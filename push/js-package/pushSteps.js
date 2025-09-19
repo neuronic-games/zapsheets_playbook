@@ -1,6 +1,3 @@
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// For Refresh the page
-//document.getElementById('versionId').innerHTML = 'Checking updates...'
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * 
@@ -13,9 +10,8 @@ function getCurrentVersion() {
  document.getElementsByTagName('head')[0].appendChild(newScript);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
-//return;
 getCurrentVersion()
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * 
  * @returns 
@@ -28,8 +24,8 @@ const detectDeviceType = () =>
 //listener.onupdateinstalling = installingevent => console.log('Update is installing.');
 // Called whenever an update is done installing and is waiting
 var buttonElem = ''
-if(detectDeviceType() == 'Desktop') {
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* if(detectDeviceType() == 'Desktop') {
+//////////////////////////////////////////////////////////////////////////////////////
 buttonElem = `<p id='btnRefresh' style="position: absolute; right: 1em; top: .8em; font-weight: 700; border: 0; font-size: 1.2em; border-radius: 2px; padding:0.5em; color:#A7C1F6; cursor:pointer; z-index:99999; font-family: Font-default;">REFRESH</p>
     <p style="position: absolute; left: 0em; top: 1.2em; font-weight: 700; border: 0; font-size: 1.2em; border-radius: 2px; padding:0.5em">
     <img id='closeBox' src='images/close.png' alt="" style="filter: saturate(500%) contrast(800%) brightness(500%) 
@@ -37,15 +33,14 @@ buttonElem = `<p id='btnRefresh' style="position: absolute; right: 1em; top: .8e
     </p>
     `
 } else {
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 buttonElem = `<p id='btnRefresh' style="position: absolute; right: 0.5em; top: 0.8em; font-weight: 700; border: 0; font-size: 1.4em; border-radius: 2px; padding:0.5em; color:#A7C1F6; cursor:pointer; z-index:99999; font-family: Font-default;">REFRESH</p>
     <p style="position: absolute; left: 0.5em; top: 0.9em; font-weight: 700; border: 0; font-size: 1.2em; border-radius: 2px; padding:0.5em">
     <img id='closeBox' src='images/close.png' alt="" style="filter: saturate(500%) contrast(800%) brightness(500%) 
     invert(100%) sepia(0%) hue-rotate(0deg); position: relative; width: 30px; cursor:pointer;" />
     </p>`
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//localStorage.setItem("refreshStatus", "null")
+} */
+///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Global Variables
  */
@@ -60,44 +55,38 @@ let gameMsg = ""
 let eventSliderActive = false
 let MODE_TYPE = ""
 let pollTime = 10
-
 let prevRenderEvents = 0
 let activeLanguage = "eng"
 let inLanguageProcess = false
 let activeMenuIndex = -1
-
 // To store active click object
 let activeEventObject = null
 let activeEventIndex = -1;
-
 let activeLayout = ''
 let addLanguage = ''
-
 let onEvents = false;
 let downIndex = -1;
 let upIndex = -1;
 let imageLoadedCount = 1
-
-/////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 // Image Holder
 let tempLangHolder = []
 let tempInstallHolder = []
-//////////////////////////////////////////////////////////////////////////////////////////////////
+// Language Holder
+let languageLoadIndex = 0
+let languageJSON = []
+//////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Checking open browser stats
  */
 if (window.performance) {
-    //console.log("ENTER HERE")
     if (performance.navigation.type == 1) {
-        //alert( "This page is reloaded" );
-        // For loading cache always
         loadType = "refresh"
     } else {
-        //alert( "This page is not reloaded");
         loadType = "normal"
     }
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 /**
  * IDLE TIMEOUT
  */
@@ -106,7 +95,7 @@ let idleTime;
 let idleTimeOut = 60 // Idle threshold 3 MINS
 let idleStatus = false
 // Event to check for
-//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 /**
  * function to get the url variables passed in url
  * @returns 
@@ -121,7 +110,7 @@ function getUrlVars() {
     }
     return vars;
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 // TO LOAD PRIVATE DATA IN THE BEGINNING
 let privateDataList = []
 let eventsDataList = []
@@ -134,7 +123,7 @@ let splashDelaySec = 0
 let currentVersion = ''
 let slideShowLoaded = false;
 let backgroundWorker = null
-//////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 /**
  * iOS FIX
  * @returns 
@@ -143,7 +132,7 @@ function checkCookieStatus(){
     var cookieEnabled = navigator.cookieEnabled;
     return cookieEnabled;
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 /**
  * update message function
  */
@@ -151,124 +140,77 @@ function updateInfoTextView() {
     //document.getElementById("loadingTxt").scrollTop = 150;
     document.getElementById("loadingTxt").scrollTop += 100;
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 /**
  * function tp load Setting from spreadsheet
  */
 let settingDataList = []
 let installDataList = []
-//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 /**
  * variable to store the init urlvars
  */
 var sheet_Id = (getUrlVars()["id"]) ? getUrlVars()["id"].split('/')[0] : '';
-var isPreloadImages = (document.location.search.substr(1).split('&')[1] != '' && document.location.search.substr(1).split('&')[1] != undefined) ? document.location.search.substr(1).split('&')[1] : 'download_images';
-//var setVersion_Id = (getUrlVars()["set_version"]) ? getUrlVars()["set_version"].split('/')[0] : 'undefined';
+var isPreloadImages = (document.location.search.substr(1).split('&')[2] != '' && document.location.search.substr(1).split('&')[2] != undefined) ? document.location.search.substr(1).split('&')[2] : 'download_images';
+var isSpecificSheet = (getUrlVars()["sheet"]) ? getUrlVars()["sheet"].split('/')[0] : '';
 var setVersion_Id = (getUrlVars()["publish_id"]) ? getUrlVars()["publish_id"].split('/')[0] : 'undefined';
-//var setVersion_Num = (getUrlVars()["version"]) ? getUrlVars()["version"].split('/')[0] : '';
 var getKiosk_Num = (getUrlVars()["kiosk"]) ? getUrlVars()["kiosk"].split('/')[0] : '';
-//console.log(sheet_Id, " ---- ", setVersion_Id, " ======= ", setVersion_Num)
-//console.log(sheet_Id, " ---- ",)
-//console.log(getKiosk_Num, " getKiosk_Num")
 var game_action = ''
-//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 function UpdateAppVersion() {
-    //document.getElementById('versionId').innerHTML = 'Version ' + Number(_version).toFixed(1);
-    document.getElementById('defaultBGImage').style.display = 'none'
-    document.getElementById("loadingTxt").innerHTML = "Publishing Sheet content..<br>"
-   /*  document.getElementById("loadingTxt").innerHTML = "App Version: " + Number(_version).toFixed(1) + "<br>"
-    updateInfoTextView() */
-    var setVersion_Num = ''
-    // change status
-    //savePublishedStateToServer('false');
-    let currentDate = new Date();
-   /*  document.getElementById("loadingTxt").innerHTML += "Checking server on " + moment(currentDate).format('MM/DD/YYYY HH:mm:ss').toLocaleString() + "<br>"
-    updateInfoTextView() */
-    let date_str = moment(currentDate).format('MM/DD/YYYY-HH:mm:ss').toLocaleString();
-    //return
-    const updateAppTimer = setTimeout(function() {
-        clearTimeout(updateAppTimer)
-        if(window.navigator.onLine == true) {
-            //console.log("INTERNET ACTIVE")
-            //document.getElementById("loadingTxt").innerHTML = "Publishing sheet content..<br>"
-            //console.log('sheets/' + setVersion_Id + '/version.json')
-            /////////////////////////////////////////////////////////////////////////////////
-            // Modifying push stat
-            var updateRequest = $.ajax({
-                url: 'pushSheet.php?version=' + Math.random(), 
-                type:'POST', 
-                data:{'id' : sheet_Id, 'sheetname' : '', 'date_string' : date_str}, 
-                cache: false, 
-                // async: false,
-                success: function (response) {
-                    //console.log(response, " VERSION UPDATED")
-                    // document.getElementById("loadingTxt").innerHTML += "Sheet Version: " + response.toString() + "<br>"
-                    // updateInfoTextView()
-                    document.getElementById('defaultBGImage').style.display = 'none'
-
-                    setTimeout(function() {
-                        // let currentDate = new Date();
-                        // document.getElementById("loadingTxt").innerHTML += "Checking server on " + moment(currentDate).format('YYYY/MM/DD HH:mm:ss') + "<br>"
-                        // updateInfoTextView()
-                        // Load Setting Data from server and save it to server settings.json file
-                        getSettingsDataFromSheet();
-                    }, 100)
-
-                }
-            })
-            ///////////////////
-            // Clear memory
-            updateRequest.onreadystatechange = null;
-            updateRequest.abort = null;
-            updateRequest = null;
-            ///////////////////
-            /* setTimeout(function() {
-                // let currentDate = new Date();
-                // document.getElementById("loadingTxt").innerHTML += "Checking server on " + moment(currentDate).format('YYYY/MM/DD HH:mm:ss') + "<br>"
-                // updateInfoTextView()
-                // Load Setting Data from server and save it to server settings.json file
-                getSettingsDataFromSheet();
-            }, 100) */
-        } else {
-            //console.log("NO INTERNET")
-            document.getElementById("loadingTxt").innerHTML = "Waiting for active internet...<br>Retrying..." 
-            UpdateAppVersion()
-        }
-    }, 5000)
+    if(isSpecificSheet == '') {
+        document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Sheet not defined.' + "</font><br>"
+        updateInfoTextView()
+    } else {
+        checkIfSheetExists(isSpecificSheet.toLowerCase())
+    }
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * 
+ * @param {*} url 
+ * @param {*} callback 
+ */
+function checkIfUrlExists(url, callback) {
+  const http = new XMLHttpRequest();
+  http.open('HEAD', url);
+  http.onreadystatechange = () => {
+    if (http.readyState === XMLHttpRequest.DONE) {
+      callback(http.status !== 404);
+    }
+  };
+  http.send();
+}
+/////////////////////////////////////////////////////////////////////////////////////////
 /**
  * 
  */
-function getSettingsDataFromSheet() {
+/* function getSettingsDataFromSheet() {
     if(window.navigator.onLine == true) {
-        //console.log("INTERNET ACTIVE")
-        //document.getElementById("loadingTxt").innerHTML = "Publishing sheet content..<br>"
-        //console.log('sheets/' + setVersion_Id + '/version.json')
-        /////////////////////////////////////////////////////////////////////////////////
         var updateRequest = $.ajax({
             url: 'pushSheet.php?version=' + Math.random(), 
             type:'POST', 
             data:{'id' : sheet_Id, 'sheetname' : 'Settings'}, 
             cache: false, 
-           /*  async: false, */
             success: function (response) {
-                //console.log(response, " Setting Data")
-                //return;
                 let settingResponse = response
                 document.getElementById("loadingTxt").innerHTML += response.toString() + "<br>"
                 updateInfoTextView()
-                //document.getElementById('defaultBGImage').style.display = 'none'
-                //var languageJSON = ''
                 setTimeout(function() {
-                    //let currentDate = new Date();
-                    //document.getElementById("loadingTxt").innerHTML += "Checking server on " + moment(currentDate).format('YYYY/MM/DD HH:mm:ss') + "<br>"
-                    //updateInfoTextView()
+                    // In case either sheet not defined or not given the access to Service Account
+                    checkIfUrlExists('../sheets/' + sheet_Id + "/settings.json?version=" + Math.random(), (exists) => {
+                        if(!exists) {
+                            document.getElementById("loadingTxt").innerHTML = "Publishing Sheet content..</br>"
+                            updateInfoTextView()
+                            document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Give Editor access to editor@zsheets-378406.iam.gserviceaccount.com' + "</font><br>"
+                            updateInfoTextView()
+                            return;
+                        }
+                    });
                     // Load and store setting data to list
                     var settingRequest = $.ajax({
                         url: '../sheets/' + sheet_Id + "/settings.json?version=" + Math.random(), 
                         cache: false, 
-                        //async: false,
                         type: 'GET',
                         dataType: "text",
                         success: function (response) {
@@ -277,14 +219,11 @@ function getSettingsDataFromSheet() {
                                 document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Settings data not available.' + "</font><br>"
                                 updateInfoTextView()
                             } else { 
-                                //////////////////////////////////////////////////////////////////////////////
                                 settingDataList = []
                                 var mResponseSettings = response.replace(/�/g, "") 
                                 var newSettingsData = eval(mResponseSettings)
                                 for(var i=0; i<newSettingsData.length; i++) {
                                     var settingsDataSting = JSON.stringify(newSettingsData[i]);
-                                    //console.log(isJSON(pp), " --- ")
-                                    //newstr += JSON.stringify(isJSON(pp))
                                     if(isJSONData(settingsDataSting) == false) {
                                         document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Settings Sheet : (Row: ' + i + ")</font><br>"
                                         updateInfoTextView()
@@ -292,7 +231,6 @@ function getSettingsDataFromSheet() {
                                         settingDataList[i] = isJSONData(settingsDataSting)
                                     }
                                 }
-                                //////////////////////////////////////////////////////////////////////////////
                                 $.each(settingDataList, function (index, row) {
                                     if(row['Name'] == 'Title') {
                                         document.getElementById("loadingTxt").innerHTML = 'Sheet Title: ' + row['Value'] + '<br>'
@@ -310,89 +248,404 @@ function getSettingsDataFromSheet() {
                                         document.getElementById("loadingTxt").innerHTML += 'Sheet Published on: ' + row['Value'] + '<br>'
                                         updateInfoTextView()
                                     }
-                                    /* if(row['Name'] == 'AddLanguage') {
-                                        //console.log(row['Value'], " anguage value")
-                                        languageJSON = [row['Value']]
-                                    } */
                                 })
                                 document.getElementById("loadingTxt").innerHTML += "App Version: " + Number(_version).toFixed(1) + "<br>"
                                 updateInfoTextView()
 
-
                                 // Settings message added
-                                document.getElementById("loadingTxt").innerHTML += "Publishing settings data to server.<br>"
+                                document.getElementById("loadingTxt").innerHTML += "Publising settings data to server.<br>"
                                 updateInfoTextView()
-
-
-                                /* document.getElementById("loadingTxt").innerHTML += settingResponse.toString() + "<br>"
-                                updateInfoTextView() */
-                                /////////////////////////////////////////////////////////////////////////////////////
-                                // Show Setting data to the log
-                                //document.getElementById("loadingTxt").innerHTML += "Sheet settings details..<br>"
-                                //updateInfoTextView()
-                                /* $.each(settingDataList, function (index_setting, row_setting) {
-                                   if(row_setting['Name'] != '' && row_setting['Value'] != '') {
-                                        document.getElementById("loadingTxt").innerHTML += row_setting['Name'] + ': ' + row_setting['Value'] + "<br>"
-                                        updateInfoTextView()
-                                   }
-                                }) */
-                                /////////////////////////////////////////////////////////////////////////////////////////
-
                             }
-                            /* $.each(settingDataList, function (index, row) {
-                                if(row['Name'] == 'AddLanguage') {
-                                    //console.log(row['Value'], " anguage value")
-
-                                    var languageJSON = row['Value'].split(',')
-                                    for (var i=0; i< languageJSON.length; i++) {
-                                        //console.log(languageJSON[i].trimStart().trimEnd(), "HERERE")
-                                        console.log(languageJSON[i].replace(/\s/g, ''), "HERERE")
-                                    }
-                                }
-                            }) */
-                            //getDirectoryDataFromSheet()
-
-                            // Changes here 8/4/25
-                            //getStepsDataFromSheet()
-                            getInstallDataFromSheet()
-
+                            if(isSpecificSheet.toLowerCase() == 'all') {
+                                getInstallDataFromSheet()
+                            } else {
+                                checkIfSheetExists(isSpecificSheet.toLowerCase())
+                            }
                         },
                     })
-                    ///////////////////
                     // Clear memory
                     settingRequest.onreadystatechange = null;
                     settingRequest.abort = null;
                     settingRequest = null;
-                    ///////////////////
-                    // Load Directory Data from server and save it to server settings.json file
-                    //getDirectoryDataFromSheet()
                 }, 100)
             }
         })
-        ///////////////////
         // Clear memory
         updateRequest.onreadystatechange = null;
         updateRequest.abort = null;
         updateRequest = null;
-        ///////////////////
+    }
+} */
+////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * 
+ */
+// Check Sheet passsed
+function checkIfSheetExists(_sheetName) {
+    if(window.navigator.onLine == true) {
+        var updateRequest = $.ajax({
+            url: 'pushSheet.php?version=' + Math.random(), 
+            type:'POST', 
+            data:{'id' : sheet_Id, 'sheetname' : 'checkSheet', 'tab_name' : _sheetName}, 
+            cache: false, 
+            success: function (response) {
+                //console.log(response, " >Sheet exists")s
+                var mResponseSheet = response.replace(/�/g, "") 
+                var newSheetData = JSON.parse(mResponseSheet)
+                if(newSheetData.exists == "no") {
+                    console.log(newSheetData.exists)
+                    document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Sheet ' + _sheetName + ' does not exists.' + "</font><br>"
+                    updateInfoTextView()
+                } else {
+                    // If the sheet exists
+                    let returnSheet = newSheetData.sheet;
+                    UpdateSheetVersion(returnSheet)
+                }
+            },
+        })
+        // Clear memory
+        updateRequest.onreadystatechange = null;
+        updateRequest.abort = null;
+        updateRequest = null;
     }
 }
-// Get Install tab data
-function getInstallDataFromSheet() {
+/////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * 
+ * @param {*} _sheetName 
+ */
+let date_str = ''
+function UpdateSheetVersion(_sheetName) {
+    //console.log(_sheetName, " in update")
+    document.getElementById('defaultBGImage').style.display = 'none'
+    //document.getElementById("loadingTxt").innerHTML = "Publishing Sheet content..<br>"
+    var setVersion_Num = ''
+    let currentDate = new Date();
+    date_str = moment(currentDate).format('MM/DD/YYYY-HH:mm:ss').toLocaleString();
+    const updateAppTimer = setTimeout(function() {
+        clearTimeout(updateAppTimer)
+        if(window.navigator.onLine == true) {
+            var updateRequest = $.ajax({
+                url: 'pushSheetUpdate.php?version=' + Math.random(), 
+                type:'POST', 
+                data:{'id' : sheet_Id, 'sheetname' : "Settings", 'date_string' : date_str}, 
+                cache: false, 
+                success: function (response) {
+                    //console.log(response, " VERSION UPDATED")
+                    document.getElementById('defaultBGImage').style.display = 'none'
+                    setTimeout(function() {
+                        getSheetData(_sheetName, response, date_str)
+                    }, 100)
+                }
+            })
+            // Clear memory
+            updateRequest.onreadystatechange = null;
+            updateRequest.abort = null;
+            updateRequest = null;
+        } else {
+            document.getElementById("loadingTxt").innerHTML = "Waiting for active internet...<br>Retrying..." 
+            UpdateAppVersion()
+        }
+    }, 2000)
+}
+////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * 
+ * @param {*} _sheetName 
+ * @param {*} sheetVersion 
+ * @param {*} pub_date 
+ */
+function getSheetSettings(_sheetName, sheetVersion, pub_date) {
+    checkIfUrlExists('../sheets/' + sheet_Id + "/" + _sheetName.toLowerCase() + ".json?version=" + Math.random(), (exists) => {
+        if(!exists) {
+            document.getElementById("loadingTxt").innerHTML = "Publishing Sheet content..</br>"
+            updateInfoTextView()
+            document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Give Editor access to editor@zsheets-378406.iam.gserviceaccount.com' + "</font><br>"
+            updateInfoTextView()
+            return;
+        }
+    });
+    // Load and store setting data to list
+    var settingRequest = $.ajax({
+        url: '../sheets/' + sheet_Id + "/" + _sheetName.toLowerCase() + ".json?version=" + Math.random(), 
+        cache: false, 
+        type: 'GET',
+        dataType: "text",
+        success: function (response) {
+            if(response.length == 0) {
+                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>"
+                updateInfoTextView()
+            } else { 
+                settingDataList = []
+                var mResponseSettings = response.replace(/�/g, "") 
+                var newSettingsData = eval(mResponseSettings)
+                for(var i=0; i<newSettingsData.length; i++) {
+                    var settingsDataSting = JSON.stringify(newSettingsData[i]);
+                    if(isJSONData(settingsDataSting) == false) {
+                        document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' Sheet : (Row: ' + i + ")</font><br>"
+                        updateInfoTextView()
+                    } else {
+                        settingDataList[i] = isJSONData(settingsDataSting)
+                    }
+                }
+                $.each(settingDataList, function (index, row) {
+                    if(row['Name'] == 'Title') {
+                        document.getElementById("loadingTxt").innerHTML = 'Sheet Title: ' + row['Value'] + '<br>'
+                        updateInfoTextView()
+                    }
+                    if(row['Name'] == 'SheetId') {
+                        document.getElementById("loadingTxt").innerHTML += 'Sheet Id: ' + row['Value'] + '<br>'
+                        updateInfoTextView()
+                    }
+                    if(row['Name'] == 'Version') {
+                        document.getElementById("loadingTxt").innerHTML += 'Sheet Version: ' + row['Value'] + '<br>'
+                        updateInfoTextView()
+                    }
+                    if(row['Name'] == 'PublishedOn') {
+                        document.getElementById("loadingTxt").innerHTML += 'Sheet Published on: ' + row['Value'] + '<br>'
+                        updateInfoTextView()
+                    }
+                })
+                document.getElementById("loadingTxt").innerHTML += "App Version: " + Number(_version).toFixed(1) + "<br>"
+                updateInfoTextView()
+
+                // Settings message added
+                document.getElementById("loadingTxt").innerHTML += "Publising " + _sheetName + " data to server.<br>"
+                updateInfoTextView()
+
+                // Check for loading image
+                if(isPreloadImages == 'download_images') {
+                    console.log("Preload Images")
+                    // Added new line break
+                    document.getElementById("loadingTxt").innerHTML += "<br>"
+                    // Preload All Images
+                    PreloadAllImagesToServer();
+                } else {
+                    pushVersionToServer();
+                    setTimeout(function() {
+                        document.getElementById("loadingTxt").innerHTML += "All steps data published.<br>"
+                        updateInfoTextView()
+                    }, 3000)
+                }
+            }
+        },
+        error: function(e) {
+            console.log("No " + _sheetName + " sheet found")
+        }
+    })
+    // Clear memory
+    settingRequest.onreadystatechange = null;
+    settingRequest.abort = null;
+    settingRequest = null;
+}
+/////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * 
+ * @param {*} _sheetName 
+ * @param {*} sheetVersion 
+ * @param {*} pub_date 
+ */
+function getSheetInstall(_sheetName, sheetVersion, pub_date) {
+    var settingRequest = $.ajax({
+        url: '../sheets/' + sheet_Id + "/" + _sheetName.toLowerCase() + ".json?version=" + Math.random(), 
+        cache: false, 
+        type: 'GET',
+        dataType: "text",
+        success: function (response) {
+            if(response.length == 0) {
+                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>"
+                updateInfoTextView()
+            } else { 
+                installDataList = []
+                var mResponseSettings = response.replace(/�/g, "") 
+                var newSettingsData = eval(mResponseSettings)
+                for(var i=0; i<newSettingsData.length; i++) {
+                    var settingsDataSting = JSON.stringify(newSettingsData[i]);
+                    if(isJSONData(settingsDataSting) == false) {
+                        document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' Sheet : (Row: ' + i + ")</font><br>"
+                        updateInfoTextView()
+                    } else {
+                        installDataList[i] = isJSONData(settingsDataSting)
+                    }
+                }
+
+                document.getElementById("loadingTxt").innerHTML += "App Version: " + Number(_version).toFixed(1) + "<br>"
+                updateInfoTextView()
+                document.getElementById("loadingTxt").innerHTML += 'Sheet Id: ' + sheet_Id + '<br>'
+                updateInfoTextView()
+                /* document.getElementById("loadingTxt").innerHTML += 'Sheet Version: ' + sheetVersion + '<br>'
+                updateInfoTextView() */
+                document.getElementById("loadingTxt").innerHTML += 'Sheet Published on: ' + pub_date + '<br>'
+                updateInfoTextView()
+                // Settings message added
+                document.getElementById("loadingTxt").innerHTML += "Publising " + _sheetName + " data to server.<br>"
+                updateInfoTextView()
+
+                if(isPreloadImages == 'download_images') {
+                    console.log("Preload Images")
+                    // Added new line break
+                    document.getElementById("loadingTxt").innerHTML += "<br>"
+                    // Preload All Images
+                    PreloadAllImagesToServer();
+                } else {
+                    pushVersionToServer();
+                    setTimeout(function() {
+                        document.getElementById("loadingTxt").innerHTML += "All steps data published.<br>"
+                        updateInfoTextView()
+                    }, 3000)
+                }
+            }
+        },
+        error: function(e) {
+            console.log("No " + _sheetName + " sheet found")
+        }
+    })
+    // Clear memory
+    settingRequest.onreadystatechange = null;
+    settingRequest.abort = null;
+    settingRequest = null;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
+/**
+ * 
+ * @param {*} languageToLoad 
+ * @param {*} sheetVersion 
+ * @param {*} pub_date 
+ * @param {*} _sheetName 
+ */
+function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
+    var languageRequest = $.ajax({
+        //url: '../sheets/' + sheet_Id + "/steps_" + languageToLoad.toLowerCase() + ".json?version=" + Math.random(),
+        url: '../sheets/' + sheet_Id + "/" + languageToLoad.toLowerCase() + ".json?version=" + Math.random(), 
+        cache: false, 
+        async: false,
+        type: 'GET',
+        dataType: "text",
+        success: function (response) {
+            if(response.length == 0) {
+                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>"
+                updateInfoTextView()
+            } else {
+                languageDataList[languageLoadIndex] = []
+                var mResponsePrivate = response.replace(/�/g, "") 
+                var newPrivateData = eval(mResponsePrivate)
+                for(var i=0; i<newPrivateData.length; i++) {
+                    var privateDataSting = JSON.stringify(newPrivateData[i]);
+                    if(isJSONData(privateDataSting) == false) {
+                        document.getElementById("loadingTxt").innerHTML += '<font color="red">Error:' + languageToLoad.toUpperCase() + 'Sheet : (Row: ' + i + ")</font><br>"
+                        updateInfoTextView()
+                    } else {
+                        languageDataList[languageLoadIndex][i] = isJSONData(privateDataSting)
+                    }
+                }
+            }
+            document.getElementById("loadingTxt").innerHTML += "App Version: " + Number(_version).toFixed(1) + "<br>"
+            updateInfoTextView()
+            document.getElementById("loadingTxt").innerHTML += 'Sheet Id: ' + sheet_Id + '<br>'
+            updateInfoTextView()
+            
+            /* document.getElementById("loadingTxt").innerHTML += 'Sheet Version: ' + sheetVersion + '<br>'
+            updateInfoTextView() */
+
+            document.getElementById("loadingTxt").innerHTML += 'Sheet Published on: ' + pub_date + '<br>'
+            updateInfoTextView()
+
+            // Settings message added
+            document.getElementById("loadingTxt").innerHTML += "Publising " + _sheetName + " data to server.<br>"
+            updateInfoTextView()
+            
+            if(isPreloadImages == 'download_images') {
+                console.log("Preload Images")
+                // Added new line break
+                document.getElementById("loadingTxt").innerHTML += "<br>"
+                // Preload All Images
+                PreloadAllImagesToServer();
+            } else {
+                pushVersionToServer();
+                setTimeout(function() {
+                    document.getElementById("loadingTxt").innerHTML += "All steps data published.<br>"
+                    updateInfoTextView()
+                }, 3000)
+            }
+        },
+        error: function(e) {
+            console.log("No " + _sheetName + " sheet found")
+        }
+    })
+    // Clear memory
+    languageRequest.onreadystatechange = null;
+    languageRequest.abort = null;
+    languageRequest = null;
+}
+///////////////////////////////////////////////////////////////////////////////////////
+/**
+ * 
+ * @param {*} _sheetName 
+ * @param {*} sheetVersion 
+ * @param {*} pub_date 
+ */
+function getSheetData(_sheetName, sheetVersion, pub_date) {
+    //console.log("in get sheet data")
+    //console.log(sheetVersion, " sv")
+
+    //console.log(_sheetName, " AAAA")
+
     if(window.navigator.onLine == true) {
-        //console.log("INTERNET ACTIVE")
-        //document.getElementById("loadingTxt").innerHTML = "Publishing sheet content..<br>"
-        //console.log('sheets/' + setVersion_Id + '/version.json')
-        /////////////////////////////////////////////////////////////////////////////////
+        var updateRequest = $.ajax({
+            url: 'pushSheetUpdate.php?version=' + Math.random(), 
+            type:'POST', 
+            data:{'id' : sheet_Id, 'sheetname' : _sheetName, 'date_string' : ''}, 
+            cache: false, 
+            success: function (response) {
+                //console.log(response, " >> RESP")
+                //let settingResponse = response
+                //document.getElementById("loadingTxt").innerHTML += response.toString() + "<br>"
+                //updateInfoTextView()
+                //return
+                if(_sheetName.toLowerCase() == "settings") {
+                    setTimeout(function() {
+                        // In case either sheet not defined or not given the access to Service Account
+                        getSheetSettings(_sheetName, sheetVersion, pub_date);
+                    }, 100)
+                } else if(_sheetName.toLowerCase() == "install") {
+                    //console.log("Install data")
+                    setTimeout(function() {
+                        getSheetInstall(_sheetName, sheetVersion, pub_date);
+                    }, 100)
+                } else {
+                    let languageToLoad = ''
+                    languageJSON[0] = isSpecificSheet
+                    languageToLoad = isSpecificSheet; 
+                    setTimeout(function() {
+                        if(languageLoadIndex < languageJSON.length) {
+                            getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName);
+                        } else {
+                        }
+                    }, 300)
+                }
+            }
+        })
+        // Clear memory
+        updateRequest.onreadystatechange = null;
+        updateRequest.abort = null;
+        updateRequest = null;
+    }
+}
+////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * 
+ */
+// Get Install tab data
+/* function getInstallDataFromSheet() {
+    if(window.navigator.onLine == true) {
         var updateRequest = $.ajax({
             url: 'pushSheet.php?version=' + Math.random(), 
             type:'POST', 
             data:{'id' : sheet_Id, 'sheetname' : 'Install'}, 
             cache: false, 
-           /*  async: false, */
             success: function (response) {
-                //console.log(response, " Setting Data")
-                //return;
+                //console.log(response, " Install Data")
                 let installResponse = response
                 document.getElementById("loadingTxt").innerHTML += response.toString() + "<br>"
                 updateInfoTextView()
@@ -424,79 +677,78 @@ function getInstallDataFromSheet() {
                                         installDataList[i] = isJSONData(settingsDataSting)
                                     }
                                 }
-                                /////////////////////////////////////////////////////////////////
-                                // Settings message added
-                                //document.getElementById("loadingTxt").innerHTML += "Publishing install data to server.<br>"
                                 updateInfoTextView()
                             }
-                            // Changes here 8/4/25
-                            getStepsDataFromSheet()
+                            if(isSpecificSheet == 'all' || (isSpecificSheet != 'install' && isSpecificSheet != '')) {
+                                getStepsDataFromSheet()
+                            } else {
+                                if(isPreloadImages == 'download_images') {
+                                    console.log("Preload Images")
+                                    // Added new line break
+                                    document.getElementById("loadingTxt").innerHTML += "<br>"
+                                    // Preload All Images
+                                    PreloadAllImagesToServer();
+                                } else {
+                                    pushVersionToServer();
+                                    setTimeout(function() {
+                                        document.getElementById("loadingTxt").innerHTML += "All steps data published.<br>"
+                                        updateInfoTextView()
+                                        // Call PHP to save data to the json file
+                                        //savePublishedStateToServer('true');
+                                    }, 3000)
+                                }
+                            }
                         },
+                        error: function(e) {
+                            console.log("No Install sheet found")
+                        }
                     })
-                    ///////////////////
                     // Clear memory
                     settingRequest.onreadystatechange = null;
                     settingRequest.abort = null;
                     settingRequest = null;
-                    ///////////////////
-                    // Load Directory Data from server and save it to server settings.json file
-                    //getDirectoryDataFromSheet()
                 }, 100)
-            }
+            },
+            
         })
-        ///////////////////
         // Clear memory
         updateRequest.onreadystatechange = null;
         updateRequest.abort = null;
         updateRequest = null;
-        ///////////////////
     }
-}
-//////////////////////////////////////////////////////////////////////////////////////////////////
+} */
+////////////////////////////////////////////////////////////////////////////////////////
 /**
  * 
  */
-let languageLoadIndex = 0
+/* let languageLoadIndex = 0
 let languageJSON = []
 function getStepsDataFromSheet() {
     if(window.navigator.onLine == true) {
-        //console.log("INTERNET ACTIVE")
-        //document.getElementById("loadingTxt").innerHTML = "Publishing sheet content..<br>"
-        //console.log('sheets/' + setVersion_Id + '/version.json')
-        /////////////////////////////////////////////////////////////////////////////////
         let languageToLoad = ''
-        $.each(settingDataList, function (index, row) {
-            if(row['Name'] == 'AddLanguage') {
-                //console.log(row['Value'], " anguage value")
-                languageJSON = row['Value'].split(',')
-                //for (var i=0; i< languageJSON.length; i++) {
-                    //console.log(languageJSON[i].trimStart().trimEnd(), "HERERE")
+        if(isSpecificSheet == 'all') {
+            $.each(settingDataList, function (index, row) {
+                if(row['Name'] == 'AddLanguage') {
+                    //console.log(row['Value'], " anguage value")
+                    languageJSON = row['Value'].split(',')
                     languageToLoad = languageJSON[languageLoadIndex].replace(/\s/g, '')
-                //}
-            }
-        })
-        //console.log(languageToLoad.toUpperCase(), " TO LOAD SHEET")
-        //return;
-        /////////////////////////////////////////////////////////////////////////////////
+                }
+            })
+        } else {
+            languageJSON[0] = isSpecificSheet
+            languageToLoad = isSpecificSheet; 
+        }
         var updateRequest = $.ajax({
             url: 'pushSheet.php?version=' + Math.random(), 
             type:'POST', 
             data:{'id' : sheet_Id, 'sheetname' : languageToLoad.toUpperCase()}, 
             cache: false, 
-           /*  async: false, */
             success: function (response) {
                 console.log(response, "Steps Data")
-                //return;
                 document.getElementById("loadingTxt").innerHTML += response.toString() + "<br>"
                 updateInfoTextView()
-                //document.getElementById('defaultBGImage').style.display = 'none'
-                //return;
                 setTimeout(function() {
-                    //console.log(languageLoadIndex , '<', (languageJSON.length-1))
                     if(languageLoadIndex < languageJSON.length) {
-                        /* languageLoadIndex++;
-                        getStepsDataFromSheet() */
-                        //console.log("Load all the languages data available in the folder list - ", languageToLoad.toLowerCase())
                         var languageRequest = $.ajax({
                             url: '../sheets/' + sheet_Id + "/steps_" + languageToLoad.toLowerCase() + ".json?version=" + Math.random(), 
                             cache: false, 
@@ -507,17 +759,13 @@ function getStepsDataFromSheet() {
                                 //console.log(response, " READ DATA")
                                 if(response.length == 0) {
                                     document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Steps data not available.' + "</font><br>"
-                                    //document.getElementById("loadingTxt").innerHTML += '<font color="red">' + "</font><br>"
                                     updateInfoTextView()
                                 } else {
-                                    //////////////////////////////////////////////////////////////////////////////
                                     languageDataList[languageLoadIndex] = []
                                     var mResponsePrivate = response.replace(/�/g, "") 
                                     var newPrivateData = eval(mResponsePrivate)
                                     for(var i=0; i<newPrivateData.length; i++) {
                                         var privateDataSting = JSON.stringify(newPrivateData[i]);
-                                        //console.log(isJSON(pp), " --- ")
-                                        //newstr += JSON.stringify(isJSON(pp))
                                         if(isJSONData(privateDataSting) == false) {
                                             document.getElementById("loadingTxt").innerHTML += '<font color="red">Error:' + languageToLoad.toUpperCase() + 'Sheet : (Row: ' + i + ")</font><br>"
                                             updateInfoTextView()
@@ -526,18 +774,14 @@ function getStepsDataFromSheet() {
                                         }
                                     }
                                 }
-                                //console.log(languageDataList[languageLoadIndex], " LANG DATA")
                                 if(languageLoadIndex != languageJSON.length-1) {
                                     languageLoadIndex++;
                                     getStepsDataFromSheet()
                                 } else {
                                     if(isPreloadImages == 'download_images') {
                                         console.log("Preload Images")
-                                        
                                         // Added new line break
                                         document.getElementById("loadingTxt").innerHTML += "<br>"
-                                        
-
                                         // Preload All Images
                                         PreloadAllImagesToServer();
                                     } else {
@@ -548,52 +792,40 @@ function getStepsDataFromSheet() {
                                             // Call PHP to save data to the json file
                                             //savePublishedStateToServer('true');
                                         }, 3000)
-                                        /* document.getElementById("loadingTxt").innerHTML += "All steps data published.<br>"
-                                        updateInfoTextView() */
                                     }
                                 }
                             },
                         })
-                        ///////////////////
                         // Clear memory
                         languageRequest.onreadystatechange = null;
                         languageRequest.abort = null;
                         languageRequest = null;
-                        ///////////////////
                     } else {
                         document.getElementById("loadingTxt").innerHTML += "All steps data published.<br>"
                         updateInfoTextView()
                     }
-                    // Load Events Data from server and save it to server settings.json file
-                    //getEventsDataFromSheet() 
                 }, 300)
             }
         })
-        ///////////////////
         // Clear memory
         updateRequest.onreadystatechange = null;
         updateRequest.abort = null;
         updateRequest = null;
-        ///////////////////
     }
-}
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
+} */
+///////////////////////////////////////////////////////////////////////////////////////
 /**
  * 
  */
 isJSONData = str => {
-    //if (typeof str === 'string'){
-      try {
+    try {
         let p = JSON.parse(str)
         return p
-      } catch(e){
-      }
-    //}
+    } catch(e) {
+    }
     return false
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////
 /**
  * 
  * @param {*} txt 
@@ -603,7 +835,7 @@ function validateTimeString(txt) {
     var isValid = /^([0-1]?[0-9]|2[0-4]):([0-5][0-9])(:[0-5][0-9])?$/.test(txt);
     return isValid;
   }
-//////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 /**
  * 
  * @returns 
@@ -611,49 +843,25 @@ function validateTimeString(txt) {
 function getAllImagesToPublish() {
     var tempCount = 0
     $.each(settingDataList, function (index_setting, row_setting) {
-        /* if(row_setting['Name'] == 'TextImage' || row_setting['Name'] == 'DefaultMapImage' || row_setting['Name'] == 'BackgroundImage' || row_setting['Name'] == 'SplashImageUrl') {
-            if(row_setting['Value'] != '' && row_setting['Value'] != undefined) {
-                tempCount++
-            }
-            if(row_setting['Value ES'] != '' && row_setting['Value ES'] != undefined) {
-                tempCount++
-            }
-        } */
-        if(row_setting['Name'] == 'BackgroundImage' || row_setting['Name'] == 'SplashImageUrl' || row_setting['Name'] == 'PrevButtonUrl' || row_setting['Name'] == 'NextButtonUrl' || row_setting['Name'] == 'QuitButtonUrl') {
+        if(row_setting['Name'] == 'BackgroundImage' || row_setting['Name'] == 'SplashImageUrl' || row_setting['Name'] == 'PrevButtonUrl' || row_setting['Name'] == 'NextButtonUrl' || row_setting['Name'] == 'QuitButtonUrl' || row_setting['Name'] == 'LoadingImageUrl' || row_setting['Name'] == 'DownloadButtonUrl' || row_setting["Name"] == '[DICE]' || row_setting["Name"] == '[BERRY]' || row_setting["Name"] == '[NUT]' || row_setting["Name"] == '[BUG]' || row_setting["Name"] == '[OOPS]') {
             if(row_setting['Value'] != '') {
                 tempCount++
             }
         }
     })
-    //////////////////////////////////////////////////////////////////////////////////////////
-    // Unfiltered list
-    /* for(var i=0; i<languageDataList.length; i++) {
-        for (var j=0; j<languageDataList[i].length; j++) {
-            if(languageDataList[i][j].Image != '') {
-                //console.log(languageDataList[i][j].Image, " AAS")
-                tempCount++
-                //tempImages.push(languageDataList[i][j].Image)
-            }
-        }
-    } */
-    //////////////////////////////////////////////////////////////////////////////////////////
     // Filtered list
     let filteredImages = tempLangHolder.filter((item, index) => tempLangHolder.indexOf(item) === index);
-    //console.log(filteredImages.length, " LEN")
     for (var j=0; j<filteredImages.length; j++) {
         tempCount++
     }
-
     // Install tab images
     let filteredInstallImages = tempInstallHolder.filter((item, index) => tempInstallHolder.indexOf(item) === index);
     for (var k=0; k<filteredInstallImages.length; k++) {
         tempCount++
     }
-    //////////////////////////////////////////////////////////////////////////////////////////
     return tempCount;
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 /**
  * 
  * @param {*} _value 
@@ -664,19 +872,16 @@ function savePublishedStateToServer(_value) {
         type:'POST', 
         data:{'id' : sheet_Id, 'value' : _value}, 
         cache: false, 
-       /*  async: false, */
         success: function (response) {
             console.log("RESONSE - ", response)
         }
     })
-    ///////////////////
     // Clear memory
     saveRequest.onreadystatechange = null;
     saveRequest.abort = null;
     saveRequest = null;
-    ///////////////////
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////
 /**
  * 
  */
@@ -684,7 +889,40 @@ function PreloadAllImagesToServer() {
     // Caching Directory Map Images
     if(window.navigator.onLine == true) {
         let settingTimeout = 10
+
+        /* console.log(settingDataList)
+        return; */
+
         $.each(settingDataList, function (index_setting, row_setting) {
+            //console.log(row_setting['Name'], " NAME")
+
+            // For Loading Screen Image
+            if(row_setting['Name'] == 'LoadingImageUrl') {
+                if(row_setting['Value'] != '') {
+                    if (row_setting['Value'].includes("https://drive.google.com")) {
+                        let imgid = row["Value"].split('https://drive.google.com')[1].split('/')[3];
+                        let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
+                        // Cache Image
+                        setTimeout(function() {
+                            if(row_setting['Value'] != '') {
+                                downloadImagesLocally(imgPath)
+                            } else {
+                                downloadImagesLocally("")
+                            }
+                        }, (settingTimeout * index_setting));
+                    } else {
+                        // Cache Image
+                        setTimeout(function() {
+                            if(row_setting['Value'] != '') {
+                                downloadImagesLocally(row_setting['Value'])
+                            } else {
+                                downloadImagesLocally("")
+                            }
+                        }, (settingTimeout * index_setting));
+                    }
+                }
+            }
+            // For Background Image
             if(row_setting['Name'] == 'BackgroundImage') {
                 if(row_setting['Value'] != '') {
                     if (row_setting['Value'].includes("https://drive.google.com")) {
@@ -710,6 +948,7 @@ function PreloadAllImagesToServer() {
                     }
                 }
             }
+            // For Splash Screen
             if(row_setting['Name'] == 'SplashImageUrl') {
                 if(row_setting['Value'] != '') {
                     if (row_setting['Value'].includes("https://drive.google.com")) {
@@ -735,10 +974,6 @@ function PreloadAllImagesToServer() {
                     }
                 }
             }
-            
-
-            ////////////////////////////////////////////////////////////////////////////
-
             // For Prev Button
             if(row_setting['Name'] == 'PrevButtonUrl') {
                 if(row_setting['Value'] != '') {
@@ -765,7 +1000,6 @@ function PreloadAllImagesToServer() {
                     }
                 }
             }
-
             // For Next Button
             if(row_setting['Name'] == 'NextButtonUrl') {
                 if(row_setting['Value'] != '') {
@@ -792,8 +1026,7 @@ function PreloadAllImagesToServer() {
                     }
                 }
             }
-
-            // For Next Button
+            // For Quit Button
             if(row_setting['Name'] == 'QuitButtonUrl') {
                 if(row_setting['Value'] != '') {
                     if (row_setting['Value'].includes("https://drive.google.com")) {
@@ -819,73 +1052,229 @@ function PreloadAllImagesToServer() {
                     }
                 }
             }
-
-            ////////////////////////////////////////////////////////////////////////////
-
+            // For Download Button
+            if(row_setting['Name'] == 'DownloadButtonUrl') {
+                if(row_setting['Value'] != '') {
+                    if (row_setting['Value'].includes("https://drive.google.com")) {
+                        let imgid = row["Value"].split('https://drive.google.com')[1].split('/')[3];
+                        let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
+                        // Cache Image
+                        setTimeout(function() {
+                            if(row_setting['Value'] != '') {
+                                downloadImagesLocally(imgPath)
+                            } else {
+                                downloadImagesLocally("")
+                            }
+                        }, (settingTimeout * index_setting));
+                    } else {
+                        // Cache Image
+                        setTimeout(function() {
+                            if(row_setting['Value'] != '') {
+                                downloadImagesLocally(row_setting['Value'])
+                            } else {
+                                downloadImagesLocally("")
+                            }
+                        }, (settingTimeout * index_setting));
+                    }
+                }
+            }
+            // For DICE Image
+            if(row_setting['Name'] == '[DICE]') {
+                if(row_setting['Value'] != '') {
+                    if (row_setting['Value'].includes("https://drive.google.com")) {
+                        let imgid = row["Value"].split('https://drive.google.com')[1].split('/')[3];
+                        let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
+                        // Cache Image
+                        setTimeout(function() {
+                            if(row_setting['Value'] != '') {
+                                downloadImagesLocally(imgPath)
+                            } else {
+                                downloadImagesLocally("")
+                            }
+                        }, (settingTimeout * index_setting));
+                    } else {
+                        // Cache Image
+                        setTimeout(function() {
+                            if(row_setting['Value'] != '') {
+                                downloadImagesLocally(row_setting['Value'])
+                            } else {
+                                downloadImagesLocally("")
+                            }
+                        }, (settingTimeout * index_setting));
+                    }
+                }
+            }
+            // For BERRY Image
+            if(row_setting['Name'] == '[BERRY]') {
+                if(row_setting['Value'] != '') {
+                    if (row_setting['Value'].includes("https://drive.google.com")) {
+                        let imgid = row["Value"].split('https://drive.google.com')[1].split('/')[3];
+                        let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
+                        // Cache Image
+                        setTimeout(function() {
+                            if(row_setting['Value'] != '') {
+                                downloadImagesLocally(imgPath)
+                            } else {
+                                downloadImagesLocally("")
+                            }
+                        }, (settingTimeout * index_setting));
+                    } else {
+                        // Cache Image
+                        setTimeout(function() {
+                            if(row_setting['Value'] != '') {
+                                downloadImagesLocally(row_setting['Value'])
+                            } else {
+                                downloadImagesLocally("")
+                            }
+                        }, (settingTimeout * index_setting));
+                    }
+                }
+            }
+            // For NUT Image
+            if(row_setting['Name'] == '[NUT]') {
+                if(row_setting['Value'] != '') {
+                    if (row_setting['Value'].includes("https://drive.google.com")) {
+                        let imgid = row["Value"].split('https://drive.google.com')[1].split('/')[3];
+                        let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
+                        // Cache Image
+                        setTimeout(function() {
+                            if(row_setting['Value'] != '') {
+                                downloadImagesLocally(imgPath)
+                            } else {
+                                downloadImagesLocally("")
+                            }
+                        }, (settingTimeout * index_setting));
+                    } else {
+                        // Cache Image
+                        setTimeout(function() {
+                            if(row_setting['Value'] != '') {
+                                downloadImagesLocally(row_setting['Value'])
+                            } else {
+                                downloadImagesLocally("")
+                            }
+                        }, (settingTimeout * index_setting));
+                    }
+                }
+            }
+            // For BUG Image
+            if(row_setting['Name'] == '[BUG]') {
+                if(row_setting['Value'] != '') {
+                    if (row_setting['Value'].includes("https://drive.google.com")) {
+                        let imgid = row["Value"].split('https://drive.google.com')[1].split('/')[3];
+                        let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
+                        // Cache Image
+                        setTimeout(function() {
+                            if(row_setting['Value'] != '') {
+                                downloadImagesLocally(imgPath)
+                            } else {
+                                downloadImagesLocally("")
+                            }
+                        }, (settingTimeout * index_setting));
+                    } else {
+                        // Cache Image
+                        setTimeout(function() {
+                            if(row_setting['Value'] != '') {
+                                downloadImagesLocally(row_setting['Value'])
+                            } else {
+                                downloadImagesLocally("")
+                            }
+                        }, (settingTimeout * index_setting));
+                    }
+                }
+            }
+            // For BERRY Image
+            if(row_setting['Name'] == '[OOPS]') {
+                if(row_setting['Value'] != '') {
+                    if (row_setting['Value'].includes("https://drive.google.com")) {
+                        let imgid = row["Value"].split('https://drive.google.com')[1].split('/')[3];
+                        let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
+                        // Cache Image
+                        setTimeout(function() {
+                            if(row_setting['Value'] != '') {
+                                downloadImagesLocally(imgPath)
+                            } else {
+                                downloadImagesLocally("")
+                            }
+                        }, (settingTimeout * index_setting));
+                    } else {
+                        // Cache Image
+                        setTimeout(function() {
+                            if(row_setting['Value'] != '') {
+                                downloadImagesLocally(row_setting['Value'])
+                            } else {
+                                downloadImagesLocally("")
+                            }
+                        }, (settingTimeout * index_setting));
+                    }
+                }
+            }
         })
         //////////////////////// For steps data ///////////////////////////
-        //console.log(languageDataList)
         let langTimeout = 300
-        //let tempLangHolder = []
         tempLangHolder = []
         $.each(languageDataList, function (i, row) {
             $.each(languageDataList[i], function (j, row_data) {
-                if (languageDataList[i][j]['Image'].includes("https://drive.google.com")) {
-                    let imgid = languageDataList[i][j]['Image'].split('https://drive.google.com')[1].split('/')[3];
-                    let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
-                    // Cache Image
-                    setTimeout(function() {
-                        if(languageDataList[i][j].Image != '') {
-                            //downloadImagesLocally(imgPath)
-                            tempLangHolder.push(imagePath)
-                            /* console.log("IMG FROM GOOGLE")
-                            console.log(tempLangHolder.length, " IMAGWA") */
-                        } else {
-                            //downloadImagesLocally("") 
-                        }
-                    }, (0));
+                if(languageDataList[i][j]['Image'] != undefined) {
+                    if (languageDataList[i][j]['Image'].includes("https://drive.google.com")) {
+                        let imgid = languageDataList[i][j]['Image'].split('https://drive.google.com')[1].split('/')[3];
+                        let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
+                        // Cache Image
+                        setTimeout(function() {
+                            if(languageDataList[i][j].Image != '') {
+                                tempLangHolder.push(imgPath)
+                            } else {
+                                //downloadImagesLocally("") 
+                            }
+                        }, (0));
+                    } else {
+                        // Cache Image
+                        setTimeout(function() {
+                            if(languageDataList[i][j].Image != '') {
+                            tempLangHolder.push(languageDataList[i][j].Image)
+                            } else {
+                                //downloadImagesLocally("")
+                            }
+                        }, (0));
+                    }
                 } else {
-                    // Cache Image
-                    setTimeout(function() {
-                        if(languageDataList[i][j].Image != '') {
-                            //console.log("IMG FROM DB")
-                           // downloadImagesLocally(languageDataList[i][j]['Image'])
-                           tempLangHolder.push(languageDataList[i][j].Image)
-                           //console.log(tempLangHolder.length, " IMAGWA")
+                    //console.log('rules.en - ', languageDataList[i][j]['Type'])
+                    if(languageDataList[i][j]['Type'] == 'image') {
+                        //console.log(languageDataList[i][j]['Text'], " AAAA")
+                        if (languageDataList[i][j]['Text'].includes("https://drive.google.com")) {
+                            let imgid = languageDataList[i][j]['Text'].split('https://drive.google.com')[1].split('/')[3];
+                            let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
+                            // Cache Image
+                            setTimeout(function() {
+                                if(languageDataList[i][j].Text != '') {
+                                    tempLangHolder.push(imgPath)
+                                } else {
+                                    //downloadImagesLocally("") 
+                                }
+                            }, (0));
                         } else {
-                            //downloadImagesLocally("")
+                            // Cache Image
+                            setTimeout(function() {
+                                if(languageDataList[i][j].Text != '') {
+                                tempLangHolder.push(languageDataList[i][j].Text)
+                                } else {
+                                    //downloadImagesLocally("")
+                                }
+                            }, (0));
                         }
-                    }, (0));
+                    }
                 }
-                
             })
         })
         setTimeout(function() {
-            //console.log(tempLangHolder.length, " IMAGWA")
-            ////////////////////////////////////////////////////////////
             // To remove duplicate values
             let filteredImages = tempLangHolder.filter((item, index) => tempLangHolder.indexOf(item) === index);
-           /*  console.log(tempLangHolder)
-            console.log('After filter')
-            console.log(filteredImages) */
-            ////////////////////////////////////////////////////////////
-            // Undo later on [unfiltered list]
-            /* $.each(tempLangHolder, function (i, row) {
-                setTimeout(function() {
-                    downloadImagesLocally(tempLangHolder[i])
-                }, (langTimeout * i));
-            }) */
-            ////////////////////////////////////////////////////////////
             // Filtered list
             $.each(filteredImages, function (i, row) {
                 setTimeout(function() {
-                    //downloadImagesLocally(tempLangHolder[i])
                     downloadImagesLocally(filteredImages[i])
                 }, (langTimeout * i));
             })
-           ////////////////////////////////////////////////////////////
         }, 300)
-
         // To Save Install Images
         let installTimeout = 500
         tempInstallHolder = []
@@ -905,58 +1294,32 @@ function PreloadAllImagesToServer() {
                 // Cache Image
                 setTimeout(function() {
                     if(installDataList[i].Image != '') {
-                        //console.log("IMG FROM DB")
-                        // downloadImagesLocally(languageDataList[i][j]['Image'])
                         tempInstallHolder.push(installDataList[i].Image)
-                        //console.log(tempLangHolder.length, " IMAGWA")
                     } else {
                         //downloadImagesLocally("")
                     }
                 }, (0));
             }
-                
         })
         setTimeout(function() {
-            //console.log(tempLangHolder.length, " IMAGWA")
-            ////////////////////////////////////////////////////////////
             // To remove duplicate values
             let filteredInstallImages = tempInstallHolder.filter((item, index) => tempInstallHolder.indexOf(item) === index);
-           /*  console.log(tempLangHolder)
-            console.log('After filter')
-            console.log(filteredImages) */
-            ////////////////////////////////////////////////////////////
-            // Undo later on [unfiltered list]
-            /* $.each(tempLangHolder, function (i, row) {
-                setTimeout(function() {
-                    downloadImagesLocally(tempLangHolder[i])
-                }, (langTimeout * i));
-            }) */
-            ////////////////////////////////////////////////////////////
             // Filtered list
             $.each(filteredInstallImages, function (i, row) {
                 setTimeout(function() {
-                    //downloadImagesLocally(tempLangHolder[i])
                     downloadImagesLocally(filteredInstallImages[i])
                 }, (installTimeout * i));
             })
-           ////////////////////////////////////////////////////////////
         }, 300)
     } 
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
-// Getting return message from backgroundAPI worker
-//////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Window onload function
  */
 window.addEventListener('load', (event) => {
-    //console.log(globalStatus, " check Status ")
-    //console.log(isPreloadImages, " check Image download option")
     // Show Push Title
-    document.getElementById('pushTitle').innerHTML = isPreloadImages == 'download_images' ? 'Publish All Steps Content' : 'Publish Only Steps Text'
-
-    //return
-
+    document.getElementById('pushTitle').innerHTML = isPreloadImages == 'download_images' ? 'Publish All Playbook Content' : 'Publish Only Playbook Text'
     if(sheet_Id != '') {
         console.log("Enter into publishing the content")
         UpdateAppVersion()
@@ -964,12 +1327,10 @@ window.addEventListener('load', (event) => {
         console.log('show missing sheet id message')
         document.getElementById("loadingTxt").innerHTML += "<font color='red'>ERROR: Sheet Id missing.<br>";
         updateInfoTextView()
-        
     }
-    //getGamesSettingData();
     return;
 })
-//////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 /**
  * To check json in correct format
  * @param {*} str 
@@ -985,16 +1346,14 @@ const isJson = (str) => {
     }
     return true;
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Hide preloader
  */
 function hideloader() {
-    /* $('.loader-spinner').addClass('d-none'); */
     $('.loader-spinner-text').addClass('d-none');
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Show preloader
  */
@@ -1002,7 +1361,7 @@ function showloader() {
     /* $('.loader-spinner').removeClass('d-none'); */
     $('.loader-spinner-text').removeClass('d-none');
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Check and return the actual conbination of urls
  * @param {*} str 
@@ -1022,7 +1381,7 @@ function combinations(str) {
     }
     return fn("", str, []);
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Reinit the window offset at top
  * @param {*} element 
@@ -1032,7 +1391,7 @@ function scrollPage(element) {
         scrollTop: $(element).offset().top
     });
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 /**
  * 
  * @param {*} url 
@@ -1054,7 +1413,7 @@ function checkIfImageExists(url, callback) {
       };
     }
   }
-////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 /**
  * 
  * @param {*} urlString 
@@ -1070,11 +1429,7 @@ function downloadImagesLocally(urlString) {
         dispImgName = imageName
     }
 
-    ///////////////////////////////////////////////////////
-    // For LOCAL debugging
-    /* console.log(urlString, " --- URL")
-    return; */
-    ///////////////////////////////////////////////////////
+    //console.log(urlString, " imgPath")
 
     var saveRequest = $.ajax({
         url: '../saveAs.php?version=' + Math.random(), 
@@ -1085,41 +1440,26 @@ function downloadImagesLocally(urlString) {
         success: function (response) {
             var tempCount = 0
             $.each(settingDataList, function (index_setting, row_setting) {
-                /* if(row_setting['Name'] == 'TextImage' || row_setting['Name'] == 'DefaultMapImage' || row_setting['Name'] == 'BackgroundImage' || row_setting['Name'] == 'SplashImageUrl') {
-                    if(row_setting['Value'] != '' && row_setting['Value'] != undefined) {
-                        tempCount++
-                    }
-                    if(row_setting['Value ES'] != '' && row_setting['Value ES'] != undefined) {
-                        tempCount++
-                    }
-                } */
-                if(row_setting['Name'] == 'BackgroundImage' || row_setting['Name'] == 'SplashImageUrl' || row_setting['Name'] == 'PrevButtonUrl' || row_setting['Name'] == 'NextButtonUrl' || row_setting['Name'] == 'QuitButtonUrl') {
+                if(row_setting['Name'] == 'BackgroundImage' || row_setting['Name'] == 'SplashImageUrl' || row_setting['Name'] == 'PrevButtonUrl' || row_setting['Name'] == 'NextButtonUrl' || row_setting['Name'] == 'QuitButtonUrl' || row_setting["Name"] == 'LoadingImageUrl' || row_setting["Name"] == 'DownloadButtonUrl' || row_setting["Name"] == '[DICE]' || row_setting["Name"] == '[BERRY]' || row_setting["Name"] == '[NUT]' || row_setting["Name"] == '[BUG]' || row_setting["Name"] == '[OOPS]') {
                     if(row_setting['Value'] != '') {
                         tempCount++
                     }
                 }
             })
-
-            //let tempLangList = []
             for(var i=0; i<languageDataList.length; i++) {
                 for (var j=0; j<languageDataList[i].length; j++) {
                     if(languageDataList[i][j].Image != '') {
-                        //console.log(languageDataList[i][j].Image, " AAS")
                         tempCount++
                     }
                 }
             }
-
             for(var i=0; i<installDataList.length; i++) {
                 if(installDataList[i].Image != "") {
                     //console.log(installDataList[i].Image, " AAS")
                     tempCount++
                 }
             }
-            
-
             var AllImageCount = tempCount; 
-            ///////////////////////////////////////////////
             var lastline = document.getElementById("loadingTxt").innerHTML.split('<br>')
             var prevMessage = ''
             for (var i=0; i<lastline.length; i++) {
@@ -1132,18 +1472,13 @@ function downloadImagesLocally(urlString) {
             var newMessage = "Publishing Images (" + (imageLoadedCount) + "/" + getAllImagesToPublish() + ")...<br>";
             document.getElementById("loadingTxt").innerHTML = prevMessage + newMessage;
             updateInfoTextView()
-            ///////////////////////////////////////////////
             if(imageLoadedCount < getAllImagesToPublish()) {
                 imageLoadedCount++;
             } else {
-                //globalStatus = true
-                // Store the status to a cache object
-                /* window.ldb.set(sheet_Id.toString() + '_published', 'true') */
                 CheckImageStatus();
                 pushVersionToServer();
-                
                 setTimeout(function() {
-                    document.getElementById("loadingTxt").innerHTML += "All data published.<br>"
+                    document.getElementById("loadingTxt").innerHTML += "All steps data published.<br>"
                     updateInfoTextView()
                     // Call PHP to save data to the json file
                     //savePublishedStateToServer('true');
@@ -1155,31 +1490,26 @@ function downloadImagesLocally(urlString) {
                 document.getElementById("loadingTxt").innerHTML += "<font color='red'>ERROR: Missing Image " + dispImgName + ".</font><br>"
                 updateInfoTextView()
             }
-
             if(imageLoadedCount < AllImageCount) {
                 imageLoadedCount++;
             } else {
-                /* window.ldb.set(sheet_Id.toString() + '_published', 'true') */
                 CheckImageStatus();
                 pushVersionToServer();
                 setTimeout(function() {
-                    document.getElementById("loadingTxt").innerHTML += "All data published.<br>"
+                    document.getElementById("loadingTxt").innerHTML += "All steps data published.<br>"
                     updateInfoTextView()
-
                     // Call PHP to save data to the json file
                     //savePublishedStateToServer('true');
                 }, 3000) 
             }
         }
     })
-    ///////////////////
     // Clear memory
     saveRequest.onreadystatechange = null;
     saveRequest.abort = null;
     saveRequest = null;
-    ///////////////////
 }
-////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 /**
  * 
  */
@@ -1193,78 +1523,96 @@ function pushVersionToServer() {
                 newVersion = row['Value']
             }
         })
-
-        //return;
-
-        //let currentDate = new Date();
-        //let date_str = moment(currentDate).format('MM/DD/YYYY-HH:mm:ss').toLocaleString();
         var updateRequest = $.ajax({
-            url: 'pushSheet.php?version=' + Math.random(), 
+            url: 'pushSheetUpdate.php?version=' + Math.random(), 
             type:'POST', 
-            data:{'id' : sheet_Id, 'sheetname' : 'Server', 'nVersion' : newVersion}, 
+            data:{'id' : sheet_Id, 'sheetname' : 'Server', 'nVersion' : newVersion, 'date_string' : ''}, 
             cache: false, 
-            // async: false,
             success: function (response) {
                 console.log(response)
             }
         })
-        ///////////////////
         // Clear memory
         updateRequest.onreadystatechange = null;
         updateRequest.abort = null;
         updateRequest = null;
-        ///////////////////
     }
 }
-////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 /**
  * 
  */
 function CheckImageStatus() {
-    //var dailyEvent = eventsDataList; //filterAllEventsBasedOnDayTime();
     $.each(settingDataList, function (index_setting, row_setting) {
+        if(row_setting['Name'] == 'LoadingImageUrl') {
+            if(row_setting['Value'] != '') {
+                if (row_setting['Value'].includes("https://drive.google.com")) {
+                    let imgid = row["Value"].split('https://drive.google.com')[1].split('/')[3];
+                    let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
+                    // Cache Image
+                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                    checkIfImageExists(imagePath, (isExists) => {
+                        if(isExists) {
+                            //console.log('Caching '  + imgid + '.png')
+                            let bgImage = new Image();
+                            bgImage.src = imagePath;
+                        } else {
+                            if(imgid != '') {
+                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image ' + imgid + '.png</font><br>'
+                                updateInfoTextView()
+                            }
+                        }
+                    })
+                } else {
+                    // Cache Image
+                    let name = row_setting['Value'].split('/')
+                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                    checkIfImageExists(imagePath, (isExists) => {
+                        if(isExists) {
+                            //console.log('Caching '  + imageName)
+                            let bgImage = new Image();
+                            bgImage.src = imagePath
+                        } else {
+                            if(imageName != '') {
+                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image '  + imageName + '</font><br>'
+                                updateInfoTextView()
+                            }
+                        }
+                    })
+                }
+            }
+        }
         if(row_setting['Name'] == 'BackgroundImage') {
             if(row_setting['Value'] != '') {
                 if (row_setting['Value'].includes("https://drive.google.com")) {
                     let imgid = row["Value"].split('https://drive.google.com')[1].split('/')[3];
                     let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                     // Cache Image
-                    //let imagePath = '../img/cacheImages/' + imgid + '.png?version=' + Math.random();
                     let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
                     checkIfImageExists(imagePath, (isExists) => {
                         if(isExists) {
                             //console.log('Caching '  + imgid + '.png')
                             let bgImage = new Image();
                             bgImage.src = imagePath;
-                           /*  document.getElementById("loadingTxt").innerHTML += 'Loading image '  + imgid + '.png from server.<br>'
-                            updateInfoTextView() */
                         } else {
-                            //console.log('Error: '  + imgid + '.png does not exists in server cache.')
                             if(imgid != '') {
                                 document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image ' + imgid + '.png</font><br>'
                                 updateInfoTextView()
                             }
                         }
                     })
-                    //document.body.appendChild(bgImage);
                 } else {
                     // Cache Image
                     let name = row_setting['Value'].split('/')
                     let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                    
-                    // New Changes
-                    //let imagePath = '../img/cacheImages/' + imageName + "?version=" + Math.random();
                     let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
                     checkIfImageExists(imagePath, (isExists) => {
-                        
                         if(isExists) {
                             //console.log('Caching '  + imageName)
                             let bgImage = new Image();
                             bgImage.src = imagePath
-                            // document.getElementById("loadingTxt").innerHTML += 'Loading image '  + imageName + ' from server.<br>'
-                            // updateInfoTextView()
                         } else {
-                            //console.log('Error: '  + imageName + ' does not exists in server cache.')
                             if(imageName != '') {
                                 document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image '  + imageName + '</font><br>'
                                 updateInfoTextView()
@@ -1273,171 +1621,21 @@ function CheckImageStatus() {
                     })
                 }
             }
-            /* if(row_setting['Value ES'] != '') {
-                if (row_setting['Value ES'].includes("https://drive.google.com")) {
-                    let imgid = row["Value ES"].split('https://drive.google.com')[1].split('/')[3];
-                    let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
-                    // Cache Image
-                    let imagePath = '../img/cacheImages/' + imgid + '.png?version=' + Math.random();
-                    checkIfImageExists(imagePath, (isExists) => {
-                        if(isExists) {
-                            //console.log('Caching '  + imgid + '.png')
-                            let bgImage = new Image();
-                            bgImage.src = imagePath;
-                            // document.getElementById("loadingTxt").innerHTML += 'Loading image '  + imgid + '.png from server.<br>'
-                            // updateInfoTextView()
-                        } else {
-                            //console.log('Error: '  + imgid + '.png does not exists in server cache.')
-                            if(imgid != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image ' + imgid + '.png</font><br>'
-                                updateInfoTextView()
-                            }
-                        }
-                    })
-
-                } else {
-                    // Cache Image
-                    let name = row_setting['Value ES'].split('/')
-                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                    
-                    // New Changes
-                    let imagePath = '../img/cacheImages/' + imageName + "?version=" + Math.random();
-                    checkIfImageExists(imagePath, (isExists) => {
-                        if(isExists) {
-                            //console.log('Caching '  + imageName)
-                            let bgImage = new Image();
-                            bgImage.src = imagePath
-                            document.getElementById("loadingTxt").innerHTML += 'Loading image '  + imageName + ' from server.<br>'
-                            updateInfoTextView()
-                        } else {
-                            //console.log('Error: '  + imageName + ' does not exists in server cache.')
-                            if(imageName != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image '  + imageName + '</font><br>'
-                                updateInfoTextView()
-                            }
-                        }
-                    })
-                }
-            } */
         }
         if(row_setting['Name'] == 'DefaultMapImage') {
-            /* if(row_setting['Value'] != '') {
-                if (row_setting['Value'].includes("https://drive.google.com")) {
-                    let imgid = row["Value"].split('https://drive.google.com')[1].split('/')[3];
-                    let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
-                    // Cache Image
-                    let imagePath = '../img/cacheImages/' + imgid + '.png?version=' + Math.random();
-
-                    checkIfImageExists(imagePath, (isExists) => {
-                        if(isExists) {
-                            //console.log('Caching '  + imgid + '.png')
-                            let bgImage = new Image();
-                            bgImage.src = imagePath;
-                           
-                        } else {
-                            //console.log('Error: '  + imgid + '.png does not exists in server cache.')
-                            if(imgid != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image ' + imgid + '.png</font><br>'
-                                updateInfoTextView()
-                            }
-                        }
-                    })
-
-                } else {
-                    // Cache Image
-                    let name = row_setting['Value'].split('/')
-                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                    
-                    // New Changes
-                    let imagePath = '../img/cacheImages/' + imageName + "?version=" + Math.random();
-                    
-                    checkIfImageExists(imagePath, (isExists) => {
-                        //console.log(isExists, " isExists map images ", ' ==== ', 'images/map/cacheImages/' + imageName)
-                        if(isExists) {
-                            let bgImage = new Image();
-                            bgImage.src = imagePath;
-                            //console.log('Caching '  + imageName)
-                           
-                        } else {
-                            //console.log('Error: '  + imageName + ' does not exists in server cache.')
-                            if(imageName != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image '  + imageName + '</font><br>'
-                                updateInfoTextView()
-                            }
-                        }
-                    })
-                }
-            } */
-
-            /* if(row_setting['Value ES'] != '') {
-                if (row_setting['Value ES'].includes("https://drive.google.com")) {
-                    let imgid = row["Value ES"].split('https://drive.google.com')[1].split('/')[3];
-                    let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
-                    // Cache Image
-                    let imagePath = '../img/cacheImages/' + imgid + '.png?version=' + Math.random();
-                    
-                    checkIfImageExists(imagePath, (isExists) => {
-                        if(isExists) {
-                            //console.log('Caching '  + imgid + '.png')
-                            let bgImage = new Image();
-                            bgImage.src = imagePath
-                            document.getElementById("loadingTxt").innerHTML += 'Loading image '  + imgid + '.png from server.<br>'
-                            updateInfoTextView()
-                        } else {
-                            //console.log('Error: '  + imgid + '.png does not exists in server cache.')
-                            if(imgid != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image ' + imgid + '.png</font><br>'
-                                updateInfoTextView()
-                            }
-                        }
-                    })
-                } else {
-                    // Cache Image
-                    let name = row_setting['Value ES'].split('/')
-                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                    
-                    // New Changes
-                    let imagePath = '../img/cacheImages/' + imageName + "?version=" + Math.random();
-                    
-
-                    //let isExists = checkIfImageExists('images/map/cacheImages/' + imageName)
-                    checkIfImageExists(imagePath, (isExists) => {
-                        if(isExists) {
-                            //console.log('Caching '  + imageName)
-                            let bgImage = new Image();
-                            bgImage.src = imagePath
-                            document.getElementById("loadingTxt").innerHTML += 'Loading image '  + imageName + ' from server.<br>'
-                            updateInfoTextView()
-                        } else {
-                            //console.log('Error: '  + imageName + ' does not exists in server cache.')
-                            if(imageName != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image '  + imageName + '</font><br>'
-                                updateInfoTextView()
-                            }
-                        }
-                    })
-
-                }
-            } */
         }
-
         if(row_setting['Name'] == 'SplashImageUrl') {
             if(row_setting['Value'] != '') {
                 if (row_setting['Value'].includes("https://drive.google.com")) {
                     let imgid = row["Value"].split('https://drive.google.com')[1].split('/')[3];
                     let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                     // Cache Image
-                    //let imagePath = '../img/cacheImages/' + imgid + '.png?version=' + Math.random();
-
                     let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                  
                     checkIfImageExists(imagePath, (isExists) => {
                         if(isExists) {
                             //console.log('Caching '  + imgid + '.png')
                             let bgImage = new Image();
                             bgImage.src = imagePath
-                            /* document.getElementById("loadingTxt").innerHTML += 'Loading image '  + imgid + '.png from server.<br>'
-                            updateInfoTextView() */
                         } else {
                             //console.log('Error: '  + imgid + '.png does not exists in server cache.')
                             if(imgid != '') {
@@ -1446,24 +1644,16 @@ function CheckImageStatus() {
                             }
                         }
                     })
-
                 } else {
                     // Cache Image
                     let name = row_setting['Value'].split('/')
                     let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                    
-                    // New Changes
-                    //let imagePath = '../img/cacheImages/' + imageName + "?version=" + Math.random();
-
                     let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                   
                     checkIfImageExists(imagePath, (isExists) => {
                         if(isExists) {
                             //console.log('Caching '  + imageName)
                             let bgImage = new Image();
                             bgImage.src = imagePath
-                            /* document.getElementById("loadingTxt").innerHTML += 'Loading image '  + imageName + ' from server.<br>'
-                            updateInfoTextView() */
                         } else {
                             //console.log('Error: '  + imageName + ' does not exists in server cache.')
                             if(imageName != '') {
@@ -1472,235 +1662,90 @@ function CheckImageStatus() {
                             }
                         }
                     })
-
                 }
             }
-
-            /* if(row_setting['Value ES'] != '') {
-                if (row_setting['Value ES'].includes("https://drive.google.com")) {
-                    let imgid = row["Value ES"].split('https://drive.google.com')[1].split('/')[3];
-                    let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
-                    // Cache Image
-                    let imagePath = '../img/cacheImages/' + imgid + '.png?version=' + Math.random();
-                   
-                    checkIfImageExists(imagePath, (isExists) => {
-                        if(isExists) {
-                            //console.log('Caching '  + imgid + '.png')
-                            let bgImage = new Image();
-                            bgImage.src = imagePath
-                            document.getElementById("loadingTxt").innerHTML += 'Loading image '  + imgid + '.png from server.<br>'
-                            updateInfoTextView()
-                        } else {
-                            //console.log('Error: '  + imgid + '.png does not exists in server cache.')
-                            if(imgid != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image ' + imgid + '.png</font><br>'
-                                updateInfoTextView()
-                            }
-                        }
-                    })
-
-                } else {
-                    // Cache Image
-                    let name = row_setting['Value ES'].split('/')
-                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                    
-                    // New Changes
-                    let imagePath = '../img/cacheImages/' + imageName + "?version=" + Math.random();
-                    
-                    checkIfImageExists(imagePath, (isExists) => {
-                        if(isExists) {
-                            //console.log('Caching '  + imageName)
-                            let bgImage = new Image();
-                            bgImage.src = imagePath
-                            document.getElementById("loadingTxt").innerHTML += 'Loading image '  + imageName + ' from server.<br>'
-                            updateInfoTextView()
-                        } else {
-                            //console.log('Error: '  + imageName + ' does not exists in server cache.')
-                            if(imageName != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image '  + imageName + '</font><br>'
-                                updateInfoTextView()
-                            }
-                        }
-                    })
-                }
-            } */
         }
-
-        
         if(row_setting['Name'] == 'TextImage') {
-            /* if(row_setting['Value'] != '') {
-                if (row_setting['Value'].includes("https://drive.google.com")) {
-                    let imgid = row["Value"].split('https://drive.google.com')[1].split('/')[3];
-                    let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
-                    // Cache Image
-                    let imagePath = '../img/cacheImages/' + imgid + '.png?version=' + Math.random();
-                   
-                    checkIfImageExists(imagePath, (isExists) => {
-                        if(isExists) {
-                            //console.log('Caching '  + imgid + '.png')
-                            let bgImage = new Image();
-                            bgImage.src = imagePath; 
-                            // document.getElementById("loadingTxt").innerHTML += 'Loading image '  + imgid + '.png from server.<br>'
-                            // updateInfoTextView()
-                        } else {
-                            //console.log('Error: '  + imgid + '.png does not exists in server cache.')
-                            if(imgid != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image ' + imgid + '.png</font><br>'
-                                updateInfoTextView()
-                            }
-                        }
-                    })
-
-                } else {
-                    // Cache Image
-                    let name = row_setting['Value'].split('/')
-                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                    
-                    // New Changes
-                    let imagePath = '../img/cacheImages/' + imageName + "?version=" + Math.random();
-                   
-                    checkIfImageExists(imagePath, (isExists) => {
-                        if(isExists) {
-                            //console.log('Caching '  + imageName)
-                            let bgImage = new Image();
-                            bgImage.src = imagePath
-                            // document.getElementById("loadingTxt").innerHTML += 'Loading image '  + imageName + ' from server.<br>'
-                            // updateInfoTextView()
-                        } else {
-                            //console.log('Error: '  + imageName + ' does not exists in server cache.')
-                            if(imageName != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image '  + imageName + '</font><br>'
-                                updateInfoTextView()
-                            }
-                        }
-                    })
-                }
-            } */
-            /* if(row_setting['Value ES'] != '') {
-                if (row_setting['Value ES'].includes("https://drive.google.com")) {
-                    let imgid = row["Value ES"].split('https://drive.google.com')[1].split('/')[3];
-                    let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
-                    // Cache Image
-                    let imagePath = 'img/cacheImages/' + imgid + '.png?version=' + Math.random();
-                  
-                    checkIfImageExists(imagePath, (isExists) => {
-                        if(isExists) {
-                            //console.log('Caching '  + imgid + '.png')
-                            let bgImage = new Image();
-                            bgImage.src = imagePath
-                            document.getElementById("loadingTxt").innerHTML += 'Loading image '  + imgid + '.png from server.<br>'
-                            updateInfoTextView()
-                        } else {
-                            //console.log('Error: '  + imgid + '.png does not exists in server cache.')
-                            if(imgid != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image ' + imgid + '.png</font><br>'
-                                updateInfoTextView()
-                            }
-                        }
-                    })
-
-                } else {
-                    // Cache Image
-                    let name = row_setting['Value ES'].split('/')
-                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                    
-                    // New Changes
-                    let imagePath = '../img/cacheImages/' + imageName + "?version=" + Math.random();
-                   
-                    checkIfImageExists(imagePath, (isExists) => {
-                        if(isExists) {
-                            //console.log('Caching '  + imageName)
-                            let bgImage = new Image();
-                            bgImage.src = imagePath
-                            document.getElementById("loadingTxt").innerHTML += 'Loading image '  + imageName + ' from server.<br>'
-                            updateInfoTextView()
-                        } else {
-                            //console.log('Error: '  + imageName + ' does not exists in server cache.')
-                            if(imageName != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image '  + imageName + '</font><br>'
-                                updateInfoTextView()
-                            }
-                        }
-                    })
-
-                }
-            } */
         }
     })
     //////////////////////// For steps data ///////////////////////////
-    //console.log(languageDataList)
     let langTimeout = 300
     let tempLangHolder = []
     $.each(languageDataList, function (i, row) {
         $.each(languageDataList[i], function (j, row_data) {
-            if (languageDataList[i][j]['Image'].includes("https://drive.google.com")) {
-                let imgid = languageDataList[i][j]['Image'].split('https://drive.google.com')[1].split('/')[3];
-                let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
-                // Cache Image
-                //let imagePath = '../img/cacheImages/' + imgid + '.png?version=' + Math.random();
-                let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                setTimeout(function() {
-                    if(languageDataList[i][j].Image != '') {
-                        tempLangHolder.push(imagePath)
-                    } else {
-                        //downloadImagesLocally("")
-                    }
-                }, (0));
+            if(languageDataList[i][j]['Image'] != undefined) {
+                if (languageDataList[i][j]['Image'].includes("https://drive.google.com")) {
+                    let imgid = languageDataList[i][j]['Image'].split('https://drive.google.com')[1].split('/')[3];
+                    let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
+                    // Cache Image
+                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                    setTimeout(function() {
+                        if(languageDataList[i][j].Image != '') {
+                            tempLangHolder.push(imagePath)
+                        } else {
+                            //downloadImagesLocally("")
+                        }
+                    }, (0));
+                } else {
+                    // Cache Image
+                    let name = languageDataList[i][j]['Image'].split('/')
+                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                    setTimeout(function() {
+                        if(languageDataList[i][j].Image != '') {
+                            tempLangHolder.push(imagePath)
+                        } else {
+                            //downloadImagesLocally("")
+                        }
+                    }, (0));
+                }
             } else {
-                // Cache Image
-                // Cache Image
-                let name = languageDataList[i][j]['Image'].split('/')
-                let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                
-                // New Changes
-                //let imagePath = '../img/cacheImages/' + imageName + "?version=" + Math.random();
-                let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                setTimeout(function() {
-                    if(languageDataList[i][j].Image != '') {
-                        tempLangHolder.push(imagePath)
+                if(languageDataList[i][j]['Type'] == 'image') {
+                    //console.log(languageDataList[i][j]['Text'], " AAAA")
+                    if (languageDataList[i][j]['Text'].includes("https://drive.google.com")) {
+                        let imgid = languageDataList[i][j]['Text'].split('https://drive.google.com')[1].split('/')[3];
+                        let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
+                        // Cache Image
+                        setTimeout(function() {
+                            if(languageDataList[i][j].Text != '') {
+                                tempLangHolder.push(imgPath)
+                            } else {
+                                //downloadImagesLocally("") 
+                            }
+                        }, (0));
                     } else {
-                        //downloadImagesLocally("")
+                        // Cache Image
+                        setTimeout(function() {
+                            if(languageDataList[i][j].Text != '') {
+                            tempLangHolder.push(languageDataList[i][j].Text)
+                            } else {
+                                //downloadImagesLocally("")
+                            }
+                        }, (0));
                     }
-                }, (0));
+                }
             }
-            
         })
     })
     setTimeout(function() {
-        //console.log(tempLangHolder.length, " IMAGWA")
-
         let filteredImages = tempLangHolder.filter((item, index) => tempLangHolder.indexOf(item) === index);
-
-        //$.each(tempLangHolder, function (i, row) {
         $.each(filteredImages, function (i, row) {
             setTimeout(function() {
-                //downloadImagesLocally(tempLangHolder[i])
                 checkIfImageExists(tempLangHolder[i], (isExists) => {
                     if(isExists) {
                         //console.log('Caching '  + imageName)
                         let bgImage = new Image();
                         bgImage.src = tempLangHolder[i]
-                       /*  document.getElementById("loadingTxt").innerHTML += 'Loading image '  + imageName + ' from server.<br>'
-                        updateInfoTextView() */
                     } else {
                         //console.log('Error: '  + imageName + ' does not exists in server cache.')
                         if(tempLangHolder[i] != '') {
-
                             let name = tempLangHolder[i].split('/')
                             let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-
-                            /* document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image '  + imageName + '</font><br>'
-                            updateInfoTextView() */
                         }
                     }
                 })
             }, (langTimeout * i));
         })
     }, 300)
-
-
-    // To Save Install Tab Images
-
-
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////

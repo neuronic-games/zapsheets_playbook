@@ -47,7 +47,6 @@ publishedOnIndex = cellNumPublishedOn.row
 dt_string = sys.argv[1].split('sheetname')[1].split('dateString')[1].replace('-', ' ')
 ##############################################################
 
-
 # Converting Data to Required JSON
 jsonObj = mSelectedWorkSheet.get_all_records()
 for items in jsonObj: 

@@ -112,6 +112,7 @@ body {
     font-family: 'Font-App'; 
     line-height: 1.2;
     text-transform: capitalize;
+    z-index: 999999;
 } 
 .page_greek div h4 { 
     font-family: 'Font-default'; 
@@ -1179,7 +1180,8 @@ Inline CSS for file loading setup
     /* overflow: scroll; */
 
     position: relative;
-    margin-top: 0vh;
+    /* margin-top: 0vh; */
+    margin-top: 2vh;
     height: 51vh;
     overflow: scroll;
     text-transform: none;

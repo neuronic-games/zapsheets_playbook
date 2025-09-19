@@ -6,41 +6,16 @@
 /* $(document).ready(function() { */
 window.addEventListener("load", (event) => {
     //console.log('READY')
-    /* console.log('READY')
-    let stepElement = `<div id="stepsScreen" style="display: none; width: 100%; height: 100%; background-color: white; position: absolute; z-index: 99999;">
-        <img src="img/floristry_mobile_scn_auction.png" alt="" />
-        <div style="display: flex; position: absolute; top: 0; height: 20vh; width: 100%; background-color: #00000095; flex-direction: column;
-        justify-content: center;
-        align-items: center;">
-            <span style="font-size: 4vh;
-        color: white; width: 90%; text-align: center;">This is Floritry game instructions.</span>
-        </div>
-        <div style="position: absolute; bottom: 0vh; height: 14vh; width: 100%; background-color: #00000095;">
-            <div style="display: flex; flex-direction: row;
-        justify-content: space-around; padding-top: 1.5vh;">
-            <img id="prevIcon" src="img/floristry_mobile_btn_prev.png" style="width: 10vh; height: 10vh;" alt="" />
-            <img id="homeIcon" src="img/floristry_mobile_btn_home.png" style="width: 10vh; height: 10vh;" alt="" />
-            <img id="nextIcon" src="img/floristry_mobile_btn_next.png" style="width: 10vh; height: 10vh;" alt="" />
-            </div>
-        </div> 
-        </div>`
-
-    console.log(document.getElementById('mainBody'), " >>>>")
-     document.getElementById('mainBody').append(stepElement)
-    //document.getElementsByTagName('body')[0].appendChild(stepElement); */
-
     // Steps Variables
     let stepIndex = 0
     let languageStepsData = [];
     let settingDataList = []
     let autoPlay;
-
     let moveType = 'right'
 
     // For lazy load
     // For LOCAL TESTING
     //let lazyLoadImages = 'TRUE'
-
     // For LIVE
     let lazyLoadImages = ''
 
@@ -70,37 +45,16 @@ window.addEventListener("load", (event) => {
     let dispInfoCount = 0
     let dispMessageList = []
 
-    //return;
+    let langLoadCount = 0;
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Save usage stat
-    /**
-     * saveUsageStat
-     */
-    /* function saveUsageStat() {
-        let deviceUID = md5(new DeviceUUID().get()).toString();
-        //console.log(getOS(), " -- ", getBrowerType(), " ==== ", deviceDetector.device, ' ++++ ', deviceUID)
-        // Call PHP to save data
-        if(window.navigator.onLine == true) {
-            var saveRequest = $.ajax({
-                url: 'saveUsageStat.php?version=' + Math.random(), 
-                type:'POST', 
-                data:{'id' : sheet_Id, 'OS' : getOS(), 'Browser' : getBrowerType(), 'Device' : deviceDetector.device, 'DeviceId' : deviceUID}, 
-                cache: false, 
-                // async: false,
-                success: function (response) {
-                    console.log(response, " stat response")
-                }
-            })
-        }
-    } */
-    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    //return;
+    //////////////////////////////////////////////////////////////////////////
     // Default value
     document.getElementById('prevIcon').style.opacity = '0.5'
     document.getElementById('prevIcon').style.pointerEvents = 'none';
     document.getElementById('nextIcon').style.pointerEvents = 'auto';
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
     // Positioning of bottom container
     var standalone = (getUrlVars()["standalone"]) ? getUrlVars()["standalone"].split('/')[0] : 'false';
     if (standalone == 'true') {
@@ -112,18 +66,16 @@ window.addEventListener("load", (event) => {
         document.getElementById('spinnerBox').style.setProperty("padding-bottom","27vh");
         document.getElementById('ExitButtonPanel').style.setProperty("bottom","9vh");
     }
-    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
     // For Testing Purpose
     // Root URL
     /* let rootURL = 'https://uncommonspublishing.com/app/floristry/steps-test' */
     /* let jasonPath = 'https://zapsheets.com/steps/' */
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
     // Checks if the internet is not active or down
     //if(window.navigator.onLine == false) {
         //document.getElementById("spinnerBox").style.display = 'none'
         //document.getElementById("loadingText").innerHTML += '<font color="red">Error: No active internet available.' + "</font><br>"
-
         // Exit Icon
         document.getElementById('ExitButtonPanel').style.display = 'block';
         document.getElementById('exitIcon').addEventListener('touchstart', onExitStart)
@@ -134,26 +86,29 @@ window.addEventListener("load", (event) => {
         //console.log(document.getElementById('exitIcon'), " aaaa")
         //return;
     //}
-    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
     // Check the browser language if the language is not passed in querystring (&EN, &ES etc)
     // Default is "EN" if not language passed or the language sheet is not defined based on brower language
 
     // Previous
     //var activeLang = (document.location.search.substr(1).split('&')[1] != '' && document.location.search.substr(1).split('&')[1] != undefined) ? document.location.search.substr(1).split('&')[1] : navigator.language;
     //console.log(activeLang, " aL")
+
+
     var activeLang = (getUrlVars()["code"]) ? getUrlVars()["code"].split('/')[0].toUpperCase() : navigator.language.split('-')[0].toUpperCase();
 
-    //console.log(activeLang, " aL")
-    
+    console.log(activeLang, " activeLang")
+
     var sheet_Id = (getUrlVars()["id"]) ? getUrlVars()["id"].split('/')[0] : '';
     //var sheet_Id = '1FYSBRB9OUDpMWYMxRjfxOE-dpP9PyCc3JWBuCT9L2w8';
 
     // to get jump id
-    var jumpId = (document.location.search.substr(1).split('&')[1] != '' && document.location.search.substr(1).split('&')[1] != undefined) ? document.location.search.substr(1).split('&')[1] : 'HOWTO';
+    //var jumpId = (document.location.search.substr(1).split('&')[1] != '' && document.location.search.substr(1).split('&')[1] != undefined) ? document.location.search.substr(1).split('&')[1] : 'HOWTO';
 
-    //console.log("ENTER -- ", sheet_Id)
-    
+    var jumpId = (document.location.search.substr(1).split('&')[1].split('=')[0] != 'id' && document.location.search.substr(1).split('&')[1] != undefined) ? document.location.search.substr(1).split('&')[1] : 'HOWTO';
 
+
+    console.log(document.location.search.substr(1).split('&')[1].split('=')[0], " jumpId")
 
     /////////////////////////////////////////////////////////////////////////////////
     /**
@@ -172,7 +127,6 @@ window.addEventListener("load", (event) => {
         return false
     }
     /////////////////////////////////////////////////////////////////////////////////
-    
     if(sheet_Id == '') {
         console.log('show Error screen')
         document.getElementById('loadingScreen').style.display = 'none';
@@ -299,7 +253,6 @@ window.addEventListener("load", (event) => {
             } else {
               sheet_Id = uSheetId
             }
-            //console.log("AAAAAAA - IN ID")
             //showloader()
             setTimeout(function() {
                 window.history.replaceState({}, "null", (winLoc + "?code=" + browserLang.toLowerCase() +"&"+ jumpId + "&id=" + sheet_Id));
@@ -314,20 +267,10 @@ window.addEventListener("load", (event) => {
             
           } 
         }
-        //console.log(uSheetId, " --- ", user_name, " --- ")
       }
 
     //return;
-
-    // Learn To Play / FullScreen instrcutions
-    //var jumpId = (document.location.search.substr(1).split('&')[2] != '' && document.location.search.substr(1).split('&')[2] != undefined) ? document.location.search.substr(1).split('&')[2] : '';
-    // New Changes
-    //var jumpId = (document.location.search.substr(1).split('&')[1] != '' && document.location.search.substr(1).split('&')[1] != undefined) ? document.location.search.substr(1).split('&')[1] : 'HOWTO';
-    //////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    //console.log(jumpId, " jumpId")
-    //document.getElementById("loadingText").innerHTML += 'Loading: ' + activeLang.split('-')[0].toUpperCase() + " steps<br>";
-    ////////////////////////////////////LANG SETTINGS START///////////////////////////////////////////////
+    //////////////////////LANG SETTINGS START///////////////////////////////////
     function loadSettingsData() {
         // Loading settings.json
         setTimeout(function() {
@@ -340,10 +283,8 @@ window.addEventListener("load", (event) => {
                 success: function (response) {
                     //console.log(response, " READ DATA")
                     if(response.length == 0) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Language data not available.' + "</font><br>"
+                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Settings data not available.' + "</font><br>"
                     } else { 
-                        ////////////////////////////////////////////////////////////////////////////////////
-                        ////////////////////////////////////////////////////////////////////////////////////
                         settingDataList = []
                         var mResponseSet = response.replace(/�/g, "") 
                         var newSettingData = eval(mResponseSet)
@@ -358,8 +299,7 @@ window.addEventListener("load", (event) => {
                                 settingDataList[i] = isJSONData(settingDataSting)
                             }
                         }
-                        ////////////////////////////////////////////////////////////////////////////////////
-                        /////////////////////LANG SETTINGS START////////////////////////////////////////////
+                        /////////////////////LANG SETTINGS START///////////////////////////
                         // Store LazyLoadValue here
                         $.each(settingDataList, function (index_setting, row_setting) {
                             if(row_setting['Name'] == 'LazyLoad') {
@@ -372,76 +312,20 @@ window.addEventListener("load", (event) => {
                             if(row_setting['Name'] == 'Version') {
                                 document.getElementById('versionInfo').innerHTML = _version + " - " + row_setting["Value"] + " - " + activeLang;
                             }
-
-                            /* if(row_setting['Name'] == 'OpenIn') {
-                                if(row_setting['Value'] == '' || row_setting['Value'].toLowerCase() == 'browser') {
-                                    openInType = 'browser'
-                                    document.getElementById('homeIcon').style.display = 'none'
-                                    //document.getElementById('homeIcon').style.opacity = '0'
-                                } else {
-                                    openInType = 'inline'
-                                    document.getElementById('homeIcon').style.display = 'block'
-                                    //document.getElementById('homeIcon').style.opacity = '1'
-                                }
-                            } */
+                            
                         })
                         //console.log(lazyLoadImages, " >>>>>")
-                        ////////////////////////////////////////////////////////////////////////////////////
-                        /////////////////////LANG SETTINGS START////////////////////////////////////////////
+                        /////////////////////LANG SETTINGS START////////////////////////
                         setTimeout(function() {
                             loadLanguageJSON()
-                            //console.log('sheets/' + sheet_Id + "/steps_" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + Math.random(), " >>url")
-                            ////////////////////////////////////LANG LOAD START///////////////////////////////////////////////
-                            // Loading steps json
-                            /* var langRequest = $.ajax({
-                            url: './sheets/' + sheet_Id + "/steps_" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + Math.random(), 
-                            cache: false, 
-                            //async: false,
-                            type: 'GET',
-                            dataType: "text",
-                            success: function (response) {
-                                //console.log(response, " READ DATA")
-                                if(response.length == 0) {
-                                    //document.getElementById("loadingText").innerHTML += '<font color="red">Error: Language data not available.' + "</font><br>"
-                                } else { 
-                                    //////////////////////////////////////////////////////////////////////////////
-                                    languageStepsData = []
-                                    var mResponseLang = response.replace(/�/g, "") 
-                                    var newLangData = eval(mResponseLang)
-                                    for(var i=0; i<newLangData.length; i++) {
-                                        var langDataSting = JSON.stringify(newLangData[i]);
-                                        //console.log(isJSON(pp), " --- ")
-                                        //newstr += JSON.stringify(isJSON(pp))
-                                        if(isJSONData(langDataSting) == false) {
-                                            document.getElementById("loadingText").innerHTML += '<font color="red">Error: ' + activeLang.split('-')[0] + ' Sheet : (Row: ' + i + ")</font><br>"
-                                            updateInfoTextView()
-                                        } else {
-                                            languageStepsData[i] = isJSONData(langDataSting)
-                                        }
-                                    }
-                    
-                                    if(lazyLoadImages == "FALSE") {
-                                        PreloadAllToCache();
-                                    } else {
-                                        jumpToStepScreen()
-                                    }
-                                    //console.log(languageDataList, " LDL")
-                                //  document.getElementById('stepsScreen').style.display = 'block'
-                                //     // Auto fill default sections
-                                //     updateTopInstructionText(stepIndex)
-                                }
-                            },
-                        })*/
-                        ///////////////////
-                        // Clear memory
-                        /* langRequest.onreadystatechange = null;
-                        langRequest.abort = null;
-                        langRequest = null; */
-                        ///////////////////
                         }, 500) 
-                ///////////////////////////////////////////////////////////////////////////////////
                     }
                 },
+                error: function(e) {
+                    console.log("EEEEE - Setting data missing..")
+                    document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : Settings</font><br>'
+                    document.getElementById("spinnerBox").style.display = 'none'
+                }
             })
             ///////////////////
             // Clear memory
@@ -452,14 +336,18 @@ window.addEventListener("load", (event) => {
         }, 1000)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////
     // Loading Language JSON
+    /**
+     * 
+     */
     function loadLanguageJSON() {
         //console.log('sheets/' + sheet_Id + "/steps_" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + Math.random(), " >>url")
         ////////////////////////////////////LANG LOAD START///////////////////////////////////////////////
         // Loading steps json
         var langRequest = $.ajax({
-            url: './sheets/' + sheet_Id + "/steps_" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + Math.random(), 
+            //url: './sheets/' + sheet_Id + "/steps_" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + Math.random(),
+            url: './sheets/' + sheet_Id + "/steps-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + Math.random(),  
             cache: false, 
             //async: false,
             type: 'GET',
@@ -509,10 +397,18 @@ window.addEventListener("load", (event) => {
                 // Reload the default language
                 //document.getElementById("loadingText").innerHTML += '<font color="red">Error: Language data not available.' + "</font><br>"
                 document.getElementById("loadingText").innerHTML += 'Error: Loading Language data' + "<br>Try again later." */
-                activeLang = 'EN'
-                loadLanguageJSON()
-              }
-            
+
+                if(activeLang.toLowerCase() != 'EN' && langLoadCount < 1) {
+                    langLoadCount++
+                    activeLang = 'EN'
+                    loadLanguageJSON()
+                } else {
+                    langLoadCount = 0;
+                    //console.log("EEEEE - Language data missing..")
+                    document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : ' + activeLang + '</font><br>'
+                    document.getElementById("spinnerBox").style.display = 'none'
+                }
+            }
         })
         ///////////////////
         // Clear memory
@@ -521,58 +417,8 @@ window.addEventListener("load", (event) => {
         langRequest = null;
         ///////////////////
     }
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
+    ///////////////////////////////////////////////////////////////////////////
     //return;
-    ////////////////////////////////////LANG SETTINGS START///////////////////////////////////////////////
-   /*  setTimeout(function() {
-    //console.log('sheets/' + sheet_Id + "/steps_" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + Math.random(), " >>url")
-    ////////////////////////////////////LANG LOAD START///////////////////////////////////////////////
-    // Loading steps json
-    var langRequest = $.ajax({
-        url: './sheets/' + sheet_Id + "/steps_" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + Math.random(), 
-        cache: false, 
-        //async: false,
-        type: 'GET',
-        dataType: "text",
-        success: function (response) {
-            //console.log(response, " READ DATA")
-            if(response.length == 0) {
-                document.getElementById("loadingText").innerHTML += '<font color="red">Error: Language data not available.' + "</font><br>"
-            } else { 
-                //////////////////////////////////////////////////////////////////////////////
-                languageStepsData = []
-                var mResponseLang = response.replace(/�/g, "") 
-                var newLangData = eval(mResponseLang)
-                for(var i=0; i<newLangData.length; i++) {
-                    var langDataSting = JSON.stringify(newLangData[i]);
-                    //console.log(isJSON(pp), " --- ")
-                    //newstr += JSON.stringify(isJSON(pp))
-                    if(isJSONData(langDataSting) == false) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: ' + activeLang.split('-')[0] + ' Sheet : (Row: ' + i + ")</font><br>"
-                        updateInfoTextView()
-                    } else {
-                        languageStepsData[i] = isJSONData(langDataSting)
-                    }
-                }
-
-                PreloadAllToCache();
-                //console.log(languageDataList, " LDL")
-                // document.getElementById('stepsScreen').style.display = 'block'
-                // // Auto fill default sections
-                // updateTopInstructionText(stepIndex)
-            }
-        },
-    })
-    ///////////////////
-    // Clear memory
-    langRequest.onreadystatechange = null;
-    langRequest.abort = null;
-    langRequest = null;
-    ///////////////////
-    }, 1000) */
-
-    ////////////////////////////////////LANG LOAD END///////////////////////////////////////////////
     function enableButtons() {
         // Steps Buttons Events
         // Prev Icon click Event
@@ -678,7 +524,7 @@ window.addEventListener("load", (event) => {
         //console.log("CHANGE COLOR")
         //document.getElementById('viewText').style.color = 'rgb(41, 171, 226)'
         document.getElementById('viewIcon').style.scale = '1'
-        console.log(activeViewLink, " >>>>")
+        //console.log(activeViewLink, " >>>>")
         if(activeViewLink != '') {
             // open to new webpage
             window.open(activeViewLink, "_new")
@@ -739,7 +585,10 @@ window.addEventListener("load", (event) => {
         if(typeof(stepDuration) == 'string') {
             return;
         }
-        if(stepType != '' && stepType != 'Loading' && typeof(stepDurationPrev) != 'string') {
+        //if(stepType != '' && stepType != 'Loading' && typeof(stepDurationPrev) != 'string') {
+        if(stepType != '' && stepType != 'loading' && typeof(stepDurationPrev) != 'string') {
+
+
             /* if(languageStepsData[stepIndex-1].Duration == '') {
                 //stepIndex++;
                 return
@@ -756,39 +605,7 @@ window.addEventListener("load", (event) => {
             prevImage = getActiveAndNextImage(stepIndex)
             newImage = getActiveAndNextImage(stepIndex-1)
 
-            // Only for test
-            // Dec 4
-            /* $("#stepBGInage").animate({
-                "left": "-50%"
-            }, 0); */
-
-            ///////////////////////////////////////////
-            // 9/1/25
-            /* if(prevImage != newImage) {
-                $("#stepBGInage").fadeOut();
-            }
-            $("#stepText").fadeOut(); */
-            ///////////////////////////////////////////
-
-            /* moveType = 'left'
-            $("#stepText").fadeOut();
-            // For Next
-            $( "#stepBGInage" ).animate({
-                left: "150%",
-                opacity: '0'
-              }, {
-                duration: 500,
-                specialEasing: {
-                  width: "linear",
-                  //height: "easeOutBounce"
-                },
-            }) */
-
-            ///////////////////////////////////////////
-            //}
             setTimeout(function() {
-                /* let stepID = languageStepsData[stepIndex-1].ID;
-                stepIndex = getIndexUsingID(stepID); */
                 stepIndex--;
 
                 // To jump
@@ -803,21 +620,14 @@ window.addEventListener("load", (event) => {
             }, 500)
         } else {
             //console.log("SECTION END")
-
             //console.log("NO TYPE found")
             let prevStep = languageStepsData[stepIndex].Prev;
             if(prevStep == 'END') {
                 console.log("EXIT FROM PREV")
                 window.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
             }
-            
-            /* stepIndex++;
-            updateTopInstructionText(stepIndex) */
         }
-        //console.log(stepType, " CHECKING ", stepIndex)
-
         return;
-
         ///////////////////////////////////////////////////////////////////////////////
         if(stepIndex == 0) {return}
         //if(languageStepsData[stepIndex].Type == 'END') {return}
@@ -857,13 +667,6 @@ window.addEventListener("load", (event) => {
                 stepIndex = getIndexUsingID(stepID);
                 updateTopInstructionText(stepIndex)
             } else {
-
-                /* let prevStep = languageStepsData[stepIndex].Prev;
-                if(prevStep != 'END') {
-                    console.log("EXIT")
-                    window.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
-                } */
-
                 stepIndex--;
                 updateTopInstructionText(stepIndex)
             }
@@ -911,100 +714,57 @@ window.addEventListener("load", (event) => {
         moveType = 'right'
 
 
-        let stepType = languageStepsData[stepIndex+1].Type;
-        /* let stepType = languageStepsData[stepIndex].Type; */
-        //console.log(stepType, " ---- ONC ")
-        if(stepType != '' && stepType != 'Loading') {
-            ///////////////////////////////////////////
-            // Only for test
-            ///////////////////////////////////////////
+        if(languageStepsData[stepIndex+1] != undefined) {
 
-            //console.log(languageStepsData[stepIndex].Image, " Active")
-            //console.log(languageStepsData[stepIndex+1].Image, " NEXT")
+            let stepType = languageStepsData[stepIndex+1].Type;
+            /* let stepType = languageStepsData[stepIndex].Type; */
+            //console.log(stepType, " ---- ONC ")
+            //if(stepType != '' && stepType != 'Loading') {
+            if(stepType != '' && stepType != 'loading') {
+                ///////////////////////////////////////////
+                // Only for test
+                ///////////////////////////////////////////
 
-            // Storing Next/Active Image to compare
-            /* prevImage = languageStepsData[stepIndex].Image;
-            newImage = languageStepsData[stepIndex+1].Image */
+                //console.log(languageStepsData[stepIndex].Image, " Active")
+                //console.log(languageStepsData[stepIndex+1].Image, " NEXT")
 
-            // New Logic with index
-            prevImage = getActiveAndNextImage(stepIndex)
-            newImage = getActiveAndNextImage(stepIndex+1)
+                // Storing Next/Active Image to compare
+                /* prevImage = languageStepsData[stepIndex].Image;
+                newImage = languageStepsData[stepIndex+1].Image */
 
-            //console.log(prevImage, " === ", newImage)
+                // New Logic with index
+                prevImage = getActiveAndNextImage(stepIndex)
+                newImage = getActiveAndNextImage(stepIndex+1)
 
-            /* $("#stepBGInage").animate({
-                "left": "150%"
-            }, 0); */
-            // Dev 4
-
-            //////////////////////////////////////////////////////
-            // 9/1/25
-            // Undo later on
-           /*  if(prevImage != newImage) {
-                $("#stepBGInage").fadeOut();
-            }
-            $("#stepText").fadeOut(); */
-            //////////////////////////////////////////////////////
-
-            /* $("#stepText").fadeOut();
-            moveType = 'right'
-
-            // For Next
-            $( "#stepBGInage" ).animate({
-                left: "-50%",
-                opacity: '0'
-              }, {
-                duration: 500,
-                specialEasing: {
-                  width: "linear",
-                  //height: "easeOutBounce"
-                },
-                // complete: function(){
-                //     alert('end ani');
-                // }
-            }) */
-
-            ///////////////////////////////////////////
-            setTimeout(function() {
-            /* let stepID = languageStepsData[stepIndex+1].ID;
-            stepIndex = getIndexUsingID(stepID); */
-
-            stepIndex++
-             // To jump
-            if(typeof(languageStepsData[stepIndex].Duration) == 'string') {
-                //console.log("INCREASING INDEX")
-                stepIndex++;
-            }
-
-            // 9/1/25
-            //updateTopInstructionText(stepIndex)
-            updateMiddleImageSection(stepIndex)
-            document.getElementById('prevIcon').style.opacity = '1'
-            document.getElementById('nextIcon').style.opacity = '1'
-
-            //stepIndex++
-            }, 500)
-        } else {
-            //console.log("NO TYPE found")
-            let nextStep = languageStepsData[stepIndex].Next;
-            if(nextStep == 'END') {
-                console.log("EXIT FROM NEXT")
-                window.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
-            } else {
-               /*  $("#stepBGInage").fadeOut();
-                $("#stepText").fadeOut();
+                //console.log(prevImage, " === ", newImage)
                 setTimeout(function() {
-                    stepIndex++
-                    updateTopInstructionText(stepIndex)
-                }, 500) */
-            }
-            //stepIndex--;
-        }
-        //console.log(stepType, " CHECKING ", stepIndex)
+                stepIndex++
+                // To jump
+                if(typeof(languageStepsData[stepIndex].Duration) == 'string') {
+                    //console.log("INCREASING INDEX")
+                    stepIndex++;
+                }
 
+                // 9/1/25
+                //updateTopInstructionText(stepIndex)
+                updateMiddleImageSection(stepIndex)
+                document.getElementById('prevIcon').style.opacity = '1'
+                document.getElementById('nextIcon').style.opacity = '1'
+
+                //stepIndex++
+                }, 500)
+            } else {
+                //console.log("NO TYPE found")
+                let nextStep = languageStepsData[stepIndex].Next;
+                if(nextStep == 'END') {
+                    console.log("EXIT FROM NEXT")
+                    window.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
+                } else {
+                }
+            }
+        }
         return
         //////////////////////////////////////////////////////////////////////////////
-
         let stepID = languageStepsData[stepIndex].Next;
         if(stepID == "END") {return}
         // Transition
@@ -1032,9 +792,7 @@ window.addEventListener("load", (event) => {
                     updateTopInstructionText(stepIndex)
                 }
             } else {
-
                 //console.log('22222')
-
                 if(languageStepsData[stepIndex+1].Type != 'Step') {return}
                 //if(languageStepsData[stepIndex+1].Type == 'END') {return}
                 /* stepIndex++; */
@@ -1071,6 +829,11 @@ window.addEventListener("load", (event) => {
         //console.log(languageStepsData[stepIndex].Type, " TYPE ", stepIndex)
     }
     //////////////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} imgIndex 
+     * @returns 
+     */
     function getActiveAndNextImage(imgIndex) {
         let ImgPath = ''
         if(languageStepsData[imgIndex].Image != '') {
@@ -1135,7 +898,8 @@ window.addEventListener("load", (event) => {
                     stepIndex = getIndexUsingID(stepID);
                     updateTopInstructionText(stepIndex)
                 } else {
-                    if(languageStepsData[stepIndex+1].Type != 'Step') {return}
+                    //if(languageStepsData[stepIndex+1].Type != 'Step') {return}
+                    if(languageStepsData[stepIndex+1].Type != 'step') {return}
                     //if(languageStepsData[stepIndex+1].Type == 'END') {return}
                     stepIndex++;
                     /* console.log(stepIndex, " Index") */
@@ -1145,12 +909,13 @@ window.addEventListener("load", (event) => {
 
                 //console.log('22222')
 
-                if(languageStepsData[stepIndex+1].Type != 'Step') {return}
+                //if(languageStepsData[stepIndex+1].Type != 'Step') {return}
+                if(languageStepsData[stepIndex+1].Type != 'step') {return}
                 //if(languageStepsData[stepIndex+1].Type == 'END') {return}
                 /* stepIndex++; */
                 //console.log(languageStepsData[stepIndex+1].Type, " ---- ")
-                if(languageStepsData[stepIndex+1].Type == 'Step') {
-                    
+                //if(languageStepsData[stepIndex+1].Type == 'Step') {
+                if(languageStepsData[stepIndex+1].Type == 'step') {    
                     let stepID = languageStepsData[stepIndex+1].Next;
                     if(stepID == "END") {return}
                     if(stepID != '') {
@@ -1165,22 +930,9 @@ window.addEventListener("load", (event) => {
                     //updateTopInstructionText(stepIndex)
                 } else {
                     stepIndex--;
-                    //////////////////////////////////////////////////////////////////////
-                    /* stepIndex = 0
-                    updateTopInstructionText(stepIndex) */
-                    //document.getElementById('stepsScreen').style.display = 'none'
-                    /* inSteps = false; */
-                    /* document.getElementById('useMode').style.display = 'none'
-                    document.getElementById('loadingScreen').style.display = 'none'
-                    $(".bodyWrapper.oddPage").css({display:"flex"}) */
-                    // Calling Periodically
-                    //fetchAppDetailsPeriodically(event)
-                    //////////////////////////////////////////////////////////////////////
                 }
             }
         }, 500)
-
-        //console.log(languageStepsData[stepIndex].Type, " TYPE ", stepIndex)
     }
     /////////////////////////////////////////////////////////////////////////////////
     /**
@@ -1197,76 +949,36 @@ window.addEventListener("load", (event) => {
         }, autoPlayTimer * 1000)
     }
     /////////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     */
     function EnableCloseEvents() {
         document.getElementById('homeIcon').addEventListener('touchstart', onHomeStart)
         document.getElementById('homeIcon').addEventListener('touchend', onHomeClick)
         document.getElementById('homeIcon').addEventListener('mousedown', onHomeStart)
         document.getElementById('homeIcon').addEventListener('mouseup', onHomeClick)
     }
+    /////////////////////////////////////////////////////////////////////////////////
     /**
      * 
      * @param {*} event 
      */
     function onHomeClick(event) {
         event.preventDefault();
-
-        /* document.getElementById('homeIcon').removeEventListener('touchstart', onHomeStart)
-        document.getElementById('homeIcon').removeEventListener('touchend', onHomeClick)
-        document.getElementById('homeIcon').removeEventListener('mousedown', onHomeStart)
-        document.getElementById('homeIcon').removeEventListener('mouseup', onHomeClick) */
-
         //reset();
-
         document.getElementById('homeIcon').style.scale = '1'
-
-        ////////////////////////////////////////////////////////////////////////////////
-        //console.log(window.frameElement, " iFrame ", window.parent)
-        //window.parent['HideIFrame']();
-        // Close parent iFrame
-        /* window.parent.top.document.getElementById('content').style.display = 'none'
-        window.parent.top.document.getElementById('content').src = '' */
-        ////////////////////////////////////////////////////////////////////////////////
-
-        ////////////////////////////////////////////////////////////////////////////////
         document.getElementById("base-timer-close").style.opacity = 0
         document.getElementById("base-timer-close").style.transition = "opacity 0.5s";
-    
-        // Circular anim issue fix [iOS]
-        /* if(timeLeft == 0 || timeLeft == 3) {
-            //window.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')  
-            return
-        } else { */
         reset();
-            window.parent.postMessage(JSON.stringify({'message': 'toggleFrame'}), '*')
-            
-        /* } */
-        
-        ////////////////////////////////////////////////////////////////////////////////
-
-        ////////////////////////////////////////////////////////////////////////////////
-        // Post message to parent window
-        //window.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
-        ////////////////////////////////////////////////////////////////////////////////
-
-        ////////////////////////////////////////////////////////////////////////////////
-        //let loadedFrame = window.frameElement.id; 
-        //document.getElementById(loadedFrame).style.display = 'none'
-        //console.log("Home Click")
-       /*  if(jumpId != '') {
-            stepIndex = getIndexUsingID(jumpId)
-        } else {
-            stepIndex = 0;
-        }
-        updateTopInstructionText(stepIndex) */
-
-        /* setTimeout(function() {
-            EnableCloseEvents()
-        }, 1000) */
-        
-
+        window.parent.postMessage(JSON.stringify({'message': 'toggleFrame'}), '*')
     }
     /////////////////////////////////////////////////////////////////////////////////
     /* Function to animate height: auto */
+    /**
+     * 
+     * @param {*} element 
+     * @param {*} time 
+     */
     function autoHeightAnimate(element, time){
         var curHeight = element.height(), // Get Default Height
         autoHeight = element.css('height', 'auto').height(); // Get Auto Height
@@ -1279,18 +991,9 @@ window.addEventListener("load", (event) => {
      * @param {*} index 
      */
     function updateTopInstructionText(index) {
-        //console.log(languageDataList[index].Text)
-        /* $("#stepText").fadeIn();
-        $("#stepBGInage").fadeIn(); */
-
-
-        
-
         // Undo later on
         document.getElementById('stepText').innerHTML = languageStepsData[index].Text
         // Check whether to display top bar or not
-
-      
         ///////////////////////////////////////////////////////////////////////////////
         //console.log(languageStepsData[index].Text, " ...")
         // undo If needed
@@ -1300,20 +1003,6 @@ window.addEventListener("load", (event) => {
         } else {
             document.getElementById('topStepBar').style.display = 'none'
         }
-        ///////////////////////////////////////////////////////////////////////////////
-
-
-        //animateTime = 500
-        //if($('#topStepBar').height() === 0){
-            //autoHeightAnimate($('#topStepBar'), animateTime);
-        //} else {
-            //nav.stop().animate({ height: '0' }, animateTime);
-        //}
-
-
-        // 9/1/25
-        // checking current / next imagePath
-        //updateMiddleImageSection(index)
     }
     /////////////////////////////////////////////////////////////////////////////////
     /**
@@ -1357,27 +1046,6 @@ window.addEventListener("load", (event) => {
      * @param {*} index 
      */
     function updateMiddleImageSection(index) {
-        /* console.log(languageStepsData[index].Image, " AAAAAA")
-        return; */
-
-        ////////////////////////////////////////////////////////////////////////////
-        /* if(moveType == 'right') {
-            // console.log('Move NEXT')
-            // console.log(languageStepsData[index-1].Image, " prev")
-            // console.log(languageStepsData[index].Image, " next")
-            // prevImage = languageStepsData[index+1].Image;
-            // newImage = languageStepsData[index].Image;
-        } else {
-            // console.log("Move PREV")
-            // console.log(languageStepsData[index+1].Image, " prev")
-            // console.log(languageStepsData[index].Image, " next")
-            // prevImage = languageStepsData[index+1].Image;
-            // newImage = languageStepsData[index].Image;
-            // console.log(languageStepsData[index+1].Image, " prev")
-            // console.log(languageStepsData[index].Image, " next")
-        } */
-        ////////////////////////////////////////////////////////////////////////////
-
         if(languageStepsData[index].Image != '') {
             let imagePath = ''
             if (languageStepsData[index]['Image'].includes("https://drive.google.com")) {
@@ -1396,56 +1064,22 @@ window.addEventListener("load", (event) => {
                 // cacheImages moved to spreadsheet id folder
                 imagePath = './sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
             }
-           /*  document.getElementById('stepBGInage').src = imagePath; */
-            ///console.log(preCacheImages[index], " = ImagePath = ", imagePath)
-
-           
-
             if(preCachedDone == false) {
-                //console.log("AAAAA")
-                /* document.getElementById('topStepBar').style.display = 'none' */
-                //document.getElementById('spinnerMiddleBox').style.display = 'block'
-                /* console.log("NOT IN CACHE...")
-                document.getElementById('stepBGInage').src = '' */
-
-                // Use this for fast processing
-                /* document.getElementById('stepBGInage').src = imagePath;
-                document.getElementById('stepBGInage').onload = moveToSlide() */
-
                 // Use in case of slow internet
                 loadImage(imagePath)
             } else {
-
-                /* 
-                //console.log("Picking up image")
-                document.getElementById('stepBGInage').src = preCacheImages[index].src;
-                //document.getElementById('stepBGInage').src = ''
-                //loadImage(imagePath)
-                document.getElementById('stepBGInage').onload = moveToSlide() */
-
                 // Use in case of slow internet
                 loadImage(preCacheImages[index].src)
-
-
             }
-            /////////////////////////////////////////////////////////////////////////////////
-            //document.getElementById('stepBGInage').onload = moveToSlide()
-            /*//console.log(document.getElementById('stepBGInage').complete, " CCCCCCCCCCCCCCCC...............")
-            document.getElementById('stepBGInage').onprogress = function(e) {
-                console.log(e.loaded, " ............ ", e.total)
-            } */
-           ///////////////////////////////////////////////////////////////////////////////////
-            
         } else {
             document.getElementById('stepBGInage').src = '' 
             moveToSlide()
         }
-        /////////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////
         /**
          * 
          */
         function moveToSlide1() {
-            
             //console.log("IMG LOADED...")
 
             setTimeout(function() {
@@ -1505,206 +1139,79 @@ window.addEventListener("load", (event) => {
                     }, 50) */
                     ///////////////////////////////////////////////////////////
                 }
-                ////////////////////////////////////////////////////////////////
-                //}
-                ///////////////////////////////////////////
-                /* $("#stepText").fadeIn();
-                if(moveType == 'right') {
-                    $( "#stepBGInage" ).animate({
-                        left: "150%",
-                        opacity: '0'
-                    }, {
-                        duration: 0,
-                        specialEasing: {
-                        width: "linear",
-                        //height: "easeOutBounce"
-                        },
-                    })
-                    // Move to correct pos
-                    $( "#stepBGInage" ).animate({
-                        left: "50%",
-                        opacity: '1'
-                    }, {
-                        duration: 500,
-                        specialEasing: {
-                        width: "linear",
-                        //height: "easeOutBounce"
-                        },
-                    })
-                } else {
-                    $( "#stepBGInage" ).animate({
-                        left: "-50%",
-                        opacity: '0'
-                    }, {
-                        duration: 0,
-                        specialEasing: {
-                        width: "linear",
-                        //height: "easeOutBounce"
-                        },
-                    })
-                    // Move to correct pos
-                    $( "#stepBGInage" ).animate({
-                        left: "50%",
-                        opacity: '1'
-                    }, {
-                        duration: 500,
-                        specialEasing: {
-                        width: "linear",
-                        //height: "easeOutBounce"
-                        },
-                    })
-                } */
                 /////////////////////////////////////////////////////////////////////////////
                 document.getElementById('prevIcon').style.pointerEvents = 'auto';
                 document.getElementById('nextIcon').style.pointerEvents = 'auto';
                 /////////////////////////////////////////////////////////////////////////////
-                // Trying New Logic
-            /*  console.log("AAAAA - ", stepIndex)
-                let nextStepType = languageStepsData[stepIndex+1].Type;
-                let prevStepType = languageStepsData[stepIndex-1].Type;
-                let curStepType = languageStepsData[stepIndex].Type;
-                let nextNext = languageStepsData[stepIndex+1].Next;
-                let PrevPrev = languageStepsData[stepIndex-2].Prev;
-                console.log(nextStepType, "-- nextstep --", nextNext, " prev --", prevStepType, " :: ", PrevPrev)
-                // if(nextStepType != 'Step' || curStepType != 'Step') {
-                //     document.getElementById('prevIcon').style.opacity = '0.5'
-                //     document.getElementById('prevIcon').style.pointerEvents = 'none';
-                //     document.getElementById('nextIcon').style.opacity = '0.5'
-                //     document.getElementById('nextIcon').style.pointerEvents = 'none';
-                // } 
-                return; */
-                /////////////////////////////////////////////////////////////////////////////
+                if(languageStepsData[stepIndex-1] != undefined) {
+                    let stepDuration = languageStepsData[stepIndex-1].Duration;
+                    if(typeof(stepDuration) == 'string') {
+                        document.getElementById('prevIcon').style.opacity = '0.5'
+                        document.getElementById('prevIcon').style.pointerEvents = 'none';
+                        
 
-
-
-                // Check Type value
-                /* let stepType = languageStepsData[stepIndex].Type;
-                console.log(stepType, " AFTER ANIM VALUE ", stepIndex)
-                if(stepType != 'Step') {
-                    document.getElementById('prevIcon').style.opacity = '0.5'
-                    document.getElementById('nextIcon').style.opacity = '0.5'
-                    document.getElementById('prevIcon').style.pointerEvents = 'none';
-                    document.getElementById('nextIcon').style.pointerEvents = 'none';
-                } else { */
-
-                    ///////////////////////////////////////////////////////////////////////
-                    /* console.log(languageStepsData[stepIndex-1], " CCC")
-                    return; */
-                    
-                    //console.log(languageStepsData[stepIndex-1], " CCC")
-
-                    ///////////////////////////////////////////////////////////////////////
-                    if(languageStepsData[stepIndex-1] != undefined) {
-                        let stepDuration = languageStepsData[stepIndex-1].Duration;
-                        if(typeof(stepDuration) == 'string') {
-                            document.getElementById('prevIcon').style.opacity = '0.5'
-                            document.getElementById('prevIcon').style.pointerEvents = 'none';
-                            
-
-                            document.getElementById('nextIcon').style.opacity = '1'
-                            document.getElementById('nextIcon').style.pointerEvents = 'auto';
-                        }
-
-                        //////////////////////////////////////////////////////////////////////
-                        let curType = languageStepsData[stepIndex].Type;
-                        //console.log(curType, " >>>>curType")
-                        let curDuration = languageStepsData[stepIndex].Duration;
-                        //console.log(curType, " >>>>curType")
-
-                        let nextType = languageStepsData[stepIndex+1].Type;
-                        //console.log(nextType, " nextType")
-                        let nextStep = languageStepsData[stepIndex].Next;
-                        //console.log(nextStep, " nextStep")
-
-                        if(nextType != 'Step' && nextStep == '') {
-                            /* document.getElementById('prevIcon').style.opacity = '0.5'
-                            document.getElementById('prevIcon').style.pointerEvents = 'none'; */
-
-                            document.getElementById('nextIcon').style.opacity = '0.5'
-                            document.getElementById('nextIcon').style.pointerEvents = 'none';
-                        } else {
-                        /*  document.getElementById('prevIcon').style.opacity = '1'
-                            document.getElementById('prevIcon').style.pointerEvents = 'auto'; */
-
-                            document.getElementById('nextIcon').style.opacity = '1'
-                            document.getElementById('nextIcon').style.pointerEvents = 'auto';
-                        }
-
-                        //////////////////////////////////////////////////////////////////////
-
-                        /* if(curType != 'Step' && typeof(curDuration) == 'number') {
-                            document.getElementById('nextIcon').style.opacity = '0.5'
-                            document.getElementById('nextIcon').style.pointerEvents = 'none';
-                        } else {
-                            document.getElementById('nextIcon').style.opacity = '1'
-                            document.getElementById('nextIcon').style.pointerEvents = 'auto';
-                        } */
-
-
-                        //////////////////////////////////////////////////////////////////////
-                    
-                        let prevType = languageStepsData[stepIndex-1].Type;
-                        let prevStep = languageStepsData[stepIndex].Prev;
-
-                        /* console.log(prevStep, " prevStep ", prevType)
-                        if(nextStep != 'Step' && prevStep == 'END') {
-                            console.log("ENTER HERE")
-                        } else */ 
-                        if(prevType != 'Step' && prevStep == '') {
-                            document.getElementById('prevIcon').style.opacity = '0.5'
-                            document.getElementById('prevIcon').style.pointerEvents = 'none';
-                        } else {
-                            document.getElementById('prevIcon').style.opacity = '1'
-                            document.getElementById('prevIcon').style.pointerEvents = 'auto';
-                        }
-                        ///////////////////////////////////////////////////////////////////////
-                        // Checing current type value
-                        // Disable all buttons
-                        /* let curType = languageStepsData[stepIndex].Type;
-                        console.log(curType, " >>>>curType")
-                        if(curType != 'Step') {
-                            document.getElementById('prevIcon').style.opacity = '0.5'
-                            document.getElementById('prevIcon').style.pointerEvents = 'none';
-                            document.getElementById('nextIcon').style.opacity = '0.5'
-                            document.getElementById('nextIcon').style.pointerEvents = 'none';
-                        } else {
-                            document.getElementById('nextIcon').style.opacity = '1'
-                            document.getElementById('nextIcon').style.pointerEvents = 'auto';
-                        } */
-                        ///////////////////////////////////////////////////////////////////////
-                        /* let curType = languageStepsData[stepIndex].Type;
-                        console.log(curType, " >>>>curType") */
-
-                        /* if(languageStepsData[stepIndex-1].Type != 'Step') {
-                            document.getElementById('nextIcon').style.opacity = '0.5'
-                            document.getElementById('nextIcon').style.pointerEvents = 'none';
-                        } */
-                        ///////////////////////////////////////////////////////////////////////
-                        // New Changes
-                        if(typeof(languageStepsData[stepIndex-1].Duration) == 'string' && languageStepsData[stepIndex].Prev == '') {
-                            //stepIndex++;
-                            document.getElementById('prevIcon').style.opacity = '0.5'
-                            document.getElementById('prevIcon').style.pointerEvents = 'none';
-                        } else {
-                            document.getElementById('prevIcon').style.opacity = '1'
-                            document.getElementById('prevIcon').style.pointerEvents = 'auto';
-                        }
-
-                        if(nextStep == 'END') {
-                            //document.getElementById('nextIcon').style.opacity = '0.5'
-                            //console.log("CLOSE THE APP")
-                        } else {
-                            //document.getElementById('nextIcon').style.opacity = '1'
-                            //document.getElementById('nextIcon').style.opacity = '0.5'
-                        }
+                        document.getElementById('nextIcon').style.opacity = '1'
+                        document.getElementById('nextIcon').style.pointerEvents = 'auto';
                     }
-            /*  } */
+
+                    //////////////////////////////////////////////////////////////////////
+                    let curType = languageStepsData[stepIndex].Type;
+                    //console.log(curType, " >>>>curType")
+                    let curDuration = languageStepsData[stepIndex].Duration;
+                    //console.log(curType, " >>>>curType")
+
+                    let nextType = languageStepsData[stepIndex+1].Type;
+                    //console.log(nextType, " nextType")
+                    let nextStep = languageStepsData[stepIndex].Next;
+                    //console.log(nextStep, " nextStep")
+
+                    //if(nextType != 'Step' && nextStep == '') {
+                    if(nextType != 'step' && nextStep == '') {
+                        /* document.getElementById('prevIcon').style.opacity = '0.5'
+                        document.getElementById('prevIcon').style.pointerEvents = 'none'; */
+
+                        document.getElementById('nextIcon').style.opacity = '0.5'
+                        document.getElementById('nextIcon').style.pointerEvents = 'none';
+                    } else {
+                    /*  document.getElementById('prevIcon').style.opacity = '1'
+                        document.getElementById('prevIcon').style.pointerEvents = 'auto'; */
+
+                        document.getElementById('nextIcon').style.opacity = '1'
+                        document.getElementById('nextIcon').style.pointerEvents = 'auto';
+                    }
+
+                    let prevType = languageStepsData[stepIndex-1].Type;
+                    let prevStep = languageStepsData[stepIndex].Prev;
+                    
+                    //if(prevType != 'Step' && prevStep == '') {
+                    if(prevType != 'step' && prevStep == '') {
+                        document.getElementById('prevIcon').style.opacity = '0.5'
+                        document.getElementById('prevIcon').style.pointerEvents = 'none';
+                    } else {
+                        document.getElementById('prevIcon').style.opacity = '1'
+                        document.getElementById('prevIcon').style.pointerEvents = 'auto';
+                    }
+                    // New Changes
+                    if(typeof(languageStepsData[stepIndex-1].Duration) == 'string' && languageStepsData[stepIndex].Prev == '') {
+                        //stepIndex++;
+                        document.getElementById('prevIcon').style.opacity = '0.5'
+                        document.getElementById('prevIcon').style.pointerEvents = 'none';
+                    } else {
+                        document.getElementById('prevIcon').style.opacity = '1'
+                        document.getElementById('prevIcon').style.pointerEvents = 'auto';
+                    }
+
+                    if(nextStep == 'END') {
+                        //document.getElementById('nextIcon').style.opacity = '0.5'
+                        //console.log("CLOSE THE APP")
+                    } else {
+                        //document.getElementById('nextIcon').style.opacity = '1'
+                        //document.getElementById('nextIcon').style.opacity = '0.5'
+                    }
+                }
                 checkAutoPlayStat();
             }, 10)
-           /*  }, 0) */
         }
-        /* }, 150) */
-
     }
     /////////////////////////////////////////////////////////////////////////////////
     /**
@@ -1721,22 +1228,6 @@ window.addEventListener("load", (event) => {
         }
         return vars;
     }
-    /////////////////////////////////////////////////////////////////////////////////
-    /**
-     * 
-     * @param {*} str 
-     * @returns 
-     */
-    /* let isJSONData = str => {
-        //if (typeof str === 'string'){
-        try {
-            let p = JSON.parse(str)
-            return p
-        } catch(e){
-        }
-        //}
-        return false
-    } */
     //////////////////////////////////////////////////////////////////////////////////
     /**
      * 
@@ -1744,56 +1235,8 @@ window.addEventListener("load", (event) => {
     function PreloadAllToCache() {
         //console.log("aaa")
         var imgLoaded = 0
-
-        ////////////////////////////////////////////////////////
         // Caching settings images
-        //console.log(getAllImageCount(), " >>>>>")
-
         if(getAllImageCount() > 0) {
-            /* $.each(settingDataList, function (index_setting, row_setting) {
-                if(row_setting['Name'] == 'BackgroundImage' || row_setting['Name'] == 'SplashImageUrl' || row_setting['Name'] == 'PrevButtonUrl' || row_setting['Name'] == 'NextButtonUrl' || row_setting['Name'] == 'QuitButtonUrl') {
-                    if(row_setting['Value'] != '' ) {
-                        if (row_setting['Value'].includes("https://drive.google.com")) {
-                            let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                            let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
-                            // Cache Image
-                            let imagePath = 'img/cacheImages/' + imgid + '.png?version=' + Math.random();
-                            checkIfImageExists(imagePath, (isExists) => {
-                                if(isExists) {
-                                    let bgImage = new Image();
-                                    bgImage.src = imagePath
-                                    imgLoaded++
-                                    showMessageInfo(imgLoaded)
-                                } else {
-                                    imgLoaded++
-                                    showMessageInfo(imgLoaded)
-                                }
-                            })
-                        } else {
-                            // Cache Image
-                            let name = row_setting['Value'].split('/')
-                            let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                            //console.log(imageName, " imageName")
-                            // New Changes
-                            let imagePath = 'img/cacheImages/' + imageName + "?version=" + Math.random();
-                            checkIfImageExists(imagePath, (isExists) => {
-                                if(isExists) {
-                                    let mapImage = new Image();
-                                    mapImage.src = imagePath
-                                    imgLoaded++
-                                    showMessageInfo(imgLoaded)
-                                } else {
-                                    imgLoaded++
-                                    showMessageInfo(imgLoaded)
-                                }
-                            })
-                        }
-                    }
-                }
-            })  */
-        ////////////////////////////////////////////////////////
-        //for (var i=0; i<privateDataList.length; i++) {
-        // if(getAllImageCount() > 0) {
             $.each(languageStepsData, function (i, row_setting) {
                 if(languageStepsData[i]['Image'] != '') {
                     if (languageStepsData[i]['Image'].includes("https://drive.google.com")) {
@@ -1857,9 +1300,6 @@ window.addEventListener("load", (event) => {
                         })
                     }
                 } 
-                // else {
-                //     showMessageInfo(imgLoaded)
-                // }
             })
         } else {
             showMessageInfo(imgLoaded)
@@ -1886,6 +1326,9 @@ window.addEventListener("load", (event) => {
         showMessageInfo(imgCount)
     }
     ///////////////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     */
     function jumpToStepScreen() {
         ////////////////////////////////////////////////////////////////////////
         // Update button urls if any
@@ -2016,7 +1459,8 @@ window.addEventListener("load", (event) => {
 
         //return;
         //console.log(startType, " startType")
-        if(startType == 'Loading') {
+        //if(startType == 'Loading') {
+        if(startType == 'loading') {
             setTimeout(function() {
                 stepIndex++;
                 updateMiddleImageSection(stepIndex)
@@ -2030,55 +1474,11 @@ window.addEventListener("load", (event) => {
         //saveUsageStat()
     }
     ///////////////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     */
     function PreloadAllToCacheInBackground() {
         var imgLoaded = 0
-        
-        //console.log(stepIndex, " Step Index")
-
-        /* $.each(settingDataList, function (index_setting, row_setting) {
-            if(row_setting['Name'] == 'BackgroundImage' || row_setting['Name'] == 'SplashImageUrl' || row_setting['Name'] == 'PrevButtonUrl' || row_setting['Name'] == 'NextButtonUrl' || row_setting['Name'] == 'QuitButtonUrl') {
-                if(row_setting['Value'] != '' ) {
-                    if (row_setting['Value'].includes("https://drive.google.com")) {
-                        let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                        let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
-                        // Cache Image
-                        let imagePath = 'img/cacheImages/' + imgid + '.png?version=' + Math.random();
-                        checkIfImageExists(imagePath, (isExists) => {
-                            if(isExists) {
-                                let bgImage = new Image();
-                                bgImage.src = imagePath
-                                imgLoaded++
-
-                            } else {
-                                imgLoaded++
-                            }
-                        })
-                    } else {
-                        // Cache Image
-                        let name = row_setting['Value'].split('/')
-                        let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                        //console.log(imageName, " imageName")
-                        // New Changes
-                        let imagePath = 'img/cacheImages/' + imageName + "?version=" + Math.random();
-                        checkIfImageExists(imagePath, (isExists) => {
-                            if(isExists) {
-                                let mapImage = new Image();
-                                mapImage.src = imagePath
-                                imgLoaded++
-
-                            } else {
-                                imgLoaded++
-
-                            }
-                        })
-                    }
-                }
-                    // /usr/bin/python3.6
-            }
-        }) */ 
-    ////////////////////////////////////////////////////////
-    //for (var i=0; i<privateDataList.length; i++) {
-    // if(getAllImageCount() > 0) {
         $.each(languageStepsData, function (i, row_setting) {
             if(languageStepsData[i]['Image'] != '') {
                 if (languageStepsData[i]['Image'].includes("https://drive.google.com")) {
@@ -2182,28 +1582,11 @@ window.addEventListener("load", (event) => {
             }
         })
         ////////////////////////////////////////////////////////////////////////
-        /* let displayString = getDataColumnValueWhileLoading(_count)
-        document.getElementById('versionInfo').innerHTML += displayString; */
         if(_count == getAllImageCount() /* && dispInfoCount == dispMessageList.length */) {
             console.log("ALL IMAGES IN CACHE NOW...")
             preCachedDone = true;
-            //console.log(preCacheImages[stepIndex].src)
-            //////////////////////////////////////////////////////////
-            // Checking elements for that jumpIndex
-            /* $.each(languageStepsData, function (i, row_setting) {
-                if(i >= stepIndex && languageStepsData[i].Name == 'How to play') {
-                    //console.log(languageStepsData[i], " Values")
-                    //jumpIdList[itemIndex++] = (languageStepsData[i])
-                    //setTimeout(function() {
-                        //createElements(jumpIdList)
-                    //}, 0)
-                    
-                }
-            }) */
-            //////////////////////////////////////////////////////////
         }
     }
-   
     ///////////////////////////////////////////////////////////////////////////////////////
     /**
      * 
@@ -2315,26 +1698,6 @@ window.addEventListener("load", (event) => {
             /* }, 1500) */
             }, 500)
 
-            ////////////////////////////////////////////////////////////////////
-            // Auto fill default sections
-            /* if(jumpId != '') {
-                stepIndex = getIndexUsingID(jumpId);
-                //console.log(stepIndex, " DEFAULT INDEX")
-                //console.log(typeof(languageStepsData[stepIndex]), " >>>>DURATION")
-                //return
-                //if(languageStepsData[stepIndex] != undefined) {
-                    if(typeof(languageStepsData[stepIndex].Duration) == 'string') {
-                        //console.log("INCREASING INDEX")
-                        stepIndex++;
-                    }
-                //}
-            } else {
-                stepIndex = 0
-            }
-            //console.log(stepIndex, " move to")
-            document.getElementById('spinnerMiddleBox').style.display = 'none'
-            updateTopInstructionText(stepIndex) */
-            /////////////////////////////////////////////////////////////////////////
             // Auto fill default sections
             // Check motion
             let startType = ''
@@ -2350,7 +1713,8 @@ window.addEventListener("load", (event) => {
             } else {
                 stepIndex = 0
             }
-            if(startType == 'Loading') {
+            //if(startType == 'Loading') {
+            if(startType == 'loading') {
                 setTimeout(function() {
                     stepIndex++;
                     updateMiddleImageSection(stepIndex)
@@ -2364,37 +1728,13 @@ window.addEventListener("load", (event) => {
         }
     }
     /////////////////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} startInt 
+     */
     function getDataColumnValueWhileLoading(startInt) {
-
-        //let dispText = ''
-        
         let index = getIndexUsingID(jumpId);
-        //console.log(index, " --- ", startInt)
-        
-        //if(languageStepsData[index + (startInt+1)].Type == "") {return}
-        //console.log(languageStepsData[index + (startInt)].Type, "---")
-        /* if(languageStepsData[index + (startInt-1)].Type == "Step") {
-            if(languageStepsData[index + (startInt-1)].Name != '') {
-                console.log(languageStepsData[index + (startInt-1)].Name, " -- TYPE")
-                //console.log(languageStepsData[index + (startInt-1)])
-            }
-        } else {
-            return;
-        } */
-
-        //console.log(index, " --- ", startInt)
-        /* if(languageStepsData[index + (startInt-1)].Type == "Step" && languageStepsData[index + (startInt-1)].Name != "") {
-            if(languageStepsData[index + (startInt-1)].Name != '') {
-                if(languageStepsData[index + (startInt-1)].Duration == "" && endFound == false) {
-                    endFound = true
-                    console.log(languageStepsData[index + (startInt-1)].Name)
-
-                }
-            }
-        } */
-
         if(languageStepsData[index + (startInt-1)] != undefined) {
-            /* if(languageStepsData[index + (startInt-1)].Type == "Step" && endFound == false && languageStepsData[index + (startInt-1)].Name != "") { */
             if(languageStepsData[index + (startInt-1)].Type == "Step" && endFound == false) {
                 endFound = true
                 //console.log(languageStepsData[index + (startInt-1)].Name, " NAME")
@@ -2410,7 +1750,8 @@ window.addEventListener("load", (event) => {
                 //dispInfoCount++
             } else if(languageStepsData[index + (startInt-1)].Next == "END") {
                 endFound = true
-            } else if(languageStepsData[index + (startInt-1)].Type == "Loading" && endFound == false) {
+            //} else if(languageStepsData[index + (startInt-1)].Type == "Loading" && endFound == false) {
+            } else if(languageStepsData[index + (startInt-1)].Type == "loading" && endFound == false) {
                 endFound = true
                 dispText = languageStepsData[index].Text
                 //console.log(dispText, " ---- 1")
@@ -2422,71 +1763,23 @@ window.addEventListener("load", (event) => {
                 }
             }
         }
-
-        //return dispText
-
-        /* if(jumpId == "HOWTO") {
-            if(languageStepsData[index + (startInt-1)].Type == "Step" && languageStepsData[index + (startInt-1)].Name != "" && languageStepsData[index + (startInt-1)].Next != 'END' && endFound == false && languageStepsData[index + (startInt-1)].Name != 'Fullscreen IOS') {
-                console.log(startInt, " index ", languageStepsData[index + (startInt-1)].Name)
-            }
-        } else if(jumpId == 'FULLSCREEN_IOS') {
-            if(languageStepsData[index + (startInt-1)].Type == "Step" && languageStepsData[index + (startInt-1)].Name != "" && languageStepsData[index + (startInt-1)].Next != 'END' && endFound == false && languageStepsData[index + (startInt-1)].Name != 'Fullscreen Android') {
-                console.log(startInt, " index ", languageStepsData[index + (startInt-1)].Name)
-            } 
-        } */
     }
-    /////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////
     /**
      * 
      * @returns 
      */
     function getAllImageCount() {
         var tempCount = 0
-        /* $.each(settingDataList, function (index_setting, row_setting) {
-            if(row_setting['Name'] == 'BackgroundImage' || row_setting['Name'] == 'SplashImageUrl' || row_setting['Name'] == 'PrevButtonUrl' || row_setting['Name'] == 'NextButtonUrl' || row_setting['Name'] == 'QuitButtonUrl') {
-                //console.log("row_setting['Value'] >>>> ", row_setting['Value'])
-                if(row_setting['Value'] != '' ) {
-                    tempCount++
-                }
-            }
-        }) */
-        //console.log(languageStepsData, " >languageStepsData")
-
-        ///////////////////////////////////////////////////////////////////////////
         $.each(languageStepsData, function (i, row) {
             if(languageStepsData[i].Image != '') {
                 tempCount++
             } 
         })
-        ///////////////////////////////////////////////////////////////////////////
-
-        /* console.log(languageStepsData)
-
-        console.log("AFTER FILTER")
-
-        let tempImageList = []
-        $.each(languageStepsData, function (i, row) {
-            if(languageStepsData[i].Image != '') {
-                tempImageList.push(languageStepsData[i].Image)
-            } 
-        })
-        
-
-        let filteredImages = tempImageList.filter((item, index) => tempImageList.indexOf(item) === index);
-
-
-        console.log(filteredImages)
-
-        $.each(filteredImages, function (i, row) {
-            if(filteredImages[i].Image != '') {
-                tempCount++
-            } 
-        }) */
-
         //console.log(tempCount, " in setting data")
         return tempCount;
     }
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
     /**
      * 
      * @param {*} url 
@@ -2507,7 +1800,7 @@ window.addEventListener("load", (event) => {
         };
         }
     }
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
     /**
      * 
      * @param {*} _type 
@@ -2537,12 +1830,12 @@ window.addEventListener("load", (event) => {
         startTimer(_type)
     }
     ////////////////////////////////////////////////////////////////////////////////////
-/**
- * stop()
- */
-function stop() {
-    clearInterval(timerInterval);
-  }
+    /**
+     * stop()
+     */
+    function stop() {
+        clearInterval(timerInterval);
+    }
   /////////////////////////////////////////////////////////////////////////////
   /**
    * 
@@ -2733,8 +2026,11 @@ function stop() {
       /* timer.setAttribute("stroke-dasharray", RESET_DASH_ARRAY);
       timerFinal.setAttribute("stroke-dasharray", RESET_DASH_ARRAY); */
     }
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    
+    ////////////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} imageURI 
+     */
     function loadImage(imageURI) {
         let imgURL = ''
         imgURL = imageURI
@@ -2747,7 +2043,10 @@ function stop() {
         request.overrideMimeType('text/plain; charset=x-user-defined');
         request.send(null);
     }
-    
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     */
     function showProgressBar() {
         //progressbar.innerHTML = 0;
         //console.log("show loaded")
@@ -2757,13 +2056,20 @@ function stop() {
             document.getElementById('spinnerMiddleBox').style.display = 'none'
         }
     }
-    
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} e 
+     */
     function updateProgressBar(e) {
         if (e.lengthComputable) {
             //console.log(e.loaded / e.total * 100, " perc");
         }
     }
-    
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     */
     function showImage() {
         var imageElement = "data:image/jpeg;base64," + base64Encode(request.responseText);
         //document.body.style.backgroundImage = 'url("' + imageElement + '")';
@@ -2789,13 +2095,21 @@ function stop() {
             moveToSlide();
         }, 500)
     }
-    
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     */
     function hideProgressBar() {
         //progressbar.innerHTML = 100;
         //console.log("hide loaded")
         document.getElementById('spinnerMiddleBox').style.display = 'none'
     }
-
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} inputStr 
+     * @returns 
+     */
     function base64Encode(inputStr) {
         var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
         var outputStr = "";
@@ -2829,6 +2143,24 @@ function stop() {
         return outputStr;
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @returns 
+     */
+    function DetectSpecificDevice() {
+    var OSType = null;
+    if(deviceDetector.device == 'tablet' || deviceDetector.device == 'desktop') {
+        OSType = 'iPad'
+    } else {
+        OSType = 'phone'
+    }
+    return OSType;
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     */
     function moveToSlide() {
         //console.log("IMG LOADED...")
         setTimeout(function() {
@@ -2847,29 +2179,7 @@ function stop() {
             }
 
             //return
-            ////////////////////////////////////////////////////////////////////
-            //console.log(languageStepsData[stepIndex+1], " data ", languageStepsData[stepIndex])
-            ///////////////////////////////////////////
-            // Only for test
-            // Transition
-            // Fade in the BG image
-            // Dev 4
-            ////////////////////////////////////////////////////////////////
-            // jQuery Effects
-            //$( "#stepText" ).effect( "clip", "fast" );
-            ////////////////////////////////////////////////////////////////
-
-            ////////////////////////////////////////////////////////////////
-            // Left Right sliding
-            /* if(moveType == 'right') {
-                $('#stepText').show("slide", { direction: "right" }, 700);
-            } else {
-                $('#stepText').show("slide", { direction: "left" }, 700);
-            }
-
-            $("#stepBGInage").animate({
-                "left": "50%"
-            }, 500); */
+            
             ////////////////////////////////////////////////////////////////
             //document.getElementById('spinnerMiddleBox').style.display = 'none'
             ////////////////////////////////////////////////////////////////
@@ -2900,6 +2210,28 @@ function stop() {
                     document.getElementById('viewIcon').style.display = 'none'
                     document.getElementById('viewLinkLabel').innerHTML = checkshowLinkText[0]; //showViewLink; //languageStepsData[stepIndex].Name;
                     document.getElementById('viewIconText').style.display = 'inline-flex'
+                    ////////////////////////////////////////////////////////////////////////////
+                    // Animate buttons
+                    var el = $('#viewIconText')
+                    var curW = el.width()
+                    var textLen = document.getElementById('viewLinkLabel').innerText.length
+                    var wValue = 220
+                    if(textLen < 10) {
+                        wValue = DetectSpecificDevice() == 'iPad' ? 370 : 240;
+                    } else if(textLen >= 10 && textLen <= 12) {
+                        wValue = DetectSpecificDevice() == 'iPad' ? 530 : 260;
+                    } else if(textLen >= 12 && textLen <= 15) {
+                        wValue = DetectSpecificDevice() == 'iPad' ? 530 : 340;
+                    } else if(textLen >= 15 && textLen <= 20) {
+                        wValue = DetectSpecificDevice() == 'iPad' ? 670 : 450;
+                    } else {
+                        wValue = DetectSpecificDevice() == 'iPad' ? 850 : 550;
+                    }
+                    el.width(curW).animate({width: ((textLen) + wValue)}, 10);
+                    // Change border styling
+                    document.getElementById('viewIconContainer').style.borderRadius = DetectSpecificDevice() == 'iPad' ? '25px' : '20px'
+                    document.getElementById('viewIconContainer').style.border = DetectSpecificDevice() == 'iPad' ? '3.5px dashed #F7AE4F' : '1.8px dashed #F7AE4F'
+                    ////////////////////////////////////////////////////////////////////////////
                     activeViewLink = checkshowLinkText[1]
                 } else {
                     document.getElementById('viewIcon').style.display = 'block'
@@ -2960,116 +2292,36 @@ function stop() {
             //$( "#nextIcon" ).effect( "pulsate", "fast" );
             ////////////////////////////////////////////////////////////////
             //}
-            ///////////////////////////////////////////
-            /* $("#stepText").fadeIn();
-            if(moveType == 'right') {
-                $( "#stepBGInage" ).animate({
-                    left: "150%",
-                    opacity: '0'
-                }, {
-                    duration: 0,
-                    specialEasing: {
-                    width: "linear",
-                    //height: "easeOutBounce"
-                    },
-                })
-                // Move to correct pos
-                $( "#stepBGInage" ).animate({
-                    left: "50%",
-                    opacity: '1'
-                }, {
-                    duration: 500,
-                    specialEasing: {
-                    width: "linear",
-                    //height: "easeOutBounce"
-                    },
-                })
-            } else {
-                $( "#stepBGInage" ).animate({
-                    left: "-50%",
-                    opacity: '0'
-                }, {
-                    duration: 0,
-                    specialEasing: {
-                    width: "linear",
-                    //height: "easeOutBounce"
-                    },
-                })
-                // Move to correct pos
-                $( "#stepBGInage" ).animate({
-                    left: "50%",
-                    opacity: '1'
-                }, {
-                    duration: 500,
-                    specialEasing: {
-                    width: "linear",
-                    //height: "easeOutBounce"
-                    },
-                })
-            } */
+            
             /////////////////////////////////////////////////////////////////////////////
             document.getElementById('prevIcon').style.pointerEvents = 'auto';
             document.getElementById('nextIcon').style.pointerEvents = 'auto';
             /////////////////////////////////////////////////////////////////////////////
             // Trying New Logic
-        /*  console.log("AAAAA - ", stepIndex)
-            let nextStepType = languageStepsData[stepIndex+1].Type;
-            let prevStepType = languageStepsData[stepIndex-1].Type;
-            let curStepType = languageStepsData[stepIndex].Type;
-            let nextNext = languageStepsData[stepIndex+1].Next;
-            let PrevPrev = languageStepsData[stepIndex-2].Prev;
-            console.log(nextStepType, "-- nextstep --", nextNext, " prev --", prevStepType, " :: ", PrevPrev)
-            // if(nextStepType != 'Step' || curStepType != 'Step') {
-            //     document.getElementById('prevIcon').style.opacity = '0.5'
-            //     document.getElementById('prevIcon').style.pointerEvents = 'none';
-            //     document.getElementById('nextIcon').style.opacity = '0.5'
-            //     document.getElementById('nextIcon').style.pointerEvents = 'none';
-            // } 
-            return; */
-            /////////////////////////////////////////////////////////////////////////////
+            ///////////////////////////////////////////////////////////////////////
+            if(languageStepsData[stepIndex-1] != undefined) {
+                let stepDuration = languageStepsData[stepIndex-1].Duration;
+                if(typeof(stepDuration) == 'string') {
+                    document.getElementById('prevIcon').style.opacity = '0.5'
+                    document.getElementById('prevIcon').style.pointerEvents = 'none';
+                    document.getElementById('nextIcon').style.opacity = '1'
+                    document.getElementById('nextIcon').style.pointerEvents = 'auto';
+                }
+                //////////////////////////////////////////////////////////////////////
+                let curType = languageStepsData[stepIndex].Type;
+                //console.log(curType, " >>>>curType")
+                let curDuration = languageStepsData[stepIndex].Duration;
+                //console.log(curType, " >>>>curType")
 
-
-
-            // Check Type value
-            /* let stepType = languageStepsData[stepIndex].Type;
-            console.log(stepType, " AFTER ANIM VALUE ", stepIndex)
-            if(stepType != 'Step') {
-                document.getElementById('prevIcon').style.opacity = '0.5'
-                document.getElementById('nextIcon').style.opacity = '0.5'
-                document.getElementById('prevIcon').style.pointerEvents = 'none';
-                document.getElementById('nextIcon').style.pointerEvents = 'none';
-            } else { */
-
-                ///////////////////////////////////////////////////////////////////////
-                /* console.log(languageStepsData[stepIndex-1], " CCC")
-                return; */
-                
-                //console.log(languageStepsData[stepIndex-1], " CCC")
-
-                ///////////////////////////////////////////////////////////////////////
-                if(languageStepsData[stepIndex-1] != undefined) {
-                    let stepDuration = languageStepsData[stepIndex-1].Duration;
-                    if(typeof(stepDuration) == 'string') {
-                        document.getElementById('prevIcon').style.opacity = '0.5'
-                        document.getElementById('prevIcon').style.pointerEvents = 'none';
-                        
-
-                        document.getElementById('nextIcon').style.opacity = '1'
-                        document.getElementById('nextIcon').style.pointerEvents = 'auto';
-                    }
-
-                    //////////////////////////////////////////////////////////////////////
-                    let curType = languageStepsData[stepIndex].Type;
-                    //console.log(curType, " >>>>curType")
-                    let curDuration = languageStepsData[stepIndex].Duration;
-                    //console.log(curType, " >>>>curType")
+                if(languageStepsData[stepIndex+1] != undefined) {
 
                     let nextType = languageStepsData[stepIndex+1].Type;
                     //console.log(nextType, " nextType")
                     let nextStep = languageStepsData[stepIndex].Next;
                     //console.log(nextStep, " nextStep")
 
-                    if(nextType != 'Step' && nextStep == '') {
+                    //if(nextType != 'Step' && nextStep == '') {
+                    if(nextType != 'step' && nextStep == '') {
                         /* document.getElementById('prevIcon').style.opacity = '0.5'
                         document.getElementById('prevIcon').style.pointerEvents = 'none'; */
 
@@ -3082,58 +2334,16 @@ function stop() {
                         document.getElementById('nextIcon').style.opacity = '1'
                         document.getElementById('nextIcon').style.pointerEvents = 'auto';
                     }
-
-                    //////////////////////////////////////////////////////////////////////
-
-                    /* if(curType != 'Step' && typeof(curDuration) == 'number') {
-                        document.getElementById('nextIcon').style.opacity = '0.5'
-                        document.getElementById('nextIcon').style.pointerEvents = 'none';
-                    } else {
-                        document.getElementById('nextIcon').style.opacity = '1'
-                        document.getElementById('nextIcon').style.pointerEvents = 'auto';
-                    } */
-
-
-                    //////////////////////////////////////////////////////////////////////
-                
                     let prevType = languageStepsData[stepIndex-1].Type;
                     let prevStep = languageStepsData[stepIndex].Prev;
-
-                    /* console.log(prevStep, " prevStep ", prevType)
-                    if(nextStep != 'Step' && prevStep == 'END') {
-                        console.log("ENTER HERE")
-                    } else */ 
-                    if(prevType != 'Step' && prevStep == '') {
+                    //if(prevType != 'Step' && prevStep == '') {
+                    if(prevType != 'step' && prevStep == '') {
                         document.getElementById('prevIcon').style.opacity = '0.5'
                         document.getElementById('prevIcon').style.pointerEvents = 'none';
                     } else {
                         document.getElementById('prevIcon').style.opacity = '1'
                         document.getElementById('prevIcon').style.pointerEvents = 'auto';
                     }
-                    ///////////////////////////////////////////////////////////////////////
-                    // Checing current type value
-                    // Disable all buttons
-                    /* let curType = languageStepsData[stepIndex].Type;
-                    console.log(curType, " >>>>curType")
-                    if(curType != 'Step') {
-                        document.getElementById('prevIcon').style.opacity = '0.5'
-                        document.getElementById('prevIcon').style.pointerEvents = 'none';
-                        document.getElementById('nextIcon').style.opacity = '0.5'
-                        document.getElementById('nextIcon').style.pointerEvents = 'none';
-                    } else {
-                        document.getElementById('nextIcon').style.opacity = '1'
-                        document.getElementById('nextIcon').style.pointerEvents = 'auto';
-                    } */
-                    ///////////////////////////////////////////////////////////////////////
-                    /* let curType = languageStepsData[stepIndex].Type;
-                    console.log(curType, " >>>>curType") */
-
-                    /* if(languageStepsData[stepIndex-1].Type != 'Step') {
-                        document.getElementById('nextIcon').style.opacity = '0.5'
-                        document.getElementById('nextIcon').style.pointerEvents = 'none';
-                    } */
-                    ///////////////////////////////////////////////////////////////////////
-
                     // New Changes
                     if(typeof(languageStepsData[stepIndex-1].Duration) == 'string' && languageStepsData[stepIndex].Prev == '') {
                         //stepIndex++;
@@ -3156,10 +2366,9 @@ function stop() {
                     // Check whether the view link available or not at end
                     //console.log(languageStepsData[stepIndex].ViewLink, " View Link")
                 }
-        /*  } */
+            }
             checkAutoPlayStat();
         }, 10)
-       /*  }, 0) */
     }
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
 })
+/////////////////////////////////////////////////////////////////////////////////

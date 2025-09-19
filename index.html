@@ -3,17 +3,14 @@
   
   <head>
     <meta content-type='text/javascript' charset="UTF-8" />
-
     <meta http-equiv='cache-control' content='no-cache, no-store, must-revalidate'>
     <meta http-equiv='expires' content='0'>
     <meta http-equiv='pragma' content='no-cache'>
-
     <!-- <meta http-equiv="EXPIRES" content="Wed, 17 May 2023 15:00:00 GMT" /> -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    
-    <title>Steps</title>
+    <title>Playbook Steps</title>
     <link
       href="./css/bootstrap.min.css"
       rel="stylesheet"
@@ -32,58 +29,23 @@
       href="./css/minireset.min.css"
     />
     <link rel="stylesheet" href="css/style.css?version=3.6" />
-    <link rel="icon" type="image/x-icon" href="img/zap_icons_step.png?version=3.2" />
-    <link rel="apple-touch-icon" href="img/zap_icons_step.png?version=3.2" />
+    <link rel="icon" type="image/x-icon" href="img/step_icon_new.webp?version=3.2" />
+    <link rel="apple-touch-icon" href="img/step_new.webp?version=3.2" />
   </head>
-  
   <body id="mainBody" style="position: fixed; min-height: 100vh !important; background-color: #F9F3E3" onpagehide="CloseIFrame()">
-
-    <!------------------------------------------------------------------------------------------------------>
-    <!------------------------------------------------------------------------------------------------------>
-
+    <!--------------------------------------------------------------------->
     <div id="stepsSnippetContainer" style="position: absolute; width: 100%; height: 100vh;">
-
       <div id="loadingScreen" style="position: absolute; top: 0; left: 0; z-index: 99999; width: 100%; display: flex; justify-content: space-evenly; height: 100vh;">
-        <!-- <img src="img/floristry_mobile_sym_floristry.png?version=3.2" alt="" onContextMenu="return false;" style="position: absolute;
-        top: 3.5vh;
-        left: 50%;
-        width: 40vh;
-        transform: translate(-50%, 0%); z-index: 99;">
-        <img src="img/floristry_mobile_scn_splash.png?version=1.2" style="position: relative; width: 100vw; height: 100vh;" alt="" onContextMenu="return false;" > -->
-        <!-- <div style="position: absolute;
-        display: flex;
-        width: 100%;
-        height: 100vh;
-        bottom: 7vh;
-        flex-direction: row;
-        justify-content: space-around;
-        align-items: flex-end;
-        align-content: flex-end;
-        flex-wrap: nowrap;">
-          <img src="img/floristry_mobile_scan_up.png?version=1.0" style="position: relative; width: 15vh;" alt="" onContextMenu="return false;" >
-          <div style="position: relative; width: 0.5vh; background-color: #808080; height: 13vh; border-radius: 5px;"></div>
-          <img src="img/floristry_mobile_up_logo.png?version=1.0" style="position: relative; width: 15vh;" alt="" onContextMenu="return false;">
-        </div> -->
-
-        <!------------------------------------------------------------------------------------------------------>
-        <!------------------------------------------------------------------------------------------------------>
-
+        <!------------------------------------------------------------------>
         <p id="versionInfo" style="position: absolute; width: 100%; text-align: center; top: 3vh; font-size: 1.7vh; color: #666666;"></p>
-
         <p id="appInfo" style="position: absolute; width: 100%; text-align: center; top: 37%; font-size: 4vh; color: #666666; padding: 15%;"></p>
-
-        <!------------------------------------------------------------------------------------------------------>
-        <!------------------------------------------------------------------------------------------------------>
-
+        <!------------------------------------------------------------------>
         <div id="spinnerBox" class="spinner-box">
           <div class="circle-border">
             <div class="circle-core"></div>
           </div>  
         </div>
-
-        <!------------------------------------------------------------------------------------------------------>
-        <!------------------------------------------------------------------------------------------------------>
-
+        <!------------------------------------------------------------------->
         <div id="loadingText" style="position: absolute;
         top: 40vh;
         left: 50%;
@@ -92,10 +54,7 @@
         text-align: center;
         color: #683F97;
         transform: translate(-50%, 0%); font-family: AcuminVariableConcept; line-height: 2.6vh; font-weight: 500;"><br></div>
-
-        <!------------------------------------------------------------------------------------------------------>
-        <!------------------------------------------------------------------------------------------------------>
-
+        <!------------------------------------------------------------------->
         <!-- FOR EXIT BUTTON OFFLINE MODE -->
         <div id="ExitButtonPanel" style="display: block;position: absolute; bottom: 0vh; height: 21vh; width: 100%; z-index: 99999999;">
           <div style="display: flex; flex-direction: row;
@@ -106,12 +65,9 @@
           </div>
         </div>
       </div>
-
-      <!------------------------------------------------------------------------------------------------------>
-      <!------------------------------------------------------------------------------------------------------>
-
+      <!-------------------------------------------------------------------------->
       <div id="stepsScreen" style="display: none; width: 100%; height: 100vh; background-color: white; position: absolute; z-index: 99999;">
-        <!----------------------------------------SLIDE 1 START----------------------------------------------->
+        <!---------------------------SLIDE 1 START--------------------------------->
         <div id="slide_0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh;">
           <div id="stepImg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 0;">
             <div style="position: absolute; bottom: 0vh; height: 15vh; width: 100%; background-color: #666666; z-index: 2;"></div>
@@ -126,14 +82,15 @@
           align-items: center; padding: 1vh; min-height: 10vh; z-index: 99;">
             <span id="stepText" style="font-size: 4vh;
           color: white; width: 90%; text-align: center; font-family: 'DINCondensed-Bold'; line-height: 5vh; white-space: pre-wrap;">This is Floritry game instructions.</span>
-
           <img id="viewIcon" src="img/floristry_mobile_btn_viewlink.webp" style="width: 10vh; height: 10vh; margin-top: 2vh;" alt="" />
-
           <div id="viewIconText" style="position: relative; display: none; /* display: inline-flex; */ justify-content: center; margin-top: 2.5vh;">
-            <img src="img/floristry_mobile_btn_full.png?version=1.0" style="/* width: 190px; height: 55px; */width: 23vh; height: 6vh;" alt="" />
+            <div id="viewIconContainer" style="-webkit-touch-callout: none; user-select: none; -moz-user-select: none; -webkit-user-select: none; width: 70%; height: 7vh; border-radius: 25px;
+          border: 5px dashed #F7AE4F; position: relative;"></div>
+            <!-- <img src="img/floristry_mobile_btn_full.png?version=1.0" style="/* width: 190px; height: 55px; */min-width: 23vh; height: 6vh; width: 100%;" alt="" /> -->
             <p id="viewLinkLabel" style="position: absolute;
             top: 50%;
             width: 84%;
+            /* width: 70%; */
             height: auto;
             left: 50%;
             z-index: 999999;
@@ -153,51 +110,15 @@
             margin-top: .3vh;">View Link
             </p>
           </div>
-
           </div>
-          <!----------------------------------------VIEW LINKS----------------------------------------------->
-          <!-- <div id="viewLink" style="position: absolute;
-          z-index: 9999;
-          left: 50%;
-          width: 100%;
-          bottom: 15vh;
-          text-align: right;
-          transform: translateY(-50%) translateX(-50%);
-          padding-right: 2vh;
-          font-size: 3vh;">
-            <p id="viewText" style="color: rgb(41, 171, 226);">View Link</p>
-          </div> -->
-          <!------------------------------------------------------------------------------------------------->
         </div>
-        <!------------------------------------------------------------------------------------------------->
-        
+        <!---------------------------------------------------------------------------->
         <div id="spinnerMiddleBox" class="spinner-box-middle">
           <div class="circle-border-middle">
             <div class="circle-core-middle"></div>
           </div>  
         </div>
-
-        <!----------------------------------------SLIDE 1 END------------------------------------------------>
-        <!----------------------------------------SLIDE 2 START---------------------------------------------->
-        <!-- <div id="slide_1" style="position: absolute; top: 0; left: 0; width: 50%; height: 100vh;">
-          <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 0;">
-            <div style="position: absolute; bottom: 0vh; height: 15vh; width: 100%; background-color: #666666; z-index: 2;"></div>
-
-            <img id="stepBGInage_1" src="img/floristry_mobile_scn_auction.png" alt="" style="position: relative;
-            /* height: 100vh; */ left: 50%;
-            top: 50%;
-            transform: translateY(-50%) translateX(-50%); z-index: 0;" />
-          </div>
-          <div style="display: flex; position: absolute; top: 0; height: auto; width: 100%; background-color: #666666; flex-direction: column;
-          justify-content: center;
-          align-items: center; padding: 1vh; min-height: 10vh; z-index: 99;">
-            <span id="stepText_1" style="font-size: 4vh;
-          color: white; width: 90%; text-align: center; font-family: 'DINCondensed-Bold'; line-height: 5vh; ">This is Floritry game instructions.</span>
-            </div>
-        </div> -->
-        <!--------------------------------------------------------------------------------------------------->
-        <!----------------------------------------SLIDE 2 END------------------------------------------------>
-
+        <!----------------------------------------------------------------------------->
         <div id="bottomButtonLayer" style="position: absolute; bottom: 0vh; height: 21vh; width: 100%; background-color: #666666; z-index: 99999;">
           <div style="display: flex; flex-direction: row;
       justify-content: space-around; padding-top: 2.5vh;">
@@ -218,10 +139,8 @@
                   </path>
                 </g>
               </svg>
-              <!-- <span id="base-timer-label" class="base-timer__label"></span> -->
             </div>
           </div>
-
             <!-- <img id="viewIcon" src="img/floristry_mobile_btn_viewlink.webp" style="width: 10vh; height: 10vh;" alt="" /> -->
             <div>
               <img id="nextIcon" class='pulse-button' src="img/floristry_mobile_btn_next.webp" style="width: 10vh; 
@@ -230,10 +149,7 @@
           </div>
         </div> 
       </div>
-
-      <!------------------------------------------------------------------------------------------------------>
-      <!------------------------------------------------------------------------------------------------------>
-
+      <!------------------------------------------------------------------>
       <div id="useMode" style="position: absolute;
       display: block;
       width: 100%;
@@ -255,8 +171,7 @@
         color: #808080;
         z-index: 9; text-align: center; display: block;"></p>
       </div>
-
-      <!------------------------------------------------------------------------------------------------------>
+      <!------------------------------------------------------------------>
       <div id="sheetIdError" class="text-center pt-4" style="position: absolute; width:100%; height:100vh; display:none; flex-direction:column;justify-content:center; z-index:9999999999 !important;">
         <h5 class="text-center" style="color:red; display:block; font-family:AcuminVariableConcept;">**Sheet Id missing.</h5>
         <h4 class="text-center h3 mb-3" style="position:relative;top: 1em; z-index:9; font-family:AcuminVariableConcept; letter-spacing: -1px; font-weight: 700; width: 80%; left: 10%;">ENTER YOUR GOOGLE SHEET ID, OR GOOGLE SHEET URL</h4>
@@ -269,8 +184,7 @@
         </div>
     </div>
   </div>
-    <!------------------------------------------------------------------------------------------------------>
-
+    <!------------------------------------------------------------------------>
     <script src="./js/jquery-3.5.1.min.js"></script>
     <script src="./js/jquery.cookie.min.js"></script>
     <script
@@ -280,24 +194,15 @@
     ></script>
     <script>
     </script>
-    
-    <!----------------------------------------------------------------------------------->
-    <!----------------------------------------------------------------------------------->
-
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.8/typed.js"></script>
-    <script src="https://code.jquery.com/ui/1.13.3/jquery-ui.js"></script> -->
-    
-    
+    <!------------------------------------------------------------------------->
     <script src="./js/moment.min.js?version=1.0"></script>
     <script src="./js/device-uuid.min.js?version=1.0"></script>
     <script src="./js/md5.js?version=1.0"></script>
     <script src="./js/createjs.min.js?version=3.9"></script>
     <script src="./js/JSController.js?version=2.4"></script>
     <script src="./js/devicedetector-min.js"></script>
-    <script src="stepsJS/steps.js?version=37"></script>
-    
-    <!----------------------------------------------------------------------------------->
-    <!----------------------------------------------------------------------------------->
+    <script src="stepsJS/steps.js?version=39"></script>
+    <!------------------------------------------------------------------------->
     <!-- Matomo -->
     <script>
       var _paq = window._paq = window._paq || [];
@@ -311,31 +216,12 @@
         g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
       })();
     </script>
-    <!-- End Matomo Code -->
-    <!----------------------------------------------------------------------------------->
+    <!-------------------------------------------------------------------------->
     <script>
       function CloseIFrame() {
         window.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*') 
       }
     </script>
-    <!----------------------------------------------------------------------------------->
-
-    <!-- Moved to controller file -->
-    <!-- <script src="./js/main.js?version=4.0"></script> -->
-    <!-- <script src="./js/ServiceWorkerUpdateListener.min.js?version=3.9"></script> -->
-    <!-- <script src="./js/version.js?version=3.9"></script> -->
-    <!-- <script src="./js/floristry_ios.js?version=3.9"></script>
-    <script src="./js/floristry_android.js?version=3.9"></script> -->
-    
-    <!--------------------- BROWSER BACK ARROW CLICK FIX ---------------------------------->
-    <!-- <script>
-      document.addEventListener('popstate', function() {
-        window.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
-      })
-      history.pushState(null, null, document.URL)
-    </script> -->
-    
-    <!----------------------------------------------------------------------------------->
-    
+    <!-------------------------------------------------------------------------->
   </body>
 </html>

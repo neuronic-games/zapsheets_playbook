@@ -1,62 +1,16 @@
 ///////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////
 // All global vars 
 var touched = false
 var isFullScreen = false
-var maxLevel = 10; //12
-var levelCounter = 1
-var maxTime = 15
-var bidAmount = Math.ceil(maxTime/3)
 var pause = false
-var selectBidPlayserID = -1
-var isTimerStarted = false
 var isOnEndScreen = false
-// init user props at start
-// Amount in Euro
-var fPlayer_0 = {
-  name: 'Player 1',
-  total_amount : 30,
-  amount_spent : 0,
-}
-var fPlayer_1 = {
-  name: 'Player 2',
-  total_amount : 30,
-  amount_spent : 0,
-}
-// Level Wise bid
-var player_0_Bid = false
-var player_1_Bid = false
-
-// For waiting user event
-var player1_active = false
-var player2_active = false
-
-// Scoring counter
-var player_0_count = 0
-var player_1_count = 0
-
-//var imgList = ["/img/flor_sym_blue.png", "/img/flor_sym_orange.png", "/img/flor_sym_purple.png", "/img/flor_sym_red.png", "/img/flor_sym_white.png", "/img/flor_sym_yellow.png"]
-
-var imgList = ["img/mari_flower_yellow_1.png", "img/mari_flower_red_2.png", "img/mari_flower_green_3.png", "img/mari_flower_purple_4.png", "img/mari_flower_blue_5.png", "img/mari_flower_orange_6.png"]
-
-
-var imgCounter = -1
 var downloadTimer;
-var bothActive = false
-
 var pauseFrom = ''
-var secondHand = ''
-//////////////////////////////////////////////////////////////////////////////
-var canvas, stage, exportRoot, anim_container, dom_overlay_container, fnStartAnimation;
-var canvas_android, stage_android, exportRoot_android, anim_container_android, dom_overlay_container_android, fnStartAnimation_android;
-var canvas_howto, stage_howto, exportRoot_howto, anim_container_howto, dom_overlay_container_howto, fnStartAnimation_howto;
-//////////////////////////////////////////////////////////////////////////////
 let pollTime = 20;
 let isToggle = false;
 let currentSheetVersion = 0;
 let periodicVersion = 0
-let RefreshAppVersionTime = 10; // Default time
+let RefreshAppVersionTime = 5; // Default time
 let deviceUID = null
 let systemMemoryUsed = ''
 let systemName = ''
@@ -66,186 +20,157 @@ let FULL_DASH_ARRAY = 283;
 let RESET_DASH_ARRAY = `-57 ${FULL_DASH_ARRAY}`;
 let timer;// = document.querySelector("#base-timer-path-remaining");
 let timerFinal;// = document.querySelector("#base-timer-path-remaining-end");
+let timerGame;
 //let timeLabel = document.getElementById("base-timer-label");
 let TIME_LIMIT = 3; //in seconds
 let timePassed = 1;
 let timeLeft = TIME_LIMIT;
 let timerInterval = null;
-
 let modeType = 0;
 let machineFPS = 0
 let inSteps = true;
+let languageStepsData = []
+let fromStep = false;
+// For Settings JSON
+let currentJSONVersion = 0;
+let newJSONVersion = 0
+let inStart = true;
+// For setting list holder
+let settingDataList = []
+// For install list holder
+let installDataList = []
+// For controller version update
+let controllerVersion = ''
+// document Ready status
+let documentReadyStat = false
+// Cut-Off time
+let cutOffTime = 5;
+let cutOffCount = 0
+let cutOffCountLang = 0
+let cutOffTimePassed = false
+let processStartTime = 0;
+let processEndTime = 0;
+// Controller version
+let controllerVerion = 4
+// For standalone
+let isStandalone = false;
+// Layout
+let portrait = window.matchMedia("(orientation: portrait)");
+//////////////////////////////////////////////////////////////
+// SET YOUR SPREADSHEET ID HERE
+let activeSheet_id = (getUrlVars()["id"]) ? getUrlVars()["id"].split('/')[0].toUpperCase() : '1CWWzaAXQbI-SkvU6I0kx6lHn32VKC-Ee4XadnueBZKI'
+//////////////////////////////////////////////////////////////
+// Path of the steps language url [sprecially from different server like zapsheets.com]
+// Change the path accordingly.
+// For Local Testing
+let jasonPath = './steps/'
+///////////////////////////////////////////////////////////////
+// For Online
+/* let jasonPath = 'https://zapsheets.com/playbook/steps/' */
 ///////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////
-/**
- * // Getting current App version (version.js)
- */
-function getCurrentVersion() {
-    if(window.navigator.onLine == true) {
-        // Loading version.js dynamically for [mac fix]
-        var newScript = document.createElement('script');
-        newScript.id = 'version_Script';
-        newScript.type = 'text/javascript';
-        newScript.src = 'js/version.js?version=' + Math.random();
-        document.getElementsByTagName('head')[0].appendChild(newScript);
-    }
+function getCurrentLiveVersion() {
+    var newScript = document.createElement('script');
+    newScript.id = 'version_Script';
+    newScript.type = 'text/javascript';
+    newScript.src = 'js/version.js?version=' + UIVersion;
+    newScript.onload = checkSettingLoad();
+    document.getElementsByTagName('head')[0].appendChild(newScript);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////
 /**
- * // Getting current App module working (main.js)
+ * getCurrentGameMainVersion
  */
 function getCurrentGameMainVersion() {
-    if(window.navigator.onLine == true) {
-        // Loading version.js dynamically for [mac fix]
-        var floristryScript = document.createElement('script');
-        floristryScript.type = 'text/javascript';
-        floristryScript.id = 'floristry_Script';
-        floristryScript.src = 'js/stepsMain.js?version=' + Math.random();
-        floristryScript.onload = checkLoadStat()
-        document.getElementsByTagName('head')[0].appendChild(floristryScript);
-    }
+    var floristryScript = document.createElement('script');
+    floristryScript = document.createElement('script');
+    floristryScript.type = 'text/javascript';
+    floristryScript.id = 'floristry_Script';
+    floristryScript.src = 'js/main.js?version=' + UIVersion;
+    floristryScript.onload = checkLoadStatMain()
+    document.getElementsByTagName('head')[0].appendChild(floristryScript);
 }
-// Getting current iOS module working (floristry_ios.js)
-/* function getCurrentFloristryiOSVersion() {
-    if(window.navigator.onLine == true) {
-        // Loading version.js dynamically for [mac fix]
-        var floristryiOSScript = document.createElement('script');
-        floristryiOSScript.type = 'text/javascript';
-        floristryiOSScript.id = 'floristryiOS_Script';
-        floristryiOSScript.src = 'js/floristry_ios.js?version=' + Math.random();
-        floristryiOSScript.onload = checkLoadStatiOS()
-        document.getElementsByTagName('head')[0].appendChild(floristryiOSScript);
-    }
-} */
-// Getting current iOS module working (floristry_ios.js)
-/* function getCurrentFloristryAndroidVersion() {
-    if(window.navigator.onLine == true) {
-        // Loading version.js dynamically for [mac fix]
-        var floristryAndroidScript = document.createElement('script');
-        floristryAndroidScript.type = 'text/javascript';
-        floristryAndroidScript.id = 'floristryAndroid_Script';
-        floristryAndroidScript.src = 'js/floristry_android.js?version=' + Math.random();
-        floristryAndroidScript.onload = checkLoadStatAndroid()
-        document.getElementsByTagName('head')[0].appendChild(floristryAndroidScript);
-    }
-} */
-// Getting current iOS module working (floristry_ios.js)
-/* function getCurrentFloristryHowToVersion() {
-    if(window.navigator.onLine == true) {
-        // Loading version.js dynamically for [mac fix]
-        var floristryRulesScript = document.createElement('script');
-        floristryRulesScript.type = 'text/javascript';
-        floristryRulesScript.id = 'floristryRules_Script';
-        floristryRulesScript.src = 'js/floristry_rules.js?version=' + Math.random();
-        floristryRulesScript.onload = checkLoadStatHowTo()
-        document.getElementsByTagName('head')[0].appendChild(floristryRulesScript);
-    }
-} */
 ///////////////////////////////////////////////////////////////////////////////////////////
+// Matomo Tracking Scripts
+/* function doTrackOnMatomo() {
+    var _paq = window._paq = window._paq || [];
+    //tracker methods like "setCustomDimension" should be called before "trackPageView"
+    _paq.push(['trackPageView']);
+    _paq.push(['enableLinkTracking']);
+    (function() {
+      var u="//zapsheets.com/stats/";
+      _paq.push(['setTrackerUrl', u+'matomo.php']);
+      _paq.push(['setSiteId', '1']);
+      var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+      g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+    })();s
+} */
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
- * 
+ * checkSettingLoad
  */
-function checkLoadStat() {
-    console.log("Step JS LOADED")
+function checkSettingLoad() {
+    console.log('JS VERSION LOADED')
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////
-/* function checkLoadStatiOS() {
-    console.log("iOS JS LOADED")
+/**
+ * checkLoadStatMain
+ */
+function checkLoadStatMain() {
+    console.log('MAIN JS VERSION LOADED')
 }
-function checkLoadStatAndroid() {
-    console.log("Android JS LOADED")
-}
-function checkLoadStatHowTo() {
-    console.log("Rules JS LOADED")
-} */
 ///////////////////////////////////////////////////////////////////////////////////////////
-//window.addEventListener('load', (event) => {
+/**
+ * doCheckOrientation
+ */
+function doCheckOrientation() {
+    if(portrait.matches) {
+        document.getElementById('useMode').style.display = 'none'
+        pause = false;
+        document.getElementById('useModeBG').style.display = 'none';
+    } else {
+        document.getElementById('useMode').style.display = 'flex'
+        document.getElementById('modeLogo').style.display = 'block'
+        document.getElementById('modeLogo').style.width = '45vh'
+        document.getElementById('useModeBG').style.display = 'block';
+        pause = true
+    }
+}
+///////////////////////////////////////////////////////////////////////////////////////////
 let currentRunningVersion = 0;
-//console.log("JS FILE LOADED")
-/* getCurrentVersion(); */
-//////////////////////////////////////////////////////////////////////////////////////////
 checkVersion();
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
- * 
+ * checkVersion
  */
 function checkVersion() {
-    getCurrentVersion();
-    let versionTimer = setTimeout(function() {
-        clearTimeout(versionTimer)
-        //console.log(typeof _version)
-        if(typeof _version != 'undefined') {
-            currentRunningVersion = _version;
-            periodicVersion = _version;
-
-
-            // Functions call : When app loads for first time
-            getCurrentGameMainVersion();
-            /* getCurrentFloristryAndroidVersion();
-            getCurrentFloristryiOSVersion();
-            getCurrentFloristryHowToVersion(); */
-
-
-
-            // Undo If needed
-            /* checkAppVersionStatus() */
-
-        } else {
-            // Loop the function untill we have active internet to fetch the data  
-            checkVersion();
-        }
-    }, 2000)
+    doCheckOrientation();
+    if(window.navigator.onLine == true) {
+        // Version files
+        getCurrentLiveVersion();
+        // Game file
+        getCurrentGameMainVersion();
+        // Matomo Tacking
+        //doTrackOnMatomo();
+    } else {
+        // Version files
+        getCurrentLiveVersion();
+        // Game file
+        getCurrentGameMainVersion();
+    }
 }
-//////////////////////////////////////////////////////////////////////////////////////////
-/* getCurrentGameMainVersion();
-getCurrentFloristryAndroidVersion();
-getCurrentFloristryiOSVersion();
-getCurrentFloristryHowToVersion();
-checkAppVersionStatus() */
-//})
-//////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
 /**
  * 
+ * @returns 
  */
-function checkAppVersionStatus() {
-    //console.log("CHECKING VERS")
-    let versionPeriodicTimer = setTimeout(function() {
-        clearTimeout(versionPeriodicTimer)
-        if(window.navigator.onLine == true) {
-            // get new app version
-            getCurrentVersion();
-            /* if(window.navigator.onLine == true) { */
-                if(_version != currentRunningVersion) {
-                    currentRunningVersion = _version
-                    console.log("NEW Version")
-                    /* document.getElementsByTagName('head')[0].removeChild(document.getElementById("version_Script"));
-                    document.getElementsByTagName('head')[0].removeChild(document.getElementById("floristry_Script"));
-                    document.getElementsByTagName('head')[0].removeChild(document.getElementById("floristryiOS_Script"));
-                    document.getElementsByTagName('head')[0].removeChild(document.getElementById("floristryAndroid_Script")); */
-
-                    /* document.getElementById("version_Script").parentNode.removeChild(document.getElementById("version_Script"));
-                    document.getElementById("floristry_Script").parentNode.removeChild(document.getElementById("floristry_Script"));
-                    document.getElementById("floristryiOS_Script").parentNode.removeChild(document.getElementById("floristryiOS_Script"));
-                    document.getElementById("floristryAndroid_Script").parentNode.removeChild(document.getElementById("floristryAndroid_Script")); */
-
-                    //document.getElementsByTagName('head')[0].removeChild(floristryScript);
-                    
-                    /* window.removeEventListener('keyup', onKeyUpfunc);
-                    window.removeEventListener('keydown', onKeyDownFunc); */
-
-                    setTimeout(function() {
-                    // Reload the mainMap js file
-                        /* getCurrentGameMainVersion();
-                        getCurrentFloristryAndroidVersion();
-                        getCurrentFloristryiOSVersion(); */
-                    }, 2000)
-                }
-           /*  } */
-        }
-        checkAppVersionStatus();
-    }, RefreshAppVersionTime * 1000)
+function getUrlVars() {
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+    for (var i = 0; i < hashes.length; i++) {
+        hash = hashes[i].split('=');
+        vars.push(hash[0]);
+        vars[hash[0]] = hash[1];
+    }
+    return vars;
 }
 //////////////////////////////////////////////////////////////////////////////////////////

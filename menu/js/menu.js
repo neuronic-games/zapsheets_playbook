@@ -10,6 +10,13 @@ $(document).ready(function() {
     let rulesDataList = [];
     let faqsDataList = [];
 
+    // Special Icons
+    let berryImgPath = ''
+    let bugImgPath = ''
+    let nutImgPath = ''
+    let diceImgPath = ''
+    let oopsImgPath = ''
+
     // For lazy load
     // For LOCAL TESTING
     //let lazyLoadImages = 'TRUE'
@@ -195,6 +202,73 @@ $(document).ready(function() {
                                     imagePath = '../steps/sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
                                 }
                                 document.getElementById('downloadBtn').src = imagePath
+                            }
+
+                            // Other Icons
+                            // BERRY
+                            if(row_setting['Name'] == '[BERRY]') {
+                                if (row_setting['Value'].includes("https://drive.google.com")) {
+                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
+                                    berryImgPath = '../steps/sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                                } else {
+                                    // Cache Image
+                                    let name = row_setting['Value'].split('/')
+                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                                    // image from spreadsheet id folder
+                                    berryImgPath = '../steps/sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                                }
+                            }
+                            // DICE
+                            if(row_setting['Name'] == '[DICE]') {
+                                if (row_setting['Value'].includes("https://drive.google.com")) {
+                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
+                                    diceImgPath = '../steps/sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                                } else {
+                                    // Cache Image
+                                    let name = row_setting['Value'].split('/')
+                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                                    // image from spreadsheet id folder
+                                    diceImgPath = '../steps/sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                                }
+                            }
+                            // BUG
+                            if(row_setting['Name'] == '[BUG]') {
+                                if (row_setting['Value'].includes("https://drive.google.com")) {
+                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
+                                    bugImgPath = '../steps/sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                                } else {
+                                    // Cache Image
+                                    let name = row_setting['Value'].split('/')
+                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                                    // image from spreadsheet id folder
+                                    bugImgPath = '../steps/sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                                }
+                            }
+                            // NUT
+                            if(row_setting['Name'] == '[NUT]') {
+                                if (row_setting['Value'].includes("https://drive.google.com")) {
+                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
+                                    nutImgPath = '../steps/sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                                } else {
+                                    // Cache Image
+                                    let name = row_setting['Value'].split('/')
+                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                                    // image from spreadsheet id folder
+                                    nutImgPath = '../steps/sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                                }
+                            }
+                            // OOPS
+                            if(row_setting['Name'] == '[OOPS]') {
+                                if (row_setting['Value'].includes("https://drive.google.com")) {
+                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
+                                    oopsImgPath = '../steps/sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                                } else {
+                                    // Cache Image
+                                    let name = row_setting['Value'].split('/')
+                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                                    // image from spreadsheet id folder
+                                    oopsImgPath = '../steps/sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                                }
                             }
                         })
                         /////////////////////MENU JSON START////////////////////////
@@ -466,7 +540,7 @@ $(document).ready(function() {
             }
         })
         ////////////////////////////////////////////////////////////////////////
-        if(_count == getAllImageCount() /* && dispInfoCount == dispMessageList.length */) {
+        if(_count == getAllImageCount()) {
             preCachedDone = true;
             ////////////////////////////////////////////////////////////////////////
             // Update button urls if any
@@ -490,7 +564,6 @@ $(document).ready(function() {
                             // image from spreadsheet id folder
                             imagePathPrev = '../steps/sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
                         }
-                        //document.getElementById('prevIcon').src = imagePathPrev;
                     }
                 }
 
@@ -797,6 +870,39 @@ $(document).ready(function() {
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
+     * Download Button events 
+     */
+    function DoDownloadRulesBtnEvents() {
+        document.getElementById('downloadBtn').addEventListener('touchstart', onDownloadBtnTouchStart)
+        document.getElementById('downloadBtn').addEventListener('touchend', onDownloadBtnTouchEnd)
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} event 
+     */
+    function onDownloadBtnTouchStart(event) {
+        event.preventDefault();
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} event 
+     */
+    function onDownloadBtnTouchEnd(event) {
+        event.preventDefault();
+        let downloadURL = ''
+        for(var i=0; i<rulesDataList.length; i++) {
+            if(rulesDataList[i].ID == 'DOWNLOAD_URL') {
+                downloadURL = rulesDataList[i].Text;
+            }
+        }
+        if(downloadURL != '') {
+            window.open(downloadURL)
+        }
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
      * LoadGameFaqs
      */
     function LoadGameFaqs() {
@@ -827,7 +933,7 @@ $(document).ready(function() {
                             let faqList = ''
                             for(var i=0; i<faqsDataList.length; i++) {
                                 if(faqsDataList[i].Type == 'faq') {
-                                    faqList += `<li id="faqItem_${i}" style="color: lightgray; left: 4vh; position: relative;font-size: 3.5vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh;"> <span style="position: relative; top: 0vh !important; color: #F7AE50; font-size: 3.5vh;">${faqsDataList[i].Question}</span><li id="faq_${i}" style="color: #2D2C2B; left: 4vh; position: relative;font-size: 3.5vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh; display:none"><span style="position: relative; top: 0vh !important; color: #FFFFFF; font-size: 3vh;">${faqsDataList[i].Answer}</span></li></li>`
+                                    faqList += `<li id="faqItem_${i}" style="color: lightgray; left: 4vh; position: relative;font-size: 3.5vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh;"> <span style="position: relative; top: 0vh !important; color: #F7AE50; font-size: 3.5vh;">${faqsDataList[i].Question}</span><li id="faq_${i}" style="color: #2D2C2B; left: 2vh; position: relative;font-size: 3vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh; display:none"><span style="position: relative; top: 0vh !important; color: #FFFFFF; font-size: 3vh;">${faqsDataList[i].Answer}</span></li></li>`
                                 }
                             }
                             document.getElementById('menuList').innerHTML = faqList;
@@ -926,10 +1032,21 @@ $(document).ready(function() {
                             let ruleList = ''
                             for(var i=0; i<rulesDataList.length; i++) {
                                 if(rulesDataList[i].Type == 'menu') {
-                                    ruleList += `<li style="color: lightgray; left: 4vh; position: relative;font-size: 3.5vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh;"> <span style="position: relative; top: 0vh !important; color: #F7AE50; font-size: 3.5vh;">${rulesDataList[i].ID}</span></li>`
+                                    ruleList += `<li id="rulesItem_${i}" style="color: lightgray; left: 4vh; position: relative;font-size: 3.5vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh;"> <span style="position: relative; top: 0vh !important; color: #F7AE50; font-size: 3.5vh;">${rulesDataList[i].ID}</span></li>`
                                 }
                             }
                             document.getElementById('menuList').innerHTML = ruleList;
+
+                            // List events
+                            for(var i=0; i<rulesDataList.length; i++) {
+                                if(rulesDataList[i].Type == 'menu') {
+                                    // Add events
+                                    document.getElementById('rulesItem_' + i).addEventListener('touchstart', onRuleItemTouchStart)
+                                    document.getElementById('rulesItem_' + i).addEventListener('touchend', onRuleItemTouchEnd)
+                                    console.log("RULEs DONE")
+                                }
+                            }
+                            DoDownloadRulesBtnEvents();
                         }, 10) 
                     }
                 },
@@ -945,6 +1062,126 @@ $(document).ready(function() {
             RulesRequest = null;
         }, 1000)
     }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} event 
+     */
+    function onRuleItemTouchStart(event) {
+        if(event.cancelable) event.preventDefault();
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} event 
+     */
+    function onRuleItemTouchEnd(event) {
+        if(event.cancelable) event.preventDefault();
+        let ruleItemId = event.target.parentElement.id.split('_')[1];
+        //console.log(ruleItemId, " --- ruleItemId")
+        if(ruleItemId == undefined) return;
+        document.getElementById('menuDetailsPage').style.display = 'flex'
+        //console.log(rulesDataList[ruleItemId])
+        document.getElementById('menuDetailsTitle').innerHTML = rulesDataList[ruleItemId].ID;
+
+        // Add Listener
+        document.getElementById('backToRuleMenuBtn').addEventListener('touchstart', onBackToRuleTouchStart)
+        document.getElementById('backToRuleMenuBtn').addEventListener('touchend', onBackToRuleTouchEnd)
+
+        // Fill data based on menu clicked
+        FillSelectedMenuDetailsData(ruleItemId)
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} ruleItemId 
+     */
+    function FillSelectedMenuDetailsData(ruleItemId) {
+        //console.log(getMenuDetailItemEndIndex(ruleItemId))
+        //console.log(languageStepsData[ruleItemId])
+        //FillSelectedMenuDetailsData()
+        document.getElementById('menuDetails').innerHTML = ''
+
+        let endIndex = getMenuDetailItemEndIndex(ruleItemId)
+        let menuItemToDisplay = ''
+        for(var i=Number(ruleItemId)+1; i<endIndex; i++) {
+            //console.log(rulesDataList[i], ' DATA TO DISPLAY')
+            if(rulesDataList[i].Type == 'text') {
+                //menuItemToDisplay = rulesDataList[i].Text
+                // Format Text for adding special icons
+                let mWordBerry = rulesDataList[i].Text.replaceAll('[BERRY]', `<img class="specialIcons" src="${berryImgPath}"</img>`)
+                let mWordDice = mWordBerry.replaceAll('[DICE]', `<img class="specialIcons" src="${diceImgPath}"</img>`)
+                let mWordNut = mWordDice.replaceAll('[NUT]', `<img class="specialIcons" src="${nutImgPath}"</img>`)
+                let mWordBug = mWordNut.replaceAll('[BUG]', `<img class="specialIcons" src="${bugImgPath}"</img>`)
+                let mWordOops = mWordBug.replaceAll('[OOPS]', `<img class="specialIcons" src="${oopsImgPath}"</img>`)
+                //console.log(mWordOops, " final")
+
+                //document.getElementById('menuDetails').innerHTML += `<p style="margin-top:3vh; font-size:3vh; line-height:1.1; width:100%; color:white" >${rulesDataList[i].Text}</p>`
+
+                document.getElementById('menuDetails').innerHTML += `<p style="margin-top:3vh; font-size:3vh; line-height:1.1; width:100%; color:white" >${mWordOops}</p>`
+
+            } else if(rulesDataList[i].Type == 'image') {
+                let imagePath = ''
+                if (rulesDataList[i].Text.includes("https://drive.google.com")) {
+                    let imgid = rulesDataList[i].Text.split('https://drive.google.com')[1].split('/')[3];
+                    let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
+                    // image from spreadsheet id folder
+                    imagePath = '../steps/sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                } else {
+                    // Cache Image
+                    let name = rulesDataList[i].Text.split('/')
+                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                    // image from spreadsheet id folder
+                    imagePath = '../steps/sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                }
+                document.getElementById('menuDetails').innerHTML += `<div style="margin-top:3vh; font-size:3vh; line-height:1.1; width:100%"><img src=${imagePath} alt=""</img></div>`
+            }
+        }
+        console.log(menuItemToDisplay)
+        //document.getElementById('menuDetails').innerHTML = menuItemToDisplay;
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} index 
+     */
+    function getMenuDetailItemEndIndex(index) {
+        let lastIndex = -1
+        for(var i=Number(index)+1; i<rulesDataList.length; i++) {
+            /* if(rulesDataList[i].ID != '') {
+                lastIndex = i */
+                //console.log(i+1)
+                //console.log(rulesDataList[i], " --- ")
+                /* return lastIndex
+            }  */
+           //console.log(rulesDataList[i])
+           if(rulesDataList[i].Type == 'menu') {
+            // console.log(i, " menu Index")
+            lastIndex = i;
+            return lastIndex;
+           }
+        }
+        return lastIndex;
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} event 
+     */
+    function onBackToRuleTouchStart(event) {
+        if(event.cancelable) event.preventDefault();
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} event 
+     */
+    function onBackToRuleTouchEnd(event) {
+        if(event.cancelable) event.preventDefault();
+        document.getElementById('menuDetailsPage').style.display = 'none'
+        document.getElementById('menuDetailsTitle').innerHTML = '';
+    }
+
     ///////////////////////////////////////////////////////////////////////////////
     /**
      * hideProgressBar

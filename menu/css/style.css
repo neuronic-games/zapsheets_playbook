@@ -3050,3 +3050,19 @@ input[type=text]:focus {
 a {
   color: #F7AE50 !important;
 }
+/***********************************************************************/
+ul {
+  color: white;
+  list-style-type: disc;
+  list-style-position: inside;
+  font-size: 2.5vh;
+  line-height: 1.2;
+  left: 1vh;
+  position: relative;
+}
+.specialIcons {
+  position: relative;
+  width: 4vh;
+  height: 4vh;
+}
+/***********************************************************************/

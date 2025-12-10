@@ -83,7 +83,7 @@ function getCurrentVersion() {
         var newScript = document.createElement('script');
         newScript.id = 'version_Script';
         newScript.type = 'text/javascript';
-        newScript.src = 'js/version.js?version=' + Math.random();
+        newScript.src = 'js/version.js?version=' + UIVersion;
         document.getElementsByTagName('head')[0].appendChild(newScript);
     }
 }
@@ -98,7 +98,7 @@ function getCurrentGameMainVersion() {
         var floristryScript = document.createElement('script');
         floristryScript.type = 'text/javascript';
         floristryScript.id = 'floristry_Script';
-        floristryScript.src = 'js/menuMain.js?version=' + Math.random();
+        floristryScript.src = 'js/menuMain.js?version=' + UIVersion;
         floristryScript.onload = checkLoadStat()
         document.getElementsByTagName('head')[0].appendChild(floristryScript);
     }
@@ -109,7 +109,7 @@ function getCurrentMenuVersion() {
         var menuScript = document.createElement('script');
         menuScript.type = 'text/javascript';
         menuScript.id = 'floristry_Script';
-        menuScript.src = 'js/menu.js?version=' + Math.random();
+        menuScript.src = 'js/menu.js?version=' + UIVersion;
         menuScript.onload = checkLoadStatMenu()
         document.getElementsByTagName('head')[0].appendChild(menuScript);
     }
@@ -122,7 +122,7 @@ function getZapsheetsCore() {
     var funtionScript = document.createElement('script');
     funtionScript.type = 'text/javascript';
     funtionScript.id = 'function_Script';
-    funtionScript.src = 'js/zapsheetsCore.js?version=' + Math.random();
+    funtionScript.src = 'js/zapsheetsCore.js?version=' + UIVersion;
     funtionScript.onload = checkLoadStatCore()
     document.getElementsByTagName('head')[0].appendChild(funtionScript);
 }
@@ -180,7 +180,7 @@ function checkAppVersionStatus() {
         clearTimeout(versionPeriodicTimer)
         if(window.navigator.onLine == true) {
             // get new app version
-            getCurrentVersion();
+            getCurrentVersion(UIVersion);
                 if(_version != currentRunningVersion) {
                     currentRunningVersion = _version
                     console.log("NEW Version")

@@ -28,11 +28,11 @@
       rel="stylesheet"
       href="./css/minireset.min.css"
     />
-    <link rel="stylesheet" href="css/style.css?version=3.8" />
+    <!-- <link rel="stylesheet" href="css/style.css?version=3.8" /> -->
     <link rel="icon" type="image/x-icon" href="img/step_icon_new.webp?version=3.2" />
     <link rel="apple-touch-icon" href="img/step_new.webp?version=3.2" />
   </head>
-  <body id="menuBody" style="position: fixed; min-height: 100vh !important; background-color: #F9F3E3" onpagehide="CloseIFrame()">
+  <body id="menuBody" style="position: fixed; min-height: 100vh !important; background-color: #F9F3E3 !important" onpagehide="CloseIFrame()">
     <!--------------------------------------------------------------------->
     <div id="menuSnippetContainer" style="position: absolute; width: 100%; height: 100vh;">
       <div id="loadingScreen" style="position: absolute; top: 0; left: 0; z-index: 99999; width: 100%; display: flex; justify-content: space-evenly; height: 100vh;">
@@ -69,7 +69,7 @@
           </div>
         </div>
         <!----------BUTTONS-------------------------------------------------------------->
-        <div id="buttonContainer" style="position: absolute; width: 100%; height: 25%; /* background-color: #683F97; */ bottom: 15vh; display: flex; justify-content: flex-end; align-items: center; flex-direction: column;">
+        <div id="buttonContainer" style="position: absolute; width: 100%; height: 25%; /* background-color: #683F97; */ bottom: 15vh; display: flex; justify-content: flex-end; align-items: center; flex-direction: column; font-size: 3vh !important;">
             <div id="viewIconText" style="position: relative; display: flex; justify-content: center; margin-top: 2.5vh; width: 70%; flex-direction: column;">
             </div>
         </div>
@@ -147,13 +147,42 @@
     <script src="./js/device-uuid.min.js?version=1.0"></script>
     <script src="./js/md5.js?version=1.0"></script>
     <script src="./js/createjs.min.js?version=3.9"></script>
-    <script src="./js/JSController.js?version=2.7"></script>
+    <!-- <script src="./js/JSController.js?version=2.7"></script> -->
     <script src="./js/devicedetector-min.js"></script>
     <!------------------------------------------------------------------------->
     <script>
       // To get UIVersion from Parent HTML for cache/dynamic loading
-      //const selfUrl = new URL(self.location);
-      //console.log(selfUrl.searchParams.get('version'));
+      
+      const selfUrl = new URL(self.location);
+      console.log(selfUrl.searchParams.get('version').split('?')[0]);
+      let UIVersion = selfUrl.searchParams.get('version').split('?')[0]
+      
+      // Load JSController File for menu section
+      getLatestGameCSSFile(UIVersion)
+      getControllerVersion(UIVersion)
+      /////////////////////////////////////////////////////////////////////////////////
+      /*
+      * getControllerVersion
+      */
+      function getControllerVersion(_ver) {
+        var conScript = document.createElement('script');
+        conScript.id = 'controller_Script';
+        conScript.type = 'text/javascript';
+        conScript.src = './js/JSController.js?version=' + _ver;
+        document.getElementsByTagName('head')[0].appendChild(conScript);
+      }
+      /////////////////////////////////////////////////////////////////////////////////
+      /*
+      * getLatestGameCSSFile
+      */
+      function getLatestGameCSSFile(_ver) {
+        let cssLink = document.createElement('link');
+        cssLink.rel = 'stylesheet';
+        cssLink.type = 'text/css';
+        cssLink.href = './css/style.css?version=' + _ver;
+        document.getElementsByTagName('head')[0].appendChild(cssLink);
+      }
+
       if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
         document.getElementById('buttonContainer').style.setProperty("bottom","2vh");
       }

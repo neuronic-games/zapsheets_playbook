@@ -155,8 +155,10 @@ $(document).ready(function() {
         // Loading menu-en.json
         setTimeout(function() {
             var settingRequest = $.ajax({
-                url: '../steps/sheets/' + sheet_Id + "/settings.json?version=" + Math.random(), 
-                cache: false, 
+                //url: '../steps/sheets/' + sheet_Id + "/settings.json?version=" + Math.random(),
+                url: '../steps/sheets/' + sheet_Id + "/settings.json?version=" + UIVersion, 
+                /* cache: false, */ 
+                cache: true,
                 type: 'GET',
                 dataType: "text",
                 success: function (response) {
@@ -297,8 +299,10 @@ $(document).ready(function() {
     function loadMenuJSON() {
         // Loading steps json
         var langRequest = $.ajax({
-            url: '../steps/sheets/' + sheet_Id + "/menu-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + Math.random(), 
-            cache: false, 
+            //url: '../steps/sheets/' + sheet_Id + "/menu-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + Math.random(), 
+            url: '../steps/sheets/' + sheet_Id + "/menu-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion, 
+            /* cache: false, */
+            cache: true, 
             //async: false,
             type: 'GET',
             dataType: "text",
@@ -489,7 +493,6 @@ $(document).ready(function() {
                             imgLoaded++
                             // New to show only When load completed
                             preCacheImages[i].onload = checkImageLoadStatus(imgLoaded)
-
                         } else {
                             imgLoaded++
                             showCacheMessageInfo(imgLoaded)
@@ -720,7 +723,7 @@ $(document).ready(function() {
         for(var i=0; i<languageStepsData.length; i++) {
             if(languageStepsData[i].Type == 'button') {
                 buttonElement += `<div id="viewIconContainer" style="-webkit-touch-callout: none; user-select: none; -moz-user-select: none; -webkit-user-select: none; width: 100%; height: 5vh; border-radius: 15px; background-color: #F7AE4F; position: relative; margin-bottom: 2vh; ">
-                <p id="menuButtonLabel_${i}" style="position: absolute;
+                <p id="menuButtonLabel_${i}" style="position: relative;
                 top: 50%;
                 width: 95%;
                 height: auto;
@@ -756,7 +759,11 @@ $(document).ready(function() {
                     // Add events
                     document.getElementById('menuButtonLabel_' + i).addEventListener('touchstart', onMenuTouchStart)
                     document.getElementById('menuButtonLabel_' + i).addEventListener('touchend', onMenuTouchEnd)
-                    console.log("EENTS DONE")
+
+                    document.getElementById('menuButtonLabel_' + i).addEventListener('mousedown', onMenuTouchStart)
+                    document.getElementById('menuButtonLabel_' + i).addEventListener('mouseup', onMenuTouchEnd)
+
+                    console.log("MENU DONE")
                 }
             }
         }, 250)
@@ -795,6 +802,10 @@ $(document).ready(function() {
         // event listener back button
         document.getElementById('backToMenuBtn').addEventListener('touchstart', onBackMenuTouchStart)
         document.getElementById('backToMenuBtn').addEventListener('touchend', onBackMenuTouchEnd)
+
+        document.getElementById('backToMenuBtn').addEventListener('mousedown', onBackMenuTouchStart)
+        document.getElementById('backToMenuBtn').addEventListener('mouseup', onBackMenuTouchEnd)
+
         // Fill data based on menu clicked
         FillSelectedMenuData(languageStepsData[sheetParamData].Text)
     }
@@ -825,6 +836,9 @@ $(document).ready(function() {
         // event listener back button
         document.getElementById('backToMenuBtn').addEventListener('touchstart', onBackMenuTouchStart)
         document.getElementById('backToMenuBtn').addEventListener('touchend', onBackMenuTouchEnd)
+
+        document.getElementById('backToMenuBtn').addEventListener('mousedown', onBackMenuTouchStart)
+        document.getElementById('backToMenuBtn').addEventListener('mouseup', onBackMenuTouchEnd)
         // Fill data based on menu clicked
         FillSelectedMenuData(languageStepsData[event.target.id.split('_')[1]].Text)
     }
@@ -875,6 +889,9 @@ $(document).ready(function() {
     function DoDownloadRulesBtnEvents() {
         document.getElementById('downloadBtn').addEventListener('touchstart', onDownloadBtnTouchStart)
         document.getElementById('downloadBtn').addEventListener('touchend', onDownloadBtnTouchEnd)
+
+        document.getElementById('downloadBtn').addEventListener('mousedown', onDownloadBtnTouchStart)
+        document.getElementById('downloadBtn').addEventListener('mouseup', onDownloadBtnTouchEnd)
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -907,9 +924,11 @@ $(document).ready(function() {
      */
     function LoadGameFaqs() {
         setTimeout(function() {
-            var RulesRequest = $.ajax({
-                url: '../steps/sheets/' + sheet_Id + "/faqs-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + Math.random(),
-                cache: false, 
+            var FaqsRequest = $.ajax({
+                //url: '../steps/sheets/' + sheet_Id + "/faqs-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + Math.random(),
+                url: '../steps/sheets/' + sheet_Id + "/faqs-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion,
+                /* cache: false, */ 
+                cache: true,
                 type: 'GET',
                 dataType: "text",
                 success: function (response) {
@@ -945,6 +964,10 @@ $(document).ready(function() {
                                         // Add events
                                         document.getElementById('faqItem_' + i).addEventListener('touchstart', onFaqItemTouchStart)
                                         document.getElementById('faqItem_' + i).addEventListener('touchend', onFaqItemTouchEnd)
+
+                                        document.getElementById('faqItem_' + i).addEventListener('mousedown', onFaqItemTouchStart)
+                                        document.getElementById('faqItem_' + i).addEventListener('mouseup', onFaqItemTouchEnd)
+
                                         console.log("FAQs DONE")
                                     }
                                 }
@@ -954,15 +977,15 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    console.log("EEEEE - Faqs data missing..")
-                    document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : Rules</font><br>'
+                    console.log("ERROR - Faqs data missing..")
+                    document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : Faqs</font><br>'
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
             })
             // Clear memory
-            RulesRequest.onreadystatechange = null;
-            RulesRequest.abort = null;
-            RulesRequest = null;
+            FaqsRequest.onreadystatechange = null;
+            FaqsRequest.abort = null;
+            FaqsRequest = null;
         }, 1000)
     }
     ///////////////////////////////////////////////////////////////////////////////
@@ -1007,8 +1030,10 @@ $(document).ready(function() {
     function LoadGameRules() {
         setTimeout(function() {
             var RulesRequest = $.ajax({
-                url: '../steps/sheets/' + sheet_Id + "/rules-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + Math.random(),
-                cache: false, 
+                //url: '../steps/sheets/' + sheet_Id + "/rules-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + Math.random(),
+                url: '../steps/sheets/' + sheet_Id + "/rules-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion,
+                /* cache: false, */ 
+                cache: true,
                 type: 'GET',
                 dataType: "text",
                 success: function (response) {
@@ -1043,7 +1068,11 @@ $(document).ready(function() {
                                     // Add events
                                     document.getElementById('rulesItem_' + i).addEventListener('touchstart', onRuleItemTouchStart)
                                     document.getElementById('rulesItem_' + i).addEventListener('touchend', onRuleItemTouchEnd)
-                                    console.log("RULEs DONE")
+
+                                    document.getElementById('rulesItem_' + i).addEventListener('mousedown', onRuleItemTouchStart)
+                                    document.getElementById('rulesItem_' + i).addEventListener('mouseup', onRuleItemTouchEnd)
+
+                                    console.log("RULES DONE")
                                 }
                             }
                             DoDownloadRulesBtnEvents();
@@ -1051,7 +1080,7 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    console.log("EEEEE - Rules data missing..")
+                    console.log("ERROR - Rules data missing..")
                     document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : Rules</font><br>'
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
@@ -1087,6 +1116,9 @@ $(document).ready(function() {
         // Add Listener
         document.getElementById('backToRuleMenuBtn').addEventListener('touchstart', onBackToRuleTouchStart)
         document.getElementById('backToRuleMenuBtn').addEventListener('touchend', onBackToRuleTouchEnd)
+
+        document.getElementById('backToRuleMenuBtn').addEventListener('mousedown', onBackToRuleTouchStart)
+        document.getElementById('backToRuleMenuBtn').addEventListener('mouseup', onBackToRuleTouchEnd)
 
         // Fill data based on menu clicked
         FillSelectedMenuDetailsData(ruleItemId)

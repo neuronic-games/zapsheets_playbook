@@ -123,6 +123,21 @@ function checkLoadStatMain() {
  * doCheckOrientation
  */
 function doCheckOrientation() {
+    console.log(DetectSpecificDevice(), " DT")
+    if(DetectSpecificDevice() == 'desktop') {
+        document.getElementById('useMode').style.display = 'none'
+        if(window.orientation != 0) {
+            
+            pause = false;
+            document.getElementById('useModeBG').style.display = 'none';
+        }
+
+        //console.log(window.innerWidth, " --- ")
+        //document.getElementById('content').style.width = '400px !important'
+        //document.getElementById('content').style.left = (window.innerWidth-400)/2 + 'px !important'; 
+
+        return
+    }
     if(portrait.matches) {
         document.getElementById('useMode').style.display = 'none'
         pause = false;
@@ -174,3 +189,18 @@ function getUrlVars() {
     return vars;
 }
 //////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * 
+ * @returns 
+ */
+function DetectSpecificDevice() {
+    var OSType = null;
+    if(deviceDetector.device == 'tablet') {
+        OSType = 'iPad'
+    } else if(deviceDetector.device == 'desktop') {
+        OSType = 'desktop'
+    } else {
+        OSType = 'phone'
+    }
+    return OSType;
+}

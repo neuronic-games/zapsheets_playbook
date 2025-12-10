@@ -1511,13 +1511,13 @@ $(document).ready(function() {
      * @returns 
      */
     function DetectSpecificDevice() {
-    var OSType = null;
-    if(deviceDetector.device == 'tablet' || deviceDetector.device == 'desktop') {
-        OSType = 'iPad'
-    } else {
-        OSType = 'phone'
-    }
-    return OSType;
+        var OSType = null;
+        if(deviceDetector.device == 'tablet' || deviceDetector.device == 'desktop') {
+            OSType = 'iPad'
+        } else {
+            OSType = 'phone'
+        }
+        return OSType;
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**

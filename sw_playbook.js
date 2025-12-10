@@ -7,7 +7,7 @@ let jasonPath = './steps/'
 // For Live
 /* let jasonPath = 'https://zapsheets.com/playbook/steps/' */
 /////////////////////////////////////////////////////////////////////////////////////
-const CACHE_NAME = {name: 'playbookSW_v5'}
+const CACHE_NAME = {name: 'playbookSW_v7'}
 /////////////////////////////////////////////////////////////////////////////////////
 // Assets container
 let STATIC_ASSETS = []
@@ -44,6 +44,7 @@ function createCache(cacheVersion) {
 
                 // UI CSS
                 './css/style.css?version=' + dyVersion,
+                './menu/css/style.css?version=' + dyVersion,
 
                 // UI Images
                 './img/logo.png',
@@ -55,6 +56,7 @@ function createCache(cacheVersion) {
 
                 // JS Files
                 './js/JSController.js?version=' + dyVersion,
+                './menu/js/JSController.js?version=' + dyVersion,
 
                 // Language JSON Files
                 jasonPath + 'sheets/' + sheet_Id + '/settings.json?version=' + dyVersion,

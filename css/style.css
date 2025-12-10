@@ -1765,7 +1765,7 @@ body {
     font-size: 11vw !important;
     bottom: 9vw !important;
   }
-  #uiSnippetContainer {
+  #uiSnippetContainer, #content {
     width: 70% !important;
     height: 100% !important;
     background-color: #000000 !important;
@@ -1968,7 +1968,7 @@ body {
     font-size: 11vw !important;
     bottom: 9vw !important;
   }
-  #uiSnippetContainer {
+  #uiSnippetContainer, #content {
     width: 70% !important;
     height: 100% !important;
     background-color: #000000 !important;
@@ -2121,7 +2121,7 @@ body {
     font-size: 11vw !important;
     bottom: 9vw !important;
   }
-  #uiSnippetContainer {
+  #uiSnippetContainer, #content {
     width: 70% !important;
     height: 100% !important;
     background-color: #000000 !important;
@@ -2274,7 +2274,7 @@ body {
     font-size: 11vw !important;
     bottom: 9vw !important;
   }
-  #uiSnippetContainer {
+  #uiSnippetContainer, #content {
     width: 80% !important;
     height: 100% !important;
     background-color: #000000 !important;
@@ -2427,7 +2427,7 @@ body {
     font-size: 11vw !important;
     bottom: 9vw !important;
   }
-  #uiSnippetContainer {
+  #uiSnippetContainer, #content {
     width: 70% !important;
     height: 100% !important;
     background-color: #000000 !important;
@@ -2580,7 +2580,7 @@ body {
       font-size: 11vw !important;
       bottom: 9vw !important;
     }
-    #uiSnippetContainer {
+    #uiSnippetContainer, #content {
       width: 70% !important;
       height: 100% !important;
       background-color: #000000 !important;
@@ -2734,7 +2734,7 @@ body {
     font-size: 11vw !important;
     bottom: 9vw !important;
   }
-  #uiSnippetContainer {
+  #uiSnippetContainer, #content {
     width: 70% !important;
     height: 100% !important;
     background-color: #000000 !important;
@@ -3014,6 +3014,10 @@ body {
   #ExitButtonPanel {
     height: 15vh !important;
     pointer-events: auto !important;
+  }
+  #content {
+    width: 34% !important;
+    left: 33% !important;
   }
 }
 /***********************************************************************/

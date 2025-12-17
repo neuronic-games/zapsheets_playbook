@@ -722,7 +722,7 @@ $(document).ready(function() {
         let buttonElement = ''
         for(var i=0; i<languageStepsData.length; i++) {
             if(languageStepsData[i].Type == 'button') {
-                buttonElement += `<div id="viewIconContainer" style="-webkit-touch-callout: none; user-select: none; -moz-user-select: none; -webkit-user-select: none; width: 100%; height: 5vh; border-radius: 15px; background-color: #F7AE4F; position: relative; margin-bottom: 2vh; ">
+                buttonElement += `<div id="viewIconContainer" style="-webkit-touch-callout: none; user-select: none; -moz-user-select: none; -webkit-user-select: none; width: 100%; height: 5vh; border-radius: 15px; background-color: #F7AE4F; position: relative; margin-bottom: 2vh; cursor: pointer;">
                 <p id="menuButtonLabel_${i}" style="position: relative;
                 top: 50%;
                 width: 95%;
@@ -742,7 +742,8 @@ $(document).ready(function() {
                 user-select: none;
                 overflow: hidden;
                 word-break: break-all;
-                margin-top: .3vh;">
+                margin-top: .3vh;
+                cursor: pointer;">
                 </p>
               </div>`
             }
@@ -762,6 +763,7 @@ $(document).ready(function() {
 
                     document.getElementById('menuButtonLabel_' + i).addEventListener('mousedown', onMenuTouchStart)
                     document.getElementById('menuButtonLabel_' + i).addEventListener('mouseup', onMenuTouchEnd)
+                    document.getElementById('menuButtonLabel_' + i).addEventListener('mouseout', onMenuTouchOut)
 
                     console.log("MENU DONE")
                 }
@@ -816,15 +818,34 @@ $(document).ready(function() {
      */
     function onMenuTouchStart(event) {
         event.preventDefault();
-        
+        // Add pulsating effect
+        //console.log(event.target.parentElement)
+        event.target.parentElement.classList.add('pulse-button');
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
      * 
      * @param {*} event 
      */
+    function onMenuTouchOut(event) {
+        //console.log("ASASASASA")
+        event.preventDefault();
+        event.target.parentElement.classList.remove('pulse-button');
+    }
+    ///////////////////////////////////////////////////////////////////////////////s
+    /**
+     * 
+     * @param {*} event 
+     */
     function onMenuTouchEnd(event) {
         event.preventDefault();
+        event.target.parentElement.classList.remove('pulse-button');
+
+        let touchStatus = handleTouchEnd(event);
+        if(touchStatus == false) {
+            return;
+        }
+
         let menuTitleText = ''
         document.getElementById('menuPage').style.display = 'block'
         if(languageStepsData[event.target.id.split('_')[1]].Text.toLowerCase().indexOf('faq') != -1) {
@@ -839,6 +860,7 @@ $(document).ready(function() {
 
         document.getElementById('backToMenuBtn').addEventListener('mousedown', onBackMenuTouchStart)
         document.getElementById('backToMenuBtn').addEventListener('mouseup', onBackMenuTouchEnd)
+        document.getElementById('backToMenuBtn').addEventListener('mouseout', onBackMenuTouchOut)
         // Fill data based on menu clicked
         FillSelectedMenuData(languageStepsData[event.target.id.split('_')[1]].Text)
     }
@@ -847,8 +869,18 @@ $(document).ready(function() {
      * 
      * @param {*} event 
      */
+    function onBackMenuTouchOut(event) {
+        event.preventDefault();
+        event.target.classList.remove('pulse-button');
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} event 
+     */
     function onBackMenuTouchStart(event) {
         event.preventDefault();
+        event.target.classList.add('pulse-button');
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -857,6 +889,12 @@ $(document).ready(function() {
      */
     function onBackMenuTouchEnd(event) {
         event.preventDefault();
+        event.target.classList.remove('pulse-button');
+        let touchStatus = handleTouchEnd(event);
+        if(touchStatus == false) {
+            return;
+        }
+
         console.log('Back menu click')
         document.getElementById('menuPage').style.display = 'none'
         document.getElementById('menuTitle').innerHTML = '';
@@ -892,6 +930,16 @@ $(document).ready(function() {
 
         document.getElementById('downloadBtn').addEventListener('mousedown', onDownloadBtnTouchStart)
         document.getElementById('downloadBtn').addEventListener('mouseup', onDownloadBtnTouchEnd)
+        document.getElementById('downloadBtn').addEventListener('mouseout', onDownloadBtnTouchOut)
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} event 
+     */
+    function onDownloadBtnTouchOut(event) {
+        event.preventDefault();
+        event.target.classList.remove('pulse-button');
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -900,6 +948,7 @@ $(document).ready(function() {
      */
     function onDownloadBtnTouchStart(event) {
         event.preventDefault();
+        event.target.classList.add('pulse-button');
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -908,6 +957,12 @@ $(document).ready(function() {
      */
     function onDownloadBtnTouchEnd(event) {
         event.preventDefault();
+        event.target.classList.remove('pulse-button');
+        let touchStatus = handleTouchEnd(event);
+        if(touchStatus == false) {
+            return;
+        }
+
         let downloadURL = ''
         for(var i=0; i<rulesDataList.length; i++) {
             if(rulesDataList[i].ID == 'DOWNLOAD_URL') {
@@ -952,7 +1007,7 @@ $(document).ready(function() {
                             let faqList = ''
                             for(var i=0; i<faqsDataList.length; i++) {
                                 if(faqsDataList[i].Type == 'faq') {
-                                    faqList += `<li id="faqItem_${i}" style="color: lightgray; left: 4vh; position: relative;font-size: 3.5vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh;"> <span style="position: relative; top: 0vh !important; color: #F7AE50; font-size: 3.5vh;">${faqsDataList[i].Question}</span><li id="faq_${i}" style="color: #2D2C2B; left: 2vh; position: relative;font-size: 3vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh; display:none"><span style="position: relative; top: 0vh !important; color: #FFFFFF; font-size: 3vh;">${faqsDataList[i].Answer}</span></li></li>`
+                                    faqList += `<li id="faqItem_${i}" style="color: lightgray; left: 4vh; position: relative;font-size: 3.5vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh; cursor: pointer;"> <span style="position: relative; top: 0vh !important; color: #F7AE50; font-size: 3.5vh;">${faqsDataList[i].Question}</span><li id="faq_${i}" style="color: #2D2C2B; left: 2vh; position: relative;font-size: 3vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh; display:none"><span style="position: relative; top: 0vh !important; color: #FFFFFF; font-size: 3vh;">${faqsDataList[i].Answer}</span></li></li>`
                                 }
                             }
                             document.getElementById('menuList').innerHTML = faqList;
@@ -1003,6 +1058,12 @@ $(document).ready(function() {
      */
     function onFaqItemTouchEnd(event) {
         if(event.cancelable) event.preventDefault();
+
+        let touchStatus = handleTouchEnd(event);
+        if(touchStatus == false) {
+            return;
+        }
+
         let faqItemId = event.target.parentElement.id.split('_')[1];
         if(faqItemId == undefined) return;
         activateFaqElement(faqItemId)
@@ -1057,7 +1118,7 @@ $(document).ready(function() {
                             let ruleList = ''
                             for(var i=0; i<rulesDataList.length; i++) {
                                 if(rulesDataList[i].Type == 'menu') {
-                                    ruleList += `<li id="rulesItem_${i}" style="color: lightgray; left: 4vh; position: relative;font-size: 3.5vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh;"> <span style="position: relative; top: 0vh !important; color: #F7AE50; font-size: 3.5vh;">${rulesDataList[i].ID}</span></li>`
+                                    ruleList += `<li id="rulesItem_${i}" style="color: lightgray; left: 4vh; position: relative;font-size: 3.5vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh; cursor: pointer;"> <span style="position: relative; top: 0vh !important; color: #F7AE50; font-size: 3.5vh;">${rulesDataList[i].ID}</span></li>`
                                 }
                             }
                             document.getElementById('menuList').innerHTML = ruleList;
@@ -1106,6 +1167,11 @@ $(document).ready(function() {
      */
     function onRuleItemTouchEnd(event) {
         if(event.cancelable) event.preventDefault();
+        let touchStatus = handleTouchEnd(event);
+        if(touchStatus == false) {
+            return;
+        }
+
         let ruleItemId = event.target.parentElement.id.split('_')[1];
         //console.log(ruleItemId, " --- ruleItemId")
         if(ruleItemId == undefined) return;
@@ -1119,9 +1185,19 @@ $(document).ready(function() {
 
         document.getElementById('backToRuleMenuBtn').addEventListener('mousedown', onBackToRuleTouchStart)
         document.getElementById('backToRuleMenuBtn').addEventListener('mouseup', onBackToRuleTouchEnd)
+        document.getElementById('backToRuleMenuBtn').addEventListener('mouseout', onBackToRuleTouchOut)
 
         // Fill data based on menu clicked
         FillSelectedMenuDetailsData(ruleItemId)
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} event 
+     */
+    function onBackToRuleTouchOut(event) {
+        event.preventDefault();
+        event.target.classList.remove('pulse-button');
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -1202,6 +1278,7 @@ $(document).ready(function() {
      */
     function onBackToRuleTouchStart(event) {
         if(event.cancelable) event.preventDefault();
+        event.target.classList.add('pulse-button');
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -1210,6 +1287,12 @@ $(document).ready(function() {
      */
     function onBackToRuleTouchEnd(event) {
         if(event.cancelable) event.preventDefault();
+        event.target.classList.remove('pulse-button');
+        let touchStatus = handleTouchEnd(event);
+        if(touchStatus == false) {
+            return;
+        }
+
         document.getElementById('menuDetailsPage').style.display = 'none'
         document.getElementById('menuDetailsTitle').innerHTML = '';
     }
@@ -1254,5 +1337,34 @@ $(document).ready(function() {
         }
         return outputStr;
     }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} event 
+     * @returns 
+     */
+    function handleTouchEnd(event) {
+        let inButton = false;
+        let touch = null;
+        if(event.type == 'mouseup') {
+            touch = event;
+        } else {
+            touch = event.changedTouches[0];
+        }
+        const element = event.target; // Or use the element from step 1
+        const rect = element.parentElement.getBoundingClientRect();
+
+        //console.log(element, " --- ", element.parentElement)
+
+        if(touch.clientX >= rect.left && touch.clientX <= rect.right && touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+            //console.log("Inside button")
+            inButton = true;
+        } else {
+            //console.log("outside button")
+            inButton = false
+        }
+        return inButton;
+    }
+    ///////////////////////////////////////////////////////////////////////////////
 })
     

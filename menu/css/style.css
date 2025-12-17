@@ -3066,3 +3066,26 @@ ul {
   font-size: 3vh !important;
 }
 /***********************************************************************/
+.pulse-button {
+  position: relative;
+  border: none;
+  border-radius: 50%;
+  animation: pulse-animation 1.5s;
+  animation-play-state: running;
+}
+
+@keyframes pulse-animation {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0px rgba(255, 255, 255, 0.5);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 25px rgba(255, 255, 255, 0.001);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 15px rgba(255, 255, 255, 0);
+  }
+}
+/***********************************************************************/

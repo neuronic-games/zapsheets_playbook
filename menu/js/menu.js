@@ -809,7 +809,7 @@ $(document).ready(function() {
         document.getElementById('backToMenuBtn').addEventListener('mouseup', onBackMenuTouchEnd)
 
         // Fill data based on menu clicked
-        FillSelectedMenuData(languageStepsData[sheetParamData].Text)
+        FillSelectedMenuData(languageStepsData[sheetParamData].Text, languageStepsData[sheetParamData].Next)
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -862,7 +862,7 @@ $(document).ready(function() {
         document.getElementById('backToMenuBtn').addEventListener('mouseup', onBackMenuTouchEnd)
         document.getElementById('backToMenuBtn').addEventListener('mouseout', onBackMenuTouchOut)
         // Fill data based on menu clicked
-        FillSelectedMenuData(languageStepsData[event.target.id.split('_')[1]].Text)
+        FillSelectedMenuData(languageStepsData[event.target.id.split('_')[1]].Text, languageStepsData[event.target.id.split('_')[1]].Next)
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -904,21 +904,49 @@ $(document).ready(function() {
      * 
      * @param {*} menuType 
      */
-    function FillSelectedMenuData(menuType) {
-        console.log(menuType, " --- ")
+    function FillSelectedMenuData(menuType, toHold) {
+        //console.log(menuType, " --- ", toHold)
         document.getElementById('menuList').innerHTML = ''
-        if(menuType.toLowerCase().indexOf('faq') != -1) {
+        /* if(menuType.toLowerCase().indexOf('faq') != -1) {
             console.log('faqs selected')
             document.getElementById('downloadBtn').style.display = 'none'
+            document.getElementById('contentSteps').style.display = 'none'
             LoadGameFaqs()
         } else if(menuType.toLowerCase().indexOf('rule') != -1) {
             console.log('rules selected')
             document.getElementById('downloadBtn').style.display = 'block'
+            document.getElementById('contentSteps').style.display = 'none'
             LoadGameRules()
         } else {
             console.log('teach me selected')
-            document.getElementById('downloadBtn').style.display = 'none' 
+            document.getElementById('downloadBtn').style.display = 'none'
+            document.getElementById('contentSteps').style.display = 'block'
+            LoadGameSteps();
+        } */
+       if(toHold == 'faqs' || toHold == 'faq') {
+            console.log('faqs selected')
+            document.getElementById('downloadBtn').style.display = 'none'
+            document.getElementById('contentSteps').style.display = 'none'
+            LoadGameFaqs()
+        } else if(toHold == 'rules' || toHold == 'rule') {
+            console.log('rules selected')
+            document.getElementById('downloadBtn').style.display = 'block'
+            document.getElementById('contentSteps').style.display = 'none'
+            LoadGameRules()
+        } else if(toHold == 'steps' || toHold == 'step') {
+            console.log('teach me selected')
+            document.getElementById('downloadBtn').style.display = 'none'
+            document.getElementById('contentSteps').style.display = 'block'
+            LoadGameSteps();
         }
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     */
+    function LoadGameSteps() {
+        let _sheet = '../steps/index.html?version=' + UIVersion;
+        $("#contentSteps").attr("src", _sheet + "?code=" + activeLang + "&id=" + sheet_Id);
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -1364,6 +1392,32 @@ $(document).ready(function() {
             inButton = false
         }
         return inButton;
+    }
+    /////////////////////////////////////////////////////////////////////////////////
+    /**
+     * // iFrame message listener
+     */
+    window.addEventListener('message', function(event) {
+        if(JSON.parse(event.data).message == 'closeFrame') {
+            HideIFrame();
+        }
+        if(JSON.parse(event.data).message == 'toggleFrame') {
+            ToggleIFrame();
+        }
+    })
+    ///////////////////////////////////////////////////////////////////////////////
+    function HideIFrame() {
+        //$("#contentSteps").effect( "drop", "fast" );
+        $("#contentSteps").attr("src",'');
+        document.getElementById('menuPage').style.display = 'none'
+        document.getElementById('menuTitle').innerHTML = '';
+    }
+    /////////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     */
+    function ToggleIFrame(event) {
+        //$( "#contentSteps" ).effect( "drop", "fast" );
     }
     ///////////////////////////////////////////////////////////////////////////////
 })

@@ -4,7 +4,7 @@
  * Ready events
  */
 $(document).ready(function() {
-    console.log('READY STEPS')
+    console.log('READY STEPS NEW')
     // Steps Variables
     let stepIndex = 0
     let languageStepsData = [];
@@ -580,6 +580,7 @@ $(document).ready(function() {
         // Restart pulsating effect after pause
         document.getElementById('nextIcon').style.animationPlayState = "running";
         moveType = 'right'
+        //console.log(languageStepsData[stepIndex+1])
         if(languageStepsData[stepIndex+1] != undefined) {
             let stepType = languageStepsData[stepIndex+1].Type;
             if(stepType != '' && stepType != 'loading') {
@@ -603,6 +604,13 @@ $(document).ready(function() {
                     window.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
                 } else {
                 }
+            }
+        } else {
+            let nextStep = languageStepsData[stepIndex].Next;
+            if(nextStep == 'END') {
+                console.log("EXIT FROM NEXT")
+                window.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
+            } else {
             }
         }
     }

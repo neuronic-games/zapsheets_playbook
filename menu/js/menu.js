@@ -773,7 +773,7 @@ $(document).ready(function() {
         let buttonElement = ''
         for(var i=0; i<languageStepsData.length; i++) {
             if(languageStepsData[i].Type == 'button') {
-                buttonElement += `<div id="viewIconContainer" style="-webkit-touch-callout: none; user-select: none; -moz-user-select: none; -webkit-user-select: none; width: 100%; height: 5vh; border-radius: 15px; background-color: #F7AE4F; position: relative; margin-bottom: 2vh; cursor: pointer;">
+                buttonElement += `<div id="viewIconContainer" style="-webkit-touch-callout: none; user-select: none; -moz-user-select: none; -webkit-user-select: none; width: 100%; height: 7vh; border-radius: 15px; background-color: rgba(247, 174, 79, 0.8); position: relative; margin-bottom: 2vh; cursor: pointer;">
                 <p id="menuButtonLabel_${i}" style="position: relative;
                 top: 50%;
                 width: 95%;
@@ -786,7 +786,7 @@ $(document).ready(function() {
                 letter-spacing: 0px;
                 color: white;
                 font-family: AcuminVariableConcept;
-                font-weight: 600;
+                font-weight: 800;
                 transform: translateX(-50%) translateY(-50%);
                 -webkit-user-select: none;
                 -ms-user-select: none;

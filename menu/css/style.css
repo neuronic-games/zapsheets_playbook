@@ -3088,4 +3088,235 @@ ul {
     box-shadow: 0 0 0 15px rgba(255, 255, 255, 0);
   }
 }
+.touch-pulse-button {
+  position: relative;
+  border: none;
+  border-radius: 50%;
+  animation: touch-pulse-animation 1.5s infinite;
+  animation-play-state: running;
+}
+
+@keyframes touch-pulse-animation {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0px rgba(233, 168, 111, 0.5);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 25px rgba(233, 168, 111, 0.001);
+  }
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 15px rgba(233, 168, 111, 0);
+  }
+}
 /***********************************************************************/
+.animated-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0; 
+    /* Apply the fade-in animation */
+    /* animation-name: fadeIn;
+    animation-duration: 2s; 
+    animation-fill-mode: forwards; */
+}
+
+.img1 {
+  /* Image 1 fades in and out */
+  animation: fadeIn 5s infinite alternate ease-in-out;
+}
+
+.img2 {
+  /* Image 2 fades in and out with a delay so they alternate */
+  animation: fadeIn 5s infinite alternate ease-in-out;
+  animation-delay: 2.5s; /* Start the second image's animation halfway through the first */
+}
+
+/* .img2 {
+    animation-delay: 2s; 
+} */
+
+/* Keyframe definition for the fade-in effect */
+@keyframes fadeIn {
+    0% {
+        opacity: 0; /* Start at 0% alpha */
+    }
+    50% {
+        opacity: 1; /* Reached at 100% alpha */
+    }
+    100% {
+        opacity: 0; /* End at 0% alpha */
+    }
+}
+/**************************************************************************/
+/***********************BGG SCREEN STYLING*********************************/
+.game-title { 
+  font-size: 48px; 
+  letter-spacing: -1px; 
+  margin:0;
+  max-width: 13em;
+}
+.game-designer { 
+  font-size: 28px; 
+  letter-spacing: -1px;
+}
+.img-box {
+  border:4px solid #fff;
+  box-shadow: 0 0 4px 0 rgba(0,0,0,0.30);
+}
+.card-body {
+  background-color: rgb(45, 44, 43) !important;
+  /* padding: 0rem 0rem !important; */
+  /* padding: 1.5rem 0rem !important; */
+  padding: 1rem 0rem !important;
+}
+.boardgamemechanic div { 
+  color:#949598; 
+  padding: 0rem 1rem !important; 
+  padding-bottom: 0.5vh;
+  padding-top: 0.5vh;
+}
+.card { 
+  border:none; 
+  background:#fff;
+}
+.card .ak_card_header { 
+  border:none; 
+  background:#fff;
+}
+.ak_card_timer{
+  position: absolute;
+  background-color: transparent;
+  width: 10px;
+  height: 10px;
+  margin-left: -45px;
+  margin-top: -70px;
+}
+.metaGroup { 
+  display: flex; 
+  gap:10px; 
+  justify-content: flex-end; 
+  align-items: center;
+}
+.metaGroup_details_filter { 
+  display: flex; 
+  gap:10px; 
+  justify-content: flex-start; 
+  align-items: center; 
+  width: 250px !important; 
+  position: relative; 
+  right: 50px; 
+  left: 0px; 
+  color: #FFFFFF; 
+  font-size: 2vh; 
+  margin-top: 2.5vh !important;
+}
+.metaGroup_details { 
+  display: flex; 
+  gap:10px; 
+  justify-content: flex-end; 
+  align-items: center; 
+  width: 250px !important; 
+  position: relative; 
+  right: 0px;
+}
+.metaGroup span, .metaGroup_details span { 
+  display: flex; 
+  align-items: center;
+}
+.metaGroupOut { 
+  display: flex; 
+  gap:10px; 
+  justify-content: flex-start; 
+  align-items: center;
+}
+.metaGroupOut span, .metaGroup_details span { 
+  display: flex; 
+  align-items: center;
+}
+.bg-primary { 
+  background-color:#3874b5 !important;
+}
+.bg-light {
+  background-color: rgb(45, 44, 43) !important;
+}
+.bg-alto { 
+  background-color: #939598/* #939598; */; 
+  color: #FFFFFF;
+}
+.page_greek div { 
+  font-family: 'DINCondensed-Bold'; 
+  line-height: 1.2;
+}
+.font-dinblack { 
+  font-family: 'DINBlack';
+}
+.font-DINCondensed { 
+  font-family: 'DINCondensed-Bold';
+}
+.font-DINRegular { 
+  font-family: 'DINRegular';
+}
+.text-large {
+  font-size:3vh; 
+  letter-spacing: -0.5px; 
+  line-height: 1.1;
+}
+.text-desc {
+  margin-top: -2vh;
+}
+.text-left {
+  font-size: 2vh !important;
+}
+.text-md-right {
+  margin-top: 1.5vh;
+}
+.my-4 {
+  margin-top: 4vh !important;
+}
+.sup-small { 
+  font-size:3vh; 
+  top: 0; 
+  color:#FFFFFF; 
+  letter-spacing: 0;
+}
+.bggTitle {
+  color: #FFFFFF;
+  font-size: 2vh;
+  line-height: 0;
+}
+.ratingWrapper { 
+  width: auto;  
+  display: inline-block; 
+  position: relative; 
+  color: #e7e7e9; 
+  z-index:1; 
+  margin-left:auto;
+}
+.ratingStar { 
+  overflow: hidden; 
+  white-space: nowrap; 
+  user-select: none; 
+  height: 40px;
+}
+.ratingStar span {
+  font-size: 40px;
+  line-height: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  color: #fcb040;
+  letter-spacing: -4px;
+}
+.ratingStar p {
+  font-size: 26px;
+  margin-top: 8px;
+  line-height: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  color: #fcb040;
+  letter-spacing: 0px;
+}
+/**************************************************************************/

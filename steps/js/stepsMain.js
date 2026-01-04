@@ -187,17 +187,42 @@ function saveInfoToLog() {
  * 
  */
 let portrait = window.matchMedia("(orientation: portrait)");
+
 portrait.addEventListener("change", function(e) {
-    if(e.matches) {
-        document.getElementById('useMode').style.display = 'none'
+  if(DetectSpecificDevice() == 'desktop') {
+    document.getElementById('useMode').style.display = 'none'
+    if(window.orientation != 0) {
         pause = false;
-    } else {
-      document.getElementById('useMode').style.display = 'flex'
-      document.getElementById('modeMsg').style.display = 'block'
-      document.getElementById('modeMsg').innerHTML = "Portrait orientation is not supported when phone is rotated.<br>Rotate back to continue.."
-      document.getElementById('modeMsg').style.fontSize = '6vh'
-      document.getElementById('modeLogo').style.width = '60vh'
-      pause = true
+        document.getElementById('useModeBG').style.display = 'none';
     }
+    return
+  }
+  if(e.matches) {
+      document.getElementById('useMode').style.display = 'none'
+      pause = false;
+  } else {
+    document.getElementById('useMode').style.display = 'flex'
+    document.getElementById('modeMsg').style.display = 'block'
+    document.getElementById('modeMsg').innerHTML = "Portrait orientation is not supported when phone is rotated.<br>Rotate back to continue.."
+    document.getElementById('modeMsg').style.fontSize = '6vh'
+    document.getElementById('modeLogo').style.width = '60vh'
+    pause = true
+  }
 })
+//////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * 
+ * @returns 
+ */
+function DetectSpecificDevice() {
+    var OSType = null;
+    if(deviceDetector.device == 'tablet') {
+        OSType = 'iPad'
+    } else if(deviceDetector.device == 'desktop') {
+        OSType = 'desktop'
+    } else {
+        OSType = 'phone'
+    }
+    return OSType;
+}
 ///////////////////////////////////////////////////////////////////////////

@@ -1,3 +1,4 @@
+<?php require "../dotEnv.php"; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -12,26 +13,34 @@
   <meta name="mobile-web-app-capable" content="yes">
   <title>Playbook</title>
   <link rel="stylesheet" href="css/bootstrap.min.css"
-    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous" />
+    <?php if($_ENV['ENVIRONMENT'] != 'development') {
+      echo 'integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"';} ?>
+      crossorigin="anonymous" />
   <link rel="stylesheet" href="css/style.css?version=8.0" />
-  <link rel="icon" type="image/x-icon" href="images/sheet_2_new.webp?version=1.8" />
-  <link rel="apple-touch-icon" href="images/sheet_icon_new.webp?version=1.7" />
+  <link rel="icon" type="image/x-icon" href="images/step_icon_new.webp?version=1.8" />
+  <link rel="apple-touch-icon" href="images/step_new.webp?version=1.7" />
 </head>
 <script src="js-package/bootstrap.bundle.min.js"
-    integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4"
-    crossorigin="anonymous"></script>
+    <?php if($_ENV['ENVIRONMENT'] != 'development') {
+      echo 'integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4"';} ?>
+      crossorigin="anonymous"></script>
 <script src="js-package/jquery-3.5.1.min.js"
-  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+  <?php if($_ENV['ENVIRONMENT'] != 'development') {
+    echo 'integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="';} ?>
+    crossorigin="anonymous"></script>
 <!-- <script src="slick/slick.js"></script> -->
 <script src="js-package/moment.min.js"
-  integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
-  crossorigin="anonymous"></script>
+  <?php if($_ENV['ENVIRONMENT'] != 'development') {
+    echo 'integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="';} ?>
+    crossorigin="anonymous"></script>
 <script src="js-package/popper.min.js"
-  integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
-  crossorigin="anonymous"></script>
+  <?php if($_ENV['ENVIRONMENT'] != 'development') {
+    echo 'integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"';} ?>
+    crossorigin="anonymous"></script>
 <script src="js-package/bootstrap.min.js"
-  integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
-  crossorigin="anonymous"></script>
+  <?php if($_ENV['ENVIRONMENT'] != 'development') {
+    echo 'integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"';} ?>
+    crossorigin="anonymous"></script>
 <body class="page_greek d-flex flex-column min-vh-100">
   <header id="page-header" class="game_header pt-4">
 		<div class="container">
@@ -70,6 +79,6 @@
 			<div class="copyright text-center text-light"><!-- © 2023 zsheets 2023 All Right Reserved --></div>
 		</div>
 	</footer>
- <script src="js-package/pushSteps.js?version=4.1"></script>
+ <script src="js-package/pushSteps.js?version=4.0"></script>
 </body>
 </html>

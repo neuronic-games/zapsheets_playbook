@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////////////////
 // All global vars 
-var touched = false
+/* var touched = false
 var isFullScreen = false
 var maxLevel = 10; //12
 var levelCounter = 1
@@ -52,7 +52,7 @@ let periodicVersion = 0
 let RefreshAppVersionTime = 10; // Default time
 let deviceUID = null
 let systemMemoryUsed = ''
-let systemName = ''
+let systemName = '' */
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Home Icon Animation vars
 let FULL_DASH_ARRAY = 283;

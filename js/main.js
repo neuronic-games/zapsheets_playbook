@@ -31,6 +31,14 @@ function getBrowerType() {
  */
 $(document).ready(function() {
   portrait.addEventListener("change", function(e) {
+    if(DetectSpecificDevice() == 'desktop') {
+      document.getElementById('useMode').style.display = 'none'
+      if(window.orientation != 0) {
+          pause = false;
+          document.getElementById('useModeBG').style.display = 'none';
+      }
+      return
+    }
     if(e.matches) {
         document.getElementById('useMode').style.display = 'none'
         pause = false;
@@ -43,6 +51,23 @@ $(document).ready(function() {
       pause = true
     }
   })
+  //////////////////////////////////////////////////////////////////////////////////////////
+  /**
+   * 
+   * @returns 
+   */
+  function DetectSpecificDevice() {
+      var OSType = null;
+      if(deviceDetector.device == 'tablet') {
+          OSType = 'iPad'
+      } else if(deviceDetector.device == 'desktop') {
+          OSType = 'desktop'
+      } else {
+          OSType = 'phone'
+      }
+      return OSType;
+  }
 })
+
 //////////////////////////////////////////////////////////////////////////////////
 

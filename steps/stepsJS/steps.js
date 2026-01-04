@@ -425,7 +425,7 @@ $(document).ready(function() {
      */
     function onHomeStart(event) {
         event.preventDefault();
-        doAnimateCloseButton('close');
+        //doAnimateCloseButton('close');
         document.getElementById("base-timer-close").style.opacity = 1
         document.getElementById("base-timer-close").style.transition = "opacity 0.5s";
     }
@@ -725,7 +725,8 @@ $(document).ready(function() {
         document.getElementById("base-timer-close").style.opacity = 0
         document.getElementById("base-timer-close").style.transition = "opacity 0.5s";
         reset();
-        window.parent.postMessage(JSON.stringify({'message': 'toggleFrame'}), '*')
+        //window.parent.postMessage(JSON.stringify({'message': 'toggleFrame'}), '*')
+        window.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
     }
     /////////////////////////////////////////////////////////////////////////////////
     /* Function to animate height: auto */

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////////////////
 // All global vars 
-var touched = false
+/* var touched = false
 var isFullScreen = false
 var pause = false
 var isOnEndScreen = false
@@ -49,7 +49,7 @@ let cutOffCount = 0
 let cutOffCountLang = 0
 let cutOffTimePassed = false
 let processStartTime = 0;
-let processEndTime = 0;
+let processEndTime = 0; */
 // Controller version
 let controllerVerion = 4
 // For standalone
@@ -127,7 +127,6 @@ function doCheckOrientation() {
     if(DetectSpecificDevice() == 'desktop') {
         document.getElementById('useMode').style.display = 'none'
         if(window.orientation != 0) {
-            
             pause = false;
             document.getElementById('useModeBG').style.display = 'none';
         }

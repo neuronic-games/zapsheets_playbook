@@ -9,6 +9,8 @@ $(document).ready(function() {
     let settingDataList = [];
     let rulesDataList = [];
     let faqsDataList = [];
+    let statsDataList = [];
+    let bggInfoData = [];
 
     // Special Icons
     let berryImgPath = ''
@@ -276,6 +278,7 @@ $(document).ready(function() {
                         /////////////////////MENU JSON START////////////////////////
                         setTimeout(function() {
                             loadMenuJSON()
+                            loadBggGameInfo();
                         }, 500) 
                     }
                 },
@@ -290,6 +293,54 @@ $(document).ready(function() {
             settingRequest.abort = null;
             settingRequest = null;
         }, 1000)
+    }
+    /////////////////////////////////////////////////////////////////////////
+    /**
+     * loadBggGameInfo
+     */
+    function loadBggGameInfo() {
+        var langRequest = $.ajax({
+            url: '../steps/sheets/' + sheet_Id + "/bgg-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion, 
+            cache: true, 
+            type: 'GET',
+            dataType: "text",
+            success: function (response) {
+                //console.log(response, " READ DATA")
+                if(response.length == 0) {
+                    activeLang = "EN"
+                    loadBggGameInfo()
+                } else { 
+                    bggInfoData = []
+                    var mResponseLang = response.replace(/�/g, "") 
+                    var newLangData = eval(mResponseLang)
+                    for(var i=0; i<newLangData.length; i++) {
+                        var langDataSting = JSON.stringify(newLangData[i]);
+                        if(isJSONData(langDataSting) == false) {
+                            document.getElementById("loadingText").innerHTML += '<font color="red">Error: ' + activeLang.split('-')[0] + ' Sheet : (Row: ' + i + ")</font><br>"
+                            updateInfoTextView()
+                        } else {
+                            bggInfoData[i] = isJSONData(langDataSting)
+                        }
+                    }
+
+                    //console.log(bggInfoData, " bggInfoData")
+                }
+            },
+            error: function (response) {
+                console.log("NO FILE FOUND")
+                if(activeLang.toLowerCase() != 'EN') {
+                    langLoadCount++
+                    loadBggGameInfo()
+                } else {
+                    langLoadCount = 0;
+                    document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : bgg-' + activeLang + '</font><br>'
+                    document.getElementById("spinnerBox").style.display = 'none'
+                }
+            }
+        })
+        langRequest.onreadystatechange = null;
+        langRequest.abort = null;
+        langRequest = null;
     }
     /////////////////////////////////////////////////////////////////////////
     // Loading Menu JSON
@@ -722,7 +773,7 @@ $(document).ready(function() {
         let buttonElement = ''
         for(var i=0; i<languageStepsData.length; i++) {
             if(languageStepsData[i].Type == 'button') {
-                buttonElement += `<div id="viewIconContainer" style="-webkit-touch-callout: none; user-select: none; -moz-user-select: none; -webkit-user-select: none; width: 100%; height: 7vh; border-radius: 15px; background-color: rgba(247, 174, 79, 0.8); position: relative; margin-bottom: 2vh; cursor: pointer;">
+                buttonElement += `<div id="viewIconContainer" style="-webkit-touch-callout: none; user-select: none; -moz-user-select: none; -webkit-user-select: none; width: 100%; height: 5vh; border-radius: 15px; background-color: #F7AE4F; position: relative; margin-bottom: 2vh; cursor: pointer;">
                 <p id="menuButtonLabel_${i}" style="position: relative;
                 top: 50%;
                 width: 95%;
@@ -735,7 +786,7 @@ $(document).ready(function() {
                 letter-spacing: 0px;
                 color: white;
                 font-family: AcuminVariableConcept;
-                font-weight: 800;
+                font-weight: 600;
                 transform: translateX(-50%) translateY(-50%);
                 -webkit-user-select: none;
                 -ms-user-select: none;
@@ -765,10 +816,375 @@ $(document).ready(function() {
                     document.getElementById('menuButtonLabel_' + i).addEventListener('mouseup', onMenuTouchEnd)
                     document.getElementById('menuButtonLabel_' + i).addEventListener('mouseout', onMenuTouchOut)
 
+                    
+
                     console.log("MENU DONE")
                 }
             }
+
+            // Info & BGG Icons Buttons events
+            document.getElementById('infoIconBtn').addEventListener('mousedown', onAnimateBtnTouchStart)
+            document.getElementById('infoIconBtn').addEventListener('mouseup', onAnimateBtnTouchEnd)
+            document.getElementById('infoIconBtn').addEventListener('mouseout', onAnimateBtnTouchOut)
+
+            document.getElementById('bggIconBtn').addEventListener('mousedown', onAnimateBtnTouchStart)
+            document.getElementById('bggIconBtn').addEventListener('mouseup', onAnimateBtnTouchEnd)
+            document.getElementById('bggIconBtn').addEventListener('mouseout', onAnimateBtnTouchOut)
+
+            // On menuBGInage Touch
+            document.getElementById('menuScreen').addEventListener('mousedown', onMenuScreenTouchStart)
+            document.getElementById('menuScreen').addEventListener('mouseup', onMenuScreenTouchEnd)
+            document.getElementById('menuScreen').addEventListener('mouseout', onMenuScreenTouchOut)
+
         }, 250)
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * RemoveMenuScreenListner
+     */
+    function RemoveMenuScreenListner() {
+        document.getElementById('menuScreen').removeEventListener('mousedown', onMenuScreenTouchStart)
+        document.getElementById('menuScreen').removeEventListener('mouseup', onMenuScreenTouchEnd)
+        document.getElementById('menuScreen').removeEventListener('mouseout', onMenuScreenTouchOut)
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} event 
+     */
+    function onMenuScreenTouchStart(event) {
+        event.preventDefault();
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} event 
+     */
+    function onMenuScreenTouchEnd(event) {
+        event.preventDefault();
+        console.log("on Menu Screen Touched")
+        RemoveMenuScreenListner();
+
+        // Animate menuItems
+        AnimateMenuBtns()
+
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * AnimateMenuBtns
+     */
+    function AnimateMenuBtns() {
+        document.getElementById('touchSection').style.display = 'none'
+        //let divToAnimate = document.getElementById('viewIconText');
+        document.getElementById('buttonContainer').style.bottom = '10vh'
+        document.getElementById('buttonContainer').style.opacity = '0'
+        document.getElementById('viewIconText').style.display = 'flex'
+        document.getElementById('infoBGGSection').style.display = 'flex'
+        // Apply the animation
+        $("#buttonContainer").animate({bottom: '15vh', opacity: '1'}, 300);
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} event 
+     */
+    function onMenuScreenTouchOut(event) {
+        event.preventDefault();
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} event 
+     */
+    function onAnimateBtnTouchStart(event) {
+        event.preventDefault();
+        //console.log(document.getElementById('bggIconBtn').opacity, " --- ", event.target.id)
+
+        const bggImage = document.getElementById("bggIconBtn");
+        const infoImage = document.getElementById("infoIconBtn");
+
+        // 2. Use window.getComputedStyle()
+        const bggComputedStyle = window.getComputedStyle(bggImage);
+        const bggCurrentOpacity = bggComputedStyle.getPropertyValue("opacity");
+        const infoComputedStyle = window.getComputedStyle(infoImage);
+        const infoCurrentOpacity = infoComputedStyle.getPropertyValue("opacity");
+
+        // 3. Convert to percentage
+        const bggOpacityPercentage = parseFloat(bggCurrentOpacity) * 100;
+        const infoOpacityPercentage = parseFloat(infoCurrentOpacity) * 100;
+
+        //console.log(bggOpacityPercentage, " << bggIcon -- infoIcon >>", infoOpacityPercentage)
+
+        if(bggOpacityPercentage >= 50) {
+            //console.log("BGG Icon ")
+            LoadStatsData()
+        } else if(infoOpacityPercentage >= 50) {
+            //console.log("Info Icon ")
+            LoadStatsData()
+        }
+        
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * LoadStatsData
+     */
+    function LoadStatsData() {
+        setTimeout(function() {
+            var StatsRequest = $.ajax({
+                url: '../steps/sheets/' + sheet_Id + "/stats.json?version=" + UIVersion,
+                cache: true,
+                type: 'GET',
+                dataType: "JSON",
+                success: function (response) {
+                    //console.log(response, " READ DATA")
+                    if(response.length == 0) {
+                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Stats data not available.' + "</font><br>"
+                    } else { 
+                        if (response.status == 200) {
+                            //console.log(response.boardgame, ' ----- ', response.boardgameBasicData)
+                            statsDataList = response
+                            FillBGGScreenData(statsDataList)
+                        } else {
+                           document.getElementById("loadingText").innerHTML += '<font color="red">Error: Stats data not available.' + "</font><br>" 
+                        }
+                    }
+                    //console.log(statsDataList, " ---- ")
+                },
+                error: function(e) {
+                    console.log("ERROR - Stats data missing..")
+                    document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Stats : Faqs</font><br>'
+                    document.getElementById("spinnerBox").style.display = 'none'
+                }
+            })
+            // Clear memory
+            StatsRequest.onreadystatechange = null;
+            StatsRequest.abort = null;
+            StatsRequest = null;
+        }, 1000)
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} data 
+     */
+    function FillBGGScreenData(data) {
+        //console.log(getBoardGameName(data))
+        document.getElementById('small-sub').innerHTML = ''
+        let objectid = data.boardgame[0].boardgame['@attributes']['objectid'];
+        let gameName = getBoardGameName(data)
+        let boardGameDesigner = getBoardGameDesigner(data);
+       // console.log(boardGameDesigner, " ---- ")
+        let boardGameDesignerTitle = boardGameDesigner == undefined ? '' : boardGameDesigner
+        let yearPublish = (data.boardgame[0].boardgame.yearpublished == undefined || data.boardgame[0].boardgame.yearpublished == 0 ) ? '' : data.boardgame[0].boardgame.yearpublished
+
+        let name = data.boardgame[0].boardgame.image.split('/')
+        let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+        let iPath = '../steps/sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+        let imagePath = data.boardgame[0].boardgame.image == undefined ? './img/earshot-games_splash.png' : iPath
+        let playerStats = (data.minplayers == data.boardgame[0].boardgame.maxplayers) ? data.boardgame[0].boardgame.maxplayers : data.boardgame[0].boardgame.minplayers+"-"+data.boardgame[0].boardgame.maxplayers;
+        let playtimeStats = (data.boardgame[0].boardgame.minplaytime == data.boardgame[0].boardgame.maxplaytime) ? data.boardgame[0].boardgame.maxplaytime : data.boardgame[0].minplaytime+"-"+data.boardgame[0].boardgame.maxplaytime; 
+
+        let gameRatingAverage = getBoardGameRatingAverage(data);
+        let ratingInPercentage = ((gameRatingAverage - 5)*5/3) * 20;
+
+        //console.log(ratingInPercentage, " --- ", gameRatingAverage)
+
+        if(ratingInPercentage < 0) {
+            ratingInPercentage = 0
+        } else if(ratingInPercentage > 100) {
+            ratingInPercentage = 100
+        }
+
+        // Weight and Game Price Value
+        let weightValue = '';
+        let valueWeight = 0;
+        let gamePrice = 0;
+        $.each(bggInfoData, function (i, row_bgg) {
+            if(row_bgg['Name'] == "Weight") {
+                let weightNumber = Number(row_bgg['Value']);
+                valueWeight = (weightNumber / 5) * 100;
+                if(weightNumber > 4) {
+                    weightValue = "HEAVY"
+                } else if(weightNumber > 3 && weightNumber <= 4) {
+                    weightValue = "MEDIUM HEAVY"
+                } else if(weightNumber > 2 && weightNumber <= 3) {
+                    weightValue = "MEDIUM"
+                } else if(weightNumber > 1 && weightNumber <= 2) {
+                    weightValue = "MEDIUM LIGHT"
+                } else if(weightNumber > 0 && weightNumber <= 1) {
+                    weightValue = "LIGHT"
+                }
+            }
+            if(row_bgg['Name'] == "Price") {
+                gamePrice = row_bgg['Value']
+            }
+        }) 
+        
+        //FillSelectedMenuData('bggGame', gameName);
+        document.getElementById('contentSteps').style.display = 'none'
+        document.getElementById('downloadBtn').style.display = 'none'
+
+        /* <h3 class="font-DINCondensed game-title text-primary">${gameName} <sup class="sup-small" data-objectid="${data.boardgame[0].objectid}">${yearPublish}</sup></h3>
+        <h5 class="font-DINCondensed game-designer">${boardGameDesignerTitle}</h5> */
+
+        // Fill small sub
+        document.getElementById('small-sub').innerHTML = yearPublish;
+
+        // Fill Game Data
+        let gameHTML = `<div class="bg-light border-0 card game-card">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-lg-9 col-md-8">
+
+
+                <div class="row mt-3">
+                  <div class="col-md-4">
+                    <div class="img-box"><img src="${imagePath}" class="img-fluid"></div>
+                    <div class="gamePrivateDataHTML details-game-${objectid}-private-data"></div>
+                  </div>
+                                      
+                </div>
+              </div>
+
+              <div style="display:flex; width: 100%; flex-direction: row; justify-content: space-between;">
+                <div style="width:46%;">
+                    <div style="100%; height: 3.5vh; position: relative; top: 3vh;background-color: #CCCCCC; border-radius: 0.4vh;">
+                    <div style="width:${valueWeight.toFixed(0)}%; height: 3.5vh; position: relative; top: 0vh;background-color: #0F75BC; border-radius: 0.4vh;"></div>
+                    <p style="position:absolute; width:100%; font-size:2.4vh; color:#FFFFFF;text-align:center; top:0">${weightValue}</p>
+                    </div>
+                    <div class="card text-left my-4">
+                    <div class="card-header bg-alto py-1 px-2">MECHANICS</div>
+                    <div class="card-body p-2" style="border: 0.2vh solid #93959840;"><div class="boardgamemechanic"> </div></div>
+                    </div>
+
+                    <div style="position: relative; display: flex; font-size: 3.5vh;  flex-direction: row; align-items: center; margin-bottom: 2vh;">
+                        <div style="position: relative; width: 2vh; height: 2vh;background-color: #0F75BC; z-index: 9999; border-radius: 50%;margin-right: 1vh;"></div>
+                        <p style="position: relative; color: white;">${gamePrice}</p>
+                    </div>
+
+                </div>
+
+                <div style="width:50%;">
+                    <div class="metaGroup_details_filter">
+                    <span>
+                        <img src="./img/earshot-games_player.png" width="25vh">${playerStats}</span><span><img src="./img/earshot-games_time.png"  width="35vh">${playtimeStats}
+                    </span>
+                    <span>
+                        <img src="./img/earshot-games_age.png"  width="25vh">${data.boardgame[0].boardgame.age}+
+                    </span>
+                    ${data.boardgame[0].boardgamemechanic != undefined && data.boardgame[0].boardgame.boardgamemechanic.includes("Cooperative Game") == true
+                    ?
+                    `<span>
+                        <img src="./img/earshot-games_coop.png?version=1.4" width="25vh" style="margin-top:-4px"></span>`
+                    : ``}
+                </div>
+                <div id="${objectid}_d" class="ratingWrapper">
+                <div id="star_d" class="ratingStar" style="width: ${ratingInPercentage}%"> 
+                    <span>&#x2605;&#x2605;&#x2605;&#x2605;&#x2605;</span>
+                </div> 
+                </div>
+                <div style="position: relative; width: 100%; display: flex; flex-direction: row; justify-content: flex-end; margin-top: 2vh;">
+                    <img src="./img/btn_bgg_2.webp" style="width:7vh" alt="" />
+                </div>
+                </div>
+              </div>
+
+              <div class="col-lg-3 col-md-4 text-md-right">
+                <div class="col-md-8 text-desc" style="margin-top:-1vh; color:#FFFFFF">
+                    <div class="font-DINCondensed text-large">${data.boardgame[0].boardgame.description}</div>                        
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+        `
+
+
+        let menuTitleText = ''
+        document.getElementById('menuPage').style.display = 'block'
+        menuTitleText = gameName + `<br><p class="bggTitle">${boardGameDesignerTitle}</p>`;
+        document.getElementById('menuTitle').innerHTML = menuTitleText;
+        // event listener back button
+        document.getElementById('backToMenuBtn').addEventListener('touchstart', onBackMenuTouchStart)
+        document.getElementById('backToMenuBtn').addEventListener('touchend', onBackMenuTouchEnd)
+
+        document.getElementById('backToMenuBtn').addEventListener('mousedown', onBackMenuTouchStart)
+        document.getElementById('backToMenuBtn').addEventListener('mouseup', onBackMenuTouchEnd)
+        document.getElementById('menuList').innerHTML = gameHTML
+        // Render Boardgame mechanics data
+        boardgameMechanicData(data);
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} data 
+     */
+    function boardgameMechanicData(data) {
+        var boardgameMechanic = '';
+        if ($.isArray(data.boardgame[0].boardgame.boardgamemechanic)) {
+            $.each(data.boardgame[0].boardgame.boardgamemechanic, function (gameMechanic, index) {
+            boardgameMechanic += '<div style="line-height:1.1;">' + index + '</div>';
+            });
+        } else if(data.boardgame[0].boardgame.boardgamemechanic){
+            boardgameMechanic = data.boardgame[0].boardgame.boardgamemechanic;
+        }
+        boardgameMechanic = (boardgameMechanic == '') ? 'No Mechanics' : boardgameMechanic;
+        $('.boardgamemechanic').append(boardgameMechanic);
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} data 
+     * @returns 
+     */
+    function getBoardGameDesigner(data) {
+        if ($.isArray(data.boardgame[0].boardgame.boardgamedesigner)) {
+            var boardgamedesigner = '';
+            $.each(data.boardgame[0].boardgame.boardgamedesigner, function (index, value) {
+            boardgamedesigner += (boardgamedesigner != '') ? ' & ' + value : value;
+            });
+            return boardgamedesigner;
+        } else {
+            return data.boardgame[0].boardgame.boardgamedesigner;
+        }
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} data 
+     * @returns 
+     */
+    function getBoardGameRatingAverage(data) {
+        if(data == undefined) {return}
+        var objectid = data.boardgame[0].boardgame['@attributes']['objectid'];
+        return data.boardgameBasicData[objectid]['rating'];
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} data 
+     * @returns 
+     */
+    function getBoardGameName(data) {
+        var objectid = data.boardgame[0].boardgame['@attributes']['objectid'];
+        return data.boardgameBasicData[objectid]['name'];
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} event 
+     */
+    function onAnimateBtnTouchEnd(event) {
+        event.preventDefault();
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} event 
+     */
+    function onAnimateBtnTouchOut(event) {
+        event.preventDefault();
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -798,7 +1214,7 @@ $(document).ready(function() {
         if(languageStepsData[sheetParamData].Text.toLowerCase().indexOf('faq') != -1) {
             menuTitleText = languageStepsData[sheetParamData].Text.split(" ")[1]
         } else {
-            menuTitleText = languageStepsData[sheetParamData].Text
+            menuTitleText = languageStepsData[sheetParamData].Text.split(" ")[1]
         }
         document.getElementById('menuTitle').innerHTML = menuTitleText;
         // event listener back button
@@ -819,7 +1235,6 @@ $(document).ready(function() {
     function onMenuTouchStart(event) {
         event.preventDefault();
         // Add pulsating effect
-        //console.log(event.target.parentElement)
         event.target.parentElement.classList.add('pulse-button');
     }
     ///////////////////////////////////////////////////////////////////////////////
@@ -828,7 +1243,6 @@ $(document).ready(function() {
      * @param {*} event 
      */
     function onMenuTouchOut(event) {
-        //console.log("ASASASASA")
         event.preventDefault();
         event.target.parentElement.classList.remove('pulse-button');
     }
@@ -851,7 +1265,7 @@ $(document).ready(function() {
         if(languageStepsData[event.target.id.split('_')[1]].Text.toLowerCase().indexOf('faq') != -1) {
             menuTitleText = languageStepsData[event.target.id.split('_')[1]].Text.split(" ")[1]
         } else {
-            menuTitleText = languageStepsData[event.target.id.split('_')[1]].Text
+            menuTitleText = languageStepsData[event.target.id.split('_')[1]].Text.split(" ")[1]
         }
         document.getElementById('menuTitle').innerHTML = menuTitleText;
         // event listener back button
@@ -907,6 +1321,7 @@ $(document).ready(function() {
     function FillSelectedMenuData(menuType, toHold) {
         //console.log(menuType, " --- ", toHold)
         document.getElementById('menuList').innerHTML = ''
+        document.getElementById('small-sub').innerHTML = ''
         /* if(menuType.toLowerCase().indexOf('faq') != -1) {
             console.log('faqs selected')
             document.getElementById('downloadBtn').style.display = 'none'
@@ -938,19 +1353,21 @@ $(document).ready(function() {
             document.getElementById('downloadBtn').style.display = 'none'
             document.getElementById('contentSteps').style.display = 'block'
             LoadGameSteps();
-        }
+        } 
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
-     * 
+     * For TEACH ME link on home page
+     * LoadGameSteps
      */
     function LoadGameSteps() {
-        let _sheet = '../steps/index.html?version=' + UIVersion;
+        let _sheet = '../steps/index.php?version=' + UIVersion;
         $("#contentSteps").attr("src", _sheet + "?code=" + activeLang + "&id=" + sheet_Id);
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
      * Download Button events 
+     * DoDownloadRulesBtnEvents
      */
     function DoDownloadRulesBtnEvents() {
         document.getElementById('downloadBtn').addEventListener('touchstart', onDownloadBtnTouchStart)
@@ -1395,7 +1812,7 @@ $(document).ready(function() {
     }
     /////////////////////////////////////////////////////////////////////////////////
     /**
-     * // iFrame message listener
+     * iFrame message listener
      */
     window.addEventListener('message', function(event) {
         if(JSON.parse(event.data).message == 'closeFrame') {
@@ -1406,6 +1823,10 @@ $(document).ready(function() {
         }
     })
     ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * Hide the frame
+     * HideIFrame
+     */
     function HideIFrame() {
         //$("#contentSteps").effect( "drop", "fast" );
         $("#contentSteps").attr("src",'');
@@ -1414,7 +1835,7 @@ $(document).ready(function() {
     }
     /////////////////////////////////////////////////////////////////////////////////
     /**
-     * 
+     * ToggleIFrame
      */
     function ToggleIFrame(event) {
         //$( "#contentSteps" ).effect( "drop", "fast" );

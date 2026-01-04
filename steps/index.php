@@ -1,6 +1,6 @@
+<?php require "../dotEnv.php"; ?>
 <!DOCTYPE html>
 <html lang="en">
-  
   <head>
     <meta content-type='text/javascript' charset="UTF-8" />
     <meta http-equiv='cache-control' content='no-cache, no-store, must-revalidate'>
@@ -14,13 +14,15 @@
     <link
       href="./css/bootstrap.min.css"
       rel="stylesheet"
-      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
-      crossorigin="anonymous"
+      <?php if($_ENV['ENVIRONMENT'] != 'development') {
+        echo 'integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"';} ?>
+        crossorigin="anonymous"
     />
     <link
       rel="stylesheet"
       href="./css/all.min.css"
-      integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+      <?php if($_ENV['ENVIRONMENT'] != 'development') {
+        echo 'integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="';} ?>
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
@@ -197,9 +199,7 @@
     <script src="./js/device-uuid.min.js?version=1.0"></script>
     <script src="./js/md5.js?version=1.0"></script>
     <script src="./js/createjs.min.js?version=3.9"></script>
-    <!-- <script src="./js/JSController.js?version=2.5"></script> -->
     <script src="./js/devicedetector-min.js"></script>
-    <!-- <script src="./stepsJS/steps.js?version=2"></script> -->
     <script>
       // To get UIVersion from Parent HTML for cache/dynamic loading
       //const selfUrl = new URL(self.location);

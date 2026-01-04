@@ -1,6 +1,6 @@
+<?php require "../dotEnv.php"; ?>
 <!DOCTYPE html>
 <html lang="en">
-  
   <head>
     <meta content-type='text/javascript' charset="UTF-8" />
     <meta http-equiv='cache-control' content='no-cache, no-store, must-revalidate'>
@@ -14,13 +14,15 @@
     <link
       href="./css/bootstrap.min.css"
       rel="stylesheet"
-      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      <?php if($_ENV['ENVIRONMENT'] != 'development') {
+        echo 'integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"';} ?>
       crossorigin="anonymous"
     />
     <link
       rel="stylesheet"
       href="./css/all.min.css"
-      integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+      <?php if($_ENV['ENVIRONMENT'] != 'development') {
+        echo 'integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="';} ?>
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
@@ -29,8 +31,8 @@
       href="./css/minireset.min.css"
     />
     <!-- <link rel="stylesheet" href="css/style.css?version=3.8" /> -->
-    <link rel="icon" type="image/x-icon" href="img/step_icon_new.webp?version=3.2" />
-    <link rel="apple-touch-icon" href="img/step_new.webp?version=3.2" />
+    <link rel="icon" type="image/x-icon" href="img/sheet_2_new.webp?version=3.2" />
+    <link rel="apple-touch-icon" href="img/sheet_icon_new.webp?version=3.2" />
   </head>
   <body id="menuBody" style="position: fixed; min-height: 100vh !important; background-color: #F9F3E3 !important" onpagehide="CloseIFrame()">
     <!--------------------------------------------------------------------->
@@ -53,6 +55,7 @@
         font-size: 2.5vh;
         text-align: center;
         color: #666666;
+        display: none;
         transform: translate(-50%, 0%); font-family: Oswald-Bold; line-height: 2.6vh; font-weight: 500;"><br>LOADING</div>
       </div>
       <!-------------------------------------------------------------------------->
@@ -83,7 +86,7 @@
             </div>
         </div>
         <div id="infoBGGSection" style="position: absolute; width: 100%; display: none /* flex */; flex-direction: row; justify-content: flex-end; height: 10vh;">
-          <img id="infoIconBtn" src="./img/btn_info.png?version=1" style="position: absolute; width: 10vh; height: 10vh; top: 4vh; left: 70%; cursor: pointer;" class="animated-img img1" alt="" />
+          <img id="infoIconBtn" src="./img/btn_info.webp?version=1" style="position: absolute; width: 10vh; height: 10vh; top: 4vh; left: 70%; cursor: pointer;" class="animated-img img1" alt="" />
           <img id="bggIconBtn" src="./img/btn_bgg.png?version=1" style="position: absolute; width: 10vh; height: 10vh; top: 4vh; left: 70%; cursor: pointer;" class="animated-img img2" alt="" />
         </div>
         <!---------------------------------------------------------------------------->
@@ -99,6 +102,7 @@
         <div style="position: absolute; display: flex; flex-direction: row; align-content: center; justify-content: space-between; align-items: center; width: 100vw; left: 0;padding: 5vh; background-color: #2D2C2B; height: 0; z-index: 99;">
           <img id="backToMenuBtn" src="img/floristry_mobile_btn_prev_orange.png" style="position: relative; width: 4vh; z-index: 999; cursor: pointer;" alt="" />
           <p id="menuTitle" style="color: white; position: absolute; font-size: 3.5vh;margin-left: 5vh;">Title</p>
+          <sup id="small-sub" class="sup-small" data-objectid=""></sup>
           <img id="downloadBtn" src="" style="position: relative; width: 5vh; z-index: 999; cursor: pointer;" alt="" />
         </div>
         <div id="menuList" style="position: relative;
@@ -156,7 +160,8 @@
     <script src="./js/jquery.cookie.min.js"></script>
     <script
       src="./js/bootstrap.bundle.min.js"
-      integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+      <?php if($_ENV['ENVIRONMENT'] != 'development') {
+        echo 'integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"';} ?>
       crossorigin="anonymous"
     ></script>
     <script>
@@ -166,13 +171,12 @@
     <script src="./js/device-uuid.min.js?version=1.0"></script>
     <script src="./js/md5.js?version=1.0"></script>
     <script src="./js/createjs.min.js?version=3.9"></script>
-    <!-- <script src="./js/JSController.js?version=2.7"></script> -->
     <script src="./js/devicedetector-min.js"></script>
     <!------------------------------------------------------------------------->
     <script>
       // To get UIVersion from Parent HTML for cache/dynamic loading
-      
       const selfUrl = new URL(self.location);
+
       //console.log(selfUrl.searchParams.get('version').split('?')[0]);
       let UIVersion = selfUrl.searchParams.get('version').split('?')[0]
       
@@ -200,6 +204,11 @@
         cssLink.type = 'text/css';
         cssLink.href = './css/style.css?version=' + _ver;
         document.getElementsByTagName('head')[0].appendChild(cssLink);
+
+        // Display Loading text
+        setTimeout(function() {
+          document.getElementById('loadingText').style.display = 'block';
+        }, 250)
       }
 
       if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {

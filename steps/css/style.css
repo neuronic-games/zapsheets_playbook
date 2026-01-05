@@ -2079,10 +2079,13 @@ body {
   }
 
   #stepsSnippetContainer {
-    width: 70% !important;
+    /* width: 70% !important; */
+    width: 100% !important;
     height: 100% !important;
     background-color: #000000 !important;
-    left: 15% !important;
+    /* left: 15% !important; */
+
+
     /* width: 100% !important;
     height: 100% !important;
     background-color: #000000 !important;
@@ -2205,10 +2208,13 @@ body {
   }
 
   #stepsSnippetContainer {
-    width: 70% !important;
+    /* width: 70% !important; */
+    width: 100% !important;
     height: 100% !important;
     background-color: #000000 !important;
-    left: 15% !important;
+    /* left: 15% !important; */
+
+
     /* width: 100% !important;
     height: 100% !important;
     background-color: #000000 !important;
@@ -2360,10 +2366,13 @@ body {
   }
 
   #stepsSnippetContainer {
-    width: 80% !important;
+    /* width: 80% !important; */
+    width: 100% !important;
     height: 100% !important;
     background-color: #000000 !important;
-    left: 10% !important;
+    /* left: 10% !important; */
+
+
    /*  width: 100% !important;
     height: 100% !important;
     background-color: #000000 !important;
@@ -2523,10 +2532,13 @@ body {
     /* left: 15% !important; */
   }
   #stepsSnippetContainer {
-    width: 70% !important;
+    /* width: 70% !important; */
+    width: 100% !important;
     height: 100% !important;
     background-color: #000000 !important;
-    left: 15% !important;
+    /* left: 15% !important; */
+
+
     /* width: 100% !important;
     height: 100% !important;
     background-color: #000000 !important;
@@ -2645,10 +2657,13 @@ body {
     /* left: 15% !important; */
   }
   #stepsSnippetContainer {
-    width: 70% !important;
+    /* width: 70% !important; */
+    width: 100% !important;
     height: 100% !important;
     background-color: #000000 !important;
-    left: 15% !important;
+    /* left: 15% !important; */
+
+
     /* width: 100% !important;
     height: 100% !important;
     background-color: #000000 !important;
@@ -2817,10 +2832,11 @@ body {
   }
 
   #stepsSnippetContainer {
-    width: 70% !important;
+    /* width: 70% !important; */
+    width: 100% !important;
     height: 100% !important;
     background-color: #000000 !important;
-    left: 15% !important;
+    /* left: 15% !important; */
   }
 }
 /***********************************************************************/
@@ -2882,10 +2898,12 @@ body {
     /* left: 36% !important; */
   }
   #stepsSnippetContainer {
-    width: 28% !important;
+    /* width: 28% !important; */
+    width: 108% !important;
     height: 100% !important;
     background-color: #000000 !important;
-    left: 36% !important;
+    /* left: 36% !important; */
+
     /* width: 100% !important;
     height: 100% !important;
     background-color: #000000 !important;

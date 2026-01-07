@@ -138,8 +138,39 @@
           left: 0;
           padding: 5vh;
           top: 4vh;
-          height: 95%; overflow: scroll; background-color: 
+          height: 90%; overflow: scroll; background-color: 
           #2D2C2B;"></div>
+
+        <div id="rulesNavigation" style="position: absolute; bottom:0vh; width: 90%; left: 5%; height: 10vh; background-color: #2D2C2B; /* display: flex; */ color:#F7AE50; font-size: 2.5vh; align-items: center; justify-content: space-between; display: none;">
+
+        <div style="position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-direction: row;">
+          <img id="prevArrow" src="img/floristry_mobile_btn_prev_orange.png" style="position: relative;display:none;
+    width: 3vh;
+    z-index: 999;
+    cursor: pointer;
+    height: 3vh;
+    margin-right: 0.5vh;" alt="" />
+          <div id="prevElement"></div>
+        </div>
+        <div style="position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-direction: row;">
+          <div id="nextElement"></div>
+          <img id="nextArrow" src="img/floristry_mobile_btn_next_orange.png" style="position: relative;display:none;
+    width: 3vh;
+    z-index: 999;
+    cursor: pointer;
+    height: 3vh;
+    margin-left: 0.5vh;" alt="" />
+        </div>
+        </div>
+
       </div>
       
       <!------------------------------------------------------------------>

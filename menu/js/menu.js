@@ -836,6 +836,32 @@ $(document).ready(function() {
             document.getElementById('menuScreen').addEventListener('mouseup', onMenuScreenTouchEnd)
             document.getElementById('menuScreen').addEventListener('mouseout', onMenuScreenTouchOut)
 
+            // Rules Navigation events
+            document.getElementById('nextElement').addEventListener('touchstart', onRuleItemTouchStart)
+            document.getElementById('nextElement').addEventListener('touchend', onRuleItemTouchEnd)
+            document.getElementById('nextElement').addEventListener('mousedown', onRuleItemTouchStart)
+            document.getElementById('nextElement').addEventListener('mouseup', onRuleItemTouchEnd)
+            document.getElementById('nextElement').addEventListener('mouseout', onRuleItemTouchEnd)
+
+            document.getElementById('nextArrow').addEventListener('touchstart', onRuleItemTouchStart)
+            document.getElementById('nextArrow').addEventListener('touchend', onRuleItemTouchEnd)
+            document.getElementById('nextArrow').addEventListener('mousedown', onRuleItemTouchStart)
+            document.getElementById('nextArrow').addEventListener('mouseup', onRuleItemTouchEnd)
+            document.getElementById('nextArrow').addEventListener('mouseout', onRuleItemTouchEnd)
+
+            document.getElementById('prevElement').addEventListener('touchstart', onRuleItemTouchStart)
+            document.getElementById('prevElement').addEventListener('touchend', onRuleItemTouchEnd)
+            document.getElementById('prevElement').addEventListener('mousedown', onRuleItemTouchStart)
+            document.getElementById('prevElement').addEventListener('mouseup', onRuleItemTouchEnd)
+            document.getElementById('prevElement').addEventListener('mouseout', onRuleItemTouchEnd)
+
+            document.getElementById('prevArrow').addEventListener('touchstart', onRuleItemTouchStart)
+            document.getElementById('prevArrow').addEventListener('touchend', onRuleItemTouchEnd)
+            document.getElementById('prevArrow').addEventListener('mousedown', onRuleItemTouchStart)
+            document.getElementById('prevArrow').addEventListener('mouseup', onRuleItemTouchEnd)
+            document.getElementById('prevArrow').addEventListener('mouseout', onRuleItemTouchEnd)
+           
+
         }, 250)
     }
     ///////////////////////////////////////////////////////////////////////////////
@@ -1563,7 +1589,7 @@ $(document).ready(function() {
                             let ruleList = ''
                             for(var i=0; i<rulesDataList.length; i++) {
                                 if(rulesDataList[i].Type == 'menu') {
-                                    ruleList += `<li id="rulesItem_${i}" style="color: lightgray; left: 4vh; position: relative;font-size: 3.5vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh; cursor: pointer;"> <span style="position: relative; top: 0vh !important; color: #F7AE50; font-size: 3.5vh;">${rulesDataList[i].ID}</span></li>`
+                                    ruleList += `<li id="rulesItem_${i}" style="color: lightgray; left: 4vh; position: relative;font-size: 3.5vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh; cursor: pointer;"> <span id="rulesSpan_${i}" style="position: relative; top: 0vh !important; color: #F7AE50; font-size: 3.5vh;">${rulesDataList[i].ID}</span></li>`
                                 }
                             }
                             document.getElementById('menuList').innerHTML = ruleList;
@@ -1577,6 +1603,7 @@ $(document).ready(function() {
 
                                     document.getElementById('rulesItem_' + i).addEventListener('mousedown', onRuleItemTouchStart)
                                     document.getElementById('rulesItem_' + i).addEventListener('mouseup', onRuleItemTouchEnd)
+                                    document.getElementById('rulesItem_' + i).addEventListener('mouseout', onRuleItemTouchEnd)
 
                                     console.log("RULES DONE")
                                 }
@@ -1604,6 +1631,31 @@ $(document).ready(function() {
      */
     function onRuleItemTouchStart(event) {
         if(event.cancelable) event.preventDefault();
+        /* let touchStatus = handleTouchEnd(event);
+        if(touchStatus == false) {
+            return;
+        } */
+
+        //if(event.target.parentElement.id == 'rulesNavigation') {
+
+
+            //document.getElementById(event.target.id).style.color = '#FFFFFF'
+
+            if(event.target.id == 'prevElement' || event.target.id == 'prevArrow') {
+                document.getElementById('prevArrow').classList.add('pulse-button');
+                document.getElementById('prevElement').style.color = '#FFFFFF'
+            } else if(event.target.id == 'nextElement' || event.target.id == 'nextArrow') {
+                document.getElementById('nextArrow').classList.add('pulse-button');
+                document.getElementById('nextElement').style.color = '#FFFFFF'
+            } else {
+                document.getElementById(event.target.id).style.color = '#FFFFFF'
+            }
+
+            //event.target.classList.add('pulse-button');
+        /* } else {
+            document.getElementById(event.target.id).style.color = '#FFFFFF'
+        } */
+
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -1613,11 +1665,60 @@ $(document).ready(function() {
     function onRuleItemTouchEnd(event) {
         if(event.cancelable) event.preventDefault();
         let touchStatus = handleTouchEnd(event);
+        console.log(touchStatus, " --- ")
         if(touchStatus == false) {
+            //if(event.target.parentElement.id == 'rulesNavigation') {
+
+
+                //document.getElementById(event.target.id).style.color = '#F7AE50'
+
+
+
+                //event.target.classList.remove('pulse-button');
+            /* } else {
+                document.getElementById(event.target.id).style.color = '#F7AE50'
+            } */
+           if(event.target.id == 'prevElement' || event.target.id == 'prevArrow') {
+                document.getElementById('prevArrow').classList.remove('pulse-button');
+                document.getElementById('prevElement').style.color = '#F7AE50'
+            } else if(event.target.id == 'nextElement' || event.target.id == 'nextArrow') {
+                document.getElementById('nextArrow').classList.remove('pulse-button');
+                document.getElementById('nextElement').style.color = '#F7AE50'
+            } else {
+               document.getElementById(event.target.id).style.color = '#F7AE50' 
+            }
+
             return;
         }
 
-        let ruleItemId = event.target.parentElement.id.split('_')[1];
+
+        //console.log(event.target.parentElement.parentElement.id, " --- ", event.target.parentElement)
+
+        //document.getElementById(event.target.id).style.color = '#F7AE50'
+        let ruleItemId = -1
+        let ruleName = ''
+        if(event.target.parentElement.parentElement.id == 'rulesNavigation') {
+            //document.getElementById(event.target.id).style.color = '#F7AE50'
+
+            if(event.target.id == 'prevElement' || event.target.id == 'prevArrow') {
+                document.getElementById('prevArrow').classList.remove('pulse-button');
+                document.getElementById('prevElement').style.color = '#F7AE50'
+                ruleName = document.getElementById('prevElement').innerHTML;
+            } else if(event.target.id == 'nextElement' || event.target.id == 'nextArrow') {
+                document.getElementById('nextArrow').classList.remove('pulse-button');
+                document.getElementById('nextElement').style.color = '#F7AE50'
+                ruleName = document.getElementById('nextElement').innerHTML;
+            } else {
+                document.getElementById(event.target.id).style.color = '#F7AE50'
+            }
+
+            //let ruleName = document.getElementById(event.target.id).innerHTML;
+            ruleItemId = getRuleItemEndIndex(ruleName)
+        } else {
+            //document.getElementById(event.target.id).style.color = '#F7AE50'
+            ruleItemId = event.target.parentElement.id.split('_')[1];
+            document.getElementById(event.target.id).style.color = '#F7AE50'
+        }
         //console.log(ruleItemId, " --- ruleItemId")
         if(ruleItemId == undefined) return;
         document.getElementById('menuDetailsPage').style.display = 'flex'
@@ -1655,8 +1756,29 @@ $(document).ready(function() {
         //FillSelectedMenuDetailsData()
         document.getElementById('menuDetails').innerHTML = ''
 
+        document.getElementById('rulesNavigation').style.display = "flex"
+
         let endIndex = getMenuDetailItemEndIndex(ruleItemId)
         let menuItemToDisplay = ''
+
+        // Show Navigation data
+        let prevRule = getPrevRule(ruleItemId)
+        let nextRule = getNextRule(ruleItemId)
+        if(prevRule.Text != undefined) {
+            document.getElementById('prevElement').innerHTML = prevRule.ID;
+            document.getElementById('prevArrow').style.display = 'block';
+        } else {
+            document.getElementById('prevElement').innerHTML = '';
+            document.getElementById('prevArrow').style.display = 'none';
+        }
+        if(nextRule.Text != undefined) {
+            document.getElementById('nextElement').innerHTML = nextRule.ID;
+            document.getElementById('nextArrow').style.display = 'block';
+        } else {
+            document.getElementById('nextElement').innerHTML = ''
+            document.getElementById('nextArrow').style.display = 'none';
+        }
+
         for(var i=Number(ruleItemId)+1; i<endIndex; i++) {
             //console.log(rulesDataList[i], ' DATA TO DISPLAY')
             if(rulesDataList[i].Type == 'text') {
@@ -1689,9 +1811,56 @@ $(document).ready(function() {
                 }
                 document.getElementById('menuDetails').innerHTML += `<div style="margin-top:3vh; font-size:3vh; line-height:1.1; width:100%"><img src=${imagePath} alt=""</img></div>`
             }
+
+            
         }
-        console.log(menuItemToDisplay)
-        //document.getElementById('menuDetails').innerHTML = menuItemToDisplay;
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} index 
+     * @returns 
+     */
+    function getRuleItemEndIndex(ruleName) {
+        let ruleIndex = -1
+        for(var i=0; i<rulesDataList.length; i++) {
+           if(rulesDataList[i].Type == 'menu' && rulesDataList[i].ID == ruleName) {
+            ruleIndex = i;
+            return ruleIndex;
+           }
+        }
+        return ruleIndex;
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} index 
+     */
+    function getNextRule(index) {
+        let ruleObj = []
+        for(var i=Number(index)+1; i<rulesDataList.length; i++) {
+           if(rulesDataList[i].Type == 'menu') {
+            ruleObj = rulesDataList[i];
+            return ruleObj;
+           }
+        }
+        return ruleObj;
+    }
+    //////////////////////////////////////////////////////////////////////////////
+    /**
+     * 
+     * @param {*} index 
+     * @returns 
+     */
+    function getPrevRule(index) {
+        let ruleObj = []
+        for(var i=Number(index)-1; i>=0; i--) {
+           if(rulesDataList[i].Type == 'menu') {
+            ruleObj = rulesDataList[i];
+            return ruleObj;
+           }
+        }
+        return ruleObj;
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -1791,7 +1960,11 @@ $(document).ready(function() {
     function handleTouchEnd(event) {
         let inButton = false;
         let touch = null;
-        if(event.type == 'mouseup') {
+        console.log(event.type, " ---- ")
+        if(event.type == 'mouseout') {
+            inButton = false;
+            return inButton;
+        } else if(event.type == 'mouseup') {
             touch = event;
         } else {
             touch = event.changedTouches[0];

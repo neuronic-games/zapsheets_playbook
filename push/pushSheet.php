@@ -30,8 +30,6 @@
         $python_execution = "python ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName .'dateString' .$dateStr; 
         $versionNum = shell_exec($python_execution);
         $versionNum = str_replace("\r\n","",$versionNum);
-        //echo $versionNum;
-
         /////////////////////////////////////////////////////////////
         // For Server
         /* $sheetName = 'Settings';
@@ -39,24 +37,9 @@
         $versionNum = shell_exec($py_command);
         $versionNum = str_replace("\r\n","", $versionNum); */
         /////////////////////////////////////////////////////////////
-
-        // Now update version so that the running app looks for updated version
-        // And reload the contents from spreadsheet
-        // New version generated and saved
-        /* $jsonVersionNum = ''. ((int) $versionNum ) . ''; */
-        /* $jsonVersionNum = ''. ((int) $updatedVers ) . ''; */
-
-        //////////////////////////////////////////////////////////////////////
-        // Moved to last block
-        /* $data = array('version' => ($jsonVersionNum));
-        $json_object = json_encode($data);
-        $output = file_put_contents($jsonFile, $json_object);  */
-        ///////////////////////////////////////////////////////////////////////
         // Return Message to console
         echo $versionNum;
     } else if($sheet == 'Settings') {
-        //$jsonFile = "../sheets/" . $spreadsheetId . "/settings.json";
-
         // For Local
         $sheetName = $sheet;
         $python_file_name = "gread.py "; 
@@ -69,11 +52,7 @@
         $py_command = escapeshellcmd('source /home/zapsheets/virtualenv/public_html/steps/3.11/bin/python3 gread.py ' .$spreadsheetId .'sheetname' .$sheetName); 
         $settingsData = shell_exec($py_command); */
         /////////////////////////////////////////////////////////////
-        
-        //$json_object = json_encode($settingsData);
-        //$output = file_put_contents($jsonFile, $settingsData); 
         echo 'Publishing settings data to server';
-        //echo $settingsData;
     } else if ($sheet == 'Install') {
         $jsonFile = "../sheets/" . $spreadsheetId . "/install.json";
 
@@ -89,9 +68,6 @@
         $py_command = escapeshellcmd('source /home/zapsheets/virtualenv/public_html/steps/3.11/bin/python3 gread.py ' .$spreadsheetId .'sheetname' .$sheetName); 
         $directoryData = shell_exec($py_command); */
         /////////////////////////////////////////////////////////////
-
-        //$json_object = json_encode($temp8);
-        //$output = file_put_contents($jsonFile, $directoryData); 
         echo 'Publishing Install data to server';
     } else if ($sheet == 'Events') {
         $jsonFile = "../sheets/" . $spreadsheetId . "/events.json";
@@ -109,7 +85,6 @@
         $eventsData = shell_exec($py_command); */
         /////////////////////////////////////////////////////////////
        
-        //$json_object = json_encode($settingsData);
         $output = file_put_contents($jsonFile, $eventsData); 
         echo 'Publishing events data to server';
     } else if ($sheet == 'Kiosks') {
@@ -129,7 +104,6 @@
         $kiosksData = shell_exec($py_command); */
         /////////////////////////////////////////////////////////////
        
-        //$json_object = json_encode($settingsData);
         $output = file_put_contents($jsonFile, $kiosksData); 
         echo 'Publishing kiosk data to server';
     } else if($sheet == 'Server') {
@@ -140,8 +114,6 @@
         $output = file_put_contents($jsonFile, $json_object); 
         echo 'Sheet version updated to server';
     } else if($sheet != '' && $sheet != 'checkSheet') {
-        //$jsonFile = "../sheets/" . $spreadsheetId . "/steps_" . strtolower($sheet) . '.json' ;
-
         // For Local
         $sheetName = $sheet;
         $python_file_name = "gread.py "; 
@@ -155,21 +127,18 @@
         $stepsLang = shell_exec($py_command); */
         /////////////////////////////////////////////////////////////
        
-        //$json_object = json_encode($settingsData);
-        //$output = file_put_contents($jsonFile, $stepsLang); 
         echo 'Publishing ', $sheet . ' data to server';
     } else if($sheet == 'checkSheet') {
        // For Local
         $tabName = $_POST['tab_name'];
         $sheetName = $tabName;
 
-
         // Local
         $python_file_name = "checkSheetStatus.py "; 
         $python_execution = "python ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName; 
         $isSheet = shell_exec($python_execution); 
 
-        
+        // Server
         /* $py_command = escapeshellcmd('source /home/zapsheets/virtualenv/public_html/steps/3.11/bin/python3 checkSheetStatus.py ' .$spreadsheetId .'sheetname' .$sheetName); 
         $isSheet = shell_exec($py_command); */
 

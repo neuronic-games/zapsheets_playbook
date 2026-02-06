@@ -1,8 +1,5 @@
 <?php
     $jsonFile = $_POST['jsonPath'];
-    /* if (!file_exists($jsonFile)) {
-        mkdir($jsonFile, 0777, true);
-    } */
     $tempFolder = explode('.json', $jsonFile);
     $folderName = explode('/version', $tempFolder[0]);
     if (!file_exists($jsonFile)) {

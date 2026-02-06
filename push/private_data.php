@@ -1,9 +1,6 @@
 <?php 
     /* header('Content-Type: text/html; charset=ISO-8859-1'); */
-    /*
-    Arguments from index file
-    */
-    
+    /* Arguments from index file */
     $sheetId = $_POST['sheetId'];
     $sheet = $_POST['sheet'];
 

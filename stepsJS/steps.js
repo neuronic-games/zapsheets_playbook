@@ -5,7 +5,7 @@
  */
 /* $(document).ready(function() { */
 window.addEventListener("load", (event) => {
-    //console.log('READY')
+    console.log('READY')
     // Steps Variables
     let stepIndex = 0
     let languageStepsData = [];

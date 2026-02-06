@@ -3,11 +3,11 @@
 let dyVersion = 0;
 /////////////////////////////////////////////////////////////////////////////////////
 // For Local Testing
-let jasonPath = './steps/'
+/* let jasonPath = './' */
 // For Live
-/* let jasonPath = 'https://zapsheets.com/playbook/steps/' */
+let jasonPath = 'https://zapsheets.com/playbook/'
 /////////////////////////////////////////////////////////////////////////////////////
-const CACHE_NAME = {name: 'playbookSW_v8'}
+const CACHE_NAME = {name: 'playbookSW_v10'}
 /////////////////////////////////////////////////////////////////////////////////////
 // Assets container
 let STATIC_ASSETS = []
@@ -44,7 +44,7 @@ function createCache(cacheVersion) {
 
                 // UI CSS
                 './css/style.css?version=' + dyVersion,
-                './menu/css/style.css?version=' + dyVersion,
+               
 
                 // UI Images
                 './img/logo.png',
@@ -55,16 +55,17 @@ function createCache(cacheVersion) {
                 './img/sheet_icon.png',
 
                 // JS Files
-                './js/JSController.js?version=' + dyVersion,
-                './menu/js/JSController.js?version=' + dyVersion,
+                './js/main/JSController.js?version=' + dyVersion,
+                './menu/js/MenuController.js?version=' + dyVersion,
+                './steps/js/StepsController.js?version=' + dyVersion,
 
                 // Language JSON Files
                 jasonPath + 'sheets/' + sheet_Id + '/settings.json?version=' + dyVersion,
-                jasonPath + 'sheets/' + sheet_Id + '/steps_en.json?version=' + dyVersion,
-                jasonPath + 'sheets/' + sheet_Id + '/menu_en.json?version=' + dyVersion,
-                jasonPath + 'sheets/' + sheet_Id + '/faqs_en.json?version=' + dyVersion,
-                jasonPath + 'sheets/' + sheet_Id + '/rules_en.json?version=' + dyVersion,
-                jasonPath + 'sheets/' + sheet_Id + '/bgg_en.json?version=' + dyVersion,
+                jasonPath + 'sheets/' + sheet_Id + '/steps-en.json?version=' + dyVersion,
+                jasonPath + 'sheets/' + sheet_Id + '/menu-en.json?version=' + dyVersion,
+                jasonPath + 'sheets/' + sheet_Id + '/faqs-en.json?version=' + dyVersion,
+                jasonPath + 'sheets/' + sheet_Id + '/rules-en.json?version=' + dyVersion,
+                jasonPath + 'sheets/' + sheet_Id + '/bgg-en.json?version=' + dyVersion,
                 jasonPath + 'sheets/' + sheet_Id + '/stats.json?version=' + dyVersion,
             ]
         }

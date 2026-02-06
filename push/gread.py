@@ -33,7 +33,6 @@ if(sheetName == "Settings"):
 elif (sheetName == "Install"):
     path = "../sheets/" + mGoogleSheetId + "/install.json"
 else:
-    #path = "../sheets/" + mGoogleSheetId + "/steps_" + sheetName.lower() + ".json"
     path = "../sheets/" + mGoogleSheetId + "/" + sheetName.lower() + ".json"
 
 # Check for file exists (If not creates one)

@@ -1,6 +1,7 @@
 /sheets/
 **/sheets/
 **/credentials.json
+/push/credentials.json
 /.env
 /log/
 /vendor/

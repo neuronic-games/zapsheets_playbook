@@ -42,7 +42,6 @@
       flex-direction: column; align-items: center; justify-content: space-around;">
     <img  src="img/sheet_2_new.webp?version=1.0" style="position:relative; width:25vw;"  alt="" onContextMenu="return false;" >
     </div>
-    <!-- <div id="uiSnippetContainer" style="position: absolute; width: 100%; height: 100vh;"> -->
     <iframe id="content" title="" style="position: absolute; top: 0; left: 0; position: absolute;
     top: 0;
     left: 0;
@@ -73,26 +72,26 @@
     color: #808080;
     z-index: 9; text-align: center; display: block;"></p>
   </div>
-  <!------------------------------------------------------------------------------------------------------>
+  <!--------------------------------------------------------------------------->
     <include src="./result.html"></include>
-    <script src="./js/jquery-3.5.1.min.js"></script>
-    <script src="./js/jquery.cookie.min.js"></script>
+    <script src="./js/common/jquery-3.5.1.min.js"></script>
+    <script src="./js/common/jquery.cookie.min.js"></script>
     <script
-      src="./js/bootstrap.bundle.min.js"
+      src="./js/common/bootstrap.bundle.min.js"
       <?php if($_ENV['ENVIRONMENT'] != 'development') {
         echo 'integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"';} ?>
       crossorigin="anonymous"
     ></script>
     <script>
     </script>
-    <!----------------------------------------------------------------------------------->
-    <script src="./js/devicedetector-min.js"></script>
-    <script src="./js/localdata.js"></script>
-    <script src="./js/moment.min.js?version=1.0"></script>
-    <script src="./js/device-uuid.min.js?version=1.0"></script>
-    <script src="./js/md5.js?version=1.0"></script>
-    <script src="./js/createjs.min.js?version=1.0"></script>
-    <!-------------------------FILE HANDLES OFFLINE MODE--------------------------------->
+    <!--------------------------------------------------------------------------->
+    <script src="./js/common/devicedetector-min.js"></script>
+    <script src="./js/common/localdata.js"></script>
+    <script src="./js/common/moment.min.js?version=1.0"></script>
+    <script src="./js/common/device-uuid.min.js?version=1.0"></script>
+    <script src="./js/common/md5.js?version=1.0"></script>
+    <script src="./js/common/createjs.min.js?version=1.0"></script>
+    <!-------------------FILE HANDLES OFFLINE MODE------------------------------->
     <script>
       let isSWExists = false;
       let uiSpinnetLoaded = false;
@@ -114,22 +113,43 @@
         var sheetType = (getUrlVars()["sheet"]) ? getUrlVars()["sheet"].split('/')[0] : 'menu-en';
         var sheet_Id = (getUrlVars()["id"]) ? getUrlVars()["id"].split('/')[0] : '';
         var activeLang = (getUrlVars()["code"]) ? getUrlVars()["code"].split('/')[0].toUpperCase() : navigator.language.split('-')[0].toUpperCase();
+
+        var fromParent = (getUrlVars()["from"]) ? getUrlVars()["from"].split('/')[0] : '';
+        var faqsSheetId = (getUrlVars()["faqsId"]) ? getUrlVars()["faqsId"].split('/')[0] : '';
+        var standalone = (getUrlVars()["standalone"]) ? getUrlVars()["standalone"].split('/')[0] : '';
+
+        // Reset Styling
+        if(fromParent == 'floristry') {
+          // Set Styling
+          document.getElementById('content').style.setProperty('--screen-width', '100%');
+          document.getElementById('content').style.setProperty('--screen-left', '0%');
+
+        } else {
+          // Set Styling
+          document.getElementById('content').style.setProperty('--screen-width', '70%');
+          document.getElementById('content').style.setProperty('--screen-left', '15%');
+        }
+        
         switch(sheetType.split('-')[0]) {
           case 'menu':
           case 'menus':
-            sheetToLoad = './menu/index.php?version=' + _ver
+            console.log("MENU")
+            sheetToLoad = './menu/index.php?version=' + _ver + "&code=" + activeLang
             break;
           case 'steps':
           case 'step':
-            sheetToLoad = './steps/index.php?version=' + _ver
+            console.log("STEPS")
+            sheetToLoad = './steps/index.php?version=' + _ver + "&code=" + activeLang + "&steps&" + fromParent + "&" + faqsSheetId + "&standalone=" + standalone 
             break;
           case 'faqs':
           case 'faq':
-            sheetToLoad = './menu/index.php?version=' + _ver + "&faqs"
+            console.log("FAQS")
+            sheetToLoad = './menu/index.php?version=' + _ver + "&code=" + activeLang + "&faqs&" + fromParent + "&" + faqsSheetId
             break;
           case 'rules':
           case 'rule':
-            sheetToLoad = './menu/index.php?version=' + _ver + "&rules"
+            console.log("RULES")
+            sheetToLoad = './menu/index.php?version=' + _ver + "&code=" + activeLang + "&rules"
             break;
         }
 
@@ -187,7 +207,7 @@
                 var netLoadTime = new Date().getTime() - netStartTime;
                 checkConnectionSpeed(netLoadTime);
               }
-              img.src = "img/zapsheets.png?version=" + Math.random()
+              img.src = "./img/zapsheets.png?version=" + Math.random()
             }
           }
           function checkConnectionSpeed(milliseconds) {
@@ -207,7 +227,7 @@
         var inetScript = document.createElement('script');
         inetScript.id = 'inet_Script';
         inetScript.type = 'text/javascript';
-        inetScript.src = './js/getInternetStat.js?version=' + _ver;
+        inetScript.src = './js/main/getInternetStat.js?version=' + _ver;
         document.getElementsByTagName('head')[0].appendChild(inetScript);
       }
       /////////////////////////////////////////////////////////////////////////////////
@@ -218,7 +238,7 @@
         var conScript = document.createElement('script');
         conScript.id = 'controller_Script';
         conScript.type = 'text/javascript';
-        conScript.src = './js/JSController.js?version=' + _ver;
+        conScript.src = './js/main/JSController.js?version=' + _ver;
         document.getElementsByTagName('head')[0].appendChild(conScript);
       }
       /////////////////////////////////////////////////////////////////////////////////
@@ -271,8 +291,8 @@
       }, 3000)
     </script>
     <!----------------------------------------------------------------------------------->
-    <script src="./js/jquery-ui.js"></script>
-    <script src="./js/devicedetector-min.js"></script>
+    <script src="./js/common/jquery-ui.js"></script>
+    <script src="./js/common/devicedetector-min.js"></script>
     <!----------------------------------------------------------------------------------->
   </body>
 </html>

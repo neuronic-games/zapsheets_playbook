@@ -1,0 +1,1 @@
+var interNetStatus =  window.navigator.onLine

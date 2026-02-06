@@ -1,4 +1,6 @@
-/****** FONTS *********/
+/********************************************************************/
+/********************************************************************/
+/******************************* FONTS ******************************/
 @font-face {
   font-family: 'DINCondensed-Bold';
   src: url('../fonts/DDINCondensedBold.eot');
@@ -33,14 +35,51 @@
   font-family: 'AcuminVariableConcept';
   src: url('../fonts/AcuminVariableConcept.otf');
 }
+@font-face {
+  font-family: 'DINBold';
+  src: url('../fonts/DIN_Bold.TTF') format('truetype');
+}
 
-/*************************************************************************/
+@font-face {
+  font-family: 'Oswald-Bold';
+  src: url('../fonts/Oswald.ttf') format('truetype');
+}
 
-*{margin:0;padding: 0;font-family: 'DINCondensed-Bold', 'AcuminVariableConcept', sans-serif;}
- ::-webkit-scrollbar {
+@font-face {
+    font-family: 'Font-default';
+    src: url('../fonts/HelveticaBold.ttf');
+}
+
+/*** FONT-Desc : FOR EVENT DESCRIPTION ***/
+@font-face {
+    font-family: 'Font-Title';
+    src: url('../fonts/CenturyOldStyleStd-Italic.otf');
+}
+
+@font-face {
+    font-family: 'eurostile';
+    src: url('../fonts/eurostile.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('../fonts/Poppins-ExtraLight.eot') format('embedded-opentype'),
+        url('../fonts/Poppins-ExtraLight.woff2') format('woff2'),
+        url('../fonts/Poppins-ExtraLight.woff') format('woff'),
+        url('../fonts/Poppins-ExtraLight.ttf') format('truetype'),
+        url('../fonts/Poppins-ExtraLight.svg') format('svg');
+}
+/********************************************************************/
+/********************************************************************/
+/********************************************************************/
+*{margin:0;padding: 0;font-family: 'DINCondensed-Bold', 'Oswald-Bold',  'AcuminVariableConcept', sans-serif;}
+
+::-webkit-scrollbar {
   width: 0px;
   background: transparent; /* make scrollbar transparent */
- }
+  display: none;
+}
+
 html {
   overflow-x: hidden;
   overflow-y: hidden;
@@ -48,1086 +87,23 @@ html {
   bottom: 0;
   left: 0;
   right: 0;
-
   -webkit-touch-callout: none; 
   user-select: none; 
   -moz-user-select: none; 
   -webkit-user-select: none;
+  scroll-behavior: smooth;
 }
+
 body {
   width: 100%;
   height: 100%;
   background-color: #F9F3E3 !important;
-}
-.bodyWrapper {
-  display: flex;
-  flex-wrap: wrap;
-  position: relative;
-  background-color: #000000;
-  background-repeat: no-repeat;
-  flex-direction: column;
-  align-items: center;
-}
-.bodyWrapper .boxes {
-  width: 50%;
-  height: 50vh;
-  border: 2px solid transparent;
-  position: relative;
-}
-.bodyWrapper .boxes .circles {
-  width: 150px;
-  height: 150px;
-  border-radius: 100px;
-  position: absolute;
-  top: 30%;
-  left: 50%;
-  transform: translateY(-50%) translateX(-50%);
-}
-.bodyWrapper .boxes:nth-of-type(2) .circles {
-  top: 70%;
-}
-.bodyWrapper.evenPage .boxes {
-  width: 100%;
-}
-.bodyWrapper.evenPage .boxes.green .counterAmount{
-  background-color: #29ABE2;
-}
-.bodyWrapper.evenPage .boxes.yellow .counterAmount{
-  background-color:#FBB03B;
-}
-.bigBtnClose {
-  z-index: 1061;
-  width: 30vh;
-  height: 30vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-transform: uppercase;
-  text-decoration: none;
-  font-weight: 700;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translateX(-50%) translateY(-50%);
-  z-index: 99999999999999;
-}
-.bigBtn,
-.counterBox,
-.bodyWrapper.evenPage .modal-content {
-  z-index: 1061;
-  width: 30vh;
-  height: 30vh;
-  border-radius: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 0 8px white, 0 0 0 12px #ffffff;
-  text-transform: uppercase;
-  color: #000000 !important;
-  text-decoration: none;
-  font-weight: 700;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translateX(-50%) translateY(-50%);
-  background-color: #ffffff;
-}
-.counterBox {
-  font-weight: 300;
-  cursor: default;
-}
-.bodyWrapper.evenPage .modal-content {
-  color: white !important;
-  cursor: default;
-}
-.counterAmount {
-  height: 70%;
-  background-color: red;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 15%;
-  font-size: 15vh;
-  color: #000000;
-  font-weight: 300;
-}
-.smAmount {
-  display: flex;
-  align-items: flex-start;
-  padding: 0 0.2em;
-  height: 30%;
-  font-size: 7vh;
-}
-.smAmount.right {
-  justify-content: flex-end;
-  align-items: flex-end;
-}
-.count-end-amount {
-  font-size: 6em;
-}
-.bodyWrapper.evenPage .boxes.green .smAmount,
-.count-end-amount.green {
-  color: #000000;
-  display: flex;
-  position: relative;
-  top: -9.5vh;
-  justify-content: space-between;
-}
-.bodyWrapper.evenPage .boxes.pink .smAmount,
-.count-end-amount.pink {
-  color: #ff00ff;
-  display: flex;
-}
-.bodyWrapper.evenPage .boxes.yellow .smAmount,
-.count-end-amount.yellow {
-  position: relative;
-  top: 9.5vh;
-  color: #000000;
-  justify-content: space-between;
-}
-.bodyWrapper.evenPage .boxes.sky .smAmount,
-.count-end-amount.sky {
-  color: #29ABE2;
-}
-.bodyWrapper.evenPage .boxes.green {
-  border-bottom: 2px solid white;
-  background-color: rgb(41, 171, 226);
-}
-.bodyWrapper.evenPage .boxes.yellow {
-  border-top: 2px solid white;
-  background-color: rgb(251, 176, 59);
-}
-#goModal {
-  font-size: 7em;
-}
-#goModal2,
-.bodyWrapper.counter-end-page .bigBtn {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  overflow: hidden;
-}
-#goModal2 a,
-.bodyWrapper.counter-end-page .bigBtn a {
-  width: 50%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  color: white;
-  font-size: 1.8em;
-  font-weight: 700;
-}
-#goModal h6 {
-  font-size: 32px;
-  text-align: center;
-  margin-top: -1.5em;
-}
-.bodyWrapper.counter-end-page .bigBtn {
-  background-color: #22b573;
-}
-.bodyWrapper.counter-end-page .bigBtn a {
-  font-size: 0.7em;
-  cursor: default;
-}
-.bodyWrapper.counter-end-page .bigBtnEnd{
-  font-size: 0.55em;
-  color: #ffffff;
-}
-#goModal2 a:nth-of-type(1),
-.bodyWrapper.counter-end-page .bigBtn a:nth-of-type(1) {
-  background-color: #c1272d;
-}
-.bigBtn.mainBtn {
-  background-color: #187e50;
-  color: white !important;
-  cursor: default;
-}
-.bodyWrapper.counter-end-page .boxes {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  padding: 0em 1em;
-  padding-top: 6em;
-}
-.bodyWrapper.counter-end-page .boxes.right {
-  padding-top: 0;
-  padding-bottom: 6em;
-  justify-content: flex-end;
-}
-.scoreText {
-  color: white;
-  font-size: 1.5em;
-  text-align: center;
-}
-.scoreText.rotated {
-  transform: rotateZ(180deg);
-}
-.eurohf {
-  transform: rotateZ(180deg);
-  font-weight: 600;
-  font-family: 'DINCondensed-Bold';
-}
-.euro {
-  font-weight: 600;
-  font-family: 'DINCondensed-Bold';
-}
-.flower {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translateX(-50%) translateY(-50%);
-  width: 85%;
-  z-index: -1;
-}
-.flowerNew {
-  z-index: 1061;
-  width: 35vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-transform: uppercase;
-  text-decoration: none;
-  font-weight: 700;
-  position: absolute;
-  bottom: 25vh;
-  left: 50%;
-  transform: translateX(-50%) translateY(-50%);
-}
-/**************************************************************************/
-.bodyWrapper.second-screen .readyBtn,.bodyWrapper.counter-end-page-score .readyBtn, .bodyWrapper.score-page .readyBtn, .bodyWrapper.score-page-count .readyBtn, .bodyWrapper.final-screen .readyBtn{
-  background-color: #29ABE2;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 35vh;
-  transform:rotateZ(180deg);
-  flex-wrap: wrap;
-  position: relative;
-}
-/**************************************************************************/
-.bodyWrapper.second-screen .readyBtn span{
-  font-size: 11vh; 
-  letter-spacing: -3px;
-  color: #ffffff;
-  font-weight: 500;
-  position: absolute;
-  bottom: 4vh;
-  cursor: default;
-  user-select: none;
-  font-weight: 600;
-  font-family: AcuminVariableConcept;
-}
-.bodyWrapper.counter-end-page-score .readyBtn span,.bodyWrapper.score-page .readyBtn span,.bodyWrapper.score-page-count .readyBtn span, .bodyWrapper.final-screen .readyBtn span{
-  font-size: 12vh;
-  letter-spacing: -3px;
-  color: #ffffff;
-  font-weight: 500;
-  position: absolute;
-  bottom: 5px;
-  cursor: default;
-  user-select: none;
-  font-weight: 600;
-  font-family: AcuminVariableConcept;
-}
-/**************************************************************************/
-.bodyWrapper.second-screen .readyBtn.yellow,.bodyWrapper.counter-end-page-score .readyBtn.yellow,.bodyWrapper.score-page .readyBtn.yellow,.bodyWrapper.score-page-count .readyBtn.yellow, .bodyWrapper.final-screen .readyBtn.yellow{
-  background-color: #fbb03b;
-  transform:rotateZ(0deg);
-}
-.bodyWrapper.second-screen .readySection,.bodyWrapper.second-screen .readySectionLevel,.bodyWrapper.counter-end-page-score .readySection,.bodyWrapper.counter-end-page-score .readySectionLevel,.bodyWrapper.score-page .readySection,.bodyWrapper.score-page .readySectionLevel,.bodyWrapper.score-page-count .readySection,.bodyWrapper.score-page-count .readySectionLevel, .bodyWrapper.final-screen .readySection,.bodyWrapper.final-screen .readySectionLevel{
-  height: 30vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 95vw;
-}
-.bodyWrapper.second-screen .readySectionLevel,.bodyWrapper.counter-end-page-score .readySectionLevel,.bodyWrapper.score-page .readySectionLevel,.bodyWrapper.score-page-count .readySectionLevel, .bodyWrapper.final-screen .readySectionLevel {
-  width: 100%;
-  justify-content: space-between;
-}
-.bodyWrapper.second-screen .readySectionLevel span,.bodyWrapper.counter-end-page-score .readySectionLevel span,.bodyWrapper.score-page .readySectionLevel span,.bodyWrapper.score-page-count .readySectionLevel span, .bodyWrapper.final-screen .readySectionLevel span{
-  width: 100%;
-  text-align: end;
-  display: block;
-  color: #fbb03b;
-  font-size: 2em;
-  font-weight: 500;
-  padding: 0.2em 0.5em;
-  font-size: 2.5em;
-}
-.bodyWrapper.second-screen .readySectionLevel span.rotated,.bodyWrapper.counter-end-page-score .readySectionLevel span.rotated,.bodyWrapper.score-page .readySectionLevel span.rotated,.bodyWrapper.counter-end-page-score .readySectionLevel span.rotated,.bodyWrapper.score-page .readySectionLevel span.rotated,.bodyWrapper.score-page-count .readySectionLevel span.rotated, .bodyWrapper.final-screen .readySectionLevel span.rotated{
-  text-align: start;
-  color: #29ABE2;
-  font-size: 2.5em;
-}
-.bodyWrapper.second-screen .readySectionLevel h1,.bodyWrapper.counter-end-page-score .readySectionLevel h1,.bodyWrapper.score-page .readySectionLevel h1,.bodyWrapper.score-page-count .readySectionLevel h1, .bodyWrapper.final-screen .readySectionLevel h1 {
-  font-size: 4em;
-  font-weight: 500;
-  color: #ffffff;
-  text-align: center;
-}
-/*******************************************************************************/
-.bodyWrapper.second-screen .readySection span{
-  display: block;
-  font-size: 10vh;
-  font-weight: 600;
-  color: #fbb03b;
-  position: relative;
-  margin-left: 66vw;
-  top: -40vw;
-}
-.bodyWrapper.counter-end-page-score .readySection span, .bodyWrapper.final-screen .readySection span{
-  display: block;
-  width: 100%;
-  font-size: 7vh;
-  font-weight: 600;
-  color: black;
-  position: relative;
-  margin-left: 0%;
-  top: 19.5vh;
-  z-index: 9;
-  text-align: right;
-}
-/*******************************************************************************/
-.bodyWrapper.score-page .readySection span, .bodyWrapper.score-page-count .readySection span{
-  display: block;
-  font-size: 4.5em;
-  font-weight: 700;
-  color: #fbb03b;
-}
-/*******************************************************************************/
-.bodyWrapper.second-screen .readySection span.rotated{
-  transform: rotateZ(180deg);
-  color: #29ABE2;
-  position: relative;
-  margin-left: -66vw;
-  top: 40vw;
-}
-.bodyWrapper.counter-end-page-score .readySection span.rotated,.bodyWrapper.score-page .readySection span.rotated,.bodyWrapper.score-page-count .readySection span.rotated {
-  transform: rotateZ(180deg);
-  color: black;
-  position: relative;
-  text-align: right;
-  top: -17vh;
-}
-.bodyWrapper.final-screen .readySection span.rotated{
-  transform: rotateZ(180deg);
-  color: black;
-  position: relative;
-  text-align: right;
-}
-/*******************************************************************************/
-/* @media (min-height: 569px) and (max-height: 750px) {
-  .bodyWrapper.second-screen .readyBtn,.bodyWrapper.counter-end-page-score .readyBtn, .bodyWrapper.score-page .readyBtn, .bodyWrapper.score-page-count .readyBtn, .bodyWrapper.final-screen .readyBtn{
-    background-color: #29ABE2;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 30vh;
-    transform:rotateZ(180deg);
-    flex-wrap: wrap;
-    position: relative;
-  
-  }
-  .bodyWrapper.second-screen .readyBtn span,.bodyWrapper.counter-end-page-score .readyBtn span,.bodyWrapper.score-page .readyBtn span,.bodyWrapper.score-page-count .readyBtn span, .bodyWrapper.final-screen .readyBtn span{
-    letter-spacing: 5px;
-    color: #ffffff;
-    font-weight: 500;
-    position: absolute;
-    bottom: 0px;
-  }
-  .bodyWrapper.second-screen .readyBtn.yellow,.bodyWrapper.counter-end-page-score .readyBtn.yellow,.bodyWrapper.score-page .readyBtn.yellow,.bodyWrapper.score-page-count .readyBtn.yellow, .bodyWrapper.final-screen .readyBtn.yellow{
-    background-color: #fbb03b;
-    transform:rotateZ(0deg);
-  }
-  .bodyWrapper.second-screen .readySection,.bodyWrapper.second-screen .readySectionLevel,.bodyWrapper.counter-end-page-score .readySection,.bodyWrapper.counter-end-page-score .readySectionLevel,.bodyWrapper.score-page .readySection,.bodyWrapper.score-page .readySectionLevel,.bodyWrapper.score-page-count .readySection,.bodyWrapper.score-page-count .readySectionLevel, .bodyWrapper.final-screen .readySection,.bodyWrapper.final-screen .readySectionLevel{
-    height: 40vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .bodyWrapper.second-screen .readySectionLevel,.bodyWrapper.counter-end-page-score .readySectionLevel,.bodyWrapper.score-page .readySectionLevel,.bodyWrapper.score-page-count .readySectionLevel, .bodyWrapper.final-screen .readySectionLevel {
-    width: 100%;
-    justify-content: space-between;
-  }
-  .bodyWrapper.second-screen .readySectionLevel span,.bodyWrapper.counter-end-page-score .readySectionLevel span,.bodyWrapper.score-page .readySectionLevel span,.bodyWrapper.score-page-count .readySectionLevel span, .bodyWrapper.final-screen .readySectionLevel span{
-    width: 100%;
-    text-align: end;
-    display: block;
-    color: #fbb03b;
-    font-size: 2em;
-    font-weight: 500;
-    padding: 0.2em 0.5em;
-    font-size: 2.5em;
-  }
-  .bodyWrapper.second-screen .readySectionLevel span.rotated,.bodyWrapper.counter-end-page-score .readySectionLevel span.rotated,.bodyWrapper.score-page .readySectionLevel span.rotated,.bodyWrapper.score-page-count .readySectionLevel span.rotated, .bodyWrapper.final-screen .readySectionLevel span{
-    text-align: start;
-    color: #29ABE2;
-    font-size: 2.5em;
-  }
-  .bodyWrapper.second-screen .readySectionLevel h1,.bodyWrapper.counter-end-page-score .readySectionLevel h1,.bodyWrapper.score-page .readySectionLevel h1,.bodyWrapper.score-page-count .readySectionLevel h1, .bodyWrapper.final-screen .readySectionLevel h1 {
-    font-size: 4em;
-    font-weight: 500;
-    color: #ffffff;
-    text-align: center;
-  }
-  .bodyWrapper.second-screen .readySection span{
-    display: block;
-    font-weight: 700;
-    color: #fbb03b;
-    position: relative;
-  }
-  .bodyWrapper.counter-end-page-score .readySection span, .bodyWrapper.final-screen .readySection span{
-    display: block;
-    font-size: 5em;
-    font-weight: 700;
-    color: #fbb03b;
-    position: relative;
-    margin-left: 0%;
-    top: 0%;
-  }
-  .bodyWrapper.score-page .readySection span, .bodyWrapper.score-page-count .readySection span{
-    display: block;
-   font-size: 3.5rem;
-    font-weight: 700;
-    color: #fbb03b;
-  }
-  .bodyWrapper.second-screen .readySection span.rotated{
-    transform: rotateZ(180deg);
-    color: #29ABE2;
-    position: relative;
-  }
-  .bodyWrapper.counter-end-page-score .readySection span.rotated,.bodyWrapper.score-page .readySection span.rotated,.bodyWrapper.score-page-count .readySection span.rotated, .bodyWrapper.final-screen .readySection span.rotated{
-    transform: rotateZ(180deg);
-    color: #29ABE2;
-    position: relative;
-    margin-left: 0%;
-    top: 0%;
-  }
-  .roundTextScoreCount
-  {
-    position: absolute;
-    width: 100%;
-    z-index: 9999;
-    text-align: center;
-    font-size: 4.3em; 
-    color: white;
-    top: 0.05em;
-  }
-} */
-/*****************************************************************************************/
-/* @media (min-height: 1000px) and (max-height: 1500px) {
-  .bodyWrapper.second-screen .readyBtn,.bodyWrapper.counter-end-page-score .readyBtn, .bodyWrapper.score-page .readyBtn, .bodyWrapper.score-page-count .readyBtn, .bodyWrapper.final-screen .readyBtn{
-   background-color: #29ABE2;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transform:rotateZ(180deg);
-    flex-wrap: wrap;
-    position: relative;
-  }
-  .bodyWrapper.second-screen .readyBtn span,.bodyWrapper.counter-end-page-score .readyBtn span,.bodyWrapper.score-page .readyBtn span,.bodyWrapper.score-page-count .readyBtn span, .bodyWrapper.final-screen .readyBtn span{
-    letter-spacing: 5px;
-    color: #ffffff;
-    font-weight: 500;
-    position: absolute;
-    bottom: 0px;
-  }
-  
-  .bodyWrapper.second-screen .readyBtn.yellow,.bodyWrapper.counter-end-page-score .readyBtn.yellow,.bodyWrapper.score-page .readyBtn.yellow,.bodyWrapper.score-page-count .readyBtn.yellow, .bodyWrapper.final-screen .readyBtn.yellow{
-    background-color: #fbb03b;
-    transform:rotateZ(0deg);
-  }
-  .bodyWrapper.second-screen .readySection,.bodyWrapper.second-screen .readySectionLevel,.bodyWrapper.counter-end-page-score .readySection,.bodyWrapper.counter-end-page-score .readySectionLevel,.bodyWrapper.score-page .readySection,.bodyWrapper.score-page .readySectionLevel,.bodyWrapper.score-page-count .readySection,.bodyWrapper.score-page-count .readySectionLevel, .bodyWrapper.final-screen .readySection,.bodyWrapper.final-screen .readySectionLevel{
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .bodyWrapper.second-screen .readySectionLevel,.bodyWrapper.counter-end-page-score .readySectionLevel,.bodyWrapper.score-page .readySectionLevel,.bodyWrapper.score-page-count .readySectionLevel, .bodyWrapper.final-screen .readySectionLevel {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .bodyWrapper.second-screen .readySectionLevel span,.bodyWrapper.counter-end-page-score .readySectionLevel span,.bodyWrapper.score-page .readySectionLevel span,.bodyWrapper.score-page-count .readySectionLevel span, .bodyWrapper.final-screen .readySectionLevel span{
-    width: 100%;
-    text-align: end;
-    display: block;
-    color: #fbb03b;
-    font-size: 2em;
-    font-weight: 500;
-    padding: 0.2em 0.5em;
-    font-size: 2.5em;
-  }
-  .bodyWrapper.second-screen .readySectionLevel span.rotated,.bodyWrapper.counter-end-page-score .readySectionLevel span.rotated,.bodyWrapper.score-page .readySectionLevel span.rotated,.bodyWrapper.score-page-count .readySectionLevel span.rotated, .bodyWrapper.final-screen .readySectionLevel span{
-    text-align: start;
-    color: #29ABE2;
-    font-size: 2.5em;
-  }
-  
-  .bodyWrapper.second-screen .readySectionLevel h1,.bodyWrapper.counter-end-page-score .readySectionLevel h1,.bodyWrapper.score-page .readySectionLevel h1,.bodyWrapper.score-page-count .readySectionLevel h1, .bodyWrapper.final-screen .readySectionLevel h1 {
-    font-size: 4em;
-    font-weight: 500;
-    color: #ffffff;
-    text-align: center;
-  }
-  .bodyWrapper.second-screen .readySection span{
-    display: block;
-    font-weight: 700;
-    color: #fbb03b;
-    position: relative;
-  }
-
-  .bodyWrapper.counter-end-page-score .readySection span, .bodyWrapper.final-screen .readySection span{
-    display: block;
-    font-weight: 700;
-    color: #fbb03b;
-    position: relative;
-  }
-
-  .bodyWrapper.score-page .readySection span, .bodyWrapper.score-page-count .readySection span{
-    display: block;
-   font-size: 3.5rem;
-    font-weight: 700;
-    color: #fbb03b;
-  }
-
-  .bodyWrapper.second-screen .readySection span.rotated{
-    transform: rotateZ(180deg);
-    color: #29ABE2;
-    position: relative;
-  }
-
-  .bodyWrapper.counter-end-page-score .readySection span.rotated,.bodyWrapper.score-page .readySection span.rotated,.bodyWrapper.score-page-count .readySection span.rotated, .bodyWrapper.final-screen .readySection span.rotated{
-    transform: rotateZ(180deg);
-    color: #29ABE2;
-    position: relative;
-  }
-  .roundTextScoreCount
-  {
-    position: absolute;
-    width: 100%;
-    z-index: 9999;
-    text-align: center;
-    font-size: 4.3em; 
-    color: white;
-    top: 0.05em;
-  }
-} */
-/*****************************************************************************************/
-
-/*
-////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////
-*/
-
-/*
-////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////
-*/
-
-/* @media (max-height: 450px) {
-  .bodyWrapper {
-    height: 100vh;
-    flex-direction: row;
-  }
-
-  .bodyWrapper .boxes .circles {
-    top: 50%;
-    left: 30%;
-    width: 100px !important;
-    height: 100px !important;
-  }
-  .bodyWrapper .boxes:nth-of-type(2) .circles {
-    top: 50%;
-    left: 70%;
-  }
-  .bodyWrapper.counter-end-page .boxes {
-    align-items: flex-start;
-    height: 100vh;
-    padding: 2em;
-  }
-  .bodyWrapper.counter-end-page .boxes.right {
-    align-items: flex-end;
-    padding: 2em;
-  }
-  .counterAmount {
-    justify-content: flex-start;
-  }
-  .bodyWrapper.evenPage .boxes.yellow .counterAmount {
-    justify-content: flex-end;
-  }
-
-  .bodyWrapper.second-screen .readyBtn,.bodyWrapper.counter-end-page-score .readyBtn, .bodyWrapper.final-screen .readyBtn{
-    height: 20vh;
-  }
-  .bodyWrapper.second-screen .readyBtn span,.bodyWrapper.counter-end-page-score .readyBtn span, .bodyWrapper.final-screen .readyBtn span{
-    font-size: 3em;
-  }
-
-  .bodyWrapper.second-screen .readySection,.bodyWrapper.second-screen .readySectionLevel, .bodyWrapper.counter-end-page-score .readySectionLevel, .bodyWrapper.final-screen .readySection,.bodyWrapper.final-screen .readySectionLevel{
-   height: 60vh;
-   width: 100%;
-  }
-  .bodyWrapper.second-screen,.bodyWrapper.counter-end-page-score, .bodyWrapper.final-screen{
-    align-content: space-between;
-  }
-  .bodyWrapper.second-screen .readySection span, .bodyWrapper.counter-end-page-score .readySection span, .bodyWrapper.final-screen .readySection span{
-    font-size: 3em;
-  }
-
-  .bodyWrapper.second-screen .readySectionLevel span, .bodyWrapper.counter-end-page-score .readySectionLevel span, .bodyWrapper.final-screen .readySectionLevel span{
-    font-size: 2em;
-  }
-  .bodyWrapper.second-screen .readySectionLevel h1, .bodyWrapper.counter-end-page-score .readySectionLevel h1, .bodyWrapper.final-screen .readySectionLevel h1{
-    font-size: 4em;
-  }
-  
-  .roundTextScoreCount
-  {
-    position: absolute;
-    width: 100%;
-    z-index: 9999;
-    text-align: center;
-    font-size: 4em; 
-    color: white;
-    top: 0.05em;
-  }
-} */
-
-/*
-**************************************************************************
-**************************************************************************
-*/
-
-/* @media (max-height: 750px) and (max-width: 768px) {
-  .bodyWrapper .boxes .circles {
-  }
-  .bigBtn,
-  .counterBox,
-  .bodyWrapper.evenPage .modal-content {
-    cursor: default;
-  }
-  
-  #goModal2 a,
-  .bodyWrapper.counter-end-page .bigBtn a i {
-    font-size: 1.8em;
-  }
-  .bodyWrapper.counter-end-page .bigBtn a {
-    font-size: 0.7em;
-  }
-  #goModal {
-    font-size: 7em;
-  }
-  #goModal2 {
-  }
-  #goModal h6 {
-    margin-top: -1.2em;
-  }
-  
-  .bodyWrapper.counter-end-page .boxes {
-    padding-top: 3em;
-  }
-
-  .bodyWrapper.counter-end-page .boxes.right {
-    padding-bottom: 3em;
-  }
-
-  .counterAmount,
-  .counterBox {
-    font-weight: 6em;
-  }
-  .count-end-amount {
-    font-size: 5em;
-  }
-
-  .bigBtn.mainBtn{
-    background-color: #187E50;
-    color: white !important;
-  }
-
-  .roundTextScoreCount
-  {
-    position: absolute;
-    width: 100%;
-    z-index: 9999;
-    text-align: center;
-    font-size: 4.5em; 
-    color: white;
-    top: 0.05em;
-  }
-  
-} */
-
-/************************************************************************/
-.modal {
-  z-index: 1060;
-  width: 30vh;
-  height: 30Vh;
-  font-size: 15vh;
-  border-radius: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-transform: uppercase;
-  color: #000000 !important;
-  text-decoration: none;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translateX(-50%) translateY(-50%);
-  background-color: #ffffff;
-}
-.modal-backdrop {
-  user-select: none;
-  pointer-events: none;
-  opacity:0.2 !important;
-}
-.roundText {
-  position: absolute;
-  width: 100%;
-  z-index: 9999;
-  text-align: left;
-  left: 2vw;
-  font-size: 7vh; 
-  color: black;
-  top: 0.5vh;
-  font-family: 'DINCondensed-Bold';
-}
-.roundTextScore {
-  position: absolute;
-  width: 100%;
-  z-index: 9999;
-  text-align: left;
-  font-size: 6vh; 
-  color: black;
-  left: 1.5vh;
-  top: 1vh;
-  font-weight: 600;
-  letter-spacing: -1px;
-}
-.roundTextToken {
-  position: relative;
-  z-index: 99999;
-  font-size: 3.5vh; 
-  color: black;
-  font-weight: 600;
-  font-family: 'DINCondensed-Bold';
-}
-.roundTextTokenGreen {
-  position: relative;
-  z-index: 99999;
-  font-size: 3.5vh; 
-  color: black;
-  font-weight: 600;
-  font-family: 'DINCondensed-Bold';
-}
-#imgBackPointGreen {
-  position: relative;
-  display: block;
-  top: -13vh;
-  left: 64vw;
-}
-#imgBackPointYellow {
-  position: relative;
-  display: block;
-  top: -5vh;
-  left: 59vw;
-}
-.pointsIcon {
-  position: fixed;
-  width: 6vh;
-  z-index: -1;
-  transform: scale(0.7);
-}
-.creditIcon {
-  position: fixed;
-  width: 5vh;
-  z-index: -1;
-  transform: scale(0.5);
-  margin-left: -0.9vh;
-  margin-top: -0.2vh;
-}
-/********************** CLOCK START ************************/
-.clock {
-  width: 26vh;
-  height: 26vh;
-  font-size: 4vh;
-  line-height: 6vh;
-  border-radius: 50%;
-  position: relative;
-}
-.clock .number {
-  --rotation : 0;
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  text-align: center;
-  transform: rotate(var(--rotation));
-  font-weight: 600;
-}
-
-.dot {
-  height: 1.8vh;
-  width: 1.8vh;
-  background-color: #000000;
-  border: 1px solid black;
-  border-radius: 50%;
-  display: inline-block;
-  position: absolute;
-  top: -1.2vh;
-  transform: translateX(-45%);
-}
-.dotColored {
-  height: 2.7vh;
-  width: 2.7vh;
-  display: inline-block;
-  position: absolute;
-  color: #bb0a0a;
-  top: -3.5vh;
-  transform: translateX(-50%);
-}
-.dot12 {
-  height: 2.7vh;
-  width: 2.7vh;
-  display: inline-block;
-  position: absolute;
-  color: #bb0a0a;
-  top: -3.5vh;
-  transform: translateX(-65%);
-}
-.dot15 {
-  height: 2.7vh;
-  width: 2.7vh;
-  display: inline-block;
-  position: absolute;
-  color: #bb0a0a;
-  top: -3.5vh;
-  transform: translateX(-50%);
-}
-.clock .number0 {--rotation: 0deg;}
-.clock .number1 {--rotation: 18deg;}
-.clock .number2 {--rotation: 36deg;}
-.clock .number3 {--rotation: 54deg;}
-.clock .number4 {--rotation: 72deg;}
-.clock .number5 {--rotation: 90deg;}
-.clock .number6 {--rotation: 108deg;}
-.clock .number7 {--rotation: 126deg;}
-.clock .number8 {--rotation: 144deg;}
-.clock .number9 {--rotation: 162deg;}
-.clock .number10 {--rotation: 180deg;}
-.clock .number11 {--rotation: 198deg;}
-.clock .number12 {--rotation: 216deg;}
-.clock .number13 {--rotation: 234deg;}
-.clock .number14 {--rotation: 252deg;}
-.clock .number15 {--rotation: 270deg;}
-.clock::after {
-  content: '';
-  position: absolute;
-  background-color: #000000;
-  z-index: 11;
-  width: 15px;
-  height: 15px;
-  top: 50%;
-  left: 50%;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-}
-.clock .hand {
-  --rotation: 0;
-  position: absolute;
-  bottom: 50%;
-  left: 50%;
-  transform-origin: bottom;
-  z-index: 10;
-  transform: translate(-55%) rotate(calc(var(--rotation) * 1deg));
-}
-.clock .hand.second {
-  background-image: url(../img/floristry_clock_hand.png);
-  background-repeat: no-repeat;
-  width: 1vh;
-  height: 12vh;
-}
-/********************** CLOCK END ***********************************/
-
-/*********************** Buttons + and - ****************************/
-.buttonPlus {
-  background-color: #110006;
-  width: 17vw;
-  height: auto;
-  border-radius: 5px;
-  text-align: center;
-  position: relative;
-  top: -9vh;
-  left: 28vw;
-  z-index: 99998;
-}
-.buttonMinus {
-  background-color: #110006;
-  width: 17vw;
-  height: auto;
-  border-radius: 5px;
-  text-align: center;
-  position: relative;
-  top: -9vh;
-  left: -28vw;
-  z-index: 99999;
-}
-.buttonPlus img {
-  filter: brightness(0) invert(1);
-  transform: scale(.7);
-}
-.buttonMinus img {
-  filter: brightness(0) invert(1);
-  transform: scale(.6);
-}
-.buttonPlus p {
-  color: #fff;
-  position: absolute;
-  margin: 0;
-  position: absolute;
-  top: 40%;
-  left: 49%;
-  transform: translate(-50%, -50%);
-  font-size: 8em;
-  padding: 40px;
-  user-select: none;
-}
-.buttonMinus p {
-  color: #fff;
-  position: absolute;
-  margin: 0;
-  position: absolute;
-  top: 50%;
-  left: 49%;
-  transform: translate(-50%, -50%);
-  font-size: 8em;
-  padding: 40px;
-  font-weight: 700;
-}
-/*********************** Buttons END *************************/
-/**************************************************************/
-.counter-end-page .bigBtn, .counter-end-page-quit .bigBtn {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  overflow: hidden;
-}
-.counter-end-page .bigBtn a, .counter-end-page-quit .bigBtn a {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  color: white;
-  font-size: 1.8em;
-  font-weight: 700;
-}
-#goModal h6 {
-  font-size: 32px;
-  text-align: center;
-  margin-top: -1.5em;
-}
-.counter-end-page .bigBtn, .counter-end-page-quit .bigBtn {
-  background-color: #22b573;
-  user-select: none;
-  -moz-user-select: none;
   -webkit-user-select: none;
-}
-.counter-end-page .bigBtn a, .counter-end-page-quit .bigBtn a {
-  font-size: 6vh !important;
-  cursor: default;
-  user-select: none;
+  -khtml-user-select: none;
   -moz-user-select: none;
-  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
-.counter-end-page .bigBtn a:nth-of-type(1), .counter-end-page-quit .bigBtn a:nth-of-type(1){
-  background-color: #C1272D;
-}
-.bigBtn.mainBtn{
-  background-color: #187E50;
-  color: white !important;
-  font-size: 4em;
-}
-.moneyBottomLine {
-  position: absolute;
-  width: 94vw; 
-  height: 0.3vw; 
-  background-color: #000000; 
-  left: 3vw;
-}
-.moneyBottomLineScore {
-  position: absolute;
-  width: 94vw;
-  height: 0.3vw;
-  background-color: #000000;
-  left: 3vw;
-  top: 7.5vh;
-}
-.moneyBottomLineStart {
-  position: absolute;
-  width: 94vw;
-  height: 0.3vw;
-  background-color: #000000;
-  left: 3vw;
-  top: 8vh;
-}
-/*****************************************************************/
-/* @media screen and (orientation : portrait) {
-  #update-banner .headline {
-      font-size: 1.2em !important;
-      user-select: none;
-      line-height: 1.2;
-      position: relative;
-      left: 15% !important;
-   }
-   
-   #update-banner .subhead {
-      font-size: 1em !important;
-   }
-
-   #update-banner[data-state="updateavailable"] {
-      background: #404040; 
-      position: fixed;
-      width: 100%; 
-      left: 0%; 
-      top: 15px;
-      border-radius: 5px;
-      z-index: 1060 !important;
-   }
-} */
-/* @media screen and (orientation : landscape) {
-  #update-banner .headline {
-      font-size: 1.5em !important;
-      user-select: none;
-      line-height: 1.2;
-      position: relative;
-      left: 15% !important;
-   }
-
-   #update-banner .subhead {
-      font-size: 1.2em !important;
-   }
-
-   #update-banner[data-state="updateavailable"] {
-      background: #404040; 
-      position: fixed;
-      width: 84%;
-      left: 8%;
-      top: 15px;
-      border-radius: 5px;
-      z-index: 1060 !important;
-   }
-} */
 /*****************************************************************/
 #update-banner {
   color: #FFFFFF;
@@ -1137,6 +113,7 @@ body {
   top: 15px;
   border: 1px solid #00000090;
 }
+
 #update-banner .content {
   margin: 0 auto;
   max-width: 980px;
@@ -1146,6 +123,7 @@ body {
   align-items: center;
   justify-content: flex-start;
 }
+
 #update-banner .headline {
   font-weight: 800;
   font-size: 4.5vw;
@@ -1153,9 +131,11 @@ body {
   position: relative;
   left: 10vw;
 }
+
 #update-banner .subhead {
   font-size: 1em;
 }
+
 #update-banner1111[data-state="updateavailable"] {
   cursor: pointer;
   background: green;
@@ -1167,259 +147,11 @@ body {
   z-index: 1060 !important;
 }
 /*****************************************************************/
-/* @media (min-height: 568px) and (max-width: 370px) {
-  .bodyWrapper.second-screen .readyBtn,.bodyWrapper.counter-end-page-score .readyBtn, .bodyWrapper.score-page .readyBtn, .bodyWrapper.score-page-count .readyBtn, .bodyWrapper.final-screen .readyBtn{
-   background-color: #29ABE2;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 30vh;
-    transform:rotateZ(180deg);
-    flex-wrap: wrap;
-    position: relative;
-  
-  }
-  .bodyWrapper.second-screen .readyBtn span,.bodyWrapper.counter-end-page-score .readyBtn span,.bodyWrapper.score-page .readyBtn span,.bodyWrapper.score-page-count .readyBtn span, .bodyWrapper.final-screen .readyBtn span{
-    letter-spacing: 5px;
-    color: #ffffff;
-    font-weight: 500;
-    position: absolute;
-    bottom: 0px;
-  }
-  
-  .bodyWrapper.second-screen .readyBtn.yellow,.bodyWrapper.counter-end-page-score .readyBtn.yellow,.bodyWrapper.score-page .readyBtn.yellow,.bodyWrapper.score-page-count .readyBtn.yellow, .bodyWrapper.final-screen .readyBtn.yellow{
-    background-color: #fbb03b;
-    transform:rotateZ(0deg);
-  }
-  .bodyWrapper.second-screen .readySection,.bodyWrapper.second-screen .readySectionLevel,.bodyWrapper.counter-end-page-score .readySection,.bodyWrapper.counter-end-page-score .readySectionLevel,.bodyWrapper.score-page .readySection,.bodyWrapper.score-page .readySectionLevel,.bodyWrapper.score-page-count .readySection,.bodyWrapper.score-page-count .readySectionLevel, .bodyWrapper.final-screen .readySection,.bodyWrapper.final-screen .readySectionLevel{
-    height: 40vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .bodyWrapper.second-screen .readySectionLevel,.bodyWrapper.counter-end-page-score .readySectionLevel,.bodyWrapper.score-page .readySectionLevel,.bodyWrapper.score-page-count .readySectionLevel, .bodyWrapper.final-screen .readySectionLevel {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .bodyWrapper.second-screen .readySectionLevel span,.bodyWrapper.counter-end-page-score .readySectionLevel span,.bodyWrapper.score-page .readySectionLevel span,.bodyWrapper.score-page-count .readySectionLevel span, .bodyWrapper.final-screen .readySectionLevel span{
-    width: 100%;
-    text-align: end;
-    display: block;
-    color: #fbb03b;
-    font-size: 2em;
-    font-weight: 500;
-    padding: 0.2em 0.5em;
-    font-size: 2.5em;
-  }
-  .bodyWrapper.second-screen .readySectionLevel span.rotated,.bodyWrapper.counter-end-page-score .readySectionLevel span.rotated,.bodyWrapper.score-page .readySectionLevel span.rotated,.bodyWrapper.score-page-count .readySectionLevel span.rotated, .bodyWrapper.final-screen .readySectionLevel span{
-    text-align: start;
-    color: #29ABE2;
-    font-size: 2.5em;
-  }
-  
-  .bodyWrapper.second-screen .readySectionLevel h1,.bodyWrapper.counter-end-page-score .readySectionLevel h1,.bodyWrapper.score-page .readySectionLevel h1,.bodyWrapper.score-page-count .readySectionLevel h1, .bodyWrapper.final-screen .readySectionLevel h1 {
-    font-size: 4em;
-    font-weight: 500;
-    color: #ffffff;
-    text-align: center;
-  }
-
-  .bodyWrapper.second-screen .readySection span{
-    display: block;
-    font-weight: 700;
-    color: #fbb03b;
-    position: relative;
-  }
-
-  .bodyWrapper.counter-end-page-score .readySection span, .bodyWrapper.final-screen .readySection span{
-    display: block;
-    font-size: 5em;
-    font-weight: 700;
-    color: #fbb03b;
-    position: relative;
-    margin-left: 0%;
-    top: 0%;
-  }
-
-  .bodyWrapper.score-page .readySection span, .bodyWrapper.score-page-count .readySection span{
-    display: block;
-    font-size: 3.5rem;
-    font-weight: 700;
-    color: #fbb03b;
-  }
-
-  .bodyWrapper.second-screen .readySection span.rotated{
-    transform: rotateZ(180deg);
-    color: #29ABE2;
-    position: relative;
-  }
-
-  .bodyWrapper.counter-end-page-score .readySection span.rotated,.bodyWrapper.score-page .readySection span.rotated,.bodyWrapper.score-page-count .readySection span.rotated, .bodyWrapper.final-screen .readySection span.rotated{
-    transform: rotateZ(180deg);
-    color: #29ABE2;
-    position: relative;
-    margin-left: 0%;
-    top: 0%;
-  }
-
-  .roundTextScoreCount
-  {
-    position: absolute;
-    width: 100%;
-    z-index: 9999;
-    text-align: center;
-    font-size: 4.3em; 
-    color: white;
-    top: 0.05em;
-  }
-  .roundText {
-    position: absolute;
-    width: 100%;
-    z-index: 9999;
-    text-align: center;
-    color: white;
-    top: 0.05em;
-  }
-} */
-/******************************************************************************/
-/* @media 
-  only screen and (min-device-width: 320px) 
-  and (max-device-width: 480px) 
-  and (-webkit-device-pixel-ratio: 2) 
-  and (device-aspect-ratio: 2/3)
-{
-  .bodyWrapper.second-screen .readyBtn,.bodyWrapper.counter-end-page-score .readyBtn, .bodyWrapper.score-page .readyBtn, .bodyWrapper.score-page-count .readyBtn, .bodyWrapper.final-screen .readyBtn{
-   background-color: #29ABE2;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 30vh;
-    transform:rotateZ(180deg);
-    flex-wrap: wrap;
-    position: relative;
-  
-  }
-  .bodyWrapper.second-screen .readyBtn span,.bodyWrapper.counter-end-page-score .readyBtn span,.bodyWrapper.score-page .readyBtn span,.bodyWrapper.score-page-count .readyBtn span, .bodyWrapper.final-screen .readyBtn span{
-    letter-spacing: 5px;
-    color: #ffffff;
-    font-weight: 500;
-    position: absolute;
-    bottom: 0px;
-  }
-  
-  .bodyWrapper.second-screen .readyBtn.yellow,.bodyWrapper.counter-end-page-score .readyBtn.yellow,.bodyWrapper.score-page .readyBtn.yellow,.bodyWrapper.score-page-count .readyBtn.yellow, .bodyWrapper.final-screen .readyBtn.yellow{
-    background-color: #fbb03b;
-    transform:rotateZ(0deg);
-  }
-  .bodyWrapper.second-screen .readySection,.bodyWrapper.second-screen .readySectionLevel,.bodyWrapper.counter-end-page-score .readySection,.bodyWrapper.counter-end-page-score .readySectionLevel,.bodyWrapper.score-page .readySection,.bodyWrapper.score-page .readySectionLevel,.bodyWrapper.score-page-count .readySection,.bodyWrapper.score-page-count .readySectionLevel, .bodyWrapper.final-screen .readySection,.bodyWrapper.final-screen .readySectionLevel{
-    height: 40vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .bodyWrapper.second-screen .readySectionLevel,.bodyWrapper.counter-end-page-score .readySectionLevel,.bodyWrapper.score-page .readySectionLevel,.bodyWrapper.score-page-count .readySectionLevel, .bodyWrapper.final-screen .readySectionLevel {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .bodyWrapper.second-screen .readySectionLevel span,.bodyWrapper.counter-end-page-score .readySectionLevel span,.bodyWrapper.score-page .readySectionLevel span,.bodyWrapper.score-page-count .readySectionLevel span, .bodyWrapper.final-screen .readySectionLevel span{
-    width: 100%;
-    text-align: end;
-    display: block;
-    color: #fbb03b;
-    font-size: 2em;
-    font-weight: 500;
-    padding: 0.2em 0.5em;
-    font-size: 2.5em;
-  }
-  .bodyWrapper.second-screen .readySectionLevel span.rotated,.bodyWrapper.counter-end-page-score .readySectionLevel span.rotated,.bodyWrapper.score-page .readySectionLevel span.rotated,.bodyWrapper.score-page-count .readySectionLevel span.rotated, .bodyWrapper.final-screen .readySectionLevel span{
-    text-align: start;
-    color: #29ABE2;
-    font-size: 2.5em;
-  }
-  
-  .bodyWrapper.second-screen .readySectionLevel h1,.bodyWrapper.counter-end-page-score .readySectionLevel h1,.bodyWrapper.score-page .readySectionLevel h1,.bodyWrapper.score-page-count .readySectionLevel h1, .bodyWrapper.final-screen .readySectionLevel h1 {
-    font-size: 4em;
-    font-weight: 500;
-    color: #ffffff;
-    text-align: center;
-  }
-
-  .bodyWrapper.second-screen .readySection span{
-    display: block;
-    font-weight: 700;
-    color: #fbb03b;
-    position: relative;
-  }
-
-
-  .bodyWrapper.counter-end-page-score .readySection span, .bodyWrapper.final-screen .readySection span{
-    display: block;
-    font-size: 5em;
-    font-weight: 700;
-    color: #fbb03b;
-    position: relative;
-  }
-
-
-  .bodyWrapper.score-page .readySection span, .bodyWrapper.score-page-count .readySection span{
-    display: block;
-    font-size: 3.5rem;
-    font-weight: 700;
-    color: #fbb03b;
-  }
-
-  .bodyWrapper.second-screen .readySection span.rotated{
-    transform: rotateZ(180deg);
-    color: #29ABE2;
-    position: relative;
-  }
-
-  .bodyWrapper.counter-end-page-score .readySection span.rotated,.bodyWrapper.score-page .readySection span.rotated,.bodyWrapper.score-page-count .readySection span.rotated, .bodyWrapper.final-screen .readySection span.rotated{
-    transform: rotateZ(180deg);
-    color: #29ABE2;
-    position: relative;
-  }
-
-  .roundTextScoreCount
-  {
-    position: absolute;
-    width: 100%;
-    z-index: 9999;
-    text-align: center;
-    font-size: 4.3em; 
-    color: white;
-    top: 0.05em;
-  }
-  .roundText {
-    position: absolute;
-    width: 100%;
-    z-index: 9999;
-    text-align: center;
-    color: white;
-    top: 0.05em;
-  }
-  .bodyWrapper.evenPage .boxes.green .smAmount, .count-end-amount.green {
-    color: #29ABE2;
-    display: flex;
-    font-size: 2.5em;
-  }
-  .bodyWrapper.evenPage .boxes.yellow .smAmount, .count-end-amount.yellow {
-    color: #fbb03b;
-    font-size: 2.5em;
-  }
-} */
-
-/***********************************************************************/
+/*****************************************************************/
 .pulse {
   animation: pulse 1s ease-out infinite;
 }
-/***********************************************************************/
+
 @keyframes pulse {
   0% {
     transform: scale(1);
@@ -1434,63 +166,7 @@ body {
     opacity: 0.6;
   }
 }
-/***********************************************************************/
-.betMessage {
-  position: relative;
-  width: 100%;
-  height: 70%;
-  color: black;
-  font-size: 9vw;
-  text-align: center;
-  line-height: 11vw;
-  display: none;
-  justify-content: space-around;
-  align-content: center;
-  align-items: center;
-  flex-direction: column;
-}
-.betMessage_yellow {
-  position: relative;
-  width: 100%;
-  height: 80%;
-  color: white;
-  font-size: 9vw;
-  text-align: center;
-  line-height: 11vw;
-  display: none;
-  justify-content: start;
-  align-items: center;
-  flex-direction: column;
-  transform: rotateZ(180deg);
-}
-.scoreGraphic_OLD {
-  position: relative;
-  width: 6vh;
-  z-index: 9999;
-  text-align: center;
-  left: 12vh;
-  top: -2.5vh;
-}
-.scoreGraphic {
-  position: relative;
-  width: 6vh;
-  z-index: 9999;
-}
-.scoreGraphicYellowPoints {
-  position: absolute;
-  width: 6vh;
-  z-index: 9999;
-  top: 5vh;
-  left: 60%;
-}
-.scoreGraphicPoints {
-  position: absolute;
-  width: 7vh;
-  z-index: 9999;
-  text-align: center;
-  top: 0.05em;
-  font-size: 5vh;
-}
+/*****************************************************************/
 .versionText {
   position: absolute; 
   width: 80%; 
@@ -1499,249 +175,7 @@ body {
   text-align: right; 
   font-size: 2vh;
 }
-.goFullScreen {
-  position: fixed;
-  text-align: center;
-  width: 50%;
-  bottom: 1.5vh;
-  left: 50%;
-  font-size: 3.5vw !important;
-  transform: translateX(-50%) translateY(-50%);
-}
-.fullScreenText {
-  font-size: 4vh;  
-  color: #22b573;
-}
-.learnPlay {
-  position: fixed; 
-  top: 20vh; 
-  text-align: center; 
-  width: 100%;
-}
-.learnPlayNew {
-  position: fixed;
-  text-align: center;
-  top: 20vh;
-  left: 50%;
-  font-size: 5.5vw;
-  transform: translateX(-50%) translateY(-50%);
-  z-index: 999;
-}
-.learnPlayText {
-  font-size: 4vh;  
-  color: #29ABE2;
-}
-.play {
-  position: fixed; 
-  top: 75vh; 
-  text-align: center; 
-  width: 100%;
-}
-.playNew {
-  position: fixed;
-  text-align: center;
-  width: 50%;
-  bottom: 10vh;
-  left: 50%;
-  font-size: 13vw;
-  transform: translateX(-50%) translateY(-50%);
-}
-.playNewUI {
-  position: relative;
-  text-align: center;
-  width: 60%;
-  left: 50%;
-  font-size: 8vw;
-  transform: translateX(-50%) translateY(-50%);
-}
-.playNewUIBrowser {
-  position: relative;
-  text-align: center;
-  width: 100%;
-  top: 10vh;
-  left: 50%;
-  font-size: 4vw;
-  transform: translateX(-50%) translateY(-50%);
-}
-.addPhone {
-  position: relative;
-  text-align: center;
-  width: 60%;
-  left: 50%;
-  font-size: 6vw;
-  transform: translateX(-50%) translateY(-50%);
-}
-.playText {
-  font-size: 10vh;  
-  color: #FBB03B;
-}
-.OSInfoContainer {
-  position: absolute; 
-  top:0em; 
-  left: 0%; 
-  width: 100%; 
-  height: 100%; 
-  background-color: #000000; 
-  z-index: 999999; 
-  display: none;
-}
-.animationContainer {
-  background-color:#000000; 
-  top:0; 
-  left:0; 
-  display: none;
-}
-.iosCanvas {
-  position: absolute; 
-  display: block; 
-  background-color:#000000; 
-  height: 1080px; 
-  top: 0em; 
-  left:0px;
-}
-.iosOverlay {
-  pointer-events:none; 
-  overflow:hidden; 
-  position: absolute; 
-  left: 10%; 
-  top: 0px; 
-  display: block;
-}
-.andriodCanvas {
-  position: absolute; 
-  display: block; 
-  background-color:#000000; 
-  height: 1080px; 
-  top: 0em;
-}
-.androidOverlay {
-  pointer-events:none; 
-  overflow:hidden; 
-  position: absolute; 
-  left: 0px; 
-  top: 0px; 
-  display: block;
-}
-.howtoCanvas {
-  position: absolute; 
-  display: block; 
-  background-color:#000000; 
-  height: 1080px; 
-  top: 0em;
-}
-.howtoOverlay {
-  pointer-events:none; 
-  overflow:hidden; 
-  position: absolute; 
-  left: 0px; 
-  top: 0px; 
-  display: block;
-}
-.tapContinue {
-  position: absolute;
-  width: 100vw;
-  height: 3vh;
-  color: #000000;
-  text-align: center;
-  font-size: 4vh;
-  top: -10vh;
-  font-family: 'DINCondensed-Bold';
-}
-.finalScreenTop {
-  position: relative;
-  display: flex;
-  align-content: flex-end;
-  top: -39vh;
-  right: 17vh;
-}
-.finalScreenBottom {
-  position: relative;
-  display: flex;
-  align-content: flex-end;
-  top: 0vh;
-  right: -17vh;
-}
-.addPhoneSection {
-  position: absolute; 
-  width: 100%; 
-  height: 100vh; 
-  bottom: 0vh; 
-  background-color: #F9F3E3; 
-  z-index: 9999 !important;
-}
-#btnHelp {
-  position: fixed;
-  bottom: 1vh;
-}
-/***********************************************************************/
-@media only screen 
-  and (min-device-width: 320px) 
-  and (min-device-height: 568px)
-  {
-  .finalScreenTop {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: -39vh;
-    right: 17vh;
-  }
-  .finalScreenBottom {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: 0vh;
-    right: -17vh;
-  }
-}
-/***********************************************************************/
-@media only screen 
-  and (min-device-width: 375px) 
-  and (min-device-height: 667px)
-  {
-  .finalScreenTop {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: -39vh;
-    right: 17vh;
-  }
-  .finalScreenBottom {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: 0vh;
-    right: -17vh;
-  }
-}
-/***********************************************************************/
-@media only screen 
-  and (min-device-width: 414px) 
-  and (min-device-height: 736px)
-  {
-  .finalScreenTop {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: -39vh;
-    right: 17vh;
-  }
-  .finalScreenBottom {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: 0vh;
-    right: -17vh;
-  }
-  #playNewBtnImgBrowser, #learnPlayUI {
-    position: relative;
-    width: 70% !important;
-    height: 7vh !important;
-  }
-  #playNewUIBrowser {
-    font-size: 4vw !important;
-  }
-}
-/***********************************************************************/
+/*****************************************************************/
 @media only screen 
   and (min-device-width: 912px) 
   and (min-device-height: 1368px)
@@ -1749,202 +183,22 @@ body {
   body {
     background-color: #000000 !important;
   }
-  #initMiddleContent, #initFinalContent {
-    position: relative;
-    width: 100% !important;
-    left: 0% !important;
-    flex-wrap: nowrap !important;
-  }
-  #greenAmountContainer, #greenAmountPauseContainer {
-   width: 98% !important; 
-  }
-  #yellowAmountContainer, #yellowAmountPauseContainer {
-    width: 98% !important; 
-  }
-  #greenReadyPause, #yellowReadyPause {
-    font-size: 11vw !important;
-    bottom: 9vw !important;
-  }
   #uiSnippetContainer, #content {
-    width: 70% !important;
+    width: 100% !important;
     height: 100% !important;
     background-color: #000000 !important;
-    left: 15% !important;
+    left: 0% !important;
   }
-  #btnHelp {
-    width: 70% !important;
+  #stepsSnippetContainer {
+    width: 100% !important;
+    height: 100% !important;
+    background-color: #000000 !important;
   }
-  .loadingScreen {
-    position: absolute; 
-    top: 0; 
-    left: 0; 
-    z-index: 
-    99999; 
-    width: 70% !important; 
-    display: flex; 
-    justify-content: space-evenly; 
-    height: 100vh;
-  }
-  .flowerNew {
-    z-index: 1061;
-    width: 35vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-transform: uppercase;
-    text-decoration: none;
-    font-weight: 700;
-    position: absolute;
-    bottom: 25vh;
-    left: 50%;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .playNew {
-    position: fixed;
-    text-align: center;
-    width: 40%;
-    bottom: 10vh;
-    left: 50%;
-    font-size: 10vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .playNewUI {
-    position: relative;
-    text-align: center;
-    left: 50%;
-    font-size: 5.5vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .addPhone {
-    position: relative;
-    text-align: center;
-    left: 50%;
-    font-size: 4.5vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .learnPlayNew {
-    position: fixed;
-    text-align: center;
-    top: 20vh;
-    left: 50%;
-    font-size: 4.5vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .goFullScreen {
-    position: fixed;
-    text-align: center;
-    width: 40%;
-    bottom: 1.5vh;
-    left: 50%;
-    font-size: 3vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .finalScreenTop {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: -40vh;
-    right: 17vh;
-  }
-  .finalScreenBottom {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: 1vh;
-    right: -17vh;
-  }
-  .betMessage_yellow {
-    position: relative;
-    width: 100%;
-    height: 90%;
-    color: white;
-    font-size: 9vw;
-    text-align: center;
-    line-height: 11vw;
-    display: none;
-    justify-content: start;
-    align-items: center;
-    flex-direction: column;
-    transform: rotateZ(180deg);
-  }
-  #greenBetMessage {
-    position: absolute;
-    text-align: center;
-    display: block;
-    transform: rotateZ(0deg);
-  }
-  #yellowBetMessage {
-    position: absolute;
-    text-align: center;
-    display: block;
-    transform: rotateZ(180deg);
-  }
-  #playNewBtnImgBrowser, #learnPlayUI {
-    position: relative;
-    width: 70% !important;
-    height: 7vh !important;
-  }
-  #playNewUIBrowser {
-    font-size: 4vw !important;
-  }
-  #btnHelp {
-    bottom: 3vh !important;
-  }
-  .addPhoneSection {
-    bottom: 0vh !important; 
+  #bottomButtonLayer {
+    height: 21vh !important;
   }
 }
-/***********************************************************************/
-@media only screen 
-  and (min-device-width: 360px) 
-  and (min-device-height: 740px)
-  {
-}
-/***********************************************************************/
-@media only screen 
-  and (min-device-width: 320px) 
-  and (min-device-height: 658px)
-  {
-}
-/***********************************************************************/
-@media only screen 
-  and (min-device-width: 360px) 
-  and (min-device-height: 640px)
-  {
-  #btnInfo {
-    position: relative;
-    width: 87% !important;
-  }
-}
-/***********************************************************************/
-@media only screen 
-  and (min-device-width: 320px) 
-  and (min-device-height: 480px)
-  {
-  #playNewBtnImgBrowser, #learnPlayUI {
-    position: relative;
-    width: 70% !important;
-    height: 7vh !important;
-  }
-  #playNewUIBrowser {
-    font-size: 4vw !important;
-  }
-}
-/***********************************************************************/
-@media only screen 
-  and (min-device-width: 320px) 
-  and (min-device-height: 568px)
-  {
-  #playNewBtnImgBrowser, #learnPlayUI {
-    position: relative;
-    width: 70% !important;
-    height: 7vh !important;
-  }
-  #playNewUIBrowser {
-    font-size: 5vw !important;
-  }
-}
-/***********************************************************************/
+/*****************************************************************/
   @media only screen 
   and (min-device-width: 1024px) 
   and (min-device-height: 1366px)
@@ -1952,152 +206,22 @@ body {
   body {
     background-color: #000000 !important;
   }
-  #initMiddleContent, #initFinalContent {
-    position: relative;
-    width: 100% !important;
-    left: 0% !important;
-    flex-wrap: nowrap !important;
-  }
-  #greenAmountContainer, #greenAmountPauseContainer {
-   width: 98% !important; 
-  }
-  #yellowAmountContainer, #yellowAmountPauseContainer {
-    width: 98% !important; 
-  }
-  #greenReadyPause, #yellowReadyPause {
-    font-size: 11vw !important;
-    bottom: 9vw !important;
-  }
   #uiSnippetContainer, #content {
-    width: 70% !important;
+    width: var(--screen-width) !important;
     height: 100% !important;
     background-color: #000000 !important;
-    left: 15% !important;
+    left: var(--screen-left) !important;
   }
-  #btnHelp {
-    width: 70% !important;
+  #stepsSnippetContainer {
+    width: 100% !important;
+    height: 100% !important;
+    background-color: #000000 !important;
   }
-  .loadingScreen {
-    position: absolute; 
-    top: 0; 
-    left: 0; 
-    z-index: 
-    99999; 
-    width: 70% !important; 
-    display: flex; 
-    justify-content: space-evenly; 
-    height: 100vh;
-  }
-  .flowerNew {
-    z-index: 1061;
-    width: 35vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-transform: uppercase;
-    text-decoration: none;
-    font-weight: 700;
-    position: absolute;
-    bottom: 25vh;
-    left: 50%;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .playNew {
-    position: fixed;
-    text-align: center;
-    width: 40%;
-    bottom: 10vh;
-    left: 50%;
-    font-size: 10vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .playNewUI {
-    position: relative;
-    text-align: center;
-    left: 50%;
-    font-size: 5.5vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .addPhone {
-    position: relative;
-    text-align: center;
-    left: 50%;
-    font-size: 3.5vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .learnPlayNew {
-    position: fixed;
-    text-align: center;
-    top: 20vh;
-    left: 50%;
-    font-size: 3.8vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .goFullScreen {
-    position: fixed;
-    text-align: center;
-    width: 40%;
-    bottom: 1.5vh;
-    left: 50%;
-    font-size: 3vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .finalScreenTop {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: -40vh;
-    right: 17vh;
-  }
-  .finalScreenBottom {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: 1vh;
-    right: -17vh;
-  }
-  .betMessage_yellow {
-    position: relative;
-    width: 100%;
-    height: 90%;
-    color: white;
-    font-size: 9vw;
-    text-align: center;
-    line-height: 11vw;
-    display: none;
-    justify-content: start;
-    align-items: center;
-    flex-direction: column;
-    transform: rotateZ(180deg);
-  }
-  #greenBetMessage {
-    position: absolute;
-    text-align: center;
-    display: block;
-    transform: rotateZ(0deg);
-  }
-  #yellowBetMessage {
-    position: absolute;
-    text-align: center;
-    display: block;
-    transform: rotateZ(180deg);
-  }
-  #playNewBtnImgBrowser, #learnPlayUI {
-    position: relative;
-    width: 70% !important;
-    height: 7vh !important;
-  }
-  #playNewUIBrowser {
-    font-size: 4vw !important;
-  }
-  #btnHelp {
-    bottom: 3vh !important;
-  }
-  .addPhoneSection {
-    bottom: 0vh !important; 
+  #bottomButtonLayer {
+    height: 21vh !important;
   }
 }
-/***********************************************************************/
+/*****************************************************************/
 @media only screen 
   and (min-device-width: 768px) 
   and (min-device-height: 1024px)
@@ -2105,152 +229,22 @@ body {
   body {
     background-color: #000000 !important;
   }
-  #initMiddleContent, #initFinalContent {
-    position: relative;
-    width: 100% !important;
-    left: 0% !important;
-    flex-wrap: nowrap !important;
-  }
-  #greenAmountContainer, #greenAmountPauseContainer {
-   width: 98% !important; 
-  }
-  #yellowAmountContainer, #yellowAmountPauseContainer {
-    width: 98% !important; 
-  }
-  #greenReadyPause, #yellowReadyPause {
-    font-size: 11vw !important;
-    bottom: 9vw !important;
-  }
   #uiSnippetContainer, #content {
-    width: 70% !important;
+    width: var(--screen-width) !important;
     height: 100% !important;
     background-color: #000000 !important;
-    left: 15% !important;
+    left: var(--screen-left) !important;
   }
-  #btnHelp {
-    width: 70% !important;
+  #stepsSnippetContainer {
+    width: 100% !important;
+    height: 100% !important;
+    background-color: #000000 !important;
   }
-  .loadingScreen {
-    position: absolute; 
-    top: 0; 
-    left: 0; 
-    z-index: 
-    99999; 
-    width: 70% !important; 
-    display: flex; 
-    justify-content: space-evenly; 
-    height: 100vh;
-  }
-  .flowerNew {
-    z-index: 1061;
-    width: 35vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-transform: uppercase;
-    text-decoration: none;
-    font-weight: 700;
-    position: absolute;
-    bottom: 25vh;
-    left: 50%;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .playNew {
-    position: fixed;
-    text-align: center;
-    width: 40%;
-    bottom: 10vh;
-    left: 50%;
-    font-size: 10vw;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .playNewUI {
-    position: relative;
-    text-align: center;
-    left: 50%;
-    font-size: 8vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .addPhone {
-    position: relative;
-    text-align: center;
-    left: 50%;
-    font-size: 4.5vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .learnPlayNew {
-    position: fixed;
-    text-align: center;
-    top: 20svh;
-    left: 50%;
-    font-size: 5vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .goFullScreen {
-    position: fixed;
-    text-align: center;
-    width: 40%;
-    bottom: 1.5vh;
-    left: 50%;
-    font-size: 3.2vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .finalScreenTop {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: -39vh;
-    right: 17vh;
-  }
-  .finalScreenBottom {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: 0vh;
-    right: -17vh;
-  }
-  .betMessage_yellow {
-    position: relative;
-    width: 100%;
-    height: 90%;
-    color: white;
-    font-size: 9vw;
-    text-align: center;
-    line-height: 11vw;
-    display: none;
-    justify-content: start;
-    align-items: center;
-    flex-direction: column;
-    transform: rotateZ(180deg);
-  }
-  #greenBetMessage {
-    position: absolute;
-    text-align: center;
-    display: block;
-    transform: rotateZ(0deg);
-  }
-  #yellowBetMessage {
-    position: absolute;
-    text-align: center;
-    display: block;
-    transform: rotateZ(180deg);
-  }
-  #playNewBtnImgBrowser, #learnPlayUI {
-    position: relative;
-    width: 70% !important;
-    height: 7vh !important;
-  }
-  #playNewUIBrowser {
-    font-size: 4vw !important;
-  }
-  #btnHelp {
-    bottom: 3vh !important;
-  }
-  .addPhoneSection {
-    bottom: 0vh !important; 
+  #bottomButtonLayer {
+    height: 21vh !important;
   }
 }
-/***********************************************************************/
+/*****************************************************************/
 @media only screen 
   and (min-device-width: 712px) 
   and (min-device-height: 1138px)
@@ -2258,30 +252,16 @@ body {
   body {
     background-color: #000000 !important;
   }
-  #initMiddleContent, #initFinalContent {
-    position: relative;
-    width: 100% !important;
-    left: 0% !important;
-    flex-wrap: nowrap !important;
-  }
-  #greenAmountContainer, #greenAmountPauseContainer {
-   width: 98% !important; 
-  }
-  #yellowAmountContainer, #yellowAmountPauseContainer {
-    width: 98% !important; 
-  }
-  #greenReadyPause, #yellowReadyPause {
-    font-size: 11vw !important;
-    bottom: 9vw !important;
-  }
   #uiSnippetContainer, #content {
     width: 80% !important;
     height: 100% !important;
     background-color: #000000 !important;
     left: 10% !important;
   }
-  #btnHelp {
-    width: 80% !important;
+  #stepsSnippetContainer {
+    width: 100% !important;
+    height: 100% !important;
+    background-color: #000000 !important;
   }
   .loadingScreen {
     position: absolute; 
@@ -2294,116 +274,8 @@ body {
     justify-content: space-evenly; 
     height: 100vh;
   }
-  .flowerNew {
-    z-index: 1061;
-    width: 35vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-transform: uppercase;
-    text-decoration: none;
-    font-weight: 700;
-    position: absolute;
-    bottom: 25vh;
-    left: 50%;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .playNew {
-    position: fixed;
-    text-align: center;
-    width: 40%;
-    bottom: 10vh;
-    left: 50%;
-    font-size: 10vw;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .playNewUI {
-    position: relative;
-    text-align: center;
-    left: 50%;
-    font-size: 7vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .addPhone {
-    position: relative;
-    text-align: center;
-    left: 50%;
-    font-size: 4.5vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .learnPlayNew {
-    position: fixed;
-    text-align: center;
-    top: 20svh;
-    left: 50%;
-    font-size: 5vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .goFullScreen {
-    position: fixed;
-    text-align: center;
-    width: 40%;
-    bottom: 1.5vh;
-    left: 50%;
-    font-size: 3.2vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .finalScreenTop {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: -39vh;
-    right: 17vh;
-  }
-  .finalScreenBottom {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: 0vh;
-    right: -17vh;
-  }
-  .betMessage_yellow {
-    position: relative;
-    width: 100%;
-    height: 90%;
-    color: white;
-    font-size: 9vw;
-    text-align: center;
-    line-height: 11vw;
-    display: none;
-    justify-content: start;
-    align-items: center;
-    flex-direction: column;
-    transform: rotateZ(180deg);
-  }
-  #greenBetMessage {
-    position: absolute;
-    text-align: center;
-    display: block;
-    transform: rotateZ(0deg);
-  }
-  #yellowBetMessage {
-    position: absolute;
-    text-align: center;
-    display: block;
-    transform: rotateZ(180deg);
-  }
-  #playNewBtnImgBrowser, #learnPlayUI {
-    position: relative;
-    width: 70% !important;
-    height: 7vh !important;
-  }
-  #playNewUIBrowser {
-    font-size: 4vw !important;
-  }
-  #btnHelp {
-    bottom: 3vh !important;
-  }
-  .addPhoneSection {
-    bottom: 0vh !important; 
-  }
 }
-/***********************************************************************/
+/*****************************************************************/
 @media only screen 
   and (min-device-width: 820px) 
   and (min-device-height: 1180px)
@@ -2411,152 +283,26 @@ body {
   body {
     background-color: #000000 !important;
   }
-  #initMiddleContent, #initFinalContent {
-    position: relative;
-    width: 100% !important;
-    left: 0% !important;
-    flex-wrap: nowrap !important;
-  }
-  #greenAmountContainer, #greenAmountPauseContainer {
-   width: 98% !important; 
-  }
-  #yellowAmountContainer, #yellowAmountPauseContainer {
-    width: 98% !important; 
-  }
-  #greenReadyPause, #yellowReadyPause {
-    font-size: 11vw !important;
-    bottom: 9vw !important;
-  }
   #uiSnippetContainer, #content {
-    width: 70% !important;
+    width: var(--screen-width) !important;
     height: 100% !important;
     background-color: #000000 !important;
-    left: 15% !important;
+    left: var(--screen-left) !important;
   }
-  #btnHelp {
-    width: 70% !important;
+  #stepsSnippetContainer {
+    width: 100% !important;
+    height: 100% !important;
+    background-color: #000000 !important;
   }
-  .loadingScreen {
-    position: absolute; 
-    top: 0; 
-    left: 0; 
-    z-index: 
-    99999; 
-    width: 70% !important; 
-    display: flex; 
-    justify-content: space-evenly; 
-    height: 100vh;
-  }
-  .flowerNew {
-    z-index: 1061;
-    width: 35vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-transform: uppercase;
-    text-decoration: none;
-    font-weight: 700;
-    position: absolute;
-    bottom: 25vh;
-    left: 50%;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .playNew {
-    position: fixed;
-    text-align: center;
-    width: 40%;
-    bottom: 10vh;
-    left: 50%;
-    font-size: 10vw;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .playNewUI {
-    position: relative;
-    text-align: center;
-    left: 50%;
-    font-size: 6vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .addPhone {
-    position: relative;
-    text-align: center;
-    left: 50%;
-    font-size: 4.5vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .learnPlayNew {
-    position: fixed;
-    text-align: center;
-    top: 20svh;
-    left: 50%;
-    font-size: 4.5vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .goFullScreen {
-    position: fixed;
-    text-align: center;
-    width: 40%;
-    bottom: 1.5vh;
-    left: 50%;
-    font-size: 3vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .finalScreenTop {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: -39vh;
-    right: 17vh;
-  }
-  .finalScreenBottom {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: 0vh;
-    right: -17vh;
-  }
-  .betMessage_yellow {
-    position: relative;
-    width: 100%;
-    height: 90%;
-    color: white;
-    font-size: 9vw;
-    text-align: center;
-    line-height: 11vw;
-    display: none;
-    justify-content: start;
-    align-items: center;
-    flex-direction: column;
-    transform: rotateZ(180deg);
-  }
-  #greenBetMessage {
-    position: absolute;
-    text-align: center;
-    display: block;
-    transform: rotateZ(0deg);
-  }
-  #yellowBetMessage {
-    position: absolute;
-    text-align: center;
-    display: block;
-    transform: rotateZ(180deg);
-  }
-  #playNewBtnImgBrowser, #learnPlayUI {
-    position: relative;
-    width: 70% !important;
-    height: 7vh !important;
-  }
-  #playNewUIBrowser {
-    font-size: 4vw !important;
-  }
-  #btnHelp {
-    bottom: 3vh !important;
-  }
-  .addPhoneSection {
-    bottom: 0vh !important; 
+  #bottomButtonLayer {
+    height: 21vh !important;
   }
 }
-/***********************************************************************/
+/*****************************************************************/
+:root {
+  --screen-width: 100%;
+  --screen-left: 0%;
+}
 @media only screen 
     and (min-device-width: 853px) 
     and (min-device-height: 1280px)
@@ -2564,153 +310,20 @@ body {
     body {
       background-color: #000000 !important;
     }
-    #initMiddleContent, #initFinalContent {
-      position: relative;
-      width: 100% !important;
-      left: 0% !important;
-      flex-wrap: nowrap !important;
-    }
-    #greenAmountContainer, #greenAmountPauseContainer {
-     width: 98% !important; 
-    }
-    #yellowAmountContainer, #yellowAmountPauseContainer {
-      width: 98% !important; 
-    }
-    #greenReadyPause, #yellowReadyPause {
-      font-size: 11vw !important;
-      bottom: 9vw !important;
-    }
     #uiSnippetContainer, #content {
-      width: 70% !important;
+      width: var(--screen-width) !important;
       height: 100% !important;
       background-color: #000000 !important;
-      left: 15% !important;
-    }
-    #btnHelp {
-      width: 70% !important;
-    }
-    .loadingScreen {
-      position: absolute; 
-      top: 0; 
-      left: 0; 
-      z-index: 
-      99999; 
-      width: 70% !important; 
-      display: flex; 
-      justify-content: space-evenly; 
-      height: 100vh;
-    }
-    .flowerNew {
-      z-index: 1061;
-      width: 35vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-transform: uppercase;
-      text-decoration: none;
-      font-weight: 700;
-      position: absolute;
-      bottom: 25vh;
-      left: 50%;
-      transform: translateX(-50%) translateY(-50%);
-    }
-    .playNew {
-      position: fixed;
-      text-align: center;
-      width: 40%;
-      bottom: 10vh;
-      left: 50%;
-      font-size: 10vw;
-      transform: translateX(-50%) translateY(-50%);
-    }
-    .playNewUI {
-      position: relative;
-      text-align: center;
-      left: 50%;
-      font-size: 6vw !important;
-      transform: translateX(-50%) translateY(-50%);
-    }
-    .addPhone {
-      position: relative;
-      text-align: center;
-      left: 50%;
-      font-size: 3.5vw !important;
-      transform: translateX(-50%) translateY(-50%);
-    }
-    .learnPlayNew {
-      position: fixed;
-      text-align: center;
-      top: 20svh;
-      left: 50%;
-      font-size: 4.5vw !important;
-      transform: translateX(-50%) translateY(-50%);
-    }
-    .goFullScreen {
-      position: fixed;
-      text-align: center;
-      width: 40%;
-      bottom: 1.5vh;
-      left: 50%;
-      font-size: 3vw !important;
-      transform: translateX(-50%) translateY(-50%);
-    }
-    .finalScreenTop {
-      position: relative;
-      display: flex;
-      align-content: flex-end;
-      top: -39vh;
-      right: 17vh;
-    }
-    .finalScreenBottom {
-      position: relative;
-      display: flex;
-      align-content: flex-end;
-      top: 0vh;
-      right: -17vh;
-    }
-    .betMessage_yellow {
-      position: relative;
-      width: 100%;
-      height: 90%;
-      color: white;
-      font-size: 9vw;
-      text-align: center;
-      line-height: 11vw;
-      display: none;
-      justify-content: start;
-      align-items: center;
-      flex-direction: column;
-      transform: rotateZ(180deg);
-    }
-    #greenBetMessage {
-      position: absolute;
-      text-align: center;
-      display: block;
-      transform: rotateZ(0deg);
-    }
-    #yellowBetMessage {
-      position: absolute;
-      text-align: center;
-      display: block;
-      transform: rotateZ(180deg);
-    }
-    #playNewBtnImgBrowser, #learnPlayUI {
-      position: relative;
-      width: 70% !important;
-      height: 7vh !important;
-    }
-    #playNewUIBrowser {
-      font-size: 4vw !important;
-    }
-    #btnHelp {
-      bottom: 3vh !important;
-    }
-    .addPhoneSection {
-      bottom: 0vh !important; 
+      left: var(--screen-left) !important;
     }
   }
-
-/***********************************************************************/
+.fromFloristry {
+  width: 100% !important;
+  height: 100% !important;
+  background-color: #000000 !important;
+  left: 0% !important;
+}
+/*****************************************************************/
 @media only screen 
   and (min-device-width: 540px) 
   and (min-device-height: 720px)
@@ -2718,179 +331,23 @@ body {
   body {
     background-color: #000000 !important;
   }
-  #initMiddleContent, #initFinalContent {
-    position: relative;
-    width: 100% !important;
-    left: 0% !important;
-    flex-wrap: nowrap !important;
-  }
-  #greenAmountContainer, #greenAmountPauseContainer {
-   width: 98% !important; 
-  }
-  #yellowAmountContainer, #yellowAmountPauseContainer {
-    width: 98% !important; 
-  }
-  #greenReadyPause, #yellowReadyPause {
-    font-size: 11vw !important;
-    bottom: 9vw !important;
-  }
   #uiSnippetContainer, #content {
-    width: 70% !important;
+    width: 100%;
     height: 100% !important;
     background-color: #000000 !important;
-    left: 15% !important;
+    left: 0%;
   }
-  #btnHelp {
-    width: 70% !important;
+  #bottomButtonLayer {
+    height: 21vh !important;
   }
-  .loadingScreen {
-    position: absolute; 
-    top: 0; 
-    left: 0; 
-    z-index: 
-    999999; 
-    width: 70% !important; 
-    display: flex; 
-    justify-content: space-evenly; 
-    height: 100vh;
-  }
-  .flowerNew {
-    z-index: 1061;
-    width: 35vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-transform: uppercase;
-    text-decoration: none;
-    font-weight: 700;
-    position: absolute;
-    bottom: 25svh;
-    left: 50%;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .playNew {
-    position: fixed;
-    text-align: center;
-    width: 40%;
-    bottom: 10vh;
-    left: 50%;
-    font-size: 13vw;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .playNewUI {
-    position: relative;
-    text-align: center;
-    left: 50%;
-    font-size: 4vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .addPhone {
-    position: relative;
-    text-align: center;
-    left: 50%;
-    font-size: 3.5vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .learnPlayNew {
-    position: fixed;
-    text-align: center;
-    top: 20svh;
-    left: 50%;
-    font-size: 4vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .goFullScreen {
-    position: fixed;
-    text-align: center;
-    width: 40%;
-    bottom: 1.5vh;
-    left: 50%;
-    font-size: 3.2vw !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .finalScreenTop {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: -39vh;
-    right: 17vh;
-  }
-  .finalScreenBottom {
-    position: relative;
-    display: flex;
-    align-content: flex-end;
-    top: 0vh;
-    right: -17vh;
-  }
-  #playNewBtnImgBrowser, #learnPlayUI {
-    position: relative;
-    width: 70% !important;
-    height: 7vh !important;
-  }
-  #playNewUIBrowser {
-    font-size: 4vw !important;
+  #stepsSnippetContainer {
+    width: 100% !important;
+    height: 100% !important;
+    background-color: #000000 !important;
   }
 }
-/******************* FOR HOME BUTTON ICON ANIMATION ********************/
-.base-timer {
-  position: absolute;
-  width: 13.8vh;
-  height: 13.8vh;
-  top: 50%;
-  left: 50%;
-  transform: translateY(-50%) translateX(-50%);
-  display: block;
-  opacity: 0;
-}
-.base-timer-game {
-  position: absolute;
-  width: 12.8vh;
-  height: 12.8vh;
-  top: 50%;
-  left: 50%;
-  transform: translateY(-50%) translateX(-50%);
-  display: block;
-  opacity: 0;
-}
-.base-timer__svg {
-  transform: scaleX(1);
-}
-.base-timer__circle {
-  fill: none;
-  stroke: none;
-}
-.base-timer__path-elapsed {
-  stroke-width: 7px;
-  stroke: #29ABE2;
-}
-.base-timer__path-remaining {
-  stroke-width: 7px;
-  stroke-linecap: round;
-  transform: rotate(90deg);
-  transform-origin: center;
-  transition: 1s linear all;
-  fill-rule: nonzero;
-  stroke: currentColor;
-}
-.base-timer__path-remaining.arc {
-  color: #fbb03b;
-}
-.base-timer__label {
-  position: absolute;
-  width: 16vh;
-  height: 16vh;
-  top: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48px;
-}
-/***********************************************************************/
-#pauseButton {
-  -webkit-touch-callout: none; user-select: none; -moz-user-select: none; -webkit-user-select: none;
-}
-/***********************************************************************/
- .spinner-box {
+/*****************************************************************/
+.spinner-box {
   width: 100%;
   height: 100vh;
   display: flex;
@@ -2900,6 +357,7 @@ body {
   top: 0vh;
   position: absolute;
 }
+
 .circle-border {
   width: 6vh;
   height: 6vh;
@@ -2912,12 +370,14 @@ body {
   background: linear-gradient(0deg, rgba(63,249,220,0.1) 33%, rgb(232, 177, 31) 100%);
   animation: spin 1s linear 0s infinite;
 }
+
 .circle-core {
   width: 100%;
   height: 100%;
   background-color: #F9F3E3;
   border-radius: 50%;
 }
+
 @keyframes spin {
   from {
     transform: rotate(0);
@@ -2926,116 +386,821 @@ body {
     transform: rotate(359deg);
   }
 }
-/***********************************************************************/
+/*****************************************************************/
 @media screen and (orientation: landscape) {
   body {
-    /* width: 28% !important;
-    height: 100% !important; */
     background-color: #000000 !important;
-    /* left: 36% !important; */
-    /* transform: rotate(-90deg); */
-  }
-  #initMiddleContent {
-    position: relative;
-    width: 100% !important;
-    left: 0% !important;
-    flex-wrap: nowrap !important;
-  }
-  #greenAmountContainer, #greenAmountPauseContainer {
-   width: 100% !important; 
-  }
-  #yellowAmountContainer, #yellowAmountPauseContainer {
-    width: 100% !important; 
-  }
-  #greenReadyPause, #yellowReadyPause {
-    font-size: 11vw !important;
-    bottom: 9vw !important;
-  }
-  .roundText {
-    left: 0.5vw !important;
-  }
-  #player0, #player1 {
-    right: 1vw !important;
-  }
-  .learnPlayNew {
-    position: fixed !important;
-    text-align: center !important;
-    top: 20vh !important;
-    left: 50% !important;
-    font-size: 3.2vh !important;
-    transform: translateX(-50%) translateY(-50%) !important;
-  }
-  .flowerNew {
-    z-index: 1061 !important;
-    width: calc(35vh - 30px) !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    text-transform: uppercase !important;
-    text-decoration: none !important;
-    font-weight: 700 !important;
-    position: absolute !important;
-    bottom: 25vh !important;
-    left: 50% !important;
-    transform: translateX(-50%) translateY(-50%) !important;
-  }
-  .playNew {
-    position: fixed !important;
-    text-align: center !important;
-    width: calc(16% - 30px) !important;
-    bottom: 10vh !important;
-    left: 50% !important;
-    font-size: 3vw !important;
-    transform: translateX(-50%) translateY(-50%) !important;
-  }
-  .playNewUI {
-    position: relative;
-    text-align: center;
-    left: 50%;
-    font-size: 8vw;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .addPhone {
-    position: relative;
-    text-align: center;
-    left: 50%;
-    font-size: 10vw;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  .goFullScreen {
-    position: fixed;
-    text-align: center;
-    width: calc(16% - 32px) !important;
-    bottom: 1.5vh;
-    left: 50%;
-    font-size: calc(3.5vw - 35px) !important;
-    transform: translateX(-50%) translateY(-50%);
-  }
-  #ExitButtonPanel {
-    height: 15vh !important;
-    pointer-events: auto !important;
   }
   #content {
     width: 34% !important;
     left: 33% !important;
   }
+  #stepsSnippetContainer {
+    width: 108% !important;
+    height: 100% !important;
+    background-color: #000000 !important;
+  }
 }
-/***********************************************************************/
+/*****************************************************************/
+/*****************************************************************/
+/*****************************************************************/
+/*****************************************************************/
+/***********************MENU SECTION CSS *************************/
+.pulse {
+  animation: pulse 1s ease-out infinite;
+}
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  60% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+}
+/*****************************************************************/
+input[type=text]:focus {
+  outline:none;background: white;
+  border: none;
+  border-radius: 0;
+  margin-bottom: 15px;
+  box-shadow: none !important;
+  height: 45px;
+  color: #000;
+}
+
+a {
+  color: #F7AE50 !important;
+}
+
+span a {
+  position: relative;
+  word-wrap: break-word;
+}
+
+ul {
+  color: white;
+  list-style-type: disc;
+  list-style-position: inside;
+  font-size: 2.5vh;
+  line-height: 1.2;
+  left: 1vh;
+  position: relative;
+}
+
+.specialIcons {
+  position: relative;
+  width: 4vh;
+  height: 4vh;
+}
+
+#viewIconText p {
+  font-size: 3vh !important;
+}
+
+.pulse-button {
+  position: relative;
+  border: none;
+  border-radius: 50%;
+  animation: pulse-animation 1.5s;
+  animation-play-state: running;
+}
+
+@keyframes pulse-animation {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0px rgba(255, 255, 255, 0.5);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 25px rgba(255, 255, 255, 0.001);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 15px rgba(255, 255, 255, 0);
+  }
+}
+
+.touch-pulse-button {
+  position: relative;
+  border: none;
+  border-radius: 50%;
+  animation: touch-pulse-animation 1.5s infinite;
+  animation-play-state: running;
+}
+
+@keyframes touch-pulse-animation {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0px rgba(233, 168, 111, 0.5);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 25px rgba(233, 168, 111, 0.001);
+  }
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 15px rgba(233, 168, 111, 0);
+  }
+}
+
+.animated-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0; 
+}
+
+.img1 {
+  /* Image 1 fades in and out */
+  animation: fadeIn 5s infinite alternate ease-in-out;
+}
+
+.img2 {
+  /* Image 2 fades in and out with a delay so they alternate */
+  animation: fadeIn 5s infinite alternate ease-in-out;
+  animation-delay: 2.5s; /* Start the second image's animation halfway through the first */
+}
+
+/* Keyframe definition for the fade-in effect */
+@keyframes fadeIn {
+    0% {
+        opacity: 0; /* Start at 0% alpha */
+    }
+    50% {
+        opacity: 1; /* Reached at 100% alpha */
+    }
+    100% {
+        opacity: 0; /* End at 0% alpha */
+    }
+}
+/***********************BGG SCREEN STYLING*************************/
+.game-title { 
+  font-size: 48px; 
+  letter-spacing: -1px; 
+  margin:0;
+  max-width: 13em;
+}
+
+.game-designer { 
+  font-size: 28px; 
+  letter-spacing: -1px;
+}
+
+.img-box {
+  border:4px solid #fff;
+  box-shadow: 0 0 4px 0 rgba(0,0,0,0.30);
+}
+
+.card-body {
+  background-color: rgb(45, 44, 43) !important;
+  padding: 1rem 0rem !important;
+}
+
+.boardgamemechanic div { 
+  color:#949598; 
+  padding: 0rem 1rem !important; 
+  padding-bottom: 0.5vh;
+  padding-top: 0.5vh;
+}
+
+.card { 
+  border:none; 
+  background:#fff;
+}
+
+.card .ak_card_header { 
+  border:none; 
+  background:#fff;
+}
+
+.ak_card_timer{
+  position: absolute;
+  background-color: transparent;
+  width: 10px;
+  height: 10px;
+  margin-left: -45px;
+  margin-top: -70px;
+}
+
+.metaGroup { 
+  display: flex; 
+  gap:10px; 
+  justify-content: flex-end; 
+  align-items: center;
+}
+
+.metaGroup_details_filter { 
+  display: flex; 
+  gap:10px; 
+  justify-content: flex-start; 
+  align-items: center; 
+  width: 250px !important; 
+  position: relative; 
+  right: 50px; 
+  left: 0px; 
+  color: #FFFFFF; 
+  font-size: 2vh; 
+  margin-top: 2.5vh !important;
+}
+
+.metaGroup_details { 
+  display: flex; 
+  gap:10px; 
+  justify-content: flex-end; 
+  align-items: center; 
+  width: 250px !important; 
+  position: relative; 
+  right: 0px;
+}
+
+.metaGroup span, .metaGroup_details span { 
+  display: flex; 
+  align-items: center;
+}
+
+.metaGroupOut { 
+  display: flex; 
+  gap:10px; 
+  justify-content: flex-start; 
+  align-items: center;
+}
+
+.metaGroupOut span, .metaGroup_details span { 
+  display: flex; 
+  align-items: center;
+}
+
+.bg-primary { 
+  background-color:#3874b5 !important;
+}
+
+.bg-light {
+  background-color: rgb(45, 44, 43) !important;
+}
+
+.bg-alto { 
+  background-color: #939598; 
+  color: #FFFFFF;
+}
+
+.page_greek div { 
+  font-family: 'DINCondensed-Bold'; 
+  line-height: 1.2;
+}
+
+.font-dinblack { 
+  font-family: 'DINBlack';
+}
+
+.font-DINCondensed-bgg { 
+  font-family: 'DINCondensed-Bold';
+}
+
+.font-DINRegular { 
+  font-family: 'DINRegular';
+}
+
+.text-large {
+  font-size:3vh; 
+  letter-spacing: -0.5px; 
+  line-height: 1.1;
+}
+
+.text-desc {
+  margin-top: -2vh;
+}
+
+.text-left {
+  font-size: 2vh !important;
+}
+
+.text-md-right {
+  margin-top: 1.5vh;
+}
+
+.my-4 {
+  margin-top: 4vh !important;
+}
+
+.sup-small { 
+  font-size:3vh; 
+  top: 0; 
+  color:#FFFFFF; 
+  letter-spacing: 0;
+}
+
+.bggTitle {
+  color: #FFFFFF;
+  font-size: 2vh;
+  line-height: 0;
+}
+
+.ratingWrapper { 
+  width: auto;  
+  display: inline-block; 
+  position: relative; 
+  color: #e7e7e9; 
+  z-index:1; 
+  margin-left:auto;
+}
+
+.ratingStar { 
+  overflow: hidden; 
+  white-space: nowrap; 
+  user-select: none; 
+  height: 40px;
+}
+
+.ratingStar span {
+  font-size: 40px;
+  line-height: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  color: #fcb040;
+  letter-spacing: -4px;
+}
+
+.ratingStar p {
+  font-size: 26px;
+  margin-top: 8px;
+  line-height: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  color: #fcb040;
+  letter-spacing: 0px;
+}
+/*****************************************************************/
+/*****************************************************************/
+/*****************************************************************/
+/********************* STEPS SECTION CSS *************************/
 @media only screen and (orientation: portrait) {
+  #bottomButtonLayer {
+    height: 15vh;
+    pointer-events: auto !important;
+  }
   #ExitButtonPanel {
     height: 15vh !important;
     pointer-events: auto !important;
   }
 }
-/***********************************************************************/
-li {
-  color: lightgray;
-  left: 0.5vh !important;
+
+@media only screen and (orientation: landscape) {
+  #bottomButtonLayer {
+    height: 15vh;
+    pointer-events: auto !important;
+  }
+  #ExitButtonPanel {
+    height: 15vh !important;
+    pointer-events: auto !important;
+  }
 }
-li span {
-  font-family: 'AcuminVariableConcept';
+
+@media all and (device-width: 414px) and (device-height: 736px) {
+  #bottomButtonLayer {
+    height: 21vh;
+  }
+}
+
+@media all and (device-width: 375px) and (device-height: 667px) {
+  #bottomButtonLayer {
+    height: 21vh;
+  }
+}
+
+@media all and (device-width: 320px) and (device-height: 568px) {
+  #bottomButtonLayer {
+    height: 21vh;
+  }
+}
+
+@media all and (device-width: 344px) and (device-height: 882px) {
+  #bottomButtonLayer {
+    height: 21vh;
+  }
+}
+
+@media all and (device-width: 414px) and (device-height: 896px) {
+  #bottomButtonLayer {
+    height: 21vh;
+  }
+}
+
+@media all and (device-width: 412px) and (device-height: 914px) {
+  #bottomButtonLayer {
+    height: 21vh;
+  }
+}
+
+
+@media all and (device-width: 390px) and (device-height: 844px) {
+  #bottomButtonLayer {
+    height: 21vh;
+  }
+}
+
+@media all and (device-width: 375px) and (device-height: 812px) {
+  #bottomButtonLayer {
+    height: 21vh;
+  }
+}
+
+@media all and (device-width: 912px) and (device-height: 1368px) {
+  #bottomButtonLayer {
+    height: 21vh;
+  }
+}
+
+@media all and (device-width: 853px) and (device-height: 1280px) {
+  #bottomButtonLayer {
+    height: 21vh;
+  }
+}
+
+@media all and (device-width: 1024px) and (device-height: 600px) {
+  #bottomButtonLayer {
+    height: 21vh;
+  }
+}
+
+@media all and (device-width: 360px) and (device-height: 640px) {
+  #bottomButtonLayer {
+    height: 21vh;
+  }
+}
+@media all and (device-width: 320px) and (device-height: 480px) {
+  #bottomButtonLayer {
+    height: 21vh;
+  }
+}
+
+@media all and (device-width: 430px) and (device-height: 932px) {
+  #bottomButtonLayer {
+    height: 21vh;
+  }
+}
+
+@media all and (device-width: 800px) and (device-height: 1280px) {
+  #bottomButtonLayer {
+    height: 21vh;
+  }
+}
+
+#bottomButtonLayer {
+  height: 21vh;
+}
+
+.spinner-box-steps {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  background-color: transparent;
+  top: 0vh;
   position: absolute;
-  left: 2vh !important;
-  top: 0.3vh !important;
 }
-/***********************************************************************/
+
+.pulse-button-steps {
+  position: relative;
+  border: none;
+  border-radius: 50%;
+  animation: pulse-animation-steps 1.5s infinite;
+  animation-play-state: running;
+}
+
+@keyframes pulse-animation-steps {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0px rgba(255, 255, 255, 0.5);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.001);
+  }
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 20px rgba(255, 255, 255, 0);
+  }
+}
+
+.base-timer-close {
+  position: absolute;
+  width: 12vh;
+  height: 12vh;
+  top: 50%;
+  left: 50%;
+  transform: translateY(-50%) translateX(-50%);
+  display: block;
+  opacity: 0;
+}
+
+.base-timer__svg {
+  transform: scaleX(1);
+}
+
+.base-timer__circle {
+  fill: none;
+  stroke: none;
+}
+
+.base-timer__path-elapsed {
+  stroke-width: 7px;
+  stroke: #29ABE2;
+}
+
+.base-timer__path-remaining {
+  stroke-width: 7px;
+  stroke-linecap: round;
+  transform: rotate(90deg);
+  transform-origin: center;
+  transition: 1s linear all;
+  fill-rule: nonzero;
+  stroke: currentColor;
+}
+
+.base-timer__path-remaining.arc {
+  color: #fbb03b;
+}
+
+.base-timer__label {
+  position: absolute;
+  width: 16vh;
+  height: 16vh;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+}
+/*****************************************************************/
+/*****************************************************************/
+/*****************************************************************/
+/******************** PUSH SECTION CSS  **************************/
+.page_greek div { 
+    font-family: 'Font-App'; 
+    line-height: 1.2;
+    text-transform: capitalize;
+    z-index: 999999;
+} 
+
+.page_greek div h4 { 
+    font-family: 'Font-default'; 
+    line-height: 1.2;
+} 
+
+.font-dinblack { 
+    font-family: 'DINBlack';
+}
+
+.font-DINCondensed { 
+    font-family: 'Font-App';
+}
+
+.font-DINRegular { 
+    font-family: 'Font-Desc';
+}
+
+@media screen and (orientation : portrait) {
+  #spinningLoader {
+      top: 32vh !important;
+  }
+  #update-banner .headline {
+      font-size: 1.2em !important;
+      user-select: none;
+      line-height: 1.2;
+      position: relative;
+      left: 15% !important;
+      top: 0.2em;
+    }
+  #update-banner .subhead {
+      font-size: 1em !important;
+  }
+  #update-banner[data-state="updateavailable"] {
+      background: #404040; 
+      position: fixed;
+      width: 100%;
+      left: 0%; 
+      top: 5px;
+      border-radius: 5px;
+      z-index: 9999 !important;
+  }
+}
+
+@media screen and (orientation : landscape) {
+  #sheetIdForm {
+      height: 38vh !important;
+  }
+  #spinningLoader {
+      top: 34vh !important;
+  }
+  #update-banner .headline {
+      font-size: 1.2em !important;
+      font-family: Font-default;
+      user-select: none;
+      line-height: 1.2;
+      position: relative;
+      left: 15% !important;
+      top: 0.2em;
+    }
+  #update-banner .subhead {
+      font-size: 1.2em !important;
+  }
+  #update-banner[data-state="updateavailable"] {
+      background: #404040;
+      position: fixed;
+      width: 100%;
+      left: 0%;
+      top: 5px;
+      border-radius: 5px;
+      z-index: 9999 !important;
+  }
+}
+
+@media only screen and (min-width: 320px) and (max-width: 340px) and (min-height: 495px) and (max-height: 570px){
+    #sheetIdForm {
+        top: 0vh !important;
+    }
+}
+
+@media only screen and (min-width: 1920px){
+  #sheetIdForm {
+      height: 55vh !important;
+  }
+  #spinningLoader {
+      top: 34vh !important;
+  }
+}
+
+h1,.h1{font-size:43px;}
+h2,.h2{font-size:30px;}
+h3,.h3{font-size:18px;}
+h4,.h4{ font-size:14px;}
+h5,.h5{ font-size:14px;}
+h6,.h6{ font-size:13px;}
+
+.min-vh-100 {
+    min-height: 100vh!important;
+}
+
+.font-poppins {
+    font-family: 'Poppins', sans-serif;
+}
+
+.game_header {
+	background-color:#7353a3;
+	background-image:url('../img/bg_header.jpg');
+	background-repeat:no-repeat;
+	background-position:bottom left;
+	background-size:100% 100px;
+	padding-bottom:100px;
+    position: relative;
+    z-index: 9999;
+}
+
+.header_title {
+	font-weight:100 !important;
+	color:#fff;
+}
+
+.game_footer{
+	background-color:#7353a3;
+	background-image:url('../img/bg_footer.jpg');
+	background-repeat:no-repeat;
+	background-position:top left;
+	background-size:100% 100px;
+	padding-top:95px; 
+}
+
+.form-control{
+    background:#b9a7d1;
+    border:none;
+    border-radius:0;
+    margin-bottom:15px;
+    box-shadow:none !important;
+    height:45px;
+    color:#000;
+}
+
+.btn_submit{
+	border:none; background:transparent; outline:none !important;
+}
+
+@media screen and (max-width:767px){
+  h1,.h1 {
+      font-size:32px;
+  }
+  h2,.h2 {
+      font-size:28px;
+  }
+  h3,.h3 {
+      font-size:18px;
+  }
+  h4,.h4 { 
+      font-size:16px;
+  }
+  h5,.h5 { 
+      font-size:16px;
+  }
+  h6,.h6 { 
+      font-size:16px;
+  }
+  .game_header { 
+      background-size:100% 50px; 
+      padding-bottom:50px; 
+  }
+  .game_footer {
+      background-size:100% 50px; 
+      padding-top:50px; 
+  }
+  .h2.header_title { 
+      font-size:20px; 
+      font-weight: 100;
+  }
+}
+
+.mainContainer {
+  position: absolute;
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  display: none;
+  font-size: 5vh;
+}
+
+.loader-spinner-text {
+  position: absolute;
+  width: 100%;
+  height: 50vh;
+  font-size: 1.2em;
+  text-transform: uppercase;
+  color: #3874b5 !important;
+  text-decoration: none;
+  font-weight: 700;
+  text-align: center;
+  margin: auto;
+  top:50%; 
+  left:0
+}
+
+.versionContiner {
+  position: absolute; 
+  top: 0.5em; 
+  right: 1em; 
+  color: #FFFFFF90; 
+  font-family: Font-Default;
+  font-size: 1.6vh;
+}
+
+.copyright {
+  position: relative; 
+  height: 1em;
+}
+
+#spinningLoader {
+    width: 100%;
+    overflow: hidden;
+}
+
+#loadingTxt {
+  position: relative;
+  margin-top: 2vh;
+  height: 51vh;
+  overflow: scroll;
+  text-transform: none;
+  -moz-user-select: text;
+  -khtml-user-select: text;
+  -webkit-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+/*****************************************************************/
+/*****************************************************************/
+/*****************************************************************/
+.spinner {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  left: 37%;
+  top: -2%;
+  border: 4px #ddd solid;
+  border-top: 4px #2e93e6 solid;
+  border-radius: 50%;
+  animation: sp-anime 0.8s infinite linear;
+}
+@keyframes sp-anime {
+  100% { 
+    transform: rotate(360deg); 
+  }
+}

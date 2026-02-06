@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <title>Playbook Steps</title>
     <link
-      href="./css/bootstrap.min.css"
+      href="../css/bootstrap.min.css"
       rel="stylesheet"
       <?php if($_ENV['ENVIRONMENT'] != 'development') {
         echo 'integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"';} ?>
@@ -20,7 +20,7 @@
     />
     <link
       rel="stylesheet"
-      href="./css/all.min.css"
+      href="../css/all.min.css"
       <?php if($_ENV['ENVIRONMENT'] != 'development') {
         echo 'integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="';} ?>
       crossorigin="anonymous"
@@ -28,11 +28,11 @@
     />
     <link
       rel="stylesheet"
-      href="./css/minireset.min.css"
+      href="../css/minireset.min.css"
     />
     <!-- <link rel="stylesheet" href="css/style.css?version=3.6" /> -->
-    <link rel="icon" type="image/x-icon" href="img/step_icon_new.webp?version=3.2" />
-    <link rel="apple-touch-icon" href="img/step_new.webp?version=3.2" />
+    <link rel="icon" type="image/x-icon" href="../img/step_icon_new.webp?version=3.2" />
+    <link rel="apple-touch-icon" href="../img/step_new.webp?version=3.2" />
   </head>
   <body id="mainBody" style="position: fixed; min-height: 100vh !important; background-color: #F9F3E3 !important" onpagehide="CloseIFrame()">
     <!--------------------------------------------------------------------->
@@ -42,7 +42,7 @@
         <p id="versionInfo" style="position: absolute; width: 100%; text-align: center; top: 3vh; font-size: 1.7vh; color: #666666;"></p>
         <p id="appInfo" style="position: absolute; width: 100%; text-align: center; top: 37%; font-size: 4vh; color: #666666; padding: 15%;"></p>
         <!------------------------------------------------------------------>
-        <div id="spinnerBox" class="spinner-box">
+        <div id="spinnerBox" class="spinner-box-steps" style="display:none">
           <div class="circle-border">
             <div class="circle-core"></div>
           </div>  
@@ -61,7 +61,7 @@
         <div id="ExitButtonPanel" style="display: block;position: absolute; bottom: 0vh; height: 21vh; width: 100%; z-index: 99999999;">
           <div style="display: flex; flex-direction: row;
         justify-content: space-around; padding-top: 2.5vh;">
-            <img id="exitIcon" src="img/floristry_mobile_btn_quit-28.webp" style="display: block ;width: 10vh; height: 10vh;" alt="" />
+            <img id="exitIcon" src="../img/floristry_mobile_btn_quit-28.webp" style="display: block ;width: 10vh; height: 10vh;" alt="" />
             <img src="" style="display: none ;width: 10vh; height: 10vh;" alt="" />
           </div>
         </div>
@@ -72,7 +72,7 @@
         <div id="slide_0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh;">
           <div id="stepImg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 0;">
             <div style="position: absolute; bottom: 0vh; height: 15vh; width: 100%; background-color: #666666; z-index: 2;"></div>
-            <img id="stepBGInage" src="img/floristry_mobile_scn_auction.webp" alt="" style="position: relative;
+            <img id="stepBGInage" src="../img/floristry_mobile_scn_auction.webp" alt="" style="position: relative;
             /* height: 100vh; */ left: 50%;
             top: 50%;
             transform: translateY(-50%) translateX(-50%); z-index: 0;" />
@@ -82,7 +82,7 @@
           align-items: center; padding: 1vh; min-height: 10vh; z-index: 99;">
             <span id="stepText" style="font-size: 4vh;
           color: white; width: 90%; text-align: center; font-family: 'Oswald-Bold'; line-height: 5vh; white-space: pre-wrap;">This is Floritry game instructions.</span>
-          <img id="viewIcon" src="img/floristry_mobile_btn_viewlink.webp" style="width: 10vh; height: 10vh; margin-top: 2vh;" alt="" />
+          <img id="viewIcon" src="../img/floristry_mobile_btn_viewlink.webp" style="width: 10vh; height: 10vh; margin-top: 2vh;" alt="" />
           <div id="viewIconText" style="position: relative; display: none; /* display: inline-flex; */ justify-content: center; margin-top: 2.5vh; width: 70%;">
             <div id="viewIconContainer" style="-webkit-touch-callout: none; user-select: none; -moz-user-select: none; -webkit-user-select: none; width: 100%; height: 7vh; border-radius: 25px;
           border: 5px dashed #F7AE4F; position: relative;">
@@ -123,9 +123,9 @@
         <div id="bottomButtonLayer" style="position: absolute; bottom: 0vh; height: 21vh; width: 100%; background-color: #666666; z-index: 99999;">
           <div style="display: flex; flex-direction: row;
       justify-content: space-around; padding-top: 2.5vh;">
-            <img id="prevIcon" src="img/floristry_mobile_btn_prev.webp" style="width: 10vh; height: 10vh;" alt="" />
+            <img id="prevIcon" src="../img/floristry_mobile_btn_prev.webp" style="width: 10vh; height: 10vh;" alt="" />
             <div style="position: relative; display: flex;">
-            <img id="homeIcon" src="img/floristry_mobile_btn_quit-28.webp" style="width: 10vh; height: 10vh;  z-index: 99999;" alt="" />
+            <img id="homeIcon" src="../img/floristry_mobile_btn_quit-28.webp" style="width: 10vh; height: 10vh;  z-index: 99999;" alt="" />
             <div id="base-timer-close" class="base-timer-close">
               <svg class="base-timer__svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                 <g class="base-timer__circle">
@@ -143,7 +143,7 @@
             </div>
           </div>
             <div>
-              <img id="nextIcon" class='pulse-button' src="img/floristry_mobile_btn_next.webp" style="width: 10vh; 
+              <img id="nextIcon" class='pulse-button-steps' src="../img/floristry_mobile_btn_next.webp" style="width: 10vh; 
     height: 10vh;" alt="" />
             </div>
           </div>
@@ -161,9 +161,9 @@
       align-content: center;
       align-items: center;
       justify-content: space-around;">
-      <img src="img/floristry_bg.png" alt="" onContextMenu="return false;" style="position: absolute; top: 0; left: 0; width: 100%;
+      <img src="../img/floristry_bg.png" alt="" onContextMenu="return false;" style="position: absolute; top: 0; left: 0; width: 100%;
       height: 100%;">
-      <img id="modeLogo" src="img/floristry_mobile_sym_floristry.webp?version=3.1" alt="" onContextMenu="return false;" style="position: absolute;
+      <img id="modeLogo" src="../img/floristry_mobile_sym_floristry.webp?version=3.1" alt="" onContextMenu="return false;" style="position: absolute;
       width: 30vh;
       top: 17vh; display: none;">
         <p id="modeMsg" style="font-size: 3vh;
@@ -179,34 +179,34 @@
         <div style="border: 2px solid #FFFFFF; padding: 0.5vh; border-radius: 5px; position: relative; width: 96%; left: 2%; top: -10px; height: 5.6vh;">
             <input class="form-control" type="text" id="usheetId" name="usheetId" style="position: relative; margin-top: 0px; width: 100%;margin-left: 0em; height: 4.2vh; font-family: AcuminVariableConcept;" pattern="[A-Za-z0-9]+" onkeydown="if(['Space'].includes(arguments[0].code)){return false;}"/>
         </div>
-        <img id="sheetIdBtn" src="img/floristry_mobile_btn_next.webp" class="img-fluid" style="width: 10vh;" />
+        <img id="sheetIdBtn" src="../img/floristry_mobile_btn_next.webp" class="img-fluid" style="width: 10vh;" />
         </div>
         </div>
     </div>
   </div>
     <!------------------------------------------------------------------------>
-    <script src="./js/jquery-3.5.1.min.js"></script>
-    <script src="./js/jquery.cookie.min.js"></script>
+    <script src="../js/common/jquery-3.5.1.min.js"></script>
+    <script src="../js/common/jquery.cookie.min.js"></script>
     <script
-      src="./js/bootstrap.bundle.min.js"
+      src="../js/common/bootstrap.bundle.min.js"
       integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
       crossorigin="anonymous"
     ></script>
     <script>
     </script>
     <!------------------------------------------------------------------------->
-    <script src="./js/moment.min.js?version=1.0"></script>
-    <script src="./js/device-uuid.min.js?version=1.0"></script>
-    <script src="./js/md5.js?version=1.0"></script>
-    <script src="./js/createjs.min.js?version=3.9"></script>
-    <script src="./js/devicedetector-min.js"></script>
+    <script src="../js/common/moment.min.js?version=1.0"></script>
+    <script src="../js/common/device-uuid.min.js?version=1.0"></script>
+    <script src="../js/common/md5.js?version=1.0"></script>
+    <script src="../js/common/createjs.min.js?version=3.9"></script>
+    <script src="../js/common/devicedetector-min.js"></script>
     <script>
       // To get UIVersion from Parent HTML for cache/dynamic loading
       //const selfUrl = new URL(self.location);
       //console.log(selfUrl.searchParams.get('version'));
 
       const selfUrl = new URL(self.location);
-      console.log(selfUrl.searchParams.get('version').split('?')[0]);
+      //console.log(selfUrl.searchParams.get('version').split('?')[0]);
       let UIVersion = selfUrl.searchParams.get('version').split('?')[0]
 
       // Load JSController File for menu section
@@ -222,7 +222,7 @@
         var stepScript = document.createElement('script');
         stepScript.id = 'step_Script';
         stepScript.type = 'text/javascript';
-        stepScript.src = './stepsJS/steps.js?version=' + _ver;
+        stepScript.src = '../js/steps/steps.js?version=' + _ver;
         document.getElementsByTagName('head')[0].appendChild(stepScript);
       }
       /////////////////////////////////////////////////////////////////////////////////
@@ -233,7 +233,7 @@
         var conScript = document.createElement('script');
         conScript.id = 'controller_Script';
         conScript.type = 'text/javascript';
-        conScript.src = './js/JSController.js?version=' + _ver;
+        conScript.src = './js/StepsController.js?version=' + _ver;
         document.getElementsByTagName('head')[0].appendChild(conScript);
       }
       /////////////////////////////////////////////////////////////////////////////////
@@ -244,7 +244,7 @@
         let cssLink = document.createElement('link');
         cssLink.rel = 'stylesheet';
         cssLink.type = 'text/css';
-        cssLink.href = './css/style.css?version=' + _ver;
+        cssLink.href = '../css/style.css?version=' + _ver;
         document.getElementsByTagName('head')[0].appendChild(cssLink);
       }
       function CloseIFrame() {

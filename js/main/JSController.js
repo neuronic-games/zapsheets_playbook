@@ -22,7 +22,7 @@ function getCurrentLiveVersion() {
     var newScript = document.createElement('script');
     newScript.id = 'version_Script';
     newScript.type = 'text/javascript';
-    newScript.src = './js/main/version.js?version=' + UIVersion;
+    newScript.src = '../../js/main/version.js?version=' + UIVersion;
     newScript.onload = checkSettingLoad();
     document.getElementsByTagName('head')[0].appendChild(newScript);
 }
@@ -35,7 +35,7 @@ function getCurrentGameMainVersion() {
     floristryScript = document.createElement('script');
     floristryScript.type = 'text/javascript';
     floristryScript.id = 'floristry_Script';
-    floristryScript.src = './js/main/main.js?version=' + UIVersion;
+    floristryScript.src = '../../js/main/main.js?version=' + UIVersion;
     floristryScript.onload = checkLoadStatMain()
     document.getElementsByTagName('head')[0].appendChild(floristryScript);
 }

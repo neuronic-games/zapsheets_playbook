@@ -15,35 +15,35 @@ let modeType = 0;
 let machineFPS = 0
 let inSteps = true;
 ///////////////////////////////////////////////////////////////////////////////////////////
-let jasonPath = '../'
+let jasonPath = 'https://zapsheets.com/playbook/'
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * // Getting current App version (version.js)
  */
 function getCurrentVersion() {
-    if(window.navigator.onLine == true) {
+    //if(window.navigator.onLine == true) {
         // Loading version.js dynamically for [mac fix]
         var newScript = document.createElement('script');
         newScript.id = 'version_Script';
         newScript.type = 'text/javascript';
-        newScript.src = '../js/main/version.js?version=' + Math.random();
+        newScript.src = '../js/main/version.js?version=' + UIVersion;
         document.getElementsByTagName('head')[0].appendChild(newScript);
-    }
+    //}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * // Getting current App module working (main.js)
  */
 function getCurrentGameMainVersion() {
-    if(window.navigator.onLine == true) {
+    //if(window.navigator.onLine == true) {
         // Loading version.js dynamically for [mac fix]
         var floristryScript = document.createElement('script');
         floristryScript.type = 'text/javascript';
         floristryScript.id = 'floristry_Script';
-        floristryScript.src = '../js/steps/stepsMain.js?version=' + Math.random();
+        floristryScript.src = '../js/steps/stepsMain.js?version=' + UIVersion;
         floristryScript.onload = checkLoadStat()
         document.getElementsByTagName('head')[0].appendChild(floristryScript);
-    }
+    //}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
@@ -53,7 +53,7 @@ function getZapsheetsCore() {
     var funtionScript = document.createElement('script');
     funtionScript.type = 'text/javascript';
     funtionScript.id = 'function_Script';
-    funtionScript.src = '../js/core/zapsheetsCore.js?version=' + Math.random();
+    funtionScript.src = '../js/core/zapsheetsCore.js?version=' + UIVersion;
     funtionScript.onload = checkLoadStatCore()
     document.getElementsByTagName('head')[0].appendChild(funtionScript);
 }

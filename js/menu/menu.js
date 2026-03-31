@@ -5,12 +5,16 @@
  */
 $(document).ready(function() {
     console.log('READY MENU LOADED')
+
+    //alert('menujs')
     let languageStepsData = [];
     let settingDataList = [];
     let rulesDataList = [];
     let faqsDataList = [];
     let statsDataList = [];
     let bggInfoData = [];
+    let tagsDataList = [];
+    let splashDataList = []
 
     // Special Icons
     let berryImgPath = ''
@@ -18,6 +22,10 @@ $(document).ready(function() {
     let nutImgPath = ''
     let diceImgPath = ''
     let oopsImgPath = ''
+    let flowerImgPath = ''
+
+    // Timeout
+    let idleTimeOut = 0;
 
     // For lazy load
     // For LOCAL TESTING
@@ -30,10 +38,22 @@ $(document).ready(function() {
     let langLoadCount = 0;
     let faqTouchMoved = false;
     ///////////////////////////////////////////////////////////////////////////
+    // Total events
+    let events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    // Idle status
+    let idleStatus = false;
+    let idleTime = 0;
+
+    var fromParent = ''
+    //var faqsSheedId = ''
+    let slideIndex = 0;
+    let slideshowTimeout;
+    ///////////////////////////////////////////////////////////////////////////
     // Positioning of bottom container
     var standalone = (getUrlVars()["standalone"]) ? getUrlVars()["standalone"].split('/')[0] : 'false';
     // To get active browser language OR language passed from QS 'code'
-    var activeLang = (getUrlVars()["code"]) ? getUrlVars()["code"].split('/')[0].toUpperCase() : navigator.language.split('-')[0].toUpperCase();
+    var activeLang = (getUrlVars()["code"]) ? getUrlVars()["code"].split('/')[0].split('?')[0].toUpperCase() : navigator.language.split('-')[0].toUpperCase();
+
     // To get spreadsheet id passed from QS 'id'
     var sheet_Id = (getUrlVars()["id"]) ? getUrlVars()["id"].split('/')[0] : '';
     // To jump faqs or rules
@@ -43,20 +63,55 @@ $(document).ready(function() {
     //console.log(sheetInnerParam, " --- ")
     //return;
 
-    var fromParent = ''
-    var faqsSheedId = ''
-    if(sheetInnerParam == 'faqs' || sheetInnerParam == 'faq') {
+    if(sheetInnerParam == 'faqs' || sheetInnerParam == 'faq' || sheetInnerParam == 'steps' || sheetInnerParam == 'step' || sheetInnerParam == 'rules' || sheetInnerParam == 'rule') {
         //fromParent = document.location.search.substr(1).split('&')[2].split('?')[0];
         fromParent = document.location.search.substr(1).split('&')[3].split('?')[0];
-        if(fromParent == 'floristry') {
-            /* faqsSheedId = document.location.search.substr(1).split('&')[3].split('?')[0]; */
-            faqsSheedId = document.location.search.substr(1).split('&')[4].split('?')[0];
+        if(fromParent == 'app' || fromParent == 'web') {
             jasonPath = 'https://zapsheets.com/playbook/'
         }
     }
-    //console.log(fromParent, " fromParent ", jasonPath)
-    
     //return;
+    /////////////////////////////////////////////////////////////////////////////////
+    /**
+     * IDLE TIMEOUT
+     */
+    // Event to check for
+    function EnableTimeoutEvents() {
+        console.log("Enable Events- ", idleTimeOut)
+        events.forEach(function (name) {
+            document.addEventListener(name, resetIdleTimer, true);
+        });
+    }
+    /////////////////////////////////////////////////////////////////////////////////
+    /**
+     * idle out function
+     * @returns 
+     */
+    function idleOut() {
+        if(idleTimeOut == 0 || fromParent != '' || idleStatus == true) {return}
+        idleStatus = true
+        clearTimeout(idleTime);
+        idleTime = setTimeout(idleOut, (idleTimeOut * 1000))
+        // Move to home screen
+        ShowSplashScreen();
+    }
+    /////////////////////////////////////////////////////////////////////////////////
+    /**
+     * Restart idle timer
+     */
+    function resetIdleTimer() {
+        if(idleStatus == true || idleStatus == undefined) {
+            idleStatus = false
+        }
+
+        // Hide Splash
+        document.getElementById('splashScreen').style.display = 'none';
+        //timeLine.pause();
+        HideSplashSlides();
+
+        clearTimeout(idleTime);
+        idleTime = setTimeout(idleOut, (idleTimeOut * 1000))
+    }
     /////////////////////////////////////////////////////////////////////////////////
     /**
      * isJSONData
@@ -86,7 +141,11 @@ $(document).ready(function() {
     } else {
         let winLoc = window.location.href.split("?")[0];
         var browserLang = (getUrlVars()["code"]) ? getUrlVars()["code"].split('/')[0].toUpperCase() : navigator.language.split('-')[0].toLowerCase();
-        loadSettingsData()
+        loadTagsData();
+        loadSettingsData();
+
+        // Splash Screen
+        loadSplashData();
     }
     /////////////////////////////////////////////////////////////////////////////////
     /**
@@ -166,7 +225,11 @@ $(document).ready(function() {
                 document.getElementById('loadingScreen').style.display = 'flex';
                 document.getElementById('sheetIdError').style.display = 'none';
                 setTimeout(function() {
+                    loadTagsData();
                     loadSettingsData();
+
+                    // Splash Screen
+                    loadSplashData();
                 }, 100)
             }, 10)
             
@@ -181,7 +244,8 @@ $(document).ready(function() {
         // Loading menu-en.json
         setTimeout(function() {
             var settingRequest = $.ajax({
-                url: '../sheets/' + sheet_Id + "/settings.json?version=" + UIVersion,
+                //url: '../sheets/' + sheet_Id + "/settings.json?version=" + UIVersion,
+                url: jasonPath + 'sheets/' + sheet_Id + "/settings.json?version=" + UIVersion,
                 cache: true,
                 type: 'GET',
                 dataType: "text",
@@ -205,6 +269,13 @@ $(document).ready(function() {
                         /////////////////////LANG SETTINGS START///////////////////////////
                         // Store LazyLoadValue here
                         $.each(settingDataList, function (index_setting, row_setting) {
+                            
+                            if(row_setting['Name'] == 'Title') {
+                                if(row_setting['Value'] != '' ) {
+                                    window.parent.document.getElementById('appTitle').innerHTML = row_setting['Value']
+                                } 
+                            }
+
                             if(row_setting['Name'] == 'LazyLoad') {
                                 if(row_setting['Value'] == '' ) {
                                     lazyLoadImages = 'FALSE'
@@ -212,27 +283,64 @@ $(document).ready(function() {
                                     lazyLoadImages = row_setting['Value']
                                 }
                             }
+
                             if(row_setting['Name'] == 'Version') {
                                 document.getElementById('versionInfo').innerHTML = _version + " - " + row_setting["Value"] + " - " + activeLang;
                             }
+                            
                             if(row_setting['Name'] == 'DownloadButtonUrl') {
                                 let imagePath = ''
                                 if (row_setting['Value'].includes("https://drive.google.com")) {
                                     let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                                    //imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                                    imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
                                 } else {
                                     // Cache Image
                                     let name = row_setting['Value'].split('/')
                                     let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
                                     // image from spreadsheet id folder
-                                    imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                                    //imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                                    imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
                                 }
                                 document.getElementById('downloadBtn').src = imagePath
                             }
 
+                            if(row_setting['Name'] == 'TimeoutSec') {
+                                if(row_setting['Value'] == '' ) {
+                                    idleTimeOut = 0
+                                } else {
+                                    idleTimeOut = row_setting['Value']
+                                }
+                            }
+
+                            // Change App Icon
+                            if(row_setting['Name'] == 'AppIconImageUrl') {
+                                if(row_setting['Value'] != '' ) {
+                                    //console.log(window.parent.document.getElementById('appIcon'), " >>>")
+
+                                    let appIconPath = ''
+                                    if (row_setting['Value'].includes("https://drive.google.com")) {
+                                        let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
+                                        //imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                                        appIconPath = '../../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                                    } else {
+                                        // Cache Image
+                                        let name = row_setting['Value'].split('/')
+                                        let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                                        // image from spreadsheet id folder
+                                        //imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                                        appIconPath = '../../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                                    }
+
+                                    window.parent.document.getElementById('appIconiOS').href = appIconPath;
+                                    window.parent.document.getElementById('appIconAndroid').href = appIconPath; 
+                                    
+                                } 
+                            }
+
                             // Other Icons
                             // BERRY
-                            if(row_setting['Name'] == '[BERRY]') {
+                            /* if(row_setting['Name'] == '[BERRY]') {
                                 if (row_setting['Value'].includes("https://drive.google.com")) {
                                     let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
                                     berryImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
@@ -295,18 +403,244 @@ $(document).ready(function() {
                                     // image from spreadsheet id folder
                                     oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
                                 }
-                            }
+                            } */
                         })
                         /////////////////////MENU JSON START////////////////////////
                         setTimeout(function() {
-                            loadMenuJSON()
-                            loadBggGameInfo();
+                            if(fromParent == '') {
+                                loadMenuJSON()
+                                //loadBggGameInfo();
+                                //LoadStatsData();
+                                
+                                // EnameTim out events
+                                EnableTimeoutEvents();
+                            }
                         }, 500) 
                     }
                 },
                 error: function(e) {
                     console.log("ERROR - Setting data missing..")
-                    document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : Settings</font><br>'
+                    document.getElementById("loadingText").innerHTML += '<br><font color="red">Error: Missing Sheet : Settings</font><br>'
+                    document.getElementById("spinnerBox").style.display = 'none'
+                }
+            })
+            // Clear memory
+            settingRequest.onreadystatechange = null;
+            settingRequest.abort = null;
+            settingRequest = null;
+        }, 1000)
+    }
+    //////////////////////TAGS START///////////////////////////////////
+    /**
+     * loadTagsData
+     */
+    function loadTagsData() {
+        // Loading tags.json
+        setTimeout(function() {
+            var settingRequest = $.ajax({
+                //url: '../sheets/' + sheet_Id + "/tags.json?version=" + UIVersion,
+                url: jasonPath + 'sheets/' + sheet_Id + "/tags.json?version=" + UIVersion,
+                cache: true,
+                type: 'GET',
+                dataType: "text",
+                success: function (response) {
+                    //console.log(response, " READ DATA")
+                    if(response.length == 0) {
+                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags data not available.' + "</font><br>"
+                    } else { 
+                        tagsDataList = []
+                        var mResponseSet = response.replace(/�/g, "") 
+                        var newSettingData = eval(mResponseSet)
+                        for(var i=0; i<newSettingData.length; i++) {
+                            var settingDataSting = JSON.stringify(newSettingData[i]);
+                            if(isJSONData(settingDataSting) == false) {
+                                document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags Sheet : (Row: ' + i + ")</font><br>"
+                                updateInfoTextView()
+                            } else {
+                                tagsDataList[i] = isJSONData(settingDataSting)
+                            }
+                        }
+                        /////////////////////LANG SETTINGS START///////////////////////////
+                        // Store LazyLoadValue here
+                        $.each(tagsDataList, function (index_setting, row_setting) {
+                            // BERRY
+                            if(row_setting['Name'] == '[BERRY]') {
+                                if (row_setting['Value'].includes("https://drive.google.com")) {
+                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
+                                    //berryImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                                    berryImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                                } else {
+                                    // Cache Image
+                                    let name = row_setting['Value'].split('/')
+                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                                    // image from spreadsheet id folder
+                                    //berryImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                                    berryImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                                }
+                            }
+                            // DICE
+                            if(row_setting['Name'] == '[DICE]') {
+                                if (row_setting['Value'].includes("https://drive.google.com")) {
+                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
+                                    //diceImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                                    diceImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                                } else {
+                                    // Cache Image
+                                    let name = row_setting['Value'].split('/')
+                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                                    // image from spreadsheet id folder
+                                    //diceImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                                    diceImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                                }
+                            }
+                            // BUG
+                            if(row_setting['Name'] == '[BUG]') {
+                                if (row_setting['Value'].includes("https://drive.google.com")) {
+                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
+                                    //bugImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                                    bugImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                                } else {
+                                    // Cache Image
+                                    let name = row_setting['Value'].split('/')
+                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                                    // image from spreadsheet id folder
+                                    //bugImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                                    bugImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                                }
+                            }
+                            // NUT
+                            if(row_setting['Name'] == '[NUT]') {
+                                if (row_setting['Value'].includes("https://drive.google.com")) {
+                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
+                                    //nutImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                                    nutImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                                } else {
+                                    // Cache Image
+                                    let name = row_setting['Value'].split('/')
+                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                                    // image from spreadsheet id folder
+                                    //nutImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                                    nutImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                                }
+                            }
+                            // OOPS
+                            if(row_setting['Name'] == '[OOPS]') {
+                                if (row_setting['Value'].includes("https://drive.google.com")) {
+                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
+                                    //oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                                    oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                                } else {
+                                    // Cache Image
+                                    let name = row_setting['Value'].split('/')
+                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                                    // image from spreadsheet id folder
+                                    //oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                                    oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                                }
+                            }
+                            // FLOWER
+                            if(row_setting['Name'] == '[FLOWER]') {
+                                if (row_setting['Value'].includes("https://drive.google.com")) {
+                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
+                                    //oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                                    flowerImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                                } else {
+                                    // Cache Image
+                                    let name = row_setting['Value'].split('/')
+                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                                    // image from spreadsheet id folder
+                                    //flowerImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                                    flowerImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                                }
+                            }
+                        })
+
+                        setTimeout(function() {
+                            console.log("CREATE UI SCREEN FOR MENU....")
+                            jumpToMenuScreen()
+                        }, 250)
+
+                    }
+                },
+                error: function(e) {
+                    console.log("ERROR - Setting data missing..")
+                    document.getElementById("loadingText").innerHTML += '<br><font color="red">Error: Missing Sheet : Tags</font><br>'
+                    document.getElementById("spinnerBox").style.display = 'none'
+                }
+            })
+            // Clear memory
+            settingRequest.onreadystatechange = null;
+            settingRequest.abort = null;
+            settingRequest = null;
+        }, 1000)
+    }
+    //////////////////////SPLASH START///////////////////////////////////
+    /**
+     * loadTagsData
+     */
+    function loadSplashData() {
+        // Loading tags.json
+        setTimeout(function() {
+            var settingRequest = $.ajax({
+                url: jasonPath + 'sheets/' + sheet_Id + "/splash-" + activeLang.toLowerCase() + ".json?version=" + UIVersion,
+                cache: true,
+                type: 'GET',
+                dataType: "text",
+                success: function (response) {
+                    //console.log(response, " READ DATA")
+                    if(response.length == 0) {
+                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags data not available.' + "</font><br>"
+                    } else { 
+                        splashDataList = []
+                        var mResponseSet = response.replace(/�/g, "") 
+                        var newSettingData = eval(mResponseSet)
+                        for(var i=0; i<newSettingData.length; i++) {
+                            var settingDataSting = JSON.stringify(newSettingData[i]);
+                            if(isJSONData(settingDataSting) == false) {
+                                document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags Sheet : (Row: ' + i + ")</font><br>"
+                                updateInfoTextView()
+                            } else {
+                                splashDataList[i] = isJSONData(settingDataSting)
+                            }
+                        }
+                        /////////////////////LANG SETTINGS START///////////////////////////
+                        // Create splash screen timeline
+                        let splashData = ''
+                        $.each(splashDataList, function (index_setting, row_setting) {
+                            let contentPath = ''
+                            if (row_setting['Content'].includes("https://drive.google.com")) {
+                                let imgid = row_setting['Content'].split('https://drive.google.com')[1].split('/')[3];
+                                if(row_setting['Type'] == "Image") {
+                                    contentPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                                } else {
+                                    contentPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.mp4?version=' + UIVersion;
+                                }
+                            } else {
+                                // Cache Image
+                                let name = row_setting['Content'].split('/')
+                                let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                                contentPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                            }
+                            splashData += 
+                            `<div class="splashSlide" id='t_${index_setting}' style='position: absolute;
+                                left: 50%; top: 50%; height: 100vh; width: 100vw; transform: translateY(-50%) translateX(-50%); z-index: 0; object-fit: cover; opacity:1; background-color:#2D2C2B' data-delay=${row_setting["DelaySec"]} >
+                                ${row_setting['Type'].toLowerCase() == 'image' ?
+                                    `<img id='img_${index_setting}' src='${contentPath}' style='position: relative;
+                                left: 50%; top: 50%; height: 100vh; width: 100vw; transform: translateY(-50%) translateX(-50%); z-index: 0; object-fit: cover;'></img>`
+                                : 
+                                    `<video id='vid_${index_setting}' src="${contentPath}" muted style='position: relative;
+                                left: 50%; top: 50%; height: 100vh; width: 100vw; transform: translateY(-50%) translateX(-50%); z-index: 0; object-fit: cover;' playsinline></video>`
+                                }
+                                
+                            </div>`
+                        })
+                        // Add element
+                        document.getElementById('splashScreen').innerHTML = splashData;
+                    }
+                },
+                error: function(e) {
+                    console.log("ERROR - Setting data missing..")
+                    document.getElementById("loadingText").innerHTML += '<br><font color="red">Error: Missing Sheet : Splash</font><br>'
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
             })
@@ -318,11 +652,61 @@ $(document).ready(function() {
     }
     /////////////////////////////////////////////////////////////////////////
     /**
+     * ShowSplashSlides
+     */
+    function ShowSplashSlides() {
+        let i;
+        let slides = document.getElementsByClassName("splashSlide");
+
+        // Hide all slides
+        for (i = 0; i < slides.length; i++) {
+            slides[i].style.display = "none";
+        }
+
+        // Move to the next slide
+        slideIndex++;
+        if (slideIndex > slides.length) {slideIndex = 1}
+        let currentSlide = slides[slideIndex-1];
+        currentSlide.style.display = "block"; // Display the current slide
+        // Play if its a video element
+        let animType = currentSlide.children[0].id.split("_")
+        if(animType[0] == "vid") {
+            var videoElement = document.getElementById('vid_' + animType[1]);
+            videoElement.play();
+        }
+        // Get the custom delay from the data-delay attribute, default to 5000ms if not specified
+        let delay = parseInt(currentSlide.getAttribute("data-delay")) * 1000 || 5000;
+        // Clear any existing timeout and set a new one for the next slide
+        clearTimeout(slideshowTimeout);
+        // Use setTimeout to call ShowSplashSlides again after the specified delay
+        slideshowTimeout = setTimeout(ShowSplashSlides, delay);
+    }
+    /////////////////////////////////////////////////////////////////////////
+    /**
+     * HideSplashSlides
+     */
+    function HideSplashSlides() {
+        clearTimeout(slideshowTimeout);
+        let slides = document.getElementsByClassName("splashSlide");
+        // Hide all slides
+        for (i = 0; i < slides.length; i++) {
+            slides[i].style.display = "none";
+            let animType = slides[i].children[0].id.split("_")
+            if(animType[0] == "vid") {
+                var videoElement = document.getElementById('vid_' + animType[1]);
+                videoElement.pause();
+                videoElement.currentTime = 0;
+            }
+        }
+    }
+    /////////////////////////////////////////////////////////////////////////
+    /**
      * loadBggGameInfo
      */
     function loadBggGameInfo() {
         var langRequest = $.ajax({
-            url: '../sheets/' + sheet_Id + "/bgg-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion, 
+            //url: '../sheets/' + sheet_Id + "/bgg-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion,
+            url: jasonPath + 'sheets/' + sheet_Id + "/bgg-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion, 
             cache: true, 
             type: 'GET',
             dataType: "text",
@@ -374,7 +758,8 @@ $(document).ready(function() {
     function loadMenuJSON() {
         // Loading steps json
         var langRequest = $.ajax({
-            url: '../sheets/' + sheet_Id + "/menu-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion, 
+            //url: '../sheets/' + sheet_Id + "/menu-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion, 
+            url: jasonPath + 'sheets/' + sheet_Id + "/menu-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion, 
             /* cache: false, */
             cache: true, 
             //async: false,
@@ -403,6 +788,11 @@ $(document).ready(function() {
                         PreloadAllToCache();
                     } else {
                         console.log("CREATE UI SCREEN FOR MENU....")
+
+                        // Loading moved here from settings block..
+                        loadBggGameInfo();
+                        LoadStatsData();
+
                         jumpToMenuScreen()
                     }
                 }
@@ -413,12 +803,16 @@ $(document).ready(function() {
                     langLoadCount++
                     loadLanguageJSON()
                 } else { */
-                    langLoadCount = 0;
-                    activeLang = "EN"
-                    loadMenuJSON()
-                    /* document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : ' + activeLang + '</font><br>'
-                    document.getElementById("spinnerBox").style.display = 'none'
-                } */
+                    langLoadCount++;
+                    //console.log(langLoadCount, " >>")
+                    if(langLoadCount < 5) {
+                        activeLang = "EN"
+                        loadMenuJSON()
+                    } else {
+                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : menu-' + activeLang.toLowerCase() + '</font><br>'
+                        document.getElementById("spinnerBox").style.display = 'none'
+                    }
+                 /* } */
             }
         })
         langRequest.onreadystatechange = null;
@@ -523,9 +917,13 @@ $(document).ready(function() {
         // Check motion
         console.log("Caching In Background")
         
-        if(fromParent == 'floristry') {
+        if(fromParent == 'app' || fromParent == 'web') {
             setTimeout(function() {
-                $("#menuScreen").fadeIn();
+                if(sheetInnerParam == 'steps') {
+                    $("#menuScreen").fadeOut();
+                } else {
+                    $("#menuScreen").fadeIn();
+                }
                 generateMenuButtons()
             }, 0)
         }
@@ -542,7 +940,8 @@ $(document).ready(function() {
                     let imgid = languageStepsData[i]['Image'].split('https://drive.google.com')[1].split('/')[3];
                     let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                     // image from spreadsheet id folder
-                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                    //let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
                     checkIfImageExists(imagePath, (isExists) => {
                         if(isExists) {
                             let bgImage = new Image();
@@ -565,7 +964,8 @@ $(document).ready(function() {
                     let name = languageStepsData[i]['Image'].split('/')
                     let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
                     // image from spreadsheet id folder
-                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                    //let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
                     checkIfImageExists(imagePath, (isExists) => {
                         if(isExists) {
                             let mapImage = new Image();
@@ -642,13 +1042,15 @@ $(document).ready(function() {
                             let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
                             let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                             // image from spreadsheet id folder
-                            imagePathPrev = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                            //imagePathPrev = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                            imagePathPrev = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
                         } else {
                             // Cache Image
                             let name = row_setting['Value'].split('/')
                             let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
                             // image from spreadsheet id folder
-                            imagePathPrev = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                            //imagePathPrev = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                            imagePathPrev = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
                         }
                     }
                 }
@@ -660,13 +1062,15 @@ $(document).ready(function() {
                             let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
                             let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                             // image from spreadsheet id folder
-                            imagePathNext = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                            //imagePathNext = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                            imagePathNext = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
                         } else {
                             // Cache Image
                             let name = row_setting['Value'].split('/')
                             let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
                             // image from spreadsheet id folder
-                            imagePathNext = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                            //imagePathNext = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                            imagePathNext = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
                         }
                     }
                 }
@@ -677,13 +1081,15 @@ $(document).ready(function() {
                             let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
                             let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                             // image from spreadsheet id folder
-                            imagePathQuit = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                            //imagePathQuit = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                            imagePathQuit = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
                         } else {
                             // Cache Image
                             let name = row_setting['Value'].split('/')
                             let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
                             // image from spreadsheet id folder
-                            imagePathQuit = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                            //imagePathQuit = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                            imagePathQuit = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
                         }
                     }
                 }
@@ -790,7 +1196,7 @@ $(document).ready(function() {
         var imageElement = "data:image/jpeg;base64," + base64Encode(request.responseText);
         // Fade Out
         $("#menuScreen").fadeOut();
-        if(fromParent == 'floristry' || (sheetInnerParam == 'faqs' || sheetInnerParam == 'faq')) {
+        if(fromParent == 'app' || fromParent == 'web' || (sheetInnerParam == 'faqs' || sheetInnerParam == 'faq') || (sheetInnerParam == 'steps' || sheetInnerParam == 'step')) {
             document.getElementById('menuScreen').style.display = 'none'
         } else {
             document.getElementById('menuScreen').style.display = 'block'
@@ -798,9 +1204,13 @@ $(document).ready(function() {
         document.getElementById('menuBGInage').src = imageElement;
 
         // Check for loading
-        if(fromParent != 'floristry') {
+        if(fromParent != 'app') {
             setTimeout(function() {
-                $("#menuScreen").fadeIn();
+                if(sheetInnerParam == 'steps') {
+                    $("#menuScreen").fadeOut();
+                } else {
+                    $("#menuScreen").fadeIn();
+                }
                 generateMenuButtons()
             }, 10)
         }
@@ -841,9 +1251,12 @@ $(document).ready(function() {
         }
         document.getElementById('viewIconText').innerHTML = buttonElement
 
+
         // Load Pages based on Param
-        if(sheetInnerParam.length < 10) {
-            ShowAutoMenuPages(sheetInnerParam)
+        if(sheetInnerParam != 'steps') {
+            if(sheetInnerParam.length < 10) {
+                ShowAutoMenuPages(sheetInnerParam)
+            }
         }
         setTimeout(function() {
             for(var i=0; i<languageStepsData.length; i++) {
@@ -857,22 +1270,29 @@ $(document).ready(function() {
                     document.getElementById('menuButtonLabel_' + i).addEventListener('mouseup', onMenuTouchEnd)
                     document.getElementById('menuButtonLabel_' + i).addEventListener('mouseout', onMenuTouchOut)
 
-                    
-
                     console.log("MENU DONE")
                 }
             }
 
             // Info & BGG Icons Buttons events
+            document.getElementById('infoIconBtn').addEventListener('touchstart', onAnimateBtnTouchStart)
+            document.getElementById('infoIconBtn').addEventListener('touchend', onAnimateBtnTouchEnd)
+
             document.getElementById('infoIconBtn').addEventListener('mousedown', onAnimateBtnTouchStart)
             document.getElementById('infoIconBtn').addEventListener('mouseup', onAnimateBtnTouchEnd)
             document.getElementById('infoIconBtn').addEventListener('mouseout', onAnimateBtnTouchOut)
+
+            document.getElementById('bggIconBtn').addEventListener('touchstart', onAnimateBtnTouchStart)
+            document.getElementById('bggIconBtn').addEventListener('touchend', onAnimateBtnTouchEnd)
 
             document.getElementById('bggIconBtn').addEventListener('mousedown', onAnimateBtnTouchStart)
             document.getElementById('bggIconBtn').addEventListener('mouseup', onAnimateBtnTouchEnd)
             document.getElementById('bggIconBtn').addEventListener('mouseout', onAnimateBtnTouchOut)
 
             // On menuBGInage Touch
+            document.getElementById('menuScreen').addEventListener('touchstart', onMenuScreenTouchStart)
+            document.getElementById('menuScreen').addEventListener('touchend', onMenuScreenTouchEnd)
+
             document.getElementById('menuScreen').addEventListener('mousedown', onMenuScreenTouchStart)
             document.getElementById('menuScreen').addEventListener('mouseup', onMenuScreenTouchEnd)
             document.getElementById('menuScreen').addEventListener('mouseout', onMenuScreenTouchOut)
@@ -901,7 +1321,17 @@ $(document).ready(function() {
             document.getElementById('prevArrow').addEventListener('mousedown', onRuleItemTouchStart)
             document.getElementById('prevArrow').addEventListener('mouseup', onRuleItemTouchEnd)
             document.getElementById('prevArrow').addEventListener('mouseout', onRuleItemTouchEnd)
-           
+
+            // Show steps
+            if(sheetInnerParam == 'steps' || sheetInnerParam == 'step') {
+                document.getElementById('downloadBtn').style.display = 'none'
+                document.getElementById('menuPage').style.display = 'block'
+                document.getElementById('menuPage').style.backgroundColor = '#F9F3E3'
+                
+                //document.getElementById('contentSteps').style.display = 'block'
+                document.getElementById('menuTopContainer').style.display = 'none'
+                LoadGameSteps();
+            }
 
         }, 250)
     }
@@ -910,9 +1340,24 @@ $(document).ready(function() {
      * RemoveMenuScreenListner
      */
     function RemoveMenuScreenListner() {
+        document.getElementById('menuScreen').removeEventListener('touchstart', onMenuScreenTouchStart)
+        document.getElementById('menuScreen').removeEventListener('touchend', onMenuScreenTouchEnd)
+
         document.getElementById('menuScreen').removeEventListener('mousedown', onMenuScreenTouchStart)
         document.getElementById('menuScreen').removeEventListener('mouseup', onMenuScreenTouchEnd)
         document.getElementById('menuScreen').removeEventListener('mouseout', onMenuScreenTouchOut)
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * AddMenuScreenListner
+     */
+    function AddMenuScreenListner() {
+        document.getElementById('menuScreen').addEventListener('touchstart', onMenuScreenTouchStart)
+        document.getElementById('menuScreen').addEventListener('touchend', onMenuScreenTouchEnd)
+
+        document.getElementById('menuScreen').addEventListener('mousedown', onMenuScreenTouchStart)
+        document.getElementById('menuScreen').addEventListener('mouseup', onMenuScreenTouchEnd)
+        document.getElementById('menuScreen').addEventListener('mouseout', onMenuScreenTouchOut)
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -942,13 +1387,46 @@ $(document).ready(function() {
      */
     function AnimateMenuBtns() {
         document.getElementById('touchSection').style.display = 'none'
-        //let divToAnimate = document.getElementById('viewIconText');
         document.getElementById('buttonContainer').style.bottom = '10vh'
         document.getElementById('buttonContainer').style.opacity = '0'
         document.getElementById('viewIconText').style.display = 'flex'
         document.getElementById('infoBGGSection').style.display = 'flex'
         // Apply the animation
         $("#buttonContainer").animate({bottom: '15vh', opacity: '1'}, 300);
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * ShowSplashScreen
+     */
+    function ShowSplashScreen() {
+
+        if(fromParent == 'app' || fromParent == 'web') {return}
+
+        // Start timeline animation
+        //timeLine.seek(0);
+        //timeLine.resume();
+
+        //console.log("showing splash screen....")
+
+        $("#menuScreen").fadeIn();
+        document.getElementById('splashScreen').style.display = 'block';
+        ShowSplashSlides();
+        //timeLine.resume();
+
+        document.getElementById('touchSection').style.display = 'flex'
+        document.getElementById('buttonContainer').style.bottom = '15vh'
+        document.getElementById('viewIconText').style.opacity = '1'
+        document.getElementById('viewIconText').style.display = 'none'
+        document.getElementById('infoBGGSection').style.display = 'none'
+        document.getElementById('menuDetailsPage').style.display = 'none'
+        //document.getElementById('menuPage').style.display = 'none'
+
+        HideIFrame();
+        // Add menu event listener
+        AddMenuScreenListner();
+
+        
+        
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -963,9 +1441,14 @@ $(document).ready(function() {
      * 
      * @param {*} event 
      */
-    function onAnimateBtnTouchStart(event) {
+    function onAnimateBtnTouchEnd(event) {
         event.preventDefault();
         //console.log(document.getElementById('bggIconBtn').opacity, " --- ", event.target.id)
+
+        let touchStatus = handleTouchEnd(event);
+        if(touchStatus == false) {
+            return;
+        }
 
         const bggImage = document.getElementById("bggIconBtn");
         const infoImage = document.getElementById("infoIconBtn");
@@ -984,10 +1467,16 @@ $(document).ready(function() {
 
         if(bggOpacityPercentage >= 50) {
             //console.log("BGG Icon ")
-            LoadStatsData()
+            document.getElementById('downloadBtn').style.display = 'none'
+            document.getElementById('contentSteps').style.display = 'none'
+            document.getElementById('menuTopContainer').style.display = 'flex'
+            FillBGGScreenData(statsDataList)
         } else if(infoOpacityPercentage >= 50) {
             //console.log("Info Icon ")
-            LoadStatsData()
+            document.getElementById('downloadBtn').style.display = 'none'
+            document.getElementById('contentSteps').style.display = 'none'
+            document.getElementById('menuTopContainer').style.display = 'flex'
+            FillBGGScreenData(statsDataList)
         }
         
     }
@@ -998,7 +1487,8 @@ $(document).ready(function() {
     function LoadStatsData() {
         setTimeout(function() {
             var StatsRequest = $.ajax({
-                url: '../sheets/' + sheet_Id + "/stats.json?version=" + UIVersion,
+                //url: '../sheets/' + sheet_Id + "/stats.json?version=" + UIVersion,
+                url: jasonPath + 'sheets/' + sheet_Id + "/stats.json?version=" + UIVersion,
                 cache: true,
                 type: 'GET',
                 dataType: "JSON",
@@ -1010,16 +1500,18 @@ $(document).ready(function() {
                         if (response.status == 200) {
                             //console.log(response.boardgame, ' ----- ', response.boardgameBasicData)
                             statsDataList = response
-                            FillBGGScreenData(statsDataList)
+                            //FillBGGScreenData(statsDataList)
                         } else {
                            document.getElementById("loadingText").innerHTML += '<font color="red">Error: Stats data not available.' + "</font><br>" 
                         }
                     }
                     //console.log(statsDataList, " ---- ")
+
+                    
                 },
                 error: function(e) {
                     console.log("ERROR - Stats data missing..")
-                    document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Stats : Faqs</font><br>'
+                    document.getElementById("loadingText").innerHTML += '<br><font color="red">Error: Missing Sheet : stats</font><br>'
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
             })
@@ -1105,7 +1597,7 @@ $(document).ready(function() {
 
                 <div class="row mt-3">
                   <div class="col-md-4">
-                    <div class="img-box"><img src="${imagePath}" class="img-fluid"></div>
+                    <div class="img-box"><img src="${imagePath}" class="img-fluid" loading="lazy"/></div>
                     <div class="gamePrivateDataHTML details-game-${objectid}-private-data"></div>
                   </div>
                                       
@@ -1113,7 +1605,7 @@ $(document).ready(function() {
               </div>
 
               <div style="display:flex; width: 100%; flex-direction: row; justify-content: space-between;">
-                <div style="width:46%;">
+                <div style="width:48%;">
                     <div style="100%; height: 3.5vh; position: relative; top: 3vh;background-color: #CCCCCC; border-radius: 0.4vh;">
                     <div style="width:${valueWeight.toFixed(0)}%; height: 3.5vh; position: relative; top: 0vh;background-color: #0F75BC; border-radius: 0.4vh;"></div>
                     <p style="position:absolute; width:100%; font-size:2.4vh; color:#FFFFFF;text-align:center; top:0">${weightValue}</p>
@@ -1130,18 +1622,18 @@ $(document).ready(function() {
 
                 </div>
 
-                <div style="width:50%;">
+                <div style="width:50%; display: inline-block; text-align: end;">
                     <div class="metaGroup_details_filter">
                     <span>
-                        <img src="../img/earshot-games_player.png" width="25vh">${playerStats}</span><span><img src="../img/earshot-games_time.png"  width="35vh">${playtimeStats}
+                        <img src="../img/earshot-games_player.png" width="25vh" loading="lazy" style="position:relative; height:3vh; width:auto;" />${playerStats}</span><span><img src="../img/earshot-games_time.png" width="35vh" loading="lazy" style="position:relative; height:3vh; width:auto;" />${playtimeStats}
                     </span>
                     <span>
-                        <img src="../img/earshot-games_age.png"  width="25vh">${data.boardgame[0].boardgame.age}+
+                        <img src="../img/earshot-games_age.png"  width="25vh" loading="lazy" style="position:relative; height:3vh; width:auto;" />${data.boardgame[0].boardgame.age}+
                     </span>
                     ${data.boardgame[0].boardgamemechanic != undefined && data.boardgame[0].boardgame.boardgamemechanic.includes("Cooperative Game") == true
                     ?
                     `<span>
-                        <img src="../img/earshot-games_coop.png?version=1.4" width="25vh" style="margin-top:-4px"></span>`
+                        <img src="../img/earshot-games_coop.png?version=1.4" width="25vh" style="margin-top:-4px" loading="lazy" style="position:relative; height:3vh; width:auto;" /></span>`
                     : ``}
                 </div>
                 <div id="${objectid}_d" class="ratingWrapper">
@@ -1150,7 +1642,7 @@ $(document).ready(function() {
                 </div> 
                 </div>
                 <div style="position: relative; width: 100%; display: flex; flex-direction: row; justify-content: flex-end; margin-top: 2vh;">
-                    <img src="../img/btn_bgg_2.webp" style="width:7vh" alt="" />
+                    <img src="../img/btn_bgg_2.webp" style="width:7vh" alt="" loading="lazy" />
                 </div>
                 </div>
               </div>
@@ -1241,7 +1733,7 @@ $(document).ready(function() {
      * 
      * @param {*} event 
      */
-    function onAnimateBtnTouchEnd(event) {
+    function onAnimateBtnTouchStart(event) {
         event.preventDefault();
     }
     ///////////////////////////////////////////////////////////////////////////////
@@ -1276,13 +1768,35 @@ $(document).ready(function() {
     function ShowAutoMenuPages(sheetParam) {
         let menuTitleText = ''
         document.getElementById('menuPage').style.display = 'block'
-        let sheetParamData = getMenuItemData(sheetParam);
-        if(languageStepsData[sheetParamData].Text.toLowerCase().indexOf('faq') != -1) {
-            menuTitleText = languageStepsData[sheetParamData].Text.split(" ")[1]
+        if(fromParent == '') {
+            let sheetParamData = getMenuItemData(sheetParam);
+            if(languageStepsData[sheetParamData].Text.toLowerCase().indexOf('faq') != -1) {
+                menuTitleText = languageStepsData[sheetParamData].Text.split(" ")[1]
+            } else {
+                menuTitleText = languageStepsData[sheetParamData].Text.split(" ")[1]
+            }
+            document.getElementById('menuTitle').innerHTML = menuTitleText;
+            // Fill data based on menu clicked
+            FillSelectedMenuData(languageStepsData[sheetParamData].Text, languageStepsData[sheetParamData].Next)
         } else {
-            menuTitleText = languageStepsData[sheetParamData].Text.split(" ")[1]
+            let dispTitle = ''
+            if(sheetInnerParam == 'faqs' || sheetInnerParam == 'faq') {
+                dispTitle = 'FAQs'
+            } else {
+                dispTitle = sheetInnerParam.toUpperCase();
+            }
+            document.getElementById('menuTitle').innerHTML = dispTitle;
+            // Fill data based on menu clicked
+            FillSelectedMenuData(sheetInnerParam.toUpperCase(), sheetInnerParam)
         }
-        document.getElementById('menuTitle').innerHTML = menuTitleText;
+
+
+        // Hiding Top container
+        if(fromParent == 'web') {
+            document.getElementById('menuTopContainer').style.display = 'none';
+        }
+
+        document.getElementById('backToMenuBtn').style.opacity = '1';
         // event listener back button
         document.getElementById('backToMenuBtn').addEventListener('touchstart', onBackMenuTouchStart)
         document.getElementById('backToMenuBtn').addEventListener('touchend', onBackMenuTouchEnd)
@@ -1290,8 +1804,8 @@ $(document).ready(function() {
         document.getElementById('backToMenuBtn').addEventListener('mousedown', onBackMenuTouchStart)
         document.getElementById('backToMenuBtn').addEventListener('mouseup', onBackMenuTouchEnd)
 
-        // Fill data based on menu clicked
-        FillSelectedMenuData(languageStepsData[sheetParamData].Text, languageStepsData[sheetParamData].Next)
+        /* // Fill data based on menu clicked
+        FillSelectedMenuData(languageStepsData[sheetParamData].Text, languageStepsData[sheetParamData].Next) */
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -1335,6 +1849,7 @@ $(document).ready(function() {
             menuTitleText = languageStepsData[event.target.id.split('_')[1]].Text.split(" ")[1]
         }
         document.getElementById('menuTitle').innerHTML = menuTitleText;
+
         // event listener back button
         document.getElementById('backToMenuBtn').addEventListener('touchstart', onBackMenuTouchStart)
         document.getElementById('backToMenuBtn').addEventListener('touchend', onBackMenuTouchEnd)
@@ -1377,10 +1892,10 @@ $(document).ready(function() {
         }
         
         //console.log('Back menu click - ', fromParent)
-        if(fromParent == 'floristry') {
-            //console.log(window.parent.parent, " --- ")
+        if(fromParent == 'app' || fromParent == 'web') {
             window.parent.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
         } else {
+            document.getElementById('menuTopContainer').style.display = 'flex'
             document.getElementById('menuPage').style.display = 'none'
             document.getElementById('menuTitle').innerHTML = '';
         }
@@ -1414,16 +1929,23 @@ $(document).ready(function() {
             console.log('faqs selected')
             document.getElementById('downloadBtn').style.display = 'none'
             document.getElementById('contentSteps').style.display = 'none'
+            document.getElementById('menuPage').style.backgroundColor = '#2D2C2B'
+            document.getElementById('menuTopContainer').style.display = 'flex'
             LoadGameFaqs()
         } else if(toHold == 'rules' || toHold == 'rule') {
             console.log('rules selected')
             document.getElementById('downloadBtn').style.display = 'block'
             document.getElementById('contentSteps').style.display = 'none'
+            document.getElementById('menuPage').style.backgroundColor = '#2D2C2B'
+            document.getElementById('menuTopContainer').style.display = 'flex'
             LoadGameRules()
         } else if(toHold == 'steps' || toHold == 'step') {
             console.log('teach me selected')
             document.getElementById('downloadBtn').style.display = 'none'
-            document.getElementById('contentSteps').style.display = 'block'
+            document.getElementById('menuPage').style.display = 'block'
+            document.getElementById('menuPage').style.backgroundColor = '#F9F3E3'
+            //document.getElementById('contentSteps').style.display = 'block'
+            document.getElementById('menuTopContainer').style.display = 'none'
             LoadGameSteps();
         } 
     }
@@ -1433,8 +1955,30 @@ $(document).ready(function() {
      * LoadGameSteps
      */
     function LoadGameSteps() {
-        let _sheet = '../steps/index.php?version=' + UIVersion;
+        // "?code=" + browserLang + "&id=" + faqSheetId + "&sheet=steps&from=floristry&faqsId=" + activeSheet_id + "&standalone=" + isStandalone
+        //let _sheet = '../steps/index.php?version=' + UIVersion;
+        //console.log(_sheet, " ...sheetToLoad...")
+        /* let _sheet = '../steps/index.php?version=' + UIVersion;
         $("#contentSteps").attr("src", _sheet + "?code=" + activeLang + "&id=" + sheet_Id);
+        $("#contentSteps").fadeIn(500); */
+
+        //'./menu/index.php?version=' + _ver + "&code=" + activeLang + "&steps&" + fromParent + "&" + faqsSheetId + "&standalone=" + standalone
+        let stepsType = ''
+        /* if(fromParent == 'floristry') {
+            stepsType = "?code=" + activeLang + "&id=" + faqsSheedId + "&standalone=" + standalone.split('?')[0]
+        } else {
+            stepsType = "?code=" + activeLang + "&id=" + sheet_Id + "&standalone=" + standalone.split('?')[0]
+        } */
+
+        // With Docker
+        //stepsType = '../steps/index.php?version=' + UIVersion + "&code=" + activeLang + "&id=" + sheet_Id + "&steps&" + fromParent + "&standalone=" + standalone.split('?')[0]
+
+        stepsType = '../steps/index.html?version=' + UIVersion + "&code=" + activeLang + "&id=" + sheet_Id + "&steps&" + fromParent + "&standalone=" + standalone.split('?')[0]
+
+       //stepsType = '../menu/index.php?version=' + UIVersion + "&code=" + activeLang + "&id=" + sheet_Id + "&steps&" + fromParent + "&standalone=" + standalone.split('?')[0]
+
+        $("#contentSteps").attr("src", stepsType);
+        $("#contentSteps").fadeIn(500);
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -1497,17 +2041,14 @@ $(document).ready(function() {
     function LoadGameFaqs() {
         setTimeout(function() {
             let sheetName = ''
-            fromParent == 'floristry' ? sheetName = 'faqs-' : sheetName = 'faqs-'
+            fromParent == 'app' || 'web' ? sheetName = 'faqs-' : sheetName = 'faqs-'
+
             var FaqsRequest = $.ajax({
 
-                /*
-                //url: '../steps/sheets/' + sheet_Id + "/faqs-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + Math.random(),
-                //url: '../steps/sheets/' + sheet_Id + "/faqs-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion,
-                //url: jasonPath + '/sheets/' + sheet_Id + "/steps_faqs-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion,
-                */
+                //url: fromParent == 'app' ? jasonPath + '/sheets/' + faqsSheedId + "/" + sheetName + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion : jasonPath + '/sheets/' + sheet_Id + "/" + sheetName + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion,
 
+                url: jasonPath + 'sheets/' + sheet_Id + "/" + sheetName + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion,
 
-                url: fromParent == 'floristry' ? jasonPath + '/sheets/' + faqsSheedId + "/" + sheetName + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion : jasonPath + '/sheets/' + sheet_Id + "/" + sheetName + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion,
 
 
                 /* cache: false, */ 
@@ -1536,13 +2077,29 @@ $(document).ready(function() {
                             let faqList = ''
                             for(var i=0; i<faqsDataList.length; i++) {
                                 if(faqsDataList[i].Type == 'faq') {
+                                    // TAGS Support
+                                    // For Question
+                                    let mWordBerryQuestion = faqsDataList[i].Question.replaceAll('[BERRY]', `<img class="specialIconsFaqs" src="${berryImgPath}" loading="lazy"></img>`)
+                                    let mWordDiceQuesyion = mWordBerryQuestion.replaceAll('[DICE]', `<img class="specialIconsFaqs" src="${diceImgPath}" loading="lazy"></img>`)
+                                    let mWordNutQuestion = mWordDiceQuesyion.replaceAll('[NUT]', `<img class="specialIconsFaqs" src="${nutImgPath}" loading="lazy"></img>`)
+                                    let mWordBugQuestion = mWordNutQuestion.replaceAll('[BUG]', `<img class="specialIconsFaqs" src="${bugImgPath}" loading="lazy"></img>`)
+                                    let mWordOopsQuestion = mWordBugQuestion.replaceAll('[OOPS]', `<img class="specialIconsFaqs" src="${oopsImgPath}" loading="lazy"></img>`)
+                                    let mWordFlowerQuestion = mWordOopsQuestion.replaceAll('[FLOWER]', `<img class="specialIconsFaqs" src="${flowerImgPath}" loading="lazy"></img>`)
+
+                                    // For Answer
+                                    let mWordBerryAnswer = faqsDataList[i].Answer.replaceAll('[BERRY]', `<img class="specialIconsFaqs" src="${berryImgPath}" loading="lazy"></img>`)
+                                    let mWordDiceAnswer = mWordBerryAnswer.replaceAll('[DICE]', `<img class="specialIconsFaqs" src="${diceImgPath}" loading="lazy"></img>`)
+                                    let mWordNutAnswer = mWordDiceAnswer.replaceAll('[NUT]', `<img class="specialIconsFaqs" src="${nutImgPath}" loading="lazy"></img>`)
+                                    let mWordBugAnswer = mWordNutAnswer.replaceAll('[BUG]', `<img class="specialIconsFaqs" src="${bugImgPath}" loading="lazy"></img>`)
+                                    let mWordOopsAnswer = mWordBugAnswer.replaceAll('[OOPS]', `<img class="specialIconsFaqs" src="${oopsImgPath}" loading="lazy"></img>`)
+                                    let mWordFlowerAnswer = mWordOopsAnswer.replaceAll('[FLOWER]', `<img class="specialIconsFaqs" src="${flowerImgPath}" loading="lazy"></img>`)
 
                                     // get Image
                                     let faqImage = getImagePath(faqsDataList[i].Image)
 
-                                    faqList += `<li id="faqItem_${i}" style="color: lightgray; left: 4vh; position: relative;font-size: 3.5vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh; cursor: pointer;"> <span style="position: relative; top: 0vh !important; color: #F7AE50; font-size: 3.5vh;">${faqsDataList[i].Question}</span><div id="faq_${i}" style="color: #2D2C2B; left: 0vh; position: relative;font-size: 3vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh; display:none"><span style="position: relative; top: 0vh !important; color: #FFFFFF; font-size: 3vh;">${faqsDataList[i].Answer}</span>`
+                                    faqList += `<li id="faqItem_${i}" style="color: lightgray; left: 4vh; position: relative;font-size: 3.5vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh; cursor: pointer;"> <span style="position: relative; top: 0vh !important; color: #F7AE50; font-size: 3.5vh;">${mWordFlowerQuestion}</span><div id="faq_${i}" style="color: #2D2C2B; left: 0vh; position: relative;font-size: 3vh; top: 2vh; height:auto; line-height:1; margin-bottom:2vh; display:none"><p style="position: relative; top: 0vh !important; color: #FFFFFF; font-size: 3vh;">${mWordFlowerAnswer}</p>`
                                     faqImage != '' ? 
-                                    faqList += `<div style="margin-top: 3vh; font-size: 3vh; line-height: 1.1; width: 100%;height: auto; position: relative;"><span id="spinner_${i}" class="spinner"></span><img id="faqImg_${i}" src=${faqImage} alt="" loading="lazy" style="position:relative; width:100%; height:auto;"></img></div></div></li>` : 
+                                    faqList += `<div style="margin-top: 3vh; font-size: 3vh; line-height: 1.1; width: 100%;height: auto; position: relative;"><p id="spinner_${i}" class="spinner"></p><img id="faqImg_${i}" src=${faqImage} alt="" loading="lazy" style="position:relative; width:auto; height:auto;"></img></div></div></li>` : 
                                     faqList += `</div></li>`
                                 }
                             }
@@ -1566,8 +2123,8 @@ $(document).ready(function() {
                                         console.log("FAQs DONE")
                                     }
                                 }
+                                
                             }, 250)
-
                         }, 10) 
                     }
                 },
@@ -1594,11 +2151,15 @@ $(document).ready(function() {
                     if (faqsDataList[i].Image.includes("https://drive.google.com")) {
                         let imgid = faqsDataList[i].Image.split('https://drive.google.com')[1].split('/')[3];
                         let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
-                        imagePath = fromParent == 'floristry' ? (jasonPath + '/sheets/' + faqsSheedId + '/cacheImages/' + imgid + '.png?version=' + Math.random()) : (jasonPath + '/sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random());
+                        //imagePath = fromParent == 'app' ? (jasonPath + '/sheets/' + faqsSheedId + '/cacheImages/' + imgid + '.png?version=' + Math.random()) : (jasonPath + '/sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random());
+                        //imagePath = (jasonPath + '/sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random());
+                        imagePath = (jasonPath + '/sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion);
                     } else {
                         let name = faqsDataList[i].Image.split('/')
                         let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                        imagePath = fromParent == 'floristry' ? (jasonPath + '/sheets/' + faqsSheedId + '/cacheImages/' + imageName + "?version=" + Math.random()) : (jasonPath + '/sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random());
+                        //imagePath = fromParent == 'app' ? (jasonPath + '/sheets/' + faqsSheedId + '/cacheImages/' + imageName + "?version=" + Math.random()) : (jasonPath + '/sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random());
+                        //imagePath = (jasonPath + '/sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random());
+                        imagePath = (jasonPath + '/sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion);
                     }
                 }
             } 
@@ -1703,12 +2264,12 @@ $(document).ready(function() {
     function LoadGameRules() {
         setTimeout(function() {
             var RulesRequest = $.ajax({
-                url: '../sheets/' + sheet_Id + "/rules-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion,
+                //url: '../sheets/' + sheet_Id + "/rules-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion,
+                url: jasonPath + 'sheets/' + sheet_Id + "/rules-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion,
                 cache: true,
                 type: 'GET',
                 dataType: "text",
                 success: function (response) {
-                    //console.log(response, " READ DATA")
                     if(response.length == 0) {
                         document.getElementById("loadingText").innerHTML += '<font color="red">Error: Rules data not available.' + "</font><br>"
                     } else { 
@@ -1852,6 +2413,7 @@ $(document).ready(function() {
             ruleItemId = event.target.parentElement.id.split('_')[1];
             document.getElementById(event.target.id).style.color = '#F7AE50'
         }
+        
         //console.log(ruleItemId, " --- ruleItemId")
         if(ruleItemId == undefined) return;
         document.getElementById('menuDetailsPage').style.display = 'flex'
@@ -1892,6 +2454,8 @@ $(document).ready(function() {
         document.getElementById('rulesNavigation').style.display = "flex"
 
         let endIndex = getMenuDetailItemEndIndex(ruleItemId)
+
+
         let menuItemToDisplay = ''
 
         // Show Navigation data
@@ -1917,16 +2481,17 @@ $(document).ready(function() {
             if(rulesDataList[i].Type == 'text') {
                 //menuItemToDisplay = rulesDataList[i].Text
                 // Format Text for adding special icons
-                let mWordBerry = rulesDataList[i].Text.replaceAll('[BERRY]', `<img class="specialIcons" src="${berryImgPath}"</img>`)
-                let mWordDice = mWordBerry.replaceAll('[DICE]', `<img class="specialIcons" src="${diceImgPath}"</img>`)
-                let mWordNut = mWordDice.replaceAll('[NUT]', `<img class="specialIcons" src="${nutImgPath}"</img>`)
-                let mWordBug = mWordNut.replaceAll('[BUG]', `<img class="specialIcons" src="${bugImgPath}"</img>`)
-                let mWordOops = mWordBug.replaceAll('[OOPS]', `<img class="specialIcons" src="${oopsImgPath}"</img>`)
-                //console.log(mWordOops, " final")
+                let mWordBerry = rulesDataList[i].Text.replaceAll('[BERRY]', `<img class="specialIcons" src="${berryImgPath}" loading="lazy"></img>`)
+                let mWordDice = mWordBerry.replaceAll('[DICE]', `<img class="specialIcons" src="${diceImgPath}" loading="lazy"></img>`)
+                let mWordNut = mWordDice.replaceAll('[NUT]', `<img class="specialIcons" src="${nutImgPath}" loading="lazy"></img>`)
+                let mWordBug = mWordNut.replaceAll('[BUG]', `<img class="specialIcons" src="${bugImgPath}" loading="lazy"></img>`)
+                let mWordOops = mWordBug.replaceAll('[OOPS]', `<img class="specialIcons" src="${oopsImgPath}" loading="lazy"></img>`)
+                let mWordFlower = mWordOops.replaceAll('[FLOWER]', `<img class="specialIcons" src="${flowerImgPath}" loading="lazy"></img>`)
 
+                //console.log(mWordOops, " final")
                 //document.getElementById('menuDetails').innerHTML += `<p style="margin-top:3vh; font-size:3vh; line-height:1.1; width:100%; color:white" >${rulesDataList[i].Text}</p>`
 
-                document.getElementById('menuDetails').innerHTML += `<p style="margin-top:3vh; font-size:3vh; line-height:1.1; width:100%; color:white" >${mWordOops}</p>`
+                document.getElementById('menuDetails').innerHTML += `<p style="margin-top:3vh; font-size:3vh; line-height:1.1; width:100%; color:white" >${mWordFlower}</p>`
 
             } else if(rulesDataList[i].Type == 'image') {
                 let imagePath = ''
@@ -1934,18 +2499,18 @@ $(document).ready(function() {
                     let imgid = rulesDataList[i].Text.split('https://drive.google.com')[1].split('/')[3];
                     let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                     // image from spreadsheet id folder
-                    imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                    //imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                    imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
                 } else {
                     // Cache Image
                     let name = rulesDataList[i].Text.split('/')
                     let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
                     // image from spreadsheet id folder
-                    imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                    //imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                    imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
                 }
-                document.getElementById('menuDetails').innerHTML += `<div style="margin-top:3vh; font-size:3vh; line-height:1.1; width:100%"><img src=${imagePath} alt=""</img></div>`
+                document.getElementById('menuDetails').innerHTML += `<div style="margin-top:3vh; font-size:3vh; line-height:1.1; width:100%"><img src=${imagePath} alt="" loading="lazy"></img></div>`
             }
-
-            
         }
     }
     ///////////////////////////////////////////////////////////////////////////////
@@ -2001,7 +2566,8 @@ $(document).ready(function() {
      * @param {*} index 
      */
     function getMenuDetailItemEndIndex(index) {
-        let lastIndex = -1
+        //let lastIndex = -1
+        let lastIndex = rulesDataList.length;
         for(var i=Number(index)+1; i<rulesDataList.length; i++) {
             /* if(rulesDataList[i].ID != '') {
                 lastIndex = i */
@@ -2127,6 +2693,9 @@ $(document).ready(function() {
         if(JSON.parse(event.data).message == 'toggleFrame') {
             ToggleIFrame();
         }
+        if(JSON.parse(event.data).message == 'disableTimer') {
+            resetIdleTimer();
+        }
     })
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -2135,9 +2704,12 @@ $(document).ready(function() {
      */
     function HideIFrame() {
         //$("#contentSteps").effect( "drop", "fast" );
+        //$("#contentSteps").fadeOut(500);
         $("#contentSteps").attr("src",'');
+        document.getElementById('menuPage').style.backgroundColor = '#2D2C2B'
         document.getElementById('menuPage').style.display = 'none'
         document.getElementById('menuTitle').innerHTML = '';
+        document.getElementById("menuScreen").style.display = 'block'
     }
     /////////////////////////////////////////////////////////////////////////////////
     /**

@@ -129,9 +129,9 @@ $(document).ready(function() {
   // Get the deviceFPS
   getDeviceFPS();
   setTimeout(function() {
-    if(window.navigator.onLine == false) {
-      return
-    } else {
+    //if(window.navigator.onLine == false) {
+      //return
+    //} else {
       // Set buttons layer pos
       const detectDeviceType = () =>
         /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -142,7 +142,7 @@ $(document).ready(function() {
           } else {
             document.getElementById('bottomButtonLayer').style.height = '21vh; !important'
           }
-        }
+        //}
   }, 3000)
   /////////////////////////////////////////////////////////////////////////////////
   var isToggle = false

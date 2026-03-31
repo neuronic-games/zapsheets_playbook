@@ -195,7 +195,7 @@ body {
     background-color: #000000 !important;
   }
   #bottomButtonLayer {
-    height: 21vh !important;
+    height: 21vh;
   }
 }
 /*****************************************************************/
@@ -218,7 +218,7 @@ body {
     background-color: #000000 !important;
   }
   #bottomButtonLayer {
-    height: 21vh !important;
+    height: 21vh;
   }
 }
 /*****************************************************************/
@@ -241,7 +241,7 @@ body {
     background-color: #000000 !important;
   }
   #bottomButtonLayer {
-    height: 21vh !important;
+    height: 21vh;
   }
 }
 /*****************************************************************/
@@ -295,12 +295,14 @@ body {
     background-color: #000000 !important;
   }
   #bottomButtonLayer {
-    height: 21vh !important;
+    height: 21vh;
   }
 }
 /*****************************************************************/
 :root {
   --screen-width: 100%;
+  --screen-width-max: 100%;
+  --screen-width-min: 100%;
   --screen-left: 0%;
 }
 @media only screen 
@@ -338,7 +340,7 @@ body {
     left: 0%;
   }
   #bottomButtonLayer {
-    height: 21vh !important;
+    height: 21vh;
   }
   #stepsSnippetContainer {
     width: 100% !important;
@@ -392,8 +394,12 @@ body {
     background-color: #000000 !important;
   }
   #content {
-    width: 34% !important;
-    left: 33% !important;
+    /* width: 34% !important;
+    left: 33% !important; */
+    width: var(--screen-width) !important;
+    max-width: var(--screen-width-max) !important;
+    min-width: var(--screen-width-min) !important;
+    left: var(--screen-left) !important;
   }
   #stepsSnippetContainer {
     width: 108% !important;
@@ -455,9 +461,17 @@ ul {
 
 .specialIcons {
   position: relative;
-  width: 4vh;
+  width: auto;
   height: 4vh;
 }
+
+.specialIconsFaqs {
+  position: relative;
+  width: auto;
+  height: 4vh;
+  z-index: -1;
+}
+
 
 #viewIconText p {
   font-size: 3vh !important;
@@ -515,12 +529,13 @@ ul {
     left: 0;
     width: 100%;
     height: 100%;
-    opacity: 0; 
+    opacity: 0;
+    border-radius: 50%;
 }
 
 .img1 {
   /* Image 1 fades in and out */
-  animation: fadeIn 5s infinite alternate ease-in-out;
+  animation: fadeIn 5s infinite alternate ease-in-out,touch-pulse-animation 1.5s infinite;
 }
 
 .img2 {
@@ -600,15 +615,16 @@ ul {
 .metaGroup_details_filter { 
   display: flex; 
   gap:10px; 
-  justify-content: flex-start; 
+  justify-content: flex-END; 
   align-items: center; 
-  width: 250px !important; 
+  /* width: 250px !important;  */
+  width: 100% !important; 
   position: relative; 
   right: 50px; 
   left: 0px; 
   color: #FFFFFF; 
   font-size: 2vh; 
-  margin-top: 2.5vh !important;
+  margin-top: 3vh !important;
 }
 
 .metaGroup_details { 
@@ -716,11 +732,11 @@ ul {
   overflow: hidden; 
   white-space: nowrap; 
   user-select: none; 
-  height: 40px;
+  height: 3vh;
 }
 
 .ratingStar span {
-  font-size: 40px;
+  font-size: 3vh;
   line-height: 100%;
   white-space: nowrap;
   overflow: hidden;
@@ -736,6 +752,37 @@ ul {
   overflow: hidden;
   color: #fcb040;
   letter-spacing: 0px;
+}
+
+.row {
+    --bs-gutter-x: 1.5rem;
+    --bs-gutter-y: 0;
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: calc(var(--bs-gutter-y) * -1);
+    margin-right: calc(var(--bs-gutter-x) * -1);
+    margin-left: calc(var(--bs-gutter-x) * -.5);
+}
+
+@media (min-width: 768px) {
+    .col-md-8 {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+    .col-md-4 {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+}
+@media (min-width: 992px) {
+    .col-lg-3 {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+    .col-lg-9 {
+        flex: 0 0 auto;
+        width: 100%;
+    }
 }
 /*****************************************************************/
 /*****************************************************************/
@@ -1203,4 +1250,31 @@ h6,.h6{ font-size:13px;}
   100% { 
     transform: rotate(360deg); 
   }
+}
+
+.iframe .img {
+  position: relative;
+  left: 50%; 
+  top: 50%; 
+  height: 100vh; 
+  width: 100vw; 
+  transform: translateY(-50%) translateX(-50%); 
+  z-index: 0; 
+  object-fit: cover;
+}
+
+.splashSlide {
+  display: none; /* Hide all slides by default */
+  animation: fade 1s ease-in-out; /* Fade duration */
+}
+
+/* Optional: Add fade animation */
+.fade {
+  animation-name: fade;
+  animation-duration: 1.5s;
+}
+
+@keyframes fade {
+  from {opacity: .4}
+  to {opacity: 1}
 }

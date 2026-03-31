@@ -43,11 +43,14 @@ let imageLoadedCount = 1
 // Image Holder
 let tempLangHolder = []
 let tempInstallHolder = []
+let tempTagsHolder = []
+let tempSplashHolder = []
 // Language Holder
 let languageLoadIndex = 0
 let languageJSON = []
 let isMoreSheets = []
 let sheetIndex = 0;
+let bggIndex = 0;
 //////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Checking open browser stats
@@ -92,6 +95,8 @@ let eventsDataList = []
 let kioskDataList = []
 let languageDataList = []
 let bggDataList = []
+let tagsDataList = []
+let splashDataList = []
 let sheet_Name = ''
 let splash_img = ''
 let splashDelaySec = 0
@@ -308,7 +313,18 @@ function getSheetSettings(_sheetName, sheetVersion, pub_date) {
                         setTimeout(function() {
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                         }, 100)
-                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-en") {
+                    //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-en") {
+                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-" + activeLanguage.toLowerCase()) {
+                        setTimeout(function() {
+                            console.log("BBB")
+                            getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                        }, 100)
+                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "tags") {
+                        setTimeout(function() {
+                            getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                        }, 100)
+                    //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "splash-en") {
+                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "splash-" + activeLanguage.toLowerCase()) {
                         setTimeout(function() {
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                         }, 100)
@@ -318,9 +334,10 @@ function getSheetSettings(_sheetName, sheetVersion, pub_date) {
                         }, 100)
                     }
                 } else {
-                    if(_sheetName.toLowerCase() == 'bgg-en') {
-                        console.log("Load bgg sheet data to get username and game id....")
-                        loadBGGSheetData(languageDataList[languageLoadIndex])
+                    //if(_sheetName.toLowerCase() == 'bgg-en') {
+                    if(_sheetName.toLowerCase() == 'bgg-' + activeLanguage.toLowerCase()) {
+                        //console.log("Load bgg sheet data to get username and game id....")
+                        //loadBGGSheetData(languageDataList[languageLoadIndex])
                     } else {
                         // Check for loading image
                         if(isPreloadImages == 'download_images') {
@@ -331,6 +348,7 @@ function getSheetSettings(_sheetName, sheetVersion, pub_date) {
                             PreloadAllImagesToServer();
                         } else {
                             pushVersionToServer();
+                            saveIndexFile();
                             setTimeout(function() {
                                 document.getElementById("loadingTxt").innerHTML += "All sheet data published.<br>"
                                 updateInfoTextView()
@@ -393,11 +411,22 @@ function getSheetInstall(_sheetName, sheetVersion, pub_date) {
 
                 if(isMoreSheets.length > 1 && languageLoadIndex < isMoreSheets.length-1) {
                     languageLoadIndex++;
-                    if(isMoreSheets[languageLoadIndex].toLowerCase() == "install") {
+                    if(isMoreSheets[languageLoadIndex].toLowerCase() == "settings") {
                         setTimeout(function() {
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                         }, 100)
-                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-en") {
+                    //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-en") {
+                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-" + activeLanguage.toLocaleLowerCase()) {
+                        setTimeout(function() {
+                            console.log("CCC")
+                            getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                        }, 100)
+                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "tags") {
+                        setTimeout(function() {
+                            getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                        }, 100)
+                    //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "splash-en") {
+                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "splash-" + activeLanguage.toLowerCase()) {
                         setTimeout(function() {
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                         }, 100)
@@ -407,9 +436,10 @@ function getSheetInstall(_sheetName, sheetVersion, pub_date) {
                         }, 100)
                     }
                 } else {
-                    if(_sheetName.toLowerCase() == 'bgg-en') {
-                        console.log("Load bgg sheet data to get username and game id....")
-                        loadBGGSheetData(languageDataList[languageLoadIndex])
+                    //if(_sheetName.toLowerCase() == 'bgg-en') {
+                    if(_sheetName.toLowerCase() == 'bgg-' + activeLanguage.toLowerCase()) {
+                        //console.log("Load bgg sheet data to get username and game id....")
+                        //loadBGGSheetData(languageDataList[languageLoadIndex])
                     } else {
                         // Check for loading image
                         if(isPreloadImages == 'download_images') {
@@ -420,6 +450,7 @@ function getSheetInstall(_sheetName, sheetVersion, pub_date) {
                             PreloadAllImagesToServer();
                         } else {
                             pushVersionToServer();
+                            saveIndexFile();
                             setTimeout(function() {
                                 document.getElementById("loadingTxt").innerHTML += "All sheet data published.<br>"
                                 updateInfoTextView()
@@ -427,7 +458,6 @@ function getSheetInstall(_sheetName, sheetVersion, pub_date) {
                         }
                     }
                 }
-
                 
             }
         },
@@ -440,7 +470,220 @@ function getSheetInstall(_sheetName, sheetVersion, pub_date) {
     settingRequest.abort = null;
     settingRequest = null;
 }
+/////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * 
+ * @param {*} _sheetName 
+ * @param {*} sheetVersion 
+ * @param {*} pub_date 
+ */
+function getSheetTags(_sheetName, sheetVersion, pub_date) {
+    var settingRequest = $.ajax({
+        url: '../sheets/' + sheet_Id + "/" + _sheetName.toLowerCase() + ".json?version=" + Math.random(), 
+        cache: false, 
+        type: 'GET',
+        dataType: "text",
+        success: function (response) {
+            if(response.length == 0) {
+                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>"
+                updateInfoTextView()
+            } else { 
+                tagsDataList = []
+                var mResponseSettings = response.replace(/�/g, "") 
+                var newSettingsData = eval(mResponseSettings)
+                for(var i=0; i<newSettingsData.length; i++) {
+                    var settingsDataSting = JSON.stringify(newSettingsData[i]);
+                    if(isJSONData(settingsDataSting) == false) {
+                        document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' Sheet : (Row: ' + i + ")</font><br>"
+                        updateInfoTextView()
+                    } else {
+                        tagsDataList[i] = isJSONData(settingsDataSting)
+                    }
+                }
+                if(languageLoadIndex == 0) {
+                    document.getElementById("loadingTxt").innerHTML += "App Version: " + Number(_version).toFixed(1) + "<br>"
+                    updateInfoTextView()
+                    document.getElementById("loadingTxt").innerHTML += 'Sheet Id: ' + sheet_Id + '<br>'
+                    updateInfoTextView()
+                    document.getElementById("loadingTxt").innerHTML += 'Sheet Published on: ' + pub_date + '<br>'
+                    updateInfoTextView()
+                } 
+                // Settings message added
+                document.getElementById("loadingTxt").innerHTML += "Publising " + _sheetName + " data to server.<br>"
+                updateInfoTextView()
 
+                if(isMoreSheets.length > 1 && languageLoadIndex < isMoreSheets.length-1) {
+                    languageLoadIndex++;
+                    if(isMoreSheets[languageLoadIndex].toLowerCase() == "settings") {
+                        setTimeout(function() {
+                            getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                        }, 100)
+                    //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-en") {
+                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-" + activeLanguage.toLowerCase()) {
+                        setTimeout(function() {
+                            getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                        }, 100)
+                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "install") {
+                        setTimeout(function() {
+                            getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                        }, 100)
+                    //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "splash-en") {
+                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "splash-" + activeLanguage.toLowerCase()) {
+                        setTimeout(function() {
+                            getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                        }, 100)
+                    } else {
+                        setTimeout(function() {
+                            getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                        }, 100)
+                    }
+                } else {
+                    //if(_sheetName.toLowerCase() == 'bgg-en') {
+                    if(_sheetName.toLowerCase() == 'bgg-' + activeLanguage.toLowerCase()) {
+                        //console.log("Load bgg sheet data to get username and game id....")
+                        //loadBGGSheetData(languageDataList[languageLoadIndex])
+                    } else {
+                        // Check for loading image
+                        if(isPreloadImages == 'download_images') {
+                            console.log("Preload Images")
+                            // Added new line break
+                            document.getElementById("loadingTxt").innerHTML += "<br>"
+                            // Preload All Images
+                            PreloadAllImagesToServer();
+                        } else {
+                            pushVersionToServer();
+                            saveIndexFile();
+                            setTimeout(function() {
+                                document.getElementById("loadingTxt").innerHTML += "All sheet data published.<br>"
+                                updateInfoTextView()
+                            }, 3000)
+                        }
+                    }
+                }
+                
+            }
+        },
+        error: function(e) {
+            console.log("No " + _sheetName + " sheet found")
+        }
+    })
+    // Clear memory
+    settingRequest.onreadystatechange = null;
+    settingRequest.abort = null;
+    settingRequest = null;
+}
+/////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * 
+ * @param {*} _sheetName 
+ * @param {*} sheetVersion 
+ * @param {*} pub_date 
+ */
+function getSheetSplash(_sheetName, sheetVersion, pub_date) {
+    var settingRequest = $.ajax({
+        url: '../sheets/' + sheet_Id + "/" + _sheetName.toLowerCase() + ".json?version=" + Math.random(), 
+        cache: false, 
+        type: 'GET',
+        dataType: "text",
+        success: function (response) {
+            if(response.length == 0) {
+                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>"
+                updateInfoTextView()
+            } else { 
+                splashDataList = []
+                var mResponseSettings = response.replace(/�/g, "") 
+                var newSettingsData = eval(mResponseSettings)
+                for(var i=0; i<newSettingsData.length; i++) {
+                    var settingsDataSting = JSON.stringify(newSettingsData[i]);
+                    if(isJSONData(settingsDataSting) == false) {
+                        document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' Sheet : (Row: ' + i + ")</font><br>"
+                        updateInfoTextView()
+                    } else {
+                        splashDataList[i] = isJSONData(settingsDataSting)
+                    }
+                }
+                if(languageLoadIndex == 0) {
+                    document.getElementById("loadingTxt").innerHTML += "App Version: " + Number(_version).toFixed(1) + "<br>"
+                    updateInfoTextView()
+                    document.getElementById("loadingTxt").innerHTML += 'Sheet Id: ' + sheet_Id + '<br>'
+                    updateInfoTextView()
+                    document.getElementById("loadingTxt").innerHTML += 'Sheet Published on: ' + pub_date + '<br>'
+                    updateInfoTextView()
+                } 
+                // Settings message added
+                document.getElementById("loadingTxt").innerHTML += "Publising " + _sheetName + " data to server.<br>"
+                updateInfoTextView()
+
+                if(isMoreSheets.length > 1 && languageLoadIndex < isMoreSheets.length-1) {
+                    languageLoadIndex++;
+                    if(isMoreSheets[languageLoadIndex].toLowerCase() == "settings") {
+                        setTimeout(function() {
+                            getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                        }, 100)
+                    //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-en") {
+                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-" + activeLanguage.toLowerCase()) {
+                        setTimeout(function() {
+                            getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                        }, 100)
+                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "install") {
+                        setTimeout(function() {
+                            getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                        }, 100)
+                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "tags") {
+                        setTimeout(function() {
+                            getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                        }, 100)
+                    } else {
+                        setTimeout(function() {
+                            getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                        }, 100)
+                    }
+                } else {
+                    //if(_sheetName.toLowerCase() == 'bgg-en') {
+                    if(_sheetName.toLowerCase() == 'bgg-' + activeLanguage.toLowerCase()) {
+                        //console.log("Load bgg sheet data to get username and game id....")
+                        //loadBGGSheetData(languageDataList[languageLoadIndex])
+                    } else {
+                        // Check for loading image
+                        if(isPreloadImages == 'download_images') {
+                            console.log("Preload Images")
+                            // Added new line break
+                            document.getElementById("loadingTxt").innerHTML += "<br>"
+                            // Preload All Images
+                            PreloadAllImagesToServer();
+                        } else {
+                            pushVersionToServer();
+                            saveIndexFile();
+                            setTimeout(function() {
+                                document.getElementById("loadingTxt").innerHTML += "All sheet data published.<br>"
+                                updateInfoTextView()
+                            }, 3000)
+                        }
+                    }
+                }
+                
+            }
+        },
+        error: function(e) {
+            console.log("No " + _sheetName + " sheet found")
+        }
+    })
+    // Clear memory
+    settingRequest.onreadystatechange = null;
+    settingRequest.abort = null;
+    settingRequest = null;
+}
+///////////////////////////////////////////////////////////////////////////////////////
+function getBGGIndex() {
+    let bggPosIndex = -1;
+    for (i=0; i<isMoreSheets.length; i++) {
+        //if(isMoreSheets[i] == 'bgg-en') {
+        if(isMoreSheets[i] == 'bgg-' + activeLanguage.toLowerCase()) {
+            bggPosIndex = i;
+        }
+    }
+    return bggPosIndex;
+}
 ///////////////////////////////////////////////////////////////////////////////////////
 /**
  * 
@@ -457,6 +700,7 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
         type: 'GET',
         dataType: "text",
         success: function (response) {
+            //console.log(response, " >data")
             if(response.length == 0) {
                 document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>"
                 updateInfoTextView()
@@ -473,7 +717,18 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
                         languageDataList[languageLoadIndex][i] = isJSONData(privateDataSting)
                     }
                 }
+
+                if(languageLoadIndex == isMoreSheets.length-1) {
+                    //if(isMoreSheets.includes('bgg-en') == true) {
+                    if(isMoreSheets.includes('bgg-') + activeLanguage.toLowerCase() == true) {
+                        bggIndex = getBGGIndex();
+                        console.log("Load bgg sheet data to get username and game id....")
+                        loadBGGSheetData(languageDataList[bggIndex])
+                        return;
+                    } 
+                } 
             }
+
             if(languageLoadIndex == 0) {
                 document.getElementById("loadingTxt").innerHTML += "App Version: " + Number(_version).toFixed(1) + "<br>"
                 updateInfoTextView()
@@ -494,11 +749,22 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
                     setTimeout(function() {
                         getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                     }, 100)
-                } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-en") {
+                //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-en") {
+                } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-" + activeLanguage.toLowerCase()) {
                     setTimeout(function() {
+                        console.log("AAA")
                         getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                     }, 100)
                 } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "install") {
+                    setTimeout(function() {
+                        getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                    }, 100)
+                //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "splash-en") {
+                } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "splash-" + activeLanguage.toLowerCase()) {
+                    setTimeout(function() {
+                        getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                    }, 100)
+                } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "tags") {
                     setTimeout(function() {
                         getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                     }, 100)
@@ -509,9 +775,10 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
                 }
             } else {
                 //console.log(_sheetName, " PRELOAD..")
-                if(_sheetName.toLowerCase() == 'bgg-en') {
-                    console.log("Load bgg sheet data to get username and game id....")
-                    loadBGGSheetData(languageDataList[languageLoadIndex])
+                //if(_sheetName.toLowerCase() == 'bgg-en') {
+                if(_sheetName.toLowerCase() == 'bgg-' + activeLanguage.toLowerCase()) {
+                    //console.log("Load bgg sheet data to get username and game id....")
+                    //loadBGGSheetData(languageDataList[languageLoadIndex])
                 } else {
                     if(isPreloadImages == 'download_images') {
                         console.log("Preload Images")
@@ -521,6 +788,7 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
                         PreloadAllImagesToServer();
                     } else {
                         pushVersionToServer();
+                        saveIndexFile();
                         setTimeout(function() {
                             document.getElementById("loadingTxt").innerHTML += "All sheet data published.<br>"
                             updateInfoTextView()
@@ -576,6 +844,7 @@ function loadBGGSheetData(bggJSON) {
                 updateInfoTextView()
             } else {
                 bggDataList = response;
+
                 if(isPreloadImages == 'download_images') {
                     console.log("Preload Images")
                     // Added new line break
@@ -584,11 +853,13 @@ function loadBGGSheetData(bggJSON) {
                     PreloadAllImagesToServer();
                 } else {
                     pushVersionToServer();
+                    saveIndexFile();
                     setTimeout(function() {
                         document.getElementById("loadingTxt").innerHTML += "All sheet data published.<br>"
                         updateInfoTextView()
                     }, 3000)
                 }
+
             }
         }
     })
@@ -596,7 +867,6 @@ function loadBGGSheetData(bggJSON) {
     bggRequest.onreadystatechange = null;
     bggRequest.abort = null;
     bggRequest = null;
-
 }
 ///////////////////////////////////////////////////////////////////////////////////////
 /**
@@ -624,10 +894,21 @@ function getSheetData(_sheetName, sheetVersion, pub_date) {
                     setTimeout(function() {
                         getSheetInstall(_sheetName, sheetVersion, pub_date);
                     }, 100)
+                } else if(_sheetName.toLowerCase() == "tags") {
+                    //console.log("Install data")
+                    setTimeout(function() {
+                        getSheetTags(_sheetName, sheetVersion, pub_date);
+                    }, 100)
+                //} else if(_sheetName.toLowerCase() == "splash-en") {
+                } else if(_sheetName.toLowerCase() == "splash-"+activeLanguage.toLowerCase()) {
+                    //console.log("Install data")
+                    setTimeout(function() {
+                        getSheetSplash(_sheetName, sheetVersion, pub_date);
+                    }, 100)
                 } else {
                     let languageToLoad = ''
                     languageJSON = isMoreSheets
-                    languageToLoad = isSpecificSheet;
+                    languageToLoad = isSpecificSheet = isMoreSheets[languageLoadIndex]; //isSpecificSheet;
                     setTimeout(function() {
                        if(languageLoadIndex < languageJSON.length) {
                             getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName);
@@ -677,9 +958,9 @@ function getAllImagesToPublish() {
             tempCount++;
         }
     })
-
+    
     $.each(settingDataList, function (index_setting, row_setting) {
-        if(row_setting['Name'] == 'BackgroundImage' || row_setting['Name'] == 'SplashImageUrl' || row_setting['Name'] == 'PrevButtonUrl' || row_setting['Name'] == 'NextButtonUrl' || row_setting['Name'] == 'QuitButtonUrl' || row_setting['Name'] == 'LoadingImageUrl' || row_setting['Name'] == 'DownloadButtonUrl' || row_setting["Name"] == '[DICE]' || row_setting["Name"] == '[BERRY]' || row_setting["Name"] == '[NUT]' || row_setting["Name"] == '[BUG]' || row_setting["Name"] == '[OOPS]') {
+        if(row_setting['Name'] == 'BackgroundImage' || row_setting['Name'] == 'SplashImageUrl' || row_setting['Name'] == 'PrevButtonUrl' || row_setting['Name'] == 'NextButtonUrl' || row_setting['Name'] == 'QuitButtonUrl' || row_setting['Name'] == 'LoadingImageUrl' || row_setting['Name'] == 'DownloadButtonUrl' || row_setting["Name"] == 'AppIconImageUrl') {
             if(row_setting['Value'] != '') {
                 tempCount++
             }
@@ -695,6 +976,19 @@ function getAllImagesToPublish() {
     for (var k=0; k<filteredInstallImages.length; k++) {
         tempCount++
     }
+
+    // Tags tab images
+    let filteredTagsImages = tempTagsHolder.filter((item, index) => tempTagsHolder.indexOf(item) === index);
+    for (var k=0; k<filteredTagsImages.length; k++) {
+        tempCount++
+    }
+
+    // splash tab images
+    let filteredSplashContent = tempSplashHolder.filter((item, index) => tempSplashHolder.indexOf(item) === index);
+    for (var k=0; k<filteredSplashContent.length; k++) {
+        tempCount++
+    }
+
     return tempCount;
 }
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -908,8 +1202,34 @@ function PreloadAllImagesToServer() {
                     }
                 }
             }
+            // For App Icon
+            if(row_setting['Name'] == 'AppIconImageUrl') {
+                if(row_setting['Value'] != '') {
+                    if (row_setting['Value'].includes("https://drive.google.com")) {
+                        let imgid = row["Value"].split('https://drive.google.com')[1].split('/')[3];
+                        let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
+                        // Cache Image
+                        setTimeout(function() {
+                            if(row_setting['Value'] != '') {
+                                downloadImagesLocally(imgPath)
+                            } else {
+                                downloadImagesLocally("")
+                            }
+                        }, (settingTimeout * index_setting));
+                    } else {
+                        // Cache Image
+                        setTimeout(function() {
+                            if(row_setting['Value'] != '') {
+                                downloadImagesLocally(row_setting['Value'])
+                            } else {
+                                downloadImagesLocally("")
+                            }
+                        }, (settingTimeout * index_setting));
+                    }
+                }
+            }
             // For DICE Image
-            if(row_setting['Name'] == '[DICE]') {
+            /* if(row_setting['Name'] == '[DICE]') {
                 if(row_setting['Value'] != '') {
                     if (row_setting['Value'].includes("https://drive.google.com")) {
                         let imgid = row["Value"].split('https://drive.google.com')[1].split('/')[3];
@@ -1037,7 +1357,7 @@ function PreloadAllImagesToServer() {
                         }, (settingTimeout * index_setting));
                     }
                 }
-            }
+            } */
         })
         //////////////////////// For steps data ///////////////////////////
         let langTimeout = 300
@@ -1162,6 +1482,77 @@ function PreloadAllImagesToServer() {
                 }
             }
         })
+
+        // To Save Tags Images
+        let tagsTimeout = 900
+        tempTagsHolder = []
+        $.each(tagsDataList, function (i, row) {
+            if (tagsDataList[i]['Value'].includes("https://drive.google.com")) {
+                let imgid = tagsDataList[i]['Image'].split('https://drive.google.com')[1].split('/')[3];
+                let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
+                // Cache Image
+                setTimeout(function() {
+                    if(tagsDataList[i].Value != '') {
+                        tempTagsHolder.push(imgPath)
+                    } else {
+                    }
+                }, (0));
+            } else {
+                // Cache Image
+                setTimeout(function() {
+                    if(tagsDataList[i].Value != '') {
+                        tempTagsHolder.push(tagsDataList[i].Value)
+                    } else {
+                    }
+                }, (0));
+            }
+        })
+        setTimeout(function() {
+            // To remove duplicate values
+            let filteredTagsImages = tempTagsHolder.filter((item, index) => tempTagsHolder.indexOf(item) === index);
+            // Filtered list
+            $.each(filteredTagsImages, function (i, row) {
+                setTimeout(function() {
+                    downloadImagesLocally(filteredTagsImages[i])
+                }, (tagsTimeout * i));
+            })
+        }, 300)
+
+        // To Save spplash Images
+        let splashTimeout = 900
+        tempSplashHolder = []
+        //console.log(splashDataList, " >>>")
+        $.each(splashDataList, function (i, row) {
+            if (splashDataList[i]['Content'].includes("https://drive.google.com")) {
+                let imgid = splashDataList[i]['Content'].split('https://drive.google.com')[1].split('/')[3];
+                let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
+                // Cache Image
+                setTimeout(function() {
+                    if(tagsDataList[i].Value != '') {
+                        tempSplashHolder.push(imgPath)
+                    } else {
+                    }
+                }, (0));
+            } else {
+                // Cache Image
+                setTimeout(function() {
+                    if(splashDataList[i].Content != '') {
+                        tempSplashHolder.push(splashDataList[i].Content)
+                    } else {
+                    }
+                }, (0));
+            }
+        })
+        setTimeout(function() {
+            // To remove duplicate values
+            let filteredSplashImages = tempSplashHolder.filter((item, index) => tempSplashHolder.indexOf(item) === index);
+            // Filtered list
+            $.each(filteredSplashImages, function (i, row) {
+                setTimeout(function() {
+                    downloadImagesLocally(filteredSplashImages[i])
+                }, (splashTimeout * i));
+            })
+        }, 300)
 
     } 
 }
@@ -1295,7 +1686,7 @@ function downloadImagesLocally(urlString) {
             })
 
             $.each(settingDataList, function (index_setting, row_setting) {
-                if(row_setting['Name'] == 'BackgroundImage' || row_setting['Name'] == 'SplashImageUrl' || row_setting['Name'] == 'PrevButtonUrl' || row_setting['Name'] == 'NextButtonUrl' || row_setting['Name'] == 'QuitButtonUrl' || row_setting["Name"] == 'LoadingImageUrl' || row_setting["Name"] == 'DownloadButtonUrl' || row_setting["Name"] == '[DICE]' || row_setting["Name"] == '[BERRY]' || row_setting["Name"] == '[NUT]' || row_setting["Name"] == '[BUG]' || row_setting["Name"] == '[OOPS]') {
+                if(row_setting['Name'] == 'BackgroundImage' || row_setting['Name'] == 'SplashImageUrl' || row_setting['Name'] == 'PrevButtonUrl' || row_setting['Name'] == 'NextButtonUrl' || row_setting['Name'] == 'QuitButtonUrl' || row_setting["Name"] == 'LoadingImageUrl' || row_setting["Name"] == 'DownloadButtonUrl' || row_setting["Name"] == 'AppIconImageUrl') {
                     if(row_setting['Value'] != '') {
                         tempCount++
                     }
@@ -1312,6 +1703,16 @@ function downloadImagesLocally(urlString) {
             }
             for(var i=0; i<installDataList.length; i++) {
                 if(installDataList[i].Image != "") {
+                    tempCount++
+                }
+            }
+            for(var i=0; i<tagsDataList.length; i++) {
+                if(tagsDataList[i].Value != "") {
+                    tempCount++
+                }
+            }
+            for(var i=0; i<splashDataList.length; i++) {
+                if(splashDataList[i].Content != "") {
                     tempCount++
                 }
             }
@@ -1332,6 +1733,7 @@ function downloadImagesLocally(urlString) {
             } else {
                 CheckImageStatus();
                 pushVersionToServer();
+                saveIndexFile();
                 setTimeout(function() {
                     document.getElementById("loadingTxt").innerHTML += "All sheet data published.<br>"
                     updateInfoTextView()
@@ -1348,6 +1750,7 @@ function downloadImagesLocally(urlString) {
             } else {
                 CheckImageStatus();
                 pushVersionToServer();
+                saveIndexFile();
                 setTimeout(function() {
                     document.getElementById("loadingTxt").innerHTML += "All sheet data published.<br>"
                     updateInfoTextView()
@@ -1584,5 +1987,46 @@ function CheckImageStatus() {
             }, (langTimeout * i));
         })
     }, 300)
+}
+/////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * 
+ * @param {*} _value 
+ */
+function saveIndexFile() {
+    var saveRequest = $.ajax({
+        url: './saveIndex.php?version=' + Math.random(), 
+        type:'POST', 
+        data:{'id' : sheet_Id, 'type' : 'index'}, 
+        cache: false, 
+        success: function (response) {
+            console.log("index - ", response)
+            saveServiceWorker();
+        }
+    })
+    // Clear memory
+    saveRequest.onreadystatechange = null;
+    saveRequest.abort = null;
+    saveRequest = null;
+}
+/////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * 
+ * @param {*} _value 
+ */
+function saveServiceWorker() {
+    var saveRequest = $.ajax({
+        url: './saveIndex.php?version=' + Math.random(), 
+        type:'POST', 
+        data:{'id' : sheet_Id, 'type' : 'sw'}, 
+        cache: false, 
+        success: function (response) {
+            console.log("SW - ", response)
+        }
+    })
+    // Clear memory
+    saveRequest.onreadystatechange = null;
+    saveRequest.abort = null;
+    saveRequest = null;
 }
 /////////////////////////////////////////////////////////////////////////////////////////

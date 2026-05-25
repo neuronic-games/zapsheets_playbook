@@ -19,6 +19,7 @@ $(document).ready(function() {
     // Special Icons
     let berryImgPath = ''
     let bugImgPath = ''
+    let bugBottomImgPath = ''
     let nutImgPath = ''
     let diceImgPath = ''
     let oopsImgPath = ''
@@ -548,6 +549,17 @@ $(document).ready(function() {
                                     // image from spreadsheet id folder
                                     //flowerImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
                                     flowerImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                                }
+                            }
+                            // BUG_BOTTOM
+                            if(row_setting['Name'] == '[BUG_BOTTOM]') {
+                                if (row_setting['Value'].includes("https://drive.google.com")) {
+                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
+                                    bugBottomImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                                } else {
+                                    let name = row_setting['Value'].split('/')
+                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                                    bugBottomImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
                                 }
                             }
                         })
@@ -2047,7 +2059,8 @@ $(document).ready(function() {
                                     let mWordDiceQuesyion = mWordBerryQuestion.replaceAll('[DICE]', `<img class="specialIconsFaqs" src="${diceImgPath}" loading="lazy"></img>`)
                                     let mWordNutQuestion = mWordDiceQuesyion.replaceAll('[NUT]', `<img class="specialIconsFaqs" src="${nutImgPath}" loading="lazy"></img>`)
                                     let mWordBugQuestion = mWordNutQuestion.replaceAll('[BUG]', `<img class="specialIconsFaqs" src="${bugImgPath}" loading="lazy"></img>`)
-                                    let mWordOopsQuestion = mWordBugQuestion.replaceAll('[OOPS]', `<img class="specialIconsFaqs" src="${oopsImgPath}" loading="lazy"></img>`)
+                                    let mWordBugBottomQuestion = mWordBugQuestion.replaceAll('[BUG_BOTTOM]', `<img class="specialIconsFaqs" src="${bugBottomImgPath}" loading="lazy"></img>`)
+                                    let mWordOopsQuestion = mWordBugBottomQuestion.replaceAll('[OOPS]', `<img class="specialIconsFaqs" src="${oopsImgPath}" loading="lazy"></img>`)
                                     let mWordFlowerQuestion = mWordOopsQuestion.replaceAll('[FLOWER]', `<img class="specialIconsFaqs" src="${flowerImgPath}" loading="lazy"></img>`)
 
                                     // For Answer
@@ -2055,7 +2068,8 @@ $(document).ready(function() {
                                     let mWordDiceAnswer = mWordBerryAnswer.replaceAll('[DICE]', `<img class="specialIconsFaqs" src="${diceImgPath}" loading="lazy"></img>`)
                                     let mWordNutAnswer = mWordDiceAnswer.replaceAll('[NUT]', `<img class="specialIconsFaqs" src="${nutImgPath}" loading="lazy"></img>`)
                                     let mWordBugAnswer = mWordNutAnswer.replaceAll('[BUG]', `<img class="specialIconsFaqs" src="${bugImgPath}" loading="lazy"></img>`)
-                                    let mWordOopsAnswer = mWordBugAnswer.replaceAll('[OOPS]', `<img class="specialIconsFaqs" src="${oopsImgPath}" loading="lazy"></img>`)
+                                    let mWordBugBottomAnswer = mWordBugAnswer.replaceAll('[BUG_BOTTOM]', `<img class="specialIconsFaqs" src="${bugBottomImgPath}" loading="lazy"></img>`)
+                                    let mWordOopsAnswer = mWordBugBottomAnswer.replaceAll('[OOPS]', `<img class="specialIconsFaqs" src="${oopsImgPath}" loading="lazy"></img>`)
                                     let mWordFlowerAnswer = mWordOopsAnswer.replaceAll('[FLOWER]', `<img class="specialIconsFaqs" src="${flowerImgPath}" loading="lazy"></img>`)
 
                                     // get Image
@@ -2527,7 +2541,8 @@ $(document).ready(function() {
                 let mWordDice = mWordBerry.replaceAll('[DICE]', `<img class="specialIcons" src="${diceImgPath}" loading="lazy"></img>`)
                 let mWordNut = mWordDice.replaceAll('[NUT]', `<img class="specialIcons" src="${nutImgPath}" loading="lazy"></img>`)
                 let mWordBug = mWordNut.replaceAll('[BUG]', `<img class="specialIcons" src="${bugImgPath}" loading="lazy"></img>`)
-                let mWordOops = mWordBug.replaceAll('[OOPS]', `<img class="specialIcons" src="${oopsImgPath}" loading="lazy"></img>`)
+                let mWordBugBottom = mWordBug.replaceAll('[BUG_BOTTOM]', `<img class="specialIcons" src="${bugBottomImgPath}" loading="lazy"></img>`)
+                let mWordOops = mWordBugBottom.replaceAll('[OOPS]', `<img class="specialIcons" src="${oopsImgPath}" loading="lazy"></img>`)
                 let mWordFlower = mWordOops.replaceAll('[FLOWER]', `<img class="specialIcons" src="${flowerImgPath}" loading="lazy"></img>`)
 
                 //document.getElementById('menuDetails').innerHTML += `<p style="margin-top:3vh; font-size:3vh; line-height:1.1; width:100%; color:white" >${rulesDataList[i].Text}</p>`

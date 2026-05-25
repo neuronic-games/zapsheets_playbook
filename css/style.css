@@ -1103,7 +1103,7 @@ h6,.h6{ font-size:13px;}
 
 .game_header {
 	background-color:#7353a3;
-	background-image:url('../img/bg_header.jpg');
+	background-image:url('../images/bg_header.jpg');
 	background-repeat:no-repeat;
 	background-position:bottom left;
 	background-size:100% 100px;
@@ -1119,7 +1119,7 @@ h6,.h6{ font-size:13px;}
 
 .game_footer{
 	background-color:#7353a3;
-	background-image:url('../img/bg_footer.jpg');
+	background-image:url('../images/bg_footer.jpg');
 	background-repeat:no-repeat;
 	background-position:top left;
 	background-size:100% 100px;

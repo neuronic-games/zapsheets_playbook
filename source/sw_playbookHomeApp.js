@@ -48,12 +48,12 @@ function createCache(cacheVersion) {
                 '../../css/style.css?version=' + dyVersion,
 
                 // UI Images
-                '../../img/logo.png',
-                '../../img/loadingScreen.png',
-                '../../img/floristry_mobile_sym_no_conn.png',
-                '../../img/logoZapsheets.webp',
-                '../../img/logoIconScreen.webp',
-                '../../img/sheet_icon.png',
+                '../../images/logo.png',
+                '../../images/loadingScreen.png',
+                '../../images/floristry_mobile_sym_no_conn.png',
+                '../../images/logoZapsheets.webp',
+                '../../images/logoIconScreen.webp',
+                '../../images/sheet_icon.png',
 
                 // JS Files
                 '../../js/main/JSController.js?version=' + dyVersion,

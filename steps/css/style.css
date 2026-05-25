@@ -1118,7 +1118,7 @@ body {
 }
 
 .clock .hand.second {
-  background-image: url(../img/floristry_clock_hand.png);
+  background-image: url(../images/floristry_clock_hand.png);
   background-repeat: no-repeat;
   width: 1vh;
   /* height: 10vh; */

@@ -31,8 +31,8 @@
       href="../css/minireset.min.css"
     />
 
-    <link rel="icon" type="image/x-icon" href="../img/sheet_2_new.webp?version=3.2" />
-    <link rel="apple-touch-icon" href="../img/sheet_icon_new.webp?version=3.2" />
+    <link rel="icon" type="image/x-icon" href="../images/sheet_2_new.webp?version=3.2" />
+    <link rel="apple-touch-icon" href="../images/sheet_icon_new.webp?version=3.2" />
   </head>
   <body id="menuBody" style="position: fixed; min-height: 100vh !important; background-color: #F9F3E3 !important" onpagehide="CloseIFrame()">
     <!--------------------------------------------------------------------->
@@ -63,7 +63,7 @@
         <!---------------------------SLIDE 1 START--------------------------------->
         <div id="menu" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh;">
           <div id="menuImg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 0;">
-            <img id="menuBGInage" src="../img/floristry_mobile_scn_auction.webp" alt="" style="position: relative;
+            <img id="menuBGInage" src="../images/floristry_mobile_scn_auction.webp" alt="" style="position: relative;
             left: 50%;
             top: 50%;
             height: 100vh;
@@ -80,14 +80,14 @@
                 background-color: #eea41ca1;" 
                 class="touch-pulse-button">
               </div>
-              <img src="../img/btn_touch.png" style="position: relative; width: 8vh;" alt=""  />
+              <img src="../images/btn_touch.png" style="position: relative; width: 8vh;" alt=""  />
             </div>
             <div id="viewIconText" style="position: relative; display: none/* flex */; justify-content: center; margin-top: 2.5vh; width: 70%; flex-direction: column;">
             </div>
         </div>
         <div id="infoBGGSection" style="position: absolute; width: 100%; display: none /* flex */; flex-direction: row; justify-content: flex-end; height: 10vh;">
-          <img id="infoIconBtn" src="../img/btn_info.webp?version=1" style="position: absolute; width: 10vh; height: 10vh; top: 4vh; left: 70%; cursor: pointer;" class="animated-img img1" alt="" />
-          <img id="bggIconBtn" src="../img/btn_bgg.png?version=1" style="position: absolute; width: 10vh; height: 10vh; top: 4vh; left: 70%; cursor: pointer;" class="animated-img img2" alt="" />
+          <img id="infoIconBtn" src="../images/btn_info.webp?version=1" style="position: absolute; width: 10vh; height: 10vh; top: 4vh; left: 70%; cursor: pointer;" class="animated-img img1" alt="" />
+          <img id="bggIconBtn" src="../images/btn_bgg.png?version=1" style="position: absolute; width: 10vh; height: 10vh; top: 4vh; left: 70%; cursor: pointer;" class="animated-img img2" alt="" />
         </div>
         <!---------------------------------------------------------------------------->
         <div id="spinnerMiddleBox" class="spinner-box-middle">
@@ -100,7 +100,7 @@
       <!------------------------------------------------------------------>
       <div id="menuPage" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; background-color: #2D2C2B; display: none; z-index: 99999;">
         <div style="position: absolute; display: flex; flex-direction: row; align-content: center; justify-content: space-between; align-items: center; width: 100vw; left: 0;padding: 5vh; background-color: #2D2C2B; height: 0; z-index: 99;">
-          <img id="backToMenuBtn" src="../img/floristry_mobile_btn_prev_orange.png" style="position: relative; width: 4vh; z-index: 999; cursor: pointer;" alt="" />
+          <img id="backToMenuBtn" src="../images/floristry_mobile_btn_prev_orange.png" style="position: relative; width: 4vh; z-index: 999; cursor: pointer;" alt="" />
           <p id="menuTitle" style="color: white; position: absolute; font-size: 3.5vh;margin-left: 5vh;">Title</p>
           <sup id="small-sub" class="sup-small" data-objectid=""></sup>
           <img id="downloadBtn" src="" style="position: relative; width: 5vh; z-index: 999; cursor: pointer;" alt="" />
@@ -127,7 +127,7 @@
       </div>
       <div id="menuDetailsPage" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; background-color: #2D2C2B; display: none; z-index: 99999;">
         <div style="position: absolute; display: flex; flex-direction: row; align-content: center; justify-content: space-between; align-items: center; width: 100vw; left: 0;padding: 5vh; background-color: #2D2C2B; height: 0; z-index: 99;">
-          <img id="backToRuleMenuBtn" src="../img/floristry_mobile_btn_prev_orange.png" style="position: relative; width: 4vh; z-index: 999; cursor: pointer;" alt="" />
+          <img id="backToRuleMenuBtn" src="../images/floristry_mobile_btn_prev_orange.png" style="position: relative; width: 4vh; z-index: 999; cursor: pointer;" alt="" />
           <p id="menuDetailsTitle" style="color: white; position: absolute; font-size: 3.5vh;margin-left: 5vh;">Menu Title</p>
         </div>
         <div id="menuDetails" style="position: relative;
@@ -149,7 +149,7 @@
     align-items: center;
     justify-content: flex-start;
     flex-direction: row;">
-          <img id="prevArrow" src="../img/floristry_mobile_btn_prev_orange.png" style="position: relative;display:none;
+          <img id="prevArrow" src="../images/floristry_mobile_btn_prev_orange.png" style="position: relative;display:none;
     width: 3vh;
     z-index: 999;
     cursor: pointer;
@@ -163,7 +163,7 @@
     justify-content: flex-start;
     flex-direction: row;">
           <div id="nextElement"></div>
-          <img id="nextArrow" src="../img/floristry_mobile_btn_next_orange.png" style="position: relative;display:none;
+          <img id="nextArrow" src="../images/floristry_mobile_btn_next_orange.png" style="position: relative;display:none;
     width: 3vh;
     z-index: 999;
     cursor: pointer;
@@ -182,7 +182,7 @@
         <div style="border: 2px solid #FFFFFF; padding: 0.5vh; border-radius: 5px; position: relative; width: 96%; left: 2%; top: -10px; height: 5.6vh;">
             <input class="form-control" type="text" id="usheetId" name="usheetId" style="position: relative; margin-top: 0px; width: 100%;margin-left: 0em; height: 4.2vh; font-family: AcuminVariableConcept;" pattern="[A-Za-z0-9]+" onkeydown="if(['Space'].includes(arguments[0].code)){return false;}"/>
         </div>
-        <img id="sheetIdBtn" src="../img/floristry_mobile_btn_next.webp" class="img-fluid" style="width: 10vh;" alt="" />
+        <img id="sheetIdBtn" src="../images/floristry_mobile_btn_next.webp" class="img-fluid" style="width: 10vh;" alt="" />
         </div>
         </div>
     </div>

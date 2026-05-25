@@ -16,8 +16,8 @@
     <?php if($_ENV['ENVIRONMENT'] != 'development') {
     echo 'integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"';} ?>
     crossorigin="anonymous" />
-  <link rel="icon" type="image/x-icon" href="../img/sheet_2_new.webp?version=1.8" />
-  <link rel="apple-touch-icon" href="../../img/sheet_icon_new.webp?version=1.7" />
+  <link rel="icon" type="image/x-icon" href="../images/sheet_2_new.webp?version=1.8" />
+  <link rel="apple-touch-icon" href="../images/sheet_icon_new.webp?version=1.7" />
 </head>
 <script src="../js/common/bootstrap.bundle.min.js"
     <?php if($_ENV['ENVIRONMENT'] != 'development') {
@@ -44,8 +44,8 @@
   <header id="page-header" class="game_header pt-4">
 		<div class="container">
 			<div class="game_logo" onclick="">
-        <img src="../img/step_icon_new.webp?version=1.7" alt="" class="img-fluid mr-3" width="60"/>
-				<img src="../img/zapsheets.png?version=1.7" alt="" class="img-fluid" width="250"/>
+        <img src="../images/step_icon_new.webp?version=1.7" alt="" class="img-fluid mr-3" width="60"/>
+				<img src="../images/zapsheets.png?version=1.7" alt="" class="img-fluid" width="250"/>
 			</div>
 			<h1 id="pushTitle" class="h2 header_title mt-md-5 mt-4 font-poppins"></h1>
 		</div>

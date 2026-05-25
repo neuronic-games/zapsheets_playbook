@@ -984,7 +984,7 @@ $(document).ready(function() {
         let name = data.boardgame[0].boardgame.image.split('/')
         let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
         let iPath = '../steps/sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-        let imagePath = data.boardgame[0].boardgame.image == undefined ? './img/earshot-games_splash.png' : iPath
+        let imagePath = data.boardgame[0].boardgame.image == undefined ? '../images/earshot-games_splash.png' : iPath
         let playerStats = (data.minplayers == data.boardgame[0].boardgame.maxplayers) ? data.boardgame[0].boardgame.maxplayers : data.boardgame[0].boardgame.minplayers+"-"+data.boardgame[0].boardgame.maxplayers;
         let playtimeStats = (data.boardgame[0].boardgame.minplaytime == data.boardgame[0].boardgame.maxplaytime) ? data.boardgame[0].boardgame.maxplaytime : data.boardgame[0].minplaytime+"-"+data.boardgame[0].boardgame.maxplaytime; 
 
@@ -1070,15 +1070,15 @@ $(document).ready(function() {
                 <div style="width:50%;">
                     <div class="metaGroup_details_filter">
                     <span>
-                        <img src="./img/earshot-games_player.png" width="25vh">${playerStats}</span><span><img src="./img/earshot-games_time.png"  width="35vh">${playtimeStats}
+                        <img src="../images/earshot-games_player.png" width="25vh">${playerStats}</span><span><img src="../images/earshot-games_time.png"  width="35vh">${playtimeStats}
                     </span>
                     <span>
-                        <img src="./img/earshot-games_age.png"  width="25vh">${data.boardgame[0].boardgame.age}+
+                        <img src="../images/earshot-games_age.png"  width="25vh">${data.boardgame[0].boardgame.age}+
                     </span>
                     ${data.boardgame[0].boardgamemechanic != undefined && data.boardgame[0].boardgame.boardgamemechanic.includes("Cooperative Game") == true
                     ?
                     `<span>
-                        <img src="./img/earshot-games_coop.png?version=1.4" width="25vh" style="margin-top:-4px"></span>`
+                        <img src="../images/earshot-games_coop.png?version=1.4" width="25vh" style="margin-top:-4px"></span>`
                     : ``}
                 </div>
                 <div id="${objectid}_d" class="ratingWrapper">
@@ -1087,7 +1087,7 @@ $(document).ready(function() {
                 </div> 
                 </div>
                 <div style="position: relative; width: 100%; display: flex; flex-direction: row; justify-content: flex-end; margin-top: 2vh;">
-                    <img src="./img/btn_bgg_2.webp" style="width:7vh" alt="" />
+                    <img src="../images/btn_bgg_2.webp" style="width:7vh" alt="" />
                 </div>
                 </div>
               </div>

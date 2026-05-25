@@ -16,25 +16,7 @@ $(document).ready(function() {
     let tagsDataList = [];
     let splashDataList = []
 
-    // Special Icons — keyed by tag name e.g. '[BUG]', '[BUG_BOTTOM]'
-    let tagImageMap = {}
-
-    /**
-     * Replace all [TAG_NAME] tokens in text with their corresponding cached images.
-     * @param {string} text      - source text that may contain [TAG_NAME] tokens
-     * @param {string} cssClass  - CSS class to apply to each <img>
-     * @returns {string} text with every known tag replaced by an <img> element
-     */
-    function applyTagReplacements(text, cssClass) {
-        if (!text) return text;
-        return text.replace(/\[([A-Z0-9_]+)\]/g, function(match) {
-            var imgPath = tagImageMap[match];
-            if (imgPath) {
-                return `<img class="${cssClass}" src="${imgPath}" loading="lazy">`;
-            }
-            return match; // leave unknown tags as-is
-        });
-    }
+    // tagImageMap and applyTagReplacements are defined in zapsheetsCore.js
 
     // Timeout
     let idleTimeOut = 0;
@@ -156,7 +138,7 @@ $(document).ready(function() {
     } else {
         let winLoc = window.location.href.split("?")[0];
         var browserLang = (getUrlVars()["code"]) ? getUrlVars()["code"].split('/')[0].toUpperCase() : navigator.language.split('-')[0].toLowerCase();
-        loadTagsData();
+        loadTagsData(function() { setTimeout(function() { jumpToMenuScreen(); }, 250); });
         loadSettingsData();
 
         // Splash Screen
@@ -238,7 +220,7 @@ $(document).ready(function() {
                 document.getElementById('loadingScreen').style.display = 'flex';
                 document.getElementById('sheetIdError').style.display = 'none';
                 setTimeout(function() {
-                    loadTagsData();
+                    loadTagsData(function() { setTimeout(function() { jumpToMenuScreen(); }, 250); });
                     loadSettingsData();
 
                     // Splash Screen
@@ -440,69 +422,7 @@ $(document).ready(function() {
         }, 1000)
     }
     //////////////////////TAGS START///////////////////////////////////
-    /**
-     * loadTagsData
-     */
-    function loadTagsData() {
-        // Loading tags.json
-        setTimeout(function() {
-            var settingRequest = $.ajax({
-                //url: '../sheets/' + sheet_Id + "/tags.json?version=" + UIVersion,
-                url: jasonPath + 'sheets/' + sheet_Id + "/tags.json?version=" + UIVersion,
-                cache: true,
-                type: 'GET',
-                dataType: "text",
-                success: function (response) {
-                    if(response.length == 0) {
-                        logLoadMsg('<font color="red">Error: Tags data not available.' + "</font><br>")
-                    } else { 
-                        tagsDataList = []
-                        var mResponseSet = response.replace(/�/g, "") 
-                        var newSettingData = eval(mResponseSet)
-                        for(var i=0; i<newSettingData.length; i++) {
-                            var settingDataSting = JSON.stringify(newSettingData[i]);
-                            if(isJSONData(settingDataSting) == false) {
-                                logLoadMsg('<font color="red">Error: Tags Sheet : (Row: ' + i + ")</font><br>")
-                            } else {
-                                tagsDataList[i] = isJSONData(settingDataSting)
-                            }
-                        }
-                        /////////////////////LANG SETTINGS START///////////////////////////
-                        // Store LazyLoadValue here
-                        // Build tagImageMap dynamically — any [TAG_NAME] in tags.json is supported
-                        $.each(tagsDataList, function (index_setting, row_setting) {
-                            var tagName = row_setting['Name'];   // e.g. '[BUG]', '[BUG_BOTTOM]'
-                            var tagValue = row_setting['Value'];
-                            if (!tagName || !tagValue) return;
-                            var imgPath = '';
-                            if (tagValue.includes("https://drive.google.com")) {
-                                let imgid = tagValue.split('https://drive.google.com')[1].split('/')[3];
-                                imgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                            } else {
-                                let name = tagValue.split('/');
-                                let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                imgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + '?version=' + UIVersion;
-                            }
-                            tagImageMap[tagName] = imgPath;
-                        })
-
-                        setTimeout(function() {
-                            jumpToMenuScreen()
-                        }, 250)
-
-                    }
-                },
-                error: function(e) {
-                    logLoadMsg('<br><font color="red">Error: Missing Sheet : Tags</font><br>')
-                    document.getElementById("spinnerBox").style.display = 'none'
-                }
-            })
-            // Clear memory
-            settingRequest.onreadystatechange = null;
-            settingRequest.abort = null;
-            settingRequest = null;
-        }, 1000)
-    }
+    // loadTagsData is defined in zapsheetsCore.js
     //////////////////////SPLASH START///////////////////////////////////
     /**
      * loadTagsData

@@ -2147,7 +2147,7 @@ $(document).ready(function() {
                     return;
                 }
 
-                var html = '';
+                var html = '<div style="height: 4vh;"></div>';
                 for (var j = 0; j < videosDataList.length; j++) {
                     var item = videosDataList[j];
                     var title = item.Title || ('Video ' + (j + 1));

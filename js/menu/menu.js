@@ -1190,20 +1190,13 @@ $(document).ready(function() {
                 }
             }
 
-            // Info & BGG Icons Buttons events
+            // Info Icon Button events
             document.getElementById('infoIconBtn').addEventListener('touchstart', onAnimateBtnTouchStart)
             document.getElementById('infoIconBtn').addEventListener('touchend', onAnimateBtnTouchEnd)
 
             document.getElementById('infoIconBtn').addEventListener('mousedown', onAnimateBtnTouchStart)
             document.getElementById('infoIconBtn').addEventListener('mouseup', onAnimateBtnTouchEnd)
             document.getElementById('infoIconBtn').addEventListener('mouseout', onAnimateBtnTouchOut)
-
-            document.getElementById('bggIconBtn').addEventListener('touchstart', onAnimateBtnTouchStart)
-            document.getElementById('bggIconBtn').addEventListener('touchend', onAnimateBtnTouchEnd)
-
-            document.getElementById('bggIconBtn').addEventListener('mousedown', onAnimateBtnTouchStart)
-            document.getElementById('bggIconBtn').addEventListener('mouseup', onAnimateBtnTouchEnd)
-            document.getElementById('bggIconBtn').addEventListener('mouseout', onAnimateBtnTouchOut)
 
             // On menuBGInage Touch
             document.getElementById('menuScreen').addEventListener('touchstart', onMenuScreenTouchStart)
@@ -1363,34 +1356,11 @@ $(document).ready(function() {
             return;
         }
 
-        const bggImage = document.getElementById("bggIconBtn");
-        const infoImage = document.getElementById("infoIconBtn");
-
-        // 2. Use window.getComputedStyle()
-        const bggComputedStyle = window.getComputedStyle(bggImage);
-        const bggCurrentOpacity = bggComputedStyle.getPropertyValue("opacity");
-        const infoComputedStyle = window.getComputedStyle(infoImage);
-        const infoCurrentOpacity = infoComputedStyle.getPropertyValue("opacity");
-
-        // 3. Convert to percentage
-        const bggOpacityPercentage = parseFloat(bggCurrentOpacity) * 100;
-        const infoOpacityPercentage = parseFloat(infoCurrentOpacity) * 100;
-
-
-        if(bggOpacityPercentage >= 50) {
-            document.getElementById('downloadBtn').style.display = 'none'
-            document.getElementById('contentSteps').style.display = 'none'
-            document.getElementById('menuTopContainer').style.display = 'flex'
-            if(statsDataList && statsDataList.boardgame) {
-                FillBGGScreenData(statsDataList)
-            }
-        } else if(infoOpacityPercentage >= 50) {
-            document.getElementById('downloadBtn').style.display = 'none'
-            document.getElementById('contentSteps').style.display = 'none'
-            document.getElementById('menuTopContainer').style.display = 'flex'
-            if(statsDataList && statsDataList.boardgame) {
-                FillBGGScreenData(statsDataList)
-            }
+        document.getElementById('downloadBtn').style.display = 'none'
+        document.getElementById('contentSteps').style.display = 'none'
+        document.getElementById('menuTopContainer').style.display = 'flex'
+        if(statsDataList && statsDataList.boardgame) {
+            FillBGGScreenData(statsDataList)
         }
         
     }

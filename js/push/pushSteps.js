@@ -114,13 +114,6 @@ function checkCookieStatus(){
 }
 ////////////////////////////////////////////////////////////////////////////////////////
 /**
- * update message function
- */
-function updateInfoTextView() {
-    document.getElementById("loadingTxt").scrollTop += 100;
-}
-////////////////////////////////////////////////////////////////////////////////////////
-/**
  * function tp load Setting from spreadsheet
  */
 let settingDataList = []
@@ -141,8 +134,7 @@ var game_action = ''
  */
 function UpdateAppVersion() {
     if(isSpecificSheet == '') {
-        document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Sheet not defined.' + "</font><br>"
-        updateInfoTextView()
+        logLoadMsg('<font color="red">Error: Sheet not defined.' + "</font><br>")
     } else {
         isMoreSheets = isSpecificSheet.replaceAll('%20', '').split(',')
         if(isMoreSheets.length > 1) {
@@ -187,13 +179,11 @@ function checkIfSheetExists(_sheetName) {
                 try {
                     newSheetData = JSON.parse(mResponseSheet)
                 } catch(e) {
-                    document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Could not read sheet status for ' + _sheetName + '.</font><br>'
-                    updateInfoTextView()
+                    logLoadMsg('<font color="red">Error: Could not read sheet status for ' + _sheetName + '.</font><br>')
                     return
                 }
                 if(newSheetData.exists == "no") {
-                    document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Sheet ' + _sheetName + ' does not exist.' + "</font><br>"
-                    updateInfoTextView()
+                    logLoadMsg('<font color="red">Error: Sheet ' + _sheetName + ' does not exist.' + "</font><br>")
                 } else {
                     // If the sheet exists
                     let returnSheet = newSheetData.sheet;
@@ -238,7 +228,7 @@ function UpdateSheetVersion(_sheetName) {
             updateRequest.abort = null;
             updateRequest = null;
         } else {
-            document.getElementById("loadingTxt").innerHTML = "Waiting for active internet...<br>Retrying..." 
+            document.getElementById("loadingText").innerHTML = "Waiting for active internet...<br>Retrying..." 
             UpdateAppVersion()
         }
     }, 2000)
@@ -253,10 +243,9 @@ function UpdateSheetVersion(_sheetName) {
 function getSheetSettings(_sheetName, sheetVersion, pub_date) {
     checkIfUrlExists('../sheets/' + sheet_Id + "/" + _sheetName.toLowerCase() + ".json?version=" + Math.random(), (exists) => {
         if(!exists) {
-            document.getElementById("loadingTxt").innerHTML = "Publishing Sheet content..</br>"
+            document.getElementById("loadingText").innerHTML = "Publishing Sheet content..</br>"
             updateInfoTextView()
-            document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Give Editor access to editor@zsheets-378406.iam.gserviceaccount.com' + "</font><br>"
-            updateInfoTextView()
+            logLoadMsg('<font color="red">Error: Give Editor access to editor@zsheets-378406.iam.gserviceaccount.com' + "</font><br>")
             return;
         }
     });
@@ -268,8 +257,7 @@ function getSheetSettings(_sheetName, sheetVersion, pub_date) {
         dataType: "text",
         success: function (response) {
             if(response.length == 0) {
-                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>"
-                updateInfoTextView()
+                logLoadMsg('<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>")
             } else { 
                 settingDataList = []
                 var mResponseSettings = response.replace(/�/g, "") 
@@ -277,8 +265,7 @@ function getSheetSettings(_sheetName, sheetVersion, pub_date) {
                 for(var i=0; i<newSettingsData.length; i++) {
                     var settingsDataSting = JSON.stringify(newSettingsData[i]);
                     if(isJSONData(settingsDataSting) == false) {
-                        document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' Sheet : (Row: ' + i + ")</font><br>"
-                        updateInfoTextView()
+                        logLoadMsg('<font color="red">Error: ' + _sheetName + ' Sheet : (Row: ' + i + ")</font><br>")
                     } else {
                         settingDataList[i] = isJSONData(settingsDataSting)
                     }
@@ -287,30 +274,25 @@ function getSheetSettings(_sheetName, sheetVersion, pub_date) {
                 if(languageLoadIndex == 0) {
                     $.each(settingDataList, function (index, row) {
                         if(row['Name'] == 'Title') {
-                            document.getElementById("loadingTxt").innerHTML = 'Sheet Title: ' + row['Value'] + '<br>'
+                            document.getElementById("loadingText").innerHTML = 'Sheet Title: ' + row['Value'] + '<br>'
                             updateInfoTextView()
                         }
                         if(row['Name'] == 'SheetId') {
-                            document.getElementById("loadingTxt").innerHTML += 'Sheet Id: ' + row['Value'] + '<br>'
-                            updateInfoTextView()
+                            logLoadMsg('Sheet Id: ' + row['Value'] + '<br>')
                         }
                         if(row['Name'] == 'Version') {
-                            document.getElementById("loadingTxt").innerHTML += 'Sheet Version: ' + row['Value'] + '<br>'
-                            updateInfoTextView()
+                            logLoadMsg('Sheet Version: ' + row['Value'] + '<br>')
                         }
                         if(row['Name'] == 'PublishedOn') {
-                            document.getElementById("loadingTxt").innerHTML += 'Sheet Published on: ' + row['Value'] + '<br>'
-                            updateInfoTextView()
+                            logLoadMsg('Sheet Published on: ' + row['Value'] + '<br>')
                         }
                     })
                
-                    document.getElementById("loadingTxt").innerHTML += "App Version: " + Number(_version).toFixed(1) + "<br>"
-                    updateInfoTextView()
+                    logLoadMsg("App Version: " + Number(_version).toFixed(1) + "<br>")
                 }
 
                 // Settings message added
-                document.getElementById("loadingTxt").innerHTML += "Publising " + _sheetName + " data to server.<br>"
-                updateInfoTextView()
+                logLoadMsg("Publising " + _sheetName + " data to server.<br>")
 
                 if(isMoreSheets.length > 1 && languageLoadIndex < isMoreSheets.length-1) {
                     languageLoadIndex++;
@@ -345,15 +327,14 @@ function getSheetSettings(_sheetName, sheetVersion, pub_date) {
                         // Check for loading image
                         if(isPreloadImages == 'download_images') {
                             // Added new line break
-                            document.getElementById("loadingTxt").innerHTML += "<br>"
+                            logLoadMsg("<br>")
                             // Preload All Images
                             PreloadAllImagesToServer();
                         } else {
                             pushVersionToServer();
                             saveIndexFile();
                             setTimeout(function() {
-                                document.getElementById("loadingTxt").innerHTML += "All sheet data published.<br>"
-                                updateInfoTextView()
+                                logLoadMsg("All sheet data published.<br>")
                             }, 3000)
                         }
                     }
@@ -383,8 +364,7 @@ function getSheetInstall(_sheetName, sheetVersion, pub_date) {
         dataType: "text",
         success: function (response) {
             if(response.length == 0) {
-                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>"
-                updateInfoTextView()
+                logLoadMsg('<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>")
             } else { 
                 installDataList = []
                 var mResponseSettings = response.replace(/�/g, "") 
@@ -392,23 +372,18 @@ function getSheetInstall(_sheetName, sheetVersion, pub_date) {
                 for(var i=0; i<newSettingsData.length; i++) {
                     var settingsDataSting = JSON.stringify(newSettingsData[i]);
                     if(isJSONData(settingsDataSting) == false) {
-                        document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' Sheet : (Row: ' + i + ")</font><br>"
-                        updateInfoTextView()
+                        logLoadMsg('<font color="red">Error: ' + _sheetName + ' Sheet : (Row: ' + i + ")</font><br>")
                     } else {
                         installDataList[i] = isJSONData(settingsDataSting)
                     }
                 }
                 if(languageLoadIndex == 0) {
-                    document.getElementById("loadingTxt").innerHTML += "App Version: " + Number(_version).toFixed(1) + "<br>"
-                    updateInfoTextView()
-                    document.getElementById("loadingTxt").innerHTML += 'Sheet Id: ' + sheet_Id + '<br>'
-                    updateInfoTextView()
-                    document.getElementById("loadingTxt").innerHTML += 'Sheet Published on: ' + pub_date + '<br>'
-                    updateInfoTextView()
+                    logLoadMsg("App Version: " + Number(_version).toFixed(1) + "<br>")
+                    logLoadMsg('Sheet Id: ' + sheet_Id + '<br>')
+                    logLoadMsg('Sheet Published on: ' + pub_date + '<br>')
                 } 
                 // Settings message added
-                document.getElementById("loadingTxt").innerHTML += "Publising " + _sheetName + " data to server.<br>"
-                updateInfoTextView()
+                logLoadMsg("Publising " + _sheetName + " data to server.<br>")
 
                 if(isMoreSheets.length > 1 && languageLoadIndex < isMoreSheets.length-1) {
                     languageLoadIndex++;
@@ -443,15 +418,14 @@ function getSheetInstall(_sheetName, sheetVersion, pub_date) {
                         // Check for loading image
                         if(isPreloadImages == 'download_images') {
                             // Added new line break
-                            document.getElementById("loadingTxt").innerHTML += "<br>"
+                            logLoadMsg("<br>")
                             // Preload All Images
                             PreloadAllImagesToServer();
                         } else {
                             pushVersionToServer();
                             saveIndexFile();
                             setTimeout(function() {
-                                document.getElementById("loadingTxt").innerHTML += "All sheet data published.<br>"
-                                updateInfoTextView()
+                                logLoadMsg("All sheet data published.<br>")
                             }, 3000)
                         }
                     }
@@ -482,8 +456,7 @@ function getSheetTags(_sheetName, sheetVersion, pub_date) {
         dataType: "text",
         success: function (response) {
             if(response.length == 0) {
-                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>"
-                updateInfoTextView()
+                logLoadMsg('<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>")
             } else { 
                 tagsDataList = []
                 var mResponseSettings = response.replace(/�/g, "") 
@@ -491,23 +464,18 @@ function getSheetTags(_sheetName, sheetVersion, pub_date) {
                 for(var i=0; i<newSettingsData.length; i++) {
                     var settingsDataSting = JSON.stringify(newSettingsData[i]);
                     if(isJSONData(settingsDataSting) == false) {
-                        document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' Sheet : (Row: ' + i + ")</font><br>"
-                        updateInfoTextView()
+                        logLoadMsg('<font color="red">Error: ' + _sheetName + ' Sheet : (Row: ' + i + ")</font><br>")
                     } else {
                         tagsDataList[i] = isJSONData(settingsDataSting)
                     }
                 }
                 if(languageLoadIndex == 0) {
-                    document.getElementById("loadingTxt").innerHTML += "App Version: " + Number(_version).toFixed(1) + "<br>"
-                    updateInfoTextView()
-                    document.getElementById("loadingTxt").innerHTML += 'Sheet Id: ' + sheet_Id + '<br>'
-                    updateInfoTextView()
-                    document.getElementById("loadingTxt").innerHTML += 'Sheet Published on: ' + pub_date + '<br>'
-                    updateInfoTextView()
+                    logLoadMsg("App Version: " + Number(_version).toFixed(1) + "<br>")
+                    logLoadMsg('Sheet Id: ' + sheet_Id + '<br>')
+                    logLoadMsg('Sheet Published on: ' + pub_date + '<br>')
                 } 
                 // Settings message added
-                document.getElementById("loadingTxt").innerHTML += "Publising " + _sheetName + " data to server.<br>"
-                updateInfoTextView()
+                logLoadMsg("Publising " + _sheetName + " data to server.<br>")
 
                 if(isMoreSheets.length > 1 && languageLoadIndex < isMoreSheets.length-1) {
                     languageLoadIndex++;
@@ -542,15 +510,14 @@ function getSheetTags(_sheetName, sheetVersion, pub_date) {
                         // Check for loading image
                         if(isPreloadImages == 'download_images') {
                             // Added new line break
-                            document.getElementById("loadingTxt").innerHTML += "<br>"
+                            logLoadMsg("<br>")
                             // Preload All Images
                             PreloadAllImagesToServer();
                         } else {
                             pushVersionToServer();
                             saveIndexFile();
                             setTimeout(function() {
-                                document.getElementById("loadingTxt").innerHTML += "All sheet data published.<br>"
-                                updateInfoTextView()
+                                logLoadMsg("All sheet data published.<br>")
                             }, 3000)
                         }
                     }
@@ -581,8 +548,7 @@ function getSheetSplash(_sheetName, sheetVersion, pub_date) {
         dataType: "text",
         success: function (response) {
             if(response.length == 0) {
-                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>"
-                updateInfoTextView()
+                logLoadMsg('<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>")
             } else { 
                 splashDataList = []
                 var mResponseSettings = response.replace(/�/g, "") 
@@ -590,23 +556,18 @@ function getSheetSplash(_sheetName, sheetVersion, pub_date) {
                 for(var i=0; i<newSettingsData.length; i++) {
                     var settingsDataSting = JSON.stringify(newSettingsData[i]);
                     if(isJSONData(settingsDataSting) == false) {
-                        document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' Sheet : (Row: ' + i + ")</font><br>"
-                        updateInfoTextView()
+                        logLoadMsg('<font color="red">Error: ' + _sheetName + ' Sheet : (Row: ' + i + ")</font><br>")
                     } else {
                         splashDataList[i] = isJSONData(settingsDataSting)
                     }
                 }
                 if(languageLoadIndex == 0) {
-                    document.getElementById("loadingTxt").innerHTML += "App Version: " + Number(_version).toFixed(1) + "<br>"
-                    updateInfoTextView()
-                    document.getElementById("loadingTxt").innerHTML += 'Sheet Id: ' + sheet_Id + '<br>'
-                    updateInfoTextView()
-                    document.getElementById("loadingTxt").innerHTML += 'Sheet Published on: ' + pub_date + '<br>'
-                    updateInfoTextView()
+                    logLoadMsg("App Version: " + Number(_version).toFixed(1) + "<br>")
+                    logLoadMsg('Sheet Id: ' + sheet_Id + '<br>')
+                    logLoadMsg('Sheet Published on: ' + pub_date + '<br>')
                 } 
                 // Settings message added
-                document.getElementById("loadingTxt").innerHTML += "Publising " + _sheetName + " data to server.<br>"
-                updateInfoTextView()
+                logLoadMsg("Publising " + _sheetName + " data to server.<br>")
 
                 if(isMoreSheets.length > 1 && languageLoadIndex < isMoreSheets.length-1) {
                     languageLoadIndex++;
@@ -640,15 +601,14 @@ function getSheetSplash(_sheetName, sheetVersion, pub_date) {
                         // Check for loading image
                         if(isPreloadImages == 'download_images') {
                             // Added new line break
-                            document.getElementById("loadingTxt").innerHTML += "<br>"
+                            logLoadMsg("<br>")
                             // Preload All Images
                             PreloadAllImagesToServer();
                         } else {
                             pushVersionToServer();
                             saveIndexFile();
                             setTimeout(function() {
-                                document.getElementById("loadingTxt").innerHTML += "All sheet data published.<br>"
-                                updateInfoTextView()
+                                logLoadMsg("All sheet data published.<br>")
                             }, 3000)
                         }
                     }
@@ -692,8 +652,7 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
         dataType: "text",
         success: function (response) {
             if(response.length == 0) {
-                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>"
-                updateInfoTextView()
+                logLoadMsg('<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>")
             } else {
                 languageDataList[languageLoadIndex] = []
                 var mResponsePrivate = response.replace(/�/g, "") 
@@ -701,35 +660,31 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
                 for(var i=0; i<newPrivateData.length; i++) {
                     var privateDataSting = JSON.stringify(newPrivateData[i]);
                     if(isJSONData(privateDataSting) == false) {
-                        document.getElementById("loadingTxt").innerHTML += '<font color="red">Error:' + languageToLoad.toUpperCase() + 'Sheet : (Row: ' + i + ")</font><br>"
-                        updateInfoTextView()
+                        logLoadMsg('<font color="red">Error:' + languageToLoad.toUpperCase() + 'Sheet : (Row: ' + i + ")</font><br>")
                     } else {
                         languageDataList[languageLoadIndex][i] = isJSONData(privateDataSting)
                     }
                 }
 
-                if(languageLoadIndex == isMoreSheets.length-1) {
-                    //if(isMoreSheets.includes('bgg-en') == true) {
-                    if(isMoreSheets.includes('bgg-' + activeLanguage.toLowerCase()) == true) {
-                        bggIndex = getBGGIndex();
-                        loadBGGSheetData(languageDataList[bggIndex])
-                        return;
-                    } 
-                } 
+                // Trigger BGG fetch as soon as the bgg sheet is parsed, regardless of position
+                if(_sheetName.toLowerCase() == 'bgg-' + activeLanguage.toLowerCase()) {
+                    bggIndex = getBGGIndex();
+                    loadBGGSheetData(languageDataList[bggIndex]);
+                    if(languageLoadIndex == isMoreSheets.length-1) {
+                        return; // bgg-en is last — loadBGGSheetData handles finalisation
+                    }
+                    // bgg-en is not last — fall through to continue processing remaining sheets
+                }
             }
 
             if(languageLoadIndex == 0) {
-                document.getElementById("loadingTxt").innerHTML += "App Version: " + Number(_version).toFixed(1) + "<br>"
-                updateInfoTextView()
-                document.getElementById("loadingTxt").innerHTML += 'Sheet Id: ' + sheet_Id + '<br>'
-                updateInfoTextView()
-                document.getElementById("loadingTxt").innerHTML += 'Sheet Published on: ' + pub_date + '<br>'
-                updateInfoTextView()
+                logLoadMsg("App Version: " + Number(_version).toFixed(1) + "<br>")
+                logLoadMsg('Sheet Id: ' + sheet_Id + '<br>')
+                logLoadMsg('Sheet Published on: ' + pub_date + '<br>')
             }
 
             // Settings message added
-            document.getElementById("loadingTxt").innerHTML += "Publising " + _sheetName + " data to server.<br>"
-            updateInfoTextView()
+            logLoadMsg("Publising " + _sheetName + " data to server.<br>")
 
             if(isMoreSheets.length > 1 && languageLoadIndex < isMoreSheets.length-1) {
                 languageLoadIndex++;
@@ -762,29 +717,22 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
                     }, 100)
                 }
             } else {
-                //if(_sheetName.toLowerCase() == 'bgg-en') {
-                if(_sheetName.toLowerCase() == 'bgg-' + activeLanguage.toLowerCase()) {
-                    loadBGGSheetData(languageDataList[languageLoadIndex])
+                if(isPreloadImages == 'download_images') {
+                    // Added new line break
+                    logLoadMsg("<br>")
+                    // Preload All Images
+                    PreloadAllImagesToServer();
                 } else {
-                    if(isPreloadImages == 'download_images') {
-                        // Added new line break
-                        document.getElementById("loadingTxt").innerHTML += "<br>"
-                        // Preload All Images
-                        PreloadAllImagesToServer();
-                    } else {
-                        pushVersionToServer();
-                        saveIndexFile();
-                        setTimeout(function() {
-                            document.getElementById("loadingTxt").innerHTML += "All sheet data published.<br>"
-                            updateInfoTextView()
-                        }, 3000)
-                    }
+                    pushVersionToServer();
+                    saveIndexFile();
+                    setTimeout(function() {
+                        logLoadMsg("All sheet data published.<br>")
+                    }, 3000)
                 }
             }
         },
         error: function(e) {
-            document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>"
-            updateInfoTextView()
+            logLoadMsg('<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>")
         }
     })
     // Clear memory
@@ -817,8 +765,7 @@ function loadBGGSheetData(bggJSON) {
     function showCountdown(seconds) {
         clearInterval(countdownTimer)
         let remaining = seconds
-        document.getElementById("loadingTxt").innerHTML += 'Retrying in <span id="bggCountdown">' + remaining + '</span>s...<br>'
-        updateInfoTextView()
+        logLoadMsg('Retrying in <span id="bggCountdown">' + remaining + '</span>s...<br>')
         countdownTimer = setInterval(function() {
             remaining--
             let el = document.getElementById("bggCountdown")
@@ -829,9 +776,7 @@ function loadBGGSheetData(bggJSON) {
 
     function attemptBGGFetch() {
         bggAttempt++
-        document.getElementById("loadingTxt").innerHTML +=
-            'Fetching BGG data — attempt ' + bggAttempt + ' of ' + BGG_MAX_ATTEMPTS + '...<br>'
-        updateInfoTextView()
+        logLoadMsg('Fetching BGG data — attempt ' + bggAttempt + ' of ' + BGG_MAX_ATTEMPTS + '...<br>')
 
         $.ajax({
             url: './getBggData.php?version=' + Math.random(),
@@ -845,61 +790,47 @@ function loadBGGSheetData(bggJSON) {
 
                 if(response.status == 202) {
                     // BGG is still preparing the collection
-                    document.getElementById("loadingTxt").innerHTML +=
-                        '<font color="orange">BGG collection not ready yet.</font><br>'
-                    updateInfoTextView()
+                    logLoadMsg('<font color="orange">BGG collection not ready yet.</font><br>')
                     if(bggAttempt < BGG_MAX_ATTEMPTS) {
                         showCountdown(BGG_RETRY_DELAY / 1000)
                         setTimeout(attemptBGGFetch, BGG_RETRY_DELAY)
                     } else {
-                        document.getElementById("loadingTxt").innerHTML +=
-                            '<font color="red">Error: BGG did not respond after ' + BGG_MAX_ATTEMPTS + ' attempts. Try pushing bgg-' + activeLanguage + ' again later.</font><br>'
-                        updateInfoTextView()
+                        logLoadMsg('<font color="red">Error: BGG did not respond after ' + BGG_MAX_ATTEMPTS + ' attempts. Try pushing bgg-' + activeLanguage + ' again later.</font><br>')
                     }
                     return
                 }
 
                 if(response.status == 404 || response.error) {
-                    document.getElementById("loadingTxt").innerHTML +=
-                        '<font color="red">Error: ' + (response.error || 'BGG data not available.') + '</font><br>'
-                    updateInfoTextView()
+                    logLoadMsg('<font color="red">Error: ' + (response.error || 'BGG data not available.') + '</font><br>')
                     return
                 }
 
                 if(!response.boardgame || response.boardgame.length == 0) {
-                    document.getElementById("loadingTxt").innerHTML +=
-                        '<font color="red">Error: BGG returned no game data.</font><br>'
-                    updateInfoTextView()
+                    logLoadMsg('<font color="red">Error: BGG returned no game data.</font><br>')
                     return
                 }
 
                 bggDataList = response
-                document.getElementById("loadingTxt").innerHTML +=
-                    '<font color="green">BGG data loaded successfully.</font><br>'
-                updateInfoTextView()
+                logLoadMsg('<font color="green">BGG data loaded successfully.</font><br>')
 
                 if(isPreloadImages == 'download_images') {
-                    document.getElementById("loadingTxt").innerHTML += "<br>"
+                    logLoadMsg("<br>")
                     PreloadAllImagesToServer()
                 } else {
                     pushVersionToServer()
                     saveIndexFile()
                     setTimeout(function() {
-                        document.getElementById("loadingTxt").innerHTML += "All sheet data published.<br>"
-                        updateInfoTextView()
+                        logLoadMsg("All sheet data published.<br>")
                     }, 3000)
                 }
             },
             error: function(xhr, status) {
                 clearInterval(countdownTimer)
                 if(status === 'timeout') {
-                    document.getElementById("loadingTxt").innerHTML +=
-                        '<font color="red">Error: BGG request timed out.</font><br>'
+                    logLoadMsg('<font color="red">Error: BGG request timed out.</font><br>')
                 } else {
-                    document.getElementById("loadingTxt").innerHTML +=
-                        '<font color="red">Error: Could not reach BGG (' + status + ').</font><br>'
+                    logLoadMsg('<font color="red">Error: Could not reach BGG (' + status + ').</font><br>')
                 }
-                updateInfoTextView()
             }
         })
     }
@@ -1597,8 +1528,7 @@ window.addEventListener('load', (event) => {
     if(sheet_Id != '') {
         UpdateAppVersion()
     } else {
-        document.getElementById("loadingTxt").innerHTML += "<font color='red'>ERROR: Sheet Id missing.<br>";
-        updateInfoTextView()
+        logLoadMsg("<font color='red'>ERROR: Sheet Id missing.<br>")
     }
     return;
 })
@@ -1746,7 +1676,7 @@ function downloadImagesLocally(urlString) {
                 }
             }
             var AllImageCount = tempCount; 
-            var lastline = document.getElementById("loadingTxt").innerHTML.split('<br>')
+            var lastline = document.getElementById("loadingText").innerHTML.split('<br>')
             var prevMessage = ''
             for (var i=0; i<lastline.length; i++) {
                 if(i < lastline.length-2) {
@@ -1755,7 +1685,7 @@ function downloadImagesLocally(urlString) {
                 }
             }
             var newMessage = "Publishing Images (" + (imageLoadedCount) + "/" + getAllImagesToPublish() + ")...<br>";
-            document.getElementById("loadingTxt").innerHTML = prevMessage + newMessage;
+            document.getElementById("loadingText").innerHTML = prevMessage + newMessage;
             updateInfoTextView()
             if(imageLoadedCount < getAllImagesToPublish()) {
                 imageLoadedCount++;
@@ -1764,15 +1694,13 @@ function downloadImagesLocally(urlString) {
                 pushVersionToServer();
                 saveIndexFile();
                 setTimeout(function() {
-                    document.getElementById("loadingTxt").innerHTML += "All sheet data published.<br>"
-                    updateInfoTextView()
+                    logLoadMsg("All sheet data published.<br>")
                 }, 3000)
             }
         },
         error: function(e) {
             if(dispImgName != '') {
-                document.getElementById("loadingTxt").innerHTML += "<font color='red'>ERROR: Missing Image " + dispImgName + ".</font><br>"
-                updateInfoTextView()
+                logLoadMsg("<font color='red'>ERROR: Missing Image " + dispImgName + ".</font><br>")
             }
             if(imageLoadedCount < AllImageCount) {
                 imageLoadedCount++;
@@ -1781,8 +1709,7 @@ function downloadImagesLocally(urlString) {
                 pushVersionToServer();
                 saveIndexFile();
                 setTimeout(function() {
-                    document.getElementById("loadingTxt").innerHTML += "All sheet data published.<br>"
-                    updateInfoTextView()
+                    logLoadMsg("All sheet data published.<br>")
                 }, 3000) 
             }
         }
@@ -1837,8 +1764,7 @@ function CheckImageStatus() {
                             bgImage.src = imagePath;
                         } else {
                             if(imgid != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image ' + imgid + '.png</font><br>'
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Missing Image ' + imgid + '.png</font><br>')
                             }
                         }
                     })
@@ -1853,8 +1779,7 @@ function CheckImageStatus() {
                             bgImage.src = imagePath
                         } else {
                             if(imageName != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image '  + imageName + '</font><br>'
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Missing Image '  + imageName + '</font><br>')
                             }
                         }
                     })
@@ -1874,8 +1799,7 @@ function CheckImageStatus() {
                             bgImage.src = imagePath;
                         } else {
                             if(imgid != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image ' + imgid + '.png</font><br>'
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Missing Image ' + imgid + '.png</font><br>')
                             }
                         }
                     })
@@ -1890,8 +1814,7 @@ function CheckImageStatus() {
                             bgImage.src = imagePath
                         } else {
                             if(imageName != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image '  + imageName + '</font><br>'
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Missing Image '  + imageName + '</font><br>')
                             }
                         }
                     })
@@ -1913,8 +1836,7 @@ function CheckImageStatus() {
                             bgImage.src = imagePath
                         } else {
                             if(imgid != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image ' + imgid + '.png</font><br>'
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Missing Image ' + imgid + '.png</font><br>')
                             }
                         }
                     })
@@ -1929,8 +1851,7 @@ function CheckImageStatus() {
                             bgImage.src = imagePath
                         } else {
                             if(imageName != '') {
-                                document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Missing Image '  + imageName + '</font><br>'
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Missing Image '  + imageName + '</font><br>')
                             }
                         }
                     })

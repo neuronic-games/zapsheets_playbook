@@ -178,8 +178,7 @@ function saveInfoToLog() {
     document.getElementById("loadingText").innerHTML = 'Session Id: ' + deviceUID + '<br>';
     updateInfoTextView();
 
-    document.getElementById("loadingText").innerHTML += "Checking server on " + moment(currentDate).format('YYYY/MM/DD HH:mm:ss') + "<br>"
-    updateInfoTextView()
+    logLoadMsg("Checking server on " + moment(currentDate).format('YYYY/MM/DD HH:mm:ss') + "<br>")
   }
 }
 ////////////////////////////////////////////////////////////////////////////////////

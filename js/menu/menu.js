@@ -264,7 +264,7 @@ $(document).ready(function() {
                 dataType: "text",
                 success: function (response) {
                     if(response.length == 0) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Settings data not available.' + "</font><br>"
+                        logLoadMsg('<font color="red">Error: Settings data not available.' + "</font><br>")
                     } else { 
                         settingDataList = []
                         var mResponseSet = response.replace(/�/g, "") 
@@ -272,8 +272,7 @@ $(document).ready(function() {
                         for(var i=0; i<newSettingData.length; i++) {
                             var settingDataSting = JSON.stringify(newSettingData[i]);
                             if(isJSONData(settingDataSting) == false) {
-                                document.getElementById("loadingText").innerHTML += '<font color="red">Error: Settings Sheet : (Row: ' + i + ")</font><br>"
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Settings Sheet : (Row: ' + i + ")</font><br>")
                             } else {
                                 settingDataList[i] = isJSONData(settingDataSting)
                             }
@@ -430,7 +429,7 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    document.getElementById("loadingText").innerHTML += '<br><font color="red">Error: Missing Sheet : Settings</font><br>'
+                    logLoadMsg('<br><font color="red">Error: Missing Sheet : Settings</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
             })
@@ -455,7 +454,7 @@ $(document).ready(function() {
                 dataType: "text",
                 success: function (response) {
                     if(response.length == 0) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags data not available.' + "</font><br>"
+                        logLoadMsg('<font color="red">Error: Tags data not available.' + "</font><br>")
                     } else { 
                         tagsDataList = []
                         var mResponseSet = response.replace(/�/g, "") 
@@ -463,8 +462,7 @@ $(document).ready(function() {
                         for(var i=0; i<newSettingData.length; i++) {
                             var settingDataSting = JSON.stringify(newSettingData[i]);
                             if(isJSONData(settingDataSting) == false) {
-                                document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags Sheet : (Row: ' + i + ")</font><br>"
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Tags Sheet : (Row: ' + i + ")</font><br>")
                             } else {
                                 tagsDataList[i] = isJSONData(settingDataSting)
                             }
@@ -495,7 +493,7 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    document.getElementById("loadingText").innerHTML += '<br><font color="red">Error: Missing Sheet : Tags</font><br>'
+                    logLoadMsg('<br><font color="red">Error: Missing Sheet : Tags</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
             })
@@ -519,7 +517,7 @@ $(document).ready(function() {
                 dataType: "text",
                 success: function (response) {
                     if(response.length == 0) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags data not available.' + "</font><br>"
+                        logLoadMsg('<font color="red">Error: Tags data not available.' + "</font><br>")
                     } else { 
                         splashDataList = []
                         var mResponseSet = response.replace(/�/g, "") 
@@ -527,8 +525,7 @@ $(document).ready(function() {
                         for(var i=0; i<newSettingData.length; i++) {
                             var settingDataSting = JSON.stringify(newSettingData[i]);
                             if(isJSONData(settingDataSting) == false) {
-                                document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags Sheet : (Row: ' + i + ")</font><br>"
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Tags Sheet : (Row: ' + i + ")</font><br>")
                             } else {
                                 splashDataList[i] = isJSONData(settingDataSting)
                             }
@@ -569,7 +566,7 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    document.getElementById("loadingText").innerHTML += '<br><font color="red">Error: Missing Sheet : Splash</font><br>'
+                    logLoadMsg('<br><font color="red">Error: Missing Sheet : Splash</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
             })
@@ -650,8 +647,7 @@ $(document).ready(function() {
                     for(var i=0; i<newLangData.length; i++) {
                         var langDataSting = JSON.stringify(newLangData[i]);
                         if(isJSONData(langDataSting) == false) {
-                            document.getElementById("loadingText").innerHTML += '<font color="red">Error: ' + activeLang.split('-')[0] + ' Sheet : (Row: ' + i + ")</font><br>"
-                            updateInfoTextView()
+                            logLoadMsg('<font color="red">Error: ' + activeLang.split('-')[0] + ' Sheet : (Row: ' + i + ")</font><br>")
                         } else {
                             bggInfoData[i] = isJSONData(langDataSting)
                         }
@@ -667,7 +663,7 @@ $(document).ready(function() {
                     langLoadCount = 0;
                     activeLang = "EN"
                     loadBggGameInfo()
-                    /* document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : bgg-' + activeLang + '</font><br>'
+                    /* logLoadMsg('<font color="red">Error: Missing Sheet : bgg-' + activeLang + '</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none'
                 } */
             }
@@ -702,8 +698,7 @@ $(document).ready(function() {
                     for(var i=0; i<newLangData.length; i++) {
                         var langDataSting = JSON.stringify(newLangData[i]);
                         if(isJSONData(langDataSting) == false) {
-                            document.getElementById("loadingText").innerHTML += '<font color="red">Error: ' + activeLang.split('-')[0] + ' Sheet : (Row: ' + i + ")</font><br>"
-                            updateInfoTextView()
+                            logLoadMsg('<font color="red">Error: ' + activeLang.split('-')[0] + ' Sheet : (Row: ' + i + ")</font><br>")
                         } else {
                             languageStepsData[i] = isJSONData(langDataSting)
                         }
@@ -731,7 +726,7 @@ $(document).ready(function() {
                         activeLang = "EN"
                         loadMenuJSON()
                     } else {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : menu-' + activeLang.toLowerCase() + '</font><br>'
+                        logLoadMsg('<font color="red">Error: Missing Sheet : menu-' + activeLang.toLowerCase() + '</font><br>')
                         document.getElementById("spinnerBox").style.display = 'none'
                     }
                  /* } */
@@ -1378,13 +1373,13 @@ $(document).ready(function() {
                 dataType: "JSON",
                 success: function (response) {
                     if(!response || (Array.isArray(response) && response.length == 0)) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Stats data not available.' + "</font><br>"
+                        logLoadMsg('<font color="red">Error: Stats data not available.' + "</font><br>")
                     } else {
                         statsDataList = response
                     }
                 },
                 error: function(e) {
-                    document.getElementById("loadingText").innerHTML += '<br><font color="red">Error: Missing Sheet : stats</font><br>'
+                    logLoadMsg('<br><font color="red">Error: Missing Sheet : stats</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
             })
@@ -1401,7 +1396,7 @@ $(document).ready(function() {
      */
     function FillBGGScreenData(data) {
         if (!data || !data.boardgame || !data.boardgame[0]) {
-            document.getElementById("loadingText").innerHTML += '<font color="red">Error: BGG stats data not available.</font><br>'
+            logLoadMsg('<font color="red">Error: BGG stats data not available.</font><br>')
             return;
         }
         document.getElementById('small-sub').innerHTML = ''
@@ -1931,7 +1926,7 @@ $(document).ready(function() {
                 dataType: "text",
                 success: function (response) {
                     if(response.length == 0) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Rules data not available.' + "</font><br>"
+                        logLoadMsg('<font color="red">Error: Rules data not available.' + "</font><br>")
                     } else { 
                         faqsDataList = []
                         var mResponseSet = response.replace(/�/g, "") 
@@ -1939,8 +1934,7 @@ $(document).ready(function() {
                         for(var i=0; i<newSettingData.length; i++) {
                             var settingDataSting = JSON.stringify(newSettingData[i]);
                             if(isJSONData(settingDataSting) == false) {
-                                document.getElementById("loadingText").innerHTML += '<font color="red">Error: Rules Sheet : (Row: ' + i + ")</font><br>"
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Rules Sheet : (Row: ' + i + ")</font><br>")
                             } else {
                                 faqsDataList[i] = isJSONData(settingDataSting)
                             }
@@ -1992,7 +1986,7 @@ $(document).ready(function() {
                 error: function(e) {
                     activeLang = "EN";
                     LoadGameFaqs();
-                    /* document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : Faqs</font><br>'
+                    /* logLoadMsg('<font color="red">Error: Missing Sheet : Faqs</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none' */
                 }
             })
@@ -2220,7 +2214,7 @@ $(document).ready(function() {
                 dataType: "text",
                 success: function (response) {
                     if(response.length == 0) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Rules data not available.' + "</font><br>"
+                        logLoadMsg('<font color="red">Error: Rules data not available.' + "</font><br>")
                     } else { 
                         rulesDataList = []
                         var mResponseSet = response.replace(/�/g, "") 
@@ -2228,8 +2222,7 @@ $(document).ready(function() {
                         for(var i=0; i<newSettingData.length; i++) {
                             var settingDataSting = JSON.stringify(newSettingData[i]);
                             if(isJSONData(settingDataSting) == false) {
-                                document.getElementById("loadingText").innerHTML += '<font color="red">Error: Rules Sheet : (Row: ' + i + ")</font><br>"
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Rules Sheet : (Row: ' + i + ")</font><br>")
                             } else {
                                 rulesDataList[i] = isJSONData(settingDataSting)
                             }
@@ -2263,7 +2256,7 @@ $(document).ready(function() {
                 error: function(e) {
                     activeLang = "EN";
                     LoadGameRules();
-                    /* document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : Rules</font><br>'
+                    /* logLoadMsg('<font color="red">Error: Missing Sheet : Rules</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none' */
                 }
             })

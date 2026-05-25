@@ -73,7 +73,7 @@
         </div>
       </div>
       <div id="spinningLoader" class="text-center loader-spinner-text"/>
-        <h4 id="loadingTxt">Publishing Playbook Assets..<br></h4>
+        <h4 id="loadingText">Publishing Playbook Assets..<br></h4>
       </div>
     </div>
   </div>

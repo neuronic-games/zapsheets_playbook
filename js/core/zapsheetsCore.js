@@ -80,3 +80,22 @@ function adjustFontSizeMultiple(text, tempElement, maxLines, type) {
         tempElement.style.visibility = 'visible';
     }, 10)
 }
+/////////////////////////////////////////////////////////////////////////////
+/**
+ * Scroll the loading log element to the bottom.
+ */
+function updateInfoTextView() {
+    var el = document.getElementById('loadingText');
+    if (el) el.scrollTop += 100;
+}
+/////////////////////////////////////////////////////////////////////////////
+/**
+ * Append a message to the loading log and auto-scroll to the bottom.
+ * @param {string} msg - HTML string to append (may include <font>, <br>, etc.)
+ */
+function logLoadMsg(msg) {
+    var el = document.getElementById('loadingText');
+    if (!el) return;
+    el.innerHTML += msg;
+    el.scrollTop += 100;
+}

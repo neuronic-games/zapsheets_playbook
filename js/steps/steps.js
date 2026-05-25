@@ -179,7 +179,7 @@ $(document).ready(function() {
                 dataType: "text",
                 success: function (response) {
                     if(response.length == 0) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags data not available.' + "</font><br>"
+                        logLoadMsg('<font color="red">Error: Tags data not available.' + "</font><br>")
                     } else { 
                         tagsDataList = []
                         var mResponseSet = response.replace(/�/g, "") 
@@ -187,8 +187,7 @@ $(document).ready(function() {
                         for(var i=0; i<newSettingData.length; i++) {
                             var settingDataSting = JSON.stringify(newSettingData[i]);
                             if(isJSONData(settingDataSting) == false) {
-                                document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags Sheet : (Row: ' + i + ")</font><br>"
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Tags Sheet : (Row: ' + i + ")</font><br>")
                             } else {
                                 tagsDataList[i] = isJSONData(settingDataSting)
                             }
@@ -290,7 +289,7 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : tags</font><br>'
+                    logLoadMsg('<font color="red">Error: Missing Sheet : tags</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
             })
@@ -419,7 +418,7 @@ $(document).ready(function() {
                 dataType: "text",
                 success: function (response) {
                     if(response.length == 0) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Settings data not available.' + "</font><br>"
+                        logLoadMsg('<font color="red">Error: Settings data not available.' + "</font><br>")
                     } else { 
                         settingDataList = []
                         var mResponseSet = response.replace(/�/g, "") 
@@ -427,8 +426,7 @@ $(document).ready(function() {
                         for(var i=0; i<newSettingData.length; i++) {
                             var settingDataSting = JSON.stringify(newSettingData[i]);
                             if(isJSONData(settingDataSting) == false) {
-                                document.getElementById("loadingText").innerHTML += '<font color="red">Error: Settings Sheet : (Row: ' + i + ")</font><br>"
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Settings Sheet : (Row: ' + i + ")</font><br>")
                             } else {
                                 settingDataList[i] = isJSONData(settingDataSting)
                             }
@@ -455,7 +453,7 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : Settings</font><br>'
+                    logLoadMsg('<font color="red">Error: Missing Sheet : Settings</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
             })
@@ -495,8 +493,7 @@ $(document).ready(function() {
                     for(var i=0; i<newLangData.length; i++) {
                         var langDataSting = JSON.stringify(newLangData[i]);
                         if(isJSONData(langDataSting) == false) {
-                            document.getElementById("loadingText").innerHTML += '<font color="red">Error: ' + activeLang.split('-')[0] + ' Sheet : (Row: ' + i + ")</font><br>"
-                            updateInfoTextView()
+                            logLoadMsg('<font color="red">Error: ' + activeLang.split('-')[0] + ' Sheet : (Row: ' + i + ")</font><br>")
                         } else {
                             languageStepsData[i] = isJSONData(langDataSting)
                         }
@@ -531,7 +528,7 @@ $(document).ready(function() {
                     langLoadCount = 0;
                     activeLang = "EN"
                     loadLanguageJSON()
-                    /* document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : ' + activeLang + '</font><br>'
+                    /* logLoadMsg('<font color="red">Error: Missing Sheet : ' + activeLang + '</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none'
                 } */
             }

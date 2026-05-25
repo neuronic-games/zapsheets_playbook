@@ -86,7 +86,7 @@
             </div>
         </div>
         <div id="infoBGGSection" style="position: absolute; width: 100%; display: none /* flex */; flex-direction: row; justify-content: flex-end; height: 10vh;">
-          <div id="bggInfoBtnWrap" style="position: absolute; width: 12vh; height: 12vh; top: 3vh; left: 68%; cursor: pointer;">
+          <div id="bggInfoBtnWrap" style="position: absolute; width: 9vh; height: 9vh; top: 4vh; left: 68%; cursor: pointer;">
             <img id="infoIconBtn" src="../images/btn_info.webp?version=1" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; animation: touch-pulse-animation 1.5s infinite;" alt="" />
           </div>
         </div>

@@ -1516,7 +1516,9 @@ $(document).ready(function() {
                 </div> 
                 </div>
                 <div style="position: relative; width: 100%; display: flex; flex-direction: row; justify-content: flex-end; margin-top: 2vh;">
-                    <img src="../images/btn_bgg_2.webp" style="width:7vh" alt="" loading="lazy" />
+                    <a href="https://boardgamegeek.com/boardgame/${objectid}" target="_blank" rel="noopener noreferrer">
+                        <img src="../images/btn_bgg_2.webp" style="width:7vh" alt="View on BoardGameGeek" loading="lazy" />
+                    </a>
                 </div>
                 </div>
               </div>

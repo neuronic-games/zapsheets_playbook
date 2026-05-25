@@ -206,15 +206,26 @@
       //console.log(selfUrl.searchParams.get('version').split('?')[0]);
       let UIVersion = selfUrl.searchParams.get('version').split('?')[0].split('../')[0];
 
-      // Load JSController File for menu section
       getLatestGameCSSFile(UIVersion)
-      getControllerVersion(UIVersion)
       getStepsGameScript(UIVersion)
+      getZapsheetsCore()
+      checkVersion()
 
       /////////////////////////////////////////////////////////////////////////////////
-      /*
-      * getControllerVersion
-      */
+      let jasonPath = '../'
+      // Timer / animation globals used by steps code
+      let FULL_DASH_ARRAY = 283;
+      let RESET_DASH_ARRAY = `-57 ${FULL_DASH_ARRAY}`;
+      let timer, timerFinal;
+      let TIME_LIMIT = 3;
+      let timePassed = 1;
+      let timeLeft = TIME_LIMIT;
+      let timerInterval = null;
+      let modeType = 0;
+      let machineFPS = 0;
+      let inSteps = true;
+      let currentRunningVersion = 0;
+      /////////////////////////////////////////////////////////////////////////////////
       function getStepsGameScript(_ver) {
         var stepScript = document.createElement('script');
         stepScript.id = 'step_Script';
@@ -222,21 +233,51 @@
         stepScript.src = '../js/steps/steps.js?version=' + _ver;
         document.getElementsByTagName('head')[0].appendChild(stepScript);
       }
-      /////////////////////////////////////////////////////////////////////////////////
-      /*
-      * getControllerVersion
-      */
-      function getControllerVersion(_ver) {
-        var conScript = document.createElement('script');
-        conScript.id = 'controller_Script';
-        conScript.type = 'text/javascript';
-        conScript.src = './js/StepsController.js?version=' + _ver;
-        document.getElementsByTagName('head')[0].appendChild(conScript);
+      function getCurrentVersion() {
+        var newScript = document.createElement('script');
+        newScript.id = 'version_Script';
+        newScript.type = 'text/javascript';
+        newScript.src = '../js/main/version.js?version=' + UIVersion;
+        document.getElementsByTagName('head')[0].appendChild(newScript);
+      }
+      function getCurrentGameMainVersion() {
+        var floristryScript = document.createElement('script');
+        floristryScript.type = 'text/javascript';
+        floristryScript.id = 'floristry_Script';
+        floristryScript.src = '../js/steps/stepsMain.js?version=' + UIVersion;
+        document.getElementsByTagName('head')[0].appendChild(floristryScript);
+      }
+      function getZapsheetsCore() {
+        var funtionScript = document.createElement('script');
+        funtionScript.type = 'text/javascript';
+        funtionScript.id = 'function_Script';
+        funtionScript.src = '../js/core/zapsheetsCore.js?version=' + UIVersion;
+        document.getElementsByTagName('head')[0].appendChild(funtionScript);
+      }
+      function checkVersion() {
+        getCurrentVersion();
+        let versionTimer = setTimeout(function() {
+          clearTimeout(versionTimer)
+          if (typeof _version != 'undefined') {
+            currentRunningVersion = _version;
+            periodicVersion = _version;
+            getCurrentGameMainVersion();
+          } else {
+            checkVersion();
+          }
+        }, 2000)
+      }
+      function checkAppVersionStatus() {
+        let versionPeriodicTimer = setTimeout(function() {
+          clearTimeout(versionPeriodicTimer)
+          if (window.navigator.onLine == true) {
+            getCurrentVersion();
+            if (_version != currentRunningVersion) currentRunningVersion = _version;
+          }
+          checkAppVersionStatus();
+        }, RefreshAppVersionTime * 1000)
       }
       /////////////////////////////////////////////////////////////////////////////////
-      /*
-      * getLatestGameCSSFile
-      */
       function getLatestGameCSSFile(_ver) {
         let cssLink = document.createElement('link');
         cssLink.rel = 'stylesheet';

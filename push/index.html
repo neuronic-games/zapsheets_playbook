@@ -76,30 +76,38 @@
     }
     //////////////////////////////////////////////////////////////////////////////
     let UIVersion = getUniqueNumber();
-    // Load JSController File for menu section
-    getLatestPushCSSFile(UIVersion)
-    getStepsPushControllerScript(UIVersion)
+    getLatestPushCSSFile(UIVersion);
+    getZapsheetsCore();
+    getCurrentVersion();
+    getCurrentGamePushVersion();
     /////////////////////////////////////////////////////////////////////////////////
-    /*
-    * getControllerVersion
-    */
-    function getStepsPushControllerScript(_ver) {
-      var stepScript = document.createElement('script');
-      stepScript.id = 'stepPush_Script';
-      stepScript.type = 'text/javascript';
-      stepScript.src = './js/PushController.js?version=' + _ver;
-      document.getElementsByTagName('head')[0].appendChild(stepScript);
-    }
-    /////////////////////////////////////////////////////////////////////////////////
-    /*
-    * getLatestGameCSSFile
-    */
     function getLatestPushCSSFile(_ver) {
       let cssLink = document.createElement('link');
       cssLink.rel = 'stylesheet';
       cssLink.type = 'text/css';
       cssLink.href = '../css/style.css?version=' + _ver;
       document.getElementsByTagName('head')[0].appendChild(cssLink);
+    }
+    function getCurrentVersion() {
+      var newScript = document.createElement('script');
+      newScript.id = 'version_Script';
+      newScript.type = 'text/javascript';
+      newScript.src = '../js/main/version.js?version=' + UIVersion;
+      document.getElementsByTagName('head')[0].appendChild(newScript);
+    }
+    function getCurrentGamePushVersion() {
+      var floristryScript = document.createElement('script');
+      floristryScript.type = 'text/javascript';
+      floristryScript.id = 'floristry_Script';
+      floristryScript.src = '../js/push/pushSteps.js?version=' + UIVersion;
+      document.getElementsByTagName('head')[0].appendChild(floristryScript);
+    }
+    function getZapsheetsCore() {
+      var funtionScript = document.createElement('script');
+      funtionScript.type = 'text/javascript';
+      funtionScript.id = 'function_Script';
+      funtionScript.src = '../js/core/zapsheetsCore.js?version=' + UIVersion;
+      document.getElementsByTagName('head')[0].appendChild(funtionScript);
     }
   </script>
 </body>

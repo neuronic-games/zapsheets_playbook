@@ -4,7 +4,7 @@ let dyVersion = 0;
 /////////////////////////////////////////////////////////////////////////////////////
 let jasonPath = './'
 /////////////////////////////////////////////////////////////////////////////////////
-const CACHE_NAME = {name: 'playbookSW_v10'}
+const CACHE_NAME = {name: 'playbookSW_v11'}
 /////////////////////////////////////////////////////////////////////////////////////
 // Assets container
 let STATIC_ASSETS = []
@@ -53,8 +53,6 @@ function createCache(cacheVersion) {
 
                 // JS Files
                 './js/main/JSController.js?version=' + dyVersion,
-                './menu/js/MenuController.js?version=' + dyVersion,
-                './steps/js/StepsController.js?version=' + dyVersion,
 
                 // Language JSON Files
                 jasonPath + 'sheets/' + sheet_Id + '/settings.json?version=' + dyVersion,

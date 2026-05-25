@@ -14,30 +14,36 @@
   <title>Playbook</title>
   <link rel="stylesheet" href="../css/bootstrap.min.css"
     <?php if($_ENV['ENVIRONMENT'] != 'development') {
-    echo 'integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"';} ?>
+    echo '
+';} ?>
     crossorigin="anonymous" />
   <link rel="icon" type="image/x-icon" href="../images/sheet_2_new.webp?version=1.8" />
   <link rel="apple-touch-icon" href="../images/sheet_icon_new.webp?version=1.7" />
 </head>
 <script src="../js/common/bootstrap.bundle.min.js"
     <?php if($_ENV['ENVIRONMENT'] != 'development') {
-    echo 'integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4"';} ?>
+    echo '
+';} ?>
     crossorigin="anonymous"></script>
 <script src="../js/common/jquery-3.5.1.min.js"
     <?php if($_ENV['ENVIRONMENT'] != 'development') {
-    echo 'integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="';} ?>
+    echo '
+';} ?>
     crossorigin="anonymous"></script>
 <script src="../js/common/moment.min.js"
   <?php if($_ENV['ENVIRONMENT'] != 'development') {
-  echo 'integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="';} ?>
+  echo '
+';} ?>
   crossorigin="anonymous"></script>
 <script src="../js/common/popper.min.js"
   <?php if($_ENV['ENVIRONMENT'] != 'development') {
-  echo 'integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"';} ?>
+  echo '
+';} ?>
   crossorigin="anonymous"></script>
 <script src="../js/common/bootstrap.min.js"
   <?php if($_ENV['ENVIRONMENT'] != 'development') {
-  echo 'integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"';} ?>
+  echo '
+';} ?>
   crossorigin="anonymous"></script>
 
 <body class="page_greek d-flex flex-column min-vh-100" style="background-color: #FFFFFF !important;">

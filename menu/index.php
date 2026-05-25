@@ -15,14 +15,16 @@
       href="../css/bootstrap.min.css"
       rel="stylesheet"
       <?php if($_ENV['ENVIRONMENT'] != 'development') {
-        echo 'integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"';} ?>
+        echo '
+';} ?>
       crossorigin="anonymous"
     />
     <link
       rel="stylesheet"
       href="../css/all.min.css"
       <?php if($_ENV['ENVIRONMENT'] != 'development') {
-        echo 'integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="';} ?>
+        echo '
+';} ?>
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
@@ -194,7 +196,8 @@
     <script
       src="../js/common/bootstrap.bundle.min.js"
       <?php if($_ENV['ENVIRONMENT'] != 'development') {
-        echo 'integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"';} ?>
+        echo '
+';} ?>
       crossorigin="anonymous"
     ></script>
     <script>
@@ -210,22 +213,66 @@
       // To get UIVersion from Parent HTML for cache/dynamic loading
       const selfUrl = new URL(self.location);
 
-      //console.log(selfUrl.searchParams.get('version').split('?')[0]);
-      let UIVersion = selfUrl.searchParams.get('version').split('?')[0]
+      let UIVersion = (selfUrl.searchParams.get('version') || '1').split('?')[0]
 
-      // Load JSController File for menu section
       getLatestGameCSSFile(UIVersion)
-      getControllerVersion(UIVersion)
+      getZapsheetsCore()
+      checkVersion()
       /////////////////////////////////////////////////////////////////////////////////
-      /*
-      * getControllerVersion
-      */
-      function getControllerVersion(_ver) {
-        var conScript = document.createElement('script');
-        conScript.id = 'controller_Script';
-        conScript.type = 'text/javascript';
-        conScript.src = './js/MenuController.js?version=' + _ver;
-        document.getElementsByTagName('head')[0].appendChild(conScript);
+      let jasonPath = '../'
+      let currentRunningVersion = 0;
+      /////////////////////////////////////////////////////////////////////////////////
+      function getCurrentVersion() {
+        var newScript = document.createElement('script');
+        newScript.id = 'version_Script';
+        newScript.type = 'text/javascript';
+        newScript.src = '../js/main/version.js?version=' + UIVersion;
+        document.getElementsByTagName('head')[0].appendChild(newScript);
+      }
+      function getCurrentGameMainVersion() {
+        var floristryScript = document.createElement('script');
+        floristryScript.type = 'text/javascript';
+        floristryScript.id = 'floristry_Script';
+        floristryScript.src = '../js/menu/menuMain.js?version=' + UIVersion;
+        document.getElementsByTagName('head')[0].appendChild(floristryScript);
+      }
+      function getCurrentMenuVersion() {
+        var menuScript = document.createElement('script');
+        menuScript.type = 'text/javascript';
+        menuScript.id = 'menu_Script';
+        menuScript.src = '../js/menu/menu.js?version=' + UIVersion;
+        document.getElementsByTagName('head')[0].appendChild(menuScript);
+      }
+      function getZapsheetsCore() {
+        var funtionScript = document.createElement('script');
+        funtionScript.type = 'text/javascript';
+        funtionScript.id = 'function_Script';
+        funtionScript.src = '../js/core/zapsheetsCore.js?version=' + UIVersion;
+        document.getElementsByTagName('head')[0].appendChild(funtionScript);
+      }
+      function checkVersion() {
+        getCurrentVersion();
+        let versionTimer = setTimeout(function() {
+          clearTimeout(versionTimer)
+          if (typeof _version != 'undefined') {
+            currentRunningVersion = _version;
+            periodicVersion = _version;
+            getCurrentGameMainVersion();
+            getCurrentMenuVersion();
+          } else {
+            checkVersion();
+          }
+        }, 2000)
+      }
+      function checkAppVersionStatus() {
+        let versionPeriodicTimer = setTimeout(function() {
+          clearTimeout(versionPeriodicTimer)
+          if (window.navigator.onLine == true) {
+            getCurrentVersion();
+            if (_version != currentRunningVersion) currentRunningVersion = _version;
+          }
+          checkAppVersionStatus();
+        }, RefreshAppVersionTime * 1000)
       }
       /////////////////////////////////////////////////////////////////////////////////
       /*

@@ -1,6 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////
-// All global vars 
+// All global vars
 // Controller version
+console.log('[JSController] script loaded');
 let controllerVerion = 4
 // For standalone
 let isStandalone = false;
@@ -104,7 +105,10 @@ function checkLoadStatMain() {
  * doCheckOrientation
  */
 function doCheckOrientation() {
-    if(DetectSpecificDevice() == 'desktop') {
+    var device = DetectSpecificDevice();
+    var isPortrait = portrait.matches;
+    console.log('[JSController] doCheckOrientation — device:', device, 'portrait:', isPortrait);
+    if(device == 'desktop') {
         document.getElementById('useMode').style.display = 'none'
         if(window.orientation != 0) {
             pause = false;
@@ -112,11 +116,12 @@ function doCheckOrientation() {
         }
         return
     }
-    if(portrait.matches) {
+    if(isPortrait) {
         document.getElementById('useMode').style.display = 'none'
         pause = false;
         document.getElementById('useModeBG').style.display = 'none';
     } else {
+        // Landscape on a non-desktop device: show rotation prompt
         document.getElementById('useMode').style.display = 'flex'
         document.getElementById('modeLogo').style.display = 'block'
         document.getElementById('modeLogo').style.width = '45vh'

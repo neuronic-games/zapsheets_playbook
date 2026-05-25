@@ -15,7 +15,8 @@
       href="./css/bootstrap.min.css"
       rel="stylesheet"
       <?php if($_ENV['ENVIRONMENT'] != 'development') {
-        echo 'integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"';} 
+        echo '
+';} 
       ?>
       crossorigin="anonymous"
     />
@@ -23,7 +24,8 @@
       rel="stylesheet"
       href="./css/all.min.css"
       <?php if($_ENV['ENVIRONMENT'] != 'development') {
-        echo 'integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="';} ?>
+        echo '
+';} ?>
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
@@ -79,7 +81,8 @@
     <script
       src="./js/common/bootstrap.bundle.min.js"
       <?php if($_ENV['ENVIRONMENT'] != 'development') {
-        echo 'integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"';} ?>
+        echo '
+';} ?>
       crossorigin="anonymous"
     ></script>
     <!--------------------------------------------------------------------------------------------------------->

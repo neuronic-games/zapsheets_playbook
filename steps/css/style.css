@@ -3,47 +3,47 @@
 */
 @font-face {
   font-family: 'DINCondensed-Bold';
-  src: url('../fonts/DDINCondensedBold.eot');
-  src: url('../fonts/DDINCondensedBold.eot') format('embedded-opentype'),
-       url('../fonts/DDINCondensedBold.woff2') format('woff2'),
-       url('../fonts/DDINCondensedBold.woff') format('woff'),
-       url('../fonts/DDINCondensedBold.ttf') format('truetype'),
-       url('../fonts/DDINCondensedBold.svg#DDINCondensedBold') format('svg');
+  src: url('../../fonts/DDINCondensedBold.eot');
+  src: url('../../fonts/DDINCondensedBold.eot') format('embedded-opentype'),
+       url('../../fonts/DDINCondensedBold.woff2') format('woff2'),
+       url('../../fonts/DDINCondensedBold.woff') format('woff'),
+       url('../../fonts/DDINCondensedBold.ttf') format('truetype'),
+       url('../../fonts/DDINCondensedBold.svg#DDINCondensedBold') format('svg');
 }
 
 @font-face {
   font-family: 'DINBlack';
-  src: url('../fonts/DINBlack.eot');
-  src: url('../fonts/DINBlack.eot') format('embedded-opentype'),
-       url('../fonts/DINBlack.woff2') format('woff2'),
-       url('../fonts/DINBlack.woff') format('woff'),
-       url('../fonts/DINBlack.ttf') format('truetype'),
-       url('../fonts/DINBlack.svg#DINBlack') format('svg');
+  src: url('../../fonts/DINBlack.eot');
+  src: url('../../fonts/DINBlack.eot') format('embedded-opentype'),
+       url('../../fonts/DINBlack.woff2') format('woff2'),
+       url('../../fonts/DINBlack.woff') format('woff'),
+       url('../../fonts/DINBlack.ttf') format('truetype'),
+       url('../../fonts/DINBlack.svg#DINBlack') format('svg');
 }
 
 @font-face {
   font-family: 'DINRegular';
-  src: url('../fonts/DINMedium.eot');
-  src: url('../fonts/DINMedium.eot') format('embedded-opentype'),
-       url('../fonts/DINMedium.woff2') format('woff2'),
-       url('../fonts/DINMedium.woff') format('woff'),
-       url('../fonts/DINMedium.ttf') format('truetype'),
-       url('../fonts/DINMedium.svg#DINMedium') format('svg');
+  src: url('../../fonts/DINMedium.eot');
+  src: url('../../fonts/DINMedium.eot') format('embedded-opentype'),
+       url('../../fonts/DINMedium.woff2') format('woff2'),
+       url('../../fonts/DINMedium.woff') format('woff'),
+       url('../../fonts/DINMedium.ttf') format('truetype'),
+       url('../../fonts/DINMedium.svg#DINMedium') format('svg');
 }
 
 @font-face {
   font-family: 'AcuminVariableConcept';
-  src: url('../fonts/AcuminVariableConcept.otf');
+  src: url('../../fonts/AcuminVariableConcept.otf');
 }
 
 @font-face {
   font-family: 'DINBold';
-  src: url('../fonts/DIN_Bold.TTF') format('truetype');
+  src: url('../../fonts/DIN_Bold.TTF') format('truetype');
 }
 
 @font-face {
   font-family: 'Oswald-Bold';
-  src: url('../fonts/Oswald.ttf') format('truetype');
+  src: url('../../fonts/Oswald.ttf') format('truetype');
 }
 
 

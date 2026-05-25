@@ -12,11 +12,7 @@ let activeSheet_id = (getUrlVars()["id"]) ? getUrlVars()["id"].split('/')[0].toU
 //////////////////////////////////////////////////////////////
 // Path of the steps language url [sprecially from different server like zapsheets.com]
 // Change the path accordingly.
-// For Local Testing
-/* let jasonPath = './' */
-///////////////////////////////////////////////////////////////
-// For Online
-let jasonPath = 'https://zapsheets.com/playbook/'
+let jasonPath = './'
 ///////////////////////////////////////////////////////////////////////////////////////////
 function getCurrentLiveVersion() {
     var newScript = document.createElement('script');
@@ -84,35 +80,30 @@ function getCurrentGameMainVersion() {
  * checkSettingLoad
  */
 function checkSettingLoad() {
-    console.log('JS VERSION LOADED')
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * checkLoadStatMainMenu
  */
 function checkLoadStatMainMenu() {
-    console.log('MENU MAIN JS VERSION LOADED')
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * checkLoadStatMenu
  */
 function checkLoadStatMenu() {
-    console.log('MENU JS VERSION LOADED')
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * checkLoadStatMain
  */
 function checkLoadStatMain() {
-    console.log('MAIN JS VERSION LOADED')
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * doCheckOrientation
  */
 function doCheckOrientation() {
-    console.log(DetectSpecificDevice(), " DT ")
     if(DetectSpecificDevice() == 'desktop') {
         document.getElementById('useMode').style.display = 'none'
         if(window.orientation != 0) {

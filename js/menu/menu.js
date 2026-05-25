@@ -4,7 +4,6 @@
  * Ready events
  */
 $(document).ready(function() {
-    console.log('READY MENU LOADED')
 
     //alert('menujs')
     let languageStepsData = [];
@@ -55,12 +54,17 @@ $(document).ready(function() {
     var activeLang = (getUrlVars()["code"]) ? getUrlVars()["code"].split('/')[0].split('?')[0].toUpperCase() : navigator.language.split('-')[0].toUpperCase();
 
     // To get spreadsheet id passed from QS 'id'
-    var sheet_Id = (getUrlVars()["id"]) ? getUrlVars()["id"].split('/')[0] : '';
+    var sheet_Id = (getUrlVars()["id"]) ? getUrlVars()["id"] : '';
+    // Fallback: extract from URL path /sheets/{id}/ when id param is missing or invalid
+    if (!sheet_Id) {
+        var _pathParts = window.location.pathname.split('/');
+        var _sheetsIdx = _pathParts.indexOf('sheets');
+        if (_sheetsIdx >= 0 && _pathParts[_sheetsIdx + 1]) sheet_Id = _pathParts[_sheetsIdx + 1];
+    }
     // To jump faqs or rules
     //var sheetInnerParam = document.location.search.substr(1).split('&')[1].split('?')[0];
     var sheetInnerParam = document.location.search.substr(1).split('&')[2].split('?')[0];
     // To check where it comes
-    //console.log(sheetInnerParam, " --- ")
     //return;
 
     if(sheetInnerParam == 'faqs' || sheetInnerParam == 'faq' || sheetInnerParam == 'steps' || sheetInnerParam == 'step' || sheetInnerParam == 'rules' || sheetInnerParam == 'rule') {
@@ -77,7 +81,6 @@ $(document).ready(function() {
      */
     // Event to check for
     function EnableTimeoutEvents() {
-        console.log("Enable Events- ", idleTimeOut)
         events.forEach(function (name) {
             document.addEventListener(name, resetIdleTimer, true);
         });
@@ -130,7 +133,6 @@ $(document).ready(function() {
     }
     /////////////////////////////////////////////////////////////////////////////////
     if(sheet_Id == '') {
-        console.log('show Error screen')
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('sheetIdError').style.display = 'flex';
         document.getElementById('sheetIdBtn').addEventListener('touchstart', onCheckUserDataStart)
@@ -163,7 +165,6 @@ $(document).ready(function() {
      */
     function onCheckUserDataClick(event) {
         if(event != null) {event.preventDefault();}
-        console.log("check user data")
         document.getElementById('sheetIdBtn').style.scale = '1'
         checkUserFillData();
 
@@ -219,7 +220,6 @@ $(document).ready(function() {
             //showloader()
             setTimeout(function() {
                 //window.history.replaceState({}, "null", (winLoc + "?code=" + browserLang.toLowerCase() +"&"+ jumpId + "&id=" + sheet_Id));
-                //console.log(winLoc)
                 //return;
                 window.history.replaceState({}, "null", (winLoc + "?code=" + browserLang.toLowerCase() + "&id=" + sheet_Id));
                 document.getElementById('loadingScreen').style.display = 'flex';
@@ -250,7 +250,6 @@ $(document).ready(function() {
                 type: 'GET',
                 dataType: "text",
                 success: function (response) {
-                    //console.log(response, " READ DATA")
                     if(response.length == 0) {
                         document.getElementById("loadingText").innerHTML += '<font color="red">Error: Settings data not available.' + "</font><br>"
                     } else { 
@@ -316,7 +315,6 @@ $(document).ready(function() {
                             // Change App Icon
                             if(row_setting['Name'] == 'AppIconImageUrl') {
                                 if(row_setting['Value'] != '' ) {
-                                    //console.log(window.parent.document.getElementById('appIcon'), " >>>")
 
                                     let appIconPath = ''
                                     if (row_setting['Value'].includes("https://drive.google.com")) {
@@ -419,7 +417,6 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    console.log("ERROR - Setting data missing..")
                     document.getElementById("loadingText").innerHTML += '<br><font color="red">Error: Missing Sheet : Settings</font><br>'
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
@@ -444,7 +441,6 @@ $(document).ready(function() {
                 type: 'GET',
                 dataType: "text",
                 success: function (response) {
-                    //console.log(response, " READ DATA")
                     if(response.length == 0) {
                         document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags data not available.' + "</font><br>"
                     } else { 
@@ -556,14 +552,12 @@ $(document).ready(function() {
                         })
 
                         setTimeout(function() {
-                            console.log("CREATE UI SCREEN FOR MENU....")
                             jumpToMenuScreen()
                         }, 250)
 
                     }
                 },
                 error: function(e) {
-                    console.log("ERROR - Setting data missing..")
                     document.getElementById("loadingText").innerHTML += '<br><font color="red">Error: Missing Sheet : Tags</font><br>'
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
@@ -587,7 +581,6 @@ $(document).ready(function() {
                 type: 'GET',
                 dataType: "text",
                 success: function (response) {
-                    //console.log(response, " READ DATA")
                     if(response.length == 0) {
                         document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags data not available.' + "</font><br>"
                     } else { 
@@ -639,7 +632,6 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    console.log("ERROR - Setting data missing..")
                     document.getElementById("loadingText").innerHTML += '<br><font color="red">Error: Missing Sheet : Splash</font><br>'
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
@@ -711,7 +703,6 @@ $(document).ready(function() {
             type: 'GET',
             dataType: "text",
             success: function (response) {
-                //console.log(response, " READ DATA")
                 if(response.length == 0) {
                     activeLang = "EN"
                     loadBggGameInfo()
@@ -729,11 +720,9 @@ $(document).ready(function() {
                         }
                     }
 
-                    //console.log(bggInfoData, " bggInfoData")
                 }
             },
             error: function (response) {
-                console.log("NO FILE FOUND")
                 /* if(activeLang.toLowerCase() != 'EN') {
                     langLoadCount++
                     loadBggGameInfo()
@@ -766,7 +755,6 @@ $(document).ready(function() {
             type: 'GET',
             dataType: "text",
             success: function (response) {
-                //console.log(response, " READ DATA")
                 if(response.length == 0) {
                     activeLang = "EN"
                     loadMenuJSON()
@@ -787,7 +775,6 @@ $(document).ready(function() {
                     if(lazyLoadImages == "FALSE" || lazyLoadImages == "False" || lazyLoadImages == "false" || lazyLoadImages == "0") {
                         PreloadAllToCache();
                     } else {
-                        console.log("CREATE UI SCREEN FOR MENU....")
 
                         // Loading moved here from settings block..
                         loadBggGameInfo();
@@ -798,13 +785,11 @@ $(document).ready(function() {
                 }
             },
             error: function (response) {
-                console.log("NO FILE FOUND")
                 /* if(activeLang.toLowerCase() != 'EN' && langLoadCount < 1) {
                     langLoadCount++
                     loadLanguageJSON()
                 } else { */
                     langLoadCount++;
-                    //console.log(langLoadCount, " >>")
                     if(langLoadCount < 5) {
                         activeLang = "EN"
                         loadMenuJSON()
@@ -915,7 +900,6 @@ $(document).ready(function() {
         }, 10)
         // Auto fill default sections
         // Check motion
-        console.log("Caching In Background")
         
         if(fromParent == 'app' || fromParent == 'web') {
             setTimeout(function() {
@@ -1008,7 +992,6 @@ $(document).ready(function() {
             }
         })
         if(_count == getAllImageCount()) {
-            console.log("ALL IMAGES IN CACHE NOW...")
             preCachedDone = true;
         }
     }
@@ -1096,7 +1079,6 @@ $(document).ready(function() {
             })
             setTimeout(function() {
             }, 500)
-            console.log("IMAGES CACHED")
         } else {
         }
     }
@@ -1171,7 +1153,6 @@ $(document).ready(function() {
      * showProgressBar
      */
     function showProgressBar() {
-        //console.log("show loaded")
         if(preCachedDone == false) {
             document.getElementById('spinnerMiddleBox').style.display = 'block'
         } else {
@@ -1185,7 +1166,6 @@ $(document).ready(function() {
      */
     function updateProgressBar(e) {
         if (e.lengthComputable) {
-            //console.log(e.loaded / e.total * 100, " perc");
         }
     }
     ///////////////////////////////////////////////////////////////////////////////
@@ -1270,7 +1250,6 @@ $(document).ready(function() {
                     document.getElementById('menuButtonLabel_' + i).addEventListener('mouseup', onMenuTouchEnd)
                     document.getElementById('menuButtonLabel_' + i).addEventListener('mouseout', onMenuTouchOut)
 
-                    console.log("MENU DONE")
                 }
             }
 
@@ -1374,7 +1353,6 @@ $(document).ready(function() {
      */
     function onMenuScreenTouchEnd(event) {
         event.preventDefault();
-        console.log("on Menu Screen Touched")
         RemoveMenuScreenListner();
 
         // Animate menuItems
@@ -1406,7 +1384,6 @@ $(document).ready(function() {
         //timeLine.seek(0);
         //timeLine.resume();
 
-        //console.log("showing splash screen....")
 
         $("#menuScreen").fadeIn();
         document.getElementById('splashScreen').style.display = 'block';
@@ -1443,7 +1420,6 @@ $(document).ready(function() {
      */
     function onAnimateBtnTouchEnd(event) {
         event.preventDefault();
-        //console.log(document.getElementById('bggIconBtn').opacity, " --- ", event.target.id)
 
         let touchStatus = handleTouchEnd(event);
         if(touchStatus == false) {
@@ -1463,20 +1439,21 @@ $(document).ready(function() {
         const bggOpacityPercentage = parseFloat(bggCurrentOpacity) * 100;
         const infoOpacityPercentage = parseFloat(infoCurrentOpacity) * 100;
 
-        //console.log(bggOpacityPercentage, " << bggIcon -- infoIcon >>", infoOpacityPercentage)
 
         if(bggOpacityPercentage >= 50) {
-            //console.log("BGG Icon ")
             document.getElementById('downloadBtn').style.display = 'none'
             document.getElementById('contentSteps').style.display = 'none'
             document.getElementById('menuTopContainer').style.display = 'flex'
-            FillBGGScreenData(statsDataList)
+            if(statsDataList && statsDataList.boardgame) {
+                FillBGGScreenData(statsDataList)
+            }
         } else if(infoOpacityPercentage >= 50) {
-            //console.log("Info Icon ")
             document.getElementById('downloadBtn').style.display = 'none'
             document.getElementById('contentSteps').style.display = 'none'
             document.getElementById('menuTopContainer').style.display = 'flex'
-            FillBGGScreenData(statsDataList)
+            if(statsDataList && statsDataList.boardgame) {
+                FillBGGScreenData(statsDataList)
+            }
         }
         
     }
@@ -1493,24 +1470,13 @@ $(document).ready(function() {
                 type: 'GET',
                 dataType: "JSON",
                 success: function (response) {
-                    //console.log(response, " READ DATA")
-                    if(response.length == 0) {
+                    if(!response || (Array.isArray(response) && response.length == 0)) {
                         document.getElementById("loadingText").innerHTML += '<font color="red">Error: Stats data not available.' + "</font><br>"
-                    } else { 
-                        if (response.status == 200) {
-                            //console.log(response.boardgame, ' ----- ', response.boardgameBasicData)
-                            statsDataList = response
-                            //FillBGGScreenData(statsDataList)
-                        } else {
-                           document.getElementById("loadingText").innerHTML += '<font color="red">Error: Stats data not available.' + "</font><br>" 
-                        }
+                    } else {
+                        statsDataList = response
                     }
-                    //console.log(statsDataList, " ---- ")
-
-                    
                 },
                 error: function(e) {
-                    console.log("ERROR - Stats data missing..")
                     document.getElementById("loadingText").innerHTML += '<br><font color="red">Error: Missing Sheet : stats</font><br>'
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
@@ -1527,12 +1493,14 @@ $(document).ready(function() {
      * @param {*} data 
      */
     function FillBGGScreenData(data) {
-        //console.log(getBoardGameName(data))
+        if (!data || !data.boardgame || !data.boardgame[0]) {
+            document.getElementById("loadingText").innerHTML += '<font color="red">Error: BGG stats data not available.</font><br>'
+            return;
+        }
         document.getElementById('small-sub').innerHTML = ''
         let objectid = data.boardgame[0].boardgame['@attributes']['objectid'];
         let gameName = getBoardGameName(data)
         let boardGameDesigner = getBoardGameDesigner(data);
-       // console.log(boardGameDesigner, " ---- ")
         let boardGameDesignerTitle = boardGameDesigner == undefined ? '' : boardGameDesigner
         let yearPublish = (data.boardgame[0].boardgame.yearpublished == undefined || data.boardgame[0].boardgame.yearpublished == 0 ) ? '' : data.boardgame[0].boardgame.yearpublished
 
@@ -1546,7 +1514,6 @@ $(document).ready(function() {
         let gameRatingAverage = getBoardGameRatingAverage(data);
         let ratingInPercentage = ((gameRatingAverage - 5)*5/3) * 20;
 
-        //console.log(ratingInPercentage, " --- ", gameRatingAverage)
 
         if(ratingInPercentage < 0) {
             ratingInPercentage = 0
@@ -1891,7 +1858,6 @@ $(document).ready(function() {
             return;
         }
         
-        //console.log('Back menu click - ', fromParent)
         if(fromParent == 'app' || fromParent == 'web') {
             window.parent.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
         } else {
@@ -1906,41 +1872,34 @@ $(document).ready(function() {
      * @param {*} menuType 
      */
     function FillSelectedMenuData(menuType, toHold) {
-        //console.log(menuType, " --- ", toHold)
         document.getElementById('menuList').innerHTML = ''
         document.getElementById('small-sub').innerHTML = ''
         /* if(menuType.toLowerCase().indexOf('faq') != -1) {
-            console.log('faqs selected')
             document.getElementById('downloadBtn').style.display = 'none'
             document.getElementById('contentSteps').style.display = 'none'
             LoadGameFaqs()
         } else if(menuType.toLowerCase().indexOf('rule') != -1) {
-            console.log('rules selected')
             document.getElementById('downloadBtn').style.display = 'block'
             document.getElementById('contentSteps').style.display = 'none'
             LoadGameRules()
         } else {
-            console.log('teach me selected')
             document.getElementById('downloadBtn').style.display = 'none'
             document.getElementById('contentSteps').style.display = 'block'
             LoadGameSteps();
         } */
        if(toHold == 'faqs' || toHold == 'faq') {
-            console.log('faqs selected')
             document.getElementById('downloadBtn').style.display = 'none'
             document.getElementById('contentSteps').style.display = 'none'
             document.getElementById('menuPage').style.backgroundColor = '#2D2C2B'
             document.getElementById('menuTopContainer').style.display = 'flex'
             LoadGameFaqs()
         } else if(toHold == 'rules' || toHold == 'rule') {
-            console.log('rules selected')
             document.getElementById('downloadBtn').style.display = 'block'
             document.getElementById('contentSteps').style.display = 'none'
             document.getElementById('menuPage').style.backgroundColor = '#2D2C2B'
             document.getElementById('menuTopContainer').style.display = 'flex'
             LoadGameRules()
         } else if(toHold == 'steps' || toHold == 'step') {
-            console.log('teach me selected')
             document.getElementById('downloadBtn').style.display = 'none'
             document.getElementById('menuPage').style.display = 'block'
             document.getElementById('menuPage').style.backgroundColor = '#F9F3E3'
@@ -1957,7 +1916,6 @@ $(document).ready(function() {
     function LoadGameSteps() {
         // "?code=" + browserLang + "&id=" + faqSheetId + "&sheet=steps&from=floristry&faqsId=" + activeSheet_id + "&standalone=" + isStandalone
         //let _sheet = '../steps/index.php?version=' + UIVersion;
-        //console.log(_sheet, " ...sheetToLoad...")
         /* let _sheet = '../steps/index.php?version=' + UIVersion;
         $("#contentSteps").attr("src", _sheet + "?code=" + activeLang + "&id=" + sheet_Id);
         $("#contentSteps").fadeIn(500); */
@@ -2056,7 +2014,6 @@ $(document).ready(function() {
                 type: 'GET',
                 dataType: "text",
                 success: function (response) {
-                    //console.log(response, " READ DATA")
                     if(response.length == 0) {
                         document.getElementById("loadingText").innerHTML += '<font color="red">Error: Rules data not available.' + "</font><br>"
                     } else { 
@@ -2073,7 +2030,6 @@ $(document).ready(function() {
                             }
                         }
                         setTimeout(function() {
-                            //console.log(faqsDataList, " >>>")
                             let faqList = ''
                             for(var i=0; i<faqsDataList.length; i++) {
                                 if(faqsDataList[i].Type == 'faq') {
@@ -2120,7 +2076,6 @@ $(document).ready(function() {
                                         document.getElementById('faqItem_' + i).addEventListener('mousedown', onFaqItemTouchStart)
                                         document.getElementById('faqItem_' + i).addEventListener('mouseup', onFaqItemTouchEnd)
 
-                                        console.log("FAQs DONE")
                                     }
                                 }
                                 
@@ -2129,7 +2084,6 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    console.log("ERROR - Faqs data missing..")
                     activeLang = "EN";
                     LoadGameFaqs();
                     /* document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : Faqs</font><br>'
@@ -2223,7 +2177,6 @@ $(document).ready(function() {
             if(faqsDataList[i].Type == 'faq') {
                 if(_id == i) {
                     let elementToScroll = document.getElementById('faq_'+i);
-                    /* console.log(element.firstElementChild, " --- ") */
                     //document.getElementById('faq_'+i).style.display = 'block';
                     //$('#faq_' + i).slideUp();
                     //document.getElementById('faq_'+i).style.opacity = 0;
@@ -2247,7 +2200,6 @@ $(document).ready(function() {
                     // 3. Access the 'height' property
                     const heightInPx = computedStyle.height;
                     let scrollH = Math.ceil(heightInPx.split('px')[0]) 
-                    console.log(scrollH, " heightInPx")
                     elem.scrollTop = scrollH;
                     }, 100) */
                 } else {
@@ -2305,7 +2257,6 @@ $(document).ready(function() {
                                     document.getElementById('rulesItem_' + i).addEventListener('mouseup', onRuleItemTouchEnd)
                                     document.getElementById('rulesItem_' + i).addEventListener('mouseout', onRuleItemTouchEnd)
 
-                                    console.log("RULES DONE")
                                 }
                             }
                             DoDownloadRulesBtnEvents();
@@ -2313,7 +2264,6 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    console.log("ERROR - Rules data missing..")
                     activeLang = "EN";
                     LoadGameRules();
                     /* document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : Rules</font><br>'
@@ -2365,7 +2315,6 @@ $(document).ready(function() {
     function onRuleItemTouchEnd(event) {
         if(event.cancelable) event.preventDefault();
         let touchStatus = handleTouchEnd(event);
-        //console.log(touchStatus, " --- ")
         if(touchStatus == false) {
             //if(event.target.parentElement.id == 'rulesNavigation') {
                 //document.getElementById(event.target.id).style.color = '#F7AE50'
@@ -2386,7 +2335,6 @@ $(document).ready(function() {
         }
 
 
-        //console.log(event.target.parentElement.parentElement.id, " --- ", event.target.parentElement)
 
         //document.getElementById(event.target.id).style.color = '#F7AE50'
         let ruleItemId = -1
@@ -2414,10 +2362,8 @@ $(document).ready(function() {
             document.getElementById(event.target.id).style.color = '#F7AE50'
         }
         
-        //console.log(ruleItemId, " --- ruleItemId")
         if(ruleItemId == undefined) return;
         document.getElementById('menuDetailsPage').style.display = 'flex'
-        //console.log(rulesDataList[ruleItemId])
         document.getElementById('menuDetailsTitle').innerHTML = rulesDataList[ruleItemId].ID;
 
         // Add Listener
@@ -2446,8 +2392,6 @@ $(document).ready(function() {
      * @param {*} ruleItemId 
      */
     function FillSelectedMenuDetailsData(ruleItemId) {
-        //console.log(getMenuDetailItemEndIndex(ruleItemId))
-        //console.log(languageStepsData[ruleItemId])
         //FillSelectedMenuDetailsData()
         document.getElementById('menuDetails').innerHTML = ''
 
@@ -2477,7 +2421,6 @@ $(document).ready(function() {
         }
 
         for(var i=Number(ruleItemId)+1; i<endIndex; i++) {
-            //console.log(rulesDataList[i], ' DATA TO DISPLAY')
             if(rulesDataList[i].Type == 'text') {
                 //menuItemToDisplay = rulesDataList[i].Text
                 // Format Text for adding special icons
@@ -2488,7 +2431,6 @@ $(document).ready(function() {
                 let mWordOops = mWordBug.replaceAll('[OOPS]', `<img class="specialIcons" src="${oopsImgPath}" loading="lazy"></img>`)
                 let mWordFlower = mWordOops.replaceAll('[FLOWER]', `<img class="specialIcons" src="${flowerImgPath}" loading="lazy"></img>`)
 
-                //console.log(mWordOops, " final")
                 //document.getElementById('menuDetails').innerHTML += `<p style="margin-top:3vh; font-size:3vh; line-height:1.1; width:100%; color:white" >${rulesDataList[i].Text}</p>`
 
                 document.getElementById('menuDetails').innerHTML += `<p style="margin-top:3vh; font-size:3vh; line-height:1.1; width:100%; color:white" >${mWordFlower}</p>`
@@ -2571,13 +2513,9 @@ $(document).ready(function() {
         for(var i=Number(index)+1; i<rulesDataList.length; i++) {
             /* if(rulesDataList[i].ID != '') {
                 lastIndex = i */
-                //console.log(i+1)
-                //console.log(rulesDataList[i], " --- ")
                 /* return lastIndex
             }  */
-           //console.log(rulesDataList[i])
            if(rulesDataList[i].Type == 'menu') {
-            // console.log(i, " menu Index")
             lastIndex = i;
             return lastIndex;
            }
@@ -2659,7 +2597,6 @@ $(document).ready(function() {
     function handleTouchEnd(event) {
         let inButton = false;
         let touch = null;
-        //console.log(event.type, " ---- ")
         if(event.type == 'mouseout') {
             inButton = false;
             return inButton;
@@ -2671,13 +2608,10 @@ $(document).ready(function() {
         const element = event.target; // Or use the element from step 1
         const rect = element.parentElement.getBoundingClientRect();
 
-        //console.log(element, " --- ", element.parentElement)
 
         if(touch.clientX >= rect.left && touch.clientX <= rect.right && touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
-            //console.log("Inside button")
             inButton = true;
         } else {
-            //console.log("outside button")
             inButton = false
         }
         return inButton;

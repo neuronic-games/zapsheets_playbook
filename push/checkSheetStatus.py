@@ -2,11 +2,17 @@
 
 # Packages Used
 import gspread
-import sys, os
+import sys, os, json
 from gspread.exceptions import WorksheetNotFound
 
 # Credentials [Keys etc]
-credFileName = "credentials.json"
+# Resolve credentials path relative to this script's location
+credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
+
+# Check credentials file exists before attempting to connect
+if not os.path.exists(credFileName):
+    print(json.dumps({"exists": "no", "error": "credentials.json not found"}))
+    sys.exit(1)
 
 # Accessing Google service account using credentials
 mServiceAccount = gspread.service_account(filename=credFileName)

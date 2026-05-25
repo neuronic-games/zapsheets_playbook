@@ -6,47 +6,47 @@
 /********* FONT FOR LOADING TEXT / ERROR MESSAGES ***********/
 @font-face {
     font-family: 'Font-default';
-    src: url('DDINCondensedBold.eot');
-    src: url('DDINCondensedBold.eot') format('embedded-opentype'),
-         url('DDINCondensedBold.woff2') format('woff2'),
-         url('DDINCondensedBold.woff') format('woff'),
-         url('DDINCondensedBold.ttf') format('truetype'),
-         url('DDINCondensedBold.svg#DDINCondensedBold') format('svg');
+    src: url('../../fonts/DDINCondensedBold.eot');
+    src: url('../../fonts/DDINCondensedBold.eot') format('embedded-opentype'),
+         url('../../fonts/DDINCondensedBold.woff2') format('woff2'),
+         url('../../fonts/DDINCondensedBold.woff') format('woff'),
+         url('../../fonts/DDINCondensedBold.ttf') format('truetype'),
+         url('../../fonts/DDINCondensedBold.svg#DDINCondensedBold') format('svg');
 }
 /********* FONT FOR MESSAGE DESC  ***********/
 @font-face {
     font-family: 'Font-Title';
-    src: url('DINMedium.eot');
-    src: url('DINMedium.eot') format('embedded-opentype'),
-         url('DINMedium.woff2') format('woff2'),
-         url('DINMedium.woff') format('woff'),
-         url('DINMedium.ttf') format('truetype'),
-         url('DINMedium.svg#DINMedium') format('svg');
+    src: url('../../fonts/DINMedium.eot');
+    src: url('../../fonts/DINMedium.eot') format('embedded-opentype'),
+         url('../../fonts/DINMedium.woff2') format('woff2'),
+         url('../../fonts/DINMedium.woff') format('woff'),
+         url('../../fonts/DINMedium.ttf') format('truetype'),
+         url('../../fonts/DINMedium.svg#DINMedium') format('svg');
 }
 /********* NOT IN USE ***********/
 @font-face {
     font-family: 'DINBlack';
-    src: url('DINBlack.eot');
-    src: url('DINBlack.eot') format('embedded-opentype'),
-         url('DINBlack.woff2') format('woff2'),
-         url('DINBlack.woff') format('woff'),
-         url('DINBlack.ttf') format('truetype'),
-         url('DINBlack.svg#DINBlack') format('svg');
+    src: url('../../fonts/DINBlack.eot');
+    src: url('../../fonts/DINBlack.eot') format('embedded-opentype'),
+         url('../../fonts/DINBlack.woff2') format('woff2'),
+         url('../../fonts/DINBlack.woff') format('woff'),
+         url('../../fonts/DINBlack.ttf') format('truetype'),
+         url('../../fonts/DINBlack.svg#DINBlack') format('svg');
 
 }
 /********* FONT FOR HEADER TEXT ***********/
 @font-face {
     font-family: 'eurostile';
-    src: url('eurostile.ttf') format('truetype');
+    src: url('../../fonts/eurostile.TTF') format('truetype');
 }
 /********* FONT FOR HEADER TEXT ***********/
 @font-face {
     font-family: 'Poppins';
-    src: url('Poppins-ExtraLight.eot') format('embedded-opentype'),
-         url('Poppins-ExtraLight.woff2') format('woff2'),
-         url('Poppins-ExtraLight.woff') format('woff'),
-         url('Poppins-ExtraLight.ttf') format('truetype'),
-         url('Poppins-ExtraLight.svg') format('svg');
+    src: url('../../fonts/Poppins-ExtraLight.eot') format('embedded-opentype'),
+         url('../../fonts/Poppins-ExtraLight.woff2') format('woff2'),
+         url('../../fonts/Poppins-ExtraLight.woff') format('woff'),
+         url('../../fonts/Poppins-ExtraLight.ttf') format('truetype'),
+         url('../../fonts/Poppins-ExtraLight.svg') format('svg');
 }
 /*/////////////////////////////////////////////////////////////////////////////////////////////////////*/
 html {

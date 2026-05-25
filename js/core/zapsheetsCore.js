@@ -34,7 +34,6 @@ function adjustFontSizeInBreak(text, elment, fSize) {
     let fontSize = fSize;
     
     setTimeout(function() {
-        console.log(elment.offsetWidth , '>', elment.parentElement.offsetWidth)
         while (elment.offsetWidth > (elment.parentElement.offsetWidth)) {
             fontSize--;
             elment.style.fontSize = fontSize + 'vw';

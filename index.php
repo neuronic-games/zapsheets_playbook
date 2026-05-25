@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta content-type='text/javascript' charset="UTF-8" />
+    <meta charset="UTF-8" />
     <meta http-equiv='cache-control' content='no-cache, no-store, must-revalidate'>
     <meta http-equiv='expires' content='0'>
     <meta http-equiv='pragma' content='no-cache'>
@@ -82,9 +82,7 @@
         echo 'integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"';} ?>
       crossorigin="anonymous"
     ></script>
-    <script>
-    </script>
-    <!--------------------------------------------------------------------------->
+    <!--------------------------------------------------------------------------------------------------------->
     <script src="./js/common/devicedetector-min.js"></script>
     <script src="./js/common/localdata.js"></script>
     <script src="./js/common/moment.min.js?version=1.0"></script>
@@ -111,7 +109,13 @@
       // Checking Cors issues
       const loadSnippet = async (_ver) => {
         var sheetType = (getUrlVars()["sheet"]) ? getUrlVars()["sheet"].split('/')[0] : 'menu-en';
-        var sheet_Id = (getUrlVars()["id"]) ? getUrlVars()["id"].split('/')[0] : '';
+        var sheet_Id = (getUrlVars()["id"]) ? getUrlVars()["id"] : '';
+        // Fallback: extract from URL path /sheets/{id}/
+        if (!sheet_Id) {
+            var _pathParts = window.location.pathname.split('/');
+            var _sheetsIdx = _pathParts.indexOf('sheets');
+            if (_sheetsIdx >= 0 && _pathParts[_sheetsIdx + 1]) sheet_Id = _pathParts[_sheetsIdx + 1];
+        }
         var activeLang = (getUrlVars()["code"]) ? getUrlVars()["code"].split('/')[0].toUpperCase() : navigator.language.split('-')[0].toUpperCase();
 
         var fromParent = (getUrlVars()["from"]) ? getUrlVars()["from"].split('/')[0] : '';
@@ -133,22 +137,18 @@
         switch(sheetType.split('-')[0]) {
           case 'menu':
           case 'menus':
-            console.log("MENU")
             sheetToLoad = './menu/index.php?version=' + _ver + "&code=" + activeLang
             break;
           case 'steps':
           case 'step':
-            console.log("STEPS")
             sheetToLoad = './steps/index.php?version=' + _ver + "&code=" + activeLang + "&steps&" + fromParent + "&" + faqsSheetId + "&standalone=" + standalone 
             break;
           case 'faqs':
           case 'faq':
-            console.log("FAQS")
             sheetToLoad = './menu/index.php?version=' + _ver + "&code=" + activeLang + "&faqs&" + fromParent + "&" + faqsSheetId
             break;
           case 'rules':
           case 'rule':
-            console.log("RULES")
             sheetToLoad = './menu/index.php?version=' + _ver + "&code=" + activeLang + "&rules"
             break;
         }
@@ -194,32 +194,7 @@
             }
           };
           registerServiceWorker();
-          if(window.navigator.onLine == true) {
-            CheckNetConnection();
-          } else {
-          }
-          // Checking internet speed
-          function CheckNetConnection() {
-            if(window.navigator.onLine == true) {
-              var netStartTime = new Date().getTime();
-              var img = new Image();
-              img.onload = function() {
-                var netLoadTime = new Date().getTime() - netStartTime;
-                checkConnectionSpeed(netLoadTime);
-              }
-              img.src = "./img/zapsheets.png?version=" + Math.random()
-            }
-          }
-          function checkConnectionSpeed(milliseconds) {
-            if(window.navigator.onLine == true) {
-              let downloadSize = 399000; //1024 * 1024 * 5;
-              var duration = (milliseconds) / 1000;
-              var bitsLoaded = downloadSize * 8;
-              var bps = (bitsLoaded / duration).toFixed(2);
-              var kbps = (bps / 1024).toFixed(2);
-              var mbps = (kbps / 1024).toFixed(2);
-            }
-          }
+
         })
       }
       /////////////////////////////////////////////////////////////////////////////////
@@ -291,8 +266,6 @@
       }, 3000)
     </script>
     <!----------------------------------------------------------------------------------->
-    <script src="./js/common/jquery-ui.js"></script>
-    <script src="./js/common/devicedetector-min.js"></script>
-    <!----------------------------------------------------------------------------------->
+    <!----------------------------------------------------------------------------------------------------------->
   </body>
 </html>

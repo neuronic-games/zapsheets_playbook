@@ -88,7 +88,6 @@ function getDeviceFPS() {
       let fps = Math.round( ( frames * 1000 ) / ( time - prevTime ) );
       prevTime = time;
       frames = 0;
-      //console.info('FPS: ', fps);
       machineFPS = fps;
       cancelAnimationFrame(loop)
       return;

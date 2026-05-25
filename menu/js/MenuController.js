@@ -3,21 +3,18 @@
  * // Getting current App version (version.js)
  */
 function getCurrentVersion() {
-    //if(window.navigator.onLine == true) {
         // Loading version.js dynamically for [mac fix]
         var newScript = document.createElement('script');
         newScript.id = 'version_Script';
         newScript.type = 'text/javascript';
         newScript.src = '../js/main/version.js?version=' + UIVersion;
         document.getElementsByTagName('head')[0].appendChild(newScript);
-    //}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * // Getting current App module working (main.js)
  */
 function getCurrentGameMainVersion() {
-    //if(window.navigator.onLine == true) {
         // Loading version.js dynamically for [mac fix]
         var floristryScript = document.createElement('script');
         floristryScript.type = 'text/javascript';
@@ -25,14 +22,12 @@ function getCurrentGameMainVersion() {
         floristryScript.src = '../js/menu/menuMain.js?version=' + UIVersion;
         floristryScript.onload = checkLoadStat()
         document.getElementsByTagName('head')[0].appendChild(floristryScript);
-    //}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * getCurrentMenuVersion
  */
 function getCurrentMenuVersion() {
-    //if(window.navigator.onLine == true) {
         // Loading version.js dynamically for [mac fix]
         var menuScript = document.createElement('script');
         menuScript.type = 'text/javascript';
@@ -40,7 +35,6 @@ function getCurrentMenuVersion() {
         menuScript.src = '../js/menu/menu.js?version=' + UIVersion;
         menuScript.onload = checkLoadStatMenu()
         document.getElementsByTagName('head')[0].appendChild(menuScript);
-    //}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
@@ -59,24 +53,20 @@ function getZapsheetsCore() {
  * 
  */
 function checkLoadStat() {
-    console.log("Main Menu JS LOADED.. ")
     //alert('main menu')
     getCurrentMenuVersion()
 }
 function checkLoadStatMenu() {
-    //alert('menu script')
-    console.log("Menu JS LOADED")
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * checkLoadStatFunctions
  */
 function checkLoadStatCore() {
-    console.log('zapsheets core loaded')
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 let currentRunningVersion = 0;
-let jasonPath = 'https://zapsheets.com/playbook/'
+let jasonPath = '../'
 //////////////////////////////////////////////////////////////////////////////////////////
 // Core functions
 getZapsheetsCore();
@@ -89,7 +79,6 @@ function checkVersion() {
     getCurrentVersion();
     let versionTimer = setTimeout(function() {
         clearTimeout(versionTimer)
-        //console.log(typeof _version)
         if(typeof _version != 'undefined') {
             currentRunningVersion = _version;
             periodicVersion = _version;
@@ -106,7 +95,6 @@ function checkVersion() {
  * 
  */
 function checkAppVersionStatus() {
-    //console.log("CHECKING VERS")
     let versionPeriodicTimer = setTimeout(function() {
         clearTimeout(versionPeriodicTimer)
         if(window.navigator.onLine == true) {
@@ -114,9 +102,6 @@ function checkAppVersionStatus() {
             getCurrentVersion(UIVersion);
                 if(_version != currentRunningVersion) {
                     currentRunningVersion = _version
-                    console.log("NEW Version")
-                    setTimeout(function() {
-                    }, 2000)
                 }
         }
         checkAppVersionStatus();

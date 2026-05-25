@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta content-type='text/javascript' charset="UTF-8" />
+    <meta charset="UTF-8" />
     <meta http-equiv='cache-control' content='no-cache, no-store, must-revalidate'>
     <meta http-equiv='expires' content='0'>
     <meta http-equiv='pragma' content='no-cache'>
@@ -107,9 +107,11 @@
       const loadSnippet = async (_ver) => {
         var sheetType = (getUrlVars()["sheet"]) ? getUrlVars()["sheet"].split('/')[0] : 'menu-en';
         var sheet_Id = (getUrlVars()["id"]) ? getUrlVars()["id"].split('/')[0] : '';
-        if(sheet_Id == '') {
-          let sId = window.location.href.split('/')
-          sheet_Id = sId[sId.length-2]
+        // Fallback: extract from URL path /sheets/{id}/
+        if (!sheet_Id) {
+            var _pathParts = window.location.pathname.split('/');
+            var _sheetsIdx = _pathParts.indexOf('sheets');
+            if (_sheetsIdx >= 0 && _pathParts[_sheetsIdx + 1]) sheet_Id = _pathParts[_sheetsIdx + 1];
         }
         var activeLang = (getUrlVars()["code"]) ? getUrlVars()["code"].split('/')[0].toUpperCase() : navigator.language.split('-')[0].toUpperCase();
 
@@ -200,8 +202,12 @@
           const registerServiceWorker = async () => {
             if ("serviceWorker" in navigator) {
               try {
-                const registration = await navigator.serviceWorker.register("sw_playbookHomeApp.js?version=" + _ver, {
-                  scope: "",
+                // Build an absolute SW path so it resolves correctly whether or
+                // not the URL has a trailing slash (e.g. /sheets/ID vs /sheets/ID/)
+                var _swDir = window.location.pathname;
+                if (!_swDir.endsWith('/')) _swDir += '/';
+                const registration = await navigator.serviceWorker.register(_swDir + "sw_playbookHomeApp.js?version=" + _ver, {
+                  scope: _swDir,
                 });
                 if (registration.installing) {
                   isSWExists = false

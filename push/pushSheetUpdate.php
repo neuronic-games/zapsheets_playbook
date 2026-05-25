@@ -24,7 +24,7 @@
         // For local testing
         $sheetName = 'Settings';
         $python_file_name = "greadPush.py "; 
-        $python_execution = "python ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName .'dateString' .$dateStr; 
+        $python_execution = "python3 ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName .'dateString' .$dateStr; 
         $versionNum = shell_exec($python_execution);
         $versionNum = str_replace("\r\n","",$versionNum);
         /////////////////////////////////////////////////////////////
@@ -44,19 +44,29 @@
         $output = file_put_contents($jsonFile, $json_object); 
         echo 'Sheet version updated to server';
     } else {
-        //echo "Getting Settings values";
-        // For Local
         $sheetName = $sheet;
-        $python_file_name = "gread.py "; 
-        $python_execution = "python ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName; 
-        $settingsData = shell_exec($python_execution);
+        $jsonFile = "../sheets/" . $spreadsheetId . "/" . strtolower($sheetName) . ".json";
+
+        // For Local
+        $python_file_name = "gread.py ";
+        $python_execution = "python3 ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName;
+        $sheetData = shell_exec($python_execution);
+
         /////////////////////////////////////////////////////////////
         // For Server
         /* $sheetName = $sheet;
-        $py_command = escapeshellcmd('source /home/zapsheets/virtualenv/public_html/steps/3.11/bin/python3 gread.py ' .$spreadsheetId .'sheetname' .$sheetName); 
-        $settingsData = shell_exec($py_command); */
+        $py_command = escapeshellcmd('source /home/zapsheets/virtualenv/public_html/steps/3.11/bin/python3 gread.py ' .$spreadsheetId .'sheetname' .$sheetName);
+        $sheetData = shell_exec($py_command); */
         /////////////////////////////////////////////////////////////
+
+        // Save fetched data to the sheet's JSON file
+        if (!empty(trim($sheetData))) {
+            if (!file_exists("../sheets/" . $spreadsheetId)) {
+                mkdir("../sheets/" . $spreadsheetId, 0777, true);
+            }
+            file_put_contents($jsonFile, $sheetData);
+        }
         echo 'Publishing '. $sheetName .' data to server';
-    } 
+    }
     
 ?>

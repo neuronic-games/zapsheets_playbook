@@ -8,7 +8,6 @@ const detectDeviceType = () =>
         ? 'Mobile'
         : 'Desktop';
 // Called whenever an update has been found and is installing
-//listener.onupdateinstalling = installingevent => console.log('Update is installing.');
 // Called whenever an update is done installing and is waiting
 var buttonElem = ''
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -27,7 +26,7 @@ let eventSliderActive = false
 let MODE_TYPE = ""
 let pollTime = 10
 let prevRenderEvents = 0
-let activeLanguage = "eng"
+let activeLanguage = (getUrlVars()["code"]) ? getUrlVars()["code"].split('/')[0].toLowerCase() : "en"
 let inLanguageProcess = false
 let activeMenuIndex = -1
 // To store active click object
@@ -183,11 +182,17 @@ function checkIfSheetExists(_sheetName) {
             data:{'id' : sheet_Id, 'sheetname' : 'checkSheet', 'tab_name' : _sheetName}, 
             cache: false, 
             success: function (response) {
-                var mResponseSheet = response.replace(/�/g, "") 
-                var newSheetData = JSON.parse(mResponseSheet)
+                var mResponseSheet = response.replace(/�/g, "").trim()
+                var newSheetData
+                try {
+                    newSheetData = JSON.parse(mResponseSheet)
+                } catch(e) {
+                    document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Could not read sheet status for ' + _sheetName + '.</font><br>'
+                    updateInfoTextView()
+                    return
+                }
                 if(newSheetData.exists == "no") {
-                    console.log(newSheetData.exists)
-                    document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Sheet ' + _sheetName + ' does not exists.' + "</font><br>"
+                    document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: Sheet ' + _sheetName + ' does not exist.' + "</font><br>"
                     updateInfoTextView()
                 } else {
                     // If the sheet exists
@@ -316,7 +321,6 @@ function getSheetSettings(_sheetName, sheetVersion, pub_date) {
                     //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-en") {
                     } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-" + activeLanguage.toLowerCase()) {
                         setTimeout(function() {
-                            console.log("BBB")
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                         }, 100)
                     } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "tags") {
@@ -336,12 +340,10 @@ function getSheetSettings(_sheetName, sheetVersion, pub_date) {
                 } else {
                     //if(_sheetName.toLowerCase() == 'bgg-en') {
                     if(_sheetName.toLowerCase() == 'bgg-' + activeLanguage.toLowerCase()) {
-                        //console.log("Load bgg sheet data to get username and game id....")
-                        //loadBGGSheetData(languageDataList[languageLoadIndex])
+                        loadBGGSheetData(languageDataList[languageLoadIndex])
                     } else {
                         // Check for loading image
                         if(isPreloadImages == 'download_images') {
-                            console.log("Preload Images")
                             // Added new line break
                             document.getElementById("loadingTxt").innerHTML += "<br>"
                             // Preload All Images
@@ -359,7 +361,6 @@ function getSheetSettings(_sheetName, sheetVersion, pub_date) {
             }
         },
         error: function(e) {
-            console.log("No " + _sheetName + " sheet found")
         }
     })
     // Clear memory
@@ -418,7 +419,6 @@ function getSheetInstall(_sheetName, sheetVersion, pub_date) {
                     //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-en") {
                     } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-" + activeLanguage.toLocaleLowerCase()) {
                         setTimeout(function() {
-                            console.log("CCC")
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                         }, 100)
                     } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "tags") {
@@ -438,12 +438,10 @@ function getSheetInstall(_sheetName, sheetVersion, pub_date) {
                 } else {
                     //if(_sheetName.toLowerCase() == 'bgg-en') {
                     if(_sheetName.toLowerCase() == 'bgg-' + activeLanguage.toLowerCase()) {
-                        //console.log("Load bgg sheet data to get username and game id....")
-                        //loadBGGSheetData(languageDataList[languageLoadIndex])
+                        loadBGGSheetData(languageDataList[languageLoadIndex])
                     } else {
                         // Check for loading image
                         if(isPreloadImages == 'download_images') {
-                            console.log("Preload Images")
                             // Added new line break
                             document.getElementById("loadingTxt").innerHTML += "<br>"
                             // Preload All Images
@@ -462,7 +460,6 @@ function getSheetInstall(_sheetName, sheetVersion, pub_date) {
             }
         },
         error: function(e) {
-            console.log("No " + _sheetName + " sheet found")
         }
     })
     // Clear memory
@@ -540,12 +537,10 @@ function getSheetTags(_sheetName, sheetVersion, pub_date) {
                 } else {
                     //if(_sheetName.toLowerCase() == 'bgg-en') {
                     if(_sheetName.toLowerCase() == 'bgg-' + activeLanguage.toLowerCase()) {
-                        //console.log("Load bgg sheet data to get username and game id....")
-                        //loadBGGSheetData(languageDataList[languageLoadIndex])
+                        loadBGGSheetData(languageDataList[languageLoadIndex])
                     } else {
                         // Check for loading image
                         if(isPreloadImages == 'download_images') {
-                            console.log("Preload Images")
                             // Added new line break
                             document.getElementById("loadingTxt").innerHTML += "<br>"
                             // Preload All Images
@@ -564,7 +559,6 @@ function getSheetTags(_sheetName, sheetVersion, pub_date) {
             }
         },
         error: function(e) {
-            console.log("No " + _sheetName + " sheet found")
         }
     })
     // Clear memory
@@ -641,12 +635,10 @@ function getSheetSplash(_sheetName, sheetVersion, pub_date) {
                 } else {
                     //if(_sheetName.toLowerCase() == 'bgg-en') {
                     if(_sheetName.toLowerCase() == 'bgg-' + activeLanguage.toLowerCase()) {
-                        //console.log("Load bgg sheet data to get username and game id....")
-                        //loadBGGSheetData(languageDataList[languageLoadIndex])
+                        loadBGGSheetData(languageDataList[languageLoadIndex])
                     } else {
                         // Check for loading image
                         if(isPreloadImages == 'download_images') {
-                            console.log("Preload Images")
                             // Added new line break
                             document.getElementById("loadingTxt").innerHTML += "<br>"
                             // Preload All Images
@@ -665,7 +657,6 @@ function getSheetSplash(_sheetName, sheetVersion, pub_date) {
             }
         },
         error: function(e) {
-            console.log("No " + _sheetName + " sheet found")
         }
     })
     // Clear memory
@@ -700,7 +691,6 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
         type: 'GET',
         dataType: "text",
         success: function (response) {
-            //console.log(response, " >data")
             if(response.length == 0) {
                 document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>"
                 updateInfoTextView()
@@ -720,9 +710,8 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
 
                 if(languageLoadIndex == isMoreSheets.length-1) {
                     //if(isMoreSheets.includes('bgg-en') == true) {
-                    if(isMoreSheets.includes('bgg-') + activeLanguage.toLowerCase() == true) {
+                    if(isMoreSheets.includes('bgg-' + activeLanguage.toLowerCase()) == true) {
                         bggIndex = getBGGIndex();
-                        console.log("Load bgg sheet data to get username and game id....")
                         loadBGGSheetData(languageDataList[bggIndex])
                         return;
                     } 
@@ -752,7 +741,6 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
                 //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-en") {
                 } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-" + activeLanguage.toLowerCase()) {
                     setTimeout(function() {
-                        console.log("AAA")
                         getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                     }, 100)
                 } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "install") {
@@ -774,14 +762,11 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
                     }, 100)
                 }
             } else {
-                //console.log(_sheetName, " PRELOAD..")
                 //if(_sheetName.toLowerCase() == 'bgg-en') {
                 if(_sheetName.toLowerCase() == 'bgg-' + activeLanguage.toLowerCase()) {
-                    //console.log("Load bgg sheet data to get username and game id....")
-                    //loadBGGSheetData(languageDataList[languageLoadIndex])
+                    loadBGGSheetData(languageDataList[languageLoadIndex])
                 } else {
                     if(isPreloadImages == 'download_images') {
-                        console.log("Preload Images")
                         // Added new line break
                         document.getElementById("loadingTxt").innerHTML += "<br>"
                         // Preload All Images
@@ -798,7 +783,6 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
             }
         },
         error: function(e) {
-            console.log("No " + _sheetName + " sheet found")
             document.getElementById("loadingTxt").innerHTML += '<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>"
             updateInfoTextView()
         }
@@ -824,49 +808,103 @@ function loadBGGSheetData(bggJSON) {
             bggUserId = row_bgg['Value']
         }
     })
-    // Load Game Details and save
-    //console.log(bggGameId, " --- ", bggUserId)
-    var bggRequest = $.ajax({
-        url: './getBggData.php?version=' + Math.random(), 
-        type:'POST', 
-        data:{'Id': sheet_Id ,'bggUsername' : bggUserId, 'bggGameId' : bggGameId}, 
-        cache: false, 
-        dataType: 'JSON',
-        success: function (response) {
-            //console.log("bgg: " , response , " bgg Data")
-            if(response.status == '404') {
-                document.getElementById("loadingTxt").innerHTML += "<font color='red'>Error: " + response.error + ".</font><br>"
+
+    const BGG_MAX_ATTEMPTS = 6
+    const BGG_RETRY_DELAY  = 5000   // ms between retries when BGG returns 202
+    let   bggAttempt       = 0
+    let   countdownTimer   = null
+
+    function showCountdown(seconds) {
+        clearInterval(countdownTimer)
+        let remaining = seconds
+        document.getElementById("loadingTxt").innerHTML += 'Retrying in <span id="bggCountdown">' + remaining + '</span>s...<br>'
+        updateInfoTextView()
+        countdownTimer = setInterval(function() {
+            remaining--
+            let el = document.getElementById("bggCountdown")
+            if(el) el.textContent = remaining
+            if(remaining <= 0) clearInterval(countdownTimer)
+        }, 1000)
+    }
+
+    function attemptBGGFetch() {
+        bggAttempt++
+        document.getElementById("loadingTxt").innerHTML +=
+            'Fetching BGG data — attempt ' + bggAttempt + ' of ' + BGG_MAX_ATTEMPTS + '...<br>'
+        updateInfoTextView()
+
+        $.ajax({
+            url: './getBggData.php?version=' + Math.random(),
+            type: 'POST',
+            data: { 'Id': sheet_Id, 'bggUsername': bggUserId, 'bggGameId': bggGameId },
+            cache: false,
+            dataType: 'JSON',
+            timeout: 30000,
+            success: function(response) {
+                clearInterval(countdownTimer)
+
+                if(response.status == 202) {
+                    // BGG is still preparing the collection
+                    document.getElementById("loadingTxt").innerHTML +=
+                        '<font color="orange">BGG collection not ready yet.</font><br>'
+                    updateInfoTextView()
+                    if(bggAttempt < BGG_MAX_ATTEMPTS) {
+                        showCountdown(BGG_RETRY_DELAY / 1000)
+                        setTimeout(attemptBGGFetch, BGG_RETRY_DELAY)
+                    } else {
+                        document.getElementById("loadingTxt").innerHTML +=
+                            '<font color="red">Error: BGG did not respond after ' + BGG_MAX_ATTEMPTS + ' attempts. Try pushing bgg-' + activeLanguage + ' again later.</font><br>'
+                        updateInfoTextView()
+                    }
+                    return
+                }
+
+                if(response.status == 404 || response.error) {
+                    document.getElementById("loadingTxt").innerHTML +=
+                        '<font color="red">Error: ' + (response.error || 'BGG data not available.') + '</font><br>'
+                    updateInfoTextView()
+                    return
+                }
+
+                if(!response.boardgame || response.boardgame.length == 0) {
+                    document.getElementById("loadingTxt").innerHTML +=
+                        '<font color="red">Error: BGG returned no game data.</font><br>'
+                    updateInfoTextView()
+                    return
+                }
+
+                bggDataList = response
+                document.getElementById("loadingTxt").innerHTML +=
+                    '<font color="green">BGG data loaded successfully.</font><br>'
                 updateInfoTextView()
-                return
-            }
-            if(response.length == 0) {
-                document.getElementById("loadingTxt").innerHTML += "<font color='red'>Error: BGG games data not available." + "</font><br>"
-                updateInfoTextView()
-            } else {
-                bggDataList = response;
 
                 if(isPreloadImages == 'download_images') {
-                    console.log("Preload Images")
-                    // Added new line break
                     document.getElementById("loadingTxt").innerHTML += "<br>"
-                    // Preload All Images
-                    PreloadAllImagesToServer();
+                    PreloadAllImagesToServer()
                 } else {
-                    pushVersionToServer();
-                    saveIndexFile();
+                    pushVersionToServer()
+                    saveIndexFile()
                     setTimeout(function() {
                         document.getElementById("loadingTxt").innerHTML += "All sheet data published.<br>"
                         updateInfoTextView()
                     }, 3000)
                 }
-
+            },
+            error: function(xhr, status) {
+                clearInterval(countdownTimer)
+                if(status === 'timeout') {
+                    document.getElementById("loadingTxt").innerHTML +=
+                        '<font color="red">Error: BGG request timed out.</font><br>'
+                } else {
+                    document.getElementById("loadingTxt").innerHTML +=
+                        '<font color="red">Error: Could not reach BGG (' + status + ').</font><br>'
+                }
+                updateInfoTextView()
             }
-        }
-    })
-    // Clear memory
-    bggRequest.onreadystatechange = null;
-    bggRequest.abort = null;
-    bggRequest = null;
+        })
+    }
+
+    attemptBGGFetch()
 }
 ///////////////////////////////////////////////////////////////////////////////////////
 /**
@@ -883,25 +921,21 @@ function getSheetData(_sheetName, sheetVersion, pub_date) {
             data:{'id' : sheet_Id, 'sheetname' : _sheetName, 'date_string' : ''}, 
             cache: false, 
             success: function (response) {
-                //console.log(response, " >> RESP")
                 if(_sheetName.toLowerCase() == "settings") {
                     setTimeout(function() {
                         // In case either sheet not defined or not given the access to Service Account
                         getSheetSettings(_sheetName, sheetVersion, pub_date);
                     }, 100)
                 } else if(_sheetName.toLowerCase() == "install") {
-                    //console.log("Install data")
                     setTimeout(function() {
                         getSheetInstall(_sheetName, sheetVersion, pub_date);
                     }, 100)
                 } else if(_sheetName.toLowerCase() == "tags") {
-                    //console.log("Install data")
                     setTimeout(function() {
                         getSheetTags(_sheetName, sheetVersion, pub_date);
                     }, 100)
                 //} else if(_sheetName.toLowerCase() == "splash-en") {
                 } else if(_sheetName.toLowerCase() == "splash-"+activeLanguage.toLowerCase()) {
-                    //console.log("Install data")
                     setTimeout(function() {
                         getSheetSplash(_sheetName, sheetVersion, pub_date);
                     }, 100)
@@ -1003,7 +1037,6 @@ function savePublishedStateToServer(_value) {
         data:{'id' : sheet_Id, 'value' : _value}, 
         cache: false, 
         success: function (response) {
-            console.log("RESONSE - ", response)
         }
     })
     // Clear memory
@@ -1457,7 +1490,6 @@ function PreloadAllImagesToServer() {
         // To Preload Images
         let bggGameTimeout = 700
         $.each(bggDataList.boardgame, function (i, row) {
-            //console.log(bggGamesDataList[i].image, " ImagePath")
             if(bggDataList.boardgame[i].boardgame != '' /* && bggGamesDataList.boardgame[i] != undefined */) {
                 if (bggDataList.boardgame[i].boardgame.image.includes("https://drive.google.com")) {
                     let imgid = bggDataList.boardgame[i].boardgame.image.split('https://drive.google.com')[1].split('/')[3];
@@ -1521,7 +1553,6 @@ function PreloadAllImagesToServer() {
         // To Save spplash Images
         let splashTimeout = 900
         tempSplashHolder = []
-        //console.log(splashDataList, " >>>")
         $.each(splashDataList, function (i, row) {
             if (splashDataList[i]['Content'].includes("https://drive.google.com")) {
                 let imgid = splashDataList[i]['Content'].split('https://drive.google.com')[1].split('/')[3];
@@ -1564,10 +1595,8 @@ window.addEventListener('load', (event) => {
     // Show Push Title
     document.getElementById('pushTitle').innerHTML = isPreloadImages == 'download_images' ? 'Publish All Playbook Content' : 'Publish Only Playbook Text'
     if(sheet_Id != '') {
-        console.log("Enter into publishing the content")
         UpdateAppVersion()
     } else {
-        console.log('show missing sheet id message')
         document.getElementById("loadingTxt").innerHTML += "<font color='red'>ERROR: Sheet Id missing.<br>";
         updateInfoTextView()
     }
@@ -1768,12 +1797,10 @@ function downloadImagesLocally(urlString) {
  * 
  */
 function pushVersionToServer() {
-    console.log("Version publishing to server...")
     if(window.navigator.onLine == true) {
         let newVersion = 0
         $.each(settingDataList, function (index, row) {
             if(row['Name'] == 'Version') {
-                console.log(row['Value'], " VERSION")
                 newVersion = row['Value']
             }
         })
@@ -1783,7 +1810,6 @@ function pushVersionToServer() {
             data:{'id' : sheet_Id, 'sheetname' : 'Server', 'nVersion' : newVersion, 'date_string' : ''}, 
             cache: false, 
             success: function (response) {
-                console.log(response)
             }
         })
         // Clear memory
@@ -1945,7 +1971,6 @@ function CheckImageStatus() {
                 }
             } else {
                 if(languageDataList[i][j]['Type'] == 'image') {
-                    //console.log(languageDataList[i][j]['Text'], " AAAA")
                     if (languageDataList[i][j]['Text'].includes("https://drive.google.com")) {
                         let imgid = languageDataList[i][j]['Text'].split('https://drive.google.com')[1].split('/')[3];
                         let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
@@ -2000,7 +2025,6 @@ function saveIndexFile() {
         data:{'id' : sheet_Id, 'type' : 'index'}, 
         cache: false, 
         success: function (response) {
-            console.log("index - ", response)
             saveServiceWorker();
         }
     })
@@ -2021,7 +2045,6 @@ function saveServiceWorker() {
         data:{'id' : sheet_Id, 'type' : 'sw'}, 
         cache: false, 
         success: function (response) {
-            console.log("SW - ", response)
         }
     })
     // Clear memory

@@ -27,7 +27,7 @@
         // For local testing
         $sheetName = 'Settings';
         $python_file_name = "greadPush.py "; 
-        $python_execution = "python ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName .'dateString' .$dateStr; 
+        $python_execution = "python3 ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName .'dateString' .$dateStr; 
         $versionNum = shell_exec($python_execution);
         $versionNum = str_replace("\r\n","",$versionNum);
         /////////////////////////////////////////////////////////////
@@ -43,7 +43,7 @@
         // For Local
         $sheetName = $sheet;
         $python_file_name = "gread.py "; 
-        $python_execution = "python ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName; 
+        $python_execution = "python3 ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName; 
         $settingsData = shell_exec($python_execution);
 
         /////////////////////////////////////////////////////////////
@@ -59,7 +59,7 @@
         // For Local
         $sheetName = $sheet;
         $python_file_name = "gread.py "; 
-        $python_execution = "python ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName; 
+        $python_execution = "python3 ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName; 
         $directoryData = shell_exec($python_execution);
 
         /////////////////////////////////////////////////////////////
@@ -75,7 +75,7 @@
         // For Local
         $sheetName = $sheet;
         $python_file_name = "gread.py "; 
-        $python_execution = "python ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName; 
+        $python_execution = "python3 ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName; 
         $eventsData = shell_exec($python_execution);
 
         /////////////////////////////////////////////////////////////
@@ -94,7 +94,7 @@
         // For Local
         $sheetName = $sheet;
         $python_file_name = "gread.py "; 
-        $python_execution = "python ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName; 
+        $python_execution = "python3 ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName; 
         $kiosksData = shell_exec($python_execution);
 
         /////////////////////////////////////////////////////////////
@@ -114,35 +114,48 @@
         $output = file_put_contents($jsonFile, $json_object); 
         echo 'Sheet version updated to server';
     } else if($sheet != '' && $sheet != 'checkSheet') {
-        // For Local
         $sheetName = $sheet;
-        $python_file_name = "gread.py "; 
-        $python_execution = "python ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName; 
+        $jsonFile = "../sheets/" . $spreadsheetId . "/" . strtolower($sheetName) . ".json";
+
+        // For Local
+        $python_file_name = "gread.py ";
+        $python_execution = "python3 ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName;
         $stepsLang = shell_exec($python_execution);
 
         /////////////////////////////////////////////////////////////
         // For Server
         /* $sheetName = $sheet;
-        $py_command = escapeshellcmd('source /home/zapsheets/virtualenv/public_html/steps/3.11/bin/python3 gread.py ' .$spreadsheetId .'sheetname' .$sheetName); 
+        $py_command = escapeshellcmd('source /home/zapsheets/virtualenv/public_html/steps/3.11/bin/python3 gread.py ' .$spreadsheetId .'sheetname' .$sheetName);
         $stepsLang = shell_exec($py_command); */
         /////////////////////////////////////////////////////////////
-       
+
+        // Save fetched data to the sheet's JSON file
+        if (!empty(trim($stepsLang))) {
+            if (!file_exists("../sheets/" . $spreadsheetId)) {
+                mkdir("../sheets/" . $spreadsheetId, 0777, true);
+            }
+            file_put_contents($jsonFile, $stepsLang);
+        }
         echo 'Publishing ', $sheet . ' data to server';
     } else if($sheet == 'checkSheet') {
-       // For Local
         $tabName = $_POST['tab_name'];
         $sheetName = $tabName;
 
         // Local
-        $python_file_name = "checkSheetStatus.py "; 
-        $python_execution = "python ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName; 
-        $isSheet = shell_exec($python_execution); 
+        $python_file_name = "checkSheetStatus.py ";
+        $python_execution = "python3 ".$python_file_name .$spreadsheetId .'sheetname' .$sheetName;
+        $isSheet = shell_exec($python_execution);
 
         // Server
-        /* $py_command = escapeshellcmd('source /home/zapsheets/virtualenv/public_html/steps/3.11/bin/python3 checkSheetStatus.py ' .$spreadsheetId .'sheetname' .$sheetName); 
+        /* $py_command = escapeshellcmd('source /home/zapsheets/virtualenv/public_html/steps/3.11/bin/python3 checkSheetStatus.py ' .$spreadsheetId .'sheetname' .$sheetName);
         $isSheet = shell_exec($py_command); */
 
-        echo $isSheet;
+        // Guard: if the Python script returned nothing, echo a safe JSON error
+        if(empty(trim($isSheet))) {
+            echo json_encode(['exists' => 'no', 'error' => 'checkSheetStatus script returned no output']);
+        } else {
+            echo $isSheet;
+        }
     }
     
 ?>

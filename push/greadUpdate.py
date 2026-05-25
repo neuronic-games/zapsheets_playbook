@@ -8,7 +8,13 @@ from pathlib import Path
 
 
 # Credentials [Keys etc]
-credFileName = "credentials.json"
+# Resolve credentials path relative to this script's location
+credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
+
+# Check credentials file exists before attempting to connect
+if not os.path.exists(credFileName):
+    print(json.dumps({"error": "credentials.json not found"}))
+    sys.exit(1)
 
 # Accessing Google service account using credentials
 mServiceAccount = gspread.service_account(filename=credFileName)
@@ -19,13 +25,20 @@ mGoogleSheetId = sys.argv[1].split('sheetname')[0]
 mGoogleSheet = mServiceAccount.open_by_key(mGoogleSheetId)
 
 # Checking if variable is None
-if sys.argv[1].split('sheetname')[1] == "null":                   
+if sys.argv[1].split('sheetname')[1] == "null":
     sheetName = mGoogleSheet.worksheets()[0].title
-else :
+else:
     sheetName = sys.argv[1].split('sheetname')[1]
 
-# Getting the date from the mentioned sheet name
-mSelectedWorkSheet = mGoogleSheet.worksheet(sheetName)
+# Case-insensitive worksheet lookup
+all_worksheets = mGoogleSheet.worksheets()
+mSelectedWorkSheet = next((ws for ws in all_worksheets if ws.title == sheetName), None)
+if mSelectedWorkSheet is None:
+    # Try case-insensitive match
+    mSelectedWorkSheet = next((ws for ws in all_worksheets if ws.title.lower() == sheetName.lower()), None)
+if mSelectedWorkSheet is None:
+    print(json.dumps({"error": f"Worksheet '{sheetName}' not found. Available: {[ws.title for ws in all_worksheets]}"}))
+    sys.exit(1)
 
 # Creating .JSON files
 if(sheetName == "Settings"):
@@ -37,11 +50,17 @@ else:
 
 # Check for file exists (If not creates one)
 if not os.path.exists(os.path.dirname(path)):
-    os.mkdirs(os.path.dirname(path))
+    os.makedirs(os.path.dirname(path))
 
-# Writing the spreadsheet data to the .JSON files
+# Fetch records once
+records = mSelectedWorkSheet.get_all_records()
+json_data = json.dumps(records, ensure_ascii=False)
+
+# Write to the JSON file
 with open(path, 'w', encoding='utf8') as json_file:
-    json.dump(mSelectedWorkSheet.get_all_records(), json_file, ensure_ascii=False)
-    print('JSON SAVED')
+    json_file.write(json_data)
+
+# Print the JSON to stdout so PHP can capture and relay it
+print(json_data)
 
 # DONE

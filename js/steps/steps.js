@@ -4,7 +4,6 @@
  * Ready events
  */
 $(document).ready(function() {
-    console.log('READY STEPS NEW')
     // Steps Variables
     let stepIndex = 0
     let languageStepsData = [];
@@ -76,7 +75,6 @@ $(document).ready(function() {
     // Positioning of bottom container
     var standalone = (getUrlVars()["standalone"]) ? getUrlVars()["standalone"].split('/')[0] : 'false';
 
-    //console.log(standalone.split('?')[0], " --- ")
 
     if (standalone.split('?')[0] == 'true') {
         document.getElementById('spinnerBox').style.setProperty("display","flex");
@@ -101,12 +99,17 @@ $(document).ready(function() {
 
     var activeLang = (getUrlVars()["code"]) ? getUrlVars()["code"].split('/')[0].toUpperCase() : navigator.language.split('-')[0].toUpperCase();
 
-    var sheet_Id = (getUrlVars()["id"]) ? getUrlVars()["id"].split('/')[0] : '';
+    var sheet_Id = (getUrlVars()["id"]) ? getUrlVars()["id"] : '';
+    // Fallback: extract from URL path /sheets/{id}/ when id param is missing or invalid
+    if (!sheet_Id) {
+        var _pathParts = window.location.pathname.split('/');
+        var _sheetsIdx = _pathParts.indexOf('sheets');
+        if (_sheetsIdx >= 0 && _pathParts[_sheetsIdx + 1]) sheet_Id = _pathParts[_sheetsIdx + 1];
+    }
 
     // to get jump id
     var jumpId = (document.location.search.substr(1).split('&')[1].split('=')[0] != 'id' && document.location.search.substr(1).split('&')[1] != undefined) ? document.location.search.substr(1).split('&')[1] : '0';
 
-    //console.log(jumpId, " jump")
 
     //////////////////////////////////////////////////////////////////////////
     //var sheetInnerParam = document.location.search.substr(1).split('&')[1].split('?')[0];
@@ -116,7 +119,6 @@ $(document).ready(function() {
         if(sheetInnerParam.toLowerCase() == 'steps' || sheetInnerParam.toLowerCase() == 'step') {
             //fromParent = document.location.search.substr(1).split('&')[2].split('?')[0];
             fromParent = document.location.search.substr(1).split('&')[4].split('?')[0];
-            //console.log(fromParent, " from parent")
             if(fromParent == 'app') {
                 //faqsSheedId = document.location.search.substr(1).split('&')[3].split('?')[0];
                 //faqsSheedId = document.location.search.substr(1).split('&')[5].split('?')[0];
@@ -141,7 +143,6 @@ $(document).ready(function() {
     }
     /////////////////////////////////////////////////////////////////////////////////
     if(sheet_Id == '') {
-        console.log('show Error screen')
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('sheetIdError').style.display = 'flex';
         document.getElementById('sheetIdBtn').addEventListener('touchstart', onCheckUserDataStart)
@@ -177,7 +178,6 @@ $(document).ready(function() {
                 type: 'GET',
                 dataType: "text",
                 success: function (response) {
-                    //console.log(response, " READ DATA")
                     if(response.length == 0) {
                         document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags data not available.' + "</font><br>"
                     } else { 
@@ -290,7 +290,6 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    console.log("ERROR - tags data missing..")
                     document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : tags</font><br>'
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
@@ -317,7 +316,6 @@ $(document).ready(function() {
      */
     function onCheckUserDataClick(event) {
         if(event != null) {event.preventDefault();}
-        console.log("check user data")
         document.getElementById('sheetIdBtn').style.scale = '1'
         checkUserFillData();
 
@@ -420,7 +418,6 @@ $(document).ready(function() {
                 type: 'GET',
                 dataType: "text",
                 success: function (response) {
-                    //console.log(response, " READ DATA")
                     if(response.length == 0) {
                         document.getElementById("loadingText").innerHTML += '<font color="red">Error: Settings data not available.' + "</font><br>"
                     } else { 
@@ -458,7 +455,6 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    console.log("EEEEE - Setting data missing..")
                     document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : Settings</font><br>'
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
@@ -489,7 +485,6 @@ $(document).ready(function() {
             type: 'GET',
             dataType: "text",
             success: function (response) {
-                //console.log(response, " READ DATA")
                 if(response.length == 0) {
                     activeLang = "EN"
                     loadLanguageJSON()
@@ -528,7 +523,6 @@ $(document).ready(function() {
                 }
             },
             error: function (response) {
-                console.log("NO FILE FOUND")
                 /* if(activeLang.toLowerCase() != 'EN' && langLoadCount < 1) {
                     langLoadCount++
                     activeLang = 'EN'
@@ -537,7 +531,6 @@ $(document).ready(function() {
                     langLoadCount = 0;
                     activeLang = "EN"
                     loadLanguageJSON()
-                    //console.log("EEEEE - Language data missing..")
                     /* document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : ' + activeLang + '</font><br>'
                     document.getElementById("spinnerBox").style.display = 'none'
                 } */
@@ -724,7 +717,6 @@ $(document).ready(function() {
         } else {
             let prevStep = languageStepsData[stepIndex].Prev;
             if(prevStep == 'END') {
-                //console.log("EXIT FROM PREV")
                 if(fromParent == 'app') {
                     window.parent.parent.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
                 } else {
@@ -785,7 +777,6 @@ $(document).ready(function() {
         // Restart pulsating effect after pause
         document.getElementById('nextIcon').style.animationPlayState = "running";
         moveType = 'right'
-        //console.log(languageStepsData[stepIndex+1])
         if(languageStepsData[stepIndex+1] != undefined) {
             let stepType = languageStepsData[stepIndex+1].Type;
             if(stepType.toLowerCase() != '' && stepType.toLowerCase() != 'loading') {
@@ -805,7 +796,6 @@ $(document).ready(function() {
             } else {
                 let nextStep = languageStepsData[stepIndex].Next;
                 if(nextStep == 'END') {
-                    //console.log("EXIT FROM NEXT")
                     if(fromParent == 'app') {
                         window.parent.parent.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
                     } else {
@@ -817,7 +807,6 @@ $(document).ready(function() {
         } else {
             let nextStep = languageStepsData[stepIndex].Next;
             if(nextStep == 'END') {
-                //console.log("EXIT FROM NEXT")
                 if(fromParent == 'app') {
                     window.parent.parent.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
                 } else {
@@ -1259,7 +1248,6 @@ $(document).ready(function() {
         } else {
             updateMiddleImageSection(stepIndex)
         }
-        console.log("Caching In Background")
     }
     ///////////////////////////////////////////////////////////////////////////////////////
     /**
@@ -1348,7 +1336,6 @@ $(document).ready(function() {
             }
         })
         if(_count == getAllImageCount()) {
-            console.log("ALL IMAGES IN CACHE NOW...")
             preCachedDone = true;
         }
     }
@@ -1467,7 +1454,6 @@ $(document).ready(function() {
             } else {
                 updateMiddleImageSection(stepIndex)
             }
-            console.log("IMAGES CACHED")
         } else {
         }
     }
@@ -1592,9 +1578,7 @@ $(document).ready(function() {
       timeLeft = TIME_LIMIT - timePassed;
       setCircleDasharray(_type);
       if (timeLeft === 0) {
-        //console.log(timeLeft, " time left")
         if(fromParent == 'app') {
-            //console.log(window.parent.parent, " -- ", window.parent.parent.parent)
             window.parent.parent.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
         } else {
             window.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
@@ -1724,7 +1708,6 @@ $(document).ready(function() {
      */
     function updateProgressBar(e) {
         if (e.lengthComputable) {
-            //console.log(e.loaded / e.total * 100, " perc");
         }
     }
     ///////////////////////////////////////////////////////////////////////////////

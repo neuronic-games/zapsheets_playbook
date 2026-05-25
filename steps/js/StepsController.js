@@ -15,27 +15,24 @@ let modeType = 0;
 let machineFPS = 0
 let inSteps = true;
 ///////////////////////////////////////////////////////////////////////////////////////////
-let jasonPath = 'https://zapsheets.com/playbook/'
+let jasonPath = '../'
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * // Getting current App version (version.js)
  */
 function getCurrentVersion() {
-    //if(window.navigator.onLine == true) {
         // Loading version.js dynamically for [mac fix]
         var newScript = document.createElement('script');
         newScript.id = 'version_Script';
         newScript.type = 'text/javascript';
         newScript.src = '../js/main/version.js?version=' + UIVersion;
         document.getElementsByTagName('head')[0].appendChild(newScript);
-    //}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * // Getting current App module working (main.js)
  */
 function getCurrentGameMainVersion() {
-    //if(window.navigator.onLine == true) {
         // Loading version.js dynamically for [mac fix]
         var floristryScript = document.createElement('script');
         floristryScript.type = 'text/javascript';
@@ -43,7 +40,6 @@ function getCurrentGameMainVersion() {
         floristryScript.src = '../js/steps/stepsMain.js?version=' + UIVersion;
         floristryScript.onload = checkLoadStat()
         document.getElementsByTagName('head')[0].appendChild(floristryScript);
-    //}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
@@ -62,14 +58,12 @@ function getZapsheetsCore() {
  * 
  */
 function checkLoadStat() {
-    console.log("Step JS LOADED")
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * checkLoadStatFunctions
  */
 function checkLoadStatCore() {
-    console.log('zapsheets core loaded')
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 //window.addEventListener('load', (event) => {
@@ -86,7 +80,6 @@ function checkVersion() {
     getCurrentVersion();
     let versionTimer = setTimeout(function() {
         clearTimeout(versionTimer)
-        //console.log(typeof _version)
         if(typeof _version != 'undefined') {
             currentRunningVersion = _version;
             periodicVersion = _version;
@@ -110,9 +103,6 @@ function checkAppVersionStatus() {
             getCurrentVersion();
             if(_version != currentRunningVersion) {
                 currentRunningVersion = _version
-                console.log("NEW Version")
-                setTimeout(function() {
-                }, 2000)
             }
         }
         checkAppVersionStatus();

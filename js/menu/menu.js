@@ -12,6 +12,7 @@ $(document).ready(function() {
     let faqsDataList = [];
     let statsDataList = [];
     let bggInfoData = [];
+    let videosDataList = [];
     let tagsDataList = [];
     let splashDataList = []
 
@@ -1906,7 +1907,14 @@ $(document).ready(function() {
             //document.getElementById('contentSteps').style.display = 'block'
             document.getElementById('menuTopContainer').style.display = 'none'
             LoadGameSteps();
-        } 
+        } else if(toHold == 'videos' || toHold == 'vidoes') {
+            // 'vidoes' handles the typo in menu-en.json Next field
+            document.getElementById('downloadBtn').style.display = 'none'
+            document.getElementById('contentSteps').style.display = 'none'
+            document.getElementById('menuPage').style.backgroundColor = '#2D2C2B'
+            document.getElementById('menuTopContainer').style.display = 'flex'
+            LoadGameVideos()
+        }
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -2208,6 +2216,97 @@ $(document).ready(function() {
                 }
             }
         }
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * LoadGameVideos — renders video links from videos-{lang}.json
+     */
+    function LoadGameVideos() {
+        var langCode = activeLang.split('-')[0].toLowerCase();
+        var videosRequest = $.ajax({
+            url: jasonPath + 'sheets/' + sheet_Id + '/videos-' + langCode + '.json?version=' + UIVersion,
+            cache: true,
+            type: 'GET',
+            dataType: 'text',
+            success: function(response) {
+                if (!response || response.length === 0) {
+                    document.getElementById('menuList').innerHTML =
+                        '<p style="color:#F7AE50; font-size:3vh; padding:2vh;">No videos available.</p>';
+                    return;
+                }
+                videosDataList = [];
+                try {
+                    var parsed = JSON.parse(response);
+                    for (var i = 0; i < parsed.length; i++) {
+                        var row = parsed[i];
+                        if (row.Content && row.Content.trim() !== '') {
+                            videosDataList.push(row);
+                        }
+                    }
+                } catch(e) {
+                    document.getElementById('menuList').innerHTML =
+                        '<p style="color:red; font-size:3vh; padding:2vh;">Error reading videos data.</p>';
+                    return;
+                }
+
+                var html = '';
+                for (var j = 0; j < videosDataList.length; j++) {
+                    var item = videosDataList[j];
+                    var title = item.Title || ('Video ' + (j + 1));
+                    var url   = item.Content.trim();
+
+                    // Detect platform for icon label
+                    var platform = '';
+                    if (url.indexOf('youtube.com') !== -1 || url.indexOf('youtu.be') !== -1) {
+                        platform = 'YouTube';
+                    } else if (url.indexOf('tiktok.com') !== -1) {
+                        platform = 'TikTok';
+                    } else {
+                        platform = 'Watch';
+                    }
+
+                    html += `<div id="videoItem_${j}"
+                        data-url="${url}"
+                        style="display:flex; align-items:center; justify-content:space-between;
+                               width:100%; padding:2vh 3vh; margin-bottom:1.5vh;
+                               background:rgba(255,255,255,0.07); border-radius:1.5vh;
+                               cursor:pointer;">
+                        <div style="font-size:3vh; color:#FFFFFF; line-height:1.2;">${title}</div>
+                        <div style="font-size:2.2vh; color:#F7AE50; white-space:nowrap; padding-left:2vh;">${platform} &#8599;</div>
+                    </div>`;
+                }
+
+                if (html === '') {
+                    html = '<p style="color:#F7AE50; font-size:3vh; padding:2vh;">No video links found.</p>';
+                }
+
+                document.getElementById('menuList').innerHTML = html;
+
+                // Attach click handlers — open each link in a new tab
+                setTimeout(function() {
+                    for (var k = 0; k < videosDataList.length; k++) {
+                        (function(idx) {
+                            var el = document.getElementById('videoItem_' + idx);
+                            if (!el) return;
+                            el.addEventListener('mouseup', function() {
+                                window.open(this.getAttribute('data-url'), '_blank');
+                            });
+                            el.addEventListener('touchend', function(e) {
+                                e.preventDefault();
+                                window.open(this.getAttribute('data-url'), '_blank');
+                            });
+                        })(k);
+                    }
+                }, 100);
+            },
+            error: function() {
+                document.getElementById('menuList').innerHTML =
+                    '<p style="color:red; font-size:3vh; padding:2vh;">Error: videos-' + langCode + '.json not found.</p>';
+            }
+        });
+        videosRequest.onreadystatechange = null;
+        videosRequest.abort = null;
+        videosRequest = null;
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**

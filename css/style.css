@@ -994,7 +994,6 @@ ul {
 .page_greek div { 
     font-family: 'Font-App'; 
     line-height: 1.2;
-    text-transform: capitalize;
     z-index: 999999;
 } 
 
@@ -1191,7 +1190,6 @@ h6,.h6{ font-size:13px;}
   width: 100%;
   height: 50vh;
   font-size: 1.2em;
-  text-transform: uppercase;
   color: #3874b5 !important;
   text-decoration: none;
   font-weight: 700;

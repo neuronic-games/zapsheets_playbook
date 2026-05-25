@@ -41,9 +41,9 @@ if mSelectedWorkSheet is None:
     sys.exit(1)
 
 # Creating .JSON files
-if(sheetName == "Settings"):
+if(sheetName == "settings"):
     path = "../sheets/" + mGoogleSheetId + "/settings.json"
-elif (sheetName == "Install"):
+elif (sheetName == "install"):
     path = "../sheets/" + mGoogleSheetId + "/install.json"
 else:
     path = "../sheets/" + mGoogleSheetId + "/" + sheetName.lower() + ".json"

@@ -139,9 +139,9 @@ function UpdateAppVersion() {
         isMoreSheets = isSpecificSheet.replaceAll('%20', '').split(',')
         if(isMoreSheets.length > 1) {
             isSpecificSheet = isMoreSheets[sheetIndex]
-            checkIfSheetExists(isSpecificSheet.toLowerCase())
+            checkIfSheetExists(isSpecificSheet)
         } else {
-            checkIfSheetExists(isSpecificSheet.toLowerCase())
+            checkIfSheetExists(isSpecificSheet)
         }
     }
 }
@@ -214,7 +214,7 @@ function UpdateSheetVersion(_sheetName) {
             var updateRequest = $.ajax({
                 url: 'pushSheetUpdate.php?version=' + Math.random(), 
                 type:'POST', 
-                data:{'id' : sheet_Id, 'sheetname' : "Settings", 'date_string' : date_str}, 
+                data:{'id' : sheet_Id, 'sheetname' : "settings", 'date_string' : date_str}, 
                 cache: false, 
                 success: function (response) {
                     document.getElementById('defaultBGImage').style.display = 'none'

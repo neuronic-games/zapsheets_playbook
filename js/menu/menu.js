@@ -16,14 +16,25 @@ $(document).ready(function() {
     let tagsDataList = [];
     let splashDataList = []
 
-    // Special Icons
-    let berryImgPath = ''
-    let bugImgPath = ''
-    let bugBottomImgPath = ''
-    let nutImgPath = ''
-    let diceImgPath = ''
-    let oopsImgPath = ''
-    let flowerImgPath = ''
+    // Special Icons — keyed by tag name e.g. '[BUG]', '[BUG_BOTTOM]'
+    let tagImageMap = {}
+
+    /**
+     * Replace all [TAG_NAME] tokens in text with their corresponding cached images.
+     * @param {string} text      - source text that may contain [TAG_NAME] tokens
+     * @param {string} cssClass  - CSS class to apply to each <img>
+     * @returns {string} text with every known tag replaced by an <img> element
+     */
+    function applyTagReplacements(text, cssClass) {
+        if (!text) return text;
+        return text.replace(/\[([A-Z0-9_]+)\]/g, function(match) {
+            var imgPath = tagImageMap[match];
+            if (imgPath) {
+                return `<img class="${cssClass}" src="${imgPath}" loading="lazy">`;
+            }
+            return match; // leave unknown tags as-is
+        });
+    }
 
     // Timeout
     let idleTimeOut = 0;
@@ -460,108 +471,21 @@ $(document).ready(function() {
                         }
                         /////////////////////LANG SETTINGS START///////////////////////////
                         // Store LazyLoadValue here
+                        // Build tagImageMap dynamically — any [TAG_NAME] in tags.json is supported
                         $.each(tagsDataList, function (index_setting, row_setting) {
-                            // BERRY
-                            if(row_setting['Name'] == '[BERRY]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //berryImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    berryImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //berryImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    berryImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
+                            var tagName = row_setting['Name'];   // e.g. '[BUG]', '[BUG_BOTTOM]'
+                            var tagValue = row_setting['Value'];
+                            if (!tagName || !tagValue) return;
+                            var imgPath = '';
+                            if (tagValue.includes("https://drive.google.com")) {
+                                let imgid = tagValue.split('https://drive.google.com')[1].split('/')[3];
+                                imgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                            } else {
+                                let name = tagValue.split('/');
+                                let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
+                                imgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + '?version=' + UIVersion;
                             }
-                            // DICE
-                            if(row_setting['Name'] == '[DICE]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //diceImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    diceImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //diceImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    diceImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
-                            // BUG
-                            if(row_setting['Name'] == '[BUG]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //bugImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    bugImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //bugImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    bugImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
-                            // NUT
-                            if(row_setting['Name'] == '[NUT]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //nutImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    nutImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //nutImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    nutImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
-                            // OOPS
-                            if(row_setting['Name'] == '[OOPS]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
-                            // FLOWER
-                            if(row_setting['Name'] == '[FLOWER]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    flowerImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //flowerImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    flowerImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
-                            // BUG_BOTTOM
-                            if(row_setting['Name'] == '[BUG_BOTTOM]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    bugBottomImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    bugBottomImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
+                            tagImageMap[tagName] = imgPath;
                         })
 
                         setTimeout(function() {
@@ -2055,22 +1979,10 @@ $(document).ready(function() {
                                 if(faqsDataList[i].Type == 'faq') {
                                     // TAGS Support
                                     // For Question
-                                    let mWordBerryQuestion = faqsDataList[i].Question.replaceAll('[BERRY]', `<img class="specialIconsFaqs" src="${berryImgPath}" loading="lazy"></img>`)
-                                    let mWordDiceQuesyion = mWordBerryQuestion.replaceAll('[DICE]', `<img class="specialIconsFaqs" src="${diceImgPath}" loading="lazy"></img>`)
-                                    let mWordNutQuestion = mWordDiceQuesyion.replaceAll('[NUT]', `<img class="specialIconsFaqs" src="${nutImgPath}" loading="lazy"></img>`)
-                                    let mWordBugQuestion = mWordNutQuestion.replaceAll('[BUG]', `<img class="specialIconsFaqs" src="${bugImgPath}" loading="lazy"></img>`)
-                                    let mWordBugBottomQuestion = mWordBugQuestion.replaceAll('[BUG_BOTTOM]', `<img class="specialIconsFaqs" src="${bugBottomImgPath}" loading="lazy"></img>`)
-                                    let mWordOopsQuestion = mWordBugBottomQuestion.replaceAll('[OOPS]', `<img class="specialIconsFaqs" src="${oopsImgPath}" loading="lazy"></img>`)
-                                    let mWordFlowerQuestion = mWordOopsQuestion.replaceAll('[FLOWER]', `<img class="specialIconsFaqs" src="${flowerImgPath}" loading="lazy"></img>`)
+                                    let mWordFlowerQuestion = applyTagReplacements(faqsDataList[i].Question, 'specialIconsFaqs')
 
                                     // For Answer
-                                    let mWordBerryAnswer = faqsDataList[i].Answer.replaceAll('[BERRY]', `<img class="specialIconsFaqs" src="${berryImgPath}" loading="lazy"></img>`)
-                                    let mWordDiceAnswer = mWordBerryAnswer.replaceAll('[DICE]', `<img class="specialIconsFaqs" src="${diceImgPath}" loading="lazy"></img>`)
-                                    let mWordNutAnswer = mWordDiceAnswer.replaceAll('[NUT]', `<img class="specialIconsFaqs" src="${nutImgPath}" loading="lazy"></img>`)
-                                    let mWordBugAnswer = mWordNutAnswer.replaceAll('[BUG]', `<img class="specialIconsFaqs" src="${bugImgPath}" loading="lazy"></img>`)
-                                    let mWordBugBottomAnswer = mWordBugAnswer.replaceAll('[BUG_BOTTOM]', `<img class="specialIconsFaqs" src="${bugBottomImgPath}" loading="lazy"></img>`)
-                                    let mWordOopsAnswer = mWordBugBottomAnswer.replaceAll('[OOPS]', `<img class="specialIconsFaqs" src="${oopsImgPath}" loading="lazy"></img>`)
-                                    let mWordFlowerAnswer = mWordOopsAnswer.replaceAll('[FLOWER]', `<img class="specialIconsFaqs" src="${flowerImgPath}" loading="lazy"></img>`)
+                                    let mWordFlowerAnswer = applyTagReplacements(faqsDataList[i].Answer, 'specialIconsFaqs')
 
                                     // get Image
                                     let faqImage = getImagePath(faqsDataList[i].Image)
@@ -2537,13 +2449,7 @@ $(document).ready(function() {
             if(rulesDataList[i].Type == 'text') {
                 //menuItemToDisplay = rulesDataList[i].Text
                 // Format Text for adding special icons
-                let mWordBerry = rulesDataList[i].Text.replaceAll('[BERRY]', `<img class="specialIcons" src="${berryImgPath}" loading="lazy"></img>`)
-                let mWordDice = mWordBerry.replaceAll('[DICE]', `<img class="specialIcons" src="${diceImgPath}" loading="lazy"></img>`)
-                let mWordNut = mWordDice.replaceAll('[NUT]', `<img class="specialIcons" src="${nutImgPath}" loading="lazy"></img>`)
-                let mWordBug = mWordNut.replaceAll('[BUG]', `<img class="specialIcons" src="${bugImgPath}" loading="lazy"></img>`)
-                let mWordBugBottom = mWordBug.replaceAll('[BUG_BOTTOM]', `<img class="specialIcons" src="${bugBottomImgPath}" loading="lazy"></img>`)
-                let mWordOops = mWordBugBottom.replaceAll('[OOPS]', `<img class="specialIcons" src="${oopsImgPath}" loading="lazy"></img>`)
-                let mWordFlower = mWordOops.replaceAll('[FLOWER]', `<img class="specialIcons" src="${flowerImgPath}" loading="lazy"></img>`)
+                let mWordFlower = applyTagReplacements(rulesDataList[i].Text, 'specialIcons')
 
                 //document.getElementById('menuDetails').innerHTML += `<p style="margin-top:3vh; font-size:3vh; line-height:1.1; width:100%; color:white" >${rulesDataList[i].Text}</p>`
 

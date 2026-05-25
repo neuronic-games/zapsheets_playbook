@@ -97,7 +97,7 @@ function logLoadMsg(msg) {
     var el = document.getElementById('loadingText');
     if (!el) return;
     el.innerHTML += msg;
-    el.scrollTop += 100;
+    el.scrollTop = el.scrollHeight;
 }
 /////////////////////////////////////////////////////////////////////////////
 // Shared tag-image map — populated by loadTagsData(), consumed by applyTagReplacements()

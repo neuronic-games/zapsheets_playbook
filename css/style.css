@@ -1015,9 +1015,6 @@ ul {
 }
 
 @media screen and (orientation : portrait) {
-  #spinningLoader {
-      top: 32vh !important;
-  }
   #update-banner .headline {
       font-size: 1.2em !important;
       user-select: none;
@@ -1043,9 +1040,6 @@ ul {
 @media screen and (orientation : landscape) {
   #sheetIdForm {
       height: 38vh !important;
-  }
-  #spinningLoader {
-      top: 34vh !important;
   }
   #update-banner .headline {
       font-size: 1.2em !important;
@@ -1195,8 +1189,8 @@ h6,.h6{ font-size:13px;}
   font-weight: 700;
   text-align: center;
   margin: auto;
-  top:50%; 
-  left:0
+  top:0; 
+  left:0;
 }
 
 .versionContiner {
@@ -1214,16 +1208,22 @@ h6,.h6{ font-size:13px;}
 }
 
 #spinningLoader {
+    position: relative;
+    top: 0;
+    left: 0;
     width: 100%;
-    overflow: hidden;
+    padding-left: 15px;
+    padding-right: 15px;
 }
 
-#loadingTxt {
+#loadingText {
   position: relative;
   margin-top: 2vh;
   height: 51vh;
-  overflow: scroll;
+  overflow-y: scroll;
   text-transform: none;
+  text-align: left;
+  cursor: text;
   -moz-user-select: text;
   -khtml-user-select: text;
   -webkit-user-select: text;

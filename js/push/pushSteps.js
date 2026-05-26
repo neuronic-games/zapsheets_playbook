@@ -922,18 +922,7 @@ function getSheetData(_sheetName, sheetVersion, pub_date) {
         updateRequest = null;
     }
 }
-///////////////////////////////////////////////////////////////////////////////////////
-/**
- * 
- */
-isJSONData = str => {
-    try {
-        let p = JSON.parse(str)
-        return p
-    } catch(e) {
-    }
-    return false
-}
+// isJSONData is defined in zapsheetsCore.js
 ///////////////////////////////////////////////////////////////////////////////////////
 /**
  * 

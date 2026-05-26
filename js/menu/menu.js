@@ -110,22 +110,7 @@ $(document).ready(function() {
         clearTimeout(idleTime);
         idleTime = setTimeout(idleOut, (idleTimeOut * 1000))
     }
-    /////////////////////////////////////////////////////////////////////////////////
-    /**
-     * isJSONData
-     * @param {*} str 
-     * @returns 
-     */
-    let isJSONData = str => {
-        //if (typeof str === 'string'){
-        try {
-            let p = JSON.parse(str)
-            return p
-        } catch(e){
-        }
-        //}
-        return false
-    }
+    // isJSONData is defined in zapsheetsCore.js
     /////////////////////////////////////////////////////////////////////////////////
     if(sheet_Id == '') {
         document.getElementById('loadingScreen').style.display = 'none';
@@ -138,7 +123,7 @@ $(document).ready(function() {
     } else {
         let winLoc = window.location.href.split("?")[0];
         var browserLang = (getUrlVars()["code"]) ? getUrlVars()["code"].split('/')[0].toUpperCase() : navigator.language.split('-')[0].toLowerCase();
-        loadTagsData(function() { setTimeout(function() { jumpToMenuScreen(); }, 250); });
+        loadTagsData(function() { setTimeout(function() { jumpToMenuScreen(); }, 250); }, sheet_Id);
         loadSettingsData();
 
         // Splash Screen
@@ -220,7 +205,7 @@ $(document).ready(function() {
                 document.getElementById('loadingScreen').style.display = 'flex';
                 document.getElementById('sheetIdError').style.display = 'none';
                 setTimeout(function() {
-                    loadTagsData(function() { setTimeout(function() { jumpToMenuScreen(); }, 250); });
+                    loadTagsData(function() { setTimeout(function() { jumpToMenuScreen(); }, 250); }, sheet_Id);
                     loadSettingsData();
 
                     // Splash Screen

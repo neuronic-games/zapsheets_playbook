@@ -119,21 +119,7 @@ $(document).ready(function() {
             }
         } 
     }
-    /////////////////////////////////////////////////////////////////////////////////
-    /**
-     * 
-     * @param {*} str 
-     * @returns 
-     */
-    let isJSONData = str => {
-        try {
-            let p = JSON.parse(str)
-            return p
-        } catch(e){
-        }
-        //}
-        return false
-    }
+    // isJSONData is defined in zapsheetsCore.js
     /////////////////////////////////////////////////////////////////////////////////
     if(sheet_Id == '') {
         document.getElementById('loadingScreen').style.display = 'none';
@@ -153,7 +139,7 @@ $(document).ready(function() {
         } else {
             window.history.replaceState({}, "null", (winLoc + "?code=" + browserLang.toLowerCase() + "&id=" + sheet_Id));
         }
-        loadTagsData();
+        loadTagsData(undefined, sheet_Id);
         loadSettingsData()
         enableButtons();
     }

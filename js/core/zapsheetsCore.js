@@ -100,6 +100,20 @@ function logLoadMsg(msg) {
     el.scrollTop = el.scrollHeight;
 }
 /////////////////////////////////////////////////////////////////////////////
+/**
+ * Parse a JSON string; return the parsed object on success, false on failure.
+ * Shared utility — used by loadTagsData() here and by menu.js / steps.js / pushSteps.js.
+ * @param {string} str
+ * @returns {object|false}
+ */
+function isJSONData(str) {
+    try {
+        return JSON.parse(str);
+    } catch(e) {
+        return false;
+    }
+}
+/////////////////////////////////////////////////////////////////////////////
 // Shared tag-image map — populated by loadTagsData(), consumed by applyTagReplacements()
 var tagImageMap = {};
 /////////////////////////////////////////////////////////////////////////////
@@ -126,10 +140,11 @@ function applyTagReplacements(text, cssClass) {
  * Any [TAG_NAME] row in the sheet is supported — no hardcoded tag names.
  * @param {Function} [callback] - optional function to call when loading succeeds
  */
-function loadTagsData(callback) {
+function loadTagsData(callback, sheetId) {
+    var sid = sheetId || (typeof sheet_Id !== 'undefined' ? sheet_Id : '');
     setTimeout(function() {
         var tagRequest = $.ajax({
-            url: jasonPath + 'sheets/' + sheet_Id + '/tags.json?version=' + UIVersion,
+            url: jasonPath + 'sheets/' + sid + '/tags.json?version=' + UIVersion,
             cache: true,
             type: 'GET',
             dataType: 'text',
@@ -157,13 +172,13 @@ function loadTagsData(callback) {
                         var imgPath = '';
                         if (tagValue.includes('https://drive.google.com')) {
                             var imgid = tagValue.split('https://drive.google.com')[1].split('/')[3];
-                            imgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                            imgPath = '../sheets/' + sid + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
                         } else {
                             var parts = tagValue.split('/');
                             var imageName = parts[parts.length - 1].indexOf('?') !== -1
                                 ? parts[parts.length - 1].split('?')[0]
                                 : parts[parts.length - 1];
-                            imgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + '?version=' + UIVersion;
+                            imgPath = '../sheets/' + sid + '/cacheImages/' + imageName + '?version=' + UIVersion;
                         }
                         tagImageMap[tagName] = imgPath;
                     });

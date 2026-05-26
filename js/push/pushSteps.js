@@ -12,6 +12,22 @@ const detectDeviceType = () =>
 var buttonElem = ''
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
+ * Ensures "All sheet data published." is logged exactly once,
+ * no matter how many async callbacks reach the finish line.
+ */
+let publishingComplete = false;
+let imageQueue = []
+function finishPublishing() {
+    if (publishingComplete) return;
+    publishingComplete = true;
+    pushVersionToServer();
+    saveIndexFile();
+    setTimeout(function() {
+        logLoadMsg("All sheet data published.<br>")
+    }, 500);
+}
+///////////////////////////////////////////////////////////////////////////////////////////
+/**
  * Global Variables
  */
 var loadType = ""
@@ -243,7 +259,7 @@ function UpdateSheetVersion(_sheetName) {
 function getSheetSettings(_sheetName, sheetVersion, pub_date) {
     checkIfUrlExists('../sheets/' + sheet_Id + "/" + _sheetName.toLowerCase() + ".json?version=" + Math.random(), (exists) => {
         if(!exists) {
-            document.getElementById("loadingText").innerHTML = "Publishing Sheet content..</br>"
+            document.getElementById("loadingText").innerHTML = "Publishing sheet content...</br>"
             updateInfoTextView()
             logLoadMsg('<font color="red">Error: Give Editor access to editor@zsheets-378406.iam.gserviceaccount.com' + "</font><br>")
             return;
@@ -292,7 +308,7 @@ function getSheetSettings(_sheetName, sheetVersion, pub_date) {
                 }
 
                 // Settings message added
-                logLoadMsg("Publising " + _sheetName + " data to server.<br>")
+                logLoadMsg("Publishing " + _sheetName + " data to server.<br>")
 
                 if(isMoreSheets.length > 1 && languageLoadIndex < isMoreSheets.length-1) {
                     languageLoadIndex++;
@@ -300,7 +316,6 @@ function getSheetSettings(_sheetName, sheetVersion, pub_date) {
                         setTimeout(function() {
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                         }, 100)
-                    //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-en") {
                     } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-" + activeLanguage.toLowerCase()) {
                         setTimeout(function() {
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
@@ -309,7 +324,6 @@ function getSheetSettings(_sheetName, sheetVersion, pub_date) {
                         setTimeout(function() {
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                         }, 100)
-                    //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "splash-en") {
                     } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "splash-" + activeLanguage.toLowerCase()) {
                         setTimeout(function() {
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
@@ -320,7 +334,6 @@ function getSheetSettings(_sheetName, sheetVersion, pub_date) {
                         }, 100)
                     }
                 } else {
-                    //if(_sheetName.toLowerCase() == 'bgg-en') {
                     if(_sheetName.toLowerCase() == 'bgg-' + activeLanguage.toLowerCase()) {
                         loadBGGSheetData(languageDataList[languageLoadIndex])
                     } else {
@@ -331,11 +344,7 @@ function getSheetSettings(_sheetName, sheetVersion, pub_date) {
                             // Preload All Images
                             PreloadAllImagesToServer();
                         } else {
-                            pushVersionToServer();
-                            saveIndexFile();
-                            setTimeout(function() {
-                                logLoadMsg("All sheet data published.<br>")
-                            }, 3000)
+                            finishPublishing();
                         }
                     }
                 }
@@ -383,7 +392,7 @@ function getSheetInstall(_sheetName, sheetVersion, pub_date) {
                     logLoadMsg('Sheet Published on: ' + pub_date + '<br>')
                 } 
                 // Settings message added
-                logLoadMsg("Publising " + _sheetName + " data to server.<br>")
+                logLoadMsg("Publishing " + _sheetName + " data to server.<br>")
 
                 if(isMoreSheets.length > 1 && languageLoadIndex < isMoreSheets.length-1) {
                     languageLoadIndex++;
@@ -422,11 +431,7 @@ function getSheetInstall(_sheetName, sheetVersion, pub_date) {
                             // Preload All Images
                             PreloadAllImagesToServer();
                         } else {
-                            pushVersionToServer();
-                            saveIndexFile();
-                            setTimeout(function() {
-                                logLoadMsg("All sheet data published.<br>")
-                            }, 3000)
+                            finishPublishing();
                         }
                     }
                 }
@@ -475,7 +480,7 @@ function getSheetTags(_sheetName, sheetVersion, pub_date) {
                     logLoadMsg('Sheet Published on: ' + pub_date + '<br>')
                 } 
                 // Settings message added
-                logLoadMsg("Publising " + _sheetName + " data to server.<br>")
+                logLoadMsg("Publishing " + _sheetName + " data to server.<br>")
 
                 if(isMoreSheets.length > 1 && languageLoadIndex < isMoreSheets.length-1) {
                     languageLoadIndex++;
@@ -514,11 +519,7 @@ function getSheetTags(_sheetName, sheetVersion, pub_date) {
                             // Preload All Images
                             PreloadAllImagesToServer();
                         } else {
-                            pushVersionToServer();
-                            saveIndexFile();
-                            setTimeout(function() {
-                                logLoadMsg("All sheet data published.<br>")
-                            }, 3000)
+                            finishPublishing();
                         }
                     }
                 }
@@ -567,7 +568,7 @@ function getSheetSplash(_sheetName, sheetVersion, pub_date) {
                     logLoadMsg('Sheet Published on: ' + pub_date + '<br>')
                 } 
                 // Settings message added
-                logLoadMsg("Publising " + _sheetName + " data to server.<br>")
+                logLoadMsg("Publishing " + _sheetName + " data to server.<br>")
 
                 if(isMoreSheets.length > 1 && languageLoadIndex < isMoreSheets.length-1) {
                     languageLoadIndex++;
@@ -605,11 +606,7 @@ function getSheetSplash(_sheetName, sheetVersion, pub_date) {
                             // Preload All Images
                             PreloadAllImagesToServer();
                         } else {
-                            pushVersionToServer();
-                            saveIndexFile();
-                            setTimeout(function() {
-                                logLoadMsg("All sheet data published.<br>")
-                            }, 3000)
+                            finishPublishing();
                         }
                     }
                 }
@@ -669,8 +666,9 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
                 // Trigger BGG fetch as soon as the bgg sheet is parsed, regardless of position
                 if(_sheetName.toLowerCase() == 'bgg-' + activeLanguage.toLowerCase()) {
                     bggIndex = getBGGIndex();
-                    loadBGGSheetData(languageDataList[bggIndex]);
-                    if(languageLoadIndex == isMoreSheets.length-1) {
+                    let isLast = (languageLoadIndex == isMoreSheets.length-1);
+                    loadBGGSheetData(languageDataList[bggIndex], isLast);
+                    if(isLast) {
                         return; // bgg-en is last — loadBGGSheetData handles finalisation
                     }
                     // bgg-en is not last — fall through to continue processing remaining sheets
@@ -684,7 +682,7 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
             }
 
             // Settings message added
-            logLoadMsg("Publising " + _sheetName + " data to server.<br>")
+            logLoadMsg("Publishing " + _sheetName + " data to server.<br>")
 
             if(isMoreSheets.length > 1 && languageLoadIndex < isMoreSheets.length-1) {
                 languageLoadIndex++;
@@ -723,11 +721,7 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
                     // Preload All Images
                     PreloadAllImagesToServer();
                 } else {
-                    pushVersionToServer();
-                    saveIndexFile();
-                    setTimeout(function() {
-                        logLoadMsg("All sheet data published.<br>")
-                    }, 3000)
+                    finishPublishing();
                 }
             }
         },
@@ -745,7 +739,7 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
  * 
  * @param {*} bggJSON 
  */
-function loadBGGSheetData(bggJSON) {
+function loadBGGSheetData(bggJSON, isLast = true) {
     let bggUserId = ''
     let bggGameId = ''
     $.each(bggJSON, function (index_bgg, row_bgg) {
@@ -776,7 +770,7 @@ function loadBGGSheetData(bggJSON) {
 
     function attemptBGGFetch() {
         bggAttempt++
-        logLoadMsg('Fetching BGG data — attempt ' + bggAttempt + ' of ' + BGG_MAX_ATTEMPTS + '...<br>')
+        // logLoadMsg('Fetching BGG data — attempt ' + bggAttempt + ' of ' + BGG_MAX_ATTEMPTS + '...<br>')
 
         $.ajax({
             url: './getBggData.php?version=' + Math.random(),
@@ -811,17 +805,15 @@ function loadBGGSheetData(bggJSON) {
                 }
 
                 bggDataList = response
-                logLoadMsg('<font color="green">BGG data loaded successfully.</font><br>')
+                // logLoadMsg('<font color="green">BGG data loaded successfully.</font><br>')
+
+                if (!isLast) return  // Chain continues from getSheetLanguage; don't finalize here
 
                 if(isPreloadImages == 'download_images') {
                     logLoadMsg("<br>")
                     PreloadAllImagesToServer()
                 } else {
-                    pushVersionToServer()
-                    saveIndexFile()
-                    setTimeout(function() {
-                        logLoadMsg("All sheet data published.<br>")
-                    }, 3000)
+                    finishPublishing();
                 }
             },
             error: function(xhr, status) {
@@ -917,44 +909,83 @@ function validateTimeString(txt) {
  * @returns 
  */
 function getAllImagesToPublish() {
-    var tempCount = 0
-    $.each(bggDataList.boardgame, function (i, row) {
-        if(bggDataList.boardgame[i].image != '') {
-            tempCount++;
+    return imageQueue.length;
+}
+
+/**
+ * Convert a Google Drive share URL to a thumbnail URL.
+ * Non-Drive URLs are returned unchanged.
+ */
+function resolveImageUrl(url) {
+    if (url && url.includes("https://drive.google.com")) {
+        let imgid = url.split('https://drive.google.com')[1].split('/')[3]
+        return "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500"
+    }
+    return url
+}
+
+/**
+ * Synchronously collect every image URL from all loaded data lists,
+ * resolve Drive URLs, and deduplicate. Returns a clean array ready to publish.
+ */
+function buildImageQueue() {
+    let queue = []
+    const settingImageFields = ['BackgroundImage', 'SplashImageUrl', 'PrevButtonUrl',
+                                'NextButtonUrl', 'QuitButtonUrl', 'LoadingImageUrl',
+                                'DownloadButtonUrl', 'AppIconImageUrl']
+    // Settings images
+    $.each(settingDataList, function(i, row) {
+        if (settingImageFields.includes(row['Name']) && row['Value']) {
+            queue.push(resolveImageUrl(row['Value']))
         }
     })
-    
-    $.each(settingDataList, function (index_setting, row_setting) {
-        if(row_setting['Name'] == 'BackgroundImage' || row_setting['Name'] == 'SplashImageUrl' || row_setting['Name'] == 'PrevButtonUrl' || row_setting['Name'] == 'NextButtonUrl' || row_setting['Name'] == 'QuitButtonUrl' || row_setting['Name'] == 'LoadingImageUrl' || row_setting['Name'] == 'DownloadButtonUrl' || row_setting["Name"] == 'AppIconImageUrl') {
-            if(row_setting['Value'] != '') {
-                tempCount++
+    // Language / steps images
+    $.each(languageDataList, function(i, langData) {
+        if (!langData) return
+        $.each(langData, function(j, row) {
+            if (row['Image']) {
+                queue.push(resolveImageUrl(row['Image']))
+            } else if (row['Type'] == 'image' && row['Text']) {
+                queue.push(resolveImageUrl(row['Text']))
             }
-        }
+        })
     })
-    // Filtered list
-    let filteredImages = tempLangHolder.filter((item, index) => tempLangHolder.indexOf(item) === index);
-    for (var j=0; j<filteredImages.length; j++) {
-        tempCount++
+    // Install images
+    $.each(installDataList, function(i, row) {
+        if (row['Image']) queue.push(resolveImageUrl(row['Image']))
+    })
+    // BGG images
+    if (bggDataList && bggDataList.boardgame) {
+        $.each(bggDataList.boardgame, function(i, entry) {
+            if (entry.boardgame && entry.boardgame.image) {
+                queue.push(resolveImageUrl(entry.boardgame.image))
+            }
+        })
     }
-    // Install tab images
-    let filteredInstallImages = tempInstallHolder.filter((item, index) => tempInstallHolder.indexOf(item) === index);
-    for (var k=0; k<filteredInstallImages.length; k++) {
-        tempCount++
-    }
+    // Tags images
+    $.each(tagsDataList, function(i, row) {
+        if (row['Value']) queue.push(resolveImageUrl(row['Value']))
+    })
+    // Splash images
+    $.each(splashDataList, function(i, row) {
+        if (row['Content']) queue.push(resolveImageUrl(row['Content']))
+    })
+    // Deduplicate and strip empty
+    return [...new Set(queue.filter(url => url && url !== ''))]
+}
 
-    // Tags tab images
-    let filteredTagsImages = tempTagsHolder.filter((item, index) => tempTagsHolder.indexOf(item) === index);
-    for (var k=0; k<filteredTagsImages.length; k++) {
-        tempCount++
+/**
+ * Download images one at a time in order.
+ */
+function publishNextImage(index) {
+    if (index >= imageQueue.length) {
+        CheckImageStatus()
+        finishPublishing()
+        return
     }
-
-    // splash tab images
-    let filteredSplashContent = tempSplashHolder.filter((item, index) => tempSplashHolder.indexOf(item) === index);
-    for (var k=0; k<filteredSplashContent.length; k++) {
-        tempCount++
-    }
-
-    return tempCount;
+    downloadImagesLocally(imageQueue[index], function() {
+        publishNextImage(index + 1)
+    })
 }
 /////////////////////////////////////////////////////////////////////////////////////////
 /**
@@ -980,6 +1011,18 @@ function savePublishedStateToServer(_value) {
  * 
  */
 function PreloadAllImagesToServer() {
+    if (!window.navigator.onLine) return
+    imageQueue = buildImageQueue()
+    imageLoadedCount = 1
+    if (imageQueue.length === 0) {
+        logLoadMsg("No images to publish.<br>")
+        finishPublishing()
+        return
+    }
+    logLoadMsg("Publishing " + imageQueue.length + " images...<br>")
+    publishNextImage(0)
+}
+function PreloadAllImagesToServer_OLD_UNUSED() {
     // Caching Directory Map Images
     if(window.navigator.onLine == true) {
         let settingTimeout = 10
@@ -1619,99 +1662,32 @@ function checkIfImageExists(url, callback) {
  * 
  * @param {*} urlString 
  */
-function downloadImagesLocally(urlString) {
+function downloadImagesLocally(urlString, onComplete) {
     let dispImgName = ''
     if (urlString.includes("https://drive.google.com")) {
         imgid = urlString.split('https://drive.google.com')[1].split('/')[3];
         dispImgName = imgid + ".png"
     } else {
-        let name =  urlString.split('/')
+        let name = urlString.split('/')
         let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
         dispImgName = imageName
     }
     var saveRequest = $.ajax({
-        url: './saveAs.php?version=' + Math.random(), 
-        type:'POST', 
-        data:{'imgURL' : urlString, 'id' : sheet_Id}, 
-        cache: false, 
+        url: './saveAs.php?version=' + Math.random(),
+        type:'POST',
+        data:{'imgURL' : urlString, 'id' : sheet_Id},
+        cache: false,
         success: function (response) {
-            var tempCount = 0
-
-            // Load Board Game Images
-            $.each(bggDataList.boardgame, function (i, row) {
-                if(bggDataList.boardgame[i].boardgame.image != '') {
-                    tempCount++;
-                }
-            })
-
-            $.each(settingDataList, function (index_setting, row_setting) {
-                if(row_setting['Name'] == 'BackgroundImage' || row_setting['Name'] == 'SplashImageUrl' || row_setting['Name'] == 'PrevButtonUrl' || row_setting['Name'] == 'NextButtonUrl' || row_setting['Name'] == 'QuitButtonUrl' || row_setting["Name"] == 'LoadingImageUrl' || row_setting["Name"] == 'DownloadButtonUrl' || row_setting["Name"] == 'AppIconImageUrl') {
-                    if(row_setting['Value'] != '') {
-                        tempCount++
-                    }
-                }
-            })
-            for(var i=0; i<languageDataList.length; i++) {
-                if(languageDataList[i] != undefined) {
-                    for (var j=0; j<languageDataList[i].length; j++) {
-                        if(languageDataList[i][j].Image != '') {
-                            tempCount++
-                        }
-                    }
-                }
-            }
-            for(var i=0; i<installDataList.length; i++) {
-                if(installDataList[i].Image != "") {
-                    tempCount++
-                }
-            }
-            for(var i=0; i<tagsDataList.length; i++) {
-                if(tagsDataList[i].Value != "") {
-                    tempCount++
-                }
-            }
-            for(var i=0; i<splashDataList.length; i++) {
-                if(splashDataList[i].Content != "") {
-                    tempCount++
-                }
-            }
-            var AllImageCount = tempCount; 
-            var lastline = document.getElementById("loadingText").innerHTML.split('<br>')
-            var prevMessage = ''
-            for (var i=0; i<lastline.length; i++) {
-                if(i < lastline.length-2) {
-                    prevMessage += lastline[i] + "<br>";
-                } else {
-                }
-            }
-            var newMessage = "Publishing Images (" + (imageLoadedCount) + "/" + getAllImagesToPublish() + ")...<br>";
-            document.getElementById("loadingText").innerHTML = prevMessage + newMessage;
-            updateInfoTextView()
-            if(imageLoadedCount < getAllImagesToPublish()) {
-                imageLoadedCount++;
-            } else {
-                CheckImageStatus();
-                pushVersionToServer();
-                saveIndexFile();
-                setTimeout(function() {
-                    logLoadMsg("All sheet data published.<br>")
-                }, 3000)
-            }
+            if (publishingComplete) return;
+            logLoadMsg("Publishing " + dispImgName + " (" + imageLoadedCount + "/" + imageQueue.length + ")<br>")
+            imageLoadedCount++
+            if (onComplete) onComplete()
         },
         error: function(e) {
-            if(dispImgName != '') {
-                logLoadMsg("<font color='red'>ERROR: Missing Image " + dispImgName + ".</font><br>")
-            }
-            if(imageLoadedCount < AllImageCount) {
-                imageLoadedCount++;
-            } else {
-                CheckImageStatus();
-                pushVersionToServer();
-                saveIndexFile();
-                setTimeout(function() {
-                    logLoadMsg("All sheet data published.<br>")
-                }, 3000) 
-            }
+            if (publishingComplete) return;
+            if (dispImgName) logLoadMsg("<font color='red'>ERROR: Missing Image " + dispImgName + ".</font><br>")
+            imageLoadedCount++
+            if (onComplete) onComplete()
         }
     })
     // Clear memory

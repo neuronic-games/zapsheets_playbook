@@ -150,7 +150,8 @@ var game_action = ''
  */
 function UpdateAppVersion() {
     if(isSpecificSheet == '') {
-        logLoadMsg('<font color="red">Error: Sheet not defined.' + "</font><br>")
+        // No sheet param — initialise the folder from /source and stop
+        initSheetFolder()
     } else {
         isMoreSheets = isSpecificSheet.replaceAll('%20', '').split(',')
         if(isMoreSheets.length > 1) {
@@ -160,6 +161,46 @@ function UpdateAppVersion() {
             checkIfSheetExists(isSpecificSheet)
         }
     }
+}
+/////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * Called when no ?sheet= param is provided.
+ * Creates /sheets/[id]/ on the server and copies /source/ files into it.
+ */
+function initSheetFolder() {
+    if (!sheet_Id) {
+        logLoadMsg('<font color="red">Error: No sheet id provided.</font><br>')
+        return
+    }
+    logLoadMsg('Initialising sheet: ' + sheet_Id + '<br>')
+    $.ajax({
+        url: 'initSheet.php?version=' + Math.random(),
+        type: 'POST',
+        data: { 'id': sheet_Id },
+        cache: false,
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'ok') {
+                // logLoadMsg('<font color="green">Folder created: sheets/' + sheet_Id + '/</font><br>')
+                if (response.copied && response.copied.length > 0) {
+                    $.each(response.copied, function(i, f) {
+                        // logLoadMsg('Copied: ' + f + '<br>')
+                    })
+                }
+                if (response.failed && response.failed.length > 0) {
+                    $.each(response.failed, function(i, f) {
+                        logLoadMsg('<font color="red">Failed to copy: ' + f + '</font><br>')
+                    })
+                }
+                logLoadMsg('Initialisation complete. You can now publish sheets.<br>')
+            } else {
+                logLoadMsg('<font color="red">Error: ' + (response.message || 'initSheet failed.') + '</font><br>')
+            }
+        },
+        error: function() {
+            logLoadMsg('<font color="red">Error: Could not reach initSheet.php.</font><br>')
+        }
+    })
 }
 /////////////////////////////////////////////////////////////////////////////////////////
 /**

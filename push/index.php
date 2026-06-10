@@ -25,7 +25,7 @@
     echo '
 ';} ?>
     crossorigin="anonymous"></script>
-<script src="../js/common/jquery-3.5.1.min.js"
+<script src="/js/common/jquery-3.5.1.min.js?v=3"
     <?php if($_ENV['ENVIRONMENT'] != 'development') {
     echo '
 ';} ?>

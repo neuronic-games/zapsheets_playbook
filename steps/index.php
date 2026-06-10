@@ -187,7 +187,7 @@
     </div>
   </div>
     <!------------------------------------------------------------------------>
-    <script src="../js/common/jquery-3.5.1.min.js"></script>
+    <script src="/js/common/jquery-3.5.1.min.js?v=3"></script>
     <script src="../js/common/jquery.cookie.min.js"></script>
     <script
       src="../js/common/bootstrap.bundle.min.js"

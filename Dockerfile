@@ -20,4 +20,4 @@ RUN curl -OL https://github.com/mozilla/geckodriver/releases/download/v0.36.0/ge
   tar -xzvf geckodriver-v0.36.0-linux64.tar.gz && \
   mv geckodriver /usr/bin/geckodriver
 
-CMD php -S 0.0.0.0:8000 &
+CMD php -S 0.0.0.0:8000 router.php &

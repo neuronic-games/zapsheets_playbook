@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clearing app cache…</title>
+  <style>
+    body { font-family: sans-serif; display: flex; align-items: center; justify-content: center;
+           min-height: 100vh; margin: 0; background: #f5f5f5; }
+    .box { text-align: center; max-width: 360px; padding: 2rem; background: #fff;
+           border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.1); }
+    h2 { margin: 0 0 .75rem; font-size: 1.25rem; }
+    p  { margin: 0 0 1.25rem; color: #555; font-size: .95rem; line-height: 1.5; }
+    .status { font-size: .85rem; color: #888; min-height: 1.2em; }
+    .done   { color: #2a7a3b; font-weight: bold; }
+  </style>
+</head>
+<body>
+<div class="box">
+  <h2>Clearing App Cache</h2>
+  <p>Removing stale service workers and cached files. This only takes a moment.</p>
+  <div class="status" id="status">Working…</div>
+</div>
+
+<script>
+// No jQuery. No Bootstrap. No external dependencies.
+// This page MUST stay pure so the stale SW can't interfere with it.
+(function() {
+  var status = document.getElementById('status');
+  var steps = [];
+
+  // 1. Unregister every service worker on this origin
+  if ('serviceWorker' in navigator) {
+    steps.push(
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        status.textContent = 'Unregistering ' + regs.length + ' service worker(s)…';
+        return Promise.all(regs.map(function(r) { return r.unregister(); }));
+      })
+    );
+  }
+
+  // 2. Delete every cache on this origin
+  if ('caches' in window) {
+    steps.push(
+      caches.keys().then(function(keys) {
+        status.textContent = 'Deleting ' + keys.length + ' cache(s)…';
+        return Promise.all(keys.map(function(k) { return caches.delete(k); }));
+      })
+    );
+  }
+
+  Promise.all(steps).then(function() {
+    status.className = 'status done';
+    status.textContent = 'Done! Now do a hard reload (⌘⇧R / Ctrl+Shift+R) on every tab that was open.';
+    // Give the user time to read the hard-reload instruction
+    var ref = document.referrer;
+    setTimeout(function() {
+      var target = (ref && ref.indexOf(location.origin) === 0) ? ref : '/';
+      window.location.replace(target);
+    }, 3500);
+  }).catch(function(err) {
+    status.textContent = 'Error: ' + err.message;
+  });
+})();
+</script>
+</body>
+</html>

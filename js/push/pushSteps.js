@@ -240,7 +240,20 @@ function checkIfSheetExists(_sheetName) {
                     return
                 }
                 if(newSheetData.exists == "no") {
-                    logLoadMsg('<font color="red">Error: Sheet ' + _sheetName + ' does not exist.' + "</font><br>")
+                    let hint = ''
+                    if (newSheetData.error) {
+                        hint = '<br>&nbsp;&nbsp;Details: ' + newSheetData.error
+                    } else if (newSheetData.available && newSheetData.available.length) {
+                        hint = '<br>&nbsp;&nbsp;Available tabs: ' + newSheetData.available.join(', ')
+                    }
+                    logLoadMsg('<font color="red">Error: Tab "' + _sheetName + '" not found.' + hint + "</font><br>")
+                    // Skip this sheet and continue with the next one
+                    if(isMoreSheets.length > 1 && sheetIndex < isMoreSheets.length - 1) {
+                        sheetIndex++
+                        checkIfSheetExists(isMoreSheets[sheetIndex])
+                    } else {
+                        logLoadMsg('<font color="orange">Push stopped — no more sheets to process.</font><br>')
+                    }
                 } else {
                     // If the sheet exists
                     let returnSheet = newSheetData.sheet;

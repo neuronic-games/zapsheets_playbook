@@ -4,7 +4,7 @@ let dyVersion = 0;
 /////////////////////////////////////////////////////////////////////////////////////
 let jasonPath = './'
 /////////////////////////////////////////////////////////////////////////////////////
-const CACHE_NAME = {name: 'playbookSW_v11'}
+const CACHE_NAME = {name: 'playbookSW_v13'}
 /////////////////////////////////////////////////////////////////////////////////////
 // Assets container
 let STATIC_ASSETS = []
@@ -137,9 +137,11 @@ async function fetchAssets(event) {
  * SW Fetch event 
  */
 self.addEventListener('fetch', event => {
-    if (event.request.method === 'GET') { 
-        event.respondWith(fetchAssets(event))
-    }
+    if (event.request.method !== 'GET') return;
+    var url = event.request.url;
+    // Never intercept static library files — let the browser fetch them directly
+    if (/\/(js|css|fonts|images)\//.test(url)) return;
+    event.respondWith(fetchAssets(event));
 })
 /////////////////////////////////////////////////////////////////////////////////////
 // To clean up previous genearated cache

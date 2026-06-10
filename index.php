@@ -10,6 +10,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <base href="/" />
     <title>Playboook</title>
     <link
       href="./css/bootstrap.min.css"
@@ -76,7 +77,7 @@
   </div>
   <!--------------------------------------------------------------------------->
     <include src="./result.html"></include>
-    <script src="./js/common/jquery-3.5.1.min.js"></script>
+    <script src="/js/common/jquery-3.5.1.min.js?v=3"></script>
     <script src="./js/common/jquery.cookie.min.js"></script>
     <script
       src="./js/common/bootstrap.bundle.min.js"
@@ -176,13 +177,23 @@
           // Loading updated Controller
           getControllerVersion(_ver)
 
+          // Unregister any stale service workers from previous app versions
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              regs.forEach(function(reg) {
+                var url = (reg.active || reg.installing || reg.waiting || {}).scriptURL || '';
+                if (!url.includes('sw_playbook.js') && !url.includes('sw_playbookHomeApp')) reg.unregister();
+              });
+            });
+          }
+
           // Hide default screen
           document.getElementById('defaultScreen').style.display = 'none'
           const registerServiceWorker = async () => {
             if ("serviceWorker" in navigator) {
               try {
                 const registration = await navigator.serviceWorker.register("sw_playbook.js?version=" + _ver, {
-                  scope: "",
+                  scope: "/",
                 });
                 if (registration.installing) {
                   isSWExists = false

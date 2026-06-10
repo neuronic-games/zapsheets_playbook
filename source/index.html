@@ -68,7 +68,7 @@ crossorigin="anonymous"
   </div>
   <!--------------------------------------------------------------------------->
     <include src="../../result.html"></include>
-    <script src="../../js/common/jquery-3.5.1.min.js"></script>
+    <script src="/js/common/jquery-3.5.1.min.js?v=3"></script>
     <script src="../../js/common/jquery.cookie.min.js"></script>
     <script
       src="../../js/common/bootstrap.bundle.min.js"
@@ -193,6 +193,16 @@ crossorigin="anonymous"
 
           // Loading updated Controller
           getControllerVersion(_ver)
+
+          // Unregister any stale service workers from previous app versions
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              regs.forEach(function(reg) {
+                var url = (reg.active || reg.installing || reg.waiting || {}).scriptURL || '';
+                if (!url.includes('sw_playbookHomeApp')) reg.unregister();
+              });
+            });
+          }
 
           // Hide default screen
           document.getElementById('defaultScreen').style.display = 'none'

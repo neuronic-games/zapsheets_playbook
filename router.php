@@ -88,6 +88,10 @@ if (preg_match('#^/([A-Za-z0-9_\-]+)/view(/.*)?$#', $uri, $m)) {
     $target = __DIR__ . '/sheets/' . $id . '/view' . $rest;
     if (is_file($target))  { serveFile($target, $MIME); }
 
+    // Prefer index.php (PHP sets <base href> server-side); fall back to .html
+    $idx = __DIR__ . '/sheets/' . $id . '/view/index.php';
+    if (is_file($idx))     { serveFile($idx, $MIME); }
+
     $idx = __DIR__ . '/sheets/' . $id . '/view/index.html';
     if (is_file($idx))     { serveFile($idx, $MIME); }
 

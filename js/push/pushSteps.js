@@ -153,13 +153,25 @@ function UpdateAppVersion() {
         // No sheet param — initialise the folder from /source and stop
         initSheetFolder()
     } else {
-        isMoreSheets = isSpecificSheet.replaceAll('%20', '').split(',')
-        if(isMoreSheets.length > 1) {
-            isSpecificSheet = isMoreSheets[sheetIndex]
-            checkIfSheetExists(isSpecificSheet)
-        } else {
-            checkIfSheetExists(isSpecificSheet)
-        }
+        // Always copy/refresh source template files first (creates the folder
+        // if missing, updates index.html, view/index.php, etc.), then push data.
+        $.ajax({
+            url: 'initSheet.php?version=' + Math.random(),
+            type: 'POST',
+            data: { 'id': sheet_Id },
+            cache: false,
+            dataType: 'json',
+            complete: function() {
+                // Proceed whether init succeeded or not
+                isMoreSheets = isSpecificSheet.replaceAll('%20', '').split(',')
+                if(isMoreSheets.length > 1) {
+                    isSpecificSheet = isMoreSheets[sheetIndex]
+                    checkIfSheetExists(isMoreSheets[sheetIndex])
+                } else {
+                    checkIfSheetExists(isSpecificSheet)
+                }
+            }
+        })
     }
 }
 /////////////////////////////////////////////////////////////////////////////////////////

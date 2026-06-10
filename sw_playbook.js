@@ -106,7 +106,9 @@ self.addEventListener('install', event => {
  */
 self.addEventListener('activate', event => {
     console.log('sw1 activated');
-    event.waitUntil(cleanUpCache())
+    // clients.claim() makes this SW take control of all existing pages immediately,
+    // so the old SW (which intercepts navigations) stops controlling open tabs.
+    event.waitUntil(Promise.all([cleanUpCache(), clients.claim()]));
 })
 /////////////////////////////////////////////////////////////////////////////////////
 // Function to fetch the data from the passes url from cache
@@ -128,7 +130,14 @@ async function fetchAssets(event) {
         const cachedResponse = await cache.match(event.request);
         if (cachedResponse) {
             return cachedResponse;
-        } 
+        }
+        // Both network and cache failed — return a proper error response
+        // rather than undefined (which causes chrome-error://chromewebdata/)
+        return new Response('Network error and no cached version available.', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'text/plain' }
+        });
     }
 }
 /////////////////////////////////////////////////////////////////////////////////////
@@ -138,6 +147,9 @@ async function fetchAssets(event) {
  */
 self.addEventListener('fetch', event => {
     if (event.request.method !== 'GET') return;
+    // Never intercept navigation requests — let the browser handle page loads directly.
+    // This prevents the SW from breaking /push/, /sheets/, and any other pages.
+    if (event.request.mode === 'navigate') return;
     var url = event.request.url;
     // Never intercept static library files — let the browser fetch them directly
     if (/\/(js|css|fonts|images)\//.test(url)) return;

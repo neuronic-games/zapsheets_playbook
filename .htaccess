@@ -4,15 +4,17 @@ Header set Access-Control-Allow-Origin *
 
 RewriteEngine On
 
-# Short-URL: /{id}/view[/…] → /sheets/{id}/view[/…]   (more specific first)
+# Short-URL: /{id}/view[/…] → /sheets/{id}/view/index.php  (more specific — must come first)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^([A-Za-z0-9_\-]+)/view(/.*)?$ /sheets/$1/view$2 [L]
+RewriteRule ^([A-Za-z0-9_\-]+)/view/?$ sheets/$1/view/index.php [L]
 
 # Short-URL: /{id}[/…] → redirect to /sheets/{id}[/…]
-# Skip known top-level directories so /js/, /css/, /push/ etc. still resolve normally
+#
+# Guard 1: skip real files and real directories (e.g. push/, js/, css/)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_URI} !^/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_|result|dotEnv|clear-sw|debug-jquery|router|start)
-RewriteCond %{DOCUMENT_ROOT}/sheets/%1 -d
-RewriteRule ^([A-Za-z0-9_\-]+)(/.*)?$ /sheets/$1$2 [R=302,L]
+# Guard 2: skip known top-level names regardless of subdirectory prefix.
+#          Matches  /anything/name/  or  /anything/name  at end of URI.
+RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index)(/|$)
+RewriteRule ^([A-Za-z0-9_\-]+)(/.*)?$ sheets/$1$2 [R=302,L]

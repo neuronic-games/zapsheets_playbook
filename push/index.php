@@ -1,4 +1,4 @@
-<?php require "../dotEnv.php"; ?>
+<?php require __DIR__ . '/../dotEnv.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -25,7 +25,7 @@
     echo '
 ';} ?>
     crossorigin="anonymous"></script>
-<script src="/js/common/jquery-3.5.1.min.js?v=3"
+<script src="../js/common/jquery-3.5.1.min.js?v=3"
     <?php if($_ENV['ENVIRONMENT'] != 'development') {
     echo '
 ';} ?>
@@ -83,6 +83,13 @@
 		</div>
 	</footer>
   <script>
+    // Unregister any service worker that might intercept requests on this page.
+    // The playbook SW is for the game viewer, not the push tool.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        regs.forEach(function(reg) { reg.unregister(); });
+      });
+    }
     //////////////////////////////////////////////////////////////////////////////
     // Get unique number using time stamp
     function getUniqueNumber() {

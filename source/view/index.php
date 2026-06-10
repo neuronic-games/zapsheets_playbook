@@ -1,15 +1,25 @@
+<?php
+// Compute the deployment base path from the request URI — no .env needed.
+// Works for both short-URL (/{id}/view) and direct access (/sheets/{id}/view/).
+// Also works in subdirectory deployments like /playbook-test/.
+$_rp = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+preg_match('#^(.*?)(?:sheets/)?[A-Za-z0-9_\-]+/view/?$#', $_rp, $_bm);
+$_base = (isset($_bm[1]) && $_bm[1] !== '') ? $_bm[1] : '/';
+if (substr($_base, -1) !== '/') $_base .= '/';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate" />
   <title id="pageTitle">Game</title>
-  <link id="appIconLink" rel="icon" type="image/x-icon" href="/images/sheet_2_new.webp" />
-  <link rel="stylesheet" href="/css/bootstrap.min.css" />
+  <link id="appIconLink" rel="icon" type="image/x-icon" href="images/sheet_2_new.webp" />
+  <link rel="stylesheet" href="css/bootstrap.min.css" />
   <style>
-    @font-face { font-family:'DINBlack';   src:url('/fonts/DINBlack.woff2') format('woff2'), url('/fonts/DINBlack.ttf'); }
-    @font-face { font-family:'DINRegular'; src:url('/fonts/DINMedium.woff2') format('woff2'), url('/fonts/DINMedium.ttf'); }
+    @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2') format('woff2'), url('fonts/DINBlack.ttf'); }
+    @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'), url('fonts/DINMedium.ttf'); }
 
     *, *::before, *::after { box-sizing: border-box; }
     body {
@@ -359,7 +369,7 @@
 
 <!-- Loading -->
 <div id="loadScreen">
-  <img src="/images/sheet_2_new.webp" alt="" />
+  <img src="images/sheet_2_new.webp" alt="" />
   <div class="spin"></div>
 </div>
 
@@ -441,8 +451,8 @@
 
 </div><!-- /page-wrap -->
 
-<script src="/js/common/jquery-3.5.1.min.js?v=3"></script>
-<script src="/js/common/bootstrap.bundle.min.js?v=2"></script>
+<script src="js/common/jquery-3.5.1.min.js?v=3"></script>
+<script src="js/common/bootstrap.bundle.min.js?v=2"></script>
 <script>
 // Unregister any stale service workers (e.g. sw_map.js from old deployments)
 if ('serviceWorker' in navigator) {
@@ -474,7 +484,8 @@ function getLang() {
 
 var sheet_Id = getSheetId();
 var lang     = getLang();
-var BASE     = '/sheets/' + sheet_Id + '/';
+var APP_BASE = document.querySelector('base').getAttribute('href');
+var BASE     = APP_BASE + 'sheets/' + sheet_Id + '/';
 
 function cachedImage(url) {
   if (!url) return '';

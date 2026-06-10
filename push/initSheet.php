@@ -24,22 +24,31 @@
         mkdir($cacheDir, 0777, true);
     }
 
-    // Copy every file from /source into the sheet folder
+    // Recursively copy /source into the sheet folder (files + subdirectories)
     $copied = [];
     $failed = [];
-    $files  = scandir($sourceDir);
-    foreach ($files as $file) {
-        if ($file === '.' || $file === '..') continue;
-        $src  = $sourceDir . '/' . $file;
-        $dest = $sheetDir  . '/' . $file;
-        if (is_file($src)) {
-            if (copy($src, $dest)) {
-                $copied[] = $file;
+
+    function copySourceDir($src, $dest, &$copied, &$failed) {
+        if (!file_exists($dest)) {
+            mkdir($dest, 0777, true);
+        }
+        foreach (scandir($src) as $item) {
+            if ($item === '.' || $item === '..') continue;
+            $srcPath  = $src  . '/' . $item;
+            $destPath = $dest . '/' . $item;
+            if (is_dir($srcPath)) {
+                copySourceDir($srcPath, $destPath, $copied, $failed);
             } else {
-                $failed[] = $file;
+                if (copy($srcPath, $destPath)) {
+                    $copied[] = $destPath;
+                } else {
+                    $failed[] = $destPath;
+                }
             }
         }
     }
+
+    copySourceDir($sourceDir, $sheetDir, $copied, $failed);
 
     echo json_encode([
         'status'  => 'ok',

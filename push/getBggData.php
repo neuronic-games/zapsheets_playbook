@@ -49,8 +49,11 @@
     //   data.boardgame[0].boardgame.minplaytime / maxplaytime
     //   data.boardgame[0].boardgame.age
     //   data.boardgame[0].boardgame.description
-    //   data.boardgame[0].boardgame.boardgamemechanic  (string or array)
-    //   data.boardgame[0].boardgame.boardgamedesigner  (string or array)
+    //   data.boardgame[0].boardgame.boardgamemechanic   (string or array)
+    //   data.boardgame[0].boardgame.boardgamedesigner   (string or array)
+    //   data.boardgame[0].boardgame.boardgameartist     (string or array)
+    //   data.boardgame[0].boardgame.boardgamepublisher  (string or array)
+    //   data.boardgame[0].boardgame.boardgamecategory   (string or array)
     //---------------------------------------------------------------------------
     function normalize_to_v1($v2_chunk) {
         $item = $v2_chunk['item'] ?? [];
@@ -70,29 +73,38 @@
         }
 
         // v2 links: flat array of <link type="boardgamemechanic" value="..."/>
-        $mechanics = [];
-        $designers = [];
+        $mechanics  = [];
+        $designers  = [];
+        $artists    = [];
+        $publishers = [];
+        $categories = [];
         $links = $item['link'] ?? [];
         if (isset($links['@attributes'])) $links = [$links]; // single link
         foreach ($links as $link) {
             $type  = $link['@attributes']['type']  ?? '';
             $value = $link['@attributes']['value'] ?? '';
-            if ($type === 'boardgamemechanic') $mechanics[] = $value;
-            if ($type === 'boardgamedesigner') $designers[] = $value;
+            if ($type === 'boardgamemechanic')  $mechanics[]  = $value;
+            if ($type === 'boardgamedesigner')  $designers[]  = $value;
+            if ($type === 'boardgameartist')    $artists[]    = $value;
+            if ($type === 'boardgamepublisher') $publishers[] = $value;
+            if ($type === 'boardgamecategory')  $categories[] = $value;
         }
 
         $boardgame = [
-            '@attributes'       => ['objectid' => $id],
-            'yearpublished'     => attr_val($item['yearpublished']  ?? ''),
-            'image'             => trim($item['image'] ?? ''),
-            'minplayers'        => attr_val($item['minplayers']     ?? ''),
-            'maxplayers'        => attr_val($item['maxplayers']     ?? ''),
-            'minplaytime'       => attr_val($item['minplaytime']    ?? ''),
-            'maxplaytime'       => attr_val($item['maxplaytime']    ?? ''),
-            'age'               => attr_val($item['minage']         ?? ''), // v2 uses minage
-            'description'       => trim($item['description']        ?? ''),
-            'boardgamemechanic' => count($mechanics) === 1 ? $mechanics[0] : $mechanics,
-            'boardgamedesigner' => count($designers) === 1 ? $designers[0] : $designers,
+            '@attributes'        => ['objectid' => $id],
+            'yearpublished'      => attr_val($item['yearpublished']  ?? ''),
+            'image'              => trim($item['image'] ?? ''),
+            'minplayers'         => attr_val($item['minplayers']     ?? ''),
+            'maxplayers'         => attr_val($item['maxplayers']     ?? ''),
+            'minplaytime'        => attr_val($item['minplaytime']    ?? ''),
+            'maxplaytime'        => attr_val($item['maxplaytime']    ?? ''),
+            'age'                => attr_val($item['minage']         ?? ''), // v2 uses minage
+            'description'        => trim($item['description']        ?? ''),
+            'boardgamemechanic'  => count($mechanics)  === 1 ? $mechanics[0]  : $mechanics,
+            'boardgamedesigner'  => count($designers)  === 1 ? $designers[0]  : $designers,
+            'boardgameartist'    => count($artists)    === 1 ? $artists[0]    : $artists,
+            'boardgamepublisher' => count($publishers) === 1 ? $publishers[0] : $publishers,
+            'boardgamecategory'  => count($categories) === 1 ? $categories[0] : $categories,
         ];
 
         return ['boardgame' => $boardgame];

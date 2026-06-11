@@ -81,9 +81,8 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .main-image-wrap img {
       width: 100%;
       display: block;
-      object-fit: contain;
+      object-fit: cover;
       max-height: 340px;
-      background: #fff;
     }
     .thumb-strip {
       display: flex;
@@ -106,6 +105,25 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       opacity: .7;
     }
     .thumb:hover, .thumb.active { border-color: #c8860a; opacity: 1; }
+
+    /* ── Buy buttons ─────────────────────────────────────────── */
+    .buy-btn-list { display: flex; flex-direction: column; gap: .45rem; margin-top: .9rem; }
+    .btn-buy {
+      display: block;
+      width: 100%;
+      background: #c8860a;
+      color: #fff;
+      font-family: 'DINBlack', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      font-size: .9rem;
+      padding: .7rem 1.2rem;
+      border-radius: 8px;
+      text-decoration: none;
+      text-align: center;
+      transition: background .15s, transform .1s;
+    }
+    .btn-buy:hover { background: #a06808; color: #fff; transform: translateY(-1px); }
 
     /* ── Right: info panel ───────────────────────────────────── */
     .info-panel {}
@@ -356,6 +374,31 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .spin { width: 32px; height: 32px; border: 3px solid #ddd; border-top-color: #c8860a; border-radius: 50%; animation: sp .7s linear infinite; }
     @keyframes sp { to { transform: rotate(360deg); } }
 
+    /* ── Reviews ─────────────────────────────────────────────── */
+    .review-list { display: flex; flex-direction: column; gap: 1.1rem; }
+    .review-card {
+      border-left: 4px solid #c8860a;
+      background: #fdf8f0;
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+    }
+    .review-quote {
+      font-size: 1rem;
+      line-height: 1.7;
+      color: #222;
+      margin: 0 0 .55rem;
+      font-style: italic;
+    }
+    .review-quote::before { content: '\201C'; }
+    .review-quote::after  { content: '\201D'; }
+    .review-byline {
+      font-family: 'DINBlack', sans-serif;
+      font-size: .78rem;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: #888;
+    }
+
     /* ── Rule tag images ─────────────────────────────────────── */
     .rule-tag-img { height: 1.4em; vertical-align: middle; margin: 0 1px; }
 
@@ -397,6 +440,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
         <img id="mainImg" src="" alt="" />
       </div>
       <div class="thumb-strip" id="thumbStrip"></div>
+      <div id="buyBtnWrap" style="display:none"></div>
     </div>
 
     <!-- Right: info -->
@@ -409,7 +453,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
           <small>BGG Rating</small>
         </div>
         <a id="bggLink" class="bgg-link" href="#" target="_blank" rel="noopener" style="display:none">
-          View on BGG ↗
+          View on BGG
         </a>
       </div>
 
@@ -441,6 +485,9 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     <div class="tab-pane" id="pane-videos">
       <div class="video-grid" id="videoGrid"></div>
     </div>
+    <div class="tab-pane" id="pane-reviews">
+      <div class="review-list" id="reviewList"></div>
+    </div>
     <div class="tab-pane" id="pane-rules">
       <div class="accordion rules-accordion" id="rulesAccordion"></div>
     </div>
@@ -471,8 +518,9 @@ function getSheetId() {
   // /sheets/{id}/view/
   var idx = parts.indexOf('sheets');
   if (idx >= 0 && parts[idx + 1]) return parts[idx + 1];
-  // /{id}/view/  (short URL via router)
-  if (parts.length >= 2 && parts[1] === 'view') return parts[0];
+  // /{id}/view/ or /subdir/{id}/view/ — find 'view' and take the element before it
+  var viewIdx = parts.lastIndexOf('view');
+  if (viewIdx > 0) return parts[viewIdx - 1];
   // query string fallback
   var m = window.location.search.match(/[?&]id=([^&]+)/);
   return m ? m[1] : '';
@@ -657,6 +705,22 @@ function render() {
     buildThumbs();
   }
 
+  // ── Buy URLs ─────────────────────────────────────────────────
+  var buyUrls = (data.bgg || []).filter(function(r) {
+    return r.Name === 'BuyUrl' && r.Value;
+  });
+  if (buyUrls.length) {
+    document.getElementById('buyBtnWrap').innerHTML =
+      '<div class="buy-btn-list">'
+      + buyUrls.map(function(r) {
+          var label = (r['Alt Value'] && r['Alt Value'].trim()) ? r['Alt Value'].trim() : 'Buy Now';
+          return '<a class="btn-buy" href="' + r.Value + '" target="_blank" rel="noopener">'
+            + label + '</a>';
+        }).join('')
+      + '</div>';
+    document.getElementById('buyBtnWrap').style.display = '';
+  }
+
   // Lightbox on main image click
   document.getElementById('mainImgWrap').addEventListener('click', function() {
     document.getElementById('lbImg').src = allImages[activeThumb] ? allImages[activeThumb].src : document.getElementById('mainImg').src;
@@ -721,6 +785,11 @@ function render() {
       ? bg['boardgamedesigner'] : [bg['boardgamedesigner']];
     meta.push({ k: 'Designers', v: designers.map(function(d){ return '<span class="tag-pill">' + d + '</span>'; }).join('') });
   }
+  if (bg['boardgameartist']) {
+    var artists = Array.isArray(bg['boardgameartist'])
+      ? bg['boardgameartist'] : [bg['boardgameartist']];
+    meta.push({ k: 'Artists', v: artists.map(function(a){ return '<span class="tag-pill">' + a + '</span>'; }).join('') });
+  }
   if (bg['boardgamemechanic']) {
     var mechs = Array.isArray(bg['boardgamemechanic'])
       ? bg['boardgamemechanic'] : [bg['boardgamemechanic']];
@@ -750,10 +819,13 @@ function render() {
   });
 
   // ── Build tabs ───────────────────────────────────────────────
+  var reviews = (data.bgg || []).filter(function(r) { return r.Name === 'Review' && r.Value; });
+
   var tabs = [];
-  if (data.videos && data.videos.length)   tabs.push({ id: 'videos', label: 'Videos (' + data.videos.length + ')' });
-  if (data.rules  && data.rules.length)    tabs.push({ id: 'rules',  label: 'Rules' });
-  if (data.faqs   && data.faqs.length)     tabs.push({ id: 'faqs',   label: 'FAQs (' + data.faqs.length + ')' });
+  if (data.videos && data.videos.length)   tabs.push({ id: 'videos',  label: 'Videos (' + data.videos.length + ')' });
+  if (reviews.length)                      tabs.push({ id: 'reviews', label: 'Reviews (' + reviews.length + ')' });
+  if (data.rules  && data.rules.length)    tabs.push({ id: 'rules',   label: 'Rules' });
+  if (data.faqs   && data.faqs.length)     tabs.push({ id: 'faqs',    label: 'FAQs (' + data.faqs.length + ')' });
 
   if (tabs.length) {
     document.getElementById('tabNav').innerHTML = tabs.map(function(t) {
@@ -781,6 +853,17 @@ function render() {
         + '<span class="video-icon">&#9654;</span>'
         + '<span><div class="video-link-title">' + (v.Title || 'Watch') + '</div>'
         + '<div class="video-link-platform">' + platform + '</div></span></a>';
+    }).join('');
+  }
+
+  // ── Reviews ──────────────────────────────────────────────────
+  if (reviews.length) {
+    document.getElementById('reviewList').innerHTML = reviews.map(function(r) {
+      var byline = (r['Alt Value'] && r['Alt Value'].trim()) ? r['Alt Value'].trim() : '';
+      return '<div class="review-card">'
+        + '<p class="review-quote">' + r.Value + '</p>'
+        + (byline ? '<span class="review-byline">— ' + byline + '</span>' : '')
+        + '</div>';
     }).join('');
   }
 

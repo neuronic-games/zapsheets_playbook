@@ -289,7 +289,9 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       font-size: .78rem;
       margin: .1rem .15rem .1rem 0;
       color: #444;
+      text-decoration: none;
     }
+    a.tag-pill-link:hover { background: #c8860a; color: #fff; }
 
     /* CTA */
     .cta-row { display: flex; gap: .75rem; flex-wrap: wrap; }
@@ -845,15 +847,25 @@ function render() {
 
   // ── Meta rows ────────────────────────────────────────────────
   var meta = [];
-  if (bg['boardgamedesigner']) {
+  if (bg['boardgamedesigner'] && bg['boardgamedesigner'].length) {
     var designers = Array.isArray(bg['boardgamedesigner'])
       ? bg['boardgamedesigner'] : [bg['boardgamedesigner']];
-    meta.push({ k: 'Designers', v: designers.map(function(d){ return '<span class="tag-pill">' + d + '</span>'; }).join('') });
+    meta.push({ k: 'Designers', v: designers.map(function(d) {
+      var name = typeof d === 'object' ? d.name : d;
+      var id   = typeof d === 'object' ? d.id   : '';
+      if (id) return '<a class="tag-pill tag-pill-link" href="https://boardgamegeek.com/boardgamedesigner/' + id + '" target="_blank" rel="noopener">' + name + '</a>';
+      return '<span class="tag-pill">' + name + '</span>';
+    }).join('') });
   }
-  if (bg['boardgameartist']) {
+  if (bg['boardgameartist'] && bg['boardgameartist'].length) {
     var artists = Array.isArray(bg['boardgameartist'])
       ? bg['boardgameartist'] : [bg['boardgameartist']];
-    meta.push({ k: 'Artists', v: artists.map(function(a){ return '<span class="tag-pill">' + a + '</span>'; }).join('') });
+    meta.push({ k: 'Artists', v: artists.map(function(a) {
+      var name = typeof a === 'object' ? a.name : a;
+      var id   = typeof a === 'object' ? a.id   : '';
+      if (id) return '<a class="tag-pill tag-pill-link" href="https://boardgamegeek.com/boardgameartist/' + id + '" target="_blank" rel="noopener">' + name + '</a>';
+      return '<span class="tag-pill">' + name + '</span>';
+    }).join('') });
   }
   if (bg['boardgamemechanic']) {
     var mechs = Array.isArray(bg['boardgamemechanic'])

@@ -83,9 +83,10 @@
         foreach ($links as $link) {
             $type  = $link['@attributes']['type']  ?? '';
             $value = $link['@attributes']['value'] ?? '';
+            $lid   = $link['@attributes']['id']    ?? '';
             if ($type === 'boardgamemechanic')  $mechanics[]  = $value;
-            if ($type === 'boardgamedesigner')  $designers[]  = $value;
-            if ($type === 'boardgameartist')    $artists[]    = $value;
+            if ($type === 'boardgamedesigner')  $designers[]  = ['name' => $value, 'id' => $lid];
+            if ($type === 'boardgameartist')    $artists[]    = ['name' => $value, 'id' => $lid];
             if ($type === 'boardgamepublisher') $publishers[] = $value;
             if ($type === 'boardgamecategory')  $categories[] = $value;
         }
@@ -101,8 +102,8 @@
             'age'                => attr_val($item['minage']         ?? ''), // v2 uses minage
             'description'        => trim($item['description']        ?? ''),
             'boardgamemechanic'  => count($mechanics)  === 1 ? $mechanics[0]  : $mechanics,
-            'boardgamedesigner'  => count($designers)  === 1 ? $designers[0]  : $designers,
-            'boardgameartist'    => count($artists)    === 1 ? $artists[0]    : $artists,
+            'boardgamedesigner'  => $designers,   // always array of {name, id}
+            'boardgameartist'    => $artists,      // always array of {name, id}
             'boardgamepublisher' => count($publishers) === 1 ? $publishers[0] : $publishers,
             'boardgamecategory'  => count($categories) === 1 ? $categories[0] : $categories,
         ];

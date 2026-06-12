@@ -333,14 +333,17 @@ $(document).ready(function() {
                     loadLanguageJSON()
                 } else { 
                     languageStepsData = []
-                    var mResponseLang = response.replace(/�/g, "") 
+                    var mResponseLang = response.replace(/�/g, "")
                     var newLangData = eval(mResponseLang)
                     for(var i=0; i<newLangData.length; i++) {
                         var langDataSting = JSON.stringify(newLangData[i]);
                         if(isJSONData(langDataSting) == false) {
                             logLoadMsg('<font color="red">Error: ' + activeLang.split('-')[0] + ' Sheet : (Row: ' + i + ")</font><br>")
                         } else {
-                            languageStepsData[i] = isJSONData(langDataSting)
+                            var _row = isJSONData(langDataSting);
+                            // Skip blank rows (no Type and no ID)
+                            if (!_row.Type && !_row.ID) continue;
+                            languageStepsData.push(_row);
                         }
                     }
                     // set default

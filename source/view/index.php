@@ -78,12 +78,17 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       margin-bottom: .6rem;
       cursor: pointer;
     }
-    .main-image-wrap img {
+    .main-image-wrap {
+      height: 320px;
+    }
+    .main-image-wrap img,
+    .main-image-wrap video {
       width: 100%;
+      height: 100%;
       display: block;
       object-fit: cover;
-      max-height: 340px;
     }
+    .main-image-wrap video { display: none; background: #000; }
     .thumb-strip {
       display: flex;
       gap: .4rem;
@@ -105,6 +110,21 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       opacity: .7;
     }
     .thumb:hover, .thumb.active { border-color: #c8860a; opacity: 1; }
+    .thumb-video-wrap {
+      flex: 0 0 auto;
+      width: 64px; height: 48px;
+      background: #1a1a2e;
+      border-radius: 5px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color .15s, opacity .15s;
+      opacity: .7;
+    }
+    .thumb-video-wrap:hover, .thumb-video-wrap.active { border-color: #c8860a; opacity: 1; }
+    .thumb-play-icon { color: #fff; font-size: 1.1rem; line-height: 1; }
 
     /* ── Buy buttons ─────────────────────────────────────────── */
     .buy-btn-list { display: flex; flex-direction: column; gap: .45rem; margin-top: .9rem; }
@@ -438,6 +458,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     <div class="image-panel">
       <div class="main-image-wrap" id="mainImgWrap">
         <img id="mainImg" src="" alt="" />
+        <video id="mainVideo" muted playsinline></video>
       </div>
       <div class="thumb-strip" id="thumbStrip"></div>
       <div id="buyBtnWrap" style="display:none"></div>
@@ -597,27 +618,77 @@ _jsonLoad(BASE + 'faqs-'   + lang + '.json', 'faqs');
 _jsonLoad(BASE + 'tags.json',              'tags');
 
 ////////////////////////////////////////////////////////////////////////////////
-var allImages = [];   // [{src, caption}] for gallery
+// allImages entries: { src, caption, type ('image'|'video'), delay (seconds) }
+var allImages   = [];
 var activeThumb = 0;
+var slideshowTimer = null;
 
-function setMainImage(src) {
-  document.getElementById('mainImg').src = src;
+function stopSlideshow() {
+  if (slideshowTimer) { clearTimeout(slideshowTimer); slideshowTimer = null; }
+}
+
+function startSlideshow(fromIdx) {
+  stopSlideshow();
+  if (allImages.length < 2) return;
+  var delay = (allImages[fromIdx] && allImages[fromIdx].delay) ? allImages[fromIdx].delay : 5;
+  slideshowTimer = setTimeout(function() {
+    var nextIdx = (fromIdx + 1) % allImages.length;
+    activeThumb = nextIdx;
+    setMainMedia(nextIdx);
+    updateThumbActive(nextIdx);
+    startSlideshow(nextIdx);
+  }, delay * 1000);
+}
+
+function updateThumbActive(idx) {
+  var strip = document.getElementById('thumbStrip');
+  strip.querySelectorAll('.thumb, .thumb-video-wrap').forEach(function(t) {
+    t.classList.remove('active');
+  });
+  var all = strip.querySelectorAll('.thumb, .thumb-video-wrap');
+  if (all[idx]) all[idx].classList.add('active');
+}
+
+function setMainMedia(idx) {
+  var item = allImages[idx];
+  if (!item) return;
+  var img = document.getElementById('mainImg');
+  var vid = document.getElementById('mainVideo');
+  if (item.type === 'video') {
+    img.style.display = 'none';
+    vid.src = item.src;
+    vid.style.display = 'block';
+    vid.load();
+    vid.play().catch(function(){});
+  } else {
+    vid.pause();
+    vid.removeAttribute('src');
+    vid.style.display = 'none';
+    img.src = item.src;
+    img.style.display = 'block';
+  }
 }
 
 function buildThumbs() {
   var strip = document.getElementById('thumbStrip');
   if (allImages.length <= 1) { strip.style.display = 'none'; return; }
-  strip.innerHTML = allImages.map(function(img, i) {
-    return '<img class="thumb' + (i===0?' active':'') + '" src="' + img.src
+  strip.innerHTML = allImages.map(function(item, i) {
+    var activeCls = i === 0 ? ' active' : '';
+    if (item.type === 'video') {
+      return '<div class="thumb-video-wrap' + activeCls + '" data-idx="' + i + '" title="' + item.caption + '">'
+        + '<span class="thumb-play-icon">&#9654;</span></div>';
+    }
+    return '<img class="thumb' + activeCls + '" src="' + item.src
       + '" alt="" data-idx="' + i + '" loading="lazy" />';
   }).join('');
-  strip.querySelectorAll('.thumb').forEach(function(el) {
+  strip.querySelectorAll('.thumb, .thumb-video-wrap').forEach(function(el) {
     el.addEventListener('click', function() {
       var idx = parseInt(this.dataset.idx);
       activeThumb = idx;
-      setMainImage(allImages[idx].src);
-      strip.querySelectorAll('.thumb').forEach(function(t){ t.classList.remove('active'); });
-      this.classList.add('active');
+      stopSlideshow();
+      setMainMedia(idx);
+      updateThumbActive(idx);
+      startSlideshow(idx);
     });
   });
 }
@@ -676,33 +747,25 @@ function render() {
     });
   }
 
-  // ── Images ───────────────────────────────────────────────────
-  // Priority: BGG box image, then splash images, then rules images
-  if (bg['image']) {
-    allImages.push({ src: cachedImage(bg['image']), caption: title });
-  }
+  // ── Images / Videos — sourced exclusively from splash JSON ──
   if (data.splash) {
     data.splash.forEach(function(r) {
-      if (r.Type === 'Image' && r.Content) {
-        var src = cachedImage(r.Content);
-        if (!allImages.find(function(x){ return x.src === src; }))
-          allImages.push({ src: src, caption: r.ID || '' });
-      }
-    });
-  }
-  if (data.rules) {
-    data.rules.forEach(function(r) {
-      if (r.Type === 'image' && r.Text) {
-        var src = cachedImage(r.Text);
-        if (!allImages.find(function(x){ return x.src === src; }))
-          allImages.push({ src: src, caption: '' });
+      var t = (r.Type || '').toLowerCase();
+      if ((t === 'image' || t === 'video') && r.Content) {
+        allImages.push({
+          src:     cachedImage(r.Content),
+          caption: r.ID || '',
+          type:    t,
+          delay:   parseFloat(r.DelaySec) || 5
+        });
       }
     });
   }
 
   if (allImages.length) {
-    setMainImage(allImages[0].src);
+    setMainMedia(0);
     buildThumbs();
+    startSlideshow(0);
   }
 
   // ── Buy URLs ─────────────────────────────────────────────────
@@ -721,9 +784,11 @@ function render() {
     document.getElementById('buyBtnWrap').style.display = '';
   }
 
-  // Lightbox on main image click
+  // Lightbox on main image click (images only, not video)
   document.getElementById('mainImgWrap').addEventListener('click', function() {
-    document.getElementById('lbImg').src = allImages[activeThumb] ? allImages[activeThumb].src : document.getElementById('mainImg').src;
+    var item = allImages[activeThumb];
+    if (!item || item.type === 'video') return;
+    document.getElementById('lbImg').src = item.src;
     document.getElementById('lightbox').classList.add('open');
   });
 

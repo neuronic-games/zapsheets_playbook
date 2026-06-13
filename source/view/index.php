@@ -131,16 +131,21 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .btn-buy {
       display: block;
       width: 100%;
+      height: 2.75rem;
+      line-height: 2.75rem;
       background: #c8860a;
       color: #fff;
       font-family: 'DINBlack', sans-serif;
       text-transform: uppercase;
       letter-spacing: .07em;
       font-size: .9rem;
-      padding: .7rem 1.2rem;
+      padding: 0 1.2rem;
       border-radius: 8px;
       text-decoration: none;
       text-align: center;
+      box-sizing: border-box;
+      white-space: nowrap;
+      overflow: hidden;
       transition: background .15s, transform .1s;
     }
     .btn-buy:hover { background: #a06808; color: #fff; transform: translateY(-1px); }
@@ -296,34 +301,42 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     /* CTA */
     .cta-row { display: flex; gap: .75rem; flex-wrap: wrap; }
     .btn-play {
+      display: inline-block;
+      height: 2.5rem;
+      line-height: 2.5rem;
       background: #1a1a2e;
       color: #fff;
       font-family: 'DINBlack', sans-serif;
       text-transform: uppercase;
       letter-spacing: .06em;
       font-size: .9rem;
-      padding: .6rem 1.4rem;
+      padding: 0 1.4rem;
       border-radius: 7px;
       border: none;
       cursor: pointer;
       text-decoration: none;
-      display: inline-block;
+      box-sizing: border-box;
+      white-space: nowrap;
       transition: background .15s;
     }
     .btn-play:hover { background: #2d2d50; color: #fff; }
     .btn-rules {
+      display: inline-block;
+      height: 2.5rem;
+      line-height: 2.5rem;
       background: #fff;
       color: #222;
       font-family: 'DINBlack', sans-serif;
       text-transform: uppercase;
       letter-spacing: .06em;
       font-size: .9rem;
-      padding: .6rem 1.4rem;
+      padding: 0 1.4rem;
       border-radius: 7px;
       border: 1px solid #ccc;
       cursor: pointer;
       text-decoration: none;
-      display: inline-block;
+      box-sizing: border-box;
+      white-space: nowrap;
       transition: background .15s;
     }
     .btn-rules:hover { background: #f5f5f5; color: #222; }

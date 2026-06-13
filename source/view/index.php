@@ -340,6 +340,25 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       transition: background .15s;
     }
     .btn-rules:hover { background: #f5f5f5; color: #222; }
+    #rulesDownload { margin-bottom: .85rem; }
+    .btn-rules-dl {
+      display: inline-block;
+      height: 2.5rem;
+      line-height: 2.5rem;
+      background: #1a1a2e;
+      color: #fff;
+      font-family: 'DINBlack', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      font-size: .85rem;
+      padding: 0 1.4rem;
+      border-radius: 7px;
+      text-decoration: none;
+      box-sizing: border-box;
+      white-space: nowrap;
+      transition: background .15s;
+    }
+    .btn-rules-dl:hover { background: #2d2d50; color: #fff; }
 
     /* ── Tabs ────────────────────────────────────────────────── */
     .tabs-section { margin-top: 2rem; }
@@ -525,6 +544,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       <div class="review-list" id="reviewList"></div>
     </div>
     <div class="tab-pane" id="pane-rules">
+      <div id="rulesDownload"></div>
       <div class="accordion rules-accordion" id="rulesAccordion"></div>
     </div>
     <div class="tab-pane" id="pane-faqs">
@@ -959,8 +979,17 @@ function render() {
 
   // ── Rules ────────────────────────────────────────────────────
   if (data.rules && data.rules.length) {
+    // Extract DOWNLOAD_URL before building accordion
+    var dlRow = data.rules.find(function(r) { return r.ID === 'DOWNLOAD_URL' && r.Text; });
+    if (dlRow) {
+      document.getElementById('rulesDownload').innerHTML =
+        '<a class="btn-rules-dl" href="' + dlRow.Text + '" target="_blank" rel="noopener" download>'
+        + '&#8613;&nbsp; Download Rules</a>';
+    }
+
     var sections = [], cur = null;
     data.rules.forEach(function(row) {
+      if (row.ID === 'DOWNLOAD_URL') return; // handled above
       if (row.Type === 'menu' && row.Level == 1) {
         cur = { title: row.Text, rows: [] };
         sections.push(cur);

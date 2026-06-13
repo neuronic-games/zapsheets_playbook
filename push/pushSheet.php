@@ -104,7 +104,12 @@
     } else if($sheet != '' && $sheet != 'checkSheet') {
 
         $sheetName = $sheet;
-        $jsonFile = "../sheets/" . $spreadsheetId . "/" . strtolower($sheetName) . ".json";
+        // product-* sheets all map to product.json
+        if (stripos($sheetName, 'product-') === 0) {
+            $jsonFile = "../sheets/" . $spreadsheetId . "/product.json";
+        } else {
+            $jsonFile = "../sheets/" . $spreadsheetId . "/" . strtolower($sheetName) . ".json";
+        }
 
         // For Server
         $py_command = pyCmd($pythonPath, __DIR__, 'gread.py', $spreadsheetId . 'sheetname' . $sheetName);

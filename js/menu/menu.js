@@ -536,8 +536,8 @@ $(document).ready(function() {
      */
     function loadBggGameInfo() {
         var langRequest = $.ajax({
-            //url: '../sheets/' + sheet_Id + "/bgg-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion,
-            url: jasonPath + 'sheets/' + sheet_Id + "/bgg-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion, 
+            //url: '../sheets/' + sheet_Id + "/product.json?version=" + UIVersion,
+            url: jasonPath + 'sheets/' + sheet_Id + "/product.json?version=" + UIVersion,
             cache: true, 
             type: 'GET',
             dataType: "text",
@@ -1271,8 +1271,8 @@ $(document).ready(function() {
     function LoadStatsData() {
         setTimeout(function() {
             var StatsRequest = $.ajax({
-                //url: '../sheets/' + sheet_Id + "/stats.json?version=" + UIVersion,
-                url: jasonPath + 'sheets/' + sheet_Id + "/stats.json?version=" + UIVersion,
+                //url: '../sheets/' + sheet_Id + "/bgg.json?version=" + UIVersion,
+                url: jasonPath + 'sheets/' + sheet_Id + "/bgg.json?version=" + UIVersion,
                 cache: true,
                 type: 'GET',
                 dataType: "JSON",

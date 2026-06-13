@@ -9,7 +9,7 @@
         echo json_encode(['status' => 404, 'error' => "Username is missing."]); exit;
     }
 
-    $statsJSONFile = "../sheets/" . $spreadsheetId . "/stats.json";
+    $statsJSONFile = "../sheets/" . $spreadsheetId . "/bgg.json";
 
     // BGG XML API v2
     $collectionURL = 'https://boardgamegeek.com/xmlapi2/collection';

@@ -708,7 +708,7 @@ function getBGGIndex() {
  */
 function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
     var languageRequest = $.ajax({
-        url: '../sheets/' + sheet_Id + "/" + languageToLoad.toLowerCase() + ".json?version=" + Math.random(), 
+        url: '../sheets/' + sheet_Id + "/" + languageToLoad.toLowerCase() + ".json?version=" + Math.random(),
         cache: false, 
         async: false,
         type: 'GET',
@@ -729,15 +729,16 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
                     }
                 }
 
-                // Trigger BGG fetch as soon as the bgg sheet is parsed, regardless of position
+                // Trigger BGG fetch as soon as the game sheet is parsed, regardless of position
                 if(_sheetName.toLowerCase() == 'game-' + activeLanguage.toLowerCase()) {
                     bggIndex = getBGGIndex();
                     let isLast = (languageLoadIndex == isMoreSheets.length-1);
                     loadBGGSheetData(languageDataList[bggIndex], isLast);
                     if(isLast) {
-                        return; // game-en is last — loadBGGSheetData handles finalisation
+                        logLoadMsg("Publishing " + _sheetName + " data to server.<br>");
+                        return; // game sheet is last — loadBGGSheetData handles finalisation
                     }
-                    // game-en is not last — fall through to continue processing remaining sheets
+                    // game sheet is not last — fall through to continue processing remaining sheets
                 }
             }
 

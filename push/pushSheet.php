@@ -104,12 +104,7 @@
     } else if($sheet != '' && $sheet != 'checkSheet') {
 
         $sheetName = $sheet;
-        // game-* sheets all map to game.json
-        if (stripos($sheetName, 'game-') === 0) {
-            $jsonFile = "../sheets/" . $spreadsheetId . "/game.json";
-        } else {
-            $jsonFile = "../sheets/" . $spreadsheetId . "/" . strtolower($sheetName) . ".json";
-        }
+        $jsonFile = "../sheets/" . $spreadsheetId . "/" . strtolower($sheetName) . ".json";
 
         // For Server
         $py_command = pyCmd($pythonPath, __DIR__, 'gread.py', $spreadsheetId . 'sheetname' . $sheetName);

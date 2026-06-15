@@ -60,7 +60,7 @@ function createCache(cacheVersion) {
                 jasonPath + 'sheets/' + sheet_Id + '/menu-en.json?version=' + dyVersion,
                 jasonPath + 'sheets/' + sheet_Id + '/faqs-en.json?version=' + dyVersion,
                 jasonPath + 'sheets/' + sheet_Id + '/rules-en.json?version=' + dyVersion,
-                jasonPath + 'sheets/' + sheet_Id + '/game.json?version=' + dyVersion,
+                jasonPath + 'sheets/' + sheet_Id + '/game-en.json?version=' + dyVersion,
                 jasonPath + 'sheets/' + sheet_Id + '/bgg.json?version=' + dyVersion,
             ]
         }

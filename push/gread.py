@@ -45,8 +45,6 @@ if(sheetName == "settings"):
     path = "../sheets/" + mGoogleSheetId + "/settings.json"
 elif (sheetName == "install"):
     path = "../sheets/" + mGoogleSheetId + "/install.json"
-elif (sheetName.lower().startswith("game-")):
-    path = "../sheets/" + mGoogleSheetId + "/game.json"
 else:
     path = "../sheets/" + mGoogleSheetId + "/" + sheetName.lower() + ".json"
 

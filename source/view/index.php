@@ -645,7 +645,7 @@ function _checkAllLoaded() {
 
 _jsonLoad(BASE + 'settings.json',          'settings');
 _jsonLoad(BASE + 'bgg.json',     'stats');
-_jsonLoad(BASE + 'product.json', 'bgg');
+_jsonLoad(BASE + 'game.json', 'bgg');
 _jsonLoad(BASE + 'splash-' + lang + '.json', 'splash');
 _jsonLoad(BASE + 'videos-' + lang + '.json', 'videos');
 _jsonLoad(BASE + 'rules-'  + lang + '.json', 'rules');

@@ -382,7 +382,7 @@ function getSheetSettings(_sheetName, sheetVersion, pub_date) {
                         setTimeout(function() {
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                         }, 100)
-                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "product-" + activeLanguage.toLowerCase()) {
+                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "game-" + activeLanguage.toLowerCase()) {
                         setTimeout(function() {
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                         }, 100)
@@ -400,7 +400,7 @@ function getSheetSettings(_sheetName, sheetVersion, pub_date) {
                         }, 100)
                     }
                 } else {
-                    if(_sheetName.toLowerCase() == 'product-' + activeLanguage.toLowerCase()) {
+                    if(_sheetName.toLowerCase() == 'game-' + activeLanguage.toLowerCase()) {
                         loadBGGSheetData(languageDataList[languageLoadIndex])
                     } else {
                         // Check for loading image
@@ -467,7 +467,7 @@ function getSheetInstall(_sheetName, sheetVersion, pub_date) {
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                         }, 100)
                     //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-en") {
-                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "product-" + activeLanguage.toLocaleLowerCase()) {
+                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "game-" + activeLanguage.toLocaleLowerCase()) {
                         setTimeout(function() {
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                         }, 100)
@@ -487,7 +487,7 @@ function getSheetInstall(_sheetName, sheetVersion, pub_date) {
                     }
                 } else {
                     //if(_sheetName.toLowerCase() == 'bgg-en') {
-                    if(_sheetName.toLowerCase() == 'product-' + activeLanguage.toLowerCase()) {
+                    if(_sheetName.toLowerCase() == 'game-' + activeLanguage.toLowerCase()) {
                         loadBGGSheetData(languageDataList[languageLoadIndex])
                     } else {
                         // Check for loading image
@@ -555,7 +555,7 @@ function getSheetTags(_sheetName, sheetVersion, pub_date) {
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                         }, 100)
                     //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-en") {
-                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "product-" + activeLanguage.toLowerCase()) {
+                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "game-" + activeLanguage.toLowerCase()) {
                         setTimeout(function() {
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                         }, 100)
@@ -575,7 +575,7 @@ function getSheetTags(_sheetName, sheetVersion, pub_date) {
                     }
                 } else {
                     //if(_sheetName.toLowerCase() == 'bgg-en') {
-                    if(_sheetName.toLowerCase() == 'product-' + activeLanguage.toLowerCase()) {
+                    if(_sheetName.toLowerCase() == 'game-' + activeLanguage.toLowerCase()) {
                         loadBGGSheetData(languageDataList[languageLoadIndex])
                     } else {
                         // Check for loading image
@@ -643,7 +643,7 @@ function getSheetSplash(_sheetName, sheetVersion, pub_date) {
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                         }, 100)
                     //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-en") {
-                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "product-" + activeLanguage.toLowerCase()) {
+                    } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "game-" + activeLanguage.toLowerCase()) {
                         setTimeout(function() {
                             getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                         }, 100)
@@ -662,7 +662,7 @@ function getSheetSplash(_sheetName, sheetVersion, pub_date) {
                     }
                 } else {
                     //if(_sheetName.toLowerCase() == 'bgg-en') {
-                    if(_sheetName.toLowerCase() == 'product-' + activeLanguage.toLowerCase()) {
+                    if(_sheetName.toLowerCase() == 'game-' + activeLanguage.toLowerCase()) {
                         loadBGGSheetData(languageDataList[languageLoadIndex])
                     } else {
                         // Check for loading image
@@ -692,7 +692,7 @@ function getBGGIndex() {
     let bggPosIndex = -1;
     for (i=0; i<isMoreSheets.length; i++) {
         //if(isMoreSheets[i] == 'bgg-en') {
-        if(isMoreSheets[i] == 'product-' + activeLanguage.toLowerCase()) {
+        if(isMoreSheets[i] == 'game-' + activeLanguage.toLowerCase()) {
             bggPosIndex = i;
         }
     }
@@ -730,14 +730,14 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
                 }
 
                 // Trigger BGG fetch as soon as the bgg sheet is parsed, regardless of position
-                if(_sheetName.toLowerCase() == 'product-' + activeLanguage.toLowerCase()) {
+                if(_sheetName.toLowerCase() == 'game-' + activeLanguage.toLowerCase()) {
                     bggIndex = getBGGIndex();
                     let isLast = (languageLoadIndex == isMoreSheets.length-1);
                     loadBGGSheetData(languageDataList[bggIndex], isLast);
                     if(isLast) {
-                        return; // product-en is last — loadBGGSheetData handles finalisation
+                        return; // game-en is last — loadBGGSheetData handles finalisation
                     }
-                    // product-en is not last — fall through to continue processing remaining sheets
+                    // game-en is not last — fall through to continue processing remaining sheets
                 }
             }
 
@@ -758,7 +758,7 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
                         getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                     }, 100)
                 //} else if(isMoreSheets[languageLoadIndex].toLowerCase() == "bgg-en") {
-                } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "product-" + activeLanguage.toLowerCase()) {
+                } else if(isMoreSheets[languageLoadIndex].toLowerCase() == "game-" + activeLanguage.toLowerCase()) {
                     setTimeout(function() {
                         getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
                     }, 100)
@@ -855,7 +855,7 @@ function loadBGGSheetData(bggJSON, isLast = true) {
                         showCountdown(BGG_RETRY_DELAY / 1000)
                         setTimeout(attemptBGGFetch, BGG_RETRY_DELAY)
                     } else {
-                        logLoadMsg('<font color="red">Error: BGG did not respond after ' + BGG_MAX_ATTEMPTS + ' attempts. Try pushing product-' + activeLanguage + ' again later.</font><br>')
+                        logLoadMsg('<font color="red">Error: BGG did not respond after ' + BGG_MAX_ATTEMPTS + ' attempts. Try pushing game-' + activeLanguage + ' again later.</font><br>')
                     }
                     return
                 }

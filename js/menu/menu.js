@@ -536,8 +536,8 @@ $(document).ready(function() {
      */
     function loadBggGameInfo() {
         var langRequest = $.ajax({
-            //url: '../sheets/' + sheet_Id + "/product.json?version=" + UIVersion,
-            url: jasonPath + 'sheets/' + sheet_Id + "/product.json?version=" + UIVersion,
+            //url: '../sheets/' + sheet_Id + "/game.json?version=" + UIVersion,
+            url: jasonPath + 'sheets/' + sheet_Id + "/game.json?version=" + UIVersion,
             cache: true, 
             type: 'GET',
             dataType: "text",

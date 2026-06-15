@@ -104,9 +104,9 @@
     } else if($sheet != '' && $sheet != 'checkSheet') {
 
         $sheetName = $sheet;
-        // product-* sheets all map to product.json
-        if (stripos($sheetName, 'product-') === 0) {
-            $jsonFile = "../sheets/" . $spreadsheetId . "/product.json";
+        // game-* sheets all map to game.json
+        if (stripos($sheetName, 'game-') === 0) {
+            $jsonFile = "../sheets/" . $spreadsheetId . "/game.json";
         } else {
             $jsonFile = "../sheets/" . $spreadsheetId . "/" . strtolower($sheetName) . ".json";
         }

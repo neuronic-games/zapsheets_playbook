@@ -68,7 +68,7 @@ function createCache(cacheVersion) {
                 jasonPath + 'sheets/' + sheet_Id + '/menu-en.json?version=' + dyVersion,
                 jasonPath + 'sheets/' + sheet_Id + '/faqs-en.json?version=' + dyVersion,
                 jasonPath + 'sheets/' + sheet_Id + '/rules-en.json?version=' + dyVersion,
-                jasonPath + 'sheets/' + sheet_Id + '/product.json?version=' + dyVersion,
+                jasonPath + 'sheets/' + sheet_Id + '/game.json?version=' + dyVersion,
                 jasonPath + 'sheets/' + sheet_Id + '/bgg.json?version=' + dyVersion,
                 jasonPath + 'sheets/' + sheet_Id + '/tags.json?version=' + dyVersion,
                 jasonPath + 'sheets/' + sheet_Id + '/splash-en.json?version=' + dyVersion,

@@ -1,10 +1,6 @@
+.DS_Store
 /credentials.json
 /.env
 /log/
 /vendor/
 /sheets/
-source/.DS_Store
-/sheets
-.DS_Store
-js/.DS_Store
-source/.DS_Store

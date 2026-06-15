@@ -1,7 +1,6 @@
-/sheets/
-**/sheets/
-**/credentials.json
-/push/credentials.json
+.DS_Store
+/credentials.json
 /.env
 /log/
 /vendor/
+/sheets/

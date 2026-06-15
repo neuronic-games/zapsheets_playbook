@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>jQuery Load Diagnostic</title>
+  <style>
+    body { font-family: monospace; padding: 2rem; background: #1a1a2e; color: #e0e0e0; }
+    h2   { color: #a8d8ea; margin-bottom: 1.5rem; }
+    .ok  { color: #4caf50; }
+    .err { color: #f44336; }
+    .row { margin: .5rem 0; }
+    pre  { background: #0f3460; padding: 1rem; border-radius: 6px; overflow: auto;
+           font-size: .85rem; white-space: pre-wrap; word-break: break-all; }
+    a    { color: #a8d8ea; }
+  </style>
+</head>
+<body>
+<h2>jQuery Load Diagnostic</h2>
+<div id="out"></div>
+<script>
+(function() {
+  var out = document.getElementById('out');
+  function row(cls, text) {
+    var d = document.createElement('div');
+    d.className = 'row ' + cls;
+    d.textContent = text;
+    out.appendChild(d);
+  }
+  function preEl(text) {
+    var p = document.createElement('pre');
+    p.textContent = text;
+    out.appendChild(p);
+  }
+
+  var jqUrl = '/js/common/jquery-3.5.1.min.js?v=diag';
+
+  row('', '→ Page URL: ' + window.location.href);
+  row('', '→ Fetching: ' + jqUrl);
+
+  fetch(jqUrl)
+    .then(function(r) {
+      var ct = r.headers.get('content-type') || '(none)';
+      row(r.ok ? 'ok' : 'err',
+          'HTTP ' + r.status + ' — Content-Type: ' + ct);
+      return r.text();
+    })
+    .then(function(body) {
+      row('', '→ First 200 chars of response:');
+      preEl(body.slice(0, 200));
+      if (body.trim().startsWith('<')) {
+        row('err', '✗ Server returned HTML for jQuery — that is the bug!');
+      } else if (body.indexOf('jQuery') !== -1 || body.indexOf('jquery') !== -1) {
+        row('ok', '✓ Server returned valid JS (jQuery found in body)');
+      } else {
+        row('err', '? Unexpected content — not HTML but no jQuery keyword either');
+      }
+    })
+    .catch(function(e) {
+      row('err', '✗ fetch() error: ' + e.message);
+    });
+
+  // Also try fetching via a <script> tag
+  var s = document.createElement('script');
+  s.src = '/js/common/jquery-3.5.1.min.js?v=diag2';
+  s.onload = function() {
+    row('ok', '✓ <script> tag: jQuery ' + (window.jQuery ? window.jQuery.fn.jquery : '(loaded but $ not set)') + ' loaded OK');
+  };
+  s.onerror = function(e) {
+    row('err', '✗ <script> tag: failed to load — check browser Network tab for the exact response');
+  };
+  document.head.appendChild(s);
+
+  row('', '— Service workers registered on this origin:');
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(regs) {
+      if (regs.length === 0) {
+        row('ok', '✓ No service workers registered');
+      } else {
+        regs.forEach(function(r) {
+          var url = (r.active || r.installing || r.waiting || {}).scriptURL || '(unknown)';
+          row('', '  SW: ' + url);
+        });
+      }
+    });
+    row('', '  (checking…)');
+  } else {
+    row('', '  Service workers not supported');
+  }
+})();
+</script>
+</body>
+</html>

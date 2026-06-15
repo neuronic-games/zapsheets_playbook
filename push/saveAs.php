@@ -21,7 +21,7 @@
   $file_name = $imageName; //basename($url); 
   echo $file_name;
   if(!empty($url)) {
-    if(!file_exists($file_name)) {
+    if(!file_exists($dir . $file_name)) {
       $content = file_get_contents($url);
       $output = file_put_contents($dir . $file_name, $content);
     }

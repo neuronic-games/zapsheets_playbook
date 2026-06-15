@@ -6,7 +6,7 @@
 
     // Local Testing
     $python_file_name = "gread.py "; 
-    $python_execution = "python ".$python_file_name .$sheetId .'sheetname' .$sheet; 
+    $python_execution = "python3 ".$python_file_name .$sheetId .'sheetname' .$sheet; 
     $output = shell_exec($python_execution); 
     echo $output;   
     

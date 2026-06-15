@@ -1,3 +1,20 @@
 RewriteOptions inherit
 Header always unset X-Frame-Options
 Header set Access-Control-Allow-Origin *
+
+RewriteEngine On
+
+# Short-URL: /{id}/view[/…] → /sheets/{id}/view/index.php  (more specific — must come first)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/view/?$ sheets/$1/view/index.php [L]
+
+# Short-URL: /{id}[/…] → redirect to /sheets/{id}[/…]
+#
+# Guard 1: skip real files and real directories (e.g. push/, js/, css/)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+# Guard 2: skip known top-level names regardless of subdirectory prefix.
+#          Matches  /anything/name/  or  /anything/name  at end of URI.
+RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index)(/|$)
+RewriteRule ^([A-Za-z0-9_\-]+)(/.*)?$ sheets/$1$2 [R=302,L]

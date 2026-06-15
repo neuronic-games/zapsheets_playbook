@@ -1,6 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////
-// All global vars 
+// All global vars
 // Controller version
+console.log('[JSController] script loaded');
 let controllerVerion = 4
 // For standalone
 let isStandalone = false;
@@ -12,11 +13,7 @@ let activeSheet_id = (getUrlVars()["id"]) ? getUrlVars()["id"].split('/')[0].toU
 //////////////////////////////////////////////////////////////
 // Path of the steps language url [sprecially from different server like zapsheets.com]
 // Change the path accordingly.
-// For Local Testing
-/* let jasonPath = './' */
-///////////////////////////////////////////////////////////////
-// For Online
-let jasonPath = 'https://zapsheets.com/playbook/'
+let jasonPath = './'
 ///////////////////////////////////////////////////////////////////////////////////////////
 function getCurrentLiveVersion() {
     var newScript = document.createElement('script');
@@ -84,36 +81,34 @@ function getCurrentGameMainVersion() {
  * checkSettingLoad
  */
 function checkSettingLoad() {
-    console.log('JS VERSION LOADED')
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * checkLoadStatMainMenu
  */
 function checkLoadStatMainMenu() {
-    console.log('MENU MAIN JS VERSION LOADED')
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * checkLoadStatMenu
  */
 function checkLoadStatMenu() {
-    console.log('MENU JS VERSION LOADED')
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * checkLoadStatMain
  */
 function checkLoadStatMain() {
-    console.log('MAIN JS VERSION LOADED')
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * doCheckOrientation
  */
 function doCheckOrientation() {
-    console.log(DetectSpecificDevice(), " DT ")
-    if(DetectSpecificDevice() == 'desktop') {
+    var device = DetectSpecificDevice();
+    var isPortrait = portrait.matches;
+    console.log('[JSController] doCheckOrientation — device:', device, 'portrait:', isPortrait);
+    if(device == 'desktop') {
         document.getElementById('useMode').style.display = 'none'
         if(window.orientation != 0) {
             pause = false;
@@ -121,11 +116,12 @@ function doCheckOrientation() {
         }
         return
     }
-    if(portrait.matches) {
+    if(isPortrait) {
         document.getElementById('useMode').style.display = 'none'
         pause = false;
         document.getElementById('useModeBG').style.display = 'none';
     } else {
+        // Landscape on a non-desktop device: show rotation prompt
         document.getElementById('useMode').style.display = 'flex'
         document.getElementById('modeLogo').style.display = 'block'
         document.getElementById('modeLogo').style.width = '45vh'

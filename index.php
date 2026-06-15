@@ -1,8 +1,8 @@
-<?php require "./dotEnv.php"; ?>
+<?php require __DIR__ . '/dotEnv.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta content-type='text/javascript' charset="UTF-8" />
+    <meta charset="UTF-8" />
     <meta http-equiv='cache-control' content='no-cache, no-store, must-revalidate'>
     <meta http-equiv='expires' content='0'>
     <meta http-equiv='pragma' content='no-cache'>
@@ -10,12 +10,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <base href="<?= rtrim($_ENV['BASE_PATH'], '/') . '/' ?>" />
     <title>Playboook</title>
     <link
       href="./css/bootstrap.min.css"
       rel="stylesheet"
       <?php if($_ENV['ENVIRONMENT'] != 'development') {
-        echo 'integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"';} 
+        echo '
+';} 
       ?>
       crossorigin="anonymous"
     />
@@ -23,7 +25,8 @@
       rel="stylesheet"
       href="./css/all.min.css"
       <?php if($_ENV['ENVIRONMENT'] != 'development') {
-        echo 'integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="';} ?>
+        echo '
+';} ?>
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
@@ -31,8 +34,8 @@
       rel="stylesheet"
       href="./css/minireset.min.css"
     />
-    <link rel="icon" type="image/x-icon" href="img/sheet_2_new.webp?version=1.0" />
-    <link rel="apple-touch-icon" href="img/sheet_icon_new.webp?version=1.0" />
+    <link rel="icon" type="image/x-icon" href="images/sheet_2_new.webp?version=1.0" />
+    <link rel="apple-touch-icon" href="images/sheet_icon_new.webp?version=1.0" />
     <!-- For PWA Hack -->
     <link rel="manifest" href="manifest.json?version=1">
   </head>
@@ -40,7 +43,7 @@
     <!-- Loaging screen default -->
    <div id="defaultScreen" style="position: relative; width: 100vw; height: 100vh; display: flex;
       flex-direction: column; align-items: center; justify-content: space-around;">
-    <img  src="img/sheet_2_new.webp?version=1.0" style="position:relative; width:25vw;"  alt="" onContextMenu="return false;" >
+    <img  src="images/sheet_2_new.webp?version=1.0" style="position:relative; width:25vw;"  alt="" onContextMenu="return false;" >
     </div>
     <iframe id="content" title="" style="position: absolute; top: 0; left: 0; position: absolute;
     top: 0;
@@ -62,9 +65,9 @@
   align-content: center;
   align-items: center;
   justify-content: space-around;">
-  <img id="useModeBG" src="img/floristry_bg.png" alt="" onContextMenu="return false;" style="position: absolute; top: 0; left: 0; width: 100%;
+  <img id="useModeBG" src="images/floristry_bg.png" alt="" onContextMenu="return false;" style="position: absolute; top: 0; left: 0; width: 100%;
   height: 100%; display: none;">
-  <img id="modeLogo" src="img/orientation.png?version=1.0" alt="" onContextMenu="return false;" style="position: absolute;
+  <img id="modeLogo" src="images/orientation.png?version=1.0" alt="" onContextMenu="return false;" style="position: absolute;
   width: 45vh;
   display: none;">
     <p id="modeMsg" style="font-size: 3vh;
@@ -74,17 +77,16 @@
   </div>
   <!--------------------------------------------------------------------------->
     <include src="./result.html"></include>
-    <script src="./js/common/jquery-3.5.1.min.js"></script>
+    <script src="js/common/jquery-3.5.1.min.js?v=3"></script>
     <script src="./js/common/jquery.cookie.min.js"></script>
     <script
       src="./js/common/bootstrap.bundle.min.js"
       <?php if($_ENV['ENVIRONMENT'] != 'development') {
-        echo 'integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"';} ?>
+        echo '
+';} ?>
       crossorigin="anonymous"
     ></script>
-    <script>
-    </script>
-    <!--------------------------------------------------------------------------->
+    <!--------------------------------------------------------------------------------------------------------->
     <script src="./js/common/devicedetector-min.js"></script>
     <script src="./js/common/localdata.js"></script>
     <script src="./js/common/moment.min.js?version=1.0"></script>
@@ -111,7 +113,13 @@
       // Checking Cors issues
       const loadSnippet = async (_ver) => {
         var sheetType = (getUrlVars()["sheet"]) ? getUrlVars()["sheet"].split('/')[0] : 'menu-en';
-        var sheet_Id = (getUrlVars()["id"]) ? getUrlVars()["id"].split('/')[0] : '';
+        var sheet_Id = (getUrlVars()["id"]) ? getUrlVars()["id"] : '';
+        // Fallback: extract from URL path /sheets/{id}/
+        if (!sheet_Id) {
+            var _pathParts = window.location.pathname.split('/');
+            var _sheetsIdx = _pathParts.indexOf('sheets');
+            if (_sheetsIdx >= 0 && _pathParts[_sheetsIdx + 1]) sheet_Id = _pathParts[_sheetsIdx + 1];
+        }
         var activeLang = (getUrlVars()["code"]) ? getUrlVars()["code"].split('/')[0].toUpperCase() : navigator.language.split('-')[0].toUpperCase();
 
         var fromParent = (getUrlVars()["from"]) ? getUrlVars()["from"].split('/')[0] : '';
@@ -133,22 +141,18 @@
         switch(sheetType.split('-')[0]) {
           case 'menu':
           case 'menus':
-            console.log("MENU")
             sheetToLoad = './menu/index.php?version=' + _ver + "&code=" + activeLang
             break;
           case 'steps':
           case 'step':
-            console.log("STEPS")
             sheetToLoad = './steps/index.php?version=' + _ver + "&code=" + activeLang + "&steps&" + fromParent + "&" + faqsSheetId + "&standalone=" + standalone 
             break;
           case 'faqs':
           case 'faq':
-            console.log("FAQS")
             sheetToLoad = './menu/index.php?version=' + _ver + "&code=" + activeLang + "&faqs&" + fromParent + "&" + faqsSheetId
             break;
           case 'rules':
           case 'rule':
-            console.log("RULES")
             sheetToLoad = './menu/index.php?version=' + _ver + "&code=" + activeLang + "&rules"
             break;
         }
@@ -173,13 +177,23 @@
           // Loading updated Controller
           getControllerVersion(_ver)
 
+          // Unregister any stale service workers from previous app versions
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              regs.forEach(function(reg) {
+                var url = (reg.active || reg.installing || reg.waiting || {}).scriptURL || '';
+                if (!url.includes('sw_playbook.js') && !url.includes('sw_playbookHomeApp')) reg.unregister();
+              });
+            });
+          }
+
           // Hide default screen
           document.getElementById('defaultScreen').style.display = 'none'
           const registerServiceWorker = async () => {
             if ("serviceWorker" in navigator) {
               try {
                 const registration = await navigator.serviceWorker.register("sw_playbook.js?version=" + _ver, {
-                  scope: "",
+                  scope: "./",
                 });
                 if (registration.installing) {
                   isSWExists = false
@@ -194,32 +208,7 @@
             }
           };
           registerServiceWorker();
-          if(window.navigator.onLine == true) {
-            CheckNetConnection();
-          } else {
-          }
-          // Checking internet speed
-          function CheckNetConnection() {
-            if(window.navigator.onLine == true) {
-              var netStartTime = new Date().getTime();
-              var img = new Image();
-              img.onload = function() {
-                var netLoadTime = new Date().getTime() - netStartTime;
-                checkConnectionSpeed(netLoadTime);
-              }
-              img.src = "./img/zapsheets.png?version=" + Math.random()
-            }
-          }
-          function checkConnectionSpeed(milliseconds) {
-            if(window.navigator.onLine == true) {
-              let downloadSize = 399000; //1024 * 1024 * 5;
-              var duration = (milliseconds) / 1000;
-              var bitsLoaded = downloadSize * 8;
-              var bps = (bitsLoaded / duration).toFixed(2);
-              var kbps = (bps / 1024).toFixed(2);
-              var mbps = (kbps / 1024).toFixed(2);
-            }
-          }
+
         })
       }
       /////////////////////////////////////////////////////////////////////////////////
@@ -291,8 +280,6 @@
       }, 3000)
     </script>
     <!----------------------------------------------------------------------------------->
-    <script src="./js/common/jquery-ui.js"></script>
-    <script src="./js/common/devicedetector-min.js"></script>
-    <!----------------------------------------------------------------------------------->
+    <!----------------------------------------------------------------------------------------------------------->
   </body>
 </html>

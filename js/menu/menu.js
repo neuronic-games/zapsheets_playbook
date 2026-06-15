@@ -4,7 +4,6 @@
  * Ready events
  */
 $(document).ready(function() {
-    console.log('READY MENU LOADED')
 
     //alert('menujs')
     let languageStepsData = [];
@@ -13,16 +12,11 @@ $(document).ready(function() {
     let faqsDataList = [];
     let statsDataList = [];
     let bggInfoData = [];
+    let videosDataList = [];
     let tagsDataList = [];
     let splashDataList = []
 
-    // Special Icons
-    let berryImgPath = ''
-    let bugImgPath = ''
-    let nutImgPath = ''
-    let diceImgPath = ''
-    let oopsImgPath = ''
-    let flowerImgPath = ''
+    // tagImageMap and applyTagReplacements are defined in zapsheetsCore.js
 
     // Timeout
     let idleTimeOut = 0;
@@ -55,12 +49,17 @@ $(document).ready(function() {
     var activeLang = (getUrlVars()["code"]) ? getUrlVars()["code"].split('/')[0].split('?')[0].toUpperCase() : navigator.language.split('-')[0].toUpperCase();
 
     // To get spreadsheet id passed from QS 'id'
-    var sheet_Id = (getUrlVars()["id"]) ? getUrlVars()["id"].split('/')[0] : '';
+    var sheet_Id = (getUrlVars()["id"]) ? getUrlVars()["id"] : '';
+    // Fallback: extract from URL path /sheets/{id}/ when id param is missing or invalid
+    if (!sheet_Id) {
+        var _pathParts = window.location.pathname.split('/');
+        var _sheetsIdx = _pathParts.indexOf('sheets');
+        if (_sheetsIdx >= 0 && _pathParts[_sheetsIdx + 1]) sheet_Id = _pathParts[_sheetsIdx + 1];
+    }
     // To jump faqs or rules
     //var sheetInnerParam = document.location.search.substr(1).split('&')[1].split('?')[0];
     var sheetInnerParam = document.location.search.substr(1).split('&')[2].split('?')[0];
     // To check where it comes
-    //console.log(sheetInnerParam, " --- ")
     //return;
 
     if(sheetInnerParam == 'faqs' || sheetInnerParam == 'faq' || sheetInnerParam == 'steps' || sheetInnerParam == 'step' || sheetInnerParam == 'rules' || sheetInnerParam == 'rule') {
@@ -77,7 +76,6 @@ $(document).ready(function() {
      */
     // Event to check for
     function EnableTimeoutEvents() {
-        console.log("Enable Events- ", idleTimeOut)
         events.forEach(function (name) {
             document.addEventListener(name, resetIdleTimer, true);
         });
@@ -112,25 +110,9 @@ $(document).ready(function() {
         clearTimeout(idleTime);
         idleTime = setTimeout(idleOut, (idleTimeOut * 1000))
     }
-    /////////////////////////////////////////////////////////////////////////////////
-    /**
-     * isJSONData
-     * @param {*} str 
-     * @returns 
-     */
-    let isJSONData = str => {
-        //if (typeof str === 'string'){
-        try {
-            let p = JSON.parse(str)
-            return p
-        } catch(e){
-        }
-        //}
-        return false
-    }
+    // isJSONData is defined in zapsheetsCore.js
     /////////////////////////////////////////////////////////////////////////////////
     if(sheet_Id == '') {
-        console.log('show Error screen')
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('sheetIdError').style.display = 'flex';
         document.getElementById('sheetIdBtn').addEventListener('touchstart', onCheckUserDataStart)
@@ -141,7 +123,7 @@ $(document).ready(function() {
     } else {
         let winLoc = window.location.href.split("?")[0];
         var browserLang = (getUrlVars()["code"]) ? getUrlVars()["code"].split('/')[0].toUpperCase() : navigator.language.split('-')[0].toLowerCase();
-        loadTagsData();
+        loadTagsData(function() { setTimeout(function() { jumpToMenuScreen(); }, 250); }, sheet_Id);
         loadSettingsData();
 
         // Splash Screen
@@ -163,7 +145,6 @@ $(document).ready(function() {
      */
     function onCheckUserDataClick(event) {
         if(event != null) {event.preventDefault();}
-        console.log("check user data")
         document.getElementById('sheetIdBtn').style.scale = '1'
         checkUserFillData();
 
@@ -219,13 +200,12 @@ $(document).ready(function() {
             //showloader()
             setTimeout(function() {
                 //window.history.replaceState({}, "null", (winLoc + "?code=" + browserLang.toLowerCase() +"&"+ jumpId + "&id=" + sheet_Id));
-                //console.log(winLoc)
                 //return;
                 window.history.replaceState({}, "null", (winLoc + "?code=" + browserLang.toLowerCase() + "&id=" + sheet_Id));
                 document.getElementById('loadingScreen').style.display = 'flex';
                 document.getElementById('sheetIdError').style.display = 'none';
                 setTimeout(function() {
-                    loadTagsData();
+                    loadTagsData(function() { setTimeout(function() { jumpToMenuScreen(); }, 250); }, sheet_Id);
                     loadSettingsData();
 
                     // Splash Screen
@@ -250,9 +230,8 @@ $(document).ready(function() {
                 type: 'GET',
                 dataType: "text",
                 success: function (response) {
-                    //console.log(response, " READ DATA")
                     if(response.length == 0) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Settings data not available.' + "</font><br>"
+                        logLoadMsg('<font color="red">Error: Settings data not available.' + "</font><br>")
                     } else { 
                         settingDataList = []
                         var mResponseSet = response.replace(/�/g, "") 
@@ -260,8 +239,7 @@ $(document).ready(function() {
                         for(var i=0; i<newSettingData.length; i++) {
                             var settingDataSting = JSON.stringify(newSettingData[i]);
                             if(isJSONData(settingDataSting) == false) {
-                                document.getElementById("loadingText").innerHTML += '<font color="red">Error: Settings Sheet : (Row: ' + i + ")</font><br>"
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Settings Sheet : (Row: ' + i + ")</font><br>")
                             } else {
                                 settingDataList[i] = isJSONData(settingDataSting)
                             }
@@ -316,7 +294,6 @@ $(document).ready(function() {
                             // Change App Icon
                             if(row_setting['Name'] == 'AppIconImageUrl') {
                                 if(row_setting['Value'] != '' ) {
-                                    //console.log(window.parent.document.getElementById('appIcon'), " >>>")
 
                                     let appIconPath = ''
                                     if (row_setting['Value'].includes("https://drive.google.com")) {
@@ -419,8 +396,7 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    console.log("ERROR - Setting data missing..")
-                    document.getElementById("loadingText").innerHTML += '<br><font color="red">Error: Missing Sheet : Settings</font><br>'
+                    logLoadMsg('<br><font color="red">Error: Missing Sheet : Settings</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
             })
@@ -431,149 +407,7 @@ $(document).ready(function() {
         }, 1000)
     }
     //////////////////////TAGS START///////////////////////////////////
-    /**
-     * loadTagsData
-     */
-    function loadTagsData() {
-        // Loading tags.json
-        setTimeout(function() {
-            var settingRequest = $.ajax({
-                //url: '../sheets/' + sheet_Id + "/tags.json?version=" + UIVersion,
-                url: jasonPath + 'sheets/' + sheet_Id + "/tags.json?version=" + UIVersion,
-                cache: true,
-                type: 'GET',
-                dataType: "text",
-                success: function (response) {
-                    //console.log(response, " READ DATA")
-                    if(response.length == 0) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags data not available.' + "</font><br>"
-                    } else { 
-                        tagsDataList = []
-                        var mResponseSet = response.replace(/�/g, "") 
-                        var newSettingData = eval(mResponseSet)
-                        for(var i=0; i<newSettingData.length; i++) {
-                            var settingDataSting = JSON.stringify(newSettingData[i]);
-                            if(isJSONData(settingDataSting) == false) {
-                                document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags Sheet : (Row: ' + i + ")</font><br>"
-                                updateInfoTextView()
-                            } else {
-                                tagsDataList[i] = isJSONData(settingDataSting)
-                            }
-                        }
-                        /////////////////////LANG SETTINGS START///////////////////////////
-                        // Store LazyLoadValue here
-                        $.each(tagsDataList, function (index_setting, row_setting) {
-                            // BERRY
-                            if(row_setting['Name'] == '[BERRY]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //berryImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    berryImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //berryImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    berryImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
-                            // DICE
-                            if(row_setting['Name'] == '[DICE]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //diceImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    diceImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //diceImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    diceImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
-                            // BUG
-                            if(row_setting['Name'] == '[BUG]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //bugImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    bugImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //bugImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    bugImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
-                            // NUT
-                            if(row_setting['Name'] == '[NUT]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //nutImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    nutImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //nutImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    nutImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
-                            // OOPS
-                            if(row_setting['Name'] == '[OOPS]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
-                            // FLOWER
-                            if(row_setting['Name'] == '[FLOWER]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    flowerImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //flowerImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    flowerImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
-                        })
-
-                        setTimeout(function() {
-                            console.log("CREATE UI SCREEN FOR MENU....")
-                            jumpToMenuScreen()
-                        }, 250)
-
-                    }
-                },
-                error: function(e) {
-                    console.log("ERROR - Setting data missing..")
-                    document.getElementById("loadingText").innerHTML += '<br><font color="red">Error: Missing Sheet : Tags</font><br>'
-                    document.getElementById("spinnerBox").style.display = 'none'
-                }
-            })
-            // Clear memory
-            settingRequest.onreadystatechange = null;
-            settingRequest.abort = null;
-            settingRequest = null;
-        }, 1000)
-    }
+    // loadTagsData is defined in zapsheetsCore.js
     //////////////////////SPLASH START///////////////////////////////////
     /**
      * loadTagsData
@@ -587,9 +421,8 @@ $(document).ready(function() {
                 type: 'GET',
                 dataType: "text",
                 success: function (response) {
-                    //console.log(response, " READ DATA")
                     if(response.length == 0) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags data not available.' + "</font><br>"
+                        logLoadMsg('<font color="red">Error: Tags data not available.' + "</font><br>")
                     } else { 
                         splashDataList = []
                         var mResponseSet = response.replace(/�/g, "") 
@@ -597,8 +430,7 @@ $(document).ready(function() {
                         for(var i=0; i<newSettingData.length; i++) {
                             var settingDataSting = JSON.stringify(newSettingData[i]);
                             if(isJSONData(settingDataSting) == false) {
-                                document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags Sheet : (Row: ' + i + ")</font><br>"
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Tags Sheet : (Row: ' + i + ")</font><br>")
                             } else {
                                 splashDataList[i] = isJSONData(settingDataSting)
                             }
@@ -639,8 +471,7 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    console.log("ERROR - Setting data missing..")
-                    document.getElementById("loadingText").innerHTML += '<br><font color="red">Error: Missing Sheet : Splash</font><br>'
+                    logLoadMsg('<br><font color="red">Error: Missing Sheet : Splash</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
             })
@@ -705,13 +536,12 @@ $(document).ready(function() {
      */
     function loadBggGameInfo() {
         var langRequest = $.ajax({
-            //url: '../sheets/' + sheet_Id + "/bgg-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion,
-            url: jasonPath + 'sheets/' + sheet_Id + "/bgg-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion, 
+            //url: '../sheets/' + sheet_Id + "/game.json?version=" + UIVersion,
+            url: jasonPath + 'sheets/' + sheet_Id + "/game-" + activeLang.split('-')[0].toLowerCase() + ".json?version=" + UIVersion,
             cache: true, 
             type: 'GET',
             dataType: "text",
             success: function (response) {
-                //console.log(response, " READ DATA")
                 if(response.length == 0) {
                     activeLang = "EN"
                     loadBggGameInfo()
@@ -722,18 +552,15 @@ $(document).ready(function() {
                     for(var i=0; i<newLangData.length; i++) {
                         var langDataSting = JSON.stringify(newLangData[i]);
                         if(isJSONData(langDataSting) == false) {
-                            document.getElementById("loadingText").innerHTML += '<font color="red">Error: ' + activeLang.split('-')[0] + ' Sheet : (Row: ' + i + ")</font><br>"
-                            updateInfoTextView()
+                            logLoadMsg('<font color="red">Error: ' + activeLang.split('-')[0] + ' Sheet : (Row: ' + i + ")</font><br>")
                         } else {
                             bggInfoData[i] = isJSONData(langDataSting)
                         }
                     }
 
-                    //console.log(bggInfoData, " bggInfoData")
                 }
             },
             error: function (response) {
-                console.log("NO FILE FOUND")
                 /* if(activeLang.toLowerCase() != 'EN') {
                     langLoadCount++
                     loadBggGameInfo()
@@ -741,7 +568,7 @@ $(document).ready(function() {
                     langLoadCount = 0;
                     activeLang = "EN"
                     loadBggGameInfo()
-                    /* document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : bgg-' + activeLang + '</font><br>'
+                    /* logLoadMsg('<font color="red">Error: Missing Sheet : bgg-' + activeLang + '</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none'
                 } */
             }
@@ -766,7 +593,6 @@ $(document).ready(function() {
             type: 'GET',
             dataType: "text",
             success: function (response) {
-                //console.log(response, " READ DATA")
                 if(response.length == 0) {
                     activeLang = "EN"
                     loadMenuJSON()
@@ -777,8 +603,7 @@ $(document).ready(function() {
                     for(var i=0; i<newLangData.length; i++) {
                         var langDataSting = JSON.stringify(newLangData[i]);
                         if(isJSONData(langDataSting) == false) {
-                            document.getElementById("loadingText").innerHTML += '<font color="red">Error: ' + activeLang.split('-')[0] + ' Sheet : (Row: ' + i + ")</font><br>"
-                            updateInfoTextView()
+                            logLoadMsg('<font color="red">Error: ' + activeLang.split('-')[0] + ' Sheet : (Row: ' + i + ")</font><br>")
                         } else {
                             languageStepsData[i] = isJSONData(langDataSting)
                         }
@@ -787,7 +612,6 @@ $(document).ready(function() {
                     if(lazyLoadImages == "FALSE" || lazyLoadImages == "False" || lazyLoadImages == "false" || lazyLoadImages == "0") {
                         PreloadAllToCache();
                     } else {
-                        console.log("CREATE UI SCREEN FOR MENU....")
 
                         // Loading moved here from settings block..
                         loadBggGameInfo();
@@ -798,18 +622,16 @@ $(document).ready(function() {
                 }
             },
             error: function (response) {
-                console.log("NO FILE FOUND")
                 /* if(activeLang.toLowerCase() != 'EN' && langLoadCount < 1) {
                     langLoadCount++
                     loadLanguageJSON()
                 } else { */
                     langLoadCount++;
-                    //console.log(langLoadCount, " >>")
                     if(langLoadCount < 5) {
                         activeLang = "EN"
                         loadMenuJSON()
                     } else {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : menu-' + activeLang.toLowerCase() + '</font><br>'
+                        logLoadMsg('<font color="red">Error: Missing Sheet : menu-' + activeLang.toLowerCase() + '</font><br>')
                         document.getElementById("spinnerBox").style.display = 'none'
                     }
                  /* } */
@@ -915,7 +737,6 @@ $(document).ready(function() {
         }, 10)
         // Auto fill default sections
         // Check motion
-        console.log("Caching In Background")
         
         if(fromParent == 'app' || fromParent == 'web') {
             setTimeout(function() {
@@ -1008,7 +829,6 @@ $(document).ready(function() {
             }
         })
         if(_count == getAllImageCount()) {
-            console.log("ALL IMAGES IN CACHE NOW...")
             preCachedDone = true;
         }
     }
@@ -1096,7 +916,6 @@ $(document).ready(function() {
             })
             setTimeout(function() {
             }, 500)
-            console.log("IMAGES CACHED")
         } else {
         }
     }
@@ -1171,7 +990,6 @@ $(document).ready(function() {
      * showProgressBar
      */
     function showProgressBar() {
-        //console.log("show loaded")
         if(preCachedDone == false) {
             document.getElementById('spinnerMiddleBox').style.display = 'block'
         } else {
@@ -1185,7 +1003,6 @@ $(document).ready(function() {
      */
     function updateProgressBar(e) {
         if (e.lengthComputable) {
-            //console.log(e.loaded / e.total * 100, " perc");
         }
     }
     ///////////////////////////////////////////////////////////////////////////////
@@ -1270,24 +1087,16 @@ $(document).ready(function() {
                     document.getElementById('menuButtonLabel_' + i).addEventListener('mouseup', onMenuTouchEnd)
                     document.getElementById('menuButtonLabel_' + i).addEventListener('mouseout', onMenuTouchOut)
 
-                    console.log("MENU DONE")
                 }
             }
 
-            // Info & BGG Icons Buttons events
+            // Info Icon Button events
             document.getElementById('infoIconBtn').addEventListener('touchstart', onAnimateBtnTouchStart)
             document.getElementById('infoIconBtn').addEventListener('touchend', onAnimateBtnTouchEnd)
 
             document.getElementById('infoIconBtn').addEventListener('mousedown', onAnimateBtnTouchStart)
             document.getElementById('infoIconBtn').addEventListener('mouseup', onAnimateBtnTouchEnd)
             document.getElementById('infoIconBtn').addEventListener('mouseout', onAnimateBtnTouchOut)
-
-            document.getElementById('bggIconBtn').addEventListener('touchstart', onAnimateBtnTouchStart)
-            document.getElementById('bggIconBtn').addEventListener('touchend', onAnimateBtnTouchEnd)
-
-            document.getElementById('bggIconBtn').addEventListener('mousedown', onAnimateBtnTouchStart)
-            document.getElementById('bggIconBtn').addEventListener('mouseup', onAnimateBtnTouchEnd)
-            document.getElementById('bggIconBtn').addEventListener('mouseout', onAnimateBtnTouchOut)
 
             // On menuBGInage Touch
             document.getElementById('menuScreen').addEventListener('touchstart', onMenuScreenTouchStart)
@@ -1374,7 +1183,6 @@ $(document).ready(function() {
      */
     function onMenuScreenTouchEnd(event) {
         event.preventDefault();
-        console.log("on Menu Screen Touched")
         RemoveMenuScreenListner();
 
         // Animate menuItems
@@ -1406,7 +1214,6 @@ $(document).ready(function() {
         //timeLine.seek(0);
         //timeLine.resume();
 
-        //console.log("showing splash screen....")
 
         $("#menuScreen").fadeIn();
         document.getElementById('splashScreen').style.display = 'block';
@@ -1443,39 +1250,16 @@ $(document).ready(function() {
      */
     function onAnimateBtnTouchEnd(event) {
         event.preventDefault();
-        //console.log(document.getElementById('bggIconBtn').opacity, " --- ", event.target.id)
 
         let touchStatus = handleTouchEnd(event);
         if(touchStatus == false) {
             return;
         }
 
-        const bggImage = document.getElementById("bggIconBtn");
-        const infoImage = document.getElementById("infoIconBtn");
-
-        // 2. Use window.getComputedStyle()
-        const bggComputedStyle = window.getComputedStyle(bggImage);
-        const bggCurrentOpacity = bggComputedStyle.getPropertyValue("opacity");
-        const infoComputedStyle = window.getComputedStyle(infoImage);
-        const infoCurrentOpacity = infoComputedStyle.getPropertyValue("opacity");
-
-        // 3. Convert to percentage
-        const bggOpacityPercentage = parseFloat(bggCurrentOpacity) * 100;
-        const infoOpacityPercentage = parseFloat(infoCurrentOpacity) * 100;
-
-        //console.log(bggOpacityPercentage, " << bggIcon -- infoIcon >>", infoOpacityPercentage)
-
-        if(bggOpacityPercentage >= 50) {
-            //console.log("BGG Icon ")
-            document.getElementById('downloadBtn').style.display = 'none'
-            document.getElementById('contentSteps').style.display = 'none'
-            document.getElementById('menuTopContainer').style.display = 'flex'
-            FillBGGScreenData(statsDataList)
-        } else if(infoOpacityPercentage >= 50) {
-            //console.log("Info Icon ")
-            document.getElementById('downloadBtn').style.display = 'none'
-            document.getElementById('contentSteps').style.display = 'none'
-            document.getElementById('menuTopContainer').style.display = 'flex'
+        document.getElementById('downloadBtn').style.display = 'none'
+        document.getElementById('contentSteps').style.display = 'none'
+        document.getElementById('menuTopContainer').style.display = 'flex'
+        if(statsDataList && statsDataList.boardgame) {
             FillBGGScreenData(statsDataList)
         }
         
@@ -1487,31 +1271,20 @@ $(document).ready(function() {
     function LoadStatsData() {
         setTimeout(function() {
             var StatsRequest = $.ajax({
-                //url: '../sheets/' + sheet_Id + "/stats.json?version=" + UIVersion,
-                url: jasonPath + 'sheets/' + sheet_Id + "/stats.json?version=" + UIVersion,
+                //url: '../sheets/' + sheet_Id + "/bgg.json?version=" + UIVersion,
+                url: jasonPath + 'sheets/' + sheet_Id + "/bgg.json?version=" + UIVersion,
                 cache: true,
                 type: 'GET',
                 dataType: "JSON",
                 success: function (response) {
-                    //console.log(response, " READ DATA")
-                    if(response.length == 0) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Stats data not available.' + "</font><br>"
-                    } else { 
-                        if (response.status == 200) {
-                            //console.log(response.boardgame, ' ----- ', response.boardgameBasicData)
-                            statsDataList = response
-                            //FillBGGScreenData(statsDataList)
-                        } else {
-                           document.getElementById("loadingText").innerHTML += '<font color="red">Error: Stats data not available.' + "</font><br>" 
-                        }
+                    if(!response || (Array.isArray(response) && response.length == 0)) {
+                        logLoadMsg('<font color="red">Error: Stats data not available.' + "</font><br>")
+                    } else {
+                        statsDataList = response
                     }
-                    //console.log(statsDataList, " ---- ")
-
-                    
                 },
                 error: function(e) {
-                    console.log("ERROR - Stats data missing..")
-                    document.getElementById("loadingText").innerHTML += '<br><font color="red">Error: Missing Sheet : stats</font><br>'
+                    logLoadMsg('<br><font color="red">Error: Missing Sheet : stats</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
             })
@@ -1527,26 +1300,27 @@ $(document).ready(function() {
      * @param {*} data 
      */
     function FillBGGScreenData(data) {
-        //console.log(getBoardGameName(data))
+        if (!data || !data.boardgame || !data.boardgame[0]) {
+            logLoadMsg('<font color="red">Error: BGG stats data not available.</font><br>')
+            return;
+        }
         document.getElementById('small-sub').innerHTML = ''
         let objectid = data.boardgame[0].boardgame['@attributes']['objectid'];
         let gameName = getBoardGameName(data)
         let boardGameDesigner = getBoardGameDesigner(data);
-       // console.log(boardGameDesigner, " ---- ")
         let boardGameDesignerTitle = boardGameDesigner == undefined ? '' : boardGameDesigner
         let yearPublish = (data.boardgame[0].boardgame.yearpublished == undefined || data.boardgame[0].boardgame.yearpublished == 0 ) ? '' : data.boardgame[0].boardgame.yearpublished
 
         let name = data.boardgame[0].boardgame.image.split('/')
         let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
         let iPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-        let imagePath = data.boardgame[0].boardgame.image == undefined ? './img/earshot-games_splash.png' : iPath
+        let imagePath = data.boardgame[0].boardgame.image == undefined ? '../images/earshot-games_splash.png' : iPath
         let playerStats = (data.minplayers == data.boardgame[0].boardgame.maxplayers) ? data.boardgame[0].boardgame.maxplayers : data.boardgame[0].boardgame.minplayers+"-"+data.boardgame[0].boardgame.maxplayers;
         let playtimeStats = (data.boardgame[0].boardgame.minplaytime == data.boardgame[0].boardgame.maxplaytime) ? data.boardgame[0].boardgame.maxplaytime : data.boardgame[0].minplaytime+"-"+data.boardgame[0].boardgame.maxplaytime; 
 
         let gameRatingAverage = getBoardGameRatingAverage(data);
         let ratingInPercentage = ((gameRatingAverage - 5)*5/3) * 20;
 
-        //console.log(ratingInPercentage, " --- ", gameRatingAverage)
 
         if(ratingInPercentage < 0) {
             ratingInPercentage = 0
@@ -1625,15 +1399,15 @@ $(document).ready(function() {
                 <div style="width:50%; display: inline-block; text-align: end;">
                     <div class="metaGroup_details_filter">
                     <span>
-                        <img src="../img/earshot-games_player.png" width="25vh" loading="lazy" style="position:relative; height:3vh; width:auto;" />${playerStats}</span><span><img src="../img/earshot-games_time.png" width="35vh" loading="lazy" style="position:relative; height:3vh; width:auto;" />${playtimeStats}
+                        <img src="../images/earshot-games_player.png" width="25vh" loading="lazy" style="position:relative; height:3vh; width:auto;" />${playerStats}</span><span><img src="../images/earshot-games_time.png" width="35vh" loading="lazy" style="position:relative; height:3vh; width:auto;" />${playtimeStats}
                     </span>
                     <span>
-                        <img src="../img/earshot-games_age.png"  width="25vh" loading="lazy" style="position:relative; height:3vh; width:auto;" />${data.boardgame[0].boardgame.age}+
+                        <img src="../images/earshot-games_age.png"  width="25vh" loading="lazy" style="position:relative; height:3vh; width:auto;" />${data.boardgame[0].boardgame.age}+
                     </span>
                     ${data.boardgame[0].boardgamemechanic != undefined && data.boardgame[0].boardgame.boardgamemechanic.includes("Cooperative Game") == true
                     ?
                     `<span>
-                        <img src="../img/earshot-games_coop.png?version=1.4" width="25vh" style="margin-top:-4px" loading="lazy" style="position:relative; height:3vh; width:auto;" /></span>`
+                        <img src="../images/earshot-games_coop.png?version=1.4" width="25vh" style="margin-top:-4px" loading="lazy" style="position:relative; height:3vh; width:auto;" /></span>`
                     : ``}
                 </div>
                 <div id="${objectid}_d" class="ratingWrapper">
@@ -1642,7 +1416,9 @@ $(document).ready(function() {
                 </div> 
                 </div>
                 <div style="position: relative; width: 100%; display: flex; flex-direction: row; justify-content: flex-end; margin-top: 2vh;">
-                    <img src="../img/btn_bgg_2.webp" style="width:7vh" alt="" loading="lazy" />
+                    <a href="https://boardgamegeek.com/boardgame/${objectid}" target="_blank" rel="noopener noreferrer">
+                        <img src="../images/btn_bgg_2.webp" style="width:7vh" alt="View on BoardGameGeek" loading="lazy" />
+                    </a>
                 </div>
                 </div>
               </div>
@@ -1891,7 +1667,6 @@ $(document).ready(function() {
             return;
         }
         
-        //console.log('Back menu click - ', fromParent)
         if(fromParent == 'app' || fromParent == 'web') {
             window.parent.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
         } else {
@@ -1906,48 +1681,48 @@ $(document).ready(function() {
      * @param {*} menuType 
      */
     function FillSelectedMenuData(menuType, toHold) {
-        //console.log(menuType, " --- ", toHold)
         document.getElementById('menuList').innerHTML = ''
         document.getElementById('small-sub').innerHTML = ''
         /* if(menuType.toLowerCase().indexOf('faq') != -1) {
-            console.log('faqs selected')
             document.getElementById('downloadBtn').style.display = 'none'
             document.getElementById('contentSteps').style.display = 'none'
             LoadGameFaqs()
         } else if(menuType.toLowerCase().indexOf('rule') != -1) {
-            console.log('rules selected')
             document.getElementById('downloadBtn').style.display = 'block'
             document.getElementById('contentSteps').style.display = 'none'
             LoadGameRules()
         } else {
-            console.log('teach me selected')
             document.getElementById('downloadBtn').style.display = 'none'
             document.getElementById('contentSteps').style.display = 'block'
             LoadGameSteps();
         } */
        if(toHold == 'faqs' || toHold == 'faq') {
-            console.log('faqs selected')
             document.getElementById('downloadBtn').style.display = 'none'
             document.getElementById('contentSteps').style.display = 'none'
             document.getElementById('menuPage').style.backgroundColor = '#2D2C2B'
             document.getElementById('menuTopContainer').style.display = 'flex'
             LoadGameFaqs()
         } else if(toHold == 'rules' || toHold == 'rule') {
-            console.log('rules selected')
             document.getElementById('downloadBtn').style.display = 'block'
             document.getElementById('contentSteps').style.display = 'none'
             document.getElementById('menuPage').style.backgroundColor = '#2D2C2B'
             document.getElementById('menuTopContainer').style.display = 'flex'
             LoadGameRules()
         } else if(toHold == 'steps' || toHold == 'step') {
-            console.log('teach me selected')
             document.getElementById('downloadBtn').style.display = 'none'
             document.getElementById('menuPage').style.display = 'block'
             document.getElementById('menuPage').style.backgroundColor = '#F9F3E3'
             //document.getElementById('contentSteps').style.display = 'block'
             document.getElementById('menuTopContainer').style.display = 'none'
             LoadGameSteps();
-        } 
+        } else if(toHold == 'videos' || toHold == 'vidoes') {
+            // 'vidoes' handles the typo in menu-en.json Next field
+            document.getElementById('downloadBtn').style.display = 'none'
+            document.getElementById('contentSteps').style.display = 'none'
+            document.getElementById('menuPage').style.backgroundColor = '#2D2C2B'
+            document.getElementById('menuTopContainer').style.display = 'flex'
+            LoadGameVideos()
+        }
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -1957,7 +1732,6 @@ $(document).ready(function() {
     function LoadGameSteps() {
         // "?code=" + browserLang + "&id=" + faqSheetId + "&sheet=steps&from=floristry&faqsId=" + activeSheet_id + "&standalone=" + isStandalone
         //let _sheet = '../steps/index.php?version=' + UIVersion;
-        //console.log(_sheet, " ...sheetToLoad...")
         /* let _sheet = '../steps/index.php?version=' + UIVersion;
         $("#contentSteps").attr("src", _sheet + "?code=" + activeLang + "&id=" + sheet_Id);
         $("#contentSteps").fadeIn(500); */
@@ -2056,9 +1830,8 @@ $(document).ready(function() {
                 type: 'GET',
                 dataType: "text",
                 success: function (response) {
-                    //console.log(response, " READ DATA")
                     if(response.length == 0) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Rules data not available.' + "</font><br>"
+                        logLoadMsg('<font color="red">Error: Rules data not available.' + "</font><br>")
                     } else { 
                         faqsDataList = []
                         var mResponseSet = response.replace(/�/g, "") 
@@ -2066,33 +1839,21 @@ $(document).ready(function() {
                         for(var i=0; i<newSettingData.length; i++) {
                             var settingDataSting = JSON.stringify(newSettingData[i]);
                             if(isJSONData(settingDataSting) == false) {
-                                document.getElementById("loadingText").innerHTML += '<font color="red">Error: Rules Sheet : (Row: ' + i + ")</font><br>"
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Rules Sheet : (Row: ' + i + ")</font><br>")
                             } else {
                                 faqsDataList[i] = isJSONData(settingDataSting)
                             }
                         }
                         setTimeout(function() {
-                            //console.log(faqsDataList, " >>>")
                             let faqList = ''
                             for(var i=0; i<faqsDataList.length; i++) {
                                 if(faqsDataList[i].Type == 'faq') {
                                     // TAGS Support
                                     // For Question
-                                    let mWordBerryQuestion = faqsDataList[i].Question.replaceAll('[BERRY]', `<img class="specialIconsFaqs" src="${berryImgPath}" loading="lazy"></img>`)
-                                    let mWordDiceQuesyion = mWordBerryQuestion.replaceAll('[DICE]', `<img class="specialIconsFaqs" src="${diceImgPath}" loading="lazy"></img>`)
-                                    let mWordNutQuestion = mWordDiceQuesyion.replaceAll('[NUT]', `<img class="specialIconsFaqs" src="${nutImgPath}" loading="lazy"></img>`)
-                                    let mWordBugQuestion = mWordNutQuestion.replaceAll('[BUG]', `<img class="specialIconsFaqs" src="${bugImgPath}" loading="lazy"></img>`)
-                                    let mWordOopsQuestion = mWordBugQuestion.replaceAll('[OOPS]', `<img class="specialIconsFaqs" src="${oopsImgPath}" loading="lazy"></img>`)
-                                    let mWordFlowerQuestion = mWordOopsQuestion.replaceAll('[FLOWER]', `<img class="specialIconsFaqs" src="${flowerImgPath}" loading="lazy"></img>`)
+                                    let mWordFlowerQuestion = applyTagReplacements(faqsDataList[i].Question, 'specialIconsFaqs')
 
                                     // For Answer
-                                    let mWordBerryAnswer = faqsDataList[i].Answer.replaceAll('[BERRY]', `<img class="specialIconsFaqs" src="${berryImgPath}" loading="lazy"></img>`)
-                                    let mWordDiceAnswer = mWordBerryAnswer.replaceAll('[DICE]', `<img class="specialIconsFaqs" src="${diceImgPath}" loading="lazy"></img>`)
-                                    let mWordNutAnswer = mWordDiceAnswer.replaceAll('[NUT]', `<img class="specialIconsFaqs" src="${nutImgPath}" loading="lazy"></img>`)
-                                    let mWordBugAnswer = mWordNutAnswer.replaceAll('[BUG]', `<img class="specialIconsFaqs" src="${bugImgPath}" loading="lazy"></img>`)
-                                    let mWordOopsAnswer = mWordBugAnswer.replaceAll('[OOPS]', `<img class="specialIconsFaqs" src="${oopsImgPath}" loading="lazy"></img>`)
-                                    let mWordFlowerAnswer = mWordOopsAnswer.replaceAll('[FLOWER]', `<img class="specialIconsFaqs" src="${flowerImgPath}" loading="lazy"></img>`)
+                                    let mWordFlowerAnswer = applyTagReplacements(faqsDataList[i].Answer, 'specialIconsFaqs')
 
                                     // get Image
                                     let faqImage = getImagePath(faqsDataList[i].Image)
@@ -2120,7 +1881,6 @@ $(document).ready(function() {
                                         document.getElementById('faqItem_' + i).addEventListener('mousedown', onFaqItemTouchStart)
                                         document.getElementById('faqItem_' + i).addEventListener('mouseup', onFaqItemTouchEnd)
 
-                                        console.log("FAQs DONE")
                                     }
                                 }
                                 
@@ -2129,10 +1889,9 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    console.log("ERROR - Faqs data missing..")
                     activeLang = "EN";
                     LoadGameFaqs();
-                    /* document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : Faqs</font><br>'
+                    /* logLoadMsg('<font color="red">Error: Missing Sheet : Faqs</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none' */
                 }
             })
@@ -2223,7 +1982,6 @@ $(document).ready(function() {
             if(faqsDataList[i].Type == 'faq') {
                 if(_id == i) {
                     let elementToScroll = document.getElementById('faq_'+i);
-                    /* console.log(element.firstElementChild, " --- ") */
                     //document.getElementById('faq_'+i).style.display = 'block';
                     //$('#faq_' + i).slideUp();
                     //document.getElementById('faq_'+i).style.opacity = 0;
@@ -2247,7 +2005,6 @@ $(document).ready(function() {
                     // 3. Access the 'height' property
                     const heightInPx = computedStyle.height;
                     let scrollH = Math.ceil(heightInPx.split('px')[0]) 
-                    console.log(scrollH, " heightInPx")
                     elem.scrollTop = scrollH;
                     }, 100) */
                 } else {
@@ -2256,6 +2013,97 @@ $(document).ready(function() {
                 }
             }
         }
+    }
+    ///////////////////////////////////////////////////////////////////////////////
+    /**
+     * LoadGameVideos — renders video links from videos-{lang}.json
+     */
+    function LoadGameVideos() {
+        var langCode = activeLang.split('-')[0].toLowerCase();
+        var videosRequest = $.ajax({
+            url: jasonPath + 'sheets/' + sheet_Id + '/videos-' + langCode + '.json?version=' + UIVersion,
+            cache: true,
+            type: 'GET',
+            dataType: 'text',
+            success: function(response) {
+                if (!response || response.length === 0) {
+                    document.getElementById('menuList').innerHTML =
+                        '<p style="color:#F7AE50; font-size:3vh; padding:2vh;">No videos available.</p>';
+                    return;
+                }
+                videosDataList = [];
+                try {
+                    var parsed = JSON.parse(response);
+                    for (var i = 0; i < parsed.length; i++) {
+                        var row = parsed[i];
+                        if (row.Content && row.Content.trim() !== '') {
+                            videosDataList.push(row);
+                        }
+                    }
+                } catch(e) {
+                    document.getElementById('menuList').innerHTML =
+                        '<p style="color:red; font-size:3vh; padding:2vh;">Error reading videos data.</p>';
+                    return;
+                }
+
+                var html = '<div style="height: 4vh;"></div>';
+                for (var j = 0; j < videosDataList.length; j++) {
+                    var item = videosDataList[j];
+                    var title = item.Title || ('Video ' + (j + 1));
+                    var url   = item.Content.trim();
+
+                    // Detect platform for icon label
+                    var platform = '';
+                    if (url.indexOf('youtube.com') !== -1 || url.indexOf('youtu.be') !== -1) {
+                        platform = 'YouTube';
+                    } else if (url.indexOf('tiktok.com') !== -1) {
+                        platform = 'TikTok';
+                    } else {
+                        platform = 'Watch';
+                    }
+
+                    html += `<div id="videoItem_${j}"
+                        data-url="${url}"
+                        style="display:flex; align-items:center; justify-content:space-between;
+                               width:100%; padding:2vh 3vh; margin-bottom:1.5vh;
+                               background:rgba(255,255,255,0.07); border-radius:1.5vh;
+                               cursor:pointer;">
+                        <div style="font-size:3vh; color:#FFFFFF; line-height:1.2;">${title}</div>
+                        <div style="font-size:2.2vh; color:#F7AE50; white-space:nowrap; padding-left:2vh;">${platform} &#8599;</div>
+                    </div>`;
+                }
+
+                if (html === '') {
+                    html = '<p style="color:#F7AE50; font-size:3vh; padding:2vh;">No video links found.</p>';
+                }
+
+                document.getElementById('menuList').innerHTML = html;
+
+                // Attach click handlers — open each link in a new tab
+                setTimeout(function() {
+                    for (var k = 0; k < videosDataList.length; k++) {
+                        (function(idx) {
+                            var el = document.getElementById('videoItem_' + idx);
+                            if (!el) return;
+                            el.addEventListener('mouseup', function() {
+                                window.open(this.getAttribute('data-url'), '_blank');
+                            });
+                            el.addEventListener('touchend', function(e) {
+                                e.preventDefault();
+                                window.open(this.getAttribute('data-url'), '_blank');
+                            });
+                        })(k);
+                    }
+                }, 100);
+            },
+            error: function() {
+                document.getElementById('menuList').innerHTML =
+                    '<p style="color:red; font-size:3vh; padding:2vh;">Error: videos-' + langCode + '.json not found.</p>';
+            }
+        });
+        videosRequest.onreadystatechange = null;
+        videosRequest.abort = null;
+        videosRequest = null;
     }
     ///////////////////////////////////////////////////////////////////////////////
     /**
@@ -2271,7 +2119,7 @@ $(document).ready(function() {
                 dataType: "text",
                 success: function (response) {
                     if(response.length == 0) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Rules data not available.' + "</font><br>"
+                        logLoadMsg('<font color="red">Error: Rules data not available.' + "</font><br>")
                     } else { 
                         rulesDataList = []
                         var mResponseSet = response.replace(/�/g, "") 
@@ -2279,8 +2127,7 @@ $(document).ready(function() {
                         for(var i=0; i<newSettingData.length; i++) {
                             var settingDataSting = JSON.stringify(newSettingData[i]);
                             if(isJSONData(settingDataSting) == false) {
-                                document.getElementById("loadingText").innerHTML += '<font color="red">Error: Rules Sheet : (Row: ' + i + ")</font><br>"
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Rules Sheet : (Row: ' + i + ")</font><br>")
                             } else {
                                 rulesDataList[i] = isJSONData(settingDataSting)
                             }
@@ -2305,7 +2152,6 @@ $(document).ready(function() {
                                     document.getElementById('rulesItem_' + i).addEventListener('mouseup', onRuleItemTouchEnd)
                                     document.getElementById('rulesItem_' + i).addEventListener('mouseout', onRuleItemTouchEnd)
 
-                                    console.log("RULES DONE")
                                 }
                             }
                             DoDownloadRulesBtnEvents();
@@ -2313,10 +2159,9 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    console.log("ERROR - Rules data missing..")
                     activeLang = "EN";
                     LoadGameRules();
-                    /* document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : Rules</font><br>'
+                    /* logLoadMsg('<font color="red">Error: Missing Sheet : Rules</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none' */
                 }
             })
@@ -2365,7 +2210,6 @@ $(document).ready(function() {
     function onRuleItemTouchEnd(event) {
         if(event.cancelable) event.preventDefault();
         let touchStatus = handleTouchEnd(event);
-        //console.log(touchStatus, " --- ")
         if(touchStatus == false) {
             //if(event.target.parentElement.id == 'rulesNavigation') {
                 //document.getElementById(event.target.id).style.color = '#F7AE50'
@@ -2386,7 +2230,6 @@ $(document).ready(function() {
         }
 
 
-        //console.log(event.target.parentElement.parentElement.id, " --- ", event.target.parentElement)
 
         //document.getElementById(event.target.id).style.color = '#F7AE50'
         let ruleItemId = -1
@@ -2414,10 +2257,8 @@ $(document).ready(function() {
             document.getElementById(event.target.id).style.color = '#F7AE50'
         }
         
-        //console.log(ruleItemId, " --- ruleItemId")
         if(ruleItemId == undefined) return;
         document.getElementById('menuDetailsPage').style.display = 'flex'
-        //console.log(rulesDataList[ruleItemId])
         document.getElementById('menuDetailsTitle').innerHTML = rulesDataList[ruleItemId].ID;
 
         // Add Listener
@@ -2446,8 +2287,6 @@ $(document).ready(function() {
      * @param {*} ruleItemId 
      */
     function FillSelectedMenuDetailsData(ruleItemId) {
-        //console.log(getMenuDetailItemEndIndex(ruleItemId))
-        //console.log(languageStepsData[ruleItemId])
         //FillSelectedMenuDetailsData()
         document.getElementById('menuDetails').innerHTML = ''
 
@@ -2477,18 +2316,11 @@ $(document).ready(function() {
         }
 
         for(var i=Number(ruleItemId)+1; i<endIndex; i++) {
-            //console.log(rulesDataList[i], ' DATA TO DISPLAY')
             if(rulesDataList[i].Type == 'text') {
                 //menuItemToDisplay = rulesDataList[i].Text
                 // Format Text for adding special icons
-                let mWordBerry = rulesDataList[i].Text.replaceAll('[BERRY]', `<img class="specialIcons" src="${berryImgPath}" loading="lazy"></img>`)
-                let mWordDice = mWordBerry.replaceAll('[DICE]', `<img class="specialIcons" src="${diceImgPath}" loading="lazy"></img>`)
-                let mWordNut = mWordDice.replaceAll('[NUT]', `<img class="specialIcons" src="${nutImgPath}" loading="lazy"></img>`)
-                let mWordBug = mWordNut.replaceAll('[BUG]', `<img class="specialIcons" src="${bugImgPath}" loading="lazy"></img>`)
-                let mWordOops = mWordBug.replaceAll('[OOPS]', `<img class="specialIcons" src="${oopsImgPath}" loading="lazy"></img>`)
-                let mWordFlower = mWordOops.replaceAll('[FLOWER]', `<img class="specialIcons" src="${flowerImgPath}" loading="lazy"></img>`)
+                let mWordFlower = applyTagReplacements(rulesDataList[i].Text, 'specialIcons')
 
-                //console.log(mWordOops, " final")
                 //document.getElementById('menuDetails').innerHTML += `<p style="margin-top:3vh; font-size:3vh; line-height:1.1; width:100%; color:white" >${rulesDataList[i].Text}</p>`
 
                 document.getElementById('menuDetails').innerHTML += `<p style="margin-top:3vh; font-size:3vh; line-height:1.1; width:100%; color:white" >${mWordFlower}</p>`
@@ -2571,13 +2403,9 @@ $(document).ready(function() {
         for(var i=Number(index)+1; i<rulesDataList.length; i++) {
             /* if(rulesDataList[i].ID != '') {
                 lastIndex = i */
-                //console.log(i+1)
-                //console.log(rulesDataList[i], " --- ")
                 /* return lastIndex
             }  */
-           //console.log(rulesDataList[i])
            if(rulesDataList[i].Type == 'menu') {
-            // console.log(i, " menu Index")
             lastIndex = i;
             return lastIndex;
            }
@@ -2659,7 +2487,6 @@ $(document).ready(function() {
     function handleTouchEnd(event) {
         let inButton = false;
         let touch = null;
-        //console.log(event.type, " ---- ")
         if(event.type == 'mouseout') {
             inButton = false;
             return inButton;
@@ -2671,13 +2498,10 @@ $(document).ready(function() {
         const element = event.target; // Or use the element from step 1
         const rect = element.parentElement.getBoundingClientRect();
 
-        //console.log(element, " --- ", element.parentElement)
 
         if(touch.clientX >= rect.left && touch.clientX <= rect.right && touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
-            //console.log("Inside button")
             inButton = true;
         } else {
-            //console.log("outside button")
             inButton = false
         }
         return inButton;

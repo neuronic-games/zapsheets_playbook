@@ -2,12 +2,9 @@
 // Cache Name
 let dyVersion = 0;
 /////////////////////////////////////////////////////////////////////////////////////
-// For Local Testing
-/* let jasonPath = './' */
-// For Live
-let jasonPath = 'https://zapsheets.com/playbook/'
+let jasonPath = './'
 /////////////////////////////////////////////////////////////////////////////////////
-const CACHE_NAME = {name: 'playbookSW_v17'}
+const CACHE_NAME = {name: 'playbookSW_v20'}
 /////////////////////////////////////////////////////////////////////////////////////
 // Assets container
 let STATIC_ASSETS = []
@@ -51,17 +48,15 @@ function createCache(cacheVersion) {
                 '../../css/style.css?version=' + dyVersion,
 
                 // UI Images
-                '../../img/logo.png',
-                '../../img/loadingScreen.png',
-                '../../img/floristry_mobile_sym_no_conn.png',
-                '../../img/logoZapsheets.webp',
-                '../../img/logoIconScreen.webp',
-                '../../img/sheet_icon.png',
+                '../../images/logo.png',
+                '../../images/loadingScreen.png',
+                '../../images/floristry_mobile_sym_no_conn.png',
+                '../../images/logoZapsheets.webp',
+                '../../images/logoIconScreen.webp',
+                '../../images/sheet_icon.png',
 
                 // JS Files
                 '../../js/main/JSController.js?version=' + dyVersion,
-                '../../menu/js/MenuController.js?version=' + dyVersion,
-                '../../steps/js/StepsController.js?version=' + dyVersion,
 
                 // Index Files
                 /* '../../menu/index.html?version=' + dyVersion,
@@ -73,8 +68,8 @@ function createCache(cacheVersion) {
                 jasonPath + 'sheets/' + sheet_Id + '/menu-en.json?version=' + dyVersion,
                 jasonPath + 'sheets/' + sheet_Id + '/faqs-en.json?version=' + dyVersion,
                 jasonPath + 'sheets/' + sheet_Id + '/rules-en.json?version=' + dyVersion,
-                jasonPath + 'sheets/' + sheet_Id + '/bgg-en.json?version=' + dyVersion,
-                jasonPath + 'sheets/' + sheet_Id + '/stats.json?version=' + dyVersion,
+                jasonPath + 'sheets/' + sheet_Id + '/game-en.json?version=' + dyVersion,
+                jasonPath + 'sheets/' + sheet_Id + '/bgg.json?version=' + dyVersion,
                 jasonPath + 'sheets/' + sheet_Id + '/tags.json?version=' + dyVersion,
                 jasonPath + 'sheets/' + sheet_Id + '/splash-en.json?version=' + dyVersion,
             ]
@@ -150,9 +145,11 @@ async function fetchAssets(event) {
  * SW Fetch event 
  */
 self.addEventListener('fetch', event => {
-    if (event.request.method === 'GET') { 
-        event.respondWith(fetchAssets(event))
-    }
+    if (event.request.method !== 'GET') return;
+    var url = event.request.url;
+    // Never intercept static library files — let the browser fetch them directly
+    if (/\/(js|css|fonts|images)\//.test(url)) return;
+    event.respondWith(fetchAssets(event));
 })
 /////////////////////////////////////////////////////////////////////////////////////
 // To clean up previous genearated cache

@@ -109,21 +109,18 @@ function getCurrentGameMainVersion() {
  * checkSettingLoad
  */
 function checkSettingLoad() {
-    console.log('JS VERSION LOADED')
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * checkLoadStatMain
  */
 function checkLoadStatMain() {
-    console.log('MAIN JS VERSION LOADED')
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
  * doCheckOrientation
  */
 function doCheckOrientation() {
-    console.log(DetectSpecificDevice(), " DT")
     if(DetectSpecificDevice() == 'desktop') {
         document.getElementById('useMode').style.display = 'none'
         if(window.orientation != 0) {
@@ -131,7 +128,6 @@ function doCheckOrientation() {
             document.getElementById('useModeBG').style.display = 'none';
         }
 
-        //console.log(window.innerWidth, " --- ")
         //document.getElementById('content').style.width = '400px !important'
         //document.getElementById('content').style.left = (window.innerWidth-400)/2 + 'px !important'; 
 

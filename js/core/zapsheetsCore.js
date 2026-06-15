@@ -34,7 +34,6 @@ function adjustFontSizeInBreak(text, elment, fSize) {
     let fontSize = fSize;
     
     setTimeout(function() {
-        console.log(elment.offsetWidth , '>', elment.parentElement.offsetWidth)
         while (elment.offsetWidth > (elment.parentElement.offsetWidth)) {
             fontSize--;
             elment.style.fontSize = fontSize + 'vw';
@@ -80,4 +79,120 @@ function adjustFontSizeMultiple(text, tempElement, maxLines, type) {
         }
         tempElement.style.visibility = 'visible';
     }, 10)
+}
+/////////////////////////////////////////////////////////////////////////////
+/**
+ * Scroll the loading log element to the bottom.
+ */
+function updateInfoTextView() {
+    var el = document.getElementById('loadingText');
+    if (el) el.scrollTop += 100;
+}
+/////////////////////////////////////////////////////////////////////////////
+/**
+ * Append a message to the loading log and auto-scroll to the bottom.
+ * @param {string} msg - HTML string to append (may include <font>, <br>, etc.)
+ */
+function logLoadMsg(msg) {
+    var el = document.getElementById('loadingText');
+    if (!el) return;
+    el.innerHTML += msg;
+    el.scrollTop = el.scrollHeight;
+}
+/////////////////////////////////////////////////////////////////////////////
+/**
+ * Parse a JSON string; return the parsed object on success, false on failure.
+ * Shared utility — used by loadTagsData() here and by menu.js / steps.js / pushSteps.js.
+ * @param {string} str
+ * @returns {object|false}
+ */
+function isJSONData(str) {
+    try {
+        return JSON.parse(str);
+    } catch(e) {
+        return false;
+    }
+}
+/////////////////////////////////////////////////////////////////////////////
+// Shared tag-image map — populated by loadTagsData(), consumed by applyTagReplacements()
+var tagImageMap = {};
+/////////////////////////////////////////////////////////////////////////////
+/**
+ * Replace all [TAG_NAME] tokens in text with their cached <img> elements.
+ * Any tag present in tagImageMap is substituted; unknown tags are left as-is.
+ * @param {string} text      - source text that may contain [TAG_NAME] tokens
+ * @param {string} cssClass  - CSS class to apply to each <img>
+ * @returns {string}
+ */
+function applyTagReplacements(text, cssClass) {
+    if (!text) return text;
+    return text.replace(/\[([A-Z0-9_]+)\]/g, function(match) {
+        var imgPath = tagImageMap[match];
+        if (imgPath) {
+            return '<img class="' + cssClass + '" src="' + imgPath + '" loading="lazy">';
+        }
+        return match; // leave unknown tags as-is
+    });
+}
+/////////////////////////////////////////////////////////////////////////////
+/**
+ * Load tags.json for the current sheet and populate tagImageMap dynamically.
+ * Any [TAG_NAME] row in the sheet is supported — no hardcoded tag names.
+ * @param {Function} [callback] - optional function to call when loading succeeds
+ */
+function loadTagsData(callback, sheetId) {
+    var sid = sheetId || (typeof sheet_Id !== 'undefined' ? sheet_Id : '');
+    setTimeout(function() {
+        var tagRequest = $.ajax({
+            url: jasonPath + 'sheets/' + sid + '/tags.json?version=' + UIVersion,
+            cache: true,
+            type: 'GET',
+            dataType: 'text',
+            success: function(response) {
+                if (response.length == 0) {
+                    logLoadMsg('<font color="red">Error: Tags data not available.</font><br>');
+                } else {
+                    tagsDataList = [];
+                    var mResponseSet = response.replace(/�/g, '');
+                    var newTagData = eval(mResponseSet);
+                    for (var i = 0; i < newTagData.length; i++) {
+                        var rowStr = JSON.stringify(newTagData[i]);
+                        if (isJSONData(rowStr) == false) {
+                            logLoadMsg('<font color="red">Error: Tags Sheet : (Row: ' + i + ')</font><br>');
+                        } else {
+                            tagsDataList[i] = isJSONData(rowStr);
+                        }
+                    }
+                    // Build tagImageMap — every [TAG_NAME] row becomes an entry
+                    tagImageMap = {};
+                    $.each(tagsDataList, function(idx, row) {
+                        var tagName = row['Name'];   // e.g. '[BUG]', '[BUG_BOTTOM]'
+                        var tagValue = row['Value'];
+                        if (!tagName || !tagValue) return;
+                        var imgPath = '';
+                        if (tagValue.includes('https://drive.google.com')) {
+                            var imgid = tagValue.split('https://drive.google.com')[1].split('/')[3];
+                            imgPath = '../sheets/' + sid + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                        } else {
+                            var parts = tagValue.split('/');
+                            var imageName = parts[parts.length - 1].indexOf('?') !== -1
+                                ? parts[parts.length - 1].split('?')[0]
+                                : parts[parts.length - 1];
+                            imgPath = '../sheets/' + sid + '/cacheImages/' + imageName + '?version=' + UIVersion;
+                        }
+                        tagImageMap[tagName] = imgPath;
+                    });
+                    if (typeof callback === 'function') callback();
+                }
+            },
+            error: function() {
+                logLoadMsg('<font color="red">Error: Missing Sheet : Tags</font><br>');
+                var spinner = document.getElementById('spinnerBox');
+                if (spinner) spinner.style.display = 'none';
+            }
+        });
+        tagRequest.onreadystatechange = null;
+        tagRequest.abort = null;
+        tagRequest = null;
+    }, 1000);
 }

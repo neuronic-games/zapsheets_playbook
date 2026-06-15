@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta content-type='text/javascript' charset="UTF-8" />
+    <meta charset="UTF-8" />
     <meta http-equiv='cache-control' content='no-cache, no-store, must-revalidate'>
     <meta http-equiv='expires' content='0'>
     <meta http-equiv='pragma' content='no-cache'>
@@ -15,14 +15,16 @@
       href="../css/bootstrap.min.css"
       rel="stylesheet"
       <?php if($_ENV['ENVIRONMENT'] != 'development') {
-        echo 'integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"';} ?>
+        echo '
+';} ?>
       crossorigin="anonymous"
     />
     <link
       rel="stylesheet"
       href="../css/all.min.css"
       <?php if($_ENV['ENVIRONMENT'] != 'development') {
-        echo 'integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="';} ?>
+        echo '
+';} ?>
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
@@ -31,8 +33,8 @@
       href="../css/minireset.min.css"
     />
 
-    <link rel="icon" type="image/x-icon" href="../img/sheet_2_new.webp?version=3.2" />
-    <link rel="apple-touch-icon" href="../img/sheet_icon_new.webp?version=3.2" />
+    <link rel="icon" type="image/x-icon" href="../images/sheet_2_new.webp?version=3.2" />
+    <link rel="apple-touch-icon" href="../images/sheet_icon_new.webp?version=3.2" />
   </head>
   <body id="menuBody" style="position: fixed; min-height: 100vh !important; background-color: #F9F3E3 !important" onpagehide="CloseIFrame()">
     <!--------------------------------------------------------------------->
@@ -63,7 +65,7 @@
         <!---------------------------SLIDE 1 START--------------------------------->
         <div id="menu" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh;">
           <div id="menuImg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 0;">
-            <img id="menuBGInage" src="../img/floristry_mobile_scn_auction.webp" alt="" style="position: relative;
+            <img id="menuBGInage" src="../images/floristry_mobile_scn_auction.webp" alt="" style="position: relative;
             left: 50%;
             top: 50%;
             height: 100vh;
@@ -80,14 +82,15 @@
                 background-color: #eea41ca1;" 
                 class="touch-pulse-button">
               </div>
-              <img src="../img/btn_touch.png" style="position: relative; width: 8vh;" alt=""  />
+              <img src="../images/btn_touch.png" style="position: relative; width: 8vh;" alt=""  />
             </div>
             <div id="viewIconText" style="position: relative; display: none/* flex */; justify-content: center; margin-top: 2.5vh; width: 70%; flex-direction: column;">
             </div>
         </div>
         <div id="infoBGGSection" style="position: absolute; width: 100%; display: none /* flex */; flex-direction: row; justify-content: flex-end; height: 10vh;">
-          <img id="infoIconBtn" src="../img/btn_info.webp?version=1" style="position: absolute; width: 10vh; height: 10vh; top: 4vh; left: 70%; cursor: pointer;" class="animated-img img1" alt="" />
-          <img id="bggIconBtn" src="../img/btn_bgg.png?version=1" style="position: absolute; width: 10vh; height: 10vh; top: 4vh; left: 70%; cursor: pointer;" class="animated-img img2" alt="" />
+          <div id="bggInfoBtnWrap" style="position: absolute; width: 9vh; height: 9vh; top: 4vh; left: 68%; cursor: pointer;">
+            <img id="infoIconBtn" src="../images/btn_info.webp?version=1" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; animation: touch-pulse-animation 1.5s infinite;" alt="" />
+          </div>
         </div>
         <!---------------------------------------------------------------------------->
         <div id="spinnerMiddleBox" class="spinner-box-middle">
@@ -100,7 +103,7 @@
       <!------------------------------------------------------------------>
       <div id="menuPage" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; background-color: #2D2C2B; display: none; z-index: 99999;">
         <div style="position: absolute; display: flex; flex-direction: row; align-content: center; justify-content: space-between; align-items: center; width: 100vw; left: 0;padding: 5vh; background-color: #2D2C2B; height: 0; z-index: 99;">
-          <img id="backToMenuBtn" src="../img/floristry_mobile_btn_prev_orange.png" style="position: relative; width: 4vh; z-index: 999; cursor: pointer;" alt="" />
+          <img id="backToMenuBtn" src="../images/floristry_mobile_btn_prev_orange.png" style="position: relative; width: 4vh; z-index: 999; cursor: pointer;" alt="" />
           <p id="menuTitle" style="color: white; position: absolute; font-size: 3.5vh;margin-left: 5vh;">Title</p>
           <sup id="small-sub" class="sup-small" data-objectid=""></sup>
           <img id="downloadBtn" src="" style="position: relative; width: 5vh; z-index: 999; cursor: pointer;" alt="" />
@@ -127,7 +130,7 @@
       </div>
       <div id="menuDetailsPage" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; background-color: #2D2C2B; display: none; z-index: 99999;">
         <div style="position: absolute; display: flex; flex-direction: row; align-content: center; justify-content: space-between; align-items: center; width: 100vw; left: 0;padding: 5vh; background-color: #2D2C2B; height: 0; z-index: 99;">
-          <img id="backToRuleMenuBtn" src="../img/floristry_mobile_btn_prev_orange.png" style="position: relative; width: 4vh; z-index: 999; cursor: pointer;" alt="" />
+          <img id="backToRuleMenuBtn" src="../images/floristry_mobile_btn_prev_orange.png" style="position: relative; width: 4vh; z-index: 999; cursor: pointer;" alt="" />
           <p id="menuDetailsTitle" style="color: white; position: absolute; font-size: 3.5vh;margin-left: 5vh;">Menu Title</p>
         </div>
         <div id="menuDetails" style="position: relative;
@@ -149,7 +152,7 @@
     align-items: center;
     justify-content: flex-start;
     flex-direction: row;">
-          <img id="prevArrow" src="../img/floristry_mobile_btn_prev_orange.png" style="position: relative;display:none;
+          <img id="prevArrow" src="../images/floristry_mobile_btn_prev_orange.png" style="position: relative;display:none;
     width: 3vh;
     z-index: 999;
     cursor: pointer;
@@ -163,7 +166,7 @@
     justify-content: flex-start;
     flex-direction: row;">
           <div id="nextElement"></div>
-          <img id="nextArrow" src="../img/floristry_mobile_btn_next_orange.png" style="position: relative;display:none;
+          <img id="nextArrow" src="../images/floristry_mobile_btn_next_orange.png" style="position: relative;display:none;
     width: 3vh;
     z-index: 999;
     cursor: pointer;
@@ -182,18 +185,19 @@
         <div style="border: 2px solid #FFFFFF; padding: 0.5vh; border-radius: 5px; position: relative; width: 96%; left: 2%; top: -10px; height: 5.6vh;">
             <input class="form-control" type="text" id="usheetId" name="usheetId" style="position: relative; margin-top: 0px; width: 100%;margin-left: 0em; height: 4.2vh; font-family: AcuminVariableConcept;" pattern="[A-Za-z0-9]+" onkeydown="if(['Space'].includes(arguments[0].code)){return false;}"/>
         </div>
-        <img id="sheetIdBtn" src="../img/floristry_mobile_btn_next.webp" class="img-fluid" style="width: 10vh;" alt="" />
+        <img id="sheetIdBtn" src="../images/floristry_mobile_btn_next.webp" class="img-fluid" style="width: 10vh;" alt="" />
         </div>
         </div>
     </div>
   </div>
     <!------------------------------------------------------------------------>
-    <script src="../js/common/jquery-3.5.1.min.js"></script>
+    <script src="../js/common/jquery-3.5.1.min.js?v=3"></script>
     <script src="../js/common/jquery.cookie.min.js"></script>
     <script
       src="../js/common/bootstrap.bundle.min.js"
       <?php if($_ENV['ENVIRONMENT'] != 'development') {
-        echo 'integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"';} ?>
+        echo '
+';} ?>
       crossorigin="anonymous"
     ></script>
     <script>
@@ -209,22 +213,66 @@
       // To get UIVersion from Parent HTML for cache/dynamic loading
       const selfUrl = new URL(self.location);
 
-      //console.log(selfUrl.searchParams.get('version').split('?')[0]);
-      let UIVersion = selfUrl.searchParams.get('version').split('?')[0]
+      let UIVersion = (selfUrl.searchParams.get('version') || '1').split('?')[0]
 
-      // Load JSController File for menu section
       getLatestGameCSSFile(UIVersion)
-      getControllerVersion(UIVersion)
+      getZapsheetsCore()
+      checkVersion()
       /////////////////////////////////////////////////////////////////////////////////
-      /*
-      * getControllerVersion
-      */
-      function getControllerVersion(_ver) {
-        var conScript = document.createElement('script');
-        conScript.id = 'controller_Script';
-        conScript.type = 'text/javascript';
-        conScript.src = './js/MenuController.js?version=' + _ver;
-        document.getElementsByTagName('head')[0].appendChild(conScript);
+      let jasonPath = '../'
+      let currentRunningVersion = 0;
+      /////////////////////////////////////////////////////////////////////////////////
+      function getCurrentVersion() {
+        var newScript = document.createElement('script');
+        newScript.id = 'version_Script';
+        newScript.type = 'text/javascript';
+        newScript.src = '../js/main/version.js?version=' + UIVersion;
+        document.getElementsByTagName('head')[0].appendChild(newScript);
+      }
+      function getCurrentGameMainVersion() {
+        var floristryScript = document.createElement('script');
+        floristryScript.type = 'text/javascript';
+        floristryScript.id = 'floristry_Script';
+        floristryScript.src = '../js/menu/menuMain.js?version=' + UIVersion;
+        document.getElementsByTagName('head')[0].appendChild(floristryScript);
+      }
+      function getCurrentMenuVersion() {
+        var menuScript = document.createElement('script');
+        menuScript.type = 'text/javascript';
+        menuScript.id = 'menu_Script';
+        menuScript.src = '../js/menu/menu.js?version=' + UIVersion;
+        document.getElementsByTagName('head')[0].appendChild(menuScript);
+      }
+      function getZapsheetsCore() {
+        var funtionScript = document.createElement('script');
+        funtionScript.type = 'text/javascript';
+        funtionScript.id = 'function_Script';
+        funtionScript.src = '../js/core/zapsheetsCore.js?version=' + UIVersion;
+        document.getElementsByTagName('head')[0].appendChild(funtionScript);
+      }
+      function checkVersion() {
+        getCurrentVersion();
+        let versionTimer = setTimeout(function() {
+          clearTimeout(versionTimer)
+          if (typeof _version != 'undefined') {
+            currentRunningVersion = _version;
+            periodicVersion = _version;
+            getCurrentGameMainVersion();
+            getCurrentMenuVersion();
+          } else {
+            checkVersion();
+          }
+        }, 2000)
+      }
+      function checkAppVersionStatus() {
+        let versionPeriodicTimer = setTimeout(function() {
+          clearTimeout(versionPeriodicTimer)
+          if (window.navigator.onLine == true) {
+            getCurrentVersion();
+            if (_version != currentRunningVersion) currentRunningVersion = _version;
+          }
+          checkAppVersionStatus();
+        }, RefreshAppVersionTime * 1000)
       }
       /////////////////////////////////////////////////////////////////////////////////
       /*

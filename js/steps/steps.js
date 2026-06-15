@@ -4,7 +4,6 @@
  * Ready events
  */
 $(document).ready(function() {
-    console.log('READY STEPS NEW')
     // Steps Variables
     let stepIndex = 0
     let languageStepsData = [];
@@ -46,14 +45,7 @@ $(document).ready(function() {
 
     let langLoadCount = 0;
     //////////////////////////////////////////////////////////////////////////
-    // TAGS support
-    // Special Icons
-    let berryImgPath = ''
-    let bugImgPath = ''
-    let nutImgPath = ''
-    let diceImgPath = ''
-    let oopsImgPath = ''
-    let flowerImgPath = ''
+    // tagImageMap is populated by loadTagsData() in zapsheetsCore.js
     //////////////////////////////////////////////////////////////////////////
     let fromParent = ''
     let faqsSheedId = ''
@@ -76,7 +68,6 @@ $(document).ready(function() {
     // Positioning of bottom container
     var standalone = (getUrlVars()["standalone"]) ? getUrlVars()["standalone"].split('/')[0] : 'false';
 
-    //console.log(standalone.split('?')[0], " --- ")
 
     if (standalone.split('?')[0] == 'true') {
         document.getElementById('spinnerBox').style.setProperty("display","flex");
@@ -101,12 +92,17 @@ $(document).ready(function() {
 
     var activeLang = (getUrlVars()["code"]) ? getUrlVars()["code"].split('/')[0].toUpperCase() : navigator.language.split('-')[0].toUpperCase();
 
-    var sheet_Id = (getUrlVars()["id"]) ? getUrlVars()["id"].split('/')[0] : '';
+    var sheet_Id = (getUrlVars()["id"]) ? getUrlVars()["id"] : '';
+    // Fallback: extract from URL path /sheets/{id}/ when id param is missing or invalid
+    if (!sheet_Id) {
+        var _pathParts = window.location.pathname.split('/');
+        var _sheetsIdx = _pathParts.indexOf('sheets');
+        if (_sheetsIdx >= 0 && _pathParts[_sheetsIdx + 1]) sheet_Id = _pathParts[_sheetsIdx + 1];
+    }
 
     // to get jump id
     var jumpId = (document.location.search.substr(1).split('&')[1].split('=')[0] != 'id' && document.location.search.substr(1).split('&')[1] != undefined) ? document.location.search.substr(1).split('&')[1] : '0';
 
-    //console.log(jumpId, " jump")
 
     //////////////////////////////////////////////////////////////////////////
     //var sheetInnerParam = document.location.search.substr(1).split('&')[1].split('?')[0];
@@ -116,7 +112,6 @@ $(document).ready(function() {
         if(sheetInnerParam.toLowerCase() == 'steps' || sheetInnerParam.toLowerCase() == 'step') {
             //fromParent = document.location.search.substr(1).split('&')[2].split('?')[0];
             fromParent = document.location.search.substr(1).split('&')[4].split('?')[0];
-            //console.log(fromParent, " from parent")
             if(fromParent == 'app') {
                 //faqsSheedId = document.location.search.substr(1).split('&')[3].split('?')[0];
                 //faqsSheedId = document.location.search.substr(1).split('&')[5].split('?')[0];
@@ -124,24 +119,9 @@ $(document).ready(function() {
             }
         } 
     }
-    /////////////////////////////////////////////////////////////////////////////////
-    /**
-     * 
-     * @param {*} str 
-     * @returns 
-     */
-    let isJSONData = str => {
-        try {
-            let p = JSON.parse(str)
-            return p
-        } catch(e){
-        }
-        //}
-        return false
-    }
+    // isJSONData is defined in zapsheetsCore.js
     /////////////////////////////////////////////////////////////////////////////////
     if(sheet_Id == '') {
-        console.log('show Error screen')
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('sheetIdError').style.display = 'flex';
         document.getElementById('sheetIdBtn').addEventListener('touchstart', onCheckUserDataStart)
@@ -159,148 +139,11 @@ $(document).ready(function() {
         } else {
             window.history.replaceState({}, "null", (winLoc + "?code=" + browserLang.toLowerCase() + "&id=" + sheet_Id));
         }
-        loadTagsData();
+        loadTagsData(undefined, sheet_Id);
         loadSettingsData()
         enableButtons();
     }
-    /////////////////////////////////////////////////////////////////////////////////
-    /**
-     * loadTagsData
-     */
-    function loadTagsData() {
-        // Loading tags.json
-        setTimeout(function() {
-            var settingRequest = $.ajax({
-                //url: '../sheets/' + sheet_Id + "/tags.json?version=" + UIVersion,
-                url: jasonPath + 'sheets/' + sheet_Id + "/tags.json?version=" + UIVersion,
-                cache: true,
-                type: 'GET',
-                dataType: "text",
-                success: function (response) {
-                    //console.log(response, " READ DATA")
-                    if(response.length == 0) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags data not available.' + "</font><br>"
-                    } else { 
-                        tagsDataList = []
-                        var mResponseSet = response.replace(/�/g, "") 
-                        var newSettingData = eval(mResponseSet)
-                        for(var i=0; i<newSettingData.length; i++) {
-                            var settingDataSting = JSON.stringify(newSettingData[i]);
-                            if(isJSONData(settingDataSting) == false) {
-                                document.getElementById("loadingText").innerHTML += '<font color="red">Error: Tags Sheet : (Row: ' + i + ")</font><br>"
-                                updateInfoTextView()
-                            } else {
-                                tagsDataList[i] = isJSONData(settingDataSting)
-                            }
-                        }
-                        /////////////////////LANG SETTINGS START///////////////////////////
-                        // Store LazyLoadValue here
-                        $.each(tagsDataList, function (index_setting, row_setting) {
-                            // BERRY
-                            if(row_setting['Name'] == '[BERRY]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //berryImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    berryImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //berryImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    berryImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
-                            // DICE
-                            if(row_setting['Name'] == '[DICE]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //diceImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    diceImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //diceImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    diceImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
-                            // BUG
-                            if(row_setting['Name'] == '[BUG]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //bugImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    bugImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //bugImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    bugImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
-                            // NUT
-                            if(row_setting['Name'] == '[NUT]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //nutImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    nutImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //nutImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    nutImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
-                            // OOPS
-                            if(row_setting['Name'] == '[OOPS]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    oopsImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
-                            // FLOWER
-                            if(row_setting['Name'] == '[FLOWER]') {
-                                if (row_setting['Value'].includes("https://drive.google.com")) {
-                                    let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
-                                    //flowerImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                                    flowerImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
-                                } else {
-                                    // Cache Image
-                                    let name = row_setting['Value'].split('/')
-                                    let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                                    // image from spreadsheet id folder
-                                    //flowerImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                                    flowerImgPath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
-                                }
-                            }
-                        })
-                    }
-                },
-                error: function(e) {
-                    console.log("ERROR - tags data missing..")
-                    document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : tags</font><br>'
-                    document.getElementById("spinnerBox").style.display = 'none'
-                }
-            })
-            // Clear memory
-            settingRequest.onreadystatechange = null;
-            settingRequest.abort = null;
-            settingRequest = null;
-        }, 1000)
-    }
+    // loadTagsData is defined in zapsheetsCore.js
     /////////////////////////////////////////////////////////////////////////////////
     /**
      * 
@@ -317,7 +160,6 @@ $(document).ready(function() {
      */
     function onCheckUserDataClick(event) {
         if(event != null) {event.preventDefault();}
-        console.log("check user data")
         document.getElementById('sheetIdBtn').style.scale = '1'
         checkUserFillData();
 
@@ -420,9 +262,8 @@ $(document).ready(function() {
                 type: 'GET',
                 dataType: "text",
                 success: function (response) {
-                    //console.log(response, " READ DATA")
                     if(response.length == 0) {
-                        document.getElementById("loadingText").innerHTML += '<font color="red">Error: Settings data not available.' + "</font><br>"
+                        logLoadMsg('<font color="red">Error: Settings data not available.' + "</font><br>")
                     } else { 
                         settingDataList = []
                         var mResponseSet = response.replace(/�/g, "") 
@@ -430,8 +271,7 @@ $(document).ready(function() {
                         for(var i=0; i<newSettingData.length; i++) {
                             var settingDataSting = JSON.stringify(newSettingData[i]);
                             if(isJSONData(settingDataSting) == false) {
-                                document.getElementById("loadingText").innerHTML += '<font color="red">Error: Settings Sheet : (Row: ' + i + ")</font><br>"
-                                updateInfoTextView()
+                                logLoadMsg('<font color="red">Error: Settings Sheet : (Row: ' + i + ")</font><br>")
                             } else {
                                 settingDataList[i] = isJSONData(settingDataSting)
                             }
@@ -458,8 +298,7 @@ $(document).ready(function() {
                     }
                 },
                 error: function(e) {
-                    console.log("EEEEE - Setting data missing..")
-                    document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : Settings</font><br>'
+                    logLoadMsg('<font color="red">Error: Missing Sheet : Settings</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none'
                 }
             })
@@ -489,21 +328,22 @@ $(document).ready(function() {
             type: 'GET',
             dataType: "text",
             success: function (response) {
-                //console.log(response, " READ DATA")
                 if(response.length == 0) {
                     activeLang = "EN"
                     loadLanguageJSON()
                 } else { 
                     languageStepsData = []
-                    var mResponseLang = response.replace(/�/g, "") 
+                    var mResponseLang = response.replace(/�/g, "")
                     var newLangData = eval(mResponseLang)
                     for(var i=0; i<newLangData.length; i++) {
                         var langDataSting = JSON.stringify(newLangData[i]);
                         if(isJSONData(langDataSting) == false) {
-                            document.getElementById("loadingText").innerHTML += '<font color="red">Error: ' + activeLang.split('-')[0] + ' Sheet : (Row: ' + i + ")</font><br>"
-                            updateInfoTextView()
+                            logLoadMsg('<font color="red">Error: ' + activeLang.split('-')[0] + ' Sheet : (Row: ' + i + ")</font><br>")
                         } else {
-                            languageStepsData[i] = isJSONData(langDataSting)
+                            var _row = isJSONData(langDataSting);
+                            // Skip blank rows (no Type and no ID)
+                            if (!_row.Type && !_row.ID) continue;
+                            languageStepsData.push(_row);
                         }
                     }
                     // set default
@@ -528,7 +368,6 @@ $(document).ready(function() {
                 }
             },
             error: function (response) {
-                console.log("NO FILE FOUND")
                 /* if(activeLang.toLowerCase() != 'EN' && langLoadCount < 1) {
                     langLoadCount++
                     activeLang = 'EN'
@@ -537,8 +376,7 @@ $(document).ready(function() {
                     langLoadCount = 0;
                     activeLang = "EN"
                     loadLanguageJSON()
-                    //console.log("EEEEE - Language data missing..")
-                    /* document.getElementById("loadingText").innerHTML += '<font color="red">Error: Missing Sheet : ' + activeLang + '</font><br>'
+                    /* logLoadMsg('<font color="red">Error: Missing Sheet : ' + activeLang + '</font><br>')
                     document.getElementById("spinnerBox").style.display = 'none'
                 } */
             }
@@ -724,7 +562,6 @@ $(document).ready(function() {
         } else {
             let prevStep = languageStepsData[stepIndex].Prev;
             if(prevStep == 'END') {
-                //console.log("EXIT FROM PREV")
                 if(fromParent == 'app') {
                     window.parent.parent.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
                 } else {
@@ -785,7 +622,6 @@ $(document).ready(function() {
         // Restart pulsating effect after pause
         document.getElementById('nextIcon').style.animationPlayState = "running";
         moveType = 'right'
-        //console.log(languageStepsData[stepIndex+1])
         if(languageStepsData[stepIndex+1] != undefined) {
             let stepType = languageStepsData[stepIndex+1].Type;
             if(stepType.toLowerCase() != '' && stepType.toLowerCase() != 'loading') {
@@ -805,7 +641,6 @@ $(document).ready(function() {
             } else {
                 let nextStep = languageStepsData[stepIndex].Next;
                 if(nextStep == 'END') {
-                    //console.log("EXIT FROM NEXT")
                     if(fromParent == 'app') {
                         window.parent.parent.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
                     } else {
@@ -817,7 +652,6 @@ $(document).ready(function() {
         } else {
             let nextStep = languageStepsData[stepIndex].Next;
             if(nextStep == 'END') {
-                //console.log("EXIT FROM NEXT")
                 if(fromParent == 'app') {
                     window.parent.parent.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
                 } else {
@@ -966,16 +800,7 @@ $(document).ready(function() {
      * @param {*} index 
      */
     function updateTopInstructionText(index) {
-        let mWordBerry = languageStepsData[index].Text.replaceAll('[BERRY]', `<img class="specialIcons" src="${berryImgPath}" loading="lazy"></img>`)
-        let mWordDice = mWordBerry.replaceAll('[DICE]', `<img class="specialIcons" src="${diceImgPath}" loading="lazy"></img>`)
-        let mWordNut = mWordDice.replaceAll('[NUT]', `<img class="specialIcons" src="${nutImgPath}" loading="lazy"></img>`)
-        let mWordBug = mWordNut.replaceAll('[BUG]', `<img class="specialIcons" src="${bugImgPath}" loading="lazy"></img>`)
-        let mWordOops = mWordBug.replaceAll('[OOPS]', `<img class="specialIcons" src="${oopsImgPath}" loading="lazy"></img>`)
-        let mWordFlower = mWordOops.replaceAll('[FLOWER]', `<img class="specialIcons" src="${flowerImgPath}" loading="lazy"></img>`)
-        
-        // Undo later on
-        //document.getElementById('stepText').innerHTML = languageStepsData[index].Text
-        document.getElementById('stepText').innerHTML = mWordFlower;
+        document.getElementById('stepText').innerHTML = applyTagReplacements(languageStepsData[index].Text, 'specialIcons');
 
         // Check whether to display top bar or not
         activeSlideIndex = index;
@@ -1259,7 +1084,6 @@ $(document).ready(function() {
         } else {
             updateMiddleImageSection(stepIndex)
         }
-        console.log("Caching In Background")
     }
     ///////////////////////////////////////////////////////////////////////////////////////
     /**
@@ -1348,7 +1172,6 @@ $(document).ready(function() {
             }
         })
         if(_count == getAllImageCount()) {
-            console.log("ALL IMAGES IN CACHE NOW...")
             preCachedDone = true;
         }
     }
@@ -1467,7 +1290,6 @@ $(document).ready(function() {
             } else {
                 updateMiddleImageSection(stepIndex)
             }
-            console.log("IMAGES CACHED")
         } else {
         }
     }
@@ -1592,9 +1414,7 @@ $(document).ready(function() {
       timeLeft = TIME_LIMIT - timePassed;
       setCircleDasharray(_type);
       if (timeLeft === 0) {
-        //console.log(timeLeft, " time left")
         if(fromParent == 'app') {
-            //console.log(window.parent.parent, " -- ", window.parent.parent.parent)
             window.parent.parent.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
         } else {
             window.parent.postMessage(JSON.stringify({'message': 'closeFrame'}), '*')
@@ -1724,7 +1544,6 @@ $(document).ready(function() {
      */
     function updateProgressBar(e) {
         if (e.lengthComputable) {
-            //console.log(e.loaded / e.total * 100, " perc");
         }
     }
     ///////////////////////////////////////////////////////////////////////////////
@@ -1808,15 +1627,7 @@ $(document).ready(function() {
     function moveToSlide() {
         setTimeout(function() {
             // Live
-            let mWordBerry = languageStepsData[stepIndex].Text.replaceAll('[BERRY]', `<img class="specialIcons" src="${berryImgPath}" loading="lazy"></img>`)
-            let mWordDice = mWordBerry.replaceAll('[DICE]', `<img class="specialIcons" src="${diceImgPath}" loading="lazy"></img>`)
-            let mWordNut = mWordDice.replaceAll('[NUT]', `<img class="specialIcons" src="${nutImgPath}" loading="lazy"></img>`)
-            let mWordBug = mWordNut.replaceAll('[BUG]', `<img class="specialIcons" src="${bugImgPath}" loading="lazy"></img>`)
-            let mWordOops = mWordBug.replaceAll('[OOPS]', `<img class="specialIcons" src="${oopsImgPath}" loading="lazy"></img>`)
-            let mWordFlower = mWordOops.replaceAll('[FLOWER]', `<img class="specialIcons" src="${flowerImgPath}" loading="lazy"></img>`)
-
-            //document.getElementById('stepText').innerHTML = languageStepsData[stepIndex].Text;
-            document.getElementById('stepText').innerHTML = mWordFlower;
+            document.getElementById('stepText').innerHTML = applyTagReplacements(languageStepsData[stepIndex].Text, 'specialIcons');
 
             if(languageStepsData[activeSlideIndex].Text != '') {
                 document.getElementById('topStepBar').style.display = 'flex' 

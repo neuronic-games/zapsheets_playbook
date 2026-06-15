@@ -11,7 +11,7 @@
     "scripts": {
         "server": [
           "Composer\\Config::disableProcessTimeout",
-          "php -S 0.0.0.0:8000"
+          "php -S 0.0.0.0:8000 router.php"
         ],
         "test-e2e": "cd tests && ../vendor/bin/phpunit"
     }

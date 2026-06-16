@@ -916,8 +916,14 @@ function render() {
   }).join('');
 
   // ── CTAs ─────────────────────────────────────────────────────
-  var domain = cfg['DomainPrefix'] || '../../../';
-  var stepsUrl = domain + 'sheets/' + sheet_Id + '/?sheet=steps-' + lang + '&id=' + sheet_Id;
+  // Derive the steps URL from the current location so it works on any host
+  // or subdirectory without needing DomainPrefix.
+  // The view page lives at …/sheets/{id}/view/ — walk back to …/sheets/{id}/
+  var _viewPath = window.location.pathname;
+  var _idEnd    = _viewPath.indexOf(sheet_Id) + sheet_Id.length;
+  var stepsUrl  = window.location.origin
+                + _viewPath.substring(0, _idEnd)
+                + '/?sheet=steps-' + lang + '&id=' + sheet_Id;
   document.getElementById('ctaRow').innerHTML =
     '<a class="btn-rules" id="cta-rules" href="#">Read Rules</a>'
     + '<a class="btn-play" href="' + stepsUrl + '" target="_blank" rel="noopener">Teach Me</a>';

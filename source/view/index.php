@@ -20,6 +20,14 @@ if (substr($_base, -1) !== '/') $_base .= '/';
   <style>
     @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2') format('woff2'), url('fonts/DINBlack.ttf'); }
     @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'), url('fonts/DINMedium.ttf'); }
+    /* DINBlack alias with normalised metrics for use in buttons only */
+    @font-face {
+      font-family: 'DINBlackUI';
+      src: url('fonts/DINBlack.woff2') format('woff2'), url('fonts/DINBlack.ttf');
+      ascent-override:  85%;
+      descent-override: 15%;
+      line-gap-override: 0%;
+    }
 
     *, *::before, *::after { box-sizing: border-box; }
     body {
@@ -307,66 +315,43 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     a.tag-pill-link:hover { background: #c8860a; color: #fff; }
 
     /* CTA */
-    .cta-row { display: flex; gap: .75rem; flex-wrap: wrap; }
-    .btn-play {
-      display: inline-block;
-      height: 2.5rem;
-      line-height: 2.5rem;
-      background: #1a1a2e;
-      color: #fff;
-      font-family: 'DINBlack', sans-serif;
+    .cta-row { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; }
+    .btn-play, .btn-rules, .btn-rules-dl {
+      display: inline-flex !important;
+      align-items: center !important;
+      font-family: 'DINBlackUI', 'DINBlack', sans-serif;
       text-transform: uppercase;
       letter-spacing: .06em;
       font-size: .9rem;
-      padding: 0 1.4rem;
+      padding: .6rem 1.4rem !important;
       border-radius: 7px;
-      border: none;
       cursor: pointer;
-      text-decoration: none;
+      text-decoration: none !important;
       box-sizing: border-box;
       white-space: nowrap;
+      line-height: 1 !important;
       transition: background .15s;
+    }
+    .btn-play {
+      background: #1a1a2e;
+      color: #fff;
+      border: none;
     }
     .btn-play:hover { background: #2d2d50; color: #fff; }
     .btn-rules {
-      display: inline-block;
-      height: 2.5rem;
-      line-height: 2.5rem;
       background: #fff;
       color: #222;
-      font-family: 'DINBlack', sans-serif;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      font-size: .9rem;
-      padding: 0 1.4rem;
-      border-radius: 7px;
       border: 1px solid #ccc;
-      cursor: pointer;
-      text-decoration: none;
-      box-sizing: border-box;
-      white-space: nowrap;
-      transition: background .15s;
     }
     .btn-rules:hover { background: #f5f5f5; color: #222; }
-    #rulesDownload { margin-bottom: .85rem; }
     .btn-rules-dl {
-      display: inline-block;
-      height: 2.5rem;
-      line-height: 2.5rem;
       background: #1a1a2e;
       color: #fff;
-      font-family: 'DINBlack', sans-serif;
-      text-transform: uppercase;
-      letter-spacing: .06em;
+      border: none;
       font-size: .85rem;
-      padding: 0 1.4rem;
-      border-radius: 7px;
-      text-decoration: none;
-      box-sizing: border-box;
-      white-space: nowrap;
-      transition: background .15s;
     }
     .btn-rules-dl:hover { background: #2d2d50; color: #fff; }
+    #rulesDownload { margin-bottom: .85rem; }
 
     /* ── Tabs ────────────────────────────────────────────────── */
     .tabs-section { margin-top: 2rem; }

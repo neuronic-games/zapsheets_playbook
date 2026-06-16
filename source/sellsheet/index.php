@@ -458,7 +458,8 @@ function render() {
   }
 
   // ── Description (line breaks → paragraph spacing) ─────────
-  var desc = gv('Description') || (bg['description'] || '');
+  // PitchDescription takes priority on the sellsheet; fall back to Description, then BGG
+  var desc = gv('PitchDescription') || gv('Description') || (bg['description'] || '');
   if (desc) {
     var descEl = document.getElementById('ssDesc');
     var lines = desc.replace(/&#10;/g, '\n').split(/\n+/).filter(function(l){ return l.trim(); });

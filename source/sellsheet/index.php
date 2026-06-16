@@ -28,7 +28,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       }
       .print-btn { display: none !important; }
 
-      /* Force the sheet to fill the page exactly */
+      /* Force the sheet to fill the page exactly — reset any JS-applied mobile scaling */
       .sheet {
         box-shadow: none !important;
         width: 8.5in !important;
@@ -38,6 +38,8 @@ if (substr($_base, -1) !== '/') $_base .= '/';
         overflow: hidden !important;
         display: flex !important;
         flex-direction: column !important;
+        transform: none !important;
+        transform-origin: unset !important;
       }
 
       /* Restore layout overridden by the mobile breakpoint */
@@ -243,15 +245,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .ss-contact-bar a { color: #444; text-decoration: none; }
 
-    /* ── Mobile (screen only — never applies during print) ──────── */
-    @media screen and (max-width: 860px) {
-      body { padding: .5rem; }
-      .sheet { width: 100%; height: auto; overflow: visible; padding: 1.5rem; }
-      .ss-hero-wrap { height: 52vw; }
-      .ss-header { grid-template-columns: 1fr auto; gap: .5rem; }
-      .ss-header-qr { display: none; }
-      .ss-body { grid-template-columns: 1fr; }
-    }
+    /* No responsive breakpoints — layout is fixed at 816×1056 px (8.5×11 in) on all screen sizes */
   </style>
 </head>
 <body>
@@ -508,6 +502,28 @@ function render() {
     barEl.style.display = '';
   }
 }
+
+// ── Scale sheet to fit viewport on small screens ──────────────
+(function() {
+  var sheet = document.querySelector('.sheet');
+  function fit() {
+    var pad = 16; // px breathing room on each side
+    var available = window.innerWidth - pad * 2;
+    if (available < 816) {
+      var scale = available / 816;
+      sheet.style.transform = 'scale(' + scale + ')';
+      sheet.style.transformOrigin = 'top center';
+      // Collapse the empty layout space left behind by the CSS transform
+      sheet.style.marginBottom = '-' + Math.round(1056 * (1 - scale)) + 'px';
+    } else {
+      sheet.style.transform = '';
+      sheet.style.transformOrigin = '';
+      sheet.style.marginBottom = '';
+    }
+  }
+  fit();
+  window.addEventListener('resize', fit);
+})();
 </script>
 </body>
 </html>

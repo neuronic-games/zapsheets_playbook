@@ -22,9 +22,27 @@ function finishPublishing() {
     publishingComplete = true;
     pushVersionToServer();
     saveIndexFile();
-    setTimeout(function() {
-        logLoadMsg("All sheet data published.<br>")
-    }, 500);
+    // Re-copy source files so deployed sheet always reflects the latest source
+    logLoadMsg("Copying source files to sheet folder...<br>");
+    $.ajax({
+        url: 'initSheet.php?version=' + Math.random(),
+        type: 'POST',
+        data: { id: sheet_Id },
+        dataType: 'JSON',
+        success: function(resp) {
+            if (resp && resp.status === 'ok') {
+                var n = (resp.copied || []).length;
+                logLoadMsg("Source files copied (" + n + " files). All sheet data published.<br>");
+            } else {
+                var msg = (resp && resp.message) ? resp.message : 'Unknown error';
+                logLoadMsg("<font color='red'>Source copy error: " + msg + "</font><br>");
+                logLoadMsg("All sheet data published.<br>");
+            }
+        },
+        error: function(xhr, status) {
+            logLoadMsg("<font color='red'>Source copy failed (" + status + "). Sheet data was still published.</font><br>");
+        }
+    });
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 /**
@@ -817,6 +835,20 @@ function loadBGGSheetData(bggJSON, isLast = true) {
             bggUserId = row_bgg['Value']
         }
     })
+
+    // If no BGG username is configured, skip the BGG fetch entirely
+    if (!bggUserId) {
+        logLoadMsg('No BGG username defined — skipping BGG data fetch.<br>')
+        if (isLast) {
+            if (isPreloadImages == 'download_images') {
+                logLoadMsg("<br>")
+                PreloadAllImagesToServer()
+            } else {
+                finishPublishing()
+            }
+        }
+        return
+    }
 
     const BGG_MAX_ATTEMPTS = 6
     const BGG_RETRY_DELAY  = 5000   // ms between retries when BGG returns 202

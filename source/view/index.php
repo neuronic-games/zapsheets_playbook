@@ -56,6 +56,12 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       font-family: 'DINRegular', sans-serif;
       white-space: nowrap;
     }
+    .game-subtitle {
+      font-size: 1rem;
+      color: #555;
+      font-family: 'DINRegular', sans-serif;
+      margin: -.75rem 0 1.25rem;
+    }
 
     /* ── Two-column layout ───────────────────────────────────── */
     .main-columns {
@@ -71,13 +77,15 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     /* ── Left: image panel ───────────────────────────────────── */
     .image-panel {}
     .main-image-wrap {
-      background: #fff;
+      background: #d8d8d8;
       border: 1px solid #ddd;
       border-radius: 10px;
       overflow: hidden;
       margin-bottom: .6rem;
       cursor: pointer;
     }
+    .main-image-wrap.no-image img,
+    .main-image-wrap.no-image video { display: none; }
     .main-image-wrap {
       height: 320px;
     }
@@ -484,6 +492,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     <h1 class="game-title" id="gameTitle">…</h1>
     <span class="game-year" id="gameYear"></span>
   </div>
+  <p class="game-subtitle" id="gameSubTitle" style="display:none"></p>
 
   <!-- Two-column main section -->
   <div class="main-columns">
@@ -616,7 +625,7 @@ function youtubeId(url) {
 
 ////////////////////////////////////////////////////////////////////////////////
 var data = {};
-var _loadTotal = 8;
+var _loadTotal = 9;
 var _loadDone  = 0;
 
 function _jsonLoad(path, key) {
@@ -644,8 +653,9 @@ function _checkAllLoaded() {
 }
 
 _jsonLoad(BASE + 'settings.json',          'settings');
-_jsonLoad(BASE + 'bgg.json',     'stats');
+_jsonLoad(BASE + 'bgg.json',               'stats');
 _jsonLoad(BASE + 'game-' + lang + '.json', 'bgg');
+_jsonLoad(BASE + 'steps-' + lang + '.json','steps');
 _jsonLoad(BASE + 'splash-' + lang + '.json', 'splash');
 _jsonLoad(BASE + 'videos-' + lang + '.json', 'videos');
 _jsonLoad(BASE + 'rules-'  + lang + '.json', 'rules');
@@ -748,13 +758,19 @@ function render() {
   }
 
   // ── Title & meta ─────────────────────────────────────────────
-  var title = cfg['Title'] || basic['name'] || 'Game';
-  var year  = bg['yearpublished'] ? '(' + bg['yearpublished'] + ')' : '';
+  var title    = cfg['Title'] || basic['name'] || 'Game';
+  var year     = bg['yearpublished'] ? '(' + bg['yearpublished'] + ')' : '';
+  var _subRow  = (data.bgg || []).find(function(r){ return r.Name === 'SubTitle' && r.Value; });
 
   document.title = title;
   document.getElementById('gameTitle').textContent = title;
   document.getElementById('gameYear').textContent  = year;
   document.getElementById('pageTitle').textContent = title;
+  if (_subRow) {
+    var _subEl = document.getElementById('gameSubTitle');
+    _subEl.textContent = _subRow.Value;
+    _subEl.style.display = '';
+  }
 
   // App icon
   if (cfg['AppIconImageUrl']) {
@@ -801,6 +817,8 @@ function render() {
     setMainMedia(0);
     buildThumbs();
     startSlideshow(0);
+  } else {
+    document.getElementById('mainImgWrap').classList.add('no-image');
   }
 
   // ── Buy URLs ─────────────────────────────────────────────────
@@ -841,11 +859,25 @@ function render() {
   }
 
   // ── Stats ────────────────────────────────────────────────────
+  // Game JSON fields take precedence over BGG data for player count and time
+  var _gameVal = function(name) {
+    var r = (data.bgg || []).find(function(r){ return r.Name === name && r.Value; });
+    return r ? r.Value : null;
+  };
+  var _minPlayers = _gameVal('MinPlayers') || bg['minplayers'];
+  var _maxPlayers = _gameVal('MaxPlayers') || bg['maxplayers'];
+  var _minTime    = _gameVal('MinPlaytime') || bg['minplaytime'];
+  var _maxTime    = _gameVal('MaxPlaytime') || bg['maxplaytime'];
+
   var stats = [];
-  if (bg['minplayers'] && bg['maxplayers'])
-    stats.push({ v: bg['minplayers'] + '–' + bg['maxplayers'], k: 'Players' });
-  if (bg['minplaytime'])
-    stats.push({ v: bg['minplaytime'] + ' min', k: 'Play Time' });
+  if (_minPlayers && _maxPlayers)
+    stats.push({ v: _minPlayers + '–' + _maxPlayers, k: 'Players' });
+  else if (_minPlayers)
+    stats.push({ v: _minPlayers, k: 'Players' });
+  if (_minTime && _maxTime && _minTime !== _maxTime)
+    stats.push({ v: _minTime + '–' + _maxTime + ' min', k: 'Play Time' });
+  else if (_minTime)
+    stats.push({ v: _minTime + ' min', k: 'Play Time' });
   if (bg['age'])
     stats.push({ v: bg['age'] + '+', k: 'Age' });
   if (bggCfg['Weight'])
@@ -875,12 +907,20 @@ function render() {
   }
 
   // ── Description ──────────────────────────────────────────────
-  var desc = bg['description'] ? decodeHtml(bg['description']) : '';
+  // Prefer Description from game JSON; fall back to BGG data
+  var _gameDesc   = (data.bgg || []).find(function(r){ return r.Name === 'Description'; });
+  var desc = (_gameDesc && _gameDesc.Value)
+    ? _gameDesc.Value
+    : (bg['description'] ? decodeHtml(bg['description']) : '');
   document.getElementById('descText').textContent = desc;
 
   // ── Meta rows ────────────────────────────────────────────────
   var meta = [];
-  if (bg['boardgamedesigner'] && bg['boardgamedesigner'].length) {
+  // Prefer Designer from game JSON; fall back to BGG boardgamedesigner list
+  var _gameDesigners = (data.bgg || []).filter(function(r){ return r.Name === 'Designer' && r.Value; });
+  if (_gameDesigners.length) {
+    meta.push({ k: 'Designers', v: _gameDesigners.map(function(r){ return r.Value; }).join(', ') });
+  } else if (bg['boardgamedesigner'] && bg['boardgamedesigner'].length) {
     var designers = Array.isArray(bg['boardgamedesigner'])
       ? bg['boardgamedesigner'] : [bg['boardgamedesigner']];
     meta.push({ k: 'Designers', v: designers.map(function(d) {
@@ -905,9 +945,11 @@ function render() {
       ? bg['boardgamemechanic'] : [bg['boardgamemechanic']];
     meta.push({ k: 'Mechanics', v: mechs.map(function(m){ return '<span class="tag-pill">' + m + '</span>'; }).join('') });
   }
-  if (cfg['PublishedOn']) {
-    var pubDate = cfg['PublishedOn'].split(' ')[0];
-    meta.push({ k: 'Published', v: pubDate });
+  // Published year: game JSON YearPublished > BGG yearpublished
+  // (cfg['PublishedOn'] is the push timestamp, not the game's release year)
+  var _yearPublished = _gameVal('YearPublished') || bg['yearpublished'] || null;
+  if (_yearPublished) {
+    meta.push({ k: 'Published', v: _yearPublished });
   }
 
   document.getElementById('metaList').innerHTML = meta.map(function(m) {
@@ -916,23 +958,54 @@ function render() {
   }).join('');
 
   // ── CTAs ─────────────────────────────────────────────────────
-  // Derive the steps URL from the current location so it works on any host
-  // or subdirectory without needing DomainPrefix.
-  // The view page lives at …/sheets/{id}/view/ — walk back to …/sheets/{id}/
+  var _rulesUrl    = (data.bgg || []).find(function(r){ return r.Name === 'RulesUrl' && r.Value; });
+  var _ttsUrl      = (data.bgg || []).find(function(r){ return r.Name === 'TTSUrl'   && r.Value; });
+  var _hasSteps    = data.steps && data.steps.length > 0;
+
   var _viewPath = window.location.pathname;
   var _idEnd    = _viewPath.indexOf(sheet_Id) + sheet_Id.length;
-  var stepsUrl  = window.location.origin
+  var _stepsUrl = window.location.origin
                 + _viewPath.substring(0, _idEnd)
                 + '/?sheet=steps-' + lang + '&id=' + sheet_Id;
-  document.getElementById('ctaRow').innerHTML =
-    '<a class="btn-rules" id="cta-rules" href="#">Read Rules</a>'
-    + '<a class="btn-play" href="' + stepsUrl + '" target="_blank" rel="noopener">Teach Me</a>';
 
-  document.getElementById('cta-rules').addEventListener('click', function(e) {
-    e.preventDefault();
-    activateTab('rules');
-    document.querySelector('.tabs-section').scrollIntoView({ behavior: 'smooth' });
-  });
+  var _ctaHtml = '';
+
+  // View Sellsheet — first button, shown when the game has no published year yet
+  if (!_yearPublished) {
+    var _sellsheetUrl = window.location.origin + _viewPath.substring(0, _idEnd) + '/sellsheet';
+    _ctaHtml += '<a class="btn-rules" href="' + _sellsheetUrl + '" target="_blank" rel="noopener">View Sellsheet</a>';
+  }
+
+  // Read Rules — link to RulesUrl if defined, otherwise scroll to rules tab
+  if (_rulesUrl) {
+    _ctaHtml += '<a class="btn-rules" href="' + _rulesUrl.Value + '" target="_blank" rel="noopener">Read Rules</a>';
+  } else {
+    _ctaHtml += '<a class="btn-rules" id="cta-rules" href="#">Read Rules</a>';
+  }
+
+  // Play Now — only shown when TTSUrl is defined
+  if (_ttsUrl) {
+    _ctaHtml += '<a class="btn-play" href="' + _ttsUrl.Value + '" target="_blank" rel="noopener">Play Now</a>';
+  }
+
+  // Teach Me — only shown when steps data exists
+  if (_hasSteps) {
+    _ctaHtml += '<a class="btn-play" href="' + _stepsUrl + '" target="_blank" rel="noopener">Teach Me</a>';
+  }
+
+  document.getElementById('ctaRow').innerHTML = _ctaHtml;
+
+  // Scroll-to-rules only wired up when there is no external RulesUrl
+  if (!_rulesUrl) {
+    var _rulesBtn = document.getElementById('cta-rules');
+    if (_rulesBtn) {
+      _rulesBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        activateTab('rules');
+        document.querySelector('.tabs-section').scrollIntoView({ behavior: 'smooth' });
+      });
+    }
+  }
 
   // ── Build tabs ───────────────────────────────────────────────
   var reviews = (data.bgg || []).filter(function(r) { return r.Name === 'Review' && r.Value; });

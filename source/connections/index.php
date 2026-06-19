@@ -32,6 +32,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       align-items: center;
       gap: 1rem;
     }
+    .top-bar-left { flex: 1; }
     .top-bar h1 {
       font-family: 'DINBlack', sans-serif;
       font-size: 1.1rem;
@@ -43,6 +44,102 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       opacity: .65;
       margin: 0;
     }
+    .share-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      font-family: 'DINBlack', sans-serif;
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      background: rgba(255,255,255,.15);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 6px;
+      padding: .4rem .9rem;
+      cursor: pointer;
+      transition: background .15s;
+      white-space: nowrap;
+    }
+    .share-btn:hover { background: rgba(255,255,255,.25); }
+
+    /* ── Share dialog ──────────────────────────────────── */
+    .share-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .share-overlay.open { display: flex; }
+    .share-dialog {
+      background: #fff;
+      border-radius: 10px;
+      padding: 1.5rem;
+      width: min(480px, 92vw);
+      box-shadow: 0 8px 32px rgba(0,0,0,.22);
+    }
+    .share-dialog h2 {
+      font-family: 'DINBlack', sans-serif;
+      font-size: 1rem;
+      margin: 0 0 .3rem;
+    }
+    .share-dialog p {
+      font-size: .82rem;
+      color: #666;
+      margin: 0 0 1rem;
+    }
+    .share-url-row {
+      display: flex;
+      gap: .5rem;
+      align-items: stretch;
+    }
+    .share-url-input {
+      flex: 1;
+      font-family: 'DINRegular', monospace, sans-serif;
+      font-size: .78rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: .5rem .75rem;
+      color: #333;
+      background: #f8f8f8;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: text;
+      outline: none;
+    }
+    .copy-btn {
+      font-family: 'DINBlack', sans-serif;
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      background: #1a1a2e;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: .5rem 1rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .15s;
+      flex-shrink: 0;
+    }
+    .copy-btn:hover  { background: #2d2d50; }
+    .copy-btn.copied { background: #16a34a; }
+    .share-close {
+      display: block;
+      margin-top: 1rem;
+      text-align: right;
+      font-size: .8rem;
+      color: #999;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: 'DINRegular', sans-serif;
+    }
+    .share-close:hover { color: #333; }
 
     /* ── Summary pills ─────────────────────────────────── */
     .summary-bar {
@@ -196,9 +293,22 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 <body>
 
 <div class="top-bar">
-  <div>
+  <div class="top-bar-left">
     <h1>Publisher Connections</h1>
     <p class="game-name" id="gameName"></p>
+  </div>
+  <button class="share-btn" onclick="openShare()">&#8679; Share</button>
+</div>
+
+<div class="share-overlay" id="shareOverlay" onclick="if(event.target===this)closeShare()">
+  <div class="share-dialog">
+    <h2>Share Connections</h2>
+    <p>Send this link to share your connections list.</p>
+    <div class="share-url-row">
+      <input class="share-url-input" id="shareUrl" type="text" readonly />
+      <button class="copy-btn" id="copyBtn" onclick="copyUrl()">Copy</button>
+    </div>
+    <button class="share-close" onclick="closeShare()">Close</button>
   </div>
 </div>
 
@@ -238,11 +348,13 @@ function latestStatus(entries) {
   return sorted[0] ? sorted[0].Status : '';
 }
 
-function render(connections, settings) {
-  // Game name from settings
+function render(connections, settings, game) {
+  // Game title — prefer settings.json, fall back to game-en.json
   var cfg = {};
   (settings || []).forEach(function(r){ if (r.Name) cfg[r.Name] = r.Value; });
-  var gameTitle = cfg['Title'] || '';
+  var gd = {};
+  (game || []).forEach(function(r){ if (r.Name) gd[r.Name] = r.Value; });
+  var gameTitle = cfg['Title'] || gd['Title'] || '';
   if (gameTitle) document.getElementById('gameName').textContent = gameTitle;
 
   if (!connections || !connections.length) {
@@ -374,9 +486,9 @@ function render(connections, settings) {
   document.getElementById('content').innerHTML = html;
 }
 
-// Load connections.json + settings.json in parallel
-var loaded = {}, needed = 2;
-function check() { if (--needed === 0) render(loaded.connections, loaded.settings); }
+// Load all data files in parallel
+var loaded = {}, needed = 3;
+function check() { if (--needed === 0) render(loaded.connections, loaded.settings, loaded.game); }
 
 function loadJSON(url, key) {
   var xhr = new XMLHttpRequest();
@@ -391,6 +503,37 @@ function loadJSON(url, key) {
 
 loadJSON(BASE + 'connections.json', 'connections');
 loadJSON(BASE + 'settings.json',    'settings');
+loadJSON(BASE + 'game-en.json',     'game');
+
+// ── Share dialog ──────────────────────────────────────
+function openShare() {
+  var url = window.location.origin
+          + '/' + sheet_Id + '/connections.json';
+  document.getElementById('shareUrl').value = url;
+  document.getElementById('copyBtn').textContent = 'Copy';
+  document.getElementById('copyBtn').classList.remove('copied');
+  document.getElementById('shareOverlay').classList.add('open');
+}
+function closeShare() {
+  document.getElementById('shareOverlay').classList.remove('open');
+}
+function copyUrl() {
+  var input = document.getElementById('shareUrl');
+  input.select();
+  var btn = document.getElementById('copyBtn');
+  try {
+    navigator.clipboard.writeText(input.value).then(function() {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(function(){ btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  } catch(e) {
+    document.execCommand('copy');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function(){ btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  }
+}
 </script>
 </body>
 </html>

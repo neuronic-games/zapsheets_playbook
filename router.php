@@ -98,6 +98,23 @@ if (preg_match('#^/([A-Za-z0-9_\-]+)/view(/.*)?$#', $uri, $m)) {
     sheetNotFound($id);
 }
 
+// ── Short URL: /{id}/connections[/…] ─────────────────────────────────────
+if (preg_match('#^/([A-Za-z0-9_\-]+)/connections(/.*)?$#', $uri, $m)) {
+    $id   = $m[1];
+    $rest = (isset($m[2]) && $m[2] !== '' && $m[2] !== '/') ? $m[2] : '/index.html';
+
+    $target = __DIR__ . '/sheets/' . $id . '/connections' . $rest;
+    if (is_file($target))  { serveFile($target, $MIME); }
+
+    $idx = __DIR__ . '/sheets/' . $id . '/connections/index.php';
+    if (is_file($idx))     { serveFile($idx, $MIME); }
+
+    $idx = __DIR__ . '/sheets/' . $id . '/connections/index.html';
+    if (is_file($idx))     { serveFile($idx, $MIME); }
+
+    sheetNotFound($id);
+}
+
 // ── Short URL: /{id}/sellsheet[/…] ───────────────────────────────────────
 if (preg_match('#^/([A-Za-z0-9_\-]+)/sellsheet(/.*)?$#', $uri, $m)) {
     $id   = $m[1];

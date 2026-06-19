@@ -944,7 +944,7 @@ function render() {
 
   // ── CTAs ─────────────────────────────────────────────────────
   var _rulesUrl    = (data.bgg || []).find(function(r){ return r.Name === 'RulesUrl' && r.Value; });
-  var _ttsUrl      = (data.bgg || []).find(function(r){ return r.Name === 'TTSUrl'   && r.Value; });
+  var _ttsUrl      = (data.bgg || []).find(function(r){ return r.Name === 'PlayUrl'  && r.Value; });
   var _hasSteps    = data.steps && data.steps.length > 0;
 
   var _viewPath = window.location.pathname;
@@ -968,7 +968,7 @@ function render() {
     _ctaHtml += '<a class="btn-rules" id="cta-rules" href="#">Read Rules</a>';
   }
 
-  // Play Now — only shown when TTSUrl is defined
+  // Play Now — only shown when PlayUrl is defined
   if (_ttsUrl) {
     _ctaHtml += '<a class="btn-play" href="' + _ttsUrl.Value + '" target="_blank" rel="noopener">Play Now</a>';
   }

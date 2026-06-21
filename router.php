@@ -98,21 +98,28 @@ if (preg_match('#^/([A-Za-z0-9_\-]+)/view(/.*)?$#', $uri, $m)) {
     sheetNotFound($id);
 }
 
-// ── Short URL: /{id}/connections[/…] ─────────────────────────────────────
-if (preg_match('#^/([A-Za-z0-9_\-]+)/connections(/.*)?$#', $uri, $m)) {
+// ── Short URL: /{id}/dashboard[/…] ───────────────────────────────────────
+if (preg_match('#^/([A-Za-z0-9_\-]+)/dashboard(/.*)?$#', $uri, $m)) {
     $id   = $m[1];
     $rest = (isset($m[2]) && $m[2] !== '' && $m[2] !== '/') ? $m[2] : '/index.html';
 
-    $target = __DIR__ . '/sheets/' . $id . '/connections' . $rest;
+    $target = __DIR__ . '/sheets/' . $id . '/dashboard' . $rest;
     if (is_file($target))  { serveFile($target, $MIME); }
 
-    $idx = __DIR__ . '/sheets/' . $id . '/connections/index.php';
+    $idx = __DIR__ . '/sheets/' . $id . '/dashboard/index.php';
     if (is_file($idx))     { serveFile($idx, $MIME); }
 
-    $idx = __DIR__ . '/sheets/' . $id . '/connections/index.html';
+    $idx = __DIR__ . '/sheets/' . $id . '/dashboard/index.html';
     if (is_file($idx))     { serveFile($idx, $MIME); }
 
     sheetNotFound($id);
+}
+
+// ── Short URL: /{id}/connections[/…] (legacy → redirect to /dashboard) ───
+if (preg_match('#^/([A-Za-z0-9_\-]+)/connections(/.*)?$#', $uri, $m)) {
+    $id = $m[1];
+    header('Location: /' . $id . '/dashboard', true, 301);
+    exit;
 }
 
 // ── Short URL: /{id}/sellsheet[/…] ───────────────────────────────────────

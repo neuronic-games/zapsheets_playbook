@@ -10,7 +10,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pitch Dashboard</title>
+  <title>Pitch Board</title>
   <style>
     @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2') format('woff2'),url('fonts/DINBlack.ttf'); }
     @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'),url('fonts/DINMedium.ttf'); }
@@ -64,21 +64,42 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       text-transform:uppercase; letter-spacing:.05em;
       padding:.25rem .65rem; border-radius:999px;
     }
-    .pill-total    { background:#1a1a2e; color:#fff; }
-    .pill-pitched  { background:#e2e8f0; color:#334155; }
-    .pill-int      { background:#dcfce7; color:#166534; }
-    .pill-passed   { background:#fee2e2; color:#991b1b; }
+    .pill-total     { background:#1a1a2e; color:#fff; }
+    .pill-pitched   { background:#e2e8f0; color:#334155; cursor:pointer; border:none; transition:opacity .15s,box-shadow .15s; }
+    .pill-int       { background:#dcfce7; color:#166534; cursor:pointer; border:none; transition:opacity .15s,box-shadow .15s; }
+    .pill-passed    { background:#fee2e2; color:#991b1b; cursor:pointer; border:none; transition:opacity .15s,box-shadow .15s; }
+    .pill-signed    { background:#7c3aed; color:#fff; cursor:pointer; border:none; transition:opacity .15s,box-shadow .15s; }
+    .pill-published { background:#0369a1; color:#fff; cursor:pointer; border:none; transition:opacity .15s,box-shadow .15s; }
+    .pill-pitched:hover, .pill-int:hover, .pill-passed:hover,
+    .pill-signed:hover, .pill-published:hover { opacity:.85; }
+    .pill-pitched.filter-active   { box-shadow:0 0 0 2px #fff, 0 0 0 4px #94a3b8; }
+    .pill-int.filter-active       { box-shadow:0 0 0 2px #fff, 0 0 0 4px #16a34a; }
+    .pill-passed.filter-active    { box-shadow:0 0 0 2px #fff, 0 0 0 4px #dc2626; }
+    .pill-signed.filter-active    { box-shadow:0 0 0 2px #fff, 0 0 0 4px #7c3aed; }
+    .pill-published.filter-active { box-shadow:0 0 0 2px #fff, 0 0 0 4px #0369a1; }
 
-    /* ── Search ──────────────────────────────────────── */
-    .search-bar { padding:.4rem 1.25rem .6rem; }
+    /* ── Search + sort ───────────────────────────────── */
+    .search-bar { padding:.4rem 1.25rem .6rem; display:flex; align-items:center; gap:.6rem; }
     .search-bar input {
-      width:100%; max-width:380px;
+      flex:1; max-width:380px;
       font-family:'DINRegular',sans-serif; font-size:.82rem;
       border:1px solid #ccc; border-radius:6px;
       padding:.42rem .8rem; outline:none;
       background:#fff; color:#111;
     }
     .search-bar input:focus { border-color:#1a1a2e; }
+    .sort-toggle {
+      display:flex; background:#e2e8f0;
+      border-radius:6px; overflow:hidden; flex-shrink:0;
+    }
+    .sort-toggle button {
+      font-family:'DINBlack',sans-serif; font-size:.68rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      background:none; color:#64748b;
+      border:none; padding:.38rem .75rem; cursor:pointer;
+      transition:background .15s, color .15s;
+    }
+    .sort-toggle button.active { background:#1a1a2e; color:#fff; }
 
     /* ── Content ─────────────────────────────────────── */
     .content { padding:.4rem 1.25rem 3rem; max-width:900px; }
@@ -102,6 +123,10 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
     .card-badges { display:flex; align-items:center; gap:.35rem; flex-shrink:0; }
+    .game-designers {
+      font-family:'DINRegular',sans-serif; font-size:.75rem;
+      opacity:.65; font-weight:normal; letter-spacing:0;
+    }
     .card-chevron {
       font-size:.65rem; opacity:.55; flex-shrink:0;
       transition:transform .2s; transform:rotate(0deg);
@@ -119,6 +144,8 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .badge-interested  { background:#dcfce7; color:#166534; }
     .badge-passed      { background:#fee2e2; color:#991b1b; }
     .badge-pitched     { background:#e2e8f0; color:#334155; }
+    .badge-signed      { background:#7c3aed; color:#fff; }
+    .badge-published   { background:#0369a1; color:#fff; }
     .badge-age-6mo     { background:#ef4444; color:#fff; }
     .badge-age-3mo     { background:#f59e0b; color:#fff; }
 
@@ -205,12 +232,12 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 <!-- Top bar -->
 <div class="top-bar">
   <div class="top-bar-left">
-    <h1>Pitch Dashboard</h1>
+    <h1>Pitch Board</h1>
     <p class="sub" id="subTitle">Loading…</p>
   </div>
   <div class="view-toggle">
-    <button id="btnGame"      class="active" onclick="setView('game')">By Game</button>
-    <button id="btnPublisher"               onclick="setView('publisher')">By Publisher</button>
+    <button id="btnGame"      class="active" onclick="setView('game')">Games</button>
+    <button id="btnPublisher"               onclick="setView('publisher')">Publishers</button>
   </div>
   <button class="share-btn" onclick="openShare()">&#8679; Share</button>
 </div>
@@ -231,6 +258,10 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 <div class="summary-bar" id="summaryBar"></div>
 <div class="search-bar">
   <input type="text" id="searchInput" placeholder="Search games, publishers, contacts…" oninput="applySearch()" />
+  <div class="sort-toggle">
+    <button id="btnSortDate"  class="active" onclick="setSort('date')">Date</button>
+    <button id="btnSortAlpha"            onclick="setSort('alpha')">A–Z</button>
+  </div>
 </div>
 <div class="content" id="content"><div class="empty">Loading…</div></div>
 
@@ -251,17 +282,44 @@ var BASE     = APP_BASE + 'sheets/' + sheet_Id + '/';
 
 // ── State ─────────────────────────────────────────────
 var currentView     = 'game';
+var currentSort     = 'date';   // 'date' | 'alpha'
 var allPitches      = [];
 var filteredPitches = [];
 var searchQuery     = '';
+var activeFilters   = {};   // keys: 'signed', 'published'
 var peopleIndex     = {};   // "Name|Company" → email
+var gamesIndex      = {};   // Game name → {Designers, …}
+var totalGameCount  = 0;
+var totalPubCount   = 0;
 
 // ── Helpers ───────────────────────────────────────────
 function statusClass(s) {
   s = (s||'').toLowerCase();
+  if (s==='signed')     return 'signed';
   if (s==='interested') return 'interested';
   if (s==='passed')     return 'passed';
   return 'pitched';
+}
+
+// A game is signed if games.json has a Date Signed or Status=Signed, or any pitch entry has Status=Signed
+function isGameSigned(gameName, allEntries) {
+  var info = gamesIndex[gameName] || {};
+  if ((info['Date Signed'] || '').trim()) return true;
+  if ((info['Status'] || '').toLowerCase() === 'signed') return true;
+  return (allEntries || []).some(function(e) {
+    return (e.Status || '').toLowerCase() === 'signed' ||
+           (e['Date Signed'] || '').trim();
+  });
+}
+
+// A game is published if games.json has a Date Published or Status=Published, or any pitch entry has Status=Published
+function isGamePublished(gameName, allEntries) {
+  var info = gamesIndex[gameName] || {};
+  if ((info['Date Published'] || '').trim()) return true;
+  if ((info['Status'] || '').toLowerCase() === 'published') return true;
+  return (allEntries || []).some(function(e) {
+    return (e.Status || '').toLowerCase() === 'published';
+  });
 }
 
 function latestEntry(entries) {
@@ -287,22 +345,71 @@ function escHtml(s) {
 
 // ── Build summary bar ─────────────────────────────────
 function buildSummary(pitches) {
-  var games = {}, pubs = {}, counts = {pitched:0, interested:0, passed:0};
+  // Build game→publisher→entries map for pair-level counting
+  var gameEntryMap = {}, gamePubMap = {}, pubSet = {};
   pitches.forEach(function(r) {
-    if (r.Game) games[r.Game] = 1;
-    if (r.Publisher) pubs[r.Publisher] = 1;
-    var s = (r.Status||'').toLowerCase();
-    if (s==='interested') counts.interested++;
-    else if (s==='passed') counts.passed++;
-    else if (s) counts.pitched++;
+    var g = r.Game || '(Unknown)';
+    var p = r.Publisher || '(Unknown)';
+    if (r.Publisher) pubSet[r.Publisher] = 1;
+    if (!gameEntryMap[g]) gameEntryMap[g] = [];
+    gameEntryMap[g].push(r);
+    if (!gamePubMap[g]) gamePubMap[g] = {};
+    if (!gamePubMap[g][p]) gamePubMap[g][p] = [];
+    gamePubMap[g][p].push(r);
   });
-  document.getElementById('summaryBar').innerHTML =
-    '<span class="pill pill-total">' + pitches.length + ' pitches</span>' +
-    '<span class="pill pill-total" style="background:#2d2d50">' + Object.keys(games).length + ' games</span>' +
-    '<span class="pill pill-total" style="background:#374151">' + Object.keys(pubs).length + ' publishers</span>' +
-    '<span class="pill pill-pitched">'  + counts.pitched    + ' pitched</span>' +
-    '<span class="pill pill-int">'      + counts.interested + ' interested</span>' +
-    '<span class="pill pill-passed">'   + counts.passed     + ' passed</span>';
+
+  // Also include games in gamesIndex that may not have pitches yet
+  Object.keys(gamesIndex).forEach(function(n){ if (!gameEntryMap[n]) gameEntryMap[n] = []; });
+
+  // Count per game-publisher pair by latest status
+  var pairCounts = {pitched:0, interested:0, passed:0};
+  Object.keys(gamePubMap).forEach(function(g) {
+    Object.keys(gamePubMap[g]).forEach(function(p) {
+      var latest = latestEntry(gamePubMap[g][p]);
+      var s = (latest.Status||'').toLowerCase();
+      if (s === 'interested') pairCounts.interested++;
+      else if (s === 'passed') pairCounts.passed++;
+      else if (s) pairCounts.pitched++;
+    });
+  });
+
+  // Count signed and published at the game level
+  var signedGames = 0, publishedGames = 0;
+  Object.keys(gameEntryMap).forEach(function(name) {
+    if (isGamePublished(name, gameEntryMap[name])) publishedGames++;
+    else if (isGameSigned(name, gameEntryMap[name])) signedGames++;
+  });
+
+  // Store for view-toggle button labels
+  totalGameCount = Object.keys(gameEntryMap).length;
+  totalPubCount  = Object.keys(pubSet).length;
+  document.getElementById('btnGame').textContent      = totalGameCount + ' Games';
+  document.getElementById('btnPublisher').textContent = totalPubCount  + ' Publishers';
+
+  function filterBtn(cls, key, label, count) {
+    if (!count) return '';
+    var active = activeFilters[key] ? ' filter-active' : '';
+    return '<button class="pill ' + cls + active + '" onclick="toggleFilter(\'' + key + '\')">' + count + ' ' + label + '</button>';
+  }
+
+  var html =
+    filterBtn('pill-pitched', 'pitched',   'pitched',   pairCounts.pitched) +
+    filterBtn('pill-int',     'interested','interested', pairCounts.interested) +
+    filterBtn('pill-passed',  'passed',    'passed',     pairCounts.passed) +
+    filterBtn('pill-signed',  'signed',    'signed',     signedGames) +
+    filterBtn('pill-published','published','published',  publishedGames);
+  document.getElementById('summaryBar').innerHTML = html;
+}
+
+// ── Filter toggle ─────────────────────────────────────
+function toggleFilter(key) {
+  if (activeFilters[key]) {
+    delete activeFilters[key];
+  } else {
+    activeFilters[key] = true;
+  }
+  buildSummary(allPitches);
+  buildView();
 }
 
 // ── Search ────────────────────────────────────────────
@@ -324,6 +431,14 @@ function setView(v) {
   currentView = v;
   document.getElementById('btnGame').classList.toggle('active',      v==='game');
   document.getElementById('btnPublisher').classList.toggle('active', v==='publisher');
+  buildView();
+}
+
+// ── Sort switcher ─────────────────────────────────────
+function setSort(s) {
+  currentSort = s;
+  document.getElementById('btnSortDate').classList.toggle('active',  s==='date');
+  document.getElementById('btnSortAlpha').classList.toggle('active', s==='alpha');
   buildView();
 }
 
@@ -367,8 +482,48 @@ function buildGameView(pitches) {
     games[g][p][c].push(r);
   });
 
-  // Sort games by most recent entry
+  // Add games from games.json that have no pitch entries yet
+  Object.keys(gamesIndex).forEach(function(name) {
+    if (!games[name]) games[name] = {};
+  });
+
+  // Apply active filters (any combination, OR logic)
+  var hasFilter = activeFilters.signed || activeFilters.published ||
+                  activeFilters.interested || activeFilters.passed || activeFilters.pitched;
+  if (hasFilter) {
+    Object.keys(games).forEach(function(name) {
+      var entries = [];
+      Object.keys(games[name]).forEach(function(p) {
+        Object.keys(games[name][p]).forEach(function(c) {
+          games[name][p][c].forEach(function(e){ entries.push(e); });
+        });
+      });
+      var pub = isGamePublished(name, entries);
+      var sig = !pub && isGameSigned(name, entries);
+      var keep = false;
+      if (activeFilters.published && pub) keep = true;
+      if (activeFilters.signed    && sig) keep = true;
+      if (!keep && (activeFilters.interested || activeFilters.passed || activeFilters.pitched)) {
+        // Check if any publisher's latest status matches an active status filter
+        keep = Object.keys(games[name]).some(function(p) {
+          var pe = [];
+          Object.keys(games[name][p]).forEach(function(c){
+            games[name][p][c].forEach(function(e){ pe.push(e); });
+          });
+          var s = (latestEntry(pe).Status||'').toLowerCase();
+          return (activeFilters.interested && s === 'interested') ||
+                 (activeFilters.passed     && s === 'passed') ||
+                 (activeFilters.pitched    && s === 'pitched');
+        });
+      }
+      if (!keep) delete games[name];
+    });
+  }
+
+  // Sort games
   var gameNames = Object.keys(games).sort(function(a,b) {
+    if (currentSort === 'alpha') return a.localeCompare(b);
+    // Date sort: most recent first; unpitched (no dates) fall to end, then alpha
     function maxDate(g) {
       var dates = [];
       Object.keys(games[g]).forEach(function(p) {
@@ -376,9 +531,11 @@ function buildGameView(pitches) {
           games[g][p][c].forEach(function(e){ dates.push(new Date(e.Date)); });
         });
       });
-      return Math.max.apply(null, dates);
+      return dates.length ? Math.max.apply(null, dates) : 0;
     }
-    return maxDate(b)-maxDate(a);
+    var da = maxDate(a), db = maxDate(b);
+    if (db !== da) return db - da;
+    return a.localeCompare(b);
   });
 
   var html = '';
@@ -389,21 +546,51 @@ function buildGameView(pitches) {
         games[g][p][c].forEach(function(e){ allEntries.push(e); });
       });
     });
-    var latest = latestEntry(allEntries);
-    var sc = statusClass(latest.Status);
     var at = ageTag(allEntries);
 
+    // Determine game-level status badge (never show PASSED; INTERESTED if any pub is currently interested)
+    var published = isGamePublished(g, allEntries);
+    var signed    = !published && isGameSigned(g, allEntries);
+    var gameStatusBadge = '';
+    if (published) {
+      gameStatusBadge = '<span class="badge badge-published">Published</span>';
+    } else if (signed) {
+      gameStatusBadge = '<span class="badge badge-signed">Signed</span>';
+    } else {
+      // Check if any publisher's most-recent status is Interested
+      var anyInterested = Object.keys(games[g]).some(function(pub) {
+        var pe = [];
+        Object.keys(games[g][pub]).forEach(function(c){ games[g][pub][c].forEach(function(e){ pe.push(e); }); });
+        return (latestEntry(pe).Status||'').toLowerCase() === 'interested';
+      });
+      if (anyInterested) {
+        gameStatusBadge = '<span class="badge badge-interested">Interested</span>';
+      } else {
+        // Show Pitched only (suppress Passed)
+        var anyPitched = allEntries.some(function(e){ return (e.Status||'').toLowerCase() === 'pitched'; });
+        if (anyPitched) gameStatusBadge = '<span class="badge badge-pitched">Pitched</span>';
+      }
+    }
+
     html += '<div class="card">';
+    var gameInfo  = gamesIndex[g] || {};
+    var designers = (gameInfo.Designers||'').trim();
+    var gameLabel = designers ? escHtml(g) + ' <span class="game-designers">(' + escHtml(designers) + ')</span>' : escHtml(g);
+
     html += '<div class="card-header" onclick="toggleCard(this)">';
-    html += '<span class="card-title">' + escHtml(g) + '</span>';
-    html += '<span class="card-badges">' + at +
-            '<span class="badge badge-' + sc + '">' + escHtml(latest.Status||'—') + '</span></span>';
+    html += '<span class="card-title">' + gameLabel + '</span>';
+    html += '<span class="card-badges">' + (published || signed ? '' : at) + gameStatusBadge + '</span>';
     html += '<span class="card-chevron">▼</span>';
     html += '</div>';
     html += '<div class="card-body">';
 
     // Sort publishers alphabetically
     var pubNames = Object.keys(games[g]).sort(function(a,b){ return a.localeCompare(b); });
+
+    if (pubNames.length === 0) {
+      html += '<div style="padding:.75rem 1rem;color:#aaa;font-size:.8rem;font-style:italic">No pitches yet</div>';
+    }
+
     pubNames.forEach(function(p) {
       // Each contact under this publisher
       var contacts = Object.keys(games[g][p]).sort(function(a,b){
@@ -413,13 +600,23 @@ function buildGameView(pitches) {
       // Publisher label spanning contacts
       var pubEntries = [];
       contacts.forEach(function(c){ games[g][p][c].forEach(function(e){ pubEntries.push(e); }); });
-      var pubLatest = latestEntry(pubEntries);
-      var psc = statusClass(pubLatest.Status);
+      var pubLatest  = latestEntry(pubEntries);
+      var pubStatus  = (pubLatest.Status||'').toLowerCase();
+      var pubAgeTag  = ageTag(pubEntries);  // age tag for this specific publisher
+
+      // Publisher status badge: show Interested; show Pitched; suppress Passed
+      var pubBadge = '';
+      if (pubStatus === 'interested') {
+        pubBadge = '<span class="badge badge-interested" style="margin-right:.75rem">Interested</span>';
+      } else if (pubStatus === 'pitched') {
+        pubBadge = '<span class="badge badge-pitched" style="margin-right:.75rem">Pitched</span>';
+      }
+      // (Passed → no badge)
 
       html += '<div class="sub-group">';
       html += '<div class="sub-label" style="color:#333;font-size:.75rem">' +
               '<span style="flex:1">' + escHtml(p) + '</span>' +
-              '<span class="badge badge-' + psc + '" style="margin-right:.75rem">' + escHtml(pubLatest.Status||'—') + '</span>' +
+              pubAgeTag + pubBadge +
               '</div>';
 
       contacts.forEach(function(c) {
@@ -465,8 +662,35 @@ function buildPublisherView(pitches) {
     pubs[p][g][c].push(r);
   });
 
-  // Sort publishers by most recent
+  // Apply active filters — remove games from each publisher that don't match,
+  // then remove publishers left with no games
+  var hasFilter = activeFilters.signed || activeFilters.published ||
+                  activeFilters.interested || activeFilters.passed || activeFilters.pitched;
+  if (hasFilter) {
+    Object.keys(pubs).forEach(function(p) {
+      Object.keys(pubs[p]).forEach(function(g) {
+        var entries = [];
+        Object.keys(pubs[p][g]).forEach(function(c){ pubs[p][g][c].forEach(function(e){ entries.push(e); }); });
+        var pub = isGamePublished(g, entries);
+        var sig = !pub && isGameSigned(g, entries);
+        var keep = false;
+        if (activeFilters.published && pub) keep = true;
+        if (activeFilters.signed    && sig) keep = true;
+        if (!keep && (activeFilters.interested || activeFilters.passed || activeFilters.pitched)) {
+          var s = (latestEntry(entries).Status||'').toLowerCase();
+          keep = (activeFilters.interested && s === 'interested') ||
+                 (activeFilters.passed     && s === 'passed') ||
+                 (activeFilters.pitched    && s === 'pitched');
+        }
+        if (!keep) delete pubs[p][g];
+      });
+      if (Object.keys(pubs[p]).length === 0) delete pubs[p];
+    });
+  }
+
+  // Sort publishers
   var pubNames = Object.keys(pubs).sort(function(a,b) {
+    if (currentSort === 'alpha') return a.localeCompare(b);
     function maxDate(p) {
       var dates = [];
       Object.keys(pubs[p]).forEach(function(g) {
@@ -487,15 +711,24 @@ function buildPublisherView(pitches) {
         pubs[p][g][c].forEach(function(e){ allEntries.push(e); });
       });
     });
-    var latest = latestEntry(allEntries);
-    var sc = statusClass(latest.Status);
     var at = ageTag(allEntries);
+
+    // Publisher header: INTERESTED if any game's current status with this publisher is Interested
+    var anyPubInterested = Object.keys(pubs[p]).some(function(g) {
+      var ge = [];
+      Object.keys(pubs[p][g]).forEach(function(c){ pubs[p][g][c].forEach(function(e){ ge.push(e); }); });
+      return (latestEntry(ge).Status||'').toLowerCase() === 'interested';
+    });
+    var pubHeaderBadge = anyPubInterested
+      ? '<span class="badge badge-interested">Interested</span>'
+      : (allEntries.some(function(e){ return (e.Status||'').toLowerCase() === 'pitched'; })
+          ? '<span class="badge badge-pitched">Pitched</span>'
+          : '');
 
     html += '<div class="card">';
     html += '<div class="card-header" onclick="toggleCard(this)">';
     html += '<span class="card-title">' + escHtml(p) + '</span>';
-    html += '<span class="card-badges">' + at +
-            '<span class="badge badge-' + sc + '">' + escHtml(latest.Status||'—') + '</span></span>';
+    html += '<span class="card-badges">' + at + pubHeaderBadge + '</span>';
     html += '<span class="card-chevron">▼</span>';
     html += '</div>';
     html += '<div class="card-body">';
@@ -509,13 +742,29 @@ function buildPublisherView(pitches) {
       });
       var gameEntries = [];
       contacts.forEach(function(c){ pubs[p][g][c].forEach(function(e){ gameEntries.push(e); }); });
-      var gLatest = latestEntry(gameEntries);
-      var gsc = statusClass(gLatest.Status);
+      var gLatest  = latestEntry(gameEntries);
+      var gStatus  = (gLatest.Status||'').toLowerCase();
+      var gAgeTag  = ageTag(gameEntries);
+
+      var gamePublished = isGamePublished(g, gameEntries);
+      var gameSigned    = !gamePublished && isGameSigned(g, gameEntries);
+      var gBadge;
+      if (gamePublished) {
+        gBadge = '<span class="badge badge-published" style="margin-right:.75rem">Published</span>';
+      } else if (gameSigned) {
+        gBadge = '<span class="badge badge-signed" style="margin-right:.75rem">Signed</span>';
+      } else if (gStatus === 'interested') {
+        gBadge = '<span class="badge badge-interested" style="margin-right:.75rem">Interested</span>';
+      } else if (gStatus === 'pitched') {
+        gBadge = '<span class="badge badge-pitched" style="margin-right:.75rem">Pitched</span>';
+      } else {
+        gBadge = ''; // Passed → no badge
+      }
 
       html += '<div class="sub-group">';
       html += '<div class="sub-label" style="color:#333;font-size:.75rem">' +
               '<span style="flex:1">' + escHtml(g) + '</span>' +
-              '<span class="badge badge-' + gsc + '" style="margin-right:.75rem">' + escHtml(gLatest.Status||'—') + '</span>' +
+              (gamePublished || gameSigned ? '' : gAgeTag) + gBadge +
               '</div>';
 
       contacts.forEach(function(c) {
@@ -555,7 +804,7 @@ function buildView() {
       : buildPublisherView(filteredPitches);
 }
 
-function render(pitches, settings, game, people) {
+function render(pitches, settings, game, people, games) {
   // ── Parse settings.json (format: [{My Name: label, COL: value}, …]) ──
   // The value column is whatever key isn't "My Name"
   var myEmail = '', myPhone = '';
@@ -588,6 +837,13 @@ function render(pitches, settings, game, people) {
   (people||[]).forEach(function(p) {
     var key = (p.Name||'').trim() + '|' + (p.Company||'').trim();
     if (p.Email) peopleIndex[key] = p.Email;
+  });
+
+  // ── Build games index: game name → {Designers, …} ────
+  gamesIndex = {};
+  (games||[]).forEach(function(g) {
+    var name = (g.Name||'').trim();
+    if (name) gamesIndex[name] = g;
   });
 
   allPitches = (pitches||[]).filter(function(r){ return r.Date || r.Publisher || r.Game; });
@@ -632,8 +888,8 @@ function copyUrl() {
 }
 
 // ── Load ──────────────────────────────────────────────
-var loaded = {}, needed = 4;
-function check() { if (--needed===0) render(loaded.pitches, loaded.settings, loaded.game, loaded.people); }
+var loaded = {}, needed = 5;
+function check() { if (--needed===0) render(loaded.pitches, loaded.settings, loaded.game, loaded.people, loaded.games); }
 function loadJSON(url, key, fallbackUrl) {
   var xhr = new XMLHttpRequest();
   xhr.open('GET', url + '?v=' + Date.now());
@@ -658,6 +914,7 @@ loadJSON(BASE + 'pitches.json',  'pitches', BASE + 'connections.json');
 loadJSON(BASE + 'settings.json', 'settings');
 loadJSON(BASE + 'game-en.json',  'game');
 loadJSON(BASE + 'people.json',   'people');
+loadJSON(BASE + 'games.json',    'games');
 </script>
 </body>
 </html>

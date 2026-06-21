@@ -56,13 +56,22 @@
         $sheetData = shell_exec($py_command);
 
         // Save fetched data to the sheet's JSON file
-        if (!empty(trim($sheetData))) {
-            if (!file_exists("../sheets/" . $spreadsheetId)) {
-                mkdir("../sheets/" . $spreadsheetId, 0777, true);
+        $trimmed = trim($sheetData);
+        if (!empty($trimmed)) {
+            // Check if gread returned an error object instead of real data
+            $decoded = json_decode($trimmed, true);
+            if (is_array($decoded) && isset($decoded['error'])) {
+                echo 'ERROR:' . $sheetName . ':' . $decoded['error'];
+            } else {
+                if (!file_exists("../sheets/" . $spreadsheetId)) {
+                    mkdir("../sheets/" . $spreadsheetId, 0777, true);
+                }
+                file_put_contents($jsonFile, $trimmed);
+                echo 'Publishing ' . $sheetName . ' data to server';
             }
-            file_put_contents($jsonFile, $sheetData);
+        } else {
+            echo 'SKIP:' . $sheetName;
         }
-        echo 'Publishing ' . $sheetName . ' data to server';
     }
 
 ?>

@@ -811,7 +811,21 @@ function getSheetLanguage(languageToLoad, sheetVersion, pub_date, _sheetName) {
             }
         },
         error: function(e) {
-            logLoadMsg('<font color="red">Error: ' + _sheetName + ' data not available.' + "</font><br>")
+            logLoadMsg('<font color="red">Error: ' + _sheetName + ' data not available — skipping.</font><br>')
+            // Advance to next sheet instead of stopping the whole push
+            if(isMoreSheets.length > 1 && languageLoadIndex < isMoreSheets.length - 1) {
+                languageLoadIndex++;
+                setTimeout(function() {
+                    getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                }, 100)
+            } else {
+                if(isPreloadImages == 'download_images') {
+                    logLoadMsg("<br>")
+                    PreloadAllImagesToServer();
+                } else {
+                    finishPublishing();
+                }
+            }
         }
     })
     // Clear memory
@@ -938,11 +952,30 @@ function loadBGGSheetData(bggJSON, isLast = true) {
 function getSheetData(_sheetName, sheetVersion, pub_date) {
     if(window.navigator.onLine == true) {
         var updateRequest = $.ajax({
-            url: 'pushSheetUpdate.php?version=' + Math.random(), 
-            type:'POST', 
-            data:{'id' : sheet_Id, 'sheetname' : _sheetName, 'date_string' : ''}, 
-            cache: false, 
+            url: 'pushSheetUpdate.php?version=' + Math.random(),
+            type:'POST',
+            data:{'id' : sheet_Id, 'sheetname' : _sheetName, 'date_string' : ''},
+            cache: false,
             success: function (response) {
+                // If pushSheetUpdate signals a skip (tab not found) or error, advance without reading JSON
+                if(typeof response === 'string' && (response.startsWith('SKIP:') || response.startsWith('ERROR:'))) {
+                    if(response.startsWith('ERROR:')) {
+                        var parts = response.slice(6).split(':');
+                        var errSheet = parts.shift();
+                        logLoadMsg('<font color="red">Error pushing "' + errSheet + '": ' + parts.join(':') + '</font><br>')
+                    } else {
+                        logLoadMsg('<font color="orange">Tab "' + response.slice(5) + '" not found in sheet — skipping.</font><br>')
+                    }
+                    if(isMoreSheets.length > 1 && languageLoadIndex < isMoreSheets.length - 1) {
+                        languageLoadIndex++;
+                        setTimeout(function() {
+                            getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                        }, 100)
+                    } else {
+                        finishPublishing();
+                    }
+                    return;
+                }
                 if(_sheetName.toLowerCase() == "settings") {
                     setTimeout(function() {
                         // In case either sheet not defined or not given the access to Service Account
@@ -971,6 +1004,17 @@ function getSheetData(_sheetName, sheetVersion, pub_date) {
                         } else {
                         }
                     }, 300)
+                }
+            },
+            error: function() {
+                logLoadMsg('<font color="red">Error: Could not push ' + _sheetName + ' — skipping.</font><br>')
+                if(isMoreSheets.length > 1 && languageLoadIndex < isMoreSheets.length - 1) {
+                    languageLoadIndex++;
+                    setTimeout(function() {
+                        getSheetData(isMoreSheets[languageLoadIndex].toLowerCase(), sheetVersion, pub_date);
+                    }, 100)
+                } else {
+                    finishPublishing();
                 }
             }
         })

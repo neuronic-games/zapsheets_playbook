@@ -46,8 +46,8 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .view-toggle button.active { background:#fff; color:#1a1a2e; }
 
-    /* ── Share button ────────────────────────────────── */
-    .share-btn {
+    /* ── Top-bar buttons (Share / Sync) ─────────────── */
+    .share-btn, .sync-btn {
       display:inline-flex; align-items:center; gap:.35rem;
       font-family:'DINBlack',sans-serif; font-size:.7rem;
       text-transform:uppercase; letter-spacing:.06em;
@@ -56,7 +56,12 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       padding:.38rem .8rem; cursor:pointer;
       transition:background .15s; white-space:nowrap; flex-shrink:0;
     }
-    .share-btn:hover { background:rgba(255,255,255,.25); }
+    .share-btn:hover, .sync-btn:hover { background:rgba(255,255,255,.25); }
+    .sync-btn:disabled { opacity:.5; cursor:default; }
+    .sync-btn:disabled:hover { background:rgba(255,255,255,.15); }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .sync-icon { display:inline-block; }
+    .sync-btn.syncing .sync-icon { animation:spin .8s linear infinite; }
 
     /* ── Summary bar ─────────────────────────────────── */
     .summary-bar {
@@ -230,6 +235,44 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       background:none; border:none; font-family:'DINRegular',sans-serif;
     }
     .share-close:hover { color:#333; }
+
+    /* ── Sync dialog ─────────────────────────────────── */
+    .sync-overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.45); z-index:1000;
+      align-items:center; justify-content:center;
+    }
+    .sync-overlay.open { display:flex; }
+    .sync-dialog {
+      background:#fff; border-radius:10px;
+      padding:1.4rem; width:min(480px,92vw);
+      box-shadow:0 8px 32px rgba(0,0,0,.22);
+      display:flex; flex-direction:column; gap:.75rem;
+    }
+    .sync-dialog h2 {
+      font-family:'DINBlack',sans-serif; font-size:.95rem; margin:0;
+    }
+    .sync-log {
+      background:#0f172a; border-radius:6px;
+      padding:.75rem 1rem; min-height:6rem; max-height:14rem;
+      overflow-y:auto; font-family:monospace; font-size:.75rem;
+      line-height:1.6; color:#94a3b8;
+    }
+    .sync-log-line { display:block; }
+    .sync-log-line.ok    { color:#4ade80; }
+    .sync-log-line.skip  { color:#94a3b8; }
+    .sync-log-line.error { color:#f87171; }
+    .sync-log-line.info  { color:#60a5fa; }
+    .sync-done-btn {
+      font-family:'DINBlack',sans-serif; font-size:.72rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      background:#1a1a2e; color:#fff; border:none;
+      border-radius:6px; padding:.45rem .9rem;
+      cursor:pointer; align-self:flex-end;
+      transition:background .15s;
+    }
+    .sync-done-btn:hover { background:#2d2d50; }
+    .sync-done-btn:disabled { opacity:.45; cursor:default; }
   </style>
 </head>
 <body>
@@ -244,6 +287,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     <button id="btnGame"      class="active" onclick="setView('game')">Games</button>
     <button id="btnPublisher"               onclick="setView('publisher')">Publishers</button>
   </div>
+  <button class="sync-btn" id="syncBtn" onclick="syncData()"><span class="sync-icon">&#8635;</span> Sync</button>
   <button class="share-btn" onclick="openShare()">&#8679; Share</button>
 </div>
 
@@ -257,6 +301,15 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       <button class="copy-btn" id="copyBtn" onclick="copyUrl()">Copy</button>
     </div>
     <button class="share-close" onclick="closeShare()">Close</button>
+  </div>
+</div>
+
+<!-- Sync dialog -->
+<div class="sync-overlay" id="syncOverlay">
+  <div class="sync-dialog">
+    <h2 id="syncDialogTitle">Syncing…</h2>
+    <div class="sync-log" id="syncLog"></div>
+    <button class="sync-done-btn" id="syncDoneBtn" disabled onclick="closeSyncDialog()">Done</button>
   </div>
 </div>
 
@@ -341,6 +394,30 @@ function ageTag(entries) {
   var months = (now.getFullYear()-d.getFullYear())*12 + (now.getMonth()-d.getMonth());
   if (months >= 6) return '<span class="badge badge-age-6mo">6mo+</span>';
   if (months >= 3) return '<span class="badge badge-age-3mo">3mo+</span>';
+  return '';
+}
+
+// Age tag for game header: checks each non-passed publisher independently;
+// shows 3mo+ and/or 6mo+ if any publisher falls into that bracket
+function gameAgeTag(pubMap) {
+  var now = new Date();
+  var has3mo = false, has6mo = false;
+  Object.keys(pubMap).forEach(function(p) {
+    var pubEntries = [];
+    Object.keys(pubMap[p]).forEach(function(c){
+      pubMap[p][c].forEach(function(e){ pubEntries.push(e); });
+    });
+    if (!pubEntries.length) return;
+    var latest = latestEntry(pubEntries);
+    if ((latest.Status||'').toLowerCase() === 'passed') return;
+    if (!latest.Date) return;
+    var months = (now.getFullYear() - new Date(latest.Date).getFullYear()) * 12
+               + (now.getMonth()    - new Date(latest.Date).getMonth());
+    if (months >= 6) has6mo = true;
+    else if (months >= 3) has3mo = true;
+  });
+  if (has6mo) return '<span class="badge badge-age-6mo">6mo+</span>';
+  if (has3mo) return '<span class="badge badge-age-3mo">3mo+</span>';
   return '';
 }
 
@@ -551,7 +628,7 @@ function buildGameView(pitches) {
         games[g][p][c].forEach(function(e){ allEntries.push(e); });
       });
     });
-    var at = ageTag(allEntries);
+    var at = gameAgeTag(games[g]);
 
     // Determine game-level status badge (never show PASSED; INTERESTED if any pub is currently interested)
     var published = isGamePublished(g, allEntries);
@@ -579,7 +656,10 @@ function buildGameView(pitches) {
 
     html += '<div class="card">';
     var gameInfo  = gamesIndex[g] || {};
-    var designers = (gameInfo.Designers||'').trim();
+    var designers = ['Designer1','Designer2','Designer3','Designer4']
+      .map(function(f){ return (gameInfo[f]||'').trim(); })
+      .filter(function(v){ return v; })
+      .join(', ');
     var gameLabel = designers ? escHtml(g) + ' <span class="game-designers">(' + escHtml(designers) + ')</span>' : escHtml(g);
 
     html += '<div class="card-header" onclick="toggleCard(this)">';
@@ -893,32 +973,115 @@ function copyUrl() {
 }
 
 // ── Load ──────────────────────────────────────────────
-var loaded = {}, needed = 4;
-function check() { if (--needed===0) render(loaded.pitches, loaded.settings, loaded.people, loaded.games); }
-function loadJSON(url, key, fallbackUrl) {
+function loadJSON(url, key, fallbackUrl, onDone) {
   var xhr = new XMLHttpRequest();
   xhr.open('GET', url + '?v=' + Date.now());
   xhr.onload = function() {
     if (xhr.status === 200) {
-      try { loaded[key] = JSON.parse(xhr.responseText); } catch(e) { loaded[key] = []; }
-      check();
+      var data; try { data = JSON.parse(xhr.responseText); } catch(e) { data = []; }
+      onDone(key, data);
     } else if (fallbackUrl) {
-      loadJSON(fallbackUrl, key);
+      loadJSON(fallbackUrl, key, null, onDone);
     } else {
-      loaded[key] = []; check();
+      onDone(key, []);
     }
   };
   xhr.onerror = function() {
-    if (fallbackUrl) { loadJSON(fallbackUrl, key); }
-    else { loaded[key]=[]; check(); }
+    if (fallbackUrl) { loadJSON(fallbackUrl, key, null, onDone); }
+    else { onDone(key, []); }
   };
   xhr.send();
 }
-// Try pitches.json first; fall back to connections.json for legacy sheets
-loadJSON(BASE + 'pitches.json',  'pitches', BASE + 'connections.json');
-loadJSON(BASE + 'settings.json', 'settings');
-loadJSON(BASE + 'people.json',   'people');
-loadJSON(BASE + 'games.json',    'games');
+
+function loadAll(onComplete) {
+  var loaded = {}, needed = 4;
+  function done(key, data) {
+    loaded[key] = data;
+    if (--needed === 0) {
+      render(loaded.pitches, loaded.settings, loaded.people, loaded.games);
+      if (onComplete) onComplete();
+    }
+  }
+  loadJSON(BASE + 'pitches.json',  'pitches',  BASE + 'connections.json', done);
+  loadJSON(BASE + 'settings.json', 'settings', null,                      done);
+  loadJSON(BASE + 'people.json',   'people',   null,                      done);
+  loadJSON(BASE + 'games.json',    'games',    null,                      done);
+}
+
+// ── Sync dialog helpers ───────────────────────────────
+function openSyncDialog() {
+  document.getElementById('syncLog').innerHTML = '';
+  document.getElementById('syncDialogTitle').textContent = 'Syncing…';
+  document.getElementById('syncDoneBtn').disabled = true;
+  document.getElementById('syncOverlay').classList.add('open');
+}
+function closeSyncDialog() {
+  document.getElementById('syncOverlay').classList.remove('open');
+}
+function syncLog(msg, type) {
+  var log  = document.getElementById('syncLog');
+  var line = document.createElement('span');
+  line.className = 'sync-log-line ' + (type||'info');
+  line.textContent = msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ── Sync (push then reload) ───────────────────────────
+function syncData() {
+  var btn = document.getElementById('syncBtn');
+  btn.disabled = true;
+  btn.classList.add('syncing');
+
+  openSyncDialog();
+
+  var sheets   = ['pitches', 'games', 'people', 'settings'];
+  var pushBase = APP_BASE + 'push/pushSheetUpdate.php';
+  var idx = 0;
+
+  function pushNext() {
+    if (idx >= sheets.length) {
+      syncLog('─────────────────────────────', 'info');
+      syncLog('Reloading data…', 'info');
+      loadAll(function() {
+        syncLog('Done.', 'ok');
+        document.getElementById('syncDialogTitle').textContent = 'Sync Complete';
+        document.getElementById('syncDoneBtn').disabled = false;
+        btn.disabled = false;
+        btn.classList.remove('syncing');
+      });
+      return;
+    }
+    var sheetName = sheets[idx++];
+    syncLog('Pushing ' + sheetName + '…', 'info');
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', pushBase);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function() {
+      var resp = (xhr.responseText || '').trim();
+      if (resp.indexOf('ERROR:') === 0) {
+        var msg = resp.replace(/^ERROR:[^:]+:/, '');
+        syncLog('  ✗ ' + sheetName + ': ' + msg, 'error');
+      } else if (resp.indexOf('SKIP:') === 0) {
+        syncLog('  – ' + sheetName + ': skipped (not found)', 'skip');
+      } else {
+        syncLog('  ✓ ' + resp, 'ok');
+      }
+      pushNext();
+    };
+    xhr.onerror = function() {
+      syncLog('  ✗ ' + sheetName + ': network error', 'error');
+      pushNext();
+    };
+    xhr.send('id=' + encodeURIComponent(sheet_Id) +
+             '&sheetname=' + encodeURIComponent(sheetName) +
+             '&date_string=');
+  }
+  pushNext();
+}
+
+// Initial load
+loadAll();
 </script>
 </body>
 </html>

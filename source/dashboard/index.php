@@ -270,11 +270,14 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       width:18px; height:18px; border-radius:50%;
       border:2.5px solid #dde1ea; background:#f8fafc;
       flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:8.5px; font-weight:bold; color:transparent; line-height:1;
     }
-    .tl-ms-wrap.reached .tl-dot { background:#1a1a2e; border-color:#1a1a2e; }
-    .tl-ms-wrap.stage-interested.reached .tl-dot { background:#166534; border-color:#166534; }
-    .tl-ms-wrap.stage-signed.reached .tl-dot     { background:#7c3aed; border-color:#7c3aed; }
-    .tl-ms-wrap.stage-published.reached .tl-dot  { background:#0369a1; border-color:#0369a1; }
+    .tl-ms-wrap.reached .tl-dot { background:#1a1a2e; border-color:#1a1a2e; color:#fff; }
+    .tl-ms-wrap.stage-signed.reached .tl-dot    { background:#7c3aed; border-color:#7c3aed; }
+    .tl-ms-wrap.stage-published.reached .tl-dot { background:#0369a1; border-color:#0369a1; }
+    .tl-ms-wrap.stage-pitching { min-width:auto; }
+    .tl-pitching-pill { border-radius:999px; padding:0 5px; }
     .tl-connector {
       flex:1; height:3px; background:#dde1ea;
       margin-top:7px; min-width:8px;
@@ -798,11 +801,12 @@ function buildGameView(pitches) {
       }
       var playbookId = gfield(['Playbook Sheet ID','Playbook ID','Sheet ID']);
       var linkDefs = [
-        { label:'Rules', url: gfield(['Rules','Rules URL','Rules Link','Link Rules']) },
-        { label:'Play',  url: gfield(['Play','Play URL','Play Link','Link Play']) },
-        { label:'Print', url: gfield(['Print','Print URL','Print Link','Link Print']) },
-        { label:'View',  url: gfield(['View','View URL','Link View','Website','BGG','BGG URL','BGG Link']) },
-        { label:'Info',  url: playbookId ? APP_BASE + 'sheets/' + playbookId + '/view' : '' }
+        { label:'Rules',     url: gfield(['Rules','Rules URL','Rules Link','Link Rules']) },
+        { label:'Play',      url: gfield(['Play','Play URL','Play Link','Link Play']) },
+        { label:'Print',     url: gfield(['Print','Print URL','Print Link','Link Print']) },
+        { label:'Sellsheet', url: gfield(['Sellsheet URL','Sellsheet','Sell Sheet URL','Sell Sheet','Link Sellsheet']) },
+        { label:'View',      url: gfield(['View','View URL','Link View','Website','BGG','BGG URL','BGG Link']) },
+        { label:'Info',      url: playbookId ? APP_BASE + 'sheets/' + playbookId + '/view' : '' }
       ];
       var out = '';
       linkDefs.forEach(function(lp) {
@@ -1190,13 +1194,22 @@ function buildDashboardView() {
     var dsgDate = dsgStr ? new Date(dsgStr) : null;
     var dpDate  = dpStr  ? new Date(dpStr)  : null;
 
-    // 5 milestone stages
+    // Total unique publishers pitched for this game
+    var totalPubsPitched = (function() {
+      var pubMap = {};
+      entries.forEach(function(e){
+        var pub = e.Publisher || '(Unknown)';
+        pubMap[pub] = 1;
+      });
+      return Object.keys(pubMap).length;
+    })();
+
+    // 4 milestone stages
     var stages = [
-      { key:'started',    label:'Started',    date: dsDate,    reached: !!(dsDate || firstPitch) },
-      { key:'pitched',    label:'Pitched',    date: firstPitch,reached: !!firstPitch             },
-      { key:'interested', label:'Interested', date: firstInt,  reached: !!firstInt               },
-      { key:'signed',     label:'Signed',     date: dsgDate,   reached: sig || pub               },
-      { key:'published',  label:'Published',  date: dpDate,    reached: pub                      }
+      { key:'started',   label:'Started',  date: dsDate,    reached: !!(dsDate || firstPitch), count: 0 },
+      { key:'pitching',  label:'Pitching', date: firstPitch,reached: !!firstPitch,             count: totalPubsPitched },
+      { key:'signed',    label:'Signed',   date: dsgDate,   reached: sig || pub,               count: 0 },
+      { key:'published', label:'Published',date: dpDate,    reached: pub,                      count: 0 }
     ];
 
     // Designers
@@ -1214,7 +1227,12 @@ function buildDashboardView() {
       var st = stages[si];
       var msClass = 'tl-ms-wrap stage-' + st.key + (st.reached ? ' reached' : '');
       tlHtml += '<div class="' + msClass + '">';
-      tlHtml += '<div class="tl-dot"></div>';
+      if (st.key === 'pitching' && st.reached && st.count > 0) {
+        var pillW = Math.max(24, Math.min(st.count, 30) * 5);
+        tlHtml += '<div class="tl-dot tl-pitching-pill" style="width:' + pillW + 'px">' + st.count + '</div>';
+      } else {
+        tlHtml += '<div class="tl-dot">' + (st.count > 0 ? st.count : '') + '</div>';
+      }
       tlHtml += '<div class="tl-ms-label">' + escHtml(st.label) + '</div>';
       var dateStr = fmtMonYr(st.date);
       if (dateStr) tlHtml += '<div class="tl-ms-date">' + escHtml(dateStr) + '</div>';

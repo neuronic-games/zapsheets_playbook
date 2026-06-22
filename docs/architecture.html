@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZapSheets Playbook — Architecture</title>
+<style>
+  body { margin: 0; padding: 2rem; font-family: system-ui, sans-serif; background: #f8fafc; }
+  h1 { font-size: 1.2rem; color: #1a1a2e; margin: 0 0 1.5rem; }
+  svg { width: 100%; max-width: 880px; display: block; }
+</style>
+</head>
+<body>
+<h1>ZapSheets Playbook — Architecture Diagram</h1>
+<svg viewBox="0 0 880 510" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif" role="img">
+  <title>ZapSheets Playbook — Architecture Diagram</title>
+  <defs>
+    <marker id="arr" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5z" fill="#94a3b8"/></marker>
+    <marker id="arrG" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5z" fill="#16a34a"/></marker>
+    <marker id="arrP" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5z" fill="#7c3aed"/></marker>
+  </defs>
+
+  <!-- Zone bands -->
+  <rect x="8" y="46" width="864" height="106" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="20" y="61" font-size="8.5" fill="#94a3b8" font-weight="700" letter-spacing="1.2">REQUEST PATH</text>
+
+  <rect x="8" y="162" width="864" height="90" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+  <text x="20" y="177" font-size="8.5" fill="#16a34a" font-weight="700" letter-spacing="1.2">DATA</text>
+
+  <rect x="8" y="262" width="864" height="108" rx="6" fill="#faf5ff" stroke="#e9d5ff" stroke-width="1"/>
+  <text x="20" y="277" font-size="8.5" fill="#7c3aed" font-weight="700" letter-spacing="1.2">SYNC — PUSH</text>
+
+  <rect x="8" y="380" width="864" height="120" rx="6" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="20" y="395" font-size="8.5" fill="#64748b" font-weight="700" letter-spacing="1.2">DEPLOY</text>
+
+  <!-- REQUEST PATH -->
+  <rect x="22" y="64" width="130" height="72" rx="6" fill="#1a1a2e"/>
+  <text x="87" y="89" text-anchor="middle" font-size="13" fill="#fff" font-weight="700">Browser</text>
+  <text x="87" y="106" text-anchor="middle" font-size="9.5" fill="#94a3b8">Dashboard UI</text>
+  <text x="87" y="120" text-anchor="middle" font-size="9" fill="#475569">Vanilla JS · no framework</text>
+
+  <rect x="222" y="64" width="138" height="72" rx="6" fill="#1a1a2e"/>
+  <text x="291" y="89" text-anchor="middle" font-size="13" fill="#fff" font-weight="700">router.php</text>
+  <text x="291" y="106" text-anchor="middle" font-size="9.5" fill="#94a3b8">URL routing</text>
+  <text x="291" y="120" text-anchor="middle" font-size="9" fill="#475569">PHP built-in server</text>
+
+  <rect x="430" y="64" width="230" height="72" rx="6" fill="#334155"/>
+  <text x="545" y="86" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">sheets/{id}/dashboard/index.php</text>
+  <text x="545" y="102" text-anchor="middle" font-size="9.5" fill="#94a3b8">Game View · Publisher View · Dashboard</text>
+  <text x="545" y="117" text-anchor="middle" font-size="9" fill="#64748b">filter · search · sort · sync · email</text>
+
+  <line x1="152" y1="100" x2="220" y2="100" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="186" y="95" text-anchor="middle" font-size="8.5" fill="#94a3b8">HTTP</text>
+  <line x1="360" y1="100" x2="428" y2="100" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="394" y="95" text-anchor="middle" font-size="8.5" fill="#94a3b8">serves</text>
+
+  <!-- DATA -->
+  <rect x="430" y="174" width="230" height="68" rx="6" fill="#15803d" fill-opacity="0.1" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="545" y="196" text-anchor="middle" font-size="11" fill="#15803d" font-weight="700">JSON Data Files</text>
+  <text x="545" y="212" text-anchor="middle" font-size="9.5" fill="#1e3a2a">pitches · games · people · settings</text>
+  <text x="545" y="226" text-anchor="middle" font-size="9" fill="#64748b">sheets/{id}/*.json</text>
+
+  <line x1="545" y1="136" x2="545" y2="172" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrG)"/>
+  <text x="558" y="157" font-size="8.5" fill="#16a34a">XHR reads</text>
+
+  <!-- SYNC PUSH -->
+  <rect x="160" y="282" width="188" height="72" rx="6" fill="#1a1a2e"/>
+  <text x="254" y="305" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">pushSheetUpdate.php</text>
+  <text x="254" y="321" text-anchor="middle" font-size="9" fill="#94a3b8">receives SYNC POST per sheet</text>
+  <text x="254" y="337" text-anchor="middle" font-size="9" fill="#475569">invokes gread.py · handles SKIP/ERROR</text>
+
+  <rect x="420" y="282" width="142" height="72" rx="6" fill="#1a1a2e"/>
+  <text x="491" y="309" text-anchor="middle" font-size="13" fill="#fff" font-weight="700">gread.py</text>
+  <text x="491" y="326" text-anchor="middle" font-size="9.5" fill="#94a3b8">Python · gspread</text>
+  <text x="491" y="342" text-anchor="middle" font-size="9" fill="#475569">reads sheet → writes JSON</text>
+
+  <rect x="644" y="278" width="150" height="80" rx="6" fill="#166534"/>
+  <text x="719" y="306" text-anchor="middle" font-size="12" fill="#fff" font-weight="700">Google Sheets</text>
+  <text x="719" y="323" text-anchor="middle" font-size="9.5" fill="#bbf7d0">Sheets API v4</text>
+  <text x="719" y="339" text-anchor="middle" font-size="9" fill="#bbf7d0">pitches · games</text>
+  <text x="719" y="353" text-anchor="middle" font-size="9" fill="#bbf7d0">people · settings</text>
+
+  <path d="M87,136 L87,318 L158,318" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrP)"/>
+  <text x="112" y="340" font-size="8.5" fill="#7c3aed">SYNC POST</text>
+
+  <line x1="348" y1="318" x2="418" y2="318" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="383" y="312" text-anchor="middle" font-size="8.5" fill="#94a3b8">exec</text>
+
+  <line x1="562" y1="318" x2="642" y2="318" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="602" y="312" text-anchor="middle" font-size="8.5" fill="#94a3b8">API</text>
+
+  <path d="M491,282 L491,242 L430,242" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrG)"/>
+  <text x="468" y="257" font-size="8.5" fill="#16a34a">writes</text>
+
+  <!-- DEPLOY -->
+  <rect x="22" y="400" width="178" height="66" rx="6" fill="#334155"/>
+  <text x="111" y="423" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">source/dashboard/</text>
+  <text x="111" y="439" text-anchor="middle" font-size="10" fill="#e2e8f0">index.php</text>
+  <text x="111" y="453" text-anchor="middle" font-size="9" fill="#64748b">canonical template</text>
+
+  <rect x="272" y="400" width="168" height="66" rx="6" fill="#1a1a2e"/>
+  <text x="356" y="423" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">deploySource.php</text>
+  <text x="356" y="439" text-anchor="middle" font-size="9.5" fill="#94a3b8">copies source →</text>
+  <text x="356" y="455" text-anchor="middle" font-size="9.5" fill="#94a3b8">all sheets/{id}/dashboard/</text>
+
+  <line x1="200" y1="433" x2="270" y2="433" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <path d="M440,433 L545,433 L545,136" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrP)"/>
+  <text x="510" y="450" font-size="8.5" fill="#7c3aed">copies to</text>
+  <text x="510" y="462" font-size="8.5" fill="#7c3aed">all sheet dirs</text>
+
+  <path d="M87,136 L87,433 L270,433" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrP)"/>
+
+  <!-- Legend -->
+  <line x1="22" y1="480" x2="50" y2="480" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="56" y="484" font-size="8.5" fill="#64748b">synchronous call</text>
+  <line x1="160" y1="480" x2="188" y2="480" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="194" y="484" font-size="8.5" fill="#64748b">triggered by SYNC</text>
+  <line x1="320" y1="480" x2="348" y2="480" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="354" y="484" font-size="8.5" fill="#64748b">data write</text>
+</svg>
+</body>
+</html>

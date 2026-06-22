@@ -1517,17 +1517,43 @@ function syncData() {
   var pushBase = APP_BASE + 'push/pushSheetUpdate.php';
   var idx = 0;
 
+  function finish() {
+    syncLog('Reloading data…', 'info');
+    loadAll(function() {
+      syncLog('Done.', 'ok');
+      document.getElementById('syncDialogTitle').textContent = 'Sync Complete';
+      document.getElementById('syncDoneBtn').disabled = false;
+      btn.disabled = false;
+      btn.classList.remove('syncing');
+    });
+  }
+
+  function deploySource() {
+    syncLog('Deploying source files…', 'info');
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', APP_BASE + 'push/deploySource.php');
+    xhr.onload = function() {
+      var resp = (xhr.responseText || '').trim();
+      if (resp.indexOf('ERROR') === 0) {
+        syncLog('  ✗ ' + resp, 'error');
+      } else if (resp.indexOf('SKIP') === 0) {
+        syncLog('  – ' + resp.replace(/^SKIP:\s*/,''), 'skip');
+      } else {
+        syncLog('  ✓ ' + resp, 'ok');
+      }
+      finish();
+    };
+    xhr.onerror = function() {
+      syncLog('  ✗ deploy: network error', 'error');
+      finish();
+    };
+    xhr.send();
+  }
+
   function pushNext() {
     if (idx >= sheets.length) {
       syncLog('─────────────────────────────', 'info');
-      syncLog('Reloading data…', 'info');
-      loadAll(function() {
-        syncLog('Done.', 'ok');
-        document.getElementById('syncDialogTitle').textContent = 'Sync Complete';
-        document.getElementById('syncDoneBtn').disabled = false;
-        btn.disabled = false;
-        btn.classList.remove('syncing');
-      });
+      deploySource();
       return;
     }
     var sheetName = sheets[idx++];

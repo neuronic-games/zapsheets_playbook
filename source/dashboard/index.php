@@ -163,6 +163,11 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     /* ── Sub-group ───────────────────────────────────── */
     .sub-group { border-top:1px solid #f0f0f0; }
     .sub-group:first-child { border-top:none; }
+    .pub-passed-header { cursor:pointer; user-select:none; }
+    .pub-passed-header:hover { background:#fafafa; }
+    .pub-expand-chevron { font-size:.58rem; color:#bbb; margin-left:.2rem; flex-shrink:0; }
+    .pub-passed-body { display:none; }
+    .pub-passed-body.open { display:block; }
     .sub-label {
       font-family:'DINBlack',sans-serif; font-size:.72rem;
       color:#666; text-transform:uppercase; letter-spacing:.05em;
@@ -226,6 +231,21 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .db-chart-wide { grid-column:1 / -1; }
     @media (max-width:600px) { .db-charts { grid-template-columns:1fr; } }
+
+    /* ── Game link pills ─────────────────────────────── */
+    .game-links {
+      padding:.5rem 1rem .55rem;
+      display:flex; gap:.35rem; flex-wrap:wrap;
+      border-bottom:1px solid #f0f0f4;
+    }
+    .game-link-pill {
+      display:inline-block; padding:.18rem .65rem;
+      background:#f1f5f9; color:#1a1a2e; border-radius:20px;
+      font-family:'DINBlack',sans-serif; font-size:.63rem;
+      letter-spacing:.05em; text-transform:uppercase;
+      text-decoration:none; transition:background .15s, color .15s;
+    }
+    .game-link-pill:hover { background:#1a1a2e; color:#fff; }
 
     /* ── Game Timelines ──────────────────────────────── */
     .tl-list { display:flex; flex-direction:column; gap:1rem; }
@@ -766,7 +786,36 @@ function buildGameView(pitches) {
     html += '<span class="card-badges">' + (published || signed ? '' : at) + gameStatusBadge + '</span>';
     html += '<span class="card-chevron">▼</span>';
     html += '</div>';
+
+    // ── Game link pills (Rules / Play / Print / View) ──
+    var gameLinkPills = (function() {
+      function gfield(keys) {
+        for (var i = 0; i < keys.length; i++) {
+          var v = (gameInfo[keys[i]] || '').trim();
+          if (v) return v;
+        }
+        return '';
+      }
+      var playbookId = gfield(['Playbook Sheet ID','Playbook ID','Sheet ID']);
+      var linkDefs = [
+        { label:'Rules', url: gfield(['Rules','Rules URL','Rules Link','Link Rules']) },
+        { label:'Play',  url: gfield(['Play','Play URL','Play Link','Link Play']) },
+        { label:'Print', url: gfield(['Print','Print URL','Print Link','Link Print']) },
+        { label:'View',  url: gfield(['View','View URL','Link View','Website','BGG','BGG URL','BGG Link']) },
+        { label:'Info',  url: playbookId ? APP_BASE + 'sheets/' + playbookId + '/view' : '' }
+      ];
+      var out = '';
+      linkDefs.forEach(function(lp) {
+        if (lp.url) {
+          out += '<a class="game-link-pill" href="' + escHtml(lp.url) +
+                 '" target="_blank" rel="noopener">' + escHtml(lp.label) + '</a>';
+        }
+      });
+      return out;
+    })();
+
     html += '<div class="card-body">';
+    if (gameLinkPills) html += '<div class="game-links">' + gameLinkPills + '</div>';
 
     // Sort publishers alphabetically
     var pubNames = Object.keys(games[g]).sort(function(a,b){ return a.localeCompare(b); });
@@ -788,20 +837,27 @@ function buildGameView(pitches) {
       var pubStatus  = (pubLatest.Status||'').toLowerCase();
       var pubAgeTag  = ageTag(pubEntries);  // age tag for this specific publisher
 
-      // Publisher status badge: show Interested; show Pitched; suppress Passed
+      var isPassed = pubStatus === 'passed';
+
+      // Publisher status badge
       var pubBadge = '';
-      if (pubStatus === 'interested') {
+      if (isPassed) {
+        pubBadge = '<span class="badge badge-passed" style="margin-right:.75rem">Passed</span>';
+      } else if (pubStatus === 'interested') {
         pubBadge = '<span class="badge badge-interested" style="margin-right:.75rem">Interested</span>';
       } else if (pubStatus === 'pitched') {
         pubBadge = '<span class="badge badge-pitched" style="margin-right:.75rem">Pitched</span>';
       }
-      // (Passed → no badge)
 
+      // All publishers collapsed by default; passed ones are additionally dimmed
+      var headerColor = isPassed ? 'color:#aaa;' : 'color:#333;';
       html += '<div class="sub-group">';
-      html += '<div class="sub-label" style="color:#333;font-size:.75rem">' +
+      html += '<div class="sub-label pub-passed-header" onclick="togglePubPassed(this)" style="' + headerColor + 'font-size:.75rem">' +
               '<span style="flex:1">' + escHtml(p) + '</span>' +
-              pubAgeTag + pubBadge +
+              (isPassed ? '' : pubAgeTag) + pubBadge +
+              '<span class="pub-expand-chevron">▶</span>' +
               '</div>';
+      html += '<div class="pub-passed-body">';
 
       contacts.forEach(function(c) {
         var entries  = games[g][p][c];
@@ -820,7 +876,8 @@ function buildGameView(pitches) {
         sorted.forEach(function(e){ html += entryRow(e); });
       });
 
-      html += '</div>';
+      html += '</div>'; // pub-passed-body
+      html += '</div>'; // sub-group
     });
 
     html += '</div>'; // card-body
@@ -930,6 +987,7 @@ function buildPublisherView(pitches) {
 
       var gamePublished = isGamePublished(g, gameEntries);
       var gameSigned    = !gamePublished && isGameSigned(g, gameEntries);
+      var gIsPassed     = !gamePublished && !gameSigned && gStatus === 'passed';
       var gBadge;
       if (gamePublished) {
         gBadge = '<span class="badge badge-published" style="margin-right:.75rem">Published</span>';
@@ -937,17 +995,22 @@ function buildPublisherView(pitches) {
         gBadge = '<span class="badge badge-signed" style="margin-right:.75rem">Signed</span>';
       } else if (gStatus === 'interested') {
         gBadge = '<span class="badge badge-interested" style="margin-right:.75rem">Interested</span>';
+      } else if (gStatus === 'passed') {
+        gBadge = '<span class="badge badge-passed" style="margin-right:.75rem">Passed</span>';
       } else if (gStatus === 'pitched') {
         gBadge = '<span class="badge badge-pitched" style="margin-right:.75rem">Pitched</span>';
       } else {
-        gBadge = ''; // Passed → no badge
+        gBadge = '';
       }
 
+      var gHeaderColor = gIsPassed ? 'color:#aaa;' : 'color:#333;';
       html += '<div class="sub-group">';
-      html += '<div class="sub-label" style="color:#333;font-size:.75rem">' +
+      html += '<div class="sub-label pub-passed-header" onclick="togglePubPassed(this)" style="' + gHeaderColor + 'font-size:.75rem">' +
               '<span style="flex:1">' + escHtml(g) + '</span>' +
-              (gamePublished || gameSigned ? '' : gAgeTag) + gBadge +
+              (gamePublished || gameSigned || gIsPassed ? '' : gAgeTag) + gBadge +
+              '<span class="pub-expand-chevron">▶</span>' +
               '</div>';
+      html += '<div class="pub-passed-body">';
 
       contacts.forEach(function(c) {
         var entries  = pubs[p][g][c];
@@ -966,7 +1029,8 @@ function buildPublisherView(pitches) {
         sorted.forEach(function(e){ html += entryRow(e); });
       });
 
-      html += '</div>';
+      html += '</div>'; // pub-passed-body
+      html += '</div>'; // sub-group
     });
 
     html += '</div>'; // card-body
@@ -1336,6 +1400,13 @@ function mailtoHref(email, gameName) {
 // ── Collapse / expand ────────────────────────────────
 function toggleCard(header) {
   header.parentElement.classList.toggle('open');
+}
+
+function togglePubPassed(header) {
+  var body     = header.nextElementSibling;
+  var chevron  = header.querySelector('.pub-expand-chevron');
+  var isOpen   = body.classList.toggle('open');
+  if (chevron) chevron.textContent = isOpen ? '▼' : '▶';
 }
 
 // ── Share ─────────────────────────────────────────────

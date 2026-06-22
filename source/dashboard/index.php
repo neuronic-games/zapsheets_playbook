@@ -22,10 +22,15 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       background:#1a1a2e; color:#fff;
       padding:.75rem 1.25rem;
       display:flex; align-items:center; gap:.75rem;
+      flex-wrap:wrap;
     }
     .top-bar-left { flex:1; min-width:0; }
     .top-bar h1 { font-family:'DINBlack',sans-serif; font-size:1rem; margin:0; letter-spacing:.03em; }
     .top-bar .sub { font-size:.73rem; opacity:.6; margin:0; letter-spacing:.01em; }
+
+    @media (max-width:500px) {
+      .top-bar-left { flex-basis:100%; }
+    }
 
     /* ── View toggle ─────────────────────────────────── */
     .view-toggle {
@@ -804,7 +809,7 @@ function buildView() {
       : buildPublisherView(filteredPitches);
 }
 
-function render(pitches, settings, game, people, games) {
+function render(pitches, settings, people, games) {
   // ── Parse settings.json (format: [{My Name: label, COL: value}, …]) ──
   // The value column is whatever key isn't "My Name"
   var myEmail = '', myPhone = '';
@@ -888,8 +893,8 @@ function copyUrl() {
 }
 
 // ── Load ──────────────────────────────────────────────
-var loaded = {}, needed = 5;
-function check() { if (--needed===0) render(loaded.pitches, loaded.settings, loaded.game, loaded.people, loaded.games); }
+var loaded = {}, needed = 4;
+function check() { if (--needed===0) render(loaded.pitches, loaded.settings, loaded.people, loaded.games); }
 function loadJSON(url, key, fallbackUrl) {
   var xhr = new XMLHttpRequest();
   xhr.open('GET', url + '?v=' + Date.now());
@@ -912,7 +917,6 @@ function loadJSON(url, key, fallbackUrl) {
 // Try pitches.json first; fall back to connections.json for legacy sheets
 loadJSON(BASE + 'pitches.json',  'pitches', BASE + 'connections.json');
 loadJSON(BASE + 'settings.json', 'settings');
-loadJSON(BASE + 'game-en.json',  'game');
 loadJSON(BASE + 'people.json',   'people');
 loadJSON(BASE + 'games.json',    'games');
 </script>

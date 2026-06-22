@@ -565,8 +565,18 @@ function buildGameView(pitches) {
   });
 
   // Add games from games.json that have no pitch entries yet
+  // When searching, only include unpitched games whose name or designers match the query
   Object.keys(gamesIndex).forEach(function(name) {
-    if (!games[name]) games[name] = {};
+    if (games[name]) return; // already has pitches
+    if (searchQuery) {
+      var info = gamesIndex[name];
+      var designers = ['Designer1','Designer2','Designer3','Designer4']
+        .map(function(f){ return (info[f]||'').toLowerCase(); }).join(' ');
+      var matchesSearch = name.toLowerCase().includes(searchQuery) ||
+                          designers.includes(searchQuery);
+      if (!matchesSearch) return;
+    }
+    games[name] = {};
   });
 
   // Apply active filters (any combination, OR logic)

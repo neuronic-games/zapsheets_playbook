@@ -380,6 +380,9 @@ var peopleIndex     = {};   // "Name|Company" → email
 var gamesIndex      = {};   // Game name → {Designers, …}
 var totalGameCount  = 0;
 var totalPubCount   = 0;
+var myName  = '';
+var myPhone = '';
+var myEmail = '';
 
 // ── Helpers ───────────────────────────────────────────
 function statusClass(s) {
@@ -573,9 +576,7 @@ function entryRow(e) {
 // ── Sub-group (contact or game label) ─────────────────
 function subGroup(label, email, gameTitle, entries) {
   var sorted = entries.slice().sort(function(a,b){ return new Date(a.Date)-new Date(b.Date); });
-  var mailHref = email
-    ? 'mailto:' + email + (gameTitle ? '?subject=' + encodeURIComponent(gameTitle) : '')
-    : '';
+  var mailHref = email ? mailtoHref(email, gameTitle) : '';
   var emailBtn = mailHref
     ? '<a class="contact-email-btn" href="' + mailHref + '">&#9993; Email</a>'
     : '';
@@ -756,9 +757,7 @@ function buildGameView(pitches) {
         var emailVal = resolveEmail(c, p, rawEmail);
         var sorted = entries.slice().sort(function(a,b){ return new Date(a.Date)-new Date(b.Date); });
         if (c !== '(Unknown)') {
-          var mailHref = emailVal
-            ? 'mailto:' + emailVal + '?subject=' + encodeURIComponent(g)
-            : '';
+          var mailHref = emailVal ? mailtoHref(emailVal, g) : '';
           var emailBtn = mailHref
             ? '<a class="contact-email-btn" href="' + mailHref + '">&#9993; Email</a>'
             : '';
@@ -904,9 +903,7 @@ function buildPublisherView(pitches) {
         var emailVal = resolveEmail(c, p, rawEmail);
         var sorted = entries.slice().sort(function(a,b){ return new Date(a.Date)-new Date(b.Date); });
         if (c !== '(Unknown)') {
-          var mailHref = emailVal
-            ? 'mailto:' + emailVal + '?subject=' + encodeURIComponent(g)
-            : '';
+          var mailHref = emailVal ? mailtoHref(emailVal, g) : '';
           var emailBtn = mailHref
             ? '<a class="contact-email-btn" href="' + mailHref + '">&#9993; Email</a>'
             : '';
@@ -1103,16 +1100,14 @@ function buildView() {
 function render(pitches, settings, people, games) {
   // ── Parse settings.json (format: [{My Name: label, COL: value}, …]) ──
   // The value column is whatever key isn't "My Name"
-  var myEmail = '', myPhone = '';
-  var userName = '';
+  myName = ''; myPhone = ''; myEmail = '';
   if (settings && settings.length) {
-    // Detect value column name (the non-"My Name" key)
     var valCol = '';
     var keys = Object.keys(settings[0] || {});
     for (var ki = 0; ki < keys.length; ki++) {
       if (keys[ki] !== 'My Name') { valCol = keys[ki]; break; }
     }
-    if (!userName && valCol) userName = valCol; // e.g. "TAM"
+    if (!myName && valCol) myName = valCol; // e.g. "TAM"
     settings.forEach(function(r) {
       var label = (r['My Name']||'').trim();
       var val   = valCol ? (r[valCol]||'').trim() : '';
@@ -1123,9 +1118,9 @@ function render(pitches, settings, people, games) {
 
   // ── Build subtitle ───────────────────────────────────
   var parts = [];
-  if (userName) parts.push(userName);
-  if (myEmail)  parts.push(myEmail);
-  if (myPhone)  parts.push(myPhone);
+  if (myName)  parts.push(myName);
+  if (myEmail) parts.push(myEmail);
+  if (myPhone) parts.push(myPhone);
   document.getElementById('subTitle').textContent = parts.join('  ·  ') || ('Sheet ' + sheet_Id.slice(0,8) + '…');
 
   // ── Build people index: "Name|Company" → email ───────
@@ -1153,6 +1148,47 @@ function resolveEmail(contact, publisher, fallbackEmail) {
   if (fallbackEmail) return fallbackEmail;
   var key = (contact||'').trim() + '|' + (publisher||'').trim();
   return peopleIndex[key] || '';
+}
+
+// ── Build mailto body with contact info + game links ──
+function buildEmailBody(gameName) {
+  var lines = [];
+  if (myName)  lines.push(myName);
+  if (myPhone) lines.push(myPhone);
+  if (myEmail) lines.push(myEmail);
+
+  var info = gamesIndex[gameName] || {};
+  function field(keys) {
+    for (var i = 0; i < keys.length; i++) {
+      var v = (info[keys[i]] || '').trim();
+      if (v) return v;
+    }
+    return '';
+  }
+  var rulesUrl = field(['Rules', 'Rules URL', 'Rules Link', 'Link Rules']);
+  var printUrl = field(['Print', 'Print URL', 'Print Link', 'Link Print']);
+  var playUrl  = field(['Play',  'Play URL',  'Play Link',  'Link Play']);
+
+  var gameLines = [];
+  if (gameName) gameLines.push('Title: ' + gameName);
+  if (rulesUrl) gameLines.push('Rules: ' + rulesUrl);
+  if (printUrl) gameLines.push('Print: ' + printUrl);
+  if (playUrl)  gameLines.push('Play: '  + playUrl);
+
+  if (gameLines.length) {
+    lines.push('');
+    lines = lines.concat(gameLines);
+  }
+  return lines.join('\n');
+}
+
+// ── Build mailto href ─────────────────────────────────
+function mailtoHref(email, gameName) {
+  if (!email) return '';
+  var body = buildEmailBody(gameName);
+  return 'mailto:' + email
+    + '?subject=' + encodeURIComponent(gameName)
+    + (body ? '&body=' + encodeURIComponent(body) : '');
 }
 
 // ── Collapse / expand ────────────────────────────────

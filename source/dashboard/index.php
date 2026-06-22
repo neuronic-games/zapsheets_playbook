@@ -227,6 +227,54 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .db-chart-wide { grid-column:1 / -1; }
     @media (max-width:600px) { .db-charts { grid-template-columns:1fr; } }
 
+    /* ── Game Timelines ──────────────────────────────── */
+    .tl-list { display:flex; flex-direction:column; gap:1rem; }
+    .tl-game {
+      background:#fff; border-radius:8px; padding:.85rem 1.1rem;
+      box-shadow:0 1px 4px rgba(0,0,0,.08);
+    }
+    .tl-game-name {
+      font-family:'DINBlack',sans-serif; font-size:.8rem;
+      color:#1a1a2e; margin-bottom:.65rem;
+    }
+    .tl-designers {
+      font-family:'DINRegular',sans-serif; font-size:.72rem;
+      color:#888; font-weight:normal;
+    }
+    .tl-row { display:flex; align-items:flex-start; }
+    .tl-ms-wrap {
+      display:flex; flex-direction:column; align-items:center;
+      min-width:64px; flex-shrink:0;
+    }
+    .tl-dot {
+      width:18px; height:18px; border-radius:50%;
+      border:2.5px solid #dde1ea; background:#f8fafc;
+      flex-shrink:0;
+    }
+    .tl-ms-wrap.reached .tl-dot { background:#1a1a2e; border-color:#1a1a2e; }
+    .tl-ms-wrap.stage-interested.reached .tl-dot { background:#166534; border-color:#166534; }
+    .tl-ms-wrap.stage-signed.reached .tl-dot     { background:#7c3aed; border-color:#7c3aed; }
+    .tl-ms-wrap.stage-published.reached .tl-dot  { background:#0369a1; border-color:#0369a1; }
+    .tl-connector {
+      flex:1; height:3px; background:#dde1ea;
+      margin-top:7px; min-width:8px;
+    }
+    .tl-connector.filled { background:#1a1a2e; }
+    .tl-ms-label {
+      font-size:.57rem; text-transform:uppercase; letter-spacing:.04em;
+      color:#bbb; margin-top:.3rem; text-align:center; line-height:1.2;
+    }
+    .tl-ms-wrap.reached .tl-ms-label { color:#555; }
+    .tl-ms-date {
+      font-size:.55rem; color:#aaa; margin-top:.1rem;
+      text-align:center; white-space:nowrap;
+    }
+    @media (max-width:500px) {
+      .tl-ms-wrap { min-width:46px; }
+      .tl-ms-label { font-size:.5rem; }
+      .tl-ms-date  { font-size:.47rem; }
+    }
+
     /* ── Share dialog ────────────────────────────────── */
     .share-overlay {
       display:none; position:fixed; inset:0;
@@ -457,6 +505,11 @@ function gameAgeTag(pubMap) {
 
 function escHtml(s) {
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtMonYr(d) {
+  if (!d || isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-US', { month:'short', year:'numeric' });
 }
 
 // ── Build summary bar ─────────────────────────────────
@@ -1024,6 +1077,95 @@ function buildDashboardView() {
       '<div class="db-chart-card"><h3>Top Publishers by Games Pitched</h3><canvas id="chartPublishers"></canvas></div>' +
     '</div>' +
     '<div class="db-chart-card db-chart-wide"><h3>Pitches Over Time</h3><canvas id="chartTimeline"></canvas></div>';
+
+  // ── Game Timelines ─────────────────────────────────────
+  // Sort: published > signed > pitching > not started, then alpha
+  var sortedGames = allGameNames.slice().sort(function(a, b) {
+    var ea = allPitches.filter(function(r){ return r.Game === a; });
+    var eb = allPitches.filter(function(r){ return r.Game === b; });
+    var puba = isGamePublished(a, ea), pubb = isGamePublished(b, eb);
+    var siga = !puba && isGameSigned(a, ea), sigb = !pubb && isGameSigned(b, eb);
+    function rank(pub, sig, e) { return pub ? 0 : sig ? 1 : e.length ? 2 : 3; }
+    var ra = rank(puba, siga, ea), rb = rank(pubb, sigb, eb);
+    if (ra !== rb) return ra - rb;
+    return a.localeCompare(b);
+  });
+
+  var tlHtml = '<div class="db-chart-card db-chart-wide"><h3>Game Timelines</h3><div class="tl-list">';
+
+  sortedGames.forEach(function(name) {
+    var info    = gamesIndex[name] || {};
+    var entries = allPitches.filter(function(r){ return r.Game === name; });
+    var pub     = isGamePublished(name, entries);
+    var sig     = !pub && isGameSigned(name, entries);
+
+    // Date strings — prefer gamesIndex, fall back to entries
+    var dsStr  = (info['Date Started']   || '').trim();
+    var dsgStr = (info['Date Signed']    || '').trim();
+    var dpStr  = (info['Date Published'] || '').trim();
+    if (!dsgStr) entries.forEach(function(e){
+      if (!dsgStr && (e.Status||'').toLowerCase() === 'signed' && e.Date) dsgStr = e.Date;
+    });
+    if (!dpStr) entries.forEach(function(e){
+      if (!dpStr && (e.Status||'').toLowerCase() === 'published' && e.Date) dpStr = e.Date;
+    });
+
+    // Earliest pitch date
+    var pitchDates = entries.filter(function(e){ return e.Date; })
+                            .map(function(e){ return new Date(e.Date); })
+                            .filter(function(d){ return !isNaN(d); });
+    var firstPitch = pitchDates.length ? new Date(Math.min.apply(null, pitchDates)) : null;
+
+    // Earliest interested date
+    var intDates = entries.filter(function(e){
+      return (e.Status||'').toLowerCase() === 'interested' && e.Date;
+    }).map(function(e){ return new Date(e.Date); }).filter(function(d){ return !isNaN(d); });
+    var firstInt = intDates.length ? new Date(Math.min.apply(null, intDates)) : null;
+
+    var dsDate  = dsStr  ? new Date(dsStr)  : null;
+    var dsgDate = dsgStr ? new Date(dsgStr) : null;
+    var dpDate  = dpStr  ? new Date(dpStr)  : null;
+
+    // 5 milestone stages
+    var stages = [
+      { key:'started',    label:'Started',    date: dsDate,    reached: !!(dsDate || firstPitch) },
+      { key:'pitched',    label:'Pitched',    date: firstPitch,reached: !!firstPitch             },
+      { key:'interested', label:'Interested', date: firstInt,  reached: !!firstInt               },
+      { key:'signed',     label:'Signed',     date: dsgDate,   reached: sig || pub               },
+      { key:'published',  label:'Published',  date: dpDate,    reached: pub                      }
+    ];
+
+    // Designers
+    var designers = ['Designer1','Designer2','Designer3','Designer4']
+      .map(function(f){ return (info[f]||'').trim(); })
+      .filter(function(v){ return v; }).join(', ');
+
+    tlHtml += '<div class="tl-game">';
+    tlHtml += '<div class="tl-game-name">' + escHtml(name);
+    if (designers) tlHtml += ' <span class="tl-designers">(' + escHtml(designers) + ')</span>';
+    tlHtml += '</div>';
+    tlHtml += '<div class="tl-row">';
+
+    for (var si = 0; si < stages.length; si++) {
+      var st = stages[si];
+      var msClass = 'tl-ms-wrap stage-' + st.key + (st.reached ? ' reached' : '');
+      tlHtml += '<div class="' + msClass + '">';
+      tlHtml += '<div class="tl-dot"></div>';
+      tlHtml += '<div class="tl-ms-label">' + escHtml(st.label) + '</div>';
+      var dateStr = fmtMonYr(st.date);
+      if (dateStr) tlHtml += '<div class="tl-ms-date">' + escHtml(dateStr) + '</div>';
+      tlHtml += '</div>';
+      if (si < stages.length - 1) {
+        var connClass = 'tl-connector' + (stages[si].reached && stages[si+1].reached ? ' filled' : '');
+        tlHtml += '<div class="' + connClass + '"></div>';
+      }
+    }
+
+    tlHtml += '</div></div>'; // tl-row, tl-game
+  });
+
+  tlHtml += '</div></div>'; // tl-list, db-chart-card
+  html += tlHtml;
 
   document.getElementById('content').innerHTML = html;
 

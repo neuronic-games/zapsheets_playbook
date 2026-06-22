@@ -23,6 +23,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       padding:.75rem 1.25rem;
       display:flex; align-items:center; gap:.75rem;
       flex-wrap:wrap;
+      position:sticky; top:0; z-index:100;
     }
     .top-bar-left { flex:1; min-width:0; }
     .top-bar h1 { font-family:'DINBlack',sans-serif; font-size:1rem; margin:0; letter-spacing:.03em; }
@@ -197,6 +198,35 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     /* ── Empty / loading ─────────────────────────────── */
     .empty { padding:3rem; text-align:center; color:#999; font-size:.88rem; }
 
+    /* ── Dashboard view ──────────────────────────────── */
+    .db-stats { display:flex; flex-wrap:wrap; gap:.65rem; margin-bottom:1rem; }
+    .db-stat {
+      background:#fff; border-radius:8px;
+      box-shadow:0 1px 4px rgba(0,0,0,.08);
+      padding:.85rem 1.1rem; flex:1; min-width:110px;
+    }
+    .db-stat-value {
+      font-family:'DINBlack',sans-serif; font-size:1.55rem; color:#1a1a2e; line-height:1;
+    }
+    .db-stat-label {
+      font-size:.67rem; color:#888; text-transform:uppercase;
+      letter-spacing:.05em; margin-top:.3rem;
+    }
+    .db-charts {
+      display:grid; grid-template-columns:1fr 1fr; gap:.65rem; margin-bottom:.65rem;
+    }
+    .db-chart-card {
+      background:#fff; border-radius:8px;
+      box-shadow:0 1px 4px rgba(0,0,0,.08);
+      padding:1rem 1.1rem;
+    }
+    .db-chart-card h3 {
+      font-family:'DINBlack',sans-serif; font-size:.75rem; margin:0 0 .75rem;
+      text-transform:uppercase; letter-spacing:.05em; color:#555;
+    }
+    .db-chart-wide { grid-column:1 / -1; }
+    @media (max-width:600px) { .db-charts { grid-template-columns:1fr; } }
+
     /* ── Share dialog ────────────────────────────────── */
     .share-overlay {
       display:none; position:fixed; inset:0;
@@ -284,6 +314,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     <p class="sub" id="subTitle">Loading…</p>
   </div>
   <div class="view-toggle">
+    <button id="btnDashboard"              onclick="setView('dashboard')">Dashboard</button>
     <button id="btnGame"      class="active" onclick="setView('game')">Games</button>
     <button id="btnPublisher"               onclick="setView('publisher')">Publishers</button>
   </div>
@@ -314,7 +345,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 </div>
 
 <div class="summary-bar" id="summaryBar"></div>
-<div class="search-bar">
+<div class="search-bar" id="searchBar">
   <input type="text" id="searchInput" placeholder="Search games, publishers, contacts…" oninput="applySearch()" />
   <div class="sort-toggle">
     <button id="btnSortDate"  class="active" onclick="setSort('date')">Date</button>
@@ -511,8 +542,12 @@ function applySearch() {
 // ── View switcher ─────────────────────────────────────
 function setView(v) {
   currentView = v;
+  document.getElementById('btnDashboard').classList.toggle('active', v==='dashboard');
   document.getElementById('btnGame').classList.toggle('active',      v==='game');
   document.getElementById('btnPublisher').classList.toggle('active', v==='publisher');
+  var isDash = v === 'dashboard';
+  document.getElementById('summaryBar').style.display = isDash ? 'none' : '';
+  document.getElementById('searchBar').style.display  = isDash ? 'none' : '';
   buildView();
 }
 
@@ -891,8 +926,174 @@ function buildPublisherView(pitches) {
   return html || '<div class="empty">No results.</div>';
 }
 
+// ── Chart.js lazy loader ──────────────────────────────
+var _chartJsReady = false, _chartJsQueue = [];
+function loadChartJS(cb) {
+  if (_chartJsReady) { cb(); return; }
+  _chartJsQueue.push(cb);
+  if (_chartJsQueue.length > 1) return;
+  var s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
+  s.onload = function() {
+    _chartJsReady = true;
+    _chartJsQueue.forEach(function(fn){ fn(); });
+    _chartJsQueue = [];
+  };
+  document.head.appendChild(s);
+}
+
+// ── Dashboard view ─────────────────────────────────────
+var _activeCharts = {};
+function buildDashboardView() {
+  // ── Compute stats ──────────────────────────────────────
+  var allGameNames = Object.keys(gamesIndex).slice();
+  allPitches.forEach(function(r){
+    if (r.Game && allGameNames.indexOf(r.Game) < 0) allGameNames.push(r.Game);
+  });
+
+  var counts = { notStarted:0, pitching:0, signed:0, published:0 };
+  var timeToSign = [], timeToPublish = [];
+
+  allGameNames.forEach(function(name) {
+    var info    = gamesIndex[name] || {};
+    var entries = allPitches.filter(function(r){ return r.Game === name; });
+    var pub     = isGamePublished(name, entries);
+    var sig     = !pub && isGameSigned(name, entries);
+    if (pub)              counts.published++;
+    else if (sig)         counts.signed++;
+    else if (entries.length) counts.pitching++;
+    else                  counts.notStarted++;
+
+    var ds  = (info['Date Started']   || '').trim();
+    var dsg = (info['Date Signed']    || '').trim();
+    var dp  = (info['Date Published'] || '').trim();
+    if (ds && dsg) {
+      var mo = (new Date(dsg).getFullYear()-new Date(ds).getFullYear())*12
+             + (new Date(dsg).getMonth()  -new Date(ds).getMonth());
+      if (mo >= 0) timeToSign.push(mo);
+    }
+    if (ds && dp) {
+      var mo2 = (new Date(dp).getFullYear()-new Date(ds).getFullYear())*12
+              + (new Date(dp).getMonth()  -new Date(ds).getMonth());
+      if (mo2 >= 0) timeToPublish.push(mo2);
+    }
+  });
+
+  function avg(arr) {
+    return arr.length ? (arr.reduce(function(a,b){return a+b;},0)/arr.length).toFixed(1) : null;
+  }
+  var avgSign = avg(timeToSign), avgPub = avg(timeToPublish);
+
+  // Publisher → unique games map
+  var pubGames = {};
+  allPitches.forEach(function(r){
+    if (!r.Publisher || !r.Game) return;
+    if (!pubGames[r.Publisher]) pubGames[r.Publisher] = {};
+    pubGames[r.Publisher][r.Game] = 1;
+  });
+
+  // Timeline: pitches per month
+  var monthMap = {};
+  allPitches.forEach(function(r){
+    if (!r.Date) return;
+    var d = new Date(r.Date);
+    if (isNaN(d)) return;
+    var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    monthMap[key] = (monthMap[key]||0) + 1;
+  });
+
+  // ── Build HTML ─────────────────────────────────────────
+  function statCard(value, label, color) {
+    return '<div class="db-stat" style="border-top:3px solid '+color+'">' +
+           '<div class="db-stat-value">' + escHtml(String(value)) + '</div>' +
+           '<div class="db-stat-label">' + escHtml(label) + '</div>' +
+           '</div>';
+  }
+
+  var html = '<div class="db-stats">';
+  html += statCard(allGameNames.length,       'Total Games',      '#1a1a2e');
+  html += statCard(counts.published,          'Published',        '#0369a1');
+  html += statCard(counts.signed,             'Signed',           '#7c3aed');
+  html += statCard(counts.pitching,           'In Pitching',      '#166534');
+  html += statCard(counts.notStarted,         'Not Pitched',      '#94a3b8');
+  html += statCard(Object.keys(pubGames).length, 'Publishers',    '#334155');
+  if (avgSign !== null) html += statCard(avgSign + ' mo', 'Avg to Sign',    '#7c3aed');
+  if (avgPub  !== null) html += statCard(avgPub  + ' mo', 'Avg to Publish', '#0369a1');
+  html += '</div>';
+
+  html +=
+    '<div class="db-charts">' +
+      '<div class="db-chart-card"><h3>Games by Status</h3><canvas id="chartStatus"></canvas></div>' +
+      '<div class="db-chart-card"><h3>Top Publishers by Games Pitched</h3><canvas id="chartPublishers"></canvas></div>' +
+    '</div>' +
+    '<div class="db-chart-card db-chart-wide"><h3>Pitches Over Time</h3><canvas id="chartTimeline"></canvas></div>';
+
+  document.getElementById('content').innerHTML = html;
+
+  // ── Charts ─────────────────────────────────────────────
+  loadChartJS(function() {
+    // Destroy old chart instances to avoid canvas reuse errors
+    Object.keys(_activeCharts).forEach(function(k){
+      try { _activeCharts[k].destroy(); } catch(e){}
+    });
+    _activeCharts = {};
+
+    // Status doughnut
+    _activeCharts.status = new Chart(
+      document.getElementById('chartStatus').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Not Pitched', 'Pitching', 'Signed', 'Published'],
+          datasets: [{ data: [counts.notStarted, counts.pitching, counts.signed, counts.published],
+            backgroundColor: ['#e2e8f0','#bbf7d0','#7c3aed','#0369a1'],
+            borderWidth: 2, borderColor: '#fff' }]
+        },
+        options: { responsive:true, plugins:{ legend:{ position:'bottom', labels:{ font:{size:11} } } } }
+      }
+    );
+
+    // Top publishers horizontal bar
+    var topPubs = Object.keys(pubGames)
+      .map(function(p){ return { name:p, count:Object.keys(pubGames[p]).length }; })
+      .sort(function(a,b){ return b.count-a.count; }).slice(0,12);
+
+    _activeCharts.publishers = new Chart(
+      document.getElementById('chartPublishers').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: topPubs.map(function(p){ return p.name; }),
+          datasets: [{ label:'Games', data: topPubs.map(function(p){ return p.count; }),
+            backgroundColor:'#1a1a2e', borderRadius:3 }]
+        },
+        options: { indexAxis:'y', responsive:true,
+          plugins:{ legend:{ display:false } },
+          scales:{ x:{ ticks:{ stepSize:1 }, grid:{ display:false } },
+                   y:{ ticks:{ font:{ size:11 } } } } }
+      }
+    );
+
+    // Timeline bar chart
+    var monthKeys = Object.keys(monthMap).sort();
+    _activeCharts.timeline = new Chart(
+      document.getElementById('chartTimeline').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: monthKeys,
+          datasets: [{ label:'Pitches', data: monthKeys.map(function(k){ return monthMap[k]; }),
+            backgroundColor:'#1a1a2e', borderRadius:3 }]
+        },
+        options: { responsive:true,
+          plugins:{ legend:{ display:false } },
+          scales:{ x:{ ticks:{ font:{ size:10 }, maxRotation:45 } },
+                   y:{ ticks:{ stepSize:1 }, grid:{ color:'#f0f0f0' } } } }
+      }
+    );
+  });
+}
+
 // ── Render ────────────────────────────────────────────
 function buildView() {
+  if (currentView === 'dashboard') { buildDashboardView(); return; }
   document.getElementById('content').innerHTML =
     currentView === 'game'
       ? buildGameView(filteredPitches)

@@ -22,21 +22,28 @@
 
     if($dateStr != '') {
 
-        // Get current stored version id to respective spreadsheet named folder;
-        $jsonFile = "../sheets/" . $spreadsheetId . "/version.json";
-        // Check if the folder is not exists then create one and
-        // create the version.json file there with default value (0.0)
-        if (!file_exists($jsonFile)) {
-            mkdir("../sheets/" . $spreadsheetId, 0777, true);
+        // Increment version in root version.json and write PublishedOn + Version
+        // back to the Google Sheet's Settings tab via gwrite.py — same as deploySource.php.
+        $root        = dirname(__DIR__);
+        $versionFile = $root . '/version.json';
+        $versionData = ['Version' => 0, 'PublishedOn' => ''];
+        if (file_exists($versionFile)) {
+            $ex = json_decode(file_get_contents($versionFile), true);
+            if (is_array($ex)) $versionData = $ex;
         }
+        $versionData['Version']     = (int)($versionData['Version'] ?? 0) + 1;
+        $versionData['PublishedOn'] = date('M j, Y g:i A');
+        file_put_contents($versionFile, json_encode($versionData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
-        $sheetName = 'Settings';
-        $py_command = pyCmd($pythonPath, __DIR__, 'greadPush.py', $spreadsheetId . 'sheetname' . $sheetName . 'dateString' . $dateStr);
-        $versionNum = shell_exec($py_command);
-        $versionNum = str_replace("\r\n", "", $versionNum);
+        $gwriteScript = __DIR__ . '/gwrite.py';
+        $arg          = $spreadsheetId . 'version' . $versionData['Version'];
+        $cmd          = escapeshellarg($pythonPath) . ' '
+                      . escapeshellarg($gwriteScript) . ' '
+                      . escapeshellarg($arg) . ' 2>/dev/null';
+        $out = trim((string) shell_exec($cmd));
 
-        // Return Message to console
-        echo $versionNum;
+        // Return the new version number so the JS can display it
+        echo $versionData['Version'];
 
     } else if($sheet == 'Server') {
 
@@ -67,6 +74,33 @@
                     mkdir("../sheets/" . $spreadsheetId, 0777, true);
                 }
                 file_put_contents($jsonFile, $trimmed);
+
+                // If this is the Settings sheet, sync PublishedOn + Version → version.json
+                if (strtolower($sheetName) === 'settings') {
+                    $records = json_decode($trimmed, true);
+                    if (is_array($records)) {
+                        $pubOn = null;
+                        $ver   = null;
+                        foreach ($records as $row) {
+                            $name = trim($row['Name']  ?? '');
+                            $val  = trim($row['Value'] ?? '');
+                            if ($name === 'PublishedOn' && $val !== '') $pubOn = $val;
+                            if ($name === 'Version'     && $val !== '') $ver   = $val;
+                        }
+                        if ($pubOn !== null || $ver !== null) {
+                            $vf   = dirname(__DIR__) . '/version.json';
+                            $vdat = ['Version' => 0, 'PublishedOn' => ''];
+                            if (file_exists($vf)) {
+                                $ex = json_decode(file_get_contents($vf), true);
+                                if (is_array($ex)) $vdat = $ex;
+                            }
+                            if ($pubOn !== null) $vdat['PublishedOn'] = $pubOn;
+                            if ($ver   !== null) $vdat['Version']     = $ver;
+                            file_put_contents($vf, json_encode($vdat, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+                        }
+                    }
+                }
+
                 echo 'Publishing ' . $sheetName . ' data to server';
             }
         } else {

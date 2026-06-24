@@ -28,6 +28,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .top-bar-left { flex:1; min-width:0; }
     .top-bar h1 { font-family:'DINBlack',sans-serif; font-size:1rem; margin:0; letter-spacing:.03em; }
     .top-bar .sub { font-size:.73rem; opacity:.6; margin:0; letter-spacing:.01em; }
+    .version-tag { opacity:.4; font-size:.65rem; }
 
     @media (max-width:500px) {
       .top-bar-left { flex-basis:100%; }
@@ -406,6 +407,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
   <div class="top-bar-left">
     <h1>Pitchboard</h1>
     <p class="sub" id="subTitle">Loading…</p>
+    <p class="sub version-tag" id="versionTag" style="display:none"></p>
   </div>
   <div class="view-toggle">
     <button id="btnDashboard"              onclick="setView('dashboard')">Dashboard</button>
@@ -1567,6 +1569,24 @@ function loadAll(onComplete) {
   loadJSON(BASE + 'settings.json', 'settings', null,                      done);
   loadJSON(BASE + 'people.json',   'people',   null,                      done);
   loadJSON(BASE + 'games.json',    'games',    null,                      done);
+  // Load version info (best-effort — silently ignored if missing)
+  (function() {
+    var vx = new XMLHttpRequest();
+    vx.open('GET', APP_BASE + 'version.json?v=' + Date.now());
+    vx.onload = function() {
+      if (vx.status !== 200) return;
+      try {
+        var v = JSON.parse(vx.responseText);
+        var el = document.getElementById('versionTag');
+        if (el && v.Version) {
+          el.textContent = 'v' + v.Version + (v.PublishedOn ? ' · ' + v.PublishedOn : '');
+          el.style.display = '';
+        }
+      } catch(e) {}
+    };
+    vx.onerror = function() {};
+    vx.send();
+  })();
 }
 
 // ── Sync dialog helpers ───────────────────────────────
@@ -1616,14 +1636,18 @@ function syncData() {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', APP_BASE + 'push/deploySource.php');
     xhr.onload = function() {
-      var resp = (xhr.responseText || '').trim();
-      if (resp.indexOf('ERROR') === 0) {
-        syncLog('  ✗ ' + resp, 'error');
-      } else if (resp.indexOf('SKIP') === 0) {
-        syncLog('  – ' + resp.replace(/^SKIP:\s*/,''), 'skip');
-      } else {
-        syncLog('  ✓ ' + resp, 'ok');
-      }
+      var lines = (xhr.responseText || '').trim().split('\n');
+      lines.forEach(function(line) {
+        line = line.trim();
+        if (!line) return;
+        if (line.indexOf('ERROR') === 0) {
+          syncLog('  ✗ ' + line, 'error');
+        } else if (line.indexOf('SKIP') === 0) {
+          syncLog('  – ' + line.replace(/^SKIP:\s*/,''), 'skip');
+        } else {
+          syncLog('  ✓ ' + line, 'ok');
+        }
+      });
       finish();
     };
     xhr.onerror = function() {

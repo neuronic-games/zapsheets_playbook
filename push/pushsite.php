@@ -1,6 +1,6 @@
 <?php
 /**
- * pushsite/index.php — server-side sheet sync, no browser/JS required.
+ * push/pushsite.php — server-side sheet sync, no browser/JS required.
  *
  * Usage (GET or POST):
  *   /pushsite?id=<sheetId>
@@ -11,6 +11,11 @@
  * Then pulls:   any extra sheets listed in ?sheets=
  * Finally:      copies source/site/ → sheets/{id}/site/
  */
+
+// router.php includes PHP files inside serveFile() — a function scope.
+// Variables used by pullSheet() via `global` must be declared global here
+// so they land in PHP's global scope rather than serveFile()'s local scope.
+global $pythonPath, $pushDir, $sheetDir, $sheetId, $pulled, $KV_SHEETS;
 
 header('Content-Type: text/plain; charset=UTF-8');
 error_reporting(0);

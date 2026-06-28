@@ -8,11 +8,17 @@ global $tab, $tabMulti, $_cacheDir;
 $dir = dirname(__DIR__);    // sheets/{id}/
 
 // Site branding (site.json: [{Name, Value}])
-$site = json_decode(@file_get_contents($dir . '/site.json') ?: '[]', true) ?: [];
+$site     = json_decode(@file_get_contents($dir . '/site.json')     ?: '[]', true) ?: [];
+$settings = json_decode(@file_get_contents($dir . '/settings.json') ?: '[]', true) ?: [];
 $sd = []; $sdMulti = [];
 foreach ($site as $row) {
     $n = trim($row['Name'] ?? ''); $v = trim($row['Value'] ?? '');
     if ($n !== '') { $sd[$n] = $v; $sdMulti[$n][] = $v; }
+}
+$sett = [];
+foreach ($settings as $row) {
+    $n = trim($row['Name'] ?? '');
+    if ($n !== '') $sett[$n] = trim($row['Value'] ?? '');
 }
 $splashUrls = array_values(array_filter($sdMulti['SplashUrl'] ?? ($sdMulti['SplashURL'] ?? [])));
 $tagline    = $sd['Tagline'] ?? '';
@@ -195,7 +201,8 @@ if ($stock !== '') {
 // ─── Status ────────────────────────────────────────────────────────────────────
 [$statusLabel, $statusCls, $statusColor] = statusInfo($status);
 
-$company = $sd['CompanyName'] ?? '';
+$company    = $sd['CompanyName'] ?? '';
+$appIconRaw = $sett['AppIconImageUrl'] ?? ($sd['AppIconImageUrl'] ?? '');
 $logoUrl = cachedUrl($sd['LogoUrl'] ?? ($sd['LogoURL'] ?? ''));
 $address = $sd['Address']   ?? '';
 $insta   = $sd['Instagram'] ?? '';
@@ -210,6 +217,10 @@ $hasTabs = !empty($videos) || !empty($reviews) || !empty($faqs);
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= esc($name) ?><?= $company ? ' — '.esc($company) : '' ?></title>
   <meta name="description" content="<?= esc($summary ?: $name) ?>">
+  <?php if ($appIconRaw): $appIcon = cachedUrl($appIconRaw); ?>
+  <link rel="icon" href="<?= esc($appIcon) ?>">
+  <link rel="apple-touch-icon" href="<?= esc($appIcon) ?>">
+  <?php endif; ?>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">

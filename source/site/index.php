@@ -19,13 +19,20 @@ if (preg_match('#^(.*/|/)' . preg_quote($_sheetId, '#') . '/site(?:/|$)#i', $_re
 } else {
     $_siteUrl = '/' . $_sheetId . '/site/';
 }
-$games = json_decode(@file_get_contents($dir . '/games.json') ?: '[]', true) ?: [];
-$site  = json_decode(@file_get_contents($dir . '/site.json')  ?: '[]', true) ?: [];
+$games    = json_decode(@file_get_contents($dir . '/games.json')    ?: '[]', true) ?: [];
+$site     = json_decode(@file_get_contents($dir . '/site.json')     ?: '[]', true) ?: [];
+$settings = json_decode(@file_get_contents($dir . '/settings.json') ?: '[]', true) ?: [];
 
 $sd = []; $sdMulti = []; $sdRows = [];
 foreach ($site as $row) {
     $n = trim($row['Name'] ?? ''); $v = trim($row['Value'] ?? '');
     if ($n !== '') { $sd[$n] = $v; $sdMulti[$n][] = $v; $sdRows[$n][] = $row; }
+}
+
+$sett = [];
+foreach ($settings as $row) {
+    $n = trim($row['Name'] ?? '');
+    if ($n !== '') $sett[$n] = trim($row['Value'] ?? '');
 }
 
 // Splash URLs (multiple allowed)
@@ -47,6 +54,7 @@ usort($games, fn($a,$b) =>
     ($statusOrder[strtolower(trim($b['Status']??''))] ?? 3));
 
 // Company config
+$appIconRaw = $sett['AppIconImageUrl'] ?? ($sd['AppIconImageUrl'] ?? '');
 $company = $sd['CompanyName'] ?? 'Board Game Publisher';
 $tagline = $sd['Tagline']     ?? '';
 $about   = $sd['Description'] ?? '';
@@ -157,6 +165,10 @@ foreach ($games as $g) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= esc($company) ?></title>
   <meta name="description" content="<?= esc($tagline ?: $company . ' — Board Game Publisher') ?>">
+  <?php if ($appIconRaw): $appIcon = cachedUrl($appIconRaw); ?>
+  <link rel="icon" href="<?= esc($appIcon) ?>">
+  <link rel="apple-touch-icon" href="<?= esc($appIcon) ?>">
+  <?php endif; ?>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">

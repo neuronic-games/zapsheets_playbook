@@ -74,11 +74,16 @@ function sheetNotFound(string $id): void {
 // Top-level directories / files that must never be rewritten
 $RESERVED = [
     'js', 'css', 'fonts', 'images', 'sheets', 'source',
-    'push', 'pushsite', 'menu', 'steps',
+    'push', 'menu', 'steps',
     'index', 'manifest', 'result', 'dotEnv',
     'sw_playbook', 'sw_map', 'router', 'start',
     'clear-sw', 'debug-jquery',
 ];
+
+// ── /pushsite → push/pushsite.php ────────────────────────────────────────────
+if (preg_match('#^/pushsite(/.*)?$#', $uri)) {
+    serveFile(__DIR__ . '/push/pushsite.php', $MIME);
+}
 
 // ── Short URL: /{id}/view[/…] (more specific — check first) ──────────────
 if (preg_match('#^/([A-Za-z0-9_\-]+)/view(/.*)?$#', $uri, $m)) {

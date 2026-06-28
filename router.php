@@ -74,7 +74,7 @@ function sheetNotFound(string $id): void {
 // Top-level directories / files that must never be rewritten
 $RESERVED = [
     'js', 'css', 'fonts', 'images', 'sheets', 'source',
-    'push', 'menu', 'steps',
+    'push', 'pushsite', 'menu', 'steps',
     'index', 'manifest', 'result', 'dotEnv',
     'sw_playbook', 'sw_map', 'router', 'start',
     'clear-sw', 'debug-jquery',
@@ -120,6 +120,31 @@ if (preg_match('#^/([A-Za-z0-9_\-]+)/connections(/.*)?$#', $uri, $m)) {
     $id = $m[1];
     header('Location: /' . $id . '/dashboard', true, 301);
     exit;
+}
+
+// ── Short URL: /{id}/site[/…] ────────────────────────────────────────────
+if (preg_match('#^/([A-Za-z0-9_\-]+)/site(/.*)?$#', $uri, $m)) {
+    $id      = $m[1];
+    $hasRest = isset($m[2]) && $m[2] !== '';
+
+    // No trailing slash → redirect so relative URLs in the page resolve correctly
+    if (!$hasRest) {
+        header('Location: /' . $id . '/site/', true, 302);
+        exit;
+    }
+
+    $rest = ($m[2] === '/') ? '/index.php' : $m[2];
+
+    $target = __DIR__ . '/sheets/' . $id . '/site' . $rest;
+    if (is_file($target))  { serveFile($target, $MIME); }
+
+    $idx = __DIR__ . '/sheets/' . $id . '/site/index.php';
+    if (is_file($idx))     { serveFile($idx, $MIME); }
+
+    $idx = __DIR__ . '/sheets/' . $id . '/site/index.html';
+    if (is_file($idx))     { serveFile($idx, $MIME); }
+
+    sheetNotFound($id);
 }
 
 // ── Short URL: /{id}/sellsheet[/…] ───────────────────────────────────────

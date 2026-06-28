@@ -15,7 +15,16 @@
  * Everything else falls through to normal static/PHP serving.
  */
 
+require_once __DIR__ . '/dotEnv.php';
+
 $uri  = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
+// Strip BASE_PATH prefix so routes work when deployed in a subdirectory.
+// Set BASE_PATH=/playbook-test (no trailing slash) in .env for subdirectory deploys.
+$basePath = rtrim($_ENV['BASE_PATH'] ?? '/', '/');   // e.g. "/playbook-test" or ""
+if ($basePath !== '' && str_starts_with($uri, $basePath)) {
+    $uri = substr($uri, strlen($basePath)) ?: '/';
+}
 
 // MIME map shared by both routing blocks
 $MIME = [
@@ -57,6 +66,8 @@ function serveFile(string $path, array $mime): void {
  * Show a friendly "not initialised" error page.
  */
 function sheetNotFound(string $id): void {
+    global $basePath;
+    $pushLink = $basePath . '/push/?id=' . urlencode($id);
     http_response_code(404);
     header('Content-Type: text/html; charset=UTF-8');
     echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Sheet not found</title>'
@@ -66,7 +77,7 @@ function sheetNotFound(string $id): void {
        . '<h2>Sheet not initialised</h2>'
        . '<p>No sheet found for <code>' . htmlspecialchars($id) . '</code>.</p>'
        . '<p>Initialise it first:<br>'
-       . '<a href="/push/?id=' . urlencode($id) . '">/push/?id=' . htmlspecialchars($id) . '</a></p>'
+       . '<a href="' . $pushLink . '">' . htmlspecialchars($pushLink) . '</a></p>'
        . '</body></html>';
     exit;
 }
@@ -123,7 +134,7 @@ if (preg_match('#^/([A-Za-z0-9_\-]+)/dashboard(/.*)?$#', $uri, $m)) {
 // ── Short URL: /{id}/connections[/…] (legacy → redirect to /dashboard) ───
 if (preg_match('#^/([A-Za-z0-9_\-]+)/connections(/.*)?$#', $uri, $m)) {
     $id = $m[1];
-    header('Location: /' . $id . '/dashboard', true, 301);
+    header('Location: ' . $basePath . '/' . $id . '/dashboard', true, 301);
     exit;
 }
 
@@ -134,7 +145,7 @@ if (preg_match('#^/([A-Za-z0-9_\-]+)/site(/.*)?$#', $uri, $m)) {
 
     // No trailing slash → redirect so relative URLs in the page resolve correctly
     if (!$hasRest) {
-        header('Location: /' . $id . '/site/', true, 302);
+        header('Location: ' . $basePath . '/' . $id . '/site/', true, 302);
         exit;
     }
 
@@ -181,7 +192,7 @@ if (preg_match('#^/([A-Za-z0-9_\-]+)(/.*)?$#', $uri, $m)) {
 
     // Only redirect when the sheet directory actually exists
     if (is_dir(__DIR__ . '/sheets/' . $id)) {
-        header('Location: /sheets/' . $id . $rest, true, 302);
+        header('Location: ' . $basePath . '/sheets/' . $id . $rest, true, 302);
         exit;
     }
 

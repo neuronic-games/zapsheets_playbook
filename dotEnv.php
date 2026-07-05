@@ -32,3 +32,12 @@ if (file_exists($envFile)) {
 if (empty($_ENV['ENVIRONMENT'])) { $_ENV['ENVIRONMENT'] = 'production'; }
 if (empty($_ENV['PYTHON']))      { $_ENV['PYTHON']      = 'python3'; }
 if (empty($_ENV['BASE_PATH']))   { $_ENV['BASE_PATH']   = '/'; }
+
+// The web-server process often runs without HOME set, which breaks Python
+// virtualenv wrapper scripts (e.g. set_env_vars.py) that call os.environ['HOME'].
+// Derive HOME from the project path if it is not already in the environment.
+if (empty(getenv('HOME'))) {
+    preg_match('#^(/home/[^/]+)#', __FILE__, $_hm);
+    putenv('HOME=' . ($_hm[1] ?? sys_get_temp_dir()));
+    unset($_hm);
+}

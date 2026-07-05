@@ -21,9 +21,11 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .top-bar {
       background:#1a1a2e; color:#fff;
       padding:.75rem 1.25rem;
-      display:flex; align-items:center; gap:.75rem;
-      flex-wrap:wrap;
       position:sticky; top:0; z-index:100;
+    }
+    .top-bar-inner {
+      max-width:900px; margin:0 auto;
+      display:flex; align-items:center; gap:.75rem; flex-wrap:wrap;
     }
     .top-bar-left { flex:1; min-width:0; }
     .top-bar h1 { font-family:'DINBlack',sans-serif; font-size:1rem; margin:0; letter-spacing:.03em; }
@@ -69,6 +71,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .summary-bar {
       display:flex; gap:.5rem; flex-wrap:wrap;
       padding:.75rem 1.25rem .4rem;
+      max-width:900px; margin:0 auto;
     }
     .pill {
       display:inline-flex; align-items:center; gap:.3rem;
@@ -91,7 +94,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .pill-published.filter-active { box-shadow:0 0 0 2px #fff, 0 0 0 4px #0369a1; }
 
     /* ── Search + sort ───────────────────────────────── */
-    .search-bar { padding:.4rem 1.25rem .5rem; display:flex; align-items:stretch; gap:.6rem; max-width:900px; }
+    .search-bar { padding:.4rem 1.25rem .5rem; display:flex; align-items:stretch; gap:.6rem; max-width:900px; margin:0 auto; }
     .search-wrap { position:relative; flex:1; display:flex; align-items:stretch; }
     .search-wrap input {
       width:100%; height:100%; box-sizing:border-box;
@@ -123,8 +126,18 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .sort-toggle button.active { background:#1a1a2e; color:#fff; }
 
+    .new-game-btn {
+      font-family:'DINBlack',sans-serif; font-size:.68rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      background:#1a1a2e; color:#fff;
+      border:none; border-radius:6px;
+      padding:.38rem .85rem; cursor:pointer; flex-shrink:0;
+      white-space:nowrap; transition:background .15s;
+    }
+    .new-game-btn:hover { background:#2d2d4e; }
+
     /* ── Content ─────────────────────────────────────── */
-    .content { padding:.4rem 1.25rem 3rem; max-width:900px; }
+    .content { padding:.4rem 1.25rem 3rem; max-width:900px; margin:0 auto; }
 
     /* ── Card ────────────────────────────────────────── */
     .card {
@@ -139,12 +152,9 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       cursor:pointer; user-select:none;
     }
     .card-header:hover { background:#252545; }
-    .card-title-group {
-      display:flex; align-items:center; gap:.4rem; flex:1; min-width:0;
-    }
     .card-title {
       font-family:'DINBlack',sans-serif; font-size:.9rem;
-      letter-spacing:.03em; min-width:0;
+      letter-spacing:.03em; flex:1; min-width:0;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
     .card-badges { display:flex; align-items:center; gap:.35rem; flex-shrink:0; }
@@ -171,6 +181,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       font-family:'DINBlack',sans-serif; font-size:.65rem;
       text-transform:uppercase; letter-spacing:.06em;
       padding:.18rem .55rem; border-radius:999px; white-space:nowrap;
+      line-height:1; display:inline-flex; align-items:center;
     }
     .badge-interested  { background:#dcfce7; color:#166534; }
     .badge-passed      { background:#fee2e2; color:#991b1b; }
@@ -339,17 +350,18 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       .tl-ms-date  { font-size:.47rem; }
     }
 
-    /* ── Add-entry buttons ──────────────────────────── */
-    /* Button on game card header (dark bg) */
-    .game-add-btn {
+    /* ── Game sub-bar action buttons (dark bg) ──────── */
+    .game-action-btn {
       font-family:'DINBlack',sans-serif; font-size:.6rem;
       text-transform:uppercase; letter-spacing:.06em;
       background:rgba(255,255,255,.14); color:rgba(255,255,255,.85);
       border:1px solid rgba(255,255,255,.28); border-radius:999px;
-      padding:.18rem .6rem; cursor:pointer; white-space:nowrap; flex-shrink:0;
+      padding:.18rem .65rem; cursor:pointer; white-space:nowrap; flex-shrink:0;
       transition:background .15s;
     }
-    .game-add-btn:hover { background:rgba(255,255,255,.28); }
+    .game-action-btn:hover { background:rgba(255,255,255,.28); color:#fff; }
+
+    /* ── Add-entry buttons ──────────────────────────── */
     /* Button next to contact name (light bg) */
     .add-entry-btn {
       display:inline-flex; align-items:center;
@@ -601,24 +613,84 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .sync-done-btn:hover { background:#2d2d50; }
     .sync-done-btn:disabled { opacity:.45; cursor:default; }
+
+    /* ── Game edit dialog ────────────────────────────── */
+    .game-edit-overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.45); z-index:1000;
+      align-items:center; justify-content:center; padding:1rem;
+    }
+    .game-edit-overlay.open { display:flex; }
+    .game-edit-dialog {
+      background:#fff; border-radius:10px;
+      padding:1.4rem 1.5rem; width:min(580px,94vw);
+      max-height:90vh; overflow-y:auto;
+      box-shadow:0 8px 32px rgba(0,0,0,.22);
+      display:flex; flex-direction:column; gap:.65rem;
+    }
+    .game-edit-heading {
+      font-family:'DINBlack',sans-serif; font-size:.85rem;
+      color:#1a1a2e; letter-spacing:.03em;
+      padding-bottom:.55rem; border-bottom:1px solid #f0f0f0;
+    }
+    .ge-section {
+      font-family:'DINBlack',sans-serif; font-size:.62rem;
+      text-transform:uppercase; letter-spacing:.06em; color:#bbb;
+      margin-top:.2rem;
+    }
+    .ge-row { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+    .ge-label {
+      display:flex; flex-direction:column; gap:.28rem;
+      font-family:'DINBlack',sans-serif; font-size:.62rem;
+      text-transform:uppercase; letter-spacing:.05em; color:#999;
+    }
+    .ge-input {
+      font-family:'DINRegular',sans-serif; font-size:.82rem; color:#222;
+      border:1px solid #ddd; border-radius:6px; padding:.38rem .55rem;
+      outline:none; width:100%; box-sizing:border-box; background:#fff;
+      transition:border-color .15s;
+    }
+    .ge-input:focus { border-color:#1a1a2e; }
+    .ge-actions {
+      display:flex; gap:.5rem; align-items:center;
+      border-top:1px solid #f0f0f0; padding-top:.6rem; margin-top:.1rem;
+    }
+    .ge-save-btn {
+      font-family:'DINBlack',sans-serif; font-size:.7rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      background:#1a1a2e; color:#fff; border:none;
+      border-radius:6px; padding:.42rem .9rem; cursor:pointer;
+      transition:background .15s;
+    }
+    .ge-save-btn:hover:not(:disabled) { background:#2d2d50; }
+    .ge-save-btn:disabled { opacity:.4; cursor:default; }
+    .ge-cancel-btn {
+      font-family:'DINBlack',sans-serif; font-size:.7rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      color:#999; cursor:pointer; background:none; border:none;
+      margin-left:auto;
+    }
+    .ge-cancel-btn:hover { color:#333; }
   </style>
 </head>
 <body>
 
 <!-- Top bar -->
 <div class="top-bar">
-  <div class="top-bar-left">
-    <h1>Pitchboard</h1>
-    <p class="sub" id="subTitle">Loading…</p>
-    <p class="sub version-tag" id="versionTag" style="display:none"></p>
+  <div class="top-bar-inner">
+    <div class="top-bar-left">
+      <h1>Pitchboard</h1>
+      <p class="sub" id="subTitle">Loading…</p>
+      <p class="sub version-tag" id="versionTag" style="display:none"></p>
+    </div>
+    <div class="view-toggle">
+      <button id="btnDashboard"              onclick="setView('dashboard')">Dashboard</button>
+      <button id="btnGame"      class="active" onclick="setView('game')">Games</button>
+      <button id="btnPublisher"               onclick="setView('publisher')">Publishers</button>
+    </div>
+    <button class="sync-btn" id="syncBtn" onclick="syncData()"><span class="sync-icon">&#8635;</span> Sync</button>
+    <button class="share-btn" onclick="openShare()">&#8679; Share</button>
   </div>
-  <div class="view-toggle">
-    <button id="btnDashboard"              onclick="setView('dashboard')">Dashboard</button>
-    <button id="btnGame"      class="active" onclick="setView('game')">Games</button>
-    <button id="btnPublisher"               onclick="setView('publisher')">Publishers</button>
-  </div>
-  <button class="sync-btn" id="syncBtn" onclick="syncData()"><span class="sync-icon">&#8635;</span> Sync</button>
-  <button class="share-btn" onclick="openShare()">&#8679; Share</button>
 </div>
 
 <!-- Edit-entry dialog -->
@@ -655,6 +727,42 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     <div class="notes-dialog-actions">
       <button class="notes-update-btn" id="notesUpdateBtn" onclick="submitNotesUpdate()">Update</button>
       <button class="notes-close" onclick="closeNotesDialog()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Game edit dialog -->
+<div class="game-edit-overlay" id="gameEditOverlay" onclick="if(event.target===this)closeGameEditDialog()">
+  <div class="game-edit-dialog">
+    <div class="game-edit-heading" id="gameEditHeading">Edit Game</div>
+    <label class="ge-label">Game Name
+      <input type="text" id="geGameName" class="ge-input" />
+    </label>
+    <div class="ge-section">Designers</div>
+    <div class="ge-row">
+      <label class="ge-label">Designer 1<input type="text" id="geDesigner1" class="ge-input" /></label>
+      <label class="ge-label">Designer 2<input type="text" id="geDesigner2" class="ge-input" /></label>
+    </div>
+    <div class="ge-row">
+      <label class="ge-label">Designer 3<input type="text" id="geDesigner3" class="ge-input" /></label>
+      <label class="ge-label">Designer 4<input type="text" id="geDesigner4" class="ge-input" /></label>
+    </div>
+    <div class="ge-section">Links</div>
+    <div class="ge-row">
+      <label class="ge-label">Rules URL<input type="url" id="geRules" class="ge-input" placeholder="https://…" /></label>
+      <label class="ge-label">Play URL<input type="url" id="gePlay" class="ge-input" placeholder="https://…" /></label>
+    </div>
+    <div class="ge-row">
+      <label class="ge-label">Print URL<input type="url" id="gePrint" class="ge-input" placeholder="https://…" /></label>
+      <label class="ge-label">Sellsheet URL<input type="url" id="geSellsheet" class="ge-input" placeholder="https://…" /></label>
+    </div>
+    <div class="ge-row">
+      <label class="ge-label">BGG / View URL<input type="url" id="geView" class="ge-input" placeholder="https://…" /></label>
+      <label class="ge-label">Video URL<input type="url" id="geVideo" class="ge-input" placeholder="https://…" /></label>
+    </div>
+    <div class="ge-actions">
+      <button class="ge-save-btn" id="geSaveBtn" onclick="submitGameEdit()">Save</button>
+      <button class="ge-cancel-btn" onclick="closeGameEditDialog()">Cancel</button>
     </div>
   </div>
 </div>
@@ -759,6 +867,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     <button id="btnSortDate"  class="active" onclick="setSort('date')">Date</button>
     <button id="btnSortAlpha"            onclick="setSort('alpha')">A–Z</button>
   </div>
+  <button class="new-game-btn" onclick="openNewGameDialog()">+ New Game</button>
 </div>
 <div class="content" id="content"><div class="empty">Loading…</div></div>
 
@@ -1201,10 +1310,7 @@ function buildGameView(pitches) {
       .join(', ');
     var gameDateHtml = '';
     html += '<div class="card-header" onclick="toggleCard(this)">';
-    html += '<span class="card-title-group">';
     html += '<span class="card-title">' + escHtml(g) + '</span>';
-    html += '<button class="game-add-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();addBtnClick(this)">+ Add</button>';
-    html += '</span>';
     html += '<span class="card-badges">' + (published || signed ? '' : at) + gameStatusBadge + gameDateHtml + '</span>';
     html += '<span class="card-chevron">▼</span>';
     html += '</div>';
@@ -1239,12 +1345,13 @@ function buildGameView(pitches) {
     })();
 
     html += '<div class="card-body-wrap"><div class="card-body">';
-    if (gameLinkPills || designers) {
-      html += '<div class="game-links">';
-      if (designers) html += '<span class="game-links-designers">' + escHtml(designers) + '</span>';
-      html += gameLinkPills;
-      html += '</div>';
-    }
+    html += '<div class="game-links">';
+    if (designers) html += '<span class="game-links-designers">' + escHtml(designers) + '</span>';
+    html += gameLinkPills;
+    html += '<span style="flex:1"></span>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();addBtnClick(this)">Pitch</button>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();editGameClick(this)">Edit</button>';
+    html += '</div>';
 
     // Sort publishers alphabetically
     var pubNames = Object.keys(games[g]).sort(function(a,b){ return a.localeCompare(b); });
@@ -2024,9 +2131,136 @@ function submitNotesUpdate() {
   xhr.send(body);
 }
 
+// ── Game Edit dialog ──────────────────────────────────
+var _gameEditCtx = {};   // { origName, isNew }
+
+function editGameClick(btn) {
+  var gameName = btn.getAttribute('data-game') || '';
+  openGameEditDialog(gameName, false);
+}
+
+function openNewGameDialog() {
+  openGameEditDialog('', true);
+}
+
+function openGameEditDialog(gameName, isNew) {
+  _gameEditCtx = { origName: gameName, isNew: !!isNew };
+  var g = isNew ? {} : (gamesIndex[gameName] || {});
+
+  document.getElementById('gameEditHeading').textContent = isNew ? 'New Game' : 'Edit Game';
+
+  // Helper: try several field name variants in g
+  function gfield() {
+    for (var i = 0; i < arguments.length; i++) {
+      var v = g[arguments[i]]; if (v) return v;
+    }
+    return '';
+  }
+
+  document.getElementById('geGameName').value  = isNew ? '' : (g.Name || gameName);
+  document.getElementById('geDesigner1').value = isNew ? '' : gfield('Designer1', 'Designer 1');
+  document.getElementById('geDesigner2').value = isNew ? '' : gfield('Designer2', 'Designer 2');
+  document.getElementById('geDesigner3').value = isNew ? '' : gfield('Designer3', 'Designer 3');
+  document.getElementById('geDesigner4').value = isNew ? '' : gfield('Designer4', 'Designer 4');
+  document.getElementById('geRules').value     = isNew ? '' : gfield('Rules',     'Rules URL',    'RulesURL');
+  document.getElementById('gePlay').value      = isNew ? '' : gfield('Play',      'Play URL',     'PlayURL');
+  document.getElementById('gePrint').value     = isNew ? '' : gfield('Print',     'Print URL',    'PrintURL');
+  document.getElementById('geSellsheet').value = isNew ? '' : gfield('Sellsheet', 'Sellsheet URL','SellsheetURL');
+  document.getElementById('geView').value      = isNew ? '' : gfield('BGG',       'View URL',     'BGG / View URL', 'ViewURL', 'View');
+  document.getElementById('geVideo').value     = isNew ? '' : gfield('Video',     'Video URL',    'VideoURL');
+
+  document.getElementById('geSaveBtn').disabled    = false;
+  document.getElementById('geSaveBtn').textContent = isNew ? 'Add Game' : 'Save';
+  document.getElementById('gameEditOverlay').classList.add('open');
+  setTimeout(function() { document.getElementById('geGameName').focus(); }, 60);
+}
+
+function closeGameEditDialog() {
+  document.getElementById('gameEditOverlay').classList.remove('open');
+}
+
+function submitGameEdit() {
+  var btn    = document.getElementById('geSaveBtn');
+  var isNew  = _gameEditCtx.isNew;
+  btn.disabled = true;
+  btn.textContent = isNew ? 'Adding…' : 'Saving…';
+
+  var payload = {
+    orig_name:  _gameEditCtx.origName,
+    name:       document.getElementById('geGameName').value.trim(),
+    designer1:  document.getElementById('geDesigner1').value.trim(),
+    designer2:  document.getElementById('geDesigner2').value.trim(),
+    designer3:  document.getElementById('geDesigner3').value.trim(),
+    designer4:  document.getElementById('geDesigner4').value.trim(),
+    rules:      document.getElementById('geRules').value.trim(),
+    play:       document.getElementById('gePlay').value.trim(),
+    print:      document.getElementById('gePrint').value.trim(),
+    sellsheet:  document.getElementById('geSellsheet').value.trim(),
+    view:       document.getElementById('geView').value.trim(),
+    video:      document.getElementById('geVideo').value.trim()
+  };
+
+  if (!payload.name) {
+    alert('Game name is required.');
+    btn.disabled = false;
+    btn.textContent = isNew ? 'Add Game' : 'Save';
+    return;
+  }
+
+  var endpoint = isNew ? 'push/addGame.php' : 'push/updateGame.php';
+  var body = 'id=' + encodeURIComponent(sheet_Id);
+  for (var k in payload) body += '&' + k + '=' + encodeURIComponent(payload[k]);
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + endpoint);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onload = function() {
+    btn.disabled = false;
+    btn.textContent = isNew ? 'Add Game' : 'Save';
+    var result;
+    try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
+    if (result && result.ok) {
+      // Update gamesIndex in memory
+      var oldName = _gameEditCtx.origName;
+      var newName = payload.name;
+      if (!gamesIndex[newName]) gamesIndex[newName] = {};
+      var entry = gamesIndex[newName];
+      entry.Name       = newName;
+      entry.Designer1  = payload.designer1;
+      entry.Designer2  = payload.designer2;
+      entry.Designer3  = payload.designer3;
+      entry.Designer4  = payload.designer4;
+      entry.Rules      = payload.rules;
+      entry.Play       = payload.play;
+      entry.Print      = payload.print;
+      entry.Sellsheet  = payload.sellsheet;
+      entry.View       = payload.view;
+      entry.Video      = payload.video;
+      if (!isNew && newName !== oldName) {
+        delete gamesIndex[oldName];
+        allPitches.forEach(function(r) { if (r.Game === oldName) r.Game = newName; });
+      }
+      var _vs = saveViewState();
+      buildSummary(allPitches);
+      buildView();
+      restoreViewState(_vs);
+      closeGameEditDialog();
+    } else {
+      alert('Error: ' + ((result && result.error) || (isNew ? 'Could not add game.' : 'Could not update game.')));
+    }
+  };
+  xhr.onerror = function() {
+    btn.disabled = false;
+    btn.textContent = isNew ? 'Add Game' : 'Save';
+    alert('Network error — could not save.');
+  };
+  xhr.send(body);
+}
+
 // Close dialogs on Escape (sub-dialog first, then main, then notes)
 document.addEventListener('keydown', function(ev) {
   if (ev.key !== 'Escape') return;
+  if (document.getElementById('gameEditOverlay').classList.contains('open')) { closeGameEditDialog(); return; }
   if (document.getElementById('addNewOverlay').classList.contains('open')) { closeAddNew(); return; }
   if (document.getElementById('addEntryOverlay').classList.contains('open')) { closeAddDialog(); return; }
   closeNotesDialog();

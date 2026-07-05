@@ -47,6 +47,13 @@ $splashRows = $sdRows['SplashUrl'] ?? ($sdRows['SplashURL'] ?? ($sdRows['Splash 
 // Games
 $games = array_values(array_filter($games, fn($g) => trim($g['Name'] ?? '') !== ''));
 
+// Names (lowercase) of games that have a pulled JSON data file on disk.
+// Used to decide whether to show "Find out more" on splash slides.
+$gamesWithJson = array_values(array_filter(
+    array_map('strtolower', array_column($games, 'Name')),
+    fn($n) => file_exists($dir . '/' . $n . '.json')
+));
+
 // Sort order per status
 $statusOrder = ['published' => 0, 'signed' => 1, 'available' => 2];
 usort($games, fn($a,$b) =>
@@ -62,8 +69,10 @@ $logoUrl = $sd['LogoUrl'] ?? ($sd['LogoURL'] ?? '');
 $website = $sd['Website']     ?? '';
 $email   = $sd['Email']       ?? '';
 $bgg     = $sd['BGG']         ?? '';
-$insta   = $sd['Instagram']   ?? '';
-$twitter = $sd['Twitter']     ?? '';
+$insta    = $sd['Instagram']  ?? '';
+$twitter  = $sd['Twitter']    ?? '';
+$xdotcom  = $sd['X']          ?? '';
+$facebook = $sd['Facebook']   ?? '';
 $copy    = $sd['Copyright']   ?? '&copy; ' . date('Y') . ' ' . htmlspecialchars($company, ENT_QUOTES);
 
 // Colors
@@ -311,10 +320,10 @@ foreach ($games as $g) {
     }
     .hero-title a:hover { border-bottom-color: #fff; }
     .hero-tagline {
-      font-size: clamp(.85rem, 1.3vw, 1rem); font-weight: 300;
-      color: rgba(255,255,255,.78); letter-spacing: .06em; line-height: 1.65;
-      text-transform: uppercase; max-width: 480px; margin-bottom: 1.25rem;
-      text-shadow: 0 1px 6px rgba(0,0,0,.4);
+      font-size: clamp(1.05rem, 2vw, 1.4rem); font-weight: 400;
+      color: rgba(255,255,255,.92); letter-spacing: .06em; line-height: 1.65;
+      text-transform: uppercase; max-width: 560px; margin-bottom: 1.25rem;
+      text-shadow: 0 1px 8px rgba(0,0,0,.5);
     }
     .hero-findout {
       display: inline-flex; align-items: center; gap: .55rem;
@@ -541,34 +550,51 @@ foreach ($games as $g) {
     /* ────────────────────────────────── CONTACT */
     .contact-section {
       background: var(--bg-card); border-top: 1px solid var(--border);
-      padding: 4rem 2.5rem;
+      padding: 2.5rem 2.5rem;
     }
-    .contact-inner { max-width: 680px; margin: 0 auto; }
+    .contact-inner {
+      max-width: 900px; margin: 0 auto;
+      display: flex; gap: 3rem; align-items: flex-start;
+    }
+    .contact-copy { flex: 0 0 auto; width: 200px; padding-top: .25rem; }
     .contact-heading {
       font-family: 'Barlow Condensed', sans-serif;
-      font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 900;
-      color: var(--text); margin-bottom: .5rem;
+      font-size: clamp(1.4rem, 2.5vw, 1.9rem); font-weight: 900;
+      color: var(--text); margin-bottom: .4rem;
     }
-    .contact-sub { font-size: .9rem; color: var(--text-dim); margin-bottom: 2rem; }
-    .contact-form {}
-    .cf-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
-    .cf-field { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: .35rem; }
-    .cf-label { font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); }
+    .contact-sub { font-size: .82rem; color: var(--text-dim); line-height: 1.55; margin: 0; }
+    .contact-form { flex: 1; }
+    .cf-row { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: .75rem; }
+    .cf-field { flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: .3rem; }
+    .cf-field-full { margin-bottom: .75rem; display: flex; flex-direction: column; gap: .3rem; }
+    .cf-label { font-size: .65rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); }
     .cf-input {
       background: var(--bg); border: 1px solid var(--border); border-radius: 3px;
-      color: var(--text); padding: .75rem 1rem; font-size: .9rem; font-family: inherit;
+      color: var(--text); padding: .6rem .85rem; font-size: .88rem; font-family: inherit;
       transition: border-color .2s; outline: none; width: 100%;
     }
     .cf-input:focus { border-color: var(--accent); }
+    .cf-textarea {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 3px;
+      color: var(--text); padding: .6rem .85rem; font-size: .88rem; font-family: inherit;
+      transition: border-color .2s; outline: none; width: 100%;
+      resize: vertical; min-height: 80px; line-height: 1.5;
+    }
+    .cf-textarea:focus { border-color: var(--accent); }
+    .cf-footer { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
     .cf-submit {
       background: var(--accent); color: #fff; border: none; border-radius: 3px;
-      padding: .8rem 2rem; font-size: .78rem; font-weight: 600; letter-spacing: .1em;
-      text-transform: uppercase; cursor: pointer; transition: background .2s;
+      padding: .65rem 1.75rem; font-size: .75rem; font-weight: 600; letter-spacing: .1em;
+      text-transform: uppercase; cursor: pointer; transition: background .2s; white-space: nowrap;
     }
     .cf-submit:hover { background: var(--accent-h); }
-    .cf-notice { margin-top: .75rem; font-size: .82rem; min-height: 1.2em; }
+    .cf-notice { font-size: .82rem; min-height: 1.2em; margin: 0; }
     .cf-notice.ok  { color: #4ade80; }
     .cf-notice.err { color: #f87171; }
+    @media (max-width: 640px) {
+      .contact-inner { flex-direction: column; gap: 1.25rem; }
+      .contact-copy { width: auto; }
+    }
     .footer-brand { flex: 1; min-width: 200px; }
     .footer-company-name {
       font-family: 'Barlow Condensed', sans-serif;
@@ -580,13 +606,16 @@ foreach ($games as $g) {
       font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: .5rem;
     }
     .footer-about { font-size: .8rem; color: var(--text-muted); line-height: 1.75; max-width: 380px; }
-    .footer-links { display: flex; flex-wrap: wrap; gap: .6rem 1.5rem; align-items: center; }
-    .footer-links a {
+    .footer-links { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+    .footer-social {
+      display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: transparent; border: 1px solid var(--border);
       color: var(--text-muted); text-decoration: none;
-      font-size: .72rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
-      transition: color .2s;
+      transition: background .2s, color .2s, border-color .2s;
     }
-    .footer-links a:hover { color: var(--accent); }
+    .footer-social:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .footer-social svg { width: 15px; height: 15px; display: block; }
     .footer-bottom {
       display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
       gap: 1rem; padding-top: 1.5rem; border-top: 1px solid var(--border);
@@ -619,7 +648,9 @@ foreach ($games as $g) {
   <?php if ($tagline): ?><span class="hdr-tagline-sm"><?= esc($tagline) ?></span><?php endif; ?>
   <nav class="hdr-nav">
     <a href="#catalog">Games</a>
-    <?php if ($about): ?><a href="#about">About</a><?php endif; ?>
+    <?php if (file_exists($dir . '/news.json')): ?><a href="news.php">News</a><?php endif; ?>
+    <?php if (file_exists($dir . '/about.json')): ?><a href="about.php">About</a>
+    <?php elseif ($about): ?><a href="#about">About</a><?php endif; ?>
     <a class="hdr-cta" href="#contact">Contact</a>
   </nav>
 </header>
@@ -762,8 +793,10 @@ foreach ($games as $g) {
 <!-- ── Contact form ───────────────────────────────────────────────────────────── -->
 <section class="contact-section" id="contact">
   <div class="contact-inner">
-    <h2 class="contact-heading">Get in Touch</h2>
-    <?php if ($tagline): ?><p class="contact-sub"><?= esc($tagline) ?></p><?php endif; ?>
+    <div class="contact-copy">
+      <h2 class="contact-heading">Get in Touch</h2>
+      <?php if ($tagline): ?><p class="contact-sub"><?= esc($tagline) ?></p><?php endif; ?>
+    </div>
     <form class="contact-form" action="contact.php" method="post" novalidate>
       <div class="cf-row">
         <div class="cf-field">
@@ -775,8 +808,14 @@ foreach ($games as $g) {
           <input class="cf-input" type="email" id="cf-email" name="email" placeholder="your@email.com" required>
         </div>
       </div>
-      <button class="cf-submit" type="submit">Send Message</button>
-      <p class="cf-notice" id="cfNotice"></p>
+      <div class="cf-field-full">
+        <label class="cf-label" for="cf-message">Message</label>
+        <textarea class="cf-textarea" id="cf-message" name="message" placeholder="Tell us what's on your mind…"></textarea>
+      </div>
+      <div class="cf-footer">
+        <button class="cf-submit" type="submit">Send Message</button>
+        <p class="cf-notice" id="cfNotice"></p>
+      </div>
     </form>
   </div>
 </section>
@@ -789,8 +828,26 @@ foreach ($games as $g) {
       <?php if ($address = $sd['Address'] ?? ''): ?><p class="footer-address"><?= nl2br(esc($address)) ?></p><?php endif; ?>
     </div>
     <div class="footer-links">
-      <?php if ($insta):   ?><a href="<?= esc($insta) ?>"   target="_blank" rel="noopener">Instagram</a><?php endif; ?>
-      <?php if ($twitter): ?><a href="<?= esc($twitter) ?>" target="_blank" rel="noopener">Twitter / X</a><?php endif; ?>
+      <?php if ($facebook): ?>
+      <a class="footer-social" href="<?= esc($facebook) ?>" target="_blank" rel="noopener" aria-label="Facebook">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      </a>
+      <?php endif; ?>
+      <?php if ($twitter): ?>
+      <a class="footer-social" href="<?= esc($twitter) ?>" target="_blank" rel="noopener" aria-label="Twitter">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
+      </a>
+      <?php endif; ?>
+      <?php if ($xdotcom): ?>
+      <a class="footer-social" href="<?= esc($xdotcom) ?>" target="_blank" rel="noopener" aria-label="X">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      </a>
+      <?php endif; ?>
+      <?php if ($insta): ?>
+      <a class="footer-social" href="<?= esc($insta) ?>" target="_blank" rel="noopener" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+      </a>
+      <?php endif; ?>
     </div>
   </div>
   <div class="footer-bottom">
@@ -806,9 +863,10 @@ foreach ($games as $g) {
   var numEl   = document.getElementById('slideNum');
   var total   = slides.length;
   if (total < 2) {
-    // Single slide: just start Ken Burns if image
+    // Single slide: start Ken Burns if image, then update text/findout link and stop.
     var s = slides[0];
     if (s && s.dataset.type === 'image') startKB(s, 0);
+    updateSlideText(s);
     return;
   }
   var cur     = 0;
@@ -829,11 +887,16 @@ foreach ($games as $g) {
   var titleEl   = document.getElementById('heroTitle');
   var taglineEl = document.getElementById('heroTagline');
   var findOutEl = document.getElementById('heroFindOut');
-  // Map lowercase game name → product page URL
-  var gameLinks = <?= json_encode(array_combine(
-      array_map('strtolower', array_column($games, 'Name')),
-      array_map(fn($g) => $_siteUrl . 'game.php?name=' . rawurlencode($g['Name']), $games)
-  )) ?>;
+  // Map lowercase game name → product page URL (only for games with a JSON data file on disk)
+  var gamesWithJson = <?= json_encode($gamesWithJson) ?>;
+  var gameLinks = {};
+  <?php foreach ($games as $g):
+      $n = strtolower(trim($g['Name']));
+  ?>
+  if (gamesWithJson.indexOf(<?= json_encode($n) ?>) !== -1) {
+    gameLinks[<?= json_encode($n) ?>] = <?= json_encode($_siteUrl . 'game.php?name=' . rawurlencode($g['Name'])) ?>;
+  }
+  <?php endforeach; ?>
   function updateSlideText(slide) {
     var v1 = slide.dataset.v1 || '';
     var v2 = slide.dataset.v2 || '';

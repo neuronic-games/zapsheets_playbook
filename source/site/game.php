@@ -205,8 +205,10 @@ $company    = $sd['CompanyName'] ?? '';
 $appIconRaw = $sett['AppIconImageUrl'] ?? ($sd['AppIconImageUrl'] ?? '');
 $logoUrl = cachedUrl($sd['LogoUrl'] ?? ($sd['LogoURL'] ?? ''));
 $address = $sd['Address']   ?? '';
-$insta   = $sd['Instagram'] ?? '';
-$twitter = $sd['Twitter']   ?? '';
+$insta    = $sd['Instagram'] ?? '';
+$twitter  = $sd['Twitter']   ?? '';
+$xdotcom  = $sd['X']         ?? '';
+$facebook = $sd['Facebook']  ?? '';
 $copy    = $sd['Copyright'] ?? ($company ? '&copy; ' . date('Y') . ' ' . htmlspecialchars($company, ENT_QUOTES) : '');
 $hasTabs = !empty($videos) || !empty($reviews) || !empty($faqs);
 ?>
@@ -388,6 +390,11 @@ $hasTabs = !empty($videos) || !empty($reviews) || !empty($faqs);
       font-size:.95rem; line-height:1.8; color:var(--text-dim);
       margin-bottom:1.1rem; border-left:2px solid var(--accent); padding-left:.85rem;
     }
+    .desc-text a {
+      color: var(--accent); text-decoration: underline;
+      text-underline-offset: 2px; text-decoration-thickness: 1px;
+    }
+    .desc-text a:hover { color: var(--accentH); }
 
     /* Meta rows */
     .meta-list { margin-bottom:1.25rem; }
@@ -478,14 +485,16 @@ $hasTabs = !empty($videos) || !empty($reviews) || !empty($faqs);
       font-size: .95rem; font-weight: 700; color: var(--text); margin-bottom: .3rem;
     }
     .footer-address { font-size: .78rem; color: var(--text-muted); line-height: 1.65; }
-    .footer-links {
-      display: flex; flex-wrap: wrap; gap: .6rem 1.5rem; align-items: center;
+    .footer-links { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+    .footer-social {
+      display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text-muted); text-decoration: none;
+      transition: background .2s, color .2s, border-color .2s;
     }
-    .footer-links a {
-      font-size: .72rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
-      color: var(--text-muted); text-decoration: none; transition: color .2s;
-    }
-    .footer-links a:hover { color: var(--accent); }
+    .footer-social:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .footer-social svg { width: 15px; height: 15px; display: block; }
     .footer-bottom { border-top: 1px solid var(--border); padding-top: 1.25rem; }
     .footer-copy { font-size: .7rem; color: var(--text-muted); }
 
@@ -602,7 +611,9 @@ $hasTabs = !empty($videos) || !empty($reviews) || !empty($faqs);
   <?php if ($tagline): ?><span class="hdr-tagline"><?= esc($tagline) ?></span><?php endif; ?>
   <nav class="hdr-nav">
     <a href="index.php#catalog">Games</a>
-    <a class="hdr-cta" href="#contact">Contact</a>
+    <?php if (file_exists($dir . '/news.json')): ?><a href="news.php">News</a><?php endif; ?>
+    <?php if (file_exists($dir . '/about.json')): ?><a href="about.php">About</a><?php endif; ?>
+    <a class="hdr-cta" href="index.php#contact">Contact</a>
   </nav>
 </header>
 
@@ -727,7 +738,7 @@ $hasTabs = !empty($videos) || !empty($reviews) || !empty($faqs);
 
       <!-- Description -->
       <?php if ($summary): ?>
-        <p class="desc-text"><?= nl2br(esc($summary)) ?></p>
+        <p class="desc-text"><?= textWithLinks($summary) ?></p>
       <?php endif; ?>
 
       <!-- Mechanics / Categories -->
@@ -893,8 +904,26 @@ $hasTabs = !empty($videos) || !empty($reviews) || !empty($faqs);
       <?php if ($address): ?><p class="footer-address"><?= nl2br(esc($address)) ?></p><?php endif; ?>
     </div>
     <div class="footer-links">
-      <?php if ($insta):   ?><a href="<?= esc($insta) ?>"   target="_blank" rel="noopener">Instagram</a><?php endif; ?>
-      <?php if ($twitter): ?><a href="<?= esc($twitter) ?>" target="_blank" rel="noopener">Twitter / X</a><?php endif; ?>
+      <?php if ($facebook): ?>
+      <a class="footer-social" href="<?= esc($facebook) ?>" target="_blank" rel="noopener" aria-label="Facebook">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      </a>
+      <?php endif; ?>
+      <?php if ($twitter): ?>
+      <a class="footer-social" href="<?= esc($twitter) ?>" target="_blank" rel="noopener" aria-label="Twitter">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
+      </a>
+      <?php endif; ?>
+      <?php if ($xdotcom): ?>
+      <a class="footer-social" href="<?= esc($xdotcom) ?>" target="_blank" rel="noopener" aria-label="X">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      </a>
+      <?php endif; ?>
+      <?php if ($insta): ?>
+      <a class="footer-social" href="<?= esc($insta) ?>" target="_blank" rel="noopener" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+      </a>
+      <?php endif; ?>
     </div>
   </div>
   <?php if ($copy): ?>

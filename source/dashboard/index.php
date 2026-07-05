@@ -139,15 +139,20 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       cursor:pointer; user-select:none;
     }
     .card-header:hover { background:#252545; }
+    .card-title-group {
+      display:flex; align-items:center; gap:.4rem; flex:1; min-width:0;
+    }
     .card-title {
       font-family:'DINBlack',sans-serif; font-size:.9rem;
-      letter-spacing:.03em; flex:1; min-width:0;
+      letter-spacing:.03em; min-width:0;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
     .card-badges { display:flex; align-items:center; gap:.35rem; flex-shrink:0; }
-    .game-designers {
-      font-family:'DINRegular',sans-serif; font-size:.75rem;
-      opacity:.65; font-weight:normal; letter-spacing:0;
+    .game-links-designers {
+      font-family:'DINRegular',sans-serif; font-size:.72rem;
+      color:rgba(255,255,255,.55); white-space:nowrap;
+      align-self:center; flex-shrink:0;
+      padding-right:.15rem;
     }
     .card-chevron {
       font-size:.65rem; opacity:.55; flex-shrink:0;
@@ -182,6 +187,12 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .sub-group:first-child { border-top:none; }
     .pub-passed-header { cursor:pointer; user-select:none; }
     .pub-passed-header:hover { background:#fafafa; }
+    .pub-title-group {
+      display:flex; align-items:center; gap:.35rem; flex:1; min-width:0;
+    }
+    .pub-title-group > span {
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
+    }
     .pub-expand-chevron {
       font-size:.58rem; color:#bbb; margin-left:.2rem; flex-shrink:0;
       display:inline-block; transition:transform .18s ease;
@@ -212,17 +223,23 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     /* ── Entry row ───────────────────────────────────── */
     .entry-row {
       display:grid;
-      grid-template-columns: 88px 88px auto 1fr;
+      grid-template-columns: 86px 130px 80px auto 1fr;
       align-items:center; gap:.5rem;
       padding:.32rem 1rem .32rem 2rem;
       border-top:1px solid #f5f5f5;
       font-size:.8rem;
     }
-    .entry-date  { color:#777; white-space:nowrap; }
-    .entry-event { color:#999; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .entry-status { justify-self:start; }
-    .entry-notes { color:#444; line-height:1.42; min-width:0;
-      overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    .entry-date    { color:#777; white-space:nowrap; }
+    .entry-contact { color:#555; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .entry-event   { color:#999; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .entry-status  { justify-self:start; }
+    .entry-notes   { color:#444; line-height:1.42; min-width:0;
+                     overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    /* ── Alternating publisher background ───────────── */
+    .sub-group.pub-alt > .sub-label { background:#f4f5fb; }
+    .sub-group.pub-alt > .sub-label.pub-passed-header:hover { background:#eaebf5; }
+    .sub-group.pub-alt .entry-row { background:#f4f5fb; }
+    .sub-group.pub-alt .entry-row:hover { background:#eaebf5; }
 
     /* ── Empty / loading ─────────────────────────────── */
     .empty { padding:3rem; text-align:center; color:#999; font-size:.88rem; }
@@ -260,7 +277,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .game-links {
       background:#1a1a2e;
       padding:.5rem 1rem .55rem;
-      display:flex; gap:.35rem; flex-wrap:wrap;
+      display:flex; gap:.35rem; flex-wrap:wrap; align-items:center;
     }
     .game-link-pill {
       display:inline-block; padding:.18rem .65rem;
@@ -321,6 +338,192 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       .tl-ms-label { font-size:.5rem; }
       .tl-ms-date  { font-size:.47rem; }
     }
+
+    /* ── Add-entry buttons ──────────────────────────── */
+    /* Button on game card header (dark bg) */
+    .game-add-btn {
+      font-family:'DINBlack',sans-serif; font-size:.6rem;
+      text-transform:uppercase; letter-spacing:.06em;
+      background:rgba(255,255,255,.14); color:rgba(255,255,255,.85);
+      border:1px solid rgba(255,255,255,.28); border-radius:999px;
+      padding:.18rem .6rem; cursor:pointer; white-space:nowrap; flex-shrink:0;
+      transition:background .15s;
+    }
+    .game-add-btn:hover { background:rgba(255,255,255,.28); }
+    /* Button next to contact name (light bg) */
+    .add-entry-btn {
+      display:inline-flex; align-items:center;
+      font-family:'DINBlack',sans-serif; font-size:.62rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      color:#1a1a2e; background:#e8e8f0; border:none;
+      border-radius:999px; padding:.12rem .5rem;
+      cursor:pointer; white-space:nowrap; transition:background .15s, color .15s;
+    }
+    .add-entry-btn:hover { background:#1a1a2e; color:#fff; }
+
+    /* ── Add-entry dialog ───────────────────────────── */
+    .add-entry-overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.45); z-index:1000;
+      align-items:center; justify-content:center; padding:1rem;
+    }
+    .add-entry-overlay.open { display:flex; }
+    .add-entry-dialog {
+      background:#fff; border-radius:10px;
+      padding:1.4rem 1.5rem; width:min(480px,94vw);
+      box-shadow:0 8px 32px rgba(0,0,0,.22);
+      display:flex; flex-direction:column; gap:.85rem;
+    }
+    .add-entry-title {
+      font-family:'DINBlack',sans-serif; font-size:.95rem; margin:0;
+    }
+    .add-entry-ctx {
+      font-size:.75rem; color:#888; line-height:1.6;
+      background:#f8f8f8; border-radius:6px; padding:.5rem .75rem;
+      white-space:pre-line;
+    }
+    .add-entry-fields { display:flex; flex-direction:column; gap:.6rem; }
+    .add-entry-fields label {
+      display:flex; flex-direction:column; gap:.22rem;
+      font-family:'DINBlack',sans-serif; font-size:.68rem;
+      text-transform:uppercase; letter-spacing:.05em; color:#555;
+    }
+    .add-entry-fields input,
+    .add-entry-fields select,
+    .add-entry-fields textarea {
+      font-family:'DINRegular',sans-serif; font-size:.83rem;
+      border:1px solid #ccc; border-radius:6px;
+      padding:.42rem .7rem; color:#111; outline:none; background:#fff;
+    }
+    .add-entry-fields input:focus,
+    .add-entry-fields select:focus,
+    .add-entry-fields textarea:focus { border-color:#1a1a2e; }
+    .add-entry-fields textarea { resize:vertical; min-height:4.5rem; }
+    .add-entry-row { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+    /* Game label at top of dialog */
+    .add-game-label {
+      font-family:'DINBlack',sans-serif; font-size:.8rem;
+      color:#1a1a2e; letter-spacing:.03em; padding:.4rem .75rem;
+      background:#f0f0f8; border-radius:6px;
+    }
+    /* Pub/contact locked display */
+    .add-locked-ctx {
+      font-size:.78rem; color:#555; background:#f8f8f8;
+      border-radius:6px; padding:.45rem .75rem; line-height:1.5;
+    }
+    /* Select + "+ New" row */
+    .add-select-row { display:flex; gap:.4rem; align-items:stretch; }
+    .add-select-row select { flex:1; }
+    .add-new-btn {
+      font-family:'DINBlack',sans-serif; font-size:.65rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      background:#e8e8f0; color:#1a1a2e; border:none;
+      border-radius:6px; padding:0 .65rem; cursor:pointer;
+      white-space:nowrap; transition:background .15s;
+    }
+    .add-new-btn:hover { background:#1a1a2e; color:#fff; }
+    /* Sub-dialog (New Publisher / New Contact) */
+    .add-new-overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.55); z-index:1100;
+      align-items:center; justify-content:center; padding:1rem;
+    }
+    .add-new-overlay.open { display:flex; }
+    .add-new-dialog {
+      background:#fff; border-radius:10px;
+      padding:1.3rem 1.4rem; width:min(360px,92vw);
+      box-shadow:0 8px 32px rgba(0,0,0,.28);
+      display:flex; flex-direction:column; gap:.75rem;
+    }
+    .add-new-title {
+      font-family:'DINBlack',sans-serif; font-size:.88rem; margin:0;
+    }
+    .add-entry-actions { display:flex; justify-content:flex-end; gap:.6rem; margin-top:.1rem; }
+    .add-cancel-btn {
+      font-family:'DINBlack',sans-serif; font-size:.72rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      background:none; color:#999; border:1px solid #ddd;
+      border-radius:6px; padding:.45rem .9rem; cursor:pointer;
+    }
+    .add-cancel-btn:hover { background:#f5f5f5; color:#333; }
+    .add-submit-btn {
+      font-family:'DINBlack',sans-serif; font-size:.72rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      background:#1a1a2e; color:#fff; border:none;
+      border-radius:6px; padding:.45rem .9rem;
+      cursor:pointer; transition:background .15s;
+    }
+    .add-submit-btn:hover:not(:disabled) { background:#2d2d50; }
+    .add-submit-btn:disabled { opacity:.45; cursor:default; }
+
+    /* ── Entry row clickable ────────────────────────── */
+    .entry-row { cursor:pointer; }
+    .entry-row:hover { background:#f5f6fa; }
+    .entry-notes a { color:inherit; text-decoration:underline; text-underline-offset:2px; }
+
+    /* ── Notes dialog ────────────────────────────────── */
+    .notes-overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.45); z-index:1000;
+      align-items:center; justify-content:center;
+      padding:1rem;
+    }
+    .notes-overlay.open { display:flex; }
+    .notes-dialog {
+      background:#fff; border-radius:10px;
+      padding:1.4rem 1.5rem; width:min(580px,94vw);
+      max-height:82vh; overflow-y:auto;
+      box-shadow:0 8px 32px rgba(0,0,0,.22);
+      display:flex; flex-direction:column; gap:.75rem;
+    }
+    .notes-dialog-meta {
+      font-family:'DINBlack',sans-serif; font-size:.7rem;
+      color:#aaa; text-transform:uppercase; letter-spacing:.05em;
+      border-bottom:1px solid #f0f0f0; padding-bottom:.6rem;
+    }
+    .notes-field-row {
+      display:grid; grid-template-columns:1fr 1fr 1fr; gap:.65rem;
+    }
+    .notes-field-label {
+      display:flex; flex-direction:column; gap:.28rem;
+      font-family:'DINBlack',sans-serif; font-size:.62rem;
+      text-transform:uppercase; letter-spacing:.05em; color:#999;
+    }
+    .notes-field-input {
+      font-family:'DINRegular',sans-serif; font-size:.82rem; color:#222;
+      border:1px solid #ddd; border-radius:6px; padding:.38rem .55rem;
+      outline:none; width:100%; box-sizing:border-box; background:#fff;
+      transition:border-color .15s;
+    }
+    .notes-field-input:focus { border-color:#1a1a2e; }
+    .notes-edit-area {
+      width:100%; min-height:6rem; font-family:'DINRegular',sans-serif;
+      font-size:.88rem; line-height:1.7; color:#222;
+      border:1px solid #ddd; border-radius:6px;
+      padding:.5rem .65rem; resize:vertical; outline:none;
+      box-sizing:border-box; transition:border-color .15s;
+    }
+    .notes-edit-area:focus { border-color:#1a1a2e; }
+    .notes-dialog-actions {
+      display:flex; gap:.5rem; align-items:center;
+      border-top:1px solid #f0f0f0; padding-top:.6rem; margin-top:.1rem;
+    }
+    .notes-update-btn {
+      font-family:'DINBlack',sans-serif; font-size:.7rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      background:#1a1a2e; color:#fff; border:none;
+      border-radius:6px; padding:.42rem .9rem; cursor:pointer;
+      transition:background .15s;
+    }
+    .notes-update-btn:hover:not(:disabled) { background:#2d2d50; }
+    .notes-update-btn:disabled { opacity:.4; cursor:default; }
+    .notes-close {
+      font-family:'DINBlack',sans-serif; font-size:.7rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      color:#999; cursor:pointer; background:none; border:none;
+      margin-left:auto;
+    }
+    .notes-close:hover { color:#333; }
 
     /* ── Share dialog ────────────────────────────────── */
     .share-overlay {
@@ -416,6 +619,112 @@ if (substr($_base, -1) !== '/') $_base .= '/';
   </div>
   <button class="sync-btn" id="syncBtn" onclick="syncData()"><span class="sync-icon">&#8635;</span> Sync</button>
   <button class="share-btn" onclick="openShare()">&#8679; Share</button>
+</div>
+
+<!-- Edit-entry dialog -->
+<div class="notes-overlay" id="notesOverlay" onclick="if(event.target===this)closeNotesDialog()">
+  <div class="notes-dialog">
+    <div class="notes-dialog-meta" id="notesDialogMeta"></div>
+    <div class="notes-field-row">
+      <label class="notes-field-label">Date
+        <input type="date" id="editDate" class="notes-field-input" />
+      </label>
+      <label class="notes-field-label">Status
+        <select id="editStatus" class="notes-field-input">
+          <option value="">—</option>
+          <option value="Pitched">Pitched</option>
+          <option value="Interested">Interested</option>
+          <option value="Passed">Passed</option>
+          <option value="Signed">Signed</option>
+          <option value="Published">Published</option>
+          <option value="Returned">Returned</option>
+        </select>
+      </label>
+      <label class="notes-field-label">Contact
+        <select id="editContact" class="notes-field-input">
+          <option value="">— unknown —</option>
+        </select>
+      </label>
+    </div>
+    <label class="notes-field-label" style="margin-top:.45rem">Event
+      <input type="text" id="editEvent" class="notes-field-input" placeholder="e.g. GenCon 2025" />
+    </label>
+    <label class="notes-field-label" style="margin-top:.45rem">Notes
+      <textarea id="notesEditArea" class="notes-edit-area"></textarea>
+    </label>
+    <div class="notes-dialog-actions">
+      <button class="notes-update-btn" id="notesUpdateBtn" onclick="submitNotesUpdate()">Update</button>
+      <button class="notes-close" onclick="closeNotesDialog()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Entry dialog -->
+<div class="add-entry-overlay" id="addEntryOverlay" onclick="if(event.target===this)closeAddDialog()">
+  <div class="add-entry-dialog">
+    <h2 class="add-entry-title">Add Entry</h2>
+    <div class="add-game-label" id="addGameLabel"></div>
+    <div class="add-entry-fields">
+      <!-- Dropdowns shown when launched from game header -->
+      <div id="addPubContactSection">
+        <label>Publisher
+          <div class="add-select-row">
+            <select id="addPublisherSel" onchange="onPublisherChange()">
+              <option value="">— select publisher —</option>
+            </select>
+            <button class="add-new-btn" id="addNewPubBtn" type="button" onclick="openAddNew('publisher')">+ New</button>
+          </div>
+        </label>
+        <label style="margin-top:.5rem">Contact
+          <div class="add-select-row">
+            <select id="addContactSel">
+              <option value="">— optional —</option>
+            </select>
+            <button class="add-new-btn" type="button" onclick="openAddNew('contact')">+ New</button>
+          </div>
+        </label>
+      </div>
+      <!-- Read-only display when launched from a contact's Add button -->
+      <div id="addLockedSection" class="add-locked-ctx" style="display:none"></div>
+      <div class="add-entry-row" style="margin-top:.5rem">
+        <label>Date
+          <input type="date" id="addDate" />
+        </label>
+        <label>Status
+          <select id="addStatus">
+            <option value="Pitched">Pitched</option>
+            <option value="Interested">Interested</option>
+            <option value="Passed">Passed</option>
+            <option value="Returned">Returned</option>
+            <option value="Signed">Signed</option>
+            <option value="Published">Published</option>
+          </select>
+        </label>
+      </div>
+      <label>Event
+        <input type="text" id="addEvent" placeholder="e.g. Gen Con, PaxU, ..." />
+      </label>
+      <label>Notes
+        <textarea id="addNotes" placeholder="Optional notes…"></textarea>
+      </label>
+    </div>
+    <div class="add-entry-actions">
+      <button class="add-cancel-btn" onclick="closeAddDialog()">Cancel</button>
+      <button class="add-submit-btn" id="addSubmitBtn" onclick="submitAddEntry()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Publisher / New Contact sub-dialog -->
+<div class="add-new-overlay" id="addNewOverlay" onclick="if(event.target===this)closeAddNew()">
+  <div class="add-new-dialog">
+    <h3 class="add-new-title" id="addNewTitle">New Publisher</h3>
+    <div class="add-entry-fields" id="addNewFields"></div>
+    <div class="add-entry-actions">
+      <button class="add-cancel-btn" onclick="closeAddNew()">Cancel</button>
+      <button class="add-submit-btn" id="addNewSubmitBtn" onclick="submitAddNew()">Add</button>
+    </div>
+  </div>
 </div>
 
 <!-- Share dialog -->
@@ -580,6 +889,35 @@ function escHtml(s) {
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// Convert [title, url], [label](url), and bare https:// links to <a> tags.
+// stopProp=true adds onclick="event.stopPropagation()" so clicks on links inside
+// a clickable parent (e.g. the notes span) don't also trigger the parent handler.
+function renderLinks(text, stopProp) {
+  if (!text) return '';
+  var extra = stopProp ? ' onclick="event.stopPropagation()"' : '';
+  var pattern = /\[([^\],]+),\s*(https?:\/\/[^\]]+)\]|\[([^\]]*)\]\((https?:\/\/[^)]+)\)|https?:\/\/\S+/g;
+  var out = '', last = 0, m;
+  while ((m = pattern.exec(text)) !== null) {
+    out += escHtml(text.slice(last, m.index));
+    var label, url;
+    if (m[1] !== undefined) {
+      label = m[1].trim();
+      url   = m[2].trim();
+    } else if (m[3] !== undefined) {
+      label = m[3];
+      url   = m[4];
+    } else {
+      var raw = m[0].replace(/[.,;:!?)'\"]+$/, '');
+      label = raw; url = raw;
+    }
+    out += '<a href="' + escHtml(url) + '" target="_blank" rel="noopener"' + extra + '>'
+         + escHtml(label) + '</a>';
+    last = m.index + m[0].length;
+  }
+  out += escHtml(text.slice(last));
+  return out;
+}
+
 function fmtMonYr(d) {
   if (!d || isNaN(d.getTime())) return '';
   return d.toLocaleDateString('en-US', { month:'short', year:'numeric' });
@@ -708,12 +1046,23 @@ function setSort(s) {
 
 // ── Entry row ─────────────────────────────────────────
 function entryRow(e) {
-  var sc = statusClass(e.Status);
-  return '<div class="entry-row">' +
-    '<span class="entry-date">'   + escHtml(e.Date)   + '</span>' +
-    '<span class="entry-event">'  + escHtml(e.Event)  + '</span>' +
+  var sc    = statusClass(e.Status);
+  var notes = e.Notes || '';
+  var contact = (e.Contact && e.Contact !== '(Unknown)') ? e.Contact : '';
+  return '<div class="entry-row"' +
+    ' data-notes="'     + escHtml(notes)            + '"' +
+    ' data-game="'      + escHtml(e.Game      || '') + '"' +
+    ' data-publisher="' + escHtml(e.Publisher  || '') + '"' +
+    ' data-contact="'   + escHtml(e.Contact    || '') + '"' +
+    ' data-date="'      + escHtml(e.Date       || '') + '"' +
+    ' data-event="'     + escHtml(e.Event      || '') + '"' +
+    ' data-status="'    + escHtml(e.Status     || '') + '"' +
+    ' onclick="rowClick(this)">' +
+    '<span class="entry-date">'    + escHtml(e.Date)  + '</span>' +
+    '<span class="entry-contact">' + escHtml(contact) + '</span>' +
+    '<span class="entry-event">'   + escHtml(e.Event) + '</span>' +
     '<span class="entry-status badge badge-' + sc + '">' + escHtml(e.Status||'—') + '</span>' +
-    '<span class="entry-notes">'  + escHtml(e.Notes)  + '</span>' +
+    '<span class="entry-notes">'   + renderLinks(notes, true) + '</span>' +
     '</div>';
 }
 
@@ -850,11 +1199,12 @@ function buildGameView(pitches) {
       .map(function(f){ return (gameInfo[f]||'').trim(); })
       .filter(function(v){ return v; })
       .join(', ');
-    var gameLabel = designers ? escHtml(g) + ' <span class="game-designers">(' + escHtml(designers) + ')</span>' : escHtml(g);
-
     var gameDateHtml = '';
     html += '<div class="card-header" onclick="toggleCard(this)">';
-    html += '<span class="card-title">' + gameLabel + '</span>';
+    html += '<span class="card-title-group">';
+    html += '<span class="card-title">' + escHtml(g) + '</span>';
+    html += '<button class="game-add-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();addBtnClick(this)">+ Add</button>';
+    html += '</span>';
     html += '<span class="card-badges">' + (published || signed ? '' : at) + gameStatusBadge + gameDateHtml + '</span>';
     html += '<span class="card-chevron">▼</span>';
     html += '</div>';
@@ -889,7 +1239,12 @@ function buildGameView(pitches) {
     })();
 
     html += '<div class="card-body-wrap"><div class="card-body">';
-    if (gameLinkPills) html += '<div class="game-links">' + gameLinkPills + '</div>';
+    if (gameLinkPills || designers) {
+      html += '<div class="game-links">';
+      if (designers) html += '<span class="game-links-designers">' + escHtml(designers) + '</span>';
+      html += gameLinkPills;
+      html += '</div>';
+    }
 
     // Sort publishers alphabetically
     var pubNames = Object.keys(games[g]).sort(function(a,b){ return a.localeCompare(b); });
@@ -898,18 +1253,14 @@ function buildGameView(pitches) {
       html += '<div style="padding:.75rem 1rem;color:#aaa;font-size:.8rem;font-style:italic">No pitches yet</div>';
     }
 
-    pubNames.forEach(function(p) {
-      // Each contact under this publisher
-      var contacts = Object.keys(games[g][p]).sort(function(a,b){
-        if (a==='(Unknown)') return 1; if (b==='(Unknown)') return -1;
-        return a.localeCompare(b);
-      });
-      // Publisher label spanning contacts
+    pubNames.forEach(function(p, pubIdx) {
+      // Flatten all entries across contacts for this publisher
+      var contacts = Object.keys(games[g][p]);
       var pubEntries = [];
       contacts.forEach(function(c){ games[g][p][c].forEach(function(e){ pubEntries.push(e); }); });
       var pubLatest  = latestEntry(pubEntries);
       var pubStatus  = (pubLatest.Status||'').toLowerCase();
-      var pubAgeTag  = ageTag(pubEntries);  // age tag for this specific publisher
+      var pubAgeTag  = ageTag(pubEntries);
 
       var isPassed = pubStatus === 'passed';
       var isSigned = pubStatus === 'signed';
@@ -928,32 +1279,26 @@ function buildGameView(pitches) {
         pubBadge = '<span class="badge badge-pitched" style="margin-right:.75rem">Pitched</span>';
       }
 
-      // All publishers collapsed by default; passed ones are additionally dimmed
       var headerColor = isPassed ? 'color:#aaa;' : 'color:#333;';
-      html += '<div class="sub-group">';
+      var altClass    = pubIdx % 2 === 1 ? ' pub-alt' : '';
+      html += '<div class="sub-group' + altClass + '">';
+      var pubLastContact = pubLatest.Contact || '';
+      var pubAddBtn = '<button class="add-entry-btn"' +
+        ' data-game="'      + escHtml(g) + '"' +
+        ' data-publisher="' + escHtml(p) + '"' +
+        ' data-contact="'   + escHtml(pubLastContact) + '"' +
+        ' data-pub-locked="1"' +
+        ' onclick="event.stopPropagation();addBtnClick(this)">+ Add</button>';
       html += '<div class="sub-label pub-passed-header" onclick="togglePubPassed(this)" style="' + headerColor + 'font-size:.75rem">' +
-              '<span style="flex:1">' + escHtml(p) + '</span>' +
+              '<span class="pub-title-group"><span>' + escHtml(p) + '</span>' + pubAddBtn + '</span>' +
               (isPassed || isSigned ? '' : pubAgeTag) + pubBadge +
               '<span class="pub-expand-chevron">▶</span>' +
               '</div>';
       html += '<div class="pub-body-wrap"><div class="pub-passed-body">';
 
-      contacts.forEach(function(c) {
-        var entries  = games[g][p][c];
-        var rawEmail = '';
-        entries.forEach(function(e){ if (!rawEmail && e.Email) rawEmail = e.Email; });
-        var emailVal = resolveEmail(c, p, rawEmail);
-        var sorted = entries.slice().sort(function(a,b){ return new Date(a.Date)-new Date(b.Date); });
-        if (c !== '(Unknown)') {
-          var mailHref = emailVal ? mailtoHref(emailVal, g) : '';
-          var emailBtn = mailHref
-            ? '<a class="contact-email-btn" href="' + mailHref + '">&#9993; Email</a>'
-            : '';
-          html += '<div class="sub-label" style="padding-left:2.5rem;color:#888;font-size:.68rem">' +
-                  '<span>' + escHtml(c) + '</span>' + emailBtn + '</div>';
-        }
-        sorted.forEach(function(e){ html += entryRow(e); });
-      });
+      // Sort all entries newest-first and render inline (contact shown in each row)
+      pubEntries.sort(function(a,b){ return new Date(b.Date) - new Date(a.Date); });
+      pubEntries.forEach(function(e){ html += entryRow(e); });
 
       html += '</div></div>'; // pub-passed-body, pub-body-wrap
       html += '</div>'; // sub-group
@@ -1087,7 +1432,8 @@ function buildPublisherView(pitches) {
       var gStatusDate = (gamePublished || gameSigned) ? gameStatusDateStr(g, gamePublished, gameSigned) : '';
       var gStatusDateHtml = gStatusDate ? '<span class="status-date">' + escHtml(gStatusDate) + '</span>' : '';
       var gHeaderColor = gIsPassed ? 'color:#aaa;' : 'color:#333;';
-      html += '<div class="sub-group">';
+      var gAltClass = gameNames.indexOf(g) % 2 === 1 ? ' pub-alt' : '';
+      html += '<div class="sub-group' + gAltClass + '">';
       html += '<div class="sub-label pub-passed-header" onclick="togglePubPassed(this)" style="' + gHeaderColor + 'font-size:.75rem">' +
               '<span style="flex:1">' + escHtml(g) + '</span>' +
               (gamePublished || gameSigned || gIsPassed ? '' : gAgeTag) + gBadge + gStatusDateHtml +
@@ -1095,22 +1441,11 @@ function buildPublisherView(pitches) {
               '</div>';
       html += '<div class="pub-body-wrap"><div class="pub-passed-body">';
 
-      contacts.forEach(function(c) {
-        var entries  = pubs[p][g][c];
-        var rawEmail = '';
-        entries.forEach(function(e){ if (!rawEmail && e.Email) rawEmail = e.Email; });
-        var emailVal = resolveEmail(c, p, rawEmail);
-        var sorted = entries.slice().sort(function(a,b){ return new Date(a.Date)-new Date(b.Date); });
-        if (c !== '(Unknown)') {
-          var mailHref = emailVal ? mailtoHref(emailVal, g) : '';
-          var emailBtn = mailHref
-            ? '<a class="contact-email-btn" href="' + mailHref + '">&#9993; Email</a>'
-            : '';
-          html += '<div class="sub-label" style="padding-left:2.5rem;color:#888;font-size:.68rem">' +
-                  '<span>' + escHtml(c) + '</span>' + emailBtn + '</div>';
-        }
-        sorted.forEach(function(e){ html += entryRow(e); });
-      });
+      // Flatten contacts into a single sorted list; contact shown inline in each row
+      var allGameEntries = [];
+      contacts.forEach(function(c){ pubs[p][g][c].forEach(function(e){ allGameEntries.push(e); }); });
+      allGameEntries.sort(function(a,b){ return new Date(b.Date) - new Date(a.Date); });
+      allGameEntries.forEach(function(e){ html += entryRow(e); });
 
       html += '</div></div>'; // pub-passed-body, pub-body-wrap
       html += '</div>'; // sub-group
@@ -1506,10 +1841,470 @@ function togglePubPassed(header) {
   if (chevron) chevron.style.transform = isOpen ? "rotate(90deg)" : "rotate(0deg)";
 }
 
+// ── View-state save / restore (used after adding a row) ──
+function saveViewState() {
+  var openCards = {};   // card-title text → true
+  var openSubs  = {};   // "card-title|||sub-name" → true
+
+  document.querySelectorAll('.card').forEach(function(card) {
+    var titleEl = card.querySelector('.card-title');
+    if (!titleEl) return;
+    var cardKey = titleEl.textContent.trim();
+    if (card.classList.contains('open')) openCards[cardKey] = true;
+
+    card.querySelectorAll('.pub-body-wrap.open').forEach(function(wrap) {
+      var hdr = wrap.previousElementSibling;
+      if (!hdr) return;
+      var nameSpan = hdr.querySelector('span');
+      if (!nameSpan) return;
+      openSubs[cardKey + '|||' + nameSpan.textContent.trim()] = true;
+    });
+  });
+
+  return { scroll: window.scrollY, openCards: openCards, openSubs: openSubs };
+}
+
+function restoreViewState(state) {
+  document.querySelectorAll('.card').forEach(function(card) {
+    var titleEl = card.querySelector('.card-title');
+    if (!titleEl) return;
+    var cardKey = titleEl.textContent.trim();
+    if (state.openCards[cardKey]) card.classList.add('open');
+
+    card.querySelectorAll('.pub-body-wrap').forEach(function(wrap) {
+      var hdr = wrap.previousElementSibling;
+      if (!hdr) return;
+      var nameSpan = hdr.querySelector('span');
+      if (!nameSpan) return;
+      var subKey = cardKey + '|||' + nameSpan.textContent.trim();
+      if (state.openSubs[subKey]) {
+        wrap.classList.add('open');
+        var chevron = hdr.querySelector('.pub-expand-chevron');
+        if (chevron) chevron.style.transform = 'rotate(90deg)';
+      }
+    });
+  });
+
+  requestAnimationFrame(function() { window.scrollTo(0, state.scroll); });
+}
 
 
 
 
+
+
+
+// ── Edit-entry dialog ─────────────────────────────────
+var _notesCtx = {};
+
+// Convert "M/D/YYYY" (sheet) → "YYYY-MM-DD" (date input)
+function sheetDateToInput(d) {
+  if (!d) return '';
+  var p = d.split('/');
+  if (p.length !== 3) return '';
+  return p[2] + '-' + p[0].padStart(2,'0') + '-' + p[1].padStart(2,'0');
+}
+
+function rowClick(el) {
+  openNotesDialog({
+    notes:     el.getAttribute('data-notes')     || '',
+    game:      el.getAttribute('data-game')      || '',
+    publisher: el.getAttribute('data-publisher') || '',
+    contact:   el.getAttribute('data-contact')   || '',
+    date:      el.getAttribute('data-date')      || '',
+    event:     el.getAttribute('data-event')     || '',
+    status:    el.getAttribute('data-status')    || ''
+  });
+}
+
+function openNotesDialog(entry) {
+  _notesCtx = entry;
+  document.getElementById('notesDialogMeta').textContent =
+    [entry.game, entry.publisher].filter(Boolean).join('  ·  ');
+  document.getElementById('editDate').value   = sheetDateToInput(entry.date);
+  document.getElementById('editStatus').value = entry.status;
+  document.getElementById('editEvent').value  = entry.event;
+  document.getElementById('notesEditArea').value = entry.notes;
+
+  // Populate contact dropdown for this publisher
+  var contactSel = document.getElementById('editContact');
+  contactSel.innerHTML = '<option value="">— unknown —</option>';
+  var contacts = getContactsForPublisher(entry.publisher);
+  // Ensure the current contact appears even if not in people index
+  var currentContact = (entry.contact && entry.contact !== '(Unknown)') ? entry.contact : '';
+  if (currentContact && contacts.indexOf(currentContact) === -1) {
+    contacts = [currentContact].concat(contacts);
+  }
+  contacts.forEach(function(c) {
+    var o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    if (c === currentContact) o.selected = true;
+    contactSel.appendChild(o);
+  });
+
+  var btn = document.getElementById('notesUpdateBtn');
+  btn.disabled = false;
+  btn.textContent = 'Update';
+  document.getElementById('notesOverlay').classList.add('open');
+  setTimeout(function() { document.getElementById('notesEditArea').focus(); }, 60);
+}
+
+function closeNotesDialog() {
+  document.getElementById('notesOverlay').classList.remove('open');
+}
+
+function submitNotesUpdate() {
+  var btn = document.getElementById('notesUpdateBtn');
+  btn.disabled = true;
+  btn.textContent = 'Updating…';
+
+  // Convert date input "YYYY-MM-DD" back to sheet format "M/D/YYYY"
+  var rawDate   = document.getElementById('editDate').value;
+  var sheetDate = '';
+  if (rawDate) {
+    var dp = rawDate.split('-');
+    sheetDate = parseInt(dp[1]) + '/' + parseInt(dp[2]) + '/' + dp[0];
+  }
+  var newEvent  = document.getElementById('editEvent').value.trim();
+  var newStatus = document.getElementById('editStatus').value;
+  var newNotes  = document.getElementById('notesEditArea').value;
+
+  var newContact = document.getElementById('editContact').value;
+
+  var body =
+    'id='             + encodeURIComponent(sheet_Id)             +
+    '&game='          + encodeURIComponent(_notesCtx.game)       +
+    '&publisher='     + encodeURIComponent(_notesCtx.publisher)  +
+    '&orig_contact='  + encodeURIComponent(_notesCtx.contact)    +
+    '&orig_date='     + encodeURIComponent(_notesCtx.date)       +
+    '&orig_event='    + encodeURIComponent(_notesCtx.event)      +
+    '&contact='       + encodeURIComponent(newContact)           +
+    '&date='          + encodeURIComponent(sheetDate)            +
+    '&event='         + encodeURIComponent(newEvent)             +
+    '&status='        + encodeURIComponent(newStatus)            +
+    '&notes='         + encodeURIComponent(newNotes);
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/updateRow.php');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onload = function() {
+    btn.disabled = false;
+    btn.textContent = 'Update';
+    var result;
+    try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
+    if (result && result.ok) {
+      // Update in-memory allPitches
+      allPitches.forEach(function(r) {
+        if (r.Game      === _notesCtx.game      &&
+            r.Publisher === _notesCtx.publisher  &&
+            r.Contact   === _notesCtx.contact    &&
+            r.Date      === _notesCtx.date       &&
+            r.Event     === _notesCtx.event) {
+          r.Date    = sheetDate || r.Date;
+          r.Contact = newContact || r.Contact;
+          r.Event   = newEvent;
+          r.Status  = newStatus;
+          r.Notes   = newNotes;
+        }
+      });
+      var _vs = saveViewState();
+      buildSummary(allPitches);
+      buildView();
+      restoreViewState(_vs);
+      closeNotesDialog();
+    } else {
+      alert('Error: ' + ((result && result.error) || 'Could not update row.'));
+    }
+  };
+  xhr.onerror = function() {
+    btn.disabled = false;
+    btn.textContent = 'Update';
+    alert('Network error — could not update.');
+  };
+  xhr.send(body);
+}
+
+// Close dialogs on Escape (sub-dialog first, then main, then notes)
+document.addEventListener('keydown', function(ev) {
+  if (ev.key !== 'Escape') return;
+  if (document.getElementById('addNewOverlay').classList.contains('open')) { closeAddNew(); return; }
+  if (document.getElementById('addEntryOverlay').classList.contains('open')) { closeAddDialog(); return; }
+  closeNotesDialog();
+});
+
+// ── Add Entry ─────────────────────────────────────────
+var _addCtx = {};       // { game, publisher, contact, locked }
+var _addNewMode = '';   // 'publisher' | 'contact'
+
+// ── Publisher / Contact helpers ───────────────────────
+function getPublisherList() {
+  var pubs = {};
+  allPitches.forEach(function(r) { if (r.Publisher) pubs[r.Publisher] = 1; });
+  Object.keys(peopleIndex).forEach(function(key) {
+    var co = key.split('|')[1]; if (co) pubs[co] = 1;
+  });
+  return Object.keys(pubs).sort(function(a,b){ return a.localeCompare(b); });
+}
+
+function getContactsForPublisher(publisher) {
+  var contacts = {};
+  allPitches.forEach(function(r) {
+    if (r.Publisher === publisher && r.Contact && r.Contact !== '(Unknown)') contacts[r.Contact] = 1;
+  });
+  Object.keys(peopleIndex).forEach(function(key) {
+    var parts = key.split('|');
+    if (parts[1] === publisher && parts[0]) contacts[parts[0]] = 1;
+  });
+  return Object.keys(contacts).sort(function(a,b){ return a.localeCompare(b); });
+}
+
+function populatePublishers(selected) {
+  var sel = document.getElementById('addPublisherSel');
+  sel.innerHTML = '<option value="">— select publisher —</option>';
+  getPublisherList().forEach(function(p) {
+    var o = document.createElement('option');
+    o.value = p; o.textContent = p;
+    if (p === selected) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+function populateContacts(publisher, selected) {
+  var sel = document.getElementById('addContactSel');
+  sel.innerHTML = '<option value="">— optional —</option>';
+  getContactsForPublisher(publisher).forEach(function(c) {
+    var o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    if (c === selected) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+function onPublisherChange() {
+  populateContacts(document.getElementById('addPublisherSel').value, '');
+}
+
+// ── Open Add Entry dialog ─────────────────────────────
+function addBtnClick(btn) {
+  openAddDialog(
+    btn.getAttribute('data-game')      || '',
+    btn.getAttribute('data-publisher') || '',
+    btn.getAttribute('data-contact')   || '',
+    !!btn.getAttribute('data-pub-locked')
+  );
+}
+
+function openAddDialog(game, publisher, contact, pubLocked) {
+  var bothLocked = !!(publisher && contact && !pubLocked);
+  _addCtx = { game: game, publisher: publisher, contact: contact, locked: bothLocked, pubLocked: !!pubLocked };
+
+  document.getElementById('addGameLabel').textContent = game;
+
+  if (bothLocked) {
+    document.getElementById('addPubContactSection').style.display = 'none';
+    document.getElementById('addLockedSection').style.display     = '';
+    document.getElementById('addLockedSection').textContent       = publisher + '  ·  ' + contact;
+  } else {
+    document.getElementById('addPubContactSection').style.display = '';
+    document.getElementById('addLockedSection').style.display     = 'none';
+    var pubSel    = document.getElementById('addPublisherSel');
+    var newPubBtn = document.getElementById('addNewPubBtn');
+    if (pubLocked) {
+      populatePublishers(publisher);
+      populateContacts(publisher, contact);
+      pubSel.disabled            = true;
+      pubSel.style.opacity       = '.5';
+      pubSel.style.pointerEvents = 'none';
+      if (newPubBtn) newPubBtn.style.display = 'none';
+    } else {
+      populatePublishers(publisher);
+      populateContacts(publisher, contact);
+      pubSel.disabled            = false;
+      pubSel.style.opacity       = '';
+      pubSel.style.pointerEvents = '';
+      if (newPubBtn) newPubBtn.style.display = '';
+    }
+  }
+
+  var t = new Date();
+  document.getElementById('addDate').value =
+    t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
+  document.getElementById('addEvent').value  = '';
+  document.getElementById('addStatus').value = 'Pitched';
+  document.getElementById('addNotes').value  = '';
+
+  var btn = document.getElementById('addSubmitBtn');
+  btn.disabled = false; btn.textContent = 'Add';
+
+  document.getElementById('addEntryOverlay').classList.add('open');
+  setTimeout(function() {
+    (locked
+      ? document.getElementById('addEvent')
+      : document.getElementById('addPublisherSel')
+    ).focus();
+  }, 60);
+}
+
+function closeAddDialog() {
+  document.getElementById('addEntryOverlay').classList.remove('open');
+}
+
+function submitAddEntry() {
+  var dateVal = document.getElementById('addDate').value;
+  if (!dateVal) { document.getElementById('addDate').focus(); return; }
+
+  var publisher, contact;
+  if (_addCtx.locked) {
+    publisher = _addCtx.publisher;
+    contact   = _addCtx.contact;
+  } else if (_addCtx.pubLocked) {
+    publisher = _addCtx.publisher;
+    contact   = document.getElementById('addContactSel').value;
+  } else {
+    publisher = document.getElementById('addPublisherSel').value;
+    contact   = document.getElementById('addContactSel').value;
+    if (!publisher) { document.getElementById('addPublisherSel').focus(); return; }
+  }
+
+  var dp = dateVal.split('-');
+  var sheetDate = parseInt(dp[1]) + '/' + parseInt(dp[2]) + '/' + dp[0];
+  var eventVal  = document.getElementById('addEvent').value.trim();
+  var statusVal = document.getElementById('addStatus').value;
+  var notesVal  = document.getElementById('addNotes').value.trim();
+
+  var btn = document.getElementById('addSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Adding…';
+
+  var body =
+    'id='         + encodeURIComponent(sheet_Id) +
+    '&game='      + encodeURIComponent(_addCtx.game) +
+    '&publisher=' + encodeURIComponent(publisher) +
+    '&contact='   + encodeURIComponent(contact) +
+    '&date='      + encodeURIComponent(sheetDate) +
+    '&event='     + encodeURIComponent(eventVal) +
+    '&status='    + encodeURIComponent(statusVal) +
+    '&notes='     + encodeURIComponent(notesVal);
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/addRow.php');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onload = function() {
+    btn.disabled = false; btn.textContent = 'Add';
+    var result;
+    try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
+    if (result && result.ok) {
+      allPitches.push({ Game: _addCtx.game, Publisher: publisher, Contact: contact,
+        Date: sheetDate, Event: eventVal, Status: statusVal, Notes: notesVal, Email: '' });
+      filteredPitches = searchQuery
+        ? allPitches.filter(function(r) {
+            return (r.Game||'').toLowerCase().includes(searchQuery)
+                || (r.Publisher||'').toLowerCase().includes(searchQuery)
+                || (r.Contact||'').toLowerCase().includes(searchQuery)
+                || (r.Notes||'').toLowerCase().includes(searchQuery);
+          })
+        : allPitches;
+      var _vs = saveViewState();
+      buildSummary(allPitches);
+      buildView();
+      restoreViewState(_vs);
+      closeAddDialog();
+    } else {
+      alert('Error: ' + ((result && result.error) || xhr.responseText || 'Unknown error'));
+    }
+  };
+  xhr.onerror = function() {
+    btn.disabled = false; btn.textContent = 'Add';
+    alert('Network error — could not add entry.');
+  };
+  xhr.send(body);
+}
+
+// ── New Publisher / New Contact sub-dialog ────────────
+function openAddNew(mode) {
+  _addNewMode = mode;
+  var isContact = mode === 'contact';
+  document.getElementById('addNewTitle').textContent = isContact ? 'New Contact' : 'New Publisher';
+
+  var fields = document.getElementById('addNewFields');
+  if (isContact) {
+    var pub = document.getElementById('addPublisherSel').value;
+    fields.innerHTML =
+      (pub ? '<div class="add-locked-ctx" style="margin-bottom:.5rem">Publisher: ' + escHtml(pub) + '</div>' : '') +
+      '<label>Name<input type="text" id="addNewName" placeholder="Full name" autocomplete="off" /></label>' +
+      '<label style="margin-top:.45rem">Email<input type="email" id="addNewEmail" placeholder="email@example.com (optional)" autocomplete="off" /></label>';
+  } else {
+    fields.innerHTML =
+      '<label>Publisher Name<input type="text" id="addNewName" placeholder="Company name" autocomplete="off" /></label>';
+  }
+
+  var btn = document.getElementById('addNewSubmitBtn');
+  btn.disabled = false; btn.textContent = 'Add';
+  document.getElementById('addNewOverlay').classList.add('open');
+  setTimeout(function() { var el = document.getElementById('addNewName'); if (el) el.focus(); }, 60);
+}
+
+function closeAddNew() {
+  document.getElementById('addNewOverlay').classList.remove('open');
+}
+
+function submitAddNew() {
+  var nameEl = document.getElementById('addNewName');
+  var name = nameEl ? nameEl.value.trim() : '';
+  if (!name) { if (nameEl) nameEl.focus(); return; }
+
+  var btn = document.getElementById('addNewSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Adding…';
+
+  if (_addNewMode === 'publisher') {
+    // No sheet write needed — publisher name is stored in the pitches row
+    var sel = document.getElementById('addPublisherSel');
+    // Check not already in list
+    var exists = Array.from(sel.options).some(function(o){ return o.value === name; });
+    if (!exists) {
+      var opt = document.createElement('option');
+      opt.value = name; opt.textContent = name;
+      sel.appendChild(opt);
+    }
+    sel.value = name;
+    populateContacts(name, '');
+    closeAddNew();
+
+  } else {
+    // Contact — write to people sheet
+    var emailEl = document.getElementById('addNewEmail');
+    var email     = emailEl ? emailEl.value.trim() : '';
+    var publisher = document.getElementById('addPublisherSel').value;
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', APP_BASE + 'push/addPerson.php');
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function() {
+      btn.disabled = false; btn.textContent = 'Add';
+      var result;
+      try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
+      if (result && result.ok) {
+        // Update local people index
+        var key = name + '|' + publisher;
+        if (email) peopleIndex[key] = email;
+        // Refresh contact dropdown
+        populateContacts(publisher, name);
+        closeAddNew();
+      } else {
+        alert('Error: ' + ((result && result.error) || 'Could not save contact'));
+      }
+    };
+    xhr.onerror = function() {
+      btn.disabled = false; btn.textContent = 'Add';
+      alert('Network error — could not save contact.');
+    };
+    xhr.send(
+      'id='      + encodeURIComponent(sheet_Id) +
+      '&name='   + encodeURIComponent(name) +
+      '&company='+ encodeURIComponent(publisher) +
+      '&email='  + encodeURIComponent(email)
+    );
+  }
+}
 
 
 // ── Share ─────────────────────────────────────────────

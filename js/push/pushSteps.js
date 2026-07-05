@@ -180,14 +180,35 @@ function UpdateAppVersion() {
             cache: false,
             dataType: 'json',
             complete: function() {
-                // Proceed whether init succeeded or not
-                isMoreSheets = isSpecificSheet.replaceAll('%20', '').split(',')
-                if(isMoreSheets.length > 1) {
-                    isSpecificSheet = isMoreSheets[sheetIndex]
-                    checkIfSheetExists(isMoreSheets[sheetIndex])
-                } else {
-                    checkIfSheetExists(isSpecificSheet)
-                }
+                // Check which optional tabs (News, About, …) exist, then start pushing.
+                $.ajax({
+                    url: 'getOptionalSheets.php?version=' + Math.random(),
+                    type: 'POST',
+                    data: { 'id': sheet_Id },
+                    cache: false,
+                    complete: function(xhr) {
+                        var optionals = []
+                        try { optionals = JSON.parse(xhr.responseText) || [] } catch(e) {}
+
+                        isMoreSheets = isSpecificSheet.replaceAll('%20', '').split(',')
+
+                        // Append any optional tabs not already in the list
+                        var sheetsLower = isMoreSheets.map(function(s){ return s.toLowerCase() })
+                        $.each(optionals, function(i, tab) {
+                            if (sheetsLower.indexOf(tab.toLowerCase()) === -1) {
+                                isMoreSheets.push(tab)
+                                sheetsLower.push(tab.toLowerCase())
+                            }
+                        })
+
+                        if(isMoreSheets.length > 1) {
+                            isSpecificSheet = isMoreSheets[sheetIndex]
+                            checkIfSheetExists(isMoreSheets[sheetIndex])
+                        } else {
+                            checkIfSheetExists(isSpecificSheet)
+                        }
+                    }
+                })
             }
         })
     }

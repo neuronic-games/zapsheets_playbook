@@ -22,8 +22,9 @@ if (!$toEmail) {
 }
 
 // ── Validate input ────────────────────────────────────────────────────────────
-$name  = trim(strip_tags($_POST['name']  ?? ''));
-$email = trim(strip_tags($_POST['email'] ?? ''));
+$name    = trim(strip_tags($_POST['name']    ?? ''));
+$email   = trim(strip_tags($_POST['email']   ?? ''));
+$message = trim(strip_tags($_POST['message'] ?? ''));
 
 if ($name === '' || $email === '') {
     echo json_encode(['ok' => false, 'message' => 'Please fill in both fields.']);
@@ -36,7 +37,8 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 
 // ── Send email ────────────────────────────────────────────────────────────────
 $subject = ($company ? $company . ' — ' : '') . 'New contact from ' . $name;
-$body    = "Name:  $name\r\nEmail: $email\r\n";
+$body    = "Name:    $name\r\nEmail:   $email\r\n"
+         . ($message !== '' ? "\r\nMessage:\r\n$message\r\n" : '');
 $headers = implode("\r\n", [
     'From: ' . $name . ' <' . $email . '>',
     'Reply-To: ' . $email,

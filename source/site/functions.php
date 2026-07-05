@@ -68,3 +68,64 @@ function statusInfo(string $s): array {
 function esc($s): string {
     return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 }
+
+/**
+ * Render a plain-text string as safe HTML, converting:
+ *   [label](https://...)  → <a href="...">label</a>   (markdown link)
+ *   https://...           → <a href="...">url</a>      (bare URL)
+ * Everything else is HTML-escaped; newlines become <br>.
+ * Links open in a new tab with rel="noopener".
+ */
+function textWithLinks(string $text, string $cssClass = ''): string {
+    if ($text === '') return '';
+
+    $cls  = $cssClass !== '' ? ' class="' . esc($cssClass) . '"' : '';
+    $attr = ' target="_blank" rel="noopener"' . $cls;
+
+    // Matches (in priority order):
+    //   1. [title, https://...]    bracket-comma format
+    //   2. [label](https://...)    markdown format (from gread.py hyperlink export)
+    //   3. https://...             bare URL
+    $pattern = '/\[([^\],]+),\s*(https?:\/\/[^\]]+)\]|\[([^\]]*)\]\((https?:\/\/[^)]+)\)|https?:\/\/\S+/u';
+
+    $out  = '';
+    $last = 0;
+    $len  = strlen($text);
+
+    preg_match_all($pattern, $text, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
+
+    foreach ($matches as $m) {
+        $offset = $m[0][1];
+        $raw    = $m[0][0];
+
+        // Plain text before this match
+        if ($offset > $last) {
+            $out .= nl2br(esc(substr($text, $last, $offset - $last)));
+        }
+
+        if (isset($m[1]) && $m[1][1] !== -1) {
+            // Format 1: [title, url]
+            $label = trim($m[1][0]);
+            $url   = trim($m[2][0]);
+        } elseif (isset($m[3]) && $m[3][1] !== -1) {
+            // Format 2: [label](url)
+            $label = $m[3][0];
+            $url   = $m[4][0];
+        } else {
+            // Format 3: bare URL — strip trailing punctuation
+            $raw   = rtrim($raw, '.,;:!?)\'\"');
+            $label = $raw;
+            $url   = $raw;
+        }
+
+        $out .= '<a href="' . esc($url) . '"' . $attr . '>' . esc($label) . '</a>';
+        $last = $offset + strlen($m[0][0]);
+    }
+
+    // Remaining text after last match
+    if ($last < $len) {
+        $out .= nl2br(esc(substr($text, $last)));
+    }
+
+    return $out;
+}

@@ -14,10 +14,23 @@ if (!file_exists($srcFile)) {
     exit;
 }
 
-$dirs = glob($root . '/sheets/*/dashboard', GLOB_ONLYDIR);
-if (empty($dirs)) {
-    echo 'SKIP: no sheet dashboard directories found';
-    exit;
+// Optional: scope to a single sheet when sheet_id is posted
+$singleId = trim($_POST['sheet_id'] ?? '');
+
+if ($singleId !== '') {
+    // Only deploy to this one sheet
+    $targetDir = $root . '/sheets/' . $singleId . '/dashboard';
+    if (!is_dir($targetDir)) {
+        echo 'ERROR: sheets/' . $singleId . '/dashboard not found';
+        exit;
+    }
+    $dirs = [$targetDir];
+} else {
+    $dirs = glob($root . '/sheets/*/dashboard', GLOB_ONLYDIR);
+    if (empty($dirs)) {
+        echo 'SKIP: no sheet dashboard directories found';
+        exit;
+    }
 }
 
 $count = 0;

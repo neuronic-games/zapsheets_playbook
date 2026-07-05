@@ -28,7 +28,8 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       display:flex; align-items:center; gap:.75rem; flex-wrap:wrap;
     }
     .top-bar-left { flex:1; min-width:0; }
-    .top-bar h1 { font-family:'DINBlack',sans-serif; font-size:1rem; margin:0; letter-spacing:.03em; }
+    .top-bar h1 { font-family:'DINBlack',sans-serif; font-size:1rem; margin:0; letter-spacing:.03em; cursor:pointer; }
+    .top-bar h1:hover { opacity:.8; }
     .top-bar .sub { font-size:.73rem; opacity:.6; margin:0; letter-spacing:.01em; }
     .version-tag { opacity:.4; font-size:.65rem; }
 
@@ -517,7 +518,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .notes-edit-area:focus { border-color:#1a1a2e; }
     .notes-dialog-actions {
-      display:flex; gap:.5rem; align-items:center;
+      display:flex; gap:.5rem; align-items:center; justify-content:flex-end;
       border-top:1px solid #f0f0f0; padding-top:.6rem; margin-top:.1rem;
     }
     .notes-update-btn {
@@ -533,7 +534,6 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       font-family:'DINBlack',sans-serif; font-size:.7rem;
       text-transform:uppercase; letter-spacing:.05em;
       color:#999; cursor:pointer; background:none; border:none;
-      margin-left:auto;
     }
     .notes-close:hover { color:#333; }
 
@@ -603,6 +603,18 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .sync-log-line.skip  { color:#94a3b8; }
     .sync-log-line.error { color:#f87171; }
     .sync-log-line.info  { color:#60a5fa; }
+    .sync-dialog-actions {
+      display:flex; align-items:center; justify-content:flex-end; gap:.5rem;
+    }
+    .sync-update-btn {
+      font-family:'DINBlack',sans-serif; font-size:.72rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      background:#16a34a; color:#fff; border:none;
+      border-radius:6px; padding:.42rem .9rem;
+      cursor:pointer; transition:background .15s;
+    }
+    .sync-update-btn:hover:not(:disabled) { background:#15803d; }
+    .sync-update-btn:disabled { opacity:.45; cursor:default; }
     .sync-done-btn {
       font-family:'DINBlack',sans-serif; font-size:.72rem;
       text-transform:uppercase; letter-spacing:.05em;
@@ -652,7 +664,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .ge-input:focus { border-color:#1a1a2e; }
     .ge-actions {
-      display:flex; gap:.5rem; align-items:center;
+      display:flex; gap:.5rem; align-items:center; justify-content:flex-end;
       border-top:1px solid #f0f0f0; padding-top:.6rem; margin-top:.1rem;
     }
     .ge-save-btn {
@@ -668,7 +680,6 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       font-family:'DINBlack',sans-serif; font-size:.7rem;
       text-transform:uppercase; letter-spacing:.05em;
       color:#999; cursor:pointer; background:none; border:none;
-      margin-left:auto;
     }
     .ge-cancel-btn:hover { color:#333; }
   </style>
@@ -679,7 +690,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 <div class="top-bar">
   <div class="top-bar-inner">
     <div class="top-bar-left">
-      <h1>Pitchboard</h1>
+      <h1 onclick="deployOnly()">Pitchboard</h1>
       <p class="sub" id="subTitle">Loading…</p>
       <p class="sub version-tag" id="versionTag" style="display:none"></p>
     </div>
@@ -725,8 +736,8 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       <textarea id="notesEditArea" class="notes-edit-area"></textarea>
     </label>
     <div class="notes-dialog-actions">
-      <button class="notes-update-btn" id="notesUpdateBtn" onclick="submitNotesUpdate()">Update</button>
       <button class="notes-close" onclick="closeNotesDialog()">Close</button>
+      <button class="notes-update-btn" id="notesUpdateBtn" onclick="submitNotesUpdate()">Update</button>
     </div>
   </div>
 </div>
@@ -761,8 +772,8 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       <label class="ge-label">Video URL<input type="url" id="geVideo" class="ge-input" placeholder="https://…" /></label>
     </div>
     <div class="ge-actions">
-      <button class="ge-save-btn" id="geSaveBtn" onclick="submitGameEdit()">Save</button>
       <button class="ge-cancel-btn" onclick="closeGameEditDialog()">Cancel</button>
+      <button class="ge-save-btn" id="geSaveBtn" onclick="submitGameEdit()">Save</button>
     </div>
   </div>
 </div>
@@ -853,7 +864,10 @@ if (substr($_base, -1) !== '/') $_base .= '/';
   <div class="sync-dialog">
     <h2 id="syncDialogTitle">Syncing…</h2>
     <div class="sync-log" id="syncLog"></div>
-    <button class="sync-done-btn" id="syncDoneBtn" disabled onclick="closeSyncDialog()">Done</button>
+    <div class="sync-dialog-actions">
+      <button class="sync-update-btn" id="syncUpdateBtn" style="display:none" onclick="updatePitchboard()">↑ Update Pitchboard</button>
+      <button class="sync-done-btn" id="syncDoneBtn" disabled onclick="closeSyncDialog()">Done</button>
+    </div>
   </div>
 </div>
 
@@ -1349,8 +1363,8 @@ function buildGameView(pitches) {
     if (designers) html += '<span class="game-links-designers">' + escHtml(designers) + '</span>';
     html += gameLinkPills;
     html += '<span style="flex:1"></span>';
-    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();addBtnClick(this)">Pitch</button>';
-    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();editGameClick(this)">Edit</button>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();addBtnClick(this)">New Pitch</button>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();editGameClick(this)">Edit Game</button>';
     html += '</div>';
 
     // Sort publishers alphabetically
@@ -1395,7 +1409,7 @@ function buildGameView(pitches) {
         ' data-publisher="' + escHtml(p) + '"' +
         ' data-contact="'   + escHtml(pubLastContact) + '"' +
         ' data-pub-locked="1"' +
-        ' onclick="event.stopPropagation();addBtnClick(this)">+ Add</button>';
+        ' onclick="event.stopPropagation();addBtnClick(this)">+ Pitch</button>';
       html += '<div class="sub-label pub-passed-header" onclick="togglePubPassed(this)" style="' + headerColor + 'font-size:.75rem">' +
               '<span class="pub-title-group"><span>' + escHtml(p) + '</span>' + pubAddBtn + '</span>' +
               (isPassed || isSigned ? '' : pubAgeTag) + pubBadge +
@@ -1541,8 +1555,15 @@ function buildPublisherView(pitches) {
       var gHeaderColor = gIsPassed ? 'color:#aaa;' : 'color:#333;';
       var gAltClass = gameNames.indexOf(g) % 2 === 1 ? ' pub-alt' : '';
       html += '<div class="sub-group' + gAltClass + '">';
+      var gLastContact = gLatest.Contact || '';
+      var gAddBtn = '<button class="add-entry-btn"' +
+        ' data-game="'      + escHtml(g) + '"' +
+        ' data-publisher="' + escHtml(p) + '"' +
+        ' data-contact="'   + escHtml(gLastContact) + '"' +
+        ' data-pub-locked="1"' +
+        ' onclick="event.stopPropagation();addBtnClick(this)">+ Pitch</button>';
       html += '<div class="sub-label pub-passed-header" onclick="togglePubPassed(this)" style="' + gHeaderColor + 'font-size:.75rem">' +
-              '<span style="flex:1">' + escHtml(g) + '</span>' +
+              '<span class="pub-title-group"><span>' + escHtml(g) + '</span>' + gAddBtn + '</span>' +
               (gamePublished || gameSigned || gIsPassed ? '' : gAgeTag) + gBadge + gStatusDateHtml +
               '<span class="pub-expand-chevron">▶</span>' +
               '</div>';
@@ -2623,6 +2644,7 @@ function openSyncDialog() {
   document.getElementById('syncLog').innerHTML = '';
   document.getElementById('syncDialogTitle').textContent = 'Syncing…';
   document.getElementById('syncDoneBtn').disabled = true;
+  document.getElementById('syncUpdateBtn').style.display = 'none';
   document.getElementById('syncOverlay').classList.add('open');
 }
 function closeSyncDialog() {
@@ -2637,7 +2659,7 @@ function syncLog(msg, type) {
   log.scrollTop = log.scrollHeight;
 }
 
-// ── Sync (push then reload) ───────────────────────────
+// ── Sync (pull sheet data then reload) ───────────────
 function syncData() {
   var btn = document.getElementById('syncBtn');
   btn.disabled = true;
@@ -2655,45 +2677,19 @@ function syncData() {
       syncLog('Done.', 'ok');
       document.getElementById('syncDialogTitle').textContent = 'Sync Complete';
       document.getElementById('syncDoneBtn').disabled = false;
+      document.getElementById('syncUpdateBtn').style.display = '';
       btn.disabled = false;
       btn.classList.remove('syncing');
     });
   }
 
-  function deploySource() {
-    syncLog('Deploying source files…', 'info');
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', APP_BASE + 'push/deploySource.php');
-    xhr.onload = function() {
-      var lines = (xhr.responseText || '').trim().split('\n');
-      lines.forEach(function(line) {
-        line = line.trim();
-        if (!line) return;
-        if (line.indexOf('ERROR') === 0) {
-          syncLog('  ✗ ' + line, 'error');
-        } else if (line.indexOf('SKIP') === 0) {
-          syncLog('  – ' + line.replace(/^SKIP:\s*/,''), 'skip');
-        } else {
-          syncLog('  ✓ ' + line, 'ok');
-        }
-      });
-      finish();
-    };
-    xhr.onerror = function() {
-      syncLog('  ✗ deploy: network error', 'error');
-      finish();
-    };
-    xhr.send();
-  }
-
   function pushNext() {
     if (idx >= sheets.length) {
-      syncLog('─────────────────────────────', 'info');
-      deploySource();
+      finish();
       return;
     }
     var sheetName = sheets[idx++];
-    syncLog('Pushing ' + sheetName + '…', 'info');
+    syncLog('Pulling ' + sheetName + '…', 'info');
     var xhr = new XMLHttpRequest();
     xhr.open('POST', pushBase);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
@@ -2718,6 +2714,56 @@ function syncData() {
              '&date_string=');
   }
   pushNext();
+}
+
+// ── Deploy only (called from header title click) ──────
+function deployOnly() {
+  document.getElementById('syncLog').innerHTML = '';
+  document.getElementById('syncDialogTitle').textContent = 'Updating Pitchboard…';
+  document.getElementById('syncDoneBtn').disabled = true;
+  document.getElementById('syncUpdateBtn').style.display = 'none';
+  document.getElementById('syncOverlay').classList.add('open');
+  updatePitchboard(function() {
+    document.getElementById('syncDialogTitle').textContent = 'Update Complete';
+    document.getElementById('syncDoneBtn').disabled = false;
+  });
+}
+
+// ── Update Pitchboard (deploy source to this sheet) ──
+function updatePitchboard(onDone) {
+  var btn = document.getElementById('syncUpdateBtn');
+  btn.disabled = true;
+  btn.textContent = 'Updating…';
+  syncLog('─────────────────────────────', 'info');
+  syncLog('Deploying Pitchboard…', 'info');
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/deploySource.php');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onload = function() {
+    var lines = (xhr.responseText || '').trim().split('\n');
+    lines.forEach(function(line) {
+      line = line.trim();
+      if (!line) return;
+      if (line.indexOf('ERROR') === 0) {
+        syncLog('  ✗ ' + line, 'error');
+      } else if (line.indexOf('SKIP') === 0) {
+        syncLog('  – ' + line.replace(/^SKIP:\s*/, ''), 'skip');
+      } else {
+        syncLog('  ✓ ' + line, 'ok');
+      }
+    });
+    btn.disabled = false;
+    btn.textContent = '↑ Update Pitchboard';
+    if (onDone) onDone();
+  };
+  xhr.onerror = function() {
+    syncLog('  ✗ deploy: network error', 'error');
+    btn.disabled = false;
+    btn.textContent = '↑ Update Pitchboard';
+    if (onDone) onDone();
+  };
+  xhr.send('sheet_id=' + encodeURIComponent(sheet_Id));
 }
 
 // Initial load

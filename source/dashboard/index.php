@@ -51,8 +51,8 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .view-toggle button.active { background:#fff; color:#1a1a2e; }
 
-    /* ── Top-bar buttons (Share / Sync) ─────────────── */
-    .share-btn, .sync-btn {
+    /* ── Top-bar buttons (Sync) ─────────────────────── */
+    .sync-btn {
       display:inline-flex; align-items:center; gap:.35rem;
       font-family:'DINBlack',sans-serif; font-size:.7rem;
       text-transform:uppercase; letter-spacing:.06em;
@@ -61,7 +61,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       padding:.38rem .8rem; cursor:pointer;
       transition:background .15s; white-space:nowrap; flex-shrink:0;
     }
-    .share-btn:hover, .sync-btn:hover { background:rgba(255,255,255,.25); }
+    .sync-btn:hover { background:rgba(255,255,255,.25); }
     .sync-btn:disabled { opacity:.5; cursor:default; }
     .sync-btn:disabled:hover { background:rgba(255,255,255,.15); }
     @keyframes spin { to { transform:rotate(360deg); } }
@@ -573,45 +573,6 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .notes-close:hover { color:#333; }
 
-    /* ── Share dialog ────────────────────────────────── */
-    .share-overlay {
-      display:none; position:fixed; inset:0;
-      background:rgba(0,0,0,.45); z-index:1000;
-      align-items:center; justify-content:center;
-    }
-    .share-overlay.open { display:flex; }
-    .share-dialog {
-      background:#fff; border-radius:10px;
-      padding:1.4rem; width:min(460px,92vw);
-      box-shadow:0 8px 32px rgba(0,0,0,.22);
-    }
-    .share-dialog h2 { font-family:'DINBlack',sans-serif; font-size:.95rem; margin:0 0 .25rem; }
-    .share-dialog p  { font-size:.8rem; color:#666; margin:0 0 .9rem; }
-    .share-url-row   { display:flex; gap:.45rem; align-items:stretch; }
-    .share-url-input {
-      flex:1; font-size:.75rem; border:1px solid #ccc;
-      border-radius:6px; padding:.45rem .7rem;
-      color:#333; background:#f8f8f8;
-      overflow:hidden; text-overflow:ellipsis;
-      white-space:nowrap; outline:none;
-    }
-    .copy-btn {
-      font-family:'DINBlack',sans-serif; font-size:.72rem;
-      text-transform:uppercase; letter-spacing:.05em;
-      background:#1a1a2e; color:#fff; border:none;
-      border-radius:6px; padding:.45rem .9rem;
-      cursor:pointer; white-space:nowrap;
-      transition:background .15s; flex-shrink:0;
-    }
-    .copy-btn:hover  { background:#2d2d50; }
-    .copy-btn.copied { background:#16a34a; }
-    .share-close {
-      display:block; margin-top:.9rem; text-align:right;
-      font-size:.78rem; color:#999; cursor:pointer;
-      background:none; border:none; font-family:'DINRegular',sans-serif;
-    }
-    .share-close:hover { color:#333; }
-
     /* ── Sync dialog ─────────────────────────────────── */
     .sync-overlay {
       display:none; position:fixed; inset:0;
@@ -779,7 +740,6 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       <button id="btnPublisher"               onclick="setView('publisher')">Publishers</button>
     </div>
     <button class="sync-btn" id="syncBtn" onclick="syncData()"><span class="sync-icon">&#8635;</span> Sync</button>
-    <button class="share-btn" onclick="openShare()">&#8679; Share</button>
   </div>
 </div>
 
@@ -975,18 +935,6 @@ if (substr($_base, -1) !== '/') $_base .= '/';
   </div>
 </div>
 
-<!-- Share dialog -->
-<div class="share-overlay" id="shareOverlay" onclick="if(event.target===this)closeShare()">
-  <div class="share-dialog">
-    <h2>Share Pitches</h2>
-    <p>Send this link to share your pitch data.</p>
-    <div class="share-url-row">
-      <input class="share-url-input" id="shareUrl" type="text" readonly />
-      <button class="copy-btn" id="copyBtn" onclick="copyUrl()">Copy</button>
-    </div>
-    <button class="share-close" onclick="closeShare()">Close</button>
-  </div>
-</div>
 
 <!-- Sync dialog -->
 <div class="sync-overlay" id="syncOverlay">
@@ -3121,28 +3069,6 @@ function submitAddNew() {
 }
 
 
-// ── Share ─────────────────────────────────────────────
-function openShare() {
-  document.getElementById('shareUrl').value =
-    window.location.origin + '/' + sheet_Id + '/pitches.json';
-  var btn = document.getElementById('copyBtn');
-  btn.textContent = 'Copy'; btn.classList.remove('copied');
-  document.getElementById('shareOverlay').classList.add('open');
-}
-function closeShare() { document.getElementById('shareOverlay').classList.remove('open'); }
-function copyUrl() {
-  var input = document.getElementById('shareUrl');
-  var btn   = document.getElementById('copyBtn');
-  input.select();
-  navigator.clipboard.writeText(input.value).then(function() {
-    btn.textContent='Copied!'; btn.classList.add('copied');
-    setTimeout(function(){ btn.textContent='Copy'; btn.classList.remove('copied'); }, 2000);
-  }).catch(function() {
-    try { document.execCommand('copy'); } catch(e){}
-    btn.textContent='Copied!'; btn.classList.add('copied');
-    setTimeout(function(){ btn.textContent='Copy'; btn.classList.remove('copied'); }, 2000);
-  });
-}
 
 // ── Load ──────────────────────────────────────────────
 function loadJSON(url, key, fallbackUrl, onDone) {

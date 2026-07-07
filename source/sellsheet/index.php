@@ -356,8 +356,14 @@ function _jsonLoad(path, key) {
   });
 }
 
+var _gameParam = (function() {
+  var m = window.location.search.match(/[?&]game=([^&]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+})();
+var _gameFile = _gameParam ? ('game-' + _gameParam + '-' + lang + '.json') : ('game-' + lang + '.json');
+
 _jsonLoad(BASE + 'settings.json',           'settings');
-_jsonLoad(BASE + 'game-' + lang + '.json',  'bgg');
+_jsonLoad(BASE + _gameFile,                 'bgg');
 _jsonLoad(BASE + 'splash-' + lang + '.json','splash');
 _jsonLoad(BASE + 'bgg.json',                'stats');
 

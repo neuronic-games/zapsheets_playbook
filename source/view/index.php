@@ -648,9 +648,15 @@ function _checkAllLoaded() {
   if (_loadDone >= _loadTotal) render();
 }
 
-_jsonLoad(BASE + 'settings.json',          'settings');
-_jsonLoad(BASE + 'bgg.json',               'stats');
-_jsonLoad(BASE + 'game-' + lang + '.json', 'bgg');
+var _gameParam = (function() {
+  var m = window.location.search.match(/[?&]game=([^&]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+})();
+var _gameFile = _gameParam ? ('game-' + _gameParam + '-' + lang + '.json') : ('game-' + lang + '.json');
+
+_jsonLoad(BASE + 'settings.json', 'settings');
+_jsonLoad(BASE + 'bgg.json',      'stats');
+_jsonLoad(BASE + _gameFile,       'bgg');
 _jsonLoad(BASE + 'steps-' + lang + '.json','steps');
 _jsonLoad(BASE + 'splash-' + lang + '.json', 'splash');
 _jsonLoad(BASE + 'videos-' + lang + '.json', 'videos');
@@ -1014,7 +1020,8 @@ function render() {
 
   // View Sellsheet — first button, shown when the game has no published year yet
   if (!_yearPublished) {
-    var _sellsheetUrl = window.location.origin + _viewPath.substring(0, _idEnd) + '/sellsheet';
+    var _sellsheetUrl = window.location.origin + _viewPath.substring(0, _idEnd) + '/sellsheet'
+      + (_gameParam ? '?game=' + encodeURIComponent(_gameParam) : '');
     _ctaHtml += '<a class="btn-rules" href="' + _sellsheetUrl + '" target="_blank" rel="noopener">View Sellsheet</a>';
   }
 

@@ -75,9 +75,12 @@ for row in all_values:
 
 json_data = json.dumps(records, ensure_ascii=False)
 
-# Write to ../sheets/{sheet_id}/game-en.json  (path relative to this script)
+# Build a filesystem-safe version of the game name (only '/' is truly invalid on Linux)
+safe_name = game_name.replace('/', '-').replace('\\', '-')
+
+# Write to ../sheets/{sheet_id}/game-{game_name}-en.json
 out_dir  = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sheets', sheet_id)
-out_path = os.path.join(out_dir, 'game-en.json')
+out_path = os.path.join(out_dir, 'game-' + safe_name + '-en.json')
 try:
     os.makedirs(out_dir, exist_ok=True)
     with open(out_path, 'w', encoding='utf8') as f:

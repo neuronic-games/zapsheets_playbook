@@ -798,6 +798,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     <h2 id="vpTitle">Publishing…</h2>
     <div class="sync-log" id="vpLog"></div>
     <div class="sync-dialog-actions">
+      <button class="sync-done-btn" id="vpAddSheetBtn" style="display:none" onclick="vpAddSheet()">Add Sheet</button>
       <button class="sync-done-btn" id="vpDoneBtn" disabled onclick="closeVpDialog()">Done</button>
     </div>
   </div>
@@ -2245,6 +2246,7 @@ function openVpDialog(title) {
   document.getElementById('vpTitle').textContent = title;
   document.getElementById('vpLog').innerHTML = '';
   document.getElementById('vpDoneBtn').disabled = true;
+  document.getElementById('vpAddSheetBtn').style.display = 'none';
   document.getElementById('vpOverlay').classList.add('open');
 }
 function closeVpDialog() {
@@ -2280,7 +2282,7 @@ function _vpDeployAndOpen() {
   var _open = function() {
     vpLog('Opening view page…', 'info');
     vpDone('Done');
-    setTimeout(function() { window.open(BASE + 'view/', '_blank'); }, 400);
+    setTimeout(function() { window.open(BASE + 'view/?game=' + encodeURIComponent(_vpCurrentGame), '_blank'); }, 400);
   };
   xhr3.onload = function() {
     var r3; try { r3 = JSON.parse(xhr3.responseText); } catch(e) { r3 = null; }
@@ -2295,13 +2297,11 @@ function _vpDeployAndOpen() {
 }
 
 // ── View Page ─────────────────────────────────────────
-// Opens the publish dialog, exports the game tab → game-en.json,
-// caches media (showing each file), then opens /view in a new tab.
-function viewPageClick(btn) {
-  var gameName = btn.getAttribute('data-game') || '';
-  if (!gameName) return;
+var _vpCurrentGame = '';   // game name kept for vpAddSheet()
 
-  openVpDialog('Publishing ' + gameName + '…');
+// Inner publish pipeline: export → cache media → deploy → open.
+// Called both by viewPageClick and by vpAddSheet after tab creation.
+function _vpRunPublish(gameName) {
   vpLog('Exporting game data…', 'info');
 
   var xhr = new XMLHttpRequest();
@@ -2312,11 +2312,14 @@ function viewPageClick(btn) {
     try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
 
     if (!result || result.error) {
-      var errMsg = (result && result.error === 'tab_not_found')
-        ? '✕  A sheet named "' + gameName + '" does not exist in your document.'
-        : '✕  ' + ((result && result.error) || xhr.responseText || 'Unknown error');
-      vpLog(errMsg, 'error');
-      vpDone('Failed');
+      if (result && result.error === 'tab_not_found') {
+        vpLog('✕  A sheet named "' + gameName + '" does not exist in your document.', 'error');
+        document.getElementById('vpAddSheetBtn').style.display = '';
+        vpDone('Sheet Not Found');
+      } else {
+        vpLog('✕  ' + ((result && result.error) || xhr.responseText || 'Unknown error'), 'error');
+        vpDone('Failed');
+      }
       return;
     }
 
@@ -2345,6 +2348,43 @@ function viewPageClick(btn) {
   };
   xhr.onerror = function() {
     vpLog('✕  Network error — could not reach the server.', 'error');
+    vpDone('Failed');
+  };
+  xhr.send('id=' + encodeURIComponent(sheet_Id) + '&game=' + encodeURIComponent(gameName));
+}
+
+function viewPageClick(btn) {
+  var gameName = btn.getAttribute('data-game') || '';
+  if (!gameName) return;
+  _vpCurrentGame = gameName;
+  openVpDialog('Publishing ' + gameName + '…');
+  _vpRunPublish(gameName);
+}
+
+// Called when the user clicks Add Sheet in the VP dialog.
+function vpAddSheet() {
+  var gameName = _vpCurrentGame;
+  if (!gameName) return;
+  document.getElementById('vpAddSheetBtn').style.display = 'none';
+  document.getElementById('vpDoneBtn').disabled = true;
+  vpLog('Creating sheet "' + gameName + '"…', 'info');
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/createGameTab.php');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onload = function() {
+    var result;
+    try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
+    if (!result || result.error) {
+      vpLog('✕  ' + ((result && result.error) || xhr.responseText || 'Unknown error'), 'error');
+      vpDone('Failed');
+      return;
+    }
+    vpLog('✓  Sheet "' + (result.tab || gameName) + '" created', 'ok');
+    _vpRunPublish(gameName);
+  };
+  xhr.onerror = function() {
+    vpLog('✕  Network error — could not create sheet.', 'error');
     vpDone('Failed');
   };
   xhr.send('id=' + encodeURIComponent(sheet_Id) + '&game=' + encodeURIComponent(gameName));

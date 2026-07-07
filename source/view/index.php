@@ -598,14 +598,27 @@ var BASE     = APP_BASE + 'sheets/' + sheet_Id + '/';
 
 function cachedImage(url) {
   if (!url) return '';
-  if (url.includes('https://drive.google.com')) {
-    var imgid = url.split('https://drive.google.com')[1].split('/')[3];
-    return BASE + 'cacheImages/' + imgid + '.png';
+  if (url.includes('drive.google.com')) {
+    var imgid = url.split('drive.google.com')[1].split('/')[3];
+    return BASE + 'cache/' + imgid + '.png';
   }
-  var parts = url.split('/');
-  var raw   = parts[parts.length - 1];
-  var name  = raw.indexOf('?') !== -1 ? raw.split('?')[0] : raw;
-  return BASE + 'cacheImages/' + name;
+  var clean = url.split('?')[0].split('#')[0];
+  var name  = clean.replace(/\/$/, '').split('/').pop();
+  return name ? BASE + 'cache/' + name : url;
+}
+
+// Convert a direct image URL to a version that browsers will display inline
+// (not trigger a download). Handles Dropbox dl=1 → dl.dropboxusercontent.com.
+function directImageUrl(url) {
+  if (!url) return url;
+  if (url.includes('dropbox.com')) {
+    // Strip dl param and switch to the CDN subdomain that serves inline
+    return url
+      .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
+      .replace(/[?&]dl=[01]/g, '')
+      .replace(/\?$/, '');
+  }
+  return url;
 }
 
 function decodeHtml(html) {
@@ -711,8 +724,16 @@ function setMainMedia(idx) {
     vid.pause();
     vid.removeAttribute('src');
     vid.style.display = 'none';
-    img.src = item.src;
     img.style.display = 'block';
+    img.onerror = null;
+    img.src = item.src;
+    // If the cached copy is missing, fall back to the direct URL
+    if (item.direct && item.src !== item.direct) {
+      img.onerror = function() {
+        img.onerror = null;
+        img.src = item.direct;
+      };
+    }
   }
 }
 
@@ -809,7 +830,7 @@ function render() {
       var parts = tagValue.split('/');
       var raw = parts[parts.length - 1];
       var fname = raw.indexOf('?') !== -1 ? raw.split('?')[0] : raw;
-      tagImageMap[tagName] = BASE + 'cacheImages/' + fname;
+      tagImageMap[tagName] = BASE + 'cache/' + fname;
     });
   }
   function applyTags(text) {
@@ -847,17 +868,18 @@ function render() {
 
     var _pi = _bgg('ProductImage');
     if (_isHttp(_pi)) {
-      allImages.push({ src: _pi, caption: '', type: 'image', delay: 5 });
+      allImages.push({ src: cachedImage(_pi), direct: directImageUrl(_pi), caption: '', type: 'image', delay: 5 });
     }
 
     var _med = _bgg('Media');
     if (_isHttp(_med)) {
-      allImages.push({ src: _med, caption: '', type: _isVidUrl(_med) ? 'video' : 'image', delay: 5 });
+      var _medType = _isVidUrl(_med) ? 'video' : 'image';
+      allImages.push({ src: cachedImage(_med), direct: directImageUrl(_med), caption: '', type: _medType, delay: 5 });
     }
 
     var _vid = _bgg('Video');
     if (_isHttp(_vid) && _isVidUrl(_vid)) {
-      allImages.push({ src: _vid, caption: '', type: 'video', delay: 5 });
+      allImages.push({ src: _vid, direct: _vid, caption: '', type: 'video', delay: 5 });
     }
   }
 

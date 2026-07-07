@@ -172,13 +172,13 @@ function loadTagsData(callback, sheetId) {
                         var imgPath = '';
                         if (tagValue.includes('https://drive.google.com')) {
                             var imgid = tagValue.split('https://drive.google.com')[1].split('/')[3];
-                            imgPath = '../sheets/' + sid + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                            imgPath = '../sheets/' + sid + '/cache/' + imgid + '.png?version=' + UIVersion;
                         } else {
                             var parts = tagValue.split('/');
                             var imageName = parts[parts.length - 1].indexOf('?') !== -1
                                 ? parts[parts.length - 1].split('?')[0]
                                 : parts[parts.length - 1];
-                            imgPath = '../sheets/' + sid + '/cacheImages/' + imageName + '?version=' + UIVersion;
+                            imgPath = '../sheets/' + sid + '/cache/' + imageName + '?version=' + UIVersion;
                         }
                         tagImageMap[tagName] = imgPath;
                     });

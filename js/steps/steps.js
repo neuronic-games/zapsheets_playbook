@@ -675,16 +675,16 @@ $(document).ready(function() {
                 let imgid = languageStepsData[imgIndex]['Image'].split('https://drive.google.com')[1].split('/')[3];
                 let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                 // Cache Image
-                // cacheImages moved to spreadsheet id folder
-                imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                // cache moved to spreadsheet id folder
+                imagePath = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + UIVersion;
                 
             } else {
                 // Cache Image
                 let name = languageStepsData[imgIndex]['Image'].split('/')
                 let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
                 // New Changes
-                // cacheImages moved to spreadsheet id folder
-                imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + '?version=' + UIVersion;
+                // cache moved to spreadsheet id folder
+                imagePath = '../sheets/' + sheet_Id + '/cache/' + imageName + '?version=' + UIVersion;
             }
             ImgPath = imagePath
         } else {
@@ -856,17 +856,17 @@ $(document).ready(function() {
                 let imgid = languageStepsData[index]['Image'].split('https://drive.google.com')[1].split('/')[3];
                 let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                 // Cache Image
-                // cacheImages moved to spreadsheet id folder
-                //imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                // cache moved to spreadsheet id folder
+                //imagePath = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + Math.random();
+                imagePath = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + UIVersion;
             } else {
                 // Cache Image
                 let name = languageStepsData[index]['Image'].split('/')
                 let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
                 // New Changes
-                // cacheImages moved to spreadsheet id folder
-                //imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                // cache moved to spreadsheet id folder
+                //imagePath = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + Math.random();
+                imagePath = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + UIVersion;
             }
             if(preCachedDone == false) {
                 // Use in case of slow internet
@@ -909,11 +909,11 @@ $(document).ready(function() {
                         let imgid = languageStepsData[i]['Image'].split('https://drive.google.com')[1].split('/')[3];
                         let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                         // Cache Image
-                        // cacheImages moved to spreadsheet id folder
-                        //let imagePath = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                        // cache moved to spreadsheet id folder
+                        //let imagePath = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cache/' + imgid + '.png?version=' + Math.random();
 
-                        //let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                        let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                        //let imagePath = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + Math.random();
+                        let imagePath = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + UIVersion;
 
                         checkIfImageExists(imagePath, (isExists) => {
                             if(isExists) {
@@ -939,11 +939,11 @@ $(document).ready(function() {
                         let name = languageStepsData[i]['Image'].split('/')
                         let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
                         
-                        // cacheImages moved to spreadsheet id folder
-                        //let imagePath = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cacheImages/' + imageName + "?version=" + Math.random();
+                        // cache moved to spreadsheet id folder
+                        //let imagePath = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cache/' + imageName + "?version=" + Math.random();
 
-                        //let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                        let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                        //let imagePath = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + Math.random();
+                        let imagePath = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + UIVersion;
 
                         checkIfImageExists(imagePath, (isExists) => {
                             if(isExists) {
@@ -993,18 +993,18 @@ $(document).ready(function() {
                         let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
                         let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                         // Cache Image
-                        // cacheImages moved to spreadsheet id folder
-                        //imagePathPrev = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                        //imagePathPrev = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                        imagePathPrev = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                        // cache moved to spreadsheet id folder
+                        //imagePathPrev = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cache/' + imgid + '.png?version=' + Math.random();
+                        //imagePathPrev = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + Math.random();
+                        imagePathPrev = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + UIVersion;
                     } else {
                         // Cache Image
                         let name = row_setting['Value'].split('/')
                         let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                        // cacheImages moved to spreadsheet id folder
-                        //imagePathPrev = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cacheImages/' + imageName + "?version=" + Math.random();
-                        //imagePathPrev = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                        imagePathPrev = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                        // cache moved to spreadsheet id folder
+                        //imagePathPrev = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cache/' + imageName + "?version=" + Math.random();
+                        //imagePathPrev = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + Math.random();
+                        imagePathPrev = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + UIVersion;
                     }
                     document.getElementById('prevIcon').src = imagePathPrev;
                 }
@@ -1016,18 +1016,18 @@ $(document).ready(function() {
                         let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
                         let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                         // Cache Image
-                        // cacheImages moved to spreadsheet id folder
-                        //imagePathNext = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                        //imagePathNext = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                        imagePathNext = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                        // cache moved to spreadsheet id folder
+                        //imagePathNext = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cache/' + imgid + '.png?version=' + Math.random();
+                        //imagePathNext = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + Math.random();
+                        imagePathNext = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + UIVersion;
                     } else {
                         // Cache Image
                         let name = row_setting['Value'].split('/')
                         let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                        // cacheImages moved to spreadsheet id folder
-                        //imagePathNext = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cacheImages/' + imageName + "?version=" + Math.random();
-                        //imagePathNext = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                        imagePathNext = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                        // cache moved to spreadsheet id folder
+                        //imagePathNext = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cache/' + imageName + "?version=" + Math.random();
+                        //imagePathNext = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + Math.random();
+                        imagePathNext = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + UIVersion;
                     }
                     document.getElementById('nextIcon').src = imagePathNext;
                 }
@@ -1039,18 +1039,18 @@ $(document).ready(function() {
                         let imgid = row_setting['Value'].split('https://drive.google.com')[1].split('/')[3];
                         let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                         // Cache Image
-                        // cacheImages moved to spreadsheet id folder
-                        //imagePathQuit = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                        //imagePathQuit = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                        imagePathQuit = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                        // cache moved to spreadsheet id folder
+                        //imagePathQuit = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cache/' + imgid + '.png?version=' + Math.random();
+                        //imagePathQuit = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + Math.random();
+                        imagePathQuit = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + UIVersion;
                     } else {
                         // Cache Image
                         let name = row_setting['Value'].split('/')
                         let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                        // cacheImages moved to spreadsheet id folder
-                        //imagePathQuit = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cacheImages/' + imageName + "?version=" + Math.random();
-                        //imagePathQuit = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                        imagePathQuit = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                        // cache moved to spreadsheet id folder
+                        //imagePathQuit = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cache/' + imageName + "?version=" + Math.random();
+                        //imagePathQuit = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + Math.random();
+                        imagePathQuit = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + UIVersion;
                     }
                     document.getElementById('homeIcon').src = imagePathQuit;
                 }
@@ -1098,9 +1098,9 @@ $(document).ready(function() {
                     let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                     // Cache Image
                     // image from spreadsheet id folder
-                    //let imagePath = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                    //let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                    //let imagePath = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cache/' + imgid + '.png?version=' + Math.random();
+                    //let imagePath = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + Math.random();
+                    let imagePath = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + UIVersion;
                     checkIfImageExists(imagePath, (isExists) => {
                         if(isExists) {
                             let bgImage = new Image();
@@ -1124,9 +1124,9 @@ $(document).ready(function() {
                     let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
                     
                     // image from spreadsheet id folder
-                    //let imagePath = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cacheImages/' + imageName + "?version=" + Math.random();
-                    //let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                    //let imagePath = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cache/' + imageName + "?version=" + Math.random();
+                    //let imagePath = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + Math.random();
+                    let imagePath = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + UIVersion;
 
                     checkIfImageExists(imagePath, (isExists) => {
                         if(isExists) {
@@ -1201,17 +1201,17 @@ $(document).ready(function() {
                             let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                             // Cache Image
                             // image from spreadsheet id folder
-                            //imagePathPrev = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                            //imagePathPrev = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                            imagePathPrev = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                            //imagePathPrev = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cache/' + imgid + '.png?version=' + Math.random();
+                            //imagePathPrev = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + Math.random();
+                            imagePathPrev = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + UIVersion;
                         } else {
                             // Cache Image
                             let name = row_setting['Value'].split('/')
                             let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
                             // image from spreadsheet id folder
-                            //imagePathPrev = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cacheImages/' + imageName + "?version=" + Math.random();
-                            //imagePathPrev = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                            imagePathPrev = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                            //imagePathPrev = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cache/' + imageName + "?version=" + Math.random();
+                            //imagePathPrev = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + Math.random();
+                            imagePathPrev = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + UIVersion;
                         }
                         document.getElementById('prevIcon').src = imagePathPrev;
                     }
@@ -1225,17 +1225,17 @@ $(document).ready(function() {
                             let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                             // Cache Image
                             // image from spreadsheet id folder
-                            //imagePathNext = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                            //imagePathNext = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                            imagePathNext = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                            //imagePathNext = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cache/' + imgid + '.png?version=' + Math.random();
+                            //imagePathNext = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + Math.random();
+                            imagePathNext = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + UIVersion;
                         } else {
                             // Cache Image
                             let name = row_setting['Value'].split('/')
                             let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
                             // image from spreadsheet id folder
-                            //imagePathNext = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cacheImages/' + imageName + "?version=" + Math.random();
-                            //imagePathNext = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                            imagePathNext = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                            //imagePathNext = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cache/' + imageName + "?version=" + Math.random();
+                            //imagePathNext = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + Math.random();
+                            imagePathNext = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + UIVersion;
                         }
                         document.getElementById('nextIcon').src = imagePathNext;
                     }
@@ -1248,17 +1248,17 @@ $(document).ready(function() {
                             let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                             // Cache Image
                             // image from spreadsheet id folder
-                            //imagePathQuit = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                            //imagePathQuit = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
-                            imagePathQuit = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + UIVersion;
+                            //imagePathQuit = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cache/' + imgid + '.png?version=' + Math.random();
+                            //imagePathQuit = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + Math.random();
+                            imagePathQuit = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + UIVersion;
                         } else {
                             // Cache Image
                             let name = row_setting['Value'].split('/')
                             let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
                             // image from spreadsheet id folder
-                            //imagePathQuit = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cacheImages/' + imageName + "?version=" + Math.random();
-                            //imagePathQuit = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
-                            imagePathQuit = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + UIVersion;
+                            //imagePathQuit = '../sheets/' + (fromParent == 'app' ? faqsSheedId : sheet_Id) + '/cache/' + imageName + "?version=" + Math.random();
+                            //imagePathQuit = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + Math.random();
+                            imagePathQuit = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + UIVersion;
                         }
                         document.getElementById('homeIcon').src = imagePathQuit;
                     }

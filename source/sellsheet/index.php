@@ -324,22 +324,23 @@ var lang     = getLang();
 var APP_BASE = document.querySelector('base').getAttribute('href');
 var BASE     = APP_BASE + 'sheets/' + sheet_Id + '/';
 
-function getViewUrl() {
+function getViewUrl(game) {
   var _path  = window.location.pathname;
   var _idEnd = _path.indexOf(sheet_Id) + sheet_Id.length;
-  return window.location.origin + _path.substring(0, _idEnd) + '/view/';
+  var base   = window.location.origin + _path.substring(0, _idEnd) + '/view/';
+  return game ? base + '?game=' + encodeURIComponent(game) : base;
 }
 
 function cachedImage(url) {
   if (!url) return '';
   if (url.indexOf('https://drive.google.com') === 0) {
     var imgid = url.split('https://drive.google.com')[1].split('/')[3];
-    return BASE + 'cacheImages/' + imgid + '.png';
+    return BASE + 'cache/' + imgid + '.png';
   }
   var parts = url.split('/');
   var raw   = parts[parts.length - 1];
   var fname = raw.indexOf('?') !== -1 ? raw.split('?')[0] : raw;
-  return BASE + 'cacheImages/' + fname;
+  return BASE + 'cache/' + fname;
 }
 
 var _loadTotal = 4, _loadDone = 0;
@@ -437,8 +438,8 @@ function render() {
     tEl.textContent = tStr; tEl.style.display = '';
   }
 
-  // ── QR code in header (→ /view URL) ──────────────────────
-  var viewUrl = getViewUrl();
+  // ── QR code in header (→ /view/?game=… URL) ─────────────
+  var viewUrl = getViewUrl(_gameParam || title);
   if (viewUrl && typeof QRCode !== 'undefined') {
     new QRCode(document.getElementById('ssQR'), {
       text: viewUrl,

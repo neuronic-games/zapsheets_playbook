@@ -18,8 +18,8 @@
         mkdir($sheetDir, 0777, true);
     }
 
-    // Create the cacheImages sub-folder if it doesn't exist
-    $cacheDir = $sheetDir . '/cacheImages';
+    // Create the cache sub-folder if it doesn't exist
+    $cacheDir = $sheetDir . '/cache';
     if (!file_exists($cacheDir)) {
         mkdir($cacheDir, 0777, true);
     }

@@ -12,9 +12,9 @@
   } else {
     $imageName = $tempName[0];
   }
-  $dir = '../sheets/' . $spreadsheetId . '/cacheImages/';
-  if (!file_exists('../sheets/' . $spreadsheetId . '/cacheImages/')) {
-    mkdir('../sheets/' . $spreadsheetId . '/cacheImages/', 0777, true);
+  $dir = '../sheets/' . $spreadsheetId . '/cache/';
+  if (!file_exists('../sheets/' . $spreadsheetId . '/cache/')) {
+    mkdir('../sheets/' . $spreadsheetId . '/cache/', 0777, true);
   }
   // Use basename() function to return 
   // the base name of file 

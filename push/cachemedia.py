@@ -39,8 +39,30 @@ def is_cacheable(url: str) -> bool:
     return any(stripped.endswith(ext) for ext in MEDIA_EXTS)
 
 def url_filename(url: str) -> str:
-    """Stable filename: md5(url) + original extension (lower-case)."""
-    ext = Path(url.split('?')[0]).suffix.lower()
+    """Filename for the cached copy — matches what cachedImage() in the view page expects.
+
+    Google Drive:  extract the file-ID segment → {id}.png
+    Everything else: use the original filename from the URL path (query params stripped).
+    Falls back to md5+ext if no usable name can be extracted.
+    """
+    # Google Drive: https://drive.google.com/file/d/{id}/...
+    if 'drive.google.com' in url:
+        try:
+            parts = url.split('drive.google.com')[1].split('/')
+            file_id = parts[3] if len(parts) > 3 else ''
+            if file_id:
+                return file_id + '.png'
+        except Exception:
+            pass
+
+    # All other URLs: strip query string, take the last path segment
+    clean = url.split('?')[0].split('#')[0]
+    name  = clean.rstrip('/').rsplit('/', 1)[-1]
+    if name:
+        return name
+
+    # Fallback: md5 hash (should be rare)
+    ext = Path(clean).suffix.lower()
     if ext not in MEDIA_EXTS:
         ext = '.bin'
     return hashlib.md5(url.encode('utf-8')).hexdigest() + ext

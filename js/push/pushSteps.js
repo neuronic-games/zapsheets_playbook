@@ -1886,7 +1886,7 @@ function CheckImageStatus() {
                     let imgid = row["Value"].split('https://drive.google.com')[1].split('/')[3];
                     let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                     // Cache Image
-                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                    let imagePath = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + Math.random();
                     checkIfImageExists(imagePath, (isExists) => {
                         if(isExists) {
                             let bgImage = new Image();
@@ -1901,7 +1901,7 @@ function CheckImageStatus() {
                     // Cache Image
                     let name = row_setting['Value'].split('/')
                     let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                    let imagePath = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + Math.random();
                     checkIfImageExists(imagePath, (isExists) => {
                         if(isExists) {
                             let bgImage = new Image();
@@ -1921,7 +1921,7 @@ function CheckImageStatus() {
                     let imgid = row["Value"].split('https://drive.google.com')[1].split('/')[3];
                     let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                     // Cache Image
-                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                    let imagePath = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + Math.random();
                     checkIfImageExists(imagePath, (isExists) => {
                         if(isExists) {
                             let bgImage = new Image();
@@ -1936,7 +1936,7 @@ function CheckImageStatus() {
                     // Cache Image
                     let name = row_setting['Value'].split('/')
                     let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                    let imagePath = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + Math.random();
                     checkIfImageExists(imagePath, (isExists) => {
                         if(isExists) {
                             let bgImage = new Image();
@@ -1958,7 +1958,7 @@ function CheckImageStatus() {
                     let imgid = row["Value"].split('https://drive.google.com')[1].split('/')[3];
                     let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                     // Cache Image
-                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                    let imagePath = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + Math.random();
                     checkIfImageExists(imagePath, (isExists) => {
                         if(isExists) {
                             let bgImage = new Image();
@@ -1973,7 +1973,7 @@ function CheckImageStatus() {
                     // Cache Image
                     let name = row_setting['Value'].split('/')
                     let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                    let imagePath = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + Math.random();
                     checkIfImageExists(imagePath, (isExists) => {
                         if(isExists) {
                             let bgImage = new Image();
@@ -2000,7 +2000,7 @@ function CheckImageStatus() {
                     let imgid = languageDataList[i][j]['Image'].split('https://drive.google.com')[1].split('/')[3];
                     let imgPath = "https://drive.google.com/thumbnail?id=" + imgid + "&sz=w3500";
                     // Cache Image
-                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imgid + '.png?version=' + Math.random();
+                    let imagePath = '../sheets/' + sheet_Id + '/cache/' + imgid + '.png?version=' + Math.random();
                     setTimeout(function() {
                         if(languageDataList[i][j].Image != '') {
                             tempLangHolder.push(imagePath)
@@ -2011,7 +2011,7 @@ function CheckImageStatus() {
                     // Cache Image
                     let name = languageDataList[i][j]['Image'].split('/')
                     let imageName = name[name.length-1].indexOf('?') ? name[name.length-1].split('?')[0] : name[name.length-1];
-                    let imagePath = '../sheets/' + sheet_Id + '/cacheImages/' + imageName + "?version=" + Math.random();
+                    let imagePath = '../sheets/' + sheet_Id + '/cache/' + imageName + "?version=" + Math.random();
                     setTimeout(function() {
                         if(languageDataList[i][j].Image != '') {
                             tempLangHolder.push(imagePath)

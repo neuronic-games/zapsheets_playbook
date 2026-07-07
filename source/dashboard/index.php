@@ -165,6 +165,40 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       align-self:center; flex-shrink:0;
       padding-right:.15rem;
     }
+    .designer-chip {
+      font-family:'DINRegular',sans-serif; font-size:.72rem;
+      color:rgba(255,255,255,.7); cursor:pointer;
+      background:none; border:none; padding:0; margin:0;
+      text-decoration:underline;
+      text-decoration-color:rgba(255,255,255,.3);
+      text-underline-offset:2px;
+      transition:color .12s, text-decoration-color .12s;
+    }
+    .designer-chip:hover { color:#fff; text-decoration-color:rgba(255,255,255,.75); }
+    /* ── Designer info dialog ────────────────────────────── */
+    .di-overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.45); z-index:1000;
+      align-items:center; justify-content:center; padding:1rem;
+    }
+    .di-overlay.open { display:flex; }
+    .di-dialog {
+      background:#fff; border-radius:10px;
+      padding:1.4rem; width:min(420px,94vw);
+      box-shadow:0 8px 32px rgba(0,0,0,.22);
+      display:flex; flex-direction:column; gap:.75rem;
+    }
+    .di-title {
+      font-family:'DINBlack',sans-serif; font-size:.95rem;
+      color:#1a1a2e; margin:0;
+    }
+    .di-not-found {
+      font-family:'DINRegular',sans-serif; font-size:.8rem;
+      color:#e57; margin-top:-.25rem;
+    }
+    .di-dialog .combo-wrap input {
+      font-size:.82rem; color:#222; border-color:#ddd; padding:.38rem .55rem;
+    }
     .card-chevron {
       font-size:.65rem; opacity:.55; flex-shrink:0;
       transition:transform .22s ease; transform:rotate(-90deg);
@@ -781,6 +815,40 @@ if (substr($_base, -1) !== '/') $_base .= '/';
   </div>
 </div>
 
+<!-- Designer info dialog -->
+<div class="di-overlay" id="diOverlay" onclick="if(event.target===this)closeDiDialog()">
+  <div class="di-dialog">
+    <p class="di-not-found" id="diNotFound" style="display:none">Not in People list — fields will be created on save.</p>
+    <div class="notes-field-row">
+      <label class="notes-field-label" style="grid-column:1/-1">Name
+        <input type="text" id="diTitle" class="notes-field-input" placeholder="Full name" />
+      </label>
+    </div>
+    <div class="notes-field-row" style="grid-template-columns:1fr 1fr">
+      <label class="notes-field-label">Email
+        <input type="email" id="diEmail" class="notes-field-input" placeholder="email@example.com" />
+      </label>
+      <label class="notes-field-label">Company
+        <div class="combo-wrap">
+          <input type="text" id="diCompany" placeholder="Publisher / Studio" autocomplete="off" />
+          <div class="combo-drop" id="diCompanyDrop"></div>
+        </div>
+      </label>
+    </div>
+    <label class="notes-field-label">Role
+      <input type="text" id="diRole" class="notes-field-input" placeholder="e.g. Designer, Inventor Relations " />
+    </label>
+    <label class="notes-field-label">Notes
+      <textarea id="diNotes" class="notes-edit-area" style="min-height:4rem"></textarea>
+    </label>
+    <div class="notes-dialog-actions">
+      <span id="diStatus" style="flex:1;font-family:'DINRegular',sans-serif;font-size:.78rem;color:#e57"></span>
+      <button class="notes-close" onclick="closeDiDialog()">Close</button>
+      <button class="notes-update-btn" id="diUpdateBtn" onclick="submitDiUpdate()">Update</button>
+    </div>
+  </div>
+</div>
+
 <!-- Copyable error dialog -->
 <div class="err-overlay" id="errOverlay" onclick="if(event.target===this)closeErrDialog()">
   <div class="err-dialog">
@@ -985,6 +1053,7 @@ var filteredPitches = [];
 var searchQuery     = '';
 var activeFilters   = {};   // keys: 'signed', 'published'
 var peopleIndex     = {};   // "Name|Company" → email
+var peopleData      = {};   // Name → full person record {Name, Email, Company, Role, Notes}
 var gamesIndex      = {};   // Game name → {Designers, …}
 var totalGameCount  = 0;
 var totalPubCount   = 0;
@@ -1395,10 +1464,10 @@ function buildGameView(pitches) {
 
     html += '<div class="card">';
     var gameInfo  = gamesIndex[g] || {};
-    var designers = ['Designer1','Designer2','Designer3','Designer4']
+    var designerNames = ['Designer1','Designer2','Designer3','Designer4']
       .map(function(f){ return (gameInfo[f]||'').trim(); })
-      .filter(function(v){ return v; })
-      .join(', ');
+      .filter(function(v){ return v; });
+    var designers = designerNames.join(', ');
     var gameDateHtml = '';
     html += '<div class="card-header" onclick="toggleCard(this)">';
     html += '<span class="card-title">' + escHtml(g) + '</span>';
@@ -1437,7 +1506,16 @@ function buildGameView(pitches) {
 
     html += '<div class="card-body-wrap"><div class="card-body">';
     html += '<div class="game-links">';
-    if (designers) html += '<span class="game-links-designers">' + escHtml(designers) + '</span>';
+    if (designerNames.length) {
+      html += '<span class="game-links-designers">';
+      designerNames.forEach(function(dn, i) {
+        if (i > 0) html += '<span style="opacity:.5">, </span>';
+        html += '<button class="designer-chip" data-designer="' + escHtml(dn) + '"' +
+                ' onclick="event.stopPropagation();openDiDialog(this.getAttribute(\'data-designer\'))">' +
+                escHtml(dn) + '</button>';
+      });
+      html += '</span>';
+    }
     html += gameLinkPills;
     html += '<span style="flex:1"></span>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();addBtnClick(this)">New Pitch</button>';
@@ -1980,9 +2058,12 @@ function render(pitches, settings, people, games) {
 
   // ── Build people index: "Name|Company" → email ───────
   peopleIndex = {};
+  peopleData  = {};
   (people||[]).forEach(function(p) {
-    var key = (p.Name||'').trim() + '|' + (p.Company||'').trim();
+    var key  = (p.Name||'').trim() + '|' + (p.Company||'').trim();
+    var name = (p.Name||'').trim();
     if (p.Email) peopleIndex[key] = p.Email;
+    if (name)    peopleData[name] = p;
   });
 
   // ── Build games index: game name → {Designers, …} ────
@@ -3069,6 +3150,175 @@ function submitAddNew() {
 }
 
 
+
+// ── Designer info dialog ──────────────────────────────
+var _diOrigName = '';
+var _diCompanyComboReady = false;
+
+function _getDiCompanyList() {
+  var cos = {};
+  Object.keys(peopleData).forEach(function(n) {
+    var c = (peopleData[n].Company || '').trim();
+    if (c) cos[c] = 1;
+  });
+  // Also pull from peopleIndex for anyone whose company is stored there
+  Object.keys(peopleIndex).forEach(function(key) {
+    var c = key.split('|')[1];
+    if (c) cos[c] = 1;
+  });
+  return Object.keys(cos).sort(function(a, b) { return a.localeCompare(b); });
+}
+
+function openDiDialog(name) {
+  _diOrigName = name;
+  var person  = peopleData[name] || {};
+  var found   = !!peopleData[name];
+
+  document.getElementById('diTitle').value          = name;
+  document.getElementById('diEmail').value          = person.Email   || '';
+  document.getElementById('diCompany').value        = person.Company || '';
+  document.getElementById('diRole').value           = person.Role    || '';
+  document.getElementById('diNotes').value          = person.Notes   || '';
+  document.getElementById('diStatus').textContent   = '';
+  document.getElementById('diNotFound').style.display = found ? 'none' : '';
+  var btn = document.getElementById('diUpdateBtn');
+  btn.disabled    = false;
+  btn.textContent = found ? 'Update' : 'Save';
+
+  // Initialise company combobox once
+  if (!_diCompanyComboReady) {
+    _diCompanyComboReady = true;
+    _comboInit('diCompany', 'diCompanyDrop', _getDiCompanyList, null);
+  }
+
+  document.getElementById('diOverlay').classList.add('open');
+  setTimeout(function() { document.getElementById('diTitle').focus(); }, 60);
+}
+
+function closeDiDialog() {
+  document.getElementById('diOverlay').classList.remove('open');
+}
+
+function submitDiUpdate() {
+  var btn  = document.getElementById('diUpdateBtn');
+  var stat = document.getElementById('diStatus');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  stat.textContent = '';
+
+  var name    = document.getElementById('diTitle').value.trim();
+  var email   = document.getElementById('diEmail').value.trim();
+  var company = document.getElementById('diCompany').value.trim();
+  var role    = document.getElementById('diRole').value.trim();
+  var notes   = document.getElementById('diNotes').value;
+  var nameChanged = (name !== _diOrigName);
+
+  // Step 1 — update the People sheet
+  function doPersonSave(onOk) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', APP_BASE + 'push/updatePerson.php');
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function() {
+      var res; try { res = JSON.parse(xhr.responseText); } catch(e) { res = null; }
+      if (res && res.ok) { onOk(); }
+      else {
+        btn.disabled = false; btn.textContent = 'Update';
+        stat.textContent = (res && res.error) ? res.error : 'Save failed';
+      }
+    };
+    xhr.onerror = function() {
+      btn.disabled = false; btn.textContent = 'Update';
+      stat.textContent = 'Network error';
+    };
+    xhr.send('id='        + encodeURIComponent(sheet_Id) +
+             '&orig_name='+ encodeURIComponent(_diOrigName) +
+             '&name='     + encodeURIComponent(name) +
+             '&email='    + encodeURIComponent(email) +
+             '&company='  + encodeURIComponent(company) +
+             '&role='     + encodeURIComponent(role) +
+             '&notes='    + encodeURIComponent(notes));
+  }
+
+  // Step 2 — rename designer in all Games rows (only if name changed)
+  function doGameRename(onOk) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', APP_BASE + 'push/renameDesigner.php');
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function() {
+      var res; try { res = JSON.parse(xhr.responseText); } catch(e) { res = null; }
+      if (res && res.ok) { onOk(res.updated || 0); }
+      else {
+        btn.disabled = false; btn.textContent = 'Update';
+        stat.textContent = (res && res.error) ? ('Games: ' + res.error) : 'Games update failed';
+      }
+    };
+    xhr.onerror = function() {
+      btn.disabled = false; btn.textContent = 'Update';
+      stat.textContent = 'Network error (games)';
+    };
+    xhr.send('id='       + encodeURIComponent(sheet_Id) +
+             '&old_name='+ encodeURIComponent(_diOrigName) +
+             '&new_name='+ encodeURIComponent(name));
+  }
+
+  // Update local in-memory caches
+  function updateLocalCaches() {
+    // People data
+    var oldRecord = peopleData[_diOrigName] || { Name: _diOrigName };
+    oldRecord.Name    = name;
+    oldRecord.Email   = email;
+    oldRecord.Company = company;
+    oldRecord.Role    = role;
+    oldRecord.Notes   = notes;
+    if (nameChanged) {
+      delete peopleData[_diOrigName];
+      peopleData[name] = oldRecord;
+    }
+    // People index
+    var oldKey = _diOrigName + '|' + (company || '');
+    var newKey = name + '|' + company;
+    if (email) peopleIndex[newKey] = email;
+    if (oldKey !== newKey) delete peopleIndex[oldKey];
+
+    if (nameChanged) {
+      // Games index — rename designer in every game record
+      Object.keys(gamesIndex).forEach(function(gameName) {
+        var info = gamesIndex[gameName];
+        ['Designer1','Designer2','Designer3','Designer4'].forEach(function(f) {
+          if ((info[f] || '').trim() === _diOrigName) info[f] = name;
+        });
+      });
+      // DOM — update chip labels and data-designer attributes
+      document.querySelectorAll('.designer-chip[data-designer="' + _diOrigName.replace(/"/g, '\\"') + '"]')
+        .forEach(function(chip) {
+          chip.setAttribute('data-designer', name);
+          chip.setAttribute('onclick', 'event.stopPropagation();openDiDialog(this.getAttribute(\'data-designer\'))');
+          chip.textContent = name;
+        });
+      // Update the tracked original name so a second save works correctly
+      _diOrigName = name;
+    }
+  }
+
+  // Orchestrate: person → (if name changed) games → done
+  doPersonSave(function() {
+    if (nameChanged) {
+      doGameRename(function(gamesUpdated) {
+        updateLocalCaches();
+        btn.disabled = false; btn.textContent = 'Update';
+        stat.style.color = '#16a34a';
+        stat.textContent = 'Saved' + (gamesUpdated ? ' · ' + gamesUpdated + ' game' + (gamesUpdated !== 1 ? 's' : '') + ' updated' : '');
+        setTimeout(function() { stat.textContent = ''; stat.style.color = '#e57'; }, 3000);
+      });
+    } else {
+      updateLocalCaches();
+      btn.disabled = false; btn.textContent = 'Update';
+      stat.style.color = '#16a34a';
+      stat.textContent = 'Saved';
+      setTimeout(function() { stat.textContent = ''; stat.style.color = '#e57'; }, 2000);
+    }
+  });
+}
 
 // ── Load ──────────────────────────────────────────────
 function loadJSON(url, key, fallbackUrl, onDone) {

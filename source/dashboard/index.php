@@ -252,6 +252,18 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .sub-group.pub-alt > .sub-label.pub-passed-header:hover { background:#eaebf5; }
     .sub-group.pub-alt .entry-row { background:#f4f5fb; }
     .sub-group.pub-alt .entry-row:hover { background:#eaebf5; }
+    /* ── Publisher subtitle row (inside expanded card) ─ */
+    .pub-subtitle-row {
+      display:flex; align-items:center; gap:.75rem;
+      padding:.52rem 1rem .52rem 1.1rem;
+      border-bottom:1px solid #ebebeb;
+      background:#f7f7fc;
+    }
+    .pub-subtitle-info {
+      font-family:'DINRegular',sans-serif; font-size:.74rem;
+      color:#888; flex:1; min-width:0;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
 
     /* ── Empty / loading ─────────────────────────────── */
     .empty { padding:3rem; text-align:center; color:#999; font-size:.88rem; }
@@ -456,6 +468,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .combo-opt {
       padding:.4rem .7rem; font-family:'DINRegular',sans-serif; font-size:.83rem;
       cursor:pointer; color:#111;
+      text-transform:none; letter-spacing:normal;
     }
     .combo-opt:hover, .combo-opt.active { background:#1a1a2e; color:#fff; }
     /* Sub-dialog (New Publisher / New Contact) */
@@ -686,6 +699,11 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       transition:border-color .15s;
     }
     .ge-input:focus { border-color:#1a1a2e; }
+    /* Designer comboboxes inside the game-edit dialog match .ge-input sizing */
+    .ge-label .combo-wrap input {
+      font-size:.82rem; color:#222; border-color:#ddd; padding:.38rem .55rem;
+    }
+    .ge-label .combo-wrap input:focus { border-color:#1a1a2e; }
     .ge-actions {
       display:flex; gap:.5rem; align-items:center; justify-content:flex-end;
       border-top:1px solid #f0f0f0; padding-top:.6rem; margin-top:.1rem;
@@ -837,12 +855,32 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     </label>
     <div class="ge-section">Designers</div>
     <div class="ge-row">
-      <label class="ge-label">Designer 1<input type="text" id="geDesigner1" class="ge-input" /></label>
-      <label class="ge-label">Designer 2<input type="text" id="geDesigner2" class="ge-input" /></label>
+      <label class="ge-label">Designer 1
+        <div class="combo-wrap">
+          <input type="text" id="geDesigner1" placeholder="Search or enter name…" autocomplete="off" />
+          <div class="combo-drop" id="geDesigner1Drop"></div>
+        </div>
+      </label>
+      <label class="ge-label">Designer 2
+        <div class="combo-wrap">
+          <input type="text" id="geDesigner2" placeholder="Search or enter name…" autocomplete="off" />
+          <div class="combo-drop" id="geDesigner2Drop"></div>
+        </div>
+      </label>
     </div>
     <div class="ge-row">
-      <label class="ge-label">Designer 3<input type="text" id="geDesigner3" class="ge-input" /></label>
-      <label class="ge-label">Designer 4<input type="text" id="geDesigner4" class="ge-input" /></label>
+      <label class="ge-label">Designer 3
+        <div class="combo-wrap">
+          <input type="text" id="geDesigner3" placeholder="Search or enter name…" autocomplete="off" />
+          <div class="combo-drop" id="geDesigner3Drop"></div>
+        </div>
+      </label>
+      <label class="ge-label">Designer 4
+        <div class="combo-wrap">
+          <input type="text" id="geDesigner4" placeholder="Search or enter name…" autocomplete="off" />
+          <div class="combo-drop" id="geDesigner4Drop"></div>
+        </div>
+      </label>
     </div>
     <div class="ge-section">Links</div>
     <div class="ge-row">
@@ -867,9 +905,18 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 <!-- Add Entry dialog -->
 <div class="add-entry-overlay" id="addEntryOverlay" onclick="if(event.target===this)closeAddDialog()">
   <div class="add-entry-dialog">
-    <h2 class="add-entry-title">Add Entry</h2>
+    <h2 class="add-entry-title" id="addEntryTitle">Add Entry</h2>
     <div class="add-game-label" id="addGameLabel"></div>
     <div class="add-entry-fields">
+      <!-- Game picker — shown when no game is pre-set (e.g. New Pitch from publisher) -->
+      <div id="addGameSection" style="display:none">
+        <label>Game
+          <div class="combo-wrap">
+            <input type="text" id="addGameInput" placeholder="Search or choose game…" autocomplete="off" />
+            <div class="combo-drop" id="gameComboDrop"></div>
+          </div>
+        </label>
+      </div>
       <!-- Dropdowns shown when launched from game header -->
       <div id="addPubContactSection">
         <label>Publisher
@@ -1599,6 +1646,17 @@ function buildPublisherView(pitches) {
     html += '<span class="card-chevron">▼</span>';
     html += '</div>';
     html += '<div class="card-body-wrap"><div class="card-body">';
+
+    // Publisher subtitle: contact info + New Pitch button
+    var pubContacts  = getPubInfo(p);
+    var pubInfoParts = pubContacts.map(function(c) { return c.name; });
+    var pubInfoText  = pubInfoParts.join('     ');
+    html += '<div class="pub-subtitle-row">';
+    html += '<span class="pub-subtitle-info">' + escHtml(pubInfoText) + '</span>';
+    html += '<button class="add-entry-btn" style="margin-left:auto"' +
+            ' data-publisher="' + escHtml(p) + '"' +
+            ' onclick="event.stopPropagation();openNewPitchDialog(this.getAttribute(\'data-publisher\'))">New Pitch</button>';
+    html += '</div>';
 
     // Sort games alphabetically
     var gameNames = Object.keys(pubs[p]).sort(function(a,b){ return a.localeCompare(b); });
@@ -2429,6 +2487,7 @@ function openGameEditDialog(gameName, isNew) {
   var g = isNew ? {} : (gamesIndex[gameName] || {});
 
   document.getElementById('gameEditHeading').textContent = isNew ? 'New Game' : 'Edit Game';
+  _setupDesignerCombos();
 
   // Helper: try several field name variants in g
   function gfield() {
@@ -2488,69 +2547,106 @@ function submitGameEdit() {
     return;
   }
 
-  var endpoint = isNew ? 'push/addGame.php' : 'push/updateGame.php';
-  var body = 'id=' + encodeURIComponent(sheet_Id);
-  for (var k in payload) body += '&' + k + '=' + encodeURIComponent(payload[k]);
+  function doSave() {
+    btn.textContent = isNew ? 'Adding…' : 'Saving…';
+    var endpoint = isNew ? 'push/addGame.php' : 'push/updateGame.php';
+    var body = 'id=' + encodeURIComponent(sheet_Id);
+    for (var k in payload) body += '&' + k + '=' + encodeURIComponent(payload[k]);
 
-  var xhr = new XMLHttpRequest();
-  xhr.open('POST', APP_BASE + endpoint);
-  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-  xhr.onload = function() {
-    btn.disabled = false;
-    btn.textContent = isNew ? 'Add Game' : 'Save';
-    var result;
-    try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
-    if (result && result.ok) {
-      // Diagnostic: warn if gadd.py found headers but wrote nothing (column name mismatch)
-      if (typeof result.non_empty_fields === 'number' && result.non_empty_fields === 0) {
-        console.warn('[addGame] gadd.py ok but 0 non-empty fields written.',
-          'Tab:', result.sheet, 'Headers:', result.headers, 'Row:', result.written);
-        showError('Warning: the game row was appended but all fields were blank.\n\n' +
-              'Column headers found in the sheet:\n' +
-              JSON.stringify(result.headers) + '\n\n' +
-              'This usually means the "games" tab column names do not match.\n' +
-              '(See browser console for full details.)');
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', APP_BASE + endpoint);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function() {
+      btn.disabled = false;
+      btn.textContent = isNew ? 'Add Game' : 'Save';
+      var result;
+      try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
+      if (result && result.ok) {
+        // Diagnostic: warn if gadd.py found headers but wrote nothing (column name mismatch)
+        if (typeof result.non_empty_fields === 'number' && result.non_empty_fields === 0) {
+          console.warn('[addGame] gadd.py ok but 0 non-empty fields written.',
+            'Tab:', result.sheet, 'Headers:', result.headers, 'Row:', result.written);
+          showError('Warning: the game row was appended but all fields were blank.\n\n' +
+                'Column headers found in the sheet:\n' +
+                JSON.stringify(result.headers) + '\n\n' +
+                'This usually means the "games" tab column names do not match.\n' +
+                '(See browser console for full details.)');
+          closeGameEditDialog();
+          return;
+        }
+        console.log('[addGame] ok — tab:', result.sheet,
+                    'fields written:', result.non_empty_fields,
+                    'headers:', result.headers, 'row:', result.written);
+        // Update gamesIndex in memory
+        var oldName = _gameEditCtx.origName;
+        var newName = payload.name;
+        if (!gamesIndex[newName]) gamesIndex[newName] = {};
+        var entry = gamesIndex[newName];
+        entry.Name       = newName;
+        entry.Designer1  = payload.designer1;
+        entry.Designer2  = payload.designer2;
+        entry.Designer3  = payload.designer3;
+        entry.Designer4  = payload.designer4;
+        entry.Rules      = payload.rules;
+        entry.Play       = payload.play;
+        entry.Print      = payload.print;
+        entry.Sellsheet  = payload.sellsheet;
+        entry.View       = payload.view;
+        entry.Video      = payload.video;
+        if (!isNew && newName !== oldName) {
+          delete gamesIndex[oldName];
+          allPitches.forEach(function(r) { if (r.Game === oldName) r.Game = newName; });
+        }
+        var _vs = saveViewState();
+        buildSummary(allPitches);
+        buildView();
+        restoreViewState(_vs);
         closeGameEditDialog();
-        return;
+      } else {
+        showError('Error: ' + ((result && result.error) || (isNew ? 'Could not add game.' : 'Could not update game.')));
       }
-      console.log('[addGame] ok — tab:', result.sheet,
-                  'fields written:', result.non_empty_fields,
-                  'headers:', result.headers, 'row:', result.written);
-      // Update gamesIndex in memory
-      var oldName = _gameEditCtx.origName;
-      var newName = payload.name;
-      if (!gamesIndex[newName]) gamesIndex[newName] = {};
-      var entry = gamesIndex[newName];
-      entry.Name       = newName;
-      entry.Designer1  = payload.designer1;
-      entry.Designer2  = payload.designer2;
-      entry.Designer3  = payload.designer3;
-      entry.Designer4  = payload.designer4;
-      entry.Rules      = payload.rules;
-      entry.Play       = payload.play;
-      entry.Print      = payload.print;
-      entry.Sellsheet  = payload.sellsheet;
-      entry.View       = payload.view;
-      entry.Video      = payload.video;
-      if (!isNew && newName !== oldName) {
-        delete gamesIndex[oldName];
-        allPitches.forEach(function(r) { if (r.Game === oldName) r.Game = newName; });
+    };
+    xhr.onerror = function() {
+      btn.disabled = false;
+      btn.textContent = isNew ? 'Add Game' : 'Save';
+      showError('Network error — could not save.');
+    };
+    xhr.send(body);
+  }
+
+  // Save any new designer names to the people sheet first, then save the game
+  var newDesigners = [payload.designer1, payload.designer2, payload.designer3, payload.designer4]
+    .filter(function(d, i, arr) { return d && !isKnownPerson(d) && arr.indexOf(d) === i; });
+
+  function saveNextDesigner(queue) {
+    if (!queue.length) { doSave(); return; }
+    var name = queue[0]; var rest = queue.slice(1);
+    btn.textContent = 'Saving "' + name + '"…';
+    var pxhr = new XMLHttpRequest();
+    pxhr.open('POST', APP_BASE + 'push/addPerson.php');
+    pxhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    pxhr.onload = function() {
+      var res; try { res = JSON.parse(pxhr.responseText); } catch(e) { res = null; }
+      if (res && res.ok) {
+        peopleIndex[name + '|'] = '';   // mark as known so next check passes
+        saveNextDesigner(rest);
+      } else {
+        btn.disabled = false; btn.textContent = isNew ? 'Add Game' : 'Save';
+        showError('Error saving designer "' + name + '": ' + ((res && res.error) || 'Unknown error'));
       }
-      var _vs = saveViewState();
-      buildSummary(allPitches);
-      buildView();
-      restoreViewState(_vs);
-      closeGameEditDialog();
-    } else {
-      showError('Error: ' + ((result && result.error) || (isNew ? 'Could not add game.' : 'Could not update game.')));
-    }
-  };
-  xhr.onerror = function() {
-    btn.disabled = false;
-    btn.textContent = isNew ? 'Add Game' : 'Save';
-    showError('Network error — could not save.');
-  };
-  xhr.send(body);
+    };
+    pxhr.onerror = function() {
+      btn.disabled = false; btn.textContent = isNew ? 'Add Game' : 'Save';
+      showError('Network error — could not save designer.');
+    };
+    pxhr.send(
+      'id='      + encodeURIComponent(sheet_Id) +
+      '&name='   + encodeURIComponent(name) +
+      '&company=&email='
+    );
+  }
+
+  saveNextDesigner(newDesigners);
 }
 
 // Close dialogs on Escape (publish dialog first, then error, then sub-dialogs, then main)
@@ -2691,6 +2787,76 @@ function onPublisherChange() {
   document.getElementById('addContactInput').value = '';
 }
 
+// ── Publisher info helper ─────────────────────────────
+function getPubInfo(publisher) {
+  var contacts = [];
+  Object.keys(peopleIndex).forEach(function(key) {
+    var parts = key.split('|');
+    if (parts[1] === publisher && parts[0]) {
+      contacts.push({ name: parts[0], email: peopleIndex[key] || '' });
+    }
+  });
+  return contacts;
+}
+
+// ── Game combobox (New Pitch from Publisher view) ─────
+var _gameComboReady = false;
+function _setupGameCombo() {
+  if (_gameComboReady) return;
+  _gameComboReady = true;
+  _comboInit('addGameInput', 'gameComboDrop', function() {
+    return Object.keys(gamesIndex).sort(function(a,b){ return a.localeCompare(b); });
+  }, null);
+}
+
+function openNewPitchDialog(publisher) {
+  _setupGameCombo();
+  openAddDialog('', publisher, '', true);
+}
+
+// ── Designer combobox helpers ─────────────────────────
+function getAllPersonNames() {
+  var names = {};
+  // From people sheet (peopleIndex keys are "Name|Company")
+  Object.keys(peopleIndex).forEach(function(key) {
+    var n = key.split('|')[0]; if (n) names[n] = 1;
+  });
+  // Also include designers already in gamesIndex
+  Object.keys(gamesIndex).forEach(function(game) {
+    var g = gamesIndex[game];
+    ['Designer1','Designer2','Designer3','Designer4'].forEach(function(f) {
+      var d = (g[f] || '').trim(); if (d) names[d] = 1;
+    });
+  });
+  return Object.keys(names).sort(function(a,b){ return a.localeCompare(b); });
+}
+
+function isKnownPerson(name) {
+  if (!name) return true;
+  var lc = name.toLowerCase();
+  var keys = Object.keys(peopleIndex);
+  for (var i = 0; i < keys.length; i++) {
+    if (keys[i].split('|')[0].toLowerCase() === lc) return true;
+  }
+  var gnames = Object.keys(gamesIndex);
+  for (var j = 0; j < gnames.length; j++) {
+    var g = gamesIndex[gnames[j]];
+    if (['Designer1','Designer2','Designer3','Designer4'].some(function(f){
+      return (g[f]||'').trim().toLowerCase() === lc;
+    })) return true;
+  }
+  return false;
+}
+
+var _designerCombosReady = false;
+function _setupDesignerCombos() {
+  if (_designerCombosReady) return;
+  _designerCombosReady = true;
+  ['geDesigner1','geDesigner2','geDesigner3','geDesigner4'].forEach(function(id) {
+    _comboInit(id, id + 'Drop', getAllPersonNames, null);
+  });
+}
+
 // ── Open Add Entry dialog ─────────────────────────────
 function addBtnClick(btn) {
   openAddDialog(
@@ -2703,9 +2869,23 @@ function addBtnClick(btn) {
 
 function openAddDialog(game, publisher, contact, pubLocked) {
   var bothLocked = !!(publisher && contact && !pubLocked);
+  var hasGame    = !!game;
   _addCtx = { game: game, publisher: publisher, contact: contact, locked: bothLocked, pubLocked: !!pubLocked };
 
-  document.getElementById('addGameLabel').textContent = game;
+  // Game label vs game combobox
+  var gameLabelEl   = document.getElementById('addGameLabel');
+  var gameSectionEl = document.getElementById('addGameSection');
+  gameLabelEl.textContent        = game;
+  gameLabelEl.style.display      = hasGame ? '' : 'none';
+  gameSectionEl.style.display    = hasGame ? 'none' : '';
+  if (!hasGame) {
+    _setupGameCombo();
+    document.getElementById('addGameInput').value = '';
+  }
+
+  // Dialog title
+  document.getElementById('addEntryTitle').textContent =
+    publisher && !hasGame ? 'New Pitch — ' + publisher : 'Add Entry';
 
   if (bothLocked) {
     document.getElementById('addPubContactSection').style.display = 'none';
@@ -2735,7 +2915,9 @@ function openAddDialog(game, publisher, contact, pubLocked) {
   setTimeout(function() {
     var focusEl = bothLocked
       ? document.getElementById('addEvent')
-      : document.getElementById('addPublisherInput');
+      : !hasGame
+        ? document.getElementById('addGameInput')
+        : document.getElementById('addEvent');
     if (focusEl) focusEl.focus();
   }, 60);
 }
@@ -2747,6 +2929,13 @@ function closeAddDialog() {
 function submitAddEntry() {
   var dateVal = document.getElementById('addDate').value;
   if (!dateVal) { document.getElementById('addDate').focus(); return; }
+
+  // Resolve game — may come from a combobox if no game was pre-set
+  if (!_addCtx.game) {
+    var gameInputVal = (document.getElementById('addGameInput').value || '').trim();
+    if (!gameInputVal) { document.getElementById('addGameInput').focus(); return; }
+    _addCtx.game = gameInputVal;
+  }
 
   var publisher, contact;
   if (_addCtx.locked) {

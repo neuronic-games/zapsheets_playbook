@@ -435,6 +435,29 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       white-space:nowrap; transition:background .15s;
     }
     .add-new-btn:hover { background:#1a1a2e; color:#fff; }
+    /* Searchable combobox (publisher / contact) */
+    .combo-wrap { position:relative; }
+    .combo-wrap input {
+      width:100%; box-sizing:border-box;
+      font-family:'DINRegular',sans-serif; font-size:.83rem;
+      border:1px solid #ccc; border-radius:6px;
+      padding:.42rem .7rem; color:#111; outline:none; background:#fff;
+      transition:border-color .15s;
+    }
+    .combo-wrap input:focus { border-color:#1a1a2e; }
+    .combo-wrap input:disabled { opacity:.5; background:#f4f4f4; cursor:default; }
+    .combo-drop {
+      display:none; position:absolute; top:calc(100% + 2px); left:0; right:0; z-index:9999;
+      background:#fff; border:1px solid #ccc; border-radius:6px;
+      max-height:160px; overflow-y:auto;
+      box-shadow:0 4px 12px rgba(0,0,0,.13);
+    }
+    .combo-drop.open { display:block; }
+    .combo-opt {
+      padding:.4rem .7rem; font-family:'DINRegular',sans-serif; font-size:.83rem;
+      cursor:pointer; color:#111;
+    }
+    .combo-opt:hover, .combo-opt.active { background:#1a1a2e; color:#fff; }
     /* Sub-dialog (New Publisher / New Contact) */
     .add-new-overlay {
       display:none; position:fixed; inset:0;
@@ -795,11 +818,12 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 <!-- View Page publish dialog -->
 <div class="sync-overlay" id="vpOverlay">
   <div class="sync-dialog">
-    <h2 id="vpTitle">Publishing…</h2>
+    <h2>Update Game Info Page</h2>
     <div class="sync-log" id="vpLog"></div>
     <div class="sync-dialog-actions">
       <button class="sync-done-btn" id="vpAddSheetBtn" style="display:none" onclick="vpAddSheet()">Add Sheet</button>
       <button class="sync-done-btn" id="vpDoneBtn" disabled onclick="closeVpDialog()">Done</button>
+      <button class="sync-done-btn" id="vpViewPageBtn" style="display:none" onclick="vpOpenViewPage()">View Page</button>
     </div>
   </div>
 </div>
@@ -849,19 +873,15 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       <!-- Dropdowns shown when launched from game header -->
       <div id="addPubContactSection">
         <label>Publisher
-          <div class="add-select-row">
-            <select id="addPublisherSel" onchange="onPublisherChange()">
-              <option value="">— select publisher —</option>
-            </select>
-            <button class="add-new-btn" id="addNewPubBtn" type="button" onclick="openAddNew('publisher')">+ New</button>
+          <div class="combo-wrap">
+            <input type="text" id="addPublisherInput" placeholder="Search or enter publisher…" autocomplete="off" />
+            <div class="combo-drop" id="pubComboDrop"></div>
           </div>
         </label>
         <label style="margin-top:.5rem">Contact
-          <div class="add-select-row">
-            <select id="addContactSel">
-              <option value="">— optional —</option>
-            </select>
-            <button class="add-new-btn" type="button" onclick="openAddNew('contact')">+ New</button>
+          <div class="combo-wrap">
+            <input type="text" id="addContactInput" placeholder="Optional contact…" autocomplete="off" />
+            <div class="combo-drop" id="contactComboDrop"></div>
           </div>
         </label>
       </div>
@@ -2242,11 +2262,11 @@ function copyErrText() {
 }
 
 // ── View Page publish dialog ───────────────────────────────
-function openVpDialog(title) {
-  document.getElementById('vpTitle').textContent = title;
+function openVpDialog() {
   document.getElementById('vpLog').innerHTML = '';
   document.getElementById('vpDoneBtn').disabled = true;
   document.getElementById('vpAddSheetBtn').style.display = 'none';
+  document.getElementById('vpViewPageBtn').style.display = 'none';
   document.getElementById('vpOverlay').classList.add('open');
 }
 function closeVpDialog() {
@@ -2260,9 +2280,11 @@ function vpLog(msg, type) {
   log.appendChild(line);
   log.scrollTop = log.scrollHeight;
 }
-function vpDone(title) {
-  document.getElementById('vpTitle').textContent = title;
+function vpDone() {
   document.getElementById('vpDoneBtn').disabled = false;
+}
+function vpOpenViewPage() {
+  window.open(BASE + 'view/?game=' + encodeURIComponent(_vpCurrentGame), '_blank');
 }
 // Classify a cachemedia.py output line into a sync colour type.
 function _vpMediaType(line) {
@@ -2280,9 +2302,9 @@ function _vpDeployAndOpen() {
   xhr3.open('POST', APP_BASE + 'push/deployViewSource.php');
   xhr3.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
   var _open = function() {
-    vpLog('Opening view page…', 'info');
-    vpDone('Done');
-    setTimeout(function() { window.open(BASE + 'view/?game=' + encodeURIComponent(_vpCurrentGame), '_blank'); }, 400);
+    vpLog('✓  Page updated.', 'ok');
+    vpDone();
+    document.getElementById('vpViewPageBtn').style.display = '';
   };
   xhr3.onload = function() {
     var r3; try { r3 = JSON.parse(xhr3.responseText); } catch(e) { r3 = null; }
@@ -2315,10 +2337,10 @@ function _vpRunPublish(gameName) {
       if (result && result.error === 'tab_not_found') {
         vpLog('✕  A sheet named "' + gameName + '" does not exist in your document.', 'error');
         document.getElementById('vpAddSheetBtn').style.display = '';
-        vpDone('Sheet Not Found');
+        vpDone();
       } else {
         vpLog('✕  ' + ((result && result.error) || xhr.responseText || 'Unknown error'), 'error');
-        vpDone('Failed');
+        vpDone();
       }
       return;
     }
@@ -2348,7 +2370,7 @@ function _vpRunPublish(gameName) {
   };
   xhr.onerror = function() {
     vpLog('✕  Network error — could not reach the server.', 'error');
-    vpDone('Failed');
+    vpDone();
   };
   xhr.send('id=' + encodeURIComponent(sheet_Id) + '&game=' + encodeURIComponent(gameName));
 }
@@ -2357,7 +2379,7 @@ function viewPageClick(btn) {
   var gameName = btn.getAttribute('data-game') || '';
   if (!gameName) return;
   _vpCurrentGame = gameName;
-  openVpDialog('Publishing ' + gameName + '…');
+  openVpDialog();
   _vpRunPublish(gameName);
 }
 
@@ -2377,7 +2399,7 @@ function vpAddSheet() {
     try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
     if (!result || result.error) {
       vpLog('✕  ' + ((result && result.error) || xhr.responseText || 'Unknown error'), 'error');
-      vpDone('Failed');
+      vpDone();
       return;
     }
     vpLog('✓  Sheet "' + (result.tab || gameName) + '" created', 'ok');
@@ -2385,7 +2407,7 @@ function vpAddSheet() {
   };
   xhr.onerror = function() {
     vpLog('✕  Network error — could not create sheet.', 'error');
-    vpDone('Failed');
+    vpDone();
   };
   xhr.send('id=' + encodeURIComponent(sheet_Id) + '&game=' + encodeURIComponent(gameName));
 }
@@ -2568,30 +2590,105 @@ function getContactsForPublisher(publisher) {
   return Object.keys(contacts).sort(function(a,b){ return a.localeCompare(b); });
 }
 
-function populatePublishers(selected) {
-  var sel = document.getElementById('addPublisherSel');
-  sel.innerHTML = '<option value="">— select publisher —</option>';
-  getPublisherList().forEach(function(p) {
-    var o = document.createElement('option');
-    o.value = p; o.textContent = p;
-    if (p === selected) o.selected = true;
-    sel.appendChild(o);
+// ── Combobox implementation ───────────────────────────
+var _combosReady = false;
+
+function _comboInit(inputId, dropId, getItems, onSelect) {
+  var inp  = document.getElementById(inputId);
+  var drop = document.getElementById(dropId);
+  if (!inp || !drop) return;
+  var _ai = -1;   // active dropdown index
+
+  function renderDrop() {
+    if (inp.disabled) return;
+    var q     = inp.value.trim().toLowerCase();
+    var items = getItems().filter(function(s) {
+      return !q || s.toLowerCase().indexOf(q) !== -1;
+    });
+    if (!items.length) { closeDrop(); return; }
+    _ai = -1;
+    drop.innerHTML = '';
+    items.forEach(function(item) {
+      var div = document.createElement('div');
+      div.className = 'combo-opt';
+      div.textContent = item;
+      div.addEventListener('mousedown', function(e) {
+        e.preventDefault();   // keep focus on input
+        inp.value = item;
+        closeDrop();
+        if (onSelect) onSelect(item);
+      });
+      drop.appendChild(div);
+    });
+    drop.classList.add('open');
+  }
+  function closeDrop() { drop.classList.remove('open'); _ai = -1; }
+  function moveActive(dir) {
+    var opts = drop.querySelectorAll('.combo-opt');
+    if (!opts.length) return;
+    _ai = Math.max(0, Math.min(opts.length - 1, _ai + dir));
+    opts.forEach(function(o, i) {
+      o.classList.toggle('active', i === _ai);
+      if (i === _ai) o.scrollIntoView({ block: 'nearest' });
+    });
+  }
+  inp.addEventListener('input',  renderDrop);
+  inp.addEventListener('focus',  renderDrop);
+  inp.addEventListener('blur',   function() { setTimeout(closeDrop, 150); });
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!drop.classList.contains('open')) renderDrop(); else moveActive(1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault(); moveActive(-1);
+    } else if (e.key === 'Enter') {
+      var opts = drop.querySelectorAll('.combo-opt');
+      if (_ai >= 0 && opts[_ai]) {
+        e.preventDefault();
+        inp.value = opts[_ai].textContent;
+        closeDrop();
+        if (onSelect) onSelect(inp.value);
+      }
+    } else if (e.key === 'Escape') { closeDrop(); }
   });
+}
+
+function _setupCombos() {
+  if (_combosReady) return;
+  _combosReady = true;
+  _comboInit('addPublisherInput', 'pubComboDrop',
+    function() { return getPublisherList(); },
+    function() {
+      // Publisher chosen → clear contact field
+      document.getElementById('addContactInput').value = '';
+    });
+  _comboInit('addContactInput', 'contactComboDrop',
+    function() {
+      var pub = (document.getElementById('addPublisherInput') || {}).value || '';
+      return getContactsForPublisher(pub.trim());
+    }, null);
+  // Typing in publisher field also clears contact
+  var pubInp = document.getElementById('addPublisherInput');
+  if (pubInp) {
+    pubInp.addEventListener('input', function() {
+      document.getElementById('addContactInput').value = '';
+    });
+  }
+}
+
+function populatePublishers(selected) {
+  var inp = document.getElementById('addPublisherInput');
+  if (inp) inp.value = selected || '';
 }
 
 function populateContacts(publisher, selected) {
-  var sel = document.getElementById('addContactSel');
-  sel.innerHTML = '<option value="">— optional —</option>';
-  getContactsForPublisher(publisher).forEach(function(c) {
-    var o = document.createElement('option');
-    o.value = c; o.textContent = c;
-    if (c === selected) o.selected = true;
-    sel.appendChild(o);
-  });
+  var inp = document.getElementById('addContactInput');
+  if (inp) inp.value = selected || '';
 }
 
 function onPublisherChange() {
-  populateContacts(document.getElementById('addPublisherSel').value, '');
+  // kept for compatibility
+  document.getElementById('addContactInput').value = '';
 }
 
 // ── Open Add Entry dialog ─────────────────────────────
@@ -2617,23 +2714,11 @@ function openAddDialog(game, publisher, contact, pubLocked) {
   } else {
     document.getElementById('addPubContactSection').style.display = '';
     document.getElementById('addLockedSection').style.display     = 'none';
-    var pubSel    = document.getElementById('addPublisherSel');
-    var newPubBtn = document.getElementById('addNewPubBtn');
-    if (pubLocked) {
-      populatePublishers(publisher);
-      populateContacts(publisher, contact);
-      pubSel.disabled            = true;
-      pubSel.style.opacity       = '.5';
-      pubSel.style.pointerEvents = 'none';
-      if (newPubBtn) newPubBtn.style.display = 'none';
-    } else {
-      populatePublishers(publisher);
-      populateContacts(publisher, contact);
-      pubSel.disabled            = false;
-      pubSel.style.opacity       = '';
-      pubSel.style.pointerEvents = '';
-      if (newPubBtn) newPubBtn.style.display = '';
-    }
+    _setupCombos();
+    var pubInp = document.getElementById('addPublisherInput');
+    populatePublishers(publisher);
+    populateContacts(publisher, contact);
+    if (pubInp) pubInp.disabled = !!pubLocked;
   }
 
   var t = new Date();
@@ -2648,10 +2733,10 @@ function openAddDialog(game, publisher, contact, pubLocked) {
 
   document.getElementById('addEntryOverlay').classList.add('open');
   setTimeout(function() {
-    (locked
+    var focusEl = bothLocked
       ? document.getElementById('addEvent')
-      : document.getElementById('addPublisherSel')
-    ).focus();
+      : document.getElementById('addPublisherInput');
+    if (focusEl) focusEl.focus();
   }, 60);
 }
 
@@ -2669,11 +2754,11 @@ function submitAddEntry() {
     contact   = _addCtx.contact;
   } else if (_addCtx.pubLocked) {
     publisher = _addCtx.publisher;
-    contact   = document.getElementById('addContactSel').value;
+    contact   = (document.getElementById('addContactInput').value || '').trim();
   } else {
-    publisher = document.getElementById('addPublisherSel').value;
-    contact   = document.getElementById('addContactSel').value;
-    if (!publisher) { document.getElementById('addPublisherSel').focus(); return; }
+    publisher = (document.getElementById('addPublisherInput').value || '').trim();
+    contact   = (document.getElementById('addContactInput').value  || '').trim();
+    if (!publisher) { document.getElementById('addPublisherInput').focus(); return; }
   }
 
   var dp = dateVal.split('-');
@@ -2683,50 +2768,87 @@ function submitAddEntry() {
   var notesVal  = document.getElementById('addNotes').value.trim();
 
   var btn = document.getElementById('addSubmitBtn');
-  btn.disabled = true; btn.textContent = 'Adding…';
 
-  var body =
-    'id='         + encodeURIComponent(sheet_Id) +
-    '&game='      + encodeURIComponent(_addCtx.game) +
-    '&publisher=' + encodeURIComponent(publisher) +
-    '&contact='   + encodeURIComponent(contact) +
-    '&date='      + encodeURIComponent(sheetDate) +
-    '&event='     + encodeURIComponent(eventVal) +
-    '&status='    + encodeURIComponent(statusVal) +
-    '&notes='     + encodeURIComponent(notesVal);
+  function doSubmitPitch() {
+    btn.disabled = true; btn.textContent = 'Adding…';
+    var body =
+      'id='         + encodeURIComponent(sheet_Id) +
+      '&game='      + encodeURIComponent(_addCtx.game) +
+      '&publisher=' + encodeURIComponent(publisher) +
+      '&contact='   + encodeURIComponent(contact) +
+      '&date='      + encodeURIComponent(sheetDate) +
+      '&event='     + encodeURIComponent(eventVal) +
+      '&status='    + encodeURIComponent(statusVal) +
+      '&notes='     + encodeURIComponent(notesVal);
 
-  var xhr = new XMLHttpRequest();
-  xhr.open('POST', APP_BASE + 'push/addRow.php');
-  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-  xhr.onload = function() {
-    btn.disabled = false; btn.textContent = 'Add';
-    var result;
-    try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
-    if (result && result.ok) {
-      allPitches.push({ Game: _addCtx.game, Publisher: publisher, Contact: contact,
-        Date: sheetDate, Event: eventVal, Status: statusVal, Notes: notesVal, Email: '' });
-      filteredPitches = searchQuery
-        ? allPitches.filter(function(r) {
-            return (r.Game||'').toLowerCase().includes(searchQuery)
-                || (r.Publisher||'').toLowerCase().includes(searchQuery)
-                || (r.Contact||'').toLowerCase().includes(searchQuery)
-                || (r.Notes||'').toLowerCase().includes(searchQuery);
-          })
-        : allPitches;
-      var _vs = saveViewState();
-      buildSummary(allPitches);
-      buildView();
-      restoreViewState(_vs);
-      closeAddDialog();
-    } else {
-      showError('Error: ' + ((result && result.error) || xhr.responseText || 'Unknown error'));
-    }
-  };
-  xhr.onerror = function() {
-    btn.disabled = false; btn.textContent = 'Add';
-    showError('Network error — could not add entry.');
-  };
-  xhr.send(body);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', APP_BASE + 'push/addRow.php');
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function() {
+      btn.disabled = false; btn.textContent = 'Add';
+      var result;
+      try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
+      if (result && result.ok) {
+        allPitches.push({ Game: _addCtx.game, Publisher: publisher, Contact: contact,
+          Date: sheetDate, Event: eventVal, Status: statusVal, Notes: notesVal, Email: '' });
+        filteredPitches = searchQuery
+          ? allPitches.filter(function(r) {
+              return (r.Game||'').toLowerCase().includes(searchQuery)
+                  || (r.Publisher||'').toLowerCase().includes(searchQuery)
+                  || (r.Contact||'').toLowerCase().includes(searchQuery)
+                  || (r.Notes||'').toLowerCase().includes(searchQuery);
+            })
+          : allPitches;
+        var _vs = saveViewState();
+        buildSummary(allPitches);
+        buildView();
+        restoreViewState(_vs);
+        closeAddDialog();
+      } else {
+        showError('Error: ' + ((result && result.error) || xhr.responseText || 'Unknown error'));
+      }
+    };
+    xhr.onerror = function() {
+      btn.disabled = false; btn.textContent = 'Add';
+      showError('Network error — could not add entry.');
+    };
+    xhr.send(body);
+  }
+
+  // If contact is a new name not yet known, save it to people sheet first
+  var contactIsNew = contact && !_addCtx.locked
+    && getContactsForPublisher(publisher).indexOf(contact) === -1
+    && !((contact + '|' + publisher) in peopleIndex);
+
+  if (contactIsNew) {
+    btn.disabled = true; btn.textContent = 'Saving contact…';
+    var cxhr = new XMLHttpRequest();
+    cxhr.open('POST', APP_BASE + 'push/addPerson.php');
+    cxhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    cxhr.onload = function() {
+      var res;
+      try { res = JSON.parse(cxhr.responseText); } catch(e) { res = null; }
+      if (res && res.ok) {
+        peopleIndex[contact + '|' + publisher] = '';
+        doSubmitPitch();
+      } else {
+        btn.disabled = false; btn.textContent = 'Add';
+        showError('Error saving contact: ' + ((res && res.error) || 'Unknown error'));
+      }
+    };
+    cxhr.onerror = function() {
+      btn.disabled = false; btn.textContent = 'Add';
+      showError('Network error — could not save contact.');
+    };
+    cxhr.send(
+      'id='       + encodeURIComponent(sheet_Id) +
+      '&name='    + encodeURIComponent(contact) +
+      '&company=' + encodeURIComponent(publisher) +
+      '&email='   + encodeURIComponent('')
+    );
+  } else {
+    doSubmitPitch();
+  }
 }
 
 // ── New Publisher / New Contact sub-dialog ────────────
@@ -2737,7 +2859,7 @@ function openAddNew(mode) {
 
   var fields = document.getElementById('addNewFields');
   if (isContact) {
-    var pub = document.getElementById('addPublisherSel').value;
+    var pub = ((document.getElementById('addPublisherInput') || {}).value || '').trim();
     fields.innerHTML =
       (pub ? '<div class="add-locked-ctx" style="margin-bottom:.5rem">Publisher: ' + escHtml(pub) + '</div>' : '') +
       '<label>Name<input type="text" id="addNewName" placeholder="Full name" autocomplete="off" /></label>' +
@@ -2767,23 +2889,16 @@ function submitAddNew() {
 
   if (_addNewMode === 'publisher') {
     // No sheet write needed — publisher name is stored in the pitches row
-    var sel = document.getElementById('addPublisherSel');
-    // Check not already in list
-    var exists = Array.from(sel.options).some(function(o){ return o.value === name; });
-    if (!exists) {
-      var opt = document.createElement('option');
-      opt.value = name; opt.textContent = name;
-      sel.appendChild(opt);
-    }
-    sel.value = name;
-    populateContacts(name, '');
+    var pubInp = document.getElementById('addPublisherInput');
+    if (pubInp) pubInp.value = name;
+    document.getElementById('addContactInput').value = '';
     closeAddNew();
 
   } else {
     // Contact — write to people sheet
     var emailEl = document.getElementById('addNewEmail');
     var email     = emailEl ? emailEl.value.trim() : '';
-    var publisher = document.getElementById('addPublisherSel').value;
+    var publisher = ((document.getElementById('addPublisherInput') || {}).value || '').trim();
 
     var xhr = new XMLHttpRequest();
     xhr.open('POST', APP_BASE + 'push/addPerson.php');

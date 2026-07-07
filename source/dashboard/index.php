@@ -523,10 +523,10 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .add-entry-actions { display:flex; justify-content:flex-end; gap:.6rem; margin-top:.1rem; }
     .add-cancel-btn {
-      font-family:'DINBlack',sans-serif; font-size:.72rem;
+      font-family:'DINBlack',sans-serif; font-size:.7rem;
       text-transform:uppercase; letter-spacing:.05em;
       background:none; color:#999; border:1px solid #ddd;
-      border-radius:6px; padding:.45rem .9rem; cursor:pointer;
+      border-radius:6px; padding:.42rem .9rem; cursor:pointer;
     }
     .add-cancel-btn:hover { background:#f5f5f5; color:#333; }
     .add-submit-btn {
@@ -603,9 +603,11 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .notes-close {
       font-family:'DINBlack',sans-serif; font-size:.7rem;
       text-transform:uppercase; letter-spacing:.05em;
-      color:#999; cursor:pointer; background:none; border:none;
+      background:none; color:#999; border:1px solid #ddd;
+      border-radius:6px; padding:.42rem .9rem; cursor:pointer;
     }
-    .notes-close:hover { color:#333; }
+    .notes-close:hover { background:#f5f5f5; color:#333; }
+    .notes-close:disabled { opacity:.4; cursor:default; }
 
     /* ── Sync dialog ─────────────────────────────────── */
     .sync-overlay {
@@ -715,9 +717,10 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .ge-cancel-btn {
       font-family:'DINBlack',sans-serif; font-size:.7rem;
       text-transform:uppercase; letter-spacing:.05em;
-      color:#999; cursor:pointer; background:none; border:none;
+      background:none; color:#999; border:1px solid #ddd;
+      border-radius:6px; padding:.42rem .9rem; cursor:pointer;
     }
-    .ge-cancel-btn:hover { color:#333; }
+    .ge-cancel-btn:hover { background:#f5f5f5; color:#333; }
 
     /* ── Copyable error dialog ───────────────────────── */
     .err-overlay {
@@ -868,7 +871,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     <div class="sync-log" id="vpLog"></div>
     <div class="sync-dialog-actions">
       <button class="sync-done-btn" id="vpAddSheetBtn" style="display:none" onclick="vpAddSheet()">Add Sheet</button>
-      <button class="sync-done-btn" id="vpDoneBtn" disabled onclick="closeVpDialog()">Done</button>
+      <button class="notes-close" id="vpDoneBtn" disabled onclick="closeVpDialog()">Close</button>
       <button class="sync-done-btn" id="vpViewPageBtn" style="display:none" onclick="vpOpenViewPage()">View Page</button>
     </div>
   </div>
@@ -1011,7 +1014,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     <div class="sync-log" id="syncLog"></div>
     <div class="sync-dialog-actions">
       <button class="sync-update-btn" id="syncUpdateBtn" style="display:none" onclick="updatePitchboard()">↑ Update Pitchboard</button>
-      <button class="sync-done-btn" id="syncDoneBtn" disabled onclick="closeSyncDialog()">Done</button>
+      <button class="notes-close" id="syncDoneBtn" disabled onclick="closeSyncDialog()">Close</button>
     </div>
   </div>
 </div>

@@ -51,43 +51,81 @@ except Exception as e:
     print(json.dumps({"error": "could not create worksheet: " + str(e)}))
     sys.exit(1)
 
-# Default rows — [col_A (field), col_B (value), col_C (extra)]
+# ── Pre-populate from games.json if available ─────────────────────────────────
+game_info  = {}
+games_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          '..', 'sheets', sheet_id, 'games.json')
+if os.path.exists(games_path):
+    try:
+        with open(games_path, 'r', encoding='utf8') as _f:
+            for _g in json.load(_f):
+                if (_g.get('Name', '') == game_name or
+                        _g.get('Name', '').lower() == game_name.lower()):
+                    game_info = _g
+                    break
+    except Exception:
+        pass
+
+def gv(key):
+    """Return a stripped value from game_info, or '' if absent/empty."""
+    return (game_info.get(key) or '').strip()
+
+# Collect non-empty designers
+designers = [gv(f'Designer{i}') for i in range(1, 5)]
+designers = [d for d in designers if d]
+if not designers:
+    designers = ['', '']       # keep two blank rows as placeholders
+
+description     = gv('Summary') or gv('Description')
+pitch_desc      = gv('Summary') if (gv('Description') and gv('Summary') != gv('Description')) else ''
+rules_url       = gv('Rules URL')
+play_url        = gv('Play URL')
+video_url       = gv('Video URL')
+sellsheet_url   = gv('Sellsheet URL')
+
+# ── Build rows ─────────────────────────────────────────────────────────────────
+# [col_A (field), col_B (value), col_C (extra)]
 default_rows = [
-    ['Title',            game_name, ''],
-    ['SubTitle',         '',        ''],
-    ['BggGameId',        '',        ''],
-    ['Description',      '',        ''],
-    ['ProductImage',     '',        ''],
-    ['MinPlayers',       '',        ''],
-    ['MaxPlayers',       '',        ''],
-    ['MinPlaytime',      '',        ''],
-    ['MaxPlaytime',      '',        ''],
-    ['',                 '',        ''],
-    ['Designer',         '',        ''],
-    ['Designer',         '',        ''],
-    ['',                 '',        ''],
-    ['Price',            '',        ''],
-    ['Stock',            '',        ''],
-    ['Weight',           '',        ''],
-    ['',                 '',        ''],
-    ['BuyUrl',           'Shop URL',        'Shop name'],   # col B = URL, col C = display text
-    ['BuyUrl',           'Shop URL',        'Shop name'],   # col B = URL, col C = display text
-    ['',                 '',        ''],
-    ['Review',           'Review text',        'Reviewer'],   # col B = text, col C = reviewer name
-    ['Review',           'Review text',        'Reviewer'],   # col B = text, col C = reviewer name
-    ['',                 '',        ''],
-    ['Video',            'Video URL',        'Creator'],   # col B = URL,  col C = creator name
-    ['Video',            'Video URL',        'Creator'],   # col B = URL,  col C = creator name
-    ['',                 '',        ''],
-    ['Component',        '',        ''],
-    ['Component',        '',        ''],
-    ['Component',        '',        ''],
-    ['',                 '',        ''],
-    ['PitchImageUrl',    '',        ''],
-    ['PitchDescription', '',        ''],
-    ['Feature',          '',        ''],
-    ['Feature',          '',        ''],
-    ['Feature',          '',        ''],
+    ['Title',            game_name,    ''],
+    ['SubTitle',         '',           ''],
+    ['BggGameId',        '',           ''],
+    ['Description',      description,  ''],
+    ['ProductImage',     '',           ''],
+    ['MinPlayers',       '',           ''],
+    ['MaxPlayers',       '',           ''],
+    ['MinPlaytime',      '',           ''],
+    ['MaxPlaytime',      '',           ''],
+    ['',                 '',           ''],
+]
+
+# One Designer row per name (or two blank placeholders)
+for d in designers:
+    default_rows.append(['Designer', d, ''])
+
+default_rows += [
+    ['',                 '',           ''],
+    ['Price',            '',           ''],
+    ['Stock',            '',           ''],
+    ['Weight',           '',           ''],
+    ['',                 '',           ''],
+    ['BuyUrl',           'Shop URL',   'Shop name'],
+    ['BuyUrl',           'Shop URL',   'Shop name'],
+    ['',                 '',           ''],
+    ['Review',           'Review text','Reviewer'],
+    ['Review',           'Review text','Reviewer'],
+    ['',                 '',           ''],
+    ['Video',            video_url,    'Creator'],
+    ['Video',            'Video URL',  'Creator'],
+    ['',                 '',           ''],
+    ['Component',        '',           ''],
+    ['Component',        '',           ''],
+    ['Component',        '',           ''],
+    ['',                 '',           ''],
+    ['PitchImageUrl',    sellsheet_url,''],
+    ['PitchDescription', pitch_desc,   ''],
+    ['Feature',          '',           ''],
+    ['Feature',          '',           ''],
+    ['Feature',          '',           ''],
 ]
 
 try:

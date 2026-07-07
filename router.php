@@ -96,49 +96,26 @@ if (preg_match('#^/pushsite(/.*)?$#', $uri)) {
     serveFile(__DIR__ . '/push/pushsite.php', $MIME);
 }
 
-// ── Short URL: /{id}/view[/…] (more specific — check first) ──────────────
+// ── Backward compat: sheets/{id}/view|dashboard|sellsheet ────────────────
+if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/view(/.*)?$#', $uri))       { serveFile(__DIR__ . '/source/view/index.php',       $MIME); }
+if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/dashboard(/.*)?$#', $uri))  { serveFile(__DIR__ . '/source/dashboard/index.php',  $MIME); }
+if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/sellsheet(/.*)?$#', $uri))  { serveFile(__DIR__ . '/source/sellsheet/index.php',  $MIME); }
+
+// ── Short URL: /{id}/view[/…] ────────────────────────────────────────────
+// View is served from the single source file — no per-sheet copies needed.
 if (preg_match('#^/([A-Za-z0-9_\-]+)/view(/.*)?$#', $uri, $m)) {
-    $id   = $m[1];
-    $rest = (isset($m[2]) && $m[2] !== '' && $m[2] !== '/') ? $m[2] : '/index.html';
-
-    $target = __DIR__ . '/sheets/' . $id . '/view' . $rest;
-    if (is_file($target))  { serveFile($target, $MIME); }
-
-    // Prefer index.php (PHP sets <base href> server-side); fall back to .html
-    $idx = __DIR__ . '/sheets/' . $id . '/view/index.php';
-    if (is_file($idx))     { serveFile($idx, $MIME); }
-
-    $idx = __DIR__ . '/sheets/' . $id . '/view/index.html';
-    if (is_file($idx))     { serveFile($idx, $MIME); }
-
-    sheetNotFound($id);
+    serveFile(__DIR__ . '/source/view/index.php', $MIME);
 }
 
 // ── Short URL: /{id}/dashboard[/…] ───────────────────────────────────────
+// Dashboard is served from the single source file — no per-sheet copies needed.
 if (preg_match('#^/([A-Za-z0-9_\-]+)/dashboard(/.*)?$#', $uri, $m)) {
-    $id   = $m[1];
-    $rest = (isset($m[2]) && $m[2] !== '' && $m[2] !== '/') ? $m[2] : '/index.html';
-
-    $target = __DIR__ . '/sheets/' . $id . '/dashboard' . $rest;
-    if (is_file($target))  { serveFile($target, $MIME); }
-
-    $idx = __DIR__ . '/sheets/' . $id . '/dashboard/index.php';
-    if (is_file($idx))     { serveFile($idx, $MIME); }
-
-    $idx = __DIR__ . '/sheets/' . $id . '/dashboard/index.html';
-    if (is_file($idx))     { serveFile($idx, $MIME); }
-
-    sheetNotFound($id);
-}
-
-// ── Short URL: /{id}/connections[/…] (legacy → redirect to /dashboard) ───
-if (preg_match('#^/([A-Za-z0-9_\-]+)/connections(/.*)?$#', $uri, $m)) {
     $id = $m[1];
-    header('Location: ' . $basePath . '/' . $id . '/dashboard', true, 301);
-    exit;
+    serveFile(__DIR__ . '/source/dashboard/index.php', $MIME);
 }
 
 // ── Short URL: /{id}/site[/…] ────────────────────────────────────────────
+// Site is served from source/site/ — no per-sheet copies needed.
 if (preg_match('#^/([A-Za-z0-9_\-]+)/site(/.*)?$#', $uri, $m)) {
     $id      = $m[1];
     $hasRest = isset($m[2]) && $m[2] !== '';
@@ -151,33 +128,23 @@ if (preg_match('#^/([A-Za-z0-9_\-]+)/site(/.*)?$#', $uri, $m)) {
 
     $rest = ($m[2] === '/') ? '/index.php' : $m[2];
 
-    $target = __DIR__ . '/sheets/' . $id . '/site' . $rest;
+    // Serve directly from source/site/
+    $target = __DIR__ . '/source/site' . $rest;
     if (is_file($target))  { serveFile($target, $MIME); }
 
-    $idx = __DIR__ . '/sheets/' . $id . '/site/index.php';
+    $idx = __DIR__ . '/source/site/index.php';
     if (is_file($idx))     { serveFile($idx, $MIME); }
 
-    $idx = __DIR__ . '/sheets/' . $id . '/site/index.html';
+    $idx = __DIR__ . '/source/site/index.html';
     if (is_file($idx))     { serveFile($idx, $MIME); }
 
     sheetNotFound($id);
 }
 
 // ── Short URL: /{id}/sellsheet[/…] ───────────────────────────────────────
+// Sellsheet is served from the single source file — no per-sheet copies needed.
 if (preg_match('#^/([A-Za-z0-9_\-]+)/sellsheet(/.*)?$#', $uri, $m)) {
-    $id   = $m[1];
-    $rest = (isset($m[2]) && $m[2] !== '' && $m[2] !== '/') ? $m[2] : '/index.html';
-
-    $target = __DIR__ . '/sheets/' . $id . '/sellsheet' . $rest;
-    if (is_file($target))  { serveFile($target, $MIME); }
-
-    $idx = __DIR__ . '/sheets/' . $id . '/sellsheet/index.php';
-    if (is_file($idx))     { serveFile($idx, $MIME); }
-
-    $idx = __DIR__ . '/sheets/' . $id . '/sellsheet/index.html';
-    if (is_file($idx))     { serveFile($idx, $MIME); }
-
-    sheetNotFound($id);
+    serveFile(__DIR__ . '/source/sellsheet/index.php', $MIME);
 }
 
 // ── Short URL: /{id}[/…] → redirect to /sheets/{id}[/…] ─────────────────

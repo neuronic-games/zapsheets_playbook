@@ -1475,7 +1475,7 @@ function buildGameView(pitches) {
         { label:'Sellsheet', url: gfield(['Sellsheet URL','Sellsheet','Sell Sheet URL','Sell Sheet','Link Sellsheet']) },
         { label:'View',      url: gfield(['View','View URL','Link View','Website','BGG','BGG URL','BGG Link']) },
         { label:'Video',     url: gfield(['Video','Video URL','Video Link','Link Video','YouTube','YouTube URL']) },
-        { label:'Info',      url: playbookId ? APP_BASE + 'sheets/' + playbookId + '/view' : '' }
+        { label:'Info',      url: playbookId ? APP_BASE + playbookId + '/view' : '' }
       ];
       var out = '';
       linkDefs.forEach(function(lp) {
@@ -2342,7 +2342,7 @@ function vpDone() {
   document.getElementById('vpDoneBtn').disabled = false;
 }
 function vpOpenViewPage() {
-  window.open(BASE + 'view/?game=' + encodeURIComponent(_vpCurrentGame), '_blank');
+  window.open(APP_BASE + sheet_Id + '/view/?game=' + encodeURIComponent(_vpCurrentGame), '_blank');
 }
 // Classify a cachemedia.py output line into a sync colour type.
 function _vpMediaType(line) {
@@ -3174,7 +3174,7 @@ function loadAll(onComplete) {
       if (onComplete) onComplete();
     }
   }
-  loadJSON(BASE + 'pitches.json',  'pitches',  BASE + 'connections.json', done);
+  loadJSON(BASE + 'pitches.json',  'pitches',  null,                      done);
   loadJSON(BASE + 'settings.json', 'settings', null,                      done);
   loadJSON(BASE + 'people.json',   'people',   null,                      done);
   loadJSON(BASE + 'games.json',    'games',    null,                      done);

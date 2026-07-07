@@ -8,23 +8,48 @@ DirectoryIndex index.php index.html
 # /pushsite[?…] → push/pushsite.php
 RewriteRule ^pushsite/?$ push/pushsite.php [L,QSA]
 
-# Short-URL: /{id}/view[/…] → sheets/{id}/view/index.php  (more specific — must come first)
+# Short-URL: /{id}/dashboard → source/dashboard/index.php (single source, no per-sheet copy)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^([A-Za-z0-9_\-]+)/view/?$ sheets/$1/view/index.php [L]
+RewriteRule ^([A-Za-z0-9_\-]+)/dashboard/?$ source/dashboard/index.php [L,QSA]
+
+# Also cover sheets/{id}/dashboard in case of old bookmarks / direct links
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^sheets/([A-Za-z0-9_\-]+)/dashboard/?$ source/dashboard/index.php [L,QSA]
+
+# Short-URL: /{id}/view → source/view/index.php (single source, no per-sheet copy)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/view/?$ source/view/index.php [L,QSA]
+
+# Also cover sheets/{id}/view for old bookmarks / direct links
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^sheets/([A-Za-z0-9_\-]+)/view/?$ source/view/index.php [L,QSA]
+
+# Short-URL: /{id}/sellsheet → source/sellsheet/index.php (single source, no per-sheet copy)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/sellsheet/?$ source/sellsheet/index.php [L,QSA]
+
+# Also cover sheets/{id}/sellsheet for old bookmarks / direct links
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^sheets/([A-Za-z0-9_\-]+)/sellsheet/?$ source/sellsheet/index.php [L,QSA]
 
 # Short-URL: /{id}/site  → add trailing slash (301)
 RewriteRule ^([A-Za-z0-9_\-]+)/site$ %{REQUEST_URI}/ [R=301,L]
 
-# Short-URL: /{id}/site/  → sheets/{id}/site/index.php
+# Short-URL: /{id}/site/  → source/site/index.php (single source, no per-sheet copy)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^([A-Za-z0-9_\-]+)/site/?$ sheets/$1/site/index.php [L]
+RewriteRule ^([A-Za-z0-9_\-]+)/site/?$ source/site/index.php [L,QSA]
 
-# Short-URL: /{id}/site/… → sheets/{id}/site/… (game.php, cache files, etc.)
+# Short-URL: /{id}/site/… → source/site/… (game.php, contact.php, etc.)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^([A-Za-z0-9_\-]+)/site/(.+)$ sheets/$1/site/$2 [L]
+RewriteRule ^([A-Za-z0-9_\-]+)/site/(.+)$ source/site/$2 [L,QSA]
 
 # Short-URL: /{id}[/…] → redirect to /sheets/{id}[/…]
 #

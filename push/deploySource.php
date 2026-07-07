@@ -1,46 +1,27 @@
 <?php
-// Copies source/dashboard/index.php → sheets/*/dashboard/index.php
-// Also increments Version and updates PublishedOn in version.json
-// and writes Version + PublishedOn back to each Google Sheet's Settings tab.
+// Dashboard is now served directly from source/dashboard/index.php via .htaccess routing —
+// no per-sheet copies are needed.
+//
+// This script still increments Version in version.json and writes it back to
+// each Google Sheet's Settings tab so the in-app version badge stays current.
 
 require dirname(__DIR__) . '/dotEnv.php';
 
 $root       = dirname(__DIR__);
-$srcFile    = $root . '/source/dashboard/index.php';
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 
-if (!file_exists($srcFile)) {
-    echo 'ERROR: source/dashboard/index.php not found';
-    exit;
-}
-
-// Optional: scope to a single sheet when sheet_id is posted
+// Collect all known sheet IDs (any directory under sheets/)
 $singleId = trim($_POST['sheet_id'] ?? '');
-
 if ($singleId !== '') {
-    // Only deploy to this one sheet
-    $targetDir = $root . '/sheets/' . $singleId . '/dashboard';
-    if (!is_dir($targetDir)) {
-        echo 'ERROR: sheets/' . $singleId . '/dashboard not found';
-        exit;
-    }
-    $dirs = [$targetDir];
+    $sheetIds = [$singleId];
 } else {
-    $dirs = glob($root . '/sheets/*/dashboard', GLOB_ONLYDIR);
-    if (empty($dirs)) {
-        echo 'SKIP: no sheet dashboard directories found';
-        exit;
-    }
+    $sheetDirs = glob($root . '/sheets/*', GLOB_ONLYDIR);
+    $sheetIds  = array_map('basename', $sheetDirs ?: []);
 }
 
-$count = 0;
-foreach ($dirs as $dir) {
-    $dest = $dir . '/index.php';
-    if (!copy($srcFile, $dest)) {
-        echo 'ERROR: could not write to ' . basename(dirname($dir)) . '/dashboard/index.php';
-        exit;
-    }
-    $count++;
+if (empty($sheetIds)) {
+    echo 'SKIP: no sheet directories found';
+    exit;
 }
 
 // ── Update version.json ───────────────────────────────────────────────────────
@@ -59,19 +40,17 @@ $versionLabel = 'v' . $versionData['Version'] . ' · ' . $versionData['Published
 // ── Write Version + PublishedOn back to each Google Sheet's Settings tab ──────
 $gwriteScript  = __DIR__ . '/gwrite.py';
 $gwriteResults = [];
-foreach ($dirs as $dir) {
-    $sheetId = basename(dirname($dir));
-    $arg     = $sheetId . 'version' . $versionData['Version'];
-    $cmd     = escapeshellarg($pythonPath) . ' '
-             . escapeshellarg($gwriteScript) . ' '
-             . escapeshellarg($arg) . ' 2>/dev/null';
+foreach ($sheetIds as $sheetId) {
+    $arg = $sheetId . 'version' . $versionData['Version'];
+    $cmd = escapeshellarg($pythonPath) . ' '
+         . escapeshellarg($gwriteScript) . ' '
+         . escapeshellarg($arg) . ' 2>/dev/null';
     $out = trim((string) shell_exec($cmd));
     $gwriteResults[] = $sheetId . ': ' . ($out ?: 'no response');
 }
 
 // Return each result on its own line so the sync log can show them individually
-echo 'source deployed to ' . $count . ' sheet' . ($count === 1 ? '' : 's')
-   . ' — ' . $versionLabel;
+echo 'deployed — ' . $versionLabel;
 foreach ($gwriteResults as $line) {
     echo "\n" . $line;
 }

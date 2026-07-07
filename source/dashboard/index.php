@@ -682,6 +682,44 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       color:#999; cursor:pointer; background:none; border:none;
     }
     .ge-cancel-btn:hover { color:#333; }
+
+    /* ── Copyable error dialog ───────────────────────── */
+    .err-overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.45); z-index:5000;
+      align-items:center; justify-content:center; padding:1rem;
+    }
+    .err-overlay.open { display:flex; }
+    .err-dialog {
+      background:#fff; border-radius:10px;
+      padding:1.4rem 1.5rem; width:min(540px,94vw);
+      box-shadow:0 8px 32px rgba(0,0,0,.22);
+      display:flex; flex-direction:column; gap:.75rem;
+    }
+    .err-heading {
+      font-family:'DINBlack',sans-serif; font-size:.9rem;
+      text-transform:uppercase; letter-spacing:.05em; color:#c0392b;
+    }
+    .err-body {
+      font-family:monospace; font-size:.78rem; line-height:1.5;
+      background:#fafafa; border:1px solid #e0e0e0; border-radius:6px;
+      padding:.75rem; white-space:pre-wrap; word-break:break-all;
+      user-select:text; -webkit-user-select:text;
+      max-height:260px; overflow-y:auto; cursor:text;
+    }
+    .err-actions {
+      display:flex; justify-content:flex-end; gap:.5rem; align-items:center;
+    }
+    .err-copy-btn {
+      font-family:'DINBlack',sans-serif; font-size:.68rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      background:#f0f0f0; color:#444; border:none; border-radius:6px;
+      padding:.38rem .8rem; cursor:pointer; transition:background .15s;
+    }
+    .err-copy-btn:hover { background:#e0e0e0; }
+
+    /* ── View Page publish dialog (inherits sync-* styles) ─ */
+    #vpOverlay { z-index:5000; }
   </style>
 </head>
 <body>
@@ -738,6 +776,29 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     <div class="notes-dialog-actions">
       <button class="notes-close" onclick="closeNotesDialog()">Close</button>
       <button class="notes-update-btn" id="notesUpdateBtn" onclick="submitNotesUpdate()">Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- Copyable error dialog -->
+<div class="err-overlay" id="errOverlay" onclick="if(event.target===this)closeErrDialog()">
+  <div class="err-dialog">
+    <div class="err-heading">Error</div>
+    <div class="err-body" id="errBody" tabindex="0"></div>
+    <div class="err-actions">
+      <button class="err-copy-btn" onclick="copyErrText()">Copy</button>
+      <button class="ge-cancel-btn" onclick="closeErrDialog()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- View Page publish dialog -->
+<div class="sync-overlay" id="vpOverlay">
+  <div class="sync-dialog">
+    <h2 id="vpTitle">Publishing…</h2>
+    <div class="sync-log" id="vpLog"></div>
+    <div class="sync-dialog-actions">
+      <button class="sync-done-btn" id="vpDoneBtn" disabled onclick="closeVpDialog()">Done</button>
     </div>
   </div>
 </div>
@@ -1365,6 +1426,7 @@ function buildGameView(pitches) {
     html += '<span style="flex:1"></span>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();addBtnClick(this)">New Pitch</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();editGameClick(this)">Edit Game</button>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();viewPageClick(this)">View Page</button>';
     html += '</div>';
 
     // Sort publishers alphabetically
@@ -2141,15 +2203,151 @@ function submitNotesUpdate() {
       restoreViewState(_vs);
       closeNotesDialog();
     } else {
-      alert('Error: ' + ((result && result.error) || 'Could not update row.'));
+      showError('Error: ' + ((result && result.error) || 'Could not update row.'));
     }
   };
   xhr.onerror = function() {
     btn.disabled = false;
     btn.textContent = 'Update';
-    alert('Network error — could not update.');
+    showError('Network error — could not update.');
   };
   xhr.send(body);
+}
+
+// ── Copyable error dialog ─────────────────────────────
+function showError(msg) {
+  document.getElementById('errBody').textContent = msg;
+  document.getElementById('errOverlay').classList.add('open');
+}
+function closeErrDialog() {
+  document.getElementById('errOverlay').classList.remove('open');
+}
+function copyErrText() {
+  var text = document.getElementById('errBody').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function() {
+      var btn = document.querySelector('.err-copy-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(function() { btn.textContent = 'Copy'; }, 1800);
+    });
+  } else {
+    // Fallback for older browsers
+    var sel = window.getSelection();
+    var range = document.createRange();
+    range.selectNodeContents(document.getElementById('errBody'));
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+}
+
+// ── View Page publish dialog ───────────────────────────────
+function openVpDialog(title) {
+  document.getElementById('vpTitle').textContent = title;
+  document.getElementById('vpLog').innerHTML = '';
+  document.getElementById('vpDoneBtn').disabled = true;
+  document.getElementById('vpOverlay').classList.add('open');
+}
+function closeVpDialog() {
+  document.getElementById('vpOverlay').classList.remove('open');
+}
+function vpLog(msg, type) {
+  var log  = document.getElementById('vpLog');
+  var line = document.createElement('span');
+  line.className = 'sync-log-line ' + (type || 'info');
+  line.textContent = msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+function vpDone(title) {
+  document.getElementById('vpTitle').textContent = title;
+  document.getElementById('vpDoneBtn').disabled = false;
+}
+// Classify a cachemedia.py output line into a sync colour type.
+function _vpMediaType(line) {
+  if (/^OK\s/i.test(line))     return 'ok';
+  if (/^CACHED\s/i.test(line)) return 'skip';
+  if (/^FAIL\s/i.test(line))   return 'error';
+  return 'info';
+}
+
+// Deploy source/view/index.php → sheets/{id}/view/index.php, then open /view/.
+// Called as the final step of every VIEW PAGE publish flow.
+function _vpDeployAndOpen() {
+  vpLog('Deploying view page…', 'info');
+  var xhr3 = new XMLHttpRequest();
+  xhr3.open('POST', APP_BASE + 'push/deployViewSource.php');
+  xhr3.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  var _open = function() {
+    vpLog('Opening view page…', 'info');
+    vpDone('Done');
+    setTimeout(function() { window.open(BASE + 'view/', '_blank'); }, 400);
+  };
+  xhr3.onload = function() {
+    var r3; try { r3 = JSON.parse(xhr3.responseText); } catch(e) { r3 = null; }
+    if (r3 && r3.error) vpLog('⚠  Deploy: ' + r3.error, 'skip');
+    _open();
+  };
+  xhr3.onerror = function() {
+    vpLog('⚠  Deploy skipped (network error)', 'skip');
+    _open();
+  };
+  xhr3.send('id=' + encodeURIComponent(sheet_Id));
+}
+
+// ── View Page ─────────────────────────────────────────
+// Opens the publish dialog, exports the game tab → game-en.json,
+// caches media (showing each file), then opens /view in a new tab.
+function viewPageClick(btn) {
+  var gameName = btn.getAttribute('data-game') || '';
+  if (!gameName) return;
+
+  openVpDialog('Publishing ' + gameName + '…');
+  vpLog('Exporting game data…', 'info');
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/viewGame.php');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onload = function() {
+    var result;
+    try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
+
+    if (!result || result.error) {
+      var errMsg = (result && result.error === 'tab_not_found')
+        ? '✕  A sheet named "' + gameName + '" does not exist in your document.'
+        : '✕  ' + ((result && result.error) || xhr.responseText || 'Unknown error');
+      vpLog(errMsg, 'error');
+      vpDone('Failed');
+      return;
+    }
+
+    vpLog('✓  Game data exported (' + (result.records || 0) + ' fields)', 'ok');
+    vpLog('Caching media…', 'info');
+
+    var xhr2 = new XMLHttpRequest();
+    xhr2.open('POST', APP_BASE + 'push/viewGameMedia.php');
+    xhr2.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr2.onload = function() {
+      var r2;
+      try { r2 = JSON.parse(xhr2.responseText); } catch(e) { r2 = null; }
+      var lines = (r2 && Array.isArray(r2.lines)) ? r2.lines : [];
+      if (lines.length === 0) {
+        vpLog('nothing to cache', 'skip');
+      } else {
+        lines.forEach(function(line) { vpLog(line, _vpMediaType(line)); });
+      }
+      _vpDeployAndOpen();
+    };
+    xhr2.onerror = function() {
+      vpLog('⚠  Media cache skipped (network error)', 'skip');
+      _vpDeployAndOpen();
+    };
+    xhr2.send('id=' + encodeURIComponent(sheet_Id));
+  };
+  xhr.onerror = function() {
+    vpLog('✕  Network error — could not reach the server.', 'error');
+    vpDone('Failed');
+  };
+  xhr.send('id=' + encodeURIComponent(sheet_Id) + '&game=' + encodeURIComponent(gameName));
 }
 
 // ── Game Edit dialog ──────────────────────────────────
@@ -2222,7 +2420,7 @@ function submitGameEdit() {
   };
 
   if (!payload.name) {
-    alert('Game name is required.');
+    showError('Game name is required.');
     btn.disabled = false;
     btn.textContent = isNew ? 'Add Game' : 'Save';
     return;
@@ -2241,6 +2439,21 @@ function submitGameEdit() {
     var result;
     try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
     if (result && result.ok) {
+      // Diagnostic: warn if gadd.py found headers but wrote nothing (column name mismatch)
+      if (typeof result.non_empty_fields === 'number' && result.non_empty_fields === 0) {
+        console.warn('[addGame] gadd.py ok but 0 non-empty fields written.',
+          'Tab:', result.sheet, 'Headers:', result.headers, 'Row:', result.written);
+        showError('Warning: the game row was appended but all fields were blank.\n\n' +
+              'Column headers found in the sheet:\n' +
+              JSON.stringify(result.headers) + '\n\n' +
+              'This usually means the "games" tab column names do not match.\n' +
+              '(See browser console for full details.)');
+        closeGameEditDialog();
+        return;
+      }
+      console.log('[addGame] ok — tab:', result.sheet,
+                  'fields written:', result.non_empty_fields,
+                  'headers:', result.headers, 'row:', result.written);
       // Update gamesIndex in memory
       var oldName = _gameEditCtx.origName;
       var newName = payload.name;
@@ -2267,23 +2480,25 @@ function submitGameEdit() {
       restoreViewState(_vs);
       closeGameEditDialog();
     } else {
-      alert('Error: ' + ((result && result.error) || (isNew ? 'Could not add game.' : 'Could not update game.')));
+      showError('Error: ' + ((result && result.error) || (isNew ? 'Could not add game.' : 'Could not update game.')));
     }
   };
   xhr.onerror = function() {
     btn.disabled = false;
     btn.textContent = isNew ? 'Add Game' : 'Save';
-    alert('Network error — could not save.');
+    showError('Network error — could not save.');
   };
   xhr.send(body);
 }
 
-// Close dialogs on Escape (sub-dialog first, then main, then notes)
+// Close dialogs on Escape (publish dialog first, then error, then sub-dialogs, then main)
 document.addEventListener('keydown', function(ev) {
   if (ev.key !== 'Escape') return;
+  if (document.getElementById('vpOverlay').classList.contains('open'))       { closeVpDialog();       return; }
+  if (document.getElementById('errOverlay').classList.contains('open'))      { closeErrDialog();      return; }
   if (document.getElementById('gameEditOverlay').classList.contains('open')) { closeGameEditDialog(); return; }
-  if (document.getElementById('addNewOverlay').classList.contains('open')) { closeAddNew(); return; }
-  if (document.getElementById('addEntryOverlay').classList.contains('open')) { closeAddDialog(); return; }
+  if (document.getElementById('addNewOverlay').classList.contains('open'))   { closeAddNew();         return; }
+  if (document.getElementById('addEntryOverlay').classList.contains('open')) { closeAddDialog();      return; }
   closeNotesDialog();
 });
 
@@ -2464,12 +2679,12 @@ function submitAddEntry() {
       restoreViewState(_vs);
       closeAddDialog();
     } else {
-      alert('Error: ' + ((result && result.error) || xhr.responseText || 'Unknown error'));
+      showError('Error: ' + ((result && result.error) || xhr.responseText || 'Unknown error'));
     }
   };
   xhr.onerror = function() {
     btn.disabled = false; btn.textContent = 'Add';
-    alert('Network error — could not add entry.');
+    showError('Network error — could not add entry.');
   };
   xhr.send(body);
 }
@@ -2545,12 +2760,12 @@ function submitAddNew() {
         populateContacts(publisher, name);
         closeAddNew();
       } else {
-        alert('Error: ' + ((result && result.error) || 'Could not save contact'));
+        showError('Error: ' + ((result && result.error) || 'Could not save contact'));
       }
     };
     xhr.onerror = function() {
       btn.disabled = false; btn.textContent = 'Add';
-      alert('Network error — could not save contact.');
+      showError('Network error — could not save contact.');
     };
     xhr.send(
       'id='      + encodeURIComponent(sheet_Id) +

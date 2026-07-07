@@ -363,7 +363,17 @@ _jsonLoad(BASE + 'bgg.json',                'stats');
 
 function render() {
   var cfg = {};
-  (data.settings || []).forEach(function(r){ if (r.Name) cfg[r.Name] = r.Value; });
+  (data.settings || []).forEach(function(r) {
+    // settings.json uses col-A header as key column ('My Name' or 'Name')
+    // and whatever the user named col B as the value column (e.g. 'TAM')
+    var key = r['My Name'] || r['Name'];
+    if (!key) return;
+    var val = r['Value'];
+    if (val === undefined) {
+      for (var k in r) { if (k !== 'My Name' && k !== 'Name') { val = r[k]; break; } }
+    }
+    cfg[key] = val || '';
+  });
 
   var bg = {};
   if (data.stats && data.stats.boardgame && data.stats.boardgame[0])
@@ -383,7 +393,7 @@ function render() {
   };
 
   // ── Title ────────────────────────────────────────────────────
-  var title = cfg['Title'] || basic['name'] || 'Game';
+  var title = gv('Title') || cfg['Title'] || basic['name'] || 'Game';
   document.title = title + ' — Sellsheet';
   document.getElementById('ssTitle').textContent = title;
 
@@ -433,15 +443,21 @@ function render() {
   }
 
   // ── Hero image ─────────────────────────────────────────────
-  if (data.splash) {
+  // PitchImageUrl takes priority; fall back to splash-en.json
+  var _pitchImg = gv('PitchImageUrl');
+  var _heroSrc  = '';
+  if (_pitchImg) {
+    _heroSrc = _pitchImg;
+  } else if (data.splash) {
     var row = data.splash.find(function(r){
       return (r.ID || '').toLowerCase() === 'layout' && r.Content;
     });
     if (!row) row = data.splash.find(function(r){
       return (r.Type || '').toLowerCase() === 'image' && r.Content;
     });
-    if (row) document.getElementById('ssHero').src = cachedImage(row.Content);
+    if (row) _heroSrc = cachedImage(row.Content);
   }
+  if (_heroSrc) document.getElementById('ssHero').src = _heroSrc;
 
   // ── Subtitle at top of body left ──────────────────────────
   var sub = gv('SubTitle');
@@ -486,16 +502,16 @@ function render() {
   }
 
   // ── Footer contact bar ─────────────────────────────────────
-  var email   = gv('Email')   || cfg['Email'];
-  var phone   = gv('Phone')   || cfg['Phone'];
-  var website = gv('Website') || cfg['Website'];
-  var contact = gv('Contact');
+  var _fName    = cfg['My Name'];
+  var _fAddress = cfg['My Address'];
+  var _fEmail   = cfg['My Email'];
+  var _fPhone   = cfg['My Phone'];
 
   var parts = [];
-  if (email)   parts.push('<a href="mailto:' + email + '">' + email + '</a>');
-  if (phone)   parts.push(phone);
-  if (website) parts.push('<a href="' + website + '" target="_blank" rel="noopener">' + website + '</a>');
-  if (contact) parts.push(contact);
+  if (_fName)    parts.push(_fName);
+  if (_fAddress) parts.push(_fAddress);
+  if (_fEmail)   parts.push('<a href="mailto:' + _fEmail + '">' + _fEmail + '</a>');
+  if (_fPhone)   parts.push(_fPhone);
 
   if (parts.length) {
     var barEl = document.getElementById('ssContactBar');

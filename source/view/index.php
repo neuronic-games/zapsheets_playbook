@@ -421,6 +421,14 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .spin { width: 32px; height: 32px; border: 3px solid #ddd; border-top-color: #c8860a; border-radius: 50%; animation: sp .7s linear infinite; }
     @keyframes sp { to { transform: rotate(360deg); } }
 
+    /* ── Components ──────────────────────────────────────────── */
+    .component-list {
+      margin: 0; padding: 0 0 0 1.4rem;
+      list-style: disc;
+      line-height: 2;
+      font-size: 0.97rem;
+    }
+
     /* ── Reviews ─────────────────────────────────────────────── */
     .review-list { display: flex; flex-direction: column; gap: 1.1rem; }
     .review-card {
@@ -543,6 +551,9 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     </div>
     <div class="tab-pane" id="pane-faqs">
       <div id="faqList"></div>
+    </div>
+    <div class="tab-pane" id="pane-components">
+      <ul class="component-list" id="componentList"></ul>
     </div>
   </div>
 
@@ -727,10 +738,28 @@ function render() {
   try {
   // ── Parse settings ──────────────────────────────────────────
   var cfg = {};
-  (data.settings || []).forEach(function(r){ if(r.Name) cfg[r.Name]=r.Value; });
+  (data.settings || []).forEach(function(r) {
+    var key = r['My Name'] || r['Name'];
+    if (!key) return;
+    var val = r['Value'];
+    if (val === undefined) {
+      for (var k in r) { if (k !== 'My Name' && k !== 'Name') { val = r[k]; break; } }
+    }
+    cfg[key] = val || '';
+  });
 
   var bggCfg = {};
   (data.bgg || []).forEach(function(r){ if(r.Name) bggCfg[r.Name]=r.Value; });
+
+  // Case-insensitive lookup for game-data fields (game-en.json keys vary by author)
+  function _bgg(key) {
+    if (Object.prototype.hasOwnProperty.call(bggCfg, key)) return bggCfg[key] || '';
+    var low = key.toLowerCase();
+    for (var k in bggCfg) {
+      if (k.toLowerCase() === low) return bggCfg[k] || '';
+    }
+    return '';
+  }
 
   var bg = {};
   if (data.stats && data.stats.boardgame && data.stats.boardgame[0])
@@ -743,9 +772,11 @@ function render() {
   }
 
   // ── Title & meta ─────────────────────────────────────────────
-  var title    = cfg['Title'] || basic['name'] || 'Game';
+  var title    = _bgg('Title') || cfg['Title'] || basic['name'] || 'Game';
   var year     = bg['yearpublished'] ? '(' + bg['yearpublished'] + ')' : '';
-  var _subRow  = (data.bgg || []).find(function(r){ return r.Name === 'SubTitle' && r.Value; });
+  var _subRow  = (data.bgg || []).find(function(r){
+    return r.Name && r.Name.toLowerCase() === 'subtitle' && r.Value;
+  });
 
   document.title = title;
   document.getElementById('gameTitle').textContent = title;
@@ -783,7 +814,7 @@ function render() {
     });
   }
 
-  // ── Images / Videos — sourced exclusively from splash JSON ──
+  // ── Images / Videos — sourced from splash JSON ────────────
   if (data.splash) {
     data.splash.forEach(function(r) {
       var t = (r.Type || '').toLowerCase();
@@ -796,6 +827,32 @@ function render() {
         });
       }
     });
+  }
+
+  // ── Image / video fallback from game data when no splash ───
+  // ProductImage → still image.
+  // Media        → image, or video if URL ends with a video extension.
+  // Video        → direct video file only (YouTube/Vimeo can't be used
+  //                in a <video> element; those are skipped here).
+  // All lookups are case-insensitive via _bgg().
+  if (allImages.length === 0) {
+    var _isVidUrl = function(u) { return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(u); };
+    var _isHttp   = function(u) { return u && /^https?:\/\//.test(u); };
+
+    var _pi = _bgg('ProductImage');
+    if (_isHttp(_pi)) {
+      allImages.push({ src: _pi, caption: '', type: 'image', delay: 5 });
+    }
+
+    var _med = _bgg('Media');
+    if (_isHttp(_med)) {
+      allImages.push({ src: _med, caption: '', type: _isVidUrl(_med) ? 'video' : 'image', delay: 5 });
+    }
+
+    var _vid = _bgg('Video');
+    if (_isHttp(_vid) && _isVidUrl(_vid)) {
+      allImages.push({ src: _vid, caption: '', type: 'video', delay: 5 });
+    }
   }
 
   if (allImages.length) {
@@ -814,7 +871,7 @@ function render() {
     document.getElementById('buyBtnWrap').innerHTML =
       '<div class="buy-btn-list">'
       + buyUrls.map(function(r) {
-          var label = (r['Alt Value'] && r['Alt Value'].trim()) ? r['Alt Value'].trim() : 'Buy Now';
+          var label = (r['Value 1'] && r['Value 1'].trim()) || (r['Alt Value'] && r['Alt Value'].trim()) || 'Buy Now';
           return '<a class="btn-buy" href="' + r.Value + '" target="_blank" rel="noopener">'
             + label + '</a>';
         }).join('')
@@ -995,11 +1052,19 @@ function render() {
   // ── Build tabs ───────────────────────────────────────────────
   var reviews = (data.bgg || []).filter(function(r) { return r.Name === 'Review' && r.Value; });
 
+  // Merge videos-en.json entries with Video rows from game-en.json
+  var _bggVideos = (data.bgg || []).filter(function(r) { return r.Name === 'Video' && r.Value; })
+    .map(function(r) { return { Content: r.Value, Title: r['Value 1'] || '' }; });
+  var allVideos = (data.videos || []).concat(_bggVideos);
+
+  var components = (data.bgg || []).filter(function(r) { return r.Name === 'Component' && r.Value; });
+
   var tabs = [];
-  if (data.videos && data.videos.length)   tabs.push({ id: 'videos',  label: 'Videos (' + data.videos.length + ')' });
-  if (reviews.length)                      tabs.push({ id: 'reviews', label: 'Reviews (' + reviews.length + ')' });
-  if (data.rules  && data.rules.length)    tabs.push({ id: 'rules',   label: 'Rules' });
-  if (data.faqs   && data.faqs.length)     tabs.push({ id: 'faqs',    label: 'FAQs (' + data.faqs.length + ')' });
+  if (allVideos.length)   tabs.push({ id: 'videos',     label: 'Videos (' + allVideos.length + ')' });
+  if (reviews.length)     tabs.push({ id: 'reviews',    label: 'Reviews (' + reviews.length + ')' });
+  if (data.rules  && data.rules.length)    tabs.push({ id: 'rules',      label: 'Rules' });
+  if (data.faqs   && data.faqs.length)     tabs.push({ id: 'faqs',       label: 'FAQs (' + data.faqs.length + ')' });
+  if (components.length)  tabs.push({ id: 'components', label: 'Components' });
 
   if (tabs.length) {
     document.getElementById('tabNav').innerHTML = tabs.map(function(t) {
@@ -1012,8 +1077,8 @@ function render() {
   }
 
   // ── Videos ───────────────────────────────────────────────────
-  if (data.videos && data.videos.length) {
-    document.getElementById('videoGrid').innerHTML = data.videos.map(function(v) {
+  if (allVideos.length) {
+    document.getElementById('videoGrid').innerHTML = allVideos.map(function(v) {
       var url = v.Content || '';
       var ytId = youtubeId(url);
       if (ytId) {
@@ -1033,7 +1098,7 @@ function render() {
   // ── Reviews ──────────────────────────────────────────────────
   if (reviews.length) {
     document.getElementById('reviewList').innerHTML = reviews.map(function(r) {
-      var byline = (r['Alt Value'] && r['Alt Value'].trim()) ? r['Alt Value'].trim() : '';
+      var byline = (r['Value 1'] && r['Value 1'].trim()) || (r['Alt Value'] && r['Alt Value'].trim()) || '';
       return '<div class="review-card">'
         + '<p class="review-quote">' + r.Value + '</p>'
         + (byline ? '<span class="review-byline">— ' + byline + '</span>' : '')
@@ -1095,6 +1160,13 @@ function render() {
         this.classList.toggle('open', !open);
       });
     });
+  }
+
+  // ── Components ───────────────────────────────────────────────
+  if (components.length) {
+    document.getElementById('componentList').innerHTML = components.map(function(r) {
+      return '<li>' + r.Value + '</li>';
+    }).join('');
   }
 
   // ── Lightbox ─────────────────────────────────────────────────

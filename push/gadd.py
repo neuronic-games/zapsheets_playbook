@@ -31,30 +31,59 @@ except Exception as e:
     print(json.dumps({"error": f"Could not open spreadsheet: {str(e)}"}))
     sys.exit(1)
 
-# Find the target worksheet (case-insensitive), fall back to first sheet
+# Find the target worksheet (case-insensitive) — no silent fallback
 all_worksheets = mGoogleSheet.worksheets()
 ws = next((w for w in all_worksheets if w.title.lower() == sheet_name.lower()), None)
 if ws is None:
-    ws = all_worksheets[0] if all_worksheets else None
-if ws is None:
-    print(json.dumps({"error": "No worksheets found in spreadsheet"}))
+    available = ', '.join(w.title for w in all_worksheets)
+    print(json.dumps({"error": f"Worksheet '{sheet_name}' not found. Available tabs: {available}"}))
     sys.exit(1)
 
-# Read headers from row 1
+# Read all values to get headers and determine next available row
 try:
-    headers = ws.row_values(1)
+    all_values = ws.get_all_values()
 except Exception as e:
-    print(json.dumps({"error": f"Could not read headers: {str(e)}"}))
+    print(json.dumps({"error": f"Could not read sheet: {str(e)}"}))
     sys.exit(1)
+
+if not all_values:
+    print(json.dumps({"error": "Sheet is empty — no header row found"}))
+    sys.exit(1)
+
+headers = all_values[0]
+
+# Find the last row that has any non-empty cell value.
+# Using len(all_values) directly would include trailing empty rows left behind
+# when data was cleared (deleted cell values but row structure kept), causing gaps.
+last_data_row = 1  # header is at minimum row 1
+for i, row in enumerate(all_values, start=1):
+    if any(cell.strip() for cell in row):
+        last_data_row = i
+next_row = last_data_row + 1
 
 # Build row list aligned to headers
 new_row = [row_data.get(h.strip(), '') for h in headers]
 
-# Append the row
-try:
-    ws.append_row(new_row, value_input_option='USER_ENTERED')
-except Exception as e:
-    print(json.dumps({"error": f"Could not append row: {str(e)}"}))
+if not headers:
+    print(json.dumps({"error": "Header row is empty"}))
     sys.exit(1)
 
-print(json.dumps({"ok": True}))
+# Use ws.update() (direct cell write, same API path as batch_update) instead of
+# append_row (INSERT_ROWS) so this works even on sheets with row-insertion restrictions.
+try:
+    end_cell  = gspread.utils.rowcol_to_a1(next_row, len(new_row))
+    range_str = f'A{next_row}:{end_cell}'
+    ws.update(range_name=range_str, values=[new_row], value_input_option='USER_ENTERED')
+except Exception as e:
+    print(json.dumps({"error": f"Could not write row: {str(e)}"}))
+    sys.exit(1)
+
+non_empty = sum(1 for v in new_row if v)
+print(json.dumps({
+    "ok": True,
+    "sheet": ws.title,
+    "row": next_row,
+    "headers": headers,
+    "written": new_row,
+    "non_empty_fields": non_empty
+}))

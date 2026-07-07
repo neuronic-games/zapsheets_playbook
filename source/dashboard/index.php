@@ -181,7 +181,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .badge {
       font-family:'DINBlack',sans-serif; font-size:.65rem;
       text-transform:uppercase; letter-spacing:.06em;
-      padding:.18rem .55rem; border-radius:999px; white-space:nowrap;
+      padding:.38rem .65rem; border-radius:999px; white-space:nowrap;
       line-height:1; display:inline-flex; align-items:center;
     }
     .badge-interested  { background:#dcfce7; color:#166534; }
@@ -356,8 +356,8 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       font-family:'DINBlack',sans-serif; font-size:.6rem;
       text-transform:uppercase; letter-spacing:.06em;
       background:rgba(255,255,255,.14); color:rgba(255,255,255,.85);
-      border:1px solid rgba(255,255,255,.28); border-radius:999px;
-      padding:.18rem .65rem; cursor:pointer; white-space:nowrap; flex-shrink:0;
+      border:1px solid rgba(255,255,255,.28); border-radius:999px; line-height:1;
+      padding:.38rem .65rem; cursor:pointer; white-space:nowrap; flex-shrink:0;
       transition:background .15s;
     }
     .game-action-btn:hover { background:rgba(255,255,255,.28); color:#fff; }

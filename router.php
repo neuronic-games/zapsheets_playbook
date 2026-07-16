@@ -87,7 +87,7 @@ $RESERVED = [
     'js', 'css', 'fonts', 'images', 'sheets', 'source',
     'push', 'menu', 'steps',
     'index', 'manifest', 'result', 'dotEnv',
-    'sw_playbook', 'sw_map', 'router', 'start',
+    'sw_playbook', 'sw_map', 'pitchboard-sw', 'fitboard-sw', 'router', 'start',
     'clear-sw', 'debug-jquery',
 ];
 
@@ -96,10 +96,11 @@ if (preg_match('#^/pushsite(/.*)?$#', $uri)) {
     serveFile(__DIR__ . '/push/pushsite.php', $MIME);
 }
 
-// ── Backward compat: sheets/{id}/view|dashboard|sellsheet ────────────────
+// ── Backward compat: sheets/{id}/view|dashboard|sellsheet|fitboard ───────
 if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/view(/.*)?$#', $uri))       { serveFile(__DIR__ . '/source/view/index.php',       $MIME); }
 if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/dashboard(/.*)?$#', $uri))  { serveFile(__DIR__ . '/source/dashboard/index.php',  $MIME); }
 if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/sellsheet(/.*)?$#', $uri))  { serveFile(__DIR__ . '/source/sellsheet/index.php',  $MIME); }
+if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/fitboard(/.*)?$#', $uri))   { serveFile(__DIR__ . '/source/fitboard/index.php',   $MIME); }
 
 // ── Short URL: /{id}/view[/…] ────────────────────────────────────────────
 // View is served from the single source file — no per-sheet copies needed.
@@ -145,6 +146,11 @@ if (preg_match('#^/([A-Za-z0-9_\-]+)/site(/.*)?$#', $uri, $m)) {
 // Sellsheet is served from the single source file — no per-sheet copies needed.
 if (preg_match('#^/([A-Za-z0-9_\-]+)/sellsheet(/.*)?$#', $uri, $m)) {
     serveFile(__DIR__ . '/source/sellsheet/index.php', $MIME);
+}
+
+// ── Short URL: /{id}/fitboard ─────────────────────────────────────────────
+if (preg_match('#^/([A-Za-z0-9_\-]+)/fitboard(/.*)?$#', $uri, $m)) {
+    serveFile(__DIR__ . '/source/fitboard/index.php', $MIME);
 }
 
 // ── Short URL: /{id}[/…] → redirect to /sheets/{id}[/…] ─────────────────

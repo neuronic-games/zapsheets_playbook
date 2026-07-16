@@ -634,7 +634,7 @@ function youtubeId(url) {
 
 ////////////////////////////////////////////////////////////////////////////////
 var data = {};
-var _loadTotal = 9;
+var _loadTotal = 10;
 var _loadDone  = 0;
 
 function _jsonLoad(path, key) {
@@ -676,6 +676,7 @@ _jsonLoad(BASE + 'videos-' + lang + '.json', 'videos');
 _jsonLoad(BASE + 'rules-'  + lang + '.json', 'rules');
 _jsonLoad(BASE + 'faqs-'   + lang + '.json', 'faqs');
 _jsonLoad(BASE + 'tags.json',              'tags');
+_jsonLoad(BASE + 'games.json',             'games');
 
 ////////////////////////////////////////////////////////////////////////////////
 // allImages entries: { src, caption, type ('image'|'video'), delay (seconds) }
@@ -778,6 +779,18 @@ function render() {
   var bggCfg = {};
   (data.bgg || []).forEach(function(r){ if(r.Name) bggCfg[r.Name]=r.Value; });
 
+  // ── games.json fallback — find the row matching the ?game= param ─────────
+  var gameRow = null;
+  if (data.games && _gameParam) {
+    gameRow = data.games.find(function(g) {
+      return g.Name && g.Name.toLowerCase() === _gameParam.toLowerCase();
+    }) || null;
+  }
+  // Helper: return trimmed value from games.json row, or '' if absent/empty
+  function _games(key) {
+    return (gameRow && gameRow[key] && String(gameRow[key]).trim()) || '';
+  }
+
   // Case-insensitive lookup for game-data fields (game-en.json keys vary by author)
   function _bgg(key) {
     if (Object.prototype.hasOwnProperty.call(bggCfg, key)) return bggCfg[key] || '';
@@ -799,19 +812,20 @@ function render() {
   }
 
   // ── Title & meta ─────────────────────────────────────────────
-  var title    = _bgg('Title') || cfg['Title'] || basic['name'] || 'Game';
+  var title    = _games('Name') || _bgg('Title') || cfg['Title'] || basic['name'] || 'Game';
   var year     = bg['yearpublished'] ? '(' + bg['yearpublished'] + ')' : '';
-  var _subRow  = (data.bgg || []).find(function(r){
-    return r.Name && r.Name.toLowerCase() === 'subtitle' && r.Value;
-  });
+  var _subtitle = _games('Tagline')
+    || _bgg('Tagline')
+    || _bgg('SubTitle')
+    || _bgg('Subtitle');
 
   document.title = title;
   document.getElementById('gameTitle').textContent = title;
   document.getElementById('gameYear').textContent  = year;
   document.getElementById('pageTitle').textContent = title;
-  if (_subRow) {
+  if (_subtitle) {
     var _subEl = document.getElementById('gameSubTitle');
-    _subEl.textContent = _subRow.Value;
+    _subEl.textContent = _subtitle;
     _subEl.style.display = '';
   }
 
@@ -845,11 +859,11 @@ function render() {
   if (data.splash) {
     data.splash.forEach(function(r) {
       var t = (r.Type || '').toLowerCase();
-      if ((t === 'image' || t === 'video') && r.Content) {
+      if (t === 'image' && r.Content) {
         allImages.push({
           src:     cachedImage(r.Content),
           caption: r.ID || '',
-          type:    t,
+          type:    'image',
           delay:   parseFloat(r.DelaySec) || 5
         });
       }
@@ -857,19 +871,20 @@ function render() {
   }
 
   // ── Image / video fallback from game data when no splash ───
-  // ProductImage → still image.
+  // ProductImage → one or more still images (multiple rows supported).
   // Media        → image, or video if URL ends with a video extension.
   // Video        → direct video file only (YouTube/Vimeo can't be used
   //                in a <video> element; those are skipped here).
-  // All lookups are case-insensitive via _bgg().
   if (allImages.length === 0) {
     var _isVidUrl = function(u) { return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(u); };
     var _isHttp   = function(u) { return u && /^https?:\/\//.test(u); };
 
-    var _pi = _bgg('ProductImage');
-    if (_isHttp(_pi)) {
-      allImages.push({ src: cachedImage(_pi), direct: directImageUrl(_pi), caption: '', type: 'image', delay: 5 });
-    }
+    // Collect ALL ProductImage rows — the game JSON may have multiple entries
+    (data.bgg || []).forEach(function(r) {
+      if (r.Name === 'ProductImage' && _isHttp(r.Value)) {
+        allImages.push({ src: cachedImage(r.Value), direct: directImageUrl(r.Value), caption: r['Value 1'] || '', type: 'image', delay: 5 });
+      }
+    });
 
     var _med = _bgg('Media');
     if (_isHttp(_med)) {
@@ -877,11 +892,19 @@ function render() {
       allImages.push({ src: cachedImage(_med), direct: directImageUrl(_med), caption: '', type: _medType, delay: 5 });
     }
 
-    var _vid = _bgg('Video');
-    if (_isHttp(_vid) && _isVidUrl(_vid)) {
-      allImages.push({ src: _vid, direct: _vid, caption: '', type: 'video', delay: 5 });
-    }
+    // Video entries are shown in the Videos tab only — not in the image panel
   }
+
+  // Deduplicate allImages by src URL — removes overlap between splash JSON and game-specific JSON
+  (function() {
+    var seen = {};
+    allImages = allImages.filter(function(item) {
+      var key = (item.src || '').trim().toLowerCase();
+      if (!key || seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
+  })();
 
   if (allImages.length) {
     setMainMedia(0);
@@ -977,11 +1000,9 @@ function render() {
   }
 
   // ── Description ──────────────────────────────────────────────
-  // Prefer Description from game JSON; fall back to BGG data
-  var _gameDesc   = (data.bgg || []).find(function(r){ return r.Name === 'Description'; });
-  var desc = (_gameDesc && _gameDesc.Value)
-    ? _gameDesc.Value
-    : (bg['description'] ? decodeHtml(bg['description']) : '');
+  // Prefer Description from games.json; fall back to BGG data
+  var desc = _games('Description')
+    || (bg['description'] ? decodeHtml(bg['description']) : '');
   document.getElementById('descText').textContent = desc;
 
   // ── Meta rows ────────────────────────────────────────────────
@@ -1028,8 +1049,15 @@ function render() {
   }).join('');
 
   // ── CTAs ─────────────────────────────────────────────────────
-  var _rulesUrl    = (data.bgg || []).find(function(r){ return r.Name === 'RulesUrl' && r.Value; });
-  var _ttsUrl      = (data.bgg || []).find(function(r){ return r.Name === 'PlayUrl'  && r.Value; });
+  // Plain URL strings — game JSON first, games.json as fallback
+  var _rulesUrl = (function() {
+    var r = (data.bgg || []).find(function(r){ return r.Name === 'RulesUrl' && r.Value; });
+    return (r && r.Value) || _games('Rules URL');
+  })();
+  var _ttsUrl = (function() {
+    var r = (data.bgg || []).find(function(r){ return r.Name === 'PlayUrl' && r.Value; });
+    return (r && r.Value) || _games('Play URL');
+  })();
   var _hasSteps    = data.steps && data.steps.length > 0;
 
   var _viewPath = window.location.pathname;
@@ -1044,19 +1072,23 @@ function render() {
   if (!_yearPublished) {
     var _sellsheetUrl = window.location.origin + _viewPath.substring(0, _idEnd) + '/sellsheet'
       + (_gameParam ? '?game=' + encodeURIComponent(_gameParam) : '');
-    _ctaHtml += '<a class="btn-rules" href="' + _sellsheetUrl + '" target="_blank" rel="noopener">View Sellsheet</a>';
+    _ctaHtml += '<a class="btn-rules" href="' + _sellsheetUrl + '"'
+      + ' onclick="_openInViewer(event,\'' + _sellsheetUrl.replace(/'/g,"\\'") + '\',\'Sellsheet\')"'
+      + '>View Sellsheet</a>';
   }
 
-  // Read Rules — link to RulesUrl if defined, otherwise scroll to rules tab
+  // Read Rules — link out if a URL exists; scroll to Rules tab if rules data exists;
+  // hide the button entirely if neither is available.
+  var _hasRules = data.rules && data.rules.length > 0;
   if (_rulesUrl) {
-    _ctaHtml += '<a class="btn-rules" href="' + _rulesUrl.Value + '" target="_blank" rel="noopener">Read Rules</a>';
-  } else {
+    _ctaHtml += '<a class="btn-rules" href="' + _rulesUrl + '" target="_blank" rel="noopener">Read Rules</a>';
+  } else if (_hasRules) {
     _ctaHtml += '<a class="btn-rules" id="cta-rules" href="#">Read Rules</a>';
   }
 
   // Play Now — only shown when PlayUrl is defined
   if (_ttsUrl) {
-    _ctaHtml += '<a class="btn-play" href="' + _ttsUrl.Value + '" target="_blank" rel="noopener">Play Now</a>';
+    _ctaHtml += '<a class="btn-play" href="' + _ttsUrl + '" target="_blank" rel="noopener">Play Now</a>';
   }
 
   // Teach Me — only shown when steps data exists
@@ -1066,8 +1098,8 @@ function render() {
 
   document.getElementById('ctaRow').innerHTML = _ctaHtml;
 
-  // Scroll-to-rules only wired up when there is no external RulesUrl
-  if (!_rulesUrl) {
+  // Scroll-to-rules wired up when there is no external RulesUrl but rules data exists
+  if (!_rulesUrl && _hasRules) {
     var _rulesBtn = document.getElementById('cta-rules');
     if (_rulesBtn) {
       _rulesBtn.addEventListener('click', function(e) {
@@ -1081,10 +1113,23 @@ function render() {
   // ── Build tabs ───────────────────────────────────────────────
   var reviews = (data.bgg || []).filter(function(r) { return r.Name === 'Review' && r.Value; });
 
-  // Merge videos-en.json entries with Video rows from game-en.json
+  // Merge videos-en.json + Video rows from game-en.json + Video URL from games.json
   var _bggVideos = (data.bgg || []).filter(function(r) { return r.Name === 'Video' && r.Value; })
     .map(function(r) { return { Content: r.Value, Title: r['Value 1'] || '' }; });
   var allVideos = (data.videos || []).concat(_bggVideos);
+  // games.json fallback — add Video URL if not already present
+  var _gamesVideoUrl = _games('Video URL');
+  if (_gamesVideoUrl) allVideos.push({ Content: _gamesVideoUrl, Title: '' });
+  // Deduplicate by URL (case-insensitive) — removes any overlap between the three sources
+  (function() {
+    var seen = {};
+    allVideos = allVideos.filter(function(v) {
+      var key = (v.Content || '').trim().toLowerCase();
+      if (!key || seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
+  })();
 
   var components = (data.bgg || []).filter(function(r) { return r.Name === 'Component' && r.Value; });
 
@@ -1218,6 +1263,17 @@ function activateTab(id) {
   document.querySelectorAll('.tab-pane').forEach(function(p) {
     p.classList.toggle('active', p.id === 'pane-' + id);
   });
+}
+
+// ── In-viewer navigation (when loaded inside the dashboard iframe) ──
+// Posts a message to the parent dashboard to load a URL in the same
+// viewer overlay, keeping the close button visible.
+function _openInViewer(e, url, title) {
+  if (window.parent && window.parent !== window) {
+    e.preventDefault();
+    window.parent.postMessage({ type: 'openViewer', url: url, title: title }, window.location.origin);
+  }
+  // else: not in iframe — follow the link normally (fallback)
 }
 </script>
 </body>

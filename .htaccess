@@ -38,6 +38,16 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^sheets/([A-Za-z0-9_\-]+)/sellsheet/?$ source/sellsheet/index.php [L,QSA]
 
+# Short-URL: /{id}/fitboard → source/fitboard/index.php (single source, no per-sheet copy)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/fitboard/?$ source/fitboard/index.php [L,QSA]
+
+# Also cover sheets/{id}/fitboard for old bookmarks / direct links
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^sheets/([A-Za-z0-9_\-]+)/fitboard/?$ source/fitboard/index.php [L,QSA]
+
 # Short-URL: /{id}/site  → add trailing slash (301)
 RewriteRule ^([A-Za-z0-9_\-]+)/site$ %{REQUEST_URI}/ [R=301,L]
 

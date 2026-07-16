@@ -99,7 +99,9 @@ def download(url: str, dest: Path) -> bool:
 
 # ── main ──────────────────────────────────────────────────────────────────────
 
-sheet_id = sys.argv[1].strip() if len(sys.argv) > 1 else ''
+sheet_id  = sys.argv[1].strip() if len(sys.argv) > 1 else ''
+game_name = sys.argv[2].strip() if len(sys.argv) > 2 else ''
+
 if not sheet_id:
     print('ERROR  missing sheet ID argument')
     sys.exit(1)
@@ -114,16 +116,30 @@ if not sheet_dir.exists():
 
 cache_dir.mkdir(parents=True, exist_ok=True)
 
-# Scan every JSON file in the sheet directory
+# If a game name was given, only scan that game's JSON file.
+# Otherwise fall back to scanning every JSON in the sheet directory.
 all_urls: set = set()
-for jf in sorted(sheet_dir.glob('*.json')):
-    try:
-        obj = json.loads(jf.read_text(encoding='utf-8'))
-        found = collect_urls(obj)
-        if found:
-            all_urls |= found
-    except Exception:
-        pass  # malformed JSON — skip silently
+if game_name:
+    safe_name = game_name.replace('/', '-').replace('\\', '-')
+    target    = sheet_dir / f'game-{safe_name}-en.json'
+    if target.exists():
+        try:
+            obj   = json.loads(target.read_text(encoding='utf-8'))
+            all_urls = collect_urls(obj)
+        except Exception:
+            pass
+    else:
+        print(f'nothing to cache')
+        sys.exit(0)
+else:
+    for jf in sorted(sheet_dir.glob('*.json')):
+        try:
+            obj = json.loads(jf.read_text(encoding='utf-8'))
+            found = collect_urls(obj)
+            if found:
+                all_urls |= found
+        except Exception:
+            pass  # malformed JSON — skip silently
 
 if not all_urls:
     print('nothing to cache')

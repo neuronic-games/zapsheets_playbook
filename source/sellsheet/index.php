@@ -52,10 +52,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
       }
-      .ss-hero-wrap {
-        height: 330px !important;
-        overflow: hidden !important;
-      }
+      /* hero height: let image set its own height on screen; clipped by sheet overflow on print */
     }
 
     body {
@@ -122,21 +119,21 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       line-height: 1.1;
     }
     .ss-designer-byline {
-      font-size: .8rem;
+      font-size: 11pt;
       color: #444;
       margin: 0;
       line-height: 1.35;
     }
     .ss-stat-line {
-      font-size: .85rem;
+      font-size: 11pt;
       line-height: 1.55;
       margin: 0;
     }
 
     /* ── Hero image ──────────────────────────────────────────────── */
     .ss-hero-wrap {
-      flex-shrink: 0;
-      width: 100%; height: 330px;
+      flex: 1 1 auto;
+      min-height: 80px;
       overflow: hidden;
       background: #d0d0d0;
       margin-top: 1rem; margin-bottom: 1rem;
@@ -151,12 +148,11 @@ if (substr($_base, -1) !== '/') $_base .= '/';
        Col 2 row 1: components
        Col 2 row 2: (empty — QR moved to header)              */
     .ss-body {
-      flex: 1; min-height: 0;
+      flex: 0 0 auto;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr;
+      grid-template-rows: auto;
       column-gap: 1.3rem;
-      overflow: hidden;
     }
 
     /* ── Left column: subtitle → hook → desc → features ─────────── */
@@ -164,10 +160,11 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       display: flex; flex-direction: column;
       gap: .75rem;
       overflow: hidden;
+      justify-content: flex-end;
     }
     .ss-body-subtitle {
       font-style: italic;
-      font-size: .82rem;
+      font-size: 11pt;
       color: #444;
       margin: 0;
       line-height: 1.4;
@@ -175,12 +172,12 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .ss-hook {
       font-family: 'DINBlack', sans-serif;
-      font-size: .86rem;
+      font-size: 11pt;
       margin: 0; line-height: 1.35;
       flex-shrink: 0;
     }
     .ss-desc {
-      font-size: .82rem; line-height: 1.52;
+      font-size: 11pt; line-height: 1.52;
       color: #222; flex-shrink: 0;
     }
     .ss-desc p { margin: 0 0 .5rem; }
@@ -192,19 +189,20 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .ss-features li {
       display: flex; align-items: flex-start;
-      gap: .5rem; font-size: .82rem;
+      gap: .4rem; font-size: 11pt;
       line-height: 1.4; color: #222;
     }
     .ss-features li::before {
-      content: ''; width: 6px; height: 6px;
-      background: #222; border-radius: 50%;
-      flex-shrink: 0; margin-top: .38rem;
+      content: '•';
+      flex-shrink: 0;
+      line-height: 1.4;
+      color: #222;
     }
 
     /* ── Right column: components box ───────────────────────────── */
     .ss-right {
       overflow: hidden;
-      align-self: start;
+      align-self: end;
     }
     .ss-components {
       border: 1px solid #bbb;
@@ -214,7 +212,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .ss-components h3 {
       font-family: 'DINBlack', sans-serif;
-      font-size: .88rem;
+      font-size: 11pt;
       margin: 0 0 .55rem; color: #555;
     }
     .ss-comp-list {
@@ -223,13 +221,14 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .ss-comp-list li {
       display: flex; align-items: flex-start;
-      gap: .5rem; font-size: .82rem;
+      gap: .4rem; font-size: 11pt;
       line-height: 1.4; color: #222;
     }
     .ss-comp-list li::before {
-      content: ''; width: 6px; height: 6px;
-      background: #222; border-radius: 50%;
-      flex-shrink: 0; margin-top: .38rem;
+      content: '•';
+      flex-shrink: 0;
+      line-height: 1.4;
+      color: #222;
     }
 
     /* ── Footer contact bar ──────────────────────────────────────── */
@@ -238,7 +237,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       padding-top: .5rem;
       margin-top: .6rem;
       border-top: 1px solid #ddd;
-      font-size: .75rem;
+      font-size: 11pt;
       color: #444;
       text-align: center;
       line-height: 1.6;
@@ -298,6 +297,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
   <!-- Footer: contact info -->
   <div class="ss-contact-bar" id="ssContactBar" style="display:none"></div>
 
+
 </div>
 
 <script src="js/common/jquery-3.5.1.min.js"></script>
@@ -343,7 +343,7 @@ function cachedImage(url) {
   return BASE + 'cache/' + fname;
 }
 
-var _loadTotal = 4, _loadDone = 0;
+var _loadTotal = 5, _loadDone = 0;
 function _jsonLoad(path, key) {
   $.ajax({
     url: path + '?v=' + Date.now(),
@@ -367,6 +367,7 @@ _jsonLoad(BASE + 'settings.json',           'settings');
 _jsonLoad(BASE + _gameFile,                 'bgg');
 _jsonLoad(BASE + 'splash-' + lang + '.json','splash');
 _jsonLoad(BASE + 'bgg.json',                'stats');
+_jsonLoad(BASE + 'games.json',              'games');
 
 function render() {
   var cfg = {};
@@ -399,8 +400,19 @@ function render() {
     return (data.bgg || []).filter(function(r){ return r.Name === name && r.Value; });
   };
 
+  // ── games.json lookup ────────────────────────────────────────
+  var _gameRow = null;
+  if (data.games && _gameParam) {
+    _gameRow = data.games.find(function(g) {
+      return g.Name && g.Name.toLowerCase() === _gameParam.toLowerCase();
+    }) || null;
+  }
+  function _games(key) {
+    return (_gameRow && _gameRow[key] && String(_gameRow[key]).trim()) || '';
+  }
+
   // ── Title ────────────────────────────────────────────────────
-  var title = gv('Title') || cfg['Title'] || basic['name'] || 'Game';
+  var title = _games('Name') || gv('Title') || cfg['Title'] || basic['name'] || 'Game';
   document.title = title + ' — Sellsheet';
   document.getElementById('ssTitle').textContent = title;
 
@@ -467,7 +479,7 @@ function render() {
   if (_heroSrc) document.getElementById('ssHero').src = _heroSrc;
 
   // ── Subtitle at top of body left ──────────────────────────
-  var sub = gv('SubTitle');
+  var sub = _games('Tagline') || gv('Tagline') || gv('SubTitle') || gv('Subtitle');
   if (sub) {
     var subEl = document.getElementById('ssBodySubtitle');
     subEl.textContent = sub; subEl.style.display = '';
@@ -482,7 +494,7 @@ function render() {
 
   // ── Description (line breaks → paragraph spacing) ─────────
   // PitchDescription takes priority on the sellsheet; fall back to Description, then BGG
-  var desc = gv('PitchDescription') || gv('Description') || (bg['description'] || '');
+  var desc = gv('PitchDescription') || _games('Description') || gv('Description') || (bg['description'] || '');
   if (desc) {
     var descEl = document.getElementById('ssDesc');
     var lines = desc.replace(/&#10;/g, '\n').split(/\n+/).filter(function(l){ return l.trim(); });

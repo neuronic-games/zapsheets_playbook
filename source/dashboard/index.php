@@ -1,8 +1,9 @@
 <?php
 $_rp = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-preg_match('#^(.*?)(?:sheets/)?[A-Za-z0-9_\-]+/dashboard/?$#', $_rp, $_bm);
-$_base = (isset($_bm[1]) && $_bm[1] !== '') ? $_bm[1] : '/';
+preg_match('#^(.*?)(?:sheets/)?([A-Za-z0-9_\-]+)/dashboard/?$#', $_rp, $_bm);
+$_base     = (isset($_bm[1]) && $_bm[1] !== '') ? $_bm[1] : '/';
 if (substr($_base, -1) !== '/') $_base .= '/';
+$_sheet_id = $_bm[2] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -10,7 +11,10 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pitchboard</title>
+  <title>PitchBoard</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="<?= htmlspecialchars($_base) ?>images/pb_icon_180.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="<?= htmlspecialchars($_base) ?>images/pb_icon_192.png" />
+  <link rel="manifest" href="<?= htmlspecialchars($_base) ?>manifest.php?id=<?= urlencode($_sheet_id) ?>&amp;app=pitchboard&amp;base=<?= urlencode($_base) ?>" />
   <style>
     @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2') format('woff2'),url('fonts/DINBlack.ttf'); }
     @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'),url('fonts/DINMedium.ttf'); }
@@ -53,19 +57,17 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 
     /* ── Top-bar buttons (Sync) ─────────────────────── */
     .sync-btn {
-      display:inline-flex; align-items:center; gap:.35rem;
-      font-family:'DINBlack',sans-serif; font-size:.7rem;
-      text-transform:uppercase; letter-spacing:.06em;
+      display:inline-flex; align-items:center; justify-content:center;
       background:rgba(255,255,255,.15); color:#fff;
       border:1px solid rgba(255,255,255,.3); border-radius:6px;
-      padding:.38rem .8rem; cursor:pointer;
-      transition:background .15s; white-space:nowrap; flex-shrink:0;
+      padding:.38rem .5rem; cursor:pointer;
+      transition:background .15s; flex-shrink:0;
     }
     .sync-btn:hover { background:rgba(255,255,255,.25); }
     .sync-btn:disabled { opacity:.5; cursor:default; }
     .sync-btn:disabled:hover { background:rgba(255,255,255,.15); }
     @keyframes spin { to { transform:rotate(360deg); } }
-    .sync-icon { display:inline-block; }
+    .sync-icon { display:inline-block; font-size:1.1rem; line-height:1; }
     .sync-btn.syncing .sync-icon { animation:spin .8s linear infinite; }
 
     /* ── Summary bar ─────────────────────────────────── */
@@ -521,7 +523,15 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     .add-new-title {
       font-family:'DINBlack',sans-serif; font-size:.88rem; margin:0;
     }
-    .add-entry-actions { display:flex; justify-content:flex-end; gap:.6rem; margin-top:.1rem; }
+    .add-entry-actions { display:flex; justify-content:flex-end; align-items:center; gap:.6rem; margin-top:.1rem; }
+    .add-email-btn {
+      font-family:'DINBlack',sans-serif; font-size:.7rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      background:none; color:#555; border:1px solid #ddd;
+      border-radius:6px; padding:.42rem .9rem; cursor:pointer;
+      margin-right:auto;
+    }
+    .add-email-btn:hover { background:#f0f4ff; color:#1a1a2e; border-color:#b0b8d0; }
     .add-cancel-btn {
       font-family:'DINBlack',sans-serif; font-size:.7rem;
       text-transform:uppercase; letter-spacing:.05em;
@@ -757,8 +767,83 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .err-copy-btn:hover { background:#e0e0e0; }
 
+    /* ── PitchBoard brand ───────────────────────────────────── */
+    /* Used in the top-bar h1 on the dark (#1a1a2e) background  */
+    .pb-pitch { color: #A8C8F0; }  /* soft blue  */
+    .pb-board { color: #FF8A80; }  /* soft coral */
+
     /* ── View Page publish dialog (inherits sync-* styles) ─ */
     #vpOverlay { z-index:5000; }
+
+    /* ── VP summary panel ────────────────────────────────── */
+    .vp-summary {
+      background:#f7f8fa; border-radius:6px;
+      padding:.85rem 1rem;
+      display:flex; flex-direction:column; gap:.55rem;
+    }
+    .vp-sum-name {
+      font-family:'DINBlack',sans-serif;
+      font-size:1.05rem; color:#1a1a2e; line-height:1.2;
+    }
+    .vp-sum-row {
+      display:flex; gap:.5rem; align-items:baseline;
+      font-size:.82rem; color:#333;
+    }
+    .vp-sum-label {
+      font-family:'DINBlack',sans-serif;
+      font-size:.65rem; text-transform:uppercase; letter-spacing:.05em;
+      color:#999; flex-shrink:0; width:78px;
+    }
+    .vp-sum-row--wrap {
+      align-items:flex-start; flex-wrap:wrap;
+    }
+    .vp-sum-row--wrap .vp-sum-label { padding-top:.15rem; }
+    .vp-sum-desc {
+      font-size:.8rem; color:#555; line-height:1.5;
+      display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical;
+      overflow:hidden; flex:1; min-width:0;
+    }
+    .vp-sum-counts {
+      display:flex; gap:.45rem; flex-wrap:wrap; margin-top:.1rem;
+    }
+    .vp-sum-count {
+      background:#e8e8f0; border-radius:4px;
+      padding:.15rem .45rem;
+      font-size:.73rem; color:#1a1a2e;
+      font-family:'DINBlack',sans-serif;
+    }
+    .vp-sum-note {
+      font-size:.78rem; color:#aaa; font-style:italic;
+    }
+    #vpLogPanel { margin-top:.25rem; }
+
+    /* ── In-app view page overlay ───────────────────────── */
+    #viewerOverlay {
+      display:none; position:fixed; inset:0; z-index:6000;
+      flex-direction:column; background:#fff;
+    }
+    #viewerOverlay.open { display:flex; }
+    #viewerBar {
+      display:flex; align-items:center; gap:.75rem;
+      background:#1a1a2e; padding:.5rem .85rem;
+      flex-shrink:0;
+    }
+    #viewerTitle {
+      font-family:'DINBlack',sans-serif; font-size:.8rem;
+      text-transform:uppercase; letter-spacing:.06em;
+      color:#A8C8F0; flex:1; overflow:hidden;
+      white-space:nowrap; text-overflow:ellipsis;
+    }
+    #viewerCloseBtn {
+      background:none; border:none; cursor:pointer;
+      color:#fff; font-size:1.3rem; line-height:1;
+      padding:.1rem .25rem; opacity:.75;
+      transition:opacity .15s;
+    }
+    #viewerCloseBtn:hover { opacity:1; }
+    #viewerFrame {
+      flex:1; border:none; width:100%; display:block;
+    }
   </style>
 </head>
 <body>
@@ -767,7 +852,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 <div class="top-bar">
   <div class="top-bar-inner">
     <div class="top-bar-left">
-      <h1 onclick="deployOnly()">Pitchboard</h1>
+      <h1 onclick="deployOnly()"><span class="pb-pitch">Pitch</span><span class="pb-board">Board</span></h1>
       <p class="sub" id="subTitle">Loading…</p>
       <p class="sub version-tag" id="versionTag" style="display:none"></p>
     </div>
@@ -776,7 +861,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       <button id="btnGame"      class="active" onclick="setView('game')">Games</button>
       <button id="btnPublisher"               onclick="setView('publisher')">Publishers</button>
     </div>
-    <button class="sync-btn" id="syncBtn" onclick="syncData()"><span class="sync-icon">&#8635;</span> Sync</button>
+    <button class="sync-btn" id="syncBtn" onclick="syncData()" title="Sync"><span class="sync-icon">&#8635;</span></button>
   </div>
 </div>
 
@@ -864,15 +949,32 @@ if (substr($_base, -1) !== '/') $_base .= '/';
   </div>
 </div>
 
-<!-- View Page publish dialog -->
+<!-- In-app view page overlay -->
+<div id="viewerOverlay">
+  <div id="viewerBar">
+    <span id="viewerTitle">View Page</span>
+    <button id="viewerCloseBtn" onclick="closeViewer()" title="Back to dashboard">&#x2715;</button>
+  </div>
+  <iframe id="viewerFrame" src="about:blank" allowfullscreen></iframe>
+</div>
+
+<!-- View Page dialog -->
 <div class="sync-overlay" id="vpOverlay">
   <div class="sync-dialog">
-    <h2>Update Game Info Page</h2>
-    <div class="sync-log" id="vpLog"></div>
+    <h2 id="vpDialogTitle">View Page</h2>
+    <!-- Summary panel — shown first -->
+    <div id="vpSummaryPanel">
+      <div class="vp-summary" id="vpSummary"></div>
+    </div>
+    <!-- Log panel — shown during/after sync -->
+    <div id="vpLogPanel" style="display:none">
+      <div class="sync-log" id="vpLog"></div>
+    </div>
     <div class="sync-dialog-actions">
+      <button class="sync-update-btn" id="vpSyncBtn"   style="margin-right:auto" onclick="vpDoSync()">Sync</button>
       <button class="sync-done-btn" id="vpAddSheetBtn" style="display:none" onclick="vpAddSheet()">Add Sheet</button>
-      <button class="notes-close" id="vpDoneBtn" disabled onclick="closeVpDialog()">Close</button>
-      <button class="sync-done-btn" id="vpViewPageBtn" style="display:none" onclick="vpOpenViewPage()">View Page</button>
+      <button class="notes-close"   id="vpDoneBtn"     onclick="closeVpDialog()">Close</button>
+      <button class="sync-done-btn" id="vpViewPageBtn" onclick="vpOpenViewPage()">View Page</button>
     </div>
   </div>
 </div>
@@ -988,6 +1090,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       </label>
     </div>
     <div class="add-entry-actions">
+      <button class="add-email-btn" onclick="sendEmailFromAddDialog()" title="Open email with game info">&#9993; Send Email</button>
       <button class="add-cancel-btn" onclick="closeAddDialog()">Cancel</button>
       <button class="add-submit-btn" id="addSubmitBtn" onclick="submitAddEntry()">Add</button>
     </div>
@@ -1013,7 +1116,6 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     <h2 id="syncDialogTitle">Syncing…</h2>
     <div class="sync-log" id="syncLog"></div>
     <div class="sync-dialog-actions">
-      <button class="sync-update-btn" id="syncUpdateBtn" style="display:none" onclick="updatePitchboard()">↑ Update Pitchboard</button>
       <button class="notes-close" id="syncDoneBtn" disabled onclick="closeSyncDialog()">Close</button>
     </div>
   </div>
@@ -2089,13 +2191,8 @@ function resolveEmail(contact, publisher, fallbackEmail) {
   return peopleIndex[key] || '';
 }
 
-// ── Build mailto body with contact info + game links ──
-function buildEmailBody(gameName) {
-  var lines = [];
-  if (myName)  lines.push(myName);
-  if (myPhone) lines.push(myPhone);
-  if (myEmail) lines.push(myEmail);
-
+// ── Shared game field lookup ──────────────────────────
+function _gameFields(gameName) {
   var info = gamesIndex[gameName] || {};
   function field(keys) {
     for (var i = 0; i < keys.length; i++) {
@@ -2104,20 +2201,30 @@ function buildEmailBody(gameName) {
     }
     return '';
   }
-  var rulesUrl = field(['Rules', 'Rules URL', 'Rules Link', 'Link Rules']);
-  var printUrl = field(['Print', 'Print URL', 'Print Link', 'Link Print']);
-  var playUrl  = field(['Play',  'Play URL',  'Play Link',  'Link Play']);
+  return {
+    desc:      field(['Description', 'Tagline']),
+    designers: ['Designer1','Designer2','Designer3','Designer4']
+                 .map(function(f){ return (info[f]||'').trim(); }).filter(Boolean).join(', '),
+    sellsheet: field(['Sellsheet', 'Sellsheet URL', 'Link Sellsheet']),
+    video:     field(['Video', 'Video URL', 'Link Video']),
+    rules:     field(['Rules', 'Rules URL', 'Rules Link', 'Link Rules']),
+    play:      field(['Play',  'Play URL',  'Play Link',  'Link Play']),
+  };
+}
 
-  var gameLines = [];
-  if (gameName) gameLines.push('Title: ' + gameName);
-  if (rulesUrl) gameLines.push('Rules: ' + rulesUrl);
-  if (printUrl) gameLines.push('Print: ' + printUrl);
-  if (playUrl)  gameLines.push('Play: '  + playUrl);
-
-  if (gameLines.length) {
-    lines.push('');
-    lines = lines.concat(gameLines);
-  }
+// ── Build plain-text email body ───────────────────────
+function buildEmailBody(gameName) {
+  var f = _gameFields(gameName);
+  var lines = ['\n\n\n'];          // a few blank lines at the top
+  lines.push(gameName);
+  if (f.desc)      lines.push(f.desc);
+  if (f.designers) { lines.push(''); lines.push('Designers: ' + f.designers); }
+  var urls = [];
+  if (f.sellsheet) urls.push('Sellsheet: ' + f.sellsheet);
+  if (f.video)     urls.push('Video: '     + f.video);
+  if (f.rules)     urls.push('Rules: '     + f.rules);
+  if (f.play)      urls.push('Play: '      + f.play);
+  if (urls.length) { lines.push(''); lines = lines.concat(urls); }
   return lines.join('\n');
 }
 
@@ -2125,9 +2232,42 @@ function buildEmailBody(gameName) {
 function mailtoHref(email, gameName) {
   if (!email) return '';
   var body = buildEmailBody(gameName);
-  return 'mailto:' + email
-    + '?subject=' + encodeURIComponent(gameName)
-    + (body ? '&body=' + encodeURIComponent(body) : '');
+  var href = 'mailto:' + encodeURIComponent(email)
+           + '?subject=' + encodeURIComponent('Game info - ' + gameName);
+  if (myEmail) href += '&from=' + encodeURIComponent(myEmail);
+  if (body)    href += '&body='  + encodeURIComponent(body);
+  return href;
+}
+
+// ── Send email from Add Entry dialog ─────────────────
+function sendEmailFromAddDialog() {
+  var gameName = _addCtx.game || (document.getElementById('addGameInput').value || '').trim();
+  if (!gameName) return;
+
+  var contact, publisher;
+  if (_addCtx.locked) {
+    contact   = _addCtx.contact;
+    publisher = _addCtx.publisher;
+  } else if (_addCtx.pubLocked) {
+    contact   = (document.getElementById('addContactInput').value || '').trim();
+    publisher = _addCtx.publisher;
+  } else {
+    contact   = (document.getElementById('addContactInput').value || '').trim();
+    publisher = (document.getElementById('addPublisherInput').value || '').trim();
+  }
+
+  var email = resolveEmail(contact, publisher);
+  var body  = buildEmailBody(gameName);
+  var href  = 'mailto:' + encodeURIComponent(email)
+            + '?subject=' + encodeURIComponent('Game info - ' + gameName);
+  if (myEmail) href += '&from=' + encodeURIComponent(myEmail);
+  if (body)    href += '&body='  + encodeURIComponent(body);
+
+  var a = document.createElement('a');
+  a.href = href;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 // ── Collapse / expand ────────────────────────────────
@@ -2351,14 +2491,8 @@ function copyErrText() {
   }
 }
 
-// ── View Page publish dialog ───────────────────────────────
-function openVpDialog() {
-  document.getElementById('vpLog').innerHTML = '';
-  document.getElementById('vpDoneBtn').disabled = true;
-  document.getElementById('vpAddSheetBtn').style.display = 'none';
-  document.getElementById('vpViewPageBtn').style.display = 'none';
-  document.getElementById('vpOverlay').classList.add('open');
-}
+// ── View Page dialog ───────────────────────────────────────
+
 function closeVpDialog() {
   document.getElementById('vpOverlay').classList.remove('open');
 }
@@ -2371,10 +2505,143 @@ function vpLog(msg, type) {
   log.scrollTop = log.scrollHeight;
 }
 function vpDone() {
-  document.getElementById('vpDoneBtn').disabled = false;
+  document.getElementById('vpDoneBtn').disabled   = false;
+  document.getElementById('vpSyncBtn').disabled   = false;
+  document.getElementById('vpViewPageBtn').disabled = false;
 }
 function vpOpenViewPage() {
-  window.open(APP_BASE + sheet_Id + '/view/?game=' + encodeURIComponent(_vpCurrentGame), '_blank');
+  var url = APP_BASE + sheet_Id + '/view/?game=' + encodeURIComponent(_vpCurrentGame);
+  document.getElementById('viewerTitle').textContent = _vpCurrentGame;
+  document.getElementById('viewerFrame').src = url;
+  document.getElementById('viewerOverlay').classList.add('open');
+  closeVpDialog();
+}
+function closeViewer() {
+  document.getElementById('viewerOverlay').classList.remove('open');
+  document.getElementById('viewerFrame').src = 'about:blank';
+}
+
+// Listen for in-viewer navigation requests from pages inside the iframe
+// (e.g. "View Sellsheet" on the view page).
+window.addEventListener('message', function(e) {
+  if (e.origin !== window.location.origin) return;
+  if (!e.data || e.data.type !== 'openViewer') return;
+  document.getElementById('viewerTitle').textContent = e.data.title || '';
+  document.getElementById('viewerFrame').src = e.data.url || 'about:blank';
+});
+
+// Build the summary HTML from local gamesIndex data + optional parsed JSON records.
+// records = null  → still fetching (show placeholder)
+// records = []    → fetched but empty
+// records = [...] → full data
+function _vpBuildSummary(gameName, records) {
+  var g = gamesIndex[gameName] || {};
+  var html = '';
+
+  // Helper: first non-empty value from gamesIndex keys
+  function gf() {
+    for (var i = 0; i < arguments.length; i++) {
+      var v = (g[arguments[i]] || '').trim(); if (v) return v;
+    }
+    return '';
+  }
+  // Helper: first matching record value from game JSON
+  function recVal(pattern) {
+    if (!records) return '';
+    for (var i = 0; i < records.length; i++) {
+      if (pattern.test(records[i].Name || '')) return (records[i].Value || '').trim();
+    }
+    return '';
+  }
+  // Emit a labelled text row (wrapping)
+  function row(label, text) {
+    if (!text) return '';
+    return '<div class="vp-sum-row vp-sum-row--wrap">'
+         + '<span class="vp-sum-label">' + label + '</span>'
+         + '<span class="vp-sum-desc">' + escHtml(text) + '</span>'
+         + '</div>';
+  }
+
+  // Game name header
+  html += '<div class="vp-sum-name">' + escHtml(gameName) + '</div>';
+
+  if (records === null) {
+    html += '<div class="vp-sum-note">Checking for game data…</div>';
+  }
+
+  // 1. SUMMARY
+  var summary = recVal(/^summary$/i) || gf('Summary');
+  html += row('Summary', summary);
+
+  // 2. DESIGNERS
+  var designers = ['Designer1','Designer2','Designer3','Designer4']
+    .map(function(f){ return (g[f]||'').trim(); }).filter(Boolean).join(', ');
+  html += row('Designers', designers);
+
+  // 3. DESCRIPTION
+  var desc = recVal(/^description$/i) || gf('Description', 'Tagline');
+  html += row('Description', desc);
+
+  // 4. STARTED
+  var started = gf('Date Started','DateStarted','Start Date','StartDate')
+             || recVal(/^date.?started$|^start.?date$/i);
+  html += row('Started', started);
+
+  // 5. PITCHES
+  var gameEntries = allPitches.filter(function(e){ return (e.Game||'') === gameName; });
+  if (gameEntries.length) {
+    var byPub = {};
+    gameEntries.forEach(function(e) {
+      var p = e.Publisher || '(Unknown)';
+      if (!byPub[p]) byPub[p] = [];
+      byPub[p].push(e);
+    });
+    var cnt = { interested:0, pitched:0, passed:0 };
+    Object.keys(byPub).forEach(function(p) {
+      var s = (latestEntry(byPub[p]).Status||'').toLowerCase();
+      if (s === 'interested')  cnt.interested++;
+      else if (s === 'passed') cnt.passed++;
+      else if (s)              cnt.pitched++;
+    });
+    var total = Object.keys(byPub).length;
+    var parts = [];
+    if (cnt.interested) parts.push(cnt.interested + ' interested');
+    if (cnt.pitched)    parts.push(cnt.pitched    + ' pitched');
+    if (cnt.passed)     parts.push(cnt.passed     + ' passed');
+    html += '<div class="vp-sum-row"><span class="vp-sum-label">Pitches</span>'
+          + '<span>' + total + ' publisher' + (total===1?'':'s')
+          + (parts.length ? ' — ' + parts.join(', ') : '') + '</span></div>';
+  }
+
+  document.getElementById('vpSummary').innerHTML = html;
+}
+
+// Set dialog to summary mode and open/update it.
+// enabled = true  → both SYNC and VIEW PAGE are clickable
+// enabled = false → both are disabled (e.g. still fetching server data)
+function _vpOpenSummary(enabled) {
+  document.getElementById('vpSummaryPanel').style.display = '';
+  document.getElementById('vpLogPanel').style.display    = 'none';
+  document.getElementById('vpLog').innerHTML             = '';
+  document.getElementById('vpDialogTitle').textContent   = 'View Page';
+  document.getElementById('vpAddSheetBtn').style.display = 'none';
+  document.getElementById('vpSyncBtn').disabled          = !enabled;
+  document.getElementById('vpViewPageBtn').disabled      = !enabled;
+  document.getElementById('vpDoneBtn').disabled          = false;
+  document.getElementById('vpOverlay').classList.add('open');
+}
+
+// Open directly in log mode — used by vpAddSheet after sheet creation.
+function openVpDialog() {
+  document.getElementById('vpLog').innerHTML = '';
+  document.getElementById('vpDoneBtn').disabled     = true;
+  document.getElementById('vpSyncBtn').disabled     = true;
+  document.getElementById('vpViewPageBtn').disabled = true;
+  document.getElementById('vpAddSheetBtn').style.display = 'none';
+  document.getElementById('vpSummaryPanel').style.display = 'none';
+  document.getElementById('vpLogPanel').style.display = '';
+  document.getElementById('vpDialogTitle').textContent = 'Updating Game Info Page';
+  document.getElementById('vpOverlay').classList.add('open');
 }
 // Classify a cachemedia.py output line into a sync colour type.
 function _vpMediaType(line) {
@@ -2384,32 +2651,47 @@ function _vpMediaType(line) {
   return 'info';
 }
 
-// Deploy source/view/index.php → sheets/{id}/view/index.php, then open /view/.
+// Deploy source/view/index.php → sheets/{id}/view/index.php.
 // Called as the final step of every VIEW PAGE publish flow.
 function _vpDeployAndOpen() {
   vpLog('Deploying view page…', 'info');
   var xhr3 = new XMLHttpRequest();
   xhr3.open('POST', APP_BASE + 'push/deployViewSource.php');
   xhr3.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-  var _open = function() {
+  var _finish = function() {
     vpLog('✓  Page updated.', 'ok');
-    vpDone();
-    document.getElementById('vpViewPageBtn').style.display = '';
+    // Re-fetch the game JSON to update the summary with fresh data
+    var safeName = _vpCurrentGame.replace(/\//g, '-').replace(/\\/g, '-');
+    var fileUrl  = APP_BASE + 'sheets/' + sheet_Id + '/game-' + safeName + '-en.json';
+    var xhrJ = new XMLHttpRequest();
+    xhrJ.open('GET', fileUrl + '?v=' + Date.now());
+    xhrJ.onload = function() {
+      if (xhrJ.status >= 200 && xhrJ.status < 300) {
+        var data; try { data = JSON.parse(xhrJ.responseText); } catch(e) { data = []; }
+        _vpBuildSummary(_vpCurrentGame, data);
+        document.getElementById('vpSummaryPanel').style.display = '';
+        document.getElementById('vpDialogTitle').textContent = 'View Page';
+      }
+      vpDone();
+    };
+    xhrJ.onerror = function() { vpDone(); };
+    xhrJ.send();
   };
   xhr3.onload = function() {
     var r3; try { r3 = JSON.parse(xhr3.responseText); } catch(e) { r3 = null; }
     if (r3 && r3.error) vpLog('⚠  Deploy: ' + r3.error, 'skip');
-    _open();
+    _finish();
   };
   xhr3.onerror = function() {
     vpLog('⚠  Deploy skipped (network error)', 'skip');
-    _open();
+    _finish();
   };
   xhr3.send('id=' + encodeURIComponent(sheet_Id));
 }
 
 // ── View Page ─────────────────────────────────────────
 var _vpCurrentGame = '';   // game name kept for vpAddSheet()
+var _vpCheckXhr    = null; // in-flight JSON-existence check (aborted on new click)
 
 // Inner publish pipeline: export → cache media → deploy → open.
 // Called both by viewPageClick and by vpAddSheet after tab creation.
@@ -2456,7 +2738,7 @@ function _vpRunPublish(gameName) {
       vpLog('⚠  Media cache skipped (network error)', 'skip');
       _vpDeployAndOpen();
     };
-    xhr2.send('id=' + encodeURIComponent(sheet_Id));
+    xhr2.send('id=' + encodeURIComponent(sheet_Id) + '&game=' + encodeURIComponent(gameName));
   };
   xhr.onerror = function() {
     vpLog('✕  Network error — could not reach the server.', 'error');
@@ -2469,8 +2751,69 @@ function viewPageClick(btn) {
   var gameName = btn.getAttribute('data-game') || '';
   if (!gameName) return;
   _vpCurrentGame = gameName;
-  openVpDialog();
-  _vpRunPublish(gameName);
+
+  // Abort any previous in-flight JSON check so its callback can't fire late
+  // and incorrectly enable/disable buttons for the wrong game.
+  if (_vpCheckXhr) { try { _vpCheckXhr.abort(); } catch(e) {} _vpCheckXhr = null; }
+
+  // Open dialog immediately with local data; buttons disabled while we contact server.
+  _vpBuildSummary(gameName, null);
+  _vpOpenSummary(false);
+
+  // Ask the server directly whether the game JSON file exists.
+  // Using a PHP endpoint avoids all browser-caching ambiguity that comes
+  // from fetching the static file through the router.
+  var checkUrl = APP_BASE + 'push/checkGameJson.php'
+               + '?id='   + encodeURIComponent(sheet_Id)
+               + '&game=' + encodeURIComponent(gameName)
+               + '&v='    + Date.now();
+  var xhr = new XMLHttpRequest();
+  _vpCheckXhr = xhr;
+  xhr.open('GET', checkUrl);
+  xhr.onload = function() {
+    if (xhr !== _vpCheckXhr) return;   // stale callback — a newer click took over
+    _vpCheckXhr = null;
+    var result; try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
+    if (result && result.exists) {
+      // File confirmed on server — fetch it to populate the summary, then enable buttons.
+      var safeName = gameName.replace(/\//g, '-').replace(/\\/g, '-');
+      var fileUrl  = APP_BASE + 'sheets/' + sheet_Id + '/game-' + safeName + '-en.json';
+      var xhrJ = new XMLHttpRequest();
+      xhrJ.open('GET', fileUrl + '?v=' + Date.now());
+      xhrJ.onload = function() {
+        var data = [];
+        if (xhrJ.status >= 200 && xhrJ.status < 300) {
+          try { data = JSON.parse(xhrJ.responseText); } catch(e) {}
+        }
+        _vpBuildSummary(gameName, data);
+        _vpOpenSummary(true);
+      };
+      xhrJ.onerror = function() { _vpBuildSummary(gameName, []); _vpOpenSummary(true); };
+      xhrJ.send();
+    } else {
+      // No JSON on server — run the full sync automatically.
+      vpDoSync();
+    }
+  };
+  xhr.onerror = function() {
+    if (xhr !== _vpCheckXhr) return;
+    _vpCheckXhr = null;
+    // Network error — can't reach server, can't sync. Leave buttons disabled.
+    document.getElementById('vpSummary').innerHTML +=
+      '<div class="vp-sum-note" style="color:#FF8A80;margin-top:.5rem">Could not reach server.</div>';
+  };
+  xhr.send();
+}
+
+// User clicked SYNC — keep summary visible, show log below it, and run the pipeline.
+function vpDoSync() {
+  document.getElementById('vpLogPanel').style.display = '';
+  document.getElementById('vpLog').innerHTML = '';
+  document.getElementById('vpSyncBtn').disabled     = true;
+  document.getElementById('vpViewPageBtn').disabled = true;
+  document.getElementById('vpDoneBtn').disabled     = true;
+  document.getElementById('vpDialogTitle').textContent = 'Updating Game Info Page';
+  _vpRunPublish(_vpCurrentGame);
 }
 
 // Called when the user clicks Add Sheet in the VP dialog.
@@ -3325,21 +3668,30 @@ function submitDiUpdate() {
 
 // ── Load ──────────────────────────────────────────────
 function loadJSON(url, key, fallbackUrl, onDone) {
+  var cacheKey = 'pb_' + sheet_Id + '_' + key;
   var xhr = new XMLHttpRequest();
   xhr.open('GET', url + '?v=' + Date.now());
   xhr.onload = function() {
     if (xhr.status === 200) {
       var data; try { data = JSON.parse(xhr.responseText); } catch(e) { data = []; }
+      try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch(e) {}
       onDone(key, data);
     } else if (fallbackUrl) {
       loadJSON(fallbackUrl, key, null, onDone);
     } else {
-      onDone(key, []);
+      // Network data unavailable — serve from local cache if present
+      var cached = null;
+      try { cached = JSON.parse(localStorage.getItem(cacheKey)); } catch(e) {}
+      onDone(key, cached || []);
     }
   };
   xhr.onerror = function() {
     if (fallbackUrl) { loadJSON(fallbackUrl, key, null, onDone); }
-    else { onDone(key, []); }
+    else {
+      var cached = null;
+      try { cached = JSON.parse(localStorage.getItem(cacheKey)); } catch(e) {}
+      onDone(key, cached || []);
+    }
   };
   xhr.send();
 }
@@ -3382,7 +3734,6 @@ function openSyncDialog() {
   document.getElementById('syncLog').innerHTML = '';
   document.getElementById('syncDialogTitle').textContent = 'Syncing…';
   document.getElementById('syncDoneBtn').disabled = true;
-  document.getElementById('syncUpdateBtn').style.display = 'none';
   document.getElementById('syncOverlay').classList.add('open');
 }
 function closeSyncDialog() {
@@ -3415,7 +3766,6 @@ function syncData() {
       syncLog('Done.', 'ok');
       document.getElementById('syncDialogTitle').textContent = 'Sync Complete';
       document.getElementById('syncDoneBtn').disabled = false;
-      document.getElementById('syncUpdateBtn').style.display = '';
       btn.disabled = false;
       btn.classList.remove('syncing');
     });
@@ -3459,7 +3809,6 @@ function deployOnly() {
   document.getElementById('syncLog').innerHTML = '';
   document.getElementById('syncDialogTitle').textContent = 'Updating Pitchboard…';
   document.getElementById('syncDoneBtn').disabled = true;
-  document.getElementById('syncUpdateBtn').style.display = 'none';
   document.getElementById('syncOverlay').classList.add('open');
   updatePitchboard(function() {
     document.getElementById('syncDialogTitle').textContent = 'Update Complete';
@@ -3469,9 +3818,6 @@ function deployOnly() {
 
 // ── Update Pitchboard (deploy source to this sheet) ──
 function updatePitchboard(onDone) {
-  var btn = document.getElementById('syncUpdateBtn');
-  btn.disabled = true;
-  btn.textContent = 'Updating…';
   syncLog('─────────────────────────────', 'info');
   syncLog('Deploying Pitchboard…', 'info');
 
@@ -3491,21 +3837,96 @@ function updatePitchboard(onDone) {
         syncLog('  ✓ ' + line, 'ok');
       }
     });
-    btn.disabled = false;
-    btn.textContent = '↑ Update Pitchboard';
     if (onDone) onDone();
   };
   xhr.onerror = function() {
     syncLog('  ✗ deploy: network error', 'error');
-    btn.disabled = false;
-    btn.textContent = '↑ Update Pitchboard';
     if (onDone) onDone();
   };
   xhr.send('sheet_id=' + encodeURIComponent(sheet_Id));
 }
 
-// Initial load
-loadAll();
+// ── First-launch auto-sync (standalone / home-screen mode) ───
+function _pbAutoSync() {
+  // Full-screen loading overlay
+  var overlay = document.createElement('div');
+  overlay.style.cssText = [
+    'position:fixed;inset:0;z-index:99999',
+    'background:#1a1a2e',
+    'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem',
+    'padding:2rem;text-align:center'
+  ].join(';');
+  overlay.innerHTML = [
+    '<div style="font-family:DINBlack,sans-serif;font-size:2.4rem;line-height:1;letter-spacing:-.01em">',
+      '<span style="color:#A8C8F0">Pitch</span><span style="color:#FF8A80">Board</span>',
+    '</div>',
+    '<p style="font-family:DINRegular,Arial,sans-serif;font-size:.95rem;color:#c0c8d8;',
+       'max-width:280px;line-height:1.6;margin:0">',
+      'Loading your data locally so that you can run when you are not connected to the Internet.',
+    '</p>',
+    '<div id="_pbLoadStatus" style="font-family:DINBlack,sans-serif;font-size:.7rem;',
+         'text-transform:uppercase;letter-spacing:.08em;color:#A8C8F0;opacity:.7"></div>'
+  ].join('');
+  document.body.appendChild(overlay);
+
+  var status   = overlay.querySelector('#_pbLoadStatus');
+  var sheets   = ['pitches', 'games', 'people', 'settings'];
+  var pushBase = APP_BASE + 'push/pushSheetUpdate.php';
+  var idx = 0;
+
+  function dismiss() {
+    overlay.style.transition = 'opacity .6s';
+    overlay.style.opacity = '0';
+    setTimeout(function() { overlay.remove(); }, 650);
+  }
+
+  function cacheShell() {
+    // Proactively store the dashboard HTML in the SW cache so it
+    // loads from cache on the next offline launch.
+    if ('caches' in window) {
+      caches.open('pitchboard-sw-v1').then(function(cache) {
+        return cache.add(location.pathname);
+      }).catch(function(){});
+    }
+  }
+
+  function next() {
+    if (idx >= sheets.length) {
+      status.textContent = 'Done — loading…';
+      loadAll(function() { cacheShell(); dismiss(); });
+      return;
+    }
+    var name = sheets[idx++];
+    status.textContent = name + '…';
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', pushBase);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload  = next;
+    xhr.onerror = next;
+    xhr.send('id=' + encodeURIComponent(sheet_Id) +
+             '&sheetname=' + encodeURIComponent(name) +
+             '&date_string=');
+  }
+  next();
+}
+
+// ── Service Worker (offline shell caching) ─────────────────
+if ('serviceWorker' in navigator) {
+  var _swScope = APP_BASE + sheet_Id + '/';
+  navigator.serviceWorker.register(APP_BASE + 'pitchboard-sw.js', { scope: _swScope })
+    .catch(function(){});
+}
+
+// Initial load — then check for first-launch standalone auto-sync
+loadAll(function() {
+  var standalone = navigator.standalone === true ||
+                   matchMedia('(display-mode: standalone)').matches;
+  var initKey = 'pb_initialized_' + sheet_Id;
+  if (standalone && !localStorage.getItem(initKey)) {
+    localStorage.setItem(initKey, '1');
+    _pbAutoSync();
+  }
+});
 </script>
 </body>
 </html>

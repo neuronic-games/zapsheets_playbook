@@ -15,7 +15,8 @@ header('Content-Type: application/json');
 
 require __DIR__ . '/../dotEnv.php';
 
-$sheetId = trim($_POST['id'] ?? '');
+$sheetId  = trim($_POST['id']   ?? '');
+$gameName = trim($_POST['game'] ?? '');
 
 if (!$sheetId) {
     echo json_encode(['error' => 'Missing sheet ID']);
@@ -32,7 +33,13 @@ if (!file_exists($cacheScript)) {
 
 $cmd = escapeshellarg($pythonPath) . ' '
      . escapeshellarg($cacheScript) . ' '
-     . escapeshellarg($sheetId) . ' 2>/dev/null';
+     . escapeshellarg($sheetId);
+
+if ($gameName !== '') {
+    $cmd .= ' ' . escapeshellarg($gameName);
+}
+
+$cmd .= ' 2>/dev/null';
 
 $output = trim((string) shell_exec($cmd));
 $lines  = $output !== ''

@@ -1,0 +1,21 @@
+{
+    "name": "FitBoard",
+    "short_name": "FitBoard",
+    "id": "FitBoard_v1",
+    "start_url": ".",
+    "theme_color": "#0f0f14",
+    "background_color": "#0f0f14",
+    "display": "standalone",
+    "icons":[
+      {
+        "src":"./images/fb_icon_192.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src":"./images/fb_icon_512.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }

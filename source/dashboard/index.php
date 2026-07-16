@@ -674,12 +674,15 @@ $_sheet_id = $_bm[2] ?? '';
       display:none; position:fixed; inset:0;
       background:rgba(0,0,0,.45); z-index:1000;
       align-items:center; justify-content:center; padding:1rem;
+      touch-action:none;
     }
     .game-edit-overlay.open { display:flex; }
     .game-edit-dialog {
       background:#fff; border-radius:10px;
       padding:1.4rem 1.5rem; width:min(580px,94vw);
       max-height:90vh; overflow-y:auto;
+      -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+      touch-action:pan-y;
       box-shadow:0 8px 32px rgba(0,0,0,.22);
       display:flex; flex-direction:column; gap:.65rem;
     }
@@ -706,6 +709,10 @@ $_sheet_id = $_bm[2] ?? '';
       transition:border-color .15s;
     }
     .ge-input:focus { border-color:#1a1a2e; }
+    input[type="date"].ge-input {
+      -webkit-appearance:none; appearance:none;
+      line-height:1.4; min-height:2.1rem;
+    }
     /* Designer comboboxes inside the game-edit dialog match .ge-input sizing */
     .ge-label .combo-wrap input {
       font-size:.82rem; color:#222; border-color:#ddd; padding:.38rem .55rem;
@@ -2865,8 +2872,13 @@ function vpAddSheet() {
     var result;
     try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
     if (!result || result.error) {
-      vpLog('✕  ' + ((result && result.error) || xhr.responseText || 'Unknown error'), 'error');
-      vpDone();
+      if (result && result.error === 'tab_exists') {
+        vpLog('ℹ  Sheet "' + (result.name || gameName) + '" already exists — syncing…', 'info');
+        _vpRunPublish(gameName);
+      } else {
+        vpLog('✕  ' + ((result && result.error) || xhr.responseText || 'Unknown error'), 'error');
+        vpDone();
+      }
       return;
     }
     vpLog('✓  Sheet "' + (result.tab || gameName) + '" created', 'ok');

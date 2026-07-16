@@ -25,7 +25,12 @@ data     = json.loads(base64.b64decode(arg[pipe_idx + 1:]).decode('utf-8'))
 
 orig_name  = data.get('orig_name',  '').strip()
 new_name   = data.get('name',       '').strip() or orig_name
-designer1  = data.get('designer1',  '').strip()
+tagline        = data.get('tagline',        '').strip()
+status         = data.get('status',         '').strip()
+date_started   = data.get('date_started',   '').strip()
+date_signed    = data.get('date_signed',    '').strip()
+date_published = data.get('date_published', '').strip()
+designer1      = data.get('designer1',      '').strip()
 designer2  = data.get('designer2',  '').strip()
 designer3  = data.get('designer3',  '').strip()
 designer4  = data.get('designer4',  '').strip()
@@ -91,6 +96,11 @@ if target_sheet_row is None:
 # Map of (field_variants, value) pairs to update
 field_map = [
     (('Name',),                                                            new_name),
+    (('Tagline', 'Tag Line', 'SubTitle', 'Subtitle'),                      tagline),
+    (('Status',),                                                          status),
+    (('Date Started', 'DateStarted', 'Start Date', 'StartDate'),          date_started),
+    (('Date Signed',  'DateSigned',  'Signed Date', 'SignedDate'),         date_signed),
+    (('Date Published','DatePublished','Published Date','PublishedDate'),   date_published),
     (('Designer1', 'Designer 1'),                                          designer1),
     (('Designer2', 'Designer 2'),                                          designer2),
     (('Designer3', 'Designer 3'),                                          designer3),

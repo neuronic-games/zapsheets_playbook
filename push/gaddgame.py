@@ -24,7 +24,12 @@ sheet_id = arg[:pipe_idx]
 data     = json.loads(base64.b64decode(arg[pipe_idx + 1:]).decode('utf-8'))
 
 name       = data.get('name',      '').strip()
-designer1  = data.get('designer1', '').strip()
+tagline        = data.get('tagline',        '').strip()
+status         = data.get('status',         '').strip()
+date_started   = data.get('date_started',   '').strip()
+date_signed    = data.get('date_signed',    '').strip()
+date_published = data.get('date_published', '').strip()
+designer1      = data.get('designer1',      '').strip()
 designer2  = data.get('designer2', '').strip()
 designer3  = data.get('designer3', '').strip()
 designer4  = data.get('designer4', '').strip()
@@ -83,7 +88,12 @@ def set_col(value, *variants):
         new_row[idx] = value
 
 set_col(name,      'Name')
-set_col(designer1, 'Designer1', 'Designer 1')
+set_col(tagline,        'Tagline', 'Tag Line', 'SubTitle', 'Subtitle')
+set_col(status,         'Status')
+set_col(date_started,   'Date Started',   'DateStarted',   'Start Date',      'StartDate')
+set_col(date_signed,    'Date Signed',    'DateSigned',    'Signed Date',      'SignedDate')
+set_col(date_published, 'Date Published', 'DatePublished', 'Published Date',   'PublishedDate')
+set_col(designer1,      'Designer1', 'Designer 1')
 set_col(designer2, 'Designer2', 'Designer 2')
 set_col(designer3, 'Designer3', 'Designer 3')
 set_col(designer4, 'Designer4', 'Designer 4')

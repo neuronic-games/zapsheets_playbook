@@ -86,10 +86,7 @@ sellsheet_url   = gv('Sellsheet URL')
 # ── Build rows ─────────────────────────────────────────────────────────────────
 # [col_A (field), col_B (value), col_C (extra)]
 default_rows = [
-    ['Title',            game_name,    ''],
-    ['SubTitle',         '',           ''],
     ['BggGameId',        '',           ''],
-    ['Description',      description,  ''],
     ['ProductImage',     '',           ''],
     ['MinPlayers',       '',           ''],
     ['MaxPlayers',       '',           ''],

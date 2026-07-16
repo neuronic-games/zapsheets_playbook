@@ -986,6 +986,9 @@ $_sheet_id = $_bm[2] ?? '';
     <label class="ge-label">Game Name
       <input type="text" id="geGameName" class="ge-input" />
     </label>
+    <label class="ge-label">Tagline
+      <input type="text" id="geTagline" class="ge-input" placeholder="Short subtitle or tagline…" />
+    </label>
     <div class="ge-section">Designers</div>
     <div class="ge-row">
       <label class="ge-label">Designer 1
@@ -1014,6 +1017,20 @@ $_sheet_id = $_bm[2] ?? '';
           <div class="combo-drop" id="geDesigner4Drop"></div>
         </div>
       </label>
+    </div>
+    <div class="ge-section">Details</div>
+    <div class="ge-row">
+      <label class="ge-label">Status
+        <div class="combo-wrap">
+          <input type="text" id="geStatus" placeholder="e.g. Pitching, Signed…" autocomplete="off" />
+          <div class="combo-drop" id="geStatusDrop"></div>
+        </div>
+      </label>
+      <label class="ge-label">Date Started<input type="date" id="geDateStarted" class="ge-input" /></label>
+    </div>
+    <div class="ge-row">
+      <label class="ge-label">Date Signed<input type="date" id="geDateSigned" class="ge-input" /></label>
+      <label class="ge-label">Date Published<input type="date" id="geDatePublished" class="ge-input" /></label>
     </div>
     <div class="ge-section">Links</div>
     <div class="ge-row">
@@ -2505,9 +2522,14 @@ function vpLog(msg, type) {
   log.scrollTop = log.scrollHeight;
 }
 function vpDone() {
-  document.getElementById('vpDoneBtn').disabled   = false;
-  document.getElementById('vpSyncBtn').disabled   = false;
-  document.getElementById('vpViewPageBtn').disabled = false;
+  document.getElementById('vpDoneBtn').disabled              = false;
+  document.getElementById('vpSyncBtn').disabled              = false;
+  document.getElementById('vpSyncBtn').style.display         = '';
+  document.getElementById('vpSyncBtn').className             = 'sync-update-btn';
+  document.getElementById('vpAddSheetBtn').style.display     = 'none';
+  document.getElementById('vpAddSheetBtn').className         = 'sync-done-btn';
+  document.getElementById('vpAddSheetBtn').style.marginRight = '';
+  document.getElementById('vpViewPageBtn').disabled          = false;
 }
 function vpOpenViewPage() {
   var url = APP_BASE + sheet_Id + '/view/?game=' + encodeURIComponent(_vpCurrentGame);
@@ -2708,8 +2730,12 @@ function _vpRunPublish(gameName) {
     if (!result || result.error) {
       if (result && result.error === 'tab_not_found') {
         vpLog('✕  A sheet named "' + gameName + '" does not exist in your document.', 'error');
-        document.getElementById('vpAddSheetBtn').style.display = '';
-        vpDone();
+        document.getElementById('vpAddSheetBtn').style.display     = '';
+        document.getElementById('vpAddSheetBtn').className         = 'sync-update-btn';
+        document.getElementById('vpAddSheetBtn').style.marginRight = 'auto';
+        document.getElementById('vpSyncBtn').style.display         = 'none';
+        document.getElementById('vpViewPageBtn').disabled          = true;
+        document.getElementById('vpDoneBtn').disabled              = false;
       } else {
         vpLog('✕  ' + ((result && result.error) || xhr.responseText || 'Unknown error'), 'error');
         vpDone();
@@ -2791,8 +2817,12 @@ function viewPageClick(btn) {
       xhrJ.onerror = function() { _vpBuildSummary(gameName, []); _vpOpenSummary(true); };
       xhrJ.send();
     } else {
-      // No JSON on server — run the full sync automatically.
-      vpDoSync();
+      // No game JSON — ADD SHEET is the primary action; VIEW PAGE stays disabled.
+      _vpBuildSummary(gameName, []);
+      document.getElementById('vpAddSheetBtn').style.display     = '';
+      document.getElementById('vpAddSheetBtn').className         = 'sync-update-btn';
+      document.getElementById('vpAddSheetBtn').style.marginRight = 'auto';
+      document.getElementById('vpSyncBtn').style.display         = 'none';
     }
   };
   xhr.onerror = function() {
@@ -2821,7 +2851,11 @@ function vpAddSheet() {
   var gameName = _vpCurrentGame;
   if (!gameName) return;
   document.getElementById('vpAddSheetBtn').style.display = 'none';
-  document.getElementById('vpDoneBtn').disabled = true;
+  document.getElementById('vpDoneBtn').disabled          = true;
+  document.getElementById('vpSyncBtn').disabled          = true;
+  document.getElementById('vpViewPageBtn').disabled      = true;
+  document.getElementById('vpLogPanel').style.display    = '';
+  document.getElementById('vpLog').innerHTML             = '';
   vpLog('Creating sheet "' + gameName + '"…', 'info');
 
   var xhr = new XMLHttpRequest();
@@ -2863,6 +2897,7 @@ function openGameEditDialog(gameName, isNew) {
 
   document.getElementById('gameEditHeading').textContent = isNew ? 'New Game' : 'Edit Game';
   _setupDesignerCombos();
+  _setupStatusCombo();
 
   // Helper: try several field name variants in g
   function gfield() {
@@ -2873,10 +2908,15 @@ function openGameEditDialog(gameName, isNew) {
   }
 
   document.getElementById('geGameName').value  = isNew ? '' : (g.Name || gameName);
+  document.getElementById('geTagline').value   = isNew ? '' : gfield('Tagline', 'Tag Line', 'SubTitle', 'Subtitle');
   document.getElementById('geDesigner1').value = isNew ? '' : gfield('Designer1', 'Designer 1');
   document.getElementById('geDesigner2').value = isNew ? '' : gfield('Designer2', 'Designer 2');
   document.getElementById('geDesigner3').value = isNew ? '' : gfield('Designer3', 'Designer 3');
   document.getElementById('geDesigner4').value = isNew ? '' : gfield('Designer4', 'Designer 4');
+  document.getElementById('geStatus').value         = isNew ? '' : gfield('Status');
+  document.getElementById('geDateStarted').value   = isNew ? '' : _toDateInput(gfield('Date Started',  'DateStarted',  'Start Date',     'StartDate'));
+  document.getElementById('geDateSigned').value    = isNew ? '' : _toDateInput(gfield('Date Signed',   'DateSigned',   'Signed Date',    'SignedDate'));
+  document.getElementById('geDatePublished').value = isNew ? '' : _toDateInput(gfield('Date Published','DatePublished','Published Date', 'PublishedDate'));
   document.getElementById('geRules').value     = isNew ? '' : gfield('Rules',     'Rules URL',    'RulesURL');
   document.getElementById('gePlay').value      = isNew ? '' : gfield('Play',      'Play URL',     'PlayURL');
   document.getElementById('gePrint').value     = isNew ? '' : gfield('Print',     'Print URL',    'PrintURL');
@@ -2903,7 +2943,12 @@ function submitGameEdit() {
   var payload = {
     orig_name:  _gameEditCtx.origName,
     name:       document.getElementById('geGameName').value.trim(),
-    designer1:  document.getElementById('geDesigner1').value.trim(),
+    tagline:         document.getElementById('geTagline').value.trim(),
+    status:          document.getElementById('geStatus').value.trim(),
+    date_started:    document.getElementById('geDateStarted').value.trim(),
+    date_signed:     document.getElementById('geDateSigned').value.trim(),
+    date_published:  document.getElementById('geDatePublished').value.trim(),
+    designer1:       document.getElementById('geDesigner1').value.trim(),
     designer2:  document.getElementById('geDesigner2').value.trim(),
     designer3:  document.getElementById('geDesigner3').value.trim(),
     designer4:  document.getElementById('geDesigner4').value.trim(),
@@ -2957,8 +3002,13 @@ function submitGameEdit() {
         var newName = payload.name;
         if (!gamesIndex[newName]) gamesIndex[newName] = {};
         var entry = gamesIndex[newName];
-        entry.Name       = newName;
-        entry.Designer1  = payload.designer1;
+        entry.Name                = newName;
+        entry.Tagline             = payload.tagline;
+        entry.Status              = payload.status;
+        entry['Date Started']     = payload.date_started;
+        entry['Date Signed']      = payload.date_signed;
+        entry['Date Published']   = payload.date_published;
+        entry.Designer1           = payload.designer1;
         entry.Designer2  = payload.designer2;
         entry.Designer3  = payload.designer3;
         entry.Designer4  = payload.designer4;
@@ -3230,6 +3280,29 @@ function _setupDesignerCombos() {
   ['geDesigner1','geDesigner2','geDesigner3','geDesigner4'].forEach(function(id) {
     _comboInit(id, id + 'Drop', getAllPersonNames, null);
   });
+}
+
+var _STATUS_OPTIONS = [
+  'Pitching','Interested','Contract Sent','Signed',
+  'In Development','In Production','Published','Shelved','Cancelled'
+];
+var _statusComboReady = false;
+function _setupStatusCombo() {
+  if (_statusComboReady) return;
+  _statusComboReady = true;
+  _comboInit('geStatus', 'geStatusDrop', function() { return _STATUS_OPTIONS; }, null);
+}
+
+// Convert a stored date string (any common format) to YYYY-MM-DD for <input type="date">.
+// Returns '' if the value can't be parsed.
+function _toDateInput(val) {
+  if (!val) return '';
+  var d = new Date(val);
+  if (isNaN(d.getTime())) return '';
+  var y  = d.getFullYear();
+  var mo = String(d.getMonth() + 1).padStart(2, '0');
+  var dy = String(d.getDate()).padStart(2, '0');
+  return y + '-' + mo + '-' + dy;
 }
 
 // ── Open Add Entry dialog ─────────────────────────────

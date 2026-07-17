@@ -646,10 +646,13 @@ $_sheet_id = $_bm[2] ?? '';
     .notes-field-input {
       font-family:'DINRegular',sans-serif; font-size:.82rem; color:#222;
       border:1px solid #ddd; border-radius:6px; padding:.38rem .55rem;
-      outline:none; width:100%; box-sizing:border-box; background:#fff;
+      outline:none; width:100%; min-width:0; box-sizing:border-box; background:#fff;
       transition:border-color .15s;
+      -webkit-appearance:none; appearance:none;
     }
     .notes-field-input:focus { border-color:#1a1a2e; }
+    /* Re-apply native arrow for <select> elements only */
+    select.notes-field-input { -webkit-appearance:auto; appearance:auto; }
     .notes-edit-area {
       width:100%; min-height:6rem; font-family:'DINRegular',sans-serif;
       font-size:.88rem; line-height:1.7; color:#222;
@@ -661,6 +664,20 @@ $_sheet_id = $_bm[2] ?? '';
     .notes-dialog-actions {
       display:flex; gap:.5rem; align-items:center; justify-content:flex-end;
       border-top:1px solid #f0f0f0; padding-top:.6rem; margin-top:.1rem;
+    }
+    .notes-delete-btn {
+      font-family:'DINBlack',sans-serif; font-size:.7rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      background:none; color:#dc2626; border:1px solid rgba(220,38,38,.35);
+      border-radius:6px; padding:.42rem .9rem; cursor:pointer;
+      margin-right:auto; transition:background .15s, color .15s;
+    }
+    .notes-delete-btn:hover:not(:disabled) { background:#dc2626; color:#fff; }
+    .notes-delete-btn:disabled { opacity:.4; cursor:default; }
+    .notes-delete-confirm { margin-right:0; }
+    .notes-confirm-msg {
+      font-family:'DINRegular',sans-serif; font-size:.78rem;
+      color:#dc2626; flex:1;
     }
     .notes-update-btn {
       font-family:'DINBlack',sans-serif; font-size:.7rem;
@@ -978,9 +995,15 @@ $_sheet_id = $_bm[2] ?? '';
     <label class="notes-field-label" style="margin-top:.45rem">Notes
       <textarea id="notesEditArea" class="notes-edit-area"></textarea>
     </label>
-    <div class="notes-dialog-actions">
+    <div class="notes-dialog-actions" id="notesActions">
+      <button class="notes-delete-btn" id="notesDeleteBtn" onclick="confirmDeleteEntry()">Delete</button>
       <button class="notes-close" onclick="closeNotesDialog()">Close</button>
       <button class="notes-update-btn" id="notesUpdateBtn" onclick="submitNotesUpdate()">Update</button>
+    </div>
+    <div class="notes-dialog-actions notes-confirm-actions" id="notesConfirmActions" style="display:none">
+      <span class="notes-confirm-msg">Delete this pitch? This cannot be undone.</span>
+      <button class="notes-close" onclick="cancelDeleteEntry()">Cancel</button>
+      <button class="notes-delete-btn notes-delete-confirm" id="notesDeleteConfirmBtn" onclick="submitDeleteEntry()">Delete</button>
     </div>
   </div>
 </div>
@@ -2584,6 +2607,7 @@ function openNotesDialog(entry) {
 }
 
 function closeNotesDialog() {
+  cancelDeleteEntry();
   document.getElementById('notesOverlay').classList.remove('open');
 }
 
@@ -2654,6 +2678,73 @@ function submitNotesUpdate() {
     btn.disabled = false;
     btn.textContent = 'Update';
     showError('Network error — could not update.');
+  };
+  xhr.send(body);
+}
+
+function confirmDeleteEntry() {
+  document.getElementById('notesActions').style.display        = 'none';
+  document.getElementById('notesConfirmActions').style.display = '';
+}
+
+function cancelDeleteEntry() {
+  document.getElementById('notesConfirmActions').style.display = 'none';
+  document.getElementById('notesActions').style.display        = '';
+}
+
+function submitDeleteEntry() {
+  var btn    = document.getElementById('notesDeleteConfirmBtn');
+  var updBtn = document.getElementById('notesUpdateBtn');
+  btn.disabled = true; btn.textContent = 'Deleting…';
+  updBtn.disabled = true;
+
+  var body =
+    'id='        + encodeURIComponent(sheet_Id)           +
+    '&game='     + encodeURIComponent(_notesCtx.game)     +
+    '&publisher='+ encodeURIComponent(_notesCtx.publisher)+
+    '&contact='  + encodeURIComponent(_notesCtx.contact)  +
+    '&date='     + encodeURIComponent(_notesCtx.date)     +
+    '&event='    + encodeURIComponent(_notesCtx.event);
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/deleteRow.php');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onload = function() {
+    btn.disabled = false; btn.textContent = 'Delete';
+    updBtn.disabled = false;
+    cancelDeleteEntry();
+    var result;
+    try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
+    if (result && result.ok) {
+      // Remove from in-memory allPitches
+      allPitches = allPitches.filter(function(r) {
+        return !(r.Game      === _notesCtx.game      &&
+                 r.Publisher === _notesCtx.publisher  &&
+                 r.Contact   === _notesCtx.contact    &&
+                 r.Date      === _notesCtx.date       &&
+                 r.Event     === _notesCtx.event);
+      });
+      filteredPitches = searchQuery
+        ? allPitches.filter(function(r) {
+            return (r.Game||'').toLowerCase().includes(searchQuery)
+                || (r.Publisher||'').toLowerCase().includes(searchQuery)
+                || (r.Contact||'').toLowerCase().includes(searchQuery)
+                || (r.Notes||'').toLowerCase().includes(searchQuery);
+          })
+        : allPitches;
+      var _vs = saveViewState();
+      buildSummary(allPitches);
+      buildView();
+      restoreViewState(_vs);
+      closeNotesDialog();
+    } else {
+      showError('Error: ' + ((result && result.error) || 'Could not delete entry.'));
+    }
+  };
+  xhr.onerror = function() {
+    btn.disabled = false; btn.textContent = 'Delete';
+    updBtn.disabled = false;
+    showError('Network error — could not delete.');
   };
   xhr.send(body);
 }

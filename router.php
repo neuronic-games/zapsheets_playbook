@@ -106,6 +106,11 @@ if (preg_match('#^/pitchboard/?$#', $uri)) {
     serveFile(__DIR__ . '/source/pitchboard/index.php', $MIME);
 }
 
+// ── /pitchboard/help — instructional help page ────────────────────────────────
+if (preg_match('#^/pitchboard/help/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/pitchboard/help/index.php', $MIME);
+}
+
 // ── Backward compat: sheets/{id}/view|dashboard|sellsheet|fitboard ───────
 if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/view(/.*)?$#', $uri))       { serveFile(__DIR__ . '/source/view/index.php',       $MIME); }
 if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/dashboard(/.*)?$#', $uri))  { serveFile(__DIR__ . '/source/dashboard/index.php',  $MIME); }

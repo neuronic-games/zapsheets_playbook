@@ -607,16 +607,21 @@ function cachedImage(url) {
   return name ? BASE + 'cache/' + name : url;
 }
 
-// Convert a direct image URL to a version that browsers will display inline
-// (not trigger a download). Handles Dropbox dl=1 → dl.dropboxusercontent.com.
+// Convert a URL to one that browsers will display inline in an <img> tag.
+// For Dropbox shared links we keep the original URL and ensure dl=1.
+// Browsers follow Dropbox's redirect to a properly-signed CDN URL automatically,
+// which is more reliable than manually constructing the CDN URL (the new
+// /scl/fi/ format requires signed parameters that only the redirect provides).
 function directImageUrl(url) {
   if (!url) return url;
   if (url.includes('dropbox.com')) {
-    // Strip dl param and switch to the CDN subdomain that serves inline
-    return url
-      .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
-      .replace(/[?&]dl=[01]/g, '')
-      .replace(/\?$/, '');
+    if (url.includes('&dl=0') || url.includes('?dl=0')) {
+      return url.replace('dl=0', 'dl=1');
+    }
+    if (!url.match(/[?&]dl=/)) {
+      return url + (url.includes('?') ? '&' : '?') + 'dl=1';
+    }
+    return url; // already has dl=1 — return as-is
   }
   return url;
 }
@@ -747,8 +752,11 @@ function buildThumbs() {
       return '<div class="thumb-video-wrap' + activeCls + '" data-idx="' + i + '" title="' + item.caption + '">'
         + '<span class="thumb-play-icon">&#9654;</span></div>';
     }
+    var thumbErr = (item.direct && item.src !== item.direct)
+      ? ' onerror="this.onerror=null;this.src=\'' + item.direct.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\';"'
+      : '';
     return '<img class="thumb' + activeCls + '" src="' + item.src
-      + '" alt="" data-idx="' + i + '" loading="lazy" />';
+      + '"' + thumbErr + ' alt="" data-idx="' + i + '" loading="lazy" />';
   }).join('');
   strip.querySelectorAll('.thumb, .thumb-video-wrap').forEach(function(el) {
     el.addEventListener('click', function() {

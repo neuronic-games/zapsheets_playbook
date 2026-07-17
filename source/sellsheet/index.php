@@ -343,6 +343,33 @@ function cachedImage(url) {
   return BASE + 'cache/' + fname;
 }
 
+// Return the best direct URL for use as an <img> src fallback.
+// For Dropbox shared links we keep the original dl=1 URL; browsers follow
+// the redirect to a properly-signed CDN URL automatically.
+function directImageUrl(url) {
+  if (!url) return url;
+  if (url.indexOf('dropbox.com') !== -1) {
+    if (url.indexOf('&dl=0') !== -1 || url.indexOf('?dl=0') !== -1) {
+      return url.replace('dl=0', 'dl=1');
+    }
+    if (url.indexOf('dl=') === -1) {
+      return url + (url.indexOf('?') !== -1 ? '&' : '?') + 'dl=1';
+    }
+    return url;
+  }
+  return url;
+}
+
+function setHeroImage(el, src, original) {
+  el.src = src;
+  if (original && src !== original) {
+    el.onerror = function() {
+      el.onerror = null;
+      el.src = original;
+    };
+  }
+}
+
 var _loadTotal = 5, _loadDone = 0;
 function _jsonLoad(path, key) {
   $.ajax({
@@ -462,11 +489,14 @@ function render() {
   }
 
   // ── Hero image ─────────────────────────────────────────────
-  // PitchImageUrl takes priority; fall back to splash-en.json
-  var _pitchImg = gv('PitchImageUrl');
-  var _heroSrc  = '';
+  // PitchImageUrl takes priority; fall back to splash-en.json.
+  // Always try the local cache first; fall back to the direct URL on error.
+  var _pitchImg  = gv('PitchImageUrl');
+  var _heroCache = '';
+  var _heroDirect = '';
   if (_pitchImg) {
-    _heroSrc = _pitchImg;
+    _heroCache  = cachedImage(_pitchImg);
+    _heroDirect = directImageUrl(_pitchImg);
   } else if (data.splash) {
     var row = data.splash.find(function(r){
       return (r.ID || '').toLowerCase() === 'layout' && r.Content;
@@ -474,10 +504,14 @@ function render() {
     if (!row) row = data.splash.find(function(r){
       return (r.Type || '').toLowerCase() === 'image' && r.Content;
     });
-    if (row) _heroSrc = cachedImage(row.Content);
+    if (row) {
+      _heroCache  = cachedImage(row.Content);
+      _heroDirect = directImageUrl(row.Content);
+    }
   }
-  if (_heroSrc) {
-    document.getElementById('ssHero').src = _heroSrc;
+  if (_heroCache) {
+    var _heroEl = document.getElementById('ssHero');
+    setHeroImage(_heroEl, _heroCache, _heroDirect);
     document.getElementById('ssHeroWrap').style.display = '';
   }
 

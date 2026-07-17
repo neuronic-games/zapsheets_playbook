@@ -190,6 +190,7 @@ body {
     <img class="brand-logo" src="images/pb_icon_180.png" alt="PitchBoard logo" />
     <div class="brand-name">PitchBoard</div>
     <div class="brand-tagline">Your board game pitch tracker</div>
+    <a href="pitchboard/help" style="display:inline-block;margin-top:.6rem;font-family:'DINBlack',sans-serif;font-size:.68rem;letter-spacing:.07em;text-transform:uppercase;color:#c8860a;text-decoration:none;opacity:.8;">How it works →</a>
   </div>
 
   <!-- ── Setup card ───────────────────────────────────────────── -->

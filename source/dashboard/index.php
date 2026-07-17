@@ -361,19 +361,39 @@ $_sheet_id = $_bm[2] ?? '';
       padding:.5rem 1rem .55rem;
       display:flex; gap:.35rem; flex-wrap:wrap; align-items:center;
     }
+    /* Pills wrapper — sits inline on desktop, becomes its own scrollable row on mobile */
+    .game-link-pills {
+      display:contents; /* transparent on desktop — pills flow directly into .game-links */
+    }
     .game-actions {
       display:flex; gap:.35rem; align-items:center; flex-shrink:0;
       padding:.5rem 1rem .5rem 0;
     }
-    /* On narrow / portrait screens, stack links and actions vertically */
+    /* On narrow / portrait screens, stack designers / pills / actions each on own row */
     @media (max-width:540px) {
       .game-sub-bar { flex-direction:column; align-items:stretch; }
-      .game-links   { padding-bottom:.3rem; }
+      .game-links {
+        flex-direction:column; align-items:flex-start;
+        gap:.3rem; padding-bottom:.35rem;
+      }
+      /* Designers line: left-aligned, wraps if needed */
+      .game-links-designers { white-space:normal; align-self:flex-start; }
+      /* Pills: single scrollable row */
+      .game-link-pills {
+        display:flex; flex-wrap:nowrap;
+        gap:.35rem; align-items:center;
+        overflow-x:auto; -webkit-overflow-scrolling:touch;
+        scrollbar-width:none; width:100%;
+      }
+      .game-link-pills::-webkit-scrollbar { display:none; }
+      /* Actions row: single scrollable row */
       .game-actions {
         padding:.3rem 1rem .55rem;
         border-top:1px solid rgba(255,255,255,.08);
-        flex-wrap:wrap;
+        flex-wrap:nowrap; overflow-x:auto;
+        -webkit-overflow-scrolling:touch; scrollbar-width:none;
       }
+      .game-actions::-webkit-scrollbar { display:none; }
     }
     .game-link-pill {
       display:inline-block; padding:.18rem .65rem;
@@ -521,6 +541,13 @@ $_sheet_id = $_bm[2] ?? '';
     .add-entry-fields select:focus,
     .add-entry-fields textarea:focus { border-color:#1a1a2e; }
     .add-entry-fields textarea { resize:vertical; min-height:4.5rem; }
+    /* iOS: date inputs ignore padding/font-size without this */
+    .add-entry-fields input[type="date"] {
+      -webkit-appearance:none; appearance:none;
+      box-sizing:border-box;
+      padding-top:0; padding-bottom:0;
+      height:2.15rem;
+    }
     .add-entry-row { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
     /* Game label at top of dialog */
     .add-game-label {
@@ -1809,7 +1836,7 @@ function buildGameView(pitches) {
       });
       html += '</span>';
     }
-    html += gameLinkPills;
+    if (gameLinkPills) html += '<div class="game-link-pills">' + gameLinkPills + '</div>';
     html += '</div>'; // .game-links
     html += '<div class="game-actions">';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();addBtnClick(this)">New Pitch</button>';
@@ -2436,6 +2463,8 @@ function buildEmailBody(gameName) {
   if (f.desc)      lines.push(f.desc);
   if (f.designers) { lines.push(''); lines.push('Designers: ' + f.designers); }
   var urls = [];
+  var viewUrl = window.location.origin + APP_BASE + sheet_Id + '/view/?game=' + encodeURIComponent(gameName);
+  urls.push('Game Info: ' + viewUrl);
   if (f.sellsheet) urls.push('Sellsheet: ' + f.sellsheet);
   if (f.video)     urls.push('Video: '     + f.video);
   if (f.rules)     urls.push('Rules: '     + f.rules);
@@ -3639,6 +3668,13 @@ function openAddDialog(game, publisher, contact, pubLocked) {
 
   document.getElementById('addEntryOverlay').classList.add('open');
   setTimeout(function() {
+    // Equalize date input height to the select (iOS ignores CSS height on date inputs)
+    var _sel = document.getElementById('addStatus');
+    var _dat = document.getElementById('addDate');
+    if (_sel && _dat) {
+      var _h = _sel.getBoundingClientRect().height;
+      if (_h > 0) { _dat.style.height = _h + 'px'; _dat.style.boxSizing = 'border-box'; }
+    }
     var focusEl = bothLocked
       ? document.getElementById('addEvent')
       : !hasGame
@@ -4650,6 +4686,22 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register(APP_BASE + 'pitchboard-sw.js', { scope: _swScope })
     .catch(function(){});
 }
+
+// ── iOS zoom-reset on input blur ──────────────────────
+// iOS Safari zooms in when a focused input has font-size < 16px, but never
+// zooms back out on blur.  Briefly toggling maximum-scale=1 forces it to snap
+// back to the page's normal zoom level, then we restore the original viewport
+// so pinch-to-zoom remains available.
+(function() {
+  var vp = document.querySelector('meta[name="viewport"]');
+  if (!vp) return;
+  var orig = vp.getAttribute('content');
+  document.addEventListener('blur', function(e) {
+    if (!e.target.matches('input, select, textarea')) return;
+    vp.setAttribute('content', orig + ', maximum-scale=1');
+    setTimeout(function() { vp.setAttribute('content', orig); }, 300);
+  }, true);
+})();
 
 // Initial load — then check for first-launch standalone auto-sync
 loadAll(function() {

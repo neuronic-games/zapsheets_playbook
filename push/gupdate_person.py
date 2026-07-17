@@ -7,6 +7,11 @@ import sys, os, json, base64
 
 credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
 
+def safe_str(v):
+    """Prefix non-empty strings with ' to prevent Google Sheets formula interpretation."""
+    s = (str(v) if v is not None else '').strip()
+    return ("'" + s) if s else ''
+
 if not os.path.exists(credFileName):
     print(json.dumps({"error": "credentials.json not found"}))
     sys.exit(1)
@@ -86,7 +91,7 @@ for field, value in field_map:
     if idx >= 0:
         updates.append({
             'range':  gspread.utils.rowcol_to_a1(target_sheet_row, idx + 1),
-            'values': [[value]]
+            'values': [[safe_str(value)]]
         })
 
 if not updates:

@@ -6,6 +6,11 @@ import sys, os, json, base64
 
 credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
 
+def safe_str(v):
+    """Prefix non-empty strings with ' to prevent Google Sheets formula interpretation."""
+    s = (str(v) if v is not None else '').strip()
+    return ("'" + s) if s else ''
+
 if not os.path.exists(credFileName):
     print(json.dumps({"error": "credentials.json not found"}))
     sys.exit(1)
@@ -62,7 +67,7 @@ for i, row in enumerate(all_values, start=1):
 next_row = last_data_row + 1
 
 # Build row list aligned to headers
-new_row = [row_data.get(h.strip(), '') for h in headers]
+new_row = [safe_str(row_data.get(h.strip(), '')) for h in headers]
 
 if not headers:
     print(json.dumps({"error": "Header row is empty"}))

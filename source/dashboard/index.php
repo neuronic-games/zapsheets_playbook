@@ -55,7 +55,7 @@ $_sheet_id = $_bm[2] ?? '';
     }
     .view-toggle button.active { background:#fff; color:#1a1a2e; }
 
-    /* ── Top-bar buttons (Sync) ─────────────────────── */
+    /* ── Top-bar icon buttons ────────────────────────── */
     .sync-btn {
       display:inline-flex; align-items:center; justify-content:center;
       background:rgba(255,255,255,.15); color:#fff;
@@ -67,8 +67,26 @@ $_sheet_id = $_bm[2] ?? '';
     .sync-btn:disabled { opacity:.5; cursor:default; }
     .sync-btn:disabled:hover { background:rgba(255,255,255,.15); }
     @keyframes spin { to { transform:rotate(360deg); } }
-    .sync-icon { display:inline-block; font-size:1.1rem; line-height:1; }
+    .sync-icon { display:inline-flex; align-items:center; justify-content:center; line-height:1; }
     .sync-btn.syncing .sync-icon { animation:spin .8s linear infinite; }
+    /* ── Account menu ────────────────────────────────── */
+    .account-menu-wrap { position:relative; flex-shrink:0; }
+    .account-menu {
+      display:none; position:absolute; top:calc(100% + .4rem); right:0;
+      background:#1a1a2e; border:1px solid rgba(255,255,255,.2);
+      border-radius:8px; min-width:130px; z-index:300;
+      box-shadow:0 6px 20px rgba(0,0,0,.4); overflow:hidden;
+    }
+    .account-menu.open { display:block; }
+    .account-menu-item {
+      display:block; width:100%; background:none; border:none;
+      color:rgba(255,255,255,.85); text-align:left; cursor:pointer;
+      font-family:'DINBlack',sans-serif; font-size:.72rem;
+      text-transform:uppercase; letter-spacing:.07em;
+      padding:.6rem 1rem;
+      transition:background .12s;
+    }
+    .account-menu-item:hover { background:rgba(255,255,255,.1); color:#fff; }
 
     /* ── Summary bar ─────────────────────────────────── */
     .summary-bar {
@@ -333,11 +351,29 @@ $_sheet_id = $_bm[2] ?? '';
     .db-chart-wide { grid-column:1 / -1; }
     @media (max-width:600px) { .db-charts { grid-template-columns:1fr; } }
 
-    /* ── Game link pills ─────────────────────────────── */
-    .game-links {
+    /* ── Game sub-bar (links row + actions row) ─────── */
+    .game-sub-bar {
       background:#1a1a2e;
+      display:flex; align-items:center;
+    }
+    .game-links {
+      flex:1; min-width:0;
       padding:.5rem 1rem .55rem;
       display:flex; gap:.35rem; flex-wrap:wrap; align-items:center;
+    }
+    .game-actions {
+      display:flex; gap:.35rem; align-items:center; flex-shrink:0;
+      padding:.5rem 1rem .5rem 0;
+    }
+    /* On narrow / portrait screens, stack links and actions vertically */
+    @media (max-width:540px) {
+      .game-sub-bar { flex-direction:column; align-items:stretch; }
+      .game-links   { padding-bottom:.3rem; }
+      .game-actions {
+        padding:.3rem 1rem .55rem;
+        border-top:1px solid rgba(255,255,255,.08);
+        flex-wrap:wrap;
+      }
     }
     .game-link-pill {
       display:inline-block; padding:.18rem .65rem;
@@ -399,16 +435,41 @@ $_sheet_id = $_bm[2] ?? '';
       .tl-ms-date  { font-size:.47rem; }
     }
 
+    /* ── Import dialog ──────────────────────────────── */
+    .import-dialog { width:min(560px,96vw); }
+    .import-body { max-height:42vh; overflow-y:auto; -webkit-overflow-scrolling:touch; margin:.25rem 0 .5rem; }
+    .import-game-name { font-family:'DINBlack',sans-serif; font-size:1rem; margin-bottom:.2rem; }
+    .import-meta { color:#999; font-size:.73rem; margin-bottom:.6rem; }
+    .import-section-label {
+      font-family:'DINBlack',sans-serif; font-size:.62rem;
+      text-transform:uppercase; letter-spacing:.06em;
+      color:#666; margin:.6rem 0 .3rem;
+    }
+    .import-table-wrap { max-height:18vh; overflow-y:auto; border:1px solid #e5e5e5; border-radius:6px; -webkit-overflow-scrolling:touch; }
+    .import-table { width:100%; border-collapse:collapse; font-size:.76rem; }
+    .import-table th {
+      text-align:left; color:#888; font-family:'DINBlack',sans-serif;
+      font-size:.6rem; text-transform:uppercase; letter-spacing:.04em;
+      border-bottom:1px solid #e5e5e5; padding:.25rem .45rem;
+      position:sticky; top:0; background:#fff;
+    }
+    .import-table td { padding:.25rem .45rem; border-bottom:1px solid #f2f2f2; }
+    .import-table tr:last-child td { border-bottom:none; }
+    .import-people-list { margin:.2rem 0 0 1.1rem; padding:0; list-style:disc; font-size:.8rem; }
+    .import-people-list li { margin:.2rem 0; }
+    .import-company { color:#999; font-size:.9em; }
+    .import-empty { color:#aaa; font-style:italic; font-size:.8rem; }
+
     /* ── Game sub-bar action buttons (dark bg) ──────── */
     .game-action-btn {
       font-family:'DINBlack',sans-serif; font-size:.6rem;
       text-transform:uppercase; letter-spacing:.06em;
-      background:rgba(255,255,255,.14); color:rgba(255,255,255,.85);
-      border:1px solid rgba(255,255,255,.28); border-radius:999px; line-height:1;
+      background:rgba(255,196,76,.14); color:#ffd166;
+      border:1px solid rgba(255,196,76,.30); border-radius:999px; line-height:1;
       padding:.38rem .65rem; cursor:pointer; white-space:nowrap; flex-shrink:0;
-      transition:background .15s;
+      transition:background .15s, color .15s;
     }
-    .game-action-btn:hover { background:rgba(255,255,255,.28); color:#fff; }
+    .game-action-btn:hover { background:rgba(255,196,76,.26); color:#ffe099; }
 
     /* ── Add-entry buttons ──────────────────────────── */
     /* Button next to contact name (light bg) */
@@ -868,7 +929,22 @@ $_sheet_id = $_bm[2] ?? '';
       <button id="btnGame"      class="active" onclick="setView('game')">Games</button>
       <button id="btnPublisher"               onclick="setView('publisher')">Publishers</button>
     </div>
-    <button class="sync-btn" id="syncBtn" onclick="syncData()" title="Sync"><span class="sync-icon">&#8635;</span></button>
+    <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleImportFile(this)">
+    <div class="account-menu-wrap">
+      <button class="sync-btn" id="accountBtn" onclick="toggleAccountMenu()" title="Menu">
+        <span class="sync-icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="12" cy="7.5" r="4.5"/>
+            <path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/>
+          </svg>
+        </span>
+      </button>
+      <div class="account-menu" id="accountMenu">
+        <button class="account-menu-item" onclick="accountMenuProfile()">Profile</button>
+        <button class="account-menu-item" onclick="accountMenuFetch()">Fetch</button>
+        <button class="account-menu-item" onclick="accountMenuImport()">Import</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1133,6 +1209,36 @@ $_sheet_id = $_bm[2] ?? '';
   </div>
 </div>
 
+
+<!-- Profile dialog -->
+<div class="sync-overlay" id="profileOverlay">
+  <div class="sync-dialog" style="width:min(400px,94vw)">
+    <h2>Profile</h2>
+    <div style="display:flex;flex-direction:column;gap:.65rem;margin:.25rem 0 .5rem">
+      <label class="ge-label">Name<input type="text"  id="profileName"  class="ge-input" /></label>
+      <label class="ge-label">Email<input type="email" id="profileEmail" class="ge-input" /></label>
+      <label class="ge-label">Phone<input type="tel"   id="profilePhone" class="ge-input" /></label>
+    </div>
+    <div class="sync-log" id="profileLog" style="display:none"></div>
+    <div class="sync-dialog-actions">
+      <button class="notes-close" id="profileCancelBtn" onclick="closeProfileDialog()">Cancel</button>
+      <button class="sync-update-btn" id="profileSaveBtn" onclick="submitProfile()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import dialog -->
+<div class="sync-overlay" id="importOverlay">
+  <div class="sync-dialog import-dialog">
+    <h2>Import Pitches</h2>
+    <div class="import-body" id="importDialogBody"></div>
+    <div class="sync-log" id="importLog" style="display:none"></div>
+    <div class="sync-dialog-actions">
+      <button class="notes-close" id="importCancelBtn" onclick="closeImportDialog()">Cancel</button>
+      <button class="sync-update-btn" id="importConfirmBtn" onclick="confirmImport()">Import</button>
+    </div>
+  </div>
+</div>
 
 <!-- Sync dialog -->
 <div class="sync-overlay" id="syncOverlay">
@@ -1634,6 +1740,7 @@ function buildGameView(pitches) {
     })();
 
     html += '<div class="card-body-wrap"><div class="card-body">';
+    html += '<div class="game-sub-bar">';
     html += '<div class="game-links">';
     if (designerNames.length) {
       html += '<span class="game-links-designers">';
@@ -1646,11 +1753,14 @@ function buildGameView(pitches) {
       html += '</span>';
     }
     html += gameLinkPills;
-    html += '<span style="flex:1"></span>';
+    html += '</div>'; // .game-links
+    html += '<div class="game-actions">';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();addBtnClick(this)">New Pitch</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();editGameClick(this)">Edit Game</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();viewPageClick(this)">View Page</button>';
-    html += '</div>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();shareGame(this.getAttribute(\'data-game\'))">Share</button>';
+    html += '</div>'; // .game-actions
+    html += '</div>'; // .game-sub-bar
 
     // Sort publishers alphabetically
     var pubNames = Object.keys(games[g]).sort(function(a,b){ return a.localeCompare(b); });
@@ -3833,11 +3943,342 @@ function syncLog(msg, type) {
   log.scrollTop = log.scrollHeight;
 }
 
+// ── Account menu ─────────────────────────────────────
+function toggleAccountMenu() {
+  var menu = document.getElementById('accountMenu');
+  var open = menu.classList.contains('open');
+  if (open) { menu.classList.remove('open'); }
+  else       { menu.classList.add('open'); }
+}
+function closeAccountMenu() {
+  document.getElementById('accountMenu').classList.remove('open');
+}
+function accountMenuFetch()  { closeAccountMenu(); syncData(); }
+function accountMenuImport() { closeAccountMenu(); importClick(); }
+function accountMenuProfile(){ closeAccountMenu(); openProfileDialog(); }
+
+document.addEventListener('click', function(e) {
+  var wrap = document.querySelector('.account-menu-wrap');
+  if (wrap && !wrap.contains(e.target)) closeAccountMenu();
+});
+
+// ── Profile dialog ───────────────────────────────────
+function openProfileDialog() {
+  document.getElementById('profileName').value  = myName  || '';
+  document.getElementById('profileEmail').value = myEmail || '';
+  document.getElementById('profilePhone').value = myPhone || '';
+  document.getElementById('profileLog').innerHTML = '';
+  document.getElementById('profileLog').style.display = 'none';
+  document.getElementById('profileSaveBtn').disabled   = false;
+  document.getElementById('profileCancelBtn').disabled = false;
+  document.getElementById('profileCancelBtn').textContent = 'Cancel';
+  document.getElementById('profileOverlay').classList.add('open');
+}
+function closeProfileDialog() {
+  document.getElementById('profileOverlay').classList.remove('open');
+}
+function _profileLog(msg, type) {
+  var log  = document.getElementById('profileLog');
+  log.style.display = '';
+  var span = document.createElement('span');
+  span.className   = 'sync-log-line ' + (type || 'info');
+  span.textContent = msg;
+  log.appendChild(span);
+  log.scrollTop = log.scrollHeight;
+}
+function submitProfile() {
+  if (!sheet_Id) return;
+  var name  = document.getElementById('profileName').value.trim();
+  var email = document.getElementById('profileEmail').value.trim();
+  var phone = document.getElementById('profilePhone').value.trim();
+  if (!name) { _profileLog('Name is required.', 'error'); return; }
+
+  document.getElementById('profileSaveBtn').disabled   = true;
+  document.getElementById('profileCancelBtn').disabled = true;
+  _profileLog('Saving…', 'info');
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/updateProfile.php');
+  var fd = new FormData();
+  fd.append('id',    sheet_Id);
+  fd.append('name',  name);
+  fd.append('email', email);
+  fd.append('phone', phone);
+  xhr.onload = function() {
+    var result;
+    try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
+    if (!result || result.error) {
+      _profileLog('✕  ' + ((result && result.error) || 'Unknown error'), 'error');
+      document.getElementById('profileSaveBtn').disabled   = false;
+      document.getElementById('profileCancelBtn').disabled = false;
+      return;
+    }
+    // Update in-memory values immediately
+    myName  = name;
+    myEmail = email;
+    myPhone = phone;
+    var parts = [myName, myEmail, myPhone].filter(Boolean);
+    document.getElementById('subTitle').textContent = parts.join('  ·  ');
+    _profileLog('✓  Saved', 'ok');
+    document.getElementById('profileCancelBtn').disabled  = false;
+    document.getElementById('profileCancelBtn').textContent = 'Close';
+  };
+  xhr.onerror = function() {
+    _profileLog('✕  Network error', 'error');
+    document.getElementById('profileSaveBtn').disabled   = false;
+    document.getElementById('profileCancelBtn').disabled = false;
+  };
+  xhr.send(fd);
+}
+
+// ── Share (export pitches for one game as JSON) ──────
+function shareGame(gameName) {
+  var pitches = allPitches.filter(function(r) { return r.Game === gameName; });
+
+  // Collect unique contacts and their person records
+  var seen = {};
+  var people = [];
+  pitches.forEach(function(r) {
+    var name = (r.Contact || '').trim();
+    if (name && !seen[name]) {
+      seen[name] = 1;
+      var p = peopleData[name];
+      people.push(p ? p : { Name: name, Company: r.Publisher || '' });
+    }
+  });
+
+  var exportData = {
+    game:     Object.assign({ Name: gameName }, gamesIndex[gameName] || {}),
+    exported: new Date().toISOString().slice(0, 10),
+    pitches:  pitches,
+    people:   people
+  };
+
+  var filename = gameName.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() + '-pitches.json';
+  var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function() { URL.revokeObjectURL(url); a.remove(); }, 1000);
+}
+
+// ── Import (upload pitches JSON from another user) ───
+function importClick() {
+  var inp = document.getElementById('importFileInput');
+  inp.value = '';
+  inp.click();
+}
+
+var _importData = null;
+
+function handleImportFile(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var data;
+    try { data = JSON.parse(e.target.result); } catch(err) {
+      alert('Could not read file: ' + err.message);
+      return;
+    }
+    if (!data.pitches && !data.people) {
+      alert('This does not look like a valid pitches export file.');
+      return;
+    }
+    openImportDialog(data);
+  };
+  reader.readAsText(file);
+}
+
+function _isDuplicatePitch(r) {
+  var g = (r.Game      || '').trim().toLowerCase();
+  var p = (r.Publisher || '').trim().toLowerCase();
+  var c = (r.Contact   || '').trim().toLowerCase();
+  var d = (r.Date      || '').trim();
+  return allPitches.some(function(e) {
+    return (e.Game      || '').trim().toLowerCase() === g
+        && (e.Publisher || '').trim().toLowerCase() === p
+        && (e.Contact   || '').trim().toLowerCase() === c
+        && (e.Date      || '').trim()               === d;
+  });
+}
+
+function _isNewPerson(p) {
+  var name    = (p.Name    || '').trim();
+  var company = (p.Company || '').trim().toLowerCase();
+  if (!name) return false;
+  // peopleIndex is keyed "Name|Company" but only for people who have an email.
+  // Use `in` (not truthiness) so empty-string emails don't slip through.
+  if ((name + '|' + company) in peopleIndex) return false;
+  // Also check peopleIndex with original-case company (built from raw sheet data)
+  if ((name + '|' + (p.Company || '').trim()) in peopleIndex) return false;
+  // Fallback: scan peopleData for same Name + Company (covers email-less records)
+  var existing = peopleData[name];
+  if (existing && (existing.Company || '').trim().toLowerCase() === company) return false;
+  return true;
+}
+
+function openImportDialog(data) {
+  _importData = data;
+  var pitches = data.pitches || [];
+  var people  = data.people  || [];
+
+  // data.game is now a full record object; support old string format too
+  var gameObj  = (data.game && typeof data.game === 'object') ? data.game : { Name: data.game || '' };
+  var gameName = (gameObj.Name || '').trim();
+  var gameNameLc = gameName.toLowerCase();
+  var isNewGame  = !!(gameName && !Object.keys(gamesIndex).some(function(k) {
+    return k.toLowerCase() === gameNameLc;
+  }));
+
+  // Pre-compute filtered sets and cache on _importData for confirmImport()
+  var newPitches = pitches.filter(function(r) { return !_isDuplicatePitch(r); });
+  var dupCount   = pitches.length - newPitches.length;
+  var newPeople  = people.filter(_isNewPerson);
+  _importData._gameObj    = gameObj;
+  _importData._gameName   = gameName;
+  _importData._newPitches = newPitches;
+  _importData._newPeople  = newPeople;
+  _importData._isNewGame  = isNewGame;
+
+  var html = '';
+  html += '<div class="import-game-name">' + escHtml(gameName || '(Unknown game)') + '</div>';
+  if (data.exported) html += '<div class="import-meta">Exported ' + escHtml(data.exported) + '</div>';
+
+  // New game notice
+  if (isNewGame) {
+    html += '<div class="import-section-label">New game</div>';
+    html += '<div style="font-size:.8rem;margin:.1rem 0">' + escHtml(gameName) + '</div>';
+    var designers = ['Designer1','Designer2','Designer3','Designer4']
+      .map(function(f){ return (gameObj[f]||'').trim(); }).filter(Boolean);
+    if (designers.length)
+      html += '<div style="font-size:.74rem;color:#888;margin-top:.1rem">' + escHtml(designers.join(', ')) + '</div>';
+    if (gameObj.Tagline)
+      html += '<div style="font-size:.74rem;color:#888;font-style:italic;margin-top:.1rem">' + escHtml(gameObj.Tagline) + '</div>';
+  }
+
+  // Pitches — show new vs skipped
+  var pitchLabel = 'Pitches';
+  if (newPitches.length && dupCount)
+    pitchLabel += ' (' + newPitches.length + ' new, ' + dupCount + ' duplicate' + (dupCount > 1 ? 's' : '') + ' skipped)';
+  else if (newPitches.length)
+    pitchLabel += ' (' + newPitches.length + ')';
+  else if (dupCount)
+    pitchLabel += ' (all ' + dupCount + ' already imported)';
+  html += '<div class="import-section-label">' + pitchLabel + '</div>';
+
+  if (newPitches.length) {
+    html += '<div class="import-table-wrap"><table class="import-table">';
+    html += '<tr><th>Publisher</th><th>Contact</th><th>Date</th><th>Status</th></tr>';
+    newPitches.forEach(function(r) {
+      html += '<tr>'
+            + '<td>' + escHtml(r.Publisher || '') + '</td>'
+            + '<td>' + escHtml(r.Contact   || '') + '</td>'
+            + '<td>' + escHtml(r.Date      || '') + '</td>'
+            + '<td>' + escHtml(r.Status    || '') + '</td>'
+            + '</tr>';
+    });
+    html += '</table></div>';
+  } else {
+    html += '<div class="import-empty">No new pitches to import</div>';
+  }
+
+  if (newPeople.length) {
+    html += '<div class="import-section-label">New contacts (' + newPeople.length + ')</div>';
+    html += '<ul class="import-people-list">';
+    newPeople.forEach(function(p) {
+      html += '<li>' + escHtml(p.Name)
+            + (p.Company ? ' <span class="import-company">(' + escHtml(p.Company) + ')</span>' : '')
+            + '</li>';
+    });
+    html += '</ul>';
+  }
+
+  document.getElementById('importDialogBody').innerHTML = html;
+  document.getElementById('importLog').innerHTML = '';
+  document.getElementById('importLog').style.display = 'none';
+  document.getElementById('importConfirmBtn').disabled = false;
+  document.getElementById('importCancelBtn').disabled  = false;
+  document.getElementById('importCancelBtn').textContent = 'Cancel';
+  document.getElementById('importOverlay').classList.add('open');
+}
+
+function closeImportDialog() {
+  document.getElementById('importOverlay').classList.remove('open');
+  _importData = null;
+}
+
+function _importLog(msg, type) {
+  var log  = document.getElementById('importLog');
+  var span = document.createElement('span');
+  span.className   = 'sync-log-line ' + (type || 'info');
+  span.textContent = msg;
+  log.appendChild(span);
+  log.scrollTop = log.scrollHeight;
+}
+
+function confirmImport() {
+  if (!_importData || !sheet_Id) return;
+  // Use pre-computed sets from openImportDialog()
+  var newPitches = _importData._newPitches || [];
+  var newPeople  = _importData._newPeople  || [];
+  var isNewGame  = !!_importData._isNewGame;
+  var newGame    = isNewGame ? _importData._gameObj : null;
+
+  document.getElementById('importConfirmBtn').disabled = true;
+  document.getElementById('importCancelBtn').disabled  = true;
+  document.getElementById('importLog').style.display   = '';
+
+  var parts = [];
+  if (newPitches.length) parts.push(newPitches.length + ' pitch(es)');
+  if (newPeople.length)  parts.push(newPeople.length  + ' contact(s)');
+  if (isNewGame)         parts.push('game "' + _importData._gameName + '"');
+  if (!parts.length) {
+    _importLog('Nothing new to import.', 'info');
+    document.getElementById('importCancelBtn').disabled  = false;
+    document.getElementById('importCancelBtn').textContent = 'Close';
+    return;
+  }
+  _importLog('Importing ' + parts.join(', ') + '…', 'info');
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/importPitches.php');
+  var fd = new FormData();
+  fd.append('id',      sheet_Id);
+  fd.append('pitches', JSON.stringify(newPitches));
+  fd.append('people',  JSON.stringify(newPeople));
+  fd.append('game',    JSON.stringify(newGame));
+  xhr.onload = function() {
+    var result;
+    try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
+    if (!result || result.error) {
+      _importLog('✕  ' + ((result && result.error) || xhr.responseText || 'Unknown error'), 'error');
+      document.getElementById('importCancelBtn').disabled = false;
+      return;
+    }
+    if (result.game_added)       _importLog('✓  Game "' + _importData._gameName + '" added', 'ok');
+    if (result.pitches_added > 0) _importLog('✓  ' + result.pitches_added + ' pitch(es) added', 'ok');
+    if (result.people_added  > 0) _importLog('✓  ' + result.people_added  + ' contact(s) added', 'ok');
+    _importLog('Reloading data…', 'info');
+    loadAll(function() {
+      _importLog('✓  Done!', 'ok');
+      document.getElementById('importCancelBtn').disabled  = false;
+      document.getElementById('importCancelBtn').textContent = 'Close';
+    });
+  };
+  xhr.onerror = function() {
+    _importLog('✕  Network error', 'error');
+    document.getElementById('importCancelBtn').disabled = false;
+  };
+  xhr.send(fd);
+}
+
 // ── Sync (pull sheet data then reload) ───────────────
 function syncData() {
-  var btn = document.getElementById('syncBtn');
+  var btn = document.getElementById('accountBtn');
   btn.disabled = true;
-  btn.classList.add('syncing');
 
   openSyncDialog();
 
@@ -3852,7 +4293,6 @@ function syncData() {
       document.getElementById('syncDialogTitle').textContent = 'Sync Complete';
       document.getElementById('syncDoneBtn').disabled = false;
       btn.disabled = false;
-      btn.classList.remove('syncing');
     });
   }
 

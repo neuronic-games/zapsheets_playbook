@@ -7,6 +7,11 @@ import sys, os, json, base64
 
 credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
 
+def safe_str(v):
+    """Prefix non-empty strings with ' to prevent Google Sheets formula interpretation."""
+    s = (str(v) if v is not None else '').strip()
+    return ("'" + s) if s else ''
+
 if not os.path.exists(credFileName):
     print(json.dumps({"error": "credentials.json not found"}))
     sys.exit(1)
@@ -85,7 +90,7 @@ new_row  = [''] * num_cols
 def set_col(value, *variants):
     idx = find_col(*variants)
     if idx >= 0:
-        new_row[idx] = value
+        new_row[idx] = safe_str(value)
 
 set_col(name,      'Name')
 set_col(tagline,        'Tagline', 'Tag Line', 'SubTitle', 'Subtitle')
@@ -106,7 +111,7 @@ set_col(video,     'Video',     'Video URL',    'VideoURL')
 
 # If 'Name' column wasn't found, just put the name in column 0
 if find_col('Name') < 0:
-    new_row[0] = name
+    new_row[0] = safe_str(name)
 
 try:
     ws.append_row(new_row, value_input_option='USER_ENTERED')

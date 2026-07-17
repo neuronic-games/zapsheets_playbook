@@ -31,6 +31,7 @@ data     = json.loads(base64.b64decode(arg[pipe_idx + 1:]).decode('utf-8'))
 orig_name  = data.get('orig_name',  '').strip()
 new_name   = data.get('name',       '').strip() or orig_name
 tagline        = data.get('tagline',        '').strip()
+description    = data.get('description',    '').strip()
 status         = data.get('status',         '').strip()
 date_started   = data.get('date_started',   '').strip()
 date_signed    = data.get('date_signed',    '').strip()
@@ -102,6 +103,7 @@ if target_sheet_row is None:
 field_map = [
     (('Name',),                                                            new_name),
     (('Tagline', 'Tag Line', 'SubTitle', 'Subtitle'),                      tagline),
+    (('Description',),                                                     description),
     (('Status',),                                                          status),
     (('Date Started', 'DateStarted', 'Start Date', 'StartDate'),          date_started),
     (('Date Signed',  'DateSigned',  'Signed Date', 'SignedDate'),         date_signed),

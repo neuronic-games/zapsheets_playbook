@@ -6,18 +6,24 @@ header('Content-Type: application/json');
 require __DIR__ . '/../dotEnv.php';
 require_once __DIR__ . '/refreshJson.php';
 
-$sheetId   = trim($_POST['id']        ?? '');
-$name      = trim($_POST['name']      ?? '');
-$designer1 = trim($_POST['designer1'] ?? '');
-$designer2 = trim($_POST['designer2'] ?? '');
-$designer3 = trim($_POST['designer3'] ?? '');
-$designer4 = trim($_POST['designer4'] ?? '');
-$rules     = trim($_POST['rules']     ?? '');
-$play      = trim($_POST['play']      ?? '');
-$print     = trim($_POST['print']     ?? '');
-$sellsheet = trim($_POST['sellsheet'] ?? '');
-$view      = trim($_POST['view']      ?? '');
-$video     = trim($_POST['video']     ?? '');
+$sheetId       = trim($_POST['id']             ?? '');
+$name          = trim($_POST['name']           ?? '');
+$tagline       = trim($_POST['tagline']        ?? '');
+$description   = trim($_POST['description']    ?? '');
+$status        = trim($_POST['status']         ?? '');
+$dateStarted   = trim($_POST['date_started']   ?? '');
+$dateSigned    = trim($_POST['date_signed']    ?? '');
+$datePublished = trim($_POST['date_published'] ?? '');
+$designer1     = trim($_POST['designer1']      ?? '');
+$designer2     = trim($_POST['designer2']      ?? '');
+$designer3     = trim($_POST['designer3']      ?? '');
+$designer4     = trim($_POST['designer4']      ?? '');
+$rules         = trim($_POST['rules']          ?? '');
+$play          = trim($_POST['play']           ?? '');
+$print         = trim($_POST['print']          ?? '');
+$sellsheet     = trim($_POST['sellsheet']      ?? '');
+$view          = trim($_POST['view']           ?? '');
+$video         = trim($_POST['video']          ?? '');
 
 if (!$sheetId) {
     echo json_encode(['error' => 'Missing sheet ID']);
@@ -33,6 +39,12 @@ if (!$name) {
 // regardless of whether the sheet uses 'Designer1' vs 'Designer 1', etc.
 $data = [
     'Name'              => $name,
+    'Tagline'           => $tagline,    'Tag Line'           => $tagline,    'SubTitle' => $tagline,
+    'Description'       => $description,
+    'Status'            => $status,
+    'Date Started'      => $dateStarted,  'DateStarted'      => $dateStarted,
+    'Date Signed'       => $dateSigned,   'DateSigned'       => $dateSigned,
+    'Date Published'    => $datePublished,'DatePublished'    => $datePublished,
     'Designer1'         => $designer1,  'Designer 1'         => $designer1,
     'Designer2'         => $designer2,  'Designer 2'         => $designer2,
     'Designer3'         => $designer3,  'Designer 3'         => $designer3,

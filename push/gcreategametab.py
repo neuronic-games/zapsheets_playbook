@@ -35,18 +35,26 @@ except Exception as e:
     print(json.dumps({"error": "could not open sheet: " + str(e)}))
     sys.exit(1)
 
-# Refuse if tab already exists
+# Per-game tabs are named [Game Name] so they're visually distinct from the
+# structural tabs (Pitches, Games, People, Settings) in the spreadsheet.
+bracketed = '[' + game_name + ']'
+
+# Refuse if a tab already exists under either name (bracketed or plain)
 existing = wb.worksheets()
-match = next((w for w in existing if w.title == game_name), None)
+match = next((w for w in existing if w.title == bracketed), None)
+if match is None:
+    match = next((w for w in existing if w.title == game_name), None)
+if match is None:
+    match = next((w for w in existing if w.title.lower() == bracketed.lower()), None)
 if match is None:
     match = next((w for w in existing if w.title.lower() == game_name.lower()), None)
 if match is not None:
     print(json.dumps({"error": "tab_exists", "name": match.title}))
     sys.exit(1)
 
-# Create the worksheet
+# Create the worksheet with brackets
 try:
-    ws = wb.add_worksheet(title=game_name, rows=60, cols=4)
+    ws = wb.add_worksheet(title=bracketed, rows=60, cols=4)
 except Exception as e:
     print(json.dumps({"error": "could not create worksheet: " + str(e)}))
     sys.exit(1)
@@ -131,4 +139,4 @@ except Exception as e:
     print(json.dumps({"error": "could not write default data: " + str(e)}))
     sys.exit(1)
 
-print(json.dumps({"ok": True, "tab": game_name}))
+print(json.dumps({"ok": True, "tab": bracketed}))

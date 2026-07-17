@@ -929,7 +929,6 @@ $_sheet_id = $_bm[2] ?? '';
       <button id="btnGame"      class="active" onclick="setView('game')">Games</button>
       <button id="btnPublisher"               onclick="setView('publisher')">Publishers</button>
     </div>
-    <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleImportFile(this)">
     <div class="account-menu-wrap">
       <button class="sync-btn" id="accountBtn" onclick="toggleAccountMenu()" title="Menu">
         <span class="sync-icon">
@@ -1071,6 +1070,9 @@ $_sheet_id = $_bm[2] ?? '';
     </label>
     <label class="ge-label">Tagline
       <input type="text" id="geTagline" class="ge-input" placeholder="Short subtitle or tagline…" />
+    </label>
+    <label class="ge-label">Description
+      <textarea id="geDescription" class="ge-input" rows="3" placeholder="Short game description…" style="resize:vertical;min-height:4rem;line-height:1.4"></textarea>
     </label>
     <div class="ge-section">Designers</div>
     <div class="ge-row">
@@ -1240,10 +1242,41 @@ $_sheet_id = $_bm[2] ?? '';
   </div>
 </div>
 
-<!-- Sync dialog -->
+<!-- Share URL dialog -->
+<div class="sync-overlay" id="shareUrlOverlay">
+  <div class="sync-dialog" style="width:min(480px,94vw)">
+    <h2>Share Your Game Data</h2>
+    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .8rem">Send this link to your collaborators so that they can import it into their PitchBoard.</p>
+    <div style="display:flex;gap:.5rem;align-items:center">
+      <input type="text" id="shareUrlInput" class="ge-input" readonly style="flex:1;font-size:.72rem;font-family:monospace" />
+      <button class="sync-update-btn" id="shareUrlCopyBtn" onclick="copyShareUrl()">Copy</button>
+    </div>
+    <div class="sync-dialog-actions" style="margin-top:.75rem">
+      <button class="notes-close" onclick="closeShareUrlDialog()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import URL dialog -->
+<div class="sync-overlay" id="importUrlOverlay">
+  <div class="sync-dialog" style="width:min(480px,94vw)">
+    <h2>Import from Link</h2>
+    <label class="ge-label" style="display:block;margin:.1rem 0 .65rem">Paste a share link
+      <input type="url" id="importUrlInput" class="ge-input" placeholder="https://…" />
+    </label>
+    <div class="sync-log" id="importUrlLog" style="display:none;margin-bottom:.5rem"></div>
+    <div class="sync-dialog-actions">
+      <button class="notes-close" onclick="closeImportUrlDialog()">Cancel</button>
+      <button class="sync-update-btn" id="importUrlLoadBtn" onclick="loadImportUrl()">Load</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fetch dialog -->
 <div class="sync-overlay" id="syncOverlay">
   <div class="sync-dialog">
-    <h2 id="syncDialogTitle">Syncing…</h2>
+    <h2 id="syncDialogTitle">Fetching…</h2>
+    <p id="syncDialogSub" style="color:#888;font-size:.78rem;margin:.1rem 0 .4rem">Fetch data from your spreadsheet</p>
     <div class="sync-log" id="syncLog"></div>
     <div class="sync-dialog-actions">
       <button class="notes-close" id="syncDoneBtn" disabled onclick="closeSyncDialog()">Close</button>
@@ -1824,7 +1857,13 @@ function buildGameView(pitches) {
     html += '</div>'; // card
   });
 
-  return html || '<div class="empty">No results.</div>';
+  if (!html) {
+    var emptyMsg = totalGameCount === 0
+      ? 'No games yet — tap <b>+ New Game</b> to add your first game.'
+      : 'No results matching your current filters.';
+    return '<div class="empty">' + emptyMsg + '</div>';
+  }
+  return html;
 }
 
 // ── PUBLISHER VIEW ────────────────────────────────────
@@ -1989,7 +2028,13 @@ function buildPublisherView(pitches) {
     html += '</div>'; // card
   });
 
-  return html || '<div class="empty">No results.</div>';
+  if (!html) {
+    var emptyMsg = totalPubCount === 0
+      ? 'No pitches yet — tap <b>+ New Game</b> to add your first game.'
+      : 'No results matching your current filters.';
+    return '<div class="empty">' + emptyMsg + '</div>';
+  }
+  return html;
 }
 
 // ── Chart.js lazy loader ──────────────────────────────
@@ -3030,7 +3075,8 @@ function openGameEditDialog(gameName, isNew) {
   }
 
   document.getElementById('geGameName').value  = isNew ? '' : (g.Name || gameName);
-  document.getElementById('geTagline').value   = isNew ? '' : gfield('Tagline', 'Tag Line', 'SubTitle', 'Subtitle');
+  document.getElementById('geTagline').value      = isNew ? '' : gfield('Tagline', 'Tag Line', 'SubTitle', 'Subtitle');
+  document.getElementById('geDescription').value  = isNew ? '' : gfield('Description');
   document.getElementById('geDesigner1').value = isNew ? '' : gfield('Designer1', 'Designer 1');
   document.getElementById('geDesigner2').value = isNew ? '' : gfield('Designer2', 'Designer 2');
   document.getElementById('geDesigner3').value = isNew ? '' : gfield('Designer3', 'Designer 3');
@@ -3066,6 +3112,7 @@ function submitGameEdit() {
     orig_name:  _gameEditCtx.origName,
     name:       document.getElementById('geGameName').value.trim(),
     tagline:         document.getElementById('geTagline').value.trim(),
+    description:     document.getElementById('geDescription').value.trim(),
     status:          document.getElementById('geStatus').value.trim(),
     date_started:    document.getElementById('geDateStarted').value.trim(),
     date_signed:     document.getElementById('geDateSigned').value.trim(),
@@ -3126,6 +3173,7 @@ function submitGameEdit() {
         var entry = gamesIndex[newName];
         entry.Name                = newName;
         entry.Tagline             = payload.tagline;
+        entry.Description         = payload.description;
         entry.Status              = payload.status;
         entry['Date Started']     = payload.date_started;
         entry['Date Signed']      = payload.date_signed;
@@ -3924,10 +3972,11 @@ function loadAll(onComplete) {
   })();
 }
 
-// ── Sync dialog helpers ───────────────────────────────
+// ── Fetch dialog helpers ──────────────────────────────
 function openSyncDialog() {
   document.getElementById('syncLog').innerHTML = '';
-  document.getElementById('syncDialogTitle').textContent = 'Syncing…';
+  document.getElementById('syncDialogTitle').textContent = 'Fetching…';
+  document.getElementById('syncDialogSub').style.display = '';
   document.getElementById('syncDoneBtn').disabled = true;
   document.getElementById('syncOverlay').classList.add('open');
 }
@@ -4031,7 +4080,7 @@ function submitProfile() {
   xhr.send(fd);
 }
 
-// ── Share (export pitches for one game as JSON) ──────
+// ── Share (save pitches JSON to server, show link) ────
 function shareGame(gameName) {
   var pitches = allPitches.filter(function(r) { return r.Game === gameName; });
 
@@ -4054,43 +4103,83 @@ function shareGame(gameName) {
     people:   people
   };
 
-  var filename = gameName.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() + '-pitches.json';
-  var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-  var url  = URL.createObjectURL(blob);
-  var a    = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(function() { URL.revokeObjectURL(url); a.remove(); }, 1000);
+  var fd = new FormData();
+  fd.append('id',   sheet_Id);
+  fd.append('data', JSON.stringify(exportData));
+
+  fetch(APP_BASE + 'push/createShare.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+      if (result.error) { alert('Share failed: ' + result.error); return; }
+      openShareUrlDialog(result.url);
+    })
+    .catch(function(e) { alert('Share failed: ' + e.message); });
 }
 
-// ── Import (upload pitches JSON from another user) ───
-function importClick() {
-  var inp = document.getElementById('importFileInput');
-  inp.value = '';
-  inp.click();
+function openShareUrlDialog(url) {
+  document.getElementById('shareUrlInput').value = url;
+  document.getElementById('shareUrlCopyBtn').textContent = 'Copy';
+  document.getElementById('shareUrlOverlay').classList.add('open');
+}
+function closeShareUrlDialog() {
+  document.getElementById('shareUrlOverlay').classList.remove('open');
+}
+function copyShareUrl() {
+  var val = document.getElementById('shareUrlInput').value;
+  var btn = document.getElementById('shareUrlCopyBtn');
+  navigator.clipboard.writeText(val).then(function() {
+    btn.textContent = 'Copied!';
+    setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+  }).catch(function() {
+    // iOS fallback
+    var inp = document.getElementById('shareUrlInput');
+    inp.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    btn.textContent = 'Copied!';
+    setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+  });
+}
+
+// ── Import (load pitches JSON from a share link) ─────
+function importClick() { openImportUrlDialog(); }
+
+function openImportUrlDialog() {
+  document.getElementById('importUrlInput').value = '';
+  var log = document.getElementById('importUrlLog');
+  log.style.display = 'none';
+  log.innerHTML = '';
+  document.getElementById('importUrlLoadBtn').disabled = false;
+  document.getElementById('importUrlOverlay').classList.add('open');
+  setTimeout(function() { document.getElementById('importUrlInput').focus(); }, 50);
+}
+function closeImportUrlDialog() {
+  document.getElementById('importUrlOverlay').classList.remove('open');
+}
+function loadImportUrl() {
+  var url = (document.getElementById('importUrlInput').value || '').trim();
+  if (!url) return;
+  var log = document.getElementById('importUrlLog');
+  log.style.display = 'block';
+  log.innerHTML = '<span class="sync-log-line info">Loading…</span>';
+  document.getElementById('importUrlLoadBtn').disabled = true;
+
+  fetch(url)
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      if (!data.pitches && !data.people) throw new Error('Not a valid share file');
+      closeImportUrlDialog();
+      openImportDialog(data);
+    })
+    .catch(function(e) {
+      log.innerHTML = '<span class="sync-log-line error">Error: ' + escHtml(e.message) + '</span>';
+      document.getElementById('importUrlLoadBtn').disabled = false;
+    });
 }
 
 var _importData = null;
-
-function handleImportFile(input) {
-  var file = input.files[0];
-  if (!file) return;
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var data;
-    try { data = JSON.parse(e.target.result); } catch(err) {
-      alert('Could not read file: ' + err.message);
-      return;
-    }
-    if (!data.pitches && !data.people) {
-      alert('This does not look like a valid pitches export file.');
-      return;
-    }
-    openImportDialog(data);
-  };
-  reader.readAsText(file);
-}
 
 function _isDuplicatePitch(r) {
   var g = (r.Game      || '').trim().toLowerCase();
@@ -4275,7 +4364,7 @@ function confirmImport() {
   xhr.send(fd);
 }
 
-// ── Sync (pull sheet data then reload) ───────────────
+// ── Fetch (pull sheet data then reload) ──────────────
 function syncData() {
   var btn = document.getElementById('accountBtn');
   btn.disabled = true;
@@ -4290,7 +4379,8 @@ function syncData() {
     syncLog('Reloading data…', 'info');
     loadAll(function() {
       syncLog('Done.', 'ok');
-      document.getElementById('syncDialogTitle').textContent = 'Sync Complete';
+      document.getElementById('syncDialogTitle').textContent = 'Fetch Complete';
+      document.getElementById('syncDialogSub').style.display = 'none';
       document.getElementById('syncDoneBtn').disabled = false;
       btn.disabled = false;
     });
@@ -4302,7 +4392,7 @@ function syncData() {
       return;
     }
     var sheetName = sheets[idx++];
-    syncLog('Pulling ' + sheetName + '…', 'info');
+    syncLog('Fetching ' + sheetName + '…', 'info');
     var xhr = new XMLHttpRequest();
     xhr.open('POST', pushBase);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');

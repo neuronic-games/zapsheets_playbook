@@ -1627,10 +1627,10 @@ loadData();
 })();
 
 // ── Service Worker (offline shell caching) ─────────────────
-// Registered with a per-sheet scope so it only controls this fitboard URL
-// and does not interfere with sw_playbook.js on other pages.
+// Scope is narrowed to /fitboard so the fitboard SW doesn't
+// intercept navigations to /{id}/dashboard (they share the same sheet root).
 if('serviceWorker' in navigator){
-  var swScope = APP_BASE + sheetId + '/';
+  var swScope = APP_BASE + sheetId + '/fitboard';
   navigator.serviceWorker.register(APP_BASE + 'fitboard-sw.js', { scope: swScope })
     .catch(function(){});
 }

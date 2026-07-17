@@ -268,8 +268,8 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     </div>
   </header>
 
-  <!-- Hero image -->
-  <div class="ss-hero-wrap">
+  <!-- Hero image — hidden when no PitchImageUrl or splash image exists -->
+  <div class="ss-hero-wrap" id="ssHeroWrap" style="display:none">
     <img id="ssHero" src="" alt="" />
   </div>
 
@@ -476,7 +476,10 @@ function render() {
     });
     if (row) _heroSrc = cachedImage(row.Content);
   }
-  if (_heroSrc) document.getElementById('ssHero').src = _heroSrc;
+  if (_heroSrc) {
+    document.getElementById('ssHero').src = _heroSrc;
+    document.getElementById('ssHeroWrap').style.display = '';
+  }
 
   // ── Subtitle at top of body left ──────────────────────────
   var sub = _games('Tagline') || gv('Tagline') || gv('SubTitle') || gv('Subtitle');

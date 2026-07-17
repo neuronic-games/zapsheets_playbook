@@ -43,8 +43,14 @@ except Exception as e:
 
 all_worksheets = wb.worksheets()
 
-# Exact match first, then case-insensitive
-ws = next((w for w in all_worksheets if w.title == game_name), None)
+# Per-game tabs are named [Game Name].  Try bracketed form first, then plain
+# name for backward compatibility with older unbracketed tabs.
+bracketed = '[' + game_name + ']'
+ws = next((w for w in all_worksheets if w.title == bracketed), None)
+if ws is None:
+    ws = next((w for w in all_worksheets if w.title == game_name), None)
+if ws is None:
+    ws = next((w for w in all_worksheets if w.title.lower() == bracketed.lower()), None)
 if ws is None:
     ws = next((w for w in all_worksheets if w.title.lower() == game_name.lower()), None)
 if ws is None:

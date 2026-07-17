@@ -4,6 +4,7 @@ ini_set('display_errors', '0');
 header('Content-Type: application/json');
 
 require __DIR__ . '/../dotEnv.php';
+require_once __DIR__ . '/refreshJson.php';
 
 $sheetId  = trim($_POST['id']   ?? '');
 $gameName = trim($_POST['game'] ?? '');
@@ -19,7 +20,12 @@ if (!$gameName) {
 }
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
-$arg        = $sheetId . '|' . $gameName;
+
+// Refresh games.json from the live Games tab so that the latest tagline,
+// description, and other metadata are available to the view page.
+refreshJson($pythonPath, $sheetId, 'games');
+
+$arg = $sheetId . '|' . $gameName;
 
 $cmd = escapeshellarg($pythonPath) . ' '
      . escapeshellarg(__DIR__ . '/gpublishgame.py') . ' '

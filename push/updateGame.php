@@ -6,19 +6,25 @@ header('Content-Type: application/json');
 require __DIR__ . '/../dotEnv.php';
 require_once __DIR__ . '/refreshJson.php';
 
-$sheetId   = trim($_POST['id']        ?? '');
-$origName  = trim($_POST['orig_name'] ?? '');
-$name      = trim($_POST['name']      ?? '');
-$designer1 = trim($_POST['designer1'] ?? '');
-$designer2 = trim($_POST['designer2'] ?? '');
-$designer3 = trim($_POST['designer3'] ?? '');
-$designer4 = trim($_POST['designer4'] ?? '');
-$rules     = trim($_POST['rules']     ?? '');
-$play      = trim($_POST['play']      ?? '');
-$print     = trim($_POST['print']     ?? '');
-$sellsheet = trim($_POST['sellsheet'] ?? '');
-$view      = trim($_POST['view']      ?? '');
-$video     = trim($_POST['video']     ?? '');
+$sheetId       = trim($_POST['id']             ?? '');
+$origName      = trim($_POST['orig_name']      ?? '');
+$name          = trim($_POST['name']           ?? '');
+$tagline       = trim($_POST['tagline']        ?? '');
+$description   = trim($_POST['description']    ?? '');
+$status        = trim($_POST['status']         ?? '');
+$dateStarted   = trim($_POST['date_started']   ?? '');
+$dateSigned    = trim($_POST['date_signed']    ?? '');
+$datePublished = trim($_POST['date_published'] ?? '');
+$designer1     = trim($_POST['designer1']      ?? '');
+$designer2     = trim($_POST['designer2']      ?? '');
+$designer3     = trim($_POST['designer3']      ?? '');
+$designer4     = trim($_POST['designer4']      ?? '');
+$rules         = trim($_POST['rules']          ?? '');
+$play          = trim($_POST['play']           ?? '');
+$print         = trim($_POST['print']          ?? '');
+$sellsheet     = trim($_POST['sellsheet']      ?? '');
+$view          = trim($_POST['view']           ?? '');
+$video         = trim($_POST['video']          ?? '');
 
 if (!$sheetId) {
     echo json_encode(['error' => 'Missing sheet ID']);
@@ -31,18 +37,24 @@ if (!$origName) {
 }
 
 $data = [
-    'orig_name' => $origName,
-    'name'      => $name      ?: $origName,
-    'designer1' => $designer1,
-    'designer2' => $designer2,
-    'designer3' => $designer3,
-    'designer4' => $designer4,
-    'rules'     => $rules,
-    'play'      => $play,
-    'print'     => $print,
-    'sellsheet' => $sellsheet,
-    'view'      => $view,
-    'video'     => $video,
+    'orig_name'      => $origName,
+    'name'           => $name          ?: $origName,
+    'tagline'        => $tagline,
+    'description'    => $description,
+    'status'         => $status,
+    'date_started'   => $dateStarted,
+    'date_signed'    => $dateSigned,
+    'date_published' => $datePublished,
+    'designer1'      => $designer1,
+    'designer2'      => $designer2,
+    'designer3'      => $designer3,
+    'designer4'      => $designer4,
+    'rules'          => $rules,
+    'play'           => $play,
+    'print'          => $print,
+    'sellsheet'      => $sellsheet,
+    'view'           => $view,
+    'video'          => $video,
 ];
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';

@@ -50,8 +50,12 @@ $MIME = [
 function serveFile(string $path, array $mime): void {
     $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
     if ($ext === 'php') {
-        // Execute PHP files rather than dumping source
-        chdir(dirname($path));
+        // Execute PHP files rather than dumping source.
+        // Do NOT chdir() here — it changes the process CWD and persists across
+        // subsequent requests in PHP's single-process built-in server, causing
+        // later requests (e.g. POST to push/*) to 404 because the built-in server
+        // looks for files relative to the changed CWD.  All PHP files in this
+        // project use __DIR__ for path resolution, so chdir() is unnecessary.
         include $path;
         exit;
     }
@@ -158,9 +162,21 @@ if (preg_match('#^/([A-Za-z0-9_\-]+)(/.*)?$#', $uri, $m)) {
     $id   = $m[1];
     $rest = (isset($m[2]) && $m[2] !== '') ? $m[2] : '/';
 
-    // Let reserved top-level names fall through to normal PHP serving
+    // Reserved top-level names (js, css, push, etc.) must reach their actual files.
+    // Returning false here would make the built-in server resolve against the
+    // *original* REQUEST_URI, which still carries the BASE_PATH prefix
+    // (e.g. /playbook-test/push/updateProfile.php).  Because there is no
+    // playbook-test/ subdirectory in the doc root the file won't be found → 404.
+    // Instead, serve the file explicitly using the already-stripped $uri.
     if (in_array($id, $RESERVED)) {
-        return false;
+        // $uri may contain percent-encoded characters (e.g. spaces in filenames
+        // like game-Test%20Game-en.json).  Decode before constructing the
+        // filesystem path so is_file() finds the actual file on disk.
+        $physicalPath = __DIR__ . rawurldecode($uri);
+        if (is_file($physicalPath)) {
+            serveFile($physicalPath, $MIME);
+        }
+        return false;   // path doesn't exist; let the built-in server 404
     }
 
     // Only redirect when the sheet directory actually exists

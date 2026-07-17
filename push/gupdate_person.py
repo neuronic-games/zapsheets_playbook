@@ -73,11 +73,6 @@ for i, row in enumerate(all_values[1:], start=2):
         target_sheet_row = i
         break
 
-if target_sheet_row is None:
-    print(json.dumps({"error": f"Person '{orig_name}' not found in People sheet"}))
-    sys.exit(1)
-
-# Build batch update for all present columns
 field_map = [
     ('Name',    new_name or orig_name),
     ('Email',   email),
@@ -85,6 +80,24 @@ field_map = [
     ('Role',    role),
     ('Notes',   notes),
 ]
+
+if target_sheet_row is None:
+    # Person not found — INSERT a new row instead of failing (upsert behaviour).
+    # Build a row vector aligned to the existing header order.
+    new_row = [''] * len(headers)
+    for field, value in field_map:
+        idx = col.get(field, -1)
+        if 0 <= idx < len(new_row):
+            new_row[idx] = safe_str(value) if value else ''
+    try:
+        ws.append_row(new_row, value_input_option='USER_ENTERED')
+        print(json.dumps({"ok": True, "created": True}))
+    except Exception as e:
+        print(json.dumps({"error": f"Could not add person: {str(e)}"}))
+        sys.exit(1)
+    sys.exit(0)
+
+# Person found — UPDATE the existing row.
 updates = []
 for field, value in field_map:
     idx = col.get(field, -1)

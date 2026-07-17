@@ -93,11 +93,17 @@ $RESERVED = [
     'index', 'manifest', 'result', 'dotEnv',
     'sw_playbook', 'sw_map', 'pitchboard-sw', 'fitboard-sw', 'router', 'start',
     'clear-sw', 'debug-jquery',
+    'pitchboard',   // setup landing page — handled below, reserved so /{id} never grabs it
 ];
 
 // ── /pushsite → push/pushsite.php ────────────────────────────────────────────
 if (preg_match('#^/pushsite(/.*)?$#', $uri)) {
     serveFile(__DIR__ . '/push/pushsite.php', $MIME);
+}
+
+// ── /pitchboard — setup landing page (no sheet ID yet) ───────────────────────
+if (preg_match('#^/pitchboard/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/pitchboard/index.php', $MIME);
 }
 
 // ── Backward compat: sheets/{id}/view|dashboard|sellsheet|fitboard ───────

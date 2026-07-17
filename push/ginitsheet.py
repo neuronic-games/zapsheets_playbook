@@ -1,8 +1,8 @@
-# ginitsheet.py — initialise a brand-new Google Spreadsheet for PitchBoard
+# ginitsheet.py — initialise a Google Spreadsheet for PitchBoard
 #
-# Creates four worksheets (Pitches, Games, People, Settings) with the correct
-# column headers and default Settings rows.  Any worksheet not in the required
-# set (e.g. the default "Sheet1") is deleted after the required tabs exist.
+# Creates required worksheets (Pitches, Games, People, Settings) with the
+# correct column headers if they don't already exist.  Existing tabs are
+# left completely untouched.  Never deletes any worksheet.
 #
 # Arg: {sheet_id}
 #
@@ -35,16 +35,6 @@ except Exception as e:
     print(json.dumps({"error": f"Could not open spreadsheet: {str(e)}"}))
     sys.exit(1)
 
-# ── Rename spreadsheet to [Title] if not already bracketed ────────────────────
-# Brackets make PitchBoard sheets visually distinct from other spreadsheets
-# in Google Drive (e.g. "My Game" → "[My Game]").  Idempotent.
-try:
-    current_title = wb.title
-    if not (current_title.startswith('[') and current_title.endswith(']')):
-        wb.update_title('[' + current_title + ']')
-except Exception:
-    pass   # non-fatal — sheet still initialises correctly without a rename
-
 # ── Tab definitions ────────────────────────────────────────────────────────────
 #
 # Each entry is a list of rows to write starting at A1.
@@ -65,54 +55,40 @@ TABS = {
         ['Name', 'Email', 'Company', 'Role', 'Notes'],
     ],
     'Settings': [
-        ['My Name',  ''],
-        ['My Email', ''],
-        ['My Phone', ''],
+        ['My Name',     ''],
+        ['My Email',    ''],
+        ['My Phone',    ''],
+        ['PublishedOn', ''],
+        ['Version',     ''],
     ],
 }
 
-results   = {}
-tab_order = list(TABS.keys())   # preserve insertion order
+results = {}
 
-# Build map of currently existing worksheets
+# Build map of currently existing worksheets (by title)
 existing = {w.title: w for w in wb.worksheets()}
 
-# ── Create / update required worksheets ───────────────────────────────────────
+# ── Create missing required worksheets only ────────────────────────────────────
+# If a tab already exists we leave it completely untouched — never clear or
+# overwrite it.  We never delete any worksheet so that game-specific tabs
+# (e.g. [Monopoly]) created by gcreategametab.py are preserved.
 for tab_name, rows in TABS.items():
     try:
-        num_cols = max(len(r) for r in rows) if rows else 2
         if tab_name in existing:
-            ws = existing[tab_name]
+            # Tab exists — data is intact, nothing to do.
+            results[tab_name] = 'ok'
         else:
+            num_cols = max(len(r) for r in rows) if rows else 2
             ws = wb.add_worksheet(title=tab_name, rows=200, cols=num_cols)
-
-        ws.clear()
-
-        if rows:
-            end_cell  = gspread.utils.rowcol_to_a1(len(rows), max(len(r) for r in rows))
-            ws.update(range_name=f'A1:{end_cell}', values=rows, value_input_option='RAW')
-
-        results[tab_name] = 'ok'
+            if rows:
+                end_cell = gspread.utils.rowcol_to_a1(len(rows), max(len(r) for r in rows))
+                ws.update(range_name=f'A1:{end_cell}', values=rows, value_input_option='RAW')
+            results[tab_name] = 'created'
     except Exception as e:
         results[tab_name] = f'error: {str(e)}'
 
-# ── Delete any worksheet not in the required set ───────────────────────────────
-# Re-fetch the worksheet list so we see any tabs added above.
-try:
-    current_ws = wb.worksheets()
-    required   = set(TABS.keys())
-    for ws in current_ws:
-        if ws.title not in required:
-            try:
-                wb.del_worksheet(ws)
-                results[f'_deleted_{ws.title}'] = True
-            except Exception as e:
-                results[f'_delete_error_{ws.title}'] = str(e)
-except Exception as e:
-    results['_cleanup_error'] = str(e)
-
-tab_results = {k: v for k, v in results.items() if not k.startswith('_')}
-all_ok = all(v == 'ok' for v in tab_results.values())
+tab_results = {k: v for k, v in results.items()}
+all_ok = all(v in ('ok', 'created') for v in tab_results.values())
 
 print(json.dumps({
     "ok":    all_ok,

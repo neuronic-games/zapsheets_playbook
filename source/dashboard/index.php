@@ -309,13 +309,13 @@ $_sheet_id = $_bm[2] ?? '';
     /* ── Publisher subtitle row (inside expanded card) ─ */
     .pub-subtitle-row {
       display:flex; align-items:center; gap:.75rem;
-      padding:.52rem 1rem .52rem 1.1rem;
-      border-bottom:1px solid #ebebeb;
-      background:#f7f7fc;
+      padding:.48rem 1rem .48rem 1.1rem;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      background:#1a1a2e;
     }
     .pub-subtitle-info {
       font-family:'DINRegular',sans-serif; font-size:.74rem;
-      color:#888; flex:1; min-width:0;
+      color:rgba(255,255,255,.55); flex:1; min-width:0;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
 
@@ -1053,8 +1053,9 @@ $_sheet_id = $_bm[2] ?? '';
       <div class="sync-log" id="vpLog"></div>
     </div>
     <div class="sync-dialog-actions">
-      <button class="sync-update-btn" id="vpSyncBtn"   style="margin-right:auto" onclick="vpDoSync()">Sync</button>
-      <button class="sync-done-btn" id="vpAddSheetBtn" style="display:none" onclick="vpAddSheet()">Add Sheet</button>
+      <button class="sync-update-btn" id="vpSyncBtn"   style="margin-right:auto" onclick="vpDoSync()">Fetch</button>
+      <!-- vpAddSheetBtn kept hidden in DOM; referenced by vpAddSheet() for state management -->
+      <button id="vpAddSheetBtn" style="display:none" onclick="vpAddSheet()"></button>
       <button class="notes-close"   id="vpDoneBtn"     onclick="closeVpDialog()">Close</button>
       <button class="sync-done-btn" id="vpViewPageBtn" onclick="vpOpenViewPage()">View Page</button>
     </div>
@@ -1951,16 +1952,29 @@ function buildPublisherView(pitches) {
     html += '</div>';
     html += '<div class="card-body-wrap"><div class="card-body">';
 
-    // Publisher subtitle: contact info + New Pitch button
+    // Publisher subtitle: one row per contact, each with Edit Contact + New Pitch
     var pubContacts  = getPubInfo(p);
-    var pubInfoParts = pubContacts.map(function(c) { return c.name; });
-    var pubInfoText  = pubInfoParts.join('     ');
-    html += '<div class="pub-subtitle-row">';
-    html += '<span class="pub-subtitle-info">' + escHtml(pubInfoText) + '</span>';
-    html += '<button class="add-entry-btn" style="margin-left:auto"' +
-            ' data-publisher="' + escHtml(p) + '"' +
-            ' onclick="event.stopPropagation();openNewPitchDialog(this.getAttribute(\'data-publisher\'))">New Pitch</button>';
-    html += '</div>';
+    if (pubContacts.length === 0) {
+      // No contacts — single row with an unaddressed New Pitch
+      html += '<div class="pub-subtitle-row">'
+           +  '<button class="game-action-btn" style="margin-left:auto"'
+           +  ' data-publisher="' + escHtml(p) + '"'
+           +  ' onclick="event.stopPropagation();openNewPitchDialog(this.getAttribute(\'data-publisher\'))">New Pitch</button>'
+           +  '</div>';
+    } else {
+      pubContacts.forEach(function(c) {
+        html += '<div class="pub-subtitle-row">';
+        html += '<span class="pub-subtitle-info">' + escHtml(c.name) + '</span>';
+        html += '<button class="game-action-btn"'
+             +  ' data-person="' + escHtml(c.name) + '"'
+             +  ' onclick="event.stopPropagation();openDiDialog(this.getAttribute(\'data-person\'))">Edit Contact</button>';
+        html += '<button class="game-action-btn"'
+             +  ' data-publisher="' + escHtml(p) + '"'
+             +  ' data-contact="'   + escHtml(c.name) + '"'
+             +  ' onclick="event.stopPropagation();openNewPitchDialog(this.getAttribute(\'data-publisher\'),this.getAttribute(\'data-contact\'))">New Pitch</button>';
+        html += '</div>';
+      });
+    }
 
     // Sort games alphabetically
     var gameNames = Object.keys(pubs[p]).sort(function(a,b){ return a.localeCompare(b); });
@@ -2891,13 +2905,9 @@ function _vpRunPublish(gameName) {
 
     if (!result || result.error) {
       if (result && result.error === 'tab_not_found') {
-        vpLog('✕  A sheet named "' + gameName + '" does not exist in your document.', 'error');
-        document.getElementById('vpAddSheetBtn').style.display     = '';
-        document.getElementById('vpAddSheetBtn').className         = 'sync-update-btn';
-        document.getElementById('vpAddSheetBtn').style.marginRight = 'auto';
-        document.getElementById('vpSyncBtn').style.display         = 'none';
-        document.getElementById('vpViewPageBtn').disabled          = true;
-        document.getElementById('vpDoneBtn').disabled              = false;
+        // Sheet tab missing — create it automatically and re-run the pipeline.
+        vpLog('ℹ  Sheet tab not found — creating it…', 'info');
+        vpAddSheet();
       } else {
         vpLog('✕  ' + ((result && result.error) || xhr.responseText || 'Unknown error'), 'error');
         vpDone();
@@ -2979,12 +2989,12 @@ function viewPageClick(btn) {
       xhrJ.onerror = function() { _vpBuildSummary(gameName, []); _vpOpenSummary(true); };
       xhrJ.send();
     } else {
-      // No game JSON — ADD SHEET is the primary action; VIEW PAGE stays disabled.
-      _vpBuildSummary(gameName, []);
-      document.getElementById('vpAddSheetBtn').style.display     = '';
-      document.getElementById('vpAddSheetBtn').className         = 'sync-update-btn';
-      document.getElementById('vpAddSheetBtn').style.marginRight = 'auto';
-      document.getElementById('vpSyncBtn').style.display         = 'none';
+      // No game JSON — automatically create the sheet tab and publish.
+      // No need for the user to click "Add Sheet"; just get on with it.
+      document.getElementById('vpSummaryPanel').style.display = 'none';
+      document.getElementById('vpLogPanel').style.display     = '';
+      document.getElementById('vpDialogTitle').textContent    = 'Setting Up View Page';
+      vpAddSheet();
     }
   };
   xhr.onerror = function() {
@@ -3224,6 +3234,7 @@ function submitGameEdit() {
       var res; try { res = JSON.parse(pxhr.responseText); } catch(e) { res = null; }
       if (res && res.ok) {
         peopleIndex[name + '|'] = '';   // mark as known so next check passes
+        if (!peopleData[name]) peopleData[name] = { Name: name, Email: '', Company: '', Role: '', Notes: '' };
         saveNextDesigner(rest);
       } else {
         btn.disabled = false; btn.textContent = isNew ? 'Add Game' : 'Save';
@@ -3383,12 +3394,18 @@ function onPublisherChange() {
 }
 
 // ── Publisher info helper ─────────────────────────────
+// Returns all people whose Company matches the publisher name.
+// Uses peopleData (all named people) rather than peopleIndex (only people
+// with an Email set) so contacts without an email are not silently dropped.
 function getPubInfo(publisher) {
   var contacts = [];
-  Object.keys(peopleIndex).forEach(function(key) {
-    var parts = key.split('|');
-    if (parts[1] === publisher && parts[0]) {
-      contacts.push({ name: parts[0], email: peopleIndex[key] || '' });
+  var seen     = {};
+  Object.keys(peopleData).forEach(function(name) {
+    var person  = peopleData[name];
+    var company = (person.Company || '').trim();
+    if (company === publisher && name && !seen[name]) {
+      seen[name] = true;
+      contacts.push({ name: name, email: person.Email || '' });
     }
   });
   return contacts;
@@ -3404,9 +3421,9 @@ function _setupGameCombo() {
   }, null);
 }
 
-function openNewPitchDialog(publisher) {
+function openNewPitchDialog(publisher, contact) {
   _setupGameCombo();
-  openAddDialog('', publisher, '', true);
+  openAddDialog('', publisher, contact || '', true);
 }
 
 // ── Designer combobox helpers ─────────────────────────
@@ -3637,6 +3654,7 @@ function submitAddEntry() {
       try { res = JSON.parse(cxhr.responseText); } catch(e) { res = null; }
       if (res && res.ok) {
         peopleIndex[contact + '|' + publisher] = '';
+        if (!peopleData[contact]) peopleData[contact] = { Name: contact, Email: '', Company: publisher, Role: '', Notes: '' };
         doSubmitPitch();
       } else {
         btn.disabled = false; btn.textContent = 'Add';
@@ -3715,9 +3733,10 @@ function submitAddNew() {
       var result;
       try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
       if (result && result.ok) {
-        // Update local people index
+        // Update local people index and data
         var key = name + '|' + publisher;
         if (email) peopleIndex[key] = email;
+        if (!peopleData[name]) peopleData[name] = { Name: name, Email: email, Company: publisher, Role: '', Notes: '' };
         // Refresh contact dropdown
         populateContacts(publisher, name);
         closeAddNew();
@@ -3741,7 +3760,8 @@ function submitAddNew() {
 
 
 // ── Designer info dialog ──────────────────────────────
-var _diOrigName = '';
+var _diOrigName  = '';
+var _diIsNew     = false;   // true when person was not in peopleData at dialog open
 var _diCompanyComboReady = false;
 
 function _getDiCompanyList() {
@@ -3760,8 +3780,9 @@ function _getDiCompanyList() {
 
 function openDiDialog(name) {
   _diOrigName = name;
+  _diIsNew    = !peopleData[name];
   var person  = peopleData[name] || {};
-  var found   = !!peopleData[name];
+  var found   = !_diIsNew;
 
   document.getElementById('diTitle').value          = name;
   document.getElementById('diEmail').value          = person.Email   || '';
@@ -3769,6 +3790,7 @@ function openDiDialog(name) {
   document.getElementById('diRole').value           = person.Role    || '';
   document.getElementById('diNotes').value          = person.Notes   || '';
   document.getElementById('diStatus').textContent   = '';
+  document.getElementById('diStatus').style.color   = '#e57';
   document.getElementById('diNotFound').style.display = found ? 'none' : '';
   var btn = document.getElementById('diUpdateBtn');
   btn.disabled    = false;
@@ -3802,21 +3824,23 @@ function submitDiUpdate() {
   var notes   = document.getElementById('diNotes').value;
   var nameChanged = (name !== _diOrigName);
 
-  // Step 1 — update the People sheet
+  var _btnLabel = _diIsNew ? 'Save' : 'Update';
+
+  // Step 1 — upsert the People sheet (create if not found, update if found)
   function doPersonSave(onOk) {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', APP_BASE + 'push/updatePerson.php');
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     xhr.onload = function() {
       var res; try { res = JSON.parse(xhr.responseText); } catch(e) { res = null; }
-      if (res && res.ok) { onOk(); }
+      if (res && res.ok) { onOk(!!res.created); }
       else {
-        btn.disabled = false; btn.textContent = 'Update';
+        btn.disabled = false; btn.textContent = _btnLabel;
         stat.textContent = (res && res.error) ? res.error : 'Save failed';
       }
     };
     xhr.onerror = function() {
-      btn.disabled = false; btn.textContent = 'Update';
+      btn.disabled = false; btn.textContent = _btnLabel;
       stat.textContent = 'Network error';
     };
     xhr.send('id='        + encodeURIComponent(sheet_Id) +
@@ -3859,10 +3883,10 @@ function submitDiUpdate() {
     oldRecord.Company = company;
     oldRecord.Role    = role;
     oldRecord.Notes   = notes;
-    if (nameChanged) {
-      delete peopleData[_diOrigName];
-      peopleData[name] = oldRecord;
-    }
+    // Always write back — if the person is new, oldRecord is a fresh object
+    // that has no reference in peopleData yet, so it must be explicitly stored.
+    if (nameChanged) delete peopleData[_diOrigName];
+    peopleData[name] = oldRecord;
     // People index
     var oldKey = _diOrigName + '|' + (company || '');
     var newKey = name + '|' + company;
@@ -3890,20 +3914,24 @@ function submitDiUpdate() {
   }
 
   // Orchestrate: person → (if name changed) games → done
-  doPersonSave(function() {
+  doPersonSave(function(created) {
+    var successLabel = created ? 'Created' : 'Saved';
+    document.getElementById('diNotFound').style.display = 'none';
     if (nameChanged) {
       doGameRename(function(gamesUpdated) {
         updateLocalCaches();
-        btn.disabled = false; btn.textContent = 'Update';
+        var _vs = saveViewState(); buildSummary(allPitches); buildView(); restoreViewState(_vs);
+        btn.disabled = false; btn.textContent = _btnLabel;
         stat.style.color = '#16a34a';
-        stat.textContent = 'Saved' + (gamesUpdated ? ' · ' + gamesUpdated + ' game' + (gamesUpdated !== 1 ? 's' : '') + ' updated' : '');
+        stat.textContent = successLabel + (gamesUpdated ? ' · ' + gamesUpdated + ' game' + (gamesUpdated !== 1 ? 's' : '') + ' updated' : '');
         setTimeout(function() { stat.textContent = ''; stat.style.color = '#e57'; }, 3000);
       });
     } else {
       updateLocalCaches();
-      btn.disabled = false; btn.textContent = 'Update';
+      var _vs = saveViewState(); buildSummary(allPitches); buildView(); restoreViewState(_vs);
+      btn.disabled = false; btn.textContent = _btnLabel;
       stat.style.color = '#16a34a';
-      stat.textContent = 'Saved';
+      stat.textContent = successLabel;
       setTimeout(function() { stat.textContent = ''; stat.style.color = '#e57'; }, 2000);
     }
   });

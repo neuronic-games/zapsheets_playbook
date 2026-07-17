@@ -53,7 +53,8 @@ if (empty($pyResult['ok'])) {
     exit;
 }
 
-$result['tabs'] = $pyResult['tabs'] ?? [];
+$result['tabs']  = $pyResult['tabs']  ?? [];
+$result['title'] = $pyResult['title'] ?? '';   // spreadsheet title set by ginitsheet.py
 
 // ── Step 2: Create sheets/{id}/ directory and cache subfolder ─────────────────
 $sheetDir = realpath(__DIR__ . '/..') . '/sheets/' . $sheetId;

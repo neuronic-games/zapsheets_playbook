@@ -198,7 +198,7 @@ body {
   <div class="card">
     <div class="card-title">Connect Your Google Sheet</div>
     <div class="instructions">
-      Create a blank Google Spreadsheet, share it with the FitBoard service account, then paste the URL or ID below. FitBoard will set up the Week tab automatically.
+      Create a blank Google Spreadsheet, share it with the FitBoard service account, then paste the URL or ID below. FitBoard will set up the required tabs automatically.
       <ol>
         <li>Open <strong>Google Sheets</strong> and create a new blank spreadsheet.</li>
         <li>Click <strong>Share</strong> and add <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> <button class="copy-email-btn" id="copyEmailBtn" onclick="copyEmail()">Copy</button> with <strong>Editor</strong> rights.</li>

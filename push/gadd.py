@@ -51,34 +51,32 @@ except Exception as e:
     print(json.dumps({"error": f"Could not read sheet: {str(e)}"}))
     sys.exit(1)
 
-if not all_values:
-    print(json.dumps({"error": "Sheet is empty — no header row found"}))
+# Treat the sheet as empty if get_all_values() returns [] or only blank rows
+_non_blank = [r for r in all_values if any(c.strip() for c in r)]
+if not _non_blank:
+    print(json.dumps({"error": "Sheet is empty — no header row found. Run setup first."}))
     sys.exit(1)
 
 headers = all_values[0]
-
-# Find the last row that has any non-empty cell value.
-# Using len(all_values) directly would include trailing empty rows left behind
-# when data was cleared (deleted cell values but row structure kept), causing gaps.
-last_data_row = 1  # header is at minimum row 1
-for i, row in enumerate(all_values, start=1):
-    if any(cell.strip() for cell in row):
-        last_data_row = i
-next_row = last_data_row + 1
-
-# Build row list aligned to headers
-new_row = [safe_str(row_data.get(h.strip(), '')) for h in headers]
 
 if not headers:
     print(json.dumps({"error": "Header row is empty"}))
     sys.exit(1)
 
-# Use ws.update() (direct cell write, same API path as batch_update) instead of
-# append_row (INSERT_ROWS) so this works even on sheets with row-insertion restrictions.
+# Build row list aligned to headers
+new_row = [safe_str(row_data.get(h.strip(), '')) for h in headers]
+
+# Delegate row-finding to the Sheets API via append_rows (OVERWRITE mode avoids
+# INSERT_ROWS which can fail on protected sheets). The API appends after the last
+# row that contains data in the table starting at A1.
 try:
-    end_cell  = gspread.utils.rowcol_to_a1(next_row, len(new_row))
-    range_str = f'A{next_row}:{end_cell}'
-    ws.update(range_name=range_str, values=[new_row], value_input_option='USER_ENTERED')
+    ws.append_rows(
+        [new_row],
+        value_input_option='USER_ENTERED',
+        insert_data_option='OVERWRITE',
+        table_range='A1',
+    )
+    approx_row = len(all_values) + 1
 except Exception as e:
     print(json.dumps({"error": f"Could not write row: {str(e)}"}))
     sys.exit(1)
@@ -87,7 +85,7 @@ non_empty = sum(1 for v in new_row if v)
 print(json.dumps({
     "ok": True,
     "sheet": ws.title,
-    "row": next_row,
+    "row": approx_row,
     "headers": headers,
     "written": new_row,
     "non_empty_fields": non_empty

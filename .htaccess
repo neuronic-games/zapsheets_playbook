@@ -8,6 +8,12 @@ DirectoryIndex index.php index.html
 # /pushsite[?…] → push/pushsite.php
 RewriteRule ^pushsite/?$ push/pushsite.php [L,QSA]
 
+# /pitchboard/help — instructional help page (must come before /pitchboard rule)
+RewriteRule ^pitchboard/help/?$ source/pitchboard/help/index.php [L,QSA]
+
+# /pitchboard — setup landing page
+RewriteRule ^pitchboard/?$ source/pitchboard/index.php [L,QSA]
+
 # Short-URL: /{id}/dashboard → source/dashboard/index.php (single source, no per-sheet copy)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -68,5 +74,5 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 # Guard 2: skip known top-level names regardless of subdirectory prefix.
 #          Matches  /anything/name/  or  /anything/name  at end of URI.
-RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site)(/|$)
+RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard)(/|$)
 RewriteRule ^([A-Za-z0-9_\-]+)(/.*)?$ sheets/$1$2 [R=302,L]

@@ -134,7 +134,7 @@ default_rows += [
 ]
 
 try:
-    ws.update(range_name='A1', values=default_rows)
+    ws.update(default_rows, 'A1')
 except Exception as e:
     print(json.dumps({"error": "could not write default data: " + str(e)}))
     sys.exit(1)

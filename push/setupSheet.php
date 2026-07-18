@@ -48,15 +48,15 @@ if ($pyResult === null) {
     exit;
 }
 
+$result['tabs']  = $pyResult['tabs']  ?? [];
+$result['title'] = $pyResult['title'] ?? '';
 if (empty($pyResult['ok'])) {
-    echo json_encode($pyResult);
-    exit;
+    $result['ok'] = false;
 }
 
-$result['tabs']  = $pyResult['tabs']  ?? [];
-$result['title'] = $pyResult['title'] ?? '';   // spreadsheet title set by ginitsheet.py
-
 // ── Step 2: Create sheets/{id}/ directory and cache subfolder ─────────────────
+// Always run this even if ginitsheet had tab-level errors — the directory and
+// JSON cache files must exist before the dashboard can load.
 $sheetDir = realpath(__DIR__ . '/..') . '/sheets/' . $sheetId;
 if (!is_dir($sheetDir . '/cache')) {
     mkdir($sheetDir . '/cache', 0777, true);

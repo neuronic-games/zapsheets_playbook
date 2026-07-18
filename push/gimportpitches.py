@@ -88,7 +88,7 @@ def append_rows(ws, headers, rows_data):
         end_cell  = gspread.utils.rowcol_to_a1(next_row, len(new_row))
         range_str = f'A{next_row}:{end_cell}'
         try:
-            ws.update(range_name=range_str, values=[new_row], value_input_option='USER_ENTERED')
+            ws.update([new_row], range_str, value_input_option='USER_ENTERED')
         except Exception as e:
             raise RuntimeError(f"Could not write row {next_row}: {str(e)}")
         next_row += 1
@@ -158,11 +158,7 @@ if game_row and (game_row.get('Name') or '').strip():
     next_row_idx = last_data_row(all_values) + 1
     end_cell     = gspread.utils.rowcol_to_a1(next_row_idx, len(new_grow))
     try:
-        ws_games.update(
-            range_name=f'A{next_row_idx}:{end_cell}',
-            values=[new_grow],
-            value_input_option='USER_ENTERED'
-        )
+        ws_games.update([new_grow], f'A{next_row_idx}:{end_cell}', value_input_option='USER_ENTERED')
         game_added = True
     except Exception as e:
         print(json.dumps({"error": f"Could not add game: {str(e)}"}))

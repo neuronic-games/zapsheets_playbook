@@ -82,7 +82,7 @@ for tab_name, rows in TABS.items():
             ws = wb.add_worksheet(title=tab_name, rows=200, cols=num_cols)
             if rows:
                 end_cell = gspread.utils.rowcol_to_a1(len(rows), max(len(r) for r in rows))
-                ws.update(range_name=f'A1:{end_cell}', values=rows, value_input_option='RAW')
+                ws.update(rows, f'A1:{end_cell}', value_input_option='RAW')
             results[tab_name] = 'created'
     except Exception as e:
         results[tab_name] = f'error: {str(e)}'

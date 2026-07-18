@@ -521,6 +521,14 @@ body {
   font-family:'DINBlack',sans-serif; font-size:.72rem;
   letter-spacing:.1em; text-transform:uppercase; color:var(--text3);
 }
+.empty-plan-btn {
+  display:inline-block; padding:.55rem 1.4rem;
+  background:var(--blue); color:#fff; text-decoration:none;
+  font-family:'DINBlack',sans-serif; font-size:.8rem;
+  text-transform:uppercase; letter-spacing:.08em;
+  border-radius:999px; margin-top:.6rem;
+  box-shadow:0 2px 12px rgba(10,132,255,.4);
+}
 
 /* ── Drag pill ──────────────────────────────────────────── */
 #dragPill {
@@ -876,6 +884,24 @@ function parseTargetRep(str) {
   return nums ? parseInt(nums[nums.length-1]) : 0;
 }
 
+// ── Empty sheet state — shown when week.json has no rows ───
+function showEmptySheetState(){
+  var dh = document.querySelector('.day-header');
+  if(dh) dh.style.display = 'none';
+  document.getElementById('rolodexViewport').innerHTML =
+    '<div class="empty-slide" style="gap:1rem;padding:2rem 1.5rem;text-align:center;">'
+    + '<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" opacity=".3">'
+    + '<rect x="4" y="3" width="16" height="18" rx="2"/>'
+    + '<line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="14" y2="12"/><line x1="8" y1="16" x2="11" y2="16"/>'
+    + '</svg>'
+    + '<div style="font-size:.95rem;opacity:.55;margin-bottom:.25rem;">No workout data yet</div>'
+    + '<div style="font-size:.8rem;color:rgba(255,255,255,.35);line-height:1.6;max-width:260px;margin:0 auto;">'
+    + 'Enter your workout plan directly in the Google Sheet, then tap the <strong style="color:rgba(255,255,255,.55);">&#8635;</strong> sync button above to load it.'
+    + '</div>'
+    + '</div>';
+  document.getElementById('rolodexDots').innerHTML = '';
+}
+
 // ── Load & build ───────────────────────────────────────────
 var WEEK_CACHE_KEY = 'fitboard_week_' + sheetId;
 
@@ -893,7 +919,16 @@ function loadData(){
       weekData=data;
       cacheWeekData(data);   // keep cache fresh
       buildGroups();
-      autoSelectActive();
+      if(dayKeys.length === 0){
+        var manual = new URLSearchParams(window.location.search).get('manual');
+        if(manual){
+          showEmptySheetState();
+        } else {
+          window.location.replace(APP_BASE + sheetId + '/fitboard/onboard');
+        }
+      } else {
+        autoSelectActive();
+      }
     })
     .catch(function(){
       // Offline or server error — try local cache

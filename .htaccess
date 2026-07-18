@@ -14,6 +14,9 @@ RewriteRule ^pitchboard/help/?$ source/pitchboard/help/index.php [L,QSA]
 # /pitchboard — setup landing page
 RewriteRule ^pitchboard/?$ source/pitchboard/index.php [L,QSA]
 
+# /fitboard — setup landing page (no sheet ID yet)
+RewriteRule ^fitboard/?$ source/fitboard/setup/index.php [L,QSA]
+
 # Short-URL: /{id}/dashboard → source/dashboard/index.php (single source, no per-sheet copy)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -44,10 +47,20 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^sheets/([A-Za-z0-9_\-]+)/sellsheet/?$ source/sellsheet/index.php [L,QSA]
 
+# Short-URL: /{id}/fitboard/onboard → onboarding page (must come before /{id}/fitboard rule)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/fitboard/onboard/?$ source/fitboard/onboard/index.php [L,QSA]
+
 # Short-URL: /{id}/fitboard → source/fitboard/index.php (single source, no per-sheet copy)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^([A-Za-z0-9_\-]+)/fitboard/?$ source/fitboard/index.php [L,QSA]
+
+# Also cover sheets/{id}/fitboard/onboard
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^sheets/([A-Za-z0-9_\-]+)/fitboard/onboard/?$ source/fitboard/onboard/index.php [L,QSA]
 
 # Also cover sheets/{id}/fitboard for old bookmarks / direct links
 RewriteCond %{REQUEST_FILENAME} !-f
@@ -74,5 +87,5 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 # Guard 2: skip known top-level names regardless of subdirectory prefix.
 #          Matches  /anything/name/  or  /anything/name  at end of URI.
-RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard)(/|$)
+RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard|fitboard)(/|$)
 RewriteRule ^([A-Za-z0-9_\-]+)(/.*)?$ sheets/$1$2 [R=302,L]

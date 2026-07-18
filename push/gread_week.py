@@ -1,8 +1,32 @@
 # gread_week.py — fetch Week tab from Google Sheet → stdout as JSON
 # Args: {sheet_id}
+#
+# The existing sheet uses column names that pre-date the FitBoard JS field names.
+# COLUMN_REMAP translates actual sheet headers → the names the JS code expects.
+# Sheets created by the new ginitfitboard.py already use the correct names,
+# so any key not present in the map is passed through unchanged.
 
 import gspread
 import sys, os, json
+
+# Map: actual sheet column header → JS-expected field name
+COLUMN_REMAP = {
+    'Week':               'Date',
+    'Day':                'Done',
+    'Exercise':           'Day',
+    'Date':               'Exercise',
+    'Done':               'YT Video Link',
+    'Weight (lbs)':       'Target Sets/Reps',
+    'Weight (kg)':        'Weight (lbs)',
+    'Set 1':              'Weight (kg)',
+    'Set 2':              'Set 1',
+    'Set 3':              'Set 2',
+    'Set 4':              'Set 3',
+    'Total Reps':         'Set 4',
+    'Total Volume (lbs)': 'Total Reps',
+    'My Notes':           'Total Volume (lbs)',
+    '':                   'My Notes',
+}
 
 cred_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
 if not os.path.exists(cred_file):
@@ -40,7 +64,21 @@ if not all_values:
     print(json.dumps({'error': 'Sheet is empty'}))
     sys.exit(1)
 
-headers = [h.strip() for h in all_values[0]]
+raw_headers = [h.strip() for h in all_values[0]]
+
+# Detect whether this sheet uses the legacy column names.
+# A sheet created by the new ginitfitboard.py will already have 'Day' containing
+# the group label; the legacy sheet has 'Exercise' containing the group label.
+# We apply COLUMN_REMAP only when the legacy layout is detected.
+needs_remap = (
+    'Exercise' in raw_headers and 'YT Video Link' not in raw_headers
+)
+
+if needs_remap:
+    headers = [COLUMN_REMAP.get(h, h) for h in raw_headers]
+else:
+    headers = raw_headers
+
 rows = []
 for row in all_values[1:]:
     # Skip completely empty rows

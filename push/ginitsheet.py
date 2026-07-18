@@ -76,6 +76,7 @@ for tab_name, rows in TABS.items():
     try:
         if tab_name in existing:
             # Tab exists — data is intact, nothing to do.
+            ws = existing[tab_name]
             results[tab_name] = 'ok'
         else:
             num_cols = max(len(r) for r in rows) if rows else 2
@@ -83,7 +84,131 @@ for tab_name, rows in TABS.items():
             if rows:
                 end_cell = gspread.utils.rowcol_to_a1(len(rows), max(len(r) for r in rows))
                 ws.update(rows, f'A1:{end_cell}', value_input_option='RAW')
+            # Freeze and format the header row on tabs that have one (not Settings)
+            if tab_name != 'Settings':
+                ws.freeze(rows=1)
+                header_end = gspread.utils.rowcol_to_a1(1, num_cols)
+                ws.format(f'A1:{header_end}', {
+                    'backgroundColor': {'red': 0.627, 'green': 0.424, 'blue': 0.024},  # #a06d08
+                    'textFormat': {
+                        'bold': True,
+                        'foregroundColor': {'red': 1.0, 'green': 1.0, 'blue': 1.0},
+                    },
+                    'horizontalAlignment': 'LEFT',
+                })
             results[tab_name] = 'created'
+
+        # Pitches tab: apply dropdown validation regardless of whether the tab
+        # was just created or already existed — setDataValidation is idempotent.
+        # Pitches columns: Game(A/0), Publisher(B/1), Contact(C/2), Status(F/5)
+        if tab_name == 'Pitches':
+            PITCH_STATUS_VALUES = [
+                'Pitched', 'Interested', 'Passed', 'Signed', 'Published', 'Returned',
+            ]
+            # Each tuple: (col_index, condition_type, condition_values_list)
+            validation_cols = [
+                (0, 'ONE_OF_RANGE', [{'userEnteredValue': '=Games!$A$2:$A$10000'}]),
+                (1, 'ONE_OF_RANGE', [{'userEnteredValue': '=People!$C$2:$C$10000'}]),
+                (2, 'ONE_OF_RANGE', [{'userEnteredValue': '=People!$A$2:$A$10000'}]),
+                (5, 'ONE_OF_LIST',  [{'userEnteredValue': v} for v in PITCH_STATUS_VALUES]),
+            ]
+            requests = []
+            for col_idx, cond_type, cond_values in validation_cols:
+                requests.append({
+                    'setDataValidation': {
+                        'range': {
+                            'sheetId': ws.id,
+                            'startRowIndex': 1,
+                            'endRowIndex': 10000,
+                            'startColumnIndex': col_idx,
+                            'endColumnIndex': col_idx + 1,
+                        },
+                        'rule': {
+                            'condition': {
+                                'type': cond_type,
+                                'values': cond_values,
+                            },
+                            'showCustomUi': True,
+                            'strict': False,
+                        },
+                    }
+                })
+
+            # Conditional formatting for Status column — colour each value to match
+            # the badge colours used in the PitchBoard UI.
+            # Only added on newly created tabs; existing tabs keep their existing rules.
+            if results.get(tab_name) == 'created':
+                PITCH_STATUS_COLORS = [
+                    # (value,    bg_rgb_0_1,                     fg_rgb_0_1)
+                    ('Pitched',   (0.886, 0.910, 0.941), (0.278, 0.333, 0.412)),  # #e2e8f0 / #475569
+                    ('Interested',(0.863, 0.988, 0.906), (0.086, 0.396, 0.204)),  # #dcfce7 / #166534
+                    ('Passed',    (0.996, 0.886, 0.886), (0.600, 0.106, 0.106)),  # #fee2e2 / #991b1b
+                    ('Signed',    (0.929, 0.914, 0.996), (0.357, 0.129, 0.714)),  # #ede9fe / #5b21b6
+                    ('Published', (0.878, 0.949, 0.996), (0.027, 0.349, 0.522)),  # #e0f2fe / #075985
+                    ('Returned',  (1.000, 0.969, 0.929), (0.761, 0.255, 0.047)),  # #fff7ed / #c2410c
+                ]
+                for i, (status, bg, fg) in enumerate(PITCH_STATUS_COLORS):
+                    requests.append({
+                        'addConditionalFormatRule': {
+                            'rule': {
+                                'ranges': [{
+                                    'sheetId': ws.id,
+                                    'startRowIndex': 1,
+                                    'endRowIndex': 10000,
+                                    'startColumnIndex': 5,
+                                    'endColumnIndex': 6,
+                                }],
+                                'booleanRule': {
+                                    'condition': {
+                                        'type': 'TEXT_EQ',
+                                        'values': [{'userEnteredValue': status}],
+                                    },
+                                    'format': {
+                                        'backgroundColor': {'red': bg[0], 'green': bg[1], 'blue': bg[2]},
+                                        'textFormat': {
+                                            'foregroundColor': {'red': fg[0], 'green': fg[1], 'blue': fg[2]},
+                                            'bold': True,
+                                        },
+                                    },
+                                },
+                            },
+                            'index': i,
+                        }
+                    })
+
+            wb.batch_update({'requests': requests})
+
+        # Games tab: Designer1–4 validate against People.Name — idempotent.
+        if tab_name == 'Games':
+            games_headers = TABS['Games'][0]
+            designer_indices = [
+                i for i, h in enumerate(games_headers)
+                if h.lower().startswith('designer')
+            ]
+            requests = []
+            for col_idx in designer_indices:
+                requests.append({
+                    'setDataValidation': {
+                        'range': {
+                            'sheetId': ws.id,
+                            'startRowIndex': 1,
+                            'endRowIndex': 10000,
+                            'startColumnIndex': col_idx,
+                            'endColumnIndex': col_idx + 1,
+                        },
+                        'rule': {
+                            'condition': {
+                                'type': 'ONE_OF_RANGE',
+                                'values': [{'userEnteredValue': '=People!$A$2:$A$10000'}],
+                            },
+                            'showCustomUi': True,
+                            'strict': False,
+                        },
+                    }
+                })
+            if requests:
+                wb.batch_update({'requests': requests})
+
     except Exception as e:
         results[tab_name] = f'error: {str(e)}'
 

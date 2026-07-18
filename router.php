@@ -94,6 +94,7 @@ $RESERVED = [
     'sw_playbook', 'sw_map', 'pitchboard-sw', 'fitboard-sw', 'router', 'start',
     'clear-sw', 'debug-jquery',
     'pitchboard',   // setup landing page — handled below, reserved so /{id} never grabs it
+    'fitboard',     // setup landing page — handled below, reserved so /{id} never grabs it
 ];
 
 // ── /pushsite → push/pushsite.php ────────────────────────────────────────────
@@ -111,10 +112,16 @@ if (preg_match('#^/pitchboard/help/?$#', $uri)) {
     serveFile(__DIR__ . '/source/pitchboard/help/index.php', $MIME);
 }
 
+// ── /fitboard — setup landing page (no sheet ID yet) ─────────────────────────
+if (preg_match('#^/fitboard/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/fitboard/setup/index.php', $MIME);
+}
+
 // ── Backward compat: sheets/{id}/view|dashboard|sellsheet|fitboard ───────
 if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/view(/.*)?$#', $uri))       { serveFile(__DIR__ . '/source/view/index.php',       $MIME); }
 if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/dashboard(/.*)?$#', $uri))  { serveFile(__DIR__ . '/source/dashboard/index.php',  $MIME); }
 if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/sellsheet(/.*)?$#', $uri))  { serveFile(__DIR__ . '/source/sellsheet/index.php',  $MIME); }
+if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/fitboard/onboard/?$#', $uri)) { serveFile(__DIR__ . '/source/fitboard/onboard/index.php', $MIME); }
 if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/fitboard(/.*)?$#', $uri))   { serveFile(__DIR__ . '/source/fitboard/index.php',   $MIME); }
 
 // ── Short URL: /{id}/view[/…] ────────────────────────────────────────────
@@ -161,6 +168,11 @@ if (preg_match('#^/([A-Za-z0-9_\-]+)/site(/.*)?$#', $uri, $m)) {
 // Sellsheet is served from the single source file — no per-sheet copies needed.
 if (preg_match('#^/([A-Za-z0-9_\-]+)/sellsheet(/.*)?$#', $uri, $m)) {
     serveFile(__DIR__ . '/source/sellsheet/index.php', $MIME);
+}
+
+// ── Short URL: /{id}/fitboard/onboard ── must come before the fitboard rule ──
+if (preg_match('#^/([A-Za-z0-9_\-]+)/fitboard/onboard/?$#', $uri, $m)) {
+    serveFile(__DIR__ . '/source/fitboard/onboard/index.php', $MIME);
 }
 
 // ── Short URL: /{id}/fitboard ─────────────────────────────────────────────

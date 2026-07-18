@@ -82,6 +82,80 @@ except Exception as e:
     sys.exit(1)
 
 non_empty = sum(1 for v in new_row if v)
+
+# For the Pitches tab, extend dropdown validation on Game / Publisher / Contact
+# to always cover the newly added row plus a buffer ahead of it.
+if sheet_name.lower() == 'pitches':
+    cover_to = approx_row + 500   # cover 500 rows beyond the new one
+    # Each tuple: (col_index, condition_type, condition_values_list)
+    PITCH_STATUS_VALUES = [
+        'Pitched', 'Interested', 'Passed', 'Signed', 'Published', 'Returned',
+    ]
+    validation_cols = [
+        (0, 'ONE_OF_RANGE', [{'userEnteredValue': '=Games!$A$2:$A$10000'}]),
+        (1, 'ONE_OF_RANGE', [{'userEnteredValue': '=People!$C$2:$C$10000'}]),
+        (2, 'ONE_OF_RANGE', [{'userEnteredValue': '=People!$A$2:$A$10000'}]),
+        (5, 'ONE_OF_LIST',  [{'userEnteredValue': v} for v in PITCH_STATUS_VALUES]),
+    ]
+    vreqs = []
+    for col_idx, cond_type, cond_values in validation_cols:
+        vreqs.append({
+            'setDataValidation': {
+                'range': {
+                    'sheetId': ws.id,
+                    'startRowIndex': 1,        # 0-indexed: skip header
+                    'endRowIndex': cover_to,
+                    'startColumnIndex': col_idx,
+                    'endColumnIndex': col_idx + 1,
+                },
+                'rule': {
+                    'condition': {
+                        'type': cond_type,
+                        'values': cond_values,
+                    },
+                    'showCustomUi': True,   # render as dropdown
+                    'strict': False,        # warn but don't block free-text
+                },
+            }
+        })
+    try:
+        mGoogleSheet.batch_update({'requests': vreqs})
+    except Exception:
+        pass  # non-fatal: validation is a nice-to-have
+
+# For the Games tab, extend dropdown validation on Designer1–4 → People.Name.
+elif sheet_name.lower() == 'games':
+    cover_to = approx_row + 500
+    designer_indices = [
+        i for i, h in enumerate(headers)
+        if h.strip().lower().startswith('designer')
+    ]
+    vreqs = []
+    for col_idx in designer_indices:
+        vreqs.append({
+            'setDataValidation': {
+                'range': {
+                    'sheetId': ws.id,
+                    'startRowIndex': 1,
+                    'endRowIndex': cover_to,
+                    'startColumnIndex': col_idx,
+                    'endColumnIndex': col_idx + 1,
+                },
+                'rule': {
+                    'condition': {
+                        'type': 'ONE_OF_RANGE',
+                        'values': [{'userEnteredValue': '=People!$A$2:$A$10000'}],
+                    },
+                    'showCustomUi': True,
+                    'strict': False,
+                },
+            }
+        })
+    try:
+        mGoogleSheet.batch_update({'requests': vreqs})
+    except Exception:
+        pass  # non-fatal
+
 print(json.dumps({
     "ok": True,
     "sheet": ws.title,

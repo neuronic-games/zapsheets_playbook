@@ -851,6 +851,22 @@ $_sheet_id = $_bm[2] ?? '';
       align-items:center; justify-content:center; padding:1rem;
     }
     .err-overlay.open { display:flex; }
+
+    /* ── Scroll-bleed prevention ─────────────────────────────────────────────────
+       Make every overlay the scroll container so touches on the dialog or its
+       backdrop never reach the list behind. The body is locked completely while
+       any overlay is open.
+    ────────────────────────────────────────────────────────────────────────────── */
+    .di-overlay, .add-entry-overlay, .add-new-overlay, .notes-overlay,
+    .sync-overlay, .game-edit-overlay, .err-overlay {
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    body:has(.di-overlay.open, .add-entry-overlay.open, .add-new-overlay.open,
+             .notes-overlay.open, .sync-overlay.open, .game-edit-overlay.open,
+             .err-overlay.open) {
+      overflow: hidden;
+    }
     .err-dialog {
       background:#fff; border-radius:10px;
       padding:1.4rem 1.5rem; width:min(540px,94vw);
@@ -1297,12 +1313,22 @@ $_sheet_id = $_bm[2] ?? '';
 <!-- Share URL dialog -->
 <div class="sync-overlay" id="shareUrlOverlay">
   <div class="sync-dialog" style="width:min(480px,94vw)">
-    <h2>Share Your Game Data</h2>
-    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .8rem">Send this link to your collaborators so that they can import it into their PitchBoard.</p>
-    <div style="display:flex;gap:.5rem;align-items:center">
+    <h2>Share</h2>
+
+    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Share Pitches with Collaborators</p>
+    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .5rem">Send this link so collaborators can import your pitch data into their PitchBoard.</p>
+    <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:1rem">
       <input type="text" id="shareUrlInput" class="ge-input" readonly style="flex:1;font-size:.72rem;font-family:monospace" />
       <button class="sync-update-btn" id="shareUrlCopyBtn" onclick="copyShareUrl()">Copy</button>
     </div>
+
+    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Share Game Page</p>
+    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .5rem">Public link to this game's view page.</p>
+    <div style="display:flex;gap:.5rem;align-items:center">
+      <input type="text" id="shareGamePageInput" class="ge-input" readonly style="flex:1;font-size:.72rem;font-family:monospace" />
+      <button class="sync-update-btn" id="shareGamePageCopyBtn" onclick="copyGamePageUrl()">Copy</button>
+    </div>
+
     <div class="sync-dialog-actions" style="margin-top:.75rem">
       <button class="notes-close" onclick="closeShareUrlDialog()">Close</button>
     </div>
@@ -2830,23 +2856,28 @@ function vpDone() {
 }
 function vpOpenViewPage() {
   var url = APP_BASE + sheet_Id + '/view/?game=' + encodeURIComponent(_vpCurrentGame);
-  document.getElementById('viewerTitle').textContent = _vpCurrentGame;
-  document.getElementById('viewerFrame').src = url;
-  document.getElementById('viewerOverlay').classList.add('open');
   closeVpDialog();
+  window.location.href = url;
 }
 function closeViewer() {
   document.getElementById('viewerOverlay').classList.remove('open');
   document.getElementById('viewerFrame').src = 'about:blank';
 }
 
-// Listen for in-viewer navigation requests from pages inside the iframe
-// (e.g. "View Sellsheet" on the view page).
+// Listen for navigation requests from pages inside the iframe.
 window.addEventListener('message', function(e) {
   if (e.origin !== window.location.origin) return;
-  if (!e.data || e.data.type !== 'openViewer') return;
-  document.getElementById('viewerTitle').textContent = e.data.title || '';
-  document.getElementById('viewerFrame').src = e.data.url || 'about:blank';
+  if (!e.data) return;
+  // openViewer: load a same-domain URL inside the viewer overlay
+  if (e.data.type === 'openViewer') {
+    document.getElementById('viewerTitle').textContent = e.data.title || '';
+    document.getElementById('viewerFrame').src = e.data.url || 'about:blank';
+    return;
+  }
+  // openExternal: fallback when window.open() inside the iframe was blocked
+  if (e.data.type === 'openExternal' && e.data.url) {
+    window.open(e.data.url, '_blank', 'noopener,noreferrer');
+  }
 });
 
 // Build the summary HTML from local gamesIndex data + optional parsed JSON records.
@@ -4268,18 +4299,35 @@ function shareGame(gameName) {
     .then(function(r) { return r.json(); })
     .then(function(result) {
       if (result.error) { alert('Share failed: ' + result.error); return; }
-      openShareUrlDialog(result.url);
+      openShareUrlDialog(result.url, gameName);
     })
     .catch(function(e) { alert('Share failed: ' + e.message); });
 }
 
-function openShareUrlDialog(url) {
+function openShareUrlDialog(url, gameName) {
   document.getElementById('shareUrlInput').value = url;
   document.getElementById('shareUrlCopyBtn').textContent = 'Copy';
+  var gamePageUrl = window.location.origin + APP_BASE + sheet_Id + '/view/?game=' + encodeURIComponent(gameName || '');
+  document.getElementById('shareGamePageInput').value = gamePageUrl;
+  document.getElementById('shareGamePageCopyBtn').textContent = 'Copy';
   document.getElementById('shareUrlOverlay').classList.add('open');
 }
 function closeShareUrlDialog() {
   document.getElementById('shareUrlOverlay').classList.remove('open');
+}
+function copyGamePageUrl() {
+  var val = document.getElementById('shareGamePageInput').value;
+  var btn = document.getElementById('shareGamePageCopyBtn');
+  navigator.clipboard.writeText(val).then(function() {
+    btn.textContent = 'Copied!';
+    setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+  }).catch(function() {
+    var inp = document.getElementById('shareGamePageInput');
+    inp.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    btn.textContent = 'Copied!';
+    setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+  });
 }
 function copyShareUrl() {
   var val = document.getElementById('shareUrlInput').value;

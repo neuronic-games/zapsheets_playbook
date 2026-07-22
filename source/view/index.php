@@ -38,6 +38,28 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       min-height: 100vh;
     }
 
+    /* ── PWA back bar (shown when page is top-level, i.e. not inside the dashboard iframe) ── */
+    #pwaBackBar {
+      display: none;
+      position: sticky;
+      top: 0;
+      z-index: 999;
+      background: #1c1c1e;
+      padding: .55rem 1rem;
+    }
+    #pwaBackBar button {
+      background: none;
+      border: none;
+      color: #0a84ff;
+      font-size: 1rem;
+      font-family: -apple-system, sans-serif;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: .3rem;
+      padding: 0;
+    }
+
     /* ── Page container ──────────────────────────────────────── */
     .page-wrap { max-width: 1060px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
 
@@ -465,6 +487,11 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 </head>
 <body>
 
+<div id="pwaBackBar">
+  <button id="pwaBackBtn">&#8249; Back</button>
+</div>
+
+
 <!-- Loading -->
 <div id="loadScreen">
   <img src="images/sheet_2_new.webp" alt="" />
@@ -558,6 +585,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
   </div>
 
 </div><!-- /page-wrap -->
+
 
 <script src="js/common/jquery-3.5.1.min.js?v=3"></script>
 <script src="js/common/bootstrap.bundle.min.js?v=2"></script>
@@ -1057,15 +1085,35 @@ function render() {
   }).join('');
 
   // ── CTAs ─────────────────────────────────────────────────────
+  // Normalise a URL string from the sheet:
+  //   • strips Markdown link syntax  [label](url)  or  [url]
+  //   • ensures the result is absolute (adds https:// when missing)
+  function _absUrl(url) {
+    if (!url) return '';
+    url = String(url).trim();
+    // Markdown [label](url) → extract the url part
+    var md = url.match(/^\[.*?\]\((.+)\)\s*$/);
+    if (md) url = md[1].trim();
+    // Bare [url] brackets → strip them
+    var br = url.match(/^\[(.+)\]\s*$/);
+    if (br) url = br[1].trim();
+    if (!url) return '';
+    return /^https?:\/\//i.test(url) ? url : 'https://' + url;
+  }
+
   // Plain URL strings — game JSON first, games.json as fallback
-  var _rulesUrl = (function() {
+  var _rulesUrl = _absUrl((function() {
     var r = (data.bgg || []).find(function(r){ return r.Name === 'RulesUrl' && r.Value; });
     return (r && r.Value) || _games('Rules URL');
-  })();
-  var _ttsUrl = (function() {
+  })());
+  var _ttsUrl = _absUrl((function() {
     var r = (data.bgg || []).find(function(r){ return r.Name === 'PlayUrl' && r.Value; });
     return (r && r.Value) || _games('Play URL');
-  })();
+  })());
+  var _printUrl = _absUrl((function() {
+    var r = (data.bgg || []).find(function(r){ return r.Name === 'PrintUrl' && r.Value; });
+    return (r && r.Value) || _games('Print URL');
+  })());
   var _hasSteps    = data.steps && data.steps.length > 0;
 
   var _viewPath = window.location.pathname;
@@ -1080,31 +1128,60 @@ function render() {
   if (!_yearPublished) {
     var _sellsheetUrl = window.location.origin + _viewPath.substring(0, _idEnd) + '/sellsheet'
       + (_gameParam ? '?game=' + encodeURIComponent(_gameParam) : '');
-    _ctaHtml += '<a class="btn-rules" href="' + _sellsheetUrl + '"'
-      + ' onclick="_openInViewer(event,\'' + _sellsheetUrl.replace(/'/g,"\\'") + '\',\'Sellsheet\')"'
-      + '>View Sellsheet</a>';
+    _ctaHtml += '<a class="btn-rules" href="' + _sellsheetUrl + '">View Sellsheet</a>';
   }
 
   // Read Rules — link out if a URL exists; scroll to Rules tab if rules data exists;
   // hide the button entirely if neither is available.
   var _hasRules = data.rules && data.rules.length > 0;
   if (_rulesUrl) {
-    _ctaHtml += '<a class="btn-rules" href="' + _rulesUrl + '" target="_blank" rel="noopener">Read Rules</a>';
+    _ctaHtml += '<a class="btn-rules" href="' + _rulesUrl + '" target="_blank" rel="noopener noreferrer">Read Rules</a>';
   } else if (_hasRules) {
     _ctaHtml += '<a class="btn-rules" id="cta-rules" href="#">Read Rules</a>';
   }
 
+  // Print — only shown when Print URL is defined
+  if (_printUrl) {
+    _ctaHtml += '<a class="btn-rules" href="' + _printUrl + '" target="_blank" rel="noopener noreferrer">Print</a>';
+  }
+
   // Play Now — only shown when PlayUrl is defined
   if (_ttsUrl) {
-    _ctaHtml += '<a class="btn-play" href="' + _ttsUrl + '" target="_blank" rel="noopener">Play Now</a>';
+    _ctaHtml += '<a class="btn-play" href="' + _ttsUrl + '" target="_blank" rel="noopener noreferrer">Play Now</a>';
   }
 
   // Teach Me — only shown when steps data exists
   if (_hasSteps) {
-    _ctaHtml += '<a class="btn-play" href="' + _stepsUrl + '" target="_blank" rel="noopener">Teach Me</a>';
+    _ctaHtml += '<a class="btn-play" href="' + _stepsUrl + '" target="_blank" rel="noopener noreferrer">Teach Me</a>';
   }
 
   document.getElementById('ctaRow').innerHTML = _ctaHtml;
+
+  // Wire external-URL buttons with a reliable click handler.
+  // Using addEventListener (not onclick="…") ensures the call is always
+  // in the synchronous user-gesture stack, which Chrome requires for
+  // window.open() to bypass the popup blocker even inside iframes.
+  document.querySelectorAll('#ctaRow [target="_blank"]').forEach(function(a) {
+    a.addEventListener('click', function(e) {
+      var standalone = (window.navigator.standalone === true)
+                    || window.matchMedia('(display-mode: standalone)').matches;
+
+      if (standalone) {
+        // Try window.open() first. On iOS 16.4+ this opens a real browser window
+        // the user can close to return to the app. If it's blocked (older iOS),
+        // w is null and we leave the default target="_blank" to run naturally
+        // (external links open in Safari; same-origin navigates within the app).
+        var w;
+        try { w = window.open(this.href, '_blank', 'noopener,noreferrer'); } catch(ex) { w = null; }
+        if (w) e.preventDefault();
+        return;
+      }
+
+      // Browser / dashboard iframe: always use window.open() to bypass popup restrictions.
+      e.preventDefault();
+      try { window.open(this.href, '_blank', 'noopener,noreferrer'); } catch(ex) {}
+    });
+  });
 
   // Scroll-to-rules wired up when there is no external RulesUrl but rules data exists
   if (!_rulesUrl && _hasRules) {
@@ -1273,6 +1350,19 @@ function activateTab(id) {
   });
 }
 
+// ── PWA back bar — shown only when the user navigated here from within the app ──
+// Hidden when the page is loaded directly (e.g. via a shared link) — nothing to go back to.
+(function() {
+  if (window.parent !== window) return; // inside viewerFrame — dashboard provides the ✕ button
+  var ref = document.referrer;
+  if (!ref || ref.indexOf(window.location.origin) !== 0) return; // direct/external load — no back bar
+  var bar = document.getElementById('pwaBackBar');
+  bar.style.display = 'block';
+  document.getElementById('pwaBackBtn').addEventListener('click', function() {
+    history.back();
+  });
+})();
+
 // ── In-viewer navigation (when loaded inside the dashboard iframe) ──
 // Posts a message to the parent dashboard to load a URL in the same
 // viewer overlay, keeping the close button visible.
@@ -1283,6 +1373,7 @@ function _openInViewer(e, url, title) {
   }
   // else: not in iframe — follow the link normally (fallback)
 }
+
 </script>
 </body>
 </html>

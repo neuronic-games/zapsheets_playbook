@@ -55,6 +55,31 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       /* hero height: let image set its own height on screen; clipped by sheet overflow on print */
     }
 
+    /* PWA back bar — only shown in standalone / Home Screen mode */
+    #pwaBackBar {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 999;
+      background: #1c1c1e;
+      padding: .55rem 1rem;
+    }
+    #pwaBackBar button {
+      background: none;
+      border: none;
+      color: #0a84ff;
+      font-size: 1rem;
+      font-family: -apple-system, sans-serif;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: .3rem;
+      padding: 0;
+    }
+    @media print { #pwaBackBar { display: none !important; } }
+
     body {
       margin: 0;
       background: #e0dbd3;
@@ -248,6 +273,10 @@ if (substr($_base, -1) !== '/') $_base .= '/';
   </style>
 </head>
 <body>
+
+<div id="pwaBackBar">
+  <button id="pwaBackBtn">&#8249; Back</button>
+</div>
 
 <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
 
@@ -596,6 +625,29 @@ function render() {
   }
   fit();
   window.addEventListener('resize', fit);
+})();
+
+// Show the back bar only when running as a Home Screen / PWA app
+(function() {
+  var standalone = (window.navigator.standalone === true)
+                || window.matchMedia('(display-mode: standalone)').matches;
+  if (standalone) {
+    var bar = document.getElementById('pwaBackBar');
+    bar.style.display = 'block';
+    document.body.style.paddingTop = bar.offsetHeight + 'px';
+    document.getElementById('pwaBackBtn').addEventListener('click', function() {
+      if (history.length > 1) {
+        history.back();
+      } else {
+        // Tab was opened fresh via window.open() — close it to return to the /view tab.
+        window.close();
+        // Fallback if close() is blocked (fires only if window is still open):
+        setTimeout(function() {
+          window.location.href = window.location.pathname.replace(/\/sellsheet\/?$/, '/view');
+        }, 150);
+      }
+    });
+  }
 })();
 </script>
 </body>

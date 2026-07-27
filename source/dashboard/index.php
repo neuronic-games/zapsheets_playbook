@@ -106,13 +106,15 @@ $_sheet_id = $_bm[2] ?? '';
     .pill-passed    { background:#fee2e2; color:#991b1b; cursor:pointer; border:none; transition:opacity .15s,box-shadow .15s; }
     .pill-signed    { background:#7c3aed; color:#fff; cursor:pointer; border:none; transition:opacity .15s,box-shadow .15s; }
     .pill-published { background:#0369a1; color:#fff; cursor:pointer; border:none; transition:opacity .15s,box-shadow .15s; }
+    .pill-cold      { background:#dbeafe; color:#1e40af; cursor:pointer; border:none; transition:opacity .15s,box-shadow .15s; }
     .pill-pitched:hover, .pill-int:hover, .pill-passed:hover,
-    .pill-signed:hover, .pill-published:hover { opacity:.85; }
+    .pill-signed:hover, .pill-published:hover, .pill-cold:hover { opacity:.85; }
     .pill-pitched.filter-active   { box-shadow:0 0 0 2px #fff, 0 0 0 4px #94a3b8; }
     .pill-int.filter-active       { box-shadow:0 0 0 2px #fff, 0 0 0 4px #16a34a; }
     .pill-passed.filter-active    { box-shadow:0 0 0 2px #fff, 0 0 0 4px #dc2626; }
     .pill-signed.filter-active    { box-shadow:0 0 0 2px #fff, 0 0 0 4px #7c3aed; }
     .pill-published.filter-active { box-shadow:0 0 0 2px #fff, 0 0 0 4px #0369a1; }
+    .pill-cold.filter-active      { box-shadow:0 0 0 2px #fff, 0 0 0 4px #1e40af; }
 
     /* ── Search + sort ───────────────────────────────── */
     .search-bar { padding:.4rem 1.25rem .5rem; display:flex; align-items:stretch; gap:.6rem; max-width:900px; margin:0 auto; }
@@ -244,6 +246,7 @@ $_sheet_id = $_bm[2] ?? '';
     .badge-signed      { background:#7c3aed; color:#fff; }
     .badge-published   { background:#0369a1; color:#fff; }
     .badge-returned    { background:#f97316; color:#fff; }
+    .badge-gone-cold   { background:#dbeafe; color:#1e40af; }
     .status-date       { font-family:'DINRegular',sans-serif; font-size:.65rem; color:#888; font-weight:normal; text-transform:none; letter-spacing:0; white-space:nowrap; }
     .badge-age-6mo     { background:#ef4444; color:#fff; }
     .badge-age-3mo     { background:#f59e0b; color:#fff; }
@@ -1022,6 +1025,7 @@ $_sheet_id = $_bm[2] ?? '';
           <option value="Pitched">Pitched</option>
           <option value="Interested">Interested</option>
           <option value="Passed">Passed</option>
+          <option value="Gone Cold">Gone Cold</option>
           <option value="Signed">Signed</option>
           <option value="Published">Published</option>
           <option value="Returned">Returned</option>
@@ -1246,6 +1250,7 @@ $_sheet_id = $_bm[2] ?? '';
             <option value="Pitched">Pitched</option>
             <option value="Interested">Interested</option>
             <option value="Passed">Passed</option>
+            <option value="Gone Cold">Gone Cold</option>
             <option value="Returned">Returned</option>
             <option value="Signed">Signed</option>
             <option value="Published">Published</option>
@@ -1369,7 +1374,7 @@ $_sheet_id = $_bm[2] ?? '';
     <button class="search-clear" id="searchClear" onclick="clearSearch()" title="Clear">✕</button>
   </div>
   <div class="sort-toggle">
-    <button id="btnSortDate"  class="active" onclick="setSort('date')">Date</button>
+    <button id="btnSortDate"  class="active" onclick="setSort('date')">Date ↓</button>
     <button id="btnSortAlpha"            onclick="setSort('alpha')">A–Z</button>
   </div>
   <button class="new-game-btn" onclick="openNewGameDialog()">+ New Game</button>
@@ -1394,6 +1399,7 @@ var BASE     = APP_BASE + 'sheets/' + sheet_Id + '/';
 // ── State ─────────────────────────────────────────────
 var currentView     = 'game';
 var currentSort     = 'date';   // 'date' | 'alpha'
+var sortDir         = { date: -1, alpha: 1 };  // -1=desc(newest/Z-A), 1=asc(oldest/A-Z)
 var allPitches      = [];
 var filteredPitches = [];
 var searchQuery     = '';
@@ -1413,6 +1419,7 @@ function statusClass(s) {
   if (s==='signed')     return 'signed';
   if (s==='interested') return 'interested';
   if (s==='passed')     return 'passed';
+  if (s==='gone cold')  return 'gone-cold';
   return 'pitched';
 }
 
@@ -1567,13 +1574,14 @@ function buildSummary(pitches) {
   Object.keys(gamesIndex).forEach(function(n){ if (!gameEntryMap[n]) gameEntryMap[n] = []; });
 
   // Count per game-publisher pair by latest status
-  var pairCounts = {pitched:0, interested:0, passed:0};
+  var pairCounts = {pitched:0, interested:0, passed:0, gonecold:0};
   Object.keys(gamePubMap).forEach(function(g) {
     Object.keys(gamePubMap[g]).forEach(function(p) {
       var latest = latestEntry(gamePubMap[g][p]);
       var s = (latest.Status||'').toLowerCase();
       if (s === 'interested') pairCounts.interested++;
       else if (s === 'passed') pairCounts.passed++;
+      else if (s === 'gone cold') pairCounts.gonecold++;
       else if (s) pairCounts.pitched++;
     });
   });
@@ -1598,9 +1606,10 @@ function buildSummary(pitches) {
   }
 
   var html =
-    filterBtn('pill-pitched', 'pitched',   'pitched',   pairCounts.pitched) +
+    filterBtn('pill-pitched', 'pitched',   'pitched',    pairCounts.pitched) +
     filterBtn('pill-int',     'interested','interested', pairCounts.interested) +
     filterBtn('pill-passed',  'passed',    'passed',     pairCounts.passed) +
+    filterBtn('pill-cold',    'gonecold',  'gone cold',  pairCounts.gonecold) +
     filterBtn('pill-signed',  'signed',    'signed',     signedGames) +
     filterBtn('pill-published','published','published',  publishedGames);
   document.getElementById('summaryBar').innerHTML = html;
@@ -1653,9 +1662,17 @@ function setView(v) {
 
 // ── Sort switcher ─────────────────────────────────────
 function setSort(s) {
-  currentSort = s;
-  document.getElementById('btnSortDate').classList.toggle('active',  s==='date');
-  document.getElementById('btnSortAlpha').classList.toggle('active', s==='alpha');
+  if (s === currentSort) {
+    sortDir[s] *= -1;  // toggle direction
+  } else {
+    currentSort = s;
+  }
+  var dArr  = sortDir.date  === -1 ? ' ↓' : ' ↑';
+  var aArr  = sortDir.alpha ===  1 ? 'A–Z' : 'Z–A';
+  document.getElementById('btnSortDate').textContent  = 'Date' + dArr;
+  document.getElementById('btnSortAlpha').textContent = aArr;
+  document.getElementById('btnSortDate').classList.toggle('active',  currentSort==='date');
+  document.getElementById('btnSortAlpha').classList.toggle('active', currentSort==='alpha');
   buildView();
 }
 
@@ -1725,7 +1742,7 @@ function buildGameView(pitches) {
 
   // Apply active filters (any combination, OR logic)
   var hasFilter = activeFilters.signed || activeFilters.published ||
-                  activeFilters.interested || activeFilters.passed || activeFilters.pitched;
+                  activeFilters.interested || activeFilters.passed || activeFilters.pitched || activeFilters.gonecold;
   if (hasFilter) {
     Object.keys(games).forEach(function(name) {
       var entries = [];
@@ -1739,7 +1756,7 @@ function buildGameView(pitches) {
       var keep = false;
       if (activeFilters.published && pub) keep = true;
       if (activeFilters.signed    && sig) keep = true;
-      if (!keep && (activeFilters.interested || activeFilters.passed || activeFilters.pitched)) {
+      if (!keep && (activeFilters.interested || activeFilters.passed || activeFilters.pitched || activeFilters.gonecold)) {
         // Check if any publisher's latest status matches an active status filter
         keep = Object.keys(games[name]).some(function(p) {
           var pe = [];
@@ -1749,7 +1766,8 @@ function buildGameView(pitches) {
           var s = (latestEntry(pe).Status||'').toLowerCase();
           return (activeFilters.interested && s === 'interested') ||
                  (activeFilters.passed     && s === 'passed') ||
-                 (activeFilters.pitched    && s === 'pitched');
+                 (activeFilters.pitched    && s === 'pitched') ||
+                 (activeFilters.gonecold   && s === 'gone cold');
         });
       }
       if (!keep) delete games[name];
@@ -1758,8 +1776,8 @@ function buildGameView(pitches) {
 
   // Sort games
   var gameNames = Object.keys(games).sort(function(a,b) {
-    if (currentSort === 'alpha') return a.localeCompare(b);
-    // Date sort: most recent first; unpitched (no dates) fall to end, then alpha
+    if (currentSort === 'alpha') return sortDir.alpha * a.localeCompare(b);
+    // Date sort; unpitched (no dates) fall to end, then alpha
     function maxDate(g) {
       var dates = [];
       Object.keys(games[g]).forEach(function(p) {
@@ -1770,7 +1788,7 @@ function buildGameView(pitches) {
       return dates.length ? Math.max.apply(null, dates) : 0;
     }
     var da = maxDate(a), db = maxDate(b);
-    if (db !== da) return db - da;
+    if (db !== da) return sortDir.date * (da - db);
     return a.localeCompare(b);
   });
 
@@ -1830,21 +1848,33 @@ function buildGameView(pitches) {
         }
         return '';
       }
+      // Normalize a raw sheet value into an absolute URL.
+      // Handles Markdown [label](url) syntax and bare domains (no protocol).
+      function absUrl(raw) {
+        if (!raw) return '';
+        var s = String(raw).trim();
+        var md = s.match(/^\[.*?\]\((.+)\)\s*$/);
+        if (md) s = md[1].trim();
+        var br = s.match(/^\[(.+)\]\s*$/);
+        if (br) s = br[1].trim();
+        if (!s) return '';
+        return /^https?:\/\//i.test(s) ? s : 'https://' + s;
+      }
       var playbookId = gfield(['Playbook Sheet ID','Playbook ID','Sheet ID']);
       var linkDefs = [
-        { label:'Rules',     url: gfield(['Rules','Rules URL','Rules Link','Link Rules']) },
-        { label:'Play',      url: gfield(['Play','Play URL','Play Link','Link Play']) },
-        { label:'Print',     url: gfield(['Print','Print URL','Print Link','Link Print']) },
-        { label:'Sellsheet', url: gfield(['Sellsheet URL','Sellsheet','Sell Sheet URL','Sell Sheet','Link Sellsheet']) },
-        { label:'View',      url: gfield(['View','View URL','Link View','Website','BGG','BGG URL','BGG Link']) },
-        { label:'Video',     url: gfield(['Video','Video URL','Video Link','Link Video','YouTube','YouTube URL']) },
-        { label:'Info',      url: playbookId ? APP_BASE + playbookId + '/view' : '' }
+        { label:'Rules',     url: absUrl(gfield(['Rules','Rules URL','Rules Link','Link Rules'])) },
+        { label:'Play',      url: absUrl(gfield(['Play','Play URL','Play Link','Link Play'])) },
+        { label:'Print',     url: absUrl(gfield(['Print','Print URL','Print Link','Link Print'])) },
+        { label:'Sellsheet', url: absUrl(gfield(['Sellsheet URL','Sellsheet','Sell Sheet URL','Sell Sheet','Link Sellsheet'])) },
+        { label:'View',      url: absUrl(gfield(['View','View URL','Link View','Website','BGG','BGG URL','BGG Link'])) },
+        { label:'Video',     url: absUrl(gfield(['Video','Video URL','Video Link','Link Video','YouTube','YouTube URL'])) },
+        { label:'Info',      url: playbookId ? window.location.origin + APP_BASE + playbookId + '/view' : '' }
       ];
       var out = '';
       linkDefs.forEach(function(lp) {
         if (lp.url) {
           out += '<a class="game-link-pill" href="' + escHtml(lp.url) +
-                 '" target="_blank" rel="noopener">' + escHtml(lp.label) + '</a>';
+                 '" target="_blank" rel="noopener noreferrer">' + escHtml(lp.label) + '</a>';
         }
       });
       return out;
@@ -1889,13 +1919,16 @@ function buildGameView(pitches) {
       var pubStatus  = (pubLatest.Status||'').toLowerCase();
       var pubAgeTag  = ageTag(pubEntries);
 
-      var isPassed = pubStatus === 'passed';
-      var isSigned = pubStatus === 'signed';
+      var isPassed   = pubStatus === 'passed';
+      var isGoneCold = pubStatus === 'gone cold';
+      var isSigned   = pubStatus === 'signed';
 
       // Publisher status badge
       var pubBadge = '';
       if (isPassed) {
         pubBadge = '<span class="badge badge-passed" style="margin-right:.75rem">Passed</span>';
+      } else if (isGoneCold) {
+        pubBadge = '<span class="badge badge-gone-cold" style="margin-right:.75rem">Gone Cold</span>';
       } else if (isSigned) {
         pubBadge = '<span class="badge badge-signed" style="margin-right:.75rem">Signed</span>';
       } else if (pubStatus === 'interested') {
@@ -1906,7 +1939,7 @@ function buildGameView(pitches) {
         pubBadge = '<span class="badge badge-pitched" style="margin-right:.75rem">Pitched</span>';
       }
 
-      var headerColor = isPassed ? 'color:#aaa;' : 'color:#333;';
+      var headerColor = (isPassed || isGoneCold) ? 'color:#aaa;' : 'color:#333;';
       var altClass    = pubIdx % 2 === 1 ? ' pub-alt' : '';
       html += '<div class="sub-group' + altClass + '">';
       var pubLastContact = pubLatest.Contact || '';
@@ -1918,7 +1951,7 @@ function buildGameView(pitches) {
         ' onclick="event.stopPropagation();addBtnClick(this)">+ Pitch</button>';
       html += '<div class="sub-label pub-passed-header" onclick="togglePubPassed(this)" style="' + headerColor + 'font-size:.75rem">' +
               '<span class="pub-title-group"><span>' + escHtml(p) + '</span>' + pubAddBtn + '</span>' +
-              (isPassed || isSigned ? '' : pubAgeTag) + pubBadge +
+              (isPassed || isGoneCold || isSigned ? '' : pubAgeTag) + pubBadge +
               '<span class="pub-expand-chevron">▶</span>' +
               '</div>';
       html += '<div class="pub-body-wrap"><div class="pub-passed-body">';
@@ -1961,7 +1994,7 @@ function buildPublisherView(pitches) {
   // Apply active filters — remove games from each publisher that don't match,
   // then remove publishers left with no games
   var hasFilter = activeFilters.signed || activeFilters.published ||
-                  activeFilters.interested || activeFilters.passed || activeFilters.pitched;
+                  activeFilters.interested || activeFilters.passed || activeFilters.pitched || activeFilters.gonecold;
   if (hasFilter) {
     Object.keys(pubs).forEach(function(p) {
       Object.keys(pubs[p]).forEach(function(g) {
@@ -1972,11 +2005,12 @@ function buildPublisherView(pitches) {
         var keep = false;
         if (activeFilters.published && pub) keep = true;
         if (activeFilters.signed    && sig) keep = true;
-        if (!keep && (activeFilters.interested || activeFilters.passed || activeFilters.pitched)) {
+        if (!keep && (activeFilters.interested || activeFilters.passed || activeFilters.pitched || activeFilters.gonecold)) {
           var s = (latestEntry(entries).Status||'').toLowerCase();
           keep = (activeFilters.interested && s === 'interested') ||
                  (activeFilters.passed     && s === 'passed') ||
-                 (activeFilters.pitched    && s === 'pitched');
+                 (activeFilters.pitched    && s === 'pitched') ||
+                 (activeFilters.gonecold   && s === 'gone cold');
         }
         if (!keep) delete pubs[p][g];
       });
@@ -1986,7 +2020,7 @@ function buildPublisherView(pitches) {
 
   // Sort publishers
   var pubNames = Object.keys(pubs).sort(function(a,b) {
-    if (currentSort === 'alpha') return a.localeCompare(b);
+    if (currentSort === 'alpha') return sortDir.alpha * a.localeCompare(b);
     function maxDate(p) {
       var dates = [];
       Object.keys(pubs[p]).forEach(function(g) {
@@ -1996,7 +2030,7 @@ function buildPublisherView(pitches) {
       });
       return Math.max.apply(null, dates);
     }
-    return maxDate(b)-maxDate(a);
+    return sortDir.date * (maxDate(a) - maxDate(b));
   });
 
   var html = '';
@@ -2069,6 +2103,7 @@ function buildPublisherView(pitches) {
       var gamePublished = isGamePublished(g, gameEntries);
       var gameSigned    = !gamePublished && isGameSigned(g, gameEntries);
       var gIsPassed     = !gamePublished && !gameSigned && gStatus === 'passed';
+      var gIsGoneCold   = !gamePublished && !gameSigned && gStatus === 'gone cold';
       var gBadge;
       if (gamePublished) {
         gBadge = '<span class="badge badge-published" style="margin-right:.75rem">Published</span>';
@@ -2080,6 +2115,8 @@ function buildPublisherView(pitches) {
         gBadge = '<span class="badge badge-returned" style="margin-right:.75rem">Returned</span>';
       } else if (gStatus === 'passed') {
         gBadge = '<span class="badge badge-passed" style="margin-right:.75rem">Passed</span>';
+      } else if (gStatus === 'gone cold') {
+        gBadge = '<span class="badge badge-gone-cold" style="margin-right:.75rem">Gone Cold</span>';
       } else if (gStatus === 'pitched') {
         gBadge = '<span class="badge badge-pitched" style="margin-right:.75rem">Pitched</span>';
       } else {
@@ -2088,7 +2125,7 @@ function buildPublisherView(pitches) {
 
       var gStatusDate = (gamePublished || gameSigned) ? gameStatusDateStr(g, gamePublished, gameSigned) : '';
       var gStatusDateHtml = gStatusDate ? '<span class="status-date">' + escHtml(gStatusDate) + '</span>' : '';
-      var gHeaderColor = gIsPassed ? 'color:#aaa;' : 'color:#333;';
+      var gHeaderColor = (gIsPassed || gIsGoneCold) ? 'color:#aaa;' : 'color:#333;';
       var gAltClass = gameNames.indexOf(g) % 2 === 1 ? ' pub-alt' : '';
       html += '<div class="sub-group' + gAltClass + '">';
       var gLastContact = gLatest.Contact || '';
@@ -2100,7 +2137,7 @@ function buildPublisherView(pitches) {
         ' onclick="event.stopPropagation();addBtnClick(this)">+ Pitch</button>';
       html += '<div class="sub-label pub-passed-header" onclick="togglePubPassed(this)" style="' + gHeaderColor + 'font-size:.75rem">' +
               '<span class="pub-title-group"><span>' + escHtml(g) + '</span>' + gAddBtn + '</span>' +
-              (gamePublished || gameSigned || gIsPassed ? '' : gAgeTag) + gBadge + gStatusDateHtml +
+              (gamePublished || gameSigned || gIsPassed || gIsGoneCold ? '' : gAgeTag) + gBadge + gStatusDateHtml +
               '<span class="pub-expand-chevron">▶</span>' +
               '</div>';
       html += '<div class="pub-body-wrap"><div class="pub-passed-body">';
@@ -2454,6 +2491,20 @@ function render(pitches, settings, people, games) {
   buildView();
 }
 
+// ── Collect collaborator emails for a game (all designers except current user) ──
+function getCollaboratorEmails(gameName) {
+  var info = gamesIndex[gameName] || {};
+  var emails = [];
+  ['Designer1','Designer2','Designer3','Designer4'].forEach(function(f) {
+    var name = (info[f] || '').trim();
+    if (!name) return;
+    if (myName && name.toLowerCase() === myName.toLowerCase()) return; // skip self
+    var person = peopleData[name];
+    if (person && person.Email) emails.push(person.Email);
+  });
+  return emails;
+}
+
 // ── Resolve email for a contact+publisher ─────────────
 function resolveEmail(contact, publisher, fallbackEmail) {
   if (fallbackEmail) return fallbackEmail;
@@ -2504,10 +2555,12 @@ function buildEmailBody(gameName) {
 function mailtoHref(email, gameName) {
   if (!email) return '';
   var body = buildEmailBody(gameName);
+  var ccEmails = getCollaboratorEmails(gameName);
   var href = 'mailto:' + encodeURIComponent(email)
            + '?subject=' + encodeURIComponent('Game info - ' + gameName);
-  if (myEmail) href += '&from=' + encodeURIComponent(myEmail);
-  if (body)    href += '&body='  + encodeURIComponent(body);
+  if (myEmail)        href += '&from=' + encodeURIComponent(myEmail);
+  if (ccEmails.length) href += '&cc='  + encodeURIComponent(ccEmails.join(','));
+  if (body)           href += '&body=' + encodeURIComponent(body);
   return href;
 }
 
@@ -2528,12 +2581,14 @@ function sendEmailFromAddDialog() {
     publisher = (document.getElementById('addPublisherInput').value || '').trim();
   }
 
-  var email = resolveEmail(contact, publisher);
-  var body  = buildEmailBody(gameName);
+  var email    = resolveEmail(contact, publisher);
+  var body     = buildEmailBody(gameName);
+  var ccEmails = getCollaboratorEmails(gameName);
   var href  = 'mailto:' + encodeURIComponent(email)
             + '?subject=' + encodeURIComponent('Game info - ' + gameName);
-  if (myEmail) href += '&from=' + encodeURIComponent(myEmail);
-  if (body)    href += '&body='  + encodeURIComponent(body);
+  if (myEmail)         href += '&from=' + encodeURIComponent(myEmail);
+  if (ccEmails.length) href += '&cc='   + encodeURIComponent(ccEmails.join(','));
+  if (body)            href += '&body=' + encodeURIComponent(body);
 
   var a = document.createElement('a');
   a.href = href;

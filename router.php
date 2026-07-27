@@ -117,10 +117,11 @@ if (preg_match('#^/fitboard/?$#', $uri)) {
     serveFile(__DIR__ . '/source/fitboard/setup/index.php', $MIME);
 }
 
-// ── Backward compat: sheets/{id}/view|dashboard|sellsheet|fitboard ───────
+// ── Backward compat: sheets/{id}/view|dashboard|sellsheet|fitboard|trmnl ──
 if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/view(/.*)?$#', $uri))       { serveFile(__DIR__ . '/source/view/index.php',       $MIME); }
 if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/dashboard(/.*)?$#', $uri))  { serveFile(__DIR__ . '/source/dashboard/index.php',  $MIME); }
 if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/sellsheet(/.*)?$#', $uri))  { serveFile(__DIR__ . '/source/sellsheet/index.php',  $MIME); }
+if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/trmnl(/.*)?$#', $uri))      { serveFile(__DIR__ . '/source/trmnl/index.php',      $MIME); }
 if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/fitboard/onboard/?$#', $uri)) { serveFile(__DIR__ . '/source/fitboard/onboard/index.php', $MIME); }
 if (preg_match('#^/sheets/([A-Za-z0-9_\-]+)/fitboard(/.*)?$#', $uri))   { serveFile(__DIR__ . '/source/fitboard/index.php',   $MIME); }
 
@@ -168,6 +169,12 @@ if (preg_match('#^/([A-Za-z0-9_\-]+)/site(/.*)?$#', $uri, $m)) {
 // Sellsheet is served from the single source file — no per-sheet copies needed.
 if (preg_match('#^/([A-Za-z0-9_\-]+)/sellsheet(/.*)?$#', $uri, $m)) {
     serveFile(__DIR__ . '/source/sellsheet/index.php', $MIME);
+}
+
+// ── Short URL: /{id}/trmnl ────────────────────────────────────────────────
+// TRMNL e-paper plugin — follow-up list.
+if (preg_match('#^/([A-Za-z0-9_\-]+)/trmnl(/.*)?$#', $uri, $m)) {
+    serveFile(__DIR__ . '/source/trmnl/index.php', $MIME);
 }
 
 // ── Short URL: /{id}/fitboard/onboard ── must come before the fitboard rule ──

@@ -47,6 +47,16 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^sheets/([A-Za-z0-9_\-]+)/sellsheet/?$ source/sellsheet/index.php [L,QSA]
 
+# Short-URL: /{id}/trmnl → source/trmnl/index.php (TRMNL e-paper plugin)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/trmnl/?$ source/trmnl/index.php [L,QSA]
+
+# Also cover sheets/{id}/trmnl for direct links
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^sheets/([A-Za-z0-9_\-]+)/trmnl/?$ source/trmnl/index.php [L,QSA]
+
 # Short-URL: /{id}/fitboard/onboard → onboarding page (must come before /{id}/fitboard rule)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

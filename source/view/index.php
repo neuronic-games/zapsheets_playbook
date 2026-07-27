@@ -1203,7 +1203,7 @@ function render() {
     .map(function(r) { return { Content: r.Value, Title: r['Value 1'] || '' }; });
   var allVideos = (data.videos || []).concat(_bggVideos);
   // games.json fallback — add Video URL if not already present
-  var _gamesVideoUrl = _games('Video URL');
+  var _gamesVideoUrl = _absUrl(_games('Video') || _games('Video URL'));
   if (_gamesVideoUrl) allVideos.push({ Content: _gamesVideoUrl, Title: '' });
   // Deduplicate by URL (case-insensitive) — removes any overlap between the three sources
   (function() {
@@ -1246,6 +1246,7 @@ function render() {
           + (v.Title ? '<div class="video-caption">' + v.Title + '</div>' : '')
           + '</div>';
       }
+      url = _absUrl(url);
       var platform = url.includes('tiktok.com') ? 'TikTok' : 'Video';
       return '<a class="video-link-card" href="' + url + '" target="_blank" rel="noopener">'
         + '<span class="video-icon">&#9654;</span>'

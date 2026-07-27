@@ -1,0 +1,47 @@
+<style>
+  .view--full { display:flex !important; flex-direction:column !important; }
+  .layout { flex:1 !important; overflow:hidden !important; min-height:0 !important; }
+  .column { overflow:hidden !important; }
+  .title_bar { flex-shrink:0 !important; background:#FFD700 !important; }
+  .title_bar .title, .title_bar .instance { color:#000 !important; }
+</style>
+
+{% if fu_count == 0 %}
+  <div style="font-size:20px;font-weight:700;text-align:center;padding-top:80px;color:#555">
+    No follow-ups due<br>
+    <span style="font-size:13px;font-weight:400">All active pitches are within {{ fu_tier1 }} days</span>
+  </div>
+{% else %}
+  <ul style="list-style:none;margin:0;padding:0;width:100%">
+    {% for fu in fu_overdue %}
+      <li style="display:flex;align-items:baseline;gap:10px;padding:9px 0;border-bottom:1px solid #ccc;line-height:1.2">
+        <span style="flex:0 0 42px;font-size:13px;font-weight:700;text-align:center;padding:2px 4px;border-radius:3px;background:#e00;color:#fff;border:1px solid #e00">{{ fu.age }}</span>
+        <span style="flex:0 0 210px;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fu.pub }}</span>
+        <span style="flex:1;font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fu.game }}</span>
+        <span style="flex:0 0 148px;font-size:13px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right">{{ fu.contact }}</span>
+      </li>
+    {% endfor %}
+    {% if fu_has_both %}
+      <li style="list-style:none;padding:0">
+        <div style="display:flex;align-items:center;gap:6px;margin:4px 0 2px">
+          <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap">{{ fu_tier1 }}–{{ fu_t2m1 }} days</span>
+          <span style="flex:1;height:1px;background:#ccc;display:block"></span>
+        </div>
+      </li>
+    {% endif %}
+    {% for fu in fu_due %}
+      <li style="display:flex;align-items:baseline;gap:10px;padding:9px 0;border-bottom:1px solid #ccc;line-height:1.2">
+        <span style="flex:0 0 42px;font-size:13px;font-weight:700;text-align:center;padding:2px 4px;border-radius:3px;border:1px solid #000;color:#000">{{ fu.age }}</span>
+        <span style="flex:0 0 210px;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fu.pub }}</span>
+        <span style="flex:1;font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fu.game }}</span>
+        <span style="flex:0 0 148px;font-size:13px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right">{{ fu.contact }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+<div class="title_bar">
+  <img class="image" src="https://usetrmnl.com/images/plugins/trmnl--render.svg" />
+  <span class="title">PitchBoard</span>
+  <span class="instance">{{ all_active }} active &nbsp;·&nbsp; {{ all_interested }} interested &nbsp;·&nbsp; {{ all_urgent }} urgent</span>
+</div>

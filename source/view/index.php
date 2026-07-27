@@ -15,7 +15,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate" />
   <title id="pageTitle">Game</title>
-  <link id="appIconLink" rel="icon" type="image/x-icon" href="images/sheet_2_new.webp" />
+  <link id="appIconLink" rel="icon" type="image/png" href="images/pb_icon_192.png" />
   <link rel="stylesheet" href="css/bootstrap.min.css" />
   <style>
     @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2') format('woff2'), url('fonts/DINBlack.ttf'); }
@@ -451,6 +451,14 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       font-size: 0.97rem;
     }
 
+    /* ── Articles ────────────────────────────────────────────── */
+    .article-list { display: flex; flex-direction: column; gap: .6rem; }
+    .article-card { display: flex; align-items: center; gap: .85rem; padding: .85rem 1rem; border-radius: 9px; background: #fff; border: 1px solid #e8e3da; color: #222; text-decoration: none; transition: border-color .15s, background .15s; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+    .article-card:hover { border-color: #c8860a; background: #fdf8f0; }
+    .article-icon { flex-shrink: 0; color: #c8860a; }
+    .article-title { flex: 1; font-size: .97rem; font-weight: 500; }
+    .article-ext { flex-shrink: 0; color: #aaa; }
+
     /* ── Reviews ─────────────────────────────────────────────── */
     .review-list { display: flex; flex-direction: column; gap: 1.1rem; }
     .review-card {
@@ -494,7 +502,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 
 <!-- Loading -->
 <div id="loadScreen">
-  <img src="images/sheet_2_new.webp" alt="" />
+  <img src="images/pb_icon_192.png" alt="" />
   <div class="spin"></div>
 </div>
 
@@ -581,6 +589,9 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     </div>
     <div class="tab-pane" id="pane-components">
       <ul class="component-list" id="componentList"></ul>
+    </div>
+    <div class="tab-pane" id="pane-articles">
+      <div class="article-list" id="articleList"></div>
     </div>
   </div>
 
@@ -1217,6 +1228,7 @@ function render() {
   })();
 
   var components = (data.bgg || []).filter(function(r) { return r.Name === 'Component' && r.Value; });
+  var articles   = (data.bgg || []).filter(function(r) { return r.Name === 'ArticleUrl' && r.Value; });
 
   var tabs = [];
   if (allVideos.length)   tabs.push({ id: 'videos',     label: 'Videos (' + allVideos.length + ')' });
@@ -1224,6 +1236,7 @@ function render() {
   if (data.rules  && data.rules.length)    tabs.push({ id: 'rules',      label: 'Rules' });
   if (data.faqs   && data.faqs.length)     tabs.push({ id: 'faqs',       label: 'FAQs (' + data.faqs.length + ')' });
   if (components.length)  tabs.push({ id: 'components', label: 'Components' });
+  if (articles.length)    tabs.push({ id: 'articles',   label: 'Articles (' + articles.length + ')' });
 
   if (tabs.length) {
     document.getElementById('tabNav').innerHTML = tabs.map(function(t) {
@@ -1326,6 +1339,21 @@ function render() {
   if (components.length) {
     document.getElementById('componentList').innerHTML = components.map(function(r) {
       return '<li>' + r.Value + '</li>';
+    }).join('');
+  }
+
+  // ── Articles ─────────────────────────────────────────────────
+  if (articles.length) {
+    document.getElementById('articleList').innerHTML = articles.map(function(r) {
+      var url   = r.Value.trim();
+      var label = (r['Value 1'] || '').trim() || (function() {
+        try { return new URL(url).hostname; } catch(e) { return url; }
+      })();
+      return '<a class="article-card" href="' + url + '" target="_blank" rel="noopener">'
+        + '<svg class="article-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>'
+        + '<span class="article-title">' + label + '</span>'
+        + '<svg class="article-ext" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
+        + '</a>';
     }).join('');
   }
 

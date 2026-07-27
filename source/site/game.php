@@ -36,7 +36,11 @@ foreach ($games as $g) {
 if (!$game) { header('Location: index.php'); exit; }
 
 // Per-game tab JSON (Name/Value/Alt Value rows)
-$tabFile  = $dir . '/' . strtolower($gameName) . '.json';
+// Try both naming conventions: "game-{Name}-en.json" (newer) and "{name}.json" (legacy)
+$tabFile = $dir . '/game-' . $gameName . '-en.json';
+if (!file_exists($tabFile)) {
+    $tabFile = $dir . '/' . strtolower($gameName) . '.json';
+}
 $tab = []; $tabMulti = [];
 if (file_exists($tabFile)) {
     $raw = json_decode(@file_get_contents($tabFile) ?: '[]', true) ?: [];
@@ -111,6 +115,7 @@ $buyUrls    = tabRows('BuyUrl');
 $reviews    = tabRows('Review');
 $videos     = tabRows('Video');
 $faqs       = tabRows('FAQ');
+$articles   = tabRows('ArticleUrl');
 
 // ─── BGG data ──────────────────────────────────────────────────────────────────
 $bgg = [];
@@ -210,7 +215,7 @@ $twitter  = $sd['Twitter']   ?? '';
 $xdotcom  = $sd['X']         ?? '';
 $facebook = $sd['Facebook']  ?? '';
 $copy    = $sd['Copyright'] ?? ($company ? '&copy; ' . date('Y') . ' ' . htmlspecialchars($company, ENT_QUOTES) : '');
-$hasTabs = !empty($videos) || !empty($reviews) || !empty($faqs);
+$hasTabs = !empty($videos) || !empty($reviews) || !empty($faqs) || !empty($articles);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -469,6 +474,20 @@ $hasTabs = !empty($videos) || !empty($reviews) || !empty($faqs);
     .faq-a { display:none; padding-top:.65rem; font-size:.9rem; line-height:1.75; color:var(--text-dim); }
     .faq-item.open .faq-a { display:block; }
     .faq-img { display:block; margin-top:.85rem; max-width:100%; border-radius:4px; }
+
+    /* ── Articles ────────────────────────────────────────────── */
+    .article-list { display:flex; flex-direction:column; gap:.6rem; }
+    .article-card {
+      display:flex; align-items:center; gap:.9rem;
+      padding:.85rem 1rem; border-radius:8px;
+      background:var(--bg-card); border:1px solid var(--border);
+      color:var(--text); text-decoration:none;
+      transition:border-color .2s, background .2s;
+    }
+    .article-card:hover { border-color:var(--accent); background:var(--bg-card2); }
+    .article-icon { flex-shrink:0; color:var(--accent); }
+    .article-title { flex:1; font-size:.95rem; font-weight:500; }
+    .article-ext { flex-shrink:0; color:var(--text-muted); }
 
     /* ── Footer ────────────────────────────────────────────────── */
     .site-footer {
@@ -787,9 +806,10 @@ $hasTabs = !empty($videos) || !empty($reviews) || !empty($faqs);
   <?php if ($hasTabs): ?>
   <div class="tabs-section">
     <div class="tab-nav" id="tabNav">
-      <?php if (!empty($videos)):  ?><button class="tab-btn" data-tab="videos">Videos (<?= count($videos) ?>)</button><?php endif; ?>
-      <?php if (!empty($reviews)): ?><button class="tab-btn" data-tab="reviews">Reviews (<?= count($reviews) ?>)</button><?php endif; ?>
-      <?php if (!empty($faqs)):    ?><button class="tab-btn" data-tab="faqs">FAQs (<?= count($faqs) ?>)</button><?php endif; ?>
+      <?php if (!empty($videos)):   ?><button class="tab-btn" data-tab="videos">Videos (<?= count($videos) ?>)</button><?php endif; ?>
+      <?php if (!empty($reviews)):  ?><button class="tab-btn" data-tab="reviews">Reviews (<?= count($reviews) ?>)</button><?php endif; ?>
+      <?php if (!empty($faqs)):     ?><button class="tab-btn" data-tab="faqs">FAQs (<?= count($faqs) ?>)</button><?php endif; ?>
+      <?php if (!empty($articles)): ?><button class="tab-btn" data-tab="articles">Articles (<?= count($articles) ?>)</button><?php endif; ?>
     </div>
 
     <!-- Videos -->
@@ -864,6 +884,26 @@ $hasTabs = !empty($videos) || !empty($reviews) || !empty($faqs);
             </div>
             <?php endif; ?>
           </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Articles -->
+    <?php if (!empty($articles)): ?>
+    <div class="tab-pane" id="pane-articles">
+      <div class="article-list">
+        <?php foreach ($articles as $ar):
+          $aUrl   = trim($ar['Value']   ?? '');
+          $aTitle = trim($ar['Value 1'] ?? '');
+          if (!$aUrl) continue;
+          $aLabel = $aTitle ?: parse_url($aUrl, PHP_URL_HOST) ?: $aUrl;
+        ?>
+          <a class="article-card" href="<?= esc($aUrl) ?>" target="_blank" rel="noopener">
+            <svg class="article-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <span class="article-title"><?= esc($aLabel) ?></span>
+            <svg class="article-ext" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 0 2 2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
         <?php endforeach; ?>
       </div>
     </div>

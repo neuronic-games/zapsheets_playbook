@@ -16,9 +16,13 @@
     {% for fu in fu_overdue %}
       <li style="display:flex;align-items:baseline;gap:10px;padding:9px 0;border-bottom:1px solid #ccc;line-height:1.2">
         <span style="flex:0 0 42px;font-size:13px;font-weight:700;text-align:center;padding:2px 4px;border-radius:3px;background:#e00;color:#fff;border:1px solid #e00">{{ fu.age }}</span>
-        <span style="flex:0 0 210px;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fu.pub }}</span>
-        <span style="flex:1;font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fu.game }}</span>
-        <span style="flex:0 0 148px;font-size:13px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right">{{ fu.contact }}</span>
+        {% if fu.status == 'interested' %}
+          <span style="flex:0 0 46px;width:46px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 0;border-radius:3px;text-align:center;background:#FFD700;color:#000;border:1px solid #FFD700">INT</span>
+        {% else %}
+          <span style="flex:0 0 46px;width:46px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 0;border-radius:3px;text-align:center;background:transparent;color:#000;border:1px solid #000">PITCH</span>
+        {% endif %}
+        <span style="flex:0 0 280px;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fu.pub }}{% if fu.contact != blank %} <span style="font-size:13px;font-weight:400;color:#555">({{ fu.contact }})</span>{% endif %}</span>
+        <span style="flex:1;font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left">{{ fu.game }}</span>
       </li>
     {% endfor %}
     {% if fu_has_both %}
@@ -32,9 +36,13 @@
     {% for fu in fu_due %}
       <li style="display:flex;align-items:baseline;gap:10px;padding:9px 0;border-bottom:1px solid #ccc;line-height:1.2">
         <span style="flex:0 0 42px;font-size:13px;font-weight:700;text-align:center;padding:2px 4px;border-radius:3px;border:1px solid #000;color:#000">{{ fu.age }}</span>
-        <span style="flex:0 0 210px;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fu.pub }}</span>
-        <span style="flex:1;font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fu.game }}</span>
-        <span style="flex:0 0 148px;font-size:13px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right">{{ fu.contact }}</span>
+        {% if fu.status == 'interested' %}
+          <span style="flex:0 0 46px;width:46px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 0;border-radius:3px;text-align:center;background:#FFD700;color:#000;border:1px solid #FFD700">INT</span>
+        {% else %}
+          <span style="flex:0 0 46px;width:46px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 0;border-radius:3px;text-align:center;background:transparent;color:#000;border:1px solid #000">PITCH</span>
+        {% endif %}
+        <span style="flex:0 0 280px;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fu.pub }}{% if fu.contact != blank %} <span style="font-size:13px;font-weight:400;color:#555">({{ fu.contact }})</span>{% endif %}</span>
+        <span style="flex:1;font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left">{{ fu.game }}</span>
       </li>
     {% endfor %}
   </ul>

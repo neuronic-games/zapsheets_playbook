@@ -47,29 +47,52 @@ foreach ($rawPitches as $p) {
     }
 }
 
-// ── Filter & bucket ───────────────────────────────────────────────────────────
+// ── Find latest entry per game-publisher pair ─────────────────────────────────
+// Must check latest status first — a later "Passed" supersedes an earlier "Interested".
+// Compare by parsed timestamp, not string, to handle M/D/YYYY formats correctly.
+$pairLatest = [];
+foreach ($rawPitches as $p) {
+    $game    = trim($p['Game']      ?? '');
+    $pub     = trim($p['Publisher'] ?? '');
+    $status  = strtolower(trim($p['Status'] ?? ''));
+    $rawDate = trim($p['Date']      ?? '');
+    if (!$game || !$pub || !$status || !$rawDate) continue;
+    try { $ts = (new DateTime($rawDate))->getTimestamp(); }
+    catch (Exception $e) { continue; }
+    $key = $game . '||' . $pub;
+    if (!isset($pairLatest[$key]) || $ts > $pairLatest[$key]['ts']) {
+        $pairLatest[$key] = [
+            'game'    => $game,
+            'pub'     => $pub ?: '—',
+            'contact' => trim($p['Contact'] ?? ''),
+            'status'  => $status,
+            'rawDate' => $rawDate,
+            'ts'      => $ts,
+        ];
+    }
+}
+
+// ── Filter & bucket by latest status ─────────────────────────────────────────
 $today  = new DateTime('today');
 $second = [];   // 60+ days (urgent)
 $first  = [];   // 30–59 days (due)
 
-foreach ($rawPitches as $p) {
-    $status = strtolower(trim($p['Status'] ?? ''));
-    if ($status !== 'pitched') continue;
-    if (isset($doneGames[strtolower(trim($p['Game'] ?? ''))])) continue;
+foreach ($pairLatest as $pair) {
+    if ($pair['status'] !== 'pitched' && $pair['status'] !== 'interested') continue;
+    if (isset($doneGames[strtolower($pair['game'])])) continue;
 
-    $rawDate = trim($p['Date'] ?? '');
-    if (!$rawDate) continue;
-    try { $date = new DateTime($rawDate); }
+    try { $date = new DateTime($pair['rawDate']); }
     catch (Exception $e) { continue; }
 
     $age = (int)$today->diff($date)->days;
     if ($age < $tier1) continue;
 
     $entry = [
-        'game'      => trim($p['Game']      ?? ''),
-        'publisher' => trim($p['Publisher'] ?? '') ?: '—',
-        'contact'   => trim($p['Contact']   ?? ''),
+        'game'      => $pair['game'],
+        'publisher' => $pair['pub'],
+        'contact'   => $pair['contact'],
         'age'       => $age,
+        'status'    => $pair['status'],
     ];
 
     if ($age >= $tier2) $second[] = $entry;
@@ -144,10 +167,11 @@ if (!$isPreview) {
     // TRMNL polling expects flat root-level JSON — no "merge_variables" wrapper.
     // Arrays of objects with dot-notation (fu.game, fu.pub) are supported.
     $toEntry = fn(array $fu) => [
-        'age' => ageBadge($fu['age']),
-        'pub' => $fu['publisher'],
-        'game' => $fu['game'],
-        'contact' => $fu['contact'],
+        'age'    => ageBadge($fu['age']),
+        'pub'    => $fu['publisher'],
+        'game'   => $fu['game'],
+        'contact'=> $fu['contact'],
+        'status' => $fu['status'],
     ];
 
     header('Content-Type: application/json; charset=UTF-8');
@@ -183,9 +207,12 @@ header('Content-Type: text/html; charset=UTF-8');
     .fu-item:last-child { border-bottom:none; }
     .fu-age { flex:0 0 42px; font-size:13px; font-weight:700; text-align:center; padding:2px 4px; border-radius:3px; border:1px solid #000; color:#000; background:transparent; }
     .fu-age.urgent { background:#e00; color:#fff; border-color:#e00; }
-    .fu-pub { flex:0 0 210px; font-size:15px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .fu-game { flex:1; font-size:14px; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .fu-contact { flex:0 0 148px; font-size:13px; color:#555; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:right; }
+    .fu-pill { flex:0 0 46px; width:46px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:2px 0; border-radius:3px; text-align:center; }
+    .fu-pill-int { background:#FFD700; color:#000; border:1px solid #FFD700; }
+    .fu-pill-pitch { background:transparent; color:#000; border:1px solid #000; }
+    .fu-pub { flex:0 0 280px; font-size:15px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .fu-pub-contact { font-size:13px; font-weight:400; color:#555; }
+    .fu-game { flex:1; font-size:14px; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left; }
     .fu-divider { display:flex; align-items:center; gap:6px; margin:4px 0 2px; }
     .fu-divider-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; white-space:nowrap; color:#000; }
     .fu-divider-line { flex:1; height:1px; background:#ccc; }
@@ -216,9 +243,13 @@ header('Content-Type: text/html; charset=UTF-8');
 <?php foreach ($second as $fu): ?>
               <li class="fu-item">
                 <span class="fu-age urgent"><?= h(ageBadge($fu['age'])) ?></span>
-                <span class="fu-pub"><?= h($fu['publisher']) ?></span>
+                <?php if ($fu['status'] === 'interested'): ?>
+                  <span class="fu-pill fu-pill-int">INT</span>
+                <?php else: ?>
+                  <span class="fu-pill fu-pill-pitch">PITCH</span>
+                <?php endif ?>
+                <span class="fu-pub"><?= h($fu['publisher']) ?><?php if ($fu['contact']): ?> <span class="fu-pub-contact">(<?= h($fu['contact']) ?>)</span><?php endif ?></span>
                 <span class="fu-game"><?= h($fu['game']) ?></span>
-                <?php if ($fu['contact']): ?><span class="fu-contact"><?= h($fu['contact']) ?></span><?php endif ?>
               </li>
 <?php endforeach ?>
 <?php if ($first && $second): ?>
@@ -232,9 +263,13 @@ header('Content-Type: text/html; charset=UTF-8');
 <?php foreach ($first as $fu): ?>
               <li class="fu-item">
                 <span class="fu-age"><?= h(ageBadge($fu['age'])) ?></span>
-                <span class="fu-pub"><?= h($fu['publisher']) ?></span>
+                <?php if ($fu['status'] === 'interested'): ?>
+                  <span class="fu-pill fu-pill-int">INT</span>
+                <?php else: ?>
+                  <span class="fu-pill fu-pill-pitch">PITCH</span>
+                <?php endif ?>
+                <span class="fu-pub"><?= h($fu['publisher']) ?><?php if ($fu['contact']): ?> <span class="fu-pub-contact">(<?= h($fu['contact']) ?>)</span><?php endif ?></span>
                 <span class="fu-game"><?= h($fu['game']) ?></span>
-                <?php if ($fu['contact']): ?><span class="fu-contact"><?= h($fu['contact']) ?></span><?php endif ?>
               </li>
 <?php endforeach ?>
             </ul>

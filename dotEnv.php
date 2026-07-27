@@ -32,6 +32,7 @@ if (file_exists($envFile)) {
 if (empty($_ENV['ENVIRONMENT'])) { $_ENV['ENVIRONMENT'] = 'production'; }
 if (empty($_ENV['PYTHON']))      { $_ENV['PYTHON']      = 'python3'; }
 if (empty($_ENV['BASE_PATH']))   { $_ENV['BASE_PATH']   = '/'; }
+if (empty($_ENV['APP_DOMAIN']))  { $_ENV['APP_DOMAIN']  = 'http://localhost:8000'; }
 
 // The web-server process often runs without HOME set, which breaks Python
 // virtualenv wrapper scripts (e.g. set_env_vars.py) that call os.environ['HOME'].

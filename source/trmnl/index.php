@@ -188,6 +188,7 @@ if (!$isPreview) {
         'all_active'     => $statActive,
         'all_interested' => $statInterested,
         'all_pitched'    => $statPitched,
+        'pb_icon_url'    => rtrim($_ENV['APP_DOMAIN'], '/') . rtrim($_ENV['BASE_PATH'], '/') . '/images/pb_icon_192.png',
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     exit;
 }
@@ -280,9 +281,9 @@ header('Content-Type: text/html; charset=UTF-8');
       </div>
 
       <div class="title_bar">
-        <img class="image" src="https://trmnl.com/images/plugins/trmnl--render.svg" />
+        <img class="image" src="<?= rtrim($_ENV['APP_DOMAIN'], '/') . rtrim($_ENV['BASE_PATH'], '/') ?>/images/pb_icon_192.png" />
         <span class="title">PitchBoard</span>
-        <span class="instance"><?= $count ?> pitches</span>
+        <span class="instance"><?= $statActive ?> pitched &nbsp;·&nbsp; <?= $statInterested ?> interested &nbsp;·&nbsp; <?= $allUrgent ?> overdue (60d+)</span>
       </div>
     </div>
   </div>

@@ -7,7 +7,24 @@ $app  = trim($_GET['app']  ?? 'pitchboard');
 $base = trim($_GET['base'] ?? '/');
 if (substr($base, -1) !== '/') $base .= '/';
 
-if ($app === 'fitboard') {
+if ($app === 'slides') {
+    $startUrl = $base . $id . '/pitchboard/slides';
+    echo json_encode([
+        'name'             => 'PitchBoard Slides',
+        'short_name'       => 'Slides',
+        'id'               => 'PBSlides_' . $id,
+        'start_url'        => $startUrl,
+        'scope'            => $base . $id . '/pitchboard/slides',
+        'theme_color'      => '#0a0a14',
+        'background_color' => '#0a0a14',
+        'display'          => 'standalone',
+        'orientation'      => 'portrait',
+        'icons'            => [
+            ['src' => $base . 'images/pb_icon_192.png', 'sizes' => '192x192', 'type' => 'image/png'],
+            ['src' => $base . 'images/pb_icon_512.png', 'sizes' => '512x512', 'type' => 'image/png'],
+        ],
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+} elseif ($app === 'fitboard') {
     $startUrl = $base . $id . '/fitboard';
     echo json_encode([
         'name'             => 'FitBoard',

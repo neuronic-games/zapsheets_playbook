@@ -1005,6 +1005,7 @@ $_sheet_id = $_bm[2] ?? '';
         <button class="account-menu-item" onclick="accountMenuProfile()">Profile</button>
         <button class="account-menu-item" onclick="accountMenuFetch()">Fetch</button>
         <button class="account-menu-item" onclick="accountMenuImport()">Import</button>
+        <button class="account-menu-item" onclick="accountMenuSlideshow()">Slideshow</button>
         <button class="account-menu-item" onclick="accountMenuHelp()">Help</button>
       </div>
     </div>
@@ -4253,7 +4254,8 @@ function closeAccountMenu() {
 function accountMenuFetch()  { closeAccountMenu(); syncData(); }
 function accountMenuImport() { closeAccountMenu(); importClick(); }
 function accountMenuProfile(){ closeAccountMenu(); openProfileDialog(); }
-function accountMenuHelp()   { closeAccountMenu(); window.open(APP_BASE + 'pitchboard/help', '_blank'); }
+function accountMenuHelp()       { closeAccountMenu(); window.open(APP_BASE + 'pitchboard/help', '_blank'); }
+function accountMenuSlideshow() { closeAccountMenu(); window.location.href = APP_BASE + sheet_Id + '/pitchboard/slides?back=1'; }
 
 document.addEventListener('click', function(e) {
   var wrap = document.querySelector('.account-menu-wrap');

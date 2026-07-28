@@ -162,11 +162,20 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       overflow: hidden;
       background: #d0d0d0;
       margin-top: 1rem; margin-bottom: 1rem;
+      position: relative;
     }
     .ss-hero-wrap img {
       width: 100%; height: 100%;
       object-fit: cover; display: block;
     }
+    .ss-steps-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: rgba(0,0,0,.72); display: flex; backdrop-filter: blur(2px);
+    }
+    .ss-step-item { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; padding: .6rem .5rem; border-right: 1px solid rgba(255,255,255,.12); }
+    .ss-step-item:last-child { border-right: none; }
+    .ss-step-num { width: 22px; height: 22px; border-radius: 50%; background: #c8860a; color: #fff; font-family: 'DINBlack', sans-serif; font-size: .78rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-bottom: .3rem; }
+    .ss-step-text { font-size: .72rem; line-height: 1.3; color: rgba(255,255,255,.9); }
 
     /* ── Body: 2-col × 2-row grid ────────────────────────────────
        Col 1 spans both rows (text)
@@ -300,6 +309,11 @@ if (substr($_base, -1) !== '/') $_base .= '/';
   <!-- Hero image — hidden when no PitchImageUrl or splash image exists -->
   <div class="ss-hero-wrap" id="ssHeroWrap" style="display:none">
     <img id="ssHero" src="" alt="" />
+    <div class="ss-steps-overlay" id="ssStepsOverlay" style="display:none">
+      <div class="ss-step-item"><div class="ss-step-num">1</div><div class="ss-step-text" id="ssStepText1"></div></div>
+      <div class="ss-step-item"><div class="ss-step-num">2</div><div class="ss-step-text" id="ssStepText2"></div></div>
+      <div class="ss-step-item"><div class="ss-step-num">3</div><div class="ss-step-text" id="ssStepText3"></div></div>
+    </div>
   </div>
 
   <!-- Body: left text | right components -->
@@ -518,9 +532,9 @@ function render() {
   }
 
   // ── Hero image ─────────────────────────────────────────────
-  // PitchImageUrl takes priority; fall back to splash-en.json.
+  // Priority: PitchImageUrl → games.json "Image URL" → splash-en.json.
   // Always try the local cache first; fall back to the direct URL on error.
-  var _pitchImg  = gv('PitchImageUrl');
+  var _pitchImg  = gv('PitchImageUrl') || _games('Image URL');
   var _heroCache = '';
   var _heroDirect = '';
   if (_pitchImg) {
@@ -542,6 +556,18 @@ function render() {
     var _heroEl = document.getElementById('ssHero');
     setHeroImage(_heroEl, _heroCache, _heroDirect);
     document.getElementById('ssHeroWrap').style.display = '';
+    // ── Steps overlay ──────────────────────────────────────────
+    var _ssStepVal = function(name) {
+      var r = (data.bgg || []).find(function(r) { return r.Name === name && r.Value; });
+      return r ? r.Value.trim() : '';
+    };
+    var _ss1 = _ssStepVal('Step 1'), _ss2 = _ssStepVal('Step 2'), _ss3 = _ssStepVal('Step 3');
+    if (_ss1 || _ss2 || _ss3) {
+      document.getElementById('ssStepText1').textContent = _ss1;
+      document.getElementById('ssStepText2').textContent = _ss2;
+      document.getElementById('ssStepText3').textContent = _ss3;
+      document.getElementById('ssStepsOverlay').style.display = 'flex';
+    }
   }
 
   // ── Subtitle at top of body left ──────────────────────────

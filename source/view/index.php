@@ -113,6 +113,41 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       overflow: hidden;
       margin-bottom: .6rem;
       cursor: pointer;
+      position: relative;
+    }
+    /* ── Steps overlay ───────────────────────────────────────── */
+    .steps-overlay {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(0,0,0,.72);
+      display: flex;
+      backdrop-filter: blur(2px);
+    }
+    .step-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: .6rem .5rem;
+      border-right: 1px solid rgba(255,255,255,.12);
+    }
+    .step-item:last-child { border-right: none; }
+    .step-num {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #c8860a;
+      color: #fff;
+      font-family: 'DINBlack', sans-serif;
+      font-size: .78rem;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-bottom: .3rem;
+    }
+    .step-text {
+      font-size: .72rem;
+      line-height: 1.3;
+      color: rgba(255,255,255,.9);
     }
     .main-image-wrap.no-image img,
     .main-image-wrap.no-image video { display: none; }
@@ -163,6 +198,24 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .thumb-video-wrap:hover, .thumb-video-wrap.active { border-color: #c8860a; opacity: 1; }
     .thumb-play-icon { color: #fff; font-size: 1.1rem; line-height: 1; }
+    .thumb-steps {
+      flex: 0 0 auto;
+      width: 64px; height: 48px;
+      background: #c8860a;
+      border-radius: 5px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DINBlack', sans-serif;
+      font-size: .8rem;
+      color: #fff;
+      letter-spacing: .04em;
+      transition: border-color .15s, opacity .15s;
+      opacity: .7;
+    }
+    .thumb-steps:hover, .thumb-steps.active { border-color: #fff; opacity: 1; }
 
     /* ── Buy buttons ─────────────────────────────────────────── */
     .buy-btn-list { display: flex; flex-direction: column; gap: .45rem; margin-top: .9rem; }
@@ -530,6 +583,11 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       <div class="main-image-wrap" id="mainImgWrap">
         <img id="mainImg" src="" alt="" />
         <video id="mainVideo" muted playsinline></video>
+        <div class="steps-overlay" id="stepsOverlay" style="display:none">
+          <div class="step-item"><div class="step-num">1</div><div class="step-text" id="stepText1"></div></div>
+          <div class="step-item"><div class="step-num">2</div><div class="step-text" id="stepText2"></div></div>
+          <div class="step-item"><div class="step-num">3</div><div class="step-text" id="stepText3"></div></div>
+        </div>
       </div>
       <div class="thumb-strip" id="thumbStrip"></div>
       <div id="buyBtnWrap" style="display:none"></div>
@@ -747,10 +805,10 @@ function startSlideshow(fromIdx) {
 
 function updateThumbActive(idx) {
   var strip = document.getElementById('thumbStrip');
-  strip.querySelectorAll('.thumb, .thumb-video-wrap').forEach(function(t) {
+  strip.querySelectorAll('.thumb, .thumb-video-wrap, .thumb-steps').forEach(function(t) {
     t.classList.remove('active');
   });
-  var all = strip.querySelectorAll('.thumb, .thumb-video-wrap');
+  var all = strip.querySelectorAll('.thumb, .thumb-video-wrap, .thumb-steps');
   if (all[idx]) all[idx].classList.add('active');
 }
 
@@ -780,6 +838,9 @@ function setMainMedia(idx) {
       };
     }
   }
+  // Show steps overlay only on the dedicated steps slide
+  var overlay = document.getElementById('stepsOverlay');
+  if (overlay) overlay.style.display = (item.stepsSlide) ? 'flex' : 'none';
 }
 
 function buildThumbs() {
@@ -787,6 +848,9 @@ function buildThumbs() {
   if (allImages.length <= 1) { strip.style.display = 'none'; return; }
   strip.innerHTML = allImages.map(function(item, i) {
     var activeCls = i === 0 ? ' active' : '';
+    if (item.stepsSlide) {
+      return '<div class="thumb-steps' + activeCls + '" data-idx="' + i + '" title="How to Play">1·2·3</div>';
+    }
     if (item.type === 'video') {
       return '<div class="thumb-video-wrap' + activeCls + '" data-idx="' + i + '" title="' + item.caption + '">'
         + '<span class="thumb-play-icon">&#9654;</span></div>';
@@ -797,7 +861,7 @@ function buildThumbs() {
     return '<img class="thumb' + activeCls + '" src="' + item.src
       + '"' + thumbErr + ' alt="" data-idx="' + i + '" loading="lazy" />';
   }).join('');
-  strip.querySelectorAll('.thumb, .thumb-video-wrap').forEach(function(el) {
+  strip.querySelectorAll('.thumb, .thumb-video-wrap, .thumb-steps').forEach(function(el) {
     el.addEventListener('click', function() {
       var idx = parseInt(this.dataset.idx);
       activeThumb = idx;
@@ -918,13 +982,16 @@ function render() {
   }
 
   // ── Image / video fallback from game data when no splash ───
-  // ProductImage → one or more still images (multiple rows supported).
-  // Media        → image, or video if URL ends with a video extension.
-  // Video        → direct video file only (YouTube/Vimeo can't be used
-  //                in a <video> element; those are skipped here).
+  // Priority: Image URL (games.json) → ProductImage (per-game JSON) → Media.
   if (allImages.length === 0) {
     var _isVidUrl = function(u) { return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(u); };
     var _isHttp   = function(u) { return u && /^https?:\/\//.test(u); };
+
+    // games.json "Image URL" column — the default game image
+    var _gameImgUrl = _absUrl(_games('Image URL'));
+    if (_isHttp(_gameImgUrl)) {
+      allImages.push({ src: cachedImage(_gameImgUrl), direct: directImageUrl(_gameImgUrl), caption: '', type: 'image', delay: 5 });
+    }
 
     // Collect ALL ProductImage rows — the game JSON may have multiple entries
     (data.bgg || []).forEach(function(r) {
@@ -952,6 +1019,23 @@ function render() {
       return true;
     });
   })();
+
+  // ── Steps overlay (Step 1 / Step 2 / Step 3 from per-game JSON) ─────────────
+  var _stepVal = function(name) {
+    var r = (data.bgg || []).find(function(r) { return r.Name === name && r.Value; });
+    return r ? r.Value.trim() : '';
+  };
+  var _s1 = _stepVal('Step 1'), _s2 = _stepVal('Step 2'), _s3 = _stepVal('Step 3');
+  if (_s1 || _s2 || _s3) {
+    document.getElementById('stepText1').textContent = _s1;
+    document.getElementById('stepText2').textContent = _s2;
+    document.getElementById('stepText3').textContent = _s3;
+    // Add a dedicated "steps" slide (clone of first image slide)
+    var _baseImg = allImages.find(function(im) { return im.type === 'image'; });
+    if (_baseImg) {
+      allImages.push({ src: _baseImg.src, direct: _baseImg.direct, caption: '1·2·3', type: 'image', delay: 8, stepsSlide: true });
+    }
+  }
 
   if (allImages.length) {
     setMainMedia(0);

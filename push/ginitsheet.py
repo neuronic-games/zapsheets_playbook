@@ -107,9 +107,9 @@ for tab_name, rows in TABS.items():
             ]
             # Each tuple: (col_index, condition_type, condition_values_list)
             validation_cols = [
-                (0, 'ONE_OF_RANGE', [{'userEnteredValue': '=Games!$A$2:$A$10000'}]),
-                (1, 'ONE_OF_RANGE', [{'userEnteredValue': '=People!$C$2:$C$10000'}]),
-                (2, 'ONE_OF_RANGE', [{'userEnteredValue': '=People!$A$2:$A$10000'}]),
+                (0, 'ONE_OF_RANGE', [{'userEnteredValue': 'Games!$A$2:$A$10000'}]),
+                (1, 'ONE_OF_RANGE', [{'userEnteredValue': 'People!$C$2:$C$10000'}]),
+                (2, 'ONE_OF_RANGE', [{'userEnteredValue': 'People!$A$2:$A$10000'}]),
                 (5, 'ONE_OF_LIST',  [{'userEnteredValue': v} for v in PITCH_STATUS_VALUES]),
             ]
             requests = []
@@ -199,7 +199,7 @@ for tab_name, rows in TABS.items():
                         'rule': {
                             'condition': {
                                 'type': 'ONE_OF_RANGE',
-                                'values': [{'userEnteredValue': '=People!$A$2:$A$10000'}],
+                                'values': [{'userEnteredValue': 'People!$A$2:$A$10000'}],
                             },
                             'showCustomUi': True,
                             'strict': False,

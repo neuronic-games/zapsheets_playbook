@@ -17,12 +17,21 @@ RewriteRule ^pitchboard/?$ source/pitchboard/index.php [L,QSA]
 # /fitboard — setup landing page (no sheet ID yet)
 RewriteRule ^fitboard/?$ source/fitboard/setup/index.php [L,QSA]
 
-# Short-URL: /{id}/dashboard → source/dashboard/index.php (single source, no per-sheet copy)
+# Short-URL: /{id}/pitchboard → source/dashboard/index.php (single source, no per-sheet copy)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/pitchboard/?$ source/dashboard/index.php [L,QSA]
+
+# Also cover sheets/{id}/pitchboard in case of direct links
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^sheets/([A-Za-z0-9_\-]+)/pitchboard/?$ source/dashboard/index.php [L,QSA]
+
+# Backward compat: old /dashboard URLs still work
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^([A-Za-z0-9_\-]+)/dashboard/?$ source/dashboard/index.php [L,QSA]
 
-# Also cover sheets/{id}/dashboard in case of old bookmarks / direct links
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^sheets/([A-Za-z0-9_\-]+)/dashboard/?$ source/dashboard/index.php [L,QSA]

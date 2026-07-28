@@ -360,7 +360,7 @@ body {
       addLog('✓  Setup complete — opening your dashboard…', 'ok');
 
       setTimeout(function() {
-        window.location.href = APP_BASE + sheetId + '/dashboard';
+        window.location.href = APP_BASE + sheetId + '/pitchboard';
       }, 1500);
     };
 

@@ -620,7 +620,7 @@ code {
         </div>
       </div>
     </div>
-    <div class="tip"><strong>Tip:</strong> Bookmark your dashboard URL (<code>/&lt;your-sheet-id&gt;/dashboard</code>) or add it to your iPhone home screen as a web app for instant access.</div>
+    <div class="tip"><strong>Tip:</strong> Bookmark your dashboard URL (<code>/&lt;your-sheet-id&gt;/pitchboard</code>) or add it to your iPhone home screen as a web app for instant access.</div>
   </div>
 
   <!-- ── The Dashboard ── -->

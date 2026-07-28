@@ -25,7 +25,7 @@ if ($app === 'fitboard') {
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 } else {
     // pitchboard (default)
-    $startUrl = $base . $id . '/dashboard';
+    $startUrl = $base . $id . '/pitchboard';
     echo json_encode([
         'name'             => 'PitchBoard',
         'short_name'       => 'PitchBoard',

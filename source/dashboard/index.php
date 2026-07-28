@@ -1,6 +1,6 @@
 <?php
 $_rp = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-preg_match('#^(.*?)(?:sheets/)?([A-Za-z0-9_\-]+)/dashboard/?$#', $_rp, $_bm);
+preg_match('#^(.*?)(?:sheets/)?([A-Za-z0-9_\-]+)/(?:pitchboard|dashboard)/?$#', $_rp, $_bm);
 $_base     = (isset($_bm[1]) && $_bm[1] !== '') ? $_bm[1] : '/';
 if (substr($_base, -1) !== '/') $_base .= '/';
 $_sheet_id = $_bm[2] ?? '';
@@ -1377,7 +1377,7 @@ $_sheet_id = $_bm[2] ?? '';
     <button id="btnSortDate"  class="active" onclick="setSort('date')">Date ↓</button>
     <button id="btnSortAlpha"            onclick="setSort('alpha')">A–Z</button>
   </div>
-  <button class="new-game-btn" onclick="openNewGameDialog()">+ New Game</button>
+  <button class="new-game-btn" onclick="openNewGameDialog()">+ Game</button>
 </div>
 <div class="content" id="content"><div class="empty">Loading…</div></div>
 
@@ -1387,7 +1387,7 @@ function getSheetId() {
   var parts = window.location.pathname.split('/').filter(Boolean);
   var idx = parts.indexOf('sheets');
   if (idx >= 0 && parts[idx+1]) return parts[idx+1];
-  var di = parts.lastIndexOf('dashboard');
+  var di = Math.max(parts.lastIndexOf('pitchboard'), parts.lastIndexOf('dashboard'));
   if (di > 0) return parts[di-1];
   var m = window.location.search.match(/[?&]id=([^&]+)/);
   return m ? m[1] : '';
@@ -2548,6 +2548,12 @@ function buildEmailBody(gameName) {
   if (f.rules)     urls.push('Rules: '     + f.rules);
   if (f.play)      urls.push('Play: '      + f.play);
   if (urls.length) { lines.push(''); lines = lines.concat(urls); }
+  // Signature
+  var sig = [];
+  if (myName)  sig.push(myName);
+  if (myEmail) sig.push(myEmail);
+  if (myPhone) sig.push(myPhone);
+  if (sig.length) { lines.push(''); lines.push('--'); lines = lines.concat(sig); }
   return lines.join('\n');
 }
 
@@ -2558,7 +2564,7 @@ function mailtoHref(email, gameName) {
   var ccEmails = getCollaboratorEmails(gameName);
   var href = 'mailto:' + encodeURIComponent(email)
            + '?subject=' + encodeURIComponent('Game info - ' + gameName);
-  if (myEmail)        href += '&from=' + encodeURIComponent(myEmail);
+  if (myEmail)        href += '&reply-to=' + encodeURIComponent(myEmail);
   if (ccEmails.length) href += '&cc='  + encodeURIComponent(ccEmails.join(','));
   if (body)           href += '&body=' + encodeURIComponent(body);
   return href;
@@ -2586,8 +2592,8 @@ function sendEmailFromAddDialog() {
   var ccEmails = getCollaboratorEmails(gameName);
   var href  = 'mailto:' + encodeURIComponent(email)
             + '?subject=' + encodeURIComponent('Game info - ' + gameName);
-  if (myEmail)         href += '&from=' + encodeURIComponent(myEmail);
-  if (ccEmails.length) href += '&cc='   + encodeURIComponent(ccEmails.join(','));
+  if (myEmail)         href += '&reply-to=' + encodeURIComponent(myEmail);
+  if (ccEmails.length) href += '&cc='      + encodeURIComponent(ccEmails.join(','));
   if (body)            href += '&body=' + encodeURIComponent(body);
 
   var a = document.createElement('a');

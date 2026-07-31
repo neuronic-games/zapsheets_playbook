@@ -695,6 +695,9 @@ var BASE     = APP_BASE + 'sheets/' + sheet_Id + '/';
 
 function cachedImage(url) {
   if (!url) return '';
+  // Prefer the server index (md5-based filename written by cacheSlideImages.php)
+  if (data.cacheIdx && data.cacheIdx[url]) return APP_BASE + data.cacheIdx[url];
+  // Fallback: derive from URL (works for Google Drive; approximate for others)
   if (url.includes('drive.google.com')) {
     var imgid = url.split('drive.google.com')[1].split('/')[3];
     return BASE + 'cache/' + imgid + '.png';
@@ -736,7 +739,7 @@ function youtubeId(url) {
 
 ////////////////////////////////////////////////////////////////////////////////
 var data = {};
-var _loadTotal = 10;
+var _loadTotal = 11;  // +1 for cache/index.json
 var _loadDone  = 0;
 
 function _jsonLoad(path, key) {
@@ -769,6 +772,7 @@ var _gameParam = (function() {
 })();
 var _gameFile = _gameParam ? ('game-' + _gameParam + '-' + lang + '.json') : ('game-' + lang + '.json');
 
+_jsonLoad(BASE + 'cache/index.json', 'cacheIdx'); // url → cached-path map written by cacheSlideImages.php
 _jsonLoad(BASE + 'settings.json', 'settings');
 _jsonLoad(BASE + 'bgg.json',      'stats');
 _jsonLoad(BASE + _gameFile,       'bgg');
@@ -1470,8 +1474,11 @@ function activateTab(id) {
   var ref = document.referrer;
   if (!ref || ref.indexOf(window.location.origin) !== 0) return; // direct/external load — no back bar
   var bar = document.getElementById('pwaBackBar');
+  var btn = document.getElementById('pwaBackBtn');
+  // Customise label when coming from the slides page
+  if (ref.indexOf('/slides') !== -1) btn.innerHTML = '&#8249; Slides';
   bar.style.display = 'block';
-  document.getElementById('pwaBackBtn').addEventListener('click', function() {
+  btn.addEventListener('click', function() {
     history.back();
   });
 })();

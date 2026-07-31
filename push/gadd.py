@@ -89,15 +89,31 @@ if sheet_name.lower() == 'pitches':
     cover_to = approx_row + 500   # cover 500 rows beyond the new one
     # Each tuple: (col_index, condition_type, condition_values_list)
     PITCH_STATUS_VALUES = [
-        'Pitched', 'Interested', 'Passed', 'Signed', 'Published', 'Returned',
+        'Pitched', 'Interested', 'Passed', 'Gone Cold', 'Signed', 'Published', 'Returned',
     ]
+    # Pitches columns: Date(0), Game(1), Publisher(2), Contact(3), Event(4), Status(5)
     validation_cols = [
-        (0, 'ONE_OF_RANGE', [{'userEnteredValue': '=Games!$A$2:$A$10000'}]),
-        (1, 'ONE_OF_RANGE', [{'userEnteredValue': '=People!$C$2:$C$10000'}]),
-        (2, 'ONE_OF_RANGE', [{'userEnteredValue': '=People!$A$2:$A$10000'}]),
+        (1, 'ONE_OF_RANGE', [{'userEnteredValue': '=Games!$A$2:$A$10000'}]),
+        (2, 'ONE_OF_RANGE', [{'userEnteredValue': '=People!$C$2:$C$10000'}]),
+        (3, 'ONE_OF_RANGE', [{'userEnteredValue': '=People!$A$2:$A$10000'}]),
         (5, 'ONE_OF_LIST',  [{'userEnteredValue': v} for v in PITCH_STATUS_VALUES]),
     ]
-    vreqs = []
+    # Clear any stale validation on the Date column (col 0).
+    # Omitting 'rule' tells the Sheets API to delete the rule.
+    vreqs = [
+        {
+            'setDataValidation': {
+                'range': {
+                    'sheetId': ws.id,
+                    'startRowIndex': 1,
+                    'endRowIndex': 10000,
+                    'startColumnIndex': 0,
+                    'endColumnIndex': 1,
+                }
+                # No 'rule' key = clears validation
+            }
+        }
+    ]
     for col_idx, cond_type, cond_values in validation_cols:
         vreqs.append({
             'setDataValidation': {

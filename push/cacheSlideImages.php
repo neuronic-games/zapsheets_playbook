@@ -177,4 +177,18 @@ foreach ($urls as $photo) {
     }
 }
 
+// ── Write / merge cache index ────────────────────────────────────────────────
+// index.json maps original URL → cached relative path so that the view page
+// and sellsheet can resolve the correct md5-based filename without md5 in JS.
+$indexFile = $cacheDir . 'index.json';
+$index     = [];
+if (file_exists($indexFile)) {
+    $raw = @file_get_contents($indexFile);
+    if ($raw) $index = json_decode($raw, true) ?: [];
+}
+foreach ($results as $r) {
+    if (!empty($r['cached'])) $index[$r['photo']] = $r['cached'];
+}
+@file_put_contents($indexFile, json_encode($index, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
 echo json_encode($results);

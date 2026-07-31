@@ -43,7 +43,7 @@ except Exception as e:
 
 TABS = {
     'Pitches': [
-        ['Game', 'Publisher', 'Contact', 'Date', 'Event', 'Status', 'Notes'],
+        ['Date', 'Game', 'Publisher', 'Contact', 'Event', 'Status', 'Notes'],
     ],
     'Games': [
         ['Name', 'Tagline', 'Status',
@@ -100,19 +100,33 @@ for tab_name, rows in TABS.items():
 
         # Pitches tab: apply dropdown validation regardless of whether the tab
         # was just created or already existed — setDataValidation is idempotent.
-        # Pitches columns: Game(A/0), Publisher(B/1), Contact(C/2), Status(F/5)
+        # Pitches columns: Date(A/0), Game(B/1), Publisher(C/2), Contact(D/3), Event(E/4), Status(F/5)
         if tab_name == 'Pitches':
             PITCH_STATUS_VALUES = [
-                'Pitched', 'Interested', 'Passed', 'Signed', 'Published', 'Returned',
+                'Pitched', 'Interested', 'Passed', 'Gone Cold', 'Signed', 'Published', 'Returned',
             ]
             # Each tuple: (col_index, condition_type, condition_values_list)
             validation_cols = [
-                (0, 'ONE_OF_RANGE', [{'userEnteredValue': 'Games!$A$2:$A$10000'}]),
-                (1, 'ONE_OF_RANGE', [{'userEnteredValue': 'People!$C$2:$C$10000'}]),
-                (2, 'ONE_OF_RANGE', [{'userEnteredValue': 'People!$A$2:$A$10000'}]),
+                (1, 'ONE_OF_RANGE', [{'userEnteredValue': 'Games!$A$2:$A$10000'}]),
+                (2, 'ONE_OF_RANGE', [{'userEnteredValue': 'People!$C$2:$C$10000'}]),
+                (3, 'ONE_OF_RANGE', [{'userEnteredValue': 'People!$A$2:$A$10000'}]),
                 (5, 'ONE_OF_LIST',  [{'userEnteredValue': v} for v in PITCH_STATUS_VALUES]),
             ]
-            requests = []
+            requests = [
+                # Clear any stale validation on the Date column (col 0).
+                # Omitting the 'rule' key tells the Sheets API to delete the rule.
+                {
+                    'setDataValidation': {
+                        'range': {
+                            'sheetId': ws.id,
+                            'startRowIndex': 1,
+                            'endRowIndex': 10000,
+                            'startColumnIndex': 0,
+                            'endColumnIndex': 1,
+                        }
+                    }
+                },
+            ]
             for col_idx, cond_type, cond_values in validation_cols:
                 requests.append({
                     'setDataValidation': {
@@ -139,13 +153,14 @@ for tab_name, rows in TABS.items():
             # Only added on newly created tabs; existing tabs keep their existing rules.
             if results.get(tab_name) == 'created':
                 PITCH_STATUS_COLORS = [
-                    # (value,    bg_rgb_0_1,                     fg_rgb_0_1)
-                    ('Pitched',   (0.886, 0.910, 0.941), (0.278, 0.333, 0.412)),  # #e2e8f0 / #475569
-                    ('Interested',(0.863, 0.988, 0.906), (0.086, 0.396, 0.204)),  # #dcfce7 / #166534
-                    ('Passed',    (0.996, 0.886, 0.886), (0.600, 0.106, 0.106)),  # #fee2e2 / #991b1b
-                    ('Signed',    (0.929, 0.914, 0.996), (0.357, 0.129, 0.714)),  # #ede9fe / #5b21b6
-                    ('Published', (0.878, 0.949, 0.996), (0.027, 0.349, 0.522)),  # #e0f2fe / #075985
-                    ('Returned',  (1.000, 0.969, 0.929), (0.761, 0.255, 0.047)),  # #fff7ed / #c2410c
+                    # (value,       bg_rgb_0_1,                     fg_rgb_0_1)
+                    ('Pitched',     (0.886, 0.910, 0.941), (0.278, 0.333, 0.412)),  # #e2e8f0 / #475569
+                    ('Interested',  (0.863, 0.988, 0.906), (0.086, 0.396, 0.204)),  # #dcfce7 / #166534
+                    ('Passed',      (0.996, 0.886, 0.886), (0.600, 0.106, 0.106)),  # #fee2e2 / #991b1b
+                    ('Gone Cold',   (0.859, 0.894, 0.996), (0.118, 0.251, 0.686)),  # #dbeafe / #1e40af
+                    ('Signed',      (0.929, 0.914, 0.996), (0.357, 0.129, 0.714)),  # #ede9fe / #5b21b6
+                    ('Published',   (0.878, 0.949, 0.996), (0.027, 0.349, 0.522)),  # #e0f2fe / #075985
+                    ('Returned',    (1.000, 0.969, 0.929), (0.761, 0.255, 0.047)),  # #fff7ed / #c2410c
                 ]
                 for i, (status, bg, fg) in enumerate(PITCH_STATUS_COLORS):
                     requests.append({

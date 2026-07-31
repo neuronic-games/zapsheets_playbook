@@ -683,6 +683,9 @@ $_sheet_id = $_bm[2] ?? '';
     .notes-field-input:focus { border-color:#1a1a2e; }
     /* Re-apply native arrow for <select> elements only */
     select.notes-field-input { -webkit-appearance:auto; appearance:auto; }
+    /* Combobox inside notes-field-label — match bare input sizing */
+    .notes-field-label .combo-wrap { width:100%; }
+    .notes-field-label .combo-wrap input { font-size:.82rem; padding:.38rem .55rem; border-color:#ddd; }
     .notes-edit-area {
       width:100%; min-height:6rem; font-family:'DINRegular',sans-serif;
       font-size:.88rem; line-height:1.7; color:#222;
@@ -1021,16 +1024,10 @@ $_sheet_id = $_bm[2] ?? '';
         <input type="date" id="editDate" class="notes-field-input" />
       </label>
       <label class="notes-field-label">Status
-        <select id="editStatus" class="notes-field-input">
-          <option value="">—</option>
-          <option value="Pitched">Pitched</option>
-          <option value="Interested">Interested</option>
-          <option value="Passed">Passed</option>
-          <option value="Gone Cold">Gone Cold</option>
-          <option value="Signed">Signed</option>
-          <option value="Published">Published</option>
-          <option value="Returned">Returned</option>
-        </select>
+        <div class="combo-wrap">
+          <input type="text" id="editStatus" class="notes-field-input" placeholder="Status…" autocomplete="off" />
+          <div class="combo-drop" id="editStatusDrop"></div>
+        </div>
       </label>
       <label class="notes-field-label">Contact
         <select id="editContact" class="notes-field-input">
@@ -2534,6 +2531,20 @@ function _gameFields(gameName) {
   };
 }
 
+// ── Encode a game name for use in a ?game= URL query param ───────────────────
+// encodeURIComponent leaves !  '  (  )  *  ~  unencoded (RFC 3986 "unreserved"
+// chars).  Those are valid in URLs but can confuse email clients and some URL
+// parsers, so we encode them explicitly.
+function encodeGame(name) {
+  return encodeURIComponent(name)
+    .replace(/!/g,  '%21')
+    .replace(/'/g,  '%27')
+    .replace(/\(/g, '%28')
+    .replace(/\)/g, '%29')
+    .replace(/\*/g, '%2A')
+    .replace(/~/g,  '%7E');
+}
+
 // ── Build plain-text email body ───────────────────────
 function buildEmailBody(gameName) {
   var f = _gameFields(gameName);
@@ -2542,7 +2553,7 @@ function buildEmailBody(gameName) {
   if (f.desc)      lines.push(f.desc);
   if (f.designers) { lines.push(''); lines.push('Designers: ' + f.designers); }
   var urls = [];
-  var viewUrl = window.location.origin + APP_BASE + sheet_Id + '/view/?game=' + encodeURIComponent(gameName);
+  var viewUrl = window.location.origin + APP_BASE + sheet_Id + '/view/?game=' + encodeGame(gameName);
   urls.push('Game Info: ' + viewUrl);
   if (f.sellsheet) urls.push('Sellsheet: ' + f.sellsheet);
   if (f.video)     urls.push('Video: '     + f.video);
@@ -2694,6 +2705,7 @@ function rowClick(el) {
 
 function openNotesDialog(entry) {
   _notesCtx = entry;
+  _setupEditStatusCombo();
   document.getElementById('notesDialogMeta').textContent =
     [entry.game, entry.publisher].filter(Boolean).join('  ·  ');
   document.getElementById('editDate').value   = sheetDateToInput(entry.date);
@@ -2917,7 +2929,7 @@ function vpDone() {
   document.getElementById('vpViewPageBtn').disabled          = false;
 }
 function vpOpenViewPage() {
-  var url = APP_BASE + sheet_Id + '/view/?game=' + encodeURIComponent(_vpCurrentGame);
+  var url = APP_BASE + sheet_Id + '/view/?game=' + encodeGame(_vpCurrentGame);
   closeVpDialog();
   window.location.href = url;
 }
@@ -3083,6 +3095,27 @@ function _vpDeployAndOpen() {
         _vpBuildSummary(_vpCurrentGame, data);
         document.getElementById('vpSummaryPanel').style.display = '';
         document.getElementById('vpDialogTitle').textContent = 'View Page';
+      }
+      // Write the absolute game page URL back to the sheet if not already set
+      var _gInfo = gamesIndex[_vpCurrentGame] || {};
+      if (!(_gInfo['Page URL'] || '').trim()) {
+        var _absUrl = window.location.origin + APP_BASE + sheet_Id +
+                      '/view/?game=' + encodeGame(_vpCurrentGame);
+        var _pxhr = new XMLHttpRequest();
+        _pxhr.open('POST', APP_BASE + 'push/setGamePageUrl.php');
+        _pxhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        _pxhr.onload = function() {
+          var _pr; try { _pr = JSON.parse(_pxhr.responseText); } catch(e) { _pr = null; }
+          if (_pr && _pr.ok && !_pr.skipped) {
+            // Update local index so the eye icon appears if slides are reloaded
+            if (gamesIndex[_vpCurrentGame]) gamesIndex[_vpCurrentGame]['Page URL'] = _absUrl;
+          }
+        };
+        _pxhr.send(
+          'id='        + encodeURIComponent(sheet_Id) +
+          '&orig_name='+ encodeURIComponent(_vpCurrentGame) +
+          '&page_url=' + encodeURIComponent(_absUrl)
+        );
       }
       vpDone();
     };
@@ -3515,9 +3548,9 @@ function _comboInit(inputId, dropId, getItems, onSelect) {
   if (!inp || !drop) return;
   var _ai = -1;   // active dropdown index
 
-  function renderDrop() {
+  function renderDrop(q) {
     if (inp.disabled) return;
-    var q     = inp.value.trim().toLowerCase();
+    if (q === undefined) q = inp.value.trim().toLowerCase();
     var items = getItems().filter(function(s) {
       return !q || s.toLowerCase().indexOf(q) !== -1;
     });
@@ -3548,8 +3581,11 @@ function _comboInit(inputId, dropId, getItems, onSelect) {
       if (i === _ai) o.scrollIntoView({ block: 'nearest' });
     });
   }
-  inp.addEventListener('input',  renderDrop);
-  inp.addEventListener('focus',  renderDrop);
+  inp.addEventListener('input', function() { renderDrop(); });
+  inp.addEventListener('focus', function() {
+    inp.select();      // select existing text so typing replaces it
+    renderDrop('');    // show all options regardless of current value
+  });
   inp.addEventListener('blur',   function() { setTimeout(closeDrop, 150); });
   inp.addEventListener('keydown', function(e) {
     if (e.key === 'ArrowDown') {
@@ -3683,6 +3719,7 @@ function _setupDesignerCombos() {
   });
 }
 
+// Game-level status options (Add/Edit Game dialog)
 var _STATUS_OPTIONS = [
   'Pitching','Interested','Contract Sent','Signed',
   'In Development','In Production','Published','Shelved','Cancelled'
@@ -3692,6 +3729,17 @@ function _setupStatusCombo() {
   if (_statusComboReady) return;
   _statusComboReady = true;
   _comboInit('geStatus', 'geStatusDrop', function() { return _STATUS_OPTIONS; }, null);
+}
+
+// Pitch-entry status options (edit-entry dialog)
+var _PITCH_STATUS_OPTIONS = [
+  'Pitched','Interested','Passed','Gone Cold','Signed','Published','Returned'
+];
+var _editStatusComboReady = false;
+function _setupEditStatusCombo() {
+  if (_editStatusComboReady) return;
+  _editStatusComboReady = true;
+  _comboInit('editStatus', 'editStatusDrop', function() { return _PITCH_STATUS_OPTIONS; }, null);
 }
 
 // Convert a stored date string (any common format) to YYYY-MM-DD for <input type="date">.
@@ -4370,7 +4418,7 @@ function shareGame(gameName) {
 function openShareUrlDialog(url, gameName) {
   document.getElementById('shareUrlInput').value = url;
   document.getElementById('shareUrlCopyBtn').textContent = 'Copy';
-  var gamePageUrl = window.location.origin + APP_BASE + sheet_Id + '/view/?game=' + encodeURIComponent(gameName || '');
+  var gamePageUrl = window.location.origin + APP_BASE + sheet_Id + '/view/?game=' + encodeGame(gameName || '');
   document.getElementById('shareGamePageInput').value = gamePageUrl;
   document.getElementById('shareGamePageCopyBtn').textContent = 'Copy';
   document.getElementById('shareUrlOverlay').classList.add('open');

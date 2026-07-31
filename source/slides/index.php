@@ -101,6 +101,31 @@ $_sheet_id = $_bm[2] ?? '';
     margin: 0 0 .35rem;
     text-shadow: 0 2px 12px rgba(0,0,0,.7);
   }
+  .slide-name a {
+    color: inherit;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    /* Generous tap/click padding around the icon */
+    padding: .4em .5em;
+    margin-left: .2em;
+    margin-bottom: -.4em; /* optical alignment with name baseline */
+    vertical-align: middle;
+    border-radius: .3em;
+  }
+  .slide-name a:active,
+  .slide-name a:hover { opacity: .65; }
+  .slide-page-eye {
+    width: .9em;
+    height: .9em;
+    flex-shrink: 0;
+    opacity: .8;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
   .slide-tagline {
     font-size: clamp(.85rem, 4vw, 1.05rem);
     color: rgba(255,255,255,.85);
@@ -183,11 +208,15 @@ $_sheet_id = $_bm[2] ?? '';
   #pause-icon svg { width: 26px; height: 26px; fill: #fff; }
 
   /* ── Tap zones (left 30% / right 30%) ───────────────────── */
+  /* pointer-events:none so elements inside #slides-track (e.g. the eye-icon link)
+     receive mouse clicks directly; desktop navigation is handled by the
+     #slideshow click handler that checks the x coordinate. */
   .tap-zone {
     position: absolute; top: 0; bottom: 0;
     width: 28%;
     z-index: 15;
     cursor: pointer;
+    pointer-events: none;
   }
   #tap-prev { left: 0; }
   #tap-next { right: 0; }
@@ -342,19 +371,19 @@ $_sheet_id = $_bm[2] ?? '';
   var progTotal   = AUTO_DELAY;
   var iconTimer   = null;
 
-  // ── IndexedDB image blob store ───────────────────────────
-  // Stores downloaded image blobs keyed by server URL.
-  // Object URLs created from stored blobs let <img> elements render
-  // offline without any service-worker or network involvement.
-  var _objUrls = [];
-  var _idb     = null;
+  // ── IndexedDB image store (data URLs) ───────────────────────
+  // Stores images as data-URL strings (base64) keyed by server URL.
+  // Data URLs live in JS heap — unlike Object URLs, iOS cannot evict their
+  // backing memory under pressure, so images never disappear mid-slideshow.
+  var _idb = null;
 
   function openIDB() {
     if (_idb) return Promise.resolve(_idb);
     return new Promise(function (resolve, reject) {
       if (!('indexedDB' in window)) return reject(new Error('no idb'));
-      var req = indexedDB.open('pb-img-store', 1);
-      req.onupgradeneeded = function (e) { e.target.result.createObjectStore('blobs'); };
+      // v2 DB name — clean break from the earlier blob-based v1 store
+      var req = indexedDB.open('pb-img-store-v2', 1);
+      req.onupgradeneeded = function (e) { e.target.result.createObjectStore('imgs'); };
       req.onsuccess = function (e) { _idb = e.target.result; resolve(_idb); };
       req.onerror   = function () { reject(req.error); };
     });
@@ -363,8 +392,8 @@ $_sheet_id = $_bm[2] ?? '';
   function idbGet(key) {
     return openIDB().then(function (db) {
       return new Promise(function (resolve) {
-        var tx  = db.transaction('blobs', 'readonly');
-        var req = tx.objectStore('blobs').get(key);
+        var tx  = db.transaction('imgs', 'readonly');
+        var req = tx.objectStore('imgs').get(key);
         req.onsuccess = function () { resolve(req.result || null); };
         req.onerror   = function () { resolve(null); };
       });
@@ -374,26 +403,34 @@ $_sheet_id = $_bm[2] ?? '';
   function idbPut(key, val) {
     return openIDB().then(function (db) {
       return new Promise(function (resolve) {
-        var tx  = db.transaction('blobs', 'readwrite');
-        var req = tx.objectStore('blobs').put(val, key);
+        var tx  = db.transaction('imgs', 'readwrite');
+        var req = tx.objectStore('imgs').put(val, key);
         req.onsuccess = function () { resolve(); };
         req.onerror   = function () { resolve(); };
       });
     }).catch(function () {});
   }
 
-  // Sets s._idbSrc (Object URL) on each slide whose blob is in IDB.
+  // Convert a Blob to a base64 data URL.
+  function blobToDataUrl(blob) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload  = function () { resolve(reader.result); };
+      reader.onerror = function () { reject(reader.error); };
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  // Sets s._idbSrc (data URL string) on each slide whose image is in IDB.
   // Must run before buildDom() so img.src is set correctly on first paint.
   // Returns a Promise that resolves once all IDB lookups finish.
   function applyIDBImages() {
     return Promise.all(slides.map(function (s) {
       var url = resolveImage(s.photo).cached;
       if (!url) return Promise.resolve();
-      return idbGet(url).then(function (blob) {
-        if (!blob) return;
-        var objUrl = URL.createObjectURL(blob);
-        _objUrls.push(objUrl);
-        s._idbSrc = objUrl;
+      return idbGet(url).then(function (dataUrl) {
+        if (!dataUrl || typeof dataUrl !== 'string') return;
+        s._idbSrc = dataUrl;
       });
     })).catch(function () {});
   }
@@ -453,7 +490,12 @@ $_sheet_id = $_bm[2] ?? '';
       img.alt = '';
       img.setAttribute('decoding', 'async');
       img.src = s._idbSrc || urls.cached;
-      if (!s._idbSrc && urls.direct && urls.cached !== urls.direct) {
+      if (s._idbSrc) {
+        // IDB blob — if it somehow fails to render, fall back to the normal URL
+        img.onerror = (function (el, fb) {
+          return function () { el.onerror = null; el.src = fb; };
+        })(img, urls.cached);
+      } else if (urls.direct && urls.cached !== urls.direct) {
         img.onerror = (function (el, src) {
           return function () { el.onerror = null; el.src = src; };
         })(img, urls.direct);
@@ -473,6 +515,30 @@ $_sheet_id = $_bm[2] ?? '';
       var nameEl = document.createElement('p');
       nameEl.className = 'slide-name';
       nameEl.textContent = s.name;
+      if (s.page) {
+        // Only the eye icon is the link — name text is not interactive.
+        // Same-origin pages navigate in the same window so history.back() works.
+        // External URLs open in a new tab.
+        var _isSameOrigin = s.page.indexOf(window.location.origin + '/') === 0 ||
+                            s.page.charAt(0) === '/';
+        var nameLink = document.createElement('a');
+        nameLink.href      = s.page;
+        nameLink.className = 'slide-page-link';
+        nameLink.setAttribute('aria-label', 'View game page');
+        if (!_isSameOrigin) {
+          nameLink.target = '_blank';
+          nameLink.rel    = 'noopener noreferrer';
+        }
+        var eyeSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        eyeSvg.setAttribute('class', 'slide-page-eye');
+        eyeSvg.setAttribute('viewBox', '0 0 24 24');
+        eyeSvg.setAttribute('aria-hidden', 'true');
+        eyeSvg.innerHTML =
+          '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>' +
+          '<circle cx="12" cy="12" r="3"/>';
+        nameLink.appendChild(eyeSvg);
+        nameEl.appendChild(nameLink);
+      }
       info.appendChild(nameEl);
 
       if (s.tagline) {
@@ -613,6 +679,9 @@ $_sheet_id = $_bm[2] ?? '';
     touchX0 = null; touchY0 = null;
 
     if (!swiping) {
+      // Let taps on the game-page link pass through to the browser
+      var tgt = e.target;
+      if (tgt && tgt.closest && tgt.closest('.slide-page-link')) return;
       // Treat as a tap
       var x = e.changedTouches[0].clientX;
       var w = window.innerWidth;
@@ -634,9 +703,19 @@ $_sheet_id = $_bm[2] ?? '';
   // Prevent context menu on long-press (phone)
   document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-  // ── Tap zones (pointer / mouse) ──────────────────────────
-  document.getElementById('tap-prev').addEventListener('click', prev);
-  document.getElementById('tap-next').addEventListener('click', next);
+  // ── Desktop click navigation ─────────────────────────────
+  // Tap zones have pointer-events:none so the eye-icon link inside the slide
+  // receives clicks directly. We delegate prev/next to a single handler on
+  // #slideshow that mirrors the touch handler's coordinate logic.
+  document.getElementById('slideshow').addEventListener('click', function (e) {
+    // Let clicks on the game-page eye link pass through to the browser
+    if (e.target && e.target.closest && e.target.closest('.slide-page-link')) return;
+    var x = e.clientX;
+    var w = window.innerWidth;
+    if (x < w * 0.28)      { prev(); }
+    else if (x > w * 0.72) { next(); }
+    // centre click: no action on desktop (pause/play is touch-only)
+  });
 
   // ── Keyboard nav ─────────────────────────────────────────
   document.addEventListener('keydown', function (e) {
@@ -689,6 +768,7 @@ $_sheet_id = $_bm[2] ?? '';
           tagline:   (g['Tagline'] || '').trim(),
           photo:     (g['Photo URL'] || g['Image URL'] || '').trim(),
           designers: designers,
+          page:      (g['Page URL'] || '').trim(),
         };
       });
 
@@ -838,19 +918,23 @@ $_sheet_id = $_bm[2] ?? '';
         (function (slide, el, sUrl) {
           idbGet(sUrl).then(function (existing) {
             if (existing) {
-              // Already in IDB — create Object URL and apply immediately
-              var objUrl = URL.createObjectURL(existing);
-              _objUrls.push(objUrl);
-              slide._idbSrc = objUrl;
-              if (el && el.src !== objUrl) el.src = objUrl;
+              // Already in IDB as a data URL — apply immediately
+              slide._idbSrc = existing;
+              if (el && el.src !== existing) {
+                el.onerror = (function (imgEl, fb) {
+                  return function () { imgEl.onerror = null; imgEl.src = fb; };
+                })(el, sUrl);
+                el.src = existing;
+              }
               return;
             }
-            // Fetch from server, store in both IDB and SW cache
+            // Fetch from server, convert to data URL, store in IDB (+ prime SW cache)
             fetch(sUrl)
               .then(function (res) {
                 if (!res.ok) throw new Error('bad response');
-                var resClone = res.clone();   // clone before consuming body
+                var resClone = res.clone();   // for SW cache — clone before reading body
                 return res.blob().then(function (blob) {
+                  if (!blob || blob.size < 64) throw new Error('empty blob');
                   // Prime the SW cache as a backup (best-effort)
                   if ('caches' in window) {
                     caches.keys().then(function (keys) {
@@ -858,17 +942,21 @@ $_sheet_id = $_bm[2] ?? '';
                       if (k) caches.open(k).then(function (c) { c.put(sUrl, resClone); });
                     });
                   }
-                  return idbPut(sUrl, blob).then(function () {
-                    var objUrl = URL.createObjectURL(blob);
-                    _objUrls.push(objUrl);
-                    slide._idbSrc = objUrl;
-                    if (el && el.src !== objUrl) el.src = objUrl;
+                  return blobToDataUrl(blob).then(function (dataUrl) {
+                    return idbPut(sUrl, dataUrl).then(function () {
+                      slide._idbSrc = dataUrl;
+                      if (el && el.src !== dataUrl) {
+                        el.onerror = (function (imgEl, fb) {
+                          return function () { imgEl.onerror = null; imgEl.src = fb; };
+                        })(el, sUrl);
+                        el.src = dataUrl;
+                      }
+                    });
                   });
                 });
               })
               .catch(function () {
-                // IDB/fetch failed — fall back to plain server URL
-                if (el && el.src !== sUrl) el.src = sUrl;
+                // Fetch/IDB failed — leave img.src unchanged (original URL still works)
               });
           });
         })(s, imgEls[i], serverUrl);

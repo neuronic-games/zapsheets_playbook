@@ -376,6 +376,9 @@ function getViewUrl(game) {
 
 function cachedImage(url) {
   if (!url) return '';
+  // Prefer the server index (md5-based filename written by cacheSlideImages.php)
+  if (data.cacheIdx && data.cacheIdx[url]) return APP_BASE + data.cacheIdx[url];
+  // Fallback: derive from URL (works for Google Drive; approximate for others)
   if (url.indexOf('https://drive.google.com') === 0) {
     var imgid = url.split('https://drive.google.com')[1].split('/')[3];
     return BASE + 'cache/' + imgid + '.png';
@@ -403,17 +406,32 @@ function directImageUrl(url) {
   return url;
 }
 
-function setHeroImage(el, src, original) {
-  el.src = src;
-  if (original && src !== original) {
-    el.onerror = function() {
-      el.onerror = null;
-      el.src = original;
-    };
-  }
+// Normalise a URL: strip Markdown [label](url) or [url] wrappers, ensure absolute.
+function _absUrl(url) {
+  if (!url) return '';
+  url = String(url).trim();
+  var md = url.match(/^\[.*?\]\((.+)\)\s*$/);
+  if (md) url = md[1].trim();
+  var br = url.match(/^\[(.+)\]\s*$/);
+  if (br) url = br[1].trim();
+  if (!url) return '';
+  return /^https?:\/\//i.test(url) ? url : 'https://' + url;
 }
 
-var _loadTotal = 5, _loadDone = 0;
+// Try each src in order; move to next on error.
+function _setImgWithFallbacks(el, srcs) {
+  var idx = 0;
+  function tryNext() {
+    if (idx >= srcs.length) return; // all failed — leave broken
+    var s = srcs[idx++];
+    if (!s) { tryNext(); return; }
+    el.onerror = function() { el.onerror = null; tryNext(); };
+    el.src = s;
+  }
+  tryNext();
+}
+
+var _loadTotal = 6, _loadDone = 0;  // +1 for cache/index.json
 function _jsonLoad(path, key) {
   $.ajax({
     url: path + '?v=' + Date.now(),
@@ -433,6 +451,7 @@ var _gameParam = (function() {
 })();
 var _gameFile = _gameParam ? ('game-' + _gameParam + '-' + lang + '.json') : ('game-' + lang + '.json');
 
+_jsonLoad(BASE + 'cache/index.json',         'cacheIdx'); // url → cached-path map
 _jsonLoad(BASE + 'settings.json',           'settings');
 _jsonLoad(BASE + _gameFile,                 'bgg');
 _jsonLoad(BASE + 'splash-' + lang + '.json','splash');
@@ -532,29 +551,35 @@ function render() {
   }
 
   // ── Hero image ─────────────────────────────────────────────
-  // Priority: PitchImageUrl → games.json "Image URL" → splash-en.json.
-  // Always try the local cache first; fall back to the direct URL on error.
-  var _pitchImg  = gv('PitchImageUrl') || _games('Image URL');
-  var _heroCache = '';
-  var _heroDirect = '';
-  if (_pitchImg) {
-    _heroCache  = cachedImage(_pitchImg);
-    _heroDirect = directImageUrl(_pitchImg);
-  } else if (data.splash) {
-    var row = data.splash.find(function(r){
+  // Priority chain (cached first, direct fallback):
+  //   1. PitchImageUrl (game JSON)  2. Image URL (games.json)  3. splash image
+  // Each source tries its cached path, then its direct URL, before moving on.
+  var _pitchImg = _absUrl(gv('PitchImageUrl'));
+  var _gameImg  = _absUrl(_games('Image URL'));
+  var _splashUrl = '';
+  if (!_pitchImg && !_gameImg && data.splash) {
+    var _splashRow = data.splash.find(function(r){
       return (r.ID || '').toLowerCase() === 'layout' && r.Content;
     });
-    if (!row) row = data.splash.find(function(r){
+    if (!_splashRow) _splashRow = data.splash.find(function(r){
       return (r.Type || '').toLowerCase() === 'image' && r.Content;
     });
-    if (row) {
-      _heroCache  = cachedImage(row.Content);
-      _heroDirect = directImageUrl(row.Content);
-    }
+    if (_splashRow) _splashUrl = _splashRow.Content;
   }
-  if (_heroCache) {
+
+  // Build ordered fallback list: cached path then direct URL for each candidate.
+  var _heroSrcs = [];
+  [_pitchImg, _gameImg, _splashUrl].forEach(function(url) {
+    if (!url) return;
+    var cached = cachedImage(url);
+    var direct = directImageUrl(url);
+    _heroSrcs.push(cached);
+    if (direct && direct !== cached) _heroSrcs.push(direct);
+  });
+
+  if (_heroSrcs.length) {
     var _heroEl = document.getElementById('ssHero');
-    setHeroImage(_heroEl, _heroCache, _heroDirect);
+    _setImgWithFallbacks(_heroEl, _heroSrcs);
     document.getElementById('ssHeroWrap').style.display = '';
     // ── Steps overlay ──────────────────────────────────────────
     var _ssStepVal = function(name) {

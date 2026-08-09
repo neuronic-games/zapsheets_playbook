@@ -176,7 +176,14 @@ body {
   margin-bottom:1rem;
 }
 .field-input:focus, .field-textarea:focus { border-color:#c8860a; background:#fff; }
-.field-textarea { min-height:120px; resize:vertical; line-height:1.55; }
+.field-textarea { min-height:200px; resize:vertical; line-height:1.55; }
+.field-wrap { position:relative; }
+.field-wrap .field-input { padding-right:2.2rem; }
+.field-valid-check {
+  display:none; position:absolute; right:.75rem; top:50%; transform:translateY(-50%);
+  color:#16a34a; font-size:1rem; line-height:1; pointer-events:none;
+}
+.field-valid-check.visible { display:block; }
 
 .optional-tag {
   font-family:'DINRegular',sans-serif; font-size:.68rem;
@@ -227,21 +234,6 @@ body {
 <body>
 <div class="page">
 
-  <!-- Branding -->
-  <div class="brand">
-    <div class="brand-icon">
-      <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="6" y="8" width="32" height="28" rx="4" fill="none" stroke="#fff" stroke-width="2.5"/>
-        <line x1="12" y1="16" x2="32" y2="16" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
-        <line x1="12" y1="22" x2="32" y2="22" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
-        <line x1="12" y1="28" x2="24" y2="28" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="34" cy="30" r="7" fill="#c8860a"/>
-        <line x1="34" y1="27" x2="34" y2="33" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
-        <line x1="31" y1="30" x2="37" y2="30" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-    </div>
-    <div class="brand-name">NoteBoard</div>
-  </div>
 
   <div class="card">
 
@@ -276,16 +268,19 @@ body {
         value="<?= htmlspecialchars($_POST['nb_name'] ?? '') ?>" autocomplete="name" />
 
       <label class="field-label" for="nb_email">Email <span class="optional-tag">(optional)</span></label>
-      <input class="field-input" id="nb_email" name="nb_email" type="email"
-        placeholder="you@example.com"
-        value="<?= htmlspecialchars($_POST['nb_email'] ?? '') ?>" autocomplete="email" />
+      <div class="field-wrap">
+        <input class="field-input" id="nb_email" name="nb_email" type="text"
+          placeholder="you@example.com"
+          value="<?= htmlspecialchars($_POST['nb_email'] ?? '') ?>" autocomplete="email" />
+        <span class="field-valid-check" id="emailCheck">&#10003;</span>
+      </div>
 
       <label class="field-label" for="nb_note">Your Feedback</label>
       <textarea class="field-textarea" id="nb_note" name="nb_note"
-        placeholder="Share your thoughts about this game…"
+        placeholder="Share your thoughts…"
         required><?= htmlspecialchars($_POST['nb_note'] ?? '') ?></textarea>
 
-      <button type="submit" class="submit-btn" id="submitBtn">Submit Feedback</button>
+      <button type="submit" class="submit-btn" id="submitBtn">Submit</button>
     </form>
 
 <?php endif; ?>
@@ -294,16 +289,48 @@ body {
 </div><!-- /.page -->
 
 <script>
-window.beforeSubmit = function(form) {
-  var note = form.nb_note.value.trim();
-  if (!note) {
-    form.nb_note.focus();
-    return false;
+(function() {
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  var nameInput  = document.getElementById('nb_name');
+  var emailInput = document.getElementById('nb_email');
+  var emailCheck = document.getElementById('emailCheck');
+  var noteInput  = document.getElementById('nb_note');
+  var submitBtn  = document.getElementById('submitBtn');
+
+  function validate() {
+    var name  = nameInput.value.trim();
+    var email = emailInput.value.trim();
+    var note  = noteInput.value.trim();
+
+    var emailOk = !email || EMAIL_RE.test(email);
+    var emailValid = email && EMAIL_RE.test(email);
+    emailCheck.classList.toggle('visible', !!emailValid);
+
+    // Need a note AND (name OR valid email)
+    var hasContact = name || emailValid;
+    submitBtn.disabled = !note || !emailOk || !hasContact;
   }
-  var btn = document.getElementById('submitBtn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
-  return true;
-};
+
+  nameInput.addEventListener('input', validate);
+  emailInput.addEventListener('input', validate);
+  noteInput.addEventListener('input', validate);
+
+  // Set initial state
+  validate();
+
+  window.beforeSubmit = function() {
+    var name  = nameInput.value.trim();
+    var email = emailInput.value.trim();
+    var note  = noteInput.value.trim();
+    var emailOk = !email || EMAIL_RE.test(email);
+    var hasContact = name || (email && EMAIL_RE.test(email));
+    if (!note || !emailOk || !hasContact) return false;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting…';
+    return true;
+  };
+})();
 </script>
 </body>
 </html>

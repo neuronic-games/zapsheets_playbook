@@ -49,15 +49,36 @@ usort($_games, fn($a, $b) => strcasecmp($a['name'], $b['name']));
 
 $_total_notes = array_sum(array_map(fn($g) => count($g['notes']), $_games));
 
-// Suggestions for Add Topic: names in the index that have NO notes file yet
-$_suggestions = [];
-foreach ($_nb_index as $_hash => $_sname) {
-    $_ssafe = str_replace(['/', '\\'], '-', $_sname);
-    if (!file_exists($_sheets_dir . 'notes-' . $_ssafe . '-en.json')) {
-        $_suggestions[] = $_sname;
-    }
+// Suggestions for Add Topic: games that don't already have an active notes sheet.
+// Build a lookup of keys/names that already have notes (case-insensitive).
+$_active_lc = [];
+foreach ($_games as $_g) {
+    $_active_lc[] = strtolower($_g['key']);
+    $_active_lc[] = strtolower($_g['name']);
 }
-sort($_suggestions);
+
+$_suggestions = [];
+$_games_json  = $_sheets_dir . 'games.json';
+if (file_exists($_games_json)) {
+    // Primary source: games list from the PitchBoard sheet
+    $_all_games = json_decode(file_get_contents($_games_json), true) ?: [];
+    foreach ($_all_games as $_gm) {
+        $_gn = trim($_gm['Name'] ?? '');
+        if ($_gn && !in_array(strtolower($_gn), $_active_lc)) {
+            $_suggestions[] = $_gn;
+        }
+    }
+    sort($_suggestions);
+} else {
+    // Fallback: noteboard-index entries that have no notes file yet
+    foreach ($_nb_index as $_hash => $_sname) {
+        $_ssafe = str_replace(['/', '\\'], '-', $_sname);
+        if (!file_exists($_sheets_dir . 'notes-' . $_ssafe . '-en.json')) {
+            $_suggestions[] = $_sname;
+        }
+    }
+    sort($_suggestions);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

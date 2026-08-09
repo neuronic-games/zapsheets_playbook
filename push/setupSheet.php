@@ -48,6 +48,13 @@ if ($pyResult === null) {
     exit;
 }
 
+// If ginitsheet.py returned a fatal error (e.g. sheet not shared with the
+// service account), bail immediately — do NOT create the directory or caches.
+if (isset($pyResult['error'])) {
+    echo json_encode(['error' => $pyResult['error']]);
+    exit;
+}
+
 $result['tabs']  = $pyResult['tabs']  ?? [];
 $result['title'] = $pyResult['title'] ?? '';
 if (empty($pyResult['ok'])) {

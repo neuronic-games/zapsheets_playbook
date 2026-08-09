@@ -30,12 +30,10 @@ if (!is_dir($sharesDir)) {
     file_put_contents($sharesDir . DIRECTORY_SEPARATOR . '.htaccess', "Options -Indexes\n");
 }
 
-// Generate a URL-safe unique filename (16 hex chars)
-try {
-    $filename = bin2hex(random_bytes(8)) . '.json';
-} catch (Exception $e) {
-    $filename = substr(md5(uniqid('', true)), 0, 16) . '.json';
-}
+// Derive a stable filename from sheet ID + game name so re-packaging overwrites the same file.
+$decoded  = json_decode($jsonData, true);
+$gameName = trim($decoded['game']['Name'] ?? '');
+$filename = substr(md5($sheetId . '|' . $gameName), 0, 24) . '.json';
 
 $filepath = $sharesDir . DIRECTORY_SEPARATOR . $filename;
 

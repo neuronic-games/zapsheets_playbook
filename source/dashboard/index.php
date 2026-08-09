@@ -4,6 +4,30 @@ preg_match('#^(.*?)(?:sheets/)?([A-Za-z0-9_\-]+)/(?:pitchboard|dashboard)/?$#', 
 $_base     = (isset($_bm[1]) && $_bm[1] !== '') ? $_bm[1] : '/';
 if (substr($_base, -1) !== '/') $_base .= '/';
 $_sheet_id = $_bm[2] ?? '';
+
+// Noteboard: pre-compute per-game hashes so JS can build feedback URLs
+$_nb_hashes = [];
+$_nb_index  = __DIR__ . '/../../sheets/' . $_sheet_id . '/noteboard-index.json';
+if (file_exists($_nb_index)) {
+    $idx = json_decode(file_get_contents($_nb_index), true) ?: [];
+    // Invert: game_name → hash
+    foreach ($idx as $hash => $name) {
+        $_nb_hashes[$name] = $hash;
+    }
+}
+
+// Noteboard: detect which games have a local notes cache (notes-{name}-en.json)
+$_nb_has_notes = []; // game_name → safe_name (used to build JSON URL)
+$_sheets_dir   = __DIR__ . '/../../sheets/' . $_sheet_id . '/';
+if (is_dir($_sheets_dir)) {
+    foreach (glob($_sheets_dir . 'notes-*-en.json') as $_nf) {
+        // Extract safe_name from filename
+        $_safe = preg_replace('/^notes-(.+)-en\.json$/', '$1', basename($_nf));
+        if ($_safe && $_safe !== basename($_nf)) {
+            $_nb_has_notes[$_safe] = true;
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -358,11 +382,43 @@ $_sheet_id = $_bm[2] ?? '';
     .game-sub-bar {
       background:#1a1a2e;
       display:flex; align-items:center;
+      overflow:hidden;           /* clips both panels during the slide */
     }
     .game-links {
       flex:1; min-width:0;
       padding:.5rem 1rem .55rem;
+      position:relative;
+    }
+    .game-links-default {
+      display:flex; align-items:center; gap:.5rem;
+      transition: transform .28s cubic-bezier(.4,0,.2,1);
+    }
+    /* Left section: designers + pills, grows to fill available space */
+    .game-links-meta {
+      flex:1; min-width:0;
       display:flex; gap:.35rem; flex-wrap:wrap; align-items:center;
+    }
+    /* Right section: action buttons, pinned to the right of the sliding panel */
+    .game-links-actions {
+      display:flex; gap:.35rem; align-items:center; flex-shrink:0;
+    }
+    /* Overflow starts at right edge of the full card (links + actions width),
+       calculated at runtime via --nb-start set by JS */
+    .game-links-overflow {
+      position:absolute; inset:0;
+      padding:.5rem 1rem .55rem; /* match .game-links padding */
+      display:flex; gap:.35rem; align-items:center;
+      transform: translateX(var(--nb-start, 200%));
+      transition: transform .28s cubic-bezier(.4,0,.2,1);
+      pointer-events:none;
+    }
+    .game-links.overflow-open .game-links-default {
+      transform: translateX(-110%);
+      pointer-events:none;
+    }
+    .game-links.overflow-open .game-links-overflow {
+      transform: translateX(0);
+      pointer-events:auto;
     }
     /* Pills wrapper — sits inline on desktop, becomes its own scrollable row on mobile */
     .game-link-pills {
@@ -372,13 +428,17 @@ $_sheet_id = $_bm[2] ?? '';
       display:flex; gap:.35rem; align-items:center; flex-shrink:0;
       padding:.5rem 1rem .5rem 0;
     }
+    .game-action-more.active {
+      background:rgba(255,196,76,.26); color:#ffe099;
+    }
     /* On narrow / portrait screens, stack designers / pills / actions each on own row */
     @media (max-width:540px) {
       .game-sub-bar { flex-direction:column; align-items:stretch; }
-      .game-links {
-        flex-direction:column; align-items:flex-start;
-        gap:.3rem; padding-bottom:.35rem;
-      }
+      .game-links { padding-bottom:.35rem; }
+      /* On mobile: default panel stacks meta (top) + action buttons (bottom row) */
+      .game-links-default { flex-direction:column; align-items:stretch; gap:.3rem; }
+      .game-links-meta { flex-direction:column; align-items:flex-start; gap:.3rem; }
+      .game-links-actions { flex-wrap:wrap; }
       /* Designers line: left-aligned, wraps if needed */
       .game-links-designers { white-space:normal; align-self:flex-start; }
       /* Pills: single scrollable row */
@@ -389,6 +449,12 @@ $_sheet_id = $_bm[2] ?? '';
         scrollbar-width:none; width:100%;
       }
       .game-link-pills::-webkit-scrollbar { display:none; }
+      /* Overflow: single scrollable row on mobile */
+      .game-links-overflow {
+        flex-wrap:nowrap; overflow-x:auto;
+        -webkit-overflow-scrolling:touch; scrollbar-width:none;
+      }
+      .game-links-overflow::-webkit-scrollbar { display:none; }
       /* Actions row: single scrollable row */
       .game-actions {
         padding:.3rem 1rem .55rem;
@@ -598,6 +664,15 @@ $_sheet_id = $_bm[2] ?? '';
       text-transform:none; letter-spacing:normal;
     }
     .combo-opt:hover, .combo-opt.active { background:#1a1a2e; color:#fff; }
+    .combo-sep { height:1px; background:#e0dbd3; margin:.25rem .5rem; pointer-events:none; }
+    /* Show-all collapsed publishers button */
+    .pub-show-all-btn {
+      display:block; width:100%; background:none; border:none; border-top:1px solid #eee;
+      padding:.45rem 1rem; cursor:pointer; text-align:center;
+      font-family:'DINBlack',sans-serif; font-size:.65rem;
+      text-transform:uppercase; letter-spacing:.06em; color:#aaa;
+    }
+    .pub-show-all-btn:hover { color:#555; }
     /* Sub-dialog (New Publisher / New Contact) */
     .add-new-overlay {
       display:none; position:fixed; inset:0;
@@ -858,19 +933,44 @@ $_sheet_id = $_bm[2] ?? '';
     }
     .err-overlay.open { display:flex; }
 
+    /* ── Enable Notes dialog ─────────────────────────────── */
+    .en-game-name {
+      font-family:'DINBlack',sans-serif; font-size:1rem; margin:0 0 .25rem;
+    }
+    .en-label {
+      font-size:.75rem; font-weight:600; text-transform:uppercase;
+      letter-spacing:.04em; color:#888; margin:.6rem 0 .3rem;
+    }
+    .en-link-row {
+      display:flex; gap:.5rem; align-items:center;
+    }
+    .en-link-row input {
+      flex:1; font-family:monospace; font-size:.72rem;
+      color:#444; background:#f5f4f1; border:1.5px solid #ddd;
+      border-radius:6px; padding:.42rem .7rem; outline:none;
+    }
+    .en-share-btn {
+      font-family:'DINBlack',sans-serif; font-size:.72rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      background:#1a1a2e; color:#fff; border:none;
+      border-radius:6px; padding:.45rem .9rem;
+      cursor:pointer; white-space:nowrap; transition:background .15s;
+    }
+    .en-share-btn:hover { background:#2d2d50; }
+
     /* ── Scroll-bleed prevention ─────────────────────────────────────────────────
        Make every overlay the scroll container so touches on the dialog or its
        backdrop never reach the list behind. The body is locked completely while
        any overlay is open.
     ────────────────────────────────────────────────────────────────────────────── */
     .di-overlay, .add-entry-overlay, .add-new-overlay, .notes-overlay,
-    .sync-overlay, .game-edit-overlay, .err-overlay {
+    .sync-overlay, .game-edit-overlay, .err-overlay, #enableNotesOverlay {
       overflow-y: auto;
       overscroll-behavior: contain;
     }
     body:has(.di-overlay.open, .add-entry-overlay.open, .add-new-overlay.open,
              .notes-overlay.open, .sync-overlay.open, .game-edit-overlay.open,
-             .err-overlay.open) {
+             .err-overlay.open, #enableNotesOverlay.open) {
       overflow: hidden;
     }
     .err-dialog {
@@ -908,6 +1008,49 @@ $_sheet_id = $_bm[2] ?? '';
 
     /* ── View Page publish dialog (inherits sync-* styles) ─ */
     #vpOverlay { z-index:5000; }
+
+    /* ── VP Edit panel ──────────────────────────────────── */
+    #vpEditPanel {
+      display:none; overflow:hidden; max-height:0;
+      transition:max-height .38s ease;
+    }
+    .vp-edit-inner {
+      display:flex; flex-direction:column; gap:.65rem;
+      padding-top:.75rem;
+      border-top:1px solid #e8e5e0; margin-top:.25rem;
+    }
+    .vp-edit-section {
+      font-family:'DINBlack',sans-serif; font-size:.67rem;
+      text-transform:uppercase; letter-spacing:.07em;
+      color:#aaa; margin-top:.3rem;
+    }
+    .vp-edit-row   { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; }
+    .vp-edit-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.5rem; }
+    .vp-edit-list  { display:flex; flex-direction:column; gap:.35rem; }
+    .vpe-video-row { display:grid; grid-template-columns:1fr .6fr; gap:.5rem; }
+    .vpe-add-btn {
+      align-self:flex-start; background:none; border:1px dashed #c8860a;
+      color:#c8860a; border-radius:5px; padding:.2rem .65rem;
+      font-size:.72rem; cursor:pointer; font-family:'DINRegular',sans-serif;
+      transition:background .12s;
+    }
+    .vpe-add-btn:hover { background:rgba(200,134,10,.08); }
+    /* wider + capped height when edit panel is open */
+    #vpOverlay.editing .sync-dialog {
+      width:min(580px,95vw); max-height:90vh;
+      display:flex; flex-direction:column; overflow:hidden;
+      transition:width .28s ease;
+    }
+    /* scroll body fills remaining space and scrolls; edit panel inside expands */
+    #vpScrollBody { display:flex; flex-direction:column; gap:.75rem; }
+    #vpOverlay.editing #vpScrollBody {
+      flex:1; min-height:0; overflow-y:auto;
+    }
+    /* edit action bar: flex sibling pinned below the scrollable panel */
+    #vpEditActions {
+      border-top:1px solid #e8e5e0; padding-top:.55rem; flex-shrink:0;
+    }
+    #vpOverlay.editing .sync-dialog-actions { display:none; }
 
     /* ── VP summary panel ────────────────────────────────── */
     .vp-summary {
@@ -986,7 +1129,7 @@ $_sheet_id = $_bm[2] ?? '';
 <div class="top-bar">
   <div class="top-bar-inner">
     <div class="top-bar-left">
-      <h1 onclick="deployOnly()"><span class="pb-pitch">Pitch</span><span class="pb-board">Board</span></h1>
+      <h1 onclick="window.location.href=APP_BASE+'pitchboard'"><span class="pb-pitch">Pitch</span><span class="pb-board">Board</span></h1>
       <p class="sub" id="subTitle">Loading…</p>
       <p class="sub version-tag" id="versionTag" style="display:none"></p>
     </div>
@@ -1113,20 +1256,99 @@ $_sheet_id = $_bm[2] ?? '';
 <div class="sync-overlay" id="vpOverlay">
   <div class="sync-dialog">
     <h2 id="vpDialogTitle">View Page</h2>
-    <!-- Summary panel — shown first -->
-    <div id="vpSummaryPanel">
-      <div class="vp-summary" id="vpSummary"></div>
-    </div>
-    <!-- Log panel — shown during/after sync -->
-    <div id="vpLogPanel" style="display:none">
-      <div class="sync-log" id="vpLog"></div>
+    <!-- Scroll body: everything between title and action bar scrolls when editing -->
+    <div id="vpScrollBody">
+      <!-- Summary panel — shown first -->
+      <div id="vpSummaryPanel">
+        <div class="vp-summary" id="vpSummary"></div>
+      </div>
+      <!-- Log panel — shown during/after sync -->
+      <div id="vpLogPanel" style="display:none">
+        <div class="sync-log" id="vpLog"></div>
+      </div>
+      <!-- Edit panel — expands in place when EDIT is clicked -->
+      <div id="vpEditPanel">
+      <div class="vp-edit-inner">
+        <div class="vp-edit-section">Images &amp; IDs</div>
+        <label class="ge-label">Product Image URL<input type="url" id="vpeProductImage" class="ge-input" placeholder="https://…" /></label>
+        <label class="ge-label">BGG Game ID<input type="text" id="vpeBggId" class="ge-input" placeholder="e.g. 123456" /></label>
+
+        <div class="vp-edit-section">Players &amp; Time</div>
+        <div class="vp-edit-row">
+          <label class="ge-label">Min Players<input type="text" id="vpeMinPlayers" class="ge-input" /></label>
+          <label class="ge-label">Max Players<input type="text" id="vpeMaxPlayers" class="ge-input" /></label>
+        </div>
+        <div class="vp-edit-row">
+          <label class="ge-label">Min Playtime<input type="text" id="vpeMinPlaytime" class="ge-input" /></label>
+          <label class="ge-label">Max Playtime<input type="text" id="vpeMaxPlaytime" class="ge-input" /></label>
+        </div>
+
+        <div class="vp-edit-section">Commerce</div>
+        <div class="vp-edit-row-3">
+          <label class="ge-label">Price<input type="text" id="vpePrice" class="ge-input" /></label>
+          <label class="ge-label">Stock<input type="text" id="vpeStock" class="ge-input" /></label>
+          <label class="ge-label">Weight<input type="text" id="vpeWeight" class="ge-input" /></label>
+        </div>
+
+        <div class="vp-edit-section">Designers</div>
+        <div id="vpeDesigners" class="vp-edit-list"></div>
+
+        <div class="vp-edit-section">Purchase Links</div>
+        <div id="vpeBuyUrls" class="vp-edit-list"></div>
+
+        <div class="vp-edit-section">Reviews</div>
+        <div id="vpeReviews" class="vp-edit-list"></div>
+
+        <div class="vp-edit-section">Videos</div>
+        <div id="vpeVideos" class="vp-edit-list"></div>
+
+        <div class="vp-edit-section">Components</div>
+        <div id="vpeComponents" class="vp-edit-list"></div>
+
+        <div class="vp-edit-section">Pitch</div>
+        <label class="ge-label">Pitch Image URL<input type="url" id="vpePitchImage" class="ge-input" placeholder="https://…" /></label>
+        <label class="ge-label">Pitch Description<textarea id="vpePitchDesc" class="ge-input" rows="3" style="resize:vertical;min-height:3.5rem;line-height:1.45"></textarea></label>
+
+        <div class="vp-edit-section">Features</div>
+        <div id="vpeFeatures" class="vp-edit-list"></div>
+
+        <div class="vp-edit-section">How to Play</div>
+        <label class="ge-label">Step 1<input type="text" id="vpeStep1" class="ge-input" /></label>
+        <label class="ge-label">Step 2<input type="text" id="vpeStep2" class="ge-input" /></label>
+        <label class="ge-label">Step 3<input type="text" id="vpeStep3" class="ge-input" /></label>
+      </div>
+    </div><!-- /#vpEditPanel -->
+    </div><!-- /#vpScrollBody -->
+    <!-- Edit actions: fixed at dialog bottom, shown only while editing -->
+    <div id="vpEditActions" class="vp-edit-actions" style="display:none">
+      <button class="ge-cancel-btn" onclick="vpCloseEdit()">Cancel</button>
+      <button class="ge-save-btn" id="vpeSaveBtn" onclick="vpSaveEdit()">Save</button>
     </div>
     <div class="sync-dialog-actions">
       <button class="sync-update-btn" id="vpSyncBtn"   style="margin-right:auto" onclick="vpDoSync()">Fetch</button>
       <!-- vpAddSheetBtn kept hidden in DOM; referenced by vpAddSheet() for state management -->
       <button id="vpAddSheetBtn" style="display:none" onclick="vpAddSheet()"></button>
       <button class="notes-close"   id="vpDoneBtn"     onclick="closeVpDialog()">Close</button>
+      <button class="sync-update-btn" id="vpEditBtn"   onclick="vpOpenEdit()" style="display:none">Edit</button>
       <button class="sync-done-btn" id="vpViewPageBtn" onclick="vpOpenViewPage()">View Page</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notes viewer dialog -->
+<div class="sync-overlay" id="nbNotesOverlay" onclick="if(event.target===this)closeNotesDialog()">
+  <div class="sync-dialog" style="max-height:80vh;display:flex;flex-direction:column;overflow:hidden;">
+    <h2 id="nbNotesTitle">Notes</h2>
+    <div id="nbNotesList" style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:.6rem;padding:.1rem 0 .35rem;"></div>
+    <div class="sync-dialog-actions">
+      <button class="en-share-btn" id="nbNotesShareBtn" style="margin-right:auto" onclick="
+        var btn=this, link=btn.dataset.link;
+        navigator.clipboard.writeText(link).then(function(){
+          btn.textContent='Copied!'; btn.style.background='#16a34a';
+          setTimeout(function(){ btn.textContent='Share'; btn.style.background=''; }, 2000);
+        }).catch(function(){ window.open(link,'_blank'); });
+      ">Share</button>
+      <button class="notes-close" onclick="closeNotesDialog()">Close</button>
     </div>
   </div>
 </div>
@@ -1319,10 +1541,24 @@ $_sheet_id = $_bm[2] ?? '';
     <h2>Share</h2>
 
     <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Share Pitches with Collaborators</p>
-    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .5rem">Send this link so collaborators can import your pitch data into their PitchBoard.</p>
-    <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:1rem">
-      <input type="text" id="shareUrlInput" class="ge-input" readonly style="flex:1;font-size:.72rem;font-family:monospace" />
-      <button class="sync-update-btn" id="shareUrlCopyBtn" onclick="copyShareUrl()">Copy</button>
+    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .75rem">Package your pitch data so collaborators can import it into their PitchBoard.</p>
+
+    <div style="margin-bottom:.9rem">
+      <button class="sync-update-btn" id="sharePackageBtn" onclick="packagePitchData()" style="width:100%;padding:.55rem 1rem;font-size:.8rem">Package Pitch Data</button>
+    </div>
+
+    <div id="sharePitchUrlSection" style="display:none">
+      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.6rem">
+        <input type="text" id="shareUrlInput" class="ge-input" readonly style="flex:1;font-size:.72rem;font-family:monospace" />
+        <button class="sync-update-btn" id="shareUrlCopyBtn" onclick="copyShareUrl()">Copy</button>
+      </div>
+      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:1rem">
+        <div class="combo-wrap" style="flex:1">
+          <input type="text" id="shareCollabInput" class="ge-input" placeholder="Select or type a collaborator…" autocomplete="off" style="font-size:.82rem" />
+          <div class="combo-drop" id="shareCollabDrop"></div>
+        </div>
+        <button class="sync-update-btn" onclick="sendShareEmail()" style="white-space:nowrap">&#9993; Send Email</button>
+      </div>
     </div>
 
     <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Share Game Page</p>
@@ -1349,6 +1585,24 @@ $_sheet_id = $_bm[2] ?? '';
     <div class="sync-dialog-actions">
       <button class="notes-close" onclick="closeImportUrlDialog()">Cancel</button>
       <button class="sync-update-btn" id="importUrlLoadBtn" onclick="loadImportUrl()">Load</button>
+    </div>
+  </div>
+</div>
+
+<!-- Enable Notes dialog -->
+<div class="sync-overlay" id="enableNotesOverlay" onclick="if(event.target===this)closeEnableNotesDialog()">
+  <div class="sync-dialog" style="width:min(440px,94vw)">
+    <h2 id="enGameName" style="font-size:.9rem;margin-bottom:.1rem">Enable Notes</h2>
+    <div class="sync-log" id="enLog" style="min-height:5rem"></div>
+    <div id="enShareSection" style="display:none;margin-top:.65rem">
+      <p class="en-label">Feedback form link</p>
+      <div class="en-link-row">
+        <input type="text" id="enLinkInput" readonly />
+        <button class="en-share-btn" id="enShareBtn" onclick="copyNotesLink()">Share</button>
+      </div>
+    </div>
+    <div class="sync-dialog-actions" style="margin-top:.85rem">
+      <button class="notes-close" onclick="closeEnableNotesDialog()">Close</button>
     </div>
   </div>
 </div>
@@ -1393,6 +1647,8 @@ function getSheetId() {
 var sheet_Id = getSheetId();
 var APP_BASE = document.querySelector('base').getAttribute('href');
 var BASE     = APP_BASE + 'sheets/' + sheet_Id + '/';
+var NOTEBOARD_HASHES    = <?= json_encode($_nb_hashes,    JSON_UNESCAPED_UNICODE) ?>; // game name → 12-char hash
+var NOTEBOARD_HAS_NOTES = <?= json_encode(array_fill_keys(array_keys($_nb_has_notes), true), JSON_UNESCAPED_UNICODE) ?>; // safe_name → true
 
 // ── State ─────────────────────────────────────────────
 var currentView     = 'game';
@@ -1881,6 +2137,10 @@ function buildGameView(pitches) {
     html += '<div class="card-body-wrap"><div class="card-body">';
     html += '<div class="game-sub-bar">';
     html += '<div class="game-links">';
+    // Default state: [designers + pills · · · · · · · · · ] [New Pitch] [View Page] [Edit Game]
+    html += '<div class="game-links-default">';
+    // Left: metadata (designers, link pills) — grows to fill space
+    html += '<div class="game-links-meta">';
     if (designerNames.length) {
       html += '<span class="game-links-designers">';
       designerNames.forEach(function(dn, i) {
@@ -1892,12 +2152,33 @@ function buildGameView(pitches) {
       html += '</span>';
     }
     if (gameLinkPills) html += '<div class="game-link-pills">' + gameLinkPills + '</div>';
-    html += '</div>'; // .game-links
-    html += '<div class="game-actions">';
+    html += '</div>'; // .game-links-meta
+    // Right: action buttons pinned to the right — slide left together with meta content
+    html += '<div class="game-links-actions">';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();addBtnClick(this)">New Pitch</button>';
-    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();editGameClick(this)">Edit Game</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();viewPageClick(this)">View Page</button>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();editGameClick(this)">Edit Game</button>';
+    html += '</div>'; // .game-links-actions
+    html += '</div>'; // .game-links-default
+
+    // Overflow state: primary buttons + extra buttons all visible together
+    html += '<div class="game-links-overflow">';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();addBtnClick(this)">New Pitch</button>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();viewPageClick(this)">View Page</button>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();editGameClick(this)">Edit Game</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();shareGame(this.getAttribute(\'data-game\'))">Share</button>';
+    if (NOTEBOARD_HAS_NOTES[nbSafeName(g)]) {
+      html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();viewNotesClick(this)">View Notes</button>';
+    } else {
+      html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();enableNotesClick(this)">Enable Notes</button>';
+    }
+    html += '</div>'; // .game-links-overflow
+
+    html += '</div>'; // .game-links
+
+    // ··· stays fixed as the toggle — always visible
+    html += '<div class="game-actions">';
+    html += '<button class="game-action-btn game-action-more" data-game="' + escHtml(g) + '" onclick="toggleMoreActions(event,this)" title="More">···</button>';
     html += '</div>'; // .game-actions
     html += '</div>'; // .game-sub-bar
 
@@ -1908,7 +2189,13 @@ function buildGameView(pitches) {
       html += '<div style="padding:.75rem 1rem;color:#aaa;font-size:.8rem;font-style:italic">No pitches yet</div>';
     }
 
-    pubNames.forEach(function(p, pubIdx) {
+    // Build publisher rows, separating active from passed/gone-cold
+    var activePubHtml = '';
+    var collapsedPubHtml = '';
+    var activeAltIdx = 0;
+    var collapsedAltIdx = 0;
+
+    pubNames.forEach(function(p) {
       // Flatten all entries across contacts for this publisher
       var contacts = Object.keys(games[g][p]);
       var pubEntries = [];
@@ -1920,6 +2207,7 @@ function buildGameView(pitches) {
       var isPassed   = pubStatus === 'passed';
       var isGoneCold = pubStatus === 'gone cold';
       var isSigned   = pubStatus === 'signed';
+      var isCollapsed = isPassed || isGoneCold;
 
       // Publisher status badge
       var pubBadge = '';
@@ -1937,9 +2225,10 @@ function buildGameView(pitches) {
         pubBadge = '<span class="badge badge-pitched" style="margin-right:.75rem">Pitched</span>';
       }
 
-      var headerColor = (isPassed || isGoneCold) ? 'color:#aaa;' : 'color:#333;';
-      var altClass    = pubIdx % 2 === 1 ? ' pub-alt' : '';
-      html += '<div class="sub-group' + altClass + '">';
+      var headerColor = isCollapsed ? 'color:#aaa;' : 'color:#333;';
+      var altIdx      = isCollapsed ? collapsedAltIdx++ : activeAltIdx++;
+      var altClass    = altIdx % 2 === 1 ? ' pub-alt' : '';
+
       var pubLastContact = pubLatest.Contact || '';
       var pubAddBtn = '<button class="add-entry-btn"' +
         ' data-game="'      + escHtml(g) + '"' +
@@ -1947,20 +2236,35 @@ function buildGameView(pitches) {
         ' data-contact="'   + escHtml(pubLastContact) + '"' +
         ' data-pub-locked="1"' +
         ' onclick="event.stopPropagation();addBtnClick(this)">+ Pitch</button>';
-      html += '<div class="sub-label pub-passed-header" onclick="togglePubPassed(this)" style="' + headerColor + 'font-size:.75rem">' +
-              '<span class="pub-title-group"><span>' + escHtml(p) + '</span>' + pubAddBtn + '</span>' +
-              (isPassed || isGoneCold || isSigned ? '' : pubAgeTag) + pubBadge +
-              '<span class="pub-expand-chevron">▶</span>' +
-              '</div>';
-      html += '<div class="pub-body-wrap"><div class="pub-passed-body">';
+      var pubViewBtn = '<button class="add-entry-btn" data-pub="' + escHtml(p) + '" onclick="event.stopPropagation();goToPublisher(this.getAttribute(\'data-pub\'))">View</button>';
 
-      // Sort all entries newest-first and render inline (contact shown in each row)
+      var chunk = '<div class="sub-group' + altClass + '">';
+      chunk += '<div class="sub-label pub-passed-header" onclick="togglePubPassed(this)" style="' + headerColor + 'font-size:.75rem">' +
+               '<span class="pub-title-group"><span>' + escHtml(p) + '</span>' + pubViewBtn + pubAddBtn + '</span>' +
+               (isPassed || isGoneCold || isSigned ? '' : pubAgeTag) + pubBadge +
+               '<span class="pub-expand-chevron">▶</span>' +
+               '</div>';
+      chunk += '<div class="pub-body-wrap"><div class="pub-passed-body">';
       pubEntries.sort(function(a,b){ return new Date(b.Date) - new Date(a.Date); });
-      pubEntries.forEach(function(e){ html += entryRow(e); });
+      pubEntries.forEach(function(e){ chunk += entryRow(e); });
+      chunk += '</div></div>'; // pub-passed-body, pub-body-wrap
+      chunk += '</div>'; // sub-group
 
-      html += '</div></div>'; // pub-passed-body, pub-body-wrap
-      html += '</div>'; // sub-group
+      if (isCollapsed) { collapsedPubHtml += chunk; } else { activePubHtml += chunk; }
     });
+
+    html += activePubHtml;
+
+    if (collapsedPubHtml) {
+      var collapsedCount = pubNames.filter(function(p) {
+        var entries = [];
+        Object.keys(games[g][p]).forEach(function(c){ games[g][p][c].forEach(function(e){ entries.push(e); }); });
+        var s = (latestEntry(entries).Status || '').toLowerCase();
+        return s === 'passed' || s === 'gone cold';
+      }).length;
+      html += '<div class="pub-collapsed-wrap" style="display:none">' + collapsedPubHtml + '</div>';
+      html += '<button class="pub-show-all-btn" onclick="toggleCollapsedPubs(this)">Show ' + collapsedCount + ' passed / gone cold</button>';
+    }
 
     html += '</div></div>'; // card-body, card-body-wrap
     html += '</div>'; // card
@@ -2133,8 +2437,9 @@ function buildPublisherView(pitches) {
         ' data-contact="'   + escHtml(gLastContact) + '"' +
         ' data-pub-locked="1"' +
         ' onclick="event.stopPropagation();addBtnClick(this)">+ Pitch</button>';
+      var gViewBtn = '<button class="add-entry-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();goToGame(this.getAttribute(\'data-game\'))">View</button>';
       html += '<div class="sub-label pub-passed-header" onclick="togglePubPassed(this)" style="' + gHeaderColor + 'font-size:.75rem">' +
-              '<span class="pub-title-group"><span>' + escHtml(g) + '</span>' + gAddBtn + '</span>' +
+              '<span class="pub-title-group"><span>' + escHtml(g) + '</span>' + gViewBtn + gAddBtn + '</span>' +
               (gamePublished || gameSigned || gIsPassed || gIsGoneCold ? '' : gAgeTag) + gBadge + gStatusDateHtml +
               '<span class="pub-expand-chevron">▶</span>' +
               '</div>';
@@ -2620,11 +2925,46 @@ function toggleCard(header) {
   header.parentElement.classList.toggle('open');
 }
 
+// ── Cross-view navigation ─────────────────────────────
+function _expandCardByTitle(title) {
+  var cards = document.querySelectorAll('#content .card');
+  for (var i = 0; i < cards.length; i++) {
+    var t = cards[i].querySelector('.card-title');
+    if (t && t.textContent === title) {
+      cards[i].classList.add('open');
+      setTimeout(function(c) {
+        var topBar = document.querySelector('.top-bar');
+        var offset = topBar ? topBar.offsetHeight : 0;
+        var rect   = c.getBoundingClientRect();
+        window.scrollTo({ top: window.pageYOffset + rect.top - offset - 8, behavior: 'smooth' });
+      }, 50, cards[i]);
+      break;
+    }
+  }
+}
+function goToPublisher(pubName) {
+  setView('publisher');
+  _expandCardByTitle(pubName);
+}
+function goToGame(gameName) {
+  setView('game');
+  _expandCardByTitle(gameName);
+}
+
 function togglePubPassed(header) {
   var wrap    = header.nextElementSibling;
   var chevron = header.querySelector(".pub-expand-chevron");
   var isOpen  = wrap.classList.toggle("open");
   if (chevron) chevron.style.transform = isOpen ? "rotate(90deg)" : "rotate(0deg)";
+}
+
+function toggleCollapsedPubs(btn) {
+  var wrap   = btn.previousElementSibling; // .pub-collapsed-wrap
+  var isOpen = wrap.style.display !== 'none';
+  wrap.style.display = isOpen ? 'none' : '';
+  btn.textContent    = isOpen
+    ? btn.textContent.replace(/^Hide/, 'Show')
+    : btn.textContent.replace(/^Show/, 'Hide');
 }
 
 // ── View-state save / restore (used after adding a row) ──
@@ -3052,6 +3392,8 @@ function _vpOpenSummary(enabled) {
   document.getElementById('vpSyncBtn').disabled          = !enabled;
   document.getElementById('vpViewPageBtn').disabled      = !enabled;
   document.getElementById('vpDoneBtn').disabled          = false;
+  document.getElementById('vpEditBtn').style.display     = enabled ? '' : 'none';
+  document.getElementById('vpEditBtn').disabled          = false;
   document.getElementById('vpOverlay').classList.add('open');
 }
 
@@ -3092,6 +3434,7 @@ function _vpDeployAndOpen() {
     xhrJ.onload = function() {
       if (xhrJ.status >= 200 && xhrJ.status < 300) {
         var data; try { data = JSON.parse(xhrJ.responseText); } catch(e) { data = []; }
+        _vpCurrentRecords = data;
         _vpBuildSummary(_vpCurrentGame, data);
         document.getElementById('vpSummaryPanel').style.display = '';
         document.getElementById('vpDialogTitle').textContent = 'View Page';
@@ -3135,8 +3478,218 @@ function _vpDeployAndOpen() {
 }
 
 // ── View Page ─────────────────────────────────────────
-var _vpCurrentGame = '';   // game name kept for vpAddSheet()
-var _vpCheckXhr    = null; // in-flight JSON-existence check (aborted on new click)
+var _vpCurrentGame    = '';   // game name kept for vpAddSheet()
+var _vpCheckXhr       = null; // in-flight JSON-existence check (aborted on new click)
+var _vpCurrentRecords = null; // loaded game JSON records (for the edit panel)
+
+// ── VP Edit panel helpers ──────────────────────────────
+// Return all records with a given field name (case-insensitive)
+function _vpeGetAll(name) {
+  var out = [];
+  if (!_vpCurrentRecords) return out;
+  var lc = name.toLowerCase();
+  _vpCurrentRecords.forEach(function(r) {
+    if ((r.Name || '').trim().toLowerCase() === lc)
+      out.push({ val: (r.Value || '').trim(), extra: (r['Value 1'] || '').trim() });
+  });
+  return out;
+}
+function _vpeGet(name) {
+  var a = _vpeGetAll(name); return a.length ? a[0].val : '';
+}
+
+// Build a text input for a dynamic list
+function _vpeMakeInput(placeholder, value, type) {
+  var inp = document.createElement('input');
+  inp.type  = type || 'text';
+  inp.className = 'ge-input';
+  inp.placeholder = placeholder || '';
+  inp.value = value || '';
+  return inp;
+}
+
+// Render a single-value dynamic list with "+ Add" button
+function _vpeRenderList(containerId, fieldName, placeholder, minEmpty) {
+  var el   = document.getElementById(containerId);
+  var vals = _vpeGetAll(fieldName).map(function(r) { return r.val; });
+  // Guarantee at least minEmpty blank slots
+  var empties = vals.filter(function(v) { return !v; }).length;
+  while (empties < (minEmpty || 1)) { vals.push(''); empties++; }
+  el.innerHTML = '';
+  vals.forEach(function(v) { el.appendChild(_vpeMakeInput(placeholder, v)); });
+  var addBtn = document.createElement('button');
+  addBtn.className   = 'vpe-add-btn';
+  addBtn.textContent = '+ Add';
+  addBtn.type        = 'button';
+  addBtn.onclick     = function() {
+    el.insertBefore(_vpeMakeInput(placeholder, ''), addBtn);
+  };
+  el.appendChild(addBtn);
+}
+
+// Render Video list (URL + label columns)
+function _vpeRenderVideos() {
+  var el   = document.getElementById('vpeVideos');
+  var vals = _vpeGetAll('Video');
+  if (!vals.length) vals = [{ val:'', extra:'' }];
+  vals.push({ val:'', extra:'' });  // one extra blank row
+  el.innerHTML = '';
+  function makeVideoRow(v) {
+    var row = document.createElement('div');
+    row.className = 'vpe-video-row';
+    var url = _vpeMakeInput('Video URL (https://…)', v.val, 'url');
+    url.className += ' vpe-video-url';
+    var lbl = _vpeMakeInput('Label (e.g. About the game)', v.extra);
+    lbl.className += ' vpe-video-label';
+    row.appendChild(url); row.appendChild(lbl);
+    return row;
+  }
+  vals.forEach(function(v) { el.appendChild(makeVideoRow(v)); });
+  var addBtn = document.createElement('button');
+  addBtn.className   = 'vpe-add-btn';
+  addBtn.textContent = '+ Add';
+  addBtn.type        = 'button';
+  addBtn.onclick     = function() {
+    el.insertBefore(makeVideoRow({ val:'', extra:'' }), addBtn);
+  };
+  el.appendChild(addBtn);
+}
+
+function vpOpenEdit() {
+  var panel  = document.getElementById('vpEditPanel');
+  var overlay = document.getElementById('vpOverlay');
+
+  // Populate static fields
+  document.getElementById('vpeProductImage').value = _vpeGet('ProductImage');
+  document.getElementById('vpeBggId').value        = _vpeGet('BggGameId');
+  document.getElementById('vpeMinPlayers').value   = _vpeGet('MinPlayers');
+  document.getElementById('vpeMaxPlayers').value   = _vpeGet('MaxPlayers');
+  document.getElementById('vpeMinPlaytime').value  = _vpeGet('MinPlaytime');
+  document.getElementById('vpeMaxPlaytime').value  = _vpeGet('MaxPlaytime');
+  document.getElementById('vpePrice').value        = _vpeGet('Price');
+  document.getElementById('vpeStock').value        = _vpeGet('Stock');
+  document.getElementById('vpeWeight').value       = _vpeGet('Weight');
+  document.getElementById('vpePitchImage').value   = _vpeGet('PitchImageUrl');
+  document.getElementById('vpePitchDesc').value    = _vpeGet('PitchDescription');
+  document.getElementById('vpeStep1').value        = _vpeGet('Step 1');
+  document.getElementById('vpeStep2').value        = _vpeGet('Step 2');
+  document.getElementById('vpeStep3').value        = _vpeGet('Step 3');
+  document.getElementById('vpeSaveBtn').disabled   = false;
+  document.getElementById('vpeSaveBtn').textContent = 'Save';
+
+  // Populate dynamic lists
+  _vpeRenderList('vpeDesigners',  'Designer',        'Name…',            2);
+  _vpeRenderList('vpeBuyUrls',    'BuyUrl',           'https://…',       1);
+  _vpeRenderList('vpeReviews',    'Review',           'https://…',       1);
+  _vpeRenderList('vpeComponents', 'Component',        'e.g. 50 Cards…',  2);
+  _vpeRenderList('vpeFeatures',   'Feature',          'e.g. 2–4 players…', 2);
+  _vpeRenderVideos();
+
+  // Switch overlay to editing state (wider dialog)
+  overlay.classList.add('editing');
+
+  // Animate panel open — use two rAF frames so layout is computed before transition
+  panel.style.display   = 'block';
+  panel.style.maxHeight = '0';
+  panel.style.overflow  = 'hidden';
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      panel.style.maxHeight = Math.max(panel.scrollHeight, 800) + 'px';
+      // After animation, remove the cap — #vpScrollBody handles all scrolling
+      setTimeout(function() {
+        panel.style.maxHeight = 'none';
+        panel.style.overflow  = 'visible';
+      }, 420);
+    });
+  });
+
+  document.getElementById('vpEditBtn').style.display        = 'none';
+  document.getElementById('vpEditActions').style.display    = 'flex';
+  document.getElementById('vpDialogTitle').textContent      = 'Edit Game Page';
+}
+
+function vpCloseEdit() {
+  var panel   = document.getElementById('vpEditPanel');
+  var overlay = document.getElementById('vpOverlay');
+  // Switch back to hidden+capped before animating closed
+  panel.style.overflow  = 'hidden';
+  panel.style.maxHeight = panel.offsetHeight + 'px';
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      panel.style.maxHeight = '0';
+      setTimeout(function() {
+        panel.style.display = 'none';
+        document.getElementById('vpScrollBody').scrollTop = 0;
+      }, 390);
+    });
+  });
+  overlay.classList.remove('editing');
+  document.getElementById('vpEditBtn').style.display        = '';
+  document.getElementById('vpEditActions').style.display    = 'none';
+  document.getElementById('vpDialogTitle').textContent      = 'View Page';
+}
+
+function vpSaveEdit() {
+  var btn = document.getElementById('vpeSaveBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  var rows = [];
+  function addSingle(name, id) {
+    var v = (document.getElementById(id).value || '').trim();
+    if (v) rows.push({ name: name, value: v, extra: '' });
+  }
+  function addList(name, containerId) {
+    document.querySelectorAll('#' + containerId + ' input.ge-input').forEach(function(inp) {
+      var v = (inp.value || '').trim();
+      if (v) rows.push({ name: name, value: v, extra: '' });
+    });
+  }
+
+  addSingle('BggGameId',        'vpeBggId');
+  addSingle('ProductImage',     'vpeProductImage');
+  addSingle('MinPlayers',       'vpeMinPlayers');
+  addSingle('MaxPlayers',       'vpeMaxPlayers');
+  addSingle('MinPlaytime',      'vpeMinPlaytime');
+  addSingle('MaxPlaytime',      'vpeMaxPlaytime');
+  addList  ('Designer',         'vpeDesigners');
+  addSingle('Price',            'vpePrice');
+  addSingle('Stock',            'vpeStock');
+  addSingle('Weight',           'vpeWeight');
+  addList  ('BuyUrl',           'vpeBuyUrls');
+  addList  ('Review',           'vpeReviews');
+  document.querySelectorAll('#vpeVideos .vpe-video-row').forEach(function(row) {
+    var url = (row.querySelector('.vpe-video-url').value  || '').trim();
+    var lbl = (row.querySelector('.vpe-video-label').value || '').trim();
+    if (url) rows.push({ name: 'Video', value: url, extra: lbl });
+  });
+  addList  ('Component',        'vpeComponents');
+  addSingle('PitchImageUrl',    'vpePitchImage');
+  addSingle('PitchDescription', 'vpePitchDesc');
+  addList  ('Feature',          'vpeFeatures');
+  addSingle('Step 1',           'vpeStep1');
+  addSingle('Step 2',           'vpeStep2');
+  addSingle('Step 3',           'vpeStep3');
+
+  var fd = new FormData();
+  fd.append('id',   sheet_Id);
+  fd.append('game', _vpCurrentGame);
+  fd.append('rows', JSON.stringify(rows));
+
+  fetch(APP_BASE + 'push/updateGameTab.php', { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+      btn.disabled = false;
+      btn.textContent = 'Save';
+      if (result.error) { alert('Save failed: ' + result.error); return; }
+      vpCloseEdit();
+    })
+    .catch(function(e) {
+      btn.disabled = false;
+      btn.textContent = 'Save';
+      alert('Save failed: ' + e.message);
+    });
+}
 
 // Inner publish pipeline: export → cache media → deploy → open.
 // Called both by viewPageClick and by vpAddSheet after tab creation.
@@ -3230,10 +3783,11 @@ function viewPageClick(btn) {
         if (xhrJ.status >= 200 && xhrJ.status < 300) {
           try { data = JSON.parse(xhrJ.responseText); } catch(e) {}
         }
+        _vpCurrentRecords = data;
         _vpBuildSummary(gameName, data);
         _vpOpenSummary(true);
       };
-      xhrJ.onerror = function() { _vpBuildSummary(gameName, []); _vpOpenSummary(true); };
+      xhrJ.onerror = function() { _vpCurrentRecords = []; _vpBuildSummary(gameName, []); _vpOpenSummary(true); };
       xhrJ.send();
     } else {
       // No game JSON — automatically create the sheet tab and publish.
@@ -3261,6 +3815,7 @@ function vpDoSync() {
   document.getElementById('vpSyncBtn').disabled     = true;
   document.getElementById('vpViewPageBtn').disabled = true;
   document.getElementById('vpDoneBtn').disabled     = true;
+  document.getElementById('vpEditBtn').disabled     = true;
   document.getElementById('vpDialogTitle').textContent = 'Updating Game Info Page';
   _vpRunPublish(_vpCurrentGame);
 }
@@ -3502,14 +4057,16 @@ function submitGameEdit() {
   saveNextDesigner(newDesigners);
 }
 
-// Close dialogs on Escape (publish dialog first, then error, then sub-dialogs, then main)
+// Close dialogs on Escape (outermost-first priority)
 document.addEventListener('keydown', function(ev) {
   if (ev.key !== 'Escape') return;
-  if (document.getElementById('vpOverlay').classList.contains('open'))       { closeVpDialog();       return; }
-  if (document.getElementById('errOverlay').classList.contains('open'))      { closeErrDialog();      return; }
-  if (document.getElementById('gameEditOverlay').classList.contains('open')) { closeGameEditDialog(); return; }
-  if (document.getElementById('addNewOverlay').classList.contains('open'))   { closeAddNew();         return; }
-  if (document.getElementById('addEntryOverlay').classList.contains('open')) { closeAddDialog();      return; }
+  if (document.getElementById('vpOverlay').classList.contains('open'))        { closeVpDialog();        return; }
+  if (document.getElementById('shareUrlOverlay').classList.contains('open'))  { closeShareUrlDialog();  return; }
+  if (document.getElementById('errOverlay').classList.contains('open'))       { closeErrDialog();       return; }
+  if (document.getElementById('diOverlay').classList.contains('open'))        { closeDiDialog();        return; }
+  if (document.getElementById('gameEditOverlay').classList.contains('open'))  { closeGameEditDialog();  return; }
+  if (document.getElementById('addNewOverlay').classList.contains('open'))    { closeAddNew();          return; }
+  if (document.getElementById('addEntryOverlay').classList.contains('open'))  { closeAddDialog();       return; }
   closeNotesDialog();
 });
 
@@ -3551,22 +4108,36 @@ function _comboInit(inputId, dropId, getItems, onSelect) {
   function renderDrop(q) {
     if (inp.disabled) return;
     if (q === undefined) q = inp.value.trim().toLowerCase();
-    var items = getItems().filter(function(s) {
-      return !q || s.toLowerCase().indexOf(q) !== -1;
-    });
+    var allItems = getItems();
+    // When filtering, skip separators; when showing all, keep them (but strip leading/trailing)
+    var items;
+    if (q) {
+      items = allItems.filter(function(s) {
+        return s !== '---' && s.toLowerCase().indexOf(q) !== -1;
+      });
+    } else {
+      // Remove leading/trailing separators
+      items = allItems.slice();
+      while (items.length && items[0] === '---') items.shift();
+      while (items.length && items[items.length - 1] === '---') items.pop();
+    }
     if (!items.length) { closeDrop(); return; }
     _ai = -1;
     drop.innerHTML = '';
     items.forEach(function(item) {
       var div = document.createElement('div');
-      div.className = 'combo-opt';
-      div.textContent = item;
-      div.addEventListener('mousedown', function(e) {
-        e.preventDefault();   // keep focus on input
-        inp.value = item;
-        closeDrop();
-        if (onSelect) onSelect(item);
-      });
+      if (item === '---') {
+        div.className = 'combo-sep';
+      } else {
+        div.className = 'combo-opt';
+        div.textContent = item;
+        div.addEventListener('mousedown', function(e) {
+          e.preventDefault();   // keep focus on input
+          inp.value = item;
+          closeDrop();
+          if (onSelect) onSelect(item);
+        });
+      }
       drop.appendChild(div);
     });
     drop.classList.add('open');
@@ -4289,6 +4860,22 @@ function syncLog(msg, type) {
   log.scrollTop = log.scrollHeight;
 }
 
+// ── Game card "···" overflow toggle ──────────────────
+function toggleMoreActions(e, btn) {
+  e.stopPropagation();
+  var subBar = btn.closest('.game-sub-bar');
+  var links  = subBar.querySelector('.game-links');
+  var isOpen = links.classList.contains('overflow-open');
+  if (!isOpen) {
+    // Set the starting translateX so overflow slides in from the card's right edge
+    var actW   = subBar.querySelector('.game-actions').offsetWidth;
+    var linksW = links.offsetWidth;
+    links.style.setProperty('--nb-start', ((linksW + actW) / linksW * 100).toFixed(1) + '%');
+  }
+  links.classList.toggle('overflow-open', !isOpen);
+  btn.classList.toggle('active', !isOpen);
+}
+
 // ── Account menu ─────────────────────────────────────
 function toggleAccountMenu() {
   var menu = document.getElementById('accountMenu');
@@ -4379,20 +4966,194 @@ function submitProfile() {
   xhr.send(fd);
 }
 
-// ── Share (save pitches JSON to server, show link) ────
+// ── Share ─────────────────────────────────────────────
 function shareGame(gameName) {
+  openShareUrlDialog(gameName);
+}
+
+// ── NoteBoard ──────────────────────────────────────────
+function nbSafeName(g) {
+  return g.replace(/\//g, '-').replace(/\\/g, '-');
+}
+
+function enableNotesClick(btn) {
+  var gameName = btn.getAttribute('data-game') || '';
+  if (!gameName) return;
+
+  // Open dialog immediately and start the process
+  var logEl = document.getElementById('enLog');
+  logEl.innerHTML = '';
+  document.getElementById('enGameName').textContent = gameName;
+  document.getElementById('enShareSection').style.display = 'none';
+  document.getElementById('enableNotesOverlay').classList.add('open');
+  addEnLog('Starting…', 'info');
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/enableGameNotes.php');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onload = function() {
+    var res; try { res = JSON.parse(xhr.responseText); } catch(e) { res = null; }
+    if (!res) { addEnLog('Invalid server response.', 'error'); return; }
+
+    // Clear the initial "Starting…" line and replay the server's log
+    logEl.innerHTML = '';
+    var lines = res.logs || [];
+    var delay = 0;
+    lines.forEach(function(line) {
+      setTimeout(function() { addEnLog(line.msg, line.type || 'info'); }, delay);
+      delay += 110;
+    });
+
+    if (res.error && !res.ok) {
+      setTimeout(function() { addEnLog('Error: ' + res.error, 'error'); }, delay);
+      return;
+    }
+
+    if (res.ok && res.hash) {
+      NOTEBOARD_HASHES[gameName] = res.hash;
+      NOTEBOARD_HAS_NOTES[nbSafeName(gameName)] = true;
+      setTimeout(function() {
+        // Show share section in dialog
+        var link = window.location.origin + APP_BASE + sheet_Id + '/noteboard/' + res.hash;
+        document.getElementById('enLinkInput').value = link;
+        var shareBtn = document.getElementById('enShareBtn');
+        shareBtn.textContent = 'Share'; shareBtn.style.background = '';
+        document.getElementById('enShareSection').style.display = '';
+        // Update the card button to View Notes
+        btn.textContent = 'View Notes';
+        btn.onclick = function(e) { e.stopPropagation(); viewNotesClick(btn); };
+      }, delay + 80);
+    }
+  };
+  xhr.onerror = function() { addEnLog('Network error — could not reach server.', 'error'); };
+  xhr.send('id=' + encodeURIComponent(sheet_Id) + '&game=' + encodeURIComponent(gameName));
+}
+
+function addEnLog(msg, type) {
+  var logEl = document.getElementById('enLog');
+  var span  = document.createElement('span');
+  span.className  = 'sync-log-line ' + (type || 'info');
+  span.textContent = msg;
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function closeEnableNotesDialog() {
+  document.getElementById('enableNotesOverlay').classList.remove('open');
+}
+
+function copyNotesLink() {
+  var btn = document.getElementById('enShareBtn');
+  navigator.clipboard.writeText(document.getElementById('enLinkInput').value).then(function() {
+    btn.textContent = 'Copied!'; btn.style.background = '#16a34a';
+    setTimeout(function() { btn.textContent = 'Share'; btn.style.background = ''; }, 2000);
+  }).catch(function() {
+    document.getElementById('enLinkInput').select();
+    document.execCommand('copy');
+  });
+}
+
+function noteboardClick(btn) {
+  var gameName = btn.getAttribute('data-game') || '';
+  var hash     = NOTEBOARD_HASHES[gameName];
+  if (!hash) return;
+  var url = window.location.origin + APP_BASE + sheet_Id + '/noteboard/' + hash;
+  navigator.clipboard.writeText(url).then(function() {
+    var orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.style.background = '#16a34a';
+    btn.style.color = '#fff';
+    setTimeout(function() {
+      btn.textContent = orig;
+      btn.style.background = '';
+      btn.style.color = '';
+    }, 2000);
+  }).catch(function() {
+    window.open(url, '_blank');
+  });
+}
+
+function viewNotesClick(btn) {
+  var gameName = btn.getAttribute('data-game') || '';
+  if (!gameName) return;
+  var safe = nbSafeName(gameName);
+  var url  = BASE + 'notes-' + safe + '-en.json';
+
+  document.getElementById('nbNotesTitle').textContent = gameName + ' — Notes';
+  // Wire up the Share button with this game's feedback form link
+  var hash = NOTEBOARD_HASHES[gameName];
+  var shareBtn = document.getElementById('nbNotesShareBtn');
+  if (hash) {
+    shareBtn.style.display = '';
+    shareBtn.dataset.link = window.location.origin + APP_BASE + sheet_Id + '/noteboard/' + hash;
+    shareBtn.textContent = 'Share';
+    shareBtn.style.background = '';
+  } else {
+    shareBtn.style.display = 'none';
+  }
+  var list = document.getElementById('nbNotesList');
+  list.innerHTML = '<span style="color:#aaa;font-size:.85rem;">Loading…</span>';
+  document.getElementById('nbNotesOverlay').classList.add('open');
+
+  fetch(url)
+    .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function(notes) {
+      if (!notes.length) {
+        list.innerHTML = '<span style="color:#aaa;font-size:.85rem;font-style:italic;">No notes yet.</span>';
+        return;
+      }
+      list.innerHTML = notes.map(function(n) {
+        var who  = n.name  ? escHtml(n.name)  : '<em style="color:#bbb">Anonymous</em>';
+        var date = n.date  ? '<span style="color:#aaa;font-size:.73rem;">' + escHtml(n.date) + '</span>' : '';
+        var note = escHtml(n.note || '').replace(/\n/g, '<br>');
+        return '<div style="background:#fafaf8;border:1px solid #e8e5e0;border-radius:8px;padding:.65rem .85rem;">'
+             + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.3rem;">'
+             + '<span style="font-family:\'DINBlack\',sans-serif;font-size:.8rem;">' + who + '</span>' + date
+             + '</div>'
+             + '<div style="font-size:.88rem;line-height:1.55;color:#333;">' + note + '</div>'
+             + '</div>';
+      }).join('');
+    })
+    .catch(function() {
+      list.innerHTML = '<span style="color:#f87171;font-size:.85rem;">Could not load notes.</span>';
+    });
+}
+
+function closeNotesDialog() {
+  document.getElementById('nbNotesOverlay').classList.remove('open');
+}
+
+function packagePitchData() {
+  var gameName = _shareCurrentGame;
+  if (!gameName) return;
+
+  var btn = document.getElementById('sharePackageBtn');
+  btn.disabled = true;
+  btn.textContent = 'Packaging…';
+
   var pitches = allPitches.filter(function(r) { return r.Game === gameName; });
 
-  // Collect unique contacts and their person records
+  // Collect unique people: pitch contacts + game designers
   var seen = {};
   var people = [];
+
+  function addPerson(name, fallback) {
+    name = (name || '').trim();
+    if (!name || seen[name]) return;
+    seen[name] = 1;
+    var p = peopleData[name];
+    people.push(p ? Object.assign({}, p) : (fallback || { Name: name }));
+  }
+
+  // Pitch contacts
   pitches.forEach(function(r) {
-    var name = (r.Contact || '').trim();
-    if (name && !seen[name]) {
-      seen[name] = 1;
-      var p = peopleData[name];
-      people.push(p ? p : { Name: name, Company: r.Publisher || '' });
-    }
+    addPerson(r.Contact, { Name: (r.Contact || '').trim(), Company: r.Publisher || '' });
+  });
+
+  // Game designers
+  var gameInfo = gamesIndex[gameName] || {};
+  ['Designer1','Designer2','Designer3','Designer4'].forEach(function(f) {
+    addPerson(gameInfo[f]);
   });
 
   var exportData = {
@@ -4409,19 +5170,140 @@ function shareGame(gameName) {
   fetch(APP_BASE + 'push/createShare.php', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
     .then(function(result) {
-      if (result.error) { alert('Share failed: ' + result.error); return; }
-      openShareUrlDialog(result.url, gameName);
+      btn.disabled = false;
+      if (result.error) { btn.textContent = 'Package Pitch Data'; alert('Share failed: ' + result.error); return; }
+      document.getElementById('shareUrlInput').value = result.url;
+      document.getElementById('shareUrlCopyBtn').textContent = 'Copy';
+      document.getElementById('sharePitchUrlSection').style.display = '';
+      btn.textContent = 'Update Pitch Data';
     })
-    .catch(function(e) { alert('Share failed: ' + e.message); });
+    .catch(function(e) {
+      btn.disabled = false;
+      btn.textContent = 'Package Pitch Data';
+      alert('Share failed: ' + e.message);
+    });
 }
 
-function openShareUrlDialog(url, gameName) {
-  document.getElementById('shareUrlInput').value = url;
-  document.getElementById('shareUrlCopyBtn').textContent = 'Copy';
+// label → email map for the share combobox; rebuilt each time the dialog opens
+var _shareCollabMap  = {};
+var _shareCollabItems = [];
+var _shareCollabComboReady = false;
+var _shareCurrentGame = '';
+
+function _setupShareCollabCombo() {
+  if (_shareCollabComboReady) return;
+  _shareCollabComboReady = true;
+  _comboInit('shareCollabInput', 'shareCollabDrop',
+    function() { return _shareCollabItems; },
+    null
+  );
+}
+
+function openShareUrlDialog(gameName) {
+  // Reset packaging section
+  document.getElementById('sharePitchUrlSection').style.display = 'none';
+  document.getElementById('shareUrlInput').value = '';
+  var pkgBtn = document.getElementById('sharePackageBtn');
+  pkgBtn.disabled = false;
+  pkgBtn.textContent = 'Package Pitch Data';
+
   var gamePageUrl = window.location.origin + APP_BASE + sheet_Id + '/view/?game=' + encodeGame(gameName || '');
   document.getElementById('shareGamePageInput').value = gamePageUrl;
   document.getElementById('shareGamePageCopyBtn').textContent = 'Copy';
+
+  _shareCurrentGame = gameName || '';
+
+  // Silently add co-designers to People if not already there
+  if (gameName && gamesIndex[gameName]) {
+    var _gInfo = gamesIndex[gameName];
+    ['Designer1','Designer2','Designer3','Designer4'].forEach(function(f) {
+      var dname = (_gInfo[f] || '').trim();
+      if (!dname) return;
+      if (myName && dname.toLowerCase() === myName.toLowerCase()) return; // skip self
+      if (peopleData[dname]) return; // already in People
+      // Add locally immediately so they appear in the combobox right away
+      peopleData[dname] = { Name: dname, Email: '', Company: '' };
+      // Persist to sheet + people.json in background (fire-and-forget)
+      var _xhr = new XMLHttpRequest();
+      _xhr.open('POST', APP_BASE + 'push/addPerson.php');
+      _xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      _xhr.send('id=' + encodeURIComponent(sheet_Id) +
+                '&name=' + encodeURIComponent(dname));
+    });
+  }
+
+  // Rebuild collaborator list — co-designers first, then separator, then everyone else
+  _shareCollabMap   = {};
+  _shareCollabItems = [];
+
+  // Collect co-designers for this game (Designer1–4, excluding self)
+  var codesigners = [];
+  if (gameName && gamesIndex[gameName]) {
+    var gameInfo = gamesIndex[gameName];
+    ['Designer1','Designer2','Designer3','Designer4'].forEach(function(f) {
+      var dname = (gameInfo[f] || '').trim();
+      if (!dname) return;
+      if (myName && dname.toLowerCase() === myName.toLowerCase()) return;
+      var p = peopleData[dname];
+      if (!p || !p.Email) return;
+      var label = dname + (p.Company ? ' (' + p.Company + ')' : '');
+      if (_shareCollabMap[label]) return;
+      _shareCollabMap[label] = p.Email;
+      codesigners.push(label);
+    });
+  }
+  codesigners.forEach(function(l) { _shareCollabItems.push(l); });
+  if (codesigners.length) _shareCollabItems.push('---');
+
+  // Remaining people (sorted, excluding already-added co-designers)
+  Object.keys(peopleData).sort().forEach(function(name) {
+    var p = peopleData[name];
+    if (!p.Email) return;
+    var label = name + (p.Company ? ' (' + p.Company + ')' : '');
+    if (_shareCollabMap[label]) return;   // already a co-designer
+    _shareCollabMap[label] = p.Email;
+    _shareCollabItems.push(label);
+  });
+
+  _setupShareCollabCombo();
+  document.getElementById('shareCollabInput').value = '';
+
   document.getElementById('shareUrlOverlay').classList.add('open');
+}
+
+function sendShareEmail() {
+  var inp      = document.getElementById('shareCollabInput');
+  var typed    = (inp ? inp.value.trim() : '');
+  var shareUrl = document.getElementById('shareUrlInput').value;
+
+  // Resolve email: exact label match → email, else treat typed value as email, else empty
+  var email     = _shareCollabMap[typed] || (typed.indexOf('@') !== -1 ? typed : '');
+  var recipName = typed ? typed.replace(/\s*\(.*\)$/, '') : '';
+  var fromName  = myName  || 'Your collaborator';
+  var fromEmail = myEmail || '';
+
+  var gameLabel = _shareCurrentGame ? ' for ' + _shareCurrentGame : '';
+  var subject = fromName + ' shared their PitchBoard data' + gameLabel + ' with you';
+
+  var body = '\n\n\n' + (recipName ? 'Hi ' + recipName + ',\n\n' : '')
+    + fromName + ' has shared their board game pitch data' + gameLabel + ' with you via PitchBoard.\n\n'
+    + 'Go to PitchBoard and use Menu → Import the link below to import their pitches into your PitchBoard.\n'
+    + shareUrl + '\n\n'
+    + 'Don\'t have PitchBoard yet? Get started at:\n'
+    + 'https://www.zapsheets.com/app/pitchboard\n';
+
+  if (fromName || fromEmail) {
+    body += '\n--\n';
+    if (fromName)  body += fromName  + '\n';
+    if (fromEmail) body += fromEmail + '\n';
+  }
+
+  var href = 'mailto:' + encodeURIComponent(email)
+           + '?subject=' + encodeURIComponent(subject);
+  if (fromEmail) href += '&reply-to=' + encodeURIComponent(fromEmail);
+  href += '&body=' + encodeURIComponent(body);
+
+  window.location.href = href;
 }
 function closeShareUrlDialog() {
   document.getElementById('shareUrlOverlay').classList.remove('open');
@@ -4497,17 +5379,25 @@ function loadImportUrl() {
 
 var _importData = null;
 
-function _isDuplicatePitch(r) {
+// Returns 'new' | 'updated' (same key, changed Status/Notes) | 'duplicate' (exact match)
+function _classifyPitch(r) {
   var g = (r.Game      || '').trim().toLowerCase();
   var p = (r.Publisher || '').trim().toLowerCase();
   var c = (r.Contact   || '').trim().toLowerCase();
   var d = (r.Date      || '').trim();
-  return allPitches.some(function(e) {
-    return (e.Game      || '').trim().toLowerCase() === g
-        && (e.Publisher || '').trim().toLowerCase() === p
-        && (e.Contact   || '').trim().toLowerCase() === c
-        && (e.Date      || '').trim()               === d;
+  var existing = null;
+  allPitches.some(function(e) {
+    if ((e.Game      || '').trim().toLowerCase() === g
+     && (e.Publisher || '').trim().toLowerCase() === p
+     && (e.Contact   || '').trim().toLowerCase() === c
+     && (e.Date      || '').trim()               === d) {
+      existing = e; return true;
+    }
   });
+  if (!existing) return 'new';
+  var statusSame = (existing.Status || '').trim().toLowerCase() === (r.Status || '').trim().toLowerCase();
+  var notesSame  = (existing.Notes  || '').trim()               === (r.Notes  || '').trim();
+  return (statusSame && notesSame) ? 'duplicate' : 'updated';
 }
 
 function _isNewPerson(p) {
@@ -4539,14 +5429,16 @@ function openImportDialog(data) {
   }));
 
   // Pre-compute filtered sets and cache on _importData for confirmImport()
-  var newPitches = pitches.filter(function(r) { return !_isDuplicatePitch(r); });
-  var dupCount   = pitches.length - newPitches.length;
-  var newPeople  = people.filter(_isNewPerson);
-  _importData._gameObj    = gameObj;
-  _importData._gameName   = gameName;
-  _importData._newPitches = newPitches;
-  _importData._newPeople  = newPeople;
-  _importData._isNewGame  = isNewGame;
+  var newPitches     = pitches.filter(function(r) { return _classifyPitch(r) === 'new'; });
+  var updatedPitches = pitches.filter(function(r) { return _classifyPitch(r) === 'updated'; });
+  var dupCount       = pitches.length - newPitches.length - updatedPitches.length;
+  var newPeople      = people.filter(_isNewPerson);
+  _importData._gameObj        = gameObj;
+  _importData._gameName       = gameName;
+  _importData._newPitches     = newPitches;
+  _importData._updatedPitches = updatedPitches;
+  _importData._newPeople      = newPeople;
+  _importData._isNewGame      = isNewGame;
 
   var html = '';
   html += '<div class="import-game-name">' + escHtml(gameName || '(Unknown game)') + '</div>';
@@ -4564,14 +5456,12 @@ function openImportDialog(data) {
       html += '<div style="font-size:.74rem;color:#888;font-style:italic;margin-top:.1rem">' + escHtml(gameObj.Tagline) + '</div>';
   }
 
-  // Pitches — show new vs skipped
-  var pitchLabel = 'Pitches';
-  if (newPitches.length && dupCount)
-    pitchLabel += ' (' + newPitches.length + ' new, ' + dupCount + ' duplicate' + (dupCount > 1 ? 's' : '') + ' skipped)';
-  else if (newPitches.length)
-    pitchLabel += ' (' + newPitches.length + ')';
-  else if (dupCount)
-    pitchLabel += ' (all ' + dupCount + ' already imported)';
+  // Pitches — new
+  var pitchParts = [];
+  if (newPitches.length)     pitchParts.push(newPitches.length + ' new');
+  if (updatedPitches.length) pitchParts.push(updatedPitches.length + ' updated');
+  if (dupCount)              pitchParts.push(dupCount + ' duplicate' + (dupCount > 1 ? 's' : '') + ' skipped');
+  var pitchLabel = 'Pitches' + (pitchParts.length ? ' (' + pitchParts.join(', ') + ')' : '');
   html += '<div class="import-section-label">' + pitchLabel + '</div>';
 
   if (newPitches.length) {
@@ -4586,8 +5476,35 @@ function openImportDialog(data) {
             + '</tr>';
     });
     html += '</table></div>';
-  } else {
-    html += '<div class="import-empty">No new pitches to import</div>';
+  }
+
+  if (updatedPitches.length) {
+    html += '<div class="import-table-wrap"><table class="import-table">';
+    html += '<tr><th>Publisher</th><th>Contact</th><th>Date</th><th>Changes</th></tr>';
+    updatedPitches.forEach(function(r) {
+      var existing = allPitches.find(function(e) {
+        return (e.Game      || '').trim().toLowerCase() === (r.Game      || '').trim().toLowerCase()
+            && (e.Publisher || '').trim().toLowerCase() === (r.Publisher || '').trim().toLowerCase()
+            && (e.Contact   || '').trim().toLowerCase() === (r.Contact   || '').trim().toLowerCase()
+            && (e.Date      || '').trim()               === (r.Date      || '').trim();
+      });
+      var changes = [];
+      if (existing && (existing.Status || '').trim().toLowerCase() !== (r.Status || '').trim().toLowerCase())
+        changes.push((existing.Status || '—') + ' → ' + (r.Status || '—'));
+      if (existing && (existing.Notes || '').trim() !== (r.Notes || '').trim())
+        changes.push('Notes updated');
+      html += '<tr>'
+            + '<td>' + escHtml(r.Publisher || '') + '</td>'
+            + '<td>' + escHtml(r.Contact   || '') + '</td>'
+            + '<td>' + escHtml(r.Date      || '') + '</td>'
+            + '<td>' + escHtml(changes.join('; ') || 'Updated') + '</td>'
+            + '</tr>';
+    });
+    html += '</table></div>';
+  }
+
+  if (!newPitches.length && !updatedPitches.length) {
+    html += '<div class="import-empty">No new or updated pitches</div>';
   }
 
   if (newPeople.length) {
@@ -4627,19 +5544,21 @@ function _importLog(msg, type) {
 function confirmImport() {
   if (!_importData || !sheet_Id) return;
   // Use pre-computed sets from openImportDialog()
-  var newPitches = _importData._newPitches || [];
-  var newPeople  = _importData._newPeople  || [];
-  var isNewGame  = !!_importData._isNewGame;
-  var newGame    = isNewGame ? _importData._gameObj : null;
+  var newPitches     = _importData._newPitches     || [];
+  var updatedPitches = _importData._updatedPitches || [];
+  var newPeople      = _importData._newPeople      || [];
+  var isNewGame      = !!_importData._isNewGame;
+  var newGame        = isNewGame ? _importData._gameObj : null;
 
   document.getElementById('importConfirmBtn').disabled = true;
   document.getElementById('importCancelBtn').disabled  = true;
   document.getElementById('importLog').style.display   = '';
 
   var parts = [];
-  if (newPitches.length) parts.push(newPitches.length + ' pitch(es)');
-  if (newPeople.length)  parts.push(newPeople.length  + ' contact(s)');
-  if (isNewGame)         parts.push('game "' + _importData._gameName + '"');
+  if (newPitches.length)     parts.push(newPitches.length     + ' new pitch(es)');
+  if (updatedPitches.length) parts.push(updatedPitches.length + ' pitch update(s)');
+  if (newPeople.length)      parts.push(newPeople.length      + ' contact(s)');
+  if (isNewGame)             parts.push('game "' + _importData._gameName + '"');
   if (!parts.length) {
     _importLog('Nothing new to import.', 'info');
     document.getElementById('importCancelBtn').disabled  = false;
@@ -4651,10 +5570,11 @@ function confirmImport() {
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_BASE + 'push/importPitches.php');
   var fd = new FormData();
-  fd.append('id',      sheet_Id);
-  fd.append('pitches', JSON.stringify(newPitches));
-  fd.append('people',  JSON.stringify(newPeople));
-  fd.append('game',    JSON.stringify(newGame));
+  fd.append('id',              sheet_Id);
+  fd.append('pitches',         JSON.stringify(newPitches));
+  fd.append('updated_pitches', JSON.stringify(updatedPitches));
+  fd.append('people',          JSON.stringify(newPeople));
+  fd.append('game',            JSON.stringify(newGame));
   xhr.onload = function() {
     var result;
     try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
@@ -4663,9 +5583,10 @@ function confirmImport() {
       document.getElementById('importCancelBtn').disabled = false;
       return;
     }
-    if (result.game_added)       _importLog('✓  Game "' + _importData._gameName + '" added', 'ok');
-    if (result.pitches_added > 0) _importLog('✓  ' + result.pitches_added + ' pitch(es) added', 'ok');
-    if (result.people_added  > 0) _importLog('✓  ' + result.people_added  + ' contact(s) added', 'ok');
+    if (result.game_added)          _importLog('✓  Game "' + _importData._gameName + '" added', 'ok');
+    if (result.pitches_added   > 0) _importLog('✓  ' + result.pitches_added   + ' pitch(es) added', 'ok');
+    if (result.pitches_updated > 0) _importLog('✓  ' + result.pitches_updated + ' pitch(es) updated', 'ok');
+    if (result.people_added    > 0) _importLog('✓  ' + result.people_added    + ' contact(s) added', 'ok');
     _importLog('Reloading data…', 'info');
     loadAll(function() {
       _importLog('✓  Done!', 'ok');

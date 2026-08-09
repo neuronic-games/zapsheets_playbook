@@ -41,16 +41,9 @@ except Exception as e:
 # For Pitches / Games / People: first row = headers, rest = data.
 # For Settings: no header row — just the label/value pairs.
 
+# Order matters: validation rules reference other tabs, so create dependencies first.
+# People has no deps → Settings has no deps → Games references People → Pitches references Games + People.
 TABS = {
-    'Pitches': [
-        ['Date', 'Game', 'Publisher', 'Contact', 'Event', 'Status', 'Notes'],
-    ],
-    'Games': [
-        ['Name', 'Tagline', 'Status',
-         'Date Started', 'Date Signed', 'Date Published',
-         'Designer1', 'Designer2', 'Designer3', 'Designer4',
-         'Description', 'Rules', 'Play', 'Print', 'Sellsheet', 'BGG', 'Video'],
-    ],
     'People': [
         ['Name', 'Email', 'Company', 'Role', 'Notes'],
     ],
@@ -60,6 +53,15 @@ TABS = {
         ['My Phone',    ''],
         ['PublishedOn', ''],
         ['Version',     ''],
+    ],
+    'Games': [
+        ['Name', 'Tagline', 'Status',
+         'Date Started', 'Date Signed', 'Date Published',
+         'Designer1', 'Designer2', 'Designer3', 'Designer4',
+         'Description', 'Rules', 'Play', 'Print', 'Sellsheet', 'BGG', 'Video'],
+    ],
+    'Pitches': [
+        ['Date', 'Game', 'Publisher', 'Contact', 'Event', 'Status', 'Notes'],
     ],
 }
 
@@ -107,9 +109,9 @@ for tab_name, rows in TABS.items():
             ]
             # Each tuple: (col_index, condition_type, condition_values_list)
             validation_cols = [
-                (1, 'ONE_OF_RANGE', [{'userEnteredValue': 'Games!$A$2:$A$10000'}]),
-                (2, 'ONE_OF_RANGE', [{'userEnteredValue': 'People!$C$2:$C$10000'}]),
-                (3, 'ONE_OF_RANGE', [{'userEnteredValue': 'People!$A$2:$A$10000'}]),
+                (1, 'ONE_OF_RANGE', [{'userEnteredValue': '=Games!$A$2:$A$10000'}]),
+                (2, 'ONE_OF_RANGE', [{'userEnteredValue': '=People!$C$2:$C$10000'}]),
+                (3, 'ONE_OF_RANGE', [{'userEnteredValue': '=People!$A$2:$A$10000'}]),
                 (5, 'ONE_OF_LIST',  [{'userEnteredValue': v} for v in PITCH_STATUS_VALUES]),
             ]
             requests = [
@@ -214,7 +216,7 @@ for tab_name, rows in TABS.items():
                         'rule': {
                             'condition': {
                                 'type': 'ONE_OF_RANGE',
-                                'values': [{'userEnteredValue': 'People!$A$2:$A$10000'}],
+                                'values': [{'userEnteredValue': '=People!$A$2:$A$10000'}],
                             },
                             'showCustomUi': True,
                             'strict': False,

@@ -325,7 +325,16 @@ body {
       catch(e) { result = null; }
 
       if (!result || result.error) {
-        addLog('✕  ' + ((result && result.error) || xhr.responseText || 'Unknown error'), 'err');
+        var errMsg = (result && result.error) || xhr.responseText || 'Unknown error';
+        var isPermErr = errMsg.indexOf('403') !== -1
+                     || errMsg.toLowerCase().indexOf('permission') !== -1
+                     || errMsg.toLowerCase().indexOf('could not open') !== -1;
+        if (isPermErr) {
+          addLog('✕  This sheet has not been shared with the PitchBoard service account.', 'err');
+          addLog('   Please share it with editor@zapsheets-480701.iam.gserviceaccount.com (Editor access) and try again.', 'err');
+        } else {
+          addLog('✕  ' + errMsg, 'err');
+        }
         btn.disabled    = false;
         btn.textContent = 'Connect & Set Up';
         return;

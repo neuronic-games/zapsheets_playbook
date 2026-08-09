@@ -6,27 +6,30 @@ header('Content-Type: application/json');
 require __DIR__ . '/../dotEnv.php';
 require_once __DIR__ . '/refreshJson.php';
 
-$sheetId     = trim($_POST['id']      ?? '');
-$pitchesJson = trim($_POST['pitches'] ?? '[]');
-$peopleJson  = trim($_POST['people']  ?? '[]');
-$gameJson    = trim($_POST['game']    ?? 'null');
+$sheetId            = trim($_POST['id']              ?? '');
+$pitchesJson        = trim($_POST['pitches']         ?? '[]');
+$updatedPitchesJson = trim($_POST['updated_pitches'] ?? '[]');
+$peopleJson         = trim($_POST['people']          ?? '[]');
+$gameJson           = trim($_POST['game']            ?? 'null');
 
 if (!$sheetId) {
     echo json_encode(['error' => 'Missing sheet ID']);
     exit;
 }
 
-$pitches = json_decode($pitchesJson, true) ?: [];
-$people  = json_decode($peopleJson,  true) ?: [];
-$game    = ($gameJson !== 'null' && $gameJson !== '') ? json_decode($gameJson, true) : null;
+$pitches        = json_decode($pitchesJson,        true) ?: [];
+$updatedPitches = json_decode($updatedPitchesJson, true) ?: [];
+$people         = json_decode($peopleJson,         true) ?: [];
+$game           = ($gameJson !== 'null' && $gameJson !== '') ? json_decode($gameJson, true) : null;
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 
 // Build the payload for gimportpitches.py
 $payload = [
-    'pitches' => $pitches,
-    'people'  => $people,
-    'game'    => $game,
+    'pitches'         => $pitches,
+    'updated_pitches' => $updatedPitches,
+    'people'          => $people,
+    'game'            => $game,
 ];
 $encoded = base64_encode(json_encode($payload, JSON_UNESCAPED_UNICODE));
 $arg     = $sheetId . '|' . $encoded;
@@ -49,7 +52,9 @@ if ($result === null) {
 }
 
 if (!empty($result['ok'])) {
-    refreshJson($pythonPath, $sheetId, 'pitches');
+    if (!empty($result['pitches_added']) || !empty($result['pitches_updated'])) {
+        refreshJson($pythonPath, $sheetId, 'pitches');
+    }
     if (!empty($result['people_added'])) {
         refreshJson($pythonPath, $sheetId, 'people');
     }

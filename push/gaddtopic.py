@@ -38,6 +38,20 @@ if not sheet_id or not topic_name:
     print(json.dumps({"error": "sheet_id and name are required"}))
     sys.exit(1)
 
+def _apply_column_formatting(wb, ws):
+    """Set column widths (Date/Name/Email/Note) and wrap the Note column."""
+    try:
+        sid = ws.id
+        wb.batch_update({'requests': [
+            {'updateDimensionProperties': {'range': {'sheetId': sid, 'dimension': 'COLUMNS', 'startIndex': 0, 'endIndex': 1}, 'properties': {'pixelSize': 170}, 'fields': 'pixelSize'}},
+            {'updateDimensionProperties': {'range': {'sheetId': sid, 'dimension': 'COLUMNS', 'startIndex': 1, 'endIndex': 2}, 'properties': {'pixelSize': 160}, 'fields': 'pixelSize'}},
+            {'updateDimensionProperties': {'range': {'sheetId': sid, 'dimension': 'COLUMNS', 'startIndex': 2, 'endIndex': 3}, 'properties': {'pixelSize': 220}, 'fields': 'pixelSize'}},
+            {'updateDimensionProperties': {'range': {'sheetId': sid, 'dimension': 'COLUMNS', 'startIndex': 3, 'endIndex': 4}, 'properties': {'pixelSize': 420}, 'fields': 'pixelSize'}},
+        ]})
+        ws.format('D3:D1000', {'wrapStrategy': 'WRAP'})
+    except Exception:
+        pass  # cosmetic — ignore failures
+
 try:
     wb = sa.open_by_key(sheet_id)
 except Exception as e:
@@ -68,6 +82,7 @@ try:
         },
         'horizontalAlignment': 'LEFT',
     })
+    _apply_column_formatting(wb, notes_ws)
 except Exception as e:
     if 'already exists' in str(e).lower():
         print(json.dumps({"error": f"Topic '{topic_name}' already exists"}))

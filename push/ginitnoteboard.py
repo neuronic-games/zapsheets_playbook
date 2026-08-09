@@ -38,6 +38,21 @@ def refresh_ws_map():
     return {w.title: w for w in wb.worksheets()}
 
 
+def _apply_column_formatting(wb, ws):
+    """Set column widths (Date/Name/Email/Note) and wrap the Note column."""
+    try:
+        sid = ws.id
+        wb.batch_update({'requests': [
+            {'updateDimensionProperties': {'range': {'sheetId': sid, 'dimension': 'COLUMNS', 'startIndex': 0, 'endIndex': 1}, 'properties': {'pixelSize': 170}, 'fields': 'pixelSize'}},
+            {'updateDimensionProperties': {'range': {'sheetId': sid, 'dimension': 'COLUMNS', 'startIndex': 1, 'endIndex': 2}, 'properties': {'pixelSize': 160}, 'fields': 'pixelSize'}},
+            {'updateDimensionProperties': {'range': {'sheetId': sid, 'dimension': 'COLUMNS', 'startIndex': 2, 'endIndex': 3}, 'properties': {'pixelSize': 220}, 'fields': 'pixelSize'}},
+            {'updateDimensionProperties': {'range': {'sheetId': sid, 'dimension': 'COLUMNS', 'startIndex': 3, 'endIndex': 4}, 'properties': {'pixelSize': 420}, 'fields': 'pixelSize'}},
+        ]})
+        ws.format('D3:D1000', {'wrapStrategy': 'WRAP'})
+    except Exception:
+        pass  # cosmetic — ignore failures
+
+
 tabs_created = []
 ws_map = refresh_ws_map()
 
@@ -63,6 +78,7 @@ if existing is None:
                 'foregroundColor': {'red': 1.0, 'green': 1.0, 'blue': 1.0},
             },
         })
+        _apply_column_formatting(wb, ws)
         tabs_created.append(TAB_NAME)
         # Position "notes" before "Settings" if Settings already exists
         try:

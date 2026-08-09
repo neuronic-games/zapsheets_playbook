@@ -313,10 +313,12 @@ body { margin:0; background:#f3f2ef; font-family:'DINRegular',Arial,sans-serif; 
   display:flex; justify-content:space-between; align-items:baseline;
   margin-bottom:.28rem; gap:.5rem;
 }
+.note-identity { display:flex; align-items:baseline; gap:.4rem; min-width:0; overflow:hidden; }
 .note-author {
   font-family:'DINBlack',sans-serif; font-size:.75rem;
-  color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  color:#333; white-space:nowrap; flex-shrink:0;
 }
+.note-email { font-size:.72rem; color:#aaa; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .note-date { font-size:.68rem; color:#bbb; white-space:nowrap; flex-shrink:0; }
 .note-text { font-size:.86rem; color:#444; line-height:1.55; white-space:pre-wrap; }
 
@@ -557,8 +559,13 @@ body { margin:0; background:#f3f2ef; font-family:'DINRegular',Arial,sans-serif; 
         <?php foreach (array_reverse($_g['notes']) as $_note): ?>
         <div class="note-item">
           <div class="note-meta">
-            <span class="note-author"><?= $_note['name'] ? htmlspecialchars($_note['name']) : 'Anonymous' ?></span>
-            <span class="note-date"><?= htmlspecialchars($_note['date'] ?? '') ?></span>
+            <span class="note-identity">
+              <span class="note-author"><?= $_note['name'] ? htmlspecialchars($_note['name']) : 'Anonymous' ?></span>
+              <?php if (!empty($_note['email'])): ?>
+              <span class="note-email"><?= htmlspecialchars($_note['email']) ?></span>
+              <?php endif; ?>
+            </span>
+            <span class="note-date" data-iso="<?= htmlspecialchars($_note['date'] ?? '') ?>"><?= htmlspecialchars($_note['date'] ?? '') ?></span>
           </div>
           <div class="note-text"><?= htmlspecialchars($_note['note'] ?? '') ?></div>
         </div>
@@ -995,6 +1002,15 @@ body { margin:0; background:#f3f2ef; font-family:'DINRegular',Arial,sans-serif; 
     xhr.send('id=' + encodeURIComponent(SHEET_ID) + '&name=' + encodeURIComponent(name));
   };
 })();
+
+// ── Format note dates in browser local time ───────────────────────────────────
+document.querySelectorAll('.note-date[data-iso]').forEach(function(el) {
+  var iso = el.getAttribute('data-iso');
+  if (!iso) return;
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return;
+  el.textContent = d.toLocaleString();
+});
 </script>
 </body>
 </html>

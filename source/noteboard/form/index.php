@@ -53,6 +53,15 @@ if (!$_sheet_id || !$_hash) {
             $_error = 'This feedback link is not valid.';
         } else {
             $_game_name = $index[$_hash];
+            // Use the topic display name from the cache file if available
+            $_safe       = str_replace(['/', '\\'], '-', $_game_name);
+            $_cache_path = __DIR__ . '/../../../sheets/' . $_sheet_id . '/notes-' . $_safe . '-en.json';
+            if (file_exists($_cache_path)) {
+                $_cache = json_decode(file_get_contents($_cache_path), true) ?: [];
+                if (isset($_cache['topic']) && $_cache['topic'] !== '') {
+                    $_game_name = $_cache['topic'];
+                }
+            }
         }
     }
 }

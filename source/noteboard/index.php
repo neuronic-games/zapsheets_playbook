@@ -150,7 +150,7 @@ body {
   <div class="card">
     <div class="card-title">Connect Your Google Sheet</div>
     <div class="instructions">
-      Create a blank Google Spreadsheet, share it with the NoteBoard service account, then paste the URL or ID below. NoteBoard will set up all the required tabs automatically.
+      Create a blank Google Spreadsheet, share it with the NoteBoard service account, then paste the URL or ID below. NoteBoard will create a <strong>notes</strong> sheet and you can start collecting feedback straight away — no games list required.
       <ol>
         <li>Open <strong>Google Sheets</strong> and create a new blank spreadsheet.</li>
         <li>Click <strong>Share</strong> and add <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> <button class="copy-email-btn" id="copyEmailBtn" onclick="copyEmail()">Copy</button> with <strong>Editor</strong> rights.</li>
@@ -240,7 +240,6 @@ body {
     panel.style.display = '';
 
     addLog('Connecting to Google Sheet…', 'inf');
-    scheduledLog(800, 'Reading games list…', 'inf');
 
     var xhr = new XMLHttpRequest();
     xhr.open('POST', APP_BASE + 'push/setupNoteboard.php');
@@ -267,21 +266,12 @@ body {
         return;
       }
 
-      var games       = result.games || [];
       var tabsCreated = result.tabs_created || [];
-
-      tabsCreated.forEach(function(t) { addLog('✓  ' + t + ' tab created', 'ok'); });
-
-      if (games.length === 0) {
-        addLog('✓  Sheet connected — add your games to the Games tab, then come back and click Set Up NoteBoard again.', 'ok');
-        btn.disabled    = false;
-        btn.textContent = 'Set Up NoteBoard';
-      } else {
-        addLog('✓  Found ' + games.length + ' game(s) — opening NoteBoard…', 'ok');
-        setTimeout(function() {
-          window.location.href = APP_BASE + sheetId + '/noteboard';
-        }, 1200);
-      }
+      tabsCreated.forEach(function(t) { addLog('✓  "' + t + '" tab created', 'ok'); });
+      addLog('✓  NoteBoard ready — opening…', 'ok');
+      setTimeout(function() {
+        window.location.href = APP_BASE + sheetId + '/noteboard';
+      }, 1000);
     };
 
     xhr.onerror = function() {

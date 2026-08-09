@@ -1341,7 +1341,8 @@ if (is_dir($_sheets_dir)) {
     <h2 id="nbNotesTitle">Notes</h2>
     <div id="nbNotesList" style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:.6rem;padding:.1rem 0 .35rem;"></div>
     <div class="sync-dialog-actions">
-      <button class="en-share-btn" id="nbNotesShareBtn" style="margin-right:auto" onclick="
+      <button class="sync-update-btn" id="nbNotesFetchBtn" style="margin-right:auto" onclick="nbFetchNotes(this)">Fetch</button>
+      <button class="en-share-btn" id="nbNotesShareBtn" onclick="
         var btn=this, link=btn.dataset.link;
         navigator.clipboard.writeText(link).then(function(){
           btn.textContent='Copied!'; btn.style.background='#16a34a';
@@ -5073,6 +5074,34 @@ function noteboardClick(btn) {
   });
 }
 
+function _fmtNoteDate(d) {
+  if (!d) return '';
+  var dt = new Date(d);
+  if (isNaN(dt.getTime())) return escHtml(d);
+  return dt.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function _renderNotesList(notes) {
+  var list = document.getElementById('nbNotesList');
+  if (!notes.length) {
+    list.innerHTML = '<span style="color:#aaa;font-size:.85rem;font-style:italic;">No notes yet.</span>';
+    return;
+  }
+  list.innerHTML = notes.map(function(n) {
+    var who   = n.name  ? escHtml(n.name)  : '<em style="color:#bbb">Anonymous</em>';
+    var email = n.email ? '<span style="color:#aaa;font-size:.72rem;display:block;margin-top:.05rem;">' + escHtml(n.email) + '</span>' : '';
+    var date  = n.date  ? '<span style="color:#aaa;font-size:.73rem;white-space:nowrap;">' + _fmtNoteDate(n.date) + '</span>' : '';
+    var note  = escHtml(n.note || '').replace(/\n/g, '<br>');
+    return '<div style="background:#fafaf8;border:1px solid #e8e5e0;border-radius:8px;padding:.65rem .85rem;">'
+         + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.35rem;gap:.5rem;">'
+         + '<div><span style="font-family:\'DINBlack\',sans-serif;font-size:.8rem;">' + who + '</span>' + email + '</div>'
+         + date
+         + '</div>'
+         + '<div style="font-size:.88rem;line-height:1.55;color:#333;">' + note + '</div>'
+         + '</div>';
+  }).join('');
+}
+
 function viewNotesClick(btn) {
   var gameName = btn.getAttribute('data-game') || '';
   if (!gameName) return;
@@ -5080,7 +5109,11 @@ function viewNotesClick(btn) {
   var url  = BASE + 'notes-' + safe + '-en.json';
 
   document.getElementById('nbNotesTitle').textContent = gameName + ' — Notes';
-  // Wire up the Share button with this game's feedback form link
+
+  // Wire up the Fetch button with this game name
+  document.getElementById('nbNotesFetchBtn').dataset.game = gameName;
+
+  // Wire up the Share button
   var hash = NOTEBOARD_HASHES[gameName];
   var shareBtn = document.getElementById('nbNotesShareBtn');
   if (hash) {
@@ -5091,32 +5124,54 @@ function viewNotesClick(btn) {
   } else {
     shareBtn.style.display = 'none';
   }
+
   var list = document.getElementById('nbNotesList');
   list.innerHTML = '<span style="color:#aaa;font-size:.85rem;">Loading…</span>';
   document.getElementById('nbNotesOverlay').classList.add('open');
 
   fetch(url)
     .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
-    .then(function(notes) {
-      if (!notes.length) {
-        list.innerHTML = '<span style="color:#aaa;font-size:.85rem;font-style:italic;">No notes yet.</span>';
-        return;
+    .then(function(data) {
+      var notes = Array.isArray(data) ? data : (data.notes || []);
+      if (!Array.isArray(data) && data.topic) {
+        document.getElementById('nbNotesTitle').textContent = data.topic + ' — Notes';
       }
-      list.innerHTML = notes.map(function(n) {
-        var who  = n.name  ? escHtml(n.name)  : '<em style="color:#bbb">Anonymous</em>';
-        var date = n.date  ? '<span style="color:#aaa;font-size:.73rem;">' + escHtml(n.date) + '</span>' : '';
-        var note = escHtml(n.note || '').replace(/\n/g, '<br>');
-        return '<div style="background:#fafaf8;border:1px solid #e8e5e0;border-radius:8px;padding:.65rem .85rem;">'
-             + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.3rem;">'
-             + '<span style="font-family:\'DINBlack\',sans-serif;font-size:.8rem;">' + who + '</span>' + date
-             + '</div>'
-             + '<div style="font-size:.88rem;line-height:1.55;color:#333;">' + note + '</div>'
-             + '</div>';
-      }).join('');
+      _renderNotesList(notes);
     })
     .catch(function() {
       list.innerHTML = '<span style="color:#f87171;font-size:.85rem;">Could not load notes.</span>';
     });
+}
+
+function nbFetchNotes(btn) {
+  var gameName = btn.dataset.game || '';
+  if (!gameName) return;
+  var orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '…';
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/fetchNotes.php');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onload = function() {
+    btn.disabled = false;
+    btn.textContent = orig;
+    var res; try { res = JSON.parse(xhr.responseText); } catch(e) { res = null; }
+    if (res && res.ok && res.notes) {
+      if (res.topic) document.getElementById('nbNotesTitle').textContent = res.topic + ' — Notes';
+      _renderNotesList(res.notes);
+    } else {
+      document.getElementById('nbNotesList').innerHTML =
+        '<span style="color:#f87171;font-size:.85rem;">'
+        + escHtml((res && res.error) || 'Fetch failed.') + '</span>';
+    }
+  };
+  xhr.onerror = function() {
+    btn.disabled = false;
+    btn.textContent = orig;
+    document.getElementById('nbNotesList').innerHTML =
+      '<span style="color:#f87171;font-size:.85rem;">Network error.</span>';
+  };
+  xhr.send('id=' + encodeURIComponent(sheet_Id) + '&game=' + encodeURIComponent(gameName));
 }
 
 function closeNotesDialog() {

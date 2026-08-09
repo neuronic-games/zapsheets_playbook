@@ -1,16 +1,11 @@
 # ginitnoteboard.py — initialise NoteBoard for a Google Spreadsheet.
 #
-# Works with both new sheets and existing PitchBoard sheets:
-#   - New sheet: creates "Games" and "Settings" tabs if missing.
-#   - Existing sheet: reads game names from the "Games" tab (col A, rows 2+).
-#
-# Writes sheets/{sheet_id}/noteboard-index.json  →  { hash: gameName, … }
-# so that the public feedback form can resolve /{id}/noteboard/{hash} → game name.
-#
-# Does NOT create per-game notes tabs — those are created on first note submission.
+# Creates a "notes" tab (the default notes sheet) if it does not exist,
+# registers it in noteboard-index.json, and writes an empty local cache.
+# No "Games" sheet is required — notes can exist without games.
 #
 # Argument:  "{sheet_id}"
-# Returns:   {"ok": true, "games": [...], "tabs_created": [...]}
+# Returns:   {"ok": true, "hash": "...", "tabs_created": [...]}
 #         or {"error": "…"}
 
 import gspread
@@ -43,84 +38,83 @@ def refresh_ws_map():
     return {w.title: w for w in wb.worksheets()}
 
 
-def ensure_tab(wb, ws_map, title, rows, freeze_row=False):
-    """Return (worksheet, 'ok'|'created'). Handles stale cache / already-exists errors."""
-    if title in ws_map:
-        return ws_map[title], 'ok'
-    for k, ws in ws_map.items():
-        if k.lower() == title.lower():
-            ws_map[title] = ws
-            return ws, 'ok'
-    try:
-        num_cols = max(len(r) for r in rows) if rows else 2
-        ws = wb.add_worksheet(title=title, rows=200, cols=num_cols)
-        if rows:
-            ws.update(rows, 'A1', value_input_option='RAW')
-        if freeze_row:
-            ws.freeze(rows=1)
-        ws_map[title] = ws
-        return ws, 'created'
-    except Exception as e:
-        if 'already exists' in str(e).lower():
-            fresh = refresh_ws_map()
-            ws_map.update(fresh)
-            for k, ws in fresh.items():
-                if k == title or k.lower() == title.lower():
-                    ws_map[title] = ws
-                    return ws, 'ok'
-        raise
-
-
-ws_map       = refresh_ws_map()
 tabs_created = []
+ws_map = refresh_ws_map()
 
-# ── Ensure base tabs exist (no-op on existing PitchBoard sheets) ──────────────
-SETTINGS_ROWS = [['My Name', ''], ['My Email', '']]
-GAMES_HEADERS = ['Name', 'Tagline', 'Status', 'Designer1', 'Designer2', 'Description']
+# ── Ensure "notes" tab exists ─────────────────────────────────────────────────
+NOTES_HEADERS = ['Date', 'Name', 'Email', 'Note']
+TAB_NAME   = 'notes'
+topic_name = 'notes'
 
-for tab_name, rows, freeze_row in [
-    ('Settings', SETTINGS_ROWS, False),
-    ('Games',    [GAMES_HEADERS], True),
-]:
-    try:
-        _, status = ensure_tab(wb, ws_map, tab_name, rows, freeze_row)
-        if status == 'created':
-            tabs_created.append(tab_name)
-    except Exception as e:
-        print(json.dumps({"error": f"Could not set up {tab_name} tab: {str(e)}"}))
-        sys.exit(1)
-
-# ── Read game names from the Games tab ───────────────────────────────────────
-games_ws   = ws_map.get('Games') or next(
-    (ws for t, ws in ws_map.items() if t.lower() == 'games'), None
+existing = ws_map.get(TAB_NAME) or next(
+    (ws for t, ws in ws_map.items() if t.lower() == TAB_NAME), None
 )
-all_values = games_ws.get_all_values() if games_ws else []
-game_names = [row[0].strip() for row in all_values[1:] if row and row[0].strip()]
 
-# ── Build noteboard-index.json (hash → game name) ────────────────────────────
-# Per-game notes tabs are NOT created here; they are created on first submission.
-noteboard_index = {
-    hashlib.md5(name.encode('utf-8')).hexdigest()[:12]: name
-    for name in game_names
-}
+if existing is None:
+    try:
+        ws = wb.add_worksheet(title=TAB_NAME, rows=200, cols=4)
+        ws.update([['Name', topic_name], NOTES_HEADERS], 'A1',
+                  value_input_option='USER_ENTERED')
+        ws.freeze(rows=2)
+        ws.format('A2:D2', {
+            'backgroundColor': {'red': 0.102, 'green': 0.102, 'blue': 0.180},
+            'textFormat': {
+                'bold': True,
+                'foregroundColor': {'red': 1.0, 'green': 1.0, 'blue': 1.0},
+            },
+        })
+        tabs_created.append(TAB_NAME)
+        # Position "notes" before "Settings" if Settings already exists
+        try:
+            all_ws = wb.worksheets()
+            settings_idx = next(
+                (i for i, w in enumerate(all_ws) if w.title.lower() == 'settings'), None
+            )
+            if settings_idx is not None:
+                ws.update_index(settings_idx)
+        except Exception:
+            pass  # positioning is cosmetic — ignore failures
+    except Exception as e:
+        if 'already exists' not in str(e).lower():
+            print(json.dumps({"error": f"Could not create 'notes' tab: {str(e)}"}))
+            sys.exit(1)
 
+# ── Local paths ───────────────────────────────────────────────────────────────
 out_dir    = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sheets', sheet_id)
 index_path = os.path.join(out_dir, 'noteboard-index.json')
-try:
-    os.makedirs(out_dir, exist_ok=True)
-    with open(index_path, 'w', encoding='utf-8') as f:
-        json.dump(noteboard_index, f, ensure_ascii=False)
-except Exception as e:
-    print(json.dumps({"error": f"Could not write noteboard-index.json: {str(e)}"}))
-    sys.exit(1)
+os.makedirs(out_dir, exist_ok=True)
 
-games_list = [
-    {'name': name, 'hash': hashlib.md5(name.encode('utf-8')).hexdigest()[:12]}
-    for name in game_names
-]
+# ── Load or create noteboard-index.json ──────────────────────────────────────
+if os.path.exists(index_path):
+    with open(index_path, 'r', encoding='utf-8') as f:
+        nb_index = json.load(f) or {}
+else:
+    nb_index = {}
+
+# Register "notes" topic if not already present
+topic_name = 'notes'
+existing_hash = next((h for h, n in nb_index.items() if n == topic_name), None)
+
+if existing_hash:
+    notes_hash = existing_hash
+else:
+    notes_hash = hashlib.md5(topic_name.encode('utf-8')).hexdigest()[:12]
+    i = 12
+    while notes_hash in nb_index and i <= 32:
+        i += 1
+        notes_hash = hashlib.md5(topic_name.encode('utf-8')).hexdigest()[:i]
+    nb_index[notes_hash] = topic_name
+    with open(index_path, 'w', encoding='utf-8') as f:
+        json.dump(nb_index, f, ensure_ascii=False)
+
+# ── Write empty local cache if not present ────────────────────────────────────
+cache_path = os.path.join(out_dir, f'notes-{topic_name}-en.json')
+if not os.path.exists(cache_path):
+    with open(cache_path, 'w', encoding='utf-8') as f:
+        json.dump({'topic': topic_name, 'notes': []}, f)
 
 print(json.dumps({
     "ok":           True,
+    "hash":         notes_hash,
     "tabs_created": tabs_created,
-    "games":        games_list,
 }))

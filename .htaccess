@@ -95,6 +95,32 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^sheets/([A-Za-z0-9_\-]+)/fitboard/?$ source/fitboard/index.php [L,QSA]
 
+# /noteboard/help — help page (must come before /noteboard rule)
+RewriteRule ^noteboard/help/?$ source/noteboard/help/index.php [L,QSA]
+
+# /noteboard — setup landing page
+RewriteRule ^noteboard/?$ source/noteboard/index.php [L,QSA]
+
+# Short-URL: /{id}/noteboard/{hash} — public feedback form (must come before list rule)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/noteboard/([a-f0-9]+)/?$ source/noteboard/form/index.php [L,QSA]
+
+# Short-URL: /{id}/noteboard — list view
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/noteboard/?$ source/noteboard/list/index.php [L,QSA]
+
+# Also cover sheets/{id}/noteboard/{hash} for direct links
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^sheets/([A-Za-z0-9_\-]+)/noteboard/([a-f0-9]+)/?$ source/noteboard/form/index.php [L,QSA]
+
+# Also cover sheets/{id}/noteboard for direct links
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^sheets/([A-Za-z0-9_\-]+)/noteboard/?$ source/noteboard/list/index.php [L,QSA]
+
 # Short-URL: /{id}/site  → add trailing slash (301)
 RewriteRule ^([A-Za-z0-9_\-]+)/site$ %{REQUEST_URI}/ [R=301,L]
 
@@ -115,5 +141,5 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 # Guard 2: skip known top-level names regardless of subdirectory prefix.
 #          Matches  /anything/name/  or  /anything/name  at end of URI.
-RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard|fitboard|slides-sw)(/|$)
+RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard|fitboard|noteboard|slides-sw)(/|$)
 RewriteRule ^([A-Za-z0-9_\-]+)(/.*)?$ sheets/$1$2 [R=302,L]

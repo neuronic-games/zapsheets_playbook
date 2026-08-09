@@ -36,6 +36,7 @@ logs = []
 def log(msg, t='info'):
     logs.append({'msg': msg, 'type': t})
 
+
 # ── Connect ───────────────────────────────────────────────────────────────────
 log('Connecting to spreadsheet…')
 try:
@@ -89,9 +90,10 @@ else:
     log(f'Creating tab…')
     try:
         ws = wb.add_worksheet(title=tab_name, rows=100, cols=4)
-        ws.append_row(HEADERS, value_input_option='USER_ENTERED')
-        ws.freeze(rows=1)
-        ws.format('A1:D1', {
+        ws.update([['Name', game_name], HEADERS], 'A1',
+                  value_input_option='USER_ENTERED')
+        ws.freeze(rows=2)
+        ws.format('A2:D2', {
             'backgroundColor': {'red': 0.627, 'green': 0.424, 'blue': 0.024},
             'textFormat': {
                 'bold': True,
@@ -112,7 +114,7 @@ cache_path = os.path.join(out_dir, f'notes-{safe_name}-en.json')
 if not os.path.exists(cache_path):
     try:
         with open(cache_path, 'w', encoding='utf-8') as f:
-            json.dump([], f)
+            json.dump({'topic': game_name, 'notes': []}, f)
         log('Created local notes cache.', 'ok')
     except Exception as e:
         log(f'Warning: could not write cache ({e}).', 'error')

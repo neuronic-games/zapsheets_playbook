@@ -6,17 +6,12 @@
 
 $_rp = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-// Strip BASE_PATH if set
-$_bp = '';
+// Load dotEnv (needed for sheets_dir path resolution)
 $_bpFile = __DIR__ . '/../../../dotEnv.php';
-if (file_exists($_bpFile)) {
-    require_once $_bpFile;
-    $_bp = rtrim($_ENV['BASE_PATH'] ?? '', '/');
-    if ($_bp !== '' && str_starts_with($_rp, $_bp)) {
-        $_rp = substr($_rp, strlen($_bp)) ?: '/';
-    }
-}
+if (file_exists($_bpFile)) { require_once $_bpFile; }
 
+// Run regex on the full raw path so $_bm[1] captures the correct base
+// (including any BASE_PATH prefix like /app/), matching how dashboard/index.php works.
 preg_match('#^(.*?)(?:sheets/)?([A-Za-z0-9_\-]+)/noteboard/?$#', $_rp, $_bm);
 $_base     = (isset($_bm[1]) && $_bm[1] !== '') ? $_bm[1] : '/';
 if (substr($_base, -1) !== '/') $_base .= '/';
@@ -36,9 +31,13 @@ foreach ($_nb_index as $_hash => $_name) {
     $_safe       = str_replace(['/', '\\'], '-', $_name);
     $_notes_file = $_sheets_dir . 'notes-' . $_safe . '-en.json';
     if (!file_exists($_notes_file)) continue;   // skip — notes tab not set up yet
-    $_notes   = json_decode(file_get_contents($_notes_file), true) ?: [];
+    $_raw     = json_decode(file_get_contents($_notes_file), true) ?: [];
+    // Support both old format (plain array) and new format ({topic, notes})
+    $_notes   = isset($_raw['notes']) ? $_raw['notes'] : (array_values($_raw) === $_raw ? $_raw : []);
+    $_display = $_raw['topic'] ?? $_name;
     $_games[] = [
-        'name'  => $_name,
+        'name'  => $_display,
+        'key'   => $_name,      // internal key from noteboard-index.json
         'hash'  => $_hash,
         'safe'  => $_safe,
         'notes' => $_notes,
@@ -172,6 +171,29 @@ body { margin:0; background:#f3f2ef; font-family:'DINRegular',Arial,sans-serif; 
 }
 .nb-pclose:hover { background:#f5f5f5; color:#333; }
 .nb-pclose:disabled { opacity:.4; cursor:default; }
+
+/* ── Fetch dialog ────────────────────────────────────── */
+.nb-fetch-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.45); z-index:1000;
+  align-items:center; justify-content:center;
+}
+.nb-fetch-overlay.open { display:flex; }
+.nb-fetch-dialog {
+  background:#fff; border-radius:10px;
+  padding:1.4rem; width:min(420px,92vw);
+  box-shadow:0 8px 32px rgba(0,0,0,.22);
+  display:flex; flex-direction:column; gap:.75rem;
+}
+.nb-fetch-dialog h2 {
+  font-family:'DINBlack',sans-serif; font-size:.95rem; margin:0; color:#111;
+}
+.nb-fetch-log {
+  background:#0f172a; border-radius:6px;
+  padding:.75rem 1rem; min-height:5rem; max-height:12rem;
+  overflow-y:auto; font-family:monospace; font-size:.75rem; line-height:1.6;
+}
+
 .nb-psave {
   font-family:'DINBlack',sans-serif; font-size:.72rem;
   text-transform:uppercase; letter-spacing:.05em;
@@ -229,10 +251,11 @@ body { margin:0; background:#f3f2ef; font-family:'DINRegular',Arial,sans-serif; 
 /* ── Sub-bar ─────────────────────────────────────────── */
 .game-sub-bar {
   background:#1a1a1a;
-  display:flex; align-items:center;
+  display:none; align-items:center;
   padding:.45rem 1rem;
   gap:.5rem;
 }
+.game-card.open .game-sub-bar { display:flex; }
 .action-btn {
   font-family:'DINBlack',sans-serif; font-size:.68rem;
   text-transform:uppercase; letter-spacing:.07em;
@@ -242,8 +265,15 @@ body { margin:0; background:#f3f2ef; font-family:'DINRegular',Arial,sans-serif; 
 }
 .action-btn:hover { background:rgba(255,255,255,.25); color:#fff; }
 .action-btn.copied { background:#16a34a; color:#fff; }
-.action-btn-notes { background:rgba(200,134,10,.25); color:#FFB36B; }
-.action-btn-notes:hover { background:rgba(200,134,10,.45); color:#FFD09A; }
+
+/* ── Edit topic dialog input ─────────────────────────── */
+.nb-edit-input {
+  display:block; width:100%;
+  font-family:'DINRegular',Arial,sans-serif; font-size:.92rem; color:#111;
+  border:1.5px solid #d0ccc5; border-radius:8px;
+  padding:.55rem .75rem; outline:none; background:#fafaf8;
+}
+.nb-edit-input:focus { border-color:#c8860a; background:#fff; }
 
 /* ── Notes list ──────────────────────────────────────── */
 .notes-body {
@@ -358,7 +388,7 @@ body { margin:0; background:#f3f2ef; font-family:'DINRegular',Arial,sans-serif; 
 <div class="top-bar">
   <div class="top-bar-inner">
     <div class="top-bar-left">
-      <h1><span class="nb-note">Note</span><span class="nb-board">Board</span></h1>
+      <h1><a href="<?= htmlspecialchars($_base) ?>noteboard" style="color:inherit;text-decoration:none"><span class="nb-note">Note</span><span class="nb-board">Board</span></a></h1>
       <span class="sub" id="nbSubTitle"><?= htmlspecialchars($_sheet_id) ?></span>
     </div>
     <div class="top-bar-stat"><?= $_total_notes ?> note<?= $_total_notes !== 1 ? 's' : '' ?></div>
@@ -371,6 +401,7 @@ body { margin:0; background:#f3f2ef; font-family:'DINRegular',Arial,sans-serif; 
       </button>
       <div class="account-menu" id="nbAccountMenu">
         <button class="account-menu-item" onclick="accountMenuProfile()">Profile</button>
+        <button class="account-menu-item" onclick="accountMenuFetch()">Fetch</button>
         <button class="account-menu-item" onclick="accountMenuHelp()">Help</button>
       </div>
     </div>
@@ -404,6 +435,32 @@ body { margin:0; background:#f3f2ef; font-family:'DINRegular',Arial,sans-serif; 
       style="flex:1;width:auto;" />
     <button class="action-btn" onclick="openAddTopic()"
       style="white-space:nowrap;flex-shrink:0;padding:.5rem .9rem;">+ Topic</button>
+  </div>
+</div>
+
+<!-- Fetch dialog -->
+<div class="nb-fetch-overlay" id="nbFetchOverlay">
+  <div class="nb-fetch-dialog">
+    <h2>Fetch Notes</h2>
+    <div class="nb-fetch-log" id="nbFetchLog"></div>
+    <div class="nb-pdialog-actions" style="margin-top:.25rem">
+      <button class="nb-pclose" id="nbFetchCloseBtn"
+        onclick="document.getElementById('nbFetchOverlay').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Topic dialog -->
+<div class="nb-profile-overlay" id="nbEditTopicOverlay">
+  <div class="nb-profile-dialog">
+    <h2>Edit Topic Name</h2>
+    <input type="text" class="nb-edit-input" id="nbEditTopicInput"
+           placeholder="Topic name…"
+           onkeydown="if(event.key==='Enter')saveTopicDialog();if(event.key==='Escape')cancelEditTopic()" />
+    <div class="nb-pdialog-actions" style="margin-top:.25rem">
+      <button class="nb-pclose" onclick="cancelEditTopic()">Cancel</button>
+      <button class="nb-psave"  id="nbEditTopicSaveBtn" onclick="saveTopicDialog()">Save</button>
+    </div>
   </div>
 </div>
 
@@ -448,7 +505,10 @@ body { margin:0; background:#f3f2ef; font-family:'DINRegular',Arial,sans-serif; 
         $_search_blob .= ' ' . strtolower($_sn['note'] ?? '') . ' ' . strtolower($_sn['name'] ?? '');
     }
   ?>
-  <div class="game-card" id="<?= $_card_id ?>" data-search="<?= htmlspecialchars($_search_blob) ?>">
+  <div class="game-card" id="<?= $_card_id ?>"
+       data-hash="<?= $_hash ?>"
+       data-key="<?= htmlspecialchars($_g['key']) ?>"
+       data-search="<?= htmlspecialchars($_search_blob) ?>">
 
     <div class="game-header" onclick="toggleCard('<?= $_card_id ?>')">
       <span class="game-name"><?= $_game_html ?></span>
@@ -461,14 +521,12 @@ body { margin:0; background:#f3f2ef; font-family:'DINRegular',Arial,sans-serif; 
     <div class="game-sub-bar">
       <button class="action-btn"
         onclick="copyFeedbackLink(this,'<?= $_hash ?>','<?= htmlspecialchars($_sheet_id) ?>')">
-        Copy Feedback Link
+        Share
       </button>
-      <?php if ($_count > 0): ?>
-      <button class="action-btn action-btn-notes"
-        onclick="viewNotes('<?= $_card_id ?>')">
-        View Notes
+      <button class="action-btn"
+        onclick="editTopic('<?= $_card_id ?>')">
+        Edit
       </button>
-      <?php endif; ?>
     </div>
 
     <div class="notes-body">
@@ -556,6 +614,50 @@ body { margin:0; background:#f3f2ef; font-family:'DINRegular',Arial,sans-serif; 
     closeAccountMenu();
     window.open(APP_BASE + 'noteboard/help', '_blank');
   };
+  window.accountMenuFetch = function() {
+    closeAccountMenu();
+    var logEl = document.getElementById('nbFetchLog');
+    logEl.innerHTML = '';
+    var closeBtn = document.getElementById('nbFetchCloseBtn');
+    closeBtn.disabled = true;
+    document.getElementById('nbFetchOverlay').classList.add('open');
+    _fetchLog('Connecting to spreadsheet…', 'info');
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', APP_BASE + 'push/fetchNotes.php');
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function() {
+      var res; try { res = JSON.parse(xhr.responseText); } catch(e) { res = null; }
+      closeBtn.disabled = false;
+      if (!res) { _fetchLog('Invalid server response.', 'error'); return; }
+      logEl.innerHTML = '';
+      var lines = res.logs || [];
+      var delay = 0;
+      lines.forEach(function(line) {
+        setTimeout(function() { _fetchLog(line.msg, line.type || 'info'); }, delay);
+        delay += 100;
+      });
+      if (res.error && !res.ok) {
+        setTimeout(function() { _fetchLog('Error: ' + res.error, 'error'); }, delay);
+      }
+      if (res.ok) {
+        setTimeout(function() { window.location.reload(); }, delay + 700);
+      }
+    };
+    xhr.onerror = function() {
+      closeBtn.disabled = false;
+      _fetchLog('Network error — could not reach server.', 'error');
+    };
+    xhr.send('id=' + encodeURIComponent(SHEET_ID));
+  };
+  function _fetchLog(msg, type) {
+    var logEl = document.getElementById('nbFetchLog');
+    var span  = document.createElement('span');
+    span.className   = 'nb-plog-line ' + (type || 'info');
+    span.textContent = msg;
+    logEl.appendChild(span);
+    logEl.appendChild(document.createElement('br'));
+    logEl.scrollTop  = logEl.scrollHeight;
+  }
   document.addEventListener('click', function(e) {
     var wrap = document.querySelector('.account-menu-wrap');
     if (wrap && !wrap.contains(e.target)) closeAccountMenu();
@@ -665,6 +767,58 @@ body { margin:0; background:#f3f2ef; font-family:'DINRegular',Arial,sans-serif; 
     }).catch(function() {
       window.prompt('Copy this link:', url);
     });
+  };
+
+  var _editCardId = null;
+
+  window.editTopic = function(cardId) {
+    _editCardId = cardId;
+    var card     = document.getElementById(cardId);
+    var nameSpan = card ? card.querySelector('.game-name') : null;
+    var input    = document.getElementById('nbEditTopicInput');
+    var saveBtn  = document.getElementById('nbEditTopicSaveBtn');
+    input.value      = nameSpan ? nameSpan.textContent : '';
+    saveBtn.disabled = false;
+    document.getElementById('nbEditTopicOverlay').classList.add('open');
+    setTimeout(function() { input.focus(); input.select(); }, 60);
+  };
+
+  window.cancelEditTopic = function() {
+    document.getElementById('nbEditTopicOverlay').classList.remove('open');
+    _editCardId = null;
+  };
+
+  window.saveTopicDialog = function() {
+    if (!_editCardId) return;
+    var card    = document.getElementById(_editCardId);
+    var input   = document.getElementById('nbEditTopicInput');
+    var saveBtn = document.getElementById('nbEditTopicSaveBtn');
+    if (!card || !input) return;
+    var newTopic = input.value.trim();
+    if (!newTopic) { input.focus(); return; }
+    var key = card.dataset.key;
+    saveBtn.disabled = true;
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', APP_BASE + 'push/updateNoteTopic.php');
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function() {
+      saveBtn.disabled = false;
+      var res; try { res = JSON.parse(xhr.responseText); } catch(e) { res = null; }
+      if (res && res.ok) {
+        var nameSpan = card.querySelector('.game-name');
+        if (nameSpan) nameSpan.textContent = newTopic;
+        cancelEditTopic();
+      } else {
+        alert('Error: ' + ((res && res.error) || 'Could not save topic.'));
+      }
+    };
+    xhr.onerror = function() {
+      saveBtn.disabled = false;
+      alert('Network error.');
+    };
+    xhr.send('id=' + encodeURIComponent(SHEET_ID)
+           + '&key=' + encodeURIComponent(key)
+           + '&topic=' + encodeURIComponent(newTopic));
   };
 
   // ── Add Topic combobox ────────────────────────────────

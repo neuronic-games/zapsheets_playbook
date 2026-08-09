@@ -170,16 +170,36 @@ def _fetch_tab(ws, topic_name):
 
 # ── process ───────────────────────────────────────────────────────────────────
 count = 0
+processed_keys = set()  # tracks keys that matched a real tab
+
+def _fetch_tab_tracked(ws, topic_name):
+    processed_keys.add(topic_name)
+    return _fetch_tab(ws, topic_name)
 
 if single_game:
     fetched_topic, fetched_notes, _ = _fetch_tab(tab_ws, single_game)
 else:
     if default_tab:
-        _fetch_tab(default_tab, 'notes')
+        _fetch_tab_tracked(default_tab, 'notes')
     for ws in notes_tabs:
         m = re.match(r'^\[(.+)\] notes$', ws.title)
         if m:
-            _fetch_tab(ws, m.group(1))  # noqa: discard return value in bulk mode
+            _fetch_tab_tracked(ws, m.group(1))
+
+# ── prune stale index entries (tabs deleted from the sheet) ───────────────────
+if not single_game:
+    for _h, _key in list(nb_index.items()):
+        if _key not in processed_keys:
+            _safe  = re.sub(r'[/\\]', '-', _key)
+            _cache = os.path.join(out_dir, f'notes-{_safe}-en.json')
+            if os.path.exists(_cache):
+                try:
+                    os.remove(_cache)
+                except Exception:
+                    pass
+            del nb_index[_h]
+            index_dirty = True
+            log(f'Removed stale entry "{_key}" (tab no longer in sheet).', 'info')
 
 # ── persist updated index ─────────────────────────────────────────────────────
 if index_dirty:

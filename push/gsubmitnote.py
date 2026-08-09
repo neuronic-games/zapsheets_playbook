@@ -34,12 +34,17 @@ if pipe_idx < 0:
 sheet_id = arg[:pipe_idx].strip()
 data     = json.loads(base64.b64decode(arg[pipe_idx + 1:]).decode('utf-8'))
 
-game_name = data.get('game', '').strip()
+game_key  = data.get('key',  '').strip()   # internal key → tab lookup
+game_name = data.get('game', '').strip()   # display name → cache topic field
 name      = data.get('name', '').strip()
 email     = data.get('email', '').strip()
 note      = data.get('note', '').strip()
 
-if not sheet_id or not game_name or not note:
+# Fall back: if no key provided (old clients), use game_name as key
+if not game_key:
+    game_key = game_name
+
+if not sheet_id or not game_key or not note:
     print(json.dumps({"error": "sheet_id, game, and note are required"}))
     sys.exit(1)
 
@@ -49,7 +54,8 @@ except Exception as e:
     print(json.dumps({"error": f"Could not open spreadsheet: {str(e)}"}))
     sys.exit(1)
 
-tab_name  = f'[{game_name}] notes'
+# Determine tab name from the internal key
+tab_name = 'notes' if game_key.lower() == 'notes' else f'[{game_key}] notes'
 all_ws    = {w.title: w for w in wb.worksheets()}
 HEADERS   = ['Date', 'Name', 'Email', 'Note']
 
@@ -106,7 +112,7 @@ try:
         if nt.strip():
             notes.append({'date': d, 'name': n, 'email': e, 'note': nt})
 
-    safe_name  = game_name.replace('/', '-').replace('\\', '-')
+    safe_name  = game_key.replace('/', '-').replace('\\', '-')
     out_dir    = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sheets', sheet_id)
     os.makedirs(out_dir, exist_ok=True)
     cache_path = os.path.join(out_dir, f'notes-{safe_name}-en.json')

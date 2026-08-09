@@ -37,8 +37,9 @@ if ($_sheet_id) {
 }
 if (substr($_base, -1) !== '/') { $_base .= '/'; }
 
-// Resolve hash → game name
-$_game_name = '';
+// Resolve hash → internal key + display name
+$_game_key  = '';   // internal key from noteboard-index.json (used to find the tab)
+$_game_name = '';   // display name shown to the user
 $_error     = '';
 
 if (!$_sheet_id || !$_hash) {
@@ -52,9 +53,10 @@ if (!$_sheet_id || !$_hash) {
         if (!isset($index[$_hash])) {
             $_error = 'This feedback link is not valid.';
         } else {
-            $_game_name = $index[$_hash];
-            // Use the topic display name from the cache file if available
-            $_safe       = str_replace(['/', '\\'], '-', $_game_name);
+            $_game_key  = $index[$_hash];          // e.g. "notes" or "Dim Sum A-Go-Go"
+            $_game_name = $_game_key;              // default display = internal key
+            // Override display name from cache if available
+            $_safe       = str_replace(['/', '\\'], '-', $_game_key);
             $_cache_path = __DIR__ . '/../../../sheets/' . $_sheet_id . '/notes-' . $_safe . '-en.json';
             if (file_exists($_cache_path)) {
                 $_cache = json_decode(file_get_contents($_cache_path), true) ?: [];
@@ -80,7 +82,8 @@ if ($_game_name && $_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $pythonPath = $_ENV['PYTHON'] ?? 'python3';
         $payload    = json_encode([
-            'game'  => $_game_name,
+            'key'   => $_game_key,    // internal key → determines which tab to write to
+            'game'  => $_game_name,   // display name → stored in cache topic field
             'name'  => $post_name,
             'email' => $post_email,
             'note'  => $post_note,

@@ -35,11 +35,12 @@ $payload = json_encode([
     'memory'      => trim($_POST['memory']      ?? ''),
     'disk'        => trim($_POST['disk']        ?? ''),
     'uptime'      => trim($_POST['uptime']      ?? ''),
-    'last_reboot' => trim($_POST['last_reboot'] ?? ''),
-    'status'      => trim($_POST['status']      ?? ''),
-    'time'        => trim($_POST['time']        ?? ''),
-    'crashes'     => trim($_POST['crashes']     ?? ''),
-    'crash_times' => trim($_POST['crash_times'] ?? ''),
+    'last_reboot'    => trim($_POST['last_reboot']    ?? ''),
+    'teamviewer_id'  => trim($_POST['teamviewer_id']  ?? ''),
+    'status'         => trim($_POST['status']         ?? ''),
+    'time'           => trim($_POST['time']            ?? ''),
+    'crashes'        => trim($_POST['crashes']         ?? ''),
+    'crash_times'    => trim($_POST['crash_times']    ?? ''),
 ], JSON_UNESCAPED_UNICODE);
 
 $py  = $_ENV['PYTHON'] ?? 'python3';

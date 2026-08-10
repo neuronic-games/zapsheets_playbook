@@ -39,8 +39,9 @@ os_info     = data.get('os',          '').strip()
 memory      = data.get('memory',      '').strip()
 disk        = data.get('disk',        '').strip()
 uptime      = data.get('uptime',      '').strip()
-last_reboot = data.get('last_reboot', '').strip()
-status      = data.get('status',      '').strip()
+last_reboot    = data.get('last_reboot',    '').strip()
+teamviewer_id  = data.get('teamviewer_id', '').strip()
+status         = data.get('status',        '').strip()
 time_str    = data.get('time',        '').strip()
 crashes     = data.get('crashes',     None)
 crash_times = data.get('crash_times', '').strip()
@@ -69,8 +70,8 @@ except Exception as e:
 
 # ── Get or create the tab ─────────────────────────────────────────────────────
 
-HEADERS    = ['Exhibit', 'Host', 'IP', 'OS', 'Memory', 'Disk', 'Uptime', 'Last Reboot', 'Status', 'Time', 'Crashes', 'Crash Times', 'Notes']
-COL_WIDTHS = [160, 160, 130, 150, 100, 100, 90, 110, 90, 170, 80, 300, 250]
+HEADERS    = ['Exhibit', 'Host', 'IP', 'OS', 'Memory', 'Disk', 'Uptime', 'Last Reboot', 'Status', 'Time', 'Crashes', 'Crash Times', 'TeamViewer ID', 'Notes']
+COL_WIDTHS = [160, 160, 130, 150, 100, 100, 90, 110, 90, 170, 80, 300, 120, 250]
 
 def setup_worksheet(ws):
     last_col = chr(ord('A') + len(HEADERS) - 1)
@@ -141,6 +142,7 @@ if status:              updates.append({'range': f'I{row}', 'values': [[status]]
 if time_str:            updates.append({'range': f'J{row}', 'values': [[time_str]]})
 if crashes is not None: updates.append({'range': f'K{row}', 'values': [[crashes]]})
 if crash_times:         updates.append({'range': f'L{row}', 'values': [[crash_times]]})
+if teamviewer_id:       updates.append({'range': f'M{row}', 'values': [[teamviewer_id]]})
 
 if updates:
     ws.batch_update(updates)
@@ -177,8 +179,9 @@ try:
     if last_reboot:         entry['last_reboot'] = last_reboot
     if status:              entry['status']      = status
     if time_str:            entry['time']        = time_str
-    if crashes is not None: entry['crashes']     = str(crashes)
-    if crash_times:         entry['crash_times'] = crash_times
+    if crashes is not None: entry['crashes']      = str(crashes)
+    if crash_times:         entry['crash_times']  = crash_times
+    if teamviewer_id:       entry['teamviewer_id'] = teamviewer_id
 
     cache['machines'] = machines
     with open(cache_path, 'w', encoding='utf-8') as f:

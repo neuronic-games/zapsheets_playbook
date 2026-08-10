@@ -191,6 +191,7 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
   display:grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap:.65rem;
+  align-items: start;
 }
 
 /* ── Machine card ────────────────────────────────────── */
@@ -243,7 +244,7 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
 .card-summary { padding:.65rem .85rem; }
 
 .quick-stats {
-  display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:.55rem;
+  display:flex; gap:.5rem; margin-bottom:.55rem; justify-content:space-between;
 }
 .qs-pill {
   display:flex; flex-direction:column;
@@ -253,7 +254,7 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
 }
 .qs-pill-top {
   display:flex; align-items:center; gap:.35rem;
-  padding:.22rem .55rem .2rem;
+  padding:.22rem .55rem .2rem; white-space:nowrap;
 }
 .qs-bar-track {
   height:3px; background:rgba(255,255,255,.06);
@@ -444,7 +445,8 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
         $_time        = htmlspecialchars($_m['time']        ?? '');
         $_crashes     = (int)($_m['crashes'] ?? 0);
         $_crash_times = htmlspecialchars($_m['crash_times'] ?? '');
-        $_notes       = htmlspecialchars($_m['notes']       ?? '');
+        $_notes         = htmlspecialchars($_m['notes']         ?? '');
+        $_teamviewer_id = htmlspecialchars($_m['teamviewer_id'] ?? '');
 
         [$_mem_pct,  $_mem_color]  = _pb_usage_bar($_memory);
         [$_disk_pct, $_disk_color] = _pb_usage_bar($_disk);
@@ -492,7 +494,7 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
             <div class="qs-pill">
               <div class="qs-pill-top">
                 <span class="qs-label">Up</span>
-                <span class="qs-value"><?= $_uptime ?></span>
+                <span class="qs-value"><?= $_uptime ?> <span style="opacity:.45;font-size:.9em">HRS</span></span>
               </div>
             </div>
             <?php endif; ?>
@@ -531,6 +533,12 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
               <div class="detail-item">
                 <span class="detail-label">Last Reboot</span>
                 <span class="detail-value"><?= $_last_reboot ?></span>
+              </div>
+              <?php endif; ?>
+              <?php if ($_teamviewer_id): ?>
+              <div class="detail-item">
+                <span class="detail-label">TeamViewer ID</span>
+                <span class="detail-value mono"><?= $_teamviewer_id ?></span>
               </div>
               <?php endif; ?>
               <?php if ($_crash_times): ?>

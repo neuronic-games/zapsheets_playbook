@@ -121,6 +121,29 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^sheets/([A-Za-z0-9_\-]+)/noteboard/?$ source/noteboard/list/index.php [L,QSA]
 
+# /pulseboard — setup landing page
+RewriteRule ^pulseboard/?$ source/pulseboard/index.php [L,QSA]
+
+# Short-URL: /{id}/pulseboard/pulse — machine heartbeat POST (must come before list rule)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/pulseboard/pulse/?$ push/pulsePulseboard.php [L,QSA]
+
+# Short-URL: /{id}/pulseboard — machine status dashboard
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/pulseboard/?$ source/pulseboard/list/index.php [L,QSA]
+
+# Also cover sheets/{id}/pulseboard/pulse for direct links
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^sheets/([A-Za-z0-9_\-]+)/pulseboard/pulse/?$ push/pulsePulseboard.php [L,QSA]
+
+# Also cover sheets/{id}/pulseboard for direct links
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^sheets/([A-Za-z0-9_\-]+)/pulseboard/?$ source/pulseboard/list/index.php [L,QSA]
+
 # Short-URL: /{id}/site  → add trailing slash (301)
 RewriteRule ^([A-Za-z0-9_\-]+)/site$ %{REQUEST_URI}/ [R=301,L]
 
@@ -141,5 +164,5 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 # Guard 2: skip known top-level names regardless of subdirectory prefix.
 #          Matches  /anything/name/  or  /anything/name  at end of URI.
-RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard|fitboard|noteboard|slides-sw)(/|$)
+RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard|fitboard|noteboard|pulseboard|slides-sw)(/|$)
 RewriteRule ^([A-Za-z0-9_\-]+)(/.*)?$ sheets/$1$2 [R=302,L]

@@ -62,7 +62,7 @@ function _pb_usage_bar(string $val): array {
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>PulseBoard</title>
-<link rel="icon" type="image/svg+xml" href="images/pulseboard-icon.svg" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg width='180' height='180' viewBox='0 0 180 180' fill='none' xmlns='http://www.w3.org/2000/svg'><rect width='180' height='180' rx='36' fill='%231a1a1a'/><polyline points='8,90 42,90 52,38 68,138 82,58 98,90 132,90' stroke='%23ef4444' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/><line x1='132' y1='90' x2='148' y2='90' stroke='%23ef4444' stroke-width='10' stroke-linecap='round'/><circle cx='164' cy='90' r='16' fill='%2316a34a'/></svg>" />
 <style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2')  format('woff2'),url('fonts/DINBlack.ttf')  format('truetype'); }
 @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'),url('fonts/DINMedium.ttf') format('truetype'); }
@@ -82,12 +82,7 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
   display:flex; align-items:center; gap:.75rem;
 }
 .top-bar-left { flex:1; min-width:0; display:flex; align-items:center; gap:.75rem; }
-.top-bar-logo {
-  width:32px; height:32px; flex-shrink:0;
-  background:#1a1a1a; border-radius:8px;
-  display:inline-flex; align-items:center; justify-content:center;
-}
-.top-bar-logo svg { width:22px; height:22px; }
+.top-bar-logo { width:32px; height:32px; flex-shrink:0; display:flex; align-items:center; }
 .top-bar h1 {
   font-family:'DINBlack',sans-serif; font-size:1rem;
   margin:0; letter-spacing:.03em;
@@ -289,7 +284,7 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
   max-height:0; overflow:hidden;
   transition:max-height .25s ease;
 }
-.machine-card.expanded .card-detail { max-height:400px; }
+.machine-card.expanded .card-detail { max-height:500px; }
 
 .card-detail-inner {
   padding:.1rem .85rem .75rem;
@@ -307,6 +302,33 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
 }
 .detail-value { font-size:.75rem; color:#94a3b8; }
 .detail-value.mono { font-family:monospace; }
+
+/* ── Notes editor ───────────────────────────────────── */
+.notes-wrap { margin-top:.5rem; }
+.notes-textarea {
+  width:100%; box-sizing:border-box;
+  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1);
+  border-radius:5px; color:#94a3b8; font-size:.75rem;
+  font-family:'DINRegular',Arial,sans-serif;
+  padding:.4rem .55rem; resize:vertical; min-height:52px;
+  outline:none; transition:border-color .15s;
+}
+.notes-textarea:focus { border-color:rgba(22,163,74,.5); color:#e0e6f0; }
+.notes-footer {
+  display:flex; align-items:center; justify-content:flex-end;
+  gap:.5rem; margin-top:.3rem;
+}
+.notes-status { font-size:.65rem; color:#3f4f5e; }
+.notes-status.ok   { color:#4ade80; }
+.notes-status.err  { color:#f87171; }
+.notes-save-btn {
+  font-family:'DINBlack',sans-serif; font-size:.65rem;
+  background:rgba(22,163,74,.2); color:#4ade80;
+  border:1px solid rgba(22,163,74,.3); border-radius:4px;
+  padding:.2rem .6rem; cursor:pointer; transition:background .15s;
+}
+.notes-save-btn:hover { background:rgba(22,163,74,.35); }
+.notes-save-btn:disabled { opacity:.4; cursor:default; }
 
 /* ── No machines / search ────────────────────────────── */
 .no-machines {
@@ -340,10 +362,11 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
   <div class="top-bar-inner">
     <div class="top-bar-left">
       <div class="top-bar-logo">
-        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <polyline points="2,24 11,24 14,10 18,36 22,16 26,24 35,24" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <line x1="35" y1="24" x2="38" y2="24" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"/>
-          <circle cx="42" cy="24" r="4.5" fill="#22c55e"/>
+        <svg width="32" height="32" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="180" height="180" rx="36" fill="#1a1a1a"/>
+          <polyline points="8,90 42,90 52,38 68,138 82,58 98,90 132,90" stroke="#ef4444" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="132" y1="90" x2="148" y2="90" stroke="#ef4444" stroke-width="10" stroke-linecap="round"/>
+          <circle cx="164" cy="90" r="16" fill="#16a34a"/>
         </svg>
       </div>
       <h1><span class="pb-pulse">Pulse</span><span class="pb-board">Board</span></h1>
@@ -421,13 +444,14 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
         $_time        = htmlspecialchars($_m['time']        ?? '');
         $_crashes     = (int)($_m['crashes'] ?? 0);
         $_crash_times = htmlspecialchars($_m['crash_times'] ?? '');
+        $_notes       = htmlspecialchars($_m['notes']       ?? '');
 
         [$_mem_pct,  $_mem_color]  = _pb_usage_bar($_memory);
         [$_disk_pct, $_disk_color] = _pb_usage_bar($_disk);
 
         $_search_blob = strtolower(implode(' ', array_values($_m)));
       ?>
-      <div class="machine-card" data-search="<?= htmlspecialchars($_search_blob) ?>" onclick="toggleCard(this)">
+      <div class="machine-card" data-search="<?= htmlspecialchars($_search_blob) ?>" data-tab="<?= htmlspecialchars($_g['name']) ?>" data-exhibit="<?= $_exhibit ?>" onclick="toggleCard(this)">
 
         <!-- Header -->
         <div class="machine-header <?= $_sc ?>">
@@ -515,6 +539,14 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
                 <span class="detail-value mono"><?= $_crash_times ?></span>
               </div>
               <?php endif; ?>
+              <div class="detail-item full notes-wrap" onclick="event.stopPropagation()">
+                <span class="detail-label">Notes</span>
+                <textarea class="notes-textarea" rows="2" placeholder="Add a note..."><?= $_notes ?></textarea>
+                <div class="notes-footer">
+                  <span class="notes-status"></span>
+                  <button class="notes-save-btn" onclick="saveNote(this)">Save</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -543,9 +575,49 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
 
   var SHEET_ID = <?= json_encode($_sheet_id) ?>;
 
-  // ── Card expand / collapse ────────────────────────────
+  // ── Card expand / collapse (accordion) ───────────────
   window.toggleCard = function(card) {
-    card.classList.toggle('expanded');
+    var wasExpanded = card.classList.contains('expanded');
+    document.querySelectorAll('.machine-card.expanded').forEach(function(c) {
+      c.classList.remove('expanded');
+    });
+    if (!wasExpanded) card.classList.add('expanded');
+  };
+
+  // ── Save note ─────────────────────────────────────────
+  window.saveNote = function(btn) {
+    var wrap    = btn.closest('.machine-card');
+    var tab     = wrap.dataset.tab;
+    var exhibit = wrap.dataset.exhibit;
+    var ta      = btn.closest('.notes-wrap').querySelector('.notes-textarea');
+    var status  = btn.closest('.notes-wrap').querySelector('.notes-status');
+    btn.disabled = true;
+    status.className = 'notes-status';
+    status.textContent = 'Saving...';
+    var body = 'tab='     + encodeURIComponent(tab)
+             + '&exhibit=' + encodeURIComponent(exhibit)
+             + '&notes='   + encodeURIComponent(ta.value);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', APP_BASE + SHEET_ID + '/pulseboard/note');
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function() {
+      var res; try { res = JSON.parse(xhr.responseText); } catch(e) { res = null; }
+      btn.disabled = false;
+      if (res && res.ok) {
+        status.className = 'notes-status ok';
+        status.textContent = 'Saved';
+        setTimeout(function() { status.textContent = ''; }, 2500);
+      } else {
+        status.className = 'notes-status err';
+        status.textContent = (res && res.error) ? res.error : 'Error';
+      }
+    };
+    xhr.onerror = function() {
+      btn.disabled = false;
+      status.className = 'notes-status err';
+      status.textContent = 'Network error';
+    };
+    xhr.send(body);
   };
 
   // ── Account menu ─────────────────────────────────────

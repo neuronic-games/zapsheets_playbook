@@ -129,6 +129,11 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^([A-Za-z0-9_\-]+)/pulseboard/pulse/?$ push/pulsePulseboard.php [L,QSA]
 
+# Short-URL: /{id}/pulseboard/note — save machine notes
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/pulseboard/note/?$ push/saveNotePulseboard.php [L,QSA]
+
 # Short-URL: /{id}/pulseboard — machine status dashboard
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

@@ -69,8 +69,8 @@ except Exception as e:
 
 # ── Get or create the tab ─────────────────────────────────────────────────────
 
-HEADERS    = ['Exhibit', 'Host', 'IP', 'OS', 'Memory', 'Disk', 'Uptime', 'Last Reboot', 'Status', 'Time', 'Crashes', 'Crash Times']
-COL_WIDTHS = [160, 160, 130, 150, 100, 100, 90, 110, 90, 170, 80, 300]
+HEADERS    = ['Exhibit', 'Host', 'IP', 'OS', 'Memory', 'Disk', 'Uptime', 'Last Reboot', 'Status', 'Time', 'Crashes', 'Crash Times', 'Notes']
+COL_WIDTHS = [160, 160, 130, 150, 100, 100, 90, 110, 90, 170, 80, 300, 250]
 
 def setup_worksheet(ws):
     last_col = chr(ord('A') + len(HEADERS) - 1)

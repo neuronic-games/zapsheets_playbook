@@ -121,6 +121,14 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^sheets/([A-Za-z0-9_\-]+)/noteboard/?$ source/noteboard/list/index.php [L,QSA]
 
+# /share/{token} — shared read-only PulseBoard view
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^share/([A-Za-z0-9]+)/?$ source/pulseboard/shared/index.php [L,QSA]
+
+# /pulseboard/help — help page
+RewriteRule ^pulseboard/help/?$ source/pulseboard/help/index.php [L,QSA]
+
 # /pulseboard — setup landing page
 RewriteRule ^pulseboard/?$ source/pulseboard/index.php [L,QSA]
 

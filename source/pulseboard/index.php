@@ -140,6 +140,7 @@ body {
     </div>
     <div class="brand-name"><span style="color:#ef4444">Pulse</span><span style="color:#22c55e">Board</span></div>
     <div class="brand-tagline">Monitor your machines in real time</div>
+    <a href="pulseboard/help" style="display:inline-block;margin-top:.55rem;font-family:'DINBlack',sans-serif;font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:#16a34a;text-decoration:none;opacity:.75;">Help →</a>
   </div>
 
   <!-- Setup card -->

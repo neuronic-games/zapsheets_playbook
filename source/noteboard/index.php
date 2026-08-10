@@ -144,6 +144,7 @@ body {
     </div>
     <div class="brand-name">NoteBoard</div>
     <div class="brand-tagline">Collect feedback for your games</div>
+    <a href="noteboard/help" style="display:inline-block;margin-top:.55rem;font-family:'DINBlack',Arial,sans-serif;font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:#16a34a;text-decoration:none;opacity:.75;">Help →</a>
   </div>
 
   <!-- Setup card -->

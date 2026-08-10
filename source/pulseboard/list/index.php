@@ -42,16 +42,16 @@ function _pb_status_class(string $s): string {
     return 'status-unknown';
 }
 
-/** Parse "free/total GB" → [used_pct (int), bar_color (string)] */
+/** Parse "free/total GB" → [free_pct (int), bar_color (string)] */
 function _pb_usage_bar(string $val): array {
     if (!preg_match('/^([\d.]+)\/([\d.]+)/', $val, $m)) return [0, ''];
     $free  = (float)$m[1];
     $total = (float)$m[2];
     if ($total <= 0) return [0, ''];
-    $pct = (int)round((($total - $free) / $total) * 100);
-    if ($pct < 60)  $color = '#16a34a';   // green
-    elseif ($pct < 80) $color = '#f59e0b'; // amber
-    else               $color = '#dc2626'; // red
+    $pct = (int)round(($free / $total) * 100);  // bar = free %
+    if ($pct > 40)       $color = '#16a34a';   // plenty free → green
+    elseif ($pct > 20)   $color = '#f59e0b';   // getting low → amber
+    else                 $color = '#dc2626';   // critically low → red
     return [$pct, $color];
 }
 ?>
@@ -96,6 +96,18 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
   border-radius:6px; padding:.3rem .75rem; white-space:nowrap; flex-shrink:0;
   color:#4ade80;
 }
+
+/* ── Group share button ───────────────────────────────── */
+.pb-group-share-btn {
+  display:inline-flex; align-items:center; gap:.3rem;
+  font-family:'DINBlack',sans-serif; font-size:.62rem;
+  text-transform:uppercase; letter-spacing:.06em;
+  background:rgba(22,163,74,.12); color:#4ade80;
+  border:1px solid rgba(22,163,74,.25); border-radius:5px;
+  padding:.22rem .55rem; cursor:pointer; transition:background .15s;
+  flex-shrink:0;
+}
+.pb-group-share-btn:hover { background:rgba(22,163,74,.25); }
 
 /* ── Account menu ────────────────────────────────────── */
 .account-menu-wrap { position:relative; flex-shrink:0; }
@@ -156,6 +168,39 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
 }
 .pb-close-btn:hover { background:rgba(255,255,255,.14); color:#fff; }
 .pb-close-btn:disabled { opacity:.4; cursor:default; }
+
+/* ── Share dialog ────────────────────────────────────── */
+.pb-share-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.6); z-index:1000;
+  align-items:center; justify-content:center;
+}
+.pb-share-overlay.open { display:flex; }
+.pb-share-dialog {
+  background:#0f1923; border:1px solid rgba(22,163,74,.3); border-radius:10px;
+  padding:1.4rem; width:min(440px,92vw);
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+  display:flex; flex-direction:column; gap:.85rem;
+}
+.pb-share-dialog h2 { font-family:'DINBlack',sans-serif; font-size:.95rem; margin:0; color:#e0e6f0; }
+.pb-share-url-row {
+  display:flex; gap:.5rem; align-items:center;
+}
+.pb-share-url {
+  flex:1; background:#060d13; border:1px solid rgba(22,163,74,.2);
+  border-radius:6px; padding:.55rem .75rem;
+  font-family:monospace; font-size:.78rem; color:#4ade80;
+  word-break:break-all; min-height:2.4rem;
+}
+.pb-copy-btn {
+  font-family:'DINBlack',sans-serif; font-size:.7rem;
+  text-transform:uppercase; letter-spacing:.05em;
+  background:rgba(22,163,74,.2); color:#4ade80;
+  border:1px solid rgba(22,163,74,.3); border-radius:6px;
+  padding:.45rem .9rem; cursor:pointer; transition:background .15s; white-space:nowrap;
+}
+.pb-copy-btn:hover { background:rgba(22,163,74,.35); }
+.pb-share-note { font-size:.75rem; color:#3f4f5e; }
 
 /* ── Content ─────────────────────────────────────────── */
 .content { max-width:1100px; margin:0 auto; padding:1.25rem 1rem 3rem; }
@@ -382,6 +427,8 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
       </button>
       <div class="account-menu" id="pbAccountMenu">
         <button class="account-menu-item" onclick="accountMenuFetch()">Fetch</button>
+        <!-- Share moved to per-group headers -->
+        <a class="account-menu-item" href="pulseboard/help" style="text-decoration:none">Help</a>
       </div>
     </div>
   </div>
@@ -409,6 +456,21 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
   </div>
 </div>
 
+<!-- Share dialog -->
+<div class="pb-share-overlay" id="pbShareOverlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="pb-share-dialog">
+    <h2>Share This Dashboard</h2>
+    <div class="pb-share-url-row">
+      <div class="pb-share-url" id="pbShareUrl">Generating link…</div>
+      <button class="pb-copy-btn" id="pbCopyBtn" onclick="copyShareUrl()">Copy</button>
+    </div>
+    <div class="pb-share-note">Anyone with this link can view machine statuses in read-only mode. No login required.</div>
+    <div class="pb-dialog-actions" style="margin-top:.25rem">
+      <button class="pb-close-btn" onclick="document.getElementById('pbShareOverlay').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Content -->
 <div class="content">
 
@@ -424,6 +486,10 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
     <div class="group-header">
       <span class="group-name"><?= htmlspecialchars($_g['name']) ?></span>
       <span class="group-count"><?= count($_g['machines']) ?> machine<?= count($_g['machines']) !== 1 ? 's' : '' ?></span>
+      <button class="pb-group-share-btn" onclick="shareGroup(<?= htmlspecialchars(json_encode($_g['safe']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($_g['name']), ENT_QUOTES) ?>)">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Share
+      </button>
     </div>
 
     <?php if (empty($_g['machines'])): ?>
@@ -494,7 +560,7 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
             <div class="qs-pill">
               <div class="qs-pill-top">
                 <span class="qs-label">Up</span>
-                <span class="qs-value"><?= $_uptime ?> <span style="opacity:.45;font-size:.9em">HRS</span></span>
+                <span class="qs-value"><?= $_uptime ?> HRS</span>
               </div>
             </div>
             <?php endif; ?>
@@ -639,6 +705,47 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
     var wrap = document.querySelector('.account-menu-wrap');
     if (wrap && !wrap.contains(e.target)) closeAccountMenu();
   });
+
+  window.shareGroup = function(tabSafe, tabName) {
+    var urlEl   = document.getElementById('pbShareUrl');
+    var copyBtn = document.getElementById('pbCopyBtn');
+    urlEl.textContent   = 'Generating link…';
+    copyBtn.textContent = 'Copy';
+    document.getElementById('pbShareOverlay').classList.add('open');
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', APP_BASE + 'push/createSharePulseboard.php');
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function() {
+      var res; try { res = JSON.parse(xhr.responseText); } catch(e) { res = null; }
+      if (res && res.ok) {
+        urlEl.textContent = window.location.origin + APP_BASE.replace(/\/$/, '') + '/share/' + res.token;
+      } else {
+        urlEl.textContent = 'Error generating link.';
+      }
+    };
+    xhr.onerror = function() { urlEl.textContent = 'Network error.'; };
+    xhr.send(
+      'sheet_id='  + encodeURIComponent(SHEET_ID) +
+      '&tab='      + encodeURIComponent(tabName) +
+      '&tab_safe=' + encodeURIComponent(tabSafe)
+    );
+  };
+
+  window.copyShareUrl = function() {
+    var url = document.getElementById('pbShareUrl').textContent;
+    var btn = document.getElementById('pbCopyBtn');
+    navigator.clipboard.writeText(url).then(function() {
+      btn.textContent = 'Copied!';
+      setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+    }).catch(function() {
+      var ta = document.createElement('textarea');
+      ta.value = url; ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = 'Copy'; }, 2000); } catch(e) {}
+      document.body.removeChild(ta);
+    });
+  };
 
   window.accountMenuFetch = function() {
     closeAccountMenu();

@@ -399,7 +399,7 @@ code {
       <div class="step">
         <div class="step-body">
           <div class="step-title">Configure and run the Python agent</div>
-          <p>Copy <code>neuron-scripts</code> to each machine. Edit <code>settings.py</code> with your Sheet ID, tab name (machine group), and exhibit name. Then run <code>launch.cmd</code> (Windows) or <code>python report_status.py</code> and <code>python guard.py</code> directly on Linux/macOS.</p>
+          <p>Copy <code>neuron-scripts</code> to each machine. Edit <code>settings.py</code> with your Sheet ID, tab name (machine group), and exhibit name. Then run <code>launch.cmd</code> (Windows) or <code>python pulse.py</code> and <code>python guard.py</code> directly on Linux/macOS.</p>
         </div>
       </div>
     </div>
@@ -481,7 +481,7 @@ code {
       </div>
       <div class="step" style="counter-increment:none">
         <div class="step-body">
-          <div class="step-title">report_status.py — heartbeat sender</div>
+          <div class="step-title">pulse.py — heartbeat sender</div>
           <p>Collects system stats and POSTs them to the PulseBoard pulse endpoint every 5 seconds while the monitored app is running. On startup and at midnight it also reads and clears the crash log, sending accumulated crash data with the pulse.</p>
         </div>
       </div>
@@ -531,7 +531,7 @@ code {
       <div class="step">
         <div class="step-body">
           <div class="step-title">App comes back online</div>
-          <p><code>report_status.py</code> detects the app is running again. On the first pulse after a restart it reads <code>crash.log</code>, counts the lines as the crash total, extracts the timestamps, then clears the file.</p>
+          <p><code>pulse.py</code> detects the app is running again. On the first pulse after a restart it reads <code>crash.log</code>, counts the lines as the crash total, extracts the timestamps, then clears the file.</p>
         </div>
       </div>
       <div class="step">
@@ -543,7 +543,7 @@ code {
       <div class="step">
         <div class="step-body">
           <div class="step-title">Daily reset at midnight</div>
-          <p>At 00:00:00 <code>report_status.py</code> sends another pulse with crash data and clears the log again, giving you a per-day crash count in the sheet history.</p>
+          <p>At 00:00:00 <code>pulse.py</code> sends another pulse with crash data and clears the log again, giving you a per-day crash count in the sheet history.</p>
         </div>
       </div>
     </div>
@@ -558,7 +558,7 @@ code {
     </div>
     <p>Each machine card has a <strong>Notes</strong> field at the bottom of its expanded detail view. You can type any text — maintenance notes, known issues, scheduled downtime — and click <strong>Save</strong>. The note is written directly to the Google Sheet (column N on the tab) and updated in the local cache.</p>
     <p>Notes are <strong>never overwritten by a pulse</strong>. The heartbeat script deliberately skips the Notes column so that anything you type in the dashboard or directly in the sheet is preserved.</p>
-    <p>The <strong>TeamViewer ID</strong> is collected automatically by <code>report_status.py</code> on each pulse. On Windows it reads the <code>ClientID</code> value from the registry (<code>HKLM\SOFTWARE\TeamViewer</code> or the WOW6432Node equivalent). On Linux and macOS it runs <code>teamviewer info</code> or reads the config file. The ID appears in the expanded card detail and in column M of the sheet, making it easy to connect to a machine remotely without having to log in first.</p>
+    <p>The <strong>TeamViewer ID</strong> is collected automatically by <code>pulse.py</code> on each pulse. On Windows it reads the <code>ClientID</code> value from the registry (<code>HKLM\SOFTWARE\TeamViewer</code> or the WOW6432Node equivalent). On Linux and macOS it runs <code>teamviewer info</code> or reads the config file. The ID appears in the expanded card detail and in column M of the sheet, making it easy to connect to a machine remotely without having to log in first.</p>
     <div class="callout"><strong>Tip:</strong> You can also edit notes directly in Google Sheets column N. The next time the dashboard fetches data, the updated note will appear on the card.</div>
   </div>
 

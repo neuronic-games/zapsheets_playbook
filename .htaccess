@@ -137,6 +137,16 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^([A-Za-z0-9_\-]+)/pulseboard/pulse/?$ push/pulsePulseboard.php [L,QSA]
 
+# Short-URL: /{id}/pulseboard/icon.png — home-screen app icon
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/pulseboard/icon\.png$ source/pulseboard/icon.php [L,QSA]
+
+# Short-URL: /{id}/pulseboard/manifest.json — web app manifest
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/pulseboard/manifest\.json$ source/pulseboard/manifest.php [L,QSA]
+
 # Short-URL: /{id}/pulseboard/note — save machine notes
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

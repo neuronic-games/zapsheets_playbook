@@ -187,6 +187,18 @@ try:
     with open(cache_path, 'w', encoding='utf-8') as f:
         json.dump(cache, f, ensure_ascii=False, indent=2)
     log('JSON cache updated.', 'ok')
+
+    # Keep pulseboard-index.json in sync so the dashboard always sees this tab
+    idx_path = os.path.join(cache_dir, 'pulseboard-index.json')
+    try:
+        idx = json.load(open(idx_path, encoding='utf-8')) if os.path.exists(idx_path) else {}
+    except Exception:
+        idx = {}
+    if idx.get(safe) != tab:
+        idx[safe] = tab
+        with open(idx_path, 'w', encoding='utf-8') as f:
+            json.dump(idx, f, ensure_ascii=False, indent=2)
+        log('pulseboard-index.json updated.', 'ok')
 except Exception as e:
     log(f'Cache update failed: {e}', 'warn')
 

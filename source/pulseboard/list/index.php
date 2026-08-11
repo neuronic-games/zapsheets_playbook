@@ -35,6 +35,10 @@ foreach ($_pb_index as $_safe => $_display) {
 
 $_total_machines = array_sum(array_map(fn($g) => count($g['machines']), $_groups));
 
+$_app_name     = 'PulseBoard';
+$_icon_url     = $_base . 'images/pb_icon_512.png';
+$_manifest_url = $_base . $_sheet_id . '/pulseboard/manifest.json';
+
 function _pb_status_class(string $s): string {
     $sl = strtolower(trim($s));
     if (in_array($sl, ['online','running','active','up','ok'])) return 'status-online';
@@ -61,8 +65,14 @@ function _pb_usage_bar(string $val): array {
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PulseBoard</title>
+<title><?= htmlspecialchars($_app_name) ?></title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg width='180' height='180' viewBox='0 0 180 180' fill='none' xmlns='http://www.w3.org/2000/svg'><rect width='180' height='180' rx='36' fill='%231a1a1a'/><polyline points='8,90 42,90 52,38 68,138 82,58 98,90 132,90' stroke='%23ef4444' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/><line x1='132' y1='90' x2='148' y2='90' stroke='%23ef4444' stroke-width='10' stroke-linecap='round'/><circle cx='164' cy='90' r='16' fill='%2316a34a'/></svg>" />
+<link rel="apple-touch-icon" href="<?= htmlspecialchars($_icon_url, ENT_QUOTES) ?>" />
+<link rel="manifest" href="<?= htmlspecialchars($_manifest_url, ENT_QUOTES) ?>" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="<?= htmlspecialchars($_app_name, ENT_QUOTES) ?>" />
+<meta name="theme-color" content="#0a1118" />
 <style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2')  format('woff2'),url('fonts/DINBlack.ttf')  format('truetype'); }
 @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'),url('fonts/DINMedium.ttf') format('truetype'); }
@@ -816,6 +826,9 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
     var nr = document.getElementById('noResults');
     if (nr) nr.style.display = (cards.length > 0 && shown === 0) ? 'block' : 'none';
   };
+
+  // Auto-refresh every hour
+  setTimeout(function() { location.reload(); }, 60 * 60 * 1000);
 })();
 </script>
 </body>

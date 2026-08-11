@@ -3,6 +3,8 @@
  * PulseBoard dashboard — shows machine status grouped by tab.
  * URL: /{sheet_id}/pulseboard
  */
+// Cache for 7 days — serves offline; location.reload() bypasses this for live refreshes
+header('Cache-Control: max-age=604800');
 
 $_rp = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
@@ -570,7 +572,7 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
             <div class="qs-pill">
               <div class="qs-pill-top">
                 <span class="qs-label">Up</span>
-                <span class="qs-value"><?= $_uptime ?> HRS</span>
+                <span class="qs-value"><?= preg_replace('/^(\d+:\d+):\d+$/', '$1', $_uptime) ?> HRS</span>
               </div>
             </div>
             <?php endif; ?>
@@ -827,8 +829,23 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
     if (nr) nr.style.display = (cards.length > 0 && shown === 0) ? 'block' : 'none';
   };
 
-  // Auto-refresh every hour
+  // Online/offline cache strategy:
+  // - Page has a PHP-generated timestamp baked in at render time.
+  // - If the page is more than 60 s old and we're online, it came from HTTP cache → reload for fresh data.
+  // - If offline, do nothing — the cached page is all we have.
+  // - When connectivity returns, reload immediately.
+  // - Also reload every hour so data stays current during long sessions.
+  var _pageAge = Math.floor(Date.now() / 1000) - <?= time() ?>;
+  if (navigator.onLine && _pageAge > 60) { location.reload(); }
+  window.addEventListener('online', function() { location.reload(); });
   setTimeout(function() { location.reload(); }, 60 * 60 * 1000);
+
+  // Service worker — network-first with offline cache fallback
+  // No custom scope: default is /{id}/pulseboard/ which matches manifest start_url
+  if ('serviceWorker' in navigator) {
+    var _swUrl = APP_BASE + SHEET_ID + '/pulseboard/sw.js';
+    navigator.serviceWorker.register(_swUrl).catch(function() {});
+  }
 })();
 </script>
 </body>

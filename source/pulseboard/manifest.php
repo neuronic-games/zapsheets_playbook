@@ -20,7 +20,7 @@ $_sheet_id = $_m[1] ?? ($_GET['id'] ?? '');
 
 $_app_name = 'PulseBoard';
 
-$_start_url = $_bp . '/' . $_sheet_id . '/pulseboard';
+$_start_url = $_bp . '/' . $_sheet_id . '/pulseboard/';  // trailing slash matches SW scope
 $_icon_url  = $_bp . '/images/pb_icon_512.png';
 
 echo json_encode([

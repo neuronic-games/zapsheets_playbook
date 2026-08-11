@@ -3,6 +3,8 @@
  * PulseBoard shared view — read-only dashboard via share token.
  * URL: /share/{token}
  */
+// Cache for 7 days — serves offline; location.reload() bypasses this for live refreshes
+header('Cache-Control: max-age=604800');
 
 $_bpFile = __DIR__ . '/../../../dotEnv.php';
 if (file_exists($_bpFile)) { require_once $_bpFile; }
@@ -298,7 +300,7 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
             <?php endif; ?>
             <?php if ($_uptime): ?>
             <div class="qs-pill">
-              <div class="qs-pill-top"><span class="qs-label">Up</span><span class="qs-value"><?= $_uptime ?> HRS</span></div>
+              <div class="qs-pill-top"><span class="qs-label">Up</span><span class="qs-value"><?= preg_replace('/^(\d+:\d+):\d+$/', '$1', $_uptime) ?> HRS</span></div>
             </div>
             <?php endif; ?>
           </div>
@@ -361,7 +363,15 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
     if (nr) nr.style.display = (cards.length > 0 && shown === 0) ? 'block' : 'none';
   };
 
-  // Auto-refresh every hour
+  // Online/offline cache strategy:
+  // - Page has a PHP-generated timestamp baked in at render time.
+  // - If the page is more than 60 s old and we're online, it came from HTTP cache → reload for fresh data.
+  // - If offline, do nothing — the cached page is all we have.
+  // - When connectivity returns, reload immediately.
+  // - Also reload every hour so data stays current during long sessions.
+  var _pageAge = Math.floor(Date.now() / 1000) - <?= time() ?>;
+  if (navigator.onLine && _pageAge > 60) { location.reload(); }
+  window.addEventListener('online', function() { location.reload(); });
   setTimeout(function() { location.reload(); }, 60 * 60 * 1000);
 })();
 </script>

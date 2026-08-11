@@ -147,6 +147,11 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^([A-Za-z0-9_\-]+)/pulseboard/manifest\.json$ source/pulseboard/manifest.php [L,QSA]
 
+# Short-URL: /{id}/pulseboard/sw.js — service worker for offline caching
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/pulseboard/sw\.js$ source/pulseboard/sw.php [L,QSA]
+
 # Short-URL: /{id}/pulseboard/note — save machine notes
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

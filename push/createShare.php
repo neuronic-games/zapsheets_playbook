@@ -43,12 +43,15 @@ if (file_put_contents($filepath, $jsonData) === false) {
 }
 
 // Build the full URL from the current request
-// REQUEST_URI is e.g. /sheets/{id}/push/createShare.php
-// Two dirnames bring us up to the app root /sheets/{id}/
+// REQUEST_URI is e.g. /app/push/createShare.php → appRoot = /app
 $scheme   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host     = $_SERVER['HTTP_HOST'];
-$appRoot  = dirname(dirname($_SERVER['REQUEST_URI']));
-$shareUrl = $scheme . '://' . $host . rtrim($appRoot, '/') . '/shares/' . $filename;
+$appRoot  = rtrim(dirname(dirname($_SERVER['REQUEST_URI'])), '/');
+$shareUrl = $scheme . '://' . $host . $appRoot . '/shares/' . $filename;
 
-echo json_encode(['ok' => true, 'url' => $shareUrl, 'filename' => $filename]);
+// View-only link — no sheet ID exposed
+$hash    = substr($filename, 0, -5); // strip .json
+$viewUrl = $scheme . '://' . $host . $appRoot . '/pitchboard/share/' . $hash;
+
+echo json_encode(['ok' => true, 'url' => $shareUrl, 'viewUrl' => $viewUrl, 'filename' => $filename]);
 ?>

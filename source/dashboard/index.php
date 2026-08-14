@@ -1337,7 +1337,7 @@ if (is_dir($_sheets_dir)) {
 </div>
 
 <!-- Notes viewer dialog -->
-<div class="sync-overlay" id="nbNotesOverlay" onclick="if(event.target===this)closeNotesDialog()">
+<div class="sync-overlay" id="nbNotesOverlay" onclick="if(event.target===this)closeNbNotesDialog()">
   <div class="sync-dialog" style="max-height:80vh;display:flex;flex-direction:column;overflow:hidden;">
     <h2 id="nbNotesTitle">Notes</h2>
     <div id="nbNotesList" style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:.6rem;padding:.1rem 0 .35rem;"></div>
@@ -1350,7 +1350,7 @@ if (is_dir($_sheets_dir)) {
           setTimeout(function(){ btn.textContent='Share'; btn.style.background=''; }, 2000);
         }).catch(function(){ window.open(link,'_blank'); });
       ">Share</button>
-      <button class="notes-close" onclick="closeNotesDialog()">Close</button>
+      <button class="notes-close" onclick="closeNbNotesDialog()">Close</button>
     </div>
   </div>
 </div>
@@ -1542,25 +1542,41 @@ if (is_dir($_sheets_dir)) {
   <div class="sync-dialog" style="width:min(480px,94vw)">
     <h2>Share</h2>
 
-    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Share Pitches with Collaborators</p>
-    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .75rem">Package your pitch data so collaborators can import it into their PitchBoard.</p>
+    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">View-Only Link</p>
+    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .5rem">Always current. Anyone with this link can view pitches — no account needed.</p>
+    <div id="shareViewGenSection" style="margin-bottom:1rem">
+      <button class="sync-update-btn" id="shareViewGenBtn" onclick="generatePitchViewLink()" style="width:100%;padding:.55rem 1rem;font-size:.8rem">Generate Link</button>
+    </div>
+    <div id="shareViewUrlSection" style="display:none;margin-bottom:1rem">
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <input type="text" id="shareViewUrlInput" class="ge-input" readonly style="flex:1;font-size:.72rem;font-family:monospace" />
+        <button class="sync-update-btn" id="shareViewUrlCopyBtn" onclick="copyShareViewUrl()">Copy</button>
+      </div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid #2a3240;margin:.25rem 0 .9rem" />
+
+    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Import Link</p>
+    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .75rem">Package a snapshot collaborators can import into their PitchBoard.</p>
 
     <div style="margin-bottom:.9rem">
       <button class="sync-update-btn" id="sharePackageBtn" onclick="packagePitchData()" style="width:100%;padding:.55rem 1rem;font-size:.8rem">Package Pitch Data</button>
     </div>
 
     <div id="sharePitchUrlSection" style="display:none">
-      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.6rem">
+      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.9rem">
         <input type="text" id="shareUrlInput" class="ge-input" readonly style="flex:1;font-size:.72rem;font-family:monospace" />
         <button class="sync-update-btn" id="shareUrlCopyBtn" onclick="copyShareUrl()">Copy</button>
       </div>
-      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:1rem">
-        <div class="combo-wrap" style="flex:1">
-          <input type="text" id="shareCollabInput" class="ge-input" placeholder="Select or type a collaborator…" autocomplete="off" style="font-size:.82rem" />
-          <div class="combo-drop" id="shareCollabDrop"></div>
-        </div>
-        <button class="sync-update-btn" onclick="sendShareEmail()" style="white-space:nowrap">&#9993; Send Email</button>
+    </div>
+
+    <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.5rem">
+      <div class="combo-wrap" style="flex:1;min-width:130px">
+        <input type="text" id="shareCollabInput" class="ge-input" placeholder="Select or type a collaborator…" autocomplete="off" style="font-size:.82rem" />
+        <div class="combo-drop" id="shareCollabDrop"></div>
       </div>
+      <button class="sync-update-btn" onclick="sendShareEmail()" style="white-space:nowrap;font-size:.76rem" title="Email import link">&#9993; Import</button>
+      <button class="sync-update-btn" onclick="sendViewShareEmail()" style="white-space:nowrap;font-size:.76rem" title="Email view-only link">&#9993; View</button>
     </div>
 
     <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Share Game Page</p>
@@ -4375,7 +4391,15 @@ function openAddDialog(game, publisher, contact, pubLocked) {
   document.getElementById('addDate').value =
     t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
   document.getElementById('addEvent').value  = '';
-  document.getElementById('addStatus').value = 'Pitched';
+  var _lastStatus = 'Pitched';
+  if (publisher && typeof allPitches !== 'undefined') {
+    var _pubPitches = allPitches.filter(function(r) { return r.Publisher === publisher; });
+    if (_pubPitches.length) {
+      _pubPitches.sort(function(a, b) { return (b.Date || '') > (a.Date || '') ? 1 : -1; });
+      _lastStatus = _pubPitches[0].Status || 'Pitched';
+    }
+  }
+  document.getElementById('addStatus').value = _lastStatus;
   document.getElementById('addNotes').value  = '';
 
   var btn = document.getElementById('addSubmitBtn');
@@ -5176,7 +5200,7 @@ function nbFetchNotes(btn) {
   xhr.send('id=' + encodeURIComponent(sheet_Id) + '&game=' + encodeURIComponent(gameName));
 }
 
-function closeNotesDialog() {
+function closeNbNotesDialog() {
   document.getElementById('nbNotesOverlay').classList.remove('open');
 }
 
@@ -5263,6 +5287,14 @@ function openShareUrlDialog(gameName) {
   var pkgBtn = document.getElementById('sharePackageBtn');
   pkgBtn.disabled = false;
   pkgBtn.textContent = 'Package Pitch Data';
+
+  // Reset view-only link section
+  document.getElementById('shareViewUrlSection').style.display = 'none';
+  document.getElementById('shareViewUrlInput').value = '';
+  document.getElementById('shareViewGenSection').style.display = '';
+  var _vgBtn = document.getElementById('shareViewGenBtn');
+  _vgBtn.disabled = false;
+  _vgBtn.textContent = 'Generate Link';
 
   var gamePageUrl = window.location.origin + APP_BASE + sheet_Id + '/view/?game=' + encodeGame(gameName || '');
   document.getElementById('shareGamePageInput').value = gamePageUrl;
@@ -5386,13 +5418,76 @@ function copyShareUrl() {
     btn.textContent = 'Copied!';
     setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
   }).catch(function() {
-    // iOS fallback
     var inp = document.getElementById('shareUrlInput');
     inp.select();
     try { document.execCommand('copy'); } catch(e) {}
     btn.textContent = 'Copied!';
     setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
   });
+}
+function generatePitchViewLink() {
+  var btn = document.getElementById('shareViewGenBtn');
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+  var fd = new FormData();
+  fd.append('id',   sheet_Id);
+  fd.append('game', _shareCurrentGame);
+  fetch(APP_BASE + 'push/createPitchView.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.viewUrl) {
+        document.getElementById('shareViewUrlInput').value = res.viewUrl;
+        document.getElementById('shareViewUrlCopyBtn').textContent = 'Copy';
+        document.getElementById('shareViewUrlSection').style.display = '';
+        document.getElementById('shareViewGenSection').style.display = 'none';
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Generate Link';
+        alert('Could not generate link' + (res.error ? ': ' + res.error : '.'));
+      }
+    })
+    .catch(function() {
+      btn.disabled = false;
+      btn.textContent = 'Generate Link';
+      alert('Network error — could not generate link.');
+    });
+}
+function copyShareViewUrl() {
+  var val = document.getElementById('shareViewUrlInput').value;
+  var btn = document.getElementById('shareViewUrlCopyBtn');
+  navigator.clipboard.writeText(val).then(function() {
+    btn.textContent = 'Copied!';
+    setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+  }).catch(function() {
+    var inp = document.getElementById('shareViewUrlInput');
+    inp.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    btn.textContent = 'Copied!';
+    setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+  });
+}
+function sendViewShareEmail() {
+  var inp       = document.getElementById('shareCollabInput');
+  var typed     = (inp ? inp.value.trim() : '');
+  var viewUrl   = document.getElementById('shareViewUrlInput').value;
+  var email     = _shareCollabMap[typed] || (typed.indexOf('@') !== -1 ? typed : '');
+  var recipName = typed ? typed.replace(/\s*\(.*\)$/, '') : '';
+  var fromName  = myName  || 'Your collaborator';
+  var fromEmail = myEmail || '';
+  var gameLabel = _shareCurrentGame ? ' for ' + _shareCurrentGame : '';
+  var subject   = fromName + ' shared a pitch overview' + gameLabel + ' with you';
+  var body = '\n\n\n' + (recipName ? 'Hi ' + recipName + ',\n\n' : '')
+    + fromName + ' has shared a read-only view of their board game pitches' + gameLabel + '.\n\n'
+    + 'View it here — no account needed:\n' + viewUrl + '\n';
+  if (fromName || fromEmail) {
+    body += '\n--\n';
+    if (fromName)  body += fromName  + '\n';
+    if (fromEmail) body += fromEmail + '\n';
+  }
+  var href = 'mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(subject);
+  if (fromEmail) href += '&reply-to=' + encodeURIComponent(fromEmail);
+  href += '&body=' + encodeURIComponent(body);
+  window.location.href = href;
 }
 
 // ── Import (load pitches JSON from a share link) ─────

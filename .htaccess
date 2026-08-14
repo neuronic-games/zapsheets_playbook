@@ -11,6 +11,11 @@ RewriteRule ^pushsite/?$ push/pushsite.php [L,QSA]
 # /pitchboard/help — instructional help page (must come before /pitchboard rule)
 RewriteRule ^pitchboard/help/?$ source/pitchboard/help/index.php [L,QSA]
 
+# /pitchboard/share/{hash} — read-only shared pitch view (no sheet ID in URL)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^pitchboard/share/([a-f0-9]{24})/?$ source/pitchboard/shared/index.php [L,QSA]
+
 # /pitchboard — setup landing page
 RewriteRule ^pitchboard/?$ source/pitchboard/index.php [L,QSA]
 

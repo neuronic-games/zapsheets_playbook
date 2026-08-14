@@ -55,7 +55,28 @@ $_d1 = trim($_gameInfo['Designer1'] ?? '');
 $_d2 = trim($_gameInfo['Designer2'] ?? '');
 $_designers = implode(', ', array_filter([$_d1, $_d2]));
 
-// ── JSON / import mode ───────────────────────────────────────────────────────
+// ── PWA manifest mode (?manifest) ───────────────────────────────────────────
+if (isset($_GET['manifest'])) {
+    header('Content-Type: application/manifest+json');
+    header('Cache-Control: public, max-age=86400');
+    $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $base    = $scheme . '://' . $_SERVER['HTTP_HOST'] . $_bp;
+    echo json_encode([
+        'name'             => $_gameName . ' — PitchBoard',
+        'short_name'       => $_gameName,
+        'start_url'        => $_rp,
+        'display'          => 'standalone',
+        'background_color' => '#1a1a2e',
+        'theme_color'      => '#1a1a2e',
+        'icons'            => [
+            ['src' => $base . '/images/pb_icon_192.png', 'sizes' => '192x192', 'type' => 'image/png'],
+            ['src' => $base . '/images/pb_icon_512.png', 'sizes' => '512x512', 'type' => 'image/png'],
+        ],
+    ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    exit;
+}
+
+// ── JSON / import mode (?data) ───────────────────────────────────────────────
 if (isset($_GET['data'])) {
     header('Content-Type: application/json');
     $people = []; $seen = [];
@@ -200,6 +221,13 @@ $_base      = $_bp . '/';
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?= _ps_e($_gameName) ?> — Pitch Overview</title>
 <base href="<?= _ps_e($_base) ?>" />
+<link rel="manifest" href="<?= _ps_e($_rp) ?>?manifest" />
+<meta name="theme-color" content="#1a1a2e" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="<?= _ps_e($_gameName) ?>" />
+<link rel="icon" type="image/png" sizes="192x192" href="<?= _ps_e($_base) ?>images/pb_icon_192.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="<?= _ps_e($_base) ?>images/pb_icon_180.png" />
 <style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2') format('woff2'),url('fonts/DINBlack.ttf'); }
 @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'),url('fonts/DINMedium.ttf'); }
@@ -222,12 +250,10 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,.18);
 }
 .top-bar-logo {
-  display: inline-flex; align-items: center; gap: .45rem;
   font-family: 'DINBlack', sans-serif;
   font-size: 1rem; letter-spacing: .03em;
   color: #fff; text-decoration: none;
 }
-.top-bar-logo img { height: 26px; width: 26px; border-radius: 6px; flex-shrink: 0; }
 .top-bar-logo .pb-pitch { color: #A8C8F0; }
 .top-bar-logo .pb-board { color: #FF8A80; }
 .top-bar-sep  { color: rgba(255,255,255,.3); }
@@ -377,10 +403,7 @@ body {
 <body>
 
 <div class="top-bar">
-  <a class="top-bar-logo" href="<?= _ps_e($_pbUrl) ?>">
-    <img src="images/pb_icon_180.png" alt="PitchBoard" />
-    <span class="pb-pitch">Pitch</span><span class="pb-board">Board</span>
-  </a>
+  <a class="top-bar-logo" href="<?= _ps_e($_pbUrl) ?>"><span class="pb-pitch">Pitch</span><span class="pb-board">Board</span></a>
   <span class="top-bar-sep">›</span>
   <span class="top-bar-game"><?= _ps_e($_gameName) ?></span>
   <span class="top-bar-readonly">View Only</span>
@@ -447,13 +470,6 @@ function toggleCollapsedPubs(btn) {
   btn.textContent = isOpen ? t.replace(/^Hide/i, 'Show') : t.replace(/^Show/i, 'Hide');
 }
 
-// Open active publishers by default; collapsed ones stay closed
-document.querySelectorAll('.sub-group:not(.pub-collapsed-wrap .sub-group)').forEach(function(sg) {
-  var wrap    = sg.querySelector('.pub-body-wrap');
-  var chevron = sg.querySelector('.pub-expand-chevron');
-  if (wrap)    wrap.classList.add('open');
-  if (chevron) chevron.style.transform = 'rotate(90deg)';
-});
 
 function copyImportLink() {
   var btn  = document.getElementById('importBtn');

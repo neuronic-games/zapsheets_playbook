@@ -15,7 +15,7 @@ The caller (pushsite) reads stdout and relays it to the browser.
 stderr is not used.
 """
 
-import os, sys, json, hashlib, urllib.request, urllib.error
+import os, sys, json, re, hashlib, urllib.request, urllib.error
 from pathlib import Path
 
 # Extensions we will try to download
@@ -29,31 +29,60 @@ SKIP_HOSTS = ('youtube.com', 'youtu.be', 'vimeo.com')
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
+def direct_image_url(url: str) -> str:
+    """Convert a cloud-storage sharing URL to a browser/download-safe direct URL.
+
+    Mirrors the JS directImageUrl() in zapsheetsCore.js — keep both in sync.
+
+    Dropbox:      ?dl=0 / ?dl=1  →  ?raw=1   (serves file inline)
+    Google Drive: /file/d/{id}/view or ?id={id}
+                  →  https://drive.google.com/uc?export=view&id={id}
+    Everything else: returned unchanged.
+    """
+    if not url:
+        return url
+    if 'dropbox.com' in url:
+        if re.search(r'[?&]dl=', url):
+            return re.sub(r'([?&])dl=[^&]*', r'\1raw=1', url)
+        sep = '&' if '?' in url else '?'
+        return url + sep + 'raw=1'
+    if 'drive.google.com' in url or 'docs.google.com' in url:
+        m = re.search(r'/file/d/([A-Za-z0-9_-]+)', url)
+        if m:
+            return f'https://drive.google.com/uc?export=view&id={m.group(1)}'
+        m = re.search(r'[?&]id=([A-Za-z0-9_-]+)', url)
+        if m:
+            return f'https://drive.google.com/uc?export=view&id={m.group(1)}'
+    return url
+
 def is_cacheable(url: str) -> bool:
     if not isinstance(url, str) or not url.startswith('http'):
         return False
     low = url.lower()
     if any(h in low for h in SKIP_HOSTS):
         return False
+    # Always attempt to cache Dropbox and Google Drive image links
+    # (their paths don't end in a media extension but the file is still an image)
+    if 'dropbox.com' in low or 'drive.google.com' in low or 'docs.google.com' in low:
+        return True
     stripped = low.split('?')[0].split('#')[0]
     return any(stripped.endswith(ext) for ext in MEDIA_EXTS)
 
 def url_filename(url: str) -> str:
     """Filename for the cached copy — matches what cachedImage() in the view page expects.
 
-    Google Drive:  extract the file-ID segment → {id}.png
+    Google Drive:  extract the file-ID → {id}.png
     Everything else: use the original filename from the URL path (query params stripped).
     Falls back to md5+ext if no usable name can be extracted.
     """
-    # Google Drive: https://drive.google.com/file/d/{id}/...
-    if 'drive.google.com' in url:
-        try:
-            parts = url.split('drive.google.com')[1].split('/')
-            file_id = parts[3] if len(parts) > 3 else ''
-            if file_id:
-                return file_id + '.png'
-        except Exception:
-            pass
+    # Google Drive: /file/d/{id}/... or uc?export=view&id={id}
+    if 'drive.google.com' in url or 'docs.google.com' in url:
+        m = re.search(r'/file/d/([A-Za-z0-9_-]+)', url)
+        if m:
+            return m.group(1) + '.png'
+        m = re.search(r'[?&]id=([A-Za-z0-9_-]+)', url)
+        if m:
+            return m.group(1) + '.png'
 
     # All other URLs: strip query string, take the last path segment
     clean = url.split('?')[0].split('#')[0]
@@ -147,13 +176,14 @@ if not all_urls:
 
 ok = fail = skipped = 0
 for url in sorted(all_urls):
-    fname = url_filename(url)
-    dest  = cache_dir / fname
-    label = f'{fname}  ({url[:60]}{"…" if len(url)>60 else ""})'
+    fname    = url_filename(url)
+    dest     = cache_dir / fname
+    fetch_url = direct_image_url(url)   # convert sharing links to direct download URLs
+    label    = f'{fname}  ({url[:60]}{"…" if len(url)>60 else ""})'
     if dest.exists():
         print(f'CACHED {label}')
         skipped += 1
-    elif download(url, dest):
+    elif download(fetch_url, dest):
         print(f'OK     {label}')
         ok += 1
     else:

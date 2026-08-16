@@ -2152,7 +2152,7 @@ function buildGameView(pitches) {
     // Action buttons in sub-bar
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="addBtnClick(this)">New Pitch</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="editGameClick(this)">Edit Game</button>';
-    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="viewPageClick(this)">' + (gpToken ? 'Edit Page' : 'Enable Page') + '</button>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="viewPageClick(this)">' + (GAME_PAGE_TOKENS[g] ? 'Edit Page' : 'Enable Page') + '</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="shareGame(this.getAttribute(\'data-game\'))">Share</button>';
     if (NOTEBOARD_HAS_NOTES[nbSafeName(g)]) {
       html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="viewNotesClick(this)">View Notes</button>';

@@ -171,6 +171,16 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       width: 100%; height: 100%;
       object-fit: cover; display: block;
     }
+    @keyframes img-shimmer {
+      0%   { background-position: -200% 0; }
+      100% { background-position:  200% 0; }
+    }
+    .ss-hero-wrap.img-loading {
+      background: linear-gradient(90deg, #c4c4c4 25%, #d8d8d8 50%, #c4c4c4 75%);
+      background-size: 200% 100%;
+      animation: img-shimmer 1.4s ease-in-out infinite;
+    }
+    .ss-hero-wrap.img-loading img { visibility: hidden; }
     .ss-steps-overlay {
       position: absolute; bottom: 0; left: 0; right: 0;
       background: rgba(0,0,0,.72); display: flex; backdrop-filter: blur(2px);
@@ -426,13 +436,14 @@ function _absUrl(url) {
 }
 
 // Try each src in order; move to next on error.
-function _setImgWithFallbacks(el, srcs) {
+function _setImgWithFallbacks(el, srcs, onLoad) {
   var idx = 0;
   function tryNext() {
-    if (idx >= srcs.length) return; // all failed — leave broken
+    if (idx >= srcs.length) { if (onLoad) onLoad(); return; } // all failed
     var s = srcs[idx++];
     if (!s) { tryNext(); return; }
-    el.onerror = function() { el.onerror = null; tryNext(); };
+    el.onerror = function() { el.onerror = null; el.onload = null; tryNext(); };
+    el.onload  = function() { el.onerror = null; el.onload = null; if (onLoad) onLoad(); };
     el.src = s;
   }
   tryNext();
@@ -586,9 +597,13 @@ function render() {
   });
 
   if (_heroSrcs.length) {
-    var _heroEl = document.getElementById('ssHero');
-    _setImgWithFallbacks(_heroEl, _heroSrcs);
-    document.getElementById('ssHeroWrap').style.display = '';
+    var _heroEl   = document.getElementById('ssHero');
+    var _heroWrap = document.getElementById('ssHeroWrap');
+    _heroWrap.classList.add('img-loading');
+    _heroWrap.style.display = '';
+    _setImgWithFallbacks(_heroEl, _heroSrcs, function() {
+      _heroWrap.classList.remove('img-loading');
+    });
     // ── Steps overlay ──────────────────────────────────────────
     var _ssStepVal = function(name) {
       var r = (data.bgg || []).find(function(r) { return r.Name === name && r.Value; });

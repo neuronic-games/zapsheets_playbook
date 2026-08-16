@@ -55,6 +55,18 @@ if (file_exists($_gamesFile)) {
 $_d1 = trim($_gameInfo['Designer1'] ?? '');
 $_d2 = trim($_gameInfo['Designer2'] ?? '');
 $_designers = implode(', ', array_filter([$_d1, $_d2]));
+// Fall back to the pitchboard owner's name (from settings.json) for old token files
+if ($_sharer === '') {
+    $_settingsFile = __DIR__ . '/../../../sheets/' . $_sheetId . '/settings.json';
+    if (file_exists($_settingsFile)) {
+        $_settings = json_decode(file_get_contents($_settingsFile), true) ?: [];
+        if (!empty($_settings[0])) {
+            foreach (array_keys($_settings[0]) as $_sk) {
+                if ($_sk !== 'My Name') { $_sharer = $_sk; break; }
+            }
+        }
+    }
+}
 
 // ── PWA manifest mode (?manifest) ───────────────────────────────────────────
 if (isset($_GET['manifest'])) {

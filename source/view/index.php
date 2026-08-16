@@ -165,6 +165,17 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       object-fit: cover;
     }
     .main-image-wrap video { display: none; background: #000; }
+    @keyframes img-shimmer {
+      0%   { background-position: -200% 0; }
+      100% { background-position:  200% 0; }
+    }
+    .main-image-wrap.img-loading {
+      background: linear-gradient(90deg, #d0d0d0 25%, #e8e8e8 50%, #d0d0d0 75%);
+      background-size: 200% 100%;
+      animation: img-shimmer 1.4s ease-in-out infinite;
+    }
+    .main-image-wrap.img-loading img,
+    .main-image-wrap.img-loading video { visibility: hidden; }
     .thumb-strip {
       display: flex;
       gap: .4rem;
@@ -175,17 +186,29 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .thumb-strip::-webkit-scrollbar { height: 4px; }
     .thumb-strip::-webkit-scrollbar-thumb { background: #c8860a; border-radius: 2px; }
-    .thumb {
+    .thumb-wrap {
       flex: 0 0 auto;
       width: 64px; height: 48px;
-      object-fit: cover;
       border-radius: 5px;
       border: 2px solid transparent;
       cursor: pointer;
       transition: border-color .15s, opacity .15s;
       opacity: .7;
+      overflow: hidden;
+      position: relative;
     }
-    .thumb:hover, .thumb.active { border-color: #c8860a; opacity: 1; }
+    .thumb-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .thumb-wrap:hover, .thumb-wrap.active { border-color: #c8860a; opacity: 1; }
+    .thumb-wrap.thumb-loading {
+      background: linear-gradient(90deg, #d0d0d0 25%, #e8e8e8 50%, #d0d0d0 75%);
+      background-size: 200% 100%;
+      animation: img-shimmer 1.4s ease-in-out infinite;
+    }
+    .thumb-wrap.thumb-loading img { visibility: hidden; }
     .thumb-video-wrap {
       flex: 0 0 auto;
       width: 64px; height: 48px;
@@ -583,7 +606,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 
     <!-- Left: images -->
     <div class="image-panel">
-      <div class="main-image-wrap" id="mainImgWrap">
+      <div class="main-image-wrap img-loading" id="mainImgWrap">
         <img id="mainImg" src="" alt="" />
         <video id="mainVideo" muted playsinline></video>
         <div class="steps-overlay" id="stepsOverlay" style="display:none">
@@ -819,19 +842,21 @@ function startSlideshow(fromIdx) {
 
 function updateThumbActive(idx) {
   var strip = document.getElementById('thumbStrip');
-  strip.querySelectorAll('.thumb, .thumb-video-wrap, .thumb-steps').forEach(function(t) {
+  strip.querySelectorAll('.thumb-wrap, .thumb-video-wrap, .thumb-steps').forEach(function(t) {
     t.classList.remove('active');
   });
-  var all = strip.querySelectorAll('.thumb, .thumb-video-wrap, .thumb-steps');
+  var all = strip.querySelectorAll('.thumb-wrap, .thumb-video-wrap, .thumb-steps');
   if (all[idx]) all[idx].classList.add('active');
 }
 
 function setMainMedia(idx) {
   var item = allImages[idx];
   if (!item) return;
-  var img = document.getElementById('mainImg');
-  var vid = document.getElementById('mainVideo');
+  var wrap = document.getElementById('mainImgWrap');
+  var img  = document.getElementById('mainImg');
+  var vid  = document.getElementById('mainVideo');
   if (item.type === 'video') {
+    wrap.classList.remove('img-loading');
     img.style.display = 'none';
     vid.src = item.src;
     vid.style.display = 'block';
@@ -843,13 +868,23 @@ function setMainMedia(idx) {
     vid.style.display = 'none';
     img.style.display = 'block';
     img.onerror = null;
+    img.onload  = null;
+    wrap.classList.add('img-loading');
+    img.onload = function() { img.onload = null; wrap.classList.remove('img-loading'); };
     img.src = item.src;
-    // If the cached copy is missing, fall back to the direct URL
-    if (item.direct && item.src !== item.direct) {
+    // Already in browser cache — onload won't fire, remove shimmer immediately
+    if (img.complete && img.naturalWidth > 0) {
+      img.onload = null;
+      wrap.classList.remove('img-loading');
+    } else if (item.direct && item.src !== item.direct) {
+      // Cached copy missing — fall back to the direct URL
       img.onerror = function() {
         img.onerror = null;
+        img.onload  = function() { img.onload = null; wrap.classList.remove('img-loading'); };
         img.src = item.direct;
       };
+    } else {
+      img.onerror = function() { img.onerror = null; wrap.classList.remove('img-loading'); };
     }
   }
   // Show steps overlay only on the dedicated steps slide
@@ -869,13 +904,16 @@ function buildThumbs() {
       return '<div class="thumb-video-wrap' + activeCls + '" data-idx="' + i + '" title="' + item.caption + '">'
         + '<span class="thumb-play-icon">&#9654;</span></div>';
     }
-    var thumbErr = (item.direct && item.src !== item.direct)
-      ? ' onerror="this.onerror=null;this.src=\'' + item.direct.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\';"'
-      : '';
-    return '<img class="thumb' + activeCls + '" src="' + item.src
-      + '"' + thumbErr + ' alt="" data-idx="' + i + '" loading="lazy" />';
+    var _tdirect = (item.direct && item.src !== item.direct) ? item.direct : '';
+    var _tderr = _tdirect
+      ? ' onerror="this.onerror=null;this.src=\'' + _tdirect.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\';"'
+      : ' onerror="this.parentNode.classList.remove(\'thumb-loading\')"';
+    return '<div class="thumb-wrap thumb-loading' + activeCls + '" data-idx="' + i + '">'
+      + '<img src="' + item.src + '"' + _tderr
+      + ' onload="this.parentNode.classList.remove(\'thumb-loading\')" alt="" loading="lazy" />'
+      + '</div>';
   }).join('');
-  strip.querySelectorAll('.thumb, .thumb-video-wrap, .thumb-steps').forEach(function(el) {
+  strip.querySelectorAll('.thumb-wrap, .thumb-video-wrap, .thumb-steps').forEach(function(el) {
     el.addEventListener('click', function() {
       var idx = parseInt(this.dataset.idx);
       activeThumb = idx;

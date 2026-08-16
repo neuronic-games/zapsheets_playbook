@@ -9,7 +9,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 <head>
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
 <?php if (isset($GLOBALS['_gv_sheet_id'])): ?>
-<script>window._gvSheetId=<?=json_encode($GLOBALS['_gv_sheet_id'])?>;window._gvGame=<?=json_encode($GLOBALS['_gv_game']??'')?></script>
+<script>window._gvSheetId=<?=json_encode($GLOBALS['_gv_sheet_id'])?>;window._gvGame=<?=json_encode($GLOBALS['_gv_game']??'')?>;window._gvGameToken=<?=json_encode($GLOBALS['_gv_game_token']??'')?></script>
 <?php endif; ?>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -373,6 +373,11 @@ var APP_BASE = document.querySelector('base').getAttribute('href');
 var BASE     = APP_BASE + 'sheets/' + sheet_Id + '/';
 
 function getViewUrl(game) {
+  // Prefer the token-based public game page URL (no sheet ID in URL)
+  if (window._gvGameToken) {
+    return window.location.origin + APP_BASE + 'game/' + window._gvGameToken;
+  }
+  // Fallback for direct sheet access
   var _path  = window.location.pathname;
   var _idEnd = _path.indexOf(sheet_Id) + sheet_Id.length;
   var base   = window.location.origin + _path.substring(0, _idEnd) + '/view/';
@@ -546,7 +551,7 @@ function render() {
     tEl.textContent = tStr; tEl.style.display = '';
   }
 
-  // ── QR code in header (→ /view/?game=… URL) ─────────────
+  // ── QR code in header (→ /game/{token} public URL) ───────
   var viewUrl = getViewUrl(_gameParam || title);
   if (viewUrl && typeof QRCode !== 'undefined') {
     new QRCode(document.getElementById('ssQR'), {

@@ -32,8 +32,9 @@ $_gameName = $_meta['game']     ?? '';
 
 if (!$_sheetId || !$_gameName) { http_response_code(404); exit; }
 
-$GLOBALS['_gv_sheet_id'] = $_sheetId;
-$GLOBALS['_gv_game']     = $_gameName;
+$GLOBALS['_gv_sheet_id']   = $_sheetId;
+$GLOBALS['_gv_game']       = $_gameName;
+$GLOBALS['_gv_game_token'] = $_token;
 
 // Fake REQUEST_URI so sellsheet/index.php computes the correct base href
 $_SERVER['REQUEST_URI'] = $_bp . '/sheets/' . $_sheetId . '/sellsheet/?game=' . urlencode($_gameName);

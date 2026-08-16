@@ -2846,7 +2846,10 @@ function buildEmailBody(gameName) {
   if (f.desc)      lines.push(f.desc);
   if (f.designers) { lines.push(''); lines.push('Designers: ' + f.designers); }
   var urls = [];
-  var viewUrl = window.location.origin + APP_BASE + sheet_Id + '/view/?game=' + encodeGame(gameName);
+  var _gpTok  = GAME_PAGE_TOKENS[gameName] || '';
+  var viewUrl = _gpTok
+    ? window.location.origin + APP_BASE + 'game/' + _gpTok
+    : window.location.origin + APP_BASE + sheet_Id + '/view/?game=' + encodeGame(gameName);
   urls.push('Game Info: ' + viewUrl);
   if (f.sellsheet) urls.push('Sellsheet: ' + f.sellsheet);
   if (f.video)     urls.push('Video: '     + f.video);
@@ -3449,26 +3452,38 @@ function _vpDeployAndOpen() {
         document.getElementById('vpSummaryPanel').style.display = '';
         document.getElementById('vpDialogTitle').textContent = 'View Page';
       }
-      // Write the absolute game page URL back to the sheet if not already set
+      // Write the token-based game page URL back to the sheet if not already set
       var _gInfo = gamesIndex[_vpCurrentGame] || {};
       if (!(_gInfo['Page URL'] || '').trim()) {
-        var _absUrl = window.location.origin + APP_BASE + sheet_Id +
-                      '/view/?game=' + encodeGame(_vpCurrentGame);
-        var _pxhr = new XMLHttpRequest();
-        _pxhr.open('POST', APP_BASE + 'push/setGamePageUrl.php');
-        _pxhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        _pxhr.onload = function() {
-          var _pr; try { _pr = JSON.parse(_pxhr.responseText); } catch(e) { _pr = null; }
-          if (_pr && _pr.ok && !_pr.skipped) {
-            // Update local index so the eye icon appears if slides are reloaded
-            if (gamesIndex[_vpCurrentGame]) gamesIndex[_vpCurrentGame]['Page URL'] = _absUrl;
-          }
-        };
-        _pxhr.send(
-          'id='        + encodeURIComponent(sheet_Id) +
-          '&orig_name='+ encodeURIComponent(_vpCurrentGame) +
-          '&page_url=' + encodeURIComponent(_absUrl)
-        );
+        var _vpGame = _vpCurrentGame;
+        // Create/retrieve the token URL then persist it (fire-and-forget, non-blocking)
+        var _gpFd = new FormData();
+        _gpFd.append('id',   sheet_Id);
+        _gpFd.append('game', _vpGame);
+        fetch(APP_BASE + 'push/createGameView.php', { method: 'POST', body: _gpFd })
+          .then(function(r) { return r.json(); })
+          .then(function(res) {
+            if (!res.viewUrl) return;
+            var _absUrl = res.viewUrl;
+            var _pxhr = new XMLHttpRequest();
+            _pxhr.open('POST', APP_BASE + 'push/setGamePageUrl.php');
+            _pxhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            _pxhr.onload = function() {
+              var _pr; try { _pr = JSON.parse(_pxhr.responseText); } catch(e) { _pr = null; }
+              if (_pr && _pr.ok && !_pr.skipped) {
+                // Update local index so the eye icon appears if slides are reloaded
+                if (gamesIndex[_vpGame]) gamesIndex[_vpGame]['Page URL'] = _absUrl;
+                // Also update token map so Game Page button appears in card footer
+                var _tok = _absUrl.split('/game/')[1] || '';
+                if (_tok) GAME_PAGE_TOKENS[_vpGame] = _tok;
+              }
+            };
+            _pxhr.send(
+              'id='        + encodeURIComponent(sheet_Id) +
+              '&orig_name='+ encodeURIComponent(_vpGame) +
+              '&page_url=' + encodeURIComponent(_absUrl)
+            );
+          }).catch(function() {});
       }
       vpDone();
     };

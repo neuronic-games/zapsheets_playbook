@@ -46,6 +46,7 @@ print_url  = data.get('print',      '').strip()
 sellsheet  = data.get('sellsheet',  '').strip()
 view       = data.get('view',       '').strip()
 video      = data.get('video',      '').strip()
+image      = data.get('image',      '').strip()
 
 # Open spreadsheet
 try:
@@ -118,6 +119,7 @@ field_map = [
     (('Sellsheet', 'Sellsheet URL', 'SellsheetURL'),                       sellsheet),
     (('BGG',       'View URL',    'BGG / View URL', 'ViewURL', 'View'),    view),
     (('Video',     'Video URL',   'VideoURL'),                             video),
+    (('Image URL', 'ImageURL',    'Image'),                                image),
 ]
 
 updates = []

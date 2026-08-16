@@ -348,6 +348,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 
 <script src="js/common/jquery-3.5.1.min.js"></script>
 <script src="js/common/qrcode.min.js"></script>
+<script src="js/core/zapsheetsCore.js?v=2"></script>
 <script>
 var data = {};
 
@@ -393,21 +394,22 @@ function cachedImage(url) {
   return BASE + 'cache/' + fname;
 }
 
-// Return the best direct URL for use as an <img> src fallback.
-// For Dropbox shared links we keep the original dl=1 URL; browsers follow
-// the redirect to a properly-signed CDN URL automatically.
-function directImageUrl(url) {
-  if (!url) return url;
-  if (url.indexOf('dropbox.com') !== -1) {
-    if (url.indexOf('&dl=0') !== -1 || url.indexOf('?dl=0') !== -1) {
-      return url.replace('dl=0', 'dl=1');
+// directImageUrl() — canonical definition in js/core/zapsheetsCore.js; inline fallback below
+if (typeof directImageUrl !== 'function') {
+  window.directImageUrl = function(url) {
+    if (!url) return url;
+    if (url.indexOf('dropbox.com') !== -1) {
+      if (url.match(/[?&]dl=/)) return url.replace(/([?&])dl=[^&]*/g, '$1raw=1');
+      return url + (url.indexOf('?') !== -1 ? '&' : '?') + 'raw=1';
     }
-    if (url.indexOf('dl=') === -1) {
-      return url + (url.indexOf('?') !== -1 ? '&' : '?') + 'dl=1';
+    if (url.indexOf('drive.google.com') !== -1 || url.indexOf('docs.google.com') !== -1) {
+      var _m = url.match(/\/file\/d\/([A-Za-z0-9_-]+)/);
+      if (_m) return 'https://drive.google.com/uc?export=view&id=' + _m[1];
+      _m = url.match(/[?&]id=([A-Za-z0-9_-]+)/);
+      if (_m) return 'https://drive.google.com/uc?export=view&id=' + _m[1];
     }
     return url;
-  }
-  return url;
+  };
 }
 
 // Normalise a URL: strip Markdown [label](url) or [url] wrappers, ensure absolute.

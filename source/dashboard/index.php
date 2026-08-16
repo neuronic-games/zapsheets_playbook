@@ -28,6 +28,18 @@ if (is_dir($_sheets_dir)) {
         }
     }
 }
+
+// Game-page tokens: scan shares/pitch-game-view for existing tokens
+$_gp_tokens = []; // game_name → 24-char token
+$_gpv_dir   = __DIR__ . '/../../shares/pitch-game-view';
+if (is_dir($_gpv_dir)) {
+    foreach (glob($_gpv_dir . '/*.json') as $_tf) {
+        $_td = json_decode(file_get_contents($_tf), true) ?: [];
+        if (!empty($_td['game'])) {
+            $_gp_tokens[$_td['game']] = basename($_tf, '.json');
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -512,6 +524,17 @@ if (is_dir($_sheets_dir)) {
       transition:background .15s, color .15s;
     }
     .game-action-btn:hover { background:rgba(255,196,76,.26); color:#ffe099; }
+    /* ── Footer link buttons (solid yellow, match shared card) ── */
+    .game-link-btn {
+      display:inline-flex; align-items:center;
+      padding:.32rem .85rem; border-radius:999px;
+      font-family:'DINBlack',sans-serif; font-size:.65rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      text-decoration:none; cursor:pointer; border:none;
+      transition:opacity .15s; background:#f5c518; color:#1a1a2e;
+      white-space:nowrap; flex-shrink:0;
+    }
+    .game-link-btn:hover { opacity:.8; }
 
     /* ── Add-entry buttons ──────────────────────────── */
     /* Button next to contact name (light bg) */
@@ -1377,6 +1400,9 @@ if (is_dir($_sheets_dir)) {
       <label class="ge-label">BGG / View URL<input type="url" id="geView" class="ge-input" placeholder="https://…" /></label>
       <label class="ge-label">Video URL<input type="url" id="geVideo" class="ge-input" placeholder="https://…" /></label>
     </div>
+    <div class="ge-row">
+      <label class="ge-label" style="grid-column:1/-1">Image URL<input type="url" id="geImage" class="ge-input" placeholder="https://…" /></label>
+    </div>
     <div class="ge-actions">
       <button class="ge-cancel-btn" onclick="closeGameEditDialog()">Cancel</button>
       <button class="ge-save-btn" id="geSaveBtn" onclick="submitGameEdit()">Save</button>
@@ -1625,6 +1651,7 @@ var APP_BASE = document.querySelector('base').getAttribute('href');
 var BASE     = APP_BASE + 'sheets/' + sheet_Id + '/';
 var NOTEBOARD_HASHES    = <?= json_encode($_nb_hashes,    JSON_UNESCAPED_UNICODE) ?>; // game name → 12-char hash
 var NOTEBOARD_HAS_NOTES = <?= json_encode(array_fill_keys(array_keys($_nb_has_notes), true), JSON_UNESCAPED_UNICODE) ?>; // safe_name → true
+var GAME_PAGE_TOKENS    = <?= json_encode($_gp_tokens, JSON_UNESCAPED_UNICODE) ?>;     // game name → 24-char token
 
 // ── State ─────────────────────────────────────────────
 var currentView     = 'game';
@@ -2069,8 +2096,8 @@ function buildGameView(pitches) {
     html += '<span class="card-chevron">▼</span>';
     html += '</div>';
 
-    // ── Game link pills (Rules / Play / Print / View) ──
-    var gameLinkPills = (function() {
+    // ── Footer link buttons (Rules / Print / Play / Sellsheet / Video / Game Page) ──
+    var gameFooterLinks = (function() {
       function gfield(keys) {
         for (var i = 0; i < keys.length; i++) {
           var v = (gameInfo[keys[i]] || '').trim();
@@ -2079,7 +2106,6 @@ function buildGameView(pitches) {
         return '';
       }
       // Normalize a raw sheet value into an absolute URL.
-      // Handles Markdown [label](url) syntax and bare domains (no protocol).
       function absUrl(raw) {
         if (!raw) return '';
         var s = String(raw).trim();
@@ -2090,20 +2116,19 @@ function buildGameView(pitches) {
         if (!s) return '';
         return /^https?:\/\//i.test(s) ? s : 'https://' + s;
       }
-      var playbookId = gfield(['Playbook Sheet ID','Playbook ID','Sheet ID']);
+      var gpToken = GAME_PAGE_TOKENS[g] || '';
       var linkDefs = [
         { label:'Rules',     url: absUrl(gfield(['Rules','Rules URL','Rules Link','Link Rules'])) },
-        { label:'Play',      url: absUrl(gfield(['Play','Play URL','Play Link','Link Play'])) },
         { label:'Print',     url: absUrl(gfield(['Print','Print URL','Print Link','Link Print'])) },
+        { label:'Play',      url: absUrl(gfield(['Play','Play URL','Play Link','Link Play'])) },
         { label:'Sellsheet', url: absUrl(gfield(['Sellsheet URL','Sellsheet','Sell Sheet URL','Sell Sheet','Link Sellsheet'])) },
-        { label:'View',      url: absUrl(gfield(['View','View URL','Link View','Website','BGG','BGG URL','BGG Link'])) },
         { label:'Video',     url: absUrl(gfield(['Video','Video URL','Video Link','Link Video','YouTube','YouTube URL'])) },
-        { label:'Info',      url: playbookId ? window.location.origin + APP_BASE + playbookId + '/view' : '' }
+        { label:'Game Page', url: gpToken ? window.location.origin + APP_BASE + 'game/' + gpToken : '' }
       ];
       var out = '';
       linkDefs.forEach(function(lp) {
         if (lp.url) {
-          out += '<a class="game-link-pill" href="' + escHtml(lp.url) +
+          out += '<a class="game-link-btn" href="' + escHtml(lp.url) +
                  '" target="_blank" rel="noopener noreferrer">' + escHtml(lp.label) + '</a>';
         }
       });
@@ -2113,7 +2138,7 @@ function buildGameView(pitches) {
     html += '<div class="card-body-wrap"><div class="card-body">';
     html += '<div class="game-sub-bar">';
     html += '<div class="game-links">';
-    html += '<div class="game-links-meta">';
+    html += '<div class="game-links-meta" onclick="event.stopPropagation()">';
     if (designerNames.length) {
       html += '<span class="game-links-designers">';
       designerNames.forEach(function(dn, i) {
@@ -2124,7 +2149,16 @@ function buildGameView(pitches) {
       });
       html += '</span>';
     }
-    if (gameLinkPills) html += '<div class="game-link-pills">' + gameLinkPills + '</div>';
+    // Action buttons in sub-bar
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="addBtnClick(this)">New Pitch</button>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="viewPageClick(this)">View Page</button>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="editGameClick(this)">Edit Game</button>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="shareGame(this.getAttribute(\'data-game\'))">Share</button>';
+    if (NOTEBOARD_HAS_NOTES[nbSafeName(g)]) {
+      html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="viewNotesClick(this)">View Notes</button>';
+    } else {
+      html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="enableNotesClick(this)">Enable Notes</button>';
+    }
     html += '</div>'; // .game-links-meta
     html += '</div>'; // .game-links
 
@@ -2216,18 +2250,10 @@ function buildGameView(pitches) {
 
     html += '</div></div>'; // card-body, card-body-wrap
 
-    // Action footer — always visible at the very bottom of the card
-    html += '<div class="game-action-row" onclick="event.stopPropagation()">';
-    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="addBtnClick(this)">New Pitch</button>';
-    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="viewPageClick(this)">View Page</button>';
-    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="editGameClick(this)">Edit Game</button>';
-    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="shareGame(this.getAttribute(\'data-game\'))">Share</button>';
-    if (NOTEBOARD_HAS_NOTES[nbSafeName(g)]) {
-      html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="viewNotesClick(this)">View Notes</button>';
-    } else {
-      html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="enableNotesClick(this)">Enable Notes</button>';
+    // Link footer — hidden until card is expanded, matches shared card layout
+    if (gameFooterLinks) {
+      html += '<div class="game-action-row">' + gameFooterLinks + '</div>';
     }
-    html += '</div>'; // .game-action-row
 
     html += '</div>'; // card
   });
@@ -3887,6 +3913,7 @@ function openGameEditDialog(gameName, isNew) {
   document.getElementById('geSellsheet').value = isNew ? '' : gfield('Sellsheet', 'Sellsheet URL','SellsheetURL');
   document.getElementById('geView').value      = isNew ? '' : gfield('BGG',       'View URL',     'BGG / View URL', 'ViewURL', 'View');
   document.getElementById('geVideo').value     = isNew ? '' : gfield('Video',     'Video URL',    'VideoURL');
+  document.getElementById('geImage').value     = isNew ? '' : gfield('Image URL', 'ImageURL',     'Image');
 
   document.getElementById('geSaveBtn').disabled    = false;
   document.getElementById('geSaveBtn').textContent = isNew ? 'Add Game' : 'Save';
@@ -3922,7 +3949,8 @@ function submitGameEdit() {
     print:      document.getElementById('gePrint').value.trim(),
     sellsheet:  document.getElementById('geSellsheet').value.trim(),
     view:       document.getElementById('geView').value.trim(),
-    video:      document.getElementById('geVideo').value.trim()
+    video:      document.getElementById('geVideo').value.trim(),
+    image:      document.getElementById('geImage').value.trim()
   };
 
   if (!payload.name) {
@@ -3984,6 +4012,7 @@ function submitGameEdit() {
         entry.Sellsheet  = payload.sellsheet;
         entry.View       = payload.view;
         entry.Video      = payload.video;
+        entry['Image URL'] = payload.image;
         if (!isNew && newName !== oldName) {
           delete gamesIndex[oldName];
           allPitches.forEach(function(r) { if (r.Game === oldName) r.Game = newName; });

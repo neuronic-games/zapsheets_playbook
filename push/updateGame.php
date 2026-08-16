@@ -25,6 +25,7 @@ $print         = trim($_POST['print']          ?? '');
 $sellsheet     = trim($_POST['sellsheet']      ?? '');
 $view          = trim($_POST['view']           ?? '');
 $video         = trim($_POST['video']          ?? '');
+$image         = trim($_POST['image']          ?? '');
 
 if (!$sheetId) {
     echo json_encode(['error' => 'Missing sheet ID']);
@@ -55,6 +56,7 @@ $data = [
     'sellsheet'      => $sellsheet,
     'view'           => $view,
     'video'          => $video,
+    'image'          => $image,
 ];
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';

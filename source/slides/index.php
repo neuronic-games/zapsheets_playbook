@@ -329,6 +329,7 @@ $_sheet_id = $_bm[2] ?? '';
   </div>
 </div>
 
+<script src="js/core/zapsheetsCore.js?v=2"></script>
 <script>
 (function () {
   'use strict';
@@ -448,29 +449,42 @@ $_sheet_id = $_bm[2] ?? '';
   var PAUSE_SVG = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
   var PLAY_SVG  = '<path d="M5 3l14 9-14 9V3z"/>';
 
-  // ── Image URL helpers (mirrors view/index.php) ───────────
+  // ── Image URL helpers ────────────────────────────────────
+  // directImageUrl() — canonical definition in js/core/zapsheetsCore.js; inline fallback below
+  if (typeof directImageUrl !== 'function') {
+    window.directImageUrl = function(url) {
+      if (!url) return url;
+      if (url.indexOf('dropbox.com') !== -1) {
+        if (url.match(/[?&]dl=/)) return url.replace(/([?&])dl=[^&]*/g, '$1raw=1');
+        return url + (url.indexOf('?') !== -1 ? '&' : '?') + 'raw=1';
+      }
+      if (url.indexOf('drive.google.com') !== -1 || url.indexOf('docs.google.com') !== -1) {
+        var _m = url.match(/\/file\/d\/([A-Za-z0-9_-]+)/);
+        if (_m) return 'https://drive.google.com/uc?export=view&id=' + _m[1];
+        _m = url.match(/[?&]id=([A-Za-z0-9_-]+)/);
+        if (_m) return 'https://drive.google.com/uc?export=view&id=' + _m[1];
+      }
+      return url;
+    };
+  }
   function resolveImage(url) {
     if (!url) return { cached: '', direct: '' };
     url = url.trim();
-    var direct = url;
-    // Dropbox: force direct download; use the same URL as both cached and direct
-    // so the SW caches the correct full URL (including rlkey) and can serve it offline.
-    if (url.includes('dropbox.com')) {
-      direct = url.includes('dl=0')
-        ? url.replace('dl=0', 'dl=1')
-        : (url.match(/[?&]dl=/) ? url : url + (url.includes('?') ? '&' : '?') + 'dl=1');
+    var direct = directImageUrl(url);
+    // Dropbox: use the converted URL for both cache key and direct src
+    if (url.indexOf('dropbox.com') !== -1) {
       return { cached: direct, direct: direct };
     }
-    // Google Drive: route through local cache
-    if (url.includes('drive.google.com')) {
-      var parts = url.split('drive.google.com')[1].split('/');
-      var imgid = parts[3] || parts[2] || '';
+    // Google Drive: keep local cache path; use converted uc?export=view as direct fallback
+    if (url.indexOf('drive.google.com') !== -1 || url.indexOf('docs.google.com') !== -1) {
+      var _m = url.match(/\/file\/d\/([A-Za-z0-9_-]+)/);
+      var imgid = _m ? _m[1] : '';
+      if (!imgid) { _m = url.match(/[?&]id=([A-Za-z0-9_-]+)/); imgid = _m ? _m[1] : ''; }
       var cached = imgid ? BASE + 'cache/' + imgid + '.png' : direct;
       return { cached: cached, direct: direct };
     }
     // Everything else: strip query/hash for cached guess, use original as direct
-    var clean = url.split('?')[0].split('#')[0];
-    return { cached: clean, direct: direct };
+    return { cached: url.split('?')[0].split('#')[0], direct: url };
   }
 
   // ── Build slide DOM ──────────────────────────────────────

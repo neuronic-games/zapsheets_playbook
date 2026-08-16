@@ -1,9 +1,41 @@
 /////////////////////////////////////////////////////////////////////////////
 /**
- * 
- * @param {*} text 
- * @param {*} elment 
- * @param {*} fSize 
+ * Convert a cloud-storage sharing URL to a browser-displayable direct URL.
+ *
+ * Dropbox: sharing links use ?dl=0 (page) or ?dl=1 (download). ?raw=1 serves
+ *   the file inline with the correct Content-Type so browsers render it as an
+ *   image. Any existing dl= parameter is replaced; raw=1 is appended otherwise.
+ *
+ * Google Drive: /file/d/{ID}/view and ?id={ID} sharing formats are both
+ *   converted to the uc?export=view&id={ID} form that browsers can embed.
+ *
+ * All other URLs are returned unchanged.
+ *
+ * @param {string} url - Raw URL (possibly a cloud sharing link)
+ * @returns {string}   - Browser-displayable URL
+ */
+function directImageUrl(url) {
+    if (!url) return url;
+    // Dropbox: replace any dl= param with raw=1, or append raw=1 if absent
+    if (url.indexOf('dropbox.com') !== -1) {
+        if (url.match(/[?&]dl=/)) return url.replace(/([?&])dl=[^&]*/g, '$1raw=1');
+        return url + (url.indexOf('?') !== -1 ? '&' : '?') + 'raw=1';
+    }
+    // Google Drive / Docs: extract file ID and build uc?export=view URL
+    if (url.indexOf('drive.google.com') !== -1 || url.indexOf('docs.google.com') !== -1) {
+        var _m = url.match(/\/file\/d\/([A-Za-z0-9_-]+)/);
+        if (_m) return 'https://drive.google.com/uc?export=view&id=' + _m[1];
+        _m = url.match(/[?&]id=([A-Za-z0-9_-]+)/);
+        if (_m) return 'https://drive.google.com/uc?export=view&id=' + _m[1];
+    }
+    return url;
+}
+/////////////////////////////////////////////////////////////////////////////
+/**
+ *
+ * @param {*} text
+ * @param {*} elment
+ * @param {*} fSize
  */
 function adjustFontSize(text, elment, fSize) {
     elment.innerHTML = text;

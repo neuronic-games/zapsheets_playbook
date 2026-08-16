@@ -661,6 +661,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 
 <script src="js/common/jquery-3.5.1.min.js?v=3"></script>
 <script src="js/common/bootstrap.bundle.min.js?v=2"></script>
+<script src="js/core/zapsheetsCore.js?v=2"></script>
 <script>
 // Unregister any stale service workers (e.g. sw_map.js from old deployments)
 if ('serviceWorker' in navigator) {
@@ -716,18 +717,22 @@ function cachedImage(url) {
 // Browsers follow Dropbox's redirect to a properly-signed CDN URL automatically,
 // which is more reliable than manually constructing the CDN URL (the new
 // /scl/fi/ format requires signed parameters that only the redirect provides).
-function directImageUrl(url) {
-  if (!url) return url;
-  if (url.includes('dropbox.com')) {
-    if (url.includes('&dl=0') || url.includes('?dl=0')) {
-      return url.replace('dl=0', 'dl=1');
+// directImageUrl() — canonical definition in js/core/zapsheetsCore.js; inline fallback below
+if (typeof directImageUrl !== 'function') {
+  window.directImageUrl = function(url) {
+    if (!url) return url;
+    if (url.indexOf('dropbox.com') !== -1) {
+      if (url.match(/[?&]dl=/)) return url.replace(/([?&])dl=[^&]*/g, '$1raw=1');
+      return url + (url.indexOf('?') !== -1 ? '&' : '?') + 'raw=1';
     }
-    if (!url.match(/[?&]dl=/)) {
-      return url + (url.includes('?') ? '&' : '?') + 'dl=1';
+    if (url.indexOf('drive.google.com') !== -1 || url.indexOf('docs.google.com') !== -1) {
+      var _m = url.match(/\/file\/d\/([A-Za-z0-9_-]+)/);
+      if (_m) return 'https://drive.google.com/uc?export=view&id=' + _m[1];
+      _m = url.match(/[?&]id=([A-Za-z0-9_-]+)/);
+      if (_m) return 'https://drive.google.com/uc?export=view&id=' + _m[1];
     }
-    return url; // already has dl=1 — return as-is
-  }
-  return url;
+    return url;
+  };
 }
 
 function decodeHtml(html) {

@@ -24,6 +24,7 @@ $print         = trim($_POST['print']          ?? '');
 $sellsheet     = trim($_POST['sellsheet']      ?? '');
 $view          = trim($_POST['view']           ?? '');
 $video         = trim($_POST['video']          ?? '');
+$image         = trim($_POST['image']          ?? '');
 
 if (!$sheetId) {
     echo json_encode(['error' => 'Missing sheet ID']);
@@ -56,6 +57,7 @@ $data = [
     'BGG'               => $view,       'View URL'           => $view,
     'BGG / View URL'    => $view,       'ViewURL'            => $view,       'View'         => $view,
     'Video'             => $video,      'Video URL'          => $video,      'VideoURL'     => $video,
+    'Image URL'         => $image,      'ImageURL'           => $image,      'Image'        => $image,
 ];
 
 // Use gadd.py (proven working) with 3-part arg: sheet_id|sheet_name|base64_json

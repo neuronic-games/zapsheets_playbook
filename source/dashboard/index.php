@@ -1280,7 +1280,7 @@ if (is_dir($_gpv_dir)) {
         <div id="vpeVideos" class="vp-edit-list"></div>
 
         <div class="vp-edit-section">Components</div>
-        <div id="vpeComponents" class="vp-edit-list"></div>
+        <label class="ge-label"><textarea id="vpeComponents" class="ge-input" rows="4" placeholder="e.g. 1 Board&#10;50 Cards&#10;6 Dice" style="resize:vertical;min-height:4rem;line-height:1.55"></textarea></label>
 
         <div class="vp-edit-section">Pitch</div>
         <label class="ge-label">Pitch Image URL<input type="url" id="vpePitchImage" class="ge-input" placeholder="https://…" /></label>
@@ -3589,7 +3589,8 @@ function vpOpenEdit() {
   _vpeRenderList('vpeDesigners',  'Designer',        'Name…',            2);
   _vpeRenderList('vpeBuyUrls',    'BuyUrl',           'https://…',       1);
   _vpeRenderList('vpeReviews',    'Review',           'https://…',       1);
-  _vpeRenderList('vpeComponents', 'Component',        'e.g. 50 Cards…',  2);
+  document.getElementById('vpeComponents').value =
+    _vpeGetAll('Component').map(function(r) { return r.val; }).join('\n');
   _vpeRenderList('vpeFeatures',   'Feature',          'e.g. 2–4 players…', 2);
   _vpeRenderVideos();
 
@@ -3671,7 +3672,10 @@ function vpSaveEdit() {
     var lbl = (row.querySelector('.vpe-video-label').value || '').trim();
     if (url) rows.push({ name: 'Video', value: url, extra: lbl });
   });
-  addList  ('Component',        'vpeComponents');
+  document.getElementById('vpeComponents').value.split('\n').forEach(function(line) {
+    var v = line.trim();
+    if (v) rows.push({ name: 'Component', value: v, extra: '' });
+  });
   addSingle('PitchImageUrl',    'vpePitchImage');
   addSingle('PitchDescription', 'vpePitchDesc');
   addList  ('Feature',          'vpeFeatures');
@@ -5487,8 +5491,9 @@ function generatePitchViewLink() {
   btn.disabled = true;
   btn.textContent = 'Generating…';
   var fd = new FormData();
-  fd.append('id',   sheet_Id);
-  fd.append('game', _shareCurrentGame);
+  fd.append('id',     sheet_Id);
+  fd.append('game',   _shareCurrentGame);
+  fd.append('sharer', myName || '');
   fetch(APP_BASE + 'push/createPitchView.php', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
     .then(function(res) {

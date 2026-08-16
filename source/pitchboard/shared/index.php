@@ -29,6 +29,7 @@ if (!$_token || !file_exists($_viewFile)) {
 $_meta    = json_decode(file_get_contents($_viewFile), true) ?: [];
 $_sheetId = $_meta['sheet_id'] ?? '';
 $_gameName= $_meta['game']     ?? '';
+$_sharer  = trim($_meta['sharer'] ?? '');
 
 if (!$_sheetId || !$_gameName) { http_response_code(404); exit; }
 
@@ -105,7 +106,9 @@ function _ps_field(array $info, array $keys): string {
 }
 
 function _ps_latest(array $entries): array {
-    usort($entries, function($a,$b){ return strcmp($b['Date']??'',$a['Date']??''); });
+    usort($entries, function($a,$b){
+        return strtotime($b['Date']??'0') - strtotime($a['Date']??'0');
+    });
     return $entries[0] ?? [];
 }
 
@@ -172,7 +175,9 @@ foreach ($_byPub as $pub => $contacts) {
         foreach ($rows as $r) { $allEntries[] = $r; }
     }
     // Sort entries newest first
-    usort($allEntries, function($a,$b){ return strcmp($b['Date']??'',$a['Date']??''); });
+    usort($allEntries, function($a,$b){
+        return strtotime($b['Date']??'0') - strtotime($a['Date']??'0');
+    });
 
     $latest    = _ps_latest($allEntries);
     $pubStatus = strtolower($latest['Status'] ?? '');
@@ -421,6 +426,7 @@ body {
   box-shadow: 0 1px 4px rgba(0,0,0,.08);
   text-align: center;
 }
+.cta-shared-by { font-size: .85rem; color: #555; margin-bottom: .75rem; }
 .cta-title { font-family: 'DINBlack', sans-serif; font-size: .9rem; color: #1a1a2e; margin-bottom: .3rem; text-transform: uppercase; letter-spacing: .04em; }
 .cta-sub   { font-size: .8rem; color: #888; margin-bottom: 1rem; line-height: 1.5; }
 .cta-buttons { display: flex; gap: .65rem; justify-content: center; flex-wrap: wrap; margin-bottom: .8rem; }
@@ -505,6 +511,9 @@ body {
 
   <!-- ── CTA ── -->
   <div class="cta-section">
+    <?php if ($_sharer !== ''): ?>
+    <div class="cta-shared-by"><?= _ps_e($_sharer) ?> shared &ldquo;<?= _ps_e($_gameName) ?>&rdquo; with you.</div>
+    <?php endif ?>
     <div class="cta-title">Track your own pitches</div>
     <div class="cta-sub">PitchBoard helps board game designers manage publisher relationships and pitch history.</div>
     <div class="cta-buttons">

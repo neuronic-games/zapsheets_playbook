@@ -12,8 +12,9 @@ if (file_exists($_bpFile)) { require_once $_bpFile; }
 
 // GET = check-only; POST = create/refresh
 $isGet    = ($_SERVER['REQUEST_METHOD'] === 'GET');
-$sheetId  = trim(($isGet ? $_GET : $_POST)['id']   ?? '');
-$gameName = trim(($isGet ? $_GET : $_POST)['game'] ?? '');
+$sheetId  = trim(($isGet ? $_GET : $_POST)['id']     ?? '');
+$gameName = trim(($isGet ? $_GET : $_POST)['game']   ?? '');
+$sharer   = trim(($isGet ? $_GET : $_POST)['sharer'] ?? '');
 
 if (!$sheetId || !$gameName) {
     echo json_encode(['error' => 'Missing data']);
@@ -44,9 +45,11 @@ if (!is_dir($viewsDir)) {
         "Options -Indexes\nDeny from all\n");
 }
 
+$_payload = ['sheet_id' => $sheetId, 'game' => $gameName];
+if ($sharer !== '') $_payload['sharer'] = $sharer;
 file_put_contents(
     $viewsDir . DIRECTORY_SEPARATOR . $token . '.json',
-    json_encode(['sheet_id' => $sheetId, 'game' => $gameName])
+    json_encode($_payload)
 );
 
 echo json_encode(['ok' => true, 'viewUrl' => $viewUrl]);

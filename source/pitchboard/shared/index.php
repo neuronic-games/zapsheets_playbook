@@ -497,7 +497,7 @@ body {
         <a class="footer-btn" href="<?= _ps_e($_videoUrl) ?>" target="_blank">Video</a>
       <?php endif ?>
       <?php if ($_gamePageUrl): ?>
-        <a class="footer-btn" href="<?= _ps_e($_gamePageUrl) ?>">Game Page</a>
+        <a class="footer-btn" href="<?= _ps_e($_gamePageUrl) ?>">Page</a>
       <?php endif ?>
     </div>
     <?php endif ?>

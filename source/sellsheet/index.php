@@ -373,15 +373,11 @@ var APP_BASE = document.querySelector('base').getAttribute('href');
 var BASE     = APP_BASE + 'sheets/' + sheet_Id + '/';
 
 function getViewUrl(game) {
-  // Prefer the token-based public game page URL (no sheet ID in URL)
+  // Only use the token-based public game page URL (no sheet ID exposed)
   if (window._gvGameToken) {
     return window.location.origin + APP_BASE + 'game/' + window._gvGameToken;
   }
-  // Fallback for direct sheet access
-  var _path  = window.location.pathname;
-  var _idEnd = _path.indexOf(sheet_Id) + sheet_Id.length;
-  var base   = window.location.origin + _path.substring(0, _idEnd) + '/view/';
-  return game ? base + '?game=' + encodeURIComponent(game) : base;
+  return '';
 }
 
 function cachedImage(url) {

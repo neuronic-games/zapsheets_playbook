@@ -1558,7 +1558,7 @@ if (is_dir($_gpv_dir)) {
       <button class="sync-update-btn" onclick="sendViewShareEmail()" style="white-space:nowrap;font-size:.76rem" title="Email view-only link">&#9993; View</button>
     </div>
 
-    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Share Game Page</p>
+    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Share Page</p>
     <p style="color:#888;font-size:.78rem;margin:.1rem 0 .5rem">Public link to this game's view page. Anyone with this link can view it — no account needed.</p>
     <div id="shareGamePageGenSection" style="margin-bottom:1rem">
       <button class="sync-update-btn" id="shareGamePageGenBtn" onclick="generateGamePageLink()" style="width:100%;padding:.55rem 1rem;font-size:.8rem">Generate Link</button>
@@ -2123,7 +2123,7 @@ function buildGameView(pitches) {
         { label:'Play',      url: absUrl(gfield(['Play','Play URL','Play Link','Link Play'])) },
         { label:'Sellsheet', url: absUrl(gfield(['Sellsheet URL','Sellsheet','Sell Sheet URL','Sell Sheet','Link Sellsheet'])) },
         { label:'Video',     url: absUrl(gfield(['Video','Video URL','Video Link','Link Video','YouTube','YouTube URL'])) },
-        { label:'Game Page', url: gpToken ? window.location.origin + APP_BASE + 'game/' + gpToken : '' }
+        { label:'Page', url: gpToken ? window.location.origin + APP_BASE + 'game/' + gpToken : '' }
       ];
       var out = '';
       linkDefs.forEach(function(lp) {
@@ -2151,8 +2151,8 @@ function buildGameView(pitches) {
     }
     // Action buttons in sub-bar
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="addBtnClick(this)">New Pitch</button>';
-    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="viewPageClick(this)">View Page</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="editGameClick(this)">Edit Game</button>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="viewPageClick(this)">' + (gpToken ? 'Edit Page' : 'Enable Page') + '</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="shareGame(this.getAttribute(\'data-game\'))">Share</button>';
     if (NOTEBOARD_HAS_NOTES[nbSafeName(g)]) {
       html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="viewNotesClick(this)">View Notes</button>';
@@ -2846,11 +2846,10 @@ function buildEmailBody(gameName) {
   if (f.desc)      lines.push(f.desc);
   if (f.designers) { lines.push(''); lines.push('Designers: ' + f.designers); }
   var urls = [];
-  var _gpTok  = GAME_PAGE_TOKENS[gameName] || '';
-  var viewUrl = _gpTok
-    ? window.location.origin + APP_BASE + 'game/' + _gpTok
-    : window.location.origin + APP_BASE + sheet_Id + '/view/?game=' + encodeGame(gameName);
-  urls.push('Game Info: ' + viewUrl);
+  var _gpTok = GAME_PAGE_TOKENS[gameName] || '';
+  if (_gpTok) {
+    urls.push('Game Info: ' + window.location.origin + APP_BASE + 'game/' + _gpTok);
+  }
   if (f.sellsheet) urls.push('Sellsheet: ' + f.sellsheet);
   if (f.video)     urls.push('Video: '     + f.video);
   if (f.rules)     urls.push('Rules: '     + f.rules);
@@ -3452,11 +3451,11 @@ function _vpDeployAndOpen() {
         document.getElementById('vpSummaryPanel').style.display = '';
         document.getElementById('vpDialogTitle').textContent = 'View Page';
       }
-      // Write the token-based game page URL back to the sheet if not already set
-      var _gInfo = gamesIndex[_vpCurrentGame] || {};
-      if (!(_gInfo['Page URL'] || '').trim()) {
-        var _vpGame = _vpCurrentGame;
-        // Create/retrieve the token URL then persist it (fire-and-forget, non-blocking)
+      // Ensure a token-based game page exists so the Game Page card button appears.
+      // We do NOT write the generated URL to the Page URL field in the sheet —
+      // Page URL is reserved for user-supplied overrides only.
+      var _vpGame = _vpCurrentGame;
+      if (!GAME_PAGE_TOKENS[_vpGame]) {
         var _gpFd = new FormData();
         _gpFd.append('id',   sheet_Id);
         _gpFd.append('game', _vpGame);
@@ -3464,25 +3463,9 @@ function _vpDeployAndOpen() {
           .then(function(r) { return r.json(); })
           .then(function(res) {
             if (!res.viewUrl) return;
-            var _absUrl = res.viewUrl;
-            var _pxhr = new XMLHttpRequest();
-            _pxhr.open('POST', APP_BASE + 'push/setGamePageUrl.php');
-            _pxhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-            _pxhr.onload = function() {
-              var _pr; try { _pr = JSON.parse(_pxhr.responseText); } catch(e) { _pr = null; }
-              if (_pr && _pr.ok && !_pr.skipped) {
-                // Update local index so the eye icon appears if slides are reloaded
-                if (gamesIndex[_vpGame]) gamesIndex[_vpGame]['Page URL'] = _absUrl;
-                // Also update token map so Game Page button appears in card footer
-                var _tok = _absUrl.split('/game/')[1] || '';
-                if (_tok) GAME_PAGE_TOKENS[_vpGame] = _tok;
-              }
-            };
-            _pxhr.send(
-              'id='        + encodeURIComponent(sheet_Id) +
-              '&orig_name='+ encodeURIComponent(_vpGame) +
-              '&page_url=' + encodeURIComponent(_absUrl)
-            );
+            // Update in-memory token map so the Game Page button appears immediately
+            var _tok = res.viewUrl.split('/game/')[1] || '';
+            if (_tok) GAME_PAGE_TOKENS[_vpGame] = _tok;
           }).catch(function() {});
       }
       vpDone();
@@ -3630,7 +3613,7 @@ function vpOpenEdit() {
 
   document.getElementById('vpEditBtn').style.display        = 'none';
   document.getElementById('vpEditActions').style.display    = 'flex';
-  document.getElementById('vpDialogTitle').textContent      = 'Edit Game Page';
+  document.getElementById('vpDialogTitle').textContent      = 'Edit Page';
 }
 
 function vpCloseEdit() {

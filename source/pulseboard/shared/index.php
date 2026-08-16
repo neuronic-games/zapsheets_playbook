@@ -17,7 +17,7 @@ $_rp_stripped = ($_bp !== '' && str_starts_with($_rp, $_bp))
 preg_match('#^/share/([A-Za-z0-9]+)/?$#', $_rp_stripped, $_tm);
 $_token = $_tm[1] ?? '';
 
-$_share_file = __DIR__ . '/../../../share/' . $_token . '.json';
+$_share_file = __DIR__ . '/../../../shares/pulse-group-readonly/' . $_token . '.json';
 if (!$_token || !file_exists($_share_file)) {
     http_response_code(404);
     echo '<!DOCTYPE html><html><head><title>Not found</title></head><body style="font-family:sans-serif;padding:3rem;text-align:center"><h2>Share link not found or expired.</h2></body></html>';

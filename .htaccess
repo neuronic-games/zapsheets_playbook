@@ -11,6 +11,16 @@ RewriteRule ^pushsite/?$ push/pushsite.php [L,QSA]
 # /pitchboard/help — instructional help page (must come before /pitchboard rule)
 RewriteRule ^pitchboard/help/?$ source/pitchboard/help/index.php [L,QSA]
 
+# /game/{hash}/sellsheet — token-based sellsheet (must come before the game rule)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^game/([a-f0-9]{24})/sellsheet/?$ source/gameview/sellsheet.php [L,QSA]
+
+# /game/{hash} — token-based public game page (no sheet ID in URL)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^game/([a-f0-9]{24})/?$ source/gameview/index.php [L,QSA]
+
 # /pitchboard/share/{hash} — read-only shared pitch view (no sheet ID in URL)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -197,5 +207,5 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 # Guard 2: skip known top-level names regardless of subdirectory prefix.
 #          Matches  /anything/name/  or  /anything/name  at end of URI.
-RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard|fitboard|noteboard|pulseboard|slides-sw)(/|$)
+RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard|fitboard|noteboard|pulseboard|slides-sw|game|shares)(/|$)
 RewriteRule ^([A-Za-z0-9_\-]+)(/.*)?$ sheets/$1$2 [R=302,L]

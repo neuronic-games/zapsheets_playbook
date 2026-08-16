@@ -19,8 +19,8 @@ if (json_decode($jsonData) === null) {
     exit;
 }
 
-// Create shares directory at the app root (sibling of push/)
-$sharesDir = realpath(__DIR__ . '/..') . DIRECTORY_SEPARATOR . 'shares';
+// Create export directory at the app root (sibling of push/)
+$sharesDir = realpath(__DIR__ . '/..') . DIRECTORY_SEPARATOR . 'shares' . DIRECTORY_SEPARATOR . 'pitch-collab-export';
 if (!is_dir($sharesDir)) {
     if (!mkdir($sharesDir, 0755, true)) {
         echo json_encode(['error' => 'Could not create shares directory']);
@@ -47,7 +47,7 @@ if (file_put_contents($filepath, $jsonData) === false) {
 $scheme   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host     = $_SERVER['HTTP_HOST'];
 $appRoot  = rtrim(dirname(dirname($_SERVER['REQUEST_URI'])), '/');
-$shareUrl = $scheme . '://' . $host . $appRoot . '/shares/' . $filename;
+$shareUrl = $scheme . '://' . $host . $appRoot . '/shares/pitch-collab-export/' . $filename;
 
 // View-only link — no sheet ID exposed
 $hash    = substr($filename, 0, -5); // strip .json

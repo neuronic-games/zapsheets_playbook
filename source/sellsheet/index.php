@@ -8,6 +8,9 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 <html lang="en">
 <head>
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
+<?php if (isset($GLOBALS['_gv_sheet_id'])): ?>
+<script>window._gvSheetId=<?=json_encode($GLOBALS['_gv_sheet_id'])?>;window._gvGame=<?=json_encode($GLOBALS['_gv_game']??'')?></script>
+<?php endif; ?>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title id="pageTitle">Sellsheet</title>
@@ -349,6 +352,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 var data = {};
 
 function getSheetId() {
+  if (window._gvSheetId) return window._gvSheetId;
   var parts = window.location.pathname.split('/').filter(Boolean);
   var idx = parts.indexOf('sheets');
   if (idx >= 0 && parts[idx + 1]) return parts[idx + 1];
@@ -446,6 +450,7 @@ function _jsonLoad(path, key) {
 }
 
 var _gameParam = (function() {
+  if (window._gvGame) return window._gvGame;
   var m = window.location.search.match(/[?&]game=([^&]+)/);
   return m ? decodeURIComponent(m[1]) : '';
 })();

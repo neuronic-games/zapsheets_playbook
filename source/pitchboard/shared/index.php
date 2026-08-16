@@ -17,7 +17,7 @@ $_rp_stripped = ($_bp !== '' && str_starts_with($_rp, $_bp))
 preg_match('#^/pitchboard/share/([a-f0-9]{24})/?$#', $_rp_stripped, $_m);
 $_token = $_m[1] ?? '';
 
-$_viewFile = __DIR__ . '/../../../pitch-views/' . $_token . '.json';
+$_viewFile = __DIR__ . '/../../../shares/pitch-collab-readonly/' . $_token . '.json';
 if (!$_token || !file_exists($_viewFile)) {
     http_response_code(404);
     echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Not found</title></head>'
@@ -95,6 +95,14 @@ if (isset($_GET['data'])) {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function _ps_e(string $s): string { return htmlspecialchars($s, ENT_QUOTES); }
+
+function _ps_field(array $info, array $keys): string {
+    foreach ($keys as $k) {
+        $v = trim($info[$k] ?? '');
+        if ($v !== '') return $v;
+    }
+    return '';
+}
 
 function _ps_latest(array $entries): array {
     usort($entries, function($a,$b){ return strcmp($b['Date']??'',$a['Date']??''); });
@@ -213,6 +221,22 @@ $_scheme    = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'http
 $_importUrl = $_scheme . '://' . $_SERVER['HTTP_HOST'] . $_rp . '?data';
 $_pbUrl     = $_scheme . '://' . $_SERVER['HTTP_HOST'] . $_bp . '/pitchboard';
 $_base      = $_bp . '/';
+
+// ── Game links for footer ─────────────────────────────────────────────────────
+$_rulesUrl     = _ps_field($_gameInfo, ['Rules', 'Rules URL', 'Rules Link', 'Link Rules']);
+$_playUrl      = _ps_field($_gameInfo, ['Play', 'Play URL', 'Play Link', 'Link Play']);
+$_printUrl     = _ps_field($_gameInfo, ['Print', 'Print URL', 'Print Link', 'Link Print']);
+$_sellsheetUrl = _ps_field($_gameInfo, ['Sellsheet URL', 'Sellsheet', 'Sell Sheet URL', 'Sell Sheet', 'Link Sellsheet']);
+$_videoUrl     = _ps_field($_gameInfo, ['Video', 'Video URL', 'Video Link', 'Link Video', 'YouTube', 'YouTube URL']);
+
+// Game Page: check whether a token file has been generated for this game
+$_gameToken     = substr(md5($_sheetId . '|game|' . $_gameName), 0, 24);
+$_gameTokenFile = __DIR__ . '/../../../shares/pitch-game-view/' . $_gameToken . '.json';
+$_gamePageUrl   = file_exists($_gameTokenFile)
+    ? $_scheme . '://' . $_SERVER['HTTP_HOST'] . $_bp . '/game/' . $_gameToken
+    : '';
+
+$_hasFooter = $_rulesUrl || $_playUrl || $_printUrl || $_sellsheetUrl || $_videoUrl || $_gamePageUrl;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -369,6 +393,24 @@ body {
 /* ── Empty ── */
 .empty-pub { padding: .75rem 1rem; color: #aaa; font-size: .8rem; font-style: italic; }
 
+/* ── Shared card footer ── */
+.shared-footer {
+  display: flex; gap: .45rem; flex-wrap: wrap; align-items: center;
+  padding: .5rem 1rem .55rem;
+  background: #2a2006;
+  border-radius: 0 0 10px 10px;
+}
+.footer-btn {
+  display: inline-flex; align-items: center;
+  padding: .32rem .85rem; border-radius: 999px;
+  font-family: 'DINBlack', sans-serif; font-size: .65rem;
+  text-transform: uppercase; letter-spacing: .05em;
+  text-decoration: none; cursor: pointer;
+  border: none; transition: opacity .15s;
+  background: #f5c518; color: #1a1a2e;
+}
+.footer-btn:hover { opacity: .8; }
+
 /* ── CTA section ── */
 .cta-section {
   margin-top: 1.5rem;
@@ -437,6 +479,28 @@ body {
         <?php endif ?>
       <?php endif ?>
     </div>
+    <?php if ($_hasFooter): ?>
+    <div class="shared-footer">
+      <?php if ($_rulesUrl): ?>
+        <a class="footer-btn" href="<?= _ps_e($_rulesUrl) ?>" target="_blank">Rules</a>
+      <?php endif ?>
+      <?php if ($_printUrl): ?>
+        <a class="footer-btn" href="<?= _ps_e($_printUrl) ?>" target="_blank">Print</a>
+      <?php endif ?>
+      <?php if ($_playUrl): ?>
+        <a class="footer-btn" href="<?= _ps_e($_playUrl) ?>" target="_blank">Play</a>
+      <?php endif ?>
+      <?php if ($_sellsheetUrl): ?>
+        <a class="footer-btn" href="<?= _ps_e($_sellsheetUrl) ?>" target="_blank">Sellsheet</a>
+      <?php endif ?>
+      <?php if ($_videoUrl): ?>
+        <a class="footer-btn" href="<?= _ps_e($_videoUrl) ?>" target="_blank">Video</a>
+      <?php endif ?>
+      <?php if ($_gamePageUrl): ?>
+        <a class="footer-btn" href="<?= _ps_e($_gamePageUrl) ?>">Game Page</a>
+      <?php endif ?>
+    </div>
+    <?php endif ?>
   </div>
 
   <!-- ── CTA ── -->

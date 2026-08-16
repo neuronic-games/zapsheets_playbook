@@ -11,6 +11,9 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 <html lang="en">
 <head>
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
+<?php if (isset($GLOBALS['_gv_sheet_id'])): ?>
+<script>window._gvSheetId=<?=json_encode($GLOBALS['_gv_sheet_id'])?>;window._gvGame=<?=json_encode($GLOBALS['_gv_game']??'')?></script>
+<?php endif; ?>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate" />
@@ -672,6 +675,7 @@ if ('serviceWorker' in navigator) {
 <script>
 ////////////////////////////////////////////////////////////////////////////////
 function getSheetId() {
+  if (window._gvSheetId) return window._gvSheetId;
   var parts = window.location.pathname.split('/').filter(Boolean);
   // /sheets/{id}/view/
   var idx = parts.indexOf('sheets');
@@ -767,6 +771,7 @@ function _checkAllLoaded() {
 }
 
 var _gameParam = (function() {
+  if (window._gvGame) return window._gvGame;
   var m = window.location.search.match(/[?&]game=([^&]+)/);
   return m ? decodeURIComponent(m[1]) : '';
 })();
@@ -1225,8 +1230,10 @@ function render() {
 
   // View Sellsheet — first button, shown when the game has no published year yet
   if (!_yearPublished) {
-    var _sellsheetUrl = window.location.origin + _viewPath.substring(0, _idEnd) + '/sellsheet'
-      + (_gameParam ? '?game=' + encodeURIComponent(_gameParam) : '');
+    var _sellsheetUrl = window._gvSheetId
+      ? window.location.origin + _viewPath.replace(/\/$/, '') + '/sellsheet'
+      : window.location.origin + _viewPath.substring(0, _idEnd) + '/sellsheet'
+          + (_gameParam ? '?game=' + encodeURIComponent(_gameParam) : '');
     _ctaHtml += '<a class="btn-rules" href="' + _sellsheetUrl + '">View Sellsheet</a>';
   }
 

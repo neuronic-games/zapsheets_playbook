@@ -381,88 +381,41 @@ if (is_dir($_sheets_dir)) {
     /* ── Game sub-bar (links row + actions row) ─────── */
     .game-sub-bar {
       background:#1a1a2e;
-      display:flex; align-items:center;
-      overflow:hidden;           /* clips both panels during the slide */
+      display:flex; flex-direction:column; align-items:stretch;
     }
     .game-links {
-      flex:1; min-width:0;
-      padding:.5rem 1rem .55rem;
-      position:relative;
+      padding:.5rem 1rem .35rem;
     }
-    .game-links-default {
-      display:flex; align-items:center; gap:.5rem;
-      transition: transform .28s cubic-bezier(.4,0,.2,1);
-    }
-    /* Left section: designers + pills, grows to fill available space */
     .game-links-meta {
-      flex:1; min-width:0;
       display:flex; gap:.35rem; flex-wrap:wrap; align-items:center;
+      min-width:0;
     }
-    /* Right section: action buttons, pinned to the right of the sliding panel */
-    .game-links-actions {
-      display:flex; gap:.35rem; align-items:center; flex-shrink:0;
+    /* Action footer — hidden until card is expanded */
+    .game-action-row {
+      display:none; gap:.35rem; align-items:center; flex-wrap:wrap;
+      padding:.45rem 1rem .5rem;
+      background:#2a2006;
+      border-radius:0 0 10px 10px;
     }
-    /* Overflow starts at right edge of the full card (links + actions width),
-       calculated at runtime via --nb-start set by JS */
-    .game-links-overflow {
-      position:absolute; inset:0;
-      padding:.5rem 1rem .55rem; /* match .game-links padding */
-      display:flex; gap:.35rem; align-items:center;
-      transform: translateX(var(--nb-start, 200%));
-      transition: transform .28s cubic-bezier(.4,0,.2,1);
-      pointer-events:none;
-    }
-    .game-links.overflow-open .game-links-default {
-      transform: translateX(-110%);
-      pointer-events:none;
-    }
-    .game-links.overflow-open .game-links-overflow {
-      transform: translateX(0);
-      pointer-events:auto;
-    }
-    /* Pills wrapper — sits inline on desktop, becomes its own scrollable row on mobile */
+    .card.open .game-action-row { display:flex; }
+    /* Pills wrapper */
     .game-link-pills {
-      display:contents; /* transparent on desktop — pills flow directly into .game-links */
+      display:contents;
     }
-    .game-actions {
-      display:flex; gap:.35rem; align-items:center; flex-shrink:0;
-      padding:.5rem 1rem .5rem 0;
-    }
-    .game-action-more.active {
-      background:rgba(255,196,76,.26); color:#ffe099;
-    }
-    /* On narrow / portrait screens, stack designers / pills / actions each on own row */
     @media (max-width:540px) {
-      .game-sub-bar { flex-direction:column; align-items:stretch; }
-      .game-links { padding-bottom:.35rem; }
-      /* On mobile: default panel stacks meta (top) + action buttons (bottom row) */
-      .game-links-default { flex-direction:column; align-items:stretch; gap:.3rem; }
       .game-links-meta { flex-direction:column; align-items:flex-start; gap:.3rem; }
-      .game-links-actions { flex-wrap:wrap; }
-      /* Designers line: left-aligned, wraps if needed */
-      .game-links-designers { white-space:normal; align-self:flex-start; }
-      /* Pills: single scrollable row */
+      .game-links-designers { white-space:normal; }
       .game-link-pills {
-        display:flex; flex-wrap:nowrap;
-        gap:.35rem; align-items:center;
+        display:flex; flex-wrap:nowrap; gap:.35rem; align-items:center;
         overflow-x:auto; -webkit-overflow-scrolling:touch;
         scrollbar-width:none; width:100%;
       }
       .game-link-pills::-webkit-scrollbar { display:none; }
-      /* Overflow: single scrollable row on mobile */
-      .game-links-overflow {
+      .game-action-row {
         flex-wrap:nowrap; overflow-x:auto;
         -webkit-overflow-scrolling:touch; scrollbar-width:none;
       }
-      .game-links-overflow::-webkit-scrollbar { display:none; }
-      /* Actions row: single scrollable row */
-      .game-actions {
-        padding:.3rem 1rem .55rem;
-        border-top:1px solid rgba(255,255,255,.08);
-        flex-wrap:nowrap; overflow-x:auto;
-        -webkit-overflow-scrolling:touch; scrollbar-width:none;
-      }
-      .game-actions::-webkit-scrollbar { display:none; }
+      .game-action-row::-webkit-scrollbar { display:none; }
     }
     .game-link-pill {
       display:inline-block; padding:.18rem .65rem;
@@ -1580,10 +1533,15 @@ if (is_dir($_sheets_dir)) {
     </div>
 
     <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Share Game Page</p>
-    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .5rem">Public link to this game's view page.</p>
-    <div style="display:flex;gap:.5rem;align-items:center">
-      <input type="text" id="shareGamePageInput" class="ge-input" readonly style="flex:1;font-size:.72rem;font-family:monospace" />
-      <button class="sync-update-btn" id="shareGamePageCopyBtn" onclick="copyGamePageUrl()">Copy</button>
+    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .5rem">Public link to this game's view page. Anyone with this link can view it — no account needed.</p>
+    <div id="shareGamePageGenSection" style="margin-bottom:1rem">
+      <button class="sync-update-btn" id="shareGamePageGenBtn" onclick="generateGamePageLink()" style="width:100%;padding:.55rem 1rem;font-size:.8rem">Generate Link</button>
+    </div>
+    <div id="shareGamePageUrlSection" style="display:none;margin-bottom:1rem">
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <input type="text" id="shareGamePageInput" class="ge-input" readonly style="flex:1;font-size:.72rem;font-family:monospace" />
+        <button class="sync-update-btn" id="shareGamePageCopyBtn" onclick="copyGamePageUrl()">Copy</button>
+      </div>
     </div>
 
     <div class="sync-dialog-actions" style="margin-top:.75rem">
@@ -2155,9 +2113,6 @@ function buildGameView(pitches) {
     html += '<div class="card-body-wrap"><div class="card-body">';
     html += '<div class="game-sub-bar">';
     html += '<div class="game-links">';
-    // Default state: [designers + pills · · · · · · · · · ] [New Pitch] [View Page] [Edit Game]
-    html += '<div class="game-links-default">';
-    // Left: metadata (designers, link pills) — grows to fill space
     html += '<div class="game-links-meta">';
     if (designerNames.length) {
       html += '<span class="game-links-designers">';
@@ -2171,33 +2126,8 @@ function buildGameView(pitches) {
     }
     if (gameLinkPills) html += '<div class="game-link-pills">' + gameLinkPills + '</div>';
     html += '</div>'; // .game-links-meta
-    // Right: action buttons pinned to the right — slide left together with meta content
-    html += '<div class="game-links-actions">';
-    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();addBtnClick(this)">New Pitch</button>';
-    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();viewPageClick(this)">View Page</button>';
-    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();editGameClick(this)">Edit Game</button>';
-    html += '</div>'; // .game-links-actions
-    html += '</div>'; // .game-links-default
-
-    // Overflow state: primary buttons + extra buttons all visible together
-    html += '<div class="game-links-overflow">';
-    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();addBtnClick(this)">New Pitch</button>';
-    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();viewPageClick(this)">View Page</button>';
-    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();editGameClick(this)">Edit Game</button>';
-    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();shareGame(this.getAttribute(\'data-game\'))">Share</button>';
-    if (NOTEBOARD_HAS_NOTES[nbSafeName(g)]) {
-      html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();viewNotesClick(this)">View Notes</button>';
-    } else {
-      html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();enableNotesClick(this)">Enable Notes</button>';
-    }
-    html += '</div>'; // .game-links-overflow
-
     html += '</div>'; // .game-links
 
-    // ··· stays fixed as the toggle — always visible
-    html += '<div class="game-actions">';
-    html += '<button class="game-action-btn game-action-more" data-game="' + escHtml(g) + '" onclick="toggleMoreActions(event,this)" title="More">···</button>';
-    html += '</div>'; // .game-actions
     html += '</div>'; // .game-sub-bar
 
     // Sort publishers alphabetically
@@ -2285,6 +2215,20 @@ function buildGameView(pitches) {
     }
 
     html += '</div></div>'; // card-body, card-body-wrap
+
+    // Action footer — always visible at the very bottom of the card
+    html += '<div class="game-action-row" onclick="event.stopPropagation()">';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="addBtnClick(this)">New Pitch</button>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="viewPageClick(this)">View Page</button>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="editGameClick(this)">Edit Game</button>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="shareGame(this.getAttribute(\'data-game\'))">Share</button>';
+    if (NOTEBOARD_HAS_NOTES[nbSafeName(g)]) {
+      html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="viewNotesClick(this)">View Notes</button>';
+    } else {
+      html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="enableNotesClick(this)">Enable Notes</button>';
+    }
+    html += '</div>'; // .game-action-row
+
     html += '</div>'; // card
   });
 
@@ -3287,9 +3231,31 @@ function vpDone() {
   document.getElementById('vpViewPageBtn').disabled          = false;
 }
 function vpOpenViewPage() {
-  var url = APP_BASE + sheet_Id + '/view/?game=' + encodeGame(_vpCurrentGame);
-  closeVpDialog();
-  window.location.href = url;
+  var gameName = _vpCurrentGame;
+  // Use cached token URL if available
+  if (_generatedGameLinks[gameName]) {
+    closeVpDialog();
+    window.location.href = _generatedGameLinks[gameName];
+    return;
+  }
+  // Generate (or retrieve) the token URL then open
+  var btn = document.getElementById('vpViewPageBtn');
+  btn.disabled = true; btn.textContent = 'Opening…';
+  var fd = new FormData();
+  fd.append('id',   sheet_Id);
+  fd.append('game', gameName);
+  fetch(APP_BASE + 'push/createGameView.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      btn.disabled = false; btn.textContent = 'View Page';
+      if (res.viewUrl) {
+        _generatedGameLinks[gameName] = res.viewUrl;
+        closeVpDialog();
+        window.location.href = res.viewUrl;
+      }
+    }).catch(function() {
+      btn.disabled = false; btn.textContent = 'View Page';
+    });
 }
 function closeViewer() {
   document.getElementById('viewerOverlay').classList.remove('open');
@@ -4886,21 +4852,6 @@ function syncLog(msg, type) {
   log.scrollTop = log.scrollHeight;
 }
 
-// ── Game card "···" overflow toggle ──────────────────
-function toggleMoreActions(e, btn) {
-  e.stopPropagation();
-  var subBar = btn.closest('.game-sub-bar');
-  var links  = subBar.querySelector('.game-links');
-  var isOpen = links.classList.contains('overflow-open');
-  if (!isOpen) {
-    // Set the starting translateX so overflow slides in from the card's right edge
-    var actW   = subBar.querySelector('.game-actions').offsetWidth;
-    var linksW = links.offsetWidth;
-    links.style.setProperty('--nb-start', ((linksW + actW) / linksW * 100).toFixed(1) + '%');
-  }
-  links.classList.toggle('overflow-open', !isOpen);
-  btn.classList.toggle('active', !isOpen);
-}
 
 // ── Account menu ─────────────────────────────────────
 function toggleAccountMenu() {
@@ -5270,6 +5221,8 @@ var _shareCollabMap  = {};
 var _shareCollabItems = [];
 var _shareCollabComboReady = false;
 var _shareCurrentGame = '';
+var _generatedViewLinks = {}; // gameName → viewUrl cache
+var _generatedGameLinks = {}; // gameName → game page token URL cache
 
 function _setupShareCollabCombo() {
   if (_shareCollabComboReady) return;
@@ -5288,17 +5241,53 @@ function openShareUrlDialog(gameName) {
   pkgBtn.disabled = false;
   pkgBtn.textContent = 'Package Pitch Data';
 
-  // Reset view-only link section
+  // View-only link section — reset to Generate state, then check server
   document.getElementById('shareViewUrlSection').style.display = 'none';
   document.getElementById('shareViewUrlInput').value = '';
+  document.getElementById('shareViewUrlCopyBtn').textContent = 'Copy';
   document.getElementById('shareViewGenSection').style.display = '';
   var _vgBtn = document.getElementById('shareViewGenBtn');
   _vgBtn.disabled = false;
   _vgBtn.textContent = 'Generate Link';
+  // Check if a view link already exists for this game (in memory or on server)
+  if (gameName) {
+    if (_generatedViewLinks[gameName]) {
+      _showViewUrl(_generatedViewLinks[gameName]);
+    } else {
+      var _checkParams = 'id=' + encodeURIComponent(sheet_Id) + '&game=' + encodeURIComponent(gameName);
+      fetch(APP_BASE + 'push/createPitchView.php?' + _checkParams)
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          if (res.ok && res.viewUrl && _shareCurrentGame === gameName) {
+            _generatedViewLinks[gameName] = res.viewUrl;
+            _showViewUrl(res.viewUrl);
+          }
+        }).catch(function() {});
+    }
+  }
 
-  var gamePageUrl = window.location.origin + APP_BASE + sheet_Id + '/view/?game=' + encodeGame(gameName || '');
-  document.getElementById('shareGamePageInput').value = gamePageUrl;
+  // Game page link section — reset then check server for existing token
+  document.getElementById('shareGamePageUrlSection').style.display = 'none';
+  document.getElementById('shareGamePageInput').value = '';
   document.getElementById('shareGamePageCopyBtn').textContent = 'Copy';
+  document.getElementById('shareGamePageGenSection').style.display = '';
+  var _gpBtn = document.getElementById('shareGamePageGenBtn');
+  _gpBtn.disabled = false; _gpBtn.textContent = 'Generate Link';
+  if (gameName) {
+    if (_generatedGameLinks[gameName]) {
+      _showGamePageUrl(_generatedGameLinks[gameName]);
+    } else {
+      var _gpParams = 'id=' + encodeURIComponent(sheet_Id) + '&game=' + encodeURIComponent(gameName);
+      fetch(APP_BASE + 'push/createGameView.php?' + _gpParams)
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          if (res.ok && res.viewUrl && _shareCurrentGame === gameName) {
+            _generatedGameLinks[gameName] = res.viewUrl;
+            _showGamePageUrl(res.viewUrl);
+          }
+        }).catch(function() {});
+    }
+  }
 
   _shareCurrentGame = gameName || '';
 
@@ -5397,6 +5386,42 @@ function sendShareEmail() {
 function closeShareUrlDialog() {
   document.getElementById('shareUrlOverlay').classList.remove('open');
 }
+function _showGamePageUrl(url) {
+  document.getElementById('shareGamePageInput').value = url;
+  document.getElementById('shareGamePageUrlSection').style.display = '';
+  document.getElementById('shareGamePageGenSection').style.display = 'none';
+}
+function generateGamePageLink() {
+  var btn = document.getElementById('shareGamePageGenBtn');
+  btn.disabled = true; btn.textContent = 'Generating…';
+  var fd = new FormData();
+  fd.append('id',   sheet_Id);
+  fd.append('game', _shareCurrentGame);
+  fetch(APP_BASE + 'push/createGameView.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.viewUrl) {
+        _generatedGameLinks[_shareCurrentGame] = res.viewUrl;
+        _showGamePageUrl(res.viewUrl);
+        var _copyBtn = document.getElementById('shareGamePageCopyBtn');
+        navigator.clipboard.writeText(res.viewUrl).then(function() {
+          _copyBtn.textContent = 'Copied!';
+          setTimeout(function() { _copyBtn.textContent = 'Copy'; }, 2000);
+        }).catch(function() {
+          document.getElementById('shareGamePageInput').select();
+          try { document.execCommand('copy'); } catch(e) {}
+          _copyBtn.textContent = 'Copied!';
+          setTimeout(function() { _copyBtn.textContent = 'Copy'; }, 2000);
+        });
+      } else {
+        btn.disabled = false; btn.textContent = 'Generate Link';
+        alert('Could not generate link' + (res.error ? ': ' + res.error : '.'));
+      }
+    }).catch(function() {
+      btn.disabled = false; btn.textContent = 'Generate Link';
+      alert('Network error — could not generate link.');
+    });
+}
 function copyGamePageUrl() {
   var val = document.getElementById('shareGamePageInput').value;
   var btn = document.getElementById('shareGamePageCopyBtn');
@@ -5425,6 +5450,11 @@ function copyShareUrl() {
     setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
   });
 }
+function _showViewUrl(url) {
+  document.getElementById('shareViewUrlInput').value = url;
+  document.getElementById('shareViewUrlSection').style.display = '';
+  document.getElementById('shareViewGenSection').style.display = 'none';
+}
 function generatePitchViewLink() {
   var btn = document.getElementById('shareViewGenBtn');
   btn.disabled = true;
@@ -5436,10 +5466,19 @@ function generatePitchViewLink() {
     .then(function(r) { return r.json(); })
     .then(function(res) {
       if (res.viewUrl) {
-        document.getElementById('shareViewUrlInput').value = res.viewUrl;
-        document.getElementById('shareViewUrlCopyBtn').textContent = 'Copy';
-        document.getElementById('shareViewUrlSection').style.display = '';
-        document.getElementById('shareViewGenSection').style.display = 'none';
+        _generatedViewLinks[_shareCurrentGame] = res.viewUrl;
+        _showViewUrl(res.viewUrl);
+        // Auto-copy on generate
+        var _copyBtn = document.getElementById('shareViewUrlCopyBtn');
+        navigator.clipboard.writeText(res.viewUrl).then(function() {
+          _copyBtn.textContent = 'Copied!';
+          setTimeout(function() { _copyBtn.textContent = 'Copy'; }, 2000);
+        }).catch(function() {
+          document.getElementById('shareViewUrlInput').select();
+          try { document.execCommand('copy'); } catch(e) {}
+          _copyBtn.textContent = 'Copied!';
+          setTimeout(function() { _copyBtn.textContent = 'Copy'; }, 2000);
+        });
       } else {
         btn.disabled = false;
         btn.textContent = 'Generate Link';

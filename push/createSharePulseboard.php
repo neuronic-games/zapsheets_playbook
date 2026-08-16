@@ -17,7 +17,7 @@ $tab_safe = trim($_POST['tab_safe']  ?? '');
 if (!$sheet_id) { echo json_encode(['ok' => false, 'error' => 'Missing sheet_id']); exit; }
 if (!$tab)      { echo json_encode(['ok' => false, 'error' => 'Missing tab']);      exit; }
 
-$share_dir = __DIR__ . '/../share';
+$share_dir = __DIR__ . '/../shares/pulse-group-readonly';
 if (!is_dir($share_dir)) { mkdir($share_dir, 0755, true); }
 
 // Return existing token if this sheet+tab already has one

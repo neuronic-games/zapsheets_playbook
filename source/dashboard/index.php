@@ -414,9 +414,15 @@ if (is_dir($_gpv_dir)) {
     .game-link-pills {
       display:contents;
     }
+    .game-action-btns {
+      display:flex; flex-wrap:nowrap; gap:.35rem; align-items:center;
+      overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
+    }
+    .game-action-btns::-webkit-scrollbar { display:none; }
     @media (max-width:540px) {
       .game-links-meta { flex-direction:column; align-items:flex-start; gap:.3rem; }
       .game-links-designers { white-space:normal; }
+      .game-action-btns { width:100%; }
       .game-link-pills {
         display:flex; flex-wrap:nowrap; gap:.35rem; align-items:center;
         overflow-x:auto; -webkit-overflow-scrolling:touch;
@@ -871,6 +877,24 @@ if (is_dir($_gpv_dir)) {
       transition:border-color .15s;
     }
     .ge-input:focus { border-color:#1a1a2e; }
+    /* URL field with upload button */
+    .ge-url-wrap {
+      display:flex; align-items:stretch; gap:0;
+      border:1px solid #ddd; border-radius:6px; overflow:hidden;
+      transition:border-color .15s; background:#fff;
+    }
+    .ge-url-wrap:focus-within { border-color:#1a1a2e; }
+    .ge-url-wrap .ge-input {
+      border:none; border-radius:0; flex:1; min-width:0;
+    }
+    .ge-url-wrap .ge-input:focus { border-color:transparent; }
+    .ge-upload-btn {
+      flex:0 0 auto; background:none; border:none; border-left:1px solid #eee;
+      padding:0 .5rem; cursor:pointer; color:#aaa; display:flex;
+      align-items:center; transition:color .15s, background .15s;
+    }
+    .ge-upload-btn:hover { color:#c8860a; background:#fdf6e8; }
+    .ge-upload-btn svg { display:block; }
     input[type="date"].ge-input {
       -webkit-appearance:none; appearance:none;
       line-height:1.4; min-height:2.1rem;
@@ -1389,19 +1413,19 @@ if (is_dir($_gpv_dir)) {
     </div>
     <div class="ge-section">Links</div>
     <div class="ge-row">
-      <label class="ge-label">Rules URL<input type="url" id="geRules" class="ge-input" placeholder="https://…" /></label>
-      <label class="ge-label">Play URL<input type="url" id="gePlay" class="ge-input" placeholder="https://…" /></label>
+      <label class="ge-label">Rules<div class="ge-url-wrap"><input type="url" id="geRules" class="ge-input" placeholder="https://…" /><button type="button" class="ge-upload-btn" title="Upload file" onclick="geUploadClick('geRules')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></button></div></label>
+      <label class="ge-label">Play<div class="ge-url-wrap"><input type="url" id="gePlay" class="ge-input" placeholder="https://…" /><button type="button" class="ge-upload-btn" title="Upload file" onclick="geUploadClick('gePlay')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></button></div></label>
     </div>
     <div class="ge-row">
-      <label class="ge-label">Print URL<input type="url" id="gePrint" class="ge-input" placeholder="https://…" /></label>
-      <label class="ge-label">Sellsheet URL<input type="url" id="geSellsheet" class="ge-input" placeholder="https://…" /></label>
+      <label class="ge-label">Print<div class="ge-url-wrap"><input type="url" id="gePrint" class="ge-input" placeholder="https://…" /><button type="button" class="ge-upload-btn" title="Upload file" onclick="geUploadClick('gePrint')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></button></div></label>
+      <label class="ge-label">Sellsheet<div class="ge-url-wrap"><input type="url" id="geSellsheet" class="ge-input" placeholder="https://…" /><button type="button" class="ge-upload-btn" title="Upload file" onclick="geUploadClick('geSellsheet')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></button></div></label>
     </div>
     <div class="ge-row">
-      <label class="ge-label">BGG / View URL<input type="url" id="geView" class="ge-input" placeholder="https://…" /></label>
-      <label class="ge-label">Video URL<input type="url" id="geVideo" class="ge-input" placeholder="https://…" /></label>
+      <label class="ge-label">BGG / View<div class="ge-url-wrap"><input type="url" id="geView" class="ge-input" placeholder="https://…" /><button type="button" class="ge-upload-btn" title="Upload file" onclick="geUploadClick('geView')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></button></div></label>
+      <label class="ge-label">Video<div class="ge-url-wrap"><input type="url" id="geVideo" class="ge-input" placeholder="https://…" /><button type="button" class="ge-upload-btn" title="Upload file" onclick="geUploadClick('geVideo')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></button></div></label>
     </div>
     <div class="ge-row">
-      <label class="ge-label" style="grid-column:1/-1">Image URL<input type="url" id="geImage" class="ge-input" placeholder="https://…" /></label>
+      <label class="ge-label" style="grid-column:1/-1">Image<div class="ge-url-wrap"><input type="url" id="geImage" class="ge-input" placeholder="https://…" /><button type="button" class="ge-upload-btn" title="Upload file" onclick="geUploadClick('geImage')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></button></div></label>
     </div>
     <div class="ge-actions">
       <button class="ge-cancel-btn" onclick="closeGameEditDialog()">Cancel</button>
@@ -2149,7 +2173,8 @@ function buildGameView(pitches) {
       });
       html += '</span>';
     }
-    // Action buttons in sub-bar
+    // Action buttons in sub-bar — single scrollable row on all screen sizes
+    html += '<div class="game-action-btns">';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="addBtnClick(this)">New Pitch</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="editGameClick(this)">Edit Game</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="viewPageClick(this)">' + (GAME_PAGE_TOKENS[g] ? 'Edit Page' : 'Enable Page') + '</button>';
@@ -2159,6 +2184,7 @@ function buildGameView(pitches) {
     } else {
       html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="enableNotesClick(this)">Enable Notes</button>';
     }
+    html += '</div>'; // .game-action-btns
     html += '</div>'; // .game-links-meta
     html += '</div>'; // .game-links
 
@@ -3925,6 +3951,47 @@ function openGameEditDialog(gameName, isNew) {
 
 function closeGameEditDialog() {
   document.getElementById('gameEditOverlay').classList.remove('open');
+}
+
+// Hidden file input reused for all upload buttons
+var _geUploadInput = null;
+var _geUploadTargetId = null;
+
+function geUploadClick(inputId) {
+  _geUploadTargetId = inputId;
+  if (!_geUploadInput) {
+    _geUploadInput = document.createElement('input');
+    _geUploadInput.type = 'file';
+    _geUploadInput.accept = 'image/*,video/mp4,video/webm,application/pdf';
+    _geUploadInput.style.display = 'none';
+    document.body.appendChild(_geUploadInput);
+    _geUploadInput.addEventListener('change', function() {
+      var file = _geUploadInput.files[0];
+      if (!file || !_geUploadTargetId) return;
+      _geUploadInput.value = '';
+      var btn = document.querySelector('#gameEditOverlay [onclick*="' + _geUploadTargetId + '"]');
+      if (btn) { btn.disabled = true; btn.style.opacity = '.4'; }
+      var fd = new FormData();
+      fd.append('id', sheet_Id);
+      fd.append('file', file);
+      fetch(APP_BASE + 'push/uploadMedia.php', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+          if (res.url) {
+            var el = document.getElementById(_geUploadTargetId);
+            if (el) { el.value = res.url; el.dispatchEvent(new Event('input')); }
+          } else {
+            alert('Upload failed: ' + (res.error || 'unknown error'));
+          }
+        })
+        .catch(function(err) {
+          if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+          alert('Upload error: ' + err);
+        });
+    });
+  }
+  _geUploadInput.click();
 }
 
 function submitGameEdit() {

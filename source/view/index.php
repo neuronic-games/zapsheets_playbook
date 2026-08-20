@@ -849,6 +849,8 @@ function updateThumbActive(idx) {
   if (all[idx]) all[idx].classList.add('active');
 }
 
+var _loadedImgSrcs = new Set(); // track every src that has successfully loaded
+
 function setMainMedia(idx) {
   var item = allImages[idx];
   if (!item) return;
@@ -869,22 +871,33 @@ function setMainMedia(idx) {
     img.style.display = 'block';
     img.onerror = null;
     img.onload  = null;
-    wrap.classList.add('img-loading');
-    img.onload = function() { img.onload = null; wrap.classList.remove('img-loading'); };
-    img.src = item.src;
-    // Already in browser cache — onload won't fire, remove shimmer immediately
-    if (img.complete && img.naturalWidth > 0) {
-      img.onload = null;
+    // If we've already loaded this URL successfully, skip the shimmer entirely.
+    // (img.complete is unreliable when switching src — the browser resets it
+    //  even for cached URLs, causing a spurious shimmer on cycle-back.)
+    if (_loadedImgSrcs.has(item.src) || (item.direct && _loadedImgSrcs.has(item.direct))) {
+      img.src = _loadedImgSrcs.has(item.direct) ? item.direct : item.src;
       wrap.classList.remove('img-loading');
-    } else if (item.direct && item.src !== item.direct) {
-      // Cached copy missing — fall back to the direct URL
-      img.onerror = function() {
-        img.onerror = null;
-        img.onload  = function() { img.onload = null; wrap.classList.remove('img-loading'); };
-        img.src = item.direct;
-      };
     } else {
-      img.onerror = function() { img.onerror = null; wrap.classList.remove('img-loading'); };
+      wrap.classList.add('img-loading');
+      img.onload = function() {
+        img.onload = null;
+        _loadedImgSrcs.add(item.src);
+        wrap.classList.remove('img-loading');
+      };
+      img.src = item.src;
+      if (item.direct && item.src !== item.direct) {
+        img.onerror = function() {
+          img.onerror = null;
+          img.onload  = function() {
+            img.onload = null;
+            _loadedImgSrcs.add(item.direct);
+            wrap.classList.remove('img-loading');
+          };
+          img.src = item.direct;
+        };
+      } else {
+        img.onerror = function() { img.onerror = null; wrap.classList.remove('img-loading'); };
+      }
     }
   }
   // Show steps overlay only on the dedicated steps slide

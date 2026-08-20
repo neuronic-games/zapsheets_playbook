@@ -61,6 +61,10 @@ def is_cacheable(url: str) -> bool:
     low = url.lower()
     if any(h in low for h in SKIP_HOSTS):
         return False
+    # Skip URLs that are already served from our own cache folder —
+    # these were uploaded directly and don't need to be re-downloaded.
+    if '/sheets/' in low and '/cache/' in low:
+        return False
     # Always attempt to cache Dropbox and Google Drive image links
     # (their paths don't end in a media extension but the file is still an image)
     if 'dropbox.com' in low or 'drive.google.com' in low or 'docs.google.com' in low:

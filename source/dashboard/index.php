@@ -1271,8 +1271,11 @@ if (is_dir($_gpv_dir)) {
       <div id="vpEditPanel">
       <div class="vp-edit-inner">
         <div class="vp-edit-section">Images &amp; IDs</div>
-        <label class="ge-label">Product Image URL<input type="url" id="vpeProductImage" class="ge-input" placeholder="https://…" /></label>
+        <label class="ge-label">Product Image<div class="ge-url-wrap"><input type="url" id="vpeProductImage" class="ge-input" placeholder="https://…" /><button type="button" class="ge-upload-btn" title="Upload file" onclick="_vpeUploadToInput(document.getElementById('vpeProductImage'))"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></button></div></label>
         <label class="ge-label">BGG Game ID<input type="text" id="vpeBggId" class="ge-input" placeholder="e.g. 123456" /></label>
+
+        <div class="vp-edit-section">Images</div>
+        <div id="vpeImages" class="vp-edit-list"></div>
 
         <div class="vp-edit-section">Players &amp; Time</div>
         <div class="vp-edit-row">
@@ -1304,10 +1307,10 @@ if (is_dir($_gpv_dir)) {
         <div id="vpeVideos" class="vp-edit-list"></div>
 
         <div class="vp-edit-section">Components</div>
-        <label class="ge-label"><textarea id="vpeComponents" class="ge-input" rows="4" placeholder="e.g. 1 Board&#10;50 Cards&#10;6 Dice" style="resize:vertical;min-height:4rem;line-height:1.55"></textarea></label>
+        <label class="ge-label"><textarea id="vpeComponents" class="ge-input" rows="4" placeholder="e.g.&#10;1 Game Board&#10;110 Cards&#10;6 Player Tokens&#10;1 Sand Timer&#10;2 Dice" style="resize:vertical;min-height:4rem;line-height:1.55"></textarea></label>
 
         <div class="vp-edit-section">Pitch</div>
-        <label class="ge-label">Pitch Image URL<input type="url" id="vpePitchImage" class="ge-input" placeholder="https://…" /></label>
+        <label class="ge-label">Pitch Image<div class="ge-url-wrap"><input type="url" id="vpePitchImage" class="ge-input" placeholder="https://…" /><button type="button" class="ge-upload-btn" title="Upload file" onclick="_vpeUploadToInput(document.getElementById('vpePitchImage'))"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></button></div></label>
         <label class="ge-label">Pitch Description<textarea id="vpePitchDesc" class="ge-input" rows="3" style="resize:vertical;min-height:3.5rem;line-height:1.45"></textarea></label>
 
         <div class="vp-edit-section">Features</div>
@@ -2107,7 +2110,7 @@ function buildGameView(pitches) {
       }
     }
 
-    html += '<div class="card">';
+    html += '<div class="card" data-game="' + escHtml(g) + '">';
     var gameInfo  = gamesIndex[g] || {};
     var designerNames = ['Designer1','Designer2','Designer3','Designer4']
       .map(function(f){ return (gameInfo[f]||'').trim(); })
@@ -3489,9 +3492,12 @@ function _vpDeployAndOpen() {
           .then(function(r) { return r.json(); })
           .then(function(res) {
             if (!res.viewUrl) return;
-            // Update in-memory token map so the Game Page button appears immediately
             var _tok = res.viewUrl.split('/game/')[1] || '';
-            if (_tok) GAME_PAGE_TOKENS[_vpGame] = _tok;
+            if (_tok) {
+              GAME_PAGE_TOKENS[_vpGame] = _tok;
+              // Patch the card DOM immediately — no page reload needed
+              _patchCardAfterPageEnabled(_vpGame, _tok);
+            }
           }).catch(function() {});
       }
       vpDone();
@@ -3561,6 +3567,80 @@ function _vpeRenderList(containerId, fieldName, placeholder, minEmpty) {
   el.appendChild(addBtn);
 }
 
+// Shared upload helper for Edit Page inputs (takes the input element directly)
+var _vpeUploadFileInput = null;
+var _vpeUploadTarget    = null;
+function _vpeUploadToInput(inputEl) {
+  _vpeUploadTarget = inputEl;
+  if (!_vpeUploadFileInput) {
+    _vpeUploadFileInput = document.createElement('input');
+    _vpeUploadFileInput.type = 'file';
+    _vpeUploadFileInput.accept = 'image/*,video/mp4,video/webm,video/ogg,video/quicktime';
+    _vpeUploadFileInput.style.display = 'none';
+    document.body.appendChild(_vpeUploadFileInput);
+    _vpeUploadFileInput.addEventListener('change', function() {
+      var file = _vpeUploadFileInput.files[0];
+      if (!file || !_vpeUploadTarget) return;
+      _vpeUploadFileInput.value = '';
+      var target = _vpeUploadTarget;
+      var btn = target.parentNode && target.parentNode.querySelector('.ge-upload-btn');
+      if (btn) { btn.disabled = true; btn.style.opacity = '.4'; }
+      var fd = new FormData();
+      fd.append('id', sheet_Id);
+      fd.append('file', file);
+      fetch(APP_BASE + 'push/uploadMedia.php', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+          if (res.url) { target.value = res.url; }
+          else { alert('Upload failed: ' + (res.error || 'unknown')); }
+        })
+        .catch(function(e) {
+          if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+          alert('Upload error: ' + e);
+        });
+    });
+  }
+  _vpeUploadFileInput.click();
+}
+
+// Render Image list — URL + upload button per row
+function _vpeRenderImages() {
+  var el   = document.getElementById('vpeImages');
+  var vals = _vpeGetAll('Image').map(function(r) { return r.val; });
+  while (vals.length < 2) vals.push('');
+  el.innerHTML = '';
+  var uploadIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+    + '<polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>'
+    + '<path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>';
+  function makeImageRow(v) {
+    var wrap = document.createElement('div');
+    wrap.className = 'ge-url-wrap vpe-image-row';
+    wrap.style.marginBottom = '.3rem';
+    var inp = document.createElement('input');
+    inp.type = 'url';
+    inp.className = 'ge-input';
+    inp.placeholder = 'https://…';
+    inp.value = v || '';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ge-upload-btn';
+    btn.title = 'Upload image';
+    btn.innerHTML = uploadIcon;
+    btn.onclick = function() { _vpeUploadToInput(inp); };
+    wrap.appendChild(inp);
+    wrap.appendChild(btn);
+    return wrap;
+  }
+  vals.forEach(function(v) { el.appendChild(makeImageRow(v)); });
+  var addBtn = document.createElement('button');
+  addBtn.className   = 'vpe-add-btn';
+  addBtn.textContent = '+ Add';
+  addBtn.type        = 'button';
+  addBtn.onclick     = function() { el.insertBefore(makeImageRow(''), addBtn); };
+  el.appendChild(addBtn);
+}
+
 // Render Video list (URL + label columns)
 function _vpeRenderVideos() {
   var el   = document.getElementById('vpeVideos');
@@ -3568,14 +3648,28 @@ function _vpeRenderVideos() {
   if (!vals.length) vals = [{ val:'', extra:'' }];
   vals.push({ val:'', extra:'' });  // one extra blank row
   el.innerHTML = '';
+  var uploadIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+    + '<polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>'
+    + '<path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>';
   function makeVideoRow(v) {
     var row = document.createElement('div');
     row.className = 'vpe-video-row';
+    // URL wrapped with upload button
+    var urlWrap = document.createElement('div');
+    urlWrap.className = 'ge-url-wrap';
     var url = _vpeMakeInput('Video URL (https://…)', v.val, 'url');
     url.className += ' vpe-video-url';
+    var upBtn = document.createElement('button');
+    upBtn.type = 'button';
+    upBtn.className = 'ge-upload-btn';
+    upBtn.title = 'Upload video';
+    upBtn.innerHTML = uploadIcon;
+    upBtn.onclick = function() { _vpeUploadToInput(url); };
+    urlWrap.appendChild(url);
+    urlWrap.appendChild(upBtn);
     var lbl = _vpeMakeInput('Label (e.g. About the game)', v.extra);
     lbl.className += ' vpe-video-label';
-    row.appendChild(url); row.appendChild(lbl);
+    row.appendChild(urlWrap); row.appendChild(lbl);
     return row;
   }
   vals.forEach(function(v) { el.appendChild(makeVideoRow(v)); });
@@ -3613,6 +3707,7 @@ function vpOpenEdit() {
 
   // Populate dynamic lists
   _vpeRenderList('vpeDesigners',  'Designer',        'Name…',            2);
+  _vpeRenderImages();
   _vpeRenderList('vpeBuyUrls',    'BuyUrl',           'https://…',       1);
   _vpeRenderList('vpeReviews',    'Review',           'https://…',       1);
   document.getElementById('vpeComponents').value =
@@ -3691,6 +3786,10 @@ function vpSaveEdit() {
   addSingle('Price',            'vpePrice');
   addSingle('Stock',            'vpeStock');
   addSingle('Weight',           'vpeWeight');
+  document.querySelectorAll('#vpeImages .vpe-image-row input').forEach(function(inp) {
+    var v = inp.value.trim();
+    if (v) rows.push({ name: 'Image', value: v, extra: '' });
+  });
   addList  ('BuyUrl',           'vpeBuyUrls');
   addList  ('Review',           'vpeReviews');
   document.querySelectorAll('#vpeVideos .vpe-video-row').forEach(function(row) {
@@ -3953,6 +4052,40 @@ function closeGameEditDialog() {
   document.getElementById('gameEditOverlay').classList.remove('open');
 }
 
+// After a token is freshly created, patch the card in-place so the button
+// label and footer pill update without a full page reload.
+function _patchCardAfterPageEnabled(gameName, token) {
+  var card = document.querySelector('.card[data-game="' + gameName.replace(/"/g, '\\"') + '"]');
+  if (!card) return;
+
+  // 1. Change sub-bar button "Enable Page" → "Edit Page"
+  var btns = card.querySelectorAll('.game-action-btn[onclick*="viewPageClick"]');
+  btns.forEach(function(b) { b.textContent = 'Edit Page'; });
+
+  // 2. Add "Page" pill to the footer action row
+  var pageUrl = window.location.origin + APP_BASE + 'game/' + token;
+  var row = card.querySelector('.game-action-row');
+  if (row) {
+    // Only add if not already present
+    if (!row.querySelector('[href="' + pageUrl + '"]')) {
+      var pill = document.createElement('a');
+      pill.className = 'game-link-btn';
+      pill.href = pageUrl;
+      pill.target = '_blank';
+      pill.rel = 'noopener noreferrer';
+      pill.textContent = 'Page';
+      row.appendChild(pill);
+    }
+  } else {
+    // Footer row didn't exist yet — create it
+    var newRow = document.createElement('div');
+    newRow.className = 'game-action-row';
+    newRow.innerHTML = '<a class="game-link-btn" href="' + escHtml(pageUrl) +
+      '" target="_blank" rel="noopener noreferrer">Page</a>';
+    card.appendChild(newRow);
+  }
+}
+
 // Hidden file input reused for all upload buttons
 var _geUploadInput = null;
 var _geUploadTargetId = null;
@@ -4091,6 +4224,14 @@ function submitGameEdit() {
         buildView();
         restoreViewState(_vs);
         closeGameEditDialog();
+        // For new games, create the per-game Google Sheet tab in the background
+        if (isNew) {
+          var _gtFd = new FormData();
+          _gtFd.append('id',   sheet_Id);
+          _gtFd.append('game', payload.name);
+          fetch(APP_BASE + 'push/createGameTab.php', { method: 'POST', body: _gtFd })
+            .catch(function() {}); // fire-and-forget; failure is non-fatal
+        }
       } else {
         showError('Error: ' + ((result && result.error) || (isNew ? 'Could not add game.' : 'Could not update game.')));
       }

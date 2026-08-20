@@ -1058,6 +1058,13 @@ function render() {
       allImages.push({ src: cachedImage(_gameImgUrl), direct: directImageUrl(_gameImgUrl), caption: '', type: 'image', delay: 5 });
     }
 
+    // Collect ALL Image rows from the per-game tab (the main slideshow images)
+    (data.bgg || []).forEach(function(r) {
+      if (r.Name === 'Image' && _isHttp(r.Value)) {
+        allImages.push({ src: cachedImage(r.Value), direct: directImageUrl(r.Value), caption: r['Value 1'] || '', type: 'image', delay: 5 });
+      }
+    });
+
     // Collect ALL ProductImage rows — the game JSON may have multiple entries
     (data.bgg || []).forEach(function(r) {
       if (r.Name === 'ProductImage' && _isHttp(r.Value)) {

@@ -15,7 +15,10 @@
 #                       or {"error": "..."}   for any other failure
 
 import gspread
-import sys, os, json
+import sys, os, json, socket
+
+# Prevent gspread/httplib2 from hanging indefinitely on slow API responses
+socket.setdefaulttimeout(30)
 
 credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
 if not os.path.exists(credFileName):

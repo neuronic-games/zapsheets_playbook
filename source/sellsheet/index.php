@@ -571,12 +571,27 @@ function render() {
 
   // ── Hero image ─────────────────────────────────────────────
   // Priority chain (cached first, direct fallback):
-  //   1. PitchImageUrl (game JSON)  2. Image URL (games.json)  3. splash image
+  //   1. PitchImageUrl (game JSON)
+  //   2. Image rows (game JSON — same source as the view page slideshow)
+  //   3. Image URL (games.json)
+  //   4. ProductImage (game JSON)
+  //   5. splash image
   // Each source tries its cached path, then its direct URL, before moving on.
+  var _isImgUrl = function(u) { return u && !/\.(pdf|docx?|xlsx?|pptx?)(\?|$)/i.test(u); };
   var _pitchImg = _absUrl(gv('PitchImageUrl'));
+  if (!_isImgUrl(_pitchImg)) _pitchImg = '';   // skip PDFs / docs
+
+  // Collect all Image rows from the game tab (uploaded or linked images)
+  var _imageRows = gvAll('Image').map(function(r){ return _absUrl(r.Value); }).filter(_isImgUrl);
+
   var _gameImg  = _absUrl(_games('Image URL'));
+  if (!_isImgUrl(_gameImg)) _gameImg = '';
+
+  var _productImg = _absUrl(gv('ProductImage'));
+  if (!_isImgUrl(_productImg)) _productImg = '';
+
   var _splashUrl = '';
-  if (!_pitchImg && !_gameImg && data.splash) {
+  if (!_pitchImg && !_imageRows.length && !_gameImg && !_productImg && data.splash) {
     var _splashRow = data.splash.find(function(r){
       return (r.ID || '').toLowerCase() === 'layout' && r.Content;
     });
@@ -588,7 +603,8 @@ function render() {
 
   // Build ordered fallback list: cached path then direct URL for each candidate.
   var _heroSrcs = [];
-  [_pitchImg, _gameImg, _splashUrl].forEach(function(url) {
+  var _heroUrls = [_pitchImg].concat(_imageRows).concat([_gameImg, _productImg, _splashUrl]);
+  _heroUrls.forEach(function(url) {
     if (!url) return;
     var cached = cachedImage(url);
     var direct = directImageUrl(url);

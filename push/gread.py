@@ -2,8 +2,11 @@
 
 # Packages Used
 import gspread
-import sys, os, json, urllib.parse
+import sys, os, json, urllib.parse, socket
 from pathlib import Path
+
+# Prevent gspread/httplib2 from hanging indefinitely on slow API responses
+socket.setdefaulttimeout(30)
 
 
 # Credentials [Keys etc]

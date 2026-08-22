@@ -3267,7 +3267,22 @@ function copyErrText() {
 // ── View Page dialog ───────────────────────────────────────
 
 function closeVpDialog() {
-  document.getElementById('vpOverlay').classList.remove('open');
+  var overlay = document.getElementById('vpOverlay');
+  overlay.classList.remove('open');
+  // Reset editing state so the dialog is clean for next open
+  if (overlay.classList.contains('editing')) {
+    overlay.classList.remove('editing');
+    var panel = document.getElementById('vpEditPanel');
+    panel.style.display   = 'none';
+    panel.style.maxHeight = '';
+    panel.style.overflow  = '';
+    document.getElementById('vpEditActions').style.display = 'none';
+    document.getElementById('vpSyncBtn').style.display     = '';
+    document.getElementById('vpViewPageBtn').style.display = '';
+    document.getElementById('vpEditBtn').style.display     = '';
+  }
+  _vpDirectEdit   = false;
+  _vpAutoOpenEdit = false;
 }
 function vpLog(msg, type) {
   var log  = document.getElementById('vpLog');
@@ -3467,7 +3482,7 @@ function _vpDeployAndOpen() {
   xhr3.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
   var _finish = function() {
     vpLog('✓  Page updated.', 'ok');
-    // Re-fetch the game JSON to update the summary with fresh data
+    // Re-fetch the game JSON to get fresh data
     var safeName = _vpCurrentGame.replace(/\//g, '-').replace(/\\/g, '-');
     var fileUrl  = APP_BASE + 'sheets/' + sheet_Id + '/game-' + safeName + '-en.json';
     var xhrJ = new XMLHttpRequest();
@@ -3476,14 +3491,35 @@ function _vpDeployAndOpen() {
       if (xhrJ.status >= 200 && xhrJ.status < 300) {
         var data; try { data = JSON.parse(xhrJ.responseText); } catch(e) { data = []; }
         _vpCurrentRecords = data;
-        _vpBuildSummary(_vpCurrentGame, data);
-        document.getElementById('vpSummaryPanel').style.display = '';
-        document.getElementById('vpDialogTitle').textContent = 'View Page';
       }
-      // Ensure a token-based game page exists so the Game Page card button appears.
-      // We do NOT write the generated URL to the Page URL field in the sheet —
-      // Page URL is reserved for user-supplied overrides only.
-      var _vpGame = _vpCurrentGame;
+
+      // Ensure a token-based game page exists. We create it first so the card
+      // footer PAGE button is patched before we reveal the edit fields — that way
+      // the button is already visible the moment the user closes the dialog.
+      var _vpGame       = _vpCurrentGame;
+      var _autoEdit     = _vpAutoOpenEdit;
+      _vpAutoOpenEdit   = false;
+
+      function _afterToken() {
+        if (_autoEdit) {
+          // Pipeline was triggered from the direct-edit path — open edit fields now
+          document.getElementById('vpLogPanel').style.display = 'none';
+          document.getElementById('vpDialogTitle').textContent = 'Edit Page';
+          _vpPopulateEditFields();
+          var _panel = document.getElementById('vpEditPanel');
+          _panel.style.display   = 'block';
+          _panel.style.maxHeight = 'none';
+          _panel.style.overflow  = 'visible';
+          document.getElementById('vpEditActions').style.display = 'flex';
+          document.getElementById('vpDoneBtn').disabled          = false;
+        } else {
+          _vpBuildSummary(_vpGame, _vpCurrentRecords || []);
+          document.getElementById('vpSummaryPanel').style.display = '';
+          document.getElementById('vpDialogTitle').textContent = 'View Page';
+        }
+        vpDone();
+      }
+
       if (!GAME_PAGE_TOKENS[_vpGame]) {
         var _gpFd = new FormData();
         _gpFd.append('id',   sheet_Id);
@@ -3491,18 +3527,21 @@ function _vpDeployAndOpen() {
         fetch(APP_BASE + 'push/createGameView.php', { method: 'POST', body: _gpFd })
           .then(function(r) { return r.json(); })
           .then(function(res) {
-            if (!res.viewUrl) return;
-            var _tok = res.viewUrl.split('/game/')[1] || '';
-            if (_tok) {
-              GAME_PAGE_TOKENS[_vpGame] = _tok;
-              // Patch the card DOM immediately — no page reload needed
-              _patchCardAfterPageEnabled(_vpGame, _tok);
+            if (res.viewUrl) {
+              var _tok = res.viewUrl.split('/game/')[1] || '';
+              if (_tok) {
+                GAME_PAGE_TOKENS[_vpGame] = _tok;
+                _patchCardAfterPageEnabled(_vpGame, _tok);
+              }
             }
-          }).catch(function() {});
+            _afterToken();
+          })
+          .catch(function() { _afterToken(); });
+      } else {
+        _afterToken();
       }
-      vpDone();
     };
-    xhrJ.onerror = function() { vpDone(); };
+    xhrJ.onerror = function() { _vpAutoOpenEdit = false; vpDone(); };
     xhrJ.send();
   };
   xhr3.onload = function() {
@@ -3514,6 +3553,11 @@ function _vpDeployAndOpen() {
     vpLog('⚠  Deploy skipped (network error)', 'skip');
     _finish();
   };
+  xhr3.timeout = 30000;
+  xhr3.ontimeout = function() {
+    vpLog('⚠  Deploy skipped (timed out)', 'skip');
+    _finish();
+  };
   xhr3.send('id=' + encodeURIComponent(sheet_Id));
 }
 
@@ -3521,6 +3565,8 @@ function _vpDeployAndOpen() {
 var _vpCurrentGame    = '';   // game name kept for vpAddSheet()
 var _vpCheckXhr       = null; // in-flight JSON-existence check (aborted on new click)
 var _vpCurrentRecords = null; // loaded game JSON records (for the edit panel)
+var _vpDirectEdit     = false; // true when opened directly from card button (skip summary)
+var _vpAutoOpenEdit   = false; // true when pipeline should auto-open edit fields on finish
 
 // ── VP Edit panel helpers ──────────────────────────────
 // Return all records with a given field name (case-insensitive)
@@ -3683,37 +3729,40 @@ function _vpeRenderVideos() {
   el.appendChild(addBtn);
 }
 
+// Populate all Edit Page fields from _vpCurrentRecords.
+// Called both by vpOpenEdit() and by the direct-edit path.
+function _vpPopulateEditFields() {
+  document.getElementById('vpeProductImage').value  = _vpeGet('ProductImage');
+  document.getElementById('vpeBggId').value         = _vpeGet('BggGameId');
+  document.getElementById('vpeMinPlayers').value    = _vpeGet('MinPlayers');
+  document.getElementById('vpeMaxPlayers').value    = _vpeGet('MaxPlayers');
+  document.getElementById('vpeMinPlaytime').value   = _vpeGet('MinPlaytime');
+  document.getElementById('vpeMaxPlaytime').value   = _vpeGet('MaxPlaytime');
+  document.getElementById('vpePrice').value         = _vpeGet('Price');
+  document.getElementById('vpeStock').value         = _vpeGet('Stock');
+  document.getElementById('vpeWeight').value        = _vpeGet('Weight');
+  document.getElementById('vpePitchImage').value    = _vpeGet('PitchImageUrl');
+  document.getElementById('vpePitchDesc').value     = _vpeGet('PitchDescription');
+  document.getElementById('vpeStep1').value         = _vpeGet('Step 1');
+  document.getElementById('vpeStep2').value         = _vpeGet('Step 2');
+  document.getElementById('vpeStep3').value         = _vpeGet('Step 3');
+  document.getElementById('vpeSaveBtn').disabled    = false;
+  document.getElementById('vpeSaveBtn').textContent = 'Save';
+  _vpeRenderList('vpeDesigners', 'Designer',          'Name…',             2);
+  _vpeRenderImages();
+  _vpeRenderList('vpeBuyUrls',   'BuyUrl',             'https://…',        1);
+  _vpeRenderList('vpeReviews',   'Review',             'https://…',        1);
+  document.getElementById('vpeComponents').value =
+    _vpeGetAll('Component').map(function(r) { return r.val; }).join('\n');
+  _vpeRenderList('vpeFeatures',  'Feature',            'e.g. 2–4 players…', 2);
+  _vpeRenderVideos();
+}
+
 function vpOpenEdit() {
   var panel  = document.getElementById('vpEditPanel');
   var overlay = document.getElementById('vpOverlay');
 
-  // Populate static fields
-  document.getElementById('vpeProductImage').value = _vpeGet('ProductImage');
-  document.getElementById('vpeBggId').value        = _vpeGet('BggGameId');
-  document.getElementById('vpeMinPlayers').value   = _vpeGet('MinPlayers');
-  document.getElementById('vpeMaxPlayers').value   = _vpeGet('MaxPlayers');
-  document.getElementById('vpeMinPlaytime').value  = _vpeGet('MinPlaytime');
-  document.getElementById('vpeMaxPlaytime').value  = _vpeGet('MaxPlaytime');
-  document.getElementById('vpePrice').value        = _vpeGet('Price');
-  document.getElementById('vpeStock').value        = _vpeGet('Stock');
-  document.getElementById('vpeWeight').value       = _vpeGet('Weight');
-  document.getElementById('vpePitchImage').value   = _vpeGet('PitchImageUrl');
-  document.getElementById('vpePitchDesc').value    = _vpeGet('PitchDescription');
-  document.getElementById('vpeStep1').value        = _vpeGet('Step 1');
-  document.getElementById('vpeStep2').value        = _vpeGet('Step 2');
-  document.getElementById('vpeStep3').value        = _vpeGet('Step 3');
-  document.getElementById('vpeSaveBtn').disabled   = false;
-  document.getElementById('vpeSaveBtn').textContent = 'Save';
-
-  // Populate dynamic lists
-  _vpeRenderList('vpeDesigners',  'Designer',        'Name…',            2);
-  _vpeRenderImages();
-  _vpeRenderList('vpeBuyUrls',    'BuyUrl',           'https://…',       1);
-  _vpeRenderList('vpeReviews',    'Review',           'https://…',       1);
-  document.getElementById('vpeComponents').value =
-    _vpeGetAll('Component').map(function(r) { return r.val; }).join('\n');
-  _vpeRenderList('vpeFeatures',   'Feature',          'e.g. 2–4 players…', 2);
-  _vpeRenderVideos();
+  _vpPopulateEditFields();
 
   // Switch overlay to editing state (wider dialog)
   overlay.classList.add('editing');
@@ -3733,12 +3782,18 @@ function vpOpenEdit() {
     });
   });
 
-  document.getElementById('vpEditBtn').style.display        = 'none';
-  document.getElementById('vpEditActions').style.display    = 'flex';
-  document.getElementById('vpDialogTitle').textContent      = 'Edit Page';
+  document.getElementById('vpEditBtn').style.display     = 'none';
+  document.getElementById('vpEditActions').style.display = 'flex';
+  document.getElementById('vpDialogTitle').textContent   = 'Edit Page';
 }
 
 function vpCloseEdit() {
+  // In direct-edit mode (opened straight from the card button), Cancel = close entire dialog
+  if (_vpDirectEdit) {
+    _vpDirectEdit = false;
+    closeVpDialog();
+    return;
+  }
   var panel   = document.getElementById('vpEditPanel');
   var overlay = document.getElementById('vpOverlay');
   // Switch back to hidden+capped before animating closed
@@ -3873,10 +3928,20 @@ function _vpRunPublish(gameName) {
       vpLog('⚠  Media cache skipped (network error)', 'skip');
       _vpDeployAndOpen();
     };
+    xhr2.timeout = 90000;
+    xhr2.ontimeout = function() {
+      vpLog('⚠  Media cache skipped (timed out)', 'skip');
+      _vpDeployAndOpen();
+    };
     xhr2.send('id=' + encodeURIComponent(sheet_Id) + '&game=' + encodeURIComponent(gameName));
   };
   xhr.onerror = function() {
     vpLog('✕  Network error — could not reach the server.', 'error');
+    vpDone();
+  };
+  xhr.timeout = 60000;
+  xhr.ontimeout = function() {
+    vpLog('✕  Timed out — server took too long to respond.', 'error');
     vpDone();
   };
   xhr.send('id=' + encodeURIComponent(sheet_Id) + '&game=' + encodeURIComponent(gameName));
@@ -3886,18 +3951,28 @@ function viewPageClick(btn) {
   var gameName = btn.getAttribute('data-game') || '';
   if (!gameName) return;
   _vpCurrentGame = gameName;
+  _vpDirectEdit  = true;
 
-  // Abort any previous in-flight JSON check so its callback can't fire late
-  // and incorrectly enable/disable buttons for the wrong game.
   if (_vpCheckXhr) { try { _vpCheckXhr.abort(); } catch(e) {} _vpCheckXhr = null; }
 
-  // Open dialog immediately with local data; buttons disabled while we contact server.
-  _vpBuildSummary(gameName, null);
-  _vpOpenSummary(false);
+  // Open the dialog immediately in editing state.
+  // Log panel is visible while we contact the server; edit fields appear once data is ready.
+  var overlay = document.getElementById('vpOverlay');
+  document.getElementById('vpSummaryPanel').style.display = 'none';
+  document.getElementById('vpLogPanel').style.display     = '';
+  document.getElementById('vpLog').innerHTML              = '';
+  document.getElementById('vpEditPanel').style.display    = 'none';
+  document.getElementById('vpDialogTitle').textContent    = 'Edit Page';
+  document.getElementById('vpDoneBtn').disabled           = true;
+  document.getElementById('vpSyncBtn').style.display      = 'none';
+  document.getElementById('vpViewPageBtn').style.display  = 'none';
+  document.getElementById('vpEditBtn').style.display      = 'none';
+  document.getElementById('vpEditActions').style.display  = 'flex';
+  document.getElementById('vpeSaveBtn').disabled          = true;
+  overlay.classList.add('open', 'editing');
 
-  // Ask the server directly whether the game JSON file exists.
-  // Using a PHP endpoint avoids all browser-caching ambiguity that comes
-  // from fetching the static file through the router.
+  vpLog('Loading…', 'info');
+
   var checkUrl = APP_BASE + 'push/checkGameJson.php'
                + '?id='   + encodeURIComponent(sheet_Id)
                + '&game=' + encodeURIComponent(gameName)
@@ -3906,11 +3981,11 @@ function viewPageClick(btn) {
   _vpCheckXhr = xhr;
   xhr.open('GET', checkUrl);
   xhr.onload = function() {
-    if (xhr !== _vpCheckXhr) return;   // stale callback — a newer click took over
+    if (xhr !== _vpCheckXhr) return;
     _vpCheckXhr = null;
     var result; try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
     if (result && result.exists) {
-      // File confirmed on server — fetch it to populate the summary, then enable buttons.
+      // Game JSON exists — load it and show the edit fields directly.
       var safeName = gameName.replace(/\//g, '-').replace(/\\/g, '-');
       var fileUrl  = APP_BASE + 'sheets/' + sheet_Id + '/game-' + safeName + '-en.json';
       var xhrJ = new XMLHttpRequest();
@@ -3921,26 +3996,42 @@ function viewPageClick(btn) {
           try { data = JSON.parse(xhrJ.responseText); } catch(e) {}
         }
         _vpCurrentRecords = data;
-        _vpBuildSummary(gameName, data);
-        _vpOpenSummary(true);
+        _vpPopulateEditFields();
+        document.getElementById('vpLogPanel').style.display = 'none';
+        var panel = document.getElementById('vpEditPanel');
+        panel.style.display   = 'block';
+        panel.style.maxHeight = 'none';
+        panel.style.overflow  = 'visible';
+        document.getElementById('vpDoneBtn').disabled  = false;
+        document.getElementById('vpeSaveBtn').disabled = false;
       };
-      xhrJ.onerror = function() { _vpCurrentRecords = []; _vpBuildSummary(gameName, []); _vpOpenSummary(true); };
+      xhrJ.onerror = function() {
+        _vpCurrentRecords = [];
+        _vpPopulateEditFields();
+        document.getElementById('vpLogPanel').style.display = 'none';
+        var panel = document.getElementById('vpEditPanel');
+        panel.style.display   = 'block';
+        panel.style.maxHeight = 'none';
+        panel.style.overflow  = 'visible';
+        document.getElementById('vpDoneBtn').disabled  = false;
+        document.getElementById('vpeSaveBtn').disabled = false;
+      };
       xhrJ.send();
     } else {
-      // No game JSON — automatically create the sheet tab and publish.
-      // No need for the user to click "Add Sheet"; just get on with it.
-      document.getElementById('vpSummaryPanel').style.display = 'none';
-      document.getElementById('vpLogPanel').style.display     = '';
-      document.getElementById('vpDialogTitle').textContent    = 'Setting Up View Page';
+      // No game JSON yet — create the sheet tab and run the publish pipeline.
+      // The log output shows progress; edit fields open automatically when done.
+      _vpAutoOpenEdit = true;
+      document.getElementById('vpLog').innerHTML = '';
+      document.getElementById('vpDialogTitle').textContent = 'Setting Up Page…';
       vpAddSheet();
     }
   };
   xhr.onerror = function() {
     if (xhr !== _vpCheckXhr) return;
     _vpCheckXhr = null;
-    // Network error — can't reach server, can't sync. Leave buttons disabled.
-    document.getElementById('vpSummary').innerHTML +=
-      '<div class="vp-sum-note" style="color:#FF8A80;margin-top:.5rem">Could not reach server.</div>';
+    vpLog('Could not reach server.', 'error');
+    document.getElementById('vpDoneBtn').disabled  = false;
+    document.getElementById('vpeSaveBtn').disabled = false;
   };
   xhr.send();
 }
@@ -3990,6 +4081,11 @@ function vpAddSheet() {
   };
   xhr.onerror = function() {
     vpLog('✕  Network error — could not create sheet.', 'error');
+    vpDone();
+  };
+  xhr.timeout = 60000;
+  xhr.ontimeout = function() {
+    vpLog('✕  Timed out — sheet creation took too long.', 'error');
     vpDone();
   };
   xhr.send('id=' + encodeURIComponent(sheet_Id) + '&game=' + encodeURIComponent(gameName));
@@ -6078,6 +6174,11 @@ function syncData() {
     };
     xhr.onerror = function() {
       syncLog('  ✗ ' + sheetName + ': network error', 'error');
+      pushNext();
+    };
+    xhr.timeout = 45000;
+    xhr.ontimeout = function() {
+      syncLog('  ⚠ ' + sheetName + ': timed out', 'error');
       pushNext();
     };
     xhr.send('id=' + encodeURIComponent(sheet_Id) +

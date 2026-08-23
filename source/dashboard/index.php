@@ -1745,7 +1745,14 @@ function isGamePublished(gameName, allEntries) {
 }
 
 function latestEntry(entries) {
-  return entries.slice().sort(function(a,b){ return new Date(b.Date)-new Date(a.Date); })[0] || {};
+  // Sort by date descending; if dates are equal the entry that appears later in
+  // the sheet (higher original index) is considered the more recent one.
+  return entries.slice().sort(function(a, b) {
+    var diff = new Date(b.Date) - new Date(a.Date);
+    if (diff !== 0) return diff;
+    // Preserve sheet order as tiebreaker: later row wins (higher _idx beats lower)
+    return (b._idx || 0) - (a._idx || 0);
+  })[0] || {};
 }
 
 function ageTag(entries) {
@@ -2805,7 +2812,9 @@ function render(pitches, settings, people, games) {
     if (name) gamesIndex[name] = g;
   });
 
-  allPitches = (pitches||[]).filter(function(r){ return r.Date || r.Publisher || r.Game; });
+  allPitches = (pitches||[])
+    .filter(function(r){ return r.Date || r.Publisher || r.Game; })
+    .map(function(r, i){ r._idx = i; return r; });
   filteredPitches = allPitches;
   buildSummary(allPitches);
   buildView();

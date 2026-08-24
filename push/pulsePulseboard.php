@@ -31,6 +31,7 @@ $payload = json_encode([
     'exhibit'     => $exhibit,
     'host'        => trim($_POST['host']        ?? ''),
     'ip'          => trim($_POST['ip']          ?? ''),
+    'user'        => trim($_POST['user']        ?? ''),
     'os'          => trim($_POST['os']          ?? ''),
     'memory'      => trim($_POST['memory']      ?? ''),
     'disk'        => trim($_POST['disk']        ?? ''),

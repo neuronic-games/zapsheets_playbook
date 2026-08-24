@@ -523,6 +523,7 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
         $_time        = htmlspecialchars($_m['time']        ?? '');
         $_crashes     = (int)($_m['crashes'] ?? 0);
         $_crash_times = htmlspecialchars($_m['crash_times'] ?? '');
+        $_user          = htmlspecialchars($_m['user']          ?? '');
         $_notes         = htmlspecialchars($_m['notes']         ?? '');
         $_teamviewer_id = htmlspecialchars($_m['teamviewer_id'] ?? '');
 
@@ -599,6 +600,12 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
               <div class="detail-item">
                 <span class="detail-label">IP</span>
                 <span class="detail-value mono"><?= $_ip ?></span>
+              </div>
+              <?php endif; ?>
+              <?php if ($_user): ?>
+              <div class="detail-item">
+                <span class="detail-label">User</span>
+                <span class="detail-value"><?= $_user ?></span>
               </div>
               <?php endif; ?>
               <?php if ($_os): ?>

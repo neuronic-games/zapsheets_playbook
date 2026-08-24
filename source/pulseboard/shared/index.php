@@ -268,6 +268,7 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
         $_time        = htmlspecialchars($_m['time']         ?? '');
         $_crashes     = (int)($_m['crashes'] ?? 0);
         $_crash_times = htmlspecialchars($_m['crash_times']  ?? '');
+        $_user        = htmlspecialchars($_m['user']          ?? '');
         $_tv_id       = htmlspecialchars($_m['teamviewer_id'] ?? '');
         $_notes       = htmlspecialchars($_m['notes']        ?? '');
 
@@ -315,6 +316,7 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
             <div class="detail-grid">
               <?php if ($_host): ?><div class="detail-item"><span class="detail-label">Host</span><span class="detail-value"><?= $_host ?></span></div><?php endif; ?>
               <?php if ($_ip): ?><div class="detail-item"><span class="detail-label">IP</span><span class="detail-value mono"><?= $_ip ?></span></div><?php endif; ?>
+              <?php if ($_user): ?><div class="detail-item"><span class="detail-label">User</span><span class="detail-value"><?= $_user ?></span></div><?php endif; ?>
               <?php if ($_os): ?><div class="detail-item full"><span class="detail-label">OS</span><span class="detail-value"><?= $_os ?></span></div><?php endif; ?>
               <?php if ($_last_reboot): ?><div class="detail-item"><span class="detail-label">Last Reboot</span><span class="detail-value"><?= $_last_reboot ?></span></div><?php endif; ?>
               <?php if ($_tv_id): ?><div class="detail-item"><span class="detail-label">TeamViewer ID</span><span class="detail-value mono"><?= $_tv_id ?></span></div><?php endif; ?>

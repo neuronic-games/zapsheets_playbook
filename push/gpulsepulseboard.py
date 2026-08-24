@@ -35,6 +35,7 @@ tab         = data.get('tab',         '').strip()
 exhibit     = data.get('exhibit',     '').strip()
 host        = data.get('host',        '').strip()
 ip          = data.get('ip',          '').strip()
+user        = data.get('user',        '').strip()
 os_info     = data.get('os',          '').strip()
 memory      = data.get('memory',      '').strip()
 disk        = data.get('disk',        '').strip()
@@ -70,8 +71,8 @@ except Exception as e:
 
 # ── Get or create the tab ─────────────────────────────────────────────────────
 
-HEADERS    = ['Exhibit', 'Host', 'IP', 'OS', 'Memory', 'Disk', 'Uptime', 'Last Reboot', 'Status', 'Time', 'Crashes', 'Crash Times', 'TeamViewer ID', 'Notes']
-COL_WIDTHS = [160, 160, 130, 150, 100, 100, 90, 110, 90, 170, 80, 300, 120, 250]
+HEADERS    = ['Exhibit', 'Host', 'IP', 'User', 'OS', 'Memory', 'Disk', 'Uptime', 'Last Reboot', 'Status', 'Time', 'Crashes', 'Crash Times', 'TeamViewer ID', 'Notes']
+COL_WIDTHS = [160, 160, 130, 120, 150, 100, 100, 90, 110, 90, 170, 80, 300, 120, 250]
 
 def setup_worksheet(ws):
     last_col = chr(ord('A') + len(HEADERS) - 1)
@@ -133,16 +134,17 @@ row = cell.row
 updates = []
 if host:                updates.append({'range': f'B{row}', 'values': [[host]]})
 if ip:                  updates.append({'range': f'C{row}', 'values': [[ip]]})
-if os_info:             updates.append({'range': f'D{row}', 'values': [[os_info]]})
-if memory:              updates.append({'range': f'E{row}', 'values': [[memory]]})
-if disk:                updates.append({'range': f'F{row}', 'values': [[disk]]})
-if uptime:              updates.append({'range': f'G{row}', 'values': [[uptime]]})
-if last_reboot:         updates.append({'range': f'H{row}', 'values': [[last_reboot]]})
-if status:              updates.append({'range': f'I{row}', 'values': [[status]]})
-if time_str:            updates.append({'range': f'J{row}', 'values': [[time_str]]})
-if crashes is not None: updates.append({'range': f'K{row}', 'values': [[crashes]]})
-if crash_times:         updates.append({'range': f'L{row}', 'values': [[crash_times]]})
-if teamviewer_id:       updates.append({'range': f'M{row}', 'values': [[teamviewer_id]]})
+if user:                updates.append({'range': f'D{row}', 'values': [[user]]})
+if os_info:             updates.append({'range': f'E{row}', 'values': [[os_info]]})
+if memory:              updates.append({'range': f'F{row}', 'values': [[memory]]})
+if disk:                updates.append({'range': f'G{row}', 'values': [[disk]]})
+if uptime:              updates.append({'range': f'H{row}', 'values': [[uptime]]})
+if last_reboot:         updates.append({'range': f'I{row}', 'values': [[last_reboot]]})
+if status:              updates.append({'range': f'J{row}', 'values': [[status]]})
+if time_str:            updates.append({'range': f'K{row}', 'values': [[time_str]]})
+if crashes is not None: updates.append({'range': f'L{row}', 'values': [[crashes]]})
+if crash_times:         updates.append({'range': f'M{row}', 'values': [[crash_times]]})
+if teamviewer_id:       updates.append({'range': f'N{row}', 'values': [[teamviewer_id]]})
 
 if updates:
     ws.batch_update(updates)
@@ -172,6 +174,7 @@ try:
 
     if host:                entry['host']        = host
     if ip:                  entry['ip']          = ip
+    if user:                entry['user']        = user
     if os_info:             entry['os']          = os_info
     if memory:              entry['memory']      = memory
     if disk:                entry['disk']        = disk

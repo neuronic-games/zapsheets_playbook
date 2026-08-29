@@ -4804,6 +4804,59 @@ function submitAddEntry() {
         buildView();
         restoreViewState(_vs);
         closeAddDialog();
+
+        // Auto-fill Date Signed on the game when a Signed pitch entry is added
+        if (statusVal.toLowerCase() === 'signed') {
+          var _sigGame = _addCtx.game;
+          var _sigDate = dateVal; // YYYY-MM-DD
+          var _gi = gamesIndex[_sigGame] || {};
+          var _existingDateSigned = (_gi['Date Signed'] || _gi['DateSigned'] || _gi['Signed Date'] || '').trim();
+          if (!_existingDateSigned) {
+            // Build full game payload from gamesIndex so we don't blank other fields
+            var _gf = function() {
+              var keys = Array.prototype.slice.call(arguments);
+              for (var ki = 0; ki < keys.length; ki++) {
+                var v = (_gi[keys[ki]] || '').trim();
+                if (v) return v;
+              }
+              return '';
+            };
+            var _sgPay = {
+              orig_name:      _sigGame,
+              name:           _gf('Name') || _sigGame,
+              tagline:        _gf('Tagline'),
+              description:    _gf('Description'),
+              status:         _gf('Status'),
+              date_started:   _toDateInput(_gf('Date Started','DateStarted','Start Date','StartDate')),
+              date_signed:    _sigDate,
+              date_published: _toDateInput(_gf('Date Published','DatePublished','Published Date','PublishedDate')),
+              designer1:      _gf('Designer1','Designer 1'),
+              designer2:      _gf('Designer2','Designer 2'),
+              designer3:      _gf('Designer3','Designer 3'),
+              designer4:      _gf('Designer4','Designer 4'),
+              rules:          _gf('Rules','Rules URL','RulesURL'),
+              play:           _gf('Play','Play URL','PlayURL'),
+              print:          _gf('Print','Print URL','PrintURL'),
+              sellsheet:      _gf('Sellsheet','Sellsheet URL','SellsheetURL'),
+              view:           _gf('BGG','View URL','BGG / View URL','ViewURL','View'),
+              video:          _gf('Video','Video URL','VideoURL'),
+              image:          _gf('Image URL','ImageURL','Image')
+            };
+            var _sgBody = 'id=' + encodeURIComponent(sheet_Id);
+            for (var _sgK in _sgPay) _sgBody += '&' + _sgK + '=' + encodeURIComponent(_sgPay[_sgK]);
+            var _sgXhr = new XMLHttpRequest();
+            _sgXhr.open('POST', APP_BASE + 'push/updateGame.php');
+            _sgXhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            _sgXhr.onload = function() {
+              var _sgR; try { _sgR = JSON.parse(_sgXhr.responseText); } catch(e) { _sgR = null; }
+              if (_sgR && _sgR.ok) {
+                if (!gamesIndex[_sigGame]) gamesIndex[_sigGame] = {};
+                gamesIndex[_sigGame]['Date Signed'] = _sigDate;
+              }
+            };
+            _sgXhr.send(_sgBody);
+          }
+        }
       } else {
         showError('Error: ' + ((result && result.error) || xhr.responseText || 'Unknown error'));
       }

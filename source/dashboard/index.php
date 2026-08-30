@@ -837,6 +837,32 @@ if (is_dir($_gpv_dir)) {
     .sync-done-btn:hover { background:#2d2d50; }
     .sync-done-btn:disabled { opacity:.45; cursor:default; }
 
+    /* ── Release notes dialog ────────────────────────── */
+    .rn-dialog {
+      background:#fff; border-radius:10px;
+      padding:1.4rem; width:min(520px,92vw);
+      box-shadow:0 8px 32px rgba(0,0,0,.22);
+      display:flex; flex-direction:column; gap:0;
+      max-height:80vh; overflow:hidden;
+    }
+    .rn-dialog h2 {
+      font-family:'DINBlack',sans-serif; font-size:.95rem; margin:0 0 1rem;
+    }
+    .rn-body { overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:1.1rem; }
+    .rn-release { display:flex; flex-direction:column; gap:.35rem; }
+    .rn-version {
+      font-family:'DINBlack',sans-serif; font-size:.72rem;
+      text-transform:uppercase; letter-spacing:.07em;
+      color:#1a1a2e; border-bottom:1px solid #e8e8f0;
+      padding-bottom:.3rem; margin-bottom:.1rem;
+    }
+    .rn-feature {
+      font-size:.8rem; color:#444; line-height:1.45;
+      display:flex; gap:.5rem; align-items:baseline;
+    }
+    .rn-feature::before { content:'·'; color:#1a1a2e; font-weight:700; flex-shrink:0; }
+    .rn-dialog-actions { display:flex; justify-content:flex-end; padding-top:.9rem; }
+
     /* ── Game edit dialog ────────────────────────────── */
     .game-edit-overlay {
       display:none; position:fixed; inset:0;
@@ -1152,6 +1178,7 @@ if (is_dir($_gpv_dir)) {
         <button class="account-menu-item" onclick="accountMenuFetch()">Fetch</button>
         <button class="account-menu-item" onclick="accountMenuImport()">Import</button>
         <button class="account-menu-item" onclick="accountMenuSlideshow()">Slideshow</button>
+        <button class="account-menu-item" onclick="accountMenuRelease()">Releases</button>
         <button class="account-menu-item" onclick="accountMenuFeedback()">Feedback</button>
         <button class="account-menu-item" onclick="accountMenuHelp()">Help</button>
       </div>
@@ -1548,8 +1575,8 @@ if (is_dir($_gpv_dir)) {
   <div class="sync-dialog" style="width:min(480px,94vw)">
     <h2>Share</h2>
 
-    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">View-Only Link</p>
-    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .5rem">Always current. Anyone with this link can view pitches — no account needed.</p>
+    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Collaborator Link</p>
+    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .5rem">Always current. Anyone with this link can view pitches, add new entries, and edit existing rows — no account needed. They cannot edit game information.</p>
     <div id="shareViewGenSection" style="margin-bottom:1rem">
       <button class="sync-update-btn" id="shareViewGenBtn" onclick="generatePitchViewLink()" style="width:100%;padding:.55rem 1rem;font-size:.8rem">Generate Link</button>
     </div>
@@ -1632,6 +1659,17 @@ if (is_dir($_gpv_dir)) {
     </div>
     <div class="sync-dialog-actions" style="margin-top:.85rem">
       <button class="notes-close" onclick="closeEnableNotesDialog()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Release notes dialog -->
+<div class="sync-overlay" id="rnOverlay" onclick="if(event.target===this)closeRnDialog()">
+  <div class="rn-dialog">
+    <h2>Release Notes</h2>
+    <div class="rn-body" id="rnBody"></div>
+    <div class="rn-dialog-actions">
+      <button class="notes-close" onclick="closeRnDialog()">Close</button>
     </div>
   </div>
 </div>
@@ -5266,6 +5304,52 @@ function accountMenuProfile(){ closeAccountMenu(); openProfileDialog(); }
 function accountMenuFeedback()   { closeAccountMenu(); window.open('https://zapsheets.com/app/1c9EDq5J05v101J00TEeFRa_Yq9SuegOQ8keH5lXb3aY/noteboard/4358b5009c67', '_blank'); }
 function accountMenuHelp()       { closeAccountMenu(); window.open(APP_BASE + 'pitchboard/help', '_blank'); }
 function accountMenuSlideshow() { closeAccountMenu(); window.location.href = APP_BASE + sheet_Id + '/pitchboard/slides?back=1'; }
+function accountMenuRelease()    { closeAccountMenu(); openRnDialog(); }
+
+// ── Release notes dialog ──────────────────────────────
+var _RN_APP = 'pitchboard';
+
+function openRnDialog() {
+  var overlay = document.getElementById('rnOverlay');
+  var body    = document.getElementById('rnBody');
+  body.innerHTML = '<span style="color:#aaa;font-size:.8rem">Loading…</span>';
+  overlay.classList.add('open');
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', APP_BASE + 'changelog.json?v=' + Date.now());
+  xhr.onload = function() {
+    var all;
+    try { all = JSON.parse(xhr.responseText); } catch(e) { all = null; }
+    if (!all || !all.length) {
+      body.innerHTML = '<span style="color:#aaa;font-size:.8rem">No release notes available.</span>';
+      return;
+    }
+    // Filter to entries relevant to this app (no apps array = show everywhere)
+    var releases = all.filter(function(r) {
+      return !r.apps || r.apps.indexOf(_RN_APP) !== -1;
+    });
+    if (!releases.length) {
+      body.innerHTML = '<span style="color:#aaa;font-size:.8rem">No release notes available.</span>';
+      return;
+    }
+    var html = '';
+    releases.forEach(function(r) {
+      html += '<div class="rn-release">';
+      html += '<div class="rn-version">' + escHtml(r.version || '') + '</div>';
+      (r.features || []).forEach(function(f) {
+        html += '<div class="rn-feature">' + escHtml(f) + '</div>';
+      });
+      html += '</div>';
+    });
+    body.innerHTML = html;
+  };
+  xhr.onerror = function() {
+    body.innerHTML = '<span style="color:#aaa;font-size:.8rem">Could not load release notes.</span>';
+  };
+  xhr.send();
+}
+function closeRnDialog() {
+  document.getElementById('rnOverlay').classList.remove('open');
+}
 
 document.addEventListener('click', function(e) {
   var wrap = document.querySelector('.account-menu-wrap');

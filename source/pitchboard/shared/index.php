@@ -154,7 +154,8 @@ function _ps_entry_row(array $e): string {
     $sc      = _ps_status_class($e['Status'] ?? '');
     $contact = ($e['Contact'] && $e['Contact'] !== '(Unknown)') ? $e['Contact'] : '';
     $notes   = $e['Notes'] ?? '';
-    return '<div class="entry-row" title="' . _ps_e($notes) . '">'
+    $dataAttr = _ps_e(json_encode($e, JSON_UNESCAPED_UNICODE));
+    return '<div class="entry-row" data-entry="' . $dataAttr . '" onclick="openEditDialog(this)">'
         . '<span class="entry-date">'    . _ps_e($e['Date']   ?? '') . '</span>'
         . '<span class="entry-contact">' . _ps_e($contact)           . '</span>'
         . '<span class="entry-event">'   . _ps_e($e['Event']  ?? '') . '</span>'
@@ -213,9 +214,11 @@ foreach ($_byPub as $pub => $contacts) {
     $entryHtml = '';
     foreach ($allEntries as $e) { $entryHtml .= _ps_entry_row($e); }
 
+    $pubJs  = 'openAddDialogForPub(' . json_encode($pub) . ',event)';
+    $pubAddBtn = '<button class="add-entry-btn" onclick="' . _ps_e($pubJs) . '">+ Pitch</button>';
     $chunk = '<div class="sub-group' . $altClass . '">'
         . '<div class="sub-label pub-passed-header" onclick="togglePubPassed(this)" style="' . $headerColor . 'font-size:.75rem">'
-        .   '<span class="pub-title-group"><span>' . _ps_e($pub) . '</span></span>'
+        .   '<span class="pub-title-group"><span>' . _ps_e($pub) . '</span>' . $pubAddBtn . '</span>'
         .   $ageTag . $badge
         .   '<span class="pub-expand-chevron">▶</span>'
         . '</div>'
@@ -230,6 +233,14 @@ foreach ($_byPub as $pub => $contacts) {
     } else {
         $_activePubs .= $chunk;
     }
+}
+
+// ── Combo data for JS ────────────────────────────────────────────────────────
+$_pubList = array_values(array_keys($_byPub));
+$_contactsByPub = [];
+foreach ($_byPub as $_p => $_cs) {
+    $_names = array_values(array_filter(array_keys($_cs), function($c){ return $c !== '(Unknown)'; }));
+    if ($_names) $_contactsByPub[$_p] = $_names;
 }
 
 // ── URLs ─────────────────────────────────────────────────────────────────────
@@ -328,10 +339,6 @@ body {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .card-badges { display: flex; align-items: center; gap: .35rem; flex-shrink: 0; }
-.card-designers {
-  font-family: 'DINRegular', sans-serif; font-size: .72rem;
-  color: rgba(255,255,255,.5); white-space: nowrap; flex-shrink: 0;
-}
 .card-body { padding: 0; }
 
 /* ── Sub-group / publisher row ── */
@@ -373,8 +380,10 @@ body {
   padding: .32rem 1rem .32rem 2rem;
   border-top: 1px solid #f5f5f5;
   font-size: .8rem;
-  cursor: default;
+  cursor: pointer;
+  transition: background .12s;
 }
+.entry-row:hover { background: #f0f1fa !important; }
 .entry-date    { color: #777; white-space: nowrap; }
 .entry-contact { color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .entry-event   { color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -458,6 +467,109 @@ body {
   .entry-row { grid-template-columns: 74px 1fr auto; }
   .entry-contact, .entry-event, .entry-notes { display: none; }
 }
+
+/* ── Game sub-bar (dark navy, below card header) ── */
+.game-sub-bar { background: #1a1a2e; }
+.game-links { padding: .5rem 1rem .45rem; }
+.game-links-meta {
+  display: flex; gap: .35rem; flex-wrap: wrap; align-items: center; min-width: 0;
+}
+.game-links-designers {
+  font-family: 'DINRegular', sans-serif; font-size: .74rem;
+  color: rgba(255,255,255,.55); white-space: nowrap; flex-shrink: 0;
+}
+.game-action-btns {
+  display: flex; flex-wrap: nowrap; gap: .35rem; align-items: center;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.game-action-btns::-webkit-scrollbar { display: none; }
+.game-action-btn {
+  font-family: 'DINBlack', sans-serif; font-size: .6rem;
+  text-transform: uppercase; letter-spacing: .06em;
+  background: rgba(255,196,76,.14); color: #ffd166;
+  border: none; border-radius: 999px;
+  padding: .38rem .65rem; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: background .15s, color .15s;
+}
+.game-action-btn:hover { background: rgba(255,196,76,.26); color: #ffe099; }
+
+/* ── Inline publisher + Pitch button ── */
+.add-entry-btn {
+  display: inline-flex; align-items: center;
+  font-family: 'DINBlack', sans-serif; font-size: .62rem;
+  text-transform: uppercase; letter-spacing: .05em;
+  color: #1a1a2e; background: #e8e8f0; border: none;
+  border-radius: 999px; padding: .12rem .5rem;
+  cursor: pointer; white-space: nowrap; transition: background .15s, color .15s;
+}
+.add-entry-btn:hover { background: #1a1a2e; color: #fff; }
+
+/* ── Collab dialogs ── */
+.collab-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.5); z-index: 200;
+  align-items: center; justify-content: center;
+  padding: 1rem;
+}
+.collab-overlay.open { display: flex; }
+.collab-dialog {
+  background: #fff; border-radius: 12px; padding: 1.5rem;
+  width: 100%; max-width: 480px;
+  box-shadow: 0 8px 40px rgba(0,0,0,.25);
+  max-height: 90vh; overflow-y: auto;
+}
+.collab-dialog-title {
+  font-family: 'DINBlack', sans-serif; font-size: .95rem;
+  color: #1a1a2e; letter-spacing: .03em;
+  margin-bottom: 1.1rem; text-transform: uppercase;
+}
+.collab-field { margin-bottom: .85rem; }
+.collab-label {
+  display: block;
+  font-family: 'DINBlack', sans-serif; font-size: .62rem;
+  text-transform: uppercase; letter-spacing: .05em;
+  color: #888; margin-bottom: .28rem;
+}
+.collab-input, .collab-select, .collab-textarea {
+  display: block; width: 100%; padding: .5rem .7rem;
+  font-family: 'DINRegular', Arial, sans-serif; font-size: .88rem; color: #111;
+  border: 1.5px solid #d8d8e0; border-radius: 7px; outline: none;
+  background: #fafafa; transition: border-color .15s;
+}
+.collab-input:focus, .collab-select:focus, .collab-textarea:focus {
+  border-color: #1a1a2e; background: #fff;
+}
+.collab-textarea { resize: vertical; min-height: 60px; }
+.collab-input[readonly], .collab-input:disabled { color: #999; background: #f4f4f8; cursor: default; }
+
+/* ── Combo drop ── */
+.combo-wrap { position: relative; }
+.combo-drop {
+  display: none; position: absolute; top: calc(100% + 2px); left: 0; right: 0; z-index: 9999;
+  background: #fff; border: 1px solid #ccc; border-radius: 6px;
+  max-height: 160px; overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,.13);
+}
+.combo-drop.open { display: block; }
+.combo-opt {
+  padding: .4rem .7rem; font-family: 'DINRegular', sans-serif; font-size: .83rem;
+  cursor: pointer; color: #111; text-transform: none; letter-spacing: normal;
+}
+.combo-opt:hover, .combo-opt.active { background: #1a1a2e; color: #fff; }
+.combo-sep { height: 1px; background: #e0dbd3; margin: .25rem .5rem; pointer-events: none; }
+.collab-dialog-actions {
+  display: flex; gap: .65rem; justify-content: flex-end; margin-top: 1.1rem;
+}
+.collab-btn {
+  display: inline-block; padding: .48rem 1.1rem; border-radius: 999px;
+  font-family: 'DINBlack', sans-serif; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em;
+  cursor: pointer; border: none; transition: opacity .15s;
+}
+.collab-btn:hover:not(:disabled) { opacity: .8; }
+.collab-btn:disabled { opacity: .4; cursor: default; }
+.collab-btn-primary { background: #1a1a2e; color: #fff; }
+.collab-btn-cancel  { background: #e8e8f0; color: #1a1a2e; }
+.collab-err { font-size: .75rem; color: #dc2626; margin-top: .6rem; display: none; }
 </style>
 </head>
 <body>
@@ -466,21 +578,33 @@ body {
   <a class="top-bar-logo" href="<?= _ps_e($_pbUrl) ?>"><span class="pb-pitch">Pitch</span><span class="pb-board">Board</span></a>
   <span class="top-bar-sep">›</span>
   <span class="top-bar-game"><?= _ps_e($_gameName) ?></span>
-  <span class="top-bar-readonly">View Only</span>
+  <span class="top-bar-readonly">Collab</span>
 </div>
 
 <div class="content">
 
+  <?php
+  $_ol = _ps_latest($_pitches);
+  $_os = $_ol['Status'] ?? '';
+  $_ob = $_os ? '<span class="badge badge-' . _ps_status_class($_os) . '">' . _ps_e($_os) . '</span>' : '';
+  ?>
   <div class="card">
     <div class="card-header">
       <span class="card-title"><?= _ps_e($_gameName) ?></span>
-      <?php if ($_designers): ?>
-        <span class="card-designers"><?= _ps_e($_designers) ?></span>
+      <?php if ($_ob): ?>
+        <div class="card-badges"><?= $_ob ?></div>
       <?php endif ?>
-      <div class="card-badges">
-        <span style="font-family:'DINRegular',sans-serif;font-size:.72rem;color:rgba(255,255,255,.4)">
-          <?= count($_pitches) ?> pitch<?= count($_pitches) !== 1 ? 'es' : '' ?>
-        </span>
+    </div>
+    <div class="game-sub-bar">
+      <div class="game-links">
+        <div class="game-links-meta">
+          <?php if ($_designers): ?>
+            <span class="game-links-designers"><?= _ps_e($_designers) ?></span>
+          <?php endif ?>
+          <div class="game-action-btns">
+            <button class="game-action-btn" onclick="openAddDialog()">New Pitch</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -535,10 +659,184 @@ body {
     <p class="cta-hint" id="importHint">Already have PitchBoard? Click Import, then go to <code>Menu → Import</code> and paste the link.</p>
   </div>
 
+  <!-- ── Add Pitch dialog ── -->
+  <div class="collab-overlay" id="addOverlay" onclick="if(event.target===this)closeAddDialog()">
+    <div class="collab-dialog">
+      <div class="collab-dialog-title">Add Pitch</div>
+      <div class="collab-field">
+        <label class="collab-label">Publisher *</label>
+        <div class="combo-wrap">
+          <input class="collab-input" id="addPubInput" type="text" placeholder="Publisher name" autocomplete="off" />
+          <div class="combo-drop" id="addPubDrop"></div>
+        </div>
+      </div>
+      <div class="collab-field">
+        <label class="collab-label">Contact</label>
+        <div class="combo-wrap">
+          <input class="collab-input" id="addContactInput" type="text" placeholder="Contact name" autocomplete="off" />
+          <div class="combo-drop" id="addContactDrop"></div>
+        </div>
+      </div>
+      <div class="collab-field">
+        <label class="collab-label">Date *</label>
+        <input class="collab-input" id="addDateInput" type="date" />
+      </div>
+      <div class="collab-field">
+        <label class="collab-label">Event</label>
+        <input class="collab-input" id="addEventInput" type="text" placeholder="e.g. Gen Con, email, etc." />
+      </div>
+      <div class="collab-field">
+        <label class="collab-label">Status</label>
+        <select class="collab-select" id="addStatusSel">
+          <option>Pitched</option>
+          <option>Interested</option>
+          <option>Passed</option>
+          <option>Gone Cold</option>
+          <option>Signed</option>
+          <option>Published</option>
+          <option>Returned</option>
+        </select>
+      </div>
+      <div class="collab-field">
+        <label class="collab-label">Notes</label>
+        <textarea class="collab-textarea" id="addNotesInput" placeholder="Optional notes…"></textarea>
+      </div>
+      <div class="collab-err" id="addErr"></div>
+      <div class="collab-dialog-actions">
+        <button class="collab-btn collab-btn-cancel" onclick="closeAddDialog()">Cancel</button>
+        <button class="collab-btn collab-btn-primary" id="addSubmitBtn" onclick="submitAdd()">Add Pitch</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Edit Pitch dialog ── -->
+  <div class="collab-overlay" id="editOverlay" onclick="if(event.target===this)closeEditDialog()">
+    <div class="collab-dialog">
+      <div class="collab-dialog-title">Edit Pitch</div>
+      <div class="collab-field">
+        <label class="collab-label">Publisher</label>
+        <input class="collab-input" id="editPubDisplay" type="text" readonly />
+      </div>
+      <div class="collab-field">
+        <label class="collab-label">Contact</label>
+        <input class="collab-input" id="editContactInput" type="text" placeholder="Contact name" />
+      </div>
+      <div class="collab-field">
+        <label class="collab-label">Date *</label>
+        <input class="collab-input" id="editDateInput" type="date" />
+      </div>
+      <div class="collab-field">
+        <label class="collab-label">Event</label>
+        <input class="collab-input" id="editEventInput" type="text" placeholder="e.g. Gen Con, email, etc." />
+      </div>
+      <div class="collab-field">
+        <label class="collab-label">Status</label>
+        <select class="collab-select" id="editStatusSel">
+          <option>Pitched</option>
+          <option>Interested</option>
+          <option>Passed</option>
+          <option>Gone Cold</option>
+          <option>Signed</option>
+          <option>Published</option>
+          <option>Returned</option>
+        </select>
+      </div>
+      <div class="collab-field">
+        <label class="collab-label">Notes</label>
+        <textarea class="collab-textarea" id="editNotesInput" placeholder="Optional notes…"></textarea>
+      </div>
+      <div class="collab-err" id="editErr"></div>
+      <div class="collab-dialog-actions">
+        <button class="collab-btn collab-btn-cancel" onclick="closeEditDialog()">Cancel</button>
+        <button class="collab-btn collab-btn-primary" id="editSubmitBtn" onclick="submitEdit()">Save</button>
+      </div>
+    </div>
+  </div>
+
 </div><!-- .content -->
 
 <script>
-var _importUrl = <?= json_encode($_importUrl) ?>;
+var _importUrl      = <?= json_encode($_importUrl) ?>;
+var _base           = <?= json_encode($_base) ?>;
+var _sheetId        = <?= json_encode($_sheetId) ?>;
+var _gameName       = <?= json_encode($_gameName) ?>;
+var _pubList        = <?= json_encode($_pubList, JSON_UNESCAPED_UNICODE) ?>;
+var _contactsByPub  = <?= json_encode($_contactsByPub, JSON_UNESCAPED_UNICODE) ?>;
+
+// ── Combo engine ─────────────────────────────────────────────────────────────
+function _comboInit(inputId, dropId, getItems, onSelect) {
+  var inp  = document.getElementById(inputId);
+  var drop = document.getElementById(dropId);
+  if (!inp || !drop) return;
+  var _ai = -1;
+  function renderDrop(q) {
+    if (inp.disabled) return;
+    if (q === undefined) q = inp.value.trim().toLowerCase();
+    var allItems = getItems();
+    var items;
+    if (q) {
+      items = allItems.filter(function(s){ return s !== '---' && s.toLowerCase().indexOf(q) !== -1; });
+    } else {
+      items = allItems.slice();
+      while (items.length && items[0] === '---') items.shift();
+      while (items.length && items[items.length-1] === '---') items.pop();
+    }
+    if (!items.length) { closeDrop(); return; }
+    _ai = -1; drop.innerHTML = '';
+    items.forEach(function(item) {
+      var div = document.createElement('div');
+      if (item === '---') { div.className = 'combo-sep'; }
+      else {
+        div.className = 'combo-opt';
+        div.textContent = item;
+        div.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          inp.value = item;
+          closeDrop();
+          if (onSelect) onSelect(item);
+        });
+      }
+      drop.appendChild(div);
+    });
+    drop.classList.add('open');
+  }
+  function closeDrop() { drop.classList.remove('open'); _ai = -1; }
+  function moveActive(dir) {
+    var opts = drop.querySelectorAll('.combo-opt');
+    if (!opts.length) return;
+    _ai = Math.max(0, Math.min(opts.length-1, _ai+dir));
+    opts.forEach(function(o,i){ o.classList.toggle('active', i===_ai); if(i===_ai) o.scrollIntoView({block:'nearest'}); });
+  }
+  inp.addEventListener('input',  function() { renderDrop(); });
+  inp.addEventListener('focus',  function() { inp.select(); renderDrop(''); });
+  inp.addEventListener('blur',   function() { setTimeout(closeDrop, 150); });
+  inp.addEventListener('keydown', function(e) {
+    if (e.key==='ArrowDown') { e.preventDefault(); if (!drop.classList.contains('open')) renderDrop(); else moveActive(1); }
+    else if (e.key==='ArrowUp')  { e.preventDefault(); moveActive(-1); }
+    else if (e.key==='Enter') {
+      var opts = drop.querySelectorAll('.combo-opt');
+      if (_ai>=0 && opts[_ai]) { e.preventDefault(); inp.value=opts[_ai].textContent; closeDrop(); if(onSelect) onSelect(inp.value); }
+    } else if (e.key==='Escape') { closeDrop(); }
+  });
+}
+
+var _addCombosReady = false;
+function _setupAddCombos() {
+  if (_addCombosReady) return;
+  _addCombosReady = true;
+  _comboInit('addPubInput', 'addPubDrop',
+    function() { return _pubList; },
+    function() { document.getElementById('addContactInput').value = ''; }
+  );
+  _comboInit('addContactInput', 'addContactDrop',
+    function() {
+      var pub = document.getElementById('addPubInput').value.trim();
+      return _contactsByPub[pub] || [];
+    }, null
+  );
+  var pubInp = document.getElementById('addPubInput');
+  if (pubInp) pubInp.addEventListener('input', function() { document.getElementById('addContactInput').value = ''; });
+}
 
 function togglePubPassed(header) {
   var wrap    = header.nextElementSibling;
@@ -572,6 +870,178 @@ function copyImportLink() {
     window.prompt('Copy this link, then paste it in PitchBoard → Menu → Import:', _importUrl);
   });
 }
+
+// ── Date helpers ─────────────────────────────────────────────────────────────
+
+function _toDateInput(v) {
+  // Convert M/D/YYYY → YYYY-MM-DD for <input type="date">
+  if (!v) return '';
+  var m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return '';
+  return m[3] + '-' + ('0'+m[1]).slice(-2) + '-' + ('0'+m[2]).slice(-2);
+}
+
+function _fromDateInput(v) {
+  // Convert YYYY-MM-DD → M/D/YYYY for sheet storage
+  if (!v) return '';
+  var m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return '';
+  return parseInt(m[2]) + '/' + parseInt(m[3]) + '/' + m[1];
+}
+
+// ── Add Pitch ─────────────────────────────────────────────────────────────────
+
+function openAddDialog() {
+  _setupAddCombos();
+  var pub = document.getElementById('addPubInput');
+  pub.value    = '';
+  pub.disabled = false;
+  document.getElementById('addContactInput').value = '';
+  document.getElementById('addDateInput').value    = '';
+  document.getElementById('addEventInput').value   = '';
+  document.getElementById('addStatusSel').value    = 'Pitched';
+  document.getElementById('addNotesInput').value   = '';
+  document.getElementById('addErr').style.display  = 'none';
+  document.getElementById('addSubmitBtn').disabled = false;
+  document.getElementById('addOverlay').classList.add('open');
+  setTimeout(function(){ pub.focus(); }, 60);
+}
+
+function openAddDialogForPub(pubName, event) {
+  if (event) event.stopPropagation();
+  _setupAddCombos();
+  var pub = document.getElementById('addPubInput');
+  pub.value    = pubName;
+  pub.disabled = true;
+  document.getElementById('addContactInput').value = '';
+  document.getElementById('addDateInput').value    = '';
+  document.getElementById('addEventInput').value   = '';
+  document.getElementById('addStatusSel').value    = 'Pitched';
+  document.getElementById('addNotesInput').value   = '';
+  document.getElementById('addErr').style.display  = 'none';
+  document.getElementById('addSubmitBtn').disabled = false;
+  document.getElementById('addOverlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('addContactInput').focus(); }, 60);
+}
+
+function closeAddDialog() {
+  document.getElementById('addOverlay').classList.remove('open');
+}
+
+function submitAdd() {
+  var pub     = document.getElementById('addPubInput').value.trim();
+  var contact = document.getElementById('addContactInput').value.trim();
+  var dateIn  = document.getElementById('addDateInput').value.trim();
+  var event   = document.getElementById('addEventInput').value.trim();
+  var status  = document.getElementById('addStatusSel').value;
+  var notes   = document.getElementById('addNotesInput').value.trim();
+  var err     = document.getElementById('addErr');
+  var btn     = document.getElementById('addSubmitBtn');
+
+  err.style.display = 'none';
+  if (!pub)    { err.textContent = 'Publisher is required.'; err.style.display = 'block'; return; }
+  if (!dateIn) { err.textContent = 'Date is required.';      err.style.display = 'block'; return; }
+
+  btn.disabled = true;
+  var body = 'id='        + encodeURIComponent(_sheetId)
+           + '&game='     + encodeURIComponent(_gameName)
+           + '&publisher='+ encodeURIComponent(pub)
+           + '&contact='  + encodeURIComponent(contact)
+           + '&date='     + encodeURIComponent(_fromDateInput(dateIn))
+           + '&event='    + encodeURIComponent(event)
+           + '&status='   + encodeURIComponent(status)
+           + '&notes='    + encodeURIComponent(notes);
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', _base + 'push/addRow.php');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.timeout = 30000;
+  xhr.ontimeout = function() { btn.disabled = false; err.textContent = 'Request timed out.'; err.style.display = 'block'; };
+  xhr.onerror   = function() { btn.disabled = false; err.textContent = 'Network error.';     err.style.display = 'block'; };
+  xhr.onload    = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+    if (r && r.ok) { location.reload(); return; }
+    btn.disabled = false;
+    err.textContent = (r && r.error) ? r.error : 'Failed to add entry.';
+    err.style.display = 'block';
+  };
+  xhr.send(body);
+}
+
+// ── Edit Pitch ────────────────────────────────────────────────────────────────
+
+var _editEntry = null;
+
+function openEditDialog(el) {
+  var entry = null;
+  try { entry = JSON.parse(el.dataset.entry); } catch(e) { return; }
+  _editEntry = entry;
+
+  document.getElementById('editPubDisplay').value   = entry['Publisher'] || '';
+  document.getElementById('editContactInput').value = entry['Contact']   || '';
+  document.getElementById('editDateInput').value    = _toDateInput(entry['Date'] || '');
+  document.getElementById('editEventInput').value   = entry['Event']     || '';
+  var sel = document.getElementById('editStatusSel');
+  sel.value = entry['Status'] || 'Pitched';
+  if (!sel.value) sel.selectedIndex = 0;
+  document.getElementById('editNotesInput').value   = entry['Notes']     || '';
+  document.getElementById('editErr').style.display  = 'none';
+  document.getElementById('editSubmitBtn').disabled = false;
+  document.getElementById('editOverlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('editContactInput').focus(); }, 60);
+}
+
+function closeEditDialog() {
+  document.getElementById('editOverlay').classList.remove('open');
+  _editEntry = null;
+}
+
+function submitEdit() {
+  if (!_editEntry) return;
+  var contact = document.getElementById('editContactInput').value.trim();
+  var dateIn  = document.getElementById('editDateInput').value.trim();
+  var event   = document.getElementById('editEventInput').value.trim();
+  var status  = document.getElementById('editStatusSel').value;
+  var notes   = document.getElementById('editNotesInput').value.trim();
+  var err     = document.getElementById('editErr');
+  var btn     = document.getElementById('editSubmitBtn');
+
+  err.style.display = 'none';
+  if (!dateIn) { err.textContent = 'Date is required.'; err.style.display = 'block'; return; }
+
+  btn.disabled = true;
+  var body = 'id='           + encodeURIComponent(_sheetId)
+           + '&game='        + encodeURIComponent(_gameName)
+           + '&publisher='   + encodeURIComponent(_editEntry['Publisher'] || '')
+           + '&orig_contact='+ encodeURIComponent(_editEntry['Contact']   || '')
+           + '&orig_date='   + encodeURIComponent(_editEntry['Date']      || '')
+           + '&orig_event='  + encodeURIComponent(_editEntry['Event']     || '')
+           + '&contact='     + encodeURIComponent(contact)
+           + '&date='        + encodeURIComponent(_fromDateInput(dateIn))
+           + '&event='       + encodeURIComponent(event)
+           + '&status='      + encodeURIComponent(status)
+           + '&notes='       + encodeURIComponent(notes);
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', _base + 'push/updateRow.php');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.timeout = 30000;
+  xhr.ontimeout = function() { btn.disabled = false; err.textContent = 'Request timed out.'; err.style.display = 'block'; };
+  xhr.onerror   = function() { btn.disabled = false; err.textContent = 'Network error.';     err.style.display = 'block'; };
+  xhr.onload    = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+    if (r && r.ok) { location.reload(); return; }
+    btn.disabled = false;
+    err.textContent = (r && r.error) ? r.error : 'Failed to update entry.';
+    err.style.display = 'block';
+  };
+  xhr.send(body);
+}
+
+// Close dialogs on Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { closeAddDialog(); closeEditDialog(); }
+});
 </script>
 </body>
 </html>

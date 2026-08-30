@@ -2,7 +2,10 @@
 # Arg: {sheet_id}|{base64_encoded_json_row}
 
 import gspread
-import sys, os, json, base64
+import sys, os, json, base64, socket
+
+# Prevent gspread/httplib2 from hanging indefinitely on slow API responses
+socket.setdefaulttimeout(30)
 
 credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
 

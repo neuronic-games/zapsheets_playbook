@@ -1,0 +1,33 @@
+[
+  {
+    "version": "Aug 2026",
+    "apps": ["pitchboard"],
+    "features": [
+      "Collaborator link — share a game's pitchboard so anyone can add entries and edit pitches without an account",
+      "Auto-add contacts to People when a new pitch is added with an unknown contact name",
+      "Per-publisher + Pitch button inline on each publisher row",
+      "Combo boxes for Publisher and Contact on the collaborator card",
+      "Date Signed auto-fill — setting a pitch to Signed updates the game's Date Signed field automatically"
+    ]
+  },
+  {
+    "version": "Jul 2026",
+    "apps": ["pitchboard"],
+    "features": [
+      "PulseBoard now tracks and displays the logged-in user alongside each pulse entry",
+      "Fixed: duplicate pitches on the same date now use sheet order to determine the latest entry",
+      "Fixed: Google API connection timeouts on Fetch no longer cause silent failures",
+      "Game Page tokens now appear without needing a Page URL field populated"
+    ]
+  },
+  {
+    "version": "Jun 2026",
+    "apps": ["pitchboard"],
+    "features": [
+      "Enable Page / Edit Page button on each game card for creating a public game page",
+      "Sellsheet broken-image fallback on the game page",
+      "Video embed support on the game page",
+      "Components example section on the game page"
+    ]
+  }
+]

@@ -53,6 +53,38 @@ if ($result === null) {
 
 if (!empty($result['ok'])) {
     refreshJson($pythonPath, $sheetId, 'pitches');
+
+    // Auto-add contact to People sheet if they don't exist yet
+    if ($contact !== '') {
+        $peopleFile = dirname(__DIR__) . '/sheets/' . $sheetId . '/people.json';
+        $people     = file_exists($peopleFile)
+            ? (json_decode(file_get_contents($peopleFile), true) ?: [])
+            : [];
+        $contactLower = strtolower($contact);
+        $exists = false;
+        foreach ($people as $p) {
+            if (strtolower(trim($p['Name'] ?? '')) === $contactLower) {
+                $exists = true;
+                break;
+            }
+        }
+        if (!$exists) {
+            $personRow = [
+                'Name'    => $contact,
+                'Email'   => '',
+                'Company' => $publisher,
+                'Role'    => '',
+                'Notes'   => '',
+            ];
+            $personEncoded = base64_encode(json_encode($personRow, JSON_UNESCAPED_UNICODE));
+            $personArg     = $sheetId . '|People|' . $personEncoded;
+            $personCmd     = escapeshellarg($pythonPath) . ' '
+                           . escapeshellarg(__DIR__ . '/gadd.py') . ' '
+                           . escapeshellarg($personArg) . ' 2>/dev/null';
+            shell_exec($personCmd);
+            refreshJson($pythonPath, $sheetId, 'people');
+        }
+    }
 }
 
 echo json_encode($result);

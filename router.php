@@ -114,6 +114,11 @@ if (preg_match('#^/pitchboard/help/?$#', $uri)) {
     serveFile(__DIR__ . '/source/pitchboard/help/index.php', $MIME);
 }
 
+// ── /pitchboard/features — sales / features page ──────────────────────────────
+if (preg_match('#^/pitchboard/features/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/pitchboard/features/index.php', $MIME);
+}
+
 // ── /fitboard — setup landing page (no sheet ID yet) ─────────────────────────
 if (preg_match('#^/fitboard/?$#', $uri)) {
     serveFile(__DIR__ . '/source/fitboard/setup/index.php', $MIME);

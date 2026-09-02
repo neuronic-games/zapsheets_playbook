@@ -503,6 +503,129 @@ if (is_dir($_gpv_dir)) {
       .tl-ms-date  { font-size:.47rem; }
     }
 
+    /* ── Kanban Board ───────────────────────────────── */
+    .kb-board { display:grid; grid-template-columns:repeat(4,1fr); gap:.65rem; }
+    .kb-col { background:#f4f6fa; border-radius:8px; padding:.65rem; }
+    .kb-col-header {
+      font-family:'DINBlack',sans-serif; font-size:.7rem; text-transform:uppercase;
+      letter-spacing:.07em; color:#fff; padding:.35rem .65rem; border-radius:5px;
+      margin-bottom:.65rem; text-align:center;
+    }
+    .kb-col-header.design    { background:#64748b; }
+    .kb-col-header.pitch     { background:#166534; }
+    .kb-col-header.signed    { background:#7c3aed; }
+    .kb-col-header.published { background:#0369a1; }
+    .kb-card {
+      background:#fff; border-radius:6px; padding:.55rem .7rem;
+      box-shadow:0 1px 3px rgba(0,0,0,.08); margin-bottom:.45rem;
+      cursor:pointer; transition:box-shadow .15s, transform .1s;
+      border-left:3px solid transparent;
+    }
+    .kb-card:hover { box-shadow:0 3px 10px rgba(0,0,0,.13); transform:translateY(-1px); }
+    .kb-col.design    .kb-card { border-left-color:#94a3b8; }
+    .kb-col.pitch     .kb-card { border-left-color:#166534; }
+    .kb-col.signed    .kb-card { border-left-color:#7c3aed; }
+    .kb-col.published .kb-card { border-left-color:#0369a1; }
+    .kb-card-name {
+      font-family:'DINBlack',sans-serif; font-size:.75rem; color:#1a1a2e; line-height:1.3;
+      display:flex; align-items:baseline; gap:.4rem;
+    }
+    .kb-card-name-text { flex:1; min-width:0; }
+    .kb-pub-pill {
+      flex-shrink:0; margin-left:auto;
+      background:#e2e8f0; color:#64748b; border-radius:999px;
+      font-family:'DINRegular',sans-serif; font-size:.6rem; font-weight:700;
+      padding:.1rem .5rem; line-height:1.4; white-space:nowrap;
+    }
+    .kb-card-meta {
+      font-size:.62rem; color:#94a3b8; margin-top:.2rem; line-height:1.3;
+    }
+    .kb-col-count {
+      font-size:.63rem; color:#aaa; text-align:center; margin-top:.4rem;
+    }
+    .kb-card { cursor:grab; touch-action:none; }
+    .kb-card.kb-dragging { opacity:.35; cursor:grabbing; }
+    .kb-col.kb-drag-over { outline:2px dashed #94a3b8; outline-offset:-2px; background:#eef2fb; }
+    .kb-col.design.kb-drag-over    { outline-color:#64748b; background:#f1f4f8; }
+    .kb-col.pitch.kb-drag-over     { outline-color:#166534; background:#f0faf4; }
+    .kb-col.signed.kb-drag-over    { outline-color:#7c3aed; background:#f5f0ff; }
+    .kb-col.published.kb-drag-over { outline-color:#0369a1; background:#eff6ff; }
+    /* Card expanded state */
+    .kb-card-open { cursor:default; }
+    .kb-card-open .kb-card-name { cursor:pointer; }
+    .kb-card-collapse { float:right; font-size:.72rem; color:#ccc; cursor:pointer; padding:0 0 0 .4rem; }
+    .kb-card-collapse:hover { color:#888; }
+    .kb-card-dates { margin:.55rem 0 .4rem; display:flex; flex-direction:column; gap:.22rem; }
+    .kb-date-row { display:flex; gap:.4rem; align-items:baseline; }
+    .kb-date-lbl { font-size:.57rem; text-transform:uppercase; letter-spacing:.05em; color:#bbb; min-width:54px; flex-shrink:0; }
+    .kb-date-val { font-size:.72rem; color:#555; }
+    .kb-card-btns { display:flex; gap:.4rem; margin-top:.55rem; }
+    .kb-btn {
+      font-family:'DINBlack',sans-serif; font-size:.62rem; text-transform:uppercase;
+      letter-spacing:.06em; border:none; border-radius:5px; padding:.3rem .65rem;
+      cursor:pointer; transition:background .15s;
+    }
+    .kb-btn-view { background:#1a1a2e; color:#fff; }
+    .kb-btn-view:hover { background:#2d2d50; }
+    .kb-btn-shelf { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
+    .kb-btn-shelf:hover { background:#fee2e2; }
+    .kb-btn-unshelf { background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; }
+    .kb-btn-unshelf:hover { background:#dcfce7; }
+    /* Shelved section */
+    .kb-shelved-section { margin-top:.8rem; border-top:2px solid #e2e8f0; padding-top:.65rem; }
+    .kb-shelved-hdr {
+      display:flex; align-items:center; gap:.5rem; cursor:pointer; user-select:none;
+    }
+    .kb-shelved-hdr-label {
+      font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase;
+      letter-spacing:.08em; color:#94a3b8;
+    }
+    .kb-shelved-hdr-count {
+      font-family:'DINRegular',sans-serif; font-size:.63rem; color:#bbb;
+    }
+    .kb-shelved-chevron {
+      font-size:.6rem; color:#bbb; margin-left:auto; transition:transform .2s;
+    }
+    .kb-shelved-hdr.open .kb-shelved-chevron { transform:rotate(90deg); }
+    .kb-shelved-cards {
+      display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.65rem;
+    }
+    .kb-shelved-cards .kb-card {
+      width:calc(25% - .38rem); min-width:140px; flex-shrink:0;
+      border-left-color:#cbd5e1;
+    }
+    .kb-shelved-cards .kb-card-open { width:calc(25% - .38rem); }
+    @media (max-width:700px) { .kb-shelved-cards .kb-card { width:calc(50% - .25rem); } }
+    @media (max-width:420px) { .kb-shelved-cards .kb-card { width:100%; } }
+    /* Shelf confirmation overlay */
+    .shelf-overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.45); z-index:5000;
+      align-items:center; justify-content:center; padding:1rem;
+    }
+    .shelf-overlay.open { display:flex; }
+    .shelf-dialog {
+      background:#fff; border-radius:10px; padding:1.4rem 1.5rem;
+      width:min(360px,94vw); box-shadow:0 8px 32px rgba(0,0,0,.22);
+    }
+    .shelf-game-name {
+      font-family:'DINBlack',sans-serif; font-size:1rem; color:#1a1a2e; margin-bottom:.4rem;
+    }
+    .shelf-msg { font-size:.82rem; color:#64748b; margin:0 0 1.1rem; line-height:1.45; }
+    .shelf-actions { display:flex; gap:.65rem; justify-content:flex-end; }
+    .shelf-confirm-btn {
+      font-family:'DINBlack',sans-serif; font-size:.78rem; text-transform:uppercase;
+      letter-spacing:.05em; background:#dc2626; color:#fff; border:none;
+      border-radius:6px; padding:.45rem 1rem; cursor:pointer; transition:background .15s;
+    }
+    .shelf-confirm-btn:hover { background:#b91c1c; }
+    @media (max-width:700px) {
+      .kb-board { grid-template-columns:repeat(2,1fr); }
+    }
+    @media (max-width:420px) {
+      .kb-board { grid-template-columns:1fr; }
+    }
+
     /* ── Import dialog ──────────────────────────────── */
     .import-dialog { width:min(560px,96vw); }
     .import-body { max-height:42vh; overflow-y:auto; -webkit-overflow-scrolling:touch; margin:.25rem 0 .5rem; }
@@ -1168,7 +1291,7 @@ if (is_dir($_gpv_dir)) {
       <p class="sub version-tag" id="versionTag" style="display:none"></p>
     </div>
     <div class="view-toggle">
-      <button id="btnDashboard"              onclick="setView('dashboard')">Dashboard</button>
+      <button id="btnDashboard"              onclick="setView('dashboard')">Board</button>
       <button id="btnGame"      class="active" onclick="setView('game')">Games</button>
       <button id="btnPublisher"               onclick="setView('publisher')">Publishers</button>
     </div>
@@ -1275,6 +1398,18 @@ if (is_dir($_gpv_dir)) {
     <div class="err-actions">
       <button class="err-copy-btn" onclick="copyErrText()">Copy</button>
       <button class="ge-cancel-btn" onclick="closeErrDialog()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Shelf confirmation dialog -->
+<div class="shelf-overlay" id="shelfOverlay" onclick="if(event.target===this)closeShelfDialog()">
+  <div class="shelf-dialog">
+    <div class="shelf-game-name" id="shelfGameNameEl"></div>
+    <p class="shelf-msg">Shelf this game? Shelved games are hidden from the board.</p>
+    <div class="shelf-actions">
+      <button class="ge-cancel-btn" onclick="closeShelfDialog()">Cancel</button>
+      <button class="shelf-confirm-btn" onclick="doShelfGame()">Shelf</button>
     </div>
   </div>
 </div>
@@ -1961,6 +2096,339 @@ function clearSearch() {
   applySearch();
   inp.focus();
 }
+// ── Kanban drag-and-drop ──────────────────────────────
+var _kbDrag        = null;
+var _kbOpenCard    = null;   // name of expanded card, or null
+var _kbShowShelved = false;  // whether shelved row is visible
+var _kbShelfTarget = null;   // name pending shelf confirmation
+
+function kbDragStart(ev, name, fromCol) {
+  _kbDrag = { name: name, fromCol: fromCol };
+  ev.dataTransfer.effectAllowed = 'move';
+  // Defer class add so the grabbed image captures the normal state
+  setTimeout(function(){ ev.target.classList.add('kb-dragging'); }, 0);
+}
+
+function kbDragEnd(ev) {
+  ev.target.classList.remove('kb-dragging');
+  document.querySelectorAll('.kb-col.kb-drag-over').forEach(function(el){
+    el.classList.remove('kb-drag-over');
+  });
+}
+
+function kbDragOver(ev) {
+  if (!_kbDrag) return;
+  ev.preventDefault();
+  ev.dataTransfer.dropEffect = 'move';
+}
+
+function kbDragEnter(ev) {
+  if (!_kbDrag) return;
+  ev.currentTarget.classList.add('kb-drag-over');
+}
+
+function kbDragLeave(ev) {
+  if (!ev.currentTarget.contains(ev.relatedTarget)) {
+    ev.currentTarget.classList.remove('kb-drag-over');
+  }
+}
+
+// ── Touch drag-and-drop (iPad / mobile) ───────────────
+var _kbTouch       = null;   // { name, fromCol, startX, startY, dragging, card }
+var _kbTouchGhost  = null;
+var _kbTouchOffset = null;
+
+function kbTouchStart(ev, name, fromCol) {
+  if (ev.touches.length !== 1) return;
+  var touch = ev.touches[0];
+  _kbTouch = { name: name, fromCol: fromCol,
+               startX: touch.clientX, startY: touch.clientY,
+               dragging: false, card: ev.currentTarget };
+  var rect = ev.currentTarget.getBoundingClientRect();
+  _kbTouchOffset = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+}
+
+document.addEventListener('touchmove', function(ev) {
+  if (!_kbTouch) return;
+  var touch = ev.touches[0];
+  var dx = touch.clientX - _kbTouch.startX;
+  var dy = touch.clientY - _kbTouch.startY;
+
+  if (!_kbTouch.dragging) {
+    if (Math.sqrt(dx*dx + dy*dy) < 10) return;
+    _kbTouch.dragging = true;
+    var card = _kbTouch.card;
+    var rect = card.getBoundingClientRect();
+    var ghost = card.cloneNode(true);
+    ghost.style.cssText = 'position:fixed;left:' + rect.left + 'px;top:' + rect.top
+      + 'px;width:' + rect.width + 'px;opacity:.8;pointer-events:none;z-index:9999;'
+      + 'box-shadow:0 8px 24px rgba(0,0,0,.25);margin:0;border-radius:6px;';
+    document.body.appendChild(ghost);
+    _kbTouchGhost = ghost;
+    card.classList.add('kb-dragging');
+  }
+
+  ev.preventDefault();
+  _kbTouchGhost.style.left = (touch.clientX - _kbTouchOffset.x) + 'px';
+  _kbTouchGhost.style.top  = (touch.clientY - _kbTouchOffset.y) + 'px';
+
+  // Highlight the column under the finger
+  _kbTouchGhost.style.display = 'none';
+  var el = document.elementFromPoint(touch.clientX, touch.clientY);
+  _kbTouchGhost.style.display = '';
+  document.querySelectorAll('.kb-col.kb-drag-over').forEach(function(c){ c.classList.remove('kb-drag-over'); });
+  var col = el;
+  while (col && !col.classList.contains('kb-col')) col = col.parentElement;
+  if (col) col.classList.add('kb-drag-over');
+}, { passive: false });
+
+document.addEventListener('touchend', function(ev) {
+  if (!_kbTouch) return;
+  if (_kbTouchGhost) { _kbTouchGhost.remove(); _kbTouchGhost = null; }
+  if (_kbTouch.card) _kbTouch.card.classList.remove('kb-dragging');
+  document.querySelectorAll('.kb-col.kb-drag-over').forEach(function(c){ c.classList.remove('kb-drag-over'); });
+
+  if (_kbTouch.dragging) {
+    var touch = ev.changedTouches[0];
+    var el = document.elementFromPoint(touch.clientX, touch.clientY);
+    var col = el;
+    while (col && !col.classList.contains('kb-col')) col = col.parentElement;
+    var name = _kbTouch.name, fromCol = _kbTouch.fromCol;
+    _kbTouch = null;
+    if (col) {
+      var toCol = null;
+      ['design','pitch','signed','published'].forEach(function(k){ if (col.classList.contains(k)) toCol = k; });
+      if (toCol && toCol !== fromCol) quickUpdateGameStatus(name, toCol);
+    }
+  } else {
+    _kbTouch = null;
+  }
+}, { passive: false });
+
+function kbDrop(ev, toCol) {
+  ev.preventDefault();
+  ev.stopPropagation();
+  document.querySelectorAll('.kb-col.kb-drag-over').forEach(function(el){ el.classList.remove('kb-drag-over'); });
+  if (!_kbDrag) return;
+  var name    = _kbDrag.name;
+  var fromCol = _kbDrag.fromCol;
+  _kbDrag = null;
+  if (fromCol === toCol) return;
+  quickUpdateGameStatus(name, toCol);
+}
+
+function quickUpdateGameStatus(name, toCol) {
+  var info = gamesIndex[name] || {};
+  function gf() {
+    for (var i = 0; i < arguments.length; i++) {
+      var v = (info[arguments[i]] || '').trim(); if (v) return v;
+    }
+    return '';
+  }
+
+  var today         = new Date().toISOString().slice(0, 10);
+  var dateSigned    = _toDateInput(gf('Date Signed',    'DateSigned',    'Signed Date',    'SignedDate'));
+  var datePublished = _toDateInput(gf('Date Published', 'DatePublished', 'Published Date', 'PublishedDate'));
+  var dateStarted   = _toDateInput(gf('Date Started',   'DateStarted',   'Start Date',     'StartDate'));
+  var status        = gf('Status');
+
+  if (toCol === 'published') {
+    status = 'Published';
+    if (!datePublished) datePublished = today;
+    // Keep dateSigned as-is
+  } else if (toCol === 'signed') {
+    status = 'Signed';
+    if (!dateSigned) dateSigned = today;
+    datePublished = '';
+  } else if (toCol === 'pitch') {
+    // Explicit 'Pitching' status overrides any signed/published entries in isGameSigned
+    status = 'Pitching';
+    dateSigned    = '';
+    datePublished = '';
+  } else {
+    // design: explicit 'Design' status overrides entry-based fallback
+    status = 'Design';
+    dateSigned    = '';
+    datePublished = '';
+  }
+
+  // Optimistic in-memory update → re-render kanban immediately (no chart flicker)
+  var prev = Object.assign({}, info);
+  gamesIndex[name] = Object.assign({}, info, {
+    'Status':         status,
+    'Date Signed':    dateSigned,
+    'Date Published': datePublished
+  });
+  rebuildKanban();
+
+  // Persist to sheet
+  var body = 'id='             + encodeURIComponent(sheet_Id)
+    + '&orig_name='            + encodeURIComponent(name)
+    + '&name='                 + encodeURIComponent(gf('Name') || name)
+    + '&tagline='              + encodeURIComponent(gf('Tagline', 'Tag Line', 'SubTitle', 'Subtitle'))
+    + '&description='          + encodeURIComponent(gf('Description'))
+    + '&status='               + encodeURIComponent(status)
+    + '&date_started='         + encodeURIComponent(dateStarted)
+    + '&date_signed='          + encodeURIComponent(dateSigned)
+    + '&date_published='       + encodeURIComponent(datePublished)
+    + '&designer1='            + encodeURIComponent(gf('Designer1', 'Designer 1'))
+    + '&designer2='            + encodeURIComponent(gf('Designer2', 'Designer 2'))
+    + '&designer3='            + encodeURIComponent(gf('Designer3', 'Designer 3'))
+    + '&designer4='            + encodeURIComponent(gf('Designer4', 'Designer 4'))
+    + '&rules='                + encodeURIComponent(gf('Rules', 'Rules URL', 'RulesURL'))
+    + '&play='                 + encodeURIComponent(gf('Play', 'Play URL', 'PlayURL'))
+    + '&print='                + encodeURIComponent(gf('Print', 'Print URL', 'PrintURL'))
+    + '&sellsheet='            + encodeURIComponent(gf('Sellsheet', 'Sellsheet URL', 'SellsheetURL'))
+    + '&view='                 + encodeURIComponent(gf('BGG', 'View URL', 'BGG / View URL', 'ViewURL', 'View'))
+    + '&video='                + encodeURIComponent(gf('Video', 'Video URL', 'VideoURL'))
+    + '&image='                + encodeURIComponent(gf('Image URL', 'ImageURL', 'Image'));
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/updateGame.php');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onload = function() {
+    var result;
+    try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
+    if (!result || !result.ok) {
+      gamesIndex[name] = prev;
+      rebuildKanban();
+      showError('Could not update game status. Please try again.');
+    }
+  };
+  xhr.onerror = function() {
+    gamesIndex[name] = prev;
+    rebuildKanban();
+    showError('Network error updating game status.');
+  };
+  xhr.send(body);
+}
+
+// ── Kanban card expand/collapse ───────────────────────
+function kbCardClick(name) {
+  _kbOpenCard = (_kbOpenCard === name) ? null : name;
+  rebuildKanban();
+}
+
+function rebuildKanban() {
+  var wrap = document.getElementById('kb-board-wrap');
+  if (!wrap) { buildDashboardView(); return; }
+  var tmp = document.createElement('div');
+  tmp.innerHTML = buildKanbanHtml();
+  wrap.parentNode.replaceChild(tmp.firstChild, wrap);
+}
+
+// ── Shelf dialog ──────────────────────────────────────
+function kbShelfConfirm(name) {
+  _kbShelfTarget = name;
+  document.getElementById('shelfGameNameEl').textContent = name;
+  document.getElementById('shelfOverlay').classList.add('open');
+}
+
+function closeShelfDialog() {
+  _kbShelfTarget = null;
+  document.getElementById('shelfOverlay').classList.remove('open');
+}
+
+function doShelfGame() {
+  var name = _kbShelfTarget;
+  if (!name) return;
+  closeShelfDialog();
+  _kbOpenCard = null;
+  var info = gamesIndex[name] || {};
+  function gf() {
+    for (var i=0;i<arguments.length;i++){var v=(info[arguments[i]]||'').trim();if(v)return v;}
+    return '';
+  }
+  // Keep dates unchanged, just set Status=Shelved
+  var dateSigned    = _toDateInput(gf('Date Signed','DateSigned','Signed Date','SignedDate'));
+  var datePublished = _toDateInput(gf('Date Published','DatePublished','Published Date','PublishedDate'));
+  var dateStarted   = _toDateInput(gf('Date Started','DateStarted','Start Date','StartDate'));
+  var prev = Object.assign({}, info);
+  gamesIndex[name] = Object.assign({}, info, { 'Status': 'Shelved' });
+  rebuildKanban();
+
+  var body = 'id='           + encodeURIComponent(sheet_Id)
+    + '&orig_name='          + encodeURIComponent(name)
+    + '&name='               + encodeURIComponent(gf('Name') || name)
+    + '&tagline='            + encodeURIComponent(gf('Tagline','Tag Line','SubTitle','Subtitle'))
+    + '&description='        + encodeURIComponent(gf('Description'))
+    + '&status=Shelved'
+    + '&date_started='       + encodeURIComponent(dateStarted)
+    + '&date_signed='        + encodeURIComponent(dateSigned)
+    + '&date_published='     + encodeURIComponent(datePublished)
+    + '&designer1='          + encodeURIComponent(gf('Designer1','Designer 1'))
+    + '&designer2='          + encodeURIComponent(gf('Designer2','Designer 2'))
+    + '&designer3='          + encodeURIComponent(gf('Designer3','Designer 3'))
+    + '&designer4='          + encodeURIComponent(gf('Designer4','Designer 4'))
+    + '&rules='              + encodeURIComponent(gf('Rules','Rules URL','RulesURL'))
+    + '&play='               + encodeURIComponent(gf('Play','Play URL','PlayURL'))
+    + '&print='              + encodeURIComponent(gf('Print','Print URL','PrintURL'))
+    + '&sellsheet='          + encodeURIComponent(gf('Sellsheet','Sellsheet URL','SellsheetURL'))
+    + '&view='               + encodeURIComponent(gf('BGG','View URL','BGG / View URL','ViewURL','View'))
+    + '&video='              + encodeURIComponent(gf('Video','Video URL','VideoURL'))
+    + '&image='              + encodeURIComponent(gf('Image URL','ImageURL','Image'));
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/updateGame.php');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onload = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+    if (!r || !r.ok) { gamesIndex[name] = prev; rebuildKanban(); showError('Could not shelf game.'); }
+  };
+  xhr.onerror = function() { gamesIndex[name] = prev; rebuildKanban(); showError('Network error.'); };
+  xhr.send(body);
+}
+
+function doUnshelfGame(name) {
+  _kbOpenCard = null;
+  var info = gamesIndex[name] || {};
+  function gf() {
+    for (var i=0;i<arguments.length;i++){var v=(info[arguments[i]]||'').trim();if(v)return v;}
+    return '';
+  }
+  var dateSigned    = _toDateInput(gf('Date Signed','DateSigned','Signed Date','SignedDate'));
+  var datePublished = _toDateInput(gf('Date Published','DatePublished','Published Date','PublishedDate'));
+  var dateStarted   = _toDateInput(gf('Date Started','DateStarted','Start Date','StartDate'));
+  var prev = Object.assign({}, info);
+  gamesIndex[name] = Object.assign({}, info, { 'Status': '' });
+  rebuildKanban();
+
+  var body = 'id='           + encodeURIComponent(sheet_Id)
+    + '&orig_name='          + encodeURIComponent(name)
+    + '&name='               + encodeURIComponent(gf('Name') || name)
+    + '&tagline='            + encodeURIComponent(gf('Tagline','Tag Line','SubTitle','Subtitle'))
+    + '&description='        + encodeURIComponent(gf('Description'))
+    + '&status='
+    + '&date_started='       + encodeURIComponent(dateStarted)
+    + '&date_signed='        + encodeURIComponent(dateSigned)
+    + '&date_published='     + encodeURIComponent(datePublished)
+    + '&designer1='          + encodeURIComponent(gf('Designer1','Designer 1'))
+    + '&designer2='          + encodeURIComponent(gf('Designer2','Designer 2'))
+    + '&designer3='          + encodeURIComponent(gf('Designer3','Designer 3'))
+    + '&designer4='          + encodeURIComponent(gf('Designer4','Designer 4'))
+    + '&rules='              + encodeURIComponent(gf('Rules','Rules URL','RulesURL'))
+    + '&play='               + encodeURIComponent(gf('Play','Play URL','PlayURL'))
+    + '&print='              + encodeURIComponent(gf('Print','Print URL','PrintURL'))
+    + '&sellsheet='          + encodeURIComponent(gf('Sellsheet','Sellsheet URL','SellsheetURL'))
+    + '&view='               + encodeURIComponent(gf('BGG','View URL','BGG / View URL','ViewURL','View'))
+    + '&video='              + encodeURIComponent(gf('Video','Video URL','VideoURL'))
+    + '&image='              + encodeURIComponent(gf('Image URL','ImageURL','Image'));
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/updateGame.php');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onload = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+    if (!r || !r.ok) { gamesIndex[name] = prev; rebuildKanban(); showError('Could not unshelf game.'); }
+  };
+  xhr.onerror = function() { gamesIndex[name] = prev; rebuildKanban(); showError('Network error.'); };
+  xhr.send(body);
+}
+
+function kbToggleShelved() {
+  _kbShowShelved = !_kbShowShelved;
+  rebuildKanban();
+}
 
 // ── View switcher ─────────────────────────────────────
 function setView(v) {
@@ -2531,6 +2999,169 @@ function loadChartJS(cb) {
   document.head.appendChild(s);
 }
 
+// ── Kanban HTML builder (standalone so rebuildKanban can call it) ──
+function buildKanbanHtml() {
+  var allGameNames = Object.keys(gamesIndex).slice();
+  allPitches.forEach(function(r){
+    if (r.Game && allGameNames.indexOf(r.Game) < 0) allGameNames.push(r.Game);
+  });
+
+  var sortedGames = allGameNames.slice().sort(function(a, b) {
+    var ea = allPitches.filter(function(r){ return r.Game === a; });
+    var eb = allPitches.filter(function(r){ return r.Game === b; });
+    var puba = isGamePublished(a, ea), pubb = isGamePublished(b, eb);
+    var siga = !puba && isGameSigned(a, ea), sigb = !pubb && isGameSigned(b, eb);
+    function rank(pub, sig, e) { return pub ? 0 : sig ? 1 : e.length ? 2 : 3; }
+    var ra = rank(puba, siga, ea), rb = rank(pubb, sigb, eb);
+    if (ra !== rb) return ra - rb;
+    return a.localeCompare(b);
+  });
+
+  var kanbanCols   = { design:[], pitch:[], signed:[], published:[] };
+  var shelvedGames = [];
+
+  // Status field is the authoritative Kanban column classifier.
+  // Recognised explicit statuses take priority over entry-based logic.
+  function kbClassify(name, info, entries) {
+    var st = (info['Status'] || '').trim().toLowerCase();
+    if (st === 'published')                      return 'published';
+    if (st === 'signed')                         return 'signed';
+    if (st === 'pitching' || st === 'pitch' ||
+        st === 'in pitching')                    return 'pitch';
+    if (st === 'design'   || st === 'not pitched' ||
+        st === 'in design')                      return 'design';
+    // No recognised explicit status — use date / entry fallback
+    if ((info['Date Published'] || '').trim())   return 'published';
+    if ((info['Date Signed']    || '').trim())   return 'signed';
+    var pub = isGamePublished(name, entries);
+    var sig = !pub && isGameSigned(name, entries);
+    if (pub) return 'published';
+    if (sig) return 'signed';
+    return entries.length ? 'pitch' : 'design';
+  }
+
+  sortedGames.forEach(function(name) {
+    var info    = gamesIndex[name] || {};
+    var entries = allPitches.filter(function(r){ return r.Game === name; });
+    if ((info['Status'] || '').trim().toLowerCase() === 'shelved') {
+      shelvedGames.push(name);
+      return;
+    }
+    var col = kbClassify(name, info, entries);
+    var designers = ['Designer1','Designer2','Designer3','Designer4']
+      .map(function(f){ return (info[f]||'').trim(); })
+      .filter(function(v){ return v; }).join(', ');
+    var pubCount = (function(){
+      var m = {};
+      entries.forEach(function(e){ if (e.Publisher) m[e.Publisher]=1; });
+      return Object.keys(m).length;
+    })();
+    kanbanCols[col].push({ name:name, designers:designers, pubCount:pubCount });
+  });
+
+  function kbCard(g, col, isShelved) {
+    var isOpen  = _kbOpenCard === g.name;
+    var safeName = escHtml(g.name);   // safe for HTML attributes (no JS quoting)
+    var cls     = 'kb-card' + (isOpen ? ' kb-card-open' : '');
+    // col is always a plain ASCII word — safe to single-quote directly in JS
+    var h = '<div class="' + cls + '" data-kbname="' + safeName + '"'
+          + (isOpen ? '' :
+               ' draggable="true"'
+             + ' ondragstart="kbDragStart(event,this.dataset.kbname,\'' + col + '\')"'
+             + ' ondragend="kbDragEnd(event)"'
+             + ' ondragover="kbDragOver(event)"'
+             + ' ondrop="event.stopPropagation();kbDrop(event,\'' + col + '\')"'
+             + ' ontouchstart="kbTouchStart(event,this.dataset.kbname,\'' + col + '\')"')
+          + ' onclick="kbCardClick(this.dataset.kbname)">';
+    h += '<div class="kb-card-name">';
+    h += '<span class="kb-card-name-text">' + safeName + '</span>';
+    if (col !== 'design' && !isShelved && g.pubCount > 0)
+      h += '<span class="kb-pub-pill">' + g.pubCount + '</span>';
+    if (isOpen) h += '<span class="kb-card-collapse" title="Collapse">✕</span>';
+    h += '</div>';
+    if (g.designers) h += '<div class="kb-card-meta">' + escHtml(g.designers) + '</div>';
+    if (isOpen) {
+      var info = gamesIndex[g.name] || {};
+      function giv(){
+        for(var i=0;i<arguments.length;i++){var v=(info[arguments[i]]||'').trim();if(v)return v;}
+        return '';
+      }
+      var ds  = giv('Date Started',   'DateStarted',   'Start Date',     'StartDate');
+      var dsg = giv('Date Signed',    'DateSigned',    'Signed Date',    'SignedDate');
+      var dp  = giv('Date Published', 'DatePublished', 'Published Date', 'PublishedDate');
+      var fmtD = function(raw){ var d=new Date(raw); return isNaN(d)?'':fmtMonYr(d); };
+      h += '<div class="kb-card-dates">';
+      if (ds)  h += '<div class="kb-date-row"><span class="kb-date-lbl">Started</span><span class="kb-date-val">' + escHtml(fmtD(ds)) + '</span></div>';
+      if (dsg) h += '<div class="kb-date-row"><span class="kb-date-lbl">Signed</span><span class="kb-date-val">' + escHtml(fmtD(dsg)) + '</span></div>';
+      if (dp)  h += '<div class="kb-date-row"><span class="kb-date-lbl">Published</span><span class="kb-date-val">' + escHtml(fmtD(dp)) + '</span></div>';
+      if (!ds && !dsg && !dp) h += '<div class="kb-date-row"><span class="kb-date-val" style="color:#ccc;font-style:italic">No dates recorded</span></div>';
+      h += '</div>';
+      // Buttons read the name back from the card's data attribute
+      h += '<div class="kb-card-btns">'
+         + '<button class="kb-btn kb-btn-view" onclick="event.stopPropagation();goToGame(this.closest(\'[data-kbname]\').dataset.kbname)">View</button>';
+      if (isShelved)
+        h += '<button class="kb-btn kb-btn-unshelf" onclick="event.stopPropagation();doUnshelfGame(this.closest(\'[data-kbname]\').dataset.kbname)">Unshelf</button>';
+      else
+        h += '<button class="kb-btn kb-btn-shelf" onclick="event.stopPropagation();kbShelfConfirm(this.closest(\'[data-kbname]\').dataset.kbname)">Shelf</button>';
+      h += '</div>';
+    }
+    h += '</div>';
+    return h;
+  }
+
+  function kanbanCol(key, label) {
+    var items = kanbanCols[key];
+    var h = '<div class="kb-col ' + key + '"'
+          + ' ondragover="kbDragOver(event)"'
+          + ' ondragenter="kbDragEnter(event)"'
+          + ' ondragleave="kbDragLeave(event)"'
+          + ' ondrop="kbDrop(event,\'' + key + '\')">';
+    h += '<div class="kb-col-header ' + key + '">' + escHtml(label) + '</div>';
+    items.forEach(function(g){ h += kbCard(g, key, false); });
+    if (!items.length) h += '<div class="kb-col-count" style="color:#ccc;font-style:italic">Empty</div>';
+    else h += '<div class="kb-col-count">' + items.length + (items.length===1?' game':' games') + '</div>';
+    h += '</div>';
+    return h;
+  }
+
+  var html = '<div id="kb-board-wrap" class="db-chart-card db-chart-wide" style="margin-bottom:.65rem"><h3>Games by Stage</h3>';
+  html += '<div class="kb-board">';
+  html += kanbanCol('design',    'Design');
+  html += kanbanCol('pitch',     'Pitch');
+  html += kanbanCol('signed',    'Signed');
+  html += kanbanCol('published', 'Published');
+  html += '</div>';
+
+  if (shelvedGames.length > 0) {
+    var shOpen = _kbShowShelved;
+    html += '<div class="kb-shelved-section">';
+    html += '<div class="kb-shelved-hdr' + (shOpen ? ' open' : '') + '" onclick="kbToggleShelved()">'
+          + '<span class="kb-shelved-hdr-label">Shelved</span>'
+          + '<span class="kb-shelved-hdr-count">(' + shelvedGames.length + ')</span>'
+          + '<span class="kb-shelved-chevron">▶</span>'
+          + '</div>';
+    if (shOpen) {
+      html += '<div class="kb-shelved-cards">';
+      shelvedGames.forEach(function(name) {
+        var info = gamesIndex[name] || {};
+        var g = {
+          name: name,
+          designers: ['Designer1','Designer2','Designer3','Designer4']
+            .map(function(f){ return (info[f]||'').trim(); })
+            .filter(function(v){ return v; }).join(', '),
+          pubCount: 0
+        };
+        html += kbCard(g, 'shelved', true);
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  html += '</div>'; // kb-board-wrap
+  return html;
+}
+
 // ── Dashboard view ─────────────────────────────────────
 var _activeCharts = {};
 function buildDashboardView() {
@@ -2617,108 +3248,7 @@ function buildDashboardView() {
     '</div>' +
     '<div class="db-chart-card db-chart-wide"><h3>Pitches Over Time</h3><canvas id="chartTimeline"></canvas></div>';
 
-  // ── Game Timelines ─────────────────────────────────────
-  // Sort: published > signed > pitching > not started, then alpha
-  var sortedGames = allGameNames.slice().sort(function(a, b) {
-    var ea = allPitches.filter(function(r){ return r.Game === a; });
-    var eb = allPitches.filter(function(r){ return r.Game === b; });
-    var puba = isGamePublished(a, ea), pubb = isGamePublished(b, eb);
-    var siga = !puba && isGameSigned(a, ea), sigb = !pubb && isGameSigned(b, eb);
-    function rank(pub, sig, e) { return pub ? 0 : sig ? 1 : e.length ? 2 : 3; }
-    var ra = rank(puba, siga, ea), rb = rank(pubb, sigb, eb);
-    if (ra !== rb) return ra - rb;
-    return a.localeCompare(b);
-  });
-
-  var tlHtml = '<div class="db-chart-card db-chart-wide"><h3>Game Timelines</h3><div class="tl-list">';
-
-  sortedGames.forEach(function(name) {
-    var info    = gamesIndex[name] || {};
-    var entries = allPitches.filter(function(r){ return r.Game === name; });
-    var pub     = isGamePublished(name, entries);
-    var sig     = !pub && isGameSigned(name, entries);
-
-    // Date strings — prefer gamesIndex, fall back to entries
-    var dsStr  = (info['Date Started']   || '').trim();
-    var dsgStr = (info['Date Signed']    || '').trim();
-    var dpStr  = (info['Date Published'] || '').trim();
-    if (!dsgStr) entries.forEach(function(e){
-      if (!dsgStr && (e.Status||'').toLowerCase() === 'signed' && e.Date) dsgStr = e.Date;
-    });
-    if (!dpStr) entries.forEach(function(e){
-      if (!dpStr && (e.Status||'').toLowerCase() === 'published' && e.Date) dpStr = e.Date;
-    });
-
-    // Earliest pitch date
-    var pitchDates = entries.filter(function(e){ return e.Date; })
-                            .map(function(e){ return new Date(e.Date); })
-                            .filter(function(d){ return !isNaN(d); });
-    var firstPitch = pitchDates.length ? new Date(Math.min.apply(null, pitchDates)) : null;
-
-    // Earliest interested date
-    var intDates = entries.filter(function(e){
-      return (e.Status||'').toLowerCase() === 'interested' && e.Date;
-    }).map(function(e){ return new Date(e.Date); }).filter(function(d){ return !isNaN(d); });
-    var firstInt = intDates.length ? new Date(Math.min.apply(null, intDates)) : null;
-
-    var dsDate  = dsStr  ? new Date(dsStr)  : null;
-    var dsgDate = dsgStr ? new Date(dsgStr) : null;
-    var dpDate  = dpStr  ? new Date(dpStr)  : null;
-
-    // Total unique publishers pitched for this game
-    var totalPubsPitched = (function() {
-      var pubMap = {};
-      entries.forEach(function(e){
-        var pub = e.Publisher || '(Unknown)';
-        pubMap[pub] = 1;
-      });
-      return Object.keys(pubMap).length;
-    })();
-
-    // 4 milestone stages
-    var stages = [
-      { key:'started',   label:'Started',  date: dsDate,    reached: !!(dsDate || firstPitch), count: 0 },
-      { key:'pitching',  label:'Pitching', date: firstPitch,reached: !!firstPitch,             count: totalPubsPitched },
-      { key:'signed',    label:'Signed',   date: dsgDate,   reached: sig || pub,               count: 0 },
-      { key:'published', label:'Published',date: dpDate,    reached: pub,                      count: 0 }
-    ];
-
-    // Designers
-    var designers = ['Designer1','Designer2','Designer3','Designer4']
-      .map(function(f){ return (info[f]||'').trim(); })
-      .filter(function(v){ return v; }).join(', ');
-
-    tlHtml += '<div class="tl-game">';
-    tlHtml += '<div class="tl-game-name">' + escHtml(name);
-    if (designers) tlHtml += ' <span class="tl-designers">(' + escHtml(designers) + ')</span>';
-    tlHtml += '</div>';
-    tlHtml += '<div class="tl-row">';
-
-    for (var si = 0; si < stages.length; si++) {
-      var st = stages[si];
-      var msClass = 'tl-ms-wrap stage-' + st.key + (st.reached ? ' reached' : '');
-      tlHtml += '<div class="' + msClass + '">';
-      if (st.key === 'pitching' && st.reached && st.count > 0) {
-        var pillW = Math.max(24, Math.min(st.count, 30) * 5);
-        tlHtml += '<div class="tl-dot tl-pitching-pill" style="width:' + pillW + 'px">' + st.count + '</div>';
-      } else {
-        tlHtml += '<div class="tl-dot">' + (st.count > 0 ? st.count : '') + '</div>';
-      }
-      tlHtml += '<div class="tl-ms-label">' + escHtml(st.label) + '</div>';
-      var dateStr = fmtMonYr(st.date);
-      if (dateStr) tlHtml += '<div class="tl-ms-date">' + escHtml(dateStr) + '</div>';
-      tlHtml += '</div>';
-      if (si < stages.length - 1) {
-        var connClass = 'tl-connector' + (stages[si].reached && stages[si+1].reached ? ' filled' : '');
-        tlHtml += '<div class="' + connClass + '"></div>';
-      }
-    }
-
-    tlHtml += '</div></div>'; // tl-row, tl-game
-  });
-
-  tlHtml += '</div></div>'; // tl-list, db-chart-card
-  html += tlHtml;
+  html += buildKanbanHtml();
 
   document.getElementById('content').innerHTML = html;
 

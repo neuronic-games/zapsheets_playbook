@@ -10,6 +10,8 @@ RewriteRule ^pushsite/?$ push/pushsite.php [L,QSA]
 
 # /pitchboard/help — instructional help page (must come before /pitchboard rule)
 RewriteRule ^pitchboard/help/?$ source/pitchboard/help/index.php [L,QSA]
+# /pitchboard/features — sales / features page (must come before /pitchboard rule)
+RewriteRule ^pitchboard/features/?$ source/pitchboard/features/index.php [L,QSA]
 
 # /game/{hash}/sellsheet — token-based sellsheet (must come before the game rule)
 RewriteCond %{REQUEST_FILENAME} !-f

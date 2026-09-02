@@ -1,5 +1,18 @@
 [
   {
+    "version": "Sep 2026",
+    "apps": ["pitchboard"],
+    "features": [
+      "Board view — Kanban-style view of all games organised into Design, Pitch, Signed, and Published columns",
+      "Drag-and-drop game cards between columns — stage and status update automatically in the sheet",
+      "Date auto-fill — moving a game to Signed or Published fills the corresponding date if blank",
+      "Card expansion — click a card to see Started, Signed, and Published dates inline",
+      "View action — jumps to the game in the Games view with the card already expanded",
+      "Shelf / Unshelf — hide a game from the board without deleting it; shelved games appear in a collapsible section at the bottom",
+      "Dialog protection — clicking outside a dialog or pressing Escape now shakes the dialog instead of closing when unsaved data is present"
+    ]
+  },
+  {
     "version": "Aug 2026",
     "apps": ["pitchboard"],
     "features": [

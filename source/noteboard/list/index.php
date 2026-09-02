@@ -366,6 +366,7 @@ body { margin:0; background:#f3f2ef; font-family:'DINRegular',Arial,sans-serif; 
 @keyframes nbshake {
   0%,100%{transform:translateX(0)} 30%{transform:translateX(-6px)} 70%{transform:translateX(6px)}
 }
+.dialog-shake { animation:nbshake .35s ease; }
 .nb-dialog-actions { display:flex; gap:.55rem; justify-content:flex-end; margin-top:.85rem; }
 .nb-btn {
   font-family:'DINBlack',sans-serif; font-size:.75rem;
@@ -488,7 +489,7 @@ body { margin:0; background:#f3f2ef; font-family:'DINRegular',Arial,sans-serif; 
 </div>
 
 <!-- Add Topic dialog -->
-<div class="nb-overlay" id="nbOverlay" onclick="if(event.target===this)closeAddTopic()">
+<div class="nb-overlay" id="nbOverlay" onclick="if(event.target===this){var d=this.querySelector('.nb-dialog');if(hasDialogData(d))shakeDialog(d);else closeAddTopic();}">
   <div class="nb-dialog">
     <h3>New Topic</h3>
     <div class="nb-combo-wrap">
@@ -904,7 +905,10 @@ body { margin:0; background:#f3f2ef; font-family:'DINRegular',Arial,sans-serif; 
     inp.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
         if (drop.classList.contains('open')) { drop.classList.remove('open'); e.stopPropagation(); }
-        else { closeAddTopic(); }
+        else {
+          var d = document.getElementById('nbOverlay').querySelector('.nb-dialog');
+          if (hasDialogData(d)) shakeDialog(d); else closeAddTopic();
+        }
         return;
       }
       if (e.key === 'Enter') {
@@ -943,6 +947,25 @@ body { margin:0; background:#f3f2ef; font-family:'DINRegular',Arial,sans-serif; 
       _activeIdx = -1;
     };
   })();
+
+  // ── Generic dialog dirty-guard ────────────────────────────────────────────
+  window.hasDialogData = function(dialogEl) {
+    var inputs = dialogEl.querySelectorAll(
+      'input[type="text"],input[type="email"],input[type="url"],input[type="tel"],textarea'
+    );
+    for (var i = 0; i < inputs.length; i++) {
+      if (!inputs[i].readOnly && !inputs[i].disabled && inputs[i].value.trim()) return true;
+    }
+    return false;
+  };
+  window.shakeDialog = function(dialogEl) {
+    dialogEl.classList.remove('dialog-shake');
+    void dialogEl.offsetWidth;
+    dialogEl.classList.add('dialog-shake');
+    dialogEl.addEventListener('animationend', function() {
+      dialogEl.classList.remove('dialog-shake');
+    }, { once: true });
+  };
 
   // ── Add Topic ─────────────────────────────────────────
   window.openAddTopic = function() {

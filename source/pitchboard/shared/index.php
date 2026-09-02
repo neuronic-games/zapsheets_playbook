@@ -570,6 +570,14 @@ body {
 .collab-btn-primary { background: #1a1a2e; color: #fff; }
 .collab-btn-cancel  { background: #e8e8f0; color: #1a1a2e; }
 .collab-err { font-size: .75rem; color: #dc2626; margin-top: .6rem; display: none; }
+@keyframes dialog-shake {
+  0%,100% { transform:translateX(0); }
+  20%     { transform:translateX(-8px); }
+  40%     { transform:translateX(8px); }
+  60%     { transform:translateX(-5px); }
+  80%     { transform:translateX(5px); }
+}
+.dialog-shake { animation:dialog-shake .35s ease; }
 </style>
 </head>
 <body>
@@ -660,7 +668,7 @@ body {
   </div>
 
   <!-- ── Add Pitch dialog ── -->
-  <div class="collab-overlay" id="addOverlay" onclick="if(event.target===this)closeAddDialog()">
+  <div class="collab-overlay" id="addOverlay" onclick="if(event.target===this){var d=this.querySelector('.collab-dialog');if(hasDialogData(d))shakeDialog(d);else closeAddDialog();}">
     <div class="collab-dialog">
       <div class="collab-dialog-title">Add Pitch</div>
       <div class="collab-field">
@@ -710,7 +718,7 @@ body {
   </div>
 
   <!-- ── Edit Pitch dialog ── -->
-  <div class="collab-overlay" id="editOverlay" onclick="if(event.target===this)closeEditDialog()">
+  <div class="collab-overlay" id="editOverlay" onclick="if(event.target===this){var d=this.querySelector('.collab-dialog');if(hasDialogData(d))shakeDialog(d);else closeEditDialog();}">
     <div class="collab-dialog">
       <div class="collab-dialog-title">Edit Pitch</div>
       <div class="collab-field">
@@ -924,6 +932,25 @@ function openAddDialogForPub(pubName, event) {
   setTimeout(function(){ document.getElementById('addContactInput').focus(); }, 60);
 }
 
+// ── Generic dialog dirty-guard ─────────────────────────────────────────────
+function hasDialogData(dialogEl) {
+  var inputs = dialogEl.querySelectorAll(
+    'input[type="text"],input[type="email"],input[type="url"],input[type="tel"],textarea'
+  );
+  for (var i = 0; i < inputs.length; i++) {
+    if (!inputs[i].readOnly && !inputs[i].disabled && inputs[i].value.trim()) return true;
+  }
+  return false;
+}
+function shakeDialog(dialogEl) {
+  dialogEl.classList.remove('dialog-shake');
+  void dialogEl.offsetWidth;
+  dialogEl.classList.add('dialog-shake');
+  dialogEl.addEventListener('animationend', function() {
+    dialogEl.classList.remove('dialog-shake');
+  }, { once: true });
+}
+
 function closeAddDialog() {
   document.getElementById('addOverlay').classList.remove('open');
 }
@@ -1038,9 +1065,14 @@ function submitEdit() {
   xhr.send(body);
 }
 
-// Close dialogs on Escape
+// Close dialogs on Escape — guard if dirty
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') { closeAddDialog(); closeEditDialog(); }
+  if (e.key !== 'Escape') return;
+  var el, d;
+  el = document.getElementById('addOverlay');
+  if (el.classList.contains('open'))  { d = el.querySelector('.collab-dialog'); if (hasDialogData(d)) shakeDialog(d); else closeAddDialog();  return; }
+  el = document.getElementById('editOverlay');
+  if (el.classList.contains('open'))  { d = el.querySelector('.collab-dialog'); if (hasDialogData(d)) shakeDialog(d); else closeEditDialog(); return; }
 });
 </script>
 </body>

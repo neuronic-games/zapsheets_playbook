@@ -104,6 +104,14 @@ if (is_dir($_gpv_dir)) {
     .sync-btn:disabled:hover { background:rgba(255,255,255,.15); }
     @keyframes spin { to { transform:rotate(360deg); } }
     .sync-icon { display:inline-flex; align-items:center; justify-content:center; line-height:1; }
+    @keyframes dialog-shake {
+      0%,100% { transform:translateX(0); }
+      20%     { transform:translateX(-8px); }
+      40%     { transform:translateX(8px); }
+      60%     { transform:translateX(-5px); }
+      80%     { transform:translateX(5px); }
+    }
+    .dialog-shake { animation:dialog-shake .35s ease; }
     .sync-btn.syncing .sync-icon { animation:spin .8s linear infinite; }
     /* ── Account menu ────────────────────────────────── */
     .account-menu-wrap { position:relative; flex-shrink:0; }
@@ -1187,7 +1195,7 @@ if (is_dir($_gpv_dir)) {
 </div>
 
 <!-- Edit-entry dialog -->
-<div class="notes-overlay" id="notesOverlay" onclick="if(event.target===this)closeNotesDialog()">
+<div class="notes-overlay" id="notesOverlay" onclick="if(event.target===this){var d=this.querySelector('.notes-dialog');if(hasDialogData(d))shakeDialog(d);else closeNotesDialog();}">
   <div class="notes-dialog">
     <div class="notes-dialog-meta" id="notesDialogMeta"></div>
     <div class="notes-field-row">
@@ -1226,7 +1234,7 @@ if (is_dir($_gpv_dir)) {
 </div>
 
 <!-- Designer info dialog -->
-<div class="di-overlay" id="diOverlay" onclick="if(event.target===this)closeDiDialog()">
+<div class="di-overlay" id="diOverlay" onclick="if(event.target===this){var d=this.querySelector('.di-dialog');if(hasDialogData(d))shakeDialog(d);else closeDiDialog();}">
   <div class="di-dialog">
     <p class="di-not-found" id="diNotFound" style="display:none">Not in People list — fields will be created on save.</p>
     <div class="notes-field-row">
@@ -1386,7 +1394,7 @@ if (is_dir($_gpv_dir)) {
 </div>
 
 <!-- Game edit dialog -->
-<div class="game-edit-overlay" id="gameEditOverlay" onclick="if(event.target===this)closeGameEditDialog()">
+<div class="game-edit-overlay" id="gameEditOverlay" onclick="if(event.target===this){var d=this.querySelector('.game-edit-dialog');if(hasDialogData(d))shakeDialog(d);else closeGameEditDialog();}">
   <div class="game-edit-dialog">
     <div class="game-edit-heading" id="gameEditHeading">Edit Game</div>
     <label class="ge-label">Game Name
@@ -1465,7 +1473,7 @@ if (is_dir($_gpv_dir)) {
 </div>
 
 <!-- Add Entry dialog -->
-<div class="add-entry-overlay" id="addEntryOverlay" onclick="if(event.target===this)closeAddDialog()">
+<div class="add-entry-overlay" id="addEntryOverlay" onclick="if(event.target===this){var d=this.querySelector('.add-entry-dialog');if(hasDialogData(d))shakeDialog(d);else closeAddDialog();}">
   <div class="add-entry-dialog">
     <h2 class="add-entry-title" id="addEntryTitle">Add Entry</h2>
     <div class="add-game-label" id="addGameLabel"></div>
@@ -1528,7 +1536,7 @@ if (is_dir($_gpv_dir)) {
 </div>
 
 <!-- New Publisher / New Contact sub-dialog -->
-<div class="add-new-overlay" id="addNewOverlay" onclick="if(event.target===this)closeAddNew()">
+<div class="add-new-overlay" id="addNewOverlay" onclick="if(event.target===this){var d=this.querySelector('.add-new-dialog');if(hasDialogData(d))shakeDialog(d);else closeAddNew();}">
   <div class="add-new-dialog">
     <h3 class="add-new-title" id="addNewTitle">New Publisher</h3>
     <div class="add-entry-fields" id="addNewFields"></div>
@@ -1575,7 +1583,7 @@ if (is_dir($_gpv_dir)) {
   <div class="sync-dialog" style="width:min(480px,94vw)">
     <h2>Share</h2>
 
-    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Collaborator Link</p>
+    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Collaborate With Others</p>
     <p style="color:#888;font-size:.78rem;margin:.1rem 0 .5rem">Always current. Anyone with this link can view pitches, add new entries, and edit existing rows — no account needed. They cannot edit game information.</p>
     <div id="shareViewGenSection" style="margin-bottom:1rem">
       <button class="sync-update-btn" id="shareViewGenBtn" onclick="generatePitchViewLink()" style="width:100%;padding:.55rem 1rem;font-size:.8rem">Generate Link</button>
@@ -1589,30 +1597,7 @@ if (is_dir($_gpv_dir)) {
 
     <hr style="border:none;border-top:1px solid #2a3240;margin:.25rem 0 .9rem" />
 
-    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Import Link</p>
-    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .75rem">Package a snapshot collaborators can import into their PitchBoard.</p>
-
-    <div style="margin-bottom:.9rem">
-      <button class="sync-update-btn" id="sharePackageBtn" onclick="packagePitchData()" style="width:100%;padding:.55rem 1rem;font-size:.8rem">Package Pitch Data</button>
-    </div>
-
-    <div id="sharePitchUrlSection" style="display:none">
-      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.9rem">
-        <input type="text" id="shareUrlInput" class="ge-input" readonly style="flex:1;font-size:.72rem;font-family:monospace" />
-        <button class="sync-update-btn" id="shareUrlCopyBtn" onclick="copyShareUrl()">Copy</button>
-      </div>
-    </div>
-
-    <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.5rem">
-      <div class="combo-wrap" style="flex:1;min-width:130px">
-        <input type="text" id="shareCollabInput" class="ge-input" placeholder="Select or type a collaborator…" autocomplete="off" style="font-size:.82rem" />
-        <div class="combo-drop" id="shareCollabDrop"></div>
-      </div>
-      <button class="sync-update-btn" onclick="sendShareEmail()" style="white-space:nowrap;font-size:.76rem" title="Email import link">&#9993; Import</button>
-      <button class="sync-update-btn" onclick="sendViewShareEmail()" style="white-space:nowrap;font-size:.76rem" title="Email view-only link">&#9993; View</button>
-    </div>
-
-    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Share Page</p>
+    <p style="color:#888;font-size:.78rem;margin:.1rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Show Your Game</p>
     <p style="color:#888;font-size:.78rem;margin:.1rem 0 .5rem">Public link to this game's view page. Anyone with this link can view it — no account needed.</p>
     <div id="shareGamePageGenSection" style="margin-bottom:1rem">
       <button class="sync-update-btn" id="shareGamePageGenBtn" onclick="generateGamePageLink()" style="width:100%;padding:.55rem 1rem;font-size:.8rem">Generate Link</button>
@@ -3142,6 +3127,25 @@ function openNotesDialog(entry) {
   setTimeout(function() { document.getElementById('notesEditArea').focus(); }, 60);
 }
 
+// ── Generic dialog dirty-guard ─────────────────────────────────────────────
+function hasDialogData(dialogEl) {
+  var inputs = dialogEl.querySelectorAll(
+    'input[type="text"],input[type="email"],input[type="url"],input[type="tel"],textarea'
+  );
+  for (var i = 0; i < inputs.length; i++) {
+    if (!inputs[i].readOnly && !inputs[i].disabled && inputs[i].value.trim()) return true;
+  }
+  return false;
+}
+function shakeDialog(dialogEl) {
+  dialogEl.classList.remove('dialog-shake');
+  void dialogEl.offsetWidth;
+  dialogEl.classList.add('dialog-shake');
+  dialogEl.addEventListener('animationend', function() {
+    dialogEl.classList.remove('dialog-shake');
+  }, { once: true });
+}
+
 function closeNotesDialog() {
   cancelDeleteEntry();
   document.getElementById('notesOverlay').classList.remove('open');
@@ -4426,14 +4430,22 @@ function submitGameEdit() {
 // Close dialogs on Escape (outermost-first priority)
 document.addEventListener('keydown', function(ev) {
   if (ev.key !== 'Escape') return;
-  if (document.getElementById('vpOverlay').classList.contains('open'))        { closeVpDialog();        return; }
-  if (document.getElementById('shareUrlOverlay').classList.contains('open'))  { closeShareUrlDialog();  return; }
-  if (document.getElementById('errOverlay').classList.contains('open'))       { closeErrDialog();       return; }
-  if (document.getElementById('diOverlay').classList.contains('open'))        { closeDiDialog();        return; }
-  if (document.getElementById('gameEditOverlay').classList.contains('open'))  { closeGameEditDialog();  return; }
-  if (document.getElementById('addNewOverlay').classList.contains('open'))    { closeAddNew();          return; }
-  if (document.getElementById('addEntryOverlay').classList.contains('open'))  { closeAddDialog();       return; }
-  closeNotesDialog();
+  var el, d;
+  // Info-only overlays — always close
+  if (document.getElementById('vpOverlay').classList.contains('open'))       { closeVpDialog();       return; }
+  if (document.getElementById('shareUrlOverlay').classList.contains('open')) { closeShareUrlDialog(); return; }
+  if (document.getElementById('errOverlay').classList.contains('open'))      { closeErrDialog();      return; }
+  // Data-entry overlays — guard if dirty
+  el = document.getElementById('diOverlay');
+  if (el.classList.contains('open'))       { d = el.querySelector('.di-dialog');        if (hasDialogData(d)) shakeDialog(d); else closeDiDialog();       return; }
+  el = document.getElementById('gameEditOverlay');
+  if (el.classList.contains('open'))       { d = el.querySelector('.game-edit-dialog'); if (hasDialogData(d)) shakeDialog(d); else closeGameEditDialog(); return; }
+  el = document.getElementById('addNewOverlay');
+  if (el.classList.contains('open'))       { d = el.querySelector('.add-new-dialog');   if (hasDialogData(d)) shakeDialog(d); else closeAddNew();          return; }
+  el = document.getElementById('addEntryOverlay');
+  if (el.classList.contains('open'))       { d = el.querySelector('.add-entry-dialog'); if (hasDialogData(d)) shakeDialog(d); else closeAddDialog();       return; }
+  el = document.getElementById('notesOverlay');
+  if (el.classList.contains('open'))       { d = el.querySelector('.notes-dialog');     if (hasDialogData(d)) shakeDialog(d); else closeNotesDialog();     return; }
 });
 
 // ── Add Entry ─────────────────────────────────────────
@@ -5715,13 +5727,6 @@ function _setupShareCollabCombo() {
 }
 
 function openShareUrlDialog(gameName) {
-  // Reset packaging section
-  document.getElementById('sharePitchUrlSection').style.display = 'none';
-  document.getElementById('shareUrlInput').value = '';
-  var pkgBtn = document.getElementById('sharePackageBtn');
-  pkgBtn.disabled = false;
-  pkgBtn.textContent = 'Package Pitch Data';
-
   // View-only link section — reset to Generate state, then check server
   document.getElementById('shareViewUrlSection').style.display = 'none';
   document.getElementById('shareViewUrlInput').value = '';
@@ -5823,9 +5828,6 @@ function openShareUrlDialog(gameName) {
     _shareCollabMap[label] = p.Email;
     _shareCollabItems.push(label);
   });
-
-  _setupShareCollabCombo();
-  document.getElementById('shareCollabInput').value = '';
 
   document.getElementById('shareUrlOverlay').classList.add('open');
 }

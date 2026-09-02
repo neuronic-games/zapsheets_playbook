@@ -14,10 +14,16 @@
     "version": "Jul 2026",
     "apps": ["pitchboard"],
     "features": [
-      "PulseBoard now tracks and displays the logged-in user alongside each pulse entry",
       "Fixed: duplicate pitches on the same date now use sheet order to determine the latest entry",
       "Fixed: Google API connection timeouts on Fetch no longer cause silent failures",
       "Game Page tokens now appear without needing a Page URL field populated"
+    ]
+  },
+  {
+    "version": "Jul 2026",
+    "apps": ["pulseboard"],
+    "features": [
+      "PulseBoard now tracks and displays the logged-in user alongside each pulse entry"
     ]
   },
   {

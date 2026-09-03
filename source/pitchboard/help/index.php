@@ -472,6 +472,70 @@ body {
   margin: 0;
 }
 
+/* ── Mock kanban ──────────────────────────────────────── */
+.mock-kb {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .5rem;
+  margin-top: 1.4rem;
+  background: var(--navy);
+  border-radius: 14px;
+  padding: 1rem;
+  overflow-x: auto;
+  box-shadow: 0 4px 24px rgba(0,0,0,.18);
+}
+.mock-kb-col {
+  background: rgba(255,255,255,.05);
+  border-radius: 8px;
+  overflow: hidden;
+  min-width: 0;
+}
+.mock-kb-col-head {
+  padding: .45rem .65rem;
+  font-family: 'DINBlack', sans-serif;
+  font-size: .62rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.45);
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mock-kb-col.signed   .mock-kb-col-head { color: #b197fc; }
+.mock-kb-col.published .mock-kb-col-head { color: #7dd3fc; }
+.mock-kb-count {
+  background: rgba(255,255,255,.1);
+  border-radius: 999px;
+  padding: .05rem .4rem;
+  font-size: .58rem;
+  color: rgba(255,255,255,.35);
+}
+.mock-kb-cards {
+  padding: .4rem .35rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+.mock-kb-card {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 5px;
+  padding: .4rem .5rem;
+}
+.mock-kb-card-name {
+  font-family: 'DINBlack', sans-serif;
+  font-size: .67rem;
+  color: rgba(255,255,255,.82);
+  letter-spacing: .02em;
+  margin-bottom: .1rem;
+}
+.mock-kb-card-sub { font-size: .58rem; color: rgba(255,255,255,.35); }
+
+@media (max-width: 540px) {
+  .mock-kb { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* ── Inline code ──────────────────────────────────────── */
 code {
   font-family: 'Courier New', monospace;
@@ -520,7 +584,7 @@ code {
     <div class="brand-name"><span class="pitch">Pitch</span><span class="board">Board</span></div>
     <span class="top-bar-divider">/</span>
     <span class="top-bar-label">Help</span>
-    <a class="top-bar-back" href="pitchboard">← Setup</a>
+    <a class="top-bar-back" href="pitchboard" id="helpBackBtn">← Back</a>
   </div>
 </div>
 
@@ -531,10 +595,11 @@ code {
   <p class="hero-sub">Your game pitching command center. Track every submission, publisher, and status — all from your Google Sheet.</p>
   <div class="hero-chips">
     <span class="hero-chip">Google Sheets–powered</span>
+    <span class="hero-chip">Board view</span>
     <span class="hero-chip">Status tracking</span>
     <span class="hero-chip">Email integration</span>
     <span class="hero-chip">Shareable game pages</span>
-    <span class="hero-chip">Works on mobile</span>
+    <span class="hero-chip">Works on iPad &amp; mobile</span>
   </div>
 </div>
 
@@ -544,6 +609,7 @@ code {
     <a href="<?= $_self ?>#what-is">What is PitchBoard?</a>
     <a href="<?= $_self ?>#getting-started">Getting Started</a>
     <a href="<?= $_self ?>#dashboard">The Dashboard</a>
+    <a href="<?= $_self ?>#board">Board View</a>
     <a href="<?= $_self ?>#game-cards">Game Cards</a>
     <a href="<?= $_self ?>#adding-pitches">Adding Pitches</a>
     <a href="<?= $_self ?>#statuses">Status Tracking</a>
@@ -629,7 +695,7 @@ code {
       <span class="section-num">03</span>
       <h2 class="section-title">The Dashboard</h2>
     </div>
-    <p>The top bar has three views. Switch between them with the toggle in the upper-right area.</p>
+    <p>The top bar has four views. Switch between them with the toggle in the upper-right area.</p>
     <div class="view-tabs">
       <div class="view-tab">
         <div class="view-tab-label">📊 Dashboard</div>
@@ -643,16 +709,115 @@ code {
         <div class="view-tab-label">🏢 Publishers</div>
         <p>Everything grouped by publisher, so you can see your entire relationship with each company at once.</p>
       </div>
+      <div class="view-tab">
+        <div class="view-tab-label">🗂 Board</div>
+        <p>Kanban-style view of all your games organised into Design, Pitch, Signed, and Published columns. Drag cards to move them.</p>
+      </div>
     </div>
     <p style="margin-top:1.1rem">Below the view toggle you'll find a <strong>search bar</strong> — it searches game names, publisher names, and contacts simultaneously. Use the <strong>Date / A–Z</strong> toggle to sort by most recent activity or alphabetically.</p>
     <p>The coloured status pills at the top of the feed act as quick filters — tap one to show only games with that status.</p>
     <div class="tip"><strong>Tip:</strong> Use the <strong>Fetch</strong> button (person icon → Fetch) after editing your Google Sheet to pull in the latest data. PitchBoard doesn't auto-sync — you control when it refreshes.</div>
   </div>
 
+  <!-- ── Board View ── -->
+  <div class="section" id="board">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2 class="section-title">Board View</h2>
+    </div>
+    <p>Board view shows all your games as cards arranged in four columns by design stage: <strong>Design</strong> (still in development), <strong>Pitch</strong> (actively submitting), <strong>Signed</strong> (contract in place), and <strong>Published</strong> (out in the world). It gives you a pipeline-level picture of where every game sits at a glance.</p>
+
+    <!-- Mock kanban board -->
+    <div class="mock-kb">
+      <div class="mock-kb-col">
+        <div class="mock-kb-col-head">Design <span class="mock-kb-count">3</span></div>
+        <div class="mock-kb-cards">
+          <div class="mock-kb-card">
+            <div class="mock-kb-card-name">Ironveil Pass</div>
+            <div class="mock-kb-card-sub">Started Apr 2025</div>
+          </div>
+          <div class="mock-kb-card">
+            <div class="mock-kb-card-name">The Glass Engine</div>
+            <div class="mock-kb-card-sub">Started Jan 2026</div>
+          </div>
+          <div class="mock-kb-card">
+            <div class="mock-kb-card-name">Nocturne Market</div>
+            <div class="mock-kb-card-sub">Started Jun 2026</div>
+          </div>
+        </div>
+      </div>
+      <div class="mock-kb-col">
+        <div class="mock-kb-col-head">Pitch <span class="mock-kb-count">2</span></div>
+        <div class="mock-kb-cards">
+          <div class="mock-kb-card">
+            <div class="mock-kb-card-name">Stormveil</div>
+            <div class="mock-kb-card-sub">3 active pitches</div>
+          </div>
+          <div class="mock-kb-card">
+            <div class="mock-kb-card-name">Deepwater Run</div>
+            <div class="mock-kb-card-sub">1 active pitch</div>
+          </div>
+        </div>
+      </div>
+      <div class="mock-kb-col signed">
+        <div class="mock-kb-col-head">Signed <span class="mock-kb-count">1</span></div>
+        <div class="mock-kb-cards">
+          <div class="mock-kb-card">
+            <div class="mock-kb-card-name">Thornwood</div>
+            <div class="mock-kb-card-sub">Signed Mar 2026</div>
+          </div>
+        </div>
+      </div>
+      <div class="mock-kb-col published">
+        <div class="mock-kb-col-head">Published <span class="mock-kb-count">1</span></div>
+        <div class="mock-kb-cards">
+          <div class="mock-kb-card">
+            <div class="mock-kb-card-name">The Cartographer</div>
+            <div class="mock-kb-card-sub">Published Jan 2026</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cards" style="margin-top:1.25rem">
+      <div class="card">
+        <span class="card-icon">↔️</span>
+        <div class="card-title">Drag to move</div>
+        <p>Drag a card to a different column to change the game's stage. The sheet updates automatically — no manual editing needed.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">📅</span>
+        <div class="card-title">Date auto-fill</div>
+        <p>Moving a game to <strong>Signed</strong> or <strong>Published</strong> fills the corresponding date in your sheet if it's blank.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🔽</span>
+        <div class="card-title">Card expansion</div>
+        <p>Tap a card to expand it and see Started, Signed, and Published dates inline, plus a View action.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">👁</span>
+        <div class="card-title">View action</div>
+        <p>The expanded card has a View button that jumps straight to that game in the Games view with the card already open.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">📦</span>
+        <div class="card-title">Shelf / Unshelf</div>
+        <p>Hide a game from the board without deleting it using the Shelf button. Shelved games appear in a collapsible section at the bottom of the board — tap to restore.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">📱</span>
+        <div class="card-title">Touch drag on iPad</div>
+        <p>Drag-and-drop works on iPad and iPhone too. Press and hold a card, then drag it to the target column.</p>
+      </div>
+    </div>
+    <div class="tip"><strong>Stage vs. status:</strong> the Board column represents a game's overall design stage (Design → Pitch → Signed → Published), not the status of individual pitch entries. A game in the Pitch column can have pitches with any status — Pitched, Interested, Passed, and so on.</div>
+  </div>
+
   <!-- ── Game Cards ── -->
   <div class="section" id="game-cards">
     <div class="section-header">
-      <span class="section-num">04</span>
+      <span class="section-num">05</span>
       <h2 class="section-title">Game Cards</h2>
     </div>
     <p>Each game gets a card in the Games view. Here's what you're looking at:</p>
@@ -717,7 +882,7 @@ code {
   <!-- ── Adding Pitches ── -->
   <div class="section" id="adding-pitches">
     <div class="section-header">
-      <span class="section-num">05</span>
+      <span class="section-num">06</span>
       <h2 class="section-title">Adding Pitches</h2>
     </div>
     <p>Tap <strong>+ New Pitch</strong> on a game card (or <strong>New Pitch</strong> on a publisher in Publishers view) to open the Add Entry dialog.</p>
@@ -754,12 +919,13 @@ code {
       </div>
     </div>
     <div class="tip"><strong>Editing an entry:</strong> tap any pitch row on a game card to open the edit dialog. You can update the status, date, notes, or delete the entry entirely.</div>
+    <div class="tip" style="margin-top:.6rem"><strong>Unsaved changes protection:</strong> if you click outside a dialog or press Escape while there are unsaved changes, the dialog shakes instead of closing. This prevents accidental data loss — use the Cancel button to discard intentionally.</div>
   </div>
 
   <!-- ── Status Tracking ── -->
   <div class="section" id="statuses">
     <div class="section-header">
-      <span class="section-num">06</span>
+      <span class="section-num">07</span>
       <h2 class="section-title">Status Tracking</h2>
     </div>
     <p>Every pitch entry has a status. The status controls the badge color on the card and the filter pills at the top of the feed.</p>
@@ -795,7 +961,7 @@ code {
   <!-- ── View Page ── -->
   <div class="section" id="view-page">
     <div class="section-header">
-      <span class="section-num">07</span>
+      <span class="section-num">08</span>
       <h2 class="section-title">View Page</h2>
     </div>
     <p>Every game can have a shareable public page at <code>/&lt;sheet-id&gt;/view/?game=GameName</code>. This is what you send to publishers so they can read your pitch, watch your video, download your rules, and open your sellsheet — all in one place.</p>
@@ -825,29 +991,24 @@ code {
   <!-- ── Sharing & Importing ── -->
   <div class="section" id="sharing">
     <div class="section-header">
-      <span class="section-num">08</span>
+      <span class="section-num">09</span>
       <h2 class="section-title">Sharing &amp; Importing</h2>
     </div>
-    <p>If you co-design games or work with a collaborator who has their own PitchBoard, you can share pitch data between accounts.</p>
+    <p>If you co-design games, you can give collaborators access to add and edit pitches in your PitchBoard — without sharing your Google Sheet directly.</p>
     <div class="cards">
       <div class="card">
         <span class="card-icon">🔗</span>
-        <div class="card-title">Share your data</div>
-        <p>Person icon → <strong>Share</strong>. Copy the generated link and send it to your co-designer. They can paste it into their Import dialog to pull in your pitch entries.</p>
-      </div>
-      <div class="card">
-        <span class="card-icon">📥</span>
-        <div class="card-title">Import from a link</div>
-        <p>Person icon → <strong>Import</strong>. Paste a share link from a collaborator. PitchBoard previews what will be imported before you confirm.</p>
+        <div class="card-title">Share access</div>
+        <p>Person icon → <strong>Share</strong>. Copy the generated link and send it to your co-designer. Anyone with the link can add and edit pitch entries on your behalf.</p>
       </div>
     </div>
-    <div class="tip"><strong>Who imports what:</strong> sharing transfers pitch entries (publisher, date, status, notes). Game metadata stays in each person's own sheet.</div>
+    <div class="tip"><strong>What collaborators can do:</strong> add new pitches, edit existing entries (status, date, notes), and see your full pitch history. Your Google Sheet remains private — only PitchBoard data is accessible through the share link.</div>
   </div>
 
   <!-- ── Email ── -->
   <div class="section" id="email">
     <div class="section-header">
-      <span class="section-num">09</span>
+      <span class="section-num">10</span>
       <h2 class="section-title">Email Integration</h2>
     </div>
     <p>PitchBoard can open your email client with a pre-filled pitch email — no copy-pasting links one by one.</p>
@@ -869,6 +1030,17 @@ code {
   </div>
 
 </div><!-- /page-body -->
+
+<script>
+// Use history.back() when navigated here from within the app.
+// Falls back to the pitchboard setup page href if loaded directly.
+(function() {
+  var btn = document.getElementById('helpBackBtn');
+  if (document.referrer && document.referrer.indexOf(window.location.origin) === 0) {
+    btn.addEventListener('click', function(e) { e.preventDefault(); history.back(); });
+  }
+})();
+</script>
 
 <!-- Footer -->
 <div class="footer">

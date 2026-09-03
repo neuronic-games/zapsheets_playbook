@@ -58,29 +58,36 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       /* hero height: let image set its own height on screen; clipped by sheet overflow on print */
     }
 
-    /* PWA back bar — only shown in standalone / Home Screen mode */
+    /* ── PWA header bar — always present ── */
     #pwaBackBar {
-      display: none;
+      display: flex;
+      align-items: center;
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
+      top: 0; left: 0; right: 0;
       z-index: 999;
       background: #1c1c1e;
       padding: .55rem 1rem;
+      gap: .6rem;
     }
-    #pwaBackBar button {
-      background: none;
+    .pwa-btn {
+      font-family: 'DINBlack', Arial, sans-serif;
+      font-size: .68rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #fff;
       border: none;
-      color: #0a84ff;
-      font-size: 1rem;
-      font-family: -apple-system, sans-serif;
+      border-radius: 10px;
+      padding: .46rem 1rem;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: .3rem;
-      padding: 0;
+      white-space: nowrap;
+      line-height: 1;
     }
+    .pwa-btn-gray  { background: #636366; }
+    .pwa-btn-green { background: #34c759; }
+    .pwa-btn-dark  { background: #3a3a3c; margin-left: auto; }
+    .pwa-btn-dark:hover  { background: #111; }
+    .pwa-btn-gray:hover  { background: #48484a; }
+    .pwa-btn-green:hover { background: #28a745; }
     @media print { #pwaBackBar { display: none !important; } }
 
     body {
@@ -93,16 +100,6 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       align-items: center;
       padding: 2rem 1rem;
     }
-    .print-btn {
-      margin-bottom: 1rem;
-      padding: .45rem 1.3rem;
-      background: #333; color: #fff;
-      border: none; border-radius: 6px;
-      font-family: 'DINBlack', sans-serif;
-      font-size: .78rem; text-transform: uppercase;
-      letter-spacing: .07em; cursor: pointer;
-    }
-    .print-btn:hover { background: #000; }
 
     /* ── Sheet: 8.5 × 11 in @ 96 dpi = 816 × 1056 px ───────────── */
     .sheet {
@@ -297,10 +294,9 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 <body>
 
 <div id="pwaBackBar">
-  <button id="pwaBackBtn">&#8249; Back</button>
+  <button class="pwa-btn pwa-btn-gray" id="pwaBackBtn" style="display:none">&#8249; Back</button>
+  <button class="pwa-btn pwa-btn-dark" onclick="window.print()">Print / Save as PDF</button>
 </div>
-
-<button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
 
 <div class="sheet">
 
@@ -717,21 +713,23 @@ function render() {
   window.addEventListener('resize', fit);
 })();
 
-// Show the back bar only when running as a Home Screen / PWA app
+// Header bar is always present. Show Back button only when navigated from within the app.
 (function() {
+  var bar = document.getElementById('pwaBackBar');
+  var btn = document.getElementById('pwaBackBtn');
+  // Push page content below the fixed bar
+  document.body.style.paddingTop = bar.offsetHeight + 'px';
+  var ref = document.referrer;
   var standalone = (window.navigator.standalone === true)
                 || window.matchMedia('(display-mode: standalone)').matches;
-  if (standalone) {
-    var bar = document.getElementById('pwaBackBar');
-    bar.style.display = 'block';
-    document.body.style.paddingTop = bar.offsetHeight + 'px';
-    document.getElementById('pwaBackBtn').addEventListener('click', function() {
+  var sameOrigin = ref && ref.indexOf(window.location.origin) === 0;
+  if (sameOrigin || (standalone && history.length > 1)) {
+    btn.style.display = '';
+    btn.addEventListener('click', function() {
       if (history.length > 1) {
         history.back();
       } else {
-        // Tab was opened fresh via window.open() — close it to return to the /view tab.
         window.close();
-        // Fallback if close() is blocked (fires only if window is still open):
         setTimeout(function() {
           window.location.href = window.location.pathname.replace(/\/sellsheet\/?$/, '/view');
         }, 150);

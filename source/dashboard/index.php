@@ -2648,13 +2648,21 @@ function buildGameView(pitches) {
         { label:'Play',      url: absUrl(gfield(['Play','Play URL','Play Link','Link Play'])) },
         { label:'Sellsheet', url: absUrl(gfield(['Sellsheet URL','Sellsheet','Sell Sheet URL','Sell Sheet','Link Sellsheet'])) },
         { label:'Video',     url: absUrl(gfield(['Video','Video URL','Video Link','Link Video','YouTube','YouTube URL'])) },
-        { label:'Page', url: gpToken ? window.location.origin + APP_BASE + 'game/' + gpToken : '' }
+        { label:'Page', url: gpToken ? window.location.origin + APP_BASE + 'game/' + gpToken : '', sameTab: true }
       ];
       var out = '';
       linkDefs.forEach(function(lp) {
         if (lp.url) {
-          out += '<a class="game-link-btn" href="' + escHtml(lp.url) +
-                 '" target="_blank" rel="noopener noreferrer">' + escHtml(lp.label) + '</a>';
+          // Same-tab links (game page) open in the current window so the Back button works.
+          // External links open in a new tab with noreferrer for security.
+          if (lp.sameTab) {
+            out += '<a class="game-link-btn" href="' + escHtml(lp.url) +
+                   '" data-return-game="' + escHtml(g) + '" onclick="pbSaveReturnGame(this)">' +
+                   escHtml(lp.label) + '</a>';
+          } else {
+            out += '<a class="game-link-btn" href="' + escHtml(lp.url) +
+                   '" target="_blank" rel="noopener noreferrer">' + escHtml(lp.label) + '</a>';
+          }
         }
       });
       return out;
@@ -3371,6 +3379,12 @@ function render(pitches, settings, people, games) {
   filteredPitches = allPitches;
   buildSummary(allPitches);
   buildView();
+  // ── Restore expanded card when returning from game page ──
+  var _retGame = sessionStorage.getItem('pb_return_game');
+  if (_retGame) {
+    sessionStorage.removeItem('pb_return_game');
+    goToGame(_retGame);
+  }
 }
 
 // ── Collect collaborator emails for a game (all designers except current user) ──
@@ -3530,6 +3544,9 @@ function goToPublisher(pubName) {
 function goToGame(gameName) {
   setView('game');
   _expandCardByTitle(gameName);
+}
+function pbSaveReturnGame(el) {
+  sessionStorage.setItem('pb_return_game', el.getAttribute('data-return-game'));
 }
 
 function togglePubPassed(header) {

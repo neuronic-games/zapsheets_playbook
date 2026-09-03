@@ -49,19 +49,28 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       z-index: 999;
       background: #1c1c1e;
       padding: .55rem 1rem;
-    }
-    #pwaBackBar button {
-      background: none;
-      border: none;
-      color: #0a84ff;
-      font-size: 1rem;
-      font-family: -apple-system, sans-serif;
-      cursor: pointer;
-      display: flex;
+      flex-direction: row;
       align-items: center;
-      gap: .3rem;
-      padding: 0;
+      gap: .6rem;
     }
+    .pwa-btn {
+      font-family: 'DINBlack', Arial, sans-serif;
+      font-size: .68rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: .46rem 1rem;
+      cursor: pointer;
+      white-space: nowrap;
+      line-height: 1;
+    }
+    .pwa-btn-gray  { background: #636366; }
+    .pwa-btn-green { background: #34c759; margin-left: auto; }
+    .pwa-btn-gray:hover  { background: #48484a; }
+    .pwa-btn-green:hover { background: #28a745; }
+    .pwa-btn-green.copied { background: #1a8c3a; }
 
     /* ── Page container ──────────────────────────────────────── */
     .page-wrap { max-width: 1060px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
@@ -575,7 +584,8 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 <body>
 
 <div id="pwaBackBar">
-  <button id="pwaBackBtn">&#8249; Back</button>
+  <button class="pwa-btn pwa-btn-gray" id="pwaBackBtn">&#8249; Back</button>
+  <button class="pwa-btn pwa-btn-green" id="pwaShareBtn" onclick="pwaShareUrl()">Share ↗</button>
 </div>
 
 
@@ -1537,21 +1547,41 @@ function activateTab(id) {
   });
 }
 
-// ── PWA back bar — shown only when the user navigated here from within the app ──
-// Hidden when the page is loaded directly (e.g. via a shared link) — nothing to go back to.
+// ── PWA back bar — shown when navigated from within the app, or in standalone mode with history ──
 (function() {
   if (window.parent !== window) return; // inside viewerFrame — dashboard provides the ✕ button
   var ref = document.referrer;
-  if (!ref || ref.indexOf(window.location.origin) !== 0) return; // direct/external load — no back bar
+  var standalone = (window.navigator.standalone === true)
+                || window.matchMedia('(display-mode: standalone)').matches;
+  // Show when: same-origin referrer (browser), OR standalone PWA with history to go back to
+  var sameOrigin = ref && ref.indexOf(window.location.origin) === 0;
+  if (!sameOrigin && !(standalone && history.length > 1)) return;
   var bar = document.getElementById('pwaBackBar');
   var btn = document.getElementById('pwaBackBtn');
   // Customise label when coming from the slides page
-  if (ref.indexOf('/slides') !== -1) btn.innerHTML = '&#8249; Slides';
-  bar.style.display = 'block';
-  btn.addEventListener('click', function() {
-    history.back();
-  });
+  if (ref && ref.indexOf('/slides') !== -1) btn.innerHTML = '&#8249; Slides';
+  bar.style.display = 'flex';
+  btn.addEventListener('click', function() { history.back(); });
 })();
+
+function pwaShareUrl() {
+  var url = window.location.href;
+  var btn = document.getElementById('pwaShareBtn');
+  if (navigator.share) {
+    navigator.share({ url: url }).catch(function() {});
+  } else {
+    navigator.clipboard.writeText(url).then(function() {
+      btn.textContent = 'Copied ✓';
+      btn.classList.add('copied');
+      setTimeout(function() {
+        btn.textContent = 'Share ↗';
+        btn.classList.remove('copied');
+      }, 2000);
+    }).catch(function() {
+      prompt('Copy this link:', url);
+    });
+  }
+}
 
 // ── In-viewer navigation (when loaded inside the dashboard iframe) ──
 // Posts a message to the parent dashboard to load a URL in the same

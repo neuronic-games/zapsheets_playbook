@@ -344,7 +344,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 /* Keyboard navigation hint — hidden on touch-only devices */
 .obs-kbd-hint {
   display:none; font-family:'DINRegular',sans-serif; font-size:.7rem;
-  color:#c8d0d8; text-align:center; padding:.1rem 0 0; user-select:none;
+  color:#c8d0d8; user-select:none; margin-right:auto;
 }
 @media (hover: hover) { .obs-kbd-hint { display:block; } }
 
@@ -524,9 +524,9 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
     <!-- Observation + Solution (dynamic pairs) -->
     <div id="obsContainer"></div>
 
-    <div class="obs-kbd-hint">⌘ / Ctrl + Arrow — move between fields</div>
     <div class="dialog-err" id="sessionErr"></div>
     <div class="dialog-actions">
+      <span class="obs-kbd-hint">⌘ / Ctrl + Arrow — move between fields</span>
       <button class="btn-cancel" onclick="closeSessionDialog()">Cancel</button>
       <button class="btn-primary" id="sessionBtn" onclick="submitSession()">Add Session</button>
     </div>

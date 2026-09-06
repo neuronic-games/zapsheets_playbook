@@ -104,6 +104,10 @@
                 echo 'Publishing ' . $sheetName . ' data to server';
             }
         } else {
+            // Tab no longer exists in the sheet — remove stale local cache
+            if (file_exists($jsonFile)) {
+                unlink($jsonFile);
+            }
             echo 'SKIP:' . $sheetName;
         }
     }

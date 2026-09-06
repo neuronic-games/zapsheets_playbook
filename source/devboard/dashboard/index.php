@@ -1338,6 +1338,7 @@ function submitSession() {
       .then(function(r) { return r.json(); })
       .then(function(res) {
         if (res.error) throw new Error(res.error);
+        addNewPeople(testerVals);
         // Force a fresh fetch so devCache reflects the new sheet state
         devCache[_sessionGame] = undefined;
         closeSessionDialog();
@@ -1386,6 +1387,7 @@ function submitSession() {
     .then(function(results) {
       var failed = results.find(function(r) { return r.error; });
       if (failed) throw new Error(failed.error);
+      addNewPeople(testerVals);
       if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
       results.forEach(function(res) { if (res.row) devCache[_sessionGame].push(res.row); });
       renderBody(_sessionGame, devCache[_sessionGame]);
@@ -1396,6 +1398,26 @@ function submitSession() {
       err.style.display = 'block';
       btn.disabled = false; btn.textContent = 'Add Session';
     });
+}
+
+// ── People sheet sync ────────────────────────────────────────────────────────
+// After a session save, silently add any new tester names to the People sheet.
+
+function addNewPeople(names) {
+  var known = {};
+  PEOPLE_NAMES.forEach(function(n) { known[n.toLowerCase()] = true; });
+  names.forEach(function(name) {
+    var key = name.toLowerCase();
+    if (known[key]) return;
+    known[key] = true;
+    PEOPLE_NAMES.push(name);   // update in-memory autocomplete list
+    var fd = new FormData();
+    fd.append('id',      SHEET_ID);
+    fd.append('name',    name);
+    fd.append('company', '');
+    fd.append('email',   '');
+    fetch(APP_BASE + 'push/addPerson.php', { method:'POST', body:fd }).catch(function(){});
+  });
 }
 
 // ── Dynamic testers ───────────────────────────────────────────────────────────

@@ -44,6 +44,10 @@ TABS = {
                   'Description', 'Rules', 'Play', 'Print', 'Sellsheet', 'BGG', 'Video']],
         'freeze': True,
     },
+    'People': {
+        'rows': [['Name', 'Email', 'Company', 'Role', 'Notes']],
+        'freeze': True,
+    },
     'Settings': {
         'rows': [
             ['My Name',     ''],

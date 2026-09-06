@@ -283,9 +283,33 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .overlay.open { display:flex; }
 
 /* Sync overlay */
-.sync-dialog { background:#fff; border-radius:10px; padding:1.4rem 1.8rem; min-width:240px; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,.2); }
-.sync-dialog p { font-size:.85rem; color:#555; margin:.5rem 0 0; }
-.sync-spinner { font-size:1.4rem; animation:spin .8s linear infinite; display:inline-block; }
+.sync-dialog {
+  background:#fff; border-radius:10px;
+  padding:1.4rem; width:min(480px,92vw);
+  box-shadow:0 8px 32px rgba(0,0,0,.22);
+  display:flex; flex-direction:column; gap:.75rem;
+}
+.sync-dialog h2 { font-family:'DINBlack',sans-serif; font-size:.95rem; margin:0; }
+.sync-log {
+  background:#0f172a; border-radius:6px;
+  padding:.75rem 1rem; min-height:6rem; max-height:14rem;
+  overflow-y:auto; font-family:monospace; font-size:.75rem;
+  line-height:1.6; color:#94a3b8;
+}
+.sync-log-line { display:block; }
+.sync-log-line.ok    { color:#4ade80; }
+.sync-log-line.skip  { color:#94a3b8; }
+.sync-log-line.error { color:#f87171; }
+.sync-log-line.info  { color:#60a5fa; }
+.sync-dialog-actions { display:flex; align-items:center; justify-content:flex-end; gap:.5rem; }
+.notes-close {
+  font-family:'DINBlack',sans-serif; font-size:.7rem;
+  text-transform:uppercase; letter-spacing:.05em;
+  background:none; color:#999; border:1px solid #ddd;
+  border-radius:6px; padding:.42rem .9rem; cursor:pointer;
+}
+.notes-close:hover { background:#f5f5f5; color:#333; }
+.notes-close:disabled { opacity:.4; cursor:default; }
 
 /* Add game dialog */
 .add-dialog {
@@ -453,8 +477,12 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 <!-- Fetch overlay -->
 <div class="overlay" id="syncOverlay">
   <div class="sync-dialog">
-    <div class="sync-spinner">↻</div>
-    <p id="syncMsg">Fetching from Google Sheets…</p>
+    <h2 id="syncDialogTitle">Fetching…</h2>
+    <p id="syncDialogSub" style="color:#888;font-size:.78rem;margin:.1rem 0 .4rem">Fetch data from your spreadsheet</p>
+    <div class="sync-log" id="syncLog"></div>
+    <div class="sync-dialog-actions">
+      <button class="notes-close" id="syncDoneBtn" disabled onclick="closeSyncDialog()">Close</button>
+    </div>
   </div>
 </div>
 
@@ -857,27 +885,82 @@ function clearSearch() {
 
 // ── Fetch ─────────────────────────────────────────────────────────────────────
 
+function openSyncDialog() {
+  document.getElementById('syncLog').innerHTML = '';
+  document.getElementById('syncDialogTitle').textContent = 'Fetching…';
+  document.getElementById('syncDialogSub').style.display = '';
+  document.getElementById('syncDoneBtn').disabled = true;
+  document.getElementById('syncOverlay').classList.add('open');
+}
+function closeSyncDialog() {
+  document.getElementById('syncOverlay').classList.remove('open');
+  window.location.reload();
+}
+function syncLog(msg, type) {
+  var log  = document.getElementById('syncLog');
+  var line = document.createElement('span');
+  line.className = 'sync-log-line ' + (type || 'info');
+  line.textContent = msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
 function doFetch() {
   var btn = document.getElementById('fetchBtn');
-  var overlay = document.getElementById('syncOverlay');
-  var msg = document.getElementById('syncMsg');
   btn.disabled = true; btn.classList.add('syncing');
-  overlay.classList.add('open');
-  msg.textContent = 'Fetching from Google Sheets…';
-  var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('tabs', 'games');
-  fetch(APP_BASE + 'push/pushSheetUpdate.php', { method:'POST', body:fd })
-    .then(function(r) {
-      if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP ' + r.status + ': ' + t.slice(0,120)); });
-      return r.json();
-    })
-    .then(function(res) {
-      if (res && res.error) throw new Error(res.error);
-      window.location.reload();
-    })
-    .catch(function(e) {
-      msg.textContent = e.message || 'Could not reach server.';
-      setTimeout(function() { overlay.classList.remove('open'); btn.disabled = false; btn.classList.remove('syncing'); }, 4000);
-    });
+
+  openSyncDialog();
+
+  // Build list: games tab first, then each active dev tab
+  var sheets = ['games'];
+  Object.keys(ACTIVE_KEYS).forEach(function(k) {
+    sheets.push('[' + k + '] dev');
+  });
+
+  var pushBase = APP_BASE + 'push/pushSheetUpdate.php';
+  var idx = 0;
+
+  function finish() {
+    syncLog('Done.', 'ok');
+    document.getElementById('syncDialogTitle').textContent = 'Fetch Complete';
+    document.getElementById('syncDialogSub').style.display = 'none';
+    document.getElementById('syncDoneBtn').disabled = false;
+    btn.disabled = false; btn.classList.remove('syncing');
+  }
+
+  function pushNext() {
+    if (idx >= sheets.length) { finish(); return; }
+    var sheetName = sheets[idx++];
+    syncLog('Fetching ' + sheetName + '…', 'info');
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', pushBase);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function() {
+      var resp = (xhr.responseText || '').trim();
+      if (resp.indexOf('ERROR:') === 0) {
+        var m = resp.replace(/^ERROR:[^:]+:/, '');
+        syncLog('  ✗ ' + sheetName + ': ' + m, 'error');
+      } else if (resp.indexOf('SKIP:') === 0) {
+        syncLog('  – ' + sheetName + ': skipped (not found)', 'skip');
+      } else {
+        syncLog('  ✓ ' + resp, 'ok');
+      }
+      pushNext();
+    };
+    xhr.onerror = function() {
+      syncLog('  ✗ ' + sheetName + ': network error', 'error');
+      pushNext();
+    };
+    xhr.timeout = 45000;
+    xhr.ontimeout = function() {
+      syncLog('  ⚠ ' + sheetName + ': timed out', 'error');
+      pushNext();
+    };
+    xhr.send('id=' + encodeURIComponent(SHEET_ID) +
+             '&sheetname=' + encodeURIComponent(sheetName) +
+             '&date_string=');
+  }
+  pushNext();
 }
 
 // ── Add game dialog ───────────────────────────────────────────────────────────

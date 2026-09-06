@@ -1108,14 +1108,20 @@ function submitAddGame() {
       .then(function(r) { return r.json(); });
   }
 
+  // Parse designer fields: strip emails, update inputs to show name only
+  var _gd1 = _parsePerson(document.getElementById('gDesigner1').value.trim());
+  var _gd2 = _parsePerson(document.getElementById('gDesigner2').value.trim());
+  document.getElementById('gDesigner1').value = _gd1.name;
+  document.getElementById('gDesigner2').value = _gd2.name;
+
   function addToGamesSheet() {
     var fd = new FormData();
     fd.append('id',           SHEET_ID);
     fd.append('name',         name);
     fd.append('status',       document.getElementById('gStatus').value);
     fd.append('date_started', document.getElementById('gDateStarted').value);
-    fd.append('designer1',    document.getElementById('gDesigner1').value);
-    fd.append('designer2',    document.getElementById('gDesigner2').value);
+    fd.append('designer1',    _gd1.name);
+    fd.append('designer2',    _gd2.name);
     fd.append('tagline',      document.getElementById('gTagline').value);
     fd.append('description',  document.getElementById('gDescription').value);
     fd.append('rules',        document.getElementById('gRules').value);
@@ -1135,6 +1141,8 @@ function submitAddGame() {
       if (isNewGame) {
         GAMES_RAW.push({ Name: name, Status: document.getElementById('gStatus').value });
         _existingNames[name.toLowerCase()] = true;
+        // Add designers to People sheet
+        addNewPeople([_gd1, _gd2].filter(function(p) { return p.name; }));
       } else {
         extraGames.push(name);
       }
@@ -1292,11 +1300,16 @@ function submitSession() {
   var err = document.getElementById('sessionErr');
   var btn = document.getElementById('sessionBtn');
 
-  // Collect testers (skip empty fields)
-  var testerVals = [];
+  // Collect testers — strip embedded emails from inputs, keep raw for People sync
+  var testerVals = [];   // clean names → session sheet
+  var testerRaws = [];   // original values (may include email) → People sheet
   document.querySelectorAll('#testersContainer input').forEach(function(el) {
-    var v = el.value.trim();
-    if (v) testerVals.push(v);
+    var raw = el.value.trim();
+    if (!raw) return;
+    var p = _parsePerson(raw);
+    el.value = p.name;       // update display to show name only
+    testerVals.push(p.name);
+    testerRaws.push(raw);
   });
 
   // Collect obs/sol pairs (skip entirely empty)
@@ -1338,7 +1351,7 @@ function submitSession() {
       .then(function(r) { return r.json(); })
       .then(function(res) {
         if (res.error) throw new Error(res.error);
-        addNewPeople(testerVals);
+        addNewPeople(testerRaws);
         // Force a fresh fetch so devCache reflects the new sheet state
         devCache[_sessionGame] = undefined;
         closeSessionDialog();
@@ -1387,7 +1400,7 @@ function submitSession() {
     .then(function(results) {
       var failed = results.find(function(r) { return r.error; });
       if (failed) throw new Error(failed.error);
-      addNewPeople(testerVals);
+      addNewPeople(testerRaws);
       if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
       results.forEach(function(res) { if (res.row) devCache[_sessionGame].push(res.row); });
       renderBody(_sessionGame, devCache[_sessionGame]);
@@ -1401,21 +1414,35 @@ function submitSession() {
 }
 
 // ── People sheet sync ────────────────────────────────────────────────────────
-// After a session save, silently add any new tester names to the People sheet.
+// After a session or game save, silently add any new names to the People sheet.
+// If a name string contains an embedded email (e.g. "Jane Smith jane@co.com"),
+// the email is extracted and stored separately; the session sheet keeps the
+// original full string unchanged.
 
-function addNewPeople(names) {
+function _parsePerson(raw) {
+  var m = raw.match(/(\S+@\S+\.\S+)/);
+  if (!m) return { name: raw.trim(), email: '' };
+  var email = m[1];
+  var name  = raw.replace(email, '').trim();
+  return { name: name || raw.trim(), email: email };
+}
+
+// items: array of strings (may include embedded email) or {name, email} objects
+function addNewPeople(items) {
   var known = {};
   PEOPLE_NAMES.forEach(function(n) { known[n.toLowerCase()] = true; });
-  names.forEach(function(name) {
-    var key = name.toLowerCase();
+  items.forEach(function(item) {
+    var parsed = (typeof item === 'string') ? _parsePerson(item.trim()) : item;
+    if (!parsed.name) return;
+    var key = parsed.name.toLowerCase();
     if (known[key]) return;
     known[key] = true;
-    PEOPLE_NAMES.push(name);   // update in-memory autocomplete list
+    PEOPLE_NAMES.push(parsed.name);   // update in-memory autocomplete list
     var fd = new FormData();
     fd.append('id',      SHEET_ID);
-    fd.append('name',    name);
+    fd.append('name',    parsed.name);
+    fd.append('email',   parsed.email || '');
     fd.append('company', '');
-    fd.append('email',   '');
     fetch(APP_BASE + 'push/addPerson.php', { method:'POST', body:fd }).catch(function(){});
   });
 }

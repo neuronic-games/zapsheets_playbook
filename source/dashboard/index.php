@@ -4998,6 +4998,14 @@ function submitGameEdit() {
   btn.disabled = true;
   btn.textContent = isNew ? 'Adding…' : 'Saving…';
 
+  // Parse designer fields: strip embedded emails, update inputs to show name only
+  var _dParsed = ['geDesigner1','geDesigner2','geDesigner3','geDesigner4'].map(function(id) {
+    var el = document.getElementById(id);
+    var p  = _parsePerson(el.value.trim());
+    el.value = p.name;
+    return p;
+  });
+
   var payload = {
     orig_name:  _gameEditCtx.origName,
     name:       document.getElementById('geGameName').value.trim(),
@@ -5007,10 +5015,10 @@ function submitGameEdit() {
     date_started:    document.getElementById('geDateStarted').value.trim(),
     date_signed:     document.getElementById('geDateSigned').value.trim(),
     date_published:  document.getElementById('geDatePublished').value.trim(),
-    designer1:       document.getElementById('geDesigner1').value.trim(),
-    designer2:  document.getElementById('geDesigner2').value.trim(),
-    designer3:  document.getElementById('geDesigner3').value.trim(),
-    designer4:  document.getElementById('geDesigner4').value.trim(),
+    designer1:  _dParsed[0].name,
+    designer2:  _dParsed[1].name,
+    designer3:  _dParsed[2].name,
+    designer4:  _dParsed[3].name,
     rules:      document.getElementById('geRules').value.trim(),
     play:       document.getElementById('gePlay').value.trim(),
     print:      document.getElementById('gePrint').value.trim(),
@@ -5109,26 +5117,28 @@ function submitGameEdit() {
     xhr.send(body);
   }
 
-  // Save any new designer names to the people sheet first, then save the game
-  var newDesigners = [payload.designer1, payload.designer2, payload.designer3, payload.designer4]
-    .filter(function(d, i, arr) { return d && !isKnownPerson(d) && arr.indexOf(d) === i; });
+  // Save any new designer names (with optional extracted email) to the people sheet first
+  var newDesigners = _dParsed.filter(function(p, i, arr) {
+    return p.name && !isKnownPerson(p.name) &&
+           arr.findIndex(function(q) { return q.name === p.name; }) === i;
+  });
 
   function saveNextDesigner(queue) {
     if (!queue.length) { doSave(); return; }
-    var name = queue[0]; var rest = queue.slice(1);
-    btn.textContent = 'Saving "' + name + '"…';
+    var person = queue[0]; var rest = queue.slice(1);
+    btn.textContent = 'Saving "' + person.name + '"…';
     var pxhr = new XMLHttpRequest();
     pxhr.open('POST', APP_BASE + 'push/addPerson.php');
     pxhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     pxhr.onload = function() {
       var res; try { res = JSON.parse(pxhr.responseText); } catch(e) { res = null; }
       if (res && res.ok) {
-        peopleIndex[name + '|'] = '';   // mark as known so next check passes
-        if (!peopleData[name]) peopleData[name] = { Name: name, Email: '', Company: '', Role: '', Notes: '' };
+        peopleIndex[person.name + '|'] = person.email || '';
+        if (!peopleData[person.name]) peopleData[person.name] = { Name: person.name, Email: person.email || '', Company: '', Role: '', Notes: '' };
         saveNextDesigner(rest);
       } else {
         btn.disabled = false; btn.textContent = isNew ? 'Add Game' : 'Save';
-        showError('Error saving designer "' + name + '": ' + ((res && res.error) || 'Unknown error'));
+        showError('Error saving designer "' + person.name + '": ' + ((res && res.error) || 'Unknown error'));
       }
     };
     pxhr.onerror = function() {
@@ -5137,8 +5147,9 @@ function submitGameEdit() {
     };
     pxhr.send(
       'id='      + encodeURIComponent(sheet_Id) +
-      '&name='   + encodeURIComponent(name) +
-      '&company=&email='
+      '&name='   + encodeURIComponent(person.name) +
+      '&email='  + encodeURIComponent(person.email || '') +
+      '&company='
     );
   }
 
@@ -5344,6 +5355,14 @@ function openNewPitchDialog(publisher, contact) {
 }
 
 // ── Designer combobox helpers ─────────────────────────
+function _parsePerson(raw) {
+  var m = (raw || '').match(/(\S+@\S+\.\S+)/);
+  if (!m) return { name: (raw || '').trim(), email: '' };
+  var email = m[1];
+  var name  = raw.replace(email, '').trim();
+  return { name: name || (raw || '').trim(), email: email };
+}
+
 function getAllPersonNames() {
   var names = {};
   // From people sheet (peopleIndex keys are "Name|Company")

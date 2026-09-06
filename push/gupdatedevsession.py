@@ -128,6 +128,28 @@ if new_rows:
         print(json.dumps({"error": f"Could not insert rows: {str(e)}"}))
         sys.exit(1)
 
+    # Clear any inherited direct background so conditional formatting applies cleanly.
+    try:
+        wb.batch_update({'requests': [{
+            'repeatCell': {
+                'range': {
+                    'sheetId': ws.id,
+                    'startRowIndex': header_sheet_row - 1,
+                    'endRowIndex':   header_sheet_row - 1 + len(new_rows),
+                    'startColumnIndex': 0,
+                    'endColumnIndex':   5,
+                },
+                'cell': {
+                    'userEnteredFormat': {
+                        'backgroundColor': {'red': 1, 'green': 1, 'blue': 1}
+                    }
+                },
+                'fields': 'userEnteredFormat.backgroundColor',
+            }
+        }]})
+    except Exception as e:
+        pass  # Non-fatal — values are correct even if background reset fails
+
 print(json.dumps({
     "ok": True,
     "header_row":     header_sheet_row,

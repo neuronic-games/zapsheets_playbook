@@ -290,11 +290,13 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 /* Add game dialog */
 .add-dialog {
   background:#fff; border-radius:12px;
-  padding:1.5rem; width:min(420px,94vw);
+  padding:1.5rem; width:min(620px,96vw);
   box-shadow:0 8px 32px rgba(0,0,0,.22);
   display:flex; flex-direction:column; gap:1rem;
+  max-height:92vh; overflow-y:auto;
 }
 .add-dialog h2 { font-family:'DINBlack',sans-serif; font-size:.95rem; text-transform:uppercase; letter-spacing:.07em; color:#1a1a2e; margin:0; }
+.add-new-only { display:none; }   /* shown only when game is not in GAMES_RAW */
 
 /* Session dialog */
 .session-dialog {
@@ -460,10 +462,12 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 <div class="overlay" id="addOverlay" onclick="if(event.target===this){if(hasAddData())shakeDialog(this.querySelector('.add-dialog'));else closeAddDialog();}">
   <div class="add-dialog">
     <h2>Add Game</h2>
-    <div>
-      <label style="font-family:'DINBlack',sans-serif;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#555;display:block;margin-bottom:.35rem;">Game Name</label>
+
+    <!-- Game name (always shown) -->
+    <div class="field-group">
+      <label>Game Name</label>
       <div class="combo-wrap" id="gameCombo">
-        <input type="text" class="combo-input" id="gameComboInput"
+        <input type="text" class="field-input combo-input" id="gameComboInput"
           placeholder="Select or type a game name…"
           autocomplete="off" spellcheck="false"
           oninput="comboFilter()"
@@ -472,6 +476,51 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
         <div class="combo-dropdown" id="comboDrop"></div>
       </div>
     </div>
+
+    <!-- Fields shown only for new games (not already in games sheet) -->
+    <div class="add-new-only" id="addNewFields">
+      <hr class="field-sep" style="margin:.25rem 0 .75rem" />
+      <div class="field-grid" style="grid-template-columns:1fr 1fr">
+        <div class="field-group">
+          <label>Status</label>
+          <select class="field-input" id="gStatus">
+            <option value="Design">Design</option>
+            <option value="Pitching">Pitching</option>
+            <option value="Signed">Signed</option>
+            <option value="Published">Published</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Date Started</label>
+          <input type="date" class="field-input" id="gDateStarted" />
+        </div>
+        <div class="field-group">
+          <label>Designer 1</label>
+          <input type="text" class="field-input" id="gDesigner1" placeholder="" autocomplete="off" />
+        </div>
+        <div class="field-group">
+          <label>Designer 2</label>
+          <input type="text" class="field-input" id="gDesigner2" placeholder="" autocomplete="off" />
+        </div>
+        <div class="field-group span2">
+          <label>Tagline</label>
+          <input type="text" class="field-input" id="gTagline" placeholder="One-line description…" autocomplete="off" />
+        </div>
+        <div class="field-group span2">
+          <label>Description</label>
+          <textarea class="field-input" id="gDescription" rows="3" placeholder="Game overview…" style="resize:vertical"></textarea>
+        </div>
+        <div class="field-group">
+          <label>Rules URL</label>
+          <input type="url" class="field-input" id="gRules" placeholder="https://…" autocomplete="off" />
+        </div>
+        <div class="field-group">
+          <label>Sellsheet URL</label>
+          <input type="url" class="field-input" id="gSellsheet" placeholder="https://…" autocomplete="off" />
+        </div>
+      </div>
+    </div>
+
     <div class="dialog-err" id="addErr"></div>
     <div class="dialog-actions">
       <button class="btn-cancel" onclick="closeAddDialog()">Cancel</button>
@@ -826,16 +875,37 @@ function doFetch() {
 
 // ── Add game dialog ───────────────────────────────────────────────────────────
 
-var _comboOptions = [];
+var _comboOptions   = [];
 var _comboHighlight = -1;
+var _existingNames  = {};   // lowercased names already in GAMES_RAW
+
+function _setNewGameFieldsVisible(visible) {
+  document.getElementById('addNewFields').style.display = visible ? 'block' : 'none';
+}
 
 function openAddDialog() {
-  _comboOptions = GAMES_RAW.map(function(g) { return (g.Name||'').trim(); }).filter(function(n) { return n && !isActive(n); });
+  _existingNames = {};
+  _comboOptions  = [];
+  GAMES_RAW.forEach(function(g) {
+    var n = (g.Name || '').trim();
+    if (!n) return;
+    _existingNames[n.toLowerCase()] = true;
+    if (!isActive(n)) _comboOptions.push(n);
+  });
   document.getElementById('gameComboInput').value = '';
+  document.getElementById('gStatus').value        = 'Design';
+  document.getElementById('gDateStarted').value   = todayISO();
+  document.getElementById('gDesigner1').value     = MY_NAME || '';
+  document.getElementById('gDesigner2').value     = '';
+  document.getElementById('gTagline').value       = '';
+  document.getElementById('gDescription').value   = '';
+  document.getElementById('gRules').value         = '';
+  document.getElementById('gSellsheet').value     = '';
+  _setNewGameFieldsVisible(false);
   document.getElementById('addErr').style.display = 'none';
-  document.getElementById('addBtn').disabled = false;
-  document.getElementById('addBtn').textContent = 'Add Game';
-  document.getElementById('comboDrop').innerHTML = '';
+  document.getElementById('addBtn').disabled      = false;
+  document.getElementById('addBtn').textContent   = 'Add Game';
+  document.getElementById('comboDrop').innerHTML  = '';
   document.getElementById('gameCombo').classList.remove('open');
   document.getElementById('addOverlay').classList.add('open');
   setTimeout(function() { document.getElementById('gameComboInput').focus(); }, 80);
@@ -893,7 +963,14 @@ function closeAddDialog() {
   document.getElementById('gameCombo').classList.remove('open');
 }
 function comboOpen() { renderComboOptions(document.getElementById('gameComboInput').value); document.getElementById('gameCombo').classList.add('open'); }
-function comboFilter() { renderComboOptions(document.getElementById('gameComboInput').value); document.getElementById('gameCombo').classList.add('open'); }
+function comboFilter() {
+  var q = document.getElementById('gameComboInput').value;
+  renderComboOptions(q);
+  document.getElementById('gameCombo').classList.add('open');
+  // Show extra fields only if the typed name is not already in the games sheet
+  var isNew = q.trim() && !_existingNames[q.trim().toLowerCase()];
+  _setNewGameFieldsVisible(isNew);
+}
 function renderComboOptions(q) {
   var drop = document.getElementById('comboDrop');
   var filtered = q.trim()
@@ -903,7 +980,12 @@ function renderComboOptions(q) {
   if (!filtered.length) { drop.innerHTML = q.trim() ? '<div class="combo-empty">New game: "' + esc(q.trim()) + '"</div>' : '<div class="combo-empty">All games already tracked, or type a new name.</div>'; return; }
   drop.innerHTML = filtered.map(function(n) { return '<div class="combo-option" onmousedown="comboSelect(\'' + esc(n) + '\')">' + esc(n) + '</div>'; }).join('');
 }
-function comboSelect(name) { document.getElementById('gameComboInput').value = name; document.getElementById('gameCombo').classList.remove('open'); }
+function comboSelect(name) {
+  document.getElementById('gameComboInput').value = name;
+  document.getElementById('gameCombo').classList.remove('open');
+  // Existing game — hide new-game fields
+  _setNewGameFieldsVisible(false);
+}
 function comboKey(e) {
   var drop = document.getElementById('comboDrop'); var items = drop.querySelectorAll('.combo-option');
   if (e.key === 'Escape') { document.getElementById('gameCombo').classList.remove('open'); return; }
@@ -927,19 +1009,51 @@ function submitAddGame() {
   if (!name) { err.textContent = 'Please enter a game name.'; err.style.display = 'block'; return; }
   if (isActive(name)) { err.textContent = '"' + name + '" is already tracked.'; err.style.display = 'block'; return; }
   btn.disabled = true; btn.textContent = 'Adding…'; err.style.display = 'none';
-  var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('game', name);
-  fetch(APP_BASE + 'push/createDevTab.php', { method:'POST', body:fd })
-    .then(function(r) { return r.json(); })
+
+  var isNewGame = !_existingNames[name.toLowerCase()];
+
+  function createTab() {
+    var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('game', name);
+    return fetch(APP_BASE + 'push/createDevTab.php', { method:'POST', body:fd })
+      .then(function(r) { return r.json(); });
+  }
+
+  function addToGamesSheet() {
+    var fd = new FormData();
+    fd.append('id',           SHEET_ID);
+    fd.append('name',         name);
+    fd.append('status',       document.getElementById('gStatus').value);
+    fd.append('date_started', document.getElementById('gDateStarted').value);
+    fd.append('designer1',    document.getElementById('gDesigner1').value);
+    fd.append('designer2',    document.getElementById('gDesigner2').value);
+    fd.append('tagline',      document.getElementById('gTagline').value);
+    fd.append('description',  document.getElementById('gDescription').value);
+    fd.append('rules',        document.getElementById('gRules').value);
+    fd.append('sellsheet',    document.getElementById('gSellsheet').value);
+    return fetch(APP_BASE + 'push/addGame.php', { method:'POST', body:fd })
+      .then(function(r) { return r.json(); });
+  }
+
+  var chain = isNewGame
+    ? addToGamesSheet().then(function(res) { if (res.error) throw new Error(res.error); return createTab(); })
+    : createTab();
+
+  chain
     .then(function(res) {
       if (res.error) throw new Error(res.error);
       ACTIVE_KEYS[name.toLowerCase()] = true;
-      extraGames.push(name);
+      if (isNewGame) {
+        GAMES_RAW.push({ Name: name, Status: document.getElementById('gStatus').value });
+        _existingNames[name.toLowerCase()] = true;
+      } else {
+        extraGames.push(name);
+      }
       buildGameList();
       renderCards(document.getElementById('searchInput').value);
       closeAddDialog();
     })
     .catch(function(e) {
-      err.textContent = e.message || 'Could not create tab.';
+      err.textContent = e.message || 'Could not add game.';
       err.style.display = 'block';
       btn.disabled = false; btn.textContent = 'Add Game';
     });

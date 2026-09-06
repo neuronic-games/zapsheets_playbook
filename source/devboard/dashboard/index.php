@@ -860,16 +860,23 @@ function clearSearch() {
 function doFetch() {
   var btn = document.getElementById('fetchBtn');
   var overlay = document.getElementById('syncOverlay');
+  var msg = document.getElementById('syncMsg');
   btn.disabled = true; btn.classList.add('syncing');
   overlay.classList.add('open');
-  document.getElementById('syncMsg').textContent = 'Fetching from Google Sheets…';
+  msg.textContent = 'Fetching from Google Sheets…';
   var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('tabs', 'games');
   fetch(APP_BASE + 'push/pushSheetUpdate.php', { method:'POST', body:fd })
-    .then(function(r) { return r.json(); })
-    .then(function() { window.location.reload(); })
-    .catch(function() {
-      document.getElementById('syncMsg').textContent = 'Error — could not reach server.';
-      setTimeout(function() { overlay.classList.remove('open'); btn.disabled = false; btn.classList.remove('syncing'); }, 2000);
+    .then(function(r) {
+      if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP ' + r.status + ': ' + t.slice(0,120)); });
+      return r.json();
+    })
+    .then(function(res) {
+      if (res && res.error) throw new Error(res.error);
+      window.location.reload();
+    })
+    .catch(function(e) {
+      msg.textContent = e.message || 'Could not reach server.';
+      setTimeout(function() { overlay.classList.remove('open'); btn.disabled = false; btn.classList.remove('syncing'); }, 4000);
     });
 }
 

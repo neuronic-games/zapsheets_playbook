@@ -222,6 +222,27 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 }
 .add-session-btn:hover { background:#145070; }
 
+/* ── Game info sub-bar ────────────────────────────────── */
+.game-info-bar {
+  background:#134a5e; color:#fff;
+  display:flex; align-items:center; gap:.75rem;
+  padding:.42rem 1rem;
+}
+.game-info-designers {
+  font-family:'DINRegular',sans-serif; font-size:.72rem;
+  color:rgba(255,255,255,.65); flex:1; min-width:0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.game-info-edit-btn {
+  font-family:'DINBlack',sans-serif; font-size:.6rem;
+  text-transform:uppercase; letter-spacing:.06em;
+  background:rgba(255,255,255,.15); color:#fff;
+  border:1px solid rgba(255,255,255,.22); border-radius:999px;
+  padding:.28rem .7rem; cursor:pointer; white-space:nowrap; flex-shrink:0;
+  transition:background .15s;
+}
+.game-info-edit-btn:hover { background:rgba(255,255,255,.28); }
+
 /* ── Sessions inside a card ───────────────────────────── */
 .dev-loading { padding:1.1rem 1.1rem; font-size:.8rem; color:#888; font-style:italic; }
 .dev-empty   { padding:1.1rem 1.1rem; font-size:.8rem; color:#aaa; }
@@ -441,9 +462,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
       <h1 onclick="window.location.href=APP_BASE+'devboard'">DevBoard</h1>
       <p class="sub">Playtest Notes</p>
     </div>
-    <button class="top-btn" id="fetchBtn" onclick="doFetch()">
-      <span class="sync-icon">↻</span> Fetch
-    </button>
+
     <div class="account-menu-wrap">
       <button class="top-btn" onclick="toggleAccountMenu()" title="Menu">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -489,7 +508,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 <!-- Add game dialog -->
 <div class="overlay" id="addOverlay" onclick="if(event.target===this){if(hasAddData())shakeDialog(this.querySelector('.add-dialog'));else closeAddDialog();}">
   <div class="add-dialog">
-    <h2>Add Game</h2>
+    <h2 id="addDialogTitle">Add Game</h2>
 
     <!-- Game name (always shown) -->
     <div class="field-group">
@@ -629,6 +648,13 @@ var ACTIVE_KEYS = <?= json_encode($_active_keys, JSON_UNESCAPED_UNICODE) ?>;
 var MY_NAME      = <?= json_encode($_my_name) ?>;
 var PEOPLE_NAMES = <?= json_encode(array_values($_people_names), JSON_UNESCAPED_UNICODE) ?>;
 
+// Quick lookup: lowercased game name → full GAMES_RAW record
+var GAMES_INDEX = {};
+GAMES_RAW.forEach(function(g) {
+  var n = (g.Name || '').trim();
+  if (n) GAMES_INDEX[n.toLowerCase()] = g;
+});
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function esc(s) {
@@ -644,6 +670,11 @@ function safeName(name) { return name.replace(/[^a-zA-Z0-9]/g, '_'); }
 function todayISO() {
   var d = new Date(); var m = String(d.getMonth()+1).padStart(2,'0'); var day = String(d.getDate()).padStart(2,'0');
   return d.getFullYear() + '-' + m + '-' + day;
+}
+function _toDateInput(v) {
+  if (!v) return '';
+  var d = new Date(v);
+  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0,10);
 }
 
 // ── Games state ───────────────────────────────────────────────────────────────
@@ -765,6 +796,19 @@ function renderBody(gameName, rows) {
 
   var gn = esc(gameName);
   var html = '';
+
+  // Game info bar — designers + Edit button
+  var gameRec   = GAMES_INDEX[gameName.toLowerCase()] || {};
+  var designers = [
+    (gameRec.Designer1 || gameRec['Designer 1'] || '').trim(),
+    (gameRec.Designer2 || gameRec['Designer 2'] || '').trim(),
+    (gameRec.Designer3 || gameRec['Designer 3'] || '').trim(),
+    (gameRec.Designer4 || gameRec['Designer 4'] || '').trim(),
+  ].filter(Boolean);
+  html += '<div class="game-info-bar">';
+  html += '<span class="game-info-designers">' + (designers.length ? esc(designers.join(', ')) : '') + '</span>';
+  html += '<button class="game-info-edit-btn" onclick="openEditGame(\'' + gn + '\')">Edit</button>';
+  html += '</div>';
 
   // Subtitle bar — per-type chips (clickable to filter)
   html += '<div class="card-subtitle">';
@@ -906,9 +950,6 @@ function syncLog(msg, type) {
 }
 
 function doFetch() {
-  var btn = document.getElementById('fetchBtn');
-  btn.disabled = true; btn.classList.add('syncing');
-
   openSyncDialog();
 
   // Build list: games tab first, then each active dev tab
@@ -925,7 +966,6 @@ function doFetch() {
     document.getElementById('syncDialogTitle').textContent = 'Fetch Complete';
     document.getElementById('syncDialogSub').style.display = 'none';
     document.getElementById('syncDoneBtn').disabled = false;
-    btn.disabled = false; btn.classList.remove('syncing');
   }
 
   function pushNext() {
@@ -973,7 +1013,12 @@ function _setNewGameFieldsVisible(visible) {
   document.getElementById('addNewFields').style.display = visible ? 'block' : 'none';
 }
 
+var _editGameMode     = false;
+var _editGameOrigName = '';
+
 function openAddDialog() {
+  _editGameMode     = false;
+  _editGameOrigName = '';
   _existingNames = {};
   _comboOptions  = [];
   GAMES_RAW.forEach(function(g) {
@@ -982,23 +1027,54 @@ function openAddDialog() {
     _existingNames[n.toLowerCase()] = true;
     if (!isActive(n)) _comboOptions.push(n);
   });
-  document.getElementById('gameComboInput').value = '';
-  document.getElementById('gStatus').value        = 'Design';
-  document.getElementById('gDateStarted').value   = todayISO();
-  document.getElementById('gDesigner1').value     = MY_NAME || '';
-  document.getElementById('gDesigner2').value     = '';
-  document.getElementById('gTagline').value       = '';
-  document.getElementById('gDescription').value   = '';
-  document.getElementById('gRules').value         = '';
-  document.getElementById('gSellsheet').value     = '';
+  document.getElementById('addDialogTitle').textContent   = 'Add Game';
+  document.getElementById('gameComboInput').value         = '';
+  document.getElementById('gameComboInput').readOnly      = false;
+  document.getElementById('gStatus').value                = 'Design';
+  document.getElementById('gDateStarted').value           = todayISO();
+  document.getElementById('gDesigner1').value             = MY_NAME || '';
+  document.getElementById('gDesigner2').value             = '';
+  document.getElementById('gTagline').value               = '';
+  document.getElementById('gDescription').value           = '';
+  document.getElementById('gRules').value                 = '';
+  document.getElementById('gSellsheet').value             = '';
   _setNewGameFieldsVisible(false);
-  document.getElementById('addErr').style.display = 'none';
-  document.getElementById('addBtn').disabled      = false;
-  document.getElementById('addBtn').textContent   = 'Add Game';
-  document.getElementById('comboDrop').innerHTML  = '';
+  document.getElementById('addErr').style.display  = 'none';
+  document.getElementById('addBtn').disabled       = false;
+  document.getElementById('addBtn').textContent    = 'Add Game';
+  document.getElementById('comboDrop').innerHTML   = '';
   document.getElementById('gameCombo').classList.remove('open');
   document.getElementById('addOverlay').classList.add('open');
   setTimeout(function() { document.getElementById('gameComboInput').focus(); }, 80);
+}
+
+function openEditGame(name) {
+  var rec = GAMES_INDEX[name.toLowerCase()] || {};
+  _editGameMode     = true;
+  _editGameOrigName = name;
+  document.getElementById('addDialogTitle').textContent   = 'Edit Game';
+  document.getElementById('gameComboInput').value         = name;
+  document.getElementById('gameComboInput').readOnly      = true;
+  document.getElementById('comboDrop').innerHTML          = '';
+  document.getElementById('gameCombo').classList.remove('open');
+  // Select option in Status dropdown
+  var statusEl = document.getElementById('gStatus');
+  var status   = rec.Status || 'Design';
+  for (var i = 0; i < statusEl.options.length; i++) {
+    if (statusEl.options[i].value === status) { statusEl.selectedIndex = i; break; }
+  }
+  document.getElementById('gDateStarted').value  = _toDateInput(rec['Date Started'] || rec.DateStarted || '');
+  document.getElementById('gDesigner1').value    = rec.Designer1 || rec['Designer 1'] || '';
+  document.getElementById('gDesigner2').value    = rec.Designer2 || rec['Designer 2'] || '';
+  document.getElementById('gTagline').value      = rec.Tagline || rec['Tag Line'] || rec.SubTitle || '';
+  document.getElementById('gDescription').value  = rec.Description || '';
+  document.getElementById('gRules').value        = rec.Rules || rec['Rules URL'] || rec.RulesURL || '';
+  document.getElementById('gSellsheet').value    = rec.Sellsheet || rec['Sellsheet URL'] || rec.SellsheetURL || '';
+  _setNewGameFieldsVisible(true);
+  document.getElementById('addErr').style.display  = 'none';
+  document.getElementById('addBtn').disabled       = false;
+  document.getElementById('addBtn').textContent    = 'Save Game';
+  document.getElementById('addOverlay').classList.add('open');
 }
 // ── Global Escape handler — guard if dirty ────────────────────────────────────
 document.addEventListener('keydown', function(ev) {
@@ -1021,6 +1097,7 @@ document.addEventListener('keydown', function(ev) {
 
 // ── Dialog dirty-check helpers ────────────────────────────────────────────────
 function hasAddData() {
+  if (_editGameMode) return false;
   return !!(document.getElementById('gameComboInput').value.trim());
 }
 function hasSessionData() {
@@ -1097,6 +1174,63 @@ function submitAddGame() {
   var err  = document.getElementById('addErr');
   var btn  = document.getElementById('addBtn');
   if (!name) { err.textContent = 'Please enter a game name.'; err.style.display = 'block'; return; }
+
+  // ── Edit mode: update existing game ──────────────────────────────────────────
+  if (_editGameMode) {
+    btn.disabled = true; btn.textContent = 'Saving…'; err.style.display = 'none';
+
+    // Parse designer fields (strips emails, updates inputs)
+    var _gd1e = _parsePerson(document.getElementById('gDesigner1').value.trim());
+    var _gd2e = _parsePerson(document.getElementById('gDesigner2').value.trim());
+    document.getElementById('gDesigner1').value = _gd1e.name;
+    document.getElementById('gDesigner2').value = _gd2e.name;
+
+    var fd = new FormData();
+    fd.append('id',           SHEET_ID);
+    fd.append('orig_name',    _editGameOrigName);
+    fd.append('name',         _editGameOrigName);  // name locked in edit mode
+    fd.append('status',       document.getElementById('gStatus').value);
+    fd.append('date_started', document.getElementById('gDateStarted').value);
+    fd.append('designer1',    _gd1e.name);
+    fd.append('designer2',    _gd2e.name);
+    fd.append('tagline',      document.getElementById('gTagline').value);
+    fd.append('description',  document.getElementById('gDescription').value);
+    fd.append('rules',        document.getElementById('gRules').value);
+    fd.append('sellsheet',    document.getElementById('gSellsheet').value);
+
+    fetch(APP_BASE + 'push/updateGame.php', { method:'POST', body:fd })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.error) throw new Error(res.error);
+        addNewPeople([_gd1e, _gd2e].filter(function(p) { return p.name; }));
+        // Update in-memory record
+        var key = _editGameOrigName.toLowerCase();
+        var rec = GAMES_INDEX[key] || {};
+        rec.Status = document.getElementById('gStatus').value;
+        rec.Designer1 = _gd1e.name; rec['Designer 1'] = _gd1e.name;
+        rec.Designer2 = _gd2e.name; rec['Designer 2'] = _gd2e.name;
+        rec.Tagline = document.getElementById('gTagline').value;
+        rec.Description = document.getElementById('gDescription').value;
+        rec.Rules = document.getElementById('gRules').value;
+        rec.Sellsheet = document.getElementById('gSellsheet').value;
+        GAMES_INDEX[key] = rec;
+        GAMES_RAW.forEach(function(g) { if ((g.Name||'').toLowerCase() === key) g.Status = rec.Status; });
+        // Refresh card body if cached, then rebuild list
+        if (devCache[_editGameOrigName] !== undefined) {
+          renderBody(_editGameOrigName, devCache[_editGameOrigName] || []);
+        }
+        buildGameList();
+        renderCards(document.getElementById('searchInput').value);
+        closeAddDialog();
+      })
+      .catch(function(e) {
+        err.textContent = e.message || 'Could not save changes.';
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Save Game';
+      });
+    return;
+  }
+
   if (isActive(name)) { err.textContent = '"' + name + '" is already tracked.'; err.style.display = 'block'; return; }
   btn.disabled = true; btn.textContent = 'Adding…'; err.style.display = 'none';
 

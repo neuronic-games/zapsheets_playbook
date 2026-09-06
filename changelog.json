@@ -9,7 +9,10 @@
       "Card expansion — click a card to see Started, Signed, and Published dates inline",
       "View action — jumps to the game in the Games view with the card already expanded",
       "Shelf / Unshelf — hide a game from the board without deleting it; shelved games appear in a collapsible section at the bottom",
-      "Dialog protection — clicking outside a dialog or pressing Escape now shakes the dialog instead of closing when unsaved data is present"
+      "Dialog protection — clicking outside a dialog or pressing Escape now shakes the dialog instead of closing when unsaved data is present",
+      "Email button on publisher cards — opens your email client addressed to the publisher's contact; works even without a saved contact",
+      "Back button on game and sellsheet pages — returns you to the dashboard with the game card still expanded",
+      "Share button on the game page — copies the link or triggers the native share sheet on mobile"
     ]
   },
   {

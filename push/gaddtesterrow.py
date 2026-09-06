@@ -53,13 +53,13 @@ except Exception as e:
     print(json.dumps({"error": f"Could not read sheet: {str(e)}"}))
     sys.exit(1)
 
-# Build the row: blank Date/Event, name in Observation, email in Solution
-# Prefix with ' to prevent formula interpretation (same as gadd.py)
+# Build the row: Date/Event/Observation/Solution all blank; name+email in People (col C).
 def safe(v):
     s = (str(v) if v else '').strip()
     return ("'" + s) if s else ''
 
-new_row  = ['', '', safe(name), safe(email)]
+combined = (name + (' ' + email if email else '')).strip()
+new_row  = ['', '', safe(combined), '', '']
 row_num  = len(all_values) + 1   # 1-indexed row where this will land
 
 try:
@@ -73,14 +73,8 @@ except Exception as e:
     print(json.dumps({"error": f"Could not write row: {str(e)}"}))
     sys.exit(1)
 
-# Right-align the tester name in column C
-try:
-    ws.format(f'C{row_num}', {'horizontalAlignment': 'RIGHT'})
-except Exception:
-    pass  # non-fatal — alignment is cosmetic
-
 print(json.dumps({
     "ok": True,
     "row_num": row_num,
-    "row": {"Date": "", "Event": "", "Observation": name, "Solution": email},
+    "row": {"Date": "", "Event": "", "People": combined, "Observation": "", "Solution": ""},
 }))

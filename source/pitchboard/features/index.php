@@ -304,7 +304,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
           </div>
           <div class="app-filter-bar">
             <span class="filter-pill fp-pitched">28 PITCHED</span>
-            <span class="filter-pill fp-interested">11 INTERESTED</span>
+            <span class="filter-pill fp-interested">11 INT</span>
             <span class="filter-pill fp-passed">74 PASSED</span>
             <span class="filter-pill fp-cold">19 GONE COLD</span>
             <span class="filter-pill fp-signed">5 SIGNED</span>
@@ -318,15 +318,15 @@ footer a:hover { color:rgba(255,255,255,.7); }
             </div>
             <div class="game-row">
               <div><div class="game-row-name">Deepwater Run</div><div class="game-row-meta">Jordan</div></div>
-              <div class="game-row-badges"><span class="badge badge-old">6MO+</span><span class="badge badge-interested">INTERESTED</span><span class="row-arrow">▶</span></div>
+              <div class="game-row-badges"><span class="badge badge-old">6MO+</span><span class="badge badge-interested">INT</span><span class="row-arrow">▶</span></div>
             </div>
             <div class="game-row">
               <div><div class="game-row-name">The Cartographer</div><div class="game-row-meta">Alex</div></div>
-              <div class="game-row-badges"><span class="badge badge-old">6MO+</span><span class="badge badge-interested">INTERESTED</span><span class="row-arrow">▶</span></div>
+              <div class="game-row-badges"><span class="badge badge-old">6MO+</span><span class="badge badge-interested">INT</span><span class="row-arrow">▶</span></div>
             </div>
             <div class="game-row">
               <div><div class="game-row-name">Ironveil Pass</div><div class="game-row-meta">—</div></div>
-              <div class="game-row-badges"><span class="badge badge-interested">INTERESTED</span><span class="row-arrow">▶</span></div>
+              <div class="game-row-badges"><span class="badge badge-interested">INT</span><span class="row-arrow">▶</span></div>
             </div>
             <div class="game-row">
               <div><div class="game-row-name">Nocturne Market</div><div class="game-row-meta">Jordan, Alex</div></div>

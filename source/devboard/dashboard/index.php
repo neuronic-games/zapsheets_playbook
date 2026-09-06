@@ -203,6 +203,16 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .session-count    { font-family:'DINRegular',sans-serif; font-size:.68rem; color:#bbb; margin-left:auto; white-space:nowrap; }
 .session-chevron  { font-size:.6rem; opacity:.45; flex-shrink:0; transition:transform .22s ease; transform:rotate(-90deg); }
 .session-block.open .session-chevron { transform:rotate(0deg); }
+.session-edit-btn {
+  display:none; margin-left:.5rem; padding:.18rem .55rem;
+  font-size:.68rem; font-family:'DINRegular',sans-serif;
+  background:#1a5f7a; color:#fff; border:none; border-radius:4px;
+  cursor:pointer; flex-shrink:0; line-height:1.4;
+}
+.session-edit-btn:hover { background:#134d63; }
+@media (hover: hover) {
+  .session-header:hover .session-edit-btn { display:inline-flex; align-items:center; }
+}
 .session-testers-line { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#888; font-style:italic; padding-left:.05rem; }
 
 /* Collapsible session body */
@@ -277,10 +287,19 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   display:block; width:100%; padding:.6rem .75rem;
   font-family:'DINRegular',sans-serif; font-size:.85rem; color:#111; line-height:1.5;
   border:2px solid #1a1a2e; border-radius:6px; outline:none;
-  background:#fff; resize:vertical; min-height:120px;
+  background:#fff; resize:none; overflow:hidden;
   transition:border-color .15s;
 }
 .field-textarea:focus { border-color:#1a5f7a; }
+.obs-pair-empty .field-textarea { border:1.5px solid #d0d8e0; background:#fafbfc; }
+.obs-pair-empty .field-textarea:focus { border-color:#1a5f7a; background:#fff; }
+
+/* Keyboard navigation hint — hidden on touch-only devices */
+.obs-kbd-hint {
+  display:none; font-family:'DINRegular',sans-serif; font-size:.7rem;
+  color:#c8d0d8; text-align:center; padding:.1rem 0 0; user-select:none;
+}
+@media (hover: hover) { .obs-kbd-hint { display:block; } }
 
 /* Shared dialog bits */
 .dialog-actions { display:flex; justify-content:flex-end; gap:.6rem; }
@@ -402,9 +421,9 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 </div>
 
 <!-- Add session dialog -->
-<div class="overlay" id="sessionOverlay" onclick="if(event.target===this){if(hasSessionData())shakeDialog(this.querySelector('.session-dialog'));else closeSessionDialog();}">
+<div class="overlay" id="sessionOverlay" onclick="if(event.target===this){var _d=this.querySelector('.session-dialog');if(_editMode?isSessionDirty():hasSessionData())shakeDialog(_d);else closeSessionDialog();}">
   <div class="session-dialog">
-    <h2>+ Session — <span id="sessionGameTitle"></span></h2>
+    <h2><span id="sessionDialogAction">+ Session</span> — <span id="sessionGameTitle"></span></h2>
 
     <!-- Session metadata -->
     <div class="field-grid">
@@ -445,6 +464,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
     <!-- Observation + Solution (dynamic pairs) -->
     <div id="obsContainer"></div>
 
+    <div class="obs-kbd-hint">⌘ / Ctrl + Arrow — move between fields</div>
     <div class="dialog-err" id="sessionErr"></div>
     <div class="dialog-actions">
       <button class="btn-cancel" onclick="closeSessionDialog()">Cancel</button>
@@ -572,11 +592,14 @@ function loadDevData(gameName) {
 
 // ── Render card body (subtitle + sessions) ────────────────────────────────────
 
+var _sessionCache = {};  // gameName → allSessions array (all, not filtered)
+
 function renderBody(gameName, rows) {
   var body = document.getElementById('body-' + safeName(gameName));
   if (!body) return;
 
   var allSessions = buildSessions(rows).reverse();  // newest first
+  _sessionCache[gameName] = allSessions;
   var nPlay = allSessions.filter(function(s){ return s.testnum.toLowerCase().indexOf('playtest ') === 0; }).length;
   var nMeet = allSessions.filter(function(s){ return s.testnum.toLowerCase().indexOf('meeting ')  === 0; }).length;
   var nIdea = allSessions.filter(function(s){ return s.testnum.toLowerCase().indexOf('idea ')     === 0; }).length;
@@ -614,13 +637,16 @@ function renderBody(gameName, rows) {
       if (s.testnum.toLowerCase().indexOf('meeting') === 0) typeClass = 'type-meeting';
       else if (s.testnum.toLowerCase().indexOf('idea') === 0) typeClass = 'type-idea';
 
+      var allIdx = allSessions.indexOf(s);
+      var gnQ    = JSON.stringify(gameName).replace(/"/g, '&quot;');
       html += '<div class="session-block" id="sblock-' + i + '">';
-      html += '<div class="session-header" onclick="toggleSession(' + i + ')">';
+      html += '<div class="session-header" onclick="toggleSession(' + i + ')" data-game="' + esc(gameName) + '" data-idx="' + allIdx + '">';
       html +=   '<div class="session-header-row">';
       if (s.testnum) html += '<span class="session-type ' + typeClass + '">' + esc(s.testnum) + '</span>';
       if (s.date)    html += '<span class="session-sep">·</span><span class="session-date">' + esc(fmtDate(s.date)) + '</span>';
       if (s.location) html += '<span class="session-sep">·</span><span class="session-location">' + esc(s.location) + '</span>';
       html +=   '<span class="session-count">' + s.obs.length + (s.obs.length === 1 ? ' note' : ' notes') + '</span>';
+      html +=   '<button class="session-edit-btn" onclick="event.stopPropagation();openEditSessionDialog(' + gnQ + ',' + allIdx + ')">Edit</button>';
       html +=   '<span class="session-chevron">▼</span>';
       html +=   '</div>';
       // Testers as comma-separated line in the header
@@ -655,29 +681,26 @@ function buildSessions(rows) {
   if (!rows || !rows.length) return [];
   var sessions = [];
   var current  = null;
-  var seenObs  = false;  // once we see a non-empty Solution, switch to obs mode
 
   rows.forEach(function(row) {
-    var date  = (row['Date']        || '').trim();
-    var event = (row['Event']       || '').trim();
-    var obs   = (row['Observation'] || '').trim();
-    var sol   = (row['Solution']    || '').trim();
+    var date   = (row['Date']        || '').trim();
+    var event  = (row['Event']       || '').trim();
+    var people = (row['People']      || '').trim();
+    var obs    = (row['Observation'] || '').trim();
+    var sol    = (row['Solution']    || '').trim();
 
     if (date || event) {
-      // New session header row
+      // Session header row; location is in Observation
       current = { date: date, testnum: event, location: obs, testers: [], obs: [] };
       sessions.push(current);
-      seenObs = false;
     } else if (current) {
-      // Email in Solution column = tester row (email placed there for sheet reference)
-      var solIsEmail = sol && /\S+@\S+\.\S+/.test(sol);
-      if (!seenObs && (!sol || solIsEmail)) {
-        // Still in tester region
-        if (obs) current.testers.push(obs);
-      } else {
-        // Observation row
-        seenObs = true;
-        if (obs || sol) current.obs.push({ obs: obs, sol: sol });
+      if (people) {
+        // Tester row: name+email in People column; strip email for display
+        var tname = people.replace(/\s+\S+@\S+\.\S+\s*$/, '').trim() || people.trim();
+        current.testers.push(tname);
+      } else if (obs || sol) {
+        // Note row
+        current.obs.push({ obs: obs, sol: sol });
       }
     }
   });
@@ -752,7 +775,8 @@ document.addEventListener('keydown', function(ev) {
   var el;
   el = document.getElementById('sessionOverlay');
   if (el.classList.contains('open')) {
-    if (hasSessionData()) shakeDialog(el.querySelector('.session-dialog'));
+    var dlg = el.querySelector('.session-dialog');
+    if (_editMode ? isSessionDirty() : hasSessionData()) shakeDialog(dlg);
     else closeSessionDialog();
     return;
   }
@@ -871,11 +895,42 @@ function onTypeChange() {
 
 // ── Session dialog ────────────────────────────────────────────────────────────
 
-var _sessionGame = '';
+var _sessionGame   = '';
+var _editMode      = false;
+var _editOrigDate  = '';
+var _editOrigEvent = '';
+var _editSnapshot  = null;
+
+function getSessionSnapshot() {
+  var testers = [];
+  document.querySelectorAll('#testersContainer input').forEach(function(el) {
+    var v = el.value.trim(); if (v) testers.push(v);
+  });
+  var obs = [];
+  document.querySelectorAll('#obsContainer .obs-pair').forEach(function(pair) {
+    var idx = pair.dataset.idx;
+    var o = (document.getElementById('sObs-' + idx) || {}).value || '';
+    var s = (document.getElementById('sSol-' + idx) || {}).value || '';
+    if (o.trim() || s.trim()) obs.push(o.trim() + '|' + s.trim());
+  });
+  return [
+    document.getElementById('sDate').value,
+    document.getElementById('sType').value,
+    (document.getElementById('sLocation').value || '').trim(),
+    (document.getElementById('sTestNum').value  || '').trim(),
+    testers.join(','),
+    obs.join('||')
+  ].join('\n');
+}
+function isSessionDirty() {
+  return _editSnapshot !== null && getSessionSnapshot() !== _editSnapshot;
+}
 
 function openSessionDialog(gameName) {
+  _editMode = false;
   _sessionGame = gameName;
-  document.getElementById('sessionGameTitle').textContent = gameName;
+  document.getElementById('sessionDialogAction').textContent = '+ Session';
+  document.getElementById('sessionGameTitle').textContent    = gameName;
   document.getElementById('sDate').value     = todayISO();
   document.getElementById('sType').value     = 'Playtest';
   document.getElementById('sLocation').value = '';
@@ -901,8 +956,61 @@ function openSessionDialog(gameName) {
   }, 80);
 }
 
+function openEditSessionDialog(gameName, idx) {
+  var cache   = _sessionCache[gameName];
+  var session = cache && cache[idx];
+  if (!session) return;
+
+  _editMode      = true;
+  _editOrigDate  = session.date;
+  _editOrigEvent = session.testnum;
+  _sessionGame   = gameName;
+
+  document.getElementById('sessionDialogAction').textContent = 'Edit Session';
+  document.getElementById('sessionGameTitle').textContent    = gameName;
+  document.getElementById('sDate').value     = session.date     || '';
+  document.getElementById('sLocation').value = session.location || '';
+
+  // Infer type from testnum prefix; set without triggering onTypeChange auto-numbering
+  var tn = (session.testnum || '').toLowerCase();
+  var type = tn.indexOf('meeting') === 0 ? 'Meeting' : tn.indexOf('idea') === 0 ? 'Idea' : 'Playtest';
+  document.getElementById('sType').value    = type;
+  document.getElementById('sTestNum').value = session.testnum || '';
+
+  // Pre-fill testers
+  _testerCount = 0; _testersHL = {};
+  document.getElementById('testersContainer').innerHTML = '';
+  session.testers.forEach(function(t) {
+    var tidx = addTesterField('Select or type…');
+    document.getElementById('sTesters-' + tidx).value = t;
+  });
+  addTesterField('Add tester…');  // trailing empty field
+
+  // Pre-fill obs/sol pairs
+  _obsCount = 0;
+  document.getElementById('obsContainer').innerHTML = '';
+  session.obs.forEach(function(pair, pi) {
+    var oidx = addObsPair(pi === 0);
+    document.getElementById('sObs-' + oidx).value = pair.obs || '';
+    document.getElementById('sSol-' + oidx).value = pair.sol || '';
+  });
+  addObsPair(session.obs.length === 0);  // trailing empty pair (shows labels if first)
+
+  document.getElementById('sessionErr').style.display = 'none';
+  document.getElementById('sessionBtn').disabled    = false;
+  document.getElementById('sessionBtn').textContent = 'Save Changes';
+  _editSnapshot = getSessionSnapshot();
+  document.getElementById('sessionOverlay').classList.add('open');
+  // Resize textareas after the overlay is visible so scrollHeight is accurate
+  setTimeout(function() {
+    document.querySelectorAll('#obsContainer .field-textarea').forEach(autoResize);
+  }, 0);
+}
+
 function closeSessionDialog() {
   document.getElementById('sessionOverlay').classList.remove('open');
+  _editMode = false;
+  _editSnapshot = null;
 }
 
 function submitSession() {
@@ -938,6 +1046,37 @@ function submitSession() {
   var testnum  = document.getElementById('sTestNum').value.trim();
   var location = document.getElementById('sLocation').value.trim();
 
+  // ── Edit mode: replace the existing session via updateDevSession ──────────────
+  if (_editMode) {
+    var fd = new FormData();
+    fd.append('id',         SHEET_ID);
+    fd.append('game',       _sessionGame);
+    fd.append('orig_date',  _editOrigDate);
+    fd.append('orig_event', _editOrigEvent);
+    fd.append('date',       date);
+    fd.append('event',      testnum);
+    fd.append('location',   location);
+    fd.append('testers',    JSON.stringify(testerVals));
+    fd.append('obs_pairs',  JSON.stringify(obsPairs));
+
+    fetch(APP_BASE + 'push/updateDevSession.php', { method:'POST', body:fd })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.error) throw new Error(res.error);
+        // Force a fresh fetch so devCache reflects the new sheet state
+        devCache[_sessionGame] = undefined;
+        closeSessionDialog();
+        loadDevData(_sessionGame);
+      })
+      .catch(function(e) {
+        err.textContent = e.message || 'Could not save. Try again.';
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Save Changes';
+      });
+    return;
+  }
+
+  // ── Add mode: append new session rows one by one ──────────────────────────────
   // Build ordered rows matching sheet format: Date | Event | Observation | Solution
   //   1. Session header row  (date, testnum, location, "")
   //   2. One tester row each (blank date/event, testerName, "")
@@ -1074,22 +1213,29 @@ function addObsPair(showLabels) {
   var idx       = _obsCount++;
   var container = document.getElementById('obsContainer');
   var div       = document.createElement('div');
-  div.className   = 'obs-pair';
+  div.className   = 'obs-pair obs-pair-empty';
   div.dataset.idx = idx;
   var labelsHtml = showLabels
     ? '<div class="obs-pair-labels"><label>Observation</label><label>Solution</label></div>'
     : '';
   div.innerHTML = labelsHtml +
     '<div class="obs-pair-inputs">' +
-      '<textarea class="field-textarea" id="sObs-' + idx + '" rows="4"' +
+      '<textarea class="field-textarea" id="sObs-' + idx + '" rows="1"' +
         ' placeholder="What happened…"' +
-        ' oninput="onObsInput(' + idx + ')"></textarea>' +
-      '<textarea class="field-textarea" id="sSol-' + idx + '" rows="4"' +
+        ' oninput="autoResize(this);onObsInput(' + idx + ')"' +
+        ' onkeydown="onObsKeydown(event,' + idx + ',0)"></textarea>' +
+      '<textarea class="field-textarea" id="sSol-' + idx + '" rows="1"' +
         ' placeholder="How to address it…"' +
-        ' oninput="onObsInput(' + idx + ')"></textarea>' +
+        ' oninput="autoResize(this);onObsInput(' + idx + ')"' +
+        ' onkeydown="onObsKeydown(event,' + idx + ',1)"></textarea>' +
     '</div>';
   container.appendChild(div);
   return idx;
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
 }
 
 function onObsInput(idx) {
@@ -1098,8 +1244,71 @@ function onObsInput(idx) {
   if (!last || parseInt(last.dataset.idx) !== idx) return;
   var obs = (document.getElementById('sObs-' + idx) || {}).value || '';
   var sol = (document.getElementById('sSol-' + idx) || {}).value || '';
-  if (obs.trim() || sol.trim()) addObsPair(false);
+  if (obs.trim() || sol.trim()) {
+    last.classList.remove('obs-pair-empty');
+    addObsPair(false);
+  }
 }
+
+// ── Keyboard navigation between obs/sol textareas ────────────────────────────
+// Cmd/Ctrl + Arrow moves focus within the grid:
+//   Left/Right → same row, other column   Up/Down → same column, adjacent row
+
+function onObsKeydown(e, idx, col) {
+  if (!e.metaKey && !e.ctrlKey) return;
+  var dir = e.key;
+  if (dir !== 'ArrowLeft' && dir !== 'ArrowRight' && dir !== 'ArrowUp' && dir !== 'ArrowDown') return;
+  e.preventDefault();
+
+  var pairs    = Array.from(document.querySelectorAll('#obsContainer .obs-pair'));
+  var pairIdx  = pairs.findIndex(function(p) { return parseInt(p.dataset.idx, 10) === idx; });
+  var tgtCol   = col;
+  var tgtPairI = pairIdx;
+
+  if      (dir === 'ArrowRight') tgtCol   = 1;
+  else if (dir === 'ArrowLeft')  tgtCol   = 0;
+  else if (dir === 'ArrowDown')  tgtPairI = Math.min(pairIdx + 1, pairs.length - 1);
+  else if (dir === 'ArrowUp')    tgtPairI = Math.max(pairIdx - 1, 0);
+
+  var tgtPair = pairs[tgtPairI];
+  if (!tgtPair) return;
+  var tgtDataIdx = parseInt(tgtPair.dataset.idx, 10);
+  var tgtEl = document.getElementById((tgtCol === 0 ? 'sObs-' : 'sSol-') + tgtDataIdx);
+  if (tgtEl) tgtEl.focus();
+}
+
+// ── Touch long-press → Edit session ──────────────────────────────────────────
+// On touch devices, a long press (600 ms) on a session header opens the edit
+// dialog. A normal tap still expands/collapses via the click handler.
+
+var _lpTimer     = null;
+var _lpMoved     = false;
+
+document.addEventListener('touchstart', function(e) {
+  var header = e.target.closest('.session-header');
+  if (!header || e.target.closest('.session-edit-btn')) return;
+  _lpMoved = false;
+  _lpTimer = setTimeout(function() {
+    _lpTimer = null;
+    if (_lpMoved) return;
+    var gn  = header.dataset.game;
+    var idx = parseInt(header.dataset.idx, 10);
+    openEditSessionDialog(gn, idx);
+  }, 600);
+}, { passive: true });
+
+document.addEventListener('touchmove', function() {
+  _lpMoved = true;
+  if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
+}, { passive: true });
+
+document.addEventListener('touchend', function() {
+  if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
+}, { passive: true });
+
+document.addEventListener('touchcancel', function() {
+  if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
+}, { passive: true });
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 

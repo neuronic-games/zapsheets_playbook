@@ -52,32 +52,33 @@ if tab_name in existing:
     print(json.dumps({"ok": True, "tab": tab_name, "created": False}))
     sys.exit(0)
 
-HEADERS = [['Date', 'Event', 'Observation', 'Solution']]
+HEADERS = [['Date', 'Event', 'People', 'Observation', 'Solution']]
 
 try:
-    ws = wb.add_worksheet(title=tab_name, rows=500, cols=4)
+    ws = wb.add_worksheet(title=tab_name, rows=500, cols=5)
     ws.update(HEADERS, 'A1', value_input_option='USER_ENTERED')
     ws.freeze(rows=1)
     # Style header row
-    ws.format('A1:D1', {
+    ws.format('A1:E1', {
         'backgroundColor': {'red': 0.102, 'green': 0.373, 'blue': 0.478},
         'textFormat': {
             'bold': True,
             'foregroundColor': {'red': 1.0, 'green': 1.0, 'blue': 1.0},
         },
     })
-    # Column widths: Date, Event, Observation, Solution
+    # Column widths: Date, Event, People, Observation, Solution
     wb.batch_update({'requests': [
         {'updateDimensionProperties': {'range': {'sheetId': ws.id, 'dimension': 'COLUMNS', 'startIndex': 0, 'endIndex': 1}, 'properties': {'pixelSize': 130}, 'fields': 'pixelSize'}},
         {'updateDimensionProperties': {'range': {'sheetId': ws.id, 'dimension': 'COLUMNS', 'startIndex': 1, 'endIndex': 2}, 'properties': {'pixelSize': 160}, 'fields': 'pixelSize'}},
-        {'updateDimensionProperties': {'range': {'sheetId': ws.id, 'dimension': 'COLUMNS', 'startIndex': 2, 'endIndex': 3}, 'properties': {'pixelSize': 340}, 'fields': 'pixelSize'}},
-        {'updateDimensionProperties': {'range': {'sheetId': ws.id, 'dimension': 'COLUMNS', 'startIndex': 3, 'endIndex': 4}, 'properties': {'pixelSize': 340}, 'fields': 'pixelSize'}},
+        {'updateDimensionProperties': {'range': {'sheetId': ws.id, 'dimension': 'COLUMNS', 'startIndex': 2, 'endIndex': 3}, 'properties': {'pixelSize': 260}, 'fields': 'pixelSize'}},
+        {'updateDimensionProperties': {'range': {'sheetId': ws.id, 'dimension': 'COLUMNS', 'startIndex': 3, 'endIndex': 4}, 'properties': {'pixelSize': 300}, 'fields': 'pixelSize'}},
+        {'updateDimensionProperties': {'range': {'sheetId': ws.id, 'dimension': 'COLUMNS', 'startIndex': 4, 'endIndex': 5}, 'properties': {'pixelSize': 300}, 'fields': 'pixelSize'}},
     ]})
-    # Wrap Observation + Solution columns
-    ws.format('C2:D500', {'wrapStrategy': 'WRAP'})
+    # Wrap People, Observation, Solution columns
+    ws.format('C2:E500', {'wrapStrategy': 'WRAP'})
     # Conditional formats: color session header rows by type (keyed on Event column B)
     _range = {'sheetId': ws.id, 'startRowIndex': 1, 'endRowIndex': 500,
-               'startColumnIndex': 0, 'endColumnIndex': 4}
+               'startColumnIndex': 0, 'endColumnIndex': 5}
     wb.batch_update({'requests': [
         # Playtest → light teal
         {'addConditionalFormatRule': {'index': 0, 'rule': {

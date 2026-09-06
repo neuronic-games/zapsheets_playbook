@@ -49,7 +49,7 @@ ws = existing[tab_name]
 _range = {
     'sheetId': ws.id,
     'startRowIndex': 1, 'endRowIndex': 500,
-    'startColumnIndex': 0, 'endColumnIndex': 4,
+    'startColumnIndex': 0, 'endColumnIndex': 5,
 }
 
 try:

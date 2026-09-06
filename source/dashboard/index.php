@@ -396,7 +396,8 @@ if (is_dir($_gpv_dir)) {
       text-transform:uppercase; letter-spacing:.05em; color:#555;
     }
     .db-chart-wide { grid-column:1 / -1; }
-    @media (max-width:600px) { .db-charts { grid-template-columns:1fr; } }
+    .db-chart-status { grid-row: span 2; }
+    @media (max-width:600px) { .db-charts { grid-template-columns:1fr; } .db-chart-status { grid-row: span 1; } }
 
     /* ── Game sub-bar (links row + actions row) ─────── */
     .game-sub-bar {
@@ -425,6 +426,7 @@ if (is_dir($_gpv_dir)) {
     .game-action-btns {
       display:flex; flex-wrap:nowrap; gap:.35rem; align-items:center;
       overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
+      margin-left:auto;
     }
     .game-action-btns::-webkit-scrollbar { display:none; }
     @media (max-width:540px) {
@@ -684,6 +686,33 @@ if (is_dir($_gpv_dir)) {
       cursor:pointer; white-space:nowrap; transition:background .15s, color .15s;
     }
     .add-entry-btn:hover { background:#1a1a2e; color:#fff; }
+
+    /* ── Reveal row/sub-bar buttons on hover (pointer) or tap (touch) ── */
+    /* Row-header buttons: display:none so they take no space when hidden */
+    .pub-passed-header .add-entry-btn { display:none; }
+    @media (hover: hover) {
+      .pub-passed-header:hover .add-entry-btn { display:inline-flex; }
+    }
+    .pub-passed-header.btns-visible .add-entry-btn { display:inline-flex; }
+
+    /* Subtitle-row and sub-bar buttons: fade in/out */
+    .pub-subtitle-row .game-action-btn,
+    .game-sub-bar     .game-action-btns {
+      opacity:0; pointer-events:none; transition:opacity .12s;
+    }
+    @media (hover: hover) {
+      .pub-subtitle-row:hover .game-action-btn,
+      .game-sub-bar:hover     .game-action-btns {
+        opacity:1; pointer-events:auto;
+      }
+    }
+    .pub-subtitle-row.btns-visible .game-action-btn,
+    .game-sub-bar.btns-visible     .game-action-btns {
+      opacity:1; pointer-events:auto;
+    }
+    /* Always show action buttons and subtitle-row buttons inside an open card */
+    .card.open .pub-subtitle-row .game-action-btn,
+    .card.open .game-sub-bar .game-action-btns { opacity:1; pointer-events:auto; }
 
     /* ── Add-entry dialog ───────────────────────────── */
     .add-entry-overlay {
@@ -1663,7 +1692,6 @@ if (is_dir($_gpv_dir)) {
       </label>
     </div>
     <div class="add-entry-actions">
-      <button class="add-email-btn" onclick="sendEmailFromAddDialog()" title="Open email with game info">&#9993; Send Email</button>
       <button class="add-cancel-btn" onclick="closeAddDialog()">Cancel</button>
       <button class="add-submit-btn" id="addSubmitBtn" onclick="submitAddEntry()">Add</button>
     </div>
@@ -1892,11 +1920,15 @@ function isGameSigned(gameName, allEntries) {
   });
 }
 
-// A game is published if games.json has a Date Published or Status=Published, or any pitch entry has Status=Published
+// A game is published if games.json has a Date Published or Status=Published, or any pitch entry has Status=Published.
+// The authoritative Status field in gamesIndex (set by the Kanban) takes precedence over historical pitch entries.
 function isGamePublished(gameName, allEntries) {
   var info = gamesIndex[gameName] || {};
+  var gameStatus = (info['Status'] || '').toLowerCase();
+  // If the game is explicitly in a non-published state, historical entries cannot override it.
+  if (gameStatus === 'signed' || gameStatus === 'pitching' || gameStatus === 'design' || gameStatus === 'shelved') return false;
   if ((info['Date Published'] || '').trim()) return true;
-  if ((info['Status'] || '').toLowerCase() === 'published') return true;
+  if (gameStatus === 'published') return true;
   return (allEntries || []).some(function(e) {
     return (e.Status || '').toLowerCase() === 'published';
   });
@@ -2475,7 +2507,7 @@ function entryRow(e) {
     '<span class="entry-date">'    + escHtml(e.Date)  + '</span>' +
     '<span class="entry-contact">' + escHtml(contact) + '</span>' +
     '<span class="entry-event">'   + escHtml(e.Event) + '</span>' +
-    '<span class="entry-status badge badge-' + sc + '">' + escHtml(e.Status||'—') + '</span>' +
+    '<span class="entry-status badge badge-' + sc + '">' + escHtml((e.Status||'—').replace(/^Interested$/i,'INT')) + '</span>' +
     '<span class="entry-notes">'   + renderLinks(notes, true) + '</span>' +
     '</div>';
 }
@@ -2600,11 +2632,9 @@ function buildGameView(pitches) {
         return (latestEntry(pe).Status||'').toLowerCase() === 'interested';
       });
       if (anyInterested) {
-        gameStatusBadge = '<span class="badge badge-interested">Interested</span>';
+        gameStatusBadge = '<span class="badge badge-interested">INT</span>';
       } else {
-        // Show Pitched only (suppress Passed)
-        var anyPitched = allEntries.some(function(e){ return (e.Status||'').toLowerCase() === 'pitched'; });
-        if (anyPitched) gameStatusBadge = '<span class="badge badge-pitched">Pitched</span>';
+        // No badge for Pitched (absence of a status pill implies pitched)
       }
     }
 
@@ -2669,7 +2699,7 @@ function buildGameView(pitches) {
     })();
 
     html += '<div class="card-body-wrap"><div class="card-body">';
-    html += '<div class="game-sub-bar">';
+    html += '<div class="game-sub-bar" onclick="pbToggleRowBtns(this)">';
     html += '<div class="game-links">';
     html += '<div class="game-links-meta" onclick="event.stopPropagation()">';
     if (designerNames.length) {
@@ -2735,11 +2765,9 @@ function buildGameView(pitches) {
       } else if (isSigned) {
         pubBadge = '<span class="badge badge-signed" style="margin-right:.75rem">Signed</span>';
       } else if (pubStatus === 'interested') {
-        pubBadge = '<span class="badge badge-interested" style="margin-right:.75rem">Interested</span>';
+        pubBadge = '<span class="badge badge-interested" style="margin-right:.75rem">INT</span>';
       } else if (pubStatus === 'returned') {
         pubBadge = '<span class="badge badge-returned" style="margin-right:.75rem">Returned</span>';
-      } else if (pubStatus === 'pitched') {
-        pubBadge = '<span class="badge badge-pitched" style="margin-right:.75rem">Pitched</span>';
       }
 
       var headerColor = isCollapsed ? 'color:#aaa;' : 'color:#333;';
@@ -2875,10 +2903,8 @@ function buildPublisherView(pitches) {
       return (latestEntry(ge).Status||'').toLowerCase() === 'interested';
     });
     var pubHeaderBadge = anyPubInterested
-      ? '<span class="badge badge-interested">Interested</span>'
-      : (allEntries.some(function(e){ return (e.Status||'').toLowerCase() === 'pitched'; })
-          ? '<span class="badge badge-pitched">Pitched</span>'
-          : '');
+      ? '<span class="badge badge-interested">INT</span>'
+      : '';
 
     html += '<div class="card">';
     html += '<div class="card-header" onclick="toggleCard(this)">';
@@ -2891,15 +2917,18 @@ function buildPublisherView(pitches) {
     // Publisher subtitle: one row per contact, each with Edit Contact + New Pitch
     var pubContacts  = getPubInfo(p);
     if (pubContacts.length === 0) {
-      // No contacts — single row with an unaddressed New Pitch
-      html += '<div class="pub-subtitle-row">'
+      // No contacts — single row with an unaddressed New Pitch + Email
+      html += '<div class="pub-subtitle-row" onclick="pbToggleRowBtns(this)">'
            +  '<button class="game-action-btn" style="margin-left:auto"'
            +  ' data-publisher="' + escHtml(p) + '"'
            +  ' onclick="event.stopPropagation();openNewPitchDialog(this.getAttribute(\'data-publisher\'))">New Pitch</button>'
+           +  '<button class="game-action-btn"'
+           +  ' data-publisher="' + escHtml(p) + '"'
+           +  ' onclick="event.stopPropagation();openPubEmail(this.getAttribute(\'data-publisher\'),\'\')">&#9993; Email</button>'
            +  '</div>';
     } else {
       pubContacts.forEach(function(c) {
-        html += '<div class="pub-subtitle-row">';
+        html += '<div class="pub-subtitle-row" onclick="pbToggleRowBtns(this)">';
         html += '<span class="pub-subtitle-info">' + escHtml(c.name) + '</span>';
         html += '<button class="game-action-btn"'
              +  ' data-person="' + escHtml(c.name) + '"'
@@ -2908,12 +2937,18 @@ function buildPublisherView(pitches) {
              +  ' data-publisher="' + escHtml(p) + '"'
              +  ' data-contact="'   + escHtml(c.name) + '"'
              +  ' onclick="event.stopPropagation();openNewPitchDialog(this.getAttribute(\'data-publisher\'),this.getAttribute(\'data-contact\'))">New Pitch</button>';
+        html += '<button class="game-action-btn"'
+             +  ' data-publisher="' + escHtml(p) + '"'
+             +  ' data-contact="'   + escHtml(c.name) + '"'
+             +  ' onclick="event.stopPropagation();openPubEmail(this.getAttribute(\'data-publisher\'),this.getAttribute(\'data-contact\'))">&#9993; Email</button>';
         html += '</div>';
       });
     }
 
-    // Sort games alphabetically
+    // Sort games alphabetically; split active vs passed/gone cold
     var gameNames = Object.keys(pubs[p]).sort(function(a,b){ return a.localeCompare(b); });
+    var activeGameHtml = '', collapsedGameHtml = '';
+    var activeGameIdx = 0, collapsedGameIdx = 0;
     gameNames.forEach(function(g) {
       var contacts = Object.keys(pubs[p][g]).sort(function(a,b){
         if (a==='(Unknown)') return 1; if (b==='(Unknown)') return -1;
@@ -2925,34 +2960,34 @@ function buildPublisherView(pitches) {
       var gStatus  = (gLatest.Status||'').toLowerCase();
       var gAgeTag  = ageTag(gameEntries);
 
-      var gamePublished = isGamePublished(g, gameEntries);
-      var gameSigned    = !gamePublished && isGameSigned(g, gameEntries);
+      // Publisher-specific: use the latest status, not any historical entry
+      var gamePublished = gStatus === 'published';
+      var gameSigned    = !gamePublished && gStatus === 'signed';
       var gIsPassed     = !gamePublished && !gameSigned && gStatus === 'passed';
       var gIsGoneCold   = !gamePublished && !gameSigned && gStatus === 'gone cold';
+      var isCollapsedGame = gIsPassed || gIsGoneCold;
+
       var gBadge;
       if (gamePublished) {
         gBadge = '<span class="badge badge-published" style="margin-right:.75rem">Published</span>';
       } else if (gameSigned) {
         gBadge = '<span class="badge badge-signed" style="margin-right:.75rem">Signed</span>';
       } else if (gStatus === 'interested') {
-        gBadge = '<span class="badge badge-interested" style="margin-right:.75rem">Interested</span>';
+        gBadge = '<span class="badge badge-interested" style="margin-right:.75rem">INT</span>';
       } else if (gStatus === 'returned') {
         gBadge = '<span class="badge badge-returned" style="margin-right:.75rem">Returned</span>';
       } else if (gStatus === 'passed') {
         gBadge = '<span class="badge badge-passed" style="margin-right:.75rem">Passed</span>';
       } else if (gStatus === 'gone cold') {
         gBadge = '<span class="badge badge-gone-cold" style="margin-right:.75rem">Gone Cold</span>';
-      } else if (gStatus === 'pitched') {
-        gBadge = '<span class="badge badge-pitched" style="margin-right:.75rem">Pitched</span>';
       } else {
         gBadge = '';
       }
 
       var gStatusDate = (gamePublished || gameSigned) ? gameStatusDateStr(g, gamePublished, gameSigned) : '';
       var gStatusDateHtml = gStatusDate ? '<span class="status-date">' + escHtml(gStatusDate) + '</span>' : '';
-      var gHeaderColor = (gIsPassed || gIsGoneCold) ? 'color:#aaa;' : 'color:#333;';
-      var gAltClass = gameNames.indexOf(g) % 2 === 1 ? ' pub-alt' : '';
-      html += '<div class="sub-group' + gAltClass + '">';
+      var gHeaderColor = isCollapsedGame ? 'color:#aaa;' : 'color:#333;';
+      var gAltClass = (isCollapsedGame ? collapsedGameIdx++ : activeGameIdx++) % 2 === 1 ? ' pub-alt' : '';
       var gLastContact = gLatest.Contact || '';
       var gAddBtn = '<button class="add-entry-btn"' +
         ' data-game="'      + escHtml(g) + '"' +
@@ -2961,22 +2996,37 @@ function buildPublisherView(pitches) {
         ' data-pub-locked="1"' +
         ' onclick="event.stopPropagation();addBtnClick(this)">+ Pitch</button>';
       var gViewBtn = '<button class="add-entry-btn" data-game="' + escHtml(g) + '" onclick="event.stopPropagation();goToGame(this.getAttribute(\'data-game\'))">View</button>';
-      html += '<div class="sub-label pub-passed-header" onclick="togglePubPassed(this)" style="' + gHeaderColor + 'font-size:.75rem">' +
-              '<span class="pub-title-group"><span>' + escHtml(g) + '</span>' + gViewBtn + gAddBtn + '</span>' +
+      var gEmailBtn = '<button class="add-entry-btn"' +
+        ' data-game="'      + escHtml(g) + '"' +
+        ' data-publisher="' + escHtml(p) + '"' +
+        ' data-contact="'   + escHtml(gLastContact) + '"' +
+        ' onclick="event.stopPropagation();openGameEmail(this.getAttribute(\'data-game\'),this.getAttribute(\'data-publisher\'),this.getAttribute(\'data-contact\'))">&#9993; Email</button>';
+
+      var gChunk = '<div class="sub-group' + gAltClass + '">';
+      gChunk += '<div class="sub-label pub-passed-header" onclick="togglePubPassed(this)" style="' + gHeaderColor + 'font-size:.75rem">' +
+              '<span class="pub-title-group"><span>' + escHtml(g) + '</span>' + gViewBtn + gAddBtn + gEmailBtn + '</span>' +
               (gamePublished || gameSigned || gIsPassed || gIsGoneCold ? '' : gAgeTag) + gBadge + gStatusDateHtml +
               '<span class="pub-expand-chevron">▶</span>' +
               '</div>';
-      html += '<div class="pub-body-wrap"><div class="pub-passed-body">';
+      gChunk += '<div class="pub-body-wrap"><div class="pub-passed-body">';
 
       // Flatten contacts into a single sorted list; contact shown inline in each row
       var allGameEntries = [];
       contacts.forEach(function(c){ pubs[p][g][c].forEach(function(e){ allGameEntries.push(e); }); });
       allGameEntries.sort(function(a,b){ return new Date(b.Date) - new Date(a.Date); });
-      allGameEntries.forEach(function(e){ html += entryRow(e); });
+      allGameEntries.forEach(function(e){ gChunk += entryRow(e); });
 
-      html += '</div></div>'; // pub-passed-body, pub-body-wrap
-      html += '</div>'; // sub-group
+      gChunk += '</div></div>'; // pub-passed-body, pub-body-wrap
+      gChunk += '</div>'; // sub-group
+
+      if (isCollapsedGame) { collapsedGameHtml += gChunk; } else { activeGameHtml += gChunk; }
     });
+
+    html += activeGameHtml;
+    if (collapsedGameHtml) {
+      html += '<div class="pub-collapsed-wrap" style="display:none">' + collapsedGameHtml + '</div>';
+      html += '<button class="pub-show-all-btn" onclick="toggleCollapsedPubs(this)">Show ' + collapsedGameIdx + ' passed / gone cold</button>';
+    }
 
     html += '</div></div>'; // card-body, card-body-wrap
     html += '</div>'; // card
@@ -3179,15 +3229,17 @@ function buildDashboardView() {
     if (r.Game && allGameNames.indexOf(r.Game) < 0) allGameNames.push(r.Game);
   });
 
-  var counts = { notStarted:0, pitching:0, signed:0, published:0 };
+  var counts = { notStarted:0, pitching:0, signed:0, published:0, shelved:0 };
   var timeToSign = [], timeToPublish = [];
 
   allGameNames.forEach(function(name) {
     var info    = gamesIndex[name] || {};
     var entries = allPitches.filter(function(r){ return r.Game === name; });
-    var pub     = isGamePublished(name, entries);
-    var sig     = !pub && isGameSigned(name, entries);
-    if (pub)              counts.published++;
+    var shelved = (info['Status'] || '').toLowerCase() === 'shelved';
+    var pub     = !shelved && isGamePublished(name, entries);
+    var sig     = !pub && !shelved && isGameSigned(name, entries);
+    if (shelved)          counts.shelved++;
+    else if (pub)         counts.published++;
     else if (sig)         counts.signed++;
     else if (entries.length) counts.pitching++;
     else                  counts.notStarted++;
@@ -3241,7 +3293,7 @@ function buildDashboardView() {
   var html = '<div class="db-stats">';
   html += statCard(allGameNames.length,       'Total Games',      '#1a1a2e');
   html += statCard(counts.published,          'Published',        '#0369a1');
-  html += statCard(counts.signed,             'Signed',           '#7c3aed');
+  html += statCard(counts.signed + counts.published, 'Signed',    '#7c3aed');
   html += statCard(counts.pitching,           'In Pitching',      '#166534');
   html += statCard(counts.notStarted,         'Not Pitched',      '#94a3b8');
   html += statCard(Object.keys(pubGames).length, 'Publishers',    '#334155');
@@ -3251,8 +3303,9 @@ function buildDashboardView() {
 
   html +=
     '<div class="db-charts">' +
-      '<div class="db-chart-card"><h3>Games by Status</h3><canvas id="chartStatus"></canvas></div>' +
+      '<div class="db-chart-card db-chart-status"><h3>Games by Status</h3><canvas id="chartStatus"></canvas><div id="chartStatusLegend"></div></div>' +
       '<div class="db-chart-card"><h3>Top Publishers by Games Pitched</h3><canvas id="chartPublishers"></canvas></div>' +
+      '<div class="db-chart-card"><h3>Top Games by Pitches</h3><canvas id="chartTopGames"></canvas></div>' +
     '</div>' +
     '<div class="db-chart-card db-chart-wide"><h3>Pitches Over Time</h3><canvas id="chartTimeline"></canvas></div>';
 
@@ -3269,23 +3322,40 @@ function buildDashboardView() {
     _activeCharts = {};
 
     // Status doughnut
+    var statusLabels = ['Not Pitched','Pitching','Signed','Published','Shelved'];
+    var statusColors = ['#e2e8f0','#bbf7d0','#7c3aed','#0369a1','#f1f5f9'];
+    var statusCounts = [counts.notStarted, counts.pitching, counts.signed, counts.published, counts.shelved];
+
     _activeCharts.status = new Chart(
       document.getElementById('chartStatus').getContext('2d'), {
         type: 'doughnut',
         data: {
-          labels: ['Not Pitched', 'Pitching', 'Signed', 'Published'],
-          datasets: [{ data: [counts.notStarted, counts.pitching, counts.signed, counts.published],
-            backgroundColor: ['#e2e8f0','#bbf7d0','#7c3aed','#0369a1'],
+          labels: statusLabels,
+          datasets: [{ data: statusCounts,
+            backgroundColor: statusColors,
             borderWidth: 2, borderColor: '#fff' }]
         },
-        options: { responsive:true, plugins:{ legend:{ position:'bottom', labels:{ font:{size:11} } } } }
+        options: { responsive:true, plugins:{ legend:{ display:false } } }
       }
     );
+
+    // Custom legend
+    var legendHtml = '<div style="display:flex;flex-direction:column;gap:.35rem;margin-top:.75rem;font-size:.78rem;">';
+    statusLabels.forEach(function(label, i) {
+      if (!statusCounts[i]) return;
+      legendHtml += '<div style="display:flex;align-items:center;gap:.5rem;">'
+        + '<span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:' + statusColors[i] + ';flex-shrink:0;border:1px solid #ccc;"></span>'
+        + '<span style="flex:1">' + label + '</span>'
+        + '<span style="color:#555;font-weight:600">' + statusCounts[i] + '</span>'
+        + '</div>';
+    });
+    legendHtml += '</div>';
+    document.getElementById('chartStatusLegend').innerHTML = legendHtml;
 
     // Top publishers horizontal bar
     var topPubs = Object.keys(pubGames)
       .map(function(p){ return { name:p, count:Object.keys(pubGames[p]).length }; })
-      .sort(function(a,b){ return b.count-a.count; }).slice(0,12);
+      .sort(function(a,b){ return b.count-a.count; }).slice(0,10);
 
     _activeCharts.publishers = new Chart(
       document.getElementById('chartPublishers').getContext('2d'), {
@@ -3298,7 +3368,36 @@ function buildDashboardView() {
         options: { indexAxis:'y', responsive:true,
           plugins:{ legend:{ display:false } },
           scales:{ x:{ ticks:{ stepSize:1 }, grid:{ display:false } },
-                   y:{ ticks:{ font:{ size:11 } } } } }
+                   y:{ ticks:{ font:{ size:11 }, autoSkip:false }, afterFit: function(axis){ axis.width = 145; } } } }
+      }
+    );
+
+    // Top games by unique publishers pitched to
+    var gamePubs = {};
+    allPitches.forEach(function(r) {
+      if (!r.Game || !r.Publisher) return;
+      if (!gamePubs[r.Game]) gamePubs[r.Game] = {};
+      gamePubs[r.Game][r.Publisher] = 1;
+    });
+    var gamePitchCounts = {};
+    Object.keys(gamePubs).forEach(function(g) { gamePitchCounts[g] = Object.keys(gamePubs[g]).length; });
+    var topGames = Object.keys(gamePitchCounts)
+      .map(function(g){ return { name:g, count:gamePitchCounts[g] }; })
+      .sort(function(a,b){ return b.count - a.count; }).slice(0,10);
+    _activeCharts.topGames = new Chart(
+      document.getElementById('chartTopGames').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: topGames.map(function(g){ return g.name; }),
+          datasets: [{ label:'Pitches', data: topGames.map(function(g){ return g.count; }),
+            backgroundColor:'#1a1a2e', borderRadius:3 }]
+        },
+        options: { indexAxis:'y', responsive:true,
+          plugins:{ legend:{ display:false } },
+          scales:{ x:{ ticks:{ stepSize:1 }, grid:{ display:false } },
+                   y:{ ticks:{ font:{ size:11 }, autoSkip:false,
+                               callback: function(val){ var l = topGames[val] ? topGames[val].name : ''; return l.length > 22 ? l.slice(0,21)+'…' : l; } },
+                       afterFit: function(axis){ axis.width = 145; } } } }
       }
     );
 
@@ -3483,6 +3582,41 @@ function mailtoHref(email, gameName) {
 }
 
 // ── Send email from Add Entry dialog ─────────────────
+// ── Quick email from publisher card (no specific game) ──
+function openPubEmail(publisher, contactName) {
+  var email = contactName ? resolveEmail(contactName, publisher) : '';
+  var sig = [];
+  if (myName)  sig.push(myName);
+  if (myEmail) sig.push(myEmail);
+  if (myPhone) sig.push(myPhone);
+  var body = sig.length ? '\n\n\n--\n' + sig.join('\n') : '';
+  var href = 'mailto:' + encodeURIComponent(email);
+  if (myEmail) href += '?reply-to=' + encodeURIComponent(myEmail);
+  if (body)    href += (myEmail ? '&' : '?') + 'body=' + encodeURIComponent(body);
+  var a = document.createElement('a');
+  a.href = href;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// ── Email from game row in publisher view (with game details) ──
+function openGameEmail(gameName, publisher, contactName) {
+  var email    = resolveEmail(contactName, publisher);
+  var body     = buildEmailBody(gameName);
+  var ccEmails = getCollaboratorEmails(gameName);
+  var href = 'mailto:' + encodeURIComponent(email)
+           + '?subject=' + encodeURIComponent('Game info - ' + gameName);
+  if (myEmail)         href += '&reply-to=' + encodeURIComponent(myEmail);
+  if (ccEmails.length) href += '&cc='       + encodeURIComponent(ccEmails.join(','));
+  if (body)            href += '&body='     + encodeURIComponent(body);
+  var a = document.createElement('a');
+  a.href = href;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 function sendEmailFromAddDialog() {
   var gameName = _addCtx.game || (document.getElementById('addGameInput').value || '').trim();
   if (!gameName) return;
@@ -3554,7 +3688,30 @@ function togglePubPassed(header) {
   var chevron = header.querySelector(".pub-expand-chevron");
   var isOpen  = wrap.classList.toggle("open");
   if (chevron) chevron.style.transform = isOpen ? "rotate(90deg)" : "rotate(0deg)";
+  // On touch: sync buttons visibility with expanded state
+  if (window.matchMedia('(hover: none)').matches) {
+    if (isOpen) {
+      document.querySelectorAll('.btns-visible').forEach(function(el){ el.classList.remove('btns-visible'); });
+      header.classList.add('btns-visible');
+    } else {
+      header.classList.remove('btns-visible');
+    }
+  }
 }
+
+function pbToggleRowBtns(row) {
+  if (window.matchMedia('(hover: hover)').matches) return;
+  if (row.classList.contains('btns-visible')) return;
+  document.querySelectorAll('.btns-visible').forEach(function(el){ el.classList.remove('btns-visible'); });
+  row.classList.add('btns-visible');
+}
+// Dismiss row/sub-bar buttons when tapping outside (capture so it fires before stopPropagation)
+document.addEventListener('click', function(e) {
+  if (window.matchMedia('(hover: hover)').matches) return;
+  if (!e.target.closest('.pub-passed-header') && !e.target.closest('.pub-subtitle-row') && !e.target.closest('.game-sub-bar')) {
+    document.querySelectorAll('.btns-visible').forEach(function(el){ el.classList.remove('btns-visible'); });
+  }
+}, true);
 
 function toggleCollapsedPubs(btn) {
   var wrap   = btn.previousElementSibling; // .pub-collapsed-wrap
@@ -3670,17 +3827,29 @@ function openNotesDialog(entry) {
   var btn = document.getElementById('notesUpdateBtn');
   btn.disabled = false;
   btn.textContent = 'Update';
+  var _nd = document.getElementById('notesOverlay').querySelector('.notes-dialog');
+  takeDialogSnapshot(_nd);
   document.getElementById('notesOverlay').classList.add('open');
   setTimeout(function() { document.getElementById('notesEditArea').focus(); }, 60);
 }
 
 // ── Generic dialog dirty-guard ─────────────────────────────────────────────
+function takeDialogSnapshot(dialogEl) {
+  var snap = {};
+  dialogEl.querySelectorAll('input,textarea,select').forEach(function(el, i) {
+    snap[el.id || ('_' + i)] = el.value;
+  });
+  dialogEl._snapshot = snap;
+}
 function hasDialogData(dialogEl) {
-  var inputs = dialogEl.querySelectorAll(
-    'input[type="text"],input[type="email"],input[type="url"],input[type="tel"],textarea'
-  );
+  var snap = dialogEl._snapshot;
+  var inputs = dialogEl.querySelectorAll('input,textarea,select');
   for (var i = 0; i < inputs.length; i++) {
-    if (!inputs[i].readOnly && !inputs[i].disabled && inputs[i].value.trim()) return true;
+    var el = inputs[i];
+    if (el.readOnly || el.disabled) continue;
+    var key = el.id || ('_' + i);
+    var orig = snap ? (snap[key] !== undefined ? snap[key] : '') : '';
+    if (el.value !== orig) return true;
   }
   return false;
 }
@@ -4738,6 +4907,8 @@ function openGameEditDialog(gameName, isNew) {
 
   document.getElementById('geSaveBtn').disabled    = false;
   document.getElementById('geSaveBtn').textContent = isNew ? 'Add Game' : 'Save';
+  var _ged = document.getElementById('gameEditOverlay').querySelector('.game-edit-dialog');
+  takeDialogSnapshot(_ged);
   document.getElementById('gameEditOverlay').classList.add('open');
   setTimeout(function() { document.getElementById('geGameName').focus(); }, 60);
 }
@@ -5229,7 +5400,7 @@ function _setupStatusCombo() {
 
 // Pitch-entry status options (edit-entry dialog)
 var _PITCH_STATUS_OPTIONS = [
-  'Pitched','Interested','Passed','Gone Cold','Signed','Published','Returned'
+  'Pitched','Interested','Passed','Gone Cold','Returned','Signed','Published'
 ];
 var _editStatusComboReady = false;
 function _setupEditStatusCombo() {
@@ -5312,6 +5483,7 @@ function openAddDialog(game, publisher, contact, pubLocked) {
   var btn = document.getElementById('addSubmitBtn');
   btn.disabled = false; btn.textContent = 'Add';
 
+  takeDialogSnapshot(document.getElementById('addEntryOverlay').querySelector('.add-entry-dialog'));
   document.getElementById('addEntryOverlay').classList.add('open');
   setTimeout(function() {
     // Equalize date input height to the select (iOS ignores CSS height on date inputs)
@@ -5522,6 +5694,7 @@ function openAddNew(mode) {
 
   var btn = document.getElementById('addNewSubmitBtn');
   btn.disabled = false; btn.textContent = 'Add';
+  takeDialogSnapshot(document.getElementById('addNewOverlay').querySelector('.add-new-dialog'));
   document.getElementById('addNewOverlay').classList.add('open');
   setTimeout(function() { var el = document.getElementById('addNewName'); if (el) el.focus(); }, 60);
 }
@@ -5628,6 +5801,8 @@ function openDiDialog(name) {
     _comboInit('diCompany', 'diCompanyDrop', _getDiCompanyList, null);
   }
 
+  var _did = document.getElementById('diOverlay').querySelector('.di-dialog');
+  takeDialogSnapshot(_did);
   document.getElementById('diOverlay').classList.add('open');
   setTimeout(function() { document.getElementById('diTitle').focus(); }, 60);
 }

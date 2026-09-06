@@ -842,7 +842,7 @@ code {
       <div class="mgc-entries">
         <div class="mgc-entry">
           <span class="mgc-pub">Stonemaier Games</span>
-          <span class="badge badge-interested">Interested</span>
+          <span class="badge badge-interested">INT</span>
           <span class="mgc-date">Jun 2026</span>
         </div>
         <div class="mgc-entry">
@@ -935,7 +935,7 @@ code {
         <p>Submitted and awaiting a response. The default.</p>
       </div>
       <div class="status-item">
-        <span class="badge badge-interested">Interested</span>
+        <span class="badge badge-interested">INT</span>
         <p>Publisher has expressed interest — keep the conversation going.</p>
       </div>
       <div class="status-item">

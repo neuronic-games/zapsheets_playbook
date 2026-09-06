@@ -51,6 +51,15 @@ foreach ($_people_raw as $_p) {
     $n = trim($_p['Name'] ?? '');
     if ($n) $_people_names[] = $n;
 }
+
+// Load contracts for Clients tab
+$_contracts_file = __DIR__ . '/../../../sheets/' . $_sheet_id . '/contract.json';
+$_contracts_raw  = file_exists($_contracts_file)
+    ? (json_decode(file_get_contents($_contracts_file), true) ?: [])
+    : [];
+$_client_count = count(array_unique(array_filter(array_map(
+    fn($c) => trim($c['Client'] ?? ''), $_contracts_raw
+))));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -144,6 +153,49 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   80%      { transform:translateX(5px); }
 }
 .dialog-shake { animation:dialog-shake .35s ease; }
+
+/* ── Tab bar ──────────────────────────────────────────── */
+.tab-bar { background:#1a1a2e; padding:.45rem 1.25rem; }
+.tab-bar-inner { max-width:860px; margin:0 auto; display:flex; gap:.3rem; }
+.tab-btn {
+  font-family:'DINBlack',sans-serif; font-size:.65rem; text-transform:uppercase;
+  letter-spacing:.07em; padding:.28rem .7rem; border-radius:5px;
+  border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.5);
+  background:transparent; cursor:pointer; transition:all .15s;
+}
+.tab-btn.active { background:#fff; color:#1a1a2e; border-color:#fff; }
+.tab-btn:not(.active):hover { color:#fff; border-color:rgba(255,255,255,.35); }
+
+/* ── Views ────────────────────────────────────────────── */
+.view { display:none; }
+.view.active { display:block; }
+
+/* ── Games list view ──────────────────────────────────── */
+.games-view-wrap { max-width:860px; margin:0 auto; padding:1rem 1.25rem; }
+.games-list-table { width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+.games-list-table th { font-family:'DINBlack',sans-serif; font-size:.62rem; text-transform:uppercase; letter-spacing:.07em; color:#666; padding:.5rem .85rem; text-align:left; border-bottom:2px solid #e2e8f0; background:#f8fafc; }
+.games-list-table td { padding:.55rem .85rem; font-size:.8rem; border-bottom:1px solid #f0f4f8; vertical-align:middle; }
+.games-list-table tbody tr:last-child td { border-bottom:none; }
+.games-list-table tbody tr:hover td { background:#f8fafc; }
+.games-list-table td.glt-name { font-family:'DINBlack',sans-serif; color:#1a5f7a; cursor:pointer; }
+.games-list-table td.glt-name:hover { text-decoration:underline; }
+.glt-status { font-family:'DINBlack',sans-serif; font-size:.6rem; letter-spacing:.05em; text-transform:uppercase; padding:.15rem .45rem; border-radius:999px; background:#e8f4f8; color:#1a5f7a; white-space:nowrap; }
+
+/* ── Clients view ─────────────────────────────────────── */
+.clients-view-wrap { max-width:860px; margin:0 auto; padding:1rem 1.25rem; display:flex; flex-direction:column; gap:.75rem; }
+.client-card { background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+.client-card-header { background:#1a1a2e; color:#fff; padding:.55rem 1rem; font-family:'DINBlack',sans-serif; font-size:.88rem; letter-spacing:.02em; display:flex; align-items:center; justify-content:space-between; }
+.client-card-count { font-family:'DINRegular',sans-serif; font-size:.7rem; opacity:.55; }
+.client-contract-row { display:grid; grid-template-columns:1fr auto auto; gap:.75rem; align-items:center; padding:.5rem 1rem; border-bottom:1px solid #f0f4f8; }
+.client-contract-row:last-child { border-bottom:none; }
+.client-contract-game { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#1a5f7a; }
+.client-contract-dates { font-size:.7rem; color:#888; margin-top:.1rem; }
+.client-contract-quote { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#111; white-space:nowrap; }
+.client-contract-badge { font-family:'DINBlack',sans-serif; font-size:.6rem; letter-spacing:.05em; text-transform:uppercase; padding:.15rem .45rem; border-radius:999px; white-space:nowrap; background:#e8f4f8; color:#1a5f7a; }
+.client-contract-badge.paid     { background:#dcfce7; color:#15803d; }
+.client-contract-badge.invoiced { background:#fef9c3; color:#a16207; }
+.client-contract-badge.partial  { background:#ffedd5; color:#9a3412; }
+.clients-empty { color:#888; font-size:.85rem; padding:1rem 0; }
 
 /* ── Search bar ───────────────────────────────────────── */
 .search-bar { padding:.6rem 1.25rem .5rem; max-width:860px; margin:0 auto; display:flex; gap:.6rem; align-items:center; }
@@ -496,19 +548,45 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   </div>
 </div>
 
-<!-- Search + Add game -->
-<div class="search-bar">
-  <div class="search-wrap" id="searchWrap">
-    <input type="text" id="searchInput" placeholder="Search games…"
-      oninput="onSearch()" autocomplete="off" spellcheck="false" />
-    <button class="search-clear" onclick="clearSearch()">✕</button>
+<!-- Tab bar -->
+<div class="tab-bar">
+  <div class="tab-bar-inner">
+    <button class="tab-btn active" id="tabDash"    onclick="switchTab('dash')">Dash</button>
+    <button class="tab-btn"        id="tabGames"   onclick="switchTab('games')"><?= count($_games_raw) ?> Games</button>
+    <button class="tab-btn"        id="tabClients" onclick="switchTab('clients')"><?= $_client_count ?> Clients</button>
   </div>
-  <div class="game-count" id="gameCount">0 Games</div>
-  <button class="add-game-btn" onclick="openAddDialog()">+ Game</button>
 </div>
 
-<!-- Cards -->
-<div class="content" id="cardList"></div>
+<!-- View: Dash (default) -->
+<div class="view active" id="view-dash">
+  <!-- Search + Add game -->
+  <div class="search-bar">
+    <div class="search-wrap" id="searchWrap">
+      <input type="text" id="searchInput" placeholder="Search games…"
+        oninput="onSearch()" autocomplete="off" spellcheck="false" />
+      <button class="search-clear" onclick="clearSearch()">✕</button>
+    </div>
+    <div class="game-count" id="gameCount">0 Games</div>
+    <button class="add-game-btn" onclick="openAddDialog()">+ Game</button>
+  </div>
+  <!-- Cards -->
+  <div class="content" id="cardList"></div>
+</div>
+
+<!-- View: Games -->
+<div class="view" id="view-games">
+  <div class="games-view-wrap">
+    <table class="games-list-table">
+      <thead><tr><th>Game</th><th>Status</th><th>Started</th><th>Designers</th></tr></thead>
+      <tbody id="gamesListBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- View: Clients -->
+<div class="view" id="view-clients">
+  <div class="clients-view-wrap" id="clientsViewWrap"></div>
+</div>
 
 <!-- Fetch overlay -->
 <div class="overlay" id="syncOverlay">
@@ -716,7 +794,8 @@ var SHEET_ID    = <?= json_encode($_sheet_id) ?>;
 var GAMES_RAW   = <?= json_encode(array_values($_games_raw), JSON_UNESCAPED_UNICODE) ?>;
 var ACTIVE_KEYS = <?= json_encode($_active_keys, JSON_UNESCAPED_UNICODE) ?>;
 var MY_NAME      = <?= json_encode($_my_name) ?>;
-var PEOPLE_NAMES = <?= json_encode(array_values($_people_names), JSON_UNESCAPED_UNICODE) ?>;
+var PEOPLE_NAMES  = <?= json_encode(array_values($_people_names), JSON_UNESCAPED_UNICODE) ?>;
+var CONTRACT_RAW  = <?= json_encode(array_values($_contracts_raw), JSON_UNESCAPED_UNICODE) ?>;
 
 // Quick lookup: lowercased game name → full GAMES_RAW record
 var GAMES_INDEX = {};
@@ -745,6 +824,97 @@ function _toDateInput(v) {
   if (!v) return '';
   var d = new Date(v);
   return isNaN(d.getTime()) ? '' : d.toISOString().slice(0,10);
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+var _activeTab = 'dash';
+function switchTab(tab) {
+  _activeTab = tab;
+  ['Dash','Games','Clients'].forEach(function(t) {
+    var btn = document.getElementById('tab' + t);
+    if (btn) btn.classList.toggle('active', t.toLowerCase() === tab);
+  });
+  ['dash','games','clients'].forEach(function(v) {
+    var el = document.getElementById('view-' + v);
+    if (el) el.classList.toggle('active', v === tab);
+  });
+  if (tab === 'games')   renderGamesView();
+  if (tab === 'clients') renderClientsView();
+}
+
+function renderGamesView() {
+  var sorted = GAMES_RAW.slice().sort(function(a, b) {
+    return (a.Name || '').localeCompare(b.Name || '');
+  });
+  var rows = sorted.map(function(g) {
+    var name = g.Name || '';
+    var status = g.Status || '';
+    var started = g['Date Started'] || g.DateStarted || '';
+    var designers = [
+      g.Designer1 || g['Designer 1'] || '',
+      g.Designer2 || g['Designer 2'] || '',
+      g.Designer3 || g['Designer 3'] || '',
+      g.Designer4 || g['Designer 4'] || '',
+    ].filter(Boolean).join(', ');
+    var nameClick = isActive(name)
+      ? ' onclick="switchTab(\'dash\');setTimeout(function(){var el=document.querySelector(\'[data-game=\\\'' + esc(name).replace(/'/g,"\\'") + '\\\']\');if(el)el.scrollIntoView({behavior:\'smooth\'});},50)"'
+      : '';
+    return '<tr>' +
+      '<td class="glt-name"' + nameClick + '>' + esc(name) + '</td>' +
+      '<td>' + (status ? '<span class="glt-status">' + esc(status) + '</span>' : '') + '</td>' +
+      '<td>' + esc(started || '—') + '</td>' +
+      '<td>' + esc(designers || '—') + '</td>' +
+      '</tr>';
+  }).join('');
+  var tbody = document.getElementById('gamesListBody');
+  if (tbody) tbody.innerHTML = rows || '<tr><td colspan="4" style="color:#888;padding:.75rem">No games yet.</td></tr>';
+}
+
+function renderClientsView() {
+  var wrap = document.getElementById('clientsViewWrap');
+  if (!wrap) return;
+  if (!CONTRACT_RAW.length) {
+    wrap.innerHTML = '<p class="clients-empty">No contracts yet.</p>';
+    return;
+  }
+  // Group by client
+  var byClient = {};
+  CONTRACT_RAW.forEach(function(c) {
+    var client = (c.Client || '').trim() || 'Unknown';
+    if (!byClient[client]) byClient[client] = [];
+    byClient[client].push(c);
+  });
+  var html = '';
+  Object.keys(byClient).sort().forEach(function(client) {
+    var contracts = byClient[client];
+    html += '<div class="client-card">';
+    html += '<div class="client-card-header">' +
+      esc(client) +
+      '<span class="client-card-count">' + contracts.length + (contracts.length === 1 ? ' contract' : ' contracts') + '</span>' +
+    '</div>';
+    contracts.forEach(function(c) {
+      var quoteNum = parseFloat(c.Quote || '');
+      var quote    = isNaN(quoteNum) ? '—' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
+      var payment  = (c.Payment || '').trim();
+      var badgeCls = 'client-contract-badge';
+      if (payment === 'Fully Paid') badgeCls += ' paid';
+      else if (payment === 'Invoiced') badgeCls += ' invoiced';
+      else if (payment === 'Partial')  badgeCls += ' partial';
+      var ts = c['Target Start Date'] || '';
+      var te = c['Target End Date']   || '';
+      var dateRange = (ts || te) ? (ts || '?') + ' → ' + (te || '?') : '';
+      html += '<div class="client-contract-row">';
+      html += '<div>' +
+        '<div class="client-contract-game">' + esc(c.Game || '—') + '</div>' +
+        (dateRange ? '<div class="client-contract-dates">' + esc(dateRange) + '</div>' : '') +
+      '</div>';
+      html += '<div class="client-contract-quote">' + esc(quote) + '</div>';
+      html += '<div><span class="' + badgeCls + '">' + esc(payment || '—') + '</span></div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+  wrap.innerHTML = html;
 }
 
 // ── Games state ───────────────────────────────────────────────────────────────

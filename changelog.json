@@ -1,8 +1,24 @@
 [
   {
     "version": "Sep 2026",
+    "apps": ["devboard"],
+    "features": [
+      "DevBoard — new app for tracking playtest sessions, meetings, and ideas per game",
+      "Game cards with lazy-loaded session history, filterable by session type (Playtest, Meeting, Idea)",
+      "Session dialog — log date, type, location, testers, and observation/solution pairs in one form",
+      "Edit existing sessions — hover to reveal Edit button on desktop, long-press on touch devices",
+      "Five-column sheet schema: Date, Event, People, Observation, Solution",
+      "Auto-resizing textareas — each field starts at one row and grows as you type",
+      "Keyboard navigation in the obs/sol grid — ⌘ / Ctrl + Arrow moves focus between fields",
+      "Trailing empty row styled faintly to distinguish it from filled rows",
+      "Dialog protection — shakes instead of closing when unsaved or edited data is present"
+    ]
+  },
+  {
+    "version": "Sep 2026",
     "apps": ["pitchboard"],
     "features": [
+      "Features page — overview of PitchBoard capabilities for sharing with potential users",
       "Board view — Kanban-style view of all games organised into Design, Pitch, Signed, and Published columns",
       "Drag-and-drop game cards between columns — stage and status update automatically in the sheet",
       "Date auto-fill — moving a game to Signed or Published fills the corresponding date if blank",

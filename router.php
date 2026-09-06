@@ -114,6 +114,11 @@ if (preg_match('#^/pitchboard/help/?$#', $uri)) {
     serveFile(__DIR__ . '/source/pitchboard/help/index.php', $MIME);
 }
 
+// ── /devboard/help — DevBoard help page ───────────────────────────────────────
+if (preg_match('#^/devboard/help/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/devboard/help/index.php', $MIME);
+}
+
 // ── /pitchboard/features — sales / features page ──────────────────────────────
 if (preg_match('#^/pitchboard/features/?$#', $uri)) {
     serveFile(__DIR__ . '/source/pitchboard/features/index.php', $MIME);

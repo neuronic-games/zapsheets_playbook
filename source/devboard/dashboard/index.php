@@ -243,6 +243,23 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 }
 .game-info-edit-btn:hover { background:rgba(255,255,255,.28); }
 
+/* ── Contract dialog ──────────────────────────────────── */
+.contract-dialog {
+  background:#fff; border-radius:12px;
+  padding:1.5rem; width:min(560px,96vw);
+  box-shadow:0 8px 32px rgba(0,0,0,.22);
+  display:flex; flex-direction:column; gap:1rem;
+  max-height:92vh; overflow-y:auto;
+}
+.contract-dialog h2 { font-family:'DINBlack',sans-serif; font-size:1rem; margin:0; }
+.contract-dialog h2 span { font-family:'DINRegular',sans-serif; opacity:.55; }
+.contract-quote-wrap { position:relative; }
+.contract-quote-wrap input { padding-left:1.4rem !important; }
+.contract-quote-prefix {
+  position:absolute; left:.55rem; top:50%; transform:translateY(-50%);
+  font-size:.82rem; color:#666; pointer-events:none;
+}
+
 /* ── Sessions inside a card ───────────────────────────── */
 .dev-loading { padding:1.1rem 1.1rem; font-size:.8rem; color:#888; font-style:italic; }
 .dev-empty   { padding:1.1rem 1.1rem; font-size:.8rem; color:#aaa; }
@@ -576,6 +593,59 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   </div>
 </div>
 
+<!-- Contract dialog -->
+<div class="overlay" id="contractOverlay" onclick="if(event.target===this)closeContractDialog()">
+  <div class="contract-dialog">
+    <h2>New Contract — <span id="contractGameTitle"></span></h2>
+    <div class="field-grid" style="grid-template-columns:1fr 1fr">
+      <div class="field-group span2">
+        <label>Client</label>
+        <div class="combo-wrap" id="contractClientCombo">
+          <input type="text" class="field-input combo-input" id="contractClient"
+            placeholder="Publisher or company…" autocomplete="off"
+            oninput="contractClientFilter()"
+            onfocus="contractClientOpen()"
+            onkeydown="contractClientKey(event)" />
+          <div class="combo-dropdown" id="contractClientDrop"></div>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Target Start Date</label>
+        <input type="date" class="field-input" id="contractTargetStart" />
+      </div>
+      <div class="field-group">
+        <label>Target End Date</label>
+        <input type="date" class="field-input" id="contractTargetEnd" />
+      </div>
+      <div class="field-group">
+        <label>Quote</label>
+        <div class="contract-quote-wrap">
+          <span class="contract-quote-prefix">$</span>
+          <input type="number" class="field-input" id="contractQuote" placeholder="0.00" min="0" step="0.01" />
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Payment</label>
+        <select class="field-input" id="contractPayment">
+          <option value="Estimate">Estimate</option>
+          <option value="Invoiced">Invoiced</option>
+          <option value="Partial">Partial</option>
+          <option value="Fully Paid">Fully Paid</option>
+        </select>
+      </div>
+      <div class="field-group span2">
+        <label>Notes</label>
+        <input type="text" class="field-input" id="contractNotes" placeholder="e.g. 2 tests, 2 rules reviews" autocomplete="off" />
+      </div>
+    </div>
+    <div class="dialog-err" id="contractErr"></div>
+    <div class="dialog-actions">
+      <button class="btn-cancel" onclick="closeContractDialog()">Cancel</button>
+      <button class="btn-dark" id="contractBtn" onclick="submitContract()">Add Contract</button>
+    </div>
+  </div>
+</div>
+
 <!-- Add session dialog -->
 <div class="overlay" id="sessionOverlay" onclick="if(event.target===this){var _d=this.querySelector('.session-dialog');if(_editMode?isSessionDirty():hasSessionData())shakeDialog(_d);else closeSessionDialog();}">
   <div class="session-dialog">
@@ -807,6 +877,7 @@ function renderBody(gameName, rows) {
   ].filter(Boolean);
   html += '<div class="game-info-bar">';
   html += '<span class="game-info-designers">' + (designers.length ? esc(designers.join(', ')) : '') + '</span>';
+  html += '<button class="game-info-edit-btn" onclick="openContractDialog(\'' + gn + '\')">+ Contract</button>';
   html += '<button class="game-info-edit-btn" onclick="openEditGame(\'' + gn + '\')">Edit</button>';
   html += '</div>';
 
@@ -1047,6 +1118,103 @@ function openAddDialog() {
   document.getElementById('addOverlay').classList.add('open');
   setTimeout(function() { document.getElementById('gameComboInput').focus(); }, 80);
 }
+
+// ── Contract dialog ────────────────────────────────────────────────────────
+var _contractGame = '';
+
+function openContractDialog(name) {
+  _contractGame = name;
+  document.getElementById('contractGameTitle').textContent = name;
+  document.getElementById('contractClient').value      = '';
+  document.getElementById('contractTargetStart').value = '';
+  document.getElementById('contractTargetEnd').value   = '';
+  document.getElementById('contractQuote').value       = '';
+  document.getElementById('contractPayment').value     = 'Estimate';
+  document.getElementById('contractNotes').value       = '';
+  document.getElementById('contractErr').textContent   = '';
+  document.getElementById('contractErr').style.display = 'none';
+  document.getElementById('contractBtn').disabled      = false;
+  document.getElementById('contractBtn').textContent   = 'Add Contract';
+  // populate client combo
+  contractClientRebuild('');
+  document.getElementById('contractOverlay').classList.add('open');
+}
+
+function closeContractDialog() {
+  document.getElementById('contractOverlay').classList.remove('open');
+}
+
+// Client combo helpers
+function contractClientRebuild(filter) {
+  var drop  = document.getElementById('contractClientDrop');
+  var lower = filter.toLowerCase();
+  var items = PEOPLE_NAMES.filter(function(n) {
+    return !lower || n.toLowerCase().indexOf(lower) !== -1;
+  });
+  if (!items.length) { drop.innerHTML = ''; document.getElementById('contractClientCombo').classList.remove('open'); return; }
+  drop.innerHTML = items.map(function(n) {
+    return '<div class="combo-item" onmousedown="contractClientPick(\'' + n.replace(/'/g,"&#39;") + '\')">' + n + '</div>';
+  }).join('');
+  document.getElementById('contractClientCombo').classList.add('open');
+}
+function contractClientOpen()  { contractClientRebuild(document.getElementById('contractClient').value); }
+function contractClientFilter(){ contractClientRebuild(document.getElementById('contractClient').value); }
+function contractClientPick(n) {
+  document.getElementById('contractClient').value = n;
+  document.getElementById('contractClientDrop').innerHTML = '';
+  document.getElementById('contractClientCombo').classList.remove('open');
+}
+function contractClientKey(e)  {
+  if (e.key === 'Escape') { document.getElementById('contractClientCombo').classList.remove('open'); }
+  if (e.key === 'Enter')  {
+    var first = document.querySelector('#contractClientDrop .combo-item');
+    if (first) { document.getElementById('contractClient').value = first.textContent; document.getElementById('contractClientCombo').classList.remove('open'); }
+  }
+}
+
+function submitContract() {
+  var client      = document.getElementById('contractClient').value.trim();
+  var targetStart = document.getElementById('contractTargetStart').value.trim();
+  var targetEnd   = document.getElementById('contractTargetEnd').value.trim();
+  var quote       = document.getElementById('contractQuote').value.trim();
+  var payment     = document.getElementById('contractPayment').value;
+  var notes       = document.getElementById('contractNotes').value.trim();
+  var errEl       = document.getElementById('contractErr');
+  errEl.textContent   = '';
+  errEl.style.display = 'none';
+  if (!client) { errEl.textContent = 'Client is required.'; errEl.style.display = 'block'; return; }
+  var btn = document.getElementById('contractBtn');
+  btn.disabled    = true;
+  btn.textContent = 'Saving…';
+  var fd = new FormData();
+  fd.append('id',           SHEET_ID);
+  fd.append('game',         _contractGame);
+  fd.append('client',       client);
+  fd.append('target_start', targetStart);
+  fd.append('target_end',   targetEnd);
+  fd.append('quote',        quote);
+  fd.append('payment',      payment);
+  fd.append('notes',        notes);
+  fetch(APP_BASE + 'push/addContract.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(j) {
+      if (j && j.ok) {
+        closeContractDialog();
+      } else {
+        errEl.textContent   = (j && j.error) ? j.error : 'Save failed.';
+        errEl.style.display = 'block';
+        btn.disabled    = false;
+        btn.textContent = 'Add Contract';
+      }
+    })
+    .catch(function() {
+      errEl.textContent   = 'Network error.';
+      errEl.style.display = 'block';
+      btn.disabled    = false;
+      btn.textContent = 'Add Contract';
+    });
+}
+// ── end Contract dialog ─────────────────────────────────────────────────────
 
 function openEditGame(name) {
   var rec = GAMES_INDEX[name.toLowerCase()] || {};

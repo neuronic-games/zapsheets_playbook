@@ -154,17 +154,16 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 }
 .dialog-shake { animation:dialog-shake .35s ease; }
 
-/* ── Tab bar ──────────────────────────────────────────── */
-.tab-bar { background:#1a1a2e; padding:.45rem 1.25rem; }
-.tab-bar-inner { max-width:860px; margin:0 auto; display:flex; gap:.3rem; }
-.tab-btn {
-  font-family:'DINBlack',sans-serif; font-size:.65rem; text-transform:uppercase;
-  letter-spacing:.07em; padding:.28rem .7rem; border-radius:5px;
-  border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.5);
-  background:transparent; cursor:pointer; transition:all .15s;
+/* ── Top tab buttons (inline in top bar) ──────────────── */
+.top-tab-btns { display:flex; gap:.3rem; align-items:center; }
+.top-tab {
+  font-family:'DINBlack',sans-serif; font-size:.62rem; text-transform:uppercase;
+  letter-spacing:.07em; padding:.32rem .85rem; border-radius:6px;
+  border:1px solid rgba(255,255,255,.18); color:rgba(255,255,255,.6);
+  background:rgba(255,255,255,.08); cursor:pointer; transition:all .15s; white-space:nowrap;
 }
-.tab-btn.active { background:#fff; color:#1a1a2e; border-color:#fff; }
-.tab-btn:not(.active):hover { color:#fff; border-color:rgba(255,255,255,.35); }
+.top-tab.active { background:#fff; color:#1a1a2e; border-color:#fff; font-weight:700; }
+.top-tab:not(.active):hover { color:#fff; background:rgba(255,255,255,.15); border-color:rgba(255,255,255,.3); }
 
 /* ── Views ────────────────────────────────────────────── */
 .view { display:none; }
@@ -182,7 +181,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .glt-status { font-family:'DINBlack',sans-serif; font-size:.6rem; letter-spacing:.05em; text-transform:uppercase; padding:.15rem .45rem; border-radius:999px; background:#e8f4f8; color:#1a5f7a; white-space:nowrap; }
 
 /* ── Clients view ─────────────────────────────────────── */
-.clients-view-wrap { max-width:860px; margin:0 auto; padding:1rem 1.25rem; display:flex; flex-direction:column; gap:.75rem; }
+.publishers-view-wrap { max-width:860px; margin:0 auto; padding:1rem 1.25rem; display:flex; flex-direction:column; gap:.75rem; }
 .client-card { background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.08); }
 .client-card-header { background:#1a1a2e; color:#fff; padding:.55rem 1rem; font-family:'DINBlack',sans-serif; font-size:.88rem; letter-spacing:.02em; display:flex; align-items:center; justify-content:space-between; }
 .client-card-count { font-family:'DINRegular',sans-serif; font-size:.7rem; opacity:.55; }
@@ -195,7 +194,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .client-contract-badge.paid     { background:#dcfce7; color:#15803d; }
 .client-contract-badge.invoiced { background:#fef9c3; color:#a16207; }
 .client-contract-badge.partial  { background:#ffedd5; color:#9a3412; }
-.clients-empty { color:#888; font-size:.85rem; padding:1rem 0; }
+.publishers-empty { color:#888; font-size:.85rem; padding:1rem 0; }
 
 /* ── Search bar ───────────────────────────────────────── */
 .search-bar { padding:.6rem 1.25rem .5rem; max-width:860px; margin:0 auto; display:flex; gap:.6rem; align-items:center; }
@@ -532,6 +531,12 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
       <p class="sub">Playtest Notes</p>
     </div>
 
+    <div class="top-tab-btns">
+      <button class="top-tab active" id="tabDash"       onclick="switchTab('dash')">Board</button>
+      <button class="top-tab"        id="tabGames"      onclick="switchTab('games')"><?= count($_games_raw) ?> Games</button>
+      <button class="top-tab"        id="tabPublishers" onclick="switchTab('publishers')"><?= $_client_count ?> Publishers</button>
+    </div>
+
     <div class="account-menu-wrap">
       <button class="top-btn" onclick="toggleAccountMenu()" title="Menu">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -545,15 +550,6 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
         <button class="account-menu-item" onclick="accountMenuHelp()">Help</button>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- Tab bar -->
-<div class="tab-bar">
-  <div class="tab-bar-inner">
-    <button class="tab-btn active" id="tabDash"    onclick="switchTab('dash')">Dash</button>
-    <button class="tab-btn"        id="tabGames"   onclick="switchTab('games')"><?= count($_games_raw) ?> Games</button>
-    <button class="tab-btn"        id="tabClients" onclick="switchTab('clients')"><?= $_client_count ?> Clients</button>
   </div>
 </div>
 
@@ -584,8 +580,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 </div>
 
 <!-- View: Clients -->
-<div class="view" id="view-clients">
-  <div class="clients-view-wrap" id="clientsViewWrap"></div>
+<div class="view" id="view-publishers">
+  <div class="publishers-view-wrap" id="publishersViewWrap"></div>
 </div>
 
 <!-- Fetch overlay -->
@@ -830,16 +826,16 @@ function _toDateInput(v) {
 var _activeTab = 'dash';
 function switchTab(tab) {
   _activeTab = tab;
-  ['Dash','Games','Clients'].forEach(function(t) {
+  ['Dash','Games','Publishers'].forEach(function(t) {
     var btn = document.getElementById('tab' + t);
     if (btn) btn.classList.toggle('active', t.toLowerCase() === tab);
   });
-  ['dash','games','clients'].forEach(function(v) {
+  ['dash','games','publishers'].forEach(function(v) {
     var el = document.getElementById('view-' + v);
     if (el) el.classList.toggle('active', v === tab);
   });
   if (tab === 'games')   renderGamesView();
-  if (tab === 'clients') renderClientsView();
+  if (tab === 'publishers') renderPublishersView();
 }
 
 function renderGamesView() {
@@ -870,11 +866,11 @@ function renderGamesView() {
   if (tbody) tbody.innerHTML = rows || '<tr><td colspan="4" style="color:#888;padding:.75rem">No games yet.</td></tr>';
 }
 
-function renderClientsView() {
-  var wrap = document.getElementById('clientsViewWrap');
+function renderPublishersView() {
+  var wrap = document.getElementById('publishersViewWrap');
   if (!wrap) return;
   if (!CONTRACT_RAW.length) {
-    wrap.innerHTML = '<p class="clients-empty">No contracts yet.</p>';
+    wrap.innerHTML = '<p class="publishers-empty">No contracts yet.</p>';
     return;
   }
   // Group by client

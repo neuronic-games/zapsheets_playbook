@@ -65,6 +65,53 @@ foreach ($_people_raw as $_p) {
 *, *::before, *::after { box-sizing:border-box; }
 body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; color:#111; }
 
+/* ── Account menu ────────────────────────────────────── */
+.account-menu-wrap { position:relative; flex-shrink:0; }
+.account-menu {
+  display:none; position:absolute; top:calc(100% + .4rem); right:0;
+  background:#1a1a2e; border:1px solid rgba(255,255,255,.2);
+  border-radius:8px; min-width:130px; z-index:300;
+  box-shadow:0 6px 20px rgba(0,0,0,.4); overflow:hidden;
+}
+.account-menu.open { display:block; }
+.account-menu-item {
+  display:block; width:100%; background:none; border:none;
+  color:rgba(255,255,255,.85); text-align:left; cursor:pointer;
+  font-family:'DINBlack',sans-serif; font-size:.72rem;
+  text-transform:uppercase; letter-spacing:.07em;
+  padding:.6rem 1rem; transition:background .12s;
+}
+.account-menu-item:hover { background:rgba(255,255,255,.1); color:#fff; }
+
+/* ── Release notes dialog ─────────────────────────────── */
+.rn-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.45); z-index:400;
+  align-items:center; justify-content:center; padding:1rem;
+}
+.rn-overlay.open { display:flex; }
+.rn-dialog {
+  background:#fff; border-radius:12px; padding:1.5rem;
+  width:min(520px,94vw); box-shadow:0 8px 32px rgba(0,0,0,.22);
+  display:flex; flex-direction:column; gap:0;
+  max-height:80vh; overflow:hidden;
+}
+.rn-dialog h2 { font-family:'DINBlack',sans-serif; font-size:.95rem; margin:0 0 1rem; }
+.rn-body { overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:1.1rem; }
+.rn-release { display:flex; flex-direction:column; gap:.35rem; }
+.rn-version {
+  font-family:'DINBlack',sans-serif; font-size:.72rem;
+  text-transform:uppercase; letter-spacing:.07em;
+  color:#1a1a2e; border-bottom:1px solid #e8e8f0;
+  padding-bottom:.3rem; margin-bottom:.1rem;
+}
+.rn-feature {
+  font-size:.8rem; color:#444; line-height:1.45;
+  display:flex; gap:.5rem; align-items:baseline;
+}
+.rn-feature::before { content:'·'; color:#1a1a2e; font-weight:700; flex-shrink:0; }
+.rn-dialog-actions { display:flex; justify-content:flex-end; padding-top:.9rem; }
+
 /* ── Top bar ──────────────────────────────────────────── */
 .top-bar {
   background:#1a5f7a; color:#fff;
@@ -371,6 +418,19 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
     <button class="top-btn" id="fetchBtn" onclick="doFetch()">
       <span class="sync-icon">↻</span> Fetch
     </button>
+    <div class="account-menu-wrap">
+      <button class="top-btn" onclick="toggleAccountMenu()" title="Menu">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="12" cy="7.5" r="4.5"/>
+          <path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/>
+        </svg>
+      </button>
+      <div class="account-menu" id="accountMenu">
+        <button class="account-menu-item" onclick="accountMenuFetch()">Fetch</button>
+        <button class="account-menu-item" onclick="accountMenuRelease()">Releases</button>
+        <button class="account-menu-item" onclick="accountMenuHelp()">Help</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -469,6 +529,17 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
     <div class="dialog-actions">
       <button class="btn-cancel" onclick="closeSessionDialog()">Cancel</button>
       <button class="btn-primary" id="sessionBtn" onclick="submitSession()">Add Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- Release notes dialog -->
+<div class="rn-overlay" id="rnOverlay" onclick="if(event.target===this)closeRnDialog()">
+  <div class="rn-dialog">
+    <h2>Release Notes</h2>
+    <div class="rn-body" id="rnBody"></div>
+    <div class="rn-dialog-actions">
+      <button class="btn-cancel" onclick="closeRnDialog()">Close</button>
     </div>
   </div>
 </div>
@@ -1309,6 +1380,67 @@ document.addEventListener('touchend', function() {
 document.addEventListener('touchcancel', function() {
   if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
 }, { passive: true });
+
+// ── Account menu ─────────────────────────────────────────────────────────────
+
+function toggleAccountMenu() {
+  var menu = document.getElementById('accountMenu');
+  menu.classList.toggle('open');
+}
+function closeAccountMenu() {
+  document.getElementById('accountMenu').classList.remove('open');
+}
+function accountMenuFetch()   { closeAccountMenu(); doFetch(); }
+function accountMenuRelease() { closeAccountMenu(); openRnDialog(); }
+function accountMenuHelp()    { closeAccountMenu(); window.open(APP_BASE + 'devboard/help', '_blank'); }
+
+document.addEventListener('click', function(e) {
+  var wrap = document.querySelector('.account-menu-wrap');
+  if (wrap && !wrap.contains(e.target)) closeAccountMenu();
+});
+
+// ── Release notes dialog ──────────────────────────────────────────────────────
+
+function openRnDialog() {
+  var overlay = document.getElementById('rnOverlay');
+  var body    = document.getElementById('rnBody');
+  body.innerHTML = '<span style="color:#aaa;font-size:.8rem">Loading…</span>';
+  overlay.classList.add('open');
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', APP_BASE + 'changelog.json?v=' + Date.now());
+  xhr.onload = function() {
+    var all;
+    try { all = JSON.parse(xhr.responseText); } catch(e) { all = null; }
+    if (!all || !all.length) {
+      body.innerHTML = '<span style="color:#aaa;font-size:.8rem">No release notes available.</span>';
+      return;
+    }
+    var releases = all.filter(function(r) {
+      return !r.apps || r.apps.indexOf('devboard') !== -1;
+    });
+    if (!releases.length) {
+      body.innerHTML = '<span style="color:#aaa;font-size:.8rem">No release notes available.</span>';
+      return;
+    }
+    var html = '';
+    releases.forEach(function(r) {
+      html += '<div class="rn-release">';
+      html += '<div class="rn-version">' + esc(r.version || '') + '</div>';
+      (r.features || []).forEach(function(f) {
+        html += '<div class="rn-feature">' + esc(f) + '</div>';
+      });
+      html += '</div>';
+    });
+    body.innerHTML = html;
+  };
+  xhr.onerror = function() {
+    body.innerHTML = '<span style="color:#aaa;font-size:.8rem">Could not load release notes.</span>';
+  };
+  xhr.send();
+}
+function closeRnDialog() {
+  document.getElementById('rnOverlay').classList.remove('open');
+}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 

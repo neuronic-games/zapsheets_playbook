@@ -33,12 +33,15 @@ $_settings_file = __DIR__ . '/../../../sheets/' . $_sheet_id . '/settings.json';
 $_settings      = file_exists($_settings_file)
     ? (json_decode(file_get_contents($_settings_file), true) ?: [])
     : [];
-$_my_name = '';
+$_my_name  = '';
+$_my_email = '';
+$_my_phone = '';
 foreach ($_settings as $_s) {
-    if (($s['Label'] ?? $s[0] ?? '') === 'My Name' || ($s['label'] ?? '') === 'My Name') {
-        $_my_name = $_s['Value'] ?? $_s[1] ?? '';
-        break;
-    }
+    $lbl = $_s['Label'] ?? $_s[0] ?? $_s['label'] ?? '';
+    $val = $_s['Value'] ?? $_s[1] ?? '';
+    if ($lbl === 'My Name')  $_my_name  = $val;
+    if ($lbl === 'My Email') $_my_email = $val;
+    if ($lbl === 'My Phone') $_my_phone = $val;
 }
 
 // Load people names for Testers combo
@@ -208,10 +211,16 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 /* ── Clients view ─────────────────────────────────────── */
 .publishers-view-wrap { max-width:860px; margin:0 auto; padding:1rem 1.25rem; display:flex; flex-direction:column; gap:.75rem; }
 .client-card { background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.08); }
-.client-card-header { background:#1a1a2e; color:#fff; padding:.55rem 1rem; font-family:'DINBlack',sans-serif; font-size:.88rem; letter-spacing:.02em; display:flex; align-items:center; justify-content:space-between; }
+.client-card-header { background:#1a1a2e; color:#fff; padding:.55rem 1rem; font-family:'DINBlack',sans-serif; font-size:.88rem; letter-spacing:.02em; display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none; }
+.client-card-header:hover { background:#252540; }
+.client-card-chevron { font-size:.65rem; opacity:.5; transition:transform .2s; flex-shrink:0; margin-left:.5rem; }
+.client-card.open .client-card-chevron { transform:rotate(180deg); }
 .client-card-count { font-family:'DINRegular',sans-serif; font-size:.7rem; opacity:.55; }
-.client-contract-row { display:grid; grid-template-columns:1fr auto auto; gap:.75rem; align-items:center; padding:.5rem 1rem; border-bottom:1px solid #f0f4f8; }
+.client-card-body { display:none; }
+.client-card.open .client-card-body { display:block; }
+.client-contract-row { display:grid; grid-template-columns:1fr auto auto; gap:.75rem; align-items:center; padding:.5rem 1rem; border-bottom:1px solid #f0f4f8; cursor:pointer; transition:background .1s; }
 .client-contract-row:last-child { border-bottom:none; }
+.client-contract-row:hover { background:#f8fafc; }
 .client-contract-game { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#1a5f7a; }
 .client-contract-dates { font-size:.7rem; color:#888; margin-top:.1rem; }
 .client-contract-quote { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#111; white-space:nowrap; }
@@ -396,6 +405,11 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; align-items:center; justify-content:center; padding:1rem; }
 .overlay.open { display:flex; }
 
+/* Profile form fields */
+.ge-label { display:flex; flex-direction:column; gap:.3rem; font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; color:#666; }
+.ge-input { font-family:'DINRegular',sans-serif; font-size:.85rem; padding:.42rem .65rem; border:1px solid #d1dde6; border-radius:6px; outline:none; color:#111; background:#fff; }
+.ge-input:focus { border-color:#1a5f7a; }
+
 /* Sync overlay */
 .sync-dialog {
   background:#fff; border-radius:10px;
@@ -570,6 +584,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
         </svg>
       </button>
       <div class="account-menu" id="accountMenu">
+        <button class="account-menu-item" onclick="accountMenuProfile()">Profile</button>
         <button class="account-menu-item" onclick="accountMenuFetch()">Fetch</button>
         <button class="account-menu-item" onclick="accountMenuRelease()">Releases</button>
         <button class="account-menu-item" onclick="accountMenuHelp()">Help</button>
@@ -600,6 +615,77 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 <!-- View: Publishers -->
 <div class="view" id="view-publishers">
   <div class="publishers-view-wrap" id="publishersViewWrap"></div>
+</div>
+
+<!-- Edit Contract dialog -->
+<div class="overlay" id="contractEditOverlay" onclick="if(event.target===this)closeContractEditDialog()">
+  <div class="contract-dialog">
+    <h2>Edit Contract — <span id="ceGameTitle"></span></h2>
+    <div class="field-grid" style="grid-template-columns:1fr 1fr">
+      <div class="field-group span2">
+        <label>Client</label>
+        <input type="text" class="field-input" id="ceClient" autocomplete="off" />
+      </div>
+      <div class="field-group">
+        <label>Target Start Date</label>
+        <input type="date" class="field-input" id="ceTargetStart" />
+      </div>
+      <div class="field-group">
+        <label>Target End Date</label>
+        <input type="date" class="field-input" id="ceTargetEnd" />
+      </div>
+      <div class="field-group">
+        <label>Start Date</label>
+        <input type="date" class="field-input" id="ceStartDate" />
+      </div>
+      <div class="field-group">
+        <label>End Date</label>
+        <input type="date" class="field-input" id="ceEndDate" />
+      </div>
+      <div class="field-group">
+        <label>Quote</label>
+        <div class="contract-quote-wrap">
+          <span class="contract-quote-prefix">$</span>
+          <input type="number" class="field-input" id="ceQuote" min="0" step="0.01" />
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Payment</label>
+        <select class="field-input" id="cePayment">
+          <option value="Estimate">Estimate</option>
+          <option value="Invoiced">Invoiced</option>
+          <option value="Partial">Partial</option>
+          <option value="Fully Paid">Fully Paid</option>
+        </select>
+      </div>
+      <div class="field-group span2">
+        <label>Notes</label>
+        <input type="text" class="field-input" id="ceNotes" autocomplete="off" />
+      </div>
+    </div>
+    <div class="dialog-err" id="ceErr"></div>
+    <div class="dialog-actions">
+      <button class="btn-cancel" onclick="closeContractEditDialog()">Cancel</button>
+      <button class="btn-dark" id="ceBtn" onclick="submitContractEdit()">Save Contract</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile dialog -->
+<div class="overlay" id="profileOverlay" onclick="if(event.target===this)closeProfileDialog()">
+  <div class="sync-dialog" style="width:min(400px,94vw)">
+    <h2>Profile</h2>
+    <div style="display:flex;flex-direction:column;gap:.65rem;margin:.25rem 0 .5rem">
+      <label class="ge-label">Name<input  type="text"  id="profileName"  class="ge-input" placeholder="Your name" /></label>
+      <label class="ge-label">Email<input type="email" id="profileEmail" class="ge-input" placeholder="your@email.com" /></label>
+      <label class="ge-label">Phone<input type="tel"   id="profilePhone" class="ge-input" placeholder="+1 555 000 0000" /></label>
+    </div>
+    <div class="sync-log" id="profileLog" style="display:none"></div>
+    <div class="sync-dialog-actions">
+      <button class="notes-close" id="profileCancelBtn" onclick="closeProfileDialog()">Cancel</button>
+      <button class="notes-close" id="profileSaveBtn"   onclick="submitProfile()" style="background:#1a5f7a;color:#fff;border-color:#1a5f7a">Save</button>
+    </div>
+  </div>
 </div>
 
 <!-- Fetch overlay -->
@@ -808,6 +894,8 @@ var SHEET_ID    = <?= json_encode($_sheet_id) ?>;
 var GAMES_RAW   = <?= json_encode(array_values($_games_raw), JSON_UNESCAPED_UNICODE) ?>;
 var ACTIVE_KEYS = <?= json_encode($_active_keys, JSON_UNESCAPED_UNICODE) ?>;
 var MY_NAME      = <?= json_encode($_my_name) ?>;
+var MY_EMAIL     = <?= json_encode($_my_email) ?>;
+var MY_PHONE     = <?= json_encode($_my_phone) ?>;
 var PEOPLE_NAMES  = <?= json_encode(array_values($_people_names), JSON_UNESCAPED_UNICODE) ?>;
 var CONTRACT_RAW  = <?= json_encode(array_values($_contracts_raw), JSON_UNESCAPED_UNICODE) ?>;
 
@@ -940,14 +1028,13 @@ function renderPublishersView() {
   var wrap = document.getElementById('publishersViewWrap');
   if (!wrap) return;
 
-  // Group contracts by client from the Contracts sheet
   var byClient = {};
-  CONTRACT_RAW.forEach(function(c) {
-    var name = (c.Client || '').trim();
+  CONTRACT_RAW.forEach(function(con) {
+    var name = (con.Client || '').trim();
     if (!name) return;
     var key = name.toLowerCase();
     if (!byClient[key]) byClient[key] = { name: name, contracts: [] };
-    byClient[key].contracts.push(c);
+    byClient[key].contracts.push(con);
   });
 
   var publishers = Object.keys(byClient).sort().map(function(k) { return byClient[k]; });
@@ -960,32 +1047,44 @@ function renderPublishersView() {
   var html = '';
   publishers.forEach(function(pub) {
     var contracts = pub.contracts;
-    html += '<div class="client-card">';
-    html += '<div class="client-card-header">' + esc(pub.name) +
-      '<span class="client-card-count">' + contracts.length + (contracts.length === 1 ? ' contract' : ' contracts') + '</span>' +
+    html += '<div class="client-card" id="pub-' + esc(pub.name.replace(/\s+/g,'_')) + '">';
+    html += '<div class="client-card-header" onclick="togglePublisherCard(this.parentNode)">' +
+      '<span>' + esc(pub.name) + '</span>' +
+      '<span style="display:flex;align-items:center;gap:.5rem">' +
+        '<span class="client-card-count">' + contracts.length + (contracts.length === 1 ? ' contract' : ' contracts') + '</span>' +
+        '<span class="client-card-chevron">▼</span>' +
+      '</span>' +
     '</div>';
-    contracts.forEach(function(c) {
-      var quoteNum = parseFloat(c.Quote || '');
+    html += '<div class="client-card-body">';
+    contracts.forEach(function(con, i) {
+      var quoteNum = parseFloat(con.Quote || '');
       var quote    = isNaN(quoteNum) ? '—' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
-      var payment  = (c.Payment || '').trim();
+      var payment  = (con.Payment || '').trim();
       var badgeCls = 'client-contract-badge';
       if (payment === 'Fully Paid') badgeCls += ' paid';
       else if (payment === 'Invoiced') badgeCls += ' invoiced';
       else if (payment === 'Partial')  badgeCls += ' partial';
-      var ts = c['Target Start Date'] || '';
-      var te = c['Target End Date']   || '';
+      var ts = con['Target Start Date'] || '';
+      var te = con['Target End Date']   || '';
       var dateRange = (ts || te) ? (ts || '?') + ' → ' + (te || '?') : '';
-      html += '<div class="client-contract-row">';
-      html += '<div><div class="client-contract-game">' + esc(c.Game || '—') + '</div>' +
+      var dataIdx = CONTRACT_RAW.indexOf(con);
+      html += '<div class="client-contract-row" onclick="openContractEditDialog(' + dataIdx + ')">';
+      html += '<div><div class="client-contract-game">' + esc(con.Game || '—') + '</div>' +
         (dateRange ? '<div class="client-contract-dates">' + esc(dateRange) + '</div>' : '') + '</div>';
       html += '<div class="client-contract-quote">' + esc(quote) + '</div>';
       html += '<div><span class="' + badgeCls + '">' + esc(payment || '—') + '</span></div>';
       html += '</div>';
     });
     html += '</div>';
+    html += '</div>';
   });
   wrap.innerHTML = html;
 }
+
+function togglePublisherCard(card) {
+  card.classList.toggle('open');
+}
+
 
 // ── Games state ───────────────────────────────────────────────────────────────
 
@@ -2185,6 +2284,7 @@ function toggleAccountMenu() {
 function closeAccountMenu() {
   document.getElementById('accountMenu').classList.remove('open');
 }
+function accountMenuProfile() { closeAccountMenu(); openProfileDialog(); }
 function accountMenuFetch()   { closeAccountMenu(); doFetch(); }
 function accountMenuRelease() { closeAccountMenu(); openRnDialog(); }
 function accountMenuHelp()    { closeAccountMenu(); window.open(APP_BASE + 'devboard/help', '_blank'); }
@@ -2238,6 +2338,143 @@ function closeRnDialog() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+
+// ── Profile dialog ─────────────────────────────────────────────────────────────
+function openProfileDialog() {
+  document.getElementById('profileName').value  = MY_NAME  || '';
+  document.getElementById('profileEmail').value = MY_EMAIL || '';
+  document.getElementById('profilePhone').value = MY_PHONE || '';
+  document.getElementById('profileLog').innerHTML = '';
+  document.getElementById('profileLog').style.display = 'none';
+  document.getElementById('profileSaveBtn').disabled   = false;
+  document.getElementById('profileCancelBtn').disabled = false;
+  document.getElementById('profileCancelBtn').textContent = 'Cancel';
+  document.getElementById('profileOverlay').classList.add('open');
+}
+function closeProfileDialog() {
+  document.getElementById('profileOverlay').classList.remove('open');
+}
+function _profileLog(msg, type) {
+  var log  = document.getElementById('profileLog');
+  log.style.display = '';
+  var span = document.createElement('span');
+  span.className   = 'sync-log-line ' + (type || 'info');
+  span.textContent = msg;
+  log.appendChild(span);
+  log.scrollTop = log.scrollHeight;
+}
+function submitProfile() {
+  var name  = document.getElementById('profileName').value.trim();
+  var email = document.getElementById('profileEmail').value.trim();
+  var phone = document.getElementById('profilePhone').value.trim();
+  if (!name) { _profileLog('Name is required.', 'error'); return; }
+  document.getElementById('profileSaveBtn').disabled   = true;
+  document.getElementById('profileCancelBtn').disabled = true;
+  _profileLog('Saving…', 'info');
+  var fd = new FormData();
+  fd.append('id',    SHEET_ID);
+  fd.append('name',  name);
+  fd.append('email', email);
+  fd.append('phone', phone);
+  fetch(APP_BASE + 'push/updateProfile.php', { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+      if (!result || result.error) {
+        _profileLog('✕  ' + ((result && result.error) || 'Unknown error'), 'error');
+        document.getElementById('profileSaveBtn').disabled   = false;
+        document.getElementById('profileCancelBtn').disabled = false;
+        return;
+      }
+      MY_NAME  = name;
+      MY_EMAIL = email;
+      MY_PHONE = phone;
+      _profileLog('✓  Saved', 'ok');
+      document.getElementById('profileSaveBtn').disabled    = true;
+      document.getElementById('profileCancelBtn').disabled  = false;
+      document.getElementById('profileCancelBtn').textContent = 'Close';
+    })
+    .catch(function() {
+      _profileLog('✕  Network error', 'error');
+      document.getElementById('profileSaveBtn').disabled   = false;
+      document.getElementById('profileCancelBtn').disabled = false;
+    });
+}
+
+// ── Contract edit dialog ───────────────────────────────────────────────────────
+var _ceIdx = -1;
+
+function openContractEditDialog(idx) {
+  var con = CONTRACT_RAW[idx];
+  if (!con) return;
+  _ceIdx = idx;
+  document.getElementById('ceGameTitle').textContent  = con.Game || '';
+  document.getElementById('ceClient').value           = con.Client || '';
+  document.getElementById('ceTargetStart').value      = _toDateInput(con['Target Start Date'] || '');
+  document.getElementById('ceTargetEnd').value        = _toDateInput(con['Target End Date']   || '');
+  document.getElementById('ceStartDate').value        = _toDateInput(con['Start Date']        || '');
+  document.getElementById('ceEndDate').value          = _toDateInput(con['End Date']          || '');
+  document.getElementById('ceQuote').value            = con.Quote   || '';
+  document.getElementById('cePayment').value          = con.Payment || 'Estimate';
+  document.getElementById('ceNotes').value            = con.Notes   || '';
+  document.getElementById('ceErr').textContent        = '';
+  document.getElementById('ceErr').style.display      = 'none';
+  document.getElementById('ceBtn').disabled           = false;
+  document.getElementById('ceBtn').textContent        = 'Save Contract';
+  document.getElementById('contractEditOverlay').classList.add('open');
+}
+
+function closeContractEditDialog() {
+  document.getElementById('contractEditOverlay').classList.remove('open');
+}
+
+function submitContractEdit() {
+  var con = CONTRACT_RAW[_ceIdx];
+  if (!con) return;
+  var errEl = document.getElementById('ceErr');
+  errEl.textContent = ''; errEl.style.display = 'none';
+  var client = document.getElementById('ceClient').value.trim();
+  if (!client) { errEl.textContent = 'Client is required.'; errEl.style.display = 'block'; return; }
+  var btn = document.getElementById('ceBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  var fd = new FormData();
+  fd.append('id',           SHEET_ID);
+  fd.append('contract_id',  con.ID || '');
+  fd.append('game',         con.Game || '');
+  fd.append('client',       client);
+  fd.append('target_start', document.getElementById('ceTargetStart').value);
+  fd.append('target_end',   document.getElementById('ceTargetEnd').value);
+  fd.append('start_date',   document.getElementById('ceStartDate').value);
+  fd.append('end_date',     document.getElementById('ceEndDate').value);
+  fd.append('quote',        document.getElementById('ceQuote').value);
+  fd.append('payment',      document.getElementById('cePayment').value);
+  fd.append('notes',        document.getElementById('ceNotes').value);
+  fetch(APP_BASE + 'push/updateContract.php', { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(j) {
+      if (j && j.ok) {
+        // Update in-memory record
+        con.Client              = client;
+        con['Target Start Date']= document.getElementById('ceTargetStart').value;
+        con['Target End Date']  = document.getElementById('ceTargetEnd').value;
+        con['Start Date']       = document.getElementById('ceStartDate').value;
+        con['End Date']         = document.getElementById('ceEndDate').value;
+        con.Quote               = document.getElementById('ceQuote').value;
+        con.Payment             = document.getElementById('cePayment').value;
+        con.Notes               = document.getElementById('ceNotes').value;
+        closeContractEditDialog();
+        renderPublishersView();
+      } else {
+        errEl.textContent = (j && j.error) ? j.error : 'Save failed.';
+        errEl.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Save Contract';
+      }
+    })
+    .catch(function() {
+      errEl.textContent = 'Network error.'; errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Save Contract';
+    });
+}
+
 
 buildGameList();
 renderCards('');

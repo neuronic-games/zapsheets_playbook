@@ -37,18 +37,18 @@ except Exception as e:
     sys.exit(1)
 
 TABS = {
-    'Games': {
+    'games': {
         'rows': [['Name', 'Tagline', 'Status',
                   'Date Started', 'Date Signed', 'Date Published',
                   'Designer1', 'Designer2', 'Designer3', 'Designer4',
                   'Description', 'Rules', 'Play', 'Print', 'Sellsheet', 'BGG', 'Video']],
         'freeze': True,
     },
-    'People': {
+    'people': {
         'rows': [['Name', 'Email', 'Company', 'Role', 'Notes']],
         'freeze': True,
     },
-    'Settings': {
+    'settings': {
         'rows': [
             ['My Name',     ''],
             ['My Email',    ''],

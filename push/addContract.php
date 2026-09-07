@@ -22,7 +22,7 @@ if (!$sheetId || !$client) {
 
 // Determine next contract ID from local cache
 $cacheDir  = __DIR__ . '/../sheets/' . $sheetId;
-$cacheFile = $cacheDir . '/contract.json';
+$cacheFile = $cacheDir . '/contracts.json';
 $nextId    = 1;
 
 if (file_exists($cacheFile)) {
@@ -56,7 +56,7 @@ $row = [
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 $encoded    = base64_encode(json_encode($row, JSON_UNESCAPED_UNICODE));
-$arg        = $sheetId . '|contract|' . $encoded;
+$arg        = $sheetId . '|contracts|' . $encoded;
 
 $cmd = escapeshellarg($pythonPath) . ' '
      . escapeshellarg(__DIR__ . '/gadd.py') . ' '
@@ -71,7 +71,7 @@ if ($output === '') {
 
 $result = json_decode($output, true);
 if ($result !== null && !empty($result['ok'])) {
-    refreshJson($pythonPath, $sheetId, 'contract');
+    refreshJson($pythonPath, $sheetId, 'contracts');
 }
 echo $result !== null ? json_encode($result) : json_encode(['error' => $output]);
 ?>

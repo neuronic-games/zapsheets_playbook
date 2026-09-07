@@ -53,7 +53,7 @@ foreach ($_people_raw as $_p) {
 }
 
 // Load contracts
-$_contracts_file = __DIR__ . '/../../../sheets/' . $_sheet_id . '/contract.json';
+$_contracts_file = __DIR__ . '/../../../sheets/' . $_sheet_id . '/contracts.json';
 $_contracts_raw  = file_exists($_contracts_file)
     ? (json_decode(file_get_contents($_contracts_file), true) ?: [])
     : [];
@@ -557,8 +557,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
     </div>
 
     <div class="top-tab-btns">
-      <button class="top-tab active" id="tabDash"       onclick="switchTab('dash')">Board</button>
-      <button class="top-tab"        id="tabGames"      onclick="switchTab('games')"><?= count($_games_raw) ?> Games</button>
+      <button class="top-tab"        id="tabDash"       onclick="switchTab('dash')">Board</button>
+      <button class="top-tab active" id="tabGames"      onclick="switchTab('games')"><?= count($_games_raw) ?> Games</button>
       <button class="top-tab"        id="tabPublishers" onclick="switchTab('publishers')"><?= $_client_count ?> Publishers</button>
     </div>
 
@@ -579,12 +579,12 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 </div>
 
 <!-- View: Dash -->
-<div class="view active" id="view-dash">
+<div class="view" id="view-dash">
   <div class="dash-wrap" id="dashWrap"></div>
 </div>
 
 <!-- View: Games (card + session view) -->
-<div class="view" id="view-games">
+<div class="view active" id="view-games">
   <div class="search-bar">
     <div class="search-wrap" id="searchWrap">
       <input type="text" id="searchInput" placeholder="Search games…"
@@ -841,7 +841,7 @@ function _toDateInput(v) {
 }
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
-var _activeTab = 'dash';
+var _activeTab = 'games';
 function switchTab(tab) {
   _activeTab = tab;
   ['Dash','Games','Publishers'].forEach(function(t) {
@@ -1264,7 +1264,7 @@ function doFetch() {
   openSyncDialog();
 
   // Build list: games tab first, then each active dev tab
-  var sheets = ['games', 'people', 'contract'];
+  var sheets = ['games', 'people', 'contracts'];
   Object.keys(ACTIVE_KEYS).forEach(function(k) {
     sheets.push('[' + k + '] dev');
   });
@@ -2241,7 +2241,6 @@ function closeRnDialog() {
 
 buildGameList();
 renderCards('');
-renderDashView();
 </script>
 </body>
 </html>

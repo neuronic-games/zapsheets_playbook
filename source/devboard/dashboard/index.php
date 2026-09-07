@@ -58,12 +58,8 @@ $_contracts_raw  = file_exists($_contracts_file)
     ? (json_decode(file_get_contents($_contracts_file), true) ?: [])
     : [];
 
-// Load clients (Publishers view) — fall back to unique contract clients
-$_clients_file = __DIR__ . '/../../../sheets/' . $_sheet_id . '/clients.json';
-$_clients_raw  = file_exists($_clients_file)
-    ? (json_decode(file_get_contents($_clients_file), true) ?: [])
-    : [];
-$_client_count = count($_clients_raw) ?: count(array_unique(array_filter(array_map(
+// Publisher count — unique clients from Contracts sheet
+$_client_count = count(array_unique(array_filter(array_map(
     fn($c) => trim($c['Client'] ?? ''), $_contracts_raw
 ))));
 ?>
@@ -160,16 +156,19 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 }
 .dialog-shake { animation:dialog-shake .35s ease; }
 
-/* ── Top tab buttons (inline in top bar) ──────────────── */
-.top-tab-btns { display:flex; gap:.3rem; align-items:center; }
+/* ── Top tab segmented control ────────────────────────── */
+.top-tab-btns {
+  display:flex; align-items:center;
+  background:rgba(255,255,255,.12); border-radius:8px; padding:3px; gap:0;
+}
 .top-tab {
   font-family:'DINBlack',sans-serif; font-size:.62rem; text-transform:uppercase;
-  letter-spacing:.07em; padding:.32rem .85rem; border-radius:6px;
-  border:1px solid rgba(255,255,255,.18); color:rgba(255,255,255,.6);
-  background:rgba(255,255,255,.08); cursor:pointer; transition:all .15s; white-space:nowrap;
+  letter-spacing:.07em; padding:.3rem .9rem; border-radius:6px;
+  border:none; color:rgba(255,255,255,.6);
+  background:transparent; cursor:pointer; transition:all .15s; white-space:nowrap;
 }
-.top-tab.active { background:#fff; color:#1a1a2e; border-color:#fff; font-weight:700; }
-.top-tab:not(.active):hover { color:#fff; background:rgba(255,255,255,.15); border-color:rgba(255,255,255,.3); }
+.top-tab.active { background:#fff; color:#1a1a2e; }
+.top-tab:not(.active):hover { color:#fff; }
 
 /* ── Views ────────────────────────────────────────────── */
 .view { display:none; }
@@ -811,7 +810,6 @@ var ACTIVE_KEYS = <?= json_encode($_active_keys, JSON_UNESCAPED_UNICODE) ?>;
 var MY_NAME      = <?= json_encode($_my_name) ?>;
 var PEOPLE_NAMES  = <?= json_encode(array_values($_people_names), JSON_UNESCAPED_UNICODE) ?>;
 var CONTRACT_RAW  = <?= json_encode(array_values($_contracts_raw), JSON_UNESCAPED_UNICODE) ?>;
-var CLIENTS_RAW   = <?= json_encode(array_values($_clients_raw),   JSON_UNESCAPED_UNICODE) ?>;
 
 // Quick lookup: lowercased game name → full GAMES_RAW record
 var GAMES_INDEX = {};
@@ -878,7 +876,8 @@ function renderDashView() {
   html += '<div class="dash-stat"><div class="dash-stat-num">' + GAMES_RAW.length + '</div><div class="dash-stat-label">Games</div></div>';
   html += '<div class="dash-stat"><div class="dash-stat-num">' + activeCount + '</div><div class="dash-stat-label">Active Dev</div></div>';
   html += '<div class="dash-stat"><div class="dash-stat-num">' + CONTRACT_RAW.length + '</div><div class="dash-stat-label">Contracts</div></div>';
-  html += '<div class="dash-stat"><div class="dash-stat-num">' + (CLIENTS_RAW.length || '—') + '</div><div class="dash-stat-label">Publishers</div></div>';
+  var _pubCount = Object.keys(CONTRACT_RAW.reduce(function(a,c){if((c.Client||'').trim())a[(c.Client||'').trim().toLowerCase()]=1;return a},{})).length;
+  html += '<div class="dash-stat"><div class="dash-stat-num">' + (_pubCount || '—') + '</div><div class="dash-stat-label">Publishers</div></div>';
   html += '</div>';
 
   // Games by status
@@ -941,63 +940,48 @@ function renderPublishersView() {
   var wrap = document.getElementById('publishersViewWrap');
   if (!wrap) return;
 
-  // Build contract lookup by client name
-  var contractsByClient = {};
+  // Group contracts by client from the Contracts sheet
+  var byClient = {};
   CONTRACT_RAW.forEach(function(c) {
-    var key = (c.Client || '').trim().toLowerCase();
-    if (!contractsByClient[key]) contractsByClient[key] = [];
-    contractsByClient[key].push(c);
+    var name = (c.Client || '').trim();
+    if (!name) return;
+    var key = name.toLowerCase();
+    if (!byClient[key]) byClient[key] = { name: name, contracts: [] };
+    byClient[key].contracts.push(c);
   });
 
-  // Use CLIENTS_RAW if available, else fall back to unique contract clients
-  var clients = CLIENTS_RAW.length ? CLIENTS_RAW : [];
-  if (!clients.length) {
-    var seen = {};
-    CONTRACT_RAW.forEach(function(c) {
-      var name = (c.Client || '').trim();
-      if (name && !seen[name.toLowerCase()]) { seen[name.toLowerCase()] = true; clients.push({Name: name}); }
-    });
-  }
+  var publishers = Object.keys(byClient).sort().map(function(k) { return byClient[k]; });
 
-  if (!clients.length) {
-    wrap.innerHTML = '<p class="publishers-empty">No publishers yet.</p>';
+  if (!publishers.length) {
+    wrap.innerHTML = '<p class="publishers-empty">No publishers yet. Add contracts to see them here.</p>';
     return;
   }
 
   var html = '';
-  clients.slice().sort(function(a,b){ return (a.Name||'').localeCompare(b.Name||''); }).forEach(function(cl) {
-    var name      = (cl.Name || cl.name || '').trim();
-    var email     = cl.Email || cl.email || '';
-    var website   = cl.Website || cl.website || '';
-    var contracts = contractsByClient[name.toLowerCase()] || [];
+  publishers.forEach(function(pub) {
+    var contracts = pub.contracts;
     html += '<div class="client-card">';
-    html += '<div class="client-card-header">' + esc(name);
-    if (email || website) {
-      html += '<span class="client-card-count">' + esc(email || website) + '</span>';
-    }
-    html += '</div>';
-    if (contracts.length) {
-      contracts.forEach(function(c) {
-        var quoteNum = parseFloat(c.Quote || '');
-        var quote    = isNaN(quoteNum) ? '—' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
-        var payment  = (c.Payment || '').trim();
-        var badgeCls = 'client-contract-badge';
-        if (payment === 'Fully Paid') badgeCls += ' paid';
-        else if (payment === 'Invoiced') badgeCls += ' invoiced';
-        else if (payment === 'Partial')  badgeCls += ' partial';
-        var ts = c['Target Start Date'] || '';
-        var te = c['Target End Date']   || '';
-        var dateRange = (ts || te) ? (ts || '?') + ' → ' + (te || '?') : '';
-        html += '<div class="client-contract-row">';
-        html += '<div><div class="client-contract-game">' + esc(c.Game || '—') + '</div>' +
-          (dateRange ? '<div class="client-contract-dates">' + esc(dateRange) + '</div>' : '') + '</div>';
-        html += '<div class="client-contract-quote">' + esc(quote) + '</div>';
-        html += '<div><span class="' + badgeCls + '">' + esc(payment || '—') + '</span></div>';
-        html += '</div>';
-      });
-    } else {
-      html += '<div style="padding:.4rem 1rem;font-size:.75rem;color:#aaa">No contracts</div>';
-    }
+    html += '<div class="client-card-header">' + esc(pub.name) +
+      '<span class="client-card-count">' + contracts.length + (contracts.length === 1 ? ' contract' : ' contracts') + '</span>' +
+    '</div>';
+    contracts.forEach(function(c) {
+      var quoteNum = parseFloat(c.Quote || '');
+      var quote    = isNaN(quoteNum) ? '—' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
+      var payment  = (c.Payment || '').trim();
+      var badgeCls = 'client-contract-badge';
+      if (payment === 'Fully Paid') badgeCls += ' paid';
+      else if (payment === 'Invoiced') badgeCls += ' invoiced';
+      else if (payment === 'Partial')  badgeCls += ' partial';
+      var ts = c['Target Start Date'] || '';
+      var te = c['Target End Date']   || '';
+      var dateRange = (ts || te) ? (ts || '?') + ' → ' + (te || '?') : '';
+      html += '<div class="client-contract-row">';
+      html += '<div><div class="client-contract-game">' + esc(c.Game || '—') + '</div>' +
+        (dateRange ? '<div class="client-contract-dates">' + esc(dateRange) + '</div>' : '') + '</div>';
+      html += '<div class="client-contract-quote">' + esc(quote) + '</div>';
+      html += '<div><span class="' + badgeCls + '">' + esc(payment || '—') + '</span></div>';
+      html += '</div>';
+    });
     html += '</div>';
   });
   wrap.innerHTML = html;
@@ -1280,7 +1264,7 @@ function doFetch() {
   openSyncDialog();
 
   // Build list: games tab first, then each active dev tab
-  var sheets = ['games', 'people', 'clients', 'contract'];
+  var sheets = ['games', 'people', 'contract'];
   Object.keys(ACTIVE_KEYS).forEach(function(k) {
     sheets.push('[' + k + '] dev');
   });

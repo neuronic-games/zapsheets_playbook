@@ -567,7 +567,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   <div class="top-bar-inner">
     <div class="top-bar-left">
       <h1 onclick="window.location.href=APP_BASE+'devboard'">DevBoard</h1>
-      <p class="sub">Playtest Notes</p>
+      <p class="sub" id="subTitle">Playtest Notes</p>
     </div>
 
     <div class="top-tab-btns">
@@ -2388,6 +2388,7 @@ function submitProfile() {
       MY_NAME  = name;
       MY_EMAIL = email;
       MY_PHONE = phone;
+      _updateSubTitle();
       _profileLog('✓  Saved', 'ok');
       document.getElementById('profileSaveBtn').disabled    = true;
       document.getElementById('profileCancelBtn').disabled  = false;
@@ -2476,8 +2477,15 @@ function submitContractEdit() {
 }
 
 
+function _updateSubTitle() {
+  var parts = [MY_NAME, MY_EMAIL, MY_PHONE].filter(Boolean);
+  var el = document.getElementById('subTitle');
+  if (el) el.textContent = parts.join('  ·  ') || 'Playtest Notes';
+}
+
 buildGameList();
 renderCards('');
+_updateSubTitle();
 </script>
 </body>
 </html>

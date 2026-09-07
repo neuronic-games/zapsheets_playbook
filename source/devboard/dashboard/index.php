@@ -36,12 +36,33 @@ $_settings      = file_exists($_settings_file)
 $_my_name  = '';
 $_my_email = '';
 $_my_phone = '';
+
 foreach ($_settings as $_s) {
-    $lbl = $_s['Label'] ?? $_s[0] ?? $_s['label'] ?? '';
-    $val = $_s['Value'] ?? $_s[1] ?? '';
-    if ($lbl === 'My Name')  $_my_name  = $val;
-    if ($lbl === 'My Email') $_my_email = $val;
-    if ($lbl === 'My Phone') $_my_phone = $val;
+    // PitchBoard-style: {Name: 'My Name', Value: '...'}
+    $n = $_s['Name'] ?? $_s['name'] ?? '';
+    $v = $_s['Value'] ?? $_s['value'] ?? '';
+    if ($n === 'My Name')  { $_my_name  = $v; continue; }
+    if ($n === 'My Email') { $_my_email = $v; continue; }
+    if ($n === 'My Phone') { $_my_phone = $v; continue; }
+
+    // DevBoard quirky format: first row becomes headers, so
+    // {"My Name": "My Email", "<actual-name>": "email@domain.com"}
+    $label = $_s['My Name'] ?? '';
+    if ($label === 'My Email' || $label === 'My Phone') {
+        $keys = array_keys($_s);
+        $val2 = count($keys) > 1 ? ($_s[$keys[1]] ?? '') : '';
+        if ($label === 'My Email') $_my_email = $val2;
+        if ($label === 'My Phone') $_my_phone = $val2;
+    }
+}
+
+// DevBoard quirky: person's name is the second column header in the first record
+if (!$_my_name && !empty($_settings)) {
+    $firstRec = $_settings[0];
+    $keys = array_keys($firstRec);
+    if (count($keys) > 1 && ($keys[0] === 'My Name')) {
+        $_my_name = $keys[1];
+    }
 }
 
 // Load people names for Testers combo

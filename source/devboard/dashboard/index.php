@@ -52,12 +52,18 @@ foreach ($_people_raw as $_p) {
     if ($n) $_people_names[] = $n;
 }
 
-// Load contracts for Clients tab
+// Load contracts
 $_contracts_file = __DIR__ . '/../../../sheets/' . $_sheet_id . '/contract.json';
 $_contracts_raw  = file_exists($_contracts_file)
     ? (json_decode(file_get_contents($_contracts_file), true) ?: [])
     : [];
-$_client_count = count(array_unique(array_filter(array_map(
+
+// Load clients (Publishers view) — fall back to unique contract clients
+$_clients_file = __DIR__ . '/../../../sheets/' . $_sheet_id . '/clients.json';
+$_clients_raw  = file_exists($_clients_file)
+    ? (json_decode(file_get_contents($_clients_file), true) ?: [])
+    : [];
+$_client_count = count($_clients_raw) ?: count(array_unique(array_filter(array_map(
     fn($c) => trim($c['Client'] ?? ''), $_contracts_raw
 ))));
 ?>
@@ -168,6 +174,26 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 /* ── Views ────────────────────────────────────────────── */
 .view { display:none; }
 .view.active { display:block; }
+
+/* ── Dash view ────────────────────────────────────────── */
+.dash-wrap { max-width:860px; margin:0 auto; padding:1rem 1.25rem; display:flex; flex-direction:column; gap:1.2rem; }
+.dash-stat-row { display:flex; gap:.65rem; flex-wrap:wrap; }
+.dash-stat { background:#fff; border-radius:8px; padding:.7rem 1rem; flex:1; min-width:110px; box-shadow:0 1px 3px rgba(0,0,0,.07); }
+.dash-stat-num { font-family:'DINBlack',sans-serif; font-size:1.5rem; color:#1a5f7a; line-height:1; }
+.dash-stat-label { font-size:.62rem; text-transform:uppercase; letter-spacing:.07em; color:#999; margin-top:.25rem; }
+.dash-section-hd { font-family:'DINBlack',sans-serif; font-size:.65rem; text-transform:uppercase; letter-spacing:.09em; color:#999; margin:0 0 .5rem; }
+.dash-status-cols { display:flex; gap:.65rem; flex-wrap:wrap; }
+.dash-status-col { background:#fff; border-radius:8px; flex:1; min-width:130px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.07); }
+.dash-status-col-hd { padding:.38rem .75rem; font-family:'DINBlack',sans-serif; font-size:.62rem; text-transform:uppercase; letter-spacing:.07em; }
+.dash-status-game { padding:.32rem .75rem; font-size:.78rem; border-top:1px solid #f0f4f8; color:#333; cursor:pointer; }
+.dash-status-game:hover { background:#f8fafc; }
+.dash-status-game.has-dev { font-family:'DINBlack',sans-serif; color:#1a5f7a; }
+.dash-status-empty { padding:.32rem .75rem; font-size:.72rem; color:#ccc; border-top:1px solid #f0f4f8; }
+.dash-contracts { background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.07); }
+.dash-contract-row { display:grid; grid-template-columns:1fr auto auto auto; gap:.75rem; align-items:center; padding:.48rem .85rem; border-bottom:1px solid #f0f4f8; font-size:.78rem; }
+.dash-contract-row:last-child { border-bottom:none; }
+.dash-contract-game { font-family:'DINBlack',sans-serif; color:#1a5f7a; }
+.dash-contract-client { color:#666; font-size:.72rem; }
 
 /* ── Games list view ──────────────────────────────────── */
 .games-view-wrap { max-width:860px; margin:0 auto; padding:1rem 1.25rem; }
@@ -553,9 +579,13 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   </div>
 </div>
 
-<!-- View: Dash (default) -->
+<!-- View: Dash -->
 <div class="view active" id="view-dash">
-  <!-- Search + Add game -->
+  <div class="dash-wrap" id="dashWrap"></div>
+</div>
+
+<!-- View: Games (card + session view) -->
+<div class="view" id="view-games">
   <div class="search-bar">
     <div class="search-wrap" id="searchWrap">
       <input type="text" id="searchInput" placeholder="Search games…"
@@ -565,21 +595,10 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
     <div class="game-count" id="gameCount">0 Games</div>
     <button class="add-game-btn" onclick="openAddDialog()">+ Game</button>
   </div>
-  <!-- Cards -->
   <div class="content" id="cardList"></div>
 </div>
 
-<!-- View: Games -->
-<div class="view" id="view-games">
-  <div class="games-view-wrap">
-    <table class="games-list-table">
-      <thead><tr><th>Game</th><th>Status</th><th>Started</th><th>Designers</th></tr></thead>
-      <tbody id="gamesListBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- View: Clients -->
+<!-- View: Publishers -->
 <div class="view" id="view-publishers">
   <div class="publishers-view-wrap" id="publishersViewWrap"></div>
 </div>
@@ -792,6 +811,7 @@ var ACTIVE_KEYS = <?= json_encode($_active_keys, JSON_UNESCAPED_UNICODE) ?>;
 var MY_NAME      = <?= json_encode($_my_name) ?>;
 var PEOPLE_NAMES  = <?= json_encode(array_values($_people_names), JSON_UNESCAPED_UNICODE) ?>;
 var CONTRACT_RAW  = <?= json_encode(array_values($_contracts_raw), JSON_UNESCAPED_UNICODE) ?>;
+var CLIENTS_RAW   = <?= json_encode(array_values($_clients_raw),   JSON_UNESCAPED_UNICODE) ?>;
 
 // Quick lookup: lowercased game name → full GAMES_RAW record
 var GAMES_INDEX = {};
@@ -834,80 +854,150 @@ function switchTab(tab) {
     var el = document.getElementById('view-' + v);
     if (el) el.classList.toggle('active', v === tab);
   });
-  if (tab === 'games')   renderGamesView();
+  if (tab === 'dash')       renderDashView();
   if (tab === 'publishers') renderPublishersView();
 }
 
-function renderGamesView() {
-  var sorted = GAMES_RAW.slice().sort(function(a, b) {
-    return (a.Name || '').localeCompare(b.Name || '');
-  });
-  var rows = sorted.map(function(g) {
-    var name = g.Name || '';
-    var status = g.Status || '';
-    var started = g['Date Started'] || g.DateStarted || '';
-    var designers = [
-      g.Designer1 || g['Designer 1'] || '',
-      g.Designer2 || g['Designer 2'] || '',
-      g.Designer3 || g['Designer 3'] || '',
-      g.Designer4 || g['Designer 4'] || '',
-    ].filter(Boolean).join(', ');
-    var nameClick = isActive(name)
-      ? ' onclick="switchTab(\'dash\');setTimeout(function(){var el=document.querySelector(\'[data-game=\\\'' + esc(name).replace(/'/g,"\\'") + '\\\']\');if(el)el.scrollIntoView({behavior:\'smooth\'});},50)"'
-      : '';
-    return '<tr>' +
-      '<td class="glt-name"' + nameClick + '>' + esc(name) + '</td>' +
-      '<td>' + (status ? '<span class="glt-status">' + esc(status) + '</span>' : '') + '</td>' +
-      '<td>' + esc(started || '—') + '</td>' +
-      '<td>' + esc(designers || '—') + '</td>' +
-      '</tr>';
-  }).join('');
-  var tbody = document.getElementById('gamesListBody');
-  if (tbody) tbody.innerHTML = rows || '<tr><td colspan="4" style="color:#888;padding:.75rem">No games yet.</td></tr>';
+function _statusStyle(status) {
+  var s = (status || '').toLowerCase();
+  if (s === 'design')      return 'background:#e0f2fe;color:#0369a1';
+  if (s === 'prototype')   return 'background:#ede9fe;color:#6d28d9';
+  if (s === 'playtesting') return 'background:#dcfce7;color:#15803d';
+  if (s === 'signed')      return 'background:#fef9c3;color:#a16207';
+  if (s === 'published')   return 'background:#1a1a2e;color:#fff';
+  return 'background:#e2e8f0;color:#475569';
 }
 
-function renderPublishersView() {
-  var wrap = document.getElementById('publishersViewWrap');
+function renderDashView() {
+  var wrap = document.getElementById('dashWrap');
   if (!wrap) return;
-  if (!CONTRACT_RAW.length) {
-    wrap.innerHTML = '<p class="publishers-empty">No contracts yet.</p>';
-    return;
-  }
-  // Group by client
-  var byClient = {};
-  CONTRACT_RAW.forEach(function(c) {
-    var client = (c.Client || '').trim() || 'Unknown';
-    if (!byClient[client]) byClient[client] = [];
-    byClient[client].push(c);
+
+  // Stat chips
+  var activeCount = Object.keys(ACTIVE_KEYS).length;
+  var html = '<div class="dash-stat-row">';
+  html += '<div class="dash-stat"><div class="dash-stat-num">' + GAMES_RAW.length + '</div><div class="dash-stat-label">Games</div></div>';
+  html += '<div class="dash-stat"><div class="dash-stat-num">' + activeCount + '</div><div class="dash-stat-label">Active Dev</div></div>';
+  html += '<div class="dash-stat"><div class="dash-stat-num">' + CONTRACT_RAW.length + '</div><div class="dash-stat-label">Contracts</div></div>';
+  html += '<div class="dash-stat"><div class="dash-stat-num">' + (CLIENTS_RAW.length || '—') + '</div><div class="dash-stat-label">Publishers</div></div>';
+  html += '</div>';
+
+  // Games by status
+  var STATUS_ORDER = ['Design','Prototype','Playtesting','Signed','Published'];
+  var byStatus = {};
+  GAMES_RAW.forEach(function(g) {
+    var s = (g.Status || 'Design').trim();
+    if (!byStatus[s]) byStatus[s] = [];
+    byStatus[s].push(g.Name || '');
   });
-  var html = '';
-  Object.keys(byClient).sort().forEach(function(client) {
-    var contracts = byClient[client];
-    html += '<div class="client-card">';
-    html += '<div class="client-card-header">' +
-      esc(client) +
-      '<span class="client-card-count">' + contracts.length + (contracts.length === 1 ? ' contract' : ' contracts') + '</span>' +
-    '</div>';
-    contracts.forEach(function(c) {
+  // Sort columns: known order first, then any others
+  var cols = STATUS_ORDER.filter(function(s) { return byStatus[s] && byStatus[s].length; });
+  Object.keys(byStatus).forEach(function(s) { if (STATUS_ORDER.indexOf(s) === -1) cols.push(s); });
+
+  if (cols.length) {
+    html += '<div>';
+    html += '<div class="dash-section-hd">Games by Status</div>';
+    html += '<div class="dash-status-cols">';
+    cols.forEach(function(status) {
+      var style = _statusStyle(status);
+      html += '<div class="dash-status-col">';
+      html += '<div class="dash-status-col-hd" style="' + style + '">' + esc(status) + ' <span style="opacity:.6;font-family:DINRegular,sans-serif">(' + byStatus[status].length + ')</span></div>';
+      byStatus[status].forEach(function(name) {
+        var hasDev = ACTIVE_KEYS.hasOwnProperty(name.toLowerCase());
+        html += '<div class="dash-status-game' + (hasDev ? ' has-dev' : '') + '" onclick="switchTab(\'games\')">' + esc(name) + '</div>';
+      });
+      html += '</div>';
+    });
+    html += '</div></div>';
+  }
+
+  // Recent contracts
+  if (CONTRACT_RAW.length) {
+    var recent = CONTRACT_RAW.slice().reverse().slice(0, 8);
+    html += '<div>';
+    html += '<div class="dash-section-hd">Contracts</div>';
+    html += '<div class="dash-contracts">';
+    recent.forEach(function(c) {
       var quoteNum = parseFloat(c.Quote || '');
-      var quote    = isNaN(quoteNum) ? '—' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
+      var quote    = isNaN(quoteNum) ? '' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
       var payment  = (c.Payment || '').trim();
       var badgeCls = 'client-contract-badge';
       if (payment === 'Fully Paid') badgeCls += ' paid';
       else if (payment === 'Invoiced') badgeCls += ' invoiced';
       else if (payment === 'Partial')  badgeCls += ' partial';
-      var ts = c['Target Start Date'] || '';
-      var te = c['Target End Date']   || '';
-      var dateRange = (ts || te) ? (ts || '?') + ' → ' + (te || '?') : '';
-      html += '<div class="client-contract-row">';
-      html += '<div>' +
-        '<div class="client-contract-game">' + esc(c.Game || '—') + '</div>' +
-        (dateRange ? '<div class="client-contract-dates">' + esc(dateRange) + '</div>' : '') +
-      '</div>';
-      html += '<div class="client-contract-quote">' + esc(quote) + '</div>';
+      html += '<div class="dash-contract-row">';
+      html += '<div><div class="dash-contract-game">' + esc(c.Game || '—') + '</div><div class="dash-contract-client">' + esc(c.Client || '') + '</div></div>';
+      html += '<div style="color:#888;font-size:.72rem">' + esc(c.Date || '') + '</div>';
+      html += '<div style="font-family:DINBlack,sans-serif;font-size:.78rem">' + esc(quote) + '</div>';
       html += '<div><span class="' + badgeCls + '">' + esc(payment || '—') + '</span></div>';
       html += '</div>';
     });
+    html += '</div></div>';
+  }
+
+  wrap.innerHTML = html;
+}
+
+function renderPublishersView() {
+  var wrap = document.getElementById('publishersViewWrap');
+  if (!wrap) return;
+
+  // Build contract lookup by client name
+  var contractsByClient = {};
+  CONTRACT_RAW.forEach(function(c) {
+    var key = (c.Client || '').trim().toLowerCase();
+    if (!contractsByClient[key]) contractsByClient[key] = [];
+    contractsByClient[key].push(c);
+  });
+
+  // Use CLIENTS_RAW if available, else fall back to unique contract clients
+  var clients = CLIENTS_RAW.length ? CLIENTS_RAW : [];
+  if (!clients.length) {
+    var seen = {};
+    CONTRACT_RAW.forEach(function(c) {
+      var name = (c.Client || '').trim();
+      if (name && !seen[name.toLowerCase()]) { seen[name.toLowerCase()] = true; clients.push({Name: name}); }
+    });
+  }
+
+  if (!clients.length) {
+    wrap.innerHTML = '<p class="publishers-empty">No publishers yet.</p>';
+    return;
+  }
+
+  var html = '';
+  clients.slice().sort(function(a,b){ return (a.Name||'').localeCompare(b.Name||''); }).forEach(function(cl) {
+    var name      = (cl.Name || cl.name || '').trim();
+    var email     = cl.Email || cl.email || '';
+    var website   = cl.Website || cl.website || '';
+    var contracts = contractsByClient[name.toLowerCase()] || [];
+    html += '<div class="client-card">';
+    html += '<div class="client-card-header">' + esc(name);
+    if (email || website) {
+      html += '<span class="client-card-count">' + esc(email || website) + '</span>';
+    }
+    html += '</div>';
+    if (contracts.length) {
+      contracts.forEach(function(c) {
+        var quoteNum = parseFloat(c.Quote || '');
+        var quote    = isNaN(quoteNum) ? '—' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
+        var payment  = (c.Payment || '').trim();
+        var badgeCls = 'client-contract-badge';
+        if (payment === 'Fully Paid') badgeCls += ' paid';
+        else if (payment === 'Invoiced') badgeCls += ' invoiced';
+        else if (payment === 'Partial')  badgeCls += ' partial';
+        var ts = c['Target Start Date'] || '';
+        var te = c['Target End Date']   || '';
+        var dateRange = (ts || te) ? (ts || '?') + ' → ' + (te || '?') : '';
+        html += '<div class="client-contract-row">';
+        html += '<div><div class="client-contract-game">' + esc(c.Game || '—') + '</div>' +
+          (dateRange ? '<div class="client-contract-dates">' + esc(dateRange) + '</div>' : '') + '</div>';
+        html += '<div class="client-contract-quote">' + esc(quote) + '</div>';
+        html += '<div><span class="' + badgeCls + '">' + esc(payment || '—') + '</span></div>';
+        html += '</div>';
+      });
+    } else {
+      html += '<div style="padding:.4rem 1rem;font-size:.75rem;color:#aaa">No contracts</div>';
+    }
     html += '</div>';
   });
   wrap.innerHTML = html;
@@ -1190,7 +1280,7 @@ function doFetch() {
   openSyncDialog();
 
   // Build list: games tab first, then each active dev tab
-  var sheets = ['games'];
+  var sheets = ['games', 'people', 'clients', 'contract'];
   Object.keys(ACTIVE_KEYS).forEach(function(k) {
     sheets.push('[' + k + '] dev');
   });
@@ -2167,6 +2257,7 @@ function closeRnDialog() {
 
 buildGameList();
 renderCards('');
+renderDashView();
 </script>
 </body>
 </html>

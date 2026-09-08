@@ -582,10 +582,27 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .obs-img-btn:hover { color:#1a5f7a; background:#fff; border-color:#a0b8c8; }
 .obs-img-preview img { width:100%; border-radius:6px; border:1px solid #dce8f0; display:block; }
 
-@media (max-width:540px) {
+/* ── Mobile: 2-col session layout ── */
+@media (max-width:600px) {
+  #sessionOverlay { align-items:flex-end; padding:0; }
+  .session-dialog {
+    width:100vw; max-width:100vw; border-radius:16px 16px 0 0;
+    margin-top:auto; padding:1.25rem 1rem 1.5rem;
+    max-height:94dvh;
+  }
+  /* Date + Type side by side; People full-width below; Location + TestNum side by side */
   .field-grid { grid-template-columns:1fr 1fr; }
   .field-group.span2 { grid-column:span 1; }
+  /* People: remove row-span, place full-width after Date/Type row */
+  .session-people { grid-row:auto !important; grid-column:1 / -1; order:1; }
   .obs-grid { grid-template-columns:1fr; }
+}
+
+/* ── Mobile: stack obs/sol pairs ── */
+@media (max-width:500px) {
+  .obs-pair-inputs { grid-template-columns:1fr; }
+  .obs-pair-labels { grid-template-columns:1fr; }
+  .obs-pair-labels label:last-child { display:none; }
 }
 </style>
 </head>
@@ -873,7 +890,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
           <option value="Idea">Idea</option>
         </select>
       </div>
-      <div class="field-group" style="grid-row:span 2">
+      <div class="field-group session-people" style="grid-row:span 2">
         <label>People</label>
         <div id="testersContainer"></div>
       </div>

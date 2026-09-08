@@ -48,6 +48,11 @@ foreach ($_people_raw as $_p) {
     if ($n) $_people_names[] = $n;
 }
 
+// Game public page link (only shown if the page token file exists)
+$_gameToken    = substr(md5($_sheetId . '|game|' . $_gameName), 0, 24);
+$_gameViewFile = __DIR__ . '/../../../shares/pitch-game-view/' . $_gameToken . '.json';
+$_gameUrl      = file_exists($_gameViewFile) ? ($_base . 'game/' . $_gameToken) : '';
+
 function _ds_e(string $s): string { return htmlspecialchars($s, ENT_QUOTES); }
 ?>
 <!DOCTYPE html>
@@ -86,6 +91,7 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
   display:flex; align-items:center; gap:.5rem;
 }
 .game-title { font-family:'DINBlack',sans-serif; font-size:.95rem; letter-spacing:.03em; flex:1; }
+.header-btns { display:flex; align-items:center; gap:.5rem; }
 .add-session-btn {
   font-family:'DINBlack',sans-serif; font-size:.7rem;
   text-transform:uppercase; letter-spacing:.07em;
@@ -95,6 +101,16 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
   transition:background .15s, color .15s;
 }
 .add-session-btn:hover { background:#e8f4f8; }
+.page-link-btn {
+  font-family:'DINBlack',sans-serif; font-size:.7rem;
+  text-transform:uppercase; letter-spacing:.07em;
+  background:transparent; color:#fff;
+  border:1.5px solid rgba(255,255,255,.45); border-radius:6px;
+  padding:.28rem .65rem; cursor:pointer; text-decoration:none;
+  display:inline-flex; align-items:center; gap:.3rem;
+  transition:background .15s, border-color .15s;
+}
+.page-link-btn:hover { background:rgba(255,255,255,.15); border-color:rgba(255,255,255,.7); }
 
 /* ── Sessions list ── */
 .sessions-wrap { background:#fff; border-radius:0 0 10px 10px; overflow:hidden; border:1px solid #d8eaf2; border-top:none; }
@@ -246,7 +262,15 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 <div class="page">
   <div class="game-header">
     <span class="game-title"><?= _ds_e($_gameName) ?></span>
-    <button class="add-session-btn" onclick="openSessionDialog()">+ Session</button>
+    <div class="header-btns">
+<?php if ($_gameUrl): ?>
+      <a class="page-link-btn" href="<?= _ds_e($_gameUrl) ?>" target="_blank">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Page
+      </a>
+<?php endif; ?>
+      <button class="add-session-btn" onclick="openSessionDialog()">+ Session</button>
+    </div>
   </div>
   <div class="sessions-wrap" id="sessionsWrap">
     <div class="loading-msg">Loading sessions…</div>

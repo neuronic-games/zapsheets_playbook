@@ -157,6 +157,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .top-bar-left  { flex:1; min-width:0; }
 .top-bar h1    { font-family:'DINBlack',sans-serif; font-size:1rem; margin:0; letter-spacing:.03em; cursor:pointer; }
 .top-bar h1:hover { opacity:.8; }
+.db-dev   { color:#7ECFB3; }
+.db-board { color:#FFB347; }
 .top-bar .sub  { font-size:.73rem; opacity:.6; margin:0; }
 
 .top-btn {
@@ -631,13 +633,13 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 <div class="top-bar">
   <div class="top-bar-inner">
     <div class="top-bar-left">
-      <h1 onclick="window.location.href=APP_BASE+'devboard'">DevBoard</h1>
+      <h1 onclick="window.location.href=APP_BASE+'devboard'"><span class="db-dev">Dev</span><span class="db-board">Board</span></h1>
       <p class="sub" id="subTitle">Playtest Notes</p>
     </div>
 
     <div class="top-tab-btns">
       <button class="top-tab"        id="tabDash"       onclick="switchTab('dash')">Board</button>
-      <button class="top-tab active" id="tabGames"      onclick="switchTab('games')"><?= count($_games_raw) ?> Games</button>
+      <button class="top-tab active" id="tabGames"      onclick="switchTab('games')">Games</button>
       <button class="top-tab"        id="tabPublishers" onclick="switchTab('publishers')"><?= $_client_count ?> Publishers</button>
     </div>
 
@@ -1403,33 +1405,115 @@ function shareGame(gameName) {
     .catch(function() { alert('Could not create share link.'); });
 }
 
-var _sharePopupOpen = false;
-function showSharePopup(gameName, url) {
+var _sharePopupOpen   = false;
+var _shareCurrentGame = '';
+var _generatedGameLinks = {};
+
+function showSharePopup(gameName, collabUrl) {
   if (_sharePopupOpen) {
     var el = document.getElementById('sharePopupOverlay');
     if (el) el.parentNode.removeChild(el);
   }
-  _sharePopupOpen = true;
+  _sharePopupOpen   = true;
+  _shareCurrentGame = gameName;
+
+  var S = 'font-family:DINRegular,sans-serif;';
+  var SB = 'font-family:DINBlack,sans-serif;';
   var overlay = document.createElement('div');
   overlay.id = 'sharePopupOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
   overlay.onclick = function(e) { if (e.target === overlay) closeSharePopup(); };
   overlay.innerHTML =
-    '<div style="background:#fff;border-radius:12px;padding:1.5rem;width:min(420px,92vw);box-shadow:0 8px 32px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:1rem">' +
+    '<div style="background:#fff;border-radius:12px;padding:1.5rem;width:min(440px,92vw);box-shadow:0 8px 32px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:.85rem">' +
       '<div style="display:flex;align-items:center;justify-content:space-between">' +
-        '<h2 style="font-family:DINBlack,sans-serif;font-size:.95rem;margin:0">Share <span style="font-family:DINRegular,sans-serif;opacity:.55">' + esc(gameName) + '</span></h2>' +
+        '<h2 style="' + SB + 'font-size:.95rem;margin:0">Share <span style="' + S + 'opacity:.55">' + esc(gameName) + '</span></h2>' +
         '<button onclick="closeSharePopup()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:#888;line-height:1">×</button>' +
       '</div>' +
-      '<p style="font-family:DINRegular,sans-serif;font-size:.82rem;color:#555;margin:0">Anyone with this link can view sessions and submit new session data for this game.</p>' +
+
+      // ── Section 1: Collaborator link ──────────────────────────────────────
+      '<p style="' + SB + 'font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#888;margin:0">Collaborate</p>' +
+      '<p style="' + S + 'font-size:.8rem;color:#555;margin:0">Anyone with this link can view sessions and submit new data — no account needed.</p>' +
       '<div style="display:flex;gap:.5rem">' +
-        '<input id="shareLinkInput" readonly value="' + esc(url) + '" ' +
-          'style="flex:1;font-family:DINRegular,sans-serif;font-size:.78rem;padding:.45rem .6rem;border:1.5px solid #d0d8e0;border-radius:6px;outline:none;color:#111;background:#f7fafb" />' +
-        '<button onclick="copyShareLink()" style="font-family:DINBlack,sans-serif;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;background:#1a5f7a;color:#fff;border:none;border-radius:6px;padding:.45rem .85rem;cursor:pointer;white-space:nowrap">Copy</button>' +
+        '<input id="shareLinkInput" readonly value="' + esc(collabUrl) + '" ' +
+          'style="flex:1;' + S + 'font-size:.75rem;padding:.42rem .6rem;border:1.5px solid #d0d8e0;border-radius:6px;outline:none;color:#111;background:#f7fafb" />' +
+        '<button onclick="copyShareLink()" style="' + SB + 'font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;background:#1a5f7a;color:#fff;border:none;border-radius:6px;padding:.42rem .85rem;cursor:pointer;white-space:nowrap">Copy</button>' +
       '</div>' +
-      '<p id="shareCopiedMsg" style="font-family:DINRegular,sans-serif;font-size:.78rem;color:#2e7a52;margin:0;display:none">Link copied!</p>' +
+      '<p id="shareCopiedMsg" style="' + S + 'font-size:.78rem;color:#2e7a52;margin:0;display:none">Link copied!</p>' +
+
+      // ── Section 2: Public game page ───────────────────────────────────────
+      '<hr style="border:none;border-top:1px solid #edf2f6;margin:.1rem 0" />' +
+      '<p style="' + SB + 'font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#888;margin:0">Public Page</p>' +
+      '<p style="' + S + 'font-size:.8rem;color:#555;margin:0">Public link to this game\'s info page. Anyone can view it — no account needed.</p>' +
+      '<div id="sharePageGenSection">' +
+        '<button id="sharePageGenBtn" onclick="generateDevGamePageLink()" ' +
+          'style="' + SB + 'font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;width:100%;padding:.5rem 1rem;background:#f0f4f8;color:#1a5f7a;border:1.5px solid #c8d8e4;border-radius:6px;cursor:pointer">Generate Link</button>' +
+      '</div>' +
+      '<div id="sharePageUrlSection" style="display:none">' +
+        '<div style="display:flex;gap:.5rem">' +
+          '<input id="sharePageInput" readonly style="flex:1;' + S + 'font-size:.75rem;padding:.42rem .6rem;border:1.5px solid #d0d8e0;border-radius:6px;outline:none;color:#111;background:#f7fafb" />' +
+          '<button id="sharePageCopyBtn" onclick="copyDevGamePageUrl()" style="' + SB + 'font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;background:#1a5f7a;color:#fff;border:none;border-radius:6px;padding:.42rem .85rem;cursor:pointer;white-space:nowrap">Copy</button>' +
+        '</div>' +
+      '</div>' +
+      '<p id="sharePageCopiedMsg" style="' + S + 'font-size:.78rem;color:#2e7a52;margin:0;display:none">Link copied!</p>' +
     '</div>';
   document.body.appendChild(overlay);
+
+  // Check whether a game page link already exists (GET = check-only)
+  if (_generatedGameLinks[gameName]) {
+    _showDevGamePageUrl(_generatedGameLinks[gameName]);
+  } else {
+    fetch(APP_BASE + 'push/createGameView.php?id=' + encodeURIComponent(SHEET_ID) + '&game=' + encodeURIComponent(gameName))
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.ok && res.viewUrl && _shareCurrentGame === gameName) {
+          _generatedGameLinks[gameName] = res.viewUrl;
+          _showDevGamePageUrl(res.viewUrl);
+        }
+      }).catch(function() {});
+  }
 }
+
+function _showDevGamePageUrl(url) {
+  var gen = document.getElementById('sharePageGenSection');
+  var sec = document.getElementById('sharePageUrlSection');
+  var inp = document.getElementById('sharePageInput');
+  if (gen) gen.style.display = 'none';
+  if (sec) sec.style.display = '';
+  if (inp) inp.value = url;
+}
+
+function generateDevGamePageLink() {
+  var btn = document.getElementById('sharePageGenBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+  var fd = new FormData();
+  fd.append('id',   SHEET_ID);
+  fd.append('game', _shareCurrentGame);
+  fetch(APP_BASE + 'push/createGameView.php', { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.viewUrl) {
+        _generatedGameLinks[_shareCurrentGame] = res.viewUrl;
+        _showDevGamePageUrl(res.viewUrl);
+        copyDevGamePageUrl();
+      } else {
+        if (btn) { btn.disabled = false; btn.textContent = 'Generate Link'; }
+      }
+    }).catch(function() {
+      if (btn) { btn.disabled = false; btn.textContent = 'Generate Link'; }
+    });
+}
+
+function copyDevGamePageUrl() {
+  var inp = document.getElementById('sharePageInput');
+  var btn = document.getElementById('sharePageCopyBtn');
+  var msg = document.getElementById('sharePageCopiedMsg');
+  if (!inp || !inp.value) return;
+  inp.select(); inp.setSelectionRange(0, 9999);
+  navigator.clipboard ? navigator.clipboard.writeText(inp.value).catch(function(){}) : (function(){ try { document.execCommand('copy'); } catch(e){} })();
+  if (btn) { btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = 'Copy'; }, 2000); }
+  if (msg) { msg.style.display = 'block'; setTimeout(function(){ msg.style.display='none'; }, 2000); }
+}
+
 function closeSharePopup() {
   _sharePopupOpen = false;
   var el = document.getElementById('sharePopupOverlay');

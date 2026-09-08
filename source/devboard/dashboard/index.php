@@ -573,6 +573,11 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   text-transform:uppercase; letter-spacing:.07em; color:#888;
 }
 .obs-pair-inputs { display:grid; grid-template-columns:1fr 1fr; gap:.9rem; }
+.obs-img-row { display:flex; align-items:center; gap:.5rem; margin-top:.35rem; }
+.obs-img-btn { background:none; border:none; cursor:pointer; padding:.2rem .4rem; border-radius:4px; font-size:.9rem; color:#aab; line-height:1; transition:color .15s,background .15s; }
+.obs-img-btn:hover { color:#1a5f7a; background:rgba(26,95,122,.09); }
+.obs-img-preview { margin-top:.35rem; }
+.obs-img-preview img { max-width:100%; max-height:220px; border-radius:6px; border:1px solid #dce8f0; display:block; }
 
 @media (max-width:540px) {
   .field-grid { grid-template-columns:1fr 1fr; }
@@ -1282,7 +1287,7 @@ function renderBody(gameName, rows) {
       if (s.obs.length) {
         html += '<table class="obs-table"><tbody>';
         s.obs.forEach(function(o) {
-          html += '<tr><td class="td-obs">' + esc(o.obs) + '</td><td class="td-sol">' + esc(o.sol) + '</td></tr>';
+          html += '<tr><td class="td-obs">' + obsHtml(o.obs) + '</td><td class="td-sol">' + esc(o.sol) + '</td></tr>';
         });
         html += '</tbody></table>';
       }
@@ -1887,7 +1892,7 @@ function openSessionDialog(gameName) {
   var firstIdx = addTesterField('Select or type…');
   if (MY_NAME) document.getElementById('sTesters-' + firstIdx).value = MY_NAME;
 
-  _obsCount = 0;
+  _obsCount = 0; _obsImages = {};
   document.getElementById('obsContainer').innerHTML = '';
   addObsPair(true);  // first pair with labels
 
@@ -1932,11 +1937,24 @@ function openEditSessionDialog(gameName, idx) {
   addTesterField('Add tester…');  // trailing empty field
 
   // Pre-fill obs/sol pairs
-  _obsCount = 0;
+  _obsCount = 0; _obsImages = {};
   document.getElementById('obsContainer').innerHTML = '';
   session.obs.forEach(function(pair, pi) {
     var oidx = addObsPair(pi === 0);
-    document.getElementById('sObs-' + oidx).value = pair.obs || '';
+    var obsVal = pair.obs || '';
+    var imgMatch = obsVal.match(/<img\s[^>]*>/i);
+    if (imgMatch) {
+      var srcM = imgMatch[0].match(/src="([^"]*)"/i);
+      if (srcM) {
+        _obsImages[oidx] = srcM[1];
+        setTimeout(function(i, u) { return function() {
+          var pv = document.getElementById('sImgPreview-' + i);
+          if (pv) pv.innerHTML = '<img src="' + esc(u) + '" alt="observation image">';
+        }; }(oidx, srcM[1]), 0);
+      }
+      obsVal = obsVal.replace(/<img\s[^>]*>/gi, '').trim();
+    }
+    document.getElementById('sObs-' + oidx).value = obsVal;
     document.getElementById('sSol-' + oidx).value = pair.sol || '';
   });
   addObsPair(session.obs.length === 0);  // trailing empty pair (shows labels if first)
@@ -1981,6 +1999,7 @@ function submitSession() {
     var obs = (document.getElementById('sObs-' + idx) || {}).value || '';
     var sol = (document.getElementById('sSol-' + idx) || {}).value || '';
     obs = obs.trim(); sol = sol.trim();
+    if (_obsImages[idx]) obs = (obs ? obs + '\n' : '') + '<img src="' + _obsImages[idx] + '" style="max-width:400px">';
     if (obs || sol) obsPairs.push({ obs: obs, sol: sol });
   });
 
@@ -2194,6 +2213,36 @@ document.addEventListener('click', function(e) {
 // ── Dynamic obs/sol pairs ─────────────────────────────────────────────────────
 
 var _obsCount = 0;
+var _obsImages = {};  // obs pair idx → uploaded image URL
+
+function obsHtml(text) {
+  // Render <img> tags inline; escape everything else
+  var parts = text.split(/(<img\s[^>]*>)/i);
+  return parts.map(function(p) {
+    return /^<img\s/i.test(p) ? p : esc(p);
+  }).join('');
+}
+
+function triggerObsImageUpload(idx) {
+  var inp = document.getElementById('sImgFile-' + idx);
+  if (inp) inp.click();
+}
+
+function handleObsImageFile(idx, file) {
+  if (!file) return;
+  var fd = new FormData();
+  fd.append('id',   SHEET_ID);
+  fd.append('file', file);
+  fetch(APP_BASE + 'push/uploadMedia.php', { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (!res.ok || !res.url) { alert('Upload failed: ' + (res.error || 'Unknown error')); return; }
+      _obsImages[idx] = res.url;
+      var preview = document.getElementById('sImgPreview-' + idx);
+      if (preview) preview.innerHTML = '<img src="' + esc(res.url) + '" alt="observation image">';
+    })
+    .catch(function() { alert('Upload failed.'); });
+}
 
 function addObsPair(showLabels) {
   var idx       = _obsCount++;
@@ -2214,7 +2263,12 @@ function addObsPair(showLabels) {
         ' placeholder="How to address it…"' +
         ' oninput="autoResize(this);onObsInput(' + idx + ')"' +
         ' onkeydown="onObsKeydown(event,' + idx + ',1)"></textarea>' +
-    '</div>';
+    '</div>' +
+    '<div class="obs-img-row">' +
+      '<button type="button" class="obs-img-btn" onclick="triggerObsImageUpload(' + idx + ')" title="Attach image">📷</button>' +
+      '<input type="file" accept="image/*" id="sImgFile-' + idx + '" style="display:none" onchange="handleObsImageFile(' + idx + ', this.files[0])">' +
+    '</div>' +
+    '<div class="obs-img-preview" id="sImgPreview-' + idx + '"></div>';
   container.appendChild(div);
   return idx;
 }

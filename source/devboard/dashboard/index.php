@@ -503,7 +503,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .field-input:focus { border-color:#1a5f7a; background:#fff; }
 .field-sep { border:none; border-top:1px solid #e8edf0; margin:.1rem 0; }
 
-/* Observation/solution textareas */
+/* Observations/thoughts textareas */
 .obs-grid { display:grid; grid-template-columns:1fr 1fr; gap:.9rem; }
 .field-textarea {
   display:block; width:100%; padding:.6rem .75rem;
@@ -582,7 +582,18 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .obs-img-btn:hover { color:#1a5f7a; background:#fff; border-color:#a0b8c8; }
 .obs-img-preview img { width:100%; border-radius:6px; border:1px solid #dce8f0; display:block; }
 
-/* ── Mobile: 2-col session layout ── */
+/* ── Desktop: People spans 2 rows in 3-col grid ── */
+.session-people { grid-row:span 2; }
+
+/* ── Tablet/mobile (≤768px): 2-col, People full-width ── */
+@media (max-width:768px) {
+  .field-grid { grid-template-columns:1fr 1fr; }
+  .field-group.span2 { grid-column:span 1; }
+  .session-people { grid-row:auto; grid-column:1 / -1; }
+  .obs-grid { grid-template-columns:1fr; }
+}
+
+/* ── Phone (≤600px): bottom-sheet dialog, stack obs/sol ── */
 @media (max-width:600px) {
   #sessionOverlay { align-items:flex-end; padding:0; }
   .session-dialog {
@@ -590,18 +601,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
     margin-top:auto; padding:1.25rem 1rem 1.5rem;
     max-height:94dvh;
   }
-  /* Date + Type side by side; People full-width below; Location + TestNum side by side */
-  .field-grid { grid-template-columns:1fr 1fr; }
-  .field-group.span2 { grid-column:span 1; }
-  /* People: remove row-span, place full-width after Date/Type row */
-  .session-people { grid-row:auto !important; grid-column:1 / -1; order:1; }
-  .obs-grid { grid-template-columns:1fr; }
-}
-
-/* ── Mobile: stack obs/sol pairs ── */
-@media (max-width:500px) {
   .obs-pair-inputs { grid-template-columns:1fr; }
-  .obs-pair-labels { grid-template-columns:1fr; }
   .obs-pair-labels label:last-child { display:none; }
 }
 </style>
@@ -890,7 +890,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
           <option value="Idea">Idea</option>
         </select>
       </div>
-      <div class="field-group session-people" style="grid-row:span 2">
+      <div class="field-group session-people">
         <label>People</label>
         <div id="testersContainer"></div>
       </div>
@@ -911,7 +911,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 
     <hr class="field-sep" />
 
-    <!-- Observation + Solution (dynamic pairs) -->
+    <!-- Observations + Thoughts (dynamic pairs) -->
     <div id="obsContainer"></div>
 
     <div class="dialog-err" id="sessionErr"></div>
@@ -1334,8 +1334,8 @@ function buildSessions(rows) {
     var date   = (row['Date']        || '').trim();
     var event  = (row['Event']       || '').trim();
     var people = (row['People']      || '').trim();
-    var obs    = (row['Observation'] || '').trim();
-    var sol    = (row['Solution']    || '').trim();
+    var obs    = (row['Observations'] || row['Observation'] || '').trim();
+    var sol    = (row['Solution'] || row['Thoughts'] || '').trim();
 
     if (date || event) {
       // Session header row; location is in Observation
@@ -2278,7 +2278,7 @@ function addObsPair(showLabels) {
   div.className   = 'obs-pair obs-pair-empty';
   div.dataset.idx = idx;
   var labelsHtml = showLabels
-    ? '<div class="obs-pair-labels"><label>Observation</label><label>Solution</label></div>'
+    ? '<div class="obs-pair-labels"><label>Observations</label><label>Thoughts</label></div>'
     : '';
   div.innerHTML = labelsHtml +
     '<div class="obs-pair-inputs">' +
@@ -2300,7 +2300,7 @@ function addObsPair(showLabels) {
         '</div>' +
       '</div>' +
       '<textarea class="field-textarea" id="sSol-' + idx + '" rows="1"' +
-        ' placeholder="How to address it…"' +
+        ' placeholder="Thoughts…"' +
         ' oninput="autoResize(this);onObsInput(' + idx + ')"' +
         ' onkeydown="onObsKeydown(event,' + idx + ',1)"></textarea>' +
     '</div>';

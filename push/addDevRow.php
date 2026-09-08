@@ -68,7 +68,7 @@ if ($isTesterRow) {
     $row     = [
         'Date'        => $date,
         'Event'       => $event,
-        'Observation' => $observation,
+        'Observations' => $observation,
         'Solution'    => $solution,
     ];
     $encoded = base64_encode(json_encode($row, JSON_UNESCAPED_UNICODE));

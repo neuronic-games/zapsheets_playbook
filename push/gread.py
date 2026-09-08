@@ -149,7 +149,7 @@ def get_records_with_links(service_account_client, sheet_id, sheet_name):
         row_texts = [get_cell_text(c) for c in cells]
 
         # Skip entirely empty rows
-        if not any(v.strip() for v in row_texts):
+        if not any(str(v).strip() for v in row_texts):
             continue
 
         record = {}
@@ -191,12 +191,12 @@ if records is None:
             headers = all_values[0]
             records = []
             for row in all_values[1:]:
-                if not any(cell.strip() for cell in row):
+                if not any(str(cell).strip() for cell in row):
                     continue
                 record = {}
                 for i, header in enumerate(headers):
-                    if header.strip():
-                        record[header.strip()] = row[i] if i < len(row) else ''
+                    if str(header).strip():
+                        record[str(header).strip()] = str(row[i]) if i < len(row) else ''
                 records.append(record)
     except Exception as e:
         err = json.dumps({"error": f"Record build failed for '{sheetName}': {type(e).__name__}: {str(e)}"})

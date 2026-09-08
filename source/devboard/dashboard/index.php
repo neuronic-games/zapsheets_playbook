@@ -573,12 +573,13 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   text-transform:uppercase; letter-spacing:.07em; color:#888;
 }
 .obs-pair-inputs { display:grid; grid-template-columns:1fr 1fr; gap:.9rem; }
+.obs-obs-col { display:flex; flex-direction:column; min-width:0; }
 .obs-img-row { display:flex; align-items:center; gap:.5rem; margin-top:.35rem; }
 .obs-img-btn { background:none; border:none; cursor:pointer; padding:.2rem .4rem; border-radius:4px; font-size:.9rem; color:#aab; line-height:1; transition:color .15s,background .15s; }
 .obs-img-btn:hover { color:#1a5f7a; background:rgba(26,95,122,.09); }
 .obs-img-preview { }
 .obs-img-preview img { max-width:100%; max-height:220px; border-radius:6px; border:1px solid #dce8f0; display:block; }
-.obs-img-preview-inner { position:relative; display:inline-block; margin-top:.35rem; }
+.obs-img-preview-inner { position:relative; display:block; }
 .obs-img-preview-inner img { max-width:100%; max-height:220px; border-radius:6px; border:1px solid #dce8f0; display:block; }
 .obs-img-replace-btn { position:absolute; top:.35rem; right:.35rem; background:rgba(255,255,255,.88); border:1px solid #ccd; border-radius:5px; padding:.25rem .3rem; cursor:pointer; color:#555; line-height:1; backdrop-filter:blur(4px); transition:background .15s,color .15s; }
 .obs-img-replace-btn:hover { background:#fff; color:#1a5f7a; }
@@ -1949,11 +1950,7 @@ function openEditSessionDialog(gameName, idx) {
     var imgMatch = obsVal.match(/=IMAGE\("([^"]*)"\)/i);
     if (imgMatch) {
       var imgUrl = imgMatch[1];
-      _obsImages[oidx] = imgUrl;
-      setTimeout(function(i, u) { return function() {
-        var pv = document.getElementById('sImgPreview-' + i);
-        if (pv) pv.innerHTML = _obsImgPreviewHtml(i, u);
-      }; }(oidx, imgUrl), 0);
+      setTimeout(function(i, u) { return function() { _showObsImage(i, u); }; }(oidx, imgUrl), 0);
       obsVal = obsVal.replace(/=IMAGE\("[^"]*"\)/gi, '').trim();
     }
     document.getElementById('sObs-' + oidx).value = obsVal;
@@ -2001,7 +1998,7 @@ function submitSession() {
     var obs = (document.getElementById('sObs-' + idx) || {}).value || '';
     var sol = (document.getElementById('sSol-' + idx) || {}).value || '';
     obs = obs.trim(); sol = sol.trim();
-    if (_obsImages[idx]) obs = (obs ? obs + '\n' : '') + '=IMAGE("' + _obsImages[idx] + '")';
+    if (_obsImages[idx]) obs = '=IMAGE("' + _obsImages[idx] + '")';
     if (obs || sol) obsPairs.push({ obs: obs, sol: sol });
   });
 
@@ -2227,6 +2224,14 @@ function obsHtml(text) {
   }).join('');
 }
 
+function _showObsImage(idx, url) {
+  _obsImages[idx] = url;
+  var ta = document.getElementById('sObs-' + idx);
+  var pv = document.getElementById('sImgPreview-' + idx);
+  if (ta) ta.style.display = 'none';
+  if (pv) { pv.style.display = 'block'; pv.innerHTML = _obsImgPreviewHtml(idx, url); }
+}
+
 function _obsImgPreviewHtml(idx, url) {
   return '<div class="obs-img-preview-inner">' +
     '<img src="' + esc(url) + '" alt="observation image">' +
@@ -2254,9 +2259,7 @@ function handleObsImageFile(idx, file) {
     .then(function(r) { return r.json(); })
     .then(function(res) {
       if (!res.ok || !res.url) { alert('Upload failed: ' + (res.error || 'Unknown error')); return; }
-      _obsImages[idx] = res.url;
-      var preview = document.getElementById('sImgPreview-' + idx);
-      if (preview) preview.innerHTML = _obsImgPreviewHtml(idx, res.url);
+      _showObsImage(idx, res.url);
     })
     .catch(function() { alert('Upload failed.'); });
 }
@@ -2272,26 +2275,28 @@ function addObsPair(showLabels) {
     : '';
   div.innerHTML = labelsHtml +
     '<div class="obs-pair-inputs">' +
-      '<textarea class="field-textarea" id="sObs-' + idx + '" rows="1"' +
-        ' placeholder="What happened…"' +
-        ' oninput="autoResize(this);onObsInput(' + idx + ')"' +
-        ' onkeydown="onObsKeydown(event,' + idx + ',0)"></textarea>' +
+      '<div class="obs-obs-col">' +
+        '<textarea class="field-textarea" id="sObs-' + idx + '" rows="1"' +
+          ' placeholder="What happened…"' +
+          ' oninput="autoResize(this);onObsInput(' + idx + ')"' +
+          ' onkeydown="onObsKeydown(event,' + idx + ',0)"></textarea>' +
+        '<div class="obs-img-preview" id="sImgPreview-' + idx + '" style="display:none"></div>' +
+        '<div class="obs-img-row">' +
+          '<button type="button" class="obs-img-btn" onclick="triggerObsImageUpload(' + idx + ')" title="Attach image">' +
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+            '<rect x="3" y="3" width="18" height="18" rx="2"/>' +
+            '<circle cx="8.5" cy="8.5" r="1.5"/>' +
+            '<polyline points="21 15 16 10 5 21"/>' +
+          '</svg>' +
+        '</button>' +
+          '<input type="file" accept="image/*" id="sImgFile-' + idx + '" style="display:none" onchange="handleObsImageFile(' + idx + ', this.files[0])">' +
+        '</div>' +
+      '</div>' +
       '<textarea class="field-textarea" id="sSol-' + idx + '" rows="1"' +
         ' placeholder="How to address it…"' +
         ' oninput="autoResize(this);onObsInput(' + idx + ')"' +
         ' onkeydown="onObsKeydown(event,' + idx + ',1)"></textarea>' +
-    '</div>' +
-    '<div class="obs-img-row">' +
-      '<button type="button" class="obs-img-btn" onclick="triggerObsImageUpload(' + idx + ')" title="Attach image">' +
-      '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-        '<rect x="3" y="3" width="18" height="18" rx="2"/>' +
-        '<circle cx="8.5" cy="8.5" r="1.5"/>' +
-        '<polyline points="21 15 16 10 5 21"/>' +
-      '</svg>' +
-    '</button>' +
-      '<input type="file" accept="image/*" id="sImgFile-' + idx + '" style="display:none" onchange="handleObsImageFile(' + idx + ', this.files[0])">' +
-    '</div>' +
-    '<div class="obs-img-preview" id="sImgPreview-' + idx + '"></div>';
+    '</div>';
   container.appendChild(div);
   return idx;
 }

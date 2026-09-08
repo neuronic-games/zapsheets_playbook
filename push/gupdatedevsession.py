@@ -22,9 +22,14 @@ socket.setdefaulttimeout(30)
 credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
 
 def safe_str(v):
-    """Prefix non-empty strings with ' to prevent Google Sheets formula interpretation."""
+    """Prefix non-empty strings with ' to prevent Google Sheets formula interpretation.
+    Exception: =IMAGE() formulas are passed through so they render as images in the sheet."""
     s = (str(v) if v is not None else '').strip()
-    return ("'" + s) if s else ''
+    if not s:
+        return ''
+    if s.upper().startswith('=IMAGE('):
+        return s
+    return "'" + s
 
 def clean(v):
     """Strip the safe_str apostrophe prefix if present (returned by get_all_values)."""
@@ -149,6 +154,31 @@ if new_rows:
         }]})
     except Exception as e:
         pass  # Non-fatal — values are correct even if background reset fails
+
+# Resize rows that contain =IMAGE() formulas so the image is visible
+image_resize_reqs = []
+for i, row in enumerate(new_rows):
+    for cell in row:
+        if isinstance(cell, str) and cell.strip().upper().startswith('=IMAGE('):
+            row_0idx = header_sheet_row - 1 + i  # 0-indexed for the API
+            image_resize_reqs.append({
+                'updateDimensionProperties': {
+                    'range': {
+                        'sheetId': ws.id,
+                        'dimension': 'ROWS',
+                        'startIndex': row_0idx,
+                        'endIndex':   row_0idx + 1,
+                    },
+                    'properties': {'pixelSize': 200},
+                    'fields': 'pixelSize',
+                }
+            })
+            break
+if image_resize_reqs:
+    try:
+        wb.batch_update({'requests': image_resize_reqs})
+    except Exception:
+        pass  # non-fatal
 
 print(json.dumps({
     "ok": True,

@@ -94,6 +94,17 @@ if ($result === null) {
 if (!empty($result['ok'])) {
     refreshJson($pythonPath, $sheetId, $tabName);
     $result['row'] = $row;
+
+    // If the observation is an =IMAGE() formula, resize the row to show the image
+    if (!$isTesterRow && !empty($result['row']) && strpos($observation, '=IMAGE(') !== false) {
+        $rowNum   = (int) $result['row'];
+        $resizeArg = $sheetId . '|' . $tabName . '|' . $rowNum . '|200';
+        shell_exec(
+            escapeshellarg($pythonPath) . ' '
+            . escapeshellarg(__DIR__ . '/gresizerow.py') . ' '
+            . escapeshellarg($resizeArg) . ' 2>/dev/null'
+        );
+    }
 }
 
 echo json_encode($result);

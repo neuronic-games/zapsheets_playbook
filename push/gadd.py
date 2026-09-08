@@ -10,9 +10,14 @@ socket.setdefaulttimeout(30)
 credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
 
 def safe_str(v):
-    """Prefix non-empty strings with ' to prevent Google Sheets formula interpretation."""
+    """Prefix non-empty strings with ' to prevent Google Sheets formula interpretation.
+    Exception: =IMAGE() formulas are passed through so they render as images in the sheet."""
     s = (str(v) if v is not None else '').strip()
-    return ("'" + s) if s else ''
+    if not s:
+        return ''
+    if s.upper().startswith('=IMAGE('):
+        return s
+    return "'" + s
 
 if not os.path.exists(credFileName):
     print(json.dumps({"error": "credentials.json not found"}))

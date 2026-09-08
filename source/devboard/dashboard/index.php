@@ -782,7 +782,41 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <!-- Fields shown only for new games (not already in games sheet) -->
     <div class="add-new-only" id="addNewFields">
       <hr class="field-sep" style="margin:.25rem 0 .75rem" />
-      <div class="field-grid" style="grid-template-columns:1fr 1fr">
+
+      <!-- Description -->
+      <div class="field-group" style="margin-bottom:.9rem">
+        <label>Description</label>
+        <textarea class="field-input" id="gDescription" rows="3" placeholder="Game overview…" style="resize:vertical"></textarea>
+      </div>
+      <div class="field-group" style="margin-bottom:.9rem">
+        <label>Tagline</label>
+        <input type="text" class="field-input" id="gTagline" placeholder="One-line description…" autocomplete="off" />
+      </div>
+
+      <!-- Designers -->
+      <p style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:#aaa;margin:.1rem 0 .55rem">Designers</p>
+      <div class="field-grid" style="grid-template-columns:1fr 1fr;margin-bottom:.9rem">
+        <div class="field-group">
+          <label>Designer 1</label>
+          <input type="text" class="field-input" id="gDesigner1" placeholder="Search or enter name…" autocomplete="off" />
+        </div>
+        <div class="field-group">
+          <label>Designer 2</label>
+          <input type="text" class="field-input" id="gDesigner2" placeholder="Search or enter name…" autocomplete="off" />
+        </div>
+        <div class="field-group">
+          <label>Designer 3</label>
+          <input type="text" class="field-input" id="gDesigner3" placeholder="Search or enter name…" autocomplete="off" />
+        </div>
+        <div class="field-group">
+          <label>Designer 4</label>
+          <input type="text" class="field-input" id="gDesigner4" placeholder="Search or enter name…" autocomplete="off" />
+        </div>
+      </div>
+
+      <!-- Details -->
+      <p style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:#aaa;margin:.1rem 0 .55rem">Details</p>
+      <div class="field-grid" style="grid-template-columns:1fr 1fr;margin-bottom:.9rem">
         <div class="field-group">
           <label>Status</label>
           <select class="field-input" id="gStatus">
@@ -797,28 +831,45 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
           <input type="date" class="field-input" id="gDateStarted" />
         </div>
         <div class="field-group">
-          <label>Designer 1</label>
-          <input type="text" class="field-input" id="gDesigner1" placeholder="" autocomplete="off" />
+          <label>Date Signed</label>
+          <input type="date" class="field-input" id="gDateSigned" />
         </div>
         <div class="field-group">
-          <label>Designer 2</label>
-          <input type="text" class="field-input" id="gDesigner2" placeholder="" autocomplete="off" />
+          <label>Date Published</label>
+          <input type="date" class="field-input" id="gDatePublished" />
         </div>
-        <div class="field-group span2">
-          <label>Tagline</label>
-          <input type="text" class="field-input" id="gTagline" placeholder="One-line description…" autocomplete="off" />
-        </div>
-        <div class="field-group span2">
-          <label>Description</label>
-          <textarea class="field-input" id="gDescription" rows="3" placeholder="Game overview…" style="resize:vertical"></textarea>
-        </div>
+      </div>
+
+      <!-- Links -->
+      <p style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:#aaa;margin:.1rem 0 .55rem">Links</p>
+      <div class="field-grid" style="grid-template-columns:1fr 1fr;margin-bottom:.5rem">
         <div class="field-group">
-          <label>Rules URL</label>
+          <label>Rules</label>
           <input type="url" class="field-input" id="gRules" placeholder="https://…" autocomplete="off" />
         </div>
         <div class="field-group">
-          <label>Sellsheet URL</label>
+          <label>Play</label>
+          <input type="url" class="field-input" id="gPlay" placeholder="https://…" autocomplete="off" />
+        </div>
+        <div class="field-group">
+          <label>Print</label>
+          <input type="url" class="field-input" id="gPrint" placeholder="https://…" autocomplete="off" />
+        </div>
+        <div class="field-group">
+          <label>Sellsheet</label>
           <input type="url" class="field-input" id="gSellsheet" placeholder="https://…" autocomplete="off" />
+        </div>
+        <div class="field-group">
+          <label>BGG / View</label>
+          <input type="url" class="field-input" id="gView" placeholder="https://…" autocomplete="off" />
+        </div>
+        <div class="field-group">
+          <label>Video</label>
+          <input type="url" class="field-input" id="gVideo" placeholder="https://…" autocomplete="off" />
+        </div>
+        <div class="field-group span2">
+          <label>Image URL</label>
+          <input type="url" class="field-input" id="gImage" placeholder="https://…" autocomplete="off" />
         </div>
       </div>
     </div>
@@ -1642,14 +1693,23 @@ function openAddDialog() {
   document.getElementById('addDialogTitle').textContent   = 'Add Game';
   document.getElementById('gameComboInput').value         = '';
   document.getElementById('gameComboInput').readOnly      = false;
-  document.getElementById('gStatus').value                = 'Design';
-  document.getElementById('gDateStarted').value           = todayISO();
-  document.getElementById('gDesigner1').value             = MY_NAME || '';
-  document.getElementById('gDesigner2').value             = '';
-  document.getElementById('gTagline').value               = '';
-  document.getElementById('gDescription').value           = '';
-  document.getElementById('gRules').value                 = '';
-  document.getElementById('gSellsheet').value             = '';
+  document.getElementById('gStatus').value         = 'Design';
+  document.getElementById('gDateStarted').value    = todayISO();
+  document.getElementById('gDateSigned').value     = '';
+  document.getElementById('gDatePublished').value  = '';
+  document.getElementById('gDesigner1').value      = MY_NAME || '';
+  document.getElementById('gDesigner2').value      = '';
+  document.getElementById('gDesigner3').value      = '';
+  document.getElementById('gDesigner4').value      = '';
+  document.getElementById('gTagline').value        = '';
+  document.getElementById('gDescription').value   = '';
+  document.getElementById('gRules').value          = '';
+  document.getElementById('gPlay').value           = '';
+  document.getElementById('gPrint').value          = '';
+  document.getElementById('gSellsheet').value      = '';
+  document.getElementById('gView').value           = '';
+  document.getElementById('gVideo').value          = '';
+  document.getElementById('gImage').value          = '';
   _setNewGameFieldsVisible(false);
   document.getElementById('addErr').style.display  = 'none';
   document.getElementById('addBtn').disabled       = false;
@@ -1772,13 +1832,22 @@ function openEditGame(name) {
   for (var i = 0; i < statusEl.options.length; i++) {
     if (statusEl.options[i].value === status) { statusEl.selectedIndex = i; break; }
   }
-  document.getElementById('gDateStarted').value  = _toDateInput(rec['Date Started'] || rec.DateStarted || '');
+  document.getElementById('gDescription').value  = rec.Description || '';
+  document.getElementById('gTagline').value      = rec.Tagline || rec['Tag Line'] || rec.SubTitle || '';
   document.getElementById('gDesigner1').value    = rec.Designer1 || rec['Designer 1'] || '';
   document.getElementById('gDesigner2').value    = rec.Designer2 || rec['Designer 2'] || '';
-  document.getElementById('gTagline').value      = rec.Tagline || rec['Tag Line'] || rec.SubTitle || '';
-  document.getElementById('gDescription').value  = rec.Description || '';
-  document.getElementById('gRules').value        = rec.Rules || rec['Rules URL'] || rec.RulesURL || '';
-  document.getElementById('gSellsheet').value    = rec.Sellsheet || rec['Sellsheet URL'] || rec.SellsheetURL || '';
+  document.getElementById('gDesigner3').value    = rec.Designer3 || rec['Designer 3'] || '';
+  document.getElementById('gDesigner4').value    = rec.Designer4 || rec['Designer 4'] || '';
+  document.getElementById('gDateStarted').value  = _toDateInput(rec['Date Started']   || rec.DateStarted   || '');
+  document.getElementById('gDateSigned').value   = _toDateInput(rec['Date Signed']    || rec.DateSigned    || '');
+  document.getElementById('gDatePublished').value= _toDateInput(rec['Date Published'] || rec.DatePublished || '');
+  document.getElementById('gRules').value        = rec.Rules    || rec['Rules URL']    || rec.RulesURL    || '';
+  document.getElementById('gPlay').value         = rec.Play     || rec['Play URL']     || rec.PlayURL     || '';
+  document.getElementById('gPrint').value        = rec.Print    || rec['Print URL']    || rec.PrintURL    || '';
+  document.getElementById('gSellsheet').value    = rec.Sellsheet|| rec['Sellsheet URL']|| rec.SellsheetURL|| '';
+  document.getElementById('gView').value         = rec.BGG      || rec['BGG / View URL']|| rec.View       || rec['View URL'] || '';
+  document.getElementById('gVideo').value        = rec.Video    || rec['Video URL']    || rec.VideoURL    || '';
+  document.getElementById('gImage').value        = rec['Image URL'] || rec.Image      || rec.ImageURL    || '';
   _setNewGameFieldsVisible(true);
   document.getElementById('addErr').style.display  = 'none';
   document.getElementById('addBtn').disabled       = false;
@@ -1891,37 +1960,60 @@ function submitAddGame() {
     // Parse designer fields (strips emails, updates inputs)
     var _gd1e = _parsePerson(document.getElementById('gDesigner1').value.trim());
     var _gd2e = _parsePerson(document.getElementById('gDesigner2').value.trim());
+    var _gd3e = _parsePerson(document.getElementById('gDesigner3').value.trim());
+    var _gd4e = _parsePerson(document.getElementById('gDesigner4').value.trim());
     document.getElementById('gDesigner1').value = _gd1e.name;
     document.getElementById('gDesigner2').value = _gd2e.name;
+    document.getElementById('gDesigner3').value = _gd3e.name;
+    document.getElementById('gDesigner4').value = _gd4e.name;
 
     var fd = new FormData();
-    fd.append('id',           SHEET_ID);
-    fd.append('orig_name',    _editGameOrigName);
-    fd.append('name',         _editGameOrigName);  // name locked in edit mode
-    fd.append('status',       document.getElementById('gStatus').value);
-    fd.append('date_started', document.getElementById('gDateStarted').value);
-    fd.append('designer1',    _gd1e.name);
-    fd.append('designer2',    _gd2e.name);
-    fd.append('tagline',      document.getElementById('gTagline').value);
-    fd.append('description',  document.getElementById('gDescription').value);
-    fd.append('rules',        document.getElementById('gRules').value);
-    fd.append('sellsheet',    document.getElementById('gSellsheet').value);
+    fd.append('id',            SHEET_ID);
+    fd.append('orig_name',     _editGameOrigName);
+    fd.append('name',          _editGameOrigName);
+    fd.append('status',        document.getElementById('gStatus').value);
+    fd.append('date_started',  document.getElementById('gDateStarted').value);
+    fd.append('date_signed',   document.getElementById('gDateSigned').value);
+    fd.append('date_published',document.getElementById('gDatePublished').value);
+    fd.append('designer1',     _gd1e.name);
+    fd.append('designer2',     _gd2e.name);
+    fd.append('designer3',     _gd3e.name);
+    fd.append('designer4',     _gd4e.name);
+    fd.append('tagline',       document.getElementById('gTagline').value);
+    fd.append('description',   document.getElementById('gDescription').value);
+    fd.append('rules',         document.getElementById('gRules').value);
+    fd.append('play',          document.getElementById('gPlay').value);
+    fd.append('print',         document.getElementById('gPrint').value);
+    fd.append('sellsheet',     document.getElementById('gSellsheet').value);
+    fd.append('view',          document.getElementById('gView').value);
+    fd.append('video',         document.getElementById('gVideo').value);
+    fd.append('image',         document.getElementById('gImage').value);
 
     fetch(APP_BASE + 'push/updateGame.php', { method:'POST', body:fd })
       .then(function(r) { return r.json(); })
       .then(function(res) {
         if (res.error) throw new Error(res.error);
-        addNewPeople([_gd1e, _gd2e].filter(function(p) { return p.name; }));
+        addNewPeople([_gd1e, _gd2e, _gd3e, _gd4e].filter(function(p) { return p.name; }));
         // Update in-memory record
         var key = _editGameOrigName.toLowerCase();
         var rec = GAMES_INDEX[key] || {};
         rec.Status = document.getElementById('gStatus').value;
-        rec.Designer1 = _gd1e.name; rec['Designer 1'] = _gd1e.name;
-        rec.Designer2 = _gd2e.name; rec['Designer 2'] = _gd2e.name;
-        rec.Tagline = document.getElementById('gTagline').value;
+        rec['Date Started']   = rec.DateStarted   = document.getElementById('gDateStarted').value;
+        rec['Date Signed']    = rec.DateSigned    = document.getElementById('gDateSigned').value;
+        rec['Date Published'] = rec.DatePublished = document.getElementById('gDatePublished').value;
+        rec.Designer1 = rec['Designer 1'] = _gd1e.name;
+        rec.Designer2 = rec['Designer 2'] = _gd2e.name;
+        rec.Designer3 = rec['Designer 3'] = _gd3e.name;
+        rec.Designer4 = rec['Designer 4'] = _gd4e.name;
+        rec.Tagline     = document.getElementById('gTagline').value;
         rec.Description = document.getElementById('gDescription').value;
-        rec.Rules = document.getElementById('gRules').value;
-        rec.Sellsheet = document.getElementById('gSellsheet').value;
+        rec.Rules       = rec['Rules URL']     = document.getElementById('gRules').value;
+        rec.Play        = rec['Play URL']      = document.getElementById('gPlay').value;
+        rec.Print       = rec['Print URL']     = document.getElementById('gPrint').value;
+        rec.Sellsheet   = rec['Sellsheet URL'] = document.getElementById('gSellsheet').value;
+        rec.BGG = rec.View = rec['View URL']   = document.getElementById('gView').value;
+        rec.Video       = rec['Video URL']     = document.getElementById('gVideo').value;
+        rec['Image URL']= rec.Image            = document.getElementById('gImage').value;
         GAMES_INDEX[key] = rec;
         GAMES_RAW.forEach(function(g) { if ((g.Name||'').toLowerCase() === key) g.Status = rec.Status; });
         // Refresh card body if cached, then rebuild list
@@ -1954,21 +2046,34 @@ function submitAddGame() {
   // Parse designer fields: strip emails, update inputs to show name only
   var _gd1 = _parsePerson(document.getElementById('gDesigner1').value.trim());
   var _gd2 = _parsePerson(document.getElementById('gDesigner2').value.trim());
+  var _gd3 = _parsePerson(document.getElementById('gDesigner3').value.trim());
+  var _gd4 = _parsePerson(document.getElementById('gDesigner4').value.trim());
   document.getElementById('gDesigner1').value = _gd1.name;
   document.getElementById('gDesigner2').value = _gd2.name;
+  document.getElementById('gDesigner3').value = _gd3.name;
+  document.getElementById('gDesigner4').value = _gd4.name;
 
   function addToGamesSheet() {
     var fd = new FormData();
-    fd.append('id',           SHEET_ID);
-    fd.append('name',         name);
-    fd.append('status',       document.getElementById('gStatus').value);
-    fd.append('date_started', document.getElementById('gDateStarted').value);
-    fd.append('designer1',    _gd1.name);
-    fd.append('designer2',    _gd2.name);
-    fd.append('tagline',      document.getElementById('gTagline').value);
-    fd.append('description',  document.getElementById('gDescription').value);
-    fd.append('rules',        document.getElementById('gRules').value);
-    fd.append('sellsheet',    document.getElementById('gSellsheet').value);
+    fd.append('id',            SHEET_ID);
+    fd.append('name',          name);
+    fd.append('status',        document.getElementById('gStatus').value);
+    fd.append('date_started',  document.getElementById('gDateStarted').value);
+    fd.append('date_signed',   document.getElementById('gDateSigned').value);
+    fd.append('date_published',document.getElementById('gDatePublished').value);
+    fd.append('designer1',     _gd1.name);
+    fd.append('designer2',     _gd2.name);
+    fd.append('designer3',     _gd3.name);
+    fd.append('designer4',     _gd4.name);
+    fd.append('tagline',       document.getElementById('gTagline').value);
+    fd.append('description',   document.getElementById('gDescription').value);
+    fd.append('rules',         document.getElementById('gRules').value);
+    fd.append('play',          document.getElementById('gPlay').value);
+    fd.append('print',         document.getElementById('gPrint').value);
+    fd.append('sellsheet',     document.getElementById('gSellsheet').value);
+    fd.append('view',          document.getElementById('gView').value);
+    fd.append('video',         document.getElementById('gVideo').value);
+    fd.append('image',         document.getElementById('gImage').value);
     return fetch(APP_BASE + 'push/addGame.php', { method:'POST', body:fd })
       .then(function(r) { return r.json(); });
   }

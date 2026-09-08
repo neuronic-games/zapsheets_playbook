@@ -172,9 +172,13 @@ except Exception:
     pass  # fall through to get_all_values()
 
 if records is None:
-    # Fallback: plain get_all_values() – no hyperlinks preserved
+    # Fallback: use FORMULA render option so =IMAGE() cells return their formula
+    # rather than an empty formattedValue string
     try:
-        all_values = mSelectedWorkSheet.get_all_values()
+        try:
+            all_values = mSelectedWorkSheet.get_all_values(value_render_option='FORMULA')
+        except TypeError:
+            all_values = mSelectedWorkSheet.get_all_values()
     except Exception as e:
         err = json.dumps({"error": f"get_all_values failed for '{sheetName}': {type(e).__name__}: {str(e)}"})
         print(err)

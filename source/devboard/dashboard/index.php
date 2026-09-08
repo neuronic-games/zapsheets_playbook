@@ -2227,9 +2227,11 @@ function obsHtml(text) {
 
 function _showObsImage(idx, url) {
   _obsImages[idx] = url;
-  var ta = document.getElementById('sObs-' + idx);
-  var pv = document.getElementById('sImgPreview-' + idx);
-  if (ta) ta.style.display = 'none';
+  var ta   = document.getElementById('sObs-' + idx);
+  var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
+  var pv   = document.getElementById('sImgPreview-' + idx);
+  if (wrap) wrap.style.display = 'none';   // hides textarea + icon button together
+  else if (ta) ta.style.display = 'none';
   if (pv) { pv.style.display = 'block'; pv.innerHTML = _obsImgPreviewHtml(idx, url); }
 }
 

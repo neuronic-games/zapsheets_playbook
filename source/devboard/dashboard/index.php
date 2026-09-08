@@ -377,7 +377,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   display:flex; flex-direction:column; gap:.28rem;
   padding:.75rem 1rem .65rem;
   background:#f0f7fb; border-bottom:1px solid #d8eaf2;
-  cursor:pointer; user-select:none;
+  cursor:pointer; user-select:none; -webkit-user-select:none;
+  -webkit-touch-callout:none;
 }
 .session-header:hover { background:#e6f2f8; }
 .session-header-row { display:flex; align-items:center; gap:.55rem; }
@@ -589,8 +590,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .session-meta-row { display:grid; grid-template-columns:1fr 1fr; gap:.75rem .9rem; }
 .session-people { width:190px; flex-shrink:0; }
 
-/* ── Phone (≤600px): stack People below; bottom-sheet dialog ── */
-@media (max-width:600px) {
+/* ── Mobile (≤768px): stack People below Date/Type/Loc/TestNum ── */
+@media (max-width:768px) {
   #sessionOverlay { align-items:flex-end; padding:0; }
   .session-dialog {
     width:100vw; max-width:100vw; border-radius:16px 16px 0 0;

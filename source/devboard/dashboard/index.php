@@ -576,8 +576,12 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .obs-img-row { display:flex; align-items:center; gap:.5rem; margin-top:.35rem; }
 .obs-img-btn { background:none; border:none; cursor:pointer; padding:.2rem .4rem; border-radius:4px; font-size:.9rem; color:#aab; line-height:1; transition:color .15s,background .15s; }
 .obs-img-btn:hover { color:#1a5f7a; background:rgba(26,95,122,.09); }
-.obs-img-preview { margin-top:.35rem; }
+.obs-img-preview { }
 .obs-img-preview img { max-width:100%; max-height:220px; border-radius:6px; border:1px solid #dce8f0; display:block; }
+.obs-img-preview-inner { position:relative; display:inline-block; margin-top:.35rem; }
+.obs-img-preview-inner img { max-width:100%; max-height:220px; border-radius:6px; border:1px solid #dce8f0; display:block; }
+.obs-img-replace-btn { position:absolute; top:.35rem; right:.35rem; background:rgba(255,255,255,.88); border:1px solid #ccd; border-radius:5px; padding:.25rem .3rem; cursor:pointer; color:#555; line-height:1; backdrop-filter:blur(4px); transition:background .15s,color .15s; }
+.obs-img-replace-btn:hover { background:#fff; color:#1a5f7a; }
 
 @media (max-width:540px) {
   .field-grid { grid-template-columns:1fr 1fr; }
@@ -1942,17 +1946,15 @@ function openEditSessionDialog(gameName, idx) {
   session.obs.forEach(function(pair, pi) {
     var oidx = addObsPair(pi === 0);
     var obsVal = pair.obs || '';
-    var imgMatch = obsVal.match(/<img\s[^>]*>/i);
+    var imgMatch = obsVal.match(/=IMAGE\("([^"]*)"\)/i);
     if (imgMatch) {
-      var srcM = imgMatch[0].match(/src="([^"]*)"/i);
-      if (srcM) {
-        _obsImages[oidx] = srcM[1];
-        setTimeout(function(i, u) { return function() {
-          var pv = document.getElementById('sImgPreview-' + i);
-          if (pv) pv.innerHTML = '<img src="' + esc(u) + '" alt="observation image">';
-        }; }(oidx, srcM[1]), 0);
-      }
-      obsVal = obsVal.replace(/<img\s[^>]*>/gi, '').trim();
+      var imgUrl = imgMatch[1];
+      _obsImages[oidx] = imgUrl;
+      setTimeout(function(i, u) { return function() {
+        var pv = document.getElementById('sImgPreview-' + i);
+        if (pv) pv.innerHTML = _obsImgPreviewHtml(i, u);
+      }; }(oidx, imgUrl), 0);
+      obsVal = obsVal.replace(/=IMAGE\("[^"]*"\)/gi, '').trim();
     }
     document.getElementById('sObs-' + oidx).value = obsVal;
     document.getElementById('sSol-' + oidx).value = pair.sol || '';
@@ -1999,7 +2001,7 @@ function submitSession() {
     var obs = (document.getElementById('sObs-' + idx) || {}).value || '';
     var sol = (document.getElementById('sSol-' + idx) || {}).value || '';
     obs = obs.trim(); sol = sol.trim();
-    if (_obsImages[idx]) obs = (obs ? obs + '\n' : '') + '<img src="' + _obsImages[idx] + '" style="max-width:400px">';
+    if (_obsImages[idx]) obs = (obs ? obs + '\n' : '') + '=IMAGE("' + _obsImages[idx] + '")';
     if (obs || sol) obsPairs.push({ obs: obs, sol: sol });
   });
 
@@ -2216,11 +2218,26 @@ var _obsCount = 0;
 var _obsImages = {};  // obs pair idx → uploaded image URL
 
 function obsHtml(text) {
-  // Render <img> tags inline; escape everything else
-  var parts = text.split(/(<img\s[^>]*>)/i);
+  // Render =IMAGE("url") formulas as real <img> tags; escape everything else
+  var parts = text.split(/(=IMAGE\("[^"]*"\))/i);
   return parts.map(function(p) {
-    return /^<img\s/i.test(p) ? p : esc(p);
+    var m = p.match(/^=IMAGE\("([^"]*)"\)$/i);
+    if (m) return '<img src="' + esc(m[1]) + '" style="max-width:100%;max-height:220px;border-radius:4px;display:block;margin-top:.25rem">';
+    return esc(p);
   }).join('');
+}
+
+function _obsImgPreviewHtml(idx, url) {
+  return '<div class="obs-img-preview-inner">' +
+    '<img src="' + esc(url) + '" alt="observation image">' +
+    '<button type="button" class="obs-img-replace-btn" onclick="triggerObsImageUpload(' + idx + ')" title="Replace image">' +
+      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<rect x="3" y="3" width="18" height="18" rx="2"/>' +
+        '<circle cx="8.5" cy="8.5" r="1.5"/>' +
+        '<polyline points="21 15 16 10 5 21"/>' +
+      '</svg>' +
+    '</button>' +
+  '</div>';
 }
 
 function triggerObsImageUpload(idx) {
@@ -2239,7 +2256,7 @@ function handleObsImageFile(idx, file) {
       if (!res.ok || !res.url) { alert('Upload failed: ' + (res.error || 'Unknown error')); return; }
       _obsImages[idx] = res.url;
       var preview = document.getElementById('sImgPreview-' + idx);
-      if (preview) preview.innerHTML = '<img src="' + esc(res.url) + '" alt="observation image">';
+      if (preview) preview.innerHTML = _obsImgPreviewHtml(idx, res.url);
     })
     .catch(function() { alert('Upload failed.'); });
 }
@@ -2265,7 +2282,13 @@ function addObsPair(showLabels) {
         ' onkeydown="onObsKeydown(event,' + idx + ',1)"></textarea>' +
     '</div>' +
     '<div class="obs-img-row">' +
-      '<button type="button" class="obs-img-btn" onclick="triggerObsImageUpload(' + idx + ')" title="Attach image">📷</button>' +
+      '<button type="button" class="obs-img-btn" onclick="triggerObsImageUpload(' + idx + ')" title="Attach image">' +
+      '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<rect x="3" y="3" width="18" height="18" rx="2"/>' +
+        '<circle cx="8.5" cy="8.5" r="1.5"/>' +
+        '<polyline points="21 15 16 10 5 21"/>' +
+      '</svg>' +
+    '</button>' +
       '<input type="file" accept="image/*" id="sImgFile-' + idx + '" style="display:none" onchange="handleObsImageFile(' + idx + ', this.files[0])">' +
     '</div>' +
     '<div class="obs-img-preview" id="sImgPreview-' + idx + '"></div>';

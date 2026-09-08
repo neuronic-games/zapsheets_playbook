@@ -502,6 +502,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   background:#fafbfc; transition:border-color .15s;
 }
 .field-input:focus { border-color:#1a5f7a; background:#fff; }
+select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .7rem center; padding-right:2rem; }
 .field-sep { border:none; border-top:1px solid #e8edf0; margin:.1rem 0; }
 
 /* Observations/thoughts textareas */
@@ -584,13 +585,18 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .obs-img-btn:hover { color:#1a5f7a; background:#fff; border-color:#a0b8c8; }
 .obs-img-preview img { width:100%; border-radius:6px; border:1px solid #dce8f0; display:block; }
 
-/* ── Session metadata: flexbox, People beside Date/Type/Location/TestNum ── */
-.session-meta-wrap { display:flex; gap:.9rem; align-items:flex-start; }
-.session-meta-left { flex:1; min-width:0; display:flex; flex-direction:column; gap:.75rem; }
+/* ── Session metadata: mobile-first (column), side-by-side on wide screens ── */
+.session-meta-wrap { display:flex; flex-direction:column; gap:.9rem; }
+.session-meta-left { display:flex; flex-direction:column; gap:.75rem; }
 .session-meta-row { display:grid; grid-template-columns:1fr 1fr; gap:.75rem .9rem; }
-.session-people { width:190px; flex-shrink:0; }
+.session-people { width:100%; }
+@media (min-width:769px) {
+  .session-meta-wrap { flex-direction:row; align-items:flex-start; }
+  .session-meta-left { flex:1; min-width:0; }
+  .session-people { width:190px; flex-shrink:0; }
+}
 
-/* ── Mobile (≤768px): stack People below Date/Type/Loc/TestNum ── */
+/* ── Mobile (≤768px): bottom-sheet dialog, stack obs/sol ── */
 @media (max-width:768px) {
   #sessionOverlay { align-items:flex-end; padding:0; }
   .session-dialog {
@@ -598,8 +604,6 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
     margin-top:auto; padding:1.25rem 1rem 1.5rem;
     max-height:94dvh;
   }
-  .session-meta-wrap { flex-direction:column; }
-  .session-people { width:100%; }
   .obs-pair-inputs { grid-template-columns:1fr; }
   .obs-pair-labels label:last-child { display:none; }
   .field-grid { grid-template-columns:1fr 1fr; }

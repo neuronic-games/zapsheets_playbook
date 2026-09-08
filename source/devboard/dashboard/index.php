@@ -317,8 +317,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .stat-idea     { background:#2e7a52; }
 .stat-dim      { opacity:.35; }
 .stat-active   { box-shadow:0 0 0 2.5px #fff, 0 0 0 4.5px rgba(0,0,0,.25); }
+.subtitle-right { margin-left:auto; display:flex; align-items:center; gap:.45rem; }
 .add-session-btn {
-  margin-left:auto;
   font-family:'DINBlack',sans-serif; font-size:.7rem;
   text-transform:uppercase; letter-spacing:.07em;
   background:#1a5f7a; color:#fff;
@@ -327,6 +327,17 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   transition:background .15s;
 }
 .add-session-btn:hover { background:#145070; }
+.share-game-btn {
+  font-family:'DINBlack',sans-serif; font-size:.7rem;
+  text-transform:uppercase; letter-spacing:.07em;
+  background:transparent; color:#1a5f7a;
+  border:1.5px solid #1a5f7a; border-radius:6px;
+  padding:.28rem .65rem; cursor:pointer;
+  display:flex; align-items:center; gap:.3rem;
+  transition:background .15s, color .15s;
+}
+.share-game-btn:hover { background:#1a5f7a; color:#fff; }
+.share-game-btn svg { flex-shrink:0; }
 
 /* ── Game info sub-bar ────────────────────────────────── */
 .game-info-bar {
@@ -609,6 +620,8 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   .field-grid { grid-template-columns:1fr 1fr; }
   .field-group.span2 { grid-column:span 1; }
   .obs-grid { grid-template-columns:1fr; }
+  /* Prevent iOS Safari from auto-zooming inputs with font-size < 16px */
+  .field-input, .field-textarea { font-size:1rem; }
 }
 </style>
 </head>
@@ -1279,7 +1292,12 @@ function renderBody(gameName, rows) {
   if (nMeet) html += '<div class="' + chipClass('Meeting', 'stat-meeting')  + '" onclick="filterSessions(\'' + gn + '\',\'Meeting\')">'  + nMeet + ' <span>' + (nMeet === 1 ? 'Meeting'  : 'Meetings')  + '</span></div>';
   if (nIdea) html += '<div class="' + chipClass('Idea',    'stat-idea')     + '" onclick="filterSessions(\'' + gn + '\',\'Idea\')">'     + nIdea + ' <span>' + (nIdea === 1 ? 'Idea'     : 'Ideas')      + '</span></div>';
   if (!nPlay && !nMeet && !nIdea) html += '<div class="card-stat stat-playtest">0 <span>Sessions</span></div>';
+  html += '<div class="subtitle-right">';
+  html += '<button class="share-game-btn" onclick="shareGame(\'' + gn + '\')">' +
+    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
+    'Share</button>';
   html += '<button class="add-session-btn" onclick="openSessionDialog(\'' + gn + '\')">+ Session</button>';
+  html += '</div>';
   html += '</div>';
 
   // Sessions list
@@ -1367,6 +1385,63 @@ function buildSessions(rows) {
 function filterSessions(gameName, type) {
   devFilter[gameName] = (devFilter[gameName] === type) ? null : type;
   renderBody(gameName, devCache[gameName] || []);
+}
+
+// ── Share game ────────────────────────────────────────────────────────────────
+
+function shareGame(gameName) {
+  var fd = new FormData();
+  fd.append('id', SHEET_ID);
+  fd.append('game', gameName);
+  fd.append('sharer', '');
+  fetch(APP_BASE + 'push/createDevShare.php', { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (!res.ok || !res.viewUrl) { alert('Could not create share link.'); return; }
+      showSharePopup(gameName, res.viewUrl);
+    })
+    .catch(function() { alert('Could not create share link.'); });
+}
+
+var _sharePopupOpen = false;
+function showSharePopup(gameName, url) {
+  if (_sharePopupOpen) {
+    var el = document.getElementById('sharePopupOverlay');
+    if (el) el.parentNode.removeChild(el);
+  }
+  _sharePopupOpen = true;
+  var overlay = document.createElement('div');
+  overlay.id = 'sharePopupOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
+  overlay.onclick = function(e) { if (e.target === overlay) closeSharePopup(); };
+  overlay.innerHTML =
+    '<div style="background:#fff;border-radius:12px;padding:1.5rem;width:min(420px,92vw);box-shadow:0 8px 32px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:1rem">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between">' +
+        '<h2 style="font-family:DINBlack,sans-serif;font-size:.95rem;margin:0">Share <span style="font-family:DINRegular,sans-serif;opacity:.55">' + esc(gameName) + '</span></h2>' +
+        '<button onclick="closeSharePopup()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:#888;line-height:1">×</button>' +
+      '</div>' +
+      '<p style="font-family:DINRegular,sans-serif;font-size:.82rem;color:#555;margin:0">Anyone with this link can view sessions and submit new session data for this game.</p>' +
+      '<div style="display:flex;gap:.5rem">' +
+        '<input id="shareLinkInput" readonly value="' + esc(url) + '" ' +
+          'style="flex:1;font-family:DINRegular,sans-serif;font-size:.78rem;padding:.45rem .6rem;border:1.5px solid #d0d8e0;border-radius:6px;outline:none;color:#111;background:#f7fafb" />' +
+        '<button onclick="copyShareLink()" style="font-family:DINBlack,sans-serif;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;background:#1a5f7a;color:#fff;border:none;border-radius:6px;padding:.45rem .85rem;cursor:pointer;white-space:nowrap">Copy</button>' +
+      '</div>' +
+      '<p id="shareCopiedMsg" style="font-family:DINRegular,sans-serif;font-size:.78rem;color:#2e7a52;margin:0;display:none">Link copied!</p>' +
+    '</div>';
+  document.body.appendChild(overlay);
+}
+function closeSharePopup() {
+  _sharePopupOpen = false;
+  var el = document.getElementById('sharePopupOverlay');
+  if (el) el.parentNode.removeChild(el);
+}
+function copyShareLink() {
+  var inp = document.getElementById('shareLinkInput');
+  if (!inp) return;
+  inp.select(); inp.setSelectionRange(0, 9999);
+  try { document.execCommand('copy'); } catch(e) { navigator.clipboard && navigator.clipboard.writeText(inp.value); }
+  var msg = document.getElementById('shareCopiedMsg');
+  if (msg) { msg.style.display = 'block'; setTimeout(function(){ msg.style.display='none'; }, 2000); }
 }
 
 // ── Toggle session block ──────────────────────────────────────────────────────

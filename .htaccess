@@ -31,6 +31,11 @@ RewriteRule ^pitchboard/share/([a-f0-9]{24})/?$ source/pitchboard/shared/index.p
 # /pitchboard — setup landing page
 RewriteRule ^pitchboard/?$ source/pitchboard/index.php [L,QSA]
 
+# /devboard/share/{hash} — collaborator shared dev view (no sheet ID in URL)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^devboard/share/([a-f0-9]{24})/?$ source/devboard/shared/index.php [L,QSA]
+
 # /devboard/help — help page (must come before /devboard rule)
 RewriteRule ^devboard/help/?$ source/devboard/help/index.php [L,QSA]
 

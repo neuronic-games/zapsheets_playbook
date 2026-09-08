@@ -66,9 +66,15 @@ def get_cell_text(cell):
     Extract text from a Sheets API v4 cell object.
     Converts hyperlinks (both inline text-run links and whole-cell links)
     to [text](url) markdown so they survive JSON serialisation.
+    Also recovers =IMAGE() formulas so they can be rendered by the dashboard.
     """
     text = cell.get('formattedValue', '')
     if not text:
+        # =IMAGE() cells have no formattedValue — recover the formula so the
+        # dashboard can render the image via obsHtml()
+        formula = (cell.get('userEnteredValue') or {}).get('formulaValue', '')
+        if formula and formula.strip().upper().startswith('=IMAGE('):
+            return formula.strip()
         return ''
 
     # Inline text-run hyperlinks (e.g. "click [here](url) for more")

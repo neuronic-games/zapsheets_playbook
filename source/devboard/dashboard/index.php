@@ -574,11 +574,12 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 }
 .obs-pair-inputs { display:grid; grid-template-columns:1fr 1fr; gap:.9rem; }
 .obs-obs-col { display:flex; flex-direction:column; min-width:0; }
-.obs-img-row { display:flex; align-items:center; gap:.5rem; margin-top:.35rem; }
-.obs-img-btn { background:none; border:none; cursor:pointer; padding:.2rem .4rem; border-radius:4px; font-size:.9rem; color:#aab; line-height:1; transition:color .15s,background .15s; }
-.obs-img-btn:hover { color:#1a5f7a; background:rgba(26,95,122,.09); }
+/* obs-obs-col: textarea wrapper with icon overlaid inside */
+.obs-ta-wrap { position:relative; }
+.obs-ta-wrap .field-textarea { padding-right:2.1rem; }
+.obs-img-btn { position:absolute; bottom:.35rem; right:.35rem; background:rgba(255,255,255,.88); border:1px solid #d0d8e4; border-radius:5px; padding:.22rem .26rem; cursor:pointer; color:#99a; line-height:1; backdrop-filter:blur(2px); transition:color .15s,background .15s,border-color .15s; }
+.obs-img-btn:hover { color:#1a5f7a; background:#fff; border-color:#a0b8c8; }
 .obs-img-preview { }
-.obs-img-preview img { max-width:100%; max-height:220px; border-radius:6px; border:1px solid #dce8f0; display:block; }
 .obs-img-preview-inner { position:relative; display:block; }
 .obs-img-preview-inner img { max-width:100%; max-height:220px; border-radius:6px; border:1px solid #dce8f0; display:block; }
 .obs-img-replace-btn { position:absolute; top:.35rem; right:.35rem; background:rgba(255,255,255,.88); border:1px solid #ccd; border-radius:5px; padding:.25rem .3rem; cursor:pointer; color:#555; line-height:1; backdrop-filter:blur(4px); transition:background .15s,color .15s; }
@@ -2276,21 +2277,21 @@ function addObsPair(showLabels) {
   div.innerHTML = labelsHtml +
     '<div class="obs-pair-inputs">' +
       '<div class="obs-obs-col">' +
-        '<textarea class="field-textarea" id="sObs-' + idx + '" rows="1"' +
-          ' placeholder="What happened…"' +
-          ' oninput="autoResize(this);onObsInput(' + idx + ')"' +
-          ' onkeydown="onObsKeydown(event,' + idx + ',0)"></textarea>' +
-        '<div class="obs-img-preview" id="sImgPreview-' + idx + '" style="display:none"></div>' +
-        '<div class="obs-img-row">' +
+        '<div class="obs-ta-wrap">' +
+          '<textarea class="field-textarea" id="sObs-' + idx + '" rows="1"' +
+            ' placeholder="What happened…"' +
+            ' oninput="autoResize(this);onObsInput(' + idx + ')"' +
+            ' onkeydown="onObsKeydown(event,' + idx + ',0)"></textarea>' +
           '<button type="button" class="obs-img-btn" onclick="triggerObsImageUpload(' + idx + ')" title="Attach image">' +
-          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-            '<rect x="3" y="3" width="18" height="18" rx="2"/>' +
-            '<circle cx="8.5" cy="8.5" r="1.5"/>' +
-            '<polyline points="21 15 16 10 5 21"/>' +
-          '</svg>' +
-        '</button>' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+              '<rect x="3" y="3" width="18" height="18" rx="2"/>' +
+              '<circle cx="8.5" cy="8.5" r="1.5"/>' +
+              '<polyline points="21 15 16 10 5 21"/>' +
+            '</svg>' +
+          '</button>' +
           '<input type="file" accept="image/*" id="sImgFile-' + idx + '" style="display:none" onchange="handleObsImageFile(' + idx + ', this.files[0])">' +
         '</div>' +
+        '<div class="obs-img-preview" id="sImgPreview-' + idx + '" style="display:none"></div>' +
       '</div>' +
       '<textarea class="field-textarea" id="sSol-' + idx + '" rows="1"' +
         ' placeholder="How to address it…"' +

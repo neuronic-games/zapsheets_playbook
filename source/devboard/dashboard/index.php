@@ -265,12 +265,6 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .search-wrap input:focus { border-color:#1a5f7a; }
 .search-clear { position:absolute; right:.5rem; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:1rem; color:#aaa; line-height:1; padding:0; display:none; }
 .search-wrap.has-text .search-clear { display:block; }
-.game-count {
-  font-family:'DINBlack',sans-serif; font-size:.7rem;
-  text-transform:uppercase; letter-spacing:.05em;
-  background:#1a5f7a; color:#fff;
-  padding:.28rem .7rem; border-radius:999px; white-space:nowrap; flex-shrink:0;
-}
 .add-game-btn {
   font-family:'DINBlack',sans-serif; font-size:.75rem;
   text-transform:uppercase; letter-spacing:.07em;
@@ -673,7 +667,6 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         oninput="onSearch()" autocomplete="off" spellcheck="false" />
       <button class="search-clear" onclick="clearSearch()">✕</button>
     </div>
-    <div class="game-count" id="gameCount">0 Games</div>
     <button class="add-game-btn" onclick="openAddDialog()">+ Game</button>
   </div>
   <div class="content" id="cardList"></div>
@@ -1181,13 +1174,10 @@ function buildGameList() {
 
 function renderCards(filter) {
   var list    = document.getElementById('cardList');
-  var count   = document.getElementById('gameCount');
   var q       = (filter || '').toLowerCase().trim();
   var visible = q
     ? allGames.filter(function(g) { return (g.Name||'').toLowerCase().indexOf(q) !== -1; })
     : allGames;
-
-  count.textContent = visible.length + (visible.length === 1 ? ' Game' : ' Games');
 
   if (!visible.length) {
     list.innerHTML = '<div class="no-games"><strong>' + (q ? 'No matching games' : 'No games yet') + '</strong>' +

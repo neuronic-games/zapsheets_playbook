@@ -577,23 +577,19 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 /* obs-obs-col: textarea wrapper with icon overlaid inside */
 .obs-ta-wrap { position:relative; }
 .obs-ta-wrap .field-textarea { padding-right:2.1rem; }
-/* icon button: always absolute top-right of obs-ta-wrap; overlays image when shown */
+/* icon button: hidden when obs textarea has text; always shown when image present */
+.obs-ta-wrap.has-obs-text .obs-img-btn { display:none; }
 .obs-img-btn { position:absolute; top:.35rem; right:.35rem; background:rgba(255,255,255,.88); border:1px solid #d0d8e4; border-radius:5px; padding:.22rem .26rem; cursor:pointer; color:#99a; line-height:1; z-index:2; backdrop-filter:blur(2px); transition:color .15s,background .15s,border-color .15s; }
 .obs-img-btn:hover { color:#1a5f7a; background:#fff; border-color:#a0b8c8; }
 .obs-img-preview img { width:100%; border-radius:6px; border:1px solid #dce8f0; display:block; }
 
-/* ── Desktop: People spans 2 rows in 3-col grid ── */
-.session-people { grid-row:span 2; }
+/* ── Session metadata: flexbox, People beside Date/Type/Location/TestNum ── */
+.session-meta-wrap { display:flex; gap:.9rem; align-items:flex-start; }
+.session-meta-left { flex:1; min-width:0; display:flex; flex-direction:column; gap:.75rem; }
+.session-meta-row { display:grid; grid-template-columns:1fr 1fr; gap:.75rem .9rem; }
+.session-people { width:190px; flex-shrink:0; }
 
-/* ── Tablet/mobile (≤768px): 2-col, People full-width ── */
-@media (max-width:768px) {
-  .field-grid { grid-template-columns:1fr 1fr; }
-  .field-group.span2 { grid-column:span 1; }
-  .session-people { grid-row:auto; grid-column:1 / -1; }
-  .obs-grid { grid-template-columns:1fr; }
-}
-
-/* ── Phone (≤600px): bottom-sheet dialog, stack obs/sol ── */
+/* ── Phone (≤600px): stack People below; bottom-sheet dialog ── */
 @media (max-width:600px) {
   #sessionOverlay { align-items:flex-end; padding:0; }
   .session-dialog {
@@ -601,8 +597,13 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
     margin-top:auto; padding:1.25rem 1rem 1.5rem;
     max-height:94dvh;
   }
+  .session-meta-wrap { flex-direction:column; }
+  .session-people { width:100%; }
   .obs-pair-inputs { grid-template-columns:1fr; }
   .obs-pair-labels label:last-child { display:none; }
+  .field-grid { grid-template-columns:1fr 1fr; }
+  .field-group.span2 { grid-column:span 1; }
+  .obs-grid { grid-template-columns:1fr; }
 }
 </style>
 </head>
@@ -875,38 +876,39 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   <div class="session-dialog">
     <h2><span id="sessionDialogAction">+ Session</span> — <span id="sessionGameTitle"></span></h2>
 
-    <!-- Session metadata -->
-    <div class="field-grid">
-      <!-- Row 1 -->
-      <div class="field-group">
-        <label>Date</label>
-        <input type="date" class="field-input" id="sDate" autocomplete="off" />
-      </div>
-      <div class="field-group">
-        <label>Type</label>
-        <select class="field-input" id="sType" onchange="onTypeChange()">
-          <option value="Playtest">Playtest</option>
-          <option value="Meeting">Meeting</option>
-          <option value="Idea">Idea</option>
-        </select>
+    <!-- Session metadata: left 2×2 + right people -->
+    <div class="session-meta-wrap">
+      <div class="session-meta-left">
+        <div class="session-meta-row">
+          <div class="field-group">
+            <label>Date</label>
+            <input type="date" class="field-input" id="sDate" autocomplete="off" />
+          </div>
+          <div class="field-group">
+            <label>Type</label>
+            <select class="field-input" id="sType" onchange="onTypeChange()">
+              <option value="Playtest">Playtest</option>
+              <option value="Meeting">Meeting</option>
+              <option value="Idea">Idea</option>
+            </select>
+          </div>
+        </div>
+        <div class="session-meta-row">
+          <div class="field-group">
+            <label>Location</label>
+            <input type="text" class="field-input" id="sLocation" placeholder="" autocomplete="off" />
+          </div>
+          <div class="field-group">
+            <label>Test Number</label>
+            <input type="text" class="field-input" id="sTestNum" readonly
+              style="background:#f0f4f8;color:#888;cursor:default;" />
+          </div>
+        </div>
       </div>
       <div class="field-group session-people">
         <label>People</label>
         <div id="testersContainer"></div>
       </div>
-
-      <!-- Row 2 -->
-      <div class="field-group">
-        <label>Location</label>
-        <input type="text" class="field-input" id="sLocation" placeholder="" autocomplete="off" />
-      </div>
-      <div class="field-group">
-        <label>Test Number</label>
-        <input type="text" class="field-input" id="sTestNum" readonly
-          style="background:#f0f4f8;color:#888;cursor:default;" />
-      </div>
-      <!-- Testers row 2 (empty cell to keep grid aligned) -->
-      <div></div>
     </div>
 
     <hr class="field-sep" />
@@ -1969,6 +1971,7 @@ function openEditSessionDialog(gameName, idx) {
       obsVal = obsVal.replace(/=IMAGE\("[^"]*"\)/gi, '').trim();
     }
     document.getElementById('sObs-' + oidx).value = obsVal;
+    toggleObsImgBtn(oidx);
     document.getElementById('sSol-' + oidx).value = pair.sol || '';
   });
   addObsPair(session.obs.length === 0);  // trailing empty pair (shows labels if first)
@@ -2227,7 +2230,14 @@ document.addEventListener('click', function(e) {
 // ── Dynamic obs/sol pairs ─────────────────────────────────────────────────────
 
 var _obsCount = 0;
-var _obsImages = {};  // obs pair idx → uploaded image URL
+var _obsImages = {};
+
+function toggleObsImgBtn(idx) {
+  var ta   = document.getElementById('sObs-' + idx);
+  var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
+  if (!wrap) return;
+  wrap.classList.toggle('has-obs-text', ta.value.trim().length > 0);
+}  // obs pair idx → uploaded image URL
 
 function obsHtml(text) {
   // Render =IMAGE("url") formulas as real <img> tags; escape everything else
@@ -2241,9 +2251,11 @@ function obsHtml(text) {
 
 function _showObsImage(idx, url) {
   _obsImages[idx] = url;
-  var ta = document.getElementById('sObs-' + idx);
-  var pv = document.getElementById('sImgPreview-' + idx);
-  if (ta) ta.style.display = 'none';   // hide textarea; obs-ta-wrap stays visible
+  var ta   = document.getElementById('sObs-' + idx);
+  var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
+  var pv   = document.getElementById('sImgPreview-' + idx);
+  if (ta)   ta.style.display = 'none';   // hide textarea
+  if (wrap) wrap.classList.remove('has-obs-text');  // always show replace btn
   if (pv) { pv.style.display = 'block'; pv.innerHTML = _obsImgPreviewHtml(idx, url); }
 }
 
@@ -2286,7 +2298,7 @@ function addObsPair(showLabels) {
         '<div class="obs-ta-wrap">' +
           '<textarea class="field-textarea" id="sObs-' + idx + '" rows="1"' +
             ' placeholder="What happened…"' +
-            ' oninput="autoResize(this);onObsInput(' + idx + ')"' +
+            ' oninput="autoResize(this);onObsInput(' + idx + ');toggleObsImgBtn(' + idx + ')"' +
             ' onkeydown="onObsKeydown(event,' + idx + ',0)"></textarea>' +
           '<div class="obs-img-preview" id="sImgPreview-' + idx + '" style="display:none"></div>' +
           '<button type="button" class="obs-img-btn" onclick="triggerObsImageUpload(' + idx + ')" title="Attach image">' +

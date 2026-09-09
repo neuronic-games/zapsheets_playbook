@@ -990,6 +990,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   </div>
 </div>
 
+<script src="devboard/devboard-common.js"></script>
 <script>
 var APP_BASE    = document.querySelector('base').getAttribute('href');
 var SHEET_ID    = <?= json_encode($_sheet_id) ?>;
@@ -1010,15 +1011,8 @@ GAMES_RAW.forEach(function(g) {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function fmtDate(raw) {
-  if (!raw) return '';
-  var d = new Date(raw);
-  if (isNaN(d.getTime())) return raw;
-  return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-}
+// esc, fmtDate, obsHtml, buildSessions, _sessionMatchesQuery, _filterObsByQuery
+// are defined in devboard-common.js (loaded above).
 function safeName(name) { return name.replace(/[^a-zA-Z0-9]/g, '_'); }
 function todayISO() {
   var d = new Date(); var m = String(d.getMonth()+1).padStart(2,'0'); var day = String(d.getDate()).padStart(2,'0');
@@ -1414,15 +1408,7 @@ function renderBody(gameName, rows) {
       html += '</div>';
       // Collapsible body
       html += '<div class="session-body-wrap"><div class="session-body">';
-      var visibleObs = s.obs;
-      if (_searchQuery) {
-        var obsFiltered = s.obs.filter(function(o) {
-          return (o.obs || '').toLowerCase().indexOf(_searchQuery) !== -1 ||
-                 (o.sol || '').toLowerCase().indexOf(_searchQuery) !== -1;
-        });
-        // Only narrow rows if some match; if the session matched via header info, show all rows
-        if (obsFiltered.length) visibleObs = obsFiltered;
-      }
+      var visibleObs = _filterObsByQuery(s.obs, _searchQuery);
       if (visibleObs.length) {
         html += '<table class="obs-table"><tbody>';
         visibleObs.forEach(function(o) {
@@ -1443,36 +1429,6 @@ function renderBody(gameName, rows) {
 //   Header row : date non-empty  → starts a new session; Observation = location
 //   Tester rows: date empty, solution empty  → tester name in Observation
 //   Obs rows   : date empty, solution non-empty (or after first obs seen)
-
-function buildSessions(rows) {
-  if (!rows || !rows.length) return [];
-  var sessions = [];
-  var current  = null;
-
-  rows.forEach(function(row) {
-    var date   = (row['Date']        || '').trim();
-    var event  = (row['Event']       || '').trim();
-    var people = (row['People']      || '').trim();
-    var obs    = (row['Observations'] || row['Observation'] || '').trim();
-    var sol    = (row['Solution'] || row['Thoughts'] || '').trim();
-
-    if (date || event) {
-      // Session header row; location is in Observation
-      current = { date: date, testnum: event, location: obs, testers: [], obs: [] };
-      sessions.push(current);
-    } else if (current) {
-      if (people) {
-        // Tester row: name+email in People column; strip email for display
-        var tname = people.replace(/\s+\S+@\S+\.\S+\s*$/, '').trim() || people.trim();
-        current.testers.push(tname);
-      } else if (obs || sol) {
-        // Note row
-        current.obs.push({ obs: obs, sol: sol });
-      }
-    }
-  });
-  return sessions;
-}
 
 // ── Filter sessions by type ───────────────────────────────────────────────────
 
@@ -1628,21 +1584,6 @@ function toggleSession(idx) {
 }
 
 // ── Search ────────────────────────────────────────────────────────────────────
-
-function _sessionMatchesQuery(s, q) {
-  if (!q) return true;
-  if ((s.testnum   || '').toLowerCase().indexOf(q) !== -1) return true;
-  if ((s.location  || '').toLowerCase().indexOf(q) !== -1) return true;
-  if ((s.date      || '').toLowerCase().indexOf(q) !== -1) return true;
-  for (var t = 0; t < s.testers.length; t++) {
-    if (s.testers[t].toLowerCase().indexOf(q) !== -1) return true;
-  }
-  for (var o = 0; o < s.obs.length; o++) {
-    if ((s.obs[o].obs || '').toLowerCase().indexOf(q) !== -1) return true;
-    if ((s.obs[o].sol || '').toLowerCase().indexOf(q) !== -1) return true;
-  }
-  return false;
-}
 
 function onSearch() {
   var inp  = document.getElementById('searchInput');
@@ -2599,16 +2540,6 @@ function toggleObsImgBtn(idx) {
   if (!wrap) return;
   wrap.classList.toggle('has-obs-text', ta.value.trim().length > 0);
 }  // obs pair idx → uploaded image URL
-
-function obsHtml(text) {
-  // Render =IMAGE("url") formulas as real <img> tags; escape everything else
-  var parts = text.split(/(=IMAGE\("[^"]*"\))/i);
-  return parts.map(function(p) {
-    var m = p.match(/^=IMAGE\("([^"]*)"\)$/i);
-    if (m) return '<img src="' + esc(m[1]) + '" style="max-width:100%;max-height:220px;border-radius:4px;display:block;margin-top:.25rem">';
-    return esc(p);
-  }).join('');
-}
 
 function _showObsImage(idx, url) {
   _obsImages[idx] = url;

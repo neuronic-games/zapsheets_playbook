@@ -501,14 +501,10 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
           <span id="authEditAvatarInitial" style="font-size:.6rem;text-align:center;line-height:1.2">Photo</span>
         </div>
         <input type="file" id="authEditPhotoFile" accept="image/*" style="display:none" onchange="authEditPhotoPreview(this)" />
-        <div style="flex:1;display:flex;flex-direction:column;gap:.6rem">
+        <div style="flex:1">
           <div class="field-group">
             <label>Your Name</label>
             <input type="text" class="field-input" id="authEditName" placeholder="Display name" autocomplete="name" />
-          </div>
-          <div class="field-group">
-            <label>Email</label>
-            <input type="email" class="field-input" id="authEditEmailField" autocomplete="email" autocapitalize="off" />
           </div>
         </div>
       </div>
@@ -1171,8 +1167,9 @@ function _updateMenuLabel() {
   var el = document.getElementById('collabUserLabel');
   if (!el) return;
   if (_collabUser) {
-    var display = (_collabUser.bio && _collabUser.bio.name) || _collabUser.email;
-    el.textContent = display;
+    var name  = (_collabUser.bio && _collabUser.bio.name) || '';
+    var email = _collabUser.email || '';
+    el.textContent = name ? name + '  ·  ' + email : email;
     el.style.display = '';
   } else {
     el.style.display = 'none';
@@ -1367,7 +1364,6 @@ function _openEditBioForm(email) {
   }
   document.getElementById('authEditPhotoFile').value   = '';
   document.getElementById('authEditName').value         = bio.name        || '';
-  document.getElementById('authEditEmailField').value   = email           || (_collabUser ? _collabUser.email : '');
   document.getElementById('authEditDesc').value         = bio.description || '';
   document.getElementById('authEditSkills').value      = bio.skills      || '';
   document.getElementById('authEditLocation').value    = bio.location    || '';
@@ -1413,8 +1409,8 @@ function submitBioEdit() {
 
   var photoFile = document.getElementById('authEditPhotoFile').files[0] || null;
   var oldEmail  = _collabUser ? _collabUser.email : '';
-  var newEmail  = (document.getElementById('authEditEmailField').value || '').trim().toLowerCase();
-  var email     = newEmail || oldEmail;
+  var newEmail  = '';
+  var email     = oldEmail;
 
   var photoPromise = Promise.resolve('');
   if (photoFile) {

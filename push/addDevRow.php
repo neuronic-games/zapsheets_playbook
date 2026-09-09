@@ -101,13 +101,14 @@ if ($result === null) {
 
 // Refresh the dev JSON cache so the card reflects the new row
 if (!empty($result['ok'])) {
+    $sheetRowNum = (int)($result['row'] ?? 0);  // save before overwriting
     refreshJson($pythonPath, $sheetId, $tabName);
     $result['row'] = $row;
 
     // If the observation is an =IMAGE() formula, resize the row to show the image
-    if (!$isTesterRow && !empty($result['row']) && strpos($observation, '=IMAGE(') !== false) {
-        $rowNum   = (int) $result['row'];
-        $resizeArg = $sheetId . '|' . $tabName . '|' . $rowNum . '|200';
+    if (!$isTesterRow && $sheetRowNum > 0 && strpos($observation, '=IMAGE(') !== false) {
+        $rowNum   = $sheetRowNum;
+        $resizeArg = $sheetId . '|' . $tabName . '|' . $rowNum . '|300';
         shell_exec(
             escapeshellarg($pythonPath) . ' '
             . escapeshellarg(__DIR__ . '/gresizerow.py') . ' '

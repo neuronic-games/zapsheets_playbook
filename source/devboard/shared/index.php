@@ -263,6 +263,16 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 /* Loading / success states */
 .loading-msg { text-align:center; padding:2rem 1rem; font-family:'DINRegular',sans-serif; font-size:.85rem; color:#aaa; }
 .success-banner { display:none; background:#e8f8ef; border:1px solid #b2dfc4; border-radius:8px; padding:.75rem 1rem; font-family:'DINRegular',sans-serif; font-size:.85rem; color:#2e7a52; margin-bottom:.75rem; }
+/* Search bar */
+.search-bar { padding:.6rem 1rem; background:#fff; border-bottom:1px solid #e8edf2; }
+.search-wrap { position:relative; max-width:480px; }
+.search-wrap input { width:100%; padding:.45rem .7rem .45rem 2rem; font-family:'DINRegular',sans-serif; font-size:.82rem; border:1.5px solid #d0d8e0; border-radius:20px; outline:none; background:#f6f9fb; color:#222; transition:border-color .15s,background .15s; box-sizing:border-box; }
+.search-wrap input:focus { border-color:#1a5f7a; background:#fff; }
+.search-wrap input::placeholder { color:#c0ccd8; font-style:italic; }
+.search-wrap .search-icon { position:absolute; left:.6rem; top:50%; transform:translateY(-50%); color:#b0b8c4; pointer-events:none; }
+.search-wrap .search-clear { position:absolute; right:.55rem; top:50%; transform:translateY(-50%); background:none; border:none; color:#b0b8c4; cursor:pointer; font-size:.8rem; display:none; padding:0; line-height:1; }
+.search-wrap.has-text .search-clear { display:block; }
+.search-wrap.has-text input { padding-right:1.6rem; }
 </style>
 </head>
 <body>
@@ -287,6 +297,14 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       </a>
 <?php endif; ?>
       <button class="add-session-btn" onclick="openSessionDialog()">+ Session</button>
+    </div>
+  </div>
+  <div class="search-bar">
+    <div class="search-wrap" id="searchWrap">
+      <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Search sessions, people, notes…"
+        oninput="onSearch()" autocomplete="off" spellcheck="false" />
+      <button class="search-clear" onclick="clearSearch()">✕</button>
     </div>
   </div>
   <div class="sessions-wrap" id="sessionsWrap">
@@ -410,26 +428,44 @@ var _editMode      = false;
 var _editOrigDate  = '';
 var _editOrigEvent = '';
 
+function _sessionMatchesQuery(s, q) {
+  if (!q) return true;
+  if (s.testnum.toLowerCase().indexOf(q) !== -1) return true;
+  if (s.location.toLowerCase().indexOf(q) !== -1) return true;
+  if (s.date.toLowerCase().indexOf(q) !== -1) return true;
+  for (var t = 0; t < s.testers.length; t++) {
+    if (s.testers[t].toLowerCase().indexOf(q) !== -1) return true;
+  }
+  for (var o = 0; o < s.obs.length; o++) {
+    if ((s.obs[o].obs || '').toLowerCase().indexOf(q) !== -1) return true;
+    if ((s.obs[o].sol || '').toLowerCase().indexOf(q) !== -1) return true;
+  }
+  return false;
+}
+
 function renderSessions() {
   _allSessions = buildSessions(_allRows).reverse();
+  var q    = (document.getElementById('searchInput') ? document.getElementById('searchInput').value : '').toLowerCase().trim();
+  var sessions = q ? _allSessions.filter(function(s) { return _sessionMatchesQuery(s, q); }) : _allSessions;
   var wrap = document.getElementById('sessionsWrap');
-  if (!_allSessions.length) {
-    wrap.innerHTML = '<div class="dev-empty">No sessions yet. Click "+ Session" to log one.</div>';
+  if (!sessions.length) {
+    wrap.innerHTML = '<div class="dev-empty">' + (q ? 'No sessions match "' + esc(q) + '".' : 'No sessions yet. Click "+ Session" to log one.') + '</div>';
     return;
   }
   var html = '';
-  _allSessions.forEach(function(s, i) {
+  sessions.forEach(function(s, i) {
+    var allIdx = _allSessions.indexOf(s);  // index into _allSessions for edit dialog
     var typeClass = 'type-playtest';
     if (s.testnum.toLowerCase().indexOf('meeting') === 0) typeClass = 'type-meeting';
     else if (s.testnum.toLowerCase().indexOf('idea') === 0) typeClass = 'type-idea';
-    html += '<div class="session-block" id="sblock-' + i + '">';
+    html += '<div class="session-block' + (q ? ' open' : '') + '" id="sblock-' + i + '">';
     html += '<div class="session-header" onclick="toggleSession(' + i + ')">';
     html += '<div class="session-header-row">';
     if (s.testnum) html += '<span class="session-type ' + typeClass + '">' + esc(s.testnum) + '</span>';
     if (s.date)    html += '<span class="session-sep">·</span><span class="session-date">' + esc(fmtDate(s.date)) + '</span>';
     if (s.location) html += '<span class="session-sep">·</span><span class="session-location">' + esc(s.location) + '</span>';
     html += '<span class="session-count">' + s.obs.length + (s.obs.length === 1 ? ' note' : ' notes') + '</span>';
-    html += '<button class="session-edit-btn" onclick="event.stopPropagation();openEditSessionDialog(' + i + ')">Edit</button>';
+    html += '<button class="session-edit-btn" onclick="event.stopPropagation();openEditSessionDialog(' + allIdx + ')">Edit</button>';
     html += '<span class="session-chevron">▼</span>';
     html += '</div>';
     if (s.testers.length) html += '<div class="session-testers-line">' + s.testers.map(esc).join(', ') + '</div>';
@@ -455,6 +491,18 @@ function toggleSession(idx) {
 }
 
 // ── Load data from server ─────────────────────────────────────────────────────
+
+function onSearch() {
+  var inp  = document.getElementById('searchInput');
+  var wrap = document.getElementById('searchWrap');
+  wrap.classList.toggle('has-text', inp.value.length > 0);
+  renderSessions();
+}
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchWrap').classList.remove('has-text');
+  renderSessions();
+}
 
 function loadSessions() {
   var fd = new FormData();

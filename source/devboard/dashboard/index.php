@@ -1239,12 +1239,34 @@ function buildGameList() {
 
 // ── Render cards ──────────────────────────────────────────────────────────────
 
+function _gameMatchesQuery(g, q) {
+  if (!q) return true;
+  var name = (g.Name || '').toLowerCase();
+  if (name.indexOf(q) !== -1) return true;
+  // Search designers
+  var rec = GAMES_INDEX[name] || g;
+  var designers = ['Designer1','Designer2','Designer3','Designer4',
+                   'Designer 1','Designer 2','Designer 3','Designer 4'];
+  for (var i = 0; i < designers.length; i++) {
+    if ((rec[designers[i]] || '').toLowerCase().indexOf(q) !== -1) return true;
+  }
+  // Search cached dev notes (people, observations, thoughts)
+  var rows = devCache[g.Name];
+  if (rows && rows.length) {
+    for (var r = 0; r < rows.length; r++) {
+      var row = rows[r];
+      if ((row['People']       || '').toLowerCase().indexOf(q) !== -1) return true;
+      if ((row['Observations'] || row['Observation'] || '').toLowerCase().indexOf(q) !== -1) return true;
+      if ((row['Thoughts']     || row['Solution']    || '').toLowerCase().indexOf(q) !== -1) return true;
+    }
+  }
+  return false;
+}
+
 function renderCards(filter) {
   var list    = document.getElementById('cardList');
   var q       = (filter || '').toLowerCase().trim();
-  var visible = q
-    ? allGames.filter(function(g) { return (g.Name||'').toLowerCase().indexOf(q) !== -1; })
-    : allGames;
+  var visible = allGames.filter(function(g) { return _gameMatchesQuery(g, q); });
 
   if (!visible.length) {
     list.innerHTML = '<div class="no-games"><strong>' + (q ? 'No matching games' : 'No games yet') + '</strong>' +

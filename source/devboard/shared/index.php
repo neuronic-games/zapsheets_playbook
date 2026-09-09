@@ -453,6 +453,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <!-- ── Not signed in: sign-in form ── -->
     <div id="authForm">
       <h2>Sign In</h2>
+      <p class="auth-notice">Enter your email and password to sign in. If you don't have an account yet, enter a new email and we'll walk you through creating one.</p>
 
       <!-- Fields (hidden during create-confirm step) -->
       <div id="authFields">
@@ -1341,6 +1342,8 @@ function submitAuth(confirmNew) {
 function _authConfirmBack() {
   document.getElementById('authConfirm').style.display = 'none';
   document.getElementById('authFields').style.display  = '';
+  var btn = document.getElementById('authBtn');
+  btn.disabled = false; btn.textContent = 'Sign In';
   _authPendingEmail = ''; _authPendingPassword = '';
 }
 function _authConfirmCreate() {

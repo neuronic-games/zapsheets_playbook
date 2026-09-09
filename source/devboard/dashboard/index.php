@@ -1414,9 +1414,18 @@ function renderBody(gameName, rows) {
       html += '</div>';
       // Collapsible body
       html += '<div class="session-body-wrap"><div class="session-body">';
-      if (s.obs.length) {
+      var visibleObs = s.obs;
+      if (_searchQuery) {
+        var obsFiltered = s.obs.filter(function(o) {
+          return (o.obs || '').toLowerCase().indexOf(_searchQuery) !== -1 ||
+                 (o.sol || '').toLowerCase().indexOf(_searchQuery) !== -1;
+        });
+        // Only narrow rows if some match; if the session matched via header info, show all rows
+        if (obsFiltered.length) visibleObs = obsFiltered;
+      }
+      if (visibleObs.length) {
         html += '<table class="obs-table"><tbody>';
-        s.obs.forEach(function(o) {
+        visibleObs.forEach(function(o) {
           html += '<tr><td class="td-obs">' + obsHtml(o.obs) + '</td><td class="td-sol">' + esc(o.sol) + '</td></tr>';
         });
         html += '</tbody></table>';

@@ -58,7 +58,7 @@ TABS = {
         ['Name', 'Tagline', 'Status',
          'Date Started', 'Date Signed', 'Date Published',
          'Designer1', 'Designer2', 'Designer3', 'Designer4',
-         'Description', 'Rules', 'Play', 'Print', 'Sellsheet', 'BGG', 'Video'],
+         'Description', 'Rules', 'Play', 'Print', 'Sellsheet', 'BGG', 'Video', 'Image'],
     ],
     'Pitches': [
         ['Date', 'Game', 'Publisher', 'Contact', 'Event', 'Status', 'Notes'],

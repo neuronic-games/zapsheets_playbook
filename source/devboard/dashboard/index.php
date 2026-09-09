@@ -990,8 +990,9 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   </div>
 </div>
 
-<script src="devboard/devboard-common.js"></script>
 <script>
+<?php include __DIR__ . '/../devboard-common.js'; ?>
+
 var APP_BASE    = document.querySelector('base').getAttribute('href');
 var SHEET_ID    = <?= json_encode($_sheet_id) ?>;
 var GAMES_RAW   = <?= json_encode(array_values($_games_raw), JSON_UNESCAPED_UNICODE) ?>;

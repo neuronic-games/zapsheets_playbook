@@ -747,7 +747,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     </div>
     <div class="dialog-err" id="ceErr"></div>
     <div class="dialog-actions">
-      <button class="btn-cancel" onclick="closeContractEditDialog()">Cancel</button>
+      <button class="btn-cancel" onclick="forceCloseContractEditDialog()">Cancel</button>
       <button class="btn-dark" id="ceBtn" onclick="submitContractEdit()">Save Contract</button>
     </div>
   </div>
@@ -783,7 +783,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <input type="file" id="profilePhotoFile" accept="image/*" style="display:none" onchange="profilePhotoPreview(this)">
     <div class="sync-log" id="profileLog" style="display:none"></div>
     <div class="sync-dialog-actions">
-      <button class="notes-close" id="profileCancelBtn" onclick="closeProfileDialog()">Cancel</button>
+      <button class="notes-close" id="profileCancelBtn" onclick="forceCloseProfileDialog()">Cancel</button>
       <button class="notes-close" id="profileSaveBtn"   onclick="submitProfile()" style="background:#1a5f7a;color:#fff;border-color:#1a5f7a">Save</button>
     </div>
   </div>
@@ -976,7 +976,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     </div>
     <div class="dialog-err" id="contractErr"></div>
     <div class="dialog-actions">
-      <button class="btn-cancel" onclick="closeContractDialog()">Cancel</button>
+      <button class="btn-cancel" onclick="forceCloseContractDialog()">Cancel</button>
       <button class="btn-dark" id="contractBtn" onclick="submitContract()">Add Contract</button>
     </div>
   </div>

@@ -205,6 +205,8 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   border:2px solid #1a1a2e; border-radius:6px; outline:none;
   background:#fff; resize:none; overflow:hidden; transition:border-color .15s;
 }
+.field-textarea::placeholder { color:#c4cdd8; font-style:italic; }
+.field-input::placeholder { color:#c4cdd8; }
 .field-textarea:focus { border-color:#1a5f7a; }
 .obs-pair-empty .field-textarea { border:1.5px solid #d0d8e0; background:#fafbfc; }
 .obs-pair-empty .field-textarea:focus { border-color:#1a5f7a; background:#fff; }
@@ -527,6 +529,7 @@ function openEditSessionDialog(idx) {
   session.obs.forEach(function(pair, pi) {
     var oidx = addObsPair(pi === 0);
     document.getElementById('sObs-' + oidx).value = pair.obs || '';
+    toggleObsImgBtn(oidx);
     document.getElementById('sSol-' + oidx).value = pair.sol || '';
   });
   addObsPair(session.obs.length === 0);

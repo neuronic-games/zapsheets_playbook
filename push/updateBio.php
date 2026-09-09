@@ -8,6 +8,7 @@ require_once __DIR__ . '/refreshJson.php';
 
 $sheetId     = trim($_POST['id']          ?? '');
 $email       = trim($_POST['email']       ?? '');
+$oldEmail    = trim($_POST['old_email']   ?? '');
 $imageUrl    = trim($_POST['image_url']   ?? '');
 $description = trim($_POST['description'] ?? '');
 $skills      = trim($_POST['skills']      ?? '');
@@ -25,6 +26,7 @@ if (!$sheetId || !$email) {
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 $payload    = [
     'email'       => $email,
+    'old_email'   => $oldEmail ?: $email,
     'image'       => $imageUrl,
     'description' => $description,
     'skills'      => $skills,

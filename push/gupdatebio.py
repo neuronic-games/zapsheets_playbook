@@ -36,6 +36,7 @@ sheet_id = arg[:pipe_idx]
 data     = json.loads(base64.b64decode(arg[pipe_idx + 1:]).decode('utf-8'))
 
 email       = data.get('email',       '').strip()
+old_email   = data.get('old_email',   '').strip() or email  # for matching when email is being changed
 image       = data.get('image',       '').strip()
 description = data.get('description', '').strip()
 skills      = data.get('skills',      '').strip()
@@ -89,11 +90,11 @@ if email_col < 0:
     print(json.dumps({"error": "No 'Email' column found in bios sheet"}))
     sys.exit(1)
 
-# Find existing row for this email (strip leading apostrophe from safe_str)
+# Find existing row — match by old_email (same as email unless it's being changed)
 target_row = None
 for i, row in enumerate(all_values[1:], start=2):
     cell_email = row[email_col].lstrip("'").strip() if email_col < len(row) else ''
-    if cell_email.lower() == email.lower():
+    if cell_email.lower() == old_email.lower():
         target_row = i
         break
 

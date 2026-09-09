@@ -501,10 +501,14 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
           <span id="authEditAvatarInitial" style="font-size:.6rem;text-align:center;line-height:1.2">Photo</span>
         </div>
         <input type="file" id="authEditPhotoFile" accept="image/*" style="display:none" onchange="authEditPhotoPreview(this)" />
-        <div style="flex:1">
+        <div style="flex:1;display:flex;flex-direction:column;gap:.6rem">
           <div class="field-group">
             <label>Your Name</label>
             <input type="text" class="field-input" id="authEditName" placeholder="Display name" autocomplete="name" />
+          </div>
+          <div class="field-group">
+            <label>Email</label>
+            <input type="email" class="field-input" id="authEditEmailField" autocomplete="email" autocapitalize="off" />
           </div>
         </div>
       </div>
@@ -1361,9 +1365,10 @@ function _openEditBioForm(email) {
     img.style.display = 'none'; img.src = '';
     ini.style.display = ''; ini.textContent = initial;
   }
-  document.getElementById('authEditPhotoFile').value  = '';
-  document.getElementById('authEditName').value        = bio.name        || '';
-  document.getElementById('authEditDesc').value        = bio.description || '';
+  document.getElementById('authEditPhotoFile').value   = '';
+  document.getElementById('authEditName').value         = bio.name        || '';
+  document.getElementById('authEditEmailField').value   = email           || (_collabUser ? _collabUser.email : '');
+  document.getElementById('authEditDesc').value         = bio.description || '';
   document.getElementById('authEditSkills').value      = bio.skills      || '';
   document.getElementById('authEditLocation').value    = bio.location    || '';
   document.getElementById('authEditDiscord').value     = bio.discord     || '';
@@ -1407,7 +1412,9 @@ function submitBioEdit() {
   btn.disabled = true; btn.textContent = 'Saving…';
 
   var photoFile = document.getElementById('authEditPhotoFile').files[0] || null;
-  var email     = _collabUser ? _collabUser.email : '';
+  var oldEmail  = _collabUser ? _collabUser.email : '';
+  var newEmail  = (document.getElementById('authEditEmailField').value || '').trim().toLowerCase();
+  var email     = newEmail || oldEmail;
 
   var photoPromise = Promise.resolve('');
   if (photoFile) {
@@ -1422,19 +1429,33 @@ function submitBioEdit() {
   }
 
   photoPromise.then(function(imageUrl) {
-    var fd = new FormData();
-    fd.append('id',          SHEET_ID);
-    fd.append('email',       email);
-    fd.append('image_url',   imageUrl);
-    fd.append('description', document.getElementById('authEditDesc').value.trim());
-    fd.append('skills',      document.getElementById('authEditSkills').value.trim());
-    fd.append('location',    document.getElementById('authEditLocation').value.trim());
-    fd.append('discord',     document.getElementById('authEditDiscord').value.trim());
-    fd.append('phone',       document.getElementById('authEditPhone').value.trim());
-    fd.append('payment',     document.getElementById('authEditPayment').value.trim());
-    fd.append('notes',       document.getElementById('authEditNotes').value.trim());
-    return fetch(APP_BASE + 'push/updateBio.php', { method:'POST', body:fd }).then(function(r){ return r.json(); })
-      .then(function(res) { return { res:res, imageUrl:imageUrl }; });
+    // If email changed, rename the account key first
+    var emailChangePromise = Promise.resolve();
+    if (newEmail && newEmail !== oldEmail) {
+      var efd = new FormData();
+      efd.append('id',        SHEET_ID);
+      efd.append('old_email', oldEmail);
+      efd.append('new_email', newEmail);
+      emailChangePromise = fetch(APP_BASE + 'push/collabUpdateEmail.php', { method:'POST', body:efd })
+        .then(function(r) { return r.json(); })
+        .then(function(res) { if (res.error) throw new Error(res.error); });
+    }
+    return emailChangePromise.then(function() {
+      var fd = new FormData();
+      fd.append('id',          SHEET_ID);
+      fd.append('email',       email);
+      if (newEmail && newEmail !== oldEmail) fd.append('old_email', oldEmail);
+      fd.append('image_url',   imageUrl);
+      fd.append('description', document.getElementById('authEditDesc').value.trim());
+      fd.append('skills',      document.getElementById('authEditSkills').value.trim());
+      fd.append('location',    document.getElementById('authEditLocation').value.trim());
+      fd.append('discord',     document.getElementById('authEditDiscord').value.trim());
+      fd.append('phone',       document.getElementById('authEditPhone').value.trim());
+      fd.append('payment',     document.getElementById('authEditPayment').value.trim());
+      fd.append('notes',       document.getElementById('authEditNotes').value.trim());
+      return fetch(APP_BASE + 'push/updateBio.php', { method:'POST', body:fd }).then(function(r){ return r.json(); })
+        .then(function(res) { return { res:res, imageUrl:imageUrl }; });
+    });
   })
   .then(function(obj) {
     if (obj.res && obj.res.error) throw new Error(obj.res.error);
@@ -1450,6 +1471,7 @@ function submitBioEdit() {
     _collabUser.bio.phone       = document.getElementById('authEditPhone').value.trim();
     _collabUser.bio.payment     = document.getElementById('authEditPayment').value.trim();
     _collabUser.bio.notes       = document.getElementById('authEditNotes').value.trim();
+    if (newEmail && newEmail !== oldEmail) _collabUser.email = newEmail;
     _saveStoredUser(_collabUser);
     _updateMenuLabel();
     // Add to people sheet on new signup (use real name if entered, email as fallback)

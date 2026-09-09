@@ -1343,6 +1343,8 @@ function renderBody(gameName, rows) {
   var body = document.getElementById('body-' + safeName(gameName));
   if (!body) return;
 
+  var gameRec = GAMES_INDEX[gameName.toLowerCase()] || {};
+
   var allSessions = buildSessions(rows).reverse();  // newest first
   _sessionCache[gameName] = allSessions;
   var nPlay = allSessions.filter(function(s){ return s.testnum.toLowerCase().indexOf('playtest ') === 0; }).length;

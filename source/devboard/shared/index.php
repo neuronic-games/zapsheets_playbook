@@ -450,27 +450,41 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 <div class="overlay" id="profileOverlay" onclick="if(event.target===this)closeProfileDialog()">
   <div class="auth-dialog" id="authDialog">
 
-    <!-- ── Not signed in: sign-in / sign-up form ── -->
+    <!-- ── Not signed in: sign-in form ── -->
     <div id="authForm">
-      <h2 id="authTitle">Sign In</h2>
-      <p class="auth-notice">Enter your email and password to sign in. New here? We'll create an account for you automatically.</p>
-      <div class="field-group">
-        <label class="auth-bio-field" style="gap:.3rem;display:flex;flex-direction:column">
-          <span style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:#888">Email</span>
-          <input type="email" class="field-input" id="authEmail" placeholder="you@example.com" autocomplete="email" autocapitalize="off" />
-        </label>
+      <h2>Sign In</h2>
+
+      <!-- Fields (hidden during create-confirm step) -->
+      <div id="authFields">
+        <div class="field-group">
+          <label class="auth-bio-field" style="gap:.3rem;display:flex;flex-direction:column">
+            <span style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:#888">Email</span>
+            <input type="email" class="field-input" id="authEmail" placeholder="you@example.com" autocomplete="email" autocapitalize="off" />
+          </label>
+        </div>
+        <div class="field-group">
+          <label class="auth-bio-field" style="gap:.3rem;display:flex;flex-direction:column">
+            <span style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:#888">Password</span>
+            <input type="password" class="field-input" id="authPassword" placeholder="At least 4 characters" autocomplete="current-password"
+              onkeydown="if(event.key==='Enter')submitAuth()" />
+          </label>
+        </div>
+        <div class="auth-err" id="authErr"></div>
+        <div class="dialog-actions" style="margin-top:.5rem">
+          <button class="btn-cancel" onclick="closeProfileDialog()">Cancel</button>
+          <button class="btn-primary" id="authBtn" onclick="submitAuth()">Sign In</button>
+        </div>
       </div>
-      <div class="field-group">
-        <label class="auth-bio-field" style="gap:.3rem;display:flex;flex-direction:column">
-          <span style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:#888">Password</span>
-          <input type="password" class="field-input" id="authPassword" placeholder="At least 4 characters" autocomplete="current-password"
-            onkeydown="if(event.key==='Enter')submitAuth()" />
-        </label>
-      </div>
-      <div class="auth-err" id="authErr"></div>
-      <div class="dialog-actions" style="margin-top:.5rem">
-        <button class="btn-cancel" onclick="closeProfileDialog()">Cancel</button>
-        <button class="btn-primary" id="authBtn" onclick="submitAuth()">Sign In / Sign Up</button>
+
+      <!-- Create-account confirmation (shown when email not found) -->
+      <div id="authConfirm" style="display:none">
+        <p class="auth-notice" style="background:#fff8e8;border:1px solid #f0d898">
+          No account found for <strong id="authConfirmEmail"></strong>. Would you like to create one?
+        </p>
+        <div class="dialog-actions" style="margin-top:.5rem">
+          <button class="btn-cancel" onclick="_authConfirmBack()">Back</button>
+          <button class="btn-primary" id="authConfirmBtn" onclick="_authConfirmCreate()">Create Profile</button>
+        </div>
       </div>
     </div>
 
@@ -1179,10 +1193,15 @@ function openProfileDialog() {
     _openEditBioForm(_collabUser.email);
   } else {
     form.style.display = '';
+    document.getElementById('authFields').style.display  = '';
+    document.getElementById('authConfirm').style.display = 'none';
     document.getElementById('authEmail').value     = '';
     document.getElementById('authPassword').value  = '';
+    document.getElementById('authErr').textContent = '';
+    document.getElementById('authErr').style.display = 'none';
     document.getElementById('authBtn').disabled    = false;
-    document.getElementById('authBtn').textContent = 'Sign In / Sign Up';
+    document.getElementById('authBtn').textContent = 'Sign In';
+    _authPendingEmail = ''; _authPendingPassword = '';
     document.getElementById('profileOverlay').classList.add('open');
     setTimeout(function() { var el = document.getElementById('authEmail'); if(el) el.focus(); }, 80);
     return;
@@ -1247,16 +1266,21 @@ function _renderAuthProfile(u) {
   sec.innerHTML = html;
 }
 
-function submitAuth() {
-  var email    = (document.getElementById('authEmail').value    || '').trim();
-  var password = (document.getElementById('authPassword').value || '').trim();
-  var errEl    = document.getElementById('authErr');
-  var btn      = document.getElementById('authBtn');
+var _authPendingEmail    = '';
+var _authPendingPassword = '';
 
-  errEl.textContent = ''; errEl.style.display = 'none';
-  if (!email || !password) {
-    errEl.textContent = 'Email and password are required.';
-    errEl.style.display = 'block'; return;
+function submitAuth(confirmNew) {
+  var email    = confirmNew ? _authPendingEmail    : (document.getElementById('authEmail').value    || '').trim();
+  var password = confirmNew ? _authPendingPassword : (document.getElementById('authPassword').value || '').trim();
+  var errEl    = document.getElementById('authErr');
+  var btn      = document.getElementById(confirmNew ? 'authConfirmBtn' : 'authBtn');
+
+  if (!confirmNew) {
+    errEl.textContent = ''; errEl.style.display = 'none';
+    if (!email || !password) {
+      errEl.textContent = 'Email and password are required.';
+      errEl.style.display = 'block'; return;
+    }
   }
 
   btn.disabled = true; btn.textContent = 'Signing in…';
@@ -1265,25 +1289,62 @@ function submitAuth() {
   fd.append('email',    email);
   fd.append('password', password);
   fd.append('id',       SHEET_ID);
+  if (confirmNew) fd.append('confirm_new', '1');
 
   fetch(APP_BASE + 'push/collabAuth.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })
     .then(function(res) {
       if (res.error) throw new Error(res.error);
+
+      if (res.prompt_create) {
+        // Unknown email — ask user to confirm account creation
+        _authPendingEmail    = email;
+        _authPendingPassword = password;
+        document.getElementById('authFields').style.display  = 'none';
+        document.getElementById('authConfirm').style.display = '';
+        document.getElementById('authConfirmEmail').textContent = email;
+        document.getElementById('authConfirmBtn').disabled   = false;
+        document.getElementById('authConfirmBtn').textContent = 'Create Profile';
+        return;
+      }
+
+      // Signed in successfully
       _collabUser = { email: res.email, bio: res.bio || {} };
       _saveStoredUser(_collabUser);
       _updateMenuLabel();
       renderSessions();
-      document.getElementById('authForm').style.display = 'none';
-      // Both new and existing users go to editable bio form
-      _isNewCollabUser = !!res.new;
-      _openEditBioForm(email);
+
+      if (res.new) {
+        // New account just created — open bio edit form
+        document.getElementById('authForm').style.display    = 'none';
+        document.getElementById('authConfirm').style.display = 'none';
+        _isNewCollabUser = true;
+        _openEditBioForm(email);
+      } else {
+        // Existing user — just close
+        closeProfileDialog();
+      }
     })
     .catch(function(e) {
-      errEl.textContent   = e.message || 'Sign in failed. Please try again.';
-      errEl.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Sign In / Sign Up';
+      if (confirmNew) {
+        document.getElementById('authConfirmBtn').disabled   = false;
+        document.getElementById('authConfirmBtn').textContent = 'Create Profile';
+      } else {
+        errEl.textContent   = e.message || 'Sign in failed. Please try again.';
+        errEl.style.display = 'block';
+      }
+      btn.disabled = false;
+      if (!confirmNew) btn.textContent = 'Sign In';
     });
+}
+
+function _authConfirmBack() {
+  document.getElementById('authConfirm').style.display = 'none';
+  document.getElementById('authFields').style.display  = '';
+  _authPendingEmail = ''; _authPendingPassword = '';
+}
+function _authConfirmCreate() {
+  submitAuth(true);
 }
 
 function _openEditBioForm(email) {

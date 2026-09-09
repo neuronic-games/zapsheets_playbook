@@ -46,10 +46,16 @@ if (file_exists($accountsFile)) {
     $accounts = json_decode(file_get_contents($accountsFile), true) ?: [];
 }
 
-$isNew = !isset($accounts[$email]);
+$isNew       = !isset($accounts[$email]);
+$confirmNew  = !empty($_POST['confirm_new']);
 
 if ($isNew) {
-    // Register new account
+    if (!$confirmNew) {
+        // Ask the client to confirm before creating
+        echo json_encode(['prompt_create' => true, 'email' => $email]);
+        exit;
+    }
+    // Confirmed — register new account
     $accounts[$email] = ['hash' => password_hash($password, PASSWORD_DEFAULT)];
     file_put_contents($accountsFile, json_encode($accounts, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 } else {

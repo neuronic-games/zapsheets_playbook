@@ -107,6 +107,8 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 .top-bar { background:#1a1a2e; color:#fff; padding:0 1rem; }
 .top-bar-inner { max-width:860px; margin:0 auto; display:flex; align-items:center; gap:.75rem; min-height:48px; }
 .top-bar h1 { font-family:'DINBlack',sans-serif; font-size:.9rem; letter-spacing:.04em; text-transform:uppercase; margin:0; cursor:pointer; }
+.db-dev   { color:#7ECFB3; }
+.db-board { color:#FFB347; }
 .top-bar .sep { opacity:.3; font-size:.85rem; }
 .top-bar .game-label { font-family:'DINRegular',sans-serif; font-size:.82rem; color:rgba(255,255,255,.65); }
 .top-bar .collab-badge {
@@ -416,7 +418,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 <div class="top-bar">
   <div class="top-bar-inner">
     <div style="display:flex;flex-direction:column;gap:.1rem">
-      <h1>DevBoard</h1>
+      <h1><span class="db-dev">Dev</span><span class="db-board">Board</span></h1>
       <span id="collabUserLabel" style="font-family:'DINRegular',sans-serif;font-size:.72rem;color:rgba(255,255,255,.5);display:none"></span>
     </div>
     <span class="sep">·</span>
@@ -1347,8 +1349,6 @@ function submitAuth(confirmNew) {
       renderSessions();
 
       if (res.new) {
-        // New account just created — add to people immediately, then open bio edit
-        _addTopeople(res.email, res.email);
         document.getElementById('authForm').style.display    = 'none';
         document.getElementById('authConfirm').style.display = 'none';
         _isNewCollabUser = true;
@@ -1425,6 +1425,9 @@ function authEditPhotoPreview(input) {
 }
 
 function skipBioEdit() {
+  if (_isNewCollabUser) {
+    _addTopeople(_collabUser.email, _collabUser.email);
+  }
   _isNewCollabUser = false;
   closeProfileDialog();
 }
@@ -1498,6 +1501,9 @@ function submitBioEdit() {
     if (newEmail && newEmail !== oldEmail) _collabUser.email = newEmail;
     _saveStoredUser(_collabUser);
     _updateMenuLabel();
+    if (_isNewCollabUser) {
+      _addTopeople(savedName || _collabUser.email, _collabUser.email);
+    }
     _isNewCollabUser = false;
     closeProfileDialog();
   })

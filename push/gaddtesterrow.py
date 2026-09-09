@@ -58,7 +58,7 @@ def safe(v):
     s = (str(v) if v else '').strip()
     return ("'" + s) if s else ''
 
-combined = (name + (' ' + email if email else '')).strip()
+combined = name  # email kept for lookup only, not stored in sheet
 new_row  = ['', '', safe(combined), '', '']
 row_num  = len(all_values) + 1   # 1-indexed row where this will land
 
@@ -76,5 +76,5 @@ except Exception as e:
 print(json.dumps({
     "ok": True,
     "row_num": row_num,
-    "row": {"Date": "", "Event": "", "People": combined, "Observation": "", "Solution": ""},
+    "row": {"Date": "", "Event": "", "People": combined, "Observations": "", "Thoughts": ""},
 }))

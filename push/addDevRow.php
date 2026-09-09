@@ -22,6 +22,7 @@ $date        = trim($_POST['date']        ?? '');
 $event       = trim($_POST['event']       ?? '');
 $observation = trim($_POST['observation'] ?? '');
 $solution    = trim($_POST['solution']    ?? '');
+$rowType     = trim($_POST['row_type']    ?? '');
 
 if (!$sheetId || !$gameName) {
     echo json_encode(['error' => 'Missing id or game']);
@@ -31,8 +32,16 @@ if (!$sheetId || !$gameName) {
 $tabName    = '[' . $gameName . '] dev';
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 
-// Tester row: date and event are blank, solution is blank on arrival
-$isTesterRow = ($date === '' && $event === '' && $solution === '');
+// row_type='tester' or 'obs' is explicit; fall back to heuristic only when absent
+if ($rowType === 'tester') {
+    $isTesterRow = true;
+} elseif ($rowType === 'obs' || $rowType === 'header') {
+    $isTesterRow = false;
+} else {
+    // Legacy: blank date+event+solution was the only signal — but this mis-routes
+    // obs rows that have no solution. Kept for backward compat with old clients.
+    $isTesterRow = ($date === '' && $event === '' && $solution === '');
+}
 
 if ($isTesterRow) {
     // Parse inline email from tester name field — handles formats:
@@ -69,7 +78,7 @@ if ($isTesterRow) {
         'Date'        => $date,
         'Event'       => $event,
         'Observations' => $observation,
-        'Solution'    => $solution,
+        'Thoughts'    => $solution,
     ];
     $encoded = base64_encode(json_encode($row, JSON_UNESCAPED_UNICODE));
     $arg     = $sheetId . '|' . $tabName . '|' . $encoded;

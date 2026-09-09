@@ -135,12 +135,20 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 .session-count    { font-family:'DINRegular',sans-serif; font-size:.68rem; color:#bbb; margin-left:auto; white-space:nowrap; }
 .session-chevron  { font-size:.6rem; opacity:.45; flex-shrink:0; transition:transform .22s ease; transform:rotate(-90deg); }
 .session-block.open .session-chevron { transform:rotate(0deg); }
+.session-edit-btn {
+  margin-left:.4rem; padding:.16rem .55rem;
+  font-size:.65rem; font-family:'DINRegular',sans-serif;
+  background:#1a5f7a; color:#fff; border:none; border-radius:5px;
+  cursor:pointer; flex-shrink:0; line-height:1.4;
+  display:inline-flex; align-items:center;
+}
+.session-edit-btn:hover { background:#134d63; }
 .session-testers-line { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#888; font-style:italic; }
 .session-body-wrap { display:grid; grid-template-rows:0fr; transition:grid-template-rows .22s ease; }
 .session-block.open .session-body-wrap { grid-template-rows:1fr; }
 .session-body { overflow:hidden; min-height:0; }
 .obs-table { width:100%; border-collapse:collapse; }
-.obs-table td { padding:.45rem 1rem; font-size:.8rem; line-height:1.5; vertical-align:top; border-bottom:1px solid #f0f4f8; }
+.obs-table td { padding:.45rem 1rem; font-size:0.9375rem; line-height:1.5; vertical-align:top; border-bottom:1px solid #f0f4f8; }
 .obs-table tr:last-child td { border-bottom:none; }
 .obs-table .td-obs { width:50%; color:#222; }
 .obs-table .td-sol { width:50%; color:#1a5f7a; border-left:1px solid #d8eaf2; }
@@ -280,7 +288,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 <!-- Session dialog -->
 <div class="overlay" id="sessionOverlay" onclick="if(event.target===this)closeSessionDialog()">
   <div class="session-dialog">
-    <h2>+ Session — <span><?= _ds_e($_gameName) ?></span></h2>
+    <h2 id="sessionDialogTitle">+ Session — <span><?= _ds_e($_gameName) ?></span></h2>
 
     <div class="session-meta-wrap">
       <div class="session-meta-left">
@@ -389,6 +397,9 @@ function buildSessions(rows) {
 
 var _allRows     = [];
 var _allSessions = [];
+var _editMode      = false;
+var _editOrigDate  = '';
+var _editOrigEvent = '';
 
 function renderSessions() {
   _allSessions = buildSessions(_allRows).reverse();
@@ -409,6 +420,7 @@ function renderSessions() {
     if (s.date)    html += '<span class="session-sep">·</span><span class="session-date">' + esc(fmtDate(s.date)) + '</span>';
     if (s.location) html += '<span class="session-sep">·</span><span class="session-location">' + esc(s.location) + '</span>';
     html += '<span class="session-count">' + s.obs.length + (s.obs.length === 1 ? ' note' : ' notes') + '</span>';
+    html += '<button class="session-edit-btn" onclick="event.stopPropagation();openEditSessionDialog(' + i + ')">Edit</button>';
     html += '<span class="session-chevron">▼</span>';
     html += '</div>';
     if (s.testers.length) html += '<div class="session-testers-line">' + s.testers.map(esc).join(', ') + '</div>';
@@ -468,6 +480,8 @@ function onTypeChange() {
 // ── Session dialog open/close ─────────────────────────────────────────────────
 
 function openSessionDialog() {
+  _editMode = false;
+  document.getElementById('sessionDialogTitle').innerHTML = '+ Session — <span>' + esc(GAME_NAME) + '</span>';
   document.getElementById('sDate').value     = todayISO();
   document.getElementById('sType').value     = 'Playtest';
   document.getElementById('sLocation').value = '';
@@ -488,8 +502,46 @@ function openSessionDialog() {
   }, 80);
 }
 
+function openEditSessionDialog(idx) {
+  var session = _allSessions[idx];
+  if (!session) return;
+  _editMode      = true;
+  _editOrigDate  = session.date;
+  _editOrigEvent = session.testnum;
+  document.getElementById('sessionDialogTitle').innerHTML = 'Edit Session — <span>' + esc(GAME_NAME) + '</span>';
+  var tn = (session.testnum || '').toLowerCase();
+  var type = tn.indexOf('meeting') === 0 ? 'Meeting' : tn.indexOf('idea') === 0 ? 'Idea' : 'Playtest';
+  document.getElementById('sDate').value     = session.date     || '';
+  document.getElementById('sType').value     = type;
+  document.getElementById('sTestNum').value  = session.testnum  || '';
+  document.getElementById('sLocation').value = session.location || '';
+  _testerCount = 0; _testersHL = {};
+  document.getElementById('testersContainer').innerHTML = '';
+  session.testers.forEach(function(t) {
+    var tidx = addTesterField('Select or type…');
+    document.getElementById('sTesters-' + tidx).value = t;
+  });
+  addTesterField('Add tester…');
+  _obsCount = 0; _obsImages = {};
+  document.getElementById('obsContainer').innerHTML = '';
+  session.obs.forEach(function(pair, pi) {
+    var oidx = addObsPair(pi === 0);
+    document.getElementById('sObs-' + oidx).value = pair.obs || '';
+    document.getElementById('sSol-' + oidx).value = pair.sol || '';
+  });
+  addObsPair(session.obs.length === 0);
+  document.getElementById('sessionErr').style.display = 'none';
+  document.getElementById('sessionBtn').disabled    = false;
+  document.getElementById('sessionBtn').textContent = 'Save Changes';
+  document.getElementById('sessionOverlay').classList.add('open');
+  setTimeout(function() {
+    document.querySelectorAll('#obsContainer .field-textarea').forEach(autoResize);
+  }, 0);
+}
+
 function closeSessionDialog() {
   document.getElementById('sessionOverlay').classList.remove('open');
+  _editMode = false;
 }
 
 // ── Submit session ────────────────────────────────────────────────────────────
@@ -553,10 +605,38 @@ function submitSession() {
   var testnum  = document.getElementById('sTestNum').value.trim();
   var location = document.getElementById('sLocation').value.trim();
 
+  // ── Edit mode: replace existing session ───────────────────────────────────────
+  if (_editMode) {
+    var fd = new FormData();
+    fd.append('id',         SHEET_ID);
+    fd.append('game',       GAME_NAME);
+    fd.append('orig_date',  _editOrigDate);
+    fd.append('orig_event', _editOrigEvent);
+    fd.append('date',       date);
+    fd.append('event',      testnum);
+    fd.append('location',   location);
+    fd.append('testers',    JSON.stringify(testerVals));
+    fd.append('obs_pairs',  JSON.stringify(obsPairs));
+    fetch(APP_BASE + 'push/updateDevSession.php', { method:'POST', body:fd })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.error) throw new Error(res.error);
+        addNewPeople(testerRaws);
+        closeSessionDialog();
+        loadSessions();
+      })
+      .catch(function(e) {
+        err.textContent = e.message || 'Could not save. Try again.';
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Save Changes';
+      });
+    return;
+  }
+
   var allRows = [];
-  allRows.push({ date:date, event:testnum, observation:location, solution:'' });
-  testerVals.forEach(function(t) { allRows.push({ date:'', event:'', observation:t, solution:'' }); });
-  obsPairs.forEach(function(pair) { allRows.push({ date:'', event:'', observation:pair.obs, solution:pair.sol }); });
+  allRows.push({ date:date, event:testnum, observation:location, solution:'', type:'header' });
+  testerVals.forEach(function(t) { allRows.push({ date:'', event:'', observation:t, solution:'', type:'tester' }); });
+  obsPairs.forEach(function(pair) { allRows.push({ date:'', event:'', observation:pair.obs, solution:pair.sol, type:'obs' }); });
 
   function postRow(row) {
     var fd = new FormData();
@@ -566,6 +646,7 @@ function submitSession() {
     fd.append('event',       row.event);
     fd.append('observation', row.observation);
     fd.append('solution',    row.solution);
+    fd.append('row_type',    row.type || '');
     return fetch(APP_BASE + 'push/addDevRow.php', { method:'POST', body:fd })
       .then(function(r) { return r.json(); });
   }

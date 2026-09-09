@@ -511,6 +511,14 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .field-input:focus { border-color:#1a5f7a; background:#fff; }
 select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .7rem center; padding-right:2rem; }
 .field-sep { border:none; border-top:1px solid #e8edf0; margin:.1rem 0; }
+/* URL input + upload button combo */
+.ge-url-wrap { display:flex; align-items:stretch; border:1.5px solid #d0d8e0; border-radius:6px; overflow:hidden; background:#fafbfc; transition:border-color .15s; }
+.ge-url-wrap:focus-within { border-color:#1a5f7a; background:#fff; }
+.ge-url-wrap .field-input { border:none; border-radius:0; flex:1; min-width:0; background:transparent; }
+.ge-url-wrap .field-input:focus { border-color:transparent; background:transparent; }
+.ge-upload-btn { flex:0 0 auto; background:none; border:none; border-left:1px solid #e0e8ee; padding:0 .5rem; cursor:pointer; color:#bbb; display:flex; align-items:center; transition:color .15s,background .15s; }
+.ge-upload-btn:hover { color:#1a5f7a; background:#e8f4f8; }
+.ge-upload-btn svg { display:block; }
 
 /* Observations/thoughts textareas */
 .obs-grid { display:grid; grid-template-columns:1fr 1fr; gap:.9rem; }
@@ -865,11 +873,17 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         </div>
         <div class="field-group">
           <label>Video</label>
-          <input type="url" class="field-input" id="gVideo" placeholder="https://…" autocomplete="off" />
+          <div class="ge-url-wrap">
+            <input type="url" class="field-input" id="gVideo" placeholder="https://…" autocomplete="off" />
+            <button type="button" class="ge-upload-btn" title="Upload video" onclick="gGameUploadClick('gVideo')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></button>
+          </div>
         </div>
         <div class="field-group span2">
-          <label>Image URL</label>
-          <input type="url" class="field-input" id="gImage" placeholder="https://…" autocomplete="off" />
+          <label>Image</label>
+          <div class="ge-url-wrap">
+            <input type="url" class="field-input" id="gImage" placeholder="https://…" autocomplete="off" />
+            <button type="button" class="ge-upload-btn" title="Upload image" onclick="gGameUploadClick('gImage')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></button>
+          </div>
         </div>
       </div>
     </div>
@@ -1947,6 +1961,41 @@ document.addEventListener('click', function(e) {
   var wrap = document.getElementById('gameCombo');
   if (wrap && !wrap.contains(e.target)) wrap.classList.remove('open');
 });
+/* ── Upload button for IMAGE / VIDEO fields in Edit Game dialog ── */
+var _gGameUploadTargetId = '';
+var _gGameUploadInput = null;
+function gGameUploadClick(inputId) {
+  _gGameUploadTargetId = inputId;
+  if (!_gGameUploadInput) {
+    _gGameUploadInput = document.createElement('input');
+    _gGameUploadInput.type = 'file';
+    _gGameUploadInput.accept = 'image/*,video/mp4,video/webm';
+    _gGameUploadInput.style.display = 'none';
+    document.body.appendChild(_gGameUploadInput);
+    _gGameUploadInput.addEventListener('change', function() {
+      var file = _gGameUploadInput.files[0];
+      if (!file || !_gGameUploadTargetId) return;
+      _gGameUploadInput.value = '';
+      var btn = document.querySelector('#addOverlay [onclick*="' + _gGameUploadTargetId + '"]');
+      if (btn) { btn.disabled = true; btn.style.opacity = '.4'; }
+      var fd = new FormData();
+      fd.append('id', SHEET_ID);
+      fd.append('file', file);
+      fetch(APP_BASE + 'push/uploadMedia.php', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+          if (res.url) {
+            var el = document.getElementById(_gGameUploadTargetId);
+            if (el) { el.value = res.url; }
+          } else { alert('Upload failed: ' + (res.error || 'unknown error')); }
+        })
+        .catch(function() { if (btn) { btn.disabled = false; btn.style.opacity = ''; } });
+    });
+  }
+  _gGameUploadInput.click();
+}
+
 function submitAddGame() {
   var name = document.getElementById('gameComboInput').value.trim();
   var err  = document.getElementById('addErr');
@@ -2328,12 +2377,12 @@ function submitSession() {
   //   2. One tester row each (blank date/event, testerName, "")
   //   3. One obs row each    (blank date/event, obs, sol)
   var allRows = [];
-  allRows.push({ date: date, event: testnum, observation: location, solution: '' });
+  allRows.push({ date: date, event: testnum, observation: location, solution: '', type: 'header' });
   testerVals.forEach(function(t) {
-    allRows.push({ date: '', event: '', observation: t, solution: '' });
+    allRows.push({ date: '', event: '', observation: t, solution: '', type: 'tester' });
   });
   obsPairs.forEach(function(pair) {
-    allRows.push({ date: '', event: '', observation: pair.obs, solution: pair.sol });
+    allRows.push({ date: '', event: '', observation: pair.obs, solution: pair.sol, type: 'obs' });
   });
 
   // Submit sequentially to preserve sheet row order
@@ -2345,6 +2394,7 @@ function submitSession() {
     fd.append('event',       row.event);
     fd.append('observation', row.observation);
     fd.append('solution',    row.solution);
+    fd.append('row_type',    row.type || '');
     return fetch(APP_BASE + 'push/addDevRow.php', { method:'POST', body:fd })
       .then(function(r) { return r.json(); });
   }

@@ -52,7 +52,7 @@ if tab_name in existing:
     print(json.dumps({"ok": True, "tab": tab_name, "created": False}))
     sys.exit(0)
 
-HEADERS = [['Date', 'Event', 'People', 'Observation', 'Solution']]
+HEADERS = [['Date', 'Event', 'People', 'Observations', 'Thoughts']]
 
 try:
     ws = wb.add_worksheet(title=tab_name, rows=500, cols=5)

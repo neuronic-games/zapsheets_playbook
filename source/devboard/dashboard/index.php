@@ -1384,15 +1384,6 @@ function renderBody(gameName, rows) {
   html += '</div>';
   html += '</div>';
 
-  // Game image (strip =IMAGE() formula if present)
-  var _rawImg = gameRec['Image URL'] || gameRec.Image || gameRec.ImageURL || '';
-  var _imgUrl = '';
-  var _imgM   = _rawImg.match(/^=IMAGE\("([^"]*)"\)$/i);
-  if (_imgM) { _imgUrl = _imgM[1]; } else if (_rawImg) { _imgUrl = _rawImg; }
-  if (_imgUrl) {
-    html += '<div class="game-image-wrap"><img src="' + esc(_imgUrl) + '" alt="' + esc(gameName) + '"></div>';
-  }
-
   // Sessions list
   if (!sessions.length) {
     html += '<div class="dev-empty">' + (_searchQuery ? 'No sessions match your search.' : activeFilter ? 'No ' + activeFilter + ' sessions.' : 'No playtest sessions yet. Click "+ Session" to log one.') + '</div>';

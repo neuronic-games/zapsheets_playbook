@@ -25,7 +25,8 @@ $print         = trim($_POST['print']          ?? '');
 $sellsheet     = trim($_POST['sellsheet']      ?? '');
 $view          = trim($_POST['view']           ?? '');
 $video         = trim($_POST['video']          ?? '');
-$image         = trim($_POST['image']          ?? '');
+$imageRaw      = trim($_POST['image']          ?? '');
+$image         = $imageRaw ? '=IMAGE("' . $imageRaw . '")' : '';
 
 if (!$sheetId) {
     echo json_encode(['error' => 'Missing sheet ID']);

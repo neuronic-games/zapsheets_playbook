@@ -48,6 +48,24 @@ foreach ($_people_raw as $_p) {
     if ($n) $_people_names[] = $n;
 }
 
+// Game image (strip =IMAGE("url") formula if present)
+$_gamesFile = __DIR__ . '/../../../sheets/' . $_sheetId . '/games.json';
+$_gameImage = '';
+if (file_exists($_gamesFile)) {
+    $_games = json_decode(file_get_contents($_gamesFile), true) ?: [];
+    foreach ($_games as $_g) {
+        if (strcasecmp(trim($_g['Name'] ?? ''), $_gameName) === 0) {
+            $_raw = trim($_g['Image URL'] ?? $_g['Image'] ?? $_g['ImageURL'] ?? '');
+            if (preg_match('/^=IMAGE\("([^"]*)"\)$/i', $_raw, $_im)) {
+                $_gameImage = $_im[1];
+            } elseif ($_raw) {
+                $_gameImage = $_raw;
+            }
+            break;
+        }
+    }
+}
+
 // Game public page link (only shown if the page token file exists)
 $_gameToken    = substr(md5($_sheetId . '|game|' . $_gameName), 0, 24);
 $_gameViewFile = __DIR__ . '/../../../shares/pitch-game-view/' . $_gameToken . '.json';
@@ -111,6 +129,10 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
   transition:background .15s, border-color .15s;
 }
 .page-link-btn:hover { background:rgba(255,255,255,.15); border-color:rgba(255,255,255,.7); }
+
+/* ── Game image ── */
+.game-image-wrap { background:#fff; border-left:1px solid #d8eaf2; border-right:1px solid #d8eaf2; text-align:center; }
+.game-image-wrap img { max-width:100%; max-height:300px; display:block; margin:0 auto; object-fit:contain; }
 
 /* ── Sessions list ── */
 .sessions-wrap { background:#fff; border-radius:0 0 10px 10px; overflow:hidden; border:1px solid #d8eaf2; border-top:none; }
@@ -299,6 +321,11 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       <button class="add-session-btn" onclick="openSessionDialog()">+ Session</button>
     </div>
   </div>
+<?php if ($_gameImage): ?>
+  <div class="game-image-wrap">
+    <img src="<?= _ds_e($_gameImage) ?>" alt="<?= _ds_e($_gameName) ?>">
+  </div>
+<?php endif; ?>
   <div class="search-bar">
     <div class="search-wrap" id="searchWrap">
       <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>

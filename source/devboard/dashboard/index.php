@@ -350,6 +350,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 /* ── Sessions inside a card ───────────────────────────── */
 .dev-loading { padding:1.1rem 1.1rem; font-size:.8rem; color:#888; font-style:italic; }
 .dev-empty   { padding:1.1rem 1.1rem; font-size:.8rem; color:#aaa; }
+.game-image-wrap { background:#fff; border-top:1px solid #e8edf2; text-align:center; }
+.game-image-wrap img { max-width:100%; max-height:280px; display:block; margin:0 auto; object-fit:contain; }
 .dev-error   { padding:1.1rem 1.1rem; font-size:.8rem; color:#c0392b; }
 
 .session-block { border-top:1px solid #e8f0f4; }
@@ -1380,6 +1382,15 @@ function renderBody(gameName, rows) {
   html += '</div>';
   html += '</div>';
 
+  // Game image (strip =IMAGE() formula if present)
+  var _rawImg = gameRec['Image URL'] || gameRec.Image || gameRec.ImageURL || '';
+  var _imgUrl = '';
+  var _imgM   = _rawImg.match(/^=IMAGE\("([^"]*)"\)$/i);
+  if (_imgM) { _imgUrl = _imgM[1]; } else if (_rawImg) { _imgUrl = _rawImg; }
+  if (_imgUrl) {
+    html += '<div class="game-image-wrap"><img src="' + esc(_imgUrl) + '" alt="' + esc(gameName) + '"></div>';
+  }
+
   // Sessions list
   if (!sessions.length) {
     html += '<div class="dev-empty">' + (_searchQuery ? 'No sessions match your search.' : activeFilter ? 'No ' + activeFilter + ' sessions.' : 'No playtest sessions yet. Click "+ Session" to log one.') + '</div>';
@@ -1825,6 +1836,12 @@ function submitContract() {
 }
 // ── end Contract dialog ─────────────────────────────────────────────────────
 
+function _stripImageFormula(v) {
+  // Convert =IMAGE("url") stored in the sheet back to a plain URL for input fields
+  var m = String(v || '').match(/^=IMAGE\("([^"]*)"\)$/i);
+  return m ? m[1] : (v || '');
+}
+
 function openEditGame(name) {
   var rec = GAMES_INDEX[name.toLowerCase()] || {};
   _editGameMode     = true;
@@ -1855,7 +1872,7 @@ function openEditGame(name) {
   document.getElementById('gSellsheet').value    = rec.Sellsheet|| rec['Sellsheet URL']|| rec.SellsheetURL|| '';
   document.getElementById('gView').value         = rec.BGG      || rec['BGG / View URL']|| rec.View       || rec['View URL'] || '';
   document.getElementById('gVideo').value        = rec.Video    || rec['Video URL']    || rec.VideoURL    || '';
-  document.getElementById('gImage').value        = rec['Image URL'] || rec.Image      || rec.ImageURL    || '';
+  document.getElementById('gImage').value        = _stripImageFormula(rec['Image URL'] || rec.Image || rec.ImageURL || '');
   _setNewGameFieldsVisible(true);
   document.getElementById('addErr').style.display  = 'none';
   document.getElementById('addBtn').disabled       = false;

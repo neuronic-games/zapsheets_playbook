@@ -293,6 +293,98 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .search-wrap .search-icon { display:none; }
 .search-wrap .search-clear { position:absolute; right:.5rem; top:50%; transform:translateY(-50%); background:none; border:none; color:#aaa; cursor:pointer; font-size:1rem; display:none; padding:0; line-height:1; }
 .search-wrap.has-text .search-clear { display:block; }
+
+/* ── Account menu ── */
+.top-btn-collab {
+  display:inline-flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.15); color:#fff;
+  border:1px solid rgba(255,255,255,.25); border-radius:6px;
+  padding:.35rem .55rem; cursor:pointer;
+  transition:background .15s; flex-shrink:0;
+  margin-left:auto;
+}
+.top-btn-collab:hover { background:rgba(255,255,255,.28); }
+.account-menu-wrap { position:relative; flex-shrink:0; margin-left:auto; }
+.account-menu {
+  display:none; position:absolute; top:calc(100% + .4rem); right:0;
+  background:#1a1a2e; border:1px solid rgba(255,255,255,.2);
+  border-radius:8px; min-width:140px; z-index:300;
+  box-shadow:0 6px 20px rgba(0,0,0,.4); overflow:hidden;
+}
+.account-menu.open { display:block; }
+.account-menu-item {
+  display:block; width:100%; background:none; border:none;
+  color:rgba(255,255,255,.85); text-align:left; cursor:pointer;
+  font-family:'DINBlack',sans-serif; font-size:.72rem;
+  text-transform:uppercase; letter-spacing:.07em;
+  padding:.6rem 1rem; transition:background .12s;
+}
+.account-menu-item:hover { background:rgba(255,255,255,.1); color:#fff; }
+.account-menu-divider { border:none; border-top:1px solid rgba(255,255,255,.12); margin:.2rem 0; }
+.account-menu-label {
+  display:block; padding:.45rem 1rem .2rem;
+  font-family:'DINRegular',sans-serif; font-size:.68rem; color:rgba(255,255,255,.4);
+  text-transform:uppercase; letter-spacing:.06em; pointer-events:none;
+}
+
+/* ── Auth / profile dialog ── */
+.auth-dialog {
+  background:#fff; border-radius:12px;
+  padding:1.5rem; width:min(440px,94vw);
+  box-shadow:0 8px 32px rgba(0,0,0,.22);
+  display:flex; flex-direction:column; gap:1rem;
+  max-height:calc(100dvh - 2rem); overflow-y:auto;
+}
+.auth-dialog h2 {
+  font-family:'DINBlack',sans-serif; font-size:.95rem;
+  text-transform:uppercase; letter-spacing:.07em; color:#1a5f7a; margin:0;
+}
+.auth-status-row {
+  display:flex; align-items:center; gap:.75rem;
+}
+.auth-avatar {
+  width:48px; height:48px; border-radius:50%; overflow:hidden; flex-shrink:0;
+  background:#e8f4f8; display:flex; align-items:center; justify-content:center;
+  font-family:'DINBlack',sans-serif; font-size:.75rem; color:#1a5f7a; text-transform:uppercase;
+}
+.auth-avatar img { width:100%; height:100%; object-fit:cover; }
+.auth-identity { display:flex; flex-direction:column; gap:.15rem; }
+.auth-identity .auth-name { font-family:'DINBlack',sans-serif; font-size:.9rem; color:#1a1a2e; }
+.auth-identity .auth-email { font-family:'DINRegular',sans-serif; font-size:.75rem; color:#888; }
+.auth-bio-section { display:flex; flex-direction:column; gap:.6rem; }
+.auth-bio-row { display:grid; grid-template-columns:1fr 1fr; gap:.5rem .8rem; }
+.auth-bio-field { display:flex; flex-direction:column; gap:.2rem; }
+.auth-bio-field label {
+  font-family:'DINBlack',sans-serif; font-size:.63rem;
+  text-transform:uppercase; letter-spacing:.07em; color:#aaa;
+}
+.auth-bio-field span {
+  font-family:'DINRegular',sans-serif; font-size:.82rem; color:#333;
+  word-break:break-word;
+}
+.auth-bio-field span:empty::after { content:'—'; color:#ccc; }
+.auth-bio-full { grid-column:1/-1; }
+.auth-notice {
+  font-family:'DINRegular',sans-serif; font-size:.78rem; color:#888;
+  background:#f4f8fb; border-radius:6px; padding:.6rem .75rem; line-height:1.5;
+}
+.auth-err { font-size:.78rem; color:#c0392b; display:none; }
+.auth-signout-btn {
+  align-self:flex-start;
+  font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em;
+  background:none; border:1.5px solid #ddd; color:#888; border-radius:7px;
+  padding:.38rem .85rem; cursor:pointer; transition:border-color .15s, color .15s;
+}
+.auth-signout-btn:hover { border-color:#c0392b; color:#c0392b; }
+
+@keyframes dialog-shake {
+  0%,100% { transform:translateX(0); }
+  20%      { transform:translateX(-8px); }
+  40%      { transform:translateX(8px); }
+  60%      { transform:translateX(-5px); }
+  80%      { transform:translateX(5px); }
+}
+.dialog-shake { animation:dialog-shake .35s ease; }
 </style>
 </head>
 <body>
@@ -302,7 +394,19 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <h1>DevBoard</h1>
     <span class="sep">·</span>
     <span class="game-label"><?= _ds_e($_gameName) ?></span>
-    <span class="collab-badge">Collaborator View</span>
+    <div class="account-menu-wrap">
+      <button class="top-btn-collab" onclick="toggleAccountMenu()" title="Account" id="accountMenuBtn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="12" cy="7.5" r="4.5"/>
+          <path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/>
+        </svg>
+      </button>
+      <div class="account-menu" id="accountMenu">
+        <span class="account-menu-label" id="accountMenuEmail">Not signed in</span>
+        <hr class="account-menu-divider" />
+        <button class="account-menu-item" onclick="closeAccountMenu();openProfileDialog()">Profile</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -316,7 +420,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         Page
       </a>
 <?php endif; ?>
-      <button class="add-session-btn" onclick="openSessionDialog()">+ Session</button>
+      <button class="add-session-btn" onclick="guardedOpenSessionDialog()">+ Session</button>
     </div>
   </div>
 
@@ -330,6 +434,57 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   </div>
   <div class="sessions-wrap" id="sessionsWrap">
     <div class="loading-msg">Loading sessions…</div>
+  </div>
+</div>
+
+<!-- Profile / auth dialog -->
+<div class="overlay" id="profileOverlay" onclick="if(event.target===this)closeProfileDialog()">
+  <div class="auth-dialog" id="authDialog">
+
+    <!-- ── Not signed in: sign-in / sign-up form ── -->
+    <div id="authForm">
+      <h2 id="authTitle">Sign In</h2>
+      <p class="auth-notice">Enter your email and password to sign in. New here? We'll create an account for you automatically.</p>
+      <div class="field-group">
+        <label class="auth-bio-field" style="gap:.3rem;display:flex;flex-direction:column">
+          <span style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:#888">Email</span>
+          <input type="email" class="field-input" id="authEmail" placeholder="you@example.com" autocomplete="email" autocapitalize="off" />
+        </label>
+      </div>
+      <div class="field-group">
+        <label class="auth-bio-field" style="gap:.3rem;display:flex;flex-direction:column">
+          <span style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:#888">Password</span>
+          <input type="password" class="field-input" id="authPassword" placeholder="At least 4 characters" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter')submitAuth()" />
+        </label>
+      </div>
+      <div class="auth-err" id="authErr"></div>
+      <div class="dialog-actions">
+        <button class="btn-cancel" onclick="closeProfileDialog()">Cancel</button>
+        <button class="btn-primary" id="authBtn" onclick="submitAuth()">Sign In / Sign Up</button>
+      </div>
+    </div>
+
+    <!-- ── Signed in: bio display ── -->
+    <div id="authProfile" style="display:none">
+      <h2>Your Profile</h2>
+      <div class="auth-status-row">
+        <div class="auth-avatar" id="authAvatar">
+          <img id="authAvatarImg" src="" alt="" style="display:none" />
+          <span id="authAvatarInitial"></span>
+        </div>
+        <div class="auth-identity">
+          <span class="auth-name" id="authDisplayName"></span>
+          <span class="auth-email" id="authDisplayEmail"></span>
+        </div>
+      </div>
+      <div class="auth-bio-section" id="authBioSection"></div>
+      <div class="dialog-actions" style="justify-content:space-between">
+        <button class="auth-signout-btn" onclick="signOut()">Sign Out</button>
+        <button class="btn-cancel" onclick="closeProfileDialog()">Close</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -432,7 +587,7 @@ function renderSessions() {
     if (s.date)    html += '<span class="session-sep">·</span><span class="session-date">' + esc(fmtDate(s.date)) + '</span>';
     if (s.location) html += '<span class="session-sep">·</span><span class="session-location">' + esc(s.location) + '</span>';
     html += '<span class="session-count">' + s.obs.length + (s.obs.length === 1 ? ' note' : ' notes') + '</span>';
-    html += '<button class="session-edit-btn" onclick="event.stopPropagation();openEditSessionDialog(' + allIdx + ')">Edit</button>';
+    if (_collabUser) html += '<button class="session-edit-btn" onclick="event.stopPropagation();guardedOpenEditDialog(' + allIdx + ')">Edit</button>';
     html += '<span class="session-chevron">▼</span>';
     html += '</div>';
     if (s.testers.length) html += '<div class="session-testers-line">' + s.testers.map(esc).join(', ') + '</div>';
@@ -893,7 +1048,193 @@ function handleObsImageFile(idx, file) {
     .catch(function() { alert('Upload failed.'); });
 }
 
+// ── Auth state ───────────────────────────────────────────────────────────────
+var _collabUser = null;  // null = not signed in; { email, bio } = signed in
+
+function _loadStoredUser() {
+  try {
+    var s = sessionStorage.getItem('devboard_collab_user');
+    if (s) _collabUser = JSON.parse(s);
+  } catch(e) { _collabUser = null; }
+}
+function _saveStoredUser(u) {
+  try { sessionStorage.setItem('devboard_collab_user', JSON.stringify(u)); } catch(e) {}
+}
+function _clearStoredUser() {
+  try { sessionStorage.removeItem('devboard_collab_user'); } catch(e) {}
+  _collabUser = null;
+}
+
+// ── Account menu ──────────────────────────────────────────────────────────────
+function toggleAccountMenu() {
+  document.getElementById('accountMenu').classList.toggle('open');
+}
+function closeAccountMenu() {
+  document.getElementById('accountMenu').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  var wrap = document.querySelector('.account-menu-wrap');
+  if (wrap && !wrap.contains(e.target)) closeAccountMenu();
+}, true);
+
+function _updateMenuLabel() {
+  var el = document.getElementById('accountMenuEmail');
+  if (el) el.textContent = _collabUser ? _collabUser.email : 'Not signed in';
+}
+
+// ── Profile / auth dialog ────────────────────────────────────────────────────
+function openProfileDialog() {
+  var form    = document.getElementById('authForm');
+  var profile = document.getElementById('authProfile');
+  document.getElementById('authErr').textContent = '';
+  document.getElementById('authErr').style.display = 'none';
+
+  if (_collabUser) {
+    form.style.display    = 'none';
+    profile.style.display = '';
+    _renderAuthProfile(_collabUser);
+  } else {
+    form.style.display    = '';
+    profile.style.display = 'none';
+    document.getElementById('authEmail').value    = '';
+    document.getElementById('authPassword').value = '';
+    document.getElementById('authBtn').disabled   = false;
+    document.getElementById('authBtn').textContent = 'Sign In / Sign Up';
+  }
+  document.getElementById('profileOverlay').classList.add('open');
+  if (!_collabUser) {
+    setTimeout(function() { var el = document.getElementById('authEmail'); if(el) el.focus(); }, 80);
+  }
+}
+function closeProfileDialog() {
+  document.getElementById('profileOverlay').classList.remove('open');
+}
+
+function _renderAuthProfile(u) {
+  var bio  = u.bio  || {};
+  var name = bio.name || '';
+  var initials = (name || u.email || '?').charAt(0).toUpperCase();
+
+  // Avatar
+  var img = document.getElementById('authAvatarImg');
+  var ini = document.getElementById('authAvatarInitial');
+  if (bio.image) {
+    img.src = bio.image; img.style.display = ''; ini.style.display = 'none';
+  } else {
+    img.style.display = 'none'; ini.style.display = ''; ini.textContent = initials;
+  }
+
+  document.getElementById('authDisplayName').textContent  = name || '';
+  document.getElementById('authDisplayEmail').textContent = u.email || '';
+
+  // Bio fields
+  var fields = [
+    { key:'description', label:'About',    full:true },
+    { key:'skills',      label:'Skills',   full:true },
+    { key:'location',    label:'Location', full:false },
+    { key:'discord',     label:'Discord',  full:false },
+    { key:'phone',       label:'Phone',    full:false },
+    { key:'payment',     label:'Payment',  full:false },
+    { key:'notes',       label:'Notes',    full:true  },
+  ];
+  var sec   = document.getElementById('authBioSection');
+  var html  = '';
+  var anyBio = fields.some(function(f) { return bio[f.key]; });
+  if (anyBio) {
+    var rowOpen = false;
+    fields.forEach(function(f) {
+      var val = bio[f.key] || '';
+      if (!val) return;
+      if (f.full) {
+        if (rowOpen) { html += '</div>'; rowOpen = false; }
+        html += '<div class="auth-bio-field auth-bio-full">' +
+                '<label>' + esc(f.label) + '</label>' +
+                '<span>' + esc(val) + '</span>' +
+                '</div>';
+      } else {
+        if (!rowOpen) { html += '<div class="auth-bio-row">'; rowOpen = true; }
+        html += '<div class="auth-bio-field">' +
+                '<label>' + esc(f.label) + '</label>' +
+                '<span>' + esc(val) + '</span>' +
+                '</div>';
+      }
+    });
+    if (rowOpen) html += '</div>';
+  }
+  sec.innerHTML = html;
+}
+
+function submitAuth() {
+  var email    = (document.getElementById('authEmail').value    || '').trim();
+  var password = (document.getElementById('authPassword').value || '').trim();
+  var errEl    = document.getElementById('authErr');
+  var btn      = document.getElementById('authBtn');
+
+  errEl.textContent = ''; errEl.style.display = 'none';
+  if (!email || !password) {
+    errEl.textContent = 'Email and password are required.';
+    errEl.style.display = 'block'; return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Signing in…';
+
+  var fd = new FormData();
+  fd.append('email',    email);
+  fd.append('password', password);
+  fd.append('id',       SHEET_ID);
+
+  fetch(APP_BASE + 'push/collabAuth.php', { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.error) throw new Error(res.error);
+      _collabUser = { email: res.email, bio: res.bio || {} };
+      _saveStoredUser(_collabUser);
+      _updateMenuLabel();
+      // Switch to profile view
+      document.getElementById('authForm').style.display    = 'none';
+      document.getElementById('authProfile').style.display = '';
+      _renderAuthProfile(_collabUser);
+      // Re-render sessions so Edit buttons appear
+      renderSessions();
+    })
+    .catch(function(e) {
+      errEl.textContent   = e.message || 'Sign in failed. Please try again.';
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Sign In / Sign Up';
+    });
+}
+
+function signOut() {
+  _clearStoredUser();
+  _updateMenuLabel();
+  closeProfileDialog();
+  renderSessions();  // hide Edit buttons
+}
+
+// ── Auth guard for session actions ────────────────────────────────────────────
+function guardedOpenSessionDialog() {
+  if (!_collabUser) { openProfileDialog(); return; }
+  openSessionDialog();
+}
+function guardedOpenEditDialog(idx) {
+  if (!_collabUser) { openProfileDialog(); return; }
+  openEditSessionDialog(idx);
+}
+
+// ── Esc handler ───────────────────────────────────────────────────────────────
+document.addEventListener('keydown', function(ev) {
+  if (ev.key !== 'Escape') return;
+  if (document.getElementById('profileOverlay').classList.contains('open')) {
+    closeProfileDialog(); return;
+  }
+  if (document.getElementById('sessionOverlay').classList.contains('open')) {
+    closeSessionDialog(); return;
+  }
+});
+
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
+_loadStoredUser();
+_updateMenuLabel();
 
 loadSessions();
 </script>

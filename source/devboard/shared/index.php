@@ -115,8 +115,8 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 /* ── Sessions list ── */
 .sessions-wrap { background:#fff; border-radius:0 0 10px 10px; overflow:hidden; border:1px solid #d8eaf2; border-top:none; }
 
-.session-block { border-bottom:1px solid #edf2f6; }
-.session-block:last-child { border-bottom:none; }
+.session-block { border-top:1px solid #e8f0f4; }
+.session-block:first-child { border-top:none; }
 .session-header {
   display:flex; flex-direction:column; gap:.28rem;
   padding:.75rem 1rem .65rem;
@@ -124,6 +124,7 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
   cursor:pointer; user-select:none; -webkit-user-select:none;
   -webkit-touch-callout:none;
 }
+.session-header:hover { background:#e6f2f8; }
 .session-header-row { display:flex; align-items:center; gap:.55rem; }
 .session-type { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; }
 .session-type.type-playtest { color:#1a5f7a; }
@@ -136,19 +137,25 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 .session-chevron  { font-size:.6rem; opacity:.45; flex-shrink:0; transition:transform .22s ease; transform:rotate(-90deg); }
 .session-block.open .session-chevron { transform:rotate(0deg); }
 .session-edit-btn {
-  margin-left:.4rem; padding:.16rem .55rem;
-  font-size:.65rem; font-family:'DINRegular',sans-serif;
+  display:none; margin-left:.5rem; padding:.18rem .55rem;
+  font-size:.68rem; font-family:'DINRegular',sans-serif;
   background:#1a5f7a; color:#fff; border:none; border-radius:5px;
   cursor:pointer; flex-shrink:0; line-height:1.4;
-  display:inline-flex; align-items:center;
 }
 .session-edit-btn:hover { background:#134d63; }
-.session-testers-line { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#888; font-style:italic; }
+@media (hover: hover) {
+  .session-header:hover .session-edit-btn { display:inline-flex; align-items:center; }
+}
+/* Always show Edit on touch devices (no hover) */
+@media (hover: none) {
+  .session-edit-btn { display:inline-flex; align-items:center; }
+}
+.session-testers-line { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#888; font-style:italic; padding-left:.05rem; }
 .session-body-wrap { display:grid; grid-template-rows:0fr; transition:grid-template-rows .22s ease; }
 .session-block.open .session-body-wrap { grid-template-rows:1fr; }
 .session-body { overflow:hidden; min-height:0; }
 .obs-table { width:100%; border-collapse:collapse; }
-.obs-table td { padding:.45rem 1rem; font-size:0.9375rem; line-height:1.5; vertical-align:top; border-bottom:1px solid #f0f4f8; }
+.obs-table td { padding:.45rem 1rem; font-size:.8rem; line-height:1.5; vertical-align:top; border-bottom:1px solid #f0f4f8; }
 .obs-table tr:last-child td { border-bottom:none; }
 .obs-table .td-obs { width:50%; color:#222; }
 .obs-table .td-sol { width:50%; color:#1a5f7a; border-left:1px solid #d8eaf2; }
@@ -430,11 +437,11 @@ function renderSessions() {
     // Body
     html += '<div class="session-body-wrap"><div class="session-body">';
     if (s.obs.length) {
-      html += '<table class="obs-table">';
+      html += '<table class="obs-table"><tbody>';
       s.obs.forEach(function(pair) {
         html += '<tr><td class="td-obs">' + obsHtml(pair.obs) + '</td><td class="td-sol">' + esc(pair.sol) + '</td></tr>';
       });
-      html += '</table>';
+      html += '</tbody></table>';
     }
     html += '</div></div>';  // .session-body .session-body-wrap
     html += '</div>';  // .session-block
@@ -528,7 +535,14 @@ function openEditSessionDialog(idx) {
   document.getElementById('obsContainer').innerHTML = '';
   session.obs.forEach(function(pair, pi) {
     var oidx = addObsPair(pi === 0);
-    document.getElementById('sObs-' + oidx).value = pair.obs || '';
+    var obsVal = pair.obs || '';
+    var imgMatch = obsVal.match(/=IMAGE\("([^"]*)"\)/i);
+    if (imgMatch) {
+      var imgUrl = imgMatch[1];
+      setTimeout(function(i, u) { return function() { _showObsImage(i, u); }; }(oidx, imgUrl), 0);
+      obsVal = obsVal.replace(/=IMAGE\("[^"]*"\)/gi, '').trim();
+    }
+    document.getElementById('sObs-' + oidx).value = obsVal;
     toggleObsImgBtn(oidx);
     document.getElementById('sSol-' + oidx).value = pair.sol || '';
   });

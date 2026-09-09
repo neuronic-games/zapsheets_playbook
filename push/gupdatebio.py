@@ -110,6 +110,26 @@ field_map = [
     (('Notes',),       safe_str(notes)),
 ]
 
+def resize_row(ws, row_1based, height_px=120):
+    """Set the pixel height of a single sheet row."""
+    try:
+        ws.spreadsheet.batch_update({
+            "requests": [{
+                "updateDimensionProperties": {
+                    "range": {
+                        "sheetId":    ws.id,
+                        "dimension":  "ROWS",
+                        "startIndex": row_1based - 1,  # 0-based
+                        "endIndex":   row_1based,
+                    },
+                    "properties": {"pixelSize": height_px},
+                    "fields": "pixelSize",
+                }
+            }]
+        })
+    except Exception:
+        pass  # row resize is best-effort; don't fail the whole update
+
 if target_row is not None:
     updates = []
     for variants, value in field_map:
@@ -121,6 +141,8 @@ if target_row is not None:
             })
     try:
         ws.batch_update(updates, value_input_option='USER_ENTERED')
+        if image:
+            resize_row(ws, target_row)
         print(json.dumps({"ok": True, "row": target_row, "action": "updated"}))
     except Exception as e:
         print(json.dumps({"error": f"Could not update row: {str(e)}"}))
@@ -141,7 +163,10 @@ else:
         elif h_strip == 'Notes':       new_row.append(safe_str(notes))
         else:                          new_row.append('')
     try:
+        new_row_index = len(all_values) + 1  # 1-based index of the appended row
         ws.append_row(new_row, value_input_option='USER_ENTERED')
+        if image:
+            resize_row(ws, new_row_index)
         print(json.dumps({"ok": True, "action": "inserted"}))
     except Exception as e:
         print(json.dumps({"error": f"Could not insert row: {str(e)}"}))

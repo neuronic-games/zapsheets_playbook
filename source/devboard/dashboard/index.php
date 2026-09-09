@@ -1690,11 +1690,7 @@ function syncLog(msg, type) {
 function doFetch() {
   openSyncDialog();
 
-  // Build list: games tab first, then each active dev tab
-  var sheets = ['games', 'people', 'contracts', 'bios'];
-  Object.keys(ACTIVE_KEYS).forEach(function(k) {
-    sheets.push('[' + k + '] dev');
-  });
+  var sheets = ['games', 'people', 'bios', 'contracts'];
 
   var pushBase = APP_BASE + 'push/pushSheetUpdate.php';
   var idx = 0;

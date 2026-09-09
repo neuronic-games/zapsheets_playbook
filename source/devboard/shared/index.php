@@ -87,6 +87,22 @@ function _ds_e(string $s): string { return htmlspecialchars($s, ENT_QUOTES); }
 *, *::before, *::after { box-sizing:border-box; }
 html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:100vh; }
 
+/* ── Not-signed-in banner ── */
+#notSignedInBanner {
+  display:flex; align-items:center; justify-content:space-between; gap:.75rem;
+  background:#fff; border:1.5px solid #d8eaf2; border-radius:8px;
+  padding:.6rem .9rem; margin-bottom:.6rem;
+  font-family:'DINRegular',sans-serif; font-size:.82rem; color:#555;
+}
+#notSignedInBanner button {
+  flex-shrink:0; font-family:'DINBlack',sans-serif; font-size:.7rem;
+  text-transform:uppercase; letter-spacing:.06em;
+  background:#1a5f7a; color:#fff; border:none; border-radius:6px;
+  padding:.32rem .8rem; cursor:pointer; white-space:nowrap;
+  transition:background .15s;
+}
+#notSignedInBanner button:hover { background:#145070; }
+
 /* ── Top bar ── */
 .top-bar { background:#1a1a2e; color:#fff; padding:0 1rem; }
 .top-bar-inner { max-width:860px; margin:0 auto; display:flex; align-items:center; gap:.75rem; min-height:48px; }
@@ -420,6 +436,22 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 </div>
 
 <div class="page">
+
+  <!-- Not-signed-in nudge -->
+  <div id="notSignedInBanner" style="display:none">
+    <span>Create a profile to add and edit sessions.</span>
+    <button onclick="openProfileDialog()">Sign In / Create Profile</button>
+  </div>
+
+  <div class="search-bar">
+    <div class="search-wrap" id="searchWrap">
+      <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Search sessions, people, notes…"
+        oninput="onSearch()" autocomplete="off" spellcheck="false" />
+      <button class="search-clear" onclick="clearSearch()">✕</button>
+    </div>
+  </div>
+
   <div class="game-header">
     <span class="game-title"><?= _ds_e($_gameName) ?></span>
     <div class="header-btns">
@@ -433,14 +465,6 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     </div>
   </div>
 
-  <div class="search-bar">
-    <div class="search-wrap" id="searchWrap">
-      <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="searchInput" placeholder="Search sessions, people, notes…"
-        oninput="onSearch()" autocomplete="off" spellcheck="false" />
-      <button class="search-clear" onclick="clearSearch()">✕</button>
-    </div>
-  </div>
   <div class="sessions-wrap" id="sessionsWrap">
     <div class="loading-msg">Loading sessions…</div>
   </div>
@@ -1163,6 +1187,11 @@ document.addEventListener('click', function(e) {
   if (wrap && !wrap.contains(e.target)) closeAccountMenu();
 }, true);
 
+function _updateSignedInState() {
+  var banner = document.getElementById('notSignedInBanner');
+  if (banner) banner.style.display = _collabUser ? 'none' : '';
+}
+
 function _updateMenuLabel() {
   var el = document.getElementById('collabUserLabel');
   if (!el) return;
@@ -1314,10 +1343,12 @@ function submitAuth(confirmNew) {
       _collabUser = { email: res.email, bio: res.bio || {} };
       _saveStoredUser(_collabUser);
       _updateMenuLabel();
+      _updateSignedInState();
       renderSessions();
 
       if (res.new) {
-        // New account just created — open bio edit form
+        // New account just created — add to people immediately, then open bio edit
+        _addTopeople(res.email, res.email);
         document.getElementById('authForm').style.display    = 'none';
         document.getElementById('authConfirm').style.display = 'none';
         _isNewCollabUser = true;
@@ -1394,10 +1425,7 @@ function authEditPhotoPreview(input) {
 }
 
 function skipBioEdit() {
-  if (_isNewCollabUser) {
-    // Add to people sheet with email as placeholder name
-    _addTopeople(_collabUser.email, _collabUser.email);
-  }
+  _isNewCollabUser = false;
   closeProfileDialog();
 }
 
@@ -1470,11 +1498,7 @@ function submitBioEdit() {
     if (newEmail && newEmail !== oldEmail) _collabUser.email = newEmail;
     _saveStoredUser(_collabUser);
     _updateMenuLabel();
-    // Add to people sheet on new signup (use real name if entered, email as fallback)
-    if (_isNewCollabUser) {
-      _addTopeople(savedName || _collabUser.email, _collabUser.email);
-      _isNewCollabUser = false;
-    }
+    _isNewCollabUser = false;
     closeProfileDialog();
   })
   .catch(function(e) {
@@ -1487,6 +1511,7 @@ function submitBioEdit() {
 function signOut() {
   _clearStoredUser();
   _updateMenuLabel();
+  _updateSignedInState();
   closeProfileDialog();
   renderSessions();  // hide Edit buttons
 }
@@ -1523,6 +1548,7 @@ document.addEventListener('keydown', function(ev) {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 _loadStoredUser();
 _updateMenuLabel();
+_updateSignedInState();
 
 loadSessions();
 </script>

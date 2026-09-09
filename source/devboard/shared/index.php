@@ -376,6 +376,14 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   padding:.38rem .85rem; cursor:pointer; transition:border-color .15s, color .15s;
 }
 .auth-signout-btn:hover { border-color:#c0392b; color:#c0392b; }
+.auth-avatar-edit {
+  width:64px; height:64px; border-radius:50%; border:2px dashed #c8d6e0; overflow:hidden;
+  background:#f0f4f8; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  font-family:'DINBlack',sans-serif; font-size:.6rem; color:#aaa; text-align:center;
+  text-transform:uppercase; letter-spacing:.04em; transition:border-color .15s;
+}
+.auth-avatar-edit:hover { border-color:#1a5f7a; }
+.ge-textarea { resize:vertical; min-height:4rem; line-height:1.5; }
 
 @keyframes dialog-shake {
   0%,100% { transform:translateX(0); }
@@ -459,9 +467,68 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         </label>
       </div>
       <div class="auth-err" id="authErr"></div>
-      <div class="dialog-actions">
+      <div class="dialog-actions" style="margin-top:.5rem">
         <button class="btn-cancel" onclick="closeProfileDialog()">Cancel</button>
         <button class="btn-primary" id="authBtn" onclick="submitAuth()">Sign In / Sign Up</button>
+      </div>
+    </div>
+
+    <!-- ── New user: editable bio form ── -->
+    <div id="authEditBio" style="display:none">
+      <h2>Your Profile</h2>
+      <p class="auth-notice">Welcome! You're signed in. Fill in your details (optional) so the team knows who you are.</p>
+
+      <!-- Photo -->
+      <div style="display:flex;align-items:center;gap:.85rem">
+        <div class="auth-avatar-edit" id="authEditAvatarWrap" onclick="document.getElementById('authEditPhotoFile').click()" title="Upload photo" style="cursor:pointer">
+          <img id="authEditAvatarImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover" />
+          <span id="authEditAvatarInitial" style="font-size:.6rem;text-align:center;line-height:1.2">Photo</span>
+        </div>
+        <input type="file" id="authEditPhotoFile" accept="image/*" style="display:none" onchange="authEditPhotoPreview(this)" />
+        <div style="flex:1">
+          <div class="field-group">
+            <label>Your Name</label>
+            <input type="text" class="field-input" id="authEditName" placeholder="Display name" autocomplete="name" />
+          </div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>About</label>
+        <textarea class="field-input ge-textarea" id="authEditDesc" placeholder="A short bio…" style="resize:vertical;min-height:4rem;line-height:1.5"></textarea>
+      </div>
+      <div class="field-group">
+        <label>Skills <span style="font-weight:normal;text-transform:none;letter-spacing:0;color:#bbb">(comma separated)</span></label>
+        <input type="text" class="field-input" id="authEditSkills" placeholder="e.g. Game design, Illustration" />
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem .8rem">
+        <div class="field-group">
+          <label>Location</label>
+          <input type="text" class="field-input" id="authEditLocation" placeholder="City, Country" />
+        </div>
+        <div class="field-group">
+          <label>Discord</label>
+          <input type="text" class="field-input" id="authEditDiscord" placeholder="username" />
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem .8rem">
+        <div class="field-group">
+          <label>Phone</label>
+          <input type="text" class="field-input" id="authEditPhone" placeholder="" />
+        </div>
+        <div class="field-group">
+          <label>Payment</label>
+          <input type="text" class="field-input" id="authEditPayment" placeholder="e.g. PayPal, Venmo" />
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Notes</label>
+        <textarea class="field-input ge-textarea" id="authEditNotes" placeholder="Anything else…" style="resize:vertical;min-height:3rem;line-height:1.5"></textarea>
+      </div>
+      <div class="auth-err" id="authEditErr"></div>
+      <div class="dialog-actions" style="margin-top:.5rem">
+        <button class="btn-cancel" onclick="skipBioEdit()">Skip for now</button>
+        <button class="btn-primary" id="authEditBtn" onclick="submitBioEdit()">Save Profile</button>
       </div>
     </div>
 
@@ -479,7 +546,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         </div>
       </div>
       <div class="auth-bio-section" id="authBioSection"></div>
-      <div class="dialog-actions" style="justify-content:space-between">
+      <div class="dialog-actions" style="justify-content:space-between;margin-top:.5rem">
         <button class="auth-signout-btn" onclick="signOut()">Sign Out</button>
         <button class="btn-cancel" onclick="closeProfileDialog()">Close</button>
       </div>
@@ -1190,18 +1257,121 @@ function submitAuth() {
       _collabUser = { email: res.email, bio: res.bio || {} };
       _saveStoredUser(_collabUser);
       _updateMenuLabel();
-      // Switch to profile view
-      document.getElementById('authForm').style.display    = 'none';
-      document.getElementById('authProfile').style.display = '';
-      _renderAuthProfile(_collabUser);
-      // Re-render sessions so Edit buttons appear
       renderSessions();
+      document.getElementById('authForm').style.display = 'none';
+      if (res.new) {
+        // New user — show editable bio form
+        _openEditBioForm(email);
+      } else {
+        // Existing user — show read-only profile
+        document.getElementById('authProfile').style.display = '';
+        _renderAuthProfile(_collabUser);
+      }
     })
     .catch(function(e) {
       errEl.textContent   = e.message || 'Sign in failed. Please try again.';
       errEl.style.display = 'block';
       btn.disabled = false; btn.textContent = 'Sign In / Sign Up';
     });
+}
+
+function _openEditBioForm(email) {
+  var initial = (email || '').charAt(0).toUpperCase();
+  var img = document.getElementById('authEditAvatarImg');
+  var ini = document.getElementById('authEditAvatarInitial');
+  img.style.display = 'none'; img.src = '';
+  ini.style.display = ''; ini.textContent = initial;
+  document.getElementById('authEditPhotoFile').value = '';
+  document.getElementById('authEditName').value     = (_collabUser.bio && _collabUser.bio.name)     || '';
+  document.getElementById('authEditDesc').value     = (_collabUser.bio && _collabUser.bio.description) || '';
+  document.getElementById('authEditSkills').value   = (_collabUser.bio && _collabUser.bio.skills)   || '';
+  document.getElementById('authEditLocation').value = (_collabUser.bio && _collabUser.bio.location) || '';
+  document.getElementById('authEditDiscord').value  = (_collabUser.bio && _collabUser.bio.discord)  || '';
+  document.getElementById('authEditPhone').value    = (_collabUser.bio && _collabUser.bio.phone)    || '';
+  document.getElementById('authEditPayment').value  = (_collabUser.bio && _collabUser.bio.payment)  || '';
+  document.getElementById('authEditNotes').value    = (_collabUser.bio && _collabUser.bio.notes)    || '';
+  document.getElementById('authEditErr').textContent = ''; document.getElementById('authEditErr').style.display = 'none';
+  document.getElementById('authEditBtn').disabled   = false;
+  document.getElementById('authEditBtn').textContent = 'Save Profile';
+  document.getElementById('authEditBio').style.display = '';
+}
+
+function authEditPhotoPreview(input) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = document.getElementById('authEditAvatarImg');
+    var ini = document.getElementById('authEditAvatarInitial');
+    img.src = e.target.result; img.style.display = ''; ini.style.display = 'none';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function skipBioEdit() {
+  document.getElementById('authEditBio').style.display    = 'none';
+  document.getElementById('authProfile').style.display    = '';
+  _renderAuthProfile(_collabUser);
+}
+
+function submitBioEdit() {
+  var btn   = document.getElementById('authEditBtn');
+  var errEl = document.getElementById('authEditErr');
+  errEl.textContent = ''; errEl.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  var photoFile = document.getElementById('authEditPhotoFile').files[0] || null;
+  var email     = _collabUser ? _collabUser.email : '';
+
+  var photoPromise = Promise.resolve('');
+  if (photoFile) {
+    var ufd = new FormData();
+    ufd.append('id', SHEET_ID); ufd.append('file', photoFile);
+    photoPromise = fetch(APP_BASE + 'push/uploadMedia.php', { method:'POST', body:ufd })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (!res || res.error) throw new Error(res.error || 'Upload failed');
+        return res.url;
+      });
+  }
+
+  photoPromise.then(function(imageUrl) {
+    var fd = new FormData();
+    fd.append('id',          SHEET_ID);
+    fd.append('email',       email);
+    fd.append('image_url',   imageUrl);
+    fd.append('description', document.getElementById('authEditDesc').value.trim());
+    fd.append('skills',      document.getElementById('authEditSkills').value.trim());
+    fd.append('location',    document.getElementById('authEditLocation').value.trim());
+    fd.append('discord',     document.getElementById('authEditDiscord').value.trim());
+    fd.append('phone',       document.getElementById('authEditPhone').value.trim());
+    fd.append('payment',     document.getElementById('authEditPayment').value.trim());
+    fd.append('notes',       document.getElementById('authEditNotes').value.trim());
+    return fetch(APP_BASE + 'push/updateBio.php', { method:'POST', body:fd }).then(function(r){ return r.json(); })
+      .then(function(res) { return { res:res, imageUrl:imageUrl }; });
+  })
+  .then(function(obj) {
+    if (obj.res && obj.res.error) throw new Error(obj.res.error);
+    // Update in-memory bio
+    if (!_collabUser.bio) _collabUser.bio = {};
+    _collabUser.bio.image       = obj.imageUrl || _collabUser.bio.image || '';
+    _collabUser.bio.name        = document.getElementById('authEditName').value.trim();
+    _collabUser.bio.description = document.getElementById('authEditDesc').value.trim();
+    _collabUser.bio.skills      = document.getElementById('authEditSkills').value.trim();
+    _collabUser.bio.location    = document.getElementById('authEditLocation').value.trim();
+    _collabUser.bio.discord     = document.getElementById('authEditDiscord').value.trim();
+    _collabUser.bio.phone       = document.getElementById('authEditPhone').value.trim();
+    _collabUser.bio.payment     = document.getElementById('authEditPayment').value.trim();
+    _collabUser.bio.notes       = document.getElementById('authEditNotes').value.trim();
+    _saveStoredUser(_collabUser);
+    document.getElementById('authEditBio').style.display = 'none';
+    document.getElementById('authProfile').style.display = '';
+    _renderAuthProfile(_collabUser);
+  })
+  .catch(function(e) {
+    errEl.textContent = e.message || 'Could not save. Try again.';
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Save Profile';
+  });
 }
 
 function signOut() {

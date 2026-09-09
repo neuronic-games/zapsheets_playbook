@@ -976,6 +976,20 @@ function render() {
   function _games(key) {
     return (gameRow && gameRow[key] && String(gameRow[key]).trim()) || '';
   }
+  // Multi-key fallback: returns first non-empty value across key variants
+  function _gamesAny() {
+    for (var i = 0; i < arguments.length; i++) {
+      var v = _games(arguments[i]);
+      if (v) return v;
+    }
+    return '';
+  }
+  // Like _gamesAny but strips =IMAGE("url") formula to a raw URL
+  function _gamesImg() {
+    var raw = _gamesAny.apply(null, arguments);
+    var m = raw.match(/^=IMAGE\("([^"]*)"\)$/i);
+    return m ? m[1] : raw;
+  }
 
   // Case-insensitive lookup for game-data fields (game-en.json keys vary by author)
   function _bgg(key) {
@@ -1063,7 +1077,7 @@ function render() {
     var _isHttp   = function(u) { return u && /^https?:\/\//.test(u); };
 
     // games.json "Image URL" column — the default game image
-    var _gameImgUrl = _absUrl(_games('Image URL'));
+    var _gameImgUrl = _absUrl(_gamesImg('Image URL', 'ImageURL', 'Image'));
     if (_isHttp(_gameImgUrl)) {
       allImages.push({ src: cachedImage(_gameImgUrl), direct: directImageUrl(_gameImgUrl), caption: '', type: 'image', delay: 5 });
     }
@@ -1162,6 +1176,13 @@ function render() {
     var lnk = document.getElementById('bggLink');
     lnk.href = 'https://boardgamegeek.com/boardgame/' + bggId;
     lnk.style.display = '';
+  } else {
+    var _bggDirect = _gamesAny('BGG', 'BGG URL', 'BGGURL');
+    if (_bggDirect) {
+      var lnk = document.getElementById('bggLink');
+      lnk.href = _absUrl(_bggDirect);
+      lnk.style.display = '';
+    }
   }
 
   // ── Stats ────────────────────────────────────────────────────
@@ -1281,15 +1302,15 @@ function render() {
   // Plain URL strings — game JSON first, games.json as fallback
   var _rulesUrl = _absUrl((function() {
     var r = (data.bgg || []).find(function(r){ return r.Name === 'RulesUrl' && r.Value; });
-    return (r && r.Value) || _games('Rules URL');
+    return (r && r.Value) || _gamesAny('Rules URL', 'RulesURL', 'Rules');
   })());
   var _ttsUrl = _absUrl((function() {
     var r = (data.bgg || []).find(function(r){ return r.Name === 'PlayUrl' && r.Value; });
-    return (r && r.Value) || _games('Play URL');
+    return (r && r.Value) || _gamesAny('Play URL', 'PlayURL', 'Play');
   })());
   var _printUrl = _absUrl((function() {
     var r = (data.bgg || []).find(function(r){ return r.Name === 'PrintUrl' && r.Value; });
-    return (r && r.Value) || _games('Print URL');
+    return (r && r.Value) || _gamesAny('Print URL', 'PrintURL', 'Print');
   })());
   var _hasSteps    = data.steps && data.steps.length > 0;
 

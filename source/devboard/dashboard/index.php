@@ -456,6 +456,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   padding:1.4rem; width:min(480px,92vw);
   box-shadow:0 8px 32px rgba(0,0,0,.22);
   display:flex; flex-direction:column; gap:.75rem;
+  max-height:calc(100dvh - 2rem); overflow-y:auto;
 }
 .sync-dialog h2 { font-family:'DINBlack',sans-serif; font-size:.95rem; margin:0; }
 .sync-log {
@@ -699,7 +700,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 </div>
 
 <!-- Edit Contract dialog -->
-<div class="overlay" id="contractEditOverlay" onclick="if(event.target===this)closeContractEditDialog()">
+<div class="overlay" id="contractEditOverlay" onclick="if(event.target===this){if(isContractEditDirty())shakeDialog(this.querySelector('.contract-dialog'));else closeContractEditDialog();}">
   <div class="contract-dialog">
     <h2>Edit Contract — <span id="ceGameTitle"></span></h2>
     <div class="field-grid" style="grid-template-columns:1fr 1fr">
@@ -929,7 +930,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 </div>
 
 <!-- Contract dialog -->
-<div class="overlay" id="contractOverlay" onclick="if(event.target===this)closeContractDialog()">
+<div class="overlay" id="contractOverlay" onclick="if(event.target===this){if(hasContractData())shakeDialog(this.querySelector('.contract-dialog'));else closeContractDialog();}">
   <div class="contract-dialog">
     <h2>New Contract — <span id="contractGameTitle"></span></h2>
     <div class="field-grid" style="grid-template-columns:1fr 1fr">
@@ -1815,7 +1816,14 @@ function openContractDialog(name) {
   document.getElementById('contractOverlay').classList.add('open');
 }
 
+function hasContractData() {
+  return !!(document.getElementById('contractClient').value.trim());
+}
 function closeContractDialog() {
+  if (hasContractData()) { shakeDialog(document.getElementById('contractOverlay').querySelector('.contract-dialog')); return; }
+  document.getElementById('contractOverlay').classList.remove('open');
+}
+function forceCloseContractDialog() {
   document.getElementById('contractOverlay').classList.remove('open');
 }
 
@@ -1874,7 +1882,7 @@ function submitContract() {
     .then(function(r) { return r.json(); })
     .then(function(j) {
       if (j && j.ok) {
-        closeContractDialog();
+        forceCloseContractDialog();
       } else {
         errEl.textContent   = (j && j.error) ? j.error : 'Save failed.';
         errEl.style.display = 'block';
@@ -1938,6 +1946,21 @@ function openEditGame(name) {
 document.addEventListener('keydown', function(ev) {
   if (ev.key !== 'Escape') return;
   var el;
+  el = document.getElementById('profileOverlay');
+  if (el && el.classList.contains('open')) {
+    closeProfileDialog();
+    return;
+  }
+  el = document.getElementById('contractEditOverlay');
+  if (el && el.classList.contains('open')) {
+    closeContractEditDialog();
+    return;
+  }
+  el = document.getElementById('contractOverlay');
+  if (el && el.classList.contains('open')) {
+    closeContractDialog();
+    return;
+  }
   el = document.getElementById('sessionOverlay');
   if (el.classList.contains('open')) {
     var dlg = el.querySelector('.session-dialog');
@@ -2827,6 +2850,20 @@ function closeRnDialog() {
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 // ── Profile dialog ─────────────────────────────────────────────────────────────
+var _profileInitial = {};
+function _profileIsDirty() {
+  var f = function(id) { return (document.getElementById(id).value || '').trim(); };
+  return f('profileName')     !== (_profileInitial.name     || '') ||
+         f('profileEmail')    !== (_profileInitial.email    || '') ||
+         f('profilePhone')    !== (_profileInitial.phone    || '') ||
+         f('profileDesc')     !== (_profileInitial.desc     || '') ||
+         f('profileSkills')   !== (_profileInitial.skills   || '') ||
+         f('profileLocation') !== (_profileInitial.location || '') ||
+         f('profileDiscord')  !== (_profileInitial.discord  || '') ||
+         f('profilePayment')  !== (_profileInitial.payment  || '') ||
+         f('profileNotes')    !== (_profileInitial.notes    || '') ||
+         document.getElementById('profilePhotoFile').files.length > 0;
+}
 function openProfileDialog() {
   document.getElementById('profileName').value     = MY_NAME         || '';
   document.getElementById('profileEmail').value    = MY_EMAIL        || '';
@@ -2851,9 +2888,19 @@ function openProfileDialog() {
   document.getElementById('profileSaveBtn').disabled   = false;
   document.getElementById('profileCancelBtn').disabled = false;
   document.getElementById('profileCancelBtn').textContent = 'Cancel';
+  // Capture initial state for dirty checking
+  _profileInitial = {
+    name: MY_NAME || '', email: MY_EMAIL || '', phone: MY_PHONE || '',
+    desc: MY_BIO_DESC || '', skills: MY_BIO_SKILLS || '', location: MY_BIO_LOCATION || '',
+    discord: MY_BIO_DISCORD || '', payment: MY_BIO_PAYMENT || '', notes: MY_BIO_NOTES || ''
+  };
   document.getElementById('profileOverlay').classList.add('open');
 }
 function closeProfileDialog() {
+  if (_profileIsDirty()) { shakeDialog(document.getElementById('profileOverlay').querySelector('.sync-dialog')); return; }
+  document.getElementById('profileOverlay').classList.remove('open');
+}
+function forceCloseProfileDialog() {
   document.getElementById('profileOverlay').classList.remove('open');
 }
 function profilePhotoPreview(input) {
@@ -2936,6 +2983,12 @@ function submitProfile() {
     MY_BIO_DISCORD  = document.getElementById('profileDiscord').value.trim();
     MY_BIO_PAYMENT  = document.getElementById('profilePayment').value.trim();
     MY_BIO_NOTES    = document.getElementById('profileNotes').value.trim();
+    // Sync initial snapshot so Cancel/Close after save doesn't falsely shake
+    _profileInitial = {
+      name: MY_NAME, email: MY_EMAIL, phone: MY_PHONE,
+      desc: MY_BIO_DESC, skills: MY_BIO_SKILLS, location: MY_BIO_LOCATION,
+      discord: MY_BIO_DISCORD, payment: MY_BIO_PAYMENT, notes: MY_BIO_NOTES
+    };
     _updateSubTitle();
     _profileLog('✓  Saved', 'ok');
     document.getElementById('profileSaveBtn').disabled    = true;
@@ -2951,6 +3004,18 @@ function submitProfile() {
 
 // ── Contract edit dialog ───────────────────────────────────────────────────────
 var _ceIdx = -1;
+var _ceInitial = {};
+function isContractEditDirty() {
+  var f = function(id) { return (document.getElementById(id).value || '').trim(); };
+  return f('ceClient')      !== (_ceInitial.client      || '') ||
+         f('ceTargetStart') !== (_ceInitial.targetStart || '') ||
+         f('ceTargetEnd')   !== (_ceInitial.targetEnd   || '') ||
+         f('ceStartDate')   !== (_ceInitial.startDate   || '') ||
+         f('ceEndDate')     !== (_ceInitial.endDate     || '') ||
+         f('ceQuote')       !== (_ceInitial.quote       || '') ||
+         f('cePayment')     !== (_ceInitial.payment     || '') ||
+         f('ceNotes')       !== (_ceInitial.notes       || '');
+}
 
 function openContractEditDialog(idx) {
   var con = CONTRACT_RAW[idx];
@@ -2969,10 +3034,25 @@ function openContractEditDialog(idx) {
   document.getElementById('ceErr').style.display      = 'none';
   document.getElementById('ceBtn').disabled           = false;
   document.getElementById('ceBtn').textContent        = 'Save Contract';
+  // Capture initial state for dirty checking
+  _ceInitial = {
+    client:      (con.Client || '').trim(),
+    targetStart: _toDateInput(con['Target Start Date'] || ''),
+    targetEnd:   _toDateInput(con['Target End Date']   || ''),
+    startDate:   _toDateInput(con['Start Date']        || ''),
+    endDate:     _toDateInput(con['End Date']          || ''),
+    quote:       (con.Quote   || '').trim(),
+    payment:     (con.Payment || 'Estimate').trim(),
+    notes:       (con.Notes   || '').trim()
+  };
   document.getElementById('contractEditOverlay').classList.add('open');
 }
 
 function closeContractEditDialog() {
+  if (isContractEditDirty()) { shakeDialog(document.getElementById('contractEditOverlay').querySelector('.contract-dialog')); return; }
+  document.getElementById('contractEditOverlay').classList.remove('open');
+}
+function forceCloseContractEditDialog() {
   document.getElementById('contractEditOverlay').classList.remove('open');
 }
 
@@ -3010,7 +3090,7 @@ function submitContractEdit() {
         con.Quote               = document.getElementById('ceQuote').value;
         con.Payment             = document.getElementById('cePayment').value;
         con.Notes               = document.getElementById('ceNotes').value;
-        closeContractEditDialog();
+        forceCloseContractEditDialog();
         renderPublishersView();
       } else {
         errEl.textContent = (j && j.error) ? j.error : 'Save failed.';

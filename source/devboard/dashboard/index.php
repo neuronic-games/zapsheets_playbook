@@ -287,7 +287,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 }
 .game-card-header:hover { background:#145070; }
 .game-card-title { font-family:'DINBlack',sans-serif; font-size:.88rem; letter-spacing:.03em; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.game-card-meta  { font-family:'DINRegular',sans-serif; font-size:.7rem; color:rgba(255,255,255,.55); white-space:nowrap; flex-shrink:0; }
+.game-card-meta  { font-family:'DINRegular',sans-serif; font-size:.72rem; color:rgba(255,255,255,.5); white-space:nowrap; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; max-width:40%; }
 .game-card-chevron { font-size:.65rem; opacity:.55; flex-shrink:0; transition:transform .22s ease; transform:rotate(-90deg); }
 .game-card.open .game-card-chevron { transform:rotate(0deg); }
 .game-card-body-wrap { display:grid; grid-template-rows:0fr; transition:grid-template-rows .22s ease; }
@@ -314,47 +314,21 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .stat-dim      { opacity:.35; }
 .stat-active   { box-shadow:0 0 0 2.5px #fff, 0 0 0 4.5px rgba(0,0,0,.25); }
 .subtitle-right { margin-left:auto; display:flex; align-items:center; gap:.45rem; }
-.add-session-btn {
-  font-family:'DINBlack',sans-serif; font-size:.7rem;
-  text-transform:uppercase; letter-spacing:.07em;
-  background:#1a5f7a; color:#fff;
-  border:none; border-radius:6px;
-  padding:.3rem .75rem; cursor:pointer;
-  transition:background .15s;
-}
-.add-session-btn:hover { background:#145070; }
-.share-game-btn {
+.subtitle-btn {
   font-family:'DINBlack',sans-serif; font-size:.7rem;
   text-transform:uppercase; letter-spacing:.07em;
   background:transparent; color:#1a5f7a;
   border:1.5px solid #1a5f7a; border-radius:6px;
   padding:.28rem .65rem; cursor:pointer;
-  display:flex; align-items:center; gap:.3rem;
+  display:inline-flex; align-items:center; gap:.3rem;
   transition:background .15s, color .15s;
+  white-space:nowrap;
 }
-.share-game-btn:hover { background:#1a5f7a; color:#fff; }
-.share-game-btn svg { flex-shrink:0; }
+.subtitle-btn:hover { background:#1a5f7a; color:#fff; }
+.subtitle-btn svg { flex-shrink:0; }
+.subtitle-btn-primary { background:#1a5f7a; color:#fff; }
+.subtitle-btn-primary:hover { background:#145070; }
 
-/* ── Game info sub-bar ────────────────────────────────── */
-.game-info-bar {
-  background:#134a5e; color:#fff;
-  display:flex; align-items:center; gap:.75rem;
-  padding:.42rem 1rem;
-}
-.game-info-designers {
-  font-family:'DINRegular',sans-serif; font-size:.72rem;
-  color:rgba(255,255,255,.65); flex:1; min-width:0;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
-.game-info-edit-btn {
-  font-family:'DINBlack',sans-serif; font-size:.6rem;
-  text-transform:uppercase; letter-spacing:.06em;
-  background:rgba(255,255,255,.15); color:#fff;
-  border:1px solid rgba(255,255,255,.22); border-radius:999px;
-  padding:.28rem .7rem; cursor:pointer; white-space:nowrap; flex-shrink:0;
-  transition:background .15s;
-}
-.game-info-edit-btn:hover { background:rgba(255,255,255,.28); }
 
 /* ── Contract dialog ──────────────────────────────────── */
 .contract-dialog {
@@ -1275,14 +1249,21 @@ function renderCards() {
     return;
   }
   allGames.forEach(function(g) {
-    var name = g.Name || '';
+    var name    = g.Name || '';
+    var gameRec = GAMES_INDEX[name.toLowerCase()] || g;
+    var designers = [
+      (gameRec.Designer1 || gameRec['Designer 1'] || '').trim(),
+      (gameRec.Designer2 || gameRec['Designer 2'] || '').trim(),
+      (gameRec.Designer3 || gameRec['Designer 3'] || '').trim(),
+      (gameRec.Designer4 || gameRec['Designer 4'] || '').trim(),
+    ].filter(Boolean).join(', ');
     var div  = document.createElement('div');
     div.className    = 'game-card';
     div.dataset.game = name;
     div.innerHTML =
       '<div class="game-card-header" onclick="toggleCard(this.parentNode)">' +
         '<span class="game-card-title">' + esc(name) + '</span>' +
-        '<span class="game-card-meta">' + esc(g.Status || '') + '</span>' +
+        (designers ? '<span class="game-card-meta">' + esc(designers) + '</span>' : '') +
         '<span class="game-card-chevron">▼</span>' +
       '</div>' +
       '<div class="game-card-body-wrap">' +
@@ -1388,31 +1369,19 @@ function renderBody(gameName, rows) {
   var gn = esc(gameName);
   var html = '';
 
-  // Game info bar — designers + Edit button
-  var gameRec   = GAMES_INDEX[gameName.toLowerCase()] || {};
-  var designers = [
-    (gameRec.Designer1 || gameRec['Designer 1'] || '').trim(),
-    (gameRec.Designer2 || gameRec['Designer 2'] || '').trim(),
-    (gameRec.Designer3 || gameRec['Designer 3'] || '').trim(),
-    (gameRec.Designer4 || gameRec['Designer 4'] || '').trim(),
-  ].filter(Boolean);
-  html += '<div class="game-info-bar">';
-  html += '<span class="game-info-designers">' + (designers.length ? esc(designers.join(', ')) : '') + '</span>';
-  html += '<button class="game-info-edit-btn" onclick="openContractDialog(\'' + gn + '\')">+ Contract</button>';
-  html += '<button class="game-info-edit-btn" onclick="openEditGame(\'' + gn + '\')">Edit</button>';
-  html += '</div>';
-
-  // Subtitle bar — per-type chips (clickable to filter)
+  // Subtitle bar — per-type chips + action buttons
   html += '<div class="card-subtitle">';
   if (nPlay) html += '<div class="' + chipClass('Playtest','stat-playtest') + '" onclick="filterSessions(\'' + gn + '\',\'Playtest\')">' + nPlay + ' <span>' + (nPlay === 1 ? 'Playtest' : 'Playtests') + '</span></div>';
   if (nMeet) html += '<div class="' + chipClass('Meeting', 'stat-meeting')  + '" onclick="filterSessions(\'' + gn + '\',\'Meeting\')">'  + nMeet + ' <span>' + (nMeet === 1 ? 'Meeting'  : 'Meetings')  + '</span></div>';
   if (nIdea) html += '<div class="' + chipClass('Idea',    'stat-idea')     + '" onclick="filterSessions(\'' + gn + '\',\'Idea\')">'     + nIdea + ' <span>' + (nIdea === 1 ? 'Idea'     : 'Ideas')      + '</span></div>';
   if (!nPlay && !nMeet && !nIdea) html += '<div class="card-stat stat-playtest">0 <span>Sessions</span></div>';
   html += '<div class="subtitle-right">';
-  html += '<button class="share-game-btn" onclick="shareGame(\'' + gn + '\')">' +
+  html += '<button class="subtitle-btn" onclick="shareGame(\'' + gn + '\')">' +
     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
     'Share</button>';
-  html += '<button class="add-session-btn" onclick="openSessionDialog(\'' + gn + '\')">+ Session</button>';
+  html += '<button class="subtitle-btn" onclick="openContractDialog(\'' + gn + '\')">+ Contract</button>';
+  html += '<button class="subtitle-btn" onclick="openEditGame(\'' + gn + '\')">Edit</button>';
+  html += '<button class="subtitle-btn subtitle-btn-primary" onclick="openSessionDialog(\'' + gn + '\')">+ Session</button>';
   html += '</div>';
   html += '</div>';
 

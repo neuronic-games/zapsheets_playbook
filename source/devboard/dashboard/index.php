@@ -1263,19 +1263,18 @@ function _gameMatchesQuery(g, q) {
   return false;
 }
 
-function renderCards(filter) {
-  var list    = document.getElementById('cardList');
-  var q       = (filter || '').toLowerCase().trim();
-  var visible = allGames.filter(function(g) { return _gameMatchesQuery(g, q); });
+var _searchQuery = '';
 
-  if (!visible.length) {
-    list.innerHTML = '<div class="no-games"><strong>' + (q ? 'No matching games' : 'No games yet') + '</strong>' +
-      (q ? 'Try a different search.' : 'Click "+ Game" to start tracking a game.') + '</div>';
+function renderCards() {
+  // Rebuild all card elements (called on initial load and after add/edit game).
+  // Does NOT filter visibility — applySearchFilter does that afterwards.
+  var list = document.getElementById('cardList');
+  list.innerHTML = '';
+  if (!allGames.length) {
+    list.innerHTML = '<div class="no-games"><strong>No games yet</strong>Click "+ Game" to start tracking a game.</div>';
     return;
   }
-
-  list.innerHTML = '';
-  visible.forEach(function(g) {
+  allGames.forEach(function(g) {
     var name = g.Name || '';
     var div  = document.createElement('div');
     div.className    = 'game-card';
@@ -1293,6 +1292,39 @@ function renderCards(filter) {
       '</div>';
     list.appendChild(div);
   });
+  applySearchFilter(_searchQuery);
+}
+
+function applySearchFilter(q) {
+  _searchQuery = (q || '').toLowerCase().trim();
+  var list     = document.getElementById('cardList');
+  var cards    = list ? list.querySelectorAll('.game-card') : [];
+  var anyVisible = false;
+
+  cards.forEach(function(card) {
+    var name    = card.dataset.game;
+    var matches = _gameMatchesQuery({ Name: name }, _searchQuery);
+    card.style.display = matches ? '' : 'none';
+    if (matches) { anyVisible = true; }
+    // Re-render body if open and data is available (so sessions get filtered)
+    if (matches && card.classList.contains('open') && devCache[name] && devCache[name].length !== undefined) {
+      renderBody(name, devCache[name]);
+    }
+  });
+
+  // Show/update no-results placeholder
+  var placeholder = list ? list.querySelector('.no-games') : null;
+  if (!anyVisible && cards.length) {
+    if (!placeholder) {
+      placeholder = document.createElement('div');
+      placeholder.className = 'no-games';
+      list.appendChild(placeholder);
+    }
+    placeholder.innerHTML = '<strong>No matching games</strong>Try a different search.';
+    placeholder.style.display = '';
+  } else if (placeholder) {
+    placeholder.style.display = 'none';
+  }
 }
 
 // ── Toggle + lazy load ────────────────────────────────────────────────────────
@@ -1343,6 +1375,9 @@ function renderBody(gameName, rows) {
   var sessions = activeFilter
     ? allSessions.filter(function(s){ return s.testnum.toLowerCase().indexOf(activeFilter.toLowerCase() + ' ') === 0; })
     : allSessions;
+  if (_searchQuery) {
+    sessions = sessions.filter(function(s) { return _sessionMatchesQuery(s, _searchQuery); });
+  }
 
   function chipClass(type, baseClass) {
     var cls = 'card-stat ' + baseClass;
@@ -1383,7 +1418,7 @@ function renderBody(gameName, rows) {
 
   // Sessions list
   if (!sessions.length) {
-    html += '<div class="dev-empty">' + (activeFilter ? 'No ' + activeFilter + ' sessions.' : 'No playtest sessions yet. Click "+ Session" to log one.') + '</div>';
+    html += '<div class="dev-empty">' + (_searchQuery ? 'No sessions match your search.' : activeFilter ? 'No ' + activeFilter + ' sessions.' : 'No playtest sessions yet. Click "+ Session" to log one.') + '</div>';
   } else {
     sessions.forEach(function(s, i) {
       // Determine type class from testnum prefix
@@ -1393,7 +1428,7 @@ function renderBody(gameName, rows) {
 
       var allIdx = allSessions.indexOf(s);
       var gnQ    = JSON.stringify(gameName).replace(/"/g, '&quot;');
-      html += '<div class="session-block" id="sblock-' + i + '">';
+      html += '<div class="session-block' + (_searchQuery ? ' open' : '') + '" id="sblock-' + i + '">';
       html += '<div class="session-header" onclick="toggleSession(' + i + ')" data-game="' + esc(gameName) + '" data-idx="' + allIdx + '">';
       html +=   '<div class="session-header-row">';
       if (s.testnum) html += '<span class="session-type ' + typeClass + '">' + esc(s.testnum) + '</span>';
@@ -1616,16 +1651,31 @@ function toggleSession(idx) {
 
 // ── Search ────────────────────────────────────────────────────────────────────
 
+function _sessionMatchesQuery(s, q) {
+  if (!q) return true;
+  if ((s.testnum   || '').toLowerCase().indexOf(q) !== -1) return true;
+  if ((s.location  || '').toLowerCase().indexOf(q) !== -1) return true;
+  if ((s.date      || '').toLowerCase().indexOf(q) !== -1) return true;
+  for (var t = 0; t < s.testers.length; t++) {
+    if (s.testers[t].toLowerCase().indexOf(q) !== -1) return true;
+  }
+  for (var o = 0; o < s.obs.length; o++) {
+    if ((s.obs[o].obs || '').toLowerCase().indexOf(q) !== -1) return true;
+    if ((s.obs[o].sol || '').toLowerCase().indexOf(q) !== -1) return true;
+  }
+  return false;
+}
+
 function onSearch() {
   var inp  = document.getElementById('searchInput');
   var wrap = document.getElementById('searchWrap');
   wrap.classList.toggle('has-text', inp.value.length > 0);
-  renderCards(inp.value);
+  applySearchFilter(inp.value);
 }
 function clearSearch() {
   document.getElementById('searchInput').value = '';
   document.getElementById('searchWrap').classList.remove('has-text');
-  renderCards('');
+  applySearchFilter('');
 }
 
 // ── Fetch ─────────────────────────────────────────────────────────────────────
@@ -2094,7 +2144,7 @@ function submitAddGame() {
           renderBody(_editGameOrigName, devCache[_editGameOrigName] || []);
         }
         buildGameList();
-        renderCards(document.getElementById('searchInput').value);
+        renderCards();
         closeAddDialog();
       })
       .catch(function(e) {
@@ -2168,7 +2218,7 @@ function submitAddGame() {
         extraGames.push(name);
       }
       buildGameList();
-      renderCards(document.getElementById('searchInput').value);
+      renderCards();
       closeAddDialog();
     })
     .catch(function(e) {
@@ -2939,7 +2989,7 @@ function _updateSubTitle() {
 }
 
 buildGameList();
-renderCards('');
+renderCards();
 _updateSubTitle();
 </script>
 </body>

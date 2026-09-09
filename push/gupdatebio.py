@@ -42,6 +42,8 @@ skills      = data.get('skills',      '').strip()
 location    = data.get('location',    '').strip()
 phone       = data.get('phone',       '').strip()
 discord     = data.get('discord',     '').strip()
+payment     = data.get('payment',     '').strip()
+notes       = data.get('notes',       '').strip()
 
 if not email:
     print(json.dumps({"error": "Email is required"}))
@@ -104,6 +106,8 @@ field_map = [
     (('Location',),    safe_str(location)),
     (('Phone',),       safe_str(phone)),
     (('Discord',),     safe_str(discord)),
+    (('Payment',),     safe_str(payment)),
+    (('Notes',),       safe_str(notes)),
 ]
 
 if target_row is not None:
@@ -133,6 +137,8 @@ else:
         elif h_strip == 'Location':    new_row.append(safe_str(location))
         elif h_strip == 'Phone':       new_row.append(safe_str(phone))
         elif h_strip == 'Discord':     new_row.append(safe_str(discord))
+        elif h_strip == 'Payment':     new_row.append(safe_str(payment))
+        elif h_strip == 'Notes':       new_row.append(safe_str(notes))
         else:                          new_row.append('')
     try:
         ws.append_row(new_row, value_input_option='USER_ENTERED')

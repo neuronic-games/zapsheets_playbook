@@ -14,6 +14,8 @@ $skills      = trim($_POST['skills']      ?? '');
 $location    = trim($_POST['location']    ?? '');
 $phone       = trim($_POST['phone']       ?? '');
 $discord     = trim($_POST['discord']     ?? '');
+$payment     = trim($_POST['payment']     ?? '');
+$notes       = trim($_POST['notes']       ?? '');
 
 if (!$sheetId || !$email) {
     echo json_encode(['error' => 'Missing required fields']);
@@ -29,6 +31,8 @@ $payload    = [
     'location'    => $location,
     'phone'       => $phone,
     'discord'     => $discord,
+    'payment'     => $payment,
+    'notes'       => $notes,
 ];
 $encoded = base64_encode(json_encode($payload, JSON_UNESCAPED_UNICODE));
 $arg     = $sheetId . '|' . $encoded;

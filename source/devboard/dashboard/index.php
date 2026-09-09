@@ -75,6 +75,8 @@ $_my_bio_desc     = '';
 $_my_bio_skills   = '';
 $_my_bio_location = '';
 $_my_bio_discord  = '';
+$_my_bio_payment  = '';
+$_my_bio_notes    = '';
 foreach ($_bios as $_b) {
     $bEmail = ltrim(trim($_b['Email'] ?? ''), "'");
     if ($_my_email && strcasecmp($bEmail, $_my_email) === 0) {
@@ -88,6 +90,8 @@ foreach ($_bios as $_b) {
         $_my_bio_skills   = ltrim(trim($_b['Skills']      ?? ''), "'");
         $_my_bio_location = ltrim(trim($_b['Location']    ?? ''), "'");
         $_my_bio_discord  = ltrim(trim($_b['Discord']     ?? ''), "'");
+        $_my_bio_payment  = ltrim(trim($_b['Payment']     ?? ''), "'");
+        $_my_bio_notes    = ltrim(trim($_b['Notes']       ?? ''), "'");
         break;
     }
 }
@@ -772,6 +776,8 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         <label class="ge-label">Discord<input type="text" id="profileDiscord" class="ge-input" placeholder="@handle" /></label>
       </div>
       <label class="ge-label">Phone<input type="tel" id="profilePhone" class="ge-input" placeholder="+1 555 000 0000" /></label>
+      <label class="ge-label">Payment<input type="text" id="profilePayment" class="ge-input" placeholder="Venmo @handle, PayPal…" /></label>
+      <label class="ge-label">Notes<textarea id="profileNotes" class="ge-input ge-textarea" placeholder="Availability, preferences…" rows="2"></textarea></label>
     </div>
     <input type="file" id="profilePhotoFile" accept="image/*" style="display:none" onchange="profilePhotoPreview(this)">
     <div class="sync-log" id="profileLog" style="display:none"></div>
@@ -1055,6 +1061,8 @@ var MY_BIO_DESC     = <?= json_encode($_my_bio_desc) ?>;
 var MY_BIO_SKILLS   = <?= json_encode($_my_bio_skills) ?>;
 var MY_BIO_LOCATION = <?= json_encode($_my_bio_location) ?>;
 var MY_BIO_DISCORD  = <?= json_encode($_my_bio_discord) ?>;
+var MY_BIO_PAYMENT  = <?= json_encode($_my_bio_payment) ?>;
+var MY_BIO_NOTES    = <?= json_encode($_my_bio_notes) ?>;
 var _profilePhotoUrl = MY_BIO_IMAGE || '';
 var PEOPLE_NAMES  = <?= json_encode(array_values($_people_names), JSON_UNESCAPED_UNICODE) ?>;
 var CONTRACT_RAW  = <?= json_encode(array_values($_contracts_raw), JSON_UNESCAPED_UNICODE) ?>;
@@ -1682,7 +1690,7 @@ function doFetch() {
   openSyncDialog();
 
   // Build list: games tab first, then each active dev tab
-  var sheets = ['games', 'people', 'contracts'];
+  var sheets = ['games', 'people', 'contracts', 'bios'];
   Object.keys(ACTIVE_KEYS).forEach(function(k) {
     sheets.push('[' + k + '] dev');
   });
@@ -2827,6 +2835,8 @@ function openProfileDialog() {
   document.getElementById('profileSkills').value   = MY_BIO_SKILLS   || '';
   document.getElementById('profileLocation').value = MY_BIO_LOCATION || '';
   document.getElementById('profileDiscord').value  = MY_BIO_DISCORD  || '';
+  document.getElementById('profilePayment').value  = MY_BIO_PAYMENT  || '';
+  document.getElementById('profileNotes').value    = MY_BIO_NOTES    || '';
   _profilePhotoUrl = MY_BIO_IMAGE || '';
   var img = document.getElementById('profilePhotoImg');
   var ph  = document.getElementById('profilePhotoPlaceholder');
@@ -2873,6 +2883,8 @@ function submitProfile() {
   var skills   = document.getElementById('profileSkills').value.trim();
   var location = document.getElementById('profileLocation').value.trim();
   var discord  = document.getElementById('profileDiscord').value.trim();
+  var payment  = document.getElementById('profilePayment').value.trim();
+  var notes    = document.getElementById('profileNotes').value.trim();
   var photoFile = document.getElementById('profilePhotoFile').files[0];
   if (!name) { _profileLog('Name is required.', 'error'); return; }
   document.getElementById('profileSaveBtn').disabled   = true;
@@ -2907,6 +2919,7 @@ function submitProfile() {
     fd2.append('image_url', imageUrl || ''); fd2.append('description', desc);
     fd2.append('skills', skills); fd2.append('location', location);
     fd2.append('phone', phone);   fd2.append('discord', discord);
+    fd2.append('payment', payment); fd2.append('notes', notes);
     var p2 = fetch(APP_BASE + 'push/updateBio.php', { method:'POST', body:fd2 }).then(function(r){ return r.json(); });
     return Promise.all([p1, p2]);
   })
@@ -2921,6 +2934,8 @@ function submitProfile() {
     MY_BIO_SKILLS   = document.getElementById('profileSkills').value.trim();
     MY_BIO_LOCATION = document.getElementById('profileLocation').value.trim();
     MY_BIO_DISCORD  = document.getElementById('profileDiscord').value.trim();
+    MY_BIO_PAYMENT  = document.getElementById('profilePayment').value.trim();
+    MY_BIO_NOTES    = document.getElementById('profileNotes').value.trim();
     _updateSubTitle();
     _profileLog('✓  Saved', 'ok');
     document.getElementById('profileSaveBtn').disabled    = true;

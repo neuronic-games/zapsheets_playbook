@@ -286,15 +286,13 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .loading-msg { text-align:center; padding:2rem 1rem; font-family:'DINRegular',sans-serif; font-size:.85rem; color:#aaa; }
 .success-banner { display:none; background:#e8f8ef; border:1px solid #b2dfc4; border-radius:8px; padding:.75rem 1rem; font-family:'DINRegular',sans-serif; font-size:.85rem; color:#2e7a52; margin-bottom:.75rem; }
 /* Search bar */
-.search-bar { padding:.6rem 1rem; background:#fff; border-bottom:1px solid #e8edf2; }
-.search-wrap { position:relative; max-width:480px; }
-.search-wrap input { width:100%; padding:.45rem .7rem .45rem 2rem; font-family:'DINRegular',sans-serif; font-size:.82rem; border:1.5px solid #d0d8e0; border-radius:20px; outline:none; background:#f6f9fb; color:#222; transition:border-color .15s,background .15s; box-sizing:border-box; }
-.search-wrap input:focus { border-color:#1a5f7a; background:#fff; }
-.search-wrap input::placeholder { color:#c0ccd8; font-style:italic; }
-.search-wrap .search-icon { position:absolute; left:.6rem; top:50%; transform:translateY(-50%); color:#b0b8c4; pointer-events:none; }
-.search-wrap .search-clear { position:absolute; right:.55rem; top:50%; transform:translateY(-50%); background:none; border:none; color:#b0b8c4; cursor:pointer; font-size:.8rem; display:none; padding:0; line-height:1; }
+.search-bar { padding:.6rem 1.25rem .5rem; max-width:860px; margin:0 auto; display:flex; gap:.6rem; align-items:center; }
+.search-wrap { position:relative; flex:1; }
+.search-wrap input { width:100%; padding:.45rem 2rem .45rem .8rem; font-family:'DINRegular',sans-serif; font-size:.8rem; border:1px solid #c8d6e0; border-radius:6px; outline:none; background:#fff; color:#111; box-sizing:border-box; }
+.search-wrap input:focus { border-color:#1a5f7a; }
+.search-wrap .search-icon { display:none; }
+.search-wrap .search-clear { position:absolute; right:.5rem; top:50%; transform:translateY(-50%); background:none; border:none; color:#aaa; cursor:pointer; font-size:1rem; display:none; padding:0; line-height:1; }
 .search-wrap.has-text .search-clear { display:block; }
-.search-wrap.has-text input { padding-right:1.6rem; }
 </style>
 </head>
 <body>

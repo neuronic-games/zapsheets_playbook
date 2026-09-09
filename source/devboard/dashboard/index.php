@@ -65,6 +65,33 @@ if (!$_my_name && !empty($_settings)) {
     }
 }
 
+// Load bio data for current user from bios.json
+$_bios_file = __DIR__ . '/../../../sheets/' . $_sheet_id . '/bios.json';
+$_bios      = file_exists($_bios_file)
+    ? (json_decode(file_get_contents($_bios_file), true) ?: [])
+    : [];
+$_my_bio_image    = '';
+$_my_bio_desc     = '';
+$_my_bio_skills   = '';
+$_my_bio_location = '';
+$_my_bio_discord  = '';
+foreach ($_bios as $_b) {
+    $bEmail = ltrim(trim($_b['Email'] ?? ''), "'");
+    if ($_my_email && strcasecmp($bEmail, $_my_email) === 0) {
+        $rawImg = trim($_b['Image'] ?? '');
+        if (preg_match('/^=IMAGE\("([^"]*)"\)$/i', $rawImg, $_im)) {
+            $_my_bio_image = $_im[1];
+        } elseif ($rawImg) {
+            $_my_bio_image = ltrim($rawImg, "'");
+        }
+        $_my_bio_desc     = ltrim(trim($_b['Description'] ?? ''), "'");
+        $_my_bio_skills   = ltrim(trim($_b['Skills']      ?? ''), "'");
+        $_my_bio_location = ltrim(trim($_b['Location']    ?? ''), "'");
+        $_my_bio_discord  = ltrim(trim($_b['Discord']     ?? ''), "'");
+        break;
+    }
+}
+
 // Load people names for Testers combo
 $_people_file  = __DIR__ . '/../../../sheets/' . $_sheet_id . '/people.json';
 $_people_raw   = file_exists($_people_file)
@@ -414,6 +441,10 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .ge-label { display:flex; flex-direction:column; gap:.3rem; font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; color:#666; }
 .ge-input { font-family:'DINRegular',sans-serif; font-size:.85rem; padding:.42rem .65rem; border:1px solid #d1dde6; border-radius:6px; outline:none; color:#111; background:#fff; }
 .ge-input:focus { border-color:#1a5f7a; }
+.ge-textarea { resize:vertical; min-height:5rem; line-height:1.5; }
+.profile-photo-wrap { width:72px; height:72px; border-radius:50%; border:2px dashed #c8d6e0; cursor:pointer; overflow:hidden; flex-shrink:0; background:#f0f4f8; display:flex; align-items:center; justify-content:center; font-size:.6rem; color:#aaa; text-align:center; font-family:'DINBlack',sans-serif; text-transform:uppercase; letter-spacing:.04em; transition:border-color .15s; }
+.profile-photo-wrap:hover { border-color:#1a5f7a; }
+.profile-photo-wrap img { width:100%; height:100%; object-fit:cover; }
 
 /* Sync overlay */
 .sync-dialog {
@@ -719,13 +750,30 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
 <!-- Profile dialog -->
 <div class="overlay" id="profileOverlay" onclick="if(event.target===this)closeProfileDialog()">
-  <div class="sync-dialog" style="width:min(400px,94vw)">
+  <div class="sync-dialog" style="width:min(500px,94vw)">
     <h2>Profile</h2>
-    <div style="display:flex;flex-direction:column;gap:.65rem;margin:.25rem 0 .5rem">
-      <label class="ge-label">Name<input  type="text"  id="profileName"  class="ge-input" placeholder="Your name" /></label>
-      <label class="ge-label">Email<input type="email" id="profileEmail" class="ge-input" placeholder="your@email.com" /></label>
-      <label class="ge-label">Phone<input type="tel"   id="profilePhone" class="ge-input" placeholder="+1 555 000 0000" /></label>
+    <!-- Photo + Name/Email row -->
+    <div style="display:flex;gap:1rem;align-items:flex-start;margin:.25rem 0 0">
+      <div class="profile-photo-wrap" id="profilePhotoWrap" title="Click to change photo" onclick="document.getElementById('profilePhotoFile').click()">
+        <img id="profilePhotoImg" src="" alt="" style="display:none">
+        <span id="profilePhotoPlaceholder" style="padding:.3rem">Photo</span>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:.6rem">
+        <label class="ge-label">Name<input type="text"  id="profileName"  class="ge-input" placeholder="Your name" /></label>
+        <label class="ge-label">Email<input type="email" id="profileEmail" class="ge-input" placeholder="your@email.com" /></label>
+      </div>
     </div>
+    <!-- Bio fields -->
+    <div style="display:flex;flex-direction:column;gap:.65rem;margin:.75rem 0 .5rem">
+      <label class="ge-label">Description<textarea id="profileDesc" class="ge-input ge-textarea" placeholder="Brief bio…"></textarea></label>
+      <label class="ge-label" style="text-transform:none;letter-spacing:0"><span style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em">Skills</span> <span style="color:#bbb;font-size:.65rem">(comma-separated)</span><input type="text" id="profileSkills" class="ge-input" placeholder="Game Designer, Tester…" /></label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem">
+        <label class="ge-label">Location<input type="text" id="profileLocation" class="ge-input" placeholder="City, Country" /></label>
+        <label class="ge-label">Discord<input type="text" id="profileDiscord" class="ge-input" placeholder="@handle" /></label>
+      </div>
+      <label class="ge-label">Phone<input type="tel" id="profilePhone" class="ge-input" placeholder="+1 555 000 0000" /></label>
+    </div>
+    <input type="file" id="profilePhotoFile" accept="image/*" style="display:none" onchange="profilePhotoPreview(this)">
     <div class="sync-log" id="profileLog" style="display:none"></div>
     <div class="sync-dialog-actions">
       <button class="notes-close" id="profileCancelBtn" onclick="closeProfileDialog()">Cancel</button>
@@ -999,9 +1047,15 @@ var APP_BASE    = document.querySelector('base').getAttribute('href');
 var SHEET_ID    = <?= json_encode($_sheet_id) ?>;
 var GAMES_RAW   = <?= json_encode(array_values($_games_raw), JSON_UNESCAPED_UNICODE) ?>;
 var ACTIVE_KEYS = <?= json_encode($_active_keys, JSON_UNESCAPED_UNICODE) ?>;
-var MY_NAME      = <?= json_encode($_my_name) ?>;
-var MY_EMAIL     = <?= json_encode($_my_email) ?>;
-var MY_PHONE     = <?= json_encode($_my_phone) ?>;
+var MY_NAME         = <?= json_encode($_my_name) ?>;
+var MY_EMAIL        = <?= json_encode($_my_email) ?>;
+var MY_PHONE        = <?= json_encode($_my_phone) ?>;
+var MY_BIO_IMAGE    = <?= json_encode($_my_bio_image) ?>;
+var MY_BIO_DESC     = <?= json_encode($_my_bio_desc) ?>;
+var MY_BIO_SKILLS   = <?= json_encode($_my_bio_skills) ?>;
+var MY_BIO_LOCATION = <?= json_encode($_my_bio_location) ?>;
+var MY_BIO_DISCORD  = <?= json_encode($_my_bio_discord) ?>;
+var _profilePhotoUrl = MY_BIO_IMAGE || '';
 var PEOPLE_NAMES  = <?= json_encode(array_values($_people_names), JSON_UNESCAPED_UNICODE) ?>;
 var CONTRACT_RAW  = <?= json_encode(array_values($_contracts_raw), JSON_UNESCAPED_UNICODE) ?>;
 
@@ -2766,9 +2820,22 @@ function closeRnDialog() {
 
 // ── Profile dialog ─────────────────────────────────────────────────────────────
 function openProfileDialog() {
-  document.getElementById('profileName').value  = MY_NAME  || '';
-  document.getElementById('profileEmail').value = MY_EMAIL || '';
-  document.getElementById('profilePhone').value = MY_PHONE || '';
+  document.getElementById('profileName').value     = MY_NAME         || '';
+  document.getElementById('profileEmail').value    = MY_EMAIL        || '';
+  document.getElementById('profilePhone').value    = MY_PHONE        || '';
+  document.getElementById('profileDesc').value     = MY_BIO_DESC     || '';
+  document.getElementById('profileSkills').value   = MY_BIO_SKILLS   || '';
+  document.getElementById('profileLocation').value = MY_BIO_LOCATION || '';
+  document.getElementById('profileDiscord').value  = MY_BIO_DISCORD  || '';
+  _profilePhotoUrl = MY_BIO_IMAGE || '';
+  var img = document.getElementById('profilePhotoImg');
+  var ph  = document.getElementById('profilePhotoPlaceholder');
+  if (_profilePhotoUrl) {
+    img.src = _profilePhotoUrl; img.style.display = ''; ph.style.display = 'none';
+  } else {
+    img.style.display = 'none'; ph.style.display = '';
+  }
+  document.getElementById('profilePhotoFile').value = '';
   document.getElementById('profileLog').innerHTML = '';
   document.getElementById('profileLog').style.display = 'none';
   document.getElementById('profileSaveBtn').disabled   = false;
@@ -2778,6 +2845,16 @@ function openProfileDialog() {
 }
 function closeProfileDialog() {
   document.getElementById('profileOverlay').classList.remove('open');
+}
+function profilePhotoPreview(input) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = document.getElementById('profilePhotoImg');
+    var ph  = document.getElementById('profilePhotoPlaceholder');
+    img.src = e.target.result; img.style.display = ''; ph.style.display = 'none';
+  };
+  reader.readAsDataURL(input.files[0]);
 }
 function _profileLog(msg, type) {
   var log  = document.getElementById('profileLog');
@@ -2789,41 +2866,72 @@ function _profileLog(msg, type) {
   log.scrollTop = log.scrollHeight;
 }
 function submitProfile() {
-  var name  = document.getElementById('profileName').value.trim();
-  var email = document.getElementById('profileEmail').value.trim();
-  var phone = document.getElementById('profilePhone').value.trim();
+  var name     = document.getElementById('profileName').value.trim();
+  var email    = document.getElementById('profileEmail').value.trim();
+  var phone    = document.getElementById('profilePhone').value.trim();
+  var desc     = document.getElementById('profileDesc').value.trim();
+  var skills   = document.getElementById('profileSkills').value.trim();
+  var location = document.getElementById('profileLocation').value.trim();
+  var discord  = document.getElementById('profileDiscord').value.trim();
+  var photoFile = document.getElementById('profilePhotoFile').files[0];
   if (!name) { _profileLog('Name is required.', 'error'); return; }
   document.getElementById('profileSaveBtn').disabled   = true;
   document.getElementById('profileCancelBtn').disabled = true;
   _profileLog('Saving…', 'info');
-  var fd = new FormData();
-  fd.append('id',    SHEET_ID);
-  fd.append('name',  name);
-  fd.append('email', email);
-  fd.append('phone', phone);
-  fetch(APP_BASE + 'push/updateProfile.php', { method:'POST', body:fd })
-    .then(function(r) { return r.json(); })
-    .then(function(result) {
-      if (!result || result.error) {
-        _profileLog('✕  ' + ((result && result.error) || 'Unknown error'), 'error');
-        document.getElementById('profileSaveBtn').disabled   = false;
-        document.getElementById('profileCancelBtn').disabled = false;
-        return;
-      }
-      MY_NAME  = name;
-      MY_EMAIL = email;
-      MY_PHONE = phone;
-      _updateSubTitle();
-      _profileLog('✓  Saved', 'ok');
-      document.getElementById('profileSaveBtn').disabled    = true;
-      document.getElementById('profileCancelBtn').disabled  = false;
-      document.getElementById('profileCancelBtn').textContent = 'Close';
-    })
-    .catch(function() {
-      _profileLog('✕  Network error', 'error');
-      document.getElementById('profileSaveBtn').disabled   = false;
-      document.getElementById('profileCancelBtn').disabled = false;
-    });
+
+  // Step 1: upload photo if a new file was selected
+  var photoPromise = Promise.resolve(_profilePhotoUrl);
+  if (photoFile) {
+    _profileLog('Uploading photo…', 'info');
+    var ufd = new FormData();
+    ufd.append('id',   SHEET_ID);
+    ufd.append('file', photoFile);
+    photoPromise = fetch(APP_BASE + 'push/uploadMedia.php', { method:'POST', body:ufd })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (!res || res.error) throw new Error(res.error || 'Upload failed');
+        return res.url;
+      });
+  }
+
+  photoPromise.then(function(imageUrl) {
+    _profilePhotoUrl = imageUrl || '';
+    // Step 2: update settings (name / email / phone)
+    var fd1 = new FormData();
+    fd1.append('id', SHEET_ID); fd1.append('name', name);
+    fd1.append('email', email); fd1.append('phone', phone);
+    var p1 = fetch(APP_BASE + 'push/updateProfile.php', { method:'POST', body:fd1 }).then(function(r){ return r.json(); });
+    // Step 3: update bios row
+    var fd2 = new FormData();
+    fd2.append('id', SHEET_ID); fd2.append('email', email);
+    fd2.append('image_url', imageUrl || ''); fd2.append('description', desc);
+    fd2.append('skills', skills); fd2.append('location', location);
+    fd2.append('phone', phone);   fd2.append('discord', discord);
+    var p2 = fetch(APP_BASE + 'push/updateBio.php', { method:'POST', body:fd2 }).then(function(r){ return r.json(); });
+    return Promise.all([p1, p2]);
+  })
+  .then(function(results) {
+    var err = (results[0] && results[0].error) || (results[1] && results[1].error);
+    if (err) throw new Error(err);
+    MY_NAME = document.getElementById('profileName').value.trim();
+    MY_EMAIL = document.getElementById('profileEmail').value.trim();
+    MY_PHONE = document.getElementById('profilePhone').value.trim();
+    MY_BIO_IMAGE    = _profilePhotoUrl;
+    MY_BIO_DESC     = document.getElementById('profileDesc').value.trim();
+    MY_BIO_SKILLS   = document.getElementById('profileSkills').value.trim();
+    MY_BIO_LOCATION = document.getElementById('profileLocation').value.trim();
+    MY_BIO_DISCORD  = document.getElementById('profileDiscord').value.trim();
+    _updateSubTitle();
+    _profileLog('✓  Saved', 'ok');
+    document.getElementById('profileSaveBtn').disabled    = true;
+    document.getElementById('profileCancelBtn').disabled  = false;
+    document.getElementById('profileCancelBtn').textContent = 'Close';
+  })
+  .catch(function(err) {
+    _profileLog('✕  ' + (err.message || 'Error'), 'error');
+    document.getElementById('profileSaveBtn').disabled   = false;
+    document.getElementById('profileCancelBtn').disabled = false;
+  });
 }
 
 // ── Contract edit dialog ───────────────────────────────────────────────────────

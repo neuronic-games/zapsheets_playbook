@@ -56,8 +56,10 @@
 
     } else {
 
-        $sheetName = $sheet;
-        $jsonFile = "../sheets/" . $spreadsheetId . "/" . strtolower($sheetName) . ".json";
+        $sheetName  = $sheet;
+        $sheetsRoot = dirname(__DIR__) . '/sheets';
+        $sheetDir   = $sheetsRoot . '/' . $spreadsheetId;
+        $jsonFile   = $sheetDir . '/' . strtolower($sheetName) . '.json';
 
         $py_command = pyCmd($pythonPath, __DIR__, 'gread.py', $spreadsheetId . 'sheetname' . $sheetName);
         $sheetData = shell_exec($py_command);
@@ -70,8 +72,8 @@
             if (is_array($decoded) && isset($decoded['error'])) {
                 echo 'ERROR:' . $sheetName . ':' . $decoded['error'];
             } else {
-                if (!file_exists("../sheets/" . $spreadsheetId)) {
-                    mkdir("../sheets/" . $spreadsheetId, 0777, true);
+                if (!is_dir($sheetDir)) {
+                    mkdir($sheetDir, 0777, true);
                 }
                 file_put_contents($jsonFile, $trimmed);
 

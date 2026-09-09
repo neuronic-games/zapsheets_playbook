@@ -364,6 +364,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   </div>
 </div>
 
+<script src="devboard/devboard-common.js"></script>
 <script>
 var APP_BASE     = document.querySelector('base').getAttribute('href');
 var SHEET_ID     = <?= json_encode($_sheetId) ?>;
@@ -371,53 +372,12 @@ var GAME_NAME    = <?= json_encode($_gameName) ?>;
 var PEOPLE_NAMES = <?= json_encode(array_values($_people_names), JSON_UNESCAPED_UNICODE) ?>;
 
 // ── Utilities ────────────────────────────────────────────────────────────────
+// esc, fmtDate, obsHtml, buildSessions, _sessionMatchesQuery, _filterObsByQuery
+// are defined in devboard-common.js (loaded above).
 
-function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function fmtDate(raw) {
-  if (!raw) return '';
-  var d = new Date(raw);
-  if (isNaN(d.getTime())) return raw;
-  return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-}
 function todayISO() {
   var d = new Date(); var m = String(d.getMonth()+1).padStart(2,'0'); var day = String(d.getDate()).padStart(2,'0');
   return d.getFullYear() + '-' + m + '-' + day;
-}
-function obsHtml(text) {
-  var parts = text.split(/(=IMAGE\("[^"]*"\))/i);
-  return parts.map(function(p) {
-    var m = p.match(/^=IMAGE\("([^"]*)"\)$/i);
-    if (m) return '<img src="' + esc(m[1]) + '" style="max-width:100%;max-height:220px;border-radius:4px;display:block;margin-top:.25rem">';
-    return esc(p);
-  }).join('');
-}
-
-// ── Build session objects from flat rows ──────────────────────────────────────
-
-function buildSessions(rows) {
-  if (!rows || !rows.length) return [];
-  var sessions = [], current = null;
-  rows.forEach(function(row) {
-    var date   = (row['Date']        || '').trim();
-    var event  = (row['Event']       || '').trim();
-    var people = (row['People']      || '').trim();
-    var obs    = (row['Observations'] || row['Observation'] || '').trim();
-    var sol    = (row['Solution'] || row['Thoughts'] || '').trim();
-    if (date || event) {
-      current = { date:date, testnum:event, location:obs, testers:[], obs:[] };
-      sessions.push(current);
-    } else if (current) {
-      if (people) {
-        var tname = people.replace(/\s+\S+@\S+\.\S+\s*$/, '').trim() || people.trim();
-        current.testers.push(tname);
-      } else if (obs || sol) {
-        current.obs.push({ obs:obs, sol:sol });
-      }
-    }
-  });
-  return sessions;
 }
 
 // ── Render sessions ───────────────────────────────────────────────────────────
@@ -427,21 +387,6 @@ var _allSessions = [];
 var _editMode      = false;
 var _editOrigDate  = '';
 var _editOrigEvent = '';
-
-function _sessionMatchesQuery(s, q) {
-  if (!q) return true;
-  if (s.testnum.toLowerCase().indexOf(q) !== -1) return true;
-  if (s.location.toLowerCase().indexOf(q) !== -1) return true;
-  if (s.date.toLowerCase().indexOf(q) !== -1) return true;
-  for (var t = 0; t < s.testers.length; t++) {
-    if (s.testers[t].toLowerCase().indexOf(q) !== -1) return true;
-  }
-  for (var o = 0; o < s.obs.length; o++) {
-    if ((s.obs[o].obs || '').toLowerCase().indexOf(q) !== -1) return true;
-    if ((s.obs[o].sol || '').toLowerCase().indexOf(q) !== -1) return true;
-  }
-  return false;
-}
 
 function renderSessions() {
   _allSessions = buildSessions(_allRows).reverse();
@@ -472,9 +417,10 @@ function renderSessions() {
     html += '</div>';  // .session-header
     // Body
     html += '<div class="session-body-wrap"><div class="session-body">';
-    if (s.obs.length) {
+    var visibleObs = _filterObsByQuery(s.obs, q);
+    if (visibleObs.length) {
       html += '<table class="obs-table"><tbody>';
-      s.obs.forEach(function(pair) {
+      visibleObs.forEach(function(pair) {
         html += '<tr><td class="td-obs">' + obsHtml(pair.obs) + '</td><td class="td-sol">' + esc(pair.sol) + '</td></tr>';
       });
       html += '</tbody></table>';

@@ -399,7 +399,10 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
 <div class="top-bar">
   <div class="top-bar-inner">
-    <h1>DevBoard</h1>
+    <div style="display:flex;flex-direction:column;gap:.1rem">
+      <h1>DevBoard</h1>
+      <span id="collabUserLabel" style="font-family:'DINRegular',sans-serif;font-size:.72rem;color:rgba(255,255,255,.5);display:none"></span>
+    </div>
     <span class="sep">·</span>
     <span class="game-label"><?= _ds_e($_gameName) ?></span>
     <div class="account-menu-wrap">
@@ -410,8 +413,6 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         </svg>
       </button>
       <div class="account-menu" id="accountMenu">
-        <span class="account-menu-label" id="accountMenuEmail">Not signed in</span>
-        <hr class="account-menu-divider" />
         <button class="account-menu-item" onclick="closeAccountMenu();openProfileDialog()">Profile</button>
       </div>
     </div>
@@ -1148,8 +1149,15 @@ document.addEventListener('click', function(e) {
 }, true);
 
 function _updateMenuLabel() {
-  var el = document.getElementById('accountMenuEmail');
-  if (el) el.textContent = _collabUser ? _collabUser.email : 'Not signed in';
+  var el = document.getElementById('collabUserLabel');
+  if (!el) return;
+  if (_collabUser) {
+    var display = (_collabUser.bio && _collabUser.bio.name) || _collabUser.email;
+    el.textContent = display;
+    el.style.display = '';
+  } else {
+    el.style.display = 'none';
+  }
 }
 
 // ── Profile / auth dialog ────────────────────────────────────────────────────
@@ -1379,6 +1387,7 @@ function submitBioEdit() {
     _collabUser.bio.payment     = document.getElementById('authEditPayment').value.trim();
     _collabUser.bio.notes       = document.getElementById('authEditNotes').value.trim();
     _saveStoredUser(_collabUser);
+    _updateMenuLabel();
     // Add to people sheet on new signup (use real name if entered, email as fallback)
     if (_isNewCollabUser) {
       _addTopeople(savedName || _collabUser.email, _collabUser.email);

@@ -22,8 +22,8 @@ $email    = strtolower(trim($_POST['email']    ?? ''));
 $password = trim($_POST['password']            ?? '');
 $sheetId  = trim($_POST['id']                  ?? '');
 
-if (!$email || !$password) {
-    echo json_encode(['error' => 'Email and password are required.']);
+if (!$email || !$password || !$sheetId) {
+    echo json_encode(['error' => 'Email, password, and sheet ID are required.']);
     exit;
 }
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -36,7 +36,9 @@ if (strlen($password) < 4) {
 }
 
 $sheetsRoot   = dirname(__DIR__) . '/sheets';
-$accountsFile = $sheetsRoot . '/accounts.json';
+$sheetDir     = $sheetsRoot . '/' . $sheetId;
+if ($sheetId && !is_dir($sheetDir)) { mkdir($sheetDir, 0777, true); }
+$accountsFile = $sheetDir . '/accounts.json';
 
 // Load or init accounts map
 $accounts = [];

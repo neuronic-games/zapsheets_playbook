@@ -1273,13 +1273,7 @@ function _profileBioIsDirty() {
 function _profileDialogIsDirty() {
   var editBio = document.getElementById('authEditBio');
   if (editBio && editBio.style.display !== 'none') return _profileBioIsDirty();
-  var authForm = document.getElementById('authForm');
-  if (authForm && authForm.style.display !== 'none') {
-    var email = (document.getElementById('authEmail').value || '').trim();
-    var pw    = (document.getElementById('authPassword').value || '').trim();
-    return !!(email || pw);
-  }
-  return false;  // authProfile panel — read-only, never dirty
+  return false;  // sign-in form and read-only profile — no data to lose
 }
 function closeProfileDialog() {
   if (_profileDialogIsDirty()) { shakeDialog(document.getElementById('authDialog')); return; }
@@ -1399,7 +1393,7 @@ function submitAuth(confirmNew) {
         _openEditBioForm(email);
       } else {
         // Existing user — just close
-        closeProfileDialog();
+        forceCloseProfileDialog();
       }
     })
     .catch(function(e) {

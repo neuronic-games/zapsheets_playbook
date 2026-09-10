@@ -1,5 +1,17 @@
 // devboard-common.js — shared utilities for dashboard and collab views
 
+// ── Dialog shake (dirty-close feedback) ──────────────────────────────────────
+function shakeDialog(el) {
+  if (!el) return;
+  el.classList.remove('dialog-shake');
+  void el.offsetWidth;  // reflow to restart animation
+  el.classList.add('dialog-shake');
+  el.addEventListener('animationend', function handler() {
+    el.classList.remove('dialog-shake');
+    el.removeEventListener('animationend', handler);
+  });
+}
+
 // ── HTML escaping ─────────────────────────────────────────────────────────────
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');

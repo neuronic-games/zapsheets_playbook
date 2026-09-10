@@ -1222,9 +1222,24 @@ function openProfileDialog() {
   profile.style.display = 'none';
 
   if (_collabUser) {
-    // Already signed in — open editable bio form directly
+    // Already signed in — fetch fresh bio then open edit form
     _isNewCollabUser = false;
-    _openEditBioForm(_collabUser.email);
+    document.getElementById('profileOverlay').classList.add('open');
+    var _bioFd = new FormData();
+    _bioFd.append('id',    SHEET_ID);
+    _bioFd.append('email', _collabUser.email);
+    fetch(APP_BASE + 'push/collabGetBio.php', { method:'POST', body:_bioFd })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.ok && res.bio) {
+          _collabUser.bio = res.bio;
+          _saveStoredUser(_collabUser);
+          _updateMenuLabel();
+        }
+        _openEditBioForm(_collabUser.email);
+      })
+      .catch(function() { _openEditBioForm(_collabUser.email); });
+    return;
   } else {
     form.style.display = '';
     document.getElementById('authFields').style.display  = '';
@@ -1238,9 +1253,7 @@ function openProfileDialog() {
     _authPendingEmail = ''; _authPendingPassword = '';
     document.getElementById('profileOverlay').classList.add('open');
     setTimeout(function() { var el = document.getElementById('authEmail'); if(el) el.focus(); }, 80);
-    return;
   }
-  document.getElementById('profileOverlay').classList.add('open');
 }
 function _profileBioIsDirty() {
   var f = function(id) { return (document.getElementById(id).value || '').trim(); };

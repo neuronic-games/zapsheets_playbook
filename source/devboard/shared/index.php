@@ -432,6 +432,8 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       </button>
       <div class="account-menu" id="accountMenu">
         <button class="account-menu-item" onclick="closeAccountMenu();openProfileDialog()">Profile</button>
+        <hr class="account-menu-divider" />
+        <button class="account-menu-item" id="accountMenuAuthBtn" onclick="closeAccountMenu();_menuAuthAction()">Sign In</button>
       </div>
     </div>
   </div>
@@ -568,12 +570,9 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         <textarea class="field-input ge-textarea" id="authEditNotes" placeholder="Anything else…" style="resize:vertical;min-height:3rem;line-height:1.5"></textarea>
       </div>
       <div class="auth-err" id="authEditErr"></div>
-      <div class="dialog-actions" style="margin-top:.5rem;justify-content:space-between">
-        <button class="auth-signout-btn" id="authEditSignOutBtn" onclick="signOut()" style="display:none">Sign Out</button>
-        <div style="display:flex;gap:.6rem;margin-left:auto">
-          <button class="btn-cancel" id="authEditCancelBtn" onclick="skipBioEdit()">Skip for now</button>
-          <button class="btn-primary" id="authEditBtn" onclick="submitBioEdit()">Save Profile</button>
-        </div>
+      <div class="dialog-actions" style="margin-top:.5rem">
+        <button class="btn-cancel" id="authEditCancelBtn" onclick="skipBioEdit()">Skip for now</button>
+        <button class="btn-primary" id="authEditBtn" onclick="submitBioEdit()">Save Profile</button>
       </div>
     </div>
 
@@ -591,8 +590,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         </div>
       </div>
       <div class="auth-bio-section" id="authBioSection"></div>
-      <div class="dialog-actions" style="justify-content:space-between;margin-top:.5rem">
-        <button class="auth-signout-btn" onclick="signOut()">Sign Out</button>
+      <div class="dialog-actions" style="margin-top:.5rem">
         <button class="btn-cancel" onclick="closeProfileDialog()">Close</button>
       </div>
     </div>
@@ -1193,6 +1191,11 @@ document.addEventListener('click', function(e) {
 function _updateSignedInState() {
   var banner = document.getElementById('notSignedInBanner');
   if (banner) banner.style.display = _collabUser ? 'none' : '';
+  var authBtn = document.getElementById('accountMenuAuthBtn');
+  if (authBtn) authBtn.textContent = _collabUser ? 'Sign Out' : 'Sign In';
+}
+function _menuAuthAction() {
+  if (_collabUser) { signOut(); } else { openProfileDialog(); }
 }
 
 function _updateMenuLabel() {
@@ -1447,10 +1450,9 @@ function _openEditBioForm(email) {
   document.getElementById('authEditErr').style.display = 'none';
   document.getElementById('authEditBtn').disabled      = false;
   document.getElementById('authEditBtn').textContent   = 'Save Profile';
-  // Show Sign Out and relabel Cancel when editing an existing profile
+  // Relabel Cancel button depending on context
   var isNew = _isNewCollabUser;
-  document.getElementById('authEditSignOutBtn').style.display = isNew ? 'none' : '';
-  document.getElementById('authEditCancelBtn').textContent    = isNew ? 'Skip for now' : 'Cancel';
+  document.getElementById('authEditCancelBtn').textContent = isNew ? 'Skip for now' : 'Cancel';
   document.getElementById('authEditBio').style.display = '';
   // Snapshot initial state for dirty-check
   _profileBioInitial = {

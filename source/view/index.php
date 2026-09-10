@@ -1322,8 +1322,9 @@ function render() {
 
   var _ctaHtml = '';
 
-  // View Sellsheet — first button, shown when the game has no published year yet
-  if (!_yearPublished) {
+  // View Sellsheet — shown when unpublished AND the game has a Sellsheet URL
+  var _hasSellsheet = !!_absUrl(_gamesAny('Sellsheet URL', 'Sellsheet', 'SellsheetURL'));
+  if (!_yearPublished && _hasSellsheet) {
     var _sellsheetUrl = window._gvSheetId
       ? window.location.origin + _viewPath.replace(/\/$/, '') + '/sellsheet'
       : window.location.origin + _viewPath.substring(0, _idEnd) + '/sellsheet'

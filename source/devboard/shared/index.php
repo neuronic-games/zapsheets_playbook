@@ -106,7 +106,7 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 /* ── Top bar ── */
 .top-bar { background:#1a1a2e; color:#fff; padding:0 1rem; }
 .top-bar-inner { max-width:860px; margin:0 auto; display:flex; align-items:center; gap:.75rem; min-height:48px; }
-.top-bar h1 { font-family:'DINBlack',sans-serif; font-size:.9rem; letter-spacing:.04em; text-transform:uppercase; margin:0; cursor:pointer; }
+.top-bar h1 { font-family:'DINBlack',sans-serif; font-size:.9rem; letter-spacing:.04em; text-transform:none; margin:0; cursor:pointer; }
 .db-dev   { color:#7ECFB3; }
 .db-board { color:#FFB347; }
 .top-bar .sep { opacity:.3; font-size:.85rem; }
@@ -498,7 +498,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         </div>
         <div class="auth-err" id="authErr"></div>
         <div class="dialog-actions" style="margin-top:.5rem">
-          <button class="btn-cancel" onclick="closeProfileDialog()">Cancel</button>
+          <button class="btn-cancel" onclick="forceCloseProfileDialog()">Cancel</button>
           <button class="btn-primary" id="authBtn" onclick="submitAuth()">Sign In</button>
         </div>
       </div>
@@ -1162,6 +1162,7 @@ function handleObsImageFile(idx, file) {
 
 // ── Auth state ───────────────────────────────────────────────────────────────
 var _collabUser = null;  // null = not signed in; { email, bio } = signed in
+var _profileBioInitial = {};
 
 function _loadStoredUser() {
   try {
@@ -1241,7 +1242,34 @@ function openProfileDialog() {
   }
   document.getElementById('profileOverlay').classList.add('open');
 }
+function _profileBioIsDirty() {
+  var f = function(id) { return (document.getElementById(id).value || '').trim(); };
+  return f('authEditName')     !== (_profileBioInitial.name     || '')
+      || f('authEditDesc')     !== (_profileBioInitial.desc     || '')
+      || f('authEditSkills')   !== (_profileBioInitial.skills   || '')
+      || f('authEditLocation') !== (_profileBioInitial.location || '')
+      || f('authEditDiscord')  !== (_profileBioInitial.discord  || '')
+      || f('authEditPhone')    !== (_profileBioInitial.phone    || '')
+      || f('authEditPayment')  !== (_profileBioInitial.payment  || '')
+      || f('authEditNotes')    !== (_profileBioInitial.notes    || '')
+      || document.getElementById('authEditPhotoFile').files.length > 0;
+}
+function _profileDialogIsDirty() {
+  var editBio = document.getElementById('authEditBio');
+  if (editBio && editBio.style.display !== 'none') return _profileBioIsDirty();
+  var authForm = document.getElementById('authForm');
+  if (authForm && authForm.style.display !== 'none') {
+    var email = (document.getElementById('authEmail').value || '').trim();
+    var pw    = (document.getElementById('authPassword').value || '').trim();
+    return !!(email || pw);
+  }
+  return false;  // authProfile panel — read-only, never dirty
+}
 function closeProfileDialog() {
+  if (_profileDialogIsDirty()) { shakeDialog(document.getElementById('authDialog')); return; }
+  forceCloseProfileDialog();
+}
+function forceCloseProfileDialog() {
   document.getElementById('profileOverlay').classList.remove('open');
 }
 
@@ -1411,6 +1439,17 @@ function _openEditBioForm(email) {
   document.getElementById('authEditSignOutBtn').style.display = isNew ? 'none' : '';
   document.getElementById('authEditCancelBtn').textContent    = isNew ? 'Skip for now' : 'Cancel';
   document.getElementById('authEditBio').style.display = '';
+  // Snapshot initial state for dirty-check
+  _profileBioInitial = {
+    name:     bio.name        || '',
+    desc:     bio.description || '',
+    skills:   bio.skills      || '',
+    location: bio.location    || '',
+    discord:  bio.discord     || '',
+    phone:    bio.phone       || '',
+    payment:  bio.payment     || '',
+    notes:    bio.notes       || ''
+  };
 }
 
 function authEditPhotoPreview(input) {
@@ -1429,7 +1468,7 @@ function skipBioEdit() {
     _addTopeople(_collabUser.email, _collabUser.email);
   }
   _isNewCollabUser = false;
-  closeProfileDialog();
+  forceCloseProfileDialog();
 }
 
 function submitBioEdit() {
@@ -1505,7 +1544,18 @@ function submitBioEdit() {
       _addTopeople(savedName || _collabUser.email, _collabUser.email);
     }
     _isNewCollabUser = false;
-    closeProfileDialog();
+    // Re-sync snapshot so dialog is no longer dirty
+    _profileBioInitial = {
+      name:     _collabUser.bio.name        || '',
+      desc:     _collabUser.bio.description || '',
+      skills:   _collabUser.bio.skills      || '',
+      location: _collabUser.bio.location    || '',
+      discord:  _collabUser.bio.discord     || '',
+      phone:    _collabUser.bio.phone       || '',
+      payment:  _collabUser.bio.payment     || '',
+      notes:    _collabUser.bio.notes       || ''
+    };
+    forceCloseProfileDialog();
   })
   .catch(function(e) {
     errEl.textContent = e.message || 'Could not save. Try again.';

@@ -49,8 +49,9 @@ foreach ($_people_raw as $_p) {
 }
 
 // Game image (strip =IMAGE("url") formula if present)
-$_gamesFile = __DIR__ . '/../../../sheets/' . $_sheetId . '/games.json';
-$_gameImage = '';
+$_gamesFile    = __DIR__ . '/../../../sheets/' . $_sheetId . '/games.json';
+$_gameImage    = '';
+$_sellsheetUrl = '';
 if (file_exists($_gamesFile)) {
     $_games = json_decode(file_get_contents($_gamesFile), true) ?: [];
     foreach ($_games as $_g) {
@@ -61,6 +62,7 @@ if (file_exists($_gamesFile)) {
             } elseif ($_raw) {
                 $_gameImage = $_raw;
             }
+            $_sellsheetUrl = trim($_g['Sellsheet URL'] ?? '');
             break;
         }
     }
@@ -459,7 +461,12 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   <div class="game-header">
     <span class="game-title"><?= _ds_e($_gameName) ?></span>
     <div class="header-btns">
-<?php if ($_gameUrl): ?>
+<?php if ($_sellsheetUrl): ?>
+      <a class="page-link-btn" href="<?= _ds_e($_sellsheetUrl) ?>" target="_blank" rel="noopener">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Sellsheet
+      </a>
+<?php elseif ($_gameUrl): ?>
       <a class="page-link-btn" href="<?= _ds_e($_gameUrl) ?>">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         Page

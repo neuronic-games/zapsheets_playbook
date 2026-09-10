@@ -84,6 +84,14 @@ Renames the email key in `accounts.json` preserving insertion order; validates n
 - `guardedOpenSessionDialog()` / `guardedOpenEditDialog()` — check `_collabUser`; redirect to Profile dialog if not signed in
 - Edit buttons on session cards are only rendered when `_collabUser` is set
 
+## Games Data (`sheets/{sheet_id}/games.json`)
+Known columns: `Name`, `Status`, `Summary`, `Description`, `Count`, `Duration`, `Availability`, `Designer1–4`, `Cover URL`, `Image URL`, `Page URL`, `Video URL`, `Sellsheet URL`, `Play URL`, `Print URL`, `Rules URL`, `Playbook Sheet ID`, `Date Started`, `Date Signed`, `Date Published`
+
+### Sellsheet button (collab view)
+- If `Sellsheet URL` has data for the current game → show "Sellsheet" button (opens in new tab)
+- Else if game page exists (`$_gameUrl`) → show "Page" button
+- Otherwise → no button
+
 ## Python Scripts
 - All scripts take `{sheet_id}|{base64_json}` as a single CLI argument
 - `safe_str(v)` prefixes strings with `'` to prevent Sheets formula interpretation (except `=IMAGE()`)

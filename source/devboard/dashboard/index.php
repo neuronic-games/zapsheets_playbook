@@ -2625,25 +2625,22 @@ function submitSession() {
       var failed = results.find(function(r) { return r.error; });
       if (failed) throw new Error(failed.error);
       // Debug: show sheet headers visibly so we can diagnose length-not-saving
-      if (results[0] && results[0]._debug_headers) {
-        var hdrs = results[0]._debug_headers;
-        var writ = results[0]._debug_written;
-        console.log('[DevBoard] Sheet headers:', hdrs);
-        console.log('[DevBoard] Written row:', writ);
-        console.log('[DevBoard] swSeconds at save:', _swSeconds, 'swLength sent:', swLength);
-        // Show headers in UI so we can identify the column name without dev tools
-        var dbgMsg = 'DEBUG — Sheet columns: [' + hdrs.join(', ') + ']  |  Written: [' + writ.join(', ') + ']';
-        err.style.color = '#1a73e8';
-        err.textContent = dbgMsg;
-        err.style.display = 'block';
-        // Don't close the dialog yet — let user read the debug info, then close manually
-        addNewPeople(testerRaws);
-        if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
-        results.forEach(function(res) { if (res.row) devCache[_sessionGame].push(res.row); });
-        renderBody(_sessionGame, devCache[_sessionGame]);
-        return; // skip normal close
-      }
+      var r0 = results[0] || {};
+      var hdrs = r0._debug_headers || [];
+      var writ = r0._debug_written || [];
+      console.log('[DevBoard] results[0]:', r0);
+      console.log('[DevBoard] Sheet headers:', hdrs);
+      console.log('[DevBoard] Written row:', writ);
+      console.log('[DevBoard] swSeconds:', _swSeconds, 'swLength:', swLength);
+      var dbgMsg = 'HEADERS: [' + hdrs.join(' | ') + ']  WRITTEN: [' + writ.join(' | ') + ']';
+      err.style.cssText = 'display:block;color:#1a73e8;font-size:11px;word-break:break-all';
+      err.textContent = dbgMsg;
+      // Don't auto-close — let user read the debug, then close manually
       addNewPeople(testerRaws);
+      if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
+      results.forEach(function(res) { if (res.row) devCache[_sessionGame].push(res.row); });
+      renderBody(_sessionGame, devCache[_sessionGame]);
+      return; // skip normal close
       if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
       results.forEach(function(res) { if (res.row) devCache[_sessionGame].push(res.row); });
       renderBody(_sessionGame, devCache[_sessionGame]);

@@ -499,8 +499,13 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   display:flex; flex-direction:column; gap:1.1rem;
   max-height:92vh; overflow-y:auto;
 }
-.session-dialog h2 { font-family:'DINBlack',sans-serif; font-size:.95rem; text-transform:uppercase; letter-spacing:.07em; color:#1a5f7a; margin:0; }
-.session-dialog h2 span { color:#1a1a2e; }
+.session-dialog h2 { font-family:'DINBlack',sans-serif; font-size:.95rem; text-transform:uppercase; letter-spacing:.07em; color:#1a5f7a; margin:0; display:flex; align-items:center; gap:.5rem; }
+.session-dialog h2 > span:not(.sw-display) { color:#1a1a2e; }
+.sw-display { margin-left:auto; font-family:'DINBlack',sans-serif; font-size:.85rem; color:#e67e22; letter-spacing:.06em; display:none; }
+.sw-display.sw-active { display:block; }
+.btn-stopwatch { flex:0 0 auto; background:none; border:1.5px solid #d0d8e0; border-radius:50%; width:1.9rem; height:1.9rem; padding:0; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#bbb; transition:border-color .15s, color .15s, background .15s; }
+.btn-stopwatch:hover { border-color:#1a5f7a; color:#1a5f7a; }
+.btn-stopwatch.sw-running { border-color:#e67e22; color:#e67e22; background:#fff8f2; }
 
 /* Field grid: 3 cols top, separator, 2 cols bottom */
 .field-grid {
@@ -985,7 +990,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 <!-- Add session dialog -->
 <div class="overlay" id="sessionOverlay" onclick="if(event.target===this){var _d=this.querySelector('.session-dialog');if(_editMode?isSessionDirty():hasSessionData())shakeDialog(_d);else closeSessionDialog();}">
   <div class="session-dialog">
-    <h2><span id="sessionDialogAction">+ Session</span> — <span id="sessionGameTitle"></span></h2>
+    <h2><span id="sessionDialogAction">+ Session</span><span style="color:#1a5f7a"> — </span><span id="sessionGameTitle"></span><span id="swDisplay" class="sw-display"></span></h2>
 
     <!-- Session metadata: left 2×2 + right people -->
     <div class="session-meta-wrap">
@@ -1029,6 +1034,9 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
     <div class="dialog-err" id="sessionErr"></div>
     <div class="dialog-actions">
+      <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold to reset">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 5V3"/><path d="M9 3h6"/><path d="M12 13V9"/></svg>
+      </button>
       <span class="obs-kbd-hint">⌘ / Ctrl + Arrow — move between fields</span>
       <button class="btn-cancel" onclick="closeSessionDialog()">Cancel</button>
       <button class="btn-primary" id="sessionBtn" onclick="submitSession()">Add Session</button>
@@ -2267,6 +2275,82 @@ var _editOrigDate  = '';
 var _editOrigEvent = '';
 var _editSnapshot  = null;
 
+// ── Stopwatch ─────────────────────────────────────────────────────────────────
+var _swSeconds  = 0;
+var _swRunning  = false;
+var _swInterval = null;
+
+function _swFormat(secs) {
+  var h  = Math.floor(secs / 3600);
+  var m  = Math.floor((secs % 3600) / 60);
+  var s  = secs % 60;
+  var mm = String(m).padStart(2, '0');
+  var ss = String(s).padStart(2, '0');
+  return h > 0 ? h + ':' + mm + ':' + ss : mm + ':' + ss;
+}
+
+function _swUpdate() {
+  var disp = document.getElementById('swDisplay');
+  if (!disp) return;
+  if (_swSeconds > 0 || _swRunning) {
+    disp.textContent = _swFormat(_swSeconds);
+    disp.classList.add('sw-active');
+  } else {
+    disp.textContent = '';
+    disp.classList.remove('sw-active');
+  }
+}
+
+var _swLongPressTimer = null;
+
+function toggleStopwatch() {
+  var btn = document.getElementById('swBtn');
+  if (_swRunning) {
+    // Pause
+    clearInterval(_swInterval);
+    _swInterval = null;
+    _swRunning = false;
+    if (btn) btn.classList.remove('sw-running');
+  } else {
+    // Start / resume
+    _swRunning = true;
+    if (btn) btn.classList.add('sw-running');
+    _swInterval = setInterval(function() {
+      _swSeconds++;
+      _swUpdate();
+    }, 1000);
+  }
+  _swUpdate();
+}
+
+function _swStartLongPress() {
+  _swLongPressTimer = setTimeout(function() {
+    _swLongPressTimer = null;
+    _swReset();
+  }, 600);
+}
+
+function _swCancelLongPress(e) {
+  if (_swLongPressTimer) {
+    clearTimeout(_swLongPressTimer);
+    _swLongPressTimer = null;
+  } else {
+    // Long press fired — prevent the click from also toggling
+    e.preventDefault();
+    e.stopPropagation();
+  }
+}
+
+function _swReset() {
+  clearInterval(_swInterval);
+  _swInterval = null;
+  _swRunning  = false;
+  _swSeconds  = 0;
+  var btn = document.getElementById('swBtn');
+  if (btn) btn.classList.remove('sw-running');
+  _swUpdate();
+}
+
 function getSessionSnapshot() {
   var testers = [];
   document.querySelectorAll('#testersContainer input').forEach(function(el) {
@@ -2446,6 +2530,7 @@ function submitSession() {
         addNewPeople(testerRaws);
         // Force a fresh fetch so devCache reflects the new sheet state
         devCache[_sessionGame] = undefined;
+        _swReset();
         closeSessionDialog();
         loadDevData(_sessionGame);
       })
@@ -2463,7 +2548,8 @@ function submitSession() {
   //   2. One tester row each (blank date/event, testerName, "")
   //   3. One obs row each    (blank date/event, obs, sol)
   var allRows = [];
-  allRows.push({ date: date, event: testnum, observation: location, solution: '', type: 'header' });
+  var swLength = _swSeconds > 0 ? 'Length: ' + _swFormat(_swSeconds) : '';
+  allRows.push({ date: date, event: testnum, observation: location, solution: swLength, type: 'header' });
   testerVals.forEach(function(t) {
     allRows.push({ date: '', event: '', observation: t, solution: '', type: 'tester' });
   });
@@ -2497,6 +2583,7 @@ function submitSession() {
       if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
       results.forEach(function(res) { if (res.row) devCache[_sessionGame].push(res.row); });
       renderBody(_sessionGame, devCache[_sessionGame]);
+      _swReset();
       closeSessionDialog();
     })
     .catch(function(e) {

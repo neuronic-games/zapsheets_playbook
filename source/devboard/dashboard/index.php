@@ -359,6 +359,10 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .subtitle-btn svg { flex-shrink:0; }
 .subtitle-btn-primary { background:#1a5f7a; color:#fff; }
 .subtitle-btn-primary:hover { background:#145070; }
+.subtitle-btn-reload { padding:.3rem .45rem; color:#aaa; }
+.subtitle-btn-reload:hover { color:#1a5f7a; }
+.subtitle-btn-reload.loading svg { animation:sw-spin .7s linear infinite; }
+@keyframes sw-spin { to { transform:rotate(360deg); } }
 
 
 /* ── Contract dialog ──────────────────────────────────── */
@@ -1390,11 +1394,12 @@ function toggleCard(card) {
   }
 }
 
-function loadDevData(gameName) {
+function loadDevData(gameName, force) {
   devCache[gameName] = null;
   var fd = new FormData();
   fd.append('id', SHEET_ID);
   fd.append('game', gameName);
+  if (force) fd.append('force', '1');
   fetch(APP_BASE + 'push/getDevJson.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })
     .then(function(rows) {
@@ -1405,6 +1410,34 @@ function loadDevData(gameName) {
       devCache[gameName] = [];
       var body = document.getElementById('body-' + safeName(gameName));
       if (body) body.innerHTML = '<div class="dev-error">Could not load dev notes.</div>';
+    });
+}
+
+function reloadDevData(gameName) {
+  // Find the reload button and show a spinner while fetching
+  var cards = document.querySelectorAll('.game-card');
+  var reloadBtn = null;
+  cards.forEach(function(card) {
+    if (card.dataset.game === gameName) {
+      reloadBtn = card.querySelector('.subtitle-btn-reload');
+    }
+  });
+  if (reloadBtn) reloadBtn.classList.add('loading');
+  devCache[gameName] = null;
+  var fd = new FormData();
+  fd.append('id', SHEET_ID);
+  fd.append('game', gameName);
+  fd.append('force', '1');
+  fetch(APP_BASE + 'push/getDevJson.php', { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(rows) {
+      devCache[gameName] = Array.isArray(rows) ? rows : [];
+      renderBody(gameName, devCache[gameName]);
+      if (reloadBtn) reloadBtn.classList.remove('loading');
+    })
+    .catch(function() {
+      devCache[gameName] = [];
+      if (reloadBtn) reloadBtn.classList.remove('loading');
     });
 }
 
@@ -1454,6 +1487,9 @@ function renderBody(gameName, rows) {
   html += '<button class="subtitle-btn" onclick="openContractDialog(\'' + gn + '\')">+ Contract</button>';
   html += '<button class="subtitle-btn" onclick="openEditGame(\'' + gn + '\')">Edit</button>';
   html += '<button class="subtitle-btn subtitle-btn-primary" onclick="openSessionDialog(\'' + gn + '\')">+ Session</button>';
+  html += '<button class="subtitle-btn subtitle-btn-reload" onclick="reloadDevData(\'' + gn + '\')" title="Reload from sheet">' +
+    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>' +
+    '</button>';
   html += '</div>';
   html += '</div>';
 
@@ -2407,6 +2443,7 @@ function openSessionDialog(gameName) {
   document.getElementById('sessionErr').style.display = 'none';
   document.getElementById('sessionBtn').disabled    = false;
   document.getElementById('sessionBtn').textContent = 'Add Session';
+  _swUpdate();
   document.getElementById('sessionOverlay').classList.add('open');
   setTimeout(function() {
     var firstObs = document.getElementById('sObs-0');
@@ -2466,6 +2503,7 @@ function openEditSessionDialog(gameName, idx) {
   document.getElementById('sessionBtn').disabled    = false;
   document.getElementById('sessionBtn').textContent = 'Save Changes';
   _editSnapshot = getSessionSnapshot();
+  _swUpdate();
   document.getElementById('sessionOverlay').classList.add('open');
   // Resize textareas after the overlay is visible so scrollHeight is accurate
   setTimeout(function() {

@@ -27,8 +27,9 @@ if (!$sheetId || !$gameName) {
 $tabName   = '[' . $gameName . '] dev';
 $cacheFile = dirname(__DIR__) . '/sheets/' . $sheetId . '/' . strtolower($tabName) . '.json';
 
-// ── Serve from cache when available ──────────────────────────────────────────
-if (file_exists($cacheFile)) {
+// ── Serve from cache when available (skip if force=1) ────────────────────────
+$force = !empty($_POST['force']);
+if (!$force && file_exists($cacheFile)) {
     $data = json_decode(file_get_contents($cacheFile), true);
     echo json_encode(is_array($data) ? $data : []);
     exit;

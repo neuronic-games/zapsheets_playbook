@@ -1021,12 +1021,6 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
               style="background:#f0f4f8;color:#888;cursor:default;" />
           </div>
         </div>
-        <div class="session-meta-row">
-          <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold to reset">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="13" r="8"/><path d="M12 5V3"/><path d="M9 3h6"/><path d="M12 13V9"/></svg>
-            <span id="swTime">00:00</span>
-          </button>
-        </div>
       </div>
       <div class="field-group session-people">
         <label>People</label>
@@ -1042,6 +1036,10 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <div class="dialog-err" id="sessionErr"></div>
     <span class="obs-kbd-hint">⌘ / Ctrl + Arrow — move between fields</span>
     <div class="dialog-actions">
+      <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold to reset">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="13" r="8"/><path d="M12 5V3"/><path d="M9 3h6"/><path d="M12 13V9"/></svg>
+        <span id="swTime">00:00</span>
+      </button>
       <button class="btn-cancel" onclick="closeSessionDialog()">Cancel</button>
       <button class="btn-primary" id="sessionBtn" onclick="submitSession()">Add Session</button>
     </div>

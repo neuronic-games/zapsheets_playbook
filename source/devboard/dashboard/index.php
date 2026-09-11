@@ -2624,11 +2624,24 @@ function submitSession() {
     .then(function(results) {
       var failed = results.find(function(r) { return r.error; });
       if (failed) throw new Error(failed.error);
-      // Debug: log sheet headers and written values so we can diagnose length-not-saving
+      // Debug: show sheet headers visibly so we can diagnose length-not-saving
       if (results[0] && results[0]._debug_headers) {
-        console.log('[DevBoard] Sheet headers:', results[0]._debug_headers);
-        console.log('[DevBoard] Written row:', results[0]._debug_written);
+        var hdrs = results[0]._debug_headers;
+        var writ = results[0]._debug_written;
+        console.log('[DevBoard] Sheet headers:', hdrs);
+        console.log('[DevBoard] Written row:', writ);
         console.log('[DevBoard] swSeconds at save:', _swSeconds, 'swLength sent:', swLength);
+        // Show headers in UI so we can identify the column name without dev tools
+        var dbgMsg = 'DEBUG — Sheet columns: [' + hdrs.join(', ') + ']  |  Written: [' + writ.join(', ') + ']';
+        err.style.color = '#1a73e8';
+        err.textContent = dbgMsg;
+        err.style.display = 'block';
+        // Don't close the dialog yet — let user read the debug info, then close manually
+        addNewPeople(testerRaws);
+        if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
+        results.forEach(function(res) { if (res.row) devCache[_sessionGame].push(res.row); });
+        renderBody(_sessionGame, devCache[_sessionGame]);
+        return; // skip normal close
       }
       addNewPeople(testerRaws);
       if (!devCache[_sessionGame]) devCache[_sessionGame] = [];

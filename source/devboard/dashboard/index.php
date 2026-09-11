@@ -504,7 +504,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .session-dialog h2 > span:not(.sw-display) { color:#1a1a2e; }
 .sw-display { margin-left:auto; font-family:'DINBlack',sans-serif; font-size:.85rem; color:#e67e22; letter-spacing:.06em; display:none; }
 .sw-display.sw-active { display:block; }
-.btn-stopwatch { background:none; border:1.5px solid #d0d8e0; border-radius:6px; padding:.35rem .65rem; cursor:pointer; display:inline-flex; align-items:center; gap:.35rem; color:#bbb; font-family:'DINBlack',sans-serif; font-size:.78rem; letter-spacing:.04em; transition:border-color .15s, color .15s, background .15s; }
+.btn-stopwatch { margin-right:auto; background:none; border:1.5px solid #d0d8e0; border-radius:6px; padding:.35rem .65rem; cursor:pointer; display:inline-flex; align-items:center; gap:.35rem; color:#bbb; font-family:'DINBlack',sans-serif; font-size:.78rem; letter-spacing:.04em; transition:border-color .15s, color .15s, background .15s; }
 .btn-stopwatch:hover { border-color:#aaa; color:#888; }
 .btn-stopwatch.sw-running { border-color:#e67e22; color:#e67e22; background:#fff8f2; }
 
@@ -2407,7 +2407,6 @@ function openSessionDialog(gameName) {
   document.getElementById('sessionErr').style.display = 'none';
   document.getElementById('sessionBtn').disabled    = false;
   document.getElementById('sessionBtn').textContent = 'Add Session';
-  _swReset();
   document.getElementById('sessionOverlay').classList.add('open');
   setTimeout(function() {
     var firstObs = document.getElementById('sObs-0');
@@ -2467,7 +2466,6 @@ function openEditSessionDialog(gameName, idx) {
   document.getElementById('sessionBtn').disabled    = false;
   document.getElementById('sessionBtn').textContent = 'Save Changes';
   _editSnapshot = getSessionSnapshot();
-  _swReset();
   document.getElementById('sessionOverlay').classList.add('open');
   // Resize textareas after the overlay is visible so scrollHeight is accurate
   setTimeout(function() {

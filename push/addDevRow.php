@@ -75,10 +75,12 @@ if ($isTesterRow) {
     $output = trim((string) shell_exec($cmd));
 } else {
     $row     = [
-        'Date'        => $date,
-        'Event'       => $event,
+        'Date'         => $date,
+        'Event'        => $event,
         'Observations' => $observation,
-        'Thoughts'    => $solution,
+        'Observation'  => $observation,   // legacy sheets used 'Observation' (no s)
+        'Thoughts'     => $solution,
+        'Solution'     => $solution,      // legacy sheets used 'Solution' not 'Thoughts'
     ];
     $encoded = base64_encode(json_encode($row, JSON_UNESCAPED_UNICODE));
     $arg     = $sheetId . '|' . $tabName . '|' . $encoded;

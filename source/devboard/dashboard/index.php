@@ -503,8 +503,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .session-dialog h2 > span:not(.sw-display) { color:#1a1a2e; }
 .sw-display { margin-left:auto; font-family:'DINBlack',sans-serif; font-size:.85rem; color:#e67e22; letter-spacing:.06em; display:none; }
 .sw-display.sw-active { display:block; }
-.btn-stopwatch { flex:0 0 auto; background:none; border:1.5px solid #d0d8e0; border-radius:50%; width:1.9rem; height:1.9rem; padding:0; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#bbb; transition:border-color .15s, color .15s, background .15s; }
-.btn-stopwatch:hover { border-color:#1a5f7a; color:#1a5f7a; }
+.btn-stopwatch { flex:0 0 auto; background:none; border:1.5px solid #d0d8e0; border-radius:6px; padding:.3rem .55rem; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#bbb; font-family:'DINBlack',sans-serif; font-size:.75rem; letter-spacing:.04em; transition:border-color .15s, color .15s, background .15s; }
+.btn-stopwatch:hover { border-color:#aaa; color:#888; }
 .btn-stopwatch.sw-running { border-color:#e67e22; color:#e67e22; background:#fff8f2; }
 
 /* Field grid: 3 cols top, separator, 2 cols bottom */
@@ -555,7 +555,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 /* Keyboard navigation hint — hidden on touch-only devices */
 .obs-kbd-hint {
   display:none; font-family:'DINRegular',sans-serif; font-size:.7rem;
-  color:#c8d0d8; user-select:none; margin-right:auto;
+  color:#c8d0d8; user-select:none; text-align:center;
 }
 @media (hover: hover) { .obs-kbd-hint { display:block; } }
 
@@ -1033,11 +1033,9 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <div id="obsContainer"></div>
 
     <div class="dialog-err" id="sessionErr"></div>
+    <span class="obs-kbd-hint">⌘ / Ctrl + Arrow — move between fields</span>
     <div class="dialog-actions">
-      <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold to reset">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 5V3"/><path d="M9 3h6"/><path d="M12 13V9"/></svg>
-      </button>
-      <span class="obs-kbd-hint">⌘ / Ctrl + Arrow — move between fields</span>
+      <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold to reset"><span id="swTime">00:00</span></button>
       <button class="btn-cancel" onclick="closeSessionDialog()">Cancel</button>
       <button class="btn-primary" id="sessionBtn" onclick="submitSession()">Add Session</button>
     </div>
@@ -2290,10 +2288,15 @@ function _swFormat(secs) {
 }
 
 function _swUpdate() {
+  var timeStr = _swFormat(_swSeconds);
+  // Update button time display
+  var swTime = document.getElementById('swTime');
+  if (swTime) swTime.textContent = timeStr;
+  // Update title bar (only when active)
   var disp = document.getElementById('swDisplay');
   if (!disp) return;
   if (_swSeconds > 0 || _swRunning) {
-    disp.textContent = _swFormat(_swSeconds);
+    disp.textContent = timeStr;
     disp.classList.add('sw-active');
   } else {
     disp.textContent = '';
@@ -2399,6 +2402,7 @@ function openSessionDialog(gameName) {
   document.getElementById('sessionErr').style.display = 'none';
   document.getElementById('sessionBtn').disabled    = false;
   document.getElementById('sessionBtn').textContent = 'Add Session';
+  _swReset();
   document.getElementById('sessionOverlay').classList.add('open');
   setTimeout(function() {
     var firstObs = document.getElementById('sObs-0');
@@ -2458,6 +2462,7 @@ function openEditSessionDialog(gameName, idx) {
   document.getElementById('sessionBtn').disabled    = false;
   document.getElementById('sessionBtn').textContent = 'Save Changes';
   _editSnapshot = getSessionSnapshot();
+  _swReset();
   document.getElementById('sessionOverlay').classList.add('open');
   // Resize textareas after the overlay is visible so scrollHeight is accurate
   setTimeout(function() {
@@ -2548,7 +2553,7 @@ function submitSession() {
   //   2. One tester row each (blank date/event, testerName, "")
   //   3. One obs row each    (blank date/event, obs, sol)
   var allRows = [];
-  var swLength = _swSeconds > 0 ? 'Length: ' + _swFormat(_swSeconds) : '';
+  var swLength = 'Length: ' + _swFormat(_swSeconds);
   allRows.push({ date: date, event: testnum, observation: location, solution: swLength, type: 'header' });
   testerVals.forEach(function(t) {
     allRows.push({ date: '', event: '', observation: t, solution: '', type: 'tester' });

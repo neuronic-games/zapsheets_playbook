@@ -344,14 +344,14 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .stat-idea     { background:#2e7a52; }
 .stat-dim      { opacity:.35; }
 .stat-active   { box-shadow:0 0 0 2.5px #fff, 0 0 0 4.5px rgba(0,0,0,.25); }
-.subtitle-right { margin-left:auto; display:flex; align-items:center; gap:.45rem; }
+.subtitle-right { margin-left:auto; display:flex; align-items:stretch; gap:.45rem; }
 .subtitle-btn {
   font-family:'DINBlack',sans-serif; font-size:.7rem;
   text-transform:uppercase; letter-spacing:.07em;
   background:transparent; color:#1a5f7a;
   border:1.5px solid #1a5f7a; border-radius:6px;
   padding:.28rem .65rem; cursor:pointer;
-  display:inline-flex; align-items:center; gap:.3rem;
+  display:inline-flex; align-items:center; justify-content:center; gap:.3rem;
   transition:background .15s, color .15s;
   white-space:nowrap;
 }
@@ -2576,7 +2576,6 @@ function submitSession() {
         addNewPeople(testerRaws);
         // Force a fresh fetch so devCache reflects the new sheet state
         devCache[_sessionGame] = undefined;
-        _swReset();
         closeSessionDialog();
         loadDevData(_sessionGame);
       })
@@ -2594,7 +2593,7 @@ function submitSession() {
   //   2. One tester row each (blank date/event, testerName, "")
   //   3. One obs row each    (blank date/event, obs, sol)
   var allRows = [];
-  var swLength = 'Length: ' + _swFormat(_swSeconds);
+  var swLength = _swSeconds > 0 ? 'Length: ' + _swFormat(_swSeconds) : '';
   allRows.push({ date: date, event: testnum, observation: location, solution: swLength, type: 'header' });
   testerVals.forEach(function(t) {
     allRows.push({ date: '', event: '', observation: t, solution: '', type: 'tester' });
@@ -2629,7 +2628,6 @@ function submitSession() {
       if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
       results.forEach(function(res) { if (res.row) devCache[_sessionGame].push(res.row); });
       renderBody(_sessionGame, devCache[_sessionGame]);
-      _swReset();
       closeSessionDialog();
     })
     .catch(function(e) {

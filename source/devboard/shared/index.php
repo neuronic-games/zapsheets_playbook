@@ -483,7 +483,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         Page
       </a>
 <?php endif; ?>
-      <button class="add-session-btn" onclick="guardedOpenSessionDialog()">+ Session</button>
+      <button class="add-session-btn" id="addSessionBtn" onclick="guardedOpenSessionDialog()" style="display:none">+ Session</button>
       <button class="reload-session-btn" id="reloadSessionBtn" onclick="reloadSessions()" title="Reload from sheet">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
       </button>
@@ -1234,6 +1234,8 @@ function _updateSignedInState() {
   if (banner) banner.style.display = _collabUser ? 'none' : '';
   var authBtn = document.getElementById('accountMenuAuthBtn');
   if (authBtn) authBtn.textContent = _collabUser ? 'Sign Out' : 'Sign In';
+  var addBtn = document.getElementById('addSessionBtn');
+  if (addBtn) addBtn.style.display = _collabUser ? '' : 'none';
 }
 function _menuAuthAction() {
   if (_collabUser) { signOut(); } else { openProfileDialog(); }

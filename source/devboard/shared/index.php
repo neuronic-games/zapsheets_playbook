@@ -87,7 +87,7 @@ function _ds_e(string $s): string { return htmlspecialchars($s, ENT_QUOTES); }
 @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'),url('fonts/DINMedium.ttf'); }
 
 *, *::before, *::after { box-sizing:border-box; }
-html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:100vh; }
+html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:100vh; font-family:'DINRegular',Arial,sans-serif; }
 
 /* ── Not-signed-in banner ── */
 #notSignedInBanner {

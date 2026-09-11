@@ -1457,10 +1457,11 @@ function renderBody(gameName, rows) {
       if (s.testnum.toLowerCase().indexOf('meeting') === 0) typeClass = 'type-meeting';
       else if (s.testnum.toLowerCase().indexOf('idea') === 0) typeClass = 'type-idea';
 
-      var allIdx = allSessions.indexOf(s);
-      var gnQ    = JSON.stringify(gameName).replace(/"/g, '&quot;');
-      html += '<div class="session-block' + (_searchQuery ? ' open' : '') + '" id="sblock-' + i + '">';
-      html += '<div class="session-header" onclick="toggleSession(' + i + ')" data-game="' + esc(gameName) + '" data-idx="' + allIdx + '">';
+      var allIdx  = allSessions.indexOf(s);
+      var gnQ     = JSON.stringify(gameName).replace(/"/g, '&quot;');
+      var blockId = gameName.replace(/[^a-z0-9]/gi, '-').toLowerCase() + '-' + i;
+      html += '<div class="session-block' + (_searchQuery ? ' open' : '') + '" id="sblock-' + blockId + '">';
+      html += '<div class="session-header" onclick="toggleSession(\'' + blockId + '\')" data-game="' + esc(gameName) + '" data-idx="' + allIdx + '">';
       html +=   '<div class="session-header-row">';
       if (s.testnum) html += '<span class="session-type ' + typeClass + '">' + esc(s.testnum) + '</span>';
       if (s.date)    html += '<span class="session-sep">·</span><span class="session-date">' + esc(fmtDate(s.date)) + '</span>';

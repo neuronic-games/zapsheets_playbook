@@ -2624,6 +2624,12 @@ function submitSession() {
     .then(function(results) {
       var failed = results.find(function(r) { return r.error; });
       if (failed) throw new Error(failed.error);
+      // Debug: log sheet headers and written values so we can diagnose length-not-saving
+      if (results[0] && results[0]._debug_headers) {
+        console.log('[DevBoard] Sheet headers:', results[0]._debug_headers);
+        console.log('[DevBoard] Written row:', results[0]._debug_written);
+        console.log('[DevBoard] swSeconds at save:', _swSeconds, 'swLength sent:', swLength);
+      }
       addNewPeople(testerRaws);
       if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
       results.forEach(function(res) { if (res.row) devCache[_sessionGame].push(res.row); });

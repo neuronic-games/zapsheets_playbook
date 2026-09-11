@@ -1,12 +1,14 @@
 <?php
-// getDevJson.php — lazy-load playtest data for a single game.
+// getDevJson.php — serve playtest session data for a single game.
 //
-// Reads the "{GameName} dev" tab from Google Sheets via gread.py and returns
-// the rows as JSON.  If the tab doesn't exist yet, returns an empty array.
+// Serves from the cached JSON file written by gread.py (via the dashboard
+// Fetch button).  Falls back to a live gread.py call only when the cache
+// file doesn't exist yet (first-ever load).  This prevents concurrent
+// Google Sheets API calls from multiple collaborators hitting rate limits.
 //
 // POST params:
 //   id   — Google Spreadsheet ID
-//   game — Game name (tab name will be "{game} dev")
+//   game — Game name (tab name will be "[{game}] dev")
 
 error_reporting(0);
 ini_set('display_errors', '0');
@@ -22,8 +24,18 @@ if (!$sheetId || !$gameName) {
     exit;
 }
 
+$tabName   = '[' . $gameName . '] dev';
+$cacheFile = dirname(__DIR__) . '/sheets/' . $sheetId . '/' . strtolower($tabName) . '.json';
+
+// ── Serve from cache when available ──────────────────────────────────────────
+if (file_exists($cacheFile)) {
+    $data = json_decode(file_get_contents($cacheFile), true);
+    echo json_encode(is_array($data) ? $data : []);
+    exit;
+}
+
+// ── First-time load: fetch live and populate the cache ────────────────────────
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
-$tabName    = '[' . $gameName . '] dev';
 $arg        = $sheetId . 'sheetname' . $tabName;
 
 $cmd    = escapeshellarg($pythonPath) . ' '
@@ -32,7 +44,6 @@ $cmd    = escapeshellarg($pythonPath) . ' '
 $output = trim((string) shell_exec($cmd));
 
 if ($output === '') {
-    // Tab doesn't exist yet — no dev notes recorded
     echo json_encode([]);
     exit;
 }

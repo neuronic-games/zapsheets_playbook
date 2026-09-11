@@ -139,6 +139,17 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
   transition:background .15s, color .15s;
 }
 .add-session-btn:hover { background:#e8f4f8; }
+.reload-session-btn {
+  font-family:'DINBlack',sans-serif; font-size:.7rem;
+  background:#fff; color:#aaa;
+  border:1.5px solid #d0d8e0; border-radius:6px;
+  padding:.3rem .55rem; cursor:pointer;
+  display:inline-flex; align-items:center;
+  transition:color .15s, border-color .15s;
+}
+.reload-session-btn:hover { color:#1a5f7a; border-color:#1a5f7a; }
+.reload-session-btn.loading svg { animation:sw-spin .7s linear infinite; }
+@keyframes sw-spin { to { transform:rotate(360deg); } }
 .page-link-btn {
   font-family:'DINBlack',sans-serif; font-size:.7rem;
   text-transform:uppercase; letter-spacing:.07em;
@@ -473,6 +484,9 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       </a>
 <?php endif; ?>
       <button class="add-session-btn" onclick="guardedOpenSessionDialog()">+ Session</button>
+      <button class="reload-session-btn" id="reloadSessionBtn" onclick="reloadSessions()" title="Reload from sheet">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      </button>
     </div>
   </div>
 
@@ -744,10 +758,11 @@ function clearSearch() {
   renderSessions();
 }
 
-function loadSessions() {
+function loadSessions(force) {
   var fd = new FormData();
   fd.append('id',   SHEET_ID);
   fd.append('game', GAME_NAME);
+  if (force) fd.append('force', '1');
   fetch(APP_BASE + 'push/getDevJson.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })
     .then(function(rows) {
@@ -757,6 +772,25 @@ function loadSessions() {
     .catch(function() {
       document.getElementById('sessionsWrap').innerHTML =
         '<div class="dev-empty">Could not load sessions. Please try again later.</div>';
+    });
+}
+
+function reloadSessions() {
+  var btn = document.getElementById('reloadSessionBtn');
+  if (btn) btn.classList.add('loading');
+  var fd = new FormData();
+  fd.append('id',    SHEET_ID);
+  fd.append('game',  GAME_NAME);
+  fd.append('force', '1');
+  fetch(APP_BASE + 'push/getDevJson.php', { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(rows) {
+      _allRows = Array.isArray(rows) ? rows : [];
+      renderSessions();
+      if (btn) btn.classList.remove('loading');
+    })
+    .catch(function() {
+      if (btn) btn.classList.remove('loading');
     });
 }
 

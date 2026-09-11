@@ -359,8 +359,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .subtitle-btn svg { flex-shrink:0; }
 .subtitle-btn-primary { background:#1a5f7a; color:#fff; }
 .subtitle-btn-primary:hover { background:#145070; }
-.subtitle-btn-reload { padding:.3rem .45rem; color:#aaa; }
-.subtitle-btn-reload:hover { color:#1a5f7a; }
+.subtitle-btn-reload { color:#aaa; border-color:#d0d8e0; }
+.subtitle-btn-reload:hover { color:#1a5f7a; border-color:#1a5f7a; background:transparent; }
 .subtitle-btn-reload.loading svg { animation:sw-spin .7s linear infinite; }
 @keyframes sw-spin { to { transform:rotate(360deg); } }
 

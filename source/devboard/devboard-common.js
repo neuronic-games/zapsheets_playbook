@@ -47,7 +47,7 @@ function buildSessions(rows) {
     var obs    = (row['Observations'] || row['Observation'] || '').trim();
     var sol    = (row['Thoughts']     || row['Solution']    || '').trim();
     if (date || event) {
-      current = { date:date, testnum:event, location:obs, testers:[], obs:[] };
+      current = { date:date, testnum:event, location:obs, length:sol, testers:[], obs:[] };
       sessions.push(current);
     } else if (current) {
       if (people) {

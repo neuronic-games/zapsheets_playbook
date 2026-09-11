@@ -406,6 +406,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .session-date     { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#999; }
 .session-sep      { color:#ccc; font-size:.6rem; }
 .session-location { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#777; }
+.session-length   { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#999; }
 .session-count    { font-family:'DINRegular',sans-serif; font-size:.68rem; color:#bbb; margin-left:auto; white-space:nowrap; }
 .session-chevron  { font-size:.6rem; opacity:.45; flex-shrink:0; transition:transform .22s ease; transform:rotate(-90deg); }
 .session-block.open .session-chevron { transform:rotate(0deg); }
@@ -503,7 +504,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .session-dialog h2 > span:not(.sw-display) { color:#1a1a2e; }
 .sw-display { margin-left:auto; font-family:'DINBlack',sans-serif; font-size:.85rem; color:#e67e22; letter-spacing:.06em; display:none; }
 .sw-display.sw-active { display:block; }
-.btn-stopwatch { flex:0 0 auto; background:none; border:1.5px solid #d0d8e0; border-radius:6px; padding:.3rem .55rem; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#bbb; font-family:'DINBlack',sans-serif; font-size:.75rem; letter-spacing:.04em; transition:border-color .15s, color .15s, background .15s; }
+.btn-stopwatch { background:none; border:1.5px solid #d0d8e0; border-radius:6px; padding:.35rem .65rem; cursor:pointer; display:inline-flex; align-items:center; gap:.35rem; color:#bbb; font-family:'DINBlack',sans-serif; font-size:.78rem; letter-spacing:.04em; transition:border-color .15s, color .15s, background .15s; }
 .btn-stopwatch:hover { border-color:#aaa; color:#888; }
 .btn-stopwatch.sw-running { border-color:#e67e22; color:#e67e22; background:#fff8f2; }
 
@@ -1020,6 +1021,12 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
               style="background:#f0f4f8;color:#888;cursor:default;" />
           </div>
         </div>
+        <div class="session-meta-row">
+          <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold to reset">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="13" r="8"/><path d="M12 5V3"/><path d="M9 3h6"/><path d="M12 13V9"/></svg>
+            <span id="swTime">00:00</span>
+          </button>
+        </div>
       </div>
       <div class="field-group session-people">
         <label>People</label>
@@ -1035,7 +1042,6 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <div class="dialog-err" id="sessionErr"></div>
     <span class="obs-kbd-hint">⌘ / Ctrl + Arrow — move between fields</span>
     <div class="dialog-actions">
-      <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold to reset"><span id="swTime">00:00</span></button>
       <button class="btn-cancel" onclick="closeSessionDialog()">Cancel</button>
       <button class="btn-primary" id="sessionBtn" onclick="submitSession()">Add Session</button>
     </div>
@@ -1472,6 +1478,7 @@ function renderBody(gameName, rows) {
       if (s.testnum) html += '<span class="session-type ' + typeClass + '">' + esc(s.testnum) + '</span>';
       if (s.date)    html += '<span class="session-sep">·</span><span class="session-date">' + esc(fmtDate(s.date)) + '</span>';
       if (s.location) html += '<span class="session-sep">·</span><span class="session-location">' + esc(s.location) + '</span>';
+      if (s.length)   html += '<span class="session-sep">·</span><span class="session-length">' + esc(s.length) + '</span>';
       html +=   '<span class="session-count">' + s.obs.length + (s.obs.length === 1 ? ' note' : ' notes') + '</span>';
       html +=   '<button class="session-edit-btn" onclick="event.stopPropagation();openEditSessionDialog(' + gnQ + ',' + allIdx + ')">Edit</button>';
       html +=   '<span class="session-chevron">▼</span>';

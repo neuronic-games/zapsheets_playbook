@@ -324,7 +324,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .search-bar { padding:.6rem 1.25rem .5rem; max-width:860px; margin:0 auto; display:flex; gap:.6rem; align-items:center; }
 .search-wrap { position:relative; flex:1; }
 .search-wrap input {
-  width:100%; padding:.45rem 2rem .45rem .8rem;
+  width:100%; padding:0 2rem 0 .8rem; height:2.1rem; box-sizing:border-box;
   font-family:'DINRegular',sans-serif; font-size:.8rem;
   border:1px solid #c8d6e0; border-radius:6px; outline:none;
   background:#fff; color:#111;
@@ -337,7 +337,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   text-transform:uppercase; letter-spacing:.07em;
   background:#1a1a2e; color:#fff;
   border:none; border-radius:8px;
-  padding:.42rem .85rem; cursor:pointer; flex-shrink:0;
+  height:2.1rem; padding:0 .85rem; box-sizing:border-box; cursor:pointer; flex-shrink:0;
   transition:background .15s;
 }
 .add-game-btn:hover { background:#2d2d4e; }
@@ -756,7 +756,8 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   <div class="search-bar">
     <div class="search-wrap" id="searchWrap">
       <input type="text" id="searchInput" placeholder="Search games…"
-        oninput="onSearch()" autocomplete="off" spellcheck="false" />
+        oninput="onSearch()" autocomplete="off" spellcheck="false"
+        onkeydown="if(event.key==='Escape'){clearSearch();this.blur();event.stopPropagation();}" />
       <button class="search-clear" onclick="clearSearch()">✕</button>
     </div>
     <button class="add-game-btn" onclick="openAddDialog()">+ Game</button>

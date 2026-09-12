@@ -531,6 +531,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   background:#fafbfc; transition:border-color .15s;
 }
 .field-input:focus { border-color:#1a5f7a; background:#fff; }
+input[type="date"].field-input { -webkit-appearance:none; appearance:none; min-height:2.45rem; box-sizing:border-box; }
 select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .7rem center; padding-right:2rem; }
 .field-sep { border:none; border-top:1px solid #e8edf0; margin:.1rem 0; }
 /* URL input + upload button combo */
@@ -1020,7 +1021,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
             <input type="text" class="field-input" id="sLocation" placeholder="" autocomplete="off" />
           </div>
           <div class="field-group">
-            <label>Test Number</label>
+            <label>Session Number</label>
             <input type="text" class="field-input" id="sTestNum" readonly
               style="background:#f0f4f8;color:#888;cursor:default;" />
           </div>

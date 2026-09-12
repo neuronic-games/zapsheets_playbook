@@ -2045,12 +2045,9 @@ function hasSessionData() {
   for (var i = 0; i < inputs.length; i++) {
     if (inputs[i].value.trim()) return true;
   }
-  // more than one tester row, or first tester differs from the auto-fill default
   var testerInputs = document.querySelectorAll('#testersContainer input');
-  if (testerInputs.length > 1) return true;
-  if (testerInputs.length === 1) {
-    var v = testerInputs[0].value.trim();
-    if (v && v !== (MY_NAME || '')) return true;
+  for (var i = 0; i < testerInputs.length; i++) {
+    if (testerInputs[i].value.trim()) return true;
   }
   return false;
 }
@@ -2447,8 +2444,7 @@ function openSessionDialog(gameName) {
   // Reset dynamic lists
   _testerCount = 0; _testersHL = {};
   document.getElementById('testersContainer').innerHTML = '';
-  var firstIdx = addTesterField('Select or type…');
-  if (MY_NAME) document.getElementById('sTesters-' + firstIdx).value = MY_NAME;
+  addTesterField('Add tester…');
 
   _obsCount = 0; _obsImages = {};
   document.getElementById('obsContainer').innerHTML = '';

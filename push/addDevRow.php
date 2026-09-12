@@ -107,8 +107,8 @@ if (!empty($result['ok'])) {
     // Keep headers/written for debug visibility in JS console
     $result['_debug_headers'] = $result['headers'] ?? [];
     $result['_debug_written'] = $result['written'] ?? [];
-    // Write debug log so we can inspect without opening the browser console
-    $debugLog = dirname(__DIR__) . '/sheets/' . $sheetId . '/devrow_debug.json';
+    // Write debug log to source dir (which IS volume-mounted and readable locally)
+    $debugLog = dirname(__DIR__) . '/source/devboard/dashboard/debug_last.json';
     file_put_contents($debugLog, json_encode([
         'time'     => date('c'),
         'rowType'  => $rowType,

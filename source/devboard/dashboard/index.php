@@ -395,14 +395,14 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .session-block { border-top:1px solid #e8f0f4; }
 .session-block:first-child { border-top:none; }
 .session-header {
-  display:flex; flex-direction:column; gap:.12rem;
-  padding:.75rem 1rem .65rem;
+  display:flex; flex-direction:column; gap:0;
+  padding:.7rem 1rem .6rem;
   background:#f0f7fb; border-bottom:1px solid #d8eaf2;
   cursor:pointer; user-select:none; -webkit-user-select:none;
   -webkit-touch-callout:none;
 }
 .session-header:hover { background:#e6f2f8; }
-.session-header-row { display:flex; align-items:baseline; gap:.55rem; }
+.session-header-row { display:flex; align-items:baseline; gap:.55rem; line-height:1.2; }
 .session-type {
   font-family:'DINBlack',sans-serif; font-size:.72rem;
   text-transform:uppercase; letter-spacing:.06em; line-height:1;
@@ -436,7 +436,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 @media (hover: none) {
   .session-block.open .session-edit-btn { visibility:visible; }
 }
-.session-testers-line { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#888; font-style:italic; padding-left:.05rem; }
+.session-testers-line { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#888; font-style:italic; padding-left:.05rem; line-height:1.2; margin-top:.18rem; }
 
 /* Collapsible session body */
 .session-body-wrap { display:grid; grid-template-rows:0fr; transition:grid-template-rows .22s ease; }

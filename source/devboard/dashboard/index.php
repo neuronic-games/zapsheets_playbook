@@ -395,14 +395,14 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .session-block { border-top:1px solid #e8f0f4; }
 .session-block:first-child { border-top:none; }
 .session-header {
-  display:flex; flex-direction:column; gap:.28rem;
+  display:flex; flex-direction:column; gap:.12rem;
   padding:.75rem 1rem .65rem;
   background:#f0f7fb; border-bottom:1px solid #d8eaf2;
   cursor:pointer; user-select:none; -webkit-user-select:none;
   -webkit-touch-callout:none;
 }
 .session-header:hover { background:#e6f2f8; }
-.session-header-row { display:flex; align-items:center; gap:.55rem; }
+.session-header-row { display:flex; align-items:baseline; gap:.55rem; }
 .session-type {
   font-family:'DINBlack',sans-serif; font-size:.72rem;
   text-transform:uppercase; letter-spacing:.06em; line-height:1;
@@ -414,11 +414,11 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .session-sep      { color:#ccc; font-size:.6rem; }
 .session-location { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#777; }
 .session-length   { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#999; }
-.session-count    { font-family:'DINRegular',sans-serif; font-size:.68rem; color:#bbb; margin-left:auto; white-space:nowrap; }
-.session-chevron  { font-size:.6rem; opacity:.45; flex-shrink:0; transition:transform .22s ease; transform:rotate(-90deg); }
+.session-count    { font-family:'DINRegular',sans-serif; font-size:.68rem; color:#bbb; margin-left:auto; white-space:nowrap; align-self:center; }
+.session-chevron  { font-size:.6rem; opacity:.45; flex-shrink:0; transition:transform .22s ease; transform:rotate(-90deg); align-self:center; }
 .session-block.open .session-chevron { transform:rotate(0deg); }
 .session-edit-btn {
-  visibility:hidden; margin-left:.5rem; flex-shrink:0;
+  visibility:hidden; margin-left:.5rem; flex-shrink:0; align-self:center;
   font-family:'DINBlack',sans-serif; font-size:.7rem;
   text-transform:uppercase; letter-spacing:.07em;
   background:transparent; color:#1a5f7a;

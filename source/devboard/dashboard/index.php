@@ -402,7 +402,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   -webkit-touch-callout:none;
 }
 .session-header:hover { background:#e6f2f8; }
-.session-header-row { display:flex; align-items:baseline; gap:.55rem; line-height:1.2; }
+/* position:relative so button+chevron can be abs-positioned within the row */
+.session-header-row { position:relative; display:flex; align-items:baseline; gap:.55rem; padding-right:5.5rem; }
 .session-type {
   font-family:'DINBlack',sans-serif; font-size:.72rem;
   text-transform:uppercase; letter-spacing:.06em; line-height:1;
@@ -414,11 +415,14 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .session-sep      { color:#ccc; font-size:.6rem; }
 .session-location { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#777; }
 .session-length   { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#999; }
-.session-count    { font-family:'DINRegular',sans-serif; font-size:.68rem; color:#bbb; margin-left:auto; white-space:nowrap; align-self:center; }
-.session-chevron  { font-size:.6rem; opacity:.45; flex-shrink:0; transition:transform .22s ease; transform:rotate(-90deg); align-self:center; }
-.session-block.open .session-chevron { transform:rotate(0deg); }
+.session-count    { font-family:'DINRegular',sans-serif; font-size:.68rem; color:#bbb; margin-left:auto; white-space:nowrap; }
+/* Chevron: absolute so it doesn't affect row height */
+.session-chevron  { position:absolute; right:.3rem; top:50%; transform:translateY(-50%) rotate(-90deg); font-size:.6rem; opacity:.45; transition:transform .22s ease; }
+.session-block.open .session-chevron { transform:translateY(-50%) rotate(0deg); }
+/* EDIT button: absolute so it doesn't inflate the row */
 .session-edit-btn {
-  visibility:hidden; margin-left:.5rem; flex-shrink:0; align-self:center;
+  position:absolute; right:1.7rem; top:50%; transform:translateY(-50%);
+  visibility:hidden;
   font-family:'DINBlack',sans-serif; font-size:.7rem;
   text-transform:uppercase; letter-spacing:.07em;
   background:transparent; color:#1a5f7a;
@@ -428,15 +432,13 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   transition:background .15s, color .15s;
 }
 .session-edit-btn:hover { background:#1a5f7a; color:#fff; }
-/* Desktop (hover capable): reveal on row hover */
 @media (hover: hover) {
   .session-header:hover .session-edit-btn { visibility:visible; }
 }
-/* Touch (no hover): reveal when session is expanded */
 @media (hover: none) {
   .session-block.open .session-edit-btn { visibility:visible; }
 }
-.session-testers-line { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#888; font-style:italic; padding-left:.05rem; line-height:1.2; margin-top:.18rem; }
+.session-testers-line { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#888; font-style:italic; padding-left:.05rem; margin-top:.2rem; }
 
 /* Collapsible session body */
 .session-body-wrap { display:grid; grid-template-rows:0fr; transition:grid-template-rows .22s ease; }

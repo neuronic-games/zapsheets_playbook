@@ -370,9 +370,9 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .loading-msg { text-align:center; padding:2rem 1rem; font-family:'DINRegular',sans-serif; font-size:.85rem; color:#aaa; }
 .success-banner { display:none; background:#e8f8ef; border:1px solid #b2dfc4; border-radius:8px; padding:.75rem 1rem; font-family:'DINRegular',sans-serif; font-size:.85rem; color:#2e7a52; margin-bottom:.75rem; }
 /* Search bar */
-.search-bar { padding:.6rem 1.25rem .5rem; max-width:860px; margin:0 auto; display:flex; gap:.6rem; align-items:center; }
+.search-bar { padding:.6rem 0 .5rem; display:flex; gap:.6rem; align-items:center; }
 .search-wrap { position:relative; flex:1; }
-.search-wrap input { width:100%; padding:.45rem 2rem .45rem .8rem; font-family:'DINRegular',sans-serif; font-size:.8rem; border:1px solid #c8d6e0; border-radius:6px; outline:none; background:#fff; color:#111; box-sizing:border-box; }
+.search-wrap input { width:100%; padding:0 2rem 0 .8rem; height:2.1rem; font-family:'DINRegular',sans-serif; font-size:.8rem; border:1px solid #c8d6e0; border-radius:6px; outline:none; background:#fff; color:#111; box-sizing:border-box; }
 .search-wrap input:focus { border-color:#1a5f7a; }
 .search-wrap .search-icon { display:none; }
 .search-wrap .search-clear { position:absolute; right:.5rem; top:50%; transform:translateY(-50%); background:none; border:none; color:#aaa; cursor:pointer; font-size:1rem; display:none; padding:0; line-height:1; }
@@ -522,7 +522,8 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <div class="search-wrap" id="searchWrap">
       <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" id="searchInput" placeholder="Search sessions, people, notes…"
-        oninput="onSearch()" autocomplete="off" spellcheck="false" />
+        oninput="onSearch()" autocomplete="off" spellcheck="false"
+        onkeydown="if(event.key==='Escape'){clearSearch();this.blur();event.stopPropagation();}" />
       <button class="search-clear" onclick="clearSearch()">✕</button>
     </div>
   </div>

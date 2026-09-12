@@ -2091,7 +2091,7 @@ function renderComboOptions(q) {
     : _comboOptions;
   _comboHighlight = -1;
   if (!filtered.length) { drop.innerHTML = q.trim() ? '<div class="combo-empty">New game: "' + esc(q.trim()) + '"</div>' : '<div class="combo-empty">All games already tracked, or type a new name.</div>'; return; }
-  drop.innerHTML = filtered.map(function(n) { return '<div class="combo-option" onmousedown="comboSelect(\'' + esc(n) + '\')">' + esc(n) + '</div>'; }).join('');
+  drop.innerHTML = filtered.map(function(n) { return '<div class="combo-option" data-name="' + esc(n) + '" onmousedown="comboSelect(this.dataset.name)">' + esc(n) + '</div>'; }).join('');
 }
 function comboSelect(name) {
   document.getElementById('gameComboInput').value = name;
@@ -2762,7 +2762,7 @@ function renderTestersOptions(idx, q) {
   _testersHL[idx] = -1;
   if (!filtered.length) { drop.innerHTML = '<div class="combo-empty">No matching people.</div>'; return; }
   drop.innerHTML = filtered.map(function(n) {
-    return '<div class="combo-option" onmousedown="testersSelect(' + idx + ',\'' + esc(n) + '\')">' + esc(n) + '</div>';
+    return '<div class="combo-option" data-name="' + esc(n) + '" onmousedown="testersSelect(' + idx + ',this.dataset.name)">' + esc(n) + '</div>';
   }).join('');
 }
 function testersSelect(idx, name) {

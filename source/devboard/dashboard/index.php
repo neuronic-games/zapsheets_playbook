@@ -218,6 +218,25 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 }
 .dialog-shake { animation:dialog-shake .35s ease; }
 
+/* ── Save toast (background-save error notification) ─────────────────────── */
+.save-toast {
+  position:fixed; bottom:1.25rem; left:50%; transform:translateX(-50%);
+  background:#b91c1c; color:#fff;
+  padding:.55rem 1rem .55rem .9rem;
+  border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,.25);
+  font-family:'DINRegular',sans-serif; font-size:.8rem; line-height:1.4;
+  display:flex; align-items:center; gap:.75rem;
+  max-width:min(420px,90vw);
+  opacity:0; pointer-events:none; transition:opacity .2s;
+  z-index:9999;
+}
+.save-toast.visible { opacity:1; pointer-events:auto; }
+.save-toast-close {
+  background:none; border:none; color:#fff; cursor:pointer;
+  font-size:1rem; line-height:1; padding:0; flex-shrink:0; opacity:.8;
+}
+.save-toast-close:hover { opacity:1; }
+
 /* ── Top tab segmented control ────────────────────────── */
 .top-tab-btns {
   display:flex; align-items:center;
@@ -2584,15 +2603,47 @@ function submitSession() {
     return;
   }
 
-  btn.disabled = true; btn.textContent = 'Saving…'; err.style.display = 'none';
-
   var date       = document.getElementById('sDate').value || todayISO();
   var eventType  = document.getElementById('sType').value;
   var sessionNum = document.getElementById('sTestNum').value.trim();
   var location   = document.getElementById('sLocation').value.trim();
+  var swLength   = _swSeconds > 0 ? 'Length: ' + _swFormat(_swSeconds) : '';
 
-  // ── Edit mode: replace the existing session via updateDevSession ──────────────
+  // ── Build local cache rows (same shape as sheet JSON) for optimistic update ──
+  var localRows = [];
+  localRows.push({ 'Date': date, 'Event': eventType, 'People': sessionNum,
+                   'Observations': location, 'Thoughts': swLength });
+  testerVals.forEach(function(t) {
+    localRows.push({ 'Date': '', 'Event': '', 'People': t, 'Observations': '', 'Thoughts': '' });
+  });
+  obsPairs.forEach(function(pair) {
+    localRows.push({ 'Date': '', 'Event': '', 'People': '', 'Observations': pair.obs, 'Thoughts': pair.sol });
+  });
+
+  // ── Edit mode: optimistically patch the cache, close immediately, save in bg ──
   if (_editMode) {
+    // Find the old session header in cache and splice in the new rows
+    var cache = devCache[_sessionGame] || [];
+    var startIdx = -1;
+    for (var ci = 0; ci < cache.length; ci++) {
+      var cr = cache[ci];
+      if ((cr['Date']||'').trim() === _editOrigDate &&
+          (cr['Event']||'').trim() === _editOrigEvent) {
+        if (!_editOrigSessionNum || (cr['People']||'').trim() === _editOrigSessionNum) {
+          startIdx = ci; break;
+        }
+      }
+    }
+    if (startIdx >= 0) {
+      var endIdx = startIdx + 1;
+      while (endIdx < cache.length && !(cache[endIdx]['Date'] || cache[endIdx]['Event'])) endIdx++;
+      cache.splice.apply(cache, [startIdx, endIdx - startIdx].concat(localRows));
+    }
+    addNewPeople(testerRaws);
+    renderBody(_sessionGame, devCache[_sessionGame]);
+    closeSessionDialog();
+
+    // Background: persist to sheet, then refresh cache from server to confirm
     var fd = new FormData();
     fd.append('id',               SHEET_ID);
     fd.append('game',             _sessionGame);
@@ -2603,44 +2654,39 @@ function submitSession() {
     fd.append('event',            eventType);
     fd.append('session_num',      sessionNum);
     fd.append('location',         location);
-    fd.append('length',     _swSeconds > 0 ? 'Length: ' + _swFormat(_swSeconds) : '');
-    fd.append('testers',    JSON.stringify(testerVals));
-    fd.append('obs_pairs',  JSON.stringify(obsPairs));
-
+    fd.append('length',           swLength);
+    fd.append('testers',          JSON.stringify(testerVals));
+    fd.append('obs_pairs',        JSON.stringify(obsPairs));
     fetch(APP_BASE + 'push/updateDevSession.php', { method:'POST', body:fd })
       .then(function(r) { return r.json(); })
       .then(function(res) {
         if (res.error) throw new Error(res.error);
-        addNewPeople(testerRaws);
-        // Force a fresh fetch so devCache reflects the new sheet state
         devCache[_sessionGame] = undefined;
-        closeSessionDialog();
         loadDevData(_sessionGame);
       })
       .catch(function(e) {
-        err.textContent = e.message || 'Could not save. Try again.';
-        err.style.display = 'block';
-        btn.disabled = false; btn.textContent = 'Save Changes';
+        showSaveToast('Couldn\'t save changes to sheet — ' + (e.message || 'unknown error') + '. Reload to try again.');
       });
     return;
   }
 
-  // ── Add mode: append new session rows one by one ──────────────────────────────
-  // Build ordered rows matching sheet format: Date | Event | People | Observation | Solution
-  //   1. Session header row  (date, eventType, sessionNum, location, length)
-  //   2. One tester row each (blank date/event, testerName, "")
-  //   3. One obs row each    (blank date/event, obs, sol)
-  var allRows = [];
-  var swLength = _swSeconds > 0 ? 'Length: ' + _swFormat(_swSeconds) : '';
-  allRows.push({ date: date, event: eventType, session_num: sessionNum, observation: location, solution: swLength, type: 'header' });
+  // ── Add mode: push to local cache, close immediately, send rows in background ──
+  if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
+  localRows.forEach(function(r) { devCache[_sessionGame].push(r); });
+  addNewPeople(testerRaws);
+  renderBody(_sessionGame, devCache[_sessionGame]);
+  closeSessionDialog();
+
+  // Background: post rows sequentially to preserve sheet row order
+  var postRows = [];
+  postRows.push({ date: date, event: eventType, session_num: sessionNum, observation: location, solution: swLength, type: 'header' });
   testerVals.forEach(function(t) {
-    allRows.push({ date: '', event: '', observation: t, solution: '', type: 'tester' });
+    postRows.push({ date: '', event: '', observation: t, solution: '', type: 'tester' });
   });
   obsPairs.forEach(function(pair) {
-    allRows.push({ date: '', event: '', observation: pair.obs, solution: pair.sol, type: 'obs' });
+    postRows.push({ date: '', event: '', observation: pair.obs, solution: pair.sol, type: 'obs' });
   });
 
-  // Submit sequentially to preserve sheet row order
   function postRow(row) {
     var fd = new FormData();
     fd.append('id',          SHEET_ID);
@@ -2655,25 +2701,12 @@ function submitSession() {
       .then(function(r) { return r.json(); });
   }
 
-  allRows.reduce(function(chain, row) {
-    return chain.then(function(acc) {
-      return postRow(row).then(function(res) { return acc.concat([res]); });
-    });
-  }, Promise.resolve([]))
-    .then(function(results) {
-      var failed = results.find(function(r) { return r.error; });
-      if (failed) throw new Error(failed.error);
-      addNewPeople(testerRaws);
-      if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
-      results.forEach(function(res) { if (res.row) devCache[_sessionGame].push(res.row); });
-      renderBody(_sessionGame, devCache[_sessionGame]);
-      closeSessionDialog();
-    })
-    .catch(function(e) {
-      err.textContent = e.message || 'Could not save. Try again.';
-      err.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Add Session';
-    });
+  postRows.reduce(function(chain, row) {
+    return chain.then(function() { return postRow(row); });
+  }, Promise.resolve())
+  .catch(function(e) {
+    showSaveToast('Couldn\'t save session to sheet — ' + (e.message || 'unknown error') + '. Reload to try again.');
+  });
 }
 
 // ── People sheet sync ────────────────────────────────────────────────────────
@@ -3253,6 +3286,21 @@ function _updateSubTitle() {
 buildGameList();
 renderCards();
 _updateSubTitle();
+
+// ── Background-save error toast ────────────────────────────────────────────
+var _saveToastTimer = null;
+function showSaveToast(msg) {
+  var t = document.getElementById('saveToast');
+  document.getElementById('saveToastMsg').textContent = msg;
+  t.classList.add('visible');
+  clearTimeout(_saveToastTimer);
+  _saveToastTimer = setTimeout(function() { t.classList.remove('visible'); }, 10000);
+}
 </script>
+
+<div class="save-toast" id="saveToast" role="alert">
+  <span id="saveToastMsg"></span>
+  <button class="save-toast-close" onclick="this.parentNode.classList.remove('visible')" aria-label="Dismiss">✕</button>
+</div>
 </body>
 </html>

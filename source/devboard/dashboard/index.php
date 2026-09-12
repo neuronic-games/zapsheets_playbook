@@ -36,6 +36,8 @@ $_settings      = file_exists($_settings_file)
 $_my_name  = '';
 $_my_email = '';
 $_my_phone = '';
+$_company  = '';
+$_logo_url = '';
 
 foreach ($_settings as $_s) {
     // PitchBoard-style: {Name: 'My Name', Value: '...'}
@@ -44,15 +46,24 @@ foreach ($_settings as $_s) {
     if ($n === 'My Name')  { $_my_name  = $v; continue; }
     if ($n === 'My Email') { $_my_email = $v; continue; }
     if ($n === 'My Phone') { $_my_phone = $v; continue; }
+    if ($n === 'Company')  { $_company  = ltrim($v, "'"); continue; }
+    if ($n === 'Logo') {
+        if (preg_match('/^=IMAGE\("([^"]*)"\)$/i', ltrim($v,"'"), $_lm)) { $_logo_url = $_lm[1]; }
+        else { $_logo_url = ltrim($v, "'"); }
+        continue;
+    }
 
     // DevBoard quirky format: first row becomes headers, so
     // {"My Name": "My Email", "<actual-name>": "email@domain.com"}
     $label = $_s['My Name'] ?? '';
-    if ($label === 'My Email' || $label === 'My Phone') {
-        $keys = array_keys($_s);
-        $val2 = count($keys) > 1 ? ($_s[$keys[1]] ?? '') : '';
-        if ($label === 'My Email') $_my_email = $val2;
-        if ($label === 'My Phone') $_my_phone = $val2;
+    $keys  = array_keys($_s);
+    $val2  = count($keys) > 1 ? ltrim(trim($_s[$keys[1]] ?? ''), "'") : '';
+    if ($label === 'My Email') { $_my_email = $val2; }
+    if ($label === 'My Phone') { $_my_phone = $val2; }
+    if ($label === 'Company')  { $_company  = $val2; }
+    if ($label === 'Logo') {
+        if (preg_match('/^=IMAGE\("([^"]*)"\)$/i', $val2, $_lm)) { $_logo_url = $_lm[1]; }
+        else { $_logo_url = $val2; }
     }
 }
 
@@ -196,6 +207,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .db-dev   { color:#a8bcd7; }
 .db-board { color:#48c4d2; }
 .top-bar .sub  { font-size:.73rem; opacity:.6; margin:0; }
+.top-bar-logo  { height:2rem; width:auto; object-fit:contain; display:block; margin-bottom:.15rem; border-radius:3px; }
 
 .top-btn {
   display:inline-flex; align-items:center; justify-content:center;
@@ -698,6 +710,12 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 <div class="top-bar">
   <div class="top-bar-inner">
     <div class="top-bar-left">
+      <?php if ($_logo_url): ?>
+      <img src="<?= htmlspecialchars($_logo_url, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($_company, ENT_QUOTES) ?>"
+           class="top-bar-logo" id="topBarLogo">
+      <?php else: ?>
+      <img src="" alt="" class="top-bar-logo" id="topBarLogo" style="display:none">
+      <?php endif; ?>
       <h1 onclick="window.location.href=APP_BASE+'devboard'"><span class="db-dev">Dev</span><span class="db-board">Board</span></h1>
       <p class="sub" id="subTitle">Playtest Notes</p>
     </div>
@@ -826,6 +844,13 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         <label class="ge-label">Discord<input type="text" id="profileDiscord" class="ge-input" placeholder="@handle" /></label>
       </div>
       <label class="ge-label">Phone<input type="tel" id="profilePhone" class="ge-input" placeholder="+1 555 000 0000" /></label>
+      <label class="ge-label">Company<input type="text" id="profileCompany" class="ge-input" placeholder="Your studio or company" /></label>
+      <div>
+        <label class="ge-label" style="margin-bottom:.3rem">Logo URL<input type="url" id="profileLogoUrl" class="ge-input" placeholder="https://…/logo.png" oninput="profileLogoPreview()" /></label>
+        <div id="profileLogoPreview" style="margin-top:.4rem;display:none">
+          <img id="profileLogoImg" src="" alt="Logo preview" style="max-height:3rem;max-width:12rem;object-fit:contain;border-radius:3px;border:1px solid #ddd">
+        </div>
+      </div>
       <label class="ge-label">Payment<input type="text" id="profilePayment" class="ge-input" placeholder="Venmo @handle, PayPal…" /></label>
       <label class="ge-label">Notes<textarea id="profileNotes" class="ge-input ge-textarea" placeholder="Availability, preferences…" rows="2"></textarea></label>
     </div>
@@ -1114,6 +1139,8 @@ var ACTIVE_KEYS = <?= json_encode($_active_keys, JSON_UNESCAPED_UNICODE) ?>;
 var MY_NAME         = <?= json_encode($_my_name) ?>;
 var MY_EMAIL        = <?= json_encode($_my_email) ?>;
 var MY_PHONE        = <?= json_encode($_my_phone) ?>;
+var MY_COMPANY      = <?= json_encode($_company) ?>;
+var MY_LOGO         = <?= json_encode($_logo_url) ?>;
 var MY_BIO_IMAGE    = <?= json_encode($_my_bio_image) ?>;
 var MY_BIO_DESC     = <?= json_encode($_my_bio_desc) ?>;
 var MY_BIO_SKILLS   = <?= json_encode($_my_bio_skills) ?>;
@@ -3028,6 +3055,8 @@ function _profileIsDirty() {
   return f('profileName')     !== (_profileInitial.name     || '') ||
          f('profileEmail')    !== (_profileInitial.email    || '') ||
          f('profilePhone')    !== (_profileInitial.phone    || '') ||
+         f('profileCompany')  !== (_profileInitial.company  || '') ||
+         f('profileLogoUrl')  !== (_profileInitial.logo_url || '') ||
          f('profileDesc')     !== (_profileInitial.desc     || '') ||
          f('profileSkills')   !== (_profileInitial.skills   || '') ||
          f('profileLocation') !== (_profileInitial.location || '') ||
@@ -3036,10 +3065,26 @@ function _profileIsDirty() {
          f('profileNotes')    !== (_profileInitial.notes    || '') ||
          document.getElementById('profilePhotoFile').files.length > 0;
 }
+function profileLogoPreview() {
+  var url = (document.getElementById('profileLogoUrl').value || '').trim();
+  var wrap = document.getElementById('profileLogoPreview');
+  var img  = document.getElementById('profileLogoImg');
+  if (url) { img.src = url; wrap.style.display = ''; }
+  else { wrap.style.display = 'none'; img.src = ''; }
+}
+function _updateTopBarLogo(url, alt) {
+  var el = document.getElementById('topBarLogo');
+  if (!el) return;
+  if (url) { el.src = url; el.alt = alt || ''; el.style.display = ''; }
+  else { el.src = ''; el.style.display = 'none'; }
+}
 function openProfileDialog() {
   document.getElementById('profileName').value     = MY_NAME         || '';
   document.getElementById('profileEmail').value    = MY_EMAIL        || '';
   document.getElementById('profilePhone').value    = MY_PHONE        || '';
+  document.getElementById('profileCompany').value  = MY_COMPANY      || '';
+  document.getElementById('profileLogoUrl').value  = MY_LOGO         || '';
+  profileLogoPreview();
   document.getElementById('profileDesc').value     = MY_BIO_DESC     || '';
   document.getElementById('profileSkills').value   = MY_BIO_SKILLS   || '';
   document.getElementById('profileLocation').value = MY_BIO_LOCATION || '';
@@ -3063,6 +3108,7 @@ function openProfileDialog() {
   // Capture initial state for dirty checking
   _profileInitial = {
     name: MY_NAME || '', email: MY_EMAIL || '', phone: MY_PHONE || '',
+    company: MY_COMPANY || '', logo_url: MY_LOGO || '',
     desc: MY_BIO_DESC || '', skills: MY_BIO_SKILLS || '', location: MY_BIO_LOCATION || '',
     discord: MY_BIO_DISCORD || '', payment: MY_BIO_PAYMENT || '', notes: MY_BIO_NOTES || ''
   };
@@ -3127,10 +3173,13 @@ function submitProfile() {
 
   photoPromise.then(function(imageUrl) {
     _profilePhotoUrl = imageUrl || '';
-    // Step 2: update settings (name / email / phone)
+    // Step 2: update settings (name / email / phone / company / logo)
+    var company  = document.getElementById('profileCompany').value.trim();
+    var logo_url = document.getElementById('profileLogoUrl').value.trim();
     var fd1 = new FormData();
     fd1.append('id', SHEET_ID); fd1.append('name', name);
     fd1.append('email', email); fd1.append('phone', phone);
+    fd1.append('company', company); fd1.append('logo_url', logo_url);
     var p1 = fetch(APP_BASE + 'push/updateProfile.php', { method:'POST', body:fd1 }).then(function(r){ return r.json(); });
     // Step 3: update bios row
     var fd2 = new FormData();
@@ -3148,6 +3197,8 @@ function submitProfile() {
     MY_NAME = document.getElementById('profileName').value.trim();
     MY_EMAIL = document.getElementById('profileEmail').value.trim();
     MY_PHONE = document.getElementById('profilePhone').value.trim();
+    MY_COMPANY = document.getElementById('profileCompany').value.trim();
+    MY_LOGO    = document.getElementById('profileLogoUrl').value.trim();
     MY_BIO_IMAGE    = _profilePhotoUrl;
     MY_BIO_DESC     = document.getElementById('profileDesc').value.trim();
     MY_BIO_SKILLS   = document.getElementById('profileSkills').value.trim();
@@ -3155,9 +3206,11 @@ function submitProfile() {
     MY_BIO_DISCORD  = document.getElementById('profileDiscord').value.trim();
     MY_BIO_PAYMENT  = document.getElementById('profilePayment').value.trim();
     MY_BIO_NOTES    = document.getElementById('profileNotes').value.trim();
+    _updateTopBarLogo(MY_LOGO, MY_COMPANY);
     // Sync initial snapshot so Cancel/Close after save doesn't falsely shake
     _profileInitial = {
       name: MY_NAME, email: MY_EMAIL, phone: MY_PHONE,
+      company: MY_COMPANY, logo_url: MY_LOGO,
       desc: MY_BIO_DESC, skills: MY_BIO_SKILLS, location: MY_BIO_LOCATION,
       discord: MY_BIO_DISCORD, payment: MY_BIO_PAYMENT, notes: MY_BIO_NOTES
     };

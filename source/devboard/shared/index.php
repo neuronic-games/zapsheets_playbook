@@ -74,6 +74,37 @@ $_gameViewFile = __DIR__ . '/../../../shares/pitch-game-view/' . $_gameToken . '
 $_gameUrl      = file_exists($_gameViewFile) ? ($_base . 'game/' . $_gameToken) : '';
 
 function _ds_e(string $s): string { return htmlspecialchars($s, ENT_QUOTES); }
+
+// Load company + logo from settings
+$_company  = '';
+$_logo_url = '';
+$_settingsFile = __DIR__ . '/../../../sheets/' . $_sheetId . '/settings.json';
+if (file_exists($_settingsFile)) {
+    $_settingsRaw = json_decode(file_get_contents($_settingsFile), true) ?: [];
+    foreach ($_settingsRaw as $_s) {
+        // PitchBoard-style: {Name: "Company", Value: "..."} or {Name: "Logo", Value: "..."}
+        $_n = trim($_s['Name'] ?? '');
+        $_v = trim($_s['Value'] ?? '');
+        if ($_n === '' && $_v === '') {
+            // DevBoard-style: {My Name: "Company", <person>: "..."}
+            $_label = trim($_s['My Name'] ?? '');
+            $_keys  = array_keys($_s);
+            $_val2  = count($_keys) > 1 ? ltrim(trim($_s[$_keys[1]] ?? ''), "'") : '';
+            if ($_label === 'Company') { $_company = $_val2; }
+            if ($_label === 'Logo') {
+                if (preg_match('/^=IMAGE\("([^"]*)"\)$/i', $_val2, $_lm)) { $_logo_url = $_lm[1]; }
+                else { $_logo_url = $_val2; }
+            }
+        } else {
+            if ($_n === 'Company') { $_company = ltrim($_v, "'"); }
+            if ($_n === 'Logo') {
+                $_v2 = ltrim($_v, "'");
+                if (preg_match('/^=IMAGE\("([^"]*)"\)$/i', $_v2, $_lm)) { $_logo_url = $_lm[1]; }
+                else { $_logo_url = $_v2; }
+            }
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -116,6 +147,7 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 .top-bar h1 { font-family:'DINBlack',sans-serif; font-size:.9rem; letter-spacing:.04em; text-transform:none; margin:0; cursor:pointer; }
 .db-dev   { color:#a8bcd7; }
 .db-board { color:#48c4d2; }
+.top-bar-logo { height:1.75rem; width:auto; object-fit:contain; display:block; border-radius:3px; }
 .top-bar .sep { opacity:.3; font-size:.85rem; }
 .top-bar .game-label { font-family:'DINRegular',sans-serif; font-size:.82rem; color:rgba(255,255,255,.65); }
 .top-bar .collab-badge {
@@ -450,9 +482,14 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
 <div class="top-bar">
   <div class="top-bar-inner">
-    <div style="display:flex;flex-direction:column;gap:.1rem">
-      <h1><span class="db-dev">Dev</span><span class="db-board">Board</span></h1>
-      <span id="collabUserLabel" style="font-family:'DINRegular',sans-serif;font-size:.72rem;color:rgba(255,255,255,.5);display:none"></span>
+    <div style="display:flex;align-items:center;gap:.65rem">
+      <?php if ($_logo_url): ?>
+      <img src="<?= htmlspecialchars($_logo_url, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($_company, ENT_QUOTES) ?>" class="top-bar-logo">
+      <?php endif; ?>
+      <div style="display:flex;flex-direction:column;gap:.1rem">
+        <h1><span class="db-dev">Dev</span><span class="db-board">Board</span></h1>
+        <span id="collabUserLabel" style="font-family:'DINRegular',sans-serif;font-size:.72rem;color:rgba(255,255,255,.5);display:none"></span>
+      </div>
     </div>
     <div class="account-menu-wrap">
       <button class="top-btn-collab" onclick="toggleAccountMenu()" title="Account" id="accountMenuBtn">

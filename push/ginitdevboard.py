@@ -53,6 +53,8 @@ TABS = {
             ['My Name',     ''],
             ['My Email',    ''],
             ['My Phone',    ''],
+            ['Company',     ''],
+            ['Logo',        ''],
             ['PublishedOn', ''],
             ['Version',     ''],
         ],

@@ -33,9 +33,11 @@ pipe_idx = arg.index('|')
 sheet_id = arg[:pipe_idx]
 data     = json.loads(base64.b64decode(arg[pipe_idx + 1:]).decode('utf-8'))
 
-new_name  = data.get('name',  '').strip()
-new_email = data.get('email', '').strip()
-new_phone = data.get('phone', '').strip()
+new_name     = data.get('name',     '').strip()
+new_email    = data.get('email',    '').strip()
+new_phone    = data.get('phone',    '').strip()
+new_company  = data.get('company',  '').strip()
+new_logo_url = data.get('logo_url', '').strip()
 
 if not new_name:
     print(json.dumps({"error": "Name is required"}))
@@ -79,6 +81,12 @@ for i, row in enumerate(all_values[1:], start=2):
         updates.append({'range': gspread.utils.rowcol_to_a1(i, 2), 'values': [[safe_str(new_email)]]})
     elif label == 'My Phone':
         updates.append({'range': gspread.utils.rowcol_to_a1(i, 2), 'values': [[safe_str(new_phone)]]})
+    elif label == 'Company':
+        updates.append({'range': gspread.utils.rowcol_to_a1(i, 2), 'values': [[safe_str(new_company)]]})
+    elif label == 'Logo':
+        # Logo is stored as an =IMAGE() formula so it renders in the sheet
+        logo_val = f'=IMAGE("{new_logo_url}")' if new_logo_url else ''
+        updates.append({'range': gspread.utils.rowcol_to_a1(i, 2), 'values': [[logo_val]]})
 
 try:
     ws.batch_update(updates, value_input_option='USER_ENTERED')

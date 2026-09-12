@@ -6,10 +6,12 @@ header('Content-Type: application/json');
 require __DIR__ . '/../dotEnv.php';
 require_once __DIR__ . '/refreshJson.php';
 
-$sheetId = trim($_POST['id']    ?? '');
-$name    = trim($_POST['name']  ?? '');
-$email   = trim($_POST['email'] ?? '');
-$phone   = trim($_POST['phone'] ?? '');
+$sheetId  = trim($_POST['id']       ?? '');
+$name     = trim($_POST['name']     ?? '');
+$email    = trim($_POST['email']    ?? '');
+$phone    = trim($_POST['phone']    ?? '');
+$company  = trim($_POST['company']  ?? '');
+$logo_url = trim($_POST['logo_url'] ?? '');
 
 if (!$sheetId || !$name) {
     echo json_encode(['error' => 'Missing required fields']);
@@ -17,7 +19,8 @@ if (!$sheetId || !$name) {
 }
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
-$payload    = ['name' => $name, 'email' => $email, 'phone' => $phone];
+$payload    = ['name' => $name, 'email' => $email, 'phone' => $phone,
+               'company' => $company, 'logo_url' => $logo_url];
 $encoded    = base64_encode(json_encode($payload, JSON_UNESCAPED_UNICODE));
 $arg        = $sheetId . '|' . $encoded;
 

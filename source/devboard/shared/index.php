@@ -477,6 +477,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   </div>
 
   <div class="game-header">
+    <span class="game-title"><?= _ds_e($_gameName) ?></span>
     <div class="header-btns">
 <?php if ($_sellsheetUrl): ?>
       <a class="page-link-btn" href="<?= _ds_e($_sellsheetUrl) ?>" target="_blank" rel="noopener">

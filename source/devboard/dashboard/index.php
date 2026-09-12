@@ -201,13 +201,13 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   position:sticky; top:0; z-index:100;
 }
 .top-bar-inner { max-width:860px; margin:0 auto; display:flex; align-items:center; gap:.75rem; }
-.top-bar-left  { flex:1; min-width:0; }
+.top-bar-left  { flex:1; min-width:0; display:flex; align-items:center; gap:.65rem; }
 .top-bar h1    { font-family:'DINBlack',sans-serif; font-size:1rem; margin:0; letter-spacing:.03em; cursor:pointer; }
 .top-bar h1:hover { opacity:.8; }
 .db-dev   { color:#a8bcd7; }
 .db-board { color:#48c4d2; }
 .top-bar .sub  { font-size:.73rem; opacity:.6; margin:0; }
-.top-bar-logo  { height:2rem; width:auto; object-fit:contain; display:block; margin-bottom:.15rem; border-radius:3px; }
+.top-bar-logo  { height:2.5rem; width:auto; object-fit:contain; flex-shrink:0; border-radius:3px; }
 
 .top-btn {
   display:inline-flex; align-items:center; justify-content:center;
@@ -716,8 +716,10 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       <?php else: ?>
       <img src="" alt="" class="top-bar-logo" id="topBarLogo" style="display:none">
       <?php endif; ?>
-      <h1 onclick="window.location.href=APP_BASE+'devboard'"><span class="db-dev">Dev</span><span class="db-board">Board</span></h1>
-      <p class="sub" id="subTitle">Playtest Notes</p>
+      <div>
+        <h1 onclick="window.location.href=APP_BASE+'devboard'"><span class="db-dev">Dev</span><span class="db-board">Board</span></h1>
+        <p class="sub" id="subTitle">Playtest Notes</p>
+      </div>
     </div>
 
     <div class="top-tab-btns">

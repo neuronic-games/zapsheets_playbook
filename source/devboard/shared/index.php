@@ -144,6 +144,7 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 /* ── Top bar ── */
 .top-bar { background:#1a1a2e; color:#fff; padding:0 1rem; }
 .top-bar-inner { max-width:860px; margin:0 auto; display:flex; align-items:center; gap:.75rem; min-height:48px; }
+.top-bar-left-wrap { display:flex; align-items:center; gap:.65rem; }
 .top-bar h1 { font-family:'DINBlack',sans-serif; font-size:.9rem; letter-spacing:.04em; text-transform:none; margin:0; cursor:pointer; }
 .db-dev   { color:#a8bcd7; }
 .db-board { color:#48c4d2; }
@@ -482,7 +483,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
 <div class="top-bar">
   <div class="top-bar-inner">
-    <div style="display:flex;align-items:center;gap:.65rem">
+    <div class="top-bar-left-wrap">
       <?php if ($_logo_url): ?>
       <img src="<?= htmlspecialchars($_logo_url, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($_company, ENT_QUOTES) ?>" class="top-bar-logo">
       <?php endif; ?>

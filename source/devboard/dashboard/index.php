@@ -735,6 +735,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       </button>
       <div class="account-menu" id="accountMenu">
         <button class="account-menu-item" onclick="accountMenuProfile()">Profile</button>
+        <button class="account-menu-item" onclick="accountMenuCompany()">Company</button>
         <button class="account-menu-item" onclick="accountMenuFetch()">Fetch</button>
         <button class="account-menu-item" onclick="accountMenuRelease()">Releases</button>
         <button class="account-menu-item" onclick="accountMenuHelp()">Help</button>
@@ -859,6 +860,32 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <div class="sync-dialog-actions">
       <button class="notes-close" id="profileCancelBtn" onclick="forceCloseProfileDialog()">Cancel</button>
       <button class="notes-close" id="profileSaveBtn"   onclick="submitProfile()" style="background:#1a5f7a;color:#fff;border-color:#1a5f7a">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Company dialog -->
+<div class="overlay" id="companyOverlay" onclick="if(event.target===this)closeCompanyDialog()">
+  <div class="sync-dialog" style="width:min(420px,94vw)">
+    <h2>Company</h2>
+    <div style="display:flex;flex-direction:column;gap:.75rem;margin:.5rem 0">
+      <label class="ge-label">Company Name
+        <input type="text" id="companyName" class="ge-input" placeholder="Your studio or company" />
+      </label>
+      <div>
+        <label class="ge-label" style="margin-bottom:.35rem">Logo URL
+          <input type="url" id="companyLogoUrl" class="ge-input" placeholder="https://…/logo.png" oninput="companyLogoPreview()" />
+        </label>
+        <div id="companyLogoPreview" style="margin-top:.4rem;display:none">
+          <img id="companyLogoImg" src="" alt="Logo preview"
+               style="max-height:3.5rem;max-width:14rem;object-fit:contain;border-radius:4px;border:1px solid #ddd">
+        </div>
+      </div>
+    </div>
+    <div class="sync-log" id="companyLog" style="display:none"></div>
+    <div class="sync-dialog-actions">
+      <button class="notes-close" id="companyCancelBtn" onclick="forceCloseCompanyDialog()">Cancel</button>
+      <button class="notes-close" id="companySaveBtn" onclick="submitCompany()" style="background:#1a5f7a;color:#fff;border-color:#1a5f7a">Save</button>
     </div>
   </div>
 </div>
@@ -2061,6 +2088,11 @@ function openEditGame(name) {
 document.addEventListener('keydown', function(ev) {
   if (ev.key !== 'Escape') return;
   var el;
+  el = document.getElementById('companyOverlay');
+  if (el && el.classList.contains('open')) {
+    closeCompanyDialog();
+    return;
+  }
   el = document.getElementById('profileOverlay');
   if (el && el.classList.contains('open')) {
     closeProfileDialog();
@@ -2994,6 +3026,7 @@ function closeAccountMenu() {
   document.getElementById('accountMenu').classList.remove('open');
 }
 function accountMenuProfile() { closeAccountMenu(); openProfileDialog(); }
+function accountMenuCompany() { closeAccountMenu(); openCompanyDialog(); }
 function accountMenuFetch()   { closeAccountMenu(); doFetch(); }
 function accountMenuRelease() { closeAccountMenu(); openRnDialog(); }
 function accountMenuHelp()    { closeAccountMenu(); window.open(APP_BASE + 'devboard/help', '_blank'); }
@@ -3047,6 +3080,82 @@ function closeRnDialog() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+
+// ── Company dialog ─────────────────────────────────────────────────────────────
+var _companyInitial = {};
+function _companyIsDirty() {
+  var f = function(id) { return (document.getElementById(id).value || '').trim(); };
+  return f('companyName')    !== (_companyInitial.name    || '') ||
+         f('companyLogoUrl') !== (_companyInitial.logo_url || '');
+}
+function companyLogoPreview() {
+  var url  = (document.getElementById('companyLogoUrl').value || '').trim();
+  var wrap = document.getElementById('companyLogoPreview');
+  var img  = document.getElementById('companyLogoImg');
+  if (url) { img.src = url; wrap.style.display = ''; }
+  else { wrap.style.display = 'none'; img.src = ''; }
+}
+function _companyLog(msg, type) {
+  var el = document.getElementById('companyLog');
+  el.textContent = msg;
+  el.style.display = msg ? '' : 'none';
+  el.style.color = type === 'ok' ? '#1a5f7a' : '#b91c1c';
+}
+function openCompanyDialog() {
+  document.getElementById('companyName').value    = MY_COMPANY || '';
+  document.getElementById('companyLogoUrl').value = MY_LOGO    || '';
+  companyLogoPreview();
+  _companyLog('', '');
+  document.getElementById('companySaveBtn').disabled   = false;
+  document.getElementById('companyCancelBtn').disabled = false;
+  document.getElementById('companyCancelBtn').textContent = 'Cancel';
+  _companyInitial = { name: MY_COMPANY || '', logo_url: MY_LOGO || '' };
+  document.getElementById('companyOverlay').classList.add('open');
+}
+function closeCompanyDialog() {
+  if (_companyIsDirty()) { shakeDialog(document.getElementById('companyOverlay').querySelector('.sync-dialog')); return; }
+  forceCloseCompanyDialog();
+}
+function forceCloseCompanyDialog() {
+  document.getElementById('companyOverlay').classList.remove('open');
+}
+function submitCompany() {
+  var name    = document.getElementById('companyName').value.trim();
+  var logo    = document.getElementById('companyLogoUrl').value.trim();
+  document.getElementById('companySaveBtn').disabled   = true;
+  document.getElementById('companyCancelBtn').disabled = true;
+  _companyLog('Saving…', '');
+  var fd = new FormData();
+  fd.append('id', SHEET_ID);
+  fd.append('name',     MY_NAME  || '');
+  fd.append('email',    MY_EMAIL || '');
+  fd.append('phone',    MY_PHONE || '');
+  fd.append('company',  name);
+  fd.append('logo_url', logo);
+  fetch(APP_BASE + 'push/updateProfile.php', { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.error) throw new Error(res.error);
+      MY_COMPANY = name;
+      MY_LOGO    = logo;
+      _updateTopBarLogo(MY_LOGO, MY_COMPANY);
+      // Keep profile dialog in sync if it's open
+      var pName = document.getElementById('profileCompany');
+      if (pName) pName.value = name;
+      var pLogo = document.getElementById('profileLogoUrl');
+      if (pLogo) { pLogo.value = logo; profileLogoPreview(); }
+      _companyInitial = { name: MY_COMPANY, logo_url: MY_LOGO };
+      _companyLog('✓  Saved', 'ok');
+      document.getElementById('companySaveBtn').disabled   = true;
+      document.getElementById('companyCancelBtn').disabled = false;
+      document.getElementById('companyCancelBtn').textContent = 'Close';
+    })
+    .catch(function(err) {
+      _companyLog('✕  ' + (err.message || 'Error'), 'error');
+      document.getElementById('companySaveBtn').disabled   = false;
+      document.getElementById('companyCancelBtn').disabled = false;
+    });
+}
 
 // ── Profile dialog ─────────────────────────────────────────────────────────────
 var _profileInitial = {};

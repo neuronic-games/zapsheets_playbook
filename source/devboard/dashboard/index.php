@@ -415,14 +415,23 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .session-chevron  { font-size:.6rem; opacity:.45; flex-shrink:0; transition:transform .22s ease; transform:rotate(-90deg); }
 .session-block.open .session-chevron { transform:rotate(0deg); }
 .session-edit-btn {
-  display:none; margin-left:.5rem; padding:.18rem .55rem;
-  font-size:.68rem; font-family:'DINRegular',sans-serif;
-  background:#1a5f7a; color:#fff; border:none; border-radius:4px;
-  cursor:pointer; flex-shrink:0; line-height:1.4;
+  display:none; margin-left:.5rem; flex-shrink:0;
+  font-family:'DINBlack',sans-serif; font-size:.7rem;
+  text-transform:uppercase; letter-spacing:.07em;
+  background:transparent; color:#1a5f7a;
+  border:1.5px solid #1a5f7a; border-radius:6px;
+  padding:.28rem .65rem; cursor:pointer; white-space:nowrap;
+  align-items:center; justify-content:center;
+  transition:background .15s, color .15s;
 }
-.session-edit-btn:hover { background:#134d63; }
+.session-edit-btn:hover { background:#1a5f7a; color:#fff; }
+/* Desktop (hover capable): show edit button on row hover */
 @media (hover: hover) {
-  .session-header:hover .session-edit-btn { display:inline-flex; align-items:center; }
+  .session-header:hover .session-edit-btn { display:inline-flex; }
+}
+/* Touch (no hover): show edit button when session is expanded */
+@media (hover: none) {
+  .session-block.open .session-edit-btn { display:inline-flex; }
 }
 .session-testers-line { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#888; font-style:italic; padding-left:.05rem; }
 
@@ -2903,34 +2912,6 @@ function onObsKeydown(e, idx, col) {
 // On touch devices, a long press (600 ms) on a session header opens the edit
 // dialog. A normal tap still expands/collapses via the click handler.
 
-var _lpTimer     = null;
-var _lpMoved     = false;
-
-document.addEventListener('touchstart', function(e) {
-  var header = e.target.closest('.session-header');
-  if (!header || e.target.closest('.session-edit-btn')) return;
-  _lpMoved = false;
-  _lpTimer = setTimeout(function() {
-    _lpTimer = null;
-    if (_lpMoved) return;
-    var gn  = header.dataset.game;
-    var idx = parseInt(header.dataset.idx, 10);
-    openEditSessionDialog(gn, idx);
-  }, 600);
-}, { passive: true });
-
-document.addEventListener('touchmove', function() {
-  _lpMoved = true;
-  if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
-}, { passive: true });
-
-document.addEventListener('touchend', function() {
-  if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
-}, { passive: true });
-
-document.addEventListener('touchcancel', function() {
-  if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
-}, { passive: true });
 
 // ── Account menu ─────────────────────────────────────────────────────────────
 

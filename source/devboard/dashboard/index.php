@@ -373,7 +373,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 
 /* ── Card subtitle bar ────────────────────────────────── */
 .card-subtitle {
-  display:flex; align-items:center; gap:.75rem;
+  display:flex; align-items:center; gap:.5rem .75rem; flex-wrap:wrap;
   padding:.5rem 1rem;
   background:#f7fafb; border-bottom:1px solid #ddeaf0;
 }
@@ -390,7 +390,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .stat-idea     { background:#2e7a52; }
 .stat-dim      { opacity:.35; }
 .stat-active   { box-shadow:0 0 0 2.5px #fff, 0 0 0 4.5px rgba(0,0,0,.25); }
-.subtitle-right { margin-left:auto; display:flex; align-items:stretch; gap:.45rem; }
+.subtitle-right { margin-left:auto; display:flex; align-items:stretch; gap:.45rem; flex-wrap:wrap; }
+@media (max-width:560px) { .subtitle-right { margin-left:0; width:100%; } }
 .subtitle-btn {
   font-family:'DINBlack',sans-serif; font-size:.7rem;
   text-transform:uppercase; letter-spacing:.07em;

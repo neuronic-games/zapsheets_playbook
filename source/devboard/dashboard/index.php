@@ -124,9 +124,11 @@ $_client_count = count(array_unique(array_filter(array_map(
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" sizes="32x32" href="images/db_icon_32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="images/db_icon_16.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="images/db_icon_180.png" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="DevBoard" />
-<link rel="apple-touch-icon" sizes="180x180" href="images/db_icon_180.png" />
 <title>DevBoard</title>
 <style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2') format('woff2'),url('fonts/DINBlack.ttf'); }

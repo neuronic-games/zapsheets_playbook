@@ -47,7 +47,10 @@ function buildSessions(rows) {
     var obs    = (row['Observations'] || row['Observation'] || '').trim();
     var sol    = (row['Thoughts']     || row['Solution']    || '').trim();
     if (date || event) {
-      current = { date:date, testnum:event, location:obs, length:sol, testers:[], obs:[] };
+      // New schema: Event = type ("Playtest"), People = session number ("1")
+      // Old schema: Event = "Playtest 1", People = blank — both work transparently
+      var sessionLabel = event + (people ? ' ' + people : '');
+      current = { date:date, testnum:sessionLabel, eventType:event, sessionNum:people, location:obs, length:sol, testers:[], obs:[] };
       sessions.push(current);
     } else if (current) {
       if (people) {

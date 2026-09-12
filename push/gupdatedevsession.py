@@ -59,9 +59,10 @@ except Exception as e:
     print(json.dumps({"error": f"Could not decode payload: {str(e)}"}))
     sys.exit(1)
 
-orig_date  = data.get('orig_date',  '').strip()
-orig_event = data.get('orig_event', '').strip()
-new_rows   = data.get('rows', [])   # list of [date, event, observation, solution]
+orig_date        = data.get('orig_date',        '').strip()
+orig_event       = data.get('orig_event',       '').strip()
+orig_session_num = data.get('orig_session_num', '').strip()
+new_rows         = data.get('rows', [])   # list of [date, event, people, observation, solution]
 
 try:
     wb = sa.open_by_key(sheet_id)
@@ -91,14 +92,17 @@ if len(all_values) < 2:
 # enumerate(..., start=2) maps list index i → sheet row i (1-indexed).
 header_sheet_row = None
 for i, row in enumerate(all_values[1:], start=2):
-    row_date  = clean(row[0] if len(row) > 0 else '')
-    row_event = clean(row[1] if len(row) > 1 else '')
+    row_date       = clean(row[0] if len(row) > 0 else '')
+    row_event      = clean(row[1] if len(row) > 1 else '')
+    row_people     = clean(row[2] if len(row) > 2 else '')
     if row_date == orig_date and row_event == orig_event:
-        header_sheet_row = i
-        break
+        # When orig_session_num is provided, also match the People column (new schema)
+        if not orig_session_num or row_people == orig_session_num:
+            header_sheet_row = i
+            break
 
 if header_sheet_row is None:
-    print(json.dumps({"error": f"Session not found: date={orig_date!r} event={orig_event!r}"}))
+    print(json.dumps({"error": f"Session not found: date={orig_date!r} event={orig_event!r} session_num={orig_session_num!r}"}))
     sys.exit(1)
 
 # Find the end of the session: first subsequent row with non-empty date or event.

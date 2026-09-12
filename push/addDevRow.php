@@ -20,6 +20,7 @@ $sheetId     = trim($_POST['id']          ?? '');
 $gameName    = trim($_POST['game']        ?? '');
 $date        = trim($_POST['date']        ?? '');
 $event       = trim($_POST['event']       ?? '');
+$sessionNum  = trim($_POST['session_num'] ?? '');   // new schema: session number goes in People col
 $observation = trim($_POST['observation'] ?? '');
 $solution    = trim($_POST['solution']    ?? '');
 $rowType     = trim($_POST['row_type']    ?? '');
@@ -77,6 +78,7 @@ if ($isTesterRow) {
     $row     = [
         'Date'         => $date,
         'Event'        => $event,
+        'People'       => $sessionNum,    // new schema: session number on header row
         'Observations' => $observation,
         'Observation'  => $observation,   // legacy sheets used 'Observation' (no s)
         'Thoughts'     => $solution,

@@ -19,14 +19,16 @@ header('Content-Type: application/json');
 require __DIR__ . '/../dotEnv.php';
 require_once __DIR__ . '/refreshJson.php';
 
-$sheetId   = trim($_POST['id']         ?? '');
-$gameName  = trim($_POST['game']       ?? '');
-$origDate  = trim($_POST['orig_date']  ?? '');
-$origEvent = trim($_POST['orig_event'] ?? '');
-$date      = trim($_POST['date']       ?? '');
-$event     = trim($_POST['event']      ?? '');
-$location  = trim($_POST['location']   ?? '');
-$length    = trim($_POST['length']    ?? '');  // existing session length (preserved on edit)
+$sheetId        = trim($_POST['id']               ?? '');
+$gameName       = trim($_POST['game']             ?? '');
+$origDate       = trim($_POST['orig_date']        ?? '');
+$origEvent      = trim($_POST['orig_event']       ?? '');
+$origSessionNum = trim($_POST['orig_session_num'] ?? '');
+$date           = trim($_POST['date']             ?? '');
+$event          = trim($_POST['event']            ?? '');
+$sessionNum     = trim($_POST['session_num']      ?? '');
+$location       = trim($_POST['location']         ?? '');
+$length         = trim($_POST['length']           ?? '');  // existing session length (preserved on edit)
 $testersRaw  = $_POST['testers']    ?? '[]';
 $obsPairsRaw = $_POST['obs_pairs']  ?? '[]';
 
@@ -52,8 +54,8 @@ if (file_exists($peopleFile)) {
 // Build replacement rows: Date | Event | People | Observation | Solution
 $rows = [];
 
-// Header row: date + event + blank People + location in Observations + existing length in Thoughts
-$rows[] = [$date, $event, '', $location, $length];
+// Header row: date + event type + session number in People + location in Observations + length in Thoughts
+$rows[] = [$date, $event, $sessionNum, $location, $length];
 
 // Tester rows: blank Date/Event + "Name email" in People + blank Observation/Solution
 foreach ($testers as $t) {
@@ -77,9 +79,10 @@ $tabName    = '[' . $gameName . '] dev';
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 
 $payload = [
-    'orig_date'  => $origDate,
-    'orig_event' => $origEvent,
-    'rows'       => $rows,
+    'orig_date'        => $origDate,
+    'orig_event'       => $origEvent,
+    'orig_session_num' => $origSessionNum,
+    'rows'             => $rows,
 ];
 $encoded = base64_encode(json_encode($payload, JSON_UNESCAPED_UNICODE));
 $arg     = $sheetId . '|' . $tabName . '|' . $encoded;

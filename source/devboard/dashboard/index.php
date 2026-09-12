@@ -2289,8 +2289,9 @@ function submitAddGame() {
 
 // ── Session numbering ─────────────────────────────────────────────────────────
 
-// Count existing sessions of a given type for a game, return next label e.g. "Playtest 3"
-// Sessions store the type in the Event column as "Playtest 1", "Meeting 2", etc.
+// Count existing sessions of a given type for a game, return next session number e.g. "3"
+// New schema: Event = type only ("Playtest"), People = number ("3")
+// Old schema: Event = "Playtest 1" — prefix match on testnum handles both transparently.
 function nextSessionLabel(gameName, type) {
   var rows     = devCache[gameName] || [];
   var sessions = buildSessions(rows);
@@ -2298,7 +2299,7 @@ function nextSessionLabel(gameName, type) {
   var count    = sessions.filter(function(s) {
     return s.testnum.toLowerCase().indexOf(prefix) === 0;
   }).length;
-  return type + ' ' + (count + 1);
+  return String(count + 1);
 }
 
 function onTypeChange() {
@@ -2308,11 +2309,12 @@ function onTypeChange() {
 
 // ── Session dialog ────────────────────────────────────────────────────────────
 
-var _sessionGame   = '';
-var _editMode      = false;
-var _editOrigDate  = '';
-var _editOrigEvent = '';
-var _editSnapshot  = null;
+var _sessionGame        = '';
+var _editMode           = false;
+var _editOrigDate       = '';
+var _editOrigEvent      = '';
+var _editOrigSessionNum = '';
+var _editSnapshot       = null;
 
 // ── Stopwatch ─────────────────────────────────────────────────────────────────
 var _swSeconds  = 0;
@@ -2457,23 +2459,31 @@ function openEditSessionDialog(gameName, idx) {
 
   _editMode      = true;
   _editOrigDate  = session.date;
-  _editOrigEvent = session.testnum;
+  _sessionGame   = gameName;
+
+  // Resolve event type and session number.
+  // New schema: session.eventType = "Playtest", session.sessionNum = "3"
+  // Legacy schema: session.eventType = "Playtest 3", session.sessionNum = "" — parse it.
+  var editEventType  = session.eventType || '';
+  var editSessionNum = session.sessionNum || '';
+  if (!editSessionNum) {
+    var legacyMatch = editEventType.match(/^(.*?)\s+(\d+)$/);
+    if (legacyMatch) { editEventType = legacyMatch[1]; editSessionNum = legacyMatch[2]; }
+  }
+  _editOrigEvent      = editEventType;
+  _editOrigSessionNum = editSessionNum;
+
   // Load existing session length into the stopwatch (paused)
   _swReset();
   _swSeconds = _swParseLength(session.length);
   _swUpdate();
-  _sessionGame   = gameName;
 
   document.getElementById('sessionDialogAction').textContent = 'Edit Session';
   document.getElementById('sessionGameTitle').textContent    = gameName;
   document.getElementById('sDate').value     = session.date     || '';
   document.getElementById('sLocation').value = session.location || '';
-
-  // Infer type from testnum prefix; set without triggering onTypeChange auto-numbering
-  var tn = (session.testnum || '').toLowerCase();
-  var type = tn.indexOf('meeting') === 0 ? 'Meeting' : tn.indexOf('idea') === 0 ? 'Idea' : 'Playtest';
-  document.getElementById('sType').value    = type;
-  document.getElementById('sTestNum').value = session.testnum || '';
+  document.getElementById('sType').value     = editEventType;
+  document.getElementById('sTestNum').value  = editSessionNum;
 
   // Pre-fill testers
   _testerCount = 0; _testersHL = {};
@@ -2555,20 +2565,23 @@ function submitSession() {
 
   btn.disabled = true; btn.textContent = 'Saving…'; err.style.display = 'none';
 
-  var date     = document.getElementById('sDate').value || todayISO();
-  var testnum  = document.getElementById('sTestNum').value.trim();
-  var location = document.getElementById('sLocation').value.trim();
+  var date       = document.getElementById('sDate').value || todayISO();
+  var eventType  = document.getElementById('sType').value;
+  var sessionNum = document.getElementById('sTestNum').value.trim();
+  var location   = document.getElementById('sLocation').value.trim();
 
   // ── Edit mode: replace the existing session via updateDevSession ──────────────
   if (_editMode) {
     var fd = new FormData();
-    fd.append('id',         SHEET_ID);
-    fd.append('game',       _sessionGame);
-    fd.append('orig_date',  _editOrigDate);
-    fd.append('orig_event', _editOrigEvent);
-    fd.append('date',       date);
-    fd.append('event',      testnum);
-    fd.append('location',   location);
+    fd.append('id',               SHEET_ID);
+    fd.append('game',             _sessionGame);
+    fd.append('orig_date',        _editOrigDate);
+    fd.append('orig_event',       _editOrigEvent);
+    fd.append('orig_session_num', _editOrigSessionNum);
+    fd.append('date',             date);
+    fd.append('event',            eventType);
+    fd.append('session_num',      sessionNum);
+    fd.append('location',         location);
     fd.append('length',     _swSeconds > 0 ? 'Length: ' + _swFormat(_swSeconds) : '');
     fd.append('testers',    JSON.stringify(testerVals));
     fd.append('obs_pairs',  JSON.stringify(obsPairs));
@@ -2592,13 +2605,13 @@ function submitSession() {
   }
 
   // ── Add mode: append new session rows one by one ──────────────────────────────
-  // Build ordered rows matching sheet format: Date | Event | Observation | Solution
-  //   1. Session header row  (date, testnum, location, "")
+  // Build ordered rows matching sheet format: Date | Event | People | Observation | Solution
+  //   1. Session header row  (date, eventType, sessionNum, location, length)
   //   2. One tester row each (blank date/event, testerName, "")
   //   3. One obs row each    (blank date/event, obs, sol)
   var allRows = [];
   var swLength = _swSeconds > 0 ? 'Length: ' + _swFormat(_swSeconds) : '';
-  allRows.push({ date: date, event: testnum, observation: location, solution: swLength, type: 'header' });
+  allRows.push({ date: date, event: eventType, session_num: sessionNum, observation: location, solution: swLength, type: 'header' });
   testerVals.forEach(function(t) {
     allRows.push({ date: '', event: '', observation: t, solution: '', type: 'tester' });
   });
@@ -2613,6 +2626,7 @@ function submitSession() {
     fd.append('game',        _sessionGame);
     fd.append('date',        row.date);
     fd.append('event',       row.event);
+    fd.append('session_num', row.session_num || '');
     fd.append('observation', row.observation);
     fd.append('solution',    row.solution);
     fd.append('row_type',    row.type || '');

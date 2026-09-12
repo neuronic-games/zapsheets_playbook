@@ -1301,7 +1301,7 @@ function renderDashView() {
       else if (payment === 'Partial')  badgeCls += ' partial';
       html += '<div class="dash-contract-row">';
       html += '<div><div class="dash-contract-game">' + esc(c.Game || '—') + '</div><div class="dash-contract-client">' + esc(c.Client || '') + '</div></div>';
-      html += '<div style="color:#888;font-size:.72rem">' + esc(c.Date || '') + '</div>';
+      html += '<div style="color:#888;font-size:.72rem">' + esc(fmtDate(c.Date)) + '</div>';
       html += '<div style="font-family:DINBlack,sans-serif;font-size:.78rem">' + esc(quote) + '</div>';
       html += '<div><span class="' + badgeCls + '">' + esc(payment || '—') + '</span></div>';
       html += '</div>';
@@ -1352,8 +1352,8 @@ function renderPublishersView() {
       if (payment === 'Fully Paid') badgeCls += ' paid';
       else if (payment === 'Invoiced') badgeCls += ' invoiced';
       else if (payment === 'Partial')  badgeCls += ' partial';
-      var ts = con['Target Start Date'] || '';
-      var te = con['Target End Date']   || '';
+      var ts = fmtDate(con['Target Start Date'] || '');
+      var te = fmtDate(con['Target End Date']   || '');
       var dateRange = (ts || te) ? (ts || '?') + ' → ' + (te || '?') : '';
       var dataIdx = CONTRACT_RAW.indexOf(con);
       html += '<div class="client-contract-row" onclick="openContractEditDialog(' + dataIdx + ')">';

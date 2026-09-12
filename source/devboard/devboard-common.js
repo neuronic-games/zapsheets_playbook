@@ -19,10 +19,28 @@ function esc(s) {
 
 // ── Date formatting ───────────────────────────────────────────────────────────
 function fmtDate(raw) {
-  if (!raw) return '';
-  var d = new Date(raw);
-  if (isNaN(d.getTime())) return raw;
-  return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  if (raw === null || raw === undefined || raw === '') return '';
+  var d;
+  // Google Sheets serial date (integer or numeric string with no dashes/slashes)
+  var n = Number(raw);
+  if (!isNaN(n) && n > 1000 && String(raw).trim().match(/^\d+$/)) {
+    // Sheets epoch: Dec 30, 1899
+    d = new Date(Date.UTC(1899, 11, 30) + n * 86400000);
+  } else {
+    // ISO "YYYY-MM-DD" — parse as UTC to avoid timezone day-shift
+    var iso = String(raw).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+      var p = iso.split('-');
+      d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2]));
+    } else {
+      d = new Date(raw);
+    }
+  }
+  if (!d || isNaN(d.getTime())) return String(raw);
+  var mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  var dd = String(d.getUTCDate()).padStart(2, '0');
+  var yyyy = d.getUTCFullYear();
+  return mm + '/' + dd + '/' + yyyy;
 }
 
 // ── Render observation text (pass =IMAGE() formulas through as <img>) ─────────

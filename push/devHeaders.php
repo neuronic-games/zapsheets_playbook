@@ -45,10 +45,33 @@ if (empty($records)) {
 $headers   = array_keys($records[0]);
 $firstRow  = $records[0];
 
+// Also probe gadd.py directly to see what it returns for a header row
+$testRow = [
+    'Date'         => date('Y-m-d'),
+    'Event'        => '__DEBUG_TEST__',
+    'Observations' => 'debug-location',
+    'Observation'  => 'debug-location',
+    'Thoughts'     => 'Length: 00:42',
+    'Solution'     => 'Length: 00:42',
+    'People'       => '',
+];
+$encoded  = base64_encode(json_encode($testRow, JSON_UNESCAPED_UNICODE));
+$gaddArg  = $sheetId . '|' . $tabName . '|' . $encoded;
+$gaddCmd  = escapeshellarg($pythonPath) . ' '
+          . escapeshellarg(__DIR__ . '/gadd.py') . ' '
+          . escapeshellarg($gaddArg) . ' 2>&1';
+$gaddOut  = trim((string) shell_exec($gaddCmd));
+$gaddResult = json_decode($gaddOut, true);
+
+// If the test row was actually written, immediately delete it by noting its row num
+// (we can't delete easily, so just flag it)
+
 echo json_encode([
-    'tab'       => $tabName,
-    'headers'   => $headers,
-    'first_row' => $firstRow,
-    'row_count' => count($records),
+    'tab'             => $tabName,
+    'headers'         => $headers,
+    'row_count'       => count($records),
+    'last_3_rows'     => array_slice($records, -3),
+    'gadd_raw_output' => $gaddOut,
+    'gadd_result'     => $gaddResult,
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 ?>

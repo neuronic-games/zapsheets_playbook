@@ -443,8 +443,6 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       <h1><span class="db-dev">Dev</span><span class="db-board">Board</span></h1>
       <span id="collabUserLabel" style="font-family:'DINRegular',sans-serif;font-size:.72rem;color:rgba(255,255,255,.5);display:none"></span>
     </div>
-    <span class="sep">·</span>
-    <span class="game-label"><?= _ds_e($_gameName) ?></span>
     <div class="account-menu-wrap">
       <button class="top-btn-collab" onclick="toggleAccountMenu()" title="Account" id="accountMenuBtn">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

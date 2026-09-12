@@ -452,6 +452,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       </button>
       <div class="account-menu" id="accountMenu">
         <button class="account-menu-item" onclick="closeAccountMenu();openProfileDialog()">Profile</button>
+        <button class="account-menu-item" onclick="closeAccountMenu();window.open('<?= htmlspecialchars($_base, ENT_QUOTES) ?>devboard/help','_blank')">Help</button>
         <hr class="account-menu-divider" />
         <button class="account-menu-item" id="accountMenuAuthBtn" onclick="closeAccountMenu();_menuAuthAction()">Sign In</button>
       </div>

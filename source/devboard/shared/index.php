@@ -1089,7 +1089,7 @@ function renderTestersOptions(idx, q) {
   _testersHL[idx] = -1;
   if (!filtered.length) { drop.innerHTML = '<div class="combo-empty">No matching people.</div>'; return; }
   drop.innerHTML = filtered.map(function(n) {
-    return '<div class="combo-option" onmousedown="testersSelect(' + idx + ',\'' + esc(n) + '\')">' + esc(n) + '</div>';
+    return '<div class="combo-option" data-name="' + esc(n) + '" onmousedown="testersSelect(' + idx + ',this.dataset.name)">' + esc(n) + '</div>';
   }).join('');
 }
 function testersSelect(idx, name) {

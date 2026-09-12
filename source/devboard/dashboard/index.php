@@ -1495,23 +1495,24 @@ function renderBody(gameName, rows) {
     return cls;
   }
 
-  var gn = esc(gameName);
+  var gn   = esc(gameName);
+  var gnJ  = gn.replace(/'/g, "\\'");   // additionally JS-safe for onclick strings
   var html = '';
 
   // Subtitle bar — per-type chips + action buttons
   html += '<div class="card-subtitle">';
-  if (nPlay) html += '<div class="' + chipClass('Playtest','stat-playtest') + '" onclick="filterSessions(\'' + gn + '\',\'Playtest\')">' + nPlay + ' <span>' + (nPlay === 1 ? 'Playtest' : 'Playtests') + '</span></div>';
-  if (nMeet) html += '<div class="' + chipClass('Meeting', 'stat-meeting')  + '" onclick="filterSessions(\'' + gn + '\',\'Meeting\')">'  + nMeet + ' <span>' + (nMeet === 1 ? 'Meeting'  : 'Meetings')  + '</span></div>';
-  if (nIdea) html += '<div class="' + chipClass('Idea',    'stat-idea')     + '" onclick="filterSessions(\'' + gn + '\',\'Idea\')">'     + nIdea + ' <span>' + (nIdea === 1 ? 'Idea'     : 'Ideas')      + '</span></div>';
+  if (nPlay) html += '<div class="' + chipClass('Playtest','stat-playtest') + '" onclick="filterSessions(\'' + gnJ + '\',\'Playtest\')">' + nPlay + ' <span>' + (nPlay === 1 ? 'Playtest' : 'Playtests') + '</span></div>';
+  if (nMeet) html += '<div class="' + chipClass('Meeting', 'stat-meeting')  + '" onclick="filterSessions(\'' + gnJ + '\',\'Meeting\')">'  + nMeet + ' <span>' + (nMeet === 1 ? 'Meeting'  : 'Meetings')  + '</span></div>';
+  if (nIdea) html += '<div class="' + chipClass('Idea',    'stat-idea')     + '" onclick="filterSessions(\'' + gnJ + '\',\'Idea\')">'     + nIdea + ' <span>' + (nIdea === 1 ? 'Idea'     : 'Ideas')      + '</span></div>';
   if (!nPlay && !nMeet && !nIdea) html += '<div class="card-stat stat-playtest">0 <span>Sessions</span></div>';
   html += '<div class="subtitle-right">';
-  html += '<button class="subtitle-btn" onclick="shareGame(\'' + gn + '\')">' +
+  html += '<button class="subtitle-btn" onclick="shareGame(\'' + gnJ + '\')">' +
     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
     'Share</button>';
-  html += '<button class="subtitle-btn" onclick="openContractDialog(\'' + gn + '\')">+ Contract</button>';
-  html += '<button class="subtitle-btn" onclick="openEditGame(\'' + gn + '\')">Edit</button>';
-  html += '<button class="subtitle-btn subtitle-btn-primary" onclick="openSessionDialog(\'' + gn + '\')">+ Session</button>';
-  html += '<button class="subtitle-btn subtitle-btn-reload" onclick="reloadDevData(\'' + gn + '\')" title="Reload from sheet">' +
+  html += '<button class="subtitle-btn" onclick="openContractDialog(\'' + gnJ + '\')">+ Contract</button>';
+  html += '<button class="subtitle-btn" onclick="openEditGame(\'' + gnJ + '\')">Edit</button>';
+  html += '<button class="subtitle-btn subtitle-btn-primary" onclick="openSessionDialog(\'' + gnJ + '\')">+ Session</button>';
+  html += '<button class="subtitle-btn subtitle-btn-reload" onclick="reloadDevData(\'' + gnJ + '\')" title="Reload from sheet">' +
     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>' +
     '</button>';
   html += '</div>';
@@ -1904,7 +1905,7 @@ function contractClientRebuild(filter) {
   });
   if (!items.length) { drop.innerHTML = ''; document.getElementById('contractClientCombo').classList.remove('open'); return; }
   drop.innerHTML = items.map(function(n) {
-    return '<div class="combo-item" onmousedown="contractClientPick(\'' + n.replace(/'/g,"&#39;") + '\')">' + n + '</div>';
+    return '<div class="combo-item" data-name="' + esc(n) + '" onmousedown="contractClientPick(this.dataset.name)">' + esc(n) + '</div>';
   }).join('');
   document.getElementById('contractClientCombo').classList.add('open');
 }

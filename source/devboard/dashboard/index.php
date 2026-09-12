@@ -405,7 +405,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .session-header-row { display:flex; align-items:center; gap:.55rem; }
 .session-type {
   font-family:'DINBlack',sans-serif; font-size:.72rem;
-  text-transform:uppercase; letter-spacing:.06em;
+  text-transform:uppercase; letter-spacing:.06em; line-height:1;
 }
 .session-type.type-playtest { color:#1a5f7a; }
 .session-type.type-meeting  { color:#6b3fa8; }
@@ -418,23 +418,23 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .session-chevron  { font-size:.6rem; opacity:.45; flex-shrink:0; transition:transform .22s ease; transform:rotate(-90deg); }
 .session-block.open .session-chevron { transform:rotate(0deg); }
 .session-edit-btn {
-  display:none; margin-left:.5rem; flex-shrink:0;
+  visibility:hidden; margin-left:.5rem; flex-shrink:0;
   font-family:'DINBlack',sans-serif; font-size:.7rem;
   text-transform:uppercase; letter-spacing:.07em;
   background:transparent; color:#1a5f7a;
   border:1.5px solid #1a5f7a; border-radius:6px;
   padding:.28rem .65rem; cursor:pointer; white-space:nowrap;
-  align-items:center; justify-content:center;
+  display:inline-flex; align-items:center; justify-content:center;
   transition:background .15s, color .15s;
 }
 .session-edit-btn:hover { background:#1a5f7a; color:#fff; }
-/* Desktop (hover capable): show edit button on row hover */
+/* Desktop (hover capable): reveal on row hover */
 @media (hover: hover) {
-  .session-header:hover .session-edit-btn { display:inline-flex; }
+  .session-header:hover .session-edit-btn { visibility:visible; }
 }
-/* Touch (no hover): show edit button when session is expanded */
+/* Touch (no hover): reveal when session is expanded */
 @media (hover: none) {
-  .session-block.open .session-edit-btn { display:inline-flex; }
+  .session-block.open .session-edit-btn { visibility:visible; }
 }
 .session-testers-line { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#888; font-style:italic; padding-left:.05rem; }
 

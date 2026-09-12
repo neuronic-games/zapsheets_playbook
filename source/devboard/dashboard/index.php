@@ -1943,7 +1943,7 @@ function openAddDialog() {
   document.getElementById('gView').value           = '';
   document.getElementById('gVideo').value          = '';
   document.getElementById('gImage').value          = '';
-  _setNewGameFieldsVisible(false);
+  _setNewGameFieldsVisible(true);
   document.getElementById('addErr').style.display  = 'none';
   document.getElementById('addBtn').disabled       = false;
   document.getElementById('addBtn').textContent    = 'Add Game';
@@ -2176,8 +2176,7 @@ function comboFilter() {
   renderComboOptions(q);
   document.getElementById('gameCombo').classList.add('open');
   // Show extra fields only if the typed name is not already in the games sheet
-  var isNew = q.trim() && !_existingNames[q.trim().toLowerCase()];
-  _setNewGameFieldsVisible(isNew);
+  _setNewGameFieldsVisible(true);
 }
 function renderComboOptions(q) {
   var drop = document.getElementById('comboDrop');
@@ -2191,8 +2190,7 @@ function renderComboOptions(q) {
 function comboSelect(name) {
   document.getElementById('gameComboInput').value = name;
   document.getElementById('gameCombo').classList.remove('open');
-  // Existing game — hide new-game fields
-  _setNewGameFieldsVisible(false);
+  _setNewGameFieldsVisible(true);
 }
 function comboKey(e) {
   var drop = document.getElementById('comboDrop'); var items = drop.querySelectorAll('.combo-option');

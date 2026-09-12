@@ -143,8 +143,8 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
   font-family:'DINBlack',sans-serif; font-size:.7rem;
   background:#fff; color:#aaa;
   border:1.5px solid #d0d8e0; border-radius:6px;
-  padding:.3rem .55rem; cursor:pointer;
-  display:inline-flex; align-items:center;
+  padding:.28rem .55rem; cursor:pointer;
+  display:inline-flex; align-items:center; align-self:stretch;
   transition:color .15s, border-color .15s;
 }
 .reload-session-btn:hover { color:#1a5f7a; border-color:#1a5f7a; }

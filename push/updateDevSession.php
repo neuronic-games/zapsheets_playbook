@@ -26,6 +26,7 @@ $origEvent = trim($_POST['orig_event'] ?? '');
 $date      = trim($_POST['date']       ?? '');
 $event     = trim($_POST['event']      ?? '');
 $location  = trim($_POST['location']   ?? '');
+$length    = trim($_POST['length']    ?? '');  // existing session length (preserved on edit)
 $testersRaw  = $_POST['testers']    ?? '[]';
 $obsPairsRaw = $_POST['obs_pairs']  ?? '[]';
 
@@ -51,8 +52,8 @@ if (file_exists($peopleFile)) {
 // Build replacement rows: Date | Event | People | Observation | Solution
 $rows = [];
 
-// Header row: date + event + blank People + location in Observation + blank Solution
-$rows[] = [$date, $event, '', $location, ''];
+// Header row: date + event + blank People + location in Observations + existing length in Thoughts
+$rows[] = [$date, $event, '', $location, $length];
 
 // Tester rows: blank Date/Event + "Name email" in People + blank Observation/Solution
 foreach ($testers as $t) {

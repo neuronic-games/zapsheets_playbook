@@ -104,19 +104,6 @@ if ($result === null) {
 // Refresh the dev JSON cache so the card reflects the new row
 if (!empty($result['ok'])) {
     $sheetRowNum = (int)($result['row'] ?? 0);  // save before overwriting
-    // Keep headers/written for debug visibility in JS console
-    $result['_debug_headers'] = $result['headers'] ?? [];
-    $result['_debug_written'] = $result['written'] ?? [];
-    // Write debug log to source dir (which IS volume-mounted and readable locally)
-    $debugLog = dirname(__DIR__) . '/source/devboard/dashboard/debug_last.json';
-    file_put_contents($debugLog, json_encode([
-        'time'     => date('c'),
-        'rowType'  => $rowType,
-        'solution' => $solution,
-        'headers'  => $result['headers']  ?? [],
-        'written'  => $result['written']  ?? [],
-        'phpRow'   => $row,
-    ], JSON_PRETTY_PRINT));
     refreshJson($pythonPath, $sheetId, $tabName);
     $result['row'] = $row;
 

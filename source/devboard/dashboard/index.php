@@ -2311,7 +2311,8 @@ function onTypeChange() {
 var _sessionGame   = '';
 var _editMode      = false;
 var _editOrigDate  = '';
-var _editOrigEvent = '';
+var _editOrigEvent  = '';
+var _editOrigLength = '';  // preserve existing session length on edit
 var _editSnapshot  = null;
 
 // ── Stopwatch ─────────────────────────────────────────────────────────────────
@@ -2456,9 +2457,10 @@ function openEditSessionDialog(gameName, idx) {
   var session = cache && cache[idx];
   if (!session) return;
 
-  _editMode      = true;
-  _editOrigDate  = session.date;
-  _editOrigEvent = session.testnum;
+  _editMode       = true;
+  _editOrigDate   = session.date;
+  _editOrigEvent  = session.testnum;
+  _editOrigLength = session.length || '';  // carry existing length through to PHP
   _sessionGame   = gameName;
 
   document.getElementById('sessionDialogAction').textContent = 'Edit Session';
@@ -2566,6 +2568,7 @@ function submitSession() {
     fd.append('date',       date);
     fd.append('event',      testnum);
     fd.append('location',   location);
+    fd.append('length',     _editOrigLength);
     fd.append('testers',    JSON.stringify(testerVals));
     fd.append('obs_pairs',  JSON.stringify(obsPairs));
 
@@ -2624,23 +2627,7 @@ function submitSession() {
     .then(function(results) {
       var failed = results.find(function(r) { return r.error; });
       if (failed) throw new Error(failed.error);
-      // Debug: show sheet headers visibly so we can diagnose length-not-saving
-      var r0 = results[0] || {};
-      var hdrs = r0._debug_headers || [];
-      var writ = r0._debug_written || [];
-      console.log('[DevBoard] results[0]:', r0);
-      console.log('[DevBoard] Sheet headers:', hdrs);
-      console.log('[DevBoard] Written row:', writ);
-      console.log('[DevBoard] swSeconds:', _swSeconds, 'swLength:', swLength);
-      var dbgMsg = 'HEADERS: [' + hdrs.join(' | ') + ']  WRITTEN: [' + writ.join(' | ') + ']';
-      err.style.cssText = 'display:block;color:#1a73e8;font-size:11px;word-break:break-all';
-      err.textContent = dbgMsg;
-      // Don't auto-close — let user read the debug, then close manually
       addNewPeople(testerRaws);
-      if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
-      results.forEach(function(res) { if (res.row) devCache[_sessionGame].push(res.row); });
-      renderBody(_sessionGame, devCache[_sessionGame]);
-      return; // skip normal close
       if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
       results.forEach(function(res) { if (res.row) devCache[_sessionGame].push(res.row); });
       renderBody(_sessionGame, devCache[_sessionGame]);

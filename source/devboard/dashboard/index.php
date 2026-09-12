@@ -916,7 +916,9 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 </div>
 
 <!-- Add game dialog -->
-<div class="overlay" id="addOverlay" onclick="if(event.target===this){if(hasAddData())shakeDialog(this.querySelector('.add-dialog'));else closeAddDialog();}">
+<div class="overlay" id="addOverlay"
+  onmousedown="_addOverlayMd=event.target"
+  onclick="if(event.target===this&&_addOverlayMd===this){if(hasAddData())shakeDialog(this.querySelector('.add-dialog'));else closeAddDialog();}">
   <div class="add-dialog">
     <h2 id="addDialogTitle">Add Game</h2>
 
@@ -1898,9 +1900,10 @@ function doFetch() {
 
 // ── Add game dialog ───────────────────────────────────────────────────────────
 
-var _comboOptions   = [];
-var _comboHighlight = -1;
-var _existingNames  = {};   // lowercased names already in GAMES_RAW
+var _comboOptions    = [];
+var _comboHighlight  = -1;
+var _existingNames   = {};   // lowercased names already in GAMES_RAW
+var _addOverlayMd    = null; // mousedown target — prevents spurious shake when combo shrinks dialog
 
 function _setNewGameFieldsVisible(visible) {
   document.getElementById('addNewFields').style.display = visible ? 'block' : 'none';

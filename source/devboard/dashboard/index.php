@@ -263,6 +263,16 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .top-tab.active { background:#fff; color:#1a1a2e; }
 .top-tab:not(.active):hover { color:#fff; }
 
+/* ── Mobile top bar: wrap tabs to second row ─────────── */
+@media (max-width:560px) {
+  .top-bar { padding:.5rem 1rem; }
+  .top-bar-inner { flex-wrap:wrap; gap:.4rem; padding-bottom:.4rem; }
+  .top-bar-left  { order:1; flex:1; }
+  .account-menu-wrap { order:2; }
+  .top-tab-btns  { order:3; width:100%; }
+  .top-tab       { flex:1; text-align:center; padding:.3rem .4rem; }
+}
+
 /* ── Views ────────────────────────────────────────────── */
 .view { display:none; }
 .view.active { display:block; }

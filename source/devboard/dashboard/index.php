@@ -755,7 +755,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 <div class="view active" id="view-games">
   <div class="search-bar">
     <div class="search-wrap" id="searchWrap">
-      <input type="text" id="searchInput" placeholder="Search games…"
+      <input type="text" id="searchInput" placeholder="Search sessions, people, notes…"
         oninput="onSearch()" autocomplete="off" spellcheck="false"
         onkeydown="if(event.key==='Escape'){clearSearch();this.blur();event.stopPropagation();}" />
       <button class="search-clear" onclick="clearSearch()">✕</button>

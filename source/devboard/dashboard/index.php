@@ -868,20 +868,19 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 <div class="overlay" id="companyOverlay" onclick="if(event.target===this)closeCompanyDialog()">
   <div class="sync-dialog" style="width:min(420px,94vw)">
     <h2>Company</h2>
-    <div style="display:flex;flex-direction:column;gap:.75rem;margin:.5rem 0">
-      <label class="ge-label">Company Name
+    <div style="display:flex;gap:1rem;align-items:center;margin:.25rem 0 .5rem">
+      <div class="profile-photo-wrap" id="companyLogoWrap"
+           style="width:88px;height:56px;border-radius:6px;flex-shrink:0"
+           title="Click to change logo"
+           onclick="document.getElementById('companyLogoFile').click()">
+        <img id="companyLogoImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain">
+        <span id="companyLogoPlaceholder" style="padding:.3rem">Logo</span>
+      </div>
+      <label class="ge-label" style="flex:1">Company Name
         <input type="text" id="companyName" class="ge-input" placeholder="Your studio or company" />
       </label>
-      <div>
-        <label class="ge-label" style="margin-bottom:.35rem">Logo URL
-          <input type="url" id="companyLogoUrl" class="ge-input" placeholder="https://…/logo.png" oninput="companyLogoPreview()" />
-        </label>
-        <div id="companyLogoPreview" style="margin-top:.4rem;display:none">
-          <img id="companyLogoImg" src="" alt="Logo preview"
-               style="max-height:3.5rem;max-width:14rem;object-fit:contain;border-radius:4px;border:1px solid #ddd">
-        </div>
-      </div>
     </div>
+    <input type="file" id="companyLogoFile" accept="image/*" style="display:none" onchange="companyLogoFileChange(this)">
     <div class="sync-log" id="companyLog" style="display:none"></div>
     <div class="sync-dialog-actions">
       <button class="notes-close" id="companyCancelBtn" onclick="forceCloseCompanyDialog()">Cancel</button>
@@ -3082,18 +3081,12 @@ function closeRnDialog() {
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 // ── Company dialog ─────────────────────────────────────────────────────────────
-var _companyInitial = {};
+var _companyInitial  = {};
+var _companyLogoUrl  = '';
 function _companyIsDirty() {
-  var f = function(id) { return (document.getElementById(id).value || '').trim(); };
-  return f('companyName')    !== (_companyInitial.name    || '') ||
-         f('companyLogoUrl') !== (_companyInitial.logo_url || '');
-}
-function companyLogoPreview() {
-  var url  = (document.getElementById('companyLogoUrl').value || '').trim();
-  var wrap = document.getElementById('companyLogoPreview');
-  var img  = document.getElementById('companyLogoImg');
-  if (url) { img.src = url; wrap.style.display = ''; }
-  else { wrap.style.display = 'none'; img.src = ''; }
+  var name = (document.getElementById('companyName').value || '').trim();
+  return name !== (_companyInitial.name || '') ||
+         document.getElementById('companyLogoFile').files.length > 0;
 }
 function _companyLog(msg, type) {
   var el = document.getElementById('companyLog');
@@ -3101,15 +3094,28 @@ function _companyLog(msg, type) {
   el.style.display = msg ? '' : 'none';
   el.style.color = type === 'ok' ? '#1a5f7a' : '#b91c1c';
 }
+function _companyShowLogo(url) {
+  var img = document.getElementById('companyLogoImg');
+  var ph  = document.getElementById('companyLogoPlaceholder');
+  if (url) { img.src = url; img.style.display = ''; ph.style.display = 'none'; }
+  else     { img.style.display = 'none'; ph.style.display = ''; img.src = ''; }
+}
+function companyLogoFileChange(input) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) { _companyShowLogo(e.target.result); };
+  reader.readAsDataURL(input.files[0]);
+}
 function openCompanyDialog() {
-  document.getElementById('companyName').value    = MY_COMPANY || '';
-  document.getElementById('companyLogoUrl').value = MY_LOGO    || '';
-  companyLogoPreview();
+  document.getElementById('companyName').value = MY_COMPANY || '';
+  document.getElementById('companyLogoFile').value = '';
+  _companyLogoUrl = MY_LOGO || '';
+  _companyShowLogo(_companyLogoUrl);
   _companyLog('', '');
   document.getElementById('companySaveBtn').disabled   = false;
   document.getElementById('companyCancelBtn').disabled = false;
   document.getElementById('companyCancelBtn').textContent = 'Cancel';
-  _companyInitial = { name: MY_COMPANY || '', logo_url: MY_LOGO || '' };
+  _companyInitial = { name: MY_COMPANY || '' };
   document.getElementById('companyOverlay').classList.add('open');
 }
 function closeCompanyDialog() {
@@ -3120,41 +3126,60 @@ function forceCloseCompanyDialog() {
   document.getElementById('companyOverlay').classList.remove('open');
 }
 function submitCompany() {
-  var name    = document.getElementById('companyName').value.trim();
-  var logo    = document.getElementById('companyLogoUrl').value.trim();
+  var name      = document.getElementById('companyName').value.trim();
+  var logoFile  = document.getElementById('companyLogoFile').files[0];
   document.getElementById('companySaveBtn').disabled   = true;
   document.getElementById('companyCancelBtn').disabled = true;
   _companyLog('Saving…', '');
-  var fd = new FormData();
-  fd.append('id', SHEET_ID);
-  fd.append('name',     MY_NAME  || '');
-  fd.append('email',    MY_EMAIL || '');
-  fd.append('phone',    MY_PHONE || '');
-  fd.append('company',  name);
-  fd.append('logo_url', logo);
-  fetch(APP_BASE + 'push/updateProfile.php', { method:'POST', body:fd })
-    .then(function(r) { return r.json(); })
-    .then(function(res) {
-      if (res.error) throw new Error(res.error);
-      MY_COMPANY = name;
-      MY_LOGO    = logo;
-      _updateTopBarLogo(MY_LOGO, MY_COMPANY);
-      // Keep profile dialog in sync if it's open
-      var pName = document.getElementById('profileCompany');
-      if (pName) pName.value = name;
-      var pLogo = document.getElementById('profileLogoUrl');
-      if (pLogo) { pLogo.value = logo; profileLogoPreview(); }
-      _companyInitial = { name: MY_COMPANY, logo_url: MY_LOGO };
-      _companyLog('✓  Saved', 'ok');
-      document.getElementById('companySaveBtn').disabled   = true;
-      document.getElementById('companyCancelBtn').disabled = false;
-      document.getElementById('companyCancelBtn').textContent = 'Close';
-    })
-    .catch(function(err) {
-      _companyLog('✕  ' + (err.message || 'Error'), 'error');
-      document.getElementById('companySaveBtn').disabled   = false;
-      document.getElementById('companyCancelBtn').disabled = false;
-    });
+  // Step 1: upload logo file if a new one was picked
+  var logoPromise = Promise.resolve(_companyLogoUrl);
+  if (logoFile) {
+    _companyLog('Uploading logo…', '');
+    var ufd = new FormData();
+    ufd.append('id', SHEET_ID);
+    ufd.append('file', logoFile);
+    logoPromise = fetch(APP_BASE + 'push/uploadMedia.php', { method:'POST', body:ufd })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (!res || res.error) throw new Error(res.error || 'Upload failed');
+        return res.url;
+      });
+  }
+  // Step 2: save name + logo URL to settings
+  logoPromise.then(function(logoUrl) {
+    _companyLogoUrl = logoUrl || '';
+    var fd = new FormData();
+    fd.append('id',       SHEET_ID);
+    fd.append('name',     MY_NAME  || '');
+    fd.append('email',    MY_EMAIL || '');
+    fd.append('phone',    MY_PHONE || '');
+    fd.append('company',  name);
+    fd.append('logo_url', _companyLogoUrl);
+    return fetch(APP_BASE + 'push/updateProfile.php', { method:'POST', body:fd })
+      .then(function(r) { return r.json(); });
+  })
+  .then(function(res) {
+    if (res.error) throw new Error(res.error);
+    MY_COMPANY = name;
+    MY_LOGO    = _companyLogoUrl;
+    _updateTopBarLogo(MY_LOGO, MY_COMPANY);
+    // Keep profile dialog in sync if open
+    var pCo = document.getElementById('profileCompany');
+    if (pCo) pCo.value = MY_COMPANY;
+    var pLo = document.getElementById('profileLogoUrl');
+    if (pLo) { pLo.value = MY_LOGO; profileLogoPreview(); }
+    document.getElementById('companyLogoFile').value = '';
+    _companyInitial = { name: MY_COMPANY };
+    _companyLog('✓  Saved', 'ok');
+    document.getElementById('companySaveBtn').disabled   = true;
+    document.getElementById('companyCancelBtn').disabled = false;
+    document.getElementById('companyCancelBtn').textContent = 'Close';
+  })
+  .catch(function(err) {
+    _companyLog('✕  ' + (err.message || 'Error'), 'error');
+    document.getElementById('companySaveBtn').disabled   = false;
+    document.getElementById('companyCancelBtn').disabled = false;
+  });
 }
 
 // ── Profile dialog ─────────────────────────────────────────────────────────────

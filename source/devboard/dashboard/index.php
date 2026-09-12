@@ -507,9 +507,12 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   padding:1.5rem; width:min(620px,96vw);
   box-shadow:0 8px 32px rgba(0,0,0,.22);
   display:flex; flex-direction:column; gap:1rem;
-  max-height:92vh; overflow-y:auto;
+  max-height:92vh;
+  /* No overflow-y:auto here — it would clip the game-name combo dropdown.
+     Scrolling happens inside .add-dialog-body instead. */
 }
 .add-dialog h2 { font-family:'DINBlack',sans-serif; font-size:.95rem; text-transform:uppercase; letter-spacing:.07em; color:#1a1a2e; margin:0; }
+.add-dialog-body { overflow-y:auto; display:flex; flex-direction:column; gap:1rem; }
 .add-new-only { display:none; }   /* shown only when game is not in GAMES_RAW */
 
 /* Session dialog */
@@ -847,6 +850,9 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       </div>
     </div>
 
+    <!-- Scrollable body: new-game fields + actions.
+         Kept separate from game-name combo so the dropdown isn't clipped by overflow. -->
+    <div class="add-dialog-body">
     <!-- Fields shown only for new games (not already in games sheet) -->
     <div class="add-new-only" id="addNewFields">
       <hr class="field-sep" style="margin:.25rem 0 .75rem" />
@@ -953,6 +959,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       <button class="btn-cancel" onclick="closeAddDialog()">Cancel</button>
       <button class="btn-dark" id="addBtn" onclick="submitAddGame()">Add Game</button>
     </div>
+    </div><!-- /.add-dialog-body -->
   </div>
 </div>
 

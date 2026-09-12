@@ -222,6 +222,17 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 .obs-table .td-obs { width:50%; color:#222; }
 .obs-table .td-sol { width:50%; color:#1a5f7a; border-left:1px solid #d8eaf2; }
 .obs-table .td-sol:empty::after { content:'—'; color:#e0e0e0; }
+/* ── Release notes dialog ── */
+.rn-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; align-items:center; justify-content:center; padding:1rem; }
+.rn-overlay.open { display:flex; }
+.rn-dialog { background:#fff; border-radius:12px; padding:1.4rem 1.5rem 1.2rem; width:100%; max-width:480px; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 8px 32px rgba(0,0,0,.18); }
+.rn-dialog h2 { font-family:'DINBlack',sans-serif; font-size:.95rem; margin:0 0 1rem; }
+.rn-body { overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:1.1rem; }
+.rn-release { display:flex; flex-direction:column; gap:.35rem; }
+.rn-version { font-family:'DINBlack',sans-serif; font-size:.7rem; text-transform:uppercase; letter-spacing:.07em; color:#1a5f7a; }
+.rn-feature { font-family:'DINRegular',sans-serif; font-size:.82rem; color:#333; line-height:1.45; padding-left:.9rem; position:relative; }
+.rn-feature::before { content:'·'; position:absolute; left:0; color:#1a1a2e; font-weight:700; }
+.rn-dialog-actions { display:flex; justify-content:flex-end; padding-top:.9rem; }
 
 .dev-empty { padding:2rem 1rem; text-align:center; font-family:'DINRegular',sans-serif; font-size:.85rem; color:#aaa; }
 
@@ -452,6 +463,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       </button>
       <div class="account-menu" id="accountMenu">
         <button class="account-menu-item" onclick="closeAccountMenu();openProfileDialog()">Profile</button>
+        <button class="account-menu-item" onclick="closeAccountMenu();openRnDialog()">Releases</button>
         <button class="account-menu-item" onclick="closeAccountMenu();window.open('<?= htmlspecialchars($_base, ENT_QUOTES) ?>devboard/help','_blank')">Help</button>
         <hr class="account-menu-divider" />
         <button class="account-menu-item" id="accountMenuAuthBtn" onclick="closeAccountMenu();_menuAuthAction()">Sign In</button>
@@ -500,6 +512,17 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
   <div class="sessions-wrap" id="sessionsWrap">
     <div class="loading-msg">Loading sessions…</div>
+  </div>
+</div>
+
+<!-- Release notes dialog -->
+<div class="rn-overlay" id="rnOverlay" onclick="if(event.target===this)closeRnDialog()">
+  <div class="rn-dialog">
+    <h2>Release Notes</h2>
+    <div class="rn-body" id="rnBody"></div>
+    <div class="rn-dialog-actions">
+      <button class="btn-primary" onclick="closeRnDialog()">Close</button>
+    </div>
   </div>
 </div>
 
@@ -1667,6 +1690,35 @@ _updateMenuLabel();
 _updateSignedInState();
 
 loadSessions();
+
+// ── Release notes ─────────────────────────────────────────────────────────────
+function openRnDialog() {
+  var overlay = document.getElementById('rnOverlay');
+  var body    = document.getElementById('rnBody');
+  body.innerHTML = '<span style="color:#aaa;font-size:.8rem">Loading…</span>';
+  overlay.classList.add('open');
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', APP_BASE + 'changelog.json?v=' + Date.now());
+  xhr.onload = function() {
+    var all;
+    try { all = JSON.parse(xhr.responseText); } catch(e) { all = null; }
+    if (!all || !all.length) { body.innerHTML = '<span style="color:#aaa;font-size:.8rem">No release notes available.</span>'; return; }
+    var releases = all.filter(function(r) { return !r.apps || r.apps.indexOf('devboard') !== -1; });
+    if (!releases.length) { body.innerHTML = '<span style="color:#aaa;font-size:.8rem">No release notes available.</span>'; return; }
+    var html = '';
+    releases.forEach(function(r) {
+      html += '<div class="rn-release"><div class="rn-version">' + esc(r.version || '') + '</div>';
+      (r.features || []).forEach(function(f) { html += '<div class="rn-feature">' + esc(f) + '</div>'; });
+      html += '</div>';
+    });
+    body.innerHTML = html;
+  };
+  xhr.onerror = function() { body.innerHTML = '<span style="color:#aaa;font-size:.8rem">Could not load release notes.</span>'; };
+  xhr.send();
+}
+function closeRnDialog() {
+  document.getElementById('rnOverlay').classList.remove('open');
+}
 </script>
 </body>
 </html>

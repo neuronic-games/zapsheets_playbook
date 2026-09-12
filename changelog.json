@@ -3,11 +3,21 @@
     "version": "Sep 2026",
     "apps": ["devboard"],
     "features": [
+      "Stopwatch — built into the session dialog to track how long a session runs; starts at 00:00 for new sessions and pre-loads the existing time when editing",
+      "Session number stored separately from event type — Event column holds the type (e.g. Playtest), People column holds the number, making it easy to filter the sheet by session type",
+      "Edit button on session rows — revealed on hover on desktop; appears when a session is expanded on touch devices",
+      "New sessions start with no people — testers are optional",
+      "Collab view improvements — game title on the session card, Help and Releases in the menu, app icon in the browser tab and on the home screen"
+    ]
+  },
+  {
+    "version": "Sep 2026",
+    "apps": ["devboard"],
+    "features": [
       "DevBoard — new app for tracking playtest sessions, meetings, and ideas per game",
       "Game cards with lazy-loaded session history, filterable by session type (Playtest, Meeting, Idea)",
       "Session dialog — log date, type, location, testers, and observation/solution pairs in one form",
-      "Edit existing sessions — hover to reveal Edit button on desktop, long-press on touch devices",
-      "Five-column sheet schema: Date, Event, People, Observation, Solution",
+      "Five-column sheet schema: Date, Event, People, Observations, Thoughts",
       "Auto-resizing textareas — each field starts at one row and grows as you type",
       "Keyboard navigation in the obs/sol grid — ⌘ / Ctrl + Arrow moves focus between fields",
       "Trailing empty row styled faintly to distinguish it from filled rows",

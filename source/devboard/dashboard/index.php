@@ -995,7 +995,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 <!-- Add session dialog -->
 <div class="overlay" id="sessionOverlay" onclick="if(event.target===this){var _d=this.querySelector('.session-dialog');if(_editMode?isSessionDirty():hasSessionData())shakeDialog(_d);else closeSessionDialog();}">
   <div class="session-dialog">
-    <h2><span id="sessionDialogAction">+ Session</span><span style="color:#1a5f7a"> — </span><span id="sessionGameTitle"></span><span id="swDisplay" class="sw-display"></span></h2>
+    <h2><span id="sessionDialogAction">+ Session</span><span style="color:#1a5f7a"> — </span><span id="sessionGameTitle"></span></h2>
 
     <!-- Session metadata: left 2×2 + right people -->
     <div class="session-meta-wrap">
@@ -2311,8 +2311,7 @@ function onTypeChange() {
 var _sessionGame   = '';
 var _editMode      = false;
 var _editOrigDate  = '';
-var _editOrigEvent  = '';
-var _editOrigLength = '';  // preserve existing session length on edit
+var _editOrigEvent = '';
 var _editSnapshot  = null;
 
 // ── Stopwatch ─────────────────────────────────────────────────────────────────
@@ -2331,19 +2330,18 @@ function _swFormat(secs) {
 
 function _swUpdate() {
   var timeStr = _swFormat(_swSeconds);
-  // Update button time display
   var swTime = document.getElementById('swTime');
   if (swTime) swTime.textContent = timeStr;
-  // Update title bar (only when active)
-  var disp = document.getElementById('swDisplay');
-  if (!disp) return;
-  if (_swSeconds > 0 || _swRunning) {
-    disp.textContent = timeStr;
-    disp.classList.add('sw-active');
-  } else {
-    disp.textContent = '';
-    disp.classList.remove('sw-active');
-  }
+}
+
+// Parse "Length: MM:SS" or "Length: H:MM:SS" → total seconds
+function _swParseLength(str) {
+  str = (str || '').trim();
+  var m = str.match(/Length:\s*(\d+):(\d+):(\d+)/);
+  if (m) return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseInt(m[3]);
+  m = str.match(/Length:\s*(\d+):(\d+)/);
+  if (m) return parseInt(m[1]) * 60 + parseInt(m[2]);
+  return 0;
 }
 
 var _swLongPressTimer = null;
@@ -2444,7 +2442,7 @@ function openSessionDialog(gameName) {
   document.getElementById('sessionErr').style.display = 'none';
   document.getElementById('sessionBtn').disabled    = false;
   document.getElementById('sessionBtn').textContent = 'Add Session';
-  _swUpdate();
+  _swReset();  // each new session starts the clock at 00:00
   document.getElementById('sessionOverlay').classList.add('open');
   setTimeout(function() {
     var firstObs = document.getElementById('sObs-0');
@@ -2457,10 +2455,13 @@ function openEditSessionDialog(gameName, idx) {
   var session = cache && cache[idx];
   if (!session) return;
 
-  _editMode       = true;
-  _editOrigDate   = session.date;
-  _editOrigEvent  = session.testnum;
-  _editOrigLength = session.length || '';  // carry existing length through to PHP
+  _editMode      = true;
+  _editOrigDate  = session.date;
+  _editOrigEvent = session.testnum;
+  // Load existing session length into the stopwatch (paused)
+  _swReset();
+  _swSeconds = _swParseLength(session.length);
+  _swUpdate();
   _sessionGame   = gameName;
 
   document.getElementById('sessionDialogAction').textContent = 'Edit Session';
@@ -2568,7 +2569,7 @@ function submitSession() {
     fd.append('date',       date);
     fd.append('event',      testnum);
     fd.append('location',   location);
-    fd.append('length',     _editOrigLength);
+    fd.append('length',     _swSeconds > 0 ? 'Length: ' + _swFormat(_swSeconds) : '');
     fd.append('testers',    JSON.stringify(testerVals));
     fd.append('obs_pairs',  JSON.stringify(obsPairs));
 

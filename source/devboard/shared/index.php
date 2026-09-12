@@ -81,6 +81,9 @@ function _ds_e(string $s): string { return htmlspecialchars($s, ENT_QUOTES); }
 <base href="<?= _ds_e($_base) ?>" />
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="DevBoard" />
+<link rel="apple-touch-icon" sizes="180x180" href="images/db_icon_180.png" />
 <title><?= _ds_e($_gameName) ?> — DevBoard</title>
 <style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2') format('woff2'),url('fonts/DINBlack.ttf'); }
@@ -109,8 +112,8 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 .top-bar { background:#1a1a2e; color:#fff; padding:0 1rem; }
 .top-bar-inner { max-width:860px; margin:0 auto; display:flex; align-items:center; gap:.75rem; min-height:48px; }
 .top-bar h1 { font-family:'DINBlack',sans-serif; font-size:.9rem; letter-spacing:.04em; text-transform:none; margin:0; cursor:pointer; }
-.db-dev   { color:#7ECFB3; }
-.db-board { color:#FFB347; }
+.db-dev   { color:#a8bcd7; }
+.db-board { color:#48c4d2; }
 .top-bar .sep { opacity:.3; font-size:.85rem; }
 .top-bar .game-label { font-family:'DINRegular',sans-serif; font-size:.82rem; color:rgba(255,255,255,.65); }
 .top-bar .collab-badge {

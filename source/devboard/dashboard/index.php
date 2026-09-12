@@ -124,6 +124,9 @@ $_client_count = count(array_unique(array_filter(array_map(
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="DevBoard" />
+<link rel="apple-touch-icon" sizes="180x180" href="images/db_icon_180.png" />
 <title>DevBoard</title>
 <style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2') format('woff2'),url('fonts/DINBlack.ttf'); }
@@ -188,8 +191,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .top-bar-left  { flex:1; min-width:0; }
 .top-bar h1    { font-family:'DINBlack',sans-serif; font-size:1rem; margin:0; letter-spacing:.03em; cursor:pointer; }
 .top-bar h1:hover { opacity:.8; }
-.db-dev   { color:#7ECFB3; }
-.db-board { color:#FFB347; }
+.db-dev   { color:#a8bcd7; }
+.db-board { color:#48c4d2; }
 .top-bar .sub  { font-size:.73rem; opacity:.6; margin:0; }
 
 .top-btn {

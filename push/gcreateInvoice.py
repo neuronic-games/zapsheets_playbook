@@ -1,7 +1,7 @@
 # gcreateInvoice.py — create a formatted invoice tab in a Google Sheet.
 #
-# 8 columns A-H. Column A = left margin (empty, 25px).
-# Content lives in columns B-H.
+# 9 columns A-I. Column A = left margin (25px), column I = right margin (25px).
+# Content lives in columns B-H. Navy blue bar at row 1.
 # Orange accent #e8623a. No gridlines. Tab: [{game}] invoice {num}.
 #
 # Arg: {sheet_id}|{base64_json}
@@ -109,6 +109,7 @@ GRAY_MED  = rgb(155, 155, 155)
 ROW_BG    = rgb(245, 245, 245)  # light gray for data rows
 WHITE     = rgb(255, 255, 255)
 SEP       = rgb(200, 200, 200)  # separator line
+NAVY      = rgb(26,  52,  102)  # dark blue bar at top
 
 # ── Derived values ────────────────────────────────────────────────────────
 today_obj  = datetime.today()
@@ -167,10 +168,12 @@ while tab_name in existing:
 # G (6): total column        — "Total price", subtotal amount
 # H (7): right padding/total — logo right edge, total price right
 
-TOTAL_COLS = 8  # A-H (0-7)
+TOTAL_COLS = 8  # A-H (0-7) — content columns
+CI         = 8  # column I — right margin
+ALL_COLS   = 9  # A-I including right margin
 
-COL_W = {0: 25, 1: 250, 2: 20, 3: 105, 4: 65, 5: 90, 6: 90, 7: 55}
-# Total ≈ 700px — fits letter page
+COL_W = {0: 25, 1: 250, 2: 20, 3: 105, 4: 65, 5: 90, 6: 90, 7: 55, 8: 25}
+# Total ≈ 725px — fits letter page
 
 # Named column aliases (0-indexed)
 CA = 0  # margin
@@ -269,7 +272,7 @@ sc(R_TOTAL, CG, quote_fmt)
 
 # ── Create worksheet ──────────────────────────────────────────────────────
 try:
-    ws = wb.add_worksheet(title=tab_name, rows=TOTAL_ROWS + 4, cols=TOTAL_COLS)
+    ws = wb.add_worksheet(title=tab_name, rows=TOTAL_ROWS + 4, cols=ALL_COLS + 4)
 except Exception as e:
     print(json.dumps({"error": f"Could not create worksheet: {str(e)}"}))
     sys.exit(1)
@@ -364,16 +367,21 @@ reqs.append({'updateSheetProperties': {
     'fields': 'gridProperties.hideGridlines,gridProperties.frozenRowCount,gridProperties.frozenColumnCount'
 }})
 
-# 2. Column widths
+# 2. Column widths (includes right margin CI=8)
 for ci, px in COL_W.items():
     reqs.append(col_w(ci, px))
 
+# 2b. Blue bar — fill R_TOP across ALL columns A-I
+reqs.append(fmt(R_TOP, R_TOP, CA, ALL_COLS, {
+    'backgroundColor': NAVY,
+}, 'userEnteredFormat.backgroundColor'))
+
 # 3. Row heights
-reqs.append(row_h(R_TOP,       6))
-reqs.append(row_h(R_COMPANY,   42))
-reqs.append(row_h(R_ADDR1,     18))
-reqs.append(row_h(R_ADDR2,     18 if addr_line2 else 4))
-reqs.append(row_h(R_PHONE,     20))
+reqs.append(row_h(R_TOP,       10))   # blue bar row — slightly taller
+reqs.append(row_h(R_COMPANY,   72))   # taller for larger logo
+reqs.append(row_h(R_ADDR1,     24))
+reqs.append(row_h(R_ADDR2,     24 if addr_line2 else 4))
+reqs.append(row_h(R_PHONE,     24))
 reqs.append(row_h(R_SPACER1,   18))
 reqs.append(row_h(R_INVOICE,   60))
 reqs.append(row_h(R_SUBMITTED, 22))
@@ -394,9 +402,9 @@ reqs.append(row_h(R_TOTAL,    46))
 # 4. Merges
 # Company name: B:D (CB to CD+1 = 1:4)
 reqs.append(merge(R_COMPANY, CB, CD))
-# Logo: E:H rows 2-5
+# Logo: E:I rows 2-5 (extends through right margin for maximum size)
 if my_logo:
-    reqs.append(merge_rows(R_COMPANY, R_PHONE, CE, TOTAL_COLS))
+    reqs.append(merge_rows(R_COMPANY, R_PHONE, CE, ALL_COLS))
 # "Invoice" heading: B:H
 reqs.append(merge(R_INVOICE, CB, TOTAL_COLS))
 # "Submitted on": B:H
@@ -439,6 +447,13 @@ for ar in [R_ADDR1, R_ADDR2, R_PHONE]:
         'textFormat': tf(GRAY_DARK, 9),
         'verticalAlignment': 'MIDDLE',
     }, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment'))
+
+# Logo cell: right-aligned, middle-aligned within the merged E:I block
+if my_logo:
+    reqs.append(fmt(R_COMPANY, R_PHONE, CE, ALL_COLS, {
+        'horizontalAlignment': 'RIGHT',
+        'verticalAlignment':   'MIDDLE',
+    }, 'userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment'))
 
 # "Invoice" heading: black, very large bold, bottom-aligned
 reqs.append(fmt(R_INVOICE, R_INVOICE, CB, TOTAL_COLS, {

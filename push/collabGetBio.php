@@ -55,7 +55,7 @@ if (file_exists($biosFile)) {
             }
             $fields = [
                 'description' => 'Description', 'skills'  => 'Skills',
-                'location'    => 'Location',    'discord' => 'Discord',
+                'location'    => 'Address',     'discord' => 'Messaging',
                 'phone'       => 'Phone',       'payment' => 'Payment',
                 'notes'       => 'Notes',
             ];

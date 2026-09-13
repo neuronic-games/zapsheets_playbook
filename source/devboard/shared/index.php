@@ -641,8 +641,8 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         <textarea class="field-input" id="authEditLocation" placeholder="Street&#10;City, State, ZIP" rows="3" style="resize:vertical"></textarea>
       </div>
       <div class="field-group">
-        <label>Discord</label>
-        <input type="text" class="field-input" id="authEditDiscord" placeholder="username" />
+        <label>Messaging</label>
+        <input type="text" class="field-input" id="authEditDiscord" placeholder="@handle or username" />
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem .8rem">
         <div class="field-group">
@@ -1415,8 +1415,8 @@ function _renderAuthProfile(u) {
   var fields = [
     { key:'description', label:'About',    full:true },
     { key:'skills',      label:'Skills',   full:true },
-    { key:'location',    label:'Location', full:false },
-    { key:'discord',     label:'Discord',  full:false },
+    { key:'location',    label:'Address',   full:false },
+    { key:'discord',     label:'Messaging', full:false },
     { key:'phone',       label:'Phone',    full:false },
     { key:'payment',     label:'Payment',  full:false },
     { key:'notes',       label:'Notes',    full:true  },

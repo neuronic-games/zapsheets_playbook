@@ -98,7 +98,7 @@ if ($sheetId) {
                     $bio['image'] = ltrim($rawImg, "'");
                 }
                 $fields = ['description' => 'Description', 'skills' => 'Skills',
-                           'location' => 'Location', 'discord' => 'Discord',
+                           'location' => 'Address',  'discord' => 'Messaging',
                            'phone' => 'Phone', 'payment' => 'Payment', 'notes' => 'Notes'];
                 foreach ($fields as $key => $col) {
                     $val = ltrim(trim($b[$col] ?? ''), "'");

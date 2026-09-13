@@ -1,5 +1,5 @@
 # gupdatebio.py — update or insert a row in the bios sheet
-# Bios columns: Email | Image | Description | Skills | Location | Phone | Discord
+# Bios columns: Email | Image | Description | Skills | Address | Phone | Messaging
 # Row is matched by Email. If no match, a new row is appended.
 #
 # Arg: {sheet_id}|{base64_encoded_json}
@@ -104,9 +104,9 @@ field_map = [
     (('Image',),       image),          # =IMAGE("url") or ''
     (('Description',), safe_str(description)),
     (('Skills',),      safe_str(skills)),
-    (('Location',),    safe_str(location)),
+    (('Address',),     safe_str(location)),
     (('Phone',),       safe_str(phone)),
-    (('Discord',),     safe_str(discord)),
+    (('Messaging',),   safe_str(discord)),
     (('Payment',),     safe_str(payment)),
     (('Notes',),       safe_str(notes)),
 ]
@@ -157,9 +157,9 @@ else:
         elif h_strip == 'Image':       new_row.append(image)
         elif h_strip == 'Description': new_row.append(safe_str(description))
         elif h_strip == 'Skills':      new_row.append(safe_str(skills))
-        elif h_strip == 'Location':    new_row.append(safe_str(location))
+        elif h_strip == 'Address':     new_row.append(safe_str(location))
         elif h_strip == 'Phone':       new_row.append(safe_str(phone))
-        elif h_strip == 'Discord':     new_row.append(safe_str(discord))
+        elif h_strip == 'Messaging':   new_row.append(safe_str(discord))
         elif h_strip == 'Payment':     new_row.append(safe_str(payment))
         elif h_strip == 'Notes':       new_row.append(safe_str(notes))
         else:                          new_row.append('')

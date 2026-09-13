@@ -99,8 +99,8 @@ foreach ($_bios as $_b) {
         }
         $_my_bio_desc     = ltrim(trim($_b['Description'] ?? ''), "'");
         $_my_bio_skills   = ltrim(trim($_b['Skills']      ?? ''), "'");
-        $_my_bio_location = ltrim(trim($_b['Location']    ?? ''), "'");
-        $_my_bio_discord  = ltrim(trim($_b['Discord']     ?? ''), "'");
+        $_my_bio_location = ltrim(trim($_b['Address']    ?? ''), "'");
+        $_my_bio_discord  = ltrim(trim($_b['Messaging'] ?? ''), "'");
         $_my_bio_payment  = ltrim(trim($_b['Payment']     ?? ''), "'");
         $_my_bio_notes    = ltrim(trim($_b['Notes']       ?? ''), "'");
         break;
@@ -855,7 +855,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       <label class="ge-label">Description<textarea id="profileDesc" class="ge-input ge-textarea" placeholder="Brief bio…"></textarea></label>
       <label class="ge-label" style="text-transform:none;letter-spacing:0"><span style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em">Skills</span> <span style="color:#bbb;font-size:.65rem">(comma-separated)</span><input type="text" id="profileSkills" class="ge-input" placeholder="Game Designer, Tester…" /></label>
       <label class="ge-label">Mailing Address<textarea id="profileLocation" class="ge-input ge-textarea" placeholder="Street&#10;City, State, ZIP" rows="3"></textarea></label>
-      <label class="ge-label">Discord<input type="text" id="profileDiscord" class="ge-input" placeholder="@handle" /></label>
+      <label class="ge-label">Messaging<input type="text" id="profileDiscord" class="ge-input" placeholder="@handle or username" /></label>
       <label class="ge-label">Phone<input type="tel" id="profilePhone" class="ge-input" placeholder="+1 555 000 0000" /></label>
       <label class="ge-label">Payment<input type="text" id="profilePayment" class="ge-input" placeholder="Venmo @handle, PayPal…" /></label>
       <label class="ge-label">Notes<textarea id="profileNotes" class="ge-input ge-textarea" placeholder="Availability, preferences…" rows="2"></textarea></label>

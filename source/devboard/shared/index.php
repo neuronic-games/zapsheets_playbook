@@ -636,15 +636,13 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         <label>Skills <span style="font-weight:normal;text-transform:none;letter-spacing:0;color:#bbb">(comma separated)</span></label>
         <input type="text" class="field-input" id="authEditSkills" placeholder="e.g. Game design, Illustration" />
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem .8rem">
-        <div class="field-group">
-          <label>Location</label>
-          <input type="text" class="field-input" id="authEditLocation" placeholder="City, Country" />
-        </div>
-        <div class="field-group">
-          <label>Discord</label>
-          <input type="text" class="field-input" id="authEditDiscord" placeholder="username" />
-        </div>
+      <div class="field-group">
+        <label>Mailing Address</label>
+        <textarea class="field-input" id="authEditLocation" placeholder="Street, City, State, ZIP" rows="3" style="resize:vertical"></textarea>
+      </div>
+      <div class="field-group">
+        <label>Discord</label>
+        <input type="text" class="field-input" id="authEditDiscord" placeholder="username" />
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem .8rem">
         <div class="field-group">

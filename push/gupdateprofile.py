@@ -37,6 +37,7 @@ new_name     = data.get('name',     '').strip()
 new_email    = data.get('email',    '').strip()
 new_phone    = data.get('phone',    '').strip()
 new_company  = data.get('company',  '').strip()
+new_address  = data.get('address',  '').strip()
 new_logo_url = data.get('logo_url', '').strip()
 
 if not new_name:
@@ -83,6 +84,8 @@ for i, row in enumerate(all_values[1:], start=2):
         updates.append({'range': gspread.utils.rowcol_to_a1(i, 2), 'values': [[safe_str(new_phone)]]})
     elif label == 'Company':
         updates.append({'range': gspread.utils.rowcol_to_a1(i, 2), 'values': [[safe_str(new_company)]]})
+    elif label == 'Address':
+        updates.append({'range': gspread.utils.rowcol_to_a1(i, 2), 'values': [[safe_str(new_address)]]})
     elif label == 'Logo':
         # Logo is stored as an =IMAGE() formula so it renders in the sheet
         logo_val = f'=IMAGE("{new_logo_url}")' if new_logo_url else ''

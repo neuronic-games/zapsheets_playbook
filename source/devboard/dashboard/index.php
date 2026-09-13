@@ -33,11 +33,12 @@ $_settings_file = __DIR__ . '/../../../sheets/' . $_sheet_id . '/settings.json';
 $_settings      = file_exists($_settings_file)
     ? (json_decode(file_get_contents($_settings_file), true) ?: [])
     : [];
-$_my_name  = '';
-$_my_email = '';
-$_my_phone = '';
-$_company  = '';
-$_logo_url = '';
+$_my_name         = '';
+$_my_email        = '';
+$_my_phone        = '';
+$_company         = '';
+$_logo_url        = '';
+$_company_address = '';
 
 foreach ($_settings as $_s) {
     // PitchBoard-style: {Name: 'My Name', Value: '...'}
@@ -47,6 +48,7 @@ foreach ($_settings as $_s) {
     if ($n === 'My Email') { $_my_email = $v; continue; }
     if ($n === 'My Phone') { $_my_phone = $v; continue; }
     if ($n === 'Company')  { $_company  = ltrim($v, "'"); continue; }
+    if ($n === 'Address')  { $_company_address = ltrim($v, "'"); continue; }
     if ($n === 'Logo') {
         if (preg_match('/^=IMAGE\("([^"]*)"\)$/i', ltrim($v,"'"), $_lm)) { $_logo_url = $_lm[1]; }
         else { $_logo_url = ltrim($v, "'"); }
@@ -61,6 +63,7 @@ foreach ($_settings as $_s) {
     if ($label === 'My Email') { $_my_email = $val2; }
     if ($label === 'My Phone') { $_my_phone = $val2; }
     if ($label === 'Company')  { $_company  = $val2; }
+    if ($label === 'Address')  { $_company_address = $val2; }
     if ($label === 'Logo') {
         if (preg_match('/^=IMAGE\("([^"]*)"\)$/i', $val2, $_lm)) { $_logo_url = $_lm[1]; }
         else { $_logo_url = $val2; }
@@ -914,6 +917,11 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       </label>
     </div>
     <input type="file" id="companyLogoFile" accept="image/*" style="display:none" onchange="companyLogoFileChange(this)">
+    <label class="ge-label" style="margin-top:.35rem">Address
+      <textarea id="companyAddress" class="ge-input" rows="3"
+        placeholder="Street&#10;City, State, ZIP"
+        style="resize:vertical;min-height:3.5rem;line-height:1.5"></textarea>
+    </label>
     <div class="sync-log" id="companyLog" style="display:none"></div>
     <div class="sync-dialog-actions">
       <button class="notes-close" id="companyCancelBtn" onclick="forceCloseCompanyDialog()">Cancel</button>
@@ -1212,11 +1220,12 @@ var APP_BASE    = document.querySelector('base').getAttribute('href');
 var SHEET_ID    = <?= json_encode($_sheet_id) ?>;
 var GAMES_RAW   = <?= json_encode(array_values($_games_raw), JSON_UNESCAPED_UNICODE) ?>;
 var ACTIVE_KEYS = <?= json_encode($_active_keys, JSON_UNESCAPED_UNICODE) ?>;
-var MY_NAME         = <?= json_encode($_my_name) ?>;
-var MY_EMAIL        = <?= json_encode($_my_email) ?>;
-var MY_PHONE        = <?= json_encode($_my_phone) ?>;
-var MY_COMPANY      = <?= json_encode($_company) ?>;
-var MY_LOGO         = <?= json_encode($_logo_url) ?>;
+var MY_NAME             = <?= json_encode($_my_name) ?>;
+var MY_EMAIL            = <?= json_encode($_my_email) ?>;
+var MY_PHONE            = <?= json_encode($_my_phone) ?>;
+var MY_COMPANY          = <?= json_encode($_company) ?>;
+var MY_COMPANY_ADDRESS  = <?= json_encode($_company_address) ?>;
+var MY_LOGO             = <?= json_encode($_logo_url) ?>;
 var MY_BIO_IMAGE    = <?= json_encode($_my_bio_image) ?>;
 var MY_BIO_DESC     = <?= json_encode($_my_bio_desc) ?>;
 var MY_BIO_SKILLS   = <?= json_encode($_my_bio_skills) ?>;
@@ -1464,7 +1473,7 @@ function generateInvoice(dataIdx) {
   fd.append('my_phone',    MY_PHONE         || '');
   fd.append('my_company',  MY_COMPANY       || '');
   fd.append('my_logo',     MY_LOGO          || '');
-  fd.append('my_address',  MY_BIO_LOCATION  || '');
+  fd.append('my_address',  MY_COMPANY_ADDRESS || MY_BIO_LOCATION || '');
 
   fetch(APP_BASE + 'push/createInvoice.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })
@@ -3304,8 +3313,10 @@ function closeRnDialog() {
 var _companyInitial  = {};
 var _companyLogoUrl  = '';
 function _companyIsDirty() {
-  var name = (document.getElementById('companyName').value || '').trim();
-  return name !== (_companyInitial.name || '') ||
+  var name    = (document.getElementById('companyName').value    || '').trim();
+  var address = (document.getElementById('companyAddress').value || '').trim();
+  return name    !== (_companyInitial.name    || '') ||
+         address !== (_companyInitial.address || '') ||
          document.getElementById('companyLogoFile').files.length > 0;
 }
 function _companyLog(msg, type) {
@@ -3327,7 +3338,8 @@ function companyLogoFileChange(input) {
   reader.readAsDataURL(input.files[0]);
 }
 function openCompanyDialog() {
-  document.getElementById('companyName').value = MY_COMPANY || '';
+  document.getElementById('companyName').value    = MY_COMPANY         || '';
+  document.getElementById('companyAddress').value = MY_COMPANY_ADDRESS || '';
   document.getElementById('companyLogoFile').value = '';
   _companyLogoUrl = MY_LOGO || '';
   _companyShowLogo(_companyLogoUrl);
@@ -3335,7 +3347,7 @@ function openCompanyDialog() {
   document.getElementById('companySaveBtn').disabled   = false;
   document.getElementById('companyCancelBtn').disabled = false;
   document.getElementById('companyCancelBtn').textContent = 'Cancel';
-  _companyInitial = { name: MY_COMPANY || '' };
+  _companyInitial = { name: MY_COMPANY || '', address: MY_COMPANY_ADDRESS || '' };
   document.getElementById('companyOverlay').classList.add('open');
 }
 function closeCompanyDialog() {
@@ -3347,6 +3359,7 @@ function forceCloseCompanyDialog() {
 }
 function submitCompany() {
   var name      = document.getElementById('companyName').value.trim();
+  var address   = document.getElementById('companyAddress').value.trim();
   var logoFile  = document.getElementById('companyLogoFile').files[0];
   document.getElementById('companySaveBtn').disabled   = true;
   document.getElementById('companyCancelBtn').disabled = true;
@@ -3374,18 +3387,20 @@ function submitCompany() {
     fd.append('email',    MY_EMAIL || '');
     fd.append('phone',    MY_PHONE || '');
     fd.append('company',  name);
+    fd.append('address',  address);
     fd.append('logo_url', _companyLogoUrl);
     return fetch(APP_BASE + 'push/updateProfile.php', { method:'POST', body:fd })
       .then(function(r) { return r.json(); });
   })
   .then(function(res) {
     if (res.error) throw new Error(res.error);
-    MY_COMPANY = name;
-    MY_LOGO    = _companyLogoUrl;
+    MY_COMPANY         = name;
+    MY_COMPANY_ADDRESS = address;
+    MY_LOGO            = _companyLogoUrl;
     _updateTopBarLogo(MY_LOGO, MY_COMPANY);
     // (Company/Logo no longer shown in profile dialog)
     document.getElementById('companyLogoFile').value = '';
-    _companyInitial = { name: MY_COMPANY };
+    _companyInitial = { name: MY_COMPANY, address: MY_COMPANY_ADDRESS };
     _companyLog('✓  Saved', 'ok');
     document.getElementById('companySaveBtn').disabled   = true;
     document.getElementById('companyCancelBtn').disabled = false;

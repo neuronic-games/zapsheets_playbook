@@ -168,22 +168,21 @@ while tab_name in existing:
 # G (6): total column        — "Total price", subtotal amount
 # H (7): right padding/total — logo right edge, total price right
 
-TOTAL_COLS = 8  # A-H (0-7) — content columns
-CI         = 8  # column I — right margin
-ALL_COLS   = 9  # A-I including right margin
+TOTAL_COLS   = 8  # A-H (0-7) — full sheet width (blue bar spans this)
+CONTENT_END  = 7  # exclusive end for content merges/formats (content B–G, H is right margin)
 
-COL_W = {0: 25, 1: 250, 2: 20, 3: 105, 4: 65, 5: 90, 6: 90, 7: 55, 8: 25}
-# Total ≈ 725px — fits letter page
+COL_W = {0: 25, 1: 250, 2: 20, 3: 105, 4: 65, 5: 90, 6: 90, 7: 25}
+# Total ≈ 670px — fits letter page with left+right margins
 
 # Named column aliases (0-indexed)
-CA = 0  # margin
-CB = 1  # B main
-CC = 2  # C spacer
-CD = 3  # D project
-CE = 4  # E qty
-CF = 5  # F unit
-CG = 6  # G total/amount
-CH = 7  # H right
+CA = 0  # A: left margin
+CB = 1  # B: main / description
+CC = 2  # C: narrow spacer
+CD = 3  # D: project
+CE = 4  # E: qty / logo start
+CF = 5  # F: unit price
+CG = 6  # G: total/amount (rightmost content column)
+CH = 7  # H: right margin (empty, 25px)
 
 # ── Row assignments (1-indexed) ───────────────────────────────────────────
 R_TOP       = 1   # top margin (tiny)
@@ -272,7 +271,7 @@ sc(R_TOTAL, CG, quote_fmt)
 
 # ── Create worksheet ──────────────────────────────────────────────────────
 try:
-    ws = wb.add_worksheet(title=tab_name, rows=TOTAL_ROWS + 4, cols=ALL_COLS + 4)
+    ws = wb.add_worksheet(title=tab_name, rows=TOTAL_ROWS + 4, cols=TOTAL_COLS + 4)
 except Exception as e:
     print(json.dumps({"error": f"Could not create worksheet: {str(e)}"}))
     sys.exit(1)
@@ -371,8 +370,8 @@ reqs.append({'updateSheetProperties': {
 for ci, px in COL_W.items():
     reqs.append(col_w(ci, px))
 
-# 2b. Blue bar — fill R_TOP across ALL columns A-I
-reqs.append(fmt(R_TOP, R_TOP, CA, ALL_COLS, {
+# 2b. Blue bar — fill R_TOP across all columns A-H (full width including margins)
+reqs.append(fmt(R_TOP, R_TOP, CA, TOTAL_COLS, {
     'backgroundColor': NAVY,
 }, 'userEnteredFormat.backgroundColor'))
 
@@ -402,36 +401,36 @@ reqs.append(row_h(R_TOTAL,    46))
 # 4. Merges
 # Company name: B:D (CB to CD+1 = 1:4)
 reqs.append(merge(R_COMPANY, CB, CD))
-# Logo: E:I rows 2-5 (extends through right margin for maximum size)
+# Logo: E:G rows 2-5 (content ends at G; H is right margin)
 if my_logo:
-    reqs.append(merge_rows(R_COMPANY, R_PHONE, CE, ALL_COLS))
-# "Invoice" heading: B:H
-reqs.append(merge(R_INVOICE, CB, TOTAL_COLS))
-# "Submitted on": B:H
-reqs.append(merge(R_SUBMITTED, CB, TOTAL_COLS))
+    reqs.append(merge_rows(R_COMPANY, R_PHONE, CE, CONTENT_END))
+# "Invoice" heading: B:G
+reqs.append(merge(R_INVOICE, CB, CONTENT_END))
+# "Submitted on": B:G
+reqs.append(merge(R_SUBMITTED, CB, CONTENT_END))
 # Labels row
-reqs.append(merge(R_LABELS, CB, CD))          # B:C "Prepared for"
-reqs.append(merge(R_LABELS, CD, CF))          # D:E "Project"
-reqs.append(merge(R_LABELS, CF, TOTAL_COLS))  # F:H "Estimate #"
+reqs.append(merge(R_LABELS, CB, CD))              # B:C "Prepared for"
+reqs.append(merge(R_LABELS, CD, CF))              # D:E "Project"
+reqs.append(merge(R_LABELS, CF, CONTENT_END))     # F:G "Estimate #"
 # Values row
 reqs.append(merge(R_VALUES, CB, CD))
 reqs.append(merge(R_VALUES, CD, CF))
-reqs.append(merge(R_VALUES, CF, TOTAL_COLS))
+reqs.append(merge(R_VALUES, CF, CONTENT_END))
 # Duration
 if date_range:
-    reqs.append(merge(R_DUR_LABEL, CF, TOTAL_COLS))
-    reqs.append(merge(R_DUR_VAL,   CF, TOTAL_COLS))
+    reqs.append(merge(R_DUR_LABEL, CF, CONTENT_END))
+    reqs.append(merge(R_DUR_VAL,   CF, CONTENT_END))
 # Table header
-reqs.append(merge(R_THEAD, CB, CE))           # B:D "Description"
+reqs.append(merge(R_THEAD, CB, CE))               # B:D "Description"
 # Data row description
-reqs.append(merge(R_DATA, CB, CE))            # B:D
+reqs.append(merge(R_DATA, CB, CE))                # B:D
 # Notes + subtotal row
 if notes:
-    reqs.append(merge(R_NOTESUB, CB, CE))     # B:D notes (left)
-reqs.append(merge(R_NOTESUB, CE, CG))         # E:F subtotal label
-reqs.append(merge(R_NOTESUB, CG, TOTAL_COLS)) # G:H subtotal amount
+    reqs.append(merge(R_NOTESUB, CB, CE))         # B:D notes (left)
+reqs.append(merge(R_NOTESUB, CE, CG))             # E:F subtotal label
+reqs.append(merge(R_NOTESUB, CG, CONTENT_END))    # G: subtotal amount
 # Total row
-reqs.append(merge(R_TOTAL, CE, TOTAL_COLS))   # E:H large total
+reqs.append(merge(R_TOTAL, CE, CONTENT_END))      # E:G large total
 
 # 5. Text formatting
 
@@ -448,67 +447,67 @@ for ar in [R_ADDR1, R_ADDR2, R_PHONE]:
         'verticalAlignment': 'MIDDLE',
     }, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment'))
 
-# Logo cell: right-aligned, middle-aligned within the merged E:I block
+# Logo cell: right-aligned, middle-aligned within the merged E:G block
 if my_logo:
-    reqs.append(fmt(R_COMPANY, R_PHONE, CE, ALL_COLS, {
+    reqs.append(fmt(R_COMPANY, R_PHONE, CE, CONTENT_END, {
         'horizontalAlignment': 'RIGHT',
         'verticalAlignment':   'MIDDLE',
     }, 'userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment'))
 
 # "Invoice" heading: black, very large bold, bottom-aligned
-reqs.append(fmt(R_INVOICE, R_INVOICE, CB, TOTAL_COLS, {
+reqs.append(fmt(R_INVOICE, R_INVOICE, CB, CONTENT_END, {
     'textFormat': tf(BLACK, 36, bold=True),
     'verticalAlignment': 'BOTTOM',
 }, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment'))
 
 # "Submitted on": dark gray, small bold
-reqs.append(fmt(R_SUBMITTED, R_SUBMITTED, CB, TOTAL_COLS, {
+reqs.append(fmt(R_SUBMITTED, R_SUBMITTED, CB, CONTENT_END, {
     'textFormat': tf(GRAY_DARK, 10, bold=True),
 }, 'userEnteredFormat.textFormat'))
 
 # Labels (Prepared for / Project / Estimate #): bold black
-reqs.append(fmt(R_LABELS, R_LABELS, CB, TOTAL_COLS, {
+reqs.append(fmt(R_LABELS, R_LABELS, CB, CONTENT_END, {
     'textFormat': tf(BLACK, 9, bold=True),
     'verticalAlignment': 'BOTTOM',
 }, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment'))
 
 # Values row: normal weight black
-reqs.append(fmt(R_VALUES, R_VALUES, CB, TOTAL_COLS, {
+reqs.append(fmt(R_VALUES, R_VALUES, CB, CONTENT_END, {
     'textFormat': tf(BLACK, 10),
     'verticalAlignment': 'TOP',
 }, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment'))
 
 # Duration label: bold black; value: gray
 if date_range:
-    reqs.append(fmt(R_DUR_LABEL, R_DUR_LABEL, CF, TOTAL_COLS, {
+    reqs.append(fmt(R_DUR_LABEL, R_DUR_LABEL, CF, CONTENT_END, {
         'textFormat': tf(BLACK, 10, bold=True),
         'verticalAlignment': 'BOTTOM',
     }, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment'))
-    reqs.append(fmt(R_DUR_VAL, R_DUR_VAL, CF, TOTAL_COLS, {
+    reqs.append(fmt(R_DUR_VAL, R_DUR_VAL, CF, CONTENT_END, {
         'textFormat': tf(GRAY_DARK, 10),
         'verticalAlignment': 'TOP',
     }, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment'))
 
 # Table header: orange text, white bg, bold
-reqs.append(fmt(R_THEAD, R_THEAD, CB, TOTAL_COLS, {
+reqs.append(fmt(R_THEAD, R_THEAD, CB, CONTENT_END, {
     'textFormat': tf(ORANGE, 9, bold=True),
     'backgroundColor': WHITE,
     'verticalAlignment': 'MIDDLE',
 }, 'userEnteredFormat.textFormat,userEnteredFormat.backgroundColor,userEnteredFormat.verticalAlignment'))
 # Right-align Qty / Unit / Total headers
-reqs.append(halign(R_THEAD, R_THEAD, CE, TOTAL_COLS, 'RIGHT'))
+reqs.append(halign(R_THEAD, R_THEAD, CE, CONTENT_END, 'RIGHT'))
 
 # Data row: light gray bg, wrap, top-align text
-reqs.append(fmt(R_DATA, R_DATA, CB, TOTAL_COLS, {
+reqs.append(fmt(R_DATA, R_DATA, CB, CONTENT_END, {
     'textFormat': tf(BLACK, 10),
     'backgroundColor': ROW_BG,
     'verticalAlignment': 'TOP',
     'wrapStrategy': 'WRAP',
 }, 'userEnteredFormat.textFormat,userEnteredFormat.backgroundColor,userEnteredFormat.verticalAlignment,userEnteredFormat.wrapStrategy'))
 # Right-align Qty / prices in data row
-reqs.append(halign(R_DATA, R_DATA, CE, TOTAL_COLS, 'RIGHT'))
+reqs.append(halign(R_DATA, R_DATA, CE, CONTENT_END, 'RIGHT'))
 # Bottom border on data row
-reqs.append(border_bottom(R_DATA, CB, TOTAL_COLS, SEP, 1))
+reqs.append(border_bottom(R_DATA, CB, CONTENT_END, SEP, 1))
 
 # Notes (left of notes+subtotal row): italic gray
 if notes:
@@ -524,22 +523,22 @@ reqs.append(fmt(R_NOTESUB, R_NOTESUB, CE, CG, {
     'verticalAlignment': 'MIDDLE',
 }, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment'))
 
-# Subtotal amount (G:H): bold black, right-aligned
-reqs.append(fmt(R_NOTESUB, R_NOTESUB, CG, TOTAL_COLS, {
+# Subtotal amount (G): bold black, right-aligned
+reqs.append(fmt(R_NOTESUB, R_NOTESUB, CG, CONTENT_END, {
     'textFormat': tf(BLACK, 10, bold=True),
     'horizontalAlignment': 'RIGHT',
     'verticalAlignment': 'MIDDLE',
 }, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment'))
 
-# Large total (E:H): orange, large bold, right-aligned
-reqs.append(fmt(R_TOTAL, R_TOTAL, CE, TOTAL_COLS, {
+# Large total (E:G): orange, large bold, right-aligned
+reqs.append(fmt(R_TOTAL, R_TOTAL, CE, CONTENT_END, {
     'textFormat': tf(ORANGE, 28, bold=True),
     'horizontalAlignment': 'RIGHT',
     'verticalAlignment': 'MIDDLE',
 }, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment'))
 
-# Separator line: thin gray border on the row just above the table header
-reqs.append(border_bottom(R_THEAD - 1, CB, TOTAL_COLS, SEP, 1))
+# Separator line above table header
+reqs.append(border_bottom(R_THEAD - 1, CB, CONTENT_END, SEP, 1))
 
 # Execute
 try:

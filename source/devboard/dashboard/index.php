@@ -1976,7 +1976,7 @@ function syncLog(msg, type) {
 function doFetch() {
   openSyncDialog();
 
-  var sheets = ['games', 'people', 'bios', 'contracts'];
+  var sheets = ['games', 'people', 'bios', 'contracts', 'settings'];
 
   var pushBase = APP_BASE + 'push/pushSheetUpdate.php';
   var idx = 0;

@@ -59,6 +59,17 @@ my_address  = data.get('my_address', '').strip()
 
 # ── Helpers ───────────────────────────────────────────────────────────────
 
+def safe_str(v):
+    """Prefix non-empty strings with ' to prevent Google Sheets from
+    interpreting phone numbers, dates, or other values as formulas/numbers.
+    =IMAGE() formulas are passed through unchanged."""
+    s = (str(v) if v is not None else '').strip()
+    if not s:
+        return ''
+    if s.upper().startswith('=IMAGE('):
+        return s   # keep formula as-is
+    return "'" + s
+
 def fmt_date(s):
     """Format YYYY-MM-DD → M/D/YYYY."""
     if not s:
@@ -182,7 +193,7 @@ for _ in range(TOTAL_ROWS):
 
 def set_cell(row1, col0, val):
     if 1 <= row1 <= len(grid) and 0 <= col0 < COLS:
-        grid[row1 - 1][col0] = val
+        grid[row1 - 1][col0] = safe_str(val)
 
 # Company / logo
 set_cell(R_COMPANY, 0, my_company or my_name)
@@ -405,30 +416,30 @@ reqs.append(fmt(R_SUBMITTED, 0, R_SUBMITTED, COLS, {
     'textFormat': text_fmt(GRAY_DARK, 10, bold=True),
 }, 'userEnteredFormat.textFormat'))
 
-# "Prepared for / Project / Estimate #" labels — bold black, gray bg
+# "Prepared for / Project / Estimate #" labels — bold black, white bg
 reqs.append(fmt(R_LABELS, 0, R_LABELS, COLS, {
     'textFormat': text_fmt(BLACK, 9, bold=True),
-    'backgroundColor': ROW_BG,
     'verticalAlignment': 'BOTTOM',
-}, 'userEnteredFormat.textFormat,userEnteredFormat.backgroundColor,userEnteredFormat.verticalAlignment'))
+}, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment'))
 
-# Values row — normal weight, gray bg
+# Values row — normal weight, white bg
 reqs.append(fmt(R_VALUES, 0, R_VALUES, COLS, {
     'textFormat': text_fmt(BLACK, 10),
-    'backgroundColor': ROW_BG,
     'verticalAlignment': 'TOP',
-}, 'userEnteredFormat.textFormat,userEnteredFormat.backgroundColor,userEnteredFormat.verticalAlignment'))
+}, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment'))
 
-# Duration label — bold black
+# Duration label — bold black (no background)
 if date_range:
     reqs.append(fmt(R_DUR_LABEL, 5, R_DUR_LABEL, COLS, {
-        'textFormat': text_fmt(BLACK, 9, bold=True),
+        'textFormat': text_fmt(BLACK, 10, bold=True),
         'horizontalAlignment': 'LEFT',
-    }, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment'))
+        'verticalAlignment': 'BOTTOM',
+    }, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment'))
     reqs.append(fmt(R_DUR_VAL, 5, R_DUR_VAL, COLS, {
-        'textFormat': text_fmt(BLACK, 10),
+        'textFormat': text_fmt(GRAY_DARK, 10),
         'horizontalAlignment': 'LEFT',
-    }, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment'))
+        'verticalAlignment': 'TOP',
+    }, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment'))
 
 # Table header row — orange text, white bg (no fill), bold
 reqs.append(fmt(R_THEAD, 0, R_THEAD, COLS, {
@@ -462,15 +473,17 @@ if notes and R_NOTES:
         'wrapStrategy': 'WRAP',
     }, 'userEnteredFormat.textFormat,userEnteredFormat.wrapStrategy'))
 
-# Subtotal label + amount
+# Subtotal label + amount (white bg, right-aligned)
 reqs.append(fmt(R_SUBTOTAL, 4, R_SUBTOTAL, 6, {
-    'textFormat': text_fmt(BLACK, 10),
+    'textFormat': text_fmt(GRAY_DARK, 10),
     'horizontalAlignment': 'RIGHT',
-}, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment'))
+    'verticalAlignment': 'MIDDLE',
+}, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment'))
 reqs.append(fmt(R_SUBTOTAL, 6, R_SUBTOTAL, COLS, {
     'textFormat': text_fmt(BLACK, 10, bold=True),
     'horizontalAlignment': 'RIGHT',
-}, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment'))
+    'verticalAlignment': 'MIDDLE',
+}, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment'))
 
 # Total amount — large orange, right-aligned
 reqs.append(fmt(R_TOTAL, 4, R_TOTAL, COLS, {

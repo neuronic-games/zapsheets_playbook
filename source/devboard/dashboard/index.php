@@ -318,9 +318,13 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .client-card-count { font-family:'DINRegular',sans-serif; font-size:.7rem; opacity:.55; }
 .client-card-body { display:none; }
 .client-card.open .client-card-body { display:block; }
-.client-contract-row { display:grid; grid-template-columns:1fr auto auto; gap:.75rem; align-items:center; padding:.5rem 1rem; border-bottom:1px solid #f0f4f8; cursor:pointer; transition:background .1s; }
-.client-contract-row:last-child { border-bottom:none; }
+.contract-item { border-bottom:1px solid #f0f4f8; }
+.contract-item:last-child { border-bottom:none; }
+.client-contract-row { display:grid; grid-template-columns:1fr auto auto auto; gap:.75rem; align-items:center; padding:.5rem 1rem; cursor:pointer; transition:background .1s; }
 .client-contract-row:hover { background:#f8fafc; }
+.contract-item.open .client-contract-row { background:#f4f8fb; }
+.client-contract-row-chevron { font-size:.6rem; opacity:.4; transition:transform .2s; }
+.contract-item.open .client-contract-row-chevron { transform:rotate(180deg); opacity:.7; }
 .client-contract-game { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#1a5f7a; }
 .client-contract-dates { font-size:.7rem; color:#888; margin-top:.1rem; }
 .client-contract-quote { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#111; white-space:nowrap; }
@@ -328,6 +332,18 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .client-contract-badge.paid     { background:#dcfce7; color:#15803d; }
 .client-contract-badge.invoiced { background:#fef9c3; color:#a16207; }
 .client-contract-badge.partial  { background:#ffedd5; color:#9a3412; }
+.client-contract-details { display:none; padding:.6rem 1rem .8rem 1rem; background:#f4f8fb; border-top:1px solid #e8eef3; }
+.contract-item.open .client-contract-details { display:block; }
+.contract-detail-fields { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:.35rem .75rem; margin-bottom:.7rem; }
+.contract-detail-field label { font-size:.62rem; text-transform:uppercase; letter-spacing:.05em; color:#888; display:block; margin-bottom:.1rem; }
+.contract-detail-field span  { font-family:'DINRegular',sans-serif; font-size:.78rem; color:#222; }
+.contract-detail-notes { font-size:.75rem; color:#555; margin-bottom:.65rem; font-style:italic; }
+.contract-detail-actions { display:flex; gap:.5rem; }
+.btn-contract-action { font-family:'DINBlack',sans-serif; font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; background:none; border:1.5px solid #1a5f7a; color:#1a5f7a; border-radius:7px; padding:.35rem .85rem; cursor:pointer; transition:background .15s, color .15s; }
+.btn-contract-action:hover { background:#1a5f7a; color:#fff; }
+.btn-contract-action.invoice { border-color:#a16207; color:#a16207; }
+.btn-contract-action.invoice:hover { background:#a16207; color:#fff; }
+.btn-contract-action:disabled { opacity:.5; cursor:default; }
 .publishers-empty { color:#888; font-size:.85rem; padding:1rem 0; }
 
 /* ── Search bar ───────────────────────────────────────── */
@@ -507,6 +523,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 /* ── Overlays ─────────────────────────────────────────── */
 .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; align-items:center; justify-content:center; padding:1rem; }
 .overlay.open { display:flex; }
+.confirm-overlay { z-index:300; }
 
 /* Profile form fields */
 .ge-label { display:flex; flex-direction:column; gap:.3rem; font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; color:#666; }
@@ -1165,6 +1182,18 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   </div>
 </div>
 
+<!-- Confirm dialog -->
+<div class="overlay confirm-overlay" id="confirmOverlay" onclick="if(event.target===this)_closeConfirmDialog()">
+  <div class="sync-dialog" style="width:min(360px,92vw)" onclick="event.stopPropagation()">
+    <h2 id="confirmTitle" style="margin-bottom:.35rem">Confirm</h2>
+    <p id="confirmMessage" style="font-family:'DINRegular',sans-serif;font-size:.88rem;color:#555;margin:.1rem 0 1.1rem;line-height:1.5"></p>
+    <div class="sync-dialog-actions">
+      <button class="notes-close" onclick="_closeConfirmDialog()">Cancel</button>
+      <button class="notes-close" id="confirmOkBtn" onclick="_confirmOk()" style="background:#e53e3e;color:#fff;border-color:#e53e3e">Delete</button>
+    </div>
+  </div>
+</div>
+
 <!-- Release notes dialog -->
 <div class="rn-overlay" id="rnOverlay" onclick="if(event.target===this)closeRnDialog()">
   <div class="rn-dialog">
@@ -1361,12 +1390,41 @@ function renderPublishersView() {
       var te = fmtDate(con['Target End Date']   || '');
       var dateRange = (ts || te) ? (ts || '?') + ' → ' + (te || '?') : '';
       var dataIdx = CONTRACT_RAW.indexOf(con);
-      html += '<div class="client-contract-row" onclick="openContractEditDialog(' + dataIdx + ')">';
+
+      // Detail fields
+      var ss = fmtDate(con['Start Date'] || '');
+      var se = fmtDate(con['End Date']   || '');
+      var actualRange = (ss || se) ? (ss || '?') + ' → ' + (se || '?') : '';
+      var notes = (con.Notes || '').trim();
+      var status = (con.Status || '').trim();
+
+      html += '<div class="contract-item" id="ci-' + dataIdx + '">';
+      html += '<div class="client-contract-row" onclick="toggleContractItem(' + dataIdx + ')">';
       html += '<div><div class="client-contract-game">' + esc(con.Game || '—') + '</div>' +
         (dateRange ? '<div class="client-contract-dates">' + esc(dateRange) + '</div>' : '') + '</div>';
       html += '<div class="client-contract-quote">' + esc(quote) + '</div>';
       html += '<div><span class="' + badgeCls + '">' + esc(payment || '—') + '</span></div>';
-      html += '</div>';
+      html += '<div class="client-contract-row-chevron">▼</div>';
+      html += '</div>'; // .client-contract-row
+
+      html += '<div class="client-contract-details">';
+      html += '<div class="contract-detail-fields">';
+      if (actualRange) {
+        html += '<div class="contract-detail-field"><label>Actual Dates</label><span>' + esc(actualRange) + '</span></div>';
+      }
+      if (status) {
+        html += '<div class="contract-detail-field"><label>Status</label><span>' + esc(status) + '</span></div>';
+      }
+      html += '</div>'; // .contract-detail-fields
+      if (notes) {
+        html += '<div class="contract-detail-notes">' + esc(notes) + '</div>';
+      }
+      html += '<div class="contract-detail-actions">';
+      html += '<button class="btn-contract-action" onclick="event.stopPropagation();openContractEditDialog(' + dataIdx + ')">Edit</button>';
+      html += '<button class="btn-contract-action invoice" id="inv-btn-' + dataIdx + '" onclick="event.stopPropagation();generateInvoice(' + dataIdx + ')">Invoice</button>';
+      html += '</div>'; // .contract-detail-actions
+      html += '</div>'; // .client-contract-details
+      html += '</div>'; // .contract-item
     });
     html += '</div>';
     html += '</div>';
@@ -1376,6 +1434,53 @@ function renderPublishersView() {
 
 function togglePublisherCard(card) {
   card.classList.toggle('open');
+}
+
+function toggleContractItem(dataIdx) {
+  var el = document.getElementById('ci-' + dataIdx);
+  if (el) el.classList.toggle('open');
+}
+
+function generateInvoice(dataIdx) {
+  var con = CONTRACT_RAW[dataIdx];
+  if (!con) return;
+  var btn = document.getElementById('inv-btn-' + dataIdx);
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+
+  var fd = new FormData();
+  fd.append('id',          SHEET_ID);
+  fd.append('data_idx',    dataIdx);
+  fd.append('game',        con.Game         || '');
+  fd.append('client',      con.Client       || '');
+  fd.append('quote',       con.Quote        || '');
+  fd.append('payment',     con.Payment      || '');
+  fd.append('status',      con.Status       || '');
+  fd.append('target_start', con['Target Start Date'] || '');
+  fd.append('target_end',   con['Target End Date']   || '');
+  fd.append('start_date',   con['Start Date']        || '');
+  fd.append('end_date',     con['End Date']           || '');
+  fd.append('notes',        con.Notes        || '');
+  fd.append('my_name',     MY_NAME          || '');
+  fd.append('my_phone',    MY_PHONE         || '');
+  fd.append('my_company',  MY_COMPANY       || '');
+  fd.append('my_logo',     MY_LOGO          || '');
+  fd.append('my_address',  MY_BIO_LOCATION  || '');
+
+  fetch(APP_BASE + 'push/createInvoice.php', { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(j) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Invoice'; }
+      if (!j.ok) {
+        alert('Invoice error: ' + (j.error || 'Unknown error'));
+        return;
+      }
+      // Open the spreadsheet in a new tab
+      if (j.url) window.open(j.url, '_blank');
+    })
+    .catch(function() {
+      if (btn) { btn.disabled = false; btn.textContent = 'Invoice'; }
+      alert('Invoice generation failed. Check your connection.');
+    });
 }
 
 
@@ -2111,10 +2216,32 @@ function openEditGame(name) {
   document.getElementById('addBtn').textContent    = 'Save Game';
   document.getElementById('addOverlay').classList.add('open');
 }
+// ── Confirm dialog ────────────────────────────────────────────────────────────
+var _confirmCallback = null;
+function _showConfirmDialog(title, message, okLabel, callback) {
+  document.getElementById('confirmTitle').textContent   = title   || 'Confirm';
+  document.getElementById('confirmMessage').textContent = message || 'Are you sure?';
+  document.getElementById('confirmOkBtn').textContent   = okLabel || 'OK';
+  _confirmCallback = callback || null;
+  document.getElementById('confirmOverlay').classList.add('open');
+  setTimeout(function() { document.getElementById('confirmOkBtn').focus(); }, 50);
+}
+function _closeConfirmDialog() {
+  document.getElementById('confirmOverlay').classList.remove('open');
+  _confirmCallback = null;
+}
+function _confirmOk() {
+  var cb = _confirmCallback;
+  _closeConfirmDialog();
+  if (cb) cb();
+}
+
 // ── Global Escape handler — guard if dirty ────────────────────────────────────
 document.addEventListener('keydown', function(ev) {
   if (ev.key !== 'Escape') return;
   var el;
+  el = document.getElementById('confirmOverlay');
+  if (el && el.classList.contains('open')) { _closeConfirmDialog(); return; }
   el = document.getElementById('companyOverlay');
   if (el && el.classList.contains('open')) {
     closeCompanyDialog();
@@ -2664,60 +2791,61 @@ function forceCloseSessionDialog() {
 }
 
 function deleteSession() {
-  if (!confirm('Delete this session? This cannot be undone.')) return;
-  var delBtn = document.getElementById('deleteSessionBtn');
-  delBtn.disabled    = true;
-  delBtn.textContent = 'Deleting…';
-  document.getElementById('sessionBtn').disabled = true;
+  _showConfirmDialog('Delete Session', 'This cannot be undone.', 'Delete', function() {
+    var delBtn = document.getElementById('deleteSessionBtn');
+    delBtn.disabled    = true;
+    delBtn.textContent = 'Deleting…';
+    document.getElementById('sessionBtn').disabled = true;
 
-  var fd = new FormData();
-  fd.append('id',              SHEET_ID);
-  fd.append('game',            _sessionGame);
-  fd.append('orig_date',       _editOrigDate);
-  fd.append('orig_event',      _editOrigEvent);
-  fd.append('orig_session_num', _editOrigSessionNum);
+    var fd = new FormData();
+    fd.append('id',              SHEET_ID);
+    fd.append('game',            _sessionGame);
+    fd.append('orig_date',       _editOrigDate);
+    fd.append('orig_event',      _editOrigEvent);
+    fd.append('orig_session_num', _editOrigSessionNum);
 
-  fetch(APP_BASE + 'push/deleteDevSession.php', { method:'POST', body:fd })
-    .then(function(r){ return r.json(); })
-    .then(function(j) {
-      if (!j.ok) {
+    fetch(APP_BASE + 'push/deleteDevSession.php', { method:'POST', body:fd })
+      .then(function(r){ return r.json(); })
+      .then(function(j) {
+        if (!j.ok) {
+          delBtn.disabled    = false;
+          delBtn.textContent = 'Delete';
+          document.getElementById('sessionBtn').disabled = false;
+          var err = document.getElementById('sessionErr');
+          err.textContent    = j.error || 'Delete failed';
+          err.style.display  = '';
+          return;
+        }
+        // Remove this session's rows from the local cache
+        var cache    = devCache[_sessionGame] || [];
+        var newCache = [];
+        var skipping = false;
+        for (var ci = 0; ci < cache.length; ci++) {
+          var cr = cache[ci];
+          var rd = (cr['Date']  || '').trim();
+          var re = (cr['Event'] || '').trim();
+          if (skipping) {
+            if (rd || re) skipping = false;
+            else continue;
+          }
+          if (!skipping && rd === _editOrigDate && re === _editOrigEvent) {
+            if (!_editOrigSessionNum || (cr['People']||'').trim() === _editOrigSessionNum) {
+              skipping = true;
+              continue;
+            }
+          }
+          newCache.push(cr);
+        }
+        devCache[_sessionGame] = newCache;
+        forceCloseSessionDialog();
+        renderBody(_sessionGame, devCache[_sessionGame]);
+      })
+      .catch(function() {
         delBtn.disabled    = false;
         delBtn.textContent = 'Delete';
         document.getElementById('sessionBtn').disabled = false;
-        var err = document.getElementById('sessionErr');
-        err.textContent    = j.error || 'Delete failed';
-        err.style.display  = '';
-        return;
-      }
-      // Remove this session's rows from the local cache
-      var cache    = devCache[_sessionGame] || [];
-      var newCache = [];
-      var skipping = false;
-      for (var ci = 0; ci < cache.length; ci++) {
-        var cr = cache[ci];
-        var rd = (cr['Date']  || '').trim();
-        var re = (cr['Event'] || '').trim();
-        if (skipping) {
-          if (rd || re) skipping = false;  // next session header — stop skipping
-          else continue;                   // child row of deleted session
-        }
-        if (!skipping && rd === _editOrigDate && re === _editOrigEvent) {
-          if (!_editOrigSessionNum || (cr['People']||'').trim() === _editOrigSessionNum) {
-            skipping = true;
-            continue;  // skip the header row itself
-          }
-        }
-        newCache.push(cr);
-      }
-      devCache[_sessionGame] = newCache;
-      forceCloseSessionDialog();
-      renderBody(_sessionGame, devCache[_sessionGame]);
-    })
-    .catch(function() {
-      delBtn.disabled    = false;
-      delBtn.textContent = 'Delete';
-      document.getElementById('sessionBtn').disabled = false;
-    });
+      });
+  });
 }
 
 function submitSession() {

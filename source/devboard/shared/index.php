@@ -274,6 +274,7 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 /* ── Overlay & session dialog ── */
 .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; align-items:center; justify-content:center; padding:1rem; }
 .overlay.open { display:flex; }
+.confirm-overlay { z-index:300; }
 .session-dialog {
   background:#fff; border-radius:12px;
   padding:1.5rem; width:min(680px,96vw);
@@ -751,6 +752,18 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   </div>
 </div>
 
+<!-- Confirm dialog -->
+<div class="overlay confirm-overlay" id="confirmOverlay" onclick="if(event.target===this)_closeConfirmDialog()">
+  <div class="sync-dialog" style="width:min(360px,92vw)" onclick="event.stopPropagation()">
+    <h2 id="confirmTitle" style="margin-bottom:.35rem">Confirm</h2>
+    <p id="confirmMessage" style="font-family:'DINRegular',sans-serif;font-size:.88rem;color:#555;margin:.1rem 0 1.1rem;line-height:1.5"></p>
+    <div class="sync-dialog-actions">
+      <button class="notes-close" onclick="_closeConfirmDialog()">Cancel</button>
+      <button class="notes-close" id="confirmOkBtn" onclick="_confirmOk()" style="background:#e53e3e;color:#fff;border-color:#e53e3e">Delete</button>
+    </div>
+  </div>
+</div>
+
 <script>
 <?php include __DIR__ . '/../devboard-common.js'; ?>
 
@@ -973,56 +986,57 @@ function closeSessionDialog() {
 }
 
 function deleteSession() {
-  if (!confirm('Delete this session? This cannot be undone.')) return;
-  var delBtn = document.getElementById('deleteSessionBtn');
-  delBtn.disabled    = true;
-  delBtn.textContent = 'Deleting…';
-  document.getElementById('sessionBtn').disabled = true;
+  _showConfirmDialog('Delete Session', 'This cannot be undone.', 'Delete', function() {
+    var delBtn = document.getElementById('deleteSessionBtn');
+    delBtn.disabled    = true;
+    delBtn.textContent = 'Deleting…';
+    document.getElementById('sessionBtn').disabled = true;
 
-  var fd = new FormData();
-  fd.append('id',         SHEET_ID);
-  fd.append('game',       GAME_NAME);
-  fd.append('orig_date',  _editOrigDate);
-  fd.append('orig_event', _editOrigEvent);
+    var fd = new FormData();
+    fd.append('id',         SHEET_ID);
+    fd.append('game',       GAME_NAME);
+    fd.append('orig_date',  _editOrigDate);
+    fd.append('orig_event', _editOrigEvent);
 
-  fetch(APP_BASE + 'push/deleteDevSession.php', { method:'POST', body:fd })
-    .then(function(r){ return r.json(); })
-    .then(function(j) {
-      if (!j.ok) {
+    fetch(APP_BASE + 'push/deleteDevSession.php', { method:'POST', body:fd })
+      .then(function(r){ return r.json(); })
+      .then(function(j) {
+        if (!j.ok) {
+          delBtn.disabled    = false;
+          delBtn.textContent = 'Delete';
+          document.getElementById('sessionBtn').disabled = false;
+          var err = document.getElementById('sessionErr');
+          err.textContent   = j.error || 'Delete failed';
+          err.style.display = '';
+          return;
+        }
+        // Remove this session's rows from the local flat rows cache
+        var newRows  = [];
+        var skipping = false;
+        for (var ci = 0; ci < _allRows.length; ci++) {
+          var cr = _allRows[ci];
+          var rd = (cr['Date']  || '').trim();
+          var re = (cr['Event'] || '').trim();
+          if (skipping) {
+            if (rd || re) skipping = false;
+            else continue;
+          }
+          if (!skipping && rd === _editOrigDate && re === _editOrigEvent) {
+            skipping = true;
+            continue;
+          }
+          newRows.push(cr);
+        }
+        _allRows = newRows;
+        closeSessionDialog();
+        renderSessions();
+      })
+      .catch(function() {
         delBtn.disabled    = false;
         delBtn.textContent = 'Delete';
         document.getElementById('sessionBtn').disabled = false;
-        var err = document.getElementById('sessionErr');
-        err.textContent   = j.error || 'Delete failed';
-        err.style.display = '';
-        return;
-      }
-      // Remove this session's rows from the local flat rows cache
-      var newRows  = [];
-      var skipping = false;
-      for (var ci = 0; ci < _allRows.length; ci++) {
-        var cr = _allRows[ci];
-        var rd = (cr['Date']  || '').trim();
-        var re = (cr['Event'] || '').trim();
-        if (skipping) {
-          if (rd || re) skipping = false;
-          else continue;
-        }
-        if (!skipping && rd === _editOrigDate && re === _editOrigEvent) {
-          skipping = true;
-          continue;
-        }
-        newRows.push(cr);
-      }
-      _allRows = newRows;
-      closeSessionDialog();
-      renderSessions();
-    })
-    .catch(function() {
-      delBtn.disabled    = false;
-      delBtn.textContent = 'Delete';
-      document.getElementById('sessionBtn').disabled = false;
-    });
+      });
+  });
 }
 
 // ── Submit session ────────────────────────────────────────────────────────────
@@ -1784,9 +1798,32 @@ function guardedOpenEditDialog(idx) {
   openEditSessionDialog(idx);
 }
 
+// ── Confirm dialog ────────────────────────────────────────────────────────────
+var _confirmCallback = null;
+function _showConfirmDialog(title, message, okLabel, callback) {
+  document.getElementById('confirmTitle').textContent   = title   || 'Confirm';
+  document.getElementById('confirmMessage').textContent = message || 'Are you sure?';
+  document.getElementById('confirmOkBtn').textContent   = okLabel || 'OK';
+  _confirmCallback = callback || null;
+  document.getElementById('confirmOverlay').classList.add('open');
+  setTimeout(function() { document.getElementById('confirmOkBtn').focus(); }, 50);
+}
+function _closeConfirmDialog() {
+  document.getElementById('confirmOverlay').classList.remove('open');
+  _confirmCallback = null;
+}
+function _confirmOk() {
+  var cb = _confirmCallback;
+  _closeConfirmDialog();
+  if (cb) cb();
+}
+
 // ── Esc handler ───────────────────────────────────────────────────────────────
 document.addEventListener('keydown', function(ev) {
   if (ev.key !== 'Escape') return;
+  if (document.getElementById('confirmOverlay').classList.contains('open')) {
+    _closeConfirmDialog(); return;
+  }
   if (document.getElementById('profileOverlay').classList.contains('open')) {
     closeProfileDialog(); return;
   }

@@ -1,5 +1,10 @@
 # gcreateInvoice.py — create a formatted invoice tab in a Google Sheet.
 #
+# Matches the Tabletop Refinery invoice layout:
+#   - Orange accent (#e8623a) for company name, table header text, totals
+#   - No gridlines
+#   - Tab name: [{game}] invoice {invoice_num}
+#
 # Arg: {sheet_id}|{base64_json}
 # JSON fields: sheet_id, game, client, quote, payment, status,
 #              tgt_start, tgt_end, start_date, end_date, notes,
@@ -52,9 +57,10 @@ my_company  = data.get('my_company', '').strip()
 my_logo     = data.get('my_logo',    '').strip()
 my_address  = data.get('my_address', '').strip()
 
-# ── Helpers ──────────────────────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────
+
 def fmt_date(s):
-    """Format YYYY-MM-DD → M/D/YYYY, or return as-is."""
+    """Format YYYY-MM-DD → M/D/YYYY."""
     if not s:
         return ''
     try:
@@ -63,7 +69,6 @@ def fmt_date(s):
         return s
 
 def parse_quote(s):
-    """Return float or None."""
     try:
         return float(re.sub(r'[^\d.]', '', s))
     except Exception:
@@ -72,51 +77,23 @@ def parse_quote(s):
 def rgb(r, g, b):
     return {'red': r/255, 'green': g/255, 'blue': b/255}
 
-# Colours
-DARK_NAVY  = rgb(26, 26, 46)    # #1a1a2e — company name
-TEAL       = rgb(26, 95, 122)   # #1a5f7a — table header, total label
-WHITE      = rgb(255,255,255)
-LIGHT_GRAY = rgb(240,244,248)   # section backgrounds
-MID_GRAY   = rgb(136,136,136)
+# ── Palette (matches screenshot) ──────────────────────────────────────────
+ORANGE     = rgb(232, 98, 58)    # #e8623a — company, headers, totals
+BLACK      = rgb(30, 30, 30)     # near-black for body text
+GRAY_DARK  = rgb(100, 100, 100)  # submitted-on line, notes
+GRAY_MED   = rgb(160, 160, 160)  # address/phone
+ROW_BG     = rgb(245, 245, 245)  # light gray for data rows / label section
+WHITE      = rgb(255, 255, 255)
+SEP_COLOR  = rgb(200, 200, 200)  # separator line color
 
-# ── Open spreadsheet ─────────────────────────────────────────────────────
-try:
-    wb = sa.open_by_key(sheet_id)
-except Exception as e:
-    print(json.dumps({"error": f"Could not open spreadsheet: {str(e)}"}))
-    sys.exit(1)
+# ── Derived values ────────────────────────────────────────────────────────
+today_disp = datetime.today().strftime('%-m/%-d/%Y')
+today_str  = datetime.today().strftime('%Y-%m-%d')
 
-# ── Build tab name ────────────────────────────────────────────────────────
-today_str = datetime.today().strftime('%Y-%m-%d')
-base_name = f"Invoice – {game}" if game else "Invoice"
-tab_name  = base_name
-
-existing = {w.title for w in wb.worksheets()}
-if tab_name in existing:
-    # Append date to avoid collision
-    tab_name = f"{base_name} {today_str}"
-    counter = 2
-    while tab_name in existing:
-        tab_name = f"{base_name} {today_str} ({counter})"
-        counter += 1
-
-# ── Create the worksheet ──────────────────────────────────────────────────
-try:
-    ws = wb.add_worksheet(title=tab_name, rows=30, cols=8)
-except Exception as e:
-    print(json.dumps({"error": f"Could not create worksheet: {str(e)}"}))
-    sys.exit(1)
-
-sheet_gid = ws.id
-COLS = 8   # A–H
-
-# ── Build values ──────────────────────────────────────────────────────────
 quote_val  = parse_quote(quote_raw)
 quote_fmt  = ('$' + f'{quote_val:,.2f}') if quote_val is not None else (quote_raw or '—')
 
-today_disp = datetime.today().strftime('%-m/%-d/%Y')
-
-# Date range for the contract (prefer actual dates, fall back to target dates)
+# Date range: prefer actual dates, fall back to target dates
 range_start = start_date or tgt_start
 range_end   = end_date   or tgt_end
 disp_start  = fmt_date(range_start)
@@ -130,132 +107,143 @@ elif disp_end:
 else:
     date_range = ''
 
-# Invoice number: YYYYMMDD + game initials
-initials = ''.join(w[0].upper() for w in re.split(r'\s+', game) if w)[:4]
-invoice_num = today_str.replace('-', '') + ('-' + initials if initials else '')
+# Invoice number: company initials + YYYYMMDD
+comp_initials = ''.join(w[0].upper() for w in re.split(r'\s+', my_company or my_name) if w)[:2]
+invoice_num = (comp_initials or 'INV') + today_str.replace('-', '')
 
-# Address: split into up to 2 lines
+# Address lines
 addr_lines = [l.strip() for l in my_address.replace('\r\n', '\n').split('\n') if l.strip()]
 addr_line1 = addr_lines[0] if len(addr_lines) > 0 else ''
 addr_line2 = addr_lines[1] if len(addr_lines) > 1 else ''
-addr_line3 = addr_lines[2] if len(addr_lines) > 2 else ''
 
-# ─── Row layout (1-indexed):
-# 1  — (empty top margin)
-# 2  — (empty)
-# 3  — Company name (A:F) | Logo image (G:H)
-# 4  — Address line 1
-# 5  — Address line 2 (if present)
-# 6  — Phone
-# 7  — (spacer)
-# 8  — "Invoice" header (A:H)
-# 9  — "Submitted on MM/DD/YYYY"
-# 10 — (spacer)
-# 11 — "Prepared for" | "Project" | "Estimate #" (labels)
-# 12 — client name  | game + " Dev" | invoice_num
-# 13 — (spacer)
-# 14 — "Duration" (label, if date_range)
-# 15 — date range value
-# 16 — (spacer)
-# 17 — separator (thick bottom border on row 16)
-# 18 — Table header: Description | | Qty | Unit Price | Total
-# 19 — Table data row
-# 20 — Notes row (if notes)
-# 21 — (spacer)
-# 22 — "Subtotal" label (cols E:G) | amount (col H)
-# 23 — (spacer)
-# 24 — "Total Due" label (cols E:G, teal) | amount (col H, large teal)
+# ── Open spreadsheet ──────────────────────────────────────────────────────
+try:
+    wb = sa.open_by_key(sheet_id)
+except Exception as e:
+    print(json.dumps({"error": f"Could not open spreadsheet: {str(e)}"}))
+    sys.exit(1)
 
-# We'll set values row by row.
-# Column mapping: A=0,B=1,C=2,D=3,E=4,F=5,G=6,H=7
+# ── Tab name: [{game}] invoice {invoice_num} ──────────────────────────────
+base_name = f"[{game}] invoice {invoice_num}" if game else f"invoice {invoice_num}"
+tab_name  = base_name
+existing  = {w.title for w in wb.worksheets()}
+counter   = 2
+while tab_name in existing:
+    tab_name = f"{base_name} ({counter})"
+    counter += 1
 
-def empty_row():
+# ── Layout constants ──────────────────────────────────────────────────────
+# 8 columns (A–H), ~30 rows
+COLS = 8
+ROWS = 32
+
+# Row assignments (1-indexed)
+R_MARGIN1   = 1
+R_MARGIN2   = 2
+R_COMPANY   = 3   # company name (A:F) | logo (G:H, spans 3-6)
+R_ADDR1     = 4
+R_ADDR2     = 5
+R_PHONE     = 6
+R_SPACER1   = 7
+R_INVOICE   = 8   # "Invoice" large heading
+R_SUBMITTED = 9   # "Submitted on..."
+R_SPACER2   = 10
+R_LABELS    = 11  # Prepared for | Project | Estimate #
+R_VALUES    = 12  # client name  | game Dev | invoice num
+R_SPACER3   = 13
+
+# Duration rows (if present)
+if date_range:
+    R_DUR_LABEL = 14
+    R_DUR_VAL   = 15
+    R_SPACER4   = 16
+    R_SEPARATOR = 16   # bottom border goes on this row
+    R_THEAD     = 17
+else:
+    R_SEPARATOR = 13
+    R_THEAD     = 14
+
+R_DATA      = R_THEAD + 1
+R_NOTES     = R_DATA  + 1 if notes else None
+R_SPACER5   = R_DATA  + (2 if notes else 1)
+R_SUBTOTAL  = R_SPACER5 + 1
+R_SPACER6   = R_SUBTOTAL + 1
+R_TOTAL     = R_SPACER6 + 1
+
+TOTAL_ROWS  = R_TOTAL + 2
+
+# ── Build values array ────────────────────────────────────────────────────
+def erow():
     return [''] * COLS
 
-rows = []
-rows.append(empty_row())                                       # row 1
-rows.append(empty_row())                                       # row 2
-r3 = empty_row(); r3[0] = my_company or my_name               # row 3 — company name
+grid = []
+for _ in range(TOTAL_ROWS):
+    grid.append(erow())
+
+def set_cell(row1, col0, val):
+    if 1 <= row1 <= len(grid) and 0 <= col0 < COLS:
+        grid[row1 - 1][col0] = val
+
+# Company / logo
+set_cell(R_COMPANY, 0, my_company or my_name)
 if my_logo:
-    r3[6] = f'=IMAGE("{my_logo}",2)'                          # G3 — logo
-rows.append(r3)
-r4 = empty_row(); r4[0] = addr_line1; rows.append(r4)         # row 4
-r5 = empty_row(); r5[0] = addr_line2; rows.append(r5)         # row 5
-r6 = empty_row(); r6[0] = my_phone;   rows.append(r6)         # row 6
-rows.append(empty_row())                                       # row 7
-r8 = empty_row(); r8[0] = 'Invoice';  rows.append(r8)         # row 8
-r9 = empty_row(); r9[0] = f'Submitted on {today_disp}'; rows.append(r9)  # row 9
-rows.append(empty_row())                                       # row 10
-# row 11 — labels
-r11 = empty_row()
-r11[0] = 'Prepared for'
-r11[2] = 'Project'
-r11[5] = 'Estimate #'
-rows.append(r11)
-# row 12 — values
-r12 = empty_row()
-r12[0] = client or '—'
-r12[2] = (game + ' Dev') if game else '—'
-r12[5] = invoice_num
-rows.append(r12)
-rows.append(empty_row())                                       # row 13
-# row 14-15 — duration (only if we have a date range)
+    set_cell(R_COMPANY, 6, f'=IMAGE("{my_logo}",2)')
+
+# Address / phone
+set_cell(R_ADDR1, 0, addr_line1)
+set_cell(R_ADDR2, 0, addr_line2)
+set_cell(R_PHONE, 0, my_phone)
+
+# Invoice heading
+set_cell(R_INVOICE, 0, 'Invoice')
+set_cell(R_SUBMITTED, 0, f'Submitted on {today_disp}')
+
+# Prepared for / Project / Estimate #
+set_cell(R_LABELS, 0, 'Prepared for')
+set_cell(R_LABELS, 3, 'Project')
+set_cell(R_LABELS, 5, 'Estimate #')
+set_cell(R_VALUES, 0, client or '—')
+set_cell(R_VALUES, 3, (game + ' Dev') if game else '—')
+set_cell(R_VALUES, 5, invoice_num)
+
+# Duration
 if date_range:
-    r14 = empty_row(); r14[4] = 'Duration'; rows.append(r14)
-    r15 = empty_row(); r15[4] = date_range; rows.append(r15)
-    rows.append(empty_row())                                   # row 16
-    DUR_ROWS = 3
-else:
-    rows.append(empty_row())                                   # row 14 placeholder
-    DUR_ROWS = 1
+    set_cell(R_DUR_LABEL, 5, 'Duration')
+    set_cell(R_DUR_VAL,   5, date_range)
 
-# Current row index after duration section
-BASE = len(rows) + 1   # 1-indexed sheet row number
+# Table header
+set_cell(R_THEAD, 0, 'Description')
+set_cell(R_THEAD, 4, 'Qty')
+set_cell(R_THEAD, 5, 'Unit price')
+set_cell(R_THEAD, 6, 'Total price')
 
-# Table header row
-r_thead = empty_row()
-r_thead[0] = 'Description'
-r_thead[5] = 'Qty'
-r_thead[6] = 'Unit Price'
-r_thead[7] = 'Total'
-rows.append(r_thead)
-ROW_THEAD = BASE      # 1-indexed
+# Data row
+set_cell(R_DATA, 0, f'{game} Development' if game else 'Design services')
+set_cell(R_DATA, 4, '1')
+set_cell(R_DATA, 5, quote_fmt)
+set_cell(R_DATA, 6, quote_fmt)
 
-# Table data row
-r_data = empty_row()
-r_data[0] = f'{game} Dev' if game else 'Design services'
-r_data[5] = '1'
-r_data[6] = quote_fmt
-r_data[7] = quote_fmt
-rows.append(r_data)
-ROW_DATA = BASE + 1
+# Notes
+if notes and R_NOTES:
+    set_cell(R_NOTES, 0, notes)
 
-# Notes row (if any)
-if notes:
-    r_notes = empty_row(); r_notes[0] = notes; rows.append(r_notes)
-    ROW_NOTES = BASE + 2
-    NOTES_OFFSET = 1
-else:
-    rows.append(empty_row())
-    NOTES_OFFSET = 1
+# Subtotal / Total
+set_cell(R_SUBTOTAL, 4, 'Subtotal')
+set_cell(R_SUBTOTAL, 6, quote_fmt)
+set_cell(R_TOTAL,    6, quote_fmt)
 
-# Spacer
-rows.append(empty_row())
-
-# Subtotal row
-ROW_SUBTOTAL = len(rows) + 1
-r_sub = empty_row(); r_sub[5] = 'Subtotal'; r_sub[7] = quote_fmt; rows.append(r_sub)
-
-# Spacer
-rows.append(empty_row())
-
-# Total row
-ROW_TOTAL = len(rows) + 1
-r_tot = empty_row(); r_tot[5] = 'Total Due'; r_tot[7] = quote_fmt; rows.append(r_tot)
-
-# ── Write all values at once ──────────────────────────────────────────────
+# ── Create worksheet ──────────────────────────────────────────────────────
 try:
-    ws.update(values=rows, range_name='A1', value_input_option='USER_ENTERED')
+    ws = wb.add_worksheet(title=tab_name, rows=TOTAL_ROWS + 4, cols=COLS)
+except Exception as e:
+    print(json.dumps({"error": f"Could not create worksheet: {str(e)}"}))
+    sys.exit(1)
+
+sheet_gid = ws.id
+
+# ── Write values ──────────────────────────────────────────────────────────
+try:
+    ws.update(values=grid, range_name='A1', value_input_option='USER_ENTERED')
 except Exception as e:
     try:
         wb.del_worksheet(ws)
@@ -264,222 +252,248 @@ except Exception as e:
     print(json.dumps({"error": f"Could not write values: {str(e)}"}))
     sys.exit(1)
 
-# ── Batch formatting ──────────────────────────────────────────────────────
-def cell_range(r1, c1, r2, c2):
-    """0-indexed startRowIndex/endRowIndex/startColumnIndex/endColumnIndex."""
-    return {
-        'sheetId':          sheet_gid,
-        'startRowIndex':    r1,
-        'endRowIndex':      r2,
-        'startColumnIndex': c1,
-        'endColumnIndex':   c2,
-    }
+# ── Formatting helpers ────────────────────────────────────────────────────
 
-def merge_req(r1, c1, r2, c2):
-    return {'mergeCells': {'range': cell_range(r1, c1, r2, c2), 'mergeType': 'MERGE_ALL'}}
+def cr(r1, c1, r2, c2):
+    """Cell range (all 0-indexed, end exclusive)."""
+    return {'sheetId': sheet_gid, 'startRowIndex': r1, 'endRowIndex': r2,
+            'startColumnIndex': c1, 'endColumnIndex': c2}
 
-def format_req(r1, c1, r2, c2, fmt, fields):
-    return {'repeatCell': {'range': cell_range(r1, c1, r2, c2), 'cell': {'userEnteredFormat': fmt}, 'fields': fields}}
+def r0(row1):
+    """1-indexed row → 0-indexed."""
+    return row1 - 1
 
-def border_req(r1, c1, r2, c2, borders):
-    return {'updateBorders': {'range': cell_range(r1, c1, r2, c2), **borders}}
+def merge(r1, c1, r2, c2):
+    return {'mergeCells': {'range': cr(r0(r1), c1, r0(r1)+1, c2), 'mergeType': 'MERGE_ALL'}}
 
-def solid_border(width=1, color=None):
-    c = color or rgb(200, 210, 218)
-    return {'style': 'SOLID', 'width': width, 'color': c}
+def merge_rows(r1, c1, r2, c2):
+    """Merge across multiple rows."""
+    return {'mergeCells': {'range': cr(r0(r1), c1, r0(r2)+1, c2), 'mergeType': 'MERGE_ALL'}}
 
-def row_height_req(row_0idx, px):
+def fmt(r1, c1, r2, c2, cell_fmt, fields):
+    return {'repeatCell': {
+        'range': cr(r0(r1), c1, r0(r2)+1, c2),
+        'cell': {'userEnteredFormat': cell_fmt},
+        'fields': fields
+    }}
+
+def row_h(row1, px):
     return {'updateDimensionProperties': {
-        'range': {'sheetId': sheet_gid, 'dimension': 'ROWS', 'startIndex': row_0idx, 'endIndex': row_0idx+1},
+        'range': {'sheetId': sheet_gid, 'dimension': 'ROWS',
+                  'startIndex': r0(row1), 'endIndex': r0(row1)+1},
         'properties': {'pixelSize': px}, 'fields': 'pixelSize'
     }}
 
-def col_width_req(c_0idx, px):
+def col_w(c0, px):
     return {'updateDimensionProperties': {
-        'range': {'sheetId': sheet_gid, 'dimension': 'COLUMNS', 'startIndex': c_0idx, 'endIndex': c_0idx+1},
+        'range': {'sheetId': sheet_gid, 'dimension': 'COLUMNS',
+                  'startIndex': c0, 'endIndex': c0+1},
         'properties': {'pixelSize': px}, 'fields': 'pixelSize'
     }}
 
-# Convenience: convert 1-indexed row to 0-indexed
-def r0(row1): return row1 - 1
+def border_bottom(row1, c1, c2, color=None, width=1):
+    c = color or SEP_COLOR
+    return {'updateBorders': {
+        'range': cr(r0(row1), c1, r0(row1)+1, c2),
+        'bottom': {'style': 'SOLID', 'width': width, 'color': c}
+    }}
+
+def text_fmt(color, size, bold=False, italic=False, family='Arial'):
+    return {'foregroundColor': color, 'fontSize': size, 'bold': bold,
+            'italic': italic, 'fontFamily': family}
 
 reqs = []
 
-# ── Column widths ──
-# A=desc wide, B-D small spacers, E-G labels/qty/price, H=amount
-col_widths = [280, 40, 120, 60, 60, 60, 90, 100]
+# ── 1. Hide gridlines ──────────────────────────────────────────────────────
+reqs.append({'updateSheetProperties': {
+    'properties': {'sheetId': sheet_gid, 'gridProperties': {'hideGridlines': True}},
+    'fields': 'gridProperties.hideGridlines'
+}})
+
+# ── 2. Column widths ──────────────────────────────────────────────────────
+# A=wide desc, B tiny, C tiny, D project, E qty, F-G price, H total
+col_widths = [270, 20, 20, 140, 60, 90, 90, 90]
 for ci, px in enumerate(col_widths):
-    reqs.append(col_width_req(ci, px))
+    reqs.append(col_w(ci, px))
 
-# ── Row heights ──
-reqs.append(row_height_req(r0(1), 8))   # top margin
-reqs.append(row_height_req(r0(2), 8))
-reqs.append(row_height_req(r0(3), 48))  # company name
-reqs.append(row_height_req(r0(8), 54))  # "Invoice" big
+# ── 3. Row heights ────────────────────────────────────────────────────────
+reqs.append(row_h(R_MARGIN1, 10))
+reqs.append(row_h(R_MARGIN2, 10))
+reqs.append(row_h(R_COMPANY, 40 if not my_logo else 60))
+reqs.append(row_h(R_ADDR1, 18))
+reqs.append(row_h(R_ADDR2, 18 if addr_line2 else 4))
+reqs.append(row_h(R_PHONE, 18))
+reqs.append(row_h(R_SPACER1, 20))
+reqs.append(row_h(R_INVOICE, 60))
+reqs.append(row_h(R_SUBMITTED, 20))
+reqs.append(row_h(R_SPACER2, 16))
+reqs.append(row_h(R_LABELS, 24))
+reqs.append(row_h(R_VALUES, 26))
+reqs.append(row_h(R_SPACER3, 14))
+if date_range:
+    reqs.append(row_h(R_DUR_LABEL, 22))
+    reqs.append(row_h(R_DUR_VAL, 24))
+    reqs.append(row_h(R_SPACER4, 14))
+reqs.append(row_h(R_THEAD, 30))
+reqs.append(row_h(R_DATA, 80))   # taller for wrapped text
+if notes and R_NOTES:
+    reqs.append(row_h(R_NOTES, 24))
+reqs.append(row_h(R_SPACER5, 14))
+reqs.append(row_h(R_SUBTOTAL, 26))
+reqs.append(row_h(R_SPACER6, 12))
+reqs.append(row_h(R_TOTAL, 44))
+
+# ── 4. Merges ─────────────────────────────────────────────────────────────
+# Company name: A:F (cols 0-5)
+reqs.append(merge(R_COMPANY, 0, R_COMPANY, 6))
+# Logo: G:H spanning rows 3-6 (cols 6-7)
 if my_logo:
-    # Logo spans rows 3-6 → make them taller to show image
-    for logo_r in [3, 4, 5, 6]:
-        reqs.append(row_height_req(r0(logo_r), 42))
+    reqs.append(merge_rows(R_COMPANY, 6, R_PHONE, 8))
+# "Invoice" heading: A:H
+reqs.append(merge(R_INVOICE, 0, R_INVOICE, COLS))
+# "Submitted on": A:H
+reqs.append(merge(R_SUBMITTED, 0, R_SUBMITTED, COLS))
+# "Prepared for" label: A:C (0-3)
+reqs.append(merge(R_LABELS, 0, R_LABELS, 3))
+# "Project" label: D:E (3-5)
+reqs.append(merge(R_LABELS, 3, R_LABELS, 5))
+# "Estimate #" label: F:H (5-8)
+reqs.append(merge(R_LABELS, 5, R_LABELS, COLS))
+# Values row
+reqs.append(merge(R_VALUES, 0, R_VALUES, 3))
+reqs.append(merge(R_VALUES, 3, R_VALUES, 5))
+reqs.append(merge(R_VALUES, 5, R_VALUES, COLS))
+# Duration (if present)
+if date_range:
+    reqs.append(merge(R_DUR_LABEL, 5, R_DUR_LABEL, COLS))
+    reqs.append(merge(R_DUR_VAL,   5, R_DUR_VAL,   COLS))
+# Table header description: A:D (0-4)
+reqs.append(merge(R_THEAD, 0, R_THEAD, 4))
+# Data row description: A:D (0-4)
+reqs.append(merge(R_DATA, 0, R_DATA, 4))
+# Notes row: A:H
+if notes and R_NOTES:
+    reqs.append(merge(R_NOTES, 0, R_NOTES, COLS))
+# Subtotal label: E:F (4-6)
+reqs.append(merge(R_SUBTOTAL, 4, R_SUBTOTAL, 6))
+# Total amount: E:H (spans for large right-aligned text)
+reqs.append(merge(R_TOTAL, 4, R_TOTAL, COLS))
 
-# ── Merges ──
-# Company name A3:F3
-reqs.append(merge_req(r0(3), 0, r0(3)+1, 6))
-# Logo G3:H6
-if my_logo:
-    reqs.append(merge_req(r0(3), 6, r0(6)+1, 8))
-# "Invoice" heading A8:H8
-reqs.append(merge_req(r0(8), 0, r0(8)+1, 8))
-# "Submitted on" A9:H9
-reqs.append(merge_req(r0(9), 0, r0(9)+1, 8))
-# "Prepared for" label A11:B11
-reqs.append(merge_req(r0(11), 0, r0(11)+1, 2))
-# "Project" label C11:E11
-reqs.append(merge_req(r0(11), 2, r0(11)+1, 5))
-# "Estimate #" label F11:H11
-reqs.append(merge_req(r0(11), 5, r0(11)+1, 8))
-# Client name A12:B12
-reqs.append(merge_req(r0(12), 0, r0(12)+1, 2))
-# Game name C12:E12
-reqs.append(merge_req(r0(12), 2, r0(12)+1, 5))
-# Estimate # value F12:H12
-reqs.append(merge_req(r0(12), 5, r0(12)+1, 8))
-# Description cell in table spans A:E
-reqs.append(merge_req(r0(ROW_THEAD), 0, r0(ROW_THEAD)+1, 5))
-reqs.append(merge_req(r0(ROW_DATA),  0, r0(ROW_DATA)+1,  5))
-# Notes spans A:H
-if notes:
-    reqs.append(merge_req(r0(ROW_DATA+1), 0, r0(ROW_DATA+1)+1, 8))
-# Subtotal label E:G
-reqs.append(merge_req(r0(ROW_SUBTOTAL), 4, r0(ROW_SUBTOTAL)+1, 7))
-# Total label E:G
-reqs.append(merge_req(r0(ROW_TOTAL), 4, r0(ROW_TOTAL)+1, 7))
+# ── 5. Cell formatting ────────────────────────────────────────────────────
 
-# ── Company name formatting ──
-reqs.append(format_req(r0(3), 0, r0(3)+1, 6, {
-    'textFormat': {'foregroundColor': DARK_NAVY, 'fontSize': 22, 'bold': True,
-                   'fontFamily': 'Arial'},
+# Company name — orange, large bold
+reqs.append(fmt(R_COMPANY, 0, R_COMPANY, 6, {
+    'textFormat': text_fmt(ORANGE, 22, bold=True),
     'verticalAlignment': 'MIDDLE',
 }, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment'))
 
-# ── Address / phone rows (4,5,6) ──
-for ar in [4, 5, 6]:
-    reqs.append(format_req(r0(ar), 0, r0(ar)+1, 6, {
-        'textFormat': {'foregroundColor': MID_GRAY, 'fontSize': 9, 'fontFamily': 'Arial'},
-    }, 'userEnteredFormat.textFormat'))
+# Address lines — medium gray, small
+for row in [R_ADDR1, R_ADDR2, R_PHONE]:
+    reqs.append(fmt(row, 0, row, 6, {
+        'textFormat': text_fmt(GRAY_DARK, 9),
+        'verticalAlignment': 'MIDDLE',
+    }, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment'))
 
-# ── "Invoice" heading ──
-reqs.append(format_req(r0(8), 0, r0(8)+1, 8, {
-    'textFormat': {'foregroundColor': DARK_NAVY, 'fontSize': 32, 'bold': True, 'fontFamily': 'Arial'},
-    'verticalAlignment': 'MIDDLE',
+# "Invoice" — black, very large bold
+reqs.append(fmt(R_INVOICE, 0, R_INVOICE, COLS, {
+    'textFormat': text_fmt(BLACK, 36, bold=True),
+    'verticalAlignment': 'BOTTOM',
 }, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment'))
 
-# ── "Submitted on" ──
-reqs.append(format_req(r0(9), 0, r0(9)+1, 8, {
-    'textFormat': {'foregroundColor': MID_GRAY, 'fontSize': 9, 'fontFamily': 'Arial'},
+# "Submitted on" — dark gray
+reqs.append(fmt(R_SUBMITTED, 0, R_SUBMITTED, COLS, {
+    'textFormat': text_fmt(GRAY_DARK, 10, bold=True),
 }, 'userEnteredFormat.textFormat'))
 
-# ── Label row 11 ──
-reqs.append(format_req(r0(11), 0, r0(11)+1, 8, {
-    'textFormat': {'foregroundColor': MID_GRAY, 'fontSize': 8, 'bold': False, 'fontFamily': 'Arial'},
-    'backgroundColor': LIGHT_GRAY,
-}, 'userEnteredFormat.textFormat,userEnteredFormat.backgroundColor'))
+# "Prepared for / Project / Estimate #" labels — bold black, gray bg
+reqs.append(fmt(R_LABELS, 0, R_LABELS, COLS, {
+    'textFormat': text_fmt(BLACK, 9, bold=True),
+    'backgroundColor': ROW_BG,
+    'verticalAlignment': 'BOTTOM',
+}, 'userEnteredFormat.textFormat,userEnteredFormat.backgroundColor,userEnteredFormat.verticalAlignment'))
 
-# ── Value row 12 ──
-reqs.append(format_req(r0(12), 0, r0(12)+1, 8, {
-    'textFormat': {'foregroundColor': DARK_NAVY, 'fontSize': 10, 'bold': True, 'fontFamily': 'Arial'},
-    'backgroundColor': LIGHT_GRAY,
-}, 'userEnteredFormat.textFormat,userEnteredFormat.backgroundColor'))
+# Values row — normal weight, gray bg
+reqs.append(fmt(R_VALUES, 0, R_VALUES, COLS, {
+    'textFormat': text_fmt(BLACK, 10),
+    'backgroundColor': ROW_BG,
+    'verticalAlignment': 'TOP',
+}, 'userEnteredFormat.textFormat,userEnteredFormat.backgroundColor,userEnteredFormat.verticalAlignment'))
 
-# ── Duration label/value (if present) ──
+# Duration label — bold black
 if date_range:
-    dur_label_row = 14
-    dur_val_row   = 15
-    reqs.append(merge_req(r0(dur_label_row), 4, r0(dur_label_row)+1, 8))
-    reqs.append(merge_req(r0(dur_val_row),   4, r0(dur_val_row)+1,   8))
-    reqs.append(format_req(r0(dur_label_row), 4, r0(dur_label_row)+1, 8, {
-        'textFormat': {'foregroundColor': MID_GRAY, 'fontSize': 8, 'fontFamily': 'Arial'},
-        'backgroundColor': LIGHT_GRAY,
-    }, 'userEnteredFormat.textFormat,userEnteredFormat.backgroundColor'))
-    reqs.append(format_req(r0(dur_val_row), 4, r0(dur_val_row)+1, 8, {
-        'textFormat': {'foregroundColor': DARK_NAVY, 'fontSize': 10, 'bold': True, 'fontFamily': 'Arial'},
-        'backgroundColor': LIGHT_GRAY,
-    }, 'userEnteredFormat.textFormat,userEnteredFormat.backgroundColor'))
+    reqs.append(fmt(R_DUR_LABEL, 5, R_DUR_LABEL, COLS, {
+        'textFormat': text_fmt(BLACK, 9, bold=True),
+        'horizontalAlignment': 'LEFT',
+    }, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment'))
+    reqs.append(fmt(R_DUR_VAL, 5, R_DUR_VAL, COLS, {
+        'textFormat': text_fmt(BLACK, 10),
+        'horizontalAlignment': 'LEFT',
+    }, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment'))
 
-# ── Table header row ──
-reqs.append(format_req(r0(ROW_THEAD), 0, r0(ROW_THEAD)+1, 8, {
-    'textFormat': {'foregroundColor': WHITE, 'fontSize': 9, 'bold': True, 'fontFamily': 'Arial'},
-    'backgroundColor': TEAL,
+# Table header row — orange text, white bg (no fill), bold
+reqs.append(fmt(R_THEAD, 0, R_THEAD, COLS, {
+    'textFormat': text_fmt(ORANGE, 9, bold=True),
+    'backgroundColor': WHITE,
     'verticalAlignment': 'MIDDLE',
 }, 'userEnteredFormat.textFormat,userEnteredFormat.backgroundColor,userEnteredFormat.verticalAlignment'))
-reqs.append(row_height_req(r0(ROW_THEAD), 28))
-
-# Align qty/price/total right in header
-reqs.append(format_req(r0(ROW_THEAD), 5, r0(ROW_THEAD)+1, 8, {
+# Right-align qty / price cols in header
+reqs.append(fmt(R_THEAD, 4, R_THEAD, COLS, {
     'horizontalAlignment': 'RIGHT',
 }, 'userEnteredFormat.horizontalAlignment'))
 
-# ── Table data row ──
-reqs.append(format_req(r0(ROW_DATA), 0, r0(ROW_DATA)+1, 8, {
-    'textFormat': {'fontSize': 10, 'fontFamily': 'Arial'},
-}, 'userEnteredFormat.textFormat'))
-reqs.append(format_req(r0(ROW_DATA), 5, r0(ROW_DATA)+1, 8, {
+# Data row — light gray bg, wrap
+reqs.append(fmt(R_DATA, 0, R_DATA, COLS, {
+    'textFormat': text_fmt(BLACK, 10),
+    'backgroundColor': ROW_BG,
+    'verticalAlignment': 'TOP',
+    'wrapStrategy': 'WRAP',
+}, 'userEnteredFormat.textFormat,userEnteredFormat.backgroundColor,userEnteredFormat.verticalAlignment,userEnteredFormat.wrapStrategy'))
+# Right-align qty/price in data row
+reqs.append(fmt(R_DATA, 4, R_DATA, COLS, {
     'horizontalAlignment': 'RIGHT',
 }, 'userEnteredFormat.horizontalAlignment'))
-# Light bottom border on data row
-reqs.append(border_req(r0(ROW_DATA), 0, r0(ROW_DATA)+1, 8, {
-    'bottom': solid_border(1)
-}))
+# Bottom border on data row
+reqs.append(border_bottom(R_DATA, 0, COLS, SEP_COLOR, 1))
 
-# ── Notes row ──
-if notes:
-    reqs.append(format_req(r0(ROW_DATA+1), 0, r0(ROW_DATA+1)+1, 8, {
-        'textFormat': {'foregroundColor': MID_GRAY, 'fontSize': 8, 'italic': True, 'fontFamily': 'Arial'},
+# Notes — italic, gray
+if notes and R_NOTES:
+    reqs.append(fmt(R_NOTES, 0, R_NOTES, COLS, {
+        'textFormat': text_fmt(GRAY_DARK, 9, italic=True),
         'wrapStrategy': 'WRAP',
     }, 'userEnteredFormat.textFormat,userEnteredFormat.wrapStrategy'))
 
-# ── Subtotal row ──
-reqs.append(format_req(r0(ROW_SUBTOTAL), 4, r0(ROW_SUBTOTAL)+1, 7, {
-    'textFormat': {'foregroundColor': DARK_NAVY, 'fontSize': 9, 'fontFamily': 'Arial'},
+# Subtotal label + amount
+reqs.append(fmt(R_SUBTOTAL, 4, R_SUBTOTAL, 6, {
+    'textFormat': text_fmt(BLACK, 10),
     'horizontalAlignment': 'RIGHT',
 }, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment'))
-reqs.append(format_req(r0(ROW_SUBTOTAL), 7, r0(ROW_SUBTOTAL)+1, 8, {
-    'textFormat': {'foregroundColor': DARK_NAVY, 'fontSize': 9, 'fontFamily': 'Arial'},
+reqs.append(fmt(R_SUBTOTAL, 6, R_SUBTOTAL, COLS, {
+    'textFormat': text_fmt(BLACK, 10, bold=True),
     'horizontalAlignment': 'RIGHT',
 }, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment'))
 
-# ── Total row ──
-reqs.append(format_req(r0(ROW_TOTAL), 4, r0(ROW_TOTAL)+1, 7, {
-    'textFormat': {'foregroundColor': TEAL, 'fontSize': 13, 'bold': True, 'fontFamily': 'Arial'},
+# Total amount — large orange, right-aligned
+reqs.append(fmt(R_TOTAL, 4, R_TOTAL, COLS, {
+    'textFormat': text_fmt(ORANGE, 28, bold=True),
     'horizontalAlignment': 'RIGHT',
-}, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment'))
-reqs.append(format_req(r0(ROW_TOTAL), 7, r0(ROW_TOTAL)+1, 8, {
-    'textFormat': {'foregroundColor': TEAL, 'fontSize': 18, 'bold': True, 'fontFamily': 'Arial'},
-    'horizontalAlignment': 'RIGHT',
-}, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment'))
-reqs.append(row_height_req(r0(ROW_TOTAL), 36))
+    'verticalAlignment': 'MIDDLE',
+}, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment'))
 
-# ── Thin separator above table header ──
-reqs.append(border_req(r0(ROW_THEAD), 0, r0(ROW_THEAD)+1, 8, {
-    'top': solid_border(2, TEAL)
-}))
+# ── 6. Separator line above table header ─────────────────────────────────
+reqs.append(border_bottom(R_SEPARATOR, 0, COLS, SEP_COLOR, 1))
 
-# ── Logo image row height ──
-if my_logo:
-    reqs.append(row_height_req(r0(3), 80))
-
-# ── Execute all formatting requests ──────────────────────────────────────
+# ── 7. Execute all requests ───────────────────────────────────────────────
 try:
     wb.batch_update({'requests': reqs})
 except Exception as e:
-    # Non-fatal — sheet was created and values written; formatting failed
-    pass
+    pass  # Non-fatal — values are correct even if formatting fails
 
-# ── Return spreadsheet URL ────────────────────────────────────────────────
+# ── 8. Return result ──────────────────────────────────────────────────────
 spreadsheet_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/edit#gid={sheet_gid}"
 
 print(json.dumps({
-    "ok":       True,
-    "tab":      tab_name,
-    "gid":      sheet_gid,
-    "url":      spreadsheet_url,
+    "ok":  True,
+    "tab": tab_name,
+    "gid": sheet_gid,
+    "url": spreadsheet_url,
 }))

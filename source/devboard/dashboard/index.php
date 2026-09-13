@@ -385,9 +385,11 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 }
 .card-stat:hover { opacity:.85; }
 .card-stat span { font-family:'DINRegular',sans-serif; opacity:.85; }
-.stat-playtest { background:#1a5f7a; }
-.stat-meeting  { background:#6b3fa8; }
-.stat-idea     { background:#2e7a52; }
+.stat-playtest  { background:#1a5f7a; }
+.stat-meeting   { background:#6b3fa8; }
+.stat-idea      { background:#2e7a52; }
+.stat-editing   { background:#a0522d; }
+.stat-reporting { background:#2d3a8c; }
 .stat-dim      { opacity:.35; }
 .stat-active   { box-shadow:0 0 0 2.5px #fff, 0 0 0 4.5px rgba(0,0,0,.25); }
 .subtitle-right { margin-left:auto; display:flex; align-items:stretch; gap:.45rem; flex-wrap:wrap; }
@@ -452,9 +454,11 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   font-family:'DINBlack',sans-serif; font-size:.72rem;
   text-transform:uppercase; letter-spacing:.06em; line-height:1;
 }
-.session-type.type-playtest { color:#1a5f7a; }
-.session-type.type-meeting  { color:#6b3fa8; }
-.session-type.type-idea     { color:#2e7a52; }
+.session-type.type-playtest  { color:#1a5f7a; }
+.session-type.type-meeting   { color:#6b3fa8; }
+.session-type.type-idea      { color:#2e7a52; }
+.session-type.type-editing   { color:#a0522d; }
+.session-type.type-reporting { color:#2d3a8c; }
 .session-date     { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#999; }
 .session-sep      { color:#ccc; font-size:.6rem; }
 .session-location { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#777; }
@@ -634,6 +638,13 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   transition:border-color .15s, color .15s;
 }
 .btn-cancel:hover { border-color:#aaa; color:#555; }
+.btn-delete {
+  font-family:'DINBlack',sans-serif; font-size:.8rem; text-transform:uppercase; letter-spacing:.06em;
+  background:none; border:1.5px solid #e53e3e; color:#e53e3e; border-radius:7px; padding:.5rem 1rem; cursor:pointer;
+  transition:background .15s, color .15s; margin-right:auto;
+}
+.btn-delete:hover:not(:disabled) { background:#e53e3e; color:#fff; }
+.btn-delete:disabled { opacity:.5; cursor:default; }
 .btn-primary {
   font-family:'DINBlack',sans-serif; font-size:.8rem; text-transform:uppercase; letter-spacing:.06em;
   background:#1a5f7a; color:#fff; border:none; border-radius:7px; padding:.5rem 1.2rem; cursor:pointer;
@@ -1112,6 +1123,8 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
               <option value="Playtest">Playtest</option>
               <option value="Meeting">Meeting</option>
               <option value="Idea">Idea</option>
+              <option value="Editing">Editing</option>
+              <option value="Reporting">Reporting</option>
             </select>
           </div>
         </div>
@@ -1145,6 +1158,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="13" r="8"/><path d="M12 5V3"/><path d="M9 3h6"/><path d="M12 13V9"/></svg>
         <span id="swTime">00:00</span>
       </button>
+      <button class="btn-delete" id="deleteSessionBtn" style="display:none" onclick="deleteSession()">Delete</button>
       <button class="btn-cancel" onclick="closeSessionDialog()">Cancel</button>
       <button class="btn-primary" id="sessionBtn" onclick="submitSession()">Add Session</button>
     </div>
@@ -1556,9 +1570,11 @@ function renderBody(gameName, rows) {
 
   var allSessions = buildSessions(rows).reverse();  // newest first
   _sessionCache[gameName] = allSessions;
-  var nPlay = allSessions.filter(function(s){ return s.testnum.toLowerCase().indexOf('playtest ') === 0; }).length;
-  var nMeet = allSessions.filter(function(s){ return s.testnum.toLowerCase().indexOf('meeting ')  === 0; }).length;
-  var nIdea = allSessions.filter(function(s){ return s.testnum.toLowerCase().indexOf('idea ')     === 0; }).length;
+  var nPlay   = allSessions.filter(function(s){ return s.testnum.toLowerCase().indexOf('playtest ')  === 0; }).length;
+  var nMeet   = allSessions.filter(function(s){ return s.testnum.toLowerCase().indexOf('meeting ')   === 0; }).length;
+  var nIdea   = allSessions.filter(function(s){ return s.testnum.toLowerCase().indexOf('idea ')      === 0; }).length;
+  var nEdit   = allSessions.filter(function(s){ return s.testnum.toLowerCase().indexOf('editing ')   === 0; }).length;
+  var nReport = allSessions.filter(function(s){ return s.testnum.toLowerCase().indexOf('reporting ') === 0; }).length;
 
   var activeFilter = devFilter[gameName] || null;
   var sessions = activeFilter
@@ -1580,10 +1596,12 @@ function renderBody(gameName, rows) {
 
   // Subtitle bar — per-type chips + action buttons
   html += '<div class="card-subtitle">';
-  if (nPlay) html += '<div class="' + chipClass('Playtest','stat-playtest') + '" onclick="filterSessions(\'' + gnJ + '\',\'Playtest\')">' + nPlay + ' <span>' + (nPlay === 1 ? 'Playtest' : 'Playtests') + '</span></div>';
-  if (nMeet) html += '<div class="' + chipClass('Meeting', 'stat-meeting')  + '" onclick="filterSessions(\'' + gnJ + '\',\'Meeting\')">'  + nMeet + ' <span>' + (nMeet === 1 ? 'Meeting'  : 'Meetings')  + '</span></div>';
-  if (nIdea) html += '<div class="' + chipClass('Idea',    'stat-idea')     + '" onclick="filterSessions(\'' + gnJ + '\',\'Idea\')">'     + nIdea + ' <span>' + (nIdea === 1 ? 'Idea'     : 'Ideas')      + '</span></div>';
-  if (!nPlay && !nMeet && !nIdea) html += '<div class="card-stat stat-playtest">0 <span>Sessions</span></div>';
+  if (nPlay)   html += '<div class="' + chipClass('Playtest',  'stat-playtest')  + '" onclick="filterSessions(\'' + gnJ + '\',\'Playtest\')">'  + nPlay   + ' <span>' + (nPlay   === 1 ? 'Playtest'  : 'Playtests')  + '</span></div>';
+  if (nMeet)   html += '<div class="' + chipClass('Meeting',   'stat-meeting')   + '" onclick="filterSessions(\'' + gnJ + '\',\'Meeting\')">'   + nMeet   + ' <span>' + (nMeet   === 1 ? 'Meeting'   : 'Meetings')   + '</span></div>';
+  if (nIdea)   html += '<div class="' + chipClass('Idea',      'stat-idea')      + '" onclick="filterSessions(\'' + gnJ + '\',\'Idea\')">'      + nIdea   + ' <span>' + (nIdea   === 1 ? 'Idea'      : 'Ideas')      + '</span></div>';
+  if (nEdit)   html += '<div class="' + chipClass('Editing',   'stat-editing')   + '" onclick="filterSessions(\'' + gnJ + '\',\'Editing\')">'   + nEdit   + ' <span>' + (nEdit   === 1 ? 'Edit'      : 'Edits')      + '</span></div>';
+  if (nReport) html += '<div class="' + chipClass('Reporting', 'stat-reporting') + '" onclick="filterSessions(\'' + gnJ + '\',\'Reporting\')">' + nReport + ' <span>' + (nReport === 1 ? 'Report'    : 'Reports')    + '</span></div>';
+  if (!nPlay && !nMeet && !nIdea && !nEdit && !nReport) html += '<div class="card-stat stat-playtest">0 <span>Sessions</span></div>';
   html += '<div class="subtitle-right">';
   html += '<button class="subtitle-btn" onclick="shareGame(\'' + gnJ + '\')">' +
     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
@@ -1604,8 +1622,10 @@ function renderBody(gameName, rows) {
     sessions.forEach(function(s, i) {
       // Determine type class from testnum prefix
       var typeClass = 'type-playtest';
-      if (s.testnum.toLowerCase().indexOf('meeting') === 0) typeClass = 'type-meeting';
-      else if (s.testnum.toLowerCase().indexOf('idea') === 0) typeClass = 'type-idea';
+      if      (s.testnum.toLowerCase().indexOf('meeting')   === 0) typeClass = 'type-meeting';
+      else if (s.testnum.toLowerCase().indexOf('idea')      === 0) typeClass = 'type-idea';
+      else if (s.testnum.toLowerCase().indexOf('editing')   === 0) typeClass = 'type-editing';
+      else if (s.testnum.toLowerCase().indexOf('reporting') === 0) typeClass = 'type-reporting';
 
       var allIdx  = allSessions.indexOf(s);
       var gnQ     = JSON.stringify(gameName).replace(/"/g, '&quot;');
@@ -2545,9 +2565,10 @@ function openSessionDialog(gameName) {
   document.getElementById('obsContainer').innerHTML = '';
   addObsPair(true);  // first pair with labels
 
-  document.getElementById('sessionErr').style.display = 'none';
-  document.getElementById('sessionBtn').disabled    = false;
-  document.getElementById('sessionBtn').textContent = 'Add Session';
+  document.getElementById('sessionErr').style.display    = 'none';
+  document.getElementById('sessionBtn').disabled         = false;
+  document.getElementById('sessionBtn').textContent      = 'Add Session';
+  document.getElementById('deleteSessionBtn').style.display = 'none';
   _swReset();  // each new session starts the clock at 00:00
   document.getElementById('sessionOverlay').classList.add('open');
   setTimeout(function() {
@@ -2616,9 +2637,12 @@ function openEditSessionDialog(gameName, idx) {
   });
   addObsPair(session.obs.length === 0);  // trailing empty pair (shows labels if first)
 
-  document.getElementById('sessionErr').style.display = 'none';
-  document.getElementById('sessionBtn').disabled    = false;
-  document.getElementById('sessionBtn').textContent = 'Save Changes';
+  document.getElementById('sessionErr').style.display       = 'none';
+  document.getElementById('sessionBtn').disabled            = false;
+  document.getElementById('sessionBtn').textContent         = 'Save Changes';
+  document.getElementById('deleteSessionBtn').style.display = '';
+  document.getElementById('deleteSessionBtn').disabled      = false;
+  document.getElementById('deleteSessionBtn').textContent   = 'Delete';
   _editSnapshot = getSessionSnapshot();
   _swUpdate();
   document.getElementById('sessionOverlay').classList.add('open');
@@ -2632,6 +2656,68 @@ function closeSessionDialog() {
   document.getElementById('sessionOverlay').classList.remove('open');
   _editMode = false;
   _editSnapshot = null;
+}
+
+function forceCloseSessionDialog() {
+  _editSnapshot = null;  // prevent dirty-check from blocking
+  closeSessionDialog();
+}
+
+function deleteSession() {
+  if (!confirm('Delete this session? This cannot be undone.')) return;
+  var delBtn = document.getElementById('deleteSessionBtn');
+  delBtn.disabled    = true;
+  delBtn.textContent = 'Deleting…';
+  document.getElementById('sessionBtn').disabled = true;
+
+  var fd = new FormData();
+  fd.append('id',              SHEET_ID);
+  fd.append('game',            _sessionGame);
+  fd.append('orig_date',       _editOrigDate);
+  fd.append('orig_event',      _editOrigEvent);
+  fd.append('orig_session_num', _editOrigSessionNum);
+
+  fetch(APP_BASE + 'push/deleteDevSession.php', { method:'POST', body:fd })
+    .then(function(r){ return r.json(); })
+    .then(function(j) {
+      if (!j.ok) {
+        delBtn.disabled    = false;
+        delBtn.textContent = 'Delete';
+        document.getElementById('sessionBtn').disabled = false;
+        var err = document.getElementById('sessionErr');
+        err.textContent    = j.error || 'Delete failed';
+        err.style.display  = '';
+        return;
+      }
+      // Remove this session's rows from the local cache
+      var cache    = devCache[_sessionGame] || [];
+      var newCache = [];
+      var skipping = false;
+      for (var ci = 0; ci < cache.length; ci++) {
+        var cr = cache[ci];
+        var rd = (cr['Date']  || '').trim();
+        var re = (cr['Event'] || '').trim();
+        if (skipping) {
+          if (rd || re) skipping = false;  // next session header — stop skipping
+          else continue;                   // child row of deleted session
+        }
+        if (!skipping && rd === _editOrigDate && re === _editOrigEvent) {
+          if (!_editOrigSessionNum || (cr['People']||'').trim() === _editOrigSessionNum) {
+            skipping = true;
+            continue;  // skip the header row itself
+          }
+        }
+        newCache.push(cr);
+      }
+      devCache[_sessionGame] = newCache;
+      forceCloseSessionDialog();
+      renderBody(_sessionGame, devCache[_sessionGame]);
+    })
+    .catch(function() {
+      delBtn.disabled    = false;
+      delBtn.textContent = 'Delete';
+      document.getElementById('sessionBtn').disabled = false;
+    });
 }
 
 function submitSession() {

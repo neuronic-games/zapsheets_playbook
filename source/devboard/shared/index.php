@@ -638,7 +638,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       </div>
       <div class="field-group">
         <label>Mailing Address</label>
-        <textarea class="field-input" id="authEditLocation" placeholder="Street, City, State, ZIP" rows="3" style="resize:vertical"></textarea>
+        <textarea class="field-input" id="authEditLocation" placeholder="Street&#10;City, State, ZIP" rows="5" style="resize:vertical;line-height:1.6"></textarea>
       </div>
       <div class="field-group">
         <label>Discord</label>

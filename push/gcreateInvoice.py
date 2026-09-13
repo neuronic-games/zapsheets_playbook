@@ -271,7 +271,7 @@ sc(R_TOTAL, CG, quote_fmt)
 
 # ── Create worksheet ──────────────────────────────────────────────────────
 try:
-    ws = wb.add_worksheet(title=tab_name, rows=TOTAL_ROWS + 4, cols=TOTAL_COLS + 4)
+    ws = wb.add_worksheet(title=tab_name, rows=TOTAL_ROWS + 4, cols=TOTAL_COLS)
 except Exception as e:
     print(json.dumps({"error": f"Could not create worksheet: {str(e)}"}))
     sys.exit(1)

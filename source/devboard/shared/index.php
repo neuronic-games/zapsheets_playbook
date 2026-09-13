@@ -547,13 +547,13 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         Sellsheet
       </a>
 <?php elseif ($_gameUrl): ?>
-      <a class="page-link-btn" href="<?= _ds_e($_gameUrl) ?>">
+      <a class="page-link-btn" href="<?= _ds_e($_gameUrl) ?>" target="_blank" rel="noopener">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         Page
       </a>
 <?php endif; ?>
-      <button class="add-session-btn" id="addSessionBtn" onclick="guardedOpenSessionDialog()" style="display:none">+ Session</button>
-      <button class="reload-session-btn" id="reloadSessionBtn" onclick="reloadSessions()" title="Reload from sheet">
+      <button type="button" class="add-session-btn" id="addSessionBtn" onclick="guardedOpenSessionDialog()" style="display:none">+ Session</button>
+      <button type="button" class="reload-session-btn" id="reloadSessionBtn" onclick="reloadSessions()" title="Reload from sheet">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
       </button>
     </div>
@@ -813,7 +813,7 @@ function renderSessions() {
     if (s.date)    html += '<span class="session-sep">·</span><span class="session-date">' + esc(fmtDate(s.date)) + '</span>';
     if (s.location) html += '<span class="session-sep">·</span><span class="session-location">' + esc(s.location) + '</span>';
     html += '<span class="session-count">' + s.obs.length + (s.obs.length === 1 ? ' note' : ' notes') + '</span>';
-    if (_collabUser) html += '<button class="session-edit-btn" onclick="event.stopPropagation();guardedOpenEditDialog(' + allIdx + ')">Edit</button>';
+    if (_collabUser) html += '<button type="button" class="session-edit-btn" onclick="event.stopPropagation();guardedOpenEditDialog(' + allIdx + ')">Edit</button>';
     html += '<span class="session-chevron">▼</span>';
     html += '</div>';
     if (s.testers.length) html += '<div class="session-testers-line">' + s.testers.map(esc).join(', ') + '</div>';
@@ -864,9 +864,13 @@ function loadSessions(force) {
       _allRows = Array.isArray(rows) ? rows : [];
       renderSessions();
     })
-    .catch(function() {
-      document.getElementById('sessionsWrap').innerHTML =
-        '<div class="dev-empty">Could not load sessions. Please try again later.</div>';
+    .catch(function(err) {
+      console.error('[DevBoard] loadSessions failed:', err);
+      // Only show error if no sessions have been loaded yet
+      if (!_allRows.length) {
+        document.getElementById('sessionsWrap').innerHTML =
+          '<div class="dev-empty">Could not load sessions. Please try again later.</div>';
+      }
     });
 }
 

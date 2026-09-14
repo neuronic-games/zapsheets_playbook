@@ -49,10 +49,24 @@ if (!$sheetId) {
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 
+// Step 1: add a row to the contracts sheet and get the assigned ID
+$docId = '';
+$rowPayload  = ['game' => $game, 'client' => $client, 'quote' => $quote, 'payment' => 'Invoiced', 'notes' => $notes];
+$rowEncoded  = base64_encode(json_encode($rowPayload, JSON_UNESCAPED_UNICODE));
+$rowCmd      = escapeshellarg($pythonPath) . ' '
+             . escapeshellarg(__DIR__ . '/gaddcontractrow.py') . ' '
+             . escapeshellarg($sheetId . '|' . $rowEncoded) . ' 2>&1';
+$rowOut      = trim((string) shell_exec($rowCmd));
+$rowResult   = json_decode($rowOut, true);
+if (!empty($rowResult['ok'])) {
+    $docId = $rowResult['contract_id'] ?? '';
+}
+
 $payload = [
     'sheet_id'   => $sheetId,
     'game'       => $game,
     'client'     => $client,
+    'doc_id'     => $docId,
     'quote'      => $quote,
     'payment'    => $payment,
     'status'     => $status,

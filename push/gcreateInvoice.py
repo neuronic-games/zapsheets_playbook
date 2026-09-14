@@ -38,6 +38,7 @@ except Exception as e:
 
 game        = data.get('game',       '').strip()
 client      = data.get('client',     '').strip()
+doc_id      = data.get('doc_id',     '').strip()   # pre-assigned ID from contracts sheet
 quote_raw   = data.get('quote',      '').strip()
 tgt_start   = data.get('tgt_start',  '').strip()
 tgt_end     = data.get('tgt_end',    '').strip()
@@ -132,10 +133,10 @@ elif disp_end:
 else:
     date_range = ''
 
-# Invoice number: company initials + MMDD (e.g. TR0913)
+# Invoice number: use doc_id from contracts sheet if provided, else generate
 comp = my_company or my_name
 comp_initials = ''.join(w[0].upper() for w in re.split(r'\s+', comp) if w)[:2]
-invoice_num = (comp_initials or 'INV') + today_obj.strftime('%m%d')
+invoice_num = doc_id if doc_id else (comp_initials or 'INV') + today_obj.strftime('%m%d')
 
 # Address lines (split on newline)
 addr_lines = [l.strip() for l in my_address.replace('\r\n', '\n').split('\n') if l.strip()]

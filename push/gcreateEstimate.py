@@ -41,6 +41,7 @@ except Exception as e:
 
 game          = data.get('game',          '').strip()
 client        = data.get('client',        '').strip()
+doc_id        = data.get('doc_id',        '').strip()   # pre-assigned ID from contracts sheet
 num_tests     = int(data.get('num_tests',  2))
 num_edits     = int(data.get('num_edits',  2))
 qty_raw       = data.get('qty',           '1').strip()
@@ -110,10 +111,10 @@ subtotal_fmt = fmt_money(subtotal)
 total_fmt    = fmt_money(total)
 qty_disp     = str(int(qty)) if qty == int(qty) else str(qty)
 
-# Estimate number: initials + MMDD + -E (+ counter suffix if dup)
+# Estimate number: use doc_id if provided, else generate
 comp = my_company or my_name
 comp_initials = ''.join(w[0].upper() for w in re.split(r'\s+', comp) if w)[:2]
-est_num_base = (comp_initials or 'EST') + today_obj.strftime('%m%d') + '-E'
+est_num_base = doc_id if doc_id else (comp_initials or 'EST') + today_obj.strftime('%m%d') + '-E'
 
 # Address lines
 addr_lines = [l.strip() for l in my_address.replace('\r\n', '\n').split('\n') if l.strip()]

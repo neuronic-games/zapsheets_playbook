@@ -929,14 +929,16 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       <input type="text" id="estimateDuration" class="ge-input" placeholder="e.g. 2 months" />
     </label>
     <div class="estimate-field-row three-one">
-      <label class="ge-label">Discount Label <span style="font-family:'DINRegular',sans-serif;opacity:.5">(optional)</span>
+      <label class="ge-label">
+        <span style="display:flex;justify-content:space-between;align-items:baseline">Discount Label<span style="font-family:'DINRegular',sans-serif;letter-spacing:0;text-transform:none;opacity:.45;font-size:.65rem">(optional)</span></span>
         <input type="text" id="estimateDiscountLabel" class="ge-input" placeholder="e.g. First-timer discount" />
       </label>
       <label class="ge-label">%
         <input type="number" id="estimateDiscountPct" class="ge-input" value="0" min="0" max="100" step="1" />
       </label>
     </div>
-    <label class="ge-label">Notes <span style="font-family:'DINRegular',sans-serif;opacity:.5">(optional)</span>
+    <label class="ge-label">
+      <span style="display:flex;justify-content:space-between;align-items:baseline">Notes<span style="font-family:'DINRegular',sans-serif;letter-spacing:0;text-transform:none;opacity:.45;font-size:.65rem">(optional)</span></span>
       <input type="text" id="estimateNotes" class="ge-input" placeholder="e.g. Printing costs not included" />
     </label>
     <div class="sync-log" id="estimateLog" style="display:none"></div>

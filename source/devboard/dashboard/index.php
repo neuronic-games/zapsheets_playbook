@@ -1334,9 +1334,28 @@ function todayISO() {
   return d.getFullYear() + '-' + m + '-' + day;
 }
 function _toDateInput(v) {
-  if (!v) return '';
-  var d = new Date(v);
-  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0,10);
+  if (v === null || v === undefined || v === '') return '';
+  var s = String(v).trim();
+  if (!s) return '';
+  // Google Sheets serial number (integer > 1000, no slashes or dashes)
+  if (/^\d+(\.\d+)?$/.test(s)) {
+    var n = parseFloat(s);
+    if (n > 1000) {
+      var d = new Date(Date.UTC(1899, 11, 30) + Math.round(n) * 86400000);
+      if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    }
+  }
+  // YYYY-MM-DD — already correct format
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // M/D/YYYY or MM/DD/YYYY
+  var mdy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mdy) {
+    var mm = mdy[1].padStart(2, '0'), dd = mdy[2].padStart(2, '0');
+    return mdy[3] + '-' + mm + '-' + dd;
+  }
+  // Fallback: let the browser try
+  var fb = new Date(s);
+  return isNaN(fb.getTime()) ? '' : fb.toISOString().slice(0, 10);
 }
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
@@ -1470,7 +1489,7 @@ function renderPublishersView() {
     // Subtitle bar with + Estimate button
     html += '<div class="client-card-subtitle">' +
       '<span class="client-card-subtitle-label">Estimates</span>' +
-      '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + JSON.stringify(pub.name) + ')">+ Estimate</button>' +
+      '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(pub.name)) + ')">+ Estimate</button>' +
     '</div>';
     // Estimate rows for this publisher
     var pubEstimates = ESTIMATES_RAW.filter(function(e) {
@@ -3803,7 +3822,7 @@ function openContractEditDialog(idx) {
   document.getElementById('ceTargetEnd').value        = _toDateInput(con['Target End Date']   || '');
   document.getElementById('ceStartDate').value        = _toDateInput(con['Start Date']        || '');
   document.getElementById('ceEndDate').value          = _toDateInput(con['End Date']          || '');
-  document.getElementById('ceQuote').value            = con.Quote   || '';
+  document.getElementById('ceQuote').value            = String(con.Quote || '').replace(/^'/, '');
   document.getElementById('cePayment').value          = con.Payment || 'Estimate';
   document.getElementById('ceNotes').value            = con.Notes   || '';
   document.getElementById('ceErr').textContent        = '';
@@ -3817,7 +3836,7 @@ function openContractEditDialog(idx) {
     targetEnd:   _toDateInput(con['Target End Date']   || ''),
     startDate:   _toDateInput(con['Start Date']        || ''),
     endDate:     _toDateInput(con['End Date']          || ''),
-    quote:       (con.Quote   || '').trim(),
+    quote:       String(con.Quote || '').replace(/^'/, '').trim(),
     payment:     (con.Payment || 'Estimate').trim(),
     notes:       (con.Notes   || '').trim()
   };

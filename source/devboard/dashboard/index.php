@@ -127,6 +127,12 @@ $_contracts_raw  = file_exists($_contracts_file)
     ? (json_decode(file_get_contents($_contracts_file), true) ?: [])
     : [];
 
+// Load estimates
+$_estimates_file = __DIR__ . '/../../../sheets/' . $_sheet_id . '/estimates.json';
+$_estimates_raw  = file_exists($_estimates_file)
+    ? (json_decode(file_get_contents($_estimates_file), true) ?: [])
+    : [];
+
 // Publisher count — unique clients from Contracts sheet
 $_client_count = count(array_unique(array_filter(array_map(
     fn($c) => trim($c['Client'] ?? ''), $_contracts_raw
@@ -348,6 +354,29 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .btn-contract-action.invoice:hover { background:#a16207; color:#fff; }
 .btn-contract-action:disabled { opacity:.5; cursor:default; }
 .publishers-empty { color:#888; font-size:.85rem; padding:1rem 0; }
+
+/* ── Publisher card subtitle bar ──────────────────────────── */
+.client-card-subtitle { display:flex; align-items:center; justify-content:space-between; padding:.38rem 1rem; background:#f4f8fb; border-bottom:1px solid #e8eef3; }
+.client-card-subtitle-label { font-family:'DINBlack',sans-serif; font-size:.65rem; letter-spacing:.07em; text-transform:uppercase; color:#888; }
+.btn-card-subtitle { font-family:'DINBlack',sans-serif; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; background:none; border:1.5px solid #2e7d9e; color:#2e7d9e; border-radius:7px; padding:.22rem .65rem; cursor:pointer; transition:background .15s,color .15s; }
+.btn-card-subtitle:hover { background:#2e7d9e; color:#fff; }
+
+/* ── Estimate rows inside publisher card ──────────────────── */
+.estimate-item { display:grid; grid-template-columns:1fr auto auto auto; gap:.75rem; align-items:center; padding:.45rem 1rem; border-bottom:1px solid #f0f4f8; font-size:.78rem; }
+.estimate-item:last-of-type { border-bottom:none; }
+.estimate-game-name { font-family:'DINBlack',sans-serif; color:#1a5f7a; font-size:.8rem; }
+.estimate-num-badge { font-family:'DINRegular',sans-serif; font-size:.7rem; color:#888; }
+.estimate-amount { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#111; white-space:nowrap; }
+.estimate-open-link { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:#2e7d9e; text-decoration:none; border:1.5px solid #2e7d9e; border-radius:6px; padding:.18rem .55rem; white-space:nowrap; }
+.estimate-open-link:hover { background:#2e7d9e; color:#fff; }
+
+/* ── Estimate dialog ──────────────────────────────────────── */
+.estimate-dialog { background:#fff; border-radius:12px; padding:1.5rem; width:min(480px,96vw); box-shadow:0 8px 32px rgba(0,0,0,.22); display:flex; flex-direction:column; gap:.8rem; max-height:92vh; overflow-y:auto; }
+.estimate-dialog h2 { font-family:'DINBlack',sans-serif; font-size:1rem; margin:0; }
+.estimate-dialog h2 span { font-family:'DINRegular',sans-serif; opacity:.55; }
+.estimate-field-row { display:grid; gap:.6rem; }
+.estimate-field-row.two { grid-template-columns:1fr 1fr; }
+.estimate-field-row.three-one { grid-template-columns:2fr 1fr; }
 
 /* ── Search bar ───────────────────────────────────────── */
 .search-bar { padding:.6rem 1.25rem .5rem; max-width:860px; margin:0 auto; display:flex; gap:.6rem; align-items:center; }
@@ -866,6 +895,56 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   </div>
 </div>
 
+<!-- Estimate dialog -->
+<div class="overlay" id="estimateOverlay" onclick="if(event.target===this){if(_estimateIsDirty())shakeDialog(this.querySelector('.estimate-dialog'));else forceCloseEstimateDialog();}">
+  <div class="estimate-dialog">
+    <h2>New Estimate — <span id="estimateClientLabel"></span></h2>
+    <input type="hidden" id="estimateClient" />
+    <label class="ge-label">Game
+      <input type="text" id="estimateGame" class="ge-input" list="estimateGameList" placeholder="Select or type a game name" autocomplete="off" />
+      <datalist id="estimateGameList"></datalist>
+    </label>
+    <div class="estimate-field-row two">
+      <label class="ge-label"># of Tests
+        <input type="number" id="estimateTests" class="ge-input" value="2" min="0" step="1" />
+      </label>
+      <label class="ge-label"># of Edit Rounds
+        <input type="number" id="estimateEdits" class="ge-input" value="2" min="0" step="1" />
+      </label>
+    </div>
+    <div class="estimate-field-row two">
+      <label class="ge-label">Qty
+        <input type="number" id="estimateQty" class="ge-input" value="1" min="1" step="1" />
+      </label>
+      <label class="ge-label">Unit Price
+        <div class="contract-quote-wrap">
+          <span class="contract-quote-prefix">$</span>
+          <input type="number" id="estimateUnitPrice" class="ge-input" style="padding-left:1.4rem" min="0" step="0.01" placeholder="0.00" />
+        </div>
+      </label>
+    </div>
+    <label class="ge-label">Duration
+      <input type="text" id="estimateDuration" class="ge-input" placeholder="e.g. 2 months" />
+    </label>
+    <div class="estimate-field-row three-one">
+      <label class="ge-label">Discount Label <span style="font-family:'DINRegular',sans-serif;opacity:.5">(optional)</span>
+        <input type="text" id="estimateDiscountLabel" class="ge-input" placeholder="e.g. First-timer discount" />
+      </label>
+      <label class="ge-label">%
+        <input type="number" id="estimateDiscountPct" class="ge-input" value="0" min="0" max="100" step="1" />
+      </label>
+    </div>
+    <label class="ge-label">Notes <span style="font-family:'DINRegular',sans-serif;opacity:.5">(optional)</span>
+      <input type="text" id="estimateNotes" class="ge-input" placeholder="e.g. Printing costs not included" />
+    </label>
+    <div class="sync-log" id="estimateLog" style="display:none"></div>
+    <div class="sync-dialog-actions">
+      <button type="button" class="notes-close" onclick="forceCloseEstimateDialog()">Cancel</button>
+      <button type="button" class="notes-close" id="estimateCreateBtn" onclick="submitEstimate()" style="background:#1a5f7a;color:#fff;border-color:#1a5f7a">Create</button>
+    </div>
+  </div>
+</div>
+
 <!-- Profile dialog -->
 <div class="overlay" id="profileOverlay" onclick="if(event.target===this)closeProfileDialog()">
   <div class="sync-dialog" style="width:min(500px,94vw)">
@@ -1236,6 +1315,7 @@ var MY_BIO_NOTES    = <?= json_encode($_my_bio_notes) ?>;
 var _profilePhotoUrl = MY_BIO_IMAGE || '';
 var PEOPLE_NAMES  = <?= json_encode(array_values($_people_names), JSON_UNESCAPED_UNICODE) ?>;
 var CONTRACT_RAW  = <?= json_encode(array_values($_contracts_raw), JSON_UNESCAPED_UNICODE) ?>;
+var ESTIMATES_RAW = <?= json_encode(array_values($_estimates_raw), JSON_UNESCAPED_UNICODE) ?>;
 
 // Quick lookup: lowercased game name → full GAMES_RAW record
 var GAMES_INDEX = {};
@@ -1387,6 +1467,24 @@ function renderPublishersView() {
       '</span>' +
     '</div>';
     html += '<div class="client-card-body">';
+    // Subtitle bar with + Estimate button
+    html += '<div class="client-card-subtitle">' +
+      '<span class="client-card-subtitle-label">Estimates</span>' +
+      '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + JSON.stringify(pub.name) + ')">+ Estimate</button>' +
+    '</div>';
+    // Estimate rows for this publisher
+    var pubEstimates = ESTIMATES_RAW.filter(function(e) {
+      return (e.client || '').trim().toLowerCase() === pub.name.toLowerCase();
+    });
+    pubEstimates.forEach(function(est) {
+      var amtFmt = est.amount ? '$' + parseFloat(est.amount).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
+      html += '<div class="estimate-item">' +
+        '<div><div class="estimate-game-name">' + esc(est.game || '—') + '</div></div>' +
+        '<div class="estimate-num-badge">' + esc(est.estimate_num || '') + '</div>' +
+        '<div class="estimate-amount">' + esc(amtFmt) + '</div>' +
+        (est.url ? '<a class="estimate-open-link" href="' + esc(est.url) + '" target="_blank" rel="noopener">Open</a>' : '<span></span>') +
+      '</div>';
+    });
     contracts.forEach(function(con, i) {
       var quoteNum = parseFloat(con.Quote || '');
       var quote    = isNaN(quoteNum) ? '—' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
@@ -1492,6 +1590,106 @@ function generateInvoice(dataIdx) {
     });
 }
 
+
+// ── Estimate dialog ───────────────────────────────────────────────────────────
+
+var _estimateInitial = {};
+
+function _estimateIsDirty() {
+  var game    = (document.getElementById('estimateGame').value      || '').trim();
+  var price   = (document.getElementById('estimateUnitPrice').value || '').trim();
+  return game !== '' || price !== '';
+}
+
+function _estimateLog(msg, type) {
+  var el = document.getElementById('estimateLog');
+  if (!el) return;
+  el.style.display = msg ? 'block' : 'none';
+  el.textContent = msg;
+  el.className = 'sync-log' + (type ? ' ' + type : '');
+}
+
+function openEstimateDialog(clientName) {
+  // Populate game datalist
+  var dl = document.getElementById('estimateGameList');
+  dl.innerHTML = '';
+  GAMES_RAW.forEach(function(g) {
+    var n = (g.Name || '').trim();
+    if (n) {
+      var opt = document.createElement('option');
+      opt.value = n;
+      dl.appendChild(opt);
+    }
+  });
+
+  document.getElementById('estimateClientLabel').textContent = clientName;
+  document.getElementById('estimateClient').value            = clientName;
+  document.getElementById('estimateGame').value              = '';
+  document.getElementById('estimateTests').value             = '2';
+  document.getElementById('estimateEdits').value             = '2';
+  document.getElementById('estimateQty').value               = '1';
+  document.getElementById('estimateUnitPrice').value         = '';
+  document.getElementById('estimateDuration').value          = '';
+  document.getElementById('estimateDiscountLabel').value     = '';
+  document.getElementById('estimateDiscountPct').value       = '0';
+  document.getElementById('estimateNotes').value             = '';
+  document.getElementById('estimateCreateBtn').disabled      = false;
+  _estimateLog('', '');
+  document.getElementById('estimateOverlay').classList.add('open');
+  setTimeout(function() { document.getElementById('estimateGame').focus(); }, 50);
+}
+
+function forceCloseEstimateDialog() {
+  document.getElementById('estimateOverlay').classList.remove('open');
+}
+
+function submitEstimate() {
+  var game      = document.getElementById('estimateGame').value.trim();
+  var unitPrice = document.getElementById('estimateUnitPrice').value.trim();
+  if (!game)      { _estimateLog('Please enter a game name.', 'error'); return; }
+  if (!unitPrice) { _estimateLog('Please enter a unit price.', 'error'); return; }
+
+  document.getElementById('estimateCreateBtn').disabled = true;
+  _estimateLog('Creating estimate…', '');
+
+  var fd = new FormData();
+  fd.append('id',             SHEET_ID);
+  fd.append('game',           game);
+  fd.append('client',         document.getElementById('estimateClient').value);
+  fd.append('num_tests',      document.getElementById('estimateTests').value);
+  fd.append('num_edits',      document.getElementById('estimateEdits').value);
+  fd.append('qty',            document.getElementById('estimateQty').value);
+  fd.append('unit_price',     unitPrice);
+  fd.append('duration',       document.getElementById('estimateDuration').value.trim());
+  fd.append('discount_pct',   document.getElementById('estimateDiscountPct').value);
+  fd.append('discount_label', document.getElementById('estimateDiscountLabel').value.trim());
+  fd.append('notes',          document.getElementById('estimateNotes').value.trim());
+  fd.append('my_name',        MY_NAME          || '');
+  fd.append('my_phone',       MY_PHONE         || '');
+  fd.append('my_company',     MY_COMPANY       || '');
+  fd.append('my_logo',        MY_LOGO          || '');
+  fd.append('my_address',     MY_COMPANY_ADDRESS || MY_BIO_LOCATION || '');
+
+  fetch(APP_BASE + 'push/createEstimate.php', { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(j) {
+      document.getElementById('estimateCreateBtn').disabled = false;
+      if (!j.ok) {
+        _estimateLog('✕  ' + (j.error || 'Unknown error'), 'error');
+        return;
+      }
+      // Add to in-memory list and re-render
+      if (j.estimate_record) ESTIMATES_RAW.push(j.estimate_record);
+      forceCloseEstimateDialog();
+      renderPublishersView();
+      // Open in new tab
+      if (j.url) window.open(j.url, '_blank');
+    })
+    .catch(function() {
+      document.getElementById('estimateCreateBtn').disabled = false;
+      _estimateLog('✕  Request failed. Check your connection.', 'error');
+    });
+}
 
 // ── Games state ───────────────────────────────────────────────────────────────
 
@@ -2259,6 +2457,12 @@ document.addEventListener('keydown', function(ev) {
   el = document.getElementById('profileOverlay');
   if (el && el.classList.contains('open')) {
     closeProfileDialog();
+    return;
+  }
+  el = document.getElementById('estimateOverlay');
+  if (el && el.classList.contains('open')) {
+    if (_estimateIsDirty()) shakeDialog(el.querySelector('.estimate-dialog'));
+    else forceCloseEstimateDialog();
     return;
   }
   el = document.getElementById('contractEditOverlay');

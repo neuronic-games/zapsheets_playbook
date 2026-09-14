@@ -350,6 +350,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .contract-detail-actions { display:flex; gap:.5rem; }
 .btn-contract-action { font-family:'DINBlack',sans-serif; font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; background:none; border:1.5px solid #1a5f7a; color:#1a5f7a; border-radius:7px; padding:.35rem .85rem; cursor:pointer; transition:background .15s, color .15s; }
 .btn-contract-action:hover { background:#1a5f7a; color:#fff; }
+.btn-contract-action.estimate { border-color:#2e7d9e; color:#2e7d9e; }
+.btn-contract-action.estimate:hover { background:#2e7d9e; color:#fff; }
 .btn-contract-action.invoice { border-color:#a16207; color:#a16207; }
 .btn-contract-action.invoice:hover { background:#a16207; color:#fff; }
 .btn-contract-action:disabled { opacity:.5; cursor:default; }
@@ -1547,6 +1549,7 @@ function renderPublishersView() {
       }
       html += '<div class="contract-detail-actions">';
       html += '<button class="btn-contract-action" onclick="event.stopPropagation();openContractEditDialog(' + dataIdx + ')">Edit</button>';
+      html += '<button class="btn-contract-action estimate" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(con.Client || '')) + ',' + esc(JSON.stringify(con.Game || '')) + ')">Estimate</button>';
       html += '<button class="btn-contract-action invoice" id="inv-btn-' + dataIdx + '" onclick="event.stopPropagation();generateInvoice(' + dataIdx + ')">Invoice</button>';
       html += '</div>'; // .contract-detail-actions
       html += '</div>'; // .client-contract-details
@@ -1628,7 +1631,7 @@ function _estimateLog(msg, type) {
   el.className = 'sync-log' + (type ? ' ' + type : '');
 }
 
-function openEstimateDialog(clientName) {
+function openEstimateDialog(clientName, gameName) {
   // Populate game datalist
   var dl = document.getElementById('estimateGameList');
   dl.innerHTML = '';
@@ -1643,7 +1646,7 @@ function openEstimateDialog(clientName) {
 
   document.getElementById('estimateClientLabel').textContent = clientName;
   document.getElementById('estimateClient').value            = clientName;
-  document.getElementById('estimateGame').value              = '';
+  document.getElementById('estimateGame').value              = gameName || '';
   document.getElementById('estimateTests').value             = '2';
   document.getElementById('estimateEdits').value             = '2';
   document.getElementById('estimateQty').value               = '1';

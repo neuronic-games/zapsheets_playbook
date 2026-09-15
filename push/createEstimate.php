@@ -31,7 +31,17 @@ $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 
 // Step 1: add a row to the contracts sheet and get the assigned ID
 $docId = '';
-$rowPayload = ['game' => $game, 'client' => $client, 'quote' => $unitPrice, 'payment' => 'Estimate', 'notes' => $notes];
+$rowPayload = [
+    'game'     => $game,
+    'client'   => $client,
+    'quote'    => $unitPrice,
+    'payment'  => 'Estimate',
+    'tests'    => $numTests,
+    'edits'    => $numEdits,
+    'duration' => $duration,
+    'notes'    => $notes,
+    'date'     => date('n/j/Y'),   // today as M/D/YYYY matching sheet format
+];
 $rowEncoded = base64_encode(json_encode($rowPayload, JSON_UNESCAPED_UNICODE));
 $rowCmd     = escapeshellarg($pythonPath) . ' '
             . escapeshellarg(__DIR__ . '/gaddcontractrow.py') . ' '

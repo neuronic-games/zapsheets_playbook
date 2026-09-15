@@ -27,11 +27,15 @@ pipe_idx = arg.index('|')
 sheet_id = arg[:pipe_idx]
 data     = json.loads(base64.b64decode(arg[pipe_idx + 1:]).decode('utf-8'))
 
-game    = data.get('game',    '').strip()
-client  = data.get('client',  '').strip()
-quote   = data.get('quote',   '').strip()
-payment = data.get('payment', '').strip() or 'Estimate'
-notes   = data.get('notes',   '').strip()
+game     = data.get('game',     '').strip()
+client   = data.get('client',  '').strip()
+quote    = data.get('quote',   '').strip()
+payment  = data.get('payment', '').strip() or 'Estimate'
+notes    = data.get('notes',   '').strip()
+tests    = str(data.get('tests',    '')).strip()
+edits    = str(data.get('edits',    '')).strip()
+duration = data.get('duration', '').strip()
+date_val = data.get('date',     '').strip()   # MM/DD/YYYY; caller supplies today
 
 try:
     wb = sa.open_by_key(sheet_id)
@@ -62,22 +66,40 @@ def col(name):
     try: return headers.index(name)
     except ValueError: return -1
 
-id_col      = col('ID')
-game_col    = col('Game')
-client_col  = col('Client')
-quote_col   = col('Quote')
-payment_col = col('Payment')
-notes_col   = col('Notes')
+id_col       = col('ID')
+date_col     = col('Date')
+game_col     = col('Game')
+client_col   = col('Client')
+quote_col    = col('Quote')
+payment_col  = col('Payment')
+tests_col    = col('Tests')
+edits_col    = col('Edits')
+duration_col = col('Duration')
+notes_col    = col('Notes')
+
+# Determine next sequential ID
+next_id = 1
+if id_col >= 0:
+    for row in existing[1:]:
+        cell = str(row[id_col]).strip() if id_col < len(row) else ''
+        try:
+            next_id = max(next_id, int(float(cell)) + 1)
+        except (ValueError, TypeError):
+            pass
 
 # Build new row matching the header width
 num_cols = len(headers)
 new_row  = [''] * num_cols
-if game_col    >= 0: new_row[game_col]    = game
-if client_col  >= 0: new_row[client_col]  = client
-if quote_col   >= 0: new_row[quote_col]   = quote
-if payment_col >= 0: new_row[payment_col] = payment
-if notes_col   >= 0: new_row[notes_col]   = notes
-# Leave ID blank — let any existing formula in the sheet fill it
+if id_col       >= 0: new_row[id_col]       = str(next_id)
+if date_col     >= 0: new_row[date_col]     = date_val
+if game_col     >= 0: new_row[game_col]     = game
+if client_col   >= 0: new_row[client_col]   = client
+if quote_col    >= 0: new_row[quote_col]    = quote
+if payment_col  >= 0: new_row[payment_col]  = payment
+if tests_col    >= 0: new_row[tests_col]    = tests
+if edits_col    >= 0: new_row[edits_col]    = edits
+if duration_col >= 0: new_row[duration_col] = duration
+if notes_col    >= 0: new_row[notes_col]    = notes
 
 try:
     ws.append_row(new_row, value_input_option='USER_ENTERED')
@@ -100,7 +122,6 @@ contract_id = ''
 if id_col >= 0 and id_col < len(last_row):
     contract_id = str(last_row[id_col]).strip()
 if not contract_id:
-    # Fallback: use the 1-based row index (row 2 = first data row → ID 1)
-    contract_id = str(new_row_idx - 1)
+    contract_id = str(next_id)
 
 print(json.dumps({"ok": True, "contract_id": contract_id, "row": new_row_idx}))

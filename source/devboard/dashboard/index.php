@@ -1591,6 +1591,7 @@ function generateInvoice(dataIdx) {
   fd.append('start_date',   con['Start Date']        || '');
   fd.append('end_date',     con['End Date']           || '');
   fd.append('notes',        con.Notes        || '');
+  fd.append('contract_id',  con.ID           || '');
   fd.append('my_name',     MY_NAME          || '');
   fd.append('my_phone',    MY_PHONE         || '');
   fd.append('my_company',  MY_COMPANY       || '');

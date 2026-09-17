@@ -3,6 +3,7 @@
     "version": "Sep 2026",
     "apps": ["devboard"],
     "features": [
+      "Remember me on sign-in — checking the box saves your email and password so the sign-in form pre-fills next time; uncheck it to stop saving credentials",
       "Stopwatch — built into the session dialog to track how long a session runs; starts at 00:00 for new sessions and pre-loads the existing time when editing",
       "Session number stored separately from event type — Event column holds the type (e.g. Playtest), People column holds the number, making it easy to filter the sheet by session type",
       "Edit button on session rows — revealed on hover on desktop; appears when a session is expanded on touch devices",

@@ -1262,9 +1262,9 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <div class="dialog-err" id="sessionErr"></div>
     <span class="obs-kbd-hint">⌘ / Ctrl + Arrow — move between fields</span>
     <div class="dialog-actions">
-      <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold to reset">
+      <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Long-press to reset · Click time to edit">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="13" r="8"/><path d="M12 5V3"/><path d="M9 3h6"/><path d="M12 13V9"/></svg>
-        <span id="swTime">00:00</span>
+        <span id="swTime" onclick="event.stopPropagation();_swStartEdit()" style="cursor:text">00:00</span>
       </button>
       <button class="btn-delete" id="deleteSessionBtn" style="display:none" onclick="deleteSession()">Delete</button>
       <button class="btn-cancel" onclick="closeSessionDialog()">Cancel</button>
@@ -2821,6 +2821,7 @@ function _swFormat(secs) {
 }
 
 function _swUpdate() {
+  if (_swEditing) return;
   var timeStr = _swFormat(_swSeconds);
   var swTime = document.getElementById('swTime');
   if (swTime) swTime.textContent = timeStr;
@@ -2884,6 +2885,82 @@ function _swReset() {
   var btn = document.getElementById('swBtn');
   if (btn) btn.classList.remove('sw-running');
   _swUpdate();
+}
+
+var _swEditing = false;
+
+// Parse typed time: H:MM:SS, MM:SS, or plain number (treated as minutes)
+function _swParseEdit(str) {
+  str = str.trim();
+  if (!str) return 0;
+  var m3 = str.match(/^(\d+):(\d+):(\d+)$/);
+  if (m3) return parseInt(m3[1]) * 3600 + parseInt(m3[2]) * 60 + parseInt(m3[3]);
+  var m2 = str.match(/^(\d+):(\d+)$/);
+  if (m2) return parseInt(m2[1]) * 60 + parseInt(m2[2]);
+  var m1 = str.match(/^(\d+)$/);
+  if (m1) return parseInt(m1[1]) * 60;
+  return null;
+}
+
+function _swStartEdit() {
+  if (_swEditing) return;
+  _swEditing = true;
+
+  // Pause if running
+  if (_swRunning) {
+    clearInterval(_swInterval);
+    _swInterval = null;
+    _swRunning  = false;
+    var btn = document.getElementById('swBtn');
+    if (btn) btn.classList.remove('sw-running');
+  }
+
+  var span = document.getElementById('swTime');
+  span.contentEditable = 'true';
+  span.style.borderBottom = '1.5px solid currentColor';
+  span.focus();
+  var range = document.createRange();
+  range.selectNodeContents(span);
+  var sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  function commit() {
+    _swEditing = false;
+    span.contentEditable = 'false';
+    span.style.borderBottom = '';
+    var secs = _swParseEdit(span.textContent);
+    if (secs !== null) _swSeconds = secs;
+    _swUpdate();
+  }
+
+  function cancel() {
+    _swEditing = false;
+    span.contentEditable = 'false';
+    span.style.borderBottom = '';
+    _swUpdate();
+  }
+
+  function onKey(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      span.removeEventListener('keydown', onKey);
+      span.removeEventListener('blur', onBlur);
+      commit();
+    } else if (e.key === 'Escape') {
+      span.removeEventListener('keydown', onKey);
+      span.removeEventListener('blur', onBlur);
+      cancel();
+    }
+  }
+
+  function onBlur() {
+    span.removeEventListener('keydown', onKey);
+    commit();
+  }
+
+  span.addEventListener('keydown', onKey);
+  span.addEventListener('blur', onBlur, { once: true });
 }
 
 function getSessionSnapshot() {

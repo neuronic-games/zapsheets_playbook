@@ -1480,13 +1480,16 @@ function openProfileDialog() {
     form.style.display = '';
     document.getElementById('authFields').style.display  = '';
     document.getElementById('authConfirm').style.display = 'none';
-    document.getElementById('authEmail').value     = '';
-    document.getElementById('authPassword').value  = '';
+    // Pre-fill saved credentials if present
+    var _savedCreds = null;
+    try { var _sc = localStorage.getItem('devboard_collab_creds'); if (_sc) _savedCreds = JSON.parse(_sc); } catch(e) {}
+    document.getElementById('authEmail').value    = _savedCreds ? _savedCreds.email    : '';
+    document.getElementById('authPassword').value = _savedCreds ? _savedCreds.password : '';
     document.getElementById('authErr').textContent = '';
     document.getElementById('authErr').style.display = 'none';
     document.getElementById('authBtn').disabled    = false;
     document.getElementById('authBtn').textContent = 'Sign In';
-    document.getElementById('authRemember').checked = _collabRemember;
+    document.getElementById('authRemember').checked = !!_savedCreds || _collabRemember;
     _authPendingEmail = ''; _authPendingPassword = '';
     document.getElementById('profileOverlay').classList.add('open');
     setTimeout(function() { var el = document.getElementById('authEmail'); if(el) el.focus(); }, 80);
@@ -1616,7 +1619,12 @@ function submitAuth(confirmNew) {
         return;
       }
 
-      // Signed in successfully
+      // Signed in successfully — save credentials if "Remember me" is checked
+      if (_collabRemember) {
+        try { localStorage.setItem('devboard_collab_creds', JSON.stringify({ email: email, password: password })); } catch(e) {}
+      } else {
+        try { localStorage.removeItem('devboard_collab_creds'); } catch(e) {}
+      }
       _collabUser = { email: res.email, bio: res.bio || {} };
       _saveStoredUser(_collabUser);
       _updateMenuLabel();
@@ -1812,6 +1820,7 @@ function submitBioEdit() {
 
 function signOut() {
   _clearStoredUser();
+  try { localStorage.removeItem('devboard_collab_creds'); } catch(e) {}
   _updateMenuLabel();
   _updateSignedInState();
   closeProfileDialog();

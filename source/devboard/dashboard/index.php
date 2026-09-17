@@ -2934,6 +2934,7 @@ function openSessionDialog(gameName) {
   document.getElementById('sessionBtn').disabled         = false;
   document.getElementById('sessionBtn').textContent      = 'Add Session';
   document.getElementById('deleteSessionBtn').style.display = 'none';
+  document.querySelectorAll('#sessionOverlay .btn-cancel').forEach(function(b) { b.disabled = false; });
   _swReset();  // each new session starts the clock at 00:00
   document.getElementById('sessionOverlay').classList.add('open');
   setTimeout(function() {
@@ -3008,6 +3009,7 @@ function openEditSessionDialog(gameName, idx) {
   document.getElementById('deleteSessionBtn').style.display = '';
   document.getElementById('deleteSessionBtn').disabled      = false;
   document.getElementById('deleteSessionBtn').textContent   = 'Delete';
+  document.querySelectorAll('#sessionOverlay .btn-cancel').forEach(function(b) { b.disabled = false; });
   _editSnapshot = getSessionSnapshot();
   _swUpdate();
   document.getElementById('sessionOverlay').classList.add('open');

@@ -1388,13 +1388,11 @@ function _loadStoredUser() {
   } catch(e) { _collabUser = null; }
 }
 function _saveStoredUser(u) {
-  try {
-    if (_collabRemember) {
-      localStorage.setItem('devboard_collab_user', JSON.stringify(u));
-    } else {
-      sessionStorage.setItem('devboard_collab_user', JSON.stringify(u));
-    }
-  } catch(e) {}
+  var val = JSON.stringify(u);
+  if (_collabRemember) {
+    try { localStorage.setItem('devboard_collab_user', val); return; } catch(e) {}
+  }
+  try { sessionStorage.setItem('devboard_collab_user', val); } catch(e) {}
 }
 function _clearStoredUser() {
   try { localStorage.removeItem('devboard_collab_user'); } catch(e) {}
@@ -1581,6 +1579,9 @@ function submitAuth(confirmNew) {
       errEl.textContent = 'Email and password are required.';
       errEl.style.display = 'block'; return;
     }
+    // Read checkbox synchronously before the async fetch
+    var rememberEl = document.getElementById('authRemember');
+    _collabRemember = !!(rememberEl && rememberEl.checked);
   }
 
   btn.disabled = true; btn.textContent = 'Signing in…';
@@ -1609,7 +1610,6 @@ function submitAuth(confirmNew) {
       }
 
       // Signed in successfully
-      _collabRemember = !!(document.getElementById('authRemember') || {checked:false}).checked;
       _collabUser = { email: res.email, bio: res.bio || {} };
       _saveStoredUser(_collabUser);
       _updateMenuLabel();

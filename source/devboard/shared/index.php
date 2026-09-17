@@ -463,6 +463,8 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   background:#f4f8fb; border-radius:6px; padding:.6rem .75rem; line-height:1.5;
 }
 .auth-err { font-size:.78rem; color:#c0392b; display:none; }
+.auth-remember { display:flex; align-items:center; gap:.45rem; font-family:'DINRegular',sans-serif; font-size:.76rem; color:#888; cursor:pointer; margin-top:.55rem; user-select:none; }
+.auth-remember input[type=checkbox] { accent-color:#1a5f7a; width:14px; height:14px; cursor:pointer; flex-shrink:0; }
 .auth-signout-btn {
   align-self:flex-start;
   font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em;
@@ -599,6 +601,10 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
               onkeydown="if(event.key==='Enter')submitAuth()" />
           </label>
         </div>
+        <label class="auth-remember">
+          <input type="checkbox" id="authRemember" />
+          Remember me on this device
+        </label>
         <div class="auth-err" id="authErr"></div>
         <div class="dialog-actions" style="margin-top:.5rem">
           <button class="btn-cancel" onclick="forceCloseProfileDialog()">Cancel</button>
@@ -1371,18 +1377,30 @@ function handleObsImageFile(idx, file) {
 var _collabUser = null;  // null = not signed in; { email, bio } = signed in
 var _profileBioInitial = {};
 
+var _collabRemember = false;
+
 function _loadStoredUser() {
   try {
-    var s = sessionStorage.getItem('devboard_collab_user');
-    if (s) _collabUser = JSON.parse(s);
+    var ls = localStorage.getItem('devboard_collab_user');
+    if (ls) { _collabUser = JSON.parse(ls); _collabRemember = true; return; }
+    var ss = sessionStorage.getItem('devboard_collab_user');
+    if (ss) _collabUser = JSON.parse(ss);
   } catch(e) { _collabUser = null; }
 }
 function _saveStoredUser(u) {
-  try { sessionStorage.setItem('devboard_collab_user', JSON.stringify(u)); } catch(e) {}
+  try {
+    if (_collabRemember) {
+      localStorage.setItem('devboard_collab_user', JSON.stringify(u));
+    } else {
+      sessionStorage.setItem('devboard_collab_user', JSON.stringify(u));
+    }
+  } catch(e) {}
 }
 function _clearStoredUser() {
+  try { localStorage.removeItem('devboard_collab_user'); } catch(e) {}
   try { sessionStorage.removeItem('devboard_collab_user'); } catch(e) {}
   _collabUser = null;
+  _collabRemember = false;
 }
 
 // ── Account menu ──────────────────────────────────────────────────────────────
@@ -1591,6 +1609,7 @@ function submitAuth(confirmNew) {
       }
 
       // Signed in successfully
+      _collabRemember = !!(document.getElementById('authRemember') || {checked:false}).checked;
       _collabUser = { email: res.email, bio: res.bio || {} };
       _saveStoredUser(_collabUser);
       _updateMenuLabel();

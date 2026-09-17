@@ -1276,7 +1276,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <div id="obsContainer"></div>
 
     <div class="dialog-err" id="sessionErr"></div>
-    <span class="obs-kbd-hint">⌘ / Ctrl + Arrow — move between fields</span>
+    <span class="obs-kbd-hint">⌘ / Ctrl + Arrow — move between fields &nbsp;·&nbsp; ⌘ / Ctrl + Enter — save</span>
     <div class="dialog-actions">
       <div class="sw-wrap" id="swWrap">
         <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold 3s to set time · Click time to edit">
@@ -2494,8 +2494,17 @@ function _confirmOk() {
   if (cb) cb();
 }
 
-// ── Global Escape handler — guard if dirty ────────────────────────────────────
+// ── Global keyboard shortcuts ─────────────────────────────────────────────────
 document.addEventListener('keydown', function(ev) {
+  // Cmd/Ctrl + Enter → save session dialog
+  if (ev.key === 'Enter' && (ev.metaKey || ev.ctrlKey)) {
+    var so = document.getElementById('sessionOverlay');
+    if (so && so.classList.contains('open')) {
+      ev.preventDefault();
+      submitSession();
+      return;
+    }
+  }
   if (ev.key !== 'Escape') return;
   var el;
   el = document.getElementById('confirmOverlay');

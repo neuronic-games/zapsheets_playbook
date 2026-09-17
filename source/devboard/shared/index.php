@@ -1820,7 +1820,6 @@ function submitBioEdit() {
 
 function signOut() {
   _clearStoredUser();
-  try { localStorage.removeItem('devboard_collab_creds'); } catch(e) {}
   _updateMenuLabel();
   _updateSignedInState();
   closeProfileDialog();

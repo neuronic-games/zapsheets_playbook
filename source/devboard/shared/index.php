@@ -784,10 +784,11 @@ function todayISO() {
 // ── Render sessions ───────────────────────────────────────────────────────────
 
 var _allRows     = [];
-var _allSessions = [];
-var _editMode      = false;
-var _editOrigDate  = '';
-var _editOrigEvent = '';
+var _allSessions       = [];
+var _editMode          = false;
+var _editOrigDate      = '';
+var _editOrigEvent     = '';
+var _editOrigSessionNum = '';
 
 function renderSessions() {
   _allSessions = buildSessions(_allRows).reverse();
@@ -936,9 +937,10 @@ function openSessionDialog() {
 function openEditSessionDialog(idx) {
   var session = _allSessions[idx];
   if (!session) return;
-  _editMode      = true;
-  _editOrigDate  = session.date;
-  _editOrigEvent = session.testnum;
+  _editMode           = true;
+  _editOrigDate       = session.date;
+  _editOrigEvent      = session.eventType || session.testnum;
+  _editOrigSessionNum = session.sessionNum || '';
   document.getElementById('sessionDialogTitle').innerHTML = 'Edit Session — <span>' + esc(GAME_NAME) + '</span>';
   var tn = (session.testnum || '').toLowerCase();
   var type = tn.indexOf('meeting')   === 0 ? 'Meeting'   :
@@ -1107,13 +1109,19 @@ function submitSession() {
   // ── Edit mode: replace existing session ───────────────────────────────────────
   if (_editMode) {
     var fd = new FormData();
-    fd.append('id',         SHEET_ID);
-    fd.append('game',       GAME_NAME);
-    fd.append('orig_date',  _editOrigDate);
-    fd.append('orig_event', _editOrigEvent);
-    fd.append('date',       date);
-    fd.append('event',      testnum);
-    fd.append('location',   location);
+    // Split "Playtest 2" → event="Playtest", session_num="2"
+    var _evMatch   = testnum.match(/^(.*?)\s+(\d+)\s*$/);
+    var _newEvent  = _evMatch ? _evMatch[1].trim() : testnum;
+    var _newSesNum = _evMatch ? _evMatch[2] : '';
+    fd.append('id',               SHEET_ID);
+    fd.append('game',             GAME_NAME);
+    fd.append('orig_date',        _editOrigDate);
+    fd.append('orig_event',       _editOrigEvent);
+    fd.append('orig_session_num', _editOrigSessionNum);
+    fd.append('date',             date);
+    fd.append('event',            _newEvent);
+    fd.append('session_num',      _newSesNum);
+    fd.append('location',         location);
     fd.append('testers',    JSON.stringify(testerVals));
     fd.append('obs_pairs',  JSON.stringify(obsPairs));
     fetch(APP_BASE + 'push/updateDevSession.php', { method:'POST', body:fd })

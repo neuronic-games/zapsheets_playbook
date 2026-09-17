@@ -3202,47 +3202,37 @@ function submitSession() {
   var _sCancelBtns = document.querySelectorAll('#sessionOverlay .btn-cancel');
   _sCancelBtns.forEach(function(b) { b.disabled = true; });
 
-  // Post rows sequentially to preserve sheet row order
-  var postRows = [];
-  postRows.push({ date: date, event: eventType, session_num: sessionNum, observation: location, solution: swLength, type: 'header' });
+  // Build all rows and POST in one batch — server writes JSON immediately,
+  // syncs to Google Sheet in the background.
+  var allRows = [];
+  allRows.push({ date: date, event: eventType, session_num: sessionNum, observation: location, solution: swLength, type: 'header' });
   testerVals.forEach(function(t) {
-    postRows.push({ date: '', event: '', observation: t, solution: '', type: 'tester' });
+    allRows.push({ date: '', event: '', session_num: '', observation: t, solution: '', type: 'tester' });
   });
   obsPairs.forEach(function(pair) {
-    postRows.push({ date: '', event: '', observation: pair.obs, solution: pair.sol, type: 'obs' });
+    allRows.push({ date: '', event: '', session_num: '', observation: pair.obs, solution: pair.sol, type: 'obs' });
   });
 
-  function postRow(row) {
-    var fd = new FormData();
-    fd.append('id',          SHEET_ID);
-    fd.append('game',        _sessionGame);
-    fd.append('date',        row.date);
-    fd.append('event',       row.event);
-    fd.append('session_num', row.session_num || '');
-    fd.append('observation', row.observation);
-    fd.append('solution',    row.solution);
-    fd.append('row_type',    row.type || '');
-    return fetch(APP_BASE + 'push/addDevRow.php', { method:'POST', body:fd })
-      .then(function(r) { return r.json(); });
-  }
-
-  postRows.reduce(function(chain, row) {
-    return chain.then(function() { return postRow(row); });
-  }, Promise.resolve())
-  .then(function() {
-    // Confirmed saved — update local cache and close
-    if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
-    localRows.forEach(function(r) { devCache[_sessionGame].push(r); });
-    renderBody(_sessionGame, devCache[_sessionGame]);
-    forceCloseSessionDialog();
-  })
-  .catch(function(e) {
-    btn.disabled = false;
-    btn.textContent = 'Add Session';
-    _sCancelBtns.forEach(function(b) { b.disabled = false; });
-    err.textContent = 'Couldn\'t save session — ' + (e.message || 'unknown error');
-    err.style.display = 'block';
-  });
+  var fd = new FormData();
+  fd.append('id',   SHEET_ID);
+  fd.append('game', _sessionGame);
+  fd.append('rows', JSON.stringify(allRows));
+  fetch(APP_BASE + 'push/addDevRows.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.error) throw new Error(res.error);
+      if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
+      localRows.forEach(function(r) { devCache[_sessionGame].push(r); });
+      renderBody(_sessionGame, devCache[_sessionGame]);
+      forceCloseSessionDialog();
+    })
+    .catch(function(e) {
+      btn.disabled = false;
+      btn.textContent = 'Add Session';
+      _sCancelBtns.forEach(function(b) { b.disabled = false; });
+      err.textContent = 'Couldn\'t save session — ' + (e.message || 'unknown error');
+      err.style.display = 'block';
+    });
 }
 
 // ── People sheet sync ────────────────────────────────────────────────────────

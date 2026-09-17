@@ -1281,7 +1281,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       <div class="sw-wrap" id="swWrap">
         <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold 3s to set time · Click time to edit">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="13" r="8"/><path d="M12 5V3"/><path d="M9 3h6"/><path d="M12 13V9"/></svg>
-          <span id="swTime" onclick="event.stopPropagation();_swStartEdit()" style="cursor:text">0</span>
+          <span id="swTime">0</span>
         </button>
         <div class="sw-panel" id="swPanel">
           <input type="number" id="swPanelInput" class="sw-panel-input" min="0" max="999" placeholder="0"
@@ -2842,7 +2842,6 @@ function _swFormat(secs) {
 }
 
 function _swUpdate() {
-  if (_swEditing) return;
   var timeStr = _swFormat(_swSeconds);
   var swTime = document.getElementById('swTime');
   if (swTime) swTime.textContent = timeStr;
@@ -2938,81 +2937,6 @@ function _swReset() {
   _swUpdate();
 }
 
-var _swEditing = false;
-
-// Parse typed time: plain number = minutes (primary); also accepts MM:SS or H:MM:SS for legacy pastes
-function _swParseEdit(str) {
-  str = str.trim();
-  if (!str) return 0;
-  var m3 = str.match(/^(\d+):(\d+):(\d+)$/);
-  if (m3) return parseInt(m3[1]) * 3600 + parseInt(m3[2]) * 60 + parseInt(m3[3]);
-  var m2 = str.match(/^(\d+):(\d+)$/);
-  if (m2) return parseInt(m2[1]) * 60 + parseInt(m2[2]);
-  var m1 = str.match(/^(\d+)$/);
-  if (m1) return parseInt(m1[1]) * 60;   // plain number = minutes
-  return null;
-}
-
-function _swStartEdit() {
-  if (_swEditing) return;
-  _swEditing = true;
-
-  // Pause if running
-  if (_swRunning) {
-    clearInterval(_swInterval);
-    _swInterval = null;
-    _swRunning  = false;
-    var btn = document.getElementById('swBtn');
-    if (btn) btn.classList.remove('sw-running');
-  }
-
-  var span = document.getElementById('swTime');
-  span.contentEditable = 'true';
-  span.style.borderBottom = '1.5px solid currentColor';
-  span.focus();
-  var range = document.createRange();
-  range.selectNodeContents(span);
-  var sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
-
-  function commit() {
-    _swEditing = false;
-    span.contentEditable = 'false';
-    span.style.borderBottom = '';
-    var secs = _swParseEdit(span.textContent);
-    if (secs !== null) _swSeconds = secs;
-    _swUpdate();
-  }
-
-  function cancel() {
-    _swEditing = false;
-    span.contentEditable = 'false';
-    span.style.borderBottom = '';
-    _swUpdate();
-  }
-
-  function onKey(e) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      span.removeEventListener('keydown', onKey);
-      span.removeEventListener('blur', onBlur);
-      commit();
-    } else if (e.key === 'Escape') {
-      span.removeEventListener('keydown', onKey);
-      span.removeEventListener('blur', onBlur);
-      cancel();
-    }
-  }
-
-  function onBlur() {
-    span.removeEventListener('keydown', onKey);
-    commit();
-  }
-
-  span.addEventListener('keydown', onKey);
-  span.addEventListener('blur', onBlur, { once: true });
-}
 
 function getSessionSnapshot() {
   var testers = [];

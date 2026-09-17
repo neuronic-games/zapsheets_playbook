@@ -3136,7 +3136,7 @@ function submitSession() {
     localRows.push({ 'Date': '', 'Event': '', 'People': '', 'Observations': pair.obs, 'Thoughts': pair.sol });
   });
 
-  // ── Edit mode: optimistically patch the cache, close immediately, save in bg ──
+  // ── Edit mode: optimistically patch the cache, wait for save, then close ──
   if (_editMode) {
     // Find the old session header in cache and splice in the new rows
     var cache = devCache[_sessionGame] || [];
@@ -3157,9 +3157,12 @@ function submitSession() {
     }
     addNewPeople(testerRaws);
     renderBody(_sessionGame, devCache[_sessionGame]);
-    closeSessionDialog();
 
-    // Background: persist to sheet, then refresh cache from server to confirm
+    // Keep dialog open while saving
+    btn.disabled = true; btn.textContent = 'Saving…';
+    var _sCancelBtns = document.querySelectorAll('#sessionOverlay .btn-cancel');
+    _sCancelBtns.forEach(function(b) { b.disabled = true; });
+
     var fd = new FormData();
     fd.append('id',               SHEET_ID);
     fd.append('game',             _sessionGame);
@@ -3179,21 +3182,25 @@ function submitSession() {
         if (res.error) throw new Error(res.error);
         devCache[_sessionGame] = undefined;
         loadDevData(_sessionGame);
+        forceCloseSessionDialog();
       })
       .catch(function(e) {
-        showSaveToast('Couldn\'t save changes to sheet — ' + (e.message || 'unknown error') + '. Reload to try again.');
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+        _sCancelBtns.forEach(function(b) { b.disabled = false; });
+        err.textContent = 'Couldn\'t save changes — ' + (e.message || 'unknown error');
+        err.style.display = 'block';
       });
     return;
   }
 
-  // ── Add mode: push to local cache, close immediately, send rows in background ──
-  if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
-  localRows.forEach(function(r) { devCache[_sessionGame].push(r); });
+  // ── Add mode: show saving state, post rows to server, then close on success ──
   addNewPeople(testerRaws);
-  renderBody(_sessionGame, devCache[_sessionGame]);
-  closeSessionDialog();
+  btn.disabled = true; btn.textContent = 'Saving…';
+  var _sCancelBtns = document.querySelectorAll('#sessionOverlay .btn-cancel');
+  _sCancelBtns.forEach(function(b) { b.disabled = true; });
 
-  // Background: post rows sequentially to preserve sheet row order
+  // Post rows sequentially to preserve sheet row order
   var postRows = [];
   postRows.push({ date: date, event: eventType, session_num: sessionNum, observation: location, solution: swLength, type: 'header' });
   testerVals.forEach(function(t) {
@@ -3220,8 +3227,19 @@ function submitSession() {
   postRows.reduce(function(chain, row) {
     return chain.then(function() { return postRow(row); });
   }, Promise.resolve())
+  .then(function() {
+    // Confirmed saved — update local cache and close
+    if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
+    localRows.forEach(function(r) { devCache[_sessionGame].push(r); });
+    renderBody(_sessionGame, devCache[_sessionGame]);
+    forceCloseSessionDialog();
+  })
   .catch(function(e) {
-    showSaveToast('Couldn\'t save session to sheet — ' + (e.message || 'unknown error') + '. Reload to try again.');
+    btn.disabled = false;
+    btn.textContent = 'Add Session';
+    _sCancelBtns.forEach(function(b) { b.disabled = false; });
+    err.textContent = 'Couldn\'t save session — ' + (e.message || 'unknown error');
+    err.style.display = 'block';
   });
 }
 

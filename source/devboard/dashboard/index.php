@@ -625,15 +625,15 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .sw-display { margin-left:auto; font-family:'DINBlack',sans-serif; font-size:.85rem; color:#e67e22; letter-spacing:.06em; display:none; }
 .sw-display.sw-active { display:block; }
 .sw-wrap { display:contents; }
-.sw-wrap.sw-expanded { display:flex; flex:1; align-items:center; }
-.sw-panel { display:none; flex:1; align-items:center; gap:.5rem; background:#fff8f2; border:1.5px solid #e67e22; border-radius:8px; padding:.28rem .65rem; animation:sw-expand-in .18s ease; }
+.sw-wrap.sw-expanded { display:inline-flex; align-items:stretch; margin-right:auto; }
+.sw-panel { display:none; align-items:center; gap:.5rem; background:#fff8f2; border:1.5px solid #e67e22; border-radius:8px; padding:.28rem .5rem .28rem .65rem; animation:sw-expand-in .18s ease; }
 .sw-wrap.sw-expanded .sw-panel { display:flex; }
 .sw-wrap.sw-expanded #swBtn { display:none; }
 @keyframes sw-expand-in { from{opacity:0;transform:scaleX(.88);transform-origin:left} to{opacity:1;transform:scaleX(1)} }
 .sw-panel-input { font-size:1.55rem; font-family:'DINBlack',sans-serif; color:#e67e22; border:none; outline:none; background:transparent; width:3ch; text-align:right; -moz-appearance:textfield; }
 .sw-panel-input::-webkit-inner-spin-button, .sw-panel-input::-webkit-outer-spin-button { -webkit-appearance:none; }
-.sw-panel-unit { font-family:'DINRegular',sans-serif; font-size:.85rem; color:#e67e22; opacity:.65; margin-right:auto; }
-.sw-panel-confirm { background:#e67e22; color:#fff; border:none; border-radius:5px; padding:.28rem .7rem; cursor:pointer; font-family:'DINBlack',sans-serif; font-size:.75rem; letter-spacing:.04em; }
+.sw-panel-unit { font-family:'DINRegular',sans-serif; font-size:.85rem; color:#e67e22; opacity:.65; }
+.sw-panel-confirm { background:#e67e22; color:#fff; border:none; border-radius:5px; padding:0 .75rem; cursor:pointer; font-family:'DINBlack',sans-serif; font-size:.75rem; letter-spacing:.04em; align-self:stretch; display:flex; align-items:center; margin-left:.35rem; }
 .sw-panel-cancel { background:none; border:none; color:#bbb; cursor:pointer; font-size:1rem; padding:.2rem .3rem; line-height:1; }
 .sw-panel-cancel:hover { color:#888; }
 .btn-stopwatch { margin-right:auto; background:none; border:1.5px solid #d0d8e0; border-radius:6px; padding:.35rem .65rem; cursor:pointer; display:inline-flex; align-items:center; gap:.35rem; color:#bbb; font-family:'DINBlack',sans-serif; font-size:.78rem; letter-spacing:.04em; transition:border-color .15s, color .15s, background .15s; }

@@ -1380,17 +1380,23 @@ var _profileBioInitial = {};
 var _collabRemember = false;
 
 function _loadStoredUser() {
+  // Split try-catches so a blocked localStorage doesn't skip sessionStorage
   try {
     var ls = localStorage.getItem('devboard_collab_user');
     if (ls) { _collabUser = JSON.parse(ls); _collabRemember = true; return; }
+  } catch(e) {}
+  try {
     var ss = sessionStorage.getItem('devboard_collab_user');
     if (ss) _collabUser = JSON.parse(ss);
-  } catch(e) { _collabUser = null; }
+  } catch(e) {}
 }
 function _saveStoredUser(u) {
   var val = JSON.stringify(u);
   if (_collabRemember) {
     try { localStorage.setItem('devboard_collab_user', val); return; } catch(e) {}
+  } else {
+    // Clear any stale localStorage entry so it doesn't surface on next browser restart
+    try { localStorage.removeItem('devboard_collab_user'); } catch(e) {}
   }
   try { sessionStorage.setItem('devboard_collab_user', val); } catch(e) {}
 }
@@ -1480,6 +1486,7 @@ function openProfileDialog() {
     document.getElementById('authErr').style.display = 'none';
     document.getElementById('authBtn').disabled    = false;
     document.getElementById('authBtn').textContent = 'Sign In';
+    document.getElementById('authRemember').checked = _collabRemember;
     _authPendingEmail = ''; _authPendingPassword = '';
     document.getElementById('profileOverlay').classList.add('open');
     setTimeout(function() { var el = document.getElementById('authEmail'); if(el) el.focus(); }, 80);

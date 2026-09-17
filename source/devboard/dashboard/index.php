@@ -624,6 +624,18 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .session-dialog h2 > span:not(.sw-display) { color:#1a1a2e; }
 .sw-display { margin-left:auto; font-family:'DINBlack',sans-serif; font-size:.85rem; color:#e67e22; letter-spacing:.06em; display:none; }
 .sw-display.sw-active { display:block; }
+.sw-wrap { display:contents; }
+.sw-wrap.sw-expanded { display:flex; flex:1; align-items:center; }
+.sw-panel { display:none; flex:1; align-items:center; gap:.5rem; background:#fff8f2; border:1.5px solid #e67e22; border-radius:8px; padding:.28rem .65rem; animation:sw-expand-in .18s ease; }
+.sw-wrap.sw-expanded .sw-panel { display:flex; }
+.sw-wrap.sw-expanded #swBtn { display:none; }
+@keyframes sw-expand-in { from{opacity:0;transform:scaleX(.88);transform-origin:left} to{opacity:1;transform:scaleX(1)} }
+.sw-panel-input { font-size:1.55rem; font-family:'DINBlack',sans-serif; color:#e67e22; border:none; outline:none; background:transparent; width:3ch; text-align:right; -moz-appearance:textfield; }
+.sw-panel-input::-webkit-inner-spin-button, .sw-panel-input::-webkit-outer-spin-button { -webkit-appearance:none; }
+.sw-panel-unit { font-family:'DINRegular',sans-serif; font-size:.85rem; color:#e67e22; opacity:.65; margin-right:auto; }
+.sw-panel-confirm { background:#e67e22; color:#fff; border:none; border-radius:5px; padding:.28rem .7rem; cursor:pointer; font-family:'DINBlack',sans-serif; font-size:.75rem; letter-spacing:.04em; }
+.sw-panel-cancel { background:none; border:none; color:#bbb; cursor:pointer; font-size:1rem; padding:.2rem .3rem; line-height:1; }
+.sw-panel-cancel:hover { color:#888; }
 .btn-stopwatch { margin-right:auto; background:none; border:1.5px solid #d0d8e0; border-radius:6px; padding:.35rem .65rem; cursor:pointer; display:inline-flex; align-items:center; gap:.35rem; color:#bbb; font-family:'DINBlack',sans-serif; font-size:.78rem; letter-spacing:.04em; transition:border-color .15s, color .15s, background .15s; }
 .btn-stopwatch:hover { border-color:#aaa; color:#888; }
 .btn-stopwatch.sw-running { border-color:#e67e22; color:#e67e22; background:#fff8f2; animation:sw-pulse 1.4s ease-out infinite; }
@@ -1266,10 +1278,20 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <div class="dialog-err" id="sessionErr"></div>
     <span class="obs-kbd-hint">⌘ / Ctrl + Arrow — move between fields</span>
     <div class="dialog-actions">
-      <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Long-press to reset · Click time to edit">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="13" r="8"/><path d="M12 5V3"/><path d="M9 3h6"/><path d="M12 13V9"/></svg>
-        <span id="swTime" onclick="event.stopPropagation();_swStartEdit()" style="cursor:text">00:00</span>
-      </button>
+      <div class="sw-wrap" id="swWrap">
+        <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold 3s to set time · Click time to edit">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="13" r="8"/><path d="M12 5V3"/><path d="M9 3h6"/><path d="M12 13V9"/></svg>
+          <span id="swTime" onclick="event.stopPropagation();_swStartEdit()" style="cursor:text">0</span>
+        </button>
+        <div class="sw-panel" id="swPanel">
+          <input type="number" id="swPanelInput" class="sw-panel-input" min="0" max="999" placeholder="0"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();_swExpandCommit();}if(event.key==='Escape')_swExpandCancel();"
+            onclick="event.stopPropagation()" />
+          <span class="sw-panel-unit">min</span>
+          <button type="button" class="sw-panel-confirm" onclick="_swExpandCommit()">Set</button>
+          <button type="button" class="sw-panel-cancel" onclick="_swExpandCancel()">✕</button>
+        </div>
+      </div>
       <button class="btn-delete" id="deleteSessionBtn" style="display:none" onclick="deleteSession()">Delete</button>
       <button class="btn-cancel" onclick="closeSessionDialog()">Cancel</button>
       <button class="btn-primary" id="sessionBtn" onclick="submitSession()">Add Session</button>
@@ -2863,8 +2885,36 @@ function toggleStopwatch() {
 function _swStartLongPress() {
   _swLongPressTimer = setTimeout(function() {
     _swLongPressTimer = null;
-    _swReset();
-  }, 600);
+    _swExpandOpen();
+  }, 3000);
+}
+
+function _swExpandOpen() {
+  // Pause if running
+  if (_swRunning) {
+    clearInterval(_swInterval);
+    _swInterval = null;
+    _swRunning = false;
+    var btn = document.getElementById('swBtn');
+    if (btn) btn.classList.remove('sw-running');
+  }
+  document.getElementById('swWrap').classList.add('sw-expanded');
+  var inp = document.getElementById('swPanelInput');
+  var mins = Math.floor(_swSeconds / 60);
+  inp.value = mins > 0 ? String(mins) : '';
+  inp.focus();
+  inp.select();
+}
+
+function _swExpandCommit() {
+  var val = parseInt(document.getElementById('swPanelInput').value, 10);
+  _swSeconds = isNaN(val) ? 0 : Math.max(0, val) * 60;
+  document.getElementById('swWrap').classList.remove('sw-expanded');
+  _swUpdate();
+}
+
+function _swExpandCancel() {
+  document.getElementById('swWrap').classList.remove('sw-expanded');
 }
 
 function _swCancelLongPress(e) {

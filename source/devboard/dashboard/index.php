@@ -626,7 +626,11 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .sw-display.sw-active { display:block; }
 .btn-stopwatch { margin-right:auto; background:none; border:1.5px solid #d0d8e0; border-radius:6px; padding:.35rem .65rem; cursor:pointer; display:inline-flex; align-items:center; gap:.35rem; color:#bbb; font-family:'DINBlack',sans-serif; font-size:.78rem; letter-spacing:.04em; transition:border-color .15s, color .15s, background .15s; }
 .btn-stopwatch:hover { border-color:#aaa; color:#888; }
-.btn-stopwatch.sw-running { border-color:#e67e22; color:#e67e22; background:#fff8f2; }
+.btn-stopwatch.sw-running { border-color:#e67e22; color:#e67e22; background:#fff8f2; animation:sw-pulse 1.4s ease-out infinite; }
+@keyframes sw-pulse {
+  0%,100% { box-shadow:0 0 0 0 rgba(230,126,34,.35); }
+  50%      { box-shadow:0 0 0 5px rgba(230,126,34,0); }
+}
 
 /* Field grid: 3 cols top, separator, 2 cols bottom */
 .field-grid {
@@ -2812,12 +2816,7 @@ var _swRunning  = false;
 var _swInterval = null;
 
 function _swFormat(secs) {
-  var h  = Math.floor(secs / 3600);
-  var m  = Math.floor((secs % 3600) / 60);
-  var s  = secs % 60;
-  var mm = String(m).padStart(2, '0');
-  var ss = String(s).padStart(2, '0');
-  return h > 0 ? h + ':' + mm + ':' + ss : mm + ':' + ss;
+  return String(Math.floor(secs / 60));
 }
 
 function _swUpdate() {
@@ -2827,13 +2826,15 @@ function _swUpdate() {
   if (swTime) swTime.textContent = timeStr;
 }
 
-// Parse "Length: MM:SS" or "Length: H:MM:SS" → total seconds
+// Parse "Length: N" (minutes), "Length: MM:SS", or "Length: H:MM:SS" → total seconds
 function _swParseLength(str) {
   str = (str || '').trim();
   var m = str.match(/Length:\s*(\d+):(\d+):(\d+)/);
   if (m) return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseInt(m[3]);
   m = str.match(/Length:\s*(\d+):(\d+)/);
   if (m) return parseInt(m[1]) * 60 + parseInt(m[2]);
+  m = str.match(/Length:\s*(\d+)/);
+  if (m) return parseInt(m[1]) * 60;   // plain number = minutes
   return 0;
 }
 
@@ -2889,7 +2890,7 @@ function _swReset() {
 
 var _swEditing = false;
 
-// Parse typed time: H:MM:SS, MM:SS, or plain number (treated as minutes)
+// Parse typed time: plain number = minutes (primary); also accepts MM:SS or H:MM:SS for legacy pastes
 function _swParseEdit(str) {
   str = str.trim();
   if (!str) return 0;
@@ -2898,7 +2899,7 @@ function _swParseEdit(str) {
   var m2 = str.match(/^(\d+):(\d+)$/);
   if (m2) return parseInt(m2[1]) * 60 + parseInt(m2[2]);
   var m1 = str.match(/^(\d+)$/);
-  if (m1) return parseInt(m1[1]) * 60;
+  if (m1) return parseInt(m1[1]) * 60;   // plain number = minutes
   return null;
 }
 

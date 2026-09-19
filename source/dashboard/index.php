@@ -40,6 +40,18 @@ if (is_dir($_gpv_dir)) {
         }
     }
 }
+
+// Compendium publishers: index by lowercase name for fast JS lookup
+$_comp_file = __DIR__ . '/../../data/publishers.json';
+$_comp_raw  = file_exists($_comp_file)
+    ? json_decode(file_get_contents($_comp_file), true) ?: []
+    : [];
+$_compendium_pubs_map = [];
+foreach ($_comp_raw as $_cpub) {
+    if (!empty($_cpub['publisher'])) {
+        $_compendium_pubs_map[mb_strtolower($_cpub['publisher'], 'UTF-8')] = $_cpub;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -714,6 +726,85 @@ if (is_dir($_gpv_dir)) {
     .card.open .pub-subtitle-row .game-action-btn,
     .card.open .game-sub-bar .game-action-btns { opacity:1; pointer-events:auto; }
 
+    /* ── Compendium info button (card header) ───────── */
+    .comp-info-btn {
+      font-family:'DINBlack',sans-serif; font-size:.55rem;
+      text-transform:uppercase; letter-spacing:.06em;
+      background:rgba(255,255,255,.10); color:rgba(255,255,255,.60);
+      border:1px solid rgba(255,255,255,.20); border-radius:999px;
+      padding:.28rem .55rem; cursor:pointer; white-space:nowrap; flex-shrink:0;
+      transition:background .15s, color .15s, opacity .15s;
+      opacity:0; pointer-events:none;
+    }
+    .card.open .comp-info-btn { opacity:1; pointer-events:auto; }
+    .comp-info-btn:hover { background:rgba(255,255,255,.22); color:#fff; }
+    /* ── Compendium info overlay ────────────────────── */
+    .comp-info-overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.45); z-index:1000;
+      align-items:center; justify-content:center; padding:1rem;
+    }
+    .comp-info-overlay.open { display:flex; }
+    .comp-info-dialog {
+      background:#fff; border-radius:10px;
+      padding:1.4rem; width:min(460px,94vw); max-height:85vh;
+      overflow-y:auto;
+      box-shadow:0 8px 32px rgba(0,0,0,.22);
+      display:flex; flex-direction:column; gap:.75rem;
+    }
+    .comp-info-hdr {
+      display:flex; align-items:center; gap:.6rem;
+    }
+    .comp-info-name {
+      font-family:'DINBlack',sans-serif; font-size:.95rem;
+      color:#1a1a2e; flex:1;
+    }
+    .comp-info-close {
+      background:none; border:none; cursor:pointer;
+      font-size:1rem; color:#aaa; line-height:1; padding:.1rem .2rem;
+    }
+    .comp-info-close:hover { color:#333; }
+    .comp-info-sub-badge {
+      display:inline-block; font-family:'DINBlack',sans-serif; font-size:.65rem;
+      text-transform:uppercase; letter-spacing:.06em; padding:.32rem .75rem;
+      border-radius:999px; white-space:nowrap;
+    }
+    .comp-info-sub-badge.accepting     { background:#dcfce7; color:#166534; }
+    .comp-info-sub-badge.not-accepting { background:#fee2e2; color:#991b1b; }
+    .comp-info-sub-badge.unknown       { background:#f1f5f9; color:#64748b; }
+    .comp-info-row {
+      display:flex; flex-direction:column; gap:.18rem;
+    }
+    .comp-info-label {
+      font-family:'DINBlack',sans-serif; font-size:.6rem;
+      text-transform:uppercase; letter-spacing:.06em; color:#aaa;
+    }
+    .comp-info-value {
+      font-family:'DINRegular',sans-serif; font-size:.82rem; color:#222;
+      line-height:1.5;
+    }
+    .comp-info-value a { color:#c8860a; text-decoration:none; }
+    .comp-info-value a:hover { color:#a06d08; text-decoration:underline; }
+    .comp-info-socials {
+      display:flex; flex-wrap:wrap; gap:.4rem;
+    }
+    .comp-info-social-link {
+      font-family:'DINBlack',sans-serif; font-size:.6rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      background:#f1f5f9; color:#475569; border-radius:999px;
+      padding:.28rem .62rem; text-decoration:none; white-space:nowrap;
+      transition:background .13s, color .13s;
+    }
+    .comp-info-social-link:hover { background:#e2e8f0; color:#1e293b; }
+    .comp-info-not-found {
+      font-family:'DINRegular',sans-serif; font-size:.83rem; color:#aaa;
+      text-align:center; padding:.75rem 0;
+    }
+    .comp-info-updated {
+      font-family:'DINRegular',sans-serif; font-size:.7rem; color:#bbb;
+      border-top:1px solid #f0f0f0; padding-top:.5rem; margin-top:.1rem;
+    }
+
     /* ── Add-entry dialog ───────────────────────────── */
     .add-entry-overlay {
       display:none; position:fixed; inset:0;
@@ -1156,7 +1247,7 @@ if (is_dir($_gpv_dir)) {
     }
     body:has(.di-overlay.open, .add-entry-overlay.open, .add-new-overlay.open,
              .notes-overlay.open, .sync-overlay.open, .game-edit-overlay.open,
-             .err-overlay.open, #enableNotesOverlay.open) {
+             .err-overlay.open, #enableNotesOverlay.open, .comp-info-overlay.open) {
       overflow: hidden;
     }
     .err-dialog {
@@ -1416,6 +1507,17 @@ if (is_dir($_gpv_dir)) {
       <button class="notes-close" onclick="closeDiDialog()">Close</button>
       <button class="notes-update-btn" id="diUpdateBtn" onclick="submitDiUpdate()">Update</button>
     </div>
+  </div>
+</div>
+
+<!-- Compendium publisher info dialog (read-only) -->
+<div class="comp-info-overlay" id="compInfoOverlay" onclick="if(event.target===this)closeCompendiumInfoDialog()">
+  <div class="comp-info-dialog">
+    <div class="comp-info-hdr">
+      <div class="comp-info-name" id="compInfoName"></div>
+      <button class="comp-info-close" onclick="closeCompendiumInfoDialog()">&#x2715;</button>
+    </div>
+    <div id="compInfoBody"></div>
   </div>
 </div>
 
@@ -1865,6 +1967,7 @@ var BASE     = APP_BASE + 'sheets/' + sheet_Id + '/';
 var NOTEBOARD_HASHES    = <?= json_encode($_nb_hashes,    JSON_UNESCAPED_UNICODE) ?>; // game name → 12-char hash
 var NOTEBOARD_HAS_NOTES = <?= json_encode(array_fill_keys(array_keys($_nb_has_notes), true), JSON_UNESCAPED_UNICODE) ?>; // safe_name → true
 var GAME_PAGE_TOKENS    = <?= json_encode($_gp_tokens, JSON_UNESCAPED_UNICODE) ?>;     // game name → 24-char token
+var COMPENDIUM_PUBS     = <?= json_encode($_compendium_pubs_map, JSON_UNESCAPED_UNICODE) ?>; // lowercase name → publisher data
 
 // ── State ─────────────────────────────────────────────
 var currentView     = 'game';
@@ -2910,6 +3013,8 @@ function buildPublisherView(pitches) {
     html += '<div class="card-header" onclick="toggleCard(this)">';
     html += '<span class="card-title">' + escHtml(p) + '</span>';
     html += '<span class="card-badges">' + at + pubHeaderBadge + '</span>';
+    html += '<button class="comp-info-btn" data-publisher="' + escHtml(p) + '"'
+         +  ' onclick="event.stopPropagation();openCompendiumInfo(this.getAttribute(\'data-publisher\'))">Info</button>';
     html += '<span class="card-chevron">▼</span>';
     html += '</div>';
     html += '<div class="card-body-wrap"><div class="card-body">';
@@ -5161,9 +5266,10 @@ document.addEventListener('keydown', function(ev) {
   if (ev.key !== 'Escape') return;
   var el, d;
   // Info-only overlays — always close
-  if (document.getElementById('vpOverlay').classList.contains('open'))       { closeVpDialog();       return; }
-  if (document.getElementById('shareUrlOverlay').classList.contains('open')) { closeShareUrlDialog(); return; }
-  if (document.getElementById('errOverlay').classList.contains('open'))      { closeErrDialog();      return; }
+  if (document.getElementById('vpOverlay').classList.contains('open'))       { closeVpDialog();              return; }
+  if (document.getElementById('shareUrlOverlay').classList.contains('open')) { closeShareUrlDialog();         return; }
+  if (document.getElementById('errOverlay').classList.contains('open'))      { closeErrDialog();              return; }
+  if (document.getElementById('compInfoOverlay').classList.contains('open')) { closeCompendiumInfoDialog();   return; }
   // Data-entry overlays — guard if dirty
   el = document.getElementById('diOverlay');
   if (el.classList.contains('open'))       { d = el.querySelector('.di-dialog');        if (hasDialogData(d)) shakeDialog(d); else closeDiDialog();       return; }
@@ -7216,6 +7322,113 @@ loadAll(function() {
     _pbAutoSync();
   }
 });
+
+// ── Compendium publisher info ──────────────────────────
+function openCompendiumInfo(pubName) {
+  var key  = pubName.toLowerCase();
+  var data = COMPENDIUM_PUBS[key] || null;
+
+  // Fallback: partial match (either name contains the other)
+  if (!data) {
+    var keys = Object.keys(COMPENDIUM_PUBS);
+    for (var i = 0; i < keys.length; i++) {
+      if (keys[i].indexOf(key) !== -1 || key.indexOf(keys[i]) !== -1) {
+        data = COMPENDIUM_PUBS[keys[i]]; break;
+      }
+    }
+  }
+
+  document.getElementById('compInfoName').textContent = pubName;
+
+  var body = document.getElementById('compInfoBody');
+  if (!data) {
+    body.innerHTML = '<div class="comp-info-not-found">Not found in Compendium</div>';
+    document.getElementById('compInfoOverlay').classList.add('open');
+    return;
+  }
+
+  var h = '';
+
+  // Accepting submissions badge
+  var sub = (data.accepting_submissions || '').trim();
+  var subLow = sub.toLowerCase();
+  var badgeCls = subLow === 'yes' ? 'accepting' : (subLow === 'no' ? 'not-accepting' : 'unknown');
+  var badgeLbl = badgeCls === 'accepting'     ? '✓ Accepting Submissions'
+               : badgeCls === 'not-accepting' ? '✕ Not Accepting'
+               : sub ? 'Submissions: ' + sub  : 'Submissions: Unknown';
+  h += '<div><span class="comp-info-sub-badge ' + badgeCls + '">' + escHtml(badgeLbl) + '</span></div>';
+
+  // Website
+  if (data.website) {
+    h += '<div class="comp-info-row"><div class="comp-info-label">Website</div>'
+       + '<div class="comp-info-value"><a href="' + escHtml(data.website) + '" target="_blank" rel="noopener">'
+       + escHtml(data.website) + '</a></div></div>';
+  }
+
+  // Country + catalog size
+  var meta = [data.country, data.catalog_size ? data.catalog_size + ' titles' : ''].filter(Boolean).join(' · ');
+  if (meta) {
+    h += '<div class="comp-info-row"><div class="comp-info-label">Profile</div>'
+       + '<div class="comp-info-value">' + escHtml(meta) + '</div></div>';
+  }
+
+  // Categories of interest
+  if (data.categories) {
+    h += '<div class="comp-info-row"><div class="comp-info-label">Categories of Interest</div>'
+       + '<div class="comp-info-value">' + escHtml(data.categories) + '</div></div>';
+  }
+
+  // Interested in / Looking for
+  if (data.looking_for) {
+    h += '<div class="comp-info-row"><div class="comp-info-label">Interested In</div>'
+       + '<div class="comp-info-value">' + escHtml(data.looking_for) + '</div></div>';
+  }
+
+  // Conventions
+  if (data.conventions) {
+    h += '<div class="comp-info-row"><div class="comp-info-label">Conventions</div>'
+       + '<div class="comp-info-value">' + escHtml(data.conventions) + '</div></div>';
+  }
+
+  // Contact method
+  if (data.contact_method) {
+    h += '<div class="comp-info-row"><div class="comp-info-label">Contact</div>'
+       + '<div class="comp-info-value">' + escHtml(data.contact_method) + '</div></div>';
+  }
+
+  // Social links
+  var socialFields = [
+    { key:'bgg', label:'BGG' }, { key:'facebook', label:'Facebook' },
+    { key:'twitter', label:'Twitter' }, { key:'bluesky', label:'Bluesky' },
+    { key:'youtube', label:'YouTube' }, { key:'twitch', label:'Twitch' },
+    { key:'discord', label:'Discord' }, { key:'instagram', label:'Instagram' },
+    { key:'other_social', label:'Other' }
+  ];
+  var socials = socialFields.filter(function(f) { return data[f.key]; });
+  if (socials.length) {
+    h += '<div class="comp-info-row"><div class="comp-info-label">Social / Community</div>'
+       + '<div class="comp-info-socials">';
+    socials.forEach(function(f) {
+      var url = data[f.key];
+      if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+      h += '<a class="comp-info-social-link" href="' + escHtml(url) + '" target="_blank" rel="noopener">'
+         + escHtml(f.label) + '</a>';
+    });
+    h += '</div></div>';
+  }
+
+  // Profile updated timestamp
+  if (data.profile_updated) {
+    h += '<div class="comp-info-updated">Updated: ' + escHtml(data.profile_updated) + '</div>';
+  }
+
+  body.innerHTML = h;
+  document.getElementById('compInfoOverlay').classList.add('open');
+}
+
+function closeCompendiumInfoDialog() {
+  document.getElementById('compInfoOverlay').classList.remove('open');
+}
 </script>
 </body>
 </html>

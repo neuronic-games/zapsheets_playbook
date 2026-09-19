@@ -477,11 +477,11 @@ body {
                     data.code === 'permission_denied' ||
                     (data.msg && data.msg.indexOf('Could not open spreadsheet') !== -1)
                   )) {
-                document.getElementById('permError').style.display = '';
+                document.getElementById('permError').style.display = 'block';
               }
               if (data.status === 'error' && data.code === 'invalid_schema') {
                 var box = document.getElementById('schemaError');
-                box.style.display = '';
+                box.style.display = 'block';
                 if (data.missing && data.missing.length) {
                   document.getElementById('schemaMissing').textContent =
                     'Missing columns: ' + data.missing.join(', ');

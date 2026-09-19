@@ -820,6 +820,21 @@ foreach ($_comp_raw as $_cpub) {
     }
     .comp-info-value a { color:#c8860a; text-decoration:none; }
     .comp-info-value a:hover { color:#a06d08; text-decoration:underline; }
+    /* Category / convention chips */
+    .comp-info-chips { display:flex; flex-wrap:wrap; gap:.32rem; }
+    .comp-info-chip {
+      font-family:'DINRegular',Arial,sans-serif; font-size:.75rem;
+      color:#444; background:#f4f2ef; border-radius:999px;
+      padding:.22rem .68rem; white-space:nowrap; line-height:1.4;
+    }
+    /* Mini stat row (country / catalog) */
+    .comp-info-stats {
+      display:grid; grid-template-columns:1fr 1fr; gap:.5rem;
+    }
+    .comp-info-stat {
+      background:#f8f7f5; border-radius:8px; padding:.55rem .75rem;
+    }
+    .comp-info-stat .comp-info-label { margin-bottom:.18rem; }
     .comp-info-socials {
       display:flex; flex-wrap:wrap; gap:.4rem;
     }
@@ -7414,14 +7429,36 @@ function openCompendiumInfo(pubName) {
 
   var h = '';
 
+  // Helper: split comma-separated string into chips
+  function toChips(str) {
+    return str.split(/,\s*/).filter(Boolean).map(function(s) {
+      return '<span class="comp-info-chip">' + escHtml(s.trim()) + '</span>';
+    }).join('');
+  }
+
   // Accepting submissions badge
   var sub = (data.accepting_submissions || '').trim();
   var subLow = sub.toLowerCase();
   var badgeCls = subLow === 'yes' ? 'accepting' : (subLow === 'no' ? 'not-accepting' : 'unknown');
   var badgeLbl = badgeCls === 'accepting'     ? '✓ Accepting Submissions'
                : badgeCls === 'not-accepting' ? '✕ Not Accepting'
-               : sub ? 'Submissions: ' + sub  : 'Submissions: Unknown';
+               : sub ? sub : 'Unknown';
   h += '<div><span class="comp-info-sub-badge ' + badgeCls + '">' + escHtml(badgeLbl) + '</span></div>';
+
+  // Country + catalog size as mini stats
+  var hasCountry = !!data.country, hasCatalog = !!data.catalog_size;
+  if (hasCountry || hasCatalog) {
+    h += '<div class="comp-info-stats">';
+    if (hasCountry) {
+      h += '<div class="comp-info-stat"><div class="comp-info-label">Country</div>'
+         + '<div class="comp-info-value">' + escHtml(data.country) + '</div></div>';
+    }
+    if (hasCatalog) {
+      h += '<div class="comp-info-stat"><div class="comp-info-label">Catalog Size</div>'
+         + '<div class="comp-info-value">' + escHtml(data.catalog_size) + ' titles</div></div>';
+    }
+    h += '</div>';
+  }
 
   // Website
   if (data.website) {
@@ -7430,35 +7467,28 @@ function openCompendiumInfo(pubName) {
        + escHtml(data.website) + '</a></div></div>';
   }
 
-  // Country + catalog size
-  var meta = [data.country, data.catalog_size ? data.catalog_size + ' titles' : ''].filter(Boolean).join(' · ');
-  if (meta) {
-    h += '<div class="comp-info-row"><div class="comp-info-label">Profile</div>'
-       + '<div class="comp-info-value">' + escHtml(meta) + '</div></div>';
-  }
-
-  // Categories of interest
+  // Categories of interest → chips
   if (data.categories) {
     h += '<div class="comp-info-row"><div class="comp-info-label">Categories of Interest</div>'
-       + '<div class="comp-info-value">' + escHtml(data.categories) + '</div></div>';
+       + '<div class="comp-info-chips">' + toChips(data.categories) + '</div></div>';
   }
 
-  // Interested in / Looking for
+  // Interested in / Looking for (prose — keep as text)
   if (data.looking_for) {
     h += '<div class="comp-info-row"><div class="comp-info-label">Interested In</div>'
        + '<div class="comp-info-value">' + escHtml(data.looking_for) + '</div></div>';
   }
 
-  // Conventions
+  // Conventions → chips
   if (data.conventions) {
     h += '<div class="comp-info-row"><div class="comp-info-label">Conventions</div>'
-       + '<div class="comp-info-value">' + escHtml(data.conventions) + '</div></div>';
+       + '<div class="comp-info-chips">' + toChips(data.conventions) + '</div></div>';
   }
 
-  // Contact method
+  // Contact method → chips
   if (data.contact_method) {
     h += '<div class="comp-info-row"><div class="comp-info-label">Contact</div>'
-       + '<div class="comp-info-value">' + escHtml(data.contact_method) + '</div></div>';
+       + '<div class="comp-info-chips">' + toChips(data.contact_method) + '</div></div>';
   }
 
   // Social links

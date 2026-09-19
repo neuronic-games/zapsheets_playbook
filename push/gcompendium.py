@@ -75,7 +75,7 @@ except Exception as e:
     if '403' in msg or 'PERMISSION_DENIED' in msg or 'forbidden' in msg.lower():
         out('error', 'Permission denied — sheet not shared with service account.', code='permission_denied')
     else:
-        out('error', f'Could not open spreadsheet: {e}')
+        out('error', f'Could not open spreadsheet: {e}', code='permission_denied')
     sys.exit(1)
 
 out('info', f'Opened: {wb.title}')

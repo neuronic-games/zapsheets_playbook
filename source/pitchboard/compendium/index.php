@@ -366,7 +366,7 @@ body {
 
     <div class="perm-error" id="schemaError" style="display:none">
       <div class="perm-error-title">Unexpected sheet structure</div>
-      <p>This sheet doesn't look like a Cardboard Edison Compendium export. Make sure you're using the correct sheet — it should have columns like <strong>Publisher</strong>, <strong>Accepting Submissions?</strong>, <strong>Categories of Interest</strong>, and <strong>Interested In</strong>.</p>
+      <p>This doesn't look like a Cardboard Edison Compendium sheet. Make sure you're using the correct Google Sheet URL.</p>
       <p id="schemaMissing" style="font-size:.78rem;color:#aaa;margin-top:.3rem"></p>
     </div>
 
@@ -380,9 +380,6 @@ body {
       <p style="margin-top:.5rem;font-size:.78rem;color:#aaa">Give <strong style="color:#888">Viewer</strong> access or higher, then click Publish again.</p>
     </div>
 
-    <div class="info-note">
-      Published data is stored at <code>data/publishers.json</code> and shared across all PitchBoards.
-    </div>
   </div>
 </div>
 

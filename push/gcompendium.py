@@ -131,7 +131,7 @@ out('info', f'{len(publishers)} publishers found ({skipped} blank rows skipped)'
 # Ensure output directory exists
 os.makedirs(dataDir, exist_ok=True)
 
-out('info', f'Writing {outFile}…')
+out('info', 'Writing publishers…')
 try:
     with open(outFile, 'w', encoding='utf-8') as f:
         json.dump(publishers, f, ensure_ascii=False, indent=2)
@@ -140,4 +140,4 @@ except Exception as e:
     sys.exit(1)
 
 size_kb = round(os.path.getsize(outFile) / 1024, 1)
-out('ok', f'✓  {len(publishers)} publishers written to data/publishers.json ({size_kb} KB)', count=len(publishers))
+out('ok', f'✓  {len(publishers)} publishers published ({size_kb} KB)', count=len(publishers))

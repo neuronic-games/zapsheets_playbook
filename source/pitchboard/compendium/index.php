@@ -298,17 +298,19 @@ body {
 .copy-sa-btn:hover { background: rgba(200,134,10,.2); }
 .copy-sa-btn.copied { color: #16a34a; background: rgba(22,163,74,.10); border-color: rgba(22,163,74,.30); }
 
-/* ── Info note ────────────────────────────────────────────────────── */
-.info-note {
-  font-size: .8rem;
-  color: #aaa;
-  line-height: 1.6;
-  margin-top: 1.2rem;
-  padding-top: 1.1rem;
-  border-top: 1px solid #f0ede8;
+/* ── Permission error steps ───────────────────────────────────────── */
+.perm-steps {
+  margin: .65rem 0 .75rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
 }
-.info-note a { color: #c8860a; text-decoration: none; }
-.info-note a:hover { text-decoration: underline; }
+.perm-steps li {
+  font-size: .82rem;
+  color: #555;
+  line-height: 1.55;
+}
+.perm-steps li strong { color: #333; }
 </style>
 </head>
 <body>
@@ -372,12 +374,19 @@ body {
 
     <div class="perm-error" id="permError">
       <div class="perm-error-title">Sheet not shared</div>
-      <p>Share this sheet with the PitchBoard service account, then publish again:</p>
+      <p>The sheet needs to be shared with the PitchBoard service account before it can be published. Follow these steps:</p>
+      <ol class="perm-steps">
+        <li>Open the Google Sheet and click <strong>Share</strong> (top right)</li>
+        <li>Copy the address below and add it as a contact</li>
+      </ol>
       <button class="copy-sa-btn" id="copySaBtn" onclick="copySA()">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         editor@zapsheets-480701.iam.gserviceaccount.com
       </button>
-      <p style="margin-top:.5rem;font-size:.78rem;color:#aaa">Give <strong style="color:#888">Viewer</strong> access or higher, then click Publish again.</p>
+      <ol class="perm-steps" start="3">
+        <li>Set the role to <strong>Viewer</strong> (or higher) and click <strong>Send</strong></li>
+        <li>Click <strong>Publish</strong> again on this page</li>
+      </ol>
     </div>
 
   </div>
@@ -484,11 +493,22 @@ body {
         read();
 
         function finish(ok) {
-          btn.disabled    = false;
-          btn.innerHTML   = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v10M4 7l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 13h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Publish';
+          btn.disabled  = false;
+          btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v10M4 7l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 13h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Publish';
           if (ok) {
-            // Refresh page to update last-published time
-            setTimeout(function() { window.location.reload(); }, 1200);
+            // Update "Last published" in place — keep the log visible
+            var now  = new Date();
+            var mo   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            var h    = now.getHours(), m = now.getMinutes(), ap = h >= 12 ? 'pm' : 'am';
+            h = h % 12 || 12;
+            var ts   = mo[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear()
+                     + ' — ' + h + ':' + (m < 10 ? '0' : '') + m + ' ' + ap;
+            var lpEl = document.querySelector('.last-pub');
+            if (lpEl) {
+              lpEl.innerHTML = '<div class="last-pub-dot" style="background:#22c55e;flex-shrink:0"></div>'
+                             + '<span>Last published: <strong style="color:#16a34a;font-family:\'DINBlack\',sans-serif;'
+                             + 'font-size:.78rem;letter-spacing:.04em;text-transform:uppercase">' + ts + '</strong></span>';
+            }
           }
         }
       })

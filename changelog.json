@@ -29,6 +29,7 @@
     "version": "Sep 2026",
     "apps": ["pitchboard"],
     "features": [
+      "Compendium — subscribe to the Cardboard Edison Compendium to bring publisher data into PitchBoard; expanded publisher cards show an INFO button with accepting status, categories, conventions, contact method, social links, and the publisher's logo",
       "Features page — overview of PitchBoard capabilities for sharing with potential users",
       "Board view — Kanban-style view of all games organised into Design, Pitch, Signed, and Published columns",
       "Drag-and-drop game cards between columns — stage and status update automatically in the sheet",

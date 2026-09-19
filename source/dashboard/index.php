@@ -782,8 +782,8 @@ foreach ($_comp_raw as $_cpub) {
     .comp-info-close:hover { background:rgba(255,255,255,.3); color:#fff; }
     /* Scrollable body below the brand strip */
     .comp-info-scrollbody {
-      overflow-y:auto; padding:1rem;
-      display:flex; flex-direction:column; gap:.75rem;
+      overflow-y:auto; padding:1rem 1rem 1.25rem;
+      display:flex; flex-direction:column; gap:.9rem;
     }
     /* Publisher name + logo row */
     .comp-info-pub-hdr {
@@ -808,7 +808,8 @@ foreach ($_comp_raw as $_cpub) {
     .comp-info-sub-badge.not-accepting { background:#fee2e2; color:#991b1b; }
     .comp-info-sub-badge.unknown       { background:#f1f5f9; color:#64748b; }
     .comp-info-row {
-      display:flex; flex-direction:column; gap:.18rem;
+      display:flex; flex-direction:column; gap:.3rem;
+      padding-top:.75rem; border-top:1px solid #f0f0f0;
     }
     .comp-info-label {
       font-family:'DINBlack',sans-serif; font-size:.6rem;

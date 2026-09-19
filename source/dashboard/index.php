@@ -746,24 +746,59 @@ foreach ($_comp_raw as $_cpub) {
     }
     .comp-info-overlay.open { display:flex; }
     .comp-info-dialog {
-      background:#fff; border-radius:10px;
-      padding:1.4rem; width:min(460px,94vw); max-height:85vh;
-      overflow-y:auto;
+      background:#fff; border-radius:10px; overflow:hidden;
+      width:min(460px,94vw); max-height:85vh;
       box-shadow:0 8px 32px rgba(0,0,0,.22);
+      display:flex; flex-direction:column;
+    }
+    /* Cardboard Edison Compendium branded strip */
+    .comp-info-brand {
+      background: linear-gradient(135deg,
+        #7b2d00 0%, #c8500a 10%, #e8a020 18%, #4a8a2a 26%,
+        #1a5ca8 34%, #7a2d8a 42%, #c8500a 50%,
+        #2a7a4a 58%, #1a4a8a 66%, #8a2020 74%,
+        #c8860a 82%, #2a5a1a 90%, #1c1108 100%);
+      padding:.7rem 1rem;
+      display:flex; align-items:center; gap:.6rem; flex-shrink:0;
+    }
+    .comp-info-brand-text { flex:1; }
+    .comp-info-brand-title {
+      font-family:Georgia,'Times New Roman',serif; font-size:.95rem;
+      color:#fff; display:block; font-weight:bold;
+      text-shadow:0 1px 3px rgba(0,0,0,.45);
+      letter-spacing:.01em;
+    }
+    .comp-info-brand-by {
+      font-family:'DINRegular',Arial,sans-serif; font-size:.65rem;
+      color:rgba(255,255,255,.62); display:block; margin-top:.12rem;
+    }
+    .comp-info-close {
+      background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25);
+      border-radius:50%; cursor:pointer; color:rgba(255,255,255,.8);
+      font-size:.75rem; line-height:1;
+      width:1.55rem; height:1.55rem; display:flex; align-items:center; justify-content:center;
+      flex-shrink:0; transition:background .13s;
+    }
+    .comp-info-close:hover { background:rgba(255,255,255,.3); color:#fff; }
+    /* Scrollable body below the brand strip */
+    .comp-info-scrollbody {
+      overflow-y:auto; padding:1rem;
       display:flex; flex-direction:column; gap:.75rem;
     }
-    .comp-info-hdr {
-      display:flex; align-items:center; gap:.6rem;
+    /* Publisher name + logo row */
+    .comp-info-pub-hdr {
+      display:flex; align-items:center; gap:.75rem;
+      padding-bottom:.8rem; border-bottom:1px solid #f0f0f0;
+    }
+    .comp-info-pub-logo {
+      width:52px; height:52px; object-fit:contain;
+      border-radius:7px; border:1px solid #ebebeb; background:#fafafa;
+      flex-shrink:0;
     }
     .comp-info-name {
       font-family:'DINBlack',sans-serif; font-size:.95rem;
-      color:#1a1a2e; flex:1;
+      color:#1a1a2e; flex:1; line-height:1.3;
     }
-    .comp-info-close {
-      background:none; border:none; cursor:pointer;
-      font-size:1rem; color:#aaa; line-height:1; padding:.1rem .2rem;
-    }
-    .comp-info-close:hover { color:#333; }
     .comp-info-sub-badge {
       display:inline-block; font-family:'DINBlack',sans-serif; font-size:.65rem;
       text-transform:uppercase; letter-spacing:.06em; padding:.32rem .75rem;
@@ -1513,11 +1548,20 @@ foreach ($_comp_raw as $_cpub) {
 <!-- Compendium publisher info dialog (read-only) -->
 <div class="comp-info-overlay" id="compInfoOverlay" onclick="if(event.target===this)closeCompendiumInfoDialog()">
   <div class="comp-info-dialog">
-    <div class="comp-info-hdr">
-      <div class="comp-info-name" id="compInfoName"></div>
+    <div class="comp-info-brand">
+      <div class="comp-info-brand-text">
+        <span class="comp-info-brand-title">The Compendium</span>
+        <span class="comp-info-brand-by">by Cardboard Edison</span>
+      </div>
       <button class="comp-info-close" onclick="closeCompendiumInfoDialog()">&#x2715;</button>
     </div>
-    <div id="compInfoBody"></div>
+    <div class="comp-info-scrollbody">
+      <div class="comp-info-pub-hdr">
+        <img id="compInfoLogo" class="comp-info-pub-logo" src="" alt="" style="display:none" />
+        <div class="comp-info-name" id="compInfoName"></div>
+      </div>
+      <div id="compInfoBody"></div>
+    </div>
   </div>
 </div>
 
@@ -3010,11 +3054,22 @@ function buildPublisherView(pitches) {
       : '';
 
     html += '<div class="card">';
+    // Check if this publisher has Compendium data (exact then partial match)
+    var _ck = p.toLowerCase(), _hasComp = !!COMPENDIUM_PUBS[_ck];
+    if (!_hasComp) {
+      var _cks = Object.keys(COMPENDIUM_PUBS);
+      for (var _ci = 0; _ci < _cks.length; _ci++) {
+        if (_cks[_ci].indexOf(_ck) !== -1 || _ck.indexOf(_cks[_ci]) !== -1) { _hasComp = true; break; }
+      }
+    }
+
     html += '<div class="card-header" onclick="toggleCard(this)">';
     html += '<span class="card-title">' + escHtml(p) + '</span>';
     html += '<span class="card-badges">' + at + pubHeaderBadge + '</span>';
-    html += '<button class="comp-info-btn" data-publisher="' + escHtml(p) + '"'
-         +  ' onclick="event.stopPropagation();openCompendiumInfo(this.getAttribute(\'data-publisher\'))">Info</button>';
+    if (_hasComp) {
+      html += '<button class="comp-info-btn" data-publisher="' + escHtml(p) + '"'
+           +  ' onclick="event.stopPropagation();openCompendiumInfo(this.getAttribute(\'data-publisher\'))">Info</button>';
+    }
     html += '<span class="card-chevron">▼</span>';
     html += '</div>';
     html += '<div class="card-body-wrap"><div class="card-body">';
@@ -7339,6 +7394,16 @@ function openCompendiumInfo(pubName) {
   }
 
   document.getElementById('compInfoName').textContent = pubName;
+
+  // Publisher logo
+  var logoEl = document.getElementById('compInfoLogo');
+  if (data && data.logo) {
+    logoEl.src = data.logo;
+    logoEl.style.display = '';
+  } else {
+    logoEl.src = '';
+    logoEl.style.display = 'none';
+  }
 
   var body = document.getElementById('compInfoBody');
   if (!data) {

@@ -71,7 +71,11 @@ except Exception as e:
 try:
     wb = sa.open_by_key(sheet_id)
 except Exception as e:
-    out('error', f'Could not open spreadsheet: {e}')
+    msg = str(e)
+    if '403' in msg or 'PERMISSION_DENIED' in msg or 'forbidden' in msg.lower():
+        out('error', 'Permission denied — sheet not shared with service account.', code='permission_denied')
+    else:
+        out('error', f'Could not open spreadsheet: {e}')
     sys.exit(1)
 
 out('info', f'Opened: {wb.title}')
@@ -86,6 +90,23 @@ except Exception as e:
 
 if len(all_values) < 2:
     out('error', 'Sheet appears empty (no data rows)')
+    sys.exit(1)
+
+# Validate header row against expected columns
+EXPECTED_HEADERS = [
+    'Publisher', 'Logo', 'Country', 'Accepting Submissions?',
+    'Website', 'Categories of Interest', 'Interested In',
+    'Preferred Method of Contact',
+]
+header_row = [h.strip() for h in all_values[0]]
+missing = [h for h in EXPECTED_HEADERS if h not in header_row]
+if missing:
+    out('error',
+        f'Unexpected sheet structure — missing columns: {", ".join(missing)}. '
+        f'Expected the Cardboard Edison Compendium format.',
+        code='invalid_schema',
+        missing=missing,
+        found=header_row[:10])
     sys.exit(1)
 
 # Skip the header row; use first 24 columns only

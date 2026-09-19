@@ -257,6 +257,47 @@ body {
 .ll.ok  { color: #4ade80; }
 .ll.err { color: #ff8a80; }
 
+/* ── Permission error ─────────────────────────────────────────────── */
+.perm-error {
+  display: none;
+  margin-top: 1rem;
+  background: #fff8f2;
+  border: 1.5px solid #e8b87a;
+  border-radius: 9px;
+  padding: 1rem 1.1rem;
+}
+.perm-error-title {
+  font-family: 'DINBlack', sans-serif;
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: #c8600a;
+  margin-bottom: .5rem;
+}
+.perm-error p {
+  font-size: .82rem;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: .6rem;
+}
+.copy-sa-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  font-family: 'DINRegular', monospace;
+  font-size: .78rem;
+  color: #c8860a;
+  background: rgba(200,134,10,.10);
+  border: 1px solid rgba(200,134,10,.30);
+  border-radius: 999px;
+  padding: .22rem .65rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s;
+}
+.copy-sa-btn:hover { background: rgba(200,134,10,.2); }
+.copy-sa-btn.copied { color: #16a34a; background: rgba(22,163,74,.10); border-color: rgba(22,163,74,.30); }
+
 /* ── Info note ────────────────────────────────────────────────────── */
 .info-note {
   font-size: .8rem;
@@ -323,8 +364,23 @@ body {
 
     <div id="logPanel" class="log-panel" style="display:none"></div>
 
+    <div class="perm-error" id="schemaError" style="display:none">
+      <div class="perm-error-title">Unexpected sheet structure</div>
+      <p>This sheet doesn't look like a Cardboard Edison Compendium export. Make sure you're using the correct sheet — it should have columns like <strong>Publisher</strong>, <strong>Accepting Submissions?</strong>, <strong>Categories of Interest</strong>, and <strong>Interested In</strong>.</p>
+      <p id="schemaMissing" style="font-size:.78rem;color:#aaa;margin-top:.3rem"></p>
+    </div>
+
+    <div class="perm-error" id="permError">
+      <div class="perm-error-title">Sheet not shared</div>
+      <p>Share this sheet with the PitchBoard service account, then publish again:</p>
+      <button class="copy-sa-btn" id="copySaBtn" onclick="copySA()">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        editor@zapsheets-480701.iam.gserviceaccount.com
+      </button>
+      <p style="margin-top:.5rem;font-size:.78rem;color:#aaa">Give <strong style="color:#888">Viewer</strong> access or higher, then click Publish again.</p>
+    </div>
+
     <div class="info-note">
-      The sheet must be shared with the PitchBoard service account with <strong>Viewer</strong> access or higher.
       Published data is stored at <code>data/publishers.json</code> and shared across all PitchBoards.
     </div>
   </div>
@@ -349,6 +405,20 @@ body {
     panel.scrollTop = panel.scrollHeight;
   }
 
+  var SA_EMAIL = 'editor@zapsheets-480701.iam.gserviceaccount.com';
+
+  window.copySA = function() {
+    var btn = document.getElementById('copySaBtn');
+    navigator.clipboard.writeText(SA_EMAIL).then(function() {
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(function() {
+        btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg> ' + SA_EMAIL;
+        btn.classList.remove('copied');
+      }, 2000);
+    }).catch(function() {});
+  };
+
   window.startPublish = function() {
     var inp = document.getElementById('sheetInput');
     var btn = document.getElementById('publishBtn');
@@ -369,6 +439,8 @@ body {
     var panel = document.getElementById('logPanel');
     panel.innerHTML = '';
     panel.style.display = '';
+    document.getElementById('permError').style.display = 'none';
+    document.getElementById('schemaError').style.display = 'none';
     addLog('Starting publish…', 'inf');
 
     var fd = new FormData();
@@ -395,6 +467,17 @@ body {
               try { data = JSON.parse(line); } catch(e) { addLog(line, 'inf'); return; }
               if (data.status === 'close') { done = true; return; }
               if (data.status === 'done') { done = true; }
+              if (data.status === 'error' && data.code === 'permission_denied') {
+                document.getElementById('permError').style.display = '';
+              }
+              if (data.status === 'error' && data.code === 'invalid_schema') {
+                var box = document.getElementById('schemaError');
+                box.style.display = '';
+                if (data.missing && data.missing.length) {
+                  document.getElementById('schemaMissing').textContent =
+                    'Missing columns: ' + data.missing.join(', ');
+                }
+              }
               var cls = data.status === 'ok' ? 'ok' : data.status === 'error' ? 'err' : 'inf';
               addLog(data.msg, cls);
             });

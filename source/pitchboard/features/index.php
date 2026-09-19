@@ -269,6 +269,11 @@ footer a:hover { color:rgba(255,255,255,.7); }
         <h3>Smart date tracking</h3>
         <p>Moving a game to Signed or Published auto-fills the date if blank. Started, signed, and published dates tracked per game.</p>
       </div>
+      <div class="feat-card">
+        <div class="feat-icon amber">📚</div>
+        <h3>Compendium subscription</h3>
+        <p>Subscribe to the Cardboard Edison Compendium to bring publisher data into your board — accepting status, categories, conventions, contact methods, and social links appear on every publisher card.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -521,7 +526,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <tr><td>Public game pages</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Collaborator access (no account)</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>You own the data</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Publisher discovery database</td><td class="ours"><span class="cross">—</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td>Publisher data (Compendium)</td><td class="ours"><span class="check">✓</span> <span style="font-size:12px;color:var(--text-muted);font-weight:400">with subscription</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:#1a2744;">Free</td><td>$10 / mo</td><td>$5–35 / mo</td></tr>
         </tbody>
       </table>

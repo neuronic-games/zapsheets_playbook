@@ -473,7 +473,10 @@ body {
               try { data = JSON.parse(line); } catch(e) { addLog(line, 'inf'); return; }
               if (data.status === 'close') { done = true; return; }
               if (data.status === 'done') { done = true; }
-              if (data.status === 'error' && data.code === 'permission_denied') {
+              if (data.status === 'error' && (
+                    data.code === 'permission_denied' ||
+                    (data.msg && data.msg.indexOf('Could not open spreadsheet') !== -1)
+                  )) {
                 document.getElementById('permError').style.display = '';
               }
               if (data.status === 'error' && data.code === 'invalid_schema') {

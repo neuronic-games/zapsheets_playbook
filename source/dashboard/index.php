@@ -1881,13 +1881,11 @@ foreach ($_comp_raw as $_cpub) {
       <label class="ge-label">Name<input type="text"  id="profileName"  class="ge-input" /></label>
       <label class="ge-label">Email<input type="email" id="profileEmail" class="ge-input" /></label>
       <label class="ge-label">Phone<input type="tel"   id="profilePhone" class="ge-input" /></label>
-      <label class="ge-label" style="margin-top:.4rem">
-        <span style="display:flex;align-items:center;gap:.4rem">
-          <img src="<?= $_base ?>images/ce_logo.png" alt="Cardboard Edison" id="compCodeLogo" style="height:18px;width:auto;border-radius:50%;display:none" onload="this.style.display='';document.getElementById('compCodeBadge').style.display='none'" onerror="this.style.display='none'" />
-          <span style="background:linear-gradient(90deg,#7b2d00,#c8500a);color:#f5d9b5;font-size:.62rem;font-weight:700;padding:.1rem .38rem;border-radius:3px;letter-spacing:.05em;font-family:Georgia,serif;flex-shrink:0" id="compCodeBadge">Compendium</span>
-          Code
-        </span>
-        <input type="text" id="profileCompendiumCode" class="ge-input" placeholder="Your Compendium access code" style="margin-top:.25rem" />
+      <label class="ge-label" style="margin-top:.4rem">Compendium Code
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <input type="text" id="profileCompendiumCode" class="ge-input" placeholder="Your Compendium access code" style="flex:1" />
+          <img src="<?= $_base ?>images/ce_logo.png" alt="Cardboard Edison" id="compCodeLogo" style="height:28px;width:28px;border-radius:50%;flex-shrink:0;display:none" onload="this.style.display='block'" onerror="this.style.display='none'" />
+        </div>
       </label>
     </div>
     <div class="sync-log" id="profileLog" style="display:none"></div>

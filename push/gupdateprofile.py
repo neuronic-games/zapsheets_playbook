@@ -76,27 +76,43 @@ updates.append({
     'values': [[safe_str(new_name)]]
 })
 
-# Find rows for My Email and My Phone (col 1 label, col 2 value)
+# Track which label rows already exist
+found_labels = set()
+
+# Find existing label rows and queue updates
 for i, row in enumerate(all_values[1:], start=2):
     label = row[0].strip() if row else ''
     if label == 'My Email':
+        found_labels.add('My Email')
         updates.append({'range': gspread.utils.rowcol_to_a1(i, 2), 'values': [[safe_str(new_email)]]})
     elif label == 'My Phone':
+        found_labels.add('My Phone')
         updates.append({'range': gspread.utils.rowcol_to_a1(i, 2), 'values': [[safe_str(new_phone)]]})
     elif label == 'Compendium Code':
+        found_labels.add('Compendium Code')
         updates.append({'range': gspread.utils.rowcol_to_a1(i, 2), 'values': [[safe_str(new_compendium_code)]]})
     elif label == 'Company':
+        found_labels.add('Company')
         updates.append({'range': gspread.utils.rowcol_to_a1(i, 2), 'values': [[safe_str(new_company)]]})
     elif label == 'Address':
+        found_labels.add('Address')
         updates.append({'range': gspread.utils.rowcol_to_a1(i, 2), 'values': [[safe_str(new_address)]]})
     elif label == 'Logo':
+        found_labels.add('Logo')
         # Logo is stored as an =IMAGE() formula so it renders in the sheet
         logo_val = f'=IMAGE("{new_logo_url}")' if new_logo_url else ''
         updates.append({'range': gspread.utils.rowcol_to_a1(i, 2), 'values': [[logo_val]]})
 
+# Append any missing rows that we need
+append_rows = []
+if 'Compendium Code' not in found_labels:
+    append_rows.append(['Compendium Code', safe_str(new_compendium_code)])
+
 try:
     ws.batch_update(updates, value_input_option='USER_ENTERED')
-    print(json.dumps({"ok": True, "updated": len(updates)}))
+    if append_rows:
+        ws.append_rows(append_rows, value_input_option='RAW')
+    print(json.dumps({"ok": True, "updated": len(updates), "appended": len(append_rows)}))
 except Exception as e:
     print(json.dumps({"error": f"Could not update settings: {str(e)}"}))
     sys.exit(1)

@@ -3625,7 +3625,7 @@ function buildView() {
 function render(pitches, settings, people, games) {
   // ── Parse settings.json (format: [{My Name: label, COL: value}, …]) ──
   // The value column is whatever key isn't "My Name"
-  myName = ''; myPhone = ''; myEmail = '';
+  myName = ''; myPhone = ''; myEmail = ''; myCompendiumCode = '';
   if (settings && settings.length) {
     var valCol = '';
     var keys = Object.keys(settings[0] || {});

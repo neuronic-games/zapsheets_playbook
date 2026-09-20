@@ -2307,7 +2307,7 @@ function buildSummary(pitches) {
     filterBtn('pill-cold',    'gonecold',  'gone cold',  pairCounts.gonecold) +
     filterBtn('pill-signed',  'signed',    'signed',     signedGames) +
     filterBtn('pill-published','published','published',  publishedGames);
-  if (myCompendiumCode && currentView === 'publisher') {
+  if (Object.keys(COMPENDIUM_PUBS).length > 0 && currentView === 'publisher') {
     html += '<button class="comp-filter-toggle' + (_compFilterOpen ? ' ce-active' : '') + '"'
          +  ' title="Compendium filters" onclick="toggleCompFilterBar()">'
          +  '<img src="' + escHtml(CE_LOGO_SRC) + '" alt="Compendium filters" /></button>';

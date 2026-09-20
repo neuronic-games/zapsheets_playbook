@@ -740,6 +740,34 @@ foreach ($_comp_raw as $_cpub) {
     }
     .card.open .comp-info-btn { opacity:1; pointer-events:auto; }
     .comp-info-btn:hover img { transform:scale(1.12); box-shadow:0 0 0 2px rgba(255,255,255,.5); }
+    /* ── Compendium filter bar ──────────────────────── */
+    .comp-filter-bar {
+      display:flex; flex-wrap:wrap; gap:.4rem; align-items:center;
+      padding:.3rem 1.25rem .55rem; max-width:900px; margin:0 auto;
+    }
+    .comp-filter-label {
+      font-family:'DINBlack',sans-serif; font-size:.58rem; letter-spacing:.06em;
+      color:#aaa; text-transform:uppercase; flex-shrink:0;
+    }
+    .comp-chip {
+      display:inline-flex; align-items:center;
+      font-family:'DINRegular',sans-serif; font-size:.72rem;
+      background:#f0ede8; color:#555; border:1px solid #ddd; border-radius:999px;
+      padding:.22rem .65rem; cursor:pointer; transition:background .12s, color .12s, border-color .12s;
+    }
+    .comp-chip:hover:not(.active) { background:#e0dbd3; }
+    .comp-chip.active { background:#1a1a2e; color:#e8c84a; border-color:#1a1a2e; }
+    /* CE toggle button in the summary pill bar */
+    .comp-filter-toggle {
+      background:none; border:none; padding:0 0 0 .2rem; cursor:pointer; flex-shrink:0;
+      display:inline-flex; align-items:center;
+    }
+    .comp-filter-toggle img {
+      width:26px; height:26px; border-radius:50%; display:block; opacity:.7;
+      transition:opacity .15s, transform .15s, box-shadow .15s;
+    }
+    .comp-filter-toggle:hover img { opacity:1; transform:scale(1.1); }
+    .comp-filter-toggle.ce-active img { opacity:1; box-shadow:0 0 0 2px #1a1a2e; }
     /* ── Compendium info overlay ────────────────────── */
     .comp-info-overlay {
       display:none; position:fixed; inset:0;
@@ -2015,6 +2043,7 @@ foreach ($_comp_raw as $_cpub) {
 </div>
 
 <div class="summary-bar" id="summaryBar"></div>
+<div class="comp-filter-bar" id="compFilterBar" style="display:none"></div>
 <div class="search-bar" id="searchBar">
   <div class="search-wrap" id="searchWrap">
     <input type="text" id="searchInput" placeholder="Search games, publishers, contacts…" oninput="applySearch()" />
@@ -2056,6 +2085,8 @@ var allPitches      = [];
 var filteredPitches = [];
 var searchQuery     = '';
 var activeFilters   = {};   // keys: 'signed', 'published'
+var activeCompFilters = {}; // keys: 'accepting', 'cat:card games', etc.
+var _compFilterOpen = false;
 var peopleIndex     = {};   // "Name|Company" → email
 var peopleData      = {};   // Name → full person record {Name, Email, Company, Role, Notes}
 var gamesIndex      = {};   // Game name → {Designers, …}
@@ -2276,6 +2307,11 @@ function buildSummary(pitches) {
     filterBtn('pill-cold',    'gonecold',  'gone cold',  pairCounts.gonecold) +
     filterBtn('pill-signed',  'signed',    'signed',     signedGames) +
     filterBtn('pill-published','published','published',  publishedGames);
+  if (myCompendiumCode && currentView === 'publisher') {
+    html += '<button class="comp-filter-toggle' + (_compFilterOpen ? ' ce-active' : '') + '"'
+         +  ' title="Compendium filters" onclick="toggleCompFilterBar()">'
+         +  '<img src="' + escHtml(CE_LOGO_SRC) + '" alt="Compendium filters" /></button>';
+  }
   document.getElementById('summaryBar').innerHTML = html;
 }
 
@@ -2287,6 +2323,59 @@ function toggleFilter(key) {
     activeFilters[key] = true;
   }
   buildSummary(allPitches);
+  buildView();
+}
+
+// ── Compendium filter bar ─────────────────────────────
+function toggleCompFilterBar() {
+  _compFilterOpen = !_compFilterOpen;
+  var bar = document.getElementById('compFilterBar');
+  if (_compFilterOpen) {
+    bar.style.display = '';
+    buildCompFilterBar();
+  } else {
+    bar.style.display = 'none';
+    activeCompFilters = {};
+    buildView();
+  }
+  buildSummary(allPitches); // re-render to update CE button active state
+}
+
+function buildCompFilterBar() {
+  var bar = document.getElementById('compFilterBar');
+  // Collect available filter values from COMPENDIUM_PUBS
+  var hasAccepting = false;
+  var categories = {};
+  Object.keys(COMPENDIUM_PUBS).forEach(function(k) {
+    var cpub = COMPENDIUM_PUBS[k];
+    if (cpub.accepting_submissions && cpub.accepting_submissions.toLowerCase().indexOf('yes') !== -1) {
+      hasAccepting = true;
+    }
+    if (cpub.categories) {
+      cpub.categories.split(',').forEach(function(cat) {
+        var c = cat.trim().toLowerCase();
+        if (c) categories[c] = 1;
+      });
+    }
+  });
+
+  var html = '<span class="comp-filter-label">Compendium:</span>';
+  if (hasAccepting) {
+    var a = activeCompFilters['accepting'] ? ' active' : '';
+    html += '<button class="comp-chip' + a + '" onclick="toggleCompChip(\'accepting\')">✓ Accepting</button>';
+  }
+  Object.keys(categories).sort().forEach(function(cat) {
+    var key = 'cat:' + cat;
+    var a = activeCompFilters[key] ? ' active' : '';
+    html += '<button class="comp-chip' + a + '" onclick="toggleCompChip(' + JSON.stringify(key) + ')">' + escHtml(cat) + '</button>';
+  });
+  bar.innerHTML = html;
+}
+
+function toggleCompChip(key) {
+  if (activeCompFilters[key]) delete activeCompFilters[key];
+  else activeCompFilters[key] = true;
+  buildCompFilterBar();
   buildView();
 }
 
@@ -2652,8 +2741,14 @@ function setView(v) {
   document.getElementById('btnGame').classList.toggle('active',      v==='game');
   document.getElementById('btnPublisher').classList.toggle('active', v==='publisher');
   var isDash = v === 'dashboard';
-  document.getElementById('summaryBar').style.display = isDash ? 'none' : '';
-  document.getElementById('searchBar').style.display  = isDash ? 'none' : '';
+  var isPub  = v === 'publisher';
+  document.getElementById('summaryBar').style.display    = isDash ? 'none' : '';
+  document.getElementById('searchBar').style.display     = isDash ? 'none' : '';
+  if (!isPub && _compFilterOpen) {
+    _compFilterOpen = false;
+    activeCompFilters = {};
+    document.getElementById('compFilterBar').style.display = 'none';
+  }
   buildView();
 }
 
@@ -3051,6 +3146,33 @@ function buildPublisherView(pitches) {
         if (!keep) delete pubs[p][g];
       });
       if (Object.keys(pubs[p]).length === 0) delete pubs[p];
+    });
+  }
+
+  // Apply Compendium filters (accepting submissions / category)
+  var hasCompFilter = Object.keys(activeCompFilters).length > 0;
+  if (hasCompFilter) {
+    Object.keys(pubs).forEach(function(p) {
+      var lk = p.toLowerCase();
+      var cpub = COMPENDIUM_PUBS[lk];
+      if (!cpub) {
+        var cks = Object.keys(COMPENDIUM_PUBS);
+        for (var ci = 0; ci < cks.length; ci++) {
+          if (lk.indexOf(cks[ci]) !== -1 || cks[ci].indexOf(lk) !== -1) { cpub = COMPENDIUM_PUBS[cks[ci]]; break; }
+        }
+      }
+      if (!cpub) { delete pubs[p]; return; }
+      if (activeCompFilters['accepting']) {
+        if (!cpub.accepting_submissions || cpub.accepting_submissions.toLowerCase().indexOf('yes') === -1) {
+          delete pubs[p]; return;
+        }
+      }
+      var catFilters = Object.keys(activeCompFilters).filter(function(k){ return k.indexOf('cat:') === 0; });
+      if (catFilters.length) {
+        var pubCats = (cpub.categories || '').toLowerCase();
+        var allMatch = catFilters.every(function(k){ return pubCats.indexOf(k.slice(4)) !== -1; });
+        if (!allMatch) delete pubs[p];
+      }
     });
   }
 

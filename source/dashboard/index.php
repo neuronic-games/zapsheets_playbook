@@ -3258,17 +3258,15 @@ function buildPublisherView(pitches) {
           delete pubs[p]; return;
         }
       }
-      var catFilters = Object.keys(activeCompFilters).filter(function(k){ return k.indexOf('cat:') === 0; });
-      if (catFilters.length) {
-        var pubCats = (cpub.categories || '').toLowerCase();
-        var allMatch = catFilters.every(function(k){ return pubCats.indexOf(k.slice(4)) !== -1; });
-        if (!allMatch) { delete pubs[p]; return; }
-      }
+      // OR logic: publisher passes if it matches ANY selected category OR ANY selected convention
+      var catFilters  = Object.keys(activeCompFilters).filter(function(k){ return k.indexOf('cat:')  === 0; });
       var convFilters = Object.keys(activeCompFilters).filter(function(k){ return k.indexOf('conv:') === 0; });
-      if (convFilters.length) {
+      if (catFilters.length || convFilters.length) {
+        var pubCats  = (cpub.categories  || '').toLowerCase();
         var pubConvs = (cpub.conventions || '').toLowerCase();
-        var allMatch = convFilters.every(function(k){ return pubConvs.indexOf(k.slice(5).toLowerCase()) !== -1; });
-        if (!allMatch) delete pubs[p];
+        var catMatch  = catFilters.length  > 0 && catFilters.some(function(k){  return pubCats.indexOf(k.slice(4)) !== -1; });
+        var convMatch = convFilters.length > 0 && convFilters.some(function(k){ return pubConvs.indexOf(k.slice(5).toLowerCase()) !== -1; });
+        if (!catMatch && !convMatch) { delete pubs[p]; return; }
       }
     });
   }

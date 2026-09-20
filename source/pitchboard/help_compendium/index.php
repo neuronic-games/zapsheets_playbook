@@ -285,7 +285,7 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
         <p>Multi-select list. Shows publishers that attend the chosen conventions — useful for con prep.</p>
       </div>
     </div>
-    <div class="tip"><strong>Filters combine:</strong> selecting "Accepting" plus "Gen Con" shows only publishers who are accepting submissions AND regularly attend Gen Con. Active filters are shown as a summary line below the lists.</div>
+    <div class="tip"><strong>Filters combine with OR:</strong> selecting "card games" and "Gen Con" shows publishers interested in card games OR who attend Gen Con — any match qualifies. "Accepting" is separate and always narrows the results further. Active filters are shown as a summary line below the lists.</div>
     <div class="tip"><strong>Closing the filter panel:</strong> tap the CE logo button again to collapse the panel and clear all active Compendium filters.</div>
   </div>
 

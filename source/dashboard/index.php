@@ -7773,6 +7773,12 @@ function openCompendiumInfo(pubName) {
        + '<div class="comp-info-value">' + escHtml(data.looking_for) + '</div></div>';
   }
 
+  // Representative games → chips
+  if (data.rep_games) {
+    h += '<div class="comp-info-row"><div class="comp-info-label">Representative Games</div>'
+       + '<div class="comp-info-chips">' + toChips(data.rep_games) + '</div></div>';
+  }
+
   // Conventions → chips
   if (data.conventions) {
     h += '<div class="comp-info-row"><div class="comp-info-label">Conventions</div>'

@@ -161,7 +161,6 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
     <a href="<?= $_self ?>#filters">Compendium Filters</a>
     <a href="<?= $_self ?>#publisher-dialog">Publisher Dialog</a>
     <a href="<?= $_self ?>#add-pitch">Adding a Pitch</a>
-    <a href="<?= $_self ?>#publishing">Publishing (Admin)</a>
   </nav>
 </div>
 
@@ -334,50 +333,6 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
       </div>
     </div>
     <div class="tip"><strong>New publishers:</strong> you can still type any publisher name — it doesn't have to be in the Compendium. The CE badge just indicates that Compendium data is available for that name.</div>
-  </div>
-
-  <!-- ── 07 Publishing (Admin) ── -->
-  <div class="section" id="publishing">
-    <div class="section-header">
-      <span class="section-num">07</span>
-      <h2 class="section-title">Publishing the Compendium (Admin)</h2>
-    </div>
-    <p>If you're the person who manages the Compendium data — maintaining the Google Sheet and pushing updates to PitchBoard — this section is for you.</p>
-    <div class="steps">
-      <div class="step">
-        <div class="step-body">
-          <div class="step-title">Open the Compendium admin page</div>
-          <p>Navigate to <a href="https://zapsheets.com/app/pitchboard/compendium" target="_blank" style="color:var(--sky)">zapsheets.com/app/pitchboard/compendium</a>. This page is separate from a user's PitchBoard — it's the admin publish tool.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-body">
-          <div class="step-title">Paste the Compendium Sheet URL</div>
-          <p>Enter the full Google Sheets URL for the Cardboard Edison Compendium sheet. The sheet must be shared with the ZapSheets service account.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-body">
-          <div class="step-title">Click Publish</div>
-          <p>PitchBoard reads all rows from the main publisher tab and the <strong>Codes</strong> tab, then writes <code>publishers.json</code> and <code>compendium_codes.json</code> to the server. A live log shows each step.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-body">
-          <div class="step-title">Republish whenever the sheet changes</div>
-          <p>The cached JSON is used by every PitchBoard user. Republish after adding publishers, updating entries, or changing the access codes.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Diagram: Compendium admin page -->
-    <p class="diagram-label">Compendium admin page — Codes tab structure</p>
-    <a href="https://zapsheets.com/app/pitchboard/compendium" target="_blank">
-      <img src="images/help_compendium/ce-compendium-admin.png" alt="Compendium admin page showing Codes tab" style="width:100%;border-radius:12px;display:block;max-width:700px" />
-    </a>
-
-    <div class="tip"><strong>Codes tab:</strong> add a <code>Codes</code> worksheet to the Compendium sheet. Put one access code per row in column A (add a header row like "Code" if you like — it's automatically skipped). Each code in that list can unlock the Compendium in PitchBoard.</div>
-    <div class="tip"><strong>Empty Codes tab:</strong> if the Codes tab is missing or empty, <em>any</em> non-empty string will pass as a valid code. This is useful while testing, but you should add real codes before distributing access.</div>
   </div>
 
 </div><!-- /page-body -->

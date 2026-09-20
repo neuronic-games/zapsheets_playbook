@@ -5,6 +5,11 @@ $_base     = (isset($_bm[1]) && $_bm[1] !== '') ? $_bm[1] : '/';
 if (substr($_base, -1) !== '/') $_base .= '/';
 $_sheet_id = $_bm[2] ?? '';
 
+$_ce_logo_file = __DIR__ . '/../../images/ce_logo.png';
+$_ce_logo_src  = is_file($_ce_logo_file)
+    ? 'data:image/png;base64,' . base64_encode(file_get_contents($_ce_logo_file))
+    : '';
+
 // Noteboard: pre-compute per-game hashes so JS can build feedback URLs
 $_nb_hashes = [];
 $_nb_index  = __DIR__ . '/../../sheets/' . $_sheet_id . '/noteboard-index.json';
@@ -1884,7 +1889,7 @@ foreach ($_comp_raw as $_cpub) {
       <label class="ge-label" style="margin-top:.4rem">Compendium Code
         <div style="position:relative">
           <input type="text" id="profileCompendiumCode" class="ge-input" placeholder="Your Compendium access code" style="width:100%;padding-right:2.4rem;box-sizing:border-box" />
-          <img src="<?= $_base ?>images/ce_logo.png" alt="Cardboard Edison" id="compCodeLogo" style="position:absolute;right:.45rem;top:50%;transform:translateY(-50%);height:22px;width:22px;border-radius:50%;pointer-events:none" onerror="this.style.display='none'" />
+          <?php if ($_ce_logo_src): ?><img src="<?= $_ce_logo_src ?>" alt="Cardboard Edison" id="compCodeLogo" style="position:absolute;right:.45rem;top:50%;transform:translateY(-50%);height:22px;width:22px;border-radius:50%;pointer-events:none" /><?php endif; ?>
         </div>
       </label>
     </div>

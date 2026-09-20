@@ -2749,6 +2749,7 @@ function setView(v) {
     activeCompFilters = {};
     document.getElementById('compFilterBar').style.display = 'none';
   }
+  buildSummary(allPitches); // re-render pills so CE button reflects current view
   buildView();
 }
 

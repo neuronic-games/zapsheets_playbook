@@ -951,6 +951,14 @@ foreach ($_comp_raw as $_cpub) {
     }
     .combo-opt:hover, .combo-opt.active { background:#1a1a2e; color:#fff; }
     .combo-sep { height:1px; background:#e0dbd3; margin:.25rem .5rem; pointer-events:none; }
+    .combo-comp-badge {
+      float:right; font-family:'DINBlack',sans-serif; font-size:.56rem;
+      background:#1a1a2e; color:#e8c84a; border-radius:3px;
+      padding:.1rem .3rem; letter-spacing:.05em; pointer-events:none; line-height:1.5;
+    }
+    .combo-opt:hover .combo-comp-badge, .combo-opt.active .combo-comp-badge {
+      background:#e8c84a; color:#1a1a2e;
+    }
     /* Show-all collapsed publishers button */
     .pub-show-all-btn {
       display:block; width:100%; background:none; border:none; border-top:1px solid #eee;
@@ -5375,7 +5383,17 @@ function getPublisherList() {
   Object.keys(peopleIndex).forEach(function(key) {
     var co = key.split('|')[1]; if (co) pubs[co] = 1;
   });
-  return Object.keys(pubs).sort(function(a,b){ return a.localeCompare(b); });
+  var yourPubs = Object.keys(pubs).sort(function(a,b){ return a.localeCompare(b); });
+
+  // Append Compendium-only publishers after a separator when code is set
+  if (myCompendiumCode) {
+    var compOnly = Object.keys(COMPENDIUM_PUBS)
+      .map(function(k) { return COMPENDIUM_PUBS[k].publisher || ''; })
+      .filter(function(name) { return name && !pubs[name]; })
+      .sort(function(a,b){ return a.localeCompare(b); });
+    if (compOnly.length) return yourPubs.concat(['---']).concat(compOnly);
+  }
+  return yourPubs;
 }
 
 function getContactsForPublisher(publisher) {
@@ -5393,7 +5411,7 @@ function getContactsForPublisher(publisher) {
 // ── Combobox implementation ───────────────────────────
 var _combosReady = false;
 
-function _comboInit(inputId, dropId, getItems, onSelect) {
+function _comboInit(inputId, dropId, getItems, onSelect, renderItem) {
   var inp  = document.getElementById(inputId);
   var drop = document.getElementById(dropId);
   if (!inp || !drop) return;
@@ -5424,7 +5442,7 @@ function _comboInit(inputId, dropId, getItems, onSelect) {
         div.className = 'combo-sep';
       } else {
         div.className = 'combo-opt';
-        div.textContent = item;
+        if (renderItem) { renderItem(div, item); } else { div.textContent = item; }
         div.addEventListener('mousedown', function(e) {
           e.preventDefault();   // keep focus on input
           inp.value = item;
@@ -5478,6 +5496,25 @@ function _setupCombos() {
     function() {
       // Publisher chosen → clear contact field
       document.getElementById('addContactInput').value = '';
+    },
+    function(div, item) {
+      var span = document.createElement('span');
+      span.textContent = item;
+      div.appendChild(span);
+      // Badge for Compendium publishers (exact then partial match)
+      var ck = item.toLowerCase(), hasComp = !!COMPENDIUM_PUBS[ck];
+      if (!hasComp) {
+        var cks = Object.keys(COMPENDIUM_PUBS);
+        for (var i = 0; i < cks.length; i++) {
+          if (ck.indexOf(cks[i]) !== -1 || cks[i].indexOf(ck) !== -1) { hasComp = true; break; }
+        }
+      }
+      if (hasComp) {
+        var badge = document.createElement('span');
+        badge.className = 'combo-comp-badge';
+        badge.textContent = 'COMPENDIUM';
+        div.appendChild(badge);
+      }
     });
   _comboInit('addContactInput', 'contactComboDrop',
     function() {

@@ -1957,8 +1957,8 @@ $_compendium_codes = file_exists($_codes_file)
 
 
 <!-- Profile dialog -->
-<div class="sync-overlay" id="profileOverlay">
-  <div class="sync-dialog" style="width:min(400px,94vw)">
+<div class="sync-overlay" id="profileOverlay" onclick="if(event.target===this)closeProfileDialog()">
+  <div class="sync-dialog" style="width:min(400px,94vw)" onclick="event.stopPropagation()">
     <h2>Profile</h2>
     <div style="display:flex;flex-direction:column;gap:.65rem;margin:.25rem 0 .5rem">
       <label class="ge-label">Name<input type="text"  id="profileName"  class="ge-input" /></label>
@@ -1970,7 +1970,7 @@ $_compendium_codes = file_exists($_codes_file)
     </div>
     <div class="sync-log" id="profileLog" style="display:none"></div>
     <div class="sync-dialog-actions" style="margin-top:1.2rem">
-      <button class="notes-close" id="profileCancelBtn" onclick="closeProfileDialog()">Cancel</button>
+      <button class="notes-close" id="profileCancelBtn" onclick="forceCloseProfileDialog()">Cancel</button>
       <button class="sync-update-btn" id="profileSaveBtn" onclick="submitProfile()">Save</button>
     </div>
   </div>
@@ -5601,6 +5601,8 @@ document.addEventListener('keydown', function(ev) {
   if (document.getElementById('errOverlay').classList.contains('open'))      { closeErrDialog();              return; }
   if (document.getElementById('compInfoOverlay').classList.contains('open')) { closeCompendiumInfoDialog();   return; }
   // Data-entry overlays — guard if dirty
+  el = document.getElementById('profileOverlay');
+  if (el.classList.contains('open'))       { closeProfileDialog(); return; }
   el = document.getElementById('diOverlay');
   if (el.classList.contains('open'))       { d = el.querySelector('.di-dialog');        if (hasDialogData(d)) shakeDialog(d); else closeDiDialog();       return; }
   el = document.getElementById('gameEditOverlay');
@@ -6592,6 +6594,21 @@ document.addEventListener('click', function(e) {
 });
 
 // ── Profile dialog ───────────────────────────────────
+var _profileInitial = {};
+function _profileSnapshot() {
+  _profileInitial = {
+    name:  document.getElementById('profileName').value,
+    email: document.getElementById('profileEmail').value,
+    phone: document.getElementById('profilePhone').value,
+    code:  document.getElementById('profileCompendiumCode').value,
+  };
+}
+function _profileIsDirty() {
+  return document.getElementById('profileName').value           !== _profileInitial.name  ||
+         document.getElementById('profileEmail').value          !== _profileInitial.email ||
+         document.getElementById('profilePhone').value          !== _profileInitial.phone ||
+         document.getElementById('profileCompendiumCode').value !== _profileInitial.code;
+}
 function openProfileDialog() {
   document.getElementById('profileName').value           = myName           || '';
   document.getElementById('profileEmail').value          = myEmail          || '';
@@ -6602,9 +6619,14 @@ function openProfileDialog() {
   document.getElementById('profileSaveBtn').disabled   = false;
   document.getElementById('profileCancelBtn').disabled = false;
   document.getElementById('profileCancelBtn').textContent = 'Cancel';
+  _profileSnapshot();
   document.getElementById('profileOverlay').classList.add('open');
 }
 function closeProfileDialog() {
+  if (_profileIsDirty()) { shakeDialog(document.querySelector('#profileOverlay .sync-dialog')); return; }
+  forceCloseProfileDialog();
+}
+function forceCloseProfileDialog() {
   document.getElementById('profileOverlay').classList.remove('open');
 }
 function _profileLog(msg, type) {
@@ -6659,9 +6681,9 @@ function submitProfile() {
       _compFilterOpen   = false;
       buildView();
     }
+    _profileSnapshot(); // re-sync so dialog no longer appears dirty
     _profileLog('✓  Saved', 'ok');
-    document.getElementById('profileCancelBtn').disabled  = false;
-    document.getElementById('profileCancelBtn').textContent = 'Close';
+    setTimeout(forceCloseProfileDialog, 600);
   };
   xhr.onerror = function() {
     _profileLog('✕  Network error', 'error');

@@ -5,10 +5,7 @@ $_base     = (isset($_bm[1]) && $_bm[1] !== '') ? $_bm[1] : '/';
 if (substr($_base, -1) !== '/') $_base .= '/';
 $_sheet_id = $_bm[2] ?? '';
 
-$_ce_logo_file = __DIR__ . '/../../images/ce_logo.png';
-$_ce_logo_src  = is_file($_ce_logo_file)
-    ? 'data:image/png;base64,' . base64_encode(file_get_contents($_ce_logo_file))
-    : '';
+$_ce_logo_src = 'https://images.squarespace-cdn.com/content/v1/55fc10b1e4b0347ac88a7992/3669060e-f00e-4113-8fc5-ed87690796cb/CE+logo+-+circle+transparent+background.png?format=100w';
 
 // Noteboard: pre-compute per-game hashes so JS can build feedback URLs
 $_nb_hashes = [];

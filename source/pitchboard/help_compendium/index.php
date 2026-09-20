@@ -208,7 +208,7 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
       <span class="section-num">02</span>
       <h2 class="section-title">Getting Access</h2>
     </div>
-    <p>Compendium features are unlocked by entering a valid access code in your Profile. Codes are distributed by whoever administers the Compendium for your community.</p>
+    <p>Compendium features are unlocked by entering a valid access code in your Profile. Codes are distributed by Cardboard Edison.</p>
     <div class="steps">
       <div class="step">
         <div class="step-body">

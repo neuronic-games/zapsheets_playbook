@@ -770,7 +770,16 @@ $_compendium_codes = file_exists($_codes_file)
     .comp-filter-col-label {
       font-family:'DINBlack',sans-serif; font-size:.58rem; letter-spacing:.06em;
       text-transform:uppercase; color:#aaa; margin-bottom:.3rem;
+      display:flex; align-items:center; justify-content:space-between;
     }
+    .comp-filter-clear {
+      font-family:'DINRegular',sans-serif; font-size:.6rem; letter-spacing:.03em;
+      text-transform:uppercase; color:#bbb; cursor:pointer; padding:1px 5px;
+      border:1px solid #ddd; border-radius:4px; background:none; line-height:1.4;
+      transition:color .12s, border-color .12s;
+    }
+    .comp-filter-clear:hover { color:#e05; border-color:#e05; }
+    .comp-filter-clear.has-active { color:#888; border-color:#bbb; }
     .comp-filter-list {
       height:140px; overflow-y:auto; border:1px solid #ddd; border-radius:7px;
       background:#fff;
@@ -2439,11 +2448,15 @@ function buildCompFilterBar() {
       '<div class="comp-filter-chips">' + topChips + '</div>' +
       '<div class="comp-filter-cols">' +
         '<div class="comp-filter-col">' +
-          '<div class="comp-filter-col-label">Categories of Interest</div>' +
+          '<div class="comp-filter-col-label">Categories of Interest' +
+            '<button class="comp-filter-clear' + (activeCats.length ? ' has-active' : '') + '" onclick="clearCompList(\'cat\')" title="Clear category filters">Clear</button>' +
+          '</div>' +
           '<div class="comp-filter-list">' + catItems + '</div>' +
         '</div>' +
         '<div class="comp-filter-col">' +
-          '<div class="comp-filter-col-label">Conventions Regularly Attended</div>' +
+          '<div class="comp-filter-col-label">Conventions Regularly Attended' +
+            '<button class="comp-filter-clear' + (activeConvs.length ? ' has-active' : '') + '" onclick="clearCompList(\'conv\')" title="Clear convention filters">Clear</button>' +
+          '</div>' +
           '<div class="comp-filter-list">' + convItems + '</div>' +
         '</div>' +
       '</div>' +
@@ -2457,6 +2470,14 @@ function buildCompFilterBar() {
 function toggleCompChip(key) {
   if (activeCompFilters[key]) delete activeCompFilters[key];
   else activeCompFilters[key] = true;
+  buildCompFilterBar();
+  buildView();
+}
+
+function clearCompList(prefix) {
+  Object.keys(activeCompFilters).forEach(function(k){
+    if (k.indexOf(prefix + ':') === 0) delete activeCompFilters[k];
+  });
   buildCompFilterBar();
   buildView();
 }

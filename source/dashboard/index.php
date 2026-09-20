@@ -5383,17 +5383,14 @@ function getPublisherList() {
   Object.keys(peopleIndex).forEach(function(key) {
     var co = key.split('|')[1]; if (co) pubs[co] = 1;
   });
-  var yourPubs = Object.keys(pubs).sort(function(a,b){ return a.localeCompare(b); });
-
-  // Append Compendium-only publishers after a separator when code is set
+  // Merge in Compendium publishers (no duplicates) when code is set
   if (myCompendiumCode) {
-    var compOnly = Object.keys(COMPENDIUM_PUBS)
-      .map(function(k) { return COMPENDIUM_PUBS[k].publisher || ''; })
-      .filter(function(name) { return name && !pubs[name]; })
-      .sort(function(a,b){ return a.localeCompare(b); });
-    if (compOnly.length) return yourPubs.concat(['---']).concat(compOnly);
+    Object.keys(COMPENDIUM_PUBS).forEach(function(k) {
+      var name = COMPENDIUM_PUBS[k].publisher || '';
+      if (name) pubs[name] = 1;
+    });
   }
-  return yourPubs;
+  return Object.keys(pubs).sort(function(a,b){ return a.localeCompare(b); });
 }
 
 function getContactsForPublisher(publisher) {

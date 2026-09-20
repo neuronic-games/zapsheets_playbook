@@ -172,7 +172,7 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
       <span class="section-num">01</span>
       <h2 class="section-title">What Is the Compendium Integration?</h2>
     </div>
-    <p>The <strong>Cardboard Edison Compendium</strong> is a curated database of tabletop game publishers — their categories of interest, conventions they attend, representative games, preferred contact methods, and more. When you have a valid Compendium access code, PitchBoard pulls this data in and surfaces it at every relevant point in your workflow.</p>
+    <p>The <strong><a href="https://cardboardedison.com/directoryinfo" target="_blank" style="color:inherit">Cardboard Edison Compendium</a></strong> is a curated database of tabletop game publishers — their categories of interest, conventions they attend, representative games, preferred contact methods, and more. When you have a valid Compendium access code, PitchBoard pulls this data in and surfaces it at every relevant point in your workflow.</p>
     <p>The integration is entirely opt-in and code-gated: without a code, PitchBoard works exactly as before. With a code, a Cardboard Edison logo <img class="ce-inline-logo" src="images/help_compendium/ce-logo.png" alt="CE logo"> appears wherever Compendium data is available.</p>
     <div class="cards">
       <div class="card">

@@ -3862,7 +3862,7 @@ function render(pitches, settings, people, games) {
       var val   = valCol ? (r[valCol]||'').trim() : '';
       if (label === 'My Email')        myEmail          = val;
       if (label === 'My Phone')        myPhone          = val;
-      if (label === 'Compendium Code') myCompendiumCode = val;
+      if (label === 'Compendium Code') myCompendiumCode = val.replace(/^'+/, ''); // strip any stray leading apostrophes
     });
   }
 

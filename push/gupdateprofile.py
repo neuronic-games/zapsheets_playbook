@@ -111,7 +111,7 @@ if 'Compendium Code' not in found_labels:
 try:
     ws.batch_update(updates, value_input_option='USER_ENTERED')
     if append_rows:
-        ws.append_rows(append_rows, value_input_option='RAW')
+        ws.append_rows(append_rows, value_input_option='USER_ENTERED')
     print(json.dumps({"ok": True, "updated": len(updates), "appended": len(append_rows)}))
 except Exception as e:
     print(json.dumps({"error": f"Could not update settings: {str(e)}"}))

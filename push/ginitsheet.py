@@ -48,11 +48,12 @@ TABS = {
         ['Name', 'Email', 'Company', 'Role', 'Notes'],
     ],
     'Settings': [
-        ['My Name',     ''],
-        ['My Email',    ''],
-        ['My Phone',    ''],
-        ['PublishedOn', ''],
-        ['Version',     ''],
+        ['My Name',         ''],
+        ['My Email',        ''],
+        ['My Phone',        ''],
+        ['Compendium Code', ''],
+        ['PublishedOn',     ''],
+        ['Version',         ''],
     ],
     'Games': [
         ['Name', 'Tagline', 'Status',

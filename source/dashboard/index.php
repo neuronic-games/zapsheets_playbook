@@ -1881,6 +1881,14 @@ foreach ($_comp_raw as $_cpub) {
       <label class="ge-label">Name<input type="text"  id="profileName"  class="ge-input" /></label>
       <label class="ge-label">Email<input type="email" id="profileEmail" class="ge-input" /></label>
       <label class="ge-label">Phone<input type="tel"   id="profilePhone" class="ge-input" /></label>
+      <label class="ge-label" style="margin-top:.4rem">
+        <span style="display:flex;align-items:center;gap:.4rem">
+          <img src="https://cardboardedison.com/wp-content/uploads/2023/06/compendium-logo.png" alt="Compendium" id="compCodeLogo" style="height:18px;width:auto;border-radius:2px;display:none" onload="this.style.display='';document.getElementById('compCodeBadge').style.display='none'" onerror="this.style.display='none'" />
+          <span style="background:linear-gradient(90deg,#7b2d00,#c8500a);color:#f5d9b5;font-size:.62rem;font-weight:700;padding:.1rem .38rem;border-radius:3px;letter-spacing:.05em;font-family:Georgia,serif;flex-shrink:0" id="compCodeBadge">Compendium</span>
+          Code
+        </span>
+        <input type="text" id="profileCompendiumCode" class="ge-input" placeholder="Your Compendium access code" style="margin-top:.25rem" />
+      </label>
     </div>
     <div class="sync-log" id="profileLog" style="display:none"></div>
     <div class="sync-dialog-actions">
@@ -2042,9 +2050,10 @@ var peopleData      = {};   // Name → full person record {Name, Email, Company
 var gamesIndex      = {};   // Game name → {Designers, …}
 var totalGameCount  = 0;
 var totalPubCount   = 0;
-var myName  = '';
-var myPhone = '';
-var myEmail = '';
+var myName           = '';
+var myPhone          = '';
+var myEmail          = '';
+var myCompendiumCode = '';
 
 // ── Helpers ───────────────────────────────────────────
 function statusClass(s) {
@@ -3082,7 +3091,7 @@ function buildPublisherView(pitches) {
     html += '<div class="card-header" onclick="toggleCard(this)">';
     html += '<span class="card-title">' + escHtml(p) + '</span>';
     html += '<span class="card-badges">' + at + pubHeaderBadge + '</span>';
-    if (_hasComp) {
+    if (_hasComp && myCompendiumCode) {
       html += '<button class="comp-info-btn" data-publisher="' + escHtml(p) + '"'
            +  ' onclick="event.stopPropagation();openCompendiumInfo(this.getAttribute(\'data-publisher\'))">Info</button>';
     }
@@ -3619,8 +3628,9 @@ function render(pitches, settings, people, games) {
     settings.forEach(function(r) {
       var label = (r['My Name']||'').trim();
       var val   = valCol ? (r[valCol]||'').trim() : '';
-      if (label === 'My Email') myEmail = val;
-      if (label === 'My Phone') myPhone = val;
+      if (label === 'My Email')        myEmail          = val;
+      if (label === 'My Phone')        myPhone          = val;
+      if (label === 'Compendium Code') myCompendiumCode = val;
     });
   }
 
@@ -6288,9 +6298,10 @@ document.addEventListener('click', function(e) {
 
 // ── Profile dialog ───────────────────────────────────
 function openProfileDialog() {
-  document.getElementById('profileName').value  = myName  || '';
-  document.getElementById('profileEmail').value = myEmail || '';
-  document.getElementById('profilePhone').value = myPhone || '';
+  document.getElementById('profileName').value           = myName           || '';
+  document.getElementById('profileEmail').value          = myEmail          || '';
+  document.getElementById('profilePhone').value          = myPhone          || '';
+  document.getElementById('profileCompendiumCode').value = myCompendiumCode || '';
   document.getElementById('profileLog').innerHTML = '';
   document.getElementById('profileLog').style.display = 'none';
   document.getElementById('profileSaveBtn').disabled   = false;
@@ -6312,9 +6323,10 @@ function _profileLog(msg, type) {
 }
 function submitProfile() {
   if (!sheet_Id) return;
-  var name  = document.getElementById('profileName').value.trim();
-  var email = document.getElementById('profileEmail').value.trim();
-  var phone = document.getElementById('profilePhone').value.trim();
+  var name            = document.getElementById('profileName').value.trim();
+  var email           = document.getElementById('profileEmail').value.trim();
+  var phone           = document.getElementById('profilePhone').value.trim();
+  var compendiumCode  = document.getElementById('profileCompendiumCode').value.trim();
   if (!name) { _profileLog('Name is required.', 'error'); return; }
 
   document.getElementById('profileSaveBtn').disabled   = true;
@@ -6324,10 +6336,11 @@ function submitProfile() {
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_BASE + 'push/updateProfile.php');
   var fd = new FormData();
-  fd.append('id',    sheet_Id);
-  fd.append('name',  name);
-  fd.append('email', email);
-  fd.append('phone', phone);
+  fd.append('id',               sheet_Id);
+  fd.append('name',             name);
+  fd.append('email',            email);
+  fd.append('phone',            phone);
+  fd.append('compendium_code',  compendiumCode);
   xhr.onload = function() {
     var result;
     try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
@@ -6338,9 +6351,10 @@ function submitProfile() {
       return;
     }
     // Update in-memory values immediately
-    myName  = name;
-    myEmail = email;
-    myPhone = phone;
+    myName           = name;
+    myEmail          = email;
+    myPhone          = phone;
+    myCompendiumCode = compendiumCode;
     var parts = [myName, myEmail, myPhone].filter(Boolean);
     document.getElementById('subTitle').textContent = parts.join('  ·  ');
     _profileLog('✓  Saved', 'ok');

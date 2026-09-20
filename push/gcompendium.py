@@ -146,23 +146,25 @@ out('info', f'✓  {len(publishers)} publishers written ({size_kb} KB)')
 codesFile = os.path.join(dataDir, 'compendium_codes.json')
 codes = []
 try:
+    all_sheet_names = [w.title for w in wb.worksheets()]
+    out('info', f'Sheets found: {", ".join(all_sheet_names)}')
     codes_ws = next((w for w in wb.worksheets() if w.title.strip().lower() == 'codes'), None)
     if codes_ws:
-        out('info', 'Reading Codes tab…')
+        out('info', f'Reading Codes tab ("{codes_ws.title}")…')
         rows = codes_ws.get_all_values()
-        # Skip header row (row 0); collect non-empty values from column A
-        for row in rows[1:]:
+        for row in rows:
             code = row[0].strip() if row else ''
-            if code:
+            # Skip blank cells and obvious header labels
+            if code and code.lower() not in ('code', 'codes'):
                 codes.append(code)
         with open(codesFile, 'w', encoding='utf-8') as f:
             json.dump(codes, f, ensure_ascii=False)
         out('info', f'{len(codes)} code(s) stored.')
     else:
-        out('info', 'No Codes tab found — skipping.')
+        out('info', 'No "Codes" tab found — skipping.')
         if os.path.exists(codesFile):
             os.remove(codesFile)
 except Exception as e:
-    out('info', f'Could not read Codes tab: {e}')
+    out('error', f'Could not read Codes tab: {e}')
 
 out('ok', f'✓  Published {len(publishers)} publishers, {len(codes)} code(s).', count=len(publishers))

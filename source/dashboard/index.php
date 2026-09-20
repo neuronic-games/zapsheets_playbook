@@ -2360,6 +2360,8 @@ function buildCompFilterBar() {
   });
 
   var html = '<span class="comp-filter-label">Compendium:</span>';
+  var sa = activeCompFilters['showAll'] ? ' active' : '';
+  html += '<button class="comp-chip' + sa + '" onclick="toggleCompChip(\'showAll\')">Show All</button>';
   if (hasAccepting) {
     var a = activeCompFilters['accepting'] ? ' active' : '';
     html += '<button class="comp-chip' + a + '" onclick="toggleCompChip(\'accepting\')">✓ Accepting</button>';
@@ -3147,6 +3149,14 @@ function buildPublisherView(pitches) {
         if (!keep) delete pubs[p][g];
       });
       if (Object.keys(pubs[p]).length === 0) delete pubs[p];
+    });
+  }
+
+  // Inject Compendium-only publishers (no pitch history) when Show All is active
+  if (activeCompFilters['showAll']) {
+    Object.keys(COMPENDIUM_PUBS).forEach(function(k) {
+      var name = COMPENDIUM_PUBS[k].publisher || '';
+      if (name && !pubs[name]) pubs[name] = {};
     });
   }
 

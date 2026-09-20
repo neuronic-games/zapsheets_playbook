@@ -1884,7 +1884,7 @@ foreach ($_comp_raw as $_cpub) {
       <label class="ge-label" style="margin-top:.4rem">Compendium Code
         <div style="position:relative">
           <input type="text" id="profileCompendiumCode" class="ge-input" placeholder="Your Compendium access code" style="width:100%;padding-right:2.4rem;box-sizing:border-box" />
-          <img src="<?= $_base ?>images/ce_logo.png" alt="Cardboard Edison" id="compCodeLogo" style="position:absolute;right:.45rem;top:50%;transform:translateY(-50%);height:22px;width:22px;border-radius:50%;pointer-events:none;display:none" onload="this.style.display='block'" onerror="this.style.display='none'" />
+          <img src="<?= $_base ?>images/ce_logo.png" alt="Cardboard Edison" id="compCodeLogo" style="position:absolute;right:.45rem;top:50%;transform:translateY(-50%);height:22px;width:22px;border-radius:50%;pointer-events:none" onerror="this.style.display='none'" />
         </div>
       </label>
     </div>

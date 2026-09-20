@@ -107,9 +107,8 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
 /* ── Diagram label ── */
 .diagram-label { font-family: 'DINBlack', sans-serif; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--slate); margin: 1.5rem 0 .5rem; }
 
-/* ── CE inline badge ── */
-.ce-badge-inline { display: inline-flex; align-items: center; gap: .3rem; background: rgba(232,105,28,.1); border: 1px solid rgba(232,105,28,.3); border-radius: 6px; padding: .15rem .5rem .15rem .3rem; font-family: 'DINBlack', sans-serif; font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ce-orange); vertical-align: middle; }
-.ce-badge-inline .ce-logo-img { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; display: block; }
+/* ── CE inline logo ── */
+.ce-inline-logo { width: 20px; height: 20px; border-radius: 50%; vertical-align: middle; display: inline-block; }
 
 /* ── Footer ── */
 .footer { text-align: center; padding: 3rem 1.5rem 2.5rem; border-top: 1px solid var(--border); margin-top: 2rem; }
@@ -175,7 +174,7 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
       <h2 class="section-title">What Is the Compendium Integration?</h2>
     </div>
     <p>The <strong>Cardboard Edison Compendium</strong> is a curated database of tabletop game publishers — their categories of interest, conventions they attend, representative games, preferred contact methods, and more. When you have a valid Compendium access code, PitchBoard pulls this data in and surfaces it at every relevant point in your workflow.</p>
-    <p>The integration is entirely opt-in and code-gated: without a code, PitchBoard works exactly as before. With a code, a Cardboard Edison logo <span class="ce-badge-inline"><img class="ce-logo-img" src="images/help_compendium/ce-logo.png" alt="CE">CE</span> appears wherever Compendium data is available.</p>
+    <p>The integration is entirely opt-in and code-gated: without a code, PitchBoard works exactly as before. With a code, a Cardboard Edison logo <img class="ce-inline-logo" src="images/help_compendium/ce-logo.png" alt="CE logo"> appears wherever Compendium data is available.</p>
     <div class="cards">
       <div class="card">
         <span class="card-icon">🏢</span>
@@ -242,7 +241,7 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
       <span class="section-num">03</span>
       <h2 class="section-title">Publisher View — CE Buttons</h2>
     </div>
-    <p>In Publisher view, every publisher card that has a matching Compendium entry shows a <span class="ce-badge-inline"><img class="ce-logo-img" src="images/help_compendium/ce-logo.png" alt="CE">CE</span> button in its header. Tapping it opens the full publisher profile from the Compendium.</p>
+    <p>In Publisher view, every publisher card that has a matching Compendium entry shows a <img class="ce-inline-logo" src="images/help_compendium/ce-logo.png" alt="CE logo"> button in its header. Tapping it opens the full publisher profile from the Compendium.</p>
 
     <!-- Diagram: publisher card -->
     <p class="diagram-label">Publisher card with Compendium button</p>

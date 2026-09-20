@@ -238,7 +238,7 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
   <div class="section" id="publisher-view">
     <div class="section-header">
       <span class="section-num">03</span>
-      <h2 class="section-title">Publisher View — CE Buttons</h2>
+      <h2 class="section-title">Publisher View — <img class="ce-inline-logo" src="images/help_compendium/ce-logo.png" alt="CE logo" style="width:26px;height:26px;vertical-align:middle;margin-bottom:2px"> Buttons</h2>
     </div>
     <p>In Publisher view, every publisher card that has a matching Compendium entry shows a <img class="ce-inline-logo" src="images/help_compendium/ce-logo.png" alt="CE logo"> button in its header. Tapping it opens the full publisher profile from the Compendium.</p>
 

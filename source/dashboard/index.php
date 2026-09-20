@@ -752,11 +752,6 @@ foreach ($_comp_raw as $_cpub) {
       font-family:'DINRegular',sans-serif; font-size:.72rem; color:#888;
       margin-bottom:.5rem; line-height:1.4;
     }
-    .comp-filter-section { margin-top:.55rem; }
-    .comp-filter-section-label {
-      font-family:'DINBlack',sans-serif; font-size:.58rem; letter-spacing:.06em;
-      text-transform:uppercase; color:#aaa; margin-bottom:.35rem;
-    }
     .comp-filter-chips { display:flex; flex-wrap:wrap; gap:.35rem; }
     .comp-chip {
       display:inline-flex; align-items:center;
@@ -766,6 +761,32 @@ foreach ($_comp_raw as $_cpub) {
     }
     .comp-chip:hover:not(.active) { background:#ede9e2; border-color:#bbb; }
     .comp-chip.active { background:#1a1a2e; color:#e8c84a; border-color:#1a1a2e; }
+    .comp-filter-cols { display:flex; gap:.85rem; margin-top:.6rem; }
+    .comp-filter-col { flex:1; min-width:0; }
+    .comp-filter-col-label {
+      font-family:'DINBlack',sans-serif; font-size:.58rem; letter-spacing:.06em;
+      text-transform:uppercase; color:#aaa; margin-bottom:.3rem;
+    }
+    .comp-filter-list {
+      height:140px; overflow-y:auto; border:1px solid #ddd; border-radius:7px;
+      background:#fff;
+    }
+    .comp-filter-item {
+      padding:.3rem .65rem; cursor:pointer;
+      font-family:'DINRegular',sans-serif; font-size:.76rem; color:#444;
+      display:flex; align-items:center; gap:.4rem; user-select:none;
+      border-bottom:1px solid #f3f0ec;
+    }
+    .comp-filter-item:last-child { border-bottom:none; }
+    .comp-filter-item:hover:not(.active) { background:#f7f4f0; }
+    .comp-filter-item.active { background:#1a1a2e; color:#e8c84a; }
+    .comp-filter-item .fi-check { font-size:.7rem; opacity:0; flex-shrink:0; }
+    .comp-filter-item.active .fi-check { opacity:1; }
+    .comp-filter-summary {
+      margin-top:.55rem; font-family:'DINRegular',sans-serif; font-size:.74rem;
+      color:#888; line-height:1.4; min-height:1.2em;
+    }
+    .comp-filter-summary strong { color:#1a1a2e; }
     /* CE toggle button in the summary pill bar */
     .comp-filter-toggle {
       background:none; border:none; padding:0 0 0 .2rem; cursor:pointer; flex-shrink:0;
@@ -2372,29 +2393,47 @@ function buildCompFilterBar() {
     var a = activeCompFilters[key] ? ' active' : '';
     return '<button class="comp-chip' + a + '" data-key="' + escHtml(key) + '" onclick="toggleCompChip(this.dataset.key)">' + escHtml(label) + '</button>';
   }
-  function section(label, chipsHtml) {
-    return '<div class="comp-filter-section"><div class="comp-filter-section-label">' + label + '</div>'
-         + '<div class="comp-filter-chips">' + chipsHtml + '</div></div>';
+  function listItem(key, label) {
+    var a = activeCompFilters[key] ? ' active' : '';
+    return '<div class="comp-filter-item' + a + '" data-key="' + escHtml(key) + '" onclick="toggleCompChip(this.dataset.key)">'
+         + '<span class="fi-check">✓</span>' + escHtml(label) + '</div>';
   }
 
   // Top row: Show All + Accepting
   var topChips = chip('showAll', 'Show All');
   if (hasAccepting) topChips += chip('accepting', '✓ Accepting');
 
-  // Categories section
-  var catChips = '';
-  Object.keys(categories).sort().forEach(function(cat) { catChips += chip('cat:' + cat, cat); });
+  // Category list
+  var catItems = '';
+  Object.keys(categories).sort().forEach(function(cat) { catItems += listItem('cat:' + cat, cat); });
 
-  // Conventions section
-  var convChips = '';
-  Object.keys(conventions).sort().forEach(function(conv) { convChips += chip('conv:' + conv, conv); });
+  // Convention list
+  var convItems = '';
+  Object.keys(conventions).sort().forEach(function(conv) { convItems += listItem('conv:' + conv, conv); });
+
+  // Summary text
+  var activeCats  = Object.keys(activeCompFilters).filter(function(k){ return k.indexOf('cat:')  === 0; }).map(function(k){ return k.slice(4); });
+  var activeConvs = Object.keys(activeCompFilters).filter(function(k){ return k.indexOf('conv:') === 0; }).map(function(k){ return k.slice(5); });
+  var summaryParts = [];
+  if (activeCats.length)  summaryParts.push('<strong>Categories:</strong> ' + escHtml(activeCats.join(', ')));
+  if (activeConvs.length) summaryParts.push('<strong>Conventions:</strong> ' + escHtml(activeConvs.join(', ')));
+  var summary = summaryParts.length ? summaryParts.join(' &nbsp;·&nbsp; ') : 'No filters selected.';
 
   bar.innerHTML =
     '<div class="comp-filter-box">' +
       '<div class="comp-filter-desc">The Compendium: Click on filter options below to look for publishers. Toggle <strong>Show All</strong> to show/hide the entire Compendium.</div>' +
       '<div class="comp-filter-chips">' + topChips + '</div>' +
-      (catChips  ? section('Categories of Interest', catChips)    : '') +
-      (convChips ? section('Conventions Regularly Attended', convChips) : '') +
+      '<div class="comp-filter-cols">' +
+        '<div class="comp-filter-col">' +
+          '<div class="comp-filter-col-label">Categories of Interest</div>' +
+          '<div class="comp-filter-list">' + catItems + '</div>' +
+        '</div>' +
+        '<div class="comp-filter-col">' +
+          '<div class="comp-filter-col-label">Conventions Regularly Attended</div>' +
+          '<div class="comp-filter-list">' + convItems + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="comp-filter-summary">' + summary + '</div>' +
     '</div>';
 }
 

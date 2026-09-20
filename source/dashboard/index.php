@@ -742,20 +742,24 @@ foreach ($_comp_raw as $_cpub) {
     .comp-info-btn:hover img { transform:scale(1.12); box-shadow:0 0 0 2px rgba(255,255,255,.5); }
     /* ── Compendium filter bar ──────────────────────── */
     .comp-filter-bar {
-      display:flex; flex-wrap:wrap; gap:.4rem; align-items:center;
-      padding:.3rem 1.25rem .55rem; max-width:900px; margin:0 auto;
+      padding:.3rem 1.25rem .6rem; max-width:900px; margin:0 auto;
     }
-    .comp-filter-label {
-      font-family:'DINBlack',sans-serif; font-size:.58rem; letter-spacing:.06em;
-      color:#aaa; text-transform:uppercase; flex-shrink:0;
+    .comp-filter-box {
+      background:#f7f5f1; border:1px solid #e0dbd3; border-radius:10px;
+      padding:.65rem .85rem .7rem;
     }
+    .comp-filter-desc {
+      font-family:'DINRegular',sans-serif; font-size:.72rem; color:#888;
+      margin-bottom:.5rem; line-height:1.4;
+    }
+    .comp-filter-chips { display:flex; flex-wrap:wrap; gap:.35rem; }
     .comp-chip {
       display:inline-flex; align-items:center;
       font-family:'DINRegular',sans-serif; font-size:.72rem;
-      background:#f0ede8; color:#555; border:1px solid #ddd; border-radius:999px;
+      background:#fff; color:#555; border:1px solid #ccc; border-radius:999px;
       padding:.22rem .65rem; cursor:pointer; transition:background .12s, color .12s, border-color .12s;
     }
-    .comp-chip:hover:not(.active) { background:#e0dbd3; }
+    .comp-chip:hover:not(.active) { background:#ede9e2; border-color:#bbb; }
     .comp-chip.active { background:#1a1a2e; color:#e8c84a; border-color:#1a1a2e; }
     /* CE toggle button in the summary pill bar */
     .comp-filter-toggle {
@@ -2359,19 +2363,20 @@ function buildCompFilterBar() {
     }
   });
 
-  var html = '<span class="comp-filter-label">Compendium:</span>';
-  var sa = activeCompFilters['showAll'] ? ' active' : '';
-  html += '<button class="comp-chip' + sa + '" onclick="toggleCompChip(\'showAll\')">Show All</button>';
-  if (hasAccepting) {
-    var a = activeCompFilters['accepting'] ? ' active' : '';
-    html += '<button class="comp-chip' + a + '" onclick="toggleCompChip(\'accepting\')">✓ Accepting</button>';
-  }
-  Object.keys(categories).sort().forEach(function(cat) {
-    var key = 'cat:' + cat;
+  function chip(key, label) {
     var a = activeCompFilters[key] ? ' active' : '';
-    html += '<button class="comp-chip' + a + '" onclick="toggleCompChip(' + JSON.stringify(key) + ')">' + escHtml(cat) + '</button>';
-  });
-  bar.innerHTML = html;
+    return '<button class="comp-chip' + a + '" data-key="' + escHtml(key) + '" onclick="toggleCompChip(this.dataset.key)">' + escHtml(label) + '</button>';
+  }
+
+  var chips = chip('showAll', 'Show All');
+  if (hasAccepting) chips += chip('accepting', '✓ Accepting');
+  Object.keys(categories).sort().forEach(function(cat) { chips += chip('cat:' + cat, cat); });
+
+  bar.innerHTML =
+    '<div class="comp-filter-box">' +
+      '<div class="comp-filter-desc">The Compendium: Click on filter options below to look for publishers. Toggle <strong>Show All</strong> to show/hide the entire Compendium.</div>' +
+      '<div class="comp-filter-chips">' + chips + '</div>' +
+    '</div>';
 }
 
 function toggleCompChip(key) {

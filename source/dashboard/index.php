@@ -7476,9 +7476,10 @@ function openCompendiumInfo(pubName) {
 
   document.getElementById('compInfoName').textContent = pubName;
 
-  // Publisher logo
+  // Publisher logo — hide if missing or hotlink-blocked
   var logoEl = document.getElementById('compInfoLogo');
   if (data && data.logo) {
+    logoEl.onerror = function() { this.style.display = 'none'; };
     logoEl.src = data.logo;
     logoEl.style.display = '';
   } else {

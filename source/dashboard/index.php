@@ -2373,6 +2373,9 @@ function toggleCompFilterBar() {
 
 function buildCompFilterBar() {
   var bar = document.getElementById('compFilterBar');
+  // Preserve scroll positions before rebuild
+  var lists = bar.querySelectorAll('.comp-filter-list');
+  var scrollTops = Array.prototype.map.call(lists, function(l){ return l.scrollTop; });
   // Collect available filter values from COMPENDIUM_PUBS
   var hasAccepting = false;
   var categories = {}, conventions = {};
@@ -2435,6 +2438,9 @@ function buildCompFilterBar() {
       '</div>' +
       '<div class="comp-filter-summary">' + summary + '</div>' +
     '</div>';
+  // Restore scroll positions
+  var newLists = bar.querySelectorAll('.comp-filter-list');
+  scrollTops.forEach(function(top, i){ if (newLists[i]) newLists[i].scrollTop = top; });
 }
 
 function toggleCompChip(key) {

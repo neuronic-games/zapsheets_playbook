@@ -347,7 +347,7 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
       <div class="step">
         <div class="step-body">
           <div class="step-title">Open the Compendium admin page</div>
-          <p>Navigate to <code>/pitchboard/compendium</code>. This page is separate from a user's PitchBoard — it's the admin publish tool.</p>
+          <p>Navigate to <a href="https://zapsheets.com/app/pitchboard/compendium" target="_blank" style="color:var(--sky)">zapsheets.com/app/pitchboard/compendium</a>. This page is separate from a user's PitchBoard — it's the admin publish tool.</p>
         </div>
       </div>
       <div class="step">
@@ -370,9 +370,11 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
       </div>
     </div>
 
-    <!-- Diagram: Compendium spreadsheet -->
-    <p class="diagram-label">Compendium spreadsheet — Codes tab structure</p>
-    <img src="images/help_compendium/ce-compendium-admin.png" alt="Compendium spreadsheet with Codes tab showing one access code per row" style="width:100%;border-radius:12px;display:block;max-width:700px" />
+    <!-- Diagram: Compendium admin page -->
+    <p class="diagram-label">Compendium admin page — Codes tab structure</p>
+    <a href="https://zapsheets.com/app/pitchboard/compendium" target="_blank">
+      <img src="images/help_compendium/ce-compendium-admin.png" alt="Compendium admin page showing Codes tab" style="width:100%;border-radius:12px;display:block;max-width:700px" />
+    </a>
 
     <div class="tip"><strong>Codes tab:</strong> add a <code>Codes</code> worksheet to the Compendium sheet. Put one access code per row in column A (add a header row like "Code" if you like — it's automatically skipped). Each code in that list can unlock the Compendium in PitchBoard.</div>
     <div class="tip"><strong>Empty Codes tab:</strong> if the Codes tab is missing or empty, <em>any</em> non-empty string will pass as a valid code. This is useful while testing, but you should add real codes before distributing access.</div>

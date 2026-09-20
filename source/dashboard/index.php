@@ -1883,7 +1883,7 @@ foreach ($_comp_raw as $_cpub) {
       <label class="ge-label">Phone<input type="tel"   id="profilePhone" class="ge-input" /></label>
       <label class="ge-label" style="margin-top:.4rem">
         <span style="display:flex;align-items:center;gap:.4rem">
-          <img src="https://cardboardedison.com/wp-content/uploads/2023/06/compendium-logo.png" alt="Compendium" id="compCodeLogo" style="height:18px;width:auto;border-radius:2px;display:none" onload="this.style.display='';document.getElementById('compCodeBadge').style.display='none'" onerror="this.style.display='none'" />
+          <img src="<?= $_base ?>images/ce_logo.png" alt="Cardboard Edison" id="compCodeLogo" style="height:18px;width:auto;border-radius:50%;display:none" onload="this.style.display='';document.getElementById('compCodeBadge').style.display='none'" onerror="this.style.display='none'" />
           <span style="background:linear-gradient(90deg,#7b2d00,#c8500a);color:#f5d9b5;font-size:.62rem;font-weight:700;padding:.1rem .38rem;border-radius:3px;letter-spacing:.05em;font-family:Georgia,serif;flex-shrink:0" id="compCodeBadge">Compendium</span>
           Code
         </span>

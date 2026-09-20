@@ -730,16 +730,16 @@ foreach ($_comp_raw as $_cpub) {
 
     /* ── Compendium info button (card header) ───────── */
     .comp-info-btn {
-      font-family:'DINBlack',sans-serif; font-size:.55rem;
-      text-transform:uppercase; letter-spacing:.06em;
-      background:rgba(255,255,255,.10); color:rgba(255,255,255,.60);
-      border:1px solid rgba(255,255,255,.20); border-radius:999px;
-      padding:.28rem .55rem; cursor:pointer; white-space:nowrap; flex-shrink:0;
-      transition:background .15s, color .15s, opacity .15s;
+      background:none; border:none; padding:0; cursor:pointer; flex-shrink:0;
       opacity:0; pointer-events:none;
+      transition:opacity .15s, transform .15s;
+    }
+    .comp-info-btn img {
+      width:26px; height:26px; border-radius:50%; display:block;
+      transition:transform .15s, box-shadow .15s;
     }
     .card.open .comp-info-btn { opacity:1; pointer-events:auto; }
-    .comp-info-btn:hover { background:rgba(255,255,255,.22); color:#fff; }
+    .comp-info-btn:hover img { transform:scale(1.12); box-shadow:0 0 0 2px rgba(255,255,255,.5); }
     /* ── Compendium info overlay ────────────────────── */
     .comp-info-overlay {
       display:none; position:fixed; inset:0;
@@ -952,12 +952,14 @@ foreach ($_comp_raw as $_cpub) {
     .combo-opt:hover, .combo-opt.active { background:#1a1a2e; color:#fff; }
     .combo-sep { height:1px; background:#e0dbd3; margin:.25rem .5rem; pointer-events:none; }
     .combo-comp-badge {
-      float:right; font-family:'DINBlack',sans-serif; font-size:.56rem;
-      background:#1a1a2e; color:#e8c84a; border-radius:3px;
-      padding:.1rem .3rem; letter-spacing:.05em; pointer-events:none; line-height:1.5;
+      float:right; pointer-events:none; line-height:0;
     }
-    .combo-opt:hover .combo-comp-badge, .combo-opt.active .combo-comp-badge {
-      background:#e8c84a; color:#1a1a2e;
+    .combo-comp-badge img {
+      width:20px; height:20px; border-radius:50%; vertical-align:middle;
+      opacity:.75;
+    }
+    .combo-opt:hover .combo-comp-badge img, .combo-opt.active .combo-comp-badge img {
+      opacity:1;
     }
     /* Show-all collapsed publishers button */
     .pub-show-all-btn {
@@ -2044,6 +2046,7 @@ var NOTEBOARD_HASHES    = <?= json_encode($_nb_hashes,    JSON_UNESCAPED_UNICODE
 var NOTEBOARD_HAS_NOTES = <?= json_encode(array_fill_keys(array_keys($_nb_has_notes), true), JSON_UNESCAPED_UNICODE) ?>; // safe_name → true
 var GAME_PAGE_TOKENS    = <?= json_encode($_gp_tokens, JSON_UNESCAPED_UNICODE) ?>;     // game name → 24-char token
 var COMPENDIUM_PUBS     = <?= json_encode($_compendium_pubs_map, JSON_UNESCAPED_UNICODE) ?>; // lowercase name → publisher data
+var CE_LOGO_SRC         = <?= json_encode($_ce_logo_src) ?>;  // Cardboard Edison logo URL
 
 // ── State ─────────────────────────────────────────────
 var currentView     = 'game';
@@ -3101,7 +3104,9 @@ function buildPublisherView(pitches) {
     html += '<span class="card-badges">' + at + pubHeaderBadge + '</span>';
     if (_hasComp && myCompendiumCode) {
       html += '<button class="comp-info-btn" data-publisher="' + escHtml(p) + '"'
-           +  ' onclick="event.stopPropagation();openCompendiumInfo(this.getAttribute(\'data-publisher\'))">Info</button>';
+           +  ' title="View in Compendium"'
+           +  ' onclick="event.stopPropagation();openCompendiumInfo(this.getAttribute(\'data-publisher\'))">'
+           +  '<img src="' + escHtml(CE_LOGO_SRC) + '" alt="Cardboard Edison Compendium" /></button>';
     }
     html += '<span class="card-chevron">▼</span>';
     html += '</div>';
@@ -5526,7 +5531,10 @@ function _setupCombos() {
       if (hasComp) {
         var badge = document.createElement('span');
         badge.className = 'combo-comp-badge';
-        badge.textContent = 'COMPENDIUM';
+        var bimg = document.createElement('img');
+        bimg.src = CE_LOGO_SRC;
+        bimg.alt = 'Cardboard Edison';
+        badge.appendChild(bimg);
         div.appendChild(badge);
       }
     });

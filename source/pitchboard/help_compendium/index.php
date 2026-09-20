@@ -140,9 +140,7 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
 <!-- Hero -->
 <div class="hero">
   <div class="hero-ce-logo">
-    <img src="https://images.squarespace-cdn.com/content/v1/55fc10b1e4b0347ac88a7992/3669060e-f00e-4113-8fc5-ed87690796cb/CE+logo+-+circle+transparent+background.png?format=100w"
-         alt="Cardboard Edison"
-         onerror="this.parentNode.innerHTML='<span style=\'font-size:2rem\'>🃏</span>'" />
+    <img src="images/help_compendium/ce-logo-72.png" alt="Cardboard Edison Compendium" />
   </div>
   <div class="hero-title"><span class="ce">Cardboard Edison</span><br><span class="pitch">Com</span><span class="board">pendium</span></div>
   <p class="hero-sub">Publisher data from the Cardboard Edison Compendium — right inside PitchBoard. Find who's accepting, filter by category, and pull up publisher details in seconds.</p>
@@ -232,29 +230,7 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
 
     <!-- Diagram: profile dialog -->
     <p class="diagram-label">Profile dialog — Compendium Code field</p>
-    <svg viewBox="0 0 560 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;border-radius:12px;display:block;max-width:560px">
-      <rect width="560" height="180" rx="14" fill="#1a1a2e"/>
-      <!-- Dialog box -->
-      <rect x="60" y="18" width="440" height="145" rx="10" fill="#242440"/>
-      <text x="80" y="42" font-family="Arial" font-weight="bold" font-size="11" fill="rgba(255,255,255,.45)" letter-spacing="1">PROFILE</text>
-      <!-- Name row -->
-      <text x="80" y="68" font-family="Arial" font-size="10" fill="rgba(255,255,255,.4)">Name</text>
-      <rect x="80" y="74" width="180" height="22" rx="5" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
-      <text x="90" y="89" font-family="Arial" font-size="10" fill="rgba(255,255,255,.7)">Jane Designer</text>
-      <!-- Email row -->
-      <text x="280" y="68" font-family="Arial" font-size="10" fill="rgba(255,255,255,.4)">Email</text>
-      <rect x="280" y="74" width="200" height="22" rx="5" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
-      <text x="290" y="89" font-family="Arial" font-size="10" fill="rgba(255,255,255,.7)">jane@example.com</text>
-      <!-- Compendium Code row — highlighted -->
-      <text x="80" y="114" font-family="Arial" font-size="10" fill="#f5a263">Compendium Code</text>
-      <rect x="80" y="120" width="280" height="22" rx="5" fill="rgba(232,105,28,.12)" stroke="#e8691c" stroke-width="1.5"/>
-      <text x="90" y="135" font-family="Arial" font-size="10" fill="#f5a263">CE-MYCODE-2026</text>
-      <!-- Arrow pointing to code field -->
-      <text x="378" y="133" font-family="Arial" font-size="10" fill="#f5a263">← Enter your code here</text>
-      <!-- Save button -->
-      <rect x="430" y="120" width="50" height="22" rx="5" fill="#e8691c"/>
-      <text x="455" y="134" font-family="Arial" font-size="10" fill="#fff" text-anchor="middle" font-weight="bold">Save</text>
-    </svg>
+    <img src="images/help_compendium/ce-profile-dialog.png" alt="Profile dialog showing the Compendium Code field" style="width:100%;border-radius:12px;display:block;max-width:560px" />
 
     <div class="tip"><strong>Tip:</strong> your code is saved to your Google Sheet's Settings tab. It persists across sessions and devices — you only need to enter it once per Sheet.</div>
     <div class="tip"><strong>Removing access:</strong> clear the Compendium Code field in Profile and save. All CE features disappear immediately.</div>
@@ -270,32 +246,7 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
 
     <!-- Diagram: publisher card -->
     <p class="diagram-label">Publisher card with Compendium button</p>
-    <svg viewBox="0 0 560 110" xmlns="http://www.w3.org/2000/svg" style="width:100%;border-radius:12px;display:block;max-width:560px">
-      <rect width="560" height="110" rx="14" fill="#1a1a2e"/>
-      <!-- Card -->
-      <rect x="20" y="15" width="520" height="80" rx="10" fill="#242440" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
-      <!-- Card header -->
-      <rect x="20" y="15" width="520" height="40" rx="10" fill="#2d2d50"/>
-      <rect x="20" y="40" width="520" height="15" fill="#2d2d50"/>
-      <!-- Publisher name -->
-      <text x="40" y="40" font-family="Arial" font-weight="bold" font-size="13" fill="rgba(255,255,255,.9)">Stonemaier Games</text>
-      <!-- INT badge -->
-      <rect x="330" y="24" width="32" height="16" rx="4" fill="#dcfce7"/>
-      <text x="346" y="35" font-family="Arial" font-weight="bold" font-size="8" fill="#166534" text-anchor="middle">INT</text>
-      <!-- CE button -->
-      <rect x="370" y="20" width="30" height="28" rx="7" fill="rgba(232,105,28,.2)" stroke="#e8691c" stroke-width="1.5"/>
-      <circle cx="385" cy="34" r="9" fill="#fff"/>
-      <text x="385" y="38" font-family="Arial" font-weight="bold" font-size="9" fill="#e8691c" text-anchor="middle">CE</text>
-      <!-- Arrow -->
-      <text x="408" y="32" font-family="Arial" font-size="10" fill="#f5a263">← tap for Compendium profile</text>
-      <!-- Chevron -->
-      <text x="506" y="38" font-family="Arial" font-size="12" fill="rgba(255,255,255,.25)">▼</text>
-      <!-- Body rows -->
-      <rect x="40" y="63" width="130" height="8" rx="3" fill="rgba(255,255,255,.1)"/>
-      <rect x="180" y="63" width="80" height="8" rx="3" fill="rgba(255,255,255,.06)"/>
-      <rect x="40" y="78" width="100" height="8" rx="3" fill="rgba(255,255,255,.07)"/>
-      <rect x="150" y="78" width="60" height="8" rx="3" fill="rgba(255,255,255,.05)"/>
-    </svg>
+    <img src="images/help_compendium/ce-publisher-card.png" alt="Publisher card showing the CE Compendium info button" style="width:100%;border-radius:12px;display:block;max-width:560px" />
 
     <p style="margin-top:1.25rem">The CE button only appears when all of the following are true: the Compendium data has been published, your access code is valid, and that publisher's name matches a Compendium entry.</p>
     <div class="tip"><strong>No CE button on a publisher?</strong> Either they're not in the Compendium yet, or the name in your sheet doesn't closely match the Compendium's entry. Partial matches are attempted (e.g. "Osprey" matches "Osprey Games"), but exact names work best.</div>
@@ -311,85 +262,11 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
 
     <!-- Diagram: summary bar with CE button -->
     <p class="diagram-label">Status bar with Compendium filter toggle</p>
-    <svg viewBox="0 0 560 52" xmlns="http://www.w3.org/2000/svg" style="width:100%;border-radius:10px;display:block;max-width:560px">
-      <rect width="560" height="52" rx="10" fill="#f3f0eb"/>
-      <!-- Pills -->
-      <rect x="12" y="12" width="78" height="28" rx="14" fill="#e2e8f0"/>
-      <text x="51" y="30" font-family="Arial" font-weight="bold" font-size="10" fill="#475569" text-anchor="middle">58 PITCHED</text>
-      <rect x="96" y="12" width="98" height="28" rx="14" fill="#dcfce7"/>
-      <text x="145" y="30" font-family="Arial" font-weight="bold" font-size="10" fill="#166534" text-anchor="middle">67 INTERESTED</text>
-      <rect x="200" y="12" width="78" height="28" rx="14" fill="#fee2e2"/>
-      <text x="239" y="30" font-family="Arial" font-weight="bold" font-size="10" fill="#991b1b" text-anchor="middle">77 PASSED</text>
-      <rect x="284" y="12" width="66" height="28" rx="14" fill="#7c3aed"/>
-      <text x="317" y="30" font-family="Arial" font-weight="bold" font-size="10" fill="#fff" text-anchor="middle">7 SIGNED</text>
-      <rect x="356" y="12" width="88" height="28" rx="14" fill="#075985"/>
-      <text x="400" y="30" font-family="Arial" font-weight="bold" font-size="10" fill="#fff" text-anchor="middle">7 PUBLISHED</text>
-      <!-- CE toggle button -->
-      <rect x="452" y="8" width="36" height="36" rx="18" fill="rgba(232,105,28,.15)" stroke="#e8691c" stroke-width="1.5"/>
-      <circle cx="470" cy="26" r="12" fill="#fff"/>
-      <text x="470" y="30" font-family="Arial" font-weight="bold" font-size="10" fill="#e8691c" text-anchor="middle">CE</text>
-      <!-- Arrow -->
-      <text x="494" y="24" font-family="Arial" font-size="9" fill="#e8691c">←</text>
-    </svg>
+    <img src="images/help_compendium/ce-summary-bar.png" alt="Status pill bar showing the CE Compendium toggle button" style="width:100%;border-radius:10px;display:block;max-width:560px" />
 
     <!-- Diagram: filter panel -->
     <p class="diagram-label">Expanded Compendium filter panel</p>
-    <svg viewBox="0 0 560 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;border-radius:12px;display:block;max-width:560px">
-      <rect width="560" height="220" rx="12" fill="#fff" stroke="#e5e2dd" stroke-width="1"/>
-      <!-- Header bar -->
-      <rect width="560" height="36" rx="12" fill="#1a1a2e"/>
-      <rect y="24" width="560" height="12" fill="#1a1a2e"/>
-      <!-- Header chips -->
-      <rect x="14" y="8" width="62" height="20" rx="10" fill="rgba(255,255,255,.12)" stroke="rgba(255,255,255,.2)" stroke-width="1"/>
-      <text x="45" y="21" font-family="Arial" font-weight="bold" font-size="9" fill="rgba(255,255,255,.85)" text-anchor="middle">ACCEPTING</text>
-      <rect x="82" y="8" width="60" height="20" rx="10" fill="rgba(232,105,28,.3)" stroke="#e8691c" stroke-width="1"/>
-      <text x="112" y="21" font-family="Arial" font-weight="bold" font-size="9" fill="#f5a263" text-anchor="middle">SHOW ALL</text>
-      <!-- Section label: Categories -->
-      <text x="14" y="58" font-family="Arial" font-weight="bold" font-size="9" fill="#64748b" letter-spacing="1">CATEGORIES OF INTEREST</text>
-      <!-- Category list -->
-      <rect x="14" y="64" width="252" height="140" rx="6" fill="#f8f7f5" stroke="#e5e2dd" stroke-width="1"/>
-      <!-- List items -->
-      <text x="22" y="83" font-family="Arial" font-size="10" fill="#e8691c">✓</text>
-      <text x="36" y="83" font-family="Arial" font-weight="bold" font-size="10" fill="#1a1a2e">Card Games</text>
-      <line x1="14" y1="90" x2="266" y2="90" stroke="#e5e2dd" stroke-width="1"/>
-      <text x="22" y="105" font-family="Arial" font-size="10" fill="#aaa">✓</text>
-      <text x="36" y="105" font-family="Arial" font-size="10" fill="#555">Co-operative Games</text>
-      <line x1="14" y1="112" x2="266" y2="112" stroke="#e5e2dd" stroke-width="1"/>
-      <text x="22" y="127" font-family="Arial" font-size="10" fill="#aaa">✓</text>
-      <text x="36" y="127" font-family="Arial" font-size="10" fill="#555">Deduction</text>
-      <line x1="14" y1="134" x2="266" y2="134" stroke="#e5e2dd" stroke-width="1"/>
-      <text x="22" y="149" font-family="Arial" font-size="10" fill="#aaa">✓</text>
-      <text x="36" y="149" font-family="Arial" font-size="10" fill="#555">Drafting</text>
-      <line x1="14" y1="156" x2="266" y2="156" stroke="#e5e2dd" stroke-width="1"/>
-      <text x="22" y="171" font-family="Arial" font-size="10" fill="#aaa">✓</text>
-      <text x="36" y="171" font-family="Arial" font-size="10" fill="#555">Engine Building</text>
-      <line x1="14" y1="178" x2="266" y2="178" stroke="#e5e2dd" stroke-width="1"/>
-      <text x="22" y="193" font-family="Arial" font-size="10" fill="#aaa">✓</text>
-      <text x="36" y="193" font-family="Arial" font-size="10" fill="#555">Family Games</text>
-      <!-- Section label: Conventions -->
-      <text x="280" y="58" font-family="Arial" font-weight="bold" font-size="9" fill="#64748b" letter-spacing="1">CONVENTIONS</text>
-      <!-- Convention list -->
-      <rect x="280" y="64" width="266" height="140" rx="6" fill="#f8f7f5" stroke="#e5e2dd" stroke-width="1"/>
-      <text x="288" y="83" font-family="Arial" font-size="10" fill="#aaa">✓</text>
-      <text x="302" y="83" font-family="Arial" font-size="10" fill="#555">AIGA</text>
-      <line x1="280" y1="90" x2="546" y2="90" stroke="#e5e2dd" stroke-width="1"/>
-      <text x="288" y="105" font-family="Arial" font-size="10" fill="#e8691c">✓</text>
-      <text x="302" y="105" font-family="Arial" font-weight="bold" font-size="10" fill="#1a1a2e">Gen Con</text>
-      <line x1="280" y1="112" x2="546" y2="112" stroke="#e5e2dd" stroke-width="1"/>
-      <text x="288" y="127" font-family="Arial" font-size="10" fill="#aaa">✓</text>
-      <text x="302" y="127" font-family="Arial" font-size="10" fill="#555">Origins</text>
-      <line x1="280" y1="134" x2="546" y2="134" stroke="#e5e2dd" stroke-width="1"/>
-      <text x="288" y="149" font-family="Arial" font-size="10" fill="#aaa">✓</text>
-      <text x="302" y="149" font-family="Arial" font-size="10" fill="#555">PAX Unplugged</text>
-      <line x1="280" y1="156" x2="546" y2="156" stroke="#e5e2dd" stroke-width="1"/>
-      <text x="288" y="171" font-family="Arial" font-size="10" fill="#aaa">✓</text>
-      <text x="302" y="171" font-family="Arial" font-size="10" fill="#555">SPIEL Essen</text>
-      <line x1="280" y1="178" x2="546" y2="178" stroke="#e5e2dd" stroke-width="1"/>
-      <text x="288" y="193" font-family="Arial" font-size="10" fill="#aaa">✓</text>
-      <text x="302" y="193" font-family="Arial" font-size="10" fill="#555">UK Games Expo</text>
-      <!-- Active filter summary -->
-      <rect x="14" y="208" width="532" height="0" rx="0" fill="none"/>
-    </svg>
+    <img src="images/help_compendium/ce-filter-panel.png" alt="Expanded Compendium filter panel with Categories and Conventions columns" style="width:100%;border-radius:12px;display:block;max-width:560px" />
 
     <div class="cards" style="margin-top:1.25rem">
       <div class="card">
@@ -423,74 +300,7 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
 
     <!-- Diagram: publisher dialog -->
     <p class="diagram-label">Publisher profile dialog</p>
-    <svg viewBox="0 0 560 390" xmlns="http://www.w3.org/2000/svg" style="width:100%;border-radius:12px;display:block;max-width:560px">
-      <rect width="560" height="390" rx="14" fill="#1a1a2e"/>
-      <!-- Dialog -->
-      <rect x="20" y="15" width="520" height="360" rx="12" fill="#242440"/>
-      <!-- Header band -->
-      <rect x="20" y="15" width="520" height="64" rx="12" fill="#2d2d50"/>
-      <rect x="20" y="60" width="520" height="19" fill="#2d2d50"/>
-      <!-- Logo circle -->
-      <circle cx="60" cy="47" r="22" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
-      <text x="60" y="52" font-family="Arial" font-size="14" fill="rgba(255,255,255,.3)" text-anchor="middle">🏢</text>
-      <!-- Name & country -->
-      <text x="92" y="38" font-family="Arial" font-weight="bold" font-size="14" fill="#fff">Stonemaier Games</text>
-      <text x="92" y="56" font-family="Arial" font-size="10" fill="rgba(255,255,255,.4)">United States  ·  Updated Jan 2026</text>
-      <!-- Accepting chip -->
-      <rect x="402" y="22" width="115" height="20" rx="10" fill="rgba(22,163,74,.2)" stroke="#16a34a" stroke-width="1"/>
-      <text x="459" y="35" font-family="Arial" font-weight="bold" font-size="9" fill="#4ade80" text-anchor="middle">✓ ACCEPTING</text>
-
-      <!-- Row: Looking for -->
-      <text x="40" y="100" font-family="Arial" font-weight="bold" font-size="9" fill="rgba(255,255,255,.35)" letter-spacing="1">LOOKING FOR</text>
-      <rect x="40" y="107" width="90" height="18" rx="9" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
-      <text x="85" y="119" font-family="Arial" font-size="9" fill="rgba(255,255,255,.7)" text-anchor="middle">Euro-style</text>
-      <rect x="136" y="107" width="70" height="18" rx="9" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
-      <text x="171" y="119" font-family="Arial" font-size="9" fill="rgba(255,255,255,.7)" text-anchor="middle">Engine Build</text>
-      <rect x="212" y="107" width="76" height="18" rx="9" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
-      <text x="250" y="119" font-family="Arial" font-size="9" fill="rgba(255,255,255,.7)" text-anchor="middle">Worker Place</text>
-
-      <!-- Row: Representative Games -->
-      <line x1="40" y1="135" x2="520" y2="135" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
-      <text x="40" y="153" font-family="Arial" font-weight="bold" font-size="9" fill="rgba(255,255,255,.35)" letter-spacing="1">REPRESENTATIVE GAMES</text>
-      <rect x="40" y="160" width="72" height="18" rx="9" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
-      <text x="76" y="172" font-family="Arial" font-size="9" fill="rgba(255,255,255,.7)" text-anchor="middle">Wingspan</text>
-      <rect x="118" y="160" width="74" height="18" rx="9" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
-      <text x="155" y="172" font-family="Arial" font-size="9" fill="rgba(255,255,255,.7)" text-anchor="middle">Viticulture</text>
-      <rect x="198" y="160" width="80" height="18" rx="9" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
-      <text x="238" y="172" font-family="Arial" font-size="9" fill="rgba(255,255,255,.7)" text-anchor="middle">Scythe</text>
-
-      <!-- Row: Conventions -->
-      <line x1="40" y1="188" x2="520" y2="188" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
-      <text x="40" y="206" font-family="Arial" font-weight="bold" font-size="9" fill="rgba(255,255,255,.35)" letter-spacing="1">CONVENTIONS</text>
-      <rect x="40" y="213" width="62" height="18" rx="9" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
-      <text x="71" y="225" font-family="Arial" font-size="9" fill="rgba(255,255,255,.7)" text-anchor="middle">Gen Con</text>
-      <rect x="108" y="213" width="64" height="18" rx="9" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
-      <text x="140" y="225" font-family="Arial" font-size="9" fill="rgba(255,255,255,.7)" text-anchor="middle">Origins</text>
-      <rect x="178" y="213" width="96" height="18" rx="9" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
-      <text x="226" y="225" font-family="Arial" font-size="9" fill="rgba(255,255,255,.7)" text-anchor="middle">PAX Unplugged</text>
-
-      <!-- Row: Contact -->
-      <line x1="40" y1="241" x2="520" y2="241" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
-      <text x="40" y="259" font-family="Arial" font-weight="bold" font-size="9" fill="rgba(255,255,255,.35)" letter-spacing="1">CONTACT</text>
-      <text x="40" y="276" font-family="Arial" font-size="10" fill="rgba(255,255,255,.6)">submissions@stonemaier.com  ·  Preferred: Email</text>
-
-      <!-- Row: Social links -->
-      <line x1="40" y1="290" x2="520" y2="290" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
-      <text x="40" y="308" font-family="Arial" font-weight="bold" font-size="9" fill="rgba(255,255,255,.35)" letter-spacing="1">LINKS</text>
-      <rect x="40" y="316" width="56" height="18" rx="5" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
-      <text x="68" y="328" font-family="Arial" font-size="9" fill="rgba(255,255,255,.6)" text-anchor="middle">Website</text>
-      <rect x="102" y="316" width="36" height="18" rx="5" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
-      <text x="120" y="328" font-family="Arial" font-size="9" fill="rgba(255,255,255,.6)" text-anchor="middle">BGG</text>
-      <rect x="144" y="316" width="60" height="18" rx="5" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
-      <text x="174" y="328" font-family="Arial" font-size="9" fill="rgba(255,255,255,.6)" text-anchor="middle">Facebook</text>
-      <rect x="210" y="316" width="56" height="18" rx="5" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
-      <text x="238" y="328" font-family="Arial" font-size="9" fill="rgba(255,255,255,.6)" text-anchor="middle">Twitter</text>
-
-      <!-- Close button -->
-      <rect x="220" y="350" width="120" height="14" rx="0" fill="none"/>
-      <rect x="234" y="347" width="92" height="20" rx="8" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
-      <text x="280" y="360" font-family="Arial" font-size="9" fill="rgba(255,255,255,.45)" text-anchor="middle">Close</text>
-    </svg>
+    <img src="images/help_compendium/ce-publisher-dialog.png" alt="The Compendium publisher profile dialog with rainbow brand strip" style="width:100%;border-radius:12px;display:block;max-width:560px" />
 
     <div class="cards" style="margin-top:1.25rem">
       <div class="card"><div class="card-title">Accepting status</div><p>Green badge when the publisher is currently accepting. No badge when closed or unknown.</p></div>
@@ -512,47 +322,7 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
 
     <!-- Diagram: publisher dropdown -->
     <p class="diagram-label">Publisher dropdown with CE badges</p>
-    <svg viewBox="0 0 560 210" xmlns="http://www.w3.org/2000/svg" style="width:100%;border-radius:12px;display:block;max-width:560px">
-      <rect width="560" height="210" rx="14" fill="#1a1a2e"/>
-      <!-- Input field -->
-      <rect x="20" y="18" width="320" height="30" rx="7" fill="#2d2d50" stroke="#4a4a70" stroke-width="1"/>
-      <text x="36" y="37" font-family="Arial" font-size="11" fill="rgba(255,255,255,.6)">Sto…</text>
-      <text x="324" y="37" font-family="Arial" font-size="10" fill="rgba(255,255,255,.25)" text-anchor="end">▼</text>
-      <!-- Dropdown list -->
-      <rect x="20" y="52" width="320" height="145" rx="8" fill="#2d2d50" stroke="#4a4a70" stroke-width="1"/>
-      <!-- Row 1: Stonemaier -->
-      <rect x="20" y="52" width="320" height="36" rx="8" fill="#3d3d60"/>
-      <rect x="20" y="72" width="320" height="16" fill="#3d3d60"/>
-      <text x="36" y="74" font-family="Arial" font-size="11" fill="#fff">Stonemaier Games</text>
-      <!-- CE badge row 1 -->
-      <circle cx="290" cy="70" r="11" fill="#fff"/>
-      <text x="290" y="74" font-family="Arial" font-weight="bold" font-size="9" fill="#e8691c" text-anchor="middle">CE</text>
-      <text x="310" y="74" font-family="Arial" font-size="9" fill="#f5a263">← CE badge</text>
-      <!-- Row 2: Stronghold -->
-      <line x1="28" y1="88" x2="332" y2="88" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
-      <text x="36" y="107" font-family="Arial" font-size="11" fill="rgba(255,255,255,.75)">Stronghold Games</text>
-      <circle cx="290" cy="103" r="11" fill="#fff"/>
-      <text x="290" y="107" font-family="Arial" font-weight="bold" font-size="9" fill="#e8691c" text-anchor="middle">CE</text>
-      <!-- Row 3: no CE -->
-      <line x1="28" y1="120" x2="332" y2="120" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
-      <text x="36" y="139" font-family="Arial" font-size="11" fill="rgba(255,255,255,.75)">Studio Broc</text>
-      <!-- Row 4: Swan Panasia -->
-      <line x1="28" y1="152" x2="332" y2="152" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
-      <text x="36" y="171" font-family="Arial" font-size="11" fill="rgba(255,255,255,.75)">Swan Panasia</text>
-      <circle cx="290" cy="167" r="11" fill="#fff"/>
-      <text x="290" y="171" font-family="Arial" font-weight="bold" font-size="9" fill="#e8691c" text-anchor="middle">CE</text>
-      <!-- Row 5 -->
-      <line x1="28" y1="184" x2="332" y2="184" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
-      <text x="36" y="203" font-family="Arial" font-size="11" fill="rgba(255,255,255,.75)">Synapses Games</text>
-      <circle cx="290" cy="199" r="11" fill="#fff"/>
-      <text x="290" y="203" font-family="Arial" font-weight="bold" font-size="9" fill="#e8691c" text-anchor="middle">CE</text>
-      <!-- Right panel: auto-fill -->
-      <rect x="360" y="18" width="180" height="78" rx="8" fill="#242440" stroke="#4a4a70" stroke-width="1"/>
-      <text x="376" y="36" font-family="Arial" font-weight="bold" font-size="9" fill="rgba(255,255,255,.35)" letter-spacing="1">CONTACT (AUTO-FILLED)</text>
-      <rect x="376" y="44" width="148" height="22" rx="5" fill="rgba(232,105,28,.12)" stroke="#e8691c" stroke-width="1"/>
-      <text x="384" y="58" font-family="Arial" font-size="9" fill="#f5a263">submissions@stone…</text>
-      <text x="376" y="84" font-family="Arial" font-size="9" fill="rgba(255,255,255,.35)">Filled from Compendium</text>
-    </svg>
+    <img src="images/help_compendium/ce-add-pitch.png" alt="Add Pitch dialog publisher dropdown showing CE logo badges" style="width:100%;border-radius:12px;display:block;max-width:560px" />
 
     <div class="cards" style="margin-top:1.25rem">
       <div class="card">
@@ -600,6 +370,10 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
         </div>
       </div>
     </div>
+
+    <!-- Diagram: Compendium spreadsheet -->
+    <p class="diagram-label">Compendium spreadsheet — Codes tab structure</p>
+    <img src="images/help_compendium/ce-compendium-admin.png" alt="Compendium spreadsheet with Codes tab showing one access code per row" style="width:100%;border-radius:12px;display:block;max-width:700px" />
 
     <div class="tip"><strong>Codes tab:</strong> add a <code>Codes</code> worksheet to the Compendium sheet. Put one access code per row in column A (add a header row like "Code" if you like — it's automatically skipped). Each code in that list can unlock the Compendium in PitchBoard.</div>
     <div class="tip"><strong>Empty Codes tab:</strong> if the Codes tab is missing or empty, <em>any</em> non-empty string will pass as a valid code. This is useful while testing, but you should add real codes before distributing access.</div>

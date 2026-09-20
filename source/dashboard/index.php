@@ -6635,6 +6635,13 @@ function submitProfile() {
     myCompendiumCode = compendiumCode;
     var parts = [myName, myEmail, myPhone].filter(Boolean);
     document.getElementById('subTitle').textContent = parts.join('  ·  ');
+    // Refresh views so Compendium features appear/disappear based on new code
+    buildSummary(allPitches);
+    if (currentView === 'publisher') {
+      activeCompFilters = {};
+      _compFilterOpen   = false;
+      buildView();
+    }
     _profileLog('✓  Saved', 'ok');
     document.getElementById('profileCancelBtn').disabled  = false;
     document.getElementById('profileCancelBtn').textContent = 'Close';

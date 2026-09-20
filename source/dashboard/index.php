@@ -752,6 +752,11 @@ foreach ($_comp_raw as $_cpub) {
       font-family:'DINRegular',sans-serif; font-size:.72rem; color:#888;
       margin-bottom:.5rem; line-height:1.4;
     }
+    .comp-filter-section { margin-top:.55rem; }
+    .comp-filter-section-label {
+      font-family:'DINBlack',sans-serif; font-size:.58rem; letter-spacing:.06em;
+      text-transform:uppercase; color:#aaa; margin-bottom:.35rem;
+    }
     .comp-filter-chips { display:flex; flex-wrap:wrap; gap:.35rem; }
     .comp-chip {
       display:inline-flex; align-items:center;
@@ -2349,17 +2354,17 @@ function buildCompFilterBar() {
   var bar = document.getElementById('compFilterBar');
   // Collect available filter values from COMPENDIUM_PUBS
   var hasAccepting = false;
-  var categories = {};
+  var categories = {}, conventions = {};
   Object.keys(COMPENDIUM_PUBS).forEach(function(k) {
     var cpub = COMPENDIUM_PUBS[k];
     if (cpub.accepting_submissions && cpub.accepting_submissions.toLowerCase().indexOf('yes') !== -1) {
       hasAccepting = true;
     }
     if (cpub.categories) {
-      cpub.categories.split(',').forEach(function(cat) {
-        var c = cat.trim().toLowerCase();
-        if (c) categories[c] = 1;
-      });
+      cpub.categories.split(',').forEach(function(v) { var c = v.trim().toLowerCase(); if (c) categories[c] = 1; });
+    }
+    if (cpub.conventions) {
+      cpub.conventions.split(',').forEach(function(v) { var c = v.trim(); if (c) conventions[c] = 1; });
     }
   });
 
@@ -2367,15 +2372,29 @@ function buildCompFilterBar() {
     var a = activeCompFilters[key] ? ' active' : '';
     return '<button class="comp-chip' + a + '" data-key="' + escHtml(key) + '" onclick="toggleCompChip(this.dataset.key)">' + escHtml(label) + '</button>';
   }
+  function section(label, chipsHtml) {
+    return '<div class="comp-filter-section"><div class="comp-filter-section-label">' + label + '</div>'
+         + '<div class="comp-filter-chips">' + chipsHtml + '</div></div>';
+  }
 
-  var chips = chip('showAll', 'Show All');
-  if (hasAccepting) chips += chip('accepting', '✓ Accepting');
-  Object.keys(categories).sort().forEach(function(cat) { chips += chip('cat:' + cat, cat); });
+  // Top row: Show All + Accepting
+  var topChips = chip('showAll', 'Show All');
+  if (hasAccepting) topChips += chip('accepting', '✓ Accepting');
+
+  // Categories section
+  var catChips = '';
+  Object.keys(categories).sort().forEach(function(cat) { catChips += chip('cat:' + cat, cat); });
+
+  // Conventions section
+  var convChips = '';
+  Object.keys(conventions).sort().forEach(function(conv) { convChips += chip('conv:' + conv, conv); });
 
   bar.innerHTML =
     '<div class="comp-filter-box">' +
       '<div class="comp-filter-desc">The Compendium: Click on filter options below to look for publishers. Toggle <strong>Show All</strong> to show/hide the entire Compendium.</div>' +
-      '<div class="comp-filter-chips">' + chips + '</div>' +
+      '<div class="comp-filter-chips">' + topChips + '</div>' +
+      (catChips  ? section('Categories of Interest', catChips)    : '') +
+      (convChips ? section('Conventions Regularly Attended', convChips) : '') +
     '</div>';
 }
 
@@ -3187,6 +3206,12 @@ function buildPublisherView(pitches) {
       if (catFilters.length) {
         var pubCats = (cpub.categories || '').toLowerCase();
         var allMatch = catFilters.every(function(k){ return pubCats.indexOf(k.slice(4)) !== -1; });
+        if (!allMatch) { delete pubs[p]; return; }
+      }
+      var convFilters = Object.keys(activeCompFilters).filter(function(k){ return k.indexOf('conv:') === 0; });
+      if (convFilters.length) {
+        var pubConvs = (cpub.conventions || '').toLowerCase();
+        var allMatch = convFilters.every(function(k){ return pubConvs.indexOf(k.slice(5).toLowerCase()) !== -1; });
         if (!allMatch) delete pubs[p];
       }
     });

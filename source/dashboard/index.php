@@ -1965,7 +1965,10 @@ $_compendium_codes = file_exists($_codes_file)
       <label class="ge-label">Email<input type="email" id="profileEmail" class="ge-input" /></label>
       <label class="ge-label">Phone<input type="tel"   id="profilePhone" class="ge-input" /></label>
       <label class="ge-label" style="margin-top:.4rem">Compendium Code
-        <input type="text" id="profileCompendiumCode" class="ge-input" placeholder="Your Compendium access code" style="width:100%;box-sizing:border-box" />
+        <div style="position:relative">
+          <input type="text" id="profileCompendiumCode" class="ge-input" placeholder="Your Compendium access code" style="width:100%;padding-right:2.4rem;box-sizing:border-box" />
+          <?php if ($_ce_logo_src): ?><img src="<?= $_ce_logo_src ?>" alt="Cardboard Edison" id="compCodeLogo" style="position:absolute;right:.45rem;top:50%;transform:translateY(-50%);height:22px;width:22px;border-radius:50%;pointer-events:none" /><?php endif; ?>
+        </div>
       </label>
     </div>
     <div class="sync-log" id="profileLog" style="display:none"></div>

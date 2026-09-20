@@ -54,6 +54,10 @@ foreach ($_comp_raw as $_cpub) {
         $_compendium_pubs_map[mb_strtolower($_cpub['publisher'], 'UTF-8')] = $_cpub;
     }
 }
+$_codes_file = __DIR__ . '/../../data/compendium_codes.json';
+$_compendium_codes = file_exists($_codes_file)
+    ? json_decode(file_get_contents($_codes_file), true) ?: []
+    : [];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -2106,6 +2110,7 @@ var NOTEBOARD_HAS_NOTES = <?= json_encode(array_fill_keys(array_keys($_nb_has_no
 var GAME_PAGE_TOKENS    = <?= json_encode($_gp_tokens, JSON_UNESCAPED_UNICODE) ?>;     // game name → 24-char token
 var COMPENDIUM_PUBS     = <?= json_encode($_compendium_pubs_map, JSON_UNESCAPED_UNICODE) ?>; // lowercase name → publisher data
 var CE_LOGO_SRC         = <?= json_encode($_ce_logo_src) ?>;  // Cardboard Edison logo URL
+var COMPENDIUM_CODES    = <?= json_encode(array_values($_compendium_codes), JSON_UNESCAPED_UNICODE) ?>; // valid access codes
 
 // ── State ─────────────────────────────────────────────
 var currentView     = 'game';
@@ -2126,6 +2131,12 @@ var myName           = '';
 var myPhone          = '';
 var myEmail          = '';
 var myCompendiumCode = '';
+function _validCompCode() {
+  if (!myCompendiumCode) return false;
+  // If no codes are published, any non-empty code is accepted (backward compat)
+  if (!COMPENDIUM_CODES.length) return true;
+  return COMPENDIUM_CODES.indexOf(myCompendiumCode) !== -1;
+}
 
 // ── Helpers ───────────────────────────────────────────
 function statusClass(s) {
@@ -3310,7 +3321,7 @@ function buildPublisherView(pitches) {
     html += '<div class="card-header" onclick="toggleCard(this)">';
     html += '<span class="card-title">' + escHtml(p) + '</span>';
     html += '<span class="card-badges">' + at + pubHeaderBadge + '</span>';
-    if (_hasComp && myCompendiumCode) {
+    if (_hasComp && _validCompCode()) {
       html += '<button class="comp-info-btn" data-publisher="' + escHtml(p) + '"'
            +  ' title="View in Compendium"'
            +  ' onclick="event.stopPropagation();openCompendiumInfo(this.getAttribute(\'data-publisher\'))">'
@@ -5597,7 +5608,7 @@ function getPublisherList() {
     var co = key.split('|')[1]; if (co) pubs[co] = 1;
   });
   // Merge in Compendium publishers (no duplicates) when code is set
-  if (myCompendiumCode) {
+  if (_validCompCode()) {
     Object.keys(COMPENDIUM_PUBS).forEach(function(k) {
       var name = COMPENDIUM_PUBS[k].publisher || '';
       if (name) pubs[name] = 1;
@@ -5709,7 +5720,7 @@ function _setupCombos() {
       // Publisher chosen → clear contact, then fill from Compendium contact_info if available
       var contactInp = document.getElementById('addContactInput');
       contactInp.value = '';
-      if (myCompendiumCode) {
+      if (_validCompCode()) {
         var ck = (item || '').toLowerCase();
         var cpub = COMPENDIUM_PUBS[ck];
         if (!cpub) {

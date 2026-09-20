@@ -30,7 +30,7 @@
 #  23  Admin Contact                 → admin_contact
 
 import gspread
-import sys, os, json, socket
+import sys, os, json, socket, re
 
 socket.setdefaulttimeout(60)
 
@@ -140,4 +140,29 @@ except Exception as e:
     sys.exit(1)
 
 size_kb = round(os.path.getsize(outFile) / 1024, 1)
-out('ok', f'✓  {len(publishers)} publishers published ({size_kb} KB)', count=len(publishers))
+out('info', f'✓  {len(publishers)} publishers written ({size_kb} KB)')
+
+# ── Read Codes tab ────────────────────────────────────────────────────────────
+codesFile = os.path.join(dataDir, 'compendium_codes.json')
+codes = []
+try:
+    codes_ws = next((w for w in wb.worksheets() if w.title.strip().lower() == 'codes'), None)
+    if codes_ws:
+        out('info', 'Reading Codes tab…')
+        rows = codes_ws.get_all_values()
+        # Skip header row (row 0); collect non-empty values from column A
+        for row in rows[1:]:
+            code = row[0].strip() if row else ''
+            if code:
+                codes.append(code)
+        with open(codesFile, 'w', encoding='utf-8') as f:
+            json.dump(codes, f, ensure_ascii=False)
+        out('info', f'{len(codes)} code(s) stored.')
+    else:
+        out('info', 'No Codes tab found — skipping.')
+        if os.path.exists(codesFile):
+            os.remove(codesFile)
+except Exception as e:
+    out('info', f'Could not read Codes tab: {e}')
+
+out('ok', f'✓  Published {len(publishers)} publishers, {len(codes)} code(s).', count=len(publishers))

@@ -2423,7 +2423,7 @@ function buildCompFilterBar() {
   }
 
   // Top row: Show All + Accepting
-  var topChips = chip('showAll', 'Show All');
+  var topChips = chip('showAll', 'Include Compendium');
   if (hasAccepting) topChips += chip('accepting', '✓ Accepting');
 
   // Category list
@@ -2444,7 +2444,7 @@ function buildCompFilterBar() {
 
   bar.innerHTML =
     '<div class="comp-filter-box">' +
-      '<div class="comp-filter-desc">The Compendium: Click on filter options below to look for publishers. Toggle <strong>Show All</strong> to show/hide the entire Compendium.</div>' +
+      '<div class="comp-filter-desc">The Compendium: Click on filter options below to look for publishers. Toggle <strong>Include Compendium</strong> to show/hide the entire Compendium.</div>' +
       '<div class="comp-filter-chips">' + topChips + '</div>' +
       '<div class="comp-filter-cols">' +
         '<div class="comp-filter-col">' +

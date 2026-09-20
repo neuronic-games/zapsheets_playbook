@@ -194,7 +194,7 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
       <div class="card">
         <span class="card-icon">📋</span>
         <div class="card-title">Show all publishers</div>
-        <p>Toggle "Show All" to display every publisher in the Compendium, even ones you haven't pitched yet — great for prospecting.</p>
+        <p>Toggle "Include Compendium" to display every publisher in the Compendium, even ones you haven't pitched yet — great for prospecting.</p>
       </div>
     </div>
   </div>
@@ -273,7 +273,7 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
         <p>Shows only publishers that are currently marked as accepting submissions in the Compendium.</p>
       </div>
       <div class="card">
-        <div class="card-title">Show All</div>
+        <div class="card-title">Include Compendium</div>
         <p>Includes publishers that are <em>only</em> in the Compendium (not yet in your pitch history). Great for finding new prospects.</p>
       </div>
       <div class="card">

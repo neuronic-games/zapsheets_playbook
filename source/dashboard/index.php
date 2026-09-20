@@ -5439,6 +5439,7 @@ function _comboInit(inputId, dropId, getItems, onSelect, renderItem) {
         div.className = 'combo-sep';
       } else {
         div.className = 'combo-opt';
+        div.dataset.value = item;
         if (renderItem) { renderItem(div, item); } else { div.textContent = item; }
         div.addEventListener('mousedown', function(e) {
           e.preventDefault();   // keep focus on input
@@ -5477,9 +5478,10 @@ function _comboInit(inputId, dropId, getItems, onSelect, renderItem) {
       var opts = drop.querySelectorAll('.combo-opt');
       if (_ai >= 0 && opts[_ai]) {
         e.preventDefault();
-        inp.value = opts[_ai].textContent;
+        var val = opts[_ai].dataset.value || opts[_ai].textContent;
+        inp.value = val;
         closeDrop();
-        if (onSelect) onSelect(inp.value);
+        if (onSelect) onSelect(val);
       }
     } else if (e.key === 'Escape') { closeDrop(); }
   });
@@ -5490,9 +5492,24 @@ function _setupCombos() {
   _combosReady = true;
   _comboInit('addPublisherInput', 'pubComboDrop',
     function() { return getPublisherList(); },
-    function() {
-      // Publisher chosen → clear contact field
-      document.getElementById('addContactInput').value = '';
+    function(item) {
+      // Publisher chosen → clear contact, then fill from Compendium contact_info if available
+      var contactInp = document.getElementById('addContactInput');
+      contactInp.value = '';
+      if (myCompendiumCode) {
+        var ck = (item || '').toLowerCase();
+        var cpub = COMPENDIUM_PUBS[ck];
+        if (!cpub) {
+          var cks = Object.keys(COMPENDIUM_PUBS);
+          for (var i = 0; i < cks.length; i++) {
+            if (ck.indexOf(cks[i]) !== -1 || cks[i].indexOf(ck) !== -1) { cpub = COMPENDIUM_PUBS[cks[i]]; break; }
+          }
+        }
+        if (cpub && cpub.contact_info) {
+          var emailMatch = cpub.contact_info.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
+          if (emailMatch) contactInp.value = emailMatch[0];
+        }
+      }
     },
     function(div, item) {
       var span = document.createElement('span');

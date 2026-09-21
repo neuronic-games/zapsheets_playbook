@@ -228,7 +228,7 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
 
     <!-- Diagram: profile dialog -->
     <p class="diagram-label">Profile dialog — Compendium Code field</p>
-    <img src="images/help_compendium/ce-profile-dialog.png" alt="Profile dialog showing the Compendium Code field" style="width:100%;border-radius:12px;display:block;max-width:560px" />
+    <img src="images/help_compendium/ce-profile-dialog.png" alt="Profile dialog showing the Compendium Code field" style="display:block;width:210px;border-radius:7px" />
 
     <div class="tip"><strong>Tip:</strong> your code is saved to your Google Sheet's Settings tab. It persists across sessions and devices — you only need to enter it once per Sheet.</div>
     <div class="tip"><strong>Removing access:</strong> clear the Compendium Code field in Profile and save. All CE features disappear immediately.</div>

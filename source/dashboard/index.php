@@ -6081,6 +6081,11 @@ function submitAddEntry() {
       if (result && result.ok) {
         allPitches.push({ Game: _addCtx.game, Publisher: publisher, Contact: contact,
           Date: sheetDate, Event: eventVal, Status: statusVal, Notes: notesVal, Email: '' });
+        // If this is a brand-new game name, register it in gamesIndex so it's
+        // immediately findable via search and appears in the game combobox.
+        if (_addCtx.game && !gamesIndex[_addCtx.game]) {
+          gamesIndex[_addCtx.game] = { Name: _addCtx.game };
+        }
         filteredPitches = searchQuery
           ? allPitches.filter(function(r) {
               return (r.Game||'').toLowerCase().includes(searchQuery)

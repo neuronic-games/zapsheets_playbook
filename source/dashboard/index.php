@@ -2256,6 +2256,21 @@ function escHtml(s) {
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// Convert a Google Sheets date value to m/d/yyyy string.
+// Sheets stores dates as serial integers (days since Dec 30, 1899, with a phantom
+// Feb 29 1900 bug meaning serials >60 are off by 1 vs. the JS epoch offset).
+// If the value is already a string date, return it unchanged.
+function normalizeSheetDate(val) {
+  if (!val && val !== 0) return '';
+  var s = String(val).trim();
+  if (!s) return '';
+  var n = Number(s);
+  if (isNaN(n) || s.indexOf('/') !== -1 || s.indexOf('-') !== -1) return s; // already formatted
+  // Serial → JS Date: serial 25569 = Jan 1, 1970 (accounting for the 1900 leap bug for n>60)
+  var d = new Date((n - 25569) * 86400000);
+  return (d.getUTCMonth()+1) + '/' + d.getUTCDate() + '/' + d.getUTCFullYear();
+}
+
 // Convert [title, url], [label](url), and bare https:// links to <a> tags.
 // stopProp=true adds onclick="event.stopPropagation()" so clicks on links inside
 // a clickable parent (e.g. the notes span) don't also trigger the parent handler.
@@ -3912,7 +3927,7 @@ function render(pitches, settings, people, games) {
 
   allPitches = (pitches||[])
     .filter(function(r){ return r.Date || r.Publisher || r.Game; })
-    .map(function(r, i){ r._idx = i; return r; });
+    .map(function(r, i){ r._idx = i; r.Date = normalizeSheetDate(r.Date); return r; });
   filteredPitches = allPitches;
   buildSummary(allPitches);
   buildView();

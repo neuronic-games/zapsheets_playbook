@@ -1,6 +1,19 @@
 [
   {
     "version": "Sep 2026",
+    "apps": ["pitchboard"],
+    "features": [
+      "Planned pitch status — record a publisher you intend to pitch in the future; shows an indigo Planned badge on publisher and game rows, with a matching filter pill in the status bar",
+      "CLEAR buttons on Compendium filters — remove all selections from a filter column in one click",
+      "Compendium filter renamed from Show All to Include Compendium",
+      "Profile dialog now follows the standard dialog protection pattern — unsaved changes shake the dialog instead of letting it close",
+      "Fixed: dates stored as Google Sheets serial integers now display correctly throughout the pitch log",
+      "Fixed: a newly added game is immediately searchable without a page refresh",
+      "Fixed: entering a contact as \"Name email@example.com\" now saves the name and email to separate fields"
+    ]
+  },
+  {
+    "version": "Sep 2026",
     "apps": ["devboard"],
     "features": [
       "Remember me on sign-in — checking the box saves your email and password so the sign-in form pre-fills next time; uncheck it to stop saving credentials",

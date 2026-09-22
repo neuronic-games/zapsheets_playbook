@@ -6038,7 +6038,7 @@ function submitAddEntry() {
     _addCtx.game = gameInputVal;
   }
 
-  var publisher, contact;
+  var publisher, contact, contactEmail = '';
   if (_addCtx.locked) {
     publisher = _addCtx.publisher;
     contact   = _addCtx.contact;
@@ -6050,6 +6050,9 @@ function submitAddEntry() {
     contact   = (document.getElementById('addContactInput').value  || '').trim();
     if (!publisher) { document.getElementById('addPublisherInput').focus(); return; }
   }
+  // If contact includes an email address (e.g. "Jane Smith jane@co.com"), split it
+  var _cp = _parsePerson(contact);
+  if (_cp.email) { contact = _cp.name; contactEmail = _cp.email; }
 
   var dp = dateVal.split('-');
   var sheetDate = parseInt(dp[1]) + '/' + parseInt(dp[2]) + '/' + dp[0];
@@ -6177,8 +6180,8 @@ function submitAddEntry() {
       var res;
       try { res = JSON.parse(cxhr.responseText); } catch(e) { res = null; }
       if (res && res.ok) {
-        peopleIndex[contact + '|' + publisher] = '';
-        if (!peopleData[contact]) peopleData[contact] = { Name: contact, Email: '', Company: publisher, Role: '', Notes: '' };
+        peopleIndex[contact + '|' + publisher] = contactEmail;
+        if (!peopleData[contact]) peopleData[contact] = { Name: contact, Email: contactEmail, Company: publisher, Role: '', Notes: '' };
         doSubmitPitch();
       } else {
         btn.disabled = false; btn.textContent = 'Add';
@@ -6193,7 +6196,7 @@ function submitAddEntry() {
       'id='       + encodeURIComponent(sheet_Id) +
       '&name='    + encodeURIComponent(contact) +
       '&company=' + encodeURIComponent(publisher) +
-      '&email='   + encodeURIComponent('')
+      '&email='   + encodeURIComponent(contactEmail)
     );
   } else {
     doSubmitPitch();

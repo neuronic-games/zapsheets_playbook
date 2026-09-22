@@ -2214,6 +2214,14 @@ function latestEntry(entries) {
   })[0] || {};
 }
 
+// Like latestEntry, but for status/badge/filter purposes: if the pair has any
+// non-Planned entry (i.e. actual pitching has occurred), Planned entries are
+// excluded so the real status is returned instead.
+function effectiveLatestEntry(entries) {
+  var active = entries.filter(function(e){ return (e.Status||'').toLowerCase() !== 'planned'; });
+  return latestEntry(active.length ? active : entries);
+}
+
 function ageTag(entries) {
   // If the most recent communication ended in anything other than Pitched/Interested,
   // there is nothing to follow up on — suppress the age pill.
@@ -2338,11 +2346,11 @@ function buildSummary(pitches) {
   // Also include games in gamesIndex that may not have pitches yet
   Object.keys(gamesIndex).forEach(function(n){ if (!gameEntryMap[n]) gameEntryMap[n] = []; });
 
-  // Count per game-publisher pair by latest status
+  // Count per game-publisher pair by effective latest status
   var pairCounts = {planned:0, pitched:0, interested:0, passed:0, gonecold:0};
   Object.keys(gamePubMap).forEach(function(g) {
     Object.keys(gamePubMap[g]).forEach(function(p) {
-      var latest = latestEntry(gamePubMap[g][p]);
+      var latest = effectiveLatestEntry(gamePubMap[g][p]);
       var s = (latest.Status||'').toLowerCase();
       if (s === 'planned') pairCounts.planned++;
       else if (s === 'interested') pairCounts.interested++;
@@ -2981,7 +2989,7 @@ function buildGameView(pitches) {
           Object.keys(games[name][p]).forEach(function(c){
             games[name][p][c].forEach(function(e){ pe.push(e); });
           });
-          var s = (latestEntry(pe).Status||'').toLowerCase();
+          var s = (effectiveLatestEntry(pe).Status||'').toLowerCase();
           return (activeFilters.planned    && s === 'planned') ||
                  (activeFilters.interested && s === 'interested') ||
                  (activeFilters.passed     && s === 'passed') ||
@@ -3152,7 +3160,7 @@ function buildGameView(pitches) {
       var contacts = Object.keys(games[g][p]);
       var pubEntries = [];
       contacts.forEach(function(c){ games[g][p][c].forEach(function(e){ pubEntries.push(e); }); });
-      var pubLatest  = latestEntry(pubEntries);
+      var pubLatest  = effectiveLatestEntry(pubEntries);
       var pubStatus  = (pubLatest.Status||'').toLowerCase();
       var pubAgeTag  = ageTag(pubEntries);
 
@@ -3266,7 +3274,7 @@ function buildPublisherView(pitches) {
         if (activeFilters.published && pub) keep = true;
         if (activeFilters.signed    && sig) keep = true;
         if (!keep && (activeFilters.interested || activeFilters.passed || activeFilters.pitched || activeFilters.gonecold || activeFilters.planned)) {
-          var s = (latestEntry(entries).Status||'').toLowerCase();
+          var s = (effectiveLatestEntry(entries).Status||'').toLowerCase();
           keep = (activeFilters.planned    && s === 'planned') ||
                  (activeFilters.interested && s === 'interested') ||
                  (activeFilters.passed     && s === 'passed') ||
@@ -3419,7 +3427,7 @@ function buildPublisherView(pitches) {
       });
       var gameEntries = [];
       contacts.forEach(function(c){ pubs[p][g][c].forEach(function(e){ gameEntries.push(e); }); });
-      var gLatest  = latestEntry(gameEntries);
+      var gLatest  = effectiveLatestEntry(gameEntries);
       var gStatus  = (gLatest.Status||'').toLowerCase();
       var gAgeTag  = ageTag(gameEntries);
 
@@ -6098,7 +6106,8 @@ function submitAddEntry() {
       try { result = JSON.parse(xhr.responseText); } catch(e) { result = null; }
       if (result && result.ok) {
         allPitches.push({ Game: _addCtx.game, Publisher: publisher, Contact: contact,
-          Date: sheetDate, Event: eventVal, Status: statusVal, Notes: notesVal, Email: '' });
+          Date: sheetDate, Event: eventVal, Status: statusVal, Notes: notesVal, Email: '',
+          _idx: allPitches.length });
         // If this is a brand-new game name, register it in gamesIndex so it's
         // immediately findable via search and appears in the game combobox.
         if (_addCtx.game && !gamesIndex[_addCtx.game]) {

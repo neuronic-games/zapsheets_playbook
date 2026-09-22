@@ -164,14 +164,16 @@ $_compendium_codes = file_exists($_codes_file)
     }
     .pill-total     { background:#1a1a2e; color:#fff; }
     .pill-pitched   { background:#e2e8f0; color:#334155; cursor:pointer; border:none; transition:opacity .15s,box-shadow .15s; }
+    .pill-planned   { background:#e0e7ff; color:#3730a3; cursor:pointer; border:none; transition:opacity .15s,box-shadow .15s; }
     .pill-int       { background:#dcfce7; color:#166534; cursor:pointer; border:none; transition:opacity .15s,box-shadow .15s; }
     .pill-passed    { background:#fee2e2; color:#991b1b; cursor:pointer; border:none; transition:opacity .15s,box-shadow .15s; }
     .pill-signed    { background:#7c3aed; color:#fff; cursor:pointer; border:none; transition:opacity .15s,box-shadow .15s; }
     .pill-published { background:#0369a1; color:#fff; cursor:pointer; border:none; transition:opacity .15s,box-shadow .15s; }
     .pill-cold      { background:#dbeafe; color:#1e40af; cursor:pointer; border:none; transition:opacity .15s,box-shadow .15s; }
-    .pill-pitched:hover, .pill-int:hover, .pill-passed:hover,
+    .pill-pitched:hover, .pill-planned:hover, .pill-int:hover, .pill-passed:hover,
     .pill-signed:hover, .pill-published:hover, .pill-cold:hover { opacity:.85; }
     .pill-pitched.filter-active   { box-shadow:0 0 0 2px #fff, 0 0 0 4px #94a3b8; }
+    .pill-planned.filter-active   { box-shadow:0 0 0 2px #fff, 0 0 0 4px #3730a3; }
     .pill-int.filter-active       { box-shadow:0 0 0 2px #fff, 0 0 0 4px #16a34a; }
     .pill-passed.filter-active    { box-shadow:0 0 0 2px #fff, 0 0 0 4px #dc2626; }
     .pill-signed.filter-active    { box-shadow:0 0 0 2px #fff, 0 0 0 4px #7c3aed; }
@@ -305,6 +307,7 @@ $_compendium_codes = file_exists($_codes_file)
     .badge-interested  { background:#dcfce7; color:#166534; }
     .badge-passed      { background:#fee2e2; color:#991b1b; }
     .badge-pitched     { background:#e2e8f0; color:#334155; }
+    .badge-planned     { background:#e0e7ff; color:#3730a3; }
     .badge-signed      { background:#7c3aed; color:#fff; }
     .badge-published   { background:#0369a1; color:#fff; }
     .badge-returned    { background:#f97316; color:#fff; }
@@ -1919,6 +1922,7 @@ $_compendium_codes = file_exists($_codes_file)
         </label>
         <label>Status
           <select id="addStatus">
+            <option value="Planned">Planned</option>
             <option value="Pitched">Pitched</option>
             <option value="Interested">Interested</option>
             <option value="Passed">Passed</option>
@@ -2154,6 +2158,7 @@ function statusClass(s) {
   if (s==='interested') return 'interested';
   if (s==='passed')     return 'passed';
   if (s==='gone cold')  return 'gone-cold';
+  if (s==='planned')    return 'planned';
   return 'pitched';
 }
 
@@ -2334,12 +2339,13 @@ function buildSummary(pitches) {
   Object.keys(gamesIndex).forEach(function(n){ if (!gameEntryMap[n]) gameEntryMap[n] = []; });
 
   // Count per game-publisher pair by latest status
-  var pairCounts = {pitched:0, interested:0, passed:0, gonecold:0};
+  var pairCounts = {planned:0, pitched:0, interested:0, passed:0, gonecold:0};
   Object.keys(gamePubMap).forEach(function(g) {
     Object.keys(gamePubMap[g]).forEach(function(p) {
       var latest = latestEntry(gamePubMap[g][p]);
       var s = (latest.Status||'').toLowerCase();
-      if (s === 'interested') pairCounts.interested++;
+      if (s === 'planned') pairCounts.planned++;
+      else if (s === 'interested') pairCounts.interested++;
       else if (s === 'passed') pairCounts.passed++;
       else if (s === 'gone cold') pairCounts.gonecold++;
       else if (s) pairCounts.pitched++;
@@ -2366,6 +2372,7 @@ function buildSummary(pitches) {
   }
 
   var html =
+    filterBtn('pill-planned', 'planned',   'planned',    pairCounts.planned) +
     filterBtn('pill-pitched', 'pitched',   'pitched',    pairCounts.pitched) +
     filterBtn('pill-int',     'interested','interested', pairCounts.interested) +
     filterBtn('pill-passed',  'passed',    'passed',     pairCounts.passed) +
@@ -2953,7 +2960,7 @@ function buildGameView(pitches) {
 
   // Apply active filters (any combination, OR logic)
   var hasFilter = activeFilters.signed || activeFilters.published ||
-                  activeFilters.interested || activeFilters.passed || activeFilters.pitched || activeFilters.gonecold;
+                  activeFilters.interested || activeFilters.passed || activeFilters.pitched || activeFilters.gonecold || activeFilters.planned;
   if (hasFilter) {
     Object.keys(games).forEach(function(name) {
       var entries = [];
@@ -2967,7 +2974,7 @@ function buildGameView(pitches) {
       var keep = false;
       if (activeFilters.published && pub) keep = true;
       if (activeFilters.signed    && sig) keep = true;
-      if (!keep && (activeFilters.interested || activeFilters.passed || activeFilters.pitched || activeFilters.gonecold)) {
+      if (!keep && (activeFilters.interested || activeFilters.passed || activeFilters.pitched || activeFilters.gonecold || activeFilters.planned)) {
         // Check if any publisher's latest status matches an active status filter
         keep = Object.keys(games[name]).some(function(p) {
           var pe = [];
@@ -2975,7 +2982,8 @@ function buildGameView(pitches) {
             games[name][p][c].forEach(function(e){ pe.push(e); });
           });
           var s = (latestEntry(pe).Status||'').toLowerCase();
-          return (activeFilters.interested && s === 'interested') ||
+          return (activeFilters.planned    && s === 'planned') ||
+                 (activeFilters.interested && s === 'interested') ||
                  (activeFilters.passed     && s === 'passed') ||
                  (activeFilters.pitched    && s === 'pitched') ||
                  (activeFilters.gonecold   && s === 'gone cold');
@@ -3165,6 +3173,8 @@ function buildGameView(pitches) {
         pubBadge = '<span class="badge badge-interested" style="margin-right:.75rem">INT</span>';
       } else if (pubStatus === 'returned') {
         pubBadge = '<span class="badge badge-returned" style="margin-right:.75rem">Returned</span>';
+      } else if (pubStatus === 'planned') {
+        pubBadge = '<span class="badge badge-planned" style="margin-right:.75rem">Planned</span>';
       }
 
       var headerColor = isCollapsed ? 'color:#aaa;' : 'color:#333;';
@@ -3244,7 +3254,7 @@ function buildPublisherView(pitches) {
   // Apply active filters — remove games from each publisher that don't match,
   // then remove publishers left with no games
   var hasFilter = activeFilters.signed || activeFilters.published ||
-                  activeFilters.interested || activeFilters.passed || activeFilters.pitched || activeFilters.gonecold;
+                  activeFilters.interested || activeFilters.passed || activeFilters.pitched || activeFilters.gonecold || activeFilters.planned;
   if (hasFilter) {
     Object.keys(pubs).forEach(function(p) {
       Object.keys(pubs[p]).forEach(function(g) {
@@ -3255,9 +3265,10 @@ function buildPublisherView(pitches) {
         var keep = false;
         if (activeFilters.published && pub) keep = true;
         if (activeFilters.signed    && sig) keep = true;
-        if (!keep && (activeFilters.interested || activeFilters.passed || activeFilters.pitched || activeFilters.gonecold)) {
+        if (!keep && (activeFilters.interested || activeFilters.passed || activeFilters.pitched || activeFilters.gonecold || activeFilters.planned)) {
           var s = (latestEntry(entries).Status||'').toLowerCase();
-          keep = (activeFilters.interested && s === 'interested') ||
+          keep = (activeFilters.planned    && s === 'planned') ||
+                 (activeFilters.interested && s === 'interested') ||
                  (activeFilters.passed     && s === 'passed') ||
                  (activeFilters.pitched    && s === 'pitched') ||
                  (activeFilters.gonecold   && s === 'gone cold');
@@ -3432,6 +3443,8 @@ function buildPublisherView(pitches) {
         gBadge = '<span class="badge badge-passed" style="margin-right:.75rem">Passed</span>';
       } else if (gStatus === 'gone cold') {
         gBadge = '<span class="badge badge-gone-cold" style="margin-right:.75rem">Gone Cold</span>';
+      } else if (gStatus === 'planned') {
+        gBadge = '<span class="badge badge-planned" style="margin-right:.75rem">Planned</span>';
       } else {
         gBadge = '';
       }

@@ -4436,7 +4436,8 @@ function submitDeleteEntry() {
     '&publisher='+ encodeURIComponent(_notesCtx.publisher)+
     '&contact='  + encodeURIComponent(_notesCtx.contact)  +
     '&date='     + encodeURIComponent(_notesCtx.date)     +
-    '&event='    + encodeURIComponent(_notesCtx.event);
+    '&event='    + encodeURIComponent(_notesCtx.event)    +
+    '&status='   + encodeURIComponent(_notesCtx.status||'');
 
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_BASE + 'push/deleteRow.php');
@@ -4450,11 +4451,12 @@ function submitDeleteEntry() {
     if (result && result.ok) {
       // Remove from in-memory allPitches
       allPitches = allPitches.filter(function(r) {
-        return !(r.Game      === _notesCtx.game      &&
-                 r.Publisher === _notesCtx.publisher  &&
-                 r.Contact   === _notesCtx.contact    &&
-                 r.Date      === _notesCtx.date       &&
-                 r.Event     === _notesCtx.event);
+        return !(r.Game      === _notesCtx.game           &&
+                 r.Publisher === _notesCtx.publisher       &&
+                 r.Contact   === _notesCtx.contact         &&
+                 r.Date      === _notesCtx.date            &&
+                 r.Event     === _notesCtx.event           &&
+                 (r.Status||'') === (_notesCtx.status||''));
       });
       filteredPitches = searchQuery
         ? allPitches.filter(function(r) {

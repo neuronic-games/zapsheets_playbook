@@ -27,6 +27,7 @@ publisher = data.get('publisher', '').strip()
 contact   = data.get('contact',   '').strip()
 date      = data.get('date',      '').strip()
 event     = data.get('event',     '').strip()
+status    = data.get('status',    '').strip()
 
 try:
     mGoogleSheet = mServiceAccount.open_by_key(sheet_id)
@@ -63,7 +64,8 @@ for i, row in enumerate(all_values[1:], start=2):
         cell(row, 'Publisher') == publisher and
         cell(row, 'Contact')   == contact   and
         cell(row, 'Date')      == date      and
-        cell(row, 'Event')     == event):
+        cell(row, 'Event')     == event     and
+        cell(row, 'Status')    == status):
         target_sheet_row = i
         break
 

@@ -12,6 +12,7 @@ $publisher = trim($_POST['publisher'] ?? '');
 $contact   = trim($_POST['contact']   ?? '');
 $date      = trim($_POST['date']      ?? '');
 $event     = trim($_POST['event']     ?? '');
+$status    = trim($_POST['status']    ?? '');
 
 if (!$sheetId) {
     echo json_encode(['error' => 'Missing sheet ID']);
@@ -24,6 +25,7 @@ $data = [
     'contact'   => $contact,
     'date'      => $date,
     'event'     => $event,
+    'status'    => $status,
 ];
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';

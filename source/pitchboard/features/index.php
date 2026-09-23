@@ -219,7 +219,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
   <p>PitchBoard keeps every game, every publisher, and every pitch in one place. Built on your Google Sheet, so your data stays yours.</p>
   <div class="hero-btns">
     <a href="pitchboard" class="btn-primary">Get PitchBoard</a>
-    <a href="#screenshots" class="btn-ghost">See it in action</a>
+    <a href="https://zapsheets.com/app/1tCL9R2mCG9i1egFFsYUM0Rw7jY3itxb4vJHcnlBJi8c/pitchboard" class="btn-ghost" target="_blank" rel="noopener">See it in action</a>
   </div>
 </section>
 

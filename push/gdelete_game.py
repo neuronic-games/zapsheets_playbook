@@ -96,18 +96,29 @@ if ws_pitches is not None:
     except Exception as e:
         results['pitch_warning'] = f"Could not clean Pitches tab: {str(e)}"
 
-# ── 3. Delete the [Game Name] worksheet tab if it exists ──────────────────────
-bracketed = '[' + game + ']'
-ws_game_tab = next(
-    (w for w in all_worksheets if w.title == bracketed or w.title == game),
-    None
-)
-if ws_game_tab is not None:
+# ── 3. Delete any worksheet tab whose name starts with [Game Name] ────────────
+# Covers the base tab [Game Name] and any feature tabs like [Game Name] Notes,
+# [Game Name] DevBoard, etc. — current and future.
+prefix = '[' + game + ']'
+prefix_lower = prefix.lower()
+game_tabs = [
+    w for w in all_worksheets
+    if w.title == game or
+       w.title.lower() == prefix_lower or
+       w.title.lower().startswith(prefix_lower + ' ')
+]
+deleted_tabs = []
+tab_warnings = []
+for ws_tab in game_tabs:
     try:
-        mGoogleSheet.del_worksheet(ws_game_tab)
-        results['tab_deleted'] = ws_game_tab.title
+        mGoogleSheet.del_worksheet(ws_tab)
+        deleted_tabs.append(ws_tab.title)
     except Exception as e:
-        results['tab_warning'] = f"Could not delete game tab: {str(e)}"
+        tab_warnings.append(f"{ws_tab.title}: {str(e)}")
+if deleted_tabs:
+    results['tabs_deleted'] = deleted_tabs
+if tab_warnings:
+    results['tab_warnings'] = tab_warnings
 
 results['ok'] = True
 results['game'] = game

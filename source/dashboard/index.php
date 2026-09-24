@@ -5570,6 +5570,16 @@ function submitGameEdit() {
     return;
   }
 
+  // Uniqueness check: new name must not already exist (for both new games and renames)
+  var _nameConflict = payload.name !== _gameEditCtx.origName && !!gamesIndex[payload.name];
+  if (isNew && gamesIndex[payload.name]) _nameConflict = true;
+  if (_nameConflict) {
+    showError('A game named "' + payload.name + '" already exists.');
+    btn.disabled = false;
+    btn.textContent = isNew ? 'Add Game' : 'Save';
+    return;
+  }
+
   function doSave() {
     btn.textContent = isNew ? 'Adding…' : 'Saving…';
     var endpoint = isNew ? 'push/addGame.php' : 'push/updateGame.php';

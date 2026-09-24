@@ -142,7 +142,63 @@ if not updates:
 
 try:
     ws.batch_update(updates, value_input_option='USER_ENTERED')
-    print(json.dumps({"ok": True, "row": target_sheet_row, "updated": len(updates)}))
 except Exception as e:
     print(json.dumps({"error": f"Could not update cells: {str(e)}"}))
     sys.exit(1)
+
+result = {"ok": True, "row": target_sheet_row, "updated": len(updates)}
+
+# ── If name changed, propagate rename everywhere ───────────────────────────────
+if new_name != orig_name:
+
+    # 1. Update all Pitches rows where Game == orig_name
+    ws_pitches = next((w for w in all_worksheets if w.title.lower() == 'pitches'), None)
+    if ws_pitches is not None:
+        try:
+            pitch_values = ws_pitches.get_all_values()
+            if pitch_values:
+                ph = pitch_values[0]
+                pcol = {h.strip(): i for i, h in enumerate(ph)}
+                game_col = pcol.get('Game', -1)
+                pitch_updates = []
+                for i, row in enumerate(pitch_values[1:], start=2):
+                    if game_col >= 0 and game_col < len(row) and row[game_col].strip() == orig_name:
+                        pitch_updates.append({
+                            'range':  gspread.utils.rowcol_to_a1(i, game_col + 1),
+                            'values': [["'" + new_name]]
+                        })
+                if pitch_updates:
+                    ws_pitches.batch_update(pitch_updates, value_input_option='USER_ENTERED')
+                    result['pitch_rows_renamed'] = len(pitch_updates)
+        except Exception as e:
+            result['pitch_warning'] = f"Could not rename pitch rows: {str(e)}"
+
+    # 2. Rename any worksheet tabs starting with [orig_name]
+    old_prefix       = '[' + orig_name + ']'
+    new_prefix       = '[' + new_name  + ']'
+    old_prefix_lower = old_prefix.lower()
+    renamed_tabs     = []
+    tab_warnings     = []
+    for ws_tab in all_worksheets:
+        t = ws_tab.title
+        tl = t.lower()
+        if tl == orig_name.lower() or tl == old_prefix_lower or tl.startswith(old_prefix_lower + ' '):
+            # Replace the prefix / plain name, preserve any suffix
+            if tl == orig_name.lower():
+                new_title = new_name
+            elif tl == old_prefix_lower:
+                new_title = new_prefix
+            else:
+                suffix    = t[len(old_prefix):]
+                new_title = new_prefix + suffix
+            try:
+                ws_tab.update_title(new_title)
+                renamed_tabs.append({'from': t, 'to': new_title})
+            except Exception as e:
+                tab_warnings.append(f"{t}: {str(e)}")
+    if renamed_tabs:
+        result['tabs_renamed'] = renamed_tabs
+    if tab_warnings:
+        result['tab_warnings'] = tab_warnings
+
+print(json.dumps(result))

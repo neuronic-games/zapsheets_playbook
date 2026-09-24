@@ -78,6 +78,22 @@ if ($output === '') {
 $result = json_decode($output, true);
 if ($result !== null && !empty($result['ok'])) {
     refreshJson($pythonPath, $sheetId, 'games');
+
+    // If the game was renamed, also refresh pitches and rename the local JSON file
+    $isRename = $name && $origName && $name !== $origName;
+    if ($isRename) {
+        refreshJson($pythonPath, $sheetId, 'pitches');
+
+        $sheetsDir   = dirname(__DIR__) . '/sheets/' . $sheetId;
+        $oldSafe     = str_replace(['/', '\\'], '-', $origName);
+        $newSafe     = str_replace(['/', '\\'], '-', $name);
+        $oldJsonFile = $sheetsDir . '/game-' . $oldSafe . '-en.json';
+        $newJsonFile = $sheetsDir . '/game-' . $newSafe . '-en.json';
+        if (file_exists($oldJsonFile)) {
+            rename($oldJsonFile, $newJsonFile);
+            $result['game_json_renamed'] = true;
+        }
+    }
 }
 echo $result !== null ? json_encode($result) : json_encode(['error' => $output]);
 ?>

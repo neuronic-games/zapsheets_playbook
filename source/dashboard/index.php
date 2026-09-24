@@ -5437,7 +5437,7 @@ function submitGameDelete() {
       delete gamesIndex[name];
       allPitches = allPitches.filter(function(p) { return p.Game !== name; });
       closeGameEditDialog();
-      rebuildKanban();
+      buildView();
     } else {
       if (btn) { btn.disabled = false; btn.textContent = 'Delete'; }
       cancelGameDelete();

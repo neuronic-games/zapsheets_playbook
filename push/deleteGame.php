@@ -30,8 +30,21 @@ if ($output === '') {
 }
 
 $result = json_decode($output, true);
+
 if ($result !== null && !empty($result['ok'])) {
+    // Refresh the cached JSON for games and pitches
     refreshJson($pythonPath, $sheetId, 'games');
+    refreshJson($pythonPath, $sheetId, 'pitches');
+
+    // Delete the per-game JSON file (game-{safeName}-en.json)
+    $safeName = str_replace(['/', '\\'], '-', $game);
+    $sheetsDir = dirname(__DIR__) . '/sheets/' . $sheetId;
+    $gameJson  = $sheetsDir . '/game-' . $safeName . '-en.json';
+    if (file_exists($gameJson)) {
+        unlink($gameJson);
+        $result['game_json_deleted'] = true;
+    }
 }
+
 echo $result !== null ? json_encode($result) : json_encode(['error' => $output]);
 ?>

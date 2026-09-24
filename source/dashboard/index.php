@@ -1886,10 +1886,15 @@ $_compendium_codes = file_exists($_codes_file)
     <div class="ge-row">
       <label class="ge-label" style="grid-column:1/-1">Image<div class="ge-url-wrap"><input type="url" id="geImage" class="ge-input" placeholder="https://…" /><button type="button" class="ge-upload-btn" title="Upload file" onclick="geUploadClick('geImage')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></button></div></label>
     </div>
-    <div class="ge-actions">
-      <button class="ge-delete-btn" id="geDeleteBtn" onclick="submitGameDelete()">Delete</button>
+    <div class="ge-actions" id="geActions">
+      <button class="ge-delete-btn" id="geDeleteBtn" onclick="confirmGameDelete()">Delete</button>
       <button class="ge-cancel-btn" onclick="closeGameEditDialog()">Cancel</button>
       <button class="ge-save-btn" id="geSaveBtn" onclick="submitGameEdit()">Save</button>
+    </div>
+    <div class="ge-actions" id="geConfirmActions" style="display:none">
+      <span class="notes-confirm-msg">Delete this game? This cannot be undone.</span>
+      <button class="ge-cancel-btn" onclick="cancelGameDelete()">Cancel</button>
+      <button class="ge-delete-btn notes-delete-confirm" id="geDeleteConfirmBtn" onclick="submitGameDelete()">Delete</button>
     </div>
   </div>
 </div>
@@ -5397,6 +5402,7 @@ function openGameEditDialog(gameName, isNew) {
   document.getElementById('geSaveBtn').textContent = isNew ? 'Add Game' : 'Save';
   var _geDelBtn = document.getElementById('geDeleteBtn');
   if (_geDelBtn) { _geDelBtn.style.display = isNew ? 'none' : ''; _geDelBtn.disabled = false; _geDelBtn.textContent = 'Delete'; }
+  cancelGameDelete();
   var _ged = document.getElementById('gameEditOverlay').querySelector('.game-edit-dialog');
   takeDialogSnapshot(_ged);
   document.getElementById('gameEditOverlay').classList.add('open');
@@ -5407,11 +5413,18 @@ function closeGameEditDialog() {
   document.getElementById('gameEditOverlay').classList.remove('open');
 }
 
+function confirmGameDelete() {
+  document.getElementById('geActions').style.display        = 'none';
+  document.getElementById('geConfirmActions').style.display = '';
+}
+function cancelGameDelete() {
+  document.getElementById('geConfirmActions').style.display = 'none';
+  document.getElementById('geActions').style.display        = '';
+}
 function submitGameDelete() {
   var name = _gameEditCtx && _gameEditCtx.origName;
   if (!name) return;
-  if (!confirm('Delete "' + name + '"?\n\nThis will permanently remove the game and all its pitch entries from the sheet. This cannot be undone.')) return;
-  var btn = document.getElementById('geDeleteBtn');
+  var btn = document.getElementById('geDeleteConfirmBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
   var fd = new FormData();
   fd.append('id', SHEET_ID);
@@ -5427,11 +5440,13 @@ function submitGameDelete() {
       rebuildKanban();
     } else {
       if (btn) { btn.disabled = false; btn.textContent = 'Delete'; }
+      cancelGameDelete();
       showError((r && r.error) ? r.error : 'Could not delete game.');
     }
   };
   xhr.onerror = function() {
     if (btn) { btn.disabled = false; btn.textContent = 'Delete'; }
+    cancelGameDelete();
     showError('Network error.');
   };
   xhr.send(fd);

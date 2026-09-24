@@ -1338,6 +1338,15 @@ $_compendium_codes = file_exists($_codes_file)
       border-radius:6px; padding:.42rem .9rem; cursor:pointer;
     }
     .ge-cancel-btn:hover { background:#f5f5f5; color:#333; }
+    .ge-delete-btn {
+      font-family:'DINBlack',sans-serif; font-size:.7rem;
+      text-transform:uppercase; letter-spacing:.05em;
+      background:none; color:#c0392b; border:1px solid #e8b4b8;
+      border-radius:6px; padding:.42rem .9rem; cursor:pointer;
+      margin-right:auto; transition:background .15s,color .15s;
+    }
+    .ge-delete-btn:hover { background:#fdf2f2; }
+    .ge-delete-btn:disabled { opacity:.4; cursor:default; }
 
     /* ── Copyable error dialog ───────────────────────── */
     .err-overlay {
@@ -1878,6 +1887,7 @@ $_compendium_codes = file_exists($_codes_file)
       <label class="ge-label" style="grid-column:1/-1">Image<div class="ge-url-wrap"><input type="url" id="geImage" class="ge-input" placeholder="https://…" /><button type="button" class="ge-upload-btn" title="Upload file" onclick="geUploadClick('geImage')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></button></div></label>
     </div>
     <div class="ge-actions">
+      <button class="ge-delete-btn" id="geDeleteBtn" onclick="submitGameDelete()">Delete</button>
       <button class="ge-cancel-btn" onclick="closeGameEditDialog()">Cancel</button>
       <button class="ge-save-btn" id="geSaveBtn" onclick="submitGameEdit()">Save</button>
     </div>
@@ -5385,6 +5395,8 @@ function openGameEditDialog(gameName, isNew) {
 
   document.getElementById('geSaveBtn').disabled    = false;
   document.getElementById('geSaveBtn').textContent = isNew ? 'Add Game' : 'Save';
+  var _geDelBtn = document.getElementById('geDeleteBtn');
+  if (_geDelBtn) { _geDelBtn.style.display = isNew ? 'none' : ''; _geDelBtn.disabled = false; _geDelBtn.textContent = 'Delete'; }
   var _ged = document.getElementById('gameEditOverlay').querySelector('.game-edit-dialog');
   takeDialogSnapshot(_ged);
   document.getElementById('gameEditOverlay').classList.add('open');
@@ -5393,6 +5405,36 @@ function openGameEditDialog(gameName, isNew) {
 
 function closeGameEditDialog() {
   document.getElementById('gameEditOverlay').classList.remove('open');
+}
+
+function submitGameDelete() {
+  var name = _gameEditCtx && _gameEditCtx.origName;
+  if (!name) return;
+  if (!confirm('Delete "' + name + '"?\n\nThis will permanently remove the game and all its pitch entries from the sheet. This cannot be undone.')) return;
+  var btn = document.getElementById('geDeleteBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
+  var fd = new FormData();
+  fd.append('id', SHEET_ID);
+  fd.append('game', name);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/deleteGame.php');
+  xhr.onload = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+    if (r && r.ok) {
+      delete gamesIndex[name];
+      allPitches = allPitches.filter(function(p) { return p.Game !== name; });
+      closeGameEditDialog();
+      rebuildKanban();
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = 'Delete'; }
+      showError((r && r.error) ? r.error : 'Could not delete game.');
+    }
+  };
+  xhr.onerror = function() {
+    if (btn) { btn.disabled = false; btn.textContent = 'Delete'; }
+    showError('Network error.');
+  };
+  xhr.send(fd);
 }
 
 // After a token is freshly created, patch the card in-place so the button

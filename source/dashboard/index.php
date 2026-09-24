@@ -5427,7 +5427,7 @@ function submitGameDelete() {
   var btn = document.getElementById('geDeleteConfirmBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
   var fd = new FormData();
-  fd.append('id', SHEET_ID);
+  fd.append('id', sheet_Id);
   fd.append('game', name);
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_BASE + 'push/deleteGame.php');

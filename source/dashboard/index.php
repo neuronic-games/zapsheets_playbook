@@ -1896,6 +1896,11 @@ $_compendium_codes = file_exists($_codes_file)
       <button class="ge-cancel-btn" onclick="cancelGameDelete()">Cancel</button>
       <button class="ge-delete-btn notes-delete-confirm" id="geDeleteConfirmBtn" onclick="submitGameDelete()">Delete</button>
     </div>
+    <div class="ge-actions" id="geRenameActions" style="display:none">
+      <span class="notes-confirm-msg">Renaming will update all pitch records and sheet tabs. Continue?</span>
+      <button class="ge-cancel-btn" onclick="cancelGameRename()">Cancel</button>
+      <button class="ge-save-btn" id="geRenameConfirmBtn" onclick="_gePendingRename && _gePendingRename()">Save</button>
+    </div>
   </div>
 </div>
 
@@ -5403,6 +5408,7 @@ function openGameEditDialog(gameName, isNew) {
   var _geDelBtn = document.getElementById('geDeleteBtn');
   if (_geDelBtn) { _geDelBtn.style.display = isNew ? 'none' : ''; _geDelBtn.disabled = false; _geDelBtn.textContent = 'Delete'; }
   cancelGameDelete();
+  cancelGameRename();
   var _ged = document.getElementById('gameEditOverlay').querySelector('.game-edit-dialog');
   takeDialogSnapshot(_ged);
   document.getElementById('gameEditOverlay').classList.add('open');
@@ -5413,6 +5419,7 @@ function closeGameEditDialog() {
   document.getElementById('gameEditOverlay').classList.remove('open');
 }
 
+var _gePendingRename = null;
 function confirmGameDelete() {
   document.getElementById('geActions').style.display        = 'none';
   document.getElementById('geConfirmActions').style.display = '';
@@ -5420,6 +5427,20 @@ function confirmGameDelete() {
 function cancelGameDelete() {
   document.getElementById('geConfirmActions').style.display = 'none';
   document.getElementById('geActions').style.display        = '';
+}
+function _showRenameConfirm(fn) {
+  _gePendingRename = fn;
+  document.getElementById('geActions').style.display        = 'none';
+  document.getElementById('geRenameActions').style.display  = '';
+  document.getElementById('geRenameConfirmBtn').disabled    = false;
+  document.getElementById('geRenameConfirmBtn').textContent = 'Save';
+}
+function cancelGameRename() {
+  _gePendingRename = null;
+  document.getElementById('geRenameActions').style.display = 'none';
+  document.getElementById('geActions').style.display       = '';
+  var btn = document.getElementById('geSaveBtn');
+  if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
 }
 function submitGameDelete() {
   var name = _gameEditCtx && _gameEditCtx.origName;
@@ -5581,7 +5602,13 @@ function submitGameEdit() {
   }
 
   function doSave() {
+    // Hide rename confirm row if it was showing, re-disable Save
+    document.getElementById('geRenameActions').style.display = 'none';
+    document.getElementById('geActions').style.display       = '';
+    btn.disabled = true;
     btn.textContent = isNew ? 'Adding…' : 'Saving…';
+    var rBtn = document.getElementById('geRenameConfirmBtn');
+    if (rBtn) { rBtn.disabled = true; rBtn.textContent = 'Saving…'; }
     var endpoint = isNew ? 'push/addGame.php' : 'push/updateGame.php';
     var body = 'id=' + encodeURIComponent(sheet_Id);
     for (var k in payload) body += '&' + k + '=' + encodeURIComponent(payload[k]);
@@ -5698,7 +5725,14 @@ function submitGameEdit() {
     );
   }
 
-  saveNextDesigner(newDesigners);
+  var _isRename = !isNew && payload.name !== _gameEditCtx.origName;
+  if (_isRename) {
+    btn.disabled = false;
+    btn.textContent = 'Save';
+    _showRenameConfirm(function() { saveNextDesigner(newDesigners); });
+  } else {
+    saveNextDesigner(newDesigners);
+  }
 }
 
 // Close dialogs on Escape (outermost-first priority)

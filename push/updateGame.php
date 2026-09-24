@@ -79,11 +79,12 @@ $result = json_decode($output, true);
 if ($result !== null && !empty($result['ok'])) {
     refreshJson($pythonPath, $sheetId, 'games');
 
-    // If the game was renamed, also refresh pitches and rename the local JSON file
+    // If the game was renamed, also refresh pitches, rename local JSON, and update share files
     $isRename = $name && $origName && $name !== $origName;
     if ($isRename) {
         refreshJson($pythonPath, $sheetId, 'pitches');
 
+        // Rename the per-game JSON file
         $sheetsDir   = dirname(__DIR__) . '/sheets/' . $sheetId;
         $oldSafe     = str_replace(['/', '\\'], '-', $origName);
         $newSafe     = str_replace(['/', '\\'], '-', $name);
@@ -93,6 +94,38 @@ if ($result !== null && !empty($result['ok'])) {
             rename($oldJsonFile, $newJsonFile);
             $result['game_json_renamed'] = true;
         }
+
+        // Update any collab share files that reference the old game name
+        $sharesDir      = dirname(__DIR__) . '/shares';
+        $sharesUpdated  = 0;
+        if (is_dir($sharesDir)) {
+            foreach (glob($sharesDir . '/*.json') as $shareFile) {
+                $raw  = file_get_contents($shareFile);
+                $data = json_decode($raw, true);
+                if (!is_array($data)) continue;
+                $changed = false;
+                // Update game.Name
+                if (isset($data['game']['Name']) && $data['game']['Name'] === $origName) {
+                    $data['game']['Name'] = $name;
+                    $changed = true;
+                }
+                // Update pitches[].Game
+                if (!empty($data['pitches']) && is_array($data['pitches'])) {
+                    foreach ($data['pitches'] as &$pitch) {
+                        if (isset($pitch['Game']) && $pitch['Game'] === $origName) {
+                            $pitch['Game'] = $name;
+                            $changed = true;
+                        }
+                    }
+                    unset($pitch);
+                }
+                if ($changed) {
+                    file_put_contents($shareFile, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+                    $sharesUpdated++;
+                }
+            }
+        }
+        if ($sharesUpdated > 0) $result['shares_updated'] = $sharesUpdated;
     }
 }
 echo $result !== null ? json_encode($result) : json_encode(['error' => $output]);

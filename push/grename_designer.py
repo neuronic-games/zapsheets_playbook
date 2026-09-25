@@ -81,13 +81,44 @@ for i, row in enumerate(all_values[1:], start=2):
                 'values': [[new_name]]
             })
 
-if not updates:
-    print(json.dumps({"ok": True, "updated": 0}))
-    sys.exit(0)
+games_updated = 0
+if updates:
+    try:
+        ws.batch_update(updates, value_input_option='USER_ENTERED')
+        games_updated = len(updates)
+    except Exception as e:
+        print(json.dumps({"error": f"Could not update Games sheet: {str(e)}"}))
+        sys.exit(1)
 
-try:
-    ws.batch_update(updates, value_input_option='USER_ENTERED')
-    print(json.dumps({"ok": True, "updated": len(updates)}))
-except Exception as e:
-    print(json.dumps({"error": f"Could not update cells: {str(e)}"}))
-    sys.exit(1)
+# ── Also update Designer rows in all [Game Name] worksheet tabs ───────────────
+# Per-game tabs are named [Game Name] (or [Game Name] Feature).
+# They store designers as rows where col A = 'Designer', col B = designer name.
+tabs_updated = 0
+tab_warnings = []
+for ws_tab in all_worksheets:
+    if not (ws_tab.title.startswith('[') and ']' in ws_tab.title):
+        continue
+    try:
+        tab_values = ws_tab.get_all_values()
+    except Exception:
+        continue
+    tab_updates = []
+    for i, row in enumerate(tab_values, start=1):
+        col_a = row[0].strip() if len(row) > 0 else ''
+        col_b = row[1].strip() if len(row) > 1 else ''
+        if col_a == 'Designer' and col_b == old_name:
+            tab_updates.append({
+                'range':  gspread.utils.rowcol_to_a1(i, 2),  # column B
+                'values': [[new_name]]
+            })
+    if tab_updates:
+        try:
+            ws_tab.batch_update(tab_updates, value_input_option='USER_ENTERED')
+            tabs_updated += len(tab_updates)
+        except Exception as e:
+            tab_warnings.append(f"{ws_tab.title}: {str(e)}")
+
+result = {"ok": True, "updated": games_updated, "tabs_updated": tabs_updated}
+if tab_warnings:
+    result["tab_warnings"] = tab_warnings
+print(json.dumps(result))

@@ -33,6 +33,31 @@ if ($output === '') {
 $result = json_decode($output, true);
 if ($result !== null && !empty($result['ok'])) {
     refreshJson($pythonPath, $sheetId, 'games');
+
+    // Update designer name in all cached game-*-en.json files for this sheet
+    $sheetsDir    = dirname(__DIR__) . '/sheets/' . $sheetId;
+    $gameJsonFiles = glob($sheetsDir . '/game-*-en.json') ?: [];
+    $filesUpdated  = 0;
+    foreach ($gameJsonFiles as $gameFile) {
+        $raw  = file_get_contents($gameFile);
+        $rows = json_decode($raw, true);
+        if (!is_array($rows)) continue;
+        $changed = false;
+        foreach ($rows as &$row) {
+            if (isset($row['Name'], $row['Value']) &&
+                $row['Name'] === 'Designer' &&
+                $row['Value'] === $oldName) {
+                $row['Value'] = $newName;
+                $changed = true;
+            }
+        }
+        unset($row);
+        if ($changed) {
+            file_put_contents($gameFile, json_encode($rows, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            $filesUpdated++;
+        }
+    }
+    if ($filesUpdated > 0) $result['game_jsons_updated'] = $filesUpdated;
 }
 echo $result !== null ? json_encode($result) : json_encode(['error' => $output]);
 ?>

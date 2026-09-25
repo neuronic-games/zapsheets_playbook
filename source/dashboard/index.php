@@ -3760,17 +3760,19 @@ function buildAnalyticsHtml() {
     return b + ' B';
   }
 
-  // Combine share + product-page totals per game
+  // Combine share + product-page totals + recent per game
   var pvByGame = {};
   ['share','game'].forEach(function(type) {
     var bg = (s[type] || {}).byGame || {};
     Object.keys(bg).forEach(function(g) {
-      pvByGame[g] = (pvByGame[g] || 0) + (bg[g].total || 0);
+      if (!pvByGame[g]) pvByGame[g] = { total:0, recent:0 };
+      pvByGame[g].total  += (bg[g].total  || 0);
+      pvByGame[g].recent += (bg[g].recent || 0);
     });
   });
   var pvGames = Object.keys(pvByGame)
-    .map(function(g){ return { name:g, count:pvByGame[g] }; })
-    .sort(function(a,b){ return b.count - a.count; })
+    .map(function(g){ return { name:g, total:pvByGame[g].total, recent:pvByGame[g].recent }; })
+    .sort(function(a,b){ return b.total - a.total; })
     .slice(0, 10);
   var pvHeight = Math.max(80, pvGames.length * 28 + 20);
 
@@ -4024,7 +4026,7 @@ function _buildDashboardView() {
       }
     );
 
-    // ── Access by Game horizontal bar chart ───────────────
+    // ── Access by Game horizontal stacked bar chart ───────
     var pvCanvas = document.getElementById('chartPageViews');
     if (pvCanvas) {
       var pvStats = PAGE_VIEW_STATS;
@@ -4032,29 +4034,57 @@ function _buildDashboardView() {
       ['share','game'].forEach(function(type) {
         var bg = (pvStats[type] || {}).byGame || {};
         Object.keys(bg).forEach(function(g) {
-          pvByGame[g] = (pvByGame[g] || 0) + (bg[g].total || 0);
+          if (!pvByGame[g]) pvByGame[g] = { total:0, recent:0 };
+          pvByGame[g].total  += (bg[g].total  || 0);
+          pvByGame[g].recent += (bg[g].recent || 0);
         });
       });
       var pvGames = Object.keys(pvByGame)
-        .map(function(g){ return { name:g, count:pvByGame[g] }; })
-        .sort(function(a,b){ return b.count - a.count; })
+        .map(function(g){ return { name:g, total:pvByGame[g].total, recent:pvByGame[g].recent }; })
+        .sort(function(a,b){ return b.total - a.total; })
         .slice(0, 10);
 
       _activeCharts.pageViews = new Chart(pvCanvas.getContext('2d'), {
         type: 'bar',
         data: {
           labels: pvGames.map(function(g){ return g.name; }),
-          datasets: [{ label:'Requests', data: pvGames.map(function(g){ return g.count; }),
-            backgroundColor:'#1a1a2e', borderRadius:3 }]
+          datasets: [
+            {
+              label: 'Older',
+              data: pvGames.map(function(g){ return g.total - g.recent; }),
+              backgroundColor: '#1a1a2e',
+              borderRadius: 0
+            },
+            {
+              label: 'Last 30 days',
+              data: pvGames.map(function(g){ return g.recent; }),
+              backgroundColor: '#16a34a',
+              borderRadius: 3
+            }
+          ]
         },
         options: {
           indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: { boxWidth: 10, font: { size: 10 }, padding: 10 }
+            },
+            tooltip: {
+              callbacks: {
+                afterBody: function(items) {
+                  var g = pvGames[items[0].dataIndex];
+                  return g ? 'Total: ' + g.total : '';
+                }
+              }
+            }
+          },
           scales: {
-            x: { ticks: { stepSize:1, font:{ size:10 } }, grid: { display:false } },
-            y: { ticks: { font:{ size:11 }, autoSkip:false,
+            x: { stacked: true, ticks: { stepSize:1, font:{ size:10 } }, grid: { display:false } },
+            y: { stacked: true, ticks: { font:{ size:11 }, autoSkip:false,
                    callback: function(val){ var l = pvGames[val] ? pvGames[val].name : ''; return l.length > 22 ? l.slice(0,21)+'…' : l; } },
                  afterFit: function(axis){ axis.width = 145; } }
           }

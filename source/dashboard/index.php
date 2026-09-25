@@ -3827,6 +3827,25 @@ function buildAnalyticsHtml() {
 }
 
 function buildDashboardView() {
+  // ── Reload analytics data fresh from server ────────────
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/getAnalytics.php');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onload = function() {
+    try {
+      var r = JSON.parse(xhr.responseText);
+      if (r && r.ok) {
+        PAGE_VIEW_STATS = r.stats    || {};
+        SHEET_STORAGE   = r.storage  || { bytes: 0, files: 0 };
+      }
+    } catch(e) {}
+    _buildDashboardView();
+  };
+  xhr.onerror = function() { _buildDashboardView(); };
+  xhr.send('id=' + encodeURIComponent(sheet_Id));
+}
+
+function _buildDashboardView() {
   // ── Compute stats ──────────────────────────────────────
   var allGameNames = Object.keys(gamesIndex).slice();
   allPitches.forEach(function(r){

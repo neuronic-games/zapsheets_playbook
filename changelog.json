@@ -3,7 +3,7 @@
     "version": "Sep 2026",
     "apps": ["pitchboard"],
     "features": [
-      "Analytics — an Analytics section at the bottom of the Board shows page activity (total requests for PitchBoard, Collab Share, and Product Pages, broken down by game with a 30-day recent count) and cached storage size for the sheet",
+      "Analytics — an Analytics section at the bottom of the Board shows page activity (total requests for PitchBoard, Collab Share, and Product Pages, broken down by game with a 30-day recent count), a horizontal bar chart of access requests by game, and cached storage size for the sheet",
       "Delete Game — remove a game and all its data from the Edit Game dialog; deletes the game record, all pitch entries, any game sheets, and the cached JSON files in one step",
       "Rename Game — changing a game's name in the Edit Game dialog updates all pitch records, renames any associated sheet tabs, and renames cached JSON files automatically; duplicate names are blocked and a confirmation is required before the rename is applied",
       "Planned pitch status — record a publisher you intend to pitch in the future; shows an indigo Planned badge on publisher and game rows, with a matching filter pill in the status bar",

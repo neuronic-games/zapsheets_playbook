@@ -5,12 +5,11 @@
  * Usage:
  *   require_once __DIR__ . '/push/pageViewLogger.php';
  *   logPageView($sheetId, 'pitchboard');
- *   logPageView($sheetId, 'share',      'Doll House');
- *   logPageView($sheetId, 'game',       'Doll House');
+ *   logPageView($sheetId, 'share', 'Doll House');
+ *   logPageView($sheetId, 'game',  'Doll House');
  *
- * Entry format:  { "type": "pitchboard"|"share"|"game", "date": "YYYY-MM-DD", "h": "<12-char hash>", "game": "..." }
+ * Entry format:  { "type": "pitchboard"|"share"|"game", "date": "YYYY-MM-DD", "game": "..." }
  * Entries older than 90 days are pruned on each write.
- * IP addresses are never stored — only a daily+per-sheet hashed token.
  */
 
 function logPageView($sheetId, $type, $game = '') {
@@ -19,16 +18,9 @@ function logPageView($sheetId, $type, $game = '') {
     $file = $dir . '/page-views.json';
     if (!is_dir($dir)) return;
 
-    // Anonymise: daily + per-sheet salt so the same person hashes differently across days
-    $date = date('Y-m-d');
-    $ip   = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
-    $ip   = trim(explode(',', $ip)[0]);
-    $h    = substr(hash('sha256', $ip . '|' . $date . '|' . $sheetId), 0, 12);
-
-    $entry = ['type' => $type, 'date' => $date, 'h' => $h];
+    $entry = ['type' => $type, 'date' => date('Y-m-d')];
     if ($game !== '') $entry['game'] = $game;
 
-    // Load, append, prune to last 90 days, save atomically
     $existing = [];
     if (file_exists($file)) {
         $raw = @file_get_contents($file);
@@ -45,9 +37,8 @@ function logPageView($sheetId, $type, $game = '') {
 }
 
 /**
- * Compute summary stats from a page-views.json array.
- * Returns an array keyed by type, each with total, unique, recent (last 30 days),
- * and byGame (array of [game => [total, unique, recent]]) for share + game types.
+ * Compute summary stats from page-views.json.
+ * Returns totals and per-game breakdowns for share + game types.
  */
 function pageViewStats($sheetId) {
     $dir  = dirname(__FILE__, 2) . '/sheets/' . $sheetId;
@@ -60,53 +51,24 @@ function pageViewStats($sheetId) {
 
     $stats = [];
     foreach ($entries as $e) {
-        $t    = $e['type']  ?? '';
-        $h    = $e['h']     ?? '';
-        $d    = $e['date']  ?? '';
-        $g    = $e['game']  ?? '';
-        $isR  = $d >= $recent;
+        $t   = $e['type'] ?? '';
+        $g   = $e['game'] ?? '';
+        $isR = ($e['date'] ?? '') >= $recent;
 
-        if (!isset($stats[$t])) {
-            $stats[$t] = ['total' => 0, 'hashes' => [], 'recent' => 0, 'recentHashes' => [], 'byGame' => []];
-        }
+        if (!isset($stats[$t])) $stats[$t] = ['total' => 0, 'recent' => 0, 'byGame' => []];
         $stats[$t]['total']++;
-        $stats[$t]['hashes'][$h] = true;
-        if ($isR) { $stats[$t]['recent']++; $stats[$t]['recentHashes'][$h] = true; }
+        if ($isR) $stats[$t]['recent']++;
 
         if ($g !== '') {
-            if (!isset($stats[$t]['byGame'][$g])) {
-                $stats[$t]['byGame'][$g] = ['total'=>0,'hashes'=>[],'recent'=>0,'recentHashes'=>[]];
-            }
+            if (!isset($stats[$t]['byGame'][$g])) $stats[$t]['byGame'][$g] = ['total' => 0, 'recent' => 0];
             $stats[$t]['byGame'][$g]['total']++;
-            $stats[$t]['byGame'][$g]['hashes'][$h] = true;
-            if ($isR) { $stats[$t]['byGame'][$g]['recent']++; $stats[$t]['byGame'][$g]['recentHashes'][$h] = true; }
+            if ($isR) $stats[$t]['byGame'][$g]['recent']++;
         }
     }
 
-    // Collapse hashes → unique counts
-    $out = [];
-    foreach ($stats as $t => $s) {
-        $row = [
-            'total'  => $s['total'],
-            'unique' => count($s['hashes']),
-            'recent' => $s['recent'],
-            'recentUnique' => count($s['recentHashes']),
-        ];
-        if ($s['byGame']) {
-            $row['byGame'] = [];
-            foreach ($s['byGame'] as $gName => $gs) {
-                $row['byGame'][$gName] = [
-                    'total'        => $gs['total'],
-                    'unique'       => count($gs['hashes']),
-                    'recent'       => $gs['recent'],
-                    'recentUnique' => count($gs['recentHashes']),
-                ];
-            }
-            // Sort by total desc
-            arsort($row['byGame']);
-        }
-        $out[$t] = $row;
+    foreach ($stats as $t => &$s) {
+        arsort($s['byGame']);
     }
-    return $out;
+    return $stats;
 }
 ?>

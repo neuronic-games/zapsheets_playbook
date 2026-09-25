@@ -3743,9 +3743,9 @@ function buildPageActivityHtml() {
   var gm = s['game']       || null;
 
   function fmt(stat) {
-    if (!stat) return '<span class="pv-num">0</span> <span class="pv-sub">visits</span>';
+    if (!stat || !stat.total) return '<span class="pv-num">0</span> <span class="pv-sub">requests</span>';
     return '<span class="pv-num">' + stat.total + '</span>'
-      + ' <span class="pv-sub">visits · ' + stat.unique + ' unique'
+      + ' <span class="pv-sub">requests'
       + (stat.recent ? ' · ' + stat.recent + ' in last 30 days' : '') + '</span>';
   }
 
@@ -3755,8 +3755,7 @@ function buildPageActivityHtml() {
     Object.keys(stat.byGame).forEach(function(g) {
       var gs = stat.byGame[g];
       h += '<div class="pv-game-row"><span class="pv-game-name">' + escHtml(g) + '</span>'
-         + '<span class="pv-sub">' + gs.total + ' visit' + (gs.total !== 1 ? 's' : '')
-         + ' · ' + gs.unique + ' unique'
+         + '<span class="pv-sub">' + gs.total + ' request' + (gs.total !== 1 ? 's' : '')
          + (gs.recent ? ' · ' + gs.recent + ' recent' : '') + '</span></div>';
     });
     h += '</div>';

@@ -3793,8 +3793,25 @@ function buildAnalyticsHtml() {
   h += '</div>';
 
   // ── Access by Game chart ──
+  // Combine share + product-page totals per game
+  var pvByGame = {};
+  ['share','game'].forEach(function(type) {
+    var bg = (s[type] || {}).byGame || {};
+    Object.keys(bg).forEach(function(g) {
+      pvByGame[g] = (pvByGame[g] || 0) + (bg[g].total || 0);
+    });
+  });
+  var pvGames = Object.keys(pvByGame)
+    .map(function(g){ return { name:g, count:pvByGame[g] }; })
+    .sort(function(a,b){ return b.count - a.count; })
+    .slice(0, 10);
+  var pvHeight = Math.max(120, pvGames.length * 28 + 20);
   h += '<div class="pv-section-heading" style="margin-top:1.1rem">Access by Game</div>';
-  h += '<div style="position:relative;height:180px;margin-top:.4rem"><canvas id="chartPageViews"></canvas></div>';
+  if (pvGames.length) {
+    h += '<div style="position:relative;height:' + pvHeight + 'px;margin-top:.4rem"><canvas id="chartPageViews"></canvas></div>';
+  } else {
+    h += '<p class="pv-empty" style="margin:.3rem 0 0">No game access recorded yet.</p>';
+  }
 
   // ── Storage ──
   h += '<div class="pv-section-heading" style="margin-top:1rem">Storage</div>';
@@ -4008,68 +4025,39 @@ function buildDashboardView() {
       }
     );
 
-    // ── Access by Game line chart ──────────────────────────
+    // ── Access by Game horizontal bar chart ───────────────
     var pvCanvas = document.getElementById('chartPageViews');
     if (pvCanvas) {
-      var ts = (PAGE_VIEW_STATS['_timeSeries'] || {});
-      var pvPalette = [
-        '#1a1a2e','#0369a1','#7c3aed','#166534','#b45309',
-        '#be185d','#0e7490','#4338ca','#9a3412','#065f46'
-      ];
-
-      // Collect all dates that appear across all games
-      var dateSet = {};
-      Object.keys(ts).forEach(function(g) {
-        Object.keys(ts[g]).forEach(function(d) { dateSet[d] = 1; });
+      var pvStats = PAGE_VIEW_STATS;
+      var pvByGame = {};
+      ['share','game'].forEach(function(type) {
+        var bg = (pvStats[type] || {}).byGame || {};
+        Object.keys(bg).forEach(function(g) {
+          pvByGame[g] = (pvByGame[g] || 0) + (bg[g].total || 0);
+        });
       });
-      var allDates = Object.keys(dateSet).sort();
-
-      // Sort series by total hits descending; put PitchBoard first if present, cap at 9 lines
-      var allSeries = Object.keys(ts).sort(function(a, b) {
-        var ta = Object.values(ts[a]).reduce(function(s,v){return s+v;},0);
-        var tb = Object.values(ts[b]).reduce(function(s,v){return s+v;},0);
-        return tb - ta;
-      });
-      // Move PitchBoard to front
-      var pbIdx = allSeries.indexOf('PitchBoard');
-      if (pbIdx > 0) { allSeries.splice(pbIdx, 1); allSeries.unshift('PitchBoard'); }
-      var sortedGames = allSeries.slice(0, 9);
-
-      var pvGameCount = 0;
-      var pvDatasets = sortedGames.map(function(g, i) {
-        var isPB = g === 'PitchBoard';
-        var color = isPB ? '#94a3b8' : pvPalette[pvGameCount++ % pvPalette.length];
-        return {
-          label: g,
-          data: allDates.map(function(d){ return ts[g][d] || 0; }),
-          borderColor: color,
-          backgroundColor: color + '18',
-          borderWidth: isPB ? 1.5 : 2,
-          borderDash: isPB ? [4, 3] : [],
-          pointRadius: allDates.length > 30 ? 0 : 3,
-          pointHoverRadius: 4,
-          tension: 0.3,
-          fill: false
-        };
-      });
+      var pvGames = Object.keys(pvByGame)
+        .map(function(g){ return { name:g, count:pvByGame[g] }; })
+        .sort(function(a,b){ return b.count - a.count; })
+        .slice(0, 10);
 
       _activeCharts.pageViews = new Chart(pvCanvas.getContext('2d'), {
-        type: 'line',
-        data: { labels: allDates, datasets: pvDatasets },
+        type: 'bar',
+        data: {
+          labels: pvGames.map(function(g){ return g.name; }),
+          datasets: [{ label:'Requests', data: pvGames.map(function(g){ return g.count; }),
+            backgroundColor:'#1a1a2e', borderRadius:3 }]
+        },
         options: {
+          indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: false,
-          interaction: { mode: 'index', intersect: false },
-          plugins: {
-            legend: {
-              display: true,
-              position: 'bottom',
-              labels: { boxWidth: 10, font: { size: 10 }, padding: 8 }
-            }
-          },
+          plugins: { legend: { display: false } },
           scales: {
-            x: { ticks: { font: { size: 10 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 20 } },
-            y: { ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f0f0f0' }, beginAtZero: true }
+            x: { ticks: { stepSize:1, font:{ size:10 } }, grid: { display:false } },
+            y: { ticks: { font:{ size:11 }, autoSkip:false,
+                   callback: function(val){ var l = pvGames[val] ? pvGames[val].name : ''; return l.length > 22 ? l.slice(0,21)+'…' : l; } },
+                 afterFit: function(axis){ axis.width = 145; } }
           }
         }
       });

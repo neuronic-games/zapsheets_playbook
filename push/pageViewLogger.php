@@ -69,6 +69,22 @@ function pageViewStats($sheetId) {
     foreach ($stats as $t => &$s) {
         arsort($s['byGame']);
     }
+
+    // ── Time-series: daily hit counts per game (share + game types only) ──
+    // Shape: { gameName: { "YYYY-MM-DD": count } }
+    $timeSeries = [];
+    foreach ($entries as $e) {
+        $t = $e['type'] ?? '';
+        $g = $e['game'] ?? '';
+        $d = $e['date'] ?? '';
+        if ($g === '' || $d === '') continue;
+        if ($t !== 'share' && $t !== 'game') continue;
+        if (!isset($timeSeries[$g])) $timeSeries[$g] = [];
+        $timeSeries[$g][$d] = ($timeSeries[$g][$d] ?? 0) + 1;
+    }
+    foreach ($timeSeries as &$days) { ksort($days); }
+    $stats['_timeSeries'] = $timeSeries;
+
     return $stats;
 }
 ?>

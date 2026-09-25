@@ -3792,6 +3792,13 @@ function buildAnalyticsHtml() {
   h += '<div><div class="pv-row"><span class="pv-label">Product Page</span>' + fmt(gm) + '</div>' + gameRows(gm) + '</div>';
   h += '</div>';
 
+  // ── Access by Game chart ──
+  var ts = s['_timeSeries'] || {};
+  if (Object.keys(ts).length) {
+    h += '<div class="pv-section-heading" style="margin-top:1.1rem">Access by Game</div>';
+    h += '<div style="position:relative;height:180px;margin-top:.4rem"><canvas id="chartPageViews"></canvas></div>';
+  }
+
   // ── Storage ──
   h += '<div class="pv-section-heading" style="margin-top:1rem">Storage</div>';
   h += '<div class="pv-rows">';
@@ -4003,6 +4010,65 @@ function buildDashboardView() {
                    y:{ ticks:{ stepSize:1 }, grid:{ color:'#f0f0f0' } } } }
       }
     );
+
+    // ── Access by Game line chart ──────────────────────────
+    var pvCanvas = document.getElementById('chartPageViews');
+    if (pvCanvas) {
+      var ts = (PAGE_VIEW_STATS['_timeSeries'] || {});
+      var pvPalette = [
+        '#1a1a2e','#0369a1','#7c3aed','#166534','#b45309',
+        '#be185d','#0e7490','#4338ca','#9a3412','#065f46'
+      ];
+
+      // Collect all dates that appear across all games
+      var dateSet = {};
+      Object.keys(ts).forEach(function(g) {
+        Object.keys(ts[g]).forEach(function(d) { dateSet[d] = 1; });
+      });
+      var allDates = Object.keys(dateSet).sort();
+
+      // Sort games by total hits descending; cap at 8 lines
+      var sortedGames = Object.keys(ts).sort(function(a, b) {
+        var ta = Object.values(ts[a]).reduce(function(s,v){return s+v;},0);
+        var tb = Object.values(ts[b]).reduce(function(s,v){return s+v;},0);
+        return tb - ta;
+      }).slice(0, 8);
+
+      var pvDatasets = sortedGames.map(function(g, i) {
+        return {
+          label: g,
+          data: allDates.map(function(d){ return ts[g][d] || 0; }),
+          borderColor: pvPalette[i % pvPalette.length],
+          backgroundColor: pvPalette[i % pvPalette.length] + '22',
+          borderWidth: 2,
+          pointRadius: allDates.length > 30 ? 0 : 3,
+          pointHoverRadius: 4,
+          tension: 0.3,
+          fill: false
+        };
+      });
+
+      _activeCharts.pageViews = new Chart(pvCanvas.getContext('2d'), {
+        type: 'line',
+        data: { labels: allDates, datasets: pvDatasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: { boxWidth: 10, font: { size: 10 }, padding: 8 }
+            }
+          },
+          scales: {
+            x: { ticks: { font: { size: 10 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 20 } },
+            y: { ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f0f0f0' }, beginAtZero: true }
+          }
+        }
+      });
+    }
   });
 }
 

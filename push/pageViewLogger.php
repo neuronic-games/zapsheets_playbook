@@ -70,17 +70,23 @@ function pageViewStats($sheetId) {
         arsort($s['byGame']);
     }
 
-    // ── Time-series: daily hit counts per game (share + game types only) ──
-    // Shape: { gameName: { "YYYY-MM-DD": count } }
+    // ── Time-series: daily hit counts per line ───────────────────────────────
+    // Shape: { seriesName: { "YYYY-MM-DD": count } }
+    // 'PitchBoard' = owner board visits; game names = share + product page visits
     $timeSeries = [];
     foreach ($entries as $e) {
         $t = $e['type'] ?? '';
         $g = $e['game'] ?? '';
         $d = $e['date'] ?? '';
-        if ($g === '' || $d === '') continue;
-        if ($t !== 'share' && $t !== 'game') continue;
-        if (!isset($timeSeries[$g])) $timeSeries[$g] = [];
-        $timeSeries[$g][$d] = ($timeSeries[$g][$d] ?? 0) + 1;
+        if ($d === '') continue;
+        if ($t === 'pitchboard') {
+            $key = 'PitchBoard';
+            if (!isset($timeSeries[$key])) $timeSeries[$key] = [];
+            $timeSeries[$key][$d] = ($timeSeries[$key][$d] ?? 0) + 1;
+        } elseif (($t === 'share' || $t === 'game') && $g !== '') {
+            if (!isset($timeSeries[$g])) $timeSeries[$g] = [];
+            $timeSeries[$g][$d] = ($timeSeries[$g][$d] ?? 0) + 1;
+        }
     }
     foreach ($timeSeries as &$days) { ksort($days); }
     $stats['_timeSeries'] = $timeSeries;

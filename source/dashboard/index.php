@@ -3793,11 +3793,8 @@ function buildAnalyticsHtml() {
   h += '</div>';
 
   // ── Access by Game chart ──
-  var ts = s['_timeSeries'] || {};
-  if (Object.keys(ts).length) {
-    h += '<div class="pv-section-heading" style="margin-top:1.1rem">Access by Game</div>';
-    h += '<div style="position:relative;height:180px;margin-top:.4rem"><canvas id="chartPageViews"></canvas></div>';
-  }
+  h += '<div class="pv-section-heading" style="margin-top:1.1rem">Access by Game</div>';
+  h += '<div style="position:relative;height:180px;margin-top:.4rem"><canvas id="chartPageViews"></canvas></div>';
 
   // ── Storage ──
   h += '<div class="pv-section-heading" style="margin-top:1rem">Storage</div>';
@@ -4027,20 +4024,28 @@ function buildDashboardView() {
       });
       var allDates = Object.keys(dateSet).sort();
 
-      // Sort games by total hits descending; cap at 8 lines
-      var sortedGames = Object.keys(ts).sort(function(a, b) {
+      // Sort series by total hits descending; put PitchBoard first if present, cap at 9 lines
+      var allSeries = Object.keys(ts).sort(function(a, b) {
         var ta = Object.values(ts[a]).reduce(function(s,v){return s+v;},0);
         var tb = Object.values(ts[b]).reduce(function(s,v){return s+v;},0);
         return tb - ta;
-      }).slice(0, 8);
+      });
+      // Move PitchBoard to front
+      var pbIdx = allSeries.indexOf('PitchBoard');
+      if (pbIdx > 0) { allSeries.splice(pbIdx, 1); allSeries.unshift('PitchBoard'); }
+      var sortedGames = allSeries.slice(0, 9);
 
+      var pvGameCount = 0;
       var pvDatasets = sortedGames.map(function(g, i) {
+        var isPB = g === 'PitchBoard';
+        var color = isPB ? '#94a3b8' : pvPalette[pvGameCount++ % pvPalette.length];
         return {
           label: g,
           data: allDates.map(function(d){ return ts[g][d] || 0; }),
-          borderColor: pvPalette[i % pvPalette.length],
-          backgroundColor: pvPalette[i % pvPalette.length] + '22',
-          borderWidth: 2,
+          borderColor: color,
+          backgroundColor: color + '18',
+          borderWidth: isPB ? 1.5 : 2,
+          borderDash: isPB ? [4, 3] : [],
           pointRadius: allDates.length > 30 ? 0 : 3,
           pointHoverRadius: 4,
           tension: 0.3,

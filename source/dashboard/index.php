@@ -3753,28 +3753,6 @@ var _activeCharts = {};
 function buildAnalyticsHtml() {
   var s  = PAGE_VIEW_STATS;
   var pb = s['pitchboard'] || null;
-  var sh = s['share']      || null;
-  var gm = s['game']       || null;
-
-  function fmt(stat) {
-    if (!stat || !stat.total) return '<span class="pv-num">0</span> <span class="pv-sub">requests</span>';
-    return '<span class="pv-num">' + stat.total + '</span>'
-      + ' <span class="pv-sub">requests'
-      + (stat.recent ? ' · ' + stat.recent + ' in last 30 days' : '') + '</span>';
-  }
-
-  function gameRows(stat) {
-    if (!stat || !stat.byGame || !Object.keys(stat.byGame).length) return '';
-    var h = '<div class="pv-game-list">';
-    Object.keys(stat.byGame).forEach(function(g) {
-      var gs = stat.byGame[g];
-      h += '<div class="pv-game-row"><span class="pv-game-name">' + escHtml(g) + '</span>'
-         + '<span class="pv-sub">' + gs.total + ' request' + (gs.total !== 1 ? 's' : '')
-         + (gs.recent ? ' · ' + gs.recent + ' recent' : '') + '</span></div>';
-    });
-    h += '</div>';
-    return h;
-  }
 
   function fmtBytes(b) {
     if (b >= 1048576) return (b / 1048576).toFixed(2) + ' MB';
@@ -3782,17 +3760,6 @@ function buildAnalyticsHtml() {
     return b + ' B';
   }
 
-  var h = '<div class="db-chart-card db-chart-wide pv-section"><h3>Analytics</h3>';
-
-  // ── Page Activity ──
-  h += '<div class="pv-section-heading">Page Activity</div>';
-  h += '<div class="pv-rows">';
-  h += '<div><div class="pv-row"><span class="pv-label">PitchBoard</span>' + fmt(pb) + '</div></div>';
-  h += '<div><div class="pv-row"><span class="pv-label">Collab Share</span>' + fmt(sh) + '</div>' + gameRows(sh) + '</div>';
-  h += '<div><div class="pv-row"><span class="pv-label">Product Page</span>' + fmt(gm) + '</div>' + gameRows(gm) + '</div>';
-  h += '</div>';
-
-  // ── Access by Game chart ──
   // Combine share + product-page totals per game
   var pvByGame = {};
   ['share','game'].forEach(function(type) {
@@ -3805,22 +3772,35 @@ function buildAnalyticsHtml() {
     .map(function(g){ return { name:g, count:pvByGame[g] }; })
     .sort(function(a,b){ return b.count - a.count; })
     .slice(0, 10);
-  var pvHeight = Math.max(120, pvGames.length * 28 + 20);
-  h += '<div class="pv-section-heading" style="margin-top:1.1rem">Access by Game</div>';
+  var pvHeight = Math.max(80, pvGames.length * 28 + 20);
+
+  var h = '<div class="db-chart-card db-chart-wide pv-section"><h3>Analytics</h3>';
+
+  // ── PitchBoard visits (compact single stat) ──
+  var pbTotal  = pb ? pb.total  : 0;
+  var pbRecent = pb ? pb.recent : 0;
+  h += '<div class="pv-section-heading">Page Activity</div>';
+  h += '<div class="pv-row" style="margin-bottom:.6rem">'
+     + '<span class="pv-label">PitchBoard</span>'
+     + '<span class="pv-num">' + pbTotal + '</span>'
+     + ' <span class="pv-sub">requests' + (pbRecent ? ' · ' + pbRecent + ' in last 30 days' : '') + '</span>'
+     + '</div>';
+
+  // ── Access by Game chart ──
+  h += '<div class="pv-section-heading">Access by Game</div>';
   if (pvGames.length) {
     h += '<div style="position:relative;height:' + pvHeight + 'px;margin-top:.4rem"><canvas id="chartPageViews"></canvas></div>';
   } else {
-    h += '<p class="pv-empty" style="margin:.3rem 0 0">No game access recorded yet.</p>';
+    h += '<p class="pv-empty" style="margin:.3rem 0 .6rem">No game access recorded yet.</p>';
   }
 
   // ── Storage ──
   h += '<div class="pv-section-heading" style="margin-top:1rem">Storage</div>';
-  h += '<div class="pv-rows">';
-  h += '<div class="pv-row"><span class="pv-label">Cached Files</span>'
+  h += '<div class="pv-row">'
+     + '<span class="pv-label">Cached Files</span>'
      + '<span class="pv-num">' + fmtBytes(SHEET_STORAGE.bytes) + '</span>'
      + ' <span class="pv-sub">· ' + SHEET_STORAGE.files + ' file' + (SHEET_STORAGE.files !== 1 ? 's' : '') + '</span>'
      + '</div>';
-  h += '</div>';
 
   h += '</div>';
   return h;

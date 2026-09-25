@@ -33,6 +33,10 @@ $_sharer  = trim($_meta['sharer'] ?? '');
 
 if (!$_sheetId || !$_gameName) { http_response_code(404); exit; }
 
+// Log this page view
+require_once __DIR__ . '/../../../push/pageViewLogger.php';
+logPageView($_sheetId, 'share', $_gameName);
+
 // ── Load data ────────────────────────────────────────────────────────────────
 
 $_pitchesFile = __DIR__ . '/../../../sheets/' . $_sheetId . '/pitches.json';

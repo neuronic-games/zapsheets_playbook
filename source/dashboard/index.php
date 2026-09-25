@@ -58,6 +58,11 @@ $_codes_file = __DIR__ . '/../../data/compendium_codes.json';
 $_compendium_codes = file_exists($_codes_file)
     ? json_decode(file_get_contents($_codes_file), true) ?: []
     : [];
+
+// Page-view logging + stats
+require_once __DIR__ . '/../../push/pageViewLogger.php';
+if ($_sheet_id) logPageView($_sheet_id, 'pitchboard');
+$_pv_stats = $_sheet_id ? pageViewStats($_sheet_id) : [];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -419,6 +424,19 @@ $_compendium_codes = file_exists($_codes_file)
     .db-chart-wide { grid-column:1 / -1; }
     .db-chart-status { grid-row: span 2; }
     @media (max-width:600px) { .db-charts { grid-template-columns:1fr; } .db-chart-status { grid-row: span 1; } }
+
+    /* ── Page activity section ──────────────────────── */
+    .pv-section { margin-top:.65rem; }
+    .pv-section h3 { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; color:#888; margin:0 0 .6rem; }
+    .pv-rows { display:flex; flex-direction:column; gap:.35rem; }
+    .pv-row { display:flex; align-items:baseline; gap:.5rem; flex-wrap:wrap; }
+    .pv-label { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:#555; min-width:9rem; }
+    .pv-num { font-family:'DINBlack',sans-serif; font-size:.85rem; color:#1a1a2e; }
+    .pv-sub { font-size:.72rem; color:#94a3b8; }
+    .pv-game-list { margin:.2rem 0 .1rem 9.5rem; display:flex; flex-direction:column; gap:.15rem; }
+    .pv-game-row { display:flex; gap:.4rem; align-items:baseline; font-size:.75rem; color:#555; }
+    .pv-game-name { color:#334155; }
+    .pv-empty { font-size:.78rem; color:#bbb; font-style:italic; }
 
     /* ── Game sub-bar (links row + actions row) ─────── */
     .game-sub-bar {
@@ -2144,6 +2162,7 @@ var GAME_PAGE_TOKENS    = <?= json_encode($_gp_tokens, JSON_UNESCAPED_UNICODE) ?
 var COMPENDIUM_PUBS     = <?= json_encode($_compendium_pubs_map, JSON_UNESCAPED_UNICODE) ?>; // lowercase name → publisher data
 var CE_LOGO_SRC         = <?= json_encode($_ce_logo_src) ?>;  // Cardboard Edison logo URL
 var COMPENDIUM_CODES    = <?= json_encode(array_values($_compendium_codes), JSON_UNESCAPED_UNICODE) ?>; // valid access codes
+var PAGE_VIEW_STATS     = <?= json_encode($_pv_stats, JSON_UNESCAPED_UNICODE) ?>;                      // page-view analytics
 
 // ── State ─────────────────────────────────────────────
 var currentView     = 'game';
@@ -3717,6 +3736,48 @@ function buildKanbanHtml() {
 
 // ── Dashboard view ─────────────────────────────────────
 var _activeCharts = {};
+function buildPageActivityHtml() {
+  var s = PAGE_VIEW_STATS;
+  var pb = s['pitchboard'] || null;
+  var sh = s['share']      || null;
+  var gm = s['game']       || null;
+
+  function fmt(stat) {
+    if (!stat) return '<span class="pv-num">0</span> <span class="pv-sub">visits</span>';
+    return '<span class="pv-num">' + stat.total + '</span>'
+      + ' <span class="pv-sub">visits · ' + stat.unique + ' unique'
+      + (stat.recent ? ' · ' + stat.recent + ' in last 30 days' : '') + '</span>';
+  }
+
+  function gameRows(stat) {
+    if (!stat || !stat.byGame || !Object.keys(stat.byGame).length) return '';
+    var h = '<div class="pv-game-list">';
+    Object.keys(stat.byGame).forEach(function(g) {
+      var gs = stat.byGame[g];
+      h += '<div class="pv-game-row"><span class="pv-game-name">' + escHtml(g) + '</span>'
+         + '<span class="pv-sub">' + gs.total + ' visit' + (gs.total !== 1 ? 's' : '')
+         + ' · ' + gs.unique + ' unique'
+         + (gs.recent ? ' · ' + gs.recent + ' recent' : '') + '</span></div>';
+    });
+    h += '</div>';
+    return h;
+  }
+
+  var hasAny = pb || sh || gm;
+  var h = '<div class="db-chart-card db-chart-wide pv-section"><h3>Page Activity</h3>';
+  if (!hasAny) {
+    h += '<p class="pv-empty">No page views recorded yet. Activity will appear here after your first visit.</p>';
+  } else {
+    h += '<div class="pv-rows">';
+    h += '<div><div class="pv-row"><span class="pv-label">PitchBoard</span>' + fmt(pb) + '</div></div>';
+    h += '<div><div class="pv-row"><span class="pv-label">Collab Share</span>' + fmt(sh) + '</div>' + gameRows(sh) + '</div>';
+    h += '<div><div class="pv-row"><span class="pv-label">Product Page</span>' + fmt(gm) + '</div>' + gameRows(gm) + '</div>';
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
 function buildDashboardView() {
   // ── Compute stats ──────────────────────────────────────
   var allGameNames = Object.keys(gamesIndex).slice();
@@ -3805,6 +3866,9 @@ function buildDashboardView() {
     '<div class="db-chart-card db-chart-wide"><h3>Pitches Over Time</h3><canvas id="chartTimeline"></canvas></div>';
 
   html += buildKanbanHtml();
+
+  // ── Page Activity ──────────────────────────────────────
+  html += buildPageActivityHtml();
 
   document.getElementById('content').innerHTML = html;
 

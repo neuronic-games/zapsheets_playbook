@@ -63,6 +63,18 @@ $_compendium_codes = file_exists($_codes_file)
 require_once __DIR__ . '/../../push/pageViewLogger.php';
 if ($_sheet_id) logPageView($_sheet_id, 'pitchboard');
 $_pv_stats = $_sheet_id ? pageViewStats($_sheet_id) : [];
+
+// Total size of all cached files for this sheet
+$_sheet_bytes = 0;
+$_sheet_file_count = 0;
+$_sheets_root = __DIR__ . '/../../sheets/' . $_sheet_id;
+if ($_sheet_id && is_dir($_sheets_root)) {
+    $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
+        $_sheets_root, RecursiveDirectoryIterator::SKIP_DOTS));
+    foreach ($it as $_f) {
+        if ($_f->isFile()) { $_sheet_bytes += $_f->getSize(); $_sheet_file_count++; }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -437,6 +449,7 @@ $_pv_stats = $_sheet_id ? pageViewStats($_sheet_id) : [];
     .pv-game-row { display:flex; gap:.4rem; align-items:baseline; font-size:.75rem; color:#555; }
     .pv-game-name { color:#334155; }
     .pv-empty { font-size:.78rem; color:#bbb; font-style:italic; }
+    .pv-section-heading { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.07em; color:#aaa; margin-bottom:.35rem; }
 
     /* ── Game sub-bar (links row + actions row) ─────── */
     .game-sub-bar {
@@ -2163,6 +2176,7 @@ var COMPENDIUM_PUBS     = <?= json_encode($_compendium_pubs_map, JSON_UNESCAPED_
 var CE_LOGO_SRC         = <?= json_encode($_ce_logo_src) ?>;  // Cardboard Edison logo URL
 var COMPENDIUM_CODES    = <?= json_encode(array_values($_compendium_codes), JSON_UNESCAPED_UNICODE) ?>; // valid access codes
 var PAGE_VIEW_STATS     = <?= json_encode($_pv_stats, JSON_UNESCAPED_UNICODE) ?>;                      // page-view analytics
+var SHEET_STORAGE       = { bytes: <?= (int)$_sheet_bytes ?>, files: <?= (int)$_sheet_file_count ?> }; // cached file storage
 
 // ── State ─────────────────────────────────────────────
 var currentView     = 'game';
@@ -3736,8 +3750,8 @@ function buildKanbanHtml() {
 
 // ── Dashboard view ─────────────────────────────────────
 var _activeCharts = {};
-function buildPageActivityHtml() {
-  var s = PAGE_VIEW_STATS;
+function buildAnalyticsHtml() {
+  var s  = PAGE_VIEW_STATS;
   var pb = s['pitchboard'] || null;
   var sh = s['share']      || null;
   var gm = s['game']       || null;
@@ -3762,17 +3776,31 @@ function buildPageActivityHtml() {
     return h;
   }
 
-  var hasAny = pb || sh || gm;
-  var h = '<div class="db-chart-card db-chart-wide pv-section"><h3>Page Activity</h3>';
-  if (!hasAny) {
-    h += '<p class="pv-empty">No page views recorded yet. Activity will appear here after your first visit.</p>';
-  } else {
-    h += '<div class="pv-rows">';
-    h += '<div><div class="pv-row"><span class="pv-label">PitchBoard</span>' + fmt(pb) + '</div></div>';
-    h += '<div><div class="pv-row"><span class="pv-label">Collab Share</span>' + fmt(sh) + '</div>' + gameRows(sh) + '</div>';
-    h += '<div><div class="pv-row"><span class="pv-label">Product Page</span>' + fmt(gm) + '</div>' + gameRows(gm) + '</div>';
-    h += '</div>';
+  function fmtBytes(b) {
+    if (b >= 1048576) return (b / 1048576).toFixed(2) + ' MB';
+    if (b >= 1024)    return (b / 1024).toFixed(1) + ' KB';
+    return b + ' B';
   }
+
+  var h = '<div class="db-chart-card db-chart-wide pv-section"><h3>Analytics</h3>';
+
+  // ── Page Activity ──
+  h += '<div class="pv-section-heading">Page Activity</div>';
+  h += '<div class="pv-rows">';
+  h += '<div><div class="pv-row"><span class="pv-label">PitchBoard</span>' + fmt(pb) + '</div></div>';
+  h += '<div><div class="pv-row"><span class="pv-label">Collab Share</span>' + fmt(sh) + '</div>' + gameRows(sh) + '</div>';
+  h += '<div><div class="pv-row"><span class="pv-label">Product Page</span>' + fmt(gm) + '</div>' + gameRows(gm) + '</div>';
+  h += '</div>';
+
+  // ── Storage ──
+  h += '<div class="pv-section-heading" style="margin-top:1rem">Storage</div>';
+  h += '<div class="pv-rows">';
+  h += '<div class="pv-row"><span class="pv-label">Cached Files</span>'
+     + '<span class="pv-num">' + fmtBytes(SHEET_STORAGE.bytes) + '</span>'
+     + ' <span class="pv-sub">· ' + SHEET_STORAGE.files + ' file' + (SHEET_STORAGE.files !== 1 ? 's' : '') + '</span>'
+     + '</div>';
+  h += '</div>';
+
   h += '</div>';
   return h;
 }
@@ -3866,8 +3894,8 @@ function buildDashboardView() {
 
   html += buildKanbanHtml();
 
-  // ── Page Activity ──────────────────────────────────────
-  html += buildPageActivityHtml();
+  // ── Analytics ──────────────────────────────────────────
+  html += buildAnalyticsHtml();
 
   document.getElementById('content').innerHTML = html;
 

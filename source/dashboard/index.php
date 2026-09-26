@@ -3612,10 +3612,8 @@ function buildKanbanHtml() {
     if (st === 'signed')                         return 'signed';
     if (st === 'pitching' || st === 'pitch' ||
         st === 'in pitching')                    return 'pitch';
-    // 'design' override only applies when there are no pitch entries;
-    // if there are entries (even Planned), fall through to entry-based logic
-    if ((st === 'design' || st === 'not pitched' ||
-         st === 'in design') && !entries.length)  return 'design';
+    // explicit 'design' status always wins, regardless of pitch entries
+    if (st === 'design' || st === 'not pitched' || st === 'in design') return 'design';
     // No recognised explicit status — use date / entry fallback
     if ((info['Date Published'] || '').trim())   return 'published';
     if ((info['Date Signed']    || '').trim())   return 'signed';

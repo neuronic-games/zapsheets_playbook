@@ -754,22 +754,28 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   font-family:'DINBlack',sans-serif; font-size:.68rem;
   text-transform:uppercase; letter-spacing:.07em; color:#888;
 }
-.obs-pair-inputs { display:grid; grid-template-columns:1fr 1fr; gap:.9rem; }
 /* Reorder buttons */
 .obs-reorder { display:flex; flex-direction:column; gap:.15rem; padding-top:.35rem; flex-shrink:0; }
 .obs-reorder-btn { background:none; border:1px solid #d0d8e4; border-radius:4px; padding:.15rem .28rem; cursor:pointer; font-size:.65rem; color:#aab; line-height:1; transition:color .12s,border-color .12s,background .12s; }
 .obs-reorder-btn:hover { color:#1a5f7a; border-color:#a0b8c8; background:#f0f7fa; }
 .obs-reorder-btn:disabled { opacity:.25; cursor:default; }
 .obs-pair:last-child .obs-reorder { visibility:hidden; }
-.obs-obs-col { display:flex; flex-direction:column; min-width:0; }
+/* Row box — one joined container split into two cells */
+.obs-pair-inputs { display:grid; grid-template-columns:1fr 1fr; border:1.5px solid #d0d8e0; border-radius:8px; overflow:hidden; }
+.obs-pair-inputs:focus-within { border-color:#1a5f7a; box-shadow:0 0 0 2px rgba(26,95,122,.12); }
+.obs-obs-col { display:flex; flex-direction:column; min-width:0; background:#fff; border-right:1px solid #d0d8e0; }
+.obs-sol-col  { display:flex; flex-direction:column; min-width:0; background:#f5f7fa; }
+/* Strip borders/bg from textareas inside the box */
+.obs-pair-inputs .field-textarea { border:none !important; background:transparent !important; border-radius:0 !important; box-shadow:none !important; resize:none; }
+.obs-pair-inputs .field-textarea:focus { border:none !important; box-shadow:none !important; }
 /* obs-obs-col: textarea wrapper with icon overlaid inside */
-.obs-ta-wrap { position:relative; }
-.obs-ta-wrap .field-textarea { padding-right:2.1rem; }
+.obs-ta-wrap { position:relative; flex:1; display:flex; flex-direction:column; }
+.obs-ta-wrap .field-textarea { flex:1; padding-right:2.1rem; }
 /* icon button: hidden when obs textarea has text; always shown when image present */
 .obs-ta-wrap.has-obs-text .obs-img-btn { display:none; }
 .obs-img-btn { position:absolute; top:.35rem; right:.35rem; background:rgba(255,255,255,.88); border:1px solid #d0d8e4; border-radius:5px; padding:.22rem .26rem; cursor:pointer; color:#99a; line-height:1; z-index:2; backdrop-filter:blur(2px); transition:color .15s,background .15s,border-color .15s; }
 .obs-img-btn:hover { color:#1a5f7a; background:#fff; border-color:#a0b8c8; }
-.obs-img-preview img { width:100%; border-radius:6px; border:1px solid #dce8f0; display:block; }
+.obs-img-preview img { width:100%; display:block; }
 
 /* ── Session metadata: mobile-first (column), side-by-side on wide screens ── */
 .session-meta-wrap { display:flex; flex-direction:column; gap:.9rem; }
@@ -791,6 +797,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     max-height:94dvh;
   }
   .obs-pair-inputs { grid-template-columns:1fr; }
+  .obs-obs-col { border-right:none; border-bottom:1px solid #d0d8e0; }
   .obs-pair-labels label:last-child { display:none; }
   .field-grid { grid-template-columns:1fr 1fr; }
   .field-group.span2 { grid-column:span 1; }
@@ -3068,6 +3075,7 @@ function openEditSessionDialog(gameName, idx) {
     document.getElementById('sObs-' + oidx).value = obsVal;
     toggleObsImgBtn(oidx);
     document.getElementById('sSol-' + oidx).value = pair.sol || '';
+    setTimeout(function(i){ return function(){ syncPairHeight(i); }; }(oidx), 0);
   });
   addObsPair(session.obs.length === 0);  // trailing empty pair (shows labels if first)
 
@@ -3486,7 +3494,7 @@ function addObsPair(showLabels) {
           '<div class="obs-ta-wrap">' +
             '<textarea class="field-textarea" id="sObs-' + idx + '" rows="1"' +
               ' placeholder="What happened…"' +
-              ' oninput="autoResize(this);onObsInput(' + idx + ');toggleObsImgBtn(' + idx + ')"' +
+              ' oninput="syncPairHeight(' + idx + ');onObsInput(' + idx + ');toggleObsImgBtn(' + idx + ')"' +
               ' onkeydown="onObsKeydown(event,' + idx + ',0)"></textarea>' +
             '<div class="obs-img-preview" id="sImgPreview-' + idx + '" style="display:none"></div>' +
             '<button type="button" class="obs-img-btn" onclick="triggerObsImageUpload(' + idx + ')" title="Attach image">' +
@@ -3499,20 +3507,36 @@ function addObsPair(showLabels) {
             '<input type="file" accept="image/*" id="sImgFile-' + idx + '" style="display:none" onchange="handleObsImageFile(' + idx + ', this.files[0])">' +
           '</div>' +
         '</div>' +
-        '<textarea class="field-textarea" id="sSol-' + idx + '" rows="1"' +
-          ' placeholder="Thoughts…"' +
-          ' oninput="autoResize(this);onObsInput(' + idx + ')"' +
-          ' onkeydown="onObsKeydown(event,' + idx + ',1)"></textarea>' +
+        '<div class="obs-sol-col">' +
+          '<textarea class="field-textarea" id="sSol-' + idx + '" rows="1"' +
+            ' placeholder="Thoughts…"' +
+            ' oninput="syncPairHeight(' + idx + ');onObsInput(' + idx + ')"' +
+            ' onkeydown="onObsKeydown(event,' + idx + ',1)"></textarea>' +
+        '</div>' +
       '</div>' +
     '</div>';
   container.appendChild(div);
   return idx;
 }
 
+function syncPairHeight(idx) {
+  var obs = document.getElementById('sObs-' + idx);
+  var sol = document.getElementById('sSol-' + idx);
+  if (!obs || !sol) return;
+  obs.style.height = 'auto'; sol.style.height = 'auto';
+  var h = Math.max(obs.scrollHeight, sol.scrollHeight);
+  obs.style.height = h + 'px'; sol.style.height = h + 'px';
+}
+
 function moveObsPair(idx, dir) {
-  // Collect only non-empty (content-bearing) pairs in DOM order
+  // Collect content-bearing pairs in DOM order (filter by actual content, not class)
   var all   = Array.from(document.querySelectorAll('#obsContainer .obs-pair'));
-  var pairs = all.filter(function(p){ return !p.classList.contains('obs-pair-empty'); });
+  var pairs = all.filter(function(p) {
+    var di = p.dataset.idx;
+    var o  = (document.getElementById('sObs-' + di) || {}).value || '';
+    var s  = (document.getElementById('sSol-' + di) || {}).value || '';
+    return o.trim() || s.trim() || _obsImages[di];
+  });
   var pos   = pairs.findIndex(function(p){ return parseInt(p.dataset.idx) === idx; });
   var tpos  = pos + dir;
   if (pos < 0 || tpos < 0 || tpos >= pairs.length) return;
@@ -3549,8 +3573,9 @@ function moveObsPair(idx, dir) {
   if (aWrap) toggleObsImgBtn(aIdx);
   if (bWrap) toggleObsImgBtn(bIdx);
 
-  // Re-autosize
-  [aObs, aSol, bObs, bSol].forEach(function(el){ if (el) autoResize(el); });
+  // Re-sync heights so both cells in each row stay equal
+  syncPairHeight(aIdx);
+  syncPairHeight(bIdx);
 }
 
 function autoResize(el) {

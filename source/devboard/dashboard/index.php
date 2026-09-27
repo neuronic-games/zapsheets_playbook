@@ -743,8 +743,9 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .tester-row:last-child { margin-bottom:0; }
 
 /* Dynamic obs/sol pairs */
-.obs-pair { display:flex; align-items:flex-start; gap:.5rem; margin-bottom:.75rem; }
+.obs-pair { display:flex; flex-direction:column; margin-bottom:.75rem; }
 .obs-pair:last-child { margin-bottom:0; }
+.obs-pair-row { display:flex; align-items:flex-start; gap:.5rem; }
 .obs-pair-body { flex:1; min-width:0; }
 .obs-pair-labels {
   display:grid; grid-template-columns:1fr 1fr; gap:.9rem;
@@ -760,8 +761,14 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .obs-reorder-btn:hover { color:#1a5f7a; border-color:#a0b8c8; background:#f0f7fa; }
 .obs-reorder-btn:disabled { opacity:.25; cursor:default; }
 .obs-pair:last-child .obs-reorder { visibility:hidden; }
+/* Move flash animation — applied to the visible inputs box, not the transparent pair wrapper */
+@keyframes obsMoveFlash {
+  0%   { box-shadow:0 0 0 3px rgba(26,95,122,.5), 0 0 0 2px rgba(26,95,122,.12); }
+  100% { box-shadow:0 0 0 0 rgba(26,95,122,0); }
+}
+.obs-pair-moved .obs-pair-inputs { animation:obsMoveFlash .5s ease-out; }
 /* Row box — one joined container split into two cells */
-.obs-pair-inputs { display:grid; grid-template-columns:1fr 1fr; border:1.5px solid #d0d8e0; border-radius:8px; overflow:hidden; }
+.obs-pair-inputs { flex:1; min-width:0; display:grid; grid-template-columns:1fr 1fr; border:1.5px solid #d0d8e0; border-radius:8px; overflow:hidden; }
 .obs-pair-inputs:focus-within { border-color:#1a5f7a; box-shadow:0 0 0 2px rgba(26,95,122,.12); }
 .obs-obs-col { display:flex; flex-direction:column; min-width:0; background:#fff; border-right:1px solid #d0d8e0; }
 .obs-sol-col  { display:flex; flex-direction:column; min-width:0; background:#f5f7fa; }
@@ -3267,6 +3274,7 @@ function submitSession() {
         btn.textContent = 'Save Changes';
         _sCancelBtns.forEach(function(b) { b.disabled = false; });
         err.textContent = 'Couldn\'t save changes — ' + (e.message || 'unknown error');
+        console.error('Save error:', e.message);
         err.style.display = 'block';
       });
     return;
@@ -3483,12 +3491,12 @@ function addObsPair(showLabels) {
     ? '<div class="obs-pair-labels"><label>Observations</label><label>Thoughts</label></div>'
     : '';
   div.innerHTML =
-    '<div class="obs-reorder">' +
-      '<button type="button" class="obs-reorder-btn" title="Move up"   onclick="moveObsPair(' + idx + ',-1)">▲</button>' +
-      '<button type="button" class="obs-reorder-btn" title="Move down" onclick="moveObsPair(' + idx + ', 1)">▼</button>' +
-    '</div>' +
-    '<div class="obs-pair-body">' +
-      labelsHtml +
+    labelsHtml +
+    '<div class="obs-pair-row">' +
+      '<div class="obs-reorder">' +
+        '<button type="button" class="obs-reorder-btn" title="Move up"   onclick="moveObsPair(' + idx + ',-1)">▲</button>' +
+        '<button type="button" class="obs-reorder-btn" title="Move down" onclick="moveObsPair(' + idx + ', 1)">▼</button>' +
+      '</div>' +
       '<div class="obs-pair-inputs">' +
         '<div class="obs-obs-col">' +
           '<div class="obs-ta-wrap">' +
@@ -3519,6 +3527,7 @@ function addObsPair(showLabels) {
   return idx;
 }
 
+
 function syncPairHeight(idx) {
   var obs = document.getElementById('sObs-' + idx);
   var sol = document.getElementById('sSol-' + idx);
@@ -3530,7 +3539,8 @@ function syncPairHeight(idx) {
 
 function moveObsPair(idx, dir) {
   // Collect content-bearing pairs in DOM order (filter by actual content, not class)
-  var all   = Array.from(document.querySelectorAll('#obsContainer .obs-pair'));
+  var container = document.getElementById('obsContainer');
+  var all   = Array.from(container.querySelectorAll('.obs-pair'));
   var pairs = all.filter(function(p) {
     var di = p.dataset.idx;
     var o  = (document.getElementById('sObs-' + di) || {}).value || '';
@@ -3541,41 +3551,28 @@ function moveObsPair(idx, dir) {
   var tpos  = pos + dir;
   if (pos < 0 || tpos < 0 || tpos >= pairs.length) return;
 
-  var aIdx = parseInt(pairs[pos].dataset.idx);
-  var bIdx = parseInt(pairs[tpos].dataset.idx);
+  var el     = pairs[pos];   // element to move
+  var anchor = pairs[tpos];  // element to move relative to
 
-  // Swap textarea values
-  var aObs = document.getElementById('sObs-' + aIdx);
-  var aSol = document.getElementById('sSol-' + aIdx);
-  var bObs = document.getElementById('sObs-' + bIdx);
-  var bSol = document.getElementById('sSol-' + bIdx);
-  var tmp;
-  tmp = aObs.value; aObs.value = bObs.value; bObs.value = tmp;
-  tmp = aSol.value; aSol.value = bSol.value; bSol.value = tmp;
-
-  // Swap image data
-  var aImg = _obsImages[aIdx] || null;
-  var bImg = _obsImages[bIdx] || null;
-  if (bImg) { _obsImages[aIdx] = bImg; } else { delete _obsImages[aIdx]; }
-  if (aImg) { _obsImages[bIdx] = aImg; } else { delete _obsImages[bIdx]; }
-
-  // Swap image previews
-  var aPv = document.getElementById('sImgPreview-' + aIdx);
-  var bPv = document.getElementById('sImgPreview-' + bIdx);
-  var aWrap = aObs ? aObs.closest('.obs-ta-wrap') : null;
-  var bWrap = bObs ? bObs.closest('.obs-ta-wrap') : null;
-  if (aPv && bPv) {
-    var tmpHtml = aPv.innerHTML; var tmpDisp = aPv.style.display;
-    aPv.innerHTML = bPv.innerHTML; aPv.style.display = bPv.style.display;
-    bPv.innerHTML = tmpHtml;      bPv.style.display = tmpDisp;
+  // Move the DOM element; the button, content, and images all travel with it
+  if (dir < 0) {
+    container.insertBefore(el, anchor);
+  } else {
+    container.insertBefore(el, anchor.nextSibling);
   }
-  // Sync has-obs-text class (controls img-btn visibility)
-  if (aWrap) toggleObsImgBtn(aIdx);
-  if (bWrap) toggleObsImgBtn(bIdx);
 
-  // Re-sync heights so both cells in each row stay equal
-  syncPairHeight(aIdx);
-  syncPairHeight(bIdx);
+  // Flash the moved row so the user can see what happened
+  el.classList.remove('obs-pair-moved');
+  var inputsEl = el.querySelector('.obs-pair-inputs');
+  if (inputsEl) { inputsEl.style.animation = 'none'; void inputsEl.offsetWidth; inputsEl.style.animation = ''; }
+  el.classList.add('obs-pair-moved');
+  setTimeout(function(){ el.classList.remove('obs-pair-moved'); }, 550);
+
+  // Re-sync heights
+  var di = el.dataset.idx;
+  var ai = anchor.dataset.idx;
+  syncPairHeight(parseInt(di));
+  syncPairHeight(parseInt(ai));
 }
 
 function autoResize(el) {

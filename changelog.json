@@ -1,6 +1,15 @@
 [
   {
     "version": "Sep 2026",
+    "apps": ["devboard"],
+    "features": [
+      "Reorder observation rows — UP and DOWN buttons on each observation/thoughts row let you rearrange entries; the row animates to its new position so you can see what moved, and the button stays with its row so you can tap it again to keep moving",
+      "Observation rows redesigned as a joined two-cell box — the Observations and Thoughts fields share a single bordered container, with equal row height and a slightly darker background on the Thoughts side",
+      "Fixed: saving a session after reordering rows now works correctly for sessions created with either the old or new schema"
+    ]
+  },
+  {
+    "version": "Sep 2026",
     "apps": ["pitchboard"],
     "features": [
       "Analytics — an Analytics section at the bottom of the Board shows page activity (total requests for PitchBoard, Collab Share, and Product Pages, broken down by game with a 30-day recent count), a horizontal bar chart of access requests by game, and cached storage size for the sheet",

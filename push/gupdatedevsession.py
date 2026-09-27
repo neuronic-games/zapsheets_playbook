@@ -95,14 +95,39 @@ for i, row in enumerate(all_values[1:], start=2):
     row_date       = clean(row[0] if len(row) > 0 else '')
     row_event      = clean(row[1] if len(row) > 1 else '')
     row_people     = clean(row[2] if len(row) > 2 else '')
-    if row_date == orig_date and row_event == orig_event:
-        # When orig_session_num is provided, also match the People column (new schema)
-        if not orig_session_num or row_people == orig_session_num:
+    if row_date == orig_date:
+        # New schema: Event = type, People = number
+        if row_event == orig_event:
+            if not orig_session_num or row_people == orig_session_num:
+                header_sheet_row = i
+                break
+        # Legacy schema: Event = "Playtest 2", People = blank
+        elif orig_session_num and row_event == (orig_event + ' ' + orig_session_num):
             header_sheet_row = i
             break
 
 if header_sheet_row is None:
-    print(json.dumps({"error": f"Session not found: date={orig_date!r} event={orig_event!r} session_num={orig_session_num!r}"}))
+    # Last-resort: match on date alone when there is exactly one session on that date.
+    # This handles cases where the Event or People column was stored in a different
+    # format than the lookup keys (e.g. old schema, manual edits, date-format drift).
+    date_matches = []
+    for i, row in enumerate(all_values[1:], start=2):
+        rd = clean(row[0] if len(row) > 0 else '')
+        re = clean(row[1] if len(row) > 1 else '')
+        if rd == orig_date and (rd or re):
+            date_matches.append(i)
+    if len(date_matches) == 1:
+        header_sheet_row = date_matches[0]
+
+if header_sheet_row is None:
+    # Still not found — collect all header rows to show in the error message
+    candidates = []
+    for row in all_values[1:]:
+        rd = clean(row[0] if len(row) > 0 else '')
+        if rd:
+            candidates.append(f"{rd}|{clean(row[1] if len(row) > 1 else '')}|{clean(row[2] if len(row) > 2 else '')}")
+    hint = ('; sheet has: ' + ', '.join(candidates[:10])) if candidates else ' (no header rows found)'
+    print(json.dumps({"error": f"Session not found: date={orig_date!r} event={orig_event!r} session_num={orig_session_num!r}{hint}"}))
     sys.exit(1)
 
 # Find the end of the session: first subsequent row with non-empty date or event.

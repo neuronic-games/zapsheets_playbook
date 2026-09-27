@@ -761,12 +761,6 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .obs-reorder-btn:hover { color:#1a5f7a; border-color:#a0b8c8; background:#f0f7fa; }
 .obs-reorder-btn:disabled { opacity:.25; cursor:default; }
 .obs-pair:last-child .obs-reorder { visibility:hidden; }
-/* Move flash animation — applied to the visible inputs box, not the transparent pair wrapper */
-@keyframes obsMoveFlash {
-  0%   { box-shadow:0 0 0 3px rgba(26,95,122,.5), 0 0 0 2px rgba(26,95,122,.12); }
-  100% { box-shadow:0 0 0 0 rgba(26,95,122,0); }
-}
-.obs-pair-moved .obs-pair-inputs { animation:obsMoveFlash .5s ease-out; }
 /* Row box — one joined container split into two cells */
 .obs-pair-inputs { flex:1; min-width:0; display:grid; grid-template-columns:1fr 1fr; border:1.5px solid #d0d8e0; border-radius:8px; overflow:hidden; }
 .obs-pair-inputs:focus-within { border-color:#1a5f7a; box-shadow:0 0 0 2px rgba(26,95,122,.12); }
@@ -3537,8 +3531,13 @@ function syncPairHeight(idx) {
   obs.style.height = h + 'px'; sol.style.height = h + 'px';
 }
 
+// Pending reorder animation timer — cancel if user clicks again before it fires
+var _moveTimer = null;
+
 function moveObsPair(idx, dir) {
-  // Collect content-bearing pairs in DOM order (filter by actual content, not class)
+  // Cancel any in-flight animation from a previous click
+  if (_moveTimer) { clearTimeout(_moveTimer); _moveTimer = null; }
+
   var container = document.getElementById('obsContainer');
   var all   = Array.from(container.querySelectorAll('.obs-pair'));
   var pairs = all.filter(function(p) {
@@ -3547,32 +3546,64 @@ function moveObsPair(idx, dir) {
     var s  = (document.getElementById('sSol-' + di) || {}).value || '';
     return o.trim() || s.trim() || _obsImages[di];
   });
-  var pos   = pairs.findIndex(function(p){ return parseInt(p.dataset.idx) === idx; });
-  var tpos  = pos + dir;
+  var pos  = pairs.findIndex(function(p){ return parseInt(p.dataset.idx) === idx; });
+  var tpos = pos + dir;
   if (pos < 0 || tpos < 0 || tpos >= pairs.length) return;
 
-  var el     = pairs[pos];   // element to move
-  var anchor = pairs[tpos];  // element to move relative to
+  var aEl  = pairs[pos];              // clicked row — stays in place
+  var bEl  = pairs[tpos];             // other row  — slides
+  var aIdx = parseInt(aEl.dataset.idx);
+  var bIdx = parseInt(bEl.dataset.idx);
 
-  // Move the DOM element; the button, content, and images all travel with it
-  if (dir < 0) {
-    container.insertBefore(el, anchor);
-  } else {
-    container.insertBefore(el, anchor.nextSibling);
-  }
+  // Cancel any lingering transform on bEl from a previous interrupted animation
+  bEl.style.transition = 'none';
+  bEl.style.transform  = '';
+  void bEl.offsetWidth; // flush
 
-  // Flash the moved row so the user can see what happened
-  el.classList.remove('obs-pair-moved');
-  var inputsEl = el.querySelector('.obs-pair-inputs');
-  if (inputsEl) { inputsEl.style.animation = 'none'; void inputsEl.offsetWidth; inputsEl.style.animation = ''; }
-  el.classList.add('obs-pair-moved');
-  setTimeout(function(){ el.classList.remove('obs-pair-moved'); }, 550);
+  // Slide bEl toward aEl's position:
+  //   dir=+1 (clicked ▼): bEl is below aEl, slides UP  → negative translateY
+  //   dir=-1 (clicked ▲): bEl is above aEl, slides DOWN → positive translateY
+  var slideBy = (dir > 0 ? -1 : 1) * aEl.offsetHeight;
+  bEl.style.transition = 'transform 0.18s ease-out';
+  bEl.style.transform  = 'translateY(' + slideBy + 'px)';
 
-  // Re-sync heights
-  var di = el.dataset.idx;
-  var ai = anchor.dataset.idx;
-  syncPairHeight(parseInt(di));
-  syncPairHeight(parseInt(ai));
+  _moveTimer = setTimeout(function() {
+    _moveTimer = null;
+
+    // Reset bEl before swapping so it jumps back to natural position
+    // and the content change happens simultaneously — user sees the swap, not the jump
+    bEl.style.transition = 'none';
+    bEl.style.transform  = '';
+
+    // Swap textarea content
+    var aObs = document.getElementById('sObs-' + aIdx);
+    var aSol = document.getElementById('sSol-' + aIdx);
+    var bObs = document.getElementById('sObs-' + bIdx);
+    var bSol = document.getElementById('sSol-' + bIdx);
+    var tmp;
+    tmp = aObs.value; aObs.value = bObs.value; bObs.value = tmp;
+    tmp = aSol.value; aSol.value = bSol.value; bSol.value = tmp;
+
+    // Swap image data
+    var aImg = _obsImages[aIdx] || null;
+    var bImg = _obsImages[bIdx] || null;
+    if (bImg) { _obsImages[aIdx] = bImg; } else { delete _obsImages[aIdx]; }
+    if (aImg) { _obsImages[bIdx] = aImg; } else { delete _obsImages[bIdx]; }
+
+    // Swap image previews
+    var aPv = document.getElementById('sImgPreview-' + aIdx);
+    var bPv = document.getElementById('sImgPreview-' + bIdx);
+    if (aPv && bPv) {
+      var tmpHtml = aPv.innerHTML; var tmpDisp = aPv.style.display;
+      aPv.innerHTML = bPv.innerHTML; aPv.style.display = bPv.style.display;
+      bPv.innerHTML = tmpHtml;      bPv.style.display = tmpDisp;
+    }
+    if (aObs) toggleObsImgBtn(aIdx);
+    if (bObs) toggleObsImgBtn(bIdx);
+
+    syncPairHeight(aIdx);
+    syncPairHeight(bIdx);
+  }, 190);
 }
 
 function autoResize(el) {

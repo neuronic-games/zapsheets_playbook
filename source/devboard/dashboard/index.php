@@ -760,7 +760,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .obs-reorder-btn { background:none; border:1px solid #d0d8e4; border-radius:4px; padding:.15rem .28rem; cursor:pointer; font-size:.65rem; color:#aab; line-height:1; transition:color .12s,border-color .12s,background .12s; }
 .obs-reorder-btn:hover { color:#1a5f7a; border-color:#a0b8c8; background:#f0f7fa; }
 .obs-reorder-btn:disabled { opacity:.25; cursor:default; }
-.obs-pair-empty .obs-reorder { visibility:hidden; }
+.obs-pair:last-child .obs-reorder { visibility:hidden; }
 .obs-obs-col { display:flex; flex-direction:column; min-width:0; }
 /* obs-obs-col: textarea wrapper with icon overlaid inside */
 .obs-ta-wrap { position:relative; }

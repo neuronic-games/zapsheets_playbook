@@ -743,17 +743,24 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .tester-row:last-child { margin-bottom:0; }
 
 /* Dynamic obs/sol pairs */
-.obs-pair { margin-bottom:.75rem; }
+.obs-pair { display:flex; align-items:flex-start; gap:.5rem; margin-bottom:.75rem; }
 .obs-pair:last-child { margin-bottom:0; }
+.obs-pair-body { flex:1; min-width:0; }
 .obs-pair-labels {
   display:grid; grid-template-columns:1fr 1fr; gap:.9rem;
-  margin-bottom:.3rem;
+  margin-bottom:.3rem; padding-left:0;
 }
 .obs-pair-labels label {
   font-family:'DINBlack',sans-serif; font-size:.68rem;
   text-transform:uppercase; letter-spacing:.07em; color:#888;
 }
 .obs-pair-inputs { display:grid; grid-template-columns:1fr 1fr; gap:.9rem; }
+/* Reorder buttons */
+.obs-reorder { display:flex; flex-direction:column; gap:.15rem; padding-top:.35rem; flex-shrink:0; }
+.obs-reorder-btn { background:none; border:1px solid #d0d8e4; border-radius:4px; padding:.15rem .28rem; cursor:pointer; font-size:.65rem; color:#aab; line-height:1; transition:color .12s,border-color .12s,background .12s; }
+.obs-reorder-btn:hover { color:#1a5f7a; border-color:#a0b8c8; background:#f0f7fa; }
+.obs-reorder-btn:disabled { opacity:.25; cursor:default; }
+.obs-pair-empty .obs-reorder { visibility:hidden; }
 .obs-obs-col { display:flex; flex-direction:column; min-width:0; }
 /* obs-obs-col: textarea wrapper with icon overlaid inside */
 .obs-ta-wrap { position:relative; }
@@ -3467,32 +3474,83 @@ function addObsPair(showLabels) {
   var labelsHtml = showLabels
     ? '<div class="obs-pair-labels"><label>Observations</label><label>Thoughts</label></div>'
     : '';
-  div.innerHTML = labelsHtml +
-    '<div class="obs-pair-inputs">' +
-      '<div class="obs-obs-col">' +
-        '<div class="obs-ta-wrap">' +
-          '<textarea class="field-textarea" id="sObs-' + idx + '" rows="1"' +
-            ' placeholder="What happened…"' +
-            ' oninput="autoResize(this);onObsInput(' + idx + ');toggleObsImgBtn(' + idx + ')"' +
-            ' onkeydown="onObsKeydown(event,' + idx + ',0)"></textarea>' +
-          '<div class="obs-img-preview" id="sImgPreview-' + idx + '" style="display:none"></div>' +
-          '<button type="button" class="obs-img-btn" onclick="triggerObsImageUpload(' + idx + ')" title="Attach image">' +
-            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-              '<rect x="3" y="3" width="18" height="18" rx="2"/>' +
-              '<circle cx="8.5" cy="8.5" r="1.5"/>' +
-              '<polyline points="21 15 16 10 5 21"/>' +
-            '</svg>' +
-          '</button>' +
-          '<input type="file" accept="image/*" id="sImgFile-' + idx + '" style="display:none" onchange="handleObsImageFile(' + idx + ', this.files[0])">' +
+  div.innerHTML =
+    '<div class="obs-reorder">' +
+      '<button type="button" class="obs-reorder-btn" title="Move up"   onclick="moveObsPair(' + idx + ',-1)">▲</button>' +
+      '<button type="button" class="obs-reorder-btn" title="Move down" onclick="moveObsPair(' + idx + ', 1)">▼</button>' +
+    '</div>' +
+    '<div class="obs-pair-body">' +
+      labelsHtml +
+      '<div class="obs-pair-inputs">' +
+        '<div class="obs-obs-col">' +
+          '<div class="obs-ta-wrap">' +
+            '<textarea class="field-textarea" id="sObs-' + idx + '" rows="1"' +
+              ' placeholder="What happened…"' +
+              ' oninput="autoResize(this);onObsInput(' + idx + ');toggleObsImgBtn(' + idx + ')"' +
+              ' onkeydown="onObsKeydown(event,' + idx + ',0)"></textarea>' +
+            '<div class="obs-img-preview" id="sImgPreview-' + idx + '" style="display:none"></div>' +
+            '<button type="button" class="obs-img-btn" onclick="triggerObsImageUpload(' + idx + ')" title="Attach image">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                '<rect x="3" y="3" width="18" height="18" rx="2"/>' +
+                '<circle cx="8.5" cy="8.5" r="1.5"/>' +
+                '<polyline points="21 15 16 10 5 21"/>' +
+              '</svg>' +
+            '</button>' +
+            '<input type="file" accept="image/*" id="sImgFile-' + idx + '" style="display:none" onchange="handleObsImageFile(' + idx + ', this.files[0])">' +
+          '</div>' +
         '</div>' +
+        '<textarea class="field-textarea" id="sSol-' + idx + '" rows="1"' +
+          ' placeholder="Thoughts…"' +
+          ' oninput="autoResize(this);onObsInput(' + idx + ')"' +
+          ' onkeydown="onObsKeydown(event,' + idx + ',1)"></textarea>' +
       '</div>' +
-      '<textarea class="field-textarea" id="sSol-' + idx + '" rows="1"' +
-        ' placeholder="Thoughts…"' +
-        ' oninput="autoResize(this);onObsInput(' + idx + ')"' +
-        ' onkeydown="onObsKeydown(event,' + idx + ',1)"></textarea>' +
     '</div>';
   container.appendChild(div);
   return idx;
+}
+
+function moveObsPair(idx, dir) {
+  // Collect only non-empty (content-bearing) pairs in DOM order
+  var all   = Array.from(document.querySelectorAll('#obsContainer .obs-pair'));
+  var pairs = all.filter(function(p){ return !p.classList.contains('obs-pair-empty'); });
+  var pos   = pairs.findIndex(function(p){ return parseInt(p.dataset.idx) === idx; });
+  var tpos  = pos + dir;
+  if (pos < 0 || tpos < 0 || tpos >= pairs.length) return;
+
+  var aIdx = parseInt(pairs[pos].dataset.idx);
+  var bIdx = parseInt(pairs[tpos].dataset.idx);
+
+  // Swap textarea values
+  var aObs = document.getElementById('sObs-' + aIdx);
+  var aSol = document.getElementById('sSol-' + aIdx);
+  var bObs = document.getElementById('sObs-' + bIdx);
+  var bSol = document.getElementById('sSol-' + bIdx);
+  var tmp;
+  tmp = aObs.value; aObs.value = bObs.value; bObs.value = tmp;
+  tmp = aSol.value; aSol.value = bSol.value; bSol.value = tmp;
+
+  // Swap image data
+  var aImg = _obsImages[aIdx] || null;
+  var bImg = _obsImages[bIdx] || null;
+  if (bImg) { _obsImages[aIdx] = bImg; } else { delete _obsImages[aIdx]; }
+  if (aImg) { _obsImages[bIdx] = aImg; } else { delete _obsImages[bIdx]; }
+
+  // Swap image previews
+  var aPv = document.getElementById('sImgPreview-' + aIdx);
+  var bPv = document.getElementById('sImgPreview-' + bIdx);
+  var aWrap = aObs ? aObs.closest('.obs-ta-wrap') : null;
+  var bWrap = bObs ? bObs.closest('.obs-ta-wrap') : null;
+  if (aPv && bPv) {
+    var tmpHtml = aPv.innerHTML; var tmpDisp = aPv.style.display;
+    aPv.innerHTML = bPv.innerHTML; aPv.style.display = bPv.style.display;
+    bPv.innerHTML = tmpHtml;      bPv.style.display = tmpDisp;
+  }
+  // Sync has-obs-text class (controls img-btn visibility)
+  if (aWrap) toggleObsImgBtn(aIdx);
+  if (bWrap) toggleObsImgBtn(bIdx);
+
+  // Re-autosize
+  [aObs, aSol, bObs, bSol].forEach(function(el){ if (el) autoResize(el); });
 }
 
 function autoResize(el) {

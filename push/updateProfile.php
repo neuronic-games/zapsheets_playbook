@@ -13,6 +13,7 @@ $phone           = trim($_POST['phone']           ?? '');
 $compendium_code = trim($_POST['compendium_code'] ?? '');
 $company         = trim($_POST['company']         ?? '');
 $address         = trim($_POST['address']         ?? '');
+$payment_info    = trim($_POST['payment_info']    ?? '');
 $logo_url        = trim($_POST['logo_url']        ?? '');
 
 if (!$sheetId || !$name) {
@@ -23,7 +24,8 @@ if (!$sheetId || !$name) {
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 $payload    = ['name' => $name, 'email' => $email, 'phone' => $phone,
                'compendium_code' => $compendium_code,
-               'company' => $company, 'address' => $address, 'logo_url' => $logo_url];
+               'company' => $company, 'address' => $address,
+               'payment_info' => $payment_info, 'logo_url' => $logo_url];
 $encoded    = base64_encode(json_encode($payload, JSON_UNESCAPED_UNICODE));
 $arg        = $sheetId . '|' . $encoded;
 

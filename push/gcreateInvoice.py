@@ -51,6 +51,7 @@ my_phone    = data.get('my_phone',   '').strip()
 my_company  = data.get('my_company', '').strip()
 my_logo     = data.get('my_logo',    '').strip()
 my_address  = data.get('my_address', '').strip()
+my_payment  = data.get('my_payment', '').strip()
 
 # ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -206,7 +207,11 @@ R_NOTESUB  = R_DATA  + 1   # notes (left) + subtotal (right) — SAME ROW
 R_SPACER5  = R_NOTESUB + 1
 R_TOTAL    = R_SPACER5 + 1
 
-TOTAL_ROWS = R_TOTAL + 3
+# Payment info section (only if my_payment is set)
+R_PAYMENT_SEP  = R_TOTAL + 2
+R_PAYMENT      = R_PAYMENT_SEP + 1
+
+TOTAL_ROWS = R_PAYMENT + 2 if my_payment else R_TOTAL + 3
 
 # ── Build value grid ──────────────────────────────────────────────────────
 grid = [[''] * TOTAL_COLS for _ in range(TOTAL_ROWS)]
@@ -260,6 +265,10 @@ sc(R_NOTESUB, CG, quote_fmt)
 
 # Large total
 sc(R_TOTAL, CG, quote_fmt)
+
+# Payment info (below total, if present)
+if my_payment:
+    sc(R_PAYMENT, CB, my_payment)
 
 # ── Create worksheet ──────────────────────────────────────────────────────
 try:
@@ -385,6 +394,11 @@ reqs.append(row_h(R_DATA,     90))    # tall for wrapped multi-line description
 reqs.append(row_h(R_NOTESUB,  28))
 reqs.append(row_h(R_SPACER5,  12))
 reqs.append(row_h(R_TOTAL,    46))
+if my_payment:
+    reqs.append(row_h(R_PAYMENT_SEP, 8))
+    # Payment row height: ~18px per line of text
+    pay_lines = len([l for l in my_payment.replace('\r\n', '\n').split('\n') if l.strip()])
+    reqs.append(row_h(R_PAYMENT, max(60, pay_lines * 18 + 16)))
 
 # 4. Merges
 # Company name: B:D (CB to CD+1 = 1:4)
@@ -415,6 +429,9 @@ reqs.append(merge(R_NOTESUB, CE, CG))             # E:F subtotal label
 reqs.append(merge(R_NOTESUB, CG, CONTENT_END))    # G: subtotal amount
 # Total row
 reqs.append(merge(R_TOTAL, CE, CONTENT_END))      # E:G large total
+# Payment info row
+if my_payment:
+    reqs.append(merge(R_PAYMENT, CB, CONTENT_END))   # B:G payment info
 
 # 5. Text formatting
 
@@ -512,6 +529,17 @@ reqs.append(fmt(R_TOTAL, R_TOTAL, CE, CONTENT_END, {
 
 # Separator line above table header
 reqs.append(border_bottom(R_THEAD - 1, CB, CONTENT_END, SEP, 1))
+
+# Payment info section
+if my_payment:
+    # Separator line above payment info
+    reqs.append(border_bottom(R_PAYMENT_SEP, CB, CONTENT_END, SEP, 1))
+    # Payment info text: small dark-gray, wrap, top-align
+    reqs.append(fmt(R_PAYMENT, R_PAYMENT, CB, CONTENT_END, {
+        'textFormat': tf(GRAY_DARK, 9),
+        'verticalAlignment': 'TOP',
+        'wrapStrategy': 'WRAP',
+    }, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment,userEnteredFormat.wrapStrategy'))
 
 # Execute
 try:

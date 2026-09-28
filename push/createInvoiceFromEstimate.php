@@ -29,6 +29,7 @@ $myPhone     = trim($_POST['my_phone']     ?? '');
 $myCompany   = trim($_POST['my_company']   ?? '');
 $myLogo      = trim($_POST['my_logo']      ?? '');
 $myAddress   = trim($_POST['my_address']   ?? '');
+$myPayment   = trim($_POST['my_payment']   ?? '');
 
 if (!$sheetId) {
     echo json_encode(['error' => 'Missing sheet ID']);
@@ -72,6 +73,7 @@ $payload = [
     'my_company' => $myCompany,
     'my_logo'    => $myLogo,
     'my_address' => $myAddress,
+    'my_payment' => $myPayment,
 ];
 $encoded = base64_encode(json_encode($payload, JSON_UNESCAPED_UNICODE));
 $cmd     = escapeshellarg($pythonPath) . ' '

@@ -39,16 +39,18 @@ $_my_phone        = '';
 $_company         = '';
 $_logo_url        = '';
 $_company_address = '';
+$_payment_info    = '';
 
 foreach ($_settings as $_s) {
     // PitchBoard-style: {Name: 'My Name', Value: '...'}
     $n = $_s['Name'] ?? $_s['name'] ?? '';
     $v = $_s['Value'] ?? $_s['value'] ?? '';
-    if ($n === 'My Name')  { $_my_name  = $v; continue; }
-    if ($n === 'My Email') { $_my_email = $v; continue; }
-    if ($n === 'My Phone') { $_my_phone = $v; continue; }
-    if ($n === 'Company')  { $_company  = ltrim($v, "'"); continue; }
-    if ($n === 'Address')  { $_company_address = ltrim($v, "'"); continue; }
+    if ($n === 'My Name')     { $_my_name       = $v; continue; }
+    if ($n === 'My Email')    { $_my_email      = $v; continue; }
+    if ($n === 'My Phone')    { $_my_phone      = $v; continue; }
+    if ($n === 'Company')     { $_company       = ltrim($v, "'"); continue; }
+    if ($n === 'Address')     { $_company_address = ltrim($v, "'"); continue; }
+    if ($n === 'Payment Info'){ $_payment_info  = ltrim($v, "'"); continue; }
     if ($n === 'Logo') {
         if (preg_match('/^=IMAGE\("([^"]*)"\)$/i', ltrim($v,"'"), $_lm)) { $_logo_url = $_lm[1]; }
         else { $_logo_url = ltrim($v, "'"); }
@@ -60,10 +62,11 @@ foreach ($_settings as $_s) {
     $label = $_s['My Name'] ?? '';
     $keys  = array_keys($_s);
     $val2  = count($keys) > 1 ? ltrim(trim($_s[$keys[1]] ?? ''), "'") : '';
-    if ($label === 'My Email') { $_my_email = $val2; }
-    if ($label === 'My Phone') { $_my_phone = $val2; }
-    if ($label === 'Company')  { $_company  = $val2; }
-    if ($label === 'Address')  { $_company_address = $val2; }
+    if ($label === 'My Email')     { $_my_email      = $val2; }
+    if ($label === 'My Phone')     { $_my_phone      = $val2; }
+    if ($label === 'Company')      { $_company       = $val2; }
+    if ($label === 'Address')      { $_company_address = $val2; }
+    if ($label === 'Payment Info') { $_payment_info  = $val2; }
     if ($label === 'Logo') {
         if (preg_match('/^=IMAGE\("([^"]*)"\)$/i', $val2, $_lm)) { $_logo_url = $_lm[1]; }
         else { $_logo_url = $val2; }
@@ -1145,6 +1148,11 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         placeholder="Street&#10;City, State, ZIP"
         style="resize:vertical;min-height:3.5rem;line-height:1.5"></textarea>
     </label>
+    <label class="ge-label" style="margin-top:.35rem">Payment Info
+      <textarea id="companyPaymentInfo" class="ge-input" rows="4"
+        placeholder="ACH Payments:&#10;Bank Name&#10;Routing: ...&#10;Account: ..."
+        style="resize:vertical;min-height:4rem;line-height:1.5;font-size:.8rem"></textarea>
+    </label>
     <div class="sync-log" id="companyLog" style="display:none"></div>
     <div class="sync-dialog-actions">
       <button class="notes-close" id="companyCancelBtn" onclick="forceCloseCompanyDialog()">Cancel</button>
@@ -1463,6 +1471,7 @@ var MY_EMAIL            = <?= json_encode($_my_email) ?>;
 var MY_PHONE            = <?= json_encode($_my_phone) ?>;
 var MY_COMPANY          = <?= json_encode($_company) ?>;
 var MY_COMPANY_ADDRESS  = <?= json_encode($_company_address) ?>;
+var MY_PAYMENT_INFO     = <?= json_encode($_payment_info) ?>;
 var MY_LOGO             = <?= json_encode($_logo_url) ?>;
 var MY_BIO_IMAGE    = <?= json_encode($_my_bio_image) ?>;
 var MY_BIO_DESC     = <?= json_encode($_my_bio_desc) ?>;
@@ -2081,8 +2090,9 @@ function submitInvoice() {
   fd.append('my_name',      MY_NAME          || '');
   fd.append('my_phone',     MY_PHONE         || '');
   fd.append('my_company',   MY_COMPANY       || '');
-  fd.append('my_logo',      MY_LOGO          || '');
-  fd.append('my_address',   MY_COMPANY_ADDRESS || MY_BIO_LOCATION || '');
+  fd.append('my_logo',        MY_LOGO          || '');
+  fd.append('my_address',     MY_COMPANY_ADDRESS || MY_BIO_LOCATION || '');
+  fd.append('my_payment',     MY_PAYMENT_INFO  || '');
 
   fetch(APP_BASE + 'push/createInvoiceFromEstimate.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })
@@ -4373,10 +4383,12 @@ function closeRnDialog() {
 var _companyInitial  = {};
 var _companyLogoUrl  = '';
 function _companyIsDirty() {
-  var name    = (document.getElementById('companyName').value    || '').trim();
-  var address = (document.getElementById('companyAddress').value || '').trim();
+  var name    = (document.getElementById('companyName').value        || '').trim();
+  var address = (document.getElementById('companyAddress').value     || '').trim();
+  var payment = (document.getElementById('companyPaymentInfo').value || '').trim();
   return name    !== (_companyInitial.name    || '') ||
          address !== (_companyInitial.address || '') ||
+         payment !== (_companyInitial.payment || '') ||
          document.getElementById('companyLogoFile').files.length > 0;
 }
 function _companyLog(msg, type) {
@@ -4398,8 +4410,9 @@ function companyLogoFileChange(input) {
   reader.readAsDataURL(input.files[0]);
 }
 function openCompanyDialog() {
-  document.getElementById('companyName').value    = MY_COMPANY         || '';
-  document.getElementById('companyAddress').value = MY_COMPANY_ADDRESS || '';
+  document.getElementById('companyName').value        = MY_COMPANY         || '';
+  document.getElementById('companyAddress').value     = MY_COMPANY_ADDRESS || '';
+  document.getElementById('companyPaymentInfo').value = MY_PAYMENT_INFO    || '';
   document.getElementById('companyLogoFile').value = '';
   _companyLogoUrl = MY_LOGO || '';
   _companyShowLogo(_companyLogoUrl);
@@ -4407,7 +4420,7 @@ function openCompanyDialog() {
   document.getElementById('companySaveBtn').disabled   = false;
   document.getElementById('companyCancelBtn').disabled = false;
   document.getElementById('companyCancelBtn').textContent = 'Cancel';
-  _companyInitial = { name: MY_COMPANY || '', address: MY_COMPANY_ADDRESS || '' };
+  _companyInitial = { name: MY_COMPANY || '', address: MY_COMPANY_ADDRESS || '', payment: MY_PAYMENT_INFO || '' };
   document.getElementById('companyOverlay').classList.add('open');
 }
 function closeCompanyDialog() {
@@ -4418,9 +4431,10 @@ function forceCloseCompanyDialog() {
   document.getElementById('companyOverlay').classList.remove('open');
 }
 function submitCompany() {
-  var name      = document.getElementById('companyName').value.trim();
-  var address   = document.getElementById('companyAddress').value.trim();
-  var logoFile  = document.getElementById('companyLogoFile').files[0];
+  var name        = document.getElementById('companyName').value.trim();
+  var address     = document.getElementById('companyAddress').value.trim();
+  var paymentInfo = document.getElementById('companyPaymentInfo').value.trim();
+  var logoFile    = document.getElementById('companyLogoFile').files[0];
   document.getElementById('companySaveBtn').disabled   = true;
   document.getElementById('companyCancelBtn').disabled = true;
   _companyLog('Saving…', '');
@@ -4446,9 +4460,10 @@ function submitCompany() {
     fd.append('name',     MY_NAME  || '');
     fd.append('email',    MY_EMAIL || '');
     fd.append('phone',    MY_PHONE || '');
-    fd.append('company',  name);
-    fd.append('address',  address);
-    fd.append('logo_url', _companyLogoUrl);
+    fd.append('company',      name);
+    fd.append('address',      address);
+    fd.append('payment_info', paymentInfo);
+    fd.append('logo_url',     _companyLogoUrl);
     return fetch(APP_BASE + 'push/updateProfile.php', { method:'POST', body:fd })
       .then(function(r) { return r.json(); });
   })
@@ -4456,11 +4471,12 @@ function submitCompany() {
     if (res.error) throw new Error(res.error);
     MY_COMPANY         = name;
     MY_COMPANY_ADDRESS = address;
+    MY_PAYMENT_INFO    = paymentInfo;
     MY_LOGO            = _companyLogoUrl;
     _updateTopBarLogo(MY_LOGO, MY_COMPANY);
     // (Company/Logo no longer shown in profile dialog)
     document.getElementById('companyLogoFile').value = '';
-    _companyInitial = { name: MY_COMPANY, address: MY_COMPANY_ADDRESS };
+    _companyInitial = { name: MY_COMPANY, address: MY_COMPANY_ADDRESS, payment: MY_PAYMENT_INFO };
     _companyLog('✓  Saved', 'ok');
     document.getElementById('companySaveBtn').disabled   = true;
     document.getElementById('companyCancelBtn').disabled = false;

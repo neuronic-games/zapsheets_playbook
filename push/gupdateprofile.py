@@ -39,6 +39,7 @@ new_phone           = data.get('phone',           '').strip()
 new_compendium_code = data.get('compendium_code', '').strip()
 new_company         = data.get('company',         '').strip()
 new_address         = data.get('address',         '').strip()
+new_payment_info    = data.get('payment_info',    '').strip()
 new_logo_url        = data.get('logo_url',        '').strip()
 
 if not new_name:
@@ -97,6 +98,9 @@ for i, row in enumerate(all_values[1:], start=2):
     elif label == 'Address':
         found_labels.add('Address')
         updates.append({'range': gspread.utils.rowcol_to_a1(i, 2), 'values': [[safe_str(new_address)]]})
+    elif label == 'Payment Info':
+        found_labels.add('Payment Info')
+        updates.append({'range': gspread.utils.rowcol_to_a1(i, 2), 'values': [[safe_str(new_payment_info)]]})
     elif label == 'Logo':
         found_labels.add('Logo')
         # Logo is stored as an =IMAGE() formula so it renders in the sheet
@@ -107,6 +111,8 @@ for i, row in enumerate(all_values[1:], start=2):
 append_rows = []
 if 'Compendium Code' not in found_labels:
     append_rows.append(['Compendium Code', safe_str(new_compendium_code)])
+if 'Payment Info' not in found_labels and new_payment_info:
+    append_rows.append(['Payment Info', safe_str(new_payment_info)])
 
 try:
     ws.batch_update(updates, value_input_option='USER_ENTERED')

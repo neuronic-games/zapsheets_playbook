@@ -557,7 +557,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .no-games strong { display:block; font-family:'DINBlack',sans-serif; font-size:1rem; color:#888; margin-bottom:.4rem; }
 
 /* ── Overlays ─────────────────────────────────────────── */
-.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; align-items:center; justify-content:center; padding:1rem; }
+.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; align-items:center; justify-content:center; padding:1rem; touch-action:none; }
 .overlay.open { display:flex; }
 .confirm-overlay { z-index:300; }
 
@@ -621,6 +621,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   box-shadow:0 8px 32px rgba(0,0,0,.22);
   display:flex; flex-direction:column; gap:1.1rem;
   max-height:92vh; overflow-y:auto;
+  touch-action:pan-y; -webkit-overflow-scrolling:touch;
 }
 .session-dialog h2 { font-family:'DINBlack',sans-serif; font-size:.95rem; text-transform:uppercase; letter-spacing:.07em; color:#1a5f7a; margin:0; display:flex; align-items:center; gap:.5rem; }
 .session-dialog h2 > span:not(.sw-display) { color:#1a1a2e; }

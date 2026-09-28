@@ -3510,6 +3510,8 @@ function addObsPair() {
           '<div class="obs-ta-wrap">' +
             '<div contenteditable="true" class="field-textarea obs-editable" id="sObs-' + idx + '"' +
               ' data-ph="What happened…" data-empty="1"' +
+              ' onfocus="this.dataset.empty=\'\'"' +
+              ' onblur="_ceNorm(this)"' +
               ' oninput="_autoBullet(this);_ceNorm(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ');toggleObsImgBtn(' + idx + ')"' +
               ' onkeydown="onObsKeydown(event,' + idx + ',0)"></div>' +
             '<div class="obs-img-preview" id="sImgPreview-' + idx + '" style="display:none"></div>' +
@@ -3526,6 +3528,8 @@ function addObsPair() {
         '<div class="obs-sol-col">' +
           '<div contenteditable="true" class="field-textarea obs-editable" id="sSol-' + idx + '"' +
             ' data-ph="Thoughts…" data-empty="1"' +
+            ' onfocus="this.dataset.empty=\'\'"' +
+            ' onblur="_ceNorm(this)"' +
             ' oninput="_autoBullet(this);_ceNorm(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ')"' +
             ' onkeydown="onObsKeydown(event,' + idx + ',1)"></div>' +
         '</div>' +

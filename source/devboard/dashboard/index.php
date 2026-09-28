@@ -3100,7 +3100,10 @@ function openEditSessionDialog(gameName, idx) {
   // Resize textareas after the overlay is visible so scrollHeight is accurate,
   // then sync pair heights so both columns match the taller of the two.
   setTimeout(function() {
-    document.querySelectorAll('#obsContainer .field-textarea').forEach(autoResize);
+    document.querySelectorAll('#obsContainer .field-textarea').forEach(function(el) {
+      _autoBullet(el);
+      autoResize(el);
+    });
     document.querySelectorAll('#obsContainer .obs-pair').forEach(function(pair) {
       syncPairHeight(parseInt(pair.dataset.idx));
     });
@@ -3504,7 +3507,7 @@ function addObsPair() {
           '<div class="obs-ta-wrap">' +
             '<textarea class="field-textarea" id="sObs-' + idx + '" rows="1"' +
               ' placeholder="What happened…"' +
-              ' oninput="syncPairHeight(' + idx + ');onObsInput(' + idx + ');toggleObsImgBtn(' + idx + ')"' +
+              ' oninput="_autoBullet(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ');toggleObsImgBtn(' + idx + ')"' +
               ' onkeydown="onObsKeydown(event,' + idx + ',0)"></textarea>' +
             '<div class="obs-img-preview" id="sImgPreview-' + idx + '" style="display:none"></div>' +
             '<button type="button" class="obs-img-btn" onclick="triggerObsImageUpload(' + idx + ')" title="Attach image">' +
@@ -3520,7 +3523,7 @@ function addObsPair() {
         '<div class="obs-sol-col">' +
           '<textarea class="field-textarea" id="sSol-' + idx + '" rows="1"' +
             ' placeholder="Thoughts…"' +
-            ' oninput="syncPairHeight(' + idx + ');onObsInput(' + idx + ')"' +
+            ' oninput="_autoBullet(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ')"' +
             ' onkeydown="onObsKeydown(event,' + idx + ',1)"></textarea>' +
         '</div>' +
       '</div>' +
@@ -3631,6 +3634,17 @@ function moveObsPair(idx, dir) {
 function autoResize(el) {
   el.style.height = 'auto';
   el.style.height = el.scrollHeight + 'px';
+}
+
+// Auto-convert "- " or "* " at the start of a line to "• "
+function _autoBullet(el) {
+  var pos    = el.selectionStart;
+  var val    = el.value;
+  var newVal = val.replace(/^([-*]) /gm, '• ');
+  if (newVal === val) return;
+  var delta  = newVal.length - val.length;
+  el.value   = newVal;
+  el.setSelectionRange(pos + delta, pos + delta);
 }
 
 function _syncReorderBtns() {

@@ -48,7 +48,7 @@ foreach ($rows as $row) {
         'People'       => $snum,
         'Observations' => $obs,
         'Observation'  => $obs,   // legacy column name
-        'Thoughts'     => $sol,
+        'Solutions'    => $sol,
         'Solution'     => $sol,   // legacy column name
     ];
 
@@ -59,7 +59,7 @@ foreach ($rows as $row) {
         'People'       => $snum,
         'Observations' => $obs,
         'Observation'  => $obs,
-        'Thoughts'     => $sol,
+        'Solutions'    => $sol,
         'Solution'     => $sol,
     ];
 }

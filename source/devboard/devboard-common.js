@@ -96,7 +96,7 @@ function buildSessions(rows) {
     var event  = (row['Event']        || '').trim();
     var people = (row['People']       || '').trim();
     var obs    = (row['Observations'] || row['Observation'] || '').trim();
-    var sol    = (row['Thoughts']     || row['Solution']    || '').trim();
+    var sol    = (row['Solutions']    || row['Thoughts']    || row['Solution']    || '').trim();
     if (date || event) {
       // New schema: Event = type ("Playtest"), People = session number ("1")
       // Old schema: Event = "Playtest 1", People = blank — both work transparently

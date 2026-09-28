@@ -81,8 +81,9 @@ if ($isTesterRow) {
         'People'       => $sessionNum,    // new schema: session number on header row
         'Observations' => $observation,
         'Observation'  => $observation,   // legacy sheets used 'Observation' (no s)
-        'Thoughts'     => $solution,
-        'Solution'     => $solution,      // legacy sheets used 'Solution' not 'Thoughts'
+        'Solutions'    => $solution,
+        'Thoughts'     => $solution,      // legacy column name
+        'Solution'     => $solution,      // legacy column name
     ];
     $encoded = base64_encode(json_encode($row, JSON_UNESCAPED_UNICODE));
     $arg     = $sheetId . '|' . $tabName . '|' . $encoded;

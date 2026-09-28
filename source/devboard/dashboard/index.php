@@ -677,7 +677,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .ge-upload-btn:hover { color:#1a5f7a; background:#e8f4f8; }
 .ge-upload-btn svg { display:block; }
 
-/* Observations/thoughts textareas */
+/* Observations/solutions textareas */
 .obs-grid { display:grid; grid-template-columns:1fr 1fr; gap:.9rem; }
 .field-textarea {
   display:block; width:100%; padding:.6rem .75rem;
@@ -1299,9 +1299,9 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
     <hr class="field-sep" />
 
-    <!-- Observations + Thoughts (dynamic pairs) -->
+    <!-- Observations + Solutions (dynamic pairs) -->
     <div class="obs-section">
-      <div class="obs-pair-labels"><label>Observations</label><label>Thoughts</label></div>
+      <div class="obs-pair-labels"><label>Observations</label><label>Solutions</label></div>
       <div id="obsContainer"></div>
     </div>
 
@@ -1808,14 +1808,14 @@ function _gameMatchesQuery(g, q) {
   for (var i = 0; i < designers.length; i++) {
     if ((rec[designers[i]] || '').toLowerCase().indexOf(q) !== -1) return true;
   }
-  // Search cached dev notes (people, observations, thoughts)
+  // Search cached dev notes (people, observations, solutions)
   var rows = devCache[g.Name];
   if (rows && rows.length) {
     for (var r = 0; r < rows.length; r++) {
       var row = rows[r];
       if ((row['People']       || '').toLowerCase().indexOf(q) !== -1) return true;
       if ((row['Observations'] || row['Observation'] || '').toLowerCase().indexOf(q) !== -1) return true;
-      if ((row['Thoughts']     || row['Solution']    || '').toLowerCase().indexOf(q) !== -1) return true;
+      if ((row['Solutions']    || row['Thoughts']    || row['Solution']    || '').toLowerCase().indexOf(q) !== -1) return true;
     }
   }
   return false;
@@ -3227,12 +3227,12 @@ function submitSession() {
   // ── Build local cache rows (same shape as sheet JSON) for optimistic update ──
   var localRows = [];
   localRows.push({ 'Date': date, 'Event': eventType, 'People': sessionNum,
-                   'Observations': location, 'Thoughts': swLength });
+                   'Observations': location, 'Solutions': swLength });
   testerVals.forEach(function(t) {
-    localRows.push({ 'Date': '', 'Event': '', 'People': t, 'Observations': '', 'Thoughts': '' });
+    localRows.push({ 'Date': '', 'Event': '', 'People': t, 'Observations': '', 'Solutions': '' });
   });
   obsPairs.forEach(function(pair) {
-    localRows.push({ 'Date': '', 'Event': '', 'People': '', 'Observations': pair.obs, 'Thoughts': pair.sol });
+    localRows.push({ 'Date': '', 'Event': '', 'People': '', 'Observations': pair.obs, 'Solutions': pair.sol });
   });
 
   // ── Edit mode: optimistically patch the cache, wait for save, then close ──
@@ -3529,7 +3529,7 @@ function addObsPair() {
         '</div>' +
         '<div class="obs-sol-col">' +
           '<div contenteditable="true" class="field-textarea obs-editable" id="sSol-' + idx + '"' +
-            ' data-ph="Thoughts…" data-empty="1"' +
+            ' data-ph="Solutions…" data-empty="1"' +
             ' onfocus="this.dataset.empty=\'\'"' +
             ' onblur="_ceNorm(this)"' +
             ' oninput="_autoBullet(this);_ceNorm(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ')"' +

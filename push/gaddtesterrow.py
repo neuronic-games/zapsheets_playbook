@@ -76,5 +76,5 @@ except Exception as e:
 print(json.dumps({
     "ok": True,
     "row_num": row_num,
-    "row": {"Date": "", "Event": "", "People": combined, "Observations": "", "Thoughts": ""},
+    "row": {"Date": "", "Event": "", "People": combined, "Observations": "", "Solutions": ""},
 }))

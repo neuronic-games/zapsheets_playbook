@@ -54,7 +54,7 @@ if (file_exists($peopleFile)) {
 // Build replacement rows: Date | Event | People | Observation | Solution
 $rows = [];
 
-// Header row: date + event type + session number in People + location in Observations + length in Thoughts
+// Header row: date + event type + session number in People + location in Observations + length in Solutions
 $rows[] = [$date, $event, $sessionNum, $location, $length];
 
 // Tester rows: blank Date/Event + "Name email" in People + blank Observation/Solution

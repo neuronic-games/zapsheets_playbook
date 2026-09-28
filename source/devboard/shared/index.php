@@ -1274,7 +1274,7 @@ function addObsPair(showLabels) {
   div.className = 'obs-pair obs-pair-empty';
   div.dataset.idx = idx;
   var labelsHtml = showLabels
-    ? '<div class="obs-pair-labels"><label>Observations</label><label>Thoughts</label></div>'
+    ? '<div class="obs-pair-labels"><label>Observations</label><label>Solutions</label></div>'
     : '';
   div.innerHTML = labelsHtml +
     '<div class="obs-pair-inputs">' +
@@ -1296,7 +1296,7 @@ function addObsPair(showLabels) {
         '</div>' +
       '</div>' +
       '<textarea class="field-textarea" id="sSol-' + idx + '" rows="1"' +
-        ' placeholder="Thoughts…"' +
+        ' placeholder="Solutions…"' +
         ' oninput="autoResize(this);onObsInput(' + idx + ')"' +
         ' onkeydown="onObsKeydown(event,' + idx + ',1)"></textarea>' +
     '</div>';

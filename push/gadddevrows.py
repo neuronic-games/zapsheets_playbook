@@ -2,7 +2,7 @@
 # Called in the background by addDevRows.php; no response is read.
 #
 # Arg: {sheet_id}|{base64_encoded_json}
-# JSON: { "tab": "[GameName] dev", "rows": [ {Date, Event, People, Observations, Thoughts}, ... ] }
+# JSON: { "tab": "[GameName] dev", "rows": [ {Date, Event, People, Observations, Solutions}, ... ] }
 
 import gspread
 import sys, os, json, base64, socket

@@ -38,8 +38,9 @@ except Exception as e:
 
 game        = data.get('game',       '').strip()
 client      = data.get('client',     '').strip()
-doc_id      = data.get('doc_id',     '').strip()   # pre-assigned ID from contracts sheet
-quote_raw   = data.get('quote',      '').strip()
+doc_id       = data.get('doc_id',      '').strip()   # pre-assigned ID from contracts sheet
+estimate_num = data.get('estimate_num','').strip()   # source estimate # (for invoice header)
+quote_raw    = data.get('quote',       '').strip()
 tgt_start   = data.get('tgt_start',  '').strip()
 tgt_end     = data.get('tgt_end',    '').strip()
 start_date  = data.get('start_date', '').strip()
@@ -232,10 +233,12 @@ sc(R_SUBMITTED, CB, f'Submitted on {today_disp}')
 # Info section
 sc(R_LABELS, CB, 'Prepared for')
 sc(R_LABELS, CD, 'Duration')
-sc(R_LABELS, CF, 'Estimate #')
+num_label = 'Invoice #' if estimate_num else 'Estimate #'
+num_value = f"{invoice_num} (Estimate {estimate_num})" if estimate_num else invoice_num
+sc(R_LABELS, CF, num_label)
 sc(R_VALUES, CB, client or '—')
 sc(R_VALUES, CD, date_range or '—')
-sc(R_VALUES, CF, invoice_num)
+sc(R_VALUES, CF, num_value)
 
 # Table header
 sc(R_THEAD, CB, 'Description')

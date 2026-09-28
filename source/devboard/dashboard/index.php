@@ -379,6 +379,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .estimate-item:last-of-type { border-bottom:none; }
 .estimate-item-header { display:grid; grid-template-columns:auto auto 1fr auto auto; gap:.6rem; align-items:center; padding:.38rem 1rem; font-size:.78rem; user-select:none; }
 .estimate-type-pill { font-family:'DINBlack',sans-serif; font-size:.58rem; text-transform:uppercase; letter-spacing:.05em; color:#2e7d9e; background:#e8f4f8; border-radius:4px; padding:.1rem .35rem; white-space:nowrap; }
+.estimate-type-pill.invoice { color:#a16207; background:#fef3cd; }
 .estimate-num-badge { font-family:'DINRegular',sans-serif; font-size:.7rem; color:#999; }
 .estimate-date { font-family:'DINRegular',sans-serif; font-size:.7rem; color:#bbb; }
 .estimate-amount { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#111; white-space:nowrap; }
@@ -1068,17 +1069,15 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       </label>
     </div>
     <!-- Percentage row (shown when pct mode) -->
-    <div id="invoicePctRow" style="display:none" class="estimate-field-row two">
+    <div id="invoicePctRow" style="display:none">
       <label class="ge-label">Percentage
-        <div class="contract-quote-wrap">
-          <input type="number" id="invoicePct" class="ge-input" style="padding-right:1.6rem" min="1" max="100" step="1" value="50" oninput="_invoiceUpdatePct()" />
-          <span class="contract-quote-prefix" style="left:auto;right:.5rem">%</span>
-        </div>
-      </label>
-      <label class="ge-label">Calculated Amount
-        <div class="contract-quote-wrap">
-          <span class="contract-quote-prefix">$</span>
-          <input type="text" id="invoicePctCalc" class="ge-input" style="padding-left:1.4rem;color:#1a5f7a;font-family:'DINBlack',sans-serif" readonly />
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <div class="contract-quote-wrap" style="flex:0 0 7rem">
+            <input type="number" id="invoicePct" class="ge-input" style="padding-right:1.6rem" min="1" max="100" step="1" value="50" oninput="_invoiceUpdatePct()" />
+            <span class="contract-quote-prefix" style="left:auto;right:.5rem">%</span>
+          </div>
+          <span style="font-family:'DINRegular',sans-serif;font-size:.8rem;color:#888">=</span>
+          <span id="invoicePctCalc" style="font-family:'DINBlack',sans-serif;font-size:.9rem;color:#1a5f7a"></span>
         </div>
       </label>
     </div>
@@ -1689,16 +1688,21 @@ function renderPublishersView() {
       '</div>';
       html += '<div class="game-group-body">';
 
-      // Estimates for this game
+      // Estimates for this game — sort latest date first
       var firstConDataIdx = g.contracts.length ? CONTRACT_RAW.indexOf(g.contracts[0]) : -1;
-      g.estimates.forEach(function(est) {
+      var sortedEsts = g.estimates.slice().sort(function(a, b) {
+        var da = new Date(a.date || 0), db = new Date(b.date || 0);
+        return db - da;
+      });
+      sortedEsts.forEach(function(est) {
         var amtFmt = est.amount ? '$' + parseFloat(est.amount).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
         var globalIdx = ESTIMATES_RAW.indexOf(est);
         var openAttr = est.url ? ' onclick="event.stopPropagation();window.open(\'' + esc(est.url) + '\',\'_blank\')"' : '';
         html += '<div class="estimate-item" id="est-item-' + globalIdx + '">';
         // Header row — click to expand, no action buttons
+        var isInvoice = (est.type === 'invoice');
         html += '<div class="estimate-item-header" onclick="_estToggle(' + globalIdx + ')">' +
-          '<span class="estimate-type-pill">Estimate</span>' +
+          '<span class="estimate-type-pill' + (isInvoice ? ' invoice' : '') + '">' + (isInvoice ? 'Invoice' : 'Estimate') + '</span>' +
           '<div class="estimate-num-badge">' + esc(est.estimate_num || '') + '</div>' +
           '<div class="estimate-date">' + esc(est.date || '') + '</div>' +
           '<div class="estimate-amount">' + esc(amtFmt) + '</div>' +
@@ -1983,7 +1987,7 @@ function openInvoiceFromEstimate(estIdx) {
   document.getElementById('invoiceAmtType').value  = 'fixed';
   document.getElementById('invoiceAmount').value   = estAmt ? estAmt.toFixed(2) : '';
   document.getElementById('invoicePct').value      = '100';
-  document.getElementById('invoicePctCalc').value  = estAmt ? estAmt.toFixed(2) : '';
+  document.getElementById('invoicePctCalc').textContent = estAmt ? '$' + estAmt.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
   document.getElementById('invoicePctRow').style.display = 'none';
   document.getElementById('invoiceAmtLabel').querySelector('label') && (document.getElementById('invoiceAmtLabel').style.display = '');
   document.getElementById('invoiceNotes').value    = '';
@@ -2009,7 +2013,7 @@ function _invoiceUpdatePct() {
   var estAmt = est && est.amount ? parseFloat(est.amount) : 0;
   var pct    = parseFloat(document.getElementById('invoicePct').value) || 0;
   var calc   = (estAmt * pct / 100);
-  document.getElementById('invoicePctCalc').value = calc.toFixed(2);
+  document.getElementById('invoicePctCalc').textContent = '$' + calc.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
   _invoiceDirty = true;
 }
 
@@ -2028,7 +2032,7 @@ function submitInvoice() {
 
   var isPct    = document.getElementById('invoiceAmtType').value === 'pct';
   var amount   = isPct
-    ? parseFloat(document.getElementById('invoicePctCalc').value) || 0
+    ? parseFloat((document.getElementById('invoicePctCalc').textContent || '').replace(/[^0-9.]/g, '')) || 0
     : parseFloat(document.getElementById('invoiceAmount').value)  || 0;
   var notes    = document.getElementById('invoiceNotes').value.trim();
 

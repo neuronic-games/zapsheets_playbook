@@ -60,12 +60,13 @@ if (!empty($rowResult['ok'])) {
 
 // Step 2: generate the invoice sheet tab
 $payload = [
-    'game'       => $game,
-    'client'     => $client,
-    'doc_id'     => $docId,
-    'quote'      => $invoiceAmt,
-    'payment'    => 'Invoiced',
-    'notes'      => $notes,
+    'game'         => $game,
+    'client'       => $client,
+    'doc_id'       => $docId,
+    'quote'        => $invoiceAmt,
+    'payment'      => 'Invoiced',
+    'estimate_num' => $estimateNum,
+    'notes'        => $notes,
     'my_name'    => $myName,
     'my_phone'   => $myPhone,
     'my_company' => $myCompany,

@@ -751,14 +751,14 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .obs-pair { position:relative; margin-bottom:.75rem; }
 .obs-pair:last-child { margin-bottom:0; }
 .obs-pair-row { display:block; }
-/* Reorder buttons — overlaid on left edge of the obs box, UP at top, DN at bottom */
-.obs-reorder { position:absolute; left:.35rem; top:.35rem; bottom:.35rem; z-index:2; display:flex; flex-direction:column; justify-content:space-between; }
+/* Reorder buttons — overlaid on right edge of the pair, UP at top, DN at bottom */
+.obs-reorder { position:absolute; right:.35rem; top:.35rem; bottom:.35rem; z-index:2; display:flex; flex-direction:column; justify-content:space-between; }
 .obs-reorder-btn { background:rgba(255,255,255,.92); border:1px solid #d0d8e4; border-radius:4px; padding:.13rem .22rem; cursor:pointer; font-size:.62rem; color:#aab; line-height:1; transition:color .12s,border-color .12s,background .12s; backdrop-filter:blur(2px); }
 .obs-reorder-btn:hover:not(:disabled) { color:#1a5f7a; border-color:#a0b8c8; background:#f0f7fa; }
 .obs-reorder-btn:disabled { opacity:.25; cursor:default; }
 .obs-pair:last-child .obs-reorder { visibility:hidden; }
-/* Indent obs textarea text so it doesn't sit under the buttons */
-.obs-obs-col .field-textarea { padding-left:1.8rem; }
+/* Indent sol textarea text so it doesn't sit under the buttons */
+.obs-sol-col .field-textarea,.obs-sol-col .obs-editable { padding-right:1.8rem; }
 /* Column labels — flush with dialog left edge */
 .obs-pair-labels {
   display:grid; grid-template-columns:1fr 1fr; gap:.9rem;
@@ -812,7 +812,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   .obs-pair-inputs { grid-template-columns:1fr; }
   .obs-obs-col { border-right:none; border-bottom:1px solid #d0d8e0; }
   .obs-pair-labels label:last-child { display:none; }
-  .obs-obs-col .field-textarea { padding-left:1.8rem; }
+  .obs-sol-col .field-textarea,.obs-sol-col .obs-editable { padding-right:1.8rem; }
   .field-grid { grid-template-columns:1fr 1fr; }
   .field-group.span2 { grid-column:span 1; }
   .obs-grid { grid-template-columns:1fr; }

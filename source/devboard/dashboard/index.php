@@ -994,7 +994,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <label class="ge-label">Type
       <select id="estimateType" class="ge-input">
         <option value="estimate">Estimate</option>
-        <option value="contract">Contract</option>
+        <option value="invoice">Invoice</option>
       </select>
     </label>
     <div class="estimate-field-row two">
@@ -1822,9 +1822,7 @@ function renderPublishersView() {
       }
       html += '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(pub.name)) + ',' + esc(JSON.stringify(g.name)) + ')">+ Contract</button>';
       html += '</div>';
-      html += '<div style="display:flex;gap:.4rem;align-items:center">';
-      html += '<button class="btn-contract-action invoice" onclick="event.stopPropagation();openContractDialog(' + esc(JSON.stringify(g.name)) + ')">+ Invoice</button>';
-      html += '</div>';
+      html += '<div style="display:flex;gap:.4rem;align-items:center"></div>';
       html += '</div>';
       html += '</div>'; // .game-group-body
       html += '</div>'; // .game-group

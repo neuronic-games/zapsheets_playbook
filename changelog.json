@@ -3,7 +3,8 @@
     "version": "Sep 2026",
     "apps": ["devboard"],
     "features": [
-      "Reorder observation rows — UP and DOWN buttons on each observation/thoughts row let you rearrange entries; the row animates to its new position so you can see what moved, and the button stays with its row so you can tap it again to keep moving",
+      "Reorder observation rows — UP and DOWN buttons on each observation/thoughts row let you rearrange entries; the row animates to its new position so you can see what moved, and the button stays with its row so you can tap it again to keep moving; UP is disabled on the first row and DOWN on the last",
+      "Bullet lists in observations and thoughts — start a line with - or * followed by a space and it converts to a bullet point automatically",
       "Observation rows redesigned as a joined two-cell box — the Observations and Thoughts fields share a single bordered container, with equal row height and a slightly darker background on the Thoughts side",
       "Fixed: saving a session after reordering rows now works correctly for sessions created with either the old or new schema"
     ]

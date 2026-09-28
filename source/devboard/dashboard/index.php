@@ -403,7 +403,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .estimate-field-row { display:grid; gap:.6rem; }
 .estimate-field-row.two { grid-template-columns:1fr 1fr; }
 .estimate-field-row.three-one { grid-template-columns:2fr 1fr; }
-.estimate-field-row.dur-dates { grid-template-columns:1fr 1fr 1fr; }
+.estimate-field-row.dur-dates { grid-template-columns:1fr auto auto; }
+.estimate-field-row.dur-dates input[type="date"] { width:9rem; }
 
 /* ── Search bar ───────────────────────────────────────── */
 .search-bar { padding:.6rem 1.25rem .5rem; max-width:860px; margin:0 auto; display:flex; gap:.6rem; align-items:center; }

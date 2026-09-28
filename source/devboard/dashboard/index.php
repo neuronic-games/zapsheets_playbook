@@ -1048,19 +1048,19 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <h2>New Invoice — <span id="invoiceGameTitle"></span></h2>
     <input type="hidden" id="invoiceEstIdx" />
 
-    <!-- Reference info row -->
-    <table style="width:100%;border-collapse:collapse;padding:.4rem .75rem;background:#f5f9fc;border-radius:7px;border:1px solid #e2edf5;font-size:.78rem;">
-      <tr>
-        <td style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;padding:.35rem .75rem .1rem;vertical-align:bottom">Client</td>
-        <td style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;padding:.35rem .75rem .1rem;vertical-align:bottom">Estimate #</td>
-        <td style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;padding:.35rem .75rem .1rem;vertical-align:bottom">Estimate Total</td>
-      </tr>
-      <tr>
-        <td id="invoiceRefClient" style="font-family:'DINRegular',sans-serif;color:#333;padding:.1rem .75rem .35rem;vertical-align:top"></td>
-        <td id="invoiceRefNum"    style="font-family:'DINRegular',sans-serif;color:#333;padding:.1rem .75rem .35rem;vertical-align:top"></td>
-        <td id="invoiceRefAmount" style="font-family:'DINBlack',sans-serif;color:#1a5f7a;padding:.1rem .75rem .35rem;vertical-align:top"></td>
-      </tr>
-    </table>
+    <!-- Reference info row: two independent flex rows share the same column widths -->
+    <div style="padding:.35rem .75rem .4rem;background:#f5f9fc;border-radius:7px;border:1px solid #e2edf5;">
+      <div style="display:flex">
+        <div style="flex:1;font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab">Client</div>
+        <div style="flex:1;font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab">Estimate #</div>
+        <div style="flex:1;font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab">Estimate Total</div>
+      </div>
+      <div style="display:flex;margin-top:.15rem">
+        <div id="invoiceRefClient" style="flex:1;font-family:'DINRegular',sans-serif;font-size:.82rem;color:#333"></div>
+        <div id="invoiceRefNum"    style="flex:1;font-family:'DINRegular',sans-serif;font-size:.82rem;color:#333"></div>
+        <div id="invoiceRefAmount" style="flex:1;font-family:'DINBlack',sans-serif;font-size:.82rem;color:#1a5f7a"></div>
+      </div>
+    </div>
 
     <!-- Amount type + value (all in one label row) -->
     <label class="ge-label">Invoice Amount

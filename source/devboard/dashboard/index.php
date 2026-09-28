@@ -385,12 +385,16 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .estimate-item-chevron { font-size:.6rem; opacity:.35; transition:transform .2s; }
 .estimate-item.open .estimate-item-chevron { transform:rotate(180deg); opacity:.65; }
 /* Expanded body */
-.estimate-item-body { display:none; border-top:1px solid #edf1f5; background:#f5f9fc; padding:.55rem 1rem .6rem; }
+.estimate-item-body { display:none; border-top:1px solid #edf1f5; background:#f5f9fc; }
 .estimate-item.open .estimate-item-body { display:block; }
-.estimate-item-open-zone { cursor:pointer; padding-bottom:.45rem; color:#555; font-size:.78rem; font-family:'DINRegular',sans-serif; }
-.estimate-item-open-zone:hover .estimate-item-open-hint { text-decoration:underline; color:#1a5f7a; }
-.estimate-item-open-hint { color:#1a5f7a; font-family:'DINBlack',sans-serif; font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; }
-.estimate-item-actions { display:flex; justify-content:flex-end; gap:.5rem; }
+.estimate-item-details { padding:.55rem 1rem .45rem; cursor:pointer; }
+.estimate-item-details:hover { background:#eef4f8; }
+.estimate-item-fields { display:grid; grid-template-columns:auto 1fr; gap:.2rem .75rem; font-size:.75rem; }
+.estimate-item-fields dt { font-family:'DINBlack',sans-serif; font-size:.65rem; text-transform:uppercase; letter-spacing:.05em; color:#aab; white-space:nowrap; }
+.estimate-item-fields dd { font-family:'DINRegular',sans-serif; color:#333; margin:0; }
+.estimate-item-open-hint { display:block; margin-top:.5rem; font-family:'DINBlack',sans-serif; font-size:.65rem; text-transform:uppercase; letter-spacing:.05em; color:#2e7d9e; opacity:.6; }
+.estimate-item-details:hover .estimate-item-open-hint { opacity:1; }
+.estimate-item-actions { display:flex; justify-content:flex-end; gap:.5rem; padding:.4rem 1rem .55rem; border-top:1px solid #edf1f5; }
 .estimate-del-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0c8d0; color:#c0c8d0; border-radius:6px; padding:.18rem .55rem; cursor:pointer; white-space:nowrap; transition:border-color .15s,color .15s; }
 .estimate-del-btn:hover { border-color:#c0392b; color:#c0392b; }
 /* Inline delete confirmation */
@@ -1646,11 +1650,18 @@ function renderPublishersView() {
         '</div>';
         // Expanded body
         html += '<div class="estimate-item-body">';
-        if (est.url) {
-          html += '<div class="estimate-item-open-zone"' + openAttr + '>' +
-            '<span class="estimate-item-open-hint">Open estimate ↗</span>' +
-          '</div>';
-        }
+        // Clickable details area — opens estimate URL
+        html += '<div class="estimate-item-details"' + openAttr + '>';
+        html += '<dl class="estimate-item-fields">';
+        html += '<dt>Estimate #</dt><dd>' + esc(est.estimate_num || '—') + '</dd>';
+        html += '<dt>Amount</dt><dd>' + esc(amtFmt) + '</dd>';
+        html += '<dt>Date</dt><dd>' + esc(est.date || '—') + '</dd>';
+        if (est.game)   html += '<dt>Game</dt><dd>' + esc(est.game) + '</dd>';
+        if (est.client) html += '<dt>Client</dt><dd>' + esc(est.client) + '</dd>';
+        if (est.tab)    html += '<dt>Sheet Tab</dt><dd>' + esc(est.tab) + '</dd>';
+        html += '</dl>';
+        if (est.url) html += '<span class="estimate-item-open-hint">Click to open estimate ↗</span>';
+        html += '</div>';
         html += '<div class="estimate-item-actions">';
         if (firstConDataIdx >= 0) {
           html += '<button type="button" class="btn-contract-action invoice" onclick="event.stopPropagation();generateInvoice(' + firstConDataIdx + ')">+ Invoice</button>';

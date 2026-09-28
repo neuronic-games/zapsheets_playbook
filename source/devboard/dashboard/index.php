@@ -3765,12 +3765,19 @@ function onObsKeydown(e, idx, col) {
               r0.setStart(blk, 0); r0.collapse(true);
               sel.removeAllRanges(); sel.addRange(r0);
             } else {
+              // Split at cursor: text after cursor goes to new bullet line
+              var range   = sel.getRangeAt(0);
+              var afterRng = document.createRange();
+              afterRng.setStart(range.endContainer, range.endOffset);
+              afterRng.setEnd(blk, blk.childNodes.length);
+              var afterText = afterRng.toString();
+              afterRng.deleteContents();
               var nd = document.createElement('div');
-              nd.textContent = '• '; nd.classList.add('bul');
+              nd.textContent = '• ' + afterText; nd.classList.add('bul');
               blk.after ? blk.after(nd) : blk.parentNode.insertBefore(nd, blk.nextSibling);
               var tn1 = nd.firstChild;
               var r1  = document.createRange();
-              r1.setStart(tn1, tn1.textContent.length); r1.collapse(true);
+              r1.setStart(tn1, 2); r1.collapse(true); // place cursor after '• '
               sel.removeAllRanges(); sel.addRange(r1);
             }
             syncPairHeight(idx);

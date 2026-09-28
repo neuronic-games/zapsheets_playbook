@@ -31,6 +31,7 @@ $location       = trim($_POST['location']         ?? '');
 $length         = trim($_POST['length']           ?? '');  // existing session length (preserved on edit)
 $testersRaw  = $_POST['testers']    ?? '[]';
 $obsPairsRaw = $_POST['obs_pairs']  ?? '[]';
+$submitter   = trim($_POST['submitter'] ?? '');
 
 if (!$sheetId || !$gameName) {
     echo json_encode(['error' => 'Missing id or game']);
@@ -64,6 +65,11 @@ foreach ($testers as $t) {
     $email    = $emailMap[strtolower($t)] ?? '';
     $combined = $t . ($email !== '' ? ' ' . $email : '');
     $rows[] = ['', '', $combined, '', ''];
+}
+
+// Submitter attribution row
+if ($submitter !== '') {
+    $rows[] = ['', '', '[sub:' . $submitter . ']', '', ''];
 }
 
 // Obs rows: blank Date/Event/People + Observation + Solution

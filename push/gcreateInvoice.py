@@ -198,14 +198,7 @@ R_SPACER2   = 9
 R_LABELS    = 10  # Prepared for | Project | Estimate #
 R_VALUES    = 11  # client name  | game Dev | invoice_num
 R_SPACER3   = 12
-
-if date_range:
-    R_DUR_LABEL = 13
-    R_DUR_VAL   = 14
-    R_SPACER4   = 15
-    R_THEAD     = 16
-else:
-    R_THEAD     = 13
+R_THEAD     = 13
 
 R_DATA     = R_THEAD + 1
 R_NOTESUB  = R_DATA  + 1   # notes (left) + subtotal (right) — SAME ROW
@@ -238,16 +231,11 @@ sc(R_SUBMITTED, CB, f'Submitted on {today_disp}')
 
 # Info section
 sc(R_LABELS, CB, 'Prepared for')
-sc(R_LABELS, CD, 'Project')
+sc(R_LABELS, CD, 'Duration')
 sc(R_LABELS, CF, 'Estimate #')
 sc(R_VALUES, CB, client or '—')
-sc(R_VALUES, CD, (game + ' Dev') if game else '—')
+sc(R_VALUES, CD, date_range or '—')
 sc(R_VALUES, CF, invoice_num)
-
-# Duration
-if date_range:
-    sc(R_DUR_LABEL, CF, 'Duration')
-    sc(R_DUR_VAL,   CF, date_range)
 
 # Table header
 sc(R_THEAD, CB, 'Description')
@@ -389,10 +377,6 @@ reqs.append(row_h(R_SPACER2,   16))
 reqs.append(row_h(R_LABELS,    24))
 reqs.append(row_h(R_VALUES,    28))
 reqs.append(row_h(R_SPACER3,   14))
-if date_range:
-    reqs.append(row_h(R_DUR_LABEL, 22))
-    reqs.append(row_h(R_DUR_VAL,   24))
-    reqs.append(row_h(R_SPACER4,   16))
 reqs.append(row_h(R_THEAD,    30))
 reqs.append(row_h(R_DATA,     90))    # tall for wrapped multi-line description
 reqs.append(row_h(R_NOTESUB,  28))
@@ -411,16 +395,12 @@ reqs.append(merge(R_INVOICE, CB, CONTENT_END))
 reqs.append(merge(R_SUBMITTED, CB, CONTENT_END))
 # Labels row
 reqs.append(merge(R_LABELS, CB, CD))              # B:C "Prepared for"
-reqs.append(merge(R_LABELS, CD, CF))              # D:E "Project"
+reqs.append(merge(R_LABELS, CD, CF))              # D:E "Duration"
 reqs.append(merge(R_LABELS, CF, CONTENT_END))     # F:G "Estimate #"
 # Values row
 reqs.append(merge(R_VALUES, CB, CD))
 reqs.append(merge(R_VALUES, CD, CF))
 reqs.append(merge(R_VALUES, CF, CONTENT_END))
-# Duration
-if date_range:
-    reqs.append(merge(R_DUR_LABEL, CF, CONTENT_END))
-    reqs.append(merge(R_DUR_VAL,   CF, CONTENT_END))
 # Table header
 reqs.append(merge(R_THEAD, CB, CE))               # B:D "Description"
 # Data row description
@@ -477,17 +457,6 @@ reqs.append(fmt(R_VALUES, R_VALUES, CB, CONTENT_END, {
     'textFormat': tf(BLACK, 10),
     'verticalAlignment': 'TOP',
 }, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment'))
-
-# Duration label: bold black; value: gray
-if date_range:
-    reqs.append(fmt(R_DUR_LABEL, R_DUR_LABEL, CF, CONTENT_END, {
-        'textFormat': tf(BLACK, 10, bold=True),
-        'verticalAlignment': 'BOTTOM',
-    }, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment'))
-    reqs.append(fmt(R_DUR_VAL, R_DUR_VAL, CF, CONTENT_END, {
-        'textFormat': tf(GRAY_DARK, 10),
-        'verticalAlignment': 'TOP',
-    }, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment'))
 
 # Table header: orange text, white bg, bold
 reqs.append(fmt(R_THEAD, R_THEAD, CB, CONTENT_END, {

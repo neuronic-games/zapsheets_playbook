@@ -357,20 +357,32 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .btn-contract-action:disabled { opacity:.5; cursor:default; }
 .publishers-empty { color:#888; font-size:.85rem; padding:1rem 0; }
 
-/* ── Publisher card subtitle bar ──────────────────────────── */
-.client-card-subtitle { display:flex; align-items:center; justify-content:space-between; padding:.38rem 1rem; background:#f4f8fb; border-bottom:1px solid #e8eef3; }
-.client-card-subtitle-label { font-family:'DINBlack',sans-serif; font-size:.65rem; letter-spacing:.07em; text-transform:uppercase; color:#888; }
+/* ── Game groups inside publisher card ────────────────────── */
+.game-group { border-bottom:1px solid #edf1f5; }
+.game-group:last-child { border-bottom:none; }
+.game-group-header { display:grid; grid-template-columns:1fr auto auto; gap:.75rem; align-items:center; padding:.48rem 1rem; cursor:pointer; user-select:none; transition:background .1s; }
+.game-group-header:hover { background:#f8fafc; }
+.game-group.open .game-group-header { background:#f4f8fb; }
+.game-group-name { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#1a5f7a; }
+.game-group-summary { font-family:'DINRegular',sans-serif; font-size:.7rem; color:#aab; white-space:nowrap; }
+.game-group-chevron { font-size:.6rem; opacity:.35; transition:transform .2s; }
+.game-group.open .game-group-chevron { transform:rotate(180deg); opacity:.65; }
+.game-group-body { display:none; border-top:1px solid #edf1f5; }
+.game-group.open .game-group-body { display:block; }
+.game-group-footer { padding:.45rem 1rem; background:#f9fbfc; border-top:1px solid #edf1f5; display:flex; justify-content:flex-end; }
 .btn-card-subtitle { font-family:'DINBlack',sans-serif; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; background:none; border:1.5px solid #2e7d9e; color:#2e7d9e; border-radius:7px; padding:.22rem .65rem; cursor:pointer; transition:background .15s,color .15s; }
 .btn-card-subtitle:hover { background:#2e7d9e; color:#fff; }
 
-/* ── Estimate rows inside publisher card ──────────────────── */
-.estimate-item { display:grid; grid-template-columns:1fr auto auto auto; gap:.75rem; align-items:center; padding:.45rem 1rem; border-bottom:1px solid #f0f4f8; font-size:.78rem; }
+/* ── Estimate rows inside game group ──────────────────────── */
+.estimate-item { display:grid; grid-template-columns:auto auto 1fr auto auto; gap:.6rem; align-items:center; padding:.38rem 1rem; border-bottom:1px solid #f4f7fb; font-size:.78rem; background:#fafcfe; }
 .estimate-item:last-of-type { border-bottom:none; }
-.estimate-game-name { font-family:'DINBlack',sans-serif; color:#1a5f7a; font-size:.8rem; }
-.estimate-num-badge { font-family:'DINRegular',sans-serif; font-size:.7rem; color:#888; }
-.estimate-amount { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#111; white-space:nowrap; }
+.estimate-type-pill { font-family:'DINBlack',sans-serif; font-size:.58rem; text-transform:uppercase; letter-spacing:.05em; color:#2e7d9e; background:#e8f4f8; border-radius:4px; padding:.1rem .35rem; white-space:nowrap; }
+.estimate-num-badge { font-family:'DINRegular',sans-serif; font-size:.7rem; color:#999; }
+.estimate-amount { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#111; white-space:nowrap; text-align:right; }
 .estimate-open-link { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:#2e7d9e; text-decoration:none; border:1.5px solid #2e7d9e; border-radius:6px; padding:.18rem .55rem; white-space:nowrap; }
 .estimate-open-link:hover { background:#2e7d9e; color:#fff; }
+.estimate-del-btn { background:none; border:none; cursor:pointer; color:#ccc; padding:.1rem .2rem; line-height:1; font-size:.85rem; }
+.estimate-del-btn:hover { color:#c0392b; }
 
 /* ── Estimate dialog ──────────────────────────────────────── */
 .estimate-dialog { background:#fff; border-radius:12px; padding:1.5rem; width:min(480px,96vw); box-shadow:0 8px 32px rgba(0,0,0,.22); display:flex; flex-direction:column; gap:.8rem; max-height:92vh; overflow-y:auto; }
@@ -1538,7 +1550,7 @@ function renderPublishersView() {
   }
 
   var html = '';
-  publishers.forEach(function(pub) {
+  publishers.forEach(function(pub, pubIdx) {
     var contracts = pub.contracts;
     html += '<div class="client-card" id="pub-' + esc(pub.name.replace(/\s+/g,'_')) + '">';
     html += '<div class="client-card-header" onclick="togglePublisherCard(this.parentNode)">' +
@@ -1549,81 +1561,118 @@ function renderPublishersView() {
       '</span>' +
     '</div>';
     html += '<div class="client-card-body">';
-    // Subtitle bar with + Estimate button
-    html += '<div class="client-card-subtitle">' +
-      '<span class="client-card-subtitle-label">Estimates</span>' +
-      '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(pub.name)) + ')">+ Estimate</button>' +
-    '</div>';
-    // Estimate rows for this publisher
+
+    // Build per-game groups (merge estimates + contracts under each unique game)
+    var gameMap = {};
+    function gameKey(n) { return (n || '').trim().toLowerCase() || '__none__'; }
     var pubEstimates = ESTIMATES_RAW.filter(function(e) {
       return (e.client || '').trim().toLowerCase() === pub.name.toLowerCase();
     });
     pubEstimates.forEach(function(est) {
-      var amtFmt = est.amount ? '$' + parseFloat(est.amount).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
-      html += '<div class="estimate-item">' +
-        '<div><div class="estimate-game-name">' + esc(est.game || '—') + '</div></div>' +
-        '<div class="estimate-num-badge">' + esc(est.estimate_num || '') + '</div>' +
-        '<div class="estimate-amount">' + esc(amtFmt) + '</div>' +
-        (est.url ? '<a class="estimate-open-link" href="' + esc(est.url) + '" target="_blank" rel="noopener">Open</a>' : '<span></span>') +
+      var k = gameKey(est.game);
+      if (!gameMap[k]) gameMap[k] = { name: est.game || '—', estimates: [], contracts: [] };
+      gameMap[k].estimates.push(est);
+    });
+    contracts.forEach(function(con) {
+      var k = gameKey(con.Game);
+      if (!gameMap[k]) gameMap[k] = { name: con.Game || '—', estimates: [], contracts: [] };
+      else if (con.Game) gameMap[k].name = con.Game; // contracts have canonical casing
+      gameMap[k].contracts.push(con);
+    });
+    var gameKeys = Object.keys(gameMap).sort(function(a, b) {
+      return gameMap[a].name.localeCompare(gameMap[b].name);
+    });
+
+    gameKeys.forEach(function(gk, gIdx) {
+      var g = gameMap[gk];
+      var ggId = 'gg-' + pubIdx + '-' + gIdx;
+      var summaryParts = [];
+      if (g.estimates.length) summaryParts.push(g.estimates.length + (g.estimates.length === 1 ? ' estimate' : ' estimates'));
+      if (g.contracts.length) summaryParts.push(g.contracts.length + (g.contracts.length === 1 ? ' contract' : ' contracts'));
+
+      html += '<div class="game-group" id="' + ggId + '">';
+      html += '<div class="game-group-header" onclick="toggleGameGroup(\'' + ggId + '\')">' +
+        '<div class="game-group-name">' + esc(g.name) + '</div>' +
+        '<div class="game-group-summary">' + esc(summaryParts.join(' · ')) + '</div>' +
+        '<div class="game-group-chevron">▼</div>' +
       '</div>';
+      html += '<div class="game-group-body">';
+
+      // Estimates for this game
+      g.estimates.forEach(function(est) {
+        var amtFmt = est.amount ? '$' + parseFloat(est.amount).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
+        var globalIdx = ESTIMATES_RAW.indexOf(est);
+        html += '<div class="estimate-item" id="est-item-' + globalIdx + '">' +
+          '<span class="estimate-type-pill">Estimate</span>' +
+          '<div class="estimate-num-badge">' + esc(est.estimate_num || '') + '</div>' +
+          '<span></span>' + // spacer
+          '<div class="estimate-amount">' + esc(amtFmt) + '</div>' +
+          (est.url ? '<a class="estimate-open-link" href="' + esc(est.url) + '" target="_blank" rel="noopener">Open</a>' : '<span></span>') +
+          '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();deleteEstimate(' + globalIdx + ')" title="Delete estimate">&#x1F5D1;</button>' +
+        '</div>';
+      });
+
+      // Contracts for this game
+      g.contracts.forEach(function(con) {
+        var quoteNum = parseFloat(con.Quote || '');
+        var quote    = isNaN(quoteNum) ? '—' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
+        var payment  = (con.Payment || '').trim();
+        var badgeCls = 'client-contract-badge';
+        if (payment === 'Fully Paid') badgeCls += ' paid';
+        else if (payment === 'Invoiced') badgeCls += ' invoiced';
+        else if (payment === 'Partial')  badgeCls += ' partial';
+        var ts = fmtDate(con['Target Start Date'] || '');
+        var te = fmtDate(con['Target End Date']   || '');
+        var dateRange = (ts || te) ? (ts || '?') + ' → ' + (te || '?') : '';
+        var dataIdx = CONTRACT_RAW.indexOf(con);
+        var ss = fmtDate(con['Start Date'] || '');
+        var se = fmtDate(con['End Date']   || '');
+        var actualRange = (ss || se) ? (ss || '?') + ' → ' + (se || '?') : '';
+        var notes = (con.Notes || '').trim();
+        var status = (con.Status || '').trim();
+
+        html += '<div class="contract-item" id="ci-' + dataIdx + '">';
+        html += '<div class="client-contract-row" onclick="toggleContractItem(' + dataIdx + ')">';
+        html += '<div>' + (dateRange ? '<div class="client-contract-dates">' + esc(dateRange) + '</div>' : '') + '</div>';
+        html += '<div class="client-contract-quote">' + esc(quote) + '</div>';
+        html += '<div><span class="' + badgeCls + '">' + esc(payment || '—') + '</span></div>';
+        html += '<div class="client-contract-row-chevron">▼</div>';
+        html += '</div>'; // .client-contract-row
+        html += '<div class="client-contract-details">';
+        html += '<div class="contract-detail-fields">';
+        if (actualRange) html += '<div class="contract-detail-field"><label>Actual Dates</label><span>' + esc(actualRange) + '</span></div>';
+        if (status)      html += '<div class="contract-detail-field"><label>Status</label><span>' + esc(status) + '</span></div>';
+        html += '</div>';
+        if (notes) html += '<div class="contract-detail-notes">' + esc(notes) + '</div>';
+        html += '<div class="contract-detail-actions">';
+        html += '<button class="btn-contract-action" onclick="event.stopPropagation();openContractEditDialog(' + dataIdx + ')">Edit</button>';
+        html += '<button class="btn-contract-action estimate" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(con.Client || '')) + ',' + esc(JSON.stringify(con.Game || '')) + ')">Estimate</button>';
+        html += '<button class="btn-contract-action invoice" id="inv-btn-' + dataIdx + '" onclick="event.stopPropagation();generateInvoice(' + dataIdx + ')">Invoice</button>';
+        html += '</div>';
+        html += '</div>'; // .client-contract-details
+        html += '</div>'; // .contract-item
+      });
+
+      html += '<div class="game-group-footer">' +
+        '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(pub.name)) + ',' + esc(JSON.stringify(g.name)) + ')">+ Estimate</button>' +
+      '</div>';
+      html += '</div>'; // .game-group-body
+      html += '</div>'; // .game-group
     });
-    contracts.forEach(function(con, i) {
-      var quoteNum = parseFloat(con.Quote || '');
-      var quote    = isNaN(quoteNum) ? '—' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
-      var payment  = (con.Payment || '').trim();
-      var badgeCls = 'client-contract-badge';
-      if (payment === 'Fully Paid') badgeCls += ' paid';
-      else if (payment === 'Invoiced') badgeCls += ' invoiced';
-      else if (payment === 'Partial')  badgeCls += ' partial';
-      var ts = fmtDate(con['Target Start Date'] || '');
-      var te = fmtDate(con['Target End Date']   || '');
-      var dateRange = (ts || te) ? (ts || '?') + ' → ' + (te || '?') : '';
-      var dataIdx = CONTRACT_RAW.indexOf(con);
 
-      // Detail fields
-      var ss = fmtDate(con['Start Date'] || '');
-      var se = fmtDate(con['End Date']   || '');
-      var actualRange = (ss || se) ? (ss || '?') + ' → ' + (se || '?') : '';
-      var notes = (con.Notes || '').trim();
-      var status = (con.Status || '').trim();
-
-      html += '<div class="contract-item" id="ci-' + dataIdx + '">';
-      html += '<div class="client-contract-row" onclick="toggleContractItem(' + dataIdx + ')">';
-      html += '<div><div class="client-contract-game">' + esc(con.Game || '—') + '</div>' +
-        (dateRange ? '<div class="client-contract-dates">' + esc(dateRange) + '</div>' : '') + '</div>';
-      html += '<div class="client-contract-quote">' + esc(quote) + '</div>';
-      html += '<div><span class="' + badgeCls + '">' + esc(payment || '—') + '</span></div>';
-      html += '<div class="client-contract-row-chevron">▼</div>';
-      html += '</div>'; // .client-contract-row
-
-      html += '<div class="client-contract-details">';
-      html += '<div class="contract-detail-fields">';
-      if (actualRange) {
-        html += '<div class="contract-detail-field"><label>Actual Dates</label><span>' + esc(actualRange) + '</span></div>';
-      }
-      if (status) {
-        html += '<div class="contract-detail-field"><label>Status</label><span>' + esc(status) + '</span></div>';
-      }
-      html += '</div>'; // .contract-detail-fields
-      if (notes) {
-        html += '<div class="contract-detail-notes">' + esc(notes) + '</div>';
-      }
-      html += '<div class="contract-detail-actions">';
-      html += '<button class="btn-contract-action" onclick="event.stopPropagation();openContractEditDialog(' + dataIdx + ')">Edit</button>';
-      html += '<button class="btn-contract-action estimate" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(con.Client || '')) + ',' + esc(JSON.stringify(con.Game || '')) + ')">Estimate</button>';
-      html += '<button class="btn-contract-action invoice" id="inv-btn-' + dataIdx + '" onclick="event.stopPropagation();generateInvoice(' + dataIdx + ')">Invoice</button>';
-      html += '</div>'; // .contract-detail-actions
-      html += '</div>'; // .client-contract-details
-      html += '</div>'; // .contract-item
-    });
-    html += '</div>';
-    html += '</div>';
+    html += '</div>'; // .client-card-body
+    html += '</div>'; // .client-card
   });
   wrap.innerHTML = html;
 }
 
 function togglePublisherCard(card) {
   card.classList.toggle('open');
+}
+
+function toggleGameGroup(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
 }
 
 function toggleContractItem(dataIdx) {
@@ -1773,6 +1822,25 @@ function submitEstimate() {
       document.getElementById('estimateCreateBtn').disabled = false;
       _estimateLog('✕  Request failed. Check your connection.', 'error');
     });
+}
+
+// ── Delete estimate ───────────────────────────────────────────────────────────
+function deleteEstimate(idx) {
+  var est = ESTIMATES_RAW[idx];
+  if (!est) return;
+  var label = (est.game || 'this estimate') + (est.estimate_num ? ' #' + est.estimate_num : '');
+  if (!confirm('Delete ' + label + '? This will also remove the sheet tab.')) return;
+  var fd = new FormData();
+  fd.append('id',  SHEET_ID);
+  fd.append('tab', est.tab || '');
+  fetch(APP_BASE + 'push/deleteEstimate.php', { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(j) {
+      if (!j.ok) { alert('Delete failed: ' + (j.error || 'Unknown error')); return; }
+      ESTIMATES_RAW.splice(idx, 1);
+      renderPublishersView();
+    })
+    .catch(function() { alert('Delete failed. Check your connection.'); });
 }
 
 // ── Games state ───────────────────────────────────────────────────────────────
@@ -2038,8 +2106,11 @@ function renderBody(gameName, rows) {
       html +=   '<span class="session-chevron">▼</span>';
       html +=   '</div>';
       // Testers as comma-separated line in the header
-      if (s.testers.length) {
-        html += '<div class="session-testers-line">' + s.testers.map(esc).join(', ') + '</div>';
+      if (s.testers.length || s.submittedBy) {
+        html += '<div class="session-testers-line">';
+        if (s.testers.length) html += s.testers.map(esc).join(', ');
+        if (s.submittedBy) html += (s.testers.length ? ' ' : '') + '(Submitted by ' + esc(s.submittedBy) + ')';
+        html += '</div>';
       }
       html += '</div>';
       // Collapsible body

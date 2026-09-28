@@ -825,7 +825,12 @@ function renderSessions() {
     if (_collabUser) html += '<button type="button" class="session-edit-btn" onclick="event.stopPropagation();guardedOpenEditDialog(' + allIdx + ')">Edit</button>';
     html += '<span class="session-chevron">▼</span>';
     html += '</div>';
-    if (s.testers.length) html += '<div class="session-testers-line">' + s.testers.map(esc).join(', ') + '</div>';
+    if (s.testers.length || s.submittedBy) {
+      html += '<div class="session-testers-line">';
+      if (s.testers.length) html += s.testers.map(esc).join(', ');
+      if (s.submittedBy) html += (s.testers.length ? ' ' : '') + '(Submitted by ' + esc(s.submittedBy) + ')';
+      html += '</div>';
+    }
     html += '</div>';  // .session-header
     // Body
     html += '<div class="session-body-wrap"><div class="session-body">';
@@ -1132,6 +1137,10 @@ function submitSession() {
     fd.append('location',         location);
     fd.append('testers',    JSON.stringify(testerVals));
     fd.append('obs_pairs',  JSON.stringify(obsPairs));
+    if (_collabUser) {
+      var _subNameEdit = (_collabUser.bio && _collabUser.bio.name) || _collabUser.email;
+      fd.append('submitter', _subNameEdit);
+    }
     fetch(APP_BASE + 'push/updateDevSession.php', { method:'POST', body:fd })
       .then(function(r) { return r.json(); })
       .then(function(res) {
@@ -1151,6 +1160,11 @@ function submitSession() {
   var allRows = [];
   allRows.push({ date:date, event:testnum, observation:location, solution:'', type:'header' });
   testerVals.forEach(function(t) { allRows.push({ date:'', event:'', observation:t, solution:'', type:'tester' }); });
+  // Attribution row: who submitted this session
+  if (_collabUser) {
+    var _subName = (_collabUser.bio && _collabUser.bio.name) || _collabUser.email;
+    allRows.push({ date:'', event:'', observation:'[sub:' + _subName + ']', solution:'', type:'tester' });
+  }
   obsPairs.forEach(function(pair) { allRows.push({ date:'', event:'', observation:pair.obs, solution:pair.sol, type:'obs' }); });
 
   function postRow(row) {

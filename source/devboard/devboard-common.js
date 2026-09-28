@@ -105,9 +105,14 @@ function buildSessions(rows) {
       sessions.push(current);
     } else if (current) {
       if (people) {
-        // Strip email suffix stored alongside name (legacy data)
-        var tname = people.replace(/\s+\S+@\S+\.\S+\s*$/, '').trim() || people.trim();
-        current.testers.push(tname);
+        // Submitter attribution row: [sub:Name]
+        if (people.charAt(0) === '[' && people.slice(0, 5) === '[sub:' && people.charAt(people.length - 1) === ']') {
+          current.submittedBy = people.slice(5, -1);
+        } else {
+          // Strip email suffix stored alongside name (legacy data)
+          var tname = people.replace(/\s+\S+@\S+\.\S+\s*$/, '').trim() || people.trim();
+          current.testers.push(tname);
+        }
       } else if (obs || sol) {
         current.obs.push({ obs:obs, sol:sol });
       }

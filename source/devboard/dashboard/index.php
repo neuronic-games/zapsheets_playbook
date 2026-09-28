@@ -1309,7 +1309,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <span class="obs-kbd-hint">⌘ / Ctrl + Arrow — move between fields &nbsp;·&nbsp; ⌘ / Ctrl + Enter — save</span>
     <div class="dialog-actions">
       <div class="sw-wrap" id="swWrap">
-        <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold 3s to set time · Click time to edit">
+        <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold 2s to enter minutes">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="13" r="8"/><path d="M12 5V3"/><path d="M9 3h6"/><path d="M12 13V9"/></svg>
           <span id="swTime">0</span>
         </button>
@@ -2877,6 +2877,11 @@ var _swRunning  = false;
 var _swInterval = null;
 
 function _swFormat(secs) {
+  if (_swRunning) {
+    var m = Math.floor(secs / 60);
+    var s = secs % 60;
+    return m + ':' + String(s).padStart(2, '0');
+  }
   return String(Math.floor(secs / 60));
 }
 
@@ -2884,6 +2889,9 @@ function _swUpdate() {
   var timeStr = _swFormat(_swSeconds);
   var swTime = document.getElementById('swTime');
   if (swTime) swTime.textContent = timeStr;
+  // Hide clock icon once the stopwatch has been used
+  var icon = document.querySelector('#swBtn svg');
+  if (icon) icon.style.display = (_swSeconds === 0 && !_swRunning) ? '' : 'none';
 }
 
 // Parse "Length: N" (minutes), "Length: MM:SS", or "Length: H:MM:SS" → total seconds
@@ -2924,7 +2932,7 @@ function _swStartLongPress() {
   _swLongPressTimer = setTimeout(function() {
     _swLongPressTimer = null;
     _swExpandOpen();
-  }, 3000);
+  }, 2000);
 }
 
 function _swExpandOpen() {
@@ -3222,7 +3230,7 @@ function submitSession() {
   var eventType  = document.getElementById('sType').value;
   var sessionNum = document.getElementById('sTestNum').value.trim();
   var location   = document.getElementById('sLocation').value.trim();
-  var swLength   = _swSeconds > 0 ? 'Length: ' + _swFormat(_swSeconds) : '';
+  var swLength   = _swSeconds > 0 ? 'Length: ' + Math.floor(_swSeconds / 60) : '';
 
   // ── Build local cache rows (same shape as sheet JSON) for optimistic update ──
   var localRows = [];

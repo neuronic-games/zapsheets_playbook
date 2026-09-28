@@ -1660,6 +1660,9 @@ function renderPublishersView() {
       gameMap[k].estimates.push(est);
     });
     contracts.forEach(function(con) {
+      // Skip rows that are Estimates or Invoices — they appear in the estimates list already
+      var conType = (con.Type || '').trim().toLowerCase();
+      if (conType === 'estimate' || conType === 'invoice') return;
       var k = gameKey(con.Game);
       if (!gameMap[k]) gameMap[k] = { name: con.Game || '—', estimates: [], contracts: [] };
       else if (con.Game) gameMap[k].name = con.Game; // contracts have canonical casing
@@ -2139,12 +2142,16 @@ function _estConfirmDelete(idx) {
 
 // ── Delete contract ───────────────────────────────────────────────────────────
 function _conStartDelete(dataIdx) {
-  document.getElementById('cdel-row-' + dataIdx).style.display     = 'none';
-  document.getElementById('cdel-confirm-' + dataIdx).style.display = 'flex';
+  var row  = document.getElementById('cdel-row-' + dataIdx);
+  var conf = document.getElementById('cdel-confirm-' + dataIdx);
+  if (row)  { row.style.transition = 'opacity .15s'; row.style.opacity = '0'; setTimeout(function(){ row.style.display = 'none'; }, 150); }
+  if (conf) { setTimeout(function(){ conf.style.display = 'flex'; conf.style.opacity = '0'; requestAnimationFrame(function(){ conf.style.transition = 'opacity .15s'; conf.style.opacity = '1'; }); }, 150); }
 }
 function _conCancelDelete(dataIdx) {
-  document.getElementById('cdel-row-' + dataIdx).style.display     = '';
-  document.getElementById('cdel-confirm-' + dataIdx).style.display = 'none';
+  var row  = document.getElementById('cdel-row-' + dataIdx);
+  var conf = document.getElementById('cdel-confirm-' + dataIdx);
+  if (conf) { conf.style.transition = 'opacity .15s'; conf.style.opacity = '0'; setTimeout(function(){ conf.style.display = 'none'; }, 150); }
+  if (row)  { setTimeout(function(){ row.style.display = ''; row.style.opacity = '0'; requestAnimationFrame(function(){ row.style.transition = 'opacity .15s'; row.style.opacity = '1'; }); }, 150); }
 }
 function _conConfirmDelete(dataIdx) {
   var con = CONTRACT_RAW[dataIdx];
@@ -2165,13 +2172,14 @@ function _conConfirmDelete(dataIdx) {
         alert('Delete failed: ' + (j.error || 'Unknown error'));
         return;
       }
+      // Remove just the contract-item element — keep the game group expanded
       var el = document.getElementById('ci-' + dataIdx);
       if (el) {
-        el.style.transition = 'opacity .25s';
+        el.style.transition = 'opacity .2s';
         el.style.opacity = '0';
-        setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); renderPublishersView(); }, 260);
+        setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 220);
       }
-      CONTRACT_RAW.splice(dataIdx, 1);
+      CONTRACT_RAW[dataIdx] = null; // null out so indices stay stable
     })
     .catch(function() {
       if (btn) { btn.disabled = false; btn.textContent = 'Confirm'; }

@@ -3676,6 +3676,30 @@ function onObsInput(idx) {
 //   Left/Right → same row, other column   Up/Down → same column, adjacent row
 
 function onObsKeydown(e, idx, col) {
+  // Bullet list: Enter continues the list; Enter on an empty bullet ends it
+  if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+    var el       = e.target;
+    var pos      = el.selectionStart;
+    var val      = el.value;
+    var lineStart = val.lastIndexOf('\n', pos - 1) + 1;
+    var line      = val.slice(lineStart, pos);
+    if (line.startsWith('• ')) {
+      e.preventDefault();
+      if (line === '• ') {
+        // Empty bullet — remove it and end the list
+        el.value = val.slice(0, lineStart) + val.slice(pos);
+        el.setSelectionRange(lineStart, lineStart);
+      } else {
+        // Continue with a new bullet on the next line
+        var ins  = '\n• ';
+        el.value = val.slice(0, pos) + ins + val.slice(pos);
+        el.setSelectionRange(pos + ins.length, pos + ins.length);
+      }
+      autoResize(el);
+      syncPairHeight(idx);
+      return;
+    }
+  }
   if (!e.metaKey && !e.ctrlKey) return;
   var dir = e.key;
   if (dir !== 'ArrowLeft' && dir !== 'ArrowRight' && dir !== 'ArrowUp' && dir !== 'ArrowDown') return;

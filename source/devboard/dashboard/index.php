@@ -375,21 +375,29 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .btn-card-subtitle:hover { background:#2e7d9e; color:#fff; }
 
 /* ── Estimate rows inside game group ──────────────────────── */
-.estimate-item { display:grid; grid-template-columns:auto auto 1fr auto auto auto; gap:.6rem; align-items:center; padding:.38rem 1rem; border-bottom:1px solid #f4f7fb; font-size:.78rem; background:#fafcfe; }
+.estimate-item { border-bottom:1px solid #f4f7fb; background:#fafcfe; cursor:pointer; }
 .estimate-item:last-of-type { border-bottom:none; }
+.estimate-item-header { display:grid; grid-template-columns:auto auto 1fr auto auto; gap:.6rem; align-items:center; padding:.38rem 1rem; font-size:.78rem; user-select:none; }
 .estimate-type-pill { font-family:'DINBlack',sans-serif; font-size:.58rem; text-transform:uppercase; letter-spacing:.05em; color:#2e7d9e; background:#e8f4f8; border-radius:4px; padding:.1rem .35rem; white-space:nowrap; }
 .estimate-num-badge { font-family:'DINRegular',sans-serif; font-size:.7rem; color:#999; }
 .estimate-date { font-family:'DINRegular',sans-serif; font-size:.7rem; color:#bbb; }
 .estimate-amount { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#111; white-space:nowrap; }
-.estimate-open-link { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:#2e7d9e; text-decoration:none; border:1.5px solid #2e7d9e; border-radius:6px; padding:.18rem .55rem; white-space:nowrap; }
-.estimate-open-link:hover { background:#2e7d9e; color:#fff; }
+.estimate-item-chevron { font-size:.6rem; opacity:.35; transition:transform .2s; }
+.estimate-item.open .estimate-item-chevron { transform:rotate(180deg); opacity:.65; }
+/* Expanded body */
+.estimate-item-body { display:none; border-top:1px solid #edf1f5; background:#f5f9fc; padding:.55rem 1rem .6rem; }
+.estimate-item.open .estimate-item-body { display:block; }
+.estimate-item-open-zone { cursor:pointer; padding-bottom:.45rem; color:#555; font-size:.78rem; font-family:'DINRegular',sans-serif; }
+.estimate-item-open-zone:hover .estimate-item-open-hint { text-decoration:underline; color:#1a5f7a; }
+.estimate-item-open-hint { color:#1a5f7a; font-family:'DINBlack',sans-serif; font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; }
+.estimate-item-actions { display:flex; justify-content:flex-end; gap:.5rem; }
 .estimate-del-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0c8d0; color:#c0c8d0; border-radius:6px; padding:.18rem .55rem; cursor:pointer; white-space:nowrap; transition:border-color .15s,color .15s; }
 .estimate-del-btn:hover { border-color:#c0392b; color:#c0392b; }
 /* Inline delete confirmation */
 .estimate-item .est-confirm { display:none; }
 .estimate-item.confirming > :not(.est-confirm) { display:none; }
 .estimate-item.confirming { background:#fff8f7; }
-.estimate-item.confirming .est-confirm { display:flex; grid-column:1/-1; align-items:center; justify-content:flex-end; gap:.5rem; }
+.estimate-item.confirming .est-confirm { display:flex; padding:.45rem 1rem; align-items:center; justify-content:flex-end; gap:.5rem; }
 .est-nocancel-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0c8d0; color:#888; border-radius:6px; padding:.18rem .65rem; cursor:pointer; white-space:nowrap; transition:border-color .15s,color .15s; }
 .est-nocancel-btn:hover { border-color:#555; color:#333; }
 .est-confirm-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0392b; color:#c0392b; border-radius:6px; padding:.18rem .65rem; cursor:pointer; white-space:nowrap; transition:background .15s,color .15s; }
@@ -1622,21 +1630,40 @@ function renderPublishersView() {
       html += '<div class="game-group-body">';
 
       // Estimates for this game
+      var firstConDataIdx = g.contracts.length ? CONTRACT_RAW.indexOf(g.contracts[0]) : -1;
       g.estimates.forEach(function(est) {
         var amtFmt = est.amount ? '$' + parseFloat(est.amount).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
         var globalIdx = ESTIMATES_RAW.indexOf(est);
-        html += '<div class="estimate-item" id="est-item-' + globalIdx + '">' +
+        var openAttr = est.url ? ' onclick="event.stopPropagation();window.open(\'' + esc(est.url) + '\',\'_blank\')"' : '';
+        html += '<div class="estimate-item" id="est-item-' + globalIdx + '">';
+        // Header row — click to expand, no action buttons
+        html += '<div class="estimate-item-header" onclick="_estToggle(' + globalIdx + ')">' +
           '<span class="estimate-type-pill">Estimate</span>' +
           '<div class="estimate-num-badge">' + esc(est.estimate_num || '') + '</div>' +
           '<div class="estimate-date">' + esc(est.date || '') + '</div>' +
           '<div class="estimate-amount">' + esc(amtFmt) + '</div>' +
-          (est.url ? '<a class="estimate-open-link" href="' + esc(est.url) + '" target="_blank" rel="noopener">Open</a>' : '<span></span>') +
-          '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_estStartDelete(' + globalIdx + ')">Delete</button>' +
-          '<div class="est-confirm">' +
-            '<button type="button" class="est-nocancel-btn" onclick="event.stopPropagation();_estCancelDelete(' + globalIdx + ')">Don\'t Delete</button>' +
-            '<button type="button" class="est-confirm-btn" id="est-confirm-btn-' + globalIdx + '" onclick="event.stopPropagation();_estConfirmDelete(' + globalIdx + ')">Confirm</button>' +
-          '</div>' +
+          '<div class="estimate-item-chevron">▼</div>' +
         '</div>';
+        // Expanded body
+        html += '<div class="estimate-item-body">';
+        if (est.url) {
+          html += '<div class="estimate-item-open-zone"' + openAttr + '>' +
+            '<span class="estimate-item-open-hint">Open estimate ↗</span>' +
+          '</div>';
+        }
+        html += '<div class="estimate-item-actions">';
+        if (firstConDataIdx >= 0) {
+          html += '<button type="button" class="btn-contract-action invoice" onclick="event.stopPropagation();generateInvoice(' + firstConDataIdx + ')">+ Invoice</button>';
+        }
+        html += '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_estStartDelete(' + globalIdx + ')">🗑 Delete</button>';
+        html += '</div>';
+        html += '</div>'; // .estimate-item-body
+        // Delete confirm overlay
+        html += '<div class="est-confirm">' +
+          '<button type="button" class="est-nocancel-btn" onclick="event.stopPropagation();_estCancelDelete(' + globalIdx + ')">Don\'t Delete</button>' +
+          '<button type="button" class="est-confirm-btn" id="est-confirm-btn-' + globalIdx + '" onclick="event.stopPropagation();_estConfirmDelete(' + globalIdx + ')">Confirm</button>' +
+        '</div>';
+        html += '</div>'; // .estimate-item
       });
 
       // Contracts for this game
@@ -1677,16 +1704,19 @@ function renderPublishersView() {
         html += '</div>'; // .contract-item
       });
 
-      // Footer: contract actions (Edit, + Invoice per contract) + + Estimate on right
+      // Footer: Edit Game (left) | + Estimate + + Invoice (right)
       html += '<div class="game-group-footer">';
       html += '<div class="game-group-footer-left">';
-      g.contracts.forEach(function(con) {
-        var dataIdx = CONTRACT_RAW.indexOf(con);
-        html += '<button class="btn-contract-action" onclick="event.stopPropagation();openContractEditDialog(' + dataIdx + ')">Edit</button>';
-        html += '<button class="btn-contract-action invoice" id="inv-btn-' + dataIdx + '" onclick="event.stopPropagation();generateInvoice(' + dataIdx + ')">+ Invoice</button>';
-      });
+      if (firstConDataIdx >= 0) {
+        html += '<button class="btn-contract-action" onclick="event.stopPropagation();openContractEditDialog(' + firstConDataIdx + ')">Edit Game</button>';
+      }
       html += '</div>';
+      html += '<div style="display:flex;gap:.4rem;align-items:center">';
       html += '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(pub.name)) + ',' + esc(JSON.stringify(g.name)) + ')">+ Estimate</button>';
+      if (firstConDataIdx >= 0) {
+        html += '<button class="btn-contract-action invoice" id="inv-btn-' + firstConDataIdx + '" onclick="event.stopPropagation();generateInvoice(' + firstConDataIdx + ')">+ Invoice</button>';
+      }
+      html += '</div>';
       html += '</div>';
       html += '</div>'; // .game-group-body
       html += '</div>'; // .game-group
@@ -1858,6 +1888,12 @@ function submitEstimate() {
       document.getElementById('estimateCreateBtn').disabled = false;
       _estimateLog('✕  Request failed. Check your connection.', 'error');
     });
+}
+
+// ── Expand/collapse estimate row ──────────────────────────────────────────────
+function _estToggle(idx) {
+  var el = document.getElementById('est-item-' + idx);
+  if (el) el.classList.toggle('open');
 }
 
 // ── Delete estimate (inline confirmation) ─────────────────────────────────────

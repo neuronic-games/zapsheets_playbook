@@ -346,7 +346,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .contract-detail-fields { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:.35rem .75rem; margin-bottom:.7rem; }
 .contract-detail-field label { font-size:.62rem; text-transform:uppercase; letter-spacing:.05em; color:#888; display:block; margin-bottom:.1rem; }
 .contract-detail-field span  { font-family:'DINRegular',sans-serif; font-size:.78rem; color:#222; }
-.contract-detail-notes { font-size:.75rem; color:#555; margin-bottom:.65rem; font-style:italic; }
+.contract-detail-notes { font-size:.75rem; color:#555; margin-bottom:.5rem; font-style:italic; }
+.contract-del-row { display:flex; justify-content:flex-end; padding:.3rem 0 .1rem; }
 .contract-detail-actions { display:flex; gap:.5rem; }
 .btn-contract-action { font-family:'DINBlack',sans-serif; font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; background:none; border:1.5px solid #1a5f7a; color:#1a5f7a; border-radius:7px; padding:.35rem .85rem; cursor:pointer; transition:background .15s, color .15s; }
 .btn-contract-action:hover { background:#1a5f7a; color:#fff; }
@@ -1763,6 +1764,14 @@ function renderPublishersView() {
           html += '</div>';
         }
         if (notes) html += '<div class="contract-detail-notes">' + esc(notes) + '</div>';
+        // Delete button row
+        html += '<div class="contract-del-row" id="cdel-row-' + dataIdx + '">' +
+          '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_conStartDelete(' + dataIdx + ')">🗑 Delete Contract</button>' +
+        '</div>';
+        html += '<div class="est-confirm contract-del-confirm" id="cdel-confirm-' + dataIdx + '" style="display:none;padding:.45rem 1rem;">' +
+          '<button type="button" class="est-nocancel-btn" onclick="event.stopPropagation();_conCancelDelete(' + dataIdx + ')">Don\'t Delete</button>' +
+          '<button type="button" class="est-confirm-btn" id="cdel-btn-' + dataIdx + '" onclick="event.stopPropagation();_conConfirmDelete(' + dataIdx + ')">Confirm</button>' +
+        '</div>';
         html += '</div>'; // .client-contract-details
         html += '</div>'; // .contract-item
       });
@@ -2126,6 +2135,49 @@ function _estConfirmDelete(idx) {
     .catch(function() {
       if (btn) { btn.disabled = false; btn.textContent = 'Confirm'; }
       _estCancelDelete(idx);
+      alert('Delete failed. Check your connection.');
+    });
+}
+
+// ── Delete contract ───────────────────────────────────────────────────────────
+function _conStartDelete(dataIdx) {
+  document.getElementById('cdel-row-' + dataIdx).style.display     = 'none';
+  document.getElementById('cdel-confirm-' + dataIdx).style.display = 'flex';
+}
+function _conCancelDelete(dataIdx) {
+  document.getElementById('cdel-row-' + dataIdx).style.display     = '';
+  document.getElementById('cdel-confirm-' + dataIdx).style.display = 'none';
+}
+function _conConfirmDelete(dataIdx) {
+  var con = CONTRACT_RAW[dataIdx];
+  if (!con) return;
+  var btn = document.getElementById('cdel-btn-' + dataIdx);
+  if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
+
+  var fd = new FormData();
+  fd.append('id',          SHEET_ID);
+  fd.append('contract_id', con.ID || '');
+
+  fetch(APP_BASE + 'push/deleteContract.php', { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(j) {
+      if (!j.ok) {
+        if (btn) { btn.disabled = false; btn.textContent = 'Confirm'; }
+        _conCancelDelete(dataIdx);
+        alert('Delete failed: ' + (j.error || 'Unknown error'));
+        return;
+      }
+      var el = document.getElementById('ci-' + dataIdx);
+      if (el) {
+        el.style.transition = 'opacity .25s';
+        el.style.opacity = '0';
+        setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); renderPublishersView(); }, 260);
+      }
+      CONTRACT_RAW.splice(dataIdx, 1);
+    })
+    .catch(function() {
+      if (btn) { btn.disabled = false; btn.textContent = 'Confirm'; }
+      _conCancelDelete(dataIdx);
       alert('Delete failed. Check your connection.');
     });
 }

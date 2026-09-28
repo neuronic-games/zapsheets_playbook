@@ -615,7 +615,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 /* Session dialog */
 .session-dialog {
   background:#fff; border-radius:12px;
-  padding:1.5rem 1.5rem 1.5rem 2.8rem; width:min(680px,96vw);
+  padding:1.5rem 2.4rem; width:min(680px,96vw);
   box-shadow:0 8px 32px rgba(0,0,0,.22);
   display:flex; flex-direction:column; gap:1.1rem;
   max-height:92vh; overflow-y:auto;
@@ -797,7 +797,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   #sessionOverlay { align-items:flex-end; padding:0; }
   .session-dialog {
     width:100vw; max-width:100vw; border-radius:16px 16px 0 0;
-    margin-top:auto; padding:1.25rem 1rem 1.5rem 2.5rem;
+    margin-top:auto; padding:1.25rem 2.4rem 1.5rem 2.4rem;
     max-height:94dvh;
   }
   .obs-pair-inputs { grid-template-columns:1fr; }

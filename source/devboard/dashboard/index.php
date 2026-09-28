@@ -384,6 +384,16 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .estimate-open-link:hover { background:#2e7d9e; color:#fff; }
 .estimate-del-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0c8d0; color:#c0c8d0; border-radius:6px; padding:.18rem .55rem; cursor:pointer; white-space:nowrap; transition:border-color .15s,color .15s; }
 .estimate-del-btn:hover { border-color:#c0392b; color:#c0392b; }
+/* Inline delete confirmation */
+.estimate-item .est-confirm { display:none; }
+.estimate-item.confirming > :not(.est-confirm) { display:none; }
+.estimate-item.confirming { background:#fff8f7; }
+.estimate-item.confirming .est-confirm { display:flex; grid-column:1/-1; align-items:center; justify-content:flex-end; gap:.5rem; }
+.est-nocancel-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0c8d0; color:#888; border-radius:6px; padding:.18rem .65rem; cursor:pointer; white-space:nowrap; transition:border-color .15s,color .15s; }
+.est-nocancel-btn:hover { border-color:#555; color:#333; }
+.est-confirm-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0392b; color:#c0392b; border-radius:6px; padding:.18rem .65rem; cursor:pointer; white-space:nowrap; transition:background .15s,color .15s; }
+.est-confirm-btn:hover { background:#c0392b; color:#fff; }
+.est-confirm-btn:disabled { opacity:.5; cursor:default; }
 
 /* ── Estimate dialog ──────────────────────────────────────── */
 .estimate-dialog { background:#fff; border-radius:12px; padding:1.5rem; width:min(480px,96vw); box-shadow:0 8px 32px rgba(0,0,0,.22); display:flex; flex-direction:column; gap:.8rem; max-height:92vh; overflow-y:auto; }
@@ -1609,7 +1619,11 @@ function renderPublishersView() {
           '<div class="estimate-date">' + esc(est.date || '') + '</div>' +
           '<div class="estimate-amount">' + esc(amtFmt) + '</div>' +
           (est.url ? '<a class="estimate-open-link" href="' + esc(est.url) + '" target="_blank" rel="noopener">Open</a>' : '<span></span>') +
-          '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();deleteEstimate(' + globalIdx + ')">Delete</button>' +
+          '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_estStartDelete(' + globalIdx + ')">Delete</button>' +
+          '<div class="est-confirm">' +
+            '<button type="button" class="est-nocancel-btn" onclick="event.stopPropagation();_estCancelDelete(' + globalIdx + ')">Don\'t Delete</button>' +
+            '<button type="button" class="est-confirm-btn" id="est-confirm-btn-' + globalIdx + '" onclick="event.stopPropagation();_estConfirmDelete(' + globalIdx + ')">Confirm</button>' +
+          '</div>' +
         '</div>';
       });
 
@@ -1825,23 +1839,46 @@ function submitEstimate() {
     });
 }
 
-// ── Delete estimate ───────────────────────────────────────────────────────────
-function deleteEstimate(idx) {
+// ── Delete estimate (inline confirmation) ─────────────────────────────────────
+function _estStartDelete(idx) {
+  var el = document.getElementById('est-item-' + idx);
+  if (el) el.classList.add('confirming');
+}
+function _estCancelDelete(idx) {
+  var el = document.getElementById('est-item-' + idx);
+  if (el) el.classList.remove('confirming');
+}
+function _estConfirmDelete(idx) {
   var est = ESTIMATES_RAW[idx];
   if (!est) return;
-  var label = (est.game || 'this estimate') + (est.estimate_num ? ' #' + est.estimate_num : '');
-  if (!confirm('Delete ' + label + '? This will also remove the sheet tab.')) return;
+  var btn = document.getElementById('est-confirm-btn-' + idx);
+  if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
   var fd = new FormData();
   fd.append('id',  SHEET_ID);
   fd.append('tab', est.tab || '');
   fetch(APP_BASE + 'push/deleteEstimate.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })
     .then(function(j) {
-      if (!j.ok) { alert('Delete failed: ' + (j.error || 'Unknown error')); return; }
+      if (!j.ok) {
+        if (btn) { btn.disabled = false; btn.textContent = 'Confirm'; }
+        _estCancelDelete(idx);
+        alert('Delete failed: ' + (j.error || 'Unknown error'));
+        return;
+      }
+      // Fade out and remove the row without re-rendering the whole view
+      var el = document.getElementById('est-item-' + idx);
+      if (el) {
+        el.style.transition = 'opacity .25s';
+        el.style.opacity = '0';
+        setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 260);
+      }
       ESTIMATES_RAW.splice(idx, 1);
-      renderPublishersView();
     })
-    .catch(function() { alert('Delete failed. Check your connection.'); });
+    .catch(function() {
+      if (btn) { btn.disabled = false; btn.textContent = 'Confirm'; }
+      _estCancelDelete(idx);
+      alert('Delete failed. Check your connection.');
+    });
 }
 
 // ── Games state ───────────────────────────────────────────────────────────────

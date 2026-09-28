@@ -1053,34 +1053,29 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       <div><span style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;display:block">Estimate Total</span><span id="invoiceRefAmount" style="font-family:'DINBlack',sans-serif;color:#1a5f7a"></span></div>
     </div>
 
-    <!-- Amount type toggle -->
-    <div class="estimate-field-row two">
-      <label class="ge-label">Invoice Amount
-        <select id="invoiceAmtType" class="ge-input" onchange="_invoiceAmtTypeChange()">
+    <!-- Amount type + value (all in one label row) -->
+    <label class="ge-label">Invoice Amount
+      <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
+        <select id="invoiceAmtType" class="ge-input" style="flex:0 0 auto" onchange="_invoiceAmtTypeChange()">
           <option value="fixed">Fixed Amount ($)</option>
           <option value="pct">Percentage of Estimate</option>
         </select>
-      </label>
-      <label class="ge-label" id="invoiceAmtLabel">Amount
-        <div class="contract-quote-wrap">
+        <!-- Fixed amount input -->
+        <div id="invoiceAmtLabel" class="contract-quote-wrap" style="flex:0 0 9rem">
           <span class="contract-quote-prefix">$</span>
           <input type="number" id="invoiceAmount" class="ge-input" style="padding-left:1.4rem" min="0" step="0.01" placeholder="0.00" oninput="_invoiceMarkDirty()" />
         </div>
-      </label>
-    </div>
-    <!-- Percentage row (shown when pct mode) -->
-    <div id="invoicePctRow" style="display:none">
-      <label class="ge-label">Percentage
-        <div style="display:flex;align-items:center;gap:.6rem">
-          <div class="contract-quote-wrap" style="flex:0 0 7rem">
-            <input type="number" id="invoicePct" class="ge-input" style="padding-right:1.6rem" min="1" max="100" step="1" value="50" oninput="_invoiceUpdatePct()" />
+        <!-- Percentage inputs (shown when pct mode) -->
+        <div id="invoicePctRow" style="display:none;align-items:center;gap:.5rem">
+          <div class="contract-quote-wrap" style="flex:0 0 6rem">
+            <input type="number" id="invoicePct" class="ge-input" style="padding-right:1.6rem" min="1" max="100" step="1" value="100" oninput="_invoiceUpdatePct()" />
             <span class="contract-quote-prefix" style="left:auto;right:.5rem">%</span>
           </div>
           <span style="font-family:'DINRegular',sans-serif;font-size:.8rem;color:#888">=</span>
           <span id="invoicePctCalc" style="font-family:'DINBlack',sans-serif;font-size:.9rem;color:#1a5f7a"></span>
         </div>
-      </label>
-    </div>
+      </div>
+    </label>
 
     <label class="ge-label">
       <span style="display:flex;justify-content:space-between;align-items:baseline">Notes<span style="font-family:'DINRegular',sans-serif;letter-spacing:0;text-transform:none;opacity:.45;font-size:.65rem">(optional)</span></span>
@@ -2002,7 +1997,7 @@ function openInvoiceFromEstimate(estIdx) {
 function _invoiceAmtTypeChange() {
   var type   = document.getElementById('invoiceAmtType').value;
   var isPct  = type === 'pct';
-  document.getElementById('invoicePctRow').style.display  = isPct ? '' : 'none';
+  document.getElementById('invoicePctRow').style.display  = isPct ? 'flex' : 'none';
   document.getElementById('invoiceAmtLabel').style.display = isPct ? 'none' : '';
   if (isPct) _invoiceUpdatePct();
   _invoiceDirty = true;

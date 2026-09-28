@@ -775,7 +775,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .obs-pair-inputs .field-textarea:focus { border:none !important; box-shadow:none !important; }
 /* contenteditable obs/sol fields */
 .obs-editable { outline:none; white-space:pre-wrap; word-break:break-word; overflow-wrap:break-word; cursor:text; }
-.obs-editable > div.bul { padding-left:1.1em; text-indent:-1.1em; }
+.obs-editable > div.bul { padding-left:1.4em; text-indent:-1.4em; }
 /* placeholder via data-ph when empty */
 .obs-editable[data-empty="1"]::before { content:attr(data-ph); color:#b0b8c8; pointer-events:none; }
 /* obs-obs-col: textarea wrapper with icon overlaid inside */

@@ -1,5 +1,8 @@
 # DevBoard — Project Notes for Claude
 
+## Auto-commit
+After every turn in which you modify, create, or delete any file in this repo, run the commit skill automatically — no need for the user to ask. Stage all changes and write a concise commit message describing what changed.
+
 ## Stack
 - PHP + Google Sheets (via Python scripts using gspread)
 - Per-sheet data cached as JSON in `sheets/{sheet_id}/`

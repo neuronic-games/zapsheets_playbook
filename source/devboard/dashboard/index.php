@@ -372,7 +372,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .game-group.open .game-group-body { display:block; }
 .game-group-footer { padding:.45rem 1rem; background:#f9fbfc; border-top:1px solid #edf1f5; display:flex; justify-content:space-between; align-items:center; gap:.5rem; }
 .game-group-footer-left { display:flex; gap:.4rem; align-items:center; flex-wrap:wrap; }
-.btn-card-subtitle { font-family:'DINBlack',sans-serif; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; background:none; border:1.5px solid #2e7d9e; color:#2e7d9e; border-radius:7px; padding:.22rem .65rem; cursor:pointer; transition:background .15s,color .15s; }
+.btn-card-subtitle { font-family:'DINBlack',sans-serif; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; background:none; border:1.5px solid #2e7d9e; color:#2e7d9e; border-radius:7px; padding:.35rem .65rem; cursor:pointer; transition:background .15s,color .15s; }
 .btn-card-subtitle:hover { background:#2e7d9e; color:#fff; }
 
 /* ── Estimate rows inside game group ──────────────────────── */
@@ -396,7 +396,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .estimate-item-fields dd { font-family:'DINRegular',sans-serif; font-size:.78rem; color:#333; margin:0; white-space:nowrap; }
 .estimate-item-field { display:flex; flex-direction:column; }
 .estimate-item-actions { display:flex; justify-content:flex-end; gap:.5rem; padding:.4rem 1rem .55rem; border-top:1px solid #edf1f5; }
-.estimate-del-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0c8d0; color:#c0c8d0; border-radius:6px; padding:.18rem .55rem; cursor:pointer; white-space:nowrap; transition:border-color .15s,color .15s; }
+.estimate-del-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0c8d0; color:#c0c8d0; border-radius:6px; padding:.35rem .55rem; cursor:pointer; white-space:nowrap; transition:border-color .15s,color .15s; }
 .estimate-del-btn:hover { border-color:#c0392b; color:#c0392b; }
 /* Inline delete confirmation */
 .estimate-item .est-confirm { display:none; }

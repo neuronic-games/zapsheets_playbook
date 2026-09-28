@@ -638,7 +638,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .sw-panel-confirm { background:#e67e22; color:#fff; border:none; border-radius:5px; padding:0 .75rem; cursor:pointer; font-family:'DINBlack',sans-serif; font-size:.75rem; letter-spacing:.04em; align-self:stretch; display:flex; align-items:center; margin-left:.35rem; }
 .sw-panel-cancel { background:none; border:none; color:#bbb; cursor:pointer; font-size:1rem; padding:.2rem .3rem; line-height:1; }
 .sw-panel-cancel:hover { color:#888; }
-.btn-stopwatch { margin-right:auto; background:none; border:1.5px solid #d0d8e0; border-radius:6px; padding:.35rem .65rem; cursor:pointer; display:inline-flex; align-items:center; gap:.35rem; color:#bbb; font-family:'DINBlack',sans-serif; font-size:.78rem; letter-spacing:.04em; transition:border-color .15s, color .15s, background .15s; }
+.btn-stopwatch { margin-right:auto; background:none; border:1.5px solid #d0d8e0; border-radius:6px; padding:.35rem .65rem; cursor:pointer; display:inline-flex; align-items:center; gap:.35rem; color:#bbb; font-family:'DINBlack',sans-serif; font-size:.78rem; letter-spacing:.04em; transition:border-color .15s, color .15s, background .15s; user-select:none; -webkit-user-select:none; }
 .btn-stopwatch:hover { border-color:#aaa; color:#888; }
 .btn-stopwatch.sw-running { border-color:#e67e22; color:#e67e22; background:#fff8f2; animation:sw-pulse 1.4s ease-out infinite; }
 @keyframes sw-pulse {

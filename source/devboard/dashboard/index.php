@@ -3083,7 +3083,6 @@ function openEditSessionDialog(gameName, idx) {
     document.getElementById('sObs-' + oidx).value = obsVal;
     toggleObsImgBtn(oidx);
     document.getElementById('sSol-' + oidx).value = pair.sol || '';
-    setTimeout(function(i){ return function(){ syncPairHeight(i); }; }(oidx), 0);
   });
   addObsPair();  // trailing empty pair
 
@@ -3097,9 +3096,13 @@ function openEditSessionDialog(gameName, idx) {
   _editSnapshot = getSessionSnapshot();
   _swUpdate();
   document.getElementById('sessionOverlay').classList.add('open');
-  // Resize textareas after the overlay is visible so scrollHeight is accurate
+  // Resize textareas after the overlay is visible so scrollHeight is accurate,
+  // then sync pair heights so both columns match the taller of the two.
   setTimeout(function() {
     document.querySelectorAll('#obsContainer .field-textarea').forEach(autoResize);
+    document.querySelectorAll('#obsContainer .obs-pair').forEach(function(pair) {
+      syncPairHeight(parseInt(pair.dataset.idx));
+    });
   }, 0);
 }
 

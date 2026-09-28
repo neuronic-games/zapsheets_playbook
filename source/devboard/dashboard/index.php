@@ -985,11 +985,17 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 <!-- Estimate dialog -->
 <div class="overlay" id="estimateOverlay" onclick="if(event.target===this){if(_estimateIsDirty())shakeDialog(this.querySelector('.estimate-dialog'));else forceCloseEstimateDialog();}">
   <div class="estimate-dialog">
-    <h2>New Estimate — <span id="estimateClientLabel"></span></h2>
+    <h2>New Contract — <span id="estimateClientLabel"></span></h2>
     <input type="hidden" id="estimateClient" />
     <label class="ge-label">Game
       <input type="text" id="estimateGame" class="ge-input" list="estimateGameList" placeholder="Select or type a game name" autocomplete="off" />
       <datalist id="estimateGameList"></datalist>
+    </label>
+    <label class="ge-label">Type
+      <select id="estimateType" class="ge-input">
+        <option value="estimate">Estimate</option>
+        <option value="contract">Contract</option>
+      </select>
     </label>
     <div class="estimate-field-row two">
       <label class="ge-label"># of Tests
@@ -1814,9 +1820,9 @@ function renderPublishersView() {
       if (firstConDataIdx >= 0) {
         html += '<button class="btn-contract-action" onclick="event.stopPropagation();openContractEditDialog(' + firstConDataIdx + ')">Edit Game</button>';
       }
+      html += '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(pub.name)) + ',' + esc(JSON.stringify(g.name)) + ')">+ Contract</button>';
       html += '</div>';
       html += '<div style="display:flex;gap:.4rem;align-items:center">';
-      html += '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(pub.name)) + ',' + esc(JSON.stringify(g.name)) + ')">+ Estimate</button>';
       html += '<button class="btn-contract-action invoice" onclick="event.stopPropagation();openContractDialog(' + esc(JSON.stringify(g.name)) + ')">+ Invoice</button>';
       html += '</div>';
       html += '</div>';
@@ -1919,9 +1925,10 @@ function openEstimateDialog(clientName, gameName) {
     }
   });
 
-  document.getElementById('estimateClientLabel').textContent = clientName;
+  document.getElementById('estimateClientLabel').textContent = gameName || clientName;
   document.getElementById('estimateClient').value            = clientName;
   document.getElementById('estimateGame').value              = gameName || '';
+  document.getElementById('estimateType').value              = 'estimate';
   document.getElementById('estimateTests').value             = '2';
   document.getElementById('estimateEdits').value             = '2';
   document.getElementById('estimateQty').value               = '1';
@@ -1935,7 +1942,7 @@ function openEstimateDialog(clientName, gameName) {
   document.getElementById('estimateCreateBtn').disabled      = false;
   _estimateLog('', '');
   document.getElementById('estimateOverlay').classList.add('open');
-  setTimeout(function() { document.getElementById('estimateGame').focus(); }, 50);
+  setTimeout(function() { document.getElementById('estimateUnitPrice').focus(); }, 50);
 }
 
 function forceCloseEstimateDialog() {
@@ -1953,6 +1960,7 @@ function submitEstimate() {
 
   var fd = new FormData();
   fd.append('id',             SHEET_ID);
+  fd.append('type',           document.getElementById('estimateType').value || 'estimate');
   fd.append('game',           game);
   fd.append('client',         document.getElementById('estimateClient').value);
   fd.append('num_tests',      document.getElementById('estimateTests').value);
@@ -2449,7 +2457,6 @@ function renderBody(gameName, rows) {
   html += '<button class="subtitle-btn" onclick="shareGame(\'' + gnJ + '\')">' +
     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
     'Share</button>';
-  html += '<button class="subtitle-btn" onclick="openContractDialog(\'' + gnJ + '\')">+ Contract</button>';
   html += '<button class="subtitle-btn" onclick="openEditGame(\'' + gnJ + '\')">Edit</button>';
   html += '<button class="subtitle-btn subtitle-btn-primary" onclick="openSessionDialog(\'' + gnJ + '\')">+ Session</button>';
   html += '<button class="subtitle-btn subtitle-btn-reload" onclick="reloadDevData(\'' + gnJ + '\')" title="Reload from sheet">' +

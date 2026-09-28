@@ -30,6 +30,7 @@ $myCompany   = trim($_POST['my_company']   ?? '');
 $myLogo      = trim($_POST['my_logo']      ?? '');
 $myAddress   = trim($_POST['my_address']   ?? '');
 $myPayment   = trim($_POST['my_payment']   ?? '');
+$tgtStart    = trim($_POST['tgt_start']    ?? '');
 
 if (!$sheetId) {
     echo json_encode(['error' => 'Missing sheet ID']);
@@ -71,6 +72,7 @@ $payload = [
     'my_name'    => $myName,
     'my_phone'   => $myPhone,
     'my_company' => $myCompany,
+    'tgt_start'  => $tgtStart,
     'my_logo'    => $myLogo,
     'my_address' => $myAddress,
     'my_payment' => $myPayment,

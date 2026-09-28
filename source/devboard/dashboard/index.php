@@ -1088,6 +1088,10 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       </div>
     </label>
 
+    <label class="ge-label">Due Date
+      <input type="date" id="invoiceDueDate" class="ge-input" oninput="_invoiceMarkDirty()" />
+    </label>
+
     <label class="ge-label">
       <span style="display:flex;justify-content:space-between;align-items:baseline">Notes<span style="font-family:'DINRegular',sans-serif;letter-spacing:0;text-transform:none;opacity:.45;font-size:.65rem">(optional)</span></span>
       <input type="text" id="invoiceNotes" class="ge-input" placeholder="e.g. Milestone 1 of 2" oninput="_invoiceMarkDirty()" />
@@ -2031,6 +2035,7 @@ function openInvoiceFromEstimate(estIdx) {
   document.getElementById('invoicePctCalc').textContent = estAmt ? '$' + estAmt.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
   document.getElementById('invoicePctRow').style.display = 'none';
   document.getElementById('invoiceAmtLabel').querySelector('label') && (document.getElementById('invoiceAmtLabel').style.display = '');
+  document.getElementById('invoiceDueDate').value  = '';
   document.getElementById('invoiceNotes').value    = '';
   document.getElementById('invoiceCreateBtn').disabled = false;
   var log = document.getElementById('invoiceLog');
@@ -2096,6 +2101,7 @@ function submitInvoice() {
   fd.append('estimate_num', est.estimate_num  || '');
   fd.append('estimate_amt', est.amount        || '0');
   fd.append('invoice_amt',  amount);
+  fd.append('tgt_start',    document.getElementById('invoiceDueDate').value || '');
   fd.append('notes',        notes);
   fd.append('my_name',      MY_NAME          || '');
   fd.append('my_phone',     MY_PHONE         || '');

@@ -237,12 +237,12 @@ sc(R_SUBMITTED, CB, f'Submitted on {today_disp}')
 
 # Info section
 sc(R_LABELS, CB, 'Prepared for')
-sc(R_LABELS, CD, 'Duration')
+sc(R_LABELS, CD, 'Due Date')
 num_label = 'Invoice #' if estimate_num else 'Estimate #'
 num_value = f"{invoice_num} (Estimate {estimate_num})" if estimate_num else invoice_num
 sc(R_LABELS, CF, num_label)
 sc(R_VALUES, CB, client or '—')
-sc(R_VALUES, CD, date_range or '—')
+sc(R_VALUES, CD, tgt_start or '—')
 sc(R_VALUES, CF, num_value)
 
 # Table header

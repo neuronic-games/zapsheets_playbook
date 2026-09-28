@@ -1048,14 +1048,14 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <h2>New Invoice — <span id="invoiceGameTitle"></span></h2>
     <input type="hidden" id="invoiceEstIdx" />
 
-    <!-- Reference info row: 3-col grid so labels and values always align -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;row-gap:.18rem;column-gap:1.5rem;padding:.4rem .75rem;background:#f5f9fc;border-radius:7px;border:1px solid #e2edf5;">
-      <div style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab">Client</div>
-      <div style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab">Estimate #</div>
-      <div style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab">Estimate Total</div>
-      <div id="invoiceRefClient" style="font-family:'DINRegular',sans-serif;font-size:.78rem;color:#333"></div>
-      <div id="invoiceRefNum"    style="font-family:'DINRegular',sans-serif;font-size:.78rem;color:#333"></div>
-      <div id="invoiceRefAmount" style="font-family:'DINBlack',sans-serif;font-size:.78rem;color:#1a5f7a"></div>
+    <!-- Reference info row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto;row-gap:.18rem;column-gap:1.5rem;padding:.4rem .75rem;background:#f5f9fc;border-radius:7px;border:1px solid #e2edf5;">
+      <div style="grid-row:1;grid-column:1;font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab">Client</div>
+      <div style="grid-row:1;grid-column:2;font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab">Estimate #</div>
+      <div style="grid-row:1;grid-column:3;font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab">Estimate Total</div>
+      <div id="invoiceRefClient" style="grid-row:2;grid-column:1;font-family:'DINRegular',sans-serif;font-size:.78rem;color:#333"></div>
+      <div id="invoiceRefNum"    style="grid-row:2;grid-column:2;font-family:'DINRegular',sans-serif;font-size:.78rem;color:#333"></div>
+      <div id="invoiceRefAmount" style="grid-row:2;grid-column:3;font-family:'DINBlack',sans-serif;font-size:.78rem;color:#1a5f7a"></div>
     </div>
 
     <!-- Amount type + value (all in one label row) -->

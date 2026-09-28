@@ -1050,9 +1050,9 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
     <!-- Reference info: CSS grid so all values share the same row baseline -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto;row-gap:.15rem;padding:.45rem .75rem;background:#f5f9fc;border-radius:7px;border:1px solid #e2edf5">
-      <div style="font-family:'DINBlack',sans-serif;font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:#aab">Client</div>
-      <div style="font-family:'DINBlack',sans-serif;font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:#aab">Estimate #</div>
-      <div style="font-family:'DINBlack',sans-serif;font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:#aab">Estimate Total</div>
+      <div style="font-family:'DINBlack',sans-serif;font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;white-space:nowrap">Client</div>
+      <div style="font-family:'DINBlack',sans-serif;font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;white-space:nowrap">Estimate #</div>
+      <div style="font-family:'DINBlack',sans-serif;font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;white-space:nowrap">Estimate Total</div>
       <div id="invoiceRefClient" style="font-family:'DINRegular',sans-serif;font-size:.82rem;color:#333"></div>
       <div id="invoiceRefNum"    style="font-family:'DINRegular',sans-serif;font-size:.82rem;color:#333"></div>
       <div id="invoiceRefAmount" style="font-family:'DINBlack',sans-serif;font-size:.82rem;color:#1a5f7a"></div>

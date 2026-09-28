@@ -743,6 +743,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .tester-row:last-child { margin-bottom:0; }
 
 /* Dynamic obs/sol pairs */
+.obs-section { display:flex; flex-direction:column; gap:.3rem; }
 #obsContainer { margin-left:0; }
 .obs-pair { position:relative; margin-bottom:.75rem; }
 .obs-pair:last-child { margin-bottom:0; }
@@ -758,7 +759,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 /* Column labels — flush with dialog left edge */
 .obs-pair-labels {
   display:grid; grid-template-columns:1fr 1fr; gap:.9rem;
-  margin-bottom:.3rem; margin-left:0;
+  margin-bottom:0; margin-left:0;
 }
 .obs-pair-labels label {
   font-family:'DINBlack',sans-serif; font-size:.68rem;
@@ -1292,8 +1293,10 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <hr class="field-sep" />
 
     <!-- Observations + Thoughts (dynamic pairs) -->
-    <div class="obs-pair-labels"><label>Observations</label><label>Thoughts</label></div>
-    <div id="obsContainer"></div>
+    <div class="obs-section">
+      <div class="obs-pair-labels"><label>Observations</label><label>Thoughts</label></div>
+      <div id="obsContainer"></div>
+    </div>
 
     <div class="dialog-err" id="sessionErr"></div>
     <span class="obs-kbd-hint">⌘ / Ctrl + Arrow — move between fields &nbsp;·&nbsp; ⌘ / Ctrl + Enter — save</span>
@@ -3597,10 +3600,10 @@ function moveObsPair(idx, dir) {
   // so they appear at their old positions, then animate to 0 — the whole panel slides.
   var otherPairs = all.filter(function(p) { return p !== aEl; });
 
-  // Siblings of #obsContainer in the dialog body (date fields, testers, labels, etc.)
-  var topSiblings = Array.from(container.parentElement.children).filter(function(el) {
-    return el !== container;
-  });
+  // Siblings within obs-section (just the labels row) + siblings of obs-section in the dialog
+  var obsSection  = container.parentElement;
+  var topSiblings = Array.from(obsSection.children).filter(function(el) { return el !== container; })
+    .concat(Array.from(obsSection.parentElement.children).filter(function(el) { return el !== obsSection; }));
 
   var toAnimate = otherPairs.concat(topSiblings);
   toAnimate.forEach(function(el) {

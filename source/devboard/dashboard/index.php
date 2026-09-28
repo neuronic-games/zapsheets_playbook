@@ -1048,18 +1048,11 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <h2>New Invoice — <span id="invoiceGameTitle"></span></h2>
     <input type="hidden" id="invoiceEstIdx" />
 
-    <!-- Reference info row: two independent flex rows share the same column widths -->
-    <div style="padding:.35rem .75rem .4rem;background:#f5f9fc;border-radius:7px;border:1px solid #e2edf5;">
-      <div style="display:flex">
-        <div style="flex:1;font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab">Client</div>
-        <div style="flex:1;font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab">Estimate #</div>
-        <div style="flex:1;font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab">Estimate Total</div>
-      </div>
-      <div style="display:flex;margin-top:.15rem">
-        <div id="invoiceRefClient" style="flex:1;font-family:'DINRegular',sans-serif;font-size:.82rem;color:#333"></div>
-        <div id="invoiceRefNum"    style="flex:1;font-family:'DINRegular',sans-serif;font-size:.82rem;color:#333"></div>
-        <div id="invoiceRefAmount" style="flex:1;font-family:'DINBlack',sans-serif;font-size:.82rem;color:#1a5f7a"></div>
-      </div>
+    <!-- Reference info: single flex row, label + value inline per column -->
+    <div style="display:flex;gap:2rem;align-items:center;padding:.45rem .75rem;background:#f5f9fc;border-radius:7px;border:1px solid #e2edf5;flex-wrap:nowrap">
+      <div style="white-space:nowrap"><span style="display:block;font-family:'DINBlack',sans-serif;font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;margin-bottom:.1rem">Client</span><span id="invoiceRefClient" style="font-family:'DINRegular',sans-serif;font-size:.82rem;color:#333"></span></div>
+      <div style="white-space:nowrap"><span style="display:block;font-family:'DINBlack',sans-serif;font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;margin-bottom:.1rem">Estimate #</span><span id="invoiceRefNum" style="font-family:'DINRegular',sans-serif;font-size:.82rem;color:#333"></span></div>
+      <div style="white-space:nowrap"><span style="display:block;font-family:'DINBlack',sans-serif;font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;margin-bottom:.1rem">Estimate Total</span><span id="invoiceRefAmount" style="font-family:'DINBlack',sans-serif;font-size:.82rem;color:#1a5f7a"></span></div>
     </div>
 
     <!-- Amount type + value (all in one label row) -->

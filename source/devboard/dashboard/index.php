@@ -3546,6 +3546,16 @@ function addObsPair() {
       '</div>' +
     '</div>';
   container.appendChild(div);
+  // Seed each new contenteditable with an empty block so iOS always types
+  // inside a <div> child rather than as a bare text node directly in el.
+  ['sObs-' + idx, 'sSol-' + idx].forEach(function(id) {
+    var ce = document.getElementById(id);
+    if (ce && !ce.firstChild) {
+      var seed = document.createElement('div');
+      seed.innerHTML = '<br>';
+      ce.appendChild(seed);
+    }
+  });
   return idx;
 }
 
@@ -3681,7 +3691,7 @@ function _ceNorm(el) {
   el.dataset.empty = (el.textContent || '').trim() ? '' : '1';
 }
 
-// Auto-convert "- " or "* " at the start of a line to "• "
+// Auto-convert "- ", "* ", or ". " at the start of a line to "• "
 function _autoBullet(el) {
   if (el.isContentEditable) {
     var sel = window.getSelection();
@@ -3689,35 +3699,42 @@ function _autoBullet(el) {
     var node = sel.anchorNode;
     while (node && node.parentNode !== el) node = node.parentNode;
     if (!node || node === el) return;
-    // If Chrome put a bare text node directly in el (no child div yet), wrap it
+    // If a bare text node sits directly in el (can happen on some browsers/iOS),
+    // wrap it in a div so the rest of the logic always deals with a block element.
     if (node.nodeType === 3) {
       var wrapper = document.createElement('div');
       el.insertBefore(wrapper, node);
       wrapper.appendChild(node);
       node = wrapper;
     }
-    var block = node; // node is now always a child element of el
+    var block = node;
     var t = block.textContent || '';
-    if (/^[-*] /.test(t)) {
-      var off = sel.anchorOffset;
-      var tn  = block.firstChild;
+    if (/^[-*.] /.test(t)) {
+      var tn = block.firstChild;
+      // Walk down to the actual text node (iOS may wrap it in a <span>)
+      while (tn && tn.nodeType !== 3) tn = tn.firstChild;
       if (tn && tn.nodeType === 3) {
         tn.textContent = '• ' + tn.textContent.slice(2);
         block.classList.add('bul');
-        try {
-          var r = document.createRange();
-          r.setStart(tn, Math.min(off, tn.textContent.length));
-          r.collapse(true);
-          sel.removeAllRanges();
-          sel.addRange(r);
-        } catch(e) {}
+        // Defer cursor placement — iOS needs a tick to settle after DOM changes
+        setTimeout(function() {
+          try {
+            var s = window.getSelection();
+            if (!s) return;
+            var r = document.createRange();
+            r.setStart(tn, tn.textContent.length); // always after '• '
+            r.collapse(true);
+            s.removeAllRanges();
+            s.addRange(r);
+          } catch(e) {}
+        }, 0);
       }
     }
     return;
   }
   var pos    = el.selectionStart;
   var val    = el.value;
-  var newVal = val.replace(/^([-*]) /gm, '• ');
+  var newVal = val.replace(/^([-*.]) /gm, '• ');
   if (newVal === val) return;
   var delta  = newVal.length - val.length;
   el.value   = newVal;

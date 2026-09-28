@@ -797,14 +797,14 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   #sessionOverlay { align-items:flex-end; padding:0; }
   .session-dialog {
     width:100vw; max-width:100vw; border-radius:16px 16px 0 0;
-    margin-top:auto; padding:1.25rem 1rem 1.5rem;
+    margin-top:auto; padding:1.25rem 1rem 1.5rem 2.5rem;
     max-height:94dvh;
   }
   .obs-pair-inputs { grid-template-columns:1fr; }
   .obs-obs-col { border-right:none; border-bottom:1px solid #d0d8e0; }
   .obs-pair-labels label:last-child { display:none; }
-  #obsContainer { margin-left:2rem; }
-  .obs-pair-labels { margin-left:2rem; }
+  #obsContainer { margin-left:0; }
+  .obs-pair-labels { margin-left:0; }
   .obs-reorder { left:-2rem; }
   .field-grid { grid-template-columns:1fr 1fr; }
   .field-group.span2 { grid-column:span 1; }

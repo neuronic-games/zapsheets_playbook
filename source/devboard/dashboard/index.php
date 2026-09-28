@@ -627,8 +627,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .session-dialog h2 > span:not(.sw-display) { color:#1a1a2e; }
 .sw-display { margin-left:auto; font-family:'DINBlack',sans-serif; font-size:.85rem; color:#e67e22; letter-spacing:.06em; display:none; }
 .sw-display.sw-active { display:block; }
-.sw-wrap { display:contents; }
-.sw-wrap.sw-expanded { display:inline-flex; align-items:stretch; margin-right:auto; }
+.sw-wrap { display:flex; align-items:center; margin-left:auto; flex-shrink:0; }
+.sw-wrap.sw-expanded { display:flex; align-items:center; margin-left:auto; }
 .sw-panel { display:none; align-items:center; gap:.5rem; background:#fff8f2; border:1.5px solid #e67e22; border-radius:8px; padding:.28rem .5rem .28rem .65rem; animation:sw-expand-in .18s ease; }
 .sw-wrap.sw-expanded .sw-panel { display:flex; }
 .sw-wrap.sw-expanded #swBtn { display:none; }
@@ -639,7 +639,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .sw-panel-confirm { background:#e67e22; color:#fff; border:none; border-radius:5px; padding:0 .75rem; cursor:pointer; font-family:'DINBlack',sans-serif; font-size:.75rem; letter-spacing:.04em; align-self:stretch; display:flex; align-items:center; margin-left:.35rem; }
 .sw-panel-cancel { background:none; border:none; color:#bbb; cursor:pointer; font-size:1rem; padding:.2rem .3rem; line-height:1; }
 .sw-panel-cancel:hover { color:#888; }
-.btn-stopwatch { margin-right:auto; background:none; border:1.5px solid #d0d8e0; border-radius:6px; padding:.35rem .65rem; cursor:pointer; display:inline-flex; align-items:center; gap:.35rem; color:#bbb; font-family:'DINBlack',sans-serif; font-size:.78rem; letter-spacing:.04em; transition:border-color .15s, color .15s, background .15s; user-select:none; -webkit-user-select:none; }
+.btn-stopwatch { background:none; border:1.5px solid #d0d8e0; border-radius:6px; padding:.35rem .65rem; cursor:pointer; display:inline-flex; align-items:center; gap:.35rem; color:#bbb; font-family:'DINBlack',sans-serif; font-size:.78rem; letter-spacing:.04em; transition:border-color .15s, color .15s, background .15s; user-select:none; -webkit-user-select:none; }
 .btn-stopwatch:hover { border-color:#aaa; color:#888; }
 .btn-stopwatch.sw-running { border-color:#e67e22; color:#e67e22; background:#fff8f2; animation:sw-pulse 1.4s ease-out infinite; }
 @keyframes sw-pulse {
@@ -1259,7 +1259,23 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 <!-- Add session dialog -->
 <div class="overlay" id="sessionOverlay" onclick="if(event.target===this){var _d=this.querySelector('.session-dialog');if(_editMode?isSessionDirty():hasSessionData())shakeDialog(_d);else closeSessionDialog();}">
   <div class="session-dialog">
-    <h2><span id="sessionDialogAction">+ Session</span><span style="color:#1a5f7a"> — </span><span id="sessionGameTitle"></span></h2>
+    <h2>
+      <span id="sessionDialogAction">+ Session</span><span style="color:#1a5f7a"> — </span><span id="sessionGameTitle"></span>
+      <div class="sw-wrap" id="swWrap">
+        <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold 2s to enter minutes">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="13" r="8"/><path d="M12 5V3"/><path d="M9 3h6"/><path d="M12 13V9"/></svg>
+          <span id="swTime">0</span>
+        </button>
+        <div class="sw-panel" id="swPanel">
+          <input type="number" id="swPanelInput" class="sw-panel-input" min="0" max="999" placeholder="0"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();_swExpandCommit();}if(event.key==='Escape')_swExpandCancel();"
+            onclick="event.stopPropagation()" />
+          <span class="sw-panel-unit">min</span>
+          <button type="button" class="sw-panel-confirm" onclick="_swExpandCommit()">Set</button>
+          <button type="button" class="sw-panel-cancel" onclick="_swExpandCancel()">✕</button>
+        </div>
+      </div>
+    </h2>
 
     <!-- Session metadata: left 2×2 + right people -->
     <div class="session-meta-wrap">
@@ -1309,20 +1325,6 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <div class="dialog-err" id="sessionErr"></div>
     <span class="obs-kbd-hint">⌘ / Ctrl + Arrow — move between fields &nbsp;·&nbsp; ⌘ / Ctrl + Enter — save</span>
     <div class="dialog-actions">
-      <div class="sw-wrap" id="swWrap">
-        <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold 2s to enter minutes">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="13" r="8"/><path d="M12 5V3"/><path d="M9 3h6"/><path d="M12 13V9"/></svg>
-          <span id="swTime">0</span>
-        </button>
-        <div class="sw-panel" id="swPanel">
-          <input type="number" id="swPanelInput" class="sw-panel-input" min="0" max="999" placeholder="0"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();_swExpandCommit();}if(event.key==='Escape')_swExpandCancel();"
-            onclick="event.stopPropagation()" />
-          <span class="sw-panel-unit">min</span>
-          <button type="button" class="sw-panel-confirm" onclick="_swExpandCommit()">Set</button>
-          <button type="button" class="sw-panel-cancel" onclick="_swExpandCancel()">✕</button>
-        </div>
-      </div>
       <button class="btn-delete" id="deleteSessionBtn" style="display:none" onclick="deleteSession()">Delete</button>
       <button class="btn-cancel" onclick="closeSessionDialog()">Cancel</button>
       <button class="btn-primary" id="sessionBtn" onclick="submitSession()">Add Session</button>
@@ -3105,7 +3107,7 @@ function openEditSessionDialog(gameName, idx) {
 
   document.getElementById('sessionErr').style.display       = 'none';
   document.getElementById('sessionBtn').disabled            = false;
-  document.getElementById('sessionBtn').textContent         = 'Save Changes';
+  document.getElementById('sessionBtn').textContent         = 'Save';
   document.getElementById('deleteSessionBtn').style.display = '';
   document.getElementById('deleteSessionBtn').disabled      = false;
   document.getElementById('deleteSessionBtn').textContent   = 'Delete';
@@ -3294,7 +3296,7 @@ function submitSession() {
       })
       .catch(function(e) {
         btn.disabled = false;
-        btn.textContent = 'Save Changes';
+        btn.textContent = 'Save';
         _sCancelBtns.forEach(function(b) { b.disabled = false; });
         err.textContent = 'Couldn\'t save changes — ' + (e.message || 'unknown error');
         console.error('Save error:', e.message);

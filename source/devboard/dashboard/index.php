@@ -615,7 +615,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 /* Session dialog */
 .session-dialog {
   background:#fff; border-radius:12px;
-  padding:1.5rem; width:min(680px,96vw);
+  padding:1.5rem 1.5rem 1.5rem 2.8rem; width:min(680px,96vw);
   box-shadow:0 8px 32px rgba(0,0,0,.22);
   display:flex; flex-direction:column; gap:1.1rem;
   max-height:92vh; overflow-y:auto;
@@ -743,8 +743,8 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .tester-row:last-child { margin-bottom:0; }
 
 /* Dynamic obs/sol pairs */
-/* Obs container — left margin carves space for the absolutely positioned buttons */
-#obsContainer { margin-left:2.4rem; }
+/* Obs container — no extra margin; dialog left padding accommodates buttons */
+#obsContainer { margin-left:0; }
 .obs-pair { position:relative; margin-bottom:.75rem; }
 .obs-pair:last-child { margin-bottom:0; }
 .obs-pair-row { display:block; }   /* no longer a flex row; buttons are absolute */
@@ -752,7 +752,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 /* Column labels — lives ABOVE obsContainer, never animates */
 .obs-pair-labels {
   display:grid; grid-template-columns:1fr 1fr; gap:.9rem;
-  margin-bottom:.3rem; margin-left:2.4rem;
+  margin-bottom:.3rem; margin-left:0;
 }
 .obs-pair-labels label {
   font-family:'DINBlack',sans-serif; font-size:.68rem;

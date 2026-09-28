@@ -743,26 +743,29 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .tester-row:last-child { margin-bottom:0; }
 
 /* Dynamic obs/sol pairs */
-.obs-pair { display:flex; flex-direction:column; margin-bottom:.75rem; }
+/* Obs container — left margin carves space for the absolutely positioned buttons */
+#obsContainer { margin-left:2.4rem; }
+.obs-pair { position:relative; margin-bottom:.75rem; }
 .obs-pair:last-child { margin-bottom:0; }
-.obs-pair-row { display:flex; align-items:flex-start; gap:.5rem; }
+.obs-pair-row { display:block; }   /* no longer a flex row; buttons are absolute */
 .obs-pair-body { flex:1; min-width:0; }
+/* Column labels — lives ABOVE obsContainer, never animates */
 .obs-pair-labels {
   display:grid; grid-template-columns:1fr 1fr; gap:.9rem;
-  margin-bottom:.3rem; padding-left:0;
+  margin-bottom:.3rem; margin-left:2.4rem;
 }
 .obs-pair-labels label {
   font-family:'DINBlack',sans-serif; font-size:.68rem;
   text-transform:uppercase; letter-spacing:.07em; color:#888;
 }
-/* Reorder buttons */
-.obs-reorder { display:flex; flex-direction:column; gap:.15rem; padding-top:.35rem; flex-shrink:0; }
+/* Reorder buttons — absolutely positioned in the left margin */
+.obs-reorder { position:absolute; left:-2.2rem; top:.35rem; display:flex; flex-direction:column; gap:.15rem; }
 .obs-reorder-btn { background:none; border:1px solid #d0d8e4; border-radius:4px; padding:.15rem .28rem; cursor:pointer; font-size:.65rem; color:#aab; line-height:1; transition:color .12s,border-color .12s,background .12s; }
 .obs-reorder-btn:hover { color:#1a5f7a; border-color:#a0b8c8; background:#f0f7fa; }
 .obs-reorder-btn:disabled { opacity:.25; cursor:default; }
 .obs-pair:last-child .obs-reorder { visibility:hidden; }
 /* Row box — one joined container split into two cells */
-.obs-pair-inputs { flex:1; min-width:0; display:grid; grid-template-columns:1fr 1fr; border:1.5px solid #d0d8e0; border-radius:8px; overflow:hidden; }
+.obs-pair-inputs { display:grid; grid-template-columns:1fr 1fr; border:1.5px solid #d0d8e0; border-radius:8px; overflow:hidden; }
 .obs-pair-inputs:focus-within { border-color:#1a5f7a; box-shadow:0 0 0 2px rgba(26,95,122,.12); }
 .obs-obs-col { display:flex; flex-direction:column; min-width:0; background:#fff; border-right:1px solid #d0d8e0; }
 .obs-sol-col  { display:flex; flex-direction:column; min-width:0; background:#f5f7fa; }
@@ -800,6 +803,9 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   .obs-pair-inputs { grid-template-columns:1fr; }
   .obs-obs-col { border-right:none; border-bottom:1px solid #d0d8e0; }
   .obs-pair-labels label:last-child { display:none; }
+  #obsContainer { margin-left:2rem; }
+  .obs-pair-labels { margin-left:2rem; }
+  .obs-reorder { left:-2rem; }
   .field-grid { grid-template-columns:1fr 1fr; }
   .field-group.span2 { grid-column:span 1; }
   .obs-grid { grid-template-columns:1fr; }
@@ -1288,6 +1294,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <hr class="field-sep" />
 
     <!-- Observations + Thoughts (dynamic pairs) -->
+    <div class="obs-pair-labels"><label>Observations</label><label>Thoughts</label></div>
     <div id="obsContainer"></div>
 
     <div class="dialog-err" id="sessionErr"></div>
@@ -3004,7 +3011,7 @@ function openSessionDialog(gameName) {
 
   _obsCount = 0; _obsImages = {};
   document.getElementById('obsContainer').innerHTML = '';
-  addObsPair(true);  // first pair with labels
+  addObsPair();
 
   document.getElementById('sessionErr').style.display    = 'none';
   document.getElementById('sessionBtn').disabled         = false;
@@ -3065,7 +3072,7 @@ function openEditSessionDialog(gameName, idx) {
   _obsCount = 0; _obsImages = {};
   document.getElementById('obsContainer').innerHTML = '';
   session.obs.forEach(function(pair, pi) {
-    var oidx = addObsPair(pi === 0);
+    var oidx = addObsPair();
     var obsVal = pair.obs || '';
     var imgMatch = obsVal.match(/=IMAGE\("([^"]*)"\)/i);
     if (imgMatch) {
@@ -3078,7 +3085,7 @@ function openEditSessionDialog(gameName, idx) {
     document.getElementById('sSol-' + oidx).value = pair.sol || '';
     setTimeout(function(i){ return function(){ syncPairHeight(i); }; }(oidx), 0);
   });
-  addObsPair(session.obs.length === 0);  // trailing empty pair (shows labels if first)
+  addObsPair();  // trailing empty pair
 
   document.getElementById('sessionErr').style.display       = 'none';
   document.getElementById('sessionBtn').disabled            = false;
@@ -3475,17 +3482,13 @@ function handleObsImageFile(idx, file) {
     .catch(function() { alert('Upload failed.'); });
 }
 
-function addObsPair(showLabels) {
+function addObsPair() {
   var idx       = _obsCount++;
   var container = document.getElementById('obsContainer');
   var div       = document.createElement('div');
   div.className   = 'obs-pair obs-pair-empty';
   div.dataset.idx = idx;
-  var labelsHtml = showLabels
-    ? '<div class="obs-pair-labels"><label>Observations</label><label>Thoughts</label></div>'
-    : '';
   div.innerHTML =
-    labelsHtml +
     '<div class="obs-pair-row">' +
       '<div class="obs-reorder">' +
         '<button type="button" class="obs-reorder-btn" title="Move up"   onclick="moveObsPair(' + idx + ',-1)">▲</button>' +
@@ -3623,7 +3626,7 @@ function onObsInput(idx) {
   var sol = (document.getElementById('sSol-' + idx) || {}).value || '';
   if (obs.trim() || sol.trim()) {
     last.classList.remove('obs-pair-empty');
-    addObsPair(false);
+    addObsPair();
   }
 }
 

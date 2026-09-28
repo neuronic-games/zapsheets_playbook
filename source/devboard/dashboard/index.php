@@ -770,12 +770,17 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .obs-pair-inputs:focus-within { border-color:#1a5f7a; box-shadow:0 0 0 2px rgba(26,95,122,.12); }
 .obs-obs-col { display:flex; flex-direction:column; min-width:0; background:#fff; border-right:1px solid #d0d8e0; }
 .obs-sol-col  { display:flex; flex-direction:column; min-width:0; background:#f5f7fa; }
-/* Strip borders/bg from textareas inside the box */
+/* Strip borders/bg from textareas/editables inside the box */
 .obs-pair-inputs .field-textarea { border:none !important; background:transparent !important; border-radius:0 !important; box-shadow:none !important; resize:none; }
 .obs-pair-inputs .field-textarea:focus { border:none !important; box-shadow:none !important; }
+/* contenteditable obs/sol fields */
+.obs-editable { outline:none; white-space:pre-wrap; word-break:break-word; overflow-wrap:break-word; cursor:text; }
+.obs-editable > div.bul { padding-left:1.1em; text-indent:-1.1em; }
+/* placeholder via data-ph when empty */
+.obs-editable[data-empty="1"]::before { content:attr(data-ph); color:#b0b8c8; pointer-events:none; }
 /* obs-obs-col: textarea wrapper with icon overlaid inside */
 .obs-ta-wrap { position:relative; flex:1; display:flex; flex-direction:column; }
-.obs-ta-wrap .field-textarea { flex:1; padding-right:2.1rem; }
+.obs-ta-wrap .field-textarea,.obs-ta-wrap .obs-editable { flex:1; padding-right:2.1rem; }
 /* icon button: hidden when obs textarea has text; always shown when image present */
 .obs-ta-wrap.has-obs-text .obs-img-btn { display:none; }
 .obs-img-btn { position:absolute; top:.35rem; right:.35rem; background:rgba(255,255,255,.88); border:1px solid #d0d8e4; border-radius:5px; padding:.22rem .26rem; cursor:pointer; color:#99a; line-height:1; z-index:2; backdrop-filter:blur(2px); transition:color .15s,background .15s,border-color .15s; }
@@ -2978,8 +2983,8 @@ function getSessionSnapshot() {
   var obs = [];
   document.querySelectorAll('#obsContainer .obs-pair').forEach(function(pair) {
     var idx = pair.dataset.idx;
-    var o = (document.getElementById('sObs-' + idx) || {}).value || '';
-    var s = (document.getElementById('sSol-' + idx) || {}).value || '';
+    var o = _ceGet(document.getElementById('sObs-' + idx));
+    var s = _ceGet(document.getElementById('sSol-' + idx));
     if (o.trim() || s.trim()) obs.push(o.trim() + '|' + s.trim());
   });
   return [
@@ -3081,9 +3086,9 @@ function openEditSessionDialog(gameName, idx) {
       setTimeout(function(i, u) { return function() { _showObsImage(i, u); }; }(oidx, imgUrl), 0);
       obsVal = obsVal.replace(/=IMAGE\("[^"]*"\)/gi, '').trim();
     }
-    document.getElementById('sObs-' + oidx).value = obsVal;
+    _ceSet(document.getElementById('sObs-' + oidx), obsVal);
     toggleObsImgBtn(oidx);
-    document.getElementById('sSol-' + oidx).value = pair.sol || '';
+    _ceSet(document.getElementById('sSol-' + oidx), pair.sol || '');
   });
   addObsPair();  // trailing empty pair
 
@@ -3101,8 +3106,7 @@ function openEditSessionDialog(gameName, idx) {
   // then sync pair heights so both columns match the taller of the two.
   setTimeout(function() {
     document.querySelectorAll('#obsContainer .field-textarea').forEach(function(el) {
-      _autoBullet(el);
-      autoResize(el);
+      if (el.isContentEditable) { _ceNorm(el); } else { _autoBullet(el); autoResize(el); }
     });
     document.querySelectorAll('#obsContainer .obs-pair').forEach(function(pair) {
       syncPairHeight(parseInt(pair.dataset.idx));
@@ -3200,9 +3204,8 @@ function submitSession() {
   var obsPairs = [];
   document.querySelectorAll('#obsContainer .obs-pair').forEach(function(pair) {
     var idx = pair.dataset.idx;
-    var obs = (document.getElementById('sObs-' + idx) || {}).value || '';
-    var sol = (document.getElementById('sSol-' + idx) || {}).value || '';
-    obs = obs.trim(); sol = sol.trim();
+    var obs = _ceGet(document.getElementById('sObs-' + idx)).trim();
+    var sol = _ceGet(document.getElementById('sSol-' + idx)).trim();
     if (_obsImages[idx]) obs = '=IMAGE("' + _obsImages[idx] + '")';
     if (obs || sol) obsPairs.push({ obs: obs, sol: sol });
   });
@@ -3453,7 +3456,7 @@ function toggleObsImgBtn(idx) {
   var ta   = document.getElementById('sObs-' + idx);
   var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
   if (!wrap) return;
-  wrap.classList.toggle('has-obs-text', ta.value.trim().length > 0);
+  wrap.classList.toggle('has-obs-text', _ceGet(ta).trim().length > 0);
 }  // obs pair idx → uploaded image URL
 
 function _showObsImage(idx, url) {
@@ -3505,10 +3508,10 @@ function addObsPair() {
       '<div class="obs-pair-inputs">' +
         '<div class="obs-obs-col">' +
           '<div class="obs-ta-wrap">' +
-            '<textarea class="field-textarea" id="sObs-' + idx + '" rows="1"' +
-              ' placeholder="What happened…"' +
-              ' oninput="_autoBullet(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ');toggleObsImgBtn(' + idx + ')"' +
-              ' onkeydown="onObsKeydown(event,' + idx + ',0)"></textarea>' +
+            '<div contenteditable="true" class="field-textarea obs-editable" id="sObs-' + idx + '"' +
+              ' data-ph="What happened…" data-empty="1"' +
+              ' oninput="_autoBullet(this);_ceNorm(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ');toggleObsImgBtn(' + idx + ')"' +
+              ' onkeydown="onObsKeydown(event,' + idx + ',0)"></div>' +
             '<div class="obs-img-preview" id="sImgPreview-' + idx + '" style="display:none"></div>' +
             '<button type="button" class="obs-img-btn" onclick="triggerObsImageUpload(' + idx + ')" title="Attach image">' +
               '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -3521,10 +3524,10 @@ function addObsPair() {
           '</div>' +
         '</div>' +
         '<div class="obs-sol-col">' +
-          '<textarea class="field-textarea" id="sSol-' + idx + '" rows="1"' +
-            ' placeholder="Thoughts…"' +
-            ' oninput="_autoBullet(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ')"' +
-            ' onkeydown="onObsKeydown(event,' + idx + ',1)"></textarea>' +
+          '<div contenteditable="true" class="field-textarea obs-editable" id="sSol-' + idx + '"' +
+            ' data-ph="Thoughts…" data-empty="1"' +
+            ' oninput="_autoBullet(this);_ceNorm(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ')"' +
+            ' onkeydown="onObsKeydown(event,' + idx + ',1)"></div>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -3537,7 +3540,7 @@ function syncPairHeight(idx) {
   var obs = document.getElementById('sObs-' + idx);
   var sol = document.getElementById('sSol-' + idx);
   if (!obs || !sol) return;
-  obs.style.height = 'auto'; sol.style.height = 'auto';
+  if (!obs.isContentEditable) { obs.style.height = 'auto'; sol.style.height = 'auto'; }
   var h = Math.max(obs.scrollHeight, sol.scrollHeight);
   obs.style.height = h + 'px'; sol.style.height = h + 'px';
 }
@@ -3571,8 +3574,8 @@ function moveObsPair(idx, dir) {
   var all   = Array.from(container.querySelectorAll('.obs-pair'));
   var pairs = all.filter(function(p) {
     var di = p.dataset.idx;
-    var o  = (document.getElementById('sObs-' + di) || {}).value || '';
-    var s  = (document.getElementById('sSol-' + di) || {}).value || '';
+    var o  = _ceGet(document.getElementById('sObs-' + di));
+    var s  = _ceGet(document.getElementById('sSol-' + di));
     return o.trim() || s.trim() || _obsImages[di];
   });
   var pos  = pairs.findIndex(function(p){ return parseInt(p.dataset.idx) === idx; });
@@ -3632,12 +3635,66 @@ function moveObsPair(idx, dir) {
 }
 
 function autoResize(el) {
+  if (el && el.isContentEditable) return; // contenteditable auto-expands
   el.style.height = 'auto';
   el.style.height = el.scrollHeight + 'px';
 }
 
+// ── ContentEditable helpers ───────────────────────────────────────────────────
+function _ceGet(el) {
+  if (!el) return '';
+  if (el.isContentEditable) return (el.innerText || '').replace(/\n$/, '');
+  return el.value || '';
+}
+function _ceSet(el, text) {
+  if (!el) return;
+  if (!el.isContentEditable) { el.value = text || ''; return; }
+  el.innerHTML = '';
+  var lines = (text || '').split('\n');
+  lines.forEach(function(line) {
+    var d = document.createElement('div');
+    if (line) { d.textContent = line; if (line.startsWith('• ')) d.classList.add('bul'); }
+    else       { d.innerHTML  = '<br>'; }
+    el.appendChild(d);
+  });
+  el.dataset.empty = (text || '').trim() ? '' : '1';
+}
+function _ceNorm(el) {
+  if (!el || !el.isContentEditable) return;
+  Array.from(el.children).forEach(function(d) {
+    d.classList.toggle('bul', (d.textContent || '').startsWith('• '));
+  });
+  el.dataset.empty = (el.textContent || '').trim() ? '' : '1';
+}
+
 // Auto-convert "- " or "* " at the start of a line to "• "
 function _autoBullet(el) {
+  if (el.isContentEditable) {
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    var node = sel.anchorNode;
+    while (node && node.parentNode !== el) node = node.parentNode;
+    if (!node || node === el) return;
+    var block = node.nodeType === 1 ? node : node.parentNode;
+    if (!block || block === el) return;
+    var t = block.textContent || '';
+    if (/^[-*] /.test(t)) {
+      var off = sel.anchorOffset;
+      var tn  = block.firstChild;
+      if (tn && tn.nodeType === 3) {
+        tn.textContent = '• ' + tn.textContent.slice(2);
+        block.classList.add('bul');
+        try {
+          var r = document.createRange();
+          r.setStart(tn, Math.min(off, tn.textContent.length));
+          r.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(r);
+        } catch(e) {}
+      }
+    }
+    return;
+  }
   var pos    = el.selectionStart;
   var val    = el.value;
   var newVal = val.replace(/^([-*]) /gm, '• ');
@@ -3662,8 +3719,8 @@ function onObsInput(idx) {
   var pairs = document.querySelectorAll('#obsContainer .obs-pair');
   var last  = pairs[pairs.length - 1];
   if (!last || parseInt(last.dataset.idx) !== idx) return;
-  var obs = (document.getElementById('sObs-' + idx) || {}).value || '';
-  var sol = (document.getElementById('sSol-' + idx) || {}).value || '';
+  var obs = _ceGet(document.getElementById('sObs-' + idx));
+  var sol = _ceGet(document.getElementById('sSol-' + idx));
   if (obs.trim() || sol.trim()) {
     last.classList.remove('obs-pair-empty');
     addObsPair();
@@ -3678,7 +3735,40 @@ function onObsInput(idx) {
 function onObsKeydown(e, idx, col) {
   // Bullet list: Enter continues the list; Enter on an empty bullet ends it
   if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
-    var el       = e.target;
+    var el = e.target;
+    if (el.isContentEditable) {
+      var sel = window.getSelection();
+      if (sel && sel.rangeCount) {
+        var an = sel.anchorNode;
+        while (an && an.parentNode !== el) an = an.parentNode;
+        if (an) {
+          var blk = an.nodeType === 1 ? an : an.parentNode;
+          var t   = (blk && blk !== el) ? (blk.textContent || '') : '';
+          if (t.startsWith('• ')) {
+            e.preventDefault();
+            if (t === '• ') {
+              blk.textContent = '';
+              blk.classList.remove('bul');
+              var r0 = document.createRange();
+              r0.setStart(blk, 0); r0.collapse(true);
+              sel.removeAllRanges(); sel.addRange(r0);
+            } else {
+              var nd = document.createElement('div');
+              nd.textContent = '• '; nd.classList.add('bul');
+              blk.after ? blk.after(nd) : blk.parentNode.insertBefore(nd, blk.nextSibling);
+              var tn1 = nd.firstChild;
+              var r1  = document.createRange();
+              r1.setStart(tn1, tn1.textContent.length); r1.collapse(true);
+              sel.removeAllRanges(); sel.addRange(r1);
+            }
+            syncPairHeight(idx);
+            return;
+          }
+        }
+      }
+      return; // non-bullet Enter: let browser handle
+    }
+    // Textarea version
     var pos      = el.selectionStart;
     var val      = el.value;
     var lineStart = val.lastIndexOf('\n', pos - 1) + 1;
@@ -3686,11 +3776,9 @@ function onObsKeydown(e, idx, col) {
     if (line.startsWith('• ')) {
       e.preventDefault();
       if (line === '• ') {
-        // Empty bullet — remove it and end the list
         el.value = val.slice(0, lineStart) + val.slice(pos);
         el.setSelectionRange(lineStart, lineStart);
       } else {
-        // Continue with a new bullet on the next line
         var ins  = '\n• ';
         el.value = val.slice(0, pos) + ins + val.slice(pos);
         el.setSelectionRange(pos + ins.length, pos + ins.length);

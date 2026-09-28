@@ -3675,8 +3675,14 @@ function _autoBullet(el) {
     var node = sel.anchorNode;
     while (node && node.parentNode !== el) node = node.parentNode;
     if (!node || node === el) return;
-    var block = node.nodeType === 1 ? node : node.parentNode;
-    if (!block || block === el) return;
+    // If Chrome put a bare text node directly in el (no child div yet), wrap it
+    if (node.nodeType === 3) {
+      var wrapper = document.createElement('div');
+      el.insertBefore(wrapper, node);
+      wrapper.appendChild(node);
+      node = wrapper;
+    }
+    var block = node; // node is now always a child element of el
     var t = block.textContent || '';
     if (/^[-*] /.test(t)) {
       var off = sel.anchorOffset;

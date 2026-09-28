@@ -1039,6 +1039,63 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   </div>
 </div>
 
+<!-- Invoice-from-Estimate dialog -->
+<div class="overlay" id="invoiceOverlay" onclick="if(event.target===this){if(_invoiceIsDirty())shakeDialog(this.querySelector('.estimate-dialog'));else forceCloseInvoiceDialog();}">
+  <div class="estimate-dialog">
+    <h2>New Invoice — <span id="invoiceGameTitle"></span></h2>
+    <input type="hidden" id="invoiceEstIdx" />
+
+    <!-- Reference info row -->
+    <div style="display:flex;gap:1.5rem;padding:.35rem .75rem;background:#f5f9fc;border-radius:7px;border:1px solid #e2edf5;font-size:.78rem;">
+      <div><span style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;display:block">Client</span><span id="invoiceRefClient" style="font-family:'DINRegular',sans-serif;color:#333"></span></div>
+      <div><span style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;display:block">Estimate #</span><span id="invoiceRefNum" style="font-family:'DINRegular',sans-serif;color:#333"></span></div>
+      <div><span style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;display:block">Estimate Total</span><span id="invoiceRefAmount" style="font-family:'DINBlack',sans-serif;color:#1a5f7a"></span></div>
+    </div>
+
+    <!-- Amount type toggle -->
+    <div class="estimate-field-row two">
+      <label class="ge-label">Invoice Amount
+        <select id="invoiceAmtType" class="ge-input" onchange="_invoiceAmtTypeChange()">
+          <option value="fixed">Fixed Amount ($)</option>
+          <option value="pct">Percentage of Estimate</option>
+        </select>
+      </label>
+      <label class="ge-label" id="invoiceAmtLabel">Amount
+        <div class="contract-quote-wrap">
+          <span class="contract-quote-prefix">$</span>
+          <input type="number" id="invoiceAmount" class="ge-input" style="padding-left:1.4rem" min="0" step="0.01" placeholder="0.00" oninput="_invoiceMarkDirty()" />
+        </div>
+      </label>
+    </div>
+    <!-- Percentage row (shown when pct mode) -->
+    <div id="invoicePctRow" style="display:none" class="estimate-field-row two">
+      <label class="ge-label">Percentage
+        <div class="contract-quote-wrap">
+          <input type="number" id="invoicePct" class="ge-input" style="padding-right:1.6rem" min="1" max="100" step="1" value="50" oninput="_invoiceUpdatePct()" />
+          <span class="contract-quote-prefix" style="left:auto;right:.5rem">%</span>
+        </div>
+      </label>
+      <label class="ge-label">Calculated Amount
+        <div class="contract-quote-wrap">
+          <span class="contract-quote-prefix">$</span>
+          <input type="text" id="invoicePctCalc" class="ge-input" style="padding-left:1.4rem;color:#1a5f7a;font-family:'DINBlack',sans-serif" readonly />
+        </div>
+      </label>
+    </div>
+
+    <label class="ge-label">
+      <span style="display:flex;justify-content:space-between;align-items:baseline">Notes<span style="font-family:'DINRegular',sans-serif;letter-spacing:0;text-transform:none;opacity:.45;font-size:.65rem">(optional)</span></span>
+      <input type="text" id="invoiceNotes" class="ge-input" placeholder="e.g. Milestone 1 of 2" oninput="_invoiceMarkDirty()" />
+    </label>
+
+    <div class="sync-log" id="invoiceLog" style="display:none"></div>
+    <div class="sync-dialog-actions">
+      <button type="button" class="notes-close" onclick="forceCloseInvoiceDialog()">Cancel</button>
+      <button type="button" class="notes-close" id="invoiceCreateBtn" onclick="submitInvoice()" style="background:#1a5f7a;color:#fff;border-color:#1a5f7a">Create</button>
+    </div>
+  </div>
+</div>
+
 <!-- Profile dialog -->
 <div class="overlay" id="profileOverlay" onclick="if(event.target===this)closeProfileDialog()">
   <div class="sync-dialog" style="width:min(500px,94vw)">
@@ -1661,9 +1718,7 @@ function renderPublishersView() {
         html += '</dl>';
         html += '</div>';
         html += '<div class="estimate-item-actions">';
-        if (firstConDataIdx >= 0) {
-          html += '<button type="button" class="btn-contract-action invoice" onclick="event.stopPropagation();generateInvoice(' + firstConDataIdx + ')">+ Invoice</button>';
-        }
+        html += '<button type="button" class="btn-contract-action invoice" onclick="event.stopPropagation();openInvoiceFromEstimate(' + globalIdx + ')">+ Invoice</button>';
         html += '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_estStartDelete(' + globalIdx + ')">🗑 Delete</button>';
         html += '</div>';
         html += '</div>'; // .estimate-item-body
@@ -1896,6 +1951,135 @@ function submitEstimate() {
     .catch(function() {
       document.getElementById('estimateCreateBtn').disabled = false;
       _estimateLog('✕  Request failed. Check your connection.', 'error');
+    });
+}
+
+// ── Invoice-from-Estimate dialog ──────────────────────────────────────────────
+
+var _invoiceEstIdx  = -1;
+var _invoiceDirty   = false;
+
+function _invoiceMarkDirty() { _invoiceDirty = true; }
+
+function _invoiceIsDirty() {
+  var amt = (document.getElementById('invoiceAmount').value || '').trim();
+  return _invoiceDirty || amt !== '';
+}
+
+function openInvoiceFromEstimate(estIdx) {
+  var est = ESTIMATES_RAW[estIdx];
+  if (!est) return;
+  _invoiceEstIdx = estIdx;
+  _invoiceDirty  = false;
+
+  // Populate reference info
+  document.getElementById('invoiceGameTitle').textContent  = est.game   || est.client || '';
+  document.getElementById('invoiceRefClient').textContent  = est.client || '—';
+  document.getElementById('invoiceRefNum').textContent     = est.estimate_num || '—';
+  var estAmt = est.amount ? parseFloat(est.amount) : 0;
+  document.getElementById('invoiceRefAmount').textContent  = estAmt ? '$' + estAmt.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
+
+  // Reset fields
+  document.getElementById('invoiceAmtType').value  = 'fixed';
+  document.getElementById('invoiceAmount').value   = estAmt ? estAmt.toFixed(2) : '';
+  document.getElementById('invoicePct').value      = '100';
+  document.getElementById('invoicePctCalc').value  = estAmt ? estAmt.toFixed(2) : '';
+  document.getElementById('invoicePctRow').style.display = 'none';
+  document.getElementById('invoiceAmtLabel').querySelector('label') && (document.getElementById('invoiceAmtLabel').style.display = '');
+  document.getElementById('invoiceNotes').value    = '';
+  document.getElementById('invoiceCreateBtn').disabled = false;
+  var log = document.getElementById('invoiceLog');
+  log.style.display = 'none'; log.textContent = '';
+
+  document.getElementById('invoiceOverlay').classList.add('open');
+  setTimeout(function() { document.getElementById('invoiceAmount').focus(); }, 50);
+}
+
+function _invoiceAmtTypeChange() {
+  var type   = document.getElementById('invoiceAmtType').value;
+  var isPct  = type === 'pct';
+  document.getElementById('invoicePctRow').style.display  = isPct ? '' : 'none';
+  document.getElementById('invoiceAmtLabel').style.display = isPct ? 'none' : '';
+  if (isPct) _invoiceUpdatePct();
+  _invoiceDirty = true;
+}
+
+function _invoiceUpdatePct() {
+  var est    = ESTIMATES_RAW[_invoiceEstIdx];
+  var estAmt = est && est.amount ? parseFloat(est.amount) : 0;
+  var pct    = parseFloat(document.getElementById('invoicePct').value) || 0;
+  var calc   = (estAmt * pct / 100);
+  document.getElementById('invoicePctCalc').value = calc.toFixed(2);
+  _invoiceDirty = true;
+}
+
+function closeInvoiceDialog() {
+  if (_invoiceIsDirty()) { shakeDialog(document.querySelector('#invoiceOverlay .estimate-dialog')); return; }
+  forceCloseInvoiceDialog();
+}
+
+function forceCloseInvoiceDialog() {
+  document.getElementById('invoiceOverlay').classList.remove('open');
+}
+
+function submitInvoice() {
+  var est = ESTIMATES_RAW[_invoiceEstIdx];
+  if (!est) return;
+
+  var isPct    = document.getElementById('invoiceAmtType').value === 'pct';
+  var amount   = isPct
+    ? parseFloat(document.getElementById('invoicePctCalc').value) || 0
+    : parseFloat(document.getElementById('invoiceAmount').value)  || 0;
+  var notes    = document.getElementById('invoiceNotes').value.trim();
+
+  if (!amount) {
+    var log = document.getElementById('invoiceLog');
+    log.textContent = '✕  Please enter an invoice amount.';
+    log.className = 'sync-log error'; log.style.display = '';
+    return;
+  }
+
+  var btn = document.getElementById('invoiceCreateBtn');
+  btn.disabled = true; btn.textContent = 'Creating…';
+  var log = document.getElementById('invoiceLog');
+  log.style.display = 'none';
+
+  var fd = new FormData();
+  fd.append('id',           SHEET_ID);
+  fd.append('game',         est.game         || '');
+  fd.append('client',       est.client       || '');
+  fd.append('estimate_num', est.estimate_num  || '');
+  fd.append('estimate_amt', est.amount        || '0');
+  fd.append('invoice_amt',  amount);
+  fd.append('notes',        notes);
+  fd.append('my_name',      MY_NAME          || '');
+  fd.append('my_phone',     MY_PHONE         || '');
+  fd.append('my_company',   MY_COMPANY       || '');
+  fd.append('my_logo',      MY_LOGO          || '');
+  fd.append('my_address',   MY_COMPANY_ADDRESS || MY_BIO_LOCATION || '');
+
+  fetch(APP_BASE + 'push/createInvoiceFromEstimate.php', { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(j) {
+      btn.disabled = false; btn.textContent = 'Create';
+      if (!j.ok) {
+        log.textContent = '✕  ' + (j.error || 'Unknown error');
+        log.className = 'sync-log error'; log.style.display = '';
+        return;
+      }
+      // Add to ESTIMATES_RAW so it shows without reload
+      if (j.invoice_record) {
+        ESTIMATES_RAW.push(j.invoice_record);
+        renderPublishersView();
+      }
+      // Open the new invoice sheet
+      if (j.url) window.open(j.url, '_blank');
+      forceCloseInvoiceDialog();
+    })
+    .catch(function() {
+      btn.disabled = false; btn.textContent = 'Create';
+      log.textContent = '✕  Request failed. Check your connection.';
+      log.className = 'sync-log error'; log.style.display = '';
     });
 }
 
@@ -2725,6 +2909,11 @@ document.addEventListener('keydown', function(ev) {
   el = document.getElementById('profileOverlay');
   if (el && el.classList.contains('open')) {
     closeProfileDialog();
+    return;
+  }
+  el = document.getElementById('invoiceOverlay');
+  if (el && el.classList.contains('open')) {
+    closeInvoiceDialog();
     return;
   }
   el = document.getElementById('estimateOverlay');

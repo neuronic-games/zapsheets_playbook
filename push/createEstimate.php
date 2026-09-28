@@ -43,6 +43,7 @@ $rowPayload = [
     'duration'     => $duration,
     'target_start' => $targetStart,
     'target_end'   => $targetEnd,
+    'type'         => 'Estimate',
     'notes'        => $notes,
     'date'         => date('n/j/Y'),   // today as M/D/YYYY matching sheet format
 ];

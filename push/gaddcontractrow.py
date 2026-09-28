@@ -37,6 +37,7 @@ edits    = str(data.get('edits',    '')).strip()
 duration     = data.get('duration',     '').strip()
 target_start = data.get('target_start', '').strip()
 target_end   = data.get('target_end',   '').strip()
+row_type     = data.get('type',         '').strip()   # "Estimate" or "Invoice"
 date_val     = data.get('date',         '').strip()   # MM/DD/YYYY; caller supplies today
 
 try:
@@ -79,6 +80,7 @@ edits_col    = col('Edits')
 duration_col     = col('Duration')
 target_start_col = col('Target Start Date')
 target_end_col   = col('Target End Date')
+type_col         = col('Type')
 notes_col        = col('Notes')
 
 # Determine next sequential ID
@@ -105,6 +107,7 @@ if edits_col    >= 0: new_row[edits_col]    = edits
 if duration_col     >= 0: new_row[duration_col]     = duration
 if target_start_col >= 0: new_row[target_start_col] = target_start
 if target_end_col   >= 0: new_row[target_end_col]   = target_end
+if type_col         >= 0: new_row[type_col]         = row_type
 if notes_col        >= 0: new_row[notes_col]        = notes
 
 try:

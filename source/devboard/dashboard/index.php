@@ -369,7 +369,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .game-group.open .game-group-chevron { transform:rotate(180deg); opacity:.65; }
 .game-group-body { display:none; border-top:1px solid #edf1f5; }
 .game-group.open .game-group-body { display:block; }
-.game-group-footer { padding:.45rem 1rem; background:#f9fbfc; border-top:1px solid #edf1f5; display:flex; justify-content:flex-end; }
+.game-group-footer { padding:.45rem 1rem; background:#f9fbfc; border-top:1px solid #edf1f5; display:flex; justify-content:space-between; align-items:center; gap:.5rem; }
+.game-group-footer-left { display:flex; gap:.4rem; align-items:center; flex-wrap:wrap; }
 .btn-card-subtitle { font-family:'DINBlack',sans-serif; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; background:none; border:1.5px solid #2e7d9e; color:#2e7d9e; border-radius:7px; padding:.22rem .65rem; cursor:pointer; transition:background .15s,color .15s; }
 .btn-card-subtitle:hover { background:#2e7d9e; color:#fff; }
 
@@ -1654,23 +1655,28 @@ function renderPublishersView() {
         html += '<div class="client-contract-row-chevron">▼</div>';
         html += '</div>'; // .client-contract-row
         html += '<div class="client-contract-details">';
-        html += '<div class="contract-detail-fields">';
-        if (actualRange) html += '<div class="contract-detail-field"><label>Actual Dates</label><span>' + esc(actualRange) + '</span></div>';
-        if (status)      html += '<div class="contract-detail-field"><label>Status</label><span>' + esc(status) + '</span></div>';
-        html += '</div>';
+        if (actualRange || status) {
+          html += '<div class="contract-detail-fields">';
+          if (actualRange) html += '<div class="contract-detail-field"><label>Actual Dates</label><span>' + esc(actualRange) + '</span></div>';
+          if (status)      html += '<div class="contract-detail-field"><label>Status</label><span>' + esc(status) + '</span></div>';
+          html += '</div>';
+        }
         if (notes) html += '<div class="contract-detail-notes">' + esc(notes) + '</div>';
-        html += '<div class="contract-detail-actions">';
-        html += '<button class="btn-contract-action" onclick="event.stopPropagation();openContractEditDialog(' + dataIdx + ')">Edit</button>';
-        html += '<button class="btn-contract-action estimate" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(con.Client || '')) + ',' + esc(JSON.stringify(con.Game || '')) + ')">Estimate</button>';
-        html += '<button class="btn-contract-action invoice" id="inv-btn-' + dataIdx + '" onclick="event.stopPropagation();generateInvoice(' + dataIdx + ')">Invoice</button>';
-        html += '</div>';
         html += '</div>'; // .client-contract-details
         html += '</div>'; // .contract-item
       });
 
-      html += '<div class="game-group-footer">' +
-        '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(pub.name)) + ',' + esc(JSON.stringify(g.name)) + ')">+ Estimate</button>' +
-      '</div>';
+      // Footer: contract actions (Edit, + Invoice per contract) + + Estimate on right
+      html += '<div class="game-group-footer">';
+      html += '<div class="game-group-footer-left">';
+      g.contracts.forEach(function(con) {
+        var dataIdx = CONTRACT_RAW.indexOf(con);
+        html += '<button class="btn-contract-action" onclick="event.stopPropagation();openContractEditDialog(' + dataIdx + ')">Edit</button>';
+        html += '<button class="btn-contract-action invoice" id="inv-btn-' + dataIdx + '" onclick="event.stopPropagation();generateInvoice(' + dataIdx + ')">+ Invoice</button>';
+      });
+      html += '</div>';
+      html += '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(pub.name)) + ',' + esc(JSON.stringify(g.name)) + ')">+ Estimate</button>';
+      html += '</div>';
       html += '</div>'; // .game-group-body
       html += '</div>'; // .game-group
     });

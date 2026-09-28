@@ -615,7 +615,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 /* Session dialog */
 .session-dialog {
   background:#fff; border-radius:12px;
-  padding:1.5rem 2.4rem; width:min(680px,96vw);
+  padding:1.5rem 1rem; width:min(680px,96vw);
   box-shadow:0 8px 32px rgba(0,0,0,.22);
   display:flex; flex-direction:column; gap:1.1rem;
   max-height:92vh; overflow-y:auto;
@@ -743,27 +743,25 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .tester-row:last-child { margin-bottom:0; }
 
 /* Dynamic obs/sol pairs */
-/* Obs container — no extra margin; dialog left padding accommodates buttons */
 #obsContainer { margin-left:0; }
-.obs-pair { position:relative; margin-bottom:.75rem; }
+.obs-pair { margin-bottom:.75rem; }
 .obs-pair:last-child { margin-bottom:0; }
-.obs-pair-row { display:block; }   /* no longer a flex row; buttons are absolute */
-.obs-pair-body { flex:1; min-width:0; }
-/* Column labels — lives ABOVE obsContainer, never animates */
+/* Reorder buttons — inline flex column to the left of the input box */
+.obs-pair-row { display:flex; align-items:flex-start; gap:.4rem; }
+.obs-reorder { display:flex; flex-direction:column; gap:.2rem; padding-top:.4rem; flex-shrink:0; width:1.4rem; }
+.obs-reorder-btn { background:none; border:1px solid #d0d8e4; border-radius:4px; padding:.12rem 0; cursor:pointer; font-size:.62rem; color:#aab; line-height:1; width:100%; text-align:center; transition:color .12s,border-color .12s,background .12s; }
+.obs-reorder-btn:hover { color:#1a5f7a; border-color:#a0b8c8; background:#f0f7fa; }
+.obs-reorder-btn:disabled { opacity:.25; cursor:default; }
+.obs-pair:last-child .obs-reorder { visibility:hidden; }
+/* Column labels — indented to align OBSERVATIONS with the left textarea edge */
 .obs-pair-labels {
   display:grid; grid-template-columns:1fr 1fr; gap:.9rem;
-  margin-bottom:.3rem; margin-left:0;
+  margin-bottom:.3rem; margin-left:1.8rem;
 }
 .obs-pair-labels label {
   font-family:'DINBlack',sans-serif; font-size:.68rem;
   text-transform:uppercase; letter-spacing:.07em; color:#888;
 }
-/* Reorder buttons — absolutely positioned in the left margin */
-.obs-reorder { position:absolute; left:-2.2rem; top:.35rem; display:flex; flex-direction:column; gap:.15rem; }
-.obs-reorder-btn { background:none; border:1px solid #d0d8e4; border-radius:4px; padding:.15rem .28rem; cursor:pointer; font-size:.65rem; color:#aab; line-height:1; transition:color .12s,border-color .12s,background .12s; }
-.obs-reorder-btn:hover { color:#1a5f7a; border-color:#a0b8c8; background:#f0f7fa; }
-.obs-reorder-btn:disabled { opacity:.25; cursor:default; }
-.obs-pair:last-child .obs-reorder { visibility:hidden; }
 /* Row box — one joined container split into two cells */
 .obs-pair-inputs { display:grid; grid-template-columns:1fr 1fr; border:1.5px solid #d0d8e0; border-radius:8px; overflow:hidden; }
 .obs-pair-inputs:focus-within { border-color:#1a5f7a; box-shadow:0 0 0 2px rgba(26,95,122,.12); }
@@ -797,15 +795,13 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   #sessionOverlay { align-items:flex-end; padding:0; }
   .session-dialog {
     width:100vw; max-width:100vw; border-radius:16px 16px 0 0;
-    margin-top:auto; padding:1.25rem 2.4rem 1.5rem 2.4rem;
+    margin-top:auto; padding:1.25rem 1rem 1.5rem;
     max-height:94dvh;
   }
   .obs-pair-inputs { grid-template-columns:1fr; }
   .obs-obs-col { border-right:none; border-bottom:1px solid #d0d8e0; }
   .obs-pair-labels label:last-child { display:none; }
-  #obsContainer { margin-left:0; }
-  .obs-pair-labels { margin-left:0; }
-  .obs-reorder { left:-2rem; }
+  .obs-pair-labels { margin-left:1.8rem; }
   .field-grid { grid-template-columns:1fr 1fr; }
   .field-group.span2 { grid-column:span 1; }
   .obs-grid { grid-template-columns:1fr; }

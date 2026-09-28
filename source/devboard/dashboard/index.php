@@ -1820,7 +1820,8 @@ function renderPublishersView() {
       if (firstConDataIdx >= 0) {
         html += '<button class="btn-contract-action" onclick="event.stopPropagation();openContractEditDialog(' + firstConDataIdx + ')">Edit Game</button>';
       }
-      html += '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(pub.name)) + ',' + esc(JSON.stringify(g.name)) + ')">+ Contract</button>';
+      html += '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(pub.name)) + ',' + esc(JSON.stringify(g.name)) + ')">+ Estimate</button>';
+      html += '<button type="button" class="btn-contract-action invoice" onclick="event.stopPropagation();openContractDialog(' + esc(JSON.stringify(g.name)) + ',' + esc(JSON.stringify(pub.name)) + ')">+ Invoice</button>';
       html += '</div>';
       html += '<div style="display:flex;gap:.4rem;align-items:center"></div>';
       html += '</div>';
@@ -2818,10 +2819,10 @@ function openAddDialog() {
 // ── Contract dialog ────────────────────────────────────────────────────────
 var _contractGame = '';
 
-function openContractDialog(name) {
+function openContractDialog(name, clientName) {
   _contractGame = name;
   document.getElementById('contractGameTitle').textContent = name;
-  document.getElementById('contractClient').value      = '';
+  document.getElementById('contractClient').value      = clientName || '';
   document.getElementById('contractTargetStart').value = '';
   document.getElementById('contractTargetEnd').value   = '';
   document.getElementById('contractQuote').value       = '';
@@ -2832,7 +2833,7 @@ function openContractDialog(name) {
   document.getElementById('contractBtn').disabled      = false;
   document.getElementById('contractBtn').textContent   = 'Add Contract';
   // populate client combo
-  contractClientRebuild('');
+  contractClientRebuild(clientName || '');
   document.getElementById('contractOverlay').classList.add('open');
 }
 

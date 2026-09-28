@@ -374,15 +374,16 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .btn-card-subtitle:hover { background:#2e7d9e; color:#fff; }
 
 /* ── Estimate rows inside game group ──────────────────────── */
-.estimate-item { display:grid; grid-template-columns:auto auto 1fr auto auto; gap:.6rem; align-items:center; padding:.38rem 1rem; border-bottom:1px solid #f4f7fb; font-size:.78rem; background:#fafcfe; }
+.estimate-item { display:grid; grid-template-columns:auto auto 1fr auto auto auto; gap:.6rem; align-items:center; padding:.38rem 1rem; border-bottom:1px solid #f4f7fb; font-size:.78rem; background:#fafcfe; }
 .estimate-item:last-of-type { border-bottom:none; }
 .estimate-type-pill { font-family:'DINBlack',sans-serif; font-size:.58rem; text-transform:uppercase; letter-spacing:.05em; color:#2e7d9e; background:#e8f4f8; border-radius:4px; padding:.1rem .35rem; white-space:nowrap; }
 .estimate-num-badge { font-family:'DINRegular',sans-serif; font-size:.7rem; color:#999; }
-.estimate-amount { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#111; white-space:nowrap; text-align:right; }
+.estimate-date { font-family:'DINRegular',sans-serif; font-size:.7rem; color:#bbb; }
+.estimate-amount { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#111; white-space:nowrap; }
 .estimate-open-link { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:#2e7d9e; text-decoration:none; border:1.5px solid #2e7d9e; border-radius:6px; padding:.18rem .55rem; white-space:nowrap; }
 .estimate-open-link:hover { background:#2e7d9e; color:#fff; }
-.estimate-del-btn { background:none; border:none; cursor:pointer; color:#ccc; padding:.1rem .2rem; line-height:1; font-size:.85rem; }
-.estimate-del-btn:hover { color:#c0392b; }
+.estimate-del-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0c8d0; color:#c0c8d0; border-radius:6px; padding:.18rem .55rem; cursor:pointer; white-space:nowrap; transition:border-color .15s,color .15s; }
+.estimate-del-btn:hover { border-color:#c0392b; color:#c0392b; }
 
 /* ── Estimate dialog ──────────────────────────────────────── */
 .estimate-dialog { background:#fff; border-radius:12px; padding:1.5rem; width:min(480px,96vw); box-shadow:0 8px 32px rgba(0,0,0,.22); display:flex; flex-direction:column; gap:.8rem; max-height:92vh; overflow-y:auto; }
@@ -1605,10 +1606,10 @@ function renderPublishersView() {
         html += '<div class="estimate-item" id="est-item-' + globalIdx + '">' +
           '<span class="estimate-type-pill">Estimate</span>' +
           '<div class="estimate-num-badge">' + esc(est.estimate_num || '') + '</div>' +
-          '<span></span>' + // spacer
+          '<div class="estimate-date">' + esc(est.date || '') + '</div>' +
           '<div class="estimate-amount">' + esc(amtFmt) + '</div>' +
           (est.url ? '<a class="estimate-open-link" href="' + esc(est.url) + '" target="_blank" rel="noopener">Open</a>' : '<span></span>') +
-          '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();deleteEstimate(' + globalIdx + ')" title="Delete estimate">&#x1F5D1;</button>' +
+          '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();deleteEstimate(' + globalIdx + ')">Delete</button>' +
         '</div>';
       });
 

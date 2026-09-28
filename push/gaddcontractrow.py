@@ -34,8 +34,10 @@ payment  = data.get('payment', '').strip() or 'Estimate'
 notes    = data.get('notes',   '').strip()
 tests    = str(data.get('tests',    '')).strip()
 edits    = str(data.get('edits',    '')).strip()
-duration = data.get('duration', '').strip()
-date_val = data.get('date',     '').strip()   # MM/DD/YYYY; caller supplies today
+duration     = data.get('duration',     '').strip()
+target_start = data.get('target_start', '').strip()
+target_end   = data.get('target_end',   '').strip()
+date_val     = data.get('date',         '').strip()   # MM/DD/YYYY; caller supplies today
 
 try:
     wb = sa.open_by_key(sheet_id)
@@ -74,8 +76,10 @@ quote_col    = col('Quote')
 payment_col  = col('Payment')
 tests_col    = col('Tests')
 edits_col    = col('Edits')
-duration_col = col('Duration')
-notes_col    = col('Notes')
+duration_col     = col('Duration')
+target_start_col = col('Target Start Date')
+target_end_col   = col('Target End Date')
+notes_col        = col('Notes')
 
 # Determine next sequential ID
 next_id = 1
@@ -98,8 +102,10 @@ if quote_col    >= 0: new_row[quote_col]    = quote
 if payment_col  >= 0: new_row[payment_col]  = payment
 if tests_col    >= 0: new_row[tests_col]    = tests
 if edits_col    >= 0: new_row[edits_col]    = edits
-if duration_col >= 0: new_row[duration_col] = duration
-if notes_col    >= 0: new_row[notes_col]    = notes
+if duration_col     >= 0: new_row[duration_col]     = duration
+if target_start_col >= 0: new_row[target_start_col] = target_start
+if target_end_col   >= 0: new_row[target_end_col]   = target_end
+if notes_col        >= 0: new_row[notes_col]        = notes
 
 try:
     ws.append_row(new_row, value_input_option='USER_ENTERED')

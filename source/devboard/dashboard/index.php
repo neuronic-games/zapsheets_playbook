@@ -403,6 +403,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .estimate-field-row { display:grid; gap:.6rem; }
 .estimate-field-row.two { grid-template-columns:1fr 1fr; }
 .estimate-field-row.three-one { grid-template-columns:2fr 1fr; }
+.estimate-field-row.dur-dates { grid-template-columns:1fr 1fr 1fr; }
 
 /* ── Search bar ───────────────────────────────────────── */
 .search-bar { padding:.6rem 1.25rem .5rem; max-width:860px; margin:0 auto; display:flex; gap:.6rem; align-items:center; }
@@ -993,9 +994,17 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         </div>
       </label>
     </div>
-    <label class="ge-label">Duration
-      <input type="text" id="estimateDuration" class="ge-input" placeholder="e.g. 2 months" />
-    </label>
+    <div class="estimate-field-row dur-dates">
+      <label class="ge-label">Duration
+        <input type="text" id="estimateDuration" class="ge-input" placeholder="e.g. 2 months" />
+      </label>
+      <label class="ge-label">Target Start
+        <input type="date" id="estimateTargetStart" class="ge-input" />
+      </label>
+      <label class="ge-label">Target End
+        <input type="date" id="estimateTargetEnd" class="ge-input" />
+      </label>
+    </div>
     <div class="estimate-field-row three-one">
       <label class="ge-label">
         <span style="display:flex;justify-content:space-between;align-items:baseline">Discount Label<span style="font-family:'DINRegular',sans-serif;letter-spacing:0;text-transform:none;opacity:.45;font-size:.65rem">(optional)</span></span>
@@ -1784,6 +1793,8 @@ function openEstimateDialog(clientName, gameName) {
   document.getElementById('estimateQty').value               = '1';
   document.getElementById('estimateUnitPrice').value         = '';
   document.getElementById('estimateDuration').value          = '';
+  document.getElementById('estimateTargetStart').value       = '';
+  document.getElementById('estimateTargetEnd').value         = '';
   document.getElementById('estimateDiscountLabel').value     = '';
   document.getElementById('estimateDiscountPct').value       = '0';
   document.getElementById('estimateNotes').value             = '';
@@ -1815,6 +1826,8 @@ function submitEstimate() {
   fd.append('qty',            document.getElementById('estimateQty').value);
   fd.append('unit_price',     unitPrice);
   fd.append('duration',       document.getElementById('estimateDuration').value.trim());
+  fd.append('target_start',  document.getElementById('estimateTargetStart').value);
+  fd.append('target_end',    document.getElementById('estimateTargetEnd').value);
   fd.append('discount_pct',   document.getElementById('estimateDiscountPct').value);
   fd.append('discount_label', document.getElementById('estimateDiscountLabel').value.trim());
   fd.append('notes',          document.getElementById('estimateNotes').value.trim());

@@ -1746,8 +1746,12 @@ function renderPublishersView() {
         html += '</div>'; // .estimate-item
       });
 
-      // Contracts for this game
-      g.contracts.forEach(function(con) {
+      // Contracts for this game — sort latest date first (reverse of sheet order)
+      var sortedCons = g.contracts.slice().sort(function(a, b) {
+        var da = new Date(a.Date || 0), db = new Date(b.Date || 0);
+        return db - da;
+      });
+      sortedCons.forEach(function(con) {
         var quoteNum = parseFloat(con.Quote || '');
         var quote    = isNaN(quoteNum) ? '—' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
         var payment  = (con.Payment || '').trim();

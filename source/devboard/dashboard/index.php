@@ -763,7 +763,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   text-transform:uppercase; letter-spacing:.07em; color:#888;
 }
 /* Row box — one joined container split into two cells */
-.obs-pair-inputs { display:grid; grid-template-columns:1fr 1fr; border:1.5px solid #d0d8e0; border-radius:8px; overflow:hidden; }
+.obs-pair-inputs { flex:1; min-width:0; display:grid; grid-template-columns:1fr 1fr; border:1.5px solid #d0d8e0; border-radius:8px; overflow:hidden; }
 .obs-pair-inputs:focus-within { border-color:#1a5f7a; box-shadow:0 0 0 2px rgba(26,95,122,.12); }
 .obs-obs-col { display:flex; flex-direction:column; min-width:0; background:#fff; border-right:1px solid #d0d8e0; }
 .obs-sol-col  { display:flex; flex-direction:column; min-width:0; background:#f5f7fa; }

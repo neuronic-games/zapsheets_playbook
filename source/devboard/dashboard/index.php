@@ -3534,16 +3534,6 @@ function syncPairHeight(idx) {
 // Pending reorder animation timer — cancel if user clicks again before it fires
 var _moveTimer = null;
 
-// Walk up the DOM to find the nearest scrollable ancestor
-function _findScroller(el) {
-  var p = el.parentElement;
-  while (p && p !== document.body) {
-    var ov = getComputedStyle(p).overflowY;
-    if (ov === 'auto' || ov === 'scroll') return p;
-    p = p.parentElement;
-  }
-  return document.documentElement;
-}
 
 function moveObsPair(idx, dir) {
   // Cancel any in-flight animation from a previous click
@@ -3573,37 +3563,37 @@ function moveObsPair(idx, dir) {
   var bEl  = pairs[tpos];             // other row  — slides
   var aIdx = parseInt(aEl.dataset.idx);
   var bIdx = parseInt(bEl.dataset.idx);
-  var scroller = _findScroller(container);
+  // FLIP — record screen positions before DOM change
+  var aOldTop = aEl.getBoundingClientRect().top;
+  var bOldTop = bEl.getBoundingClientRect().top;
 
-  // Record screen positions before any DOM change
-  var aScreenTop = aEl.getBoundingClientRect().top;
-  var bScreenTop = bEl.getBoundingClientRect().top;
-
-  // Move DOM — aEl travels to its new position in document order
+  // Move DOM
   if (dir < 0) {
     container.insertBefore(aEl, bEl);
   } else {
     container.insertBefore(aEl, bEl.nextSibling);
   }
 
-  // Compensate scroll so aEl stays at exactly the same screen position
-  var scrollDelta = aEl.getBoundingClientRect().top - aScreenTop;
-  scroller.scrollTop += scrollDelta;
+  // FLIP — apply inverse transforms so both rows appear at their old positions
+  var aDelta = aOldTop - aEl.getBoundingClientRect().top;
+  var bDelta = bOldTop - bEl.getBoundingClientRect().top;
 
-  // FLIP: bEl is now in its new DOM position; make it appear at its old screen position,
-  // then animate it sliding to natural position — the rest of the panel moves, aEl is pinned
-  var bNewScreenTop = bEl.getBoundingClientRect().top;
-  var bTranslate    = bScreenTop - bNewScreenTop;
-
+  aEl.style.transition = 'none';
+  aEl.style.transform  = 'translateY(' + aDelta + 'px)';
   bEl.style.transition = 'none';
-  bEl.style.transform  = 'translateY(' + bTranslate + 'px)';
-  void bEl.offsetWidth; // flush
+  bEl.style.transform  = 'translateY(' + bDelta + 'px)';
+  void aEl.offsetWidth; // flush
 
+  // PLAY — animate both to their natural positions simultaneously
+  aEl.style.transition = 'transform 0.22s ease-out';
+  aEl.style.transform  = '';
   bEl.style.transition = 'transform 0.22s ease-out';
   bEl.style.transform  = '';
 
   _moveTimer = setTimeout(function() {
     _moveTimer = null;
+    aEl.style.transition = '';
+    aEl.style.transform  = '';
     bEl.style.transition = '';
     bEl.style.transform  = '';
     syncPairHeight(aIdx);

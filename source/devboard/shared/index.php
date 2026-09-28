@@ -1296,7 +1296,7 @@ function addObsPair(showLabels) {
         '</div>' +
       '</div>' +
       '<textarea class="field-textarea" id="sSol-' + idx + '" rows="1"' +
-        ' placeholder="Solutions…"' +
+        ' placeholder="Thoughts or solutions…"' +
         ' oninput="autoResize(this);onObsInput(' + idx + ')"' +
         ' onkeydown="onObsKeydown(event,' + idx + ',1)"></textarea>' +
     '</div>';

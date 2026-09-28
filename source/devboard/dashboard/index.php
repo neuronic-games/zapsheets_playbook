@@ -3529,7 +3529,7 @@ function addObsPair() {
         '</div>' +
         '<div class="obs-sol-col">' +
           '<div contenteditable="true" class="field-textarea obs-editable" id="sSol-' + idx + '"' +
-            ' data-ph="Solutions…" data-empty="1"' +
+            ' data-ph="Thoughts or solutions…" data-empty="1"' +
             ' onfocus="this.dataset.empty=\'\'"' +
             ' onblur="_ceNorm(this)"' +
             ' oninput="_autoBullet(this);_ceNorm(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ')"' +

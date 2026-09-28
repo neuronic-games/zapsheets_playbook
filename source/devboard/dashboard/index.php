@@ -3548,14 +3548,15 @@ function _findScroller(el) {
 }
 
 function moveObsPair(idx, dir) {
-  // Cancel any in-flight animation and reset transforms immediately
+  // Cancel any in-flight animation and reset all transforms immediately
   if (_moveTimer) {
     clearTimeout(_moveTimer);
     _moveTimer = null;
-    document.querySelectorAll('#obsContainer .obs-pair').forEach(function(p) {
-      p.style.transition = 'none';
-      p.style.transform  = '';
-    });
+    var _c = document.getElementById('obsContainer');
+    if (_c) {
+      _c.querySelectorAll('.obs-pair').forEach(function(p) { p.style.transition = 'none'; p.style.transform = ''; });
+      Array.from(_c.parentElement.children).forEach(function(el) { el.style.transition = 'none'; el.style.transform = ''; });
+    }
   }
 
   var container = document.getElementById('obsContainer');
@@ -3590,24 +3591,32 @@ function moveObsPair(idx, dir) {
   var scrollDelta = aEl.getBoundingClientRect().top - aScreenTop;
   scroller.scrollTop += scrollDelta;
 
-  // Every other row shifted by −scrollDelta on screen due to the scroll change.
-  // Apply the inverse transform so they appear at their old positions, then
-  // animate them all to translateY(0) — the whole panel slides as one unit.
-  var others = all.filter(function(p) { return p !== aEl; });
-  others.forEach(function(p) {
-    p.style.transition = 'none';
-    p.style.transform  = 'translateY(' + scrollDelta + 'px)';
+  // The instant scrollTop change shifted every element in the scroller by −scrollDelta.
+  // Apply the inverse transform to ALL of them (obs-pairs + the top-section siblings)
+  // so they appear at their old positions, then animate to 0 — the whole panel slides.
+  var otherPairs = all.filter(function(p) { return p !== aEl; });
+
+  // Siblings of #obsContainer in the dialog body (date fields, testers, labels, etc.)
+  var topSiblings = Array.from(container.parentElement.children).filter(function(el) {
+    return el !== container;
+  });
+
+  var toAnimate = otherPairs.concat(topSiblings);
+  toAnimate.forEach(function(el) {
+    el.style.transition = 'none';
+    el.style.transform  = 'translateY(' + scrollDelta + 'px)';
   });
   void container.offsetWidth; // flush
 
-  others.forEach(function(p) {
-    p.style.transition = 'transform 0.25s ease-out';
-    p.style.transform  = '';
+  toAnimate.forEach(function(el) {
+    el.style.transition = 'transform 0.25s ease-out';
+    el.style.transform  = '';
   });
 
   _moveTimer = setTimeout(function() {
     _moveTimer = null;
-    all.forEach(function(p) { p.style.transition = ''; p.style.transform = ''; });
+    toAnimate.forEach(function(el) { el.style.transition = ''; el.style.transform = ''; });
+    all.forEach(function(p)        { p.style.transition  = ''; p.style.transform  = ''; });
     syncPairHeight(aIdx);
     syncPairHeight(bIdx);
   }, 270);

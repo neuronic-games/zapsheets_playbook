@@ -242,7 +242,13 @@ num_label = 'Invoice #' if estimate_num else 'Estimate #'
 num_value = f"{invoice_num} (Estimate {estimate_num})" if estimate_num else invoice_num
 sc(R_LABELS, CF, num_label)
 sc(R_VALUES, CB, client or '—')
-sc(R_VALUES, CD, tgt_start or '—')
+due_date_disp = '—'
+if tgt_start:
+    try:
+        due_date_disp = datetime.strptime(tgt_start, '%Y-%m-%d').strftime('%b %d, %Y')
+    except ValueError:
+        due_date_disp = tgt_start
+sc(R_VALUES, CD, due_date_disp)
 sc(R_VALUES, CF, num_value)
 
 # Table header

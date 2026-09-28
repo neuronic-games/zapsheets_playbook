@@ -1049,10 +1049,10 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <input type="hidden" id="invoiceEstIdx" />
 
     <!-- Reference info row -->
-    <div style="display:flex;gap:1.5rem;padding:.35rem .75rem;background:#f5f9fc;border-radius:7px;border:1px solid #e2edf5;font-size:.78rem;">
-      <div><span style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;display:block">Client</span><span id="invoiceRefClient" style="font-family:'DINRegular',sans-serif;color:#333"></span></div>
-      <div><span style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;display:block">Estimate #</span><span id="invoiceRefNum" style="font-family:'DINRegular',sans-serif;color:#333"></span></div>
-      <div><span style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;display:block">Estimate Total</span><span id="invoiceRefAmount" style="font-family:'DINBlack',sans-serif;color:#1a5f7a"></span></div>
+    <div style="display:flex;gap:1.5rem;align-items:flex-start;padding:.35rem .75rem;background:#f5f9fc;border-radius:7px;border:1px solid #e2edf5;font-size:.78rem;">
+      <div><span style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;display:block;white-space:nowrap">Client</span><span id="invoiceRefClient" style="font-family:'DINRegular',sans-serif;color:#333"></span></div>
+      <div><span style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;display:block;white-space:nowrap">Estimate #</span><span id="invoiceRefNum" style="font-family:'DINRegular',sans-serif;color:#333"></span></div>
+      <div><span style="font-family:'DINBlack',sans-serif;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;display:block;white-space:nowrap">Estimate Total</span><span id="invoiceRefAmount" style="font-family:'DINBlack',sans-serif;color:#1a5f7a"></span></div>
     </div>
 
     <!-- Amount type + value (all in one label row) -->

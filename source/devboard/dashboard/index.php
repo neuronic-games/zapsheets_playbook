@@ -775,7 +775,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .obs-pair-inputs .field-textarea:focus { border:none !important; box-shadow:none !important; }
 /* contenteditable obs/sol fields */
 .obs-editable { outline:none; white-space:pre-wrap; word-break:break-word; overflow-wrap:break-word; cursor:text; }
-.obs-editable > div.bul { padding-left:1.4em; text-indent:-1.4em; }
+.obs-editable > div.bul { padding-left:var(--bul-indent,1.4em); text-indent:calc(-1 * var(--bul-indent,1.4em)); }
 /* placeholder via data-ph when empty */
 .obs-editable[data-empty="1"]::before { content:attr(data-ph); color:#b0b8c8; pointer-events:none; }
 /* obs-obs-col: textarea wrapper with icon overlaid inside */
@@ -3642,6 +3642,27 @@ function autoResize(el) {
   if (el && el.isContentEditable) return; // contenteditable auto-expands
   el.style.height = 'auto';
   el.style.height = el.scrollHeight + 'px';
+}
+
+// Measure the rendered width of "• " in the obs font and set --bul-indent so
+// wrapped bullet lines align exactly with the text after the bullet.
+function _setBulIndent() {
+  var sp = document.createElement('span');
+  sp.style.cssText = 'font-family:DINRegular,Arial,sans-serif;font-size:.85rem;' +
+    'visibility:hidden;position:fixed;top:-9999px;white-space:nowrap;';
+  sp.textContent = '• ';
+  document.body.appendChild(sp);
+  var emBase = parseFloat(getComputedStyle(document.documentElement).fontSize) * 0.85;
+  var w = sp.getBoundingClientRect().width;
+  document.body.removeChild(sp);
+  if (emBase > 0) {
+    document.documentElement.style.setProperty('--bul-indent', (w / emBase).toFixed(4) + 'em');
+  }
+}
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(function() { _setBulIndent(); });
+} else {
+  _setBulIndent();
 }
 
 // ── ContentEditable helpers ───────────────────────────────────────────────────

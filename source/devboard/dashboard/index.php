@@ -1722,7 +1722,7 @@ function renderPublishersView() {
         // Clickable details area — opens estimate URL
         html += '<div class="estimate-item-details"' + openAttr + '>';
         html += '<dl class="estimate-item-fields">';
-        html += '<div class="estimate-item-field"><dt>Estimate #</dt><dd>' + esc(est.estimate_num || '—') + '</dd></div>';
+        html += '<div class="estimate-item-field"><dt>' + (isInvoice ? 'Invoice #' : 'Estimate #') + '</dt><dd>' + esc(est.estimate_num || '—') + '</dd></div>';
         html += '<div class="estimate-item-field"><dt>Amount</dt><dd>' + esc(amtFmt) + '</dd></div>';
         html += '<div class="estimate-item-field"><dt>Date</dt><dd>' + esc(est.date || '—') + '</dd></div>';
         if (est.game)   html += '<div class="estimate-item-field"><dt>Game</dt><dd>' + esc(est.game) + '</dd></div>';

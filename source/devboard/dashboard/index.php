@@ -744,26 +744,28 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
 /* Dynamic obs/sol pairs */
 #obsContainer { margin-left:0; }
-.obs-pair { margin-bottom:.75rem; }
+.obs-pair { position:relative; margin-bottom:.75rem; }
 .obs-pair:last-child { margin-bottom:0; }
-/* Reorder buttons — inline flex column to the left of the input box */
-.obs-pair-row { display:flex; align-items:flex-start; gap:.4rem; }
-.obs-reorder { display:flex; flex-direction:column; gap:.2rem; padding-top:.4rem; flex-shrink:0; width:1.4rem; }
-.obs-reorder-btn { background:none; border:1px solid #d0d8e4; border-radius:4px; padding:.12rem 0; cursor:pointer; font-size:.62rem; color:#aab; line-height:1; width:100%; text-align:center; transition:color .12s,border-color .12s,background .12s; }
+.obs-pair-row { display:block; }
+/* Reorder buttons — overlaid on top-left corner of the obs box */
+.obs-reorder { position:absolute; left:.35rem; top:.35rem; z-index:2; display:flex; flex-direction:column; gap:.18rem; }
+.obs-reorder-btn { background:rgba(255,255,255,.92); border:1px solid #d0d8e4; border-radius:4px; padding:.13rem .22rem; cursor:pointer; font-size:.62rem; color:#aab; line-height:1; transition:color .12s,border-color .12s,background .12s; backdrop-filter:blur(2px); }
 .obs-reorder-btn:hover { color:#1a5f7a; border-color:#a0b8c8; background:#f0f7fa; }
 .obs-reorder-btn:disabled { opacity:.25; cursor:default; }
 .obs-pair:last-child .obs-reorder { visibility:hidden; }
-/* Column labels — indented to align OBSERVATIONS with the left textarea edge */
+/* Indent obs textarea text so it doesn't sit under the buttons */
+.obs-obs-col .field-textarea { padding-left:2.4rem; }
+/* Column labels — flush with dialog left edge */
 .obs-pair-labels {
   display:grid; grid-template-columns:1fr 1fr; gap:.9rem;
-  margin-bottom:.3rem; margin-left:1.8rem;
+  margin-bottom:.3rem; margin-left:0;
 }
 .obs-pair-labels label {
   font-family:'DINBlack',sans-serif; font-size:.68rem;
   text-transform:uppercase; letter-spacing:.07em; color:#888;
 }
 /* Row box — one joined container split into two cells */
-.obs-pair-inputs { flex:1; min-width:0; display:grid; grid-template-columns:1fr 1fr; border:1.5px solid #d0d8e0; border-radius:8px; overflow:hidden; }
+.obs-pair-inputs { display:grid; grid-template-columns:1fr 1fr; border:1.5px solid #d0d8e0; border-radius:8px; overflow:hidden; }
 .obs-pair-inputs:focus-within { border-color:#1a5f7a; box-shadow:0 0 0 2px rgba(26,95,122,.12); }
 .obs-obs-col { display:flex; flex-direction:column; min-width:0; background:#fff; border-right:1px solid #d0d8e0; }
 .obs-sol-col  { display:flex; flex-direction:column; min-width:0; background:#f5f7fa; }
@@ -801,7 +803,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   .obs-pair-inputs { grid-template-columns:1fr; }
   .obs-obs-col { border-right:none; border-bottom:1px solid #d0d8e0; }
   .obs-pair-labels label:last-child { display:none; }
-  .obs-pair-labels { margin-left:1.8rem; }
+  .obs-obs-col .field-textarea { padding-left:2.2rem; }
   .field-grid { grid-template-columns:1fr 1fr; }
   .field-group.span2 { grid-column:span 1; }
   .obs-grid { grid-template-columns:1fr; }

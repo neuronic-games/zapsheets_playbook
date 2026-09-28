@@ -81,6 +81,7 @@ duration_col     = col('Duration')
 target_start_col = col('Target Start Date')
 target_end_col   = col('Target End Date')
 type_col         = col('Type')
+ref_num_col      = col('Ref Number')
 notes_col        = col('Notes')
 
 # Determine next sequential ID
@@ -108,6 +109,7 @@ if duration_col     >= 0: new_row[duration_col]     = duration
 if target_start_col >= 0: new_row[target_start_col] = target_start
 if target_end_col   >= 0: new_row[target_end_col]   = target_end
 if type_col         >= 0: new_row[type_col]         = row_type
+if ref_num_col      >= 0: new_row[ref_num_col]      = str(next_id)
 if notes_col        >= 0: new_row[notes_col]        = notes
 
 try:

@@ -3534,13 +3534,21 @@ function syncPairHeight(idx) {
 // Pending reorder animation timer — cancel if user clicks again before it fires
 var _moveTimer = null;
 
+function _findScroller(el) {
+  var p = el.parentElement;
+  while (p && p !== document.body) {
+    var ov = getComputedStyle(p).overflowY;
+    if (ov === 'auto' || ov === 'scroll') return p;
+    p = p.parentElement;
+  }
+  return document.documentElement;
+}
 
 function moveObsPair(idx, dir) {
-  // Cancel any in-flight animation from a previous click
+  // Cancel any in-flight animation and reset transforms immediately
   if (_moveTimer) {
     clearTimeout(_moveTimer);
     _moveTimer = null;
-    // Immediately clear any pending transform so we start clean
     document.querySelectorAll('#obsContainer .obs-pair').forEach(function(p) {
       p.style.transition = 'none';
       p.style.transform  = '';
@@ -3559,13 +3567,14 @@ function moveObsPair(idx, dir) {
   var tpos = pos + dir;
   if (pos < 0 || tpos < 0 || tpos >= pairs.length) return;
 
-  var aEl  = pairs[pos];              // clicked row — pinned on screen
-  var bEl  = pairs[tpos];             // other row  — slides
-  var aIdx = parseInt(aEl.dataset.idx);
-  var bIdx = parseInt(bEl.dataset.idx);
-  // FLIP — record screen positions before DOM change
-  var aOldTop = aEl.getBoundingClientRect().top;
-  var bOldTop = bEl.getBoundingClientRect().top;
+  var aEl      = pairs[pos];
+  var bEl      = pairs[tpos];
+  var aIdx     = parseInt(aEl.dataset.idx);
+  var bIdx     = parseInt(bEl.dataset.idx);
+  var scroller = _findScroller(container);
+
+  // Pin aEl: record its screen position before the DOM change
+  var aScreenTop = aEl.getBoundingClientRect().top;
 
   // Move DOM
   if (dir < 0) {
@@ -3574,31 +3583,31 @@ function moveObsPair(idx, dir) {
     container.insertBefore(aEl, bEl.nextSibling);
   }
 
-  // FLIP — apply inverse transforms so both rows appear at their old positions
-  var aDelta = aOldTop - aEl.getBoundingClientRect().top;
-  var bDelta = bOldTop - bEl.getBoundingClientRect().top;
+  // Instantly compensate scroll so aEl stays at the same screen position
+  var scrollDelta = aEl.getBoundingClientRect().top - aScreenTop;
+  scroller.scrollTop += scrollDelta;
 
-  aEl.style.transition = 'none';
-  aEl.style.transform  = 'translateY(' + aDelta + 'px)';
-  bEl.style.transition = 'none';
-  bEl.style.transform  = 'translateY(' + bDelta + 'px)';
-  void aEl.offsetWidth; // flush
+  // Every other row shifted by −scrollDelta on screen due to the scroll change.
+  // Apply the inverse transform so they appear at their old positions, then
+  // animate them all to translateY(0) — the whole panel slides as one unit.
+  var others = all.filter(function(p) { return p !== aEl; });
+  others.forEach(function(p) {
+    p.style.transition = 'none';
+    p.style.transform  = 'translateY(' + scrollDelta + 'px)';
+  });
+  void container.offsetWidth; // flush
 
-  // PLAY — animate both to their natural positions simultaneously
-  aEl.style.transition = 'transform 0.22s ease-out';
-  aEl.style.transform  = '';
-  bEl.style.transition = 'transform 0.22s ease-out';
-  bEl.style.transform  = '';
+  others.forEach(function(p) {
+    p.style.transition = 'transform 0.25s ease-out';
+    p.style.transform  = '';
+  });
 
   _moveTimer = setTimeout(function() {
     _moveTimer = null;
-    aEl.style.transition = '';
-    aEl.style.transform  = '';
-    bEl.style.transition = '';
-    bEl.style.transform  = '';
+    all.forEach(function(p) { p.style.transition = ''; p.style.transform = ''; });
     syncPairHeight(aIdx);
     syncPairHeight(bIdx);
-  }, 240);
+  }, 270);
 }
 
 function autoResize(el) {

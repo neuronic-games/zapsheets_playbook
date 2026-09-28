@@ -2891,7 +2891,7 @@ function _swUpdate() {
   if (swTime) swTime.textContent = timeStr;
   // Hide clock icon once the stopwatch has been used
   var icon = document.querySelector('#swBtn svg');
-  if (icon) icon.style.display = (_swSeconds === 0 && !_swRunning) ? '' : 'none';
+  if (icon) icon.style.display = _swRunning ? 'none' : '';
 }
 
 // Parse "Length: N" (minutes), "Length: MM:SS", or "Length: H:MM:SS" → total seconds

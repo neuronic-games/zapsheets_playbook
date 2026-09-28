@@ -748,14 +748,14 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .obs-pair { position:relative; margin-bottom:.75rem; }
 .obs-pair:last-child { margin-bottom:0; }
 .obs-pair-row { display:block; }
-/* Reorder buttons — overlaid on top-left corner of the obs box */
-.obs-reorder { position:absolute; left:.35rem; top:.35rem; z-index:2; display:flex; flex-direction:column; gap:.18rem; }
+/* Reorder buttons — overlaid on left edge of the obs box, UP at top, DN at bottom */
+.obs-reorder { position:absolute; left:.35rem; top:.35rem; bottom:.35rem; z-index:2; display:flex; flex-direction:column; justify-content:space-between; }
 .obs-reorder-btn { background:rgba(255,255,255,.92); border:1px solid #d0d8e4; border-radius:4px; padding:.13rem .22rem; cursor:pointer; font-size:.62rem; color:#aab; line-height:1; transition:color .12s,border-color .12s,background .12s; backdrop-filter:blur(2px); }
-.obs-reorder-btn:hover { color:#1a5f7a; border-color:#a0b8c8; background:#f0f7fa; }
+.obs-reorder-btn:hover:not(:disabled) { color:#1a5f7a; border-color:#a0b8c8; background:#f0f7fa; }
 .obs-reorder-btn:disabled { opacity:.25; cursor:default; }
 .obs-pair:last-child .obs-reorder { visibility:hidden; }
 /* Indent obs textarea text so it doesn't sit under the buttons */
-.obs-obs-col .field-textarea { padding-left:2.4rem; }
+.obs-obs-col .field-textarea { padding-left:1.8rem; }
 /* Column labels — flush with dialog left edge */
 .obs-pair-labels {
   display:grid; grid-template-columns:1fr 1fr; gap:.9rem;
@@ -804,7 +804,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   .obs-pair-inputs { grid-template-columns:1fr; }
   .obs-obs-col { border-right:none; border-bottom:1px solid #d0d8e0; }
   .obs-pair-labels label:last-child { display:none; }
-  .obs-obs-col .field-textarea { padding-left:2.2rem; }
+  .obs-obs-col .field-textarea { padding-left:1.8rem; }
   .field-grid { grid-template-columns:1fr 1fr; }
   .field-group.span2 { grid-column:span 1; }
   .obs-grid { grid-template-columns:1fr; }
@@ -3104,6 +3104,7 @@ function openEditSessionDialog(gameName, idx) {
     document.querySelectorAll('#obsContainer .obs-pair').forEach(function(pair) {
       syncPairHeight(parseInt(pair.dataset.idx));
     });
+    _syncReorderBtns();
   }, 0);
 }
 
@@ -3623,12 +3624,24 @@ function moveObsPair(idx, dir) {
     all.forEach(function(p)        { p.style.transition  = ''; p.style.transform  = ''; });
     syncPairHeight(aIdx);
     syncPairHeight(bIdx);
+    _syncReorderBtns();
   }, 270);
 }
 
 function autoResize(el) {
   el.style.height = 'auto';
   el.style.height = el.scrollHeight + 'px';
+}
+
+function _syncReorderBtns() {
+  var all    = Array.from(document.querySelectorAll('#obsContainer .obs-pair'));
+  // Last pair is always the trailing empty row — exclude it from enabled/disabled logic
+  var active = all.slice(0, all.length - 1);
+  active.forEach(function(pair, i) {
+    var btns = pair.querySelectorAll('.obs-reorder-btn');
+    if (btns[0]) btns[0].disabled = (i === 0);                    // UP disabled on first
+    if (btns[1]) btns[1].disabled = (i === active.length - 1);   // DN disabled on last
+  });
 }
 
 function onObsInput(idx) {
@@ -3640,6 +3653,7 @@ function onObsInput(idx) {
   if (obs.trim() || sol.trim()) {
     last.classList.remove('obs-pair-empty');
     addObsPair();
+    _syncReorderBtns();
   }
 }
 

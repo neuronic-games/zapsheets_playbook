@@ -43,14 +43,47 @@ function fmtDate(raw) {
   return mm + '/' + dd + '/' + yyyy;
 }
 
+// ── Render plain text with bullet hanging-indent and newline support ──────────
+// Each line becomes a <span class="obs-line"> block; bullet lines additionally
+// get class "obs-bul" which CSS styles with a hanging indent.
+function bulletsHtml(text) {
+  var lines = String(text || '').split('\n');
+  return lines.map(function(line) {
+    if (line.startsWith('• ')) {
+      return '<span class="obs-bul">' + esc(line) + '</span>';
+    }
+    return '<span class="obs-line">' + (esc(line) || '<br>') + '</span>';
+  }).join('');
+}
+
 // ── Render observation text (pass =IMAGE() formulas through as <img>) ─────────
 function obsHtml(text) {
   var parts = String(text || '').split(/(=IMAGE\("[^"]*"\))/i);
   return parts.map(function(p) {
     var m = p.match(/^=IMAGE\("([^"]*)"\)$/i);
     if (m) return '<img src="' + esc(m[1]) + '" style="max-width:100%;max-height:220px;border-radius:4px;display:block;margin-top:.25rem">';
-    return esc(p);
+    return bulletsHtml(p);
   }).join('');
+}
+
+// ── Bullet hanging-indent CSS variable (set after fonts load) ────────────────
+function _setBulIndent() {
+  var sp = document.createElement('span');
+  sp.style.cssText = 'font-family:DINRegular,Arial,sans-serif;font-size:.85rem;' +
+    'visibility:hidden;position:fixed;top:-9999px;white-space:nowrap;';
+  sp.textContent = '• ';
+  document.body.appendChild(sp);
+  var emBase = parseFloat(getComputedStyle(document.documentElement).fontSize) * 0.85;
+  var w = sp.getBoundingClientRect().width;
+  document.body.removeChild(sp);
+  if (emBase > 0) {
+    document.documentElement.style.setProperty('--bul-indent', (w / emBase).toFixed(4) + 'em');
+  }
+}
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(function() { _setBulIndent(); });
+} else {
+  _setBulIndent();
 }
 
 // ── Build session objects from flat sheet rows ────────────────────────────────

@@ -257,6 +257,8 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 .obs-table .td-obs { width:50%; color:#222; }
 .obs-table .td-sol { width:50%; color:#1a5f7a; border-left:1px solid #d8eaf2; }
 .obs-table .td-sol:empty::after { content:'—'; color:#e0e0e0; }
+.obs-table .obs-line,.obs-table .obs-bul { display:block; }
+.obs-table .obs-bul { padding-left:var(--bul-indent,1.4em); text-indent:calc(-1 * var(--bul-indent,1.4em)); }
 /* ── Release notes dialog ── */
 .rn-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; align-items:center; justify-content:center; padding:1rem; }
 .rn-overlay.open { display:flex; }
@@ -831,7 +833,7 @@ function renderSessions() {
     if (visibleObs.length) {
       html += '<table class="obs-table"><tbody>';
       visibleObs.forEach(function(pair) {
-        html += '<tr><td class="td-obs">' + obsHtml(pair.obs) + '</td><td class="td-sol">' + esc(pair.sol) + '</td></tr>';
+        html += '<tr><td class="td-obs">' + obsHtml(pair.obs) + '</td><td class="td-sol">' + bulletsHtml(pair.sol) + '</td></tr>';
       });
       html += '</tbody></table>';
     }

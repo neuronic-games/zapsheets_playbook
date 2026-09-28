@@ -3534,9 +3534,28 @@ function syncPairHeight(idx) {
 // Pending reorder animation timer — cancel if user clicks again before it fires
 var _moveTimer = null;
 
+// Walk up the DOM to find the nearest scrollable ancestor
+function _findScroller(el) {
+  var p = el.parentElement;
+  while (p && p !== document.body) {
+    var ov = getComputedStyle(p).overflowY;
+    if (ov === 'auto' || ov === 'scroll') return p;
+    p = p.parentElement;
+  }
+  return document.documentElement;
+}
+
 function moveObsPair(idx, dir) {
   // Cancel any in-flight animation from a previous click
-  if (_moveTimer) { clearTimeout(_moveTimer); _moveTimer = null; }
+  if (_moveTimer) {
+    clearTimeout(_moveTimer);
+    _moveTimer = null;
+    // Immediately clear any pending transform so we start clean
+    document.querySelectorAll('#obsContainer .obs-pair').forEach(function(p) {
+      p.style.transition = 'none';
+      p.style.transform  = '';
+    });
+  }
 
   var container = document.getElementById('obsContainer');
   var all   = Array.from(container.querySelectorAll('.obs-pair'));
@@ -3550,60 +3569,46 @@ function moveObsPair(idx, dir) {
   var tpos = pos + dir;
   if (pos < 0 || tpos < 0 || tpos >= pairs.length) return;
 
-  var aEl  = pairs[pos];              // clicked row — stays in place
+  var aEl  = pairs[pos];              // clicked row — pinned on screen
   var bEl  = pairs[tpos];             // other row  — slides
   var aIdx = parseInt(aEl.dataset.idx);
   var bIdx = parseInt(bEl.dataset.idx);
+  var scroller = _findScroller(container);
 
-  // Cancel any lingering transform on bEl from a previous interrupted animation
+  // Record screen positions before any DOM change
+  var aScreenTop = aEl.getBoundingClientRect().top;
+  var bScreenTop = bEl.getBoundingClientRect().top;
+
+  // Move DOM — aEl travels to its new position in document order
+  if (dir < 0) {
+    container.insertBefore(aEl, bEl);
+  } else {
+    container.insertBefore(aEl, bEl.nextSibling);
+  }
+
+  // Compensate scroll so aEl stays at exactly the same screen position
+  var scrollDelta = aEl.getBoundingClientRect().top - aScreenTop;
+  scroller.scrollTop += scrollDelta;
+
+  // FLIP: bEl is now in its new DOM position; make it appear at its old screen position,
+  // then animate it sliding to natural position — the rest of the panel moves, aEl is pinned
+  var bNewScreenTop = bEl.getBoundingClientRect().top;
+  var bTranslate    = bScreenTop - bNewScreenTop;
+
   bEl.style.transition = 'none';
-  bEl.style.transform  = '';
+  bEl.style.transform  = 'translateY(' + bTranslate + 'px)';
   void bEl.offsetWidth; // flush
 
-  // Slide bEl toward aEl's position:
-  //   dir=+1 (clicked ▼): bEl is below aEl, slides UP  → negative translateY
-  //   dir=-1 (clicked ▲): bEl is above aEl, slides DOWN → positive translateY
-  var slideBy = (dir > 0 ? -1 : 1) * aEl.offsetHeight;
-  bEl.style.transition = 'transform 0.18s ease-out';
-  bEl.style.transform  = 'translateY(' + slideBy + 'px)';
+  bEl.style.transition = 'transform 0.22s ease-out';
+  bEl.style.transform  = '';
 
   _moveTimer = setTimeout(function() {
     _moveTimer = null;
-
-    // Reset bEl before swapping so it jumps back to natural position
-    // and the content change happens simultaneously — user sees the swap, not the jump
-    bEl.style.transition = 'none';
+    bEl.style.transition = '';
     bEl.style.transform  = '';
-
-    // Swap textarea content
-    var aObs = document.getElementById('sObs-' + aIdx);
-    var aSol = document.getElementById('sSol-' + aIdx);
-    var bObs = document.getElementById('sObs-' + bIdx);
-    var bSol = document.getElementById('sSol-' + bIdx);
-    var tmp;
-    tmp = aObs.value; aObs.value = bObs.value; bObs.value = tmp;
-    tmp = aSol.value; aSol.value = bSol.value; bSol.value = tmp;
-
-    // Swap image data
-    var aImg = _obsImages[aIdx] || null;
-    var bImg = _obsImages[bIdx] || null;
-    if (bImg) { _obsImages[aIdx] = bImg; } else { delete _obsImages[aIdx]; }
-    if (aImg) { _obsImages[bIdx] = aImg; } else { delete _obsImages[bIdx]; }
-
-    // Swap image previews
-    var aPv = document.getElementById('sImgPreview-' + aIdx);
-    var bPv = document.getElementById('sImgPreview-' + bIdx);
-    if (aPv && bPv) {
-      var tmpHtml = aPv.innerHTML; var tmpDisp = aPv.style.display;
-      aPv.innerHTML = bPv.innerHTML; aPv.style.display = bPv.style.display;
-      bPv.innerHTML = tmpHtml;      bPv.style.display = tmpDisp;
-    }
-    if (aObs) toggleObsImgBtn(aIdx);
-    if (bObs) toggleObsImgBtn(bIdx);
-
     syncPairHeight(aIdx);
     syncPairHeight(bIdx);
-  }, 190);
+  }, 240);
 }
 
 function autoResize(el) {

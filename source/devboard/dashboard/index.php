@@ -400,9 +400,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .estimate-del-btn:hover { border-color:#c0392b; color:#c0392b; }
 /* Inline delete confirmation */
 .estimate-item .est-confirm { display:none; }
-.estimate-item.confirming > :not(.est-confirm) { display:none; }
-.estimate-item.confirming { background:#fff8f7; }
-.estimate-item.confirming .est-confirm { display:flex; padding:.45rem 1rem; align-items:center; justify-content:flex-end; gap:.5rem; }
+/* .confirming removed — delete confirm is now inline within .estimate-item-actions */
 .est-nocancel-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0c8d0; color:#888; border-radius:6px; padding:.18rem .65rem; cursor:pointer; white-space:nowrap; transition:border-color .15s,color .15s; }
 .est-nocancel-btn:hover { border-color:#555; color:#333; }
 .est-confirm-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0392b; color:#c0392b; border-radius:6px; padding:.18rem .65rem; cursor:pointer; white-space:nowrap; transition:background .15s,color .15s; }
@@ -1688,7 +1686,19 @@ function renderPublishersView() {
       html += '<div class="game-group-body">';
 
       // Estimates for this game — sort latest date first
-      var firstConDataIdx = g.contracts.length ? CONTRACT_RAW.indexOf(g.contracts[0]) : -1;
+      // Find a contract index for EDIT GAME — prefer a true contract, but fall back to
+      // any CONTRACT_RAW entry for this game (including Estimate/Invoice-type rows).
+      var firstConDataIdx = -1;
+      if (g.contracts.length) {
+        firstConDataIdx = CONTRACT_RAW.indexOf(g.contracts[0]);
+      } else {
+        for (var ci = 0; ci < CONTRACT_RAW.length; ci++) {
+          if (CONTRACT_RAW[ci] && gameKey(CONTRACT_RAW[ci].Game) === gk) {
+            firstConDataIdx = ci;
+            break;
+          }
+        }
+      }
       var sortedEsts = g.estimates.slice().sort(function(a, b) {
         var da = new Date(a.date || 0), db = new Date(b.date || 0);
         return db - da;
@@ -1721,15 +1731,18 @@ function renderPublishersView() {
         html += '</dl>';
         html += '</div>';
         html += '<div class="estimate-item-actions">';
+        // Normal action buttons
+        html += '<div id="est-act-btns-' + globalIdx + '" style="display:flex;gap:.5rem;align-items:center">';
         html += '<button type="button" class="btn-contract-action invoice" onclick="event.stopPropagation();openInvoiceFromEstimate(' + globalIdx + ')">+ Invoice</button>';
         html += '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_estStartDelete(' + globalIdx + ')">🗑 Delete</button>';
         html += '</div>';
+        // Inline confirm (shown in place of action buttons when delete is clicked)
+        html += '<div id="est-act-confirm-' + globalIdx + '" style="display:none;align-items:center;justify-content:flex-end;gap:.5rem">';
+        html += '<button type="button" class="est-nocancel-btn" onclick="event.stopPropagation();_estCancelDelete(' + globalIdx + ')">Don\'t Delete</button>';
+        html += '<button type="button" class="est-confirm-btn" id="est-confirm-btn-' + globalIdx + '" onclick="event.stopPropagation();_estConfirmDelete(' + globalIdx + ')">Confirm</button>';
+        html += '</div>';
+        html += '</div>'; // .estimate-item-actions
         html += '</div>'; // .estimate-item-body
-        // Delete confirm overlay
-        html += '<div class="est-confirm">' +
-          '<button type="button" class="est-nocancel-btn" onclick="event.stopPropagation();_estCancelDelete(' + globalIdx + ')">Don\'t Delete</button>' +
-          '<button type="button" class="est-confirm-btn" id="est-confirm-btn-' + globalIdx + '" onclick="event.stopPropagation();_estConfirmDelete(' + globalIdx + ')">Confirm</button>' +
-        '</div>';
         html += '</div>'; // .estimate-item
       });
 
@@ -2098,14 +2111,18 @@ function _estToggle(idx) {
   if (el) el.classList.toggle('open');
 }
 
-// ── Delete estimate (inline confirmation) ─────────────────────────────────────
+// ── Delete estimate (inline confirmation — stays expanded) ────────────────────
 function _estStartDelete(idx) {
-  var el = document.getElementById('est-item-' + idx);
-  if (el) el.classList.add('confirming');
+  var btns = document.getElementById('est-act-btns-' + idx);
+  var conf = document.getElementById('est-act-confirm-' + idx);
+  if (btns) { btns.style.transition = 'opacity .15s'; btns.style.opacity = '0'; setTimeout(function(){ btns.style.display = 'none'; }, 150); }
+  if (conf) { setTimeout(function(){ conf.style.display = 'flex'; conf.style.opacity = '0'; requestAnimationFrame(function(){ conf.style.transition = 'opacity .15s'; conf.style.opacity = '1'; }); }, 155); }
 }
 function _estCancelDelete(idx) {
-  var el = document.getElementById('est-item-' + idx);
-  if (el) el.classList.remove('confirming');
+  var btns = document.getElementById('est-act-btns-' + idx);
+  var conf = document.getElementById('est-act-confirm-' + idx);
+  if (conf) { conf.style.transition = 'opacity .15s'; conf.style.opacity = '0'; setTimeout(function(){ conf.style.display = 'none'; }, 150); }
+  if (btns) { setTimeout(function(){ btns.style.display = 'flex'; btns.style.opacity = '0'; requestAnimationFrame(function(){ btns.style.transition = 'opacity .15s'; btns.style.opacity = '1'; }); }, 155); }
 }
 function _estConfirmDelete(idx) {
   var est = ESTIMATES_RAW[idx];

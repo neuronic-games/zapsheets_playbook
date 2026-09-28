@@ -1785,9 +1785,7 @@ function renderPublishersView() {
       html += '</div>';
       html += '<div style="display:flex;gap:.4rem;align-items:center">';
       html += '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(pub.name)) + ',' + esc(JSON.stringify(g.name)) + ')">+ Estimate</button>';
-      if (firstConDataIdx >= 0) {
-        html += '<button class="btn-contract-action invoice" id="inv-btn-' + firstConDataIdx + '" onclick="event.stopPropagation();generateInvoice(' + firstConDataIdx + ')">+ Invoice</button>';
-      }
+      html += '<button class="btn-contract-action invoice" onclick="event.stopPropagation();openContractDialog(' + esc(JSON.stringify(g.name)) + ')">+ Invoice</button>';
       html += '</div>';
       html += '</div>';
       html += '</div>'; // .game-group-body

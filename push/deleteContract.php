@@ -38,10 +38,28 @@ if ($result === null) {
 }
 
 if (!empty($result['ok'])) {
-    // Remove from contracts.json cache
+    // Remove from contracts.json cache and delete any linked PDF file
     $file = dirname(__DIR__) . '/sheets/' . $sheetId . '/contracts.json';
     if (file_exists($file)) {
         $rows = json_decode(file_get_contents($file), true) ?: [];
+
+        // Find the row first so we can delete its linked file
+        foreach ($rows as $r) {
+            if ((string)($r['ID'] ?? '') === (string)$contractId) {
+                $fileUrl = $r['Files'] ?? '';
+                if ($fileUrl) {
+                    // Strip domain to get relative path, then resolve to server path
+                    $relPath = preg_replace('#^https?://[^/]+/#', '', $fileUrl);
+                    $relPath = ltrim($relPath, '/');
+                    $serverFile = dirname(__DIR__) . '/' . $relPath;
+                    if (file_exists($serverFile)) {
+                        @unlink($serverFile);
+                    }
+                }
+                break;
+            }
+        }
+
         $rows = array_values(array_filter($rows, function($r) use ($contractId) {
             return (string)($r['ID'] ?? '') !== (string)$contractId;
         }));

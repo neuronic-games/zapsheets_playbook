@@ -404,9 +404,9 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 /* Inline delete confirmation */
 .estimate-item .est-confirm { display:none; }
 /* .confirming removed — delete confirm is now inline within .estimate-item-actions */
-.est-nocancel-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0c8d0; color:#888; border-radius:6px; padding:.18rem .65rem; cursor:pointer; white-space:nowrap; transition:border-color .15s,color .15s; }
+.est-nocancel-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0c8d0; color:#888; border-radius:6px; padding:.35rem .65rem; cursor:pointer; white-space:nowrap; transition:border-color .15s,color .15s; }
 .est-nocancel-btn:hover { border-color:#555; color:#333; }
-.est-confirm-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0392b; color:#c0392b; border-radius:6px; padding:.18rem .65rem; cursor:pointer; white-space:nowrap; transition:background .15s,color .15s; }
+.est-confirm-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0392b; color:#c0392b; border-radius:6px; padding:.35rem .65rem; cursor:pointer; white-space:nowrap; transition:background .15s,color .15s; }
 .est-confirm-btn:hover { background:#c0392b; color:#fff; }
 .est-confirm-btn:disabled { opacity:.5; cursor:default; }
 

@@ -2217,7 +2217,8 @@ function _estConfirmDelete(idx) {
   if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
   var fd = new FormData();
   fd.append('id',          SHEET_ID);
-  fd.append('tab',         est.tab         || '');
+  fd.append('tab',         est.tab      || '');
+  fd.append('file_url',    est.url      || est.file || '');
   fd.append('contract_id', est.contract_id || '');
   fetch(APP_BASE + 'push/deleteEstimate.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })

@@ -14,28 +14,45 @@ require __DIR__ . '/../dotEnv.php';
 $sheetId    = trim($_POST['id']          ?? '');
 $tab        = trim($_POST['tab']         ?? '');
 $contractId = trim($_POST['contract_id'] ?? '');
+$fileUrl    = trim($_POST['file_url']    ?? '');  // server path for PDF-based records
 
-if (!$sheetId || !$tab) {
-    echo json_encode(['error' => 'Missing id or tab']);
+if (!$sheetId || (!$tab && !$fileUrl)) {
+    echo json_encode(['error' => 'Missing id and tab/file_url']);
     exit;
 }
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
-$arg        = $sheetId . '|' . $tab;
-$cmd        = escapeshellarg($pythonPath) . ' '
+$result     = ['ok' => false];
+
+if ($tab) {
+    // Legacy: delete a Google Sheets tab
+    $arg    = $sheetId . '|' . $tab;
+    $cmd    = escapeshellarg($pythonPath) . ' '
             . escapeshellarg(__DIR__ . '/gdeletetab.py') . ' '
             . escapeshellarg($arg) . ' 2>&1';
-$output     = trim((string) shell_exec($cmd));
-
-if ($output === '') {
-    echo json_encode(['error' => 'No response from Python script']);
-    exit;
-}
-
-$result = json_decode($output, true);
-if ($result === null) {
-    echo json_encode(['error' => $output]);
-    exit;
+    $output = trim((string) shell_exec($cmd));
+    if ($output === '') {
+        echo json_encode(['error' => 'No response from Python script']);
+        exit;
+    }
+    $result = json_decode($output, true);
+    if ($result === null) {
+        echo json_encode(['error' => $output]);
+        exit;
+    }
+} else {
+    // PDF-based: delete the file from the server
+    $serverFile = dirname(__DIR__) . '/' . ltrim(
+        preg_replace('#^https?://[^/]+/#', '', $fileUrl), '/'
+    );
+    // Also accept a plain relative path like sheets/{id}/files/contracts/{hash}.pdf
+    if (!file_exists($serverFile)) {
+        $serverFile = dirname(__DIR__) . '/' . ltrim($fileUrl, '/');
+    }
+    if (file_exists($serverFile)) {
+        unlink($serverFile);
+    }
+    $result = ['ok' => true];
 }
 
 if (!empty($result['ok'])) {
@@ -43,8 +60,11 @@ if (!empty($result['ok'])) {
     $estFile = dirname(__DIR__) . '/sheets/' . $sheetId . '/estimates.json';
     if (file_exists($estFile)) {
         $estimates = json_decode(file_get_contents($estFile), true) ?: [];
-        $estimates = array_values(array_filter($estimates, function($e) use ($tab) {
-            return ($e['tab'] ?? '') !== $tab;
+        $estimates = array_values(array_filter($estimates, function($e) use ($tab, $fileUrl) {
+            if ($tab && ($e['tab'] ?? '') === $tab) return false;
+            if ($fileUrl && ($e['url'] ?? '') === $fileUrl) return false;
+            if ($fileUrl && ($e['file'] ?? '') === $fileUrl) return false;
+            return true;
         }));
         file_put_contents($estFile, json_encode($estimates, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     }

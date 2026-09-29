@@ -53,31 +53,31 @@ $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 // The doc_id comes from the existing contract's ID (passed in POST).
 $docId = trim($_POST['contract_id'] ?? '');
 
+$appDomain = rtrim($_ENV['APP_DOMAIN'] ?? 'http://localhost:8000', '/');
+$basePath  = trim($_ENV['BASE_PATH']  ?? '', '/');
+$baseUrl   = $basePath ? "$appDomain/$basePath" : $appDomain;
+
 $payload = [
-    'sheet_id'   => $sheetId,
     'game'       => $game,
     'client'     => $client,
     'doc_id'     => $docId,
+    'doc_type'   => 'Invoice',
     'quote'      => $quote,
-    'payment'    => $payment,
-    'status'     => $status,
-    'tgt_start'  => $tgtStart,
-    'tgt_end'    => $tgtEnd,
-    'start_date' => $startDate,
-    'end_date'   => $endDate,
     'notes'      => $notes,
+    'tgt_start'  => $tgtStart,
     'my_name'    => $myName,
     'my_phone'   => $myPhone,
     'my_company' => $myCompany,
     'my_logo'    => $myLogo,
     'my_address' => $myAddress,
+    'base_url'   => $baseUrl,
 ];
 
 $encoded = base64_encode(json_encode($payload, JSON_UNESCAPED_UNICODE));
 $arg     = $sheetId . '|' . $encoded;
 
 $cmd    = escapeshellarg($pythonPath) . ' '
-        . escapeshellarg(__DIR__ . '/gcreateInvoice.py') . ' '
+        . escapeshellarg(__DIR__ . '/gcreateDocPdf.py') . ' '
         . escapeshellarg($arg) . ' 2>&1';
 $output = trim((string) shell_exec($cmd));
 

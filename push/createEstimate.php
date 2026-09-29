@@ -57,10 +57,15 @@ if (!empty($rowResult['ok'])) {
     $docId = $rowResult['contract_id'] ?? '';
 }
 
+$appDomain = rtrim($_ENV['APP_DOMAIN'] ?? 'http://localhost:8000', '/');
+$basePath  = trim($_ENV['BASE_PATH']  ?? '', '/');
+$baseUrl   = $basePath ? "$appDomain/$basePath" : $appDomain;
+
 $payload = [
     'game'          => $game,
     'client'        => $client,
     'doc_id'        => $docId,
+    'doc_type'      => 'Estimate',
     'num_tests'     => $numTests,
     'num_edits'     => $numEdits,
     'qty'           => $qty,
@@ -74,17 +79,19 @@ $payload = [
     'my_company'    => $myCompany,
     'my_logo'       => $myLogo,
     'my_address'    => $myAddress,
+    'tgt_start'     => $targetStart,
+    'base_url'      => $baseUrl,
 ];
 $encoded = base64_encode(json_encode($payload, JSON_UNESCAPED_UNICODE));
 $arg     = $sheetId . '|' . $encoded;
 
 $cmd    = escapeshellarg($pythonPath) . ' '
-        . escapeshellarg(__DIR__ . '/gcreateEstimate.py') . ' '
+        . escapeshellarg(__DIR__ . '/gcreateDocPdf.py') . ' '
         . escapeshellarg($arg) . ' 2>&1';
 $output = trim((string) shell_exec($cmd));
 
 if ($output === '') {
-    echo json_encode(['error' => 'No response from estimate script']);
+    echo json_encode(['error' => 'No response from PDF script']);
     exit;
 }
 
@@ -101,12 +108,14 @@ if (!empty($result['ok'])) {
         ? (json_decode(file_get_contents($estFile), true) ?: [])
         : [];
     $record = [
+        'type'         => 'estimate',
         'client'       => $client,
         'game'         => $game,
-        'estimate_num' => $result['estimate_num'] ?? '',
-        'amount'       => $result['amount']       ?? 0,
-        'url'          => $result['url']           ?? '',
-        'tab'          => $result['tab']           ?? '',
+        'estimate_num' => $result['doc_num'] ?? $docId,
+        'amount'       => floatval($unitPrice),
+        'url'          => $result['url']  ?? '',
+        'file'         => $result['file'] ?? '',
+        'tab'          => '',
         'contract_id'  => $docId,
         'date'         => date('m/d/Y'),
     ];

@@ -60,26 +60,31 @@ if (!empty($rowResult['ok'])) {
     $docId = $rowResult['contract_id'] ?? '';
 }
 
-// Step 2: generate the invoice sheet tab
+// Step 2: generate invoice PDF
+$appDomain = rtrim($_ENV['APP_DOMAIN'] ?? 'http://localhost:8000', '/');
+$basePath  = trim($_ENV['BASE_PATH']  ?? '', '/');
+$baseUrl   = $basePath ? "$appDomain/$basePath" : $appDomain;
+
 $payload = [
     'game'         => $game,
     'client'       => $client,
     'doc_id'       => $docId,
-    'quote'        => $invoiceAmt,
-    'payment'      => '',
+    'doc_type'     => 'Invoice',
     'estimate_num' => $estimateNum,
+    'quote'        => $invoiceAmt,
     'notes'        => $notes,
-    'my_name'    => $myName,
-    'my_phone'   => $myPhone,
-    'my_company' => $myCompany,
-    'tgt_start'  => $tgtStart,
-    'my_logo'    => $myLogo,
-    'my_address' => $myAddress,
-    'my_payment' => $myPayment,
+    'tgt_start'    => $tgtStart,
+    'my_name'      => $myName,
+    'my_phone'     => $myPhone,
+    'my_company'   => $myCompany,
+    'my_logo'      => $myLogo,
+    'my_address'   => $myAddress,
+    'my_payment'   => $myPayment,
+    'base_url'     => $baseUrl,
 ];
 $encoded = base64_encode(json_encode($payload, JSON_UNESCAPED_UNICODE));
 $cmd     = escapeshellarg($pythonPath) . ' '
-         . escapeshellarg(__DIR__ . '/gcreateInvoice.py') . ' '
+         . escapeshellarg(__DIR__ . '/gcreateDocPdf.py') . ' '
          . escapeshellarg($sheetId . '|' . $encoded) . ' 2>&1';
 $output  = trim((string) shell_exec($cmd));
 
@@ -104,10 +109,11 @@ if (!empty($result['ok'])) {
         'type'         => 'invoice',
         'client'       => $client,
         'game'         => $game,
-        'estimate_num' => $result['invoice_num'] ?? $docId,
+        'estimate_num' => $result['doc_num'] ?? $docId,
         'amount'       => floatval($invoiceAmt),
-        'url'          => $result['url']   ?? '',
-        'tab'          => $result['tab']   ?? '',
+        'url'          => $result['url']  ?? '',
+        'file'         => $result['file'] ?? '',
+        'tab'          => '',
         'contract_id'  => $docId,
         'date'         => date('m/d/Y'),
     ];

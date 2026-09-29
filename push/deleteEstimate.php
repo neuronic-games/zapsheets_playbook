@@ -42,13 +42,13 @@ if ($tab) {
     }
 } else {
     // PDF-based: delete the file from the server
-    $serverFile = dirname(__DIR__) . '/' . ltrim(
-        preg_replace('#^https?://[^/]+/#', '', $fileUrl), '/'
-    );
-    // Also accept a plain relative path like sheets/{id}/files/contracts/{hash}.pdf
-    if (!file_exists($serverFile)) {
-        $serverFile = dirname(__DIR__) . '/' . ltrim($fileUrl, '/');
+    $basePath = trim($_ENV['BASE_PATH'] ?? '', '/');
+    $rel = preg_replace('#^https?://[^/]+#', '', $fileUrl);
+    $rel = ltrim($rel, '/');
+    if ($basePath !== '' && strpos($rel, $basePath . '/') === 0) {
+        $rel = substr($rel, strlen($basePath) + 1);
     }
+    $serverFile = dirname(__DIR__) . '/' . $rel;
     if (file_exists($serverFile)) {
         unlink($serverFile);
     }

@@ -551,39 +551,34 @@ try:
 except Exception as e:
     fmt_error = str(e)
 
-# Insert logo as a floating over-grid image (renders in PDF).
-# OverGridImage structure: addImage > image (OverGridImage) > image (Image) + position
+# Insert logo as an in-cell image using imageValue (renders in PDF, unlike =IMAGE() formula).
+# The Image object uses `sourceUri`, not `url`.
 logo_method = None
 logo_error  = None
 if my_logo:
     try:
         wb.batch_update({'requests': [{
-            'addImage': {
-                'image': {                   # OverGridImage
-                    'image': {               # Image sub-object
-                        'imageUrl': my_logo,
-                        'altText': 'Logo',
-                    },
-                    'position': {            # EmbeddedObjectPosition
-                        'overlayPosition': {
-                            'anchorCell': {
-                                'sheetId':     sheet_gid,
-                                'rowIndex':    r0(R_COMPANY),
-                                'columnIndex': CE,
-                            },
-                            'offsetXPixels': 0,
-                            'offsetYPixels': 0,
-                            'widthPixels':   180,
-                            'heightPixels':  140,
-                        }
+            'updateCells': {
+                'rows': [{'values': [{'userEnteredValue': {
+                    'imageValue': {
+                        'sourceUri': my_logo,
+                        'altText':   'Logo',
                     }
-                }
+                }}]}],
+                'fields': 'userEnteredValue',
+                'range': {
+                    'sheetId':            sheet_gid,
+                    'startRowIndex':      r0(R_COMPANY),
+                    'endRowIndex':        r0(R_COMPANY) + 1,
+                    'startColumnIndex':   CE,
+                    'endColumnIndex':     CE + 1,
+                },
             }
         }]})
-        logo_method = 'addImage'
+        logo_method = 'imageValue'
     except Exception as e1:
-        logo_error = f'addImage: {e1}'
-        # Fallback: =IMAGE() formula (browser only, not PDF — better than nothing)
+        logo_error = f'imageValue: {e1}'
+        # Fallback: =IMAGE() formula (visible in browser, not PDF — better than nothing)
         try:
             ws.update(values=[[f'=IMAGE("{my_logo}",1)']],
                       range_name=f'{chr(65+CE)}{R_COMPANY}',

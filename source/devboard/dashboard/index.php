@@ -1730,7 +1730,7 @@ function renderPublishersView() {
 
     gameKeys.forEach(function(gk, gIdx) {
       var g = gameMap[gk];
-      var ggId = 'gg-' + pubIdx + '-' + gIdx;
+      var ggId = 'gg-' + (pub.name + '|' + g.name).replace(/[^a-z0-9|]/gi, '_');
       var summaryParts = [];
       if (g.estimates.length) summaryParts.push(g.estimates.length + (g.estimates.length === 1 ? ' estimate' : ' estimates'));
       if (g.contracts.length) summaryParts.push(g.contracts.length + (g.contracts.length === 1 ? ' contract' : ' contracts'));
@@ -1886,6 +1886,24 @@ function toggleGameGroup(id) {
   if (el) el.classList.toggle('open');
 }
 
+// Save/restore open state for publisher cards and game groups across re-renders
+function _saveOpenState() {
+  var open = { pubs: [], games: [] };
+  document.querySelectorAll('.client-card.open').forEach(function(el) { open.pubs.push(el.id); });
+  document.querySelectorAll('.game-group.open').forEach(function(el) { open.games.push(el.id); });
+  return open;
+}
+function _restoreOpenState(state) {
+  if (!state) return;
+  state.pubs.forEach(function(id)  { var el = document.getElementById(id); if (el) el.classList.add('open'); });
+  state.games.forEach(function(id) { var el = document.getElementById(id); if (el) el.classList.add('open'); });
+}
+function renderPublishersViewKeepOpen() {
+  var state = _saveOpenState();
+  renderPublishersView();
+  _restoreOpenState(state);
+}
+
 function toggleContractItem(dataIdx) {
   var el = document.getElementById('ci-' + dataIdx);
   if (el) el.classList.toggle('open');
@@ -2031,7 +2049,7 @@ function submitEstimate() {
       // Add to in-memory list and re-render
       if (j.estimate_record) ESTIMATES_RAW.push(j.estimate_record);
       forceCloseEstimateDialog();
-      renderPublishersView();
+      renderPublishersViewKeepOpen();
       // Open in new tab
       if (j.url) window.open(j.url, '_blank');
     })
@@ -2160,7 +2178,7 @@ function submitInvoice() {
       // Add to ESTIMATES_RAW so it shows without reload
       if (j.invoice_record) {
         ESTIMATES_RAW.push(j.invoice_record);
-        renderPublishersView();
+        renderPublishersViewKeepOpen();
       }
       // Open the new invoice sheet
       if (j.url) window.open(j.url, '_blank');
@@ -2966,7 +2984,7 @@ function submitStandaloneInvoice() {
       if (j && j.ok) {
         if (j.invoice_record) ESTIMATES_RAW.push(j.invoice_record);
         forceCloseStandaloneInvoiceDialog();
-        renderPublishersView();
+        renderPublishersViewKeepOpen();
         if (j.url) window.open(j.url, '_blank');
       } else {
         errEl.textContent   = (j && j.error) ? j.error : 'Create failed.';
@@ -4888,7 +4906,7 @@ function submitContractEdit() {
         con.Payment             = document.getElementById('cePayment').value;
         con.Notes               = document.getElementById('ceNotes').value;
         forceCloseContractEditDialog();
-        renderPublishersView();
+        renderPublishersViewKeepOpen();
       } else {
         errEl.textContent = (j && j.error) ? j.error : 'Save failed.';
         errEl.style.display = 'block';

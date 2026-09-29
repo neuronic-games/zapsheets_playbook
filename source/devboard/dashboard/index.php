@@ -1849,10 +1849,16 @@ function renderPublishersView() {
           html += '</div>';
         }
         if (notes) html += '<div class="contract-detail-notes">' + esc(notes) + '</div>';
-        // Delete button row
-        html += '<div class="contract-del-row" id="cdel-row-' + dataIdx + '">' +
-          '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_conStartDelete(' + dataIdx + ')">🗑 Delete Contract</button>' +
-        '</div>';
+        // Share + Delete button row
+        var filesUrl = (con.Files || '').trim();
+        html += '<div class="contract-del-row" id="cdel-row-' + dataIdx + '">';
+        if (filesUrl) {
+          var shareSubject = encodeURIComponent((g.name || 'Contract') + ' PDF');
+          var shareBody    = encodeURIComponent('Please find the document linked below:\n\n' + filesUrl);
+          html += '<button type="button" class="btn-contract-action" onclick="event.stopPropagation();window.open(\'mailto:?subject=' + shareSubject + '&body=' + shareBody + '\',\'_self\')">✉ Share</button>';
+        }
+        html += '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_conStartDelete(' + dataIdx + ')">🗑 Delete Contract</button>';
+        html += '</div>';
         html += '<div class="est-confirm contract-del-confirm" id="cdel-confirm-' + dataIdx + '" style="display:none;padding:.45rem 1rem;">' +
           '<button type="button" class="est-nocancel-btn" onclick="event.stopPropagation();_conCancelDelete(' + dataIdx + ')">Don\'t Delete</button>' +
           '<button type="button" class="est-confirm-btn" id="cdel-btn-' + dataIdx + '" onclick="event.stopPropagation();_conConfirmDelete(' + dataIdx + ')">Confirm</button>' +

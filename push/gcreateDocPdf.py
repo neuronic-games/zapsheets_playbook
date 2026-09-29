@@ -109,6 +109,24 @@ def fmt_date(s):
 def pluralize(n, word):
     return f"{n} {word}{'s' if n != 1 else ''}"
 
+def wrap_text(c_obj, text, font, size, max_width):
+    """Split text into lines that fit within max_width, respecting existing newlines."""
+    c_obj.setFont(font, size)
+    result = []
+    for paragraph in text.replace('\r\n', '\n').split('\n'):
+        words = paragraph.split(' ')
+        line = ''
+        for word in words:
+            test = (line + ' ' + word).strip()
+            if c_obj.stringWidth(test, font, size) <= max_width:
+                line = test
+            else:
+                if line:
+                    result.append(line)
+                line = word
+        result.append(line)  # last line (may be empty for blank paragraphs)
+    return result
+
 today_obj  = datetime.today()
 today_disp = today_obj.strftime('%m/%d/%Y')
 
@@ -399,13 +417,15 @@ if notes:
     c.setFillColor(DARK)
     c.drawString(ML, notes_top, 'Notes')
     note_y = notes_top - 14
-    c.setFont('Helvetica', 9)
-    c.setFillColor(MID_GRAY)
-    for nl in notes.replace('\r\n', '\n').split('\n'):
-        nl = nl.strip()
-        if nl:
+    note_line_h = 13
+    for nl in wrap_text(c, notes, 'Helvetica', 9, CW):
+        c.setFont('Helvetica', 9)
+        c.setFillColor(MID_GRAY)
+        if nl.strip():
             c.drawString(ML, note_y, nl)
-            note_y -= 13
+            note_y -= note_line_h
+        else:
+            note_y -= note_line_h // 2   # blank line = half-height gap
     cur_y = note_y - 8
 
 # ── Payment section + large total ──────────────────────────────────────────────

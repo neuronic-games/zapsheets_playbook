@@ -162,9 +162,11 @@ if new_rows:
         print(json.dumps({"error": f"Could not insert rows: {str(e)}"}))
         sys.exit(1)
 
-    # Clear any inherited direct background so conditional formatting applies cleanly.
-    try:
-        wb.batch_update({'requests': [{
+    # Reset background and row heights for all inserted rows, then bump image rows.
+    # (insert_rows inherits the height of the row above, so we must reset explicitly.)
+    format_reqs = [
+        # Clear direct background colour
+        {
             'repeatCell': {
                 'range': {
                     'sheetId': ws.id,
@@ -180,34 +182,42 @@ if new_rows:
                 },
                 'fields': 'userEnteredFormat.backgroundColor',
             }
-        }]})
-    except Exception as e:
-        pass  # Non-fatal — values are correct even if background reset fails
-
-# Resize rows that contain =IMAGE() formulas so the image is visible
-image_resize_reqs = []
-for i, row in enumerate(new_rows):
-    for cell in row:
-        if isinstance(cell, str) and cell.strip().upper().startswith('=IMAGE('):
-            row_0idx = header_sheet_row - 1 + i  # 0-indexed for the API
-            image_resize_reqs.append({
-                'updateDimensionProperties': {
-                    'range': {
-                        'sheetId': ws.id,
-                        'dimension': 'ROWS',
-                        'startIndex': row_0idx,
-                        'endIndex':   row_0idx + 1,
-                    },
-                    'properties': {'pixelSize': 200},
-                    'fields': 'pixelSize',
-                }
-            })
-            break
-if image_resize_reqs:
+        },
+        # Reset ALL inserted rows to default height (21px)
+        {
+            'updateDimensionProperties': {
+                'range': {
+                    'sheetId':    ws.id,
+                    'dimension':  'ROWS',
+                    'startIndex': header_sheet_row - 1,
+                    'endIndex':   header_sheet_row - 1 + len(new_rows),
+                },
+                'properties': {'pixelSize': 21},
+                'fields': 'pixelSize',
+            }
+        },
+    ]
+    # Bump image rows to 150px so the image is visible
+    for i, row in enumerate(new_rows):
+        for cell in row:
+            if isinstance(cell, str) and cell.strip().upper().startswith('=IMAGE('):
+                format_reqs.append({
+                    'updateDimensionProperties': {
+                        'range': {
+                            'sheetId':    ws.id,
+                            'dimension':  'ROWS',
+                            'startIndex': header_sheet_row - 1 + i,
+                            'endIndex':   header_sheet_row     + i,
+                        },
+                        'properties': {'pixelSize': 150},
+                        'fields': 'pixelSize',
+                    }
+                })
+                break
     try:
-        wb.batch_update({'requests': image_resize_reqs})
+        wb.batch_update({'requests': format_reqs})
     except Exception:
-        pass  # non-fatal
+        pass  # Non-fatal — values are correct even if formatting fails
 
 print(json.dumps({
     "ok": True,

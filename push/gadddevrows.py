@@ -72,3 +72,42 @@ try:
     )
 except Exception:
     sys.exit(1)
+
+# Reset row heights for appended rows, then bump image rows.
+# append_rows inherits the height of the row above, so we must reset explicitly.
+try:
+    total_rows_after = len(ws.get_all_values())
+    start_idx = total_rows_after - len(sheet_rows)  # 0-indexed
+    format_reqs = [
+        {
+            'updateDimensionProperties': {
+                'range': {
+                    'sheetId':    ws.id,
+                    'dimension':  'ROWS',
+                    'startIndex': start_idx,
+                    'endIndex':   total_rows_after,
+                },
+                'properties': {'pixelSize': 21},
+                'fields': 'pixelSize',
+            }
+        }
+    ]
+    for i, row in enumerate(sheet_rows):
+        for cell in row:
+            if isinstance(cell, str) and cell.strip().upper().startswith('=IMAGE('):
+                format_reqs.append({
+                    'updateDimensionProperties': {
+                        'range': {
+                            'sheetId':    ws.id,
+                            'dimension':  'ROWS',
+                            'startIndex': start_idx + i,
+                            'endIndex':   start_idx + i + 1,
+                        },
+                        'properties': {'pixelSize': 150},
+                        'fields': 'pixelSize',
+                    }
+                })
+                break
+    wb.batch_update({'requests': format_reqs})
+except Exception:
+    pass  # Non-fatal

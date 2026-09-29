@@ -11,8 +11,9 @@ header('Content-Type: application/json');
 
 require __DIR__ . '/../dotEnv.php';
 
-$sheetId = trim($_POST['id']  ?? '');
-$tab     = trim($_POST['tab'] ?? '');
+$sheetId    = trim($_POST['id']          ?? '');
+$tab        = trim($_POST['tab']         ?? '');
+$contractId = trim($_POST['contract_id'] ?? '');
 
 if (!$sheetId || !$tab) {
     echo json_encode(['error' => 'Missing id or tab']);
@@ -46,6 +47,25 @@ if (!empty($result['ok'])) {
             return ($e['tab'] ?? '') !== $tab;
         }));
         file_put_contents($estFile, json_encode($estimates, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+
+    // Also delete the corresponding Contracts sheet row if we have an ID
+    if ($contractId !== '') {
+        $delEncoded = base64_encode(json_encode(['contract_id' => $contractId], JSON_UNESCAPED_UNICODE));
+        $delCmd     = escapeshellarg($pythonPath) . ' '
+                    . escapeshellarg(__DIR__ . '/gdeletecontractrow.py') . ' '
+                    . escapeshellarg($sheetId . '|' . $delEncoded) . ' 2>&1';
+        shell_exec($delCmd); // fire-and-forget; tab deletion already succeeded
+
+        // Remove from contracts.json cache too
+        $conFile = dirname(__DIR__) . '/sheets/' . $sheetId . '/contracts.json';
+        if (file_exists($conFile)) {
+            $contracts = json_decode(file_get_contents($conFile), true) ?: [];
+            $contracts = array_values(array_filter($contracts, function($r) use ($contractId) {
+                return (string)($r['ID'] ?? '') !== (string)$contractId;
+            }));
+            file_put_contents($conFile, json_encode($contracts, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        }
     }
 }
 

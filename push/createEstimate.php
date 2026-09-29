@@ -107,6 +107,7 @@ if (!empty($result['ok'])) {
         'amount'       => $result['amount']       ?? 0,
         'url'          => $result['url']           ?? '',
         'tab'          => $result['tab']           ?? '',
+        'contract_id'  => $docId,
         'date'         => date('m/d/Y'),
     ];
     $existing[] = $record;

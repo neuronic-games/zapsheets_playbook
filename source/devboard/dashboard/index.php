@@ -1017,13 +1017,13 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     </label>
     <div class="estimate-field-row dur-dates">
       <label class="ge-label">Duration
-        <input type="text" id="estimateDuration" class="ge-input" placeholder="e.g. 2 months" oninput="_estimateMarkDirty()" />
+        <input type="text" id="estimateDuration" class="ge-input" placeholder="e.g. 2 months" />
       </label>
       <label class="ge-label">Target Start
-        <input type="date" id="estimateTargetStart" class="ge-input" oninput="_estimateMarkDirty()" />
+        <input type="date" id="estimateTargetStart" class="ge-input" />
       </label>
       <label class="ge-label">Target End
-        <input type="date" id="estimateTargetEnd" class="ge-input" oninput="_estimateMarkDirty()" />
+        <input type="date" id="estimateTargetEnd" class="ge-input" />
       </label>
     </div>
     <div class="estimate-field-row three-one">

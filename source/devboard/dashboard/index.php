@@ -820,7 +820,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 /* image/trash button: square, anchored to top-right of the textarea */
 .obs-img-btn { position:absolute; top:.3rem; right:.3rem; width:1.55rem; height:1.55rem; background:rgba(255,255,255,.88); border:1px solid #d0d8e4; border-radius:5px; cursor:pointer; color:#99a; display:flex; align-items:center; justify-content:center; z-index:2; backdrop-filter:blur(2px); transition:color .15s,background .15s,border-color .15s; padding:0; }
 .obs-img-btn:hover { color:#1a5f7a; background:#fff; border-color:#a0b8c8; }
-.obs-img-preview img { width:100%; display:block; }
+.obs-img-preview img { width:100%; display:block; pointer-events:none; }
 
 /* ── Session metadata: mobile-first (column), side-by-side on wide screens ── */
 .session-meta-wrap { display:flex; flex-direction:column; gap:.9rem; }
@@ -4160,9 +4160,12 @@ function toggleObsImgBtn(idx) {
 var _SVG_IMG  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
 var _SVG_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
 
-// Single dispatch — routes to upload or remove depending on whether an image is attached
+// Single dispatch — routes to upload or remove based on data-mode attribute on the button.
+// Using data-mode (set in _showObsImage / _removeObsImage) instead of _obsImages key lookup
+// avoids any integer-vs-string key mismatch in the _obsImages object.
 function _obsImgBtnClick(idx) {
-  if (_obsImages[idx]) { _removeObsImage(idx); } else { triggerObsImageUpload(idx); }
+  var btn = _obsImgBtnEl(idx);
+  if (btn && btn.dataset.mode === 'remove') { _removeObsImage(idx); } else { triggerObsImageUpload(idx); }
 }
 
 function _obsImgBtnEl(idx) {
@@ -4181,7 +4184,7 @@ function _showObsImage(idx, url) {
   if (ta)   ta.style.display = 'none';
   if (wrap) wrap.classList.remove('has-obs-text');  // always show btn
   if (pv) { pv.style.display = 'block'; pv.innerHTML = '<img src="' + esc(url) + '" alt="observation image">'; }
-  if (btn) { btn.innerHTML = _SVG_TRASH; btn.title = 'Remove image'; btn.style.color = '#c0392b'; }
+  if (btn) { btn.innerHTML = _SVG_TRASH; btn.title = 'Remove image'; btn.style.color = '#c0392b'; btn.dataset.mode = 'remove'; }
   // Treat image as data — promote pair and add trailing empty row if it was last
   if (pair) {
     var pairs = document.querySelectorAll('#obsContainer .obs-pair');
@@ -4203,7 +4206,7 @@ function _removeObsImage(idx) {
   var btn  = _obsImgBtnEl(idx);
   if (ta)   { ta.style.display = ''; toggleObsImgBtn(idx); }
   if (pv)   { pv.style.display = 'none'; pv.innerHTML = ''; }
-  if (btn)  { btn.innerHTML = _SVG_IMG; btn.title = 'Attach image'; btn.style.color = ''; }
+  if (btn)  { btn.innerHTML = _SVG_IMG; btn.title = 'Attach image'; btn.style.color = ''; btn.dataset.mode = 'upload'; }
   // Re-mark as empty if no text and no solution
   if (pair) {
     var sol = _ceGet(document.getElementById('sSol-' + idx));
@@ -4248,8 +4251,8 @@ function addObsPair() {
               ' oninput="_autoBullet(this);_ceNorm(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ');toggleObsImgBtn(' + idx + ')"' +
               ' onkeydown="onObsKeydown(event,' + idx + ',0)"></div>' +
             '<div class="obs-img-preview" id="sImgPreview-' + idx + '" style="display:none"></div>' +
-            '<button type="button" class="obs-img-btn" onclick="_obsImgBtnClick(' + idx + ')" title="Attach image">' +
-              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+            '<button type="button" class="obs-img-btn" data-mode="upload" onclick="_obsImgBtnClick(' + idx + ')" title="Attach image">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none">' +
                 '<rect x="3" y="3" width="18" height="18" rx="2"/>' +
                 '<circle cx="8.5" cy="8.5" r="1.5"/>' +
                 '<polyline points="21 15 16 10 5 21"/>' +

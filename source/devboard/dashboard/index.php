@@ -807,12 +807,14 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .obs-editable > div.bul { padding-left:var(--bul-indent,1.4em); text-indent:calc(-1 * var(--bul-indent,1.4em)); }
 /* placeholder via data-ph when empty */
 .obs-editable[data-empty="1"]::before { content:attr(data-ph); color:#b0b8c8; pointer-events:none; }
-/* obs-obs-col: textarea wrapper with icon overlaid inside */
+/* obs-obs-col: textarea wrapper */
 .obs-ta-wrap { position:relative; flex:1; display:flex; flex-direction:column; min-width:0; }
-.obs-ta-wrap .field-textarea,.obs-ta-wrap .obs-editable { flex:1; padding-right:2.1rem; }
-/* icon button: hidden when obs textarea has text; always shown when image present */
-.obs-ta-wrap.has-obs-text .obs-img-btn { display:none; }
-.obs-img-btn { position:absolute; top:.35rem; right:.35rem; background:rgba(255,255,255,.88); border:1px solid #d0d8e4; border-radius:5px; padding:.22rem .26rem; cursor:pointer; color:#99a; line-height:1; z-index:2; backdrop-filter:blur(2px); transition:color .15s,background .15s,border-color .15s; }
+.obs-ta-wrap .field-textarea,.obs-ta-wrap .obs-editable { flex:1; }
+/* image button lives inside obs-reorder, overlaying the ▲▼ buttons;
+   hidden when obs textarea has text (pair gets .has-obs-text) */
+.obs-pair.has-obs-text .obs-img-btn { display:none; }
+.obs-reorder { position:relative; }
+.obs-img-btn { position:absolute; inset:0; background:rgba(255,255,255,.88); border:1px solid #d0d8e4; border-radius:5px; cursor:pointer; color:#99a; display:flex; align-items:center; justify-content:center; z-index:2; backdrop-filter:blur(2px); transition:color .15s,background .15s,border-color .15s; }
 .obs-img-btn:hover { color:#1a5f7a; background:#fff; border-color:#a0b8c8; }
 .obs-img-preview img { width:100%; display:block; }
 
@@ -4146,18 +4148,18 @@ var _obsImages = {};
 
 function toggleObsImgBtn(idx) {
   var ta   = document.getElementById('sObs-' + idx);
-  var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
-  if (!wrap) return;
-  wrap.classList.toggle('has-obs-text', _ceGet(ta).trim().length > 0);
+  var pair = ta ? ta.closest('.obs-pair') : null;
+  if (!pair) return;
+  pair.classList.toggle('has-obs-text', _ceGet(ta).trim().length > 0);
 }  // obs pair idx → uploaded image URL
 
 function _showObsImage(idx, url) {
   _obsImages[idx] = url;
   var ta   = document.getElementById('sObs-' + idx);
-  var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
+  var pair = ta ? ta.closest('.obs-pair') : null;
   var pv   = document.getElementById('sImgPreview-' + idx);
   if (ta)   ta.style.display = 'none';   // hide textarea
-  if (wrap) wrap.classList.remove('has-obs-text');  // always show replace btn
+  if (pair) pair.classList.remove('has-obs-text');  // always show replace btn
   if (pv) { pv.style.display = 'block'; pv.innerHTML = _obsImgPreviewHtml(idx, url); }
 }
 
@@ -4203,6 +4205,11 @@ function addObsPair() {
               ' oninput="_autoBullet(this);_ceNorm(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ');toggleObsImgBtn(' + idx + ')"' +
               ' onkeydown="onObsKeydown(event,' + idx + ',0)"></div>' +
             '<div class="obs-img-preview" id="sImgPreview-' + idx + '" style="display:none"></div>' +
+            '<input type="file" accept="image/*" id="sImgFile-' + idx + '" style="display:none" onchange="handleObsImageFile(' + idx + ', this.files[0])">' +
+          '</div>' +
+          '<div class="obs-reorder">' +
+            '<button type="button" class="obs-reorder-btn" title="Move up"   onclick="moveObsPair(' + idx + ',-1)">▲</button>' +
+            '<button type="button" class="obs-reorder-btn" title="Move down" onclick="moveObsPair(' + idx + ', 1)">▼</button>' +
             '<button type="button" class="obs-img-btn" onclick="triggerObsImageUpload(' + idx + ')" title="Attach image">' +
               '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
                 '<rect x="3" y="3" width="18" height="18" rx="2"/>' +
@@ -4210,11 +4217,6 @@ function addObsPair() {
                 '<polyline points="21 15 16 10 5 21"/>' +
               '</svg>' +
             '</button>' +
-            '<input type="file" accept="image/*" id="sImgFile-' + idx + '" style="display:none" onchange="handleObsImageFile(' + idx + ', this.files[0])">' +
-          '</div>' +
-          '<div class="obs-reorder">' +
-            '<button type="button" class="obs-reorder-btn" title="Move up"   onclick="moveObsPair(' + idx + ',-1)">▲</button>' +
-            '<button type="button" class="obs-reorder-btn" title="Move down" onclick="moveObsPair(' + idx + ', 1)">▼</button>' +
           '</div>' +
         '</div>' +
         '<div class="obs-sol-col">' +

@@ -90,6 +90,19 @@ if (!empty($result['ok'])) {
         }
     }
 
+    // Debug info — remove after confirming deletion works
+    $appDomain = rtrim($_ENV['APP_DOMAIN'] ?? '', '/');
+    $basePath  = trim($_ENV['BASE_PATH']  ?? '', '/');
+    $rel = preg_replace('#^https?://[^/]+#', '', $fileUrl);
+    $rel = ltrim($rel, '/');
+    if ($basePath !== '' && strpos($rel, $basePath . '/') === 0) {
+        $rel = substr($rel, strlen($basePath) + 1);
+    }
+    $resolvedPath = dirname(__DIR__) . '/' . $rel;
+    $result['_debug_file_url']      = $fileUrl;
+    $result['_debug_resolved_path'] = $resolvedPath;
+    $result['_debug_file_exists']   = file_exists($resolvedPath);
+
     deleteLinkedPdf($fileUrl, $sheetId);
 }
 

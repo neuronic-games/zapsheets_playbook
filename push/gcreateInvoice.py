@@ -551,60 +551,46 @@ try:
 except Exception as e:
     fmt_error = str(e)
 
-# Insert logo — try methods in order, report which succeeded.
+# Insert logo as a floating over-grid image (renders in PDF).
+# OverGridImage structure: addImage > image (OverGridImage) > image (Image) + position
 logo_method = None
 logo_error  = None
 if my_logo:
-    # Attempt 1: in-cell imageValue (renders in PDF if API supports it)
     try:
         wb.batch_update({'requests': [{
-            'updateCells': {
-                'rows': [{'values': [{'userEnteredValue': {'imageValue': {'url': my_logo, 'altText': 'Logo'}}}]}],
-                'fields': 'userEnteredValue',
-                'range': {
-                    'sheetId': sheet_gid,
-                    'startRowIndex': r0(R_COMPANY),
-                    'endRowIndex':   r0(R_COMPANY) + 1,
-                    'startColumnIndex': CE,
-                    'endColumnIndex':   CE + 1,
-                },
-            }
-        }]})
-        logo_method = 'imageValue'
-    except Exception as e1:
-        logo_error = f'imageValue: {e1}'
-        # Attempt 2: floating insertImage (renders in PDF as overlay)
-        try:
-            wb.batch_update({'requests': [{
-                'addImage': {
-                    'image': {
+            'addImage': {
+                'image': {                   # OverGridImage
+                    'image': {               # Image sub-object
                         'imageUrl': my_logo,
-                        'properties': {'title': 'Logo'}
+                        'altText': 'Logo',
                     },
-                    'position': {
+                    'position': {            # EmbeddedObjectPosition
                         'overlayPosition': {
                             'anchorCell': {
-                                'sheetId': sheet_gid,
-                                'rowIndex': r0(R_COMPANY),
-                                'columnIndex': CE
+                                'sheetId':     sheet_gid,
+                                'rowIndex':    r0(R_COMPANY),
+                                'columnIndex': CE,
                             },
-                            'widthPixels':  180,
-                            'heightPixels': 140,
+                            'offsetXPixels': 0,
+                            'offsetYPixels': 0,
+                            'widthPixels':   180,
+                            'heightPixels':  140,
                         }
                     }
                 }
-            }]})
-            logo_method = 'addImage'
+            }
+        }]})
+        logo_method = 'addImage'
+    except Exception as e1:
+        logo_error = f'addImage: {e1}'
+        # Fallback: =IMAGE() formula (browser only, not PDF — better than nothing)
+        try:
+            ws.update(values=[[f'=IMAGE("{my_logo}",1)']],
+                      range_name=f'{chr(65+CE)}{R_COMPANY}',
+                      value_input_option='USER_ENTERED')
+            logo_method = 'formula'
         except Exception as e2:
-            logo_error += f' | addImage: {e2}'
-            # Attempt 3: =IMAGE() formula (browser only, not PDF)
-            try:
-                ws.update(values=[[f'=IMAGE("{my_logo}",1)']],
-                          range_name=f'{chr(65+CE)}{R_COMPANY}',
-                          value_input_option='USER_ENTERED')
-                logo_method = 'formula'
-            except Exception as e3:
-                logo_error += f' | formula: {e3}'
+            logo_error += f' | formula: {e2}'
 
 spreadsheet_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/edit#gid={sheet_gid}"
 out = {"ok": True, "tab": tab_name, "gid": sheet_gid, "url": spreadsheet_url}

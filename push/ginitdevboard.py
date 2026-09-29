@@ -48,6 +48,13 @@ TABS = {
         'rows': [['Name', 'Email', 'Company', 'Role', 'Notes']],
         'freeze': True,
     },
+    'Contracts': {
+        'rows': [['ID', 'Date', 'Game', 'Client', 'Quote', 'Payment',
+                  'Tests', 'Edits', 'Duration', 'Target Start Date', 'Target End Date',
+                  'Type', 'Ref Number', 'Notes', 'Description', 'Files',
+                  'Start Date', 'End Date', 'Status']],
+        'freeze': True,
+    },
     'settings': {
         'rows': [
             ['My Name',     ''],

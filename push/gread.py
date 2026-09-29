@@ -39,11 +39,9 @@ if mSelectedWorkSheet is None:
     # Try case-insensitive match
     mSelectedWorkSheet = next((ws for ws in all_worksheets if ws.title.lower() == sheetName.lower()), None)
 if mSelectedWorkSheet is None:
-    # Write an empty array so downstream JSON reads don't 404, and print nothing
-    # so pushSheetUpdate.php skips the file_put_contents guard (empty trim check).
-    # The JS error handler in getSheetLanguage will skip the sheet gracefully.
+    # Print the error to stdout so pushSheetUpdate.php can surface it in the sync log
     available = [ws.title for ws in all_worksheets]
-    sys.stderr.write(json.dumps({"error": f"Worksheet '{sheetName}' not found. Available: {available}"}) + "\n")
+    print(json.dumps({"error": f"Worksheet '{sheetName}' not found. Available: {available}"}))
     sys.exit(1)
 
 # Creating .JSON files

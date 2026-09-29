@@ -411,21 +411,6 @@ reqs.append(merge(R_COMPANY, CB, CD))
 # Logo: E:G rows 2-5 (content ends at G; H is right margin)
 if my_logo:
     reqs.append(merge_rows(R_COMPANY, R_PHONE, CE, CONTENT_END))
-    # Insert logo as an in-cell imageValue so it renders correctly in PDF exports
-    # (=IMAGE() formula is browser-only and skipped by the PDF renderer)
-    reqs.append({
-        'updateCells': {
-            'rows': [{'values': [{'userEnteredValue': {'imageValue': {'url': my_logo, 'altText': 'Logo'}}}]}],
-            'fields': 'userEnteredValue',
-            'range': {
-                'sheetId': sheet_gid,
-                'startRowIndex': r0(R_COMPANY),
-                'endRowIndex':   r0(R_COMPANY) + 1,
-                'startColumnIndex': CE,
-                'endColumnIndex':   CE + 1,
-            },
-        }
-    })
 # "Invoice" heading: B:G
 reqs.append(merge(R_INVOICE, CB, CONTENT_END))
 # "Submitted on": B:G
@@ -559,11 +544,36 @@ if my_payment:
         'wrapStrategy': 'WRAP',
     }, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment,userEnteredFormat.wrapStrategy'))
 
-# Execute
+# Execute formatting (separate from logo so a logo failure can't wipe formatting)
 try:
     wb.batch_update({'requests': reqs})
 except Exception:
     pass  # values are written even if formatting fails
+
+# Insert logo as an in-cell imageValue (renders in PDF exports; =IMAGE() formula does not).
+# Done in a separate batch so any API incompatibility doesn't affect the formatting above.
+if my_logo:
+    try:
+        wb.batch_update({'requests': [{
+            'updateCells': {
+                'rows': [{'values': [{'userEnteredValue': {'imageValue': {'url': my_logo, 'altText': 'Logo'}}}]}],
+                'fields': 'userEnteredValue',
+                'range': {
+                    'sheetId': sheet_gid,
+                    'startRowIndex': r0(R_COMPANY),
+                    'endRowIndex':   r0(R_COMPANY) + 1,
+                    'startColumnIndex': CE,
+                    'endColumnIndex':   CE + 1,
+                },
+            }
+        }]})
+    except Exception:
+        # Fallback: write =IMAGE() formula so logo at least appears in the browser
+        try:
+            ws.update(values=[[f'=IMAGE("{my_logo}",1)']], range_name=f'{chr(65+CE)}{R_COMPANY}',
+                      value_input_option='USER_ENTERED')
+        except Exception:
+            pass
 
 spreadsheet_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/edit#gid={sheet_gid}"
 print(json.dumps({"ok": True, "tab": tab_name, "gid": sheet_gid, "url": spreadsheet_url}))

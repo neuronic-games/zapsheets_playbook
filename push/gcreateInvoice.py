@@ -223,8 +223,7 @@ def sc(row1, col0, val):
 
 # Company name + logo
 sc(R_COMPANY, CB, my_company or my_name)
-if my_logo:
-    grid[R_COMPANY - 1][CE] = f'=IMAGE("{my_logo}",1)'   # mode 1 = fit, preserve aspect ratio
+# Logo is inserted via imageValue (not =IMAGE formula) so it renders in PDF exports
 
 # Address / phone
 sc(R_ADDR1, CB, addr_line1)
@@ -412,6 +411,21 @@ reqs.append(merge(R_COMPANY, CB, CD))
 # Logo: E:G rows 2-5 (content ends at G; H is right margin)
 if my_logo:
     reqs.append(merge_rows(R_COMPANY, R_PHONE, CE, CONTENT_END))
+    # Insert logo as an in-cell imageValue so it renders correctly in PDF exports
+    # (=IMAGE() formula is browser-only and skipped by the PDF renderer)
+    reqs.append({
+        'updateCells': {
+            'rows': [{'values': [{'userEnteredValue': {'imageValue': {'url': my_logo, 'altText': 'Logo'}}}]}],
+            'fields': 'userEnteredValue',
+            'range': {
+                'sheetId': sheet_gid,
+                'startRowIndex': r0(R_COMPANY),
+                'endRowIndex':   r0(R_COMPANY) + 1,
+                'startColumnIndex': CE,
+                'endColumnIndex':   CE + 1,
+            },
+        }
+    })
 # "Invoice" heading: B:G
 reqs.append(merge(R_INVOICE, CB, CONTENT_END))
 # "Submitted on": B:G

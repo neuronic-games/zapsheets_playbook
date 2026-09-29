@@ -551,9 +551,11 @@ try:
 except Exception as e:
     fmt_error = str(e)
 
-# Insert logo as an in-cell imageValue (renders in PDF exports; =IMAGE() formula does not).
-# Done in a separate batch so any API incompatibility doesn't affect the formatting above.
+# Insert logo — try methods in order, report which succeeded.
+logo_method = None
+logo_error  = None
 if my_logo:
+    # Attempt 1: in-cell imageValue (renders in PDF if API supports it)
     try:
         wb.batch_update({'requests': [{
             'updateCells': {
@@ -568,16 +570,48 @@ if my_logo:
                 },
             }
         }]})
-    except Exception:
-        # Fallback: write =IMAGE() formula so logo at least appears in the browser
+        logo_method = 'imageValue'
+    except Exception as e1:
+        logo_error = f'imageValue: {e1}'
+        # Attempt 2: floating insertImage (renders in PDF as overlay)
         try:
-            ws.update(values=[[f'=IMAGE("{my_logo}",1)']], range_name=f'{chr(65+CE)}{R_COMPANY}',
-                      value_input_option='USER_ENTERED')
-        except Exception:
-            pass
+            wb.batch_update({'requests': [{
+                'addImage': {
+                    'image': {
+                        'imageUrl': my_logo,
+                        'properties': {'title': 'Logo'}
+                    },
+                    'position': {
+                        'overlayPosition': {
+                            'anchorCell': {
+                                'sheetId': sheet_gid,
+                                'rowIndex': r0(R_COMPANY),
+                                'columnIndex': CE
+                            },
+                            'widthPixels':  180,
+                            'heightPixels': 140,
+                        }
+                    }
+                }
+            }]})
+            logo_method = 'addImage'
+        except Exception as e2:
+            logo_error += f' | addImage: {e2}'
+            # Attempt 3: =IMAGE() formula (browser only, not PDF)
+            try:
+                ws.update(values=[[f'=IMAGE("{my_logo}",1)']],
+                          range_name=f'{chr(65+CE)}{R_COMPANY}',
+                          value_input_option='USER_ENTERED')
+                logo_method = 'formula'
+            except Exception as e3:
+                logo_error += f' | formula: {e3}'
 
 spreadsheet_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/edit#gid={sheet_gid}"
 out = {"ok": True, "tab": tab_name, "gid": sheet_gid, "url": spreadsheet_url}
 if fmt_error:
     out["fmt_error"] = fmt_error
+if logo_method:
+    out["logo_method"] = logo_method
+if logo_error:
+    out["logo_error"] = logo_error
 print(json.dumps(out))

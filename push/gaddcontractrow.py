@@ -84,7 +84,7 @@ target_end_col   = col('Target End Date')
 type_col         = col('Type')
 ref_num_col      = col('Ref Number')
 notes_col        = col('Notes')
-scope_col        = col('Scope of Work')
+scope_col        = col('Description')
 
 # Determine next sequential ID
 next_id = 1

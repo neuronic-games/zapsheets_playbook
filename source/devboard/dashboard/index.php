@@ -1087,6 +1087,10 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       </div>
     </label>
 
+    <label class="ge-label">Description
+      <textarea id="invoiceDescription" class="ge-input ge-textarea" rows="3" oninput="_invoiceMarkDirty()"></textarea>
+    </label>
+
     <label class="ge-label">Due Date
       <input type="date" id="invoiceDueDate" class="ge-input" oninput="_invoiceMarkDirty()" />
     </label>
@@ -2115,6 +2119,7 @@ function openInvoiceFromEstimate(estIdx) {
   document.getElementById('invoicePctCalc').textContent = estAmt ? '$' + estAmt.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '';
   document.getElementById('invoicePctRow').style.display = 'none';
   document.getElementById('invoiceAmtLabel').querySelector('label') && (document.getElementById('invoiceAmtLabel').style.display = '');
+  document.getElementById('invoiceDescription').value = est.game || '';
   document.getElementById('invoiceDueDate').value  = '';
   document.getElementById('invoiceNotes').value    = '';
   document.getElementById('invoiceCreateBtn').disabled = false;
@@ -2181,6 +2186,7 @@ function submitInvoice() {
   fd.append('estimate_num', est.estimate_num  || '');
   fd.append('estimate_amt', est.amount        || '0');
   fd.append('invoice_amt',  amount);
+  fd.append('description',  document.getElementById('invoiceDescription').value.trim());
   fd.append('tgt_start',    document.getElementById('invoiceDueDate').value || '');
   fd.append('notes',        notes);
   fd.append('my_name',      MY_NAME          || '');

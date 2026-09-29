@@ -63,6 +63,7 @@ unit_price_raw= data.get('unit_price',    '').strip()
 discount_pct  = float(data.get('discount_pct',  0) or 0)
 discount_lbl  = data.get('discount_label','').strip()
 scope_of_work = data.get('scope_of_work', '').strip()
+description   = data.get('description',   '').strip()
 my_name       = data.get('my_name',       '').strip()
 my_phone      = data.get('my_phone',      '').strip()
 my_company    = data.get('my_company',    '').strip()
@@ -189,7 +190,11 @@ else:  # Invoice
     subtotal_val = quote_val or 0.0
     subtotal_fmt = quote_fmt
 
-    desc_lines = [game] if game else ['Design services']
+    # Use explicit description if provided, else fall back to game name
+    if description:
+        desc_lines = [l for l in description.replace('\r\n', '\n').split('\n') if l.strip()]
+    else:
+        desc_lines = [game] if game else ['Design services']
     line_items.append({
         'desc': desc_lines, 'qty': '1',
         'unit': quote_fmt,
@@ -447,14 +452,20 @@ if my_payment:
         c.drawString(ML, pay_y, stripped)
         pay_y -= 13
 
-# Large total — "Total" label to the left, big number to the right, same baseline
+# Large total — "Total" label immediately left of big number
 LARGE_TOTAL_Y = PAY_TOP - 40 if my_payment else cur_y - 35
+num_str   = quote_fmt
+num_width = c.stringWidth(num_str, 'Helvetica-Bold', 28)
+num_right = T_TOTAL_R - CELL_PAD
+num_left  = num_right - num_width
+lbl_str   = 'Total  '
+lbl_width = c.stringWidth(lbl_str, 'Helvetica-Bold', 18)
 c.setFont('Helvetica-Bold', 18)
 c.setFillColor(MID_GRAY)
-c.drawString(ML, LARGE_TOTAL_Y + 4, 'Total')
+c.drawString(num_left - lbl_width, LARGE_TOTAL_Y + 4, lbl_str)
 c.setFont('Helvetica-Bold', 28)
 c.setFillColor(ORANGE)
-c.drawRightString(T_TOTAL_R - CELL_PAD, LARGE_TOTAL_Y, quote_fmt)
+c.drawRightString(num_right, LARGE_TOTAL_Y, num_str)
 
 # ── Save PDF ───────────────────────────────────────────────────────────────────
 c.save()

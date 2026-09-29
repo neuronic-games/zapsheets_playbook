@@ -2,8 +2,10 @@
 // deleteEstimate.php — delete an estimate tab from the Google Sheet and remove from estimates.json.
 //
 // POST params:
-//   id  — Google Spreadsheet ID
-//   tab — Tab name to delete (e.g. "[Club K9] invoice 13")
+//   id          — Google Spreadsheet ID
+//   tab         — Tab name to delete (e.g. "[Club K9] invoice 13")  [legacy]
+//   contract_id — (optional) contract row to also remove
+//   file_url    — Share/PDF URL to delete for PDF-based records
 
 error_reporting(0);
 ini_set('display_errors', '0');
@@ -14,7 +16,7 @@ require __DIR__ . '/../dotEnv.php';
 $sheetId    = trim($_POST['id']          ?? '');
 $tab        = trim($_POST['tab']         ?? '');
 $contractId = trim($_POST['contract_id'] ?? '');
-$fileUrl    = trim($_POST['file_url']    ?? '');  // server path for PDF-based records
+$fileUrl    = trim($_POST['file_url']    ?? '');  // share URL or legacy direct path
 
 if (!$sheetId || (!$tab && !$fileUrl)) {
     echo json_encode(['error' => 'Missing id and tab/file_url']);
@@ -41,17 +43,35 @@ if ($tab) {
         exit;
     }
 } else {
-    // PDF-based: delete the file from the server
+    // PDF-based: delete the share JSON + private PDF (or legacy direct file)
+    $base     = dirname(__DIR__);
     $basePath = trim($_ENV['BASE_PATH'] ?? '', '/');
+
     $rel = preg_replace('#^https?://[^/]+#', '', $fileUrl);
     $rel = ltrim($rel, '/');
     if ($basePath !== '' && strpos($rel, $basePath . '/') === 0) {
         $rel = substr($rel, strlen($basePath) + 1);
     }
-    $serverFile = dirname(__DIR__) . '/' . $rel;
-    if (file_exists($serverFile)) {
-        unlink($serverFile);
+
+    if (preg_match('#^shares/contracts/([a-f0-9]{12})$#', $rel, $m)) {
+        // New share-token format: delete share JSON + private PDF
+        $hash     = $m[1];
+        $jsonFile = $base . '/shares/contracts/' . $hash . '.json';
+        if (file_exists($jsonFile)) {
+            $meta   = json_decode(file_get_contents($jsonFile), true) ?: [];
+            $pdfRel = $meta['file'] ?? '';
+            if ($pdfRel) {
+                $pdfFile = $base . '/' . $pdfRel;
+                if (file_exists($pdfFile)) { @unlink($pdfFile); }
+            }
+            @unlink($jsonFile);
+        }
+    } else {
+        // Legacy direct path
+        $serverFile = $base . '/' . $rel;
+        if (file_exists($serverFile)) { @unlink($serverFile); }
     }
+
     $result = ['ok' => true];
 }
 
@@ -61,8 +81,8 @@ if (!empty($result['ok'])) {
     if (file_exists($estFile)) {
         $estimates = json_decode(file_get_contents($estFile), true) ?: [];
         $estimates = array_values(array_filter($estimates, function($e) use ($tab, $fileUrl) {
-            if ($tab && ($e['tab'] ?? '') === $tab) return false;
-            if ($fileUrl && ($e['url'] ?? '') === $fileUrl) return false;
+            if ($tab    && ($e['tab'] ?? '')  === $tab)    return false;
+            if ($fileUrl && ($e['url']  ?? '') === $fileUrl) return false;
             if ($fileUrl && ($e['file'] ?? '') === $fileUrl) return false;
             return true;
         }));

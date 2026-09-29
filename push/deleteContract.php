@@ -37,26 +37,47 @@ if ($result === null) {
     exit;
 }
 
-// Helper: resolve a file URL to a server path and delete it
-function deleteLinkedPdf($fileUrl, $sheetId) {
+/**
+ * Delete a PDF share: given a share URL like "{base}/shares/contracts/{hash}",
+ * extract the hash, read the JSON to find the private PDF path, and delete both.
+ * Falls back to the old direct-path deletion for legacy URLs.
+ */
+function deleteLinkedPdf($fileUrl) {
     if (!$fileUrl) return;
-    $appDomain = rtrim($_ENV['APP_DOMAIN'] ?? '', '/');
-    $basePath  = trim($_ENV['BASE_PATH']  ?? '', '/');
-    // Strip protocol + domain
+
+    $base     = dirname(__DIR__);
+    $basePath = trim($_ENV['BASE_PATH'] ?? '', '/');
+
+    // Normalize to a relative path (strip protocol + domain + optional base path)
     $rel = preg_replace('#^https?://[^/]+#', '', $fileUrl);
     $rel = ltrim($rel, '/');
-    // Strip BASE_PATH prefix if present
     if ($basePath !== '' && strpos($rel, $basePath . '/') === 0) {
         $rel = substr($rel, strlen($basePath) + 1);
     }
-    $serverFile = dirname(__DIR__) . '/' . $rel;
-    if (file_exists($serverFile)) {
-        @unlink($serverFile);
+
+    // New share-token format: shares/contracts/{12-char hex hash}
+    if (preg_match('#^shares/contracts/([a-f0-9]{12})$#', $rel, $m)) {
+        $hash     = $m[1];
+        $jsonFile = $base . '/shares/contracts/' . $hash . '.json';
+        if (file_exists($jsonFile)) {
+            $meta    = json_decode(file_get_contents($jsonFile), true) ?: [];
+            $pdfRel  = $meta['file'] ?? '';
+            if ($pdfRel) {
+                $pdfFile = $base . '/' . $pdfRel;
+                if (file_exists($pdfFile)) { @unlink($pdfFile); }
+            }
+            @unlink($jsonFile);
+        }
+        return;
     }
+
+    // Legacy: direct file path
+    $serverFile = $base . '/' . $rel;
+    if (file_exists($serverFile)) { @unlink($serverFile); }
 }
 
 if (!empty($result['ok'])) {
-    // Remove from contracts.json cache and delete any linked PDF file
+    // Remove from contracts.json cache and delete any linked PDF/share files
     $contractsPath = dirname(__DIR__) . '/sheets/' . $sheetId . '/contracts.json';
     $fileUrl = '';
 
@@ -90,20 +111,7 @@ if (!empty($result['ok'])) {
         }
     }
 
-    // Debug info — remove after confirming deletion works
-    $appDomain = rtrim($_ENV['APP_DOMAIN'] ?? '', '/');
-    $basePath  = trim($_ENV['BASE_PATH']  ?? '', '/');
-    $rel = preg_replace('#^https?://[^/]+#', '', $fileUrl);
-    $rel = ltrim($rel, '/');
-    if ($basePath !== '' && strpos($rel, $basePath . '/') === 0) {
-        $rel = substr($rel, strlen($basePath) + 1);
-    }
-    $resolvedPath = dirname(__DIR__) . '/' . $rel;
-    $result['_debug_file_url']      = $fileUrl;
-    $result['_debug_resolved_path'] = $resolvedPath;
-    $result['_debug_file_exists']   = file_exists($resolvedPath);
-
-    deleteLinkedPdf($fileUrl, $sheetId);
+    deleteLinkedPdf($fileUrl);
 }
 
 echo json_encode($result);

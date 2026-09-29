@@ -1,6 +1,7 @@
 # gcreateDocPdf.py — generate an invoice or estimate as a PDF file on the server.
 #
-# Saves to:   shares/contracts/{sha1(sheet_id+type+num)[:12]}.pdf  (no sheet ID in URL)
+# Saves to:   sheets/{sheet_id}/files/contracts/{hash}.pdf  (private)
+# Share ref:  shares/contracts/{hash}.json  (token → file path, no sheet ID in URL)
 # Updates:    Contracts Google Sheet "Files" column with the file URL
 #
 # Arg: {sheet_id}|{base64_json}
@@ -210,11 +211,16 @@ file_hash = hashlib.sha1(file_key.encode()).hexdigest()[:12]
 file_name = f"{file_hash}.pdf"
 
 base_dir  = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-files_dir = os.path.join(base_dir, 'shares', 'contracts')
+# PDF stored privately; share JSON stored in shares/contracts/
+files_dir = os.path.join(base_dir, 'sheets', sheet_id, 'files', 'contracts')
 os.makedirs(files_dir, exist_ok=True)
 file_path = os.path.join(files_dir, file_name)
 
-rel_path = f"shares/contracts/{file_name}"
+pdf_rel_path  = f"sheets/{sheet_id}/files/contracts/{file_name}"
+share_dir     = os.path.join(base_dir, 'shares', 'contracts')
+os.makedirs(share_dir, exist_ok=True)
+# Public URL uses the share token (hash); no sheet ID exposed
+rel_path = f"shares/contracts/{file_hash}"
 file_url = (base_url.rstrip('/') + '/' + rel_path) if base_url else rel_path
 
 # ── Colors ─────────────────────────────────────────────────────────────────────
@@ -476,6 +482,18 @@ pdf_bytes = buf.getvalue()
 with open(file_path, 'wb') as f:
     f.write(pdf_bytes)
 
+# Write share JSON (token → file path, no sheet ID in public URL)
+share_meta = {
+    "file":     pdf_rel_path,
+    "doc_type": doc_type,
+    "doc_num":  doc_num,
+    "game":     game,
+    "client":   client,
+}
+share_json_path = os.path.join(share_dir, f"{file_hash}.json")
+with open(share_json_path, 'w', encoding='utf-8') as f:
+    json.dump(share_meta, f, ensure_ascii=False)
+
 # Cleanup temp logo
 if logo_tmp:
     try:
@@ -516,9 +534,7 @@ if doc_id and os.path.exists(CRED_FILE):
         sheet_error = str(e)
 
 out = {"ok": True, "file": file_path, "url": file_url, "hash": file_hash,
-       "doc_num": doc_num,
-       "_debug_tgt_start": tgt_start, "_debug_due_date": due_date,
-       "_debug_duration": duration, "_debug_timeline": timeline_str}
+       "doc_num": doc_num}
 if sheet_error:
     out["sheet_error"] = sheet_error
 print(json.dumps(out))

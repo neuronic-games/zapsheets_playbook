@@ -163,6 +163,11 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^sheets/([A-Za-z0-9_\-]+)/noteboard/?$ source/noteboard/list/index.php [L,QSA]
 
+# /shares/contracts/{hash} — contract PDF share (streams PDF from private path via token)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^shares/contracts/([a-f0-9]{12})/?$ shares/contracts/index.php?token=$1 [L,QSA]
+
 # /share/{token} — shared read-only PulseBoard view
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

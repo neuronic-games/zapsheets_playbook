@@ -142,9 +142,9 @@ if due_date and due_date_end:
     timeline_parts.append(f'{due_date} – {due_date_end}')
 elif due_date:
     timeline_parts.append(due_date)
-if duration:
+if duration and duration not in timeline_parts:
     timeline_parts.append(f'({duration})')
-timeline_str = '  '.join(timeline_parts)
+timeline_str = '  '.join(timeline_parts) if timeline_parts else '—'
 
 # ── Line items ─────────────────────────────────────────────────────────────────
 line_items = []

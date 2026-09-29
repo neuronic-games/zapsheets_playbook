@@ -22,12 +22,9 @@ try:
 except ImportError:
     import subprocess, site as _site
     subprocess.run(
-        [sys.executable, '-m', 'pip', 'install', 'reportlab', '--user', '--quiet'],
+        [sys.executable, '-m', 'pip', 'install', 'reportlab', '--quiet'],
         check=True
     )
-    _usr = _site.getusersitepackages()
-    if _usr not in sys.path:
-        sys.path.insert(0, _usr)
 
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter

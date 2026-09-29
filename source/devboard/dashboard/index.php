@@ -4151,19 +4151,42 @@ function toggleObsImgBtn(idx) {
   wrap.classList.toggle('has-obs-text', _ceGet(ta).trim().length > 0);
 }  // obs pair idx → uploaded image URL
 
+var _SVG_IMG  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+var _SVG_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
+
 function _showObsImage(idx, url) {
   _obsImages[idx] = url;
   var ta   = document.getElementById('sObs-' + idx);
   var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
   var pv   = document.getElementById('sImgPreview-' + idx);
-  if (ta)   ta.style.display = 'none';   // hide textarea
-  if (wrap) wrap.classList.remove('has-obs-text');  // always show replace btn
-  if (pv) { pv.style.display = 'block'; pv.innerHTML = _obsImgPreviewHtml(idx, url); }
+  var btn  = wrap ? wrap.querySelector('.obs-img-btn') : null;
+  if (ta)   ta.style.display = 'none';
+  if (wrap) wrap.classList.remove('has-obs-text');  // always show btn
+  if (pv) { pv.style.display = 'block'; pv.innerHTML = '<img src="' + esc(url) + '" alt="observation image">'; }
+  // Switch to trash button
+  if (btn) {
+    btn.innerHTML = _SVG_TRASH;
+    btn.title     = 'Remove image';
+    btn.onclick   = function() { _removeObsImage(idx); };
+    btn.style.color = '#c0392b';
+  }
 }
 
-function _obsImgPreviewHtml(idx, url) {
-  // Just the image — the .obs-img-btn in obs-ta-wrap overlays it at top-right
-  return '<img src="' + esc(url) + '" alt="observation image">';
+function _removeObsImage(idx) {
+  delete _obsImages[idx];
+  var ta   = document.getElementById('sObs-' + idx);
+  var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
+  var pv   = document.getElementById('sImgPreview-' + idx);
+  var btn  = wrap ? wrap.querySelector('.obs-img-btn') : null;
+  if (ta)   { ta.style.display = ''; toggleObsImgBtn(idx); }
+  if (pv)   { pv.style.display = 'none'; pv.innerHTML = ''; }
+  // Restore upload button
+  if (btn) {
+    btn.innerHTML = _SVG_IMG;
+    btn.title     = 'Attach image';
+    btn.onclick   = function() { triggerObsImageUpload(idx); };
+    btn.style.color = '';
+  }
 }
 
 function triggerObsImageUpload(idx) {

@@ -2960,10 +2960,9 @@ function submitStandaloneInvoice() {
     .then(function(r) { return r.json(); })
     .then(function(j) {
       if (j && j.ok) {
+        if (j.invoice_record) ESTIMATES_RAW.push(j.invoice_record);
         forceCloseStandaloneInvoiceDialog();
-        if (j.invoice_record) {
-          ESTIMATES_RAW.push(j.invoice_record);
-        }
+        renderPublishersView();
         if (j.url) window.open(j.url, '_blank');
       } else {
         errEl.textContent   = (j && j.error) ? j.error : 'Create failed.';

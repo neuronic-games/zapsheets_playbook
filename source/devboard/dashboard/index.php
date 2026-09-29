@@ -720,6 +720,9 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .field-input::placeholder { color:#c4cdd8; }
 .obs-pair-empty .field-textarea { border:1.5px solid #d0d8e0; background:#fafbfc; }
 .obs-pair-empty .field-textarea:focus { border-color:#1a5f7a; background:#fff; }
+/* empty rows get minimal vertical padding */
+.obs-pair-empty .obs-ta-wrap .obs-editable,
+.obs-pair-empty .obs-sol-col  .obs-editable { padding-top:.12rem; padding-bottom:.12rem; }
 
 /* Keyboard navigation hint — hidden on touch-only devices */
 .obs-kbd-hint {
@@ -4161,6 +4164,7 @@ function _showObsImage(idx, url) {
   _obsImages[idx] = url;
   var ta   = document.getElementById('sObs-' + idx);
   var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
+  var pair = ta ? ta.closest('.obs-pair')    : null;
   var pv   = document.getElementById('sImgPreview-' + idx);
   var btn  = wrap ? wrap.querySelector('.obs-img-btn') : null;
   if (ta)   ta.style.display = 'none';
@@ -4173,12 +4177,23 @@ function _showObsImage(idx, url) {
     btn.onclick   = function() { _removeObsImage(idx); };
     btn.style.color = '#c0392b';
   }
+  // Treat image as data — promote this pair and add a trailing empty row if it was last
+  if (pair) {
+    var pairs = document.querySelectorAll('#obsContainer .obs-pair');
+    var last  = pairs[pairs.length - 1];
+    if (last && parseInt(last.dataset.idx) === idx) {
+      pair.classList.remove('obs-pair-empty');
+      addObsPair();
+      _syncReorderBtns();
+    }
+  }
 }
 
 function _removeObsImage(idx) {
   delete _obsImages[idx];
   var ta   = document.getElementById('sObs-' + idx);
   var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
+  var pair = ta ? ta.closest('.obs-pair')    : null;
   var pv   = document.getElementById('sImgPreview-' + idx);
   var btn  = wrap ? wrap.querySelector('.obs-img-btn') : null;
   if (ta)   { ta.style.display = ''; toggleObsImgBtn(idx); }
@@ -4189,6 +4204,11 @@ function _removeObsImage(idx) {
     btn.title     = 'Attach image';
     btn.onclick   = function() { triggerObsImageUpload(idx); };
     btn.style.color = '';
+  }
+  // If now empty, re-mark as empty pair
+  if (pair) {
+    var sol = _ceGet(document.getElementById('sSol-' + idx));
+    if (!sol.trim()) pair.classList.add('obs-pair-empty');
   }
 }
 

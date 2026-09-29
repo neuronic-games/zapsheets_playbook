@@ -1799,8 +1799,9 @@ function renderPublishersView() {
         // Normal action buttons
         html += '<div id="est-act-btns-' + globalIdx + '" style="display:flex;gap:.5rem;align-items:center">';
         if (est.url) {
-          var shareSubject = encodeURIComponent((est.game || 'Document') + ' PDF');
-          var shareBody    = encodeURIComponent('Please find the document linked below:\n\n' + est.url);
+          var shareTypeLabel = est.type === 'invoice' ? 'Invoice' : 'Estimate';
+          var shareSubject   = encodeURIComponent((est.game || '') + ' ' + shareTypeLabel + ' - ' + (est.estimate_num || ''));
+          var shareBody      = encodeURIComponent('Download ' + shareTypeLabel + ': ' + est.url);
           html += '<button type="button" class="btn-contract-action" onclick="event.stopPropagation();window.open(\'mailto:?subject=' + shareSubject + '&body=' + shareBody + '\',\'_self\')">✉ Share</button>';
         }
         html += '<button type="button" class="btn-contract-action invoice" onclick="event.stopPropagation();openInvoiceFromEstimate(' + globalIdx + ')">+ Invoice</button>';

@@ -1375,24 +1375,26 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
 <!-- Standalone Invoice dialog -->
 <div class="overlay" id="standaloneInvoiceOverlay" onclick="if(event.target===this){closeStandaloneInvoiceDialog();}">
-  <div class="contract-dialog" onclick="event.stopPropagation()">
-    <button class="dialog-close" onclick="closeStandaloneInvoiceDialog()">&#x2715;</button>
+  <div class="contract-dialog" style="position:relative" onclick="event.stopPropagation()">
+    <button onclick="closeStandaloneInvoiceDialog()" style="position:absolute;top:.75rem;right:.75rem;background:none;border:none;cursor:pointer;font-size:1rem;color:#888;line-height:1;padding:.25rem .4rem;" title="Close">&#x2715;</button>
     <h2>New Invoice — <span id="siGameTitle"></span></h2>
     <div class="field-grid" style="grid-template-columns:1fr 1fr">
       <div class="field-group span2">
         <label>Client</label>
-        <input type="text" class="field-input" id="siClient" placeholder="Publisher or company…" autocomplete="off" />
+        <div id="siClientDisplay" style="font-family:'DINRegular',sans-serif;font-size:.9rem;color:#333;padding:.45rem 0"></div>
       </div>
       <div class="field-group">
         <label>Amount</label>
         <div class="contract-quote-wrap">
           <span class="contract-quote-prefix">$</span>
-          <input type="number" class="field-input" id="siAmount" placeholder="0.00" min="0" step="0.01" oninput="_siMarkDirty()" />
+          <input type="number" class="field-input" id="siAmount" placeholder="0.00" min="0" step="0.01"
+                 style="height:2.4rem;box-sizing:border-box" oninput="_siMarkDirty()" />
         </div>
       </div>
       <div class="field-group">
         <label>Due Date</label>
-        <input type="date" class="field-input" id="siDueDate" oninput="_siMarkDirty()" />
+        <input type="date" class="field-input" id="siDueDate"
+               style="height:2.4rem;box-sizing:border-box" oninput="_siMarkDirty()" />
       </div>
       <div class="field-group span2">
         <label>Notes</label>
@@ -2895,8 +2897,8 @@ var _siInitial   = {};
 function openStandaloneInvoiceDialog(gameName, clientName) {
   _siGame   = gameName   || '';
   _siClient = clientName || '';
-  document.getElementById('siGameTitle').textContent = _siGame;
-  document.getElementById('siClient').value          = _siClient;
+  document.getElementById('siGameTitle').textContent    = _siGame;
+  document.getElementById('siClientDisplay').textContent = _siClient;
   document.getElementById('siAmount').value          = '';
   document.getElementById('siDueDate').value         = '';
   document.getElementById('siNotes').value           = '';
@@ -2910,10 +2912,9 @@ function openStandaloneInvoiceDialog(gameName, clientName) {
 }
 
 function _siIsDirty() {
-  return document.getElementById('siClient').value    !== _siInitial.client  ||
-         document.getElementById('siAmount').value    !== _siInitial.amount  ||
-         document.getElementById('siDueDate').value   !== _siInitial.dueDate ||
-         document.getElementById('siNotes').value     !== _siInitial.notes;
+  return document.getElementById('siAmount').value  !== _siInitial.amount  ||
+         document.getElementById('siDueDate').value !== _siInitial.dueDate ||
+         document.getElementById('siNotes').value   !== _siInitial.notes;
 }
 function _siMarkDirty() { /* tracked live via _siIsDirty */ }
 
@@ -2929,14 +2930,13 @@ function forceCloseStandaloneInvoiceDialog() {
 }
 
 function submitStandaloneInvoice() {
-  var client  = document.getElementById('siClient').value.trim();
+  var client  = _siClient;
   var amount  = document.getElementById('siAmount').value.trim();
   var dueDate = document.getElementById('siDueDate').value.trim();
   var notes   = document.getElementById('siNotes').value.trim();
   var errEl   = document.getElementById('siErr');
   errEl.textContent   = '';
   errEl.style.display = 'none';
-  if (!client) { errEl.textContent = 'Client is required.'; errEl.style.display = 'block'; return; }
   if (!amount || parseFloat(amount) <= 0) { errEl.textContent = 'Amount is required.'; errEl.style.display = 'block'; return; }
   var btn = document.getElementById('siBtn');
   btn.disabled    = true;

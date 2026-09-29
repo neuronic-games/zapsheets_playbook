@@ -513,7 +513,9 @@ if doc_id and os.path.exists(CRED_FILE):
         sheet_error = str(e)
 
 out = {"ok": True, "file": file_path, "url": file_url, "hash": file_hash,
-       "doc_num": doc_num}
+       "doc_num": doc_num,
+       "_debug_tgt_start": tgt_start, "_debug_due_date": due_date,
+       "_debug_duration": duration, "_debug_timeline": timeline_str}
 if sheet_error:
     out["sheet_error"] = sheet_error
 print(json.dumps(out))

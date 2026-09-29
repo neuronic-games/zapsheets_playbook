@@ -94,5 +94,21 @@ if ($result === null) {
     exit;
 }
 
+// Keep contracts.json cache in sync with the new PDF URL
+if (!empty($result['ok']) && !empty($result['url']) && $docId) {
+    $contractsFile = dirname(__DIR__) . '/sheets/' . $sheetId . '/contracts.json';
+    if (file_exists($contractsFile)) {
+        $contracts = json_decode(file_get_contents($contractsFile), true) ?: [];
+        foreach ($contracts as &$c) {
+            if ((string)($c['ID'] ?? '') === (string)$docId) {
+                $c['Files'] = $result['url'];
+                break;
+            }
+        }
+        unset($c);
+        file_put_contents($contractsFile, json_encode($contracts, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+}
+
 echo json_encode($result);
 ?>

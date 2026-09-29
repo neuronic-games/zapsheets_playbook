@@ -558,25 +558,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 /* Chevron: absolute so it doesn't affect row height */
 .session-chevron  { position:absolute; right:.3rem; top:50%; transform:translateY(-50%) rotate(-90deg); font-size:.6rem; opacity:.45; transition:transform .22s ease; }
 .session-block.open .session-chevron { transform:translateY(-50%) rotate(0deg); }
-/* EDIT button: absolute so it doesn't inflate the row */
-.session-edit-btn {
-  position:absolute; right:1.7rem; top:50%; transform:translateY(-50%);
-  visibility:hidden;
-  font-family:'DINBlack',sans-serif; font-size:.7rem;
-  text-transform:uppercase; letter-spacing:.07em;
-  background:transparent; color:#1a5f7a;
-  border:1.5px solid #1a5f7a; border-radius:6px;
-  padding:.28rem .65rem; cursor:pointer; white-space:nowrap;
-  display:inline-flex; align-items:center; justify-content:center;
-  transition:background .15s, color .15s;
-}
-.session-edit-btn:hover { background:#1a5f7a; color:#fff; }
-@media (hover: hover) {
-  .session-header:hover .session-edit-btn { visibility:visible; }
-}
-@media (hover: none) {
-  .session-block.open .session-edit-btn { visibility:visible; }
-}
+.session-edit-btn { display:none; }
 .session-testers-line { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#888; font-style:italic; padding-left:.05rem; margin-top:.2rem; }
 
 /* Collapsible session body */
@@ -792,8 +774,8 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .obs-pair { position:relative; margin-bottom:.75rem; }
 .obs-pair:last-child { margin-bottom:0; }
 .obs-pair-row { display:block; }
-/* Reorder buttons — flex sibling inside obs column, centered vertically */
-.obs-reorder { display:flex; flex-direction:column; justify-content:center; gap:.2rem; padding:.3rem .3rem .3rem 0; align-self:stretch; }
+/* Reorder buttons — flex sibling inside obs column, UP at top / DN at bottom */
+.obs-reorder { display:flex; flex-direction:column; justify-content:space-between; padding:.3rem .12rem .3rem 0; align-self:stretch; }
 .obs-reorder-btn { background:rgba(255,255,255,.92); border:1px solid #d0d8e4; border-radius:4px; padding:.13rem .22rem; cursor:pointer; font-size:.62rem; color:#aab; line-height:1; transition:color .12s,border-color .12s,background .12s; backdrop-filter:blur(2px); }
 .obs-reorder-btn:hover:not(:disabled) { color:#1a5f7a; border-color:#a0b8c8; background:#f0f7fa; }
 .obs-reorder-btn:disabled { opacity:.25; cursor:default; }
@@ -2592,7 +2574,6 @@ function renderBody(gameName, rows) {
       if (s.location) html += '<span class="session-sep">·</span><span class="session-location">' + esc(s.location) + '</span>';
       if (s.length)   html += '<span class="session-sep">·</span><span class="session-length">' + esc(s.length) + '</span>';
       html +=   '<span class="session-count">' + s.obs.length + (s.obs.length === 1 ? ' note' : ' notes') + '</span>';
-      html +=   '<button class="session-edit-btn" onclick="event.stopPropagation();openEditSessionDialog(' + gnQ + ',' + allIdx + ')">Edit</button>';
       html +=   '<span class="session-chevron">▼</span>';
       html +=   '</div>';
       // Testers as comma-separated line in the header
@@ -2603,8 +2584,8 @@ function renderBody(gameName, rows) {
         html += '</div>';
       }
       html += '</div>';
-      // Collapsible body
-      html += '<div class="session-body-wrap"><div class="session-body">';
+      // Collapsible body — click anywhere to open edit dialog
+      html += '<div class="session-body-wrap"><div class="session-body" onclick="openEditSessionDialog(' + gnQ + ',' + allIdx + ')" style="cursor:pointer">';
       var visibleObs = _filterObsByQuery(s.obs, _searchQuery);
       if (visibleObs.length) {
         html += '<table class="obs-table"><tbody>';
@@ -3773,11 +3754,11 @@ function openEditSessionDialog(gameName, idx) {
   document.getElementById('deleteSessionBtn').disabled      = false;
   document.getElementById('deleteSessionBtn').textContent   = 'Delete';
   document.querySelectorAll('#sessionOverlay .btn-cancel').forEach(function(b) { b.disabled = false; });
-  _editSnapshot = getSessionSnapshot();
   _swUpdate();
   document.getElementById('sessionOverlay').classList.add('open');
   // Resize textareas after the overlay is visible so scrollHeight is accurate,
   // then sync pair heights so both columns match the taller of the two.
+  // Snapshot is taken here so hidden-element innerText returns real content.
   setTimeout(function() {
     document.querySelectorAll('#obsContainer .field-textarea').forEach(function(el) {
       if (el.isContentEditable) { _ceNorm(el); } else { _autoBullet(el); autoResize(el); }
@@ -3786,6 +3767,7 @@ function openEditSessionDialog(gameName, idx) {
       syncPairHeight(parseInt(pair.dataset.idx));
     });
     _syncReorderBtns();
+    _editSnapshot = getSessionSnapshot();
   }, 0);
 }
 

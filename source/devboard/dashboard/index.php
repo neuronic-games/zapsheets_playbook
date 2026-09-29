@@ -3995,7 +3995,7 @@ function submitSession() {
   var allRows = [];
   allRows.push({ date: date, event: eventType, session_num: sessionNum, observation: location, solution: swLength, type: 'header' });
   testerVals.forEach(function(t) {
-    allRows.push({ date: '', event: '', session_num: '', observation: t, solution: '', type: 'tester' });
+    allRows.push({ date: '', event: '', session_num: t, observation: '', solution: '', type: 'tester' });
   });
   obsPairs.forEach(function(pair) {
     allRows.push({ date: '', event: '', session_num: '', observation: pair.obs, solution: pair.sol, type: 'obs' });

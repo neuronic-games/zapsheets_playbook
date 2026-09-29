@@ -1821,9 +1821,7 @@ function renderPublishersView() {
       // Footer: Edit Game (left) | + Estimate + + Invoice (right)
       html += '<div class="game-group-footer">';
       html += '<div class="game-group-footer-left">';
-      if (firstConDataIdx >= 0) {
-        html += '<button class="btn-contract-action" onclick="event.stopPropagation();openContractEditDialog(' + firstConDataIdx + ')">Edit Game</button>';
-      }
+      html += '<button class="btn-contract-action" onclick="event.stopPropagation();openEditGame(' + esc(JSON.stringify(g.name)) + ')">Edit Game</button>';
       html += '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(pub.name)) + ',' + esc(JSON.stringify(g.name)) + ')">+ Estimate</button>';
       html += '<button type="button" class="btn-contract-action invoice" onclick="event.stopPropagation();openContractDialog(' + esc(JSON.stringify(g.name)) + ',' + esc(JSON.stringify(pub.name)) + ')">+ Invoice</button>';
       html += '</div>';

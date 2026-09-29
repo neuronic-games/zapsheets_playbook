@@ -538,8 +538,6 @@ reqs.append(border_bottom(R_THEAD - 1, CB, CONTENT_END, SEP, 1))
 
 # Payment info section
 if my_payment:
-    # Separator line above payment info
-    reqs.append(border_bottom(R_PAYMENT_SEP, CB, CONTENT_END, SEP, 1))
     # Payment info text: small dark-gray, wrap, top-align
     reqs.append(fmt(R_PAYMENT, R_PAYMENT, CB, CONTENT_END, {
         'textFormat': tf(GRAY_DARK, 9),

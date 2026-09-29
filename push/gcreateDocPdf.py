@@ -135,14 +135,15 @@ due_date     = fmt_date(tgt_start)
 due_date_end = fmt_date(tgt_end)
 addr_lines = [l.strip() for l in my_address.replace('\r\n', '\n').split('\n') if l.strip()]
 
-# Build timeline lines for the info section
-timeline_lines = []
-if due_date:
-    timeline_lines.append(due_date)
-if due_date_end:
-    timeline_lines.append(f'– {due_date_end}')
+# Build single-line timeline string for the info section
+timeline_parts = []
+if due_date and due_date_end:
+    timeline_parts.append(f'{due_date} – {due_date_end}')
+elif due_date:
+    timeline_parts.append(due_date)
 if duration:
-    timeline_lines.append(f'({duration})')
+    timeline_parts.append(f'({duration})')
+timeline_str = '  '.join(timeline_parts)
 
 # ── Line items ─────────────────────────────────────────────────────────────────
 line_items = []
@@ -298,14 +299,7 @@ c.setFont('Helvetica', 10)
 c.setFillColor(DARK)
 c.drawString(col_prep, Y_VAL, client or '—')
 
-# Due Date / Timeline — stack lines if multiple date fields provided
-if timeline_lines:
-    tl_y = Y_VAL
-    for tl in timeline_lines:
-        c.drawString(col_due, tl_y, tl)
-        tl_y -= 14
-else:
-    c.drawString(col_due, Y_VAL, '—')
+c.drawString(col_due, Y_VAL, timeline_str or '—')
 
 if estimate_num:
     c.drawString(col_num, Y_VAL, f'{doc_num} (Est. {estimate_num})')

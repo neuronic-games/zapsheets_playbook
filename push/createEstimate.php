@@ -83,6 +83,7 @@ $payload = [
     'my_logo'       => $myLogo,
     'my_address'    => $myAddress,
     'tgt_start'     => $targetStart,
+    'tgt_end'       => $targetEnd,
     'base_url'      => $baseUrl,
 ];
 $encoded = base64_encode(json_encode($payload, JSON_UNESCAPED_UNICODE));

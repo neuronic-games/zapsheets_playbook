@@ -70,6 +70,8 @@ my_logo       = data.get('my_logo',       '').strip()
 my_address    = data.get('my_address',    '').strip()
 my_payment    = data.get('my_payment',    '').strip()
 tgt_start     = data.get('tgt_start',     '').strip()
+tgt_end       = data.get('tgt_end',       '').strip()
+duration      = data.get('duration',      '').strip()
 base_url      = data.get('base_url',      '').strip()
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -111,8 +113,18 @@ today_obj  = datetime.today()
 today_disp = today_obj.strftime('%m/%d/%Y')
 
 doc_num = doc_id or today_obj.strftime('%Y%m%d')
-due_date = fmt_date(tgt_start)
+due_date     = fmt_date(tgt_start)
+due_date_end = fmt_date(tgt_end)
 addr_lines = [l.strip() for l in my_address.replace('\r\n', '\n').split('\n') if l.strip()]
+
+# Build timeline lines for the info section
+timeline_lines = []
+if due_date:
+    timeline_lines.append(due_date)
+if due_date_end:
+    timeline_lines.append(f'– {due_date_end}')
+if duration:
+    timeline_lines.append(f'({duration})')
 
 # ── Line items ─────────────────────────────────────────────────────────────────
 line_items = []
@@ -267,7 +279,15 @@ c.drawString(col_num,  Y_LBL, f'{doc_type} #')
 c.setFont('Helvetica', 10)
 c.setFillColor(DARK)
 c.drawString(col_prep, Y_VAL, client or '—')
-c.drawString(col_due,  Y_VAL, due_date or '—')
+
+# Due Date / Timeline — stack lines if multiple date fields provided
+if timeline_lines:
+    tl_y = Y_VAL
+    for tl in timeline_lines:
+        c.drawString(col_due, tl_y, tl)
+        tl_y -= 14
+else:
+    c.drawString(col_due, Y_VAL, '—')
 
 if estimate_num:
     c.drawString(col_num, Y_VAL, f'{doc_num} (Est. {estimate_num})')

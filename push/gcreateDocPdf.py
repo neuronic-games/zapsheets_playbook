@@ -1,6 +1,6 @@
 # gcreateDocPdf.py — generate an invoice or estimate as a PDF file on the server.
 #
-# Saves to:   sheets/{sheet_id}/files/contracts/{sha1(type+num)[:12]}.pdf
+# Saves to:   shares/contracts/{sha1(sheet_id+type+num)[:12]}.pdf  (no sheet ID in URL)
 # Updates:    Contracts Google Sheet "Files" column with the file URL
 #
 # Arg: {sheet_id}|{base64_json}
@@ -204,16 +204,17 @@ else:  # Invoice
     })
 
 # ── File path ──────────────────────────────────────────────────────────────────
-file_key  = f"{doc_type}-{doc_num}"
+# Hash includes sheet_id to avoid collisions across users; sheet_id is NOT in the URL.
+file_key  = f"{sheet_id}-{doc_type}-{doc_num}"
 file_hash = hashlib.sha1(file_key.encode()).hexdigest()[:12]
 file_name = f"{file_hash}.pdf"
 
 base_dir  = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-files_dir = os.path.join(base_dir, 'sheets', sheet_id, 'files', 'contracts')
+files_dir = os.path.join(base_dir, 'shares', 'contracts')
 os.makedirs(files_dir, exist_ok=True)
 file_path = os.path.join(files_dir, file_name)
 
-rel_path = f"sheets/{sheet_id}/files/contracts/{file_name}"
+rel_path = f"shares/contracts/{file_name}"
 file_url = (base_url.rstrip('/') + '/' + rel_path) if base_url else rel_path
 
 # ── Colors ─────────────────────────────────────────────────────────────────────

@@ -1008,17 +1008,13 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <label class="ge-label">Scope of Work
       <textarea id="estimateScopeOfWork" class="ge-input ge-textarea" rows="5" placeholder="Describe what's included…" oninput="_estimateScopeEdited=true"></textarea>
     </label>
-    <div class="estimate-field-row two">
-      <label class="ge-label">Qty
-        <input type="number" id="estimateQty" class="ge-input" value="1" min="1" step="1" />
-      </label>
-      <label class="ge-label">Unit Price
-        <div class="contract-quote-wrap">
-          <span class="contract-quote-prefix">$</span>
-          <input type="number" id="estimateUnitPrice" class="ge-input" style="padding-left:1.4rem" min="0" step="0.01" placeholder="0.00" />
-        </div>
-      </label>
-    </div>
+    <input type="hidden" id="estimateQty" value="1" />
+    <label class="ge-label">Unit Price
+      <div class="contract-quote-wrap">
+        <span class="contract-quote-prefix">$</span>
+        <input type="number" id="estimateUnitPrice" class="ge-input" style="padding-left:1.4rem" min="0" step="0.01" placeholder="0.00" />
+      </div>
+    </label>
     <div class="estimate-field-row dur-dates">
       <label class="ge-label">Duration
         <input type="text" id="estimateDuration" class="ge-input" placeholder="e.g. 2 months" />
@@ -2024,7 +2020,7 @@ function openEstimateDialog(clientName, gameName) {
   document.getElementById('estimateTargetEnd').value         = '';
   document.getElementById('estimateDiscountLabel').value     = '';
   document.getElementById('estimateDiscountPct').value       = '0';
-  document.getElementById('estimateNotes').value             = '';
+  document.getElementById('estimateNotes').value             = '50% due on signing';
   document.getElementById('estimateCreateBtn').disabled      = false;
   _estimateLog('', '');
   document.getElementById('estimateOverlay').classList.add('open');

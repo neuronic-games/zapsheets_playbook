@@ -278,15 +278,13 @@ col_num  = ML + 360
 c.setFont('Helvetica-Bold', 9)
 c.setFillColor(DARK)
 c.drawString(col_prep, Y_LBL, 'Prepared for')
-if due_date:
-    c.drawString(col_due, Y_LBL, 'Due Date')
-c.drawString(col_num, Y_LBL, f'{doc_type} #')
+c.drawString(col_due,  Y_LBL, 'Due Date')
+c.drawString(col_num,  Y_LBL, f'{doc_type} #')
 
 c.setFont('Helvetica', 10)
 c.setFillColor(DARK)
 c.drawString(col_prep, Y_VAL, client or '—')
-if due_date:
-    c.drawString(col_due, Y_VAL, due_date)
+c.drawString(col_due,  Y_VAL, due_date or '—')
 
 if estimate_num:
     c.drawString(col_num, Y_VAL, f'{doc_num} (Est. {estimate_num})')
@@ -300,17 +298,21 @@ c.setLineWidth(0.5)
 c.line(ML, SEP_Y, PAGE_W - MR, SEP_Y)
 
 # ── Table ───────────────────────────────────────────────────────────────────────
-# Column x positions (left-edge for left-aligned; right-edge for right-aligned)
-T_LEFT   = ML
-T_QTY    = ML + 310
-T_UNIT   = ML + 370
-T_TOTAL_R = PAGE_W - MR     # right edge for right-aligned totals
+CELL_PAD  = 12   # horizontal padding inside table cells
+T_LEFT    = ML
+T_TOTAL_R = PAGE_W - MR       # right edge for right-aligned totals
+
+# Estimate: 2 columns (Description | Total price)
+# Invoice:  4 columns (Description | Qty | Unit price | Total price)
+is_estimate = (doc_type == 'Estimate')
+T_QTY   = ML + 310
+T_UNIT  = ML + 370
 
 HEADER_H  = 24
-ROW_INNER = 13  # pt per text line inside a row
-ROW_PAD   = 10  # top+bottom padding inside a data row
+ROW_INNER = 13   # pt per text line
+ROW_PAD   = 12   # vertical padding inside data rows
 
-cur_y = yt(237)  # top of table header
+cur_y = yt(237)   # top of table header
 
 # Header row
 c.setFillColor(ORANGE)
@@ -319,10 +321,11 @@ c.rect(T_LEFT, cur_y - HEADER_H, CW, HEADER_H, stroke=0, fill=1)
 c.setFont('Helvetica-Bold', 9)
 c.setFillColor(white)
 hy = cur_y - HEADER_H + 8
-c.drawString(T_LEFT + 4, hy, 'Description')
-c.drawString(T_QTY,      hy, 'Qty')
-c.drawString(T_UNIT,     hy, 'Unit price')
-c.drawRightString(T_TOTAL_R, hy, 'Total price')
+c.drawString(T_LEFT + CELL_PAD, hy, 'Description')
+if not is_estimate:
+    c.drawString(T_QTY,  hy, 'Qty')
+    c.drawString(T_UNIT, hy, 'Unit price')
+c.drawRightString(T_TOTAL_R - CELL_PAD, hy, 'Total price')
 
 cur_y -= HEADER_H
 
@@ -331,52 +334,55 @@ for item in line_items:
     desc_lines_item = item['desc']
     row_h = ROW_PAD + len(desc_lines_item) * ROW_INNER
 
-    # light gray bg
     c.setFillColor(LIGHT_GRAY)
     c.rect(T_LEFT, cur_y - row_h, CW, row_h, stroke=0, fill=1)
 
-    # Description lines
     c.setFont('Helvetica', 9)
     c.setFillColor(DARK)
     dl_y = cur_y - ROW_PAD//2 - ROW_INNER + 2
     for dl in desc_lines_item:
-        c.drawString(T_LEFT + 4, dl_y, dl)
+        c.drawString(T_LEFT + CELL_PAD, dl_y, dl)
         dl_y -= ROW_INNER
 
-    # Qty / unit / total (aligned to first desc line)
     num_y = cur_y - ROW_PAD//2 - ROW_INNER + 2
-    if item.get('qty'):
-        c.drawString(T_QTY, num_y, item['qty'])
-    if item.get('unit'):
-        c.drawString(T_UNIT, num_y, item['unit'])
-    c.drawRightString(T_TOTAL_R, num_y, item['total'])
+    if not is_estimate:
+        if item.get('qty'):
+            c.drawString(T_QTY, num_y, item['qty'])
+        if item.get('unit'):
+            c.drawString(T_UNIT, num_y, item['unit'])
+    c.drawRightString(T_TOTAL_R - CELL_PAD, num_y, item['total'])
 
-    # Bottom border of row
     c.setStrokeColor(SEP_GRAY)
     c.setLineWidth(0.3)
     c.line(T_LEFT, cur_y - row_h, PAGE_W - MR, cur_y - row_h)
 
     cur_y -= row_h
 
-# Subtotal row
+# Subtotal / Total rows
 SUB_H = 22
 sub_y = cur_y - SUB_H
 
+SUB_LABEL_X = T_UNIT if not is_estimate else (T_TOTAL_R - CELL_PAD - 70)
+
 c.setFont('Helvetica', 9)
 c.setFillColor(MID_GRAY)
-c.drawString(T_UNIT, sub_y + 7, 'Subtotal')
+c.drawString(SUB_LABEL_X, sub_y + 7, 'Subtotal')
 c.setFont('Helvetica-Bold', 9)
 c.setFillColor(DARK)
-c.drawRightString(T_TOTAL_R, sub_y + 7, subtotal_fmt)
+c.drawRightString(T_TOTAL_R - CELL_PAD, sub_y + 7, subtotal_fmt)
 if doc_type == 'Estimate' and discount_pct > 0:
-    # Show total after discount too
     disc_y = sub_y - 16
     c.setFont('Helvetica', 9)
     c.setFillColor(MID_GRAY)
     c.drawString(T_UNIT, disc_y + 7, 'Total')
     c.setFont('Helvetica-Bold', 9)
     c.setFillColor(DARK)
-    c.drawRightString(T_TOTAL_R, disc_y + 7, quote_fmt)
+    c.setFont('Helvetica', 9)
+    c.setFillColor(MID_GRAY)
+    c.drawString(SUB_LABEL_X, disc_y + 7, 'Total')
+    c.setFont('Helvetica-Bold', 9)
+    c.setFillColor(DARK)
+    c.drawRightString(T_TOTAL_R - CELL_PAD, disc_y + 7, quote_fmt)
     cur_y = sub_y - 16
 else:
     cur_y = sub_y
@@ -416,7 +422,7 @@ if my_payment:
 LARGE_TOTAL_Y = PAY_TOP - 35 if my_payment else cur_y - 30
 c.setFont('Helvetica-Bold', 28)
 c.setFillColor(ORANGE)
-c.drawRightString(T_TOTAL_R, LARGE_TOTAL_Y, quote_fmt)
+c.drawRightString(T_TOTAL_R - CELL_PAD, LARGE_TOTAL_Y, quote_fmt)
 
 # ── Save PDF ───────────────────────────────────────────────────────────────────
 c.save()

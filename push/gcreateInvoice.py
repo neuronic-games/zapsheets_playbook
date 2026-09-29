@@ -545,10 +545,11 @@ if my_payment:
     }, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment,userEnteredFormat.wrapStrategy'))
 
 # Execute formatting (separate from logo so a logo failure can't wipe formatting)
+fmt_error = None
 try:
     wb.batch_update({'requests': reqs})
-except Exception:
-    pass  # values are written even if formatting fails
+except Exception as e:
+    fmt_error = str(e)
 
 # Insert logo as an in-cell imageValue (renders in PDF exports; =IMAGE() formula does not).
 # Done in a separate batch so any API incompatibility doesn't affect the formatting above.
@@ -576,4 +577,7 @@ if my_logo:
             pass
 
 spreadsheet_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/edit#gid={sheet_gid}"
-print(json.dumps({"ok": True, "tab": tab_name, "gid": sheet_gid, "url": spreadsheet_url}))
+out = {"ok": True, "tab": tab_name, "gid": sheet_gid, "url": spreadsheet_url}
+if fmt_error:
+    out["fmt_error"] = fmt_error
+print(json.dumps(out))

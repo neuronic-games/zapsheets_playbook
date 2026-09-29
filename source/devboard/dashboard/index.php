@@ -1759,7 +1759,11 @@ function renderPublishersView() {
       }
       var sortedEsts = g.estimates.slice().sort(function(a, b) {
         var da = new Date(a.date || 0), db = new Date(b.date || 0);
-        return db - da;
+        if (db - da !== 0) return db - da;
+        // Same date: sort by estimate_num descending (higher = newer)
+        var na = parseFloat(a.estimate_num) || 0;
+        var nb = parseFloat(b.estimate_num) || 0;
+        return nb - na;
       });
       sortedEsts.forEach(function(est) {
         var amtFmt = est.amount ? '$' + parseFloat(est.amount).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';

@@ -1373,6 +1373,40 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   </div>
 </div>
 
+<!-- Standalone Invoice dialog -->
+<div class="overlay" id="standaloneInvoiceOverlay" onclick="if(event.target===this){closeStandaloneInvoiceDialog();}">
+  <div class="contract-dialog" onclick="event.stopPropagation()">
+    <button class="dialog-close" onclick="closeStandaloneInvoiceDialog()">&#x2715;</button>
+    <h2>New Invoice — <span id="siGameTitle"></span></h2>
+    <div class="field-grid" style="grid-template-columns:1fr 1fr">
+      <div class="field-group span2">
+        <label>Client</label>
+        <input type="text" class="field-input" id="siClient" placeholder="Publisher or company…" autocomplete="off" />
+      </div>
+      <div class="field-group">
+        <label>Amount</label>
+        <div class="contract-quote-wrap">
+          <span class="contract-quote-prefix">$</span>
+          <input type="number" class="field-input" id="siAmount" placeholder="0.00" min="0" step="0.01" oninput="_siMarkDirty()" />
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Due Date</label>
+        <input type="date" class="field-input" id="siDueDate" oninput="_siMarkDirty()" />
+      </div>
+      <div class="field-group span2">
+        <label>Notes</label>
+        <input type="text" class="field-input" id="siNotes" placeholder="Optional notes…" autocomplete="off" oninput="_siMarkDirty()" />
+      </div>
+    </div>
+    <div class="dialog-err" id="siErr"></div>
+    <div class="dialog-actions">
+      <button class="btn-cancel" onclick="forceCloseStandaloneInvoiceDialog()">Cancel</button>
+      <button class="btn-dark" id="siBtn" onclick="submitStandaloneInvoice()">Create Invoice</button>
+    </div>
+  </div>
+</div>
+
 <!-- Add session dialog -->
 <div class="overlay" id="sessionOverlay" onclick="if(event.target===this){var _d=this.querySelector('.session-dialog');if(_editMode?isSessionDirty():hasSessionData())shakeDialog(_d);else closeSessionDialog();}">
   <div class="session-dialog">
@@ -1823,7 +1857,7 @@ function renderPublishersView() {
       html += '<div class="game-group-footer-left">';
       html += '<button class="btn-contract-action" onclick="event.stopPropagation();openEditGame(' + esc(JSON.stringify(g.name)) + ')">Edit Game</button>';
       html += '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(pub.name)) + ',' + esc(JSON.stringify(g.name)) + ')">+ Estimate</button>';
-      html += '<button type="button" class="btn-contract-action invoice" onclick="event.stopPropagation();openContractDialog(' + esc(JSON.stringify(g.name)) + ',' + esc(JSON.stringify(pub.name)) + ')">+ Invoice</button>';
+      html += '<button type="button" class="btn-contract-action invoice" onclick="event.stopPropagation();openStandaloneInvoiceDialog(' + esc(JSON.stringify(g.name)) + ',' + esc(JSON.stringify(pub.name)) + ')">+ Invoice</button>';
       html += '</div>';
       html += '<div style="display:flex;gap:.4rem;align-items:center"></div>';
       html += '</div>';
@@ -2853,6 +2887,99 @@ function forceCloseContractDialog() {
   document.getElementById('contractOverlay').classList.remove('open');
 }
 
+// ── Standalone Invoice dialog ──────────────────────────────────────────────
+var _siGame      = '';
+var _siClient    = '';
+var _siInitial   = {};
+
+function openStandaloneInvoiceDialog(gameName, clientName) {
+  _siGame   = gameName   || '';
+  _siClient = clientName || '';
+  document.getElementById('siGameTitle').textContent = _siGame;
+  document.getElementById('siClient').value          = _siClient;
+  document.getElementById('siAmount').value          = '';
+  document.getElementById('siDueDate').value         = '';
+  document.getElementById('siNotes').value           = '';
+  document.getElementById('siErr').textContent       = '';
+  document.getElementById('siErr').style.display     = 'none';
+  document.getElementById('siBtn').disabled          = false;
+  document.getElementById('siBtn').textContent       = 'Create Invoice';
+  _siInitial = { client: _siClient, amount: '', dueDate: '', notes: '' };
+  document.getElementById('standaloneInvoiceOverlay').classList.add('open');
+  setTimeout(function() { document.getElementById('siAmount').focus(); }, 50);
+}
+
+function _siIsDirty() {
+  return document.getElementById('siClient').value    !== _siInitial.client  ||
+         document.getElementById('siAmount').value    !== _siInitial.amount  ||
+         document.getElementById('siDueDate').value   !== _siInitial.dueDate ||
+         document.getElementById('siNotes').value     !== _siInitial.notes;
+}
+function _siMarkDirty() { /* tracked live via _siIsDirty */ }
+
+function closeStandaloneInvoiceDialog() {
+  if (_siIsDirty()) {
+    shakeDialog(document.getElementById('standaloneInvoiceOverlay').querySelector('.contract-dialog'));
+    return;
+  }
+  document.getElementById('standaloneInvoiceOverlay').classList.remove('open');
+}
+function forceCloseStandaloneInvoiceDialog() {
+  document.getElementById('standaloneInvoiceOverlay').classList.remove('open');
+}
+
+function submitStandaloneInvoice() {
+  var client  = document.getElementById('siClient').value.trim();
+  var amount  = document.getElementById('siAmount').value.trim();
+  var dueDate = document.getElementById('siDueDate').value.trim();
+  var notes   = document.getElementById('siNotes').value.trim();
+  var errEl   = document.getElementById('siErr');
+  errEl.textContent   = '';
+  errEl.style.display = 'none';
+  if (!client) { errEl.textContent = 'Client is required.'; errEl.style.display = 'block'; return; }
+  if (!amount || parseFloat(amount) <= 0) { errEl.textContent = 'Amount is required.'; errEl.style.display = 'block'; return; }
+  var btn = document.getElementById('siBtn');
+  btn.disabled    = true;
+  btn.textContent = 'Creating…';
+  var fd = new FormData();
+  fd.append('id',           SHEET_ID);
+  fd.append('game',         _siGame);
+  fd.append('client',       client);
+  fd.append('estimate_num', '');
+  fd.append('estimate_amt', '0');
+  fd.append('invoice_amt',  amount);
+  fd.append('tgt_start',    dueDate);
+  fd.append('notes',        notes);
+  fd.append('my_name',      MY_NAME            || '');
+  fd.append('my_phone',     MY_PHONE           || '');
+  fd.append('my_company',   MY_COMPANY         || '');
+  fd.append('my_logo',      MY_LOGO            || '');
+  fd.append('my_address',   MY_COMPANY_ADDRESS || MY_BIO_LOCATION || '');
+  fd.append('my_payment',   MY_PAYMENT_INFO    || '');
+  fetch(APP_BASE + 'push/createInvoiceFromEstimate.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(j) {
+      if (j && j.ok) {
+        forceCloseStandaloneInvoiceDialog();
+        if (j.invoice_record) {
+          ESTIMATES_RAW.push(j.invoice_record);
+        }
+        if (j.url) window.open(j.url, '_blank');
+      } else {
+        errEl.textContent   = (j && j.error) ? j.error : 'Create failed.';
+        errEl.style.display = 'block';
+        btn.disabled        = false;
+        btn.textContent     = 'Create Invoice';
+      }
+    })
+    .catch(function() {
+      errEl.textContent   = 'Create failed. Check your connection.';
+      errEl.style.display = 'block';
+      btn.disabled        = false;
+      btn.textContent     = 'Create Invoice';
+    });
+}
+
 // Client combo helpers
 function contractClientRebuild(filter) {
   var drop  = document.getElementById('contractClientDrop');
@@ -3027,6 +3154,11 @@ document.addEventListener('keydown', function(ev) {
   el = document.getElementById('contractEditOverlay');
   if (el && el.classList.contains('open')) {
     closeContractEditDialog();
+    return;
+  }
+  el = document.getElementById('standaloneInvoiceOverlay');
+  if (el && el.classList.contains('open')) {
+    closeStandaloneInvoiceDialog();
     return;
   }
   el = document.getElementById('contractOverlay');

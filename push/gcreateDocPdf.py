@@ -116,17 +116,19 @@ addr_lines = [l.strip() for l in my_address.replace('\r\n', '\n').split('\n') if
 
 # ── Line items ─────────────────────────────────────────────────────────────────
 line_items = []
+disc_amt    = 0.0
+subtotal_val = 0.0
 
 if doc_type == 'Estimate':
     try:
         qty = float(qty_raw)
     except (ValueError, TypeError):
         qty = 1.0
-    unit_price = parse_money(unit_price_raw) or 0.0
-    subtotal   = qty * unit_price
-    disc_amt   = round(subtotal * discount_pct / 100, 2) if discount_pct > 0 else 0.0
-    total_val  = subtotal - disc_amt
-    qty_disp   = str(int(qty)) if qty == int(qty) else str(qty)
+    unit_price   = parse_money(unit_price_raw) or 0.0
+    subtotal_val = qty * unit_price
+    disc_amt     = round(subtotal_val * discount_pct / 100, 2) if discount_pct > 0 else 0.0
+    total_val    = subtotal_val - disc_amt
+    qty_disp     = str(int(qty)) if qty == int(qty) else str(qty)
 
     # Build estimate description — prefer scope_of_work if provided
     if scope_of_work:
@@ -139,43 +141,24 @@ if doc_type == 'Estimate':
             desc_lines.append("- Test reports")
         if num_edits > 0:
             desc_lines.append(f"- {pluralize(num_edits, 'iteration')} of rules editing")
-        if notes:
-            for nl in notes.replace('\r\n', '\n').split('\n'):
-                nl = nl.strip()
-                if nl:
-                    desc_lines.append(f"- {nl}")
 
+    # Discount row is handled in the totals section, not in line_items
     line_items.append({
         'desc': desc_lines, 'qty': qty_disp,
         'unit': fmt_money(unit_price) if unit_price else '',
-        'total': fmt_money(subtotal),
+        'total': fmt_money(subtotal_val),
     })
-    if disc_amt > 0:
-        lbl = f"{discount_lbl or 'Discount'} ({int(discount_pct)}%)"
-        line_items.append({
-            'desc': [lbl], 'qty': '', 'unit': '',
-            'total': fmt_money(-disc_amt),
-        })
-    quote_val   = total_val
-    quote_fmt   = fmt_money(total_val)
-    subtotal_fmt = fmt_money(subtotal)
+    quote_val    = total_val
+    quote_fmt    = fmt_money(total_val)
+    subtotal_fmt = fmt_money(subtotal_val)
 
 else:  # Invoice
-    quote_val = parse_money(quote_raw)
-    quote_fmt = fmt_money(quote_val)
+    quote_val    = parse_money(quote_raw)
+    quote_fmt    = fmt_money(quote_val)
+    subtotal_val = quote_val or 0.0
     subtotal_fmt = quote_fmt
 
-    desc_lines = []
-    if game:
-        desc_lines.append(game)
-    if notes:
-        for nl in notes.replace('\r\n', '\n').split('\n'):
-            nl = nl.strip()
-            if nl:
-                desc_lines.append(nl)
-    if not desc_lines:
-        desc_lines = ['Design services']
-
+    desc_lines = [game] if game else ['Design services']
     line_items.append({
         'desc': desc_lines, 'qty': '1',
         'unit': quote_fmt,
@@ -358,43 +341,65 @@ for item in line_items:
 
     cur_y -= row_h
 
-# Subtotal / Total rows
-SUB_H = 22
+# ── Totals section ─────────────────────────────────────────────────────────────
+SUB_H       = 22
+LABEL_X     = T_TOTAL_R - CELL_PAD - 130   # label left-edge, well clear of numbers
+
+# Subtotal row
 sub_y = cur_y - SUB_H
-
-SUB_LABEL_X = T_UNIT if not is_estimate else (T_TOTAL_R - CELL_PAD - 70)
-
 c.setFont('Helvetica', 9)
 c.setFillColor(MID_GRAY)
-c.drawString(SUB_LABEL_X, sub_y + 7, 'Subtotal')
+c.drawString(LABEL_X, sub_y + 7, 'Subtotal')
 c.setFont('Helvetica-Bold', 9)
 c.setFillColor(DARK)
 c.drawRightString(T_TOTAL_R - CELL_PAD, sub_y + 7, subtotal_fmt)
-if doc_type == 'Estimate' and discount_pct > 0:
-    disc_y = sub_y - 16
+cur_y = sub_y
+
+# Discount row (only if discount applied)
+if disc_amt > 0:
+    disc_row_y = cur_y - SUB_H
+    disc_lbl = f"{discount_lbl or 'Discount'} ({int(discount_pct)}%)"
     c.setFont('Helvetica', 9)
     c.setFillColor(MID_GRAY)
-    c.drawString(T_UNIT, disc_y + 7, 'Total')
+    c.drawString(LABEL_X, disc_row_y + 7, disc_lbl)
     c.setFont('Helvetica-Bold', 9)
     c.setFillColor(DARK)
-    c.setFont('Helvetica', 9)
-    c.setFillColor(MID_GRAY)
-    c.drawString(SUB_LABEL_X, disc_y + 7, 'Total')
-    c.setFont('Helvetica-Bold', 9)
-    c.setFillColor(DARK)
-    c.drawRightString(T_TOTAL_R - CELL_PAD, disc_y + 7, quote_fmt)
-    cur_y = sub_y - 16
-else:
-    cur_y = sub_y
+    c.drawRightString(T_TOTAL_R - CELL_PAD, disc_row_y + 7, fmt_money(-disc_amt))
+    cur_y = disc_row_y
+
+# Total row
+total_row_y = cur_y - SUB_H
+c.setFont('Helvetica', 9)
+c.setFillColor(MID_GRAY)
+c.drawString(LABEL_X, total_row_y + 7, 'Total')
+c.setFont('Helvetica-Bold', 9)
+c.setFillColor(DARK)
+c.drawRightString(T_TOTAL_R - CELL_PAD, total_row_y + 7, quote_fmt)
+cur_y = total_row_y
 
 # Bottom border
 c.setStrokeColor(SEP_GRAY)
 c.setLineWidth(0.5)
 c.line(T_LEFT, cur_y - 2, PAGE_W - MR, cur_y - 2)
 
+# ── Notes section ──────────────────────────────────────────────────────────────
+if notes:
+    notes_top = cur_y - 18
+    c.setFont('Helvetica-Bold', 9)
+    c.setFillColor(DARK)
+    c.drawString(ML, notes_top, 'Notes')
+    note_y = notes_top - 14
+    c.setFont('Helvetica', 9)
+    c.setFillColor(MID_GRAY)
+    for nl in notes.replace('\r\n', '\n').split('\n'):
+        nl = nl.strip()
+        if nl:
+            c.drawString(ML, note_y, nl)
+            note_y -= 13
+    cur_y = note_y - 8
+
 # ── Payment section + large total ──────────────────────────────────────────────
 PAY_TOP = cur_y - 18
-LARGE_TOTAL_Y = PAY_TOP  # we'll update this below
 
 PAY_KEYWORDS = ('check', 'ach', 'zelle', 'wire', 'paypal', 'venmo')
 pay_y = PAY_TOP - 12
@@ -418,8 +423,11 @@ if my_payment:
         c.drawString(ML, pay_y, stripped)
         pay_y -= 13
 
-# Large total — right side, vertically centred in payment zone
-LARGE_TOTAL_Y = PAY_TOP - 35 if my_payment else cur_y - 30
+# Large total — right side, with "Total" label above it
+LARGE_TOTAL_Y = PAY_TOP - 40 if my_payment else cur_y - 35
+c.setFont('Helvetica', 11)
+c.setFillColor(MID_GRAY)
+c.drawRightString(T_TOTAL_R - CELL_PAD, LARGE_TOTAL_Y + 22, 'Total')
 c.setFont('Helvetica-Bold', 28)
 c.setFillColor(ORANGE)
 c.drawRightString(T_TOTAL_R - CELL_PAD, LARGE_TOTAL_Y, quote_fmt)

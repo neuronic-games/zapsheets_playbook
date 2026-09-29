@@ -18,13 +18,21 @@ from io import BytesIO
 socket.setdefaulttimeout(20)
 
 try:
-    from reportlab.pdfgen import canvas
-    from reportlab.lib.pagesizes import letter
-    from reportlab.lib.utils import ImageReader
-    from reportlab.lib.colors import HexColor, white, black
-except ImportError as e:
-    print(json.dumps({"error": f"reportlab not available: {e}"}))
-    sys.exit(1)
+    import reportlab  # noqa: F401
+except ImportError:
+    import subprocess, site as _site
+    subprocess.run(
+        [sys.executable, '-m', 'pip', 'install', 'reportlab', '--user', '--quiet'],
+        check=True
+    )
+    _usr = _site.getusersitepackages()
+    if _usr not in sys.path:
+        sys.path.insert(0, _usr)
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.utils import ImageReader
+from reportlab.lib.colors import HexColor, white, black
 
 import gspread
 

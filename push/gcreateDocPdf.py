@@ -308,7 +308,7 @@ c.drawString(T_LEFT + CELL_PAD, hy, 'Description')
 if not is_estimate:
     c.drawString(T_QTY,  hy, 'Qty')
     c.drawString(T_UNIT, hy, 'Unit price')
-c.drawRightString(T_TOTAL_R - CELL_PAD, hy, 'Total price')
+c.drawRightString(T_TOTAL_R - CELL_PAD, hy, 'Price')
 
 cur_y -= HEADER_H
 
@@ -367,17 +367,7 @@ if disc_amt > 0:
     c.drawRightString(T_TOTAL_R - CELL_PAD, disc_row_y + 7, fmt_money(-disc_amt))
     cur_y = disc_row_y
 
-# Total row
-total_row_y = cur_y - SUB_H
-c.setFont('Helvetica', 9)
-c.setFillColor(MID_GRAY)
-c.drawString(LABEL_X, total_row_y + 7, 'Total')
-c.setFont('Helvetica-Bold', 9)
-c.setFillColor(DARK)
-c.drawRightString(T_TOTAL_R - CELL_PAD, total_row_y + 7, quote_fmt)
-cur_y = total_row_y
-
-# Bottom border
+# Bottom border (no separate Total row — shown with large number below)
 c.setStrokeColor(SEP_GRAY)
 c.setLineWidth(0.5)
 c.line(T_LEFT, cur_y - 2, PAGE_W - MR, cur_y - 2)
@@ -423,11 +413,11 @@ if my_payment:
         c.drawString(ML, pay_y, stripped)
         pay_y -= 13
 
-# Large total — right side, with "Total" label above it
+# Large total — "Total" label to the left, big number to the right, same baseline
 LARGE_TOTAL_Y = PAY_TOP - 40 if my_payment else cur_y - 35
-c.setFont('Helvetica', 11)
+c.setFont('Helvetica-Bold', 18)
 c.setFillColor(MID_GRAY)
-c.drawRightString(T_TOTAL_R - CELL_PAD, LARGE_TOTAL_Y + 22, 'Total')
+c.drawString(ML, LARGE_TOTAL_Y + 4, 'Total')
 c.setFont('Helvetica-Bold', 28)
 c.setFillColor(ORANGE)
 c.drawRightString(T_TOTAL_R - CELL_PAD, LARGE_TOTAL_Y, quote_fmt)

@@ -39,6 +39,7 @@ target_start = data.get('target_start', '').strip()
 target_end   = data.get('target_end',   '').strip()
 row_type     = data.get('type',         '').strip()   # "Estimate" or "Invoice"
 date_val     = data.get('date',         '').strip()   # MM/DD/YYYY; caller supplies today
+scope_of_work = data.get('scope_of_work', '').strip()
 
 try:
     wb = sa.open_by_key(sheet_id)
@@ -83,6 +84,7 @@ target_end_col   = col('Target End Date')
 type_col         = col('Type')
 ref_num_col      = col('Ref Number')
 notes_col        = col('Notes')
+scope_col        = col('Scope of Work')
 
 # Determine next sequential ID
 next_id = 1
@@ -111,6 +113,7 @@ if target_end_col   >= 0: new_row[target_end_col]   = target_end
 if type_col         >= 0: new_row[type_col]         = row_type
 if ref_num_col      >= 0: new_row[ref_num_col]      = str(next_id)
 if notes_col        >= 0: new_row[notes_col]        = notes
+if scope_col        >= 0: new_row[scope_col]        = scope_of_work
 
 try:
     ws.append_row(new_row, value_input_option='USER_ENTERED')

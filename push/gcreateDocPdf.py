@@ -62,6 +62,7 @@ qty_raw       = data.get('qty',           '1').strip()
 unit_price_raw= data.get('unit_price',    '').strip()
 discount_pct  = float(data.get('discount_pct',  0) or 0)
 discount_lbl  = data.get('discount_label','').strip()
+scope_of_work = data.get('scope_of_work', '').strip()
 my_name       = data.get('my_name',       '').strip()
 my_phone      = data.get('my_phone',      '').strip()
 my_company    = data.get('my_company',    '').strip()
@@ -127,19 +128,22 @@ if doc_type == 'Estimate':
     total_val  = subtotal - disc_amt
     qty_disp   = str(int(qty)) if qty == int(qty) else str(qty)
 
-    # Build estimate description
-    desc_lines = [f"{game} Development" if game else "Design Services",
-                  "Includes (but not limited to):"]
-    if num_tests > 0:
-        desc_lines.append(f"- {pluralize(num_tests, 'organized test')}")
-        desc_lines.append("- Test reports")
-    if num_edits > 0:
-        desc_lines.append(f"- {pluralize(num_edits, 'iteration')} of rules editing")
-    if notes:
-        for nl in notes.replace('\r\n', '\n').split('\n'):
-            nl = nl.strip()
-            if nl:
-                desc_lines.append(f"- {nl}")
+    # Build estimate description — prefer scope_of_work if provided
+    if scope_of_work:
+        desc_lines = [l for l in scope_of_work.replace('\r\n', '\n').split('\n') if l.strip()]
+    else:
+        desc_lines = [f"{game} Development" if game else "Design Services",
+                      "Includes (but not limited to):"]
+        if num_tests > 0:
+            desc_lines.append(f"- {pluralize(num_tests, 'organized test')}")
+            desc_lines.append("- Test reports")
+        if num_edits > 0:
+            desc_lines.append(f"- {pluralize(num_edits, 'iteration')} of rules editing")
+        if notes:
+            for nl in notes.replace('\r\n', '\n').split('\n'):
+                nl = nl.strip()
+                if nl:
+                    desc_lines.append(f"- {nl}")
 
     line_items.append({
         'desc': desc_lines, 'qty': qty_disp,

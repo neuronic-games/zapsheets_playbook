@@ -988,7 +988,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <h2>New Contract — <span id="estimateClientLabel"></span></h2>
     <input type="hidden" id="estimateClient" />
     <label class="ge-label">Game
-      <input type="text" id="estimateGame" class="ge-input" list="estimateGameList" placeholder="Select or type a game name" autocomplete="off" />
+      <input type="text" id="estimateGame" class="ge-input" list="estimateGameList" placeholder="Select or type a game name" autocomplete="off" oninput="_seedScopeOfWork()" />
       <datalist id="estimateGameList"></datalist>
     </label>
     <label class="ge-label">Type
@@ -999,12 +999,15 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     </label>
     <div class="estimate-field-row two">
       <label class="ge-label"># of Tests
-        <input type="number" id="estimateTests" class="ge-input" value="2" min="0" step="1" />
+        <input type="number" id="estimateTests" class="ge-input" value="2" min="0" step="1" oninput="_seedScopeOfWork()" />
       </label>
       <label class="ge-label"># of Edit Rounds
-        <input type="number" id="estimateEdits" class="ge-input" value="2" min="0" step="1" />
+        <input type="number" id="estimateEdits" class="ge-input" value="2" min="0" step="1" oninput="_seedScopeOfWork()" />
       </label>
     </div>
+    <label class="ge-label">Scope of Work
+      <textarea id="estimateScopeOfWork" class="ge-input ge-textarea" rows="5" placeholder="Describe what's included…" oninput="_estimateScopeEdited=true"></textarea>
+    </label>
     <div class="estimate-field-row two">
       <label class="ge-label">Qty
         <input type="number" id="estimateQty" class="ge-input" value="1" min="1" step="1" />
@@ -1957,6 +1960,28 @@ function generateInvoice(dataIdx) {
 
 var _estimateInitial = {};
 
+var _estimateScopeEdited = false;
+
+function _buildScopeText(game, tests, edits) {
+  var lines = [];
+  if (game) lines.push(game + ' Development');
+  lines.push('Includes (but not limited to):');
+  if (tests > 0) {
+    lines.push('- ' + tests + ' organized test' + (tests !== 1 ? 's' : ''));
+    lines.push('- Test reports');
+  }
+  if (edits > 0) lines.push('- ' + edits + ' iteration' + (edits !== 1 ? 's' : '') + ' of rules editing');
+  return lines.join('\n');
+}
+
+function _seedScopeOfWork() {
+  if (_estimateScopeEdited) return;
+  var game  = (document.getElementById('estimateGame').value  || '').trim();
+  var tests = parseInt(document.getElementById('estimateTests').value, 10) || 0;
+  var edits = parseInt(document.getElementById('estimateEdits').value, 10) || 0;
+  document.getElementById('estimateScopeOfWork').value = _buildScopeText(game, tests, edits);
+}
+
 function _estimateIsDirty() {
   var game    = (document.getElementById('estimateGame').value      || '').trim();
   var price   = (document.getElementById('estimateUnitPrice').value || '').trim();
@@ -1994,6 +2019,8 @@ function openEstimateDialog(clientName, gameName) {
   document.getElementById('estimateUnitPrice').value         = '';
   document.getElementById('estimateDuration').value          = '';
   document.getElementById('estimateTargetStart').value       = '';
+  _estimateScopeEdited = false;
+  document.getElementById('estimateScopeOfWork').value       = _buildScopeText(gameName || '', 2, 2);
   document.getElementById('estimateTargetEnd').value         = '';
   document.getElementById('estimateDiscountLabel').value     = '';
   document.getElementById('estimateDiscountPct').value       = '0';
@@ -2032,6 +2059,7 @@ function submitEstimate() {
   fd.append('discount_pct',   document.getElementById('estimateDiscountPct').value);
   fd.append('discount_label', document.getElementById('estimateDiscountLabel').value.trim());
   fd.append('notes',          document.getElementById('estimateNotes').value.trim());
+  fd.append('scope_of_work',  document.getElementById('estimateScopeOfWork').value.trim());
   fd.append('my_name',        MY_NAME          || '');
   fd.append('my_phone',       MY_PHONE         || '');
   fd.append('my_company',     MY_COMPANY       || '');

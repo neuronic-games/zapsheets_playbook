@@ -809,10 +809,13 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .obs-editable[data-empty="1"]::before { content:attr(data-ph); color:#b0b8c8; pointer-events:none; }
 /* obs-obs-col: textarea wrapper with icon overlaid inside */
 .obs-ta-wrap { position:relative; flex:1; display:flex; flex-direction:column; min-width:0; }
-.obs-ta-wrap .field-textarea,.obs-ta-wrap .obs-editable { flex:1; }
+/* tighter padding inside obs pairs so row shrinks to the height of the UP/DN buttons */
+.obs-ta-wrap .field-textarea,.obs-ta-wrap .obs-editable { flex:1; padding:.3rem .5rem; }
+.obs-sol-col  .field-textarea,.obs-sol-col  .obs-editable { padding:.3rem .5rem; }
 /* icon button overlays textarea at top-right; hidden when obs has text (they share the space) */
 .obs-ta-wrap.has-obs-text .obs-img-btn { display:none; }
-.obs-img-btn { position:absolute; top:.3rem; right:.3rem; width:1.55rem; height:1.55rem; background:rgba(255,255,255,.88); border:1px solid #d0d8e4; border-radius:5px; cursor:pointer; color:#99a; display:flex; align-items:center; justify-content:center; z-index:2; backdrop-filter:blur(2px); transition:color .15s,background .15s,border-color .15s; padding:0; }
+/* image button fills the row height (top/bottom match reorder column padding) */
+.obs-img-btn { position:absolute; top:.3rem; bottom:.3rem; right:.3rem; width:1.55rem; background:rgba(255,255,255,.88); border:1px solid #d0d8e4; border-radius:5px; cursor:pointer; color:#99a; display:flex; align-items:center; justify-content:center; z-index:2; backdrop-filter:blur(2px); transition:color .15s,background .15s,border-color .15s; padding:0; }
 .obs-img-btn:hover { color:#1a5f7a; background:#fff; border-color:#a0b8c8; }
 .obs-img-preview img { width:100%; display:block; }
 

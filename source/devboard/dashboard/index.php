@@ -792,14 +792,12 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .obs-pair { position:relative; margin-bottom:.75rem; }
 .obs-pair:last-child { margin-bottom:0; }
 .obs-pair-row { display:block; }
-/* Reorder buttons — overlaid on right edge of the pair, UP at top, DN at bottom */
-.obs-reorder { position:absolute; right:.35rem; top:.35rem; bottom:.35rem; z-index:2; display:flex; flex-direction:column; justify-content:space-between; }
+/* Reorder buttons — flex sibling inside obs column, centered vertically */
+.obs-reorder { display:flex; flex-direction:column; justify-content:center; gap:.2rem; padding:.3rem .3rem .3rem 0; align-self:stretch; }
 .obs-reorder-btn { background:rgba(255,255,255,.92); border:1px solid #d0d8e4; border-radius:4px; padding:.13rem .22rem; cursor:pointer; font-size:.62rem; color:#aab; line-height:1; transition:color .12s,border-color .12s,background .12s; backdrop-filter:blur(2px); }
 .obs-reorder-btn:hover:not(:disabled) { color:#1a5f7a; border-color:#a0b8c8; background:#f0f7fa; }
 .obs-reorder-btn:disabled { opacity:.25; cursor:default; }
 .obs-pair:last-child .obs-reorder { visibility:hidden; }
-/* Indent sol textarea text so it doesn't sit under the buttons */
-.obs-sol-col .field-textarea,.obs-sol-col .obs-editable { padding-right:1.8rem; }
 /* Column labels — flush with dialog left edge */
 .obs-pair-labels {
   display:grid; grid-template-columns:1fr 1fr; gap:.9rem;
@@ -812,7 +810,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 /* Row box — one joined container split into two cells */
 .obs-pair-inputs { display:grid; grid-template-columns:1fr 1fr; border:1.5px solid #d0d8e0; border-radius:8px; overflow:hidden; }
 .obs-pair-inputs:focus-within { border-color:#1a5f7a; box-shadow:0 0 0 2px rgba(26,95,122,.12); }
-.obs-obs-col { display:flex; flex-direction:column; min-width:0; background:#fff; border-right:1px solid #d0d8e0; }
+.obs-obs-col { display:flex; flex-direction:row; align-items:stretch; min-width:0; background:#fff; border-right:1px solid #d0d8e0; }
 .obs-sol-col  { display:flex; flex-direction:column; min-width:0; background:#f5f7fa; }
 /* Strip borders/bg from textareas/editables inside the box */
 .obs-pair-inputs .field-textarea { border:none !important; background:transparent !important; border-radius:0 !important; box-shadow:none !important; resize:none; }
@@ -823,7 +821,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 /* placeholder via data-ph when empty */
 .obs-editable[data-empty="1"]::before { content:attr(data-ph); color:#b0b8c8; pointer-events:none; }
 /* obs-obs-col: textarea wrapper with icon overlaid inside */
-.obs-ta-wrap { position:relative; flex:1; display:flex; flex-direction:column; }
+.obs-ta-wrap { position:relative; flex:1; display:flex; flex-direction:column; min-width:0; }
 .obs-ta-wrap .field-textarea,.obs-ta-wrap .obs-editable { flex:1; padding-right:2.1rem; }
 /* icon button: hidden when obs textarea has text; always shown when image present */
 .obs-ta-wrap.has-obs-text .obs-img-btn { display:none; }
@@ -4177,10 +4175,6 @@ function addObsPair() {
   div.dataset.idx = idx;
   div.innerHTML =
     '<div class="obs-pair-row">' +
-      '<div class="obs-reorder">' +
-        '<button type="button" class="obs-reorder-btn" title="Move up"   onclick="moveObsPair(' + idx + ',-1)">▲</button>' +
-        '<button type="button" class="obs-reorder-btn" title="Move down" onclick="moveObsPair(' + idx + ', 1)">▼</button>' +
-      '</div>' +
       '<div class="obs-pair-inputs">' +
         '<div class="obs-obs-col">' +
           '<div class="obs-ta-wrap">' +
@@ -4199,6 +4193,10 @@ function addObsPair() {
               '</svg>' +
             '</button>' +
             '<input type="file" accept="image/*" id="sImgFile-' + idx + '" style="display:none" onchange="handleObsImageFile(' + idx + ', this.files[0])">' +
+          '</div>' +
+          '<div class="obs-reorder">' +
+            '<button type="button" class="obs-reorder-btn" title="Move up"   onclick="moveObsPair(' + idx + ',-1)">▲</button>' +
+            '<button type="button" class="obs-reorder-btn" title="Move down" onclick="moveObsPair(' + idx + ', 1)">▼</button>' +
           '</div>' +
         '</div>' +
         '<div class="obs-sol-col">' +

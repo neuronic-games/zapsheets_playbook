@@ -822,7 +822,6 @@ function renderSessions() {
     if (s.date)    html += '<span class="session-sep">·</span><span class="session-date">' + esc(fmtDate(s.date)) + '</span>';
     if (s.location) html += '<span class="session-sep">·</span><span class="session-location">' + esc(s.location) + '</span>';
     html += '<span class="session-count">' + s.obs.length + (s.obs.length === 1 ? ' note' : ' notes') + '</span>';
-    if (_collabUser) html += '<button type="button" class="session-edit-btn" onclick="event.stopPropagation();guardedOpenEditDialog(' + allIdx + ')">Edit</button>';
     html += '<span class="session-chevron">▼</span>';
     html += '</div>';
     if (s.testers.length || s.submittedBy) {
@@ -832,8 +831,9 @@ function renderSessions() {
       html += '</div>';
     }
     html += '</div>';  // .session-header
-    // Body
-    html += '<div class="session-body-wrap"><div class="session-body">';
+    // Body — clickable to open edit dialog when signed in
+    var bodyAttrs = _collabUser ? ' onclick="guardedOpenEditDialog(' + allIdx + ')" style="cursor:pointer"' : '';
+    html += '<div class="session-body-wrap"><div class="session-body"' + bodyAttrs + '>';
     var visibleObs = _filterObsByQuery(s.obs, q);
     if (visibleObs.length) {
       html += '<table class="obs-table"><tbody>';

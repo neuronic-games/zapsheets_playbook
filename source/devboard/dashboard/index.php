@@ -650,8 +650,13 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .session-dialog h2 > span:not(.sw-display) { color:#1a1a2e; }
 .sw-display { margin-left:auto; font-family:'DINBlack',sans-serif; font-size:.85rem; color:#e67e22; letter-spacing:.06em; display:none; }
 .sw-display.sw-active { display:block; }
-.sw-wrap { display:flex; align-items:center; margin-left:auto; flex-shrink:0; }
-.sw-wrap.sw-expanded { display:flex; align-items:center; margin-left:auto; }
+.rounds-wrap { display:flex; align-items:center; gap:.28rem; margin-left:auto; flex-shrink:0; }
+.rounds-btn { background:none; border:1.5px solid #d0d8e0; border-radius:5px; width:1.65rem; height:1.65rem; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; color:#999; font-family:'DINBlack',sans-serif; font-size:1rem; line-height:1; transition:border-color .15s,color .15s; padding:0; user-select:none; -webkit-user-select:none; }
+.rounds-btn:hover { border-color:#aaa; color:#555; }
+.rounds-count { font-family:'DINBlack',sans-serif; font-size:1rem; color:#1a5f7a; min-width:1.6rem; text-align:center; letter-spacing:.02em; }
+.rounds-label { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#999; letter-spacing:.04em; text-transform:uppercase; }
+.sw-wrap { display:flex; align-items:center; margin-left:.6rem; flex-shrink:0; }
+.sw-wrap.sw-expanded { display:flex; align-items:center; margin-left:.6rem; }
 .sw-panel { display:none; align-items:center; gap:.5rem; background:#fff8f2; border:1.5px solid #e67e22; border-radius:8px; padding:.28rem .5rem .28rem .65rem; animation:sw-expand-in .18s ease; }
 .sw-wrap.sw-expanded .sw-panel { display:flex; }
 .sw-wrap.sw-expanded #swBtn { display:none; }
@@ -1397,6 +1402,12 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
   <div class="session-dialog">
     <h2>
       <span id="sessionDialogAction">+ Session</span><span style="color:#1a5f7a"> — </span><span id="sessionGameTitle"></span>
+      <div class="rounds-wrap" id="roundsWrap">
+        <button type="button" class="rounds-btn" onclick="_roundsChange(-1)" title="Remove a round">−</button>
+        <span class="rounds-count" id="roundsCount">0</span>
+        <button type="button" class="rounds-btn" onclick="_roundsChange(1)" title="Add a round">+</button>
+        <span class="rounds-label">rnd</span>
+      </div>
       <div class="sw-wrap" id="swWrap">
         <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold 2s to enter minutes">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="13" r="8"/><path d="M12 5V3"/><path d="M9 3h6"/><path d="M12 13V9"/></svg>
@@ -3516,6 +3527,20 @@ var _editOrigEvent      = '';
 var _editOrigSessionNum = '';
 var _editSnapshot       = null;
 
+// ── Rounds counter ────────────────────────────────────────────────────────────
+var _sessionRounds = 0;
+
+function _roundsChange(delta) {
+  _sessionRounds = Math.max(0, _sessionRounds + delta);
+  var el = document.getElementById('roundsCount');
+  if (el) el.textContent = _sessionRounds;
+}
+
+function _swParseRounds(str) {
+  var m = (str || '').match(/Rounds:\s*(\d+)/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
 // ── Stopwatch ─────────────────────────────────────────────────────────────────
 var _swSeconds  = 0;
 var _swRunning  = false;
@@ -3627,6 +3652,9 @@ function _swReset() {
   var btn = document.getElementById('swBtn');
   if (btn) btn.classList.remove('sw-running');
   _swUpdate();
+  _sessionRounds = 0;
+  var rc = document.getElementById('roundsCount');
+  if (rc) rc.textContent = '0';
 }
 
 
@@ -3648,7 +3676,9 @@ function getSessionSnapshot() {
     (document.getElementById('sLocation').value || '').trim(),
     (document.getElementById('sTestNum').value  || '').trim(),
     testers.join(','),
-    obs.join('||')
+    obs.join('||'),
+    String(_swSeconds),
+    String(_sessionRounds)
   ].join('\n');
 }
 function isSessionDirty() {
@@ -3708,10 +3738,13 @@ function openEditSessionDialog(gameName, idx) {
   _editOrigEvent      = editEventType;
   _editOrigSessionNum = editSessionNum;
 
-  // Load existing session length into the stopwatch (paused)
+  // Load existing session length and rounds into the controls (paused)
   _swReset();
-  _swSeconds = _swParseLength(session.length);
+  _swSeconds     = _swParseLength(session.length);
+  _sessionRounds = _swParseRounds(session.length);
   _swUpdate();
+  var rc = document.getElementById('roundsCount');
+  if (rc) rc.textContent = String(_sessionRounds);
 
   document.getElementById('sessionDialogAction').textContent = 'Edit Session';
   document.getElementById('sessionGameTitle').textContent    = gameName;
@@ -3876,7 +3909,10 @@ function submitSession() {
   var eventType  = document.getElementById('sType').value;
   var sessionNum = document.getElementById('sTestNum').value.trim();
   var location   = document.getElementById('sLocation').value.trim();
-  var swLength   = _swSeconds > 0 ? 'Length: ' + Math.floor(_swSeconds / 60) : '';
+  var _timeMins  = Math.floor(_swSeconds / 60);
+  var _lenPart   = _swSeconds > 0      ? 'Length: ' + _timeMins + ' mins' : '';
+  var _rndPart   = _sessionRounds > 0  ? 'Rounds: ' + _sessionRounds       : '';
+  var swLength   = [_lenPart, _rndPart].filter(Boolean).join(', ');
 
   // ── Build local cache rows (same shape as sheet JSON) for optimistic update ──
   var localRows = [];

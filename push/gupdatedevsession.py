@@ -33,7 +33,9 @@ def safe_str(v):
 
 def clean(v):
     """Strip the safe_str apostrophe prefix if present (returned by get_all_values)."""
-    return v.strip().lstrip("'").strip() if v else ''
+    if v is None or v == '' or v == 0:
+        return ''
+    return str(v).strip().lstrip("'").strip()
 
 if not os.path.exists(credFileName):
     print(json.dumps({"error": "credentials.json not found"}))

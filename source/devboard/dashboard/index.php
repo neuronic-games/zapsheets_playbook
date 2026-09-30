@@ -1764,9 +1764,7 @@ function renderPublishersView() {
         }
       }
       var sortedEsts = g.estimates.slice().sort(function(a, b) {
-        var da = new Date(a.date || 0), db = new Date(b.date || 0);
-        if (db - da !== 0) return db - da;
-        // Same date: sort by insertion order descending (higher index = newer)
+        // Latest sheet row first (reverse of sheet order)
         return ESTIMATES_RAW.indexOf(b) - ESTIMATES_RAW.indexOf(a);
       });
       sortedEsts.forEach(function(est) {
@@ -1818,11 +1816,8 @@ function renderPublishersView() {
         html += '</div>'; // .estimate-item
       });
 
-      // Contracts for this game — sort latest date first (reverse of sheet order)
+      // Contracts for this game — latest sheet row first
       var sortedCons = g.contracts.slice().sort(function(a, b) {
-        var da = new Date(a.Date || 0), db = new Date(b.Date || 0);
-        if (db - da !== 0) return db - da;
-        // Same date: sort by insertion order descending (higher index = newer)
         return CONTRACT_RAW.indexOf(b) - CONTRACT_RAW.indexOf(a);
       });
       sortedCons.forEach(function(con) {

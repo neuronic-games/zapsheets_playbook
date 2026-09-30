@@ -823,7 +823,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .obs-img-preview { position:relative; }
 .obs-img-preview img { width:100%; display:block; }
 /* While an edit dialog is open, hide session-card images so they don't bleed through the overlay */
-.session-block.editing-session .session-body img { visibility:hidden; }
+body.session-dialog-open .session-body img { visibility:hidden; }
 /* Trash button: bottom-right of the preview image */
 .obs-img-trash { position:absolute; bottom:.3rem; right:.3rem; width:1.55rem; height:1.55rem; background:rgba(255,255,255,.92); border:1px solid #e8c0c0; border-radius:5px; cursor:pointer; color:#c0392b; display:flex; align-items:center; justify-content:center; z-index:3; backdrop-filter:blur(2px); padding:0; transition:background .15s,border-color .15s; }
 .obs-img-trash:hover { background:#fff0f0; border-color:#c0392b; }
@@ -3538,7 +3538,6 @@ var _editOrigDate       = '';
 var _editOrigEvent      = '';
 var _editOrigSessionNum = '';
 var _editSnapshot       = null;
-var _editingBlock       = null;  // session-block DOM node currently being edited
 
 // ── Rounds counter ────────────────────────────────────────────────────────────
 var _sessionRounds = 0;
@@ -3723,6 +3722,7 @@ function openSessionDialog(gameName) {
   document.getElementById('deleteSessionBtn').style.display = 'none';
   document.querySelectorAll('#sessionOverlay .btn-cancel').forEach(function(b) { b.disabled = false; });
   _swReset();  // each new session starts the clock at 00:00
+  document.body.classList.add('session-dialog-open');
   document.getElementById('sessionOverlay').classList.add('open');
   setTimeout(function() {
     var firstObs = document.getElementById('sObs-0');
@@ -3802,10 +3802,7 @@ function openEditSessionDialog(gameName, idx) {
   document.querySelectorAll('#sessionOverlay .btn-cancel').forEach(function(b) { b.disabled = false; });
   _swUpdate();
   // Hide session-card images behind the overlay so they don't bleed through while editing
-  if (_editingBlock) _editingBlock.classList.remove('editing-session');
-  var _editHdr = document.querySelector('.session-header[data-game="' + gameName.replace(/\\/g,'\\\\').replace(/"/g,'\\"') + '"][data-idx="' + idx + '"]');
-  _editingBlock = _editHdr ? _editHdr.closest('.session-block') : null;
-  if (_editingBlock) _editingBlock.classList.add('editing-session');
+  document.body.classList.add('session-dialog-open');
   document.getElementById('sessionOverlay').classList.add('open');
   // Resize textareas after the overlay is visible so scrollHeight is accurate,
   // then sync pair heights so both columns match the taller of the two.
@@ -3826,7 +3823,7 @@ function closeSessionDialog() {
   document.getElementById('sessionOverlay').classList.remove('open');
   _editMode = false;
   _editSnapshot = null;
-  if (_editingBlock) { _editingBlock.classList.remove('editing-session'); _editingBlock = null; }
+  document.body.classList.remove('session-dialog-open');
 }
 
 function forceCloseSessionDialog() {
@@ -4215,13 +4212,27 @@ function _removeObsImage(idx) {
   var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
   var pair = ta ? ta.closest('.obs-pair')    : null;
   var pv   = document.getElementById('sImgPreview-' + idx);
-  if (ta)   { ta.style.display = ''; toggleObsImgBtn(idx); }
-  if (pv)   { pv.style.display = 'none'; pv.innerHTML = ''; }
-  // Re-mark as empty if no text and no solution
+  // Show the textarea explicitly
+  if (ta) { ta.style.display = 'block'; toggleObsImgBtn(idx); }
+  // Forcibly hide and empty the preview container
+  if (pv) {
+    pv.style.cssText = 'display:none';
+    while (pv.firstChild) pv.removeChild(pv.firstChild);
+  }
+  // Remove any stray <img> anywhere in this pair (belt-and-suspenders)
   if (pair) {
+    pair.querySelectorAll('img').forEach(function(img) { img.remove(); });
     var sol = _ceGet(document.getElementById('sSol-' + idx));
     if (!sol.trim()) pair.classList.add('obs-pair-empty');
   }
+  // DEBUG: log all images visible in/around the session overlay 100ms later
+  setTimeout(function() {
+    var imgs = Array.from(document.querySelectorAll('body img'));
+    console.log('[DV] imgs 100ms after remove:', imgs.map(function(im) {
+      var anc = im.closest('[id]');
+      return (anc ? anc.id : '?') + ' cs:' + getComputedStyle(im).display + ' src:' + im.src.slice(-40);
+    }));
+  }, 100);
 }
 
 function triggerObsImageUpload(idx) {

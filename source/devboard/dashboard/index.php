@@ -4225,16 +4225,21 @@ function _removeObsImage(idx) {
     var sol = _ceGet(document.getElementById('sSol-' + idx));
     if (!sol.trim()) pair.classList.add('obs-pair-empty');
   }
-  // DEBUG: log all images + body class 100ms later
-  setTimeout(function() {
-    console.log('[DV] body.session-dialog-open:', document.body.classList.contains('session-dialog-open'));
+  // DEBUG: check pv + all imgs at 100ms and 800ms
+  var _dbgIdx = idx;
+  function _dbgLog(label) {
+    var pv2 = document.getElementById('sImgPreview-' + _dbgIdx);
+    var cs2 = pv2 ? getComputedStyle(pv2) : null;
+    console.log('[DV]', label, '| body.open:', document.body.classList.contains('session-dialog-open'),
+      '| pv d:', cs2 ? cs2.display : 'gone', '| pv children:', pv2 ? pv2.childElementCount : 'gone');
     var imgs = Array.from(document.querySelectorAll('body img'));
-    console.log('[DV] imgs 100ms after remove:', imgs.map(function(im) {
-      var anc = im.closest('[id]');
-      var cs = getComputedStyle(im);
-      return (anc ? anc.id : '?') + ' d:' + cs.display + ' v:' + cs.visibility + ' src:' + im.src.slice(-40);
+    console.log('[DV]', label, 'imgs:', imgs.map(function(im) {
+      var anc = im.closest('[id]'); var cs = getComputedStyle(im);
+      return (anc ? anc.id : '?') + ' d:' + cs.display + ' src:' + im.src.slice(-35);
     }));
-  }, 100);
+  }
+  setTimeout(function() { _dbgLog('100ms'); }, 100);
+  setTimeout(function() { _dbgLog('800ms'); }, 800);
 }
 
 function triggerObsImageUpload(idx) {

@@ -822,8 +822,8 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 /* Preview container: relative so trash button can anchor to it */
 .obs-img-preview { position:relative; }
 .obs-img-preview img { width:100%; display:block; }
-/* Trash button: always inside the preview div, visible only when preview is showing */
-.obs-img-trash { position:absolute; top:.3rem; right:.3rem; width:1.55rem; height:1.55rem; background:rgba(255,255,255,.92); border:1px solid #e8c0c0; border-radius:5px; cursor:pointer; color:#c0392b; display:flex; align-items:center; justify-content:center; z-index:3; backdrop-filter:blur(2px); padding:0; transition:background .15s,border-color .15s; }
+/* Trash button: bottom-right of the preview image */
+.obs-img-trash { position:absolute; bottom:.3rem; right:.3rem; width:1.55rem; height:1.55rem; background:rgba(255,255,255,.92); border:1px solid #e8c0c0; border-radius:5px; cursor:pointer; color:#c0392b; display:flex; align-items:center; justify-content:center; z-index:3; backdrop-filter:blur(2px); padding:0; transition:background .15s,border-color .15s; }
 .obs-img-trash:hover { background:#fff0f0; border-color:#c0392b; }
 
 /* ── Session metadata: mobile-first (column), side-by-side on wide screens ── */

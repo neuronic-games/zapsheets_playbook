@@ -78,7 +78,10 @@ if tab_name not in existing_tabs:
 ws = existing_tabs[tab_name]
 
 try:
-    all_values = ws.get_all_values()
+    try:
+        all_values = ws.get_all_values(value_render_option='FORMULA')
+    except TypeError:
+        all_values = ws.get_all_values()
 except Exception as e:
     print(json.dumps({"error": f"Could not read sheet: {str(e)}"}))
     sys.exit(1)

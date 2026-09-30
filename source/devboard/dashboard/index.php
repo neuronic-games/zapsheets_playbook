@@ -3914,6 +3914,7 @@ function submitSession() {
     if (_obsImages[idx]) obs = '=IMAGE("' + _obsImages[idx] + '")';
     if (obs || sol) obsPairs.push({ obs: obs, sol: sol });
   });
+  console.log('[SAVE] _obsImages:', JSON.stringify(_obsImages), '| obsPairs:', JSON.stringify(obsPairs));
 
   var date       = document.getElementById('sDate').value || todayISO();
   var eventType  = document.getElementById('sType').value;

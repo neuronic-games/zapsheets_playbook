@@ -7,7 +7,7 @@
 # Arg: {sheet_id}|{base64_json}
 
 import gspread
-import sys, os, json, base64, socket, re
+import sys, os, json, base64, socket, re, urllib.parse
 from datetime import datetime, date, timedelta
 
 socket.setdefaulttimeout(30)
@@ -155,7 +155,20 @@ except Exception as e:
 # ── Tab name ──────────────────────────────────────────────────────────────
 base_name = f"[{game}] invoice {invoice_num}" if game else f"invoice {invoice_num}"
 tab_name  = base_name
-existing  = {w.title for w in wb.worksheets()}
+all_ws    = wb.worksheets()
+existing  = {w.title for w in all_ws}
+
+# ── Estimate URL for QR code ──────────────────────────────────────────────
+estimate_url = ''
+if estimate_num:
+    est_tab = f"[{game}] estimate {estimate_num}" if game else f"estimate {estimate_num}"
+    for _ws in all_ws:
+        if _ws.title.lower() == est_tab.lower():
+            estimate_url = (f"https://docs.google.com/spreadsheets/d/"
+                            f"{sheet_id}/edit#gid={_ws.id}")
+            break
+    if not estimate_url:
+        estimate_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}"
 counter   = 2
 while tab_name in existing:
     tab_name = f"{base_name} ({counter})"
@@ -199,8 +212,13 @@ R_SUBMITTED = 8   # "Submitted on …"
 R_SPACER2   = 9
 R_LABELS    = 10  # Prepared for | Project | Estimate #
 R_VALUES    = 11  # client name  | game Dev | invoice_num
-R_SPACER3   = 12
-R_THEAD     = 13
+if estimate_num:
+    R_QR        = 12  # QR code image (right column, CF:CG)
+    R_EST_LABEL = 13  # "ESTIMATE" tag
+    R_SPACER3   = 14
+else:
+    R_SPACER3   = 12
+R_THEAD     = R_SPACER3 + 1
 
 R_DATA     = R_THEAD + 1
 R_NOTESUB  = R_DATA  + 1   # notes (left) + subtotal (right) — SAME ROW
@@ -237,8 +255,8 @@ sc(R_SUBMITTED, CB, f'Submitted on {today_disp}')
 # Info section
 sc(R_LABELS, CB, 'Prepared for')
 sc(R_LABELS, CD, 'Due Date')
-num_label = 'Invoice #' if estimate_num else 'Estimate #'
-num_value = f"{invoice_num} (Estimate {estimate_num})" if estimate_num else invoice_num
+num_label = 'Invoice #'
+num_value = invoice_num
 sc(R_LABELS, CF, num_label)
 sc(R_VALUES, CB, client or '—')
 due_date_disp = '—'
@@ -249,6 +267,13 @@ if tgt_start:
         due_date_disp = tgt_start
 sc(R_VALUES, CD, due_date_disp)
 sc(R_VALUES, CF, num_value)
+
+# QR code + "ESTIMATE" label (only when invoice is based on an estimate)
+if estimate_num:
+    qr_url = (f"https://api.qrserver.com/v1/create-qr-code/?size=80x80"
+              f"&data={urllib.parse.quote(estimate_url, safe='')}")
+    sc(R_QR,        CF, f'=IMAGE("{qr_url}",4,80,80)')
+    sc(R_EST_LABEL, CF, 'ESTIMATE')
 
 # Table header
 sc(R_THEAD, CB, 'Description')
@@ -393,6 +418,9 @@ reqs.append(row_h(R_SUBMITTED, 22))
 reqs.append(row_h(R_SPACER2,   16))
 reqs.append(row_h(R_LABELS,    24))
 reqs.append(row_h(R_VALUES,    28))
+if estimate_num:
+    reqs.append(row_h(R_QR,        84))
+    reqs.append(row_h(R_EST_LABEL, 16))
 reqs.append(row_h(R_SPACER3,   14))
 reqs.append(row_h(R_THEAD,    30))
 reqs.append(row_h(R_DATA,     90))    # tall for wrapped multi-line description
@@ -423,6 +451,9 @@ reqs.append(merge(R_LABELS, CF, CONTENT_END))     # F:G "Estimate #"
 reqs.append(merge(R_VALUES, CB, CD))
 reqs.append(merge(R_VALUES, CD, CF))
 reqs.append(merge(R_VALUES, CF, CONTENT_END))
+if estimate_num:
+    reqs.append(merge(R_QR,        CF, CONTENT_END))
+    reqs.append(merge(R_EST_LABEL, CF, CONTENT_END))
 # Table header
 reqs.append(merge(R_THEAD, CB, CE))               # B:D "Description"
 # Data row description
@@ -482,6 +513,16 @@ reqs.append(fmt(R_VALUES, R_VALUES, CB, CONTENT_END, {
     'textFormat': tf(BLACK, 10),
     'verticalAlignment': 'TOP',
 }, 'userEnteredFormat.textFormat,userEnteredFormat.verticalAlignment'))
+
+# QR code + ESTIMATE label (right column, CF:CG)
+if estimate_num:
+    reqs.append(halign(R_QR, R_QR, CF, CONTENT_END, 'CENTER'))
+    reqs.append(valign(R_QR, R_QR, CF, CONTENT_END, 'MIDDLE'))
+    reqs.append(fmt(R_EST_LABEL, R_EST_LABEL, CF, CONTENT_END, {
+        'textFormat': tf(ORANGE, 8, bold=True),
+        'horizontalAlignment': 'CENTER',
+        'verticalAlignment': 'MIDDLE',
+    }, 'userEnteredFormat.textFormat,userEnteredFormat.horizontalAlignment,userEnteredFormat.verticalAlignment'))
 
 # Table header: orange text, white bg, bold
 reqs.append(fmt(R_THEAD, R_THEAD, CB, CONTENT_END, {

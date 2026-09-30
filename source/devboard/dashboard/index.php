@@ -823,7 +823,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .obs-img-preview { position:relative; }
 .obs-img-preview img { width:100%; display:block; }
 /* While an edit dialog is open, hide session-card images so they don't bleed through the overlay */
-body.session-dialog-open .session-body img { visibility:hidden; }
+body.session-dialog-open .session-body img { display:none !important; }
 /* Trash button: bottom-right of the preview image */
 .obs-img-trash { position:absolute; bottom:.3rem; right:.3rem; width:1.55rem; height:1.55rem; background:rgba(255,255,255,.92); border:1px solid #e8c0c0; border-radius:5px; cursor:pointer; color:#c0392b; display:flex; align-items:center; justify-content:center; z-index:3; backdrop-filter:blur(2px); padding:0; transition:background .15s,border-color .15s; }
 .obs-img-trash:hover { background:#fff0f0; border-color:#c0392b; }
@@ -4225,12 +4225,14 @@ function _removeObsImage(idx) {
     var sol = _ceGet(document.getElementById('sSol-' + idx));
     if (!sol.trim()) pair.classList.add('obs-pair-empty');
   }
-  // DEBUG: log all images visible in/around the session overlay 100ms later
+  // DEBUG: log all images + body class 100ms later
   setTimeout(function() {
+    console.log('[DV] body.session-dialog-open:', document.body.classList.contains('session-dialog-open'));
     var imgs = Array.from(document.querySelectorAll('body img'));
     console.log('[DV] imgs 100ms after remove:', imgs.map(function(im) {
       var anc = im.closest('[id]');
-      return (anc ? anc.id : '?') + ' cs:' + getComputedStyle(im).display + ' src:' + im.src.slice(-40);
+      var cs = getComputedStyle(im);
+      return (anc ? anc.id : '?') + ' d:' + cs.display + ' v:' + cs.visibility + ' src:' + im.src.slice(-40);
     }));
   }, 100);
 }

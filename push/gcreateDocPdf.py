@@ -306,9 +306,18 @@ c.drawString(ML, yt(143), f'Submitted on {today_disp}')
 Y_LBL = yt(175)
 Y_VAL = yt(190)
 
-col_prep = ML
-col_due  = ML + 195
-col_num  = ML + 360
+# 4-column layout when invoice has an estimate ref; 3-column otherwise
+show_est_col = (doc_type == 'Invoice' and bool(estimate_num))
+if show_est_col:
+    col_prep = ML
+    col_due  = ML + 150
+    col_num  = ML + 295
+    col_est  = ML + 440
+else:
+    col_prep = ML
+    col_due  = ML + 195
+    col_num  = ML + 360
+    col_est  = None
 
 c.setFont('Helvetica-Bold', 9)
 c.setFillColor(DARK)
@@ -316,6 +325,8 @@ c.drawString(col_prep, Y_LBL, 'Prepared for')
 if timeline_str:
     c.drawString(col_due, Y_LBL, 'Due Date')
 c.drawString(col_num,  Y_LBL, f'{doc_type} #')
+if show_est_col:
+    c.drawString(col_est, Y_LBL, 'Estimate #')
 
 c.setFont('Helvetica', 10)
 c.setFillColor(DARK)
@@ -325,6 +336,8 @@ if timeline_str:
     c.drawString(col_due, Y_VAL, timeline_str)
 
 c.drawString(col_num, Y_VAL, doc_num)
+if show_est_col:
+    c.drawString(col_est, Y_VAL, estimate_num)
 
 # ── Separator ───────────────────────────────────────────────────────────────────
 SEP_Y = yt(222)
@@ -481,18 +494,6 @@ c.drawString(num_left - lbl_width, LARGE_TOTAL_Y + 4, lbl_str)
 c.setFont('Helvetica-Bold', 28)
 c.setFillColor(ORANGE)
 c.drawRightString(num_right, LARGE_TOTAL_Y, num_str)
-
-# ── Estimate reference (invoices based on an estimate) ─────────────────────────
-if doc_type == 'Invoice' and estimate_num:
-    EST_REF_Y = LARGE_TOTAL_Y - 48
-    c.setStrokeColor(SEP_GRAY)
-    c.setLineWidth(0.5)
-    c.line(ML, EST_REF_Y + 16, PAGE_W - MR, EST_REF_Y + 16)
-    c.setFont('Helvetica-Bold', 9)
-    c.setFillColor(DARK)
-    c.drawString(ML, EST_REF_Y, 'Estimate Reference')
-    c.setFont('Helvetica', 10)
-    c.drawString(ML, EST_REF_Y - 14, estimate_num)
 
 # ── Save PDF ───────────────────────────────────────────────────────────────────
 c.save()

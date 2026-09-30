@@ -54,6 +54,22 @@ $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 // The doc_id comes from the existing contract's ID (passed in POST).
 $docId = trim($_POST['contract_id'] ?? '');
 
+// Look up the contract's Ref Number from the local cache so gcreateDocPdf.py
+// can use it as the PDF URL token (the unique, non-guessable identifier).
+$refCode = '';
+if ($docId) {
+    $contractsFile = dirname(__DIR__) . '/sheets/' . $sheetId . '/contracts.json';
+    if (file_exists($contractsFile)) {
+        $contracts = json_decode(file_get_contents($contractsFile), true) ?: [];
+        foreach ($contracts as $c) {
+            if ((string)($c['ID'] ?? '') === (string)$docId) {
+                $refCode = $c['Ref Number'] ?? '';
+                break;
+            }
+        }
+    }
+}
+
 $appDomain = rtrim($_ENV['APP_DOMAIN'] ?? 'http://localhost:8000', '/');
 $basePath  = trim($_ENV['BASE_PATH']  ?? '', '/');
 $baseUrl   = $basePath ? "$appDomain/$basePath" : $appDomain;
@@ -73,6 +89,7 @@ $payload = [
     'my_logo'    => $myLogo,
     'my_address' => $myAddress,
     'base_url'   => $baseUrl,
+    'ref_code'   => $refCode,
 ];
 
 $encoded = base64_encode(json_encode($payload, JSON_UNESCAPED_UNICODE));

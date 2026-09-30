@@ -9,7 +9,7 @@
 # Returns: { ok, contract_id, row }
 
 import gspread
-import sys, os, json, base64
+import sys, os, json, base64, secrets
 
 credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
 if not os.path.exists(credFileName):
@@ -96,6 +96,36 @@ if id_col >= 0:
         except (ValueError, TypeError):
             pass
 
+# Generate a unique random Ref Number and persist it to a registry file
+base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+reg_path = os.path.join(base_dir, 'sheets', sheet_id, 'ref_codes.json')
+registry = []
+if os.path.exists(reg_path):
+    try:
+        with open(reg_path, 'r', encoding='utf-8') as _f:
+            _data = json.load(_f)
+        if isinstance(_data, list):
+            registry = _data
+    except Exception:
+        registry = []
+
+ref_code = ''
+for _ in range(30):
+    candidate = secrets.token_hex(6)   # 12 lowercase hex chars
+    if candidate not in registry:
+        ref_code = candidate
+        break
+if not ref_code:
+    ref_code = secrets.token_hex(16)   # extreme fallback (32 chars)
+
+registry.append(ref_code)
+os.makedirs(os.path.dirname(reg_path), exist_ok=True)
+try:
+    with open(reg_path, 'w', encoding='utf-8') as _f:
+        json.dump(registry, _f)
+except Exception:
+    pass   # non-fatal; sheet still gets the code
+
 # Build new row matching the header width
 num_cols = len(headers)
 new_row  = [''] * num_cols
@@ -111,7 +141,7 @@ if duration_col     >= 0: new_row[duration_col]     = duration
 if target_start_col >= 0: new_row[target_start_col] = target_start
 if target_end_col   >= 0: new_row[target_end_col]   = target_end
 if type_col         >= 0: new_row[type_col]         = row_type
-if ref_num_col      >= 0: new_row[ref_num_col]      = str(next_id)
+if ref_num_col      >= 0: new_row[ref_num_col]      = ref_code
 if notes_col        >= 0: new_row[notes_col]        = notes
 if scope_col        >= 0: new_row[scope_col]        = scope_of_work
 
@@ -138,4 +168,4 @@ if id_col >= 0 and id_col < len(last_row):
 if not contract_id:
     contract_id = str(next_id)
 
-print(json.dumps({"ok": True, "contract_id": contract_id, "row": new_row_idx}))
+print(json.dumps({"ok": True, "contract_id": contract_id, "row": new_row_idx, "ref_code": ref_code}))

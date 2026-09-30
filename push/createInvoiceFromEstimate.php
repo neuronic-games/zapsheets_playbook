@@ -58,8 +58,10 @@ $rowCmd     = escapeshellarg($pythonPath) . ' '
             . escapeshellarg($sheetId . '|' . $rowEncoded) . ' 2>&1';
 $rowOut     = trim((string) shell_exec($rowCmd));
 $rowResult  = json_decode($rowOut, true);
+$refCode = '';
 if (!empty($rowResult['ok'])) {
-    $docId = $rowResult['contract_id'] ?? '';
+    $docId   = $rowResult['contract_id'] ?? '';
+    $refCode = $rowResult['ref_code']    ?? '';
 }
 
 // Step 2: generate invoice PDF
@@ -77,6 +79,7 @@ $payload = [
     'description'  => $description,
     'notes'        => $notes,
     'tgt_start'    => $tgtStart,
+    'ref_code'     => $refCode,
     'my_name'      => $myName,
     'my_phone'     => $myPhone,
     'my_company'   => $myCompany,

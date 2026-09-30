@@ -3914,7 +3914,6 @@ function submitSession() {
     if (_obsImages[idx]) obs = '=IMAGE("' + _obsImages[idx] + '")';
     if (obs || sol) obsPairs.push({ obs: obs, sol: sol });
   });
-  console.log('[SAVE] _obsImages:', JSON.stringify(_obsImages), '| obsPairs:', JSON.stringify(obsPairs));
 
   var date       = document.getElementById('sDate').value || todayISO();
   var eventType  = document.getElementById('sType').value;
@@ -3979,10 +3978,9 @@ function submitSession() {
     fetch(APP_BASE + 'push/updateDevSession.php', { method:'POST', body:fd })
       .then(function(r) { return r.json(); })
       .then(function(res) {
-        console.log('[SAVE] server response:', JSON.stringify(res));
         if (res.error) throw new Error(res.error);
         devCache[_sessionGame] = undefined;
-        loadDevData(_sessionGame);
+        loadDevData(_sessionGame, true);
         forceCloseSessionDialog();
       })
       .catch(function(e) {

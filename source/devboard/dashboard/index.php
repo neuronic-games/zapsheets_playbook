@@ -815,12 +815,16 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 /* tighter padding inside obs pairs so row shrinks to the height of the UP/DN buttons */
 .obs-ta-wrap .field-textarea,.obs-ta-wrap .obs-editable { flex:1; padding:.3rem .5rem; }
 .obs-sol-col  .field-textarea,.obs-sol-col  .obs-editable { padding:.3rem .5rem; }
-/* icon button overlays textarea at top-right; hidden when obs has text (they share the space) */
+/* Upload button: overlays top-right of textarea; hidden when obs has text */
 .obs-ta-wrap.has-obs-text .obs-img-btn { display:none; }
-/* image/trash button: square, anchored to top-right of the textarea */
 .obs-img-btn { position:absolute; top:.3rem; right:.3rem; width:1.55rem; height:1.55rem; background:rgba(255,255,255,.88); border:1px solid #d0d8e4; border-radius:5px; cursor:pointer; color:#99a; display:flex; align-items:center; justify-content:center; z-index:2; backdrop-filter:blur(2px); transition:color .15s,background .15s,border-color .15s; padding:0; }
 .obs-img-btn:hover { color:#1a5f7a; background:#fff; border-color:#a0b8c8; }
-.obs-img-preview img { width:100%; display:block; pointer-events:none; }
+/* Preview container: relative so trash button can anchor to it */
+.obs-img-preview { position:relative; }
+.obs-img-preview img { width:100%; display:block; }
+/* Trash button: always inside the preview div, visible only when preview is showing */
+.obs-img-trash { position:absolute; top:.3rem; right:.3rem; width:1.55rem; height:1.55rem; background:rgba(255,255,255,.92); border:1px solid #e8c0c0; border-radius:5px; cursor:pointer; color:#c0392b; display:flex; align-items:center; justify-content:center; z-index:3; backdrop-filter:blur(2px); padding:0; transition:background .15s,border-color .15s; }
+.obs-img-trash:hover { background:#fff0f0; border-color:#c0392b; }
 
 /* ── Session metadata: mobile-first (column), side-by-side on wide screens ── */
 .session-meta-wrap { display:flex; flex-direction:column; gap:.9rem; }
@@ -4157,34 +4161,23 @@ function toggleObsImgBtn(idx) {
   wrap.classList.toggle('has-obs-text', _ceGet(ta).trim().length > 0);
 }  // obs pair idx → uploaded image URL
 
-var _SVG_IMG  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
-var _SVG_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
-
-// Single dispatch — routes to upload or remove based on data-mode attribute on the button.
-// Using data-mode (set in _showObsImage / _removeObsImage) instead of _obsImages key lookup
-// avoids any integer-vs-string key mismatch in the _obsImages object.
-function _obsImgBtnClick(idx) {
-  var btn = _obsImgBtnEl(idx);
-  if (btn && btn.dataset.mode === 'remove') { _removeObsImage(idx); } else { triggerObsImageUpload(idx); }
-}
-
-function _obsImgBtnEl(idx) {
-  var ta = document.getElementById('sObs-' + idx);
-  var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
-  return wrap ? wrap.querySelector('.obs-img-btn') : null;
-}
-
 function _showObsImage(idx, url) {
   _obsImages[idx] = url;
   var ta   = document.getElementById('sObs-' + idx);
   var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
   var pair = ta ? ta.closest('.obs-pair')    : null;
   var pv   = document.getElementById('sImgPreview-' + idx);
-  var btn  = _obsImgBtnEl(idx);
   if (ta)   ta.style.display = 'none';
-  if (wrap) wrap.classList.remove('has-obs-text');  // always show btn
-  if (pv) { pv.style.display = 'block'; pv.innerHTML = '<img src="' + esc(url) + '" alt="observation image">'; }
-  if (btn) { btn.innerHTML = _SVG_TRASH; btn.title = 'Remove image'; btn.style.color = '#c0392b'; btn.dataset.mode = 'remove'; }
+  if (wrap) wrap.classList.remove('has-obs-text');
+  if (pv) {
+    // Rebuild preview with trash button + image
+    pv.style.display = 'block';
+    pv.innerHTML =
+      '<button type="button" class="obs-img-trash" onclick="_removeObsImage(' + idx + ')" title="Remove image">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>' +
+      '</button>' +
+      '<img src="' + esc(url) + '" alt="observation image">';
+  }
   // Treat image as data — promote pair and add trailing empty row if it was last
   if (pair) {
     var pairs = document.querySelectorAll('#obsContainer .obs-pair');
@@ -4203,10 +4196,8 @@ function _removeObsImage(idx) {
   var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
   var pair = ta ? ta.closest('.obs-pair')    : null;
   var pv   = document.getElementById('sImgPreview-' + idx);
-  var btn  = _obsImgBtnEl(idx);
   if (ta)   { ta.style.display = ''; toggleObsImgBtn(idx); }
   if (pv)   { pv.style.display = 'none'; pv.innerHTML = ''; }
-  if (btn)  { btn.innerHTML = _SVG_IMG; btn.title = 'Attach image'; btn.style.color = ''; btn.dataset.mode = 'upload'; }
   // Re-mark as empty if no text and no solution
   if (pair) {
     var sol = _ceGet(document.getElementById('sSol-' + idx));
@@ -4250,8 +4241,12 @@ function addObsPair() {
               ' onblur="_ceNorm(this)"' +
               ' oninput="_autoBullet(this);_ceNorm(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ');toggleObsImgBtn(' + idx + ')"' +
               ' onkeydown="onObsKeydown(event,' + idx + ',0)"></div>' +
-            '<div class="obs-img-preview" id="sImgPreview-' + idx + '" style="display:none"></div>' +
-            '<button type="button" class="obs-img-btn" data-mode="upload" onclick="_obsImgBtnClick(' + idx + ')" title="Attach image">' +
+            '<div class="obs-img-preview" id="sImgPreview-' + idx + '" style="display:none">' +
+              '<button type="button" class="obs-img-trash" onclick="_removeObsImage(' + idx + ')" title="Remove image" style="pointer-events:auto">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>' +
+              '</button>' +
+            '</div>' +
+            '<button type="button" class="obs-img-btn" onclick="triggerObsImageUpload(' + idx + ')" title="Attach image">' +
               '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none">' +
                 '<rect x="3" y="3" width="18" height="18" rx="2"/>' +
                 '<circle cx="8.5" cy="8.5" r="1.5"/>' +

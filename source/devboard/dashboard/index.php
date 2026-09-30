@@ -1766,10 +1766,8 @@ function renderPublishersView() {
       var sortedEsts = g.estimates.slice().sort(function(a, b) {
         var da = new Date(a.date || 0), db = new Date(b.date || 0);
         if (db - da !== 0) return db - da;
-        // Same date: sort by estimate_num descending (higher = newer)
-        var na = parseFloat(a.estimate_num) || 0;
-        var nb = parseFloat(b.estimate_num) || 0;
-        return nb - na;
+        // Same date: sort by insertion order descending (higher index = newer)
+        return ESTIMATES_RAW.indexOf(b) - ESTIMATES_RAW.indexOf(a);
       });
       sortedEsts.forEach(function(est) {
         var amtFmt = est.amount ? '$' + parseFloat(est.amount).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
@@ -1823,7 +1821,9 @@ function renderPublishersView() {
       // Contracts for this game — sort latest date first (reverse of sheet order)
       var sortedCons = g.contracts.slice().sort(function(a, b) {
         var da = new Date(a.Date || 0), db = new Date(b.Date || 0);
-        return db - da;
+        if (db - da !== 0) return db - da;
+        // Same date: sort by insertion order descending (higher index = newer)
+        return CONTRACT_RAW.indexOf(b) - CONTRACT_RAW.indexOf(a);
       });
       sortedCons.forEach(function(con) {
         var quoteNum = parseFloat(con.Quote || '');
@@ -1863,7 +1863,7 @@ function renderPublishersView() {
         var conType     = (con.Type || '').trim() || 'Contract';
         html += '<div class="contract-del-row" id="cdel-row-' + dataIdx + '">';
         if (conFilesUrl) {
-          var conShareSubject = encodeURIComponent((g.name || '') + ' ' + conType + ' - ' + (con.ID || ''));
+          var conShareSubject = encodeURIComponent((g.name || '') + ' ' + conType + ' - ' + (con['Ref Number'] || ''));
           var conShareBody    = encodeURIComponent('Download ' + conType + ': ' + conFilesUrl);
           html += '<button type="button" class="btn-contract-action" onclick="event.stopPropagation();window.open(\'mailto:?subject=' + conShareSubject + '&body=' + conShareBody + '\',\'_self\')">✉ Share</button>';
         }

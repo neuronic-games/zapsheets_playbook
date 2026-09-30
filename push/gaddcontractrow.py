@@ -9,7 +9,7 @@
 # Returns: { ok, contract_id, row }
 
 import gspread
-import sys, os, json, base64, secrets
+import sys, os, json, base64, hashlib, time as _time
 
 credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
 if not os.path.exists(credFileName):
@@ -96,7 +96,21 @@ if id_col >= 0:
         except (ValueError, TypeError):
             pass
 
-# Generate a unique random Ref Number and persist it to a registry file
+# Generate a unique alphanumeric Ref Number derived from time + game + client.
+# SHA-256 of nanosecond timestamp + game + client, encoded as 8-char base-36
+# (digits 0–9 and uppercase A–Z).  Nanosecond precision makes collisions
+# effectively impossible; the registry is kept as a safety net only.
+_raw    = f"{_time.time_ns()}-{game}-{client}"
+_digest = hashlib.sha256(_raw.encode()).hexdigest()
+_ALPHA  = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+_num    = int(_digest[:12], 16)   # 48 bits of entropy
+ref_code = ''
+while _num:
+    ref_code = _ALPHA[_num % 36] + ref_code
+    _num //= 36
+ref_code = ref_code.zfill(8)[:8]   # always 8 uppercase alphanumeric chars
+
+# Persist to registry for auditability / collision detection
 base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 reg_path = os.path.join(base_dir, 'sheets', sheet_id, 'ref_codes.json')
 registry = []
@@ -108,15 +122,6 @@ if os.path.exists(reg_path):
             registry = _data
     except Exception:
         registry = []
-
-ref_code = ''
-for _ in range(50):
-    candidate = str(secrets.randbelow(900000) + 100000)  # 100000–999999
-    if candidate not in registry:
-        ref_code = candidate
-        break
-if not ref_code:
-    ref_code = str(secrets.randbelow(9000000000) + 1000000000)  # 10-digit fallback
 
 registry.append(ref_code)
 os.makedirs(os.path.dirname(reg_path), exist_ok=True)

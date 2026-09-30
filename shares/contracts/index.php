@@ -10,7 +10,7 @@
  */
 error_reporting(0);
 
-$token = preg_replace('/[^a-f0-9]/', '', $_GET['token'] ?? '');
+$token = preg_replace('/[^A-Za-z0-9]/', '', $_GET['token'] ?? '');
 if (!$token) { http_response_code(404); echo 'Not found'; exit; }
 
 $base     = dirname(dirname(__DIR__));   // app root (two levels up from shares/contracts/)

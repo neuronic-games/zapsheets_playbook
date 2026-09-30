@@ -880,7 +880,7 @@ body.session-dialog-open .session-body img { display:none !important; }
     <div class="top-tab-btns">
       <button class="top-tab"        id="tabDash"       onclick="switchTab('dash')">Board</button>
       <button class="top-tab active" id="tabGames"      onclick="switchTab('games')">Games</button>
-      <button class="top-tab"        id="tabPublishers" onclick="switchTab('publishers')"><?= $_client_count ?> Publishers</button>
+      <button class="top-tab"        id="tabPublishers" onclick="switchTab('publishers')">Contracts</button>
     </div>
 
     <div class="account-menu-wrap">
@@ -920,8 +920,17 @@ body.session-dialog-open .session-body img { display:none !important; }
   <div class="content" id="cardList"></div>
 </div>
 
-<!-- View: Publishers -->
+<!-- View: Publishers / Contracts -->
 <div class="view" id="view-publishers">
+  <div class="search-bar">
+    <div class="search-wrap" id="contractsSearchWrap">
+      <input type="text" id="contractsSearchInput" placeholder="Search publishers, games, contracts…"
+        oninput="onContractsSearch()" autocomplete="off" spellcheck="false"
+        onkeydown="if(event.key==='Escape'){clearContractsSearch();this.blur();event.stopPropagation();}" />
+      <button class="search-clear" onclick="clearContractsSearch()">✕</button>
+    </div>
+    <button class="add-game-btn" onclick="openNewContractDialog()">+ Contract</button>
+  </div>
   <div class="publishers-view-wrap" id="publishersViewWrap"></div>
 </div>
 
@@ -984,6 +993,10 @@ body.session-dialog-open .session-body img { display:none !important; }
   <div class="estimate-dialog">
     <h2>New Contract — <span id="estimateClientLabel"></span></h2>
     <input type="hidden" id="estimateClient" />
+    <label class="ge-label" id="estimateClientFieldWrap">Publisher / Client
+      <input type="text" id="estimateClientVisible" class="ge-input" list="estimateClientList" placeholder="Select or type a publisher name" autocomplete="off" oninput="_updateEstimateClient()" />
+      <datalist id="estimateClientList"></datalist>
+    </label>
     <label class="ge-label">Game
       <input type="text" id="estimateGame" class="ge-input" list="estimateGameList" placeholder="Select or type a game name" autocomplete="off" oninput="_seedScopeOfWork()" />
       <datalist id="estimateGameList"></datalist>
@@ -1692,8 +1705,34 @@ function renderPublishersView() {
 
   var publishers = Object.keys(byClient).sort().map(function(k) { return byClient[k]; });
 
+  // Filter by search query
+  if (_contractsQuery) {
+    var q = _contractsQuery;
+    publishers = publishers.filter(function(pub) {
+      if (pub.name.toLowerCase().indexOf(q) >= 0) return true;
+      // Check contracts
+      for (var ci = 0; ci < pub.contracts.length; ci++) {
+        var c = pub.contracts[ci];
+        if ((c.Game || '').toLowerCase().indexOf(q) >= 0) return true;
+        if ((c['Ref Number'] || '').toLowerCase().indexOf(q) >= 0) return true;
+        if ((c.Notes || '').toLowerCase().indexOf(q) >= 0) return true;
+      }
+      // Check estimates
+      var pubKey = pub.name.toLowerCase();
+      for (var ei = 0; ei < ESTIMATES_RAW.length; ei++) {
+        var e = ESTIMATES_RAW[ei];
+        if ((e.client || '').trim().toLowerCase() !== pubKey) continue;
+        if ((e.game || '').toLowerCase().indexOf(q) >= 0) return true;
+        if ((e.estimate_num || '').toLowerCase().indexOf(q) >= 0) return true;
+      }
+      return false;
+    });
+  }
+
   if (!publishers.length) {
-    wrap.innerHTML = '<p class="publishers-empty">No publishers yet. Add contracts to see them here.</p>';
+    wrap.innerHTML = _contractsQuery
+      ? '<p class="publishers-empty">No results for "' + _contractsQuery + '".</p>'
+      : '<p class="publishers-empty">No publishers yet. Add contracts to see them here.</p>';
     return;
   }
 
@@ -1996,7 +2035,11 @@ function _seedScopeOfWork() {
 function _estimateIsDirty() {
   var game    = (document.getElementById('estimateGame').value      || '').trim();
   var price   = (document.getElementById('estimateUnitPrice').value || '').trim();
-  return game !== '' || price !== '';
+  var clientWrap = document.getElementById('estimateClientFieldWrap');
+  var clientVal  = (clientWrap && clientWrap.style.display !== 'none')
+    ? (document.getElementById('estimateClientVisible').value || '').trim()
+    : '';
+  return game !== '' || price !== '' || clientVal !== '';
 }
 
 function _estimateLog(msg, type) {
@@ -2020,7 +2063,27 @@ function openEstimateDialog(clientName, gameName) {
     }
   });
 
-  document.getElementById('estimateClientLabel').textContent = gameName || clientName;
+  // Populate client datalist from known contracts
+  var cdl = document.getElementById('estimateClientList');
+  cdl.innerHTML = '';
+  var knownClients = {};
+  CONTRACT_RAW.forEach(function(c) {
+    var n = (c.Client || '').trim();
+    if (n) knownClients[n.toLowerCase()] = n;
+  });
+  Object.keys(knownClients).sort().forEach(function(k) {
+    var opt = document.createElement('option');
+    opt.value = knownClients[k];
+    cdl.appendChild(opt);
+  });
+
+  // Show/hide client field depending on whether client is pre-set
+  var hasClient = !!(clientName || '').trim();
+  var clientWrap = document.getElementById('estimateClientFieldWrap');
+  clientWrap.style.display = hasClient ? 'none' : '';
+  document.getElementById('estimateClientVisible').value = '';
+
+  document.getElementById('estimateClientLabel').textContent = gameName || clientName || 'New Contract';
   document.getElementById('estimateClient').value            = clientName;
   document.getElementById('estimateGame').value              = gameName || '';
   document.getElementById('estimateType').value              = 'estimate';
@@ -2046,9 +2109,41 @@ function forceCloseEstimateDialog() {
   document.getElementById('estimateOverlay').classList.remove('open');
 }
 
+function _updateEstimateClient() {
+  var val = document.getElementById('estimateClientVisible').value.trim();
+  document.getElementById('estimateClient').value = val;
+  document.getElementById('estimateClientLabel').textContent = val || 'New Contract';
+}
+
+function openNewContractDialog() {
+  openEstimateDialog('', '');
+  setTimeout(function() { document.getElementById('estimateClientVisible').focus(); }, 50);
+}
+
+var _contractsQuery = '';
+function onContractsSearch() {
+  var inp = document.getElementById('contractsSearchInput');
+  _contractsQuery = (inp ? inp.value : '').toLowerCase().trim();
+  var sw = document.getElementById('contractsSearchWrap');
+  if (sw) sw.classList.toggle('has-text', !!_contractsQuery);
+  renderPublishersView();
+}
+function clearContractsSearch() {
+  var inp = document.getElementById('contractsSearchInput');
+  if (inp) inp.value = '';
+  _contractsQuery = '';
+  var sw = document.getElementById('contractsSearchWrap');
+  if (sw) sw.classList.remove('has-text');
+  renderPublishersView();
+}
+
 function submitEstimate() {
   var game      = document.getElementById('estimateGame').value.trim();
   var unitPrice = document.getElementById('estimateUnitPrice').value.trim();
+  var client    = document.getElementById('estimateClient').value.trim();
+  var clientWrap = document.getElementById('estimateClientFieldWrap');
+  var clientRequired = clientWrap && clientWrap.style.display !== 'none';
+  if (clientRequired && !client) { _estimateLog('Please enter a publisher name.', 'error'); return; }
   if (!game)      { _estimateLog('Please enter a game name.', 'error'); return; }
   if (!unitPrice) { _estimateLog('Please enter a unit price.', 'error'); return; }
 

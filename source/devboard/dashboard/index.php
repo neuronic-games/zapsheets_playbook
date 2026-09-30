@@ -4209,8 +4209,16 @@ function _removeObsImage(idx) {
   var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
   var pair = ta ? ta.closest('.obs-pair')    : null;
   var pv   = document.getElementById('sImgPreview-' + idx);
+  console.log('[DevBoard] ta=', ta, 'pv=', pv, 'wrap=', wrap);
   if (ta)   { ta.style.display = ''; toggleObsImgBtn(idx); }
-  if (pv)   { pv.style.display = 'none'; pv.innerHTML = ''; }
+  if (pv) {
+    console.log('[DevBoard] pv display before:', pv.style.display, 'computed:', getComputedStyle(pv).display);
+    pv.style.display = 'none';
+    pv.innerHTML = '';
+    console.log('[DevBoard] pv display after:', pv.style.display, 'computed:', getComputedStyle(pv).display);
+  } else {
+    console.error('[DevBoard] pv NOT FOUND for sImgPreview-' + idx);
+  }
   // Re-mark as empty if no text and no solution
   if (pair) {
     var sol = _ceGet(document.getElementById('sSol-' + idx));

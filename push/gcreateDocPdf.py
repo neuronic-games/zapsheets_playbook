@@ -313,14 +313,16 @@ col_num  = ML + 360
 c.setFont('Helvetica-Bold', 9)
 c.setFillColor(DARK)
 c.drawString(col_prep, Y_LBL, 'Prepared for')
-c.drawString(col_due,  Y_LBL, 'Due Date')
+if timeline_str:
+    c.drawString(col_due, Y_LBL, 'Due Date')
 c.drawString(col_num,  Y_LBL, f'{doc_type} #')
 
 c.setFont('Helvetica', 10)
 c.setFillColor(DARK)
 c.drawString(col_prep, Y_VAL, client or '—')
 
-c.drawString(col_due, Y_VAL, timeline_str or '—')
+if timeline_str:
+    c.drawString(col_due, Y_VAL, timeline_str)
 
 c.drawString(col_num, Y_VAL, doc_num)
 
@@ -479,6 +481,18 @@ c.drawString(num_left - lbl_width, LARGE_TOTAL_Y + 4, lbl_str)
 c.setFont('Helvetica-Bold', 28)
 c.setFillColor(ORANGE)
 c.drawRightString(num_right, LARGE_TOTAL_Y, num_str)
+
+# ── Estimate reference (invoices based on an estimate) ─────────────────────────
+if doc_type == 'Invoice' and estimate_num:
+    EST_REF_Y = LARGE_TOTAL_Y - 48
+    c.setStrokeColor(SEP_GRAY)
+    c.setLineWidth(0.5)
+    c.line(ML, EST_REF_Y + 16, PAGE_W - MR, EST_REF_Y + 16)
+    c.setFont('Helvetica-Bold', 9)
+    c.setFillColor(DARK)
+    c.drawString(ML, EST_REF_Y, 'Estimate Reference')
+    c.setFont('Helvetica', 10)
+    c.drawString(ML, EST_REF_Y - 14, estimate_num)
 
 # ── Save PDF ───────────────────────────────────────────────────────────────────
 c.save()

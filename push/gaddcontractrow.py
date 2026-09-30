@@ -70,7 +70,6 @@ def col(name):
     try: return headers.index(name)
     except ValueError: return -1
 
-id_col       = col('ID')
 date_col     = col('Date')
 game_col     = col('Game')
 client_col   = col('Client')
@@ -85,16 +84,6 @@ type_col         = col('Type')
 ref_num_col      = col('Ref Number')
 notes_col        = col('Notes')
 scope_col        = col('Description')
-
-# Determine next sequential ID
-next_id = 1
-if id_col >= 0:
-    for row in existing[1:]:
-        cell = str(row[id_col]).strip() if id_col < len(row) else ''
-        try:
-            next_id = max(next_id, int(float(cell)) + 1)
-        except (ValueError, TypeError):
-            pass
 
 # Generate a unique alphanumeric Ref Number derived from time + game + client.
 # SHA-256 of nanosecond timestamp + game + client, encoded as 8-char base-36
@@ -134,7 +123,6 @@ except Exception:
 # Build new row matching the header width
 num_cols = len(headers)
 new_row  = [''] * num_cols
-if id_col       >= 0: new_row[id_col]       = str(next_id)
 if date_col     >= 0: new_row[date_col]     = date_val
 if game_col     >= 0: new_row[game_col]     = game
 if client_col   >= 0: new_row[client_col]   = client
@@ -156,21 +144,4 @@ except Exception as e:
     print(json.dumps({"error": f"Could not append row: {str(e)}"}))
     sys.exit(1)
 
-# Re-read to get the appended row (and any formula-computed ID)
-try:
-    all_values = ws.get_all_values()  # FORMATTED_VALUE by default
-except Exception as e:
-    print(json.dumps({"error": f"Could not re-read after append: {str(e)}"}))
-    sys.exit(1)
-
-new_row_idx  = len(all_values)       # 1-based sheet row index of new row
-last_row     = all_values[-1] if all_values else []
-
-# Get the ID from the sheet (formula result) or fall back to row index
-contract_id = ''
-if id_col >= 0 and id_col < len(last_row):
-    contract_id = str(last_row[id_col]).strip()
-if not contract_id:
-    contract_id = str(next_id)
-
-print(json.dumps({"ok": True, "contract_id": contract_id, "row": new_row_idx, "ref_code": ref_code}))
+print(json.dumps({"ok": True, "contract_id": ref_code, "row": -1, "ref_code": ref_code}))

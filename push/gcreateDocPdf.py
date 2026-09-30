@@ -524,8 +524,8 @@ if doc_id and os.path.exists(CRED_FILE):
                     headers.append('Files')
                 else:
                     files_col_idx = headers.index('Files')
-                id_col = headers.index('ID') if 'ID' in headers else -1
-                # Find matching row
+                id_col = headers.index('Ref Number') if 'Ref Number' in headers else -1
+                # Find matching row by Ref Number
                 target_row = -1
                 for i, row in enumerate(rows[1:], start=2):
                     row_id = str(row[id_col]).strip() if 0 <= id_col < len(row) else ''

@@ -62,7 +62,7 @@ if ($docId) {
     if (file_exists($contractsFile)) {
         $contracts = json_decode(file_get_contents($contractsFile), true) ?: [];
         foreach ($contracts as $c) {
-            if ((string)($c['ID'] ?? '') === (string)$docId) {
+            if ((string)($c['Ref Number'] ?? '') === (string)$docId) {
                 $refCode = $c['Ref Number'] ?? '';
                 break;
             }
@@ -117,7 +117,7 @@ if (!empty($result['ok']) && !empty($result['url']) && $docId) {
     if (file_exists($contractsFile)) {
         $contracts = json_decode(file_get_contents($contractsFile), true) ?: [];
         foreach ($contracts as &$c) {
-            if ((string)($c['ID'] ?? '') === (string)$docId) {
+            if ((string)($c['Ref Number'] ?? '') === (string)$docId) {
                 $c['Files'] = $result['url'];
                 break;
             }

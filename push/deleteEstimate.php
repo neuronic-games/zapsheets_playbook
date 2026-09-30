@@ -53,7 +53,7 @@ if ($tab) {
         $rel = substr($rel, strlen($basePath) + 1);
     }
 
-    if (preg_match('#^shares/contracts/([a-f0-9]{12})$#', $rel, $m)) {
+    if (preg_match('#^shares/contracts/([A-Za-z0-9]+)$#', $rel, $m)) {
         // New share-token format: delete share JSON + private PDF
         $hash     = $m[1];
         $jsonFile = $base . '/shares/contracts/' . $hash . '.json';
@@ -102,7 +102,7 @@ if (!empty($result['ok'])) {
         if (file_exists($conFile)) {
             $contracts = json_decode(file_get_contents($conFile), true) ?: [];
             $contracts = array_values(array_filter($contracts, function($r) use ($contractId) {
-                return (string)($r['ID'] ?? '') !== (string)$contractId;
+                return (string)($r['Ref Number'] ?? '') !== (string)$contractId;
             }));
             file_put_contents($conFile, json_encode($contracts, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
         }

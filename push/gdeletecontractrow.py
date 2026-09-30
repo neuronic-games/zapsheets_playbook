@@ -1,7 +1,7 @@
-# gdeletecontractrow.py — delete a row from the contracts sheet by its ID value.
+# gdeletecontractrow.py — delete a row from the contracts sheet by its Ref Number.
 #
 # Arg:     "{sheet_id}|{base64_encoded_json}"
-# JSON:    { "contract_id": "15" }
+# JSON:    { "contract_id": "3KX7M2A9" }   ← Ref Number value
 # Returns: {"ok": true, "deleted_row": 5}
 #       or {"error": "..."}
 
@@ -64,9 +64,9 @@ if not rows:
 
 headers = [h.strip() for h in rows[0]]
 try:
-    id_col = headers.index('ID')
+    id_col = headers.index('Ref Number')
 except ValueError:
-    print(json.dumps({"error": "ID column not found in contracts sheet"}))
+    print(json.dumps({"error": "Ref Number column not found in contracts sheet"}))
     sys.exit(1)
 
 # Find the row index (1-based, row 1 = header)

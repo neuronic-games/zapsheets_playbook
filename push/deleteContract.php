@@ -3,7 +3,7 @@
 //
 // POST params:
 //   id          — Google Spreadsheet ID
-//   contract_id — Value in the ID column of the row to delete
+//   contract_id — Ref Number of the row to delete
 
 error_reporting(0);
 ini_set('display_errors', '0');
@@ -55,8 +55,8 @@ function deleteLinkedPdf($fileUrl) {
         $rel = substr($rel, strlen($basePath) + 1);
     }
 
-    // New share-token format: shares/contracts/{12-char hex hash}
-    if (preg_match('#^shares/contracts/([a-f0-9]{12})$#', $rel, $m)) {
+    // Share-token format: shares/contracts/{alphanumeric token}
+    if (preg_match('#^shares/contracts/([A-Za-z0-9]+)$#', $rel, $m)) {
         $hash     = $m[1];
         $jsonFile = $base . '/shares/contracts/' . $hash . '.json';
         if (file_exists($jsonFile)) {
@@ -85,14 +85,14 @@ if (!empty($result['ok'])) {
         $rows = json_decode(file_get_contents($contractsPath), true) ?: [];
 
         foreach ($rows as $r) {
-            if ((string)($r['ID'] ?? '') === (string)$contractId) {
+            if ((string)($r['Ref Number'] ?? '') === (string)$contractId) {
                 $fileUrl = $r['Files'] ?? '';
                 break;
             }
         }
 
         $rows = array_values(array_filter($rows, function($r) use ($contractId) {
-            return (string)($r['ID'] ?? '') !== (string)$contractId;
+            return (string)($r['Ref Number'] ?? '') !== (string)$contractId;
         }));
         file_put_contents($contractsPath, json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     }

@@ -1,4 +1,4 @@
-# gupdatecontract.py — update a contract row in the contracts sheet by ID
+# gupdatecontract.py — update a contract row in the contracts sheet by Ref Number
 # Arg: {sheet_id}|{base64_encoded_json}
 # JSON keys: contract_id, game, client, target_start_date, target_end_date,
 #            start_date, end_date, quote, payment, notes
@@ -66,12 +66,12 @@ def col(name):
     except ValueError:
         return -1
 
-id_col = col('ID')
+id_col = col('Ref Number')
 if id_col < 0:
-    print(json.dumps({"error": "ID column not found in contracts sheet"}))
+    print(json.dumps({"error": "Ref Number column not found in contracts sheet"}))
     sys.exit(1)
 
-# Find the row matching contract_id
+# Find the row matching contract_id (Ref Number value)
 row_idx = None
 for i, row in enumerate(records[1:], start=2):  # 1-based, row 1 is header
     if str(row[id_col]).strip() == contract_id:
@@ -79,7 +79,7 @@ for i, row in enumerate(records[1:], start=2):  # 1-based, row 1 is header
         break
 
 if row_idx is None:
-    print(json.dumps({"error": f"Contract ID {contract_id} not found"}))
+    print(json.dumps({"error": f"Contract Ref Number {contract_id} not found"}))
     sys.exit(1)
 
 # Build update map: column letter → value

@@ -20,28 +20,10 @@ if (!$sheetId || !$client) {
     exit;
 }
 
-// Determine next contract ID from local cache
-$cacheDir  = __DIR__ . '/../sheets/' . $sheetId;
-$cacheFile = $cacheDir . '/contracts.json';
-$nextId    = 1;
-
-if (file_exists($cacheFile)) {
-    $rows = json_decode(file_get_contents($cacheFile), true);
-    if (is_array($rows) && count($rows)) {
-        $maxId = 0;
-        foreach ($rows as $row) {
-            $id = intval($row['ID'] ?? $row['id'] ?? 0);
-            if ($id > $maxId) $maxId = $id;
-        }
-        $nextId = $maxId + 1;
-    }
-}
-
 // Format today's date
 $today = date('Y-m-d');
 
 $row = [
-    'ID'               => (string) $nextId,
     'Date'             => $today,
     'Game'             => $game,
     'Client'           => $client,

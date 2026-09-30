@@ -85,6 +85,10 @@ ref_num_col      = col('Ref Number')
 notes_col        = col('Notes')
 scope_col        = col('Description')
 
+if ref_num_col < 0:
+    print(json.dumps({"error": "Ref Number column not found in contracts sheet header"}))
+    sys.exit(1)
+
 # Generate a unique alphanumeric Ref Number derived from time + game + client.
 # SHA-256 of nanosecond timestamp + game + client, encoded as 8-char base-36
 # (digits 0–9 and uppercase A–Z).  Nanosecond precision makes collisions
@@ -99,26 +103,25 @@ while _num:
     _num //= 36
 ref_code = ref_code.zfill(8)[:8]   # always 8 uppercase alphanumeric chars
 
-# Persist to registry for auditability / collision detection
-base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-reg_path = os.path.join(base_dir, 'sheets', sheet_id, 'ref_codes.json')
-registry = []
-if os.path.exists(reg_path):
-    try:
-        with open(reg_path, 'r', encoding='utf-8') as _f:
-            _data = json.load(_f)
-        if isinstance(_data, list):
-            registry = _data
-    except Exception:
-        registry = []
-
-registry.append(ref_code)
-os.makedirs(os.path.dirname(reg_path), exist_ok=True)
+# Persist to registry for auditability / collision detection (entirely non-fatal)
 try:
+    base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+    reg_path = os.path.join(base_dir, 'sheets', sheet_id, 'ref_codes.json')
+    registry = []
+    if os.path.exists(reg_path):
+        try:
+            with open(reg_path, 'r', encoding='utf-8') as _f:
+                _data = json.load(_f)
+            if isinstance(_data, list):
+                registry = _data
+        except Exception:
+            registry = []
+    registry.append(ref_code)
+    os.makedirs(os.path.dirname(reg_path), exist_ok=True)
     with open(reg_path, 'w', encoding='utf-8') as _f:
         json.dump(registry, _f)
 except Exception:
-    pass   # non-fatal; sheet still gets the code
+    pass   # non-fatal; row still gets the ref code
 
 # Build new row matching the header width
 num_cols = len(headers)

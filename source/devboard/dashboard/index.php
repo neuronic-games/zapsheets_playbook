@@ -3915,12 +3915,6 @@ function submitSession() {
     if (obs || sol) obsPairs.push({ obs: obs, sol: sol });
   });
 
-  if (!obsPairs.length) {
-    err.textContent = 'At least one observation is required.';
-    err.style.display = 'block';
-    return;
-  }
-
   var date       = document.getElementById('sDate').value || todayISO();
   var eventType  = document.getElementById('sType').value;
   var sessionNum = document.getElementById('sTestNum').value.trim();
@@ -3997,6 +3991,13 @@ function submitSession() {
         console.error('Save error:', e.message);
         err.style.display = 'block';
       });
+    return;
+  }
+
+  // ── Add mode: require at least one observation ───────────────────────────────
+  if (!obsPairs.length) {
+    err.textContent = 'At least one observation is required.';
+    err.style.display = 'block';
     return;
   }
 
@@ -4233,26 +4234,6 @@ function _removeObsImage(idx) {
     var sol = _ceGet(document.getElementById('sSol-' + idx));
     if (!sol.trim()) pair.classList.add('obs-pair-empty');
   }
-  // DEBUG: RAF bounding-rect check + 100ms/800ms img scans
-  var _dbgIdx = idx; var _dbgPv = newPv;
-  requestAnimationFrame(function() {
-    var r = _dbgPv ? _dbgPv.getBoundingClientRect() : null;
-    console.log('[DV] RAF pv rect:', r ? (r.width + 'x' + r.height + ' @' + Math.round(r.top) + ',' + Math.round(r.left)) : 'gone');
-    var allInPair = pair ? Array.from(pair.querySelectorAll('img, [style*="background"]')).map(function(el) { return el.tagName + '#' + el.id + '.' + el.className; }) : [];
-    console.log('[DV] RAF pair children with img:', allInPair);
-  });
-  function _dbgLog(label) {
-    var pv2 = document.getElementById('sImgPreview-' + _dbgIdx);
-    var cs2 = pv2 ? getComputedStyle(pv2) : null;
-    console.log('[DV]', label, '| pv d:', cs2 ? cs2.display : 'gone', '| pv children:', pv2 ? pv2.childElementCount : 'gone');
-    var imgs = Array.from(document.querySelectorAll('body img'));
-    console.log('[DV]', label, 'imgs:', imgs.map(function(im) {
-      var anc = im.closest('[id]'); var cs = getComputedStyle(im);
-      return (anc ? anc.id : '?') + ' d:' + cs.display + ' src:' + im.src.slice(-35);
-    }));
-  }
-  setTimeout(function() { _dbgLog('100ms'); }, 100);
-  setTimeout(function() { _dbgLog('800ms'); }, 800);
 }
 
 function triggerObsImageUpload(idx) {

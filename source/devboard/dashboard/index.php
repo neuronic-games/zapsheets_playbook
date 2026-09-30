@@ -4214,24 +4214,37 @@ function _removeObsImage(idx) {
   var pv   = document.getElementById('sImgPreview-' + idx);
   // Show the textarea explicitly
   if (ta) { ta.style.display = 'block'; toggleObsImgBtn(idx); }
-  // Forcibly hide and empty the preview container
-  if (pv) {
-    pv.style.cssText = 'display:none';
-    while (pv.firstChild) pv.removeChild(pv.firstChild);
+  // Replace pv entirely with a fresh empty hidden element (eliminates render cache)
+  var newPv = null;
+  if (pv && pv.parentElement) {
+    var pvParent = pv.parentElement;
+    var pvNext   = pv.nextSibling;
+    pv.remove();
+    newPv = document.createElement('div');
+    newPv.className  = 'obs-img-preview';
+    newPv.id         = 'sImgPreview-' + idx;
+    newPv.style.display = 'none';
+    if (pvNext) pvParent.insertBefore(newPv, pvNext);
+    else        pvParent.appendChild(newPv);
   }
-  // Remove any stray <img> anywhere in this pair (belt-and-suspenders)
+  // Remove any stray <img> anywhere in this pair
   if (pair) {
     pair.querySelectorAll('img').forEach(function(img) { img.remove(); });
     var sol = _ceGet(document.getElementById('sSol-' + idx));
     if (!sol.trim()) pair.classList.add('obs-pair-empty');
   }
-  // DEBUG: check pv + all imgs at 100ms and 800ms
-  var _dbgIdx = idx;
+  // DEBUG: RAF bounding-rect check + 100ms/800ms img scans
+  var _dbgIdx = idx; var _dbgPv = newPv;
+  requestAnimationFrame(function() {
+    var r = _dbgPv ? _dbgPv.getBoundingClientRect() : null;
+    console.log('[DV] RAF pv rect:', r ? (r.width + 'x' + r.height + ' @' + Math.round(r.top) + ',' + Math.round(r.left)) : 'gone');
+    var allInPair = pair ? Array.from(pair.querySelectorAll('img, [style*="background"]')).map(function(el) { return el.tagName + '#' + el.id + '.' + el.className; }) : [];
+    console.log('[DV] RAF pair children with img:', allInPair);
+  });
   function _dbgLog(label) {
     var pv2 = document.getElementById('sImgPreview-' + _dbgIdx);
     var cs2 = pv2 ? getComputedStyle(pv2) : null;
-    console.log('[DV]', label, '| body.open:', document.body.classList.contains('session-dialog-open'),
-      '| pv d:', cs2 ? cs2.display : 'gone', '| pv children:', pv2 ? pv2.childElementCount : 'gone');
+    console.log('[DV]', label, '| pv d:', cs2 ? cs2.display : 'gone', '| pv children:', pv2 ? pv2.childElementCount : 'gone');
     var imgs = Array.from(document.querySelectorAll('body img'));
     console.log('[DV]', label, 'imgs:', imgs.map(function(im) {
       var anc = im.closest('[id]'); var cs = getComputedStyle(im);

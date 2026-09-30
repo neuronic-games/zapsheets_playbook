@@ -3979,6 +3979,7 @@ function submitSession() {
     fetch(APP_BASE + 'push/updateDevSession.php', { method:'POST', body:fd })
       .then(function(r) { return r.json(); })
       .then(function(res) {
+        console.log('[SAVE] server response:', JSON.stringify(res));
         if (res.error) throw new Error(res.error);
         devCache[_sessionGame] = undefined;
         loadDevData(_sessionGame);

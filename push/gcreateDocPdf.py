@@ -350,9 +350,8 @@ CELL_PAD  = 12   # horizontal padding inside table cells
 T_LEFT    = ML
 T_TOTAL_R = PAGE_W - MR       # right edge for right-aligned totals
 
-# Estimate: 2 columns (Description | Total price)
-# Invoice:  4 columns (Description | Qty | Unit price | Total price)
-is_estimate = (doc_type == 'Estimate')
+# Both estimate and invoice use 2 columns (Description | Price)
+is_estimate = True
 T_QTY   = ML + 310
 T_UNIT  = ML + 370
 

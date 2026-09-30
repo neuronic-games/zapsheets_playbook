@@ -4159,8 +4159,10 @@ var _obsImages = {};
 document.addEventListener('click', function(e) {
   var btn = e.target.closest('.obs-img-trash');
   if (!btn) return;
+  console.log('[DevBoard] trash click caught, dataset=', btn.dataset, 'obsIdx=', btn.dataset.obsIdx);
   e.stopPropagation();
   var idx = parseInt(btn.dataset.obsIdx, 10);
+  console.log('[DevBoard] parsed idx=', idx, 'isNaN=', isNaN(idx));
   if (!isNaN(idx)) _removeObsImage(idx);
 });
 
@@ -4201,6 +4203,7 @@ function _showObsImage(idx, url) {
 }
 
 function _removeObsImage(idx) {
+  console.log('[DevBoard] _removeObsImage called, idx=', idx);
   delete _obsImages[idx];
   var ta   = document.getElementById('sObs-' + idx);
   var wrap = ta ? ta.closest('.obs-ta-wrap') : null;

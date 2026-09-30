@@ -148,7 +148,7 @@ elif due_date_end:
     timeline_parts.append(due_date_end)
 if duration and duration not in timeline_parts:
     timeline_parts.append(f'({duration})')
-timeline_str = '  '.join(timeline_parts) if timeline_parts else '—'
+timeline_str = '  '.join(timeline_parts) if timeline_parts else ''
 
 # ── Line items ─────────────────────────────────────────────────────────────────
 line_items = []

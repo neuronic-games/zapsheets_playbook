@@ -4209,13 +4209,14 @@ function _removeObsImage(idx) {
   var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
   var pair = ta ? ta.closest('.obs-pair')    : null;
   var pv   = document.getElementById('sImgPreview-' + idx);
-  console.log('[DevBoard] ta=', ta, 'pv=', pv, 'wrap=', wrap);
-  if (ta)   { ta.style.display = ''; toggleObsImgBtn(idx); }
+  console.log('[DevBoard] ta=', ta, 'ta.display=', ta ? ta.style.display : 'N/A');
+  console.log('[DevBoard] pv=', pv, 'pv.innerHTML=', pv ? pv.innerHTML.substring(0,200) : 'N/A');
+  if (ta)   { ta.style.display = ''; toggleObsImgBtn(idx); console.log('[DevBoard] ta.display now:', ta.style.display, 'ta.innerHTML:', ta.innerHTML.substring(0,200)); }
   if (pv) {
     console.log('[DevBoard] pv display before:', pv.style.display, 'computed:', getComputedStyle(pv).display);
     pv.style.display = 'none';
     pv.innerHTML = '';
-    console.log('[DevBoard] pv display after:', pv.style.display, 'computed:', getComputedStyle(pv).display);
+    console.log('[DevBoard] pv display after:', pv.style.display);
   } else {
     console.error('[DevBoard] pv NOT FOUND for sImgPreview-' + idx);
   }

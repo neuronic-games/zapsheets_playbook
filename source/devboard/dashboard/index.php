@@ -4154,6 +4154,16 @@ document.addEventListener('click', function(e) {
 var _obsCount = 0;
 var _obsImages = {};
 
+// Event delegation for trash buttons — handles clicks even after innerHTML replacement.
+// Buttons only need class obs-img-trash and data-obs-idx; no inline onclick required.
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('.obs-img-trash');
+  if (!btn) return;
+  e.stopPropagation();
+  var idx = parseInt(btn.dataset.obsIdx, 10);
+  if (!isNaN(idx)) _removeObsImage(idx);
+});
+
 function toggleObsImgBtn(idx) {
   var ta   = document.getElementById('sObs-' + idx);
   var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
@@ -4173,7 +4183,7 @@ function _showObsImage(idx, url) {
     // Rebuild preview with trash button + image
     pv.style.display = 'block';
     pv.innerHTML =
-      '<button type="button" class="obs-img-trash" onclick="_removeObsImage(' + idx + ')" title="Remove image">' +
+      '<button type="button" class="obs-img-trash" data-obs-idx="' + idx + '" title="Remove image">' +
         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>' +
       '</button>' +
       '<img src="' + esc(url) + '" alt="observation image">';
@@ -4242,7 +4252,7 @@ function addObsPair() {
               ' oninput="_autoBullet(this);_ceNorm(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ');toggleObsImgBtn(' + idx + ')"' +
               ' onkeydown="onObsKeydown(event,' + idx + ',0)"></div>' +
             '<div class="obs-img-preview" id="sImgPreview-' + idx + '" style="display:none">' +
-              '<button type="button" class="obs-img-trash" onclick="_removeObsImage(' + idx + ')" title="Remove image" style="pointer-events:auto">' +
+              '<button type="button" class="obs-img-trash" data-obs-idx="' + idx + '" title="Remove image">' +
                 '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>' +
               '</button>' +
             '</div>' +

@@ -110,13 +110,13 @@ if os.path.exists(reg_path):
         registry = []
 
 ref_code = ''
-for _ in range(30):
-    candidate = secrets.token_hex(6)   # 12 lowercase hex chars
+for _ in range(50):
+    candidate = str(secrets.randbelow(900000) + 100000)  # 100000–999999
     if candidate not in registry:
         ref_code = candidate
         break
 if not ref_code:
-    ref_code = secrets.token_hex(16)   # extreme fallback (32 chars)
+    ref_code = str(secrets.randbelow(9000000000) + 1000000000)  # 10-digit fallback
 
 registry.append(ref_code)
 os.makedirs(os.path.dirname(reg_path), exist_ok=True)

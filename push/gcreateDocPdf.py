@@ -133,7 +133,7 @@ def wrap_text(c_obj, text, font, size, max_width):
 today_obj  = datetime.today()
 today_disp = today_obj.strftime('%m/%d/%Y')
 
-doc_num = doc_id or today_obj.strftime('%Y%m%d')
+doc_num = ref_code if ref_code else (doc_id or today_obj.strftime('%Y%m%d'))
 due_date     = fmt_date(tgt_start)
 due_date_end = fmt_date(tgt_end)
 addr_lines = [l.strip() for l in my_address.replace('\r\n', '\n').split('\n') if l.strip()]

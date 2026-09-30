@@ -93,7 +93,11 @@ if ref_num_col < 0:
 # SHA-256 of nanosecond timestamp + game + client, encoded as 8-char base-36
 # (digits 0–9 and uppercase A–Z).  Nanosecond precision makes collisions
 # effectively impossible; the registry is kept as a safety net only.
-_raw    = f"{_time.time_ns()}-{game}-{client}"
+try:
+    _ts = _time.time_ns()
+except AttributeError:           # Python < 3.7
+    _ts = int(_time.time() * 1_000_000_000)
+_raw    = f"{_ts}-{game}-{client}"
 _digest = hashlib.sha256(_raw.encode()).hexdigest()
 _ALPHA  = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 _num    = int(_digest[:12], 16)   # 48 bits of entropy

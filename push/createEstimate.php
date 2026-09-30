@@ -55,11 +55,12 @@ $rowCmd     = escapeshellarg($pythonPath) . ' '
             . escapeshellarg($sheetId . '|' . $rowEncoded) . ' 2>&1';
 $rowOut     = trim((string) shell_exec($rowCmd));
 $rowResult  = json_decode($rowOut, true);
-$refCode = '';
-if (!empty($rowResult['ok'])) {
-    $docId   = $rowResult['contract_id'] ?? '';
-    $refCode = $rowResult['ref_code']    ?? '';
+if (empty($rowResult['ok'])) {
+    echo json_encode(['error' => $rowResult['error'] ?? ('Row script failed: ' . $rowOut)]);
+    exit;
 }
+$docId   = $rowResult['contract_id'] ?? '';
+$refCode = $rowResult['ref_code']    ?? '';
 
 $appDomain = rtrim($_ENV['APP_DOMAIN'] ?? 'http://localhost:8000', '/');
 $basePath  = trim($_ENV['BASE_PATH']  ?? '', '/');

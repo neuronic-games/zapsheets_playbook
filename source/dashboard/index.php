@@ -1163,7 +1163,7 @@ if ($_sheet_id && is_dir($_sheets_root)) {
     .notes-field-label .combo-wrap { width:100%; }
     .notes-field-label .combo-wrap input { font-size:.82rem; padding:.38rem .55rem; border-color:#ddd; }
     .notes-edit-area {
-      width:100%; min-height:6rem; font-family:'DINRegular',sans-serif;
+      width:100%; min-height:12rem; font-family:'DINRegular',sans-serif;
       font-size:.88rem; line-height:1.7; color:#222;
       border:1px solid #ddd; border-radius:6px;
       padding:.5rem .65rem; resize:vertical; outline:none;

@@ -646,13 +646,18 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   max-height:92vh; overflow-y:auto;
   touch-action:pan-y; -webkit-overflow-scrolling:touch;
 }
-.session-dialog h2 { font-family:'DINBlack',sans-serif; font-size:.95rem; text-transform:uppercase; letter-spacing:.07em; color:#1a5f7a; margin:0; display:flex; align-items:center; gap:.5rem; }
+.session-dialog h2 { font-family:'DINBlack',sans-serif; font-size:.95rem; text-transform:uppercase; letter-spacing:.07em; color:#1a5f7a; margin:0; display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
 .session-dialog h2 > span:not(.sw-display) { color:#1a1a2e; }
+.session-dialog-title { flex:1; min-width:0; }
 .sw-display { margin-left:auto; font-family:'DINBlack',sans-serif; font-size:.85rem; color:#e67e22; letter-spacing:.06em; display:none; }
 .sw-display.sw-active { display:block; }
 .rounds-wrap { display:flex; align-items:center; gap:.28rem; margin-left:auto; flex-shrink:0; }
-.rounds-btn { background:none; border:1.5px solid #d0d8e0; border-radius:5px; width:1.65rem; height:1.65rem; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; color:#999; font-family:'DINBlack',sans-serif; font-size:1rem; line-height:1; transition:border-color .15s,color .15s; padding:0; user-select:none; -webkit-user-select:none; }
+.rounds-btn { background:none; border:1.5px solid #d0d8e0; border-radius:5px; width:2.1rem; height:2.1rem; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; color:#999; font-family:'DINBlack',sans-serif; font-size:1.1rem; line-height:1; transition:border-color .15s,color .15s; padding:0; user-select:none; -webkit-user-select:none; }
 .rounds-btn:hover { border-color:#aaa; color:#555; }
+@media (max-width:500px) {
+  .session-dialog-title { flex-basis:100%; width:100%; }
+  .rounds-wrap { margin-left:0; }
+}
 .rounds-count { font-family:'DINBlack',sans-serif; font-size:1rem; color:#1a5f7a; min-width:1.6rem; text-align:center; letter-spacing:.02em; }
 .rounds-label { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#999; letter-spacing:.04em; text-transform:uppercase; }
 .sw-wrap { display:flex; align-items:center; margin-left:.6rem; flex-shrink:0; }
@@ -1426,7 +1431,7 @@ body.session-dialog-open .session-body img { display:none !important; }
 <div class="overlay" id="sessionOverlay" onclick="if(event.target===this){var _d=this.querySelector('.session-dialog');if(_editMode?isSessionDirty():hasSessionData())shakeDialog(_d);else closeSessionDialog();}">
   <div class="session-dialog">
     <h2>
-      <span id="sessionDialogAction">+ Session</span><span style="color:#1a5f7a"> — </span><span id="sessionGameTitle"></span>
+      <span class="session-dialog-title"><span id="sessionDialogAction">+ Session</span><span style="color:#1a5f7a"> — </span><span id="sessionGameTitle"></span></span>
       <div class="rounds-wrap" id="roundsWrap">
         <button type="button" class="rounds-btn" onclick="_roundsChange(-1)" title="Remove a round">−</button>
         <span class="rounds-count" id="roundsCount">0</span>

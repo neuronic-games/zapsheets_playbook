@@ -1237,7 +1237,10 @@ function render() {
   // Prefer Description from games.json; fall back to BGG data
   var desc = _games('Description')
     || (bg['description'] ? decodeHtml(bg['description']) : '');
-  document.getElementById('descText').textContent = desc;
+  var descEl = document.getElementById('descText');
+  descEl.innerHTML = desc
+    ? desc.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')
+    : '';
 
   // ── Meta rows ────────────────────────────────────────────────
   var meta = [];

@@ -652,7 +652,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .sw-display { margin-left:auto; font-family:'DINBlack',sans-serif; font-size:.85rem; color:#e67e22; letter-spacing:.06em; display:none; }
 .sw-display.sw-active { display:block; }
 .rounds-wrap { display:flex; align-items:center; gap:.28rem; margin-left:auto; flex-shrink:0; }
-.rounds-btn { background:none; border:1.5px solid #d0d8e0; border-radius:5px; width:2.1rem; height:2.1rem; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; color:#999; font-family:'DINBlack',sans-serif; font-size:1.1rem; line-height:1; transition:border-color .15s,color .15s; padding:0; user-select:none; -webkit-user-select:none; }
+.rounds-btn { background:none; border:1.5px solid #d0d8e0; border-radius:5px; width:2.1rem; height:2.1rem; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; color:#999; font-family:Arial,sans-serif; font-size:1.15rem; line-height:0; transition:border-color .15s,color .15s; padding:0; user-select:none; -webkit-user-select:none; }
 .rounds-btn:hover { border-color:#aaa; color:#555; }
 @media (max-width:500px) {
   .session-dialog-title { flex-basis:100%; width:100%; }

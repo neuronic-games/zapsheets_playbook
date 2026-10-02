@@ -1048,7 +1048,7 @@ body.session-dialog-open .session-body img { display:none !important; }
       <span style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#888">Publisher / Client</span>
       <div class="combo-wrap" id="estimateClientCombo" style="margin-top:.3rem">
         <input type="text" id="estimateClientVisible" class="field-input combo-input" placeholder="Select or type a publisher name" autocomplete="off"
-          oninput="_estClientFilter()" onfocus="_estClientOpen()" onblur="_estClientClose()" onkeydown="_estClientKey(event)" />
+          oninput="_estClientFilter()" onfocus="_estClientOpen()" onkeydown="_estClientKey(event)" />
         <div class="combo-dropdown" id="estimateClientDrop"></div>
       </div>
     </div>
@@ -1056,7 +1056,7 @@ body.session-dialog-open .session-body img { display:none !important; }
       <span style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#888">Game</span>
       <div class="combo-wrap" id="estimateGameCombo" style="margin-top:.3rem">
         <input type="text" id="estimateGame" class="field-input combo-input" placeholder="Select or type a game name" autocomplete="off"
-          oninput="_estGameFilter();_seedScopeOfWork()" onfocus="_estGameOpen()" onblur="_estGameClose()" onkeydown="_estGameKey(event)" />
+          oninput="_estGameFilter();_seedScopeOfWork()" onfocus="_estGameOpen()" onkeydown="_estGameKey(event)" />
         <div class="combo-dropdown" id="estimateGameDrop"></div>
       </div>
     </div>
@@ -2190,8 +2190,8 @@ function _estimateLog(msg, type) {
 
 function openEstimateDialog(clientName, gameName) {
   // Close any open combos
-  _estHideDrop('estimateClientDrop');
-  _estHideDrop('estimateGameDrop');
+  document.getElementById('estimateClientCombo').classList.remove('open');
+  document.getElementById('estimateGameCombo').classList.remove('open');
 
   // Show/hide client field depending on whether client is pre-set
   var hasClient = !!(clientName || '').trim();
@@ -2232,106 +2232,56 @@ function _updateEstimateClient() {
 }
 
 // ── Estimate dialog custom combo helpers ──────────────────────────────────────
-var _estClientOptions = [];
-var _estGameOptions   = [];
-
-function _estClientBuildOptions() {
+function _estClientRebuild(filter) {
+  var drop  = document.getElementById('estimateClientDrop');
+  var lower = (filter || '').toLowerCase();
   var knownClients = {};
   CONTRACT_RAW.forEach(function(c) { var n = (c.Client || '').trim(); if (n) knownClients[n.toLowerCase()] = n; });
-  _estClientOptions = Object.keys(knownClients).sort().map(function(k) { return knownClients[k]; });
-}
-function _estGameBuildOptions() {
-  _estGameOptions = GAMES_RAW.map(function(g) { return (g.Name || '').trim(); }).filter(Boolean);
-}
-
-// Shared floating-drop helper — moves the drop to <body> so overflow:auto can't clip it
-var _estClientDropInBody = false;
-var _estGameDropInBody   = false;
-
-function _estShowDrop(inputId, dropId, inBodyFlag) {
-  var inp  = document.getElementById(inputId);
-  var drop = document.getElementById(dropId);
-  if (!inp || !drop) return;
-  // Move to body if not already there
-  if (!window['_est' + dropId + 'InBody']) {
-    document.body.appendChild(drop);
-    window['_est' + dropId + 'InBody'] = true;
-  }
-  var r = inp.getBoundingClientRect();
-  drop.style.cssText = 'display:block;position:fixed;top:' + (r.bottom + 2) + 'px;left:' + r.left + 'px;width:' + r.width + 'px;right:auto;z-index:9999;background:#fff;border:1.5px solid #1a5f7a;border-radius:7px;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.12);';
-}
-function _estHideDrop(dropId) {
-  var drop = document.getElementById(dropId);
-  if (drop) drop.style.display = 'none';
-}
-
-function _estClientFilter() {
-  _updateEstimateClient();
-  var q = document.getElementById('estimateClientVisible').value.trim().toLowerCase();
-  var opts = q ? _estClientOptions.filter(function(o) { return o.toLowerCase().indexOf(q) !== -1; }) : _estClientOptions;
-  _estClientRenderDrop(opts);
-  _estShowDrop('estimateClientVisible', 'estimateClientDrop');
-}
-function _estClientOpen() {
-  _estClientBuildOptions();
-  _estClientRenderDrop(_estClientOptions);
-  _estShowDrop('estimateClientVisible', 'estimateClientDrop');
-}
-function _estClientClose() { setTimeout(function() { _estHideDrop('estimateClientDrop'); }, 150); }
-function _estClientRenderDrop(opts) {
-  var drop = document.getElementById('estimateClientDrop');
-  drop.innerHTML = opts.map(function(o) {
-    return '<div class="combo-option" onmousedown="_estClientPick(' + JSON.stringify(o) + ')">' + esc(o) + '</div>';
+  var items = Object.keys(knownClients).sort()
+    .map(function(k) { return knownClients[k]; })
+    .filter(function(n) { return !lower || n.toLowerCase().indexOf(lower) !== -1; });
+  if (!items.length) { drop.innerHTML = ''; document.getElementById('estimateClientCombo').classList.remove('open'); return; }
+  drop.innerHTML = items.map(function(n) {
+    return '<div class="combo-item" data-name="' + esc(n) + '" onmousedown="estimateClientPick(this.dataset.name)">' + esc(n) + '</div>';
   }).join('');
+  document.getElementById('estimateClientCombo').classList.add('open');
 }
-function _estClientPick(val) {
-  document.getElementById('estimateClientVisible').value = val;
-  _estHideDrop('estimateClientDrop');
+function _estClientFilter() { _updateEstimateClient(); _estClientRebuild(document.getElementById('estimateClientVisible').value); }
+function _estClientOpen()   { _estClientRebuild(document.getElementById('estimateClientVisible').value); }
+function estimateClientPick(n) {
+  document.getElementById('estimateClientVisible').value = n;
+  document.getElementById('estimateClientDrop').innerHTML = '';
+  document.getElementById('estimateClientCombo').classList.remove('open');
   _updateEstimateClient();
 }
 function _estClientKey(e) {
-  var drop = document.getElementById('estimateClientDrop');
-  var items = drop.querySelectorAll('.combo-option');
-  var active = drop.querySelector('.combo-option.active');
-  var idx = active ? Array.from(items).indexOf(active) : -1;
-  if (e.key === 'ArrowDown') { e.preventDefault(); if (idx < items.length - 1) { if (active) active.classList.remove('active'); items[idx + 1].classList.add('active'); } }
-  else if (e.key === 'ArrowUp') { e.preventDefault(); if (idx > 0) { if (active) active.classList.remove('active'); items[idx - 1].classList.add('active'); } }
-  else if (e.key === 'Enter' && active) { e.preventDefault(); _estClientPick(active.textContent); }
-  else if (e.key === 'Escape') { _estHideDrop('estimateClientDrop'); }
+  if (e.key === 'Escape') { document.getElementById('estimateClientCombo').classList.remove('open'); }
+  if (e.key === 'Enter') { var first = document.querySelector('#estimateClientDrop .combo-item'); if (first) estimateClientPick(first.dataset.name); }
 }
 
-function _estGameFilter() {
-  var q = document.getElementById('estimateGame').value.trim().toLowerCase();
-  var opts = q ? _estGameOptions.filter(function(o) { return o.toLowerCase().indexOf(q) !== -1; }) : _estGameOptions;
-  _estGameRenderDrop(opts);
-  _estShowDrop('estimateGame', 'estimateGameDrop');
-}
-function _estGameOpen() {
-  _estGameBuildOptions();
-  _estGameRenderDrop(_estGameOptions);
-  _estShowDrop('estimateGame', 'estimateGameDrop');
-}
-function _estGameClose() { setTimeout(function() { _estHideDrop('estimateGameDrop'); }, 150); }
-function _estGameRenderDrop(opts) {
-  var drop = document.getElementById('estimateGameDrop');
-  drop.innerHTML = opts.map(function(o) {
-    return '<div class="combo-option" onmousedown="_estGamePick(' + JSON.stringify(o) + ')">' + esc(o) + '</div>';
+function _estGameRebuild(filter) {
+  var drop  = document.getElementById('estimateGameDrop');
+  var lower = (filter || '').toLowerCase();
+  var items = GAMES_RAW.map(function(g) { return (g.Name || '').trim(); }).filter(function(n) {
+    return n && (!lower || n.toLowerCase().indexOf(lower) !== -1);
+  });
+  if (!items.length) { drop.innerHTML = ''; document.getElementById('estimateGameCombo').classList.remove('open'); return; }
+  drop.innerHTML = items.map(function(n) {
+    return '<div class="combo-item" data-name="' + esc(n) + '" onmousedown="estimateGamePick(this.dataset.name)">' + esc(n) + '</div>';
   }).join('');
+  document.getElementById('estimateGameCombo').classList.add('open');
 }
-function _estGamePick(val) {
-  document.getElementById('estimateGame').value = val;
-  _estHideDrop('estimateGameDrop');
+function _estGameFilter() { _estGameRebuild(document.getElementById('estimateGame').value); _seedScopeOfWork(); }
+function _estGameOpen()   { _estGameRebuild(document.getElementById('estimateGame').value); }
+function estimateGamePick(n) {
+  document.getElementById('estimateGame').value = n;
+  document.getElementById('estimateGameDrop').innerHTML = '';
+  document.getElementById('estimateGameCombo').classList.remove('open');
   _seedScopeOfWork();
 }
 function _estGameKey(e) {
-  var drop = document.getElementById('estimateGameDrop');
-  var items = drop.querySelectorAll('.combo-option');
-  var active = drop.querySelector('.combo-option.active');
-  var idx = active ? Array.from(items).indexOf(active) : -1;
-  if (e.key === 'ArrowDown') { e.preventDefault(); if (idx < items.length - 1) { if (active) active.classList.remove('active'); items[idx + 1].classList.add('active'); } }
-  else if (e.key === 'ArrowUp') { e.preventDefault(); if (idx > 0) { if (active) active.classList.remove('active'); items[idx - 1].classList.add('active'); } }
-  else if (e.key === 'Enter' && active) { e.preventDefault(); _estGamePick(active.textContent); }
-  else if (e.key === 'Escape') { _estHideDrop('estimateGameDrop'); }
+  if (e.key === 'Escape') { document.getElementById('estimateGameCombo').classList.remove('open'); }
+  if (e.key === 'Enter') { var first = document.querySelector('#estimateGameDrop .combo-item'); if (first) estimateGamePick(first.dataset.name); }
 }
 
 function openNewContractDialog() {

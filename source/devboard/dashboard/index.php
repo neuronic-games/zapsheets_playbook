@@ -1524,23 +1524,19 @@ body.session-dialog-open .session-body img { display:none !important; }
     <button onclick="closeDashTMDialog()" style="position:absolute;top:.75rem;right:.75rem;background:none;border:none;cursor:pointer;font-size:1rem;color:#888;line-height:1;padding:.25rem .4rem" title="Close">&#x2715;</button>
     <h2>Time &amp; Materials — <span id="dashTMGameTitle"></span></h2>
 
-    <div class="field-group" style="margin-bottom:.6rem">
-      <label>Date</label>
-      <input type="date" class="field-input" id="dashTMDate" autocomplete="off" style="height:2.45rem" />
-    </div>
-    <div style="display:grid;grid-template-columns:140px 1fr;gap:.5rem .8rem;margin-bottom:.6rem">
+    <div style="display:grid;grid-template-columns:1fr 110px;gap:.5rem .6rem;margin-bottom:.6rem">
+      <div class="field-group" style="margin:0">
+        <label>Notes</label>
+        <textarea class="field-input ge-textarea" id="dashTMTimeNotes" placeholder="What did you work on?" style="height:2.45rem;min-height:2.45rem;resize:vertical"></textarea>
+      </div>
       <div class="field-group" style="margin:0">
         <label>Time</label>
         <div class="tm-time-wrap">
-          <input type="text" class="field-input" id="dashTMTimeMinutes" placeholder="e.g. 30 min, 1 hr"
+          <input type="text" class="field-input" id="dashTMTimeMinutes" placeholder="e.g. 1 hr"
             autocomplete="off" style="height:2.45rem"
             onfocus="_showDashTMTimeList()" oninput="_showDashTMTimeList()" onblur="_hideDashTMTimeList()" />
           <div class="tm-time-list" id="dashTMTimeList"></div>
         </div>
-      </div>
-      <div class="field-group" style="margin:0">
-        <label>Notes</label>
-        <textarea class="field-input ge-textarea" id="dashTMTimeNotes" placeholder="What did you work on?" style="height:2.45rem;min-height:2.45rem;resize:vertical"></textarea>
       </div>
     </div>
 
@@ -3474,7 +3470,6 @@ function _addDashTMMaterialRow() {
 function openDashTMDialog(gameName) {
   _dashTMGame = gameName;
   document.getElementById('dashTMGameTitle').textContent = gameName;
-  document.getElementById('dashTMDate').value         = todayISO();
   document.getElementById('dashTMTimeMinutes').value  = '';
   document.getElementById('dashTMTimeNotes').value    = '';
   document.getElementById('dashTMErr').textContent    = '';
@@ -3497,7 +3492,7 @@ function forceCloseDashTMDialog() {
 }
 
 async function submitDashTM() {
-  var date      = document.getElementById('dashTMDate').value;
+  var date      = todayISO();
   var timeMins  = document.getElementById('dashTMTimeMinutes').value.trim();
   var timeNotes = document.getElementById('dashTMTimeNotes').value.trim();
 

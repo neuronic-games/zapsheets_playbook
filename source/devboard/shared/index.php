@@ -326,7 +326,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .tm-section-header .tm-section-label { margin:0; }
 .tm-add-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; border:1px solid #c8d8e0; background:#fff; color:#1a5f7a; padding:.28rem .65rem; border-radius:5px; cursor:pointer; transition:background .15s; }
 .tm-add-btn:hover { background:#e8f4f8; }
-.tm-material-row { border:1px solid #e8edf0; border-radius:7px; padding:.7rem .8rem .3rem; margin-bottom:.6rem; }
+.tm-material-row { border:1px solid #e8edf0; border-radius:7px; padding:.5rem .7rem .5rem; margin-bottom:.4rem; }
 .field-textarea {
   display:block; width:100%; padding:.6rem .75rem;
   font-family:'DINRegular',sans-serif; font-size:.85rem; color:#111; line-height:1.5;
@@ -581,51 +581,45 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
 <!-- Time & Materials dialog -->
 <div class="overlay" id="tmOverlay" onclick="if(event.target===this)closeTMDialog()">
-  <div class="session-dialog" style="max-width:520px">
+  <div class="session-dialog" style="max-width:500px">
     <h2>Time &amp; Materials — <span><?= _ds_e($_gameName) ?></span></h2>
 
-    <div class="field-group">
-      <label>Date</label>
-      <input type="date" class="field-input" id="tmDate" autocomplete="off" />
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem .8rem;margin-bottom:.6rem">
+      <div class="field-group" style="margin:0">
+        <label>Date</label>
+        <input type="date" class="field-input" id="tmDate" autocomplete="off" />
+      </div>
+      <div class="field-group" style="margin:0">
+        <label>Time</label>
+        <input type="text" class="field-input" id="tmTimeMinutes" list="tmTimeList" placeholder="e.g. 30 min, 1 hr" autocomplete="off" />
+        <datalist id="tmTimeList">
+          <option value="15 min">
+          <option value="30 min">
+          <option value="45 min">
+          <option value="1 hr">
+          <option value="1 hr 15 min">
+          <option value="1 hr 30 min">
+          <option value="1 hr 45 min">
+          <option value="2 hr">
+          <option value="2 hr 30 min">
+          <option value="3 hr">
+          <option value="3 hr 30 min">
+          <option value="4 hr">
+          <option value="5 hr">
+          <option value="6 hr">
+          <option value="7 hr">
+          <option value="8 hr">
+        </datalist>
+      </div>
     </div>
-
-    <hr class="field-sep" />
-
-    <div class="tm-section-label">Time</div>
-
-    <div class="field-group">
-      <label>Time</label>
-      <input type="text" class="field-input" id="tmTimeMinutes" list="tmTimeList" placeholder="e.g. 30 min, 1 hr 15 min" autocomplete="off" />
-      <datalist id="tmTimeList">
-        <option value="15 min">
-        <option value="30 min">
-        <option value="45 min">
-        <option value="1 hr">
-        <option value="1 hr 15 min">
-        <option value="1 hr 30 min">
-        <option value="1 hr 45 min">
-        <option value="2 hr">
-        <option value="2 hr 30 min">
-        <option value="3 hr">
-        <option value="3 hr 30 min">
-        <option value="4 hr">
-        <option value="5 hr">
-        <option value="6 hr">
-        <option value="7 hr">
-        <option value="8 hr">
-      </datalist>
-    </div>
-    <div class="field-group">
+    <div class="field-group" style="margin-bottom:.7rem">
       <label>Notes</label>
-      <textarea class="field-input ge-textarea" id="tmTimeNotes" placeholder="What did you work on?" style="min-height:3rem;resize:vertical"></textarea>
+      <textarea class="field-input ge-textarea" id="tmTimeNotes" placeholder="What did you work on?" style="min-height:2rem;resize:vertical"></textarea>
     </div>
 
-    <hr class="field-sep" />
+    <hr class="field-sep" style="margin:.2rem 0 .6rem" />
 
-    <div class="tm-section-header">
-      <div class="tm-section-label">Materials</div>
-      <button type="button" class="tm-add-btn" onclick="addTMMaterialRow()">+ Add Material</button>
-    </div>
+    <div class="tm-section-label" style="margin-bottom:.4rem">Materials</div>
 
     <div id="tmMaterialsContainer"></div>
 
@@ -1111,6 +1105,13 @@ function guardedOpenTMDialog() {
   openTMDialog();
 }
 
+function _tmCheckAutoAdd(i) {
+  if (i < _tmMaterialCount) return;  // not the last row
+  var cost = (document.getElementById('tmMatCost-' + i) || {}).value || '';
+  var desc = (document.getElementById('tmMatDesc-' + i) || {}).value || '';
+  if (cost.trim() || desc.trim()) addTMMaterialRow();
+}
+
 function addTMMaterialRow() {
   _tmMaterialCount++;
   var i = _tmMaterialCount;
@@ -1118,11 +1119,11 @@ function addTMMaterialRow() {
   div.className = 'tm-material-row';
   div.id = 'tmMat-' + i;
   div.innerHTML =
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem .8rem">'
-    + '<div class="field-group"><label>Cost ($)</label>'
-    + '<input type="text" class="field-input" id="tmMatCost-' + i + '" placeholder="0.00" autocomplete="off" /></div>'
-    + '<div class="field-group"><label>Description</label>'
-    + '<input type="text" class="field-input" id="tmMatDesc-' + i + '" placeholder="" autocomplete="off" /></div>'
+    '<div style="display:grid;grid-template-columns:120px 1fr;gap:.4rem .6rem;align-items:end">'
+    + '<div class="field-group" style="margin:0"><label>Cost ($)</label>'
+    + '<input type="text" class="field-input" id="tmMatCost-' + i + '" placeholder="0.00" autocomplete="off" oninput="_tmCheckAutoAdd(' + i + ')" /></div>'
+    + '<div class="field-group" style="margin:0"><label>Description</label>'
+    + '<input type="text" class="field-input" id="tmMatDesc-' + i + '" placeholder="" autocomplete="off" oninput="_tmCheckAutoAdd(' + i + ')" /></div>'
     + '</div>';
   document.getElementById('tmMaterialsContainer').appendChild(div);
 }

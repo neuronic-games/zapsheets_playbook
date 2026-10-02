@@ -3628,6 +3628,7 @@ function forceCloseDashTMDialog() {
 }
 
 async function submitDashTM() {
+  _fmtTMTimeInput(document.getElementById('dashTMTimeMinutes'));
   var date      = todayISO();
   var timeMins  = document.getElementById('dashTMTimeMinutes').value.trim();
   var timeNotes = document.getElementById('dashTMTimeNotes').value.trim();

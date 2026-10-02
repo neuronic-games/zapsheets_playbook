@@ -1240,6 +1240,7 @@ function addTMMaterialRow() {
 }
 
 async function submitTM() {
+  _fmtTMTimeInput(document.getElementById('tmTimeMinutes'));
   var date    = todayISO();
   var timeMins  = document.getElementById('tmTimeMinutes').value.trim();
   var timeNotes = document.getElementById('tmTimeNotes').value.trim();

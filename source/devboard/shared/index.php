@@ -295,8 +295,8 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 .rounds-wrap { display:flex; align-items:center; gap:.28rem; flex-shrink:0; }
 .rounds-btn { background:none; border:1.5px solid #d0d8e0; border-radius:5px; width:2.1rem; height:2.1rem; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; color:#999; font-family:Arial,sans-serif; font-size:1.15rem; line-height:0; transition:border-color .15s,color .15s; padding:0; user-select:none; -webkit-user-select:none; }
 .rounds-btn:hover { border-color:#aaa; color:#555; }
-.rounds-count { font-family:'DINBlack',sans-serif; font-size:1rem; color:#1a5f7a; min-width:1.6rem; text-align:center; letter-spacing:.02em; height:2.1rem; line-height:2.1rem; }
-.rounds-label { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#999; letter-spacing:.04em; text-transform:uppercase; height:2.1rem; line-height:2.1rem; margin-right:.6rem; }
+.rounds-count { font-family:'DINBlack',sans-serif; font-size:1rem; color:#1a5f7a; min-width:1.6rem; letter-spacing:.02em; display:flex; align-items:center; justify-content:center; height:2.1rem; line-height:1; }
+.rounds-label { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#999; letter-spacing:.04em; text-transform:uppercase; display:flex; align-items:center; height:2.1rem; line-height:1; margin-right:.6rem; }
 .sw-wrap { display:flex; align-items:center; flex-shrink:0; }
 .sw-wrap.sw-expanded { display:flex; align-items:center; }
 .sw-panel { display:none; align-items:center; gap:.5rem; background:#fff8f2; border:1.5px solid #e67e22; border-radius:8px; padding:.28rem .5rem .28rem .65rem; animation:sw-expand-in .18s ease; }
@@ -810,9 +810,9 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       <div class="session-dialog-controls">
         <div class="rounds-wrap" id="roundsWrap">
           <button type="button" class="rounds-btn" onclick="_roundsChange(-1)" title="Remove a round">−</button>
-          <span class="rounds-count" id="roundsCount">0</span>
+          <div class="rounds-count" id="roundsCount">0</div>
           <button type="button" class="rounds-btn" onclick="_roundsChange(1)" title="Add a round">+</button>
-          <span class="rounds-label">Rounds</span>
+          <div class="rounds-label">Rounds</div>
         </div>
         <div class="sw-wrap" id="swWrap">
           <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold 2s to enter minutes">

@@ -1038,6 +1038,12 @@ body.session-dialog-open .session-body img { display:none !important; }
   <div class="estimate-dialog">
     <h2>New Contract — <span id="estimateClientLabel"></span></h2>
     <input type="hidden" id="estimateClient" />
+    <label class="ge-label">Type
+      <select id="estimateType" class="ge-input">
+        <option value="estimate">Estimate</option>
+        <option value="invoice">Invoice</option>
+      </select>
+    </label>
     <div class="ge-label" id="estimateClientFieldWrap">
       <span style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#888">Publisher / Client</span>
       <div class="combo-wrap" id="estimateClientCombo" style="margin-top:.3rem">
@@ -1054,12 +1060,6 @@ body.session-dialog-open .session-body img { display:none !important; }
         <div class="combo-dropdown" id="estimateGameDrop"></div>
       </div>
     </div>
-    <label class="ge-label">Type
-      <select id="estimateType" class="ge-input">
-        <option value="estimate">Estimate</option>
-        <option value="invoice">Invoice</option>
-      </select>
-    </label>
     <div class="estimate-field-row two">
       <label class="ge-label"># of Tests
         <input type="number" id="estimateTests" class="ge-input" value="2" min="0" step="1" oninput="_seedScopeOfWork()" />
@@ -2218,11 +2218,7 @@ function openEstimateDialog(clientName, gameName) {
   document.getElementById('estimateCreateBtn').disabled      = false;
   _estimateLog('', '');
   document.getElementById('estimateOverlay').classList.add('open');
-  setTimeout(function() {
-    if (!hasClient) document.getElementById('estimateClientVisible').focus();
-    else if (!gameName) document.getElementById('estimateGame').focus();
-    else document.getElementById('estimateUnitPrice').focus();
-  }, 50);
+  setTimeout(function() { document.getElementById('estimateType').focus(); }, 50);
 }
 
 function forceCloseEstimateDialog() {

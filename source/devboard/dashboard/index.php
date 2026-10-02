@@ -811,8 +811,8 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .combo-input:focus { border-color:#1a5f7a; }
 .combo-dropdown { display:none; position:absolute; left:0; right:0; top:calc(100% + 2px); background:#fff; border:1.5px solid #1a5f7a; border-radius:7px; max-height:200px; overflow-y:auto; z-index:50; box-shadow:0 4px 16px rgba(0,0,0,.12); }
 .combo-wrap.open .combo-dropdown { display:block; }
-.combo-option { padding:.5rem .8rem; font-family:'DINRegular',sans-serif; font-size:.85rem; cursor:pointer; color:#222; }
-.combo-option:hover, .combo-option.highlighted { background:#e8f4f8; color:#1a5f7a; }
+.combo-option, .combo-item { padding:.5rem .8rem; font-family:'DINRegular',sans-serif; font-size:.85rem; cursor:pointer; color:#222; }
+.combo-option:hover, .combo-option.highlighted, .combo-item:hover { background:#e8f4f8; color:#1a5f7a; }
 .combo-empty { padding:.5rem .8rem; font-size:.8rem; color:#aaa; font-style:italic; }
 
 /* Dynamic tester rows */

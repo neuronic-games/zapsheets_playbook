@@ -48,6 +48,62 @@ forceClose*Dialog()  — closes unconditionally (Cancel button)
 - On success: call `forceClose*Dialog()` (not the checking variant)
 - Re-sync `_*Initial` before closing if the dialog might stay open on error
 
+## Combo Box Pattern
+
+All custom combo dropdowns (type-to-filter fields with a dropdown list) follow this pattern exactly. Do not deviate — past attempts with `onblur`, body portals, or `position:fixed` all broke item selection.
+
+### HTML structure
+```html
+<div class="combo-wrap" id="fooCombo">
+  <input type="text" id="fooInput" class="field-input combo-input"
+    autocomplete="off"
+    oninput="fooRebuild(this.value)"
+    onfocus="fooRebuild(this.value)"
+    onkeydown="fooKey(event)" />
+  <div class="combo-dropdown" id="fooDrop"></div>
+</div>
+```
+- **No `onblur`** — ever. `onblur` fires before `onmousedown` on list items, preventing selection.
+- Items go in `.combo-dropdown` which is a child of `.combo-wrap` (not appended to `document.body`).
+
+### CSS (already in dashboard/index.php — do not duplicate)
+```css
+.combo-dropdown { display:none; position:absolute; left:0; right:0; top:calc(100% + 2px); ... }
+.combo-wrap.open .combo-dropdown { display:block; }
+.combo-option, .combo-item { padding:.5rem .8rem; ... }
+.combo-option:hover, .combo-item:hover { background:#e8f4f8; color:#1a5f7a; }
+```
+Use class `.combo-item` for items (preferred) or `.combo-option` — both are styled.
+
+### JS pattern
+```js
+function fooRebuild(filter) {
+  var drop  = document.getElementById('fooDrop');
+  var lower = (filter || '').toLowerCase();
+  var items = SOURCE_ARRAY.filter(function(n) { return !lower || n.toLowerCase().indexOf(lower) !== -1; });
+  if (!items.length) { drop.innerHTML = ''; document.getElementById('fooCombo').classList.remove('open'); return; }
+  drop.innerHTML = items.map(function(n) {
+    return '<div class="combo-item" data-name="' + esc(n) + '" onmousedown="fooPick(this.dataset.name)">' + esc(n) + '</div>';
+  }).join('');
+  document.getElementById('fooCombo').classList.add('open');
+}
+function fooPick(n) {
+  document.getElementById('fooInput').value = n;
+  document.getElementById('fooDrop').innerHTML = '';
+  document.getElementById('fooCombo').classList.remove('open');
+}
+function fooKey(e) {
+  if (e.key === 'Escape') { document.getElementById('fooCombo').classList.remove('open'); }
+  if (e.key === 'Enter')  { var first = document.querySelector('#fooDrop .combo-item'); if (first) fooPick(first.dataset.name); }
+}
+```
+- Use `onmousedown` (not `onclick`) on items so it fires before focus leaves the input.
+- Use `classList.add/remove('open')` on the `.combo-wrap` — never toggle `display` directly.
+- To close all open combos on dialog open: `document.getElementById('fooCombo').classList.remove('open')`.
+
+### Container overflow
+If a combo sits inside a container with `overflow:auto` or `overflow:hidden`, the dropdown will be clipped. Fix: add `overflow:visible` to the container, or restructure so the `.combo-wrap` is not a descendant of an overflowing container.
+
 ## Collab Auth
 
 ### Storage

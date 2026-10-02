@@ -326,6 +326,11 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .tm-section-header .tm-section-label { margin:0; }
 .tm-add-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; border:1px solid #c8d8e0; background:#fff; color:#1a5f7a; padding:.28rem .65rem; border-radius:5px; cursor:pointer; transition:background .15s; }
 .tm-add-btn:hover { background:#e8f4f8; }
+.tm-time-wrap { position:relative; }
+.tm-time-list { display:none; position:absolute; top:calc(100% + 2px); left:0; right:0; background:#fff; border:1px solid #c8d8e0; border-radius:6px; box-shadow:0 4px 14px rgba(0,0,0,.13); z-index:9999; max-height:200px; overflow-y:auto; }
+.tm-time-list.open { display:block; }
+.tm-time-opt { padding:.38rem .75rem; font-family:'DINRegular',sans-serif; font-size:.85rem; cursor:pointer; color:#1a1a2e; }
+.tm-time-opt:hover { background:#e8f4f8; }
 .tm-material-row { border:1px solid #e8edf0; border-radius:7px; padding:.5rem .7rem .5rem; margin-bottom:.4rem; }
 .field-textarea {
   display:block; width:100%; padding:.6rem .75rem;
@@ -591,25 +596,12 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       </div>
       <div class="field-group" style="margin:0">
         <label>Time</label>
-        <input type="text" class="field-input" id="tmTimeMinutes" list="tmTimeList" placeholder="e.g. 30 min, 1 hr" autocomplete="off" />
-        <datalist id="tmTimeList">
-          <option value="15 min">
-          <option value="30 min">
-          <option value="45 min">
-          <option value="1 hr">
-          <option value="1 hr 15 min">
-          <option value="1 hr 30 min">
-          <option value="1 hr 45 min">
-          <option value="2 hr">
-          <option value="2 hr 30 min">
-          <option value="3 hr">
-          <option value="3 hr 30 min">
-          <option value="4 hr">
-          <option value="5 hr">
-          <option value="6 hr">
-          <option value="7 hr">
-          <option value="8 hr">
-        </datalist>
+        <div class="tm-time-wrap">
+          <input type="text" class="field-input" id="tmTimeMinutes" placeholder="e.g. 30 min, 1 hr"
+            autocomplete="off"
+            onfocus="_showTMTimeList()" oninput="_showTMTimeList()" onblur="_hideTMTimeList()" />
+          <div class="tm-time-list" id="tmTimeList"></div>
+        </div>
       </div>
     </div>
     <div class="field-group" style="margin-bottom:.7rem">
@@ -1079,6 +1071,35 @@ function closeSessionDialog() {
 }
 
 // ── Time & Materials dialog ───────────────────────────────────────────────────
+
+var _tmTimeOptions = ['15 min','30 min','45 min','1 hr','1 hr 15 min','1 hr 30 min','1 hr 45 min','2 hr','2 hr 30 min','3 hr','3 hr 30 min','4 hr','5 hr','6 hr','7 hr','8 hr'];
+
+function _showTMTimeList() {
+  var inp  = document.getElementById('tmTimeMinutes');
+  var list = document.getElementById('tmTimeList');
+  if (!inp || !list) return;
+  var q    = inp.value.trim().toLowerCase();
+  var opts = q ? _tmTimeOptions.filter(function(o) { return o.toLowerCase().indexOf(q) !== -1; }) : _tmTimeOptions;
+  if (!opts.length) { list.classList.remove('open'); return; }
+  list.innerHTML = opts.map(function(o) {
+    return '<div class="tm-time-opt" onmousedown="_pickTMTime(\'' + o + '\')">' + o + '</div>';
+  }).join('');
+  list.classList.add('open');
+}
+
+function _hideTMTimeList() {
+  setTimeout(function() {
+    var list = document.getElementById('tmTimeList');
+    if (list) list.classList.remove('open');
+  }, 150);
+}
+
+function _pickTMTime(val) {
+  var inp = document.getElementById('tmTimeMinutes');
+  if (inp) inp.value = val;
+  var list = document.getElementById('tmTimeList');
+  if (list) list.classList.remove('open');
+}
 
 var _tmMaterialCount = 0;
 

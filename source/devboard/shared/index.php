@@ -331,7 +331,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .tm-time-list.open { display:block; }
 .tm-time-opt { padding:.38rem .75rem; font-family:'DINRegular',sans-serif; font-size:.85rem; cursor:pointer; color:#1a1a2e; }
 .tm-time-opt:hover { background:#e8f4f8; }
-.tm-material-row { border:1px solid #e8edf0; border-radius:7px; padding:.5rem .7rem .5rem; margin-bottom:.4rem; }
+.tm-material-row { margin-bottom:.35rem; }
 .field-textarea {
   display:block; width:100%; padding:.6rem .75rem;
   font-family:'DINRegular',sans-serif; font-size:.85rem; color:#111; line-height:1.5;
@@ -611,7 +611,10 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
     <hr class="field-sep" style="margin:.2rem 0 .6rem" />
 
-    <div class="tm-section-label" style="margin-bottom:.4rem">Materials</div>
+    <div style="display:grid;grid-template-columns:120px 1fr;gap:0 .6rem;margin-bottom:.2rem">
+      <div class="tm-section-label" style="margin:0">Cost ($)</div>
+      <div class="tm-section-label" style="margin:0">Description</div>
+    </div>
 
     <div id="tmMaterialsContainer"></div>
 
@@ -1140,11 +1143,9 @@ function addTMMaterialRow() {
   div.className = 'tm-material-row';
   div.id = 'tmMat-' + i;
   div.innerHTML =
-    '<div style="display:grid;grid-template-columns:120px 1fr;gap:.4rem .6rem;align-items:end">'
-    + '<div class="field-group" style="margin:0"><label>Cost ($)</label>'
-    + '<input type="text" class="field-input" id="tmMatCost-' + i + '" placeholder="0.00" autocomplete="off" oninput="_tmCheckAutoAdd(' + i + ')" /></div>'
-    + '<div class="field-group" style="margin:0"><label>Description</label>'
-    + '<input type="text" class="field-input" id="tmMatDesc-' + i + '" placeholder="" autocomplete="off" oninput="_tmCheckAutoAdd(' + i + ')" /></div>'
+    '<div style="display:grid;grid-template-columns:120px 1fr;gap:.4rem .6rem;align-items:center">'
+    + '<input type="text" class="field-input" id="tmMatCost-' + i + '" placeholder="0.00" autocomplete="off" oninput="_tmCheckAutoAdd(' + i + ')" style="margin:0" />'
+    + '<input type="text" class="field-input" id="tmMatDesc-' + i + '" placeholder="" autocomplete="off" oninput="_tmCheckAutoAdd(' + i + ')" style="margin:0" />'
     + '</div>';
   document.getElementById('tmMaterialsContainer').appendChild(div);
 }

@@ -3603,7 +3603,7 @@ function openDashTMDialog(gameName) {
   document.getElementById('dashTMBtn').disabled    = false;
   document.getElementById('dashTMBtn').textContent = 'Save';
   document.getElementById('dashTMOverlay').classList.add('open');
-  setTimeout(function() { document.getElementById('dashTMTimeMinutes').focus(); }, 80);
+  setTimeout(function() { document.getElementById('dashTMTimeNotes').focus(); }, 80);
 }
 
 function closeDashTMDialog() {

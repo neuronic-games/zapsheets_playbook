@@ -1164,7 +1164,7 @@ function openTMDialog() {
   document.getElementById('tmBtn').disabled    = false;
   document.getElementById('tmBtn').textContent = 'Save';
   document.getElementById('tmOverlay').classList.add('open');
-  setTimeout(function() { document.getElementById('tmTimeMinutes').focus(); }, 80);
+  setTimeout(function() { document.getElementById('tmTimeNotes').focus(); }, 80);
 }
 
 function _tmIsDirty() {

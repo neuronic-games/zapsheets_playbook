@@ -2260,7 +2260,7 @@ function _estClientClose() { setTimeout(function() { document.getElementById('es
 function _estClientRenderDrop(opts) {
   var drop = document.getElementById('estimateClientDrop');
   drop.innerHTML = opts.map(function(o) {
-    return '<div class="combo-item" onmousedown="_estClientPick(' + JSON.stringify(o) + ')">' + esc(o) + '</div>';
+    return '<div class="combo-option" onmousedown="_estClientPick(' + JSON.stringify(o) + ')">' + esc(o) + '</div>';
   }).join('');
 }
 function _estClientPick(val) {
@@ -2270,8 +2270,8 @@ function _estClientPick(val) {
 }
 function _estClientKey(e) {
   var drop = document.getElementById('estimateClientDrop');
-  var items = drop.querySelectorAll('.combo-item');
-  var active = drop.querySelector('.combo-item.active');
+  var items = drop.querySelectorAll('.combo-option');
+  var active = drop.querySelector('.combo-option.active');
   var idx = active ? Array.from(items).indexOf(active) : -1;
   if (e.key === 'ArrowDown') { e.preventDefault(); if (idx < items.length - 1) { if (active) active.classList.remove('active'); items[idx + 1].classList.add('active'); } }
   else if (e.key === 'ArrowUp') { e.preventDefault(); if (idx > 0) { if (active) active.classList.remove('active'); items[idx - 1].classList.add('active'); } }
@@ -2294,7 +2294,7 @@ function _estGameClose() { setTimeout(function() { document.getElementById('esti
 function _estGameRenderDrop(opts) {
   var drop = document.getElementById('estimateGameDrop');
   drop.innerHTML = opts.map(function(o) {
-    return '<div class="combo-item" onmousedown="_estGamePick(' + JSON.stringify(o) + ')">' + esc(o) + '</div>';
+    return '<div class="combo-option" onmousedown="_estGamePick(' + JSON.stringify(o) + ')">' + esc(o) + '</div>';
   }).join('');
 }
 function _estGamePick(val) {
@@ -2304,8 +2304,8 @@ function _estGamePick(val) {
 }
 function _estGameKey(e) {
   var drop = document.getElementById('estimateGameDrop');
-  var items = drop.querySelectorAll('.combo-item');
-  var active = drop.querySelector('.combo-item.active');
+  var items = drop.querySelectorAll('.combo-option');
+  var active = drop.querySelector('.combo-option.active');
   var idx = active ? Array.from(items).indexOf(active) : -1;
   if (e.key === 'ArrowDown') { e.preventDefault(); if (idx < items.length - 1) { if (active) active.classList.remove('active'); items[idx + 1].classList.add('active'); } }
   else if (e.key === 'ArrowUp') { e.preventDefault(); if (idx > 0) { if (active) active.classList.remove('active'); items[idx - 1].classList.add('active'); } }

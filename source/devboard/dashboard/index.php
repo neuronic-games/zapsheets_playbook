@@ -1679,6 +1679,7 @@ var MY_BIO_PAYMENT  = <?= json_encode($_my_bio_payment) ?>;
 var MY_BIO_NOTES    = <?= json_encode($_my_bio_notes) ?>;
 var _profilePhotoUrl = MY_BIO_IMAGE || '';
 var PEOPLE_NAMES  = <?= json_encode(array_values($_people_names), JSON_UNESCAPED_UNICODE) ?>;
+var PEOPLE_DATA   = <?= json_encode(array_values($_people_raw),  JSON_UNESCAPED_UNICODE) ?>;
 var CONTRACT_RAW  = <?= json_encode(array_values($_contracts_raw), JSON_UNESCAPED_UNICODE) ?>;
 var ESTIMATES_RAW = <?= json_encode(array_values($_estimates_raw), JSON_UNESCAPED_UNICODE) ?>;
 
@@ -3512,13 +3513,36 @@ function _fmtTMTime(mins) {
   var h = Math.floor(mins / 60), m = mins % 60;
   return h && m ? h + 'h ' + m + 'm' : h ? h + 'h' : m + 'm';
 }
+function _resolveTMPerson(raw) {
+  // If the stored value is an email, try to map it to a display name
+  if (!raw || raw.indexOf('@') === -1) return raw;
+  var email = raw.toLowerCase();
+  // Check signed-in collab user
+  if (_dashCollabUser && (_dashCollabUser.email || '').toLowerCase() === email) {
+    var n = (_dashCollabUser.bio && _dashCollabUser.bio.name) ? _dashCollabUser.bio.name : '';
+    if (n) return n;
+    return MY_NAME || raw;
+  }
+  // Check people data
+  if (typeof PEOPLE_DATA !== 'undefined' && PEOPLE_DATA) {
+    for (var i = 0; i < PEOPLE_DATA.length; i++) {
+      var pe = (PEOPLE_DATA[i]['Email'] || PEOPLE_DATA[i]['email'] || '').toLowerCase();
+      if (pe === email) {
+        var pn = (PEOPLE_DATA[i]['Name'] || PEOPLE_DATA[i]['name'] || '').trim();
+        if (pn) return pn;
+      }
+    }
+  }
+  return raw;
+}
+
 function _buildTMSummaryHtml(rows) {
   // Aggregate T&M rows by person
   var byPerson = {};
   rows.forEach(function(row) {
     var et = (row['Event'] || '').trim().toLowerCase();
     if (et !== 'time' && et !== 'material') return;
-    var person = (row['People'] || '').trim() || '(unknown)';
+    var person = _resolveTMPerson((row['People'] || '').trim() || '(unknown)');
     if (!byPerson[person]) byPerson[person] = { mins: 0, cost: 0 };
     if (et === 'time') {
       byPerson[person].mins += _parseTMMinutes(row['Observations'] || row['Observation'] || '');

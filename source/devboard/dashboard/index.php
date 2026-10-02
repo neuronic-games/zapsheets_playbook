@@ -1038,14 +1038,22 @@ body.session-dialog-open .session-body img { display:none !important; }
   <div class="estimate-dialog">
     <h2>New Contract — <span id="estimateClientLabel"></span></h2>
     <input type="hidden" id="estimateClient" />
-    <label class="ge-label" id="estimateClientFieldWrap">Publisher / Client
-      <input type="text" id="estimateClientVisible" class="ge-input" list="estimateClientList" placeholder="Select or type a publisher name" autocomplete="off" oninput="_updateEstimateClient()" />
-      <datalist id="estimateClientList"></datalist>
-    </label>
-    <label class="ge-label">Game
-      <input type="text" id="estimateGame" class="ge-input" list="estimateGameList" placeholder="Select or type a game name" autocomplete="off" oninput="_seedScopeOfWork()" />
-      <datalist id="estimateGameList"></datalist>
-    </label>
+    <div class="ge-label" id="estimateClientFieldWrap">
+      <span style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#888">Publisher / Client</span>
+      <div class="combo-wrap" id="estimateClientCombo" style="margin-top:.3rem">
+        <input type="text" id="estimateClientVisible" class="field-input combo-input" placeholder="Select or type a publisher name" autocomplete="off"
+          oninput="_estClientFilter()" onfocus="_estClientOpen()" onblur="_estClientClose()" onkeydown="_estClientKey(event)" />
+        <div class="combo-dropdown" id="estimateClientDrop"></div>
+      </div>
+    </div>
+    <div class="ge-label">
+      <span style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#888">Game</span>
+      <div class="combo-wrap" id="estimateGameCombo" style="margin-top:.3rem">
+        <input type="text" id="estimateGame" class="field-input combo-input" placeholder="Select or type a game name" autocomplete="off"
+          oninput="_estGameFilter();_seedScopeOfWork()" onfocus="_estGameOpen()" onblur="_estGameClose()" onkeydown="_estGameKey(event)" />
+        <div class="combo-dropdown" id="estimateGameDrop"></div>
+      </div>
+    </div>
     <label class="ge-label">Type
       <select id="estimateType" class="ge-input">
         <option value="estimate">Estimate</option>
@@ -2181,31 +2189,9 @@ function _estimateLog(msg, type) {
 }
 
 function openEstimateDialog(clientName, gameName) {
-  // Populate game datalist
-  var dl = document.getElementById('estimateGameList');
-  dl.innerHTML = '';
-  GAMES_RAW.forEach(function(g) {
-    var n = (g.Name || '').trim();
-    if (n) {
-      var opt = document.createElement('option');
-      opt.value = n;
-      dl.appendChild(opt);
-    }
-  });
-
-  // Populate client datalist from known contracts
-  var cdl = document.getElementById('estimateClientList');
-  cdl.innerHTML = '';
-  var knownClients = {};
-  CONTRACT_RAW.forEach(function(c) {
-    var n = (c.Client || '').trim();
-    if (n) knownClients[n.toLowerCase()] = n;
-  });
-  Object.keys(knownClients).sort().forEach(function(k) {
-    var opt = document.createElement('option');
-    opt.value = knownClients[k];
-    cdl.appendChild(opt);
-  });
+  // Close any open combos
+  document.getElementById('estimateClientCombo').classList.remove('open');
+  document.getElementById('estimateGameCombo').classList.remove('open');
 
   // Show/hide client field depending on whether client is pre-set
   var hasClient = !!(clientName || '').trim();
@@ -2243,6 +2229,88 @@ function _updateEstimateClient() {
   var val = document.getElementById('estimateClientVisible').value.trim();
   document.getElementById('estimateClient').value = val;
   document.getElementById('estimateClientLabel').textContent = val || 'New Contract';
+}
+
+// ── Estimate dialog custom combo helpers ──────────────────────────────────────
+var _estClientOptions = [];
+var _estGameOptions   = [];
+
+function _estClientBuildOptions() {
+  var knownClients = {};
+  CONTRACT_RAW.forEach(function(c) { var n = (c.Client || '').trim(); if (n) knownClients[n.toLowerCase()] = n; });
+  _estClientOptions = Object.keys(knownClients).sort().map(function(k) { return knownClients[k]; });
+}
+function _estGameBuildOptions() {
+  _estGameOptions = GAMES_RAW.map(function(g) { return (g.Name || '').trim(); }).filter(Boolean);
+}
+
+function _estClientFilter() {
+  _updateEstimateClient();
+  var q = document.getElementById('estimateClientVisible').value.trim().toLowerCase();
+  var opts = q ? _estClientOptions.filter(function(o) { return o.toLowerCase().indexOf(q) !== -1; }) : _estClientOptions;
+  _estClientRenderDrop(opts);
+  document.getElementById('estimateClientCombo').classList.add('open');
+}
+function _estClientOpen() {
+  _estClientBuildOptions();
+  _estClientRenderDrop(_estClientOptions);
+  document.getElementById('estimateClientCombo').classList.add('open');
+}
+function _estClientClose() { setTimeout(function() { document.getElementById('estimateClientCombo').classList.remove('open'); }, 150); }
+function _estClientRenderDrop(opts) {
+  var drop = document.getElementById('estimateClientDrop');
+  drop.innerHTML = opts.map(function(o) {
+    return '<div class="combo-item" onmousedown="_estClientPick(' + JSON.stringify(o) + ')">' + esc(o) + '</div>';
+  }).join('');
+}
+function _estClientPick(val) {
+  document.getElementById('estimateClientVisible').value = val;
+  document.getElementById('estimateClientCombo').classList.remove('open');
+  _updateEstimateClient();
+}
+function _estClientKey(e) {
+  var drop = document.getElementById('estimateClientDrop');
+  var items = drop.querySelectorAll('.combo-item');
+  var active = drop.querySelector('.combo-item.active');
+  var idx = active ? Array.from(items).indexOf(active) : -1;
+  if (e.key === 'ArrowDown') { e.preventDefault(); if (idx < items.length - 1) { if (active) active.classList.remove('active'); items[idx + 1].classList.add('active'); } }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); if (idx > 0) { if (active) active.classList.remove('active'); items[idx - 1].classList.add('active'); } }
+  else if (e.key === 'Enter' && active) { e.preventDefault(); _estClientPick(active.textContent); }
+  else if (e.key === 'Escape') { document.getElementById('estimateClientCombo').classList.remove('open'); }
+}
+
+function _estGameFilter() {
+  var q = document.getElementById('estimateGame').value.trim().toLowerCase();
+  var opts = q ? _estGameOptions.filter(function(o) { return o.toLowerCase().indexOf(q) !== -1; }) : _estGameOptions;
+  _estGameRenderDrop(opts);
+  document.getElementById('estimateGameCombo').classList.add('open');
+}
+function _estGameOpen() {
+  _estGameBuildOptions();
+  _estGameRenderDrop(_estGameOptions);
+  document.getElementById('estimateGameCombo').classList.add('open');
+}
+function _estGameClose() { setTimeout(function() { document.getElementById('estimateGameCombo').classList.remove('open'); }, 150); }
+function _estGameRenderDrop(opts) {
+  var drop = document.getElementById('estimateGameDrop');
+  drop.innerHTML = opts.map(function(o) {
+    return '<div class="combo-item" onmousedown="_estGamePick(' + JSON.stringify(o) + ')">' + esc(o) + '</div>';
+  }).join('');
+}
+function _estGamePick(val) {
+  document.getElementById('estimateGame').value = val;
+  document.getElementById('estimateGameCombo').classList.remove('open');
+  _seedScopeOfWork();
+}
+function _estGameKey(e) {
+  var drop = document.getElementById('estimateGameDrop');
+  var items = drop.querySelectorAll('.combo-item');
+  var active = drop.querySelector('.combo-item.active');
+  var idx = active ? Array.from(items).indexOf(active) : -1;
+  if (e.key === 'ArrowDown') { e.preventDefault(); if (idx < items.length - 1) { if (active) active.classList.remove('active'); items[idx + 1].classList.add('active'); } }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); if (idx > 0) { if (active) active.classList.remove('active'); items[idx - 1].classList.add('active'); } }
+  else if (e.key === 'Enter' && active) { e.preventDefault(); _estGamePick(active.textContent); }
+  else if (e.key === 'Escape') { document.getElementById('estimateGameCombo').classList.remove('open'); }
 }
 
 function openNewContractDialog() {

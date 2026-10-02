@@ -696,7 +696,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   .session-dialog-title { flex-basis:100%; width:100%; }
   .session-dialog-controls { margin-left:0; width:100%; justify-content:center; }
 }
-.rounds-count { font-family:'DINBlack',sans-serif; font-size:1rem; color:#1a5f7a; min-width:1.6rem; letter-spacing:.02em; display:flex; align-items:center; justify-content:center; height:2.1rem; line-height:1; }
+.rounds-count { font-family:'DINBlack',sans-serif; font-size:1rem; color:#1a5f7a; min-width:1.6rem; letter-spacing:.02em; display:flex; align-items:center; justify-content:center; height:1.7rem; line-height:1; }
 .rounds-label { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#999; letter-spacing:.04em; text-transform:uppercase; display:flex; align-items:center; height:2.1rem; line-height:1; margin-right:.6rem; }
 .sw-wrap { display:flex; align-items:center; flex-shrink:0; }
 .sw-wrap.sw-expanded { display:flex; align-items:center; }

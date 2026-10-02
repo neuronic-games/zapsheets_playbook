@@ -3525,6 +3525,9 @@ function _resolveTMPerson(raw) {
     if (n) return n;
     return MY_NAME || raw;
   }
+  // Check saved email→name alias (persists in localStorage from previous sign-ins)
+  var alias = _dashGetEmailAlias(email);
+  if (alias) return alias;
   // Check people data
   if (typeof PEOPLE_DATA !== 'undefined' && PEOPLE_DATA) {
     for (var i = 0; i < PEOPLE_DATA.length; i++) {
@@ -5154,6 +5157,7 @@ async function _dashSignInConfirmCreate() {
     _dashCollabRemember = remember;
     _dashCollabUser = { email: data.email, bio: data.bio || {} };
     _dashSaveStoredUser(_dashCollabUser);
+    _dashSaveEmailAlias(data.email, (data.bio && data.bio.name) ? data.bio.name : '');
     _dashUpdateSignedInState();
     closeDashSignInDialog();
   } catch(e) { btn.disabled = false; btn.textContent = 'Create Account'; }
@@ -5184,9 +5188,27 @@ async function submitDashSignIn() {
     _dashCollabRemember = remember;
     _dashCollabUser = { email: data.email, bio: data.bio || {} };
     _dashSaveStoredUser(_dashCollabUser);
+    _dashSaveEmailAlias(data.email, (data.bio && data.bio.name) ? data.bio.name : '');
     _dashUpdateSignedInState();
     closeDashSignInDialog();
   } catch(e) { errEl.textContent = 'Could not connect. Please try again.'; btn.disabled = false; btn.textContent = 'Sign In'; }
+}
+
+function _dashSaveEmailAlias(email, name) {
+  if (!email || !name) return;
+  try {
+    var key = 'devboard_email_aliases_' + SHEET_ID;
+    var map = JSON.parse(localStorage.getItem(key) || '{}');
+    map[email.toLowerCase()] = name;
+    localStorage.setItem(key, JSON.stringify(map));
+  } catch(e) {}
+}
+function _dashGetEmailAlias(email) {
+  try {
+    var key = 'devboard_email_aliases_' + SHEET_ID;
+    var map = JSON.parse(localStorage.getItem(key) || '{}');
+    return map[(email || '').toLowerCase()] || '';
+  } catch(e) { return ''; }
 }
 
 // Load stored user on page load

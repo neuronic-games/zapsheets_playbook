@@ -1,5 +1,15 @@
 [
   {
+    "version": "Oct 2026",
+    "apps": ["devboard"],
+    "features": [
+      "Time & Materials tracking — a new + T&M button (owner and collab views) lets you log time spent and material costs per game; time uses a combo box with preset increments plus free-text, and material rows auto-add as you type",
+      "T&M summary row — when a game is expanded, a summary row shows total time and cost per person (owner view) or just your own totals (collab view)",
+      "T&M rows stored in the [Game] dev sheet as Time or Material event rows, color-coded amber and teal respectively; cost stored in $X.XX format",
+      "T&M rows are hidden from the session list so they don't clutter the playtest history"
+    ]
+  },
+  {
     "version": "Sep 2026",
     "apps": ["devboard"],
     "features": [

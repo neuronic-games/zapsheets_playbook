@@ -2218,7 +2218,11 @@ function openEstimateDialog(clientName, gameName) {
   document.getElementById('estimateCreateBtn').disabled      = false;
   _estimateLog('', '');
   document.getElementById('estimateOverlay').classList.add('open');
-  setTimeout(function() { document.getElementById('estimateUnitPrice').focus(); }, 50);
+  setTimeout(function() {
+    if (!hasClient) document.getElementById('estimateClientVisible').focus();
+    else if (!gameName) document.getElementById('estimateGame').focus();
+    else document.getElementById('estimateUnitPrice').focus();
+  }, 50);
 }
 
 function forceCloseEstimateDialog() {
@@ -2315,7 +2319,6 @@ function _estGameKey(e) {
 
 function openNewContractDialog() {
   openEstimateDialog('', '');
-  setTimeout(function() { document.getElementById('estimateClientVisible').focus(); }, 50);
 }
 
 var _contractsQuery = '';

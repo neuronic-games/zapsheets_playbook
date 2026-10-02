@@ -24,6 +24,7 @@ $myPhone      = trim($_POST['my_phone']       ?? '');
 $myCompany    = trim($_POST['my_company']     ?? '');
 $myLogo       = trim($_POST['my_logo']        ?? '');
 $myAddress    = trim($_POST['my_address']     ?? '');
+$docType      = strtolower(trim($_POST['type'] ?? 'estimate')) === 'invoice' ? 'Invoice' : 'Estimate';
 
 if (!$sheetId) {
     echo json_encode(['error' => 'Missing sheet ID']);
@@ -44,7 +45,7 @@ $rowPayload = [
     'duration'      => $duration,
     'target_start'  => $targetStart,
     'target_end'    => $targetEnd,
-    'type'          => 'Estimate',
+    'type'          => $docType,
     'notes'         => $notes,
     'scope_of_work' => $scopeOfWork,
     'date'          => date('n/j/Y'),
@@ -70,7 +71,7 @@ $payload = [
     'game'          => $game,
     'client'        => $client,
     'doc_id'        => $docId,
-    'doc_type'      => 'Estimate',
+    'doc_type'      => $docType,
     'num_tests'     => $numTests,
     'num_edits'     => $numEdits,
     'qty'           => $qty,
@@ -116,7 +117,7 @@ if (!empty($result['ok'])) {
         ? (json_decode(file_get_contents($estFile), true) ?: [])
         : [];
     $record = [
-        'type'         => 'estimate',
+        'type'         => strtolower($docType),
         'client'       => $client,
         'game'         => $game,
         'estimate_num' => $result['doc_num'] ?? $docId,

@@ -161,10 +161,11 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 
 /* ── Account menu ────────────────────────────────────── */
 .account-menu-wrap { position:relative; flex-shrink:0; }
+.account-menu-wrap-inner { display:flex; flex-direction:column; align-items:flex-end; gap:.1rem; }
 .account-menu {
   display:none; position:absolute; top:calc(100% + .4rem); right:0;
   background:#1a1a2e; border:1px solid rgba(255,255,255,.2);
-  border-radius:8px; min-width:130px; z-index:300;
+  border-radius:8px; min-width:150px; z-index:300;
   box-shadow:0 6px 20px rgba(0,0,0,.4); overflow:hidden;
 }
 .account-menu.open { display:block; }
@@ -176,6 +177,29 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   padding:.6rem 1rem; transition:background .12s;
 }
 .account-menu-item:hover { background:rgba(255,255,255,.1); color:#fff; }
+.account-menu-divider { border:none; border-top:1px solid rgba(255,255,255,.12); margin:.2rem 0; }
+.account-menu-label {
+  display:block; padding:.45rem 1rem .2rem;
+  font-family:'DINRegular',sans-serif; font-size:.68rem; color:rgba(255,255,255,.4);
+  text-transform:uppercase; letter-spacing:.06em; pointer-events:none;
+}
+#dashUserLabel { font-family:'DINRegular',sans-serif; font-size:.65rem; color:rgba(255,255,255,.5); white-space:nowrap; max-width:120px; overflow:hidden; text-overflow:ellipsis; }
+
+/* ── Sign-in dialog ──────────────────────────────────── */
+.dash-signin-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.45); z-index:500;
+  align-items:center; justify-content:center; padding:1rem;
+}
+.dash-signin-overlay.open { display:flex; }
+.dash-signin-dialog {
+  background:#fff; border-radius:14px; padding:1.6rem 1.8rem;
+  width:min(380px,94vw); box-shadow:0 8px 40px rgba(0,0,0,.22);
+  position:relative;
+}
+.dash-signin-dialog h2 { margin:0 0 .3rem; font-size:1.05rem; }
+.dash-signin-notice { font-family:'DINRegular',sans-serif; font-size:.8rem; color:#777; margin:0 0 1rem; line-height:1.5; }
+.dash-signin-err { color:#c0392b; font-size:.78rem; min-height:1.2em; margin:.3rem 0 0; }
 
 /* ── Release notes dialog ─────────────────────────────── */
 .rn-overlay {
@@ -904,18 +928,23 @@ body.session-dialog-open .session-body img { display:none !important; }
     </div>
 
     <div class="account-menu-wrap">
-      <button class="top-btn" onclick="toggleAccountMenu()" title="Menu">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <circle cx="12" cy="7.5" r="4.5"/>
-          <path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/>
-        </svg>
-      </button>
+      <div class="account-menu-wrap-inner">
+        <button class="top-btn" onclick="toggleAccountMenu()" title="Menu">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="12" cy="7.5" r="4.5"/>
+            <path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/>
+          </svg>
+        </button>
+        <span id="dashUserLabel" style="display:none"></span>
+      </div>
       <div class="account-menu" id="accountMenu">
         <button class="account-menu-item" onclick="accountMenuProfile()">Profile</button>
         <button class="account-menu-item" onclick="accountMenuCompany()">Company</button>
         <button class="account-menu-item" onclick="accountMenuFetch()">Fetch</button>
         <button class="account-menu-item" onclick="accountMenuRelease()">Releases</button>
         <button class="account-menu-item" onclick="accountMenuHelp()">Help</button>
+        <hr class="account-menu-divider" />
+        <button class="account-menu-item" id="dashAuthBtn" onclick="closeAccountMenu();_dashMenuAuthAction()">Sign In</button>
       </div>
     </div>
   </div>
@@ -1134,6 +1163,32 @@ body.session-dialog-open .session-body img { display:none !important; }
     <div class="sync-dialog-actions">
       <button type="button" class="notes-close" onclick="forceCloseInvoiceDialog()">Cancel</button>
       <button type="button" class="notes-close" id="invoiceCreateBtn" onclick="submitInvoice()" style="background:#1a5f7a;color:#fff;border-color:#1a5f7a">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sign-in dialog -->
+<div class="dash-signin-overlay" id="dashSignInOverlay" onclick="if(event.target===this)closeDashSignInDialog()">
+  <div class="dash-signin-dialog" onclick="event.stopPropagation()">
+    <button onclick="closeDashSignInDialog()" style="position:absolute;top:.75rem;right:.75rem;background:none;border:none;cursor:pointer;font-size:1rem;color:#888;padding:.25rem .4rem" title="Close">&#x2715;</button>
+    <h2>Sign In</h2>
+    <p class="dash-signin-notice">Sign in with your DevBoard collab account to track your activity.</p>
+    <div class="field-group">
+      <label style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:#888">Email</label>
+      <input type="email" class="field-input" id="dashSignInEmail" placeholder="you@example.com" autocomplete="email" autocapitalize="off" />
+    </div>
+    <div class="field-group">
+      <label style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:#888">Password</label>
+      <input type="password" class="field-input" id="dashSignInPassword" placeholder="Password"
+        autocomplete="current-password" onkeydown="if(event.key==='Enter')submitDashSignIn()" />
+    </div>
+    <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#666;margin:.3rem 0 .6rem;cursor:pointer">
+      <input type="checkbox" id="dashSignInRemember" /> Remember me on this device
+    </label>
+    <div class="dash-signin-err" id="dashSignInErr"></div>
+    <div class="dialog-actions" style="margin-top:.6rem">
+      <button class="btn-cancel" onclick="closeDashSignInDialog()">Cancel</button>
+      <button class="btn-primary" id="dashSignInBtn" onclick="submitDashSignIn()">Sign In</button>
     </div>
   </div>
 </div>
@@ -3392,6 +3447,8 @@ document.addEventListener('keydown', function(ev) {
     closeContractDialog();
     return;
   }
+  el = document.getElementById('dashSignInOverlay');
+  if (el && el.classList.contains('open')) { closeDashSignInDialog(); return; }
   el = document.getElementById('dashTMOverlay');
   if (el && el.classList.contains('open')) { closeDashTMDialog(); return; }
   el = document.getElementById('sessionOverlay');
@@ -3577,11 +3634,12 @@ async function submitDashTM() {
   for (var r = 0; r < rows.length; r++) {
     var row = rows[r];
     var fd = new FormData();
+    var tmPerson = (_dashCollabUser && ((_dashCollabUser.bio && _dashCollabUser.bio.name) || _dashCollabUser.email)) || MY_NAME;
     fd.append('id',          SHEET_ID);
     fd.append('game',        _dashTMGame);
     fd.append('date',        date);
     fd.append('event',       row.event);
-    fd.append('session_num', MY_NAME);
+    fd.append('session_num', tmPerson);
     fd.append('observation', row.observation);
     fd.append('solution',    row.solution);
     fd.append('row_type',    'header');
@@ -4977,6 +5035,77 @@ function accountMenuCompany() { closeAccountMenu(); openCompanyDialog(); }
 function accountMenuFetch()   { closeAccountMenu(); doFetch(); }
 function accountMenuRelease() { closeAccountMenu(); openRnDialog(); }
 function accountMenuHelp()    { closeAccountMenu(); window.open(APP_BASE + 'devboard/help', '_blank'); }
+
+// ── Collab sign-in for owner view ─────────────────────────────────────────────
+
+var _dashCollabUser    = null;
+var _dashCollabRemember = false;
+
+function _dashLoadStoredUser() {
+  try { var ls = localStorage.getItem('devboard_collab_user'); if (ls) { _dashCollabUser = JSON.parse(ls); _dashCollabRemember = true; return; } } catch(e) {}
+  try { var ss = sessionStorage.getItem('devboard_collab_user'); if (ss) _dashCollabUser = JSON.parse(ss); } catch(e) {}
+}
+function _dashSaveStoredUser(u) {
+  var val = JSON.stringify(u);
+  if (_dashCollabRemember) { try { localStorage.setItem('devboard_collab_user', val); return; } catch(e) {} }
+  else { try { localStorage.removeItem('devboard_collab_user'); } catch(e) {} }
+  try { sessionStorage.setItem('devboard_collab_user', val); } catch(e) {}
+}
+function _dashClearStoredUser() {
+  try { localStorage.removeItem('devboard_collab_user'); } catch(e) {}
+  try { sessionStorage.removeItem('devboard_collab_user'); } catch(e) {}
+  _dashCollabUser = null;
+  _dashCollabRemember = false;
+}
+function _dashUpdateSignedInState() {
+  var label  = document.getElementById('dashUserLabel');
+  var btn    = document.getElementById('dashAuthBtn');
+  var name   = _dashCollabUser ? ((_dashCollabUser.bio && _dashCollabUser.bio.name) || _dashCollabUser.email || '') : '';
+  if (label) { label.textContent = name; label.style.display = name ? '' : 'none'; }
+  if (btn)   btn.textContent = _dashCollabUser ? 'Sign Out' : 'Sign In';
+}
+function _dashMenuAuthAction() {
+  if (_dashCollabUser) { _dashClearStoredUser(); _dashUpdateSignedInState(); }
+  else openDashSignInDialog();
+}
+function openDashSignInDialog() {
+  document.getElementById('dashSignInEmail').value    = '';
+  document.getElementById('dashSignInPassword').value = '';
+  document.getElementById('dashSignInErr').textContent = '';
+  document.getElementById('dashSignInBtn').disabled   = false;
+  document.getElementById('dashSignInBtn').textContent = 'Sign In';
+  document.getElementById('dashSignInOverlay').classList.add('open');
+  setTimeout(function() { document.getElementById('dashSignInEmail').focus(); }, 80);
+}
+function closeDashSignInDialog() {
+  document.getElementById('dashSignInOverlay').classList.remove('open');
+}
+async function submitDashSignIn() {
+  var email    = document.getElementById('dashSignInEmail').value.trim();
+  var password = document.getElementById('dashSignInPassword').value;
+  var remember = document.getElementById('dashSignInRemember').checked;
+  var errEl    = document.getElementById('dashSignInErr');
+  var btn      = document.getElementById('dashSignInBtn');
+  if (!email || !password) { errEl.textContent = 'Enter your email and password.'; return; }
+  btn.disabled = true; btn.textContent = 'Signing in…'; errEl.textContent = '';
+  try {
+    var fd = new FormData();
+    fd.append('email', email); fd.append('password', password); fd.append('id', SHEET_ID);
+    var resp = await fetch(APP_BASE + 'push/collabAuth.php', { method:'POST', body:fd });
+    var data = await resp.json();
+    if (data.prompt_create) { errEl.textContent = 'No account found for that email. Sign in from the collab view to create one.'; btn.disabled = false; btn.textContent = 'Sign In'; return; }
+    if (!data.ok) { errEl.textContent = data.error || 'Incorrect email or password.'; btn.disabled = false; btn.textContent = 'Sign In'; return; }
+    _dashCollabRemember = remember;
+    _dashCollabUser = { email: data.email, bio: data.bio || {} };
+    _dashSaveStoredUser(_dashCollabUser);
+    _dashUpdateSignedInState();
+    closeDashSignInDialog();
+  } catch(e) { errEl.textContent = 'Could not connect. Please try again.'; btn.disabled = false; btn.textContent = 'Sign In'; }
+}
+
+// Load stored user on page load
+_dashLoadStoredUser();
+_dashUpdateSignedInState();
 
 document.addEventListener('click', function(e) {
   var wrap = document.querySelector('.account-menu-wrap');

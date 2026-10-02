@@ -488,6 +488,14 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .stat-editing   { background:#a0522d; }
 .stat-reporting { background:#2d3a8c; }
 .stat-dim      { opacity:.35; }
+.tm-summary-row {
+  padding:.35rem 1rem; background:#fdf8f0;
+  border-bottom:1px solid #f0e4c8;
+  display:flex; flex-wrap:wrap; gap:.25rem .9rem;
+  font-family:'DINRegular',sans-serif; font-size:.72rem; color:#888;
+}
+.tm-summary-person { color:#1a5f7a; font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; }
+.tm-summary-val { color:#555; }
 .stat-active   { box-shadow:0 0 0 2.5px #fff, 0 0 0 4.5px rgba(0,0,0,.25); }
 .subtitle-right { margin-left:auto; display:flex; align-items:stretch; gap:.45rem; flex-wrap:wrap; }
 @media (max-width:560px) { .subtitle-right { margin-left:0; width:100%; } }
@@ -2722,6 +2730,9 @@ function renderBody(gameName, rows) {
   html += '</div>';
   html += '</div>';
 
+  // T&M summary row (per-person totals)
+  html += _buildTMSummaryHtml(rows);
+
   // Sessions list
   if (!sessions.length) {
     html += '<div class="dev-empty">' + (_searchQuery ? 'No sessions match your search.' : activeFilter ? 'No ' + activeFilter + ' sessions.' : 'No playtest sessions yet. Click "+ Session" to log one.') + '</div>';
@@ -3404,6 +3415,50 @@ function hasAddData() {
   return !!(document.getElementById('gameComboInput').value.trim());
 }
 // ── Dashboard Time & Materials dialog ────────────────────────────────────────
+
+// ── T&M helpers ──────────────────────────────────────────────────────────────
+function _parseTMMinutes(s) {
+  if (!s) return 0;
+  var m = 0;
+  var hr  = s.match(/(\d+)\s*hr/);
+  var min = s.match(/(\d+)\s*min/);
+  if (hr)  m += parseInt(hr[1])  * 60;
+  if (min) m += parseInt(min[1]);
+  return m;
+}
+function _fmtTMTime(mins) {
+  if (!mins) return '';
+  var h = Math.floor(mins / 60), m = mins % 60;
+  return h && m ? h + 'h ' + m + 'm' : h ? h + 'h' : m + 'm';
+}
+function _buildTMSummaryHtml(rows) {
+  // Aggregate T&M rows by person
+  var byPerson = {};
+  rows.forEach(function(row) {
+    var et = (row['Event'] || '').trim().toLowerCase();
+    if (et !== 'time' && et !== 'material') return;
+    var person = (row['People'] || '').trim() || '(unknown)';
+    if (!byPerson[person]) byPerson[person] = { mins: 0, cost: 0 };
+    if (et === 'time') {
+      byPerson[person].mins += _parseTMMinutes(row['Observations'] || row['Observation'] || '');
+    } else {
+      var c = parseFloat((row['Observations'] || row['Observation'] || '').replace(/[^0-9.]/g, ''));
+      if (!isNaN(c)) byPerson[person].cost += c;
+    }
+  });
+  var people = Object.keys(byPerson);
+  if (!people.length) return '';
+  var html = '<div class="tm-summary-row">';
+  people.forEach(function(p) {
+    var parts = [];
+    if (byPerson[p].mins) parts.push(_fmtTMTime(byPerson[p].mins));
+    if (byPerson[p].cost) parts.push('$' + byPerson[p].cost.toFixed(2));
+    if (!parts.length) return;
+    html += '<span><span class="tm-summary-person">' + esc(p) + '</span> <span class="tm-summary-val">' + parts.join(' · ') + '</span></span>';
+  });
+  html += '</div>';
+  return html;
+}
 
 var _dashTMGame = '';
 var _dashTMMaterialCount = 0;

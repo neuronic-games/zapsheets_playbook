@@ -587,6 +587,8 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     </div>
   </div>
 
+  <div id="tmSummaryRow" style="display:none;padding:.3rem 1rem;background:#fdf8f0;border:1px solid #f0e4c8;border-top:none;font-family:'DINRegular',sans-serif;font-size:.72rem;color:#888;border-radius:0"></div>
+
   <div class="sessions-wrap" id="sessionsWrap">
     <div class="loading-msg">Loading sessions…</div>
   </div>
@@ -862,10 +864,50 @@ var _editOrigDate      = '';
 var _editOrigEvent     = '';
 var _editOrigSessionNum = '';
 
+function _parseTMMinutes(s) {
+  if (!s) return 0;
+  var m = 0, hr = s.match(/(\d+)\s*hr/), mn = s.match(/(\d+)\s*min/);
+  if (hr) m += parseInt(hr[1]) * 60;
+  if (mn) m += parseInt(mn[1]);
+  return m;
+}
+function _fmtTMTime(mins) {
+  if (!mins) return '';
+  var h = Math.floor(mins / 60), m = mins % 60;
+  return h && m ? h + 'h ' + m + 'm' : h ? h + 'h' : m + 'm';
+}
+function _updateTMSummaryRow() {
+  var el = document.getElementById('tmSummaryRow');
+  if (!el) return;
+  if (!_collabUser || !_allRows || !_allRows.length) { el.style.display = 'none'; return; }
+  var userName = (_collabUser.bio && _collabUser.bio.name) ? _collabUser.bio.name.toLowerCase() : '';
+  var userEmail = (_collabUser.email || '').toLowerCase();
+  var totalMins = 0, totalCost = 0;
+  _allRows.forEach(function(row) {
+    var et = (row['Event'] || '').trim().toLowerCase();
+    if (et !== 'time' && et !== 'material') return;
+    var person = (row['People'] || '').trim().toLowerCase();
+    if (person !== userName && person !== userEmail) return;
+    if (et === 'time') {
+      totalMins += _parseTMMinutes(row['Observations'] || row['Observation'] || '');
+    } else {
+      var c = parseFloat((row['Observations'] || row['Observation'] || '').replace(/[^0-9.]/g, ''));
+      if (!isNaN(c)) totalCost += c;
+    }
+  });
+  var parts = [];
+  if (totalMins) parts.push(_fmtTMTime(totalMins));
+  if (totalCost) parts.push('$' + totalCost.toFixed(2));
+  if (!parts.length) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  el.innerHTML = '<span style="font-family:\'DINBlack\',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:#1a5f7a">Your T&amp;M</span> <span style="color:#555">' + parts.join(' · ') + '</span>';
+}
+
 function renderSessions() {
   _allSessions = buildSessions(_allRows).reverse();
   var q    = (document.getElementById('searchInput') ? document.getElementById('searchInput').value : '').toLowerCase().trim();
   var sessions = q ? _allSessions.filter(function(s) { return _sessionMatchesQuery(s, q); }) : _allSessions;
+  _updateTMSummaryRow();
   var wrap = document.getElementById('sessionsWrap');
   if (!sessions.length) {
     wrap.innerHTML = '<div class="dev-empty">' + (q ? 'No sessions match "' + esc(q) + '".' : 'No sessions yet. Click "+ Session" to log one.') + '</div>';
@@ -1684,6 +1726,7 @@ function _updateSignedInState() {
   if (addBtn) addBtn.style.display = _collabUser ? '' : 'none';
   var tmBtn = document.getElementById('addTMBtn');
   if (tmBtn) tmBtn.style.display = _collabUser ? '' : 'none';
+  _updateTMSummaryRow();
 }
 function _menuAuthAction() {
   if (_collabUser) { signOut(); } else { openProfileDialog(); }

@@ -317,6 +317,12 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 .field-input:focus { border-color:#1a5f7a; background:#fff; }
 select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .7rem center; padding-right:2rem; }
 .field-sep { border:none; border-top:1px solid #e8edf0; margin:.1rem 0; }
+.tm-section-label { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; color:#888; margin:.6rem 0 .5rem; }
+.tm-section-header { display:flex; align-items:center; justify-content:space-between; margin:.6rem 0 .5rem; }
+.tm-section-header .tm-section-label { margin:0; }
+.tm-add-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; border:1px solid #c8d8e0; background:#fff; color:#1a5f7a; padding:.28rem .65rem; border-radius:5px; cursor:pointer; transition:background .15s; }
+.tm-add-btn:hover { background:#e8f4f8; }
+.tm-material-row { border:1px solid #e8edf0; border-radius:7px; padding:.7rem .8rem .3rem; margin-bottom:.6rem; }
 .field-textarea {
   display:block; width:100%; padding:.6rem .75rem;
   font-family:'DINRegular',sans-serif; font-size:.85rem; color:#111; line-height:1.5;
@@ -557,6 +563,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
       </a>
 <?php endif; ?>
       <button type="button" class="add-session-btn" id="addSessionBtn" onclick="guardedOpenSessionDialog()" style="display:none">+ Session</button>
+      <button type="button" class="add-session-btn" id="addTMBtn" onclick="guardedOpenTMDialog()" style="display:none">+ T&amp;M</button>
       <button type="button" class="reload-session-btn" id="reloadSessionBtn" onclick="reloadSessions()" title="Reload from sheet">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
       </button>
@@ -565,6 +572,70 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
   <div class="sessions-wrap" id="sessionsWrap">
     <div class="loading-msg">Loading sessions…</div>
+  </div>
+</div>
+
+<!-- Time & Materials dialog -->
+<div class="overlay" id="tmOverlay" onclick="if(event.target===this)closeTMDialog()">
+  <div class="session-dialog" style="max-width:520px">
+    <h2>Time &amp; Materials — <span><?= _ds_e($_gameName) ?></span></h2>
+
+    <div class="field-group">
+      <label>Date</label>
+      <input type="date" class="field-input" id="tmDate" autocomplete="off" />
+    </div>
+
+    <hr class="field-sep" />
+
+    <div class="tm-section-label">Time</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem .8rem">
+      <div class="field-group">
+        <label>Person</label>
+        <input type="text" class="field-input" id="tmTimePerson" autocomplete="off" />
+      </div>
+      <div class="field-group">
+        <label>Minutes</label>
+        <select class="field-input" id="tmTimeMinutes">
+          <option value="">— none —</option>
+          <option value="15">15 min</option>
+          <option value="30">30 min</option>
+          <option value="45">45 min</option>
+          <option value="60">1 hr</option>
+          <option value="75">1 hr 15 min</option>
+          <option value="90">1 hr 30 min</option>
+          <option value="105">1 hr 45 min</option>
+          <option value="120">2 hr</option>
+          <option value="150">2 hr 30 min</option>
+          <option value="180">3 hr</option>
+          <option value="210">3 hr 30 min</option>
+          <option value="240">4 hr</option>
+          <option value="300">5 hr</option>
+          <option value="360">6 hr</option>
+          <option value="420">7 hr</option>
+          <option value="480">8 hr</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>Notes</label>
+      <textarea class="field-input ge-textarea" id="tmTimeNotes" placeholder="What did you work on?" style="min-height:3rem;resize:vertical"></textarea>
+    </div>
+
+    <hr class="field-sep" />
+
+    <div class="tm-section-header">
+      <div class="tm-section-label">Materials</div>
+      <button type="button" class="tm-add-btn" onclick="addTMMaterialRow()">+ Add Material</button>
+    </div>
+
+    <div id="tmMaterialsContainer"></div>
+
+    <div class="dialog-err" id="tmErr"></div>
+    <div class="dialog-actions">
+      <button class="btn-cancel" onclick="closeTMDialog()">Cancel</button>
+      <button class="btn-primary" id="tmBtn" onclick="submitTM()">Save</button>
+    </div>
   </div>
 </div>
 
@@ -1002,6 +1073,116 @@ function openEditSessionDialog(idx) {
 function closeSessionDialog() {
   document.getElementById('sessionOverlay').classList.remove('open');
   _editMode = false;
+}
+
+// ── Time & Materials dialog ───────────────────────────────────────────────────
+
+var _tmMaterialCount = 0;
+
+function openTMDialog() {
+  document.getElementById('tmDate').value = todayISO();
+  var person = (_collabUser && _collabUser.bio && _collabUser.bio.name)
+    ? _collabUser.bio.name : (_collabUser ? _collabUser.email : '');
+  document.getElementById('tmTimePerson').value   = person;
+  document.getElementById('tmTimeMinutes').value  = '';
+  document.getElementById('tmTimeNotes').value    = '';
+  document.getElementById('tmErr').textContent    = '';
+  _tmMaterialCount = 0;
+  document.getElementById('tmMaterialsContainer').innerHTML = '';
+  addTMMaterialRow(person);
+  document.getElementById('tmBtn').disabled    = false;
+  document.getElementById('tmBtn').textContent = 'Save';
+  document.getElementById('tmOverlay').classList.add('open');
+  setTimeout(function() { document.getElementById('tmTimeMinutes').focus(); }, 80);
+}
+
+function closeTMDialog() {
+  document.getElementById('tmOverlay').classList.remove('open');
+}
+
+function guardedOpenTMDialog() {
+  if (!_collabUser) { openProfileDialog(); return; }
+  openTMDialog();
+}
+
+function addTMMaterialRow(prefillPerson) {
+  _tmMaterialCount++;
+  var i = _tmMaterialCount;
+  var person = (prefillPerson !== undefined) ? prefillPerson
+    : ((_collabUser && _collabUser.bio && _collabUser.bio.name)
+        ? _collabUser.bio.name : (_collabUser ? _collabUser.email : ''));
+  var div = document.createElement('div');
+  div.className = 'tm-material-row';
+  div.id = 'tmMat-' + i;
+  div.innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem .8rem">'
+    + '<div class="field-group"><label>Person</label>'
+    + '<input type="text" class="field-input" id="tmMatPerson-' + i + '" value="' + esc(person) + '" autocomplete="off" /></div>'
+    + '<div class="field-group"><label>Cost ($)</label>'
+    + '<input type="text" class="field-input" id="tmMatCost-' + i + '" placeholder="0.00" autocomplete="off" /></div>'
+    + '</div>'
+    + '<div class="field-group"><label>Description</label>'
+    + '<input type="text" class="field-input" id="tmMatDesc-' + i + '" placeholder="" autocomplete="off" /></div>';
+  document.getElementById('tmMaterialsContainer').appendChild(div);
+}
+
+async function submitTM() {
+  var date       = document.getElementById('tmDate').value;
+  var timePerson = document.getElementById('tmTimePerson').value.trim();
+  var timeMins   = document.getElementById('tmTimeMinutes').value;
+  var timeNotes  = document.getElementById('tmTimeNotes').value.trim();
+
+  var rows = [];
+
+  if (timeMins) {
+    rows.push({ event: 'Time', person: timePerson, observation: timeMins, solution: timeNotes });
+  }
+
+  for (var i = 1; i <= _tmMaterialCount; i++) {
+    var matEl = document.getElementById('tmMat-' + i);
+    if (!matEl) continue;
+    var matPerson = document.getElementById('tmMatPerson-' + i).value.trim();
+    var matCost   = document.getElementById('tmMatCost-' + i).value.trim();
+    var matDesc   = document.getElementById('tmMatDesc-' + i).value.trim();
+    if (matCost || matDesc) {
+      rows.push({ event: 'Material', person: matPerson, observation: matCost, solution: matDesc });
+    }
+  }
+
+  if (!rows.length) {
+    document.getElementById('tmErr').textContent = 'Enter at least one time or material entry.';
+    return;
+  }
+
+  var btn = document.getElementById('tmBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  document.getElementById('tmErr').textContent = '';
+
+  var errors = [];
+  for (var r = 0; r < rows.length; r++) {
+    var row = rows[r];
+    var fd = new FormData();
+    fd.append('id',          SHEET_ID);
+    fd.append('game',        GAME_NAME);
+    fd.append('date',        date);
+    fd.append('event',       row.event);
+    fd.append('session_num', row.person);
+    fd.append('observation', row.observation);
+    fd.append('solution',    row.solution);
+    fd.append('row_type',    'header');
+    try {
+      var resp = await fetch(APP_BASE + 'push/addDevRow.php', { method:'POST', body: fd });
+      var data = await resp.json();
+      if (!data.ok) errors.push(data.error || 'Unknown error');
+    } catch(e) { errors.push(String(e)); }
+  }
+
+  btn.disabled = false; btn.textContent = 'Save';
+  if (errors.length) {
+    document.getElementById('tmErr').textContent = errors.join('; ');
+  } else {
+    closeTMDialog();
+  }
 }
 
 function deleteSession() {
@@ -1442,6 +1623,8 @@ function _updateSignedInState() {
   if (authBtn) authBtn.textContent = _collabUser ? 'Sign Out' : 'Sign In';
   var addBtn = document.getElementById('addSessionBtn');
   if (addBtn) addBtn.style.display = _collabUser ? '' : 'none';
+  var tmBtn = document.getElementById('addTMBtn');
+  if (tmBtn) tmBtn.style.display = _collabUser ? '' : 'none';
 }
 function _menuAuthAction() {
   if (_collabUser) { signOut(); } else { openProfileDialog(); }
@@ -1891,6 +2074,9 @@ document.addEventListener('keydown', function(ev) {
   }
   if (document.getElementById('sessionOverlay').classList.contains('open')) {
     closeSessionDialog(); return;
+  }
+  if (document.getElementById('tmOverlay').classList.contains('open')) {
+    closeTMDialog(); return;
   }
 });
 

@@ -3581,6 +3581,7 @@ async function submitDashTM() {
     fd.append('game',        _dashTMGame);
     fd.append('date',        date);
     fd.append('event',       row.event);
+    fd.append('session_num', MY_NAME);
     fd.append('observation', row.observation);
     fd.append('solution',    row.solution);
     fd.append('row_type',    'header');

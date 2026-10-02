@@ -24,6 +24,7 @@ $myPhone      = trim($_POST['my_phone']       ?? '');
 $myCompany    = trim($_POST['my_company']     ?? '');
 $myLogo       = trim($_POST['my_logo']        ?? '');
 $myAddress    = trim($_POST['my_address']     ?? '');
+$myPayment    = trim($_POST['my_payment']    ?? '');
 $docType      = strtolower(trim($_POST['type'] ?? 'estimate')) === 'invoice' ? 'Invoice' : 'Estimate';
 
 if (!$sheetId) {
@@ -81,11 +82,14 @@ $payload = [
     'discount_label'=> $discountLbl,
     'notes'         => $notes,
     'scope_of_work' => $scopeOfWork,
+    'description'   => $scopeOfWork,
+    'quote'         => strval(floatval($qty) * floatval($unitPrice)),
     'my_name'       => $myName,
     'my_phone'      => $myPhone,
     'my_company'    => $myCompany,
     'my_logo'       => $myLogo,
     'my_address'    => $myAddress,
+    'my_payment'    => $myPayment,
     'tgt_start'     => $targetStart,
     'tgt_end'       => $targetEnd,
     'base_url'      => $baseUrl,

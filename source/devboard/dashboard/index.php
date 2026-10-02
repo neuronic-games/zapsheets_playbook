@@ -2339,6 +2339,7 @@ function submitEstimate() {
   fd.append('my_company',     MY_COMPANY       || '');
   fd.append('my_logo',        MY_LOGO          || '');
   fd.append('my_address',     MY_COMPANY_ADDRESS || MY_BIO_LOCATION || '');
+  fd.append('my_payment',     MY_PAYMENT_INFO  || '');
 
   fetch(APP_BASE + 'push/createEstimate.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })

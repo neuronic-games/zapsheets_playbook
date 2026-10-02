@@ -241,6 +241,12 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   80%      { transform:translateX(5px); }
 }
 .dialog-shake { animation:dialog-shake .35s ease; }
+.tm-section-label { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; color:#888; margin:.6rem 0 .5rem; }
+.tm-time-wrap { position:relative; }
+.tm-time-list { display:none; position:absolute; top:calc(100% + 2px); left:0; right:0; background:#fff; border:1px solid #c8d8e0; border-radius:6px; box-shadow:0 4px 14px rgba(0,0,0,.13); z-index:9999; max-height:200px; overflow-y:auto; }
+.tm-time-list.open { display:block; }
+.tm-time-opt { padding:.38rem .75rem; font-family:'DINRegular',sans-serif; font-size:.85rem; cursor:pointer; color:#1a1a2e; }
+.tm-time-opt:hover { background:#e8f4f8; }
 
 /* ── Save toast (background-save error notification) ─────────────────────── */
 .save-toast {
@@ -1512,6 +1518,49 @@ body.session-dialog-open .session-body img { display:none !important; }
   </div>
 </div>
 
+<!-- Time & Materials dialog -->
+<div class="overlay" id="dashTMOverlay" onclick="if(event.target===this){if(_dashTMIsDirty())shakeDialog(this.querySelector('.session-dialog'));else forceCloseDashTMDialog();}">
+  <div class="session-dialog" style="max-width:500px;position:relative" onclick="event.stopPropagation()">
+    <button onclick="closeDashTMDialog()" style="position:absolute;top:.75rem;right:.75rem;background:none;border:none;cursor:pointer;font-size:1rem;color:#888;line-height:1;padding:.25rem .4rem" title="Close">&#x2715;</button>
+    <h2>Time &amp; Materials — <span id="dashTMGameTitle"></span></h2>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem .8rem;margin-bottom:.6rem">
+      <div class="field-group" style="margin:0">
+        <label>Date</label>
+        <input type="date" class="field-input" id="dashTMDate" autocomplete="off" style="height:2.45rem" />
+      </div>
+      <div class="field-group" style="margin:0">
+        <label>Time</label>
+        <div class="tm-time-wrap">
+          <input type="text" class="field-input" id="dashTMTimeMinutes" placeholder="e.g. 30 min, 1 hr"
+            autocomplete="off" style="height:2.45rem"
+            onfocus="_showDashTMTimeList()" oninput="_showDashTMTimeList()" onblur="_hideDashTMTimeList()" />
+          <div class="tm-time-list" id="dashTMTimeList"></div>
+        </div>
+      </div>
+    </div>
+    <div class="field-group" style="margin-bottom:.7rem">
+      <label>Notes</label>
+      <textarea class="field-input ge-textarea" id="dashTMTimeNotes" placeholder="What did you work on?" style="min-height:2rem;resize:vertical"></textarea>
+    </div>
+
+    <hr class="field-sep" style="margin:.2rem 0 .6rem" />
+
+    <div style="display:grid;grid-template-columns:120px 1fr;gap:0 .6rem;margin-bottom:.2rem">
+      <div class="tm-section-label" style="margin:0">Cost ($)</div>
+      <div class="tm-section-label" style="margin:0">Description</div>
+    </div>
+
+    <div id="dashTMMaterialsContainer"></div>
+
+    <div class="dialog-err" id="dashTMErr"></div>
+    <div class="dialog-actions" style="margin-top:.5rem">
+      <button class="btn-cancel" onclick="forceCloseDashTMDialog()">Cancel</button>
+      <button class="btn-primary" id="dashTMBtn" onclick="submitDashTM()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- Confirm dialog -->
 <div class="overlay confirm-overlay" id="confirmOverlay" onclick="if(event.target===this)_closeConfirmDialog()">
   <div class="sync-dialog" style="width:min(360px,92vw)" onclick="event.stopPropagation()">
@@ -2669,6 +2718,7 @@ function renderBody(gameName, rows) {
     'Share</button>';
   html += '<button class="subtitle-btn" onclick="openEditGame(\'' + gnJ + '\')">Edit</button>';
   html += '<button class="subtitle-btn subtitle-btn-primary" onclick="openSessionDialog(\'' + gnJ + '\')">+ Session</button>';
+  html += '<button class="subtitle-btn" onclick="openDashTMDialog(\'' + gnJ + '\')">+ T&amp;M</button>';
   html += '<button class="subtitle-btn subtitle-btn-reload" onclick="reloadDevData(\'' + gnJ + '\')" title="Reload from sheet">' +
     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>' +
     '</button>';
@@ -3334,6 +3384,8 @@ document.addEventListener('keydown', function(ev) {
     closeContractDialog();
     return;
   }
+  el = document.getElementById('dashTMOverlay');
+  if (el && el.classList.contains('open')) { closeDashTMDialog(); return; }
   el = document.getElementById('sessionOverlay');
   if (el.classList.contains('open')) {
     var dlg = el.querySelector('.session-dialog');
@@ -3354,6 +3406,149 @@ function hasAddData() {
   if (_editGameMode) return false;
   return !!(document.getElementById('gameComboInput').value.trim());
 }
+// ── Dashboard Time & Materials dialog ────────────────────────────────────────
+
+var _dashTMGame = '';
+var _dashTMMaterialCount = 0;
+var _dashTMTimeOptions = ['15 min','30 min','45 min','1 hr','1 hr 15 min','1 hr 30 min','1 hr 45 min','2 hr','2 hr 30 min','3 hr','3 hr 30 min','4 hr','5 hr','6 hr','7 hr','8 hr'];
+
+function _showDashTMTimeList() {
+  var inp  = document.getElementById('dashTMTimeMinutes');
+  var list = document.getElementById('dashTMTimeList');
+  if (!inp || !list) return;
+  var q    = inp.value.trim().toLowerCase();
+  var opts = q ? _dashTMTimeOptions.filter(function(o) { return o.toLowerCase().indexOf(q) !== -1; }) : _dashTMTimeOptions;
+  if (!opts.length) { list.classList.remove('open'); return; }
+  list.innerHTML = opts.map(function(o) {
+    return '<div class="tm-time-opt" onmousedown="_pickDashTMTime(\'' + o + '\')">' + o + '</div>';
+  }).join('');
+  list.classList.add('open');
+}
+function _hideDashTMTimeList() {
+  setTimeout(function() {
+    var list = document.getElementById('dashTMTimeList');
+    if (list) list.classList.remove('open');
+  }, 150);
+}
+function _pickDashTMTime(val) {
+  var inp = document.getElementById('dashTMTimeMinutes');
+  if (inp) inp.value = val;
+  var list = document.getElementById('dashTMTimeList');
+  if (list) list.classList.remove('open');
+}
+
+function _dashTMIsDirty() {
+  if ((document.getElementById('dashTMTimeMinutes').value || '').trim()) return true;
+  if ((document.getElementById('dashTMTimeNotes').value   || '').trim()) return true;
+  for (var i = 1; i <= _dashTMMaterialCount; i++) {
+    var ce = document.getElementById('dashTMMatCost-' + i);
+    var de = document.getElementById('dashTMMatDesc-' + i);
+    if (ce && ce.value.trim()) return true;
+    if (de && de.value.trim()) return true;
+  }
+  return false;
+}
+
+function _dashTMCheckAutoAdd(i) {
+  if (i < _dashTMMaterialCount) return;
+  var cost = (document.getElementById('dashTMMatCost-' + i) || {}).value || '';
+  var desc = (document.getElementById('dashTMMatDesc-' + i) || {}).value || '';
+  if (cost.trim() || desc.trim()) _addDashTMMaterialRow();
+}
+
+function _addDashTMMaterialRow() {
+  _dashTMMaterialCount++;
+  var i = _dashTMMaterialCount;
+  var div = document.createElement('div');
+  div.style.marginBottom = '.35rem';
+  div.id = 'dashTMMat-' + i;
+  div.innerHTML =
+    '<div style="display:grid;grid-template-columns:120px 1fr;gap:.4rem .6rem;align-items:center">'
+    + '<input type="text" class="field-input" id="dashTMMatCost-' + i + '" placeholder="0.00" autocomplete="off" oninput="_dashTMCheckAutoAdd(' + i + ')" style="margin:0" />'
+    + '<input type="text" class="field-input" id="dashTMMatDesc-' + i + '" placeholder="" autocomplete="off" oninput="_dashTMCheckAutoAdd(' + i + ')" style="margin:0" />'
+    + '</div>';
+  document.getElementById('dashTMMaterialsContainer').appendChild(div);
+}
+
+function openDashTMDialog(gameName) {
+  _dashTMGame = gameName;
+  document.getElementById('dashTMGameTitle').textContent = gameName;
+  document.getElementById('dashTMDate').value         = todayISO();
+  document.getElementById('dashTMTimeMinutes').value  = '';
+  document.getElementById('dashTMTimeNotes').value    = '';
+  document.getElementById('dashTMErr').textContent    = '';
+  _dashTMMaterialCount = 0;
+  document.getElementById('dashTMMaterialsContainer').innerHTML = '';
+  _addDashTMMaterialRow();
+  document.getElementById('dashTMBtn').disabled    = false;
+  document.getElementById('dashTMBtn').textContent = 'Save';
+  document.getElementById('dashTMOverlay').classList.add('open');
+  setTimeout(function() { document.getElementById('dashTMTimeMinutes').focus(); }, 80);
+}
+
+function closeDashTMDialog() {
+  if (_dashTMIsDirty()) { shakeDialog(document.querySelector('#dashTMOverlay .session-dialog')); return; }
+  forceCloseDashTMDialog();
+}
+function forceCloseDashTMDialog() {
+  document.getElementById('dashTMOverlay').classList.remove('open');
+  _hideDashTMTimeList();
+}
+
+async function submitDashTM() {
+  var date      = document.getElementById('dashTMDate').value;
+  var timeMins  = document.getElementById('dashTMTimeMinutes').value.trim();
+  var timeNotes = document.getElementById('dashTMTimeNotes').value.trim();
+
+  var rows = [];
+  if (timeMins) rows.push({ event: 'Time', observation: timeMins, solution: timeNotes });
+
+  for (var i = 1; i <= _dashTMMaterialCount; i++) {
+    var ce = document.getElementById('dashTMMatCost-' + i);
+    var de = document.getElementById('dashTMMatDesc-' + i);
+    if (!ce) continue;
+    var matCost = ce.value.trim();
+    var matDesc = de ? de.value.trim() : '';
+    if (matCost || matDesc) {
+      var costNum = parseFloat(matCost.replace(/[^0-9.]/g, ''));
+      var costFmt = (!isNaN(costNum) && matCost !== '') ? '$' + costNum.toFixed(2) : matCost;
+      rows.push({ event: 'Material', observation: costFmt, solution: matDesc });
+    }
+  }
+
+  if (!rows.length) { document.getElementById('dashTMErr').textContent = 'Enter at least one time or material entry.'; return; }
+
+  var btn = document.getElementById('dashTMBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  document.getElementById('dashTMErr').textContent = '';
+
+  var errors = [];
+  for (var r = 0; r < rows.length; r++) {
+    var row = rows[r];
+    var fd = new FormData();
+    fd.append('id',          SHEET_ID);
+    fd.append('game',        _dashTMGame);
+    fd.append('date',        date);
+    fd.append('event',       row.event);
+    fd.append('observation', row.observation);
+    fd.append('solution',    row.solution);
+    fd.append('row_type',    'header');
+    try {
+      var resp = await fetch(APP_BASE + 'push/addDevRow.php', { method:'POST', body: fd });
+      var data = await resp.json();
+      if (!data.ok) errors.push(data.error || 'Unknown error');
+    } catch(e) { errors.push(String(e)); }
+  }
+
+  btn.disabled = false; btn.textContent = 'Save';
+  if (errors.length) {
+    document.getElementById('dashTMErr').textContent = errors.join('; ');
+  } else {
+    forceCloseDashTMDialog();
+    reloadDevData(_dashTMGame);
+  }
+}
+
 function hasSessionData() {
   if ((document.getElementById('sLocation').value || '').trim()) return true;
   // any obs/sol input filled

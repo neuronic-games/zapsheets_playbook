@@ -596,7 +596,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
 <!-- Time & Materials dialog -->
 <div class="overlay" id="tmOverlay" onclick="if(event.target===this){if(_tmIsDirty())shakeDialog(this.querySelector('.session-dialog'));else forceCloseTMDialog();}">
-  <div class="session-dialog" style="max-width:500px;position:relative" onclick="event.stopPropagation()">
+  <div class="session-dialog" style="max-width:500px;position:relative" onclick="event.stopPropagation()" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitTM();}">
     <button onclick="closeTMDialog()" style="position:absolute;top:.75rem;right:.75rem;background:none;border:none;cursor:pointer;font-size:1rem;color:#888;line-height:1;padding:.25rem .4rem" title="Close">&#x2715;</button>
     <h2>Time &amp; Materials — <span><?= _ds_e($_gameName) ?></span></h2>
 
@@ -610,7 +610,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
         <div class="tm-time-wrap">
           <input type="text" class="field-input" id="tmTimeMinutes" placeholder="e.g. 1 hr"
             autocomplete="off" style="height:2.45rem"
-            onfocus="_showTMTimeList()" oninput="_showTMTimeList()" onblur="_hideTMTimeList()" />
+            onfocus="_showTMTimeList()" oninput="_showTMTimeList()" onblur="_hideTMTimeList();_fmtTMTimeInput(this)" />
           <div class="tm-time-list" id="tmTimeList"></div>
         </div>
       </div>
@@ -1122,6 +1122,20 @@ function closeSessionDialog() {
 }
 
 // ── Time & Materials dialog ───────────────────────────────────────────────────
+
+function _fmtTMTimeInput(inp) {
+  var raw = (inp.value || '').trim();
+  if (!raw || /[a-zA-Z]/.test(raw)) return;
+  var num = parseFloat(raw);
+  if (isNaN(num) || num <= 0) return;
+  // Numbers < 9 treated as hours, >= 9 as minutes
+  var totalMins = num < 9 ? num * 60 : num;
+  // Round to nearest 15 minutes
+  totalMins = Math.round(totalMins / 15) * 15;
+  if (totalMins <= 0) totalMins = 15;
+  var h = Math.floor(totalMins / 60), m = totalMins % 60;
+  inp.value = h && m ? h + ' hr ' + m + ' min' : h ? h + ' hr' : m + ' min';
+}
 
 var _tmTimeOptions = ['15 min','30 min','45 min','1 hr','1 hr 15 min','1 hr 30 min','1 hr 45 min','2 hr','2 hr 30 min','3 hr','3 hr 30 min','4 hr','5 hr','6 hr','7 hr','8 hr'];
 

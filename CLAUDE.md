@@ -24,6 +24,11 @@ Every modal dialog follows this standard behavior:
 - Use a `forceClose*Dialog()` variant (no dirty check) wired to Cancel
 - Use the checking `close*Dialog()` variant for X buttons and backdrop clicks
 
+### Cmd+Enter to save
+- The inner dialog `div` has `onkeydown` that checks `(event.metaKey||event.ctrlKey) && event.key==='Enter'`
+- On match: `event.preventDefault()` then call the submit function directly
+- This applies to all data-entry dialogs (not action-only panels like sign-in)
+
 ### Esc handler
 - Single `keydown` listener handles all open dialogs
 - Check each overlay in priority order; call the checking `close*Dialog()` for each

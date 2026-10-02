@@ -1595,7 +1595,7 @@ body.session-dialog-open .session-body img { display:none !important; }
 
 <!-- Time & Materials dialog -->
 <div class="overlay" id="dashTMOverlay" onclick="if(event.target===this){if(_dashTMIsDirty())shakeDialog(this.querySelector('.session-dialog'));else forceCloseDashTMDialog();}">
-  <div class="session-dialog" style="max-width:500px;position:relative" onclick="event.stopPropagation()">
+  <div class="session-dialog" style="max-width:500px;position:relative" onclick="event.stopPropagation()" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitDashTM();}">
     <button onclick="closeDashTMDialog()" style="position:absolute;top:.75rem;right:.75rem;background:none;border:none;cursor:pointer;font-size:1rem;color:#888;line-height:1;padding:.25rem .4rem" title="Close">&#x2715;</button>
     <h2>Time &amp; Materials — <span id="dashTMGameTitle"></span></h2>
 
@@ -1609,7 +1609,7 @@ body.session-dialog-open .session-body img { display:none !important; }
         <div class="tm-time-wrap">
           <input type="text" class="field-input" id="dashTMTimeMinutes" placeholder="e.g. 1 hr"
             autocomplete="off" style="height:2.45rem"
-            onfocus="_showDashTMTimeList()" oninput="_showDashTMTimeList()" onblur="_hideDashTMTimeList()" />
+            onfocus="_showDashTMTimeList()" oninput="_showDashTMTimeList()" onblur="_hideDashTMTimeList();_fmtTMTimeInput(this)" />
           <div class="tm-time-list" id="dashTMTimeList"></div>
         </div>
       </div>
@@ -3486,6 +3486,18 @@ function hasAddData() {
 // ── Dashboard Time & Materials dialog ────────────────────────────────────────
 
 // ── T&M helpers ──────────────────────────────────────────────────────────────
+function _fmtTMTimeInput(inp) {
+  var raw = (inp.value || '').trim();
+  if (!raw || /[a-zA-Z]/.test(raw)) return;
+  var num = parseFloat(raw);
+  if (isNaN(num) || num <= 0) return;
+  var totalMins = num < 9 ? num * 60 : num;
+  totalMins = Math.round(totalMins / 15) * 15;
+  if (totalMins <= 0) totalMins = 15;
+  var h = Math.floor(totalMins / 60), m = totalMins % 60;
+  inp.value = h && m ? h + ' hr ' + m + ' min' : h ? h + ' hr' : m + ' min';
+}
+
 function _parseTMMinutes(s) {
   if (!s) return 0;
   var m = 0;

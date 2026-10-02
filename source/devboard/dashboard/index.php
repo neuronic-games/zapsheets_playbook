@@ -1524,11 +1524,11 @@ body.session-dialog-open .session-body img { display:none !important; }
     <button onclick="closeDashTMDialog()" style="position:absolute;top:.75rem;right:.75rem;background:none;border:none;cursor:pointer;font-size:1rem;color:#888;line-height:1;padding:.25rem .4rem" title="Close">&#x2715;</button>
     <h2>Time &amp; Materials — <span id="dashTMGameTitle"></span></h2>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem .8rem;margin-bottom:.6rem">
-      <div class="field-group" style="margin:0">
-        <label>Date</label>
-        <input type="date" class="field-input" id="dashTMDate" autocomplete="off" style="height:2.45rem" />
-      </div>
+    <div class="field-group" style="margin-bottom:.6rem">
+      <label>Date</label>
+      <input type="date" class="field-input" id="dashTMDate" autocomplete="off" style="height:2.45rem" />
+    </div>
+    <div style="display:grid;grid-template-columns:140px 1fr;gap:.5rem .8rem;margin-bottom:.6rem">
       <div class="field-group" style="margin:0">
         <label>Time</label>
         <div class="tm-time-wrap">
@@ -1538,10 +1538,10 @@ body.session-dialog-open .session-body img { display:none !important; }
           <div class="tm-time-list" id="dashTMTimeList"></div>
         </div>
       </div>
-    </div>
-    <div class="field-group" style="margin-bottom:.7rem">
-      <label>Notes</label>
-      <textarea class="field-input ge-textarea" id="dashTMTimeNotes" placeholder="What did you work on?" style="min-height:2rem;resize:vertical"></textarea>
+      <div class="field-group" style="margin:0">
+        <label>Notes</label>
+        <textarea class="field-input ge-textarea" id="dashTMTimeNotes" placeholder="What did you work on?" style="height:2.45rem;min-height:2.45rem;resize:vertical"></textarea>
+      </div>
     </div>
 
     <hr class="field-sep" style="margin:.2rem 0 .6rem" />

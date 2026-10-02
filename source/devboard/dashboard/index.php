@@ -3659,7 +3659,7 @@ async function submitDashTM() {
   for (var r = 0; r < rows.length; r++) {
     var row = rows[r];
     var fd = new FormData();
-    var tmPerson = (_dashCollabUser && ((_dashCollabUser.bio && _dashCollabUser.bio.name) || _dashCollabUser.email)) || MY_NAME;
+    var tmPerson = (_dashCollabUser && (_dashCollabUser.bio && _dashCollabUser.bio.name)) || MY_NAME || (_dashCollabUser && _dashCollabUser.email) || '';
     fd.append('id',          SHEET_ID);
     fd.append('game',        _dashTMGame);
     fd.append('date',        date);

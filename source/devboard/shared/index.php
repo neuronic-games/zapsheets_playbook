@@ -881,6 +881,7 @@ function renderSessions() {
     var allIdx = _allSessions.indexOf(s);  // index into _allSessions for edit dialog
     var evType = (s.eventType || '').toLowerCase();
     var isTM   = evType === 'time' || evType === 'material';
+    if (isTM) return;  // T&M rows not shown in session list
     var typeClass = 'type-playtest';
     if      (evType === 'time')                                   typeClass = 'type-time';
     else if (evType === 'material')                               typeClass = 'type-material';

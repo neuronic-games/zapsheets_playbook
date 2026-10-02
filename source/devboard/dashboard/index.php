@@ -2244,16 +2244,30 @@ function _estGameBuildOptions() {
   _estGameOptions = GAMES_RAW.map(function(g) { return (g.Name || '').trim(); }).filter(Boolean);
 }
 
+function _estPositionDrop(inputId, dropId) {
+  var inp  = document.getElementById(inputId);
+  var drop = document.getElementById(dropId);
+  if (!inp || !drop) return;
+  var r = inp.getBoundingClientRect();
+  drop.style.position = 'fixed';
+  drop.style.top      = (r.bottom + 2) + 'px';
+  drop.style.left     = r.left + 'px';
+  drop.style.width    = r.width + 'px';
+  drop.style.right    = 'auto';
+  drop.style.zIndex   = '9999';
+}
 function _estClientFilter() {
   _updateEstimateClient();
   var q = document.getElementById('estimateClientVisible').value.trim().toLowerCase();
   var opts = q ? _estClientOptions.filter(function(o) { return o.toLowerCase().indexOf(q) !== -1; }) : _estClientOptions;
   _estClientRenderDrop(opts);
+  _estPositionDrop('estimateClientVisible', 'estimateClientDrop');
   document.getElementById('estimateClientCombo').classList.add('open');
 }
 function _estClientOpen() {
   _estClientBuildOptions();
   _estClientRenderDrop(_estClientOptions);
+  _estPositionDrop('estimateClientVisible', 'estimateClientDrop');
   document.getElementById('estimateClientCombo').classList.add('open');
 }
 function _estClientClose() { setTimeout(function() { document.getElementById('estimateClientCombo').classList.remove('open'); }, 150); }
@@ -2283,11 +2297,13 @@ function _estGameFilter() {
   var q = document.getElementById('estimateGame').value.trim().toLowerCase();
   var opts = q ? _estGameOptions.filter(function(o) { return o.toLowerCase().indexOf(q) !== -1; }) : _estGameOptions;
   _estGameRenderDrop(opts);
+  _estPositionDrop('estimateGame', 'estimateGameDrop');
   document.getElementById('estimateGameCombo').classList.add('open');
 }
 function _estGameOpen() {
   _estGameBuildOptions();
   _estGameRenderDrop(_estGameOptions);
+  _estPositionDrop('estimateGame', 'estimateGameDrop');
   document.getElementById('estimateGameCombo').classList.add('open');
 }
 function _estGameClose() { setTimeout(function() { document.getElementById('estimateGameCombo').classList.remove('open'); }, 150); }

@@ -2315,9 +2315,8 @@ function submitEstimate() {
   if (!game)      { _estimateLog('Please enter a game name.', 'error'); return; }
   if (!unitPrice) { _estimateLog('Please enter a unit price.', 'error'); return; }
 
-  var docTypeLabel = (document.getElementById('estimateType').value === 'invoice') ? 'invoice' : 'estimate';
   document.getElementById('estimateCreateBtn').disabled = true;
-  _estimateLog('Creating ' + docTypeLabel + '…', '');
+  _estimateLog('Creating contract…', '');
 
   var fd = new FormData();
   fd.append('id',             SHEET_ID);

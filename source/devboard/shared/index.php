@@ -620,12 +620,13 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
     <hr class="field-sep" style="margin:.2rem 0 .6rem" />
 
-    <div style="display:grid;grid-template-columns:120px 1fr;gap:0 .6rem;margin-bottom:.2rem">
-      <div class="tm-section-label" style="margin:0">Cost ($)</div>
-      <div class="tm-section-label" style="margin:0">Description</div>
+    <div>
+      <div style="display:grid;grid-template-columns:1fr 110px;gap:0 .6rem;margin-bottom:.15rem">
+        <div class="tm-section-label" style="margin:0">Material</div>
+        <div class="tm-section-label" style="margin:0">Cost ($)</div>
+      </div>
+      <div id="tmMaterialsContainer"></div>
     </div>
-
-    <div id="tmMaterialsContainer"></div>
 
     <div class="dialog-err" id="tmErr"></div>
     <div class="dialog-actions">
@@ -1180,9 +1181,9 @@ function addTMMaterialRow() {
   div.className = 'tm-material-row';
   div.id = 'tmMat-' + i;
   div.innerHTML =
-    '<div style="display:grid;grid-template-columns:120px 1fr;gap:.4rem .6rem;align-items:center">'
-    + '<input type="text" class="field-input" id="tmMatCost-' + i + '" placeholder="0.00" autocomplete="off" oninput="_tmCheckAutoAdd(' + i + ')" style="margin:0" />'
+    '<div style="display:grid;grid-template-columns:1fr 110px;gap:.3rem .6rem;align-items:center">'
     + '<input type="text" class="field-input" id="tmMatDesc-' + i + '" placeholder="" autocomplete="off" oninput="_tmCheckAutoAdd(' + i + ')" style="margin:0" />'
+    + '<input type="text" class="field-input" id="tmMatCost-' + i + '" placeholder="0.00" autocomplete="off" oninput="_tmCheckAutoAdd(' + i + ')" style="margin:0" />'
     + '</div>';
   document.getElementById('tmMaterialsContainer').appendChild(div);
 }

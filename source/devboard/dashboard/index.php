@@ -1546,12 +1546,13 @@ body.session-dialog-open .session-body img { display:none !important; }
 
     <hr class="field-sep" style="margin:.2rem 0 .6rem" />
 
-    <div style="display:grid;grid-template-columns:120px 1fr;gap:0 .6rem;margin-bottom:.2rem">
-      <div class="tm-section-label" style="margin:0">Cost ($)</div>
-      <div class="tm-section-label" style="margin:0">Description</div>
+    <div>
+      <div style="display:grid;grid-template-columns:1fr 110px;gap:0 .6rem;margin-bottom:.15rem">
+        <div class="tm-section-label" style="margin:0">Material</div>
+        <div class="tm-section-label" style="margin:0">Cost ($)</div>
+      </div>
+      <div id="dashTMMaterialsContainer"></div>
     </div>
-
-    <div id="dashTMMaterialsContainer"></div>
 
     <div class="dialog-err" id="dashTMErr"></div>
     <div class="dialog-actions" style="margin-top:.5rem">
@@ -3463,9 +3464,9 @@ function _addDashTMMaterialRow() {
   div.style.marginBottom = '.35rem';
   div.id = 'dashTMMat-' + i;
   div.innerHTML =
-    '<div style="display:grid;grid-template-columns:120px 1fr;gap:.4rem .6rem;align-items:center">'
-    + '<input type="text" class="field-input" id="dashTMMatCost-' + i + '" placeholder="0.00" autocomplete="off" oninput="_dashTMCheckAutoAdd(' + i + ')" style="margin:0" />'
+    '<div style="display:grid;grid-template-columns:1fr 110px;gap:.3rem .6rem;align-items:center">'
     + '<input type="text" class="field-input" id="dashTMMatDesc-' + i + '" placeholder="" autocomplete="off" oninput="_dashTMCheckAutoAdd(' + i + ')" style="margin:0" />'
+    + '<input type="text" class="field-input" id="dashTMMatCost-' + i + '" placeholder="0.00" autocomplete="off" oninput="_dashTMCheckAutoAdd(' + i + ')" style="margin:0" />'
     + '</div>';
   document.getElementById('dashTMMaterialsContainer').appendChild(div);
 }

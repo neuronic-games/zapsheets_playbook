@@ -592,13 +592,13 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem .8rem;margin-bottom:.6rem">
       <div class="field-group" style="margin:0">
         <label>Date</label>
-        <input type="date" class="field-input" id="tmDate" autocomplete="off" />
+        <input type="date" class="field-input" id="tmDate" autocomplete="off" style="height:2.45rem" />
       </div>
       <div class="field-group" style="margin:0">
         <label>Time</label>
         <div class="tm-time-wrap">
           <input type="text" class="field-input" id="tmTimeMinutes" placeholder="e.g. 30 min, 1 hr"
-            autocomplete="off"
+            autocomplete="off" style="height:2.45rem"
             onfocus="_showTMTimeList()" oninput="_showTMTimeList()" onblur="_hideTMTimeList()" />
           <div class="tm-time-list" id="tmTimeList"></div>
         </div>

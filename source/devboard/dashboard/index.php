@@ -2626,7 +2626,10 @@ function renderBody(gameName, rows) {
 
   var gameRec = GAMES_INDEX[gameName.toLowerCase()] || {};
 
-  var allSessions = buildSessions(rows).reverse();  // newest first
+  var allSessions = buildSessions(rows).reverse().filter(function(s) {  // newest first; exclude T&M rows
+    var et = (s.eventType || '').toLowerCase();
+    return et !== 'time' && et !== 'material';
+  });
   _sessionCache[gameName] = allSessions;
   var nPlay   = allSessions.filter(function(s){ return s.testnum.toLowerCase().indexOf('playtest ')  === 0; }).length;
   var nMeet   = allSessions.filter(function(s){ return s.testnum.toLowerCase().indexOf('meeting ')   === 0; }).length;

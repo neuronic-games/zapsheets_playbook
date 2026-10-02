@@ -2190,8 +2190,8 @@ function _estimateLog(msg, type) {
 
 function openEstimateDialog(clientName, gameName) {
   // Close any open combos
-  document.getElementById('estimateClientCombo').classList.remove('open');
-  document.getElementById('estimateGameCombo').classList.remove('open');
+  _estHideDrop('estimateClientDrop');
+  _estHideDrop('estimateGameDrop');
 
   // Show/hide client field depending on whether client is pre-set
   var hasClient = !!(clientName || '').trim();
@@ -2244,33 +2244,40 @@ function _estGameBuildOptions() {
   _estGameOptions = GAMES_RAW.map(function(g) { return (g.Name || '').trim(); }).filter(Boolean);
 }
 
-function _estPositionDrop(inputId, dropId) {
+// Shared floating-drop helper — moves the drop to <body> so overflow:auto can't clip it
+var _estClientDropInBody = false;
+var _estGameDropInBody   = false;
+
+function _estShowDrop(inputId, dropId, inBodyFlag) {
   var inp  = document.getElementById(inputId);
   var drop = document.getElementById(dropId);
   if (!inp || !drop) return;
+  // Move to body if not already there
+  if (!window['_est' + dropId + 'InBody']) {
+    document.body.appendChild(drop);
+    window['_est' + dropId + 'InBody'] = true;
+  }
   var r = inp.getBoundingClientRect();
-  drop.style.position = 'fixed';
-  drop.style.top      = (r.bottom + 2) + 'px';
-  drop.style.left     = r.left + 'px';
-  drop.style.width    = r.width + 'px';
-  drop.style.right    = 'auto';
-  drop.style.zIndex   = '9999';
+  drop.style.cssText = 'display:block;position:fixed;top:' + (r.bottom + 2) + 'px;left:' + r.left + 'px;width:' + r.width + 'px;right:auto;z-index:9999;background:#fff;border:1.5px solid #1a5f7a;border-radius:7px;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.12);';
 }
+function _estHideDrop(dropId) {
+  var drop = document.getElementById(dropId);
+  if (drop) drop.style.display = 'none';
+}
+
 function _estClientFilter() {
   _updateEstimateClient();
   var q = document.getElementById('estimateClientVisible').value.trim().toLowerCase();
   var opts = q ? _estClientOptions.filter(function(o) { return o.toLowerCase().indexOf(q) !== -1; }) : _estClientOptions;
   _estClientRenderDrop(opts);
-  _estPositionDrop('estimateClientVisible', 'estimateClientDrop');
-  document.getElementById('estimateClientCombo').classList.add('open');
+  _estShowDrop('estimateClientVisible', 'estimateClientDrop');
 }
 function _estClientOpen() {
   _estClientBuildOptions();
   _estClientRenderDrop(_estClientOptions);
-  _estPositionDrop('estimateClientVisible', 'estimateClientDrop');
-  document.getElementById('estimateClientCombo').classList.add('open');
+  _estShowDrop('estimateClientVisible', 'estimateClientDrop');
 }
-function _estClientClose() { setTimeout(function() { document.getElementById('estimateClientCombo').classList.remove('open'); }, 150); }
+function _estClientClose() { setTimeout(function() { _estHideDrop('estimateClientDrop'); }, 150); }
 function _estClientRenderDrop(opts) {
   var drop = document.getElementById('estimateClientDrop');
   drop.innerHTML = opts.map(function(o) {
@@ -2279,7 +2286,7 @@ function _estClientRenderDrop(opts) {
 }
 function _estClientPick(val) {
   document.getElementById('estimateClientVisible').value = val;
-  document.getElementById('estimateClientCombo').classList.remove('open');
+  _estHideDrop('estimateClientDrop');
   _updateEstimateClient();
 }
 function _estClientKey(e) {
@@ -2290,23 +2297,21 @@ function _estClientKey(e) {
   if (e.key === 'ArrowDown') { e.preventDefault(); if (idx < items.length - 1) { if (active) active.classList.remove('active'); items[idx + 1].classList.add('active'); } }
   else if (e.key === 'ArrowUp') { e.preventDefault(); if (idx > 0) { if (active) active.classList.remove('active'); items[idx - 1].classList.add('active'); } }
   else if (e.key === 'Enter' && active) { e.preventDefault(); _estClientPick(active.textContent); }
-  else if (e.key === 'Escape') { document.getElementById('estimateClientCombo').classList.remove('open'); }
+  else if (e.key === 'Escape') { _estHideDrop('estimateClientDrop'); }
 }
 
 function _estGameFilter() {
   var q = document.getElementById('estimateGame').value.trim().toLowerCase();
   var opts = q ? _estGameOptions.filter(function(o) { return o.toLowerCase().indexOf(q) !== -1; }) : _estGameOptions;
   _estGameRenderDrop(opts);
-  _estPositionDrop('estimateGame', 'estimateGameDrop');
-  document.getElementById('estimateGameCombo').classList.add('open');
+  _estShowDrop('estimateGame', 'estimateGameDrop');
 }
 function _estGameOpen() {
   _estGameBuildOptions();
   _estGameRenderDrop(_estGameOptions);
-  _estPositionDrop('estimateGame', 'estimateGameDrop');
-  document.getElementById('estimateGameCombo').classList.add('open');
+  _estShowDrop('estimateGame', 'estimateGameDrop');
 }
-function _estGameClose() { setTimeout(function() { document.getElementById('estimateGameCombo').classList.remove('open'); }, 150); }
+function _estGameClose() { setTimeout(function() { _estHideDrop('estimateGameDrop'); }, 150); }
 function _estGameRenderDrop(opts) {
   var drop = document.getElementById('estimateGameDrop');
   drop.innerHTML = opts.map(function(o) {
@@ -2315,7 +2320,7 @@ function _estGameRenderDrop(opts) {
 }
 function _estGamePick(val) {
   document.getElementById('estimateGame').value = val;
-  document.getElementById('estimateGameCombo').classList.remove('open');
+  _estHideDrop('estimateGameDrop');
   _seedScopeOfWork();
 }
 function _estGameKey(e) {
@@ -2326,7 +2331,7 @@ function _estGameKey(e) {
   if (e.key === 'ArrowDown') { e.preventDefault(); if (idx < items.length - 1) { if (active) active.classList.remove('active'); items[idx + 1].classList.add('active'); } }
   else if (e.key === 'ArrowUp') { e.preventDefault(); if (idx > 0) { if (active) active.classList.remove('active'); items[idx - 1].classList.add('active'); } }
   else if (e.key === 'Enter' && active) { e.preventDefault(); _estGamePick(active.textContent); }
-  else if (e.key === 'Escape') { document.getElementById('estimateGameCombo').classList.remove('open'); }
+  else if (e.key === 'Escape') { _estHideDrop('estimateGameDrop'); }
 }
 
 function openNewContractDialog() {

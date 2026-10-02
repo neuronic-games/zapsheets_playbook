@@ -183,7 +183,6 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   font-family:'DINRegular',sans-serif; font-size:.68rem; color:rgba(255,255,255,.4);
   text-transform:uppercase; letter-spacing:.06em; pointer-events:none;
 }
-#dashUserLabel { font-family:'DINRegular',sans-serif; font-size:.65rem; color:rgba(255,255,255,.5); white-space:nowrap; max-width:120px; overflow:hidden; text-overflow:ellipsis; }
 
 /* ── Sign-in dialog ──────────────────────────────────── */
 .dash-signin-overlay {
@@ -928,15 +927,12 @@ body.session-dialog-open .session-body img { display:none !important; }
     </div>
 
     <div class="account-menu-wrap">
-      <div class="account-menu-wrap-inner">
-        <button class="top-btn" onclick="toggleAccountMenu()" title="Menu">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <circle cx="12" cy="7.5" r="4.5"/>
-            <path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/>
-          </svg>
-        </button>
-        <span id="dashUserLabel" style="display:none"></span>
-      </div>
+      <button class="top-btn" onclick="toggleAccountMenu()" title="Menu">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="12" cy="7.5" r="4.5"/>
+          <path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/>
+        </svg>
+      </button>
       <div class="account-menu" id="accountMenu">
         <button class="account-menu-item" onclick="accountMenuProfile()">Profile</button>
         <button class="account-menu-item" onclick="accountMenuCompany()">Company</button>
@@ -1171,24 +1167,40 @@ body.session-dialog-open .session-body img { display:none !important; }
 <div class="dash-signin-overlay" id="dashSignInOverlay" onclick="if(event.target===this)closeDashSignInDialog()">
   <div class="dash-signin-dialog" onclick="event.stopPropagation()">
     <button onclick="closeDashSignInDialog()" style="position:absolute;top:.75rem;right:.75rem;background:none;border:none;cursor:pointer;font-size:1rem;color:#888;padding:.25rem .4rem" title="Close">&#x2715;</button>
-    <h2>Sign In</h2>
-    <p class="dash-signin-notice">Sign in with your DevBoard collab account to track your activity.</p>
-    <div class="field-group">
-      <label style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:#888">Email</label>
-      <input type="email" class="field-input" id="dashSignInEmail" placeholder="you@example.com" autocomplete="email" autocapitalize="off" />
+
+    <!-- Sign-in fields -->
+    <div id="dashSignInFields">
+      <h2>Sign In</h2>
+      <p class="dash-signin-notice">Sign in to track your activity. If you don't have an account yet, we'll create one.</p>
+      <div class="field-group">
+        <label style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:#888">Email</label>
+        <input type="email" class="field-input" id="dashSignInEmail" placeholder="you@example.com" autocomplete="email" autocapitalize="off" />
+      </div>
+      <div class="field-group">
+        <label style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:#888">Password</label>
+        <input type="password" class="field-input" id="dashSignInPassword" placeholder="Password"
+          autocomplete="current-password" onkeydown="if(event.key==='Enter')submitDashSignIn()" />
+      </div>
+      <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#666;margin:.3rem 0 .6rem;cursor:pointer">
+        <input type="checkbox" id="dashSignInRemember" /> Remember me on this device
+      </label>
+      <div class="dash-signin-err" id="dashSignInErr"></div>
+      <div class="dialog-actions" style="margin-top:.6rem">
+        <button class="btn-cancel" onclick="closeDashSignInDialog()">Cancel</button>
+        <button class="btn-primary" id="dashSignInBtn" onclick="submitDashSignIn()">Sign In</button>
+      </div>
     </div>
-    <div class="field-group">
-      <label style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:#888">Password</label>
-      <input type="password" class="field-input" id="dashSignInPassword" placeholder="Password"
-        autocomplete="current-password" onkeydown="if(event.key==='Enter')submitDashSignIn()" />
-    </div>
-    <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#666;margin:.3rem 0 .6rem;cursor:pointer">
-      <input type="checkbox" id="dashSignInRemember" /> Remember me on this device
-    </label>
-    <div class="dash-signin-err" id="dashSignInErr"></div>
-    <div class="dialog-actions" style="margin-top:.6rem">
-      <button class="btn-cancel" onclick="closeDashSignInDialog()">Cancel</button>
-      <button class="btn-primary" id="dashSignInBtn" onclick="submitDashSignIn()">Sign In</button>
+
+    <!-- Create-account confirmation (shown when email not found) -->
+    <div id="dashSignInConfirm" style="display:none">
+      <h2>Create Account</h2>
+      <p class="dash-signin-notice" style="background:#fff8e8;border:1px solid #f0d898;border-radius:6px;padding:.6rem .8rem">
+        No account found for <strong id="dashSignInConfirmEmail"></strong>. Create one?
+      </p>
+      <div class="dialog-actions" style="margin-top:.6rem">
+        <button class="btn-cancel" onclick="_dashSignInConfirmBack()">Back</button>
+        <button class="btn-primary" id="dashSignInConfirmBtn" onclick="_dashSignInConfirmCreate()">Create Account</button>
+      </div>
     </div>
   </div>
 </div>
@@ -5058,27 +5070,54 @@ function _dashClearStoredUser() {
   _dashCollabRemember = false;
 }
 function _dashUpdateSignedInState() {
-  var label  = document.getElementById('dashUserLabel');
-  var btn    = document.getElementById('dashAuthBtn');
-  var name   = _dashCollabUser ? ((_dashCollabUser.bio && _dashCollabUser.bio.name) || _dashCollabUser.email || '') : '';
-  if (label) { label.textContent = name; label.style.display = name ? '' : 'none'; }
-  if (btn)   btn.textContent = _dashCollabUser ? 'Sign Out' : 'Sign In';
+  var btn = document.getElementById('dashAuthBtn');
+  if (btn) btn.textContent = _dashCollabUser ? 'Sign Out' : 'Sign In';
 }
 function _dashMenuAuthAction() {
   if (_dashCollabUser) { _dashClearStoredUser(); _dashUpdateSignedInState(); }
   else openDashSignInDialog();
 }
 function openDashSignInDialog() {
-  document.getElementById('dashSignInEmail').value    = '';
-  document.getElementById('dashSignInPassword').value = '';
+  document.getElementById('dashSignInEmail').value     = '';
+  document.getElementById('dashSignInPassword').value  = '';
   document.getElementById('dashSignInErr').textContent = '';
-  document.getElementById('dashSignInBtn').disabled   = false;
+  document.getElementById('dashSignInBtn').disabled    = false;
   document.getElementById('dashSignInBtn').textContent = 'Sign In';
+  document.getElementById('dashSignInFields').style.display  = '';
+  document.getElementById('dashSignInConfirm').style.display = 'none';
   document.getElementById('dashSignInOverlay').classList.add('open');
   setTimeout(function() { document.getElementById('dashSignInEmail').focus(); }, 80);
 }
 function closeDashSignInDialog() {
   document.getElementById('dashSignInOverlay').classList.remove('open');
+}
+function _dashSignInConfirmBack() {
+  document.getElementById('dashSignInConfirm').style.display = 'none';
+  document.getElementById('dashSignInFields').style.display  = '';
+  document.getElementById('dashSignInErr').textContent = '';
+  document.getElementById('dashSignInBtn').disabled    = false;
+  document.getElementById('dashSignInBtn').textContent = 'Sign In';
+  setTimeout(function() { document.getElementById('dashSignInPassword').focus(); }, 50);
+}
+async function _dashSignInConfirmCreate() {
+  var email    = document.getElementById('dashSignInEmail').value.trim();
+  var password = document.getElementById('dashSignInPassword').value;
+  var remember = document.getElementById('dashSignInRemember').checked;
+  var btn      = document.getElementById('dashSignInConfirmBtn');
+  btn.disabled = true; btn.textContent = 'Creating…';
+  try {
+    var fd = new FormData();
+    fd.append('email', email); fd.append('password', password);
+    fd.append('id', SHEET_ID); fd.append('confirm_new', '1');
+    var resp = await fetch(APP_BASE + 'push/collabAuth.php', { method:'POST', body:fd });
+    var data = await resp.json();
+    if (!data.ok) { btn.disabled = false; btn.textContent = 'Create Account'; return; }
+    _dashCollabRemember = remember;
+    _dashCollabUser = { email: data.email, bio: data.bio || {} };
+    _dashSaveStoredUser(_dashCollabUser);
+    _dashUpdateSignedInState();
+    closeDashSignInDialog();
+  } catch(e) { btn.disabled = false; btn.textContent = 'Create Account'; }
 }
 async function submitDashSignIn() {
   var email    = document.getElementById('dashSignInEmail').value.trim();
@@ -5093,7 +5132,15 @@ async function submitDashSignIn() {
     fd.append('email', email); fd.append('password', password); fd.append('id', SHEET_ID);
     var resp = await fetch(APP_BASE + 'push/collabAuth.php', { method:'POST', body:fd });
     var data = await resp.json();
-    if (data.prompt_create) { errEl.textContent = 'No account found for that email. Sign in from the collab view to create one.'; btn.disabled = false; btn.textContent = 'Sign In'; return; }
+    if (data.prompt_create) {
+      // Show create-account confirmation panel
+      document.getElementById('dashSignInConfirmEmail').textContent = email;
+      document.getElementById('dashSignInFields').style.display  = 'none';
+      document.getElementById('dashSignInConfirm').style.display = '';
+      document.getElementById('dashSignInConfirmBtn').disabled    = false;
+      document.getElementById('dashSignInConfirmBtn').textContent = 'Create Account';
+      return;
+    }
     if (!data.ok) { errEl.textContent = data.error || 'Incorrect email or password.'; btn.disabled = false; btn.textContent = 'Sign In'; return; }
     _dashCollabRemember = remember;
     _dashCollabUser = { email: data.email, bio: data.bio || {} };

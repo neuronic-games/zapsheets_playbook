@@ -3517,6 +3517,8 @@ function _resolveTMPerson(raw) {
   // If the stored value is an email, try to map it to a display name
   if (!raw || raw.indexOf('@') === -1) return raw;
   var email = raw.toLowerCase();
+  // Check owner's own email (MY_EMAIL from Settings)
+  if (MY_EMAIL && MY_EMAIL.toLowerCase() === email) return MY_NAME || raw;
   // Check signed-in collab user
   if (_dashCollabUser && (_dashCollabUser.email || '').toLowerCase() === email) {
     var n = (_dashCollabUser.bio && _dashCollabUser.bio.name) ? _dashCollabUser.bio.name : '';

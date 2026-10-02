@@ -62,6 +62,8 @@
         $jsonFile   = $sheetDir . '/' . strtolower($sheetName) . '.json';
 
         $py_command = pyCmd($pythonPath, __DIR__, 'gread.py', $spreadsheetId . 'sheetname' . $sheetName);
+        // Wrap with a 40-second hard timeout so a hung Google API call doesn't block the XHR forever
+        $py_command = 'timeout 40 ' . $py_command;
         $sheetData = shell_exec($py_command);
 
         // Save fetched data to the sheet's JSON file

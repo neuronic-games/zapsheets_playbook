@@ -77,8 +77,7 @@ if ($isTesterRow) {
 } else {
     // T&M rows get a background color in the sheet
     $bgColor = '';
-    if ($event === 'Time')     $bgColor = 'FFF8E1';  // light amber
-    if ($event === 'Material') $bgColor = 'E0F7FA';  // light teal
+    if ($event === 'Time' || $event === 'Material') $bgColor = 'FFF8E1';  // light amber
 
     $row     = [
         'Date'          => $date,

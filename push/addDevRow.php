@@ -75,15 +75,21 @@ if ($isTesterRow) {
             . escapeshellarg($arg) . ' 2>&1';
     $output = trim((string) shell_exec($cmd));
 } else {
+    // T&M rows get a background color in the sheet
+    $bgColor = '';
+    if ($event === 'Time')     $bgColor = 'FFF8E1';  // light amber
+    if ($event === 'Material') $bgColor = 'E0F7FA';  // light teal
+
     $row     = [
-        'Date'         => $date,
-        'Event'        => $event,
-        'People'       => $sessionNum,    // new schema: session number on header row
-        'Observations' => $observation,
-        'Observation'  => $observation,   // legacy sheets used 'Observation' (no s)
-        'Solutions'    => $solution,
-        'Thoughts'     => $solution,      // legacy column name
-        'Solution'     => $solution,      // legacy column name
+        'Date'          => $date,
+        'Event'         => $event,
+        'People'        => $sessionNum,    // new schema: session number on header row
+        'Observations'  => $observation,
+        'Observation'   => $observation,   // legacy sheets used 'Observation' (no s)
+        'Solutions'     => $solution,
+        'Thoughts'      => $solution,      // legacy column name
+        'Solution'      => $solution,      // legacy column name
+        '__bg_color__'  => $bgColor,       // consumed by gadd.py, not written to sheet
     ];
     $encoded = base64_encode(json_encode($row, JSON_UNESCAPED_UNICODE));
     $arg     = $sheetId . '|' . $tabName . '|' . $encoded;

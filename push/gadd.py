@@ -71,6 +71,9 @@ if not headers:
     print(json.dumps({"error": "Header row is empty"}))
     sys.exit(1)
 
+# Pull special keys before building the sheet row
+bg_color_hex = row_data.pop('__bg_color__', '')
+
 # Build row list aligned to headers
 new_row = [safe_str(row_data.get(h.strip(), '')) for h in headers]
 
@@ -90,6 +93,33 @@ except Exception as e:
     sys.exit(1)
 
 non_empty = sum(1 for v in new_row if v)
+
+# Apply background color to the appended row if requested
+if bg_color_hex:
+    try:
+        h = bg_color_hex.lstrip('#')
+        rc = int(h[0:2], 16) / 255.0
+        gc = int(h[2:4], 16) / 255.0
+        bc = int(h[4:6], 16) / 255.0
+        mGoogleSheet.batch_update({'requests': [{
+            'repeatCell': {
+                'range': {
+                    'sheetId': ws.id,
+                    'startRowIndex': approx_row - 1,
+                    'endRowIndex': approx_row,
+                    'startColumnIndex': 0,
+                    'endColumnIndex': len(headers),
+                },
+                'cell': {
+                    'userEnteredFormat': {
+                        'backgroundColor': {'red': rc, 'green': gc, 'blue': bc}
+                    }
+                },
+                'fields': 'userEnteredFormat.backgroundColor'
+            }
+        }]})
+    except Exception:
+        pass  # non-fatal: color is cosmetic
 
 # For the Pitches tab, extend dropdown validation on Game / Publisher / Contact
 # to always cover the newly added row plus a buffer ahead of it.

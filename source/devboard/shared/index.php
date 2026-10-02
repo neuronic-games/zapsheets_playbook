@@ -1145,7 +1145,9 @@ async function submitTM() {
     var matCost = document.getElementById('tmMatCost-' + i).value.trim();
     var matDesc = document.getElementById('tmMatDesc-' + i).value.trim();
     if (matCost || matDesc) {
-      rows.push({ event: 'Material', person: person, observation: matCost, solution: matDesc });
+      var costNum = parseFloat(matCost.replace(/[^0-9.]/g, ''));
+      var costFmt = (!isNaN(costNum) && matCost !== '') ? '$' + costNum.toFixed(2) : matCost;
+      rows.push({ event: 'Material', person: person, observation: costFmt, solution: matDesc });
     }
   }
 

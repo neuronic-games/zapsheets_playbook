@@ -1915,7 +1915,10 @@ function renderPublishersView() {
       var g = gameMap[gk];
       var ggId = 'gg-' + (pub.name + '|' + g.name).replace(/[^a-z0-9|]/gi, '_');
       var summaryParts = [];
-      if (g.estimates.length) summaryParts.push(g.estimates.length + (g.estimates.length === 1 ? ' estimate' : ' estimates'));
+      var estOnlyCount = g.estimates.filter(function(e) { return e.type !== 'invoice'; }).length;
+      var invCount     = g.estimates.filter(function(e) { return e.type === 'invoice'; }).length;
+      if (estOnlyCount) summaryParts.push(estOnlyCount + (estOnlyCount === 1 ? ' estimate' : ' estimates'));
+      if (invCount)     summaryParts.push(invCount     + (invCount     === 1 ? ' invoice'  : ' invoices'));
       if (g.contracts.length) summaryParts.push(g.contracts.length + (g.contracts.length === 1 ? ' contract' : ' contracts'));
 
       html += '<div class="game-group" id="' + ggId + '">';
@@ -4038,136 +4041,7 @@ var _editOrigEvent      = '';
 var _editOrigSessionNum = '';
 var _editSnapshot       = null;
 
-// ── Rounds counter ────────────────────────────────────────────────────────────
-var _sessionRounds = 0;
-
-function _roundsChange(delta) {
-  _sessionRounds = Math.max(0, _sessionRounds + delta);
-  var el = document.getElementById('roundsCount');
-  if (el) el.textContent = _sessionRounds;
-}
-
-function _swParseRounds(str) {
-  var m = (str || '').match(/Rounds:\s*(\d+)/);
-  return m ? parseInt(m[1], 10) : 0;
-}
-
-// ── Stopwatch ─────────────────────────────────────────────────────────────────
-var _swSeconds  = 0;
-var _swRunning  = false;
-var _swInterval = null;
-
-function _swFormat(secs) {
-  if (_swRunning) {
-    var m = Math.floor(secs / 60);
-    var s = secs % 60;
-    return m + ':' + String(s).padStart(2, '0');
-  }
-  return String(Math.floor(secs / 60));
-}
-
-function _swUpdate() {
-  var timeStr = _swFormat(_swSeconds);
-  var swTime = document.getElementById('swTime');
-  if (swTime) swTime.textContent = timeStr;
-  // Hide clock icon once the stopwatch has been used
-  var icon = document.querySelector('#swBtn svg');
-  if (icon) icon.style.display = _swRunning ? 'none' : '';
-}
-
-// Parse "Length: N" (minutes), "Length: MM:SS", or "Length: H:MM:SS" → total seconds
-function _swParseLength(str) {
-  str = (str || '').trim();
-  var m = str.match(/Length:\s*(\d+):(\d+):(\d+)/);
-  if (m) return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseInt(m[3]);
-  m = str.match(/Length:\s*(\d+):(\d+)/);
-  if (m) return parseInt(m[1]) * 60 + parseInt(m[2]);
-  m = str.match(/Length:\s*(\d+)/);
-  if (m) return parseInt(m[1]) * 60;   // plain number = minutes
-  return 0;
-}
-
-var _swLongPressTimer = null;
-
-function toggleStopwatch() {
-  var btn = document.getElementById('swBtn');
-  if (_swRunning) {
-    // Pause
-    clearInterval(_swInterval);
-    _swInterval = null;
-    _swRunning = false;
-    if (btn) btn.classList.remove('sw-running');
-  } else {
-    // Start / resume
-    _swRunning = true;
-    if (btn) btn.classList.add('sw-running');
-    _swInterval = setInterval(function() {
-      _swSeconds++;
-      _swUpdate();
-    }, 1000);
-  }
-  _swUpdate();
-}
-
-function _swStartLongPress() {
-  _swLongPressTimer = setTimeout(function() {
-    _swLongPressTimer = null;
-    _swExpandOpen();
-  }, 2000);
-}
-
-function _swExpandOpen() {
-  // Pause if running
-  if (_swRunning) {
-    clearInterval(_swInterval);
-    _swInterval = null;
-    _swRunning = false;
-    var btn = document.getElementById('swBtn');
-    if (btn) btn.classList.remove('sw-running');
-  }
-  document.getElementById('swWrap').classList.add('sw-expanded');
-  var inp = document.getElementById('swPanelInput');
-  var mins = Math.floor(_swSeconds / 60);
-  inp.value = mins > 0 ? String(mins) : '';
-  inp.focus();
-  inp.select();
-}
-
-function _swExpandCommit() {
-  var val = parseInt(document.getElementById('swPanelInput').value, 10);
-  _swSeconds = isNaN(val) ? 0 : Math.max(0, val) * 60;
-  document.getElementById('swWrap').classList.remove('sw-expanded');
-  _swUpdate();
-}
-
-function _swExpandCancel() {
-  document.getElementById('swWrap').classList.remove('sw-expanded');
-}
-
-function _swCancelLongPress(e) {
-  if (_swLongPressTimer) {
-    clearTimeout(_swLongPressTimer);
-    _swLongPressTimer = null;
-  } else {
-    // Long press fired — prevent the click from also toggling
-    e.preventDefault();
-    e.stopPropagation();
-  }
-}
-
-function _swReset() {
-  clearInterval(_swInterval);
-  _swInterval = null;
-  _swRunning  = false;
-  _swSeconds  = 0;
-  var btn = document.getElementById('swBtn');
-  if (btn) btn.classList.remove('sw-running');
-  _swUpdate();
-  _sessionRounds = 0;
-  var rc = document.getElementById('roundsCount');
-  if (rc) rc.textContent = '0';
-}
-
+// Stopwatch + rounds are defined in devboard-common.js
 
 function getSessionSnapshot() {
   var testers = [];

@@ -288,8 +288,35 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
   display:flex; flex-direction:column; gap:1.1rem;
   max-height:92vh; overflow-y:auto;
 }
-.session-dialog h2 { font-family:'DINBlack',sans-serif; font-size:.95rem; text-transform:uppercase; letter-spacing:.07em; color:#1a5f7a; margin:0; }
-.session-dialog h2 span { color:#1a1a2e; }
+.session-dialog h2 { font-family:'DINBlack',sans-serif; font-size:.95rem; text-transform:uppercase; letter-spacing:.07em; color:#1a5f7a; margin:0; display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
+.session-dialog h2 > span:not(.sw-display) { color:#1a1a2e; }
+.session-dialog-title { flex:1; min-width:0; }
+.session-dialog-controls { display:flex; align-items:center; gap:.6rem; margin-left:auto; flex-shrink:0; }
+.rounds-wrap { display:flex; align-items:center; gap:.28rem; flex-shrink:0; }
+.rounds-btn { background:none; border:1.5px solid #d0d8e0; border-radius:5px; width:2.1rem; height:2.1rem; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; color:#999; font-family:Arial,sans-serif; font-size:1.15rem; line-height:0; transition:border-color .15s,color .15s; padding:0; user-select:none; -webkit-user-select:none; }
+.rounds-btn:hover { border-color:#aaa; color:#555; }
+.rounds-count { font-family:'DINBlack',sans-serif; font-size:1rem; color:#1a5f7a; min-width:1.6rem; text-align:center; letter-spacing:.02em; }
+.rounds-label { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#999; letter-spacing:.04em; text-transform:uppercase; }
+.sw-wrap { display:flex; align-items:center; flex-shrink:0; }
+.sw-wrap.sw-expanded { display:flex; align-items:center; }
+.sw-panel { display:none; align-items:center; gap:.5rem; background:#fff8f2; border:1.5px solid #e67e22; border-radius:8px; padding:.28rem .5rem .28rem .65rem; animation:sw-expand-in .18s ease; }
+.sw-wrap.sw-expanded .sw-panel { display:flex; }
+.sw-wrap.sw-expanded #swBtn { display:none; }
+@keyframes sw-expand-in { from{opacity:0;transform:scaleX(.88);transform-origin:left} to{opacity:1;transform:scaleX(1)} }
+.sw-panel-input { font-size:1.55rem; font-family:'DINBlack',sans-serif; color:#e67e22; border:none; outline:none; background:transparent; width:3ch; text-align:right; -moz-appearance:textfield; }
+.sw-panel-input::-webkit-inner-spin-button, .sw-panel-input::-webkit-outer-spin-button { -webkit-appearance:none; }
+.sw-panel-unit { font-family:'DINRegular',sans-serif; font-size:.85rem; color:#e67e22; opacity:.65; }
+.sw-panel-confirm { background:#e67e22; color:#fff; border:none; border-radius:5px; padding:0 .75rem; cursor:pointer; font-family:'DINBlack',sans-serif; font-size:.75rem; letter-spacing:.04em; align-self:stretch; display:flex; align-items:center; margin-left:.35rem; }
+.sw-panel-cancel { background:none; border:none; color:#bbb; cursor:pointer; font-size:1rem; padding:.2rem .3rem; line-height:1; }
+.sw-panel-cancel:hover { color:#888; }
+.btn-stopwatch { background:none; border:1.5px solid #d0d8e0; border-radius:6px; padding:.35rem .65rem; cursor:pointer; display:inline-flex; align-items:center; gap:.35rem; color:#bbb; font-family:'DINBlack',sans-serif; font-size:.78rem; letter-spacing:.04em; transition:border-color .15s, color .15s, background .15s; user-select:none; -webkit-user-select:none; }
+.btn-stopwatch:hover { border-color:#aaa; color:#888; }
+.btn-stopwatch.sw-running { border-color:#e67e22; color:#e67e22; background:#fff8f2; animation:sw-pulse 1.4s ease-out infinite; }
+@keyframes sw-pulse { 0%,100% { box-shadow:0 0 0 0 rgba(230,126,34,.35); } 50% { box-shadow:0 0 0 5px rgba(230,126,34,0); } }
+@media (max-width:500px) {
+  .session-dialog-title { flex-basis:100%; width:100%; }
+  .session-dialog-controls { margin-left:0; width:100%; justify-content:center; }
+}
 .session-meta-wrap { display:flex; flex-direction:column; gap:.9rem; }
 .session-meta-left { display:flex; flex-direction:column; gap:.75rem; }
 .session-meta-row  { display:grid; grid-template-columns:1fr 1fr; gap:.75rem .9rem; }
@@ -778,7 +805,31 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 <!-- Session dialog -->
 <div class="overlay" id="sessionOverlay" onclick="if(event.target===this)closeSessionDialog()">
   <div class="session-dialog">
-    <h2 id="sessionDialogTitle">+ Session — <span><?= _ds_e($_gameName) ?></span></h2>
+    <h2>
+      <span class="session-dialog-title" id="sessionDialogTitle">+ Session — <span><?= _ds_e($_gameName) ?></span></span>
+      <div class="session-dialog-controls">
+        <div class="rounds-wrap" id="roundsWrap">
+          <button type="button" class="rounds-btn" onclick="_roundsChange(-1)" title="Remove a round">−</button>
+          <span class="rounds-count" id="roundsCount">0</span>
+          <button type="button" class="rounds-btn" onclick="_roundsChange(1)" title="Add a round">+</button>
+          <span class="rounds-label">rnd</span>
+        </div>
+        <div class="sw-wrap" id="swWrap">
+          <button class="btn-stopwatch" id="swBtn" onclick="toggleStopwatch()" onpointerdown="_swStartLongPress()" onpointerup="_swCancelLongPress(event)" onpointerleave="_swCancelLongPress(event)" title="Start / pause · Hold 2s to enter minutes">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="13" r="8"/><path d="M12 5V3"/><path d="M9 3h6"/><path d="M12 13V9"/></svg>
+            <span id="swTime">0</span>
+          </button>
+          <div class="sw-panel" id="swPanel">
+            <input type="number" id="swPanelInput" class="sw-panel-input" min="0" max="999" placeholder="0"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();_swExpandCommit();}if(event.key==='Escape')_swExpandCancel();"
+              onclick="event.stopPropagation()" />
+            <span class="sw-panel-unit">min</span>
+            <button type="button" class="sw-panel-confirm" onclick="_swExpandCommit()">Set</button>
+            <button type="button" class="sw-panel-cancel" onclick="_swExpandCancel()">✕</button>
+          </div>
+        </div>
+      </div>
+    </h2>
 
     <div class="session-meta-wrap">
       <div class="session-meta-left">
@@ -1047,6 +1098,7 @@ function onTypeChange() {
 function openSessionDialog() {
   _editMode = false;
   document.getElementById('sessionDialogTitle').innerHTML = '+ Session — <span>' + esc(GAME_NAME) + '</span>';
+  _swReset();
   document.getElementById('sDate').value     = todayISO();
   document.getElementById('sType').value     = 'Playtest';
   document.getElementById('sLocation').value = '';
@@ -1123,6 +1175,7 @@ function openEditSessionDialog(idx) {
 function closeSessionDialog() {
   document.getElementById('sessionOverlay').classList.remove('open');
   _editMode = false;
+  _swReset();
 }
 
 // ── Time & Materials dialog ───────────────────────────────────────────────────
@@ -1419,6 +1472,10 @@ function submitSession() {
   var date     = document.getElementById('sDate').value || todayISO();
   var testnum  = document.getElementById('sTestNum').value.trim();
   var location = document.getElementById('sLocation').value.trim();
+  var _timeMins = Math.floor(_swSeconds / 60);
+  var _lenPart  = _swSeconds > 0     ? 'Length: ' + _timeMins + ' mins' : '';
+  var _rndPart  = _sessionRounds > 0 ? 'Rounds: ' + _sessionRounds      : '';
+  var swLength  = [_lenPart, _rndPart].filter(Boolean).join(', ');
 
   // ── Edit mode: replace existing session ───────────────────────────────────────
   if (_editMode) {
@@ -1436,6 +1493,7 @@ function submitSession() {
     fd.append('event',            _newEvent);
     fd.append('session_num',      _newSesNum);
     fd.append('location',         location);
+    fd.append('sw_length',        swLength);
     fd.append('testers',    JSON.stringify(testerVals));
     fd.append('obs_pairs',  JSON.stringify(obsPairs));
     if (_collabUser) {
@@ -1459,7 +1517,7 @@ function submitSession() {
   }
 
   var allRows = [];
-  allRows.push({ date:date, event:testnum, observation:location, solution:'', type:'header' });
+  allRows.push({ date:date, event:testnum, observation:location, solution:swLength, type:'header' });
   testerVals.forEach(function(t) { allRows.push({ date:'', event:'', observation:t, solution:'', type:'tester' }); });
   // Attribution row: who submitted this session
   if (_collabUser) {

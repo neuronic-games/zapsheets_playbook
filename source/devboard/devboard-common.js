@@ -148,3 +148,128 @@ function _filterObsByQuery(obs, q) {
   });
   return matched.length ? matched : obs;
 }
+
+// ── Rounds counter ────────────────────────────────────────────────────────────
+var _sessionRounds = 0;
+
+function _roundsChange(delta) {
+  _sessionRounds = Math.max(0, _sessionRounds + delta);
+  var el = document.getElementById('roundsCount');
+  if (el) el.textContent = _sessionRounds;
+}
+
+function _swParseRounds(str) {
+  var m = (str || '').match(/Rounds:\s*(\d+)/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+// ── Stopwatch ─────────────────────────────────────────────────────────────────
+var _swSeconds  = 0;
+var _swRunning  = false;
+var _swInterval = null;
+
+function _swFormat(secs) {
+  if (_swRunning) {
+    var m = Math.floor(secs / 60);
+    var s = secs % 60;
+    return m + ':' + String(s).padStart(2, '0');
+  }
+  return String(Math.floor(secs / 60));
+}
+
+function _swUpdate() {
+  var timeStr = _swFormat(_swSeconds);
+  var swTime = document.getElementById('swTime');
+  if (swTime) swTime.textContent = timeStr;
+  var icon = document.querySelector('#swBtn svg');
+  if (icon) icon.style.display = _swRunning ? 'none' : '';
+}
+
+// Parse "Length: N" (minutes), "Length: MM:SS", or "Length: H:MM:SS" → total seconds
+function _swParseLength(str) {
+  str = (str || '').trim();
+  var m = str.match(/Length:\s*(\d+):(\d+):(\d+)/);
+  if (m) return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseInt(m[3]);
+  m = str.match(/Length:\s*(\d+):(\d+)/);
+  if (m) return parseInt(m[1]) * 60 + parseInt(m[2]);
+  m = str.match(/Length:\s*(\d+)/);
+  if (m) return parseInt(m[1]) * 60;
+  return 0;
+}
+
+var _swLongPressTimer = null;
+
+function toggleStopwatch() {
+  var btn = document.getElementById('swBtn');
+  if (_swRunning) {
+    clearInterval(_swInterval);
+    _swInterval = null;
+    _swRunning = false;
+    if (btn) btn.classList.remove('sw-running');
+  } else {
+    _swRunning = true;
+    if (btn) btn.classList.add('sw-running');
+    _swInterval = setInterval(function() {
+      _swSeconds++;
+      _swUpdate();
+    }, 1000);
+  }
+  _swUpdate();
+}
+
+function _swStartLongPress() {
+  _swLongPressTimer = setTimeout(function() {
+    _swLongPressTimer = null;
+    _swExpandOpen();
+  }, 2000);
+}
+
+function _swExpandOpen() {
+  if (_swRunning) {
+    clearInterval(_swInterval);
+    _swInterval = null;
+    _swRunning = false;
+    var btn = document.getElementById('swBtn');
+    if (btn) btn.classList.remove('sw-running');
+  }
+  document.getElementById('swWrap').classList.add('sw-expanded');
+  var inp = document.getElementById('swPanelInput');
+  var mins = Math.floor(_swSeconds / 60);
+  inp.value = mins > 0 ? String(mins) : '';
+  inp.focus();
+  inp.select();
+}
+
+function _swExpandCommit() {
+  var val = parseInt(document.getElementById('swPanelInput').value, 10);
+  _swSeconds = isNaN(val) ? 0 : Math.max(0, val) * 60;
+  document.getElementById('swWrap').classList.remove('sw-expanded');
+  _swUpdate();
+}
+
+function _swExpandCancel() {
+  document.getElementById('swWrap').classList.remove('sw-expanded');
+}
+
+function _swCancelLongPress(e) {
+  if (_swLongPressTimer) {
+    clearTimeout(_swLongPressTimer);
+    _swLongPressTimer = null;
+  } else {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+}
+
+function _swReset() {
+  clearInterval(_swInterval);
+  _swInterval = null;
+  _swRunning  = false;
+  _swSeconds  = 0;
+  var btn = document.getElementById('swBtn');
+  if (btn) btn.classList.remove('sw-running');
+  _swUpdate();
+  _sessionRounds = 0;
+  var rc = document.getElementById('roundsCount');
+  if (rc) rc.textContent = '0';
+}

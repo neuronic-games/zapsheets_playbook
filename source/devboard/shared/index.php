@@ -321,6 +321,14 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 .field-input:focus { border-color:#1a5f7a; background:#fff; }
 select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .7rem center; padding-right:2rem; }
 .field-sep { border:none; border-top:1px solid #e8edf0; margin:.1rem 0; }
+@keyframes dialog-shake {
+  0%,100% { transform:translateX(0); }
+  20%     { transform:translateX(-8px); }
+  40%     { transform:translateX(8px); }
+  60%     { transform:translateX(-5px); }
+  80%     { transform:translateX(5px); }
+}
+.dialog-shake { animation:dialog-shake .35s ease; }
 .tm-section-label { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; color:#888; margin:.6rem 0 .5rem; }
 .tm-section-header { display:flex; align-items:center; justify-content:space-between; margin:.6rem 0 .5rem; }
 .tm-section-header .tm-section-label { margin:0; }
@@ -585,8 +593,9 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 </div>
 
 <!-- Time & Materials dialog -->
-<div class="overlay" id="tmOverlay" onclick="if(event.target===this)closeTMDialog()">
-  <div class="session-dialog" style="max-width:500px">
+<div class="overlay" id="tmOverlay" onclick="if(event.target===this){if(_tmIsDirty())shakeDialog(this.querySelector('.session-dialog'));else forceCloseTMDialog();}">
+  <div class="session-dialog" style="max-width:500px;position:relative" onclick="event.stopPropagation()">
+    <button onclick="closeTMDialog()" style="position:absolute;top:.75rem;right:.75rem;background:none;border:none;cursor:pointer;font-size:1rem;color:#888;line-height:1;padding:.25rem .4rem" title="Close">&#x2715;</button>
     <h2>Time &amp; Materials — <span><?= _ds_e($_gameName) ?></span></h2>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem .8rem;margin-bottom:.6rem">
@@ -620,7 +629,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
     <div class="dialog-err" id="tmErr"></div>
     <div class="dialog-actions">
-      <button class="btn-cancel" onclick="closeTMDialog()">Cancel</button>
+      <button class="btn-cancel" onclick="forceCloseTMDialog()">Cancel</button>
       <button class="btn-primary" id="tmBtn" onclick="submitTM()">Save</button>
     </div>
   </div>
@@ -1120,8 +1129,36 @@ function openTMDialog() {
   setTimeout(function() { document.getElementById('tmTimeMinutes').focus(); }, 80);
 }
 
+function _tmIsDirty() {
+  if ((document.getElementById('tmTimeMinutes').value || '').trim()) return true;
+  if ((document.getElementById('tmTimeNotes').value   || '').trim()) return true;
+  for (var i = 1; i <= _tmMaterialCount; i++) {
+    var ce = document.getElementById('tmMatCost-' + i);
+    var de = document.getElementById('tmMatDesc-' + i);
+    if (ce && ce.value.trim()) return true;
+    if (de && de.value.trim()) return true;
+  }
+  return false;
+}
+
+function shakeDialog(dialogEl) {
+  if (!dialogEl) return;
+  dialogEl.classList.remove('dialog-shake');
+  void dialogEl.offsetWidth;
+  dialogEl.classList.add('dialog-shake');
+  dialogEl.addEventListener('animationend', function() {
+    dialogEl.classList.remove('dialog-shake');
+  }, { once: true });
+}
+
 function closeTMDialog() {
+  if (_tmIsDirty()) { shakeDialog(document.querySelector('#tmOverlay .session-dialog')); return; }
+  forceCloseTMDialog();
+}
+
+function forceCloseTMDialog() {
   document.getElementById('tmOverlay').classList.remove('open');
+  _hideTMTimeList();
 }
 
 function guardedOpenTMDialog() {
@@ -1207,7 +1244,7 @@ async function submitTM() {
   if (errors.length) {
     document.getElementById('tmErr').textContent = errors.join('; ');
   } else {
-    closeTMDialog();
+    forceCloseTMDialog();
   }
 }
 

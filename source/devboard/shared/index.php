@@ -223,6 +223,10 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 .session-type.type-idea      { color:#2e7a52; }
 .session-type.type-editing   { color:#a0522d; }
 .session-type.type-reporting { color:#2d3a8c; }
+.session-type.type-time      { color:#b45309; }
+.session-type.type-material  { color:#0f766e; }
+.session-block.tm-row > .session-header { background:#fdf8f0; }
+.session-block.tm-row > .session-header:hover { background:#faf0e0; }
 .session-date     { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#999; }
 .session-sep      { color:#ccc; font-size:.6rem; }
 .session-location { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#777; }
@@ -589,33 +593,27 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
     <div class="tm-section-label">Time</div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem .8rem">
-      <div class="field-group">
-        <label>Person</label>
-        <input type="text" class="field-input" id="tmTimePerson" autocomplete="off" />
-      </div>
-      <div class="field-group">
-        <label>Minutes</label>
-        <select class="field-input" id="tmTimeMinutes">
-          <option value="">— none —</option>
-          <option value="15">15 min</option>
-          <option value="30">30 min</option>
-          <option value="45">45 min</option>
-          <option value="60">1 hr</option>
-          <option value="75">1 hr 15 min</option>
-          <option value="90">1 hr 30 min</option>
-          <option value="105">1 hr 45 min</option>
-          <option value="120">2 hr</option>
-          <option value="150">2 hr 30 min</option>
-          <option value="180">3 hr</option>
-          <option value="210">3 hr 30 min</option>
-          <option value="240">4 hr</option>
-          <option value="300">5 hr</option>
-          <option value="360">6 hr</option>
-          <option value="420">7 hr</option>
-          <option value="480">8 hr</option>
-        </select>
-      </div>
+    <div class="field-group">
+      <label>Time</label>
+      <input type="text" class="field-input" id="tmTimeMinutes" list="tmTimeList" placeholder="e.g. 30 min, 1 hr 15 min" autocomplete="off" />
+      <datalist id="tmTimeList">
+        <option value="15 min">
+        <option value="30 min">
+        <option value="45 min">
+        <option value="1 hr">
+        <option value="1 hr 15 min">
+        <option value="1 hr 30 min">
+        <option value="1 hr 45 min">
+        <option value="2 hr">
+        <option value="2 hr 30 min">
+        <option value="3 hr">
+        <option value="3 hr 30 min">
+        <option value="4 hr">
+        <option value="5 hr">
+        <option value="6 hr">
+        <option value="7 hr">
+        <option value="8 hr">
+      </datalist>
     </div>
     <div class="field-group">
       <label>Notes</label>
@@ -881,17 +879,27 @@ function renderSessions() {
   var html = '';
   sessions.forEach(function(s, i) {
     var allIdx = _allSessions.indexOf(s);  // index into _allSessions for edit dialog
+    var evType = (s.eventType || '').toLowerCase();
+    var isTM   = evType === 'time' || evType === 'material';
     var typeClass = 'type-playtest';
-    if      (s.testnum.toLowerCase().indexOf('meeting')   === 0) typeClass = 'type-meeting';
+    if      (evType === 'time')                                   typeClass = 'type-time';
+    else if (evType === 'material')                               typeClass = 'type-material';
+    else if (s.testnum.toLowerCase().indexOf('meeting')   === 0) typeClass = 'type-meeting';
     else if (s.testnum.toLowerCase().indexOf('idea')      === 0) typeClass = 'type-idea';
     else if (s.testnum.toLowerCase().indexOf('editing')   === 0) typeClass = 'type-editing';
     else if (s.testnum.toLowerCase().indexOf('reporting') === 0) typeClass = 'type-reporting';
-    html += '<div class="session-block' + (q ? ' open' : '') + '" id="sblock-' + i + '">';
+    // For Material rows, format cost as $X.XX
+    var locationDisplay = s.location;
+    if (evType === 'material' && s.location) {
+      var _cost = parseFloat(s.location.replace(/[^0-9.]/g, ''));
+      if (!isNaN(_cost)) locationDisplay = '$' + _cost.toFixed(2);
+    }
+    html += '<div class="session-block' + (q ? ' open' : '') + (isTM ? ' tm-row' : '') + '" id="sblock-' + i + '">';
     html += '<div class="session-header" onclick="toggleSession(' + i + ')">';
     html += '<div class="session-header-row">';
     if (s.testnum) html += '<span class="session-type ' + typeClass + '">' + esc(s.testnum) + '</span>';
     if (s.date)    html += '<span class="session-sep">·</span><span class="session-date">' + esc(fmtDate(s.date)) + '</span>';
-    if (s.location) html += '<span class="session-sep">·</span><span class="session-location">' + esc(s.location) + '</span>';
+    if (locationDisplay) html += '<span class="session-sep">·</span><span class="session-location">' + esc(locationDisplay) + '</span>';
     html += '<span class="session-count">' + s.obs.length + (s.obs.length === 1 ? ' note' : ' notes') + '</span>';
     html += '<span class="session-chevron">▼</span>';
     html += '</div>';
@@ -1080,16 +1088,13 @@ function closeSessionDialog() {
 var _tmMaterialCount = 0;
 
 function openTMDialog() {
-  document.getElementById('tmDate').value = todayISO();
-  var person = (_collabUser && _collabUser.bio && _collabUser.bio.name)
-    ? _collabUser.bio.name : (_collabUser ? _collabUser.email : '');
-  document.getElementById('tmTimePerson').value   = person;
+  document.getElementById('tmDate').value         = todayISO();
   document.getElementById('tmTimeMinutes').value  = '';
   document.getElementById('tmTimeNotes').value    = '';
   document.getElementById('tmErr').textContent    = '';
   _tmMaterialCount = 0;
   document.getElementById('tmMaterialsContainer').innerHTML = '';
-  addTMMaterialRow(person);
+  addTMMaterialRow();
   document.getElementById('tmBtn').disabled    = false;
   document.getElementById('tmBtn').textContent = 'Save';
   document.getElementById('tmOverlay').classList.add('open');
@@ -1105,47 +1110,42 @@ function guardedOpenTMDialog() {
   openTMDialog();
 }
 
-function addTMMaterialRow(prefillPerson) {
+function addTMMaterialRow() {
   _tmMaterialCount++;
   var i = _tmMaterialCount;
-  var person = (prefillPerson !== undefined) ? prefillPerson
-    : ((_collabUser && _collabUser.bio && _collabUser.bio.name)
-        ? _collabUser.bio.name : (_collabUser ? _collabUser.email : ''));
   var div = document.createElement('div');
   div.className = 'tm-material-row';
   div.id = 'tmMat-' + i;
   div.innerHTML =
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem .8rem">'
-    + '<div class="field-group"><label>Person</label>'
-    + '<input type="text" class="field-input" id="tmMatPerson-' + i + '" value="' + esc(person) + '" autocomplete="off" /></div>'
     + '<div class="field-group"><label>Cost ($)</label>'
     + '<input type="text" class="field-input" id="tmMatCost-' + i + '" placeholder="0.00" autocomplete="off" /></div>'
-    + '</div>'
     + '<div class="field-group"><label>Description</label>'
-    + '<input type="text" class="field-input" id="tmMatDesc-' + i + '" placeholder="" autocomplete="off" /></div>';
+    + '<input type="text" class="field-input" id="tmMatDesc-' + i + '" placeholder="" autocomplete="off" /></div>'
+    + '</div>';
   document.getElementById('tmMaterialsContainer').appendChild(div);
 }
 
 async function submitTM() {
-  var date       = document.getElementById('tmDate').value;
-  var timePerson = document.getElementById('tmTimePerson').value.trim();
-  var timeMins   = document.getElementById('tmTimeMinutes').value;
-  var timeNotes  = document.getElementById('tmTimeNotes').value.trim();
+  var date    = document.getElementById('tmDate').value;
+  var timeMins  = document.getElementById('tmTimeMinutes').value.trim();
+  var timeNotes = document.getElementById('tmTimeNotes').value.trim();
+  var person    = (_collabUser && _collabUser.bio && _collabUser.bio.name)
+    ? _collabUser.bio.name : (_collabUser ? _collabUser.email : '');
 
   var rows = [];
 
   if (timeMins) {
-    rows.push({ event: 'Time', person: timePerson, observation: timeMins, solution: timeNotes });
+    rows.push({ event: 'Time', person: person, observation: timeMins, solution: timeNotes });
   }
 
   for (var i = 1; i <= _tmMaterialCount; i++) {
     var matEl = document.getElementById('tmMat-' + i);
     if (!matEl) continue;
-    var matPerson = document.getElementById('tmMatPerson-' + i).value.trim();
-    var matCost   = document.getElementById('tmMatCost-' + i).value.trim();
-    var matDesc   = document.getElementById('tmMatDesc-' + i).value.trim();
+    var matCost = document.getElementById('tmMatCost-' + i).value.trim();
+    var matDesc = document.getElementById('tmMatDesc-' + i).value.trim();
     if (matCost || matDesc) {
-      rows.push({ event: 'Material', person: matPerson, observation: matCost, solution: matDesc });
+      rows.push({ event: 'Material', person: person, observation: matCost, solution: matDesc });
     }
   }
 

@@ -5485,6 +5485,7 @@ function submitProfile() {
       });
   }
 
+  var _oldProfileEmail = MY_EMAIL || '';
   photoPromise.then(function(imageUrl) {
     _profilePhotoUrl = imageUrl || '';
     // Step 2: update settings (name / email / phone); preserve existing company/logo
@@ -5501,7 +5502,18 @@ function submitProfile() {
     fd2.append('phone', phone);   fd2.append('discord', discord);
     fd2.append('payment', payment); fd2.append('notes', notes);
     var p2 = fetch(APP_BASE + 'push/updateBio.php', { method:'POST', body:fd2 }).then(function(r){ return r.json(); });
-    return Promise.all([p1, p2]);
+    // Step 4: if signed in as collab user and email changed, update collab account too
+    var p3 = Promise.resolve();
+    if (_dashCollabUser && email && email.toLowerCase() !== (_dashCollabUser.email || '').toLowerCase()) {
+      var efd = new FormData();
+      efd.append('id', SHEET_ID);
+      efd.append('old_email', _dashCollabUser.email);
+      efd.append('new_email', email);
+      p3 = fetch(APP_BASE + 'push/collabUpdateEmail.php', { method:'POST', body:efd })
+        .then(function(r) { return r.json(); })
+        .then(function(res) { if (res && res.ok) { _dashCollabUser.email = email; _dashSaveStoredUser(_dashCollabUser); _dashSaveEmailAlias(email, name || MY_NAME); } });
+    }
+    return Promise.all([p1, p2, p3]);
   })
   .then(function(results) {
     var err = (results[0] && results[0].error) || (results[1] && results[1].error);

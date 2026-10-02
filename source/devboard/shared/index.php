@@ -704,10 +704,14 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
           <span id="authEditAvatarInitial" style="font-size:.6rem;text-align:center;line-height:1.2">Photo</span>
         </div>
         <input type="file" id="authEditPhotoFile" accept="image/*" style="display:none" onchange="authEditPhotoPreview(this)" />
-        <div style="flex:1">
-          <div class="field-group">
+        <div style="flex:1;display:flex;flex-direction:column;gap:.5rem">
+          <div class="field-group" style="margin:0">
             <label>Your Name</label>
             <input type="text" class="field-input" id="authEditName" placeholder="Display name" autocomplete="name" />
+          </div>
+          <div class="field-group" style="margin:0">
+            <label>Email</label>
+            <input type="email" class="field-input" id="authEditEmail" placeholder="you@example.com" autocomplete="email" autocapitalize="off" />
           </div>
         </div>
       </div>
@@ -1814,6 +1818,7 @@ function openProfileDialog() {
 function _profileBioIsDirty() {
   var f = function(id) { return (document.getElementById(id).value || '').trim(); };
   return f('authEditName')     !== (_profileBioInitial.name     || '')
+      || f('authEditEmail')    !== (_profileBioInitial.email    || '')
       || f('authEditDesc')     !== (_profileBioInitial.desc     || '')
       || f('authEditSkills')   !== (_profileBioInitial.skills   || '')
       || f('authEditLocation') !== (_profileBioInitial.location || '')
@@ -1994,6 +1999,7 @@ function _openEditBioForm(email) {
   }
   document.getElementById('authEditPhotoFile').value   = '';
   document.getElementById('authEditName').value         = bio.name        || '';
+  document.getElementById('authEditEmail').value        = (_collabUser && _collabUser.email) || '';
   document.getElementById('authEditDesc').value         = bio.description || '';
   document.getElementById('authEditSkills').value      = bio.skills      || '';
   document.getElementById('authEditLocation').value    = bio.location    || '';
@@ -2012,6 +2018,7 @@ function _openEditBioForm(email) {
   // Snapshot initial state for dirty-check
   _profileBioInitial = {
     name:     bio.name        || '',
+    email:    (_collabUser && _collabUser.email) || '',
     desc:     bio.description || '',
     skills:   bio.skills      || '',
     location: bio.location    || '',
@@ -2049,8 +2056,9 @@ function submitBioEdit() {
 
   var photoFile = document.getElementById('authEditPhotoFile').files[0] || null;
   var oldEmail  = _collabUser ? _collabUser.email : '';
-  var newEmail  = '';
-  var email     = oldEmail;
+  var newEmail  = document.getElementById('authEditEmail').value.trim().toLowerCase();
+  if (newEmail === oldEmail.toLowerCase()) newEmail = '';  // no change
+  var email     = newEmail || oldEmail;
 
   var photoPromise = Promise.resolve('');
   if (photoFile) {
@@ -2107,7 +2115,7 @@ function submitBioEdit() {
     _collabUser.bio.phone       = document.getElementById('authEditPhone').value.trim();
     _collabUser.bio.payment     = document.getElementById('authEditPayment').value.trim();
     _collabUser.bio.notes       = document.getElementById('authEditNotes').value.trim();
-    if (newEmail && newEmail !== oldEmail) _collabUser.email = newEmail;
+    if (newEmail && newEmail !== oldEmail.toLowerCase()) _collabUser.email = newEmail;
     _saveStoredUser(_collabUser);
     _updateMenuLabel();
     if (_isNewCollabUser) {
@@ -2117,6 +2125,7 @@ function submitBioEdit() {
     // Re-sync snapshot so dialog is no longer dirty
     _profileBioInitial = {
       name:     _collabUser.bio.name        || '',
+      email:    _collabUser.email           || '',
       desc:     _collabUser.bio.description || '',
       skills:   _collabUser.bio.skills      || '',
       location: _collabUser.bio.location    || '',

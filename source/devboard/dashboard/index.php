@@ -1691,6 +1691,14 @@ var PEOPLE_DATA   = <?= json_encode(array_values($_people_raw),  JSON_UNESCAPED_
 var CONTRACT_RAW  = <?= json_encode(array_values($_contracts_raw), JSON_UNESCAPED_UNICODE) ?>;
 var ESTIMATES_RAW = <?= json_encode(array_values($_estimates_raw), JSON_UNESCAPED_UNICODE) ?>;
 
+// Quick lookup: email (lowercase) → display name from People sheet
+var _peopleByEmail = {};
+PEOPLE_DATA.forEach(function(p) {
+  var em = (p['Email'] || p['email'] || '').trim().toLowerCase();
+  var nm = (p['Name']  || p['name']  || '').trim();
+  if (em && nm) _peopleByEmail[em] = nm;
+});
+
 // Quick lookup: lowercased game name → full GAMES_RAW record
 var GAMES_INDEX = {};
 GAMES_RAW.forEach(function(g) {
@@ -2872,7 +2880,7 @@ function renderBody(gameName, rows) {
       if (s.testers.length || s.submittedBy) {
         html += '<div class="session-testers-line">';
         if (s.testers.length) html += s.testers.map(esc).join(', ');
-        if (s.submittedBy) html += (s.testers.length ? ' ' : '') + '(Submitted by ' + esc(s.submittedBy) + ')';
+        if (s.submittedBy) { var _sbLabel = _peopleByEmail[s.submittedBy.toLowerCase()] || s.submittedBy; html += (s.testers.length ? ' ' : '') + '(Submitted by ' + esc(_sbLabel) + ')'; }
         html += '</div>';
       }
       html += '</div>';

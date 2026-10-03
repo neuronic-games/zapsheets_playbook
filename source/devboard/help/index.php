@@ -259,6 +259,33 @@ code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba
     </div>
     <p style="margin-top:1.1rem">The session count chips at the top of each game card (e.g. <strong>4 Playtests · 2 Meetings</strong>) are tappable — tap one to filter the session list to that type. Tap again to clear the filter.</p>
 
+    <!-- Example obs/solution pairs -->
+    <h3 style="font-size:.9rem;font-weight:700;color:var(--navy);margin:1.6rem 0 .6rem">Example: how to write observations &amp; solutions</h3>
+    <p style="font-size:.84rem;color:#555;margin-bottom:.9rem">Each observation row captures one thing you noticed during the session. The solution column is where you note what you'll do about it — or leave it blank and come back later.</p>
+    <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:.8rem;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;background:#f0f7fa;padding:.4rem .75rem;font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#1a5f7a;gap:.5rem;border-bottom:1px solid var(--border);">
+        <div>Observation</div>
+        <div>Solution / Thoughts</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;padding:.55rem .75rem;gap:.5rem;border-bottom:1px solid #eee;background:#fff;">
+        <div style="color:#222">Players didn't understand when to trigger the event card.</div>
+        <div style="color:#555">Add a reminder icon on the board near the event deck. Reword the card text to be more direct.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;padding:.55rem .75rem;gap:.5rem;border-bottom:1px solid #eee;background:#fafafa;">
+        <div style="color:#222">Round 3 felt too long — players were bored waiting for their turn.</div>
+        <div style="color:#555">Try limiting hand size to 4 cards. Consider simultaneous action selection.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;padding:.55rem .75rem;gap:.5rem;border-bottom:1px solid #eee;background:#fff;">
+        <div style="color:#222">"I love the trading mechanic — felt really tense and fun."</div>
+        <div style="color:#555">Keep as-is. Maybe lean into it more in the middle game.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;padding:.55rem .75rem;gap:.5rem;background:#fafafa;">
+        <div style="color:#222">Scoring was confusing at end game — two players counted wrong.</div>
+        <div style="color:#555"></div>
+      </div>
+    </div>
+    <p style="font-size:.78rem;color:#888;margin-top:.55rem">Observations can be problems, quotes from players, things that worked well, or anything worth remembering. Solutions can be left blank — you don't have to have an answer yet.</p>
+
     <!-- Mock board -->
     <div class="mock-board">
       <div class="mock-game-bar">Thornwick Abbey <span>3 Playtests · 1 Meeting · 1 Idea</span></div>

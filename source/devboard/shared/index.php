@@ -919,6 +919,86 @@ var _editOrigDate      = '';
 var _editOrigEvent     = '';
 var _editOrigSessionNum = '';
 
+// ── Session draft (localStorage auto-save for new sessions) ───────────────────
+var _draftKey     = 'devboard_draft_' + (typeof SHEET_ID !== 'undefined' ? SHEET_ID : '') + '_' + (typeof GAME_NAME !== 'undefined' ? GAME_NAME : '');
+var _draftTimer   = null;
+
+function _saveDraft() {
+  if (_editMode) return;  // only save new sessions
+  try {
+    var testers = [];
+    document.querySelectorAll('#testersContainer input').forEach(function(el) {
+      var v = el.value.trim(); if (v) testers.push(v);
+    });
+    var obsPairs = [];
+    document.querySelectorAll('#obsContainer .obs-pair').forEach(function(pair) {
+      var idx = pair.dataset.idx;
+      var obs = (document.getElementById('sObs-' + idx) || {}).value || '';
+      var sol = (document.getElementById('sSol-' + idx) || {}).value || '';
+      if (obs.trim() || sol.trim()) obsPairs.push({ obs: obs, sol: sol });
+    });
+    var draft = {
+      date:     document.getElementById('sDate').value,
+      type:     document.getElementById('sType').value,
+      location: document.getElementById('sLocation').value,
+      testers:  testers,
+      obs:      obsPairs,
+    };
+    localStorage.setItem(_draftKey, JSON.stringify(draft));
+  } catch(e) {}
+}
+
+function _scheduleDraftSave() {
+  clearTimeout(_draftTimer);
+  _draftTimer = setTimeout(_saveDraft, 600);
+}
+
+function _clearDraft() {
+  try { localStorage.removeItem(_draftKey); } catch(e) {}
+}
+
+function _hasDraft() {
+  try {
+    var raw = localStorage.getItem(_draftKey);
+    if (!raw) return false;
+    var d = JSON.parse(raw);
+    return !!(d.location || (d.testers && d.testers.length) || (d.obs && d.obs.length));
+  } catch(e) { return false; }
+}
+
+function _restoreDraft() {
+  try {
+    var raw = localStorage.getItem(_draftKey);
+    if (!raw) return;
+    var d = JSON.parse(raw);
+    if (d.date)     document.getElementById('sDate').value     = d.date;
+    if (d.type)   { document.getElementById('sType').value     = d.type; onTypeChange(); }
+    if (d.location) document.getElementById('sLocation').value = d.location;
+    if (d.testers && d.testers.length) {
+      _testerCount = 0; _testersHL = {};
+      document.getElementById('testersContainer').innerHTML = '';
+      d.testers.forEach(function(t) {
+        var tidx = addTesterField('Select or type…');
+        document.getElementById('sTesters-' + tidx).value = t;
+      });
+      addTesterField('Add tester…');
+    }
+    if (d.obs && d.obs.length) {
+      _obsCount = 0; _obsImages = {};
+      document.getElementById('obsContainer').innerHTML = '';
+      d.obs.forEach(function(pair, pi) {
+        var oidx = addObsPair(pi === 0);
+        document.getElementById('sObs-' + oidx).value = pair.obs || '';
+        document.getElementById('sSol-' + oidx).value = pair.sol || '';
+      });
+      addObsPair(false);
+      setTimeout(function() {
+        document.querySelectorAll('#obsContainer .field-textarea').forEach(autoResize);
+      }, 0);
+    }
+  } catch(e) {}
+}
+
 function _parseTMMinutes(s) {
   if (!s) return 0;
   var m = 0, hr = s.match(/(\d+)\s*hr/), mn = s.match(/(\d+)\s*min/);
@@ -1114,9 +1194,14 @@ function openSessionDialog() {
   document.getElementById('sessionBtn').textContent         = 'Add Session';
   document.getElementById('deleteSessionBtn').style.display = 'none';
   document.getElementById('sessionOverlay').classList.add('open');
+  // Restore any saved draft
+  if (_hasDraft()) _restoreDraft();
+  // Auto-save on every change (remove first to avoid duplicates)
+  document.getElementById('sessionOverlay').removeEventListener('input', _scheduleDraftSave);
+  document.getElementById('sessionOverlay').addEventListener('input', _scheduleDraftSave);
   setTimeout(function() {
     var firstObs = document.getElementById('sObs-0');
-    if (firstObs) firstObs.focus();
+    if (firstObs && !firstObs.value) firstObs.focus();
   }, 80);
 }
 
@@ -1173,6 +1258,8 @@ function openEditSessionDialog(idx) {
 }
 
 function closeSessionDialog() {
+  _clearDraft();
+  document.getElementById('sessionOverlay').removeEventListener('input', _scheduleDraftSave);
   document.getElementById('sessionOverlay').classList.remove('open');
   _editMode = false;
   _swReset();

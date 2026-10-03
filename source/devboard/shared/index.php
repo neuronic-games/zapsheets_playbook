@@ -1354,6 +1354,20 @@ async function submitTM() {
   if (errors.length) {
     document.getElementById('tmErr').textContent = errors.join('; ');
   } else {
+    // Append the new rows to _allRows so the T&M summary updates without a reload
+    rows.forEach(function(row) {
+      _allRows.push({
+        'Date':         date,
+        'Event':        row.event,
+        'People':       row.person,
+        'Observations': row.observation,
+        'Observation':  row.observation,
+        'Solutions':    row.solution,
+        'Solution':     row.solution,
+        'Thoughts':     row.solution,
+      });
+    });
+    _updateTMSummaryRow();
     forceCloseTMDialog();
   }
 }

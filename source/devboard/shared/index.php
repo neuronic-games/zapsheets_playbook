@@ -919,12 +919,18 @@ var _editOrigDate      = '';
 var _editOrigEvent     = '';
 var _editOrigSessionNum = '';
 
-// ── Session draft (localStorage auto-save for new sessions) ───────────────────
-var _draftKey     = 'devboard_draft_' + (typeof SHEET_ID !== 'undefined' ? SHEET_ID : '') + '_' + (typeof GAME_NAME !== 'undefined' ? GAME_NAME : '');
+// ── Session draft (localStorage auto-save for new and edit sessions) ──────────
+var _draftKeyBase = 'devboard_draft_' + (typeof SHEET_ID !== 'undefined' ? SHEET_ID : '') + '_' + (typeof GAME_NAME !== 'undefined' ? GAME_NAME : '');
+var _draftKey     = _draftKeyBase + '_new';
 var _draftTimer   = null;
 
+function _currentDraftKey() {
+  return _editMode
+    ? _draftKeyBase + '_edit_' + _editOrigDate + '_' + _editOrigEvent
+    : _draftKey;
+}
+
 function _saveDraft() {
-  if (_editMode) return;  // only save new sessions
   try {
     var testers = [];
     document.querySelectorAll('#testersContainer input').forEach(function(el) {
@@ -944,7 +950,7 @@ function _saveDraft() {
       testers:  testers,
       obs:      obsPairs,
     };
-    localStorage.setItem(_draftKey, JSON.stringify(draft));
+    localStorage.setItem(_currentDraftKey(), JSON.stringify(draft));
   } catch(e) {}
 }
 
@@ -954,12 +960,12 @@ function _scheduleDraftSave() {
 }
 
 function _clearDraft() {
-  try { localStorage.removeItem(_draftKey); } catch(e) {}
+  try { localStorage.removeItem(_currentDraftKey()); } catch(e) {}
 }
 
 function _hasDraft() {
   try {
-    var raw = localStorage.getItem(_draftKey);
+    var raw = localStorage.getItem(_currentDraftKey());
     if (!raw) return false;
     var d = JSON.parse(raw);
     return !!(d.location || (d.testers && d.testers.length) || (d.obs && d.obs.length));
@@ -968,7 +974,7 @@ function _hasDraft() {
 
 function _restoreDraft() {
   try {
-    var raw = localStorage.getItem(_draftKey);
+    var raw = localStorage.getItem(_currentDraftKey());
     if (!raw) return;
     var d = JSON.parse(raw);
     if (d.date)     document.getElementById('sDate').value     = d.date;
@@ -1252,6 +1258,11 @@ function openEditSessionDialog(idx) {
   document.getElementById('deleteSessionBtn').disabled      = false;
   document.getElementById('deleteSessionBtn').textContent   = 'Delete';
   document.getElementById('sessionOverlay').classList.add('open');
+  // Restore any saved draft over the pre-populated fields
+  if (_hasDraft()) _restoreDraft();
+  // Auto-save on every change (remove first to avoid duplicates)
+  document.getElementById('sessionOverlay').removeEventListener('input', _scheduleDraftSave);
+  document.getElementById('sessionOverlay').addEventListener('input', _scheduleDraftSave);
   setTimeout(function() {
     document.querySelectorAll('#obsContainer .field-textarea').forEach(autoResize);
   }, 0);

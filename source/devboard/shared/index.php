@@ -959,6 +959,14 @@ function _scheduleDraftSave() {
   _draftTimer = setTimeout(_saveDraft, 600);
 }
 
+// Save immediately when switching away (page hidden / app backgrounded)
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'hidden' && document.getElementById('sessionOverlay').classList.contains('open')) {
+    clearTimeout(_draftTimer);
+    _saveDraft();
+  }
+});
+
 function _clearDraft() {
   try { localStorage.removeItem(_currentDraftKey()); } catch(e) {}
 }

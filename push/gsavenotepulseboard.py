@@ -62,16 +62,20 @@ try:
 except Exception as e:
     fail(f'Tab "{tab}" not found: {e}')
 
-cell = ws.find(exhibit, in_column=1)
-if cell is None:
-    fail(f'Exhibit "{exhibit}" not found in tab "{tab}"')
-
-# Find Notes column from header row
+# Find Exhibit and Notes columns from header row
 headers = ws.row_values(1)
+try:
+    exhibit_col = next(i + 1 for i, h in enumerate(headers) if h.strip().lower() == 'exhibit')
+except StopIteration:
+    fail('Exhibit column not found in sheet header')
 try:
     notes_col = next(i + 1 for i, h in enumerate(headers) if h.strip().lower() == 'notes')
 except StopIteration:
     fail('Notes column not found in sheet header')
+
+cell = ws.find(exhibit, in_column=exhibit_col)
+if cell is None:
+    fail(f'Exhibit "{exhibit}" not found in tab "{tab}"')
 
 row = cell.row
 col_letter = chr(ord('A') + notes_col - 1)

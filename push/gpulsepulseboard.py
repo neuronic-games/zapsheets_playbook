@@ -121,11 +121,17 @@ except gspread.exceptions.WorksheetNotFound:
 
 # ── Find or add the exhibit row ───────────────────────────────────────────────
 
-cell = ws.find(exhibit, in_column=1)
+headers_row = ws.row_values(1)
+try:
+    exhibit_col = next(i + 1 for i, h in enumerate(headers_row) if h.strip().lower() == 'exhibit')
+except StopIteration:
+    fail('Exhibit column not found in sheet header')
+
+cell = ws.find(exhibit, in_column=exhibit_col)
 if cell is None:
     log(f'Exhibit "{exhibit}" not found — adding row...', 'info')
     ws.append_row([exhibit] + [''] * (len(HEADERS) - 1), value_input_option='RAW')
-    cell = ws.find(exhibit, in_column=1)
+    cell = ws.find(exhibit, in_column=exhibit_col)
 
 row = cell.row
 

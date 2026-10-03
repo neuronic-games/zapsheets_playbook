@@ -62,7 +62,7 @@ try:
 except Exception as e:
     fail(f'Tab "{tab}" not found: {e}')
 
-cell = ws.find(exhibit)
+cell = ws.find(exhibit, in_column=1)
 if cell is None:
     fail(f'Exhibit "{exhibit}" not found in tab "{tab}"')
 

@@ -121,11 +121,11 @@ except gspread.exceptions.WorksheetNotFound:
 
 # ── Find or add the exhibit row ───────────────────────────────────────────────
 
-cell = ws.find(exhibit)
+cell = ws.find(exhibit, in_column=1)
 if cell is None:
     log(f'Exhibit "{exhibit}" not found — adding row...', 'info')
     ws.append_row([exhibit] + [''] * (len(HEADERS) - 1), value_input_option='RAW')
-    cell = ws.find(exhibit)
+    cell = ws.find(exhibit, in_column=1)
 
 row = cell.row
 

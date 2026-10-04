@@ -121,6 +121,20 @@ function _ps_field(array $info, array $keys): string {
     return '';
 }
 
+function _ps_abs_url(string $raw): string {
+    $s = trim($raw);
+    // Strip leading apostrophe (safe_str prefix written by Python scripts)
+    if ($s !== '' && $s[0] === "'") $s = ltrim($s, "'");
+    // Unwrap markdown link [text](url)
+    if (preg_match('/^\[.*?\]\((.+)\)\s*$/', $s, $m)) $s = trim($m[1]);
+    // Unwrap bare bracket [url]
+    if (preg_match('/^\[(.+)\]\s*$/', $s, $m)) $s = trim($m[1]);
+    if ($s === '') return '';
+    // Add protocol if missing
+    if (!preg_match('/^https?:\/\//i', $s)) $s = 'https://' . $s;
+    return $s;
+}
+
 function _ps_latest(array $entries): array {
     usort($entries, function($a,$b){
         return strtotime($b['Date']??'0') - strtotime($a['Date']??'0');
@@ -255,11 +269,11 @@ $_pbUrl     = $_scheme . '://' . $_SERVER['HTTP_HOST'] . $_bp . '/pitchboard';
 $_base      = $_bp . '/';
 
 // ── Game links for footer ─────────────────────────────────────────────────────
-$_rulesUrl     = _ps_field($_gameInfo, ['Rules', 'Rules URL', 'Rules Link', 'Link Rules']);
-$_playUrl      = _ps_field($_gameInfo, ['Play', 'Play URL', 'Play Link', 'Link Play']);
-$_printUrl     = _ps_field($_gameInfo, ['Print', 'Print URL', 'Print Link', 'Link Print']);
-$_sellsheetUrl = _ps_field($_gameInfo, ['Sellsheet URL', 'Sellsheet', 'Sell Sheet URL', 'Sell Sheet', 'Link Sellsheet']);
-$_videoUrl     = _ps_field($_gameInfo, ['Video', 'Video URL', 'Video Link', 'Link Video', 'YouTube', 'YouTube URL']);
+$_rulesUrl     = _ps_abs_url(_ps_field($_gameInfo, ['Rules', 'Rules URL', 'Rules Link', 'Link Rules']));
+$_playUrl      = _ps_abs_url(_ps_field($_gameInfo, ['Play', 'Play URL', 'Play Link', 'Link Play']));
+$_printUrl     = _ps_abs_url(_ps_field($_gameInfo, ['Print', 'Print URL', 'Print Link', 'Link Print']));
+$_sellsheetUrl = _ps_abs_url(_ps_field($_gameInfo, ['Sellsheet URL', 'Sellsheet', 'Sell Sheet URL', 'Sell Sheet', 'Link Sellsheet']));
+$_videoUrl     = _ps_abs_url(_ps_field($_gameInfo, ['Video', 'Video URL', 'Video Link', 'Link Video', 'YouTube', 'YouTube URL']));
 
 // Game Page: check whether a token file has been generated for this game
 $_gameToken     = substr(md5($_sheetId . '|game|' . $_gameName), 0, 24);

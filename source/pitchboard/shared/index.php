@@ -663,7 +663,7 @@ body {
         <a class="footer-btn" href="<?= _ps_e($_playUrl) ?>" target="_blank">Play</a>
       <?php endif ?>
       <?php if ($_sellsheetUrl): ?>
-        <a class="footer-btn" href="<?= _ps_e($_sellsheetUrl) ?>" target="_blank">Sellsheet</a>
+        <a class="footer-btn" href="<?= _ps_e($_sellsheetUrl) ?>">Sellsheet</a>
       <?php endif ?>
       <?php if ($_videoUrl): ?>
         <a class="footer-btn" href="<?= _ps_e($_videoUrl) ?>" target="_blank">Video</a>

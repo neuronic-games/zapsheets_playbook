@@ -36,9 +36,10 @@ if (!$_sheetId || !$_gameName) { http_response_code(404); exit; }
 require_once __DIR__ . '/../../push/pageViewLogger.php';
 logPageView($_sheetId, 'game', $_gameName);
 
-// Pass sheet ID and game name to view/index.php via globals
-$GLOBALS['_gv_sheet_id'] = $_sheetId;
-$GLOBALS['_gv_game']     = $_gameName;
+// Pass sheet ID, game name, and token to view/index.php via globals
+$GLOBALS['_gv_sheet_id']   = $_sheetId;
+$GLOBALS['_gv_game']       = $_gameName;
+$GLOBALS['_gv_game_token'] = $_token;
 
 // Fake REQUEST_URI so view/index.php computes the correct base href for assets
 $_SERVER['REQUEST_URI'] = $_bp . '/sheets/' . $_sheetId . '/view/?game=' . urlencode($_gameName);

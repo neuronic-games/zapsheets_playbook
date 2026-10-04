@@ -8,12 +8,27 @@ if (substr($_base, -1) !== '/') $_base .= '/';
 <html lang="en">
 <head>
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
-<?php if (isset($GLOBALS['_gv_sheet_id'])): ?>
-<script>window._gvSheetId=<?=json_encode($GLOBALS['_gv_sheet_id'])?>;window._gvGame=<?=json_encode($GLOBALS['_gv_game']??'')?>;window._gvGameToken=<?=json_encode($GLOBALS['_gv_game_token']??'')?></script>
+<?php
+$_gv_title  = isset($GLOBALS['_gv_game']) && $GLOBALS['_gv_game'] !== '' ? $GLOBALS['_gv_game'] : '';
+$_gv_token  = $GLOBALS['_gv_game_token'] ?? '';
+$_gv_scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$_gv_origin = $_gv_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? '');
+$_gv_page_url = $_gv_token ? $_gv_origin . $_base . 'game/' . $_gv_token . '/sellsheet' : '';
+$_gv_page_title = $_gv_title ? $_gv_title . ' — Sellsheet' : 'Sellsheet';
+if (isset($GLOBALS['_gv_sheet_id'])): ?>
+<script>window._gvSheetId=<?=json_encode($GLOBALS['_gv_sheet_id'])?>;window._gvGame=<?=json_encode($GLOBALS['_gv_game']??'')?>;window._gvGameToken=<?=json_encode($_gv_token)?></script>
 <?php endif; ?>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title id="pageTitle">Sellsheet</title>
+  <title id="pageTitle"><?= htmlspecialchars($_gv_page_title, ENT_QUOTES) ?></title>
+<?php if ($_gv_page_url): ?>
+  <meta property="og:type"        content="website" />
+  <meta property="og:title"       content="<?= htmlspecialchars($_gv_page_title, ENT_QUOTES) ?>" />
+  <meta property="og:url"         content="<?= htmlspecialchars($_gv_page_url, ENT_QUOTES) ?>" />
+  <meta property="og:site_name"   content="ZapSheets" />
+  <meta name="twitter:card"       content="summary" />
+  <meta name="twitter:title"      content="<?= htmlspecialchars($_gv_page_title, ENT_QUOTES) ?>" />
+<?php endif; ?>
   <link id="appIconLink" rel="icon" type="image/x-icon" href="images/sheet_2_new.webp" />
   <style>
     @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2') format('woff2'),url('fonts/DINBlack.ttf'); }

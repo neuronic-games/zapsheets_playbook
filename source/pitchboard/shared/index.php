@@ -272,7 +272,6 @@ $_base      = $_bp . '/';
 $_rulesUrl     = _ps_abs_url(_ps_field($_gameInfo, ['Rules', 'Rules URL', 'Rules Link', 'Link Rules']));
 $_playUrl      = _ps_abs_url(_ps_field($_gameInfo, ['Play', 'Play URL', 'Play Link', 'Link Play']));
 $_printUrl     = _ps_abs_url(_ps_field($_gameInfo, ['Print', 'Print URL', 'Print Link', 'Link Print']));
-$_sellsheetUrl = _ps_abs_url(_ps_field($_gameInfo, ['Sellsheet URL', 'Sellsheet', 'Sell Sheet URL', 'Sell Sheet', 'Link Sellsheet']));
 $_videoUrl     = _ps_abs_url(_ps_field($_gameInfo, ['Video', 'Video URL', 'Video Link', 'Link Video', 'YouTube', 'YouTube URL']));
 
 // Game Page: check whether a token file has been generated for this game
@@ -281,6 +280,11 @@ $_gameTokenFile = __DIR__ . '/../../../shares/pitch-game-view/' . $_gameToken . 
 $_gamePageUrl   = file_exists($_gameTokenFile)
     ? $_scheme . '://' . $_SERVER['HTTP_HOST'] . $_bp . '/game/' . $_gameToken
     : '';
+
+// Sellsheet: use internal /game/{token}/sellsheet route when page exists, else fall back to sheet URL
+$_sellsheetUrl = $_gamePageUrl
+    ? $_gamePageUrl . '/sellsheet'
+    : _ps_abs_url(_ps_field($_gameInfo, ['Sellsheet URL', 'Sellsheet', 'Sell Sheet URL', 'Sell Sheet', 'Link Sellsheet']));
 
 $_hasFooter = $_rulesUrl || $_playUrl || $_printUrl || $_sellsheetUrl || $_videoUrl || $_gamePageUrl;
 ?>

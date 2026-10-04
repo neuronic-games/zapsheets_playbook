@@ -3130,6 +3130,8 @@ function buildGameView(pitches) {
       function absUrl(raw) {
         if (!raw) return '';
         var s = String(raw).trim();
+        // Strip leading apostrophe written by safe_str (gread uses FORMULA render option)
+        if (s.charAt(0) === "'") s = s.slice(1).trim();
         var md = s.match(/^\[.*?\]\((.+)\)\s*$/);
         if (md) s = md[1].trim();
         var br = s.match(/^\[(.+)\]\s*$/);

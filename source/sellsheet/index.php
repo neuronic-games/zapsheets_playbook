@@ -184,7 +184,7 @@ if (substr($_base, -1) !== '/') $_base .= '/';
     }
     .ss-step-item { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; padding: .6rem .5rem; border-right: 1px solid rgba(255,255,255,.12); }
     .ss-step-item:last-child { border-right: none; }
-    .ss-step-num { width: 22px; height: 22px; border-radius: 50%; background: #c8860a; color: #fff; font-family: 'DINBlack', sans-serif; font-size: .78rem; line-height: 1; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-bottom: .3rem; }
+    .ss-step-num { width: 22px; height: 22px; border-radius: 50%; background: #c8860a; color: #fff; font-family: Arial, Helvetica, sans-serif; font-weight: 700; font-size: .78rem; line-height: 22px; text-align: center; display: block; flex-shrink: 0; margin-bottom: .3rem; }
     .ss-step-text { font-size: .72rem; line-height: 1.3; color: rgba(255,255,255,.9); }
 
     /* ── Body: 2-col × 2-row grid ────────────────────────────────

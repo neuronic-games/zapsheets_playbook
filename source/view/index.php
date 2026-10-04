@@ -150,9 +150,12 @@ if (substr($_base, -1) !== '/') $_base .= '/';
       border-radius: 50%;
       background: #c8860a;
       color: #fff;
-      font-family: 'DINBlack', sans-serif;
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 700;
       font-size: .78rem;
-      display: flex; align-items: center; justify-content: center;
+      line-height: 22px;
+      text-align: center;
+      display: block;
       flex-shrink: 0;
       margin-bottom: .3rem;
     }

@@ -5580,7 +5580,7 @@ function openGameEditDialog(gameName, isNew) {
   document.getElementById('geSellsheet').value = isNew ? '' : gfield('Sellsheet', 'Sellsheet URL','SellsheetURL');
   document.getElementById('geView').value      = isNew ? '' : gfield('BGG',       'View URL',     'BGG / View URL', 'ViewURL', 'View');
   document.getElementById('geVideo').value     = isNew ? '' : gfield('Video',     'Video URL',    'VideoURL');
-  document.getElementById('geImage').value     = isNew ? '' : gfield('Image URL', 'ImageURL',     'Image');
+  document.getElementById('geImage').value     = isNew ? '' : _extractImageUrl(gfield('Image URL', 'ImageURL', 'Image'));
 
   document.getElementById('geSaveBtn').disabled    = false;
   document.getElementById('geSaveBtn').textContent = isNew ? 'Add Game' : 'Save';
@@ -6245,6 +6245,17 @@ function _toDateInput(val) {
   var mo = String(d.getMonth() + 1).padStart(2, '0');
   var dy = String(d.getDate()).padStart(2, '0');
   return y + '-' + mo + '-' + dy;
+}
+
+// Extract a plain URL from an =IMAGE("url") formula (written by gadd.py when uploading images).
+// Also strips the leading apostrophe that safe_str adds to prevent Google Sheets formula interpretation.
+function _extractImageUrl(raw) {
+  if (!raw) return '';
+  var s = String(raw).trim();
+  if (s.charAt(0) === "'") s = s.slice(1).trim();
+  var m = s.match(/^=IMAGE\s*\(\s*["']?(https?[^"'),\s]+)["']?/i);
+  if (m) return m[1].trim();
+  return s;
 }
 
 // ── Open Add Entry dialog ─────────────────────────────

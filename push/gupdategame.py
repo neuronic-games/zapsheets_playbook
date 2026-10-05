@@ -201,4 +201,48 @@ if new_name != orig_name:
     if tab_warnings:
         result['tab_warnings'] = tab_warnings
 
+    # 3. Rename matching JSON cache files in sheets/{sheet_id}/
+    #    Handles two naming patterns:
+    #      a) [orig_name] suffix.json  (DevBoard dev/sessions cache)
+    #      b) game-orig_name-suffix.json  (game page cache)
+    cache_dir      = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                  'sheets', sheet_id)
+    renamed_files  = []
+    file_warnings  = []
+    if os.path.isdir(cache_dir):
+        bracket_prefix_lower = ('[' + orig_name + ']').lower()
+        game_prefix_lower    = ('game-' + orig_name + '-').lower()
+        game_exact_lower     = ('game-' + orig_name + '.').lower()   # e.g. game-Foo.json
+
+        for fname in os.listdir(cache_dir):
+            name_no_ext, ext = os.path.splitext(fname)
+            fl = fname.lower()
+            nl = name_no_ext.lower()
+
+            if nl == bracket_prefix_lower or nl.startswith(bracket_prefix_lower + ' '):
+                # Pattern a: [orig_name] or [orig_name] suffix
+                suffix    = name_no_ext[len('[' + orig_name + ']'):]
+                new_fname = '[' + new_name + ']' + suffix + ext
+
+            elif fl.startswith(game_prefix_lower) or fl.startswith(game_exact_lower):
+                # Pattern b: game-orig_name-... or game-orig_name.json
+                suffix    = fname[len('game-' + orig_name):]   # e.g. "-en.json"
+                new_fname = 'game-' + new_name + suffix
+
+            else:
+                continue
+
+            old_path = os.path.join(cache_dir, fname)
+            new_path = os.path.join(cache_dir, new_fname)
+            try:
+                os.rename(old_path, new_path)
+                renamed_files.append({'from': fname, 'to': new_fname})
+            except Exception as e:
+                file_warnings.append(f"{fname}: {str(e)}")
+
+    if renamed_files:
+        result['cache_files_renamed'] = renamed_files
+    if file_warnings:
+        result['cache_file_warnings'] = file_warnings
+
 print(json.dumps(result))

@@ -36,22 +36,24 @@ $myCompany = '';
 $myAddress = '';
 $myEmail   = '';
 $myPhone   = '';
+$myLogo    = '';
 
 foreach ($settings as $s) {
-    $n = $s['Name'] ?? $s['name'] ?? $s['My Name'] ?? '';
+    $n = $s['Name'] ?? $s['name'] ?? '';
     $v = $s['Value'] ?? $s['value'] ?? '';
-    // Support both {Name, Value} and {My Name, value} formats
-    if (!$n && !$v) {
-        foreach ($s as $k => $val) {
-            if (stripos($k, 'name') !== false) $n = $k;
-            $v = $val;
+    if ($n === 'My Name')  $myName    = $v;
+    if ($n === 'My Email') $myEmail   = $v;
+    if ($n === 'My Phone') $myPhone   = $v;
+    // DevBoard uses 'Company' / 'Address' / 'Logo' (no 'My' prefix)
+    if ($n === 'Company')  $myCompany = ltrim($v, "'");
+    if ($n === 'Address')  $myAddress = ltrim($v, "'");
+    if ($n === 'Logo') {
+        if (preg_match('/^=IMAGE\("([^"]*)"\)$/i', ltrim($v, "'"), $lm)) {
+            $myLogo = $lm[1];
+        } else {
+            $myLogo = ltrim($v, "'");
         }
     }
-    if ($n === 'My Name')     $myName    = $v;
-    if ($n === 'My Email')    $myEmail   = $v;
-    if ($n === 'My Phone')    $myPhone   = $v;
-    if ($n === 'My Company')  $myCompany = $v;
-    if ($n === 'My Address')  $myAddress = $v;
 }
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
@@ -64,6 +66,7 @@ $payload = base64_encode(json_encode([
     'my_address' => $myAddress,
     'my_email'   => $myEmail,
     'my_phone'   => $myPhone,
+    'my_logo'    => $myLogo,
     'ref_code'   => $refCode,
 ], JSON_UNESCAPED_UNICODE));
 

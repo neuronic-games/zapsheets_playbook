@@ -33,6 +33,7 @@ my_company = data.get('my_company', '').strip()
 my_address = data.get('my_address', '').strip()
 my_email   = data.get('my_email',   '').strip()
 my_phone   = data.get('my_phone',   '').strip()
+my_logo    = data.get('my_logo',    '').strip()
 ref_code   = data.get('ref_code',   '').strip()
 
 if not game:
@@ -209,11 +210,17 @@ L += [
     r'\widowctrl',
 ]
 
-# ── Header table: left=company/address, right=date/ref/prepared-by ───────────
-# 2-col table spanning full width: col1=6480 twips (4.5"), col2=4320 twips (3")
+# ── Fetch logo image (if available) ──────────────────────────────────────────
+logo_data, logo_fmt = (None, None)
+if my_logo:
+    logo_data, logo_fmt = fetch_image(my_logo)
+
+# ── Header table: left=company/address, center=date/ref/prepared-by, right=logo
+# Widths: 5400 (3.75") | 3600 (2.5") | 1800 (1.25") = 10800 total
 L.append(r'\trowd\trgaph0\trleft0\trpaddl108\trpaddr108\trpaddt60\trpaddb60')
-L.append(r'\clvertalt\cellx6480')   # left cell
-L.append(r'\clvertalt\cellx10800')  # right cell
+L.append(r'\clvertalt\cellx5400')   # left: company/address
+L.append(r'\clvertalt\cellx9000')   # center: date/ref/prepared-by
+L.append(r'\clvertalt\cellx10800')  # right: logo
 
 # Left cell: company name + address
 left = r'\pard\intbl\f0\fs40\b\cf1 ' + rtf_escape(my_company or my_name) + r'\b0\par'
@@ -226,16 +233,21 @@ if my_phone:
     left += r'\pard\intbl\f0\fs18\cf2 ' + rtf_escape(my_phone) + r'\par'
 left += r'\cell'
 
-# Right cell: date, ref, prepared by
-right  = r'\pard\intbl\f0\fs20\cf3 '
-right += r'\b Date:\b0  ' + rtf_escape(date_str) + r'\par'
+# Center cell: date, ref, prepared by
+center  = r'\pard\intbl\f0\fs20\cf3 \b Date:\b0  ' + rtf_escape(date_str) + r'\par'
 if ref_code:
-    right += r'\pard\intbl\f0\fs20\cf3 \b Ref:\b0  ' + rtf_escape(ref_code) + r'\par'
+    center += r'\pard\intbl\f0\fs20\cf3 \b Ref:\b0  ' + rtf_escape(ref_code) + r'\par'
 if my_name:
-    right += r'\pard\intbl\f0\fs20\cf3 \b Prepared by:\b0  ' + rtf_escape(my_name) + r'\par'
-right += r'\cell'
+    center += r'\pard\intbl\f0\fs20\cf3 \b Prepared by:\b0  ' + rtf_escape(my_name) + r'\par'
+center += r'\cell'
 
-L += [left, right, r'\row']
+# Right cell: logo image or blank
+if logo_data:
+    logo_cell = r'\pard\intbl\qr ' + rtf_pict(logo_data, logo_fmt, goal_twips=1440) + r'\par\cell'
+else:
+    logo_cell = r'\pard\intbl\cell'
+
+L += [left, center, logo_cell, r'\row']
 
 # Spacer
 L.append(r'\pard\sb80\par')

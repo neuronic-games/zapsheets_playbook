@@ -1,18 +1,15 @@
-# gcreateReport.py — create a playtest report Google Doc from DevBoard session data.
+# gcreateReport.py — create a playtest report Markdown file from DevBoard session data.
 #
 # Arg: {sheet_id}|{base64_json}
-# JSON keys: game, client, my_name, my_company, my_address, my_email, my_phone
-# Returns: { ok, doc_id, doc_url, title }
+# JSON keys: game, client, my_name, my_company, my_address, my_email, my_phone, ref_code
+# Returns: { ok, content, filename, title }
 
 import sys, os, json, base64, socket
 from datetime import datetime
-import html as html_lib
 
 socket.setdefaulttimeout(20)
 
 CRED_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
-SCOPES    = ['https://www.googleapis.com/auth/drive',
-             'https://spreadsheets.google.com/feeds']
 
 # ── Parse args ───────────────────────────────────────────────────────────────
 raw = sys.argv[1] if len(sys.argv) > 1 else ''
@@ -117,49 +114,55 @@ for row in rows:
 # Only include sessions that have observations
 playtest_sessions = [s for s in sessions if s['obs'] or s.get('location')]
 
-# ── Build HTML ───────────────────────────────────────────────────────────────
-def esc(s):
-    return html_lib.escape(str(s or ''))
+# ── Build Markdown ────────────────────────────────────────────────────────────
+def md(s):
+    """Escape characters that would break Markdown structure."""
+    return str(s or '').replace('\\', '\\\\').replace('`', '\\`')
 
 today     = datetime.today().strftime('%B %d, %Y')
 doc_title = f"{game} — Playtest Report"
 if ref_code:
     doc_title += f" ({ref_code})"
 
-header    = my_company or my_name
+header = my_company or my_name
 
-lines = ['<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>']
-lines.append(f'<h1 style="color:#1a5f7a">{esc(header)}</h1>')
-lines.append(f'<p><strong>Date:</strong> {esc(today)}</p>')
+lines = []
+if header:
+    lines.append(f'# {md(header)}')
+    lines.append('')
+
+lines.append(f'**Date:** {today}')
 if my_address:
     for addr_line in my_address.replace('\r\n', '\n').split('\n'):
         if addr_line.strip():
-            lines.append(f'<p style="margin:0">{esc(addr_line.strip())}</p>')
+            lines.append(addr_line.strip())
 if my_name and my_company:
-    lines.append(f'<p><strong>Prepared by:</strong> {esc(my_name)}</p>')
-lines.append('<hr>')
+    lines.append(f'**Prepared by:** {md(my_name)}')
+lines.append('')
+lines.append('---')
+lines.append('')
 
 # CLIENT / GAME block
-lines.append('<table border="0" cellpadding="8" cellspacing="0" '
-             'style="border-collapse:collapse;margin-bottom:1em">')
-lines.append('<tr>')
-lines.append(f'<td style="border:1px solid #ccc;vertical-align:top;min-width:120px">'
-             f'<strong>CLIENT</strong><br>{esc(client or "—")}</td>')
-lines.append(f'<td style="border:1px solid #ccc;vertical-align:top;min-width:200px">'
-             f'<strong>GAME</strong><br>{esc(game)}</td>')
-lines.append('</tr></table>')
+lines.append(f'**CLIENT:** {md(client or "—")}  ')
+lines.append(f'**GAME:** {md(game)}')
+lines.append('')
+lines.append('---')
+lines.append('')
 
 # TESTS
 if playtest_sessions:
-    lines.append('<h2>TESTS</h2>')
+    lines.append('## TESTS')
+    lines.append('')
     for s in playtest_sessions:
-        lines.append(f'<h3>{esc(s["testnum"])}')
+        heading = md(s['testnum'])
         if s['date']:
-            lines.append(f' — {esc(s["date"])}')
-        lines.append('</h3>')
+            heading += f' — {md(s["date"])}'
+        lines.append(f'### {heading}')
+        lines.append('')
 
         if s['testers']:
-            lines.append(f'<p><em>Testers: {esc(", ".join(s["testers"]))}</em></p>')
+            lines.append(f'*Testers: {md(", ".join(s["testers"]))}*')
+            lines.append('')
 
         meta_parts = []
         if s.get('location'):
@@ -167,22 +170,23 @@ if playtest_sessions:
         if s.get('length'):
             meta_parts.append(s['length'])
         if meta_parts:
-            lines.append(f'<p><em>{esc(" · ".join(meta_parts))}</em></p>')
+            lines.append(f'*{md(" · ".join(meta_parts))}*')
+            lines.append('')
 
         if s['obs']:
-            lines.append('<ul>')
             for entry in s['obs']:
                 if entry.get('obs'):
-                    lines.append(f'<li>{esc(entry["obs"])}')
+                    lines.append(f'- {md(entry["obs"])}')
                     if entry.get('sol'):
-                        lines.append(f'<ul><li>{esc(entry["sol"])}</li></ul>')
-                    lines.append('</li>')
-            lines.append('</ul>')
+                        lines.append(f'  - {md(entry["sol"])}')
+            lines.append('')
 else:
-    lines.append('<p><em>No playtest sessions recorded yet.</em></p>')
+    lines.append('*No playtest sessions recorded yet.*')
+    lines.append('')
 
 # Footer
-lines.append('<hr>')
+lines.append('---')
+lines.append('')
 footer_parts = []
 if my_company:
     footer_parts.append(my_company)
@@ -193,68 +197,14 @@ if my_phone:
 if my_email:
     footer_parts.append(my_email)
 if footer_parts:
-    lines.append(f'<p style="color:#666">{esc("  ·  ".join(footer_parts))}</p>')
+    lines.append(f'*{md("  ·  ".join(footer_parts))}*')
 
-lines.append('</body></html>')
-html_content = '\n'.join(lines)
+md_content = '\n'.join(lines)
 
-# ── Create Google Doc via Drive API (multipart upload: HTML → Google Doc) ────
-if not os.path.exists(CRED_FILE):
-    print(json.dumps({"error": "credentials.json not found"}))
-    sys.exit(1)
+# ── Safe filename ─────────────────────────────────────────────────────────────
+import re
+safe_game = re.sub(r'[^\w\s-]', '', game).strip().replace(' ', '_')
+filename  = f"{safe_game}_Playtest_Report.md"
 
-try:
-    from google.oauth2 import service_account as sa_module
-    from google.auth.transport.requests import Request as GRequest
-    import requests as req_lib
-except ImportError as e:
-    print(json.dumps({"error": f"Missing library: {e}"}))
-    sys.exit(1)
-
-try:
-    creds = sa_module.Credentials.from_service_account_file(CRED_FILE, scopes=SCOPES)
-    creds.refresh(GRequest())
-    token = creds.token
-except Exception as e:
-    print(json.dumps({"error": f"Auth failed: {e}"}))
-    sys.exit(1)
-
-boundary   = 'zap_rpt_bdry_x7k'
-meta_json  = json.dumps({"name": doc_title,
-                          "mimeType": "application/vnd.google-apps.document"})
-body_parts = [
-    f'--{boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{meta_json}\r\n',
-    f'--{boundary}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n{html_content}\r\n',
-    f'--{boundary}--',
-]
-body = ''.join(body_parts).encode('utf-8')
-
-try:
-    resp = req_lib.post(
-        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-        headers={
-            'Authorization': f'Bearer {token}',
-            'Content-Type':  f'multipart/related; boundary={boundary}',
-        },
-        data=body,
-        timeout=30,
-    )
-except Exception as e:
-    print(json.dumps({"error": f"Network error: {e}"}))
-    sys.exit(1)
-
-if not resp.ok:
-    print(json.dumps({"error": f"Drive API {resp.status_code}: {resp.text[:300]}"}))
-    sys.exit(1)
-
-result  = resp.json()
-doc_id  = result.get('id', '')
-doc_url = f"https://docs.google.com/document/d/{doc_id}/edit"
-
-print(json.dumps({
-    "ok":      True,
-    "doc_id":  doc_id,
-    "doc_url": doc_url,
-    "title":   doc_title,
-    "sessions": len(playtest_sessions),
-}))
+print(json.dumps({"ok": True, "content": md_content, "filename": filename, "title": doc_title}))
+sys.exit(0)

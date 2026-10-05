@@ -41,15 +41,37 @@ if not game:
     print(json.dumps({"error": "game is required"}))
     sys.exit(1)
 
-# ── Load session data ────────────────────────────────────────────────────────
+# ── Load session data (cache first, fall back to live sheet read) ─────────────
+import gspread
+
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 dev_file = os.path.join(base_dir, 'sheets', sheet_id, f'[{game}] dev.json')
-if not os.path.exists(dev_file):
-    print(json.dumps({"error": f"Dev data not found for: {game}"}))
-    sys.exit(1)
 
-with open(dev_file, 'r', encoding='utf-8') as f:
-    rows = json.load(f)
+if os.path.exists(dev_file):
+    with open(dev_file, 'r', encoding='utf-8') as f:
+        rows = json.load(f)
+else:
+    # No cached JSON — read directly from the Google Sheet
+    if not os.path.exists(CRED_FILE):
+        print(json.dumps({"error": "credentials.json not found"}))
+        sys.exit(1)
+    tab_name = f'[{game}] dev'
+    try:
+        sa = gspread.service_account(filename=CRED_FILE)
+        wb = sa.open_by_key(sheet_id)
+        ws = next((w for w in wb.worksheets() if w.title == tab_name), None)
+        if ws is None:
+            print(json.dumps({"error": f"No dev tab found for: {game}"}))
+            sys.exit(1)
+        all_vals = ws.get_all_values(value_render_option='FORMATTED_VALUE')
+        if not all_vals:
+            rows = []
+        else:
+            headers = all_vals[0]
+            rows = [dict(zip(headers, r)) for r in all_vals[1:]]
+    except Exception as e:
+        print(json.dumps({"error": f"Sheet read failed: {e}"}))
+        sys.exit(1)
 
 # ── Build sessions (mirrors buildSessions() in devboard-common.js) ───────────
 sessions = []

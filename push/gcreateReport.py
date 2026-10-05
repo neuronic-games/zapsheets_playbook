@@ -253,70 +253,85 @@ L += [left, center, logo_cell, r'\row']
 L.append(r'\pard\sb80\par')
 
 # ── Info table: CLIENT / GAME / SCOPE ─────────────────────────────────────────
-def info_row(label, content_rtf, last=False):
-    """Emit one row of the info table (label | content)."""
-    border = r'\brdrw15\brdrs\brdrcf3'
-    brdrs  = (r'\clbrdrt' + border +
-              r'\clbrdrb' + border +
-              r'\clbrdrl' + border +
-              r'\clbrdrr' + border)
-    row = [r'\trowd\trgaph0\trleft0\trpaddl144\trpaddr144\trpaddt80\trpaddb80']
-    row.append(brdrs + r'\cellx1800')   # label col ~1.25"
-    row.append(brdrs + r'\cellx10800')  # content col
+# Thin black border on all sides; label cell = gray bg + teal bold; content = white
+_BDR = r'\brdrw10\brdrs\brdrcf3'   # thin dark border
+_ALL = (r'\clbrdrt' + _BDR + r'\clbrdrb' + _BDR +
+        r'\clbrdrl' + _BDR + r'\clbrdrr' + _BDR)
+
+def info_row(label, content_rtf):
+    """One row: [gray label cell | white content cell]."""
+    row = [r'\trowd\trgaph0\trleft0\trpaddl216\trpaddr216\trpaddt160\trpaddb160']
+    # Label cell: gray background
+    row.append(_ALL + r'\clshdng1000\clcbpat4\cellx1980')
+    # Content cell: white background
+    row.append(_ALL + r'\cellx10800')
     row.append(r'\pard\intbl\f0\fs20\b\cf1 ' + rtf_escape(label) + r'\b0\cell')
     row.append(r'\pard\intbl\f0\fs20\cf3 ' + content_rtf + r'\cell')
     row.append(r'\row')
     return '\n'.join(row)
 
+def intbl_bullet(text, color=3, indent=360):
+    """A single bullet paragraph inside a table cell."""
+    return (r'\pard\intbl\li' + str(indent + 180) + r'\fi-180'
+            r'\f0\fs20\cf' + str(color) + r' \bullet  ' + rtf_escape(text) + r'\par')
+
 # SCOPE bullets
 scope_lines = []
 if playtest_count:
-    scope_lines.append(str(playtest_count) + ' playtest' + ('' if playtest_count == 1 else 's'))
+    scope_lines.append(str(playtest_count) + ' organized playtest' + ('' if playtest_count == 1 else 's'))
 scope_lines.append('Playtest reports')
 if rules_count:
     scope_lines.append(str(rules_count) + ' iteration' + ('' if rules_count == 1 else 's') + ' of rules editing')
-scope_content = ''.join(r'\bullet  ' + rtf_escape(s) + r'\par\pard\intbl\f0\fs20\cf3 ' for s in scope_lines)
+scope_content = '\n'.join(intbl_bullet(s) for s in scope_lines)
 
 L.append(info_row('CLIENT', rtf_escape(client or '—')))
 L.append(info_row('GAME',   rtf_escape(game)))
-L.append(info_row('SCOPE',  scope_content.rstrip(r'\par\pard\intbl\f0\fs20\cf3 ')))
+L.append(info_row('SCOPE',  scope_content))
 
 # Spacer
 L.append(r'\pard\sb100\par')
 
 # ── Section box helper ────────────────────────────────────────────────────────
+# Matches the sample: gray header row (teal bold label) + white content row,
+# all wrapped in a thin dark border.
 def section_box(heading, bullet_items, images=None):
     """
-    Return RTF for a teal-bordered section box with a bold heading and bullet list.
-    bullet_items: list of (obs_text, sol_text) tuples — plain strings (images stripped).
-    images:       list of (img_data, fmt) pairs to embed after the bullets.
+    Two-row table: heading row (gray bg, teal bold) + content row (white, bullets).
+    bullet_items: list of (obs_text, sol_text) tuples — plain strings.
+    images: list of (img_data, fmt) pairs embedded after the table.
     """
-    border = r'\brdrw15\brdrs\brdrcf1'
-    brdrs  = (r'\clbrdrt' + border +
-              r'\clbrdrb' + border +
-              r'\clbrdrl' + border +
-              r'\clbrdrr' + border +
-              r'\clshdng500\clcbpat4')  # light gray background
-    out = [r'\trowd\trgaph0\trleft0\trpaddl144\trpaddr144\trpaddt120\trpaddb120']
-    out.append(brdrs + r'\cellx10800')
+    # Border style: thin dark line on all sides
+    _bdr = r'\brdrw10\brdrs\brdrcf3'
+    def cell_borders(extra=''):
+        return (r'\clbrdrt' + _bdr + r'\clbrdrb' + _bdr +
+                r'\clbrdrl' + _bdr + r'\clbrdrr' + _bdr + extra)
 
-    # Heading row inside cell
-    out.append(r'\pard\intbl\f0\fs22\b\cf1 ' + rtf_escape(heading) + r'\b0\par')
-    out.append(r'\pard\intbl\f0\fs4\cf3 \par')  # small spacer
+    out = []
 
-    # Bullets
+    # Row 1: heading — gray background, teal bold text
+    out.append(r'\trowd\trgaph0\trleft0\trpaddl216\trpaddr216\trpaddt120\trpaddb120')
+    out.append(cell_borders(r'\clshdng1000\clcbpat4') + r'\cellx10800')
+    out.append(r'\pard\intbl\f0\fs22\b\cf1 ' + rtf_escape(heading) + r'\b0\cell')
+    out.append(r'\row')
+
+    # Row 2: content — white background, bullets
+    out.append(r'\trowd\trgaph0\trleft0\trpaddl216\trpaddr216\trpaddt120\trpaddb180')
+    out.append(cell_borders() + r'\cellx10800')
     for obs_text, sol_text in bullet_items:
         if obs_text:
-            out.append(r'\pard\intbl\li180\fi-180\f0\fs20\cf3 \bullet  ' + rtf_escape(obs_text) + r'\par')
+            out.append(r'\pard\intbl\li360\fi-180\f0\fs20\cf3 \bullet  ' +
+                       rtf_escape(obs_text) + r'\par')
         if sol_text:
-            out.append(r'\pard\intbl\li540\fi-180\f0\fs20\cf2 \endash  ' + rtf_escape(sol_text) + r'\par')
-
+            out.append(r'\pard\intbl\li720\fi-180\f0\fs20\cf2 \endash  ' +
+                       rtf_escape(sol_text) + r'\par')
+    if not bullet_items:
+        out.append(r'\pard\intbl\f0\fs20\cf2 \i No observations recorded.\i0\par')
     out.append(r'\cell\row')
 
-    # Images outside the table (so they aren't clipped)
+    # Images after the table
     if images:
         for img_data, fmt in images:
-            out.append(r'\pard\sb60\sa60 ' + rtf_pict(img_data, fmt, goal_twips=7200) + r'\par')
+            out.append(r'\pard\sb80\sa80 ' + rtf_pict(img_data, fmt, goal_twips=7200) + r'\par')
 
     return '\n'.join(out)
 

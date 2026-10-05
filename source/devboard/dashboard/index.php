@@ -387,6 +387,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .btn-contract-action.estimate:hover { background:#2e7d9e; color:#fff; }
 .btn-contract-action.invoice { border-color:#a16207; color:#a16207; }
 .btn-contract-action.invoice:hover { background:#a16207; color:#fff; }
+.btn-contract-action.report { border-color:#1a5f7a; color:#1a5f7a; }
+.btn-contract-action.report:hover { background:#1a5f7a; color:#fff; }
 .btn-contract-action:disabled { opacity:.5; cursor:default; }
 .publishers-empty { color:#888; font-size:.85rem; padding:1rem 0; }
 
@@ -2060,12 +2062,13 @@ function renderPublishersView() {
         html += '</div>'; // .contract-item
       });
 
-      // Footer: Edit Game (left) | + Estimate + + Invoice (right)
+      // Footer: Edit Game (left) | + Estimate + + Invoice + + Report (right)
       html += '<div class="game-group-footer">';
       html += '<div class="game-group-footer-left">';
       html += '<button class="btn-contract-action" onclick="event.stopPropagation();openEditGame(' + esc(JSON.stringify(g.name)) + ')">Edit Game</button>';
       html += '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(pub.name)) + ',' + esc(JSON.stringify(g.name)) + ')">+ Estimate</button>';
       html += '<button type="button" class="btn-contract-action invoice" onclick="event.stopPropagation();openStandaloneInvoiceDialog(' + esc(JSON.stringify(g.name)) + ',' + esc(JSON.stringify(pub.name)) + ')">+ Invoice</button>';
+      html += '<button type="button" class="btn-contract-action report" onclick="event.stopPropagation();createReport(' + esc(JSON.stringify(g.name)) + ',' + esc(JSON.stringify(pub.name)) + ')">+ Report</button>';
       html += '</div>';
       html += '<div style="display:flex;gap:.4rem;align-items:center"></div>';
       html += '</div>';
@@ -3238,6 +3241,35 @@ function forceCloseContractDialog() {
 var _siGame      = '';
 var _siClient    = '';
 var _siInitial   = {};
+
+// ── + Report: generate a Google Doc from playtest session data ───────────────
+function createReport(gameName, clientName) {
+  var btn = event.currentTarget || event.target;
+  var origLabel = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
+
+  var fd = new FormData();
+  fd.append('id',     SHEET_ID);
+  fd.append('game',   gameName  || '');
+  fd.append('client', clientName || '');
+
+  fetch(APP_BASE + 'push/createReport.php', { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(j) {
+      if (btn) { btn.disabled = false; btn.textContent = origLabel; }
+      if (j.error) {
+        alert('Report error: ' + j.error);
+        return;
+      }
+      if (j.doc_url) {
+        window.open(j.doc_url, '_blank');
+      }
+    })
+    .catch(function(e) {
+      if (btn) { btn.disabled = false; btn.textContent = origLabel; }
+      alert('Report failed: ' + e);
+    });
+}
 
 function openStandaloneInvoiceDialog(gameName, clientName) {
   _siGame   = gameName   || '';

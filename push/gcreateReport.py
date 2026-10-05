@@ -5,7 +5,7 @@
 # Returns: { ok, b64, filename, title }  (b64 = base64-encoded .rtf bytes)
 # No external dependencies beyond stdlib + gspread.
 
-import sys, os, json, base64, socket, re, io, struct
+import sys, os, json, base64, socket, re, struct
 from datetime import datetime
 
 socket.setdefaulttimeout(20)
@@ -39,7 +39,7 @@ if not game:
     print(json.dumps({"error": "game is required"}))
     sys.exit(1)
 
-# ── Load session data (cache first, fall back to live sheet read) ─────────────
+# ── Load session data ─────────────────────────────────────────────────────────
 import gspread
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -82,14 +82,15 @@ for row in rows:
     event  = str(row.get('Event',        '') or '').strip()
     people = str(row.get('People',       '') or '').strip()
     obs    = str(row.get('Observations', '') or row.get('Observation', '') or '').strip()
-    sol    = str(row.get('Solutions',    '') or row.get('Thoughts', '') or row.get('Solution', '') or '').strip()
+    sol    = str(row.get('Solutions',    '') or row.get('Thoughts',    '') or row.get('Solution', '') or '').strip()
 
     if date or event:
         if event in ('Time', 'Material'):
             current = None
             continue
         label   = event + (' ' + people if people else '')
-        current = {'date': date, 'testnum': label, 'location': obs, 'length': sol, 'testers': [], 'obs': []}
+        current = {'date': date, 'testnum': label, 'event': event,
+                   'location': obs, 'length': sol, 'testers': [], 'obs': []}
         sessions.append(current)
     elif current:
         if people:
@@ -101,35 +102,52 @@ for row in rows:
         elif obs or sol:
             current['obs'].append({'obs': obs, 'sol': sol})
 
-playtest_sessions = [s for s in sessions if s['obs'] or s.get('location')]
-
-# ── RTF helpers ───────────────────────────────────────────────────────────────
+# ── Counts for SCOPE ──────────────────────────────────────────────────────────
 IMAGE_RE = re.compile(r'=IMAGE\s*\(\s*["\']?(https?[^"\')\s]+)["\']?\s*\)', re.IGNORECASE)
 
-# Color table indices (1-based)
-# 1 = teal #1a5f7a, 2 = gray #666666, 3 = dark #111111, 4 = white #ffffff
+playtest_count = sum(1 for s in sessions
+                     if 'rule' not in s['event'].lower()
+                     and s['event'].lower() not in ('time', 'material'))
+rules_count    = sum(1 for s in sessions
+                     if 'rule' in s['event'].lower())
 
+# Collect ALL obs/sol entries and ALL image URLs across all sessions
+all_obs    = []   # {'obs': str, 'sol': str}
+all_images = []   # image URL strings (preserve order)
+
+for s in sessions:
+    if 'rule' not in s['event'].lower():
+        for entry in s['obs']:
+            all_obs.append(entry)
+            for m in IMAGE_RE.finditer(entry.get('obs', '')):
+                url = m.group(1)
+                if url not in all_images:
+                    all_images.append(url)
+            for m in IMAGE_RE.finditer(entry.get('sol', '')):
+                url = m.group(1)
+                if url not in all_images:
+                    all_images.append(url)
+
+# ── RTF helpers ───────────────────────────────────────────────────────────────
 def rtf_escape(s):
-    """Escape a plain string for RTF."""
     out = []
     for ch in str(s or ''):
         cp = ord(ch)
-        if ch == '\\':
-            out.append('\\\\')
-        elif ch == '{':
-            out.append('\\{')
-        elif ch == '}':
-            out.append('\\}')
-        elif cp < 128:
-            out.append(ch)
+        if   ch == '\\': out.append('\\\\')
+        elif ch == '{':  out.append('\\{')
+        elif ch == '}':  out.append('\\}')
+        elif ch == '\n': out.append('\\line ')
+        elif cp < 128:   out.append(ch)
         else:
-            # Unicode escape
             signed = cp if cp < 32768 else cp - 65536
             out.append(f'\\u{signed}?')
     return ''.join(out)
 
+def strip_images(text):
+    """Return text with =IMAGE(...) removed."""
+    return IMAGE_RE.sub('', text).strip()
+
 def fetch_image(url):
-    """Download image; returns (bytes, 'png'|'jpeg') or (None, None)."""
     try:
         import urllib.request
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -137,260 +155,209 @@ def fetch_image(url):
             data = resp.read()
             ct   = resp.headers.get('Content-Type', '')
         fmt = 'png' if 'png' in ct.lower() else 'jpeg'
-        # Detect from magic bytes if Content-Type is vague
-        if data[:8] == b'\x89PNG\r\n\x1a\n':
-            fmt = 'png'
-        elif data[:2] == b'\xff\xd8':
-            fmt = 'jpeg'
+        if data[:8] == b'\x89PNG\r\n\x1a\n': fmt = 'png'
+        elif data[:2] == b'\xff\xd8':         fmt = 'jpeg'
         return data, fmt
     except Exception:
         return None, None
 
 def image_dims(data, fmt):
-    """Return (width_px, height_px) or (None, None)."""
     try:
         if fmt == 'png' and data[:8] == b'\x89PNG\r\n\x1a\n':
-            w = struct.unpack('>I', data[16:20])[0]
-            h = struct.unpack('>I', data[20:24])[0]
-            return w, h
+            return struct.unpack('>II', data[16:24])
         if fmt == 'jpeg':
             i = 2
             while i < len(data) - 9:
-                if data[i] != 0xFF:
-                    break
-                marker = data[i + 1]
+                if data[i] != 0xFF: break
+                marker  = data[i + 1]
                 seg_len = struct.unpack('>H', data[i+2:i+4])[0]
                 if marker in (0xC0, 0xC1, 0xC2):
-                    h = struct.unpack('>H', data[i+5:i+7])[0]
-                    w = struct.unpack('>H', data[i+7:i+9])[0]
+                    h, w = struct.unpack('>HH', data[i+5:i+9])
                     return w, h
                 i += 2 + seg_len
     except Exception:
         pass
     return None, None
 
-def rtf_image_block(img_data, fmt, goal_width_twips=7200):
-    """Return RTF \pict block string for an image."""
+def rtf_pict(img_data, fmt, goal_twips=7200):
     w, h = image_dims(img_data, fmt)
-    hex_data = img_data.hex()
-    pict_type = '\\pngblip' if fmt == 'png' else '\\jpegblip'
-    dim_str = ''
+    tag  = '\\pngblip' if fmt == 'png' else '\\jpegblip'
     if w and h:
-        goal_h = int(goal_width_twips * h / w)
-        dim_str = f'\\picw{w}\\pich{h}\\picwgoal{goal_width_twips}\\pichgoal{goal_h}'
+        gh = int(goal_twips * h / w)
+        dims = f'\\picw{w}\\pich{h}\\picwgoal{goal_twips}\\pichgoal{gh}'
     else:
-        dim_str = f'\\picwgoal{goal_width_twips}'
-    return '{\\pict' + pict_type + dim_str + '\n' + hex_data + '}'
+        dims = f'\\picwgoal{goal_twips}'
+    return '{\\pict' + tag + dims + '\n' + img_data.hex() + '}'
 
-def split_text_images(text):
-    """Return list of str or {'img_url': url} segments."""
-    segs, last = [], 0
-    for m in IMAGE_RE.finditer(text):
-        if m.start() > last:
-            segs.append(text[last:m.start()])
-        segs.append({'img_url': m.group(1)})
-        last = m.end()
-    if last < len(text):
-        segs.append(text[last:])
-    return segs
-
-# ── Build RTF document ────────────────────────────────────────────────────────
-today = datetime.today()
+# ── Compose RTF ───────────────────────────────────────────────────────────────
+today    = datetime.today()
 date_str = today.strftime('%b ') + str(today.day) + today.strftime(', %Y')
 
 doc_title = f"{game} — Playtest Report"
 if ref_code:
     doc_title += f" ({ref_code})"
 
-lines = []
+L = []   # RTF lines
 
-# RTF header
-lines.append(r'{\rtf1\ansi\ansicpg1252\deff0\deflang1033')
-lines.append(r'{\fonttbl{\f0\fswiss\fcharset0 Arial;}{\f1\fswiss\fcharset0 Helvetica;}}')
-lines.append(r'{\colortbl ;\red26\green95\blue122;\red102\green102\blue102;\red17\green17\blue17;\red255\green255\blue255;}')
-# Letter page, 1" margins left/right, 0.75" top/bottom
-lines.append(r'\paperw12240\paperh15840\margl1440\margr1440\margt1080\margb1080')
-lines.append(r'\widowctrl\hyphauto')
+# ── RTF preamble ─────────────────────────────────────────────────────────────
+L += [
+    r'{\rtf1\ansi\ansicpg1252\deff0\deflang1033',
+    r'{\fonttbl{\f0\fswiss\fcharset0 Arial;}}',
+    # Color table: 1=teal, 2=gray, 3=dark, 4=lightgray bg
+    r'{\colortbl ;\red26\green95\blue122;\red102\green102\blue102;\red17\green17\blue17;\red245\green245\blue245;}',
+    r'\paperw12240\paperh15840\margl1440\margr1440\margt1080\margb1080',
+    r'\widowctrl',
+]
 
-def para(content, bold=False, italic=False, color=3, size=20,
-         sb=0, sa=60, li=0, align='', border_bottom=False):
-    """Emit an RTF paragraph."""
-    p = r'\pard'
-    if align == 'center':
-        p += r'\qc'
-    p += f'\\sb{sb}\\sa{sa}'
-    if li:
-        p += f'\\li{li}'
-    if border_bottom:
-        p += r'\brdrb\brdrs\brdrw15\brdrcf1\brsp40'
-    p += f'\\f0\\fs{size}\\cf{color} '
-    if bold:
-        p += r'\b '
-    if italic:
-        p += r'\i '
-    p += content
-    if bold:
-        p += r'\b0'
-    if italic:
-        p += r'\i0'
-    p += r'\par'
-    return p
+# ── Header table: left=company/address, right=date/ref/prepared-by ───────────
+# 2-col table spanning full width: col1=6480 twips (4.5"), col2=4320 twips (3")
+L.append(r'\trowd\trgaph0\trleft0\trpaddl108\trpaddr108\trpaddt60\trpaddb60')
+L.append(r'\clvertalt\cellx6480')   # left cell
+L.append(r'\clvertalt\cellx10800')  # right cell
 
-# ── Company header ────────────────────────────────────────────────────────────
-header_text = my_company or my_name
-if header_text:
-    lines.append(para(rtf_escape(header_text), bold=True, color=1, size=40, sb=0, sa=80))
-
-# Date
-lines.append(
-    r'\pard\sb0\sa40\f0\fs20\cf3 '
-    r'\b Date:\b0  ' + rtf_escape(date_str) + r'\par'
-)
-
-# Address
+# Left cell: company name + address
+left = r'\pard\intbl\f0\fs40\b\cf1 ' + rtf_escape(my_company or my_name) + r'\b0\par'
 if my_address:
-    for addr_line in my_address.replace('\r\n', '\n').split('\n'):
-        addr_line = addr_line.strip()
-        if addr_line:
-            lines.append(para(rtf_escape(addr_line), color=2, size=18, sb=0, sa=20))
+    for line in my_address.replace('\r\n', '\n').split('\n'):
+        line = line.strip()
+        if line:
+            left += r'\pard\intbl\f0\fs18\cf2 ' + rtf_escape(line) + r'\par'
+if my_phone:
+    left += r'\pard\intbl\f0\fs18\cf2 ' + rtf_escape(my_phone) + r'\par'
+left += r'\cell'
 
-# Prepared by
-if my_name and my_company:
-    lines.append(
-        r'\pard\sb40\sa40\f0\fs20\cf3 '
-        r'\b Prepared by:\b0  ' + rtf_escape(my_name) + r'\par'
-    )
+# Right cell: date, ref, prepared by
+right  = r'\pard\intbl\f0\fs20\cf3 '
+right += r'\b Date:\b0  ' + rtf_escape(date_str) + r'\par'
+if ref_code:
+    right += r'\pard\intbl\f0\fs20\cf3 \b Ref:\b0  ' + rtf_escape(ref_code) + r'\par'
+if my_name:
+    right += r'\pard\intbl\f0\fs20\cf3 \b Prepared by:\b0  ' + rtf_escape(my_name) + r'\par'
+right += r'\cell'
 
-# Horizontal rule
-lines.append(r'\pard\sb60\sa60\brdrb\brdrs\brdrw15\brdrcf1\brsp40\par')
-
-# ── CLIENT / GAME table ───────────────────────────────────────────────────────
-# Use a simple RTF table: two columns, ~3" and ~4.5"
-lines.append(r'\pard\trowd\trgaph108\trleft-108')
-lines.append(r'\clbrdrt\brdrw15\brdrs\brdrcf2\clbrdrb\brdrw15\brdrs\brdrcf2'
-             r'\clbrdrl\brdrw15\brdrs\brdrcf2\clbrdrr\brdrw15\brdrs\brdrcf2'
-             r'\cellx4320')   # 3 inches
-lines.append(r'\clbrdrt\brdrw15\brdrs\brdrcf2\clbrdrb\brdrw15\brdrs\brdrcf2'
-             r'\clbrdrl\brdrw15\brdrs\brdrcf2\clbrdrr\brdrw15\brdrs\brdrcf2'
-             r'\cellx10800')  # 7.5 inches total
-lines.append(
-    r'\f0\fs18\cf1\b CLIENT\b0\cf3\fs20\line ' + rtf_escape(client or '—') + r'\cell'
-)
-lines.append(
-    r'\f0\fs18\cf1\b GAME\b0\cf3\fs20\line ' + rtf_escape(game) + r'\cell'
-)
-lines.append(r'\row')
+L += [left, right, r'\row']
 
 # Spacer
-lines.append(r'\pard\sb60\par')
+L.append(r'\pard\sb80\par')
 
-# ── TESTS heading ─────────────────────────────────────────────────────────────
-lines.append(para('TESTS', bold=True, color=1, size=28, sb=60, sa=40))
+# ── Info table: CLIENT / GAME / SCOPE ─────────────────────────────────────────
+def info_row(label, content_rtf, last=False):
+    """Emit one row of the info table (label | content)."""
+    border = r'\brdrw15\brdrs\brdrcf3'
+    brdrs  = (r'\clbrdrt' + border +
+              r'\clbrdrb' + border +
+              r'\clbrdrl' + border +
+              r'\clbrdrr' + border)
+    row = [r'\trowd\trgaph0\trleft0\trpaddl144\trpaddr144\trpaddt80\trpaddb80']
+    row.append(brdrs + r'\cellx1800')   # label col ~1.25"
+    row.append(brdrs + r'\cellx10800')  # content col
+    row.append(r'\pard\intbl\f0\fs20\b\cf1 ' + rtf_escape(label) + r'\b0\cell')
+    row.append(r'\pard\intbl\f0\fs20\cf3 ' + content_rtf + r'\cell')
+    row.append(r'\row')
+    return '\n'.join(row)
 
-if playtest_sessions:
-    for s in playtest_sessions:
-        # Session title
-        heading = s['testnum']
-        if s['date']:
-            heading += f"  —  {s['date']}"
-        lines.append(para(rtf_escape(heading), bold=True, color=3, size=24, sb=120, sa=40))
+# SCOPE bullets
+scope_lines = []
+if playtest_count:
+    scope_lines.append(str(playtest_count) + ' playtest' + ('' if playtest_count == 1 else 's'))
+scope_lines.append('Playtest reports')
+if rules_count:
+    scope_lines.append(str(rules_count) + ' iteration' + ('' if rules_count == 1 else 's') + ' of rules editing')
+scope_content = ''.join(r'\bullet  ' + rtf_escape(s) + r'\par\pard\intbl\f0\fs20\cf3 ' for s in scope_lines)
 
-        # Testers
-        if s['testers']:
-            lines.append(
-                r'\pard\sb0\sa40\f0\fs20\cf2 '
-                r'\b Testers:\b0  \i ' + rtf_escape(', '.join(s['testers'])) + r'\i0\par'
-            )
+L.append(info_row('CLIENT', rtf_escape(client or '—')))
+L.append(info_row('GAME',   rtf_escape(game)))
+L.append(info_row('SCOPE',  scope_content.rstrip(r'\par\pard\intbl\f0\fs20\cf3 ')))
 
-        # Meta: location / length
-        meta_parts = []
-        if s.get('location'):
-            meta_parts.append(s['location'])
-        if s.get('length'):
-            meta_parts.append(s['length'])
-        if meta_parts:
-            lines.append(para(r'\i ' + rtf_escape(' · '.join(meta_parts)) + r'\i0',
-                               color=2, size=18, sb=0, sa=60))
+# Spacer
+L.append(r'\pard\sb100\par')
 
-        # Observations
-        for entry in s['obs']:
-            obs_text = (entry.get('obs') or '').strip()
-            sol_text = (entry.get('sol') or '').strip()
+# ── Section box helper ────────────────────────────────────────────────────────
+def section_box(heading, bullet_items, images=None):
+    """
+    Return RTF for a teal-bordered section box with a bold heading and bullet list.
+    bullet_items: list of (obs_text, sol_text) tuples — plain strings (images stripped).
+    images:       list of (img_data, fmt) pairs to embed after the bullets.
+    """
+    border = r'\brdrw15\brdrs\brdrcf1'
+    brdrs  = (r'\clbrdrt' + border +
+              r'\clbrdrb' + border +
+              r'\clbrdrl' + border +
+              r'\clbrdrr' + border +
+              r'\clshdng500\clcbpat4')  # light gray background
+    out = [r'\trowd\trgaph0\trleft0\trpaddl144\trpaddr144\trpaddt120\trpaddb120']
+    out.append(brdrs + r'\cellx10800')
 
-            if not obs_text and not sol_text:
-                continue
+    # Heading row inside cell
+    out.append(r'\pard\intbl\f0\fs22\b\cf1 ' + rtf_escape(heading) + r'\b0\par')
+    out.append(r'\pard\intbl\f0\fs4\cf3 \par')  # small spacer
 
-            obs_segs = split_text_images(obs_text) if obs_text else []
-            sol_segs = split_text_images(sol_text) if sol_text else []
+    # Bullets
+    for obs_text, sol_text in bullet_items:
+        if obs_text:
+            out.append(r'\pard\intbl\li180\fi-180\f0\fs20\cf3 \bullet  ' + rtf_escape(obs_text) + r'\par')
+        if sol_text:
+            out.append(r'\pard\intbl\li540\fi-180\f0\fs20\cf2 \endash  ' + rtf_escape(sol_text) + r'\par')
 
-            # Plain text parts of obs
-            obs_plain  = ' '.join(seg.strip() for seg in obs_segs if isinstance(seg, str) and seg.strip())
-            obs_imgs   = [seg['img_url'] for seg in obs_segs if isinstance(seg, dict)]
+    out.append(r'\cell\row')
 
-            # Plain text parts of sol
-            sol_plain  = ' '.join(seg.strip() for seg in sol_segs if isinstance(seg, str) and seg.strip())
-            sol_imgs   = [seg['img_url'] for seg in sol_segs if isinstance(seg, dict)]
+    # Images outside the table (so they aren't clipped)
+    if images:
+        for img_data, fmt in images:
+            out.append(r'\pard\sb60\sa60 ' + rtf_pict(img_data, fmt, goal_twips=7200) + r'\par')
 
-            # Bullet: observation
-            if obs_plain:
-                lines.append(
-                    r'\pard\sb20\sa20\li360\fi-180\f0\fs20\cf3 \bullet  ' +
-                    rtf_escape(obs_plain) + r'\par'
-                )
+    return '\n'.join(out)
 
-            # Sub-bullet: solution text
-            if sol_plain:
-                lines.append(
-                    r'\pard\sb0\sa20\li720\fi-180\f0\fs20\cf2 \endash  \i ' +
-                    rtf_escape(sol_plain) + r'\i0\par'
-                )
+# ── Fetch images ─────────────────────────────────────────────────────────────
+fetched_images = []
+for url in all_images[:6]:   # cap at 6 images so the doc doesn't balloon
+    img_data, fmt = fetch_image(url)
+    if img_data:
+        fetched_images.append((img_data, fmt))
 
-            # Solution images
-            for img_url in sol_imgs:
-                img_data, fmt = fetch_image(img_url)
-                if img_data:
-                    lines.append(r'\pard\sb20\sa20\li720')
-                    lines.append(rtf_image_block(img_data, fmt, goal_width_twips=5760))
-                    lines.append(r'\par')
+# ── Build TESTS bullets (obs with images stripped) ───────────────────────────
+tests_bullets = []
+for entry in all_obs:
+    obs_plain = strip_images(entry.get('obs', ''))
+    sol_plain = strip_images(entry.get('sol', ''))
+    if obs_plain or sol_plain:
+        tests_bullets.append((obs_plain, sol_plain))
 
-            # Observation images
-            for img_url in obs_imgs:
-                img_data, fmt = fetch_image(img_url)
-                if img_data:
-                    lines.append(r'\pard\sb20\sa40')
-                    lines.append(rtf_image_block(img_data, fmt, goal_width_twips=7200))
-                    lines.append(r'\par')
+# Split images: first half between header and bullets, second half after bullets
+mid       = len(fetched_images) // 2
+imgs_mid  = fetched_images[:mid]
+imgs_end  = fetched_images[mid:]
 
-else:
-    lines.append(para(r'\i No playtest sessions recorded yet.\i0', color=2, size=20, sb=40, sa=40))
+# Emit mid-page images before TESTS box (after info table)
+if imgs_mid:
+    for img_data, fmt in imgs_mid:
+        L.append(r'\pard\sb40\sa40 ' + rtf_pict(img_data, fmt) + r'\par')
+    L.append(r'\pard\sb40\par')
+
+L.append(section_box('TESTS', tests_bullets, images=imgs_end))
 
 # ── Footer ────────────────────────────────────────────────────────────────────
-lines.append(r'\pard\sb80\sa60\brdrb\brdrs\brdrw15\brdrcf1\brsp40\par')
+L.append(r'\pard\sb120\sa0\brdrb\brdrs\brdrw10\brdrcf2\brsp40\par')
 
 footer_parts = []
-if my_company:
-    footer_parts.append(my_company)
-elif my_name:
-    footer_parts.append(my_name)
-if my_phone:
-    footer_parts.append(my_phone)
-if my_email:
-    footer_parts.append(my_email)
+if my_email:  footer_parts.append(my_email)
+if my_phone:  footer_parts.append(my_phone)
+if my_company or my_name:
+    site = (my_company or my_name).lower().replace(' ', '') + '.com'
+    # Use website if we don't have a better guess — just show the company/email
+    pass
+
 if footer_parts:
-    lines.append(para(r'\i ' + rtf_escape('  ·  '.join(footer_parts)) + r'\i0',
-                       color=2, size=18, sb=0, sa=0))
+    L.append(r'\pard\sb40\sa0\qc\f0\fs18\cf2 ' +
+             rtf_escape('  •  '.join(footer_parts)) + r'\par')
 
-lines.append('}')
+L.append('}')
 
-rtf_content = '\n'.join(lines)
-rtf_bytes   = rtf_content.encode('latin-1', errors='replace')
-b64         = base64.b64encode(rtf_bytes).decode('ascii')
+rtf_bytes = '\n'.join(L).encode('latin-1', errors='replace')
+b64       = base64.b64encode(rtf_bytes).decode('ascii')
 
 safe_game = re.sub(r'[^\w\s-]', '', game).strip().replace(' ', '_')
-if ref_code:
-    filename = f"{ref_code}_{safe_game}_Playtest_Report.rtf"
-else:
-    filename = f"{safe_game}_Playtest_Report.rtf"
+filename  = (f"{ref_code}_{safe_game}" if ref_code else safe_game) + '_Playtest_Report.rtf'
 
 print(json.dumps({"ok": True, "b64": b64, "filename": filename, "title": doc_title}))
 sys.exit(0)

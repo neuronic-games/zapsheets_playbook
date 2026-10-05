@@ -3242,7 +3242,7 @@ var _siGame      = '';
 var _siClient    = '';
 var _siInitial   = {};
 
-// ── + Report: generate a .docx playtest report with formatting and images ────
+// ── + Report: generate a .rtf playtest report with formatting and images ─────
 function createReport(gameName, clientName) {
   var btn = event.currentTarget || event.target;
   var origLabel = btn ? btn.textContent : '';
@@ -3265,11 +3265,11 @@ function createReport(gameName, clientName) {
         var bin    = atob(j.b64);
         var bytes  = new Uint8Array(bin.length);
         for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        var blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+        var blob = new Blob([bytes], { type: 'application/rtf' });
         var url  = URL.createObjectURL(blob);
         var a    = document.createElement('a');
         a.href     = url;
-        a.download = j.filename || 'playtest_report.docx';
+        a.download = j.filename || 'playtest_report.rtf';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

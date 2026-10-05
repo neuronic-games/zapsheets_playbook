@@ -1,10 +1,11 @@
-# gcreateReport.py — create a formatted .docx playtest report from DevBoard session data.
+# gcreateReport.py — create a formatted .rtf playtest report from DevBoard session data.
 #
 # Arg: {sheet_id}|{base64_json}
 # JSON keys: game, client, my_name, my_company, my_address, my_email, my_phone, ref_code
-# Returns: { ok, b64, filename, title }  (b64 = base64-encoded .docx bytes)
+# Returns: { ok, b64, filename, title }  (b64 = base64-encoded .rtf bytes)
+# No external dependencies beyond stdlib + gspread.
 
-import sys, os, json, base64, socket, re, io, tempfile
+import sys, os, json, base64, socket, re, io, struct
 from datetime import datetime
 
 socket.setdefaulttimeout(20)
@@ -51,7 +52,6 @@ elif not os.path.isdir(os.path.join(base_dir, 'sheets', sheet_id)):
     print(json.dumps({"error": f"Sheet directory not found for id: {sheet_id}"}))
     sys.exit(1)
 else:
-    # No cached JSON — read directly from the Google Sheet
     if not os.path.exists(CRED_FILE):
         print(json.dumps({"error": "credentials.json not found"}))
         sys.exit(1)
@@ -65,16 +65,15 @@ else:
             print(json.dumps({"error": f"No dev tab found for: {game} (tabs: {all_titles})"}))
             sys.exit(1)
         all_vals = ws.get_all_values(value_render_option='FORMATTED_VALUE')
-        if not all_vals:
-            rows = []
-        else:
+        rows = []
+        if all_vals:
             headers = all_vals[0]
             rows = [dict(zip(headers, r)) for r in all_vals[1:]]
     except Exception as e:
         print(json.dumps({"error": f"Sheet read failed: {e}"}))
         sys.exit(1)
 
-# ── Build sessions (mirrors buildSessions() in devboard-common.js) ───────────
+# ── Build sessions ────────────────────────────────────────────────────────────
 sessions = []
 current  = None
 
@@ -90,15 +89,7 @@ for row in rows:
             current = None
             continue
         label   = event + (' ' + people if people else '')
-        current = {
-            'date':     date,
-            'testnum':  label,
-            'event':    event,
-            'location': obs,
-            'length':   sol,
-            'testers':  [],
-            'obs':      [],
-        }
+        current = {'date': date, 'testnum': label, 'location': obs, 'length': sol, 'testers': [], 'obs': []}
         sessions.append(current)
     elif current:
         if people:
@@ -112,80 +103,98 @@ for row in rows:
 
 playtest_sessions = [s for s in sessions if s['obs'] or s.get('location')]
 
-# ── Image helper ──────────────────────────────────────────────────────────────
+# ── RTF helpers ───────────────────────────────────────────────────────────────
 IMAGE_RE = re.compile(r'=IMAGE\s*\(\s*["\']?(https?[^"\')\s]+)["\']?\s*\)', re.IGNORECASE)
 
+# Color table indices (1-based)
+# 1 = teal #1a5f7a, 2 = gray #666666, 3 = dark #111111, 4 = white #ffffff
+
+def rtf_escape(s):
+    """Escape a plain string for RTF."""
+    out = []
+    for ch in str(s or ''):
+        cp = ord(ch)
+        if ch == '\\':
+            out.append('\\\\')
+        elif ch == '{':
+            out.append('\\{')
+        elif ch == '}':
+            out.append('\\}')
+        elif cp < 128:
+            out.append(ch)
+        else:
+            # Unicode escape
+            signed = cp if cp < 32768 else cp - 65536
+            out.append(f'\\u{signed}?')
+    return ''.join(out)
+
 def fetch_image(url):
-    """Download image bytes; returns (bytes, ext) or (None, None) on failure."""
+    """Download image; returns (bytes, 'png'|'jpeg') or (None, None)."""
     try:
         import urllib.request
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = resp.read()
-            ct = resp.headers.get('Content-Type', '')
-            ext = 'png' if 'png' in ct else 'jpg'
-            return data, ext
+            ct   = resp.headers.get('Content-Type', '')
+        fmt = 'png' if 'png' in ct.lower() else 'jpeg'
+        # Detect from magic bytes if Content-Type is vague
+        if data[:8] == b'\x89PNG\r\n\x1a\n':
+            fmt = 'png'
+        elif data[:2] == b'\xff\xd8':
+            fmt = 'jpeg'
+        return data, fmt
     except Exception:
         return None, None
 
-def split_obs_text(text):
-    """Split text into segments: str or {'image_url': url}."""
-    segments = []
-    last = 0
+def image_dims(data, fmt):
+    """Return (width_px, height_px) or (None, None)."""
+    try:
+        if fmt == 'png' and data[:8] == b'\x89PNG\r\n\x1a\n':
+            w = struct.unpack('>I', data[16:20])[0]
+            h = struct.unpack('>I', data[20:24])[0]
+            return w, h
+        if fmt == 'jpeg':
+            i = 2
+            while i < len(data) - 9:
+                if data[i] != 0xFF:
+                    break
+                marker = data[i + 1]
+                seg_len = struct.unpack('>H', data[i+2:i+4])[0]
+                if marker in (0xC0, 0xC1, 0xC2):
+                    h = struct.unpack('>H', data[i+5:i+7])[0]
+                    w = struct.unpack('>H', data[i+7:i+9])[0]
+                    return w, h
+                i += 2 + seg_len
+    except Exception:
+        pass
+    return None, None
+
+def rtf_image_block(img_data, fmt, goal_width_twips=7200):
+    """Return RTF \pict block string for an image."""
+    w, h = image_dims(img_data, fmt)
+    hex_data = img_data.hex()
+    pict_type = '\\pngblip' if fmt == 'png' else '\\jpegblip'
+    dim_str = ''
+    if w and h:
+        goal_h = int(goal_width_twips * h / w)
+        dim_str = f'\\picw{w}\\pich{h}\\picwgoal{goal_width_twips}\\pichgoal{goal_h}'
+    else:
+        dim_str = f'\\picwgoal{goal_width_twips}'
+    return '{\\pict' + pict_type + dim_str + '\n' + hex_data + '}'
+
+def split_text_images(text):
+    """Return list of str or {'img_url': url} segments."""
+    segs, last = [], 0
     for m in IMAGE_RE.finditer(text):
         if m.start() > last:
-            segments.append(text[last:m.start()])
-        segments.append({'image_url': m.group(1)})
+            segs.append(text[last:m.start()])
+        segs.append({'img_url': m.group(1)})
         last = m.end()
     if last < len(text):
-        segments.append(text[last:])
-    return segments
+        segs.append(text[last:])
+    return segs
 
-# ── Build .docx ───────────────────────────────────────────────────────────────
-try:
-    from docx import Document
-    from docx.shared import Pt, Cm, RGBColor, Inches
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
-    from docx.oxml.ns import qn
-    from docx.oxml import OxmlElement
-except ImportError as e:
-    print(json.dumps({"error": f"python-docx not installed: {e}"}))
-    sys.exit(1)
-
-TEAL   = RGBColor(0x1a, 0x5f, 0x7a)
-GRAY   = RGBColor(0x66, 0x66, 0x66)
-BLACK  = RGBColor(0x11, 0x11, 0x11)
-
-def add_run(para, text, bold=False, italic=False, size=None, color=None):
-    run = para.add_run(text)
-    run.bold   = bold
-    run.italic = italic
-    if size:
-        run.font.size = Pt(size)
-    if color:
-        run.font.color.rgb = color
-    return run
-
-def set_para_spacing(para, before=0, after=0, line=None):
-    pf = para.paragraph_format
-    pf.space_before = Pt(before)
-    pf.space_after  = Pt(after)
-    if line:
-        pf.line_spacing = Pt(line)
-
-def add_horizontal_rule(doc):
-    p = doc.add_paragraph()
-    set_para_spacing(p, before=4, after=4)
-    pPr = p._p.get_or_add_pPr()
-    pBdr = OxmlElement('w:pBdr')
-    bottom = OxmlElement('w:bottom')
-    bottom.set(qn('w:val'), 'single')
-    bottom.set(qn('w:sz'), '6')
-    bottom.set(qn('w:space'), '1')
-    bottom.set(qn('w:color'), '1a5f7a')
-    pBdr.append(bottom)
-    pPr.append(pBdr)
-
+# ── Build RTF document ────────────────────────────────────────────────────────
 today = datetime.today()
 date_str = today.strftime('%b ') + str(today.day) + today.strftime(', %Y')
 
@@ -193,97 +202,117 @@ doc_title = f"{game} — Playtest Report"
 if ref_code:
     doc_title += f" ({ref_code})"
 
-doc = Document()
+lines = []
 
-# Page margins
-for section in doc.sections:
-    section.top_margin    = Cm(2)
-    section.bottom_margin = Cm(2)
-    section.left_margin   = Cm(2.5)
-    section.right_margin  = Cm(2.5)
+# RTF header
+lines.append(r'{\rtf1\ansi\ansicpg1252\deff0\deflang1033')
+lines.append(r'{\fonttbl{\f0\fswiss\fcharset0 Arial;}{\f1\fswiss\fcharset0 Helvetica;}}')
+lines.append(r'{\colortbl ;\red26\green95\blue122;\red102\green102\blue102;\red17\green17\blue17;\red255\green255\blue255;}')
+# Letter page, 1" margins left/right, 0.75" top/bottom
+lines.append(r'\paperw12240\paperh15840\margl1440\margr1440\margt1080\margb1080')
+lines.append(r'\widowctrl\hyphauto')
 
-# ── Header block ─────────────────────────────────────────────────────────────
+def para(content, bold=False, italic=False, color=3, size=20,
+         sb=0, sa=60, li=0, align='', border_bottom=False):
+    """Emit an RTF paragraph."""
+    p = r'\pard'
+    if align == 'center':
+        p += r'\qc'
+    p += f'\\sb{sb}\\sa{sa}'
+    if li:
+        p += f'\\li{li}'
+    if border_bottom:
+        p += r'\brdrb\brdrs\brdrw15\brdrcf1\brsp40'
+    p += f'\\f0\\fs{size}\\cf{color} '
+    if bold:
+        p += r'\b '
+    if italic:
+        p += r'\i '
+    p += content
+    if bold:
+        p += r'\b0'
+    if italic:
+        p += r'\i0'
+    p += r'\par'
+    return p
+
+# ── Company header ────────────────────────────────────────────────────────────
 header_text = my_company or my_name
 if header_text:
-    p = doc.add_paragraph()
-    set_para_spacing(p, before=0, after=2)
-    add_run(p, header_text, bold=True, size=20, color=TEAL)
+    lines.append(para(rtf_escape(header_text), bold=True, color=1, size=40, sb=0, sa=80))
 
-# Date line
-p = doc.add_paragraph()
-set_para_spacing(p, before=0, after=1)
-add_run(p, 'Date: ', bold=True, size=10, color=BLACK)
-add_run(p, date_str, size=10, color=BLACK)
+# Date
+lines.append(
+    r'\pard\sb0\sa40\f0\fs20\cf3 '
+    r'\b Date:\b0  ' + rtf_escape(date_str) + r'\par'
+)
 
-# Address lines
+# Address
 if my_address:
     for addr_line in my_address.replace('\r\n', '\n').split('\n'):
         addr_line = addr_line.strip()
         if addr_line:
-            p = doc.add_paragraph()
-            set_para_spacing(p, before=0, after=0)
-            add_run(p, addr_line, size=10, color=GRAY)
+            lines.append(para(rtf_escape(addr_line), color=2, size=18, sb=0, sa=20))
 
 # Prepared by
 if my_name and my_company:
-    p = doc.add_paragraph()
-    set_para_spacing(p, before=2, after=0)
-    add_run(p, 'Prepared by: ', bold=True, size=10, color=BLACK)
-    add_run(p, my_name, size=10, color=BLACK)
+    lines.append(
+        r'\pard\sb40\sa40\f0\fs20\cf3 '
+        r'\b Prepared by:\b0  ' + rtf_escape(my_name) + r'\par'
+    )
 
-add_horizontal_rule(doc)
+# Horizontal rule
+lines.append(r'\pard\sb60\sa60\brdrb\brdrs\brdrw15\brdrcf1\brsp40\par')
 
-# ── CLIENT / GAME block ───────────────────────────────────────────────────────
-tbl = doc.add_table(rows=1, cols=2)
-tbl.style = 'Table Grid'
-tbl.columns[0].width = Cm(5)
-tbl.columns[1].width = Cm(10)
+# ── CLIENT / GAME table ───────────────────────────────────────────────────────
+# Use a simple RTF table: two columns, ~3" and ~4.5"
+lines.append(r'\pard\trowd\trgaph108\trleft-108')
+lines.append(r'\clbrdrt\brdrw15\brdrs\brdrcf2\clbrdrb\brdrw15\brdrs\brdrcf2'
+             r'\clbrdrl\brdrw15\brdrs\brdrcf2\clbrdrr\brdrw15\brdrs\brdrcf2'
+             r'\cellx4320')   # 3 inches
+lines.append(r'\clbrdrt\brdrw15\brdrs\brdrcf2\clbrdrb\brdrw15\brdrs\brdrcf2'
+             r'\clbrdrl\brdrw15\brdrs\brdrcf2\clbrdrr\brdrw15\brdrs\brdrcf2'
+             r'\cellx10800')  # 7.5 inches total
+lines.append(
+    r'\f0\fs18\cf1\b CLIENT\b0\cf3\fs20\line ' + rtf_escape(client or '—') + r'\cell'
+)
+lines.append(
+    r'\f0\fs18\cf1\b GAME\b0\cf3\fs20\line ' + rtf_escape(game) + r'\cell'
+)
+lines.append(r'\row')
 
-c0, c1 = tbl.rows[0].cells
-p0 = c0.paragraphs[0]
-add_run(p0, 'CLIENT\n', bold=True, size=9, color=TEAL)
-add_run(p0, client or '—', size=10, color=BLACK)
+# Spacer
+lines.append(r'\pard\sb60\par')
 
-p1 = c1.paragraphs[0]
-add_run(p1, 'GAME\n', bold=True, size=9, color=TEAL)
-add_run(p1, game, size=10, color=BLACK)
-
-doc.add_paragraph()  # spacer
-
-# ── TESTS section ─────────────────────────────────────────────────────────────
-p = doc.add_paragraph()
-set_para_spacing(p, before=6, after=4)
-add_run(p, 'TESTS', bold=True, size=14, color=TEAL)
+# ── TESTS heading ─────────────────────────────────────────────────────────────
+lines.append(para('TESTS', bold=True, color=1, size=28, sb=60, sa=40))
 
 if playtest_sessions:
     for s in playtest_sessions:
-        # Session heading
+        # Session title
         heading = s['testnum']
         if s['date']:
             heading += f"  —  {s['date']}"
-        p = doc.add_paragraph()
-        set_para_spacing(p, before=8, after=2)
-        add_run(p, heading, bold=True, size=12, color=BLACK)
+        lines.append(para(rtf_escape(heading), bold=True, color=3, size=24, sb=120, sa=40))
 
         # Testers
         if s['testers']:
-            p = doc.add_paragraph()
-            set_para_spacing(p, before=0, after=1)
-            add_run(p, 'Testers: ', bold=True, size=10, color=GRAY)
-            add_run(p, ', '.join(s['testers']), italic=True, size=10, color=GRAY)
+            lines.append(
+                r'\pard\sb0\sa40\f0\fs20\cf2 '
+                r'\b Testers:\b0  \i ' + rtf_escape(', '.join(s['testers'])) + r'\i0\par'
+            )
 
-        # Location / Length meta
+        # Meta: location / length
         meta_parts = []
         if s.get('location'):
             meta_parts.append(s['location'])
         if s.get('length'):
             meta_parts.append(s['length'])
         if meta_parts:
-            p = doc.add_paragraph()
-            set_para_spacing(p, before=0, after=3)
-            add_run(p, ' · '.join(meta_parts), italic=True, size=10, color=GRAY)
+            lines.append(para(r'\i ' + rtf_escape(' · '.join(meta_parts)) + r'\i0',
+                               color=2, size=18, sb=0, sa=60))
 
-        # Observations + solutions
+        # Observations
         for entry in s['obs']:
             obs_text = (entry.get('obs') or '').strip()
             sol_text = (entry.get('sol') or '').strip()
@@ -291,61 +320,53 @@ if playtest_sessions:
             if not obs_text and not sol_text:
                 continue
 
-            # Split obs_text into text / image segments
-            segments = split_obs_text(obs_text) if obs_text else []
+            obs_segs = split_text_images(obs_text) if obs_text else []
+            sol_segs = split_text_images(sol_text) if sol_text else []
 
-            # Collect image segments separately; build plain text for bullet
-            plain_parts = []
-            image_urls  = []
-            for seg in segments:
-                if isinstance(seg, dict):
-                    image_urls.append(seg['image_url'])
-                else:
-                    plain_parts.append(seg.strip())
+            # Plain text parts of obs
+            obs_plain  = ' '.join(seg.strip() for seg in obs_segs if isinstance(seg, str) and seg.strip())
+            obs_imgs   = [seg['img_url'] for seg in obs_segs if isinstance(seg, dict)]
 
-            plain_text = ' '.join(p for p in plain_parts if p)
+            # Plain text parts of sol
+            sol_plain  = ' '.join(seg.strip() for seg in sol_segs if isinstance(seg, str) and seg.strip())
+            sol_imgs   = [seg['img_url'] for seg in sol_segs if isinstance(seg, dict)]
 
-            # Bullet paragraph for the observation text
-            if plain_text:
-                p = doc.add_paragraph(style='List Bullet')
-                set_para_spacing(p, before=1, after=1)
-                add_run(p, plain_text, size=10, color=BLACK)
+            # Bullet: observation
+            if obs_plain:
+                lines.append(
+                    r'\pard\sb20\sa20\li360\fi-180\f0\fs20\cf3 \bullet  ' +
+                    rtf_escape(obs_plain) + r'\par'
+                )
 
-            # Solution as indented sub-bullet
-            if sol_text:
-                # Split sol too for any images
-                sol_segs    = split_obs_text(sol_text)
-                sol_plain   = ' '.join(seg.strip() for seg in sol_segs if isinstance(seg, str) and seg.strip())
-                sol_imgs    = [seg['image_url'] for seg in sol_segs if isinstance(seg, dict)]
-                if sol_plain:
-                    p = doc.add_paragraph(style='List Bullet 2')
-                    set_para_spacing(p, before=0, after=1)
-                    add_run(p, sol_plain, size=10, color=GRAY)
-                for img_url in sol_imgs:
-                    img_bytes, _ = fetch_image(img_url)
-                    if img_bytes:
-                        p = doc.add_paragraph()
-                        set_para_spacing(p, before=2, after=2)
-                        p.paragraph_format.left_indent = Cm(1.5)
-                        run = p.add_run()
-                        run.add_picture(io.BytesIO(img_bytes), width=Inches(4))
+            # Sub-bullet: solution text
+            if sol_plain:
+                lines.append(
+                    r'\pard\sb0\sa20\li720\fi-180\f0\fs20\cf2 \endash  \i ' +
+                    rtf_escape(sol_plain) + r'\i0\par'
+                )
+
+            # Solution images
+            for img_url in sol_imgs:
+                img_data, fmt = fetch_image(img_url)
+                if img_data:
+                    lines.append(r'\pard\sb20\sa20\li720')
+                    lines.append(rtf_image_block(img_data, fmt, goal_width_twips=5760))
+                    lines.append(r'\par')
 
             # Observation images
-            for img_url in image_urls:
-                img_bytes, _ = fetch_image(img_url)
-                if img_bytes:
-                    p = doc.add_paragraph()
-                    set_para_spacing(p, before=2, after=4)
-                    run = p.add_run()
-                    run.add_picture(io.BytesIO(img_bytes), width=Inches(5))
+            for img_url in obs_imgs:
+                img_data, fmt = fetch_image(img_url)
+                if img_data:
+                    lines.append(r'\pard\sb20\sa40')
+                    lines.append(rtf_image_block(img_data, fmt, goal_width_twips=7200))
+                    lines.append(r'\par')
 
 else:
-    p = doc.add_paragraph()
-    set_para_spacing(p, before=4, after=4)
-    add_run(p, 'No playtest sessions recorded yet.', italic=True, size=10, color=GRAY)
+    lines.append(para(r'\i No playtest sessions recorded yet.\i0', color=2, size=20, sb=40, sa=40))
 
 # ── Footer ────────────────────────────────────────────────────────────────────
-add_horizontal_rule(doc)
+lines.append(r'\pard\sb80\sa60\brdrb\brdrs\brdrw15\brdrcf1\brsp40\par')
+
 footer_parts = []
 if my_company:
     footer_parts.append(my_company)
@@ -356,20 +377,20 @@ if my_phone:
 if my_email:
     footer_parts.append(my_email)
 if footer_parts:
-    p = doc.add_paragraph()
-    set_para_spacing(p, before=2, after=0)
-    add_run(p, '  ·  '.join(footer_parts), size=9, color=GRAY)
+    lines.append(para(r'\i ' + rtf_escape('  ·  '.join(footer_parts)) + r'\i0',
+                       color=2, size=18, sb=0, sa=0))
 
-# ── Serialize to base64 ───────────────────────────────────────────────────────
-buf = io.BytesIO()
-doc.save(buf)
-b64 = base64.b64encode(buf.getvalue()).decode('ascii')
+lines.append('}')
+
+rtf_content = '\n'.join(lines)
+rtf_bytes   = rtf_content.encode('latin-1', errors='replace')
+b64         = base64.b64encode(rtf_bytes).decode('ascii')
 
 safe_game = re.sub(r'[^\w\s-]', '', game).strip().replace(' ', '_')
 if ref_code:
-    filename = f"{ref_code}_{safe_game}_Playtest_Report.docx"
+    filename = f"{ref_code}_{safe_game}_Playtest_Report.rtf"
 else:
-    filename = f"{safe_game}_Playtest_Report.docx"
+    filename = f"{safe_game}_Playtest_Report.rtf"
 
 print(json.dumps({"ok": True, "b64": b64, "filename": filename, "title": doc_title}))
 sys.exit(0)

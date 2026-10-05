@@ -216,12 +216,13 @@ foreach ($_byPub as $pub => $contacts) {
 
     // Publisher status badge
     $badge = '';
-    if ($pubStatus === 'passed')      $badge = '<span class="badge badge-passed" style="margin-right:.75rem">Passed</span>';
+    if ($pubStatus === 'passed')       $badge = '<span class="badge badge-passed" style="margin-right:.75rem">Passed</span>';
     elseif ($pubStatus === 'gone cold') $badge = '<span class="badge badge-gone-cold" style="margin-right:.75rem">Gone Cold</span>';
     elseif ($pubStatus === 'signed')    $badge = '<span class="badge badge-signed" style="margin-right:.75rem">Signed</span>';
     elseif ($pubStatus === 'interested') $badge = '<span class="badge badge-interested" style="margin-right:.75rem">Interested</span>';
     elseif ($pubStatus === 'returned')  $badge = '<span class="badge badge-returned" style="margin-right:.75rem">Returned</span>';
     elseif ($pubStatus === 'published') $badge = '<span class="badge badge-published" style="margin-right:.75rem">Published</span>';
+    elseif ($pubStatus === 'planned')   $badge = '<span class="badge badge-planned" style="margin-right:.75rem">Planned</span>';
     else                                $badge = '<span class="badge badge-pitched" style="margin-right:.75rem">Pitched</span>';
 
     $ageTag      = $isCollapsed ? '' : _ps_age_tag($allEntries);
@@ -421,6 +422,7 @@ body {
 }
 .badge-interested { background: #dcfce7; color: #166534; }
 .badge-passed     { background: #fee2e2; color: #991b1b; }
+.badge-planned    { background: #e0e7ff; color: #3730a3; }
 .badge-pitched    { background: #e2e8f0; color: #334155; }
 .badge-signed     { background: #7c3aed; color: #fff; }
 .badge-published  { background: #0369a1; color: #fff; }
@@ -718,6 +720,7 @@ body {
       <div class="collab-field">
         <label class="collab-label">Status</label>
         <select class="collab-select" id="addStatusSel">
+          <option>Planned</option>
           <option>Pitched</option>
           <option>Interested</option>
           <option>Passed</option>
@@ -762,6 +765,7 @@ body {
       <div class="collab-field">
         <label class="collab-label">Status</label>
         <select class="collab-select" id="editStatusSel">
+          <option>Planned</option>
           <option>Pitched</option>
           <option>Interested</option>
           <option>Passed</option>

@@ -106,7 +106,7 @@ for tab_name, rows in TABS.items():
         # Pitches columns: Date(A/0), Game(B/1), Publisher(C/2), Contact(D/3), Event(E/4), Status(F/5)
         if tab_name == 'Pitches':
             PITCH_STATUS_VALUES = [
-                'Pitched', 'Interested', 'Passed', 'Gone Cold', 'Signed', 'Published', 'Returned',
+                'Planned', 'Pitched', 'Interested', 'Passed', 'Gone Cold', 'Signed', 'Published', 'Returned',
             ]
             # Each tuple: (col_index, condition_type, condition_values_list)
             validation_cols = [
@@ -157,6 +157,7 @@ for tab_name, rows in TABS.items():
             if results.get(tab_name) == 'created':
                 PITCH_STATUS_COLORS = [
                     # (value,       bg_rgb_0_1,                     fg_rgb_0_1)
+                    ('Planned',     (0.878, 0.902, 1.000), (0.227, 0.188, 0.639)),  # #e0e7ff / #3730a3
                     ('Pitched',     (0.886, 0.910, 0.941), (0.278, 0.333, 0.412)),  # #e2e8f0 / #475569
                     ('Interested',  (0.863, 0.988, 0.906), (0.086, 0.396, 0.204)),  # #dcfce7 / #166534
                     ('Passed',      (0.996, 0.886, 0.886), (0.600, 0.106, 0.106)),  # #fee2e2 / #991b1b

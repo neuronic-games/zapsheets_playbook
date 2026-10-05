@@ -6226,7 +6226,7 @@ function _setupStatusCombo() {
 
 // Pitch-entry status options (edit-entry dialog)
 var _PITCH_STATUS_OPTIONS = [
-  'Pitched','Interested','Passed','Gone Cold','Returned','Signed','Published'
+  'Planned','Pitched','Interested','Passed','Gone Cold','Returned','Signed','Published'
 ];
 var _editStatusComboReady = false;
 function _setupEditStatusCombo() {

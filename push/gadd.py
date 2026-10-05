@@ -127,7 +127,7 @@ if sheet_name.lower() == 'pitches':
     cover_to = approx_row + 500   # cover 500 rows beyond the new one
     # Each tuple: (col_index, condition_type, condition_values_list)
     PITCH_STATUS_VALUES = [
-        'Pitched', 'Interested', 'Passed', 'Gone Cold', 'Signed', 'Published', 'Returned',
+        'Planned', 'Pitched', 'Interested', 'Passed', 'Gone Cold', 'Signed', 'Published', 'Returned',
     ]
     # Pitches columns: Date(0), Game(1), Publisher(2), Contact(3), Event(4), Status(5)
     validation_cols = [

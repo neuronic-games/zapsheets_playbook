@@ -50,6 +50,9 @@ dev_file = os.path.join(base_dir, 'sheets', sheet_id, f'[{game}] dev.json')
 if os.path.exists(dev_file):
     with open(dev_file, 'r', encoding='utf-8') as f:
         rows = json.load(f)
+elif not os.path.isdir(os.path.join(base_dir, 'sheets', sheet_id)):
+    print(json.dumps({"error": f"Sheet directory not found for id: {sheet_id}"}))
+    sys.exit(1)
 else:
     # No cached JSON — read directly from the Google Sheet
     if not os.path.exists(CRED_FILE):
@@ -61,7 +64,8 @@ else:
         wb = sa.open_by_key(sheet_id)
         ws = next((w for w in wb.worksheets() if w.title == tab_name), None)
         if ws is None:
-            print(json.dumps({"error": f"No dev tab found for: {game}"}))
+            all_titles = [w.title for w in wb.worksheets()]
+            print(json.dumps({"error": f"No dev tab found for: {game} (tabs: {all_titles})"}))
             sys.exit(1)
         all_vals = ws.get_all_values(value_render_option='FORMATTED_VALUE')
         if not all_vals:

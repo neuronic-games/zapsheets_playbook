@@ -635,6 +635,7 @@ body {
           <?php endif ?>
           <div class="game-action-btns">
             <button class="game-action-btn" onclick="openAddDialog()">New Pitch</button>
+            <button class="game-action-btn" id="psRefreshBtn" onclick="psRefresh()" title="Refresh pitches">&#x21BA; Refresh</button>
           </div>
         </div>
       </div>
@@ -877,6 +878,12 @@ function togglePubPassed(header) {
   var chevron = header.querySelector('.pub-expand-chevron');
   var isOpen  = wrap.classList.toggle('open');
   if (chevron) chevron.style.transform = isOpen ? 'rotate(90deg)' : 'rotate(0deg)';
+}
+
+function psRefresh() {
+  var btn = document.getElementById('psRefreshBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  location.reload();
 }
 
 function toggleCollapsedPubs(btn) {

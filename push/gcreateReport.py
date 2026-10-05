@@ -269,7 +269,8 @@ def info_row(label, content_rtf):
     row = [r'\trowd\trgaph0\trleft0\trpaddl216\trpaddr216\trpaddt160\trpaddb160']
     row.append(_BORDERS + _GRAY_BG + r'\cellx1980')   # label cell: gray bg
     row.append(_BORDERS + r'\cellx10800')              # content cell: white
-    row.append(r'\pard\intbl\f0\fs20\b\cf1 ' + rtf_escape(label) + r'\b0\cell')
+    # \cbpat4 = paragraph-level bg color (works in Pages where \clcbpat doesn't)
+    row.append(r'\pard\intbl\cbpat4\f0\fs20\b\cf1 ' + rtf_escape(label) + r'\b0\cell')
     row.append(r'\pard\intbl\f0\fs20\cf3 ' + content_rtf + r'\cell')
     row.append(r'\row')
     return '\n'.join(row)
@@ -315,7 +316,8 @@ def section_box(heading, bullet_items, images=None):
     # Row 1: heading — solid gray background, teal bold text
     out.append(r'\trowd\trgaph0\trleft0\trpaddl216\trpaddr216\trpaddt120\trpaddb120')
     out.append(cell_borders(r'\clshdng10000\clcbpat4\clcfpat4') + r'\cellx10800')
-    out.append(r'\pard\intbl\f0\fs22\b\cf1 ' + rtf_escape(heading) + r'\b0\cell')
+    # \cbpat4 = paragraph-level bg (Pages ignores \clcbpat, respects \cbpat)
+    out.append(r'\pard\intbl\cbpat4\f0\fs22\b\cf1 ' + rtf_escape(heading) + r'\b0\cell')
     out.append(r'\row')
 
     # Row 2: content — white background, bullets

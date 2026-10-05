@@ -34,6 +34,7 @@ my_address = data.get('my_address', '').strip()
 my_email   = data.get('my_email',   '').strip()
 my_phone   = data.get('my_phone',   '').strip()
 my_logo    = data.get('my_logo',    '').strip()
+my_color   = data.get('my_color',   '').strip()   # hex brand color e.g. "#c55a11"
 ref_code   = data.get('ref_code',   '').strip()
 
 if not game:
@@ -148,19 +149,43 @@ def strip_images(text):
     """Return text with =IMAGE(...) removed."""
     return IMAGE_RE.sub('', text).strip()
 
+_last_fetch_error = ''
+
 def fetch_image(url):
-    try:
-        import urllib.request
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = resp.read()
-            ct   = resp.headers.get('Content-Type', '')
-        fmt = 'png' if 'png' in ct.lower() else 'jpeg'
-        if data[:8] == b'\x89PNG\r\n\x1a\n': fmt = 'png'
-        elif data[:2] == b'\xff\xd8':         fmt = 'jpeg'
-        return data, fmt
-    except Exception:
-        return None, None
+    """Fetch image bytes, following redirects. Returns (bytes, fmt) or (None, None)."""
+    global _last_fetch_error
+    import urllib.request, ssl
+    # Normalize Dropbox viewer URLs to direct-download
+    url = re.sub(r'[?&]dl=0', lambda m: m.group(0).replace('dl=0', 'dl=1'), url)
+    if 'dropbox.com' in url and 'dl=' not in url:
+        sep = '&' if '?' in url else '?'
+        url = url + sep + 'dl=1'
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+        'Accept': 'image/*,*/*;q=0.8',
+    }
+    for verify in (True, False):
+        try:
+            ctx = ssl.create_default_context()
+            if not verify:
+                ctx.check_hostname = False
+                ctx.verify_mode    = ssl.CERT_NONE
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, context=ctx, timeout=15) as resp:
+                img_data = resp.read()
+                ct       = resp.headers.get('Content-Type', '')
+            if len(img_data) < 64:
+                _last_fetch_error = f'Too small ({len(img_data)} bytes)'
+                continue
+            fmt = 'jpeg'
+            if img_data[:8] == b'\x89PNG\r\n\x1a\n': fmt = 'png'
+            elif img_data[:2] == b'\xff\xd8':         fmt = 'jpeg'
+            elif 'png' in ct.lower():                 fmt = 'png'
+            _last_fetch_error = ''
+            return img_data, fmt
+        except Exception as e:
+            _last_fetch_error = str(e)
+    return None, None
 
 def image_dims(data, fmt):
     try:
@@ -201,12 +226,32 @@ if ref_code:
 
 L = []   # RTF lines
 
+# ── Brand accent color ────────────────────────────────────────────────────────
+def _parse_hex(hex_str, default=(26, 95, 122)):
+    s = hex_str.lstrip('#').strip() if hex_str else ''
+    if len(s) == 6:
+        try:
+            return int(s[0:2], 16), int(s[2:4], 16), int(s[4:6], 16)
+        except ValueError:
+            pass
+    return default
+
+ar, ag, ab = _parse_hex(my_color)   # accent color (1 in color table)
+
 # ── RTF preamble ─────────────────────────────────────────────────────────────
+# Color table: 1=accent, 2=gray, 3=dark, 4=lightgray bg
+_colortbl = (
+    r'{\colortbl ;'
+    r'\red' + str(ar) + r'\green' + str(ag) + r'\blue' + str(ab) + r';'
+    r'\red102\green102\blue102;'
+    r'\red17\green17\blue17;'
+    r'\red245\green245\blue245;}'
+)
+
 L += [
     r'{\rtf1\ansi\ansicpg1252\deff0\deflang1033',
     r'{\fonttbl{\f0\fswiss\fcharset0 Arial;}}',
-    # Color table: 1=teal, 2=gray, 3=dark, 4=lightgray bg
-    r'{\colortbl ;\red26\green95\blue122;\red102\green102\blue102;\red17\green17\blue17;\red245\green245\blue245;}',
+    _colortbl,
     r'\paperw12240\paperh15840\margl1440\margr1440\margt1080\margb1080',
     r'\widowctrl',
 ]
@@ -392,5 +437,7 @@ safe_game = re.sub(r'[^\w\s-]', '', game).strip().replace(' ', '_')
 filename  = (f"{ref_code}_{safe_game}" if ref_code else safe_game) + '_Playtest_Report.rtf'
 
 print(json.dumps({"ok": True, "b64": b64, "filename": filename, "title": doc_title,
-                  "debug_logo": my_logo or "(none)", "logo_fetched": logo_data is not None}))
+                  "debug_logo": my_logo or "(none)",
+                  "logo_fetched": logo_data is not None,
+                  "logo_error": _last_fetch_error if not logo_data else ""}))
 sys.exit(0)

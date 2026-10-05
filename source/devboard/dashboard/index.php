@@ -3261,7 +3261,7 @@ function createReport(gameName, clientName) {
         alert('Report error: ' + j.error);
         return;
       }
-      console.log('[Report] logo:', j.debug_logo, '| fetched:', j.logo_fetched);
+      console.log('[Report] logo:', j.debug_logo, '| fetched:', j.logo_fetched, '| error:', j.logo_error || 'none');
       if (j.b64) {
         var bin    = atob(j.b64);
         var bytes  = new Uint8Array(bin.length);

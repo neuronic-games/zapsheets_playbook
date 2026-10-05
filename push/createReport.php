@@ -37,6 +37,7 @@ $myAddress = '';
 $myEmail   = '';
 $myPhone   = '';
 $myLogo    = '';
+$myColor   = '';   // hex brand color e.g. "#c55a11"
 
 function _extractLogoUrl($raw) {
     $raw = ltrim(trim($raw), "'");
@@ -53,19 +54,21 @@ foreach ($settings as $s) {
     if ($n === 'My Phone') { $myPhone   = $v; continue; }
     if ($n === 'Company')  { $myCompany = ltrim($v, "'"); continue; }
     if ($n === 'Address')  { $myAddress = ltrim($v, "'"); continue; }
-    if ($n === 'Logo')     { $myLogo    = _extractLogoUrl($v); continue; }
+    if ($n === 'Logo')        { $myLogo    = _extractLogoUrl($v); continue; }
+    if ($n === 'Brand Color') { $myColor   = ltrim($v, "'"); continue; }
 
     // Format B: DevBoard quirky — {"My Name": "<label>", "<actual-name>": "<value>"}
     $label = $s['My Name'] ?? '';
     if ($label === '') continue;
     $keys = array_keys($s);
     $val2 = count($keys) > 1 ? ltrim(trim($s[$keys[1]] ?? ''), "'") : '';
-    if ($label === 'My Name')  { $myName    = $val2; }
-    if ($label === 'My Email') { $myEmail   = $val2; }
-    if ($label === 'My Phone') { $myPhone   = $val2; }
-    if ($label === 'Company')  { $myCompany = $val2; }
-    if ($label === 'Address')  { $myAddress = $val2; }
-    if ($label === 'Logo')     { $myLogo    = _extractLogoUrl($val2); }
+    if ($label === 'My Name')    { $myName    = $val2; }
+    if ($label === 'My Email')   { $myEmail   = $val2; }
+    if ($label === 'My Phone')   { $myPhone   = $val2; }
+    if ($label === 'Company')    { $myCompany = $val2; }
+    if ($label === 'Address')    { $myAddress = $val2; }
+    if ($label === 'Logo')       { $myLogo    = _extractLogoUrl($val2); }
+    if ($label === 'Brand Color'){ $myColor   = $val2; }
 }
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
@@ -79,6 +82,7 @@ $payload = base64_encode(json_encode([
     'my_email'   => $myEmail,
     'my_phone'   => $myPhone,
     'my_logo'    => $myLogo,
+    'my_color'   => $myColor,
     'ref_code'   => $refCode,
 ], JSON_UNESCAPED_UNICODE));
 

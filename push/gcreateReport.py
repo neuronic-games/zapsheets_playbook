@@ -188,7 +188,9 @@ def rtf_pict(img_data, fmt, goal_twips=7200):
         dims = f'\\picw{w}\\pich{h}\\picwgoal{goal_twips}\\pichgoal{gh}'
     else:
         dims = f'\\picwgoal{goal_twips}'
-    return '{\\pict' + tag + dims + '\n' + img_data.hex() + '}'
+    hex_data = img_data.hex()
+    # Wrap in \shppict for Word/Pages compatibility; \nonshppict fallback omitted
+    return ('{\\*\\shppict{\\pict' + tag + dims + '\n' + hex_data + '}}')
 
 # ── Compose RTF ───────────────────────────────────────────────────────────────
 today    = datetime.today()
@@ -243,9 +245,11 @@ center += r'\cell'
 
 # Right cell: logo image or blank
 if logo_data:
-    logo_cell = r'\pard\intbl\qr ' + rtf_pict(logo_data, logo_fmt, goal_twips=1440) + r'\par\cell'
+    logo_cell = (r'\pard\intbl\qr\f0 ' +
+                 rtf_pict(logo_data, logo_fmt, goal_twips=1580) +
+                 r'\par\cell')
 else:
-    logo_cell = r'\pard\intbl\cell'
+    logo_cell = r'\pard\intbl\f0\fs20\cf3  \cell'
 
 L += [left, center, logo_cell, r'\row']
 
@@ -253,18 +257,18 @@ L += [left, center, logo_cell, r'\row']
 L.append(r'\pard\sb80\par')
 
 # ── Info table: CLIENT / GAME / SCOPE ─────────────────────────────────────────
-# Thin black border on all sides; label cell = gray bg + teal bold; content = white
-_BDR = r'\brdrw10\brdrs\brdrcf3'   # thin dark border
-_ALL = (r'\clbrdrt' + _BDR + r'\clbrdrb' + _BDR +
-        r'\clbrdrl' + _BDR + r'\clbrdrr' + _BDR)
+# Thin dark border; label cell = solid light-gray bg + teal bold; content = white
+_BDR     = r'\brdrw10\brdrs\brdrcf3'
+_BORDERS = (r'\clbrdrt' + _BDR + r'\clbrdrb' + _BDR +
+            r'\clbrdrl' + _BDR + r'\clbrdrr' + _BDR)
+# Solid fill: 10000 = 100% shading of clcbpat color (clcfpat same = pure fill)
+_GRAY_BG = r'\clshdng10000\clcbpat4\clcfpat4'
 
 def info_row(label, content_rtf):
     """One row: [gray label cell | white content cell]."""
     row = [r'\trowd\trgaph0\trleft0\trpaddl216\trpaddr216\trpaddt160\trpaddb160']
-    # Label cell: gray background
-    row.append(_ALL + r'\clshdng1000\clcbpat4\cellx1980')
-    # Content cell: white background
-    row.append(_ALL + r'\cellx10800')
+    row.append(_BORDERS + _GRAY_BG + r'\cellx1980')   # label cell: gray bg
+    row.append(_BORDERS + r'\cellx10800')              # content cell: white
     row.append(r'\pard\intbl\f0\fs20\b\cf1 ' + rtf_escape(label) + r'\b0\cell')
     row.append(r'\pard\intbl\f0\fs20\cf3 ' + content_rtf + r'\cell')
     row.append(r'\row')
@@ -308,9 +312,9 @@ def section_box(heading, bullet_items, images=None):
 
     out = []
 
-    # Row 1: heading — gray background, teal bold text
+    # Row 1: heading — solid gray background, teal bold text
     out.append(r'\trowd\trgaph0\trleft0\trpaddl216\trpaddr216\trpaddt120\trpaddb120')
-    out.append(cell_borders(r'\clshdng1000\clcbpat4') + r'\cellx10800')
+    out.append(cell_borders(r'\clshdng10000\clcbpat4\clcfpat4') + r'\cellx10800')
     out.append(r'\pard\intbl\f0\fs22\b\cf1 ' + rtf_escape(heading) + r'\b0\cell')
     out.append(r'\row')
 

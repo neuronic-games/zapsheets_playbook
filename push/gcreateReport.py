@@ -189,8 +189,7 @@ def rtf_pict(img_data, fmt, goal_twips=7200):
     else:
         dims = f'\\picwgoal{goal_twips}'
     hex_data = img_data.hex()
-    # Wrap in \shppict for Word/Pages compatibility; \nonshppict fallback omitted
-    return ('{\\*\\shppict{\\pict' + tag + dims + '\n' + hex_data + '}}')
+    return '{\\pict' + tag + dims + '\n' + hex_data + '}'
 
 # ── Compose RTF ───────────────────────────────────────────────────────────────
 today    = datetime.today()
@@ -392,5 +391,6 @@ b64       = base64.b64encode(rtf_bytes).decode('ascii')
 safe_game = re.sub(r'[^\w\s-]', '', game).strip().replace(' ', '_')
 filename  = (f"{ref_code}_{safe_game}" if ref_code else safe_game) + '_Playtest_Report.rtf'
 
-print(json.dumps({"ok": True, "b64": b64, "filename": filename, "title": doc_title}))
+print(json.dumps({"ok": True, "b64": b64, "filename": filename, "title": doc_title,
+                  "debug_logo": my_logo or "(none)", "logo_fetched": logo_data is not None}))
 sys.exit(0)

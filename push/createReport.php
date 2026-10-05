@@ -38,22 +38,34 @@ $myEmail   = '';
 $myPhone   = '';
 $myLogo    = '';
 
+function _extractLogoUrl($raw) {
+    $raw = ltrim(trim($raw), "'");
+    if (preg_match('/^=IMAGE\("([^"]*)"\)$/i', $raw, $m)) return $m[1];
+    return $raw;
+}
+
 foreach ($settings as $s) {
+    // Format A: {Name: 'Company', Value: 'Acme'} — standard key/value rows
     $n = $s['Name'] ?? $s['name'] ?? '';
     $v = $s['Value'] ?? $s['value'] ?? '';
-    if ($n === 'My Name')  $myName    = $v;
-    if ($n === 'My Email') $myEmail   = $v;
-    if ($n === 'My Phone') $myPhone   = $v;
-    // DevBoard uses 'Company' / 'Address' / 'Logo' (no 'My' prefix)
-    if ($n === 'Company')  $myCompany = ltrim($v, "'");
-    if ($n === 'Address')  $myAddress = ltrim($v, "'");
-    if ($n === 'Logo') {
-        if (preg_match('/^=IMAGE\("([^"]*)"\)$/i', ltrim($v, "'"), $lm)) {
-            $myLogo = $lm[1];
-        } else {
-            $myLogo = ltrim($v, "'");
-        }
-    }
+    if ($n === 'My Name')  { $myName    = $v; continue; }
+    if ($n === 'My Email') { $myEmail   = $v; continue; }
+    if ($n === 'My Phone') { $myPhone   = $v; continue; }
+    if ($n === 'Company')  { $myCompany = ltrim($v, "'"); continue; }
+    if ($n === 'Address')  { $myAddress = ltrim($v, "'"); continue; }
+    if ($n === 'Logo')     { $myLogo    = _extractLogoUrl($v); continue; }
+
+    // Format B: DevBoard quirky — {"My Name": "<label>", "<actual-name>": "<value>"}
+    $label = $s['My Name'] ?? '';
+    if ($label === '') continue;
+    $keys = array_keys($s);
+    $val2 = count($keys) > 1 ? ltrim(trim($s[$keys[1]] ?? ''), "'") : '';
+    if ($label === 'My Name')  { $myName    = $val2; }
+    if ($label === 'My Email') { $myEmail   = $val2; }
+    if ($label === 'My Phone') { $myPhone   = $val2; }
+    if ($label === 'Company')  { $myCompany = $val2; }
+    if ($label === 'Address')  { $myAddress = $val2; }
+    if ($label === 'Logo')     { $myLogo    = _extractLogoUrl($val2); }
 }
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';

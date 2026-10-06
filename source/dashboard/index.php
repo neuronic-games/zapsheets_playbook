@@ -6839,11 +6839,19 @@ function pbRefresh(btn) {
     if (el.textContent) openTitles.push(el.textContent);
   });
   if (btn) btn.classList.add('spinning');
-  loadAll(function() {
-    if (btn) btn.classList.remove('spinning');
-    // Restore expanded cards
-    openTitles.forEach(function(title) { _expandCardByTitle(title); });
-  });
+
+  // Sync from Google Sheets first, then re-render from updated cache
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/syncPitches.php');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.timeout = 30000;
+  xhr.onload = xhr.onerror = xhr.ontimeout = function() {
+    loadAll(function() {
+      if (btn) btn.classList.remove('spinning');
+      openTitles.forEach(function(title) { _expandCardByTitle(title); });
+    });
+  };
+  xhr.send('id=' + encodeURIComponent(sheet_Id));
 }
 
 function loadAll(onComplete) {

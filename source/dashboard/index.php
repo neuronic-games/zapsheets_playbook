@@ -3206,7 +3206,7 @@ function buildGameView(pitches) {
     } else {
       html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="enableNotesClick(this)">Enable Notes</button>';
     }
-    html += '<button class="game-action-btn icon-btn" title="Reload pitches" onclick="event.stopPropagation();pbRefresh(this)">'
+    html += '<button class="game-action-btn icon-btn" data-game="' + escHtml(g) + '" title="Reload game" onclick="event.stopPropagation();pbRefresh(this,this.getAttribute(\'data-game\'))">'
          +  '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>'
          +  '</button>';
     html += '</div>'; // .game-action-btns
@@ -6841,10 +6841,12 @@ function loadJSON(url, key, fallbackUrl, onDone) {
   xhr.send();
 }
 
-function openReloadLogDialog() {
-  var overlay = document.getElementById('reloadLogOverlay');
-  var log     = document.getElementById('reloadLog');
+function openReloadLogDialog(gameName) {
+  var overlay  = document.getElementById('reloadLogOverlay');
+  var log      = document.getElementById('reloadLog');
   var closeBtn = document.getElementById('reloadLogCloseBtn');
+  var title    = overlay.querySelector('h2');
+  title.textContent = gameName ? 'Reloading ' + gameName : 'Reloading from Google Sheets';
   log.innerHTML = '';
   closeBtn.disabled = true;
   overlay.classList.add('open');
@@ -6864,7 +6866,7 @@ function closeReloadLogDialog() {
   document.getElementById('reloadLogOverlay').classList.remove('open');
 }
 
-function pbRefresh(btn) {
+function pbRefresh(btn, gameName) {
   // Remember which cards are open before the re-render
   var openTitles = [];
   document.querySelectorAll('#content .card.open .card-title').forEach(function(el) {
@@ -6872,12 +6874,19 @@ function pbRefresh(btn) {
   });
   if (btn) btn.classList.add('spinning');
 
-  openReloadLogDialog();
+  var isGameReload = !!gameName;
+  openReloadLogDialog(isGameReload ? gameName : null);
   reloadLogAppend('info', 'Connecting to Google Sheets…');
 
-  // Sync from Google Sheets first, then re-render from updated cache
   var xhr = new XMLHttpRequest();
-  xhr.open('POST', APP_BASE + 'push/syncPitches.php');
+  var body = 'id=' + encodeURIComponent(sheet_Id);
+  if (isGameReload) {
+    // Only sync the [GameName]* tabs (and pitches so the board reflects changes)
+    xhr.open('POST', APP_BASE + 'push/syncGame.php');
+    body += '&game=' + encodeURIComponent(gameName);
+  } else {
+    xhr.open('POST', APP_BASE + 'push/syncPitches.php');
+  }
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
   xhr.timeout = 60000;
   xhr.onload = function() {
@@ -6899,10 +6908,10 @@ function pbRefresh(btn) {
   };
   xhr.onerror = xhr.ontimeout = function() {
     if (btn) btn.classList.remove('spinning');
-    reloadLogAppend('error', xhr.ontimeout ? 'Request timed out' : 'Network error');
+    reloadLogAppend('error', xhr.status === 0 ? 'Network error' : 'Request timed out');
     document.getElementById('reloadLogCloseBtn').disabled = false;
   };
-  xhr.send('id=' + encodeURIComponent(sheet_Id));
+  xhr.send(body);
 }
 
 function loadAll(onComplete) {

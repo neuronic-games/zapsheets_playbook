@@ -106,15 +106,8 @@ if ($_sheet_id && is_dir($_sheets_root)) {
     .top-bar h1 { font-family:'DINBlack',sans-serif; font-size:1rem; margin:0; letter-spacing:.03em; cursor:pointer; }
     .top-bar h1:hover { opacity:.8; }
     .top-bar .sub { font-size:.73rem; opacity:.6; margin:0; letter-spacing:.01em; }
-    .sub-row { display:flex; align-items:center; gap:.35rem; }
-    .refresh-btn {
-      display:inline-flex; align-items:center; justify-content:center;
-      background:none; border:none; cursor:pointer; padding:2px 3px;
-      opacity:.45; line-height:1; transition:opacity .15s, transform .3s;
-      color:inherit;
-    }
-    .refresh-btn:hover { opacity:.85; }
-    .refresh-btn.spinning svg { animation:spin .6s linear infinite; }
+    .game-action-btn.icon-btn { padding:.38rem .45rem; }
+    .game-action-btn.icon-btn.spinning svg { animation:spin .7s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
     .version-tag { opacity:.4; font-size:.65rem; }
 
@@ -1594,14 +1587,7 @@ if ($_sheet_id && is_dir($_sheets_root)) {
   <div class="top-bar-inner">
     <div class="top-bar-left">
       <h1 onclick="window.location.href=APP_BASE+'pitchboard'"><span class="pb-pitch">Pitch</span><span class="pb-board">Board</span></h1>
-      <div class="sub-row">
-        <p class="sub" id="subTitle">Loading…</p>
-        <button class="refresh-btn" id="refreshBtn" title="Refresh pitches" onclick="pbRefresh()">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-1.76-4.24l-2.83 2.83H22V4l-4.35 4.35z"/>
-          </svg>
-        </button>
-      </div>
+      <p class="sub" id="subTitle">Loading…</p>
       <p class="sub version-tag" id="versionTag" style="display:none"></p>
     </div>
     <div class="view-toggle">
@@ -3199,6 +3185,9 @@ function buildGameView(pitches) {
     }
     // Action buttons in sub-bar — single scrollable row on all screen sizes
     html += '<div class="game-action-btns">';
+    html += '<button class="game-action-btn icon-btn" id="refreshBtn" title="Reload pitches" onclick="event.stopPropagation();pbRefresh(this)">'
+         +  '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>'
+         +  '</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="addBtnClick(this)">New Pitch</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="editGameClick(this)">Edit Game</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="viewPageClick(this)">' + (GAME_PAGE_TOKENS[g] ? 'Edit Page' : 'Enable Page') + '</button>';
@@ -6831,8 +6820,7 @@ function loadJSON(url, key, fallbackUrl, onDone) {
   xhr.send();
 }
 
-function pbRefresh() {
-  var btn = document.getElementById('refreshBtn');
+function pbRefresh(btn) {
   if (btn) btn.classList.add('spinning');
   loadAll(function() {
     if (btn) btn.classList.remove('spinning');

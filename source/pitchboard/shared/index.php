@@ -522,6 +522,7 @@ body {
 }
 .game-action-btns {
   display: flex; flex-wrap: nowrap; gap: .35rem; align-items: center;
+  justify-content: flex-end; margin-left: auto;
   overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
 }
 .game-action-btns::-webkit-scrollbar { display: none; }
@@ -534,15 +535,8 @@ body {
   transition: background .15s, color .15s;
 }
 .game-action-btn:hover { background: rgba(255,196,76,.26); color: #ffe099; }
-.reload-session-btn {
-  background: rgba(255,255,255,.1); color: rgba(255,255,255,.5);
-  border: 1.5px solid rgba(255,255,255,.2); border-radius: 6px;
-  padding: .28rem .55rem; cursor: pointer;
-  display: inline-flex; align-items: center; align-self: stretch; flex-shrink: 0;
-  transition: color .15s, border-color .15s, background .15s;
-}
-.reload-session-btn:hover { color: #ffd166; border-color: rgba(255,196,76,.5); background: rgba(255,196,76,.1); }
-.reload-session-btn.loading svg { animation: ps-spin .7s linear infinite; }
+.game-action-btn.icon-btn { padding: .38rem .45rem; }
+.game-action-btn.icon-btn.spinning svg { animation: ps-spin .7s linear infinite; }
 @keyframes ps-spin { to { transform: rotate(360deg); } }
 
 /* ── Inline publisher + Pitch button ── */
@@ -667,7 +661,7 @@ body {
           <?php endif ?>
           <div class="game-action-btns">
             <button class="game-action-btn" onclick="openAddDialog()">New Pitch</button>
-            <button class="reload-session-btn" id="psRefreshBtn" onclick="psRefresh()" title="Reload pitches">
+            <button class="game-action-btn icon-btn" id="psRefreshBtn" onclick="psRefresh()" title="Reload pitches">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
             </button>
           </div>
@@ -931,7 +925,7 @@ function togglePubPassed(header) {
 
 function psRefresh() {
   var btn = document.getElementById('psRefreshBtn');
-  if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+  if (btn) { btn.disabled = true; btn.classList.add('spinning'); }
   location.reload();
 }
 

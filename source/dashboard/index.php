@@ -6901,6 +6901,11 @@ function pbRefresh(btn, gameName) {
     } else if (result.ok) {
       reloadLogAppend('ok', 'Done — reloading board…');
     }
+    // If the server found a game page token, update the in-memory map so
+    // the re-rendered card shows Edit Page / PAGE link without a full refresh.
+    if (result && result.gp_token && gameName) {
+      GAME_PAGE_TOKENS[gameName] = result.gp_token;
+    }
     document.getElementById('reloadLogCloseBtn').disabled = false;
     loadAll(function() {
       openTitles.forEach(function(title) { _expandCardByTitle(title); });

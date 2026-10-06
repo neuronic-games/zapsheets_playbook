@@ -95,21 +95,32 @@ if ($result !== null && !empty($result['ok'])) {
             $result['game_json_renamed'] = true;
         }
 
-        // Update any collab share files that reference the old game name
-        $sharesDir      = dirname(__DIR__) . '/shares';
-        $sharesUpdated  = 0;
-        if (is_dir($sharesDir)) {
-            foreach (glob($sharesDir . '/*.json') as $shareFile) {
+        // Update any share files that reference the old game name.
+        // Covers both shares/*.json (collab snapshots) and
+        // shares/pitch-game-view/*.json (game page tokens).
+        $sharesDir     = dirname(__DIR__) . '/shares';
+        $sharesUpdated = 0;
+        $shareGlobs    = [
+            $sharesDir . '/*.json',
+            $sharesDir . '/pitch-game-view/*.json',
+        ];
+        foreach ($shareGlobs as $globPattern) {
+            foreach (glob($globPattern) as $shareFile) {
                 $raw  = file_get_contents($shareFile);
                 $data = json_decode($raw, true);
                 if (!is_array($data)) continue;
                 $changed = false;
-                // Update game.Name
-                if (isset($data['game']['Name']) && $data['game']['Name'] === $origName) {
+                // pitch-game-view format: "game" is a plain string
+                if (isset($data['game']) && is_string($data['game']) && $data['game'] === $origName) {
+                    $data['game'] = $name;
+                    $changed = true;
+                }
+                // Collab snapshot format: game is an array with a Name key
+                if (isset($data['game']['Name']) && is_array($data['game']) && $data['game']['Name'] === $origName) {
                     $data['game']['Name'] = $name;
                     $changed = true;
                 }
-                // Update pitches[].Game
+                // pitches[].Game
                 if (!empty($data['pitches']) && is_array($data['pitches'])) {
                     foreach ($data['pitches'] as &$pitch) {
                         if (isset($pitch['Game']) && $pitch['Game'] === $origName) {

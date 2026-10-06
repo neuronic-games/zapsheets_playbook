@@ -81,9 +81,48 @@ if ($listOut) {
 
 $hasError = !empty(array_filter($steps, fn($s) => $s['status'] === 'error'));
 
+// Look up the current game page token so the client can update GAME_PAGE_TOKENS in memory.
+// Also patch any stale token files that still reference an old game name (e.g. after rename).
+$gpToken = null;
+$gpvDir  = dirname(__DIR__) . '/shares/pitch-game-view';
+if (is_dir($gpvDir)) {
+    // Load games.json to build a set of current valid game names for stale-check
+    $gamesFile    = dirname(__DIR__) . '/sheets/' . $sheetId . '/games.json';
+    $currentNames = [];
+    if (file_exists($gamesFile)) {
+        $gamesData = json_decode(file_get_contents($gamesFile), true) ?: [];
+        foreach ($gamesData as $row) {
+            if (!empty($row['Name'])) $currentNames[] = $row['Name'];
+        }
+    }
+
+    foreach (glob($gpvDir . '/*.json') as $tf) {
+        $td      = json_decode(file_get_contents($tf), true) ?: [];
+        $storedGame = $td['game'] ?? '';
+        if (!$storedGame) continue;
+
+        if ($storedGame === $gameName) {
+            // Exact match — this is the token
+            $gpToken = basename($tf, '.json');
+            break;
+        }
+
+        // Stale: stored name not in current games but a [stored_name]*.json tab no longer
+        // exists while [gameName]* does — treat this token as belonging to the renamed game.
+        if (!in_array($storedGame, $currentNames) && !empty($gameTabs)) {
+            $td['game'] = $gameName;
+            file_put_contents($tf, json_encode($td, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            $gpToken = basename($tf, '.json');
+            $steps[] = ['status' => 'info', 'msg' => 'Patched page token: ' . $storedGame . ' → ' . $gameName];
+            break;
+        }
+    }
+}
+
 echo json_encode([
     'ok'        => !$hasError,
     'game_tabs' => $gameTabs,
+    'gp_token'  => $gpToken,
     'steps'     => $steps,
 ]);
 ?>

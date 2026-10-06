@@ -834,10 +834,7 @@ var _contactsByPub  = <?= json_encode($_contactsByPub, JSON_UNESCAPED_UNICODE) ?
 var _peopleByName   = <?= json_encode($_peopleByName, JSON_UNESCAPED_UNICODE) ?>;
 
 function _isUrl(s) { return /^https?:\/\//i.test((s||'').trim()); }
-function _contactLabel(name) {
-  var email = _peopleByName[name] || '';
-  return email ? name + ', ' + email : name;
-}
+function _contactLabel(name) { return name; }
 
 // ── Combo engine ─────────────────────────────────────────────────────────────
 function _comboInit(inputId, dropId, getItems, onSelect) {

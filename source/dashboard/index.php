@@ -4500,10 +4500,9 @@ function openNotesDialog(entry) {
     contacts = [currentContact].concat(contacts);
   }
   contacts.forEach(function(name) {
-    var email = peopleIndex[name + '|' + (entry.publisher||'').trim()] || '';
     var o = document.createElement('option');
     o.value = name;
-    o.textContent = email ? name + ', ' + email : name;
+    o.textContent = name;
     if (name === currentContact) o.selected = true;
     contactSel.appendChild(o);
   });
@@ -6117,11 +6116,7 @@ function _setupCombos() {
       return getContactsForPublisher(pub.trim());
     },
     null,
-    function(div, name) {
-      var pub   = ((document.getElementById('addPublisherInput')||{}).value||'').trim();
-      var email = peopleIndex[name + '|' + pub] || '';
-      div.textContent = email ? name + ', ' + email : name;
-    });
+    function(div, name) { div.textContent = name; });
   // Typing in publisher field also clears contact
   var pubInp = document.getElementById('addPublisherInput');
   if (pubInp) {

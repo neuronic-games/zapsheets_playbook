@@ -1421,13 +1421,14 @@ if ($_sheet_id && is_dir($_sheets_root)) {
        any overlay is open.
     ────────────────────────────────────────────────────────────────────────────── */
     .di-overlay, .add-entry-overlay, .add-new-overlay, .notes-overlay,
-    .sync-overlay, .game-edit-overlay, .err-overlay, #enableNotesOverlay {
+    .sync-overlay, .game-edit-overlay, .err-overlay, #enableNotesOverlay, #reloadLogOverlay {
       overflow-y: auto;
       overscroll-behavior: contain;
     }
     body:has(.di-overlay.open, .add-entry-overlay.open, .add-new-overlay.open,
              .notes-overlay.open, .sync-overlay.open, .game-edit-overlay.open,
-             .err-overlay.open, #enableNotesOverlay.open, .comp-info-overlay.open) {
+             .err-overlay.open, #enableNotesOverlay.open, .comp-info-overlay.open,
+             #reloadLogOverlay.open) {
       overflow: hidden;
     }
     .err-dialog {
@@ -1718,6 +1719,17 @@ if ($_sheet_id && is_dir($_sheets_root)) {
     <div class="err-actions">
       <button class="err-copy-btn" onclick="copyErrText()">Copy</button>
       <button class="ge-cancel-btn" onclick="closeErrDialog()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reload log dialog -->
+<div class="sync-overlay" id="reloadLogOverlay">
+  <div class="sync-dialog" onclick="event.stopPropagation()">
+    <h2>Reloading from Google Sheets</h2>
+    <div class="sync-log" id="reloadLog"></div>
+    <div class="sync-dialog-actions">
+      <button class="ge-cancel-btn" id="reloadLogCloseBtn" onclick="closeReloadLogDialog()" disabled>Close</button>
     </div>
   </div>
 </div>
@@ -5927,6 +5939,8 @@ document.addEventListener('keydown', function(ev) {
   if (ev.key !== 'Escape') return;
   var el, d;
   // Info-only overlays — always close
+  if (document.getElementById('reloadLogOverlay').classList.contains('open') &&
+      !document.getElementById('reloadLogCloseBtn').disabled)                { closeReloadLogDialog();        return; }
   if (document.getElementById('vpOverlay').classList.contains('open'))       { closeVpDialog();              return; }
   if (document.getElementById('shareUrlOverlay').classList.contains('open')) { closeShareUrlDialog();         return; }
   if (document.getElementById('errOverlay').classList.contains('open'))      { closeErrDialog();              return; }
@@ -6827,6 +6841,29 @@ function loadJSON(url, key, fallbackUrl, onDone) {
   xhr.send();
 }
 
+function openReloadLogDialog() {
+  var overlay = document.getElementById('reloadLogOverlay');
+  var log     = document.getElementById('reloadLog');
+  var closeBtn = document.getElementById('reloadLogCloseBtn');
+  log.innerHTML = '';
+  closeBtn.disabled = true;
+  overlay.classList.add('open');
+}
+
+function reloadLogAppend(status, msg) {
+  var log  = document.getElementById('reloadLog');
+  var span = document.createElement('span');
+  span.className = 'sync-log-line ' + (status || 'info');
+  var prefix = status === 'ok' ? '✓ ' : status === 'error' ? '✗ ' : status === 'skip' ? '– ' : '• ';
+  span.textContent = prefix + msg;
+  log.appendChild(span);
+  log.scrollTop = log.scrollHeight;
+}
+
+function closeReloadLogDialog() {
+  document.getElementById('reloadLogOverlay').classList.remove('open');
+}
+
 function pbRefresh(btn) {
   // Remember which cards are open before the re-render
   var openTitles = [];
@@ -6835,16 +6872,35 @@ function pbRefresh(btn) {
   });
   if (btn) btn.classList.add('spinning');
 
+  openReloadLogDialog();
+  reloadLogAppend('info', 'Connecting to Google Sheets…');
+
   // Sync from Google Sheets first, then re-render from updated cache
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_BASE + 'push/syncPitches.php');
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-  xhr.timeout = 30000;
-  xhr.onload = xhr.onerror = xhr.ontimeout = function() {
+  xhr.timeout = 60000;
+  xhr.onload = function() {
+    if (btn) btn.classList.remove('spinning');
+    var result = null;
+    try { result = JSON.parse(xhr.responseText); } catch(e) {}
+    if (result && result.steps) {
+      result.steps.forEach(function(s) { reloadLogAppend(s.status, s.msg); });
+    }
+    if (!result || result.error) {
+      reloadLogAppend('error', result ? result.error : 'Unexpected response');
+    } else if (result.ok) {
+      reloadLogAppend('ok', 'Done — reloading board…');
+    }
+    document.getElementById('reloadLogCloseBtn').disabled = false;
     loadAll(function() {
-      if (btn) btn.classList.remove('spinning');
       openTitles.forEach(function(title) { _expandCardByTitle(title); });
     });
+  };
+  xhr.onerror = xhr.ontimeout = function() {
+    if (btn) btn.classList.remove('spinning');
+    reloadLogAppend('error', xhr.ontimeout ? 'Request timed out' : 'Network error');
+    document.getElementById('reloadLogCloseBtn').disabled = false;
   };
   xhr.send('id=' + encodeURIComponent(sheet_Id));
 }

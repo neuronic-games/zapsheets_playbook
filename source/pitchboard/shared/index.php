@@ -254,12 +254,30 @@ foreach ($_byPub as $pub => $contacts) {
     }
 }
 
+// ── People data (for contact email lookup) ───────────────────────────────────
+$_peopleFile   = __DIR__ . '/../../../sheets/' . $_sheetId . '/people.json';
+$_peopleByName = [];
+if (file_exists($_peopleFile)) {
+    foreach (json_decode(file_get_contents($_peopleFile), true) ?: [] as $_pp) {
+        $_pn = trim($_pp['Name']  ?? '');
+        $_pe = trim($_pp['Email'] ?? '');
+        if ($_pn) $_peopleByName[$_pn] = $_pe;
+    }
+}
+
 // ── Combo data for JS ────────────────────────────────────────────────────────
 $_pubList = array_values(array_keys($_byPub));
 $_contactsByPub = [];
 foreach ($_byPub as $_p => $_cs) {
-    $_names = array_values(array_filter(array_keys($_cs), function($c){ return $c !== '(Unknown)'; }));
-    if ($_names) $_contactsByPub[$_p] = $_names;
+    // Filter out (Unknown) and URL contacts — only real names
+    $_names = array_values(array_filter(array_keys($_cs), function($c){
+        return $c !== '(Unknown)' && !preg_match('/^https?:\/\//i', $c);
+    }));
+    // Also add people from the People tab associated with this publisher
+    foreach ($_peopleByName as $_pname => $_) {
+        // (People tab doesn't store publisher association; rely on pitches for now)
+    }
+    if ($_names) $_contactsByPub[$_p] = array_values(array_unique($_names));
 }
 
 // ── URLs ─────────────────────────────────────────────────────────────────────
@@ -558,6 +576,10 @@ body {
   margin-bottom: 1.1rem; text-transform: uppercase;
 }
 .collab-field { margin-bottom: .85rem; }
+.collab-field-row {
+  display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: .65rem;
+  margin-bottom: .85rem;
+}
 .collab-label {
   display: block;
   font-family: 'DINBlack', sans-serif; font-size: .62rem;
@@ -757,36 +779,36 @@ body {
 
   <!-- ── Edit Pitch dialog ── -->
   <div class="collab-overlay" id="editOverlay" onclick="if(event.target===this){var d=this.querySelector('.collab-dialog');if(hasDialogData(d))shakeDialog(d);else closeEditDialog();}">
-    <div class="collab-dialog">
-      <div class="collab-dialog-title">Edit Pitch</div>
-      <div class="collab-field">
-        <label class="collab-label">Publisher</label>
-        <input class="collab-input" id="editPubDisplay" type="text" readonly />
-      </div>
-      <div class="collab-field">
-        <label class="collab-label">Contact</label>
-        <input class="collab-input" id="editContactInput" type="text" placeholder="Contact name" />
-      </div>
-      <div class="collab-field">
-        <label class="collab-label">Date *</label>
-        <input class="collab-input" id="editDateInput" type="date" />
+    <div class="collab-dialog" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitEdit();}">
+      <div class="collab-dialog-title" id="editDialogTitle">Edit Pitch</div>
+      <div class="collab-field-row">
+        <div>
+          <label class="collab-label">Date *</label>
+          <input class="collab-input" id="editDateInput" type="date" />
+        </div>
+        <div>
+          <label class="collab-label">Status</label>
+          <select class="collab-select" id="editStatusSel">
+            <option>Planned</option>
+            <option>Pitched</option>
+            <option>Interested</option>
+            <option>Passed</option>
+            <option>Gone Cold</option>
+            <option>Signed</option>
+            <option>Published</option>
+            <option>Returned</option>
+          </select>
+        </div>
+        <div>
+          <label class="collab-label">Contact</label>
+          <select class="collab-select" id="editContactSel">
+            <option value="">— unknown —</option>
+          </select>
+        </div>
       </div>
       <div class="collab-field">
         <label class="collab-label">Event</label>
         <input class="collab-input" id="editEventInput" type="text" placeholder="e.g. Gen Con, email, etc." />
-      </div>
-      <div class="collab-field">
-        <label class="collab-label">Status</label>
-        <select class="collab-select" id="editStatusSel">
-          <option>Planned</option>
-          <option>Pitched</option>
-          <option>Interested</option>
-          <option>Passed</option>
-          <option>Gone Cold</option>
-          <option>Signed</option>
-          <option>Published</option>
-          <option>Returned</option>
-        </select>
       </div>
       <div class="collab-field">
         <label class="collab-label">Notes</label>
@@ -809,6 +831,13 @@ var _sheetId        = <?= json_encode($_sheetId) ?>;
 var _gameName       = <?= json_encode($_gameName) ?>;
 var _pubList        = <?= json_encode($_pubList, JSON_UNESCAPED_UNICODE) ?>;
 var _contactsByPub  = <?= json_encode($_contactsByPub, JSON_UNESCAPED_UNICODE) ?>;
+var _peopleByName   = <?= json_encode($_peopleByName, JSON_UNESCAPED_UNICODE) ?>;
+
+function _isUrl(s) { return /^https?:\/\//i.test((s||'').trim()); }
+function _contactLabel(name) {
+  var email = _peopleByName[name] || '';
+  return email ? name + ', ' + email : name;
+}
 
 // ── Combo engine ─────────────────────────────────────────────────────────────
 function _comboInit(inputId, dropId, getItems, onSelect) {
@@ -832,15 +861,18 @@ function _comboInit(inputId, dropId, getItems, onSelect) {
     _ai = -1; drop.innerHTML = '';
     items.forEach(function(item) {
       var div = document.createElement('div');
-      if (item === '---') { div.className = 'combo-sep'; }
+      var isObj = item && typeof item === 'object';
+      var itemVal   = isObj ? item.value : item;
+      var itemLabel = isObj ? item.label : item;
+      if (itemVal === '---') { div.className = 'combo-sep'; }
       else {
         div.className = 'combo-opt';
-        div.textContent = item;
+        div.textContent = itemLabel;
         div.addEventListener('mousedown', function(e) {
           e.preventDefault();
-          inp.value = item;
+          inp.value = itemVal;
           closeDrop();
-          if (onSelect) onSelect(item);
+          if (onSelect) onSelect(itemVal);
         });
       }
       drop.appendChild(div);
@@ -862,7 +894,13 @@ function _comboInit(inputId, dropId, getItems, onSelect) {
     else if (e.key==='ArrowUp')  { e.preventDefault(); moveActive(-1); }
     else if (e.key==='Enter') {
       var opts = drop.querySelectorAll('.combo-opt');
-      if (_ai>=0 && opts[_ai]) { e.preventDefault(); inp.value=opts[_ai].textContent; closeDrop(); if(onSelect) onSelect(inp.value); }
+      if (_ai>=0 && opts[_ai]) {
+        e.preventDefault();
+        var allIt = getItems();
+        var selIt = allIt.filter(function(it){ return it && typeof it==='object' ? it.label===opts[_ai].textContent : it===opts[_ai].textContent; })[0];
+        var selVal = selIt && typeof selIt==='object' ? selIt.value : (selIt || opts[_ai].textContent);
+        inp.value = selVal; closeDrop(); if(onSelect) onSelect(selVal);
+      }
     } else if (e.key==='Escape') { closeDrop(); }
   });
 }
@@ -878,7 +916,9 @@ function _setupAddCombos() {
   _comboInit('addContactInput', 'addContactDrop',
     function() {
       var pub = document.getElementById('addPubInput').value.trim();
-      return _contactsByPub[pub] || [];
+      return (_contactsByPub[pub] || []).map(function(n) {
+        return { value: n, label: _contactLabel(n) };
+      });
     }, null
   );
   var pubInp = document.getElementById('addPubInput');
@@ -1049,18 +1089,41 @@ function openEditDialog(el) {
   try { entry = JSON.parse(el.dataset.entry); } catch(e) { return; }
   _editEntry = entry;
 
-  document.getElementById('editPubDisplay').value   = entry['Publisher'] || '';
-  document.getElementById('editContactInput').value = entry['Contact']   || '';
-  document.getElementById('editDateInput').value    = _toDateInput(entry['Date'] || '');
-  document.getElementById('editEventInput').value   = entry['Event']     || '';
-  var sel = document.getElementById('editStatusSel');
-  sel.value = entry['Status'] || 'Pitched';
-  if (!sel.value) sel.selectedIndex = 0;
-  document.getElementById('editNotesInput').value   = entry['Notes']     || '';
-  document.getElementById('editErr').style.display  = 'none';
+  var pub     = entry['Publisher'] || '';
+  var current = entry['Contact']   || '';
+  var isUrlContact = _isUrl(current);
+
+  // Title: GAME · PUBLISHER
+  document.getElementById('editDialogTitle').textContent =
+    [_gameName, pub].filter(Boolean).join('  ·  ');
+
+  // Contact dropdown — filtered, "Name, email" format
+  var contactSel = document.getElementById('editContactSel');
+  contactSel.innerHTML = '<option value="">— unknown —</option>';
+  var contacts = (_contactsByPub[pub] || []).slice();
+  // Preserve current contact if it's a real name (not URL) and not already listed
+  if (current && !isUrlContact && contacts.indexOf(current) === -1) {
+    contacts = [current].concat(contacts);
+  }
+  contacts.forEach(function(name) {
+    var o = document.createElement('option');
+    o.value = name;
+    o.textContent = _contactLabel(name);
+    if (name === current) o.selected = true;
+    contactSel.appendChild(o);
+  });
+  // If current is a URL, leave "— unknown —" selected
+
+  document.getElementById('editDateInput').value   = _toDateInput(entry['Date'] || '');
+  var statusSel = document.getElementById('editStatusSel');
+  statusSel.value = entry['Status'] || 'Pitched';
+  if (!statusSel.value) statusSel.selectedIndex = 0;
+  document.getElementById('editEventInput').value  = entry['Event']  || '';
+  document.getElementById('editNotesInput').value  = entry['Notes']  || '';
+  document.getElementById('editErr').style.display = 'none';
   document.getElementById('editSubmitBtn').disabled = false;
   document.getElementById('editOverlay').classList.add('open');
-  setTimeout(function(){ document.getElementById('editContactInput').focus(); }, 60);
+  setTimeout(function(){ contactSel.focus(); }, 60);
 }
 
 function closeEditDialog() {
@@ -1070,7 +1133,7 @@ function closeEditDialog() {
 
 function submitEdit() {
   if (!_editEntry) return;
-  var contact = document.getElementById('editContactInput').value.trim();
+  var contact = document.getElementById('editContactSel').value.trim();
   var dateIn  = document.getElementById('editDateInput').value.trim();
   var event   = document.getElementById('editEventInput').value.trim();
   var status  = document.getElementById('editStatusSel').value;

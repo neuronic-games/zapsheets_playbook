@@ -4493,15 +4493,18 @@ function openNotesDialog(entry) {
   var contactSel = document.getElementById('editContact');
   contactSel.innerHTML = '<option value="">— unknown —</option>';
   var contacts = getContactsForPublisher(entry.publisher);
-  // Ensure the current contact appears even if not in people index
   var currentContact = (entry.contact && entry.contact !== '(Unknown)') ? entry.contact : '';
-  if (currentContact && contacts.indexOf(currentContact) === -1) {
+  var currentIsUrl = _isContactUrl(currentContact);
+  // Ensure the current contact appears if it's a real name (not a URL)
+  if (currentContact && !currentIsUrl && contacts.indexOf(currentContact) === -1) {
     contacts = [currentContact].concat(contacts);
   }
-  contacts.forEach(function(c) {
+  contacts.forEach(function(name) {
+    var email = peopleIndex[name + '|' + (entry.publisher||'').trim()] || '';
     var o = document.createElement('option');
-    o.value = c; o.textContent = c;
-    if (c === currentContact) o.selected = true;
+    o.value = name;
+    o.textContent = email ? name + ', ' + email : name;
+    if (name === currentContact) o.selected = true;
     contactSel.appendChild(o);
   });
 
@@ -5965,10 +5968,13 @@ function getPublisherList() {
   return Object.keys(pubs).sort(function(a,b){ return a.localeCompare(b); });
 }
 
+function _isContactUrl(s) { return /^https?:\/\//i.test((s||'').trim()); }
 function getContactsForPublisher(publisher) {
   var contacts = {};
   allPitches.forEach(function(r) {
-    if (r.Publisher === publisher && r.Contact && r.Contact !== '(Unknown)') contacts[r.Contact] = 1;
+    if (r.Publisher === publisher && r.Contact && r.Contact !== '(Unknown)') {
+      if (!_isContactUrl(r.Contact)) contacts[r.Contact] = 1;
+    }
   });
   Object.keys(peopleIndex).forEach(function(key) {
     var parts = key.split('|');
@@ -6109,7 +6115,13 @@ function _setupCombos() {
     function() {
       var pub = (document.getElementById('addPublisherInput') || {}).value || '';
       return getContactsForPublisher(pub.trim());
-    }, null);
+    },
+    null,
+    function(div, name) {
+      var pub   = ((document.getElementById('addPublisherInput')||{}).value||'').trim();
+      var email = peopleIndex[name + '|' + pub] || '';
+      div.textContent = email ? name + ', ' + email : name;
+    });
   // Typing in publisher field also clears contact
   var pubInp = document.getElementById('addPublisherInput');
   if (pubInp) {

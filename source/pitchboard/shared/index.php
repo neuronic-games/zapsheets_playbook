@@ -150,6 +150,7 @@ function _ps_status_class(string $s): string {
     if ($sl==='gone cold')  return 'gone-cold';
     if ($sl==='returned')   return 'returned';
     if ($sl==='published')  return 'published';
+    if ($sl==='planned')    return 'planned';
     return 'pitched';
 }
 
@@ -177,7 +178,7 @@ function _ps_entry_row(array $e): string {
         . '<span class="entry-date">'    . _ps_e($e['Date']   ?? '') . '</span>'
         . '<span class="entry-contact">' . _ps_e($contact)           . '</span>'
         . '<span class="entry-event">'   . _ps_e($e['Event']  ?? '') . '</span>'
-        . '<span class="entry-status badge badge-' . $sc . '">' . _ps_e($e['Status'] ?? '—') . '</span>'
+        . '<span class="entry-status badge badge-' . $sc . '">' . _ps_e(strcasecmp($e['Status']??'','Interested')===0 ? 'INT' : ($e['Status'] ?? '—')) . '</span>'
         . '<span class="entry-notes">'   . _ps_e($notes)             . '</span>'
         . '</div>';
 }
@@ -216,14 +217,12 @@ foreach ($_byPub as $pub => $contacts) {
 
     // Publisher status badge
     $badge = '';
-    if ($pubStatus === 'passed')       $badge = '<span class="badge badge-passed" style="margin-right:.75rem">Passed</span>';
+    if ($pubStatus === 'passed')        $badge = '<span class="badge badge-passed" style="margin-right:.75rem">Passed</span>';
     elseif ($pubStatus === 'gone cold') $badge = '<span class="badge badge-gone-cold" style="margin-right:.75rem">Gone Cold</span>';
     elseif ($pubStatus === 'signed')    $badge = '<span class="badge badge-signed" style="margin-right:.75rem">Signed</span>';
-    elseif ($pubStatus === 'interested') $badge = '<span class="badge badge-interested" style="margin-right:.75rem">Interested</span>';
+    elseif ($pubStatus === 'interested') $badge = '<span class="badge badge-interested" style="margin-right:.75rem">INT</span>';
     elseif ($pubStatus === 'returned')  $badge = '<span class="badge badge-returned" style="margin-right:.75rem">Returned</span>';
-    elseif ($pubStatus === 'published') $badge = '<span class="badge badge-published" style="margin-right:.75rem">Published</span>';
     elseif ($pubStatus === 'planned')   $badge = '<span class="badge badge-planned" style="margin-right:.75rem">Planned</span>';
-    else                                $badge = '<span class="badge badge-pitched" style="margin-right:.75rem">Pitched</span>';
 
     $ageTag      = $isCollapsed ? '' : _ps_age_tag($allEntries);
     $headerColor = $isCollapsed ? 'color:#aaa;' : 'color:#333;';

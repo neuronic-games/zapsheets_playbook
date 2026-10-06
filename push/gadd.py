@@ -74,6 +74,59 @@ if not headers:
 # Pull special keys before building the sheet row
 bg_color_hex = row_data.pop('__bg_color__', '')
 
+# ── For Pitches: check if Date+Game+Publisher already exists; merge if so ────
+if sheet_name.lower() == 'pitches':
+    col_map = {h.strip(): i for i, h in enumerate(headers)}
+    def _get(row, field):
+        idx = col_map.get(field, -1)
+        return row[idx].strip() if 0 <= idx < len(row) else ''
+
+    key_date = str(row_data.get('Date', '')).strip()
+    key_game = str(row_data.get('Game', '')).strip()
+    key_pub  = str(row_data.get('Publisher', '')).strip()
+
+    existing_idx = None
+    for i, row in enumerate(all_values[1:], start=2):
+        if (_get(row, 'Date')      == key_date and
+            _get(row, 'Game')      == key_game and
+            _get(row, 'Publisher') == key_pub):
+            existing_idx = i
+            break
+
+    if existing_idx is not None:
+        existing_row = all_values[existing_idx - 1]
+        old_notes  = _get(existing_row, 'Notes')
+        new_notes  = str(row_data.get('Notes', '')).strip()
+        if new_notes:
+            merged_notes = (old_notes + '\n' + new_notes).strip() if old_notes else new_notes
+        else:
+            merged_notes = old_notes
+
+        new_status  = str(row_data.get('Status',  '')).strip() or _get(existing_row, 'Status')
+        new_event   = str(row_data.get('Event',   '')).strip() or _get(existing_row, 'Event')
+        new_contact = str(row_data.get('Contact', '')).strip() or _get(existing_row, 'Contact')
+
+        merge_updates = []
+        for field, value in [('Status', new_status), ('Event', new_event),
+                              ('Contact', new_contact), ('Notes', merged_notes)]:
+            idx = col_map.get(field, -1)
+            if idx >= 0:
+                merge_updates.append({
+                    'range':  gspread.utils.rowcol_to_a1(existing_idx, idx + 1),
+                    'values': [[safe_str(value)]]
+                })
+        if merge_updates:
+            ws.batch_update(merge_updates, value_input_option='USER_ENTERED')
+
+        print(json.dumps({
+            "ok":     True,
+            "merged": True,
+            "row":    existing_idx,
+            "sheet":  ws.title,
+            "non_empty_fields": sum(1 for f in [new_status, new_event, new_contact, merged_notes] if f),
+        }))
+        sys.exit(0)
+
 # Build row list aligned to headers
 new_row = [safe_str(row_data.get(h.strip(), '')) for h in headers]
 

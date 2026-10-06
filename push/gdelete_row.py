@@ -58,32 +58,16 @@ def cell(row, field):
     idx = col.get(field, -1)
     return row[idx].strip() if 0 <= idx < len(row) else ''
 
-import re as _re
-def _strip_md_link(s):
-    """Convert [text](url) markdown (from gread.py hyperlink encoding) to plain text/url."""
-    m = _re.match(r'^\[([^\]]*)\]\(([^)]*)\)$', s)
-    return m.group(1) if m else s
-
-# Normalise incoming values: strip any [text](url) markdown the client may
-# have read from the JSON cache (gread.py encodes hyperlinks that way).
-def norm(s):
-    return _strip_md_link(s.strip())
-
-game      = norm(game)
-publisher = norm(publisher)
-contact   = norm(contact)
-event     = norm(event)
-status    = norm(status)
+# Key = Date + Game + Publisher only
+game      = game.strip()
+publisher = publisher.strip()
 date      = date.strip()
 
 target_sheet_row = None
 for i, row in enumerate(all_values[1:], start=2):
-    if (cell(row, 'Game')      == game      and
-        cell(row, 'Publisher') == publisher and
-        (cell(row, 'Contact')  == contact or norm(cell(row, 'Contact')) == contact) and
-        cell(row, 'Date')      == date      and
-        cell(row, 'Event')     == event     and
-        cell(row, 'Status')    == status):
+    if (cell(row, 'Date')      == date      and
+        cell(row, 'Game')      == game      and
+        cell(row, 'Publisher') == publisher):
         target_sheet_row = i
         break
 

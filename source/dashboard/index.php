@@ -3185,9 +3185,6 @@ function buildGameView(pitches) {
     }
     // Action buttons in sub-bar — single scrollable row on all screen sizes
     html += '<div class="game-action-btns">';
-    html += '<button class="game-action-btn icon-btn" id="refreshBtn" title="Reload pitches" onclick="event.stopPropagation();pbRefresh(this)">'
-         +  '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>'
-         +  '</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="addBtnClick(this)">New Pitch</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="editGameClick(this)">Edit Game</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="viewPageClick(this)">' + (GAME_PAGE_TOKENS[g] ? 'Edit Page' : 'Enable Page') + '</button>';
@@ -3197,6 +3194,9 @@ function buildGameView(pitches) {
     } else {
       html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="enableNotesClick(this)">Enable Notes</button>';
     }
+    html += '<button class="game-action-btn icon-btn" title="Reload pitches" onclick="event.stopPropagation();pbRefresh(this)">'
+         +  '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>'
+         +  '</button>';
     html += '</div>'; // .game-action-btns
     html += '</div>'; // .game-links-meta
     html += '</div>'; // .game-links
@@ -6821,9 +6821,16 @@ function loadJSON(url, key, fallbackUrl, onDone) {
 }
 
 function pbRefresh(btn) {
+  // Remember which cards are open before the re-render
+  var openTitles = [];
+  document.querySelectorAll('#content .card.open .card-title').forEach(function(el) {
+    if (el.textContent) openTitles.push(el.textContent);
+  });
   if (btn) btn.classList.add('spinning');
   loadAll(function() {
     if (btn) btn.classList.remove('spinning');
+    // Restore expanded cards
+    openTitles.forEach(function(title) { _expandCardByTitle(title); });
   });
 }
 

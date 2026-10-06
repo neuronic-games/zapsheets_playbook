@@ -24,13 +24,16 @@ foreach (['pitches', 'games', 'people'] as $tab) {
     refreshJson($pythonPath, $sheetId, $tab);
 }
 
-// Also refresh any game-specific tabs: files named like [gamename].json or [gamename] dev.json
-$sheetsDir = dirname(__DIR__) . '/sheets/' . $sheetId;
-$gameTabs  = [];
-if (is_dir($sheetsDir)) {
-    foreach (scandir($sheetsDir) as $f) {
-        if ($f[0] === '[' && substr($f, -5) === '.json') {
-            $tabName = substr($f, 0, -5); // strip .json → lowercase tab name
+// Also refresh all game-specific tabs from the live sheet (tabs starting with '[')
+$listCmd = escapeshellarg($pythonPath) . ' '
+         . escapeshellarg(__DIR__ . '/glisttabs.py') . ' '
+         . escapeshellarg($sheetId . '|[') . ' 2>/dev/null';
+$listOut  = trim((string) shell_exec($listCmd));
+$gameTabs = [];
+if ($listOut) {
+    $listResult = json_decode($listOut, true);
+    if (!empty($listResult['tabs'])) {
+        foreach ($listResult['tabs'] as $tabName) {
             $gameTabs[] = $tabName;
             refreshJson($pythonPath, $sheetId, $tabName);
         }

@@ -126,6 +126,34 @@ if ($result !== null && !empty($result['ok'])) {
             }
         }
         if ($sharesUpdated > 0) $result['shares_updated'] = $sharesUpdated;
+
+        // Delete old bracket JSON files for the old game name ([OldName].json, etc.)
+        $oldBracketPrefix = strtolower('[' . $origName . ']');
+        $sheetsDir2 = dirname(__DIR__) . '/sheets/' . $sheetId;
+        if (is_dir($sheetsDir2)) {
+            foreach (glob($sheetsDir2 . '/[[]*.json') as $f) {
+                $base = strtolower(basename($f));
+                if (strpos($base, $oldBracketPrefix) === 0) {
+                    unlink($f);
+                }
+            }
+        }
+
+        // Refresh the new game tabs ([NewName], [NewName] dev, etc.) so their
+        // JSON cache files are created / updated after the rename.
+        $listCmd = escapeshellarg($pythonPath) . ' '
+                 . escapeshellarg(__DIR__ . '/glisttabs.py') . ' '
+                 . escapeshellarg($sheetId . '|[' . $name . ']') . ' 2>/dev/null';
+        $listOut = trim((string) shell_exec($listCmd));
+        if ($listOut) {
+            $listResult = json_decode($listOut, true);
+            if (!empty($listResult['tabs'])) {
+                foreach ($listResult['tabs'] as $tabName) {
+                    refreshJson($pythonPath, $sheetId, $tabName);
+                }
+                $result['game_tabs_refreshed'] = $listResult['tabs'];
+            }
+        }
     }
 }
 echo $result !== null ? json_encode($result) : json_encode(['error' => $output]);

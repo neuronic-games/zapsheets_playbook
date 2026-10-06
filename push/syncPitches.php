@@ -24,5 +24,18 @@ foreach (['pitches', 'games', 'people'] as $tab) {
     refreshJson($pythonPath, $sheetId, $tab);
 }
 
-echo json_encode(['ok' => true]);
+// Also refresh any game-specific tabs: files named like [gamename].json or [gamename] dev.json
+$sheetsDir = dirname(__DIR__) . '/sheets/' . $sheetId;
+$gameTabs  = [];
+if (is_dir($sheetsDir)) {
+    foreach (scandir($sheetsDir) as $f) {
+        if ($f[0] === '[' && substr($f, -5) === '.json') {
+            $tabName = substr($f, 0, -5); // strip .json → lowercase tab name
+            $gameTabs[] = $tabName;
+            refreshJson($pythonPath, $sheetId, $tabName);
+        }
+    }
+}
+
+echo json_encode(['ok' => true, 'game_tabs' => $gameTabs]);
 ?>

@@ -47,8 +47,10 @@ function refreshJsonStep($pythonPath, $sheetId, $tabName) {
 
 $steps = [];
 
-// Always refresh pitches so the board reflects any changes
-$steps[] = refreshJsonStep($pythonPath, $sheetId, 'pitches');
+// Always refresh pitches and people
+foreach (['pitches', 'people'] as $tab) {
+    $steps[] = refreshJsonStep($pythonPath, $sheetId, $tab);
+}
 
 // Discover the game's bracket tabs from the live sheet: [GameName], [GameName] dev, etc.
 $prefix  = '[' . $gameName . ']';

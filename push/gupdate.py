@@ -76,18 +76,29 @@ def cell(row, field):
     idx = col.get(field, -1)
     return row[idx].strip() if 0 <= idx < len(row) else ''
 
+import re as _re
+def _strip_md_link(s):
+    """Convert [text](url) markdown (from gread.py hyperlink encoding) to plain text."""
+    m = _re.match(r'^\[([^\]]*)\]\(([^)]*)\)$', s)
+    return m.group(1) if m else s
+
+def norm(s):
+    return _strip_md_link(s.strip())
+
 # Use original values as lookup key (supports editing Contact/Date)
 # Event is NOT used in the lookup — it may itself be the field being added/changed,
 # and Game + Publisher + Contact + Date is the stable unique key for a pitch row.
-lookup_contact = orig_contact or new_contact
-lookup_date    = orig_date    or new_date
+lookup_contact = norm(orig_contact or new_contact)
+lookup_date    = (orig_date or new_date).strip()
+game           = norm(game)
+publisher      = norm(publisher)
 
 # Search rows (header is row 0; sheet rows are 1-indexed → data row i+1 = sheet row i+2)
 target_sheet_row = None
 for i, row in enumerate(all_values[1:], start=2):
     if (cell(row, 'Game')      == game           and
         cell(row, 'Publisher') == publisher       and
-        cell(row, 'Contact')   == lookup_contact  and
+        (cell(row, 'Contact') == lookup_contact or norm(cell(row, 'Contact')) == lookup_contact) and
         cell(row, 'Date')      == lookup_date):
         target_sheet_row = i
         break

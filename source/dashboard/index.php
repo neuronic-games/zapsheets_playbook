@@ -4633,6 +4633,7 @@ function sheetDateToInput(d) {
 }
 
 function rowClick(el) {
+  if (!_requireAuth()) return;
   openNotesDialog({
     notes:     el.getAttribute('data-notes')     || '',
     game:      el.getAttribute('data-game')      || '',
@@ -5717,10 +5718,12 @@ function editGameClick(btn) {
 }
 
 function openNewGameDialog() {
+  if (!_requireAuth()) return;
   openGameEditDialog('', true);
 }
 
 function openGameEditDialog(gameName, isNew) {
+  if (!_requireAuth()) return;
   _gameEditCtx = { origName: gameName, isNew: !!isNew };
   var g = isNew ? {} : (gamesIndex[gameName] || {});
 
@@ -6340,6 +6343,7 @@ function _setupGameCombo() {
 }
 
 function openNewPitchDialog(publisher, contact) {
+  if (!_requireAuth()) return;
   _setupGameCombo();
   openAddDialog('', publisher, contact || '', true);
 }
@@ -6443,6 +6447,7 @@ function _extractImageUrl(raw) {
 
 // ── Open Add Entry dialog ─────────────────────────────
 function addBtnClick(btn) {
+  if (!_requireAuth()) return;
   openAddDialog(
     btn.getAttribute('data-game')      || '',
     btn.getAttribute('data-publisher') || '',
@@ -6705,6 +6710,7 @@ function submitAddEntry() {
 
 // ── New Publisher / New Contact sub-dialog ────────────
 function openAddNew(mode) {
+  if (!_requireAuth()) return;
   _addNewMode = mode;
   var isContact = mode === 'contact';
   document.getElementById('addNewTitle').textContent = isContact ? 'New Contact' : 'New Publisher';
@@ -6807,6 +6813,7 @@ function _getDiCompanyList() {
 }
 
 function openDiDialog(name) {
+  if (!_requireAuth()) return;
   _diOrigName = name;
   _diIsNew    = !peopleData[name];
   var person  = peopleData[name] || {};
@@ -8518,6 +8525,12 @@ function _menuAuthAction() {
   } else {
     openCollabAuthDialog();
   }
+}
+
+function _requireAuth() {
+  if (_collabUser) return true;
+  openCollabAuthDialog();
+  return false;
 }
 
 function openCollabAuthDialog() {

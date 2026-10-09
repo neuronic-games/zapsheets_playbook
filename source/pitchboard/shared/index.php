@@ -478,6 +478,131 @@ body {
 }
 .footer-btn:hover { opacity: .8; }
 
+/* ── Account menu ── */
+.account-menu-wrap { position: relative; flex-shrink: 0; margin-left: .25rem; }
+.account-menu {
+  display: none; position: absolute; top: calc(100% + .4rem); right: 0;
+  background: #1a1a2e; border: 1px solid rgba(255,255,255,.2);
+  border-radius: 8px; min-width: 170px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.4); overflow: hidden; z-index: 200;
+}
+.account-menu.open { display: block; }
+.account-menu-item {
+  display: block; width: 100%; background: none; border: none;
+  color: rgba(255,255,255,.85); text-align: left; cursor: pointer;
+  font-family: 'DINBlack', sans-serif; font-size: .72rem;
+  text-transform: uppercase; letter-spacing: .06em;
+  padding: .6rem 1rem; transition: background .12s;
+}
+.account-menu-item:hover { background: rgba(255,255,255,.1); color: #fff; }
+.account-menu-divider { border: none; border-top: 1px solid rgba(255,255,255,.12); margin: .2rem 0; }
+.account-menu-label {
+  display: block; padding: .45rem 1rem .2rem;
+  font-family: 'DINRegular', sans-serif; font-size: .68rem; color: rgba(255,255,255,.4);
+  text-transform: none; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.top-btn-collab {
+  background: rgba(255,255,255,.12); border: none; border-radius: 50%; cursor: pointer;
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  color: #fff; flex-shrink: 0; transition: background .15s;
+}
+.top-btn-collab:hover { background: rgba(255,255,255,.26); }
+
+/* ── Not-signed-in banner ── */
+#notSignedInBanner {
+  background: #fff8f0; border: 1.5px solid #fde68a; border-radius: 8px;
+  padding: .55rem 1rem; margin-bottom: .65rem;
+  display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+  font-family: 'DINRegular', sans-serif; font-size: .82rem; color: #555;
+}
+#notSignedInBanner button {
+  flex-shrink: 0; font-family: 'DINBlack', sans-serif; font-size: .7rem;
+  text-transform: uppercase; letter-spacing: .06em;
+  background: #1a1a2e; color: #fff; border: none; border-radius: 999px;
+  padding: .3rem .75rem; cursor: pointer; transition: background .15s;
+}
+#notSignedInBanner button:hover { background: #252545; }
+
+/* ── Auth overlay / dialog ── */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.52); z-index: 600;
+  align-items: center; justify-content: center; padding: 1rem;
+  overflow-y: auto; overscroll-behavior: contain;
+}
+.overlay.open { display: flex; }
+.auth-dialog {
+  background: #fff; border-radius: 12px; padding: 1.5rem;
+  width: 100%; max-width: 420px;
+  box-shadow: 0 8px 40px rgba(0,0,0,.25);
+  max-height: 90vh; overflow-y: auto;
+}
+.auth-dialog h2 {
+  font-family: 'DINBlack', sans-serif; font-size: .95rem;
+  color: #1a1a2e; letter-spacing: .03em; margin-bottom: 1rem; text-transform: uppercase;
+}
+.auth-notice {
+  font-size: .82rem; color: #666; margin-bottom: .9rem; line-height: 1.5;
+  background: #f4f5fb; border-radius: 6px; padding: .6rem .75rem; border: 1px solid #e0e3f0;
+}
+.field-group { margin-bottom: .7rem; }
+.field-group > label {
+  display: block; font-family: 'DINBlack', sans-serif; font-size: .62rem;
+  text-transform: uppercase; letter-spacing: .06em; color: #888; margin-bottom: .28rem;
+}
+.field-input {
+  display: block; width: 100%; padding: .48rem .65rem;
+  font-family: 'DINRegular', Arial, sans-serif; font-size: .88rem; color: #111;
+  border: 1.5px solid #d0d0e0; border-radius: 7px; background: #fafafa; outline: none;
+  transition: border-color .15s; box-sizing: border-box;
+}
+.field-input:focus { border-color: #1a1a2e; background: #fff; }
+.auth-remember {
+  display: flex; align-items: center; gap: .5rem; margin: .5rem 0;
+  font-family: 'DINRegular', sans-serif; font-size: .8rem; color: #555; cursor: pointer;
+}
+.auth-err {
+  font-size: .75rem; color: #dc2626; margin-top: .45rem; display: none;
+  background: #fef2f2; border: 1px solid #fee2e2; border-radius: 6px; padding: .4rem .6rem;
+}
+.dialog-actions { display: flex; justify-content: flex-end; gap: .6rem; margin-top: .85rem; }
+.btn-primary {
+  font-family: 'DINBlack', sans-serif; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em;
+  background: #1a1a2e; color: #fff; border: none; border-radius: 999px;
+  padding: .42rem .95rem; cursor: pointer; transition: opacity .15s;
+}
+.btn-primary:disabled { opacity: .45; cursor: default; }
+.btn-cancel {
+  font-family: 'DINBlack', sans-serif; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em;
+  background: #e8e8f0; color: #1a1a2e; border: none; border-radius: 999px;
+  padding: .42rem .95rem; cursor: pointer; transition: background .15s;
+}
+.btn-cancel:hover { background: #d8d8e0; }
+.auth-avatar-edit {
+  width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+  background: #1a1a2e; color: #fff;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  font-family: 'DINBlack', sans-serif; font-size: .6rem; text-align: center;
+}
+.ge-textarea { resize: vertical; min-height: 3rem; line-height: 1.5; }
+.auth-status-row { display: flex; align-items: center; gap: .85rem; margin-bottom: 1rem; }
+.auth-avatar {
+  width: 48px; height: 48px; border-radius: 50%; background: #1a1a2e; color: #fff;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
+  font-family: 'DINBlack', sans-serif; font-size: 1.1rem;
+}
+.auth-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.auth-identity { display: flex; flex-direction: column; gap: .2rem; }
+.auth-name  { font-family: 'DINBlack', sans-serif; font-size: .88rem; color: #1a1a2e; }
+.auth-email { font-size: .78rem; color: #888; }
+.auth-bio-section { display: flex; flex-direction: column; gap: .5rem; margin-bottom: .75rem; }
+.auth-bio-row  { display: flex; gap: .6rem; flex-wrap: wrap; }
+.auth-bio-field { display: flex; flex-direction: column; gap: .2rem; flex: 1; min-width: 130px; }
+.auth-bio-full  { width: 100%; flex: none; }
+.auth-bio-field label { font-family: 'DINBlack', sans-serif; font-size: .6rem; text-transform: uppercase; letter-spacing: .06em; color: #999; }
+.auth-bio-field span  { font-size: .82rem; color: #333; line-height: 1.4; }
+body:has(.overlay.open) { overflow: hidden; }
+
 /* ── CTA section ── */
 .cta-section {
   margin-top: 1.5rem;
@@ -635,7 +760,17 @@ body {
   <a class="top-bar-logo" href="<?= _ps_e($_pbUrl) ?>"><span class="pb-pitch">Pitch</span><span class="pb-board">Board</span></a>
   <span class="top-bar-sep">›</span>
   <span class="top-bar-game"><?= _ps_e($_gameName) ?></span>
-  <span class="top-bar-readonly">Collab</span>
+  <div class="account-menu-wrap" style="margin-left:auto">
+    <button class="top-btn-collab" id="accountMenuBtn" title="Account" onclick="toggleAccountMenu()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    </button>
+    <div class="account-menu" id="accountMenu">
+      <div class="account-menu-label" id="collabUserLabel"></div>
+      <button class="account-menu-item" onclick="closeAccountMenu();openProfileDialog()">Profile</button>
+      <hr class="account-menu-divider" />
+      <button class="account-menu-item" id="accountMenuAuthBtn" onclick="closeAccountMenu();_menuAuthAction()">Sign In</button>
+    </div>
+  </div>
 </div>
 
 <div class="content">
@@ -659,13 +794,19 @@ body {
             <span class="game-links-designers"><?= _ps_e($_designers) ?></span>
           <?php endif ?>
           <div class="game-action-btns">
-            <button class="game-action-btn" onclick="openAddDialog()">New Pitch</button>
+            <button class="game-action-btn" onclick="guardedOpenAddDialog()">New Pitch</button>
             <button class="game-action-btn icon-btn" id="psRefreshBtn" onclick="psRefresh()" title="Reload pitches">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
             </button>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Not-signed-in banner -->
+    <div id="notSignedInBanner" style="display:none">
+      <span>Sign in to add and edit pitches.</span>
+      <button onclick="openProfileDialog()">Sign In / Create Profile</button>
     </div>
 
     <div class="card-body">
@@ -812,6 +953,80 @@ body {
         <button class="collab-btn collab-btn-cancel" onclick="closeEditDialog()">Cancel</button>
         <button class="collab-btn collab-btn-primary" id="editSubmitBtn" onclick="submitEdit()">Save</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ── Profile / Auth overlay ── -->
+  <div class="overlay" id="profileOverlay"
+       onclick="if(event.target===this)closeProfileDialog()">
+    <div class="auth-dialog" onclick="event.stopPropagation()"
+         onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();_profileCmdEnter();}">
+
+      <!-- Panel 1: Sign-in form -->
+      <div id="authForm">
+        <h2>Sign In / Create Profile</h2>
+        <div class="auth-notice" id="authConfirmNotice" style="display:none">
+          No account found for <strong id="authConfirmEmail"></strong>. Create one?
+        </div>
+        <div class="field-group">
+          <label>Email</label>
+          <input class="field-input" id="authEmailInput" type="email" placeholder="you@example.com" autocomplete="email" />
+        </div>
+        <div class="field-group">
+          <label>Password</label>
+          <input class="field-input" id="authPassInput" type="password" placeholder="Password" autocomplete="current-password" />
+        </div>
+        <label class="auth-remember">
+          <input type="checkbox" id="authRemember" /> Remember me
+        </label>
+        <div class="auth-err" id="authErr"></div>
+        <div class="dialog-actions">
+          <button class="btn-cancel" onclick="forceCloseProfileDialog()">Cancel</button>
+          <button class="btn-primary" id="authSubmitBtn" onclick="submitAuth(false)">Sign In</button>
+          <button class="btn-primary" id="authCreateBtn" style="display:none" onclick="submitAuth(true)">Create Profile</button>
+        </div>
+      </div>
+
+      <!-- Panel 2: Bio edit form -->
+      <div id="authEditBio" style="display:none">
+        <h2 id="authEditBioTitle">Your Profile</h2>
+        <div class="auth-status-row">
+          <div class="auth-avatar-edit" id="authAvatarEdit">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          </div>
+          <div class="auth-identity">
+            <div class="auth-name" id="authBioDisplayName"></div>
+            <div class="auth-email" id="authBioDisplayEmail"></div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Name <span style="color:#aaa;font-size:.6rem;font-weight:400">(optional)</span></label>
+          <input class="field-input" id="bioNameInput" type="text" placeholder="Your name" />
+        </div>
+        <div class="field-group">
+          <label>Email</label>
+          <input class="field-input" id="bioEmailInput" type="email" placeholder="you@example.com" autocomplete="email" />
+        </div>
+        <div class="field-group">
+          <label>Discord handle <span style="color:#aaa;font-size:.6rem;font-weight:400">(optional)</span></label>
+          <input class="field-input" id="bioDiscordInput" type="text" placeholder="@handle" />
+        </div>
+        <div class="field-group">
+          <label>Location <span style="color:#aaa;font-size:.6rem;font-weight:400">(optional)</span></label>
+          <input class="field-input" id="bioLocationInput" type="text" placeholder="City, Country" />
+        </div>
+        <div class="field-group">
+          <label>About <span style="color:#aaa;font-size:.6rem;font-weight:400">(optional)</span></label>
+          <textarea class="field-input ge-textarea" id="bioDescInput" placeholder="A short bio…"></textarea>
+        </div>
+        <div class="auth-err" id="bioErr"></div>
+        <div class="dialog-actions">
+          <button class="btn-cancel" onclick="forceCloseProfileDialog()">Cancel</button>
+          <button class="btn-cancel" id="bioSkipBtn" style="display:none" onclick="_bioSkip()">Skip</button>
+          <button class="btn-primary" id="bioSubmitBtn" onclick="submitBioEdit()">Save</button>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -992,6 +1207,7 @@ function openAddDialog() {
 
 function openAddDialogForPub(pubName, event) {
   if (event) event.stopPropagation();
+  if (!_collabUser) { openProfileDialog(); return; }
   _setupAddCombos();
   var pub = document.getElementById('addPubInput');
   pub.value    = pubName;
@@ -1075,6 +1291,7 @@ function submitAdd() {
 var _editEntry = null;
 
 function openEditDialog(el) {
+  if (!_collabUser) { openProfileDialog(); return; }
   var entry = null;
   try { entry = JSON.parse(el.dataset.entry); } catch(e) { return; }
   _editEntry = entry;
@@ -1167,11 +1384,346 @@ function submitEdit() {
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Escape') return;
   var el, d;
+  el = document.getElementById('profileOverlay');
+  if (el && el.classList.contains('open')) { closeProfileDialog(); return; }
   el = document.getElementById('addOverlay');
   if (el.classList.contains('open'))  { d = el.querySelector('.collab-dialog'); if (hasDialogData(d)) shakeDialog(d); else closeAddDialog();  return; }
   el = document.getElementById('editOverlay');
   if (el.classList.contains('open'))  { d = el.querySelector('.collab-dialog'); if (hasDialogData(d)) shakeDialog(d); else closeEditDialog(); return; }
 });
+
+// ── Auth / Collab sign-in ──────────────────────────────────────────────────
+
+var STORAGE_KEY   = 'pitchboard_collab_user';
+var _collabUser   = null;   // null = signed out; { email, bio } = signed in
+var _collabRemember = false;
+var _isNewCollabUser = false;
+
+// Snapshot for dirty-checking bio edit panel
+var _bioInitial = {};
+
+function _loadStoredUser() {
+  var raw;
+  try { raw = localStorage.getItem(STORAGE_KEY); } catch(e){}
+  if (!raw) try { raw = sessionStorage.getItem(STORAGE_KEY); } catch(e){}
+  if (!raw) return;
+  try { _collabUser = JSON.parse(raw); } catch(e){}
+}
+
+function _saveStoredUser(u) {
+  var js = JSON.stringify(u);
+  try {
+    if (_collabRemember) localStorage.setItem(STORAGE_KEY, js);
+    else                 sessionStorage.setItem(STORAGE_KEY, js);
+  } catch(e){}
+}
+
+function _clearStoredUser() {
+  try { localStorage.removeItem(STORAGE_KEY); }   catch(e){}
+  try { sessionStorage.removeItem(STORAGE_KEY); } catch(e){}
+}
+
+function _updateMenuLabel() {
+  var lbl = document.getElementById('collabUserLabel');
+  var btn = document.getElementById('accountMenuAuthBtn');
+  if (!lbl || !btn) return;
+  if (_collabUser) {
+    var display = (_collabUser.bio && _collabUser.bio.name) ? _collabUser.bio.name : _collabUser.email;
+    lbl.textContent = display;
+    lbl.style.display = 'block';
+    btn.textContent = 'Sign Out';
+  } else {
+    lbl.style.display = 'none';
+    btn.textContent = 'Sign In';
+  }
+}
+
+function _updateSignedInState() {
+  var banner = document.getElementById('notSignedInBanner');
+  if (banner) banner.style.display = _collabUser ? 'none' : 'flex';
+  _updateMenuLabel();
+}
+
+// ── Account menu ──────────────────────────────────────────────────────────
+
+function toggleAccountMenu() {
+  document.getElementById('accountMenu').classList.toggle('open');
+}
+function closeAccountMenu() {
+  document.getElementById('accountMenu').classList.remove('open');
+}
+function _menuAuthAction() {
+  if (_collabUser) { _signOut(); } else { openProfileDialog(); }
+}
+function _signOut() {
+  _collabUser = null;
+  _clearStoredUser();
+  _updateSignedInState();
+}
+document.addEventListener('click', function(e) {
+  var wrap = document.getElementById('accountMenu');
+  var btn  = document.getElementById('accountMenuBtn');
+  if (wrap && btn && !wrap.contains(e.target) && !btn.contains(e.target)) {
+    wrap.classList.remove('open');
+  }
+});
+
+// ── Profile dialog ────────────────────────────────────────────────────────
+
+function openProfileDialog() {
+  var overlay = document.getElementById('profileOverlay');
+  if (_collabUser) {
+    // Fetch fresh bio then open edit form
+    _showAuthPanel('authEditBio');
+    document.getElementById('authEditBioTitle').textContent = 'Edit Profile';
+    document.getElementById('bioSkipBtn').style.display = 'none';
+    _populateBioForm(_collabUser.bio || {}, _collabUser.email);
+    overlay.classList.add('open');
+    // Fetch fresh bio in background
+    fetch(_base + '/push/collabGetBio.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'id=' + encodeURIComponent(_sheetId) + '&email=' + encodeURIComponent(_collabUser.email)
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d.bio) {
+        _collabUser.bio = d.bio;
+        _populateBioForm(d.bio, _collabUser.email);
+      }
+    })
+    .catch(function(){});
+  } else {
+    _showAuthPanel('authForm');
+    document.getElementById('authEmailInput').value = '';
+    document.getElementById('authPassInput').value  = '';
+    document.getElementById('authErr').style.display = 'none';
+    document.getElementById('authConfirmNotice').style.display = 'none';
+    document.getElementById('authSubmitBtn').style.display = 'inline-block';
+    document.getElementById('authCreateBtn').style.display  = 'none';
+    overlay.classList.add('open');
+    setTimeout(function(){ document.getElementById('authEmailInput').focus(); }, 60);
+  }
+}
+
+function closeProfileDialog() {
+  // bio panel: dirty-check
+  if (document.getElementById('authEditBio').style.display !== 'none') {
+    if (_isBioDirty()) { shakeDialog(document.querySelector('#profileOverlay .auth-dialog')); return; }
+  }
+  forceCloseProfileDialog();
+}
+
+function forceCloseProfileDialog() {
+  document.getElementById('profileOverlay').classList.remove('open');
+  _isNewCollabUser = false;
+}
+
+function _profileCmdEnter() {
+  var bioPanel  = document.getElementById('authEditBio');
+  var authPanel = document.getElementById('authForm');
+  if (bioPanel && bioPanel.style.display !== 'none')  { submitBioEdit(); return; }
+  if (authPanel && authPanel.style.display !== 'none') {
+    var createBtn = document.getElementById('authCreateBtn');
+    if (createBtn && createBtn.style.display !== 'none') submitAuth(true);
+    else submitAuth(false);
+  }
+}
+
+function _showAuthPanel(id) {
+  ['authForm','authEditBio'].forEach(function(p){
+    var el = document.getElementById(p);
+    if (el) el.style.display = (p === id) ? '' : 'none';
+  });
+}
+
+function _populateBioForm(bio, email) {
+  document.getElementById('bioNameInput').value     = bio.name     || '';
+  document.getElementById('bioEmailInput').value    = email        || '';
+  document.getElementById('bioDiscordInput').value  = bio.discord  || '';
+  document.getElementById('bioLocationInput').value = bio.location || '';
+  document.getElementById('bioDescInput').value     = bio.description || '';
+  document.getElementById('authBioDisplayName').textContent  = bio.name || email || '';
+  document.getElementById('authBioDisplayEmail').textContent = email || '';
+  document.getElementById('bioErr').style.display   = 'none';
+  _bioInitial = {
+    name: bio.name || '', email: email || '',
+    discord: bio.discord || '', location: bio.location || '',
+    description: bio.description || ''
+  };
+}
+
+function _isBioDirty() {
+  return document.getElementById('bioNameInput').value     !== _bioInitial.name     ||
+         document.getElementById('bioEmailInput').value    !== _bioInitial.email    ||
+         document.getElementById('bioDiscordInput').value  !== _bioInitial.discord  ||
+         document.getElementById('bioLocationInput').value !== _bioInitial.location ||
+         document.getElementById('bioDescInput').value     !== _bioInitial.description;
+}
+
+// ── Auth submission ───────────────────────────────────────────────────────
+
+function submitAuth(confirmNew) {
+  var email = document.getElementById('authEmailInput').value.trim();
+  var pass  = document.getElementById('authPassInput').value;
+  var errEl = document.getElementById('authErr');
+  if (!email || !pass) { errEl.textContent = 'Email and password are required.'; errEl.style.display = 'block'; return; }
+  document.getElementById('authSubmitBtn').disabled = true;
+  errEl.style.display = 'none';
+
+  var body = 'id=' + encodeURIComponent(_sheetId)
+           + '&email=' + encodeURIComponent(email)
+           + '&password=' + encodeURIComponent(pass)
+           + (confirmNew ? '&confirm_new=1' : '');
+
+  fetch(_base + '/push/collabAuth.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    document.getElementById('authSubmitBtn').disabled = false;
+    if (d.prompt_create) {
+      // Email not found — show confirm-new panel
+      document.getElementById('authConfirmEmail').textContent = email;
+      document.getElementById('authConfirmNotice').style.display = 'block';
+      document.getElementById('authSubmitBtn').style.display  = 'none';
+      document.getElementById('authCreateBtn').style.display  = 'inline-block';
+      document.getElementById('authCreateBtn').disabled = false;
+      return;
+    }
+    if (d.error) { errEl.textContent = d.error; errEl.style.display = 'block'; return; }
+    if (d.ok) {
+      _collabUser     = { email: d.email, bio: d.bio || {} };
+      _collabRemember = document.getElementById('authRemember').checked;
+      _saveStoredUser(_collabUser);
+      if (d['new']) {
+        // New user — open bio form to fill in
+        _isNewCollabUser = true;
+        document.getElementById('authEditBioTitle').textContent = 'Create Your Profile';
+        document.getElementById('bioSkipBtn').style.display = 'inline-block';
+        _populateBioForm({}, email);
+        _showAuthPanel('authEditBio');
+      } else {
+        forceCloseProfileDialog();
+      }
+      _updateSignedInState();
+    }
+  })
+  .catch(function(err){
+    document.getElementById('authSubmitBtn').disabled = false;
+    errEl.textContent = 'Network error. Try again.';
+    errEl.style.display = 'block';
+  });
+}
+
+// ── Bio edit submission ───────────────────────────────────────────────────
+
+function submitBioEdit() {
+  if (!_collabUser) return;
+  var errEl  = document.getElementById('bioErr');
+  var btn    = document.getElementById('bioSubmitBtn');
+  var name     = document.getElementById('bioNameInput').value.trim();
+  var newEmail = document.getElementById('bioEmailInput').value.trim();
+  var discord  = document.getElementById('bioDiscordInput').value.trim();
+  var location = document.getElementById('bioLocationInput').value.trim();
+  var desc     = document.getElementById('bioDescInput').value.trim();
+
+  if (!newEmail) { errEl.textContent = 'Email is required.'; errEl.style.display = 'block'; return; }
+  btn.disabled = true;
+  errEl.style.display = 'none';
+
+  var oldEmail = _collabUser.email;
+
+  function _doEmailChange(cb) {
+    if (newEmail === oldEmail) { cb(null); return; }
+    fetch(_base + '/push/collabUpdateEmail.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'id=' + encodeURIComponent(_sheetId)
+          + '&email=' + encodeURIComponent(oldEmail)
+          + '&new_email=' + encodeURIComponent(newEmail)
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ cb(d.error || null); })
+    .catch(function(){ cb('Network error'); });
+  }
+
+  _doEmailChange(function(emailErr) {
+    if (emailErr) {
+      btn.disabled = false;
+      errEl.textContent = emailErr; errEl.style.display = 'block';
+      return;
+    }
+    var emailToUse = newEmail || oldEmail;
+    fetch(_base + '/push/updateBio.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'id='       + encodeURIComponent(_sheetId)
+          + '&email='   + encodeURIComponent(emailToUse)
+          + '&name='    + encodeURIComponent(name)
+          + '&discord=' + encodeURIComponent(discord)
+          + '&location='+ encodeURIComponent(location)
+          + '&description=' + encodeURIComponent(desc)
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      btn.disabled = false;
+      if (d.error) { errEl.textContent = d.error; errEl.style.display = 'block'; return; }
+      _collabUser.email   = emailToUse;
+      _collabUser.bio     = { name: name, discord: discord, location: location, description: desc };
+      _saveStoredUser(_collabUser);
+      _bioInitial = { name: name, email: emailToUse, discord: discord, location: location, description: desc };
+
+      if (_isNewCollabUser) {
+        // Fire-and-forget add to People tab
+        var displayName = name || emailToUse;
+        fetch(_base + '/push/addPerson.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'id=' + encodeURIComponent(_sheetId)
+              + '&name=' + encodeURIComponent(displayName)
+              + '&email=' + encodeURIComponent(emailToUse)
+        }).catch(function(){});
+      }
+      _updateSignedInState();
+      forceCloseProfileDialog();
+    })
+    .catch(function(){
+      btn.disabled = false;
+      errEl.textContent = 'Network error. Try again.';
+      errEl.style.display = 'block';
+    });
+  });
+}
+
+function _bioSkip() {
+  if (_isNewCollabUser && _collabUser) {
+    // Add them to People with email as name
+    fetch(_base + '/push/addPerson.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'id=' + encodeURIComponent(_sheetId)
+          + '&name=' + encodeURIComponent(_collabUser.email)
+          + '&email=' + encodeURIComponent(_collabUser.email)
+    }).catch(function(){});
+  }
+  _updateSignedInState();
+  forceCloseProfileDialog();
+}
+
+// ── Guarded dialog openers ────────────────────────────────────────────────
+
+function guardedOpenAddDialog() {
+  if (!_collabUser) { openProfileDialog(); return; }
+  openAddDialog();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+
+_loadStoredUser();
+_updateSignedInState();
 </script>
 </body>
 </html>

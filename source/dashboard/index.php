@@ -169,6 +169,78 @@ if ($_sheet_id && is_dir($_sheets_root)) {
       transition:background .12s;
     }
     .account-menu-item:hover { background:rgba(255,255,255,.1); color:#fff; }
+    .account-menu-divider { border:none; border-top:1px solid rgba(255,255,255,.12); margin:.2rem 0; }
+    .account-menu-label {
+      display:block; padding:.45rem 1rem .2rem;
+      font-family:'DINRegular',sans-serif; font-size:.68rem; color:rgba(255,255,255,.4);
+      text-transform:none; letter-spacing:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+
+    /* ── Auth overlay / dialog ── */
+    .overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.52); z-index:600;
+      align-items:center; justify-content:center; padding:1rem;
+      overflow-y:auto; overscroll-behavior:contain;
+    }
+    .overlay.open { display:flex; }
+    body:has(.overlay.open) { overflow:hidden; }
+    .auth-dialog {
+      background:#fff; border-radius:12px; padding:1.5rem;
+      width:100%; max-width:420px;
+      box-shadow:0 8px 40px rgba(0,0,0,.25);
+      max-height:90vh; overflow-y:auto;
+    }
+    .auth-dialog h2 {
+      font-family:'DINBlack',sans-serif; font-size:.95rem;
+      color:#1a1a2e; letter-spacing:.03em; margin-bottom:1rem; text-transform:uppercase;
+    }
+    .auth-notice {
+      font-size:.82rem; color:#666; margin-bottom:.9rem; line-height:1.5;
+      background:#f4f5fb; border-radius:6px; padding:.6rem .75rem; border:1px solid #e0e3f0;
+    }
+    .auth-field-group { margin-bottom:.7rem; }
+    .auth-field-group > label {
+      display:block; font-family:'DINBlack',sans-serif; font-size:.62rem;
+      text-transform:uppercase; letter-spacing:.06em; color:#888; margin-bottom:.28rem;
+    }
+    .auth-field-input {
+      display:block; width:100%; padding:.48rem .65rem;
+      font-family:'DINRegular',Arial,sans-serif; font-size:.88rem; color:#111;
+      border:1.5px solid #d0d0e0; border-radius:7px; background:#fafafa; outline:none;
+      transition:border-color .15s; box-sizing:border-box;
+    }
+    .auth-field-input:focus { border-color:#1a1a2e; background:#fff; }
+    .auth-remember {
+      display:flex; align-items:center; gap:.5rem; margin:.5rem 0;
+      font-family:'DINRegular',sans-serif; font-size:.8rem; color:#555; cursor:pointer;
+    }
+    .auth-err {
+      font-size:.75rem; color:#dc2626; margin-top:.45rem; display:none;
+      background:#fef2f2; border:1px solid #fee2e2; border-radius:6px; padding:.4rem .6rem;
+    }
+    .auth-dlg-actions { display:flex; justify-content:flex-end; gap:.6rem; margin-top:.85rem; }
+    .auth-btn-primary {
+      font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em;
+      background:#1a1a2e; color:#fff; border:none; border-radius:999px;
+      padding:.42rem .95rem; cursor:pointer; transition:opacity .15s;
+    }
+    .auth-btn-primary:disabled { opacity:.45; cursor:default; }
+    .auth-btn-cancel {
+      font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em;
+      background:#e8e8f0; color:#1a1a2e; border:none; border-radius:999px;
+      padding:.42rem .95rem; cursor:pointer; transition:background .15s;
+    }
+    .auth-btn-cancel:hover { background:#d8d8e0; }
+    .auth-status-row { display:flex; align-items:center; gap:.85rem; margin-bottom:1rem; }
+    .auth-avatar-edit {
+      width:52px; height:52px; border-radius:50%; flex-shrink:0;
+      background:#1a1a2e; color:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden;
+    }
+    .auth-identity { display:flex; flex-direction:column; gap:.2rem; }
+    .auth-name  { font-family:'DINBlack',sans-serif; font-size:.88rem; color:#1a1a2e; }
+    .auth-email { font-size:.78rem; color:#888; }
+    .auth-ge-textarea { resize:vertical; min-height:3rem; line-height:1.5; }
 
     /* ── Summary bar ─────────────────────────────────── */
     .summary-bar {
@@ -1428,7 +1500,7 @@ if ($_sheet_id && is_dir($_sheets_root)) {
     body:has(.di-overlay.open, .add-entry-overlay.open, .add-new-overlay.open,
              .notes-overlay.open, .sync-overlay.open, .game-edit-overlay.open,
              .err-overlay.open, #enableNotesOverlay.open, .comp-info-overlay.open,
-             #reloadLogOverlay.open) {
+             #reloadLogOverlay.open, #collabAuthOverlay.open) {
       overflow: hidden;
     }
     .err-dialog {
@@ -1606,7 +1678,11 @@ if ($_sheet_id && is_dir($_sheets_root)) {
         </span>
       </button>
       <div class="account-menu" id="accountMenu">
-        <button class="account-menu-item" onclick="accountMenuProfile()">Profile</button>
+        <div class="account-menu-label" id="collabUserLabel" style="display:none"></div>
+        <button class="account-menu-item" id="accountMenuAuthBtn" onclick="closeAccountMenu();_menuAuthAction()">Sign In</button>
+        <button class="account-menu-item" id="collabProfileBtn" style="display:none" onclick="closeAccountMenu();openCollabAuthDialog()">Collab Profile</button>
+        <hr class="account-menu-divider" />
+        <button class="account-menu-item" onclick="accountMenuProfile()">Settings</button>
         <button class="account-menu-item" onclick="accountMenuFetch()">Fetch</button>
         <button class="account-menu-item" onclick="accountMenuImport()">Import</button>
         <button class="account-menu-item" onclick="accountMenuSlideshow()">Slideshow</button>
@@ -1731,6 +1807,79 @@ if ($_sheet_id && is_dir($_sheets_root)) {
     <div class="sync-dialog-actions">
       <button class="ge-cancel-btn" id="reloadLogCloseBtn" onclick="closeReloadLogDialog()" disabled>Close</button>
     </div>
+  </div>
+</div>
+
+<!-- Collab sign-in overlay -->
+<div class="overlay" id="collabAuthOverlay" onclick="if(event.target===this)forceCloseCollabAuthDialog()">
+  <div class="auth-dialog" onclick="event.stopPropagation()"
+       onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();_collabAuthCmdEnter();}">
+
+    <!-- Panel 1: Sign-in form -->
+    <div id="collabAuthForm">
+      <h2>Sign In / Create Profile</h2>
+      <div class="auth-notice" id="collabAuthConfirmNotice" style="display:none">
+        No account found for <strong id="collabAuthConfirmEmail"></strong>. Create one?
+      </div>
+      <div class="auth-field-group">
+        <label>Email</label>
+        <input class="auth-field-input" id="collabAuthEmail" type="email" placeholder="you@example.com" autocomplete="email" />
+      </div>
+      <div class="auth-field-group">
+        <label>Password</label>
+        <input class="auth-field-input" id="collabAuthPass" type="password" placeholder="Password" autocomplete="current-password" />
+      </div>
+      <label class="auth-remember">
+        <input type="checkbox" id="collabAuthRemember" /> Remember me
+      </label>
+      <div class="auth-err" id="collabAuthErr"></div>
+      <div class="auth-dlg-actions">
+        <button class="auth-btn-cancel" onclick="forceCloseCollabAuthDialog()">Cancel</button>
+        <button class="auth-btn-primary" id="collabAuthSignInBtn" onclick="submitCollabAuth(false)">Sign In</button>
+        <button class="auth-btn-primary" id="collabAuthCreateBtn" style="display:none" onclick="submitCollabAuth(true)">Create Profile</button>
+      </div>
+    </div>
+
+    <!-- Panel 2: Bio edit form -->
+    <div id="collabBioForm" style="display:none">
+      <h2 id="collabBioTitle">Your Profile</h2>
+      <div class="auth-status-row">
+        <div class="auth-avatar-edit">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </div>
+        <div class="auth-identity">
+          <div class="auth-name" id="collabBioDispName"></div>
+          <div class="auth-email" id="collabBioDispEmail"></div>
+        </div>
+      </div>
+      <div class="auth-field-group">
+        <label>Name <span style="color:#aaa;font-size:.6rem;font-weight:400">(optional)</span></label>
+        <input class="auth-field-input" id="collabBioName" type="text" placeholder="Your name" />
+      </div>
+      <div class="auth-field-group">
+        <label>Email</label>
+        <input class="auth-field-input" id="collabBioEmail" type="email" autocomplete="email" />
+      </div>
+      <div class="auth-field-group">
+        <label>Discord handle <span style="color:#aaa;font-size:.6rem;font-weight:400">(optional)</span></label>
+        <input class="auth-field-input" id="collabBioDiscord" type="text" placeholder="@handle" />
+      </div>
+      <div class="auth-field-group">
+        <label>Location <span style="color:#aaa;font-size:.6rem;font-weight:400">(optional)</span></label>
+        <input class="auth-field-input" id="collabBioLocation" type="text" placeholder="City, Country" />
+      </div>
+      <div class="auth-field-group">
+        <label>About <span style="color:#aaa;font-size:.6rem;font-weight:400">(optional)</span></label>
+        <textarea class="auth-field-input auth-ge-textarea" id="collabBioDesc" placeholder="A short bio…"></textarea>
+      </div>
+      <div class="auth-err" id="collabBioErr"></div>
+      <div class="auth-dlg-actions">
+        <button class="auth-btn-cancel" onclick="forceCloseCollabAuthDialog()">Cancel</button>
+        <button class="auth-btn-cancel" id="collabBioSkipBtn" style="display:none" onclick="_collabBioSkip()">Skip</button>
+        <button class="auth-btn-primary" id="collabBioSaveBtn" onclick="submitCollabBioEdit()">Save</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -5943,6 +6092,9 @@ function submitGameEdit() {
 document.addEventListener('keydown', function(ev) {
   if (ev.key !== 'Escape') return;
   var el, d;
+  // Collab auth overlay
+  if (document.getElementById('collabAuthOverlay') &&
+      document.getElementById('collabAuthOverlay').classList.contains('open')) { forceCloseCollabAuthDialog(); return; }
   // Info-only overlays — always close
   if (document.getElementById('reloadLogOverlay').classList.contains('open') &&
       !document.getElementById('reloadLogCloseBtn').disabled)                { closeReloadLogDialog();        return; }
@@ -8322,6 +8474,260 @@ function openCompendiumInfo(pubName) {
 
 function closeCompendiumInfoDialog() {
   document.getElementById('compInfoOverlay').classList.remove('open');
+}
+
+// ── Collab sign-in (owner dashboard) ─────────────────────────────────────
+
+var COLLAB_STORAGE_KEY  = 'pitchboard_collab_user';
+var _collabUser         = null;  // null = signed out; { email, bio } = signed in
+var _collabRemember     = false;
+var _collabIsNew        = false;
+var _collabBioInitial   = {};
+
+(function _initCollab() {
+  var raw;
+  try { raw = localStorage.getItem(COLLAB_STORAGE_KEY); } catch(e){}
+  if (!raw) try { raw = sessionStorage.getItem(COLLAB_STORAGE_KEY); } catch(e){}
+  if (raw) try { _collabUser = JSON.parse(raw); } catch(e){}
+  _updateCollabMenu();
+}());
+
+function _saveCollabUser(u) {
+  var js = JSON.stringify(u);
+  try {
+    if (_collabRemember) localStorage.setItem(COLLAB_STORAGE_KEY, js);
+    else                 sessionStorage.setItem(COLLAB_STORAGE_KEY, js);
+  } catch(e){}
+}
+
+function _clearCollabUser() {
+  try { localStorage.removeItem(COLLAB_STORAGE_KEY); }   catch(e){}
+  try { sessionStorage.removeItem(COLLAB_STORAGE_KEY); } catch(e){}
+}
+
+function _updateCollabMenu() {
+  var lbl        = document.getElementById('collabUserLabel');
+  var btn        = document.getElementById('accountMenuAuthBtn');
+  var profileBtn = document.getElementById('collabProfileBtn');
+  if (!lbl || !btn) return;
+  if (_collabUser) {
+    var display = (_collabUser.bio && _collabUser.bio.name) ? _collabUser.bio.name : _collabUser.email;
+    lbl.textContent = display;
+    lbl.style.display = 'block';
+    btn.textContent = 'Sign Out';
+    if (profileBtn) profileBtn.style.display = 'block';
+  } else {
+    lbl.style.display = 'none';
+    btn.textContent = 'Sign In';
+    if (profileBtn) profileBtn.style.display = 'none';
+  }
+}
+
+function _menuAuthAction() {
+  if (_collabUser) {
+    _collabUser = null;
+    _clearCollabUser();
+    _updateCollabMenu();
+  } else {
+    openCollabAuthDialog();
+  }
+}
+
+function openCollabAuthDialog() {
+  if (_collabUser) {
+    // Open bio edit for signed-in user
+    _showCollabPanel('collabBioForm');
+    document.getElementById('collabBioTitle').textContent = 'Edit Profile';
+    document.getElementById('collabBioSkipBtn').style.display = 'none';
+    _populateCollabBio(_collabUser.bio || {}, _collabUser.email);
+    document.getElementById('collabAuthOverlay').classList.add('open');
+    // Fetch fresh bio
+    var fd = new FormData();
+    fd.append('id',    sheet_Id);
+    fd.append('email', _collabUser.email);
+    fetch(APP_BASE + 'push/collabGetBio.php', { method: 'POST', body: fd })
+      .then(function(r){ return r.json(); })
+      .then(function(d){ if (d.bio) { _collabUser.bio = d.bio; _populateCollabBio(d.bio, _collabUser.email); } })
+      .catch(function(){});
+  } else {
+    _showCollabPanel('collabAuthForm');
+    document.getElementById('collabAuthEmail').value = '';
+    document.getElementById('collabAuthPass').value  = '';
+    document.getElementById('collabAuthErr').style.display = 'none';
+    document.getElementById('collabAuthConfirmNotice').style.display = 'none';
+    document.getElementById('collabAuthSignInBtn').style.display = 'inline-block';
+    document.getElementById('collabAuthCreateBtn').style.display  = 'none';
+    document.getElementById('collabAuthOverlay').classList.add('open');
+    setTimeout(function(){ document.getElementById('collabAuthEmail').focus(); }, 60);
+  }
+}
+
+function forceCloseCollabAuthDialog() {
+  document.getElementById('collabAuthOverlay').classList.remove('open');
+  _collabIsNew = false;
+}
+
+function _collabAuthCmdEnter() {
+  var bio  = document.getElementById('collabBioForm');
+  var auth = document.getElementById('collabAuthForm');
+  if (bio && bio.style.display !== 'none')  { submitCollabBioEdit(); return; }
+  if (auth && auth.style.display !== 'none') {
+    var create = document.getElementById('collabAuthCreateBtn');
+    if (create && create.style.display !== 'none') submitCollabAuth(true);
+    else submitCollabAuth(false);
+  }
+}
+
+function _showCollabPanel(id) {
+  ['collabAuthForm','collabBioForm'].forEach(function(p){
+    var el = document.getElementById(p);
+    if (el) el.style.display = (p === id) ? '' : 'none';
+  });
+}
+
+function _populateCollabBio(bio, email) {
+  document.getElementById('collabBioName').value     = bio.name     || '';
+  document.getElementById('collabBioEmail').value    = email        || '';
+  document.getElementById('collabBioDiscord').value  = bio.discord  || '';
+  document.getElementById('collabBioLocation').value = bio.location || '';
+  document.getElementById('collabBioDesc').value     = bio.description || '';
+  document.getElementById('collabBioDispName').textContent  = bio.name || email || '';
+  document.getElementById('collabBioDispEmail').textContent = email || '';
+  document.getElementById('collabBioErr').style.display = 'none';
+  _collabBioInitial = {
+    name: bio.name || '', email: email || '', discord: bio.discord || '',
+    location: bio.location || '', description: bio.description || ''
+  };
+}
+
+function submitCollabAuth(confirmNew) {
+  var email = document.getElementById('collabAuthEmail').value.trim();
+  var pass  = document.getElementById('collabAuthPass').value;
+  var errEl = document.getElementById('collabAuthErr');
+  if (!email || !pass) { errEl.textContent = 'Email and password are required.'; errEl.style.display = 'block'; return; }
+  document.getElementById('collabAuthSignInBtn').disabled = true;
+  errEl.style.display = 'none';
+
+  var fd = new FormData();
+  fd.append('id', sheet_Id);
+  fd.append('email', email);
+  fd.append('password', pass);
+  if (confirmNew) fd.append('confirm_new', '1');
+
+  fetch(APP_BASE + 'push/collabAuth.php', { method: 'POST', body: fd })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    document.getElementById('collabAuthSignInBtn').disabled = false;
+    if (d.prompt_create) {
+      document.getElementById('collabAuthConfirmEmail').textContent = email;
+      document.getElementById('collabAuthConfirmNotice').style.display = 'block';
+      document.getElementById('collabAuthSignInBtn').style.display  = 'none';
+      document.getElementById('collabAuthCreateBtn').style.display  = 'inline-block';
+      document.getElementById('collabAuthCreateBtn').disabled = false;
+      return;
+    }
+    if (d.error) { errEl.textContent = d.error; errEl.style.display = 'block'; return; }
+    if (d.ok) {
+      _collabUser     = { email: d.email, bio: d.bio || {} };
+      _collabRemember = document.getElementById('collabAuthRemember').checked;
+      _saveCollabUser(_collabUser);
+      if (d['new']) {
+        _collabIsNew = true;
+        document.getElementById('collabBioTitle').textContent = 'Create Your Profile';
+        document.getElementById('collabBioSkipBtn').style.display = 'inline-block';
+        _populateCollabBio({}, email);
+        _showCollabPanel('collabBioForm');
+      } else {
+        forceCloseCollabAuthDialog();
+      }
+      _updateCollabMenu();
+    }
+  })
+  .catch(function(){
+    document.getElementById('collabAuthSignInBtn').disabled = false;
+    errEl.textContent = 'Network error. Try again.';
+    errEl.style.display = 'block';
+  });
+}
+
+function submitCollabBioEdit() {
+  if (!_collabUser) return;
+  var errEl    = document.getElementById('collabBioErr');
+  var btn      = document.getElementById('collabBioSaveBtn');
+  var name     = document.getElementById('collabBioName').value.trim();
+  var newEmail = document.getElementById('collabBioEmail').value.trim();
+  var discord  = document.getElementById('collabBioDiscord').value.trim();
+  var location = document.getElementById('collabBioLocation').value.trim();
+  var desc     = document.getElementById('collabBioDesc').value.trim();
+  if (!newEmail) { errEl.textContent = 'Email is required.'; errEl.style.display = 'block'; return; }
+  btn.disabled = true; errEl.style.display = 'none';
+
+  var oldEmail = _collabUser.email;
+
+  function doSave() {
+    var fd = new FormData();
+    fd.append('id', sheet_Id);
+    fd.append('email', newEmail);
+    fd.append('name', name);
+    fd.append('discord', discord);
+    fd.append('location', location);
+    fd.append('description', desc);
+    fetch(APP_BASE + 'push/updateBio.php', { method: 'POST', body: fd })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      btn.disabled = false;
+      if (d.error) { errEl.textContent = d.error; errEl.style.display = 'block'; return; }
+      _collabUser.email = newEmail;
+      _collabUser.bio   = { name: name, discord: discord, location: location, description: desc };
+      _saveCollabUser(_collabUser);
+      if (_collabIsNew) {
+        var fd2 = new FormData();
+        fd2.append('id', sheet_Id);
+        fd2.append('name', name || newEmail);
+        fd2.append('email', newEmail);
+        fetch(APP_BASE + 'push/addPerson.php', { method: 'POST', body: fd2 }).catch(function(){});
+      }
+      _updateCollabMenu();
+      forceCloseCollabAuthDialog();
+    })
+    .catch(function(){
+      btn.disabled = false;
+      errEl.textContent = 'Network error. Try again.';
+      errEl.style.display = 'block';
+    });
+  }
+
+  if (newEmail !== oldEmail) {
+    var fd3 = new FormData();
+    fd3.append('id', sheet_Id);
+    fd3.append('email', oldEmail);
+    fd3.append('new_email', newEmail);
+    fetch(APP_BASE + 'push/collabUpdateEmail.php', { method: 'POST', body: fd3 })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d.error) { btn.disabled = false; errEl.textContent = d.error; errEl.style.display = 'block'; return; }
+      doSave();
+    })
+    .catch(function(){
+      btn.disabled = false;
+      errEl.textContent = 'Network error. Try again.';
+      errEl.style.display = 'block';
+    });
+  } else {
+    doSave();
+  }
+}
+
+function _collabBioSkip() {
+  if (_collabIsNew && _collabUser) {
+    var fd = new FormData();
+    fd.append('id', sheet_Id);
+    fd.append('name', _collabUser.email);
+    fd.append('email', _collabUser.email);
+    fetch(APP_BASE + 'push/addPerson.php', { method: 'POST', body: fd }).catch(function(){});
+  }
+  _updateCollabMenu();
+  forceCloseCollabAuthDialog();
 }
 </script>
 </body>

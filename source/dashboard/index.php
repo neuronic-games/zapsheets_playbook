@@ -1687,7 +1687,6 @@ if ($_sheet_id && is_dir($_sheets_root)) {
         <button class="account-menu-item" onclick="accountMenuFeedback()">Feedback</button>
         <button class="account-menu-item" onclick="accountMenuHelp()">Help</button>
         <hr class="account-menu-divider" />
-        <div class="account-menu-label" id="collabUserLabel" style="display:none"></div>
         <button class="account-menu-item" id="accountMenuAuthBtn" onclick="closeAccountMenu();_menuAuthAction()">Sign In</button>
       </div>
     </div>
@@ -8506,18 +8505,9 @@ function _clearCollabUser() {
 }
 
 function _updateCollabMenu() {
-  var lbl = document.getElementById('collabUserLabel');
   var btn = document.getElementById('accountMenuAuthBtn');
-  if (!lbl || !btn) return;
-  if (_collabUser) {
-    var display = (_collabUser.bio && _collabUser.bio.name) ? _collabUser.bio.name : _collabUser.email;
-    lbl.textContent = display;
-    lbl.style.display = 'block';
-    btn.textContent = 'Sign Out';
-  } else {
-    lbl.style.display = 'none';
-    btn.textContent = 'Sign In';
-  }
+  if (!btn) return;
+  btn.textContent = _collabUser ? 'Sign Out' : 'Sign In';
 }
 
 function _menuAuthAction() {

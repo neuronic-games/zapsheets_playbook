@@ -1678,10 +1678,7 @@ if ($_sheet_id && is_dir($_sheets_root)) {
         </span>
       </button>
       <div class="account-menu" id="accountMenu">
-        <div class="account-menu-label" id="collabUserLabel" style="display:none"></div>
-        <button class="account-menu-item" id="accountMenuAuthBtn" onclick="closeAccountMenu();_menuAuthAction()">Sign In</button>
-        <button class="account-menu-item" id="collabProfileBtn" style="display:none" onclick="closeAccountMenu();openCollabAuthDialog()">Profile</button>
-        <hr class="account-menu-divider" />
+        <button class="account-menu-item" onclick="closeAccountMenu();openCollabAuthDialog()">Profile</button>
         <button class="account-menu-item" onclick="accountMenuProfile()">Settings</button>
         <button class="account-menu-item" onclick="accountMenuFetch()">Fetch</button>
         <button class="account-menu-item" onclick="accountMenuImport()">Import</button>
@@ -1689,6 +1686,9 @@ if ($_sheet_id && is_dir($_sheets_root)) {
         <button class="account-menu-item" onclick="accountMenuRelease()">Releases</button>
         <button class="account-menu-item" onclick="accountMenuFeedback()">Feedback</button>
         <button class="account-menu-item" onclick="accountMenuHelp()">Help</button>
+        <hr class="account-menu-divider" />
+        <div class="account-menu-label" id="collabUserLabel" style="display:none"></div>
+        <button class="account-menu-item" id="accountMenuAuthBtn" onclick="closeAccountMenu();_menuAuthAction()">Sign In</button>
       </div>
     </div>
   </div>
@@ -8506,20 +8506,17 @@ function _clearCollabUser() {
 }
 
 function _updateCollabMenu() {
-  var lbl        = document.getElementById('collabUserLabel');
-  var btn        = document.getElementById('accountMenuAuthBtn');
-  var profileBtn = document.getElementById('collabProfileBtn');
+  var lbl = document.getElementById('collabUserLabel');
+  var btn = document.getElementById('accountMenuAuthBtn');
   if (!lbl || !btn) return;
   if (_collabUser) {
     var display = (_collabUser.bio && _collabUser.bio.name) ? _collabUser.bio.name : _collabUser.email;
     lbl.textContent = display;
     lbl.style.display = 'block';
     btn.textContent = 'Sign Out';
-    if (profileBtn) profileBtn.style.display = 'block';
   } else {
     lbl.style.display = 'none';
     btn.textContent = 'Sign In';
-    if (profileBtn) profileBtn.style.display = 'none';
   }
 }
 

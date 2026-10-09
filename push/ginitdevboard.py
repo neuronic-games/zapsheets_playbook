@@ -67,6 +67,10 @@ TABS = {
         ],
         'freeze': False,
     },
+    'Bios': {
+        'rows': [['Email', 'Image', 'Description', 'Skills', 'Address', 'Phone', 'Messaging', 'Payment', 'Notes']],
+        'freeze': True,
+    },
 }
 
 existing   = {w.title: w for w in wb.worksheets()}

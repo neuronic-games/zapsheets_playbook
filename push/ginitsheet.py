@@ -64,6 +64,9 @@ TABS = {
     'Pitches': [
         ['Date', 'Game', 'Publisher', 'Contact', 'Event', 'Status', 'Notes'],
     ],
+    'Bios': [
+        ['Email', 'Image', 'Description', 'Skills', 'Address', 'Phone', 'Messaging', 'Payment', 'Notes'],
+    ],
 }
 
 results = {}

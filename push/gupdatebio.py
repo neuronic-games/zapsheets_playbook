@@ -63,8 +63,17 @@ except Exception as e:
 all_ws = wb.worksheets()
 ws = next((w for w in all_ws if w.title.lower() == 'bios'), None)
 if ws is None:
-    print(json.dumps({"error": "Bios worksheet not found"}))
-    sys.exit(1)
+    # Auto-create the Bios tab with the standard headers
+    try:
+        ws = wb.add_worksheet(title='Bios', rows=200, cols=10)
+        ws.append_row(
+            ['Email', 'Image', 'Description', 'Skills', 'Address', 'Phone', 'Messaging', 'Payment', 'Notes'],
+            value_input_option='USER_ENTERED'
+        )
+        ws.freeze(rows=1)
+    except Exception as e:
+        print(json.dumps({"error": f"Bios worksheet not found and could not be created: {str(e)}"}))
+        sys.exit(1)
 
 try:
     all_values = ws.get_all_values()

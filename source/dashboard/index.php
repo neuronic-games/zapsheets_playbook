@@ -1680,7 +1680,7 @@ if ($_sheet_id && is_dir($_sheets_root)) {
       <div class="account-menu" id="accountMenu">
         <div class="account-menu-label" id="collabUserLabel" style="display:none"></div>
         <button class="account-menu-item" id="accountMenuAuthBtn" onclick="closeAccountMenu();_menuAuthAction()">Sign In</button>
-        <button class="account-menu-item" id="collabProfileBtn" style="display:none" onclick="closeAccountMenu();openCollabAuthDialog()">Collab Profile</button>
+        <button class="account-menu-item" id="collabProfileBtn" style="display:none" onclick="closeAccountMenu();openCollabAuthDialog()">Profile</button>
         <hr class="account-menu-divider" />
         <button class="account-menu-item" onclick="accountMenuProfile()">Settings</button>
         <button class="account-menu-item" onclick="accountMenuFetch()">Fetch</button>

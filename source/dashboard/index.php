@@ -3270,10 +3270,15 @@ function buildGameView(pitches) {
         ' data-pub-locked="1"' +
         ' onclick="event.stopPropagation();addBtnClick(this)">+ Pitch</button>';
       var pubViewBtn = '<button class="add-entry-btn" data-pub="' + escHtml(p) + '" onclick="event.stopPropagation();goToPublisher(this.getAttribute(\'data-pub\'))">View</button>';
+      var pubEmailBtn = '<button class="add-entry-btn"' +
+        ' data-game="'      + escHtml(g) + '"' +
+        ' data-publisher="' + escHtml(p) + '"' +
+        ' data-contact="'   + escHtml(pubLastContact) + '"' +
+        ' onclick="event.stopPropagation();openGameEmail(this.getAttribute(\'data-game\'),this.getAttribute(\'data-publisher\'),this.getAttribute(\'data-contact\'))">&#9993; Email</button>';
 
       var chunk = '<div class="sub-group' + altClass + '">';
       chunk += '<div class="sub-label pub-passed-header" onclick="togglePubPassed(this)" style="' + headerColor + 'font-size:.75rem">' +
-               '<span class="pub-title-group"><span>' + escHtml(p) + '</span>' + pubViewBtn + pubAddBtn + '</span>' +
+               '<span class="pub-title-group"><span>' + escHtml(p) + '</span>' + pubViewBtn + pubAddBtn + pubEmailBtn + '</span>' +
                (isPassed || isGoneCold || isSigned ? '' : pubAgeTag) + pubBadge +
                '<span class="pub-expand-chevron">▶</span>' +
                '</div>';

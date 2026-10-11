@@ -757,9 +757,14 @@ body:has(.overlay.open) { overflow: hidden; }
 <body>
 
 <div class="top-bar">
-  <a class="top-bar-logo" href="<?= _ps_e($_pbUrl) ?>"><span class="pb-pitch">Pitch</span><span class="pb-board">Board</span></a>
-  <span class="top-bar-sep">›</span>
-  <span class="top-bar-game"><?= _ps_e($_gameName) ?></span>
+  <div style="display:flex;flex-direction:column;gap:.1rem">
+    <div style="display:flex;align-items:center;gap:.5rem">
+      <a class="top-bar-logo" href="<?= _ps_e($_pbUrl) ?>"><span class="pb-pitch">Pitch</span><span class="pb-board">Board</span></a>
+      <span class="top-bar-sep">›</span>
+      <span class="top-bar-game"><?= _ps_e($_gameName) ?></span>
+    </div>
+    <div id="topBarUserLine" style="display:none;font-family:'DINRegular',sans-serif;font-size:.72rem;color:rgba(255,255,255,.55);padding-left:.05rem"></div>
+  </div>
   <div class="account-menu-wrap" style="margin-left:auto">
     <button class="top-btn-collab" id="accountMenuBtn" title="Account" onclick="toggleAccountMenu()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
@@ -1441,6 +1446,16 @@ function _updateMenuLabel() {
 function _updateSignedInState() {
   var banner = document.getElementById('notSignedInBanner');
   if (banner) banner.style.display = _collabUser ? 'none' : 'flex';
+  var userLine = document.getElementById('topBarUserLine');
+  if (userLine) {
+    if (_collabUser) {
+      var display = (_collabUser.bio && _collabUser.bio.name) ? _collabUser.bio.name : _collabUser.email;
+      userLine.textContent = display;
+      userLine.style.display = 'block';
+    } else {
+      userLine.style.display = 'none';
+    }
+  }
   _updateMenuLabel();
 }
 

@@ -276,8 +276,6 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 .rn-dialog-actions { display:flex; justify-content:flex-end; padding-top:.9rem; }
 
 .dev-empty { padding:2rem 1rem; text-align:center; font-family:'DINRegular',sans-serif; font-size:.85rem; color:#aaa; }
-.dev-empty-nosessions { font-family:'DINBlack',sans-serif; font-size:.7rem; letter-spacing:.12em; color:#b8cdd8; padding:1.25rem 1rem; }
-
 /* ── Overlay & session dialog ── */
 .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; align-items:center; justify-content:center; padding:1rem; }
 .overlay.open { display:flex; }
@@ -1059,7 +1057,7 @@ function renderSessions() {
   if (!sessions.length) {
     wrap.innerHTML = q
       ? '<div class="dev-empty">No sessions match &ldquo;' + esc(q) + '&rdquo;.</div>'
-      : '<div class="dev-empty dev-empty-nosessions">NO SESSIONS</div>';
+      : '<div class="dev-empty">No playtest sessions yet. Sign in to log one.</div>';
     return;
   }
   var html = '';

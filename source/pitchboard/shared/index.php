@@ -510,18 +510,18 @@ body {
 
 /* ── Not-signed-in banner ── */
 #notSignedInBanner {
-  background: #fff8f0; border: 1.5px solid #fde68a; border-radius: 8px;
-  padding: .55rem 1rem; margin-bottom: .65rem;
   display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+  background: #fff; border: 1.5px solid #d8eaf2; border-radius: 8px;
+  padding: .6rem .9rem; margin-bottom: .6rem;
   font-family: 'DINRegular', sans-serif; font-size: .82rem; color: #555;
 }
 #notSignedInBanner button {
   flex-shrink: 0; font-family: 'DINBlack', sans-serif; font-size: .7rem;
   text-transform: uppercase; letter-spacing: .06em;
-  background: #1a1a2e; color: #fff; border: none; border-radius: 999px;
-  padding: .3rem .75rem; cursor: pointer; transition: background .15s;
+  background: #1a5f7a; color: #fff; border: none; border-radius: 6px;
+  padding: .32rem .8rem; cursor: pointer; white-space: nowrap; transition: background .15s;
 }
-#notSignedInBanner button:hover { background: #252545; }
+#notSignedInBanner button:hover { background: #145070; }
 
 /* ── Auth overlay / dialog ── */
 .overlay {
@@ -780,6 +780,12 @@ body:has(.overlay.open) { overflow: hidden; }
   $_os = $_ol['Status'] ?? '';
   $_ob = $_os ? '<span class="badge badge-' . _ps_status_class($_os) . '">' . _ps_e($_os) . '</span>' : '';
   ?>
+  <!-- Not-signed-in banner -->
+  <div id="notSignedInBanner" style="display:none">
+    <span>Create a profile to add and edit pitches.</span>
+    <button onclick="openProfileDialog()">Sign In / Create Profile</button>
+  </div>
+
   <div class="card">
     <div class="card-header">
       <span class="card-title"><?= _ps_e($_gameName) ?></span>
@@ -801,12 +807,6 @@ body:has(.overlay.open) { overflow: hidden; }
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Not-signed-in banner -->
-    <div id="notSignedInBanner" style="display:none">
-      <span>Sign in to add and edit pitches.</span>
-      <button onclick="openProfileDialog()">Sign In / Create Profile</button>
     </div>
 
     <div class="card-body">

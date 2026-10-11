@@ -417,6 +417,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 /* Obs pairs */
 .obs-pair { margin-bottom:.75rem; }
 .obs-pair:last-child { margin-bottom:0; }
+.obs-section { display:flex; flex-direction:column; gap:.3rem; }
 .obs-pair-labels { display:grid; grid-template-columns:1fr 1fr; gap:.9rem; margin-bottom:.3rem; }
 .obs-pair-labels label { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.07em; color:#888; }
 .obs-pair-inputs { display:grid; grid-template-columns:1fr 1fr; gap:.9rem; }
@@ -799,8 +800,8 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 </div>
 
 <!-- Session dialog -->
-<div class="overlay" id="sessionOverlay" onclick="if(event.target===this)closeSessionDialog()">
-  <div class="session-dialog">
+<div class="overlay" id="sessionOverlay" onclick="if(event.target===this){var _d=this.querySelector('.session-dialog');if(_editMode?hasSessionData():hasSessionData())shakeDialog(_d);else closeSessionDialog();}">
+  <div class="session-dialog" onclick="event.stopPropagation()" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitSession();}"  >
     <h2>
       <span class="session-dialog-title" id="sessionDialogTitle">+ Session — <span><?= _ds_e($_gameName) ?></span></span>
       <div class="session-dialog-controls">
@@ -851,7 +852,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
             <input type="text" class="field-input" id="sLocation" placeholder="" autocomplete="off" />
           </div>
           <div class="field-group">
-            <label>Test Number</label>
+            <label>Session Number</label>
             <input type="text" class="field-input" id="sTestNum" readonly
               style="background:#f0f4f8;color:#888;cursor:default;" />
           </div>
@@ -865,11 +866,15 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 
     <hr class="field-sep" />
 
-    <div id="obsContainer"></div>
+    <!-- Observations + Solutions (dynamic pairs) -->
+    <div class="obs-section">
+      <div class="obs-pair-labels"><label>Observations</label><label>Solutions</label></div>
+      <div id="obsContainer"></div>
+    </div>
 
     <div class="dialog-err" id="sessionErr"></div>
+    <span class="obs-kbd-hint">⌘ / Ctrl + Arrow — move between fields &nbsp;·&nbsp; ⌘ / Ctrl + Enter — save</span>
     <div class="dialog-actions">
-      <span class="obs-kbd-hint">⌘ / Ctrl + Arrow — move between fields</span>
       <button class="btn-delete" id="deleteSessionBtn" style="display:none" onclick="deleteSession()">Delete</button>
       <button class="btn-cancel" onclick="closeSessionDialog()">Cancel</button>
       <button class="btn-primary" id="sessionBtn" onclick="submitSession()">Add Session</button>
@@ -2384,6 +2389,15 @@ function _confirmOk() {
   if (cb) cb();
 }
 
+function hasSessionData() {
+  if ((document.getElementById('sLocation').value || '').trim()) return true;
+  var inputs = document.querySelectorAll('#obsContainer input, #obsContainer textarea');
+  for (var i = 0; i < inputs.length; i++) { if (inputs[i].value.trim()) return true; }
+  var tInputs = document.querySelectorAll('#testersContainer input');
+  for (var i = 0; i < tInputs.length; i++) { if (tInputs[i].value.trim()) return true; }
+  return false;
+}
+
 // ── Esc handler ───────────────────────────────────────────────────────────────
 document.addEventListener('keydown', function(ev) {
   if (ev.key !== 'Escape') return;
@@ -2394,7 +2408,9 @@ document.addEventListener('keydown', function(ev) {
     closeProfileDialog(); return;
   }
   if (document.getElementById('sessionOverlay').classList.contains('open')) {
-    closeSessionDialog(); return;
+    var _d = document.querySelector('#sessionOverlay .session-dialog');
+    if (hasSessionData()) { shakeDialog(_d); } else { closeSessionDialog(); }
+    return;
   }
   if (document.getElementById('tmOverlay').classList.contains('open')) {
     closeTMDialog(); return;

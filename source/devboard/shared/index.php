@@ -1060,6 +1060,16 @@ function renderSessions() {
       : '<div class="dev-empty">No playtest sessions yet. Sign in to log one.</div>';
     return;
   }
+  var visibleSessions = sessions.filter(function(s) {
+    var evType = (s.eventType || '').toLowerCase();
+    return evType !== 'time' && evType !== 'material';
+  });
+  if (!visibleSessions.length) {
+    wrap.innerHTML = q
+      ? '<div class="dev-empty">No sessions match &ldquo;' + esc(q) + '&rdquo;.</div>'
+      : '<div class="dev-empty">No playtest sessions yet. Sign in to log one.</div>';
+    return;
+  }
   var html = '';
   sessions.forEach(function(s, i) {
     var allIdx = _allSessions.indexOf(s);  // index into _allSessions for edit dialog

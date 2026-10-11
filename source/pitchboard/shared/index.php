@@ -867,7 +867,7 @@ body:has(.overlay.open) { overflow: hidden; }
 
   <!-- ── Add Pitch dialog ── -->
   <div class="collab-overlay" id="addOverlay" onclick="if(event.target===this){var d=this.querySelector('.collab-dialog');if(hasDialogData(d))shakeDialog(d);else closeAddDialog();}">
-    <div class="collab-dialog">
+    <div class="collab-dialog" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitAdd();}" onclick="event.stopPropagation()">
       <div class="collab-dialog-title">Add Pitch</div>
       <div class="collab-field">
         <label class="collab-label">Publisher *</label>
@@ -918,7 +918,7 @@ body:has(.overlay.open) { overflow: hidden; }
 
   <!-- ── Edit Pitch dialog ── -->
   <div class="collab-overlay" id="editOverlay" onclick="if(event.target===this){var d=this.querySelector('.collab-dialog');if(hasDialogData(d))shakeDialog(d);else closeEditDialog();}">
-    <div class="collab-dialog" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitEdit();}">
+    <div class="collab-dialog" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitEdit();}" onclick="event.stopPropagation()">
       <div class="collab-dialog-title" id="editDialogTitle">Edit Pitch</div>
       <div class="collab-field-row">
         <div>

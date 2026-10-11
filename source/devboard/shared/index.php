@@ -1130,6 +1130,19 @@ function clearSearch() {
   renderSessions();
 }
 
+function _handleSessionsResponse(rows) {
+  if (rows && rows.__error) {
+    // Server returned a structured error (tab missing, API failure, etc.)
+    var msg = rows.message || 'Sessions could not be loaded.';
+    document.getElementById('sessionsWrap').innerHTML =
+      '<div class="dev-empty" style="color:#c05;"><b>Could not load sessions.</b><br><span style="font-size:.8em;color:#888">' + esc(msg) + '</span><br><br>' +
+      '<button onclick="reloadSessions()" style="font-family:DINBlack,sans-serif;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;background:#1a5f7a;color:#fff;border:none;border-radius:6px;padding:.32rem .8rem;cursor:pointer">Retry</button></div>';
+    return;
+  }
+  _allRows = Array.isArray(rows) ? rows : [];
+  renderSessions();
+}
+
 function loadSessions(force) {
   var fd = new FormData();
   fd.append('id',   SHEET_ID);
@@ -1137,17 +1150,12 @@ function loadSessions(force) {
   if (force) fd.append('force', '1');
   fetch(APP_BASE + 'push/getDevJson.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })
-    .then(function(rows) {
-      _allRows = Array.isArray(rows) ? rows : [];
-      renderSessions();
-    })
+    .then(_handleSessionsResponse)
     .catch(function(err) {
       console.error('[DevBoard] loadSessions failed:', err);
-      // Only show error if no sessions have been loaded yet
-      if (!_allRows.length) {
-        document.getElementById('sessionsWrap').innerHTML =
-          '<div class="dev-empty">Could not load sessions. Please try again later.</div>';
-      }
+      document.getElementById('sessionsWrap').innerHTML =
+        '<div class="dev-empty" style="color:#c05;"><b>Could not load sessions.</b><br><span style="font-size:.8em;color:#888">Network error. Check your connection and try again.</span><br><br>' +
+        '<button onclick="reloadSessions()" style="font-family:DINBlack,sans-serif;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;background:#1a5f7a;color:#fff;border:none;border-radius:6px;padding:.32rem .8rem;cursor:pointer">Retry</button></div>';
     });
 }
 
@@ -1161,12 +1169,13 @@ function reloadSessions() {
   fetch(APP_BASE + 'push/getDevJson.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })
     .then(function(rows) {
-      _allRows = Array.isArray(rows) ? rows : [];
-      renderSessions();
       if (btn) btn.classList.remove('loading');
+      _handleSessionsResponse(rows);
     })
     .catch(function() {
       if (btn) btn.classList.remove('loading');
+      document.getElementById('sessionsWrap').innerHTML =
+        '<div class="dev-empty" style="color:#c05;"><b>Could not reload sessions.</b> Check your connection.</div>';
     });
 }
 

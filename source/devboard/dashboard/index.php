@@ -3105,7 +3105,8 @@ function doFetch() {
 
   var sheets = ['games', 'people', 'bios', 'contracts', 'settings'];
 
-  var pushBase = APP_BASE + 'push/pushSheetUpdate.php';
+  var pushBase    = APP_BASE + 'push/pushSheetUpdate.php';
+  var devJsonBase = APP_BASE + 'push/getDevJson.php';
   var idx = 0;
 
   function finish() {
@@ -3115,8 +3116,45 @@ function doFetch() {
     document.getElementById('syncDoneBtn').disabled = false;
   }
 
+  // After main sheets are done, re-fetch all active [GameName] dev tabs
+  function fetchDevTabs() {
+    var activeGames = Object.keys(ACTIVE_KEYS);   // lowercased game names with dev tabs
+    // Match to proper-cased names from GAMES_RAW
+    var gameNames = (GAMES_RAW || [])
+      .map(function(g) { return (g.Name || '').trim(); })
+      .filter(function(n) { return n && ACTIVE_KEYS.hasOwnProperty(n.toLowerCase()); });
+
+    if (!gameNames.length) { finish(); return; }
+
+    syncLog('Refreshing dev tabs…', 'info');
+    var gi = 0;
+    function nextDev() {
+      if (gi >= gameNames.length) { finish(); return; }
+      var gameName = gameNames[gi++];
+      var fd = new FormData();
+      fd.append('id',    SHEET_ID);
+      fd.append('game',  gameName);
+      fd.append('force', '1');
+      fetch(devJsonBase, { method:'POST', body:fd })
+        .then(function(r) { return r.json(); })
+        .then(function(rows) {
+          if (rows && rows.__error) {
+            syncLog('  ⚠ [' + gameName + '] dev: ' + (rows.message || 'error'), 'error');
+          } else {
+            syncLog('  ✓ [' + gameName + '] dev (' + (Array.isArray(rows) ? rows.length : 0) + ' rows)', 'ok');
+          }
+          nextDev();
+        })
+        .catch(function() {
+          syncLog('  ✗ [' + gameName + '] dev: network error', 'error');
+          nextDev();
+        });
+    }
+    nextDev();
+  }
+
   function pushNext() {
-    if (idx >= sheets.length) { finish(); return; }
+    if (idx >= sheets.length) { fetchDevTabs(); return; }
     var sheetName = sheets[idx++];
     syncLog('Fetching ' + sheetName + '…', 'info');
     var xhr = new XMLHttpRequest();

@@ -9,6 +9,11 @@
 // POST params:
 //   id   — Google Spreadsheet ID
 //   game — Game name (tab name will be "[{game}] dev")
+//
+// Returns:
+//   JSON array of row objects on success
+//   { "__error": true, "message": "..." } when the tab is missing or fetch fails
+//   (never a plain {"error":"..."} object, which callers can't distinguish from data)
 
 error_reporting(0);
 ini_set('display_errors', '0');
@@ -20,12 +25,13 @@ $sheetId  = trim($_POST['id']   ?? '');
 $gameName = trim($_POST['game'] ?? '');
 
 if (!$sheetId || !$gameName) {
-    echo json_encode(['error' => 'Missing id or game']);
+    echo json_encode(['__error' => true, 'message' => 'Missing id or game']);
     exit;
 }
 
 $tabName   = '[' . $gameName . '] dev';
-$cacheFile = dirname(__DIR__) . '/sheets/' . $sheetId . '/' . strtolower($tabName) . '.json';
+$cacheDir  = dirname(__DIR__) . '/sheets/' . $sheetId;
+$cacheFile = $cacheDir . '/' . strtolower($tabName) . '.json';
 
 // ── Serve from cache when available (skip if force=1) ────────────────────────
 $force = !empty($_POST['force']);
@@ -35,7 +41,7 @@ if (!$force && file_exists($cacheFile)) {
     exit;
 }
 
-// ── First-time load: fetch live and populate the cache ────────────────────────
+// ── Live fetch: call gread.py directly ───────────────────────────────────────
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 $arg        = $sheetId . 'sheetname' . $tabName;
 
@@ -45,14 +51,27 @@ $cmd    = escapeshellarg($pythonPath) . ' '
 $output = trim((string) shell_exec($cmd));
 
 if ($output === '') {
-    echo json_encode([]);
+    // gread.py produced no output — likely a Python crash or env issue
+    echo json_encode(['__error' => true, 'message' => 'Session data could not be fetched. Try the reload button or contact the board owner.']);
     exit;
 }
 
 $data = json_decode($output, true);
 
+// gread.py emits {"error":"..."} when the tab doesn't exist or the API errors
+if (!is_array($data)) {
+    $msg = (is_array($data) ? '' : '') ?: 'Sessions tab not found or could not be read.';
+    if (isset($data['error'])) $msg = $data['error'];
+    echo json_encode(['__error' => true, 'message' => $msg]);
+    exit;
+}
+
+// ── Write cache explicitly (belt-and-suspenders — gread.py also writes it) ───
+if (!is_dir($cacheDir)) { mkdir($cacheDir, 0777, true); }
+file_put_contents($cacheFile, json_encode($data, JSON_UNESCAPED_UNICODE));
+
 // Apply conditional formatting once per tab (marker file prevents repeat calls)
-$fmtMarker = dirname(__DIR__) . '/sheets/' . $sheetId . '/' . strtolower(str_replace(' ', '_', $tabName)) . '.fmt';
+$fmtMarker = $cacheDir . '/' . strtolower(str_replace(' ', '_', $tabName)) . '.fmt';
 if (!file_exists($fmtMarker)) {
     $fmtArg = $sheetId . '|' . $gameName;
     $fmtCmd = escapeshellarg($pythonPath) . ' '
@@ -62,5 +81,5 @@ if (!file_exists($fmtMarker)) {
     file_put_contents($fmtMarker, date('c'));
 }
 
-echo json_encode($data !== null ? $data : []);
+echo json_encode($data);
 ?>

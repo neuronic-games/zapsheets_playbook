@@ -775,7 +775,7 @@ body:has(.overlay.open) { overflow: hidden; }
 }
 .collab-field { margin-bottom: .6rem; }
 .collab-field-row {
-  display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: .6rem;
+  display: grid; grid-template-columns: 1fr 1fr; gap: .6rem;
   margin-bottom: .6rem;
 }
 .collab-label {
@@ -1010,6 +1010,12 @@ body:has(.overlay.open) { overflow: hidden; }
   <div class="collab-overlay" id="editOverlay" onclick="if(event.target===this){var d=this.querySelector('.collab-dialog');if(hasDialogData(d))shakeDialog(d);else closeEditDialog();}">
     <div class="collab-dialog" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitEdit();}" onclick="event.stopPropagation()">
       <div class="collab-dialog-title" id="editDialogTitle">Edit Pitch</div>
+      <div class="collab-field">
+        <label class="collab-label">Contact</label>
+        <select class="collab-select" id="editContactSel">
+          <option value="">— unknown —</option>
+        </select>
+      </div>
       <div class="collab-field-row">
         <div>
           <label class="collab-label">Date *</label>
@@ -1026,12 +1032,6 @@ body:has(.overlay.open) { overflow: hidden; }
             <option>Signed</option>
             <option>Published</option>
             <option>Returned</option>
-          </select>
-        </div>
-        <div>
-          <label class="collab-label">Contact</label>
-          <select class="collab-select" id="editContactSel">
-            <option value="">— unknown —</option>
           </select>
         </div>
       </div>

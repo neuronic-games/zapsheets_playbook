@@ -674,6 +674,61 @@ body:has(.overlay.open) { overflow: hidden; }
 }
 .add-entry-btn:hover { background: #1a1a2e; color: #fff; }
 
+/* ── Add Pitch dialog (matches owner dashboard style exactly) ── */
+.add-entry-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.45); z-index:200;
+  align-items:center; justify-content:center; padding:1rem;
+}
+.add-entry-overlay.open { display:flex; }
+.add-entry-dialog {
+  background:#fff; border-radius:10px;
+  padding:1.4rem 1.5rem; width:min(480px,94vw);
+  box-shadow:0 8px 32px rgba(0,0,0,.22);
+  display:flex; flex-direction:column; gap:.85rem;
+  max-height:90vh; overflow-y:auto;
+}
+.add-entry-title { font-family:'DINBlack',sans-serif; font-size:.95rem; margin:0; }
+.add-entry-fields { display:flex; flex-direction:column; gap:.6rem; }
+.add-entry-fields label {
+  display:flex; flex-direction:column; gap:.22rem;
+  font-family:'DINBlack',sans-serif; font-size:.68rem;
+  text-transform:uppercase; letter-spacing:.05em; color:#555;
+}
+.add-entry-fields input,
+.add-entry-fields select,
+.add-entry-fields textarea {
+  font-family:'DINRegular',sans-serif; font-size:.83rem;
+  border:1px solid #ccc; border-radius:6px;
+  padding:.42rem .7rem; color:#111; outline:none; background:#fff;
+}
+.add-entry-fields input:focus,
+.add-entry-fields select:focus,
+.add-entry-fields textarea:focus { border-color:#1a1a2e; }
+.add-entry-fields textarea { resize:vertical; min-height:4.5rem; }
+.add-entry-fields input[type="date"] {
+  -webkit-appearance:none; appearance:none;
+  box-sizing:border-box; padding-top:0; padding-bottom:0; height:2.15rem;
+}
+.add-entry-row { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+.add-entry-actions { display:flex; justify-content:flex-end; align-items:center; gap:.6rem; margin-top:.1rem; }
+.add-cancel-btn {
+  font-family:'DINBlack',sans-serif; font-size:.7rem;
+  text-transform:uppercase; letter-spacing:.05em;
+  background:none; color:#999; border:1px solid #ddd;
+  border-radius:6px; padding:.42rem .9rem; cursor:pointer;
+}
+.add-cancel-btn:hover { background:#f5f5f5; color:#333; }
+.add-submit-btn {
+  font-family:'DINBlack',sans-serif; font-size:.72rem;
+  text-transform:uppercase; letter-spacing:.05em;
+  background:#1a1a2e; color:#fff; border:none;
+  border-radius:6px; padding:.45rem .9rem;
+  cursor:pointer; transition:background .15s;
+}
+.add-submit-btn:hover:not(:disabled) { background:#2d2d50; }
+.add-submit-btn:disabled { opacity:.45; cursor:default; }
+
 /* ── Collab dialogs ── */
 .collab-overlay {
   display: none; position: fixed; inset: 0;
@@ -695,10 +750,6 @@ body:has(.overlay.open) { overflow: hidden; }
 .collab-field { margin-bottom: .6rem; }
 .collab-field-row {
   display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: .6rem;
-  margin-bottom: .6rem;
-}
-.collab-field-row-2 {
-  display: grid; grid-template-columns: 1fr 1fr; gap: .6rem;
   margin-bottom: .6rem;
 }
 .collab-label {
@@ -869,54 +920,50 @@ body:has(.overlay.open) { overflow: hidden; }
   </div>
 
   <!-- ── Add Pitch dialog ── -->
-  <div class="collab-overlay" id="addOverlay" onclick="if(event.target===this){var d=this.querySelector('.collab-dialog');if(hasDialogData(d))shakeDialog(d);else closeAddDialog();}">
-    <div class="collab-dialog" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitAdd();}" onclick="event.stopPropagation()">
-      <div class="collab-dialog-title">Add Pitch</div>
-      <div class="collab-field">
-        <label class="collab-label">Publisher *</label>
-        <div class="combo-wrap">
-          <input class="collab-input" id="addPubInput" type="text" placeholder="Publisher name" autocomplete="off" />
-          <div class="combo-drop" id="addPubDrop"></div>
+  <div class="add-entry-overlay" id="addOverlay" onclick="if(event.target===this){var d=this.querySelector('.add-entry-dialog');if(hasDialogData(d))shakeDialog(d);else closeAddDialog();}">
+    <div class="add-entry-dialog" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitAdd();}" onclick="event.stopPropagation()">
+      <h2 class="add-entry-title">Add Pitch</h2>
+      <div class="add-entry-fields">
+        <label>Publisher *
+          <div class="combo-wrap">
+            <input type="text" id="addPubInput" placeholder="Search or enter publisher…" autocomplete="off" />
+            <div class="combo-drop" id="addPubDrop"></div>
+          </div>
+        </label>
+        <label>Contact
+          <div class="combo-wrap">
+            <input type="text" id="addContactInput" placeholder="Optional contact…" autocomplete="off" />
+            <div class="combo-drop" id="addContactDrop"></div>
+          </div>
+        </label>
+        <div class="add-entry-row">
+          <label>Date *
+            <input type="date" id="addDateInput" />
+          </label>
+          <label>Status
+            <select id="addStatusSel">
+              <option value="Planned">Planned</option>
+              <option value="Pitched">Pitched</option>
+              <option value="Interested">Interested</option>
+              <option value="Passed">Passed</option>
+              <option value="Gone Cold">Gone Cold</option>
+              <option value="Returned">Returned</option>
+              <option value="Signed">Signed</option>
+              <option value="Published">Published</option>
+            </select>
+          </label>
         </div>
-      </div>
-      <div class="collab-field">
-        <label class="collab-label">Contact</label>
-        <div class="combo-wrap">
-          <input class="collab-input" id="addContactInput" type="text" placeholder="Contact name" autocomplete="off" />
-          <div class="combo-drop" id="addContactDrop"></div>
-        </div>
-      </div>
-      <div class="collab-field-row-2">
-        <div>
-          <label class="collab-label">Date *</label>
-          <input class="collab-input" id="addDateInput" type="date" style="-webkit-appearance:none;appearance:none;height:2.15rem;box-sizing:border-box;padding-top:0;padding-bottom:0" />
-        </div>
-        <div>
-          <label class="collab-label">Status</label>
-          <select class="collab-select" id="addStatusSel">
-            <option>Planned</option>
-            <option>Pitched</option>
-            <option>Interested</option>
-            <option>Passed</option>
-            <option>Gone Cold</option>
-            <option>Signed</option>
-            <option>Published</option>
-            <option>Returned</option>
-          </select>
-        </div>
-      </div>
-      <div class="collab-field">
-        <label class="collab-label">Event</label>
-        <input class="collab-input" id="addEventInput" type="text" placeholder="e.g. Gen Con, email, etc." />
-      </div>
-      <div class="collab-field">
-        <label class="collab-label">Notes</label>
-        <textarea class="collab-textarea" id="addNotesInput" placeholder="Optional notes…"></textarea>
+        <label>Event
+          <input type="text" id="addEventInput" placeholder="e.g. Gen Con, PaxU, …" />
+        </label>
+        <label>Notes
+          <textarea id="addNotesInput" placeholder="Optional notes…"></textarea>
+        </label>
       </div>
       <div class="collab-err" id="addErr"></div>
-      <div class="collab-dialog-actions">
-        <button class="collab-btn collab-btn-cancel" onclick="closeAddDialog()">Cancel</button>
-        <button class="collab-btn collab-btn-primary" id="addSubmitBtn" onclick="submitAdd()">Add Pitch</button>
+      <div class="add-entry-actions">
+        <button class="add-cancel-btn" onclick="closeAddDialog()">Cancel</button>
+        <button class="add-submit-btn" id="addSubmitBtn" onclick="submitAdd()">Add Pitch</button>
       </div>
     </div>
   </div>
@@ -1397,7 +1444,7 @@ document.addEventListener('keydown', function(e) {
   el = document.getElementById('profileOverlay');
   if (el && el.classList.contains('open')) { closeProfileDialog(); return; }
   el = document.getElementById('addOverlay');
-  if (el.classList.contains('open'))  { d = el.querySelector('.collab-dialog'); if (hasDialogData(d)) shakeDialog(d); else closeAddDialog();  return; }
+  if (el.classList.contains('open'))  { d = el.querySelector('.add-entry-dialog'); if (hasDialogData(d)) shakeDialog(d); else closeAddDialog();  return; }
   el = document.getElementById('editOverlay');
   if (el.classList.contains('open'))  { d = el.querySelector('.collab-dialog'); if (hasDialogData(d)) shakeDialog(d); else closeEditDialog(); return; }
 });

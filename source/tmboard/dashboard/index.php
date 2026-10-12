@@ -535,6 +535,26 @@ function toggleProject(id) {
   if (el) el.classList.toggle('open');
 }
 
+// ── Preserve open cards across reload ────────────────────────────────────────
+var _TM_OPEN_KEY = 'tm_open_cards_' + SHEET_ID;
+function saveOpenCards() {
+  var ids = [].map.call(document.querySelectorAll('.project-body.open'), function(el) { return el.id; });
+  sessionStorage.setItem(_TM_OPEN_KEY, JSON.stringify(ids));
+}
+function restoreOpenCards() {
+  var raw = sessionStorage.getItem(_TM_OPEN_KEY);
+  if (!raw) return;
+  sessionStorage.removeItem(_TM_OPEN_KEY);
+  try {
+    var ids = JSON.parse(raw);
+    ids.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.classList.add('open');
+    });
+  } catch(e) {}
+}
+document.addEventListener('DOMContentLoaded', restoreOpenCards);
+
 // ── Esc key ───────────────────────────────────────────────────────────────────
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Escape') return;
@@ -570,7 +590,7 @@ function submitAddClient() {
   }, function(r) {
     if (r.error) { document.getElementById('acErr').textContent = r.error; btn.disabled = false; return; }
     forceCloseAddClientDialog();
-    location.reload();
+    saveOpenCards(); location.reload();
   });
 }
 
@@ -627,12 +647,12 @@ function submitProject() {
     data.row_id = _editingProject['Row ID'] || '';
     post('push/tmUpdateProject.php', data, function(r) {
       if (r.error) { document.getElementById('projErr').textContent = r.error; btn.disabled = false; return; }
-      forceCloseProjectDialog(); location.reload();
+      forceCloseProjectDialog(); saveOpenCards(); location.reload();
     });
   } else {
     post('push/tmAddProject.php', data, function(r) {
       if (r.error) { document.getElementById('projErr').textContent = r.error; btn.disabled = false; return; }
-      forceCloseProjectDialog(); location.reload();
+      forceCloseProjectDialog(); saveOpenCards(); location.reload();
     });
   }
 }
@@ -640,7 +660,7 @@ function deleteProject(rowId, name) {
   if (!confirm('Delete project "' + name + '"? This will not delete associated time or hardware entries.')) return;
   post('push/tmDeleteProject.php', {row_id: rowId}, function(r) {
     if (r.error) { alert('Error: ' + r.error); return; }
-    location.reload();
+    saveOpenCards(); location.reload();
   });
 }
 
@@ -695,12 +715,12 @@ function submitTime() {
     data.row_id = _editingTime['Row ID'] || '';
     post('push/tmUpdateTime.php', data, function(r) {
       if (r.error) { document.getElementById('timeErr').textContent = r.error; btn.disabled = false; return; }
-      forceCloseTimeDialog(); location.reload();
+      forceCloseTimeDialog(); saveOpenCards(); location.reload();
     });
   } else {
     post('push/tmAddTime.php', data, function(r) {
       if (r.error) { document.getElementById('timeErr').textContent = r.error; btn.disabled = false; return; }
-      forceCloseTimeDialog(); location.reload();
+      forceCloseTimeDialog(); saveOpenCards(); location.reload();
     });
   }
 }
@@ -708,7 +728,7 @@ function deleteTime(rowId, proj) {
   if (!rowId || !confirm('Delete this time entry?')) return;
   post('push/tmDeleteTime.php', {row_id: rowId}, function(r) {
     if (r.error) { alert('Error: ' + r.error); return; }
-    location.reload();
+    saveOpenCards(); location.reload();
   });
 }
 
@@ -760,12 +780,12 @@ function submitHw() {
     data.row_id = _editingHw['Row ID'] || '';
     post('push/tmUpdateHardware.php', data, function(r) {
       if (r.error) { document.getElementById('hwErr').textContent = r.error; btn.disabled = false; return; }
-      forceCloseHwDialog(); location.reload();
+      forceCloseHwDialog(); saveOpenCards(); location.reload();
     });
   } else {
     post('push/tmAddHardware.php', data, function(r) {
       if (r.error) { document.getElementById('hwErr').textContent = r.error; btn.disabled = false; return; }
-      forceCloseHwDialog(); location.reload();
+      forceCloseHwDialog(); saveOpenCards(); location.reload();
     });
   }
 }
@@ -773,7 +793,7 @@ function deleteHw(rowId, proj) {
   if (!rowId || !confirm('Delete this cost entry?')) return;
   post('push/tmDeleteHardware.php', {row_id: rowId}, function(r) {
     if (r.error) { alert('Error: ' + r.error); return; }
-    location.reload();
+    saveOpenCards(); location.reload();
   });
 }
 

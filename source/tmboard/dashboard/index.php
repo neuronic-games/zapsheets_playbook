@@ -320,9 +320,9 @@ textarea.field-input { resize:vertical; min-height:4rem; }
       </div>
       <div class="project-status <?= htmlspecialchars($statusClass) ?>"><?= htmlspecialchars($pStatus) ?></div>
       <div class="project-actions" onclick="event.stopPropagation()">
-        <button class="btn-sm" onclick="openShareDialog(<?= json_encode($pName) ?>,<?= json_encode($_cn) ?>)">Share</button>
+        <button class="btn-sm" onclick="openShareDialog(<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($_cn), ENT_QUOTES) ?>)">Share</button>
         <button class="btn-sm" onclick="openEditProjectDialog(<?= htmlspecialchars(json_encode($_p), ENT_QUOTES) ?>)">Edit</button>
-        <button class="btn-sm danger" onclick="deleteProject(<?= json_encode($pRowId) ?>,<?= json_encode($pName) ?>)">Delete</button>
+        <button class="btn-sm danger" onclick="deleteProject(<?= htmlspecialchars(json_encode($pRowId), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>)">Delete</button>
       </div>
     </div>
 
@@ -333,7 +333,7 @@ textarea.field-input { resize:vertical; min-height:4rem; }
         <div class="section-label">Time Entries</div>
         <div style="display:flex;align-items:center;gap:.6rem;">
           <?php if ($pEst > 0): ?><div class="section-total"><?= $totalHrs ?>h / <?= $pEst ?>h estimated</div><?php endif; ?>
-          <button class="btn-sm primary" onclick="openAddTimeDialog(<?= json_encode($pName) ?>,<?= json_encode($_cn) ?>)">+ Log Time</button>
+          <button class="btn-sm primary" onclick="openAddTimeDialog(<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($_cn), ENT_QUOTES) ?>)">+ Log Time</button>
         </div>
       </div>
       <?php if ($tRows): ?>
@@ -350,7 +350,7 @@ textarea.field-input { resize:vertical; min-height:4rem; }
           <td><?= htmlspecialchars($t['Description'] ?? '') ?></td>
           <td class="actions">
             <button class="btn-sm" onclick="openEditTimeDialog(<?= htmlspecialchars(json_encode($t), ENT_QUOTES) ?>)">Edit</button>
-            <button class="btn-sm danger" onclick="deleteTime(<?= json_encode($t['Row ID'] ?? '') ?>,<?= json_encode($pName) ?>)">Del</button>
+            <button class="btn-sm danger" onclick="deleteTime(<?= htmlspecialchars(json_encode($t['Row ID'] ?? ''), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>)">Del</button>
           </td>
         </tr>
         <?php endforeach; ?>
@@ -363,7 +363,7 @@ textarea.field-input { resize:vertical; min-height:4rem; }
         <div class="section-label">Hardware &amp; Materials</div>
         <div style="display:flex;align-items:center;gap:.6rem;">
           <?php if ($totalHw > 0): ?><div class="section-total">$<?= number_format($totalHw,2) ?> total</div><?php endif; ?>
-          <button class="btn-sm primary" onclick="openAddHwDialog(<?= json_encode($pName) ?>,<?= json_encode($_cn) ?>)">+ Add Cost</button>
+          <button class="btn-sm primary" onclick="openAddHwDialog(<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($_cn), ENT_QUOTES) ?>)">+ Add Cost</button>
         </div>
       </div>
       <?php if ($hwRows): ?>
@@ -380,7 +380,7 @@ textarea.field-input { resize:vertical; min-height:4rem; }
           <td><?= htmlspecialchars($h['Notes'] ?? '') ?></td>
           <td class="actions">
             <button class="btn-sm" onclick="openEditHwDialog(<?= htmlspecialchars(json_encode($h), ENT_QUOTES) ?>)">Edit</button>
-            <button class="btn-sm danger" onclick="deleteHw(<?= json_encode($h['Row ID'] ?? '') ?>,<?= json_encode($pName) ?>)">Del</button>
+            <button class="btn-sm danger" onclick="deleteHw(<?= htmlspecialchars(json_encode($h['Row ID'] ?? ''), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>)">Del</button>
           </td>
         </tr>
         <?php endforeach; ?>

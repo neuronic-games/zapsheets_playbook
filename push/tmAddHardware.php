@@ -1,6 +1,6 @@
 <?php
 // tmAddHardware.php — add a hardware cost row to the Hardware tab
-// POST: id, date, project, client, description, amount, status, notes
+// POST: id, date, project, client, description, amount, status, buy_url, notes, added_by
 error_reporting(0); ini_set('display_errors','0');
 header('Content-Type: application/json');
 
@@ -16,6 +16,7 @@ $amount      = trim($_POST['amount']      ?? '');
 $status      = trim($_POST['status']      ?? '');
 $buyUrl      = trim($_POST['buy_url']     ?? '');
 $notes       = trim($_POST['notes']       ?? '');
+$addedBy     = strtolower(trim($_POST['added_by'] ?? ''));
 
 if (!$sheetId || !$project || !$description) {
     echo json_encode(['error' => 'Missing id, project, or description']); exit;
@@ -24,7 +25,7 @@ if (!$sheetId || !$project || !$description) {
 $chars  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 $refNum = ''; for ($i=0;$i<8;$i++) $refNum .= $chars[random_int(0,35)];
 $row    = ['Ref Number'=>$refNum,'Date'=>$date,'Project'=>$project,'Client'=>$client,
-           'Description'=>$description,'Amount'=>$amount,'Status'=>$status,'Buy URL'=>$buyUrl,'Notes'=>$notes];
+           'Description'=>$description,'Amount'=>$amount,'Status'=>$status,'Buy URL'=>$buyUrl,'Notes'=>$notes,'Added By'=>$addedBy];
 $enc    = base64_encode(json_encode($row, JSON_UNESCAPED_UNICODE));
 $py     = $_ENV['PYTHON'] ?? 'python3';
 $cmd    = escapeshellarg($py) . ' ' . escapeshellarg(__DIR__ . '/gadd.py') . ' '

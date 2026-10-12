@@ -161,6 +161,38 @@ Known columns: `Name`, `Status`, `Summary`, `Description`, `Count`, `Duration`, 
 - `safe_str(v)` prefixes strings with `'` to prevent Sheets formula interpretation (except `=IMAGE()`)
 - Row resize after image insert: `UpdateDimensionPropertiesRequest` via `batch_update`
 
+## Date Input Pattern
+
+All `<input type="date">` fields must use the `.date-wrap` pattern for consistent cross-browser appearance (white background, calendar icon, no gray Safari spinner).
+
+### HTML
+```html
+<div class="date-wrap">
+  <input type="date" id="myDateInput" />
+</div>
+```
+
+### CSS (add once per file, near other field styles)
+```css
+.date-wrap { position:relative; }
+.date-wrap input[type="date"] { -webkit-appearance:none; appearance:none; width:100%; box-sizing:border-box; background:#fff; padding-right:2.2rem; cursor:pointer; }
+.date-wrap input[type="date"]::-webkit-calendar-picker-indicator { position:absolute; right:0; top:0; bottom:0; width:2.2rem; opacity:0; cursor:pointer; }
+.date-wrap::after { content:''; position:absolute; right:.65rem; top:50%; transform:translateY(-50%); width:15px; height:15px; pointer-events:none; background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNSIgaGVpZ2h0PSIxNSIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM4ODgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSI0IiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIi8+PGxpbmUgeDE9IjE2IiB5MT0iMiIgeDI9IjE2IiB5Mj0iNiIvPjxsaW5lIHgxPSI4IiB5MT0iMiIgeDI9IjgiIHkyPSI2Ii8+PGxpbmUgeDE9IjMiIHkxPSIxMCIgeDI9IjIxIiB5Mj0iMTAiLz48L3N2Zz4="); background-repeat:no-repeat; background-size:contain; }
+```
+
+### JS auto-wrapper (add once per page, at end of main script block)
+When adding to an existing page that already has date inputs without the wrapper:
+```js
+document.querySelectorAll('input[type="date"]').forEach(function(inp) {
+  if (inp.closest('.date-wrap')) return;
+  var w = document.createElement('div'); w.className = 'date-wrap';
+  inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
+});
+```
+
+- The native calendar picker indicator is hidden (`opacity:0`) but still clickable — clicking anywhere on the right side opens the native date picker
+- The SVG calendar icon is shown via `::after` on the wrapper
+
 ## Fetch (collab view)
 - Only fetch sheets: `games`, `people`, `bios`, `contracts`
 - Do not fetch individual game session tabs

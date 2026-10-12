@@ -346,6 +346,11 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 }
 .field-input:focus { border-color:#1a5f7a; background:#fff; }
 select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .7rem center; padding-right:2rem; }
+input[type="date"].field-input { -webkit-appearance:none; appearance:none; min-height:2.45rem; box-sizing:border-box; }
+.date-wrap { position:relative; }
+.date-wrap input[type="date"] { -webkit-appearance:none; appearance:none; width:100%; box-sizing:border-box; background:#fff; padding-right:2.2rem; cursor:pointer; }
+.date-wrap input[type="date"]::-webkit-calendar-picker-indicator { position:absolute; right:0; top:0; bottom:0; width:2.2rem; opacity:0; cursor:pointer; }
+.date-wrap::after { content:''; position:absolute; right:.65rem; top:50%; transform:translateY(-50%); width:15px; height:15px; pointer-events:none; background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNSIgaGVpZ2h0PSIxNSIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM4ODgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSI0IiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIi8+PGxpbmUgeDE9IjE2IiB5MT0iMiIgeDI9IjE2IiB5Mj0iNiIvPjxsaW5lIHgxPSI4IiB5MT0iMiIgeDI9IjgiIHkyPSI2Ii8+PGxpbmUgeDE9IjMiIHkxPSIxMCIgeDI9IjIxIiB5Mj0iMTAiLz48L3N2Zz4="); background-repeat:no-repeat; background-size:contain; }
 .field-sep { border:none; border-top:1px solid #e8edf0; margin:.1rem 0; }
 @keyframes dialog-shake {
   0%,100% { transform:translateX(0); }
@@ -2452,6 +2457,12 @@ function openRnDialog() {
 function closeRnDialog() {
   document.getElementById('rnOverlay').classList.remove('open');
 }
+// Auto-wrap all date inputs with .date-wrap for cross-browser calendar icon
+document.querySelectorAll('input[type="date"]').forEach(function(inp) {
+  if (inp.closest('.date-wrap')) return;
+  var w = document.createElement('div'); w.className = 'date-wrap';
+  inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
+});
 </script>
 </body>
 </html>

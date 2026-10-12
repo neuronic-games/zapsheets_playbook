@@ -1829,6 +1829,12 @@ function guardedOpenAddDialog() {
 
 _loadStoredUser();
 _updateSignedInState();
+// Auto-wrap all date inputs with .date-wrap for cross-browser calendar icon
+document.querySelectorAll('input[type="date"]').forEach(function(inp) {
+  if (inp.closest('.date-wrap')) return;
+  var w = document.createElement('div'); w.className = 'date-wrap';
+  inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
+});
 </script>
 </body>
 </html>

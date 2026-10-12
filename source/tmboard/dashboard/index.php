@@ -567,7 +567,13 @@ function toggleProject(id) {
 function reloadCard(btn) {
   btn.classList.add('spinning');
   saveOpenCards();
-  setTimeout(function() { location.reload(); }, 300);
+  var fd = new FormData();
+  fd.append('id', SHEET_ID);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/tmRefresh.php');
+  xhr.onload = function() { location.reload(); };
+  xhr.onerror = function() { location.reload(); };
+  xhr.send(fd);
 }
 
 // ── Preserve open cards across reload ────────────────────────────────────────

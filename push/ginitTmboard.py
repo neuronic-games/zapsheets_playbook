@@ -34,7 +34,7 @@ existing = {ws.title for ws in ss.worksheets()}
 TABS = {
     'Clients':  ['Ref Number', 'Client', 'Contact Email', 'Phone', 'Notes'],
     'Projects': ['Ref Number', 'Client', 'Project', 'Status', 'Estimate Hours', 'Start Date', 'End Date', 'Notes'],
-    'Time':     ['Ref Number', 'Date', 'Project', 'Client', 'Staff Name', 'Staff Email', 'Hours', 'Description'],
+    'Time':     ['Ref Number', 'Date', 'Project', 'Client', 'Staff Name', 'Hours', 'Description'],
     'Hardware': ['Ref Number', 'Date', 'Project', 'Client', 'Description', 'Amount', 'Status', 'Buy URL', 'Notes', 'Added By'],
     'Staff':    ['Name', 'Email'],
 }

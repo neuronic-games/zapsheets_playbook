@@ -29,6 +29,13 @@ $_projects  = _tm_load($_sDir . '/projects.json');
 $_timeRows  = _tm_load($_sDir . '/time.json');
 $_hwRows    = _tm_load($_sDir . '/hardware.json');
 $_contracts = _tm_load($_sDir . '/contracts.json');
+$_staff     = _tm_load($_sDir . '/staff.json');
+
+// Staff names (from the Staff tab) for the Log Time staff picker
+$_staffNames = [];
+foreach ($_staff as $_st) { $_stn = trim(ltrim((string)($_st['Name'] ?? ''), "'")); if ($_stn !== '') $_staffNames[] = $_stn; }
+$_staffNames = array_values(array_unique($_staffNames));
+natcasesort($_staffNames); $_staffNames = array_values($_staffNames);
 
 // Index time/hardware/contracts by project for fast lookup
 $_timeByProject     = [];
@@ -666,8 +673,7 @@ body:not(.tm-signed-in) .auth-only { display:none !important; }
       <div class="field-group"><label>Date *</label><div class="date-wrap"><input class="field-input" id="timeDate" type="date" /></div></div>
       <div class="field-group"><label>Hours *</label><input class="field-input" id="timeHours" type="number" min="0" step="0.25" placeholder="1.5" /></div>
     </div>
-    <div class="field-group"><label>Staff Name</label><input class="field-input" id="timeStaffName" type="text" placeholder="Jane Smith" /></div>
-    <div class="field-group"><label>Staff Email</label><input class="field-input" id="timeStaffEmail" type="email" placeholder="jane@example.com" /></div>
+    <div class="field-group"><label>Staff</label><select class="field-input" id="timeStaffName"></select></div>
     <div class="field-group"><label>Description</label><textarea class="field-input" id="timeDesc" placeholder="What was done…"></textarea></div>
     <div class="tm-err" id="timeErr"></div>
     <div class="dialog-actions">
@@ -820,6 +826,21 @@ body:not(.tm-signed-in) .auth-only { display:none !important; }
 <script>
 var SHEET_ID = <?= json_encode($_sheetId) ?>;
 var APP_ROOT = <?= json_encode(rtrim($_basePath, '/') . '/') ?>;
+var STAFF_NAMES = <?= json_encode($_staffNames, JSON_UNESCAPED_UNICODE) ?>;
+
+// Fill the Log Time staff picker from the Staff tab; keep an existing value
+// that isn't on the tab so editing an old entry doesn't lose its name.
+function _fillStaffSelect(selected) {
+  var sel = document.getElementById('timeStaffName');
+  var names = STAFF_NAMES.slice();
+  selected = (selected || '').replace(/^'/, '');
+  if (selected && names.indexOf(selected) < 0) names.unshift(selected);
+  sel.innerHTML = '';
+  var blank = document.createElement('option'); blank.value = ''; blank.textContent = names.length ? '— Select staff —' : '— No staff on the Staff tab —';
+  sel.appendChild(blank);
+  names.forEach(function(n) { var o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o); });
+  sel.value = selected;
+}
 
 // ── Auth (owner sign-in) ─────────────────────────────────────────────────────
 var _ownerUser = null; // { email, bio: { name, email, ... } }
@@ -844,7 +865,7 @@ function _updateAuthState() {
 
   if (!btn) return;
   if (_ownerUser) {
-    var name = (_ownerUser.bio && _ownerUser.bio['Name']) || _ownerUser.email || 'Me';
+    var name = (_ownerUser.bio && (_ownerUser.bio['name'] || _ownerUser.bio['Name'])) || _ownerUser.email || 'Me';
     btn.classList.add('signed-in');
     btn.title = 'Signed in as ' + (_ownerUser.email || '');
     if (meta) meta.textContent = name + ' · Time & Materials Tracker';
@@ -873,7 +894,7 @@ function userMenuAction(action) {
   closeUserMenu();
   if (action === 'profile') {
     if (_ownerUser) {
-      alert('Signed in as: ' + (_ownerUser.email || '') + '\nName: ' + ((_ownerUser.bio && _ownerUser.bio['Name']) || '—'));
+      alert('Signed in as: ' + (_ownerUser.email || '') + '\nName: ' + ((_ownerUser.bio && (_ownerUser.bio['name'] || _ownerUser.bio['Name'])) || '—'));
     } else {
       openSignInDialog();
     }
@@ -1209,11 +1230,9 @@ function openAddTimeDialog(proj, client) {
   document.getElementById('timeDlgTitle').textContent = 'Log Time · ' + proj;
   document.getElementById('timeDate').value       = today();
   document.getElementById('timeHours').value      = '';
-  // Pre-fill staff from signed-in owner user
-  var _sn = (_ownerUser && ((_ownerUser.bio && _ownerUser.bio['Name']) || _ownerUser.email)) || '';
-  var _se = (_ownerUser && _ownerUser.email) || '';
-  document.getElementById('timeStaffName').value  = _sn;
-  document.getElementById('timeStaffEmail').value = _se;
+  // Pre-select the signed-in owner if they're on the Staff tab
+  var _sn = (_ownerUser && _ownerUser.bio && (_ownerUser.bio['name'] || _ownerUser.bio['Name'])) || '';
+  _fillStaffSelect(STAFF_NAMES.indexOf(_sn) >= 0 ? _sn : '');
   document.getElementById('timeDesc').value       = '';
   document.getElementById('timeErr').textContent  = '';
   document.getElementById('timeSubmitBtn').disabled = false;
@@ -1226,8 +1245,7 @@ function openEditTimeDialog(t) {
   document.getElementById('timeDlgTitle').textContent = 'Edit Time · ' + _timeProjName;
   document.getElementById('timeDate').value       = t['Date']        || '';
   document.getElementById('timeHours').value      = t['Hours']       || '';
-  document.getElementById('timeStaffName').value  = t['Staff Name']  || '';
-  document.getElementById('timeStaffEmail').value = t['Staff Email'] || '';
+  _fillStaffSelect(t['Staff Name'] || '');
   document.getElementById('timeDesc').value       = t['Description'] || '';
   document.getElementById('timeErr').textContent  = '';
   document.getElementById('timeSubmitBtn').disabled = false;
@@ -1246,7 +1264,6 @@ function submitTime() {
     project:     _timeProjName,
     client:      _timeProjClient,
     staff_name:  document.getElementById('timeStaffName').value.trim(),
-    staff_email: document.getElementById('timeStaffEmail').value.trim(),
     hours:       hours,
     description: document.getElementById('timeDesc').value.trim(),
   };

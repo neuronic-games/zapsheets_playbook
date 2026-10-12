@@ -9,8 +9,11 @@
  *
  * If another person already uses the name (case-insensitive), a number suffix
  * is added: "John Doe" → "John Doe 2" → "John Doe 3" …
- * "Another person" = another account's saved name, or a Staff Name on a time
- * entry logged under a different email.
+ * "Another person" = a Name on the Staff tab with a different Email, or another
+ * account's saved name.
+ *
+ * The final name is written to the Staff tab (Name/Email row, matched by email)
+ * and saved on the account in accounts.json.
  *
  * Returns JSON:
  *   { ok: true, name: string, adjusted: bool }
@@ -19,6 +22,9 @@
 error_reporting(0);
 ini_set('display_errors', '0');
 header('Content-Type: application/json');
+
+require __DIR__ . '/../dotEnv.php';
+require_once __DIR__ . '/refreshJson.php';
 
 $sheetId = trim($_POST['id']    ?? '');
 $email   = strtolower(trim($_POST['email'] ?? ''));
@@ -49,11 +55,11 @@ $taken = [];
 foreach ($accounts as $acctEmail => $acct) {
     if ($acctEmail !== $email && !empty($acct['name'])) $taken[$norm($acct['name'])] = true;
 }
-$timeFile = $sheetDir . '/time.json';
-if (file_exists($timeFile)) {
-    foreach ((json_decode(file_get_contents($timeFile), true) ?: []) as $r) {
-        $rEmail = strtolower(trim(ltrim($r['Staff Email'] ?? '', "'")));
-        $rName  = $r['Staff Name'] ?? '';
+$staffFile = $sheetDir . '/staff.json';
+if (file_exists($staffFile)) {
+    foreach ((json_decode(file_get_contents($staffFile), true) ?: []) as $r) {
+        $rEmail = strtolower(trim(ltrim($r['Email'] ?? '', "'")));
+        $rName  = trim(ltrim($r['Name'] ?? '', "'"));
         if ($rName !== '' && $rEmail !== $email) $taken[$norm($rName)] = true;
     }
 }
@@ -62,10 +68,23 @@ if (file_exists($timeFile)) {
 $final = $name;
 for ($n = 2; isset($taken[$norm($final)]); $n++) { $final = $name . ' ' . $n; }
 
+// Write Name/Email to the Staff tab (source of truth for who's who)
+$py  = $_ENV['PYTHON'] ?? 'python3';
+$enc = base64_encode(json_encode(['name' => $final, 'email' => $email], JSON_UNESCAPED_UNICODE));
+$out = trim((string) shell_exec(escapeshellarg($py) . ' ' . escapeshellarg(__DIR__ . '/gtmStaffUpsert.py') . ' '
+        . escapeshellarg($sheetId . '|' . $enc) . ' 2>&1'));
+$res = $out ? json_decode($out, true) : null;
+if (empty($res['ok'])) {
+    flock($fh, LOCK_UN); fclose($fh);
+    echo json_encode(['error' => 'Could not save to the Staff tab: ' . (($res['error'] ?? '') ?: ($out ?: 'no response'))]);
+    exit;
+}
+
 $accounts[$email]['name'] = $final;
 ftruncate($fh, 0); rewind($fh);
 fwrite($fh, json_encode($accounts, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 fflush($fh); flock($fh, LOCK_UN); fclose($fh);
 
+refreshJson($py, $sheetId, 'Staff');
 echo json_encode(['ok' => true, 'name' => $final, 'adjusted' => $final !== $name]);
 ?>

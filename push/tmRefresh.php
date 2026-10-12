@@ -11,7 +11,7 @@ $sheetId = trim($_POST['id'] ?? '');
 if (!$sheetId) { echo json_encode(['error' => 'Missing id']); exit; }
 
 $py   = $_ENV['PYTHON'] ?? 'python3';
-$tabs = ['Clients', 'Projects', 'Time', 'Hardware', 'contracts'];
+$tabs = ['Clients', 'Projects', 'Time', 'Hardware', 'Staff', 'contracts'];
 foreach ($tabs as $tab) {
     refreshJson($py, $sheetId, $tab);
 }

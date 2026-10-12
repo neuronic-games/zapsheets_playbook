@@ -72,6 +72,17 @@ $bio = [];
 // Display name saved on the account (set via tmSetName.php) — unique per sheet
 if (!empty($accounts[$email]['name'])) $bio['name'] = $accounts[$email]['name'];
 
+// Otherwise use the Name on the T&MBoard Staff tab for this email, if any
+if (empty($bio['name']) && $sheetId && file_exists($sheetDir . '/staff.json')) {
+    foreach ((json_decode(file_get_contents($sheetDir . '/staff.json'), true) ?: []) as $st) {
+        if (strtolower(trim(ltrim($st['Email'] ?? '', "'"))) === $email) {
+            $stName = trim(ltrim($st['Name'] ?? '', "'"));
+            if ($stName !== '') $bio['name'] = $stName;
+            break;
+        }
+    }
+}
+
 if ($sheetId) {
     // Name from people.json
     $peopleFile = $sheetsRoot . '/' . $sheetId . '/people.json';

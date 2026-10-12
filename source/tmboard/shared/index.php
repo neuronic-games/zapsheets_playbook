@@ -304,7 +304,7 @@ textarea.field-input { resize:vertical; min-height:3.5rem; }
       </tr></thead>
       <tbody>
       <?php foreach ($_timeRows as $t): ?>
-      <tr data-email="<?= _tmsh_e(ltrim($t['Staff Email'] ?? '', "'")) ?>">
+      <tr data-name="<?= _tmsh_e(ltrim($t['Staff Name'] ?? '', "'")) ?>">
         <td><?= _tmsh_e($t['Date'] ?? '') ?></td>
         <td><?= _tmsh_e($t['Staff Name'] ?? '') ?><span class="badge-you">You</span></td>
         <td class="num"><?= _tmsh_e($t['Hours'] ?? '') ?></td>
@@ -491,13 +491,9 @@ function _updateSignedInState() {
   so.className   = 'user-menu-item ' + (signed ? 'signout' : 'signin');
 
   // Mark rows this user added — only those get Edit / Del.
-  // Time rows match on Staff Email; material rows match on Added By (name).
-  var me     = signed ? _user.email.toLowerCase() : '';
+  // Rows match on name (Staff Name on time, Added By on materials); names are
+  // unique per sheet, tied to an email on the Staff tab.
   var myName = signed ? (_user.name || '').trim().toLowerCase() : '';
-  document.querySelectorAll('tr[data-email]').forEach(function(tr) {
-    var email = (tr.getAttribute('data-email') || '').toLowerCase();
-    tr.classList.toggle('mine', !!me && email === me);
-  });
   document.querySelectorAll('tr[data-name]').forEach(function(tr) {
     var name = (tr.getAttribute('data-name') || '').trim().toLowerCase();
     tr.classList.toggle('mine', !!myName && name === myName);
@@ -670,13 +666,15 @@ function saveName() {
 function _finishName() {
   var then = _needNameFor;
   forceCloseAuthDialog();
-  if (then === 'hw') openAddHwDialog();
+  if (then === 'hw')   openAddHwDialog();
+  if (then === 'time') openAddTimeDialog();
 }
 
 // ── Time ──────────────────────────────────────────────────────────────────────
 var _editingTime = null;
 function openAddTimeDialog() {
   if (!_user) { openAuthDialog(); return; }
+  if (!(_user.name || '').trim()) { _needNameFor = 'time'; openAuthDialog(); return; }
   _editingTime = null;
   document.getElementById('timeDlgTitle').textContent = 'Log Time · ' + PROJECT;
   document.getElementById('timeDate').value  = today();
@@ -713,7 +711,6 @@ function submitTime() {
     project:     PROJECT,
     client:      CLIENT,
     staff_name:  _user.name  || '',
-    staff_email: _user.email || '',
     hours:       hours,
     description: document.getElementById('timeDesc').value.trim(),
   };

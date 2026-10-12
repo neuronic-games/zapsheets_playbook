@@ -80,23 +80,81 @@ body { background:var(--bg); font-family:'DINRegular',Arial,sans-serif; color:va
 
 /* ── Header ── */
 .tm-header {
-  background:var(--accent); color:#fff;
+  background:#1a1a2e; color:#fff;
   display:flex; align-items:center; justify-content:space-between;
-  padding:.75rem 1.5rem; position:sticky; top:0; z-index:100;
-  box-shadow:0 2px 12px rgba(59,59,170,.35);
+  padding:.6rem 1.5rem; position:sticky; top:0; z-index:100;
+  box-shadow:0 2px 12px rgba(0,0,0,.35);
 }
-.tm-logo { font-family:'DINBlack',sans-serif; font-size:1.25rem; letter-spacing:.07em; }
-.tm-logo span { opacity:.7; font-size:.8rem; margin-left:.5rem; font-family:'DINRegular',sans-serif; }
-.header-actions { display:flex; gap:.6rem; }
-.btn-header {
+.tm-header-left { display:flex; flex-direction:column; gap:.05rem; }
+.tm-logo { font-family:'DINBlack',sans-serif; font-size:1.2rem; letter-spacing:.07em; color:#7c9eff; }
+.tm-logo-sub { font-size:.7rem; opacity:.65; letter-spacing:.02em; font-family:'DINRegular',sans-serif; }
+.tm-header-right { display:flex; align-items:center; gap:.5rem; }
+/* Nav tabs */
+.tm-tabs { display:flex; gap:.2rem; }
+.tm-tab {
   font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase;
-  letter-spacing:.07em; padding:.4rem .85rem; border-radius:6px; cursor:pointer;
-  border:1.5px solid rgba(255,255,255,.55); color:#fff; background:transparent;
-  transition:background .15s;
+  letter-spacing:.07em; padding:.4rem .9rem; border-radius:6px; cursor:pointer;
+  border:none; color:rgba(255,255,255,.7); background:rgba(255,255,255,.1);
+  transition:all .15s; white-space:nowrap;
 }
-.btn-header:hover { background:rgba(255,255,255,.18); }
-.btn-header.primary { background:#fff; color:var(--accent); border-color:#fff; }
-.btn-header.primary:hover { background:#e8e8f8; }
+.tm-tab:hover { background:rgba(255,255,255,.2); color:#fff; }
+.tm-tab.active { background:#fff; color:#1a1a2e; }
+/* User icon */
+.btn-user-icon {
+  width:2rem; height:2rem; border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.45); background:transparent;
+  color:rgba(255,255,255,.8); cursor:pointer; display:inline-flex;
+  align-items:center; justify-content:center; flex-shrink:0;
+  transition:background .15s, border-color .15s;
+}
+.btn-user-icon:hover { background:rgba(255,255,255,.18); border-color:#fff; }
+.btn-user-icon.signed-in { background:rgba(255,255,255,.2); border-color:#fff; color:#fff; }
+/* Views */
+.tm-view { display:none; }
+.tm-view.active { display:block; }
+/* Board toolbar */
+.board-toolbar { display:flex; justify-content:flex-end; gap:.5rem; margin-bottom:1.25rem; }
+.btn-toolbar {
+  font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase;
+  letter-spacing:.06em; padding:.38rem .85rem; border-radius:6px; cursor:pointer;
+  border:1.5px solid var(--border); background:#fff; color:var(--text);
+  transition:background .12s;
+}
+.btn-toolbar:hover { background:var(--accent-lt); border-color:var(--accent); color:var(--accent); }
+.btn-toolbar.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+.btn-toolbar.primary:hover { background:var(--accent-dk); }
+/* Projects view */
+.projects-toolbar { display:flex; align-items:center; gap:.6rem; margin-bottom:1.2rem; }
+.projects-search {
+  flex:1; padding:.5rem .9rem;
+  font-family:'DINRegular',Arial,sans-serif; font-size:.88rem; color:var(--text);
+  border:1px solid var(--border); border-radius:8px; outline:none;
+  background:#fff; transition:border-color .15s;
+}
+.projects-search:focus { border-color:var(--accent); }
+/* Flat project list */
+.proj-list-item {
+  background:var(--surface); border-radius:8px;
+  box-shadow:0 1px 6px rgba(0,0,0,.07);
+  padding:.65rem 1rem; margin-bottom:.5rem;
+  display:flex; align-items:center; gap:1rem; cursor:pointer;
+  transition:box-shadow .15s, background .12s;
+}
+.proj-list-item:hover { box-shadow:0 2px 12px rgba(59,59,170,.13); background:#fafafe; }
+.proj-list-item[hidden] { display:none; }
+.proj-list-name { font-family:'DINBlack',sans-serif; font-size:.9rem; color:var(--accent); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.proj-list-client { font-size:.8rem; color:var(--muted); min-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.proj-list-stats { display:flex; gap:1.2rem; font-size:.78rem; color:var(--muted); flex-shrink:0; }
+.proj-list-stats strong { font-family:'DINBlack',sans-serif; color:var(--text); }
+.proj-list-status {
+  font-size:.68rem; font-family:'DINBlack',sans-serif; letter-spacing:.05em;
+  text-transform:uppercase; padding:.18rem .5rem; border-radius:999px;
+  background:var(--accent); color:#fff; flex-shrink:0;
+}
+.proj-list-status.on-hold  { background:#e67e22; }
+.proj-list-status.completed{ background:#27ae60; }
+.proj-list-status.cancelled{ background:#999; }
+.proj-list-empty { text-align:center; padding:3rem 1rem; color:var(--muted); font-size:.9rem; }
 
 /* ── Layout ── */
 .tm-main { max-width:1100px; margin:0 auto; padding:1.5rem 1rem 3rem; }
@@ -283,15 +341,31 @@ textarea.field-input { resize:vertical; min-height:4rem; }
 <body>
 
 <div class="tm-header">
-  <div class="tm-logo">T&amp;MBoard <span>Time &amp; Materials</span></div>
-  <div class="header-actions">
-    <button class="btn-header" id="signInBtn" onclick="openSignInDialog()" style="opacity:.8">Sign In</button>
-    <button class="btn-header" onclick="openAddClientDialog()">+ Client</button>
-    <button class="btn-header primary" onclick="openAddProjectDialog()">+ Project</button>
+  <div class="tm-header-left">
+    <div class="tm-logo">T&amp;MBoard</div>
+    <div class="tm-logo-sub" id="headerMeta">Time &amp; Materials Tracker</div>
+  </div>
+  <div class="tm-header-right">
+    <nav class="tm-tabs">
+      <button class="tm-tab active" id="tabBoard" onclick="switchView('board')">Board</button>
+      <button class="tm-tab" id="tabProjects" onclick="switchView('projects')"><?= count($_projects) ?> Projects</button>
+    </nav>
+    <button class="btn-user-icon" id="signInBtn" onclick="openSignInDialog()" title="Sign In">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+    </button>
   </div>
 </div>
 
 <div class="tm-main">
+
+<!-- ══ BOARD VIEW ══ -->
+<div class="tm-view active" id="viewBoard">
+<div class="board-toolbar">
+  <button class="btn-toolbar" onclick="openAddClientDialog()">+ Client</button>
+  <button class="btn-toolbar primary" onclick="openAddProjectDialog()">+ Project</button>
+</div>
 
 <?php if (empty($_projects)): ?>
   <div style="text-align:center;padding:4rem 1rem;color:var(--muted);">
@@ -444,6 +518,55 @@ textarea.field-input { resize:vertical; min-height:4rem; }
 <?php endforeach; ?>
 
 <?php endif; ?>
+</div><!-- /viewBoard -->
+
+<!-- ══ PROJECTS VIEW ══ -->
+<div class="tm-view" id="viewProjects">
+  <div class="projects-toolbar">
+    <input type="text" id="projectSearch" class="projects-search" placeholder="Search projects, clients…" oninput="filterProjects(this.value)" />
+    <button class="btn-toolbar" onclick="openAddClientDialog()">+ Client</button>
+    <button class="btn-toolbar primary" onclick="openAddProjectDialog()">+ Project</button>
+  </div>
+  <div id="projectsList">
+  <?php if (empty($_projects)): ?>
+    <div class="proj-list-empty">No projects yet.</div>
+  <?php else: ?>
+  <?php foreach ($_projects as $_p):
+    $pName2   = $_p['Project']        ?? '';
+    $pCli2    = $_p['Client']         ?? '';
+    $pSt2     = $_p['Status']         ?? 'Active';
+    $pEst2    = (float)($_p['Estimate Hours'] ?? 0);
+    $tRows2   = $_timeByProject[$pName2] ?? [];
+    $hwRows2  = $_hwByProject[$pName2]  ?? [];
+    $conRows2 = $_contractsByProject[$pName2] ?? [];
+    $hrs2     = array_sum(array_column($tRows2, 'Hours'));
+    $hw2      = array_sum(array_column($hwRows2, 'Amount'));
+    $stCls2   = strtolower(str_replace(' ','-',$pSt2));
+    $cardId2  = 'proj_' . md5(($_p['Ref Number'] ?? '') ?: $pName2);
+    $search2  = strtolower($pName2 . ' ' . $pCli2 . ' ' . $pSt2);
+  ?>
+  <div class="proj-list-item" data-search="<?= htmlspecialchars($search2) ?>"
+       onclick="switchView('board');setTimeout(function(){var el=document.getElementById(<?= htmlspecialchars(json_encode($cardId2), ENT_QUOTES) ?>);if(el){el.classList.add('open');el.scrollIntoView({behavior:'smooth',block:'center'});}},80);">
+    <div class="proj-list-name"><?= htmlspecialchars($pName2) ?></div>
+    <div class="proj-list-client"><?= htmlspecialchars($pCli2) ?></div>
+    <div class="proj-list-stats">
+      <?php if ($hrs2 > 0 || $pEst2 > 0): ?>
+      <span><strong><?= $hrs2 ?><?= $pEst2 > 0 ? '/'.$pEst2 : '' ?>h</strong> time</span>
+      <?php endif; ?>
+      <?php if ($hw2 > 0): ?>
+      <span><strong>$<?= number_format($hw2,0) ?></strong> hw</span>
+      <?php endif; ?>
+      <?php if (count($conRows2) > 0): ?>
+      <span><strong><?= count($conRows2) ?></strong> contract<?= count($conRows2) > 1 ? 's' : '' ?></span>
+      <?php endif; ?>
+    </div>
+    <div class="proj-list-status <?= htmlspecialchars($stCls2) ?>"><?= htmlspecialchars($pSt2) ?></div>
+  </div>
+  <?php endforeach; ?>
+  <?php endif; ?>
+  </div><!-- /projectsList -->
+</div><!-- /viewProjects -->
+
 </div><!-- /tm-main -->
 
 <!-- ── Add Client Dialog ── -->
@@ -638,11 +761,12 @@ var _ownerUser = null; // { email, bio: { name, email, ... } }
 })();
 
 function _updateOwnerHeader() {
-  var btn = document.getElementById('signInBtn');
+  var btn  = document.getElementById('signInBtn');
+  var meta = document.getElementById('headerMeta');
   if (!btn) return;
   if (_ownerUser) {
     var name = (_ownerUser.bio && _ownerUser.bio['Name']) || _ownerUser.email || 'Signed In';
-    btn.textContent = name.split(' ')[0];
+    btn.classList.add('signed-in');
     btn.title = 'Signed in as ' + (_ownerUser.email || '') + ' — click to sign out';
     btn.onclick = function() {
       if (confirm('Sign out?')) {
@@ -650,13 +774,39 @@ function _updateOwnerHeader() {
         _ownerUser = null; _updateOwnerHeader();
       }
     };
-    btn.style.opacity = '1';
+    if (meta) meta.textContent = name + ' · Time & Materials Tracker';
   } else {
-    btn.textContent = 'Sign In';
-    btn.title = '';
+    btn.classList.remove('signed-in');
+    btn.title = 'Sign In';
     btn.onclick = openSignInDialog;
-    btn.style.opacity = '.8';
+    if (meta) meta.textContent = 'Time & Materials Tracker';
   }
+}
+
+// ── View switching ────────────────────────────────────────────────────────────
+var _currentView = 'board';
+function switchView(name) {
+  _currentView = name;
+  document.getElementById('viewBoard').classList.toggle('active', name === 'board');
+  document.getElementById('viewProjects').classList.toggle('active', name === 'projects');
+  document.getElementById('tabBoard').classList.toggle('active', name === 'board');
+  document.getElementById('tabProjects').classList.toggle('active', name === 'projects');
+  if (name === 'projects') {
+    var s = document.getElementById('projectSearch');
+    if (s) { filterProjects(s.value); s.focus(); }
+  }
+}
+function filterProjects(q) {
+  var lower = (q || '').toLowerCase().trim();
+  var items = document.querySelectorAll('#projectsList .proj-list-item');
+  var any = false;
+  items.forEach(function(el) {
+    var match = !lower || (el.dataset.search || '').indexOf(lower) !== -1;
+    el.hidden = !match;
+    if (match) any = true;
+  });
+  var empty = document.querySelector('#projectsList .proj-list-empty');
+  if (empty) empty.hidden = any || items.length > 0;
 }
 
 function openSignInDialog() {

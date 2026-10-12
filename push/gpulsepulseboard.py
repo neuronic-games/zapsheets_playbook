@@ -160,14 +160,18 @@ def _find_row():
 
 row = _find_row()
 if row is None:
-    log(f'Exhibit "{exhibit}" not found — adding row...', 'info')
+    # Insert a new row directly below the last machine in the Exhibit column.
+    # (Not append_row: Google's append guesses where the "table" ends and, when
+    # other columns such as Notes have text further down, writes into the wrong
+    # columns/rows.) Inserting shifts anything below down, so nothing is overwritten.
+    vals = ws.col_values(exhibit_col)
+    last = max([i for i, v in enumerate(vals, start=1) if str(v).strip()] or [1])
+    row  = last + 1
     new_row = [''] * len(headers_row)
     new_row[exhibit_col - 1] = exhibit
-    res = ws.append_row(new_row, value_input_option='RAW', table_range='A1')
-    # Google tells us where it landed, e.g. "'CMH'!A14:O14"
-    m = re.search(r'![A-Z]+(\d+)', ((res or {}).get('updates') or {}).get('updatedRange', ''))
-    row = int(m.group(1)) if m else _find_row()
-    if row is None:
+    log(f'Exhibit "{exhibit}" not found — inserting row {row}...', 'info')
+    ws.insert_row(new_row, index=row, value_input_option='RAW')
+    if _find_row() != row:
         fail(f'Could not add a row for exhibit "{exhibit}" on tab "{tab}"')
     log(f'Added "{exhibit}" at row {row}.', 'ok')
 

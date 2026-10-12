@@ -179,6 +179,24 @@ RewriteRule ^pulseboard/help/?$ source/pulseboard/help/index.php [L,QSA]
 # /pulseboard — setup landing page
 RewriteRule ^pulseboard/?$ source/pulseboard/index.php [L,QSA]
 
+# /tmboard/share/{hash} — staff collab view (must come before /tmboard rule)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^tmboard/share/([a-f0-9]{24})/?$ source/tmboard/shared/index.php [L,QSA]
+
+# /tmboard — setup landing page
+RewriteRule ^tmboard/?$ source/tmboard/index.php [L,QSA]
+
+# Short-URL: /{id}/tmboard → source/tmboard/dashboard/index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/tmboard/?$ source/tmboard/dashboard/index.php [L,QSA]
+
+# Also cover sheets/{id}/tmboard
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^sheets/([A-Za-z0-9_\-]+)/tmboard/?$ source/tmboard/dashboard/index.php [L,QSA]
+
 # Short-URL: /{id}/pulseboard/pulse — machine heartbeat POST (must come before list rule)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -239,5 +257,5 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 # Guard 2: skip known top-level names regardless of subdirectory prefix.
 #          Matches  /anything/name/  or  /anything/name  at end of URI.
-RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard|devboard|fitboard|noteboard|pulseboard|slides-sw|game|shares)(/|$)
+RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard|devboard|fitboard|noteboard|pulseboard|tmboard|slides-sw|game|shares)(/|$)
 RewriteRule ^([A-Za-z0-9_\-]+)(/.*)?$ sheets/$1$2 [R=302,L]

@@ -336,17 +336,18 @@ textarea.field-input { resize:vertical; min-height:3.5rem; }
     <div class="tm-table-wrap">
     <table class="tm-table">
       <thead><tr>
-        <th>Date</th><th>Description</th><th class="num">Amount</th><th>Status</th><th class="hide-sm">Notes</th><th class="actions"></th>
+        <th>Date</th><th>Description</th><th class="num">Amount</th><th>Status</th><th>Added By</th><th class="hide-sm">Notes</th><th class="actions"></th>
       </tr></thead>
       <tbody>
       <?php foreach ($_hwRows as $h): $buy = ltrim(trim($h['Buy URL'] ?? ''), "'"); ?>
-      <tr data-email="<?= _tmsh_e(ltrim($h['Added By'] ?? '', "'")) ?>">
+      <tr data-name="<?= _tmsh_e(ltrim($h['Added By'] ?? '', "'")) ?>">
         <td><?= _tmsh_e($h['Date'] ?? '') ?></td>
         <td><?= ($buy && preg_match('#^https?://#i', $buy))
               ? '<a href="' . _tmsh_e($buy) . '" target="_blank" rel="noopener">' . _tmsh_e($h['Description'] ?? '') . ' ↗</a>'
               : _tmsh_e($h['Description'] ?? '') ?><span class="badge-you">You</span></td>
         <td class="num">$<?= number_format((float)ltrim((string)($h['Amount'] ?? 0), "'"), 2) ?></td>
         <td><?= _tmsh_e($h['Status'] ?? '') ?></td>
+        <td><?= _tmsh_e(ltrim($h['Added By'] ?? '', "'")) ?></td>
         <td class="hide-sm"><?= _tmsh_e($h['Notes'] ?? '') ?></td>
         <td class="actions">
           <button class="btn-sm own-only" onclick="openEditHwDialog(<?= htmlspecialchars(json_encode($h), ENT_QUOTES) ?>)">Edit</button>
@@ -396,9 +397,10 @@ textarea.field-input { resize:vertical; min-height:3.5rem; }
     <div id="profilePanel" style="display:none" onkeydown="if(event.key==='Enter'){event.preventDefault();saveName();}">
       <div class="dlg-title">Profile</div>
       <div class="field-group"><label>Name</label>
-        <input class="field-input" id="profileName" type="text" placeholder="Shown on your time entries" />
+        <input class="field-input" id="profileName" type="text" placeholder="Shown on your time and cost entries" />
       </div>
       <div style="font-size:.8rem;color:var(--muted);" id="profileEmailLabel"></div>
+      <div class="dlg-err" id="profileErr"></div>
       <div class="dialog-actions">
         <button class="btn-cancel" onclick="forceCloseAuthDialog()">Cancel</button>
         <button class="btn-primary" onclick="saveName()">Save</button>
@@ -487,11 +489,17 @@ function _updateSignedInState() {
   so.textContent = signed ? 'Sign Out' : 'Sign In';
   so.className   = 'user-menu-item ' + (signed ? 'signout' : 'signin');
 
-  // Mark rows this user added — only those get Edit / Del
-  var me = signed ? _user.email.toLowerCase() : '';
+  // Mark rows this user added — only those get Edit / Del.
+  // Time rows match on Staff Email; material rows match on Added By (name).
+  var me     = signed ? _user.email.toLowerCase() : '';
+  var myName = signed ? (_user.name || '').trim().toLowerCase() : '';
   document.querySelectorAll('tr[data-email]').forEach(function(tr) {
     var email = (tr.getAttribute('data-email') || '').toLowerCase();
     tr.classList.toggle('mine', !!me && email === me);
+  });
+  document.querySelectorAll('tr[data-name]').forEach(function(tr) {
+    var name = (tr.getAttribute('data-name') || '').trim().toLowerCase();
+    tr.classList.toggle('mine', !!myName && name === myName);
   });
 }
 
@@ -562,6 +570,7 @@ function _showAuthPanel(which) {
 function openAuthDialog() {
   document.getElementById('authErr').textContent = '';
   document.getElementById('authConfirmErr').textContent = '';
+  document.getElementById('profileErr').textContent = '';
   document.getElementById('authSubmitBtn').disabled = false;
   document.getElementById('authCreateBtn').disabled = false;
   if (_user) {
@@ -576,7 +585,7 @@ function openAuthDialog() {
   document.getElementById('authOverlay').classList.add('open');
   setTimeout(function(){ document.getElementById(_user ? 'profileName' : 'authEmail').focus(); }, 60);
 }
-function forceCloseAuthDialog() { document.getElementById('authOverlay').classList.remove('open'); }
+function forceCloseAuthDialog() { document.getElementById('authOverlay').classList.remove('open'); _needNameFor = ''; }
 
 function submitAuth(confirmNew) {
   var email = confirmNew ? _authPendingEmail : document.getElementById('authEmail').value.trim();
@@ -619,12 +628,17 @@ function _authConfirmBack() {
   _showAuthPanel('form');
   setTimeout(function(){ document.getElementById('authPass').focus(); }, 30);
 }
+var _needNameFor = '';
 function saveName() {
   if (!_user) return;
-  _user.name = document.getElementById('profileName').value.trim();
+  var name = document.getElementById('profileName').value.trim();
+  if (_needNameFor && !name) { document.getElementById('profileErr').textContent = 'Please enter your name — it\u2019s shown as Added By on your costs.'; return; }
+  var then = _needNameFor;
+  _user.name = name;
   _saveUser();
   _updateSignedInState();
   forceCloseAuthDialog();
+  if (then === 'hw') openAddHwDialog();
 }
 
 // ── Time ──────────────────────────────────────────────────────────────────────
@@ -682,6 +696,7 @@ function submitTime() {
 var _editingHw = null;
 function openAddHwDialog() {
   if (!_user) { openAuthDialog(); return; }
+  if (!(_user.name || '').trim()) { _needNameFor = 'hw'; openAuthDialog(); return; }
   _editingHw = null;
   document.getElementById('hwDlgTitle').textContent = 'Add Cost · ' + PROJECT;
   document.getElementById('hwDate').value   = today();
@@ -730,7 +745,7 @@ function submitHw() {
     notes:       document.getElementById('hwNotes').value.trim(),
   };
   if (_editingHw) data.row_id   = _editingHw['Ref Number'] || '';
-  else            data.added_by = _user.email || '';
+  else            data.added_by = _user.name || '';
   post(_editingHw ? 'push/tmUpdateHardware.php' : 'push/tmAddHardware.php', data, function(r) {
     if (r.error) { err.textContent = r.error; btn.disabled = false; return; }
     forceCloseHwDialog(); location.reload();

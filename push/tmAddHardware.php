@@ -16,7 +16,7 @@ $amount      = trim($_POST['amount']      ?? '');
 $status      = trim($_POST['status']      ?? '');
 $buyUrl      = trim($_POST['buy_url']     ?? '');
 $notes       = trim($_POST['notes']       ?? '');
-$addedBy     = strtolower(trim($_POST['added_by'] ?? ''));
+$addedBy     = trim($_POST['added_by'] ?? '');   // collaborator's display name
 
 if (!$sheetId || !$project || !$description) {
     echo json_encode(['error' => 'Missing id, project, or description']); exit;

@@ -15,6 +15,7 @@ $client      = trim($_POST['client']      ?? '');
 $description = trim($_POST['description'] ?? '');
 $amount      = trim($_POST['amount']      ?? '');
 $status      = trim($_POST['status']      ?? '');
+$buyUrl      = trim($_POST['buy_url']     ?? '');
 $notes       = trim($_POST['notes']       ?? '');
 
 if (!$sheetId || !$rowId) {
@@ -22,7 +23,7 @@ if (!$sheetId || !$rowId) {
 }
 
 $data   = ['row_id'=>$rowId,'Date'=>$date,'Project'=>$project,'Client'=>$client,
-           'Description'=>$description,'Amount'=>$amount,'Status'=>$status,'Notes'=>$notes];
+           'Description'=>$description,'Amount'=>$amount,'Status'=>$status,'Buy URL'=>$buyUrl,'Notes'=>$notes];
 $enc    = base64_encode(json_encode($data, JSON_UNESCAPED_UNICODE));
 $py     = $_ENV['PYTHON'] ?? 'python3';
 $cmd    = escapeshellarg($py) . ' ' . escapeshellarg(__DIR__ . '/gtmUpdate.py') . ' '

@@ -14,6 +14,7 @@ $client      = trim($_POST['client']      ?? '');
 $description = trim($_POST['description'] ?? '');
 $amount      = trim($_POST['amount']      ?? '');
 $status      = trim($_POST['status']      ?? '');
+$buyUrl      = trim($_POST['buy_url']     ?? '');
 $notes       = trim($_POST['notes']       ?? '');
 
 if (!$sheetId || !$project || !$description) {
@@ -23,7 +24,7 @@ if (!$sheetId || !$project || !$description) {
 $chars  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 $refNum = ''; for ($i=0;$i<8;$i++) $refNum .= $chars[random_int(0,35)];
 $row    = ['Ref Number'=>$refNum,'Date'=>$date,'Project'=>$project,'Client'=>$client,
-           'Description'=>$description,'Amount'=>$amount,'Status'=>$status,'Notes'=>$notes];
+           'Description'=>$description,'Amount'=>$amount,'Status'=>$status,'Buy URL'=>$buyUrl,'Notes'=>$notes];
 $enc    = base64_encode(json_encode($row, JSON_UNESCAPED_UNICODE));
 $py     = $_ENV['PYTHON'] ?? 'python3';
 $cmd    = escapeshellarg($py) . ' ' . escapeshellarg(__DIR__ . '/gadd.py') . ' '

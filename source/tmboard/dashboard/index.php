@@ -510,6 +510,7 @@ textarea.field-input { resize:vertical; min-height:4rem; }
         </select>
       </div>
     </div>
+    <div class="field-group"><label>Buy URL</label><input class="field-input" id="hwBuyUrl" type="url" placeholder="https://…" /></div>
     <div class="field-group"><label>Notes</label><textarea class="field-input" id="hwNotes" placeholder="Optional notes…"></textarea></div>
     <div class="tm-err" id="hwErr"></div>
     <div class="dialog-actions">
@@ -784,6 +785,7 @@ function openAddHwDialog(proj, client) {
   document.getElementById('hwAmount').value = '';
   document.getElementById('hwStatus').value = '';
   document.getElementById('hwDesc').value   = '';
+  document.getElementById('hwBuyUrl').value = '';
   document.getElementById('hwNotes').value  = '';
   document.getElementById('hwErr').textContent = '';
   document.getElementById('hwSubmitBtn').disabled = false;
@@ -798,6 +800,7 @@ function openEditHwDialog(h) {
   document.getElementById('hwAmount').value = h['Amount']      || '';
   document.getElementById('hwStatus').value = h['Status']      || '';
   document.getElementById('hwDesc').value   = h['Description'] || '';
+  document.getElementById('hwBuyUrl').value = h['Buy URL']     || '';
   document.getElementById('hwNotes').value  = h['Notes']       || '';
   document.getElementById('hwErr').textContent = '';
   document.getElementById('hwSubmitBtn').disabled = false;
@@ -818,6 +821,7 @@ function submitHw() {
     description: desc,
     amount:      amount,
     status:      document.getElementById('hwStatus').value,
+    buy_url:     document.getElementById('hwBuyUrl').value.trim(),
     notes:       document.getElementById('hwNotes').value.trim(),
   };
   if (_editingHw) {

@@ -720,7 +720,11 @@ body:has(.overlay.open) { overflow: hidden; }
 .add-entry-fields textarea:focus { border-color:#1a1a2e; }
 .add-entry-fields textarea { resize:vertical; min-height:4.5rem; }
 .add-entry-fields input[type="date"] {
-  box-sizing:border-box;
+  -webkit-appearance:none; appearance:none;
+  background-color:#fff;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right .65rem center; background-size:15px 15px;
+  padding-right:2.2rem; box-sizing:border-box;
 }
 .add-entry-row { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
 .add-entry-actions { display:flex; justify-content:flex-end; align-items:center; gap:.6rem; margin-top:.1rem; }

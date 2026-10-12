@@ -772,6 +772,15 @@ body:has(.overlay.open) { overflow: hidden; }
 
 /* ── Combo drop ── */
 .combo-wrap { position: relative; }
+.combo-wrap input {
+  width: 100%; box-sizing: border-box;
+  font-family: 'DINRegular', sans-serif; font-size: .83rem;
+  border: 1px solid #ccc; border-radius: 6px;
+  padding: .42rem .7rem; color: #111; outline: none; background: #fff;
+  transition: border-color .15s;
+}
+.combo-wrap input:focus { border-color: #1a1a2e; }
+.combo-wrap input:disabled { opacity: .5; background: #f4f4f4; cursor: default; }
 .combo-drop {
   display: none; position: absolute; top: calc(100% + 2px); left: 0; right: 0; z-index: 9999;
   background: #fff; border: 1px solid #ccc; border-radius: 6px;

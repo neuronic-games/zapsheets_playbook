@@ -1075,8 +1075,30 @@ if ($_sheet_id && is_dir($_sheets_root)) {
     .add-entry-fields input:focus,
     .add-entry-fields select:focus,
     .add-entry-fields textarea:focus { border-color:#1a1a2e; }
+    .add-entry-fields select {
+      -webkit-appearance:none !important; appearance:none !important;
+      background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgMTIgOCI+PHBhdGggZD0iTTEgMWw1IDUgNS01IiBzdHJva2U9IiM2NjYiIHN0cm9rZS13aWR0aD0iMS41IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=") !important;
+      background-repeat:no-repeat; background-position:right .7rem center; padding-right:2rem;
+    }
     .add-entry-fields textarea { resize:vertical; min-height:4.5rem; }
-    /* iOS: date inputs ignore padding/font-size without this */
+    /* Date input wrapper with calendar icon overlay */
+    .date-wrap { position:relative; }
+    .date-wrap input[type="date"] {
+      -webkit-appearance:none; appearance:none;
+      width:100%; box-sizing:border-box; background:#fff;
+      padding-right:2.2rem; cursor:pointer;
+    }
+    .date-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+      position:absolute; right:0; top:0; bottom:0; width:2.2rem;
+      opacity:0; cursor:pointer;
+    }
+    .date-wrap::after {
+      content:''; position:absolute; right:.65rem; top:50%; transform:translateY(-50%);
+      width:15px; height:15px; pointer-events:none;
+      background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNSIgaGVpZ2h0PSIxNSIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM4ODgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSI0IiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIi8+PGxpbmUgeDE9IjE2IiB5MT0iMiIgeDI9IjE2IiB5Mj0iNiIvPjxsaW5lIHgxPSI4IiB5MT0iMiIgeDI9IjgiIHkyPSI2Ii8+PGxpbmUgeDE9IjMiIHkxPSIxMCIgeDI9IjIxIiB5Mj0iMTAiLz48L3N2Zz4=");
+      background-repeat:no-repeat; background-size:contain;
+    }
+    /* Legacy rule kept for non-wrapped date inputs */
     .add-entry-fields input[type="date"] {
       -webkit-appearance:none; appearance:none;
       box-sizing:border-box;
@@ -2132,7 +2154,9 @@ if ($_sheet_id && is_dir($_sheets_root)) {
       <div id="addLockedSection" class="add-locked-ctx" style="display:none"></div>
       <div class="add-entry-row" style="margin-top:.5rem">
         <label>Date
-          <input type="date" id="addDate" />
+          <div class="date-wrap">
+            <input type="date" id="addDate" />
+          </div>
         </label>
         <label>Status
           <select id="addStatus">

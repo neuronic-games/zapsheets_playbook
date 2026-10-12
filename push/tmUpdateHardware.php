@@ -1,6 +1,6 @@
 <?php
 // tmUpdateHardware.php — update a hardware row by Row ID
-// POST: id, row_id, date, project, client, description, amount, notes
+// POST: id, row_id, date, project, client, description, amount, status, notes
 error_reporting(0); ini_set('display_errors','0');
 header('Content-Type: application/json');
 
@@ -14,6 +14,7 @@ $project     = trim($_POST['project']     ?? '');
 $client      = trim($_POST['client']      ?? '');
 $description = trim($_POST['description'] ?? '');
 $amount      = trim($_POST['amount']      ?? '');
+$status      = trim($_POST['status']      ?? '');
 $notes       = trim($_POST['notes']       ?? '');
 
 if (!$sheetId || !$rowId) {
@@ -21,7 +22,7 @@ if (!$sheetId || !$rowId) {
 }
 
 $data   = ['row_id'=>$rowId,'Date'=>$date,'Project'=>$project,'Client'=>$client,
-           'Description'=>$description,'Amount'=>$amount,'Notes'=>$notes];
+           'Description'=>$description,'Amount'=>$amount,'Status'=>$status,'Notes'=>$notes];
 $enc    = base64_encode(json_encode($data, JSON_UNESCAPED_UNICODE));
 $py     = $_ENV['PYTHON'] ?? 'python3';
 $cmd    = escapeshellarg($py) . ' ' . escapeshellarg(__DIR__ . '/gtmUpdate.py') . ' '

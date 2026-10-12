@@ -369,7 +369,7 @@ textarea.field-input { resize:vertical; min-height:4rem; }
       <?php if ($hwRows): ?>
       <table class="tm-table">
         <thead><tr>
-          <th>Date</th><th>Description</th><th class="num">Amount</th><th>Notes</th><th class="actions"></th>
+          <th>Date</th><th>Description</th><th class="num">Amount</th><th>Status</th><th>Notes</th><th class="actions"></th>
         </tr></thead>
         <tbody>
         <?php foreach ($hwRows as $h): ?>
@@ -377,6 +377,7 @@ textarea.field-input { resize:vertical; min-height:4rem; }
           <td><?= htmlspecialchars($h['Date'] ?? '') ?></td>
           <td><?= htmlspecialchars($h['Description'] ?? '') ?></td>
           <td class="num">$<?= number_format((float)($h['Amount'] ?? 0), 2) ?></td>
+          <td><?= htmlspecialchars($h['Status'] ?? '') ?></td>
           <td><?= htmlspecialchars($h['Notes'] ?? '') ?></td>
           <td class="actions">
             <button class="btn-sm" onclick="openEditHwDialog(<?= htmlspecialchars(json_encode($h), ENT_QUOTES) ?>)">Edit</button>
@@ -480,7 +481,21 @@ textarea.field-input { resize:vertical; min-height:4rem; }
       <div class="field-group"><label>Date</label><div class="date-wrap"><input class="field-input" id="hwDate" type="date" /></div></div>
       <div class="field-group"><label>Amount ($) *</label><input class="field-input" id="hwAmount" type="number" min="0" step="0.01" placeholder="0.00" /></div>
     </div>
-    <div class="field-group"><label>Description *</label><input class="field-input" id="hwDesc" type="text" placeholder="AWS EC2 instance, etc." /></div>
+    <div class="field-row">
+      <div class="field-group" style="flex:2"><label>Description *</label><input class="field-input" id="hwDesc" type="text" placeholder="AWS EC2 instance, etc." /></div>
+      <div class="field-group"><label>Status</label>
+        <select class="field-input" id="hwStatus">
+          <option value="">—</option>
+          <option>Planned</option>
+          <option>Ordered</option>
+          <option>Received</option>
+          <option>Shipped</option>
+          <option>Delivered</option>
+          <option>Returned</option>
+          <option>Lost</option>
+        </select>
+      </div>
+    </div>
     <div class="field-group"><label>Notes</label><textarea class="field-input" id="hwNotes" placeholder="Optional notes…"></textarea></div>
     <div class="tm-err" id="hwErr"></div>
     <div class="dialog-actions">
@@ -741,6 +756,7 @@ function openAddHwDialog(proj, client) {
   document.getElementById('hwDlgTitle').textContent = 'Add Cost · ' + proj;
   document.getElementById('hwDate').value   = today();
   document.getElementById('hwAmount').value = '';
+  document.getElementById('hwStatus').value = '';
   document.getElementById('hwDesc').value   = '';
   document.getElementById('hwNotes').value  = '';
   document.getElementById('hwErr').textContent = '';
@@ -754,6 +770,7 @@ function openEditHwDialog(h) {
   document.getElementById('hwDlgTitle').textContent = 'Edit Cost · ' + _hwProjName;
   document.getElementById('hwDate').value   = h['Date']        || '';
   document.getElementById('hwAmount').value = h['Amount']      || '';
+  document.getElementById('hwStatus').value = h['Status']      || '';
   document.getElementById('hwDesc').value   = h['Description'] || '';
   document.getElementById('hwNotes').value  = h['Notes']       || '';
   document.getElementById('hwErr').textContent = '';
@@ -774,6 +791,7 @@ function submitHw() {
     client:      _hwProjClient,
     description: desc,
     amount:      amount,
+    status:      document.getElementById('hwStatus').value,
     notes:       document.getElementById('hwNotes').value.trim(),
   };
   if (_editingHw) {

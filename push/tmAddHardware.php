@@ -1,6 +1,6 @@
 <?php
 // tmAddHardware.php — add a hardware cost row to the Hardware tab
-// POST: id, date, project, client, description, amount, notes
+// POST: id, date, project, client, description, amount, status, notes
 error_reporting(0); ini_set('display_errors','0');
 header('Content-Type: application/json');
 
@@ -13,6 +13,7 @@ $project     = trim($_POST['project']     ?? '');
 $client      = trim($_POST['client']      ?? '');
 $description = trim($_POST['description'] ?? '');
 $amount      = trim($_POST['amount']      ?? '');
+$status      = trim($_POST['status']      ?? '');
 $notes       = trim($_POST['notes']       ?? '');
 
 if (!$sheetId || !$project || !$description) {
@@ -21,7 +22,7 @@ if (!$sheetId || !$project || !$description) {
 
 $rowId  = substr(md5(uniqid($sheetId . $project . $description, true)), 0, 16);
 $row    = ['Row ID'=>$rowId,'Date'=>$date,'Project'=>$project,'Client'=>$client,
-           'Description'=>$description,'Amount'=>$amount,'Notes'=>$notes];
+           'Description'=>$description,'Amount'=>$amount,'Status'=>$status,'Notes'=>$notes];
 $enc    = base64_encode(json_encode($row, JSON_UNESCAPED_UNICODE));
 $py     = $_ENV['PYTHON'] ?? 'python3';
 $cmd    = escapeshellarg($py) . ' ' . escapeshellarg(__DIR__ . '/gadd.py') . ' '

@@ -690,31 +690,34 @@ body:has(.overlay.open) { overflow: hidden; }
 }
 .collab-dialog-title {
   font-family: 'DINBlack', sans-serif; font-size: .95rem;
-  color: #1a1a2e; letter-spacing: .03em;
-  margin-bottom: 1.1rem; text-transform: uppercase;
+  color: #1a1a2e; margin-bottom: 1.1rem;
 }
-.collab-field { margin-bottom: .85rem; }
+.collab-field { margin-bottom: .6rem; }
 .collab-field-row {
-  display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: .65rem;
-  margin-bottom: .85rem;
+  display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: .6rem;
+  margin-bottom: .6rem;
+}
+.collab-field-row-2 {
+  display: grid; grid-template-columns: 1fr 1fr; gap: .6rem;
+  margin-bottom: .6rem;
 }
 .collab-label {
   display: block;
-  font-family: 'DINBlack', sans-serif; font-size: .62rem;
+  font-family: 'DINBlack', sans-serif; font-size: .68rem;
   text-transform: uppercase; letter-spacing: .05em;
-  color: #888; margin-bottom: .28rem;
+  color: #555; margin-bottom: .22rem;
 }
 .collab-input, .collab-select, .collab-textarea {
-  display: block; width: 100%; padding: .5rem .7rem;
-  font-family: 'DINRegular', Arial, sans-serif; font-size: .88rem; color: #111;
-  border: 1.5px solid #d8d8e0; border-radius: 7px; outline: none;
-  background: #fafafa; transition: border-color .15s;
+  display: block; width: 100%; padding: .42rem .7rem;
+  font-family: 'DINRegular', Arial, sans-serif; font-size: .83rem; color: #111;
+  border: 1px solid #ccc; border-radius: 6px; outline: none;
+  background: #fff; transition: border-color .15s; box-sizing: border-box;
 }
 .collab-input:focus, .collab-select:focus, .collab-textarea:focus {
-  border-color: #1a1a2e; background: #fff;
+  border-color: #1a1a2e;
 }
-.collab-textarea { resize: vertical; min-height: 60px; }
-.collab-input[readonly], .collab-input:disabled { color: #999; background: #f4f4f8; cursor: default; }
+.collab-textarea { resize: vertical; min-height: 4.5rem; }
+.collab-input[readonly], .collab-input:disabled { color: #999; background: #f4f4f4; cursor: default; }
 
 /* ── Combo drop ── */
 .combo-wrap { position: relative; }
@@ -732,14 +735,14 @@ body:has(.overlay.open) { overflow: hidden; }
 .combo-opt:hover, .combo-opt.active { background: #1a1a2e; color: #fff; }
 .combo-sep { height: 1px; background: #e0dbd3; margin: .25rem .5rem; pointer-events: none; }
 .collab-dialog-actions {
-  display: flex; gap: .65rem; justify-content: flex-end; margin-top: 1.1rem;
+  display: flex; gap: .65rem; justify-content: flex-end; margin-top: 1rem;
 }
 .collab-btn {
-  display: inline-block; padding: .48rem 1.1rem; border-radius: 999px;
+  display: inline-block; padding: .42rem 1rem; border-radius: 6px;
   font-family: 'DINBlack', sans-serif; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em;
-  cursor: pointer; border: none; transition: opacity .15s;
+  cursor: pointer; border: none; transition: background .15s, opacity .15s;
 }
-.collab-btn:hover:not(:disabled) { opacity: .8; }
+.collab-btn:hover:not(:disabled) { opacity: .85; }
 .collab-btn:disabled { opacity: .4; cursor: default; }
 .collab-btn-primary { background: #1a1a2e; color: #fff; }
 .collab-btn-cancel  { background: #e8e8f0; color: #1a1a2e; }
@@ -883,26 +886,28 @@ body:has(.overlay.open) { overflow: hidden; }
           <div class="combo-drop" id="addContactDrop"></div>
         </div>
       </div>
-      <div class="collab-field">
-        <label class="collab-label">Date *</label>
-        <input class="collab-input" id="addDateInput" type="date" />
+      <div class="collab-field-row-2">
+        <div>
+          <label class="collab-label">Date *</label>
+          <input class="collab-input" id="addDateInput" type="date" style="-webkit-appearance:none;appearance:none;height:2.15rem;box-sizing:border-box;padding-top:0;padding-bottom:0" />
+        </div>
+        <div>
+          <label class="collab-label">Status</label>
+          <select class="collab-select" id="addStatusSel">
+            <option>Planned</option>
+            <option>Pitched</option>
+            <option>Interested</option>
+            <option>Passed</option>
+            <option>Gone Cold</option>
+            <option>Signed</option>
+            <option>Published</option>
+            <option>Returned</option>
+          </select>
+        </div>
       </div>
       <div class="collab-field">
         <label class="collab-label">Event</label>
         <input class="collab-input" id="addEventInput" type="text" placeholder="e.g. Gen Con, email, etc." />
-      </div>
-      <div class="collab-field">
-        <label class="collab-label">Status</label>
-        <select class="collab-select" id="addStatusSel">
-          <option>Planned</option>
-          <option>Pitched</option>
-          <option>Interested</option>
-          <option>Passed</option>
-          <option>Gone Cold</option>
-          <option>Signed</option>
-          <option>Published</option>
-          <option>Returned</option>
-        </select>
       </div>
       <div class="collab-field">
         <label class="collab-label">Notes</label>

@@ -320,19 +320,7 @@ $_hasFooter = $_rulesUrl || $_playUrl || $_printUrl || $_sellsheetUrl || $_video
 <meta name="apple-mobile-web-app-title" content="<?= _ps_e($_gameName) ?>" />
 <link rel="icon" type="image/png" sizes="192x192" href="<?= _ps_e($_base) ?>images/pb_icon_192.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="<?= _ps_e($_base) ?>images/pb_icon_180.png" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css" />
 <style>
-/* Override flatpickr to match our input style */
-.flatpickr-calendar { font-family:'DINRegular',sans-serif; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,.15); border:1px solid #ddd; }
-.flatpickr-day.selected, .flatpickr-day.selected:hover { background:#1a1a2e; border-color:#1a1a2e; }
-.flatpickr-day:hover { background:#e8f4f8; }
-.flatpickr-months .flatpickr-month { background:#1a1a2e; color:#fff; border-radius:7px 7px 0 0; }
-.flatpickr-months .flatpickr-prev-month, .flatpickr-months .flatpickr-next-month { color:#fff; fill:#fff; }
-.flatpickr-months .flatpickr-prev-month:hover svg, .flatpickr-months .flatpickr-next-month:hover svg { fill:#cde; }
-.flatpickr-current-month .flatpickr-monthDropdown-months { background:#1a1a2e; color:#fff; }
-.flatpickr-current-month input.cur-year { color:#fff; }
-.numInputWrapper:hover { background:rgba(255,255,255,.1); }
-</style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2') format('woff2'),url('fonts/DINBlack.ttf'); }
 @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'),url('fonts/DINMedium.ttf'); }
 
@@ -731,11 +719,22 @@ body:has(.overlay.open) { overflow: hidden; }
 .add-entry-fields select:focus,
 .add-entry-fields textarea:focus { border-color:#1a1a2e; }
 .add-entry-fields textarea { resize:vertical; min-height:4.5rem; }
-.add-entry-fields input[type="date"] { display:none; } /* hidden; flatpickr altInput is shown */
-.add-entry-fields input.flatpickr-input.flatpickr-mobile,
-.add-entry-fields input.flatpickr-input[type="text"] {
+.date-wrap { position:relative; }
+.date-wrap input[type="date"] {
   -webkit-appearance:none; appearance:none;
-  background:#fff; box-sizing:border-box; cursor:pointer;
+  width:100%; box-sizing:border-box; background:#fff;
+  padding-right:2.2rem; cursor:pointer;
+}
+.date-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+  position:absolute; right:0; top:0; bottom:0; width:2.2rem;
+  opacity:0; cursor:pointer; /* invisible but clickable */
+}
+.date-wrap::after {
+  content:'';
+  position:absolute; right:.65rem; top:50%; transform:translateY(-50%);
+  width:15px; height:15px; pointer-events:none;
+  background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNSIgaGVpZ2h0PSIxNSIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM4ODgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSI0IiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIi8+PGxpbmUgeDE9IjE2IiB5MT0iMiIgeDI9IjE2IiB5Mj0iNiIvPjxsaW5lIHgxPSI4IiB5MT0iMiIgeDI9IjgiIHkyPSI2Ii8+PGxpbmUgeDE9IjMiIHkxPSIxMCIgeDI9IjIxIiB5Mj0iMTAiLz48L3N2Zz4=");
+  background-repeat:no-repeat; background-size:contain;
 }
 .add-entry-row { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
 .add-entry-actions { display:flex; justify-content:flex-end; align-items:center; gap:.6rem; margin-top:.1rem; }
@@ -975,7 +974,9 @@ body:has(.overlay.open) { overflow: hidden; }
         </label>
         <div class="add-entry-row">
           <label>Date *
-            <input type="date" id="addDateInput" />
+            <div class="date-wrap">
+              <input type="date" id="addDateInput" />
+            </div>
           </label>
           <label>Status
             <select id="addStatusSel">
@@ -1289,7 +1290,7 @@ function openAddDialog() {
   pub.value    = '';
   pub.disabled = false;
   document.getElementById('addContactInput').value = '';
-  if (_addDatePicker) { _addDatePicker.setDate(new Date(), true); } else { document.getElementById('addDateInput').value = ''; }
+  document.getElementById('addDateInput').value    = '';
   document.getElementById('addEventInput').value   = '';
   document.getElementById('addStatusSel').value    = 'Pitched';
   document.getElementById('addNotesInput').value   = '';
@@ -1307,7 +1308,7 @@ function openAddDialogForPub(pubName, event) {
   pub.value    = pubName;
   pub.disabled = true;
   document.getElementById('addContactInput').value = '';
-  if (_addDatePicker) { _addDatePicker.setDate(new Date(), true); } else { document.getElementById('addDateInput').value = ''; }
+  document.getElementById('addDateInput').value    = '';
   document.getElementById('addEventInput').value   = '';
   document.getElementById('addStatusSel').value    = 'Pitched';
   document.getElementById('addNotesInput').value   = '';
@@ -1828,16 +1829,6 @@ function guardedOpenAddDialog() {
 
 _loadStoredUser();
 _updateSignedInState();
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
-<script>
-var _addDatePicker = flatpickr('#addDateInput', {
-  dateFormat: 'Y-m-d',
-  altInput: true,
-  altFormat: 'm/d/Y',
-  allowInput: true,
-  disableMobile: true,
-});
 </script>
 </body>
 </html>

@@ -148,7 +148,7 @@ body { background:var(--bg); font-family:'DINRegular',Arial,sans-serif; color:va
   align-items:center; justify-content:center; flex-shrink:0; transition:color .15s, border-color .15s, transform .35s;
 }
 .btn-reload:hover { color:var(--accent); border-color:var(--accent); }
-.btn-reload.spinning svg { animation:spin .55s linear; }
+.btn-reload.spinning svg { animation:spin .75s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
 
 /* ── Project body ── */

@@ -133,8 +133,12 @@ body { background:var(--bg); font-family:'DINRegular',Arial,sans-serif; color:va
 
 /* ── Main ── */
 .tm-main { max-width:860px; margin:0 auto; padding:1.5rem 1rem 3rem; }
-.tm-view { display:none; }
-.tm-view.active { display:block; }
+.tm-section { scroll-margin-top:5rem; }
+.tm-section + .tm-section { margin-top:2.25rem; }
+.name-first { background:var(--accent-lt); border-radius:8px; padding:.7rem .8rem .2rem; margin-bottom:.9rem; }
+.name-first .hint { font-size:.78rem; color:var(--muted); margin:-.1rem 0 .6rem; line-height:1.35; }
+.dlg-note { background:#fff8e8; border:1px solid #f0d898; color:#5a4a1a; border-radius:6px;
+  padding:.55rem .7rem; font-size:.82rem; line-height:1.4; margin-top:.6rem; }
 
 /* ── Signed-in gating ── */
 body:not(.tm-signed-in) .auth-only { display:none !important; }
@@ -288,7 +292,7 @@ textarea.field-input { resize:vertical; min-height:3.5rem; }
   </div>
 
   <!-- ══ TIME VIEW ══ -->
-  <div class="tm-view active" id="viewTime">
+  <div class="tm-section" id="viewTime">
     <div class="section-head">
       <div class="section-label">Time Entries</div>
       <div class="section-right">
@@ -324,7 +328,7 @@ textarea.field-input { resize:vertical; min-height:3.5rem; }
   </div>
 
   <!-- ══ MATERIALS VIEW ══ -->
-  <div class="tm-view" id="viewMaterials">
+  <div class="tm-section" id="viewMaterials">
     <div class="section-head">
       <div class="section-label">Hardware &amp; Materials</div>
       <div class="section-right">
@@ -416,11 +420,16 @@ textarea.field-input { resize:vertical; min-height:3.5rem; }
   <div class="tm-dialog" onclick="event.stopPropagation()"
        onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitTime();}">
     <div class="dlg-title" id="timeDlgTitle">Log Time</div>
+    <div class="name-first" id="timeNameBox" style="display:none">
+      <div class="field-group"><label>Your Name *</label><input class="field-input" id="timeMyName" type="text" placeholder="e.g. Jane Smith" autocomplete="name" /></div>
+      <div class="hint">First time here — your name is shown on your entries and added to the Staff list.</div>
+    </div>
     <div class="field-row">
       <div class="field-group"><label>Date *</label><div class="date-wrap"><input class="field-input" id="timeDate" type="date" /></div></div>
       <div class="field-group"><label>Hours *</label><input class="field-input" id="timeHours" type="number" min="0" step="0.25" placeholder="1.5" /></div>
     </div>
     <div class="field-group"><label>Description</label><textarea class="field-input" id="timeDesc" placeholder="What did you work on?"></textarea></div>
+    <div class="dlg-note" id="timeNote" style="display:none"></div>
     <div class="dlg-err" id="timeErr"></div>
     <div class="dialog-actions">
       <button class="btn-cancel" onclick="forceCloseTimeDialog()">Cancel</button>
@@ -434,6 +443,10 @@ textarea.field-input { resize:vertical; min-height:3.5rem; }
   <div class="tm-dialog" onclick="event.stopPropagation()"
        onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitHw();}">
     <div class="dlg-title" id="hwDlgTitle">Add Cost</div>
+    <div class="name-first" id="hwNameBox" style="display:none">
+      <div class="field-group"><label>Your Name *</label><input class="field-input" id="hwMyName" type="text" placeholder="e.g. Jane Smith" autocomplete="name" /></div>
+      <div class="hint">First time here — your name is shown as Added By on your costs and added to the Staff list.</div>
+    </div>
     <div class="field-row">
       <div class="field-group"><label>Date</label><div class="date-wrap"><input class="field-input" id="hwDate" type="date" /></div></div>
       <div class="field-group"><label>Amount ($) *</label><input class="field-input" id="hwAmount" type="number" min="0" step="0.01" placeholder="0.00" /></div>
@@ -455,6 +468,7 @@ textarea.field-input { resize:vertical; min-height:3.5rem; }
     </div>
     <div class="field-group"><label>Buy URL</label><input class="field-input" id="hwBuyUrl" type="url" placeholder="https://…" /></div>
     <div class="field-group"><label>Notes</label><textarea class="field-input" id="hwNotes" placeholder="Optional notes…"></textarea></div>
+    <div class="dlg-note" id="hwNote" style="display:none"></div>
     <div class="dlg-err" id="hwErr"></div>
     <div class="dialog-actions">
       <button class="btn-cancel" onclick="forceCloseHwDialog()">Cancel</button>
@@ -468,7 +482,6 @@ var SHEET_ID = <?= json_encode($_sheetId) ?>;
 var PROJECT  = <?= json_encode($_project) ?>;
 var CLIENT   = <?= json_encode($_client) ?>;
 var APP_ROOT = <?= json_encode(rtrim($_basePath, '/') . '/') ?>;
-var VIEW_KEY = 'tmboard_share_view_' + PROJECT;
 
 // ── Auth state ────────────────────────────────────────────────────────────────
 var _user = null;  // { email, name }
@@ -500,14 +513,23 @@ function _updateSignedInState() {
   });
 }
 
-// ── Tabs ──────────────────────────────────────────────────────────────────────
-function switchView(name) {
-  document.getElementById('viewTime').classList.toggle('active', name === 'time');
-  document.getElementById('viewMaterials').classList.toggle('active', name === 'materials');
+// ── Tabs: both sections are on the page; tabs jump to them ───────────────────
+function _setActiveTab(name) {
   document.getElementById('tabTime').classList.toggle('active', name === 'time');
   document.getElementById('tabMaterials').classList.toggle('active', name === 'materials');
-  try { sessionStorage.setItem(VIEW_KEY, name); } catch(e) {}
 }
+function switchView(name) {
+  var el = document.getElementById(name === 'materials' ? 'viewMaterials' : 'viewTime');
+  if (name === 'time') window.scrollTo({top:0, behavior:'smooth'});
+  else el.scrollIntoView({behavior:'smooth', block:'start'});
+  _setActiveTab(name);
+}
+// Highlight the tab for the section in view
+window.addEventListener('scroll', function() {
+  var mat = document.getElementById('viewMaterials').getBoundingClientRect();
+  var atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+  _setActiveTab(mat.top < window.innerHeight * 0.45 || atBottom && window.scrollY > 0 ? 'materials' : 'time');
+}, {passive:true});
 
 // ── User menu ─────────────────────────────────────────────────────────────────
 function toggleUserMenu(e) { e.stopPropagation(); document.getElementById('userMenu').classList.toggle('open'); }
@@ -670,12 +692,44 @@ function _finishName() {
   if (then === 'time') openAddTimeDialog();
 }
 
+// ── "Your name" inside the Log Time / Add Cost dialogs ───────────────────────
+// prefix: 'time' or 'hw'. Shows the name box only when the user has no name yet.
+function _prepNameBox(prefix) {
+  var need = !(_user && (_user.name || '').trim());
+  document.getElementById(prefix + 'NameBox').style.display = need ? '' : 'none';
+  document.getElementById(prefix + 'MyName').value = '';
+  document.getElementById(prefix + 'Note').style.display = 'none';
+  return need;
+}
+// Saves the typed name first (server keeps it unique), then calls done().
+// If a number suffix was added, stops and tells the user so they can confirm.
+function _ensureName(prefix, btn, done) {
+  var box = document.getElementById(prefix + 'NameBox');
+  if (box.style.display === 'none') { done(); return; }
+  var err  = document.getElementById(prefix + 'Err');
+  var note = document.getElementById(prefix + 'Note');
+  var want = document.getElementById(prefix + 'MyName').value.trim().replace(/\s+/g, ' ');
+  if (!want) { err.textContent = 'Please enter your name.'; document.getElementById(prefix + 'MyName').focus(); btn.disabled = false; return; }
+  post('push/tmSetName.php', {email: _user.email, name: want}, function(r) {
+    if (r.error) { err.textContent = r.error; btn.disabled = false; return; }
+    _user.name = r.name; _saveUser(); _updateSignedInState();
+    box.style.display = 'none';
+    if (r.adjusted) {
+      note.textContent = '\u201C' + want + '\u201D is already in use, so you\u2019ve been saved as \u201C' + r.name + '\u201D. Click ' + btn.textContent + ' to continue.';
+      note.style.display = '';
+      btn.disabled = false;
+      return;
+    }
+    done();
+  });
+}
+
 // ── Time ──────────────────────────────────────────────────────────────────────
 var _editingTime = null;
 function openAddTimeDialog() {
   if (!_user) { openAuthDialog(); return; }
-  if (!(_user.name || '').trim()) { _needNameFor = 'time'; openAuthDialog(); return; }
   _editingTime = null;
+  var needName = _prepNameBox('time');
   document.getElementById('timeDlgTitle').textContent = 'Log Time · ' + PROJECT;
   document.getElementById('timeDate').value  = today();
   document.getElementById('timeHours').value = '';
@@ -684,11 +738,13 @@ function openAddTimeDialog() {
   document.getElementById('timeSubmitBtn').textContent = 'Log Time';
   document.getElementById('timeSubmitBtn').disabled = false;
   document.getElementById('timeOverlay').classList.add('open');
-  setTimeout(function(){ document.getElementById('timeHours').focus(); }, 60);
+  setTimeout(function(){ document.getElementById(needName ? 'timeMyName' : 'timeHours').focus(); }, 60);
 }
 function openEditTimeDialog(t) {
   if (!_user) { openAuthDialog(); return; }
   _editingTime = t;
+  _prepNameBox('time');
+  document.getElementById('timeNameBox').style.display = 'none';
   document.getElementById('timeDlgTitle').textContent = 'Edit Time · ' + PROJECT;
   document.getElementById('timeDate').value  = t['Date']        || '';
   document.getElementById('timeHours').value = String(t['Hours'] || '').replace(/^'/, '');
@@ -706,6 +762,8 @@ function submitTime() {
   if (!date || !hours) { err.textContent = 'Date and hours are required.'; return; }
   var btn = document.getElementById('timeSubmitBtn');
   btn.disabled = true;
+  err.textContent = '';
+  _ensureName('time', btn, function() {
   var data = {
     date:        date,
     project:     PROJECT,
@@ -719,14 +777,15 @@ function submitTime() {
     if (r.error) { err.textContent = r.error; btn.disabled = false; return; }
     forceCloseTimeDialog(); location.reload();
   });
+  });
 }
 
 // ── Hardware & Materials ──────────────────────────────────────────────────────
 var _editingHw = null;
 function openAddHwDialog() {
   if (!_user) { openAuthDialog(); return; }
-  if (!(_user.name || '').trim()) { _needNameFor = 'hw'; openAuthDialog(); return; }
   _editingHw = null;
+  var needName = _prepNameBox('hw');
   document.getElementById('hwDlgTitle').textContent = 'Add Cost · ' + PROJECT;
   document.getElementById('hwDate').value   = today();
   document.getElementById('hwAmount').value = '';
@@ -738,11 +797,13 @@ function openAddHwDialog() {
   document.getElementById('hwSubmitBtn').disabled = false;
   document.getElementById('hwSubmitBtn').textContent = 'Add Cost';
   document.getElementById('hwOverlay').classList.add('open');
-  setTimeout(function(){ document.getElementById('hwDesc').focus(); }, 60);
+  setTimeout(function(){ document.getElementById(needName ? 'hwMyName' : 'hwDesc').focus(); }, 60);
 }
 function openEditHwDialog(h) {
   if (!_user) { openAuthDialog(); return; }
   _editingHw = h;
+  _prepNameBox('hw');
+  document.getElementById('hwNameBox').style.display = 'none';
   document.getElementById('hwDlgTitle').textContent = 'Edit Cost · ' + PROJECT;
   document.getElementById('hwDate').value   = h['Date']        || '';
   document.getElementById('hwAmount').value = String(h['Amount'] || '').replace(/^'/, '');
@@ -763,6 +824,8 @@ function submitHw() {
   if (!desc || !amount) { err.textContent = 'Description and amount are required.'; return; }
   var btn = document.getElementById('hwSubmitBtn');
   btn.disabled = true;
+  err.textContent = '';
+  _ensureName('hw', btn, function() {
   var data = {
     date:        document.getElementById('hwDate').value.trim(),
     project:     PROJECT,
@@ -778,6 +841,7 @@ function submitHw() {
   post(_editingHw ? 'push/tmUpdateHardware.php' : 'push/tmAddHardware.php', data, function(r) {
     if (r.error) { err.textContent = r.error; btn.disabled = false; return; }
     forceCloseHwDialog(); location.reload();
+  });
   });
 }
 
@@ -801,10 +865,6 @@ document.querySelectorAll('input[type="date"]').forEach(function(inp) {
 // ── Boot ──────────────────────────────────────────────────────────────────────
 _loadUser();
 _updateSignedInState();
-(function() {
-  var v = null; try { v = sessionStorage.getItem(VIEW_KEY); } catch(e) {}
-  if (v === 'materials') switchView('materials');
-})();
 </script>
 </body>
 </html>

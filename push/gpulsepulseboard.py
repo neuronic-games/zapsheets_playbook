@@ -105,52 +105,87 @@ def setup_worksheet(ws):
 
 try:
     ws = wb.worksheet(tab)
-    if ws.col_count < len(HEADERS):
-        log(f'Tab "{tab}" has {ws.col_count} cols — expanding to {len(HEADERS)}...', 'info')
-        wb.batch_update({'requests': [{'appendDimension': {
-            'sheetId': ws.id, 'dimension': 'COLUMNS',
-            'length': len(HEADERS) - ws.col_count,
-        }}]})
-        setup_worksheet(ws)
-        log('Columns expanded and headers updated.', 'ok')
 except gspread.exceptions.WorksheetNotFound:
     log(f'Tab "{tab}" not found — creating...', 'info')
     ws = wb.add_worksheet(title=tab, rows=100, cols=len(HEADERS))
     setup_worksheet(ws)
     log(f'Tab "{tab}" created.', 'ok')
 
-# ── Find or add the exhibit row ───────────────────────────────────────────────
+# ── Map header names → column numbers (columns may be in any order) ──────────
+
+def _norm(v):
+    return str(v or '').strip().lstrip("'").strip().casefold()
 
 headers_row = ws.row_values(1)
-try:
-    exhibit_col = next(i + 1 for i, h in enumerate(headers_row) if h.strip().lower() == 'exhibit')
-except StopIteration:
-    fail('Exhibit column not found in sheet header')
+if not any(h.strip() for h in headers_row):
+    log(f'Tab "{tab}" has no header row — adding headers...', 'info')
+    if ws.col_count < len(HEADERS):
+        wb.batch_update({'requests': [{'appendDimension': {
+            'sheetId': ws.id, 'dimension': 'COLUMNS', 'length': len(HEADERS) - ws.col_count}}]})
+    setup_worksheet(ws)
+    headers_row = list(HEADERS)
 
-cell = ws.find(exhibit, in_column=exhibit_col)
-if cell is None:
+col = {}
+for i, h in enumerate(headers_row):
+    k = _norm(h)
+    if k and k not in col:
+        col[k] = i + 1
+
+# Add any standard columns the tab is missing, at the end (never reorder existing ones)
+missing = [h for h in HEADERS if _norm(h) not in col]
+if missing:
+    need = len(headers_row) + len(missing)
+    if ws.col_count < need:
+        wb.batch_update({'requests': [{'appendDimension': {
+            'sheetId': ws.id, 'dimension': 'COLUMNS', 'length': need - ws.col_count}}]})
+    start_col = len(headers_row) + 1
+    ws.update([missing], gspread.utils.rowcol_to_a1(1, start_col) + ':' +
+              gspread.utils.rowcol_to_a1(1, start_col + len(missing) - 1))
+    for j, h in enumerate(missing):
+        col[_norm(h)] = start_col + j
+    headers_row = headers_row + missing
+    log(f'Added missing columns: {", ".join(missing)}', 'info')
+
+exhibit_col = col[_norm('Exhibit')]
+
+# ── Find or add the exhibit row ───────────────────────────────────────────────
+
+def _find_row():
+    vals = ws.col_values(exhibit_col)
+    want = _norm(exhibit)
+    for i, v in enumerate(vals[1:], start=2):   # skip header
+        if _norm(v) == want:
+            return i
+    return None
+
+row = _find_row()
+if row is None:
     log(f'Exhibit "{exhibit}" not found — adding row...', 'info')
-    ws.append_row([exhibit] + [''] * (len(HEADERS) - 1), value_input_option='RAW')
-    cell = ws.find(exhibit, in_column=exhibit_col)
+    new_row = [''] * len(headers_row)
+    new_row[exhibit_col - 1] = exhibit
+    res = ws.append_row(new_row, value_input_option='RAW', table_range='A1')
+    # Google tells us where it landed, e.g. "'CMH'!A14:O14"
+    m = re.search(r'![A-Z]+(\d+)', ((res or {}).get('updates') or {}).get('updatedRange', ''))
+    row = int(m.group(1)) if m else _find_row()
+    if row is None:
+        fail(f'Could not add a row for exhibit "{exhibit}" on tab "{tab}"')
+    log(f'Added "{exhibit}" at row {row}.', 'ok')
 
-row = cell.row
+# ── Write the data (by header name) ───────────────────────────────────────────
 
-# ── Write the data ────────────────────────────────────────────────────────────
-
+FIELDS = [
+    ('Host', host), ('IP', ip), ('User', user), ('OS', os_info), ('Memory', memory),
+    ('Disk', disk), ('Uptime', uptime), ('Last Reboot', last_reboot), ('Status', status),
+    ('Time', time_str), ('Crashes', crashes), ('Crash Times', crash_times),
+    ('TeamViewer ID', teamviewer_id),
+]
 updates = []
-if host:                updates.append({'range': f'B{row}', 'values': [[host]]})
-if ip:                  updates.append({'range': f'C{row}', 'values': [[ip]]})
-if user:                updates.append({'range': f'D{row}', 'values': [[user]]})
-if os_info:             updates.append({'range': f'E{row}', 'values': [[os_info]]})
-if memory:              updates.append({'range': f'F{row}', 'values': [[memory]]})
-if disk:                updates.append({'range': f'G{row}', 'values': [[disk]]})
-if uptime:              updates.append({'range': f'H{row}', 'values': [[uptime]]})
-if last_reboot:         updates.append({'range': f'I{row}', 'values': [[last_reboot]]})
-if status:              updates.append({'range': f'J{row}', 'values': [[status]]})
-if time_str:            updates.append({'range': f'K{row}', 'values': [[time_str]]})
-if crashes is not None: updates.append({'range': f'L{row}', 'values': [[crashes]]})
-if crash_times:         updates.append({'range': f'M{row}', 'values': [[crash_times]]})
-if teamviewer_id:       updates.append({'range': f'N{row}', 'values': [[teamviewer_id]]})
+for header, value in FIELDS:
+    if value is None or value == '':
+        continue
+    c = col.get(_norm(header))
+    if c:
+        updates.append({'range': gspread.utils.rowcol_to_a1(row, c), 'values': [[value]]})
 
 if updates:
     ws.batch_update(updates)

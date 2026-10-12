@@ -352,7 +352,7 @@ textarea.field-input { resize:vertical; min-height:4rem; }
 .user-menu-divider { border:none; border-top:1px solid rgba(255,255,255,.1); margin:.3rem 0; }
 
 /* ── Auth-gated elements — hidden until JS sets display:'' ── */
-.auth-only { display:none; }
+body:not(.tm-signed-in) .auth-only { display:none !important; }
 
 @media (max-width:600px) {
   .project-bar { flex-wrap:wrap; }
@@ -838,9 +838,9 @@ function _updateAuthState() {
   var menuProfile   = document.getElementById('menuProfile');
 
   // Show/hide all auth-gated elements
-  document.querySelectorAll('.auth-only').forEach(function(el) {
-    el.style.display = _ownerUser ? '' : 'none';
-  });
+  // Edit controls (.auth-only) are shown via CSS when <body> has .tm-signed-in,
+  // so this also covers any rows rendered later.
+  document.body.classList.toggle('tm-signed-in', !!_ownerUser);
 
   if (!btn) return;
   if (_ownerUser) {

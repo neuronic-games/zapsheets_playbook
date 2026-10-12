@@ -701,7 +701,7 @@ body:has(.overlay.open) { overflow: hidden; }
   font-family:'DINRegular',sans-serif; font-size:.83rem;
   border:1px solid #ccc; border-radius:6px;
   padding:.42rem .7rem; color:#111; outline:none; background:#fff;
-  width:100%; box-sizing:border-box;
+  width:100%; min-width:0; box-sizing:border-box;
 }
 .add-entry-fields select {
   -webkit-appearance:none; appearance:none;
@@ -720,9 +720,7 @@ body:has(.overlay.open) { overflow: hidden; }
 .add-entry-fields textarea:focus { border-color:#1a1a2e; }
 .add-entry-fields textarea { resize:vertical; min-height:4.5rem; }
 .add-entry-fields input[type="date"] {
-  -webkit-appearance:none; appearance:none;
-  box-sizing:border-box; padding-top:0; padding-bottom:0; height:2.15rem;
-  background:#fff; color:#111;
+  box-sizing:border-box;
 }
 .add-entry-row { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
 .add-entry-actions { display:flex; justify-content:flex-end; align-items:center; gap:.6rem; margin-top:.1rem; }

@@ -701,6 +701,13 @@ body:has(.overlay.open) { overflow: hidden; }
   font-family:'DINRegular',sans-serif; font-size:.83rem;
   border:1px solid #ccc; border-radius:6px;
   padding:.42rem .7rem; color:#111; outline:none; background:#fff;
+  width:100%; box-sizing:border-box;
+}
+/* Game label chip */
+.add-game-label {
+  font-family:'DINBlack',sans-serif; font-size:.8rem;
+  color:#1a1a2e; letter-spacing:.03em; padding:.4rem .75rem;
+  background:#f0f0f8; border-radius:6px;
 }
 .add-entry-fields input:focus,
 .add-entry-fields select:focus,
@@ -932,6 +939,7 @@ body:has(.overlay.open) { overflow: hidden; }
   <div class="add-entry-overlay" id="addOverlay" onclick="if(event.target===this){var d=this.querySelector('.add-entry-dialog');if(hasDialogData(d))shakeDialog(d);else closeAddDialog();}">
     <div class="add-entry-dialog" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitAdd();}" onclick="event.stopPropagation()">
       <h2 class="add-entry-title">Add Pitch</h2>
+      <div class="add-game-label"><?= htmlspecialchars($_gameName) ?></div>
       <div class="add-entry-fields">
         <label>Publisher *
           <div class="combo-wrap">

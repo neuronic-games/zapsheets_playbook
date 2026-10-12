@@ -703,6 +703,12 @@ body:has(.overlay.open) { overflow: hidden; }
   padding:.42rem .7rem; color:#111; outline:none; background:#fff;
   width:100%; box-sizing:border-box;
 }
+.add-entry-fields select {
+  -webkit-appearance:none; appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right .7rem center;
+  padding-right:2rem;
+}
 /* Game label chip */
 .add-game-label {
   font-family:'DINBlack',sans-serif; font-size:.8rem;
@@ -716,6 +722,7 @@ body:has(.overlay.open) { overflow: hidden; }
 .add-entry-fields input[type="date"] {
   -webkit-appearance:none; appearance:none;
   box-sizing:border-box; padding-top:0; padding-bottom:0; height:2.15rem;
+  background:#fff; color:#111;
 }
 .add-entry-row { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
 .add-entry-actions { display:flex; justify-content:flex-end; align-items:center; gap:.6rem; margin-top:.1rem; }

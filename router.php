@@ -97,6 +97,7 @@ $RESERVED = [
     'fitboard',     // setup landing page — handled below, reserved so /{id} never grabs it
     'noteboard',    // setup landing page — handled below, reserved so /{id} never grabs it
     'pulseboard',   // setup landing page — handled below, reserved so /{id} never grabs it
+    'tmboard',      // setup landing page — handled below, reserved so /{id} never grabs it
 ];
 
 // ── /pushsite → push/pushsite.php ────────────────────────────────────────────
@@ -142,6 +143,16 @@ if (preg_match('#^/noteboard/help/?$#', $uri)) {
 // ── /pulseboard — setup landing page (no sheet ID yet) ───────────────────────
 if (preg_match('#^/pulseboard/?$#', $uri)) {
     serveFile(__DIR__ . '/source/pulseboard/index.php', $MIME);
+}
+
+// ── /tmboard — setup landing page (no sheet ID yet) ──────────────────────────
+if (preg_match('#^/tmboard/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/tmboard/index.php', $MIME);
+}
+
+// ── /tmboard/share/{token} — staff collab view ───────────────────────────────
+if (preg_match('#^/tmboard/share/([a-f0-9]{24})/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/tmboard/shared/index.php', $MIME);
 }
 
 // ── Backward compat: sheets/{id}/view|dashboard|sellsheet|fitboard|trmnl ──
@@ -250,6 +261,11 @@ if (preg_match('#^/([A-Za-z0-9_\-]+)/fitboard/onboard/?$#', $uri, $m)) {
 // ── Short URL: /{id}/fitboard ─────────────────────────────────────────────
 if (preg_match('#^/([A-Za-z0-9_\-]+)/fitboard(/.*)?$#', $uri, $m)) {
     serveFile(__DIR__ . '/source/fitboard/index.php', $MIME);
+}
+
+// ── Short URL: /{id}/tmboard — T&MBoard owner dashboard ──────────────────────
+if (preg_match('#^/([A-Za-z0-9_\-]+)/tmboard(/.*)?$#', $uri, $m)) {
+    serveFile(__DIR__ . '/source/tmboard/dashboard/index.php', $MIME);
 }
 
 // ── Short URL: /{id}[/…] → redirect to /sheets/{id}[/…] ─────────────────

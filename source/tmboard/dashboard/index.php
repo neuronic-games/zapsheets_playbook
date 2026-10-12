@@ -142,6 +142,14 @@ body { background:var(--bg); font-family:'DINRegular',Arial,sans-serif; color:va
 .btn-sm.danger:hover { background:#fff0ef; }
 .btn-sm.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
 .btn-sm.primary:hover { background:var(--accent-dk); }
+.btn-reload {
+  width:1.85rem; height:1.85rem; border-radius:50%; border:1.5px solid var(--border);
+  background:var(--surface); color:var(--muted); cursor:pointer; display:inline-flex;
+  align-items:center; justify-content:center; flex-shrink:0; transition:color .15s, border-color .15s, transform .35s;
+}
+.btn-reload:hover { color:var(--accent); border-color:var(--accent); }
+.btn-reload.spinning svg { animation:spin .55s linear; }
+@keyframes spin { to { transform:rotate(360deg); } }
 
 /* ── Project body ── */
 .project-body { padding:.85rem 1rem 1rem; display:none; }
@@ -320,6 +328,12 @@ textarea.field-input { resize:vertical; min-height:4rem; }
       </div>
       <div class="project-status <?= htmlspecialchars($statusClass) ?>"><?= htmlspecialchars($pStatus) ?></div>
       <div class="project-actions" onclick="event.stopPropagation()">
+        <button class="btn-reload" title="Reload" onclick="reloadCard(this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+        </button>
         <button class="btn-sm" onclick="openShareDialog(<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($_cn), ENT_QUOTES) ?>)">Share</button>
         <button class="btn-sm" onclick="openEditProjectDialog(<?= htmlspecialchars(json_encode($_p), ENT_QUOTES) ?>)">Edit</button>
         <button class="btn-sm danger" onclick="deleteProject(<?= htmlspecialchars(json_encode($pRowId), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>)">Delete</button>
@@ -548,6 +562,12 @@ function today() {
 function toggleProject(id) {
   var el = document.getElementById(id);
   if (el) el.classList.toggle('open');
+}
+
+function reloadCard(btn) {
+  btn.classList.add('spinning');
+  saveOpenCards();
+  setTimeout(function() { location.reload(); }, 300);
 }
 
 // ── Preserve open cards across reload ────────────────────────────────────────

@@ -24,16 +24,19 @@ function _tm_load(string $file): array {
     return file_exists($file) ? (json_decode(file_get_contents($file), true) ?: []) : [];
 }
 
-$_clients  = _tm_load($_sDir . '/clients.json');
-$_projects = _tm_load($_sDir . '/projects.json');
-$_timeRows = _tm_load($_sDir . '/time.json');
-$_hwRows   = _tm_load($_sDir . '/hardware.json');
+$_clients   = _tm_load($_sDir . '/clients.json');
+$_projects  = _tm_load($_sDir . '/projects.json');
+$_timeRows  = _tm_load($_sDir . '/time.json');
+$_hwRows    = _tm_load($_sDir . '/hardware.json');
+$_contracts = _tm_load($_sDir . '/contracts.json');
 
-// Index time/hardware by project for fast lookup
-$_timeByProject = [];
-foreach ($_timeRows as $r) { $_timeByProject[$r['Project'] ?? ''][] = $r; }
-$_hwByProject   = [];
-foreach ($_hwRows   as $r) { $_hwByProject[$r['Project']   ?? ''][] = $r; }
+// Index time/hardware/contracts by project for fast lookup
+$_timeByProject     = [];
+foreach ($_timeRows  as $r) { $_timeByProject[$r['Project'] ?? ''][] = $r; }
+$_hwByProject       = [];
+foreach ($_hwRows    as $r) { $_hwByProject[$r['Project']   ?? ''][] = $r; }
+$_contractsByProject = [];
+foreach ($_contracts as $r) { $_contractsByProject[$r['Game'] ?? ''][] = $r; }
 
 // Unique client names from projects (plus any in clients tab)
 $_clientNames = array_unique(array_merge(
@@ -282,6 +285,7 @@ textarea.field-input { resize:vertical; min-height:4rem; }
 <div class="tm-header">
   <div class="tm-logo">T&amp;MBoard <span>Time &amp; Materials</span></div>
   <div class="header-actions">
+    <button class="btn-header" id="signInBtn" onclick="openSignInDialog()" style="opacity:.8">Sign In</button>
     <button class="btn-header" onclick="openAddClientDialog()">+ Client</button>
     <button class="btn-header primary" onclick="openAddProjectDialog()">+ Project</button>
   </div>
@@ -311,10 +315,11 @@ textarea.field-input { resize:vertical; min-height:4rem; }
     $pStart   = $_p['Start Date']     ?? '';
     $pEnd     = $_p['End Date']       ?? '';
     $pNotes   = $_p['Notes']          ?? '';
-    $tRows    = $_timeByProject[$pName] ?? [];
-    $hwRows   = $_hwByProject[$pName]   ?? [];
-    $totalHrs = array_sum(array_column($tRows, 'Hours'));
-    $totalHw  = array_sum(array_column($hwRows, 'Amount'));
+    $tRows      = $_timeByProject[$pName]      ?? [];
+    $hwRows     = $_hwByProject[$pName]        ?? [];
+    $conRows    = $_contractsByProject[$pName] ?? [];
+    $totalHrs   = array_sum(array_column($tRows, 'Hours'));
+    $totalHw    = array_sum(array_column($hwRows, 'Amount'));
     $statusClass = strtolower(str_replace(' ','-',$pStatus));
     $cardId   = 'proj_' . md5($pRowId ?: $pName);
   ?>
@@ -335,6 +340,7 @@ textarea.field-input { resize:vertical; min-height:4rem; }
           </svg>
         </button>
         <button class="btn-sm" onclick="openShareDialog(<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($_cn), ENT_QUOTES) ?>)">Share</button>
+        <button class="btn-sm" onclick="openContractDialog(<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($_cn), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode((float)$totalHrs), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode((float)$totalHw), ENT_QUOTES) ?>)">Contract</button>
         <button class="btn-sm" onclick="openEditProjectDialog(<?= htmlspecialchars(json_encode($_p), ENT_QUOTES) ?>)">Edit</button>
         <button class="btn-sm danger" onclick="deleteProject(<?= htmlspecialchars(json_encode($pRowId), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>)">Delete</button>
       </div>
@@ -402,6 +408,34 @@ textarea.field-input { resize:vertical; min-height:4rem; }
         </tbody>
       </table>
       <?php else: ?><div class="empty-msg">No costs recorded yet.</div><?php endif; ?>
+
+      <!-- CONTRACTS -->
+      <?php if ($conRows): ?>
+      <div class="section-head" style="margin-top:1rem;">
+        <div class="section-label">Contracts</div>
+      </div>
+      <table class="tm-table">
+        <thead><tr>
+          <th>Ref #</th><th>Type</th><th>Date</th><th class="num">Total</th><th>Payment</th><th class="actions"></th>
+        </tr></thead>
+        <tbody>
+        <?php foreach ($conRows as $con): ?>
+        <tr>
+          <td style="font-family:'DINBlack',sans-serif;font-size:.75rem;letter-spacing:.04em"><?= htmlspecialchars($con['Ref Number'] ?? '') ?></td>
+          <td><?= htmlspecialchars($con['Type'] ?? '') ?></td>
+          <td><?= htmlspecialchars($con['Date'] ?? '') ?></td>
+          <td class="num"><?= ($con['Quote'] ?? '') !== '' ? '$' . number_format((float)$con['Quote'], 2) : '—' ?></td>
+          <td><?= htmlspecialchars($con['Payment'] ?? '') ?></td>
+          <td class="actions">
+            <?php if (!empty($con['Files'])): ?>
+            <a class="btn-sm" href="<?= htmlspecialchars($con['Files']) ?>" target="_blank">PDF ↗</a>
+            <?php endif; ?>
+          </td>
+        </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+      <?php endif; ?>
 
     </div><!-- /project-body -->
   </div><!-- /project-card -->
@@ -520,6 +554,43 @@ textarea.field-input { resize:vertical; min-height:4rem; }
   </div>
 </div>
 
+<!-- ── Contract Dialog ── -->
+<div class="tm-overlay" id="contractOverlay" onclick="if(event.target===this)forceCloseContractDialog()">
+  <div class="tm-dialog" onclick="event.stopPropagation()"
+       onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitContract();}">
+    <div class="tm-dialog-title" id="conDlgTitle">New Contract</div>
+    <div class="field-row">
+      <div class="field-group">
+        <label>Type</label>
+        <select class="field-input" id="conType">
+          <option value="Estimate">Estimate</option>
+          <option value="Invoice">Invoice</option>
+        </select>
+      </div>
+      <div class="field-group"><label>Due Date</label><div class="date-wrap"><input class="field-input" id="conDueDate" type="date" /></div></div>
+    </div>
+    <div style="background:var(--bg);border-radius:8px;padding:.65rem .85rem;margin-bottom:.5rem;font-size:.8rem;color:var(--muted);">
+      <strong id="conProjDisplay" style="color:var(--text)"></strong> · <span id="conClientDisplay"></span>
+    </div>
+    <div class="field-row">
+      <div class="field-group"><label>Hours Logged</label><input class="field-input" id="conHours" type="number" min="0" step="0.25" placeholder="0" /></div>
+      <div class="field-group"><label>Hourly Rate ($)</label><input class="field-input" id="conRate" type="number" min="0" step="1" placeholder="0" oninput="recalcContract()" /></div>
+      <div class="field-group"><label>Time Cost ($)</label><input class="field-input" id="conTimeCost" type="number" min="0" step="0.01" placeholder="0.00" oninput="conTimeCostEdited=true" /></div>
+    </div>
+    <div class="field-row">
+      <div class="field-group"><label>Material Cost ($) <span style="font-size:.7rem;font-weight:normal;opacity:.6">from hardware</span></label><input class="field-input" id="conMatCost" type="number" min="0" step="0.01" placeholder="0.00" oninput="recalcTotal()" /></div>
+      <div class="field-group"><label>Total ($)</label><input class="field-input" id="conTotal" type="number" min="0" step="0.01" placeholder="0.00" readonly style="background:var(--bg);font-family:'DINBlack',sans-serif;" /></div>
+    </div>
+    <div class="field-group"><label>Notes</label><textarea class="field-input" id="conNotes" placeholder="Scope, terms, etc.…"></textarea></div>
+    <div class="tm-err" id="conErr"></div>
+    <div id="conLog" style="display:none;margin-bottom:.5rem;font-size:.78rem;color:var(--muted);"></div>
+    <div class="dialog-actions">
+      <button class="btn-cancel" onclick="forceCloseContractDialog()">Cancel</button>
+      <button class="btn-primary" id="conSubmitBtn" onclick="submitContract()">Create &amp; Open PDF</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Share Dialog ── -->
 <div class="tm-overlay" id="shareOverlay" onclick="if(event.target===this)forceCloseShareDialog()">
   <div class="tm-dialog" onclick="event.stopPropagation()">
@@ -537,9 +608,88 @@ textarea.field-input { resize:vertical; min-height:4rem; }
   </div>
 </div>
 
+<!-- ── Sign In Dialog ── -->
+<div class="tm-overlay" id="signInOverlay" onclick="if(event.target===this)forceCloseSignInDialog()">
+  <div class="tm-dialog" style="max-width:360px" onclick="event.stopPropagation()"
+       onkeydown="if(event.key==='Enter'){event.preventDefault();submitSignIn();}">
+    <div class="tm-dialog-title" id="signInDlgTitle">Sign In</div>
+    <div class="field-group"><label>Email</label><input class="field-input" id="siEmail" type="email" autocomplete="email" placeholder="you@example.com" /></div>
+    <div class="field-group"><label>Password</label><input class="field-input" id="siPassword" type="password" autocomplete="current-password" placeholder="••••••••" /></div>
+    <div class="tm-err" id="siErr"></div>
+    <div class="dialog-actions">
+      <button class="btn-cancel" onclick="forceCloseSignInDialog()">Cancel</button>
+      <button class="btn-primary" id="siSubmitBtn" onclick="submitSignIn()">Sign In</button>
+    </div>
+  </div>
+</div>
+
 <script>
 var SHEET_ID = <?= json_encode($_sheetId) ?>;
 var APP_ROOT = <?= json_encode(rtrim($_basePath, '/') . '/') ?>;
+
+// ── Auth (owner sign-in) ─────────────────────────────────────────────────────
+var _ownerUser = null; // { email, bio: { name, email, ... } }
+
+(function() {
+  try {
+    var raw = sessionStorage.getItem('tmboard_owner_' + SHEET_ID);
+    if (raw) { _ownerUser = JSON.parse(raw); _updateOwnerHeader(); }
+  } catch(e) {}
+})();
+
+function _updateOwnerHeader() {
+  var btn = document.getElementById('signInBtn');
+  if (!btn) return;
+  if (_ownerUser) {
+    var name = (_ownerUser.bio && _ownerUser.bio['Name']) || _ownerUser.email || 'Signed In';
+    btn.textContent = name.split(' ')[0];
+    btn.title = 'Signed in as ' + (_ownerUser.email || '') + ' — click to sign out';
+    btn.onclick = function() {
+      if (confirm('Sign out?')) {
+        sessionStorage.removeItem('tmboard_owner_' + SHEET_ID);
+        _ownerUser = null; _updateOwnerHeader();
+      }
+    };
+    btn.style.opacity = '1';
+  } else {
+    btn.textContent = 'Sign In';
+    btn.title = '';
+    btn.onclick = openSignInDialog;
+    btn.style.opacity = '.8';
+  }
+}
+
+function openSignInDialog() {
+  document.getElementById('siEmail').value     = '';
+  document.getElementById('siPassword').value  = '';
+  document.getElementById('siErr').textContent = '';
+  document.getElementById('siSubmitBtn').disabled = false;
+  document.getElementById('signInOverlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('siEmail').focus(); }, 60);
+}
+function forceCloseSignInDialog() { document.getElementById('signInOverlay').classList.remove('open'); }
+function submitSignIn() {
+  var email = document.getElementById('siEmail').value.trim();
+  var pass  = document.getElementById('siPassword').value;
+  if (!email || !pass) { document.getElementById('siErr').textContent = 'Email and password required.'; return; }
+  var btn = document.getElementById('siSubmitBtn');
+  btn.disabled = true;
+  var fd = new FormData();
+  fd.append('email', email); fd.append('password', pass); fd.append('id', SHEET_ID);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/collabAuth.php');
+  xhr.onload = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = {error: 'Bad response'}; }
+    btn.disabled = false;
+    if (r.error) { document.getElementById('siErr').textContent = r.error; return; }
+    if (r.prompt_create) { document.getElementById('siErr').textContent = 'No account found for this email.'; return; }
+    _ownerUser = { email: r.email || email, bio: r.bio || {} };
+    try { sessionStorage.setItem('tmboard_owner_' + SHEET_ID, JSON.stringify(_ownerUser)); } catch(e) {}
+    forceCloseSignInDialog(); _updateOwnerHeader();
+  };
+  xhr.onerror = function() { btn.disabled = false; document.getElementById('siErr').textContent = 'Network error.'; };
+  xhr.send(fd);
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function post(url, data, cb) {
@@ -600,6 +750,8 @@ document.addEventListener('DOMContentLoaded', restoreOpenCards);
 // ── Esc key ───────────────────────────────────────────────────────────────────
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Escape') return;
+  if (document.getElementById('signInOverlay').classList.contains('open'))  { forceCloseSignInDialog();   return; }
+  if (document.getElementById('contractOverlay').classList.contains('open')){ forceCloseContractDialog(); return; }
   if (document.getElementById('shareOverlay').classList.contains('open'))   { forceCloseShareDialog();    return; }
   if (document.getElementById('timeOverlay').classList.contains('open'))    { forceCloseTimeDialog();     return; }
   if (document.getElementById('hwOverlay').classList.contains('open'))      { forceCloseHwDialog();       return; }
@@ -715,8 +867,11 @@ function openAddTimeDialog(proj, client) {
   document.getElementById('timeDlgTitle').textContent = 'Log Time · ' + proj;
   document.getElementById('timeDate').value       = today();
   document.getElementById('timeHours').value      = '';
-  document.getElementById('timeStaffName').value  = '';
-  document.getElementById('timeStaffEmail').value = '';
+  // Pre-fill staff from signed-in owner user
+  var _sn = (_ownerUser && ((_ownerUser.bio && _ownerUser.bio['Name']) || _ownerUser.email)) || '';
+  var _se = (_ownerUser && _ownerUser.email) || '';
+  document.getElementById('timeStaffName').value  = _sn;
+  document.getElementById('timeStaffEmail').value = _se;
   document.getElementById('timeDesc').value       = '';
   document.getElementById('timeErr').textContent  = '';
   document.getElementById('timeSubmitBtn').disabled = false;
@@ -861,6 +1016,74 @@ function openShareDialog(proj, client) {
   });
 }
 function forceCloseShareDialog() { document.getElementById('shareOverlay').classList.remove('open'); }
+
+// ── Contract ──────────────────────────────────────────────────────────────────
+var _conProjName = '', _conClient = '';
+var conTimeCostEdited = false;
+
+function recalcContract() {
+  if (conTimeCostEdited) return; // user overrode it, don't clobber
+  var h = parseFloat(document.getElementById('conHours').value)   || 0;
+  var r = parseFloat(document.getElementById('conRate').value)    || 0;
+  document.getElementById('conTimeCost').value = (h * r).toFixed(2);
+  recalcTotal();
+}
+function recalcTotal() {
+  var tc = parseFloat(document.getElementById('conTimeCost').value) || 0;
+  var mc = parseFloat(document.getElementById('conMatCost').value)  || 0;
+  document.getElementById('conTotal').value = (tc + mc).toFixed(2);
+}
+function openContractDialog(proj, client, totalHrs, totalHw) {
+  _conProjName = proj; _conClient = client;
+  conTimeCostEdited = false;
+  document.getElementById('conDlgTitle').textContent  = 'New Contract';
+  document.getElementById('conProjDisplay').textContent   = proj;
+  document.getElementById('conClientDisplay').textContent = client;
+  document.getElementById('conType').value    = 'Estimate';
+  document.getElementById('conDueDate').value = '';
+  document.getElementById('conHours').value   = totalHrs || '';
+  document.getElementById('conRate').value    = '';
+  document.getElementById('conTimeCost').value= '';
+  document.getElementById('conMatCost').value = (totalHw || 0).toFixed(2);
+  document.getElementById('conTotal').value   = (totalHw || 0).toFixed(2);
+  document.getElementById('conNotes').value   = '';
+  document.getElementById('conErr').textContent = '';
+  document.getElementById('conLog').style.display = 'none';
+  document.getElementById('conSubmitBtn').disabled = false;
+  document.getElementById('contractOverlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('conRate').focus(); }, 60);
+}
+function forceCloseContractDialog() {
+  document.getElementById('contractOverlay').classList.remove('open');
+}
+function submitContract() {
+  var btn = document.getElementById('conSubmitBtn');
+  var tc  = document.getElementById('conTimeCost').value.trim();
+  var mc  = document.getElementById('conMatCost').value.trim();
+  if (!tc && !mc) { document.getElementById('conErr').textContent = 'Enter at least a time or material cost.'; return; }
+  btn.disabled = true;
+  document.getElementById('conErr').textContent = '';
+  var log = document.getElementById('conLog');
+  log.style.display = ''; log.textContent = 'Generating PDF…';
+  var data = {
+    project:     _conProjName,
+    client:      _conClient,
+    doc_type:    document.getElementById('conType').value,
+    time_hours:  document.getElementById('conHours').value.trim(),
+    hourly_rate: document.getElementById('conRate').value.trim(),
+    time_cost:   tc || '0',
+    mat_cost:    mc || '0',
+    notes:       document.getElementById('conNotes').value.trim(),
+    due_date:    document.getElementById('conDueDate').value,
+  };
+  post('push/tmCreateContract.php', data, function(r) {
+    btn.disabled = false;
+    if (r.error) { log.style.display = 'none'; document.getElementById('conErr').textContent = r.error; return; }
+    log.textContent = '✓ Contract created!';
+    if (r.url) window.open(r.url, '_blank');
+    setTimeout(function() { forceCloseContractDialog(); saveOpenCards(); location.reload(); }, 800);
+  });
+}
 function copyShareUrl() {
   if (!_shareUrl) return;
   var btn = document.getElementById('shareCopyBtn');

@@ -76,6 +76,12 @@ tgt_end       = data.get('tgt_end',       '').strip()
 duration      = data.get('duration',      '').strip()
 base_url      = data.get('base_url',      '').strip()
 ref_code      = data.get('ref_code',      '').strip()
+# T&M mode — two line items: Time & Labor + Hardware & Materials
+tm_mode       = bool(data.get('tm_mode',      False))
+tm_time_cost  = data.get('tm_time_cost',  '').strip()
+tm_time_hours = data.get('tm_time_hours', '').strip()
+tm_hourly_rate= data.get('tm_hourly_rate','').strip()
+tm_mat_cost   = data.get('tm_mat_cost',   '').strip()
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 def parse_money(s):
@@ -155,7 +161,27 @@ line_items = []
 disc_amt    = 0.0
 subtotal_val = 0.0
 
-if doc_type == 'Estimate':
+if tm_mode:
+    # ── T&M: two line items (Time & Labor + Hardware & Materials) ─────────────
+    tc = parse_money(tm_time_cost) or 0.0
+    mc = parse_money(tm_mat_cost)  or 0.0
+    subtotal_val = tc + mc
+    disc_amt     = 0.0
+    quote_val    = subtotal_val
+    quote_fmt    = fmt_money(quote_val)
+    subtotal_fmt = fmt_money(subtotal_val)
+
+    time_desc = ['Time & Labor']
+    if tm_time_hours and tm_hourly_rate:
+        time_desc.append(f'{tm_time_hours} hrs × ${tm_hourly_rate}/hr')
+    elif tm_time_hours:
+        time_desc.append(f'{tm_time_hours} hours')
+    line_items.append({'desc': time_desc, 'qty': '', 'unit': '', 'total': fmt_money(tc)})
+
+    mat_desc = ['Hardware & Materials']
+    line_items.append({'desc': mat_desc, 'qty': '', 'unit': '', 'total': fmt_money(mc)})
+
+elif doc_type == 'Estimate':
     try:
         qty = float(qty_raw)
     except (ValueError, TypeError):

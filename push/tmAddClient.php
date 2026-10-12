@@ -17,8 +17,9 @@ if (!$sheetId || !$client) {
     echo json_encode(['error' => 'Missing id or client']); exit;
 }
 
-$rowId  = substr(md5(uniqid($sheetId . $client, true)), 0, 16);
-$row    = ['Row ID'=>$rowId,'Client'=>$client,'Contact Email'=>$contactEmail,'Phone'=>$phone,'Notes'=>$notes];
+$chars  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+$refNum = ''; for ($i=0;$i<8;$i++) $refNum .= $chars[random_int(0,35)];
+$row    = ['Ref Number'=>$refNum,'Client'=>$client,'Contact Email'=>$contactEmail,'Phone'=>$phone,'Notes'=>$notes];
 $enc    = base64_encode(json_encode($row, JSON_UNESCAPED_UNICODE));
 $py     = $_ENV['PYTHON'] ?? 'python3';
 $cmd    = escapeshellarg($py) . ' ' . escapeshellarg(__DIR__ . '/gadd.py') . ' '
@@ -26,6 +27,6 @@ $cmd    = escapeshellarg($py) . ' ' . escapeshellarg(__DIR__ . '/gadd.py') . ' '
 $out    = trim((string) shell_exec($cmd));
 $result = $out ? json_decode($out, true) : null;
 if (!$result) { echo json_encode(['error' => $out ?: 'No response']); exit; }
-if (!empty($result['ok'])) { refreshJson($py, $sheetId, 'Clients'); $result['row_id'] = $rowId; }
+if (!empty($result['ok'])) { refreshJson($py, $sheetId, 'Clients'); $result['ref_number'] = $refNum; }
 echo json_encode($result);
 ?>

@@ -1,5 +1,5 @@
 <?php
-// tmUpdateProject.php — update a project row by Row ID
+// tmUpdateProject.php — update a project row by Ref Number
 // POST: id, row_id, client, project, status, estimate_hours, start_date, end_date, notes
 error_reporting(0); ini_set('display_errors','0');
 header('Content-Type: application/json');

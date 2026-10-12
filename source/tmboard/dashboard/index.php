@@ -305,7 +305,7 @@ textarea.field-input { resize:vertical; min-height:4rem; }
 
   <?php foreach ($_cProjects as $_p):
     $pName    = $_p['Project']        ?? '';
-    $pRowId   = $_p['Row ID']         ?? '';
+    $pRowId   = $_p['Ref Number']      ?? '';
     $pStatus  = $_p['Status']         ?? 'Active';
     $pEst     = (float)($_p['Estimate Hours'] ?? 0);
     $pStart   = $_p['Start Date']     ?? '';
@@ -364,7 +364,7 @@ textarea.field-input { resize:vertical; min-height:4rem; }
           <td><?= htmlspecialchars($t['Description'] ?? '') ?></td>
           <td class="actions">
             <button class="btn-sm" onclick="openEditTimeDialog(<?= htmlspecialchars(json_encode($t), ENT_QUOTES) ?>)">Edit</button>
-            <button class="btn-sm danger" onclick="deleteTime(<?= htmlspecialchars(json_encode($t['Row ID'] ?? ''), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>)">Del</button>
+            <button class="btn-sm danger" onclick="deleteTime(<?= htmlspecialchars(json_encode($t['Ref Number'] ?? ''), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>)">Del</button>
           </td>
         </tr>
         <?php endforeach; ?>
@@ -395,7 +395,7 @@ textarea.field-input { resize:vertical; min-height:4rem; }
           <td><?= htmlspecialchars($h['Notes'] ?? '') ?></td>
           <td class="actions">
             <button class="btn-sm" onclick="openEditHwDialog(<?= htmlspecialchars(json_encode($h), ENT_QUOTES) ?>)">Edit</button>
-            <button class="btn-sm danger" onclick="deleteHw(<?= htmlspecialchars(json_encode($h['Row ID'] ?? ''), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>)">Del</button>
+            <button class="btn-sm danger" onclick="deleteHw(<?= htmlspecialchars(json_encode($h['Ref Number'] ?? ''), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>)">Del</button>
           </td>
         </tr>
         <?php endforeach; ?>
@@ -685,7 +685,7 @@ function submitProject() {
     notes:          document.getElementById('projNotes').value.trim(),
   };
   if (_editingProject) {
-    data.row_id = _editingProject['Row ID'] || '';
+    data.row_id = _editingProject['Ref Number'] || '';
     post('push/tmUpdateProject.php', data, function(r) {
       if (r.error) { document.getElementById('projErr').textContent = r.error; btn.disabled = false; return; }
       forceCloseProjectDialog(); saveOpenCards(); location.reload();
@@ -753,7 +753,7 @@ function submitTime() {
     description: document.getElementById('timeDesc').value.trim(),
   };
   if (_editingTime) {
-    data.row_id = _editingTime['Row ID'] || '';
+    data.row_id = _editingTime['Ref Number'] || '';
     post('push/tmUpdateTime.php', data, function(r) {
       if (r.error) { document.getElementById('timeErr').textContent = r.error; btn.disabled = false; return; }
       forceCloseTimeDialog(); saveOpenCards(); location.reload();
@@ -821,7 +821,7 @@ function submitHw() {
     notes:       document.getElementById('hwNotes').value.trim(),
   };
   if (_editingHw) {
-    data.row_id = _editingHw['Row ID'] || '';
+    data.row_id = _editingHw['Ref Number'] || '';
     post('push/tmUpdateHardware.php', data, function(r) {
       if (r.error) { document.getElementById('hwErr').textContent = r.error; btn.disabled = false; return; }
       forceCloseHwDialog(); saveOpenCards(); location.reload();

@@ -241,7 +241,7 @@ textarea.field-input { resize:vertical; min-height:3.5rem; }
       <td><?= _tmsh_e($t['Description'] ?? '') ?></td>
       <td class="actions" style="display:none">
         <button class="btn-sm" onclick='openEditTimeDialog(<?= htmlspecialchars(json_encode($t), ENT_QUOTES) ?>)'>Edit</button>
-        <button class="btn-sm danger" onclick="deleteMyTime(<?= json_encode($t['Row ID'] ?? '') ?>)">Del</button>
+        <button class="btn-sm danger" onclick="deleteMyTime(<?= htmlspecialchars(json_encode($t['Ref Number'] ?? ''), ENT_QUOTES) ?>)">Del</button>
       </td>
     </tr>
     <?php endforeach; ?>
@@ -482,7 +482,7 @@ function submitTime() {
     description: document.getElementById('timeDesc').value.trim(),
   };
   if (_editingTime) {
-    data.row_id = _editingTime['Row ID'] || '';
+    data.row_id = _editingTime['Ref Number'] || '';
     post('push/tmUpdateTime.php', data, function(r) {
       if (r.error) { err.textContent = r.error; btn.disabled = false; return; }
       forceCloseTimeDialog(); location.reload();

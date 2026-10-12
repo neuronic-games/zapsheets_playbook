@@ -32,10 +32,10 @@ except Exception as e:
 existing = {ws.title for ws in ss.worksheets()}
 
 TABS = {
-    'Clients':  ['Row ID', 'Client', 'Contact Email', 'Phone', 'Notes'],
-    'Projects': ['Row ID', 'Client', 'Project', 'Status', 'Estimate Hours', 'Start Date', 'End Date', 'Notes'],
-    'Time':     ['Row ID', 'Date', 'Project', 'Client', 'Staff Name', 'Staff Email', 'Hours', 'Description'],
-    'Hardware': ['Row ID', 'Date', 'Project', 'Client', 'Description', 'Amount', 'Notes'],
+    'Clients':  ['Ref Number', 'Client', 'Contact Email', 'Phone', 'Notes'],
+    'Projects': ['Ref Number', 'Client', 'Project', 'Status', 'Estimate Hours', 'Start Date', 'End Date', 'Notes'],
+    'Time':     ['Ref Number', 'Date', 'Project', 'Client', 'Staff Name', 'Staff Email', 'Hours', 'Description'],
+    'Hardware': ['Ref Number', 'Date', 'Project', 'Client', 'Description', 'Amount', 'Notes'],
     'Staff':    ['Name', 'Email'],
 }
 

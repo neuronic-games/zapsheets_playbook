@@ -51,10 +51,10 @@ if not all_values:
 
 headers = all_values[0]
 col = {h.strip(): i for i, h in enumerate(headers)}
-row_id_col = col.get('Row ID', -1)
+row_id_col = col.get('Ref Number', -1)
 
 if row_id_col < 0:
-    print(json.dumps({"error": "Sheet has no 'Row ID' column"}))
+    print(json.dumps({"error": "Sheet has no 'Ref Number' column"}))
     sys.exit(1)
 
 target_row = None
@@ -65,7 +65,7 @@ for i, row in enumerate(all_values[1:], start=2):
         break
 
 if target_row is None:
-    print(json.dumps({"error": f"Row ID '{row_id}' not found in '{sheet_name}'"}))
+    print(json.dumps({"error": f"Ref Number '{row_id}' not found in '{sheet_name}'"}))
     sys.exit(1)
 
 try:

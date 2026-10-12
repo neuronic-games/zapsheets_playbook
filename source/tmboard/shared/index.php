@@ -400,10 +400,11 @@ textarea.field-input { resize:vertical; min-height:3.5rem; }
         <input class="field-input" id="profileName" type="text" placeholder="Shown on your time and cost entries" />
       </div>
       <div style="font-size:.8rem;color:var(--muted);" id="profileEmailLabel"></div>
+      <p class="auth-notice" id="profileNote" style="display:none;margin-top:.75rem"></p>
       <div class="dlg-err" id="profileErr"></div>
       <div class="dialog-actions">
         <button class="btn-cancel" onclick="forceCloseAuthDialog()">Cancel</button>
-        <button class="btn-primary" onclick="saveName()">Save</button>
+        <button class="btn-primary" id="profileSaveBtn" onclick="saveName()">Save</button>
       </div>
     </div>
 
@@ -571,6 +572,9 @@ function openAuthDialog() {
   document.getElementById('authErr').textContent = '';
   document.getElementById('authConfirmErr').textContent = '';
   document.getElementById('profileErr').textContent = '';
+  document.getElementById('profileNote').style.display = 'none';
+  document.getElementById('profileSaveBtn').textContent = 'Save';
+  document.getElementById('profileSaveBtn').disabled = false;
   document.getElementById('authSubmitBtn').disabled = false;
   document.getElementById('authCreateBtn').disabled = false;
   if (_user) {
@@ -618,6 +622,9 @@ function submitAuth(confirmNew) {
       _showAuthPanel('profile');
       document.getElementById('profileName').value = _user.name || '';
       document.getElementById('profileEmailLabel').textContent = 'Signed in as ' + _user.email;
+      document.getElementById('profileNote').style.display = 'none';
+      document.getElementById('profileErr').textContent = '';
+      document.getElementById('profileSaveBtn').textContent = 'Save';
       setTimeout(function(){ document.getElementById('profileName').focus(); }, 30);
     } else {
       forceCloseAuthDialog();
@@ -631,12 +638,37 @@ function _authConfirmBack() {
 var _needNameFor = '';
 function saveName() {
   if (!_user) return;
-  var name = document.getElementById('profileName').value.trim();
-  if (_needNameFor && !name) { document.getElementById('profileErr').textContent = 'Please enter your name — it\u2019s shown as Added By on your costs.'; return; }
+  var input = document.getElementById('profileName');
+  var err   = document.getElementById('profileErr');
+  var note  = document.getElementById('profileNote');
+  var name  = input.value.trim().replace(/\s+/g, ' ');
+  err.textContent = '';
+  if (!name) { err.textContent = 'Please enter your name — it\u2019s shown on your time and cost entries.'; return; }
+  if (name === (_user.name || '')) { _finishName(); return; }   // unchanged
+  var btn = document.getElementById('profileSaveBtn');
+  btn.disabled = true;
+  // Server keeps names unique: a taken name comes back with a number suffix
+  post('push/tmSetName.php', {email: _user.email, name: name}, function(r) {
+    btn.disabled = false;
+    if (r.error) { err.textContent = r.error; return; }
+    _user.name = r.name;
+    _saveUser();
+    _updateSignedInState();
+    if (r.adjusted) {
+      input.value = r.name;
+      note.innerHTML = '';
+      note.appendChild(document.createTextNode('\u201C' + name + '\u201D is already in use, so you\u2019ve been saved as '));
+      var b = document.createElement('strong'); b.textContent = r.name; note.appendChild(b);
+      note.appendChild(document.createTextNode('. Click Done to continue.'));
+      note.style.display = '';
+      btn.textContent = 'Done';
+      return;
+    }
+    _finishName();
+  });
+}
+function _finishName() {
   var then = _needNameFor;
-  _user.name = name;
-  _saveUser();
-  _updateSignedInState();
   forceCloseAuthDialog();
   if (then === 'hw') openAddHwDialog();
 }

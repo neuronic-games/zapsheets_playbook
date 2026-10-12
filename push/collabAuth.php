@@ -69,6 +69,9 @@ if ($isNew) {
 // Build bio from sheet data
 $bio = [];
 
+// Display name saved on the account (set via tmSetName.php) — unique per sheet
+if (!empty($accounts[$email]['name'])) $bio['name'] = $accounts[$email]['name'];
+
 if ($sheetId) {
     // Name from people.json
     $peopleFile = $sheetsRoot . '/' . $sheetId . '/people.json';
@@ -78,7 +81,7 @@ if ($sheetId) {
             $pEmail = strtolower(ltrim(trim($p['Email'] ?? ''), "'"));
             if ($pEmail === $email) {
                 $name = ltrim(trim($p['Name'] ?? ''), "'");
-                if ($name) $bio['name'] = $name;
+                if ($name && empty($bio['name'])) $bio['name'] = $name;
                 break;
             }
         }

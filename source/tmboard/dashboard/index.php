@@ -792,14 +792,27 @@ textarea.field-input { resize:vertical; min-height:4rem; }
 <!-- ── Sign In Dialog ── -->
 <div class="tm-overlay" id="signInOverlay" onclick="if(event.target===this)forceCloseSignInDialog()">
   <div class="tm-dialog" style="max-width:360px" onclick="event.stopPropagation()"
-       onkeydown="if(event.key==='Enter'){event.preventDefault();submitSignIn();}">
+       onkeydown="if(event.key==='Enter'){event.preventDefault();submitSignIn(document.getElementById('siConfirm').style.display!=='none');}">
     <div class="tm-dialog-title" id="signInDlgTitle">Sign In</div>
-    <div class="field-group"><label>Email</label><input class="field-input" id="siEmail" type="email" autocomplete="email" placeholder="you@example.com" /></div>
-    <div class="field-group"><label>Password</label><input class="field-input" id="siPassword" type="password" autocomplete="current-password" placeholder="••••••••" /></div>
-    <div class="tm-err" id="siErr"></div>
-    <div class="dialog-actions">
-      <button class="btn-cancel" onclick="forceCloseSignInDialog()">Cancel</button>
-      <button class="btn-primary" id="siSubmitBtn" onclick="submitSignIn()">Sign In</button>
+    <div id="siFields">
+      <div class="field-group"><label>Email</label><input class="field-input" id="siEmail" type="email" autocomplete="email" placeholder="you@example.com" /></div>
+      <div class="field-group"><label>Password</label><input class="field-input" id="siPassword" type="password" autocomplete="current-password" placeholder="••••••••" /></div>
+      <div class="tm-err" id="siErr"></div>
+      <div class="dialog-actions">
+        <button class="btn-cancel" onclick="forceCloseSignInDialog()">Cancel</button>
+        <button class="btn-primary" id="siSubmitBtn" onclick="submitSignIn()">Sign In</button>
+      </div>
+    </div>
+    <!-- Create-account confirmation (shown when email not found) -->
+    <div id="siConfirm" style="display:none">
+      <p style="background:#fff8e8;border:1px solid #f0d898;color:#5a4a1a;border-radius:6px;padding:.7rem .85rem;font-size:.9rem;line-height:1.4;margin:0 0 .5rem">
+        No account found for <strong id="siConfirmEmail"></strong>. Would you like to create one?
+      </p>
+      <div class="tm-err" id="siConfirmErr"></div>
+      <div class="dialog-actions">
+        <button class="btn-cancel" onclick="_siConfirmBack()">Back</button>
+        <button class="btn-primary" id="siConfirmBtn" onclick="submitSignIn(true)">Create Account</button>
+      </div>
     </div>
   </div>
 </div>
@@ -918,6 +931,10 @@ function openSignInDialog() {
   document.getElementById('siPassword').value  = '';
   document.getElementById('siErr').textContent = '';
   document.getElementById('siSubmitBtn').disabled = false;
+  document.getElementById('siFields').style.display  = '';
+  document.getElementById('siConfirm').style.display = 'none';
+  document.getElementById('signInDlgTitle').textContent = 'Sign In';
+  _siPendingEmail = ''; _siPendingPassword = '';
   document.getElementById('signInOverlay').classList.add('open');
   setTimeout(function(){ document.getElementById('siEmail').focus(); }, 60);
 }
@@ -969,27 +986,50 @@ function submitSettings() {
   xhr.onerror = function() { btn.disabled = false; document.getElementById('setErr').textContent = 'Network error.'; };
   xhr.send(fd);
 }
-function submitSignIn() {
-  var email = document.getElementById('siEmail').value.trim();
-  var pass  = document.getElementById('siPassword').value;
-  if (!email || !pass) { document.getElementById('siErr').textContent = 'Email and password required.'; return; }
-  var btn = document.getElementById('siSubmitBtn');
+var _siPendingEmail = '', _siPendingPassword = '';
+
+function submitSignIn(confirmNew) {
+  var email = confirmNew ? _siPendingEmail    : document.getElementById('siEmail').value.trim();
+  var pass  = confirmNew ? _siPendingPassword : document.getElementById('siPassword').value;
+  var errEl = document.getElementById(confirmNew ? 'siConfirmErr' : 'siErr');
+  errEl.textContent = '';
+  if (!email || !pass) { errEl.textContent = 'Email and password required.'; return; }
+  var btn = document.getElementById(confirmNew ? 'siConfirmBtn' : 'siSubmitBtn');
   btn.disabled = true;
   var fd = new FormData();
   fd.append('email', email); fd.append('password', pass); fd.append('id', SHEET_ID);
+  if (confirmNew) fd.append('confirm_new', '1');
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_ROOT + 'push/collabAuth.php');
   xhr.onload = function() {
     var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = {error: 'Bad response'}; }
     btn.disabled = false;
-    if (r.error) { document.getElementById('siErr').textContent = r.error; return; }
-    if (r.prompt_create) { document.getElementById('siErr').textContent = 'No account found for this email.'; return; }
+    if (r.error) { errEl.textContent = r.error; return; }
+    if (r.prompt_create) {
+      // Unknown email — offer to create an account (same flow as DevBoard)
+      _siPendingEmail = email; _siPendingPassword = pass;
+      document.getElementById('siConfirmEmail').textContent = email;
+      document.getElementById('siConfirmErr').textContent = '';
+      document.getElementById('siFields').style.display  = 'none';
+      document.getElementById('siConfirm').style.display = '';
+      document.getElementById('signInDlgTitle').textContent = 'Create Account';
+      setTimeout(function(){ document.getElementById('siConfirmBtn').focus(); }, 30);
+      return;
+    }
     _ownerUser = { email: r.email || email, bio: r.bio || {} };
     try { sessionStorage.setItem('tmboard_owner_' + SHEET_ID, JSON.stringify(_ownerUser)); } catch(e) {}
+    _siPendingEmail = ''; _siPendingPassword = '';
     forceCloseSignInDialog(); _updateAuthState();
   };
-  xhr.onerror = function() { btn.disabled = false; document.getElementById('siErr').textContent = 'Network error.'; };
+  xhr.onerror = function() { btn.disabled = false; errEl.textContent = 'Network error.'; };
   xhr.send(fd);
+}
+
+function _siConfirmBack() {
+  document.getElementById('siConfirm').style.display = 'none';
+  document.getElementById('siFields').style.display  = '';
+  document.getElementById('signInDlgTitle').textContent = 'Sign In';
+  setTimeout(function(){ document.getElementById('siPassword').focus(); }, 30);
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

@@ -330,6 +330,30 @@ textarea.field-input { resize:vertical; min-height:4rem; }
 .btn-copy-share:hover { background:var(--accent-lt); }
 .btn-copy-share.copied { background:var(--accent); color:#fff; }
 
+/* ── User dropdown menu ── */
+.user-menu-wrap { position:relative; }
+.user-menu {
+  position:absolute; right:0; top:calc(100% + .4rem);
+  background:#1a1a2e; border-radius:10px; min-width:190px;
+  box-shadow:0 8px 32px rgba(0,0,0,.5); padding:.35rem 0;
+  z-index:400; display:none;
+}
+.user-menu.open { display:block; }
+.user-menu-item {
+  display:block; width:100%; padding:.65rem 1.15rem;
+  font-family:'DINBlack',sans-serif; font-size:.78rem;
+  text-transform:uppercase; letter-spacing:.08em;
+  color:#fff; background:transparent; border:none;
+  cursor:pointer; text-align:left; transition:background .12s;
+}
+.user-menu-item:hover { background:rgba(255,255,255,.1); }
+.user-menu-item.signout { color:#ff8080; }
+.user-menu-item.signin  { color:#90c8ff; }
+.user-menu-divider { border:none; border-top:1px solid rgba(255,255,255,.1); margin:.3rem 0; }
+
+/* ── Auth-gated elements — hidden until JS sets display:'' ── */
+.auth-only { display:none; }
+
 @media (max-width:600px) {
   .project-bar { flex-wrap:wrap; }
   .project-meta { display:none; }
@@ -350,11 +374,21 @@ textarea.field-input { resize:vertical; min-height:4rem; }
       <button class="tm-tab active" id="tabBoard" onclick="switchView('board')">Board</button>
       <button class="tm-tab" id="tabProjects" onclick="switchView('projects')"><?= count($_projects) ?> Projects</button>
     </nav>
-    <button class="btn-user-icon" id="signInBtn" onclick="openSignInDialog()" title="Sign In">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-      </svg>
-    </button>
+    <div class="user-menu-wrap">
+      <button class="btn-user-icon" id="signInBtn" onclick="toggleUserMenu(event)" title="Menu">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+      </button>
+      <div class="user-menu" id="userMenu">
+        <button class="user-menu-item" id="menuProfile" onclick="userMenuAction('profile')">Profile</button>
+        <button class="user-menu-item" onclick="userMenuAction('settings')">Settings</button>
+        <hr class="user-menu-divider" />
+        <button class="user-menu-item" onclick="userMenuAction('fetch')">Fetch</button>
+        <hr class="user-menu-divider" />
+        <button class="user-menu-item signin" id="menuSignInOut" onclick="userMenuAction('signout')">Sign In</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -362,7 +396,7 @@ textarea.field-input { resize:vertical; min-height:4rem; }
 
 <!-- ══ BOARD VIEW ══ -->
 <div class="tm-view active" id="viewBoard">
-<div class="board-toolbar">
+<div class="board-toolbar auth-only" id="boardToolbar">
   <button class="btn-toolbar" onclick="openAddClientDialog()">+ Client</button>
   <button class="btn-toolbar primary" onclick="openAddProjectDialog()">+ Project</button>
 </div>
@@ -413,10 +447,10 @@ textarea.field-input { resize:vertical; min-height:4rem; }
             <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
           </svg>
         </button>
-        <button class="btn-sm" onclick="openShareDialog(<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($_cn), ENT_QUOTES) ?>)">Share</button>
-        <button class="btn-sm" onclick="openContractDialog(<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($_cn), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode((float)$totalHrs), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode((float)$totalHw), ENT_QUOTES) ?>)">Contract</button>
-        <button class="btn-sm" onclick="openEditProjectDialog(<?= htmlspecialchars(json_encode($_p), ENT_QUOTES) ?>)">Edit</button>
-        <button class="btn-sm danger" onclick="deleteProject(<?= htmlspecialchars(json_encode($pRowId), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>)">Delete</button>
+        <button class="btn-sm auth-only" onclick="openShareDialog(<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($_cn), ENT_QUOTES) ?>)">Share</button>
+        <button class="btn-sm auth-only" onclick="openContractDialog(<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($_cn), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode((float)$totalHrs), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode((float)$totalHw), ENT_QUOTES) ?>)">Contract</button>
+        <button class="btn-sm auth-only" onclick="openEditProjectDialog(<?= htmlspecialchars(json_encode($_p), ENT_QUOTES) ?>)">Edit</button>
+        <button class="btn-sm danger auth-only" onclick="deleteProject(<?= htmlspecialchars(json_encode($pRowId), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>)">Delete</button>
       </div>
     </div>
 
@@ -427,7 +461,7 @@ textarea.field-input { resize:vertical; min-height:4rem; }
         <div class="section-label">Time Entries</div>
         <div style="display:flex;align-items:center;gap:.6rem;">
           <?php if ($pEst > 0): ?><div class="section-total"><?= $totalHrs ?>h / <?= $pEst ?>h estimated</div><?php endif; ?>
-          <button class="btn-sm primary" onclick="openAddTimeDialog(<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($_cn), ENT_QUOTES) ?>)">+ Log Time</button>
+          <button class="btn-sm primary auth-only" onclick="openAddTimeDialog(<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($_cn), ENT_QUOTES) ?>)">+ Log Time</button>
         </div>
       </div>
       <?php if ($tRows): ?>
@@ -443,8 +477,8 @@ textarea.field-input { resize:vertical; min-height:4rem; }
           <td class="num"><?= htmlspecialchars($t['Hours'] ?? '') ?></td>
           <td><?= htmlspecialchars($t['Description'] ?? '') ?></td>
           <td class="actions">
-            <button class="btn-sm" onclick="openEditTimeDialog(<?= htmlspecialchars(json_encode($t), ENT_QUOTES) ?>)">Edit</button>
-            <button class="btn-sm danger" onclick="deleteTime(<?= htmlspecialchars(json_encode($t['Ref Number'] ?? ''), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>)">Del</button>
+            <button class="btn-sm auth-only" onclick="openEditTimeDialog(<?= htmlspecialchars(json_encode($t), ENT_QUOTES) ?>)">Edit</button>
+            <button class="btn-sm danger auth-only" onclick="deleteTime(<?= htmlspecialchars(json_encode($t['Ref Number'] ?? ''), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>)">Del</button>
           </td>
         </tr>
         <?php endforeach; ?>
@@ -457,7 +491,7 @@ textarea.field-input { resize:vertical; min-height:4rem; }
         <div class="section-label">Hardware &amp; Materials</div>
         <div style="display:flex;align-items:center;gap:.6rem;">
           <?php if ($totalHw > 0): ?><div class="section-total">$<?= number_format($totalHw,2) ?> total</div><?php endif; ?>
-          <button class="btn-sm primary" onclick="openAddHwDialog(<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($_cn), ENT_QUOTES) ?>)">+ Add Cost</button>
+          <button class="btn-sm primary auth-only" onclick="openAddHwDialog(<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($_cn), ENT_QUOTES) ?>)">+ Add Cost</button>
         </div>
       </div>
       <?php if ($hwRows): ?>
@@ -474,8 +508,8 @@ textarea.field-input { resize:vertical; min-height:4rem; }
           <td><?= htmlspecialchars($h['Status'] ?? '') ?></td>
           <td><?= htmlspecialchars($h['Notes'] ?? '') ?></td>
           <td class="actions">
-            <button class="btn-sm" onclick="openEditHwDialog(<?= htmlspecialchars(json_encode($h), ENT_QUOTES) ?>)">Edit</button>
-            <button class="btn-sm danger" onclick="deleteHw(<?= htmlspecialchars(json_encode($h['Ref Number'] ?? ''), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>)">Del</button>
+            <button class="btn-sm auth-only" onclick="openEditHwDialog(<?= htmlspecialchars(json_encode($h), ENT_QUOTES) ?>)">Edit</button>
+            <button class="btn-sm danger auth-only" onclick="deleteHw(<?= htmlspecialchars(json_encode($h['Ref Number'] ?? ''), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>)">Del</button>
           </td>
         </tr>
         <?php endforeach; ?>
@@ -524,8 +558,8 @@ textarea.field-input { resize:vertical; min-height:4rem; }
 <div class="tm-view" id="viewProjects">
   <div class="projects-toolbar">
     <input type="text" id="projectSearch" class="projects-search" placeholder="Search projects, clients…" oninput="filterProjects(this.value)" />
-    <button class="btn-toolbar" onclick="openAddClientDialog()">+ Client</button>
-    <button class="btn-toolbar primary" onclick="openAddProjectDialog()">+ Project</button>
+    <button class="btn-toolbar auth-only" id="projViewAddClient" onclick="openAddClientDialog()">+ Client</button>
+    <button class="btn-toolbar primary auth-only" id="projViewAddProject" onclick="openAddProjectDialog()">+ Project</button>
   </div>
   <div id="projectsList">
   <?php if (empty($_projects)): ?>
@@ -731,6 +765,30 @@ textarea.field-input { resize:vertical; min-height:4rem; }
   </div>
 </div>
 
+<!-- ── Settings Dialog ── -->
+<div class="tm-overlay" id="settingsOverlay" onclick="if(event.target===this)forceCloseSettingsDialog()">
+  <div class="tm-dialog" onclick="event.stopPropagation()"
+       onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitSettings();}">
+    <div class="tm-dialog-title">Settings</div>
+    <p style="font-size:.8rem;color:var(--muted);margin-bottom:.9rem;">Company info used in contract PDFs. Saved to <code>settings.json</code> for this sheet.</p>
+    <div class="field-row">
+      <div class="field-group"><label>Your Name</label><input class="field-input" id="setName" type="text" placeholder="Jane Smith" /></div>
+      <div class="field-group"><label>Company</label><input class="field-input" id="setCompany" type="text" placeholder="Acme LLC" /></div>
+    </div>
+    <div class="field-row">
+      <div class="field-group"><label>Phone</label><input class="field-input" id="setPhone" type="text" placeholder="+1 555…" /></div>
+      <div class="field-group"><label>Logo URL</label><input class="field-input" id="setLogo" type="url" placeholder="https://…" /></div>
+    </div>
+    <div class="field-group"><label>Address</label><input class="field-input" id="setAddress" type="text" placeholder="123 Main St, City, ST 00000" /></div>
+    <div class="field-group"><label>Payment Info</label><textarea class="field-input" id="setPayment" placeholder="Bank transfer, PayPal, etc.…" style="min-height:3rem"></textarea></div>
+    <div class="tm-err" id="setErr"></div>
+    <div class="dialog-actions">
+      <button class="btn-cancel" onclick="forceCloseSettingsDialog()">Cancel</button>
+      <button class="btn-primary" id="setSubmitBtn" onclick="submitSettings()">Save Settings</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Sign In Dialog ── -->
 <div class="tm-overlay" id="signInOverlay" onclick="if(event.target===this)forceCloseSignInDialog()">
   <div class="tm-dialog" style="max-width:360px" onclick="event.stopPropagation()"
@@ -756,30 +814,76 @@ var _ownerUser = null; // { email, bio: { name, email, ... } }
 (function() {
   try {
     var raw = sessionStorage.getItem('tmboard_owner_' + SHEET_ID);
-    if (raw) { _ownerUser = JSON.parse(raw); _updateOwnerHeader(); }
+    if (raw) { _ownerUser = JSON.parse(raw); _updateAuthState(); }
   } catch(e) {}
 })();
 
-function _updateOwnerHeader() {
+function _updateAuthState() {
   var btn  = document.getElementById('signInBtn');
   var meta = document.getElementById('headerMeta');
+  var menuSignInOut = document.getElementById('menuSignInOut');
+  var menuProfile   = document.getElementById('menuProfile');
+
+  // Show/hide all auth-gated elements
+  document.querySelectorAll('.auth-only').forEach(function(el) {
+    el.style.display = _ownerUser ? '' : 'none';
+  });
+
   if (!btn) return;
   if (_ownerUser) {
-    var name = (_ownerUser.bio && _ownerUser.bio['Name']) || _ownerUser.email || 'Signed In';
+    var name = (_ownerUser.bio && _ownerUser.bio['Name']) || _ownerUser.email || 'Me';
     btn.classList.add('signed-in');
-    btn.title = 'Signed in as ' + (_ownerUser.email || '') + ' — click to sign out';
-    btn.onclick = function() {
-      if (confirm('Sign out?')) {
-        sessionStorage.removeItem('tmboard_owner_' + SHEET_ID);
-        _ownerUser = null; _updateOwnerHeader();
-      }
-    };
+    btn.title = 'Signed in as ' + (_ownerUser.email || '');
     if (meta) meta.textContent = name + ' · Time & Materials Tracker';
+    if (menuSignInOut) { menuSignInOut.textContent = 'Sign Out'; menuSignInOut.className = 'user-menu-item signout'; }
+    if (menuProfile)   { menuProfile.style.display = ''; }
   } else {
     btn.classList.remove('signed-in');
-    btn.title = 'Sign In';
-    btn.onclick = openSignInDialog;
+    btn.title = 'Menu';
     if (meta) meta.textContent = 'Time & Materials Tracker';
+    if (menuSignInOut) { menuSignInOut.textContent = 'Sign In'; menuSignInOut.className = 'user-menu-item signin'; }
+    if (menuProfile)   { menuProfile.style.display = 'none'; }
+  }
+}
+// alias used by old call sites
+var _updateOwnerHeader = _updateAuthState;
+
+// ── User dropdown menu ────────────────────────────────────────────────────────
+function toggleUserMenu(e) {
+  e.stopPropagation();
+  document.getElementById('userMenu').classList.toggle('open');
+}
+function closeUserMenu() { document.getElementById('userMenu').classList.remove('open'); }
+document.addEventListener('click', closeUserMenu);
+
+function userMenuAction(action) {
+  closeUserMenu();
+  if (action === 'profile') {
+    if (_ownerUser) {
+      alert('Signed in as: ' + (_ownerUser.email || '') + '\nName: ' + ((_ownerUser.bio && _ownerUser.bio['Name']) || '—'));
+    } else {
+      openSignInDialog();
+    }
+  } else if (action === 'settings') {
+    openSettingsDialog();
+  } else if (action === 'fetch') {
+    var btn = document.getElementById('signInBtn');
+    if (btn) btn.style.opacity = '.5';
+    var fd = new FormData(); fd.append('id', SHEET_ID);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', APP_ROOT + 'push/tmRefresh.php');
+    xhr.onload = function() { saveOpenCards(); location.reload(); };
+    xhr.onerror = function() { location.reload(); };
+    xhr.send(fd);
+  } else if (action === 'signout') {
+    if (_ownerUser) {
+      if (confirm('Sign out?')) {
+        sessionStorage.removeItem('tmboard_owner_' + SHEET_ID);
+        _ownerUser = null; _updateAuthState();
+      }
+    } else {
+      openSignInDialog();
+    }
   }
 }
 
@@ -818,6 +922,53 @@ function openSignInDialog() {
   setTimeout(function(){ document.getElementById('siEmail').focus(); }, 60);
 }
 function forceCloseSignInDialog() { document.getElementById('signInOverlay').classList.remove('open'); }
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+var _settingsCache = null;
+function openSettingsDialog() {
+  // Load existing settings.json via a quick fetch
+  document.getElementById('setErr').textContent = '';
+  document.getElementById('setSubmitBtn').disabled = false;
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', APP_ROOT + 'push/tmGetSettings.php?id=' + encodeURIComponent(SHEET_ID));
+  xhr.onload = function() {
+    var s = {}; try { s = JSON.parse(xhr.responseText); } catch(e) {}
+    _settingsCache = s;
+    document.getElementById('setName').value    = s['Name']         || '';
+    document.getElementById('setCompany').value = s['Company']      || '';
+    document.getElementById('setPhone').value   = s['Phone']        || '';
+    document.getElementById('setLogo').value    = s['Logo URL']     || '';
+    document.getElementById('setAddress').value = s['Address']      || '';
+    document.getElementById('setPayment').value = s['Payment Info'] || '';
+  };
+  xhr.onerror = function() {};
+  xhr.send();
+  document.getElementById('settingsOverlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('setName').focus(); }, 60);
+}
+function forceCloseSettingsDialog() { document.getElementById('settingsOverlay').classList.remove('open'); }
+function submitSettings() {
+  var btn = document.getElementById('setSubmitBtn');
+  btn.disabled = true;
+  var fd = new FormData();
+  fd.append('id', SHEET_ID);
+  fd.append('name',    document.getElementById('setName').value.trim());
+  fd.append('company', document.getElementById('setCompany').value.trim());
+  fd.append('phone',   document.getElementById('setPhone').value.trim());
+  fd.append('logo',    document.getElementById('setLogo').value.trim());
+  fd.append('address', document.getElementById('setAddress').value.trim());
+  fd.append('payment', document.getElementById('setPayment').value.trim());
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
+  xhr.onload = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = {error: xhr.responseText}; }
+    btn.disabled = false;
+    if (r.error) { document.getElementById('setErr').textContent = r.error; return; }
+    forceCloseSettingsDialog();
+  };
+  xhr.onerror = function() { btn.disabled = false; document.getElementById('setErr').textContent = 'Network error.'; };
+  xhr.send(fd);
+}
 function submitSignIn() {
   var email = document.getElementById('siEmail').value.trim();
   var pass  = document.getElementById('siPassword').value;
@@ -835,7 +986,7 @@ function submitSignIn() {
     if (r.prompt_create) { document.getElementById('siErr').textContent = 'No account found for this email.'; return; }
     _ownerUser = { email: r.email || email, bio: r.bio || {} };
     try { sessionStorage.setItem('tmboard_owner_' + SHEET_ID, JSON.stringify(_ownerUser)); } catch(e) {}
-    forceCloseSignInDialog(); _updateOwnerHeader();
+    forceCloseSignInDialog(); _updateAuthState();
   };
   xhr.onerror = function() { btn.disabled = false; document.getElementById('siErr').textContent = 'Network error.'; };
   xhr.send(fd);
@@ -900,6 +1051,7 @@ document.addEventListener('DOMContentLoaded', restoreOpenCards);
 // ── Esc key ───────────────────────────────────────────────────────────────────
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Escape') return;
+  if (document.getElementById('settingsOverlay').classList.contains('open')) { forceCloseSettingsDialog(); return; }
   if (document.getElementById('signInOverlay').classList.contains('open'))  { forceCloseSignInDialog();   return; }
   if (document.getElementById('contractOverlay').classList.contains('open')){ forceCloseContractDialog(); return; }
   if (document.getElementById('shareOverlay').classList.contains('open'))   { forceCloseShareDialog();    return; }

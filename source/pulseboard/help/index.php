@@ -399,7 +399,7 @@ code {
       <div class="step">
         <div class="step-body">
           <div class="step-title">Configure and run the Python agent</div>
-          <p>Copy <code>neuron-scripts</code> to each machine. Edit <code>settings.py</code> with your Sheet ID, tab name (machine group), and exhibit name. Then run <code>launch.cmd</code> (Windows) or <code>python pulse.py</code> and <code>python guard.py</code> directly on Linux/macOS.</p>
+          <p>Copy <code>neuron-scripts</code> to each machine. Edit <code>settings.py</code> with your Sheet ID (<code>sheetID</code>), site or client name (<code>orgName</code>, which becomes its tab), and exhibit name (<code>exhibitName</code>). Then run <code>launch.cmd</code> (Windows) or <code>python pulse.py</code> and <code>python guard.py</code> directly on Linux/macOS.</p>
         </div>
       </div>
     </div>
@@ -471,7 +471,7 @@ code {
           <p>Edit this file on each machine. Key fields:</p>
           <div class="code-block">
             <span class="key">sheetID</span>     = <span class="val">"your-google-sheet-id"</span><br>
-            <span class="key">sheetName</span>   = <span class="val">"Floor 1"</span>  <span class="cmt"># tab name (machine group)</span><br>
+            <span class="key">orgName</span>     = <span class="val">"Floor 1"</span>  <span class="cmt"># site or client = its tab (machine group); was sheetName</span><br>
             <span class="key">exhibitName</span> = <span class="val">"KIOSK-3"</span>   <span class="cmt"># row identifier on the tab</span><br>
             <span class="key">appEXEPath</span>  = <span class="val">r"C:\MyApp"</span><br>
             <span class="key">appEXEName</span>  = <span class="val">"MyApp.exe"</span><br>

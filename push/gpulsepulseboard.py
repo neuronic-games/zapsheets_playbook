@@ -208,45 +208,74 @@ if updates:
     log(f'Updated row {row} for "{exhibit}".', 'ok')
 
 # ── Update JSON cache ─────────────────────────────────────────────────────────
+# The dashboard and the client share page read sheets/{id}/pulseboard-{tab}.json.
+# Rebuild it from every row on the tab (like Fetch does), so machines that
+# haven't reported yet still appear. Saved under the sheet's real tab name.
 
+CACHE_COLS = {   # sheet header (lower case) -> cache key
+    'exhibit': 'exhibit', 'host': 'host', 'ip': 'ip', 'user': 'user', 'os': 'os',
+    'memory': 'memory', 'disk': 'disk', 'uptime': 'uptime', 'last reboot': 'last_reboot',
+    'status': 'status', 'time': 'time', 'crashes': 'crashes', 'crash times': 'crash_times',
+    'teamviewer id': 'teamviewer_id', 'storage': 'storage', 'startup time': 'startup_time',
+    'shutdown time': 'shutdown_time', 'tv id': 'tv_id', 'tv password': 'tv_password',
+    'notes': 'notes',
+}
+
+def _machines_from_sheet():
+    rows = ws.get_all_values()
+    if not rows:
+        return []
+    header = [_norm(h) for h in rows[0]]
+    idx = {}
+    for i, h in enumerate(header):
+        if h in CACHE_COLS and CACHE_COLS[h] not in idx:
+            idx[CACHE_COLS[h]] = i
+    out = []
+    for r in rows[1:]:
+        cell = lambda i: r[i].strip().lstrip("'") if i < len(r) else ''
+        if not cell(idx.get('exhibit', 0)):
+            continue
+        out.append({k: cell(i) for k, i in idx.items()})
+    return out
+
+def _merge_this_machine(machines):
+    # Fallback if the sheet can't be re-read: update just this machine's entry.
+    entry = next((m for m in machines if _norm(m.get('exhibit')) == _norm(exhibit)), None)
+    if entry is None:
+        entry = {'exhibit': exhibit}
+        machines.append(entry)
+    for key, val in (('host', host), ('ip', ip), ('user', user), ('os', os_info),
+                     ('memory', memory), ('disk', disk), ('uptime', uptime),
+                     ('last_reboot', last_reboot), ('status', status), ('time', time_str),
+                     ('crash_times', crash_times), ('teamviewer_id', teamviewer_id)):
+        if val:
+            entry[key] = val
+    if crashes is not None:
+        entry['crashes'] = str(crashes)
+    return machines
+
+real_tab = ws.title
 try:
-    safe       = re.sub(r'[/\\]', '-', tab)
+    safe       = re.sub(r'[/\\]', '-', real_tab)
     cache_dir  = os.path.join(_here, '..', 'sheets', sheet_id)
     cache_path = os.path.join(cache_dir, f'pulseboard-{safe}.json')
     os.makedirs(cache_dir, exist_ok=True)
 
-    cache = {'tab': tab, 'machines': []}
-    if os.path.exists(cache_path):
-        try:
-            cache = json.load(open(cache_path, encoding='utf-8')) or cache
-        except Exception:
-            pass
+    try:
+        machines = _machines_from_sheet()
+        log(f'JSON cache rebuilt from sheet ({len(machines)} machines).', 'ok')
+    except Exception as e:
+        log(f'Could not re-read tab ({e}) - updating this machine only.', 'warn')
+        machines = []
+        if os.path.exists(cache_path):
+            try:
+                machines = (json.load(open(cache_path, encoding='utf-8')) or {}).get('machines', [])
+            except Exception:
+                machines = []
+        machines = _merge_this_machine(machines)
 
-    # Update or insert the machine entry
-    machines = cache.get('machines', [])
-    entry = next((m for m in machines if m.get('exhibit') == exhibit), None)
-    if entry is None:
-        entry = {'exhibit': exhibit}
-        machines.append(entry)
-
-    if host:                entry['host']        = host
-    if ip:                  entry['ip']          = ip
-    if user:                entry['user']        = user
-    if os_info:             entry['os']          = os_info
-    if memory:              entry['memory']      = memory
-    if disk:                entry['disk']        = disk
-    if uptime:              entry['uptime']      = uptime
-    if last_reboot:         entry['last_reboot'] = last_reboot
-    if status:              entry['status']      = status
-    if time_str:            entry['time']        = time_str
-    if crashes is not None: entry['crashes']      = str(crashes)
-    if crash_times:         entry['crash_times']  = crash_times
-    if teamviewer_id:       entry['teamviewer_id'] = teamviewer_id
-
-    cache['machines'] = machines
     with open(cache_path, 'w', encoding='utf-8') as f:
-        json.dump(cache, f, ensure_ascii=False, indent=2)
-    log('JSON cache updated.', 'ok')
+        json.dump({'tab': real_tab, 'machines': machines}, f, ensure_ascii=False, indent=2)
 
     # Keep pulseboard-index.json in sync so the dashboard always sees this tab
     idx_path = os.path.join(cache_dir, 'pulseboard-index.json')
@@ -254,13 +283,46 @@ try:
         idx = json.load(open(idx_path, encoding='utf-8')) if os.path.exists(idx_path) else {}
     except Exception:
         idx = {}
-    if idx.get(safe) != tab:
-        idx[safe] = tab
+    changed = idx.get(safe) != real_tab
+    idx[safe] = real_tab
+
+    # If the machine sent a differently written name (e.g. "TEST" for "Test "),
+    # drop the duplicate entry an earlier report made under that name.
+    sent_safe = re.sub(r'[/\\]', '-', tab)
+    if sent_safe != safe and sent_safe in idx:
+        del idx[sent_safe]
+        try:
+            os.remove(os.path.join(cache_dir, f'pulseboard-{sent_safe}.json'))
+        except OSError:
+            pass
+        changed = True
+        log(f'Merged duplicate tab entry "{tab}" into "{real_tab}".', 'info')
+
+    if changed:
         with open(idx_path, 'w', encoding='utf-8') as f:
             json.dump(idx, f, ensure_ascii=False, indent=2)
         log('pulseboard-index.json updated.', 'ok')
+
+    # Point any client share link made under the sent name at the real tab
+    share_dir = os.path.join(_here, '..', 'shares', 'pulse-group-readonly')
+    if real_tab != tab and os.path.isdir(share_dir):
+        shares = []
+        for fn in os.listdir(share_dir):
+            if fn.endswith('.json'):
+                try:
+                    shares.append((fn, json.load(open(os.path.join(share_dir, fn), encoding='utf-8'))))
+                except Exception:
+                    pass
+        has_real = any(d.get('sheet_id') == sheet_id and d.get('tab') == real_tab for _, d in shares)
+        for fn, d in shares:
+            if d.get('sheet_id') == sheet_id and d.get('tab') == tab and not has_real:
+                d['tab'], d['tab_safe'] = real_tab, safe
+                with open(os.path.join(share_dir, fn), 'w', encoding='utf-8') as f:
+                    json.dump(d, f, ensure_ascii=False, indent=4)
+                log(f'Client link moved to tab "{real_tab}".', 'info')
+                has_real = True
 except Exception as e:
     log(f'Cache update failed: {e}', 'warn')
 
 log('Done.', 'ok')
-print(json.dumps({'ok': True, 'logs': logs}))
+print(json.dumps({'ok': True, 'tab': real_tab, 'logs': logs}))

@@ -59,7 +59,8 @@ $res = json_decode($out, true);
 // Make sure this tab has a read-only share link (created once, then reused),
 // and hand it back so pulse.py --test can show it.
 if (is_array($res) && !empty($res['ok'])) {
-    $share = pulseboard_share_token($sheet_id, $tab);
+    // Use the sheet's real tab name (the script matches tabs ignoring case/spaces)
+    $share = pulseboard_share_token($sheet_id, (string)($res['tab'] ?? $tab));
     if ($share) {
         $res['share_url']     = pulseboard_share_url($share['token']);
         $res['share_created'] = $share['created'];

@@ -361,8 +361,18 @@ function reloadGroup(btn) {
   var xhr = new XMLHttpRequest();
   xhr.open('POST', PB_BASE + 'push/reloadTabPulseboard.php');
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-  xhr.onload  = function() { location.reload(); };
-  xhr.onerror = function() { location.reload(); };
+  var done = function(err) {
+    if (!err) { location.reload(); return; }
+    btn.disabled = false;
+    btn.classList.remove('spinning');
+    btn.title = 'Reload failed: ' + err;
+    alert('Reload failed: ' + err);
+  };
+  xhr.onload  = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch (e) { r = { error: 'Unexpected response from server' }; }
+    done(r && r.ok ? null : ((r && r.error) || 'Unknown error'));
+  };
+  xhr.onerror = function() { done('Network error'); };
   xhr.send('token=' + encodeURIComponent(PB_SHARE_TOKEN));
 }
 

@@ -285,14 +285,12 @@ try:
                     shares.append((fn, json.load(open(os.path.join(share_dir, fn), encoding='utf-8'))))
                 except Exception:
                     pass
-        has_real = any(d.get('sheet_id') == sheet_id and d.get('tab') == real_tab for _, d in shares)
         for fn, d in shares:
-            if d.get('sheet_id') == sheet_id and d.get('tab') == tab and not has_real:
+            if d.get('sheet_id') == sheet_id and d.get('tab') == tab:
                 d['tab'], d['tab_safe'] = real_tab, safe
                 with open(os.path.join(share_dir, fn), 'w', encoding='utf-8') as f:
                     json.dump(d, f, ensure_ascii=False, indent=4)
                 log(f'Client link moved to tab "{real_tab}".', 'info')
-                has_real = True
 except Exception as e:
     log(f'Cache update failed: {e}', 'warn')
 

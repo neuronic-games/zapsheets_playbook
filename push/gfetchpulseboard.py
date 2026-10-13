@@ -131,6 +131,42 @@ for ws in machine_tabs:
     except Exception as e:
         log(f'  Error: {e}', 'error')
 
+# ── Merge entries saved under a differently written name ─────────────────────
+# Reports used to save a tab under the name the machine sent (e.g. "TEST") even
+# when the sheet tab is "Test". Drop those leftovers, and point any client share
+# link made under the old name at the real tab, so the link shows the reloaded data.
+_fold = lambda t: str(t or '').strip().casefold()
+real_by_fold = {_fold(ws.title): ws.title for ws in machine_tabs}
+
+for safe in list(index.keys()):
+    real = real_by_fold.get(_fold(index[safe]))
+    if real is not None and safe != re.sub(r'[/\\]', '-', real):
+        try:
+            os.remove(os.path.join(out_dir, f'pulseboard-{safe}.json'))
+        except OSError:
+            pass
+        del index[safe]
+        log(f'Merged "{safe}" into tab "{real}".', 'info')
+
+share_dir = os.path.join(_here, '..', 'shares', 'pulse-group-readonly')
+if os.path.isdir(share_dir):
+    for fn in os.listdir(share_dir):
+        if not fn.endswith('.json'):
+            continue
+        path = os.path.join(share_dir, fn)
+        try:
+            d = json.load(open(path, encoding='utf-8'))
+        except Exception:
+            continue
+        if d.get('sheet_id') != sheet_id:
+            continue
+        real = real_by_fold.get(_fold(d.get('tab')))
+        if real is not None and d.get('tab') != real:
+            d['tab'], d['tab_safe'] = real, re.sub(r'[/\\]', '-', real)
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump(d, f, ensure_ascii=False, indent=4)
+            log(f'Client link {fn[:8]}… now shows tab "{real}".', 'info')
+
 with open(idx_path, 'w', encoding='utf-8') as f:
     json.dump(index, f, ensure_ascii=False)
 

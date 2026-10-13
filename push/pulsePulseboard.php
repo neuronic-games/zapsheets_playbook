@@ -9,6 +9,7 @@ error_reporting(0); ini_set('display_errors', '0');
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 require_once __DIR__ . '/../dotEnv.php';
+require_once __DIR__ . '/pulseShareLib.php';
 
 // Extract sheet_id from the URL
 $_rp = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -54,4 +55,15 @@ $out = trim((string) shell_exec($cmd));
 if ($out === '') { echo json_encode(['error' => 'No response from script']); exit; }
 
 $res = json_decode($out, true);
+
+// Make sure this tab has a read-only share link (created once, then reused),
+// and hand it back so pulse.py --test can show it.
+if (is_array($res) && !empty($res['ok'])) {
+    $share = pulseboard_share_token($sheet_id, $tab);
+    if ($share) {
+        $res['share_url']     = pulseboard_share_url($share['token']);
+        $res['share_created'] = $share['created'];
+    }
+}
+
 echo json_encode($res ?? ['error' => $out]);

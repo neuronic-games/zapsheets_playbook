@@ -76,7 +76,7 @@ COL_WIDTHS = [160, 160, 130, 120, 150, 100, 100, 90, 110, 90, 170, 80, 300, 120,
 
 def setup_worksheet(ws):
     last_col = chr(ord('A') + len(HEADERS) - 1)
-    ws.update([HEADERS], f'A1:{last_col}1')
+    ws.batch_update([{'range': f'A1:{last_col}1', 'values': [HEADERS]}])
     ws.format(f'A1:{last_col}1', {
         'backgroundColor': {'red': 0.15, 'green': 0.15, 'blue': 0.15},
         'textFormat': {'bold': True, 'foregroundColor': {'red': 1.0, 'green': 1.0, 'blue': 1.0}},
@@ -103,9 +103,20 @@ def setup_worksheet(ws):
         }
     ]})
 
-try:
-    ws = wb.worksheet(tab)
-except gspread.exceptions.WorksheetNotFound:
+def _find_tab(name):
+    # Match the tab ignoring case and surrounding spaces: Google treats "TEST"
+    # and "Test" as the same name (so we can't create a second one), but
+    # wb.worksheet() only finds an exact match.
+    want = name.strip().casefold()
+    for w in wb.worksheets():
+        if w.title.strip().casefold() == want:
+            return w
+    return None
+
+ws = _find_tab(tab)
+if ws is not None and ws.title != tab:
+    log(f'Using existing tab "{ws.title}" for "{tab}".', 'info')
+if ws is None:
     log(f'Tab "{tab}" not found — creating...', 'info')
     ws = wb.add_worksheet(title=tab, rows=100, cols=len(HEADERS))
     setup_worksheet(ws)
@@ -139,8 +150,9 @@ if missing:
         wb.batch_update({'requests': [{'appendDimension': {
             'sheetId': ws.id, 'dimension': 'COLUMNS', 'length': need - ws.col_count}}]})
     start_col = len(headers_row) + 1
-    ws.update([missing], gspread.utils.rowcol_to_a1(1, start_col) + ':' +
-              gspread.utils.rowcol_to_a1(1, start_col + len(missing) - 1))
+    ws.batch_update([{'range': gspread.utils.rowcol_to_a1(1, start_col) + ':' +
+                               gspread.utils.rowcol_to_a1(1, start_col + len(missing) - 1),
+                      'values': [missing]}])
     for j, h in enumerate(missing):
         col[_norm(h)] = start_col + j
     headers_row = headers_row + missing

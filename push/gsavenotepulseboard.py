@@ -57,10 +57,14 @@ except Exception as e:
 
 # ── Find the tab and exhibit row ──────────────────────────────────────────────
 
+# Match the tab ignoring case and surrounding spaces (Google treats "TEST" and
+# "Test" as the same tab name; wb.worksheet() only finds an exact match).
 try:
-    ws = wb.worksheet(tab)
+    ws = next((w for w in wb.worksheets() if w.title.strip().casefold() == tab.strip().casefold()), None)
 except Exception as e:
-    fail(f'Tab "{tab}" not found: {e}')
+    fail(f'Could not list tabs: {e}')
+if ws is None:
+    fail(f'Tab "{tab}" not found')
 
 # Find Exhibit and Notes columns from header row
 headers = ws.row_values(1)

@@ -18,12 +18,26 @@ $status      = trim($_POST['status']      ?? '');
 $buyUrl      = trim($_POST['buy_url']     ?? '');
 $notes       = trim($_POST['notes']       ?? '');
 
-if (!$sheetId || !$rowId) {
-    echo json_encode(['error' => 'Missing id or row_id']); exit;
+if (!$sheetId) { echo json_encode(['error' => 'Missing id']); exit; }
+
+$newRef = '';
+if (!$rowId) {
+    $newRef = tmGenRef();
 }
 
-$data   = ['row_id'=>$rowId,'Date'=>$date,'Project'=>$project,'Client'=>$client,
-           'Description'=>$description,'Amount'=>$amount,'Status'=>$status,'Buy URL'=>$buyUrl,'Notes'=>$notes];
+$data = ['row_id'=>$rowId,'Date'=>$date,'Project'=>$project,'Client'=>$client,
+         'Description'=>$description,'Amount'=>$amount,'Status'=>$status,'Buy URL'=>$buyUrl,'Notes'=>$notes];
+
+if (!$rowId) {
+    $data['_new_ref'] = $newRef;
+    $data['_fingerprint'] = [
+        'Date'        => trim($_POST['orig_date']        ?? $date),
+        'Project'     => trim($_POST['orig_project']     ?? $project),
+        'Client'      => trim($_POST['orig_client']      ?? $client),
+        'Description' => trim($_POST['orig_description'] ?? $description),
+        'Amount'      => trim($_POST['orig_amount']      ?? $amount),
+    ];
+}
 $enc    = base64_encode(json_encode($data, JSON_UNESCAPED_UNICODE));
 $py     = $_ENV['PYTHON'] ?? 'python3';
 $cmd    = escapeshellarg($py) . ' ' . escapeshellarg(__DIR__ . '/gtmUpdate.py') . ' '

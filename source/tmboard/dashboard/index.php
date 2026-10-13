@@ -485,7 +485,7 @@ body:not(.tm-signed-in) .auth-only { display:none !important; }
           <td><?= htmlspecialchars($t['Description'] ?? '') ?></td>
           <td class="actions">
             <button class="btn-sm auth-only" onclick="openEditTimeDialog(<?= htmlspecialchars(json_encode($t), ENT_QUOTES) ?>)">Edit</button>
-            <button class="btn-sm danger auth-only" onclick="deleteTime(<?= htmlspecialchars(json_encode($t['Ref Number'] ?? ''), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>)">Del</button>
+            <button class="btn-sm danger auth-only" onclick="deleteTime(<?= htmlspecialchars(json_encode($t), ENT_QUOTES) ?>)">Del</button>
           </td>
         </tr>
         <?php endforeach; ?>
@@ -516,7 +516,7 @@ body:not(.tm-signed-in) .auth-only { display:none !important; }
           <td><?= htmlspecialchars($h['Notes'] ?? '') ?></td>
           <td class="actions">
             <button class="btn-sm auth-only" onclick="openEditHwDialog(<?= htmlspecialchars(json_encode($h), ENT_QUOTES) ?>)">Edit</button>
-            <button class="btn-sm danger auth-only" onclick="deleteHw(<?= htmlspecialchars(json_encode($h['Ref Number'] ?? ''), ENT_QUOTES) ?>,<?= htmlspecialchars(json_encode($pName), ENT_QUOTES) ?>)">Del</button>
+            <button class="btn-sm danger auth-only" onclick="deleteHw(<?= htmlspecialchars(json_encode($h), ENT_QUOTES) ?>)">Del</button>
           </td>
         </tr>
         <?php endforeach; ?>
@@ -1269,6 +1269,15 @@ function submitTime() {
   };
   if (_editingTime) {
     data.row_id = _editingTime['Ref Number'] || '';
+    // If no Ref Number, pass original field values so PHP can fingerprint-locate the row
+    if (!data.row_id) {
+      data.orig_date        = _editingTime['Date']        || '';
+      data.orig_project     = _editingTime['Project']     || '';
+      data.orig_client      = _editingTime['Client']      || '';
+      data.orig_staff_name  = _editingTime['Staff Name']  || '';
+      data.orig_hours       = _editingTime['Hours']       || '';
+      data.orig_description = _editingTime['Description'] || '';
+    }
     post('push/tmUpdateTime.php', data, function(r) {
       if (r.error) { document.getElementById('timeErr').textContent = r.error; btn.disabled = false; return; }
       forceCloseTimeDialog(); saveOpenCards(); location.reload();
@@ -1280,9 +1289,19 @@ function submitTime() {
     });
   }
 }
-function deleteTime(rowId, proj) {
-  if (!rowId || !confirm('Delete this time entry?')) return;
-  post('push/tmDeleteTime.php', {row_id: rowId}, function(r) {
+function deleteTime(row) {
+  if (!confirm('Delete this time entry?')) return;
+  var rowId = (row['Ref Number'] || '').trim();
+  var data  = {row_id: rowId};
+  if (!rowId) {
+    data.date        = row['Date']        || '';
+    data.project     = row['Project']     || '';
+    data.client      = row['Client']      || '';
+    data.staff_name  = row['Staff Name']  || '';
+    data.hours       = row['Hours']       || '';
+    data.description = row['Description'] || '';
+  }
+  post('push/tmDeleteTime.php', data, function(r) {
     if (r.error) { alert('Error: ' + r.error); return; }
     saveOpenCards(); location.reload();
   });
@@ -1340,6 +1359,13 @@ function submitHw() {
   };
   if (_editingHw) {
     data.row_id = _editingHw['Ref Number'] || '';
+    if (!data.row_id) {
+      data.orig_date        = _editingHw['Date']        || '';
+      data.orig_project     = _editingHw['Project']     || '';
+      data.orig_client      = _editingHw['Client']      || '';
+      data.orig_description = _editingHw['Description'] || '';
+      data.orig_amount      = _editingHw['Amount']      || '';
+    }
     post('push/tmUpdateHardware.php', data, function(r) {
       if (r.error) { document.getElementById('hwErr').textContent = r.error; btn.disabled = false; return; }
       forceCloseHwDialog(); saveOpenCards(); location.reload();
@@ -1351,9 +1377,18 @@ function submitHw() {
     });
   }
 }
-function deleteHw(rowId, proj) {
-  if (!rowId || !confirm('Delete this cost entry?')) return;
-  post('push/tmDeleteHardware.php', {row_id: rowId}, function(r) {
+function deleteHw(row) {
+  if (!confirm('Delete this cost entry?')) return;
+  var rowId = (row['Ref Number'] || '').trim();
+  var data  = {row_id: rowId};
+  if (!rowId) {
+    data.date        = row['Date']        || '';
+    data.project     = row['Project']     || '';
+    data.client      = row['Client']      || '';
+    data.description = row['Description'] || '';
+    data.amount      = row['Amount']      || '';
+  }
+  post('push/tmDeleteHardware.php', data, function(r) {
     if (r.error) { alert('Error: ' + r.error); return; }
     saveOpenCards(); location.reload();
   });

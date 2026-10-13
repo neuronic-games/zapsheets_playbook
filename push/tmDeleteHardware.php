@@ -10,13 +10,28 @@ require_once __DIR__ . '/refreshJson.php';
 $sheetId = trim($_POST['id']     ?? '');
 $rowId   = trim($_POST['row_id'] ?? '');
 
-if (!$sheetId || !$rowId) {
-    echo json_encode(['error' => 'Missing id or row_id']); exit;
+if (!$sheetId) { echo json_encode(['error' => 'Missing id']); exit; }
+
+$py = $_ENV['PYTHON'] ?? 'python3';
+
+if ($rowId) {
+    $payload = $rowId;
+} else {
+    $fp = [
+        'row_id'       => '',
+        '_fingerprint' => [
+            'Date'        => trim($_POST['date']        ?? ''),
+            'Project'     => trim($_POST['project']     ?? ''),
+            'Client'      => trim($_POST['client']      ?? ''),
+            'Description' => trim($_POST['description'] ?? ''),
+            'Amount'      => trim($_POST['amount']      ?? ''),
+        ],
+    ];
+    $payload = base64_encode(json_encode($fp, JSON_UNESCAPED_UNICODE));
 }
 
-$py     = $_ENV['PYTHON'] ?? 'python3';
-$cmd    = escapeshellarg($py) . ' ' . escapeshellarg(__DIR__ . '/gtmDelete.py') . ' '
-        . escapeshellarg($sheetId . '|Hardware|' . $rowId) . ' 2>&1';
+$cmd = escapeshellarg($py) . ' ' . escapeshellarg(__DIR__ . '/gtmDelete.py') . ' '
+     . escapeshellarg($sheetId . '|Hardware|' . $payload) . ' 2>&1';
 $out    = trim((string) shell_exec($cmd));
 $result = $out ? json_decode($out, true) : null;
 if (!$result) { echo json_encode(['error' => $out ?: 'No response']); exit; }

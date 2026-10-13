@@ -9,6 +9,16 @@
  * sheets/{sheetId}/{tabname}.json so the dashboard stays in sync after any write.
  */
 
+/**
+ * Generate an 8-char uppercase alphanumeric Ref Number.
+ */
+function tmGenRef(): string {
+    $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    $ref = '';
+    for ($i = 0; $i < 8; $i++) $ref .= $chars[random_int(0, 35)];
+    return $ref;
+}
+
 function refreshJson($pythonPath, $sheetId, $tabName) {
     $script = __DIR__ . '/gread.py';
     $arg    = $sheetId . 'sheetname' . $tabName;

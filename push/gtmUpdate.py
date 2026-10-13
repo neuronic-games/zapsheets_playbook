@@ -32,10 +32,9 @@ if len(parts) != 3:
 sheet_id, sheet_name, json_b64 = parts
 data = json.loads(base64.b64decode(json_b64).decode('utf-8'))
 
-row_id = data.pop('row_id', '').strip()
-if not row_id:
-    print(json.dumps({"error": "row_id is required"}))
-    sys.exit(1)
+row_id      = data.pop('row_id',      '').strip()
+new_ref     = data.pop('_new_ref',   '').strip()   # ref to write when row_id is empty
+fingerprint = data.pop('_fingerprint', None)        # fields used to locate the row when row_id absent
 
 try:
     ss = sa.open_by_key(sheet_id)
@@ -68,14 +67,45 @@ if row_id_col < 0:
     sys.exit(1)
 
 target_row = None
-for i, row in enumerate(all_values[1:], start=2):
-    cell_val = row[row_id_col].strip() if row_id_col < len(row) else ''
-    if cell_val == row_id:
-        target_row = i
-        break
 
-if target_row is None:
-    print(json.dumps({"error": f"Row ID '{row_id}' not found"}))
+if row_id:
+    # Normal path: find by Ref Number
+    for i, row in enumerate(all_values[1:], start=2):
+        cell_val = row[row_id_col].strip() if row_id_col < len(row) else ''
+        if cell_val == row_id:
+            target_row = i
+            break
+    if target_row is None:
+        print(json.dumps({"error": f"Ref Number '{row_id}' not found"}))
+        sys.exit(1)
+elif fingerprint:
+    # No Ref Number: locate row by matching fingerprint fields, then assign new_ref
+    fp = {k: str(v).strip().lower() for k, v in fingerprint.items() if str(v).strip()}
+    for i, row in enumerate(all_values[1:], start=2):
+        cell = row[row_id_col].strip() if row_id_col < len(row) else ''
+        if cell:
+            continue  # skip rows that already have a Ref Number (not the blank one we want)
+        match = True
+        for fname, fval in fp.items():
+            fidx = col.get(fname, -1)
+            if fidx < 0:
+                continue
+            cv = row[fidx].strip().lower() if fidx < len(row) else ''
+            if cv != fval:
+                match = False
+                break
+        if match:
+            target_row = i
+            # Write the new Ref Number now so the row is addressable in future calls
+            if new_ref and row_id_col >= 0:
+                ws.update_cell(target_row, row_id_col + 1, new_ref)
+                row_id = new_ref
+            break
+    if target_row is None:
+        print(json.dumps({"error": "Could not locate row by fingerprint — no blank-Ref row matches the provided fields"}))
+        sys.exit(1)
+else:
+    print(json.dumps({"error": "row_id is required (or provide _fingerprint for rows without a Ref Number)"}))
     sys.exit(1)
 
 updates = []

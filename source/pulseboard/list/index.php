@@ -109,6 +109,18 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
   color:#4ade80;
 }
 
+/* ── Tab reload button (re-reads this tab from the sheet) ── */
+.btn-reload {
+  width:1.6rem; height:1.6rem; border-radius:50%; border:1.5px solid rgba(74,222,128,.3);
+  background:transparent; color:#4ade80; cursor:pointer; display:inline-flex;
+  align-items:center; justify-content:center; flex-shrink:0; padding:0;
+  transition:background .15s, border-color .15s;
+}
+.btn-reload:hover { background:rgba(22,163,74,.2); border-color:#4ade80; }
+.btn-reload:disabled { cursor:default; }
+.btn-reload.spinning svg { animation:pb-spin .75s linear infinite; }
+@keyframes pb-spin { to { transform:rotate(360deg); } }
+
 /* ── Group share button ───────────────────────────────── */
 .pb-group-share-btn {
   display:inline-flex; align-items:center; gap:.3rem;
@@ -498,6 +510,7 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
     <div class="group-header">
       <span class="group-name"><?= htmlspecialchars($_g['name']) ?></span>
       <span class="group-count"><?= count($_g['machines']) ?> machine<?= count($_g['machines']) !== 1 ? 's' : '' ?></span>
+      <button class="btn-reload" title="Reload this tab from the sheet" onclick="reloadGroup(this, <?= htmlspecialchars(json_encode($_g['name']), ENT_QUOTES) ?>)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
       <button class="pb-group-share-btn" onclick="shareGroup(<?= htmlspecialchars(json_encode($_g['safe']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($_g['name']), ENT_QUOTES) ?>)">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Share
@@ -724,6 +737,20 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
     var wrap = document.querySelector('.account-menu-wrap');
     if (wrap && !wrap.contains(e.target)) closeAccountMenu();
   });
+
+  // Re-read one tab from the Google Sheet, then reload the page.
+  // The arrow keeps spinning until the page reloads.
+  window.reloadGroup = function(btn, tabName) {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.classList.add('spinning');
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', APP_BASE + 'push/reloadTabPulseboard.php');
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload  = function() { location.reload(); };
+    xhr.onerror = function() { location.reload(); };
+    xhr.send('id=' + encodeURIComponent(SHEET_ID) + '&tab=' + encodeURIComponent(tabName));
+  };
 
   window.shareGroup = function(tabSafe, tabName) {
     var urlEl   = document.getElementById('pbShareUrl');

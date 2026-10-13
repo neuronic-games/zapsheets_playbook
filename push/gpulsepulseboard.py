@@ -209,37 +209,10 @@ if updates:
 
 # ── Update JSON cache ─────────────────────────────────────────────────────────
 # The dashboard and the client share page read sheets/{id}/pulseboard-{tab}.json.
-# Rebuild it from every row on the tab (like Fetch does), so machines that
-# haven't reported yet still appear. Saved under the sheet's real tab name.
-
-CACHE_COLS = {   # sheet header (lower case) -> cache key
-    'exhibit': 'exhibit', 'host': 'host', 'ip': 'ip', 'user': 'user', 'os': 'os',
-    'memory': 'memory', 'disk': 'disk', 'uptime': 'uptime', 'last reboot': 'last_reboot',
-    'status': 'status', 'time': 'time', 'crashes': 'crashes', 'crash times': 'crash_times',
-    'teamviewer id': 'teamviewer_id', 'storage': 'storage', 'startup time': 'startup_time',
-    'shutdown time': 'shutdown_time', 'tv id': 'tv_id', 'tv password': 'tv_password',
-    'notes': 'notes',
-}
-
-def _machines_from_sheet():
-    rows = ws.get_all_values()
-    if not rows:
-        return []
-    header = [_norm(h) for h in rows[0]]
-    idx = {}
-    for i, h in enumerate(header):
-        if h in CACHE_COLS and CACHE_COLS[h] not in idx:
-            idx[CACHE_COLS[h]] = i
-    out = []
-    for r in rows[1:]:
-        cell = lambda i: r[i].strip().lstrip("'") if i < len(r) else ''
-        if not cell(idx.get('exhibit', 0)):
-            continue
-        out.append({k: cell(i) for k, i in idx.items()})
-    return out
+# Update this machine's entry there, under the sheet's real tab name. Rows typed
+# into the sheet show up after a Fetch or the tab's reload button.
 
 def _merge_this_machine(machines):
-    # Fallback if the sheet can't be re-read: update just this machine's entry.
     entry = next((m for m in machines if _norm(m.get('exhibit')) == _norm(exhibit)), None)
     if entry is None:
         entry = {'exhibit': exhibit}
@@ -261,18 +234,17 @@ try:
     cache_path = os.path.join(cache_dir, f'pulseboard-{safe}.json')
     os.makedirs(cache_dir, exist_ok=True)
 
-    try:
-        machines = _machines_from_sheet()
-        log(f'JSON cache rebuilt from sheet ({len(machines)} machines).', 'ok')
-    except Exception as e:
-        log(f'Could not re-read tab ({e}) - updating this machine only.', 'warn')
-        machines = []
-        if os.path.exists(cache_path):
+    machines = []
+    # Start from this tab's cache, or the one an earlier report saved under the sent name
+    for p in (cache_path, os.path.join(cache_dir, 'pulseboard-' + re.sub(r'[/\\]', '-', tab) + '.json')):
+        if os.path.exists(p):
             try:
-                machines = (json.load(open(cache_path, encoding='utf-8')) or {}).get('machines', [])
+                machines = (json.load(open(p, encoding='utf-8')) or {}).get('machines', [])
+                break
             except Exception:
-                machines = []
-        machines = _merge_this_machine(machines)
+                pass
+    machines = _merge_this_machine(machines)
+    log('JSON cache updated.', 'ok')
 
     with open(cache_path, 'w', encoding='utf-8') as f:
         json.dump({'tab': real_tab, 'machines': machines}, f, ensure_ascii=False, indent=2)

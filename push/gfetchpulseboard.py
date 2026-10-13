@@ -6,7 +6,8 @@ Re-reads all machine group tabs and updates the local JSON cache files.
 Tabs that no longer exist in the spreadsheet are removed from the index
 and their cache files are deleted.
 
-Arg:    "{sheet_id}"
+Arg:    "{sheet_id}"          - all tabs (removes tabs that no longer exist)
+        "{sheet_id}|{tab}"    - just that tab (the reload button on a tab)
 Returns: {"ok": true, "logs": [...]} or {"error": "...", "logs": [...]}
 """
 
@@ -21,7 +22,9 @@ def fail(msg):
     print(json.dumps({'ok': False, 'error': msg, 'logs': logs}))
     sys.exit(1)
 
-sheet_id = (sys.argv[1] if len(sys.argv) > 1 else '').strip()
+_arg     = (sys.argv[1] if len(sys.argv) > 1 else '').strip()
+sheet_id, _, only_tab = _arg.partition('|')
+sheet_id, only_tab = sheet_id.strip(), only_tab.strip()
 if not sheet_id: fail('sheet_id argument required')
 
 if not os.path.exists(cred_path): fail('credentials.json not found')
@@ -51,6 +54,12 @@ all_ws      = wb.worksheets()
 machine_tabs = [ws for ws in all_ws if ws.title.lower() not in SKIP_TITLES
                 and not re.match(r'^\[.+\] notes$', ws.title)]
 
+if only_tab:
+    want = only_tab.casefold()
+    machine_tabs = [ws for ws in machine_tabs if ws.title.strip().casefold() == want]
+    if not machine_tabs:
+        fail(f'Tab "{only_tab}" not found')
+
 existing_safes = {re.sub(r'[/\\]', '-', ws.title) for ws in machine_tabs}
 
 # Load existing index
@@ -61,8 +70,8 @@ if os.path.exists(idx_path):
     except Exception:
         index = {}
 
-# Remove stale entries
-for safe in list(index.keys()):
+# Remove stale entries (full fetch only - a single-tab reload leaves others alone)
+for safe in (list(index.keys()) if not only_tab else []):
     if safe not in existing_safes:
         cache_file = os.path.join(out_dir, f'pulseboard-{safe}.json')
         if os.path.exists(cache_file):
@@ -74,6 +83,8 @@ COL_MAP = {
     'exhibit':       'exhibit',
     'host':          'host',
     'ip':            'ip',
+    'user':          'user',
+    'teamviewer id': 'teamviewer_id',
     'os':            'os',
     'memory':        'memory',
     'disk':          'disk',
@@ -100,7 +111,7 @@ def _read_machines(ws):
     for row in rows[1:]:
         exhibit = row[col_idx['exhibit']].strip() if 'exhibit' in col_idx and col_idx['exhibit'] < len(row) else ''
         if not exhibit: continue
-        m = {key: (row[idx].strip() if idx < len(row) else '') for key, idx in col_idx.items()}
+        m = {key: (row[idx].strip().lstrip("'") if idx < len(row) else '') for key, idx in col_idx.items()}
         machines.append(m)
     return machines
 
@@ -124,4 +135,4 @@ with open(idx_path, 'w', encoding='utf-8') as f:
     json.dump(index, f, ensure_ascii=False)
 
 log(f'Done — {count} tab(s) updated.', 'ok')
-print(json.dumps({'ok': True, 'logs': logs}))
+print(json.dumps({'ok': True, 'count': count, 'logs': logs}))

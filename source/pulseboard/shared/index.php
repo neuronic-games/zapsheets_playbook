@@ -144,6 +144,17 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
 }
 .group-name { font-family:'DINBlack',sans-serif; font-size:.82rem; text-transform:uppercase; letter-spacing:.07em; color:#4ade80; flex:1; }
 .group-count { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:#4a5568; white-space:nowrap; }
+/* ── Tab reload button (re-reads this tab from the sheet) ── */
+.btn-reload {
+  width:1.6rem; height:1.6rem; border-radius:50%; border:1.5px solid rgba(74,222,128,.3);
+  background:transparent; color:#4ade80; cursor:pointer; display:inline-flex;
+  align-items:center; justify-content:center; flex-shrink:0; padding:0;
+  transition:background .15s, border-color .15s;
+}
+.btn-reload:hover { background:rgba(22,163,74,.2); border-color:#4ade80; }
+.btn-reload:disabled { cursor:default; }
+.btn-reload.spinning svg { animation:pb-spin .75s linear infinite; }
+@keyframes pb-spin { to { transform:rotate(360deg); } }
 
 /* ── Machine grid ────────────────────────────────────── */
 .machine-grid {
@@ -247,6 +258,7 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
     <div class="group-header">
       <span class="group-name"><?= htmlspecialchars($_g['name']) ?></span>
       <span class="group-count"><?= count($_g['machines']) ?> machine<?= count($_g['machines']) !== 1 ? 's' : '' ?></span>
+      <button class="btn-reload" title="Reload from the sheet" onclick="reloadGroup(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
     </div>
 
     <?php if (empty($_g['machines'])): ?>
@@ -339,6 +351,21 @@ body { margin:0; background:#0f1923; font-family:'DINRegular',Arial,sans-serif; 
 </div>
 
 <script>
+// Re-read this tab from the Google Sheet (via the share code), then reload.
+var PB_SHARE_TOKEN = <?= json_encode($_token) ?>;
+var PB_BASE        = <?= json_encode($_base) ?>;
+function reloadGroup(btn) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  btn.classList.add('spinning');
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', PB_BASE + 'push/reloadTabPulseboard.php');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onload  = function() { location.reload(); };
+  xhr.onerror = function() { location.reload(); };
+  xhr.send('token=' + encodeURIComponent(PB_SHARE_TOKEN));
+}
+
 (function() {
   'use strict';
 

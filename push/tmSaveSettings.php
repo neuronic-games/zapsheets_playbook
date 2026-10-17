@@ -18,15 +18,29 @@ if (!is_dir($dir)) {
     }
 }
 
-$settings = [
-    'Name'               => trim($_POST['name']        ?? ''),
-    'Company'            => trim($_POST['company']     ?? ''),
-    'Phone'              => trim($_POST['phone']       ?? ''),
-    'Logo URL'           => trim($_POST['logo']        ?? ''),
-    'Address'            => trim($_POST['address']     ?? ''),
-    'Payment Info'       => trim($_POST['payment']     ?? ''),
-    'Gameboard Template' => trim($_POST['gb_template'] ?? ''),
+// Load existing settings to merge — only update fields that were explicitly posted
+$existing = [];
+if (file_exists($file)) {
+    $existing = json_decode(file_get_contents($file), true) ?: [];
+}
+
+// Map of POST key → settings key, only written when the POST key is present
+$postMap = [
+    'name'        => 'Name',
+    'company'     => 'Company',
+    'phone'       => 'Phone',
+    'logo'        => 'Logo URL',
+    'address'     => 'Address',
+    'payment'     => 'Payment Info',
+    'gb_template' => 'Gameboard Template',
 ];
+
+$settings = $existing;
+foreach ($postMap as $postKey => $settingsKey) {
+    if (isset($_POST[$postKey])) {
+        $settings[$settingsKey] = trim($_POST[$postKey]);
+    }
+}
 
 if (file_put_contents($file, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) === false) {
     echo json_encode(['error' => 'Could not write settings.json']); exit;

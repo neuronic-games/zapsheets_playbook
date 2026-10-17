@@ -62,132 +62,172 @@ $_allGames = _gb_load($_sDir . '/games.json');
 $_games = array_values(array_filter($_allGames, fn($g) => strtolower(trim($g['Status'] ?? '')) === 'published'));
 
 if (!$_gameSlug) {
-    // ── No slug: render the game catalog ────────────────────────────────────────
+    // ── No slug: render the admin catalog ────────────────────────────────────────
     $_pubName  = trim($_settings['Company'] ?? $_settings['Name'] ?? '');
     $_pubLogo  = trim($_settings['Logo URL'] ?? '');
-    $__catalog_url = $_appRoot . $_sheetId . '/gameboard/';
+    $_catUrl   = $_appRoot . $_sheetId . '/gameboard/';
+    $_logoColor = $_template === 'opensea' ? '#00e5ff' : '#7c9eff';
+    $_accentHex = $_template === 'opensea' ? '#0097a7' : '#3b3baa';
     ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title><?= h($_pubName ?: 'GameBoard') ?> — Games Catalog</title>
+<title><?= h($_pubName ?: 'GameBoard') ?></title>
 <style>
 @font-face { font-family:'DINBlack';   src:url('<?= h($_appRoot) ?>fonts/DINBlack.woff2')  format('woff2'); }
 @font-face { font-family:'DINRegular'; src:url('<?= h($_appRoot) ?>fonts/DINMedium.woff2') format('woff2'); }
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 :root {
   --ink:#1a1a2e; --ink-lt:#4a4a6a; --muted:#888; --border:#e2e2ec;
-  --surface:#fff; --bg:#f6f5f2; --accent:#3b3baa; --nav-bg:#1a1a2e;
+  --surface:#fff; --bg:#f6f5f2; --accent:<?= h($_accentHex) ?>; --nav-bg:#1a1a2e;
 <?php if ($_template === 'opensea'): ?>
   --ink:#0d1b2a; --ink-lt:#2c4a6e; --muted:#6b8fae; --border:#c8dcea;
-  --surface:#fff; --bg:#f0f6fb; --accent:#0097a7; --nav-bg:#0d1b2a;
+  --surface:#fff; --bg:#f0f6fb; --nav-bg:#0d1b2a;
 <?php endif; ?>
 }
 body { background:var(--bg); font-family:'DINRegular',Arial,sans-serif; color:var(--ink); min-height:100vh; }
 a { color:inherit; text-decoration:none; }
 
-/* Nav */
-.gb-nav { background:var(--nav-bg); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:.75rem 1.5rem; gap:1rem; }
-.gb-nav-left { display:flex; align-items:center; gap:.75rem; }
-.gb-nav-logo { font-family:'DINBlack',sans-serif; font-size:1rem; letter-spacing:.06em; color:<?= $_template==='opensea' ? '#00e5ff' : '#7c9eff' ?>; }
-.gb-nav-pub { font-size:.82rem; opacity:.65; }
-.gb-nav-logo img { height:28px; border-radius:4px; vertical-align:middle; margin-right:.35rem; }
+/* ── Header ── */
+.gb-header { background:var(--nav-bg); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:.6rem 1.25rem; gap:1rem; position:sticky; top:0; z-index:100; }
+.gb-header-left { display:flex; align-items:center; gap:.6rem; min-width:0; }
+.gb-logo { font-family:'DINBlack',sans-serif; font-size:1.1rem; letter-spacing:.07em; color:<?= h($_logoColor) ?>; flex-shrink:0; }
+.gb-meta { font-size:.72rem; opacity:.6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.gb-header-right { display:flex; align-items:center; gap:.5rem; flex-shrink:0; }
 
-/* Hero strip */
-.cat-hero { background:var(--nav-bg); color:#fff; padding:2.8rem 1.5rem 2.4rem; text-align:center; }
-.cat-hero-title { font-family:'DINBlack',sans-serif; font-size:clamp(1.8rem,6vw,3rem); letter-spacing:.04em; margin-bottom:.5rem; }
-.cat-hero-sub { font-size:.95rem; opacity:.6; }
-
-/* Filters */
-.cat-filters { max-width:960px; margin:1.8rem auto 0; padding:0 1.25rem; display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; }
-.cat-filter-btn {
-  font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.07em;
-  padding:.28rem .7rem; border-radius:999px; border:1.5px solid var(--border);
-  background:var(--surface); color:var(--ink-lt); cursor:pointer; transition:background .13s;
+/* User icon + menu (matches T&MBoard) */
+.btn-user-icon {
+  width:32px; height:32px; border-radius:50%; border:1.5px solid rgba(255,255,255,.3);
+  background:transparent; color:#fff; cursor:pointer; display:flex; align-items:center;
+  justify-content:center; transition:background .14s, border-color .14s;
 }
-.cat-filter-btn:hover, .cat-filter-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+.btn-user-icon:hover, .btn-user-icon.signed-in { background:rgba(255,255,255,.15); border-color:#fff; }
+.btn-user-icon.signed-in { border-color:<?= h($_logoColor) ?>; color:<?= h($_logoColor) ?>; }
+.user-menu-wrap { position:relative; }
+.user-menu {
+  display:none; position:absolute; top:calc(100% + 6px); right:0;
+  background:#1e1e30; border:1px solid rgba(255,255,255,.12); border-radius:8px;
+  min-width:140px; box-shadow:0 6px 24px rgba(0,0,0,.4); overflow:hidden; z-index:200;
+}
+.user-menu.open { display:block; }
+.user-menu-item {
+  display:block; width:100%; text-align:left; padding:.55rem 1rem;
+  font-family:'DINRegular',sans-serif; font-size:.82rem; color:rgba(255,255,255,.8);
+  background:none; border:none; cursor:pointer; transition:background .12s;
+}
+.user-menu-item:hover { background:rgba(255,255,255,.08); }
+.user-menu-item.signout { color:#ff6b6b; }
+.user-menu-divider { border:none; border-top:1px solid rgba(255,255,255,.1); margin:2px 0; }
 
-/* Grid */
-.cat-grid { max-width:960px; margin:1.5rem auto 5rem; padding:0 1.25rem; display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:1.1rem; }
+/* ── Hero ── */
+.cat-hero { background:var(--nav-bg); color:#fff; padding:2.5rem 1.5rem 2rem; text-align:center; }
+.cat-hero-title { font-family:'DINBlack',sans-serif; font-size:clamp(1.8rem,6vw,3rem); letter-spacing:.04em; margin-bottom:.5rem; }
+.cat-hero-sub { font-size:.92rem; opacity:.55; }
+
+/* ── Grid ── */
+.cat-grid { max-width:960px; margin:2rem auto 5rem; padding:0 1.25rem; display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:1.1rem; }
 .cat-card { background:var(--surface); border-radius:12px; box-shadow:0 2px 14px rgba(0,0,0,.08); overflow:hidden; transition:box-shadow .15s, transform .15s; cursor:pointer; display:flex; flex-direction:column; }
-.cat-card:hover { box-shadow:0 6px 24px rgba(59,59,170,.14); transform:translateY(-3px); }
-<?php if ($_template==='opensea'): ?>
-.cat-card:hover { box-shadow:0 6px 24px rgba(0,151,167,.18); }
-<?php endif; ?>
-.cat-card-img { width:100%; aspect-ratio:1; object-fit:cover; display:block; background:linear-gradient(135deg,#dde 0%,#c8c8e8 100%); }
-.cat-card-ph { width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:3.5rem; opacity:.3; background:linear-gradient(135deg,#dde 0%,#c8c8e8 100%); }
-.cat-card-body { padding:.75rem .9rem 1rem; flex:1; display:flex; flex-direction:column; gap:.25rem; }
+.cat-card:hover { box-shadow:0 6px 24px rgba(0,0,0,.14); transform:translateY(-3px); }
+.cat-card-img { width:100%; aspect-ratio:1; object-fit:cover; display:block; }
+.cat-card-ph { width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:3.5rem; opacity:.28; background:linear-gradient(135deg,#dde,#c8c8e8); }
+.cat-card-body { padding:.75rem .9rem 1rem; flex:1; display:flex; flex-direction:column; gap:.2rem; }
 .cat-card-name { font-family:'DINBlack',sans-serif; font-size:.95rem; color:var(--accent); line-height:1.2; }
 .cat-card-summary { font-size:.8rem; color:var(--ink-lt); line-height:1.45; flex:1; margin-top:.1rem; }
-.cat-card-meta { display:flex; flex-wrap:wrap; gap:.35rem .7rem; margin-top:.35rem; }
+.cat-card-meta { display:flex; flex-wrap:wrap; gap:.3rem .65rem; margin-top:.35rem; }
 .cat-card-stat { font-size:.72rem; color:var(--muted); }
-.cat-card-status { font-family:'DINBlack',sans-serif; font-size:.62rem; text-transform:uppercase; letter-spacing:.08em; padding:.18rem .5rem; border-radius:999px; border:1px solid currentColor; align-self:flex-start; margin-top:.3rem; }
-.cat-card-status.published { color:#2e7d32; border-color:#a5d6a7; background:#f1f8e9; }
-.cat-card-status.signed     { color:#1565c0; border-color:#90caf9; background:#e3f2fd; }
-.cat-card-status.interested { color:#e65100; border-color:#ffcc80; background:#fff3e0; }
 
-/* Empty state */
-.cat-empty { max-width:480px; margin:5rem auto; text-align:center; color:var(--muted); }
-.cat-empty-icon { font-size:3.5rem; margin-bottom:1rem; }
-.cat-empty-title { font-family:'DINBlack',sans-serif; font-size:1.1rem; color:var(--ink); margin-bottom:.5rem; }
-.cat-empty-body { font-size:.88rem; line-height:1.65; }
+/* ── Empty ── */
+.cat-empty { grid-column:1/-1; padding:4rem 1rem; text-align:center; color:var(--muted); }
+.cat-empty-icon { font-size:3rem; margin-bottom:.75rem; }
+.cat-empty-title { font-family:'DINBlack',sans-serif; font-size:1rem; color:var(--ink); margin-bottom:.4rem; }
+.cat-empty-body { font-size:.85rem; line-height:1.6; }
 
-/* Footer */
-.gb-footer { background:var(--nav-bg); color:rgba(255,255,255,.5); text-align:center; padding:1.5rem; font-size:.76rem; }
+/* ── Footer ── */
+.gb-footer { background:var(--nav-bg); color:rgba(255,255,255,.45); text-align:center; padding:1.4rem; font-size:.75rem; }
+
+/* ── Overlay / Dialog (sign-in + settings) ── */
+.gb-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:500;
+  align-items:center; justify-content:center;
+}
+.gb-overlay.open { display:flex; }
+.gb-dialog {
+  background:#fff; border-radius:12px; padding:1.6rem 1.75rem 1.5rem;
+  width:90%; max-width:360px; box-shadow:0 8px 40px rgba(0,0,0,.28);
+}
+.gb-dialog-title { font-family:'DINBlack',sans-serif; font-size:1rem; text-transform:uppercase; letter-spacing:.07em; color:var(--ink); margin-bottom:1rem; }
+.gb-field-group { margin-bottom:.7rem; }
+.gb-field-group label { display:block; font-size:.75rem; color:var(--muted); margin-bottom:.25rem; }
+.gb-field { display:block; width:100%; padding:.55rem .75rem; border:1.5px solid var(--border); border-radius:7px; font-family:'DINRegular',sans-serif; font-size:.9rem; color:var(--ink); outline:none; transition:border-color .14s; }
+.gb-field:focus { border-color:var(--accent); }
+.gb-err { font-size:.78rem; color:#e53935; min-height:1.1rem; margin:.3rem 0; }
+.gb-dialog-actions { display:flex; gap:.5rem; justify-content:flex-end; margin-top:.9rem; }
+.btn-cancel { font-family:'DINBlack',sans-serif; font-size:.75rem; text-transform:uppercase; letter-spacing:.07em; padding:.42rem .9rem; border-radius:6px; border:1.5px solid var(--border); background:var(--surface); color:var(--ink-lt); cursor:pointer; }
+.btn-cancel:hover { background:#f0f0f8; }
+.btn-primary { font-family:'DINBlack',sans-serif; font-size:.75rem; text-transform:uppercase; letter-spacing:.07em; padding:.42rem .9rem; border-radius:6px; border:none; background:var(--accent); color:#fff; cursor:pointer; transition:opacity .13s; }
+.btn-primary:disabled { opacity:.45; cursor:default; }
+.btn-primary:not(:disabled):hover { opacity:.88; }
+#siConfirmPanel { display:none; }
 
 @media(max-width:520px) { .cat-grid { grid-template-columns:1fr 1fr; } }
-@media(max-width:360px) { .cat-grid { grid-template-columns:1fr; } }
+@media(max-width:360px) { .cat-grid { grid-column:1; } }
 </style>
 </head>
 <body>
 
-<nav class="gb-nav">
-  <div class="gb-nav-left">
-    <?php if ($_pubLogo): ?><img src="<?= h($_pubLogo) ?>" alt="" style="height:28px;border-radius:4px;" /><?php endif; ?>
-    <span class="gb-nav-logo">GameBoard</span>
-    <?php if ($_pubName): ?><span class="gb-nav-pub"><?= h($_pubName) ?></span><?php endif; ?>
+<!-- ── Header ── -->
+<header class="gb-header">
+  <div class="gb-header-left">
+    <?php if ($_pubLogo): ?><img src="<?= h($_pubLogo) ?>" alt="" style="height:26px;border-radius:4px;flex-shrink:0;" /><?php endif; ?>
+    <span class="gb-logo">GameBoard</span>
+    <span class="gb-meta" id="gbMeta"><?= h($_pubName ?: 'Games') ?></span>
   </div>
-</nav>
+  <div class="gb-header-right">
+    <div class="user-menu-wrap">
+      <button class="btn-user-icon" id="gbUserBtn" onclick="toggleGbMenu(event)" title="Menu">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+      </button>
+      <div class="user-menu" id="gbMenu">
+        <button class="user-menu-item" id="gbMenuProfile" onclick="gbMenuAction('profile')">Profile</button>
+        <button class="user-menu-item" onclick="gbMenuAction('settings')">Settings</button>
+        <hr class="user-menu-divider" />
+        <button class="user-menu-item" onclick="gbMenuAction('fetch')">Fetch</button>
+        <hr class="user-menu-divider" />
+        <button class="user-menu-item" id="gbMenuSignInOut" onclick="gbMenuAction('signout')">Sign In</button>
+      </div>
+    </div>
+  </div>
+</header>
 
+<!-- ── Hero ── -->
 <div class="cat-hero">
   <div class="cat-hero-title"><?= h($_pubName ?: 'Our Games') ?></div>
   <?php if (!empty($_games)): ?><div class="cat-hero-sub"><?= count($_games) ?> game<?= count($_games) !== 1 ? 's' : '' ?></div><?php endif; ?>
 </div>
 
-<?php
-// Collect unique statuses for filter buttons
-$_statuses = [];
-foreach ($_games as $g) { $s = strtolower(trim($g['Status'] ?? '')); if ($s && !in_array($s, $_statuses)) $_statuses[] = $s; }
-if (count($_statuses) > 1): ?>
-<div class="cat-filters">
-  <button class="cat-filter-btn active" onclick="filterCatalog('',this)">All</button>
-  <?php foreach ($_statuses as $st): ?>
-  <button class="cat-filter-btn" onclick="filterCatalog('<?= h($st) ?>',this)"><?= h(ucfirst($st)) ?></button>
-  <?php endforeach; ?>
-</div>
-<?php endif; ?>
-
+<!-- ── Game grid ── -->
 <div class="cat-grid" id="catGrid">
 <?php if (empty($_games)): ?>
-  <div class="cat-empty" style="grid-column:1/-1">
+  <div class="cat-empty">
     <div class="cat-empty-icon">🎲</div>
-    <div class="cat-empty-title">No games yet</div>
-    <div class="cat-empty-body">Add games to your Google Sheet and fetch the data to see them here.</div>
+    <div class="cat-empty-title">No published games yet</div>
+    <div class="cat-empty-body">Sign in and use Fetch to sync your Games sheet, then mark games as Published to display them here.</div>
   </div>
-<?php else: ?>
-  <?php foreach ($_games as $g):
+<?php else:
+  foreach ($_games as $g):
     $gName    = trim($g['Name']       ?? '');
     $gSummary = trim($g['Summary']    ?? '');
-    $gStatus  = strtolower(trim($g['Status'] ?? ''));
     $gCount   = trim($g['Count']      ?? '');
     $gDur     = trim($g['Duration']   ?? '');
     $gCover   = _gb_img(trim($g['Cover URL'] ?? $g['Image URL'] ?? ''));
     $gSlug    = _gb_slug($gName);
     if (!$gName) continue;
-  ?>
-  <a class="cat-card" href="<?= h($__catalog_url . $gSlug) ?>" data-status="<?= h($gStatus) ?>">
+?>
+  <a class="cat-card" href="<?= h($_catUrl . $gSlug) ?>">
     <?php if ($gCover): ?>
     <img class="cat-card-img" src="<?= h($gCover) ?>" alt="<?= h($gName) ?>" loading="lazy" />
     <?php else: ?>
@@ -200,25 +240,221 @@ if (count($_statuses) > 1): ?>
         <?php if ($gCount): ?><span class="cat-card-stat">👥 <?= h($gCount) ?></span><?php endif; ?>
         <?php if ($gDur):   ?><span class="cat-card-stat">⏱ <?= h($gDur) ?></span><?php endif; ?>
       </div>
-      <?php if ($gStatus): ?><span class="cat-card-status <?= h($gStatus) ?>"><?= h(ucfirst($gStatus)) ?></span><?php endif; ?>
     </div>
   </a>
-  <?php endforeach; ?>
-<?php endif; ?>
+<?php endforeach; endif; ?>
 </div>
 
 <footer class="gb-footer">
   <?= h($_pubName ?: 'GameBoard') ?> &nbsp;·&nbsp; Powered by GameBoard
 </footer>
 
+<!-- ── Sign-in dialog ── -->
+<div class="gb-overlay" id="signInOverlay" onclick="if(event.target===this)forceCloseSignIn()">
+  <div class="gb-dialog" onclick="event.stopPropagation()"
+       onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitSignIn(false);}">
+    <div class="gb-dialog-title" id="siTitle">Sign In</div>
+    <div id="siMainPanel">
+      <div class="gb-field-group"><label>Email</label><input class="gb-field" id="siEmail" type="email" placeholder="you@example.com" autocomplete="email" /></div>
+      <div class="gb-field-group"><label>Password</label><input class="gb-field" id="siPassword" type="password" placeholder="••••••••" autocomplete="current-password" /></div>
+    </div>
+    <div id="siConfirmPanel">
+      <p style="font-size:.85rem;color:var(--ink-lt);line-height:1.55;margin-bottom:.75rem;">No account found for this email. Create one now?</p>
+    </div>
+    <div class="gb-err" id="siErr"></div>
+    <div class="gb-dialog-actions">
+      <button class="btn-cancel" onclick="forceCloseSignIn()">Cancel</button>
+      <button class="btn-primary" id="siBtn" onclick="submitSignIn(false)">Sign In</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Settings dialog ── -->
+<div class="gb-overlay" id="settingsOverlay" onclick="if(event.target===this)forceCloseSettings()">
+  <div class="gb-dialog" style="max-width:420px" onclick="event.stopPropagation()"
+       onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitSettings();}">
+    <div class="gb-dialog-title">Settings</div>
+    <div class="gb-field-group"><label>Company Name</label><input class="gb-field" id="setCompany" type="text" placeholder="Acme Games LLC" /></div>
+    <div class="gb-field-group"><label>Logo URL</label><input class="gb-field" id="setLogo" type="url" placeholder="https://…" /></div>
+    <div class="gb-field-group">
+      <label>GameBoard Template</label>
+      <select class="gb-field" id="setTemplate">
+        <option value="">Classic (default)</option>
+        <option value="opensea">OpenSea</option>
+      </select>
+    </div>
+    <div class="gb-err" id="setErr"></div>
+    <div class="gb-dialog-actions">
+      <button class="btn-cancel" onclick="forceCloseSettings()">Cancel</button>
+      <button class="btn-primary" id="setBtn" onclick="submitSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
-function filterCatalog(status, btn) {
-  document.querySelectorAll('.cat-filter-btn').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-  document.querySelectorAll('.cat-card').forEach(function(c){
-    c.style.display = (!status || c.dataset.status === status) ? '' : 'none';
-  });
+var SHEET_ID = <?= json_encode($_sheetId) ?>;
+var APP_ROOT = <?= json_encode($_appRoot) ?>;
+
+// ── Auth state ──────────────────────────────────────────────────────────────
+var _gbUser = null;
+var _siPendingEmail = '', _siPendingPass = '';
+
+(function() {
+  try {
+    var raw = sessionStorage.getItem('gameboard_owner_' + SHEET_ID);
+    if (raw) { _gbUser = JSON.parse(raw); }
+  } catch(e) {}
+  _updateGbAuth();
+})();
+
+function _updateGbAuth() {
+  var btn = document.getElementById('gbUserBtn');
+  var metaEl = document.getElementById('gbMeta');
+  var siOut = document.getElementById('gbMenuSignInOut');
+  var profile = document.getElementById('gbMenuProfile');
+  if (_gbUser) {
+    var name = (_gbUser.bio && (_gbUser.bio['name'] || _gbUser.bio['Name'])) || _gbUser.email || '';
+    btn.classList.add('signed-in');
+    btn.title = 'Signed in as ' + (_gbUser.email || '');
+    if (metaEl) metaEl.textContent = (name || <?= json_encode($_pubName ?: 'Games') ?>) + ' · GameBoard';
+    if (siOut)  { siOut.textContent = 'Sign Out'; siOut.className = 'user-menu-item signout'; }
+    if (profile) profile.style.display = '';
+  } else {
+    btn.classList.remove('signed-in');
+    btn.title = 'Menu';
+    if (metaEl) metaEl.textContent = <?= json_encode($_pubName ?: 'Games') ?>;
+    if (siOut)  { siOut.textContent = 'Sign In'; siOut.className = 'user-menu-item'; }
+    if (profile) profile.style.display = 'none';
+  }
 }
+
+// ── Menu ────────────────────────────────────────────────────────────────────
+function toggleGbMenu(e) { e.stopPropagation(); document.getElementById('gbMenu').classList.toggle('open'); }
+function closeGbMenu() { document.getElementById('gbMenu').classList.remove('open'); }
+document.addEventListener('click', closeGbMenu);
+
+function gbMenuAction(action) {
+  closeGbMenu();
+  if (action === 'profile') {
+    if (_gbUser) {
+      var n = (_gbUser.bio && (_gbUser.bio['name'] || _gbUser.bio['Name'])) || '—';
+      alert('Signed in as: ' + (_gbUser.email || '') + '\nName: ' + n);
+    } else { openSignIn(); }
+  } else if (action === 'settings') {
+    openSettings();
+  } else if (action === 'fetch') {
+    if (!_gbUser) { openSignIn(); return; }
+    var btn = document.getElementById('gbUserBtn');
+    btn.style.opacity = '.4';
+    var fd = new FormData(); fd.append('id', SHEET_ID);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', APP_ROOT + 'push/setupGameboard.php');
+    xhr.onload = function() { location.reload(); };
+    xhr.onerror = function() { btn.style.opacity = ''; alert('Fetch failed — network error.'); };
+    xhr.send(fd);
+  } else if (action === 'signout') {
+    if (_gbUser) {
+      if (confirm('Sign out?')) {
+        try { sessionStorage.removeItem('gameboard_owner_' + SHEET_ID); } catch(e) {}
+        _gbUser = null; _updateGbAuth();
+      }
+    } else { openSignIn(); }
+  }
+}
+
+// ── Sign-in dialog ──────────────────────────────────────────────────────────
+function openSignIn() {
+  document.getElementById('siErr').textContent = '';
+  document.getElementById('siEmail').value = '';
+  document.getElementById('siPassword').value = '';
+  document.getElementById('siTitle').textContent = 'Sign In';
+  document.getElementById('siBtn').textContent = 'Sign In';
+  document.getElementById('siBtn').onclick = function(){ submitSignIn(false); };
+  document.getElementById('siMainPanel').style.display = '';
+  document.getElementById('siConfirmPanel').style.display = 'none';
+  _siPendingEmail = ''; _siPendingPass = '';
+  document.getElementById('signInOverlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('siEmail').focus(); }, 60);
+}
+function forceCloseSignIn() { document.getElementById('signInOverlay').classList.remove('open'); }
+
+function submitSignIn(confirmNew) {
+  var email = confirmNew ? _siPendingEmail : document.getElementById('siEmail').value.trim();
+  var pass  = confirmNew ? _siPendingPass  : document.getElementById('siPassword').value;
+  if (!email || !pass) { document.getElementById('siErr').textContent = 'Email and password required.'; return; }
+  var btn = document.getElementById('siBtn');
+  btn.disabled = true;
+  document.getElementById('siErr').textContent = '';
+  var fd = new FormData();
+  fd.append('email', email); fd.append('password', pass); fd.append('id', SHEET_ID);
+  if (confirmNew) fd.append('confirm_new', '1');
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/collabAuth.php');
+  xhr.onload = function() {
+    btn.disabled = false;
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = {error: xhr.responseText}; }
+    if (r.error) { document.getElementById('siErr').textContent = r.error; return; }
+    if (r.prompt_create) {
+      _siPendingEmail = email; _siPendingPass = pass;
+      document.getElementById('siTitle').textContent = 'Create Account';
+      document.getElementById('siMainPanel').style.display = 'none';
+      document.getElementById('siConfirmPanel').style.display = '';
+      document.getElementById('siBtn').textContent = 'Create Account';
+      document.getElementById('siBtn').onclick = function(){ submitSignIn(true); };
+      return;
+    }
+    _gbUser = { email: r.email || email, bio: r.bio || {} };
+    try { sessionStorage.setItem('gameboard_owner_' + SHEET_ID, JSON.stringify(_gbUser)); } catch(e) {}
+    _updateGbAuth();
+    forceCloseSignIn();
+  };
+  xhr.onerror = function() { btn.disabled = false; document.getElementById('siErr').textContent = 'Network error.'; };
+  xhr.send(fd);
+}
+
+// ── Settings dialog ──────────────────────────────────────────────────────────
+function openSettings() {
+  document.getElementById('setErr').textContent = '';
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', APP_ROOT + 'push/tmGetSettings.php?id=' + encodeURIComponent(SHEET_ID));
+  xhr.onload = function() {
+    var s = {}; try { s = JSON.parse(xhr.responseText); } catch(e) {}
+    document.getElementById('setCompany').value  = s['Company']            || s['Name'] || '';
+    document.getElementById('setLogo').value     = s['Logo URL']           || '';
+    document.getElementById('setTemplate').value = s['Gameboard Template'] || '';
+  };
+  xhr.send();
+  document.getElementById('settingsOverlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('setCompany').focus(); }, 60);
+}
+function forceCloseSettings() { document.getElementById('settingsOverlay').classList.remove('open'); }
+function submitSettings() {
+  var btn = document.getElementById('setBtn');
+  btn.disabled = true;
+  var fd = new FormData();
+  fd.append('id',          SHEET_ID);
+  fd.append('company',     document.getElementById('setCompany').value.trim());
+  fd.append('logo',        document.getElementById('setLogo').value.trim());
+  fd.append('gb_template', document.getElementById('setTemplate').value);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
+  xhr.onload = function() {
+    btn.disabled = false;
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = {error: xhr.responseText}; }
+    if (r.error) { document.getElementById('setErr').textContent = r.error; return; }
+    forceCloseSettings();
+    location.reload();
+  };
+  xhr.onerror = function() { btn.disabled = false; document.getElementById('setErr').textContent = 'Network error.'; };
+  xhr.send(fd);
+}
+
+// ── Esc closes open dialogs ──────────────────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape') return;
+  if (document.getElementById('signInOverlay').classList.contains('open'))  { forceCloseSignIn(); return; }
+  if (document.getElementById('settingsOverlay').classList.contains('open')){ forceCloseSettings(); return; }
+});
 </script>
 </body>
 </html>

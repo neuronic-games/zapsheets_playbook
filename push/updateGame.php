@@ -73,14 +73,26 @@ $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 $encoded    = base64_encode(json_encode($data, JSON_UNESCAPED_UNICODE));
 $arg        = $sheetId . '|' . $encoded;
 
+$errFile = sys_get_temp_dir() . '/gupdategame_err_' . $sheetId . '.txt';
 $cmd = escapeshellarg($pythonPath) . ' '
      . escapeshellarg(__DIR__ . '/gupdategame.py') . ' '
-     . escapeshellarg($arg) . ' 2>/dev/null';
+     . escapeshellarg($arg) . ' 2>' . escapeshellarg($errFile);
 
 $output = trim((string) shell_exec($cmd));
+$stderr = file_exists($errFile) ? trim(file_get_contents($errFile)) : '';
+
+// Write debug log so we can diagnose failures without browser console
+$logDir = dirname(__DIR__) . '/sheets/' . $sheetId;
+if (is_dir($logDir)) {
+    $logEntry = date('Y-m-d H:i:s') . "\n"
+        . 'orig_name=' . $data['orig_name'] . ' | name=' . $data['name'] . "\n"
+        . 'stdout=' . ($output ?: '(empty)') . "\n"
+        . 'stderr=' . ($stderr ?: '(empty)') . "\n---\n";
+    file_put_contents($logDir . '/debug_updategame.log', $logEntry, FILE_APPEND);
+}
 
 if ($output === '') {
-    echo json_encode(['error' => 'No response from Python script']);
+    echo json_encode(['error' => 'No response from Python script', 'stderr' => $stderr]);
     exit;
 }
 
@@ -176,5 +188,5 @@ if ($result !== null && !empty($result['ok'])) {
         }
     }
 }
-echo $result !== null ? json_encode($result) : json_encode(['error' => $output]);
+echo $result !== null ? json_encode($result) : json_encode(['error' => $output, 'stderr' => $stderr]);
 ?>

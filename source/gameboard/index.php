@@ -464,7 +464,7 @@ document.addEventListener('keydown', function(e) {
 // ── END CATALOG ──────────────────────────────────────────────────────────────
 
 $_game = null;
-foreach ($_games as $g) {
+foreach ($_allGames as $g) {
     if (_gb_slug($g['Name'] ?? '') === _gb_slug($_gameSlug)) { $_game = $g; break; }
 }
 
@@ -1453,13 +1453,15 @@ function saveGame() {
     if (!r || r.error) {
       saveBtn.disabled = false;
       saveBtn.textContent = 'Save Changes';
-      alert('Save failed: ' + ((r && r.error) || 'Unknown error — check browser console'));
+      var errMsg = (r && r.error) || 'Unknown error';
+      if (r && r.stderr) errMsg += '\n\nServer detail: ' + r.stderr;
+      alert('Save failed: ' + errMsg);
       return;
     }
     if (!r.ok) {
       saveBtn.disabled = false;
       saveBtn.textContent = 'Save Changes';
-      alert('Save failed: unexpected response — check browser console\n' + JSON.stringify(r));
+      alert('Save failed: unexpected response\n' + JSON.stringify(r));
       return;
     }
     // Success — show toast, force-refresh JSON cache, then redirect

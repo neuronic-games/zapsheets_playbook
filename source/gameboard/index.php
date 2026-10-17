@@ -60,19 +60,170 @@ $_template = strtolower(trim($_settings['Gameboard Template'] ?? ''));
 $_games = _gb_load($_sDir . '/games.json');
 
 if (!$_gameSlug) {
-    // No slug — redirect to first signed/published game
-    foreach ($_games as $g) {
-        if (in_array(strtolower($g['Status'] ?? ''), ['signed','published'])) {
-            header('Location: ' . $_appRoot . $_sheetId . '/gameboard/' . _gb_slug($g['Name'] ?? 'game'));
-            exit;
-        }
-    }
-    if (!empty($_games)) {
-        header('Location: ' . $_appRoot . $_sheetId . '/gameboard/' . _gb_slug($_games[0]['Name'] ?? 'game'));
-        exit;
-    }
-    http_response_code(404); exit;
+    // ── No slug: render the game catalog ────────────────────────────────────────
+    $_pubName  = trim($_settings['Company'] ?? $_settings['Name'] ?? '');
+    $_pubLogo  = trim($_settings['Logo URL'] ?? '');
+    $__catalog_url = $_appRoot . $_sheetId . '/gameboard/';
+    ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title><?= h($_pubName ?: 'GameBoard') ?> — Games Catalog</title>
+<style>
+@font-face { font-family:'DINBlack';   src:url('<?= h($_appRoot) ?>fonts/DINBlack.woff2')  format('woff2'); }
+@font-face { font-family:'DINRegular'; src:url('<?= h($_appRoot) ?>fonts/DINMedium.woff2') format('woff2'); }
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+:root {
+  --ink:#1a1a2e; --ink-lt:#4a4a6a; --muted:#888; --border:#e2e2ec;
+  --surface:#fff; --bg:#f6f5f2; --accent:#3b3baa; --nav-bg:#1a1a2e;
+<?php if ($_template === 'opensea'): ?>
+  --ink:#0d1b2a; --ink-lt:#2c4a6e; --muted:#6b8fae; --border:#c8dcea;
+  --surface:#fff; --bg:#f0f6fb; --accent:#0097a7; --nav-bg:#0d1b2a;
+<?php endif; ?>
 }
+body { background:var(--bg); font-family:'DINRegular',Arial,sans-serif; color:var(--ink); min-height:100vh; }
+a { color:inherit; text-decoration:none; }
+
+/* Nav */
+.gb-nav { background:var(--nav-bg); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:.75rem 1.5rem; gap:1rem; }
+.gb-nav-left { display:flex; align-items:center; gap:.75rem; }
+.gb-nav-logo { font-family:'DINBlack',sans-serif; font-size:1rem; letter-spacing:.06em; color:<?= $_template==='opensea' ? '#00e5ff' : '#7c9eff' ?>; }
+.gb-nav-pub { font-size:.82rem; opacity:.65; }
+.gb-nav-logo img { height:28px; border-radius:4px; vertical-align:middle; margin-right:.35rem; }
+
+/* Hero strip */
+.cat-hero { background:var(--nav-bg); color:#fff; padding:2.8rem 1.5rem 2.4rem; text-align:center; }
+.cat-hero-title { font-family:'DINBlack',sans-serif; font-size:clamp(1.8rem,6vw,3rem); letter-spacing:.04em; margin-bottom:.5rem; }
+.cat-hero-sub { font-size:.95rem; opacity:.6; }
+
+/* Filters */
+.cat-filters { max-width:960px; margin:1.8rem auto 0; padding:0 1.25rem; display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; }
+.cat-filter-btn {
+  font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.07em;
+  padding:.28rem .7rem; border-radius:999px; border:1.5px solid var(--border);
+  background:var(--surface); color:var(--ink-lt); cursor:pointer; transition:background .13s;
+}
+.cat-filter-btn:hover, .cat-filter-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+/* Grid */
+.cat-grid { max-width:960px; margin:1.5rem auto 5rem; padding:0 1.25rem; display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:1.1rem; }
+.cat-card { background:var(--surface); border-radius:12px; box-shadow:0 2px 14px rgba(0,0,0,.08); overflow:hidden; transition:box-shadow .15s, transform .15s; cursor:pointer; display:flex; flex-direction:column; }
+.cat-card:hover { box-shadow:0 6px 24px rgba(59,59,170,.14); transform:translateY(-3px); }
+<?php if ($_template==='opensea'): ?>
+.cat-card:hover { box-shadow:0 6px 24px rgba(0,151,167,.18); }
+<?php endif; ?>
+.cat-card-img { width:100%; aspect-ratio:1; object-fit:cover; display:block; background:linear-gradient(135deg,#dde 0%,#c8c8e8 100%); }
+.cat-card-ph { width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:3.5rem; opacity:.3; background:linear-gradient(135deg,#dde 0%,#c8c8e8 100%); }
+.cat-card-body { padding:.75rem .9rem 1rem; flex:1; display:flex; flex-direction:column; gap:.25rem; }
+.cat-card-name { font-family:'DINBlack',sans-serif; font-size:.95rem; color:var(--accent); line-height:1.2; }
+.cat-card-summary { font-size:.8rem; color:var(--ink-lt); line-height:1.45; flex:1; margin-top:.1rem; }
+.cat-card-meta { display:flex; flex-wrap:wrap; gap:.35rem .7rem; margin-top:.35rem; }
+.cat-card-stat { font-size:.72rem; color:var(--muted); }
+.cat-card-status { font-family:'DINBlack',sans-serif; font-size:.62rem; text-transform:uppercase; letter-spacing:.08em; padding:.18rem .5rem; border-radius:999px; border:1px solid currentColor; align-self:flex-start; margin-top:.3rem; }
+.cat-card-status.published { color:#2e7d32; border-color:#a5d6a7; background:#f1f8e9; }
+.cat-card-status.signed     { color:#1565c0; border-color:#90caf9; background:#e3f2fd; }
+.cat-card-status.interested { color:#e65100; border-color:#ffcc80; background:#fff3e0; }
+
+/* Empty state */
+.cat-empty { max-width:480px; margin:5rem auto; text-align:center; color:var(--muted); }
+.cat-empty-icon { font-size:3.5rem; margin-bottom:1rem; }
+.cat-empty-title { font-family:'DINBlack',sans-serif; font-size:1.1rem; color:var(--ink); margin-bottom:.5rem; }
+.cat-empty-body { font-size:.88rem; line-height:1.65; }
+
+/* Footer */
+.gb-footer { background:var(--nav-bg); color:rgba(255,255,255,.5); text-align:center; padding:1.5rem; font-size:.76rem; }
+
+@media(max-width:520px) { .cat-grid { grid-template-columns:1fr 1fr; } }
+@media(max-width:360px) { .cat-grid { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<nav class="gb-nav">
+  <div class="gb-nav-left">
+    <?php if ($_pubLogo): ?><img src="<?= h($_pubLogo) ?>" alt="" style="height:28px;border-radius:4px;" /><?php endif; ?>
+    <span class="gb-nav-logo">GameBoard</span>
+    <?php if ($_pubName): ?><span class="gb-nav-pub"><?= h($_pubName) ?></span><?php endif; ?>
+  </div>
+</nav>
+
+<div class="cat-hero">
+  <div class="cat-hero-title"><?= h($_pubName ?: 'Our Games') ?></div>
+  <?php if (!empty($_games)): ?><div class="cat-hero-sub"><?= count($_games) ?> game<?= count($_games) !== 1 ? 's' : '' ?></div><?php endif; ?>
+</div>
+
+<?php
+// Collect unique statuses for filter buttons
+$_statuses = [];
+foreach ($_games as $g) { $s = strtolower(trim($g['Status'] ?? '')); if ($s && !in_array($s, $_statuses)) $_statuses[] = $s; }
+if (count($_statuses) > 1): ?>
+<div class="cat-filters">
+  <button class="cat-filter-btn active" onclick="filterCatalog('',this)">All</button>
+  <?php foreach ($_statuses as $st): ?>
+  <button class="cat-filter-btn" onclick="filterCatalog('<?= h($st) ?>',this)"><?= h(ucfirst($st)) ?></button>
+  <?php endforeach; ?>
+</div>
+<?php endif; ?>
+
+<div class="cat-grid" id="catGrid">
+<?php if (empty($_games)): ?>
+  <div class="cat-empty" style="grid-column:1/-1">
+    <div class="cat-empty-icon">🎲</div>
+    <div class="cat-empty-title">No games yet</div>
+    <div class="cat-empty-body">Add games to your Google Sheet and fetch the data to see them here.</div>
+  </div>
+<?php else: ?>
+  <?php foreach ($_games as $g):
+    $gName    = trim($g['Name']       ?? '');
+    $gSummary = trim($g['Summary']    ?? '');
+    $gStatus  = strtolower(trim($g['Status'] ?? ''));
+    $gCount   = trim($g['Count']      ?? '');
+    $gDur     = trim($g['Duration']   ?? '');
+    $gCover   = _gb_img(trim($g['Cover URL'] ?? $g['Image URL'] ?? ''));
+    $gSlug    = _gb_slug($gName);
+    if (!$gName) continue;
+  ?>
+  <a class="cat-card" href="<?= h($__catalog_url . $gSlug) ?>" data-status="<?= h($gStatus) ?>">
+    <?php if ($gCover): ?>
+    <img class="cat-card-img" src="<?= h($gCover) ?>" alt="<?= h($gName) ?>" loading="lazy" />
+    <?php else: ?>
+    <div class="cat-card-ph">🎲</div>
+    <?php endif; ?>
+    <div class="cat-card-body">
+      <div class="cat-card-name"><?= h($gName) ?></div>
+      <?php if ($gSummary): ?><div class="cat-card-summary"><?= h($gSummary) ?></div><?php endif; ?>
+      <div class="cat-card-meta">
+        <?php if ($gCount): ?><span class="cat-card-stat">👥 <?= h($gCount) ?></span><?php endif; ?>
+        <?php if ($gDur):   ?><span class="cat-card-stat">⏱ <?= h($gDur) ?></span><?php endif; ?>
+      </div>
+      <?php if ($gStatus): ?><span class="cat-card-status <?= h($gStatus) ?>"><?= h(ucfirst($gStatus)) ?></span><?php endif; ?>
+    </div>
+  </a>
+  <?php endforeach; ?>
+<?php endif; ?>
+</div>
+
+<footer class="gb-footer">
+  <?= h($_pubName ?: 'GameBoard') ?> &nbsp;·&nbsp; Powered by GameBoard
+</footer>
+
+<script>
+function filterCatalog(status, btn) {
+  document.querySelectorAll('.cat-filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.querySelectorAll('.cat-card').forEach(function(c){
+    c.style.display = (!status || c.dataset.status === status) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>
+<?php
+    exit;
+}
+// ── END CATALOG ──────────────────────────────────────────────────────────────
 
 $_game = null;
 foreach ($_games as $g) {

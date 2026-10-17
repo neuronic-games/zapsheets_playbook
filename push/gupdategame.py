@@ -52,6 +52,10 @@ sellsheet  = data.get('sellsheet',  '').strip()
 view       = data.get('view',       '').strip()
 video      = data.get('video',      '').strip()
 image      = data.get('image',      '').strip()
+cover      = data.get('cover',      '').strip()
+count      = data.get('count',      '').strip()
+duration   = data.get('duration',   '').strip()
+availability = data.get('availability', '').strip()
 
 # Open spreadsheet
 try:
@@ -107,24 +111,28 @@ if target_sheet_row is None:
 
 # Map of (field_variants, value) pairs to update
 field_map = [
-    (('Name',),                                                            new_name),
-    (('Tagline', 'Tag Line', 'SubTitle', 'Subtitle'),                      tagline),
-    (('Description',),                                                     description),
-    (('Status',),                                                          status),
-    (('Date Started', 'DateStarted', 'Start Date', 'StartDate'),          date_started),
-    (('Date Signed',  'DateSigned',  'Signed Date', 'SignedDate'),         date_signed),
-    (('Date Published','DatePublished','Published Date','PublishedDate'),   date_published),
-    (('Designer1', 'Designer 1'),                                          designer1),
-    (('Designer2', 'Designer 2'),                                          designer2),
-    (('Designer3', 'Designer 3'),                                          designer3),
-    (('Designer4', 'Designer 4'),                                          designer4),
-    (('Rules',     'Rules URL',   'RulesURL'),                             rules),
-    (('Play',      'Play URL',    'PlayURL'),                              play),
-    (('Print',     'Print URL',   'PrintURL'),                             print_url),
-    (('Sellsheet', 'Sellsheet URL', 'SellsheetURL'),                       sellsheet),
-    (('BGG',       'View URL',    'BGG / View URL', 'ViewURL', 'View'),    view),
-    (('Video',     'Video URL',   'VideoURL'),                             video),
-    (('Image URL', 'ImageURL',    'Image'),                                image),
+    (('Name',),                                                                     new_name),
+    (('Tagline', 'Tag Line', 'SubTitle', 'Subtitle', 'Summary'),                    tagline),
+    (('Description',),                                                              description),
+    (('Status',),                                                                   status),
+    (('Count',),                                                                    count),
+    (('Duration',),                                                                 duration),
+    (('Availability',),                                                             availability),
+    (('Date Started', 'DateStarted', 'Start Date', 'StartDate'),                   date_started),
+    (('Date Signed',  'DateSigned',  'Signed Date', 'SignedDate'),                  date_signed),
+    (('Date Published','DatePublished','Published Date','PublishedDate'),            date_published),
+    (('Designer1', 'Designer 1'),                                                   designer1),
+    (('Designer2', 'Designer 2'),                                                   designer2),
+    (('Designer3', 'Designer 3'),                                                   designer3),
+    (('Designer4', 'Designer 4'),                                                   designer4),
+    (('Rules',     'Rules URL',   'RulesURL'),                                      rules),
+    (('Play',      'Play URL',    'PlayURL'),                                       play),
+    (('Print',     'Print URL',   'PrintURL'),                                      print_url),
+    (('Sellsheet', 'Sellsheet URL', 'SellsheetURL'),                                sellsheet),
+    (('BGG',       'View URL',    'BGG / View URL', 'ViewURL', 'View', 'Page URL'), view),
+    (('Video',     'Video URL',   'VideoURL'),                                      video),
+    (('Image URL', 'ImageURL',    'Image'),                                         image),
+    (('Cover URL', 'CoverURL',    'Cover'),                                         cover),
 ]
 
 updates = []

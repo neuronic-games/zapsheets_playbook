@@ -776,6 +776,79 @@ a { color:inherit; text-decoration:none; }
   .gb-more-grid { grid-template-columns:repeat(2,1fr); }
   .gb-reviews { grid-template-columns:1fr; }
 }
+
+/* ── Admin edit mode ── */
+.gb-admin-bar {
+  display:none; background:#0f0f1f; border-bottom:1px solid rgba(124,158,255,.2);
+  padding:.45rem 1.5rem; align-items:center; gap:.75rem; font-size:.8rem; flex-wrap:wrap;
+}
+.gb-admin-bar.visible { display:flex; }
+.gb-admin-label {
+  font-family:'DINBlack',sans-serif; font-size:.66rem; text-transform:uppercase;
+  letter-spacing:.1em; color:#7c9eff; margin-right:.25rem;
+}
+.gb-admin-hint { font-size:.72rem; color:rgba(255,255,255,.4); flex:1; }
+.btn-adm {
+  font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase;
+  letter-spacing:.07em; padding:.3rem .75rem; border-radius:5px; cursor:pointer;
+  transition:background .13s, opacity .13s;
+}
+.btn-adm-primary { background:#7c9eff; color:#0d1b2a; border:none; }
+.btn-adm-primary:hover:not(:disabled) { background:#9eb8ff; }
+.btn-adm-primary:disabled { opacity:.45; cursor:default; }
+.btn-adm-secondary { background:transparent; border:1.5px solid rgba(255,255,255,.25); color:rgba(255,255,255,.75); }
+.btn-adm-secondary:hover { background:rgba(255,255,255,.08); border-color:#fff; }
+.btn-adm-details { background:rgba(124,158,255,.15); border:1.5px solid rgba(124,158,255,.4); color:#7c9eff; }
+.btn-adm-details:hover { background:rgba(124,158,255,.25); }
+/* Editable field highlights in admin mode */
+body.gb-admin-mode #gbEditTitle { outline:2px dashed rgba(124,158,255,.5); border-radius:3px; cursor:text; padding:2px 4px; }
+body.gb-admin-mode #gbEditTitle:focus,
+body.gb-admin-mode #gbEditTitle:hover { outline:2px solid #7c9eff; }
+body.gb-admin-mode #gbEditSummary { outline:2px dashed rgba(255,255,255,.3); border-radius:3px; cursor:text; padding:2px 4px; }
+body.gb-admin-mode #gbEditSummary:focus,
+body.gb-admin-mode #gbEditSummary:hover { outline:2px solid rgba(255,255,255,.7); }
+body.gb-admin-mode #gbEditDesc { outline:2px dashed rgba(59,59,170,.4); border-radius:4px; cursor:text; padding:4px 6px; }
+body.gb-admin-mode #gbEditDesc:focus,
+body.gb-admin-mode #gbEditDesc:hover { outline:2px solid var(--accent); background:rgba(59,59,170,.04); }
+/* Edit details overlay */
+.gbed-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:600;
+  align-items:flex-start; justify-content:center; padding:2rem 1rem; overflow-y:auto;
+}
+.gbed-overlay.open { display:flex; }
+.gbed-dialog {
+  background:#fff; border-radius:14px; width:100%; max-width:520px;
+  box-shadow:0 12px 50px rgba(0,0,0,.32); overflow:hidden; margin:auto;
+}
+.gbed-header {
+  background:var(--nav-bg); color:#fff; padding:1rem 1.25rem;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.gbed-title { font-family:'DINBlack',sans-serif; font-size:.9rem; text-transform:uppercase; letter-spacing:.07em; }
+.gbed-close { background:none; border:none; color:rgba(255,255,255,.6); font-size:1.2rem; cursor:pointer; padding:0 .25rem; line-height:1; }
+.gbed-close:hover { color:#fff; }
+.gbed-body { padding:1.25rem 1.5rem 1.5rem; max-height:calc(80vh - 120px); overflow-y:auto; }
+.gbed-section { margin-bottom:1.1rem; }
+.gbed-section-title {
+  font-family:'DINBlack',sans-serif; font-size:.65rem; text-transform:uppercase;
+  letter-spacing:.1em; color:var(--muted); border-bottom:1px solid var(--border);
+  padding-bottom:.35rem; margin-bottom:.65rem;
+}
+.gbed-row { display:flex; gap:.6rem; margin-bottom:.55rem; }
+.gbed-row > * { flex:1; min-width:0; }
+.gbed-field-group { margin-bottom:.55rem; }
+.gbed-label { display:block; font-size:.73rem; color:var(--muted); margin-bottom:.2rem; }
+.gbed-field {
+  display:block; width:100%; padding:.45rem .7rem;
+  border:1.5px solid var(--border); border-radius:6px;
+  font-family:'DINRegular',Arial,sans-serif; font-size:.87rem; color:var(--ink);
+  outline:none; transition:border-color .14s;
+}
+.gbed-field:focus { border-color:var(--accent); }
+.gbed-footer {
+  padding:.9rem 1.5rem; background:#f8f8fc; border-top:1px solid var(--border);
+  display:flex; gap:.5rem; justify-content:flex-end;
+}
 </style>
 </head>
 <body>
@@ -783,15 +856,24 @@ a { color:inherit; text-decoration:none; }
 <!-- ── Nav ── -->
 <nav class="gb-nav">
   <div class="gb-nav-left">
-    <a class="gb-nav-logo" href="<?= h($_appRoot . $_sheetId . '/gameboard/' . _gb_slug($_name)) ?>">GameBoard</a>
-    <span class="gb-nav-game"><?= h($_name) ?></span>
+    <a class="gb-nav-logo" href="<?= h($_appRoot . $_sheetId . '/gameboard/') ?>">GameBoard</a>
+    <span class="gb-nav-game" id="gbNavGame"><?= h($_name) ?></span>
   </div>
-  <div class="gb-nav-links">
+  <div class="gb-nav-links" id="gbNavLinks">
     <?php if ($_richRules): ?><a class="btn-nav" href="<?= h($_richRules) ?>" target="_blank">Rules</a><?php endif; ?>
     <?php if ($_sellsheet): ?><a class="btn-nav" href="<?= h($_sellsheet) ?>" target="_blank">Sellsheet</a><?php endif; ?>
     <?php if ($_pageUrl): ?><a class="btn-nav filled" href="<?= h($_pageUrl) ?>" target="_blank">View Page ↗</a><?php endif; ?>
   </div>
 </nav>
+
+<!-- ── Admin bar (shown only when signed in as owner) ── -->
+<div class="gb-admin-bar" id="gbAdminBar">
+  <span class="gb-admin-label">✏ Admin</span>
+  <span class="gb-admin-hint">Click title, summary, or description to edit inline</span>
+  <button class="btn-adm btn-adm-details" onclick="openEditDetails()">Edit Details</button>
+  <button class="btn-adm btn-adm-primary" id="gbSaveBtn" onclick="saveGame()">Save Changes</button>
+  <button class="btn-adm btn-adm-secondary" onclick="cancelEdit()">Cancel</button>
+</div>
 
 <!-- ── Hero ── -->
 <div class="gb-hero">
@@ -802,9 +884,9 @@ a { color:inherit; text-decoration:none; }
   <?php endif; ?>
   <div class="gb-hero-overlay"></div>
   <div class="gb-hero-content">
-    <?php if ($_status): ?><div class="gb-status-badge"><?= h(ucfirst($_status)) ?></div><?php endif; ?>
-    <h1 class="gb-hero-title"><?= h($_name) ?></h1>
-    <?php if ($_summary): ?><p class="gb-hero-summary"><?= h($_summary) ?></p><?php endif; ?>
+    <?php if ($_status): ?><div class="gb-status-badge" id="gbStatusBadge"><?= h(ucfirst($_status)) ?></div><?php endif; ?>
+    <h1 class="gb-hero-title" id="gbEditTitle"><?= h($_name) ?></h1>
+    <p class="gb-hero-summary" id="gbEditSummary"><?= h($_summary) ?></p>
     <div class="gb-stats">
       <?php if ($_count):     ?><div class="gb-stat"><strong>👥</strong><?= h($_count) ?> players</div><?php endif; ?>
       <?php if ($_duration):  ?><div class="gb-stat"><strong>⏱</strong><?= h($_duration) ?></div><?php endif; ?>
@@ -832,7 +914,7 @@ a { color:inherit; text-decoration:none; }
   <?php if ($_description): ?>
   <div class="gb-section">
     <div class="gb-section-label">About the Game</div>
-    <p class="gb-description"><?= h($_description) ?></p>
+    <p class="gb-description" id="gbEditDesc"><?= h($_description) ?></p>
   </div>
   <?php endif; ?>
 
@@ -983,7 +1065,303 @@ a { color:inherit; text-decoration:none; }
   <img id="lightboxImg" src="" alt="" />
 </div>
 
+<!-- ── Edit Details modal ── -->
+<div class="gbed-overlay" id="gbedOverlay" onclick="if(event.target===this)closeEditDetails()">
+  <div class="gbed-dialog" onclick="event.stopPropagation()">
+    <div class="gbed-header">
+      <span class="gbed-title">Edit Details</span>
+      <button class="gbed-close" onclick="closeEditDetails()">✕</button>
+    </div>
+    <div class="gbed-body">
+      <div class="gbed-section">
+        <div class="gbed-section-title">Game Info</div>
+        <div class="gbed-row">
+          <div class="gbed-field-group">
+            <label class="gbed-label">Status</label>
+            <select class="gbed-field" id="gbedStatus">
+              <option value="">—</option>
+              <option value="Concept">Concept</option>
+              <option value="Developing">Developing</option>
+              <option value="Playtesting">Playtesting</option>
+              <option value="Pitching">Pitching</option>
+              <option value="Signed">Signed</option>
+              <option value="Published">Published</option>
+              <option value="Shelved">Shelved</option>
+            </select>
+          </div>
+          <div class="gbed-field-group">
+            <label class="gbed-label">Availability</label>
+            <input class="gbed-field" id="gbedAvailability" type="text" placeholder="e.g. Kickstarter" />
+          </div>
+        </div>
+        <div class="gbed-row">
+          <div class="gbed-field-group">
+            <label class="gbed-label">Player Count</label>
+            <input class="gbed-field" id="gbedCount" type="text" placeholder="e.g. 2–4" />
+          </div>
+          <div class="gbed-field-group">
+            <label class="gbed-label">Play Time</label>
+            <input class="gbed-field" id="gbedDuration" type="text" placeholder="e.g. 30–60 min" />
+          </div>
+        </div>
+        <div class="gbed-row">
+          <div class="gbed-field-group">
+            <label class="gbed-label">Designer 1</label>
+            <input class="gbed-field" id="gbedDesigner1" type="text" />
+          </div>
+          <div class="gbed-field-group">
+            <label class="gbed-label">Designer 2</label>
+            <input class="gbed-field" id="gbedDesigner2" type="text" />
+          </div>
+        </div>
+        <div class="gbed-row">
+          <div class="gbed-field-group">
+            <label class="gbed-label">Designer 3</label>
+            <input class="gbed-field" id="gbedDesigner3" type="text" />
+          </div>
+          <div class="gbed-field-group">
+            <label class="gbed-label">Designer 4</label>
+            <input class="gbed-field" id="gbedDesigner4" type="text" />
+          </div>
+        </div>
+      </div>
+      <div class="gbed-section">
+        <div class="gbed-section-title">Dates</div>
+        <div class="gbed-row">
+          <div class="gbed-field-group">
+            <label class="gbed-label">Date Started</label>
+            <input class="gbed-field" id="gbedDateStarted" type="text" placeholder="e.g. Jan 2024" />
+          </div>
+          <div class="gbed-field-group">
+            <label class="gbed-label">Date Signed</label>
+            <input class="gbed-field" id="gbedDateSigned" type="text" placeholder="e.g. Mar 2024" />
+          </div>
+        </div>
+        <div class="gbed-field-group" style="max-width:50%;padding-right:.3rem">
+          <label class="gbed-label">Date Published</label>
+          <input class="gbed-field" id="gbedDatePublished" type="text" placeholder="e.g. Nov 2024" />
+        </div>
+      </div>
+      <div class="gbed-section">
+        <div class="gbed-section-title">Images &amp; Media</div>
+        <div class="gbed-field-group">
+          <label class="gbed-label">Cover URL (background image)</label>
+          <input class="gbed-field" id="gbedCoverUrl" type="url" placeholder="https://…" />
+        </div>
+        <div class="gbed-field-group">
+          <label class="gbed-label">Image URL (product photo)</label>
+          <input class="gbed-field" id="gbedImageUrl" type="url" placeholder="https://…" />
+        </div>
+        <div class="gbed-field-group">
+          <label class="gbed-label">Video URL (YouTube)</label>
+          <input class="gbed-field" id="gbedVideoUrl" type="url" placeholder="https://youtube.com/watch?v=…" />
+        </div>
+      </div>
+      <div class="gbed-section">
+        <div class="gbed-section-title">Links</div>
+        <div class="gbed-field-group">
+          <label class="gbed-label">Page URL</label>
+          <input class="gbed-field" id="gbedPageUrl" type="url" placeholder="https://…" />
+        </div>
+        <div class="gbed-field-group">
+          <label class="gbed-label">Sellsheet URL</label>
+          <input class="gbed-field" id="gbedSellsheet" type="url" placeholder="https://…" />
+        </div>
+        <div class="gbed-field-group">
+          <label class="gbed-label">Rules URL</label>
+          <input class="gbed-field" id="gbedRulesUrl" type="url" placeholder="https://…" />
+        </div>
+        <div class="gbed-row">
+          <div class="gbed-field-group">
+            <label class="gbed-label">Play Online URL</label>
+            <input class="gbed-field" id="gbedPlayUrl" type="url" placeholder="https://…" />
+          </div>
+          <div class="gbed-field-group">
+            <label class="gbed-label">Print &amp; Play URL</label>
+            <input class="gbed-field" id="gbedPrintUrl" type="url" placeholder="https://…" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="gbed-footer">
+      <button class="btn-adm btn-adm-secondary" style="color:var(--ink-lt);border-color:var(--border)" onclick="closeEditDetails()">Cancel</button>
+      <button class="btn-adm btn-adm-primary" style="background:var(--accent);color:#fff" onclick="applyEditDetails()">Apply</button>
+    </div>
+  </div>
+</div>
+
 <script>
+var SHEET_ID      = <?= json_encode($_sheetId) ?>;
+var APP_ROOT      = <?= json_encode($_appRoot) ?>;
+var ORIG_GAME_NAME = <?= json_encode($_name) ?>;
+var GAME_DATA = <?= json_encode([
+    'status'         => $_status,
+    'cover_url'      => $_coverUrl,
+    'image_url'      => $_imageUrl,
+    'video_url'      => $_videoUrl,
+    'page_url'       => $_pageUrl,
+    'sellsheet'      => $_sellsheet,
+    'play_url'       => $_playUrl,
+    'print_url'      => $_printUrl,
+    'rules_url'      => $_rulesUrl,
+    'count'          => $_count,
+    'duration'       => $_duration,
+    'availability'   => $_availability,
+    'designer1'      => $_designers[0] ?? '',
+    'designer2'      => $_designers[1] ?? '',
+    'designer3'      => $_designers[2] ?? '',
+    'designer4'      => $_designers[3] ?? '',
+    'date_started'   => trim($_game['Date Started'] ?? ''),
+    'date_signed'    => $_dateSigned,
+    'date_published' => $_datePub,
+]) ?>;
+
+// Mutable copy that tracks edits from the details modal
+var _ed = Object.assign({}, GAME_DATA);
+
+// ── Admin mode ───────────────────────────────────────────────────────────────
+(function() {
+  try {
+    var raw = sessionStorage.getItem('gameboard_owner_' + SHEET_ID);
+    if (!raw) return;
+    var u = JSON.parse(raw);
+    if (!u || !u.email) return;
+    // Activate admin mode
+    document.body.classList.add('gb-admin-mode');
+    document.getElementById('gbAdminBar').classList.add('visible');
+    // Make text fields contenteditable
+    ['gbEditTitle', 'gbEditSummary', 'gbEditDesc'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.contentEditable = 'true';
+    });
+  } catch(e) {}
+})();
+
+function cancelEdit() { location.reload(); }
+
+// ── Edit Details modal ───────────────────────────────────────────────────────
+function openEditDetails() {
+  // Populate from _ed (live-edited values)
+  document.getElementById('gbedStatus').value       = _ed.status       || '';
+  document.getElementById('gbedCount').value        = _ed.count        || '';
+  document.getElementById('gbedDuration').value     = _ed.duration     || '';
+  document.getElementById('gbedAvailability').value = _ed.availability || '';
+  document.getElementById('gbedDesigner1').value    = _ed.designer1    || '';
+  document.getElementById('gbedDesigner2').value    = _ed.designer2    || '';
+  document.getElementById('gbedDesigner3').value    = _ed.designer3    || '';
+  document.getElementById('gbedDesigner4').value    = _ed.designer4    || '';
+  document.getElementById('gbedDateStarted').value   = _ed.date_started   || '';
+  document.getElementById('gbedDateSigned').value    = _ed.date_signed    || '';
+  document.getElementById('gbedDatePublished').value = _ed.date_published || '';
+  document.getElementById('gbedCoverUrl').value  = _ed.cover_url  || '';
+  document.getElementById('gbedImageUrl').value  = _ed.image_url  || '';
+  document.getElementById('gbedVideoUrl').value  = _ed.video_url  || '';
+  document.getElementById('gbedPageUrl').value   = _ed.page_url   || '';
+  document.getElementById('gbedSellsheet').value = _ed.sellsheet  || '';
+  document.getElementById('gbedRulesUrl').value  = _ed.rules_url  || '';
+  document.getElementById('gbedPlayUrl').value   = _ed.play_url   || '';
+  document.getElementById('gbedPrintUrl').value  = _ed.print_url  || '';
+  document.getElementById('gbedOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeEditDetails() {
+  document.getElementById('gbedOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function applyEditDetails() {
+  _ed.status         = document.getElementById('gbedStatus').value.trim();
+  _ed.count          = document.getElementById('gbedCount').value.trim();
+  _ed.duration       = document.getElementById('gbedDuration').value.trim();
+  _ed.availability   = document.getElementById('gbedAvailability').value.trim();
+  _ed.designer1      = document.getElementById('gbedDesigner1').value.trim();
+  _ed.designer2      = document.getElementById('gbedDesigner2').value.trim();
+  _ed.designer3      = document.getElementById('gbedDesigner3').value.trim();
+  _ed.designer4      = document.getElementById('gbedDesigner4').value.trim();
+  _ed.date_started   = document.getElementById('gbedDateStarted').value.trim();
+  _ed.date_signed    = document.getElementById('gbedDateSigned').value.trim();
+  _ed.date_published = document.getElementById('gbedDatePublished').value.trim();
+  _ed.cover_url      = document.getElementById('gbedCoverUrl').value.trim();
+  _ed.image_url      = document.getElementById('gbedImageUrl').value.trim();
+  _ed.video_url      = document.getElementById('gbedVideoUrl').value.trim();
+  _ed.page_url       = document.getElementById('gbedPageUrl').value.trim();
+  _ed.sellsheet      = document.getElementById('gbedSellsheet').value.trim();
+  _ed.rules_url      = document.getElementById('gbedRulesUrl').value.trim();
+  _ed.play_url       = document.getElementById('gbedPlayUrl').value.trim();
+  _ed.print_url      = document.getElementById('gbedPrintUrl').value.trim();
+  closeEditDetails();
+  // Update status badge live
+  var badge = document.getElementById('gbStatusBadge');
+  if (badge) {
+    if (_ed.status) {
+      badge.textContent = _ed.status.charAt(0).toUpperCase() + _ed.status.slice(1).toLowerCase();
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+}
+
+// ── Save game ────────────────────────────────────────────────────────────────
+function saveGame() {
+  var saveBtn = document.getElementById('gbSaveBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+
+  var titleEl = document.getElementById('gbEditTitle');
+  var summaryEl = document.getElementById('gbEditSummary');
+  var descEl = document.getElementById('gbEditDesc');
+
+  var fd = new FormData();
+  fd.append('id',             SHEET_ID);
+  fd.append('orig_name',      ORIG_GAME_NAME);
+  fd.append('name',           titleEl   ? titleEl.textContent.trim()   : ORIG_GAME_NAME);
+  fd.append('tagline',        summaryEl ? summaryEl.textContent.trim() : '');
+  fd.append('description',    descEl    ? descEl.textContent.trim()    : '');
+  fd.append('status',         _ed.status         || '');
+  fd.append('count',          _ed.count          || '');
+  fd.append('duration',       _ed.duration       || '');
+  fd.append('availability',   _ed.availability   || '');
+  fd.append('designer1',      _ed.designer1      || '');
+  fd.append('designer2',      _ed.designer2      || '');
+  fd.append('designer3',      _ed.designer3      || '');
+  fd.append('designer4',      _ed.designer4      || '');
+  fd.append('date_started',   _ed.date_started   || '');
+  fd.append('date_signed',    _ed.date_signed    || '');
+  fd.append('date_published', _ed.date_published || '');
+  fd.append('cover_url',      _ed.cover_url      || '');
+  fd.append('image',          _ed.image_url      || '');
+  fd.append('video',          _ed.video_url      || '');
+  fd.append('view',           _ed.page_url       || '');
+  fd.append('sellsheet',      _ed.sellsheet      || '');
+  fd.append('rules',          _ed.rules_url      || '');
+  fd.append('play',           _ed.play_url       || '');
+  fd.append('print',          _ed.print_url      || '');
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/updateGame.php');
+  xhr.onload = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = {error: xhr.responseText}; }
+    if (r && r.error) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Changes';
+      alert('Save failed: ' + r.error);
+      return;
+    }
+    // Redirect to updated slug if name changed
+    var newName = titleEl ? titleEl.textContent.trim() : ORIG_GAME_NAME;
+    var newSlug = newName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    var catUrl  = APP_ROOT + SHEET_ID + '/gameboard/';
+    location.href = catUrl + newSlug;
+  };
+  xhr.onerror = function() {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Changes';
+    alert('Save failed: network error');
+  };
+  xhr.send(fd);
+}
+
+// ── Standard page JS ─────────────────────────────────────────────────────────
 function openLightbox(src) {
   document.getElementById('lightboxImg').src = src;
   document.getElementById('lightbox').classList.add('open');
@@ -991,7 +1369,9 @@ function openLightbox(src) {
 }
 function closeLightbox() {
   document.getElementById('lightbox').classList.remove('open');
-  document.body.style.overflow = '';
+  if (!document.getElementById('gbedOverlay').classList.contains('open')) {
+    document.body.style.overflow = '';
+  }
 }
 function switchVideo(btn, embed) {
   document.getElementById('videoFrame').src = embed;
@@ -1001,7 +1381,12 @@ function switchVideo(btn, embed) {
 function toggleFaq(id) {
   document.getElementById(id).classList.toggle('open');
 }
-document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeLightbox(); });
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape') {
+    if (document.getElementById('gbedOverlay').classList.contains('open')) { closeEditDetails(); return; }
+    closeLightbox();
+  }
+});
 </script>
 </body>
 </html>

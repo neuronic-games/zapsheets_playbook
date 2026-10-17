@@ -27,6 +27,11 @@ $view          = trim($_POST['view']           ?? '');
 $video         = trim($_POST['video']          ?? '');
 $imageRaw      = trim($_POST['image']          ?? '');
 $image         = $imageRaw ? '=IMAGE("' . $imageRaw . '")' : '';
+$coverRaw      = trim($_POST['cover_url']      ?? '');
+$cover         = $coverRaw ? '=IMAGE("' . $coverRaw . '")' : '';
+$count         = trim($_POST['count']          ?? '');
+$duration      = trim($_POST['duration']       ?? '');
+$availability  = trim($_POST['availability']   ?? '');
 
 if (!$sheetId) {
     echo json_encode(['error' => 'Missing sheet ID']);
@@ -58,6 +63,10 @@ $data = [
     'view'           => $view,
     'video'          => $video,
     'image'          => $image,
+    'cover'          => $cover,
+    'count'          => $count,
+    'duration'       => $duration,
+    'availability'   => $availability,
 ];
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';

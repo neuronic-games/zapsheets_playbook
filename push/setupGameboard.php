@@ -1,0 +1,78 @@
+<?php
+/**
+ * setupGameboard.php — one-call setup for a GameBoard sheet.
+ *
+ * Works for:
+ *   - A new blank sheet  → creates Games (and People) tabs with headers
+ *   - An existing PitchBoard sheet → tabs already exist, just refreshes the cache
+ *
+ * POST / GET param:  id — Google Spreadsheet ID (already shared with service account)
+ *
+ * Returns JSON: { ok, title, tabs, json_refreshed } or { error }
+ */
+error_reporting(0);
+ini_set('display_errors', '0');
+header('Content-Type: application/json');
+
+require __DIR__ . '/../dotEnv.php';
+require_once __DIR__ . '/refreshJson.php';
+
+$sheetId = trim($_POST['id'] ?? $_GET['id'] ?? '');
+if (!$sheetId) {
+    parse_str($_SERVER['QUERY_STRING'] ?? '', $qs);
+    $sheetId = trim($qs['id'] ?? '');
+}
+if (!$sheetId) {
+    echo json_encode(['error' => 'Missing sheet ID — pass id= as a GET or POST parameter']);
+    exit;
+}
+
+$pythonPath = $_ENV['PYTHON'] ?? 'python3';
+$result     = ['ok' => true];
+
+// ── Step 1: Ensure required tabs exist (idempotent) ───────────────────────────
+// ginitsheet.py creates Pitches, Games, People, Settings tabs if not present,
+// and skips any that already exist. Safe to run on existing PitchBoard sheets.
+$cmd    = escapeshellarg($pythonPath) . ' '
+        . escapeshellarg(__DIR__ . '/ginitsheet.py') . ' '
+        . escapeshellarg($sheetId) . ' 2>&1';
+$output = trim((string) shell_exec($cmd));
+
+if ($output === '') {
+    echo json_encode(['error' => 'No response from setup script — check the service account has Editor access to the sheet.']);
+    exit;
+}
+
+$pyResult = json_decode($output, true);
+if ($pyResult === null) {
+    echo json_encode(['error' => $output]);
+    exit;
+}
+
+if (isset($pyResult['error'])) {
+    echo json_encode(['error' => $pyResult['error']]);
+    exit;
+}
+
+$result['tabs']  = $pyResult['tabs']  ?? [];
+$result['title'] = $pyResult['title'] ?? '';
+if (empty($pyResult['ok'])) {
+    $result['ok'] = false;
+}
+
+// ── Step 2: Ensure sheet directory exists ─────────────────────────────────────
+$sheetDir = realpath(__DIR__ . '/..') . '/sheets/' . $sheetId;
+if (!is_dir($sheetDir)) {
+    mkdir($sheetDir, 0775, true);
+}
+
+// ── Step 3: Refresh JSON caches needed by GameBoard ───────────────────────────
+$refreshed = [];
+foreach (['games', 'people'] as $tab) {
+    refreshJson($pythonPath, $sheetId, $tab);
+    $refreshed[] = $tab;
+}
+$result['json_refreshed'] = $refreshed;
+
+echo json_encode($result);
+?>

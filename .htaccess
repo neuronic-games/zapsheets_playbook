@@ -187,6 +187,9 @@ RewriteRule ^tmboard/share/([a-f0-9]{24})/?$ source/tmboard/shared/index.php [L,
 # /tmboard — setup landing page
 RewriteRule ^tmboard/?$ source/tmboard/index.php [L,QSA]
 
+# /gameboard — setup landing page (no sheet ID yet)
+RewriteRule ^gameboard/?$ source/gameboard/setup/index.php [L,QSA]
+
 # Short-URL: /{id}/gameboard/{slug} → source/gameboard/index.php (must come before bare /{id}/gameboard rule)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

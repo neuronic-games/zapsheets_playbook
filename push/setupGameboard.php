@@ -54,9 +54,25 @@ if (isset($pyResult['error'])) {
     exit;
 }
 
-$result['tabs']  = $pyResult['tabs']  ?? [];
+// Normalize tabs: "already exists" is not an error for GameBoard setup —
+// it just means this is an existing sheet (e.g. a PitchBoard sheet).
+$rawTabs     = $pyResult['tabs'] ?? [];
+$normalTabs  = [];
+$tabsHadRealError = false;
+foreach ($rawTabs as $tabName => $status) {
+    if ($status === 'ok' || $status === 'created') {
+        $normalTabs[$tabName] = $status;
+    } elseif (stripos((string) $status, 'already exists') !== false) {
+        $normalTabs[$tabName] = 'ok';  // treat as pre-existing — that's fine
+    } else {
+        $normalTabs[$tabName] = $status;  // real error, pass through
+        $tabsHadRealError = true;
+    }
+}
+$result['tabs']  = $normalTabs;
 $result['title'] = $pyResult['title'] ?? '';
-if (empty($pyResult['ok'])) {
+// Only fail if there's an actual error beyond "already exists"
+if ($tabsHadRealError) {
     $result['ok'] = false;
 }
 

@@ -14,9 +14,9 @@ $_rp   = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $_bp   = rtrim($_ENV['BASE_PATH'] ?? '', '/');
 $_rps  = ($_bp !== '' && str_starts_with($_rp, $_bp)) ? substr($_rp, strlen($_bp)) : $_rp;
 
-preg_match('#^/([A-Za-z0-9_\-]+)/gameboard/([^/?]+)#', $_rps, $_m);
+preg_match('#^/([A-Za-z0-9_\-]+)/gameboard(?:/([^/?]*))?#', $_rps, $_m);
 $_sheetId  = $_m[1] ?? '';
-$_gameSlug = urldecode($_m[2] ?? '');
+$_gameSlug = urldecode(trim($_m[2] ?? ''));
 
 if (!$_sheetId) { http_response_code(404); exit; }
 

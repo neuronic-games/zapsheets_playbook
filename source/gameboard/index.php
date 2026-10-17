@@ -51,6 +51,11 @@ function _gb_embed(string $url): string {
     return '';  // skip non-YouTube for embed safety
 }
 
+// ── Load settings and determine template ────────────────────────────────────
+$_settings = _gb_load($_sDir . '/settings.json');
+$_template = strtolower(trim($_settings['Gameboard Template'] ?? ''));
+// Supported templates: '' / 'classic' = Classic (default), 'opensea' = OpenSea
+
 // ── Load games list and find requested game ──────────────────────────────────
 $_games = _gb_load($_sDir . '/games.json');
 
@@ -181,13 +186,38 @@ foreach ($_games as $g) {
 :root {
   --ink:#1a1a2e; --ink-lt:#4a4a6a; --muted:#888; --border:#e2e2ec;
   --surface:#fff; --bg:#f6f5f2; --accent:#3b3baa; --accent-dk:#2d2d88; --accent-lt:#eeeeff;
+  --nav-bg:#1a1a2e; --hero-gradient:linear-gradient(to top, rgba(10,10,28,.95) 0%, rgba(10,10,28,.55) 55%, rgba(10,10,28,.05) 100%);
 }
+<?php if ($_template === 'opensea'): ?>
+/* ── OpenSea template overrides ── */
+:root {
+  --ink:#0d1b2a; --ink-lt:#2c4a6e; --muted:#6b8fae; --border:#c8dcea;
+  --surface:#fff; --bg:#f0f6fb; --accent:#0097a7; --accent-dk:#00838f; --accent-lt:#e0f7fa;
+  --nav-bg:#0d1b2a; --hero-gradient:linear-gradient(to top, rgba(13,27,42,.96) 0%, rgba(13,27,42,.5) 50%, rgba(13,27,42,.04) 100%);
+}
+.gb-nav-logo { color:#00e5ff; }
+.gb-hero-title { color:#fff; }
+.gb-status-badge { border-color:rgba(0,229,255,.4); color:rgba(255,255,255,.9); }
+.btn-nav.filled { background:#00e5ff; color:#0d1b2a; border-color:#00e5ff; }
+.btn-nav.filled:hover { background:#b2fff9; }
+.gb-section-label { color:#0097a7; border-color:#c8dcea; }
+.gb-comp-qty { color:#0097a7; }
+.gb-review-quote::before { color:#0097a7; }
+.gb-faq-item { border-color:#c8dcea; }
+.gb-vtab.active, .gb-vtab:hover { background:#0097a7; border-color:#0097a7; }
+.btn-buy { background:#0097a7; }
+.btn-buy:hover { background:#00838f; }
+.btn-link { border-color:#0097a7; color:#0097a7; }
+.btn-link:hover { background:#0097a7; color:#fff; }
+.gb-more-card:hover { box-shadow:0 4px 18px rgba(0,151,167,.18); }
+.gb-more-name { color:#0097a7; }
+<?php endif; ?>
 body { background:var(--bg); font-family:'DINRegular',Arial,sans-serif; color:var(--ink); min-height:100vh; }
 a { color:inherit; text-decoration:none; }
 
 /* ── Nav ── */
 .gb-nav {
-  background:var(--ink); color:#fff;
+  background:var(--nav-bg); color:#fff;
   display:flex; align-items:center; justify-content:space-between;
   padding:.7rem 1.5rem; position:sticky; top:0; z-index:100;
   gap:1rem;
@@ -214,7 +244,7 @@ a { color:inherit; text-decoration:none; }
 .gb-hero-bg { position:absolute; inset:0; background-size:cover; background-position:center; }
 .gb-hero-overlay {
   position:absolute; inset:0;
-  background:linear-gradient(to top, rgba(10,10,28,.95) 0%, rgba(10,10,28,.55) 55%, rgba(10,10,28,.05) 100%);
+  background:var(--hero-gradient);
 }
 .gb-hero-content { position:relative; z-index:2; max-width:860px; padding:2.5rem 2rem 3.5rem; }
 .gb-status-badge {

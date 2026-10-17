@@ -19,12 +19,13 @@ if (!is_dir($dir)) {
 }
 
 $settings = [
-    'Name'         => trim($_POST['name']    ?? ''),
-    'Company'      => trim($_POST['company'] ?? ''),
-    'Phone'        => trim($_POST['phone']   ?? ''),
-    'Logo URL'     => trim($_POST['logo']    ?? ''),
-    'Address'      => trim($_POST['address'] ?? ''),
-    'Payment Info' => trim($_POST['payment'] ?? ''),
+    'Name'               => trim($_POST['name']        ?? ''),
+    'Company'            => trim($_POST['company']     ?? ''),
+    'Phone'              => trim($_POST['phone']       ?? ''),
+    'Logo URL'           => trim($_POST['logo']        ?? ''),
+    'Address'            => trim($_POST['address']     ?? ''),
+    'Payment Info'       => trim($_POST['payment']     ?? ''),
+    'Gameboard Template' => trim($_POST['gb_template'] ?? ''),
 ];
 
 if (file_put_contents($file, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) === false) {

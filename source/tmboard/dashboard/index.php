@@ -787,6 +787,13 @@ body:not(.tm-signed-in) .auth-only { display:none !important; }
     </div>
     <div class="field-group"><label>Address</label><input class="field-input" id="setAddress" type="text" placeholder="123 Main St, City, ST 00000" /></div>
     <div class="field-group"><label>Payment Info</label><textarea class="field-input" id="setPayment" placeholder="Bank transfer, PayPal, etc.…" style="min-height:3rem"></textarea></div>
+    <div class="field-group">
+      <label>GameBoard Template</label>
+      <select class="field-input" id="setGbTemplate">
+        <option value="">Classic (default)</option>
+        <option value="opensea">OpenSea</option>
+      </select>
+    </div>
     <div class="tm-err" id="setErr"></div>
     <div class="dialog-actions">
       <button class="btn-cancel" onclick="forceCloseSettingsDialog()">Cancel</button>
@@ -977,7 +984,8 @@ function openSettingsDialog() {
     document.getElementById('setPhone').value   = s['Phone']        || '';
     document.getElementById('setLogo').value    = s['Logo URL']     || '';
     document.getElementById('setAddress').value = s['Address']      || '';
-    document.getElementById('setPayment').value = s['Payment Info'] || '';
+    document.getElementById('setPayment').value      = s['Payment Info']       || '';
+    document.getElementById('setGbTemplate').value   = s['Gameboard Template'] || '';
   };
   xhr.onerror = function() {};
   xhr.send();
@@ -995,7 +1003,8 @@ function submitSettings() {
   fd.append('phone',   document.getElementById('setPhone').value.trim());
   fd.append('logo',    document.getElementById('setLogo').value.trim());
   fd.append('address', document.getElementById('setAddress').value.trim());
-  fd.append('payment', document.getElementById('setPayment').value.trim());
+  fd.append('payment',     document.getElementById('setPayment').value.trim());
+  fd.append('gb_template', document.getElementById('setGbTemplate').value);
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
   xhr.onload = function() {

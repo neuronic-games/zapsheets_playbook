@@ -849,6 +849,47 @@ body.gb-admin-mode #gbEditDesc:hover { outline:2px solid var(--accent); backgrou
   padding:.9rem 1.5rem; background:#f8f8fc; border-top:1px solid var(--border);
   display:flex; gap:.5rem; justify-content:flex-end;
 }
+/* ── Placeholder content (admin only) ── */
+/* CSS placeholder for empty contenteditable fields */
+body.gb-admin-mode [contenteditable][data-ph]:empty::before {
+  content: attr(data-ph);
+  opacity: .35; font-style: italic; pointer-events: none; font-family:'DINRegular',Arial,sans-serif;
+}
+/* Sections that only show in admin mode when empty */
+.gb-ph-section { display: none; }
+body.gb-admin-mode .gb-ph-section { display: block; }
+/* Placeholder stat chips */
+.gb-ph-stat { display: none; }
+body.gb-admin-mode .gb-ph-stat { display: flex; }
+.gb-ph-stat strong { opacity: .5; }
+.gb-ph-stat span { opacity: .35; font-style: italic; }
+/* Cover hint overlay when no hero image */
+.gb-cover-hint {
+  display: none; position: absolute; inset: 0; z-index: 1;
+  align-items: center; justify-content: center; flex-direction: column; gap: .6rem;
+  border: 3px dashed rgba(124,158,255,.25); pointer-events: none;
+}
+body.gb-admin-mode .gb-hero.no-cover .gb-cover-hint { display: flex; }
+.gb-cover-hint-icon { font-size: 2.5rem; opacity: .25; }
+.gb-cover-hint-text {
+  font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase;
+  letter-spacing:.1em; color:rgba(255,255,255,.3);
+}
+/* Placeholder lorem sections */
+.gb-ph-lorem {
+  font-size:.93rem; line-height:1.75; color:var(--ink-lt); opacity:.35;
+  font-style:italic; white-space:pre-wrap;
+  border:2px dashed rgba(59,59,170,.2); border-radius:6px; padding:.75rem 1rem;
+}
+/* Placeholder gallery thumbs */
+.gb-ph-gallery { display: none; }
+body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
+.gb-ph-thumb {
+  height:210px; width:200px; border-radius:8px; flex-shrink:0;
+  background:linear-gradient(135deg,#dde 0%,#c8c8e8 100%);
+  display:flex; align-items:center; justify-content:center;
+  font-size:2.5rem; opacity:.3; border:2px dashed rgba(59,59,170,.2);
+}
 </style>
 </head>
 <body>
@@ -876,22 +917,29 @@ body.gb-admin-mode #gbEditDesc:hover { outline:2px solid var(--accent); backgrou
 </div>
 
 <!-- ── Hero ── -->
-<div class="gb-hero">
+<div class="gb-hero<?= $_heroImg ? '' : ' no-cover' ?>">
   <?php if ($_heroImg): ?>
   <div class="gb-hero-bg" style="background-image:url('<?= h($_heroImg) ?>')"></div>
   <?php else: ?>
   <div class="gb-hero-bg" style="background:linear-gradient(135deg,#1a1a2e 0%,#2d2d88 100%)"></div>
   <?php endif; ?>
+  <!-- Cover image hint (admin mode only, when no cover set) -->
+  <div class="gb-cover-hint">
+    <div class="gb-cover-hint-icon">🖼</div>
+    <div class="gb-cover-hint-text">Add a cover image via Edit Details</div>
+  </div>
   <div class="gb-hero-overlay"></div>
   <div class="gb-hero-content">
     <?php if ($_status): ?><div class="gb-status-badge" id="gbStatusBadge"><?= h(ucfirst($_status)) ?></div><?php endif; ?>
-    <h1 class="gb-hero-title" id="gbEditTitle"><?= h($_name) ?></h1>
-    <p class="gb-hero-summary" id="gbEditSummary"><?= h($_summary) ?></p>
+    <h1 class="gb-hero-title" id="gbEditTitle" data-ph="Game Title"><?= h($_name) ?></h1>
+    <p class="gb-hero-summary" id="gbEditSummary" data-ph="Click to add a one-line tagline for this game…"><?= h($_summary) ?></p>
     <div class="gb-stats">
       <?php if ($_count):     ?><div class="gb-stat"><strong>👥</strong><?= h($_count) ?> players</div><?php endif; ?>
       <?php if ($_duration):  ?><div class="gb-stat"><strong>⏱</strong><?= h($_duration) ?></div><?php endif; ?>
       <?php if ($_designers): ?><div class="gb-stat"><strong>✏️</strong><?= h(implode(', ', $_designers)) ?></div><?php endif; ?>
       <?php if ($_availability): ?><div class="gb-stat"><strong>📦</strong><?= h($_availability) ?></div><?php endif; ?>
+      <?php if (!$_count):    ?><div class="gb-ph-stat"><strong>👥</strong><span>2–4 players</span></div><?php endif; ?>
+      <?php if (!$_duration): ?><div class="gb-ph-stat"><strong>⏱</strong><span>30–60 min</span></div><?php endif; ?>
     </div>
     <div class="gb-hero-ctas">
       <?php if ($_richPrice): ?><span class="gb-price-tag"><?= h($_richPrice) ?></span><?php endif; ?>
@@ -910,13 +958,15 @@ body.gb-admin-mode #gbEditDesc:hover { outline:2px solid var(--accent); backgrou
 <!-- ── Main ── -->
 <div class="gb-main">
 
-  <!-- Description -->
-  <?php if ($_description): ?>
-  <div class="gb-section">
+  <!-- Description (always rendered; hidden in public when empty via .gb-ph-section) -->
+  <div class="gb-section<?= $_description ? '' : ' gb-ph-section' ?>">
     <div class="gb-section-label">About the Game</div>
+    <?php if ($_description): ?>
     <p class="gb-description" id="gbEditDesc"><?= h($_description) ?></p>
+    <?php else: ?>
+    <p class="gb-description gb-ph-lorem" id="gbEditDesc" data-ph="Click to add a game description…">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+    <?php endif; ?>
   </div>
-  <?php endif; ?>
 
   <!-- Gallery -->
   <?php if (count($_gallery) > 1): ?>
@@ -928,9 +978,30 @@ body.gb-admin-mode #gbEditDesc:hover { outline:2px solid var(--accent); backgrou
       <?php endforeach; ?>
     </div>
   </div>
+  <?php else: ?>
+  <!-- Placeholder gallery (admin only) -->
+  <div class="gb-section gb-ph-section">
+    <div class="gb-section-label">Gallery</div>
+    <div class="gb-ph-gallery">
+      <div class="gb-ph-thumb">🖼</div>
+      <div class="gb-ph-thumb">🖼</div>
+      <div class="gb-ph-thumb">🖼</div>
+    </div>
+    <p style="font-size:.75rem;color:var(--muted);margin-top:.5rem;font-style:italic">Add image URLs via Edit Details (Cover URL, Image URL) or via the per-game data sheet.</p>
+  </div>
   <?php endif; ?>
 
   <!-- Video(s) -->
+  <?php if (!$_videoEmbed): ?>
+  <!-- Placeholder video (admin only) -->
+  <div class="gb-section gb-ph-section">
+    <div class="gb-section-label">Watch</div>
+    <div style="background:linear-gradient(135deg,#1a1a2e,#2d2d88);border-radius:10px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:.5rem;opacity:.3;">
+      <div style="font-size:3rem;">▶</div>
+      <div style="font-family:'DINBlack',sans-serif;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:#fff;">Add video URL via Edit Details</div>
+    </div>
+  </div>
+  <?php endif; ?>
   <?php if ($_videoEmbed): ?>
   <div class="gb-section">
     <div class="gb-section-label">Watch</div>
@@ -949,6 +1020,21 @@ body.gb-admin-mode #gbEditDesc:hover { outline:2px solid var(--accent); backgrou
   <?php endif; ?>
 
   <!-- Components -->
+  <?php if (empty($_components)): ?>
+  <!-- Placeholder components (admin only) -->
+  <div class="gb-section gb-ph-section">
+    <div class="gb-section-label">What's in the Box</div>
+    <div class="gb-components">
+      <?php foreach (['50 Cards', '1 Game Board', '4 Player Tokens', '30 Resource Tiles', '1 Rulebook'] as $_phC): ?>
+      <div class="gb-comp-item" style="opacity:.3">
+        <span class="gb-comp-qty"><?= explode(' ', $_phC)[0] ?></span>
+        <span class="gb-comp-name"><?= implode(' ', array_slice(explode(' ', $_phC), 1)) ?></span>
+      </div>
+      <?php endforeach; ?>
+    </div>
+    <p style="font-size:.75rem;color:var(--muted);margin-top:.6rem;font-style:italic">Component list comes from the game's data sheet (rows with Name = "Component").</p>
+  </div>
+  <?php endif; ?>
   <?php if (!empty($_components)): ?>
   <div class="gb-section">
     <div class="gb-section-label">What's in the Box</div>
@@ -1232,7 +1318,15 @@ var _ed = Object.assign({}, GAME_DATA);
     // Make text fields contenteditable
     ['gbEditTitle', 'gbEditSummary', 'gbEditDesc'].forEach(function(id) {
       var el = document.getElementById(id);
-      if (el) el.contentEditable = 'true';
+      if (!el) return;
+      el.contentEditable = 'true';
+      // If the element has lorem ipsum placeholder content (class gb-ph-lorem),
+      // clear it on first focus and restore if left empty
+      if (el.classList.contains('gb-ph-lorem')) {
+        el.dataset.phContent = el.textContent;
+        el.textContent = '';
+        el.classList.remove('gb-ph-lorem');
+      }
     });
   } catch(e) {}
 })();

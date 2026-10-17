@@ -187,6 +187,25 @@ RewriteRule ^tmboard/share/([a-f0-9]{24})/?$ source/tmboard/shared/index.php [L,
 # /tmboard — setup landing page
 RewriteRule ^tmboard/?$ source/tmboard/index.php [L,QSA]
 
+# Short-URL: /{id}/gameboard/{slug} → source/gameboard/index.php (must come before bare /{id}/gameboard rule)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/gameboard/([^/]+)/?$ source/gameboard/index.php [L,QSA]
+
+# Short-URL: /{id}/gameboard → redirect to first game
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([A-Za-z0-9_\-]+)/gameboard/?$ source/gameboard/index.php [L,QSA]
+
+# Also cover sheets/{id}/gameboard/{slug}
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^sheets/([A-Za-z0-9_\-]+)/gameboard/([^/]+)/?$ source/gameboard/index.php [L,QSA]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^sheets/([A-Za-z0-9_\-]+)/gameboard/?$ source/gameboard/index.php [L,QSA]
+
 # Short-URL: /{id}/tmboard → source/tmboard/dashboard/index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -257,5 +276,5 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 # Guard 2: skip known top-level names regardless of subdirectory prefix.
 #          Matches  /anything/name/  or  /anything/name  at end of URI.
-RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard|devboard|fitboard|noteboard|pulseboard|tmboard|slides-sw|game|shares)(/|$)
+RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard|devboard|fitboard|noteboard|pulseboard|tmboard|gameboard|slides-sw|game|shares)(/|$)
 RewriteRule ^([A-Za-z0-9_\-]+)(/.*)?$ sheets/$1$2 [R=302,L]

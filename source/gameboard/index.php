@@ -783,6 +783,16 @@ a { color:inherit; text-decoration:none; }
   padding:.45rem 1.5rem; align-items:center; gap:.75rem; font-size:.8rem; flex-wrap:wrap;
 }
 .gb-admin-bar.visible { display:flex; }
+/* Save toast */
+.gb-save-toast {
+  display:none; position:fixed; bottom:1.5rem; right:1.5rem; z-index:900;
+  background:#1e1e30; border:1px solid rgba(124,158,255,.3); border-radius:8px;
+  padding:.65rem 1.1rem; font-family:'DINBlack',sans-serif; font-size:.78rem;
+  text-transform:uppercase; letter-spacing:.07em; color:#7c9eff;
+  box-shadow:0 4px 20px rgba(0,0,0,.4); animation:gb-toast-in .2s ease;
+}
+.gb-save-toast.visible { display:block; }
+@keyframes gb-toast-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
 .gb-admin-label {
   font-family:'DINBlack',sans-serif; font-size:.66rem; text-transform:uppercase;
   letter-spacing:.1em; color:#7c9eff; margin-right:.25rem;
@@ -1151,6 +1161,9 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
   <img id="lightboxImg" src="" alt="" />
 </div>
 
+<!-- ── Save toast ── -->
+<div class="gb-save-toast" id="gbSaveToast"></div>
+
 <!-- ── Edit Details modal ── -->
 <div class="gbed-overlay" id="gbedOverlay" onclick="if(event.target===this)closeEditDetails()">
   <div class="gbed-dialog" onclick="event.stopPropagation()">
@@ -1434,18 +1447,35 @@ function saveGame() {
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_ROOT + 'push/updateGame.php');
   xhr.onload = function() {
-    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = {error: xhr.responseText}; }
-    if (r && r.error) {
+    var r;
+    try { r = JSON.parse(xhr.responseText); } catch(e) { r = {error: 'Could not parse response: ' + xhr.responseText.substring(0, 200)}; }
+    console.log('[GameBoard save response]', r, xhr.responseText);
+    if (!r || r.error) {
       saveBtn.disabled = false;
       saveBtn.textContent = 'Save Changes';
-      alert('Save failed: ' + r.error);
+      alert('Save failed: ' + ((r && r.error) || 'Unknown error — check browser console'));
       return;
     }
-    // Redirect to updated slug if name changed
+    if (!r.ok) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Changes';
+      alert('Save failed: unexpected response — check browser console\n' + JSON.stringify(r));
+      return;
+    }
+    // Success — show toast, force-refresh JSON cache, then redirect
+    saveBtn.textContent = '✓ Saved!';
+    var toast = document.getElementById('gbSaveToast');
+    if (toast) { toast.textContent = '✓ Saved — refreshing…'; toast.classList.add('visible'); }
     var newName = titleEl ? titleEl.textContent.trim() : ORIG_GAME_NAME;
     var newSlug = newName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    var catUrl  = APP_ROOT + SHEET_ID + '/gameboard/';
-    location.href = catUrl + newSlug;
+    var destUrl = APP_ROOT + SHEET_ID + '/gameboard/' + newSlug;
+    // Force-refresh the games.json cache before redirecting so the page shows fresh data
+    var rfFd = new FormData(); rfFd.append('id', SHEET_ID);
+    var rfXhr = new XMLHttpRequest();
+    rfXhr.open('POST', APP_ROOT + 'push/setupGameboard.php');
+    rfXhr.onload  = function() { location.href = destUrl; };
+    rfXhr.onerror = function() { location.href = destUrl; };
+    rfXhr.send(rfFd);
   };
   xhr.onerror = function() {
     saveBtn.disabled = false;

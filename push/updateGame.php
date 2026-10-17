@@ -75,7 +75,7 @@ $arg        = $sheetId . '|' . $encoded;
 
 $cmd = escapeshellarg($pythonPath) . ' '
      . escapeshellarg(__DIR__ . '/gupdategame.py') . ' '
-     . escapeshellarg($arg) . ' 2>&1';
+     . escapeshellarg($arg) . ' 2>/dev/null';
 
 $output = trim((string) shell_exec($cmd));
 

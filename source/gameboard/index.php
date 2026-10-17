@@ -496,13 +496,24 @@ for ($i = 1; $i <= 4; $i++) {
     if ($d) $_designers[] = $d;
 }
 
-// ── Load rich game-specific data from Playbook Sheet ─────────────────────────
-// File: sheets/{playbook_sheet_id}/{lowercase_game_name}.json
+// ── Load rich game-specific data ─────────────────────────────────────────────
+// Sources checked in order:
+//   1. game-{name}-en.json in the current sheet dir  (GameBoard [GameName] tab)
+//   2. game-{name}-en.json in the Playbook Sheet dir (if Playbook Sheet ID set)
+//   3. {lowercase_name}.json in the Playbook Sheet dir (legacy Playbook naming)
 // Format: [{Name, Value, "Value 1", "Value 2"}, ...]
+$_safeName = str_replace(['/', '\\'], '-', $_name);
 $_rich = [];
+$_richCandidates = [
+    $_sDir . '/game-' . $_safeName . '-en.json',
+];
 if ($_pbSheetId) {
-    $_richFile = $_root . '/sheets/' . $_pbSheetId . '/' . strtolower($_name) . '.json';
+    $_richCandidates[] = $_root . '/sheets/' . $_pbSheetId . '/game-' . $_safeName . '-en.json';
+    $_richCandidates[] = $_root . '/sheets/' . $_pbSheetId . '/' . strtolower($_name) . '.json';
+}
+foreach ($_richCandidates as $_richFile) {
     $_rich = _gb_load($_richFile);
+    if (!empty($_rich)) break;
 }
 
 // Helper: get all rows of a given Name

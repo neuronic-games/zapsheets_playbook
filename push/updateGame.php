@@ -100,6 +100,32 @@ $result = json_decode($output, true);
 if ($result !== null && !empty($result['ok'])) {
     refreshJson($pythonPath, $sheetId, 'games');
 
+    // Create [GameName] tab if it doesn't exist, then publish its JSON cache
+    $tabGameName = $name ?: $origName;
+    $tabCmd = escapeshellarg($pythonPath) . ' '
+            . escapeshellarg(__DIR__ . '/gcreategameboardtab.py') . ' '
+            . escapeshellarg($sheetId . '|' . $tabGameName) . ' 2>/dev/null';
+    $tabOut = trim((string) shell_exec($tabCmd));
+    if ($tabOut) {
+        $tabResult = json_decode($tabOut, true);
+        if (!empty($tabResult['tab'])) {
+            $result['game_tab'] = $tabResult['tab'];
+            $result['game_tab_created'] = !($tabResult['existed'] ?? true);
+            // Publish the tab as game-{name}-en.json using gpublishgame.py
+            // (gread.py would treat row 1 as headers — wrong for key-value tabs)
+            $pubCmd = escapeshellarg($pythonPath) . ' '
+                    . escapeshellarg(__DIR__ . '/gpublishgame.py') . ' '
+                    . escapeshellarg($sheetId . '|' . $tabGameName) . ' 2>/dev/null';
+            $pubOut = trim((string) shell_exec($pubCmd));
+            if ($pubOut) {
+                $pubResult = json_decode($pubOut, true);
+                if (!empty($pubResult['ok'])) {
+                    $result['game_tab_cached'] = true;
+                }
+            }
+        }
+    }
+
     // If the game was renamed, also refresh pitches, rename local JSON, and update share files
     $isRename = $name && $origName && $name !== $origName;
     if ($isRename) {

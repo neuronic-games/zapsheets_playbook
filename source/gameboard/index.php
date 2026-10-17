@@ -2,6 +2,7 @@
 /**
  * GameBoard — polished public product page for a single board game.
  * URL: /{sheet_id}/gameboard/{game-slug}
+ * Data: games.json (main info) + {game_name}.json from Playbook Sheet (rich content)
  * Public / no sign-in required.
  */
 error_reporting(0);
@@ -13,16 +14,15 @@ $_rp   = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $_bp   = rtrim($_ENV['BASE_PATH'] ?? '', '/');
 $_rps  = ($_bp !== '' && str_starts_with($_rp, $_bp)) ? substr($_rp, strlen($_bp)) : $_rp;
 
-// Match /{sheet_id}/gameboard/{game-slug}
 preg_match('#^/([A-Za-z0-9_\-]+)/gameboard/([^/?]+)#', $_rps, $_m);
 $_sheetId  = $_m[1] ?? '';
-$_gameSlug = $_m[2] ?? '';
+$_gameSlug = urldecode($_m[2] ?? '');
 
 if (!$_sheetId) { http_response_code(404); exit; }
 
-$_root     = dirname(__DIR__, 2);
-$_sDir     = $_root . '/sheets/' . $_sheetId;
-$_appRoot  = $_bp . '/';
+$_root    = dirname(__DIR__, 2);
+$_sDir    = $_root . '/sheets/' . $_sheetId;
+$_appRoot = $_bp . '/';
 
 function _gb_load(string $f): array {
     return file_exists($f) ? (json_decode(file_get_contents($f), true) ?: []) : [];
@@ -37,14 +37,27 @@ function _gb_img(string $raw): string {
     return $raw;
 }
 
-// Load games and find the requested one
+function h(string $s): string {
+    return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+function _gb_embed(string $url): string {
+    if (!$url) return '';
+    if (preg_match('/youtube\.com\/embed\//', $url)) return $url;
+    if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_\-]+)/', $url, $m))
+        return 'https://www.youtube.com/embed/' . $m[1];
+    if (preg_match('/youtube\.com\/shorts\/([A-Za-z0-9_\-]+)/', $url, $m))
+        return 'https://www.youtube.com/embed/' . $m[1];
+    return '';  // skip non-YouTube for embed safety
+}
+
+// ── Load games list and find requested game ──────────────────────────────────
 $_games = _gb_load($_sDir . '/games.json');
 
-// If no slug given, redirect to the first published/signed game
 if (!$_gameSlug) {
+    // No slug — redirect to first signed/published game
     foreach ($_games as $g) {
-        $st = strtolower($g['Status'] ?? '');
-        if (in_array($st, ['signed','published'])) {
+        if (in_array(strtolower($g['Status'] ?? ''), ['signed','published'])) {
             header('Location: ' . $_appRoot . $_sheetId . '/gameboard/' . _gb_slug($g['Name'] ?? 'game'));
             exit;
         }
@@ -58,80 +71,100 @@ if (!$_gameSlug) {
 
 $_game = null;
 foreach ($_games as $g) {
-    if (_gb_slug($g['Name'] ?? '') === $_gameSlug) {
-        $_game = $g;
-        break;
-    }
+    if (_gb_slug($g['Name'] ?? '') === _gb_slug($_gameSlug)) { $_game = $g; break; }
 }
 
 if (!$_game) { http_response_code(404); exit; }
 
-// ── Data extraction ──────────────────────────────────────────────────────────
-$_name        = trim($_game['Name']          ?? '');
-$_summary     = trim($_game['Summary']       ?? '');
-$_description = trim($_game['Description']   ?? '');
-$_count       = trim($_game['Count']         ?? '');
-$_duration    = trim($_game['Duration']      ?? '');
-$_availability= trim($_game['Availability']  ?? '');
-$_status      = trim($_game['Status']        ?? '');
-$_coverUrl    = _gb_img(trim($_game['Cover URL']   ?? ''));
-$_imageUrl    = _gb_img(trim($_game['Image URL']   ?? ''));
-$_videoUrl    = trim($_game['Video URL']     ?? '');
-$_pageUrl     = trim($_game['Page URL']      ?? '');
-$_sellsheet   = trim($_game['Sellsheet URL'] ?? '');
-$_playUrl     = trim($_game['Play URL']      ?? '');
-$_printUrl    = trim($_game['Print URL']     ?? '');
-$_rulesUrl    = trim($_game['Rules URL']     ?? '');
+// ── Core fields from games.json ──────────────────────────────────────────────
+$_name        = trim($_game['Name']           ?? '');
+$_summary     = trim($_game['Summary']        ?? '');
+$_description = trim($_game['Description']    ?? '');
+$_count       = trim($_game['Count']          ?? '');
+$_duration    = trim($_game['Duration']       ?? '');
+$_availability= trim($_game['Availability']   ?? '');
+$_status      = trim($_game['Status']         ?? '');
+$_coverUrl    = _gb_img(trim($_game['Cover URL']    ?? ''));
+$_imageUrl    = _gb_img(trim($_game['Image URL']    ?? ''));
+$_videoUrl    = trim($_game['Video URL']      ?? '');
+$_pageUrl     = trim($_game['Page URL']       ?? '');
+$_sellsheet   = trim($_game['Sellsheet URL']  ?? '');
+$_playUrl     = trim($_game['Play URL']       ?? '');
+$_printUrl    = trim($_game['Print URL']      ?? '');
+$_rulesUrl    = trim($_game['Rules URL']      ?? '');
 $_pbSheetId   = trim($_game['Playbook Sheet ID'] ?? '');
-$_dateSigned  = trim($_game['Date Signed']   ?? '');
-$_datePub     = trim($_game['Date Published']?? '');
+$_dateSigned  = trim($_game['Date Signed']    ?? '');
+$_datePub     = trim($_game['Date Published'] ?? '');
 
-// Designers
 $_designers = [];
 for ($i = 1; $i <= 4; $i++) {
     $d = trim($_game["Designer$i"] ?? '');
     if ($d) $_designers[] = $d;
 }
 
-// Hero image — prefer Cover URL, fall back to Image URL
-$_heroImg = $_coverUrl ?: $_imageUrl;
-
-// Gallery images (additional images beyond the hero)
-$_galleryImgs = [];
-foreach ([$_coverUrl, $_imageUrl] as $img) {
-    if ($img && $img !== $_heroImg && count($_galleryImgs) < 5) $_galleryImgs[] = $img;
-}
-
-// Embed-friendly YouTube URL
-function _gb_embed(string $url): string {
-    if (!$url) return '';
-    if (preg_match('/youtube\.com\/embed\//', $url)) return $url;
-    if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_\-]+)/', $url, $m)) {
-        return 'https://www.youtube.com/embed/' . $m[1];
-    }
-    return $url;
-}
-$_videoEmbed = _gb_embed($_videoUrl);
-
-// Components from Playbook Sheet
-$_components = [];
+// ── Load rich game-specific data from Playbook Sheet ─────────────────────────
+// File: sheets/{playbook_sheet_id}/{lowercase_game_name}.json
+// Format: [{Name, Value, "Value 1", "Value 2"}, ...]
+$_rich = [];
 if ($_pbSheetId) {
-    $compFile = $_root . '/sheets/' . $_pbSheetId . '/components.json';
-    if (file_exists($compFile)) {
-        $_components = _gb_load($compFile);
-    }
+    $_richFile = $_root . '/sheets/' . $_pbSheetId . '/' . strtolower($_name) . '.json';
+    $_rich = _gb_load($_richFile);
 }
 
-// Other games for "More Games" section (same sheet, exclude current)
+// Helper: get all rows of a given Name
+function _gb_rows(array $rich, string $name): array {
+    return array_values(array_filter($rich, fn($r) => strcasecmp(trim($r['Name'] ?? ''), $name) === 0));
+}
+
+// Helper: first Value for a given Name
+function _gb_val(array $rich, string $name): string {
+    foreach ($rich as $r) { if (strcasecmp(trim($r['Name'] ?? ''), $name) === 0) return trim($r['Value'] ?? ''); }
+    return '';
+}
+
+$_components  = _gb_rows($_rich, 'Component');
+$_reviews     = _gb_rows($_rich, 'Review');
+$_faqs        = _gb_rows($_rich, 'FAQ');
+$_buyUrls     = _gb_rows($_rich, 'BuyUrl');
+$_richVideos  = _gb_rows($_rich, 'Video');
+$_mediaImgs   = array_merge(_gb_rows($_rich, 'Media'), _gb_rows($_rich, 'ProductImage'));
+$_richPrice   = _gb_val($_rich, 'Price');
+$_richRules   = _gb_val($_rich, 'Rules PDF Url') ?: $_rulesUrl;
+
+// ── Gallery: cover + image + rich media images ─────────────────────────────
+$_gallery = [];
+foreach (array_filter([$_coverUrl, $_imageUrl]) as $img) {
+    if (!in_array($img, $_gallery)) $_gallery[] = $img;
+}
+foreach ($_mediaImgs as $r) {
+    $u = trim($r['Value'] ?? '');
+    if ($u && !in_array($u, $_gallery)) $_gallery[] = $u;
+}
+
+$_heroImg = $_gallery[0] ?? '';
+
+// Primary video embed: first rich Video with embeddable URL, else games.json Video URL
+$_videoEmbed = '';
+foreach ($_richVideos as $rv) {
+    $e = _gb_embed(trim($rv['Value 1'] ?? $rv['Value'] ?? ''));
+    if ($e) { $_videoEmbed = $e; break; }
+}
+if (!$_videoEmbed) $_videoEmbed = _gb_embed($_videoUrl);
+
+// Additional video list (all rich videos that are embeddable)
+$_videoList = [];
+foreach ($_richVideos as $rv) {
+    $e = _gb_embed(trim($rv['Value 1'] ?? $rv['Value'] ?? ''));
+    if ($e) $_videoList[] = ['label' => trim($rv['Value'] ?? ''), 'embed' => $e];
+}
+
+// Other games for "More Games" section
 $_otherGames = [];
 foreach ($_games as $g) {
-    $st = strtolower($g['Status'] ?? '');
-    if (_gb_slug($g['Name'] ?? '') !== $_gameSlug && in_array($st, ['signed','published','interested'])) {
+    if (_gb_slug($g['Name'] ?? '') !== _gb_slug($_name)) {
         $_otherGames[] = $g;
     }
 }
-
-function h(string $s): string { return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -140,207 +173,202 @@ function h(string $s): string { return htmlspecialchars($s, ENT_QUOTES | ENT_SUB
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?= h($_name) ?><?= $_summary ? ' — ' . h($_summary) : '' ?></title>
 <meta name="description" content="<?= h(substr($_description ?: $_summary, 0, 160)) ?>" />
-<?php if ($_heroImg): ?>
-<meta property="og:image" content="<?= h($_heroImg) ?>" />
-<?php endif; ?>
+<?php if ($_heroImg): ?><meta property="og:image" content="<?= h($_heroImg) ?>" /><?php endif; ?>
 <style>
 @font-face { font-family:'DINBlack';   src:url('<?= $_appRoot ?>fonts/DINBlack.woff2')  format('woff2'); }
 @font-face { font-family:'DINRegular'; src:url('<?= $_appRoot ?>fonts/DINMedium.woff2') format('woff2'); }
-
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-
 :root {
-  --ink:        #1a1a2e;
-  --ink-lt:     #444;
-  --muted:      #888;
-  --border:     #e0e0e0;
-  --surface:    #fff;
-  --bg:         #f7f5f2;
-  --accent:     #3b3baa;
-  --accent-dk:  #2d2d88;
-  --accent-lt:  #eef;
-  --gold:       #c8960c;
+  --ink:#1a1a2e; --ink-lt:#4a4a6a; --muted:#888; --border:#e2e2ec;
+  --surface:#fff; --bg:#f6f5f2; --accent:#3b3baa; --accent-dk:#2d2d88; --accent-lt:#eeeeff;
 }
-
 body { background:var(--bg); font-family:'DINRegular',Arial,sans-serif; color:var(--ink); min-height:100vh; }
-
 a { color:inherit; text-decoration:none; }
 
 /* ── Nav ── */
 .gb-nav {
   background:var(--ink); color:#fff;
   display:flex; align-items:center; justify-content:space-between;
-  padding:.75rem 1.5rem; position:sticky; top:0; z-index:100;
+  padding:.7rem 1.5rem; position:sticky; top:0; z-index:100;
+  gap:1rem;
 }
-.gb-nav-logo { font-family:'DINBlack',sans-serif; font-size:1.05rem; letter-spacing:.06em; color:#7c9eff; }
-.gb-nav-game { font-size:.82rem; opacity:.65; letter-spacing:.03em; margin-left:.75rem; }
-.gb-nav-links { display:flex; gap:.5rem; }
+.gb-nav-left { display:flex; align-items:center; gap:.65rem; min-width:0; }
+.gb-nav-logo { font-family:'DINBlack',sans-serif; font-size:1rem; letter-spacing:.06em; color:#7c9eff; flex-shrink:0; }
+.gb-nav-game { font-size:.78rem; opacity:.6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.gb-nav-links { display:flex; gap:.4rem; flex-shrink:0; }
 .btn-nav {
-  font-family:'DINBlack',sans-serif; font-size:.7rem; text-transform:uppercase;
-  letter-spacing:.07em; padding:.35rem .8rem; border-radius:5px; cursor:pointer;
+  font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase;
+  letter-spacing:.07em; padding:.33rem .75rem; border-radius:5px;
   border:1.5px solid rgba(255,255,255,.3); color:#fff; background:transparent;
-  transition:background .15s; white-space:nowrap;
+  transition:background .14s; white-space:nowrap; cursor:pointer;
 }
-.btn-nav:hover { background:rgba(255,255,255,.15); border-color:#fff; }
+.btn-nav:hover { background:rgba(255,255,255,.14); border-color:#fff; }
 .btn-nav.filled { background:#fff; color:var(--ink); border-color:#fff; }
-.btn-nav.filled:hover { background:#eee; }
+.btn-nav.filled:hover { background:#e8e8ff; }
 
 /* ── Hero ── */
 .gb-hero {
-  position:relative; background:var(--ink); color:#fff;
-  min-height:65vh; display:flex; align-items:flex-end;
-  overflow:hidden;
+  position:relative; min-height:70vh; display:flex; align-items:flex-end;
+  overflow:hidden; background:var(--ink);
 }
-.gb-hero-bg {
-  position:absolute; inset:0;
-  background-size:cover; background-position:center;
-}
+.gb-hero-bg { position:absolute; inset:0; background-size:cover; background-position:center; }
 .gb-hero-overlay {
   position:absolute; inset:0;
-  background:linear-gradient(to top, rgba(10,10,30,.92) 0%, rgba(10,10,30,.5) 50%, rgba(10,10,30,.1) 100%);
+  background:linear-gradient(to top, rgba(10,10,28,.95) 0%, rgba(10,10,28,.55) 55%, rgba(10,10,28,.05) 100%);
 }
-.gb-hero-content {
-  position:relative; z-index:2;
-  max-width:900px; padding:3rem 2rem 3.5rem;
-}
+.gb-hero-content { position:relative; z-index:2; max-width:860px; padding:2.5rem 2rem 3.5rem; }
 .gb-status-badge {
-  display:inline-block; font-family:'DINBlack',sans-serif; font-size:.68rem;
-  text-transform:uppercase; letter-spacing:.1em; padding:.25rem .7rem;
-  border-radius:999px; border:1.5px solid rgba(255,255,255,.4);
-  color:rgba(255,255,255,.85); margin-bottom:.9rem;
+  display:inline-block; font-family:'DINBlack',sans-serif; font-size:.66rem;
+  text-transform:uppercase; letter-spacing:.1em; padding:.22rem .65rem;
+  border-radius:999px; border:1.5px solid rgba(255,255,255,.38); color:rgba(255,255,255,.8);
+  margin-bottom:.8rem;
 }
 .gb-hero-title {
-  font-family:'DINBlack',sans-serif; font-size:clamp(2rem,6vw,3.5rem);
-  line-height:1.05; letter-spacing:.02em; margin-bottom:.7rem;
-  text-shadow:0 2px 16px rgba(0,0,0,.6);
+  font-family:'DINBlack',sans-serif; font-size:clamp(2rem,7vw,3.8rem);
+  line-height:1.04; letter-spacing:.02em; color:#fff;
+  text-shadow:0 2px 20px rgba(0,0,0,.55); margin-bottom:.65rem;
 }
 .gb-hero-summary {
-  font-size:clamp(.95rem,2.2vw,1.15rem); opacity:.85; max-width:560px;
-  line-height:1.5; margin-bottom:1.4rem;
+  font-size:clamp(.92rem,2.5vw,1.12rem); color:rgba(255,255,255,.82);
+  max-width:560px; line-height:1.55; margin-bottom:1.3rem;
 }
 .gb-stats {
-  display:flex; flex-wrap:wrap; gap:.55rem 1.4rem; margin-bottom:1.6rem;
+  display:flex; flex-wrap:wrap; gap:.45rem 1.3rem; margin-bottom:1.5rem;
 }
-.gb-stat { font-size:.82rem; opacity:.8; }
-.gb-stat strong { font-family:'DINBlack',sans-serif; opacity:1; margin-right:.2rem; }
-.gb-hero-ctas { display:flex; flex-wrap:wrap; gap:.55rem; }
+.gb-stat { font-size:.82rem; color:rgba(255,255,255,.75); }
+.gb-stat strong { font-family:'DINBlack',sans-serif; color:#fff; margin-right:.25rem; }
+.gb-hero-ctas { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
+.gb-price-tag {
+  font-family:'DINBlack',sans-serif; font-size:1.5rem; color:#fff;
+  margin-right:.25rem; letter-spacing:-.01em;
+}
 
-/* ── Main layout ── */
-.gb-main { max-width:960px; margin:0 auto; padding:3rem 1.25rem 5rem; }
-
-/* ── Section ── */
-.gb-section { margin-bottom:3.5rem; }
+/* ── Main ── */
+.gb-main { max-width:940px; margin:0 auto; padding:3rem 1.25rem 5rem; }
+.gb-section { margin-bottom:3.2rem; }
 .gb-section-label {
-  font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase;
-  letter-spacing:.1em; color:var(--muted); margin-bottom:.9rem;
-  padding-bottom:.5rem; border-bottom:1px solid var(--border);
+  font-family:'DINBlack',sans-serif; font-size:.7rem; text-transform:uppercase;
+  letter-spacing:.1em; color:var(--muted); margin-bottom:.85rem;
+  padding-bottom:.45rem; border-bottom:1px solid var(--border);
 }
-
-/* ── Description ── */
-.gb-description {
-  font-size:1rem; line-height:1.72; color:var(--ink-lt);
-  white-space:pre-wrap;
-}
+.gb-description { font-size:.98rem; line-height:1.75; color:var(--ink-lt); white-space:pre-wrap; }
 
 /* ── Gallery ── */
-.gb-gallery { display:flex; gap:.6rem; overflow-x:auto; scroll-snap-type:x mandatory; }
+.gb-gallery { display:flex; gap:.55rem; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:.4rem; }
+.gb-gallery::-webkit-scrollbar { height:4px; }
+.gb-gallery::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
 .gb-gallery img {
-  height:220px; border-radius:8px; object-fit:cover;
-  flex-shrink:0; scroll-snap-align:start; cursor:pointer;
-  transition:transform .2s; box-shadow:0 2px 12px rgba(0,0,0,.12);
+  height:210px; border-radius:8px; object-fit:cover; flex-shrink:0;
+  scroll-snap-align:start; cursor:pointer; transition:transform .18s;
+  box-shadow:0 2px 10px rgba(0,0,0,.1);
 }
-.gb-gallery img:hover { transform:scale(1.015); }
+.gb-gallery img:hover { transform:scale(1.012); }
 
 /* ── Video ── */
-.gb-video-wrap {
-  position:relative; padding-top:56.25%; border-radius:10px;
-  overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,.14);
+.gb-video-wrap { position:relative; padding-top:56.25%; border-radius:10px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,.13); }
+.gb-video-wrap iframe { position:absolute; inset:0; width:100%; height:100%; border:none; }
+.gb-video-tabs { display:flex; gap:.4rem; flex-wrap:wrap; margin-top:.7rem; }
+.gb-vtab {
+  font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase;
+  letter-spacing:.06em; padding:.28rem .65rem; border-radius:4px; cursor:pointer;
+  border:1px solid var(--border); background:var(--surface); color:var(--ink-lt);
+  transition:background .12s;
 }
-.gb-video-wrap iframe {
-  position:absolute; inset:0; width:100%; height:100%; border:none;
-}
+.gb-vtab:hover, .gb-vtab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
 
 /* ── Components ── */
-.gb-components { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:.55rem; }
+.gb-components { display:grid; grid-template-columns:repeat(auto-fill, minmax(195px,1fr)); gap:.5rem; }
 .gb-comp-item {
-  display:flex; align-items:baseline; gap:.6rem;
+  display:flex; align-items:baseline; gap:.55rem;
   background:var(--surface); border:1px solid var(--border);
-  border-radius:7px; padding:.55rem .75rem; font-size:.87rem;
+  border-radius:7px; padding:.52rem .7rem; font-size:.86rem;
 }
-.gb-comp-qty {
-  font-family:'DINBlack',sans-serif; font-size:1rem;
-  color:var(--accent); flex-shrink:0; min-width:1.6rem;
-}
+.gb-comp-qty { font-family:'DINBlack',sans-serif; font-size:1rem; color:var(--accent); flex-shrink:0; min-width:1.5rem; }
 .gb-comp-name { color:var(--ink-lt); }
 
-/* ── Links grid ── */
-.gb-links { display:flex; flex-wrap:wrap; gap:.7rem; }
+/* ── Reviews ── */
+.gb-reviews { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:1rem; }
+.gb-review {
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:1rem 1.1rem; position:relative;
+}
+.gb-review-quote { font-size:.9rem; line-height:1.6; color:var(--ink-lt); font-style:italic; margin-bottom:.6rem; }
+.gb-review-quote::before { content:'\201C'; font-size:1.8rem; color:var(--accent); line-height:0; vertical-align:-.45em; margin-right:.1rem; }
+.gb-review-author { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+
+/* ── FAQs ── */
+.gb-faq-item { border-bottom:1px solid var(--border); padding:.85rem 0; }
+.gb-faq-item:last-child { border-bottom:none; }
+.gb-faq-q { font-family:'DINBlack',sans-serif; font-size:.9rem; color:var(--ink); cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:.5rem; }
+.gb-faq-q::after { content:'＋'; font-size:.9rem; color:var(--muted); flex-shrink:0; }
+.gb-faq-item.open .gb-faq-q::after { content:'－'; }
+.gb-faq-a { display:none; font-size:.87rem; line-height:1.65; color:var(--ink-lt); margin-top:.6rem; }
+.gb-faq-item.open .gb-faq-a { display:block; }
+.gb-faq-a a { color:var(--accent); text-decoration:underline; }
+.gb-faq-img { max-width:100%; border-radius:6px; margin-top:.5rem; }
+
+/* ── Buy links ── */
+.gb-buy-links { display:flex; flex-wrap:wrap; gap:.6rem; }
+.btn-buy {
+  font-family:'DINBlack',sans-serif; font-size:.78rem; text-transform:uppercase;
+  letter-spacing:.07em; padding:.55rem 1.2rem; border-radius:7px;
+  background:var(--accent); color:#fff; border:none; cursor:pointer;
+  transition:background .13s;
+}
+.btn-buy:hover { background:var(--accent-dk); }
+
+/* ── Resource links ── */
+.gb-links { display:flex; flex-wrap:wrap; gap:.6rem; }
 .btn-link {
-  font-family:'DINBlack',sans-serif; font-size:.76rem; text-transform:uppercase;
-  letter-spacing:.07em; padding:.55rem 1.1rem; border-radius:7px;
-  border:2px solid var(--accent); color:var(--accent); background:#fff;
-  transition:background .14s, color .14s; cursor:pointer;
+  font-family:'DINBlack',sans-serif; font-size:.74rem; text-transform:uppercase;
+  letter-spacing:.07em; padding:.48rem 1rem; border-radius:6px;
+  border:2px solid var(--accent); color:var(--accent); background:var(--surface);
+  transition:background .12s, color .12s; cursor:pointer;
 }
 .btn-link:hover { background:var(--accent); color:#fff; }
-.btn-link.primary { background:var(--accent); color:#fff; }
-.btn-link.primary:hover { background:var(--accent-dk); }
 
 /* ── More games ── */
-.gb-more-grid {
-  display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:1rem;
-}
+.gb-more-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:.9rem; }
 .gb-more-card {
-  background:var(--surface); border-radius:10px;
-  box-shadow:0 2px 10px rgba(0,0,0,.08); overflow:hidden;
-  transition:box-shadow .15s, transform .15s; cursor:pointer;
+  background:var(--surface); border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.07);
+  overflow:hidden; transition:box-shadow .15s, transform .15s; cursor:pointer;
 }
-.gb-more-card:hover { box-shadow:0 4px 20px rgba(59,59,170,.16); transform:translateY(-2px); }
+.gb-more-card:hover { box-shadow:0 4px 18px rgba(59,59,170,.15); transform:translateY(-2px); }
 .gb-more-card img { width:100%; aspect-ratio:1; object-fit:cover; display:block; }
-.gb-more-card-body { padding:.6rem .75rem .8rem; }
-.gb-more-card-name { font-family:'DINBlack',sans-serif; font-size:.82rem; color:var(--accent); margin-bottom:.15rem; }
-.gb-more-card-meta { font-size:.74rem; color:var(--muted); }
-.gb-more-card-placeholder {
-  width:100%; aspect-ratio:1; background:linear-gradient(135deg, #dde 0%, #c8c8e8 100%);
-  display:flex; align-items:center; justify-content:center;
-}
-.gb-more-card-placeholder span { font-size:2.5rem; opacity:.4; }
+.gb-more-card-ph { width:100%; aspect-ratio:1; background:linear-gradient(135deg,#dde 0%,#c8c8e8 100%); display:flex; align-items:center; justify-content:center; font-size:2.2rem; opacity:.45; }
+.gb-more-body { padding:.55rem .7rem .7rem; }
+.gb-more-name { font-family:'DINBlack',sans-serif; font-size:.8rem; color:var(--accent); margin-bottom:.1rem; }
+.gb-more-meta { font-size:.72rem; color:var(--muted); }
 
 /* ── Footer ── */
-.gb-footer {
-  background:var(--ink); color:rgba(255,255,255,.6);
-  text-align:center; padding:2rem 1.5rem;
-  font-size:.78rem; letter-spacing:.03em;
-}
+.gb-footer { background:var(--ink); color:rgba(255,255,255,.55); text-align:center; padding:1.8rem 1.5rem; font-size:.76rem; }
 .gb-footer strong { color:#fff; font-family:'DINBlack',sans-serif; }
 
 /* ── Lightbox ── */
-.gb-lightbox {
-  display:none; position:fixed; inset:0; z-index:500;
-  background:rgba(0,0,0,.9); align-items:center; justify-content:center;
-  cursor:zoom-out;
-}
+.gb-lightbox { display:none; position:fixed; inset:0; z-index:500; background:rgba(0,0,0,.92); align-items:center; justify-content:center; cursor:zoom-out; }
 .gb-lightbox.open { display:flex; }
 .gb-lightbox img { max-width:92vw; max-height:92vh; border-radius:8px; object-fit:contain; }
 
-@media (max-width:640px) {
-  .gb-hero-content { padding:2rem 1.2rem 2.5rem; }
+@media(max-width:640px) {
+  .gb-hero-content { padding:1.8rem 1rem 2.5rem; }
   .gb-nav-game { display:none; }
   .gb-main { padding:2rem .9rem 4rem; }
   .gb-components { grid-template-columns:1fr 1fr; }
-  .gb-more-grid { grid-template-columns:repeat(2, 1fr); }
+  .gb-more-grid { grid-template-columns:repeat(2,1fr); }
+  .gb-reviews { grid-template-columns:1fr; }
 }
 </style>
 </head>
 <body>
 
-<!-- ── Navigation ── -->
+<!-- ── Nav ── -->
 <nav class="gb-nav">
-  <div style="display:flex;align-items:center">
+  <div class="gb-nav-left">
     <a class="gb-nav-logo" href="<?= h($_appRoot . $_sheetId . '/gameboard/' . _gb_slug($_name)) ?>">GameBoard</a>
     <span class="gb-nav-game"><?= h($_name) ?></span>
   </div>
   <div class="gb-nav-links">
-    <?php if ($_rulesUrl): ?><a class="btn-nav" href="<?= h($_rulesUrl) ?>" target="_blank">Rules</a><?php endif; ?>
+    <?php if ($_richRules): ?><a class="btn-nav" href="<?= h($_richRules) ?>" target="_blank">Rules</a><?php endif; ?>
     <?php if ($_sellsheet): ?><a class="btn-nav" href="<?= h($_sellsheet) ?>" target="_blank">Sellsheet</a><?php endif; ?>
     <?php if ($_pageUrl): ?><a class="btn-nav filled" href="<?= h($_pageUrl) ?>" target="_blank">View Page ↗</a><?php endif; ?>
   </div>
@@ -355,31 +383,30 @@ a { color:inherit; text-decoration:none; }
   <?php endif; ?>
   <div class="gb-hero-overlay"></div>
   <div class="gb-hero-content">
-    <?php if ($_status): ?>
-    <div class="gb-status-badge"><?= h(ucfirst($_status)) ?></div>
-    <?php endif; ?>
+    <?php if ($_status): ?><div class="gb-status-badge"><?= h(ucfirst($_status)) ?></div><?php endif; ?>
     <h1 class="gb-hero-title"><?= h($_name) ?></h1>
-    <?php if ($_summary): ?>
-    <p class="gb-hero-summary"><?= h($_summary) ?></p>
-    <?php endif; ?>
-    <?php if ($_count || $_duration || $_designers || $_availability): ?>
+    <?php if ($_summary): ?><p class="gb-hero-summary"><?= h($_summary) ?></p><?php endif; ?>
     <div class="gb-stats">
-      <?php if ($_count): ?><div class="gb-stat"><strong>👥</strong><?= h($_count) ?> players</div><?php endif; ?>
-      <?php if ($_duration): ?><div class="gb-stat"><strong>⏱</strong><?= h($_duration) ?></div><?php endif; ?>
-      <?php if ($_designers): ?><div class="gb-stat"><strong>🎨</strong><?= h(implode(', ', $_designers)) ?></div><?php endif; ?>
+      <?php if ($_count):     ?><div class="gb-stat"><strong>👥</strong><?= h($_count) ?> players</div><?php endif; ?>
+      <?php if ($_duration):  ?><div class="gb-stat"><strong>⏱</strong><?= h($_duration) ?></div><?php endif; ?>
+      <?php if ($_designers): ?><div class="gb-stat"><strong>✏️</strong><?= h(implode(', ', $_designers)) ?></div><?php endif; ?>
       <?php if ($_availability): ?><div class="gb-stat"><strong>📦</strong><?= h($_availability) ?></div><?php endif; ?>
     </div>
-    <?php endif; ?>
     <div class="gb-hero-ctas">
-      <?php if ($_rulesUrl): ?><a class="btn-nav" href="<?= h($_rulesUrl) ?>" target="_blank">📖 Rules</a><?php endif; ?>
-      <?php if ($_playUrl): ?><a class="btn-nav" href="<?= h($_playUrl) ?>" target="_blank">🎮 Play Online</a><?php endif; ?>
-      <?php if ($_printUrl): ?><a class="btn-nav" href="<?= h($_printUrl) ?>" target="_blank">🖨 Print &amp; Play</a><?php endif; ?>
-      <?php if ($_sellsheet): ?><a class="btn-nav filled" href="<?= h($_sellsheet) ?>" target="_blank">📄 Sellsheet</a><?php endif; ?>
+      <?php if ($_richPrice): ?><span class="gb-price-tag"><?= h($_richPrice) ?></span><?php endif; ?>
+      <?php foreach ($_buyUrls as $b):
+        $bUrl   = trim($b['Value']   ?? '');
+        $bLabel = trim($b['Value 1'] ?? '') ?: 'Buy Now';
+        if (!$bUrl) continue;
+      ?><a class="btn-nav filled" href="<?= h($bUrl) ?>" target="_blank"><?= h($bLabel) ?></a><?php endforeach; ?>
+      <?php if ($_richRules): ?><a class="btn-nav" href="<?= h($_richRules) ?>" target="_blank">📖 Rules</a><?php endif; ?>
+      <?php if ($_playUrl):   ?><a class="btn-nav" href="<?= h($_playUrl) ?>" target="_blank">🎮 Play Online</a><?php endif; ?>
+      <?php if ($_printUrl):  ?><a class="btn-nav" href="<?= h($_printUrl) ?>" target="_blank">🖨 Print &amp; Play</a><?php endif; ?>
     </div>
   </div>
 </div>
 
-<!-- ── Main content ── -->
+<!-- ── Main ── -->
 <div class="gb-main">
 
   <!-- Description -->
@@ -391,26 +418,32 @@ a { color:inherit; text-decoration:none; }
   <?php endif; ?>
 
   <!-- Gallery -->
-  <?php
-  $_allImgs = array_values(array_unique(array_filter([$_coverUrl, $_imageUrl])));
-  if (count($_allImgs) > 1): ?>
+  <?php if (count($_gallery) > 1): ?>
   <div class="gb-section">
     <div class="gb-section-label">Gallery</div>
     <div class="gb-gallery">
-      <?php foreach ($_allImgs as $img): ?>
+      <?php foreach ($_gallery as $img): ?>
       <img src="<?= h($img) ?>" alt="<?= h($_name) ?>" loading="lazy" onclick="openLightbox('<?= h($img) ?>')" />
       <?php endforeach; ?>
     </div>
   </div>
   <?php endif; ?>
 
-  <!-- Video -->
+  <!-- Video(s) -->
   <?php if ($_videoEmbed): ?>
   <div class="gb-section">
     <div class="gb-section-label">Watch</div>
-    <div class="gb-video-wrap">
-      <iframe src="<?= h($_videoEmbed) ?>" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+    <div class="gb-video-wrap" id="videoWrap">
+      <iframe id="videoFrame" src="<?= h($_videoEmbed) ?>" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
     </div>
+    <?php if (count($_videoList) > 1): ?>
+    <div class="gb-video-tabs">
+      <?php foreach ($_videoList as $vi => $v): ?>
+      <button class="gb-vtab<?= $vi === 0 ? ' active' : '' ?>"
+              onclick="switchVideo(this, '<?= h($v['embed']) ?>')"><?= h($v['label'] ?: ('Video ' . ($vi + 1))) ?></button>
+      <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
   </div>
   <?php endif; ?>
 
@@ -420,9 +453,12 @@ a { color:inherit; text-decoration:none; }
     <div class="gb-section-label">What's in the Box</div>
     <div class="gb-components">
       <?php foreach ($_components as $c):
-        $cName = trim($c['Name'] ?? $c['Component'] ?? $c['Item'] ?? '');
-        $cQty  = trim($c['Count'] ?? $c['Qty'] ?? $c['Quantity'] ?? '');
-        if (!$cName) continue;
+        $cVal = trim($c['Value'] ?? '');
+        if (!$cVal) continue;
+        // Try to parse "42 Flower Tiles" → qty + name, or just show as-is
+        $cQty  = '';
+        $cName = $cVal;
+        if (preg_match('/^(\d+)\s+(.+)$/', $cVal, $pm)) { $cQty = $pm[1]; $cName = $pm[2]; }
       ?>
       <div class="gb-comp-item">
         <?php if ($cQty): ?><span class="gb-comp-qty"><?= h($cQty) ?></span><?php endif; ?>
@@ -433,45 +469,82 @@ a { color:inherit; text-decoration:none; }
   </div>
   <?php endif; ?>
 
-  <!-- Links -->
-  <?php
-  $_hasLinks = $_rulesUrl || $_sellsheet || $_playUrl || $_printUrl || $_pageUrl;
-  if ($_hasLinks): ?>
+  <!-- Reviews / Quotes -->
+  <?php if (!empty($_reviews)): ?>
   <div class="gb-section">
-    <div class="gb-section-label">Resources</div>
-    <div class="gb-links">
-      <?php if ($_rulesUrl): ?><a class="btn-link primary" href="<?= h($_rulesUrl) ?>" target="_blank">📖 Rules</a><?php endif; ?>
-      <?php if ($_sellsheet): ?><a class="btn-link" href="<?= h($_sellsheet) ?>" target="_blank">📄 Sellsheet</a><?php endif; ?>
-      <?php if ($_playUrl): ?><a class="btn-link" href="<?= h($_playUrl) ?>" target="_blank">🎮 Play Online</a><?php endif; ?>
-      <?php if ($_printUrl): ?><a class="btn-link" href="<?= h($_printUrl) ?>" target="_blank">🖨 Print &amp; Play</a><?php endif; ?>
-      <?php if ($_pageUrl): ?><a class="btn-link" href="<?= h($_pageUrl) ?>" target="_blank">🔗 Product Page</a><?php endif; ?>
+    <div class="gb-section-label">What People Are Saying</div>
+    <div class="gb-reviews">
+      <?php foreach ($_reviews as $rv):
+        $rQuote  = trim($rv['Value']   ?? '');
+        $rAuthor = trim($rv['Value 1'] ?? '');
+        if (!$rQuote) continue;
+      ?>
+      <div class="gb-review">
+        <div class="gb-review-quote"><?= h($rQuote) ?></div>
+        <?php if ($rAuthor): ?><div class="gb-review-author">— <?= h($rAuthor) ?></div><?php endif; ?>
+      </div>
+      <?php endforeach; ?>
     </div>
   </div>
   <?php endif; ?>
 
-  <!-- More games -->
+  <!-- FAQs -->
+  <?php if (!empty($_faqs)): ?>
+  <div class="gb-section">
+    <div class="gb-section-label">FAQ</div>
+    <?php foreach ($_faqs as $fi => $fq):
+      $fqQ = trim($fq['Value']   ?? '');
+      $fqA = trim($fq['Value 1'] ?? '');
+      $fqI = trim($fq['Value 2'] ?? '');
+      if (!$fqQ || !$fqA) continue;
+    ?>
+    <div class="gb-faq-item" id="faq<?= $fi ?>">
+      <div class="gb-faq-q" onclick="toggleFaq('faq<?= $fi ?>')"><?= h($fqQ) ?></div>
+      <div class="gb-faq-a"><?= nl2br(h($fqA)) ?>
+        <?php if ($fqI && preg_match('/^https?:\/\//', $fqI)): ?>
+        <br><img class="gb-faq-img" src="<?= h($fqI) ?>" loading="lazy" alt="" />
+        <?php endif; ?>
+      </div>
+    </div>
+    <?php endforeach; ?>
+  </div>
+  <?php endif; ?>
+
+  <!-- Resources -->
+  <?php
+  $_hasLinks = $_richRules || $_sellsheet || $_playUrl || $_printUrl || $_pageUrl;
+  if ($_hasLinks): ?>
+  <div class="gb-section">
+    <div class="gb-section-label">Resources</div>
+    <div class="gb-links">
+      <?php if ($_richRules): ?><a class="btn-link" href="<?= h($_richRules) ?>" target="_blank">📖 Rules PDF</a><?php endif; ?>
+      <?php if ($_sellsheet): ?><a class="btn-link" href="<?= h($_sellsheet) ?>" target="_blank">📄 Sellsheet</a><?php endif; ?>
+      <?php if ($_playUrl):   ?><a class="btn-link" href="<?= h($_playUrl) ?>" target="_blank">🎮 Play Online</a><?php endif; ?>
+      <?php if ($_printUrl):  ?><a class="btn-link" href="<?= h($_printUrl) ?>" target="_blank">🖨 Print &amp; Play</a><?php endif; ?>
+      <?php if ($_pageUrl):   ?><a class="btn-link" href="<?= h($_pageUrl) ?>" target="_blank">🔗 Product Page</a><?php endif; ?>
+    </div>
+  </div>
+  <?php endif; ?>
+
+  <!-- More Games -->
   <?php if (!empty($_otherGames)): ?>
   <div class="gb-section">
     <div class="gb-section-label">More Games</div>
     <div class="gb-more-grid">
       <?php foreach (array_slice($_otherGames, 0, 8) as $og):
-        $ogName  = trim($og['Name'] ?? '');
-        $ogSlug  = _gb_slug($ogName);
-        $ogImg   = _gb_img(trim($og['Cover URL'] ?? $og['Image URL'] ?? ''));
-        $ogCount = trim($og['Count'] ?? '');
-        $ogDur   = trim($og['Duration'] ?? '');
+        $ogName = trim($og['Name'] ?? '');
+        $ogImg  = _gb_img(trim($og['Cover URL'] ?? $og['Image URL'] ?? ''));
+        $ogMeta = array_filter([trim($og['Count'] ?? '') ? trim($og['Count']).' players' : '', trim($og['Duration'] ?? '')]);
       ?>
-      <a class="gb-more-card" href="<?= h($_appRoot . $_sheetId . '/gameboard/' . $ogSlug) ?>">
+      <a class="gb-more-card" href="<?= h($_appRoot . $_sheetId . '/gameboard/' . _gb_slug($ogName)) ?>">
         <?php if ($ogImg): ?>
         <img src="<?= h($ogImg) ?>" alt="<?= h($ogName) ?>" loading="lazy" />
         <?php else: ?>
-        <div class="gb-more-card-placeholder"><span>🎲</span></div>
+        <div class="gb-more-card-ph">🎲</div>
         <?php endif; ?>
-        <div class="gb-more-card-body">
-          <div class="gb-more-card-name"><?= h($ogName) ?></div>
-          <?php if ($ogCount || $ogDur): ?>
-          <div class="gb-more-card-meta"><?= $ogCount ? h($ogCount) . ' players' : '' ?><?= ($ogCount && $ogDur) ? ' · ' : '' ?><?= $ogDur ? h($ogDur) : '' ?></div>
-          <?php endif; ?>
+        <div class="gb-more-body">
+          <div class="gb-more-name"><?= h($ogName) ?></div>
+          <?php if ($ogMeta): ?><div class="gb-more-meta"><?= h(implode(' · ', $ogMeta)) ?></div><?php endif; ?>
         </div>
       </a>
       <?php endforeach; ?>
@@ -481,14 +554,12 @@ a { color:inherit; text-decoration:none; }
 
 </div><!-- /gb-main -->
 
-<!-- ── Footer ── -->
 <footer class="gb-footer">
   <strong><?= h($_name) ?></strong>
-  <?php if ($_designers): ?> &nbsp;·&nbsp; Designed by <?= h(implode(' &amp; ', $_designers)) ?><?php endif; ?>
-  <?php if ($_datePub): ?> &nbsp;·&nbsp; Published <?= h($_datePub) ?><?php elseif ($_dateSigned): ?> &nbsp;·&nbsp; Signed <?= h($_dateSigned) ?><?php endif; ?>
+  <?php if ($_designers): ?>&nbsp;·&nbsp; Designed by <?= h(implode(' & ', $_designers)) ?><?php endif; ?>
+  <?php if ($_datePub): ?>&nbsp;·&nbsp; Published <?= h($_datePub) ?><?php elseif ($_dateSigned): ?>&nbsp;·&nbsp; Signed <?= h($_dateSigned) ?><?php endif; ?>
 </footer>
 
-<!-- ── Lightbox ── -->
 <div class="gb-lightbox" id="lightbox" onclick="closeLightbox()">
   <img id="lightboxImg" src="" alt="" />
 </div>
@@ -503,9 +574,15 @@ function closeLightbox() {
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
 }
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closeLightbox();
-});
+function switchVideo(btn, embed) {
+  document.getElementById('videoFrame').src = embed;
+  document.querySelectorAll('.gb-vtab').forEach(function(t){ t.classList.remove('active'); });
+  btn.classList.add('active');
+}
+function toggleFaq(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeLightbox(); });
 </script>
 </body>
 </html>

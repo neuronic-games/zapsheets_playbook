@@ -56,8 +56,10 @@ $_settings = _gb_load($_sDir . '/settings.json');
 $_template = strtolower(trim($_settings['Gameboard Template'] ?? ''));
 // Supported templates: '' / 'classic' = Classic (default), 'opensea' = OpenSea
 
-// ── Load games list and find requested game ──────────────────────────────────
-$_games = _gb_load($_sDir . '/games.json');
+// ── Load games list ──────────────────────────────────────────────────────────
+$_allGames = _gb_load($_sDir . '/games.json');
+// Catalog only shows Published games; individual pages work for any game
+$_games = array_values(array_filter($_allGames, fn($g) => strtolower(trim($g['Status'] ?? '')) === 'published'));
 
 if (!$_gameSlug) {
     // ── No slug: render the game catalog ────────────────────────────────────────
@@ -314,10 +316,10 @@ foreach ($_richVideos as $rv) {
     if ($e) $_videoList[] = ['label' => trim($rv['Value'] ?? ''), 'embed' => $e];
 }
 
-// Other games for "More Games" section
+// Other Published games for "More Games" section
 $_otherGames = [];
-foreach ($_games as $g) {
-    if (_gb_slug($g['Name'] ?? '') !== _gb_slug($_name)) {
+foreach ($_allGames as $g) {
+    if (strtolower(trim($g['Status'] ?? '')) === 'published' && _gb_slug($g['Name'] ?? '') !== _gb_slug($_name)) {
         $_otherGames[] = $g;
     }
 }

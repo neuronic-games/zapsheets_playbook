@@ -187,6 +187,16 @@ RewriteRule ^tmboard/share/([a-f0-9]{24})/?$ source/tmboard/shared/index.php [L,
 # /tmboard — setup landing page
 RewriteRule ^tmboard/?$ source/tmboard/index.php [L,QSA]
 
+# /gameboard/{token}/{slug} — public game page (must come before bare token rule)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^gameboard/([a-f0-9]{24})/([^/]+)/?$ source/gameboard/public/index.php [L,QSA]
+
+# /gameboard/{token} — public gameboard catalog (no sheet ID in URL)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^gameboard/([a-f0-9]{24})/?$ source/gameboard/public/index.php [L,QSA]
+
 # /gameboard — setup landing page (no sheet ID yet)
 RewriteRule ^gameboard/?$ source/gameboard/setup/index.php [L,QSA]
 

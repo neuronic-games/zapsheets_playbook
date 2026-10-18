@@ -24,6 +24,12 @@ $_root    = dirname(__DIR__, 2);
 $_sDir    = $_root . '/sheets/' . $_sheetId;
 $_appRoot = $_bp . '/';
 
+// Public share mode: $_gbPublicBase is injected by source/gameboard/public/index.php
+// e.g. 'gameboard/abc123def456abc123def456/' — replaces sheet-ID-based path in all links.
+$_gbBase = isset($_gbPublicBase)
+    ? ($_appRoot . ltrim($_gbPublicBase, '/'))
+    : ($_appRoot . $_sheetId . '/gameboard/');
+
 function _gb_load(string $f): array {
     return file_exists($f) ? (json_decode(file_get_contents($f), true) ?: []) : [];
 }
@@ -65,7 +71,7 @@ if (!$_gameSlug) {
     // ── No slug: render the admin catalog ────────────────────────────────────────
     $_pubName  = trim($_settings['Company'] ?? $_settings['Name'] ?? '');
     $_pubLogo  = trim($_settings['Logo URL'] ?? '');
-    $_catUrl   = $_appRoot . $_sheetId . '/gameboard/';
+    $_catUrl   = $_gbBase;
     $_logoColor = $_template === 'opensea' ? '#00e5ff' : '#7c9eff';
     $_accentHex = $_template === 'opensea' ? '#0097a7' : '#3b3baa';
     ?>
@@ -163,6 +169,12 @@ a { color:inherit; text-decoration:none; }
 .gb-field { display:block; width:100%; padding:.55rem .75rem; border:1.5px solid var(--border); border-radius:7px; font-family:'DINRegular',sans-serif; font-size:.9rem; color:var(--ink); outline:none; transition:border-color .14s; }
 .gb-field:focus { border-color:var(--accent); }
 .gb-err { font-size:.78rem; color:#e53935; min-height:1.1rem; margin:.3rem 0; }
+.gb-dialog-close { position:absolute; top:.75rem; right:.9rem; background:none; border:none; font-size:1.35rem; color:var(--ink-lt); cursor:pointer; line-height:1; }
+.gb-dialog { position:relative; }
+.gb-btn { font-family:'DINBlack',sans-serif; font-size:.75rem; text-transform:uppercase; letter-spacing:.07em; padding:.42rem 1rem; border-radius:6px; border:1.5px solid var(--border); background:var(--surface); color:var(--ink); cursor:pointer; }
+.gb-btn:hover { background:#f0f0f8; }
+.gb-btn-sm { font-family:'DINBlack',sans-serif; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; padding:.3rem .65rem; border-radius:5px; border:1.5px solid var(--border); background:var(--surface); color:var(--ink-lt); cursor:pointer; white-space:nowrap; }
+.gb-btn-sm:hover { background:#f0f0f8; color:var(--ink); }
 .gb-dialog-actions { display:flex; gap:.5rem; justify-content:flex-end; margin-top:.9rem; }
 .btn-cancel { font-family:'DINBlack',sans-serif; font-size:.75rem; text-transform:uppercase; letter-spacing:.07em; padding:.42rem .9rem; border-radius:6px; border:1.5px solid var(--border); background:var(--surface); color:var(--ink-lt); cursor:pointer; }
 .btn-cancel:hover { background:#f0f0f8; }
@@ -196,6 +208,7 @@ a { color:inherit; text-decoration:none; }
         <button class="user-menu-item" onclick="gbMenuAction('settings')">Settings</button>
         <hr class="user-menu-divider" />
         <button class="user-menu-item" onclick="gbMenuAction('fetch')">Fetch</button>
+        <button class="user-menu-item" id="gbMenuPublish" onclick="gbMenuAction('publish')" style="display:none">🌐 Publish Site</button>
         <hr class="user-menu-divider" />
         <button class="user-menu-item" id="gbMenuSignInOut" onclick="gbMenuAction('signout')">Sign In</button>
       </div>
@@ -248,6 +261,41 @@ a { color:inherit; text-decoration:none; }
 <footer class="gb-footer">
   <?= h($_pubName ?: 'GameBoard') ?> &nbsp;·&nbsp; Powered by GameBoard
 </footer>
+
+<!-- ── Publish Site dialog ── -->
+<div class="gb-overlay" id="gbPublishOverlay" onclick="if(event.target===this)closePublishDialog()">
+  <div class="gb-dialog" onclick="event.stopPropagation()" style="max-width:480px">
+    <button class="gb-dialog-close" onclick="closePublishDialog()">×</button>
+    <div class="gb-dialog-title">🌐 Publish Site</div>
+    <p style="font-size:.82rem;color:var(--ink-lt,#666);margin-bottom:1.2rem;line-height:1.5">
+      Your public GameBoard is live. Anyone with this link can browse your published games — no sheet ID exposed.
+    </p>
+    <div class="gb-field-group" style="margin-bottom:.6rem">
+      <label style="font-size:.75rem;font-weight:600;color:var(--ink-lt,#888);text-transform:uppercase;letter-spacing:.05em">Catalog</label>
+      <div style="display:flex;gap:.4rem;align-items:center">
+        <input class="gb-field" id="gbPubCatalogUrl" type="text" readonly onclick="this.select()" style="flex:1;font-size:.8rem;cursor:text" />
+        <button class="gb-btn-sm" onclick="gbCopyUrl('gbPubCatalogUrl')">Copy</button>
+        <a id="gbPubCatalogLink" href="#" target="_blank" class="gb-btn-sm" style="text-decoration:none">Open ↗</a>
+      </div>
+    </div>
+    <div id="gbPubGameUrl" style="margin-bottom:1.2rem">
+      <div class="gb-field-group" style="margin-bottom:.3rem">
+        <label style="font-size:.75rem;font-weight:600;color:var(--ink-lt,#888);text-transform:uppercase;letter-spacing:.05em">This Game</label>
+        <div style="display:flex;gap:.4rem;align-items:center">
+          <input class="gb-field" id="gbPubGameUrlInput" type="text" readonly onclick="this.select()" style="flex:1;font-size:.8rem;cursor:text" />
+          <button class="gb-btn-sm" onclick="gbCopyUrl('gbPubGameUrlInput')">Copy</button>
+          <a id="gbPubGameUrlLink" href="#" target="_blank" class="gb-btn-sm" style="text-decoration:none">Open ↗</a>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:.75rem;color:var(--ink-lt,#999);line-height:1.5">
+      Re-publishing updates the same URL. Only games with status <strong>Published</strong> appear in the catalog.
+    </p>
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem">
+      <button class="gb-btn" onclick="closePublishDialog()">Done</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── Sign-in dialog ── -->
 <div class="gb-overlay" id="signInOverlay" onclick="if(event.target===this)forceCloseSignIn()">
@@ -312,6 +360,7 @@ function _updateGbAuth() {
   var metaEl = document.getElementById('gbMeta');
   var siOut = document.getElementById('gbMenuSignInOut');
   var profile = document.getElementById('gbMenuProfile');
+  var publishBtn = document.getElementById('gbMenuPublish');
   if (_gbUser) {
     var name = (_gbUser.bio && (_gbUser.bio['name'] || _gbUser.bio['Name'])) || _gbUser.email || '';
     btn.classList.add('signed-in');
@@ -319,12 +368,14 @@ function _updateGbAuth() {
     if (metaEl) metaEl.textContent = (name || <?= json_encode($_pubName ?: 'Games') ?>) + ' · GameBoard';
     if (siOut)  { siOut.textContent = 'Sign Out'; siOut.className = 'user-menu-item signout'; }
     if (profile) profile.style.display = '';
+    if (publishBtn) publishBtn.style.display = '';
   } else {
     btn.classList.remove('signed-in');
     btn.title = 'Menu';
     if (metaEl) metaEl.textContent = <?= json_encode($_pubName ?: 'Games') ?>;
     if (siOut)  { siOut.textContent = 'Sign In'; siOut.className = 'user-menu-item'; }
     if (profile) profile.style.display = 'none';
+    if (publishBtn) publishBtn.style.display = 'none';
   }
 }
 
@@ -352,6 +403,9 @@ function gbMenuAction(action) {
     xhr.onload = function() { location.reload(); };
     xhr.onerror = function() { btn.style.opacity = ''; alert('Fetch failed — network error.'); };
     xhr.send(fd);
+  } else if (action === 'publish') {
+    if (!_gbUser) { openSignIn(); return; }
+    gbPublishSite();
   } else if (action === 'signout') {
     if (_gbUser) {
       if (confirm('Sign out?')) {
@@ -360,6 +414,57 @@ function gbMenuAction(action) {
       }
     } else { openSignIn(); }
   }
+}
+
+// ── Publish Site ─────────────────────────────────────────────────────────────
+function gbPublishSite() {
+  var userBtn = document.getElementById('gbUserBtn');
+  if (userBtn) userBtn.style.opacity = '.4';
+  var fd = new FormData();
+  fd.append('id', SHEET_ID);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/publishGameboard.php');
+  xhr.onload = function() {
+    if (userBtn) userBtn.style.opacity = '';
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = {error: 'parse error'}; }
+    if (!r || r.error) { alert('Publish failed: ' + (r && r.error || 'unknown')); return; }
+    openPublishDialog(r.url, r.token);
+  };
+  xhr.onerror = function() {
+    if (userBtn) userBtn.style.opacity = '';
+    alert('Publish failed — network error.');
+  };
+  xhr.send(fd);
+}
+
+function openPublishDialog(catalogUrl, token) {
+  document.getElementById('gbPubCatalogUrl').value  = catalogUrl;
+  document.getElementById('gbPubCatalogLink').href  = catalogUrl;
+  // If we're on a game page, also show the game-specific URL
+  var gameSlugEl = document.getElementById('gbPubGameUrl');
+  if (gameSlugEl) {
+    var gameName = (typeof ORIG_GAME_NAME !== 'undefined' && ORIG_GAME_NAME)
+      ? ORIG_GAME_NAME.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      : '';
+    if (gameName) {
+      var gameUrl = catalogUrl.replace(/\/?$/, '/') + gameName;
+      document.getElementById('gbPubGameUrlInput').value = gameUrl;
+      document.getElementById('gbPubGameUrlLink').href   = gameUrl;
+      gameSlugEl.style.display = '';
+    } else {
+      gameSlugEl.style.display = 'none';
+    }
+  }
+  document.getElementById('gbPublishOverlay').classList.add('open');
+}
+function closePublishDialog() { document.getElementById('gbPublishOverlay').classList.remove('open'); }
+function gbCopyUrl(inputId) {
+  var inp = document.getElementById(inputId);
+  if (!inp) return;
+  inp.select(); inp.setSelectionRange(0, 9999);
+  try { document.execCommand('copy'); } catch(e) { navigator.clipboard && navigator.clipboard.writeText(inp.value); }
+  var btn = inp.nextElementSibling;
+  if (btn) { var old = btn.textContent; btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = old; }, 1500); }
 }
 
 // ── Sign-in dialog ──────────────────────────────────────────────────────────
@@ -452,6 +557,7 @@ function submitSettings() {
 // ── Esc closes open dialogs ──────────────────────────────────────────────────
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Escape') return;
+  if (document.getElementById('gbPublishOverlay').classList.contains('open')){ closePublishDialog(); return; }
   if (document.getElementById('signInOverlay').classList.contains('open'))  { forceCloseSignIn(); return; }
   if (document.getElementById('settingsOverlay').classList.contains('open')){ forceCloseSettings(); return; }
 });
@@ -943,7 +1049,7 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
 <!-- ── Nav ── -->
 <nav class="gb-nav">
   <div class="gb-nav-left">
-    <a class="gb-nav-logo" href="<?= h($_appRoot . $_sheetId . '/gameboard/') ?>">GameBoard</a>
+    <a class="gb-nav-logo" href="<?= h($_gbBase) ?>">GameBoard</a>
     <span class="gb-nav-game" id="gbNavGame"><?= h($_name) ?></span>
   </div>
   <!-- Regular nav links (hidden in admin mode) -->
@@ -1177,7 +1283,7 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
         $ogImg  = _gb_img(trim($og['Cover URL'] ?? $og['Image URL'] ?? ''));
         $ogMeta = array_filter([trim($og['Count'] ?? '') ? trim($og['Count']).' players' : '', trim($og['Duration'] ?? '')]);
       ?>
-      <a class="gb-more-card" href="<?= h($_appRoot . $_sheetId . '/gameboard/' . _gb_slug($ogName)) ?>">
+      <a class="gb-more-card" href="<?= h($_gbBase . _gb_slug($ogName)) ?>">
         <?php if ($ogImg): ?>
         <img src="<?= h($ogImg) ?>" alt="<?= h($ogName) ?>" loading="lazy" />
         <?php else: ?>
@@ -1689,6 +1795,7 @@ function toggleFaq(id) {
 }
 document.addEventListener('keydown', function(e){
   if (e.key === 'Escape') {
+    if (document.getElementById('gbPublishOverlay') && document.getElementById('gbPublishOverlay').classList.contains('open')) { closePublishDialog(); return; }
     if (document.getElementById('gbedOverlay').classList.contains('open')) { closeEditDetails(); return; }
     closeLightbox();
   }

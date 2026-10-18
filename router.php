@@ -98,6 +98,7 @@ $RESERVED = [
     'noteboard',    // setup landing page — handled below, reserved so /{id} never grabs it
     'pulseboard',   // setup landing page — handled below, reserved so /{id} never grabs it
     'tmboard',      // setup landing page — handled below, reserved so /{id} never grabs it
+    'gameboard',    // setup landing page + public share routes — handled below
 ];
 
 // ── /pushsite → push/pushsite.php ────────────────────────────────────────────
@@ -153,6 +154,21 @@ if (preg_match('#^/tmboard/?$#', $uri)) {
 // ── /tmboard/share/{token} — staff collab view ───────────────────────────────
 if (preg_match('#^/tmboard/share/([a-f0-9]{24})/?$#', $uri)) {
     serveFile(__DIR__ . '/source/tmboard/shared/index.php', $MIME);
+}
+
+// ── /gameboard/{token}/{slug} — public game page ─────────────────────────────
+if (preg_match('#^/gameboard/([a-f0-9]{24})/([^/]+)/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/gameboard/public/index.php', $MIME);
+}
+
+// ── /gameboard/{token} — public gameboard catalog ────────────────────────────
+if (preg_match('#^/gameboard/([a-f0-9]{24})/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/gameboard/public/index.php', $MIME);
+}
+
+// ── /gameboard — setup landing page ──────────────────────────────────────────
+if (preg_match('#^/gameboard/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/gameboard/setup/index.php', $MIME);
 }
 
 // ── Backward compat: sheets/{id}/view|dashboard|sellsheet|fitboard|trmnl ──

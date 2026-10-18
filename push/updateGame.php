@@ -106,23 +106,41 @@ if ($result !== null && !empty($result['ok'])) {
             . escapeshellarg(__DIR__ . '/gcreategameboardtab.py') . ' '
             . escapeshellarg($sheetId . '|' . $tabGameName) . ' 2>/dev/null';
     $tabOut = trim((string) shell_exec($tabCmd));
-    if ($tabOut) {
-        $tabResult = json_decode($tabOut, true);
-        if (!empty($tabResult['tab'])) {
-            $result['game_tab'] = $tabResult['tab'];
-            $result['game_tab_created'] = !($tabResult['existed'] ?? true);
-            // Publish the tab as game-{name}-en.json using gpublishgame.py
-            // (gread.py would treat row 1 as headers — wrong for key-value tabs)
-            $pubCmd = escapeshellarg($pythonPath) . ' '
-                    . escapeshellarg(__DIR__ . '/gpublishgame.py') . ' '
-                    . escapeshellarg($sheetId . '|' . $tabGameName) . ' 2>/dev/null';
-            $pubOut = trim((string) shell_exec($pubCmd));
-            if ($pubOut) {
-                $pubResult = json_decode($pubOut, true);
-                if (!empty($pubResult['ok'])) {
-                    $result['game_tab_cached'] = true;
+    $tabResult = $tabOut ? json_decode($tabOut, true) : null;
+    if (!empty($tabResult['tab'])) {
+        $result['game_tab'] = $tabResult['tab'];
+        $result['game_tab_created'] = !($tabResult['existed'] ?? true);
+
+        // Patch fields in the [GameName] tab that mirror Games tab columns,
+        // so the tab stays in sync with what the user just edited.
+        // (Only patch if tab already existed — new tabs are pre-populated by gcreategameboardtab.py)
+        if ($tabResult['existed'] ?? false) {
+            $patchFields = [];
+            if ($description !== '') $patchFields['Description'] = $description;
+            if ($patchFields) {
+                $patchData    = ['game' => $tabGameName, 'fields' => $patchFields];
+                $patchEncoded = base64_encode(json_encode($patchData, JSON_UNESCAPED_UNICODE));
+                $patchCmd     = escapeshellarg($pythonPath) . ' '
+                              . escapeshellarg(__DIR__ . '/gpatchtabfields.py') . ' '
+                              . escapeshellarg($sheetId . '|' . $patchEncoded) . ' 2>/dev/null';
+                $patchOut = trim((string) shell_exec($patchCmd));
+                if ($patchOut) {
+                    $patchResult = json_decode($patchOut, true);
+                    if (!empty($patchResult['patched'])) {
+                        $result['game_tab_patched'] = $patchResult['patched'];
+                    }
                 }
             }
+        }
+
+        // Publish the tab as game-{name}-en.json using gpublishgame.py
+        // (gread.py would treat row 1 as headers — wrong for key-value tabs)
+        $pubCmd = escapeshellarg($pythonPath) . ' '
+                . escapeshellarg(__DIR__ . '/gpublishgame.py') . ' '
+                . escapeshellarg($sheetId . '|' . $tabGameName) . ' 2>/dev/null';
+        $pubOut = trim((string) shell_exec($pubCmd));
+        if ($pubOut && !empty(json_decode($pubOut, true)['ok'])) {
+            $result['game_tab_cached'] = true;
         }
     }
 

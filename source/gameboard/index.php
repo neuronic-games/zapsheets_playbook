@@ -144,6 +144,13 @@ a { color:inherit; text-decoration:none; }
 .cat-card-meta { display:flex; flex-wrap:wrap; gap:.3rem .65rem; margin-top:.35rem; }
 .cat-card-stat { font-size:.72rem; color:var(--muted); }
 
+/* ── Cat card image upload (admin mode) ── */
+.cat-img-wrap { position:relative; display:block; }
+.cat-img-upload-btn { position:absolute; top:.4rem; right:.4rem; width:2rem; height:2rem; border-radius:50%; background:rgba(0,0,0,.52); border:none; color:#fff; font-size:.95rem; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:2; transition:background .15s; line-height:1; padding:0; }
+body.gb-admin-mode .cat-img-upload-btn { display:flex; }
+.cat-img-upload-btn:hover { background:rgba(0,0,0,.82); }
+.cat-img-wrap.drag-over::after { content:'Drop to set image'; position:absolute; inset:0; background:rgba(55,110,200,.75); color:#fff; font-family:'DINBlack',sans-serif; font-size:.8rem; text-transform:uppercase; letter-spacing:.07em; display:flex; align-items:center; justify-content:center; z-index:3; pointer-events:none; }
+
 /* ── Empty ── */
 .cat-empty { grid-column:1/-1; padding:4rem 1rem; text-align:center; color:var(--muted); }
 .cat-empty-icon { font-size:3rem; margin-bottom:.75rem; }
@@ -241,11 +248,16 @@ a { color:inherit; text-decoration:none; }
     if (!$gName) continue;
 ?>
   <a class="cat-card" href="<?= h($_catUrl . $gSlug) ?>">
-    <?php if ($gCover): ?>
-    <img class="cat-card-img" src="<?= h($gCover) ?>" alt="<?= h($gName) ?>" loading="lazy" />
-    <?php else: ?>
-    <div class="cat-card-ph">🎲</div>
-    <?php endif; ?>
+    <div class="cat-img-wrap" data-game="<?= h($gName) ?>"
+      ondragover="catDragOver(event,this)" ondragleave="catDragLeave(event,this)" ondrop="catDrop(event,this)">
+      <?php if ($gCover): ?>
+      <img class="cat-card-img" src="<?= h($gCover) ?>" alt="<?= h($gName) ?>" loading="lazy" />
+      <?php else: ?>
+      <div class="cat-card-ph">🎲</div>
+      <?php endif; ?>
+      <button class="cat-img-upload-btn" title="Change image"
+        onclick="catPickImage(event,this.closest('.cat-img-wrap'))">📷</button>
+    </div>
     <div class="cat-card-body">
       <div class="cat-card-name"><?= h($gName) ?></div>
       <?php if ($gSummary): ?><div class="cat-card-summary"><?= h($gSummary) ?></div><?php endif; ?>
@@ -465,6 +477,101 @@ function gbCopyUrl(inputId) {
   try { document.execCommand('copy'); } catch(e) { navigator.clipboard && navigator.clipboard.writeText(inp.value); }
   var btn = inp.nextElementSibling;
   if (btn) { var old = btn.textContent; btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = old; }, 1500); }
+}
+
+// ── Catalog card image upload (admin mode) ───────────────────────────────────
+var _catImgPickWrap = null;
+
+function catPickImage(e, wrap) {
+  e.preventDefault(); e.stopPropagation();
+  if (!document.body.classList.contains('gb-admin-mode')) return;
+  _catImgPickWrap = wrap;
+  var inp = document.getElementById('catImgFileInput');
+  if (!inp) {
+    inp = document.createElement('input');
+    inp.type = 'file'; inp.id = 'catImgFileInput'; inp.accept = 'image/*';
+    inp.style.display = 'none';
+    inp.addEventListener('change', function() {
+      if (inp.files && inp.files[0] && _catImgPickWrap) {
+        catUploadCardImage(inp.files[0], _catImgPickWrap);
+      }
+      inp.value = '';
+    });
+    document.body.appendChild(inp);
+  }
+  inp.click();
+}
+
+function catDragOver(e, wrap) {
+  if (!document.body.classList.contains('gb-admin-mode')) return;
+  e.preventDefault(); e.stopPropagation();
+  wrap.classList.add('drag-over');
+}
+
+function catDragLeave(e, wrap) {
+  e.preventDefault();
+  wrap.classList.remove('drag-over');
+}
+
+function catDrop(e, wrap) {
+  e.preventDefault(); e.stopPropagation();
+  wrap.classList.remove('drag-over');
+  if (!document.body.classList.contains('gb-admin-mode')) return;
+  var files = e.dataTransfer && e.dataTransfer.files;
+  if (files && files[0]) catUploadCardImage(files[0], wrap);
+}
+
+function catUploadCardImage(file, wrap) {
+  var gameName = wrap.dataset.game;
+  if (!gameName) return;
+  var btn = wrap.querySelector('.cat-img-upload-btn');
+  if (btn) { btn._orig = btn.textContent; btn.textContent = '⏳'; btn.disabled = true; }
+
+  var formData = new FormData();
+  formData.append('file', file);
+  formData.append('id', SHEET_ID);
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/uploadImage.php');
+  xhr.onload = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch(ex) { r = {error:'parse error'}; }
+    if (!r || r.error) {
+      alert('Upload failed: ' + (r && r.error || 'unknown'));
+      if (btn) { btn.textContent = btn._orig || '📷'; btn.disabled = false; }
+      return;
+    }
+    var imageUrl = r.url;
+    var fd2 = new FormData();
+    fd2.append('id',        SHEET_ID);
+    fd2.append('name',      gameName);
+    fd2.append('image_url', imageUrl);
+    var xhr2 = new XMLHttpRequest();
+    xhr2.open('POST', APP_ROOT + 'push/updateGameImage.php');
+    xhr2.onload = function() {
+      if (btn) { btn.textContent = btn._orig || '📷'; btn.disabled = false; }
+      var r2; try { r2 = JSON.parse(xhr2.responseText); } catch(ex) { r2 = {error:'parse error'}; }
+      if (!r2 || r2.error) {
+        alert('Sheet update failed: ' + (r2 && r2.error || 'unknown'));
+        return;
+      }
+      // Swap image in DOM immediately
+      var existing = wrap.querySelector('.cat-card-img');
+      var ph = wrap.querySelector('.cat-card-ph');
+      if (existing) {
+        existing.src = imageUrl;
+      } else {
+        var img = document.createElement('img');
+        img.className = 'cat-card-img';
+        img.src = imageUrl;
+        img.alt = gameName;
+        img.loading = 'lazy';
+        if (ph) ph.parentNode.replaceChild(img, ph);
+        else wrap.insertBefore(img, wrap.firstChild);
+      }
+    };
+    xhr2.send(fd2);
+  };
+  xhr.send(formData);
 }
 
 // ── Sign-in dialog ──────────────────────────────────────────────────────────

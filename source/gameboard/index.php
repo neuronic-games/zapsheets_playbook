@@ -243,7 +243,7 @@ body.gb-admin-mode .cat-img-upload-btn { display:flex; }
     $gSummary = trim($g['Summary']    ?? '');
     $gCount   = trim($g['Count']      ?? '');
     $gDur     = trim($g['Duration']   ?? '');
-    $gCover   = _gb_img(trim($g['Cover URL'] ?? $g['Image URL'] ?? ''));
+    $gCover   = _gb_img(trim($g['Cover URL'] ?? $g['Image URL'] ?? $g['Image'] ?? ''));
     $gSlug    = _gb_slug($gName);
     if (!$gName) continue;
 ?>
@@ -704,8 +704,8 @@ $_count       = trim($_game['Count']          ?? '');
 $_duration    = trim($_game['Duration']       ?? '');
 $_availability= trim($_game['Availability']   ?? '');
 $_status      = trim($_game['Status']         ?? '');
-$_coverUrl    = _gb_img(trim($_game['Cover URL']    ?? ''));
-$_imageUrl    = _gb_img(trim($_game['Image URL']    ?? ''));
+$_coverUrl    = _gb_img(trim($_game['Cover URL']    ?? $_game['Image'] ?? ''));
+$_imageUrl    = _gb_img(trim($_game['Image URL']    ?? $_game['Image'] ?? ''));
 $_videoUrl    = trim($_game['Video URL']      ?? '');
 $_pageUrl     = trim($_game['Page URL']       ?? '');
 $_sellsheet   = trim($_game['Sellsheet URL']  ?? '');
@@ -1400,7 +1400,7 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     <div class="gb-more-grid">
       <?php foreach (array_slice($_otherGames, 0, 8) as $og):
         $ogName = trim($og['Name'] ?? '');
-        $ogImg  = _gb_img(trim($og['Cover URL'] ?? $og['Image URL'] ?? ''));
+        $ogImg  = _gb_img(trim($og['Cover URL'] ?? $og['Image URL'] ?? $og['Image'] ?? ''));
         $ogMeta = array_filter([trim($og['Count'] ?? '') ? trim($og['Count']).' players' : '', trim($og['Duration'] ?? '')]);
       ?>
       <a class="gb-more-card" href="<?= h($_gbBase . _gb_slug($ogName)) ?>">

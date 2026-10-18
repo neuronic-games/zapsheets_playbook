@@ -114,11 +114,21 @@ if game_row_idx < 0:
 sheet_row = game_row_idx + 1
 sheet_col = col_idx + 1
 
+# Safety: never write to the header row
+if sheet_row <= 1:
+    print(json.dumps({"error": "Computed target is in header row (row 1) — aborting to protect headers"}))
+    sys.exit(1)
+
 try:
     cell_a1 = gspread.utils.rowcol_to_a1(sheet_row, sheet_col)
-    ws.update([[new_value]], cell_a1, value_input_option='USER_ENTERED')
+    # Use explicit keyword args so gspread version differences don't swap arguments.
+    ws.update(range_name=cell_a1, values=[[new_value]], value_input_option='USER_ENTERED')
 except Exception as e:
-    print(json.dumps({"error": f"Could not update cell: {str(e)}"}))
-    sys.exit(1)
+    # Older gspread versions don't accept keyword args; fall back to positional (range first).
+    try:
+        ws.update(cell_a1, [[new_value]], value_input_option='USER_ENTERED')
+    except Exception as e2:
+        print(json.dumps({"error": "Could not update cell: " + str(e2)}))
+        sys.exit(1)
 
 print(json.dumps({"ok": True, "row": sheet_row, "col": sheet_col, "cell": cell_a1}))

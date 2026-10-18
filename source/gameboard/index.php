@@ -885,15 +885,17 @@ body.gb-admin-mode .gb-ph-stat { display: flex; }
 .gb-ph-stat span { opacity: .35; font-style: italic; }
 /* Cover hint overlay when no hero image */
 .gb-cover-hint {
-  display: none; position: absolute; inset: 0; z-index: 1;
+  display: none; position: absolute; inset: 0; z-index: 3;
   align-items: center; justify-content: center; flex-direction: column; gap: .6rem;
-  border: 3px dashed rgba(124,158,255,.25); pointer-events: none;
+  border: 3px dashed rgba(124,158,255,.25); cursor: pointer;
+  transition: background .15s, border-color .15s;
 }
+.gb-cover-hint:hover { background: rgba(124,158,255,.07); border-color: rgba(124,158,255,.5); }
 body.gb-admin-mode .gb-hero.no-cover .gb-cover-hint { display: flex; }
-.gb-cover-hint-icon { font-size: 2.5rem; opacity: .25; }
+.gb-cover-hint-icon { font-size: 2.5rem; opacity: .3; }
 .gb-cover-hint-text {
   font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase;
-  letter-spacing:.1em; color:rgba(255,255,255,.3);
+  letter-spacing:.1em; color:rgba(255,255,255,.4);
 }
 /* Placeholder lorem sections */
 .gb-ph-lorem {
@@ -946,9 +948,9 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
   <div class="gb-hero-bg" style="background:linear-gradient(135deg,#1a1a2e 0%,#2d2d88 100%)"></div>
   <?php endif; ?>
   <!-- Cover image hint (admin mode only, when no cover set) -->
-  <div class="gb-cover-hint">
+  <div class="gb-cover-hint" onclick="openEditDetailsAt('gbedCoverUrl')">
     <div class="gb-cover-hint-icon">🖼</div>
-    <div class="gb-cover-hint-text">Add a cover image via Edit Details</div>
+    <div class="gb-cover-hint-text">Click to add a cover image</div>
   </div>
   <div class="gb-hero-overlay"></div>
   <div class="gb-hero-content">
@@ -1358,6 +1360,17 @@ var _ed = Object.assign({}, GAME_DATA);
 function cancelEdit() { location.reload(); }
 
 // ── Edit Details modal ───────────────────────────────────────────────────────
+function openEditDetailsAt(fieldId) {
+  openEditDetails();
+  // Scroll the target field into view and focus it after the modal opens
+  setTimeout(function() {
+    var el = document.getElementById(fieldId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.focus();
+    el.select && el.select();
+  }, 60);
+}
 function openEditDetails() {
   // Populate from _ed (live-edited values)
   document.getElementById('gbedStatus').value       = _ed.status       || '';

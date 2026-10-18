@@ -32,6 +32,8 @@ $cover         = $coverRaw ? '=IMAGE("' . $coverRaw . '")' : '';
 $count         = trim($_POST['count']          ?? '');
 $duration      = trim($_POST['duration']       ?? '');
 $availability  = trim($_POST['availability']   ?? '');
+$galleryAddRaw = trim($_POST['gallery_add']    ?? '');
+$galleryAdd    = $galleryAddRaw ? (json_decode($galleryAddRaw, true) ?: []) : [];
 
 if (!$sheetId) {
     echo json_encode(['error' => 'Missing sheet ID']);
@@ -141,6 +143,32 @@ if ($result !== null && !empty($result['ok'])) {
         $pubOut = trim((string) shell_exec($pubCmd));
         if ($pubOut && !empty(json_decode($pubOut, true)['ok'])) {
             $result['game_tab_cached'] = true;
+        }
+    }
+
+    // Append any uploaded gallery images to the [GameName] tab as ProductImage rows
+    if (!empty($galleryAdd) && is_array($galleryAdd)) {
+        $appendData    = ['game' => $tabGameName, 'rows' => []];
+        foreach ($galleryAdd as $imgUrl) {
+            $imgUrl = trim((string)$imgUrl);
+            if ($imgUrl) $appendData['rows'][] = ['name' => 'ProductImage', 'value' => $imgUrl, 'extra' => ''];
+        }
+        if ($appendData['rows']) {
+            $appendEncoded = base64_encode(json_encode($appendData, JSON_UNESCAPED_UNICODE));
+            $appendCmd = escapeshellarg($pythonPath) . ' '
+                       . escapeshellarg(__DIR__ . '/gappendtabrows.py') . ' '
+                       . escapeshellarg($sheetId . '|' . $appendEncoded) . ' 2>/dev/null';
+            $appendOut = trim((string) shell_exec($appendCmd));
+            if ($appendOut) {
+                $appendResult = json_decode($appendOut, true);
+                if (!empty($appendResult['ok'])) {
+                    $result['gallery_added'] = $appendResult['rows_added'] ?? count($galleryAdd);
+                    // Re-publish so the page cache reflects the new images
+                    shell_exec(escapeshellarg($pythonPath) . ' '
+                        . escapeshellarg(__DIR__ . '/gpublishgame.py') . ' '
+                        . escapeshellarg($sheetId . '|' . $tabGameName) . ' 2>/dev/null');
+                }
+            }
         }
     }
 

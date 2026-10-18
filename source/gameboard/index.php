@@ -890,13 +890,37 @@ body.gb-admin-mode .gb-ph-stat { display: flex; }
   border: 3px dashed rgba(124,158,255,.25); cursor: pointer;
   transition: background .15s, border-color .15s;
 }
-.gb-cover-hint:hover { background: rgba(124,158,255,.07); border-color: rgba(124,158,255,.5); }
+.gb-cover-hint:hover,
+.gb-hero.gb-drag-over .gb-cover-hint { background: rgba(124,158,255,.12); border-color: rgba(124,158,255,.7); }
 body.gb-admin-mode .gb-hero.no-cover .gb-cover-hint { display: flex; }
 .gb-cover-hint-icon { font-size: 2.5rem; opacity: .3; }
 .gb-cover-hint-text {
   font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase;
   letter-spacing:.1em; color:rgba(255,255,255,.4);
 }
+/* Change-cover overlay (admin mode, when cover already set) */
+.gb-change-cover {
+  display: none; position: absolute; inset: 0; z-index: 3;
+  align-items: center; justify-content: center;
+  cursor: pointer; transition: background .15s;
+}
+body.gb-admin-mode .gb-hero:not(.no-cover):hover .gb-change-cover,
+body.gb-admin-mode .gb-hero.gb-drag-over .gb-change-cover { display: flex; background: rgba(0,0,0,.45); }
+.gb-change-cover span {
+  font-family:'DINBlack',sans-serif; font-size:.78rem; text-transform:uppercase;
+  letter-spacing:.1em; color:#fff; background:rgba(0,0,0,.5); border:1.5px solid rgba(255,255,255,.4);
+  padding:.4rem 1rem; border-radius:6px;
+}
+/* Gallery upload zones */
+.gb-upload-zone {
+  cursor: pointer; transition: background .13s, border-color .13s, opacity .13s;
+  font-size: 1.8rem; opacity: .35; border: 2px dashed rgba(59,59,170,.25);
+}
+.gb-upload-zone:hover,
+.gb-upload-zone.gb-drag-over { opacity: .7; border-color: rgba(124,158,255,.6); background: rgba(124,158,255,.08); }
+.gb-upload-zone.gb-uploading { opacity: .5; cursor: wait; }
+.gb-upload-zone.gb-uploaded { opacity: 1; border: none; background: none; padding: 0; font-size: 0; }
+.gb-upload-zone.gb-uploaded img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; display: block; }
 /* Placeholder lorem sections */
 .gb-ph-lorem {
   font-size:.93rem; line-height:1.75; color:var(--ink-lt); opacity:.35;
@@ -940,17 +964,24 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
 <!-- Legacy admin bar slot (kept for JS compat, hidden) -->
 <div class="gb-admin-bar" id="gbAdminBarLegacy" style="display:none"></div>
 
+<!-- ── Hidden file input for image uploads ── -->
+<input type="file" id="gbFileInput" accept="image/*" style="display:none" onchange="gbHandleFileInput(event)">
+
 <!-- ── Hero ── -->
-<div class="gb-hero<?= $_heroImg ? '' : ' no-cover' ?>">
+<div class="gb-hero<?= $_heroImg ? '' : ' no-cover' ?>" id="gbHero">
   <?php if ($_heroImg): ?>
-  <div class="gb-hero-bg" style="background-image:url('<?= h($_heroImg) ?>')"></div>
+  <div class="gb-hero-bg" id="gbHeroBg" style="background-image:url('<?= h($_heroImg) ?>')"></div>
   <?php else: ?>
-  <div class="gb-hero-bg" style="background:linear-gradient(135deg,#1a1a2e 0%,#2d2d88 100%)"></div>
+  <div class="gb-hero-bg" id="gbHeroBg" style="background:linear-gradient(135deg,#1a1a2e 0%,#2d2d88 100%)"></div>
   <?php endif; ?>
-  <!-- Cover image hint (admin mode only, when no cover set) -->
-  <div class="gb-cover-hint" onclick="openEditDetailsAt('gbedCoverUrl')">
-    <div class="gb-cover-hint-icon">🖼</div>
-    <div class="gb-cover-hint-text">Click to add a cover image</div>
+  <!-- Cover hint: shown when no cover (admin mode) — click to upload -->
+  <div class="gb-cover-hint" onclick="gbPickImage(gbSetCover)">
+    <div class="gb-cover-hint-icon">📷</div>
+    <div class="gb-cover-hint-text">Click or drag an image here</div>
+  </div>
+  <!-- Change cover overlay: shown on hover when cover exists (admin mode) -->
+  <div class="gb-change-cover" id="gbChangeCover" onclick="gbPickImage(gbSetCover)">
+    <span>📷 Change Cover</span>
   </div>
   <div class="gb-hero-overlay"></div>
   <div class="gb-hero-content">
@@ -1003,15 +1034,14 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     </div>
   </div>
   <?php else: ?>
-  <!-- Placeholder gallery (admin only) -->
+  <!-- Placeholder gallery (admin only) — each thumb is an upload zone -->
   <div class="gb-section gb-ph-section">
     <div class="gb-section-label">Gallery</div>
-    <div class="gb-ph-gallery">
-      <div class="gb-ph-thumb">🖼</div>
-      <div class="gb-ph-thumb">🖼</div>
-      <div class="gb-ph-thumb">🖼</div>
+    <div class="gb-ph-gallery" id="gbPhGallery">
+      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image">📷</div>
+      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image">📷</div>
+      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image">📷</div>
     </div>
-    <p style="font-size:.75rem;color:var(--muted);margin-top:.5rem;font-style:italic">Add image URLs via Edit Details (Cover URL, Image URL) or via the per-game data sheet.</p>
   </div>
   <?php endif; ?>
 
@@ -1433,6 +1463,129 @@ function applyEditDetails() {
 }
 
 // ── Save game ────────────────────────────────────────────────────────────────
+// ── Image upload helpers ──────────────────────────────────────────────────────
+var _gbFileCallback = null;
+var _gbGalleryUploads = [];   // URLs of gallery images uploaded this session
+
+function gbPickImage(callback) {
+  _gbFileCallback = callback;
+  var inp = document.getElementById('gbFileInput');
+  inp.value = '';
+  inp.click();
+}
+
+function gbHandleFileInput(e) {
+  var file = e.target.files[0];
+  if (!file || !_gbFileCallback) return;
+  gbUploadImage(file, _gbFileCallback);
+  _gbFileCallback = null;
+}
+
+function gbUploadImage(file, callback, zoneEl) {
+  if (zoneEl) zoneEl.classList.add('gb-uploading');
+  var fd = new FormData();
+  fd.append('id', SHEET_ID);
+  fd.append('file', file);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/uploadImage.php');
+  xhr.onload = function() {
+    if (zoneEl) zoneEl.classList.remove('gb-uploading');
+    var r;
+    try { r = JSON.parse(xhr.responseText); } catch(e) { r = {error: 'parse error'}; }
+    if (r && r.ok && r.url) {
+      callback(r.url, zoneEl);
+    } else {
+      alert('Image upload failed: ' + (r && r.error || 'unknown'));
+    }
+  };
+  xhr.onerror = function() {
+    if (zoneEl) zoneEl.classList.remove('gb-uploading');
+    alert('Image upload failed: network error');
+  };
+  xhr.send(fd);
+}
+
+// ── Cover image ───────────────────────────────────────────────────────────────
+function gbSetCover(url) {
+  _ed.cover_url = url;
+  var hero = document.getElementById('gbHero');
+  var bg   = document.getElementById('gbHeroBg');
+  if (bg)   bg.style.backgroundImage = 'url(' + url + ')';
+  if (hero) hero.classList.remove('no-cover');
+  gbShowUploadToast('Cover image ready');
+}
+
+// ── Gallery images ────────────────────────────────────────────────────────────
+function gbPickGalleryImage(zoneEl) {
+  gbPickImage(function(url) { gbSetGalleryImage(url, zoneEl); });
+}
+
+function gbSetGalleryImage(url, zoneEl) {
+  _gbGalleryUploads.push(url);
+  // Show preview in the zone
+  if (zoneEl) {
+    zoneEl.classList.add('gb-uploaded');
+    zoneEl.innerHTML = '<img src="' + url + '" alt="gallery image">';
+    zoneEl.onclick = null;
+  } else {
+    // Append a new thumb to the gallery
+    var gallery = document.getElementById('gbPhGallery');
+    if (gallery) {
+      var div = document.createElement('div');
+      div.className = 'gb-ph-thumb gb-upload-zone gb-uploaded';
+      div.innerHTML = '<img src="' + url + '" alt="gallery image">';
+      gallery.appendChild(div);
+    }
+  }
+  gbShowUploadToast('Image added — click Save Changes');
+}
+
+function gbShowUploadToast(msg) {
+  var toast = document.getElementById('gbSaveToast');
+  if (!toast) return;
+  toast.textContent = '✓ ' + msg;
+  toast.classList.add('visible');
+  setTimeout(function() { toast.classList.remove('visible'); }, 3000);
+}
+
+// ── Hero drag-drop ────────────────────────────────────────────────────────────
+(function() {
+  if (!document.body.classList.contains('gb-admin-mode')) return;
+  var hero = document.getElementById('gbHero');
+  if (!hero) return;
+  hero.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    hero.classList.add('gb-drag-over');
+  });
+  hero.addEventListener('dragleave', function(e) {
+    if (!hero.contains(e.relatedTarget)) hero.classList.remove('gb-drag-over');
+  });
+  hero.addEventListener('drop', function(e) {
+    e.preventDefault();
+    hero.classList.remove('gb-drag-over');
+    var file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) gbUploadImage(file, gbSetCover);
+  });
+})();
+
+// ── Gallery placeholder drag-drop (delegated) ─────────────────────────────────
+document.addEventListener('dragover', function(e) {
+  var zone = e.target.closest('.gb-upload-zone');
+  if (zone) { e.preventDefault(); zone.classList.add('gb-drag-over'); }
+});
+document.addEventListener('dragleave', function(e) {
+  var zone = e.target.closest('.gb-upload-zone');
+  if (zone && !zone.contains(e.relatedTarget)) zone.classList.remove('gb-drag-over');
+});
+document.addEventListener('drop', function(e) {
+  var zone = e.target.closest('.gb-upload-zone');
+  if (!zone) return;
+  e.preventDefault();
+  zone.classList.remove('gb-drag-over');
+  var file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) gbUploadImage(file, gbSetGalleryImage, zone);
+});
+
 function saveGame() {
   var saveBtn = document.getElementById('gbSaveBtn');
   saveBtn.disabled = true;
@@ -1467,6 +1620,9 @@ function saveGame() {
   fd.append('rules',          _ed.rules_url      || '');
   fd.append('play',           _ed.play_url       || '');
   fd.append('print',          _ed.print_url      || '');
+  if (_gbGalleryUploads.length) {
+    fd.append('gallery_add', JSON.stringify(_gbGalleryUploads));
+  }
 
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_ROOT + 'push/updateGame.php');

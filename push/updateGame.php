@@ -118,7 +118,13 @@ if ($result !== null && !empty($result['ok'])) {
         // (Only patch if tab already existed — new tabs are pre-populated by gcreategameboardtab.py)
         if ($tabResult['existed'] ?? false) {
             $patchFields = [];
-            if ($description !== '') $patchFields['Description'] = $description;
+            // Sync all fields that mirror the Games tab columns.
+            // ProductImage patches only the FIRST ProductImage row (= cover image).
+            if ($description !== '') $patchFields['Description']  = $description;
+            if ($coverRaw    !== '') $patchFields['ProductImage'] = $coverRaw;
+            if ($rules       !== '') $patchFields['Rules PDF Url'] = $rules;
+            if ($sellsheet   !== '') $patchFields['Sellsheet URL'] = $sellsheet;
+            if ($view        !== '') $patchFields['Page URL']      = $view;
             if ($patchFields) {
                 $patchData    = ['game' => $tabGameName, 'fields' => $patchFields];
                 $patchEncoded = base64_encode(json_encode($patchData, JSON_UNESCAPED_UNICODE));

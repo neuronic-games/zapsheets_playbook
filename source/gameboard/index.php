@@ -789,11 +789,7 @@ a { color:inherit; text-decoration:none; }
 }
 
 /* ── Admin edit mode ── */
-.gb-admin-bar {
-  display:none; background:#0f0f1f; border-bottom:1px solid rgba(124,158,255,.2);
-  padding:.45rem 1.5rem; align-items:center; gap:.75rem; font-size:.8rem; flex-wrap:wrap;
-}
-.gb-admin-bar.visible { display:flex; }
+.gb-admin-bar { display:none; }  /* replaced by in-nav admin controls */
 /* Save toast */
 .gb-save-toast {
   display:none; position:fixed; bottom:1.5rem; right:1.5rem; z-index:900;
@@ -806,9 +802,12 @@ a { color:inherit; text-decoration:none; }
 @keyframes gb-toast-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
 .gb-admin-label {
   font-family:'DINBlack',sans-serif; font-size:.66rem; text-transform:uppercase;
-  letter-spacing:.1em; color:#7c9eff; margin-right:.25rem;
+  letter-spacing:.1em; color:#7c9eff; opacity:.8;
 }
-.gb-admin-hint { font-size:.72rem; color:rgba(255,255,255,.4); flex:1; }
+/* In-nav admin controls — hidden until admin mode activates */
+.gb-nav-admin { display:none; align-items:center; gap:.5rem; flex-shrink:0; }
+body.gb-admin-mode .gb-nav-admin { display:flex; }
+body.gb-admin-mode .gb-nav-links { display:none; }
 .btn-adm {
   font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase;
   letter-spacing:.07em; padding:.3rem .75rem; border-radius:5px; cursor:pointer;
@@ -921,21 +920,23 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     <a class="gb-nav-logo" href="<?= h($_appRoot . $_sheetId . '/gameboard/') ?>">GameBoard</a>
     <span class="gb-nav-game" id="gbNavGame"><?= h($_name) ?></span>
   </div>
+  <!-- Regular nav links (hidden in admin mode) -->
   <div class="gb-nav-links" id="gbNavLinks">
     <?php if ($_richRules): ?><a class="btn-nav" href="<?= h($_richRules) ?>" target="_blank">Rules</a><?php endif; ?>
     <?php if ($_sellsheet): ?><a class="btn-nav" href="<?= h($_sellsheet) ?>" target="_blank">Sellsheet</a><?php endif; ?>
     <?php if ($_pageUrl): ?><a class="btn-nav filled" href="<?= h($_pageUrl) ?>" target="_blank">View Page ↗</a><?php endif; ?>
   </div>
+  <!-- Admin controls (shown in admin mode, replaces nav links) -->
+  <div class="gb-nav-admin" id="gbAdminBar">
+    <span class="gb-admin-label">✏ Admin</span>
+    <button class="btn-adm btn-adm-details" onclick="openEditDetails()">Edit Details</button>
+    <button class="btn-adm btn-adm-primary" id="gbSaveBtn" onclick="saveGame()">Save Changes</button>
+    <button class="btn-adm btn-adm-secondary" onclick="cancelEdit()">Cancel</button>
+  </div>
 </nav>
 
-<!-- ── Admin bar (shown only when signed in as owner) ── -->
-<div class="gb-admin-bar" id="gbAdminBar">
-  <span class="gb-admin-label">✏ Admin</span>
-  <span class="gb-admin-hint">Click title, summary, or description to edit inline</span>
-  <button class="btn-adm btn-adm-details" onclick="openEditDetails()">Edit Details</button>
-  <button class="btn-adm btn-adm-primary" id="gbSaveBtn" onclick="saveGame()">Save Changes</button>
-  <button class="btn-adm btn-adm-secondary" onclick="cancelEdit()">Cancel</button>
-</div>
+<!-- Legacy admin bar slot (kept for JS compat, hidden) -->
+<div class="gb-admin-bar" id="gbAdminBarLegacy" style="display:none"></div>
 
 <!-- ── Hero ── -->
 <div class="gb-hero<?= $_heroImg ? '' : ' no-cover' ?>">
@@ -1338,7 +1339,6 @@ var _ed = Object.assign({}, GAME_DATA);
     if (!u || !u.email) return;
     // Activate admin mode
     document.body.classList.add('gb-admin-mode');
-    document.getElementById('gbAdminBar').classList.add('visible');
     // Make text fields contenteditable
     ['gbEditTitle', 'gbEditSummary', 'gbEditDesc'].forEach(function(id) {
       var el = document.getElementById(id);

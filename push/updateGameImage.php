@@ -10,7 +10,6 @@
 
 header('Content-Type: application/json');
 require __DIR__ . '/../dotEnv.php';
-require_once __DIR__ . '/refreshJson.php';
 
 $sheetId  = trim($_POST['id']        ?? '');
 $gameName = trim($_POST['name']      ?? '');
@@ -49,8 +48,5 @@ if (!empty($result['error'])) {
     echo json_encode(['error' => $result['error']]);
     exit;
 }
-
-// Refresh games.json cache
-refreshJson($pythonPath, $sheetId, 'games');
 
 echo json_encode(['ok' => true, 'image_url' => $imageUrl]);

@@ -145,8 +145,8 @@ a { color:inherit; text-decoration:none; }
 .cat-card-stat { font-size:.72rem; color:var(--muted); }
 
 /* ── Cat card image upload (admin mode) ── */
-.cat-img-wrap { position:relative; display:block; }
-.cat-img-upload-btn { position:absolute; top:.4rem; right:.4rem; width:2rem; height:2rem; border-radius:50%; background:rgba(0,0,0,.52); border:none; color:#fff; font-size:.95rem; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:2; transition:background .15s; line-height:1; padding:0; }
+.cat-img-wrap { position:relative; display:block; width:100%; }
+.cat-img-upload-btn { position:absolute; top:.4rem; right:.4rem; width:2rem; height:2rem; border-radius:50%; background:rgba(0,0,0,.52); color:#fff; font-size:.95rem; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:2; transition:background .15s; line-height:1; padding:0; user-select:none; }
 body.gb-admin-mode .cat-img-upload-btn { display:flex; }
 .cat-img-upload-btn:hover { background:rgba(0,0,0,.82); }
 .cat-img-wrap.drag-over::after { content:'Drop to set image'; position:absolute; inset:0; background:rgba(55,110,200,.75); color:#fff; font-family:'DINBlack',sans-serif; font-size:.8rem; text-transform:uppercase; letter-spacing:.07em; display:flex; align-items:center; justify-content:center; z-index:3; pointer-events:none; }
@@ -255,8 +255,8 @@ body.gb-admin-mode .cat-img-upload-btn { display:flex; }
       <?php else: ?>
       <div class="cat-card-ph">🎲</div>
       <?php endif; ?>
-      <button class="cat-img-upload-btn" title="Change image"
-        onclick="catPickImage(event,this.closest('.cat-img-wrap'))">📷</button>
+      <span class="cat-img-upload-btn" title="Change image"
+        onclick="catPickImage(event,this.closest('.cat-img-wrap'))">📷</span>
     </div>
     <div class="cat-card-body">
       <div class="cat-card-name"><?= h($gName) ?></div>

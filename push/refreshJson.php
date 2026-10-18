@@ -36,10 +36,14 @@ function refreshJson($pythonPath, $sheetId, $tabName): ?string {
     // Never overwrite a good cache file with an error response.
     $decoded = json_decode($out, true);
     if (!is_array($decoded)) return 'gread.py output is not valid JSON';
-    if (!array_is_list($decoded)) {
-        // It's a JSON object ({"error":"..."}) — do NOT overwrite the cache.
-        $errMsg = $decoded['error'] ?? 'unknown error from gread.py';
-        return $errMsg;
+    // array_is_list() requires PHP 8.1 — use array_key_first() (PHP 7.3+) instead.
+    if (isset($decoded['error'])) {
+        return $decoded['error'];
+    }
+    $firstKey = array_key_first($decoded);
+    if ($firstKey !== null && !is_int($firstKey)) {
+        // JSON object returned rather than an array of records — do NOT overwrite.
+        return 'gread.py returned an object instead of a records array';
     }
 
     $dir = dirname(__DIR__) . '/sheets/' . $sheetId;

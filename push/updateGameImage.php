@@ -49,4 +49,32 @@ if (!empty($result['error'])) {
     exit;
 }
 
-echo json_encode(['ok' => true, 'image_url' => $imageUrl]);
+// Patch games.json in-place so the cache reflects the new image immediately.
+// This avoids a full sheet re-read while keeping the local cache fresh.
+$cacheFile = dirname(__DIR__) . '/sheets/' . $sheetId . '/games.json';
+$cacheUpdated = false;
+if (file_exists($cacheFile)) {
+    $games = json_decode(file_get_contents($cacheFile), true);
+    if (is_array($games)) {
+        foreach ($games as &$g) {
+            if (isset($g['Name']) && $g['Name'] === $gameName) {
+                // Write to whichever image column exists in the cache.
+                if (array_key_exists('Image URL', $g)) {
+                    $g['Image URL'] = $imageUrl;
+                } elseif (array_key_exists('Image', $g)) {
+                    $g['Image'] = $imageUrl;
+                } else {
+                    $g['Image'] = $imageUrl;  // create the key if absent
+                }
+                $cacheUpdated = true;
+                break;
+            }
+        }
+        unset($g);
+        if ($cacheUpdated) {
+            file_put_contents($cacheFile, json_encode($games, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        }
+    }
+}
+
+echo json_encode(['ok' => true, 'image_url' => $imageUrl, 'cache_updated' => $cacheUpdated]);

@@ -190,7 +190,7 @@ a { color:inherit; text-decoration:none; }
 <body>
 
 <!-- ── Header ── -->
-<header class="gb-header">
+<header class="gb-header"<?= isset($_gbPublicBase) ? ' style="display:none"' : '' ?>>
   <div class="gb-header-left">
     <?php if ($_pubLogo): ?><img src="<?= h($_pubLogo) ?>" alt="" style="height:26px;border-radius:4px;flex-shrink:0;" /><?php endif; ?>
     <span class="gb-logo">GameBoard</span>
@@ -1047,7 +1047,7 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
 <body>
 
 <!-- ── Nav ── -->
-<nav class="gb-nav">
+<nav class="gb-nav"<?= isset($_gbPublicBase) ? ' style="display:none"' : '' ?>>
   <div class="gb-nav-left">
     <a class="gb-nav-logo" href="<?= h($_gbBase) ?>">GameBoard</a>
     <span class="gb-nav-game" id="gbNavGame"><?= h($_name) ?></span>

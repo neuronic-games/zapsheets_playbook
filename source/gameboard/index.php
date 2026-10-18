@@ -381,6 +381,7 @@ function _updateGbAuth() {
     if (siOut)  { siOut.textContent = 'Sign Out'; siOut.className = 'user-menu-item signout'; }
     if (profile) profile.style.display = '';
     if (publishBtn) publishBtn.style.display = '';
+    document.body.classList.add('gb-admin-mode');
   } else {
     btn.classList.remove('signed-in');
     btn.title = 'Menu';
@@ -388,6 +389,7 @@ function _updateGbAuth() {
     if (siOut)  { siOut.textContent = 'Sign In'; siOut.className = 'user-menu-item'; }
     if (profile) profile.style.display = 'none';
     if (publishBtn) publishBtn.style.display = 'none';
+    document.body.classList.remove('gb-admin-mode');
   }
 }
 

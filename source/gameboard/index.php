@@ -414,7 +414,18 @@ function gbMenuAction(action) {
     var fd = new FormData(); fd.append('id', SHEET_ID);
     var xhr = new XMLHttpRequest();
     xhr.open('POST', APP_ROOT + 'push/setupGameboard.php');
-    xhr.onload = function() { location.reload(); };
+    xhr.onload = function() {
+      btn.style.opacity = '';
+      var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+      if (r && !r.ok && r.refresh_errors) {
+        var msgs = Object.entries(r.refresh_errors).map(function(e){ return e[0]+': '+e[1]; }).join('\n');
+        alert('Fetch error — could not read sheet data:\n' + msgs);
+      } else if (r && r.error) {
+        alert('Fetch error: ' + r.error);
+      } else {
+        location.reload();
+      }
+    };
     xhr.onerror = function() { btn.style.opacity = ''; alert('Fetch failed — network error.'); };
     xhr.send(fd);
   } else if (action === 'publish') {

@@ -84,11 +84,20 @@ if (!is_dir($sheetDir)) {
 
 // ── Step 3: Refresh JSON caches needed by GameBoard ───────────────────────────
 $refreshed = [];
+$refreshErrors = [];
 foreach (['games', 'people'] as $tab) {
-    refreshJson($pythonPath, $sheetId, $tab);
-    $refreshed[] = $tab;
+    $err = refreshJson($pythonPath, $sheetId, $tab);
+    if ($err === null) {
+        $refreshed[] = $tab;
+    } else {
+        $refreshErrors[$tab] = $err;
+    }
 }
 $result['json_refreshed'] = $refreshed;
+if ($refreshErrors) {
+    $result['refresh_errors'] = $refreshErrors;
+    $result['ok'] = false;
+}
 
 echo json_encode($result);
 ?>

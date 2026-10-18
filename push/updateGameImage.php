@@ -9,7 +9,8 @@
  */
 
 header('Content-Type: application/json');
-require_once __DIR__ . '/../php/util.php';
+require __DIR__ . '/../dotEnv.php';
+require_once __DIR__ . '/refreshJson.php';
 
 $sheetId  = trim($_POST['id']        ?? '');
 $gameName = trim($_POST['name']      ?? '');
@@ -20,15 +21,15 @@ if (!$sheetId || !$gameName || !$imageUrl) {
     exit;
 }
 
-// Validate sheet ID is alphanumeric (basic sanity check)
 if (!preg_match('/^[A-Za-z0-9_-]+$/', $sheetId)) {
     echo json_encode(['error' => 'Invalid sheet ID']);
     exit;
 }
 
-$pythonPath = __DIR__ . '/gupdategamecolumn.py';
+$pythonPath = $_ENV['PYTHON'] ?? 'python3';
+$scriptPath = __DIR__ . '/gupdategamecolumn.py';
 
-// Use "Image URL" — gupdategamecolumn.py will alias-check to "Image" if needed
+// Use "Image URL" — gupdategamecolumn.py aliases to "Image" if needed
 $payload = json_encode([
     'name'   => $gameName,
     'column' => 'Image URL',
@@ -36,7 +37,7 @@ $payload = json_encode([
 ]);
 
 $arg = $sheetId . '|' . base64_encode($payload);
-$cmd = 'python3 ' . escapeshellarg($pythonPath) . ' ' . escapeshellarg($arg) . ' 2>&1';
+$cmd = escapeshellarg($pythonPath) . ' ' . escapeshellarg($scriptPath) . ' ' . escapeshellarg($arg) . ' 2>&1';
 $out = shell_exec($cmd);
 
 $result = json_decode(trim($out ?? ''), true);
@@ -50,10 +51,6 @@ if (!empty($result['error'])) {
 }
 
 // Refresh games.json cache
-$refreshPath = __DIR__ . '/grefreshjson.py';
-$rPayload    = json_encode(['sheet' => 'games']);
-$rArg        = $sheetId . '|' . base64_encode($rPayload);
-$rCmd        = 'python3 ' . escapeshellarg($refreshPath) . ' ' . escapeshellarg($rArg) . ' 2>&1';
-shell_exec($rCmd);
+refreshJson($pythonPath, $sheetId, 'games');
 
 echo json_encode(['ok' => true, 'image_url' => $imageUrl]);

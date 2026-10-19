@@ -450,6 +450,13 @@ $_sheet_id = $_bm[2] ?? '';
   var PLAY_SVG  = '<path d="M5 3l14 9-14 9V3z"/>';
 
   // ── Image URL helpers ────────────────────────────────────
+  // Strip =IMAGE("url") Google Sheets formula wrapper if present.
+  function stripImageFormula(val) {
+    if (!val) return '';
+    var m = val.match(/^=IMAGE\("([^"]*)"\)/i);
+    return m ? m[1] : val;
+  }
+
   // directImageUrl() — canonical definition in js/core/zapsheetsCore.js; inline fallback below
   if (typeof directImageUrl !== 'function') {
     window.directImageUrl = function(url) {
@@ -770,7 +777,7 @@ $_sheet_id = $_bm[2] ?? '';
     slides = games
       .filter(function (g) {
         var status = (g['Status'] || '').trim().toLowerCase();
-        var photo  = (g['Photo URL'] || g['Image URL'] || g['Image'] || '').trim();
+        var photo  = stripImageFormula((g['Photo URL'] || g['Image URL'] || g['Image'] || '').trim());
         return status === 'pitching' && photo;
       })
       .map(function (g) {
@@ -780,7 +787,7 @@ $_sheet_id = $_bm[2] ?? '';
         return {
           name:      (g['Name']    || '').trim(),
           tagline:   (g['Tagline'] || '').trim(),
-          photo:     (g['Photo URL'] || g['Image URL'] || g['Image'] || '').trim(),
+          photo:     stripImageFormula((g['Photo URL'] || g['Image URL'] || g['Image'] || '').trim()),
           designers: designers,
           page:      (g['Page URL'] || '').trim(),
         };

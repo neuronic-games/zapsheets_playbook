@@ -770,7 +770,7 @@ $_sheet_id = $_bm[2] ?? '';
     slides = games
       .filter(function (g) {
         var status = (g['Status'] || '').trim().toLowerCase();
-        var photo  = (g['Photo URL'] || g['Image URL'] || '').trim();
+        var photo  = (g['Photo URL'] || g['Image URL'] || g['Image'] || '').trim();
         return status === 'pitching' && photo;
       })
       .map(function (g) {
@@ -780,7 +780,7 @@ $_sheet_id = $_bm[2] ?? '';
         return {
           name:      (g['Name']    || '').trim(),
           tagline:   (g['Tagline'] || '').trim(),
-          photo:     (g['Photo URL'] || g['Image URL'] || '').trim(),
+          photo:     (g['Photo URL'] || g['Image URL'] || g['Image'] || '').trim(),
           designers: designers,
           page:      (g['Page URL'] || '').trim(),
         };

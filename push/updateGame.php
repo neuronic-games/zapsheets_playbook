@@ -178,6 +178,36 @@ if ($result !== null && !empty($result['ok'])) {
         }
     }
 
+    // Update Component / Review / FAQ rows in the [GameName] tab
+    $componentsRaw = trim($_POST['components'] ?? '');
+    $reviewsRaw    = trim($_POST['reviews']    ?? '');
+    $faqsRaw       = trim($_POST['faqs']       ?? '');
+    if ($componentsRaw !== '' || $reviewsRaw !== '' || $faqsRaw !== '') {
+        $tabContent = [
+            'game'       => $tabGameName,
+            'components' => $componentsRaw ? (json_decode($componentsRaw, true) ?: []) : [],
+            'reviews'    => $reviewsRaw    ? (json_decode($reviewsRaw,    true) ?: []) : [],
+            'faqs'       => $faqsRaw       ? (json_decode($faqsRaw,       true) ?: []) : [],
+        ];
+        $tabContentEncoded = base64_encode(json_encode($tabContent, JSON_UNESCAPED_UNICODE));
+        $tabContentCmd = escapeshellarg($pythonPath) . ' '
+                       . escapeshellarg(__DIR__ . '/gupdategametab.py') . ' '
+                       . escapeshellarg($sheetId . '|' . $tabContentEncoded) . ' 2>/dev/null';
+        $tabContentOut = trim((string) shell_exec($tabContentCmd));
+        if ($tabContentOut) {
+            $tcr = json_decode($tabContentOut, true);
+            if (!empty($tcr['ok'])) {
+                $result['tab_content_updated'] = true;
+            } elseif (!empty($tcr['error'])) {
+                $result['tab_content_error'] = $tcr['error'];
+            }
+        }
+        // Re-publish the tab cache so the page reflects the new content
+        shell_exec(escapeshellarg($pythonPath) . ' '
+            . escapeshellarg(__DIR__ . '/gpublishgame.py') . ' '
+            . escapeshellarg($sheetId . '|' . $tabGameName) . ' 2>/dev/null');
+    }
+
     // If the game was renamed, also refresh pitches, rename local JSON, and update share files
     $isRename = $name && $origName && $name !== $origName;
     if ($isRename) {

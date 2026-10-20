@@ -1552,6 +1552,24 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
         </div>
       </div>
     </div>
+      <div class="gbed-section">
+        <div class="gbed-section-title">What's In the Box</div>
+        <div class="gbed-field-group">
+          <label class="gbed-label">One item per line</label>
+          <textarea class="gbed-field" id="gbedComponents" rows="5" placeholder="50 Cards&#10;1 Game Board&#10;6 Dice"></textarea>
+        </div>
+      </div>
+      <div class="gbed-section">
+        <div class="gbed-section-title">What People Are Saying</div>
+        <div id="gbedReviewsList"></div>
+        <button type="button" onclick="gbedAddReview()" style="margin-top:.4rem;font-size:.8rem;padding:.3rem .75rem;background:transparent;border:1px dashed var(--border);border-radius:6px;cursor:pointer;color:var(--ink-lt)">+ Add Quote</button>
+      </div>
+      <div class="gbed-section">
+        <div class="gbed-section-title">FAQs</div>
+        <div id="gbedFaqsList"></div>
+        <button type="button" onclick="gbedAddFaq()" style="margin-top:.4rem;font-size:.8rem;padding:.3rem .75rem;background:transparent;border:1px dashed var(--border);border-radius:6px;cursor:pointer;color:var(--ink-lt)">+ Add FAQ</button>
+      </div>
+    </div>
     <div class="gbed-footer">
       <button class="btn-adm btn-adm-secondary" style="color:var(--ink-lt);border-color:var(--border)" onclick="closeEditDetails()">Cancel</button>
       <button class="btn-adm btn-adm-primary" style="background:var(--accent);color:#fff" onclick="applyEditDetails()">Apply</button>
@@ -1583,6 +1601,9 @@ var GAME_DATA = <?= json_encode([
     'date_started'   => trim($_game['Date Started'] ?? ''),
     'date_signed'    => $_dateSigned,
     'date_published' => $_datePub,
+    'components'     => array_values(array_map(function($c) { return trim($c['Value'] ?? ''); }, $_components)),
+    'reviews'        => array_values(array_map(function($r) { return ['attr' => trim($r['Value'] ?? ''), 'quote' => trim($r['Value 1'] ?? '')]; }, $_reviews)),
+    'faqs'           => array_values(array_map(function($f) { return ['q' => trim($f['Value'] ?? ''), 'a' => trim($f['Value 1'] ?? '')]; }, $_faqs)),
 ]) ?>;
 
 // Mutable copy that tracks edits from the details modal
@@ -1648,6 +1669,9 @@ function openEditDetails() {
   document.getElementById('gbedRulesUrl').value  = _ed.rules_url  || '';
   document.getElementById('gbedPlayUrl').value   = _ed.play_url   || '';
   document.getElementById('gbedPrintUrl').value  = _ed.print_url  || '';
+  gbedPopulateComponents(_ed.components || []);
+  gbedPopulateReviews(_ed.reviews || []);
+  gbedPopulateFaqs(_ed.faqs || []);
   document.getElementById('gbedOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -1675,6 +1699,9 @@ function applyEditDetails() {
   _ed.rules_url      = document.getElementById('gbedRulesUrl').value.trim();
   _ed.play_url       = document.getElementById('gbedPlayUrl').value.trim();
   _ed.print_url      = document.getElementById('gbedPrintUrl').value.trim();
+  _ed.components     = gbedCollectComponents();
+  _ed.reviews        = gbedCollectReviews();
+  _ed.faqs           = gbedCollectFaqs();
   closeEditDetails();
   // Update status badge live
   var badge = document.getElementById('gbStatusBadge');
@@ -1686,6 +1713,109 @@ function applyEditDetails() {
       badge.style.display = 'none';
     }
   }
+}
+
+// ── Components / Reviews / FAQs editing ──────────────────────────────────────
+function gbedPopulateComponents(arr) {
+  document.getElementById('gbedComponents').value = arr.filter(Boolean).join('\n');
+}
+function gbedPopulateReviews(arr) {
+  var list = document.getElementById('gbedReviewsList');
+  list.innerHTML = '';
+  var filled = arr.filter(function(r) { return r.attr || r.quote; });
+  if (filled.length) {
+    filled.forEach(function(r) { gbedAddReview(r.attr, r.quote); });
+  } else {
+    gbedAddReview('', '');
+  }
+}
+function gbedPopulateFaqs(arr) {
+  var list = document.getElementById('gbedFaqsList');
+  list.innerHTML = '';
+  var filled = arr.filter(function(f) { return f.q || f.a; });
+  if (filled.length) {
+    filled.forEach(function(f) { gbedAddFaq(f.q, f.a); });
+  } else {
+    gbedAddFaq('', '');
+  }
+}
+function gbedMakeRemoveBtn(rowClass) {
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.textContent = '✕';
+  btn.style.cssText = 'flex-shrink:0;margin-top:.15rem;background:none;border:none;color:var(--muted);font-size:1.05rem;cursor:pointer;line-height:1;padding:.2rem .35rem;border-radius:4px;';
+  btn.onmouseover = function() { this.style.color = 'var(--ink)'; };
+  btn.onmouseout  = function() { this.style.color = 'var(--muted)'; };
+  btn.onclick = function() { this.closest('.' + rowClass).remove(); };
+  return btn;
+}
+function gbedAddReview(attr, quote) {
+  var list = document.getElementById('gbedReviewsList');
+  var row = document.createElement('div');
+  row.className = 'gbed-review-row';
+  row.style.cssText = 'display:flex;gap:.4rem;align-items:flex-start;margin-bottom:.5rem;';
+  var inner = document.createElement('div');
+  inner.style.flex = '1';
+  var attrInp = document.createElement('input');
+  attrInp.className = 'gbed-field gbed-rev-attr';
+  attrInp.placeholder = 'Source / reviewer';
+  attrInp.value = attr || '';
+  attrInp.style.marginBottom = '.3rem';
+  var quoteArea = document.createElement('textarea');
+  quoteArea.className = 'gbed-field gbed-rev-quote';
+  quoteArea.rows = 2;
+  quoteArea.placeholder = 'Quote text…';
+  quoteArea.value = quote || '';
+  inner.appendChild(attrInp);
+  inner.appendChild(quoteArea);
+  row.appendChild(inner);
+  row.appendChild(gbedMakeRemoveBtn('gbed-review-row'));
+  list.appendChild(row);
+}
+function gbedAddFaq(q, a) {
+  var list = document.getElementById('gbedFaqsList');
+  var row = document.createElement('div');
+  row.className = 'gbed-faq-row';
+  row.style.cssText = 'display:flex;gap:.4rem;align-items:flex-start;margin-bottom:.5rem;';
+  var inner = document.createElement('div');
+  inner.style.flex = '1';
+  var qInp = document.createElement('input');
+  qInp.className = 'gbed-field gbed-faq-q';
+  qInp.placeholder = 'Question';
+  qInp.value = q || '';
+  qInp.style.marginBottom = '.3rem';
+  var aArea = document.createElement('textarea');
+  aArea.className = 'gbed-field gbed-faq-a';
+  aArea.rows = 2;
+  aArea.placeholder = 'Answer…';
+  aArea.value = a || '';
+  inner.appendChild(qInp);
+  inner.appendChild(aArea);
+  row.appendChild(inner);
+  row.appendChild(gbedMakeRemoveBtn('gbed-faq-row'));
+  list.appendChild(row);
+}
+function gbedCollectComponents() {
+  return document.getElementById('gbedComponents').value
+    .split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+}
+function gbedCollectReviews() {
+  return Array.prototype.slice.call(document.querySelectorAll('#gbedReviewsList .gbed-review-row'))
+    .map(function(row) {
+      return {
+        attr:  row.querySelector('.gbed-rev-attr').value.trim(),
+        quote: row.querySelector('.gbed-rev-quote').value.trim()
+      };
+    }).filter(function(r) { return r.attr || r.quote; });
+}
+function gbedCollectFaqs() {
+  return Array.prototype.slice.call(document.querySelectorAll('#gbedFaqsList .gbed-faq-row'))
+    .map(function(row) {
+      return {
+        q: row.querySelector('.gbed-faq-q').value.trim(),
+        a: row.querySelector('.gbed-faq-a').value.trim()
+      };
+    }).filter(function(f) { return f.q || f.a; });
 }
 
 // ── Save game ────────────────────────────────────────────────────────────────
@@ -1846,6 +1976,9 @@ function saveGame() {
   fd.append('rules',          _ed.rules_url      || '');
   fd.append('play',           _ed.play_url       || '');
   fd.append('print',          _ed.print_url      || '');
+  if (_ed.components !== undefined) fd.append('components', JSON.stringify(_ed.components || []));
+  if (_ed.reviews    !== undefined) fd.append('reviews',    JSON.stringify(_ed.reviews    || []));
+  if (_ed.faqs       !== undefined) fd.append('faqs',       JSON.stringify(_ed.faqs       || []));
   if (_gbGalleryUploads.length) {
     fd.append('gallery_add', JSON.stringify(_gbGalleryUploads));
   }

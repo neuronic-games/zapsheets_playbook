@@ -19,9 +19,15 @@ if (!is_dir($dir)) {
 }
 
 // Load existing settings to merge — only update fields that were explicitly posted
+// If the file is in old array format (ZapSheets), discard it and start fresh.
 $existing = [];
 if (file_exists($file)) {
-    $existing = json_decode(file_get_contents($file), true) ?: [];
+    $decoded = json_decode(file_get_contents($file), true);
+    if (is_array($decoded) && !empty($decoded) && isset($decoded[0])) {
+        $existing = []; // old indexed-array format — discard; start fresh flat object
+    } else {
+        $existing = $decoded ?: [];
+    }
 }
 
 // Map of POST key → settings key, only written when the POST key is present

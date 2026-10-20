@@ -97,7 +97,7 @@ if (!$_gameSlug) {
     // Carousel fallback: use game cover images if no carousel URLs are set
     if (empty($_carousel)) {
         foreach ($_games as $_g) {
-            $_cu = trim($_g['Cover URL'] ?? $_g['Image URL'] ?? $_g['Image'] ?? '');
+            $_cu = _gb_img(trim($_g['Cover URL'] ?? $_g['Image URL'] ?? $_g['Image'] ?? ''));
             if ($_cu) { $_carousel[] = $_cu; if (count($_carousel) >= 6) break; }
         }
     }

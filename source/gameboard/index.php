@@ -245,9 +245,15 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 .gb-footer-bar-inner { max-width:1100px; margin:0 auto; padding:.9rem 2rem; display:flex; align-items:center; justify-content:space-between; gap:1.5rem; flex-wrap:wrap; font-size:.72rem; color:rgba(255,255,255,.38); }
 .gb-footer-bar-left { display:flex; flex-direction:column; gap:.2rem; }
 .gb-footer-bar-icons { display:flex; gap:.5rem; align-items:center; flex-shrink:0; }
-.gb-footer-bar-icons a { width:1.9rem; height:1.9rem; border-radius:50%; border:1.5px solid rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; transition:border-color .14s,background .14s; }
-.gb-footer-bar-icons a:hover { border-color:rgba(255,255,255,.5); background:rgba(255,255,255,.08); }
-.gb-footer-bar-icons svg { fill:rgba(255,255,255,.6); }
+.gb-social-btn { width:1.9rem; height:1.9rem; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:border-color .14s,background .14s; cursor:pointer; padding:0; }
+.gb-social-btn svg { fill:rgba(255,255,255,.6); pointer-events:none; }
+.gb-social-set { border:1.5px solid rgba(255,255,255,.25); background:transparent; }
+.gb-social-set:hover { border-color:rgba(255,255,255,.6); background:rgba(255,255,255,.08); }
+.gb-social-empty { border:1.5px dashed rgba(255,255,255,.18); background:transparent; display:none; }
+.gb-social-empty svg { opacity:.35; }
+body.gb-admin-mode .gb-social-empty { display:flex; }
+body.gb-admin-mode .gb-social-empty:hover { border-color:rgba(255,255,255,.4); background:rgba(255,255,255,.05); }
+body.gb-admin-mode .gb-social-btn { cursor:pointer; }
 /* Inline-edit fields in footer (admin only) */
 .gb-footer-editable { outline:none; cursor:default; border-radius:3px; transition:background .13s,border-color .13s; min-width:4px; display:inline-block; border-bottom:1.5px solid transparent; }
 body.gb-admin-mode .gb-footer-editable { cursor:text; border-bottom-color:rgba(255,255,255,.18); padding-bottom:1px; }
@@ -459,12 +465,14 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
 
 <footer class="gb-footer">
   <?php
-  $_socials = [];
-  if ($_insta)   $_socials[] = ['url' => $_insta,   'label' => 'Instagram',    'svg' => '<svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>'];
-  if ($_twitter)  $_socials[] = ['url' => $_twitter,  'label' => 'X / Twitter',  'svg' => '<svg width="14" height="14" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>'];
-  if ($_fb)        $_socials[] = ['url' => $_fb,        'label' => 'Facebook',     'svg' => '<svg width="14" height="14" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>'];
-  if ($_yt)        $_socials[] = ['url' => $_yt,        'label' => 'YouTube',      'svg' => '<svg width="16" height="12" viewBox="0 0 24 17"><path d="M23.495 2.205a3.02 3.02 0 0 0-2.122-2.136C19.545 0 12 0 12 0S4.455 0 2.627.07a3.02 3.02 0 0 0-2.122 2.135C0 4.046 0 8.5 0 8.5s0 4.455.505 6.295a3.02 3.02 0 0 0 2.122 2.136C4.455 17 12 17 12 17s7.545 0 9.373-.07a3.02 3.02 0 0 0 2.122-2.135C24 12.954 24 8.5 24 8.5s0-4.454-.505-6.295zM9.545 12.273V4.727L15.818 8.5l-6.273 3.773z"/></svg>'];
-  if ($_bgg)       $_socials[] = ['url' => $_bgg,       'label' => 'BoardGameGeek','svg' => '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>'];
+  // All social platforms — always rendered in admin; public shows only configured ones
+  $_socialDefs = [
+    ['key'=>'instagram','label'=>'Instagram',    'url'=>$_insta,   'svg'=>'<svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>'],
+    ['key'=>'twitter',  'label'=>'X / Twitter', 'url'=>$_twitter, 'svg'=>'<svg width="14" height="14" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>'],
+    ['key'=>'facebook', 'label'=>'Facebook',    'url'=>$_fb,      'svg'=>'<svg width="14" height="14" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>'],
+    ['key'=>'youtube',  'label'=>'YouTube',     'url'=>$_yt,      'svg'=>'<svg width="16" height="12" viewBox="0 0 24 17"><path d="M23.495 2.205a3.02 3.02 0 0 0-2.122-2.136C19.545 0 12 0 12 0S4.455 0 2.627.07a3.02 3.02 0 0 0-2.122 2.135C0 4.046 0 8.5 0 8.5s0 4.455.505 6.295a3.02 3.02 0 0 0 2.122 2.136C4.455 17 12 17 12 17s7.545 0 9.373-.07a3.02 3.02 0 0 0 2.122-2.135C24 12.954 24 8.5 24 8.5s0-4.454-.505-6.295zM9.545 12.273V4.727L15.818 8.5l-6.273 3.773z"/></svg>'],
+    ['key'=>'bgg_url',  'label'=>'BoardGameGeek','url'=>$_bgg,    'svg'=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>'],
+  ];
   ?>
   <div class="gb-footer-main">
     <div class="gb-footer-brand">
@@ -472,13 +480,6 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
       <img src="<?= h($_pubLogo) ?>" alt="<?= h($_pubName) ?>" class="gb-footer-logo-img" />
       <?php elseif ($_pubName): ?>
       <div class="gb-footer-logo-ph"><?= h($_pubName) ?></div>
-      <?php endif; ?>
-      <?php if (!empty($_socials)): ?>
-      <div class="gb-footer-social">
-        <?php foreach ($_socials as $_s): ?>
-        <a href="<?= h($_s['url']) ?>" target="_blank" rel="noopener" title="<?= h($_s['label']) ?>"><?= $_s['svg'] ?></a>
-        <?php endforeach; ?>
-      </div>
       <?php endif; ?>
     </div>
   </div>
@@ -489,6 +490,7 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
               contenteditable="false"
               id="gbFooterCopyright"
               data-setting="copyright"
+              data-placeholder="© <?= date('Y') ?> <?= h($_pubName ?: 'Your Company') ?>"
               onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
               onblur="gbSaveFooterField(this)"><?= h($_copyright) ?></span>
         <?php if ($_footerNote || !isset($_gbPublicBase)): ?>
@@ -501,16 +503,34 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
               onblur="gbSaveFooterField(this)"><?= h($_footerNote) ?></span>
         <?php endif; ?>
       </div>
-      <?php if (!empty($_socials)): ?>
-      <div class="gb-footer-bar-icons">
-        <?php foreach ($_socials as $_s): ?>
-        <a href="<?= h($_s['url']) ?>" target="_blank" rel="noopener" title="<?= h($_s['label']) ?>"><?= $_s['svg'] ?></a>
-        <?php endforeach; ?>
+      <!-- Social icons: always visible in admin; public hides unconfigured ones -->
+      <div class="gb-footer-bar-icons" id="gbFooterIcons">
+        <?php foreach ($_socialDefs as $_sd):
+          $_isSet = !empty($_sd['url']);
+          $_showInPublic = $_isSet;
+          $_showInAdmin = true;
+          if (!isset($_gbPublicBase) || $_isSet): ?>
+        <button class="gb-social-btn<?= $_isSet ? ' gb-social-set' : ' gb-social-empty' ?>"
+                data-key="<?= h($_sd['key']) ?>"
+                data-label="<?= h($_sd['label']) ?>"
+                data-url="<?= h($_sd['url']) ?>"
+                onclick="gbClickSocial(this)"
+                title="<?= h($_sd['label']) . ($_isSet ? '' : ' — click to add') ?>"><?= $_sd['svg'] ?></button>
+        <?php endif; endforeach; ?>
       </div>
-      <?php endif; ?>
     </div>
   </div>
 </footer>
+
+<!-- Social link editor popover -->
+<div id="gbSocialPopover" style="display:none;position:fixed;z-index:800;background:#1e1e2e;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:.75rem .9rem;box-shadow:0 8px 32px rgba(0,0,0,.5);min-width:300px">
+  <div style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.45);margin-bottom:.5rem" id="gbSocialPopLabel"></div>
+  <div style="display:flex;gap:.4rem;align-items:center">
+    <input id="gbSocialPopInput" type="url" placeholder="https://…" style="flex:1;padding:.4rem .6rem;border-radius:5px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#fff;font-size:.83rem;outline:none" onkeydown="if(event.key==='Enter')gbSocialPopSave();if(event.key==='Escape')gbSocialPopClose()" />
+    <button onclick="gbSocialPopSave()" style="padding:.4rem .75rem;border-radius:5px;background:var(--accent);color:#fff;border:none;font-family:'DINBlack',sans-serif;font-size:.72rem;cursor:pointer">Save</button>
+    <button onclick="gbSocialPopClose()" style="padding:.4rem .55rem;border-radius:5px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);border:none;font-size:.8rem;cursor:pointer">✕</button>
+  </div>
+</div>
 
 <!-- ── Publish Site dialog ── -->
 <div class="gb-overlay" id="gbPublishOverlay" onclick="if(event.target===this)closePublishDialog()">
@@ -1129,6 +1149,55 @@ function gbSavePage() {
   };
   xhr.send(fd);
 }
+
+// ── Social link editor ───────────────────────────────────────────────────────
+var _gbSocialBtn = null;
+function gbClickSocial(btn) {
+  if (!document.body.classList.contains('gb-admin-mode')) {
+    // Public: follow URL if set
+    var url = btn.dataset.url;
+    if (url) window.open(url, '_blank', 'noopener');
+    return;
+  }
+  // Admin: open popover to edit URL
+  _gbSocialBtn = btn;
+  var pop = document.getElementById('gbSocialPopover');
+  document.getElementById('gbSocialPopLabel').textContent = btn.dataset.label;
+  var inp = document.getElementById('gbSocialPopInput');
+  inp.value = btn.dataset.url || '';
+  // Position near button
+  var r = btn.getBoundingClientRect();
+  pop.style.display = 'block';
+  var pw = pop.offsetWidth;
+  var left = Math.min(r.right - pw, window.innerWidth - pw - 12);
+  if (left < 8) left = 8;
+  pop.style.left = left + 'px';
+  pop.style.top  = (r.top - pop.offsetHeight - 8 + window.scrollY) + 'px';
+  inp.focus(); inp.select();
+}
+function gbSocialPopSave() {
+  if (!_gbSocialBtn) return;
+  var url = document.getElementById('gbSocialPopInput').value.trim();
+  var key = _gbSocialBtn.dataset.key;
+  _gbSocialBtn.dataset.url = url;
+  // Update button state
+  if (url) { _gbSocialBtn.classList.add('gb-social-set'); _gbSocialBtn.classList.remove('gb-social-empty'); _gbSocialBtn.title = _gbSocialBtn.dataset.label; }
+  else      { _gbSocialBtn.classList.remove('gb-social-set'); _gbSocialBtn.classList.add('gb-social-empty'); _gbSocialBtn.title = _gbSocialBtn.dataset.label + ' — click to add'; }
+  gbSocialPopClose();
+  var fd = new FormData();
+  fd.append('id', SHEET_ID); fd.append(key, url);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
+  xhr.send(fd);
+}
+function gbSocialPopClose() {
+  document.getElementById('gbSocialPopover').style.display = 'none';
+  _gbSocialBtn = null;
+}
+document.addEventListener('click', function(e) {
+  var pop = document.getElementById('gbSocialPopover');
+  if (pop && pop.style.display !== 'none' && !pop.contains(e.target) && !e.target.closest('.gb-social-btn')) gbSocialPopClose();
+});
 
 // ── Banner color ──────────────────────────────────────────────────────────────
 function gbApplyBannerColor(hex) {

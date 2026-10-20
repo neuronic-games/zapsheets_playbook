@@ -1414,14 +1414,18 @@ function submitAddGame() {
 // ── Strip HTML on paste — always insert plain text ────────────────────────────
 document.addEventListener('paste', function(e) {
   var el = e.target;
-  if (el.tagName !== 'TEXTAREA' && !(el.tagName === 'INPUT' && el.type === 'text')) return;
   var text = (e.clipboardData || window.clipboardData).getData('text/plain');
   if (!text) return;
-  e.preventDefault();
-  var start = el.selectionStart, end = el.selectionEnd, val = el.value;
-  el.value = val.substring(0, start) + text + val.substring(end);
-  el.selectionStart = el.selectionEnd = start + text.length;
-  el.dispatchEvent(new Event('input', { bubbles: true }));
+  if (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && el.type === 'text')) {
+    e.preventDefault();
+    var start = el.selectionStart, end = el.selectionEnd, val = el.value;
+    el.value = val.substring(0, start) + text + val.substring(end);
+    el.selectionStart = el.selectionEnd = start + text.length;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  } else if (el.isContentEditable || el.closest('[contenteditable="true"]')) {
+    e.preventDefault();
+    document.execCommand('insertText', false, text);
+  }
 }, true);
 </script>
 </body>
@@ -3410,14 +3414,18 @@ document.addEventListener('keydown', function(e){
 // ── Strip HTML on paste — always insert plain text ────────────────────────────
 document.addEventListener('paste', function(e) {
   var el = e.target;
-  if (el.tagName !== 'TEXTAREA' && !(el.tagName === 'INPUT' && el.type === 'text')) return;
   var text = (e.clipboardData || window.clipboardData).getData('text/plain');
   if (!text) return;
-  e.preventDefault();
-  var start = el.selectionStart, end = el.selectionEnd, val = el.value;
-  el.value = val.substring(0, start) + text + val.substring(end);
-  el.selectionStart = el.selectionEnd = start + text.length;
-  el.dispatchEvent(new Event('input', { bubbles: true }));
+  if (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && el.type === 'text')) {
+    e.preventDefault();
+    var start = el.selectionStart, end = el.selectionEnd, val = el.value;
+    el.value = val.substring(0, start) + text + val.substring(end);
+    el.selectionStart = el.selectionEnd = start + text.length;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  } else if (el.isContentEditable || el.closest('[contenteditable="true"]')) {
+    e.preventDefault();
+    document.execCommand('insertText', false, text);
+  }
 }, true);
 </script>
 </body>

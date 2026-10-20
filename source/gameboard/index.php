@@ -522,15 +522,6 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
   </div>
 </footer>
 
-<!-- Social link editor popover -->
-<div id="gbSocialPopover" style="display:none;position:fixed;z-index:800;background:#1e1e2e;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:.75rem .9rem;box-shadow:0 8px 32px rgba(0,0,0,.5);min-width:300px">
-  <div style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.45);margin-bottom:.5rem" id="gbSocialPopLabel"></div>
-  <div style="display:flex;gap:.4rem;align-items:center">
-    <input id="gbSocialPopInput" type="url" placeholder="https://…" style="flex:1;padding:.4rem .6rem;border-radius:5px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#fff;font-size:.83rem;outline:none" onkeydown="if(event.key==='Enter')gbSocialPopSave();if(event.key==='Escape')gbSocialPopClose()" />
-    <button onclick="gbSocialPopSave()" style="padding:.4rem .75rem;border-radius:5px;background:var(--accent);color:#fff;border:none;font-family:'DINBlack',sans-serif;font-size:.72rem;cursor:pointer">Save</button>
-    <button onclick="gbSocialPopClose()" style="padding:.4rem .55rem;border-radius:5px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);border:none;font-size:.8rem;cursor:pointer">✕</button>
-  </div>
-</div>
 
 <!-- ── Publish Site dialog ── -->
 <div class="gb-overlay" id="gbPublishOverlay" onclick="if(event.target===this)closePublishDialog()">
@@ -1151,53 +1142,16 @@ function gbSavePage() {
 }
 
 // ── Social link editor ───────────────────────────────────────────────────────
-var _gbSocialBtn = null;
+var _gbSocialFieldMap = { instagram:'setInsta', twitter:'setTwitter', facebook:'setFb', youtube:'setYt', bgg_url:'setBgg' };
 function gbClickSocial(btn) {
   if (!document.body.classList.contains('gb-admin-mode')) {
-    // Public: follow URL if set
     var url = btn.dataset.url;
     if (url) window.open(url, '_blank', 'noopener');
     return;
   }
-  // Admin: open popover to edit URL
-  _gbSocialBtn = btn;
-  var pop = document.getElementById('gbSocialPopover');
-  document.getElementById('gbSocialPopLabel').textContent = btn.dataset.label;
-  var inp = document.getElementById('gbSocialPopInput');
-  inp.value = btn.dataset.url || '';
-  // Position near button
-  var r = btn.getBoundingClientRect();
-  pop.style.display = 'block';
-  var pw = pop.offsetWidth;
-  var left = Math.min(r.right - pw, window.innerWidth - pw - 12);
-  if (left < 8) left = 8;
-  pop.style.left = left + 'px';
-  pop.style.top  = (r.top - pop.offsetHeight - 8 + window.scrollY) + 'px';
-  inp.focus(); inp.select();
+  // Admin: open Settings dialog focused on the matching field
+  openSettings(_gbSocialFieldMap[btn.dataset.key] || null);
 }
-function gbSocialPopSave() {
-  if (!_gbSocialBtn) return;
-  var url = document.getElementById('gbSocialPopInput').value.trim();
-  var key = _gbSocialBtn.dataset.key;
-  _gbSocialBtn.dataset.url = url;
-  // Update button state
-  if (url) { _gbSocialBtn.classList.add('gb-social-set'); _gbSocialBtn.classList.remove('gb-social-empty'); _gbSocialBtn.title = _gbSocialBtn.dataset.label; }
-  else      { _gbSocialBtn.classList.remove('gb-social-set'); _gbSocialBtn.classList.add('gb-social-empty'); _gbSocialBtn.title = _gbSocialBtn.dataset.label + ' — click to add'; }
-  gbSocialPopClose();
-  var fd = new FormData();
-  fd.append('id', SHEET_ID); fd.append(key, url);
-  var xhr = new XMLHttpRequest();
-  xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
-  xhr.send(fd);
-}
-function gbSocialPopClose() {
-  document.getElementById('gbSocialPopover').style.display = 'none';
-  _gbSocialBtn = null;
-}
-document.addEventListener('click', function(e) {
-  var pop = document.getElementById('gbSocialPopover');
-  if (pop && pop.style.display !== 'none' && !pop.contains(e.target) && !e.target.closest('.gb-social-btn')) gbSocialPopClose();
-});
 
 // ── Banner color ──────────────────────────────────────────────────────────────
 function gbApplyBannerColor(hex) {
@@ -1295,7 +1249,7 @@ function submitSignIn(confirmNew) {
 }
 
 // ── Settings dialog ──────────────────────────────────────────────────────────
-function openSettings() {
+function openSettings(focusFieldId) {
   document.getElementById('setErr').textContent = '';
   var xhr = new XMLHttpRequest();
   xhr.open('GET', APP_ROOT + 'push/tmGetSettings.php?id=' + encodeURIComponent(SHEET_ID));
@@ -1318,10 +1272,11 @@ function openSettings() {
     document.getElementById('setFb').value      = s['Facebook']  || '';
     document.getElementById('setYt').value      = s['YouTube']   || '';
     document.getElementById('setBgg').value     = s['BGG URL']   || '';
+    var target = focusFieldId ? document.getElementById(focusFieldId) : document.getElementById('setCompany');
+    if (target) { target.focus(); target.select(); target.scrollIntoView({ behavior:'smooth', block:'center' }); }
   };
   xhr.send();
   document.getElementById('settingsOverlay').classList.add('open');
-  setTimeout(function(){ document.getElementById('setCompany').focus(); }, 60);
 }
 function forceCloseSettings() { document.getElementById('settingsOverlay').classList.remove('open'); }
 function submitSettings() {

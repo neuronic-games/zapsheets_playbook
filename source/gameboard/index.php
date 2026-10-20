@@ -1186,7 +1186,7 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
 <body>
 
 <!-- ── Nav ── -->
-<nav class="gb-nav"<?= isset($_gbPublicBase) ? ' style="display:none"' : '' ?>>
+<nav class="gb-nav">
   <div class="gb-nav-left">
     <a class="gb-nav-back" href="<?= h($_gbBase) ?>" title="Back to all games">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>

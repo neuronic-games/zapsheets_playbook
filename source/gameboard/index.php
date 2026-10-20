@@ -1246,7 +1246,7 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
   </div>
   <div class="gb-hero-overlay"></div>
   <div class="gb-hero-content">
-    <?php if ($_status): ?><div class="gb-status-badge" id="gbStatusBadge"><?= h(ucfirst($_status)) ?></div><?php endif; ?>
+    <?php if ($_status && !isset($_gbPublicBase)): ?><div class="gb-status-badge" id="gbStatusBadge"><?= h(ucfirst($_status)) ?></div><?php endif; ?>
     <h1 class="gb-hero-title" id="gbEditTitle" data-ph="Game Title"><?= h($_name) ?></h1>
     <p class="gb-hero-summary" id="gbEditSummary" data-ph="Click to add a one-line tagline for this game…"><?= h($_summary) ?></p>
     <div class="gb-stats">

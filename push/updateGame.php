@@ -125,6 +125,7 @@ if ($result !== null && !empty($result['ok'])) {
         if ($rules       !== '') $patchFields['Rules PDF Url'] = $rules;
         if ($sellsheet   !== '') $patchFields['Sellsheet URL'] = $sellsheet;
         if ($view        !== '') $patchFields['Page URL']      = $view;
+        if ($video       !== '') $patchFields['Video URL']     = $video;
         // Stat rows live in [GameName] tab, not in Games sheet columns
         if ($minPlayers  !== '') $patchFields['MinPlayers']    = $minPlayers;
         if ($maxPlayers  !== '') $patchFields['MaxPlayers']    = $maxPlayers;

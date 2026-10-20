@@ -1579,6 +1579,8 @@ $_reviews     = array_values(array_filter(_gb_rows($_rich, 'Review'),    fn($r) 
 $_faqs        = array_values(array_filter(_gb_rows($_rich, 'FAQ'),       fn($r) => trim($r['Value'] ?? '') !== ''));
 $_buyUrls     = _gb_rows($_rich, 'BuyUrl');
 $_richVideos  = _gb_rows($_rich, 'Video');
+// Also read Video URL from [GameName] tab as fallback (in case Games sheet has no Video URL column)
+if (!$_videoUrl) $_videoUrl = _gb_val($_rich, 'Video URL');
 $_mediaImgs   = array_merge(_gb_rows($_rich, 'Media'), _gb_rows($_rich, 'ProductImage'));
 $_richPrice   = _gb_val($_rich, 'Price');
 $_richRules   = _gb_val($_rich, 'Rules PDF Url') ?: $_rulesUrl;
@@ -1622,7 +1624,8 @@ $_heroImg = $_gallery[0] ?? '';
 // Primary video embed: first rich Video with embeddable URL, else games.json Video URL
 $_videoEmbed = '';
 foreach ($_richVideos as $rv) {
-    $e = _gb_embed(trim($rv['Value 1'] ?? $rv['Value'] ?? ''));
+    // URL is in col B (Value); Value 1 / Value 2 are extras — use ?: not ?? to skip empty strings
+    $e = _gb_embed(trim($rv['Value'] ?: ($rv['Value 1'] ?? '')));
     if ($e) { $_videoEmbed = $e; break; }
 }
 if (!$_videoEmbed) $_videoEmbed = _gb_embed($_videoUrl);

@@ -1500,9 +1500,9 @@ function _gb_val(array $rich, string $name): string {
     return '';
 }
 
-$_components  = _gb_rows($_rich, 'Component');
-$_reviews     = _gb_rows($_rich, 'Review');
-$_faqs        = _gb_rows($_rich, 'FAQ');
+$_components  = array_values(array_filter(_gb_rows($_rich, 'Component'), fn($r) => trim($r['Value'] ?? '') !== ''));
+$_reviews     = array_values(array_filter(_gb_rows($_rich, 'Review'),    fn($r) => trim($r['Value'] ?? '') !== ''));
+$_faqs        = array_values(array_filter(_gb_rows($_rich, 'FAQ'),       fn($r) => trim($r['Value'] ?? '') !== '' || trim($r['Value 1'] ?? '') !== ''));
 $_buyUrls     = _gb_rows($_rich, 'BuyUrl');
 $_richVideos  = _gb_rows($_rich, 'Video');
 $_mediaImgs   = array_merge(_gb_rows($_rich, 'Media'), _gb_rows($_rich, 'ProductImage'));

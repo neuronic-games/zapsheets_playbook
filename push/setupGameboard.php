@@ -93,6 +93,38 @@ foreach (['games', 'people'] as $tab) {
         $refreshErrors[$tab] = $err;
     }
 }
+
+// ── Step 4: Publish per-game tab caches (game-{name}-en.json) ─────────────────
+$gamesJson = $sheetDir . '/games.json';
+$gameNames = [];
+if (file_exists($gamesJson)) {
+    $gamesData = json_decode(file_get_contents($gamesJson), true);
+    if (is_array($gamesData)) {
+        foreach ($gamesData as $g) {
+            $n = trim($g['Name'] ?? '');
+            if ($n) $gameNames[] = $n;
+        }
+    }
+}
+$gamesPublished = [];
+$gamesErrors    = [];
+foreach ($gameNames as $gameName) {
+    $pubCmd = escapeshellarg($pythonPath) . ' '
+            . escapeshellarg(__DIR__ . '/gpublishgame.py') . ' '
+            . escapeshellarg($sheetId . '|' . $gameName) . ' 2>/dev/null';
+    $pubOut = trim((string) shell_exec($pubCmd));
+    $pubResult = $pubOut ? json_decode($pubOut, true) : null;
+    if (!empty($pubResult['ok'])) {
+        $gamesPublished[] = $gameName;
+        $refreshed[] = 'game: ' . $gameName;
+    } else {
+        $err = $pubResult['error'] ?? ($pubOut ?: 'no response');
+        $gamesErrors[$gameName] = $err;
+        $refreshErrors['game: ' . $gameName] = $err;
+    }
+}
+if ($gamesPublished) $result['games_published'] = $gamesPublished;
+
 $result['json_refreshed'] = $refreshed;
 if ($refreshErrors) {
     $result['refresh_errors'] = $refreshErrors;

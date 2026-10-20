@@ -249,10 +249,14 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 .gb-footer-bar-icons a:hover { border-color:rgba(255,255,255,.5); background:rgba(255,255,255,.08); }
 .gb-footer-bar-icons svg { fill:rgba(255,255,255,.6); }
 /* Inline-edit fields in footer (admin only) */
-.gb-footer-editable { outline:none; cursor:default; border-radius:3px; transition:background .13s; min-width:4px; }
-body.gb-admin-mode .gb-footer-editable { cursor:text; }
-body.gb-admin-mode .gb-footer-editable:hover { background:rgba(255,255,255,.07); }
-body.gb-admin-mode .gb-footer-editable:focus { background:rgba(255,255,255,.1); outline:1.5px solid rgba(255,255,255,.25); }
+.gb-footer-editable { outline:none; cursor:default; border-radius:3px; transition:background .13s,border-color .13s; min-width:4px; display:inline-block; border-bottom:1.5px solid transparent; }
+body.gb-admin-mode .gb-footer-editable { cursor:text; border-bottom-color:rgba(255,255,255,.18); padding-bottom:1px; }
+body.gb-admin-mode .gb-footer-editable:hover { border-bottom-color:rgba(255,255,255,.4); }
+body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,255,.75); outline:none; }
+.gb-footer-editable:empty:before { content:attr(data-placeholder); color:rgba(255,255,255,.22); pointer-events:none; font-style:italic; }
+/* Save button highlight */
+#gbSavePageBtn { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.45); color:#fff; }
+#gbSavePageBtn:hover { background:rgba(255,255,255,.22); border-color:#fff; }
 
 /* ── Overlay / Dialog (sign-in + settings) ── */
 .gb-overlay {
@@ -325,6 +329,7 @@ body.gb-admin-mode .gb-footer-editable:focus { background:rgba(255,255,255,.1); 
     <span class="gb-admin-label">GameBoard Admin</span>
     <div class="gb-admin-tools">
       <span class="gb-meta" id="gbMeta"><?= h($_pubName ?: '') ?></span>
+      <button class="btn-add-game" id="gbSavePageBtn" onclick="gbSavePage()" style="display:none">Save</button>
       <button class="btn-add-game" id="gbAddGameBtn" onclick="openAddGame()" style="display:none">+ Game</button>
       <div class="user-menu-wrap">
         <button class="btn-user-icon" id="gbUserBtn" onclick="toggleGbMenu(event)" title="Menu">
@@ -491,7 +496,7 @@ body.gb-admin-mode .gb-footer-editable:focus { background:rgba(255,255,255,.1); 
               contenteditable="false"
               id="gbFooterNote"
               data-setting="footer_note"
-              data-placeholder="Add a tagline or contact info…"
+              data-placeholder="Click to add contact info or tagline…"
               onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
               onblur="gbSaveFooterField(this)"><?= h($_footerNote) ?></span>
         <?php endif; ?>
@@ -800,10 +805,14 @@ function _updateGbAuth() {
     if (profile) profile.style.display = '';
     if (publishBtn) publishBtn.style.display = '';
     if (addGameBtn) addGameBtn.style.display = '';
+    var saveBtn = document.getElementById('gbSavePageBtn');
+    if (saveBtn) saveBtn.style.display = '';
     document.body.classList.add('gb-admin-mode');
     document.querySelectorAll('.gb-footer-editable').forEach(function(el){ el.contentEditable = 'true'; });
   } else {
     document.querySelectorAll('.gb-footer-editable').forEach(function(el){ el.contentEditable = 'false'; });
+    var saveBtn = document.getElementById('gbSavePageBtn');
+    if (saveBtn) saveBtn.style.display = 'none';
     if (btn) { btn.classList.remove('signed-in'); btn.title = 'Menu'; }
     if (metaEl) metaEl.textContent = <?= json_encode($_pubName ?: 'Games') ?>;
     if (siOut)  { siOut.textContent = 'Sign In'; siOut.className = 'user-menu-item'; }
@@ -1086,20 +1095,38 @@ function gbUploadLogo(file) {
   xhr.send(fd);
 }
 
-// ── Footer inline edit ────────────────────────────────────────────────────────
+// ── Footer inline edit + page Save ───────────────────────────────────────────
 function gbSaveFooterField(el) {
   if (!document.body.classList.contains('gb-admin-mode')) return;
   var key = el.dataset.setting;
   var val = el.textContent.trim();
   if (!key) return;
-  // Show empty placeholder hint
-  var ph = el.dataset.placeholder;
-  if (!val && ph) el.textContent = '';
   var fd = new FormData();
   fd.append('id', SHEET_ID);
   fd.append(key, val);
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
+  xhr.send(fd);
+}
+
+function gbSavePage() {
+  if (!document.body.classList.contains('gb-admin-mode')) return;
+  var btn = document.getElementById('gbSavePageBtn');
+  if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
+  var fd = new FormData();
+  fd.append('id', SHEET_ID);
+  document.querySelectorAll('.gb-footer-editable[data-setting]').forEach(function(el) {
+    fd.append(el.dataset.setting, el.textContent.trim());
+  });
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
+  xhr.onload = function() {
+    if (btn) { btn.textContent = 'Saved ✓'; btn.disabled = false; setTimeout(function(){ btn.textContent = 'Save'; }, 1800); }
+  };
+  xhr.onerror = function() {
+    if (btn) { btn.textContent = 'Save'; btn.disabled = false; }
+    alert('Save failed — network error.');
+  };
   xhr.send(fd);
 }
 

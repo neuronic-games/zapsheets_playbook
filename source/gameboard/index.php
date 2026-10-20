@@ -1784,6 +1784,13 @@ a { color:inherit; text-decoration:none; }
 .gb-video-ph-inner { background:linear-gradient(135deg,#1a1a2e,#2d2d88); border-radius:10px; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:.5rem; opacity:.3; cursor:pointer; transition:opacity .2s; }
 .gb-video-ph-inner:hover { opacity:.5; }
 .gb-video-ph-inner.drag-over { opacity:.8; outline:2px dashed #fff; }
+.gb-video-ph-inner.url-entry { opacity:1; cursor:default; gap:.75rem; padding:1.5rem; }
+.gb-video-ph-url-wrap { display:flex; gap:.5rem; width:min(420px,100%); }
+.gb-video-ph-url-wrap input { flex:1; padding:.55rem .8rem; border-radius:6px; border:none; font-size:.85rem; outline:none; }
+.gb-video-ph-url-wrap button { padding:.55rem .9rem; border-radius:6px; border:none; background:#4ade80; color:#0f172a; font-weight:700; font-size:.8rem; cursor:pointer; white-space:nowrap; }
+.gb-video-ph-url-wrap button:hover { background:#22c55e; }
+.gb-video-ph-cancel { font-size:.65rem; color:#94a3b8; cursor:pointer; text-transform:uppercase; letter-spacing:.08em; }
+.gb-video-ph-cancel:hover { color:#fff; }
 .gb-video-tabs { display:flex; gap:.4rem; flex-wrap:wrap; margin-top:.7rem; }
 .gb-vtab {
   font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase;
@@ -2289,12 +2296,12 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
   <div class="gb-section gb-ph-section" id="gbVideoPlaceholder">
     <div class="gb-section-label">Watch</div>
     <div class="gb-video-ph-inner"
-         onclick="openEditDetailsAt('gbedVideoUrl')"
+         onclick="gbVideoPhClick(event,this)"
          ondragover="gbVideoDragOver(event,this)"
          ondragleave="gbVideoDragLeave(event,this)"
          ondrop="gbVideoDrop(event,this)">
-      <div style="font-size:3rem;">▶</div>
-      <div style="font-family:'DINBlack',sans-serif;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:#fff;">Drop a video file or click to add URL</div>
+      <div class="gb-video-ph-icon" style="font-size:3rem;">▶</div>
+      <div class="gb-video-ph-label" style="font-family:'DINBlack',sans-serif;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:#fff;">Drop a video file or click to add URL</div>
     </div>
   </div>
   <?php endif; ?>
@@ -2943,7 +2950,68 @@ function openEditDetailsAt(fieldId) {
     el.select && el.select();
   }, 60);
 }
-// ── Video placeholder: click → edit details; drop → upload ──────────────────
+// ── Video placeholder: click → inline URL entry; drop → upload ──────────────
+function gbVideoPhClick(e, el) {
+  if (el.classList.contains('url-entry')) return; // already open
+  el.classList.add('url-entry');
+  el.querySelector('.gb-video-ph-icon').style.display = 'none';
+  el.querySelector('.gb-video-ph-label').style.display = 'none';
+  var urlWrap = document.createElement('div');
+  urlWrap.className = 'gb-video-ph-url-wrap';
+  urlWrap.innerHTML =
+    '<input id="gbVideoUrlInline" type="url" placeholder="Paste YouTube or video URL…" />'
+    + '<button onclick="gbVideoUrlConfirm()">Add</button>';
+  var cancel = document.createElement('div');
+  cancel.className = 'gb-video-ph-cancel';
+  cancel.textContent = 'Cancel';
+  cancel.onclick = function() { gbVideoUrlCancel(el); };
+  el.appendChild(urlWrap);
+  el.appendChild(cancel);
+  setTimeout(function() { var inp = document.getElementById('gbVideoUrlInline'); if (inp) inp.focus(); }, 30);
+  urlWrap.querySelector('input').addEventListener('keydown', function(ev) {
+    if (ev.key === 'Enter') { ev.preventDefault(); gbVideoUrlConfirm(); }
+    if (ev.key === 'Escape') { gbVideoUrlCancel(el); }
+  });
+}
+function gbVideoUrlCancel(el) {
+  el.classList.remove('url-entry');
+  el.querySelector('.gb-video-ph-icon').style.display = '';
+  el.querySelector('.gb-video-ph-label').style.display = '';
+  var wrap = el.querySelector('.gb-video-ph-url-wrap');
+  var cancel = el.querySelector('.gb-video-ph-cancel');
+  if (wrap)   el.removeChild(wrap);
+  if (cancel) el.removeChild(cancel);
+}
+function gbVideoUrlConfirm() {
+  var inp = document.getElementById('gbVideoUrlInline');
+  if (!inp) return;
+  var url = inp.value.trim();
+  if (!url) return;
+  _ed.video_url = url;
+  gbVideoApplyUrl(url);
+}
+function gbVideoApplyUrl(url) {
+  // Compute embed URL (YouTube) or direct URL
+  var embed = '';
+  var yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([A-Za-z0-9_\-]+)/);
+  if (yt) embed = 'https://www.youtube.com/embed/' + yt[1];
+  var section = document.getElementById('gbVideoPlaceholder');
+  if (!section) section = document.getElementById('gbVideoSection');
+  if (!section) return;
+  section.id = 'gbVideoSection';
+  section.className = 'gb-section';
+  if (embed) {
+    section.innerHTML = '<div class="gb-section-label">Watch</div>'
+      + '<div class="gb-video-wrap" id="videoWrap">'
+      + '<iframe id="videoFrame" src="' + embed.replace(/"/g,'&quot;') + '" allow="autoplay; encrypted-media" allowfullscreen></iframe>'
+      + '</div>';
+  } else {
+    section.innerHTML = '<div class="gb-section-label">Watch</div>'
+      + '<div class="gb-video-wrap" id="videoWrap">'
+      + '<video id="videoFrame" src="' + url.replace(/"/g,'&quot;') + '" controls style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;"></video>'
+      + '</div>';
+  }
+}
 function gbVideoDragOver(e, el) {
   e.preventDefault();
   el.classList.add('drag-over');
@@ -2958,7 +3026,7 @@ function gbVideoDrop(e, el) {
   var file = e.dataTransfer.files && e.dataTransfer.files[0];
   if (!file) return;
   if (!file.type.startsWith('video/')) {
-    openEditDetailsAt('gbedVideoUrl');
+    gbVideoPhClick(e, el);
     return;
   }
   var origHTML = el.innerHTML;
@@ -2971,16 +3039,7 @@ function gbVideoDrop(e, el) {
     .then(function(r){
       if (r.ok && r.url) {
         _ed.video_url = r.url;
-        // Replace the placeholder section with an inline <video>
-        var section = document.getElementById('gbVideoPlaceholder');
-        if (section) {
-          section.id = 'gbVideoSection';
-          section.className = 'gb-section';
-          section.innerHTML = '<div class="gb-section-label">Watch</div>'
-            + '<div class="gb-video-wrap" id="videoWrap">'
-            + '<video id="videoFrame" src="' + r.url.replace(/"/g,'&quot;') + '" controls style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;"></video>'
-            + '</div>';
-        }
+        gbVideoApplyUrl(r.url);
       } else {
         alert('Upload failed: ' + (r.error || 'Unknown error'));
         el.innerHTML = origHTML;

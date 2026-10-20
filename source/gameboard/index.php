@@ -3208,6 +3208,16 @@ document.addEventListener('drop', function(e) {
 });
 
 function saveGame() {
+  // Sync inline stat inputs into _ed before building FormData
+  var _statSync = {
+    gbsiCount:'count', gbsiDuration:'duration', gbsiMechanic:'mechanic',
+    gbsiAges:'ages',   gbsiSeries:'series',     gbsiBoxSize:'box_size'
+  };
+  Object.keys(_statSync).forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) _ed[_statSync[id]] = el.value.trim();
+  });
+
   var saveBtn = document.getElementById('gbSaveBtn');
   saveBtn.disabled = true;
   saveBtn.textContent = 'Saving…';

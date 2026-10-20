@@ -106,7 +106,7 @@ if (function_exists('imagewebp')) {
 }
 
 if ($converted) {
-    @unlink($tmpPath);          // remove the original upload
+    if ($tmpPath !== $destPath) @unlink($tmpPath); // remove original only when paths differ
 } else {
     // GD unavailable or conversion failed — serve the original as-is
     rename($tmpPath, $destPath);

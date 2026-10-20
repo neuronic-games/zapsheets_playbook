@@ -56,10 +56,6 @@ cover      = data.get('cover',      '').strip()
 count      = data.get('count',      '').strip()
 duration   = data.get('duration',   '').strip()
 availability = data.get('availability', '').strip()
-mechanic   = data.get('mechanic',   '').strip()
-ages       = data.get('ages',       '').strip()
-series     = data.get('series',     '').strip()
-box_size   = data.get('box_size',   '').strip()
 
 # Open spreadsheet
 try:
@@ -137,10 +133,6 @@ field_map = [
     (('Video',     'Video URL',   'VideoURL'),                                      video),
     (('Image URL', 'ImageURL',    'Image'),                                         image),
     (('Cover URL', 'CoverURL',    'Cover'),                                         cover),
-    (('Mechanic',  'Main Mechanic', 'Mechanics'),                                   mechanic),
-    (('Ages',      'Age',           'Recommended Age', 'Min Age'),                  ages),
-    (('Series',    'Game Series',   'Collection'),                                  series),
-    (('Box Size',  'BoxSize',       'Box'),                                         box_size),
 ]
 
 updates = []

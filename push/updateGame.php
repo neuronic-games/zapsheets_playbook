@@ -29,13 +29,12 @@ $imageRaw      = trim($_POST['image']          ?? '');
 $image         = $imageRaw ? '=IMAGE("' . $imageRaw . '")' : '';
 $coverRaw      = trim($_POST['cover_url']      ?? '');
 $cover         = $coverRaw ? '=IMAGE("' . $coverRaw . '")' : '';
-$count         = trim($_POST['count']          ?? '');
-$duration      = trim($_POST['duration']       ?? '');
 $availability  = trim($_POST['availability']   ?? '');
-$mechanic      = trim($_POST['mechanic']       ?? '');
-$ages          = trim($_POST['ages']           ?? '');
-$series        = trim($_POST['series']         ?? '');
-$boxSize       = trim($_POST['box_size']       ?? '');
+$minPlayers    = trim($_POST['min_players']    ?? '');
+$maxPlayers    = trim($_POST['max_players']    ?? '');
+$minPlaytime   = trim($_POST['min_playtime']   ?? '');
+$maxPlaytime   = trim($_POST['max_playtime']   ?? '');
+$weight        = trim($_POST['weight']         ?? '');
 $galleryAddRaw = trim($_POST['gallery_add']    ?? '');
 $galleryAdd    = $galleryAddRaw ? (json_decode($galleryAddRaw, true) ?: []) : [];
 
@@ -70,13 +69,7 @@ $data = [
     'video'          => $video,
     'image'          => $image,
     'cover'          => $cover,
-    'count'          => $count,
-    'duration'       => $duration,
     'availability'   => $availability,
-    'mechanic'       => $mechanic,
-    'ages'           => $ages,
-    'series'         => $series,
-    'box_size'       => $boxSize,
 ];
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
@@ -121,30 +114,30 @@ if ($result !== null && !empty($result['ok'])) {
         $result['game_tab'] = $tabResult['tab'];
         $result['game_tab_created'] = !($tabResult['existed'] ?? true);
 
-        // Patch fields in the [GameName] tab that mirror Games tab columns,
-        // so the tab stays in sync with what the user just edited.
-        // (Only patch if tab already existed — new tabs are pre-populated by gcreategameboardtab.py)
-        if ($tabResult['existed'] ?? false) {
-            $patchFields = [];
-            // Sync all fields that mirror the Games tab columns.
-            // ProductImage patches only the FIRST ProductImage row (= cover image).
-            if ($description !== '') $patchFields['Description']  = $description;
-            if ($coverRaw    !== '') $patchFields['ProductImage'] = $coverRaw;
-            if ($rules       !== '') $patchFields['Rules PDF Url'] = $rules;
-            if ($sellsheet   !== '') $patchFields['Sellsheet URL'] = $sellsheet;
-            if ($view        !== '') $patchFields['Page URL']      = $view;
-            if ($patchFields) {
-                $patchData    = ['game' => $tabGameName, 'fields' => $patchFields];
-                $patchEncoded = base64_encode(json_encode($patchData, JSON_UNESCAPED_UNICODE));
-                $patchCmd     = escapeshellarg($pythonPath) . ' '
-                              . escapeshellarg(__DIR__ . '/gpatchtabfields.py') . ' '
-                              . escapeshellarg($sheetId . '|' . $patchEncoded) . ' 2>/dev/null';
-                $patchOut = trim((string) shell_exec($patchCmd));
-                if ($patchOut) {
-                    $patchResult = json_decode($patchOut, true);
-                    if (!empty($patchResult['patched'])) {
-                        $result['game_tab_patched'] = $patchResult['patched'];
-                    }
+        // Patch fields in the [GameName] tab — runs for both new and existing tabs.
+        $patchFields = [];
+        if ($description !== '') $patchFields['Description']   = $description;
+        if ($coverRaw    !== '') $patchFields['ProductImage']  = $coverRaw;
+        if ($rules       !== '') $patchFields['Rules PDF Url'] = $rules;
+        if ($sellsheet   !== '') $patchFields['Sellsheet URL'] = $sellsheet;
+        if ($view        !== '') $patchFields['Page URL']      = $view;
+        // Stat rows live in [GameName] tab, not in Games sheet columns
+        if ($minPlayers  !== '') $patchFields['MinPlayers']    = $minPlayers;
+        if ($maxPlayers  !== '') $patchFields['MaxPlayers']    = $maxPlayers;
+        if ($minPlaytime !== '') $patchFields['MinPlaytime']   = $minPlaytime;
+        if ($maxPlaytime !== '') $patchFields['MaxPlaytime']   = $maxPlaytime;
+        if ($weight      !== '') $patchFields['Weight']        = $weight;
+        if ($patchFields) {
+            $patchData    = ['game' => $tabGameName, 'fields' => $patchFields];
+            $patchEncoded = base64_encode(json_encode($patchData, JSON_UNESCAPED_UNICODE));
+            $patchCmd     = escapeshellarg($pythonPath) . ' '
+                          . escapeshellarg(__DIR__ . '/gpatchtabfields.py') . ' '
+                          . escapeshellarg($sheetId . '|' . $patchEncoded) . ' 2>/dev/null';
+            $patchOut = trim((string) shell_exec($patchCmd));
+            if ($patchOut) {
+                $patchResult = json_decode($patchOut, true);
+                if (!empty($patchResult['patched'])) {
+                    $result['game_tab_patched'] = $patchResult['patched'];
                 }
             }
         }

@@ -1442,13 +1442,9 @@ if (!$_game) { http_response_code(404); exit; }
 $_name        = trim($_game['Name']           ?? '');
 $_summary     = trim($_game['Tagline'] ?? $_game['Tag Line'] ?? $_game['Summary'] ?? '');
 $_description = trim($_game['Description']    ?? '');
-$_count       = trim($_game['Count']          ?? '');
-$_duration    = trim($_game['Duration']       ?? '');
-$_availability= trim($_game['Availability']   ?? '');
-$_mechanic    = trim($_game['Mechanic'] ?? $_game['Main Mechanic'] ?? $_game['Mechanics'] ?? '');
-$_ages        = trim($_game['Ages']     ?? $_game['Age']           ?? '');
-$_series      = trim($_game['Series']   ?? $_game['Game Series']   ?? '');
-$_boxSize     = trim($_game['Box Size'] ?? $_game['BoxSize']       ?? '');
+$_count       = trim($_game['Count']    ?? '');  // may be overridden by tab rows below
+$_duration    = trim($_game['Duration'] ?? '');  // may be overridden by tab rows below
+$_availability= trim($_game['Availability'] ?? '');
 $_status      = trim($_game['Status']         ?? '');
 $_coverUrl    = _gb_img(trim($_game['Cover URL']    ?? $_game['Image'] ?? ''));
 $_imageUrl    = _gb_img(trim($_game['Image URL']    ?? $_game['Image'] ?? ''));
@@ -1507,6 +1503,24 @@ $_richVideos  = _gb_rows($_rich, 'Video');
 $_mediaImgs   = array_merge(_gb_rows($_rich, 'Media'), _gb_rows($_rich, 'ProductImage'));
 $_richPrice   = _gb_val($_rich, 'Price');
 $_richRules   = _gb_val($_rich, 'Rules PDF Url') ?: $_rulesUrl;
+
+// ── Stats from [GameName] tab rows ───────────────────────────────────────────
+$_minPlayers  = _gb_val($_rich, 'MinPlayers');
+$_maxPlayers  = _gb_val($_rich, 'MaxPlayers');
+$_minPlaytime = _gb_val($_rich, 'MinPlaytime');
+$_maxPlaytime = _gb_val($_rich, 'MaxPlaytime');
+$_weight      = _gb_val($_rich, 'Weight');
+$_mechanic    = _gb_val($_rich, 'Mechanic') ?: _gb_val($_rich, 'Main Mechanic');
+$_ages        = _gb_val($_rich, 'Ages')     ?: _gb_val($_rich, 'Age');
+$_series      = _gb_val($_rich, 'Series');
+$_boxSize     = _gb_val($_rich, 'Box Size');
+// Override count/duration display with tab data when available
+if ($_minPlayers || $_maxPlayers) {
+    $_count = $_minPlayers . ($_maxPlayers && $_maxPlayers !== $_minPlayers ? '–' . $_maxPlayers : '');
+}
+if ($_minPlaytime || $_maxPlaytime) {
+    $_duration = $_minPlaytime . ($_maxPlaytime && $_maxPlaytime !== $_minPlaytime ? '–' . $_maxPlaytime : '') . ' min';
+}
 
 // ── Gallery: cover + image + rich media images ─────────────────────────────
 $_gallery = [];
@@ -1877,10 +1891,14 @@ body.gb-admin-mode .gb-nav-links { display:none; }
 .btn-adm-details:hover { background:rgba(124,158,255,.25); }
 /* Admin inline stat editor */
 .gb-stats-edit { display:flex; flex-wrap:wrap; gap:.5rem .75rem; margin:.4rem 0 .2rem; }
-.gb-stat-field { display:flex; align-items:center; gap:.35rem; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.15); border-radius:6px; padding:.3rem .55rem; }
+.gb-stat-field { display:flex; align-items:center; gap:.3rem; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.15); border-radius:6px; padding:.3rem .55rem; }
 .gb-stat-icon { width:14px; height:14px; stroke:rgba(255,255,255,.55); flex-shrink:0; }
 .gb-stat-input { background:transparent; border:none; outline:none; color:#fff; font-size:.8rem; width:90px; font-family:inherit; }
-.gb-stat-input::placeholder { color:rgba(255,255,255,.35); font-style:italic; }
+.gb-stat-num { width:36px; text-align:center; -moz-appearance:textfield; }
+.gb-stat-num::-webkit-inner-spin-button, .gb-stat-num::-webkit-outer-spin-button { -webkit-appearance:none; }
+.gb-stat-sep { color:rgba(255,255,255,.4); font-size:.8rem; }
+.gb-stat-unit { color:rgba(255,255,255,.55); font-size:.75rem; white-space:nowrap; }
+.gb-stat-input::placeholder { color:rgba(255,255,255,.3); }
 .gb-stat-field:focus-within { border-color:rgba(124,158,255,.6); background:rgba(0,0,0,.35); }
 .gb-stat-field:focus-within .gb-stat-icon { stroke:rgba(124,158,255,.8); }
 /* Designer row (separate from stats) */
@@ -2053,29 +2071,23 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     <?php if (!isset($_gbPublicBase)): ?>
     <!-- Admin: inline stat inputs with icons -->
     <div class="gb-stats-edit" id="gbStatsEdit">
-      <div class="gb-stat-field">
+      <div class="gb-stat-field gb-stat-range">
         <svg class="gb-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <input class="gb-stat-input" id="gbsiCount"    type="text" placeholder="2–4 players" oninput="_ed.count=this.value.trim()" />
+        <input class="gb-stat-input gb-stat-num" id="gbsiMinPlayers" type="number" min="1" max="99" placeholder="1" oninput="_ed.min_players=this.value.trim()" />
+        <span class="gb-stat-sep">–</span>
+        <input class="gb-stat-input gb-stat-num" id="gbsiMaxPlayers" type="number" min="1" max="99" placeholder="4" oninput="_ed.max_players=this.value.trim()" />
+        <span class="gb-stat-unit">players</span>
       </div>
-      <div class="gb-stat-field">
+      <div class="gb-stat-field gb-stat-range">
         <svg class="gb-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <input class="gb-stat-input" id="gbsiDuration" type="text" placeholder="30–60 min"   oninput="_ed.duration=this.value.trim()" />
+        <input class="gb-stat-input gb-stat-num" id="gbsiMinPlaytime" type="number" min="1" placeholder="30" oninput="_ed.min_playtime=this.value.trim()" />
+        <span class="gb-stat-sep">–</span>
+        <input class="gb-stat-input gb-stat-num" id="gbsiMaxPlaytime" type="number" min="1" placeholder="60" oninput="_ed.max_playtime=this.value.trim()" />
+        <span class="gb-stat-unit">min</span>
       </div>
       <div class="gb-stat-field">
-        <svg class="gb-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3 8 3"/><path d="M12 3v4"/></svg>
-        <input class="gb-stat-input" id="gbsiMechanic" type="text" placeholder="Mechanic"    oninput="_ed.mechanic=this.value.trim()" />
-      </div>
-      <div class="gb-stat-field">
-        <svg class="gb-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-        <input class="gb-stat-input" id="gbsiAges"     type="text" placeholder="Ages"        oninput="_ed.ages=this.value.trim()" />
-      </div>
-      <div class="gb-stat-field">
-        <svg class="gb-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        <input class="gb-stat-input" id="gbsiSeries"   type="text" placeholder="Series"      oninput="_ed.series=this.value.trim()" />
-      </div>
-      <div class="gb-stat-field">
-        <svg class="gb-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-        <input class="gb-stat-input" id="gbsiBoxSize"  type="text" placeholder="Box size"    oninput="_ed.box_size=this.value.trim()" />
+        <svg class="gb-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <input class="gb-stat-input" id="gbsiWeight" type="text" placeholder="Weight" oninput="_ed.weight=this.value.trim()" />
       </div>
     </div>
     <!-- Designer row -->
@@ -2418,36 +2430,6 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
         </div>
         <div class="gbed-row">
           <div class="gbed-field-group">
-            <label class="gbed-label">Player Count</label>
-            <input class="gbed-field" id="gbedCount" type="text" placeholder="e.g. 2–4" />
-          </div>
-          <div class="gbed-field-group">
-            <label class="gbed-label">Play Time</label>
-            <input class="gbed-field" id="gbedDuration" type="text" placeholder="e.g. 30–60 min" />
-          </div>
-        </div>
-        <div class="gbed-row">
-          <div class="gbed-field-group">
-            <label class="gbed-label">Main Mechanic</label>
-            <input class="gbed-field" id="gbedMechanic" type="text" placeholder="e.g. Deck Building" />
-          </div>
-          <div class="gbed-field-group">
-            <label class="gbed-label">Ages</label>
-            <input class="gbed-field" id="gbedAges" type="text" placeholder="e.g. 10+" />
-          </div>
-        </div>
-        <div class="gbed-row">
-          <div class="gbed-field-group">
-            <label class="gbed-label">Series</label>
-            <input class="gbed-field" id="gbedSeries" type="text" placeholder="e.g. Small Box Big Game" />
-          </div>
-          <div class="gbed-field-group">
-            <label class="gbed-label">Box Size</label>
-            <input class="gbed-field" id="gbedBoxSize" type="text" placeholder="e.g. Small" />
-          </div>
-        </div>
-        <div class="gbed-row">
-          <div class="gbed-field-group">
             <label class="gbed-label">Designer 1</label>
             <input class="gbed-field" id="gbedDesigner1" type="text" />
           </div>
@@ -2547,9 +2529,12 @@ var GAME_DATA = <?= json_encode([
     'play_url'       => $_playUrl,
     'print_url'      => $_printUrl,
     'rules_url'      => $_rulesUrl,
-    'count'          => $_count,
-    'duration'       => $_duration,
     'availability'   => $_availability,
+    'min_players'    => $_minPlayers,
+    'max_players'    => $_maxPlayers,
+    'min_playtime'   => $_minPlaytime,
+    'max_playtime'   => $_maxPlaytime,
+    'weight'         => $_weight,
     'mechanic'       => $_mechanic,
     'ages'           => $_ages,
     'series'         => $_series,
@@ -2813,13 +2798,7 @@ function openEditDetailsAt(fieldId) {
 function openEditDetails() {
   // Populate from _ed (live-edited values)
   document.getElementById('gbedStatus').value       = _ed.status       || '';
-  document.getElementById('gbedCount').value        = _ed.count        || '';
-  document.getElementById('gbedDuration').value     = _ed.duration     || '';
   document.getElementById('gbedAvailability').value = _ed.availability || '';
-  document.getElementById('gbedMechanic').value     = _ed.mechanic     || '';
-  document.getElementById('gbedAges').value         = _ed.ages         || '';
-  document.getElementById('gbedSeries').value       = _ed.series       || '';
-  document.getElementById('gbedBoxSize').value      = _ed.box_size     || '';
   document.getElementById('gbedDesigner1').value    = _ed.designer1    || '';
   document.getElementById('gbedDesigner2').value    = _ed.designer2    || '';
   document.getElementById('gbedDesigner3').value    = _ed.designer3    || '';
@@ -2844,13 +2823,7 @@ function closeEditDetails() {
 }
 function applyEditDetails() {
   _ed.status         = document.getElementById('gbedStatus').value.trim();
-  _ed.count          = document.getElementById('gbedCount').value.trim();
-  _ed.duration       = document.getElementById('gbedDuration').value.trim();
   _ed.availability   = document.getElementById('gbedAvailability').value.trim();
-  _ed.mechanic       = document.getElementById('gbedMechanic').value.trim();
-  _ed.ages           = document.getElementById('gbedAges').value.trim();
-  _ed.series         = document.getElementById('gbedSeries').value.trim();
-  _ed.box_size       = document.getElementById('gbedBoxSize').value.trim();
   _ed.designer1      = document.getElementById('gbedDesigner1').value.trim();
   _ed.designer2      = document.getElementById('gbedDesigner2').value.trim();
   _ed.designer3      = document.getElementById('gbedDesigner3').value.trim();
@@ -2919,9 +2892,9 @@ function gbInitInlineEdits() {
 
 function gbInitStatInputs() {
   var map = {
-    gbsiCount:    'count',    gbsiDuration: 'duration',
-    gbsiMechanic: 'mechanic', gbsiAges:     'ages',
-    gbsiSeries:   'series',   gbsiBoxSize:  'box_size'
+    gbsiMinPlayers:  'min_players',  gbsiMaxPlayers:  'max_players',
+    gbsiMinPlaytime: 'min_playtime', gbsiMaxPlaytime: 'max_playtime',
+    gbsiWeight:      'weight'
   };
   Object.keys(map).forEach(function(id) {
     var el = document.getElementById(id);
@@ -3210,8 +3183,9 @@ document.addEventListener('drop', function(e) {
 function saveGame() {
   // Sync inline stat inputs into _ed before building FormData
   var _statSync = {
-    gbsiCount:'count', gbsiDuration:'duration', gbsiMechanic:'mechanic',
-    gbsiAges:'ages',   gbsiSeries:'series',     gbsiBoxSize:'box_size'
+    gbsiMinPlayers:'min_players', gbsiMaxPlayers:'max_players',
+    gbsiMinPlaytime:'min_playtime', gbsiMaxPlaytime:'max_playtime',
+    gbsiWeight:'weight'
   };
   Object.keys(_statSync).forEach(function(id) {
     var el = document.getElementById(id);
@@ -3233,13 +3207,12 @@ function saveGame() {
   fd.append('tagline',        summaryEl ? summaryEl.textContent.trim() : '');
   fd.append('description',    descEl    ? descEl.textContent.trim()    : '');
   fd.append('status',         _ed.status         || '');
-  fd.append('count',          _ed.count          || '');
-  fd.append('duration',       _ed.duration       || '');
   fd.append('availability',   _ed.availability   || '');
-  fd.append('mechanic',       _ed.mechanic       || '');
-  fd.append('ages',           _ed.ages           || '');
-  fd.append('series',         _ed.series         || '');
-  fd.append('box_size',       _ed.box_size       || '');
+  fd.append('min_players',    _ed.min_players    || '');
+  fd.append('max_players',    _ed.max_players    || '');
+  fd.append('min_playtime',   _ed.min_playtime   || '');
+  fd.append('max_playtime',   _ed.max_playtime   || '');
+  fd.append('weight',         _ed.weight         || '');
   fd.append('designer1',      _ed.designer1      || '');
   fd.append('designer2',      _ed.designer2      || '');
   fd.append('designer3',      _ed.designer3      || '');

@@ -1862,14 +1862,13 @@ body.gb-admin-mode .gb-vrev-grid { display:grid; }
 .gb-vrev-empty:hover { opacity:1; }
 .gb-vrev-add-icon { font-size:1.4rem; color:#88a; }
 .gb-vrev-add-label { font-family:'DINBlack',sans-serif; font-size:.6rem; text-transform:uppercase; letter-spacing:.08em; color:#88a; }
-/* inline form shown inside the grid when adding/editing */
-.gb-vrev-form { grid-column:1/-1; background:#f5f7fa; border-radius:8px; padding:.85rem 1rem; display:flex; flex-direction:column; gap:.5rem; }
-.gb-vrev-form input { width:100%; box-sizing:border-box; padding:.45rem .65rem; border:1px solid #dde; border-radius:6px; font-size:.82rem; outline:none; }
-.gb-vrev-form input:focus { border-color:#7c9eff; }
-.gb-vrev-form-btns { display:flex; gap:.5rem; }
-.gb-vrev-form-btns button { padding:.4rem .85rem; border-radius:6px; border:none; font-size:.78rem; font-weight:700; cursor:pointer; }
-.gb-vrev-btn-save { background:#4ade80; color:#0f172a; }
-.gb-vrev-btn-cancel { background:#e2e8f0; color:#334155; }
+/* inline editing inside the tile */
+.gb-vrev-editing { aspect-ratio:unset !important; min-height:128px; background:#f5f7fa !important; display:flex !important; flex-direction:column; align-items:stretch; justify-content:flex-start; padding:.65rem; gap:.4rem; cursor:default; opacity:1 !important; }
+.gb-vrev-editing .gb-vrev-inp { width:100%; box-sizing:border-box; padding:.38rem .55rem; border:1px solid #dde; border-radius:5px; font-size:.78rem; outline:none; background:#fff; color:#1e293b; }
+.gb-vrev-editing .gb-vrev-inp:focus { border-color:#7c9eff; }
+.gb-vrev-editing .gb-vrev-inline-btns { display:flex; gap:.4rem; margin-top:.1rem; }
+.gb-vrev-editing .gb-vrev-btn-save { padding:.32rem .7rem; border-radius:5px; border:none; background:#4ade80; color:#0f172a; font-size:.72rem; font-weight:700; cursor:pointer; }
+.gb-vrev-editing .gb-vrev-btn-cancel { padding:.32rem .7rem; border-radius:5px; border:none; background:#e2e8f0; color:#334155; font-size:.72rem; font-weight:700; cursor:pointer; }
 
 /* ── FAQs ── */
 .gb-faq-item { border-bottom:1px solid var(--border); padding:.85rem 0; }
@@ -3360,59 +3359,55 @@ function gbAddVrevCard(grid, v, idx) {
   tile.innerHTML = (thumb ? '<img src="' + esc(thumb) + '" loading="lazy">' : '<div style="width:100%;height:100%;background:#222;border-radius:6px;"></div>')
     + '<div class="gb-vrev-tile-label">' + esc(v.name || v.url) + '</div>'
     + '<button class="gb-vrev-tile-del" title="Remove" onmousedown="gbVrevRemove(event,' + idx + ')">✕</button>';
-  tile.onclick = function(e) { if (!e.target.classList.contains('gb-vrev-tile-del')) gbOpenVrevForm(idx); };
+  tile.onclick = function(e) { if (!e.target.classList.contains('gb-vrev-tile-del')) gbVrevOpenInlineTile(tile, idx); };
   grid.insertBefore(tile, grid.querySelector('.gb-vrev-empty') || null);
 }
 
 function gbAddVrevEmptyTile(grid) {
-  var add = document.createElement('div');
-  add.className = 'gb-vrev-empty';
-  add.innerHTML = '<div class="gb-vrev-add-icon">▶</div><div class="gb-vrev-add-label">Add Video</div>';
-  add.onclick = function() { gbOpenVrevForm(-1); };
-  grid.appendChild(add);
+  var tile = document.createElement('div');
+  tile.className = 'gb-vrev-empty';
+  tile.innerHTML = '<div class="gb-vrev-add-icon">▶</div><div class="gb-vrev-add-label">Add Video</div>';
+  tile.onclick = function() { gbVrevOpenInlineTile(tile, -1); };
+  grid.appendChild(tile);
 }
 
-function gbOpenVrevForm(idx) {
+function gbVrevOpenInlineTile(tile, idx) {
+  // Close any other open inline editor first
   var grid = document.getElementById('gbVrevGrid');
-  if (!grid) return;
-  var existing = grid.querySelector('.gb-vrev-form');
-  if (existing) existing.remove();
-  var videos = _ed.videos || [];
-  var v = idx >= 0 ? (videos[idx] || {}) : {};
-  var form = document.createElement('div');
-  form.className = 'gb-vrev-form';
-  form.innerHTML = '<input id="gbVrevUrlInp" type="url" placeholder="YouTube or video URL…" value="' + esc(v.url || '') + '">'
-    + '<input id="gbVrevNameInp" type="text" placeholder="Source / reviewer name (optional)" value="' + esc(v.name || '') + '">'
-    + '<div class="gb-vrev-form-btns">'
-    + '<button class="gb-vrev-btn-save" onclick="gbVrevSave(' + idx + ')">Save</button>'
-    + '<button class="gb-vrev-btn-cancel" onclick="gbVrevCancelForm()">Cancel</button>'
-    + '</div>';
-  grid.appendChild(form);
-  setTimeout(function() {
-    var inp = document.getElementById('gbVrevUrlInp');
-    if (inp) { inp.focus(); form.scrollIntoView({behavior:'smooth', block:'nearest'}); }
-  }, 20);
-}
-
-function gbVrevSave(idx) {
-  var urlEl  = document.getElementById('gbVrevUrlInp');
-  var nameEl = document.getElementById('gbVrevNameInp');
-  if (!urlEl) return;
-  var url  = urlEl.value.trim();
-  var name = nameEl ? nameEl.value.trim() : '';
-  if (!url) { gbVrevCancelForm(); return; }
-  if (!_ed.videos) _ed.videos = [];
-  if (idx >= 0) {
-    _ed.videos[idx] = {url: url, name: name};
-  } else {
-    _ed.videos.push({url: url, name: name});
+  if (grid) {
+    grid.querySelectorAll('.gb-vrev-editing').forEach(function(t) {
+      if (t !== tile) gbInitVrevGrid();
+    });
   }
-  gbInitVrevGrid();
+  var v = idx >= 0 ? ((_ed.videos || [])[idx] || {}) : {};
+  tile.classList.add('gb-vrev-editing');
+  tile.onclick = null;
+  tile.innerHTML =
+    '<input class="gb-vrev-inp" type="url" placeholder="YouTube or video URL…" value="' + esc(v.url || '') + '">'
+    + '<input class="gb-vrev-inp" type="text" placeholder="Source / reviewer (optional)" value="' + esc(v.name || '') + '">'
+    + '<div class="gb-vrev-inline-btns">'
+    + '<button class="gb-vrev-btn-save" onclick="gbVrevSaveInline(this,'+idx+')">Save</button>'
+    + '<button class="gb-vrev-btn-cancel" onclick="gbInitVrevGrid()">Cancel</button>'
+    + '</div>';
+  var inp = tile.querySelector('input[type="url"]');
+  if (inp) setTimeout(function() { inp.focus(); }, 20);
+  tile.querySelector('input[type="url"]').addEventListener('keydown', function(ev) {
+    if (ev.key === 'Enter') { ev.preventDefault(); tile.querySelector('.gb-vrev-btn-save').click(); }
+    if (ev.key === 'Escape') { gbInitVrevGrid(); }
+  });
 }
 
-function gbVrevCancelForm() {
-  var form = document.querySelector('#gbVrevGrid .gb-vrev-form');
-  if (form) form.remove();
+function gbVrevSaveInline(btn, idx) {
+  var tile = btn.closest('.gb-vrev-editing');
+  if (!tile) return;
+  var inputs = tile.querySelectorAll('.gb-vrev-inp');
+  var url  = inputs[0] ? inputs[0].value.trim() : '';
+  var name = inputs[1] ? inputs[1].value.trim() : '';
+  if (!url) { gbInitVrevGrid(); return; }
+  if (!_ed.videos) _ed.videos = [];
+  if (idx >= 0) { _ed.videos[idx] = {url: url, name: name}; }
+  else          { _ed.videos.push({url: url, name: name}); }
+  gbInitVrevGrid();
 }
 
 function gbVrevRemove(e, idx) {

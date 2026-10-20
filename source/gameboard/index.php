@@ -1874,7 +1874,7 @@ body.gb-admin-mode .gb-vrev-grid { display:grid; }
 /* ── Price tag: in-place editing (admin) ── */
 .gb-cta-ph { opacity:.45; font-style:italic; }
 body.gb-admin-mode #gbEditPrice { cursor:text; border-style:dashed; min-width:3rem; }
-body.gb-admin-mode #gbEditPrice.gb-price-ph::before { content:attr(data-ph); opacity:.45; font-style:italic; pointer-events:none; }
+body.gb-admin-mode #gbEditPrice.gb-price-ph::before { content:attr(data-ph); opacity:.4; pointer-events:none; }
 body.gb-admin-mode #gbEditPrice:focus,
 body.gb-admin-mode #gbEditPrice:hover { outline:2px solid rgba(255,255,255,.75); }
 /* ── Buy links: in-place editing (admin) ── */

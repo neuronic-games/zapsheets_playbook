@@ -29,7 +29,7 @@ $print         = trim($_POST['print']          ?? '');
 $sellsheet     = trim($_POST['sellsheet']      ?? '');
 $view          = trim($_POST['view']           ?? '');
 $video         = trim($_POST['video']          ?? '');
-$price         = trim($_POST['price']          ?? '');
+$price         = isset($_POST['price']) ? trim($_POST['price']) : null;
 $imageRaw      = trim($_POST['image']          ?? '');
 $image         = $imageRaw ? '=IMAGE("' . $imageRaw . '")' : '';
 $coverRaw      = trim($_POST['cover_url']      ?? '');
@@ -132,7 +132,7 @@ if ($result !== null && !empty($result['ok'])) {
         if ($minPlaytime !== '') $patchFields['MinPlaytime']   = $minPlaytime;
         if ($maxPlaytime !== '') $patchFields['MaxPlaytime']   = $maxPlaytime;
         if ($weight      !== '') $patchFields['Weight']        = $weight;
-        if ($price       !== '') $patchFields['Price']         = $price;
+        if ($price       !== null) $patchFields['Price']        = $price;
         if ($patchFields) {
             $patchData    = ['game' => $tabGameName, 'fields' => $patchFields];
             $patchEncoded = base64_encode(json_encode($patchData, JSON_UNESCAPED_UNICODE));

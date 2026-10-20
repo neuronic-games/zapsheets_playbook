@@ -1857,8 +1857,8 @@ body.gb-admin-mode .gb-faq-editor { display:flex; }
 .gb-vrev-tile-label { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,.6); color:#fff; font-family:'DINBlack',sans-serif; font-size:.6rem; text-transform:uppercase; letter-spacing:.06em; padding:.3rem .4rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .gb-vrev-tile-del { position:absolute; top:.25rem; right:.25rem; background:rgba(0,0,0,.55); color:#fff; border:none; border-radius:50%; width:18px; height:18px; font-size:.65rem; line-height:18px; text-align:center; cursor:pointer; display:none; padding:0; }
 .gb-vrev-tile:hover .gb-vrev-tile-del { display:block; }
-.gb-vrev-add { border:2px dashed #aac; border-radius:8px; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:.3rem; cursor:pointer; opacity:.55; transition:opacity .15s; }
-.gb-vrev-add:hover { opacity:1; }
+.gb-vrev-empty { border:2px dashed #aac; border-radius:8px; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:.3rem; cursor:pointer; opacity:.55; transition:opacity .15s; }
+.gb-vrev-empty:hover { opacity:1; }
 .gb-vrev-add-icon { font-size:1.4rem; color:#88a; }
 .gb-vrev-add-label { font-family:'DINBlack',sans-serif; font-size:.6rem; text-transform:uppercase; letter-spacing:.08em; color:#88a; }
 /* inline form shown inside the grid when adding/editing */
@@ -3340,8 +3340,11 @@ function gbInitVrevGrid() {
   var grid = document.getElementById('gbVrevGrid');
   if (!grid) return;
   grid.innerHTML = '';
-  (_ed.videos || []).forEach(function(v, i) { if (v.url) gbAddVrevCard(grid, v, i); });
-  gbAddVrevAddTile(grid);
+  var videos = _ed.videos || [];
+  videos.forEach(function(v, i) { if (v.url) gbAddVrevCard(grid, v, i); });
+  // Always show enough empty tiles: 3 total when fewer than 3 filled, else 1
+  var emptyCount = Math.max(1, 3 - videos.length);
+  for (var i = 0; i < emptyCount; i++) gbAddVrevEmptyTile(grid);
 }
 
 function gbAddVrevCard(grid, v, idx) {
@@ -3349,18 +3352,16 @@ function gbAddVrevCard(grid, v, idx) {
   tile.className = 'gb-vrev-tile';
   tile.dataset.idx = idx;
   var thumb = gbYtThumb(v.url);
-  tile.innerHTML = (thumb ? '<img src="' + esc(thumb) + '" loading="lazy">' : '<div style="width:100%;height:100%;background:#222"></div>')
+  tile.innerHTML = (thumb ? '<img src="' + esc(thumb) + '" loading="lazy">' : '<div style="width:100%;height:100%;background:#222;border-radius:6px;"></div>')
     + '<div class="gb-vrev-tile-label">' + esc(v.name || v.url) + '</div>'
     + '<button class="gb-vrev-tile-del" title="Remove" onmousedown="gbVrevRemove(event,' + idx + ')">✕</button>';
   tile.onclick = function(e) { if (!e.target.classList.contains('gb-vrev-tile-del')) gbOpenVrevForm(idx); };
-  grid.insertBefore(tile, grid.querySelector('.gb-vrev-add') || null);
+  grid.insertBefore(tile, grid.querySelector('.gb-vrev-empty') || null);
 }
 
-function gbAddVrevAddTile(grid) {
-  var existing = grid.querySelector('.gb-vrev-add');
-  if (existing) existing.remove();
+function gbAddVrevEmptyTile(grid) {
   var add = document.createElement('div');
-  add.className = 'gb-vrev-add';
+  add.className = 'gb-vrev-empty';
   add.innerHTML = '<div class="gb-vrev-add-icon">▶</div><div class="gb-vrev-add-label">Add Video</div>';
   add.onclick = function() { gbOpenVrevForm(-1); };
   grid.appendChild(add);
@@ -3376,13 +3377,16 @@ function gbOpenVrevForm(idx) {
   var form = document.createElement('div');
   form.className = 'gb-vrev-form';
   form.innerHTML = '<input id="gbVrevUrlInp" type="url" placeholder="YouTube or video URL…" value="' + esc(v.url || '') + '">'
-    + '<input id="gbVrevNameInp" type="text" placeholder="Label / reviewer name (optional)" value="' + esc(v.name || '') + '">'
+    + '<input id="gbVrevNameInp" type="text" placeholder="Source / reviewer name (optional)" value="' + esc(v.name || '') + '">'
     + '<div class="gb-vrev-form-btns">'
     + '<button class="gb-vrev-btn-save" onclick="gbVrevSave(' + idx + ')">Save</button>'
     + '<button class="gb-vrev-btn-cancel" onclick="gbVrevCancelForm()">Cancel</button>'
     + '</div>';
   grid.appendChild(form);
-  setTimeout(function() { var i = document.getElementById('gbVrevUrlInp'); if (i) i.focus(); }, 20);
+  setTimeout(function() {
+    var inp = document.getElementById('gbVrevUrlInp');
+    if (inp) { inp.focus(); form.scrollIntoView({behavior:'smooth', block:'nearest'}); }
+  }, 20);
 }
 
 function gbVrevSave(idx) {

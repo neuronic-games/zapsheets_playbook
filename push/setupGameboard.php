@@ -28,6 +28,24 @@ if (!$sheetId) {
 }
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
+$mode       = trim($_POST['mode'] ?? $_GET['mode'] ?? 'setup');
+
+// ── mode=game: publish a single game's tab cache ──────────────────────────────
+if ($mode === 'game') {
+    $gameName = trim($_POST['name'] ?? $_GET['name'] ?? '');
+    if (!$gameName) {
+        echo json_encode(['error' => 'Missing game name']);
+        exit;
+    }
+    $pubCmd = escapeshellarg($pythonPath) . ' '
+            . escapeshellarg(__DIR__ . '/gpublishgame.py') . ' '
+            . escapeshellarg($sheetId . '|' . $gameName) . ' 2>/dev/null';
+    $pubOut = trim((string) shell_exec($pubCmd));
+    $pubResult = $pubOut ? json_decode($pubOut, true) : null;
+    echo $pubResult ? json_encode($pubResult) : json_encode(['error' => 'No response']);
+    exit;
+}
+
 $result     = ['ok' => true];
 
 // ── Step 1: Ensure required tabs exist (idempotent) ───────────────────────────
@@ -94,7 +112,7 @@ foreach (['games', 'people'] as $tab) {
     }
 }
 
-// ── Step 4: Publish per-game tab caches (game-{name}-en.json) ─────────────────
+// ── Step 4: Return game names list for client-side per-game publishing ────────
 $gamesJson = $sheetDir . '/games.json';
 $gameNames = [];
 if (file_exists($gamesJson)) {
@@ -106,25 +124,7 @@ if (file_exists($gamesJson)) {
         }
     }
 }
-$gamesPublished = [];
-$gamesErrors    = [];
-foreach ($gameNames as $gameName) {
-    $pubCmd = escapeshellarg($pythonPath) . ' '
-            . escapeshellarg(__DIR__ . '/gpublishgame.py') . ' '
-            . escapeshellarg($sheetId . '|' . $gameName) . ' 2>/dev/null';
-    $pubOut = trim((string) shell_exec($pubCmd));
-    $pubResult = $pubOut ? json_decode($pubOut, true) : null;
-    if (!empty($pubResult['ok'])) {
-        $gamesPublished[] = $gameName;
-        $refreshed[] = 'game: ' . $gameName;
-    } else {
-        $err = $pubResult['error'] ?? ($pubOut ?: 'no response');
-        $gamesErrors[$gameName] = $err;
-        $refreshErrors['game: ' . $gameName] = $err;
-    }
-}
-if ($gamesPublished) $result['games_published'] = $gamesPublished;
-
+$result['game_names']    = $gameNames;
 $result['json_refreshed'] = $refreshed;
 if ($refreshErrors) {
     $result['refresh_errors'] = $refreshErrors;

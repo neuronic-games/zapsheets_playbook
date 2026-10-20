@@ -850,18 +850,7 @@ function gbMenuAction(action) {
     openSettings();
   } else if (action === 'fetch') {
     if (!_gbUser) { openSignIn(); return; }
-    var btn = document.getElementById('gbUserBtn');
-    btn.style.opacity = '.4';
-    var fd = new FormData(); fd.append('id', SHEET_ID);
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', APP_ROOT + 'push/setupGameboard.php');
-    xhr.onload = function() {
-      btn.style.opacity = '';
-      var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
-      showFetchLog(r || {error: 'No response from server'});
-    };
-    xhr.onerror = function() { btn.style.opacity = ''; showFetchLog({error: 'Network error'}); };
-    xhr.send(fd);
+    gbDoFetch();
   } else if (action === 'publish') {
     if (!_gbUser) { openSignIn(); return; }
     gbPublishSite();
@@ -1413,31 +1402,59 @@ function gbSyncLog(msg, type) {
   log.appendChild(line);
   log.scrollTop = log.scrollHeight;
 }
-function showFetchLog(r) {
-  var log = document.getElementById('fetchLogBody');
-  log.innerHTML = '';
-  document.getElementById('fetchLogTitle').textContent = r && r.ok ? 'Fetch Complete' : 'Fetch';
-  document.getElementById('fetchLogDoneBtn').disabled = false;
+function gbOpenFetchDialog() {
+  document.getElementById('fetchLogBody').innerHTML = '';
+  document.getElementById('fetchLogTitle').textContent = 'Fetching…';
+  document.getElementById('fetchLogDoneBtn').disabled = true;
   document.getElementById('fetchLogOverlay').classList.add('open');
-  if (r && r.error) {
-    gbSyncLog('✗ ' + r.error, 'error');
-    return;
-  }
-  if (r && r.tabs) {
-    Object.keys(r.tabs).forEach(function(t) {
-      var s = r.tabs[t];
-      gbSyncLog((s === 'ok' || s === 'created' ? '  ✓ ' : '  ✗ ') + t + ' (' + s + ')', s === 'error' ? 'error' : (s === 'created' ? 'ok' : 'skip'));
-    });
-  }
-  if (r && r.json_refreshed) {
-    r.json_refreshed.forEach(function(t) { gbSyncLog('  ✓ ' + t, 'ok'); });
-  }
-  if (r && r.refresh_errors) {
-    Object.keys(r.refresh_errors).forEach(function(t) {
-      gbSyncLog('  ✗ ' + t + ': ' + r.refresh_errors[t], 'error');
-    });
-  }
-  gbSyncLog(r && r.ok ? 'Done.' : 'Completed with errors.', r && r.ok ? 'ok' : 'error');
+}
+function gbFinishFetch(hasErrors) {
+  document.getElementById('fetchLogTitle').textContent = hasErrors ? 'Fetch — errors' : 'Fetch Complete';
+  document.getElementById('fetchLogDoneBtn').disabled = false;
+  gbSyncLog(hasErrors ? 'Completed with errors.' : 'Done.', hasErrors ? 'error' : 'ok');
+}
+function gbDoFetch() {
+  gbOpenFetchDialog();
+  var base = APP_ROOT + 'push/setupGameboard.php';
+  var hasErrors = false;
+
+  // Step 1: setup + refresh main sheets
+  gbSyncLog('Fetching sheets…', 'info');
+  var fd = new FormData(); fd.append('id', SHEET_ID);
+  fetch(base, { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(r) {
+      if (r.error) { gbSyncLog('✗ ' + r.error, 'error'); gbFinishFetch(true); return; }
+      if (r.tabs) Object.keys(r.tabs).forEach(function(t) {
+        var s = r.tabs[t];
+        gbSyncLog((s==='error'?'  ✗ ':'  ✓ ') + t, s==='error'?'error':(s==='created'?'ok':'skip'));
+        if (s==='error') hasErrors = true;
+      });
+      if (r.json_refreshed) r.json_refreshed.forEach(function(t) { gbSyncLog('  ✓ ' + t, 'ok'); });
+      if (r.refresh_errors) { Object.keys(r.refresh_errors).forEach(function(t) { gbSyncLog('  ✗ ' + t, 'error'); hasErrors = true; }); }
+
+      // Step 2: publish each game tab cache individually
+      var games = r.game_names || [];
+      if (!games.length) { gbFinishFetch(hasErrors); return; }
+      gbSyncLog('Publishing game caches…', 'info');
+      var gi = 0;
+      function nextGame() {
+        if (gi >= games.length) { gbFinishFetch(hasErrors); return; }
+        var name = games[gi++];
+        var gfd = new FormData();
+        gfd.append('id', SHEET_ID); gfd.append('mode', 'game'); gfd.append('name', name);
+        fetch(base, { method:'POST', body:gfd })
+          .then(function(r) { return r.json(); })
+          .then(function(r) {
+            if (r && r.ok) { gbSyncLog('  ✓ ' + name, 'ok'); }
+            else { gbSyncLog('  ✗ ' + name + (r && r.error ? ': ' + r.error : ''), 'error'); hasErrors = true; }
+            nextGame();
+          })
+          .catch(function() { gbSyncLog('  ✗ ' + name + ': network error', 'error'); hasErrors = true; nextGame(); });
+      }
+      nextGame();
+    })
+    .catch(function() { gbSyncLog('✗ Network error', 'error'); gbFinishFetch(true); });
 }
 function closeFetchLog() {
   document.getElementById('fetchLogOverlay').classList.remove('open');
@@ -2722,18 +2739,7 @@ function gbMenuAction(action) {
     openSettings();
   } else if (action === 'fetch') {
     if (!_gbUser) { openSignIn(); return; }
-    var btn = document.getElementById('gbUserBtn');
-    if (btn) btn.style.opacity = '.4';
-    var fd = new FormData(); fd.append('id', SHEET_ID);
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', APP_ROOT + 'push/setupGameboard.php');
-    xhr.onload = function() {
-      if (btn) btn.style.opacity = '';
-      var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
-      showFetchLog(r || {error: 'No response from server'});
-    };
-    xhr.onerror = function() { if (btn) btn.style.opacity = ''; showFetchLog({error: 'Network error'}); };
-    xhr.send(fd);
+    gbDoFetch();
   } else if (action === 'publish') {
     if (!_gbUser) { openSignIn(); return; }
     gbPublishSite();
@@ -3478,31 +3484,57 @@ function gbSyncLog(msg, type) {
   log.appendChild(line);
   log.scrollTop = log.scrollHeight;
 }
-function showFetchLog(r) {
-  var log = document.getElementById('fetchLogBody');
-  log.innerHTML = '';
-  document.getElementById('fetchLogTitle').textContent = r && r.ok ? 'Fetch Complete' : 'Fetch';
-  document.getElementById('fetchLogDoneBtn').disabled = false;
+function gbOpenFetchDialog() {
+  document.getElementById('fetchLogBody').innerHTML = '';
+  document.getElementById('fetchLogTitle').textContent = 'Fetching…';
+  document.getElementById('fetchLogDoneBtn').disabled = true;
   document.getElementById('fetchLogOverlay').classList.add('open');
-  if (r && r.error) {
-    gbSyncLog('✗ ' + r.error, 'error');
-    return;
-  }
-  if (r && r.tabs) {
-    Object.keys(r.tabs).forEach(function(t) {
-      var s = r.tabs[t];
-      gbSyncLog((s === 'ok' || s === 'created' ? '  ✓ ' : '  ✗ ') + t + ' (' + s + ')', s === 'error' ? 'error' : (s === 'created' ? 'ok' : 'skip'));
-    });
-  }
-  if (r && r.json_refreshed) {
-    r.json_refreshed.forEach(function(t) { gbSyncLog('  ✓ ' + t, 'ok'); });
-  }
-  if (r && r.refresh_errors) {
-    Object.keys(r.refresh_errors).forEach(function(t) {
-      gbSyncLog('  ✗ ' + t + ': ' + r.refresh_errors[t], 'error');
-    });
-  }
-  gbSyncLog(r && r.ok ? 'Done.' : 'Completed with errors.', r && r.ok ? 'ok' : 'error');
+}
+function gbFinishFetch(hasErrors) {
+  document.getElementById('fetchLogTitle').textContent = hasErrors ? 'Fetch — errors' : 'Fetch Complete';
+  document.getElementById('fetchLogDoneBtn').disabled = false;
+  gbSyncLog(hasErrors ? 'Completed with errors.' : 'Done.', hasErrors ? 'error' : 'ok');
+}
+function gbDoFetch() {
+  gbOpenFetchDialog();
+  var base = APP_ROOT + 'push/setupGameboard.php';
+  var hasErrors = false;
+
+  gbSyncLog('Fetching sheets…', 'info');
+  var fd = new FormData(); fd.append('id', SHEET_ID);
+  fetch(base, { method:'POST', body:fd })
+    .then(function(r) { return r.json(); })
+    .then(function(r) {
+      if (r.error) { gbSyncLog('✗ ' + r.error, 'error'); gbFinishFetch(true); return; }
+      if (r.tabs) Object.keys(r.tabs).forEach(function(t) {
+        var s = r.tabs[t];
+        gbSyncLog((s==='error'?'  ✗ ':'  ✓ ') + t, s==='error'?'error':(s==='created'?'ok':'skip'));
+        if (s==='error') hasErrors = true;
+      });
+      if (r.json_refreshed) r.json_refreshed.forEach(function(t) { gbSyncLog('  ✓ ' + t, 'ok'); });
+      if (r.refresh_errors) { Object.keys(r.refresh_errors).forEach(function(t) { gbSyncLog('  ✗ ' + t, 'error'); hasErrors = true; }); }
+
+      var games = r.game_names || [];
+      if (!games.length) { gbFinishFetch(hasErrors); return; }
+      gbSyncLog('Publishing game caches…', 'info');
+      var gi = 0;
+      function nextGame() {
+        if (gi >= games.length) { gbFinishFetch(hasErrors); return; }
+        var name = games[gi++];
+        var gfd = new FormData();
+        gfd.append('id', SHEET_ID); gfd.append('mode', 'game'); gfd.append('name', name);
+        fetch(base, { method:'POST', body:gfd })
+          .then(function(r) { return r.json(); })
+          .then(function(r) {
+            if (r && r.ok) { gbSyncLog('  ✓ ' + name, 'ok'); }
+            else { gbSyncLog('  ✗ ' + name + (r && r.error ? ': ' + r.error : ''), 'error'); hasErrors = true; }
+            nextGame();
+          })
+          .catch(function() { gbSyncLog('  ✗ ' + name + ': network error', 'error'); hasErrors = true; nextGame(); });
+      }
+      nextGame();
+    })
+    .catch(function() { gbSyncLog('✗ Network error', 'error'); gbFinishFetch(true); });
 }
 function closeFetchLog() {
   document.getElementById('fetchLogOverlay').classList.remove('open');

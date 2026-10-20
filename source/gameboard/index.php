@@ -114,14 +114,22 @@ if (!$_gameSlug) {
 body { background:var(--bg); font-family:'DINRegular',Arial,sans-serif; color:var(--ink); min-height:100vh; }
 a { color:inherit; text-decoration:none; }
 
-/* ── Header ── */
-.gb-header { background:var(--nav-bg); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:.6rem 1.25rem; gap:1rem; position:sticky; top:0; z-index:100; }
-.gb-header-left { display:flex; align-items:center; gap:.6rem; min-width:0; }
-.gb-logo { font-family:'DINBlack',sans-serif; font-size:1.1rem; letter-spacing:.07em; color:<?= h($_logoColor) ?>; flex-shrink:0; }
-.gb-meta { font-size:.72rem; opacity:.6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.gb-header-right { display:flex; align-items:center; gap:.5rem; flex-shrink:0; }
-.btn-add-game { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; padding:.32rem .85rem; border-radius:5px; border:1.5px solid rgba(255,255,255,.35); color:#fff; background:transparent; cursor:pointer; transition:background .14s,border-color .14s; white-space:nowrap; }
+/* ── Sticky top wrapper ── */
+.gb-top-wrap { position:sticky; top:0; z-index:100; }
+/* ── Admin bar (hidden in public) ── */
+.gb-admin-bar { background:#0d0d1a; color:rgba(255,255,255,.55); display:flex; align-items:center; justify-content:space-between; padding:.3rem 1.25rem; gap:1rem; }
+.gb-admin-label { font-family:'DINBlack',sans-serif; font-size:.6rem; text-transform:uppercase; letter-spacing:.12em; color:rgba(255,255,255,.22); }
+.gb-admin-tools { display:flex; align-items:center; gap:.5rem; flex-shrink:0; }
+.gb-meta { font-size:.72rem; opacity:.55; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px; }
+.btn-add-game { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; padding:.28rem .8rem; border-radius:5px; border:1.5px solid rgba(255,255,255,.35); color:#fff; background:transparent; cursor:pointer; transition:background .14s,border-color .14s; white-space:nowrap; }
 .btn-add-game:hover { background:rgba(255,255,255,.14); border-color:#fff; }
+/* ── Page banner (always visible) ── */
+.gb-banner { background:var(--nav-bg); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:.85rem 1.5rem; gap:1.5rem; }
+.gb-banner-left { display:flex; align-items:center; gap:.85rem; min-width:0; }
+.gb-banner-name { font-family:'DINBlack',sans-serif; font-size:1rem; letter-spacing:.06em; opacity:.7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.gb-banner-nav { display:flex; align-items:center; gap:1.75rem; flex:1; justify-content:center; }
+.gb-banner-nav a { font-family:'DINBlack',sans-serif; font-size:.78rem; text-transform:uppercase; letter-spacing:.06em; color:rgba(255,255,255,.7); transition:color .14s; white-space:nowrap; }
+.gb-banner-nav a:hover { color:#fff; }
 
 /* User icon + menu (matches T&MBoard) */
 .btn-user-icon {
@@ -148,9 +156,10 @@ a { color:inherit; text-decoration:none; }
 .user-menu-divider { border:none; border-top:1px solid rgba(255,255,255,.1); margin:2px 0; }
 
 /* ── Logo placeholder ── */
-.gb-logo-ph { display:flex; align-items:center; justify-content:center; height:32px; padding:0 .6rem; border:1.5px dashed rgba(255,255,255,.3); border-radius:5px; font-family:'DINBlack',sans-serif; font-size:.65rem; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,.4); white-space:nowrap; cursor:pointer; transition:border-color .15s,color .15s; }
+.gb-logo-ph { display:none; align-items:center; justify-content:center; height:36px; padding:0 .8rem; border:1.5px dashed rgba(255,255,255,.3); border-radius:5px; font-family:'DINBlack',sans-serif; font-size:.65rem; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,.4); white-space:nowrap; cursor:pointer; transition:border-color .15s,color .15s; }
+body.gb-admin-mode .gb-logo-ph { display:flex; }
 .gb-logo-ph:hover { border-color:rgba(255,255,255,.7); color:rgba(255,255,255,.8); }
-.gb-logo-img { height:32px; object-fit:contain; flex-shrink:0; }
+.gb-logo-img { height:36px; object-fit:contain; flex-shrink:0; }
 
 /* ── Carousel ── */
 .cat-carousel { position:relative; width:100%; height:clamp(240px,42vw,520px); overflow:hidden; background:var(--nav-bg); }
@@ -276,36 +285,52 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 </head>
 <body>
 
-<!-- ── Header ── -->
-<header class="gb-header"<?= isset($_gbPublicBase) ? ' style="display:none"' : '' ?>>
-  <div class="gb-header-left">
-    <?php if ($_pubLogo): ?>
-    <img src="<?= h($_pubLogo) ?>" alt="<?= h($_pubName) ?>" class="gb-logo-img" />
-    <?php else: ?>
-    <div class="gb-logo-ph" id="gbLogoPlaceholder" onclick="gbMenuAction('settings')" title="Click to add logo in Settings">Your Logo</div>
-    <?php endif; ?>
-    <span class="gb-meta" id="gbMeta"><?= h($_pubName ?: 'Games') ?></span>
-  </div>
-  <div class="gb-header-right">
-    <button class="btn-add-game" id="gbAddGameBtn" onclick="openAddGame()" style="display:none">+ Game</button>
-    <div class="user-menu-wrap">
-      <button class="btn-user-icon" id="gbUserBtn" onclick="toggleGbMenu(event)" title="Menu">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-        </svg>
-      </button>
-      <div class="user-menu" id="gbMenu">
-        <button class="user-menu-item" id="gbMenuProfile" onclick="gbMenuAction('profile')">Profile</button>
-        <button class="user-menu-item" onclick="gbMenuAction('settings')">Settings</button>
-        <hr class="user-menu-divider" />
-        <button class="user-menu-item" onclick="gbMenuAction('fetch')">Fetch</button>
-        <button class="user-menu-item" id="gbMenuPublish" onclick="gbMenuAction('publish')" style="display:none">🌐 Publish Site</button>
-        <hr class="user-menu-divider" />
-        <button class="user-menu-item" id="gbMenuSignInOut" onclick="gbMenuAction('signout')">Sign In</button>
+<!-- ── Sticky top wrapper ── -->
+<div class="gb-top-wrap">
+
+  <?php if (!isset($_gbPublicBase)): ?>
+  <!-- Admin bar: editing tools only, hidden in public mode -->
+  <div class="gb-admin-bar">
+    <span class="gb-admin-label">GameBoard Admin</span>
+    <div class="gb-admin-tools">
+      <span class="gb-meta" id="gbMeta"><?= h($_pubName ?: '') ?></span>
+      <button class="btn-add-game" id="gbAddGameBtn" onclick="openAddGame()" style="display:none">+ Game</button>
+      <div class="user-menu-wrap">
+        <button class="btn-user-icon" id="gbUserBtn" onclick="toggleGbMenu(event)" title="Menu">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+        </button>
+        <div class="user-menu" id="gbMenu">
+          <button class="user-menu-item" id="gbMenuProfile" onclick="gbMenuAction('profile')">Profile</button>
+          <button class="user-menu-item" onclick="gbMenuAction('settings')">Settings</button>
+          <hr class="user-menu-divider" />
+          <button class="user-menu-item" onclick="gbMenuAction('fetch')">Fetch</button>
+          <button class="user-menu-item" id="gbMenuPublish" onclick="gbMenuAction('publish')" style="display:none">🌐 Publish Site</button>
+          <hr class="user-menu-divider" />
+          <button class="user-menu-item" id="gbMenuSignInOut" onclick="gbMenuAction('signout')">Sign In</button>
+        </div>
       </div>
     </div>
   </div>
-</header>
+  <?php endif; ?>
+
+  <!-- Page banner: logo + nav, always shown (public + admin) -->
+  <header class="gb-banner">
+    <div class="gb-banner-left">
+      <?php if ($_pubLogo): ?>
+      <img src="<?= h($_pubLogo) ?>" alt="<?= h($_pubName) ?>" class="gb-logo-img" />
+      <?php elseif (!isset($_gbPublicBase)): ?>
+      <div class="gb-logo-ph" id="gbLogoPlaceholder" onclick="gbMenuAction('settings')" title="Click to add your logo in Settings">Your Logo</div>
+      <?php endif; ?>
+      <?php if ($_pubName): ?><span class="gb-banner-name"><?= h($_pubName) ?></span><?php endif; ?>
+    </div>
+    <nav class="gb-banner-nav" id="gbBannerNav">
+      <!-- Nav links populated from Settings in a future update -->
+    </nav>
+  </header>
+
+</div><!-- /.gb-top-wrap -->
 
 <!-- ── Carousel ── -->
 <div class="cat-carousel" id="catCarousel"

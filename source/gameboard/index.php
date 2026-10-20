@@ -1331,7 +1331,7 @@ var _agFields = ['agName','agTagline','agDescription','agStatus','agAvailability
 
 function openAddGame() {
   _agFields.forEach(function(id){ document.getElementById(id).value = ''; });
-  document.getElementById('agStatus').value = '';
+  document.getElementById('agStatus').value = 'Published';
   document.getElementById('agErr').textContent = '';
   document.getElementById('addGameOverlay').classList.add('open');
   setTimeout(function(){ document.getElementById('agName').focus(); }, 60);

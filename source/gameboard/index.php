@@ -1463,6 +1463,11 @@ for ($i = 1; $i <= 4; $i++) {
     $d = trim($_game["Designer$i"] ?? '');
     if ($d) $_designers[] = $d;
 }
+$_artists = [];
+for ($i = 1; $i <= 4; $i++) {
+    $a = trim($_game["Artist$i"] ?? '');
+    if ($a) $_artists[] = $a;
+}
 
 // ── Load rich game-specific data ─────────────────────────────────────────────
 // Sources checked in order:
@@ -1901,8 +1906,16 @@ body.gb-admin-mode .gb-nav-links { display:none; }
 .gb-stat-input::placeholder { color:rgba(255,255,255,.3); }
 .gb-stat-field:focus-within { border-color:rgba(124,158,255,.6); background:rgba(0,0,0,.35); }
 .gb-stat-field:focus-within .gb-stat-icon { stroke:rgba(124,158,255,.8); }
-/* Designer row (separate from stats) */
-.gb-stat-designers { font-size:.85rem; color:rgba(255,255,255,.75); margin-top:.25rem; display:flex; flex-wrap:wrap; align-items:center; gap:.25rem; min-height:1.4em; }
+/* Stat icon pip inside public pills */
+.gb-stat-pip { width:12px; height:12px; stroke:rgba(255,255,255,.7); flex-shrink:0; margin-right:4px; vertical-align:middle; }
+.gb-stat { display:inline-flex; align-items:center; }
+/* Role icon (gear/brush) before designer/artist inputs */
+.gb-role-icon { width:13px; height:13px; stroke:rgba(255,255,255,.5); flex-shrink:0; margin-right:5px; }
+/* Designer/artist rows */
+.gb-stat-designers { font-size:.85rem; color:rgba(255,255,255,.75); margin-top:.2rem; display:flex; flex-wrap:wrap; align-items:center; gap:.25rem; min-height:1.6em; }
+/* Public credits row */
+.gb-stat-credits { display:flex; flex-wrap:wrap; gap:.5rem 1.2rem; margin-top:.25rem; }
+.gb-credit-item { display:inline-flex; align-items:center; font-size:.85rem; color:rgba(255,255,255,.75); }
 /* Inline designer inputs */
 .gb-designer-input {
   background:transparent; border:none; border-bottom:1.5px dashed rgba(255,255,255,.45);
@@ -2090,22 +2103,37 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
         <input class="gb-stat-input" id="gbsiWeight" type="text" placeholder="Weight" oninput="_ed.weight=this.value.trim()" />
       </div>
     </div>
-    <!-- Designer row -->
+    <!-- Designer row (admin) -->
     <div class="gb-stat-designers" id="gbStatDesigners">
+      <svg class="gb-role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
       <span id="gbDesignerInputs"></span>
+    </div>
+    <!-- Artist row (admin) -->
+    <div class="gb-stat-designers" id="gbStatArtists">
+      <svg class="gb-role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+      <span id="gbArtistInputs"></span>
     </div>
     <?php else: ?>
     <!-- Public: show stat pills for non-empty values -->
     <div class="gb-stats" id="gbStatsRow">
-      <?php if ($_count):       ?><div class="gb-stat"><?= h($_count) ?> players</div><?php endif; ?>
-      <?php if ($_duration):    ?><div class="gb-stat"><?= h($_duration) ?></div><?php endif; ?>
+      <?php if ($_count): ?>
+      <div class="gb-stat"><svg class="gb-stat-pip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><?= h($_count) ?> players</div>
+      <?php endif; ?>
+      <?php if ($_duration): ?>
+      <div class="gb-stat"><svg class="gb-stat-pip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><?= h($_duration) ?></div>
+      <?php endif; ?>
       <?php if ($_mechanic):    ?><div class="gb-stat"><?= h($_mechanic) ?></div><?php endif; ?>
       <?php if ($_ages):        ?><div class="gb-stat">Ages <?= h($_ages) ?></div><?php endif; ?>
       <?php if ($_series):      ?><div class="gb-stat"><?= h($_series) ?></div><?php endif; ?>
       <?php if ($_boxSize):     ?><div class="gb-stat"><?= h($_boxSize) ?></div><?php endif; ?>
       <?php if ($_availability):?><div class="gb-stat"><?= h($_availability) ?></div><?php endif; ?>
-      <?php if ($_designers):   ?><div class="gb-stat"><?= h(implode(', ', $_designers)) ?></div><?php endif; ?>
     </div>
+    <?php if ($_designers || $_artists): ?>
+    <div class="gb-stat-credits">
+      <?php if ($_designers): ?><span class="gb-credit-item"><svg class="gb-role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><?= h(implode(', ', $_designers)) ?></span><?php endif; ?>
+      <?php if ($_artists): ?><span class="gb-credit-item"><svg class="gb-role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg><?= h(implode(', ', $_artists)) ?></span><?php endif; ?>
+    </div>
+    <?php endif; ?>
     <?php endif; ?>
     <div class="gb-hero-ctas">
       <?php if ($_richPrice): ?><span class="gb-price-tag"><?= h($_richPrice) ?></span><?php endif; ?>
@@ -2448,6 +2476,26 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
             <input class="gbed-field" id="gbedDesigner4" type="text" />
           </div>
         </div>
+        <div class="gbed-row">
+          <div class="gbed-field-group">
+            <label class="gbed-label">Artist 1</label>
+            <input class="gbed-field" id="gbedArtist1" type="text" />
+          </div>
+          <div class="gbed-field-group">
+            <label class="gbed-label">Artist 2</label>
+            <input class="gbed-field" id="gbedArtist2" type="text" />
+          </div>
+        </div>
+        <div class="gbed-row">
+          <div class="gbed-field-group">
+            <label class="gbed-label">Artist 3</label>
+            <input class="gbed-field" id="gbedArtist3" type="text" />
+          </div>
+          <div class="gbed-field-group">
+            <label class="gbed-label">Artist 4</label>
+            <input class="gbed-field" id="gbedArtist4" type="text" />
+          </div>
+        </div>
       </div>
       <div class="gbed-section">
         <div class="gbed-section-title">Dates</div>
@@ -2543,6 +2591,10 @@ var GAME_DATA = <?= json_encode([
     'designer2'      => $_designers[1] ?? '',
     'designer3'      => $_designers[2] ?? '',
     'designer4'      => $_designers[3] ?? '',
+    'artist1'        => $_artists[0] ?? '',
+    'artist2'        => $_artists[1] ?? '',
+    'artist3'        => $_artists[2] ?? '',
+    'artist4'        => $_artists[3] ?? '',
     'date_started'   => trim($_game['Date Started'] ?? ''),
     'date_signed'    => $_dateSigned,
     'date_published' => $_datePub,
@@ -2803,6 +2855,10 @@ function openEditDetails() {
   document.getElementById('gbedDesigner2').value    = _ed.designer2    || '';
   document.getElementById('gbedDesigner3').value    = _ed.designer3    || '';
   document.getElementById('gbedDesigner4').value    = _ed.designer4    || '';
+  document.getElementById('gbedArtist1').value      = _ed.artist1      || '';
+  document.getElementById('gbedArtist2').value      = _ed.artist2      || '';
+  document.getElementById('gbedArtist3').value      = _ed.artist3      || '';
+  document.getElementById('gbedArtist4').value      = _ed.artist4      || '';
   document.getElementById('gbedDateStarted').value   = _ed.date_started   || '';
   document.getElementById('gbedDateSigned').value    = _ed.date_signed    || '';
   document.getElementById('gbedDatePublished').value = _ed.date_published || '';
@@ -2828,6 +2884,11 @@ function applyEditDetails() {
   _ed.designer2      = document.getElementById('gbedDesigner2').value.trim();
   _ed.designer3      = document.getElementById('gbedDesigner3').value.trim();
   _ed.designer4      = document.getElementById('gbedDesigner4').value.trim();
+  _ed.artist1        = document.getElementById('gbedArtist1').value.trim();
+  _ed.artist2        = document.getElementById('gbedArtist2').value.trim();
+  _ed.artist3        = document.getElementById('gbedArtist3').value.trim();
+  _ed.artist4        = document.getElementById('gbedArtist4').value.trim();
+  gbInitArtistInputs();
   _ed.date_started   = document.getElementById('gbedDateStarted').value.trim();
   _ed.date_signed    = document.getElementById('gbedDateSigned').value.trim();
   _ed.date_published = document.getElementById('gbedDatePublished').value.trim();
@@ -2887,6 +2948,7 @@ function gbInitInlineEdits() {
   gbBuildReviewEditor(_ed.reviews || []);
   gbBuildFaqEditor(_ed.faqs || []);
   gbInitDesignerInputs();
+  gbInitArtistInputs();
   gbInitStatInputs();
 }
 
@@ -2932,6 +2994,38 @@ function gbAddDesignerInput(wrap, value, idx) {
       var nextIdx = allInputs.length;
       var nextVals = [_ed.designer1||'', _ed.designer2||'', _ed.designer3||'', _ed.designer4||''];
       gbAddDesignerInput(wrap, nextVals[nextIdx] || '', nextIdx);
+    }
+  };
+  wrap.appendChild(inp);
+}
+
+function gbInitArtistInputs() {
+  var wrap = document.getElementById('gbArtistInputs');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  var vals = [_ed.artist1||'', _ed.artist2||'', _ed.artist3||'', _ed.artist4||''];
+  var lastFilled = -1;
+  vals.forEach(function(v, i){ if (v) lastFilled = i; });
+  var showCount = Math.min(lastFilled + 2, 4);
+  if (showCount < 1) showCount = 1;
+  for (var i = 0; i < showCount; i++) { gbAddArtistInput(wrap, vals[i], i); }
+}
+
+function gbAddArtistInput(wrap, value, idx) {
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.className = 'gb-designer-input';
+  inp.value = value || '';
+  inp.placeholder = idx === 0 ? 'Artist name' : '+ name';
+  inp.dataset.idx = idx;
+  inp.oninput = function() {
+    var keys = ['artist1','artist2','artist3','artist4'];
+    _ed[keys[idx]] = this.value.trim();
+    var allInputs = wrap.querySelectorAll('.gb-designer-input');
+    if (this.value && parseInt(this.dataset.idx) === allInputs.length - 1 && allInputs.length < 4) {
+      var nextIdx = allInputs.length;
+      var nextVals = [_ed.artist1||'', _ed.artist2||'', _ed.artist3||'', _ed.artist4||''];
+      gbAddArtistInput(wrap, nextVals[nextIdx] || '', nextIdx);
     }
   };
   wrap.appendChild(inp);
@@ -3217,6 +3311,10 @@ function saveGame() {
   fd.append('designer2',      _ed.designer2      || '');
   fd.append('designer3',      _ed.designer3      || '');
   fd.append('designer4',      _ed.designer4      || '');
+  fd.append('artist1',        _ed.artist1        || '');
+  fd.append('artist2',        _ed.artist2        || '');
+  fd.append('artist3',        _ed.artist3        || '');
+  fd.append('artist4',        _ed.artist4        || '');
   fd.append('date_started',   _ed.date_started   || '');
   fd.append('date_signed',    _ed.date_signed    || '');
   fd.append('date_published', _ed.date_published || '');

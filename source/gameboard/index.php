@@ -1870,19 +1870,26 @@ body.gb-admin-mode .gb-vrev-grid { display:grid; }
 .gb-vrev-editing .gb-vrev-btn-save { padding:.32rem .7rem; border-radius:5px; border:none; background:#4ade80; color:#0f172a; font-size:.72rem; font-weight:700; cursor:pointer; }
 .gb-vrev-editing .gb-vrev-btn-cancel { padding:.32rem .7rem; border-radius:5px; border:none; background:#e2e8f0; color:#334155; font-size:.72rem; font-weight:700; cursor:pointer; }
 
-/* ── Price & Buy URL editor (admin) ── */
-.gb-buy-editor { display:flex; flex-direction:column; gap:.55rem; }
-body.gb-admin-mode .gb-buy-editor { display:flex; }
-.gb-buy-price-row { display:flex; align-items:center; gap:.6rem; }
-.gb-buy-price-row label { font-family:'DINBlack',sans-serif; font-size:.65rem; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); white-space:nowrap; }
-.gb-buy-price-inp { width:120px; padding:.42rem .6rem; border:1px solid #dde; border-radius:6px; font-size:.85rem; outline:none; }
-.gb-buy-price-inp:focus { border-color:#7c9eff; }
-.gb-buy-pair { display:grid; grid-template-columns:1fr 160px 1.4rem; gap:.4rem; align-items:center; }
-.gb-buy-pair input { padding:.42rem .6rem; border:1px solid #dde; border-radius:6px; font-size:.82rem; outline:none; width:100%; box-sizing:border-box; }
-.gb-buy-pair input:focus { border-color:#7c9eff; }
-.gb-buy-pair input::placeholder { color:#aab; }
-.gb-buy-pair-del { background:none; border:none; color:#bbc; font-size:.9rem; cursor:pointer; padding:0; line-height:1; text-align:center; }
-.gb-buy-pair-del:hover { color:#e55; }
+/* ── Price tag: in-place editing (admin) ── */
+.gb-cta-ph { opacity:.45; font-style:italic; }
+body.gb-admin-mode #gbEditPrice { cursor:text; outline:2px dashed rgba(255,255,255,.35); border-radius:4px; padding:1px 5px; min-width:2rem; display:inline-block; }
+body.gb-admin-mode #gbEditPrice:focus,
+body.gb-admin-mode #gbEditPrice:hover { outline:2px solid rgba(255,255,255,.75); }
+/* ── Buy links: in-place editing (admin) ── */
+body.gb-admin-mode .gb-buy-pub { display:none; }
+body.gb-admin-mode #gbBuyCtas { display:contents; }
+.gb-buy-cta-wrap { position:relative; display:inline-flex; align-items:center; }
+.gb-buy-cta-del { position:absolute; top:-5px; right:-5px; width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,.6); color:#fff; border:none; font-size:.55rem; line-height:16px; text-align:center; cursor:pointer; padding:0; display:none; z-index:2; }
+.gb-buy-cta-wrap:hover .gb-buy-cta-del { display:block; }
+.gb-buy-cta-popover { position:absolute; top:calc(100% + 6px); left:0; z-index:200; background:#fff; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,.22); padding:.65rem .75rem; display:flex; flex-direction:column; gap:.4rem; min-width:240px; }
+.gb-buy-cta-popover input { padding:.38rem .55rem; border:1px solid #dde; border-radius:5px; font-size:.8rem; outline:none; width:100%; box-sizing:border-box; }
+.gb-buy-cta-popover input:focus { border-color:#7c9eff; }
+.gb-buy-cta-popover-btns { display:flex; gap:.4rem; }
+.gb-buy-cta-popover-btns button { padding:.32rem .65rem; border-radius:5px; border:none; font-size:.72rem; font-weight:700; cursor:pointer; }
+.gb-buy-cta-save { background:#4ade80; color:#0f172a; }
+.gb-buy-cta-cancel { background:#e2e8f0; color:#334155; }
+.gb-buy-cta-add { opacity:.6; font-size:.72rem !important; padding:.3rem .6rem !important; border-style:dashed !important; }
+.gb-buy-cta-add:hover { opacity:1; }
 
 /* ── FAQs ── */
 .gb-faq-item { border-bottom:1px solid var(--border); padding:.85rem 0; }
@@ -2272,12 +2279,17 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     <?php endif; ?>
     <?php endif; ?>
     <div class="gb-hero-ctas">
-      <?php if ($_richPrice): ?><span class="gb-price-tag"><?= h($_richPrice) ?></span><?php endif; ?>
+      <?php if ($_richPrice || !isset($_gbPublicBase)): ?>
+      <span class="gb-price-tag<?= (!$_richPrice) ? ' gb-cta-ph' : '' ?>" id="gbEditPrice" data-ph="$0.00"><?= h($_richPrice) ?></span>
+      <?php endif; ?>
+      <?php /* Admin: JS-rendered editable buy buttons */ ?>
+      <?php if (!isset($_gbPublicBase)): ?><span id="gbBuyCtas" style="display:none"></span><?php endif; ?>
+      <?php /* Public: static buy buttons */ ?>
       <?php foreach ($_buyUrls as $b):
         $bUrl   = trim($b['Value']   ?? '');
         $bLabel = trim($b['Value 1'] ?? '') ?: 'Buy Now';
         if (!$bUrl) continue;
-      ?><a class="btn-nav filled" href="<?= h($bUrl) ?>" target="_blank"><?= h($bLabel) ?></a><?php endforeach; ?>
+      ?><a class="btn-nav filled gb-buy-pub" href="<?= h($bUrl) ?>" target="_blank"><?= h($bLabel) ?></a><?php endforeach; ?>
       <?php if ($_richRules): ?><a class="btn-nav" href="<?= h($_richRules) ?>" target="_blank">📖 Rules</a><?php endif; ?>
       <?php if ($_playUrl):   ?><a class="btn-nav" href="<?= h($_playUrl) ?>" target="_blank">🎮 Play Online</a><?php endif; ?>
       <?php if ($_printUrl):  ?><a class="btn-nav" href="<?= h($_printUrl) ?>" target="_blank">🖨 Print &amp; Play</a><?php endif; ?>
@@ -2287,12 +2299,6 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
 
 <!-- ── Main ── -->
 <div class="gb-main">
-
-  <!-- Price & Buy URLs (admin only) -->
-  <div class="gb-section gb-ph-section" id="gbBuySection">
-    <div class="gb-section-label">Price &amp; Where to Buy</div>
-    <div class="gb-buy-editor gb-inline-edit" id="gbBuyEditor"></div>
-  </div>
 
   <!-- Description (always rendered; hidden in public when empty via .gb-ph-section) -->
   <div class="gb-section<?= $_description ? '' : ' gb-ph-section' ?>">
@@ -2791,7 +2797,7 @@ var _siPendingEmail = '', _siPendingPass = '';
     // Activate admin mode
     document.body.classList.add('gb-admin-mode');
     // Make text fields contenteditable
-    ['gbEditTitle', 'gbEditSummary', 'gbEditDesc'].forEach(function(id) {
+    ['gbEditTitle', 'gbEditSummary', 'gbEditDesc', 'gbEditPrice'].forEach(function(id) {
       var el = document.getElementById(id);
       if (!el) return;
       el.contentEditable = 'true';
@@ -2801,6 +2807,11 @@ var _siPendingEmail = '', _siPendingPass = '';
         el.classList.remove('gb-ph-lorem');
       }
     });
+    // Sync price on input
+    var priceEl = document.getElementById('gbEditPrice');
+    if (priceEl) priceEl.oninput = function() { _ed.price = this.textContent.trim(); };
+    // Build admin buy CTA buttons in hero
+    gbInitBuyCtas();
     gbInitInlineEdits();
     _updateGbAuth();
   } catch(e) {}
@@ -3207,7 +3218,6 @@ function gbInitInlineEdits() {
       _ed.components = this.value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
     };
   }
-  gbBuildBuyEditor(_ed.price, _ed.buy_urls || []);
   gbBuildReviewEditor(_ed.reviews || []);
   gbInitVrevGrid();
   gbBuildFaqEditor(_ed.faqs || []);
@@ -3440,48 +3450,73 @@ function gbVrevRemove(e, idx) {
   gbInitVrevGrid();
 }
 
-function gbBuildBuyEditor(price, buyUrls) {
-  var wrap = document.getElementById('gbBuyEditor');
+function gbInitBuyCtas() {
+  var wrap = document.getElementById('gbBuyCtas');
   if (!wrap) return;
   wrap.innerHTML = '';
-  // Price row
-  var priceRow = document.createElement('div');
-  priceRow.className = 'gb-buy-price-row';
-  priceRow.innerHTML = '<label>Price</label><input class="gb-buy-price-inp" id="gbBuyPriceInp" type="text" placeholder="$19.99" value="' + esc(price || '') + '">';
-  wrap.appendChild(priceRow);
-  priceRow.querySelector('input').oninput = function() { _ed.price = this.value.trim(); };
-  // URL + label pairs
-  var pairs = (buyUrls || []).filter(function(b){ return b.url; });
-  pairs.push({url:'', label:''});
-  pairs.forEach(function(b, i) { gbAddBuyPair(wrap, b.url, b.label, i === pairs.length - 1); });
+  // Hide static public buy buttons — JS takes over
+  document.querySelectorAll('.gb-buy-pub').forEach(function(el) { el.style.display = 'none'; });
+  (_ed.buy_urls || []).forEach(function(b, i) {
+    if (!b.url) return;
+    var w = document.createElement('span');
+    w.className = 'gb-buy-cta-wrap';
+    var btn = document.createElement('a');
+    btn.className = 'btn-nav filled';
+    btn.textContent = b.label || 'Buy Now';
+    btn.href = '#';
+    btn.onclick = function(e) { e.preventDefault(); gbBuyCtaPopover(w, i); };
+    var del = document.createElement('button');
+    del.className = 'gb-buy-cta-del';
+    del.textContent = '✕';
+    del.title = 'Remove';
+    del.onmousedown = function(e) { e.preventDefault(); _ed.buy_urls.splice(i, 1); gbInitBuyCtas(); };
+    w.appendChild(btn);
+    w.appendChild(del);
+    wrap.appendChild(w);
+  });
+  // Add link button
+  var add = document.createElement('a');
+  add.className = 'btn-nav gb-buy-cta-add';
+  add.textContent = '+ Add Link';
+  add.href = '#';
+  add.onclick = function(e) { e.preventDefault(); gbBuyCtaPopover(add, -1); };
+  wrap.appendChild(add);
 }
 
-function gbAddBuyPair(wrap, url, label, isLast) {
-  var row = document.createElement('div');
-  row.className = 'gb-buy-pair';
-  row.innerHTML =
-    '<input type="url" placeholder="https://buy-link.com…" value="' + esc(url || '') + '">'
-    + '<input type="text" placeholder="Label (e.g. Amazon)" value="' + esc(label || '') + '">'
-    + '<button class="gb-buy-pair-del" title="Remove">✕</button>';
-  wrap.appendChild(row);
-  var urlInp   = row.querySelectorAll('input')[0];
-  var lblInp   = row.querySelectorAll('input')[1];
-  var delBtn   = row.querySelector('.gb-buy-pair-del');
-  function syncBuyUrls() {
-    _ed.buy_urls = Array.from(wrap.querySelectorAll('.gb-buy-pair')).map(function(r) {
-      return { url: r.querySelectorAll('input')[0].value.trim(), label: r.querySelectorAll('input')[1].value.trim() };
-    }).filter(function(b){ return b.url; });
-  }
-  function maybeAddPair() {
-    var rows = wrap.querySelectorAll('.gb-buy-pair');
-    if (row === rows[rows.length - 1] && urlInp.value.trim()) gbAddBuyPair(wrap, '', '', true);
-  }
-  urlInp.oninput = function() { syncBuyUrls(); maybeAddPair(); };
-  lblInp.oninput = function() { syncBuyUrls(); };
-  delBtn.onclick = function() {
-    if (wrap.querySelectorAll('.gb-buy-pair').length > 1) { row.remove(); syncBuyUrls(); } else { urlInp.value=''; lblInp.value=''; syncBuyUrls(); }
+function gbBuyCtaPopover(anchor, idx) {
+  // Close any open popovers
+  document.querySelectorAll('.gb-buy-cta-popover').forEach(function(p) { p.remove(); });
+  var b = idx >= 0 ? ((_ed.buy_urls || [])[idx] || {}) : {};
+  var pop = document.createElement('div');
+  pop.className = 'gb-buy-cta-popover';
+  pop.innerHTML = '<input type="text" placeholder="Label (e.g. Buy on Amazon)" value="' + esc(b.label || '') + '">'
+    + '<input type="url" placeholder="https://…" value="' + esc(b.url || '') + '">'
+    + '<div class="gb-buy-cta-popover-btns">'
+    + '<button class="gb-buy-cta-save">Save</button>'
+    + '<button class="gb-buy-cta-cancel">Cancel</button>'
+    + '</div>';
+  anchor.style.position = 'relative';
+  anchor.appendChild(pop);
+  var lblInp = pop.querySelectorAll('input')[0];
+  var urlInp = pop.querySelectorAll('input')[1];
+  lblInp.focus();
+  pop.querySelector('.gb-buy-cta-save').onclick = function() {
+    var url = urlInp.value.trim();
+    var label = lblInp.value.trim();
+    if (!url) { pop.remove(); return; }
+    if (!_ed.buy_urls) _ed.buy_urls = [];
+    if (idx >= 0) { _ed.buy_urls[idx] = {url: url, label: label}; }
+    else          { _ed.buy_urls.push({url: url, label: label}); }
+    gbInitBuyCtas();
   };
-  if (!isLast) delBtn.style.visibility = 'visible';
+  pop.querySelector('.gb-buy-cta-cancel').onclick = function() { pop.remove(); };
+  pop.onclick = function(e) { e.stopPropagation(); };
+  // Close on outside click
+  setTimeout(function() {
+    document.addEventListener('click', function closePop() {
+      pop.remove(); document.removeEventListener('click', closepop);
+    }, {once: true});
+  }, 10);
 }
 
 function gbBuildFaqEditor(faqs) {
@@ -3793,6 +3828,9 @@ function saveGame() {
   fd.append('rules',          _ed.rules_url      || '');
   fd.append('play',           _ed.play_url       || '');
   fd.append('print',          _ed.print_url      || '');
+  // Sync price from contenteditable span before saving
+  var _priceEl = document.getElementById('gbEditPrice');
+  if (_priceEl) _ed.price = _priceEl.textContent.trim();
   if (_ed.price      !== undefined) fd.append('price',     _ed.price     || '');
   if (_ed.buy_urls   !== undefined) fd.append('buy_urls',  JSON.stringify(_ed.buy_urls  || []));
   if (_ed.components !== undefined) fd.append('components', JSON.stringify(_ed.components || []));

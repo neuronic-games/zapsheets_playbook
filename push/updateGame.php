@@ -125,7 +125,6 @@ if ($result !== null && !empty($result['ok'])) {
         if ($rules       !== '') $patchFields['Rules PDF Url'] = $rules;
         if ($sellsheet   !== '') $patchFields['Sellsheet URL'] = $sellsheet;
         if ($view        !== '') $patchFields['Page URL']      = $view;
-        if ($video       !== '') $patchFields['Video URL']     = $video;
         // Stat rows live in [GameName] tab, not in Games sheet columns
         if ($minPlayers  !== '') $patchFields['MinPlayers']    = $minPlayers;
         if ($maxPlayers  !== '') $patchFields['MaxPlayers']    = $maxPlayers;
@@ -185,17 +184,19 @@ if ($result !== null && !empty($result['ok'])) {
     }
 
     // Update Component / Review / FAQ rows in the [GameName] tab
-    $componentsRaw = trim($_POST['components'] ?? '');
-    $reviewsRaw    = trim($_POST['reviews']    ?? '');
-    $faqsRaw       = trim($_POST['faqs']       ?? '');
-    $artistsRaw    = trim($_POST['artists']    ?? '');
-    if ($componentsRaw !== '' || $reviewsRaw !== '' || $faqsRaw !== '' || $artistsRaw !== '') {
+    $componentsRaw    = trim($_POST['components']    ?? '');
+    $reviewsRaw       = trim($_POST['reviews']       ?? '');
+    $videoReviewsRaw  = trim($_POST['video_reviews'] ?? '');
+    $faqsRaw          = trim($_POST['faqs']          ?? '');
+    $artistsRaw       = trim($_POST['artists']       ?? '');
+    if ($componentsRaw !== '' || $reviewsRaw !== '' || $videoReviewsRaw !== '' || $faqsRaw !== '' || $artistsRaw !== '') {
         $tabContent = [
-            'game'       => $tabGameName,
-            'components' => $componentsRaw ? (json_decode($componentsRaw, true) ?: []) : [],
-            'reviews'    => $reviewsRaw    ? (json_decode($reviewsRaw,    true) ?: []) : [],
-            'faqs'       => $faqsRaw       ? (json_decode($faqsRaw,       true) ?: []) : [],
-            'artists'    => $artistsRaw    ? (json_decode($artistsRaw,    true) ?: []) : [],
+            'game'          => $tabGameName,
+            'components'    => $componentsRaw   ? (json_decode($componentsRaw,   true) ?: []) : [],
+            'reviews'       => $reviewsRaw      ? (json_decode($reviewsRaw,      true) ?: []) : [],
+            'video_reviews' => $videoReviewsRaw ? (json_decode($videoReviewsRaw, true) ?: []) : [],
+            'faqs'          => $faqsRaw         ? (json_decode($faqsRaw,         true) ?: []) : [],
+            'artists'       => $artistsRaw      ? (json_decode($artistsRaw,      true) ?: []) : [],
         ];
         $tabContentEncoded = base64_encode(json_encode($tabContent, JSON_UNESCAPED_UNICODE));
         $tabContentCmd = escapeshellarg($pythonPath) . ' '

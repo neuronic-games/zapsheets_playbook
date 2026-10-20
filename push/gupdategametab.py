@@ -38,10 +38,11 @@ sheet_id = arg[:pipe_idx]
 data     = json.loads(base64.b64decode(arg[pipe_idx + 1:]).decode('utf-8'))
 
 game_name  = data.get('game', '').strip()
-components = [str(c).strip() for c in data.get('components', []) if str(c).strip()]
-reviews    = data.get('reviews', [])
-faqs       = data.get('faqs', [])
-artists    = [str(a).strip() for a in data.get('artists', []) if str(a).strip()]
+components     = [str(c).strip() for c in data.get('components', []) if str(c).strip()]
+reviews        = data.get('reviews', [])
+video_reviews  = data.get('video_reviews', [])
+faqs           = data.get('faqs', [])
+artists        = [str(a).strip() for a in data.get('artists', []) if str(a).strip()]
 
 if not sheet_id or not game_name:
     print(json.dumps({"error": "sheet_id and game are required"}))
@@ -72,12 +73,13 @@ except Exception as e:
 
 # Build the replacement content for each block type.
 # Each list must have at least one placeholder row so the section stays present.
-BLOCK_TYPES = ('Component', 'Review', 'FAQ', 'Artist')
+BLOCK_TYPES = ('Component', 'Review', 'VideoReview', 'FAQ', 'Artist')
 block_content = {
-    'Component': [['Component', c, ''] for c in components] or [['Component', '', '']],
-    'Review':    [['Review', str(r.get('attr','')), str(r.get('quote',''))] for r in reviews if isinstance(r, dict)] or [['Review', '', '']],
-    'FAQ':       [['FAQ',    str(f.get('q','')),    str(f.get('a',''))]    for f in faqs    if isinstance(f, dict)] or [['FAQ',    '', '']],
-    'Artist':    [['Artist', a, ''] for a in artists] or [['Artist', '', '']],
+    'Component':   [['Component', c, ''] for c in components] or [['Component', '', '']],
+    'Review':      [['Review', str(r.get('attr','')), str(r.get('quote',''))] for r in reviews if isinstance(r, dict)] or [['Review', '', '']],
+    'VideoReview': [['VideoReview', str(v.get('source','')), str(v.get('url',''))] for v in video_reviews if isinstance(v, dict)] or [['VideoReview', '', '']],
+    'FAQ':         [['FAQ',    str(f.get('q','')),    str(f.get('a',''))]    for f in faqs    if isinstance(f, dict)] or [['FAQ',    '', '']],
+    'Artist':      [['Artist', a, ''] for a in artists] or [['Artist', '', '']],
 }
 
 # Rebuild rows: keep non-Component/Review/FAQ rows as-is,

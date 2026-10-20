@@ -1578,9 +1578,8 @@ $_components  = array_values(array_filter(_gb_rows($_rich, 'Component'), fn($r) 
 $_reviews     = array_values(array_filter(_gb_rows($_rich, 'Review'),    fn($r) => trim($r['Value'] ?? '') !== ''));
 $_faqs        = array_values(array_filter(_gb_rows($_rich, 'FAQ'),       fn($r) => trim($r['Value'] ?? '') !== ''));
 $_buyUrls     = _gb_rows($_rich, 'BuyUrl');
-$_richVideos  = _gb_rows($_rich, 'Video');
-// Also read Video URL from [GameName] tab as fallback (in case Games sheet has no Video URL column)
-if (!$_videoUrl) $_videoUrl = _gb_val($_rich, 'Video URL');
+$_richVideos    = _gb_rows($_rich, 'Video');
+$_videoReviews  = array_values(array_filter(_gb_rows($_rich, 'VideoReview'), fn($r) => trim($r['Value'] ?? '') !== ''));
 $_mediaImgs   = array_merge(_gb_rows($_rich, 'Media'), _gb_rows($_rich, 'ProductImage'));
 $_richPrice   = _gb_val($_rich, 'Price');
 $_richRules   = _gb_val($_rich, 'Rules PDF Url') ?: $_rulesUrl;
@@ -1856,6 +1855,13 @@ body.gb-admin-mode .gb-faq-editor { display:flex; }
 .gb-review-quote { font-size:.9rem; line-height:1.6; color:var(--ink-lt); font-style:italic; margin-bottom:.6rem; }
 .gb-review-quote::before { content:'\201C'; font-size:1.8rem; color:var(--accent); line-height:0; vertical-align:-.45em; margin-right:.1rem; }
 .gb-review-author { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+/* ── Video Reviews ── */
+.gb-vreviews { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:1.2rem; }
+.gb-vreview { background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,.08); }
+.gb-vreview-wrap { position:relative; padding-top:56.25%; }
+.gb-vreview-wrap iframe { position:absolute; inset:0; width:100%; height:100%; border:none; }
+.gb-vreview-wrap video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#000; }
+.gb-vreview-label { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); padding:.5rem .75rem .6rem; }
 
 /* ── FAQs ── */
 .gb-faq-item { border-bottom:1px solid var(--border); padding:.85rem 0; }
@@ -2367,6 +2373,31 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     </div>
   </div>
 
+  <!-- Video Reviews -->
+  <div class="gb-section<?= empty($_videoReviews) ? ' gb-sect-empty' : '' ?>">
+    <div class="gb-section-label">Video Reviews</div>
+    <div class="gb-faq-editor gb-inline-edit" id="gbVideoReviewsList"></div>
+    <div class="gb-vreviews gb-display-content">
+      <?php foreach ($_videoReviews as $vr):
+        $vrSource = trim($vr['Value']   ?? '');
+        $vrUrl    = trim($vr['Value 1'] ?? '');
+        if (!$vrSource && !$vrUrl) continue;
+        $vrEmbed  = _gb_embed($vrUrl);
+      ?>
+      <div class="gb-vreview">
+        <div class="gb-vreview-wrap">
+          <?php if ($vrEmbed): ?>
+          <iframe src="<?= h($vrEmbed) ?>" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+          <?php elseif ($vrUrl): ?>
+          <video src="<?= h($vrUrl) ?>" controls></video>
+          <?php endif; ?>
+        </div>
+        <?php if ($vrSource): ?><div class="gb-vreview-label"><?= h($vrSource) ?></div><?php endif; ?>
+      </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+
   <!-- FAQs -->
   <div class="gb-section<?= empty($_faqs) ? ' gb-sect-empty' : '' ?>">
     <div class="gb-section-label">FAQ</div>
@@ -2717,6 +2748,7 @@ var GAME_DATA = <?= json_encode([
     'date_published' => $_datePub,
     'components'     => array_values(array_map(function($c) { return trim($c['Value'] ?? ''); }, $_components)),
     'reviews'        => array_values(array_map(function($r) { return ['attr' => trim($r['Value'] ?? ''), 'quote' => trim($r['Value 1'] ?? '')]; }, $_reviews)),
+    'video_reviews'  => array_values(array_map(function($r) { return ['source' => trim($r['Value'] ?? ''), 'url' => trim($r['Value 1'] ?? '')]; }, $_videoReviews)),
     'faqs'           => array_values(array_map(function($f) { return ['q' => trim($f['Value'] ?? ''), 'a' => trim($f['Value 1'] ?? '')]; }, $_faqs)),
 ]) ?>;
 
@@ -3153,6 +3185,7 @@ function gbInitInlineEdits() {
     };
   }
   gbBuildReviewEditor(_ed.reviews || []);
+  gbBuildVideoReviewEditor(_ed.video_reviews || []);
   gbBuildFaqEditor(_ed.faqs || []);
   gbInitDesignerInputs();
   gbInitArtistInputs();
@@ -3295,6 +3328,59 @@ function gbAddReviewPair(list, quote, source, isLast) {
   pair.appendChild(sta);
   list.appendChild(pair);
   setTimeout(function() { gbAutoResize(qta); gbAutoResize(sta); }, 0);
+}
+
+function gbBuildVideoReviewEditor(vreviews) {
+  var list = document.getElementById('gbVideoReviewsList');
+  if (!list) return;
+  list.innerHTML = '';
+  var pairs = vreviews.filter(function(r){ return r.source || r.url; });
+  pairs.push({source:'', url:''});
+  pairs.forEach(function(r, idx) { gbAddVideoReviewPair(list, r.source, r.url, idx === pairs.length - 1); });
+}
+
+function gbAddVideoReviewPair(list, source, url, isLast) {
+  var pair = document.createElement('div');
+  pair.className = 'gb-faq-pair';
+
+  var sta = document.createElement('textarea');
+  sta.className = 'faq-q';
+  sta.placeholder = 'Source (e.g. BoardGameGeek Review)';
+  sta.rows = 1;
+  sta.value = source || '';
+
+  var uta = document.createElement('textarea');
+  uta.className = 'faq-a';
+  uta.placeholder = 'Video URL (YouTube or direct)';
+  uta.rows = 1;
+  uta.value = url || '';
+
+  function syncVideoReviews() {
+    _ed.video_reviews = Array.prototype.slice.call(
+      document.querySelectorAll('#gbVideoReviewsList .gb-faq-pair')
+    ).map(function(p) {
+      return {
+        source: p.querySelector('.faq-q').value.trim(),
+        url:    p.querySelector('.faq-a').value.trim()
+      };
+    }).filter(function(r){ return r.source || r.url; });
+  }
+
+  function maybeAddPair() {
+    var pairs = document.querySelectorAll('#gbVideoReviewsList .gb-faq-pair');
+    var last  = pairs[pairs.length - 1];
+    if (pair === last && (sta.value.trim() || uta.value.trim())) {
+      gbAddVideoReviewPair(list, '', '', true);
+    }
+  }
+
+  sta.oninput = function() { gbAutoResize(this); syncVideoReviews(); maybeAddPair(); };
+  uta.oninput = function() { gbAutoResize(this); syncVideoReviews(); maybeAddPair(); };
+
+  pair.appendChild(sta);
+  pair.appendChild(uta);
+  list.appendChild(pair);
+  setTimeout(function() { gbAutoResize(sta); gbAutoResize(uta); }, 0);
 }
 
 function gbBuildFaqEditor(faqs) {
@@ -3606,9 +3692,10 @@ function saveGame() {
   fd.append('rules',          _ed.rules_url      || '');
   fd.append('play',           _ed.play_url       || '');
   fd.append('print',          _ed.print_url      || '');
-  if (_ed.components !== undefined) fd.append('components', JSON.stringify(_ed.components || []));
-  if (_ed.reviews    !== undefined) fd.append('reviews',    JSON.stringify(_ed.reviews    || []));
-  if (_ed.faqs       !== undefined) fd.append('faqs',       JSON.stringify(_ed.faqs       || []));
+  if (_ed.components     !== undefined) fd.append('components',     JSON.stringify(_ed.components     || []));
+  if (_ed.reviews        !== undefined) fd.append('reviews',        JSON.stringify(_ed.reviews        || []));
+  if (_ed.video_reviews  !== undefined) fd.append('video_reviews',  JSON.stringify(_ed.video_reviews  || []));
+  if (_ed.faqs           !== undefined) fd.append('faqs',           JSON.stringify(_ed.faqs           || []));
   if (_gbGalleryUploads.length) {
     fd.append('gallery_add', JSON.stringify(_gbGalleryUploads));
   }

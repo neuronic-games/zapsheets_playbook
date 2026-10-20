@@ -1874,7 +1874,7 @@ body.gb-admin-mode .gb-vrev-grid { display:grid; }
 /* ── Price tag: in-place editing (admin) ── */
 .gb-cta-ph { opacity:.45; font-style:italic; }
 body.gb-admin-mode #gbEditPrice { cursor:text; border-style:dashed; min-width:3rem; }
-body.gb-admin-mode #gbEditPrice:empty::before { content:attr(data-ph); opacity:.4; font-style:italic; pointer-events:none; }
+body.gb-admin-mode #gbEditPrice.gb-price-ph::before { content:attr(data-ph); opacity:.45; font-style:italic; pointer-events:none; }
 body.gb-admin-mode #gbEditPrice:focus,
 body.gb-admin-mode #gbEditPrice:hover { outline:2px solid rgba(255,255,255,.75); }
 /* ── Buy links: in-place editing (admin) ── */
@@ -2812,9 +2812,18 @@ var _siPendingEmail = '', _siPendingPass = '';
         el.classList.remove('gb-ph-lorem');
       }
     });
-    // Sync price on input
+    // Sync price on input; show/hide placeholder class when empty
     var priceEl = document.getElementById('gbEditPrice');
-    if (priceEl) priceEl.oninput = function() { _ed.price = this.textContent.trim(); };
+    if (priceEl) {
+      if (!priceEl.textContent.trim()) priceEl.classList.add('gb-price-ph');
+      priceEl.oninput = function() {
+        var val = this.textContent.trim();
+        _ed.price = val;
+        this.classList.toggle('gb-price-ph', !val);
+      };
+      priceEl.onfocus = function() { this.classList.remove('gb-price-ph'); };
+      priceEl.onblur  = function() { if (!this.textContent.trim()) this.classList.add('gb-price-ph'); };
+    }
     // Build admin buy CTA buttons in hero
     gbInitBuyCtas();
     gbInitInlineEdits();

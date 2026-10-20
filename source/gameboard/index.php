@@ -67,6 +67,9 @@ $_allGames = _gb_load($_sDir . '/games.json');
 // Catalog only shows Published games; individual pages work for any game
 $_games = array_values(array_filter($_allGames, fn($g) => strtolower(trim($g['Status'] ?? '')) === 'published'));
 
+// Shared image-file SVG icon used on every image-change button
+$_imgBtnIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+
 if (!$_gameSlug) {
     // ── No slug: render the admin catalog ────────────────────────────────────────
     $_pubName  = trim($_settings['Company'] ?? $_settings['Name'] ?? '');
@@ -146,11 +149,15 @@ a { color:inherit; text-decoration:none; }
 .cat-card-meta { display:flex; flex-wrap:wrap; gap:.3rem .65rem; margin-top:.35rem; }
 .cat-card-stat { font-size:.72rem; color:var(--muted); }
 
+/* ── Shared image-change button (admin mode) ── */
+.gb-img-btn { width:2rem; height:2rem; border-radius:50%; background:rgba(0,0,0,.52); color:#fff; display:none; align-items:center; justify-content:center; cursor:pointer; transition:background .15s; line-height:1; padding:0; user-select:none; border:none; flex-shrink:0; }
+.gb-img-btn:hover { background:rgba(0,0,0,.82); }
+.gb-img-btn svg { pointer-events:none; }
+body.gb-admin-mode .gb-img-btn { display:flex; }
+
 /* ── Cat card image upload (admin mode) ── */
 .cat-img-wrap { position:relative; display:block; width:100%; }
-.cat-img-upload-btn { position:absolute; top:.4rem; right:.4rem; width:2rem; height:2rem; border-radius:50%; background:rgba(0,0,0,.52); color:#fff; font-size:.95rem; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:2; transition:background .15s; line-height:1; padding:0; user-select:none; }
-body.gb-admin-mode .cat-img-upload-btn { display:flex; }
-.cat-img-upload-btn:hover { background:rgba(0,0,0,.82); }
+.cat-img-upload-btn { position:absolute; top:.4rem; right:.4rem; z-index:2; }
 .cat-img-wrap.drag-over::after { content:'Drop to set image'; position:absolute; inset:0; background:rgba(55,110,200,.75); color:#fff; font-family:'DINBlack',sans-serif; font-size:.8rem; text-transform:uppercase; letter-spacing:.07em; display:flex; align-items:center; justify-content:center; z-index:3; pointer-events:none; }
 
 /* ── Empty ── */
@@ -283,8 +290,8 @@ body.gb-admin-mode .cat-img-upload-btn { display:flex; }
       <?php else: ?>
       <div class="cat-card-ph">🎲</div>
       <?php endif; ?>
-      <span class="cat-img-upload-btn" title="Change image"
-        onclick="catPickImage(event,this.closest('.cat-img-wrap'))">📷</span>
+      <button class="gb-img-btn cat-img-upload-btn" title="Change image"
+        onclick="catPickImage(event,this.closest('.cat-img-wrap'))"><?= $_imgBtnIcon ?></button>
     </div>
     <div class="cat-card-body">
       <div class="cat-card-name"><?= h($gName) ?></div>
@@ -709,7 +716,7 @@ function catUploadCardImage(file, wrap) {
   var gameName = wrap.dataset.game;
   if (!gameName) return;
   var btn = wrap.querySelector('.cat-img-upload-btn');
-  if (btn) { btn._orig = btn.textContent; btn.textContent = '⏳'; btn.disabled = true; }
+  if (btn) { btn._orig = btn.innerHTML; btn.textContent = '⏳'; btn.disabled = true; }
 
   var formData = new FormData();
   formData.append('file', file);
@@ -721,7 +728,7 @@ function catUploadCardImage(file, wrap) {
     var r; try { r = JSON.parse(xhr.responseText); } catch(ex) { r = {error:'parse error'}; }
     if (!r || r.error) {
       alert('Upload failed: ' + (r && r.error || 'unknown'));
-      if (btn) { btn.textContent = btn._orig || '📷'; btn.disabled = false; }
+      if (btn) { btn.innerHTML = btn._orig || ''; btn.disabled = false; }
       return;
     }
     var imageUrl = r.url;
@@ -732,7 +739,7 @@ function catUploadCardImage(file, wrap) {
     var xhr2 = new XMLHttpRequest();
     xhr2.open('POST', APP_ROOT + 'push/updateGameImage.php');
     xhr2.onload = function() {
-      if (btn) { btn.textContent = btn._orig || '📷'; btn.disabled = false; }
+      if (btn) { btn.innerHTML = btn._orig || ''; btn.disabled = false; }
       var r2; try { r2 = JSON.parse(xhr2.responseText); } catch(ex) { r2 = {error:'parse error'}; }
       if (!r2 || r2.error) {
         alert('Sheet update failed: ' + (r2 && r2.error || 'unknown'));
@@ -1400,38 +1407,17 @@ body.gb-admin-mode .gb-ph-section { display: block; }
 body.gb-admin-mode .gb-ph-stat { display: flex; }
 .gb-ph-stat strong { opacity: .5; }
 .gb-ph-stat span { opacity: .35; font-style: italic; }
-/* Cover hint overlay when no hero image */
-.gb-cover-hint {
-  display: none; position: absolute; inset: 0; z-index: 3;
-  align-items: center; justify-content: center; flex-direction: column; gap: .6rem;
-  border: 3px dashed rgba(124,158,255,.25); cursor: pointer;
-  transition: background .15s, border-color .15s;
-}
-.gb-cover-hint:hover,
-.gb-hero.gb-drag-over .gb-cover-hint { background: rgba(124,158,255,.12); border-color: rgba(124,158,255,.7); }
-body.gb-admin-mode .gb-hero.no-cover .gb-cover-hint { display: flex; }
-.gb-cover-hint-icon { font-size: 2.5rem; opacity: .3; }
-.gb-cover-hint-text {
-  font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase;
-  letter-spacing:.1em; color:rgba(255,255,255,.4);
-}
-/* Change-cover overlay (admin mode, when cover already set) */
-.gb-change-cover {
-  display: none; position: absolute; inset: 0; z-index: 3;
-  align-items: center; justify-content: center;
-  cursor: pointer; transition: background .15s;
-}
-body.gb-admin-mode .gb-hero:not(.no-cover):hover .gb-change-cover,
-body.gb-admin-mode .gb-hero.gb-drag-over .gb-change-cover { display: flex; background: rgba(0,0,0,.45); }
-.gb-change-cover span {
-  font-family:'DINBlack',sans-serif; font-size:.78rem; text-transform:uppercase;
-  letter-spacing:.1em; color:#fff; background:rgba(0,0,0,.5); border:1.5px solid rgba(255,255,255,.4);
-  padding:.4rem 1rem; border-radius:6px;
-}
+/* Cover image button (top-left of hero) */
+.gb-cover-btn { position: absolute; top: .75rem; left: .75rem; z-index: 6; }
+body.gb-admin-mode .gb-hero.no-cover .gb-cover-btn { display: flex; }
+body.gb-admin-mode .gb-hero:not(.no-cover) .gb-cover-btn { display: none; }
+body.gb-admin-mode .gb-hero:not(.no-cover):hover .gb-cover-btn,
+body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
 /* Gallery upload zones */
 .gb-upload-zone {
   cursor: pointer; transition: background .13s, border-color .13s, opacity .13s;
-  font-size: 1.8rem; opacity: .35; border: 2px dashed rgba(59,59,170,.25);
+  display: flex; align-items: center; justify-content: center;
+  opacity: .35; border: 2px dashed rgba(59,59,170,.25);
 }
 .gb-upload-zone:hover,
 .gb-upload-zone.gb-drag-over { opacity: .7; border-color: rgba(124,158,255,.6); background: rgba(124,158,255,.08); }
@@ -1495,15 +1481,8 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
   <?php else: ?>
   <div class="gb-hero-bg" id="gbHeroBg" style="background:linear-gradient(135deg,#1a1a2e 0%,#2d2d88 100%)"></div>
   <?php endif; ?>
-  <!-- Cover hint: shown when no cover (admin mode) — click to upload -->
-  <div class="gb-cover-hint" onclick="gbPickImage(gbSetCover)">
-    <div class="gb-cover-hint-icon">📷</div>
-    <div class="gb-cover-hint-text">Click or drag an image here</div>
-  </div>
-  <!-- Change cover overlay: shown on hover when cover exists (admin mode) -->
-  <div class="gb-change-cover" id="gbChangeCover" onclick="gbPickImage(gbSetCover)">
-    <span>📷 Change Cover</span>
-  </div>
+  <!-- Cover image button — top-left, shown in admin mode (always when no cover, on hover when cover exists) -->
+  <button class="gb-img-btn gb-cover-btn" onclick="gbPickImage(gbSetCover)" title="Change cover image"><?= $_imgBtnIcon ?></button>
   <div class="gb-hero-overlay"></div>
   <div class="gb-hero-content">
     <?php if ($_status && !isset($_gbPublicBase)): ?><div class="gb-status-badge" id="gbStatusBadge"><?= h(ucfirst($_status)) ?></div><?php endif; ?>
@@ -1559,9 +1538,9 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
   <div class="gb-section gb-ph-section">
     <div class="gb-section-label">Gallery</div>
     <div class="gb-ph-gallery" id="gbPhGallery">
-      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image">📷</div>
-      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image">📷</div>
-      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image">📷</div>
+      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image"><?= $_imgBtnIcon ?></div>
+      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image"><?= $_imgBtnIcon ?></div>
+      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image"><?= $_imgBtnIcon ?></div>
     </div>
   </div>
   <?php endif; ?>

@@ -849,12 +849,12 @@ a { color:inherit; text-decoration:none; }
   gap:1rem;
 }
 .gb-nav-left { display:flex; align-items:center; gap:.5rem; min-width:0; }
-.gb-nav-back { display:flex; align-items:center; gap:.25rem; color:rgba(255,255,255,.75); font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; text-decoration:none; flex-shrink:0; padding:.25rem .4rem; border-radius:5px; transition:color .12s, background .12s; }
+.gb-nav-back { display:flex; align-items:center; gap:.25rem; color:rgba(255,255,255,.75); font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; text-decoration:none; flex-shrink:0; padding:.25rem .4rem; border-radius:5px; transition:color .12s, background .12s; line-height:1; }
 .gb-nav-back:hover { color:#fff; background:rgba(255,255,255,.12); }
-.gb-nav-back svg { flex-shrink:0; }
-.gb-nav-back-label { white-space:nowrap; }
-.gb-nav-sep { color:rgba(255,255,255,.25); font-size:.85rem; flex-shrink:0; }
-.gb-nav-game { font-size:.78rem; opacity:.55; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.gb-nav-back svg { flex-shrink:0; vertical-align:middle; }
+.gb-nav-back-label { white-space:nowrap; vertical-align:middle; }
+.gb-nav-sep { color:rgba(255,255,255,.25); font-size:.85rem; flex-shrink:0; line-height:1; }
+.gb-nav-game { font-size:.78rem; opacity:.55; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1; }
 .gb-nav-links { display:flex; gap:.4rem; flex-shrink:0; }
 .btn-nav {
   font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase;

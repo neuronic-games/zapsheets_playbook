@@ -268,7 +268,7 @@ body.gb-admin-mode .cat-img-upload-btn { display:flex; }
 <?php else:
   foreach ($_games as $g):
     $gName    = trim($g['Name']       ?? '');
-    $gSummary = trim($g['Summary']    ?? '');
+    $gSummary = trim($g['Tagline'] ?? $g['Tag Line'] ?? $g['Summary'] ?? '');
     $gCount   = trim($g['Count']      ?? '');
     $gDur     = trim($g['Duration']   ?? '');
     $gCover   = _gb_img(trim($g['Cover URL'] ?? $g['Image URL'] ?? $g['Image'] ?? ''));
@@ -958,7 +958,7 @@ if (!$_game) { http_response_code(404); exit; }
 
 // ── Core fields from games.json ──────────────────────────────────────────────
 $_name        = trim($_game['Name']           ?? '');
-$_summary     = trim($_game['Summary']        ?? '');
+$_summary     = trim($_game['Tagline'] ?? $_game['Tag Line'] ?? $_game['Summary'] ?? '');
 $_description = trim($_game['Description']    ?? '');
 $_count       = trim($_game['Count']          ?? '');
 $_duration    = trim($_game['Duration']       ?? '');

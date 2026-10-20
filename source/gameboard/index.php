@@ -1338,10 +1338,10 @@ body.gb-admin-mode .gb-nav-links { display:none; }
 .btn-adm-details { background:rgba(124,158,255,.15); border:1.5px solid rgba(124,158,255,.4); color:#7c9eff; }
 .btn-adm-details:hover { background:rgba(124,158,255,.25); }
 /* Editable field highlights in admin mode */
-body.gb-admin-mode #gbEditTitle { outline:2px dashed rgba(124,158,255,.5); border-radius:3px; cursor:text; padding:2px 4px; }
+body.gb-admin-mode #gbEditTitle { outline:2px dashed rgba(124,158,255,.5); border-radius:3px; cursor:text; padding:2px 4px; position:relative; z-index:5; }
 body.gb-admin-mode #gbEditTitle:focus,
 body.gb-admin-mode #gbEditTitle:hover { outline:2px solid #7c9eff; }
-body.gb-admin-mode #gbEditSummary { outline:2px dashed rgba(255,255,255,.3); border-radius:3px; cursor:text; padding:4px 6px; min-height:2em; display:block; }
+body.gb-admin-mode #gbEditSummary { outline:2px dashed rgba(255,255,255,.3); border-radius:3px; cursor:text; padding:4px 6px; min-height:2em; display:block; position:relative; z-index:5; }
 body.gb-admin-mode #gbEditSummary:focus,
 body.gb-admin-mode #gbEditSummary:hover { outline:2px solid rgba(255,255,255,.7); }
 body.gb-admin-mode #gbEditDesc { outline:2px dashed rgba(59,59,170,.4); border-radius:4px; cursor:text; padding:4px 6px; }
@@ -1507,8 +1507,8 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
   <div class="gb-hero-overlay"></div>
   <div class="gb-hero-content">
     <?php if ($_status && !isset($_gbPublicBase)): ?><div class="gb-status-badge" id="gbStatusBadge"><?= h(ucfirst($_status)) ?></div><?php endif; ?>
-    <h1 class="gb-hero-title" id="gbEditTitle" data-ph="Game Title"><?= h($_name) ?></h1>
-    <p class="gb-hero-summary" id="gbEditSummary" data-ph="Click to add a one-line tagline for this game…"><?= h($_summary) ?></p>
+    <h1 class="gb-hero-title" id="gbEditTitle" data-ph="Game Title" onclick="event.stopPropagation()"><?= h($_name) ?></h1>
+    <p class="gb-hero-summary" id="gbEditSummary" data-ph="Click to add a one-line tagline for this game…" onclick="event.stopPropagation()"><?= h($_summary) ?></p>
     <div class="gb-stats">
       <?php if ($_count):     ?><div class="gb-stat"><strong>👥</strong><?= h($_count) ?> players</div><?php endif; ?>
       <?php if ($_duration):  ?><div class="gb-stat"><strong>⏱</strong><?= h($_duration) ?></div><?php endif; ?>

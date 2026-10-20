@@ -94,6 +94,9 @@ if (!$_gameSlug) {
     $_bgg     = trim($_settings['BGG URL']   ?? '');
     // Banner color
     $_bannerColor = trim($_settings['Banner Color'] ?? '') ?: '#1a1a2e';
+    // Footer
+    $_copyright  = trim($_settings['Copyright']   ?? '') ?: '© ' . date('Y') . ' ' . ($_pubName ?: 'GameBoard');
+    $_footerNote = trim($_settings['Footer Note']  ?? '');
     // Carousel fallback: use game cover images if no carousel URLs are set
     if (empty($_carousel)) {
         foreach ($_games as $_g) {
@@ -239,7 +242,17 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 .gb-footer-social a:hover { background:rgba(255,255,255,.22); }
 .gb-footer-social svg { fill:rgba(255,255,255,.7); }
 .gb-footer-bar { border-top:1px solid rgba(255,255,255,.08); }
-.gb-footer-bar-inner { max-width:1100px; margin:0 auto; padding:.9rem 2rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; font-size:.72rem; color:rgba(255,255,255,.35); }
+.gb-footer-bar-inner { max-width:1100px; margin:0 auto; padding:.9rem 2rem; display:flex; align-items:center; justify-content:space-between; gap:1.5rem; flex-wrap:wrap; font-size:.72rem; color:rgba(255,255,255,.38); }
+.gb-footer-bar-left { display:flex; flex-direction:column; gap:.2rem; }
+.gb-footer-bar-icons { display:flex; gap:.5rem; align-items:center; flex-shrink:0; }
+.gb-footer-bar-icons a { width:1.9rem; height:1.9rem; border-radius:50%; border:1.5px solid rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; transition:border-color .14s,background .14s; }
+.gb-footer-bar-icons a:hover { border-color:rgba(255,255,255,.5); background:rgba(255,255,255,.08); }
+.gb-footer-bar-icons svg { fill:rgba(255,255,255,.6); }
+/* Inline-edit fields in footer (admin only) */
+.gb-footer-editable { outline:none; cursor:default; border-radius:3px; transition:background .13s; min-width:4px; }
+body.gb-admin-mode .gb-footer-editable { cursor:text; }
+body.gb-admin-mode .gb-footer-editable:hover { background:rgba(255,255,255,.07); }
+body.gb-admin-mode .gb-footer-editable:focus { background:rgba(255,255,255,.1); outline:1.5px solid rgba(255,255,255,.25); }
 
 /* ── Overlay / Dialog (sign-in + settings) ── */
 .gb-overlay {
@@ -466,8 +479,30 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
   </div>
   <div class="gb-footer-bar">
     <div class="gb-footer-bar-inner">
-      <span>© <?= date('Y') ?> <?= h($_pubName ?: 'GameBoard') ?></span>
-      <span>Powered by GameBoard</span>
+      <div class="gb-footer-bar-left">
+        <span class="gb-footer-editable"
+              contenteditable="false"
+              id="gbFooterCopyright"
+              data-setting="copyright"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+              onblur="gbSaveFooterField(this)"><?= h($_copyright) ?></span>
+        <?php if ($_footerNote || !isset($_gbPublicBase)): ?>
+        <span class="gb-footer-editable"
+              contenteditable="false"
+              id="gbFooterNote"
+              data-setting="footer_note"
+              data-placeholder="Add a tagline or contact info…"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+              onblur="gbSaveFooterField(this)"><?= h($_footerNote) ?></span>
+        <?php endif; ?>
+      </div>
+      <?php if (!empty($_socials)): ?>
+      <div class="gb-footer-bar-icons">
+        <?php foreach ($_socials as $_s): ?>
+        <a href="<?= h($_s['url']) ?>" target="_blank" rel="noopener" title="<?= h($_s['label']) ?>"><?= $_s['svg'] ?></a>
+        <?php endforeach; ?>
+      </div>
+      <?php endif; ?>
     </div>
   </div>
 </footer>
@@ -580,6 +615,8 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
             </select>
           </div>
         </div>
+        <div class="gbed-field-group"><label class="gbed-label">Copyright Line <span style="font-size:.7rem;color:var(--muted)">(footer left)</span></label><input class="gbed-field" id="setCopyright" type="text" placeholder="© 2026 Acme Games LLC" /></div>
+        <div class="gbed-field-group"><label class="gbed-label">Footer Note <span style="font-size:.7rem;color:var(--muted)">(second line)</span></label><input class="gbed-field" id="setFooterNote" type="text" placeholder="contact@example.com · All rights reserved" /></div>
       </div>
 
     </div></div>
@@ -764,7 +801,9 @@ function _updateGbAuth() {
     if (publishBtn) publishBtn.style.display = '';
     if (addGameBtn) addGameBtn.style.display = '';
     document.body.classList.add('gb-admin-mode');
+    document.querySelectorAll('.gb-footer-editable').forEach(function(el){ el.contentEditable = 'true'; });
   } else {
+    document.querySelectorAll('.gb-footer-editable').forEach(function(el){ el.contentEditable = 'false'; });
     if (btn) { btn.classList.remove('signed-in'); btn.title = 'Menu'; }
     if (metaEl) metaEl.textContent = <?= json_encode($_pubName ?: 'Games') ?>;
     if (siOut)  { siOut.textContent = 'Sign In'; siOut.className = 'user-menu-item'; }
@@ -1047,6 +1086,23 @@ function gbUploadLogo(file) {
   xhr.send(fd);
 }
 
+// ── Footer inline edit ────────────────────────────────────────────────────────
+function gbSaveFooterField(el) {
+  if (!document.body.classList.contains('gb-admin-mode')) return;
+  var key = el.dataset.setting;
+  var val = el.textContent.trim();
+  if (!key) return;
+  // Show empty placeholder hint
+  var ph = el.dataset.placeholder;
+  if (!val && ph) el.textContent = '';
+  var fd = new FormData();
+  fd.append('id', SHEET_ID);
+  fd.append(key, val);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
+  xhr.send(fd);
+}
+
 // ── Banner color ──────────────────────────────────────────────────────────────
 function gbApplyBannerColor(hex) {
   document.documentElement.style.setProperty('--banner-bg', hex);
@@ -1154,7 +1210,9 @@ function openSettings() {
     document.getElementById('setTagline').value  = s['Tagline']            || '';
     document.getElementById('setAbout').value    = s['About']              || '';
     document.getElementById('setTemplate').value    = s['Gameboard Template'] || '';
-    document.getElementById('setBannerColor').value = s['Banner Color']       || '#1a1a2e';
+    document.getElementById('setBannerColor').value  = s['Banner Color']  || '#1a1a2e';
+    document.getElementById('setCopyright').value    = s['Copyright']    || '';
+    document.getElementById('setFooterNote').value   = s['Footer Note']  || '';
     for (var i = 1; i <= 6; i++) {
       var el = document.getElementById('setCarousel' + i);
       if (el) el.value = s['Carousel ' + i] || '';
@@ -1181,6 +1239,8 @@ function submitSettings() {
   fd.append('about',       document.getElementById('setAbout').value.trim());
   fd.append('gb_template',   document.getElementById('setTemplate').value);
   fd.append('banner_color', document.getElementById('setBannerColor').value);
+  fd.append('copyright',   document.getElementById('setCopyright').value.trim());
+  fd.append('footer_note', document.getElementById('setFooterNote').value.trim());
   for (var i = 1; i <= 6; i++) {
     var el = document.getElementById('setCarousel' + i);
     if (el) fd.append('carousel_' + i, el.value.trim());

@@ -1794,6 +1794,58 @@ body.gb-admin-mode .gb-faq-editor { display:flex; }
 .gb-nav-admin { display:none; align-items:center; gap:.5rem; flex-shrink:0; }
 body.gb-admin-mode .gb-nav-admin { display:flex; }
 body.gb-admin-mode .gb-nav-links { display:none; }
+/* User icon + menu (game detail page) */
+.btn-user-icon {
+  width:30px; height:30px; border-radius:50%; border:1.5px solid rgba(255,255,255,.3);
+  background:transparent; color:#fff; cursor:pointer; display:flex; align-items:center;
+  justify-content:center; transition:background .14s, border-color .14s; flex-shrink:0;
+}
+.btn-user-icon:hover { background:rgba(255,255,255,.15); border-color:#fff; }
+.btn-user-icon.signed-in { border-color:<?= $_template === 'opensea' ? '#00e5ff' : '#7c9eff' ?>; color:<?= $_template === 'opensea' ? '#00e5ff' : '#7c9eff' ?>; background:rgba(255,255,255,.1); }
+.user-menu-wrap { position:relative; }
+.user-menu {
+  display:none; position:absolute; top:calc(100% + 6px); right:0;
+  background:#1e1e30; border:1px solid rgba(255,255,255,.12); border-radius:8px;
+  min-width:140px; box-shadow:0 6px 24px rgba(0,0,0,.4); overflow:hidden; z-index:200;
+}
+.user-menu.open { display:block; }
+.user-menu-item {
+  display:block; width:100%; text-align:left; padding:.55rem 1rem;
+  font-family:'DINRegular',sans-serif; font-size:.82rem; color:rgba(255,255,255,.8);
+  background:none; border:none; cursor:pointer; transition:background .12s;
+}
+.user-menu-item:hover { background:rgba(255,255,255,.08); }
+.user-menu-divider { border:none; border-top:1px solid rgba(255,255,255,.1); margin:2px 0; }
+/* Overlay dialogs (sign-in, settings, publish) */
+.gb-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:500;
+  align-items:center; justify-content:center; padding:1.5rem;
+}
+.gb-overlay.open { display:flex; }
+.gb-dialog {
+  background:#fff; border-radius:12px; padding:1.6rem 1.75rem 1.5rem;
+  width:100%; max-width:360px; box-shadow:0 12px 48px rgba(0,0,0,.35); position:relative;
+}
+.gb-dialog-title { font-family:'DINBlack',sans-serif; font-size:1rem; text-transform:uppercase; letter-spacing:.07em; color:var(--ink); margin-bottom:1rem; }
+.gb-field-group { margin-bottom:.7rem; }
+.gb-field-group label { display:block; font-size:.75rem; color:var(--muted); margin-bottom:.25rem; }
+.gb-field { display:block; width:100%; padding:.55rem .75rem; border:1.5px solid var(--border); border-radius:7px; font-family:'DINRegular',sans-serif; font-size:.9rem; color:var(--ink); outline:none; transition:border-color .14s; }
+.gb-field:focus { border-color:var(--accent); }
+.gb-err { font-size:.78rem; color:#e53935; min-height:1.1rem; margin:.3rem 0; }
+.gb-dialog-close { position:absolute; top:.75rem; right:.9rem; background:none; border:none; font-size:1.35rem; color:var(--ink-lt); cursor:pointer; line-height:1; }
+.gb-btn { font-family:'DINBlack',sans-serif; font-size:.75rem; text-transform:uppercase; letter-spacing:.07em; padding:.42rem 1rem; border-radius:6px; border:1.5px solid var(--border); background:var(--surface); color:var(--ink); cursor:pointer; }
+.gb-btn:hover { background:#f0f0f8; }
+.gb-btn-sm { font-family:'DINBlack',sans-serif; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; padding:.3rem .65rem; border-radius:5px; border:1.5px solid var(--border); background:var(--surface); color:var(--ink-lt); cursor:pointer; white-space:nowrap; }
+.gb-btn-sm:hover { background:#f0f0f8; color:var(--ink); }
+.gb-dialog-actions { display:flex; gap:.5rem; justify-content:flex-end; margin-top:.9rem; }
+.btn-cancel { font-family:'DINBlack',sans-serif; font-size:.75rem; text-transform:uppercase; letter-spacing:.07em; padding:.42rem .9rem; border-radius:6px; border:1.5px solid var(--border); background:var(--surface); color:var(--ink-lt); cursor:pointer; }
+.btn-cancel:hover { background:#f0f0f8; }
+.btn-primary { font-family:'DINBlack',sans-serif; font-size:.75rem; text-transform:uppercase; letter-spacing:.07em; padding:.42rem .9rem; border-radius:6px; border:none; background:var(--accent); color:#fff; cursor:pointer; transition:opacity .13s; }
+.btn-primary:disabled { opacity:.45; cursor:default; }
+.btn-primary:not(:disabled):hover { opacity:.88; }
+#siConfirmPanel { display:none; }
+/* gbed-scroll for settings dialog */
+.gbed-scroll { max-height:calc(80vh - 180px); overflow-y:auto; }
 .btn-adm {
   font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase;
   letter-spacing:.07em; padding:.3rem .75rem; border-radius:5px; cursor:pointer;
@@ -1926,6 +1978,19 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     <button class="btn-adm btn-adm-details" onclick="openEditDetails()">Edit Details</button>
     <button class="btn-adm btn-adm-primary" id="gbSaveBtn" onclick="saveGame()">Save Changes</button>
     <button class="btn-adm btn-adm-secondary" onclick="cancelEdit()">Cancel</button>
+    <div class="user-menu-wrap">
+      <button class="btn-user-icon signed-in" id="gbUserBtn" onclick="toggleGbMenu(event)" title="Menu">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </button>
+      <div class="user-menu" id="gbMenu">
+        <button class="user-menu-item" onclick="gbMenuAction('settings')">Settings</button>
+        <hr class="user-menu-divider" />
+        <button class="user-menu-item" onclick="gbMenuAction('fetch')">Fetch</button>
+        <button class="user-menu-item" onclick="gbMenuAction('publish')">🌐 Publish Site</button>
+        <hr class="user-menu-divider" />
+        <button class="user-menu-item" id="gbMenuSignInOut" onclick="gbMenuAction('signout')">Sign Out</button>
+      </div>
+    </div>
   </div>
 </nav>
 
@@ -2147,6 +2212,110 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
 <!-- ── Save toast ── -->
 <div class="gb-save-toast" id="gbSaveToast"></div>
 
+<!-- ── Publish Site dialog ── -->
+<div class="gb-overlay" id="gbPublishOverlay" onclick="if(event.target===this)closePublishDialog()">
+  <div class="gb-dialog" onclick="event.stopPropagation()" style="max-width:480px">
+    <button class="gb-dialog-close" onclick="closePublishDialog()">×</button>
+    <div class="gb-dialog-title">🌐 Publish Site</div>
+    <p style="font-size:.82rem;color:var(--ink-lt,#666);margin-bottom:1.2rem;line-height:1.5">
+      Your public GameBoard is live. Anyone with this link can browse your published games.
+    </p>
+    <div class="gb-field-group" style="margin-bottom:.6rem">
+      <label style="font-size:.75rem;font-weight:600;color:var(--ink-lt,#888);text-transform:uppercase;letter-spacing:.05em">Catalog</label>
+      <div style="display:flex;gap:.4rem;align-items:center">
+        <input class="gb-field" id="gbPubCatalogUrl" type="text" readonly onclick="this.select()" style="flex:1;font-size:.8rem;cursor:text" />
+        <button class="gb-btn-sm" onclick="gbCopyUrl('gbPubCatalogUrl')">Copy</button>
+        <a id="gbPubCatalogLink" href="#" target="_blank" class="gb-btn-sm" style="text-decoration:none">Open ↗</a>
+      </div>
+    </div>
+    <div id="gbPubGameUrl" style="margin-bottom:1.2rem">
+      <div class="gb-field-group" style="margin-bottom:.3rem">
+        <label style="font-size:.75rem;font-weight:600;color:var(--ink-lt,#888);text-transform:uppercase;letter-spacing:.05em">This Game</label>
+        <div style="display:flex;gap:.4rem;align-items:center">
+          <input class="gb-field" id="gbPubGameUrlInput" type="text" readonly onclick="this.select()" style="flex:1;font-size:.8rem;cursor:text" />
+          <button class="gb-btn-sm" onclick="gbCopyUrl('gbPubGameUrlInput')">Copy</button>
+          <a id="gbPubGameUrlLink" href="#" target="_blank" class="gb-btn-sm" style="text-decoration:none">Open ↗</a>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:1rem">
+      <button class="gb-btn" onclick="closePublishDialog()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Sign-in dialog ── -->
+<div class="gb-overlay" id="signInOverlay" onclick="if(event.target===this)forceCloseSignIn()">
+  <div class="gb-dialog" onclick="event.stopPropagation()"
+       onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitSignIn(false);}">
+    <div class="gb-dialog-title" id="siTitle">Sign In</div>
+    <div id="siMainPanel">
+      <div class="gb-field-group"><label>Email</label><input class="gb-field" id="siEmail" type="email" placeholder="you@example.com" autocomplete="email" /></div>
+      <div class="gb-field-group"><label>Password</label><input class="gb-field" id="siPassword" type="password" placeholder="••••••••" autocomplete="current-password" /></div>
+    </div>
+    <div id="siConfirmPanel">
+      <p style="font-size:.85rem;color:var(--ink-lt);line-height:1.55;margin-bottom:.75rem;">No account found for this email. Create one now?</p>
+    </div>
+    <div class="gb-err" id="siErr"></div>
+    <div class="gb-dialog-actions">
+      <button class="btn-cancel" onclick="forceCloseSignIn()">Cancel</button>
+      <button class="btn-primary" id="siBtn" onclick="submitSignIn(false)">Sign In</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Settings dialog ── -->
+<div class="gbed-overlay" id="settingsOverlay" onclick="if(event.target===this)forceCloseSettings()">
+  <div class="gbed-dialog" onclick="event.stopPropagation()"
+       onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitSettings();}">
+    <div class="gbed-header">
+      <span class="gbed-title">Settings</span>
+      <button class="gbed-close" onclick="forceCloseSettings()">✕</button>
+    </div>
+    <div class="gbed-body"><div class="gbed-scroll">
+      <div class="gbed-section">
+        <div class="gbed-section-title">Company</div>
+        <div class="gbed-field-group"><label class="gbed-label">Company Name</label><input class="gbed-field" id="setCompany" type="text" placeholder="Acme Games LLC" /></div>
+        <div class="gbed-field-group"><label class="gbed-label">Logo URL</label><input class="gbed-field" id="setLogo" type="url" placeholder="https://…/logo.png" /></div>
+        <div class="gbed-field-group"><label class="gbed-label">Tagline</label><input class="gbed-field" id="setTagline" type="text" placeholder="Independent board game publisher" /></div>
+        <div class="gbed-field-group"><label class="gbed-label">About</label><textarea class="gbed-field" id="setAbout" rows="3" style="resize:vertical"></textarea></div>
+      </div>
+      <div class="gbed-section">
+        <div class="gbed-section-title">Carousel Images</div>
+        <?php for ($i = 1; $i <= 6; $i++): ?>
+        <div class="gbed-field-group"><label class="gbed-label">Image <?= $i ?></label><input class="gbed-field" id="setCarousel<?= $i ?>" type="url" placeholder="https://…/image.jpg" /></div>
+        <?php endfor; ?>
+      </div>
+      <div class="gbed-section">
+        <div class="gbed-section-title">Social Links</div>
+        <div class="gbed-row">
+          <div class="gbed-field-group"><label class="gbed-label">Instagram</label><input class="gbed-field" id="setInsta" type="url" placeholder="https://instagram.com/…" /></div>
+          <div class="gbed-field-group"><label class="gbed-label">X / Twitter</label><input class="gbed-field" id="setTwitter" type="url" placeholder="https://x.com/…" /></div>
+        </div>
+        <div class="gbed-row">
+          <div class="gbed-field-group"><label class="gbed-label">Facebook</label><input class="gbed-field" id="setFb" type="url" placeholder="https://facebook.com/…" /></div>
+          <div class="gbed-field-group"><label class="gbed-label">YouTube</label><input class="gbed-field" id="setYt" type="url" placeholder="https://youtube.com/…" /></div>
+        </div>
+        <div class="gbed-field-group"><label class="gbed-label">BoardGameGeek</label><input class="gbed-field" id="setBgg" type="url" placeholder="https://boardgamegeek.com/…" /></div>
+      </div>
+      <div class="gbed-section">
+        <div class="gbed-section-title">Display</div>
+        <div class="gbed-row">
+          <div class="gbed-field-group"><label class="gbed-label">Banner Color</label><input class="gbed-field" id="setBannerColor" type="color" style="height:2.4rem;padding:.2rem .3rem;cursor:pointer" /></div>
+          <div class="gbed-field-group"><label class="gbed-label">Template</label><select class="gbed-field" id="setTemplate"><option value="">Classic (default)</option><option value="opensea">OpenSea</option></select></div>
+        </div>
+        <div class="gbed-field-group"><label class="gbed-label">Copyright Line</label><input class="gbed-field" id="setCopyright" type="text" placeholder="© 2026 Acme Games LLC" /></div>
+        <div class="gbed-field-group"><label class="gbed-label">Footer Note</label><input class="gbed-field" id="setFooterNote" type="text" placeholder="contact@example.com" /></div>
+      </div>
+    </div></div>
+    <div class="gbed-footer">
+      <div class="gb-err gbed-err" id="setErr"></div>
+      <button class="btn-adm btn-adm-secondary" onclick="forceCloseSettings()">Cancel</button>
+      <button class="btn-adm btn-adm-primary" id="setBtn" onclick="submitSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Edit Details modal ── -->
 <div class="gbed-overlay" id="gbedOverlay" onclick="if(event.target===this)closeEditDetails()">
   <div class="gbed-dialog" onclick="event.stopPropagation()">
@@ -2305,13 +2474,16 @@ var GAME_DATA = <?= json_encode([
 // Mutable copy that tracks edits from the details modal
 var _ed = Object.assign({}, GAME_DATA);
 
-// ── Admin mode ───────────────────────────────────────────────────────────────
+// ── Admin mode + auth ────────────────────────────────────────────────────────
+var _gbUser = null;
+var _siPendingEmail = '', _siPendingPass = '';
 (function() {
   try {
     var raw = sessionStorage.getItem('gameboard_owner_' + SHEET_ID);
     if (!raw) return;
     var u = JSON.parse(raw);
     if (!u || !u.email) return;
+    _gbUser = u;
     // Activate admin mode
     document.body.classList.add('gb-admin-mode');
     // Make text fields contenteditable
@@ -2319,8 +2491,6 @@ var _ed = Object.assign({}, GAME_DATA);
       var el = document.getElementById(id);
       if (!el) return;
       el.contentEditable = 'true';
-      // If the element has lorem ipsum placeholder content (class gb-ph-lorem),
-      // clear it on first focus and restore if left empty
       if (el.classList.contains('gb-ph-lorem')) {
         el.dataset.phContent = el.textContent;
         el.textContent = '';
@@ -2328,8 +2498,208 @@ var _ed = Object.assign({}, GAME_DATA);
       }
     });
     gbInitInlineEdits();
+    _updateGbAuth();
   } catch(e) {}
 })();
+
+function _updateGbAuth() {
+  var btn  = document.getElementById('gbUserBtn');
+  var siOut = document.getElementById('gbMenuSignInOut');
+  if (_gbUser) {
+    if (btn) { btn.classList.add('signed-in'); btn.title = 'Signed in as ' + (_gbUser.email || ''); }
+    if (siOut) { siOut.textContent = 'Sign Out'; siOut.className = 'user-menu-item signout'; }
+    document.body.classList.add('gb-admin-mode');
+  } else {
+    if (btn) { btn.classList.remove('signed-in'); btn.title = 'Sign In'; }
+    if (siOut) { siOut.textContent = 'Sign In'; siOut.className = 'user-menu-item'; }
+    document.body.classList.remove('gb-admin-mode');
+  }
+}
+
+// ── Menu ─────────────────────────────────────────────────────────────────────
+function toggleGbMenu(e) { e.stopPropagation(); document.getElementById('gbMenu').classList.toggle('open'); }
+function closeGbMenu() { var m = document.getElementById('gbMenu'); if (m) m.classList.remove('open'); }
+document.addEventListener('click', closeGbMenu);
+
+function gbMenuAction(action) {
+  closeGbMenu();
+  if (action === 'settings') {
+    openSettings();
+  } else if (action === 'fetch') {
+    if (!_gbUser) { openSignIn(); return; }
+    var btn = document.getElementById('gbUserBtn');
+    if (btn) btn.style.opacity = '.4';
+    var fd = new FormData(); fd.append('id', SHEET_ID);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', APP_ROOT + 'push/setupGameboard.php');
+    xhr.onload = function() {
+      if (btn) btn.style.opacity = '';
+      var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+      alert(r && r.ok ? 'Fetch complete — reload to see changes.' : 'Fetch failed: ' + (r && r.error || 'unknown'));
+    };
+    xhr.onerror = function() { if (btn) btn.style.opacity = ''; alert('Fetch failed — network error.'); };
+    xhr.send(fd);
+  } else if (action === 'publish') {
+    if (!_gbUser) { openSignIn(); return; }
+    gbPublishSite();
+  } else if (action === 'signout') {
+    if (_gbUser) {
+      if (confirm('Sign out?')) {
+        try { sessionStorage.removeItem('gameboard_owner_' + SHEET_ID); } catch(e) {}
+        _gbUser = null; _updateGbAuth();
+      }
+    } else { openSignIn(); }
+  }
+}
+
+// ── Sign-in ───────────────────────────────────────────────────────────────────
+function openSignIn() {
+  document.getElementById('siErr').textContent = '';
+  document.getElementById('siTitle').textContent = 'Sign In';
+  document.getElementById('siBtn').textContent = 'Sign In';
+  document.getElementById('siMainPanel').style.display = '';
+  document.getElementById('siConfirmPanel').style.display = 'none';
+  _siPendingEmail = ''; _siPendingPass = '';
+  document.getElementById('signInOverlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('siEmail').focus(); }, 60);
+}
+function forceCloseSignIn() { document.getElementById('signInOverlay').classList.remove('open'); }
+
+function submitSignIn(confirmNew) {
+  var email = confirmNew ? _siPendingEmail : document.getElementById('siEmail').value.trim();
+  var pass  = confirmNew ? _siPendingPass  : document.getElementById('siPassword').value;
+  if (!email || (!confirmNew && !pass)) { document.getElementById('siErr').textContent = 'Email and password required.'; return; }
+  var btn = document.getElementById('siBtn'); btn.disabled = true;
+  var fd = new FormData();
+  fd.append('email', email); fd.append('password', pass); fd.append('id', SHEET_ID);
+  if (confirmNew) fd.append('confirm_new', '1');
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/gbAuth.php');
+  xhr.onload = function() {
+    btn.disabled = false;
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+    if (!r) { document.getElementById('siErr').textContent = 'Server error.'; return; }
+    if (r.prompt_create) {
+      _siPendingEmail = email; _siPendingPass = pass;
+      document.getElementById('siTitle').textContent = 'Create Account';
+      document.getElementById('siBtn').textContent = 'Create Account';
+      document.getElementById('siMainPanel').style.display = 'none';
+      document.getElementById('siConfirmPanel').style.display = '';
+      document.getElementById('siBtn').onclick = function(){ submitSignIn(true); };
+      return;
+    }
+    if (r.error) { document.getElementById('siErr').textContent = r.error; return; }
+    _gbUser = { email: r.email || email, bio: r.bio || {} };
+    try { sessionStorage.setItem('gameboard_owner_' + SHEET_ID, JSON.stringify(_gbUser)); } catch(e) {}
+    _updateGbAuth();
+    forceCloseSignIn();
+    location.reload();
+  };
+  xhr.onerror = function() { btn.disabled = false; document.getElementById('siErr').textContent = 'Network error.'; };
+  xhr.send(fd);
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+function openSettings(focusFieldId) {
+  document.getElementById('setErr').textContent = '';
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', APP_ROOT + 'push/tmGetSettings.php?id=' + encodeURIComponent(SHEET_ID));
+  xhr.onload = function() {
+    var s = {}; try { s = JSON.parse(xhr.responseText); } catch(e) {}
+    document.getElementById('setCompany').value      = s['Company']            || s['Name'] || '';
+    document.getElementById('setLogo').value         = s['Logo URL']           || '';
+    document.getElementById('setTagline').value      = s['Tagline']            || '';
+    document.getElementById('setAbout').value        = s['About']              || '';
+    document.getElementById('setTemplate').value     = s['Gameboard Template'] || '';
+    document.getElementById('setBannerColor').value  = s['Banner Color']       || '#1a1a2e';
+    document.getElementById('setCopyright').value    = s['Copyright']          || '';
+    document.getElementById('setFooterNote').value   = s['Footer Note']        || '';
+    for (var i = 1; i <= 6; i++) {
+      var el = document.getElementById('setCarousel' + i);
+      if (el) el.value = s['Carousel ' + i] || '';
+    }
+    document.getElementById('setInsta').value   = s['Instagram'] || '';
+    document.getElementById('setTwitter').value = s['Twitter']   || '';
+    document.getElementById('setFb').value      = s['Facebook']  || '';
+    document.getElementById('setYt').value      = s['YouTube']   || '';
+    document.getElementById('setBgg').value     = s['BGG URL']   || '';
+    var target = focusFieldId ? document.getElementById(focusFieldId) : document.getElementById('setCompany');
+    if (target) { target.focus(); target.select(); target.scrollIntoView({ behavior:'smooth', block:'center' }); }
+  };
+  xhr.send();
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+function forceCloseSettings() { document.getElementById('settingsOverlay').classList.remove('open'); }
+function submitSettings() {
+  var btn = document.getElementById('setBtn'); btn.disabled = true;
+  var fd = new FormData();
+  fd.append('id',          SHEET_ID);
+  fd.append('company',     document.getElementById('setCompany').value.trim());
+  fd.append('logo',        document.getElementById('setLogo').value.trim());
+  fd.append('tagline',     document.getElementById('setTagline').value.trim());
+  fd.append('about',       document.getElementById('setAbout').value.trim());
+  fd.append('gb_template', document.getElementById('setTemplate').value);
+  fd.append('banner_color',document.getElementById('setBannerColor').value);
+  fd.append('copyright',   document.getElementById('setCopyright').value.trim());
+  fd.append('footer_note', document.getElementById('setFooterNote').value.trim());
+  for (var i = 1; i <= 6; i++) {
+    var el = document.getElementById('setCarousel' + i);
+    if (el) fd.append('carousel_' + i, el.value.trim());
+  }
+  fd.append('instagram', document.getElementById('setInsta').value.trim());
+  fd.append('twitter',   document.getElementById('setTwitter').value.trim());
+  fd.append('facebook',  document.getElementById('setFb').value.trim());
+  fd.append('youtube',   document.getElementById('setYt').value.trim());
+  fd.append('bgg_url',   document.getElementById('setBgg').value.trim());
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
+  xhr.onload = function() {
+    btn.disabled = false;
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+    if (!r || r.error) { document.getElementById('setErr').textContent = 'Save failed: ' + (r && r.error || 'unknown'); return; }
+    forceCloseSettings();
+  };
+  xhr.onerror = function() { btn.disabled = false; document.getElementById('setErr').textContent = 'Network error.'; };
+  xhr.send(fd);
+}
+
+// ── Publish ───────────────────────────────────────────────────────────────────
+function gbPublishSite() {
+  var btn = document.getElementById('gbUserBtn');
+  if (btn) btn.style.opacity = '.4';
+  var fd = new FormData(); fd.append('id', SHEET_ID);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/publishGameboard.php');
+  xhr.onload = function() {
+    if (btn) btn.style.opacity = '';
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = {error: 'parse error'}; }
+    if (!r || r.error) { alert('Publish failed: ' + (r && r.error || 'unknown')); return; }
+    openPublishDialog(r.url, r.token);
+  };
+  xhr.onerror = function() { if (btn) btn.style.opacity = ''; alert('Publish failed — network error.'); };
+  xhr.send(fd);
+}
+function openPublishDialog(catalogUrl, token) {
+  document.getElementById('gbPubCatalogUrl').value = catalogUrl;
+  document.getElementById('gbPubCatalogLink').href = catalogUrl;
+  var gameName = ORIG_GAME_NAME ? ORIG_GAME_NAME.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : '';
+  var gameEl = document.getElementById('gbPubGameUrl');
+  if (gameName && gameEl) {
+    var gameUrl = catalogUrl.replace(/\/?$/, '/') + gameName;
+    document.getElementById('gbPubGameUrlInput').value = gameUrl;
+    document.getElementById('gbPubGameUrlLink').href   = gameUrl;
+    gameEl.style.display = '';
+  } else if (gameEl) { gameEl.style.display = 'none'; }
+  document.getElementById('gbPublishOverlay').classList.add('open');
+}
+function closePublishDialog() { document.getElementById('gbPublishOverlay').classList.remove('open'); }
+function gbCopyUrl(inputId) {
+  var inp = document.getElementById(inputId); if (!inp) return;
+  inp.select(); inp.setSelectionRange(0, 9999);
+  try { document.execCommand('copy'); } catch(e) { navigator.clipboard && navigator.clipboard.writeText(inp.value); }
+  var btn = inp.nextElementSibling;
+  if (btn) { var old = btn.textContent; btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = old; }, 1500); }
+}
 
 function cancelEdit() { location.reload(); }
 
@@ -2740,8 +3110,11 @@ function toggleFaq(id) {
 }
 document.addEventListener('keydown', function(e){
   if (e.key === 'Escape') {
-    if (document.getElementById('gbPublishOverlay') && document.getElementById('gbPublishOverlay').classList.contains('open')) { closePublishDialog(); return; }
-    if (document.getElementById('gbedOverlay').classList.contains('open')) { closeEditDetails(); return; }
+    closeGbMenu();
+    if (document.getElementById('settingsOverlay').classList.contains('open')) { forceCloseSettings(); return; }
+    if (document.getElementById('signInOverlay').classList.contains('open'))   { forceCloseSignIn(); return; }
+    if (document.getElementById('gbPublishOverlay').classList.contains('open')){ closePublishDialog(); return; }
+    if (document.getElementById('gbedOverlay').classList.contains('open'))     { closeEditDetails(); return; }
     closeLightbox();
   }
 });

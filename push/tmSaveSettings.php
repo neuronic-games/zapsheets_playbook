@@ -45,7 +45,8 @@ $postMap = [
     'twitter'     => 'Twitter',
     'facebook'    => 'Facebook',
     'youtube'     => 'YouTube',
-    'bgg_url'     => 'BGG URL',
+    'bgg_url'      => 'BGG URL',
+    'banner_color' => 'Banner Color',
 ];
 
 $settings = $existing;

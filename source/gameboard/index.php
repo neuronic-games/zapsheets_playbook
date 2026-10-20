@@ -92,6 +92,15 @@ if (!$_gameSlug) {
     $_fb      = trim($_settings['Facebook']  ?? '');
     $_yt      = trim($_settings['YouTube']   ?? '');
     $_bgg     = trim($_settings['BGG URL']   ?? '');
+    // Banner color
+    $_bannerColor = trim($_settings['Banner Color'] ?? '') ?: '#1a1a2e';
+    // Carousel fallback: use game cover images if no carousel URLs are set
+    if (empty($_carousel)) {
+        foreach ($_games as $_g) {
+            $_cu = trim($_g['Cover URL'] ?? $_g['Image URL'] ?? $_g['Image'] ?? '');
+            if ($_cu) { $_carousel[] = $_cu; if (count($_carousel) >= 6) break; }
+        }
+    }
     ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -105,7 +114,7 @@ if (!$_gameSlug) {
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 :root {
   --ink:#1a1a2e; --ink-lt:#4a4a6a; --muted:#888; --border:#e2e2ec;
-  --surface:#fff; --bg:#f6f5f2; --accent:<?= h($_accentHex) ?>; --nav-bg:#1a1a2e;
+  --surface:#fff; --bg:#f6f5f2; --accent:<?= h($_accentHex) ?>; --nav-bg:#1a1a2e; --banner-bg:<?= h($_bannerColor) ?>;
 <?php if ($_template === 'opensea'): ?>
   --ink:#0d1b2a; --ink-lt:#2c4a6e; --muted:#6b8fae; --border:#c8dcea;
   --surface:#fff; --bg:#f0f6fb; --nav-bg:#0d1b2a;
@@ -124,12 +133,16 @@ a { color:inherit; text-decoration:none; }
 .btn-add-game { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; padding:.28rem .8rem; border-radius:5px; border:1.5px solid rgba(255,255,255,.35); color:#fff; background:transparent; cursor:pointer; transition:background .14s,border-color .14s; white-space:nowrap; }
 .btn-add-game:hover { background:rgba(255,255,255,.14); border-color:#fff; }
 /* ── Page banner (always visible) ── */
-.gb-banner { background:var(--nav-bg); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:.85rem 1.5rem; gap:1.5rem; }
-.gb-banner-left { display:flex; align-items:center; gap:.85rem; min-width:0; }
-.gb-banner-name { font-family:'DINBlack',sans-serif; font-size:1rem; letter-spacing:.06em; opacity:.7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.gb-banner { background:var(--banner-bg); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:1.1rem 2rem; gap:1.5rem; }
+.gb-banner-left { display:flex; align-items:center; gap:.9rem; min-width:0; }
+.gb-banner-name { font-family:'DINBlack',sans-serif; font-size:1.1rem; letter-spacing:.06em; opacity:.75; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .gb-banner-nav { display:flex; align-items:center; gap:1.75rem; flex:1; justify-content:center; }
-.gb-banner-nav a { font-family:'DINBlack',sans-serif; font-size:.78rem; text-transform:uppercase; letter-spacing:.06em; color:rgba(255,255,255,.7); transition:color .14s; white-space:nowrap; }
+.gb-banner-nav a { font-family:'DINBlack',sans-serif; font-size:.82rem; text-transform:uppercase; letter-spacing:.06em; color:rgba(255,255,255,.75); transition:color .14s; white-space:nowrap; }
 .gb-banner-nav a:hover { color:#fff; }
+.gb-banner-right { display:flex; align-items:center; gap:.6rem; flex-shrink:0; }
+/* Color picker button */
+.gb-banner-color-btn { width:30px; height:30px; border-radius:50%; border:2px solid rgba(255,255,255,.35); background:transparent; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:border-color .14s,background .14s; padding:0; flex-shrink:0; }
+.gb-banner-color-btn:hover { border-color:#fff; background:rgba(255,255,255,.15); }
 
 /* User icon + menu (matches T&MBoard) */
 .btn-user-icon {
@@ -157,10 +170,10 @@ a { color:inherit; text-decoration:none; }
 
 /* ── Logo placeholder ── */
 .gb-logo-wrap { position:relative; display:inline-flex; align-items:center; flex-shrink:0; }
-.gb-logo-ph { display:flex; align-items:center; justify-content:center; height:40px; min-width:96px; padding:0 .85rem; border:1.5px dashed rgba(255,255,255,.3); border-radius:6px; font-family:'DINBlack',sans-serif; font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,.35); white-space:nowrap; transition:border-color .15s; cursor:pointer; }
+.gb-logo-ph { display:flex; align-items:center; justify-content:center; height:48px; min-width:96px; padding:0 .85rem; border:1.5px dashed rgba(255,255,255,.3); border-radius:6px; font-family:'DINBlack',sans-serif; font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,.35); white-space:nowrap; transition:border-color .15s; cursor:pointer; }
 .gb-logo-wrap.gb-drag-over .gb-logo-ph { border-color:rgba(255,255,255,.7); background:rgba(255,255,255,.07); }
 .gb-logo-edit-btn { position:absolute; top:-.45rem; right:-.45rem; z-index:6; }
-.gb-logo-img { height:40px; object-fit:contain; flex-shrink:0; }
+.gb-logo-img { height:48px; object-fit:contain; flex-shrink:0; }
 
 /* ── Carousel ── */
 .cat-carousel { position:relative; width:100%; height:clamp(240px,42vw,520px); overflow:hidden; background:var(--nav-bg); }
@@ -335,6 +348,16 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
     <nav class="gb-banner-nav" id="gbBannerNav">
       <!-- Nav links populated from Settings in a future update -->
     </nav>
+    <?php if (!isset($_gbPublicBase)): ?>
+    <div class="gb-banner-right">
+      <button class="gb-banner-color-btn" id="gbBannerColorBtn" onclick="document.getElementById('gbBannerColorInput').click()" title="Banner color">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+      </button>
+      <input type="color" id="gbBannerColorInput" value="<?= h($_bannerColor) ?>"
+             style="position:absolute;opacity:0;pointer-events:none;width:0;height:0"
+             oninput="gbApplyBannerColor(this.value)" onchange="gbSaveBannerColor(this.value)" />
+    </div>
+    <?php endif; ?>
   </header>
 
 </div><!-- /.gb-top-wrap -->
@@ -528,12 +551,18 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 
       <div class="gbed-section">
         <div class="gbed-section-title">Display</div>
-        <div class="gbed-field-group">
-          <label class="gbed-label">GameBoard Template</label>
-          <select class="gbed-field" id="setTemplate">
-            <option value="">Classic (default)</option>
-            <option value="opensea">OpenSea</option>
-          </select>
+        <div class="gbed-row">
+          <div class="gbed-field-group">
+            <label class="gbed-label">Banner Color</label>
+            <input class="gbed-field" id="setBannerColor" type="color" style="height:2.4rem;padding:.2rem .3rem;cursor:pointer" />
+          </div>
+          <div class="gbed-field-group">
+            <label class="gbed-label">GameBoard Template</label>
+            <select class="gbed-field" id="setTemplate">
+              <option value="">Classic (default)</option>
+              <option value="opensea">OpenSea</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -1004,6 +1033,19 @@ function gbUploadLogo(file) {
   xhr.send(fd);
 }
 
+// ── Banner color ──────────────────────────────────────────────────────────────
+function gbApplyBannerColor(hex) {
+  document.documentElement.style.setProperty('--banner-bg', hex);
+}
+function gbSaveBannerColor(hex) {
+  gbApplyBannerColor(hex);
+  var fd = new FormData();
+  fd.append('id', SHEET_ID); fd.append('banner_color', hex);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
+  xhr.send(fd);
+}
+
 // ── Carousel ─────────────────────────────────────────────────────────────────
 (function() {
   var slides = document.querySelectorAll('#catCarousel .cat-slide');
@@ -1097,7 +1139,8 @@ function openSettings() {
     document.getElementById('setLogo').value     = s['Logo URL']           || '';
     document.getElementById('setTagline').value  = s['Tagline']            || '';
     document.getElementById('setAbout').value    = s['About']              || '';
-    document.getElementById('setTemplate').value = s['Gameboard Template'] || '';
+    document.getElementById('setTemplate').value    = s['Gameboard Template'] || '';
+    document.getElementById('setBannerColor').value = s['Banner Color']       || '#1a1a2e';
     for (var i = 1; i <= 6; i++) {
       var el = document.getElementById('setCarousel' + i);
       if (el) el.value = s['Carousel ' + i] || '';
@@ -1122,7 +1165,8 @@ function submitSettings() {
   fd.append('logo',        document.getElementById('setLogo').value.trim());
   fd.append('tagline',     document.getElementById('setTagline').value.trim());
   fd.append('about',       document.getElementById('setAbout').value.trim());
-  fd.append('gb_template', document.getElementById('setTemplate').value);
+  fd.append('gb_template',   document.getElementById('setTemplate').value);
+  fd.append('banner_color', document.getElementById('setBannerColor').value);
   for (var i = 1; i <= 6; i++) {
     var el = document.getElementById('setCarousel' + i);
     if (el) fd.append('carousel_' + i, el.value.trim());

@@ -2138,9 +2138,7 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
   <!-- What People Are Saying -->
   <div class="gb-section<?= empty($_reviews) ? ' gb-sect-empty' : '' ?>">
     <div class="gb-section-label">What People Are Saying</div>
-    <textarea class="gb-inline-edit" id="gbReviewsEdit"
-      placeholder="One quote per line. Add a source with |:&#10;This game is brilliant! | BoardGameGeek&#10;My family loves it."></textarea>
-    <p class="gb-inline-hint">One quote per line. Optionally add a source after " | " (e.g. "Great game! | BGG")</p>
+    <div class="gb-faq-editor gb-inline-edit" id="gbReviewsList"></div>
     <div class="gb-reviews gb-display-content">
       <?php foreach ($_reviews as $rv):
         $rQuote  = trim($rv['Value']   ?? '');
@@ -2822,12 +2820,7 @@ function gbInitInlineEdits() {
       _ed.components = this.value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
     };
   }
-  var revEl = document.getElementById('gbReviewsEdit');
-  if (revEl) {
-    revEl.value = (_ed.reviews || []).filter(function(r){return r.attr||r.quote;})
-      .map(function(r){ return r.attr + (r.quote ? ' | ' + r.quote : ''); }).join('\n');
-    revEl.oninput = function() { _ed.reviews = gbParseReviews(this.value); };
-  }
+  gbBuildReviewEditor(_ed.reviews || []);
   gbBuildFaqEditor(_ed.faqs || []);
   gbInitDesignerInputs();
 }
@@ -2870,6 +2863,60 @@ function gbAddDesignerInput(wrap, value, idx) {
 function gbAutoResize(ta) {
   ta.style.height = 'auto';
   ta.style.height = ta.scrollHeight + 'px';
+}
+
+function gbBuildReviewEditor(reviews) {
+  var list = document.getElementById('gbReviewsList');
+  if (!list) return;
+  list.innerHTML = '';
+  var pairs = reviews.filter(function(r){ return r.attr || r.quote; });
+  pairs.push({attr:'', quote:''});
+  // attr = review text (col B), quote = source/attribution (col C)
+  pairs.forEach(function(r, idx) { gbAddReviewPair(list, r.attr, r.quote, idx === pairs.length - 1); });
+}
+
+function gbAddReviewPair(list, quote, source, isLast) {
+  var pair = document.createElement('div');
+  pair.className = 'gb-faq-pair';
+
+  var qta = document.createElement('textarea');
+  qta.className = 'faq-q';
+  qta.placeholder = 'Quote';
+  qta.rows = 1;
+  qta.value = quote || '';
+
+  var sta = document.createElement('textarea');
+  sta.className = 'faq-a';
+  sta.placeholder = 'Source (optional)';
+  sta.rows = 1;
+  sta.value = source || '';
+
+  function syncReviews() {
+    _ed.reviews = Array.prototype.slice.call(
+      document.querySelectorAll('#gbReviewsList .gb-faq-pair')
+    ).map(function(p) {
+      return {
+        attr:  p.querySelector('.faq-q').value.trim(),  // review text (top)
+        quote: p.querySelector('.faq-a').value.trim()   // source/attribution (bottom)
+      };
+    }).filter(function(r){ return r.attr || r.quote; });
+  }
+
+  function maybeAddPair() {
+    var pairs = document.querySelectorAll('#gbReviewsList .gb-faq-pair');
+    var last  = pairs[pairs.length - 1];
+    if (pair === last && (qta.value.trim() || sta.value.trim())) {
+      gbAddReviewPair(list, '', '', true);
+    }
+  }
+
+  qta.oninput = function() { gbAutoResize(this); syncReviews(); maybeAddPair(); };
+  sta.oninput = function() { gbAutoResize(this); syncReviews(); maybeAddPair(); };
+
+  pair.appendChild(qta);
+  pair.appendChild(sta);
+  list.appendChild(pair);
+  setTimeout(function() { gbAutoResize(qta); gbAutoResize(sta); }, 0);
 }
 
 function gbBuildFaqEditor(faqs) {

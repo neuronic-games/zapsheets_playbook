@@ -1627,6 +1627,13 @@ foreach ($_richVideos as $rv) {
 }
 if (!$_videoEmbed) $_videoEmbed = _gb_embed($_videoUrl);
 
+// Direct (non-embeddable) video file URL — mp4/webm/ogg/mov uploads
+$_videoDirect = '';
+if (!$_videoEmbed && $_videoUrl) {
+    $ext = strtolower(pathinfo(parse_url($_videoUrl, PHP_URL_PATH), PATHINFO_EXTENSION));
+    if (in_array($ext, ['mp4','webm','ogg','mov'], true)) $_videoDirect = $_videoUrl;
+}
+
 // Additional video list (all rich videos that are embeddable)
 $_videoList = [];
 foreach ($_richVideos as $rv) {
@@ -1772,6 +1779,11 @@ a { color:inherit; text-decoration:none; }
 /* ── Video ── */
 .gb-video-wrap { position:relative; padding-top:56.25%; border-radius:10px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,.13); }
 .gb-video-wrap iframe { position:absolute; inset:0; width:100%; height:100%; border:none; }
+.gb-video-wrap video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#000; }
+/* Video placeholder (admin only) */
+.gb-video-ph-inner { background:linear-gradient(135deg,#1a1a2e,#2d2d88); border-radius:10px; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:.5rem; opacity:.3; cursor:pointer; transition:opacity .2s; }
+.gb-video-ph-inner:hover { opacity:.5; }
+.gb-video-ph-inner.drag-over { opacity:.8; outline:2px dashed #fff; }
 .gb-video-tabs { display:flex; gap:.4rem; flex-wrap:wrap; margin-top:.7rem; }
 .gb-vtab {
   font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase;
@@ -2272,21 +2284,29 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
   <?php endif; ?>
 
   <!-- Video(s) -->
-  <?php if (!$_videoEmbed): ?>
+  <?php if (!$_videoEmbed && !$_videoDirect): ?>
   <!-- Placeholder video (admin only) -->
-  <div class="gb-section gb-ph-section">
+  <div class="gb-section gb-ph-section" id="gbVideoPlaceholder">
     <div class="gb-section-label">Watch</div>
-    <div style="background:linear-gradient(135deg,#1a1a2e,#2d2d88);border-radius:10px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:.5rem;opacity:.3;">
+    <div class="gb-video-ph-inner"
+         onclick="openEditDetailsAt('gbedVideoUrl')"
+         ondragover="gbVideoDragOver(event,this)"
+         ondragleave="gbVideoDragLeave(event,this)"
+         ondrop="gbVideoDrop(event,this)">
       <div style="font-size:3rem;">▶</div>
-      <div style="font-family:'DINBlack',sans-serif;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:#fff;">Add video URL via Edit Details</div>
+      <div style="font-family:'DINBlack',sans-serif;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:#fff;">Drop a video file or click to add URL</div>
     </div>
   </div>
   <?php endif; ?>
-  <?php if ($_videoEmbed): ?>
-  <div class="gb-section">
+  <?php if ($_videoEmbed || $_videoDirect): ?>
+  <div class="gb-section" id="gbVideoSection">
     <div class="gb-section-label">Watch</div>
     <div class="gb-video-wrap" id="videoWrap">
+      <?php if ($_videoEmbed): ?>
       <iframe id="videoFrame" src="<?= h($_videoEmbed) ?>" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+      <?php else: ?>
+      <video id="videoFrame" src="<?= h($_videoDirect) ?>" controls style="width:100%;border-radius:10px;display:block;"></video>
+      <?php endif; ?>
     </div>
     <?php if (count($_videoList) > 1): ?>
     <div class="gb-video-tabs">
@@ -2923,6 +2943,55 @@ function openEditDetailsAt(fieldId) {
     el.select && el.select();
   }, 60);
 }
+// ── Video placeholder: click → edit details; drop → upload ──────────────────
+function gbVideoDragOver(e, el) {
+  e.preventDefault();
+  el.classList.add('drag-over');
+}
+function gbVideoDragLeave(e, el) {
+  e.preventDefault();
+  el.classList.remove('drag-over');
+}
+function gbVideoDrop(e, el) {
+  e.preventDefault();
+  el.classList.remove('drag-over');
+  var file = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('video/')) {
+    openEditDetailsAt('gbedVideoUrl');
+    return;
+  }
+  var origHTML = el.innerHTML;
+  el.innerHTML = '<div style="color:#fff;font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;">Uploading…</div>';
+  var fd = new FormData();
+  fd.append('id', SHEET_ID);
+  fd.append('file', file);
+  fetch(APP_ROOT + 'push/uploadMedia.php', { method:'POST', body:fd })
+    .then(function(r){ return r.json(); })
+    .then(function(r){
+      if (r.ok && r.url) {
+        _ed.video_url = r.url;
+        // Replace the placeholder section with an inline <video>
+        var section = document.getElementById('gbVideoPlaceholder');
+        if (section) {
+          section.id = 'gbVideoSection';
+          section.className = 'gb-section';
+          section.innerHTML = '<div class="gb-section-label">Watch</div>'
+            + '<div class="gb-video-wrap" id="videoWrap">'
+            + '<video id="videoFrame" src="' + r.url.replace(/"/g,'&quot;') + '" controls style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;"></video>'
+            + '</div>';
+        }
+      } else {
+        alert('Upload failed: ' + (r.error || 'Unknown error'));
+        el.innerHTML = origHTML;
+      }
+    })
+    .catch(function(){
+      alert('Upload failed.');
+      el.innerHTML = origHTML;
+    });
+}
+
 function openEditDetails() {
   // Populate from _ed (live-edited values)
   document.getElementById('gbedStatus').value       = _ed.status       || '';

@@ -46,10 +46,12 @@ if ($file['size'] > $maxBytes) {
     exit;
 }
 
-// Safe filename: uid + original extension
-$extMap = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp'];
-$ext      = $extMap[$mime] ?? 'jpg';
-$filename = bin2hex(random_bytes(10)) . '.' . $ext;
+// Save with a random name (always .webp after conversion)
+$tmpBase  = bin2hex(random_bytes(10));
+$extMap   = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp'];
+$origExt  = $extMap[$mime] ?? 'jpg';
+$tmpName  = $tmpBase . '.' . $origExt;   // temp name for move_uploaded_file
+$filename = $tmpBase . '.webp';           // final WebP name
 
 $dir = dirname(__DIR__) . '/images/' . $sheetId . '/';
 if (!is_dir($dir)) {
@@ -59,9 +61,58 @@ if (!is_dir($dir)) {
     }
 }
 
-if (!move_uploaded_file($file['tmp_name'], $dir . $filename)) {
+$tmpPath  = $dir . $tmpName;
+$destPath = $dir . $filename;
+
+if (!move_uploaded_file($file['tmp_name'], $tmpPath)) {
     echo json_encode(['error' => 'Could not save file']);
     exit;
+}
+
+// ── Convert to WebP and resize to ≤1200 px on longest side ──────────────────
+$converted = false;
+if (function_exists('imagewebp')) {
+    $loaders = [
+        'image/jpeg' => 'imagecreatefromjpeg',
+        'image/png'  => 'imagecreatefrompng',
+        'image/gif'  => 'imagecreatefromgif',
+        'image/webp' => 'imagecreatefromwebp',
+    ];
+    $loader = $loaders[$mime] ?? null;
+    if ($loader && function_exists($loader)) {
+        $src = $loader($tmpPath);
+        if ($src) {
+            $ow = imagesx($src);
+            $oh = imagesy($src);
+            $maxDim = 1200;
+            if ($ow > $maxDim || $oh > $maxDim) {
+                $scale = $maxDim / max($ow, $oh);
+                $nw = (int)round($ow * $scale);
+                $nh = (int)round($oh * $scale);
+                $dst = imagecreatetruecolor($nw, $nh);
+                // Preserve transparency for PNG/GIF/WebP
+                imagealphablending($dst, false);
+                imagesavealpha($dst, true);
+                imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $ow, $oh);
+                imagedestroy($src);
+                $src = $dst;
+            }
+            if (imagewebp($src, $destPath, 85)) {
+                $converted = true;
+            }
+            imagedestroy($src);
+        }
+    }
+}
+
+if ($converted) {
+    @unlink($tmpPath);          // remove the original upload
+} else {
+    // GD unavailable or conversion failed — serve the original as-is
+    rename($tmpPath, $destPath);
+    // Keep original extension in the filename for correct serving
+    $filename = $tmpBase . '.' . $origExt;
+    $destPath = $dir . $filename;
 }
 
 // Build the public URL

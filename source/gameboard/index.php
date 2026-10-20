@@ -1889,11 +1889,10 @@ body.gb-admin-mode #gbBuyCtas { display:contents; }
 .gb-buy-cta-lbl:focus { text-decoration:underline; text-underline-offset:2px; }
 .gb-buy-link-icon { background:none; border:none; padding:0; cursor:pointer; color:inherit; opacity:.5; display:inline-flex; align-items:center; flex-shrink:0; transition:opacity .15s; }
 .gb-buy-link-icon:hover { opacity:1; }
-/* URL-only mini popover */
-.gb-buy-url-pop { position:absolute; top:calc(100% + 6px); left:0; z-index:200; background:#fff; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,.22); padding:.5rem .6rem; display:flex; gap:.4rem; min-width:220px; }
-.gb-buy-url-pop input { padding:.38rem .5rem; border:1px solid #dde; border-radius:5px; font-size:.8rem; outline:none; flex:1; }
-.gb-buy-url-pop input:focus { border-color:#7c9eff; }
-.gb-buy-url-ok { padding:.3rem .65rem; border-radius:5px; border:none; font-size:.75rem; font-weight:700; cursor:pointer; background:#4ade80; color:#0f172a; flex-shrink:0; }
+/* Inline URL entry — replaces label inside the button */
+.gb-buy-url-inline { border:none; outline:none; background:transparent; font-family:'DINBlack',sans-serif; font-weight:900; font-size:.72rem; letter-spacing:.07em; min-width:9rem; width:9rem; color:inherit; text-transform:none; }
+.gb-buy-url-ok-inline { background:none; border:none; padding:0 0 0 .15rem; cursor:pointer; color:inherit; font-size:1rem; font-weight:900; opacity:.7; }
+.gb-buy-url-ok-inline:hover { opacity:1; }
 
 /* ── FAQs ── */
 .gb-faq-item { border-bottom:1px solid var(--border); padding:.85rem 0; }
@@ -3454,6 +3453,8 @@ function gbVrevRemove(e, idx) {
   gbInitVrevGrid();
 }
 
+var LINK_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+
 function gbMakeBuyCtaEl(b, i, isPlaceholder) {
   var w = document.createElement('span');
   w.className = 'gb-buy-cta-wrap' + (isPlaceholder ? ' gb-buy-cta-ph' : '');
@@ -3473,18 +3474,65 @@ function gbMakeBuyCtaEl(b, i, isPlaceholder) {
     };
   }
 
+  // Inline URL input (hidden until link icon clicked)
+  var urlInp = document.createElement('input');
+  urlInp.type = 'url';
+  urlInp.placeholder = 'https://…';
+  urlInp.value = b.url || '';
+  urlInp.className = 'gb-buy-url-inline';
+  urlInp.style.display = 'none';
+  urlInp.onclick = function(e) { e.stopPropagation(); };
+
+  // Confirm button (hidden until URL input shown)
+  var okBtn = document.createElement('button');
+  okBtn.className = 'gb-buy-url-ok-inline';
+  okBtn.textContent = '✓';
+  okBtn.style.display = 'none';
+
   // Link icon button
   var linkBtn = document.createElement('button');
   linkBtn.className = 'gb-buy-link-icon';
   linkBtn.title = isPlaceholder ? 'Set URL' : 'Edit URL';
-  linkBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-  linkBtn.onmousedown = function(e) {
-    e.preventDefault();
-    gbShowBuyUrlInput(w, i, lbl.textContent.trim() || 'Buy Now', b.url || '');
+  linkBtn.innerHTML = LINK_SVG;
+
+  function showUrl(e) {
+    if (e) e.preventDefault();
+    lbl.style.display = 'none';
+    linkBtn.style.display = 'none';
+    urlInp.style.display = '';
+    okBtn.style.display = '';
+    urlInp.focus();
+    urlInp.select();
+  }
+
+  function revertUrl() {
+    urlInp.style.display = 'none';
+    okBtn.style.display = 'none';
+    lbl.style.display = '';
+    linkBtn.style.display = '';
+  }
+
+  function confirmUrl() {
+    var url = urlInp.value.trim();
+    var label = lbl.textContent.trim() || 'Buy Now';
+    if (!url) { revertUrl(); return; }
+    if (!_ed.buy_urls) _ed.buy_urls = [];
+    if (i >= 0) { _ed.buy_urls[i] = {url: url, label: label}; }
+    else        { _ed.buy_urls.push({url: url, label: label}); }
+    gbInitBuyCtas();
+  }
+
+  linkBtn.onmousedown = showUrl;
+  okBtn.onmousedown = function(e) { e.preventDefault(); confirmUrl(); };
+  urlInp.onkeydown = function(e) {
+    if (e.key === 'Enter')  { e.preventDefault(); confirmUrl(); }
+    if (e.key === 'Escape') { revertUrl(); }
   };
 
   inner.appendChild(lbl);
+  inner.appendChild(urlInp);
   inner.appendChild(linkBtn);
+  inner.appendChild(okBtn);
   w.appendChild(inner);
 
   // Delete button (not on placeholder)
@@ -3507,71 +3555,12 @@ function gbInitBuyCtas() {
   wrap.style.display = 'contents'; // override inline style="display:none"
   document.querySelectorAll('.gb-buy-pub').forEach(function(el) { el.style.display = 'none'; });
 
-  var hasBuys = false;
   (_ed.buy_urls || []).forEach(function(b, i) {
     if (!b.url) return;
-    hasBuys = true;
     wrap.appendChild(gbMakeBuyCtaEl(b, i, false));
   });
-
-  // Always show a BUY NOW placeholder or + Add Link
-  if (!hasBuys) {
-    wrap.appendChild(gbMakeBuyCtaEl({label: 'BUY NOW', url: ''}, -1, true));
-  } else {
-    var addW = document.createElement('span');
-    addW.className = 'gb-buy-cta-wrap gb-buy-cta-ph';
-    var addInner = document.createElement('span');
-    addInner.className = 'gb-buy-cta-inner filled';
-    var addLbl = document.createElement('span');
-    addLbl.className = 'gb-buy-cta-lbl';
-    addLbl.contentEditable = 'true';
-    addLbl.textContent = '+ Add Link';
-    addLbl.onclick = function(e) { e.stopPropagation(); };
-    var addLink = document.createElement('button');
-    addLink.className = 'gb-buy-link-icon';
-    addLink.title = 'Set URL';
-    addLink.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-    addLink.onmousedown = function(e) {
-      e.preventDefault();
-      gbShowBuyUrlInput(addW, -1, addLbl.textContent.trim() || 'Buy Now', '');
-    };
-    addInner.appendChild(addLbl);
-    addInner.appendChild(addLink);
-    addW.appendChild(addInner);
-    wrap.appendChild(addW);
-  }
-}
-
-function gbShowBuyUrlInput(anchor, idx, label, curUrl) {
-  document.querySelectorAll('.gb-buy-url-pop').forEach(function(p) { p.remove(); });
-  var pop = document.createElement('div');
-  pop.className = 'gb-buy-url-pop';
-  var inp = document.createElement('input');
-  inp.type = 'url';
-  inp.placeholder = 'https://…';
-  inp.value = curUrl || '';
-  var ok = document.createElement('button');
-  ok.className = 'gb-buy-url-ok';
-  ok.textContent = 'OK';
-  ok.onmousedown = function(e) {
-    e.preventDefault();
-    var url = inp.value.trim();
-    if (!url) { pop.remove(); return; }
-    if (!_ed.buy_urls) _ed.buy_urls = [];
-    if (idx >= 0) { _ed.buy_urls[idx].url = url; _ed.buy_urls[idx].label = label; }
-    else          { _ed.buy_urls.push({url: url, label: label}); }
-    gbInitBuyCtas();
-  };
-  pop.appendChild(inp);
-  pop.appendChild(ok);
-  pop.onclick = function(e) { e.stopPropagation(); };
-  anchor.style.position = 'relative';
-  anchor.appendChild(pop);
-  inp.focus();
-  inp.select();
-  setTimeout(function() {
-    document.addEventListener('click', function() { pop.remove(); }, {once: true});
-  }, 10);
+  // Always append a "BUY NOW" placeholder for adding new links
+  wrap.appendChild(gbMakeBuyCtaEl({label: 'BUY NOW', url: ''}, -1, true));
 }
 
 function gbBuildFaqEditor(faqs) {

@@ -1405,36 +1405,44 @@ function submitAddGame() {
 }
 
 // ── Fetch log dialog ─────────────────────────────────────────────────────────
+function gbSyncLog(msg, type) {
+  var log  = document.getElementById('fetchLogBody');
+  var line = document.createElement('span');
+  line.className = 'sync-log-line ' + (type || 'info');
+  line.textContent = msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
 function showFetchLog(r) {
-  var dlg = document.getElementById('fetchLogOverlay');
-  var body = document.getElementById('fetchLogBody');
-  var lines = [];
-  if (r && r.ok) {
-    lines.push('<div class="fetch-log-ok">✓ Fetch complete</div>');
-  } else if (r && r.error) {
-    lines.push('<div class="fetch-log-err">✗ ' + r.error + '</div>');
-  } else {
-    lines.push('<div class="fetch-log-err">✗ Unexpected response</div>');
+  var log = document.getElementById('fetchLogBody');
+  log.innerHTML = '';
+  document.getElementById('fetchLogTitle').textContent = r && r.ok ? 'Fetch Complete' : 'Fetch';
+  document.getElementById('fetchLogDoneBtn').disabled = false;
+  document.getElementById('fetchLogOverlay').classList.add('open');
+  if (r && r.error) {
+    gbSyncLog('✗ ' + r.error, 'error');
+    return;
   }
   if (r && r.tabs) {
     Object.keys(r.tabs).forEach(function(t) {
-      lines.push('<div class="fetch-log-row"><span class="fetch-log-tab">' + t + '</span><span class="fetch-log-status fetch-log-status-' + r.tabs[t] + '">' + r.tabs[t] + '</span></div>');
+      var s = r.tabs[t];
+      gbSyncLog((s === 'ok' || s === 'created' ? '  ✓ ' : '  ✗ ') + t + ' (' + s + ')', s === 'error' ? 'error' : (s === 'created' ? 'ok' : 'skip'));
     });
   }
-  if (r && r.json_refreshed && r.json_refreshed.length) {
-    lines.push('<div class="fetch-log-section">Refreshed</div>');
-    r.json_refreshed.forEach(function(t) { lines.push('<div class="fetch-log-row">· ' + t + '</div>'); });
+  if (r && r.json_refreshed) {
+    r.json_refreshed.forEach(function(t) { gbSyncLog('  ✓ ' + t, 'ok'); });
   }
   if (r && r.refresh_errors) {
-    lines.push('<div class="fetch-log-section fetch-log-err">Errors</div>');
     Object.keys(r.refresh_errors).forEach(function(t) {
-      lines.push('<div class="fetch-log-row fetch-log-err">✗ ' + t + ': ' + r.refresh_errors[t] + '</div>');
+      gbSyncLog('  ✗ ' + t + ': ' + r.refresh_errors[t], 'error');
     });
   }
-  body.innerHTML = lines.join('');
-  dlg.classList.add('open');
+  gbSyncLog(r && r.ok ? 'Done.' : 'Completed with errors.', r && r.ok ? 'ok' : 'error');
 }
-function closeFetchLog() { document.getElementById('fetchLogOverlay').classList.remove('open'); }
+function closeFetchLog() {
+  document.getElementById('fetchLogOverlay').classList.remove('open');
+  location.reload();
+}
 
 // ── Strip HTML on paste — always insert plain text ────────────────────────────
 document.addEventListener('paste', function(e) {
@@ -1455,21 +1463,27 @@ document.addEventListener('paste', function(e) {
 </script>
 
 <!-- ── Fetch Log dialog ── -->
-<div class="gbed-overlay" id="fetchLogOverlay" onclick="if(event.target===this)closeFetchLog()">
-  <div class="gbed-dialog fetch-log-dialog" onclick="event.stopPropagation()" style="max-width:480px">
-    <div class="gbed-header">
-      <span class="gbed-title">Fetch Log</span>
-      <button class="gbed-close" onclick="closeFetchLog()">✕</button>
-    </div>
-    <div class="gbed-body" style="padding:1.2rem 1.4rem">
-      <div id="fetchLogBody" style="font-size:.85rem;line-height:1.7;font-family:monospace"></div>
-    </div>
-    <div class="gbed-footer">
-      <button class="btn-adm btn-adm-primary" onclick="closeFetchLog();location.reload()">Reload Page</button>
-      <button class="btn-adm btn-adm-secondary" onclick="closeFetchLog()">Close</button>
+<div class="gbed-overlay" id="fetchLogOverlay">
+  <div class="sync-dialog" onclick="event.stopPropagation()">
+    <h2 id="fetchLogTitle">Fetching…</h2>
+    <div class="sync-log" id="fetchLogBody"></div>
+    <div class="sync-dialog-actions">
+      <button class="btn-adm btn-adm-secondary" id="fetchLogDoneBtn" disabled onclick="closeFetchLog()">Close</button>
     </div>
   </div>
 </div>
+
+<style>
+.sync-dialog { background:#fff; border-radius:10px; padding:1.4rem; width:min(480px,92vw); box-shadow:0 8px 32px rgba(0,0,0,.22); display:flex; flex-direction:column; gap:.75rem; max-height:calc(100dvh - 2rem); overflow-y:auto; }
+.sync-dialog h2 { font-size:.95rem; margin:0; font-weight:700; }
+.sync-log { background:#0f172a; border-radius:6px; padding:.75rem 1rem; min-height:6rem; max-height:14rem; overflow-y:auto; font-family:monospace; font-size:.75rem; line-height:1.6; color:#94a3b8; display:flex; flex-direction:column; }
+.sync-log-line { display:block; }
+.sync-log-line.ok    { color:#4ade80; }
+.sync-log-line.skip  { color:#94a3b8; }
+.sync-log-line.error { color:#f87171; }
+.sync-log-line.info  { color:#60a5fa; }
+.sync-dialog-actions { display:flex; align-items:center; justify-content:flex-end; gap:.5rem; }
+</style>
 
 </body>
 </html>
@@ -3456,36 +3470,44 @@ document.addEventListener('keydown', function(e){
 });
 
 // ── Fetch log dialog ─────────────────────────────────────────────────────────
+function gbSyncLog(msg, type) {
+  var log  = document.getElementById('fetchLogBody');
+  var line = document.createElement('span');
+  line.className = 'sync-log-line ' + (type || 'info');
+  line.textContent = msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
 function showFetchLog(r) {
-  var dlg = document.getElementById('fetchLogOverlay');
-  var body = document.getElementById('fetchLogBody');
-  var lines = [];
-  if (r && r.ok) {
-    lines.push('<div class="fetch-log-ok">✓ Fetch complete</div>');
-  } else if (r && r.error) {
-    lines.push('<div class="fetch-log-err">✗ ' + r.error + '</div>');
-  } else {
-    lines.push('<div class="fetch-log-err">✗ Unexpected response</div>');
+  var log = document.getElementById('fetchLogBody');
+  log.innerHTML = '';
+  document.getElementById('fetchLogTitle').textContent = r && r.ok ? 'Fetch Complete' : 'Fetch';
+  document.getElementById('fetchLogDoneBtn').disabled = false;
+  document.getElementById('fetchLogOverlay').classList.add('open');
+  if (r && r.error) {
+    gbSyncLog('✗ ' + r.error, 'error');
+    return;
   }
   if (r && r.tabs) {
     Object.keys(r.tabs).forEach(function(t) {
-      lines.push('<div class="fetch-log-row"><span class="fetch-log-tab">' + t + '</span><span class="fetch-log-status fetch-log-status-' + r.tabs[t] + '">' + r.tabs[t] + '</span></div>');
+      var s = r.tabs[t];
+      gbSyncLog((s === 'ok' || s === 'created' ? '  ✓ ' : '  ✗ ') + t + ' (' + s + ')', s === 'error' ? 'error' : (s === 'created' ? 'ok' : 'skip'));
     });
   }
-  if (r && r.json_refreshed && r.json_refreshed.length) {
-    lines.push('<div class="fetch-log-section">Refreshed</div>');
-    r.json_refreshed.forEach(function(t) { lines.push('<div class="fetch-log-row">· ' + t + '</div>'); });
+  if (r && r.json_refreshed) {
+    r.json_refreshed.forEach(function(t) { gbSyncLog('  ✓ ' + t, 'ok'); });
   }
   if (r && r.refresh_errors) {
-    lines.push('<div class="fetch-log-section fetch-log-err">Errors</div>');
     Object.keys(r.refresh_errors).forEach(function(t) {
-      lines.push('<div class="fetch-log-row fetch-log-err">✗ ' + t + ': ' + r.refresh_errors[t] + '</div>');
+      gbSyncLog('  ✗ ' + t + ': ' + r.refresh_errors[t], 'error');
     });
   }
-  body.innerHTML = lines.join('');
-  dlg.classList.add('open');
+  gbSyncLog(r && r.ok ? 'Done.' : 'Completed with errors.', r && r.ok ? 'ok' : 'error');
 }
-function closeFetchLog() { document.getElementById('fetchLogOverlay').classList.remove('open'); }
+function closeFetchLog() {
+  document.getElementById('fetchLogOverlay').classList.remove('open');
+  location.reload();
+}
 
 // ── Strip HTML on paste — always insert plain text ────────────────────────────
 document.addEventListener('paste', function(e) {
@@ -3506,31 +3528,26 @@ document.addEventListener('paste', function(e) {
 </script>
 
 <!-- ── Fetch Log dialog ── -->
-<div class="gbed-overlay" id="fetchLogOverlay" onclick="if(event.target===this)closeFetchLog()">
-  <div class="gbed-dialog" onclick="event.stopPropagation()" style="max-width:480px">
-    <div class="gbed-header">
-      <span class="gbed-title">Fetch Log</span>
-      <button class="gbed-close" onclick="closeFetchLog()">✕</button>
-    </div>
-    <div class="gbed-body" style="padding:1.2rem 1.4rem">
-      <div id="fetchLogBody" style="font-size:.85rem;line-height:1.7;font-family:monospace"></div>
-    </div>
-    <div class="gbed-footer">
-      <button class="btn-adm btn-adm-primary" onclick="closeFetchLog();location.reload()">Reload Page</button>
-      <button class="btn-adm btn-adm-secondary" onclick="closeFetchLog()">Close</button>
+<div class="gbed-overlay" id="fetchLogOverlay">
+  <div class="sync-dialog" onclick="event.stopPropagation()">
+    <h2 id="fetchLogTitle">Fetching…</h2>
+    <div class="sync-log" id="fetchLogBody"></div>
+    <div class="sync-dialog-actions">
+      <button class="btn-adm btn-adm-secondary" id="fetchLogDoneBtn" disabled onclick="closeFetchLog()">Close</button>
     </div>
   </div>
 </div>
 
 <style>
-.fetch-log-ok      { color:#2a7a4b; font-weight:600; margin-bottom:.5rem; }
-.fetch-log-err     { color:#c00; }
-.fetch-log-section { color:#888; font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; margin:.8rem 0 .2rem; }
-.fetch-log-row     { display:flex; justify-content:space-between; gap:1rem; padding:.1rem 0; color:#444; }
-.fetch-log-tab     { color:#222; }
-.fetch-log-status-ok      { color:#2a7a4b; }
-.fetch-log-status-created { color:#1a6fa8; }
-.fetch-log-status-error   { color:#c00; }
+.sync-dialog { background:#fff; border-radius:10px; padding:1.4rem; width:min(480px,92vw); box-shadow:0 8px 32px rgba(0,0,0,.22); display:flex; flex-direction:column; gap:.75rem; max-height:calc(100dvh - 2rem); overflow-y:auto; }
+.sync-dialog h2 { font-size:.95rem; margin:0; font-weight:700; }
+.sync-log { background:#0f172a; border-radius:6px; padding:.75rem 1rem; min-height:6rem; max-height:14rem; overflow-y:auto; font-family:monospace; font-size:.75rem; line-height:1.6; color:#94a3b8; display:flex; flex-direction:column; }
+.sync-log-line { display:block; }
+.sync-log-line.ok    { color:#4ade80; }
+.sync-log-line.skip  { color:#94a3b8; }
+.sync-log-line.error { color:#f87171; }
+.sync-log-line.info  { color:#60a5fa; }
+.sync-dialog-actions { display:flex; align-items:center; justify-content:flex-end; gap:.5rem; }
 </style>
 
 </body>

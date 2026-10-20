@@ -1889,6 +1889,7 @@ body.gb-admin-mode #gbBuyCtas { display:contents; }
 .gb-buy-cta-save { background:#4ade80; color:#0f172a; }
 .gb-buy-cta-cancel { background:#e2e8f0; color:#334155; }
 .gb-buy-cta-add { opacity:.6; font-size:.72rem !important; padding:.3rem .6rem !important; border-style:dashed !important; }
+.gb-buy-cta-ph { opacity:.55; border-style:dashed !important; }
 .gb-buy-cta-add:hover { opacity:1; }
 
 /* ── FAQs ── */
@@ -3454,10 +3455,13 @@ function gbInitBuyCtas() {
   var wrap = document.getElementById('gbBuyCtas');
   if (!wrap) return;
   wrap.innerHTML = '';
+  wrap.style.display = 'contents'; // override inline style="display:none"
   // Hide static public buy buttons — JS takes over
   document.querySelectorAll('.gb-buy-pub').forEach(function(el) { el.style.display = 'none'; });
+  var hasBuys = false;
   (_ed.buy_urls || []).forEach(function(b, i) {
     if (!b.url) return;
+    hasBuys = true;
     var w = document.createElement('span');
     w.className = 'gb-buy-cta-wrap';
     var btn = document.createElement('a');
@@ -3474,13 +3478,26 @@ function gbInitBuyCtas() {
     w.appendChild(del);
     wrap.appendChild(w);
   });
-  // Add link button
-  var add = document.createElement('a');
-  add.className = 'btn-nav gb-buy-cta-add';
-  add.textContent = '+ Add Link';
-  add.href = '#';
-  add.onclick = function(e) { e.preventDefault(); gbBuyCtaPopover(add, -1); };
-  wrap.appendChild(add);
+  if (!hasBuys) {
+    // No buy URLs yet — show a placeholder "Buy Now" button to click and configure
+    var ph = document.createElement('span');
+    ph.className = 'gb-buy-cta-wrap';
+    var phBtn = document.createElement('a');
+    phBtn.className = 'btn-nav filled gb-buy-cta-ph';
+    phBtn.textContent = 'Buy Now';
+    phBtn.href = '#';
+    phBtn.onclick = function(e) { e.preventDefault(); gbBuyCtaPopover(ph, -1); };
+    ph.appendChild(phBtn);
+    wrap.appendChild(ph);
+  } else {
+    // Already has buy URLs — show a small add link button
+    var add = document.createElement('a');
+    add.className = 'btn-nav gb-buy-cta-add';
+    add.textContent = '+ Add Link';
+    add.href = '#';
+    add.onclick = function(e) { e.preventDefault(); gbBuyCtaPopover(add, -1); };
+    wrap.appendChild(add);
+  }
 }
 
 function gbBuyCtaPopover(anchor, idx) {

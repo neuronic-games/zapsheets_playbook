@@ -156,10 +156,11 @@ a { color:inherit; text-decoration:none; }
 .user-menu-divider { border:none; border-top:1px solid rgba(255,255,255,.1); margin:2px 0; }
 
 /* ── Logo placeholder ── */
-.gb-logo-ph { display:none; align-items:center; justify-content:center; height:36px; padding:0 .8rem; border:1.5px dashed rgba(255,255,255,.3); border-radius:5px; font-family:'DINBlack',sans-serif; font-size:.65rem; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,.4); white-space:nowrap; cursor:pointer; transition:border-color .15s,color .15s; }
-body.gb-admin-mode .gb-logo-ph { display:flex; }
-.gb-logo-ph:hover { border-color:rgba(255,255,255,.7); color:rgba(255,255,255,.8); }
-.gb-logo-img { height:36px; object-fit:contain; flex-shrink:0; }
+.gb-logo-wrap { position:relative; display:inline-flex; align-items:center; flex-shrink:0; }
+.gb-logo-ph { display:flex; align-items:center; justify-content:center; height:40px; min-width:96px; padding:0 .85rem; border:1.5px dashed rgba(255,255,255,.3); border-radius:6px; font-family:'DINBlack',sans-serif; font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,.35); white-space:nowrap; transition:border-color .15s; cursor:pointer; }
+.gb-logo-wrap.gb-drag-over .gb-logo-ph { border-color:rgba(255,255,255,.7); background:rgba(255,255,255,.07); }
+.gb-logo-edit-btn { position:absolute; top:-.45rem; right:-.45rem; z-index:6; }
+.gb-logo-img { height:40px; object-fit:contain; flex-shrink:0; }
 
 /* ── Carousel ── */
 .cat-carousel { position:relative; width:100%; height:clamp(240px,42vw,520px); overflow:hidden; background:var(--nav-bg); }
@@ -318,10 +319,16 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
   <!-- Page banner: logo + nav, always shown (public + admin) -->
   <header class="gb-banner">
     <div class="gb-banner-left">
-      <?php if ($_pubLogo): ?>
-      <img src="<?= h($_pubLogo) ?>" alt="<?= h($_pubName) ?>" class="gb-logo-img" />
-      <?php elseif (!isset($_gbPublicBase)): ?>
-      <div class="gb-logo-ph" id="gbLogoPlaceholder" onclick="gbMenuAction('settings')" title="Click to add your logo in Settings">Your Logo</div>
+      <?php if ($_pubLogo || !isset($_gbPublicBase)): ?>
+      <div class="gb-logo-wrap" id="gbLogoWrap"
+           ondragover="gbLogoDragOver(event)" ondragleave="gbLogoDragLeave(event)" ondrop="gbLogoDrop(event)">
+        <?php if ($_pubLogo): ?>
+        <img src="<?= h($_pubLogo) ?>" alt="<?= h($_pubName) ?>" class="gb-logo-img" id="gbLogoImg" />
+        <?php else: ?>
+        <div class="gb-logo-ph" id="gbLogoImg">Your Logo</div>
+        <?php endif; ?>
+        <button class="gb-img-btn gb-logo-edit-btn" onclick="gbPickLogoImage(event)" title="Change logo"><?= $_imgBtnIcon ?></button>
+      </div>
       <?php endif; ?>
       <?php if ($_pubName): ?><span class="gb-banner-name"><?= h($_pubName) ?></span><?php endif; ?>
     </div>
@@ -680,8 +687,9 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 </div>
 
 <script>
-var SHEET_ID = <?= json_encode($_sheetId) ?>;
-var APP_ROOT = <?= json_encode($_appRoot) ?>;
+var SHEET_ID   = <?= json_encode($_sheetId) ?>;
+var APP_ROOT   = <?= json_encode($_appRoot) ?>;
+var IMG_BTN_ICON = <?= json_encode($_imgBtnIcon) ?>;
 
 // ── Auth state ──────────────────────────────────────────────────────────────
 var _gbUser = null;
@@ -916,6 +924,84 @@ function catUploadCardImage(file, wrap) {
     xhr2.send(fd2);
   };
   xhr.send(formData);
+}
+
+// ── Logo image upload ─────────────────────────────────────────────────────────
+function gbPickLogoImage(e) {
+  e.preventDefault(); e.stopPropagation();
+  if (!document.body.classList.contains('gb-admin-mode')) return;
+  var inp = document.getElementById('gbLogoFileInput');
+  if (!inp) {
+    inp = document.createElement('input');
+    inp.type = 'file'; inp.id = 'gbLogoFileInput'; inp.accept = 'image/*'; inp.style.display = 'none';
+    inp.addEventListener('change', function() {
+      if (inp.files && inp.files[0]) gbUploadLogo(inp.files[0]);
+      inp.value = '';
+    });
+    document.body.appendChild(inp);
+  }
+  inp.click();
+}
+function gbLogoDragOver(e) {
+  if (!document.body.classList.contains('gb-admin-mode')) return;
+  e.preventDefault(); e.stopPropagation();
+  var wrap = document.getElementById('gbLogoWrap');
+  if (wrap) wrap.classList.add('gb-drag-over');
+}
+function gbLogoDragLeave(e) {
+  var wrap = document.getElementById('gbLogoWrap');
+  if (wrap) wrap.classList.remove('gb-drag-over');
+}
+function gbLogoDrop(e) {
+  e.preventDefault(); e.stopPropagation();
+  var wrap = document.getElementById('gbLogoWrap');
+  if (wrap) wrap.classList.remove('gb-drag-over');
+  if (!document.body.classList.contains('gb-admin-mode')) return;
+  var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) gbUploadLogo(f);
+}
+function gbUploadLogo(file) {
+  var btn = document.querySelector('.gb-logo-edit-btn');
+  if (btn) { btn._orig = btn.innerHTML; btn.textContent = '⏳'; btn.disabled = true; }
+  var fd = new FormData();
+  fd.append('file', file); fd.append('id', SHEET_ID);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/uploadImage.php');
+  xhr.onload = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch(ex) { r = {error:'parse error'}; }
+    if (!r || r.error) {
+      alert('Upload failed: ' + (r && r.error || 'unknown'));
+      if (btn) { btn.innerHTML = btn._orig || IMG_BTN_ICON; btn.disabled = false; }
+      return;
+    }
+    // Save logo URL to settings
+    var fd2 = new FormData();
+    fd2.append('id', SHEET_ID); fd2.append('logo', r.url);
+    var xhr2 = new XMLHttpRequest();
+    xhr2.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
+    xhr2.onload = function() {
+      if (btn) { btn.innerHTML = btn._orig || IMG_BTN_ICON; btn.disabled = false; }
+      // Swap placeholder/image in DOM
+      var existing = document.getElementById('gbLogoImg');
+      if (existing && existing.tagName === 'IMG') {
+        existing.src = r.url;
+      } else if (existing) {
+        var img = document.createElement('img');
+        img.src = r.url; img.className = 'gb-logo-img'; img.id = 'gbLogoImg';
+        img.alt = document.title;
+        existing.parentNode.replaceChild(img, existing);
+      }
+    };
+    xhr2.onerror = function() {
+      if (btn) { btn.innerHTML = btn._orig || IMG_BTN_ICON; btn.disabled = false; }
+    };
+    xhr2.send(fd2);
+  };
+  xhr.onerror = function() {
+    if (btn) { btn.innerHTML = btn._orig || IMG_BTN_ICON; btn.disabled = false; }
+    alert('Upload failed — network error.');
+  };
+  xhr.send(fd);
 }
 
 // ── Carousel ─────────────────────────────────────────────────────────────────
@@ -1615,15 +1701,14 @@ body.gb-admin-mode .gb-ph-stat { display: flex; }
 .gb-ph-stat strong { opacity: .5; }
 .gb-ph-stat span { opacity: .35; font-style: italic; }
 /* Cover image button (top-left of hero) */
-.gb-cover-btn { position: absolute; top: .75rem; left: .75rem; z-index: 6; }
+.gb-cover-btn { position: absolute; top: .75rem; right: .75rem; z-index: 6; }
 body.gb-admin-mode .gb-hero.no-cover .gb-cover-btn { display: flex; }
 body.gb-admin-mode .gb-hero:not(.no-cover) .gb-cover-btn { display: none; }
 body.gb-admin-mode .gb-hero:not(.no-cover):hover .gb-cover-btn,
 body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
 /* Gallery upload zones */
 .gb-upload-zone {
-  cursor: pointer; transition: background .13s, border-color .13s, opacity .13s;
-  display: flex; align-items: center; justify-content: center;
+  position: relative; cursor: pointer; transition: background .13s, border-color .13s, opacity .13s;
   opacity: .35; border: 2px dashed rgba(59,59,170,.25);
 }
 .gb-upload-zone:hover,
@@ -1745,9 +1830,9 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
   <div class="gb-section gb-ph-section">
     <div class="gb-section-label">Gallery</div>
     <div class="gb-ph-gallery" id="gbPhGallery">
-      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image"><?= $_imgBtnIcon ?></div>
-      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image"><?= $_imgBtnIcon ?></div>
-      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image"><?= $_imgBtnIcon ?></div>
+      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image"><button class="gb-img-btn" style="position:absolute;top:.4rem;right:.4rem" onclick="event.stopPropagation();gbPickGalleryImage(this.closest('.gb-upload-zone'))" title="Add image"><?= $_imgBtnIcon ?></button></div>
+      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image"><button class="gb-img-btn" style="position:absolute;top:.4rem;right:.4rem" onclick="event.stopPropagation();gbPickGalleryImage(this.closest('.gb-upload-zone'))" title="Add image"><?= $_imgBtnIcon ?></button></div>
+      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image"><button class="gb-img-btn" style="position:absolute;top:.4rem;right:.4rem" onclick="event.stopPropagation();gbPickGalleryImage(this.closest('.gb-upload-zone'))" title="Add image"><?= $_imgBtnIcon ?></button></div>
     </div>
   </div>
   <?php endif; ?>
@@ -2324,7 +2409,10 @@ function gbSetGalleryImage(url, zoneEl) {
     if (gallery) {
       var div = document.createElement('div');
       div.className = 'gb-ph-thumb gb-upload-zone gb-uploaded';
-      div.innerHTML = '<img src="' + url + '" alt="gallery image">';
+      div.innerHTML = '<img src="' + url + '" alt="gallery image">'
+        + '<button class="gb-img-btn" style="position:absolute;top:.4rem;right:.4rem"'
+        + ' onclick="event.stopPropagation();gbPickGalleryImage(this.closest(\'.gb-upload-zone\'))"'
+        + ' title="Change image">' + IMG_BTN_ICON + '</button>';
       gallery.appendChild(div);
     }
   }

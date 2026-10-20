@@ -3332,6 +3332,10 @@ function gbAddReviewPair(list, quote, source, isLast) {
   setTimeout(function() { gbAutoResize(qta); gbAutoResize(sta); }, 0);
 }
 
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 function gbYtThumb(url) {
   var m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([A-Za-z0-9_\-]+)/);
   return m ? 'https://img.youtube.com/vi/' + m[1] + '/mqdefault.jpg' : '';

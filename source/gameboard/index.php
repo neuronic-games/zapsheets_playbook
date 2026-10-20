@@ -177,7 +177,7 @@ body.gb-admin-mode .cat-img-upload-btn { display:flex; }
 .gb-field-group label { display:block; font-size:.75rem; color:var(--muted); margin-bottom:.25rem; }
 .gb-field { display:block; width:100%; padding:.55rem .75rem; border:1.5px solid var(--border); border-radius:7px; font-family:'DINRegular',sans-serif; font-size:.9rem; color:var(--ink); outline:none; transition:border-color .14s; }
 .gb-field:focus { border-color:var(--accent); }
-.gb-err { font-size:.78rem; color:#e53935; min-height:1.1rem; margin:.3rem 0; }
+.gb-err, .gbed-err { font-size:.78rem; color:#e53935; min-height:1.1rem; margin:.3rem 0; }
 .gb-dialog-close { position:absolute; top:.75rem; right:.9rem; background:none; border:none; font-size:1.35rem; color:var(--ink-lt); cursor:pointer; line-height:1; }
 .gb-dialog { position:relative; }
 .gb-btn { font-family:'DINBlack',sans-serif; font-size:.75rem; text-transform:uppercase; letter-spacing:.07em; padding:.42rem 1rem; border-radius:6px; border:1.5px solid var(--border); background:var(--surface); color:var(--ink); cursor:pointer; }
@@ -355,62 +355,141 @@ body.gb-admin-mode .cat-img-upload-btn { display:flex; }
 </div>
 
 <!-- ── Add Game dialog ── -->
-<div class="gb-overlay" id="addGameOverlay" onclick="if(event.target===this)forceCloseAddGame()">
-  <div class="gb-dialog" onclick="event.stopPropagation()" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitAddGame();}">
-    <div class="gb-dialog-header">
-      <span class="gb-dialog-title">New Game</span>
-      <button class="gb-dialog-close" onclick="forceCloseAddGame()">✕</button>
+<div class="gbed-overlay" id="addGameOverlay" onclick="if(event.target===this)forceCloseAddGame()">
+  <div class="gbed-dialog" onclick="event.stopPropagation()" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitAddGame();}">
+    <div class="gbed-header">
+      <span class="gbed-title">New Game</span>
+      <button class="gbed-close" onclick="forceCloseAddGame()">✕</button>
     </div>
-    <div class="gb-dialog-body" style="max-height:70vh;overflow-y:auto;padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.55rem;">
-      <div class="gb-field-group">
-        <label>Game Name <span style="color:#c00">*</span></label>
-        <input class="gb-field" id="agName" type="text" placeholder="e.g. Lair" autofocus />
-      </div>
-      <div class="gb-field-group">
-        <label>Tagline</label>
-        <input class="gb-field" id="agTagline" type="text" placeholder="One-line description" />
-      </div>
-      <div style="display:flex;gap:.6rem;">
-        <div class="gb-field-group" style="flex:1">
-          <label>Status</label>
-          <select class="gb-field" id="agStatus">
-            <option value="Concept">Concept</option>
-            <option value="Developing">Developing</option>
-            <option value="Playtesting">Playtesting</option>
-            <option value="Pitching">Pitching</option>
-            <option value="Signed">Signed</option>
-            <option value="Published">Published</option>
-            <option value="Shelved">Shelved</option>
-          </select>
+    <div class="gbed-body">
+    <div class="gbed-scroll">
+      <div class="gbed-section">
+        <div class="gbed-section-title">Game Info</div>
+        <div class="gbed-field-group">
+          <label class="gbed-label">Game Name <span style="color:#c00">*</span></label>
+          <input class="gbed-field" id="agName" type="text" placeholder="e.g. Lair" />
         </div>
-        <div class="gb-field-group" style="flex:1">
-          <label>Player Count</label>
-          <input class="gb-field" id="agCount" type="text" placeholder="e.g. 2–4" />
+        <div class="gbed-field-group">
+          <label class="gbed-label">Tagline</label>
+          <input class="gbed-field" id="agTagline" type="text" placeholder="One-line description" />
         </div>
-        <div class="gb-field-group" style="flex:1">
-          <label>Play Time</label>
-          <input class="gb-field" id="agDuration" type="text" placeholder="e.g. 30–60 min" />
+        <div class="gbed-field-group">
+          <label class="gbed-label">Description</label>
+          <textarea class="gbed-field" id="agDescription" rows="3" style="resize:vertical"></textarea>
+        </div>
+        <div class="gbed-row">
+          <div class="gbed-field-group">
+            <label class="gbed-label">Status</label>
+            <select class="gbed-field" id="agStatus">
+              <option value="">—</option>
+              <option value="Concept">Concept</option>
+              <option value="Developing">Developing</option>
+              <option value="Playtesting">Playtesting</option>
+              <option value="Pitching">Pitching</option>
+              <option value="Signed">Signed</option>
+              <option value="Published">Published</option>
+              <option value="Shelved">Shelved</option>
+            </select>
+          </div>
+          <div class="gbed-field-group">
+            <label class="gbed-label">Availability</label>
+            <input class="gbed-field" id="agAvailability" type="text" placeholder="e.g. Kickstarter" />
+          </div>
+        </div>
+        <div class="gbed-row">
+          <div class="gbed-field-group">
+            <label class="gbed-label">Player Count</label>
+            <input class="gbed-field" id="agCount" type="text" placeholder="e.g. 2–4" />
+          </div>
+          <div class="gbed-field-group">
+            <label class="gbed-label">Play Time</label>
+            <input class="gbed-field" id="agDuration" type="text" placeholder="e.g. 30–60 min" />
+          </div>
+        </div>
+        <div class="gbed-row">
+          <div class="gbed-field-group">
+            <label class="gbed-label">Designer 1</label>
+            <input class="gbed-field" id="agDesigner1" type="text" />
+          </div>
+          <div class="gbed-field-group">
+            <label class="gbed-label">Designer 2</label>
+            <input class="gbed-field" id="agDesigner2" type="text" />
+          </div>
+        </div>
+        <div class="gbed-row">
+          <div class="gbed-field-group">
+            <label class="gbed-label">Designer 3</label>
+            <input class="gbed-field" id="agDesigner3" type="text" />
+          </div>
+          <div class="gbed-field-group">
+            <label class="gbed-label">Designer 4</label>
+            <input class="gbed-field" id="agDesigner4" type="text" />
+          </div>
         </div>
       </div>
-      <div style="display:flex;gap:.6rem;">
-        <div class="gb-field-group" style="flex:1">
-          <label>Designer 1</label>
-          <input class="gb-field" id="agDesigner1" type="text" />
+      <div class="gbed-section">
+        <div class="gbed-section-title">Dates</div>
+        <div class="gbed-row">
+          <div class="gbed-field-group">
+            <label class="gbed-label">Date Started</label>
+            <input class="gbed-field" id="agDateStarted" type="text" placeholder="e.g. Jan 2024" />
+          </div>
+          <div class="gbed-field-group">
+            <label class="gbed-label">Date Signed</label>
+            <input class="gbed-field" id="agDateSigned" type="text" placeholder="e.g. Mar 2024" />
+          </div>
         </div>
-        <div class="gb-field-group" style="flex:1">
-          <label>Designer 2</label>
-          <input class="gb-field" id="agDesigner2" type="text" />
+        <div class="gbed-field-group" style="max-width:50%;padding-right:.3rem">
+          <label class="gbed-label">Date Published</label>
+          <input class="gbed-field" id="agDatePublished" type="text" placeholder="e.g. Nov 2024" />
         </div>
       </div>
-      <div class="gb-field-group">
-        <label>Description</label>
-        <textarea class="gb-field" id="agDescription" rows="3" placeholder="Brief description of the game…" style="resize:vertical"></textarea>
+      <div class="gbed-section">
+        <div class="gbed-section-title">Images &amp; Media</div>
+        <div class="gbed-field-group">
+          <label class="gbed-label">Cover URL (background image)</label>
+          <input class="gbed-field" id="agCoverUrl" type="url" placeholder="https://…" />
+        </div>
+        <div class="gbed-field-group">
+          <label class="gbed-label">Image URL (product photo)</label>
+          <input class="gbed-field" id="agImageUrl" type="url" placeholder="https://…" />
+        </div>
+        <div class="gbed-field-group">
+          <label class="gbed-label">Video URL (YouTube)</label>
+          <input class="gbed-field" id="agVideoUrl" type="url" placeholder="https://youtube.com/watch?v=…" />
+        </div>
       </div>
-      <div class="gb-err" id="agErr"></div>
+      <div class="gbed-section">
+        <div class="gbed-section-title">Links</div>
+        <div class="gbed-field-group">
+          <label class="gbed-label">Page URL</label>
+          <input class="gbed-field" id="agPageUrl" type="url" placeholder="https://…" />
+        </div>
+        <div class="gbed-field-group">
+          <label class="gbed-label">Sellsheet URL</label>
+          <input class="gbed-field" id="agSellsheet" type="url" placeholder="https://…" />
+        </div>
+        <div class="gbed-field-group">
+          <label class="gbed-label">Rules URL</label>
+          <input class="gbed-field" id="agRulesUrl" type="url" placeholder="https://…" />
+        </div>
+        <div class="gbed-row">
+          <div class="gbed-field-group">
+            <label class="gbed-label">Play Online URL</label>
+            <input class="gbed-field" id="agPlayUrl" type="url" placeholder="https://…" />
+          </div>
+          <div class="gbed-field-group">
+            <label class="gbed-label">Print &amp; Play URL</label>
+            <input class="gbed-field" id="agPrintUrl" type="url" placeholder="https://…" />
+          </div>
+        </div>
+      </div>
+      <div class="gbed-err" id="agErr"></div>
     </div>
-    <div class="gb-dialog-actions">
-      <button class="btn-cancel" onclick="forceCloseAddGame()">Cancel</button>
-      <button class="btn-primary" id="agBtn" onclick="submitAddGame()">Create Game</button>
+    </div>
+    <div class="gbed-footer">
+      <button class="btn-adm btn-adm-secondary" style="color:var(--ink-lt);border-color:var(--border)" onclick="forceCloseAddGame()">Cancel</button>
+      <button class="btn-adm btn-adm-primary" style="background:var(--accent);color:#fff" id="agBtn" onclick="submitAddGame()">Create Game</button>
     </div>
   </div>
 </div>
@@ -751,36 +830,29 @@ document.addEventListener('keydown', function(e) {
 });
 
 // ── Add Game dialog ──────────────────────────────────────────────────────────
-var _agInitial = null;
+var _agFields = ['agName','agTagline','agDescription','agStatus','agAvailability',
+  'agCount','agDuration','agDesigner1','agDesigner2','agDesigner3','agDesigner4',
+  'agDateStarted','agDateSigned','agDatePublished',
+  'agCoverUrl','agImageUrl','agVideoUrl','agPageUrl','agSellsheet','agRulesUrl','agPlayUrl','agPrintUrl'];
 
 function openAddGame() {
-  document.getElementById('agName').value        = '';
-  document.getElementById('agTagline').value     = '';
-  document.getElementById('agStatus').value      = 'Concept';
-  document.getElementById('agCount').value       = '';
-  document.getElementById('agDuration').value    = '';
-  document.getElementById('agDesigner1').value   = '';
-  document.getElementById('agDesigner2').value   = '';
-  document.getElementById('agDescription').value = '';
-  document.getElementById('agErr').textContent   = '';
-  _agInitial = {};
+  _agFields.forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('agStatus').value = '';
+  document.getElementById('agErr').textContent = '';
   document.getElementById('addGameOverlay').classList.add('open');
   setTimeout(function(){ document.getElementById('agName').focus(); }, 60);
 }
 
 function forceCloseAddGame() {
   document.getElementById('addGameOverlay').classList.remove('open');
-  _agInitial = null;
 }
 
 function closeAddGame() {
-  var fields = ['agName','agTagline','agCount','agDuration','agDesigner1','agDesigner2','agDescription'];
-  var dirty = fields.some(function(id){ return document.getElementById(id).value.trim() !== ''; });
+  var dirty = _agFields.some(function(id){ return document.getElementById(id).value.trim() !== ''; });
   if (dirty) {
-    var d = document.getElementById('addGameOverlay').querySelector('.gb-dialog');
+    var d = document.getElementById('addGameOverlay').querySelector('.gbed-dialog');
     d.style.transition = 'transform .08s';
-    var seq = [6,-6,4,-4,2,0];
-    var i = 0;
+    var seq = [6,-6,4,-4,2,0], i = 0;
     (function step(){ d.style.transform = 'translateX('+seq[i]+'px)'; if(++i < seq.length) setTimeout(step,60); })();
     return;
   }
@@ -798,16 +870,33 @@ function submitAddGame() {
   btn.disabled = true; btn.textContent = 'Creating…';
   document.getElementById('agErr').textContent = '';
 
+  var g = function(id){ return document.getElementById(id).value.trim(); };
+  var imageRaw = g('agImageUrl');
+  var coverRaw = g('agCoverUrl');
   var fd = new FormData();
-  fd.append('id',          SHEET_ID);
-  fd.append('name',        name);
-  fd.append('tagline',     document.getElementById('agTagline').value.trim());
-  fd.append('status',      document.getElementById('agStatus').value);
-  fd.append('count',       document.getElementById('agCount').value.trim());
-  fd.append('duration',    document.getElementById('agDuration').value.trim());
-  fd.append('designer1',   document.getElementById('agDesigner1').value.trim());
-  fd.append('designer2',   document.getElementById('agDesigner2').value.trim());
-  fd.append('description', document.getElementById('agDescription').value.trim());
+  fd.append('id',             SHEET_ID);
+  fd.append('name',           name);
+  fd.append('tagline',        g('agTagline'));
+  fd.append('description',    g('agDescription'));
+  fd.append('status',         g('agStatus'));
+  fd.append('availability',   g('agAvailability'));
+  fd.append('count',          g('agCount'));
+  fd.append('duration',       g('agDuration'));
+  fd.append('designer1',      g('agDesigner1'));
+  fd.append('designer2',      g('agDesigner2'));
+  fd.append('designer3',      g('agDesigner3'));
+  fd.append('designer4',      g('agDesigner4'));
+  fd.append('date_started',   g('agDateStarted'));
+  fd.append('date_signed',    g('agDateSigned'));
+  fd.append('date_published', g('agDatePublished'));
+  fd.append('cover_url',      coverRaw);
+  fd.append('image',          imageRaw ? '=IMAGE("' + imageRaw + '")' : '');
+  fd.append('video',          g('agVideoUrl'));
+  fd.append('view',           g('agPageUrl'));
+  fd.append('sellsheet',      g('agSellsheet'));
+  fd.append('rules',          g('agRulesUrl'));
+  fd.append('play',           g('agPlayUrl'));
+  fd.append('print',          g('agPrintUrl'));
 
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_ROOT + 'push/addGame.php');

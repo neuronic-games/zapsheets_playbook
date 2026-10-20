@@ -1,7 +1,9 @@
 # gaddgame.py — append a new row to the Games sheet.
 #
 # Arg:  "{sheet_id}|{base64_encoded_json}"
-# JSON: { name, tagline, status, count, duration, designer1, designer2, description }
+# JSON: { name, tagline, description, status, availability, count, duration,
+#         designer1-4, dateStarted, dateSigned, datePublished,
+#         cover, image, video, view, sellsheet, rules, play, print }
 # Returns: {"ok": true, "row": N} or {"error": "..."}
 
 import gspread
@@ -29,14 +31,30 @@ pipe_idx = arg.index('|')
 sheet_id = arg[:pipe_idx]
 data     = json.loads(base64.b64decode(arg[pipe_idx + 1:]).decode('utf-8'))
 
-name        = data.get('name',        '').strip()
-tagline     = data.get('tagline',     '').strip()
-status      = data.get('status',      'Concept').strip()
-count       = data.get('count',       '').strip()
-duration    = data.get('duration',    '').strip()
-designer1   = data.get('designer1',   '').strip()
-designer2   = data.get('designer2',   '').strip()
-description = data.get('description', '').strip()
+def gv(key): return (data.get(key) or '').strip()
+
+name           = gv('name')
+tagline        = gv('tagline')
+description    = gv('description')
+status         = gv('status')
+availability   = gv('availability')
+count          = gv('count')
+duration       = gv('duration')
+designer1      = gv('designer1')
+designer2      = gv('designer2')
+designer3      = gv('designer3')
+designer4      = gv('designer4')
+date_started   = gv('dateStarted')
+date_signed    = gv('dateSigned')
+date_published = gv('datePublished')
+cover          = gv('cover')    # already =IMAGE("url") or ''
+image          = gv('image')    # already =IMAGE("url") or ''
+video          = gv('video')
+view           = gv('view')
+sellsheet      = gv('sellsheet')
+rules          = gv('rules')
+play           = gv('play')
+print_url      = gv('print')
 
 if not name:
     print(json.dumps({"error": "name is required"}))
@@ -48,13 +66,11 @@ except Exception as e:
     print(json.dumps({"error": "Could not open spreadsheet: " + str(e)}))
     sys.exit(1)
 
-# Find the Games worksheet
 ws = next((w for w in wb.worksheets() if w.title.lower() == 'games'), None)
 if ws is None:
     print(json.dumps({"error": "Games worksheet not found"}))
     sys.exit(1)
 
-# Read headers from row 1
 try:
     headers = ws.row_values(1)
 except Exception as e:
@@ -65,46 +81,77 @@ if not headers:
     print(json.dumps({"error": "Games sheet has no headers"}))
     sys.exit(1)
 
-# Check for duplicate name
+# Duplicate name check
 try:
-    col_idx = next((i for i, h in enumerate(headers) if h.strip() == 'Name'), -1)
-    if col_idx >= 0:
-        col_letter = gspread.utils.rowcol_to_a1(1, col_idx + 1)[0]
-        existing_names = ws.col_values(col_idx + 1)[1:]  # skip header
-        for n in existing_names:
+    name_col_idx = next((i for i, h in enumerate(headers) if h.strip() == 'Name'), -1)
+    if name_col_idx >= 0:
+        existing = ws.col_values(name_col_idx + 1)[1:]
+        for n in existing:
             if n.strip().lower() == name.lower():
                 print(json.dumps({"error": "A game named '" + name + "' already exists."}))
                 sys.exit(1)
 except Exception:
-    pass  # skip duplicate check on error
+    pass
 
 def safe_str(v):
+    """Prefix with ' to prevent formula interpretation, except =IMAGE() which passes through."""
     s = str(v).strip() if v else ''
     if not s: return ''
     if s.upper().startswith('=IMAGE('): return s
     return "'" + s
 
-# Build field map: header → value
+# Map header variants → value
 field_map = {
-    'Name':        name,
-    'Summary':     tagline,
-    'Tagline':     tagline,
-    'Tag Line':    tagline,
-    'Status':      status,
-    'Count':       count,
-    'Duration':    duration,
-    'Designer1':   designer1,
-    'Designer 1':  designer1,
-    'Designer2':   designer2,
-    'Designer 2':  designer2,
-    'Description': description,
+    'Name':            name,
+    'Summary':         tagline,
+    'Tagline':         tagline,
+    'Tag Line':        tagline,
+    'Description':     description,
+    'Status':          status,
+    'Availability':    availability,
+    'Count':           count,
+    'Duration':        duration,
+    'Designer1':       designer1,
+    'Designer 1':      designer1,
+    'Designer2':       designer2,
+    'Designer 2':      designer2,
+    'Designer3':       designer3,
+    'Designer 3':      designer3,
+    'Designer4':       designer4,
+    'Designer 4':      designer4,
+    'Date Started':    date_started,
+    'DateStarted':     date_started,
+    'Start Date':      date_started,
+    'Date Signed':     date_signed,
+    'DateSigned':      date_signed,
+    'Date Published':  date_published,
+    'DatePublished':   date_published,
+    'Cover URL':       cover,
+    'CoverURL':        cover,
+    'Image URL':       image,
+    'ImageURL':        image,
+    'Image':           image,
+    'Video URL':       video,
+    'VideoURL':        video,
+    'Video':           video,
+    'Page URL':        view,
+    'BGG / View URL':  view,
+    'View URL':        view,
+    'View':            view,
+    'BGG':             view,
+    'Sellsheet URL':   sellsheet,
+    'Sellsheet':       sellsheet,
+    'Rules URL':       rules,
+    'Rules':           rules,
+    'Play URL':        play,
+    'Play':            play,
+    'Print URL':       print_url,
+    'Print':           print_url,
 }
 
-# Build the new row aligned to headers
 new_row = []
 for h in headers:
-    h_stripped = h.strip()
-    val = field_map.get(h_stripped, '')
+    val = field_map.get(h.strip(), '')
     new_row.append(safe_str(val) if val else '')
 
 try:
@@ -113,5 +160,4 @@ except Exception as e:
     print(json.dumps({"error": "Could not append row: " + str(e)}))
     sys.exit(1)
 
-new_row_num = len(ws.col_values(1))  # approximate
-print(json.dumps({"ok": True, "row": new_row_num, "name": name}))
+print(json.dumps({"ok": True, "name": name}))

@@ -6,29 +6,41 @@ header('Content-Type: application/json');
 require __DIR__ . '/../dotEnv.php';
 require_once __DIR__ . '/refreshJson.php';
 
-$sheetId     = trim($_POST['id']          ?? '');
-$name        = trim($_POST['name']        ?? '');
-$tagline     = trim($_POST['tagline']     ?? '');
-$status      = trim($_POST['status']      ?? 'Concept');
-$count       = trim($_POST['count']       ?? '');
-$duration    = trim($_POST['duration']    ?? '');
-$designer1   = trim($_POST['designer1']   ?? '');
-$designer2   = trim($_POST['designer2']   ?? '');
-$description = trim($_POST['description'] ?? '');
+$sheetId       = trim($_POST['id']             ?? '');
+$name          = trim($_POST['name']           ?? '');
+$tagline       = trim($_POST['tagline']        ?? '');
+$description   = trim($_POST['description']    ?? '');
+$status        = trim($_POST['status']         ?? '');
+$availability  = trim($_POST['availability']   ?? '');
+$count         = trim($_POST['count']          ?? '');
+$duration      = trim($_POST['duration']       ?? '');
+$designer1     = trim($_POST['designer1']      ?? '');
+$designer2     = trim($_POST['designer2']      ?? '');
+$designer3     = trim($_POST['designer3']      ?? '');
+$designer4     = trim($_POST['designer4']      ?? '');
+$dateStarted   = trim($_POST['date_started']   ?? '');
+$dateSigned    = trim($_POST['date_signed']    ?? '');
+$datePublished = trim($_POST['date_published'] ?? '');
+$coverRaw      = trim($_POST['cover_url']      ?? '');
+$cover         = $coverRaw ? '=IMAGE("' . $coverRaw . '")' : '';
+$imageRaw      = trim($_POST['image']          ?? '');   // already wrapped by JS or empty
+$image         = $imageRaw;
+$video         = trim($_POST['video']          ?? '');
+$view          = trim($_POST['view']           ?? '');
+$sellsheet     = trim($_POST['sellsheet']      ?? '');
+$rules         = trim($_POST['rules']          ?? '');
+$play          = trim($_POST['play']           ?? '');
+$print         = trim($_POST['print']          ?? '');
 
 if (!$sheetId) { echo json_encode(['error' => 'Missing sheet ID']); exit; }
 if (!$name)    { echo json_encode(['error' => 'Game name is required']); exit; }
 
-$data = [
-    'name'        => $name,
-    'tagline'     => $tagline,
-    'status'      => $status,
-    'count'       => $count,
-    'duration'    => $duration,
-    'designer1'   => $designer1,
-    'designer2'   => $designer2,
-    'description' => $description,
-];
+$data = compact(
+    'name','tagline','description','status','availability',
+    'count','duration','designer1','designer2','designer3','designer4',
+    'dateStarted','dateSigned','datePublished',
+    'cover','image','video','view','sellsheet','rules','play','print'
+);
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 $encoded    = base64_encode(json_encode($data, JSON_UNESCAPED_UNICODE));

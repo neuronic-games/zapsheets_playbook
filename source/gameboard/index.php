@@ -951,6 +951,18 @@ body:not(.gb-admin-mode) .gb-sect-empty { display:none; }
 .gb-inline-hint { display:none; font-size:.73rem; color:var(--muted); margin:.3rem 0 0; font-style:italic; }
 body.gb-admin-mode .gb-inline-hint { display:block; }
 
+/* ── FAQ editor (dynamic Q+A pairs) ── */
+.gb-faq-editor { display:none; flex-direction:column; gap:.6rem; min-height:0; padding:0; border:none; background:none; resize:none; }
+body.gb-admin-mode .gb-faq-editor { display:flex; }
+.gb-faq-pair { border:1.5px dashed var(--border); border-radius:8px; overflow:hidden; }
+.gb-faq-pair textarea {
+  display:block; width:100%; box-sizing:border-box; border:none; outline:none;
+  font-family:inherit; font-size:.88rem; line-height:1.6; resize:none; overflow:hidden;
+  background:var(--surface); color:var(--ink); padding:.55rem .8rem;
+}
+.gb-faq-pair textarea.faq-q { font-weight:700; border-bottom:1px solid var(--border); }
+.gb-faq-pair textarea.faq-a { color:var(--ink-lt); }
+
 /* ── Components ── */
 .gb-components { display:grid; grid-template-columns:repeat(auto-fill, minmax(195px,1fr)); gap:.5rem; }
 .gb-comp-item {
@@ -1365,9 +1377,7 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
   <!-- FAQs -->
   <div class="gb-section<?= empty($_faqs) ? ' gb-sect-empty' : '' ?>">
     <div class="gb-section-label">FAQ</div>
-    <textarea class="gb-inline-edit" id="gbFaqsEdit"
-      placeholder="One Q&amp;A per line, question and answer separated by |:&#10;How many players? | 2–5&#10;How long does it play? | About 45 minutes"></textarea>
-    <p class="gb-inline-hint">One Q&amp;A per line, separated by " | " (e.g. "How many players? | 2–5")</p>
+    <div class="gb-faq-editor gb-inline-edit" id="gbFaqsList"></div>
     <?php foreach ($_faqs as $fi => $fq):
       $fqQ = trim($fq['Value']   ?? '');
       $fqA = trim($fq['Value 1'] ?? '');
@@ -1732,12 +1742,69 @@ function gbInitInlineEdits() {
       .map(function(r){ return r.attr + (r.quote ? ' | ' + r.quote : ''); }).join('\n');
     revEl.oninput = function() { _ed.reviews = gbParseReviews(this.value); };
   }
-  var faqEl = document.getElementById('gbFaqsEdit');
-  if (faqEl) {
-    faqEl.value = (_ed.faqs || []).filter(function(f){return f.q||f.a;})
-      .map(function(f){ return f.q + (f.a ? ' | ' + f.a : ''); }).join('\n');
-    faqEl.oninput = function() { _ed.faqs = gbParseFaqs(this.value); };
+  gbBuildFaqEditor(_ed.faqs || []);
+}
+
+function gbAutoResize(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+}
+
+function gbBuildFaqEditor(faqs) {
+  var list = document.getElementById('gbFaqsList');
+  if (!list) return;
+  list.innerHTML = '';
+  var pairs = faqs.filter(function(f){ return f.q || f.a; });
+  // Always ensure at least one empty pair at end
+  pairs.push({q:'', a:''});
+  pairs.forEach(function(f, idx) { gbAddFaqPair(list, f.q, f.a, idx === pairs.length - 1); });
+}
+
+function gbAddFaqPair(list, q, a, isLast) {
+  var pair = document.createElement('div');
+  pair.className = 'gb-faq-pair';
+
+  var qta = document.createElement('textarea');
+  qta.className = 'faq-q';
+  qta.placeholder = 'Question';
+  qta.rows = 1;
+  qta.value = q || '';
+
+  var ata = document.createElement('textarea');
+  ata.className = 'faq-a';
+  ata.placeholder = 'Answer';
+  ata.rows = 2;
+  ata.value = a || '';
+
+  function syncFaqs() {
+    _ed.faqs = Array.prototype.slice.call(
+      document.querySelectorAll('#gbFaqsList .gb-faq-pair')
+    ).map(function(p) {
+      return {
+        q: p.querySelector('.faq-q').value.trim(),
+        a: p.querySelector('.faq-a').value.trim()
+      };
+    }).filter(function(f){ return f.q || f.a; });
   }
+
+  function maybeAddPair() {
+    // Add a new blank pair if this is the last one and has any content
+    var pairs = document.querySelectorAll('#gbFaqsList .gb-faq-pair');
+    var last  = pairs[pairs.length - 1];
+    if (pair === last && (qta.value.trim() || ata.value.trim())) {
+      gbAddFaqPair(list, '', '', true);
+    }
+  }
+
+  qta.oninput = function() { gbAutoResize(this); syncFaqs(); maybeAddPair(); };
+  ata.oninput = function() { gbAutoResize(this); syncFaqs(); maybeAddPair(); };
+
+  pair.appendChild(qta);
+  pair.appendChild(ata);
+  list.appendChild(pair);
+
+  // Size to content after render
+  setTimeout(function() { gbAutoResize(qta); gbAutoResize(ata); }, 0);
 }
 
 // ── Save game ────────────────────────────────────────────────────────────────

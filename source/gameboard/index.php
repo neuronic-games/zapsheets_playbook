@@ -858,16 +858,9 @@ function gbMenuAction(action) {
     xhr.onload = function() {
       btn.style.opacity = '';
       var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
-      if (r && !r.ok && r.refresh_errors) {
-        var msgs = Object.entries(r.refresh_errors).map(function(e){ return e[0]+': '+e[1]; }).join('\n');
-        alert('Fetch error — could not read sheet data:\n' + msgs);
-      } else if (r && r.error) {
-        alert('Fetch error: ' + r.error);
-      } else {
-        location.reload();
-      }
+      showFetchLog(r || {error: 'No response from server'});
     };
-    xhr.onerror = function() { btn.style.opacity = ''; alert('Fetch failed — network error.'); };
+    xhr.onerror = function() { btn.style.opacity = ''; showFetchLog({error: 'Network error'}); };
     xhr.send(fd);
   } else if (action === 'publish') {
     if (!_gbUser) { openSignIn(); return; }
@@ -1411,6 +1404,38 @@ function submitAddGame() {
   xhr.send(fd);
 }
 
+// ── Fetch log dialog ─────────────────────────────────────────────────────────
+function showFetchLog(r) {
+  var dlg = document.getElementById('fetchLogOverlay');
+  var body = document.getElementById('fetchLogBody');
+  var lines = [];
+  if (r && r.ok) {
+    lines.push('<div class="fetch-log-ok">✓ Fetch complete</div>');
+  } else if (r && r.error) {
+    lines.push('<div class="fetch-log-err">✗ ' + r.error + '</div>');
+  } else {
+    lines.push('<div class="fetch-log-err">✗ Unexpected response</div>');
+  }
+  if (r && r.tabs) {
+    Object.keys(r.tabs).forEach(function(t) {
+      lines.push('<div class="fetch-log-row"><span class="fetch-log-tab">' + t + '</span><span class="fetch-log-status fetch-log-status-' + r.tabs[t] + '">' + r.tabs[t] + '</span></div>');
+    });
+  }
+  if (r && r.json_refreshed && r.json_refreshed.length) {
+    lines.push('<div class="fetch-log-section">Refreshed</div>');
+    r.json_refreshed.forEach(function(t) { lines.push('<div class="fetch-log-row">· ' + t + '</div>'); });
+  }
+  if (r && r.refresh_errors) {
+    lines.push('<div class="fetch-log-section fetch-log-err">Errors</div>');
+    Object.keys(r.refresh_errors).forEach(function(t) {
+      lines.push('<div class="fetch-log-row fetch-log-err">✗ ' + t + ': ' + r.refresh_errors[t] + '</div>');
+    });
+  }
+  body.innerHTML = lines.join('');
+  dlg.classList.add('open');
+}
+function closeFetchLog() { document.getElementById('fetchLogOverlay').classList.remove('open'); }
+
 // ── Strip HTML on paste — always insert plain text ────────────────────────────
 document.addEventListener('paste', function(e) {
   var el = e.target;
@@ -1428,6 +1453,24 @@ document.addEventListener('paste', function(e) {
   }
 }, true);
 </script>
+
+<!-- ── Fetch Log dialog ── -->
+<div class="gbed-overlay" id="fetchLogOverlay" onclick="if(event.target===this)closeFetchLog()">
+  <div class="gbed-dialog fetch-log-dialog" onclick="event.stopPropagation()" style="max-width:480px">
+    <div class="gbed-header">
+      <span class="gbed-title">Fetch Log</span>
+      <button class="gbed-close" onclick="closeFetchLog()">✕</button>
+    </div>
+    <div class="gbed-body" style="padding:1.2rem 1.4rem">
+      <div id="fetchLogBody" style="font-size:.85rem;line-height:1.7;font-family:monospace"></div>
+    </div>
+    <div class="gbed-footer">
+      <button class="btn-adm btn-adm-primary" onclick="closeFetchLog();location.reload()">Reload Page</button>
+      <button class="btn-adm btn-adm-secondary" onclick="closeFetchLog()">Close</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
 <?php
@@ -2673,9 +2716,9 @@ function gbMenuAction(action) {
     xhr.onload = function() {
       if (btn) btn.style.opacity = '';
       var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
-      alert(r && r.ok ? 'Fetch complete — reload to see changes.' : 'Fetch failed: ' + (r && r.error || 'unknown'));
+      showFetchLog(r || {error: 'No response from server'});
     };
-    xhr.onerror = function() { if (btn) btn.style.opacity = ''; alert('Fetch failed — network error.'); };
+    xhr.onerror = function() { if (btn) btn.style.opacity = ''; showFetchLog({error: 'Network error'}); };
     xhr.send(fd);
   } else if (action === 'publish') {
     if (!_gbUser) { openSignIn(); return; }
@@ -3403,6 +3446,7 @@ function toggleFaq(id) {
 document.addEventListener('keydown', function(e){
   if (e.key === 'Escape') {
     closeGbMenu();
+    if (document.getElementById('fetchLogOverlay').classList.contains('open'))  { closeFetchLog(); return; }
     if (document.getElementById('settingsOverlay').classList.contains('open')) { forceCloseSettings(); return; }
     if (document.getElementById('signInOverlay').classList.contains('open'))   { forceCloseSignIn(); return; }
     if (document.getElementById('gbPublishOverlay').classList.contains('open')){ closePublishDialog(); return; }
@@ -3410,6 +3454,38 @@ document.addEventListener('keydown', function(e){
     closeLightbox();
   }
 });
+
+// ── Fetch log dialog ─────────────────────────────────────────────────────────
+function showFetchLog(r) {
+  var dlg = document.getElementById('fetchLogOverlay');
+  var body = document.getElementById('fetchLogBody');
+  var lines = [];
+  if (r && r.ok) {
+    lines.push('<div class="fetch-log-ok">✓ Fetch complete</div>');
+  } else if (r && r.error) {
+    lines.push('<div class="fetch-log-err">✗ ' + r.error + '</div>');
+  } else {
+    lines.push('<div class="fetch-log-err">✗ Unexpected response</div>');
+  }
+  if (r && r.tabs) {
+    Object.keys(r.tabs).forEach(function(t) {
+      lines.push('<div class="fetch-log-row"><span class="fetch-log-tab">' + t + '</span><span class="fetch-log-status fetch-log-status-' + r.tabs[t] + '">' + r.tabs[t] + '</span></div>');
+    });
+  }
+  if (r && r.json_refreshed && r.json_refreshed.length) {
+    lines.push('<div class="fetch-log-section">Refreshed</div>');
+    r.json_refreshed.forEach(function(t) { lines.push('<div class="fetch-log-row">· ' + t + '</div>'); });
+  }
+  if (r && r.refresh_errors) {
+    lines.push('<div class="fetch-log-section fetch-log-err">Errors</div>');
+    Object.keys(r.refresh_errors).forEach(function(t) {
+      lines.push('<div class="fetch-log-row fetch-log-err">✗ ' + t + ': ' + r.refresh_errors[t] + '</div>');
+    });
+  }
+  body.innerHTML = lines.join('');
+  dlg.classList.add('open');
+}
+function closeFetchLog() { document.getElementById('fetchLogOverlay').classList.remove('open'); }
 
 // ── Strip HTML on paste — always insert plain text ────────────────────────────
 document.addEventListener('paste', function(e) {
@@ -3428,5 +3504,34 @@ document.addEventListener('paste', function(e) {
   }
 }, true);
 </script>
+
+<!-- ── Fetch Log dialog ── -->
+<div class="gbed-overlay" id="fetchLogOverlay" onclick="if(event.target===this)closeFetchLog()">
+  <div class="gbed-dialog" onclick="event.stopPropagation()" style="max-width:480px">
+    <div class="gbed-header">
+      <span class="gbed-title">Fetch Log</span>
+      <button class="gbed-close" onclick="closeFetchLog()">✕</button>
+    </div>
+    <div class="gbed-body" style="padding:1.2rem 1.4rem">
+      <div id="fetchLogBody" style="font-size:.85rem;line-height:1.7;font-family:monospace"></div>
+    </div>
+    <div class="gbed-footer">
+      <button class="btn-adm btn-adm-primary" onclick="closeFetchLog();location.reload()">Reload Page</button>
+      <button class="btn-adm btn-adm-secondary" onclick="closeFetchLog()">Close</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.fetch-log-ok      { color:#2a7a4b; font-weight:600; margin-bottom:.5rem; }
+.fetch-log-err     { color:#c00; }
+.fetch-log-section { color:#888; font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; margin:.8rem 0 .2rem; }
+.fetch-log-row     { display:flex; justify-content:space-between; gap:1rem; padding:.1rem 0; color:#444; }
+.fetch-log-tab     { color:#222; }
+.fetch-log-status-ok      { color:#2a7a4b; }
+.fetch-log-status-created { color:#1a6fa8; }
+.fetch-log-status-error   { color:#c00; }
+</style>
+
 </body>
 </html>

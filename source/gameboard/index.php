@@ -194,6 +194,31 @@ body.gb-admin-mode .cat-img-upload-btn { display:flex; }
 
 @media(max-width:520px) { .cat-grid { grid-template-columns:1fr 1fr; } }
 @media(max-width:360px) { .cat-grid { grid-column:1; } }
+
+/* ── Shared gbed dialog styles (also used by Add Game) ── */
+.gbed-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:600; align-items:flex-start; justify-content:center; padding:2rem 1rem; overflow-y:auto; }
+.gbed-overlay.open { display:flex; }
+.gbed-dialog { background:#fff; border-radius:14px; width:100%; max-width:520px; box-shadow:0 12px 50px rgba(0,0,0,.32); overflow:hidden; margin:auto; }
+.gbed-header { background:var(--nav-bg); color:#fff; padding:1rem 1.25rem; display:flex; align-items:center; justify-content:space-between; }
+.gbed-title { font-family:'DINBlack',sans-serif; font-size:.9rem; text-transform:uppercase; letter-spacing:.07em; }
+.gbed-close { background:none; border:none; color:rgba(255,255,255,.6); font-size:1.2rem; cursor:pointer; padding:0 .25rem; line-height:1; }
+.gbed-close:hover { color:#fff; }
+.gbed-body { overflow:hidden; }
+.gbed-scroll { padding:1.25rem 1.5rem 1.5rem; max-height:calc(80vh - 120px); overflow-y:auto; }
+.gbed-section { margin-bottom:1.1rem; }
+.gbed-section-title { font-family:'DINBlack',sans-serif; font-size:.65rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); border-bottom:1px solid var(--border); padding-bottom:.35rem; margin-bottom:.65rem; }
+.gbed-row { display:flex; gap:.6rem; margin-bottom:.55rem; }
+.gbed-row > * { flex:1; min-width:0; }
+.gbed-field-group { margin-bottom:.55rem; }
+.gbed-label { display:block; font-size:.73rem; color:var(--muted); margin-bottom:.2rem; }
+.gbed-field { display:block; width:100%; padding:.45rem .7rem; border:1.5px solid var(--border); border-radius:6px; font-family:'DINRegular',Arial,sans-serif; font-size:.87rem; color:var(--ink); outline:none; transition:border-color .14s; }
+.gbed-field:focus { border-color:var(--accent); }
+.gbed-footer { padding:.9rem 1.5rem; background:#f8f8fc; border-top:1px solid var(--border); display:flex; gap:.5rem; justify-content:flex-end; }
+.btn-adm { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; padding:.38rem .9rem; border-radius:6px; cursor:pointer; border:1.5px solid transparent; white-space:nowrap; transition:opacity .13s; }
+.btn-adm-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+.btn-adm-primary:hover { opacity:.88; }
+.btn-adm-secondary { background:transparent; color:var(--ink-lt); border-color:var(--border); }
+.btn-adm-secondary:hover { background:#f0f0f8; }
 </style>
 </head>
 <body>

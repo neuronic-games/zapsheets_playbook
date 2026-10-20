@@ -184,19 +184,19 @@ if ($result !== null && !empty($result['ok'])) {
     }
 
     // Update Component / Review / FAQ rows in the [GameName] tab
-    $componentsRaw    = trim($_POST['components']    ?? '');
-    $reviewsRaw       = trim($_POST['reviews']       ?? '');
-    $videoReviewsRaw  = trim($_POST['video_reviews'] ?? '');
-    $faqsRaw          = trim($_POST['faqs']          ?? '');
-    $artistsRaw       = trim($_POST['artists']       ?? '');
-    if ($componentsRaw !== '' || $reviewsRaw !== '' || $videoReviewsRaw !== '' || $faqsRaw !== '' || $artistsRaw !== '') {
+    $componentsRaw = trim($_POST['components'] ?? '');
+    $reviewsRaw    = trim($_POST['reviews']    ?? '');
+    $videosRaw     = trim($_POST['videos']     ?? '');
+    $faqsRaw       = trim($_POST['faqs']       ?? '');
+    $artistsRaw    = trim($_POST['artists']    ?? '');
+    if ($componentsRaw !== '' || $reviewsRaw !== '' || $videosRaw !== '' || $faqsRaw !== '' || $artistsRaw !== '') {
         $tabContent = [
-            'game'          => $tabGameName,
-            'components'    => $componentsRaw   ? (json_decode($componentsRaw,   true) ?: []) : [],
-            'reviews'       => $reviewsRaw      ? (json_decode($reviewsRaw,      true) ?: []) : [],
-            'video_reviews' => $videoReviewsRaw ? (json_decode($videoReviewsRaw, true) ?: []) : [],
-            'faqs'          => $faqsRaw         ? (json_decode($faqsRaw,         true) ?: []) : [],
-            'artists'       => $artistsRaw      ? (json_decode($artistsRaw,      true) ?: []) : [],
+            'game'       => $tabGameName,
+            'components' => $componentsRaw ? (json_decode($componentsRaw, true) ?: []) : [],
+            'reviews'    => $reviewsRaw    ? (json_decode($reviewsRaw,    true) ?: []) : [],
+            'videos'     => $videosRaw     ? (json_decode($videosRaw,     true) ?: []) : [],
+            'faqs'       => $faqsRaw       ? (json_decode($faqsRaw,       true) ?: []) : [],
+            'artists'    => $artistsRaw    ? (json_decode($artistsRaw,    true) ?: []) : [],
         ];
         $tabContentEncoded = base64_encode(json_encode($tabContent, JSON_UNESCAPED_UNICODE));
         $tabContentCmd = escapeshellarg($pythonPath) . ' '

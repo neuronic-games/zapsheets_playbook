@@ -1578,8 +1578,9 @@ $_components  = array_values(array_filter(_gb_rows($_rich, 'Component'), fn($r) 
 $_reviews     = array_values(array_filter(_gb_rows($_rich, 'Review'),    fn($r) => trim($r['Value'] ?? '') !== ''));
 $_faqs        = array_values(array_filter(_gb_rows($_rich, 'FAQ'),       fn($r) => trim($r['Value'] ?? '') !== ''));
 $_buyUrls     = _gb_rows($_rich, 'BuyUrl');
-$_richVideos    = _gb_rows($_rich, 'Video');
-$_videoReviews  = array_values(array_filter(_gb_rows($_rich, 'VideoReview'), fn($r) => trim($r['Value'] ?? '') !== ''));
+// Video rows in [GameName] tab = video reviews (col B = URL, col C = name/label)
+// Main video comes from Games sheet Video column only ($videoUrl below)
+$_videoReviews = array_values(array_filter(_gb_rows($_rich, 'Video'), fn($r) => trim($r['Value'] ?? '') !== ''));
 $_mediaImgs   = array_merge(_gb_rows($_rich, 'Media'), _gb_rows($_rich, 'ProductImage'));
 $_richPrice   = _gb_val($_rich, 'Price');
 $_richRules   = _gb_val($_rich, 'Rules PDF Url') ?: $_rulesUrl;
@@ -1620,27 +1621,14 @@ foreach ($_mediaImgs as $r) {
 
 $_heroImg = $_gallery[0] ?? '';
 
-// Primary video embed: first rich Video with embeddable URL, else games.json Video URL
-$_videoEmbed = '';
-foreach ($_richVideos as $rv) {
-    // URL is in col B (Value); Value 1 / Value 2 are extras — use ?: not ?? to skip empty strings
-    $e = _gb_embed(trim($rv['Value'] ?: ($rv['Value 1'] ?? '')));
-    if ($e) { $_videoEmbed = $e; break; }
-}
-if (!$_videoEmbed) $_videoEmbed = _gb_embed($_videoUrl);
+// Main video: Games sheet Video column only
+$_videoEmbed = _gb_embed($_videoUrl);
 
 // Direct (non-embeddable) video file URL — mp4/webm/ogg/mov uploads
 $_videoDirect = '';
 if (!$_videoEmbed && $_videoUrl) {
     $ext = strtolower(pathinfo(parse_url($_videoUrl, PHP_URL_PATH), PATHINFO_EXTENSION));
     if (in_array($ext, ['mp4','webm','ogg','mov'], true)) $_videoDirect = $_videoUrl;
-}
-
-// Additional video list (all rich videos that are embeddable)
-$_videoList = [];
-foreach ($_richVideos as $rv) {
-    $e = _gb_embed(trim($rv['Value 1'] ?? $rv['Value'] ?? ''));
-    if ($e) $_videoList[] = ['label' => trim($rv['Value'] ?? ''), 'embed' => $e];
 }
 
 // Other Published games for "More Games" section
@@ -1862,6 +1850,25 @@ body.gb-admin-mode .gb-faq-editor { display:flex; }
 .gb-vreview-wrap iframe { position:absolute; inset:0; width:100%; height:100%; border:none; }
 .gb-vreview-wrap video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#000; }
 .gb-vreview-label { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); padding:.5rem .75rem .6rem; }
+/* ── Video Review tile editor (admin) ── */
+.gb-vrev-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:.75rem; }
+.gb-vrev-tile { position:relative; border-radius:8px; overflow:hidden; aspect-ratio:16/9; cursor:pointer; background:#111; box-shadow:0 2px 8px rgba(0,0,0,.18); }
+.gb-vrev-tile img { width:100%; height:100%; object-fit:cover; display:block; }
+.gb-vrev-tile-label { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,.6); color:#fff; font-family:'DINBlack',sans-serif; font-size:.6rem; text-transform:uppercase; letter-spacing:.06em; padding:.3rem .4rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.gb-vrev-tile-del { position:absolute; top:.25rem; right:.25rem; background:rgba(0,0,0,.55); color:#fff; border:none; border-radius:50%; width:18px; height:18px; font-size:.65rem; line-height:18px; text-align:center; cursor:pointer; display:none; padding:0; }
+.gb-vrev-tile:hover .gb-vrev-tile-del { display:block; }
+.gb-vrev-add { border:2px dashed #aac; border-radius:8px; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:.3rem; cursor:pointer; opacity:.55; transition:opacity .15s; }
+.gb-vrev-add:hover { opacity:1; }
+.gb-vrev-add-icon { font-size:1.4rem; color:#88a; }
+.gb-vrev-add-label { font-family:'DINBlack',sans-serif; font-size:.6rem; text-transform:uppercase; letter-spacing:.08em; color:#88a; }
+/* inline form shown inside the grid when adding/editing */
+.gb-vrev-form { grid-column:1/-1; background:#f5f7fa; border-radius:8px; padding:.85rem 1rem; display:flex; flex-direction:column; gap:.5rem; }
+.gb-vrev-form input { width:100%; box-sizing:border-box; padding:.45rem .65rem; border:1px solid #dde; border-radius:6px; font-size:.82rem; outline:none; }
+.gb-vrev-form input:focus { border-color:#7c9eff; }
+.gb-vrev-form-btns { display:flex; gap:.5rem; }
+.gb-vrev-form-btns button { padding:.4rem .85rem; border-radius:6px; border:none; font-size:.78rem; font-weight:700; cursor:pointer; }
+.gb-vrev-btn-save { background:#4ade80; color:#0f172a; }
+.gb-vrev-btn-cancel { background:#e2e8f0; color:#334155; }
 
 /* ── FAQs ── */
 .gb-faq-item { border-bottom:1px solid var(--border); padding:.85rem 0; }
@@ -2324,14 +2331,6 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
       <video id="videoFrame" src="<?= h($_videoDirect) ?>" controls style="width:100%;border-radius:10px;display:block;"></video>
       <?php endif; ?>
     </div>
-    <?php if (count($_videoList) > 1): ?>
-    <div class="gb-video-tabs">
-      <?php foreach ($_videoList as $vi => $v): ?>
-      <button class="gb-vtab<?= $vi === 0 ? ' active' : '' ?>"
-              onclick="switchVideo(this, '<?= h($v['embed']) ?>')"><?= h($v['label'] ?: ('Video ' . ($vi + 1))) ?></button>
-      <?php endforeach; ?>
-    </div>
-    <?php endif; ?>
   </div>
   <?php endif; ?>
 
@@ -2376,23 +2375,25 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
   <!-- Video Reviews -->
   <div class="gb-section<?= empty($_videoReviews) ? ' gb-sect-empty' : '' ?>">
     <div class="gb-section-label">Video Reviews</div>
-    <div class="gb-faq-editor gb-inline-edit" id="gbVideoReviewsList"></div>
+    <!-- Admin: compact tile editor (JS-rendered) -->
+    <div class="gb-vrev-grid gb-inline-edit" id="gbVrevGrid"></div>
+    <!-- Public: full embedded players -->
     <div class="gb-vreviews gb-display-content">
       <?php foreach ($_videoReviews as $vr):
-        $vrSource = trim($vr['Value']   ?? '');
-        $vrUrl    = trim($vr['Value 1'] ?? '');
-        if (!$vrSource && !$vrUrl) continue;
-        $vrEmbed  = _gb_embed($vrUrl);
+        $vrUrl   = trim($vr['Value']   ?? '');
+        $vrName  = trim($vr['Value 1'] ?? '');
+        if (!$vrUrl) continue;
+        $vrEmbed = _gb_embed($vrUrl);
       ?>
       <div class="gb-vreview">
         <div class="gb-vreview-wrap">
           <?php if ($vrEmbed): ?>
           <iframe src="<?= h($vrEmbed) ?>" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
-          <?php elseif ($vrUrl): ?>
+          <?php else: ?>
           <video src="<?= h($vrUrl) ?>" controls></video>
           <?php endif; ?>
         </div>
-        <?php if ($vrSource): ?><div class="gb-vreview-label"><?= h($vrSource) ?></div><?php endif; ?>
+        <?php if ($vrName): ?><div class="gb-vreview-label"><?= h($vrName) ?></div><?php endif; ?>
       </div>
       <?php endforeach; ?>
     </div>
@@ -2748,7 +2749,7 @@ var GAME_DATA = <?= json_encode([
     'date_published' => $_datePub,
     'components'     => array_values(array_map(function($c) { return trim($c['Value'] ?? ''); }, $_components)),
     'reviews'        => array_values(array_map(function($r) { return ['attr' => trim($r['Value'] ?? ''), 'quote' => trim($r['Value 1'] ?? '')]; }, $_reviews)),
-    'video_reviews'  => array_values(array_map(function($r) { return ['source' => trim($r['Value'] ?? ''), 'url' => trim($r['Value 1'] ?? '')]; }, $_videoReviews)),
+    'videos'         => array_values(array_map(function($r) { return ['url' => trim($r['Value'] ?? ''), 'name' => trim($r['Value 1'] ?? '')]; }, $_videoReviews)),
     'faqs'           => array_values(array_map(function($f) { return ['q' => trim($f['Value'] ?? ''), 'a' => trim($f['Value 1'] ?? '')]; }, $_faqs)),
 ]) ?>;
 
@@ -3185,7 +3186,7 @@ function gbInitInlineEdits() {
     };
   }
   gbBuildReviewEditor(_ed.reviews || []);
-  gbBuildVideoReviewEditor(_ed.video_reviews || []);
+  gbInitVrevGrid();
   gbBuildFaqEditor(_ed.faqs || []);
   gbInitDesignerInputs();
   gbInitArtistInputs();
@@ -3330,57 +3331,86 @@ function gbAddReviewPair(list, quote, source, isLast) {
   setTimeout(function() { gbAutoResize(qta); gbAutoResize(sta); }, 0);
 }
 
-function gbBuildVideoReviewEditor(vreviews) {
-  var list = document.getElementById('gbVideoReviewsList');
-  if (!list) return;
-  list.innerHTML = '';
-  var pairs = vreviews.filter(function(r){ return r.source || r.url; });
-  pairs.push({source:'', url:''});
-  pairs.forEach(function(r, idx) { gbAddVideoReviewPair(list, r.source, r.url, idx === pairs.length - 1); });
+function gbYtThumb(url) {
+  var m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([A-Za-z0-9_\-]+)/);
+  return m ? 'https://img.youtube.com/vi/' + m[1] + '/mqdefault.jpg' : '';
 }
 
-function gbAddVideoReviewPair(list, source, url, isLast) {
-  var pair = document.createElement('div');
-  pair.className = 'gb-faq-pair';
+function gbInitVrevGrid() {
+  var grid = document.getElementById('gbVrevGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  (_ed.videos || []).forEach(function(v, i) { if (v.url) gbAddVrevCard(grid, v, i); });
+  gbAddVrevAddTile(grid);
+}
 
-  var sta = document.createElement('textarea');
-  sta.className = 'faq-q';
-  sta.placeholder = 'Source (e.g. BoardGameGeek Review)';
-  sta.rows = 1;
-  sta.value = source || '';
+function gbAddVrevCard(grid, v, idx) {
+  var tile = document.createElement('div');
+  tile.className = 'gb-vrev-tile';
+  tile.dataset.idx = idx;
+  var thumb = gbYtThumb(v.url);
+  tile.innerHTML = (thumb ? '<img src="' + esc(thumb) + '" loading="lazy">' : '<div style="width:100%;height:100%;background:#222"></div>')
+    + '<div class="gb-vrev-tile-label">' + esc(v.name || v.url) + '</div>'
+    + '<button class="gb-vrev-tile-del" title="Remove" onmousedown="gbVrevRemove(event,' + idx + ')">✕</button>';
+  tile.onclick = function(e) { if (!e.target.classList.contains('gb-vrev-tile-del')) gbOpenVrevForm(idx); };
+  grid.insertBefore(tile, grid.querySelector('.gb-vrev-add') || null);
+}
 
-  var uta = document.createElement('textarea');
-  uta.className = 'faq-a';
-  uta.placeholder = 'Video URL (YouTube or direct)';
-  uta.rows = 1;
-  uta.value = url || '';
+function gbAddVrevAddTile(grid) {
+  var existing = grid.querySelector('.gb-vrev-add');
+  if (existing) existing.remove();
+  var add = document.createElement('div');
+  add.className = 'gb-vrev-add';
+  add.innerHTML = '<div class="gb-vrev-add-icon">▶</div><div class="gb-vrev-add-label">Add Video</div>';
+  add.onclick = function() { gbOpenVrevForm(-1); };
+  grid.appendChild(add);
+}
 
-  function syncVideoReviews() {
-    _ed.video_reviews = Array.prototype.slice.call(
-      document.querySelectorAll('#gbVideoReviewsList .gb-faq-pair')
-    ).map(function(p) {
-      return {
-        source: p.querySelector('.faq-q').value.trim(),
-        url:    p.querySelector('.faq-a').value.trim()
-      };
-    }).filter(function(r){ return r.source || r.url; });
+function gbOpenVrevForm(idx) {
+  var grid = document.getElementById('gbVrevGrid');
+  if (!grid) return;
+  var existing = grid.querySelector('.gb-vrev-form');
+  if (existing) existing.remove();
+  var videos = _ed.videos || [];
+  var v = idx >= 0 ? (videos[idx] || {}) : {};
+  var form = document.createElement('div');
+  form.className = 'gb-vrev-form';
+  form.innerHTML = '<input id="gbVrevUrlInp" type="url" placeholder="YouTube or video URL…" value="' + esc(v.url || '') + '">'
+    + '<input id="gbVrevNameInp" type="text" placeholder="Label / reviewer name (optional)" value="' + esc(v.name || '') + '">'
+    + '<div class="gb-vrev-form-btns">'
+    + '<button class="gb-vrev-btn-save" onclick="gbVrevSave(' + idx + ')">Save</button>'
+    + '<button class="gb-vrev-btn-cancel" onclick="gbVrevCancelForm()">Cancel</button>'
+    + '</div>';
+  grid.appendChild(form);
+  setTimeout(function() { var i = document.getElementById('gbVrevUrlInp'); if (i) i.focus(); }, 20);
+}
+
+function gbVrevSave(idx) {
+  var urlEl  = document.getElementById('gbVrevUrlInp');
+  var nameEl = document.getElementById('gbVrevNameInp');
+  if (!urlEl) return;
+  var url  = urlEl.value.trim();
+  var name = nameEl ? nameEl.value.trim() : '';
+  if (!url) { gbVrevCancelForm(); return; }
+  if (!_ed.videos) _ed.videos = [];
+  if (idx >= 0) {
+    _ed.videos[idx] = {url: url, name: name};
+  } else {
+    _ed.videos.push({url: url, name: name});
   }
+  gbInitVrevGrid();
+}
 
-  function maybeAddPair() {
-    var pairs = document.querySelectorAll('#gbVideoReviewsList .gb-faq-pair');
-    var last  = pairs[pairs.length - 1];
-    if (pair === last && (sta.value.trim() || uta.value.trim())) {
-      gbAddVideoReviewPair(list, '', '', true);
-    }
-  }
+function gbVrevCancelForm() {
+  var form = document.querySelector('#gbVrevGrid .gb-vrev-form');
+  if (form) form.remove();
+}
 
-  sta.oninput = function() { gbAutoResize(this); syncVideoReviews(); maybeAddPair(); };
-  uta.oninput = function() { gbAutoResize(this); syncVideoReviews(); maybeAddPair(); };
-
-  pair.appendChild(sta);
-  pair.appendChild(uta);
-  list.appendChild(pair);
-  setTimeout(function() { gbAutoResize(sta); gbAutoResize(uta); }, 0);
+function gbVrevRemove(e, idx) {
+  e.stopPropagation();
+  if (!_ed.videos) return;
+  _ed.videos.splice(idx, 1);
+  gbInitVrevGrid();
 }
 
 function gbBuildFaqEditor(faqs) {
@@ -3694,7 +3724,7 @@ function saveGame() {
   fd.append('print',          _ed.print_url      || '');
   if (_ed.components     !== undefined) fd.append('components',     JSON.stringify(_ed.components     || []));
   if (_ed.reviews        !== undefined) fd.append('reviews',        JSON.stringify(_ed.reviews        || []));
-  if (_ed.video_reviews  !== undefined) fd.append('video_reviews',  JSON.stringify(_ed.video_reviews  || []));
+  if (_ed.videos         !== undefined) fd.append('videos',         JSON.stringify(_ed.videos         || []));
   if (_ed.faqs           !== undefined) fd.append('faqs',           JSON.stringify(_ed.faqs           || []));
   if (_gbGalleryUploads.length) {
     fd.append('gallery_add', JSON.stringify(_gbGalleryUploads));

@@ -1515,9 +1515,9 @@ $_mechanic    = _gb_val($_rich, 'Mechanic') ?: _gb_val($_rich, 'Main Mechanic');
 $_ages        = _gb_val($_rich, 'Ages')     ?: _gb_val($_rich, 'Age');
 $_series      = _gb_val($_rich, 'Series');
 $_boxSize     = _gb_val($_rich, 'Box Size');
-// Artists from [GameName] tab rows (Artist1–Artist4)
-for ($i = 1; $i <= 4; $i++) {
-    $a = _gb_val($_rich, "Artist$i");
+// Artists from [GameName] tab rows (multiple rows all named 'Artist')
+foreach (_gb_rows($_rich, 'Artist') as $r) {
+    $a = trim($r['Value'] ?? '');
     if ($a) $_artists[] = $a;
 }
 
@@ -3313,10 +3313,8 @@ function saveGame() {
   fd.append('designer2',      _ed.designer2      || '');
   fd.append('designer3',      _ed.designer3      || '');
   fd.append('designer4',      _ed.designer4      || '');
-  fd.append('artist1',        _ed.artist1        || '');
-  fd.append('artist2',        _ed.artist2        || '');
-  fd.append('artist3',        _ed.artist3        || '');
-  fd.append('artist4',        _ed.artist4        || '');
+  var _artists = [_ed.artist1||'',_ed.artist2||'',_ed.artist3||'',_ed.artist4||''].filter(function(a){return a.trim();});
+  fd.append('artists', JSON.stringify(_artists));
   fd.append('date_started',   _ed.date_started   || '');
   fd.append('date_signed',    _ed.date_signed    || '');
   fd.append('date_published', _ed.date_published || '');

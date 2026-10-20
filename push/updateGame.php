@@ -131,11 +131,6 @@ if ($result !== null && !empty($result['ok'])) {
         if ($minPlaytime !== '') $patchFields['MinPlaytime']   = $minPlaytime;
         if ($maxPlaytime !== '') $patchFields['MaxPlaytime']   = $maxPlaytime;
         if ($weight      !== '') $patchFields['Weight']        = $weight;
-        // Artists as rows in [GameName] tab
-        if ($artist1     !== '') $patchFields['Artist1']      = $artist1;
-        if ($artist2     !== '') $patchFields['Artist2']      = $artist2;
-        if ($artist3     !== '') $patchFields['Artist3']      = $artist3;
-        if ($artist4     !== '') $patchFields['Artist4']      = $artist4;
         if ($patchFields) {
             $patchData    = ['game' => $tabGameName, 'fields' => $patchFields];
             $patchEncoded = base64_encode(json_encode($patchData, JSON_UNESCAPED_UNICODE));
@@ -192,12 +187,14 @@ if ($result !== null && !empty($result['ok'])) {
     $componentsRaw = trim($_POST['components'] ?? '');
     $reviewsRaw    = trim($_POST['reviews']    ?? '');
     $faqsRaw       = trim($_POST['faqs']       ?? '');
-    if ($componentsRaw !== '' || $reviewsRaw !== '' || $faqsRaw !== '') {
+    $artistsRaw    = trim($_POST['artists']    ?? '');
+    if ($componentsRaw !== '' || $reviewsRaw !== '' || $faqsRaw !== '' || $artistsRaw !== '') {
         $tabContent = [
             'game'       => $tabGameName,
             'components' => $componentsRaw ? (json_decode($componentsRaw, true) ?: []) : [],
             'reviews'    => $reviewsRaw    ? (json_decode($reviewsRaw,    true) ?: []) : [],
             'faqs'       => $faqsRaw       ? (json_decode($faqsRaw,       true) ?: []) : [],
+            'artists'    => $artistsRaw    ? (json_decode($artistsRaw,    true) ?: []) : [],
         ];
         $tabContentEncoded = base64_encode(json_encode($tabContent, JSON_UNESCAPED_UNICODE));
         $tabContentCmd = escapeshellarg($pythonPath) . ' '

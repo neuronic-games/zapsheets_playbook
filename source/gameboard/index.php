@@ -1432,6 +1432,10 @@ $_description = trim($_game['Description']    ?? '');
 $_count       = trim($_game['Count']          ?? '');
 $_duration    = trim($_game['Duration']       ?? '');
 $_availability= trim($_game['Availability']   ?? '');
+$_mechanic    = trim($_game['Mechanic'] ?? $_game['Main Mechanic'] ?? $_game['Mechanics'] ?? '');
+$_ages        = trim($_game['Ages']     ?? $_game['Age']           ?? '');
+$_series      = trim($_game['Series']   ?? $_game['Game Series']   ?? '');
+$_boxSize     = trim($_game['Box Size'] ?? $_game['BoxSize']       ?? '');
 $_status      = trim($_game['Status']         ?? '');
 $_coverUrl    = _gb_img(trim($_game['Cover URL']    ?? $_game['Image'] ?? ''));
 $_imageUrl    = _gb_img(trim($_game['Image URL']    ?? $_game['Image'] ?? ''));
@@ -2026,6 +2030,10 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     <div class="gb-stats">
       <?php if ($_count):     ?><div class="gb-stat"><?= h($_count) ?> players</div><?php endif; ?>
       <?php if ($_duration):  ?><div class="gb-stat"><?= h($_duration) ?></div><?php endif; ?>
+      <?php if ($_mechanic):  ?><div class="gb-stat"><?= h($_mechanic) ?></div><?php endif; ?>
+      <?php if ($_ages):      ?><div class="gb-stat">Ages <?= h($_ages) ?></div><?php endif; ?>
+      <?php if ($_series):    ?><div class="gb-stat"><?= h($_series) ?></div><?php endif; ?>
+      <?php if ($_boxSize):   ?><div class="gb-stat"><?= h($_boxSize) ?></div><?php endif; ?>
       <?php if (!isset($_gbPublicBase)): ?>
       <!-- Designer stat: always shown in admin mode with inline inputs -->
       <div class="gb-stat" id="gbStatDesigners">
@@ -2371,6 +2379,26 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
         </div>
         <div class="gbed-row">
           <div class="gbed-field-group">
+            <label class="gbed-label">Main Mechanic</label>
+            <input class="gbed-field" id="gbedMechanic" type="text" placeholder="e.g. Deck Building" />
+          </div>
+          <div class="gbed-field-group">
+            <label class="gbed-label">Ages</label>
+            <input class="gbed-field" id="gbedAges" type="text" placeholder="e.g. 10+" />
+          </div>
+        </div>
+        <div class="gbed-row">
+          <div class="gbed-field-group">
+            <label class="gbed-label">Series</label>
+            <input class="gbed-field" id="gbedSeries" type="text" placeholder="e.g. Small Box Big Game" />
+          </div>
+          <div class="gbed-field-group">
+            <label class="gbed-label">Box Size</label>
+            <input class="gbed-field" id="gbedBoxSize" type="text" placeholder="e.g. Small" />
+          </div>
+        </div>
+        <div class="gbed-row">
+          <div class="gbed-field-group">
             <label class="gbed-label">Designer 1</label>
             <input class="gbed-field" id="gbedDesigner1" type="text" />
           </div>
@@ -2473,6 +2501,10 @@ var GAME_DATA = <?= json_encode([
     'count'          => $_count,
     'duration'       => $_duration,
     'availability'   => $_availability,
+    'mechanic'       => $_mechanic,
+    'ages'           => $_ages,
+    'series'         => $_series,
+    'box_size'       => $_boxSize,
     'designer1'      => $_designers[0] ?? '',
     'designer2'      => $_designers[1] ?? '',
     'designer3'      => $_designers[2] ?? '',
@@ -2735,6 +2767,10 @@ function openEditDetails() {
   document.getElementById('gbedCount').value        = _ed.count        || '';
   document.getElementById('gbedDuration').value     = _ed.duration     || '';
   document.getElementById('gbedAvailability').value = _ed.availability || '';
+  document.getElementById('gbedMechanic').value     = _ed.mechanic     || '';
+  document.getElementById('gbedAges').value         = _ed.ages         || '';
+  document.getElementById('gbedSeries').value       = _ed.series       || '';
+  document.getElementById('gbedBoxSize').value      = _ed.box_size     || '';
   document.getElementById('gbedDesigner1').value    = _ed.designer1    || '';
   document.getElementById('gbedDesigner2').value    = _ed.designer2    || '';
   document.getElementById('gbedDesigner3').value    = _ed.designer3    || '';
@@ -2762,6 +2798,10 @@ function applyEditDetails() {
   _ed.count          = document.getElementById('gbedCount').value.trim();
   _ed.duration       = document.getElementById('gbedDuration').value.trim();
   _ed.availability   = document.getElementById('gbedAvailability').value.trim();
+  _ed.mechanic       = document.getElementById('gbedMechanic').value.trim();
+  _ed.ages           = document.getElementById('gbedAges').value.trim();
+  _ed.series         = document.getElementById('gbedSeries').value.trim();
+  _ed.box_size       = document.getElementById('gbedBoxSize').value.trim();
   _ed.designer1      = document.getElementById('gbedDesigner1').value.trim();
   _ed.designer2      = document.getElementById('gbedDesigner2').value.trim();
   _ed.designer3      = document.getElementById('gbedDesigner3').value.trim();
@@ -3122,6 +3162,10 @@ function saveGame() {
   fd.append('count',          _ed.count          || '');
   fd.append('duration',       _ed.duration       || '');
   fd.append('availability',   _ed.availability   || '');
+  fd.append('mechanic',       _ed.mechanic       || '');
+  fd.append('ages',           _ed.ages           || '');
+  fd.append('series',         _ed.series         || '');
+  fd.append('box_size',       _ed.box_size       || '');
   fd.append('designer1',      _ed.designer1      || '');
   fd.append('designer2',      _ed.designer2      || '');
   fd.append('designer3',      _ed.designer3      || '');

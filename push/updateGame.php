@@ -32,6 +32,10 @@ $cover         = $coverRaw ? '=IMAGE("' . $coverRaw . '")' : '';
 $count         = trim($_POST['count']          ?? '');
 $duration      = trim($_POST['duration']       ?? '');
 $availability  = trim($_POST['availability']   ?? '');
+$mechanic      = trim($_POST['mechanic']       ?? '');
+$ages          = trim($_POST['ages']           ?? '');
+$series        = trim($_POST['series']         ?? '');
+$boxSize       = trim($_POST['box_size']       ?? '');
 $galleryAddRaw = trim($_POST['gallery_add']    ?? '');
 $galleryAdd    = $galleryAddRaw ? (json_decode($galleryAddRaw, true) ?: []) : [];
 
@@ -69,6 +73,10 @@ $data = [
     'count'          => $count,
     'duration'       => $duration,
     'availability'   => $availability,
+    'mechanic'       => $mechanic,
+    'ages'           => $ages,
+    'series'         => $series,
+    'box_size'       => $boxSize,
 ];
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';

@@ -102,6 +102,8 @@ a { color:inherit; text-decoration:none; }
 .gb-logo { font-family:'DINBlack',sans-serif; font-size:1.1rem; letter-spacing:.07em; color:<?= h($_logoColor) ?>; flex-shrink:0; }
 .gb-meta { font-size:.72rem; opacity:.6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .gb-header-right { display:flex; align-items:center; gap:.5rem; flex-shrink:0; }
+.btn-add-game { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; padding:.32rem .85rem; border-radius:5px; border:1.5px solid rgba(255,255,255,.35); color:#fff; background:transparent; cursor:pointer; transition:background .14s,border-color .14s; white-space:nowrap; }
+.btn-add-game:hover { background:rgba(255,255,255,.14); border-color:#fff; }
 
 /* User icon + menu (matches T&MBoard) */
 .btn-user-icon {
@@ -204,6 +206,7 @@ body.gb-admin-mode .cat-img-upload-btn { display:flex; }
     <span class="gb-meta" id="gbMeta"><?= h($_pubName ?: 'Games') ?></span>
   </div>
   <div class="gb-header-right">
+    <button class="btn-add-game" id="gbAddGameBtn" onclick="openAddGame()" style="display:none">+ Game</button>
     <div class="user-menu-wrap">
       <button class="btn-user-icon" id="gbUserBtn" onclick="toggleGbMenu(event)" title="Menu">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -351,6 +354,67 @@ body.gb-admin-mode .cat-img-upload-btn { display:flex; }
   </div>
 </div>
 
+<!-- ── Add Game dialog ── -->
+<div class="gb-overlay" id="addGameOverlay" onclick="if(event.target===this)forceCloseAddGame()">
+  <div class="gb-dialog" onclick="event.stopPropagation()" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitAddGame();}">
+    <div class="gb-dialog-header">
+      <span class="gb-dialog-title">New Game</span>
+      <button class="gb-dialog-close" onclick="forceCloseAddGame()">✕</button>
+    </div>
+    <div class="gb-dialog-body" style="max-height:70vh;overflow-y:auto;padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.55rem;">
+      <div class="gb-field-group">
+        <label>Game Name <span style="color:#c00">*</span></label>
+        <input class="gb-field" id="agName" type="text" placeholder="e.g. Lair" autofocus />
+      </div>
+      <div class="gb-field-group">
+        <label>Tagline</label>
+        <input class="gb-field" id="agTagline" type="text" placeholder="One-line description" />
+      </div>
+      <div style="display:flex;gap:.6rem;">
+        <div class="gb-field-group" style="flex:1">
+          <label>Status</label>
+          <select class="gb-field" id="agStatus">
+            <option value="Concept">Concept</option>
+            <option value="Developing">Developing</option>
+            <option value="Playtesting">Playtesting</option>
+            <option value="Pitching">Pitching</option>
+            <option value="Signed">Signed</option>
+            <option value="Published">Published</option>
+            <option value="Shelved">Shelved</option>
+          </select>
+        </div>
+        <div class="gb-field-group" style="flex:1">
+          <label>Player Count</label>
+          <input class="gb-field" id="agCount" type="text" placeholder="e.g. 2–4" />
+        </div>
+        <div class="gb-field-group" style="flex:1">
+          <label>Play Time</label>
+          <input class="gb-field" id="agDuration" type="text" placeholder="e.g. 30–60 min" />
+        </div>
+      </div>
+      <div style="display:flex;gap:.6rem;">
+        <div class="gb-field-group" style="flex:1">
+          <label>Designer 1</label>
+          <input class="gb-field" id="agDesigner1" type="text" />
+        </div>
+        <div class="gb-field-group" style="flex:1">
+          <label>Designer 2</label>
+          <input class="gb-field" id="agDesigner2" type="text" />
+        </div>
+      </div>
+      <div class="gb-field-group">
+        <label>Description</label>
+        <textarea class="gb-field" id="agDescription" rows="3" placeholder="Brief description of the game…" style="resize:vertical"></textarea>
+      </div>
+      <div class="gb-err" id="agErr"></div>
+    </div>
+    <div class="gb-dialog-actions">
+      <button class="btn-cancel" onclick="forceCloseAddGame()">Cancel</button>
+      <button class="btn-primary" id="agBtn" onclick="submitAddGame()">Create Game</button>
+    </div>
+  </div>
+</div>
+
 <script>
 var SHEET_ID = <?= json_encode($_sheetId) ?>;
 var APP_ROOT = <?= json_encode($_appRoot) ?>;
@@ -373,6 +437,7 @@ function _updateGbAuth() {
   var siOut = document.getElementById('gbMenuSignInOut');
   var profile = document.getElementById('gbMenuProfile');
   var publishBtn = document.getElementById('gbMenuPublish');
+  var addGameBtn = document.getElementById('gbAddGameBtn');
   if (_gbUser) {
     var name = (_gbUser.bio && (_gbUser.bio['name'] || _gbUser.bio['Name'])) || _gbUser.email || '';
     btn.classList.add('signed-in');
@@ -381,6 +446,7 @@ function _updateGbAuth() {
     if (siOut)  { siOut.textContent = 'Sign Out'; siOut.className = 'user-menu-item signout'; }
     if (profile) profile.style.display = '';
     if (publishBtn) publishBtn.style.display = '';
+    if (addGameBtn) addGameBtn.style.display = '';
     document.body.classList.add('gb-admin-mode');
   } else {
     btn.classList.remove('signed-in');
@@ -389,6 +455,7 @@ function _updateGbAuth() {
     if (siOut)  { siOut.textContent = 'Sign In'; siOut.className = 'user-menu-item'; }
     if (profile) profile.style.display = 'none';
     if (publishBtn) publishBtn.style.display = 'none';
+    if (addGameBtn) addGameBtn.style.display = 'none';
     document.body.classList.remove('gb-admin-mode');
   }
 }
@@ -680,7 +747,86 @@ document.addEventListener('keydown', function(e) {
   if (document.getElementById('gbPublishOverlay').classList.contains('open')){ closePublishDialog(); return; }
   if (document.getElementById('signInOverlay').classList.contains('open'))  { forceCloseSignIn(); return; }
   if (document.getElementById('settingsOverlay').classList.contains('open')){ forceCloseSettings(); return; }
+  if (document.getElementById('addGameOverlay').classList.contains('open')) { forceCloseAddGame(); return; }
 });
+
+// ── Add Game dialog ──────────────────────────────────────────────────────────
+var _agInitial = null;
+
+function openAddGame() {
+  document.getElementById('agName').value        = '';
+  document.getElementById('agTagline').value     = '';
+  document.getElementById('agStatus').value      = 'Concept';
+  document.getElementById('agCount').value       = '';
+  document.getElementById('agDuration').value    = '';
+  document.getElementById('agDesigner1').value   = '';
+  document.getElementById('agDesigner2').value   = '';
+  document.getElementById('agDescription').value = '';
+  document.getElementById('agErr').textContent   = '';
+  _agInitial = {};
+  document.getElementById('addGameOverlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('agName').focus(); }, 60);
+}
+
+function forceCloseAddGame() {
+  document.getElementById('addGameOverlay').classList.remove('open');
+  _agInitial = null;
+}
+
+function closeAddGame() {
+  var fields = ['agName','agTagline','agCount','agDuration','agDesigner1','agDesigner2','agDescription'];
+  var dirty = fields.some(function(id){ return document.getElementById(id).value.trim() !== ''; });
+  if (dirty) {
+    var d = document.getElementById('addGameOverlay').querySelector('.gb-dialog');
+    d.style.transition = 'transform .08s';
+    var seq = [6,-6,4,-4,2,0];
+    var i = 0;
+    (function step(){ d.style.transform = 'translateX('+seq[i]+'px)'; if(++i < seq.length) setTimeout(step,60); })();
+    return;
+  }
+  forceCloseAddGame();
+}
+
+function submitAddGame() {
+  var name = document.getElementById('agName').value.trim();
+  if (!name) {
+    document.getElementById('agErr').textContent = 'Game name is required.';
+    document.getElementById('agName').focus();
+    return;
+  }
+  var btn = document.getElementById('agBtn');
+  btn.disabled = true; btn.textContent = 'Creating…';
+  document.getElementById('agErr').textContent = '';
+
+  var fd = new FormData();
+  fd.append('id',          SHEET_ID);
+  fd.append('name',        name);
+  fd.append('tagline',     document.getElementById('agTagline').value.trim());
+  fd.append('status',      document.getElementById('agStatus').value);
+  fd.append('count',       document.getElementById('agCount').value.trim());
+  fd.append('duration',    document.getElementById('agDuration').value.trim());
+  fd.append('designer1',   document.getElementById('agDesigner1').value.trim());
+  fd.append('designer2',   document.getElementById('agDesigner2').value.trim());
+  fd.append('description', document.getElementById('agDescription').value.trim());
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/addGame.php');
+  xhr.onload = function() {
+    btn.disabled = false; btn.textContent = 'Create Game';
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+    if (!r || r.error) {
+      document.getElementById('agErr').textContent = (r && r.error) || 'Unknown error. Please try again.';
+      return;
+    }
+    forceCloseAddGame();
+    location.reload();
+  };
+  xhr.onerror = function() {
+    btn.disabled = false; btn.textContent = 'Create Game';
+    document.getElementById('agErr').textContent = 'Network error. Please try again.';
+  };
+  xhr.send(fd);
+}
 </script>
 </body>
 </html>

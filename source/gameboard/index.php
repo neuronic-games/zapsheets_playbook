@@ -848,9 +848,13 @@ a { color:inherit; text-decoration:none; }
   padding:.7rem 1.5rem; position:sticky; top:0; z-index:100;
   gap:1rem;
 }
-.gb-nav-left { display:flex; align-items:center; gap:.65rem; min-width:0; }
-.gb-nav-logo { font-family:'DINBlack',sans-serif; font-size:1rem; letter-spacing:.06em; color:#7c9eff; flex-shrink:0; }
-.gb-nav-game { font-size:.78rem; opacity:.6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.gb-nav-left { display:flex; align-items:center; gap:.5rem; min-width:0; }
+.gb-nav-back { display:flex; align-items:center; gap:.25rem; color:rgba(255,255,255,.75); font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; text-decoration:none; flex-shrink:0; padding:.25rem .4rem; border-radius:5px; transition:color .12s, background .12s; }
+.gb-nav-back:hover { color:#fff; background:rgba(255,255,255,.12); }
+.gb-nav-back svg { flex-shrink:0; }
+.gb-nav-back-label { white-space:nowrap; }
+.gb-nav-sep { color:rgba(255,255,255,.25); font-size:.85rem; flex-shrink:0; }
+.gb-nav-game { font-size:.78rem; opacity:.55; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .gb-nav-links { display:flex; gap:.4rem; flex-shrink:0; }
 .btn-nav {
   font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase;
@@ -1184,7 +1188,11 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
 <!-- ── Nav ── -->
 <nav class="gb-nav"<?= isset($_gbPublicBase) ? ' style="display:none"' : '' ?>>
   <div class="gb-nav-left">
-    <a class="gb-nav-logo" href="<?= h($_gbBase) ?>">GameBoard</a>
+    <a class="gb-nav-back" href="<?= h($_gbBase) ?>" title="Back to all games">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <span class="gb-nav-back-label">All Games</span>
+    </a>
+    <span class="gb-nav-sep">|</span>
     <span class="gb-nav-game" id="gbNavGame"><?= h($_name) ?></span>
   </div>
   <!-- Regular nav links (hidden in admin mode) -->

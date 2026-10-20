@@ -33,6 +33,19 @@ $postMap = [
     'address'     => 'Address',
     'payment'     => 'Payment Info',
     'gb_template' => 'Gameboard Template',
+    'tagline'     => 'Tagline',
+    'about'       => 'About',
+    'carousel_1'  => 'Carousel 1',
+    'carousel_2'  => 'Carousel 2',
+    'carousel_3'  => 'Carousel 3',
+    'carousel_4'  => 'Carousel 4',
+    'carousel_5'  => 'Carousel 5',
+    'carousel_6'  => 'Carousel 6',
+    'instagram'   => 'Instagram',
+    'twitter'     => 'Twitter',
+    'facebook'    => 'Facebook',
+    'youtube'     => 'YouTube',
+    'bgg_url'     => 'BGG URL',
 ];
 
 $settings = $existing;

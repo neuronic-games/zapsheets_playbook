@@ -77,6 +77,21 @@ if (!$_gameSlug) {
     $_catUrl   = $_gbBase;
     $_logoColor = $_template === 'opensea' ? '#00e5ff' : '#7c9eff';
     $_accentHex = $_template === 'opensea' ? '#0097a7' : '#3b3baa';
+    // Carousel images
+    $_carousel = [];
+    for ($i = 1; $i <= 6; $i++) {
+        $u = trim($_settings['Carousel ' . $i] ?? '');
+        if ($u) $_carousel[] = $u;
+    }
+    // Company copy
+    $_about   = trim($_settings['About']   ?? '');
+    $_tagline = trim($_settings['Tagline'] ?? '');
+    // Social links
+    $_insta   = trim($_settings['Instagram'] ?? '');
+    $_twitter = trim($_settings['Twitter']   ?? '');
+    $_fb      = trim($_settings['Facebook']  ?? '');
+    $_yt      = trim($_settings['YouTube']   ?? '');
+    $_bgg     = trim($_settings['BGG URL']   ?? '');
     ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -132,13 +147,37 @@ a { color:inherit; text-decoration:none; }
 .user-menu-item.signout { color:#ff6b6b; }
 .user-menu-divider { border:none; border-top:1px solid rgba(255,255,255,.1); margin:2px 0; }
 
-/* ── Hero ── */
-.cat-hero { background:var(--nav-bg); color:#fff; padding:2.5rem 1.5rem 2rem; text-align:center; }
-.cat-hero-title { font-family:'DINBlack',sans-serif; font-size:clamp(1.8rem,6vw,3rem); letter-spacing:.04em; margin-bottom:.5rem; }
-.cat-hero-sub { font-size:.92rem; opacity:.55; }
+/* ── Logo placeholder ── */
+.gb-logo-ph { display:flex; align-items:center; justify-content:center; height:32px; padding:0 .6rem; border:1.5px dashed rgba(255,255,255,.3); border-radius:5px; font-family:'DINBlack',sans-serif; font-size:.65rem; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,.4); white-space:nowrap; cursor:pointer; transition:border-color .15s,color .15s; }
+.gb-logo-ph:hover { border-color:rgba(255,255,255,.7); color:rgba(255,255,255,.8); }
+.gb-logo-img { height:32px; object-fit:contain; flex-shrink:0; }
+
+/* ── Carousel ── */
+.cat-carousel { position:relative; width:100%; height:clamp(240px,42vw,520px); overflow:hidden; background:var(--nav-bg); }
+.cat-slide { position:absolute; inset:0; background-size:cover; background-position:center; opacity:0; transition:opacity .7s ease; }
+.cat-slide.active { opacity:1; }
+.cat-carousel-ph { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.75rem; }
+.cat-carousel-ph-icon { width:80px; height:80px; opacity:.18; }
+.cat-carousel-ph-text { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,.35); }
+.cat-slide-btn { position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,.45); border:none; color:#fff; width:2.4rem; height:2.4rem; border-radius:50%; cursor:pointer; font-size:1.2rem; display:flex; align-items:center; justify-content:center; z-index:10; transition:background .15s; }
+.cat-slide-btn:hover { background:rgba(0,0,0,.75); }
+.cat-slide-prev { left:.75rem; }
+.cat-slide-next { right:.75rem; }
+.cat-slide-dots { position:absolute; bottom:.75rem; left:50%; transform:translateX(-50%); display:flex; gap:.45rem; z-index:10; }
+.cat-slide-dot { width:.55rem; height:.55rem; border-radius:50%; background:rgba(255,255,255,.45); border:none; cursor:pointer; padding:0; transition:background .2s,transform .2s; }
+.cat-slide-dot.active { background:#fff; transform:scale(1.2); }
+
+/* ── About strip ── */
+.cat-about { max-width:720px; margin:2.5rem auto 0; padding:0 1.5rem; text-align:center; }
+.cat-about-text { font-size:.93rem; line-height:1.7; color:var(--ink-lt); }
+
+/* ── Section heading ── */
+.cat-section-head { max-width:1100px; margin:2.5rem auto .75rem; padding:0 1.25rem; display:flex; align-items:baseline; gap:.75rem; }
+.cat-section-title { font-family:'DINBlack',sans-serif; font-size:1rem; text-transform:uppercase; letter-spacing:.06em; color:var(--ink); }
+.cat-section-count { font-size:.78rem; color:var(--muted); }
 
 /* ── Grid ── */
-.cat-grid { max-width:960px; margin:2rem auto 5rem; padding:0 1.25rem; display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:1.1rem; }
+.cat-grid { max-width:1100px; margin:0 auto 5rem; padding:0 1.25rem; display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1.1rem; }
 .cat-card { background:var(--surface); border-radius:12px; box-shadow:0 2px 14px rgba(0,0,0,.08); overflow:hidden; transition:box-shadow .15s, transform .15s; cursor:pointer; display:flex; flex-direction:column; }
 .cat-card:hover { box-shadow:0 6px 24px rgba(0,0,0,.14); transform:translateY(-3px); }
 .cat-card-img { width:100%; aspect-ratio:1; object-fit:cover; display:block; }
@@ -167,7 +206,13 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 .cat-empty-body { font-size:.85rem; line-height:1.6; }
 
 /* ── Footer ── */
-.gb-footer { background:var(--nav-bg); color:rgba(255,255,255,.45); text-align:center; padding:1.4rem; font-size:.75rem; }
+.gb-footer { background:var(--nav-bg); color:rgba(255,255,255,.45); padding:2rem 1.5rem 1.5rem; }
+.gb-footer-inner { max-width:1100px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:1rem; }
+.gb-footer-social { display:flex; gap:.75rem; }
+.gb-footer-social a { width:2rem; height:2rem; border-radius:50%; background:rgba(255,255,255,.1); display:flex; align-items:center; justify-content:center; transition:background .15s; }
+.gb-footer-social a:hover { background:rgba(255,255,255,.2); }
+.gb-footer-social svg { fill:rgba(255,255,255,.65); }
+.gb-footer-copy { font-size:.73rem; }
 
 /* ── Overlay / Dialog (sign-in + settings) ── */
 .gb-overlay {
@@ -220,7 +265,8 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 .gbed-label { display:block; font-size:.73rem; color:var(--muted); margin-bottom:.2rem; }
 .gbed-field { display:block; width:100%; padding:.45rem .7rem; border:1.5px solid var(--border); border-radius:6px; font-family:'DINRegular',Arial,sans-serif; font-size:.87rem; color:var(--ink); outline:none; transition:border-color .14s; }
 .gbed-field:focus { border-color:var(--accent); }
-.gbed-footer { padding:.9rem 1.5rem; background:#f8f8fc; border-top:1px solid var(--border); display:flex; gap:.5rem; justify-content:flex-end; }
+.gbed-footer { padding:.9rem 1.5rem; background:#f8f8fc; border-top:1px solid var(--border); display:flex; gap:.5rem; justify-content:flex-end; align-items:center; }
+.gbed-footer .gbed-err { margin:0; flex:1; }
 .btn-adm { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; padding:.38rem .9rem; border-radius:6px; cursor:pointer; border:1.5px solid transparent; white-space:nowrap; transition:opacity .13s; }
 .btn-adm-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
 .btn-adm-primary:hover { opacity:.88; }
@@ -233,8 +279,11 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 <!-- ── Header ── -->
 <header class="gb-header"<?= isset($_gbPublicBase) ? ' style="display:none"' : '' ?>>
   <div class="gb-header-left">
-    <?php if ($_pubLogo): ?><img src="<?= h($_pubLogo) ?>" alt="" style="height:26px;border-radius:4px;flex-shrink:0;" /><?php endif; ?>
-    <span class="gb-logo">GameBoard</span>
+    <?php if ($_pubLogo): ?>
+    <img src="<?= h($_pubLogo) ?>" alt="<?= h($_pubName) ?>" class="gb-logo-img" />
+    <?php else: ?>
+    <div class="gb-logo-ph" id="gbLogoPlaceholder" onclick="gbMenuAction('settings')" title="Click to add logo in Settings">Your Logo</div>
+    <?php endif; ?>
     <span class="gb-meta" id="gbMeta"><?= h($_pubName ?: 'Games') ?></span>
   </div>
   <div class="gb-header-right">
@@ -258,10 +307,36 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
   </div>
 </header>
 
-<!-- ── Hero ── -->
-<div class="cat-hero">
-  <div class="cat-hero-title"><?= h($_pubName ?: 'Our Games') ?></div>
-  <?php if (!empty($_games)): ?><div class="cat-hero-sub"><?= count($_games) ?> game<?= count($_games) !== 1 ? 's' : '' ?></div><?php endif; ?>
+<!-- ── Carousel ── -->
+<div class="cat-carousel" id="catCarousel"
+  ondragover="carouselDragOver(event)" ondragleave="carouselDragLeave(event)" ondrop="carouselDrop(event)">
+<?php if (!empty($_carousel)): ?>
+  <?php foreach ($_carousel as $_ci => $_cUrl): ?>
+  <div class="cat-slide<?= $_ci === 0 ? ' active' : '' ?>" style="background-image:url('<?= h($_cUrl) ?>')"></div>
+  <?php endforeach; ?>
+  <button class="cat-slide-btn cat-slide-prev" onclick="carouselPrev()" title="Previous">&#8249;</button>
+  <button class="cat-slide-btn cat-slide-next" onclick="carouselNext()" title="Next">&#8250;</button>
+  <div class="cat-slide-dots" id="catSlideDots">
+    <?php foreach ($_carousel as $_ci => $_cUrl): ?>
+    <button class="cat-slide-dot<?= $_ci === 0 ? ' active' : '' ?>" onclick="carouselGo(<?= $_ci ?>)"></button>
+    <?php endforeach; ?>
+  </div>
+<?php else: ?>
+  <div class="cat-carousel-ph">
+    <svg class="cat-carousel-ph-icon" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    <div class="cat-carousel-ph-text">Add carousel images in Settings</div>
+  </div>
+<?php endif; ?>
+</div>
+
+<?php if ($_about): ?>
+<div class="cat-about"><p class="cat-about-text"><?= h($_about) ?></p></div>
+<?php endif; ?>
+
+<!-- ── Games section ── -->
+<div class="cat-section-head">
+  <span class="cat-section-title">Our Games</span>
+  <?php if (!empty($_games)): ?><span class="cat-section-count"><?= count($_games) ?> published</span><?php endif; ?>
 </div>
 
 <!-- ── Game grid ── -->
@@ -306,7 +381,24 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 </div>
 
 <footer class="gb-footer">
-  <?= h($_pubName ?: 'GameBoard') ?> &nbsp;·&nbsp; Powered by GameBoard
+  <div class="gb-footer-inner">
+    <?php
+    $_socials = [];
+    if ($_insta)   $_socials[] = ['url' => $_insta,   'label' => 'Instagram', 'svg' => '<svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>'];
+    if ($_twitter)  $_socials[] = ['url' => $_twitter,  'label' => 'X / Twitter', 'svg' => '<svg width="14" height="14" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>'];
+    if ($_fb)        $_socials[] = ['url' => $_fb,        'label' => 'Facebook',    'svg' => '<svg width="14" height="14" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>'];
+    if ($_yt)        $_socials[] = ['url' => $_yt,        'label' => 'YouTube',     'svg' => '<svg width="16" height="12" viewBox="0 0 24 17"><path d="M23.495 2.205a3.02 3.02 0 0 0-2.122-2.136C19.545 0 12 0 12 0S4.455 0 2.627.07a3.02 3.02 0 0 0-2.122 2.135C0 4.046 0 8.5 0 8.5s0 4.455.505 6.295a3.02 3.02 0 0 0 2.122 2.136C4.455 17 12 17 12 17s7.545 0 9.373-.07a3.02 3.02 0 0 0 2.122-2.135C24 12.954 24 8.5 24 8.5s0-4.454-.505-6.295zM9.545 12.273V4.727L15.818 8.5l-6.273 3.773z"/></svg>'];
+    if ($_bgg)       $_socials[] = ['url' => $_bgg,       'label' => 'BoardGameGeek','svg' => '<svg width="14" height="14" viewBox="0 0 32 32"><text y="26" font-size="28" font-family="serif" font-weight="bold">B</text></svg>'];
+    ?>
+    <?php if (!empty($_socials)): ?>
+    <div class="gb-footer-social">
+      <?php foreach ($_socials as $_s): ?>
+      <a href="<?= h($_s['url']) ?>" target="_blank" rel="noopener" title="<?= h($_s['label']) ?>"><?= $_s['svg'] ?></a>
+      <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+    <div class="gb-footer-copy"><?= h($_pubName ?: 'GameBoard') ?> &nbsp;·&nbsp; Powered by GameBoard</div>
+  </div>
 </footer>
 
 <!-- ── Publish Site dialog ── -->
@@ -365,23 +457,59 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 </div>
 
 <!-- ── Settings dialog ── -->
-<div class="gb-overlay" id="settingsOverlay" onclick="if(event.target===this)forceCloseSettings()">
-  <div class="gb-dialog" style="max-width:420px" onclick="event.stopPropagation()"
+<div class="gbed-overlay" id="settingsOverlay" onclick="if(event.target===this)forceCloseSettings()">
+  <div class="gbed-dialog" onclick="event.stopPropagation()"
        onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitSettings();}">
-    <div class="gb-dialog-title">Settings</div>
-    <div class="gb-field-group"><label>Company Name</label><input class="gb-field" id="setCompany" type="text" placeholder="Acme Games LLC" /></div>
-    <div class="gb-field-group"><label>Logo URL</label><input class="gb-field" id="setLogo" type="url" placeholder="https://…" /></div>
-    <div class="gb-field-group">
-      <label>GameBoard Template</label>
-      <select class="gb-field" id="setTemplate">
-        <option value="">Classic (default)</option>
-        <option value="opensea">OpenSea</option>
-      </select>
+    <div class="gbed-header">
+      <span class="gbed-title">Settings</span>
+      <button class="gbed-close" onclick="forceCloseSettings()">✕</button>
     </div>
-    <div class="gb-err" id="setErr"></div>
-    <div class="gb-dialog-actions">
-      <button class="btn-cancel" onclick="forceCloseSettings()">Cancel</button>
-      <button class="btn-primary" id="setBtn" onclick="submitSettings()">Save</button>
+    <div class="gbed-body"><div class="gbed-scroll">
+
+      <div class="gbed-section">
+        <div class="gbed-section-title">Company</div>
+        <div class="gbed-field-group"><label class="gbed-label">Company Name</label><input class="gbed-field" id="setCompany" type="text" placeholder="Acme Games LLC" /></div>
+        <div class="gbed-field-group"><label class="gbed-label">Logo URL <span style="font-size:.7rem;color:var(--muted)">(image link)</span></label><input class="gbed-field" id="setLogo" type="url" placeholder="https://…/logo.png" /></div>
+        <div class="gbed-field-group"><label class="gbed-label">Tagline <span style="font-size:.7rem;color:var(--muted)">(short description shown in About)</span></label><input class="gbed-field" id="setTagline" type="text" placeholder="Independent board game publisher" /></div>
+        <div class="gbed-field-group"><label class="gbed-label">About</label><textarea class="gbed-field" id="setAbout" rows="3" placeholder="A short paragraph about your company or games…" style="resize:vertical"></textarea></div>
+      </div>
+
+      <div class="gbed-section">
+        <div class="gbed-section-title">Carousel Images <span style="font-size:.68rem;font-weight:400;color:var(--muted)">(paste image URLs)</span></div>
+        <?php for ($i = 1; $i <= 6; $i++): ?>
+        <div class="gbed-field-group"><label class="gbed-label">Image <?= $i ?></label><input class="gbed-field" id="setCarousel<?= $i ?>" type="url" placeholder="https://…/image.jpg" /></div>
+        <?php endfor; ?>
+      </div>
+
+      <div class="gbed-section">
+        <div class="gbed-section-title">Social Links</div>
+        <div class="gbed-row">
+          <div class="gbed-field-group"><label class="gbed-label">Instagram</label><input class="gbed-field" id="setInsta" type="url" placeholder="https://instagram.com/…" /></div>
+          <div class="gbed-field-group"><label class="gbed-label">X / Twitter</label><input class="gbed-field" id="setTwitter" type="url" placeholder="https://x.com/…" /></div>
+        </div>
+        <div class="gbed-row">
+          <div class="gbed-field-group"><label class="gbed-label">Facebook</label><input class="gbed-field" id="setFb" type="url" placeholder="https://facebook.com/…" /></div>
+          <div class="gbed-field-group"><label class="gbed-label">YouTube</label><input class="gbed-field" id="setYt" type="url" placeholder="https://youtube.com/…" /></div>
+        </div>
+        <div class="gbed-field-group"><label class="gbed-label">BoardGameGeek</label><input class="gbed-field" id="setBgg" type="url" placeholder="https://boardgamegeek.com/…" /></div>
+      </div>
+
+      <div class="gbed-section">
+        <div class="gbed-section-title">Display</div>
+        <div class="gbed-field-group">
+          <label class="gbed-label">GameBoard Template</label>
+          <select class="gbed-field" id="setTemplate">
+            <option value="">Classic (default)</option>
+            <option value="opensea">OpenSea</option>
+          </select>
+        </div>
+      </div>
+
+    </div></div>
+    <div class="gbed-footer">
+      <div class="gb-err gbed-err" id="setErr"></div>
+      <button class="btn-adm btn-adm-secondary" onclick="forceCloseSettings()">Cancel</button>
+      <button class="btn-adm btn-adm-primary" id="setBtn" onclick="submitSettings()">Save</button>
     </div>
   </div>
 </div>
@@ -765,6 +893,38 @@ function catUploadCardImage(file, wrap) {
   xhr.send(formData);
 }
 
+// ── Carousel ─────────────────────────────────────────────────────────────────
+(function() {
+  var slides = document.querySelectorAll('#catCarousel .cat-slide');
+  var dots   = document.querySelectorAll('#catSlideDots .cat-slide-dot');
+  if (!slides.length) return;
+  var cur = 0, timer = null;
+  function go(n) {
+    slides[cur].classList.remove('active');
+    if (dots[cur]) dots[cur].classList.remove('active');
+    cur = (n + slides.length) % slides.length;
+    slides[cur].classList.add('active');
+    if (dots[cur]) dots[cur].classList.add('active');
+  }
+  function start() { timer = setInterval(function(){ go(cur + 1); }, 5000); }
+  function reset()  { clearInterval(timer); start(); }
+  window.carouselPrev = function() { go(cur - 1); reset(); };
+  window.carouselNext = function() { go(cur + 1); reset(); };
+  window.carouselGo   = function(n) { go(n); reset(); };
+  // Drag-drop for replacing carousel images (admin mode)
+  window.carouselDragOver = function(e) {
+    if (!document.body.classList.contains('gb-admin-mode')) return;
+    e.preventDefault();
+  };
+  window.carouselDragLeave = function(e) { e.preventDefault(); };
+  window.carouselDrop = function(e) {
+    e.preventDefault();
+    if (!document.body.classList.contains('gb-admin-mode')) return;
+    // not yet wired — placeholder for future upload
+  };
+  start();
+})();
+
 // ── Sign-in dialog ──────────────────────────────────────────────────────────
 function openSignIn() {
   document.getElementById('siErr').textContent = '';
@@ -824,7 +984,18 @@ function openSettings() {
     var s = {}; try { s = JSON.parse(xhr.responseText); } catch(e) {}
     document.getElementById('setCompany').value  = s['Company']            || s['Name'] || '';
     document.getElementById('setLogo').value     = s['Logo URL']           || '';
+    document.getElementById('setTagline').value  = s['Tagline']            || '';
+    document.getElementById('setAbout').value    = s['About']              || '';
     document.getElementById('setTemplate').value = s['Gameboard Template'] || '';
+    for (var i = 1; i <= 6; i++) {
+      var el = document.getElementById('setCarousel' + i);
+      if (el) el.value = s['Carousel ' + i] || '';
+    }
+    document.getElementById('setInsta').value   = s['Instagram'] || '';
+    document.getElementById('setTwitter').value = s['Twitter']   || '';
+    document.getElementById('setFb').value      = s['Facebook']  || '';
+    document.getElementById('setYt').value      = s['YouTube']   || '';
+    document.getElementById('setBgg').value     = s['BGG URL']   || '';
   };
   xhr.send();
   document.getElementById('settingsOverlay').classList.add('open');
@@ -838,7 +1009,18 @@ function submitSettings() {
   fd.append('id',          SHEET_ID);
   fd.append('company',     document.getElementById('setCompany').value.trim());
   fd.append('logo',        document.getElementById('setLogo').value.trim());
+  fd.append('tagline',     document.getElementById('setTagline').value.trim());
+  fd.append('about',       document.getElementById('setAbout').value.trim());
   fd.append('gb_template', document.getElementById('setTemplate').value);
+  for (var i = 1; i <= 6; i++) {
+    var el = document.getElementById('setCarousel' + i);
+    if (el) fd.append('carousel_' + i, el.value.trim());
+  }
+  fd.append('instagram', document.getElementById('setInsta').value.trim());
+  fd.append('twitter',   document.getElementById('setTwitter').value.trim());
+  fd.append('facebook',  document.getElementById('setFb').value.trim());
+  fd.append('youtube',   document.getElementById('setYt').value.trim());
+  fd.append('bgg_url',   document.getElementById('setBgg').value.trim());
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
   xhr.onload = function() {

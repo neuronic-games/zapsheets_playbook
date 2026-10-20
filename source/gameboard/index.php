@@ -2112,7 +2112,7 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     </div>
     <!-- Artist row (admin) -->
     <div class="gb-stat-designers" id="gbStatArtists">
-      <svg class="gb-role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+      <svg class="gb-role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1 1 2.48 1.02 3.5 1.02 2.2 0 3.96-1.77 3.96-3.96a.96.96 0 0 0-.96-.96c-.28-.01-.54-.14-.87-.14z"/></svg>
       <span id="gbArtistInputs"></span>
     </div>
     <?php else: ?>
@@ -2133,7 +2133,7 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     <?php if ($_designers || $_artists): ?>
     <div class="gb-stat-credits">
       <?php if ($_designers): ?><span class="gb-credit-item"><svg class="gb-role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><?= h(implode(', ', $_designers)) ?></span><?php endif; ?>
-      <?php if ($_artists): ?><span class="gb-credit-item"><svg class="gb-role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg><?= h(implode(', ', $_artists)) ?></span><?php endif; ?>
+      <?php if ($_artists): ?><span class="gb-credit-item"><svg class="gb-role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1 1 2.48 1.02 3.5 1.02 2.2 0 3.96-1.77 3.96-3.96a.96.96 0 0 0-.96-.96c-.28-.01-.54-.14-.87-.14z"/></svg><?= h(implode(', ', $_artists)) ?></span><?php endif; ?>
     </div>
     <?php endif; ?>
     <?php endif; ?>

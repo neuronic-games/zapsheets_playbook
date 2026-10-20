@@ -1739,11 +1739,11 @@ a { color:inherit; text-decoration:none; }
 }
 .gb-stat { font-size:.82rem; color:rgba(255,255,255,.75); }
 .gb-stat strong { font-family:'DINBlack',sans-serif; color:#fff; margin-right:.25rem; }
-.gb-hero-ctas { display:flex; flex-wrap:wrap; gap:.5rem; align-items:stretch; margin-top:.75rem; }
+.gb-hero-ctas { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.75rem; }
 .gb-price-tag {
   font-family:'DINBlack',sans-serif; font-size:1.4rem; color:#fff;
-  letter-spacing:-.01em; display:flex; align-items:center;
-  padding:.5rem .85rem; border:2px solid rgba(255,255,255,.35); border-radius:6px;
+  letter-spacing:-.01em; line-height:1;
+  padding:.3rem .85rem; border:2px solid rgba(255,255,255,.35); border-radius:6px;
 }
 
 /* ── Main ── */
@@ -1874,6 +1874,7 @@ body.gb-admin-mode .gb-vrev-grid { display:grid; }
 /* ── Price tag: in-place editing (admin) ── */
 .gb-cta-ph { opacity:.45; font-style:italic; }
 body.gb-admin-mode #gbEditPrice { cursor:text; border-style:dashed; min-width:3rem; }
+body.gb-admin-mode #gbEditPrice:empty::before { content:attr(data-ph); opacity:.4; font-style:italic; pointer-events:none; }
 body.gb-admin-mode #gbEditPrice:focus,
 body.gb-admin-mode #gbEditPrice:hover { outline:2px solid rgba(255,255,255,.75); }
 /* ── Buy links: in-place editing (admin) ── */

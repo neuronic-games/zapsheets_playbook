@@ -1858,6 +1858,15 @@ body.gb-admin-mode .gb-nav-links { display:none; }
 .btn-adm-secondary:hover { background:rgba(255,255,255,.08); border-color:#fff; }
 .btn-adm-details { background:rgba(124,158,255,.15); border:1.5px solid rgba(124,158,255,.4); color:#7c9eff; }
 .btn-adm-details:hover { background:rgba(124,158,255,.25); }
+/* Inline designer inputs */
+.gb-designer-input {
+  background:transparent; border:none; border-bottom:1.5px dashed rgba(255,255,255,.45);
+  color:#fff; font-family:'DINRegular',Arial,sans-serif; font-size:inherit;
+  width:110px; outline:none; padding:0 2px; margin-right:4px;
+  transition:border-color .15s, width .15s;
+}
+.gb-designer-input:focus { border-bottom-color:#fff; }
+.gb-designer-input::placeholder { color:rgba(255,255,255,.35); font-style:italic; }
 /* Editable field highlights in admin mode */
 body.gb-admin-mode #gbEditTitle { outline:2px dashed rgba(124,158,255,.5); border-radius:3px; cursor:text; padding:2px 4px; }
 body.gb-admin-mode #gbEditTitle:focus,
@@ -2017,7 +2026,15 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     <div class="gb-stats">
       <?php if ($_count):     ?><div class="gb-stat"><strong>👥</strong><?= h($_count) ?> players</div><?php endif; ?>
       <?php if ($_duration):  ?><div class="gb-stat"><strong>⏱</strong><?= h($_duration) ?></div><?php endif; ?>
-      <?php if ($_designers): ?><div class="gb-stat"><strong>✏️</strong><?= h(implode(', ', $_designers)) ?></div><?php endif; ?>
+      <?php if (!isset($_gbPublicBase)): ?>
+      <!-- Designer stat: always shown in admin mode with inline inputs -->
+      <div class="gb-stat" id="gbStatDesigners">
+        <strong>✏️</strong>
+        <span id="gbDesignerInputs"></span>
+      </div>
+      <?php elseif ($_designers): ?>
+      <div class="gb-stat"><strong>✏️</strong><?= h(implode(', ', $_designers)) ?></div>
+      <?php endif; ?>
       <?php if ($_availability): ?><div class="gb-stat"><strong>📦</strong><?= h($_availability) ?></div><?php endif; ?>
       <?php if (!$_count):    ?><div class="gb-ph-stat"><strong>👥</strong><span>2–4 players</span></div><?php endif; ?>
       <?php if (!$_duration): ?><div class="gb-ph-stat"><strong>⏱</strong><span>30–60 min</span></div><?php endif; ?>
@@ -2813,6 +2830,42 @@ function gbInitInlineEdits() {
     revEl.oninput = function() { _ed.reviews = gbParseReviews(this.value); };
   }
   gbBuildFaqEditor(_ed.faqs || []);
+  gbInitDesignerInputs();
+}
+
+function gbInitDesignerInputs() {
+  var wrap = document.getElementById('gbDesignerInputs');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  // Start with existing values; always show at least 1 input
+  var vals = [_ed.designer1||'', _ed.designer2||'', _ed.designer3||'', _ed.designer4||''];
+  // Show inputs up to last filled + 1 (but at least 1, at most 4)
+  var lastFilled = -1;
+  vals.forEach(function(v, i){ if (v) lastFilled = i; });
+  var showCount = Math.min(lastFilled + 2, 4);
+  if (showCount < 1) showCount = 1;
+  for (var i = 0; i < showCount; i++) { gbAddDesignerInput(wrap, vals[i], i); }
+}
+
+function gbAddDesignerInput(wrap, value, idx) {
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.className = 'gb-designer-input';
+  inp.value = value || '';
+  inp.placeholder = idx === 0 ? 'Designer name' : '+ name';
+  inp.dataset.idx = idx;
+  inp.oninput = function() {
+    var keys = ['designer1','designer2','designer3','designer4'];
+    _ed[keys[idx]] = this.value.trim();
+    // If this is the last visible input and now has a value, add a new one
+    var allInputs = wrap.querySelectorAll('.gb-designer-input');
+    if (this.value && parseInt(this.dataset.idx) === allInputs.length - 1 && allInputs.length < 4) {
+      var nextIdx = allInputs.length;
+      var nextVals = [_ed.designer1||'', _ed.designer2||'', _ed.designer3||'', _ed.designer4||''];
+      gbAddDesignerInput(wrap, nextVals[nextIdx] || '', nextIdx);
+    }
+  };
+  wrap.appendChild(inp);
 }
 
 function gbAutoResize(ta) {

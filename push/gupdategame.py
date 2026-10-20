@@ -45,10 +45,6 @@ designer1      = data.get('designer1',      '').strip()
 designer2  = data.get('designer2',  '').strip()
 designer3  = data.get('designer3',  '').strip()
 designer4  = data.get('designer4',  '').strip()
-artist1    = data.get('artist1',    '').strip()
-artist2    = data.get('artist2',    '').strip()
-artist3    = data.get('artist3',    '').strip()
-artist4    = data.get('artist4',    '').strip()
 rules      = data.get('rules',      '').strip()
 play       = data.get('play',       '').strip()
 print_url  = data.get('print',      '').strip()
@@ -129,10 +125,6 @@ field_map = [
     (('Designer2', 'Designer 2'),                                                   designer2),
     (('Designer3', 'Designer 3'),                                                   designer3),
     (('Designer4', 'Designer 4'),                                                   designer4),
-    (('Artist1',   'Artist 1'),                                                     artist1),
-    (('Artist2',   'Artist 2'),                                                     artist2),
-    (('Artist3',   'Artist 3'),                                                     artist3),
-    (('Artist4',   'Artist 4'),                                                     artist4),
     (('Rules',     'Rules URL',   'RulesURL'),                                      rules),
     (('Play',      'Play URL',    'PlayURL'),                                       play),
     (('Print',     'Print URL',   'PrintURL'),                                      print_url),

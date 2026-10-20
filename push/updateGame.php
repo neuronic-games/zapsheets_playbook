@@ -65,10 +65,6 @@ $data = [
     'designer2'      => $designer2,
     'designer3'      => $designer3,
     'designer4'      => $designer4,
-    'artist1'        => $artist1,
-    'artist2'        => $artist2,
-    'artist3'        => $artist3,
-    'artist4'        => $artist4,
     'rules'          => $rules,
     'play'           => $play,
     'print'          => $print,
@@ -135,6 +131,11 @@ if ($result !== null && !empty($result['ok'])) {
         if ($minPlaytime !== '') $patchFields['MinPlaytime']   = $minPlaytime;
         if ($maxPlaytime !== '') $patchFields['MaxPlaytime']   = $maxPlaytime;
         if ($weight      !== '') $patchFields['Weight']        = $weight;
+        // Artists as rows in [GameName] tab
+        if ($artist1     !== '') $patchFields['Artist1']      = $artist1;
+        if ($artist2     !== '') $patchFields['Artist2']      = $artist2;
+        if ($artist3     !== '') $patchFields['Artist3']      = $artist3;
+        if ($artist4     !== '') $patchFields['Artist4']      = $artist4;
         if ($patchFields) {
             $patchData    = ['game' => $tabGameName, 'fields' => $patchFields];
             $patchEncoded = base64_encode(json_encode($patchData, JSON_UNESCAPED_UNICODE));

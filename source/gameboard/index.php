@@ -1463,11 +1463,7 @@ for ($i = 1; $i <= 4; $i++) {
     $d = trim($_game["Designer$i"] ?? '');
     if ($d) $_designers[] = $d;
 }
-$_artists = [];
-for ($i = 1; $i <= 4; $i++) {
-    $a = trim($_game["Artist$i"] ?? '');
-    if ($a) $_artists[] = $a;
-}
+$_artists = []; // populated after $_rich loads below
 
 // ── Load rich game-specific data ─────────────────────────────────────────────
 // Sources checked in order:
@@ -1519,6 +1515,12 @@ $_mechanic    = _gb_val($_rich, 'Mechanic') ?: _gb_val($_rich, 'Main Mechanic');
 $_ages        = _gb_val($_rich, 'Ages')     ?: _gb_val($_rich, 'Age');
 $_series      = _gb_val($_rich, 'Series');
 $_boxSize     = _gb_val($_rich, 'Box Size');
+// Artists from [GameName] tab rows (Artist1–Artist4)
+for ($i = 1; $i <= 4; $i++) {
+    $a = _gb_val($_rich, "Artist$i");
+    if ($a) $_artists[] = $a;
+}
+
 // Override count/duration display with tab data when available
 if ($_minPlayers || $_maxPlayers) {
     $_count = $_minPlayers . ($_maxPlayers && $_maxPlayers !== $_minPlayers ? '–' . $_maxPlayers : '');

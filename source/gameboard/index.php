@@ -1851,7 +1851,8 @@ body.gb-admin-mode .gb-faq-editor { display:flex; }
 .gb-vreview-wrap video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#000; }
 .gb-vreview-label { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); padding:.5rem .75rem .6rem; }
 /* ── Video Review tile editor (admin) ── */
-.gb-vrev-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:.75rem; }
+.gb-vrev-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.75rem; min-height:unset; padding:0; }
+body.gb-admin-mode .gb-vrev-grid { display:grid; }
 .gb-vrev-tile { position:relative; border-radius:8px; overflow:hidden; aspect-ratio:16/9; cursor:pointer; background:#111; box-shadow:0 2px 8px rgba(0,0,0,.18); }
 .gb-vrev-tile img { width:100%; height:100%; object-fit:cover; display:block; }
 .gb-vrev-tile-label { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,.6); color:#fff; font-family:'DINBlack',sans-serif; font-size:.6rem; text-transform:uppercase; letter-spacing:.06em; padding:.3rem .4rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }

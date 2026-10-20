@@ -1875,6 +1875,14 @@ body.gb-admin-mode .gb-nav-links { display:none; }
 .btn-adm-secondary:hover { background:rgba(255,255,255,.08); border-color:#fff; }
 .btn-adm-details { background:rgba(124,158,255,.15); border:1.5px solid rgba(124,158,255,.4); color:#7c9eff; }
 .btn-adm-details:hover { background:rgba(124,158,255,.25); }
+/* Admin inline stat editor */
+.gb-stats-edit { display:flex; flex-wrap:wrap; gap:.5rem .75rem; margin:.4rem 0 .2rem; }
+.gb-stat-field { display:flex; align-items:center; gap:.35rem; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.15); border-radius:6px; padding:.3rem .55rem; }
+.gb-stat-icon { width:14px; height:14px; stroke:rgba(255,255,255,.55); flex-shrink:0; }
+.gb-stat-input { background:transparent; border:none; outline:none; color:#fff; font-size:.8rem; width:90px; font-family:inherit; }
+.gb-stat-input::placeholder { color:rgba(255,255,255,.35); font-style:italic; }
+.gb-stat-field:focus-within { border-color:rgba(124,158,255,.6); background:rgba(0,0,0,.35); }
+.gb-stat-field:focus-within .gb-stat-icon { stroke:rgba(124,158,255,.8); }
 /* Designer row (separate from stats) */
 .gb-stat-designers { font-size:.85rem; color:rgba(255,255,255,.75); margin-top:.25rem; display:flex; flex-wrap:wrap; align-items:center; gap:.25rem; min-height:1.4em; }
 /* Inline designer inputs */
@@ -1949,9 +1957,6 @@ body.gb-admin-mode .gb-ph-section { display: block; }
 body.gb-admin-mode .gb-ph-stat { display: flex; }
 .gb-ph-stat strong { opacity: .5; }
 .gb-ph-stat span { opacity: .35; font-style: italic; }
-body.gb-admin-mode .gb-stats { cursor: pointer; border-radius: 6px; transition: background .15s; }
-body.gb-admin-mode .gb-stats:hover { background: rgba(255,255,255,.07); }
-.gb-ph-stat-edit span { opacity: .45; font-style: italic; }
 /* Cover image button (top-left of hero) */
 .gb-cover-btn { position: absolute; top: .75rem; right: .75rem; z-index: 6; }
 body.gb-admin-mode .gb-hero.no-cover .gb-cover-btn { display: flex; }
@@ -2045,28 +2050,50 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     <?php if ($_status && !isset($_gbPublicBase)): ?><div class="gb-status-badge" id="gbStatusBadge"><?= h(ucfirst($_status)) ?></div><?php endif; ?>
     <h1 class="gb-hero-title" id="gbEditTitle" data-ph="Game Title" onclick="event.stopPropagation()"><?= h($_name) ?></h1>
     <p class="gb-hero-summary" id="gbEditSummary" data-ph="Click to add a one-line tagline for this game…" onclick="event.stopPropagation()"><?= h($_summary) ?></p>
-    <!-- Stats row: players, time, mechanic, etc. Click to edit in admin mode. -->
-    <div class="gb-stats" id="gbStatsRow" onclick="typeof openEditDetails==='function'&&document.body.classList.contains('gb-admin-mode')&&openEditDetails()">
-      <?php if ($_count):     ?><div class="gb-stat"><?= h($_count) ?> players</div><?php endif; ?>
-      <?php if ($_duration):  ?><div class="gb-stat"><?= h($_duration) ?></div><?php endif; ?>
-      <?php if ($_mechanic):  ?><div class="gb-stat"><?= h($_mechanic) ?></div><?php endif; ?>
-      <?php if ($_ages):      ?><div class="gb-stat">Ages <?= h($_ages) ?></div><?php endif; ?>
-      <?php if ($_series):    ?><div class="gb-stat"><?= h($_series) ?></div><?php endif; ?>
-      <?php if ($_boxSize):   ?><div class="gb-stat"><?= h($_boxSize) ?></div><?php endif; ?>
-      <?php if ($_availability): ?><div class="gb-stat"><?= h($_availability) ?></div><?php endif; ?>
-      <?php if (!isset($_gbPublicBase)): ?>
-      <?php if (!$_count && !$_duration && !$_mechanic && !$_ages && !$_series && !$_boxSize): ?>
-      <div class="gb-ph-stat gb-ph-stat-edit"><span>Click to add players, time, mechanic…</span></div>
-      <?php endif; ?>
-      <?php endif; ?>
-    </div>
-    <!-- Designer row: separate from stats, inline inputs in admin mode -->
     <?php if (!isset($_gbPublicBase)): ?>
+    <!-- Admin: inline stat inputs with icons -->
+    <div class="gb-stats-edit" id="gbStatsEdit">
+      <div class="gb-stat-field">
+        <svg class="gb-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <input class="gb-stat-input" id="gbsiCount"    type="text" placeholder="2–4 players" oninput="_ed.count=this.value.trim()" />
+      </div>
+      <div class="gb-stat-field">
+        <svg class="gb-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <input class="gb-stat-input" id="gbsiDuration" type="text" placeholder="30–60 min"   oninput="_ed.duration=this.value.trim()" />
+      </div>
+      <div class="gb-stat-field">
+        <svg class="gb-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3 8 3"/><path d="M12 3v4"/></svg>
+        <input class="gb-stat-input" id="gbsiMechanic" type="text" placeholder="Mechanic"    oninput="_ed.mechanic=this.value.trim()" />
+      </div>
+      <div class="gb-stat-field">
+        <svg class="gb-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <input class="gb-stat-input" id="gbsiAges"     type="text" placeholder="Ages"        oninput="_ed.ages=this.value.trim()" />
+      </div>
+      <div class="gb-stat-field">
+        <svg class="gb-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <input class="gb-stat-input" id="gbsiSeries"   type="text" placeholder="Series"      oninput="_ed.series=this.value.trim()" />
+      </div>
+      <div class="gb-stat-field">
+        <svg class="gb-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        <input class="gb-stat-input" id="gbsiBoxSize"  type="text" placeholder="Box size"    oninput="_ed.box_size=this.value.trim()" />
+      </div>
+    </div>
+    <!-- Designer row -->
     <div class="gb-stat-designers" id="gbStatDesigners">
       <span id="gbDesignerInputs"></span>
     </div>
-    <?php elseif ($_designers): ?>
-    <div class="gb-stat-designers"><?= h(implode(', ', $_designers)) ?></div>
+    <?php else: ?>
+    <!-- Public: show stat pills for non-empty values -->
+    <div class="gb-stats" id="gbStatsRow">
+      <?php if ($_count):       ?><div class="gb-stat"><?= h($_count) ?> players</div><?php endif; ?>
+      <?php if ($_duration):    ?><div class="gb-stat"><?= h($_duration) ?></div><?php endif; ?>
+      <?php if ($_mechanic):    ?><div class="gb-stat"><?= h($_mechanic) ?></div><?php endif; ?>
+      <?php if ($_ages):        ?><div class="gb-stat">Ages <?= h($_ages) ?></div><?php endif; ?>
+      <?php if ($_series):      ?><div class="gb-stat"><?= h($_series) ?></div><?php endif; ?>
+      <?php if ($_boxSize):     ?><div class="gb-stat"><?= h($_boxSize) ?></div><?php endif; ?>
+      <?php if ($_availability):?><div class="gb-stat"><?= h($_availability) ?></div><?php endif; ?>
+      <?php if ($_designers):   ?><div class="gb-stat"><?= h(implode(', ', $_designers)) ?></div><?php endif; ?>
+    </div>
     <?php endif; ?>
     <div class="gb-hero-ctas">
       <?php if ($_richPrice): ?><span class="gb-price-tag"><?= h($_richPrice) ?></span><?php endif; ?>
@@ -2840,6 +2867,8 @@ function applyEditDetails() {
   _ed.play_url       = document.getElementById('gbedPlayUrl').value.trim();
   _ed.print_url      = document.getElementById('gbedPrintUrl').value.trim();
   closeEditDetails();
+  // Sync back to inline stat inputs
+  gbInitStatInputs();
   // Update status badge live
   var badge = document.getElementById('gbStatusBadge');
   if (badge) {
@@ -2885,6 +2914,19 @@ function gbInitInlineEdits() {
   gbBuildReviewEditor(_ed.reviews || []);
   gbBuildFaqEditor(_ed.faqs || []);
   gbInitDesignerInputs();
+  gbInitStatInputs();
+}
+
+function gbInitStatInputs() {
+  var map = {
+    gbsiCount:    'count',    gbsiDuration: 'duration',
+    gbsiMechanic: 'mechanic', gbsiAges:     'ages',
+    gbsiSeries:   'series',   gbsiBoxSize:  'box_size'
+  };
+  Object.keys(map).forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = _ed[map[id]] || '';
+  });
 }
 
 function gbInitDesignerInputs() {

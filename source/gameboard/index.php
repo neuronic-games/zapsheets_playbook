@@ -1341,7 +1341,7 @@ body.gb-admin-mode .gb-nav-links { display:none; }
 body.gb-admin-mode #gbEditTitle { outline:2px dashed rgba(124,158,255,.5); border-radius:3px; cursor:text; padding:2px 4px; }
 body.gb-admin-mode #gbEditTitle:focus,
 body.gb-admin-mode #gbEditTitle:hover { outline:2px solid #7c9eff; }
-body.gb-admin-mode #gbEditSummary { outline:2px dashed rgba(255,255,255,.3); border-radius:3px; cursor:text; padding:2px 4px; }
+body.gb-admin-mode #gbEditSummary { outline:2px dashed rgba(255,255,255,.3); border-radius:3px; cursor:text; padding:4px 6px; min-height:2em; display:block; }
 body.gb-admin-mode #gbEditSummary:focus,
 body.gb-admin-mode #gbEditSummary:hover { outline:2px solid rgba(255,255,255,.7); }
 body.gb-admin-mode #gbEditDesc { outline:2px dashed rgba(59,59,170,.4); border-radius:4px; cursor:text; padding:4px 6px; }

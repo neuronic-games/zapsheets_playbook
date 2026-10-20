@@ -1576,7 +1576,7 @@ function _gb_val(array $rich, string $name): string {
 
 $_components  = array_values(array_filter(_gb_rows($_rich, 'Component'), fn($r) => trim($r['Value'] ?? '') !== ''));
 $_reviews     = array_values(array_filter(_gb_rows($_rich, 'Review'),    fn($r) => trim($r['Value'] ?? '') !== ''));
-$_faqs        = array_values(array_filter(_gb_rows($_rich, 'FAQ'),       fn($r) => trim($r['Value'] ?? '') !== '' || trim($r['Value 1'] ?? '') !== ''));
+$_faqs        = array_values(array_filter(_gb_rows($_rich, 'FAQ'),       fn($r) => trim($r['Value'] ?? '') !== ''));
 $_buyUrls     = _gb_rows($_rich, 'BuyUrl');
 $_richVideos  = _gb_rows($_rich, 'Video');
 $_mediaImgs   = array_merge(_gb_rows($_rich, 'Media'), _gb_rows($_rich, 'ProductImage'));
@@ -1800,6 +1800,13 @@ body.gb-admin-mode .gb-inline-hint { display:block; }
 .gb-faq-editor { display:none; flex-direction:column; gap:.6rem; min-height:0; padding:0; border:none; background:none; resize:none; }
 body.gb-admin-mode .gb-faq-editor { display:flex; }
 .gb-faq-pair { border:1.5px dashed var(--border); border-radius:8px; overflow:hidden; }
+.faq-ans-wrap { position:relative; }
+.faq-img-btn { position:absolute; bottom:.35rem; right:.35rem; width:1.55rem; height:1.55rem; background:rgba(255,255,255,.88); border:1px solid #d0d8e4; border-radius:5px; cursor:pointer; color:#99a; display:flex; align-items:center; justify-content:center; z-index:2; padding:0; transition:color .15s,border-color .15s; }
+.faq-img-btn:hover { color:var(--accent); border-color:#a0b8c8; }
+.faq-img-preview { position:relative; }
+.faq-img-preview img { width:100%; display:block; border-radius:0 0 6px 6px; }
+.faq-img-trash { position:absolute; bottom:.3rem; right:.3rem; width:1.55rem; height:1.55rem; background:rgba(255,255,255,.92); border:1px solid #e8c0c0; border-radius:5px; cursor:pointer; color:#c0392b; display:flex; align-items:center; justify-content:center; z-index:3; padding:0; }
+.faq-img-trash:hover { background:#fff0f0; border-color:#c0392b; }
 .gb-faq-pair textarea {
   display:block; width:100%; box-sizing:border-box; border:none; outline:none;
   font-family:inherit; font-size:.88rem; line-height:1.6; resize:none; overflow:hidden;
@@ -2337,11 +2344,11 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     <?php foreach ($_faqs as $fi => $fq):
       $fqQ = trim($fq['Value']   ?? '');
       $fqA = trim($fq['Value 1'] ?? '');
-      if (!$fqQ || !$fqA) continue;
+      if (!$fqQ) continue;
     ?>
     <div class="gb-faq-item gb-display-content" id="faq<?= $fi ?>">
       <div class="gb-faq-q" onclick="toggleFaq('faq<?= $fi ?>')"><?= h($fqQ) ?></div>
-      <div class="gb-faq-a"><?= nl2br(h($fqA)) ?></div>
+      <div class="gb-faq-a"><?php if (strncmp($fqA, 'img:', 4) === 0): ?><img class="gb-faq-img" src="<?= h(substr($fqA, 4)) ?>" alt="" loading="lazy"><?php else: ?><?= nl2br(h($fqA)) ?><?php endif; ?></div>
     </div>
     <?php endforeach; ?>
   </div>
@@ -3179,40 +3186,115 @@ function gbAddFaqPair(list, q, a, isLast) {
   qta.rows = 1;
   qta.value = q || '';
 
+  // Answer area: textarea + image upload button + image preview
+  var ansWrap = document.createElement('div');
+  ansWrap.className = 'faq-ans-wrap';
+
   var ata = document.createElement('textarea');
   ata.className = 'faq-a';
   ata.placeholder = 'Answer';
   ata.rows = 2;
-  ata.value = a || '';
+
+  // Image upload button (hidden when text exists)
+  var imgBtn = document.createElement('button');
+  imgBtn.type = 'button';
+  imgBtn.className = 'faq-img-btn';
+  imgBtn.title = 'Upload image';
+  imgBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+
+  var fileInp = document.createElement('input');
+  fileInp.type = 'file'; fileInp.accept = 'image/*'; fileInp.style.display = 'none';
+
+  // Image preview
+  var imgPreview = document.createElement('div');
+  imgPreview.className = 'faq-img-preview';
+  imgPreview.style.display = 'none';
+  var previewImg = document.createElement('img');
+  previewImg.alt = '';
+  var trashBtn = document.createElement('button');
+  trashBtn.type = 'button'; trashBtn.className = 'faq-img-trash'; trashBtn.title = 'Remove image';
+  trashBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
+  imgPreview.appendChild(previewImg); imgPreview.appendChild(trashBtn);
+
+  // Determine initial state: if answer is an img: URL, show image; else text
+  var imgUrl = '';
+  if (a && a.indexOf('img:') === 0) {
+    imgUrl = a.slice(4);
+    previewImg.src = imgUrl;
+    imgPreview.style.display = '';
+    ata.style.display = 'none';
+    imgBtn.style.display = 'none';
+  } else {
+    ata.value = a || '';
+  }
+
+  function getAnswerValue() {
+    return imgUrl ? 'img:' + imgUrl : ata.value.trim();
+  }
 
   function syncFaqs() {
     _ed.faqs = Array.prototype.slice.call(
       document.querySelectorAll('#gbFaqsList .gb-faq-pair')
     ).map(function(p) {
-      return {
-        q: p.querySelector('.faq-q').value.trim(),
-        a: p.querySelector('.faq-a').value.trim()
-      };
+      var q2 = p.querySelector('.faq-q').value.trim();
+      var aw = p._gbGetAnswer ? p._gbGetAnswer() : (p.querySelector('.faq-a') ? p.querySelector('.faq-a').value.trim() : '');
+      return { q: q2, a: aw };
     }).filter(function(f){ return f.q || f.a; });
   }
+  pair._gbGetAnswer = getAnswerValue;
 
   function maybeAddPair() {
-    // Add a new blank pair if this is the last one and has any content
     var pairs = document.querySelectorAll('#gbFaqsList .gb-faq-pair');
     var last  = pairs[pairs.length - 1];
-    if (pair === last && (qta.value.trim() || ata.value.trim())) {
+    if (pair === last && (qta.value.trim() || getAnswerValue())) {
       gbAddFaqPair(list, '', '', true);
     }
   }
 
   qta.oninput = function() { gbAutoResize(this); syncFaqs(); maybeAddPair(); };
-  ata.oninput = function() { gbAutoResize(this); syncFaqs(); maybeAddPair(); };
+  ata.oninput = function() {
+    imgBtn.style.display = this.value ? 'none' : '';
+    gbAutoResize(this); syncFaqs(); maybeAddPair();
+  };
+
+  imgBtn.onclick = function() { fileInp.value = ''; fileInp.click(); };
+
+  fileInp.onchange = function() {
+    var file = this.files[0]; if (!file) return;
+    imgBtn.disabled = true;
+    var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('file', file);
+    fetch(APP_ROOT + 'push/uploadMedia.php', { method:'POST', body:fd })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        imgBtn.disabled = false;
+        if (!res.ok || !res.url) { alert('Upload failed: ' + (res.error || 'unknown')); return; }
+        imgUrl = res.url;
+        previewImg.src = imgUrl;
+        imgPreview.style.display = '';
+        ata.style.display = 'none';
+        imgBtn.style.display = 'none';
+        syncFaqs(); maybeAddPair();
+      })
+      .catch(function() { imgBtn.disabled = false; alert('Upload failed.'); });
+  };
+
+  trashBtn.onclick = function() {
+    imgUrl = ''; previewImg.src = '';
+    imgPreview.style.display = 'none';
+    ata.style.display = ''; ata.value = '';
+    imgBtn.style.display = '';
+    syncFaqs();
+  };
+
+  ansWrap.appendChild(ata);
+  ansWrap.appendChild(imgBtn);
+  ansWrap.appendChild(fileInp);
+  ansWrap.appendChild(imgPreview);
 
   pair.appendChild(qta);
-  pair.appendChild(ata);
+  pair.appendChild(ansWrap);
   list.appendChild(pair);
 
-  // Size to content after render
   setTimeout(function() { gbAutoResize(qta); gbAutoResize(ata); }, 0);
 }
 

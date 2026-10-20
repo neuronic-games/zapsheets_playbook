@@ -1136,7 +1136,7 @@ a { color:inherit; text-decoration:none; }
   position:absolute; inset:0;
   background:var(--hero-gradient);
 }
-.gb-hero-content { position:relative; z-index:2; max-width:860px; padding:2.5rem 2rem 3.5rem; }
+.gb-hero-content { position:relative; z-index:5; max-width:860px; padding:2.5rem 2rem 3.5rem; }
 .gb-status-badge {
   display:inline-block; font-family:'DINBlack',sans-serif; font-size:.66rem;
   text-transform:uppercase; letter-spacing:.1em; padding:.22rem .65rem;
@@ -1338,10 +1338,10 @@ body.gb-admin-mode .gb-nav-links { display:none; }
 .btn-adm-details { background:rgba(124,158,255,.15); border:1.5px solid rgba(124,158,255,.4); color:#7c9eff; }
 .btn-adm-details:hover { background:rgba(124,158,255,.25); }
 /* Editable field highlights in admin mode */
-body.gb-admin-mode #gbEditTitle { outline:2px dashed rgba(124,158,255,.5); border-radius:3px; cursor:text; padding:2px 4px; position:relative; z-index:5; }
+body.gb-admin-mode #gbEditTitle { outline:2px dashed rgba(124,158,255,.5); border-radius:3px; cursor:text; padding:2px 4px; }
 body.gb-admin-mode #gbEditTitle:focus,
 body.gb-admin-mode #gbEditTitle:hover { outline:2px solid #7c9eff; }
-body.gb-admin-mode #gbEditSummary { outline:2px dashed rgba(255,255,255,.3); border-radius:3px; cursor:text; padding:4px 6px; min-height:2em; display:block; position:relative; z-index:5; }
+body.gb-admin-mode #gbEditSummary { outline:2px dashed rgba(255,255,255,.3); border-radius:3px; cursor:text; padding:4px 6px; min-height:2em; display:block; }
 body.gb-admin-mode #gbEditSummary:focus,
 body.gb-admin-mode #gbEditSummary:hover { outline:2px solid rgba(255,255,255,.7); }
 body.gb-admin-mode #gbEditDesc { outline:2px dashed rgba(59,59,170,.4); border-radius:4px; cursor:text; padding:4px 6px; }

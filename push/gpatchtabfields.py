@@ -89,15 +89,23 @@ for row_idx, row in enumerate(all_values, start=1):
                 updates.append({'range': a1, 'values': [[new_val]]})
                 break
 
-if not updates:
-    print(json.dumps({"ok": True, "tab": ws.title, "patched": 0,
-                      "note": "no matching field rows found"}))
-    sys.exit(0)
-
 try:
-    ws.batch_update(updates, value_input_option='USER_ENTERED')
+    if updates:
+        ws.batch_update(updates, value_input_option='USER_ENTERED')
 except Exception as e:
     print(json.dumps({"error": f"Could not patch tab: {str(e)}"}))
     sys.exit(1)
 
-print(json.dumps({"ok": True, "tab": ws.title, "patched": len(updates)}))
+# Append rows for any fields that had no matching row yet
+appended = 0
+if remaining:
+    new_rows = [[name, value] for name, value in remaining.items() if value != '']
+    if new_rows:
+        try:
+            ws.append_rows(new_rows, value_input_option='USER_ENTERED')
+            appended = len(new_rows)
+        except Exception as e:
+            print(json.dumps({"error": f"Could not append new rows: {str(e)}"}))
+            sys.exit(1)
+
+print(json.dumps({"ok": True, "tab": ws.title, "patched": len(updates), "appended": appended}))

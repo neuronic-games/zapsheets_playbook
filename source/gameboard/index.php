@@ -1875,6 +1875,8 @@ body.gb-admin-mode .gb-nav-links { display:none; }
 .btn-adm-secondary:hover { background:rgba(255,255,255,.08); border-color:#fff; }
 .btn-adm-details { background:rgba(124,158,255,.15); border:1.5px solid rgba(124,158,255,.4); color:#7c9eff; }
 .btn-adm-details:hover { background:rgba(124,158,255,.25); }
+/* Designer row (separate from stats) */
+.gb-stat-designers { font-size:.85rem; color:rgba(255,255,255,.75); margin-top:.25rem; display:flex; flex-wrap:wrap; align-items:center; gap:.25rem; min-height:1.4em; }
 /* Inline designer inputs */
 .gb-designer-input {
   background:transparent; border:none; border-bottom:1.5px dashed rgba(255,255,255,.45);
@@ -2043,6 +2045,7 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     <?php if ($_status && !isset($_gbPublicBase)): ?><div class="gb-status-badge" id="gbStatusBadge"><?= h(ucfirst($_status)) ?></div><?php endif; ?>
     <h1 class="gb-hero-title" id="gbEditTitle" data-ph="Game Title" onclick="event.stopPropagation()"><?= h($_name) ?></h1>
     <p class="gb-hero-summary" id="gbEditSummary" data-ph="Click to add a one-line tagline for this game…" onclick="event.stopPropagation()"><?= h($_summary) ?></p>
+    <!-- Stats row: players, time, mechanic, etc. Click to edit in admin mode. -->
     <div class="gb-stats" id="gbStatsRow" onclick="typeof openEditDetails==='function'&&document.body.classList.contains('gb-admin-mode')&&openEditDetails()">
       <?php if ($_count):     ?><div class="gb-stat"><?= h($_count) ?> players</div><?php endif; ?>
       <?php if ($_duration):  ?><div class="gb-stat"><?= h($_duration) ?></div><?php endif; ?>
@@ -2050,22 +2053,21 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
       <?php if ($_ages):      ?><div class="gb-stat">Ages <?= h($_ages) ?></div><?php endif; ?>
       <?php if ($_series):    ?><div class="gb-stat"><?= h($_series) ?></div><?php endif; ?>
       <?php if ($_boxSize):   ?><div class="gb-stat"><?= h($_boxSize) ?></div><?php endif; ?>
+      <?php if ($_availability): ?><div class="gb-stat"><?= h($_availability) ?></div><?php endif; ?>
       <?php if (!isset($_gbPublicBase)): ?>
-      <!-- Admin placeholder if no stats yet -->
       <?php if (!$_count && !$_duration && !$_mechanic && !$_ages && !$_series && !$_boxSize): ?>
       <div class="gb-ph-stat gb-ph-stat-edit"><span>Click to add players, time, mechanic…</span></div>
       <?php endif; ?>
-      <!-- Designer stat: always shown in admin mode with inline inputs -->
-      <div class="gb-stat" id="gbStatDesigners" onclick="event.stopPropagation()">
-        <span id="gbDesignerInputs"></span>
-      </div>
-      <?php elseif ($_designers): ?>
-      <div class="gb-stat"><?= h(implode(', ', $_designers)) ?></div>
       <?php endif; ?>
-      <?php if ($_availability): ?><div class="gb-stat"><?= h($_availability) ?></div><?php endif; ?>
-      <?php if (!isset($_gbPublicBase) && !$_count):    ?><div class="gb-ph-stat"><span>2–4 players</span></div><?php endif; ?>
-      <?php if (!isset($_gbPublicBase) && !$_duration): ?><div class="gb-ph-stat"><span>30–60 min</span></div><?php endif; ?>
     </div>
+    <!-- Designer row: separate from stats, inline inputs in admin mode -->
+    <?php if (!isset($_gbPublicBase)): ?>
+    <div class="gb-stat-designers" id="gbStatDesigners">
+      <span id="gbDesignerInputs"></span>
+    </div>
+    <?php elseif ($_designers): ?>
+    <div class="gb-stat-designers"><?= h(implode(', ', $_designers)) ?></div>
+    <?php endif; ?>
     <div class="gb-hero-ctas">
       <?php if ($_richPrice): ?><span class="gb-price-tag"><?= h($_richPrice) ?></span><?php endif; ?>
       <?php foreach ($_buyUrls as $b):

@@ -43,6 +43,7 @@ reviews    = data.get('reviews', [])
 videos     = data.get('videos', [])
 faqs       = data.get('faqs', [])
 artists    = [str(a).strip() for a in data.get('artists', []) if str(a).strip()]
+buy_urls   = data.get('buy_urls', [])
 
 if not sheet_id or not game_name:
     print(json.dumps({"error": "sheet_id and game are required"}))
@@ -73,13 +74,14 @@ except Exception as e:
 
 # Build the replacement content for each block type.
 # Each list must have at least one placeholder row so the section stays present.
-BLOCK_TYPES = ('Component', 'Review', 'Video', 'FAQ', 'Artist')
+BLOCK_TYPES = ('Component', 'Review', 'Video', 'FAQ', 'Artist', 'BuyUrl')
 block_content = {
     'Component': [['Component', c, ''] for c in components] or [['Component', '', '']],
     'Review':    [['Review', str(r.get('attr','')), str(r.get('quote',''))] for r in reviews if isinstance(r, dict)] or [['Review', '', '']],
     'Video':     [['Video', str(v.get('url','')), str(v.get('name',''))] for v in videos if isinstance(v, dict)] or [['Video', '', '']],
     'FAQ':       [['FAQ', str(f.get('q','')), str(f.get('a',''))] for f in faqs if isinstance(f, dict)] or [['FAQ', '', '']],
     'Artist':    [['Artist', a, ''] for a in artists] or [['Artist', '', '']],
+    'BuyUrl':    [['BuyUrl', str(b.get('url','')), str(b.get('label',''))] for b in buy_urls if isinstance(b, dict) and b.get('url','')] or [['BuyUrl', '', '']],
 }
 
 # Rebuild rows: keep non-Component/Review/FAQ rows as-is,

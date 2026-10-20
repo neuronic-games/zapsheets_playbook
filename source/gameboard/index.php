@@ -1870,6 +1870,20 @@ body.gb-admin-mode .gb-vrev-grid { display:grid; }
 .gb-vrev-editing .gb-vrev-btn-save { padding:.32rem .7rem; border-radius:5px; border:none; background:#4ade80; color:#0f172a; font-size:.72rem; font-weight:700; cursor:pointer; }
 .gb-vrev-editing .gb-vrev-btn-cancel { padding:.32rem .7rem; border-radius:5px; border:none; background:#e2e8f0; color:#334155; font-size:.72rem; font-weight:700; cursor:pointer; }
 
+/* ── Price & Buy URL editor (admin) ── */
+.gb-buy-editor { display:flex; flex-direction:column; gap:.55rem; }
+body.gb-admin-mode .gb-buy-editor { display:flex; }
+.gb-buy-price-row { display:flex; align-items:center; gap:.6rem; }
+.gb-buy-price-row label { font-family:'DINBlack',sans-serif; font-size:.65rem; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); white-space:nowrap; }
+.gb-buy-price-inp { width:120px; padding:.42rem .6rem; border:1px solid #dde; border-radius:6px; font-size:.85rem; outline:none; }
+.gb-buy-price-inp:focus { border-color:#7c9eff; }
+.gb-buy-pair { display:grid; grid-template-columns:1fr 160px 1.4rem; gap:.4rem; align-items:center; }
+.gb-buy-pair input { padding:.42rem .6rem; border:1px solid #dde; border-radius:6px; font-size:.82rem; outline:none; width:100%; box-sizing:border-box; }
+.gb-buy-pair input:focus { border-color:#7c9eff; }
+.gb-buy-pair input::placeholder { color:#aab; }
+.gb-buy-pair-del { background:none; border:none; color:#bbc; font-size:.9rem; cursor:pointer; padding:0; line-height:1; text-align:center; }
+.gb-buy-pair-del:hover { color:#e55; }
+
 /* ── FAQs ── */
 .gb-faq-item { border-bottom:1px solid var(--border); padding:.85rem 0; }
 .gb-faq-item:last-child { border-bottom:none; }
@@ -2273,6 +2287,12 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
 
 <!-- ── Main ── -->
 <div class="gb-main">
+
+  <!-- Price & Buy URLs (admin only) -->
+  <div class="gb-section gb-ph-section" id="gbBuySection">
+    <div class="gb-section-label">Price &amp; Where to Buy</div>
+    <div class="gb-buy-editor gb-inline-edit" id="gbBuyEditor"></div>
+  </div>
 
   <!-- Description (always rendered; hidden in public when empty via .gb-ph-section) -->
   <div class="gb-section<?= $_description ? '' : ' gb-ph-section' ?>">
@@ -2747,6 +2767,8 @@ var GAME_DATA = <?= json_encode([
     'date_started'   => trim($_game['Date Started'] ?? ''),
     'date_signed'    => $_dateSigned,
     'date_published' => $_datePub,
+    'price'          => $_richPrice,
+    'buy_urls'       => array_values(array_filter(array_map(function($b) { return ['url' => trim($b['Value'] ?? ''), 'label' => trim($b['Value 1'] ?? '')]; }, $_buyUrls), function($b){ return $b['url'] !== ''; })),
     'components'     => array_values(array_map(function($c) { return trim($c['Value'] ?? ''); }, $_components)),
     'reviews'        => array_values(array_map(function($r) { return ['attr' => trim($r['Value'] ?? ''), 'quote' => trim($r['Value 1'] ?? '')]; }, $_reviews)),
     'videos'         => array_values(array_map(function($r) { return ['url' => trim($r['Value'] ?? ''), 'name' => trim($r['Value 1'] ?? '')]; }, $_videoReviews)),
@@ -3185,6 +3207,7 @@ function gbInitInlineEdits() {
       _ed.components = this.value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
     };
   }
+  gbBuildBuyEditor(_ed.price, _ed.buy_urls || []);
   gbBuildReviewEditor(_ed.reviews || []);
   gbInitVrevGrid();
   gbBuildFaqEditor(_ed.faqs || []);
@@ -3415,6 +3438,50 @@ function gbVrevRemove(e, idx) {
   if (!_ed.videos) return;
   _ed.videos.splice(idx, 1);
   gbInitVrevGrid();
+}
+
+function gbBuildBuyEditor(price, buyUrls) {
+  var wrap = document.getElementById('gbBuyEditor');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  // Price row
+  var priceRow = document.createElement('div');
+  priceRow.className = 'gb-buy-price-row';
+  priceRow.innerHTML = '<label>Price</label><input class="gb-buy-price-inp" id="gbBuyPriceInp" type="text" placeholder="$19.99" value="' + esc(price || '') + '">';
+  wrap.appendChild(priceRow);
+  priceRow.querySelector('input').oninput = function() { _ed.price = this.value.trim(); };
+  // URL + label pairs
+  var pairs = (buyUrls || []).filter(function(b){ return b.url; });
+  pairs.push({url:'', label:''});
+  pairs.forEach(function(b, i) { gbAddBuyPair(wrap, b.url, b.label, i === pairs.length - 1); });
+}
+
+function gbAddBuyPair(wrap, url, label, isLast) {
+  var row = document.createElement('div');
+  row.className = 'gb-buy-pair';
+  row.innerHTML =
+    '<input type="url" placeholder="https://buy-link.com…" value="' + esc(url || '') + '">'
+    + '<input type="text" placeholder="Label (e.g. Amazon)" value="' + esc(label || '') + '">'
+    + '<button class="gb-buy-pair-del" title="Remove">✕</button>';
+  wrap.appendChild(row);
+  var urlInp   = row.querySelectorAll('input')[0];
+  var lblInp   = row.querySelectorAll('input')[1];
+  var delBtn   = row.querySelector('.gb-buy-pair-del');
+  function syncBuyUrls() {
+    _ed.buy_urls = Array.from(wrap.querySelectorAll('.gb-buy-pair')).map(function(r) {
+      return { url: r.querySelectorAll('input')[0].value.trim(), label: r.querySelectorAll('input')[1].value.trim() };
+    }).filter(function(b){ return b.url; });
+  }
+  function maybeAddPair() {
+    var rows = wrap.querySelectorAll('.gb-buy-pair');
+    if (row === rows[rows.length - 1] && urlInp.value.trim()) gbAddBuyPair(wrap, '', '', true);
+  }
+  urlInp.oninput = function() { syncBuyUrls(); maybeAddPair(); };
+  lblInp.oninput = function() { syncBuyUrls(); };
+  delBtn.onclick = function() {
+    if (wrap.querySelectorAll('.gb-buy-pair').length > 1) { row.remove(); syncBuyUrls(); } else { urlInp.value=''; lblInp.value=''; syncBuyUrls(); }
+  };
+  if (!isLast) delBtn.style.visibility = 'visible';
 }
 
 function gbBuildFaqEditor(faqs) {
@@ -3726,10 +3793,12 @@ function saveGame() {
   fd.append('rules',          _ed.rules_url      || '');
   fd.append('play',           _ed.play_url       || '');
   fd.append('print',          _ed.print_url      || '');
-  if (_ed.components     !== undefined) fd.append('components',     JSON.stringify(_ed.components     || []));
-  if (_ed.reviews        !== undefined) fd.append('reviews',        JSON.stringify(_ed.reviews        || []));
-  if (_ed.videos         !== undefined) fd.append('videos',         JSON.stringify(_ed.videos         || []));
-  if (_ed.faqs           !== undefined) fd.append('faqs',           JSON.stringify(_ed.faqs           || []));
+  if (_ed.price      !== undefined) fd.append('price',     _ed.price     || '');
+  if (_ed.buy_urls   !== undefined) fd.append('buy_urls',  JSON.stringify(_ed.buy_urls  || []));
+  if (_ed.components !== undefined) fd.append('components', JSON.stringify(_ed.components || []));
+  if (_ed.reviews    !== undefined) fd.append('reviews',    JSON.stringify(_ed.reviews    || []));
+  if (_ed.videos     !== undefined) fd.append('videos',     JSON.stringify(_ed.videos     || []));
+  if (_ed.faqs       !== undefined) fd.append('faqs',       JSON.stringify(_ed.faqs       || []));
   if (_gbGalleryUploads.length) {
     fd.append('gallery_add', JSON.stringify(_gbGalleryUploads));
   }

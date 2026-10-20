@@ -29,6 +29,7 @@ $print         = trim($_POST['print']          ?? '');
 $sellsheet     = trim($_POST['sellsheet']      ?? '');
 $view          = trim($_POST['view']           ?? '');
 $video         = trim($_POST['video']          ?? '');
+$price         = trim($_POST['price']          ?? '');
 $imageRaw      = trim($_POST['image']          ?? '');
 $image         = $imageRaw ? '=IMAGE("' . $imageRaw . '")' : '';
 $coverRaw      = trim($_POST['cover_url']      ?? '');
@@ -131,6 +132,7 @@ if ($result !== null && !empty($result['ok'])) {
         if ($minPlaytime !== '') $patchFields['MinPlaytime']   = $minPlaytime;
         if ($maxPlaytime !== '') $patchFields['MaxPlaytime']   = $maxPlaytime;
         if ($weight      !== '') $patchFields['Weight']        = $weight;
+        if ($price       !== '') $patchFields['Price']         = $price;
         if ($patchFields) {
             $patchData    = ['game' => $tabGameName, 'fields' => $patchFields];
             $patchEncoded = base64_encode(json_encode($patchData, JSON_UNESCAPED_UNICODE));
@@ -183,13 +185,14 @@ if ($result !== null && !empty($result['ok'])) {
         }
     }
 
-    // Update Component / Review / FAQ rows in the [GameName] tab
+    // Update Component / Review / FAQ / BuyUrl rows in the [GameName] tab
     $componentsRaw = trim($_POST['components'] ?? '');
     $reviewsRaw    = trim($_POST['reviews']    ?? '');
     $videosRaw     = trim($_POST['videos']     ?? '');
     $faqsRaw       = trim($_POST['faqs']       ?? '');
     $artistsRaw    = trim($_POST['artists']    ?? '');
-    if ($componentsRaw !== '' || $reviewsRaw !== '' || $videosRaw !== '' || $faqsRaw !== '' || $artistsRaw !== '') {
+    $buyUrlsRaw    = trim($_POST['buy_urls']   ?? '');
+    if ($componentsRaw !== '' || $reviewsRaw !== '' || $videosRaw !== '' || $faqsRaw !== '' || $artistsRaw !== '' || $buyUrlsRaw !== '') {
         $tabContent = [
             'game'       => $tabGameName,
             'components' => $componentsRaw ? (json_decode($componentsRaw, true) ?: []) : [],
@@ -197,6 +200,7 @@ if ($result !== null && !empty($result['ok'])) {
             'videos'     => $videosRaw     ? (json_decode($videosRaw,     true) ?: []) : [],
             'faqs'       => $faqsRaw       ? (json_decode($faqsRaw,       true) ?: []) : [],
             'artists'    => $artistsRaw    ? (json_decode($artistsRaw,    true) ?: []) : [],
+            'buy_urls'   => $buyUrlsRaw    ? (json_decode($buyUrlsRaw,    true) ?: []) : [],
         ];
         $tabContentEncoded = base64_encode(json_encode($tabContent, JSON_UNESCAPED_UNICODE));
         $tabContentCmd = escapeshellarg($pythonPath) . ' '

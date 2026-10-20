@@ -2024,20 +2024,19 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     <h1 class="gb-hero-title" id="gbEditTitle" data-ph="Game Title" onclick="event.stopPropagation()"><?= h($_name) ?></h1>
     <p class="gb-hero-summary" id="gbEditSummary" data-ph="Click to add a one-line tagline for this game…" onclick="event.stopPropagation()"><?= h($_summary) ?></p>
     <div class="gb-stats">
-      <?php if ($_count):     ?><div class="gb-stat"><strong>👥</strong><?= h($_count) ?> players</div><?php endif; ?>
-      <?php if ($_duration):  ?><div class="gb-stat"><strong>⏱</strong><?= h($_duration) ?></div><?php endif; ?>
+      <?php if ($_count):     ?><div class="gb-stat"><?= h($_count) ?> players</div><?php endif; ?>
+      <?php if ($_duration):  ?><div class="gb-stat"><?= h($_duration) ?></div><?php endif; ?>
       <?php if (!isset($_gbPublicBase)): ?>
       <!-- Designer stat: always shown in admin mode with inline inputs -->
       <div class="gb-stat" id="gbStatDesigners">
-        <strong>✏️</strong>
         <span id="gbDesignerInputs"></span>
       </div>
       <?php elseif ($_designers): ?>
-      <div class="gb-stat"><strong>✏️</strong><?= h(implode(', ', $_designers)) ?></div>
+      <div class="gb-stat"><?= h(implode(', ', $_designers)) ?></div>
       <?php endif; ?>
-      <?php if ($_availability): ?><div class="gb-stat"><strong>📦</strong><?= h($_availability) ?></div><?php endif; ?>
-      <?php if (!$_count):    ?><div class="gb-ph-stat"><strong>👥</strong><span>2–4 players</span></div><?php endif; ?>
-      <?php if (!$_duration): ?><div class="gb-ph-stat"><strong>⏱</strong><span>30–60 min</span></div><?php endif; ?>
+      <?php if ($_availability): ?><div class="gb-stat"><?= h($_availability) ?></div><?php endif; ?>
+      <?php if (!$_count):    ?><div class="gb-ph-stat"><span>2–4 players</span></div><?php endif; ?>
+      <?php if (!$_duration): ?><div class="gb-ph-stat"><span>30–60 min</span></div><?php endif; ?>
     </div>
     <div class="gb-hero-ctas">
       <?php if ($_richPrice): ?><span class="gb-price-tag"><?= h($_richPrice) ?></span><?php endif; ?>

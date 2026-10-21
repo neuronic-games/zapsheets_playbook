@@ -2374,7 +2374,7 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
     <div class="gb-section-label">Gallery</div>
     <div class="gb-gallery-viewer" id="gbGalleryViewer">
       <div class="gb-gallery-featured" id="gbGalleryFeatured">
-        <img id="gbGalleryFeaturedImg" src="" alt="<?= h($_name) ?>" onclick="openLightbox(this.src)" style="display:none" />
+        <img id="gbGalleryFeaturedImg" src="<?= h($_productImgUrls[0] ?? '') ?>" alt="<?= h($_name) ?>" onclick="openLightbox(this.src)"<?= empty($_productImgUrls) ? ' style="display:none"' : '' ?> />
         <button class="gb-gallery-featured-del" title="Remove this image" onclick="gbGalleryDeleteFeatured()">✕</button>
       </div>
       <div class="gb-gallery-thumbs" id="gbGalleryThumbs">
@@ -2866,12 +2866,14 @@ var _siPendingEmail = '', _siPendingPass = '';
     // Build admin buy CTA buttons in hero
     gbInitBuyCtas();
     gbInitInlineEdits();
-    // Gallery: init _ed.gallery and render with auto-advance
+    _updateGbAuth();
+  } catch(e) { console.error('[admin init]', e); }
+  // Gallery init runs outside try/catch so errors here are visible
+  if (document.body.classList.contains('gb-admin-mode')) {
     if (!_ed.gallery) _ed.gallery = (GAME_DATA.gallery || []).slice();
     gbRenderGallery();
     gbGalleryAutoAdvance();
-    _updateGbAuth();
-  } catch(e) {}
+  }
 })();
 
 function _updateGbAuth() {
@@ -3820,10 +3822,11 @@ function gbRenderGallery() {
   // Clamp active index
   if (_gbGalleryIdx >= imgs.length) _gbGalleryIdx = Math.max(0, imgs.length - 1);
 
-  // Always set featured image src; show image once loaded
+  // Update featured image src only if needed; don't reset an already-loaded image
   if (imgs.length) {
     featEl.style.display = '';
-    if (featEl.src !== imgs[_gbGalleryIdx]) {
+    var alreadyLoaded = featEl.complete && featEl.naturalWidth > 0;
+    if (!alreadyLoaded || featEl.getAttribute('src') !== imgs[_gbGalleryIdx]) {
       featEl.src = imgs[_gbGalleryIdx];
     }
   } else {

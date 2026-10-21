@@ -31,9 +31,9 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 :root {
   --green:  #6abf69;
   --amber:  #e8a030;
-  --bg:     #0e0f1a;
-  --card-bg:#14162a;
-  --border: #1e2040;
+  --bg:     #1a1c30;
+  --card-bg:#22254a;
+  --border: #30346a;
 }
 
 body {
@@ -124,7 +124,7 @@ body {
 
 /* ── Log panel ── */
 .log-panel {
-  margin-top: 1.25rem; background: #09091a;
+  margin-top: 1.25rem; background: #14162a;
   border: 1px solid var(--border); border-radius: 9px;
   padding: .9rem 1rem; max-height: 220px; overflow-y: auto;
   font-family: 'Courier New', Courier, monospace; font-size: .79rem; line-height: 1.8;

@@ -1194,6 +1194,7 @@ function gbSaveFooterField(el) {
   xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
   xhr.onload = function() {
     var r = {}; try { r = JSON.parse(xhr.responseText); } catch(e) {}
+    console.log('tmSaveSettings response:', r);
     if (!r.ok) { gbShowSaveToast('Save failed', true); return; }
     if (!r.sheetOk) {
       gbShowSaveToast('Saved locally — sheet sync failed', true);

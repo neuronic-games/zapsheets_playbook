@@ -87,4 +87,4 @@ if (!$sheetOk) {
     $sheetErr = $pyResult['error'] ?? $pyErr ?: ($pyOut ?: 'Script did not respond');
 }
 
-echo json_encode(['ok' => true, 'sheetOk' => $sheetOk, 'sheetErr' => $sheetErr]);
+echo json_encode(['ok' => true, 'sheetOk' => $sheetOk, 'sheetErr' => $sheetErr, '_file' => $file, '_keys' => array_keys($settings)]);

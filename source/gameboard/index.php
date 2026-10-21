@@ -1835,6 +1835,17 @@ body.gb-admin-mode .gb-faq-editor { display:flex; }
 .gb-comp-qty { font-family:'DINBlack',sans-serif; font-size:1rem; color:var(--accent); flex-shrink:0; min-width:1.5rem; }
 .gb-comp-name { color:var(--ink-lt); }
 
+/* ── Review Ticker ── */
+.gb-ticker-wrap { background:#f5a623; overflow:hidden; padding:0; }
+body.gb-admin-mode .gb-ticker-wrap { display:none; }
+.gb-ticker-track { display:flex; will-change:transform; }
+.gb-ticker-track.gb-ticker-go { animation:gbTicker linear infinite; }
+@keyframes gbTicker { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+.gb-ticker-item { flex-shrink:0; width:480px; padding:1.6rem 2.5rem; text-align:center; box-sizing:border-box; }
+.gb-ticker-quote { font-family:'DINBlack',sans-serif; font-size:1.05rem; color:#fff; font-style:italic; line-height:1.45; }
+.gb-ticker-author { margin-top:.5rem; font-size:.7rem; color:rgba(255,255,255,.75); text-transform:uppercase; letter-spacing:.07em; }
+.gb-ticker-dot { flex-shrink:0; display:flex; align-items:center; color:rgba(255,255,255,.3); font-size:1.4rem; padding:0 .25rem; align-self:center; }
+
 /* ── Reviews ── */
 .gb-reviews { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:1rem; }
 .gb-review {
@@ -2301,6 +2312,31 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     </div>
   </div>
 </div>
+
+<?php if (!empty($_reviews)): ?>
+<?php
+  // Each item is 480px wide; aim for ~60px/s → duration = (items * 480) / 60
+  $_tickerCount = count($_reviews);
+  $_tickerDur   = max(12, intval($_tickerCount * 480 / 60));
+?>
+<!-- ── Review Ticker ── -->
+<div class="gb-ticker-wrap">
+  <div class="gb-ticker-track" id="gbTickerTrack" style="animation-duration:<?= $_tickerDur ?>s">
+    <?php foreach ([1,2] as $_pass): /* duplicate for seamless loop */ ?>
+    <?php foreach ($_reviews as $rv):
+      $rQ = trim($rv['Value'] ?? ''); $rA = trim($rv['Value 1'] ?? '');
+      if (!$rQ) continue;
+    ?>
+    <div class="gb-ticker-item">
+      <div class="gb-ticker-quote">"<?= h($rQ) ?>"</div>
+      <?php if ($rA): ?><div class="gb-ticker-author">— <?= h($rA) ?></div><?php endif; ?>
+    </div>
+    <div class="gb-ticker-dot">✦</div>
+    <?php endforeach; ?>
+    <?php endforeach; ?>
+  </div>
+</div>
+<?php endif; ?>
 
 <!-- ── Main ── -->
 <div class="gb-main">
@@ -4051,6 +4087,19 @@ document.addEventListener('paste', function(e) {
     document.execCommand('insertText', false, text);
   }
 }, true);
+
+// ── Review Ticker ─────────────────────────────────────────────────────────────
+(function() {
+  var track = document.getElementById('gbTickerTrack');
+  if (!track) return;
+  track.classList.add('gb-ticker-go');
+  track.parentElement.addEventListener('mouseenter', function() {
+    track.style.animationPlayState = 'paused';
+  });
+  track.parentElement.addEventListener('mouseleave', function() {
+    track.style.animationPlayState = '';
+  });
+})();
 </script>
 
 <!-- ── Fetch Log dialog ── -->

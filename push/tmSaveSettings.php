@@ -70,4 +70,14 @@ if (file_put_contents($file, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNE
     echo json_encode(['error' => 'Could not write settings.json']); exit;
 }
 
+// ── Also sync to Google Sheets Settings tab ──────────────────────────────────
+$pythonPath = $_ENV['PYTHON'] ?? 'python3';
+$encoded    = base64_encode(json_encode($settings, JSON_UNESCAPED_UNICODE));
+$arg        = $sheetId . '|' . $encoded;
+$errFile    = sys_get_temp_dir() . '/gwritesettings_err_' . $sheetId . '.txt';
+$cmd = escapeshellarg($pythonPath) . ' '
+     . escapeshellarg(__DIR__ . '/gwritesettings.py') . ' '
+     . escapeshellarg($arg) . ' 2>' . escapeshellarg($errFile);
+shell_exec($cmd); // fire-and-forget; don't block the response on sheet sync
+
 echo json_encode(['ok' => true]);

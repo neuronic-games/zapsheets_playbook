@@ -137,43 +137,6 @@ function _gb_embed(string $url): string {
 // ── Load settings and determine template ────────────────────────────────────
 $_settings = _gb_load($_sDir . '/settings.json');
 
-// ── Merge site.json as a fallback for brand settings ────────────────────────
-// settings.json uses flat key-value; site.json uses the old array format with
-// different key names. Parse site.json and backfill any missing settings keys.
-$_siteRaw = _gb_load($_sDir . '/site.json');
-if (!empty($_siteRaw) && isset($_siteRaw[0])) {
-    // Flatten [{Name:"CompanyName",Value:"UP Games"}, ...] → assoc array
-    $_siteFlat = [];
-    foreach ($_siteRaw as $_sr) {
-        $n = $_sr['Name'] ?? '';
-        if ($n && !isset($_siteFlat[$n])) $_siteFlat[$n] = $_sr['Value'] ?? '';
-    }
-    // site.json key → settings.json key
-    $_siteKeyMap = [
-        'CompanyName' => 'Company',
-        'LogoUrl'     => 'Logo URL',
-        'Tagline'     => 'Tagline',
-        'Copyright'   => 'Copyright',
-        'Instagram'   => 'Instagram',
-        'X'           => 'Twitter',
-        'Facebook'    => 'Facebook',
-    ];
-    foreach ($_siteKeyMap as $_sk => $_gk) {
-        if (empty($_settings[$_gk]) && !empty($_siteFlat[$_sk])) {
-            $_settings[$_gk] = $_siteFlat[$_sk];
-        }
-    }
-    // Carousel: use SplashUrl entries from site.json if no carousel slots set
-    if (empty($_settings['Carousel 1'])) {
-        $_sci = 1;
-        foreach ($_siteRaw as $_sr) {
-            if (($_sr['Name'] ?? '') === 'SplashUrl' && !empty($_sr['Value']) && $_sci <= 6) {
-                $_settings['Carousel ' . $_sci] = $_sr['Value'];
-                $_sci++;
-            }
-        }
-    }
-}
 
 $_template = strtolower(trim($_settings['Gameboard Template'] ?? ''));
 // Supported templates: '' / 'classic' = Classic (default), 'opensea' = OpenSea

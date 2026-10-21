@@ -2374,13 +2374,13 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
     <div class="gb-section-label">Gallery</div>
     <div class="gb-gallery-viewer" id="gbGalleryViewer">
       <div class="gb-gallery-featured" id="gbGalleryFeatured">
-        <img id="gbGalleryFeaturedImg" src="<?= h($_productImgUrls[0] ?? '') ?>" alt="<?= h($_name) ?>" onclick="openLightbox(this.src)"<?= empty($_productImgUrls) ? ' style="display:none"' : '' ?> />
+        <img id="gbGalleryFeaturedImg" src="" alt="<?= h($_name) ?>" onload="this.style.display=''" onclick="openLightbox(this.src)" style="display:none" />
         <button class="gb-gallery-featured-del" title="Remove this image" onclick="gbGalleryDeleteFeatured()">✕</button>
       </div>
       <div class="gb-gallery-thumbs" id="gbGalleryThumbs">
         <?php foreach ($_productImgUrls as $i => $img): ?>
         <div class="gb-gallery-thumb<?= $i === 0 ? ' gb-gt-active' : '' ?>" onclick="gbGallerySelect(<?= $i ?>)">
-          <img src="<?= h($img) ?>" loading="lazy" />
+          <img src="<?= h($img) ?>" loading="<?= $i === 0 ? 'eager' : 'lazy' ?>"<?= $i === 0 ? ' onload="(function(el){var f=document.getElementById(\'gbGalleryFeaturedImg\');if(f&&!f.naturalWidth){f.src=el.src;}})(this)"' : '' ?> />
           <button class="gb-gt-del" onclick="event.stopPropagation();gbGalleryDelete(<?= $i ?>)" title="Remove">✕</button>
         </div>
         <?php endforeach; ?>
@@ -3822,13 +3822,10 @@ function gbRenderGallery() {
   // Clamp active index
   if (_gbGalleryIdx >= imgs.length) _gbGalleryIdx = Math.max(0, imgs.length - 1);
 
-  // Update featured image src only if needed; don't reset an already-loaded image
+  // Set featured image src
   if (imgs.length) {
+    if (imgs[_gbGalleryIdx]) featEl.src = imgs[_gbGalleryIdx];
     featEl.style.display = '';
-    var alreadyLoaded = featEl.complete && featEl.naturalWidth > 0;
-    if (!alreadyLoaded || featEl.getAttribute('src') !== imgs[_gbGalleryIdx]) {
-      featEl.src = imgs[_gbGalleryIdx];
-    }
   } else {
     featEl.style.display = 'none';
   }
@@ -3860,8 +3857,9 @@ function gbGallerySelect(idx) {
   if (idx < 0 || idx >= imgs.length) return;
   _gbGalleryIdx = idx;
   var featEl = document.getElementById('gbGalleryFeaturedImg');
-  if (featEl && featEl.src !== imgs[idx]) {
+  if (featEl && featEl.getAttribute('src') !== imgs[idx]) {
     featEl.classList.add('gb-gf-fade');
+    featEl.style.display = '';
     setTimeout(function() {
       featEl.src = imgs[idx];
       featEl.onload = function() { featEl.classList.remove('gb-gf-fade'); featEl.onload = null; };

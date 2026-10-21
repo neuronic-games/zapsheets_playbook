@@ -49,7 +49,7 @@ function _gb_footer(array $opts = []): void {
     ?>
 <footer class="gb-footer">
   <div class="gb-footer-main">
-    <!-- Brand column -->
+    <!-- Brand column: logo → tagline → social icons -->
     <div class="gb-footer-brand">
       <?php if ($_pubLogo): ?>
       <img src="<?= htmlspecialchars($_pubLogo, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($_pubName, ENT_QUOTES) ?>" class="gb-footer-logo-img" />
@@ -59,6 +59,18 @@ function _gb_footer(array $opts = []): void {
       <?php if ($_tagline): ?>
       <div class="gb-footer-brand-tagline"><?= htmlspecialchars($_tagline, ENT_QUOTES) ?></div>
       <?php endif; ?>
+      <div class="gb-footer-brand-icons" <?= $isAdmin ? 'id="gbFooterIcons"' : '' ?>>
+        <?php if (!empty($_socialDefs)) foreach ($_socialDefs as $_sd):
+          $_isSet = !empty($_sd['url']);
+          if ($isAdmin || $_isSet): ?>
+        <button class="gb-social-btn<?= $_isSet ? ' gb-social-set' : ' gb-social-empty' ?>"
+                data-key="<?= htmlspecialchars($_sd['key'], ENT_QUOTES) ?>"
+                data-label="<?= htmlspecialchars($_sd['label'], ENT_QUOTES) ?>"
+                data-url="<?= htmlspecialchars($_sd['url'], ENT_QUOTES) ?>"
+                onclick="gbClickSocial(this)"
+                title="<?= htmlspecialchars($_sd['label'] . ($_isSet ? '' : ' — click to add'), ENT_QUOTES) ?>"><?= $_sd['svg'] ?></button>
+        <?php endif; endforeach; ?>
+      </div>
     </div>
     <!-- Subscribe column -->
     <div class="gb-footer-subscribe">
@@ -71,45 +83,31 @@ function _gb_footer(array $opts = []): void {
       <p class="gb-footer-sub-msg" id="gbSubscribeMsg"></p>
     </div>
   </div>
-  <!-- Bottom bar -->
+  <!-- Bottom bar: copyright only -->
   <div class="gb-footer-bar">
     <div class="gb-footer-bar-inner">
-      <div class="gb-footer-bar-left">
-        <?php if ($isAdmin): ?>
-        <span class="gb-footer-editable"
-              contenteditable="false"
-              id="gbFooterCopyright"
-              data-setting="copyright"
-              data-placeholder="© <?= date('Y') ?> <?= htmlspecialchars($_pubName ?: 'Your Company', ENT_QUOTES) ?>"
-              onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
-              onblur="gbSaveFooterField(this)"><?= htmlspecialchars($_copyright, ENT_QUOTES) ?></span>
-        <span class="gb-footer-editable"
-              contenteditable="false"
-              id="gbFooterNote"
-              data-setting="footer_note"
-              data-placeholder="Click to add contact info or a tagline…"
-              onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
-              onblur="gbSaveFooterField(this)"><?= htmlspecialchars($_footerNote, ENT_QUOTES) ?></span>
-        <?php else: ?>
-        <span><?= htmlspecialchars($_copyright, ENT_QUOTES) ?></span>
-        <?php if ($_footerNote): ?><span><?= htmlspecialchars($_footerNote, ENT_QUOTES) ?></span><?php endif; ?>
-        <?php endif; ?>
-        <?php if ($gameCredit): ?>
-        <span class="gb-footer-game-credit"><?= htmlspecialchars($gameCredit, ENT_QUOTES) ?></span>
-        <?php endif; ?>
-      </div>
-      <div class="gb-footer-bar-icons" <?= $isAdmin ? 'id="gbFooterIcons"' : '' ?>>
-        <?php if (!empty($_socialDefs)) foreach ($_socialDefs as $_sd):
-          $_isSet = !empty($_sd['url']);
-          if ($isAdmin || $_isSet): ?>
-        <button class="gb-social-btn<?= $_isSet ? ' gb-social-set' : ' gb-social-empty' ?>"
-                data-key="<?= htmlspecialchars($_sd['key'], ENT_QUOTES) ?>"
-                data-label="<?= htmlspecialchars($_sd['label'], ENT_QUOTES) ?>"
-                data-url="<?= htmlspecialchars($_sd['url'], ENT_QUOTES) ?>"
-                onclick="gbClickSocial(this)"
-                title="<?= htmlspecialchars($_sd['label'] . ($_isSet ? '' : ' — click to add'), ENT_QUOTES) ?>"><?= $_sd['svg'] ?></button>
-        <?php endif; endforeach; ?>
-      </div>
+      <?php if ($isAdmin): ?>
+      <span class="gb-footer-editable"
+            contenteditable="false"
+            id="gbFooterCopyright"
+            data-setting="copyright"
+            data-placeholder="© <?= date('Y') ?> <?= htmlspecialchars($_pubName ?: 'Your Company', ENT_QUOTES) ?>"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+            onblur="gbSaveFooterField(this)"><?= htmlspecialchars($_copyright, ENT_QUOTES) ?></span>
+      <span class="gb-footer-editable"
+            contenteditable="false"
+            id="gbFooterNote"
+            data-setting="footer_note"
+            data-placeholder="Click to add contact info or a tagline…"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+            onblur="gbSaveFooterField(this)"><?= htmlspecialchars($_footerNote, ENT_QUOTES) ?></span>
+      <?php else: ?>
+      <span><?= htmlspecialchars($_copyright, ENT_QUOTES) ?></span>
+      <?php if ($_footerNote): ?><span class="gb-footer-bar-sep">·</span><span><?= htmlspecialchars($_footerNote, ENT_QUOTES) ?></span><?php endif; ?>
+      <?php endif; ?>
+      <?php if ($gameCredit): ?>
+      <span class="gb-footer-game-credit"><?= htmlspecialchars($gameCredit, ENT_QUOTES) ?></span>
+      <?php endif; ?>
     </div>
   </div>
 </footer>
@@ -321,10 +319,11 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 .gb-footer-main { max-width:1100px; margin:0 auto; padding:3.5rem 2rem 2.5rem; display:grid; grid-template-columns:1fr 1.15fr; gap:2.5rem 5rem; align-items:start; }
 @media(max-width:680px){ .gb-footer-main { grid-template-columns:1fr; padding:2.5rem 1.5rem 2rem; gap:2rem; } }
 /* Brand column */
-.gb-footer-brand {}
-.gb-footer-logo-img { height:34px; object-fit:contain; object-position:left center; margin-bottom:.65rem; display:block; }
-.gb-footer-bar-brand { font-family:'DINBlack',sans-serif; font-size:1rem; color:rgba(255,255,255,.85); margin-bottom:.3rem; }
-.gb-footer-brand-tagline { font-size:.82rem; color:rgba(255,255,255,.4); line-height:1.6; margin-top:.2rem; }
+.gb-footer-brand { display:flex; flex-direction:column; gap:.55rem; }
+.gb-footer-logo-img { height:34px; object-fit:contain; object-position:left center; display:block; }
+.gb-footer-bar-brand { font-family:'DINBlack',sans-serif; font-size:1rem; color:rgba(255,255,255,.85); }
+.gb-footer-brand-tagline { font-size:.82rem; color:rgba(255,255,255,.4); line-height:1.6; }
+.gb-footer-brand-icons { display:flex; gap:.45rem; align-items:center; margin-top:.2rem; }
 /* Subscribe column */
 .gb-footer-subscribe {}
 .gb-footer-sub-label { font-family:'DINBlack',sans-serif; font-size:1rem; color:#fff; margin-bottom:.3rem; }
@@ -341,10 +340,9 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 .gb-footer-sub-msg.err { color:#e07070; }
 /* Bottom bar */
 .gb-footer-bar { border-top:1px solid rgba(255,255,255,.07); }
-.gb-footer-bar-inner { max-width:1100px; margin:0 auto; padding:.85rem 2rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; font-size:.71rem; color:rgba(255,255,255,.3); }
-.gb-footer-bar-left { display:flex; flex-direction:column; gap:.2rem; }
-.gb-footer-bar-icons { display:flex; gap:.45rem; align-items:center; flex-shrink:0; }
-.gb-footer-game-credit { font-size:.68rem; color:rgba(255,255,255,.22); margin-top:.1rem; }
+.gb-footer-bar-inner { max-width:1100px; margin:0 auto; padding:.75rem 2rem; display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; font-size:.71rem; color:rgba(255,255,255,.3); }
+.gb-footer-bar-sep { color:rgba(255,255,255,.18); }
+.gb-footer-game-credit { font-size:.68rem; color:rgba(255,255,255,.22); }
 /* Social buttons */
 .gb-social-btn { width:1.85rem; height:1.85rem; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:border-color .14s,background .14s; cursor:pointer; padding:0; }
 .gb-social-btn svg { fill:rgba(255,255,255,.6); pointer-events:none; }

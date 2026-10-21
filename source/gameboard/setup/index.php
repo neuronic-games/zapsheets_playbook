@@ -29,17 +29,19 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --green:  #6abf69;
-  --amber:  #e8a030;
-  --bg:     #1a1c30;
-  --card-bg:#22254a;
-  --border: #30346a;
+  --green:   #4caa4b;
+  --amber:   #d48a1a;
+  --bg:      #f0f1f8;
+  --card-bg: #ffffff;
+  --border:  #d4d6e8;
+  --text:    #1a1c30;
+  --muted:   #6b6e8a;
 }
 
 body {
   background: var(--bg);
   font-family: 'DINRegular', Arial, sans-serif;
-  color: #fff;
+  color: var(--text);
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -59,25 +61,25 @@ body {
 .brand-name {
   font-family: 'DINBlack', sans-serif;
   font-size: 2rem; text-transform: uppercase; letter-spacing: .09em;
-  color: #fff; line-height: 1;
+  color: var(--text); line-height: 1;
 }
-.brand-tagline { margin-top: .4rem; font-size: .88rem; color: rgba(255,255,255,.42); letter-spacing: .03em; }
+.brand-tagline { margin-top: .4rem; font-size: .88rem; color: var(--muted); letter-spacing: .03em; }
 
 /* ── Card ── */
 .card {
   background: var(--card-bg); border: 1px solid var(--border);
   border-radius: 16px; padding: 2rem 2rem 2.25rem;
-  box-shadow: 0 4px 40px rgba(0,0,0,.6);
+  box-shadow: 0 4px 32px rgba(26,28,48,.1);
 }
 .card-title {
   font-family: 'DINBlack', sans-serif; font-size: 1.02rem;
-  text-transform: uppercase; letter-spacing: .07em; color: #fff; margin-bottom: .75rem;
+  text-transform: uppercase; letter-spacing: .07em; color: var(--text); margin-bottom: .75rem;
 }
-.instructions { font-size: .88rem; color: rgba(255,255,255,.5); line-height: 1.65; margin-bottom: 1.5rem; }
+.instructions { font-size: .88rem; color: var(--muted); line-height: 1.65; margin-bottom: 1.5rem; }
 .instructions ol { padding-left: 1.35rem; margin-top: .5rem; }
 .instructions li { margin-bottom: .28rem; }
-.instructions strong { color: rgba(255,255,255,.82); }
-.instructions code { font-size: .8rem; background: rgba(106,191,105,.12); color: var(--green); padding: .05rem .35rem; border-radius: 4px; }
+.instructions strong { color: var(--text); }
+.instructions code { font-size: .8rem; background: rgba(76,170,75,.1); color: var(--green); padding: .05rem .35rem; border-radius: 4px; }
 
 .copy-email-btn {
   display: inline-flex; align-items: center; gap: .28rem;
@@ -95,12 +97,12 @@ body {
   display: block; width: 100%;
   padding: .72rem .9rem;
   font-family: 'DINRegular', Arial, sans-serif; font-size: .95rem;
-  color: #fff; background: var(--bg);
+  color: var(--text); background: var(--bg);
   border: 1.5px solid var(--border); border-radius: 9px;
   outline: none; transition: border-color .15s; margin-bottom: 1rem;
 }
 .sheet-input:focus { border-color: var(--green); }
-.sheet-input::placeholder { color: rgba(255,255,255,.25); }
+.sheet-input::placeholder { color: var(--muted); opacity: .7; }
 .sheet-input.shake { animation: shake .3s ease-in-out; }
 @keyframes shake {
   0%,100% { transform: translateX(0); }
@@ -111,7 +113,7 @@ body {
 /* ── Button ── */
 .connect-btn {
   width: 100%; height: 2.85rem;
-  background: var(--green); color: #0e0f1a;
+  background: var(--green); color: #fff;
   font-family: 'DINBlack', sans-serif; font-size: .88rem;
   text-transform: uppercase; letter-spacing: .09em;
   border: none; border-radius: 9px; cursor: pointer;
@@ -124,7 +126,7 @@ body {
 
 /* ── Log panel ── */
 .log-panel {
-  margin-top: 1.25rem; background: #14162a;
+  margin-top: 1.25rem; background: #e8eaf4;
   border: 1px solid var(--border); border-radius: 9px;
   padding: .9rem 1rem; max-height: 220px; overflow-y: auto;
   font-family: 'Courier New', Courier, monospace; font-size: .79rem; line-height: 1.8;
@@ -133,9 +135,9 @@ body {
 .log-panel::-webkit-scrollbar { width: 4px; }
 .log-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .ll     { display: block; white-space: pre-wrap; }
-.ll.inf { color: rgba(255,255,255,.4); }
+.ll.inf { color: var(--muted); }
 .ll.ok  { color: var(--green); }
-.ll.err { color: #ef5350; }
+.ll.err { color: #c62828; }
 </style>
 </head>
 <body>

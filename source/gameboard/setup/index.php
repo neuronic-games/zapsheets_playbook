@@ -28,8 +28,16 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+:root {
+  --green:  #6abf69;
+  --amber:  #e8a030;
+  --bg:     #0e0f1a;
+  --card-bg:#14162a;
+  --border: #1e2040;
+}
+
 body {
-  background: #060d14;
+  background: var(--bg);
   font-family: 'DINRegular', Arial, sans-serif;
   color: #fff;
   min-height: 100vh;
@@ -57,7 +65,7 @@ body {
 
 /* ── Card ── */
 .card {
-  background: #0d1b24; border: 1px solid #1a3040;
+  background: var(--card-bg); border: 1px solid var(--border);
   border-radius: 16px; padding: 2rem 2rem 2.25rem;
   box-shadow: 0 4px 40px rgba(0,0,0,.6);
 }
@@ -69,29 +77,29 @@ body {
 .instructions ol { padding-left: 1.35rem; margin-top: .5rem; }
 .instructions li { margin-bottom: .28rem; }
 .instructions strong { color: rgba(255,255,255,.82); }
-.instructions code { font-size: .8rem; background: rgba(0,151,167,.15); color: #4dd0e1; padding: .05rem .35rem; border-radius: 4px; }
+.instructions code { font-size: .8rem; background: rgba(106,191,105,.12); color: var(--green); padding: .05rem .35rem; border-radius: 4px; }
 
 .copy-email-btn {
   display: inline-flex; align-items: center; gap: .28rem;
   font-family: 'DINRegular', Arial, sans-serif; font-size: .75rem;
-  color: #0097a7; background: rgba(0,151,167,.12);
-  border: 1px solid rgba(0,151,167,.3); border-radius: 999px;
+  color: var(--green); background: rgba(106,191,105,.12);
+  border: 1px solid rgba(106,191,105,.3); border-radius: 999px;
   padding: .1rem .45rem; cursor: pointer; vertical-align: middle; white-space: nowrap;
   transition: background .15s;
 }
-.copy-email-btn:hover { background: rgba(0,151,167,.22); }
-.copy-email-btn.copied { color: #26c6da; background: rgba(38,198,218,.12); border-color: rgba(38,198,218,.3); }
+.copy-email-btn:hover { background: rgba(106,191,105,.22); }
+.copy-email-btn.copied { color: var(--amber); background: rgba(232,160,48,.12); border-color: rgba(232,160,48,.3); }
 
 /* ── Input ── */
 .sheet-input {
   display: block; width: 100%;
   padding: .72rem .9rem;
   font-family: 'DINRegular', Arial, sans-serif; font-size: .95rem;
-  color: #fff; background: #060d14;
-  border: 1.5px solid #1a3040; border-radius: 9px;
+  color: #fff; background: var(--bg);
+  border: 1.5px solid var(--border); border-radius: 9px;
   outline: none; transition: border-color .15s; margin-bottom: 1rem;
 }
-.sheet-input:focus { border-color: #0097a7; }
+.sheet-input:focus { border-color: var(--green); }
 .sheet-input::placeholder { color: rgba(255,255,255,.25); }
 .sheet-input.shake { animation: shake .3s ease-in-out; }
 @keyframes shake {
@@ -103,30 +111,30 @@ body {
 /* ── Button ── */
 .connect-btn {
   width: 100%; height: 2.85rem;
-  background: #0097a7; color: #fff;
+  background: var(--green); color: #0e0f1a;
   font-family: 'DINBlack', sans-serif; font-size: .88rem;
   text-transform: uppercase; letter-spacing: .09em;
   border: none; border-radius: 9px; cursor: pointer;
   transition: background .15s, transform .1s, box-shadow .15s;
-  box-shadow: 0 2px 16px rgba(0,151,167,.45);
+  box-shadow: 0 2px 16px rgba(106,191,105,.4);
 }
-.connect-btn:hover:not(:disabled) { background: #00838f; transform: translateY(-1px); box-shadow: 0 4px 22px rgba(0,151,167,.55); }
+.connect-btn:hover:not(:disabled) { background: #7dcf7c; transform: translateY(-1px); box-shadow: 0 4px 22px rgba(106,191,105,.55); }
 .connect-btn:active:not(:disabled) { transform: translateY(0); }
 .connect-btn:disabled { opacity: .4; cursor: default; transform: none; box-shadow: none; }
 
 /* ── Log panel ── */
 .log-panel {
-  margin-top: 1.25rem; background: #030a10;
-  border: 1px solid #0d2030; border-radius: 9px;
+  margin-top: 1.25rem; background: #09091a;
+  border: 1px solid var(--border); border-radius: 9px;
   padding: .9rem 1rem; max-height: 220px; overflow-y: auto;
   font-family: 'Courier New', Courier, monospace; font-size: .79rem; line-height: 1.8;
-  scrollbar-width: thin; scrollbar-color: #1a3040 transparent;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
 }
 .log-panel::-webkit-scrollbar { width: 4px; }
-.log-panel::-webkit-scrollbar-thumb { background: #1a3040; border-radius: 2px; }
+.log-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .ll     { display: block; white-space: pre-wrap; }
 .ll.inf { color: rgba(255,255,255,.4); }
-.ll.ok  { color: #26c6da; }
+.ll.ok  { color: var(--green); }
 .ll.err { color: #ef5350; }
 </style>
 </head>

@@ -44,10 +44,10 @@ body {
 /* ── Branding ── */
 .brand { text-align: center; margin-bottom: 2.25rem; }
 .brand-icon {
-  width: 88px; height: 88px; margin: 0 auto 1rem;
+  margin: 0 auto 1rem;
   display: flex; align-items: center; justify-content: center;
 }
-.brand-icon img { width: 88px; height: 88px; border-radius: 20px; }
+.brand-icon img { height: 88px; width: auto; }
 .brand-name {
   font-family: 'DINBlack', sans-serif;
   font-size: 2rem; text-transform: uppercase; letter-spacing: .09em;

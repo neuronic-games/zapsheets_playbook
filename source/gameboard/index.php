@@ -1837,14 +1837,27 @@ body.gb-admin-mode .gb-faq-editor { display:flex; }
 
 /* ── Review Ticker ── */
 .gb-ticker-wrap { background:#f5a623; overflow:hidden; padding:0; }
-body.gb-admin-mode .gb-ticker-wrap { display:none; }
+.gb-ticker-hidden { display:none; }
+.gb-ticker-empty { min-height:80px; display:flex; align-items:center; justify-content:center; }
 .gb-ticker-track { display:flex; will-change:transform; }
-.gb-ticker-track.gb-ticker-go { animation:gbTicker linear infinite; }
-@keyframes gbTicker { from { transform:translateX(0); } to { transform:translateX(-50%); } }
 .gb-ticker-item { flex-shrink:0; width:480px; padding:1.6rem 2.5rem; text-align:center; box-sizing:border-box; }
 .gb-ticker-quote { font-family:'DINBlack',sans-serif; font-size:1.05rem; color:#fff; font-style:italic; line-height:1.45; }
 .gb-ticker-author { margin-top:.5rem; font-size:.7rem; color:rgba(255,255,255,.75); text-transform:uppercase; letter-spacing:.07em; }
 .gb-ticker-dot { flex-shrink:0; display:flex; align-items:center; color:rgba(255,255,255,.3); font-size:1.4rem; padding:0 .25rem; align-self:center; }
+/* Admin edit styles */
+.gb-ticker-item-edit { position:relative; }
+.gb-ticker-item-edit .gb-ticker-quote,
+.gb-ticker-item-edit .gb-ticker-author { outline:none; cursor:text; border-radius:3px; transition:background .15s; }
+.gb-ticker-item-edit .gb-ticker-quote:hover,
+.gb-ticker-item-edit .gb-ticker-author:hover { background:rgba(255,255,255,.15); }
+.gb-ticker-item-edit .gb-ticker-quote:focus,
+.gb-ticker-item-edit .gb-ticker-author:focus { background:rgba(255,255,255,.2); }
+.gb-ticker-item-edit .gb-ticker-quote[data-ph]:empty::before,
+.gb-ticker-item-edit .gb-ticker-author[data-ph]:empty::before { content:attr(data-ph); opacity:.45; pointer-events:none; font-style:normal; }
+.gb-ticker-item-ph { border:2px dashed rgba(255,255,255,.35) !important; border-radius:8px; opacity:.6; }
+.gb-ticker-item-ph:hover { opacity:.9; }
+.gb-ticker-del { position:absolute; top:6px; right:6px; background:rgba(0,0,0,.5); color:#fff; border:none; border-radius:50%; width:18px; height:18px; font-size:.55rem; cursor:pointer; line-height:18px; text-align:center; padding:0; opacity:0; transition:opacity .15s; }
+.gb-ticker-item-edit:hover .gb-ticker-del { opacity:1; }
 
 /* ── Reviews ── */
 .gb-reviews { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:1rem; }
@@ -2313,15 +2326,9 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
   </div>
 </div>
 
-<?php if (!empty($_reviews)): ?>
-<?php
-  // Each item is 480px wide; aim for ~60px/s → duration = (items * 480) / 60
-  $_tickerCount = count($_reviews);
-  $_tickerDur   = max(12, intval($_tickerCount * 480 / 60));
-?>
 <!-- ── Review Ticker ── -->
-<div class="gb-ticker-wrap">
-  <div class="gb-ticker-track" id="gbTickerTrack" style="animation-duration:<?= $_tickerDur ?>s">
+<div class="gb-ticker-wrap<?= (empty($_reviews) && !isset($_gbPublicBase)) ? ' gb-ticker-empty' : (empty($_reviews) ? ' gb-ticker-hidden' : '') ?>" id="gbTickerWrap">
+  <div class="gb-ticker-track" id="gbTickerTrack">
     <?php foreach ([1,2] as $_pass): /* duplicate for seamless loop */ ?>
     <?php foreach ($_reviews as $rv):
       $rQ = trim($rv['Value'] ?? ''); $rA = trim($rv['Value 1'] ?? '');
@@ -2336,7 +2343,6 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     <?php endforeach; ?>
   </div>
 </div>
-<?php endif; ?>
 
 <!-- ── Main ── -->
 <div class="gb-main">
@@ -2419,12 +2425,6 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
       </div>
       <?php endforeach; ?>
     </div>
-  </div>
-
-  <!-- Reviews admin editor (hidden in public; ticker handles public display) -->
-  <div class="gb-section gb-inline-edit">
-    <div class="gb-section-label">Reviews</div>
-    <div class="gb-faq-editor" id="gbReviewsList"></div>
   </div>
 
   <!-- Video Reviews -->
@@ -3256,7 +3256,7 @@ function gbInitInlineEdits() {
       _ed.components = this.value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
     };
   }
-  gbBuildReviewEditor(_ed.reviews || []);
+  gbInitReviewTicker();
   gbInitVrevGrid();
   gbBuildFaqEditor(_ed.faqs || []);
   gbInitDesignerInputs();
@@ -4077,16 +4077,167 @@ document.addEventListener('paste', function(e) {
 }, true);
 
 // ── Review Ticker ─────────────────────────────────────────────────────────────
-(function() {
+var _gbTickerRaf = null, _gbTickerPos = 0, _gbTickerPaused = false;
+
+function gbInitReviewTicker() {
+  var wrap  = document.getElementById('gbTickerWrap');
   var track = document.getElementById('gbTickerTrack');
   if (!track) return;
-  track.classList.add('gb-ticker-go');
-  track.parentElement.addEventListener('mouseenter', function() {
-    track.style.animationPlayState = 'paused';
+
+  // Stop existing animation loop
+  if (_gbTickerRaf) { cancelAnimationFrame(_gbTickerRaf); _gbTickerRaf = null; }
+  _gbTickerPos = 0;
+  track.style.transform = '';
+
+  var reviews = (_ed.reviews || []).filter(function(r) { return r.attr; });
+  track.innerHTML = '';
+
+  if (!reviews.length && !document.body.classList.contains('gb-admin-mode')) {
+    if (wrap) wrap.classList.add('gb-ticker-hidden');
+    return;
+  }
+  if (wrap) wrap.classList.remove('gb-ticker-hidden', 'gb-ticker-empty');
+
+  function makeDot() {
+    var d = document.createElement('div'); d.className = 'gb-ticker-dot'; d.textContent = '✦'; return d;
+  }
+
+  // Build one set of items; cloneNode the whole set for the second pass
+  var firstSet = document.createDocumentFragment();
+  reviews.forEach(function(r, idx) {
+    var item = document.createElement('div');
+    item.className = 'gb-ticker-item gb-ticker-item-edit';
+
+    var del = document.createElement('button');
+    del.className = 'gb-ticker-del';
+    del.textContent = '✕';
+    del.title = 'Remove';
+    (function(i) {
+      del.onmousedown = function(e) {
+        e.preventDefault();
+        _ed.reviews.splice(i, 1);
+        gbInitReviewTicker();
+      };
+    })(idx);
+    item.appendChild(del);
+
+    var q = document.createElement('div');
+    q.className = 'gb-ticker-quote';
+    q.contentEditable = 'true';
+    q.textContent = '"' + r.attr + '"';
+    q.setAttribute('data-ph', '"Review quote…"');
+    (function(i) {
+      q.oninput = function() {
+        var v = this.textContent.trim().replace(/^"|"$/g, '');
+        if (_ed.reviews[i]) _ed.reviews[i].attr = v;
+      };
+    })(idx);
+    item.appendChild(q);
+
+    var a = document.createElement('div');
+    a.className = 'gb-ticker-author';
+    a.contentEditable = 'true';
+    a.textContent = r.quote ? '— ' + r.quote : '';
+    a.setAttribute('data-ph', '— Source');
+    (function(i) {
+      a.oninput = function() {
+        var v = this.textContent.trim().replace(/^—\s*/, '');
+        if (_ed.reviews[i]) _ed.reviews[i].quote = v;
+      };
+    })(idx);
+    item.appendChild(a);
+
+    firstSet.appendChild(item);
+    firstSet.appendChild(makeDot());
   });
-  track.parentElement.addEventListener('mouseleave', function() {
-    track.style.animationPlayState = '';
+
+  // Placeholder "+" card to add new
+  var ph = document.createElement('div');
+  ph.className = 'gb-ticker-item gb-ticker-item-edit gb-ticker-item-ph';
+  var phQ = document.createElement('div');
+  phQ.className = 'gb-ticker-quote';
+  phQ.contentEditable = 'true';
+  phQ.setAttribute('data-ph', '+ Add review…');
+  phQ.oninput = function() {
+    var v = this.textContent.trim().replace(/^"|"$/g, '');
+    if (v) {
+      if (!_ed.reviews) _ed.reviews = [];
+      _ed.reviews.push({attr: v, quote: ''});
+      gbInitReviewTicker();
+    }
+  };
+  ph.appendChild(phQ);
+  firstSet.appendChild(ph);
+  firstSet.appendChild(makeDot());
+
+  // Append first set to track
+  track.appendChild(firstSet);
+
+  // Append a static clone of every child for seamless loop (2nd pass)
+  var originals = Array.prototype.slice.call(track.childNodes);
+  originals.forEach(function(node) {
+    var clone = node.cloneNode(true);
+    // Strip editability from clones
+    clone.querySelectorAll && clone.querySelectorAll('[contenteditable]').forEach(function(el) {
+      el.removeAttribute('contenteditable');
+    });
+    track.appendChild(clone);
   });
+
+  // Hover pause
+  if (wrap) {
+    wrap.onmouseenter = function() { _gbTickerPaused = true; };
+    wrap.onmouseleave = function() { _gbTickerPaused = false; };
+  }
+
+  // rAF-based seamless scroll
+  var halfWidth = null;
+  var last = null;
+  var speed = 80; // px/s
+  function step(ts) {
+    if (halfWidth === null) halfWidth = track.scrollWidth / 2;
+    if (!_gbTickerPaused) {
+      if (last !== null) {
+        _gbTickerPos += speed * (ts - last) / 1000;
+        if (_gbTickerPos >= halfWidth) _gbTickerPos -= halfWidth;
+        track.style.transform = 'translateX(-' + _gbTickerPos.toFixed(2) + 'px)';
+      }
+      last = ts;
+    } else {
+      last = ts; // keep last in sync so no jump on resume
+    }
+    _gbTickerRaf = requestAnimationFrame(step);
+  }
+  _gbTickerRaf = requestAnimationFrame(step);
+}
+
+// Public page: start ticker from PHP-rendered content using rAF
+(function() {
+  var wrap  = document.getElementById('gbTickerWrap');
+  var track = document.getElementById('gbTickerTrack');
+  if (!track || !track.children.length) return;
+  if (document.body.classList.contains('gb-admin-mode')) return; // admin handles its own init
+
+  var halfWidth = null, last = null, speed = 80;
+  if (wrap) {
+    wrap.onmouseenter = function() { _gbTickerPaused = true; };
+    wrap.onmouseleave = function() { _gbTickerPaused = false; };
+  }
+  function step(ts) {
+    if (halfWidth === null) halfWidth = track.scrollWidth / 2;
+    if (!_gbTickerPaused) {
+      if (last !== null) {
+        _gbTickerPos += speed * (ts - last) / 1000;
+        if (_gbTickerPos >= halfWidth) _gbTickerPos -= halfWidth;
+        track.style.transform = 'translateX(-' + _gbTickerPos.toFixed(2) + 'px)';
+      }
+      last = ts;
+    } else {
+      last = ts;
+    }
+    _gbTickerRaf = requestAnimationFrame(step);
+  }
+  _gbTickerRaf = requestAnimationFrame(step);
 })();
 </script>
 

@@ -37,13 +37,14 @@ pipe_idx = arg.index('|')
 sheet_id = arg[:pipe_idx]
 data     = json.loads(base64.b64decode(arg[pipe_idx + 1:]).decode('utf-8'))
 
-game_name  = data.get('game', '').strip()
-components = [str(c).strip() for c in data.get('components', []) if str(c).strip()]
-reviews    = data.get('reviews', [])
-videos     = data.get('videos', [])
-faqs       = data.get('faqs', [])
-artists    = [str(a).strip() for a in data.get('artists', []) if str(a).strip()]
-buy_urls   = data.get('buy_urls', [])
+game_name    = data.get('game', '').strip()
+components   = [str(c).strip() for c in data.get('components', []) if str(c).strip()]
+reviews      = data.get('reviews', [])
+videos       = data.get('videos', [])
+faqs         = data.get('faqs', [])
+artists      = [str(a).strip() for a in data.get('artists', []) if str(a).strip()]
+buy_urls     = data.get('buy_urls', [])
+gallery_urls = [str(u).strip() for u in data.get('gallery_urls', []) if str(u).strip()]
 
 if not sheet_id or not game_name:
     print(json.dumps({"error": "sheet_id and game are required"}))
@@ -74,14 +75,15 @@ except Exception as e:
 
 # Build the replacement content for each block type.
 # Each list must have at least one placeholder row so the section stays present.
-BLOCK_TYPES = ('Component', 'Review', 'Video', 'FAQ', 'Artist', 'BuyUrl')
+BLOCK_TYPES = ('Component', 'Review', 'Video', 'FAQ', 'Artist', 'BuyUrl', 'ProductImage')
 block_content = {
-    'Component': [['Component', c, ''] for c in components] or [['Component', '', '']],
-    'Review':    [['Review', str(r.get('attr','')), str(r.get('quote',''))] for r in reviews if isinstance(r, dict)] or [['Review', '', '']],
-    'Video':     [['Video', str(v.get('url','')), str(v.get('name',''))] for v in videos if isinstance(v, dict)] or [['Video', '', '']],
-    'FAQ':       [['FAQ', str(f.get('q','')), str(f.get('a',''))] for f in faqs if isinstance(f, dict)] or [['FAQ', '', '']],
-    'Artist':    [['Artist', a, ''] for a in artists] or [['Artist', '', '']],
-    'BuyUrl':    [['BuyUrl', str(b.get('url','')), str(b.get('label',''))] for b in buy_urls if isinstance(b, dict) and b.get('url','')] or [['BuyUrl', '', '']],
+    'Component':    [['Component', c, ''] for c in components] or [['Component', '', '']],
+    'Review':       [['Review', str(r.get('attr','')), str(r.get('quote',''))] for r in reviews if isinstance(r, dict)] or [['Review', '', '']],
+    'Video':        [['Video', str(v.get('url','')), str(v.get('name',''))] for v in videos if isinstance(v, dict)] or [['Video', '', '']],
+    'FAQ':          [['FAQ', str(f.get('q','')), str(f.get('a',''))] for f in faqs if isinstance(f, dict)] or [['FAQ', '', '']],
+    'Artist':       [['Artist', a, ''] for a in artists] or [['Artist', '', '']],
+    'BuyUrl':       [['BuyUrl', str(b.get('url','')), str(b.get('label',''))] for b in buy_urls if isinstance(b, dict) and b.get('url','')] or [['BuyUrl', '', '']],
+    'ProductImage': [['ProductImage', u, ''] for u in gallery_urls] or [['ProductImage', '', '']],
 }
 
 # Rebuild rows: keep non-Component/Review/FAQ rows as-is,

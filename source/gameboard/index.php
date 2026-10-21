@@ -1581,7 +1581,8 @@ $_buyUrls     = _gb_rows($_rich, 'BuyUrl');
 // Video rows in [GameName] tab = video reviews (col B = URL, col C = name/label)
 // Main video comes from Games sheet Video column only ($videoUrl below)
 $_videoReviews = array_values(array_filter(_gb_rows($_rich, 'Video'), fn($r) => trim($r['Value'] ?? '') !== ''));
-$_mediaImgs   = array_merge(_gb_rows($_rich, 'Media'), _gb_rows($_rich, 'ProductImage'));
+$_mediaImgs      = array_merge(_gb_rows($_rich, 'Media'), _gb_rows($_rich, 'ProductImage'));
+$_productImgUrls = array_values(array_filter(array_map(fn($r) => trim($r['Value'] ?? ''), _gb_rows($_rich, 'ProductImage')), fn($u) => $u !== ''));
 $_richPrice   = _gb_val($_rich, 'Price');
 $_richRules   = _gb_val($_rich, 'Rules PDF Url') ?: $_rulesUrl;
 
@@ -1757,15 +1758,28 @@ a { color:inherit; text-decoration:none; }
 .gb-description { font-size:.98rem; line-height:1.75; color:var(--ink-lt); white-space:pre-wrap; }
 
 /* ── Gallery ── */
-.gb-gallery { display:flex; gap:.55rem; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:.4rem; }
-.gb-gallery::-webkit-scrollbar { height:4px; }
-.gb-gallery::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
-.gb-gallery img {
-  height:210px; border-radius:8px; object-fit:cover; flex-shrink:0;
-  scroll-snap-align:start; cursor:pointer; transition:transform .18s;
-  box-shadow:0 2px 10px rgba(0,0,0,.1);
-}
-.gb-gallery img:hover { transform:scale(1.012); }
+.gb-gallery-viewer { display:flex; gap:.6rem; align-items:stretch; }
+.gb-gallery-featured { flex:1; position:relative; border-radius:10px; overflow:hidden; background:#111; min-height:220px; max-height:400px; cursor:pointer; }
+.gb-gallery-featured img { width:100%; height:100%; object-fit:cover; display:block; transition:opacity .35s; }
+.gb-gallery-featured img.gb-gf-fade { opacity:0; }
+/* admin overlay on featured */
+.gb-gallery-featured-del { position:absolute; top:.5rem; right:.5rem; background:rgba(0,0,0,.6); color:#fff; border:none; border-radius:50%; width:24px; height:24px; font-size:.7rem; cursor:pointer; display:none; align-items:center; justify-content:center; z-index:3; }
+body.gb-admin-mode .gb-gallery-featured-del { display:flex; }
+/* Thumbs column */
+.gb-gallery-thumbs { display:flex; flex-direction:column; gap:.45rem; overflow-y:auto; max-height:400px; width:110px; flex-shrink:0; }
+.gb-gallery-thumbs::-webkit-scrollbar { width:3px; }
+.gb-gallery-thumbs::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.gb-gallery-thumb { position:relative; width:110px; height:74px; border-radius:7px; overflow:hidden; flex-shrink:0; cursor:pointer; border:2px solid transparent; transition:border-color .18s; background:#eee; }
+.gb-gallery-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+.gb-gallery-thumb.gb-gt-active { border-color:var(--accent); }
+.gb-gallery-thumb:hover:not(.gb-gt-active) { border-color:rgba(0,0,0,.2); }
+/* thumb delete btn */
+.gb-gt-del { position:absolute; top:2px; right:2px; background:rgba(0,0,0,.6); color:#fff; border:none; border-radius:50%; width:18px; height:18px; font-size:.55rem; cursor:pointer; display:none; align-items:center; justify-content:center; z-index:2; line-height:1; }
+body.gb-admin-mode .gb-gt-del { display:flex; }
+/* "+" add thumb */
+.gb-gallery-thumb-add { width:110px; height:74px; border-radius:7px; flex-shrink:0; cursor:pointer; border:2px dashed rgba(59,59,170,.25); background:linear-gradient(135deg,#f0f0fa,#e4e4f4); display:flex; align-items:center; justify-content:center; font-size:1.6rem; color:rgba(59,59,170,.35); transition:opacity .18s; opacity:0; pointer-events:none; }
+body.gb-admin-mode .gb-gallery-thumb-add { opacity:1; pointer-events:auto; }
+.gb-gallery-thumb-add:hover { opacity:.7 !important; }
 
 /* ── Video ── */
 .gb-video-wrap { position:relative; padding-top:56.25%; border-radius:10px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,.13); }
@@ -1803,6 +1817,7 @@ body.gb-admin-mode .gb-inline-edit { display:block; }
 body.gb-admin-mode .gb-display-content { display:none; }
 /* Hide empty sections from public view */
 body:not(.gb-admin-mode) .gb-sect-empty { display:none; }
+.gb-sect-hidden { display:none; }
 .gb-inline-hint { display:none; font-size:.73rem; color:var(--muted); margin:.3rem 0 0; font-style:italic; }
 body.gb-admin-mode .gb-inline-hint { display:block; }
 
@@ -2181,15 +2196,6 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
   font-style:italic; white-space:pre-wrap;
   border:2px dashed rgba(59,59,170,.2); border-radius:6px; padding:.75rem 1rem;
 }
-/* Placeholder gallery thumbs */
-.gb-ph-gallery { display: none; }
-body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
-.gb-ph-thumb {
-  height:210px; width:200px; border-radius:8px; flex-shrink:0;
-  background:linear-gradient(135deg,#dde 0%,#c8c8e8 100%);
-  display:flex; align-items:center; justify-content:center;
-  font-size:2.5rem; opacity:.3; border:2px dashed rgba(59,59,170,.2);
-}
 </style>
 </head>
 <body>
@@ -2359,26 +2365,24 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
   </div>
 
   <!-- Gallery -->
-  <?php if (count($_gallery) > 1): ?>
-  <div class="gb-section">
+  <div class="gb-section<?= empty($_productImgUrls) && !isset($_gbPublicBase) ? ' gb-sect-empty' : (empty($_productImgUrls) ? ' gb-sect-hidden' : '') ?>" id="gbGallerySection">
     <div class="gb-section-label">Gallery</div>
-    <div class="gb-gallery">
-      <?php foreach ($_gallery as $img): ?>
-      <img src="<?= h($img) ?>" alt="<?= h($_name) ?>" loading="lazy" onclick="openLightbox('<?= h($img) ?>')" />
-      <?php endforeach; ?>
+    <div class="gb-gallery-viewer" id="gbGalleryViewer">
+      <div class="gb-gallery-featured" id="gbGalleryFeatured">
+        <img id="gbGalleryFeaturedImg" src="<?= h($_productImgUrls[0] ?? '') ?>" alt="<?= h($_name) ?>" onclick="openLightbox(this.src)" />
+        <button class="gb-gallery-featured-del" title="Remove this image" onclick="gbGalleryDeleteFeatured()">✕</button>
+      </div>
+      <div class="gb-gallery-thumbs" id="gbGalleryThumbs">
+        <?php foreach ($_productImgUrls as $i => $img): ?>
+        <div class="gb-gallery-thumb<?= $i === 0 ? ' gb-gt-active' : '' ?>" onclick="gbGallerySelect(<?= $i ?>)">
+          <img src="<?= h($img) ?>" loading="lazy" />
+          <button class="gb-gt-del" onclick="event.stopPropagation();gbGalleryDelete(<?= $i ?>)" title="Remove">✕</button>
+        </div>
+        <?php endforeach; ?>
+        <div class="gb-gallery-thumb-add" id="gbGalleryAddBtn" onclick="gbPickGalleryImage()" title="Add image">+</div>
+      </div>
     </div>
   </div>
-  <?php else: ?>
-  <!-- Placeholder gallery (admin only) — each thumb is an upload zone -->
-  <div class="gb-section gb-ph-section">
-    <div class="gb-section-label">Gallery</div>
-    <div class="gb-ph-gallery" id="gbPhGallery">
-      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image"><button class="gb-img-btn" style="position:absolute;top:.4rem;right:.4rem" onclick="event.stopPropagation();gbPickGalleryImage(this.closest('.gb-upload-zone'))" title="Add image"><?= $_imgBtnIcon ?></button></div>
-      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image"><button class="gb-img-btn" style="position:absolute;top:.4rem;right:.4rem" onclick="event.stopPropagation();gbPickGalleryImage(this.closest('.gb-upload-zone'))" title="Add image"><?= $_imgBtnIcon ?></button></div>
-      <div class="gb-ph-thumb gb-upload-zone" onclick="gbPickGalleryImage(this)" title="Click or drag to add image"><button class="gb-img-btn" style="position:absolute;top:.4rem;right:.4rem" onclick="event.stopPropagation();gbPickGalleryImage(this.closest('.gb-upload-zone'))" title="Add image"><?= $_imgBtnIcon ?></button></div>
-    </div>
-  </div>
-  <?php endif; ?>
 
   <!-- Video(s) -->
   <?php if (!$_videoEmbed && !$_videoDirect): ?>
@@ -2809,6 +2813,7 @@ var GAME_DATA = <?= json_encode([
     'reviews'        => array_values(array_map(function($r) { return ['attr' => trim($r['Value'] ?? ''), 'quote' => trim($r['Value 1'] ?? '')]; }, $_reviews)),
     'videos'         => array_values(array_map(function($r) { return ['url' => trim($r['Value'] ?? ''), 'name' => trim($r['Value 1'] ?? '')]; }, $_videoReviews)),
     'faqs'           => array_values(array_map(function($f) { return ['q' => trim($f['Value'] ?? ''), 'a' => trim($f['Value 1'] ?? '')]; }, $_faqs)),
+    'gallery'        => <?= json_encode($_productImgUrls) ?>,
 ]) ?>;
 
 // Mutable copy that tracks edits from the details modal
@@ -2852,6 +2857,10 @@ var _siPendingEmail = '', _siPendingPass = '';
     // Build admin buy CTA buttons in hero
     gbInitBuyCtas();
     gbInitInlineEdits();
+    // Gallery: init _ed.gallery and render with auto-advance
+    if (!_ed.gallery) _ed.gallery = (GAME_DATA.gallery || []).slice();
+    gbRenderGallery();
+    gbGalleryAutoAdvance();
     _updateGbAuth();
   } catch(e) {}
 })();
@@ -3732,7 +3741,6 @@ function gbAddFaqPair(list, q, a, isLast) {
 // ── Save game ────────────────────────────────────────────────────────────────
 // ── Image upload helpers ──────────────────────────────────────────────────────
 var _gbFileCallback = null;
-var _gbGalleryUploads = [];   // URLs of gallery images uploaded this session
 
 function gbPickImage(callback) {
   _gbFileCallback = callback;
@@ -3782,32 +3790,101 @@ function gbSetCover(url) {
   gbShowUploadToast('Cover image ready');
 }
 
-// ── Gallery images ────────────────────────────────────────────────────────────
-function gbPickGalleryImage(zoneEl) {
-  gbPickImage(function(url) { gbSetGalleryImage(url, zoneEl); });
+// ── Gallery ───────────────────────────────────────────────────────────────────
+var _gbGalleryIdx  = 0;
+var _gbGalleryTimer = null;
+
+function gbRenderGallery() {
+  var imgs = _ed.gallery || [];
+  var section = document.getElementById('gbGallerySection');
+  var featEl  = document.getElementById('gbGalleryFeaturedImg');
+  var thumbsEl = document.getElementById('gbGalleryThumbs');
+  if (!section || !featEl || !thumbsEl) return;
+
+  // Show/hide section
+  if (!imgs.length) {
+    section.classList.add('gb-sect-empty');
+  } else {
+    section.classList.remove('gb-sect-empty', 'gb-sect-hidden');
+  }
+
+  // Clamp active index
+  if (_gbGalleryIdx >= imgs.length) _gbGalleryIdx = Math.max(0, imgs.length - 1);
+
+  // Update featured image
+  if (imgs.length) {
+    featEl.src = imgs[_gbGalleryIdx];
+  }
+
+  // Rebuild thumbs
+  // Keep the add button, rebuild everything before it
+  var addBtn = document.getElementById('gbGalleryAddBtn');
+  // Remove all thumb elements
+  Array.prototype.slice.call(thumbsEl.children).forEach(function(el) {
+    if (el.id !== 'gbGalleryAddBtn') thumbsEl.removeChild(el);
+  });
+  imgs.forEach(function(url, i) {
+    var div = document.createElement('div');
+    div.className = 'gb-gallery-thumb' + (i === _gbGalleryIdx ? ' gb-gt-active' : '');
+    var img = document.createElement('img'); img.src = url; img.loading = 'lazy';
+    var del = document.createElement('button');
+    del.className = 'gb-gt-del'; del.textContent = '✕'; del.title = 'Remove';
+    (function(idx) {
+      div.onclick = function() { gbGallerySelect(idx); };
+      del.onclick = function(e) { e.stopPropagation(); gbGalleryDelete(idx); };
+    })(i);
+    div.appendChild(img); div.appendChild(del);
+    thumbsEl.insertBefore(div, addBtn);
+  });
 }
 
-function gbSetGalleryImage(url, zoneEl) {
-  _gbGalleryUploads.push(url);
-  // Show preview in the zone
-  if (zoneEl) {
-    zoneEl.classList.add('gb-uploaded');
-    zoneEl.innerHTML = '<img src="' + url + '" alt="gallery image">';
-    zoneEl.onclick = null;
-  } else {
-    // Append a new thumb to the gallery
-    var gallery = document.getElementById('gbPhGallery');
-    if (gallery) {
-      var div = document.createElement('div');
-      div.className = 'gb-ph-thumb gb-upload-zone gb-uploaded';
-      div.innerHTML = '<img src="' + url + '" alt="gallery image">'
-        + '<button class="gb-img-btn" style="position:absolute;top:.4rem;right:.4rem"'
-        + ' onclick="event.stopPropagation();gbPickGalleryImage(this.closest(\'.gb-upload-zone\'))"'
-        + ' title="Change image">' + IMG_BTN_ICON + '</button>';
-      gallery.appendChild(div);
-    }
+function gbGallerySelect(idx) {
+  var imgs = _ed.gallery || [];
+  if (idx < 0 || idx >= imgs.length) return;
+  _gbGalleryIdx = idx;
+  // Crossfade featured image
+  var featEl = document.getElementById('gbGalleryFeaturedImg');
+  if (featEl) {
+    featEl.classList.add('gb-gf-fade');
+    setTimeout(function() {
+      featEl.src = imgs[idx];
+      featEl.onload = function() { featEl.classList.remove('gb-gf-fade'); featEl.onload = null; };
+    }, 180);
   }
-  gbShowUploadToast('Image added — click Save Changes');
+  // Update active thumb
+  document.querySelectorAll('#gbGalleryThumbs .gb-gallery-thumb').forEach(function(el, i) {
+    el.classList.toggle('gb-gt-active', i === idx);
+  });
+}
+
+function gbGalleryDelete(idx) {
+  if (!_ed.gallery || idx < 0 || idx >= _ed.gallery.length) return;
+  _ed.gallery.splice(idx, 1);
+  if (_gbGalleryIdx >= _ed.gallery.length) _gbGalleryIdx = Math.max(0, _ed.gallery.length - 1);
+  gbRenderGallery();
+  gbShowUploadToast('Image removed — click Save Changes');
+}
+
+function gbGalleryDeleteFeatured() {
+  gbGalleryDelete(_gbGalleryIdx);
+}
+
+function gbGalleryAutoAdvance() {
+  if (_gbGalleryTimer) clearInterval(_gbGalleryTimer);
+  _gbGalleryTimer = setInterval(function() {
+    var imgs = _ed.gallery || [];
+    if (imgs.length > 1) gbGallerySelect((_gbGalleryIdx + 1) % imgs.length);
+  }, 4000);
+}
+
+function gbPickGalleryImage() {
+  gbPickImage(function(url) {
+    if (!_ed.gallery) _ed.gallery = [];
+    _ed.gallery.push(url);
+    _gbGalleryIdx = _ed.gallery.length - 1;
+    gbRenderGallery();
+    gbShowUploadToast('Image added — click Save Changes');
+  });
 }
 
 function gbShowUploadToast(msg) {
@@ -3915,8 +3992,8 @@ function saveGame() {
   if (_ed.reviews    !== undefined) fd.append('reviews',    JSON.stringify(_ed.reviews    || []));
   if (_ed.videos     !== undefined) fd.append('videos',     JSON.stringify(_ed.videos     || []));
   if (_ed.faqs       !== undefined) fd.append('faqs',       JSON.stringify(_ed.faqs       || []));
-  if (_gbGalleryUploads.length) {
-    fd.append('gallery_add', JSON.stringify(_gbGalleryUploads));
+  if (_ed.gallery !== undefined) {
+    fd.append('gallery_urls', JSON.stringify(_ed.gallery || []));
   }
 
   var xhr = new XMLHttpRequest();
@@ -4267,6 +4344,32 @@ function gbTickerEditCancel() {
   _gbTickerEditIdx = -1;
   _gbTickerEditEl  = null;
 }
+
+// Public page: start gallery auto-advance and ticker
+(function() {
+  if (!document.body.classList.contains('gb-admin-mode')) {
+    // On public view, _ed.gallery is initialized from GAME_DATA by the IIFE above,
+    // but on public pages the admin IIFE doesn't run. Wire up gallery from PHP-rendered thumbs.
+    var thumbs = document.querySelectorAll('#gbGalleryThumbs .gb-gallery-thumb');
+    var featEl = document.getElementById('gbGalleryFeaturedImg');
+    if (thumbs.length > 1 && featEl) {
+      var pubGalleryIdx = 0;
+      var pubUrls = Array.prototype.map.call(thumbs, function(t) { return t.querySelector('img') ? t.querySelector('img').src : ''; });
+      thumbs.forEach(function(t, i) {
+        t.onclick = function() {
+          pubGalleryIdx = i;
+          featEl.classList.add('gb-gf-fade');
+          setTimeout(function() { featEl.src = pubUrls[i]; featEl.onload = function() { featEl.classList.remove('gb-gf-fade'); featEl.onload = null; }; }, 180);
+          thumbs.forEach(function(tt, ii) { tt.classList.toggle('gb-gt-active', ii === i); });
+        };
+      });
+      setInterval(function() {
+        pubGalleryIdx = (pubGalleryIdx + 1) % pubUrls.length;
+        thumbs[pubGalleryIdx].onclick();
+      }, 4000);
+    }
+  }
+})();
 
 // Public page: start ticker from PHP-rendered content using rAF
 (function() {

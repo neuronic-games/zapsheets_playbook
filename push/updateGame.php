@@ -186,21 +186,23 @@ if ($result !== null && !empty($result['ok'])) {
     }
 
     // Update Component / Review / FAQ / BuyUrl rows in the [GameName] tab
-    $componentsRaw = trim($_POST['components'] ?? '');
-    $reviewsRaw    = trim($_POST['reviews']    ?? '');
-    $videosRaw     = trim($_POST['videos']     ?? '');
-    $faqsRaw       = trim($_POST['faqs']       ?? '');
-    $artistsRaw    = trim($_POST['artists']    ?? '');
-    $buyUrlsRaw    = trim($_POST['buy_urls']   ?? '');
-    if ($componentsRaw !== '' || $reviewsRaw !== '' || $videosRaw !== '' || $faqsRaw !== '' || $artistsRaw !== '' || $buyUrlsRaw !== '') {
+    $componentsRaw  = trim($_POST['components']   ?? '');
+    $reviewsRaw     = trim($_POST['reviews']      ?? '');
+    $videosRaw      = trim($_POST['videos']       ?? '');
+    $faqsRaw        = trim($_POST['faqs']         ?? '');
+    $artistsRaw     = trim($_POST['artists']      ?? '');
+    $buyUrlsRaw     = trim($_POST['buy_urls']     ?? '');
+    $galleryUrlsRaw = trim($_POST['gallery_urls'] ?? '');
+    if ($componentsRaw !== '' || $reviewsRaw !== '' || $videosRaw !== '' || $faqsRaw !== '' || $artistsRaw !== '' || $buyUrlsRaw !== '' || $galleryUrlsRaw !== '') {
         $tabContent = [
-            'game'       => $tabGameName,
-            'components' => $componentsRaw ? (json_decode($componentsRaw, true) ?: []) : [],
-            'reviews'    => $reviewsRaw    ? (json_decode($reviewsRaw,    true) ?: []) : [],
-            'videos'     => $videosRaw     ? (json_decode($videosRaw,     true) ?: []) : [],
-            'faqs'       => $faqsRaw       ? (json_decode($faqsRaw,       true) ?: []) : [],
-            'artists'    => $artistsRaw    ? (json_decode($artistsRaw,    true) ?: []) : [],
-            'buy_urls'   => $buyUrlsRaw    ? (json_decode($buyUrlsRaw,    true) ?: []) : [],
+            'game'         => $tabGameName,
+            'components'   => $componentsRaw  ? (json_decode($componentsRaw,  true) ?: []) : [],
+            'reviews'      => $reviewsRaw     ? (json_decode($reviewsRaw,     true) ?: []) : [],
+            'videos'       => $videosRaw      ? (json_decode($videosRaw,      true) ?: []) : [],
+            'faqs'         => $faqsRaw        ? (json_decode($faqsRaw,        true) ?: []) : [],
+            'artists'      => $artistsRaw     ? (json_decode($artistsRaw,     true) ?: []) : [],
+            'buy_urls'     => $buyUrlsRaw     ? (json_decode($buyUrlsRaw,     true) ?: []) : [],
+            'gallery_urls' => $galleryUrlsRaw ? (json_decode($galleryUrlsRaw, true) ?: []) : [],
         ];
         $tabContentEncoded = base64_encode(json_encode($tabContent, JSON_UNESCAPED_UNICODE));
         $tabContentCmd = escapeshellarg($pythonPath) . ' '

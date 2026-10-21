@@ -1193,9 +1193,14 @@ function gbSaveFooterField(el) {
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
   xhr.onload = function() {
-    var ok = false;
-    try { ok = JSON.parse(xhr.responseText).ok; } catch(e) {}
-    gbShowSaveToast(ok ? 'Saved' : 'Save failed', !ok);
+    var r = {}; try { r = JSON.parse(xhr.responseText); } catch(e) {}
+    if (!r.ok) { gbShowSaveToast('Save failed', true); return; }
+    if (!r.sheetOk) {
+      gbShowSaveToast('Saved locally — sheet sync failed', true);
+      if (r.sheetErr) console.warn('Sheet sync error:', r.sheetErr);
+    } else {
+      gbShowSaveToast('Saved', false);
+    }
   };
   xhr.onerror = function() { gbShowSaveToast('Save failed', true); };
   xhr.send(fd);
@@ -1530,6 +1535,10 @@ function submitSettings() {
     btn.disabled = false;
     var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = {error: xhr.responseText}; }
     if (r.error) { document.getElementById('setErr').textContent = r.error; return; }
+    if (!r.sheetOk && r.sheetErr) {
+      console.warn('Sheet sync error:', r.sheetErr);
+      document.getElementById('setErr').textContent = 'Saved locally — sheet sync: ' + r.sheetErr;
+    }
     forceCloseSettings();
     location.reload();
   };
@@ -3330,6 +3339,7 @@ function submitSettings() {
     btn.disabled = false;
     var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
     if (!r || r.error) { document.getElementById('setErr').textContent = 'Save failed: ' + (r && r.error || 'unknown'); return; }
+    if (!r.sheetOk && r.sheetErr) console.warn('Sheet sync error:', r.sheetErr);
     forceCloseSettings();
   };
   xhr.onerror = function() { btn.disabled = false; document.getElementById('setErr').textContent = 'Network error.'; };

@@ -78,6 +78,13 @@ $errFile    = sys_get_temp_dir() . '/gwritesettings_err_' . $sheetId . '.txt';
 $cmd = escapeshellarg($pythonPath) . ' '
      . escapeshellarg(__DIR__ . '/gwritesettings.py') . ' '
      . escapeshellarg($arg) . ' 2>' . escapeshellarg($errFile);
-shell_exec($cmd); // fire-and-forget; don't block the response on sheet sync
+$pyOut   = trim((string) shell_exec($cmd));
+$pyErr   = file_exists($errFile) ? trim(file_get_contents($errFile)) : '';
+$pyResult = $pyOut ? json_decode($pyOut, true) : null;
+$sheetOk  = !empty($pyResult['ok']);
+$sheetErr = '';
+if (!$sheetOk) {
+    $sheetErr = $pyResult['error'] ?? $pyErr ?: ($pyOut ?: 'Script did not respond');
+}
 
-echo json_encode(['ok' => true]);
+echo json_encode(['ok' => true, 'sheetOk' => $sheetOk, 'sheetErr' => $sheetErr]);

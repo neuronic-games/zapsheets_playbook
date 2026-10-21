@@ -224,7 +224,12 @@ a { color:inherit; text-decoration:none; }
 /* ── Page banner (always visible) ── */
 .gb-banner { background:var(--banner-bg); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:1.1rem 2rem; gap:1.5rem; }
 .gb-banner-left { display:flex; align-items:center; gap:.9rem; min-width:0; }
-.gb-banner-name { font-family:'DINBlack',sans-serif; font-size:1.1rem; letter-spacing:.06em; opacity:.75; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.gb-banner-name { font-family:'DINBlack',sans-serif; font-size:1.1rem; letter-spacing:.06em; opacity:.75; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; outline:none; }
+.gb-banner-name-editable { border-bottom:1.5px solid transparent; border-radius:2px; transition:border-color .14s,opacity .14s; min-width:6px; display:inline-block; }
+body.gb-admin-mode .gb-banner-name-editable { cursor:text; opacity:.85; border-bottom-color:rgba(255,255,255,.25); }
+body.gb-admin-mode .gb-banner-name-editable:hover { border-bottom-color:rgba(255,255,255,.55); opacity:1; }
+body.gb-admin-mode .gb-banner-name-editable:focus { border-bottom-color:#fff; opacity:1; }
+.gb-banner-name-editable:empty:before { content:attr(data-placeholder); opacity:.35; font-style:italic; pointer-events:none; }
 .gb-banner-nav { display:flex; align-items:center; gap:1.75rem; flex:1; justify-content:center; }
 .gb-banner-nav a { font-family:'DINBlack',sans-serif; font-size:.82rem; text-transform:uppercase; letter-spacing:.06em; color:rgba(255,255,255,.75); transition:color .14s; white-space:nowrap; }
 .gb-banner-nav a:hover { color:#fff; }
@@ -469,7 +474,17 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
         <button class="gb-img-btn gb-logo-edit-btn" onclick="gbPickLogoImage(event)" title="Change logo"><?= $_imgBtnIcon ?></button>
       </div>
       <?php endif; ?>
-      <?php if ($_pubName): ?><span class="gb-banner-name"><?= h($_pubName) ?></span><?php endif; ?>
+      <?php if ($_pubName || !isset($_gbPublicBase)): ?>
+      <span class="gb-banner-name<?= !isset($_gbPublicBase) ? ' gb-banner-name-editable' : '' ?>"
+            <?php if (!isset($_gbPublicBase)): ?>
+            contenteditable="false"
+            data-setting="company"
+            data-placeholder="Company Name"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+            onblur="gbSaveFooterField(this);document.getElementById('gbMeta') && (document.getElementById('gbMeta').textContent=(this.textContent.trim()||<?= json_encode($_pubName ?: 'Games') ?>)+' · GameBoard')"
+            <?php endif; ?>
+            ><?= h($_pubName) ?></span>
+      <?php endif; ?>
     </div>
     <nav class="gb-banner-nav" id="gbBannerNav">
       <!-- Nav links populated from Settings in a future update -->
@@ -866,9 +881,9 @@ function _updateGbAuth() {
     var saveBtn = document.getElementById('gbSavePageBtn');
     if (saveBtn) saveBtn.style.display = '';
     document.body.classList.add('gb-admin-mode');
-    document.querySelectorAll('.gb-footer-editable').forEach(function(el){ el.contentEditable = 'true'; });
+    document.querySelectorAll('.gb-footer-editable, .gb-banner-name-editable').forEach(function(el){ el.contentEditable = 'true'; });
   } else {
-    document.querySelectorAll('.gb-footer-editable').forEach(function(el){ el.contentEditable = 'false'; });
+    document.querySelectorAll('.gb-footer-editable, .gb-banner-name-editable').forEach(function(el){ el.contentEditable = 'false'; });
     var saveBtn = document.getElementById('gbSavePageBtn');
     if (saveBtn) saveBtn.style.display = 'none';
     if (btn) { btn.classList.remove('signed-in'); btn.title = 'Menu'; }

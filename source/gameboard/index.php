@@ -34,6 +34,88 @@ function _gb_load(string $f): array {
     return file_exists($f) ? (json_decode(file_get_contents($f), true) ?: []) : [];
 }
 
+/**
+ * Renders the unified site footer for both the catalog page and individual game pages.
+ * $opts keys:
+ *   'gameCredit' string  — e.g. "Floristry · Designed by Alice & Bob" (page 2 only)
+ */
+function _gb_footer(array $opts = []): void {
+    global $_subHeading, $_subText, $_tagline, $_pubLogo, $_pubName,
+           $_copyright, $_footerNote, $_socialDefs, $_gbPublicBase;
+    $gameCredit = trim($opts['gameCredit'] ?? '');
+    $isAdmin    = !isset($_gbPublicBase);
+    $heading    = $_subHeading ?: ($_tagline ?: 'Stay in the loop.');
+    $desc       = $_subText ?: 'Join our newsletter for exciting announcements and special offers!';
+    ?>
+<footer class="gb-footer">
+  <div class="gb-footer-main">
+    <!-- Brand column -->
+    <div class="gb-footer-brand">
+      <?php if ($_pubLogo): ?>
+      <img src="<?= htmlspecialchars($_pubLogo, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($_pubName, ENT_QUOTES) ?>" class="gb-footer-logo-img" />
+      <?php elseif ($_pubName): ?>
+      <div class="gb-footer-bar-brand"><?= htmlspecialchars($_pubName, ENT_QUOTES) ?></div>
+      <?php endif; ?>
+      <?php if ($_tagline): ?>
+      <div class="gb-footer-brand-tagline"><?= htmlspecialchars($_tagline, ENT_QUOTES) ?></div>
+      <?php endif; ?>
+    </div>
+    <!-- Subscribe column -->
+    <div class="gb-footer-subscribe">
+      <div class="gb-footer-sub-label"><?= htmlspecialchars($heading, ENT_QUOTES) ?></div>
+      <div class="gb-footer-sub-desc"><?= htmlspecialchars($desc, ENT_QUOTES) ?></div>
+      <form class="gb-footer-sub-form" id="gbSubscribeForm" onsubmit="gbSubscribeSubmit(event)">
+        <input type="email" id="gbSubscribeEmail" class="gb-footer-sub-input" placeholder="Your email" required autocomplete="email" />
+        <button type="submit" class="gb-footer-sub-btn" id="gbSubscribeBtn">Subscribe</button>
+      </form>
+      <p class="gb-footer-sub-msg" id="gbSubscribeMsg"></p>
+    </div>
+  </div>
+  <!-- Bottom bar -->
+  <div class="gb-footer-bar">
+    <div class="gb-footer-bar-inner">
+      <div class="gb-footer-bar-left">
+        <?php if ($isAdmin): ?>
+        <span class="gb-footer-editable"
+              contenteditable="false"
+              id="gbFooterCopyright"
+              data-setting="copyright"
+              data-placeholder="© <?= date('Y') ?> <?= htmlspecialchars($_pubName ?: 'Your Company', ENT_QUOTES) ?>"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+              onblur="gbSaveFooterField(this)"><?= htmlspecialchars($_copyright, ENT_QUOTES) ?></span>
+        <span class="gb-footer-editable"
+              contenteditable="false"
+              id="gbFooterNote"
+              data-setting="footer_note"
+              data-placeholder="Click to add contact info or a tagline…"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+              onblur="gbSaveFooterField(this)"><?= htmlspecialchars($_footerNote, ENT_QUOTES) ?></span>
+        <?php else: ?>
+        <span><?= htmlspecialchars($_copyright, ENT_QUOTES) ?></span>
+        <?php if ($_footerNote): ?><span><?= htmlspecialchars($_footerNote, ENT_QUOTES) ?></span><?php endif; ?>
+        <?php endif; ?>
+        <?php if ($gameCredit): ?>
+        <span class="gb-footer-game-credit"><?= htmlspecialchars($gameCredit, ENT_QUOTES) ?></span>
+        <?php endif; ?>
+      </div>
+      <div class="gb-footer-bar-icons" <?= $isAdmin ? 'id="gbFooterIcons"' : '' ?>>
+        <?php if (!empty($_socialDefs)) foreach ($_socialDefs as $_sd):
+          $_isSet = !empty($_sd['url']);
+          if ($isAdmin || $_isSet): ?>
+        <button class="gb-social-btn<?= $_isSet ? ' gb-social-set' : ' gb-social-empty' ?>"
+                data-key="<?= htmlspecialchars($_sd['key'], ENT_QUOTES) ?>"
+                data-label="<?= htmlspecialchars($_sd['label'], ENT_QUOTES) ?>"
+                data-url="<?= htmlspecialchars($_sd['url'], ENT_QUOTES) ?>"
+                onclick="gbClickSocial(this)"
+                title="<?= htmlspecialchars($_sd['label'] . ($_isSet ? '' : ' — click to add'), ENT_QUOTES) ?>"><?= $_sd['svg'] ?></button>
+        <?php endif; endforeach; ?>
+      </div>
+    </div>
+  </div>
+</footer>
+    <?php
+}
+
 function _gb_slug(string $s): string {
     return strtolower(trim(preg_replace('/[^A-Za-z0-9]+/', '-', $s), '-'));
 }
@@ -234,30 +316,37 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 .cat-empty-body { font-size:.85rem; line-height:1.6; }
 
 /* ── Footer ── */
+/* ── Unified Footer ── */
 .gb-footer { background:#1c1c1e; color:rgba(255,255,255,.5); }
-/* Subscribe section inside footer */
-.gb-footer-subscribe { border-bottom:1px solid rgba(255,255,255,.08); padding:2.8rem 2rem; }
-.gb-footer-subscribe-inner { max-width:1100px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:2rem; flex-wrap:wrap; }
-.gb-footer-sub-label { font-family:'DINBlack',sans-serif; font-size:1.25rem; color:#fff; margin-bottom:.25rem; }
-.gb-footer-sub-desc { font-size:.85rem; color:rgba(255,255,255,.45); }
-.gb-footer-sub-form { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
-.gb-footer-sub-input { padding:.65rem 1.15rem; border:none; border-radius:999px; background:rgba(255,255,255,.1); color:#fff; font-size:.9rem; min-width:210px; outline:none; transition:background .18s; }
-.gb-footer-sub-input::placeholder { color:rgba(255,255,255,.38); }
+.gb-footer-main { max-width:1100px; margin:0 auto; padding:3.5rem 2rem 2.5rem; display:grid; grid-template-columns:1fr 1.15fr; gap:2.5rem 5rem; align-items:start; }
+@media(max-width:680px){ .gb-footer-main { grid-template-columns:1fr; padding:2.5rem 1.5rem 2rem; gap:2rem; } }
+/* Brand column */
+.gb-footer-brand {}
+.gb-footer-logo-img { height:34px; object-fit:contain; object-position:left center; margin-bottom:.65rem; display:block; }
+.gb-footer-bar-brand { font-family:'DINBlack',sans-serif; font-size:1rem; color:rgba(255,255,255,.85); margin-bottom:.3rem; }
+.gb-footer-brand-tagline { font-size:.82rem; color:rgba(255,255,255,.4); line-height:1.6; margin-top:.2rem; }
+/* Subscribe column */
+.gb-footer-subscribe {}
+.gb-footer-sub-label { font-family:'DINBlack',sans-serif; font-size:1rem; color:#fff; margin-bottom:.3rem; }
+.gb-footer-sub-desc { font-size:.82rem; color:rgba(255,255,255,.42); margin-bottom:1rem; line-height:1.55; }
+.gb-footer-sub-form { display:flex; gap:.4rem; }
+.gb-footer-sub-input { flex:1; min-width:0; padding:.62rem 1rem; border:none; border-radius:999px; background:rgba(255,255,255,.1); color:#fff; font-size:.88rem; outline:none; transition:background .18s; }
+.gb-footer-sub-input::placeholder { color:rgba(255,255,255,.35); }
 .gb-footer-sub-input:focus { background:rgba(255,255,255,.16); }
-.gb-footer-sub-btn { padding:.65rem 1.5rem; border:none; border-radius:999px; background:var(--accent); color:#fff; font-family:'DINBlack',sans-serif; font-size:.82rem; letter-spacing:.03em; cursor:pointer; transition:opacity .18s; white-space:nowrap; }
+.gb-footer-sub-btn { padding:.62rem 1.4rem; border:none; border-radius:999px; background:var(--accent); color:#fff; font-family:'DINBlack',sans-serif; font-size:.78rem; letter-spacing:.05em; cursor:pointer; transition:opacity .18s; white-space:nowrap; }
 .gb-footer-sub-btn:hover { opacity:.85; }
-.gb-footer-sub-btn:disabled { opacity:.6; cursor:default; }
-.gb-footer-sub-msg { max-width:1100px; margin:.6rem auto 0; padding:0 2rem; font-size:.8rem; min-height:1em; }
-.gb-footer-sub-msg.ok  { color:#5ecb7a; }
+.gb-footer-sub-btn:disabled { opacity:.55; cursor:default; }
+.gb-footer-sub-msg { margin-top:.55rem; font-size:.77rem; min-height:1em; }
+.gb-footer-sub-msg.ok  { color:#6bd98a; }
 .gb-footer-sub-msg.err { color:#e07070; }
-/* Footer bar */
-.gb-footer-bar { }
-.gb-footer-bar-inner { max-width:1100px; margin:0 auto; padding:1.4rem 2rem; display:flex; align-items:center; justify-content:space-between; gap:1.5rem; flex-wrap:wrap; font-size:.72rem; color:rgba(255,255,255,.38); }
+/* Bottom bar */
+.gb-footer-bar { border-top:1px solid rgba(255,255,255,.07); }
+.gb-footer-bar-inner { max-width:1100px; margin:0 auto; padding:.85rem 2rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; font-size:.71rem; color:rgba(255,255,255,.3); }
 .gb-footer-bar-left { display:flex; flex-direction:column; gap:.2rem; }
-.gb-footer-bar-brand { font-family:'DINBlack',sans-serif; font-size:.88rem; color:rgba(255,255,255,.7); margin-bottom:.25rem; }
-.gb-footer-logo-img { height:32px; object-fit:contain; margin-bottom:.35rem; display:block; }
-.gb-footer-bar-icons { display:flex; gap:.5rem; align-items:center; flex-shrink:0; }
-.gb-social-btn { width:1.9rem; height:1.9rem; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:border-color .14s,background .14s; cursor:pointer; padding:0; }
+.gb-footer-bar-icons { display:flex; gap:.45rem; align-items:center; flex-shrink:0; }
+.gb-footer-game-credit { font-size:.68rem; color:rgba(255,255,255,.22); margin-top:.1rem; }
+/* Social buttons */
+.gb-social-btn { width:1.85rem; height:1.85rem; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:border-color .14s,background .14s; cursor:pointer; padding:0; }
 .gb-social-btn svg { fill:rgba(255,255,255,.6); pointer-events:none; }
 .gb-social-set { border:1.5px solid rgba(255,255,255,.25); background:transparent; }
 .gb-social-set:hover { border-color:rgba(255,255,255,.6); background:rgba(255,255,255,.08); }
@@ -483,63 +572,8 @@ $_socialDefs = [
   ['key'=>'youtube',  'label'=>'YouTube',     'url'=>$_yt,      'svg'=>'<svg width="16" height="12" viewBox="0 0 24 17"><path d="M23.495 2.205a3.02 3.02 0 0 0-2.122-2.136C19.545 0 12 0 12 0S4.455 0 2.627.07a3.02 3.02 0 0 0-2.122 2.135C0 4.046 0 8.5 0 8.5s0 4.455.505 6.295a3.02 3.02 0 0 0 2.122 2.136C4.455 17 12 17 12 17s7.545 0 9.373-.07a3.02 3.02 0 0 0 2.122-2.135C24 12.954 24 8.5 24 8.5s0-4.454-.505-6.295zM9.545 12.273V4.727L15.818 8.5l-6.273 3.773z"/></svg>'],
   ['key'=>'bgg_url',  'label'=>'BoardGameGeek','url'=>$_bgg,    'svg'=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>'],
 ];
+_gb_footer();
 ?>
-<footer class="gb-footer">
-  <!-- Subscribe -->
-  <div class="gb-footer-subscribe">
-    <div class="gb-footer-subscribe-inner">
-      <div>
-        <div class="gb-footer-sub-label"><?= h($_subHeading ?: ($_tagline ?: 'Stay in the loop.')) ?></div>
-        <div class="gb-footer-sub-desc"><?= h($_subText ?: 'Join our newsletter for exciting announcements and special offers!') ?></div>
-      </div>
-      <form class="gb-footer-sub-form" id="gbSubscribeForm" onsubmit="gbSubscribeSubmit(event)">
-        <input type="email" id="gbSubscribeEmail" class="gb-footer-sub-input" placeholder="Your email" required autocomplete="email" />
-        <button type="submit" class="gb-footer-sub-btn" id="gbSubscribeBtn">Subscribe</button>
-      </form>
-    </div>
-    <p class="gb-footer-sub-msg" id="gbSubscribeMsg"></p>
-  </div>
-  <!-- Bar: brand + copyright + social -->
-  <div class="gb-footer-bar">
-    <div class="gb-footer-bar-inner">
-      <div class="gb-footer-bar-left">
-        <?php if ($_pubLogo): ?>
-        <img src="<?= h($_pubLogo) ?>" alt="<?= h($_pubName) ?>" class="gb-footer-logo-img" />
-        <?php elseif ($_pubName): ?>
-        <div class="gb-footer-bar-brand"><?= h($_pubName) ?></div>
-        <?php endif; ?>
-        <span class="gb-footer-editable"
-              contenteditable="false"
-              id="gbFooterCopyright"
-              data-setting="copyright"
-              data-placeholder="© <?= date('Y') ?> <?= h($_pubName ?: 'Your Company') ?>"
-              onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
-              onblur="gbSaveFooterField(this)"><?= h($_copyright) ?></span>
-        <?php if ($_footerNote || !isset($_gbPublicBase)): ?>
-        <span class="gb-footer-editable"
-              contenteditable="false"
-              id="gbFooterNote"
-              data-setting="footer_note"
-              data-placeholder="Click to add contact info or tagline…"
-              onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
-              onblur="gbSaveFooterField(this)"><?= h($_footerNote) ?></span>
-        <?php endif; ?>
-      </div>
-      <div class="gb-footer-bar-icons" id="gbFooterIcons">
-        <?php foreach ($_socialDefs as $_sd):
-          $_isSet = !empty($_sd['url']);
-          if (!isset($_gbPublicBase) || $_isSet): ?>
-        <button class="gb-social-btn<?= $_isSet ? ' gb-social-set' : ' gb-social-empty' ?>"
-                data-key="<?= h($_sd['key']) ?>"
-                data-label="<?= h($_sd['label']) ?>"
-                data-url="<?= h($_sd['url']) ?>"
-                onclick="gbClickSocial(this)"
-                title="<?= h($_sd['label']) . ($_isSet ? '' : ' — click to add') ?>"><?= $_sd['svg'] ?></button>
-        <?php endif; endforeach; ?>
-      </div>
-    </div>
-  </div>
-</footer>
 
 
 <!-- ── Publish Site dialog ── -->
@@ -2595,49 +2629,12 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
 
 </div><!-- /gb-main -->
 
-<footer class="gb-footer">
-  <!-- Subscribe -->
-  <div class="gb-footer-subscribe">
-    <div class="gb-footer-subscribe-inner">
-      <div>
-        <div class="gb-footer-sub-label"><?= h($_subHeading ?: ($_tagline ?: 'Stay in the loop.')) ?></div>
-        <div class="gb-footer-sub-desc"><?= h($_subText ?: 'Join our newsletter for exciting announcements and special offers!') ?></div>
-      </div>
-      <form class="gb-footer-sub-form" id="gbSubscribeForm" onsubmit="gbSubscribeSubmit(event)">
-        <input type="email" id="gbSubscribeEmail" class="gb-footer-sub-input" placeholder="Your email" required autocomplete="email" />
-        <button type="submit" class="gb-footer-sub-btn" id="gbSubscribeBtn">Subscribe</button>
-      </form>
-    </div>
-    <p class="gb-footer-sub-msg" id="gbSubscribeMsg"></p>
-  </div>
-  <!-- Bar: brand + game credit + social -->
-  <div class="gb-footer-bar">
-    <div class="gb-footer-bar-inner">
-      <div class="gb-footer-bar-left">
-        <?php if ($_pubLogo): ?>
-        <img src="<?= h($_pubLogo) ?>" alt="<?= h($_pubName) ?>" class="gb-footer-logo-img" />
-        <?php elseif ($_pubName): ?>
-        <div class="gb-footer-bar-brand"><?= h($_pubName) ?></div>
-        <?php endif; ?>
-        <span><?= h($_copyright) ?></span>
-        <?php if ($_footerNote): ?><span><?= h($_footerNote) ?></span><?php endif; ?>
-        <?php if ($_designers): ?><span><?= h($_name) ?> · Designed by <?= h(implode(' & ', $_designers)) ?></span><?php endif; ?>
-      </div>
-      <div class="gb-footer-bar-icons">
-        <?php foreach ($_socialDefs as $_sd):
-          $_isSet = !empty($_sd['url']);
-          if (!isset($_gbPublicBase) || $_isSet): ?>
-        <button class="gb-social-btn<?= $_isSet ? ' gb-social-set' : ' gb-social-empty' ?>"
-                data-key="<?= h($_sd['key']) ?>"
-                data-label="<?= h($_sd['label']) ?>"
-                data-url="<?= h($_sd['url']) ?>"
-                onclick="gbClickSocial(this)"
-                title="<?= h($_sd['label']) ?>"><?= $_sd['svg'] ?></button>
-        <?php endif; endforeach; ?>
-      </div>
-    </div>
-  </div>
-</footer>
+<?php
+$_gameCredit = !empty($_designers)
+    ? $_name . ' · Designed by ' . implode(' & ', $_designers)
+    : '';
+_gb_footer(['gameCredit' => $_gameCredit]);
+?>
 
 <div class="gb-lightbox" id="lightbox" onclick="closeLightbox()">
   <img id="lightboxImg" src="" alt="" />

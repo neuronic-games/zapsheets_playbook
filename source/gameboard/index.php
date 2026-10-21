@@ -2180,7 +2180,7 @@ body.gb-admin-mode .gb-ph-stat { display: flex; }
 .gb-ph-stat strong { opacity: .5; }
 .gb-ph-stat span { opacity: .35; font-style: italic; }
 /* Cover image button (top-left of hero) */
-.gb-cover-btn { position: absolute; top: .75rem; right: .75rem; z-index: 6; }
+.gb-cover-btn { position: absolute; top: .75rem; right: .75rem; z-index: 6; display: none; }
 body.gb-admin-mode .gb-hero.no-cover .gb-cover-btn { display: flex; }
 body.gb-admin-mode .gb-hero:not(.no-cover) .gb-cover-btn { display: none; }
 body.gb-admin-mode .gb-hero:not(.no-cover):hover .gb-cover-btn,

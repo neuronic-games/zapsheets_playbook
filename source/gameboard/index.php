@@ -49,7 +49,7 @@ function _gb_footer(array $opts = []): void {
     ?>
 <footer class="gb-footer">
   <div class="gb-footer-main">
-    <!-- Brand column: logo → tagline → social icons -->
+    <!-- Brand column: logo → tagline → social icons → copyright -->
     <div class="gb-footer-brand">
       <?php if ($_pubLogo): ?>
       <img src="<?= htmlspecialchars($_pubLogo, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($_pubName, ENT_QUOTES) ?>" class="gb-footer-logo-img" />
@@ -71,6 +71,30 @@ function _gb_footer(array $opts = []): void {
                 title="<?= htmlspecialchars($_sd['label'] . ($_isSet ? '' : ' — click to add'), ENT_QUOTES) ?>"><?= $_sd['svg'] ?></button>
         <?php endif; endforeach; ?>
       </div>
+      <div class="gb-footer-brand-copy">
+        <?php if ($isAdmin): ?>
+        <span class="gb-footer-editable"
+              contenteditable="false"
+              id="gbFooterCopyright"
+              data-setting="copyright"
+              data-placeholder="© <?= date('Y') ?> <?= htmlspecialchars($_pubName ?: 'Your Company', ENT_QUOTES) ?>"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+              onblur="gbSaveFooterField(this)"><?= htmlspecialchars($_copyright, ENT_QUOTES) ?></span>
+        <span class="gb-footer-editable"
+              contenteditable="false"
+              id="gbFooterNote"
+              data-setting="footer_note"
+              data-placeholder="Tagline or contact info…"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+              onblur="gbSaveFooterField(this)"><?= htmlspecialchars($_footerNote, ENT_QUOTES) ?></span>
+        <?php else: ?>
+        <span><?= htmlspecialchars($_copyright, ENT_QUOTES) ?></span>
+        <?php if ($_footerNote): ?><span><?= htmlspecialchars($_footerNote, ENT_QUOTES) ?></span><?php endif; ?>
+        <?php endif; ?>
+        <?php if ($gameCredit): ?>
+        <span class="gb-footer-game-credit"><?= htmlspecialchars($gameCredit, ENT_QUOTES) ?></span>
+        <?php endif; ?>
+      </div>
     </div>
     <!-- Subscribe column -->
     <div class="gb-footer-subscribe">
@@ -81,33 +105,6 @@ function _gb_footer(array $opts = []): void {
         <button type="submit" class="gb-footer-sub-btn" id="gbSubscribeBtn">Subscribe</button>
       </form>
       <p class="gb-footer-sub-msg" id="gbSubscribeMsg"></p>
-    </div>
-  </div>
-  <!-- Bottom bar: copyright only -->
-  <div class="gb-footer-bar">
-    <div class="gb-footer-bar-inner">
-      <?php if ($isAdmin): ?>
-      <span class="gb-footer-editable"
-            contenteditable="false"
-            id="gbFooterCopyright"
-            data-setting="copyright"
-            data-placeholder="© <?= date('Y') ?> <?= htmlspecialchars($_pubName ?: 'Your Company', ENT_QUOTES) ?>"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
-            onblur="gbSaveFooterField(this)"><?= htmlspecialchars($_copyright, ENT_QUOTES) ?></span>
-      <span class="gb-footer-editable"
-            contenteditable="false"
-            id="gbFooterNote"
-            data-setting="footer_note"
-            data-placeholder="Click to add contact info or a tagline…"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
-            onblur="gbSaveFooterField(this)"><?= htmlspecialchars($_footerNote, ENT_QUOTES) ?></span>
-      <?php else: ?>
-      <span><?= htmlspecialchars($_copyright, ENT_QUOTES) ?></span>
-      <?php if ($_footerNote): ?><span class="gb-footer-bar-sep">·</span><span><?= htmlspecialchars($_footerNote, ENT_QUOTES) ?></span><?php endif; ?>
-      <?php endif; ?>
-      <?php if ($gameCredit): ?>
-      <span class="gb-footer-game-credit"><?= htmlspecialchars($gameCredit, ENT_QUOTES) ?></span>
-      <?php endif; ?>
     </div>
   </div>
 </footer>
@@ -314,18 +311,18 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 .cat-empty-body { font-size:.85rem; line-height:1.6; }
 
 /* ── Footer ── */
-/* ── Unified Footer ── */
 .gb-footer { background:#1c1c1e; color:rgba(255,255,255,.5); }
-.gb-footer-main { max-width:1100px; margin:0 auto; padding:3.5rem 2rem 2.5rem; display:grid; grid-template-columns:1fr 1.15fr; gap:2.5rem 5rem; align-items:start; }
-@media(max-width:680px){ .gb-footer-main { grid-template-columns:1fr; padding:2.5rem 1.5rem 2rem; gap:2rem; } }
+.gb-footer-main { max-width:1100px; margin:0 auto; padding:3.5rem 2rem 3rem; display:grid; grid-template-columns:1fr 1.15fr; gap:2.5rem 5rem; align-items:start; }
+@media(max-width:680px){ .gb-footer-main { grid-template-columns:1fr; padding:2.5rem 1.5rem 2.5rem; gap:2rem; } }
 /* Brand column */
-.gb-footer-brand { display:flex; flex-direction:column; gap:.55rem; }
-.gb-footer-logo-img { height:34px; object-fit:contain; object-position:left center; display:block; }
-.gb-footer-bar-brand { font-family:'DINBlack',sans-serif; font-size:1rem; color:rgba(255,255,255,.85); }
-.gb-footer-brand-tagline { font-size:.82rem; color:rgba(255,255,255,.4); line-height:1.6; }
-.gb-footer-brand-icons { display:flex; gap:.45rem; align-items:center; margin-top:.2rem; }
+.gb-footer-brand { display:flex; flex-direction:column; gap:.7rem; }
+.gb-footer-logo-img { height:52px; object-fit:contain; object-position:left center; display:block; }
+.gb-footer-bar-brand { font-family:'DINBlack',sans-serif; font-size:1.15rem; color:rgba(255,255,255,.9); }
+.gb-footer-brand-tagline { font-size:.83rem; color:rgba(255,255,255,.42); line-height:1.65; }
+.gb-footer-brand-icons { display:flex; gap:.45rem; align-items:center; }
+.gb-footer-brand-copy { display:flex; flex-direction:column; gap:.18rem; font-size:.71rem; color:rgba(255,255,255,.28); margin-top:.15rem; }
+.gb-footer-game-credit { font-size:.68rem; color:rgba(255,255,255,.2); }
 /* Subscribe column */
-.gb-footer-subscribe {}
 .gb-footer-sub-label { font-family:'DINBlack',sans-serif; font-size:1rem; color:#fff; margin-bottom:.3rem; }
 .gb-footer-sub-desc { font-size:.82rem; color:rgba(255,255,255,.42); margin-bottom:1rem; line-height:1.55; }
 .gb-footer-sub-form { display:flex; gap:.4rem; }
@@ -338,11 +335,6 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 .gb-footer-sub-msg { margin-top:.55rem; font-size:.77rem; min-height:1em; }
 .gb-footer-sub-msg.ok  { color:#6bd98a; }
 .gb-footer-sub-msg.err { color:#e07070; }
-/* Bottom bar */
-.gb-footer-bar { border-top:1px solid rgba(255,255,255,.07); }
-.gb-footer-bar-inner { max-width:1100px; margin:0 auto; padding:.75rem 2rem; display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; font-size:.71rem; color:rgba(255,255,255,.3); }
-.gb-footer-bar-sep { color:rgba(255,255,255,.18); }
-.gb-footer-game-credit { font-size:.68rem; color:rgba(255,255,255,.22); }
 /* Social buttons */
 .gb-social-btn { width:1.85rem; height:1.85rem; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:border-color .14s,background .14s; cursor:pointer; padding:0; }
 .gb-social-btn svg { fill:rgba(255,255,255,.6); pointer-events:none; }
@@ -2300,6 +2292,34 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
   font-style:italic; white-space:pre-wrap;
   border:2px dashed rgba(59,59,170,.2); border-radius:6px; padding:.75rem 1rem;
 }
+/* ── Footer (shared) ── */
+.gb-footer { background:#1c1c1e; color:rgba(255,255,255,.5); }
+.gb-footer-main { max-width:1100px; margin:0 auto; padding:3.5rem 2rem 3rem; display:grid; grid-template-columns:1fr 1.15fr; gap:2.5rem 5rem; align-items:start; }
+@media(max-width:680px){ .gb-footer-main { grid-template-columns:1fr; padding:2.5rem 1.5rem 2.5rem; gap:2rem; } }
+.gb-footer-brand { display:flex; flex-direction:column; gap:.7rem; }
+.gb-footer-logo-img { height:52px; object-fit:contain; object-position:left center; display:block; }
+.gb-footer-bar-brand { font-family:'DINBlack',sans-serif; font-size:1.15rem; color:rgba(255,255,255,.9); }
+.gb-footer-brand-tagline { font-size:.83rem; color:rgba(255,255,255,.42); line-height:1.65; }
+.gb-footer-brand-icons { display:flex; gap:.45rem; align-items:center; }
+.gb-footer-brand-copy { display:flex; flex-direction:column; gap:.18rem; font-size:.71rem; color:rgba(255,255,255,.28); margin-top:.15rem; }
+.gb-footer-game-credit { font-size:.68rem; color:rgba(255,255,255,.2); }
+.gb-footer-sub-label { font-family:'DINBlack',sans-serif; font-size:1rem; color:#fff; margin-bottom:.3rem; }
+.gb-footer-sub-desc { font-size:.82rem; color:rgba(255,255,255,.42); margin-bottom:1rem; line-height:1.55; }
+.gb-footer-sub-form { display:flex; gap:.4rem; }
+.gb-footer-sub-input { flex:1; min-width:0; padding:.62rem 1rem; border:none; border-radius:999px; background:rgba(255,255,255,.1); color:#fff; font-size:.88rem; outline:none; transition:background .18s; }
+.gb-footer-sub-input::placeholder { color:rgba(255,255,255,.35); }
+.gb-footer-sub-input:focus { background:rgba(255,255,255,.16); }
+.gb-footer-sub-btn { padding:.62rem 1.4rem; border:none; border-radius:999px; background:var(--accent); color:#fff; font-family:'DINBlack',sans-serif; font-size:.78rem; letter-spacing:.05em; cursor:pointer; transition:opacity .18s; white-space:nowrap; }
+.gb-footer-sub-btn:hover { opacity:.85; }
+.gb-footer-sub-btn:disabled { opacity:.55; cursor:default; }
+.gb-footer-sub-msg { margin-top:.55rem; font-size:.77rem; min-height:1em; }
+.gb-footer-sub-msg.ok  { color:#6bd98a; }
+.gb-footer-sub-msg.err { color:#e07070; }
+.gb-social-btn { width:1.85rem; height:1.85rem; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:border-color .14s,background .14s; cursor:pointer; padding:0; }
+.gb-social-btn svg { fill:rgba(255,255,255,.6); pointer-events:none; }
+.gb-social-set { border:1.5px solid rgba(255,255,255,.25); background:transparent; }
+.gb-social-set:hover { border-color:rgba(255,255,255,.6); background:rgba(255,255,255,.08); }
+.gb-social-empty { display:none; }
 </style>
 </head>
 <body>

@@ -283,6 +283,20 @@ body.gb-admin-mode .gb-banner-name-editable:focus { border-bottom-color:#fff; op
 .cat-slide-dots { position:absolute; bottom:.75rem; left:50%; transform:translateX(-50%); display:flex; gap:.45rem; z-index:10; }
 .cat-slide-dot { width:.55rem; height:.55rem; border-radius:50%; background:rgba(255,255,255,.45); border:none; cursor:pointer; padding:0; transition:background .2s,transform .2s; }
 .cat-slide-dot.active { background:#fff; transform:scale(1.2); }
+/* Carousel admin controls */
+.cat-slide-edit-btn,.cat-slide-del-btn { position:absolute; display:none; align-items:center; justify-content:center; border:none; cursor:pointer; z-index:15; transition:background .14s; }
+.cat-slide-edit-btn { bottom:.75rem; right:.75rem; width:2rem; height:2rem; border-radius:50%; background:rgba(0,0,0,.55); color:#fff; }
+.cat-slide-edit-btn svg { pointer-events:none; }
+.cat-slide-del-btn { top:.5rem; right:.5rem; width:1.6rem; height:1.6rem; border-radius:50%; background:rgba(200,50,50,.75); color:#fff; font-size:1rem; line-height:1; }
+.cat-slide-del-btn:hover { background:rgba(200,50,50,1); }
+body.gb-admin-mode .cat-slide-edit-btn,
+body.gb-admin-mode .cat-slide-del-btn { display:flex; }
+body.gb-admin-mode .cat-slide-edit-btn:hover { background:rgba(0,0,0,.85); }
+/* Add image tile */
+.cat-slide-add-tile { position:absolute; right:0; top:0; bottom:0; width:clamp(80px,12%,120px); background:rgba(255,255,255,.06); border-left:1px solid rgba(255,255,255,.1); display:none; flex-direction:column; align-items:center; justify-content:center; gap:.5rem; cursor:pointer; color:rgba(255,255,255,.5); font-family:'DINBlack',sans-serif; font-size:.65rem; text-transform:uppercase; letter-spacing:.06em; transition:background .15s,color .15s; z-index:11; }
+.cat-slide-add-tile:hover,.cat-slide-add-tile.drag-over { background:rgba(255,255,255,.14); color:#fff; }
+body.gb-admin-mode .cat-slide-add-tile { display:flex; }
+body.gb-admin-mode .cat-carousel { padding-right:clamp(80px,12%,120px); }
 
 /* ── About strip ── */
 .cat-about { max-width:720px; margin:2.5rem auto 0; padding:0 1.5rem; text-align:center; }
@@ -504,11 +518,15 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
 </div><!-- /.gb-top-wrap -->
 
 <!-- ── Carousel ── -->
-<div class="cat-carousel" id="catCarousel"
-  ondragover="carouselDragOver(event)" ondragleave="carouselDragLeave(event)" ondrop="carouselDrop(event)">
+<div class="cat-carousel" id="catCarousel">
 <?php if (!empty($_carousel)): ?>
   <?php foreach ($_carousel as $_ci => $_cUrl): ?>
-  <div class="cat-slide<?= $_ci === 0 ? ' active' : '' ?>" style="background-image:url('<?= h($_cUrl) ?>')"></div>
+  <div class="cat-slide<?= $_ci === 0 ? ' active' : '' ?>" data-url="<?= h($_cUrl) ?>" style="background-image:url('<?= h($_cUrl) ?>')">
+    <?php if (!isset($_gbPublicBase)): ?>
+    <button class="cat-slide-edit-btn" onclick="carouselPickImage(this.closest('.cat-slide'))" title="Change image"><?= $_imgBtnIcon ?></button>
+    <button class="cat-slide-del-btn"  onclick="carouselRemoveSlide(this.closest('.cat-slide'))" title="Remove">×</button>
+    <?php endif; ?>
+  </div>
   <?php endforeach; ?>
   <button class="cat-slide-btn cat-slide-prev" onclick="carouselPrev()" title="Previous">&#8249;</button>
   <button class="cat-slide-btn cat-slide-next" onclick="carouselNext()" title="Next">&#8250;</button>
@@ -518,10 +536,21 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
     <?php endforeach; ?>
   </div>
 <?php else: ?>
-  <div class="cat-carousel-ph">
+  <div class="cat-carousel-ph" id="catCarouselPh">
     <svg class="cat-carousel-ph-icon" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-    <div class="cat-carousel-ph-text">Add carousel images in Settings</div>
+    <div class="cat-carousel-ph-text">Drag &amp; drop images or click + to add</div>
   </div>
+<?php endif; ?>
+<?php if (!isset($_gbPublicBase)): ?>
+<div class="cat-slide-add-tile" id="catSlideAdd"
+     onclick="carouselAddSlide()"
+     ondragover="event.preventDefault();this.classList.add('drag-over')"
+     ondragleave="this.classList.remove('drag-over')"
+     ondrop="this.classList.remove('drag-over');carouselDropAdd(event)"
+     title="Add image">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  <span>Add Image</span>
+</div>
 <?php endif; ?>
 </div>
 
@@ -1161,7 +1190,22 @@ function gbSaveFooterField(el) {
   fd.append(key, val);
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
+  xhr.onload = function() {
+    var ok = false;
+    try { ok = JSON.parse(xhr.responseText).ok; } catch(e) {}
+    gbShowSaveToast(ok ? 'Saved' : 'Save failed', !ok);
+  };
+  xhr.onerror = function() { gbShowSaveToast('Save failed', true); };
   xhr.send(fd);
+}
+function gbShowSaveToast(msg, isErr) {
+  var t = document.getElementById('gbSaveToast');
+  if (!t) return;
+  t.textContent = msg;
+  t.style.background = isErr ? '#c0392b' : '#27ae60';
+  t.classList.add('visible');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(function(){ t.classList.remove('visible'); }, 1800);
 }
 
 function gbSavePage() {
@@ -1211,35 +1255,164 @@ function gbSaveBannerColor(hex) {
 }
 
 // ── Carousel ─────────────────────────────────────────────────────────────────
-(function() {
-  var slides = document.querySelectorAll('#catCarousel .cat-slide');
-  var dots   = document.querySelectorAll('#catSlideDots .cat-slide-dot');
+var _carouselCur = 0, _carouselTimer = null;
+function _carouselSlides() { return document.querySelectorAll('#catCarousel .cat-slide'); }
+function _carouselDots()   { return document.querySelectorAll('#catSlideDots .cat-slide-dot'); }
+
+function _carouselGo(n) {
+  var slides = _carouselSlides(), dots = _carouselDots();
   if (!slides.length) return;
-  var cur = 0, timer = null;
-  function go(n) {
-    slides[cur].classList.remove('active');
-    if (dots[cur]) dots[cur].classList.remove('active');
-    cur = (n + slides.length) % slides.length;
-    slides[cur].classList.add('active');
-    if (dots[cur]) dots[cur].classList.add('active');
+  slides[_carouselCur].classList.remove('active');
+  if (dots[_carouselCur]) dots[_carouselCur].classList.remove('active');
+  _carouselCur = ((n % slides.length) + slides.length) % slides.length;
+  slides[_carouselCur].classList.add('active');
+  if (dots[_carouselCur]) dots[_carouselCur].classList.add('active');
+}
+function _carouselStart() {
+  clearInterval(_carouselTimer);
+  if (_carouselSlides().length > 1) _carouselTimer = setInterval(function(){ _carouselGo(_carouselCur + 1); }, 5000);
+}
+function _carouselRebuildDots() {
+  var box = document.getElementById('catSlideDots');
+  if (!box) return;
+  var slides = _carouselSlides();
+  box.innerHTML = '';
+  slides.forEach(function(_, i) {
+    var b = document.createElement('button');
+    b.className = 'cat-slide-dot' + (i === _carouselCur ? ' active' : '');
+    b.onclick = function() { carouselGo(i); };
+    box.appendChild(b);
+  });
+}
+window.carouselPrev = function() { _carouselGo(_carouselCur - 1); _carouselStart(); };
+window.carouselNext = function() { _carouselGo(_carouselCur + 1); _carouselStart(); };
+window.carouselGo   = function(n) { _carouselGo(n); _carouselStart(); };
+
+// Save all slide URLs to settings (slots 1–6)
+function carouselSaveAll() {
+  var urls = Array.from(_carouselSlides()).map(function(s){ return s.dataset.url || ''; });
+  var fd = new FormData(); fd.append('id', SHEET_ID);
+  for (var i = 0; i < 6; i++) fd.append('carousel_' + (i + 1), urls[i] || '');
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
+  xhr.onload = function() {
+    var ok = false; try { ok = JSON.parse(xhr.responseText).ok; } catch(e) {}
+    gbShowSaveToast(ok ? 'Saved' : 'Save failed', !ok);
+  };
+  xhr.onerror = function() { gbShowSaveToast('Save failed', true); };
+  xhr.send(fd);
+}
+
+// Upload a file, then call callback(url)
+function _carouselUpload(file, callback) {
+  if (!file || !file.type.startsWith('image/')) return;
+  var fd = new FormData(); fd.append('file', file); fd.append('id', SHEET_ID);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/uploadImage.php');
+  xhr.onload = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = {}; }
+    if (r && r.url) { callback(r.url); }
+    else { gbShowSaveToast('Upload failed', true); }
+  };
+  xhr.onerror = function() { gbShowSaveToast('Upload failed', true); };
+  xhr.send(fd);
+}
+
+// Replace image on an existing slide
+window.carouselPickImage = function(slideEl) {
+  if (!document.body.classList.contains('gb-admin-mode')) return;
+  var inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = function() {
+    if (!inp.files || !inp.files[0]) return;
+    _carouselUpload(inp.files[0], function(url) {
+      slideEl.dataset.url = url;
+      slideEl.style.backgroundImage = "url('" + url + "')";
+      carouselSaveAll();
+    });
+  };
+  inp.click();
+};
+
+// Add a new slide
+window.carouselAddSlide = function() {
+  if (!document.body.classList.contains('gb-admin-mode')) return;
+  if (_carouselSlides().length >= 6) { gbShowSaveToast('Max 6 images', false); return; }
+  var inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = function() {
+    if (!inp.files || !inp.files[0]) return;
+    _carouselUpload(inp.files[0], function(url) { _carouselInsertSlide(url); });
+  };
+  inp.click();
+};
+window.carouselDropAdd = function(e) {
+  e.preventDefault();
+  if (!document.body.classList.contains('gb-admin-mode')) return;
+  if (_carouselSlides().length >= 6) return;
+  var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) _carouselUpload(f, function(url) { _carouselInsertSlide(url); });
+};
+function _carouselInsertSlide(url) {
+  var carousel = document.getElementById('catCarousel');
+  var addTile  = document.getElementById('catSlideAdd');
+  var ph       = document.getElementById('catCarouselPh');
+  if (ph) { ph.remove(); }
+  var div = document.createElement('div');
+  div.className = 'cat-slide'; div.dataset.url = url;
+  div.style.backgroundImage = "url('" + url + "')";
+  var editBtn = document.createElement('button');
+  editBtn.className = 'cat-slide-edit-btn'; editBtn.title = 'Change image';
+  editBtn.innerHTML = document.getElementById('IMG_BTN_ICON') ? document.getElementById('IMG_BTN_ICON').innerHTML : '🖼';
+  editBtn.onclick = function() { carouselPickImage(div); };
+  var delBtn = document.createElement('button');
+  delBtn.className = 'cat-slide-del-btn'; delBtn.title = 'Remove'; delBtn.textContent = '×';
+  delBtn.onclick = function() { carouselRemoveSlide(div); };
+  div.appendChild(editBtn); div.appendChild(delBtn);
+  // Insert before the add tile (or prev/next buttons)
+  var insertBefore = addTile || carousel.querySelector('.cat-slide-btn');
+  carousel.insertBefore(div, insertBefore);
+  // Show dots bar if needed
+  var dotsBar = document.getElementById('catSlideDots');
+  if (!dotsBar) {
+    dotsBar = document.createElement('div'); dotsBar.id = 'catSlideDots'; dotsBar.className = 'cat-slide-dots';
+    carousel.insertBefore(dotsBar, addTile);
   }
-  function start() { timer = setInterval(function(){ go(cur + 1); }, 5000); }
-  function reset()  { clearInterval(timer); start(); }
-  window.carouselPrev = function() { go(cur - 1); reset(); };
-  window.carouselNext = function() { go(cur + 1); reset(); };
-  window.carouselGo   = function(n) { go(n); reset(); };
-  // Drag-drop for replacing carousel images (admin mode)
-  window.carouselDragOver = function(e) {
-    if (!document.body.classList.contains('gb-admin-mode')) return;
-    e.preventDefault();
-  };
-  window.carouselDragLeave = function(e) { e.preventDefault(); };
-  window.carouselDrop = function(e) {
-    e.preventDefault();
-    if (!document.body.classList.contains('gb-admin-mode')) return;
-    // not yet wired — placeholder for future upload
-  };
-  start();
+  // Show prev/next if not already there
+  if (!carousel.querySelector('.cat-slide-prev')) {
+    var p = document.createElement('button'); p.className = 'cat-slide-btn cat-slide-prev'; p.innerHTML = '&#8249;'; p.onclick = function(){ carouselPrev(); };
+    var n = document.createElement('button'); n.className = 'cat-slide-btn cat-slide-next'; n.innerHTML = '&#8250;'; n.onclick = function(){ carouselNext(); };
+    carousel.insertBefore(p, dotsBar); carousel.insertBefore(n, dotsBar);
+  }
+  _carouselCur = _carouselSlides().length - 1;
+  _carouselRebuildDots();
+  _carouselGo(_carouselCur);
+  _carouselStart();
+  carouselSaveAll();
+  if (_carouselSlides().length >= 6) document.getElementById('catSlideAdd') && (document.getElementById('catSlideAdd').style.opacity = '.4');
+}
+
+// Remove a slide
+window.carouselRemoveSlide = function(slideEl) {
+  if (!document.body.classList.contains('gb-admin-mode')) return;
+  var slides = _carouselSlides();
+  if (slides.length <= 1) { slideEl.remove(); _carouselRebuildDots(); carouselSaveAll(); return; }
+  var idx = Array.from(slides).indexOf(slideEl);
+  slideEl.remove();
+  if (_carouselCur >= _carouselSlides().length) _carouselCur = _carouselSlides().length - 1;
+  if (_carouselCur === idx) _carouselGo(_carouselCur);
+  _carouselRebuildDots();
+  _carouselStart();
+  carouselSaveAll();
+  if (_carouselSlides().length < 6) { var add = document.getElementById('catSlideAdd'); if (add) add.style.opacity = ''; }
+};
+
+// Init
+(function() {
+  var slides = _carouselSlides();
+  if (slides.length) { slides[0].classList.add('active'); }
+  _carouselRebuildDots();
+  _carouselStart();
 })();
 
 // ── Sign-in dialog ──────────────────────────────────────────────────────────
@@ -1607,6 +1780,8 @@ function gbSubscribeSubmit(e) {
 .sync-log-line.info  { color:#60a5fa; }
 .sync-dialog-actions { display:flex; align-items:center; justify-content:flex-end; gap:.5rem; }
 </style>
+
+<div class="gb-save-toast" id="gbSaveToast" style="position:fixed;bottom:1.5rem;right:1.5rem;padding:.55rem 1.1rem;border-radius:8px;font-size:.82rem;font-family:'DINBlack',sans-serif;color:#fff;box-shadow:0 3px 16px rgba(0,0,0,.22);display:none;z-index:9999;"></div>
 
 </body>
 </html>

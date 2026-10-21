@@ -2813,7 +2813,7 @@ var GAME_DATA = <?= json_encode([
     'reviews'        => array_values(array_map(function($r) { return ['attr' => trim($r['Value'] ?? ''), 'quote' => trim($r['Value 1'] ?? '')]; }, $_reviews)),
     'videos'         => array_values(array_map(function($r) { return ['url' => trim($r['Value'] ?? ''), 'name' => trim($r['Value 1'] ?? '')]; }, $_videoReviews)),
     'faqs'           => array_values(array_map(function($f) { return ['q' => trim($f['Value'] ?? ''), 'a' => trim($f['Value 1'] ?? '')]; }, $_faqs)),
-    'gallery'        => <?= json_encode($_productImgUrls) ?>,
+    'gallery'        => $_productImgUrls,
 ]) ?>;
 
 // Mutable copy that tracks edits from the details modal

@@ -2374,7 +2374,7 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
     <div class="gb-section-label">Gallery</div>
     <div class="gb-gallery-viewer" id="gbGalleryViewer">
       <div class="gb-gallery-featured" id="gbGalleryFeatured">
-        <img id="gbGalleryFeaturedImg" src="<?= h($_productImgUrls[0] ?? '') ?>" alt="<?= h($_name) ?>" onclick="openLightbox(this.src)" />
+        <img id="gbGalleryFeaturedImg" src="" alt="<?= h($_name) ?>" onclick="openLightbox(this.src)" style="display:none" />
         <button class="gb-gallery-featured-del" title="Remove this image" onclick="gbGalleryDeleteFeatured()">✕</button>
       </div>
       <div class="gb-gallery-thumbs" id="gbGalleryThumbs">
@@ -3820,9 +3820,14 @@ function gbRenderGallery() {
   // Clamp active index
   if (_gbGalleryIdx >= imgs.length) _gbGalleryIdx = Math.max(0, imgs.length - 1);
 
-  // Update featured image only if URL differs (compare attribute, not resolved .src)
-  if (imgs.length && featEl.getAttribute('src') !== imgs[_gbGalleryIdx]) {
-    featEl.src = imgs[_gbGalleryIdx];
+  // Always set featured image src; show image once loaded
+  if (imgs.length) {
+    featEl.style.display = '';
+    if (featEl.src !== imgs[_gbGalleryIdx]) {
+      featEl.src = imgs[_gbGalleryIdx];
+    }
+  } else {
+    featEl.style.display = 'none';
   }
 
   // Rebuild thumbs
@@ -3851,9 +3856,8 @@ function gbGallerySelect(idx) {
   var imgs = _ed.gallery || [];
   if (idx < 0 || idx >= imgs.length) return;
   _gbGalleryIdx = idx;
-  // Crossfade featured image
   var featEl = document.getElementById('gbGalleryFeaturedImg');
-  if (featEl) {
+  if (featEl && featEl.src !== imgs[idx]) {
     featEl.classList.add('gb-gf-fade');
     setTimeout(function() {
       featEl.src = imgs[idx];
@@ -4371,25 +4375,26 @@ function gbTickerEditCancel() {
 // Public page: start gallery auto-advance and ticker
 (function() {
   if (!document.body.classList.contains('gb-admin-mode')) {
-    // On public view, _ed.gallery is initialized from GAME_DATA by the IIFE above,
-    // but on public pages the admin IIFE doesn't run. Wire up gallery from PHP-rendered thumbs.
     var thumbs = document.querySelectorAll('#gbGalleryThumbs .gb-gallery-thumb');
     var featEl = document.getElementById('gbGalleryFeaturedImg');
-    if (thumbs.length > 1 && featEl) {
+    if (thumbs.length && featEl) {
       var pubGalleryIdx = 0;
-      var pubUrls = Array.prototype.map.call(thumbs, function(t) { return t.querySelector('img') ? t.querySelector('img').src : ''; });
-      thumbs.forEach(function(t, i) {
-        t.onclick = function() {
-          pubGalleryIdx = i;
-          featEl.classList.add('gb-gf-fade');
-          setTimeout(function() { featEl.src = pubUrls[i]; featEl.onload = function() { featEl.classList.remove('gb-gf-fade'); featEl.onload = null; }; }, 180);
-          thumbs.forEach(function(tt, ii) { tt.classList.toggle('gb-gt-active', ii === i); });
-        };
-      });
-      setInterval(function() {
-        pubGalleryIdx = (pubGalleryIdx + 1) % pubUrls.length;
-        thumbs[pubGalleryIdx].onclick();
-      }, 4000);
+      var pubUrls = Array.prototype.map.call(thumbs, function(t) { var i = t.querySelector('img'); return i ? i.getAttribute('src') : ''; }).filter(Boolean);
+      // Set first image immediately
+      if (pubUrls.length) { featEl.src = pubUrls[0]; featEl.style.display = ''; }
+      function pubSelect(idx) {
+        pubGalleryIdx = idx;
+        featEl.classList.add('gb-gf-fade');
+        setTimeout(function() {
+          featEl.src = pubUrls[idx];
+          featEl.onload = function() { featEl.classList.remove('gb-gf-fade'); featEl.onload = null; };
+        }, 180);
+        thumbs.forEach(function(tt, ii) { tt.classList.toggle('gb-gt-active', ii === idx); });
+      }
+      thumbs.forEach(function(t, i) { t.onclick = function() { pubSelect(i); }; });
+      if (pubUrls.length > 1) {
+        setInterval(function() { pubSelect((pubGalleryIdx + 1) % pubUrls.length); }, 4000);
+      }
     }
   }
 })();

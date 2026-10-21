@@ -570,7 +570,7 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
 <div class="cat-grid" id="catGrid">
 <?php if (empty($_games)): ?>
   <div class="cat-empty">
-    <div class="cat-empty-icon">🎲</div>
+    <div class="cat-empty-icon"><img src="<?= h($_appRoot) ?>images/gb_logo.png" alt="GameBoard" style="width:64px;height:64px;border-radius:14px;opacity:.5;" /></div>
     <div class="cat-empty-title">No published games yet</div>
     <div class="cat-empty-body">Sign in and use Fetch to sync your Games sheet, then mark games as Published to display them here.</div>
   </div>
@@ -590,7 +590,7 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
       <?php if ($gCover): ?>
       <img class="cat-card-img" src="<?= h($gCover) ?>" alt="<?= h($gName) ?>" loading="lazy" />
       <?php else: ?>
-      <div class="cat-card-ph">🎲</div>
+      <div class="cat-card-ph"><img src="<?= h($_appRoot) ?>images/gb_logo.png" alt="" style="width:64px;height:64px;border-radius:14px;opacity:.35;" /></div>
       <?php endif; ?>
       <button class="gb-img-btn cat-img-upload-btn" title="Change image"
         onclick="catPickImage(event,this.closest('.cat-img-wrap'))"><?= $_imgBtnIcon ?></button>
@@ -2833,7 +2833,7 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
         <?php if ($ogImg): ?>
         <img src="<?= h($ogImg) ?>" alt="<?= h($ogName) ?>" loading="lazy" />
         <?php else: ?>
-        <div class="gb-more-card-ph">🎲</div>
+        <div class="gb-more-card-ph"><img src="<?= h($_appRoot) ?>images/gb_logo.png" alt="" style="width:48px;height:48px;border-radius:10px;opacity:.35;" /></div>
         <?php endif; ?>
         <div class="gb-more-body">
           <div class="gb-more-name"><?= h($ogName) ?></div>

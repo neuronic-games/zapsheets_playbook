@@ -44,12 +44,10 @@ body {
 /* ── Branding ── */
 .brand { text-align: center; margin-bottom: 2.25rem; }
 .brand-icon {
-  width: 72px; height: 72px; margin: 0 auto 1rem;
-  border-radius: 18px; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #003d4d 0%, #0097a7 100%);
-  box-shadow: 0 4px 28px rgba(0,151,167,.45);
-  font-size: 2.2rem;
+  width: 88px; height: 88px; margin: 0 auto 1rem;
+  display: flex; align-items: center; justify-content: center;
 }
+.brand-icon img { width: 88px; height: 88px; border-radius: 20px; }
 .brand-name {
   font-family: 'DINBlack', sans-serif;
   font-size: 2rem; text-transform: uppercase; letter-spacing: .09em;
@@ -138,7 +136,7 @@ body {
 
   <!-- Branding -->
   <div class="brand">
-    <div class="brand-icon">🎲</div>
+    <div class="brand-icon"><img src="images/gb_logo.png" alt="GameBoard" /></div>
     <div class="brand-name">GameBoard</div>
     <div class="brand-tagline">Polished product pages for your board games</div>
   </div>

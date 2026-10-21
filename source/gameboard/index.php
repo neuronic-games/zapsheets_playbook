@@ -2421,22 +2421,10 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     </div>
   </div>
 
-  <!-- What People Are Saying -->
-  <div class="gb-section<?= empty($_reviews) ? ' gb-sect-empty' : '' ?>">
-    <div class="gb-section-label">What People Are Saying</div>
-    <div class="gb-faq-editor gb-inline-edit" id="gbReviewsList"></div>
-    <div class="gb-reviews gb-display-content">
-      <?php foreach ($_reviews as $rv):
-        $rQuote  = trim($rv['Value']   ?? '');
-        $rAuthor = trim($rv['Value 1'] ?? '');
-        if (!$rQuote) continue;
-      ?>
-      <div class="gb-review">
-        <div class="gb-review-quote"><?= h($rQuote) ?></div>
-        <?php if ($rAuthor): ?><div class="gb-review-author">— <?= h($rAuthor) ?></div><?php endif; ?>
-      </div>
-      <?php endforeach; ?>
-    </div>
+  <!-- Reviews admin editor (hidden in public; ticker handles public display) -->
+  <div class="gb-section gb-inline-edit">
+    <div class="gb-section-label">Reviews</div>
+    <div class="gb-faq-editor" id="gbReviewsList"></div>
   </div>
 
   <!-- Video Reviews -->

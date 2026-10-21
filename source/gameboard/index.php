@@ -151,7 +151,7 @@ $_imgBtnIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stro
 
 // ── Shared settings (available to both catalog and game pages) ────────────────
 $_pubName    = trim($_settings['Company'] ?? $_settings['Name'] ?? '');
-$_pubLogo    = trim($_settings['Logo URL'] ?? '');
+$_pubLogo    = trim($_settings['Logo URL'] ?? '') ?: ($_appRoot . 'images/gb_logo.png');
 $_tagline    = trim($_settings['Tagline'] ?? '');
 $_insta      = trim($_settings['Instagram'] ?? '');
 $_twitter    = trim($_settings['Twitter']   ?? '');

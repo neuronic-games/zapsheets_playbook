@@ -1758,18 +1758,18 @@ a { color:inherit; text-decoration:none; }
 .gb-description { font-size:.98rem; line-height:1.75; color:var(--ink-lt); white-space:pre-wrap; }
 
 /* ── Gallery ── */
-.gb-gallery-viewer { display:flex; gap:.6rem; align-items:stretch; }
-.gb-gallery-featured { flex:1; position:relative; border-radius:10px; overflow:hidden; background:#111; min-height:220px; max-height:400px; cursor:pointer; }
-.gb-gallery-featured img { width:100%; height:100%; object-fit:cover; display:block; transition:opacity .35s; }
+.gb-gallery-viewer { display:flex; flex-direction:column; gap:.55rem; }
+.gb-gallery-featured { position:relative; border-radius:10px; overflow:hidden; background:var(--surface); }
+.gb-gallery-featured img { width:100%; max-height:420px; object-fit:contain; display:block; transition:opacity .35s; background:var(--surface); }
 .gb-gallery-featured img.gb-gf-fade { opacity:0; }
 /* admin overlay on featured */
-.gb-gallery-featured-del { position:absolute; top:.5rem; right:.5rem; background:rgba(0,0,0,.6); color:#fff; border:none; border-radius:50%; width:24px; height:24px; font-size:.7rem; cursor:pointer; display:none; align-items:center; justify-content:center; z-index:3; }
+.gb-gallery-featured-del { position:absolute; top:.5rem; right:.5rem; background:rgba(0,0,0,.55); color:#fff; border:none; border-radius:50%; width:24px; height:24px; font-size:.7rem; cursor:pointer; display:none; align-items:center; justify-content:center; z-index:3; }
 body.gb-admin-mode .gb-gallery-featured-del { display:flex; }
-/* Thumbs column */
-.gb-gallery-thumbs { display:flex; flex-direction:column; gap:.45rem; overflow-y:auto; max-height:400px; width:110px; flex-shrink:0; }
-.gb-gallery-thumbs::-webkit-scrollbar { width:3px; }
+/* Thumbs row */
+.gb-gallery-thumbs { display:flex; flex-direction:row; gap:.45rem; overflow-x:auto; padding-bottom:2px; }
+.gb-gallery-thumbs::-webkit-scrollbar { height:3px; }
 .gb-gallery-thumbs::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
-.gb-gallery-thumb { position:relative; width:110px; height:74px; border-radius:7px; overflow:hidden; flex-shrink:0; cursor:pointer; border:2px solid transparent; transition:border-color .18s; background:#eee; }
+.gb-gallery-thumb { position:relative; width:100px; height:68px; border-radius:7px; overflow:hidden; flex-shrink:0; cursor:pointer; border:2px solid transparent; transition:border-color .18s; background:#eee; }
 .gb-gallery-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
 .gb-gallery-thumb.gb-gt-active { border-color:var(--accent); }
 .gb-gallery-thumb:hover:not(.gb-gt-active) { border-color:rgba(0,0,0,.2); }
@@ -1777,9 +1777,10 @@ body.gb-admin-mode .gb-gallery-featured-del { display:flex; }
 .gb-gt-del { position:absolute; top:2px; right:2px; background:rgba(0,0,0,.6); color:#fff; border:none; border-radius:50%; width:18px; height:18px; font-size:.55rem; cursor:pointer; display:none; align-items:center; justify-content:center; z-index:2; line-height:1; }
 body.gb-admin-mode .gb-gt-del { display:flex; }
 /* "+" add thumb */
-.gb-gallery-thumb-add { width:110px; height:74px; border-radius:7px; flex-shrink:0; cursor:pointer; border:2px dashed rgba(59,59,170,.25); background:linear-gradient(135deg,#f0f0fa,#e4e4f4); display:flex; align-items:center; justify-content:center; font-size:1.6rem; color:rgba(59,59,170,.35); transition:opacity .18s; opacity:0; pointer-events:none; }
+.gb-gallery-thumb-add { width:100px; height:68px; border-radius:7px; flex-shrink:0; cursor:pointer; border:2px dashed rgba(59,59,170,.25); background:linear-gradient(135deg,#f0f0fa,#e4e4f4); display:flex; align-items:center; justify-content:center; font-size:1.6rem; color:rgba(59,59,170,.35); transition:opacity .18s; opacity:0; pointer-events:none; }
 body.gb-admin-mode .gb-gallery-thumb-add { opacity:1; pointer-events:auto; }
 .gb-gallery-thumb-add:hover { opacity:.7 !important; }
+.gb-gallery-thumb-add.gb-drag-over { opacity:1 !important; border-color:var(--accent); background:#e8eaf8; }
 
 /* ── Video ── */
 .gb-video-wrap { position:relative; padding-top:56.25%; border-radius:10px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,.13); }
@@ -2379,7 +2380,11 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
           <button class="gb-gt-del" onclick="event.stopPropagation();gbGalleryDelete(<?= $i ?>)" title="Remove">✕</button>
         </div>
         <?php endforeach; ?>
-        <div class="gb-gallery-thumb-add" id="gbGalleryAddBtn" onclick="gbPickGalleryImage()" title="Add image">+</div>
+        <div class="gb-gallery-thumb-add" id="gbGalleryAddBtn"
+             onclick="gbPickGalleryImage()" title="Click or drop image here"
+             ondragover="event.preventDefault();this.classList.add('gb-drag-over')"
+             ondragleave="this.classList.remove('gb-drag-over')"
+             ondrop="event.preventDefault();this.classList.remove('gb-drag-over');gbGalleryDropImage(event)">+</div>
       </div>
     </div>
   </div>
@@ -3811,8 +3816,8 @@ function gbRenderGallery() {
   // Clamp active index
   if (_gbGalleryIdx >= imgs.length) _gbGalleryIdx = Math.max(0, imgs.length - 1);
 
-  // Update featured image
-  if (imgs.length) {
+  // Update featured image only if it needs to change (avoids blank flash on init)
+  if (imgs.length && featEl.src !== imgs[_gbGalleryIdx]) {
     featEl.src = imgs[_gbGalleryIdx];
   }
 
@@ -3879,6 +3884,18 @@ function gbGalleryAutoAdvance() {
 
 function gbPickGalleryImage() {
   gbPickImage(function(url) {
+    if (!_ed.gallery) _ed.gallery = [];
+    _ed.gallery.push(url);
+    _gbGalleryIdx = _ed.gallery.length - 1;
+    gbRenderGallery();
+    gbShowUploadToast('Image added — click Save Changes');
+  });
+}
+
+function gbGalleryDropImage(e) {
+  var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (!file || !file.type.startsWith('image/')) return;
+  gbUploadImage(file, function(url) {
     if (!_ed.gallery) _ed.gallery = [];
     _ed.gallery.push(url);
     _gbGalleryIdx = _ed.gallery.length - 1;

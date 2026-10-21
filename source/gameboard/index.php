@@ -1850,13 +1850,12 @@ body.gb-admin-mode .gb-faq-editor { display:flex; }
 .gb-ticker-item-edit.gb-ticker-active { background:rgba(0,0,0,.2); border-radius:6px; }
 .gb-ticker-item-ph { border:2px dashed rgba(255,255,255,.35); border-radius:8px; opacity:.55; }
 .gb-ticker-item-ph:hover { opacity:.9; }
-/* Edit panel below ticker */
-.gb-ticker-edit-panel { display:none; flex-direction:column; gap:.6rem; background:#e8910a; padding:1rem 1.4rem 1.1rem; }
-.gb-ticker-edit-panel.open { display:flex; }
-.gb-ticker-edit-ta  { font-family:inherit; font-size:.95rem; padding:.55rem .75rem; border:none; border-radius:6px; resize:vertical; outline:none; width:100%; box-sizing:border-box; line-height:1.5; }
-.gb-ticker-edit-inp { font-family:inherit; font-size:.85rem; padding:.45rem .75rem; border:none; border-radius:6px; outline:none; width:100%; box-sizing:border-box; }
-.gb-ticker-edit-ta:focus, .gb-ticker-edit-inp:focus { box-shadow:0 0 0 2px rgba(255,255,255,.6); }
-.gb-ticker-edit-actions { display:flex; gap:.5rem; }
+/* Inline edit card (replaces card content in place) */
+.gb-ticker-item-editing { width:480px; background:rgba(0,0,0,.22); border-radius:8px; padding:1rem 1.2rem; display:flex; flex-direction:column; gap:.55rem; cursor:default; }
+.gb-ticker-edit-ta  { font-family:inherit; font-size:.95rem; padding:.5rem .7rem; border:none; border-radius:6px; resize:none; outline:none; width:100%; box-sizing:border-box; line-height:1.5; background:#fff; color:#1a3a5c; }
+.gb-ticker-edit-inp { font-family:inherit; font-size:.8rem; padding:.4rem .7rem; border:none; border-radius:6px; outline:none; width:100%; box-sizing:border-box; background:rgba(255,255,255,.85); color:#1a3a5c; }
+.gb-ticker-edit-ta:focus, .gb-ticker-edit-inp:focus { box-shadow:0 0 0 2px rgba(255,255,255,.7); }
+.gb-ticker-edit-actions { display:flex; gap:.4rem; flex-wrap:wrap; }
 .btn-adm-danger { background:#e53e3e !important; color:#fff !important; }
 
 /* ── Reviews ── */
@@ -2343,16 +2342,7 @@ body.gb-admin-mode .gb-ph-gallery { display: flex; gap:.55rem; }
     <?php endforeach; ?>
     <?php endforeach; ?>
   </div>
-  <!-- Edit panel: appears below the ticker when a review is clicked in admin mode -->
-  <div class="gb-ticker-edit-panel" id="gbTickerEditPanel">
-    <textarea id="gbTickerEditQuote" class="gb-ticker-edit-ta" placeholder="Review quote…" rows="2"></textarea>
-    <input   id="gbTickerEditSource" class="gb-ticker-edit-inp" type="text" placeholder="— Source (e.g. Rahdo Runs Through)" />
-    <div class="gb-ticker-edit-actions">
-      <button class="btn-adm" onclick="gbTickerEditSave()">Save</button>
-      <button class="btn-adm btn-adm-secondary" onclick="gbTickerEditCancel()">Cancel</button>
-      <button class="btn-adm btn-adm-danger gb-ticker-edit-del-btn" onclick="gbTickerEditDelete()">Delete</button>
-    </div>
-  </div>
+
 </div>
 
 <!-- ── Main ── -->
@@ -4088,7 +4078,7 @@ document.addEventListener('paste', function(e) {
 }, true);
 
 // ── Review Ticker ─────────────────────────────────────────────────────────────
-var _gbTickerRaf = null, _gbTickerPos = 0, _gbTickerPaused = false, _gbTickerEditIdx = -1;
+var _gbTickerRaf = null, _gbTickerPos = 0, _gbTickerPaused = false, _gbTickerEditIdx = -1, _gbTickerEditEl = null;
 
 function gbInitReviewTicker() {
   var wrap  = document.getElementById('gbTickerWrap');
@@ -4096,9 +4086,8 @@ function gbInitReviewTicker() {
   if (!track) return;
 
   if (_gbTickerRaf) { cancelAnimationFrame(_gbTickerRaf); _gbTickerRaf = null; }
-  _gbTickerPos = 0;
+  _gbTickerPos = 0; _gbTickerPaused = false; _gbTickerEditIdx = -1; _gbTickerEditEl = null;
   track.style.transform = '';
-  gbTickerEditCancel();
 
   var reviews = (_ed.reviews || []).filter(function(r) { return r.attr; });
   track.innerHTML = '';
@@ -4124,9 +4113,9 @@ function gbInitReviewTicker() {
     a.textContent = r.quote ? '— ' + r.quote : '';
     item.appendChild(q);
     item.appendChild(a);
-    (function(i) {
-      item.onclick = function(e) { e.stopPropagation(); gbTickerEditOpen(i); };
-    })(idx);
+    (function(i, el) {
+      item.onclick = function(e) { e.stopPropagation(); gbTickerEditOpen(i, el); };
+    })(idx, item);
     return item;
   }
 
@@ -4137,7 +4126,7 @@ function gbInitReviewTicker() {
   phQ.className = 'gb-ticker-quote';
   phQ.textContent = '+ Add review';
   ph.appendChild(phQ);
-  ph.onclick = function(e) { e.stopPropagation(); gbTickerEditOpen(-1); };
+  ph.onclick = function(e) { e.stopPropagation(); gbTickerEditOpen(-1, ph); };
 
   // Build first pass
   reviews.forEach(function(r, idx) {
@@ -4154,7 +4143,7 @@ function gbInitReviewTicker() {
   // Hover pause
   if (wrap) {
     wrap.onmouseenter = function() { _gbTickerPaused = true; };
-    wrap.onmouseleave = function() { if (!document.getElementById('gbTickerEditPanel').classList.contains('open')) _gbTickerPaused = false; };
+    wrap.onmouseleave = function() { if (!_gbTickerEditEl) _gbTickerPaused = false; };
   }
 
   // rAF seamless scroll
@@ -4174,28 +4163,50 @@ function gbInitReviewTicker() {
   _gbTickerRaf = requestAnimationFrame(step);
 }
 
-function gbTickerEditOpen(idx) {
+function gbTickerEditOpen(idx, el) {
+  if (_gbTickerEditEl) gbTickerEditCancel(); // close any prior edit first
   _gbTickerEditIdx = idx;
-  _gbTickerPaused = true;
-  var panel = document.getElementById('gbTickerEditPanel');
-  var qta   = document.getElementById('gbTickerEditQuote');
-  var sinp  = document.getElementById('gbTickerEditSource');
+  _gbTickerEditEl  = el;
+  _gbTickerPaused  = true;
   var r = idx >= 0 ? (_ed.reviews || [])[idx] : null;
-  qta.value  = r ? (r.attr  || '') : '';
-  sinp.value = r ? (r.quote || '') : '';
-  panel.classList.add('open');
-  // Highlight active card
-  document.querySelectorAll('.gb-ticker-item-edit').forEach(function(el, i) {
-    el.classList.toggle('gb-ticker-active', i === idx || i === idx + (_ed.reviews || []).length + 1);
-  });
-  qta.focus();
-  qta.setSelectionRange(qta.value.length, qta.value.length);
+
+  // Replace card content with inline edit form
+  el.className = 'gb-ticker-item gb-ticker-item-editing';
+  el.onclick = null;
+
+  var ta = document.createElement('textarea');
+  ta.className = 'gb-ticker-edit-ta';
+  ta.placeholder = 'Review quote…';
+  ta.rows = 3;
+  ta.value = r ? (r.attr || '') : '';
+
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.className = 'gb-ticker-edit-inp';
+  inp.placeholder = '— Source (e.g. Rahdo Runs Through)';
+  inp.value = r ? (r.quote || '') : '';
+
+  var actions = document.createElement('div');
+  actions.className = 'gb-ticker-edit-actions';
+  var bSave = document.createElement('button'); bSave.className = 'btn-adm'; bSave.textContent = 'Save'; bSave.onclick = function(e) { e.stopPropagation(); gbTickerEditSave(); };
+  var bCancel = document.createElement('button'); bCancel.className = 'btn-adm btn-adm-secondary'; bCancel.textContent = 'Cancel'; bCancel.onclick = function(e) { e.stopPropagation(); gbTickerEditCancel(); };
+  var bDel = document.createElement('button'); bDel.className = 'btn-adm btn-adm-danger'; bDel.textContent = 'Delete'; bDel.style.display = (idx >= 0) ? '' : 'none'; bDel.onclick = function(e) { e.stopPropagation(); gbTickerEditDelete(); };
+  actions.appendChild(bSave); actions.appendChild(bCancel); actions.appendChild(bDel);
+
+  el.innerHTML = '';
+  el.appendChild(ta);
+  el.appendChild(inp);
+  el.appendChild(actions);
+
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
 }
 
 function gbTickerEditSave() {
-  var qta  = document.getElementById('gbTickerEditQuote');
-  var sinp = document.getElementById('gbTickerEditSource');
-  var q = qta.value.trim(), s = sinp.value.trim();
+  if (!_gbTickerEditEl) return;
+  var ta   = _gbTickerEditEl.querySelector('.gb-ticker-edit-ta');
+  var inp  = _gbTickerEditEl.querySelector('.gb-ticker-edit-inp');
+  var q = ta ? ta.value.trim() : '', s = inp ? inp.value.trim() : '';
   if (!q) { gbTickerEditCancel(); return; }
   if (!_ed.reviews) _ed.reviews = [];
   if (_gbTickerEditIdx >= 0) {
@@ -4203,6 +4214,7 @@ function gbTickerEditSave() {
   } else {
     _ed.reviews.push({attr: q, quote: s});
   }
+  _gbTickerEditEl = null;
   gbInitReviewTicker();
 }
 
@@ -4210,15 +4222,15 @@ function gbTickerEditDelete() {
   if (_gbTickerEditIdx < 0) { gbTickerEditCancel(); return; }
   if (!_ed.reviews) return;
   _ed.reviews.splice(_gbTickerEditIdx, 1);
+  _gbTickerEditEl = null;
   gbInitReviewTicker();
 }
 
 function gbTickerEditCancel() {
-  var panel = document.getElementById('gbTickerEditPanel');
-  if (panel) panel.classList.remove('open');
-  document.querySelectorAll('.gb-ticker-item-edit').forEach(function(el) { el.classList.remove('gb-ticker-active'); });
-  _gbTickerPaused = false;
+  _gbTickerPaused  = false;
   _gbTickerEditIdx = -1;
+  _gbTickerEditEl  = null;
+  gbInitReviewTicker();
 }
 
 // Public page: start ticker from PHP-rendered content using rAF

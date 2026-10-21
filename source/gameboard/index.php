@@ -96,7 +96,9 @@ if (!$_gameSlug) {
     $_bannerColor = trim($_settings['Banner Color'] ?? '') ?: '#1a1a2e';
     // Footer
     $_copyright  = trim($_settings['Copyright']   ?? '') ?: '© ' . date('Y') . ' ' . ($_pubName ?: 'GameBoard');
-    $_footerNote = trim($_settings['Footer Note']  ?? '');
+    $_footerNote     = trim($_settings['Footer Note']       ?? '');
+    $_subHeading     = trim($_settings['Subscribe Heading'] ?? '');
+    $_subText        = trim($_settings['Subscribe Text']    ?? '');
     // Carousel fallback: use game cover images if no carousel URLs are set
     if (empty($_carousel)) {
         foreach ($_games as $_g) {
@@ -463,6 +465,19 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
 <?php endforeach; endif; ?>
 </div>
 
+<!-- Subscribe band -->
+<section class="gb-subscribe-band">
+  <div class="gb-subscribe-inner">
+    <h2 class="gb-subscribe-heading"><?= h($_subHeading ?: ($_tagline ?: 'Stay in the loop.')) ?></h2>
+    <p class="gb-subscribe-subtext"><?= h($_subText ?: 'Join our newsletter for exciting announcements and special offers!') ?></p>
+    <form class="gb-subscribe-form" id="gbSubscribeForm" onsubmit="gbSubscribeSubmit(event)">
+      <input type="email" id="gbSubscribeEmail" class="gb-subscribe-input" placeholder="Your email" required autocomplete="email" />
+      <button type="submit" class="gb-subscribe-btn" id="gbSubscribeBtn">Subscribe</button>
+    </form>
+    <p class="gb-subscribe-msg" id="gbSubscribeMsg"></p>
+  </div>
+</section>
+
 <footer class="gb-footer">
   <?php
   // All social platforms — always rendered in admin; public shows only configured ones
@@ -633,6 +648,12 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
         </div>
         <div class="gbed-field-group"><label class="gbed-label">Copyright Line <span style="font-size:.7rem;color:var(--muted)">(footer left)</span></label><input class="gbed-field" id="setCopyright" type="text" placeholder="© 2026 Acme Games LLC" /></div>
         <div class="gbed-field-group"><label class="gbed-label">Footer Note <span style="font-size:.7rem;color:var(--muted)">(second line)</span></label><input class="gbed-field" id="setFooterNote" type="text" placeholder="contact@example.com · All rights reserved" /></div>
+      </div>
+
+      <div class="gbed-section">
+        <div class="gbed-section-title">Newsletter Subscribe</div>
+        <div class="gbed-field-group"><label class="gbed-label">Heading <span style="font-size:.7rem;color:var(--muted)">(defaults to tagline)</span></label><input class="gbed-field" id="setSubHeading" type="text" placeholder="Stay in the loop." /></div>
+        <div class="gbed-field-group"><label class="gbed-label">Description</label><input class="gbed-field" id="setSubText" type="text" placeholder="Join our newsletter for exciting announcements and special offers!" /></div>
       </div>
 
     </div></div>
@@ -1245,6 +1266,8 @@ function openSettings(focusFieldId) {
     document.getElementById('setBannerColor').value  = s['Banner Color']  || '#1a1a2e';
     document.getElementById('setCopyright').value    = s['Copyright']    || '';
     document.getElementById('setFooterNote').value   = s['Footer Note']  || '';
+    document.getElementById('setSubHeading').value   = s['Subscribe Heading'] || '';
+    document.getElementById('setSubText').value      = s['Subscribe Text']    || '';
     for (var i = 1; i <= 6; i++) {
       var el = document.getElementById('setCarousel' + i);
       if (el) el.value = s['Carousel ' + i] || '';
@@ -1270,10 +1293,12 @@ function submitSettings() {
   fd.append('logo',        document.getElementById('setLogo').value.trim());
   fd.append('tagline',     document.getElementById('setTagline').value.trim());
   fd.append('about',       document.getElementById('setAbout').value.trim());
-  fd.append('gb_template',   document.getElementById('setTemplate').value);
-  fd.append('banner_color', document.getElementById('setBannerColor').value);
-  fd.append('copyright',   document.getElementById('setCopyright').value.trim());
-  fd.append('footer_note', document.getElementById('setFooterNote').value.trim());
+  fd.append('gb_template',      document.getElementById('setTemplate').value);
+  fd.append('banner_color',     document.getElementById('setBannerColor').value);
+  fd.append('copyright',        document.getElementById('setCopyright').value.trim());
+  fd.append('footer_note',      document.getElementById('setFooterNote').value.trim());
+  fd.append('subscribe_heading', document.getElementById('setSubHeading').value.trim());
+  fd.append('subscribe_text',   document.getElementById('setSubText').value.trim());
   for (var i = 1; i <= 6; i++) {
     var el = document.getElementById('setCarousel' + i);
     if (el) fd.append('carousel_' + i, el.value.trim());
@@ -1477,6 +1502,46 @@ document.addEventListener('paste', function(e) {
     document.execCommand('insertText', false, text);
   }
 }, true);
+
+// ── Subscribe band ────────────────────────────────────────────────────────────
+function gbSubscribeSubmit(e) {
+  e.preventDefault();
+  var email = (document.getElementById('gbSubscribeEmail').value || '').trim();
+  if (!email) return;
+  var btn = document.getElementById('gbSubscribeBtn');
+  var msg = document.getElementById('gbSubscribeMsg');
+  btn.disabled = true;
+  btn.textContent = 'Subscribing…';
+  msg.textContent = '';
+  msg.className = 'gb-subscribe-msg';
+  var fd = new FormData();
+  fd.append('id',    SHEET_ID);
+  fd.append('game',  'subscribe');
+  fd.append('name',  '');
+  fd.append('email', email);
+  fd.append('note',  'Newsletter Subscribe');
+  fetch(APP_ROOT + 'push/submitNote.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.ok) {
+        msg.textContent = "You’re subscribed! Thanks for signing up.";
+        msg.className = 'gb-subscribe-msg ok';
+        document.getElementById('gbSubscribeEmail').value = '';
+        btn.textContent = 'Subscribed ✓';
+      } else {
+        msg.textContent = d.error || 'Something went wrong. Please try again.';
+        msg.className = 'gb-subscribe-msg err';
+        btn.disabled = false;
+        btn.textContent = 'Subscribe';
+      }
+    })
+    .catch(function() {
+      msg.textContent = 'Network error. Please try again.';
+      msg.className = 'gb-subscribe-msg err';
+      btn.disabled = false;
+      btn.textContent = 'Subscribe';
+    });
+}
 </script>
 
 <!-- ── Fetch Log dialog ── -->
@@ -2179,6 +2244,20 @@ body.gb-admin-mode .gb-ph-section { display: block; }
 body.gb-admin-mode .gb-ph-stat { display: flex; }
 .gb-ph-stat strong { opacity: .5; }
 .gb-ph-stat span { opacity: .35; font-style: italic; }
+/* Subscribe band */
+.gb-subscribe-band { background:var(--bg); border-top:1px solid var(--border); padding:4rem 2rem; text-align:center; }
+.gb-subscribe-inner { max-width:720px; margin:0 auto; }
+.gb-subscribe-heading { font-family:'DINBlack',sans-serif; font-size:2.6rem; color:var(--accent); margin-bottom:1rem; line-height:1.1; }
+.gb-subscribe-subtext { color:var(--ink-lt); margin-bottom:1.6rem; font-size:.97rem; }
+.gb-subscribe-form { display:flex; gap:.6rem; justify-content:center; align-items:center; flex-wrap:wrap; }
+.gb-subscribe-input { flex:1 1 200px; max-width:360px; padding:.75rem 1.2rem; border:2px solid var(--border); border-radius:999px; font-size:.95rem; outline:none; transition:border-color .18s; background:#fff; }
+.gb-subscribe-input:focus { border-color:var(--accent); }
+.gb-subscribe-btn { padding:.75rem 1.8rem; border:none; border-radius:999px; background:var(--accent); color:#fff; font-family:'DINBlack',sans-serif; font-size:.85rem; letter-spacing:.03em; cursor:pointer; transition:opacity .18s; white-space:nowrap; }
+.gb-subscribe-btn:hover { opacity:.85; }
+.gb-subscribe-btn:disabled { opacity:.6; cursor:default; }
+.gb-subscribe-msg { margin-top:1rem; font-size:.88rem; min-height:1.2em; }
+.gb-subscribe-msg.ok  { color:#2a7a3a; }
+.gb-subscribe-msg.err { color:#c0392b; }
 /* Cover image button (top-left of hero) */
 .gb-cover-btn { position: absolute; top: .75rem; right: .75rem; z-index: 6; display: none; }
 body.gb-admin-mode .gb-hero.no-cover .gb-cover-btn { display: flex; }

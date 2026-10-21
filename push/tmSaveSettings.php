@@ -53,8 +53,10 @@ $postMap = [
     'youtube'     => 'YouTube',
     'bgg_url'      => 'BGG URL',
     'banner_color' => 'Banner Color',
-    'copyright'   => 'Copyright',
-    'footer_note' => 'Footer Note',
+    'copyright'          => 'Copyright',
+    'footer_note'        => 'Footer Note',
+    'subscribe_heading'  => 'Subscribe Heading',
+    'subscribe_text'     => 'Subscribe Text',
 ];
 
 $settings = $existing;

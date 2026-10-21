@@ -497,7 +497,7 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
             data-setting="company"
             data-placeholder="Company Name"
             onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
-            onblur="gbSaveFooterField(this);document.getElementById('gbMeta') && (document.getElementById('gbMeta').textContent=(this.textContent.trim()||<?= json_encode($_pubName ?: 'Games') ?>)+' · GameBoard')"
+            onblur="gbSaveFooterField(this);document.getElementById('gbMeta') && (document.getElementById('gbMeta').textContent=(this.textContent.trim()||<?= htmlspecialchars(json_encode($_pubName ?: 'Games'), ENT_QUOTES) ?>)+' · GameBoard')"
             <?php endif; ?>
             ><?= h($_pubName) ?></span>
       <?php endif; ?>

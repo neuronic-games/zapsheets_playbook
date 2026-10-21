@@ -234,18 +234,28 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 .cat-empty-body { font-size:.85rem; line-height:1.6; }
 
 /* ── Footer ── */
-.gb-footer { background:#1c1c1e; color:rgba(255,255,255,.5); margin-top:4rem; }
-.gb-footer-main { max-width:1100px; margin:0 auto; padding:3rem 2rem 2.5rem; display:flex; align-items:flex-start; justify-content:space-between; gap:2rem; flex-wrap:wrap; }
-.gb-footer-brand { display:flex; flex-direction:column; gap:1rem; min-width:140px; }
-.gb-footer-logo-img { height:44px; object-fit:contain; }
-.gb-footer-logo-ph { font-family:'DINBlack',sans-serif; font-size:1.1rem; color:rgba(255,255,255,.75); letter-spacing:.05em; }
-.gb-footer-social { display:flex; gap:.6rem; align-items:center; flex-wrap:wrap; }
-.gb-footer-social a { width:2.1rem; height:2.1rem; border-radius:50%; background:rgba(255,255,255,.1); display:flex; align-items:center; justify-content:center; transition:background .15s; }
-.gb-footer-social a:hover { background:rgba(255,255,255,.22); }
-.gb-footer-social svg { fill:rgba(255,255,255,.7); }
-.gb-footer-bar { border-top:1px solid rgba(255,255,255,.08); }
-.gb-footer-bar-inner { max-width:1100px; margin:0 auto; padding:.9rem 2rem; display:flex; align-items:center; justify-content:space-between; gap:1.5rem; flex-wrap:wrap; font-size:.72rem; color:rgba(255,255,255,.38); }
+.gb-footer { background:#1c1c1e; color:rgba(255,255,255,.5); }
+/* Subscribe section inside footer */
+.gb-footer-subscribe { border-bottom:1px solid rgba(255,255,255,.08); padding:2.8rem 2rem; }
+.gb-footer-subscribe-inner { max-width:1100px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:2rem; flex-wrap:wrap; }
+.gb-footer-sub-label { font-family:'DINBlack',sans-serif; font-size:1.25rem; color:#fff; margin-bottom:.25rem; }
+.gb-footer-sub-desc { font-size:.85rem; color:rgba(255,255,255,.45); }
+.gb-footer-sub-form { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
+.gb-footer-sub-input { padding:.65rem 1.15rem; border:none; border-radius:999px; background:rgba(255,255,255,.1); color:#fff; font-size:.9rem; min-width:210px; outline:none; transition:background .18s; }
+.gb-footer-sub-input::placeholder { color:rgba(255,255,255,.38); }
+.gb-footer-sub-input:focus { background:rgba(255,255,255,.16); }
+.gb-footer-sub-btn { padding:.65rem 1.5rem; border:none; border-radius:999px; background:var(--accent); color:#fff; font-family:'DINBlack',sans-serif; font-size:.82rem; letter-spacing:.03em; cursor:pointer; transition:opacity .18s; white-space:nowrap; }
+.gb-footer-sub-btn:hover { opacity:.85; }
+.gb-footer-sub-btn:disabled { opacity:.6; cursor:default; }
+.gb-footer-sub-msg { max-width:1100px; margin:.6rem auto 0; padding:0 2rem; font-size:.8rem; min-height:1em; }
+.gb-footer-sub-msg.ok  { color:#5ecb7a; }
+.gb-footer-sub-msg.err { color:#e07070; }
+/* Footer bar */
+.gb-footer-bar { }
+.gb-footer-bar-inner { max-width:1100px; margin:0 auto; padding:1.4rem 2rem; display:flex; align-items:center; justify-content:space-between; gap:1.5rem; flex-wrap:wrap; font-size:.72rem; color:rgba(255,255,255,.38); }
 .gb-footer-bar-left { display:flex; flex-direction:column; gap:.2rem; }
+.gb-footer-bar-brand { font-family:'DINBlack',sans-serif; font-size:.88rem; color:rgba(255,255,255,.7); margin-bottom:.25rem; }
+.gb-footer-logo-img { height:32px; object-fit:contain; margin-bottom:.35rem; display:block; }
 .gb-footer-bar-icons { display:flex; gap:.5rem; align-items:center; flex-shrink:0; }
 .gb-social-btn { width:1.9rem; height:1.9rem; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:border-color .14s,background .14s; cursor:pointer; padding:0; }
 .gb-social-btn svg { fill:rgba(255,255,255,.6); pointer-events:none; }
@@ -465,42 +475,39 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
 <?php endforeach; endif; ?>
 </div>
 
-<!-- Subscribe band -->
-<section class="gb-subscribe-band">
-  <div class="gb-subscribe-inner">
-    <h2 class="gb-subscribe-heading"><?= h($_subHeading ?: ($_tagline ?: 'Stay in the loop.')) ?></h2>
-    <p class="gb-subscribe-subtext"><?= h($_subText ?: 'Join our newsletter for exciting announcements and special offers!') ?></p>
-    <form class="gb-subscribe-form" id="gbSubscribeForm" onsubmit="gbSubscribeSubmit(event)">
-      <input type="email" id="gbSubscribeEmail" class="gb-subscribe-input" placeholder="Your email" required autocomplete="email" />
-      <button type="submit" class="gb-subscribe-btn" id="gbSubscribeBtn">Subscribe</button>
-    </form>
-    <p class="gb-subscribe-msg" id="gbSubscribeMsg"></p>
-  </div>
-</section>
-
+<?php
+$_socialDefs = [
+  ['key'=>'instagram','label'=>'Instagram',    'url'=>$_insta,   'svg'=>'<svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>'],
+  ['key'=>'twitter',  'label'=>'X / Twitter', 'url'=>$_twitter, 'svg'=>'<svg width="14" height="14" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>'],
+  ['key'=>'facebook', 'label'=>'Facebook',    'url'=>$_fb,      'svg'=>'<svg width="14" height="14" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>'],
+  ['key'=>'youtube',  'label'=>'YouTube',     'url'=>$_yt,      'svg'=>'<svg width="16" height="12" viewBox="0 0 24 17"><path d="M23.495 2.205a3.02 3.02 0 0 0-2.122-2.136C19.545 0 12 0 12 0S4.455 0 2.627.07a3.02 3.02 0 0 0-2.122 2.135C0 4.046 0 8.5 0 8.5s0 4.455.505 6.295a3.02 3.02 0 0 0 2.122 2.136C4.455 17 12 17 12 17s7.545 0 9.373-.07a3.02 3.02 0 0 0 2.122-2.135C24 12.954 24 8.5 24 8.5s0-4.454-.505-6.295zM9.545 12.273V4.727L15.818 8.5l-6.273 3.773z"/></svg>'],
+  ['key'=>'bgg_url',  'label'=>'BoardGameGeek','url'=>$_bgg,    'svg'=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>'],
+];
+?>
 <footer class="gb-footer">
-  <?php
-  // All social platforms — always rendered in admin; public shows only configured ones
-  $_socialDefs = [
-    ['key'=>'instagram','label'=>'Instagram',    'url'=>$_insta,   'svg'=>'<svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>'],
-    ['key'=>'twitter',  'label'=>'X / Twitter', 'url'=>$_twitter, 'svg'=>'<svg width="14" height="14" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>'],
-    ['key'=>'facebook', 'label'=>'Facebook',    'url'=>$_fb,      'svg'=>'<svg width="14" height="14" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>'],
-    ['key'=>'youtube',  'label'=>'YouTube',     'url'=>$_yt,      'svg'=>'<svg width="16" height="12" viewBox="0 0 24 17"><path d="M23.495 2.205a3.02 3.02 0 0 0-2.122-2.136C19.545 0 12 0 12 0S4.455 0 2.627.07a3.02 3.02 0 0 0-2.122 2.135C0 4.046 0 8.5 0 8.5s0 4.455.505 6.295a3.02 3.02 0 0 0 2.122 2.136C4.455 17 12 17 12 17s7.545 0 9.373-.07a3.02 3.02 0 0 0 2.122-2.135C24 12.954 24 8.5 24 8.5s0-4.454-.505-6.295zM9.545 12.273V4.727L15.818 8.5l-6.273 3.773z"/></svg>'],
-    ['key'=>'bgg_url',  'label'=>'BoardGameGeek','url'=>$_bgg,    'svg'=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>'],
-  ];
-  ?>
-  <div class="gb-footer-main">
-    <div class="gb-footer-brand">
-      <?php if ($_pubLogo): ?>
-      <img src="<?= h($_pubLogo) ?>" alt="<?= h($_pubName) ?>" class="gb-footer-logo-img" />
-      <?php elseif ($_pubName): ?>
-      <div class="gb-footer-logo-ph"><?= h($_pubName) ?></div>
-      <?php endif; ?>
+  <!-- Subscribe -->
+  <div class="gb-footer-subscribe">
+    <div class="gb-footer-subscribe-inner">
+      <div>
+        <div class="gb-footer-sub-label"><?= h($_subHeading ?: ($_tagline ?: 'Stay in the loop.')) ?></div>
+        <div class="gb-footer-sub-desc"><?= h($_subText ?: 'Join our newsletter for exciting announcements and special offers!') ?></div>
+      </div>
+      <form class="gb-footer-sub-form" id="gbSubscribeForm" onsubmit="gbSubscribeSubmit(event)">
+        <input type="email" id="gbSubscribeEmail" class="gb-footer-sub-input" placeholder="Your email" required autocomplete="email" />
+        <button type="submit" class="gb-footer-sub-btn" id="gbSubscribeBtn">Subscribe</button>
+      </form>
     </div>
+    <p class="gb-footer-sub-msg" id="gbSubscribeMsg"></p>
   </div>
+  <!-- Bar: brand + copyright + social -->
   <div class="gb-footer-bar">
     <div class="gb-footer-bar-inner">
       <div class="gb-footer-bar-left">
+        <?php if ($_pubLogo): ?>
+        <img src="<?= h($_pubLogo) ?>" alt="<?= h($_pubName) ?>" class="gb-footer-logo-img" />
+        <?php elseif ($_pubName): ?>
+        <div class="gb-footer-bar-brand"><?= h($_pubName) ?></div>
+        <?php endif; ?>
         <span class="gb-footer-editable"
               contenteditable="false"
               id="gbFooterCopyright"
@@ -518,12 +525,9 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
               onblur="gbSaveFooterField(this)"><?= h($_footerNote) ?></span>
         <?php endif; ?>
       </div>
-      <!-- Social icons: always visible in admin; public hides unconfigured ones -->
       <div class="gb-footer-bar-icons" id="gbFooterIcons">
         <?php foreach ($_socialDefs as $_sd):
           $_isSet = !empty($_sd['url']);
-          $_showInPublic = $_isSet;
-          $_showInAdmin = true;
           if (!isset($_gbPublicBase) || $_isSet): ?>
         <button class="gb-social-btn<?= $_isSet ? ' gb-social-set' : ' gb-social-empty' ?>"
                 data-key="<?= h($_sd['key']) ?>"
@@ -1503,7 +1507,7 @@ document.addEventListener('paste', function(e) {
   }
 }, true);
 
-// ── Subscribe band ────────────────────────────────────────────────────────────
+// ── Subscribe (shared footer) ─────────────────────────────────────────────────
 function gbSubscribeSubmit(e) {
   e.preventDefault();
   var email = (document.getElementById('gbSubscribeEmail').value || '').trim();
@@ -1513,7 +1517,7 @@ function gbSubscribeSubmit(e) {
   btn.disabled = true;
   btn.textContent = 'Subscribing…';
   msg.textContent = '';
-  msg.className = 'gb-subscribe-msg';
+  msg.className = 'gb-footer-sub-msg';
   var fd = new FormData();
   fd.append('id',    SHEET_ID);
   fd.append('game',  'subscribe');
@@ -1525,19 +1529,19 @@ function gbSubscribeSubmit(e) {
     .then(function(d) {
       if (d.ok) {
         msg.textContent = "You’re subscribed! Thanks for signing up.";
-        msg.className = 'gb-subscribe-msg ok';
+        msg.className = 'gb-footer-sub-msg ok';
         document.getElementById('gbSubscribeEmail').value = '';
         btn.textContent = 'Subscribed ✓';
       } else {
         msg.textContent = d.error || 'Something went wrong. Please try again.';
-        msg.className = 'gb-subscribe-msg err';
+        msg.className = 'gb-footer-sub-msg err';
         btn.disabled = false;
         btn.textContent = 'Subscribe';
       }
     })
     .catch(function() {
       msg.textContent = 'Network error. Please try again.';
-      msg.className = 'gb-subscribe-msg err';
+      msg.className = 'gb-footer-sub-msg err';
       btn.disabled = false;
       btn.textContent = 'Subscribe';
     });
@@ -2048,9 +2052,7 @@ body.gb-admin-mode #gbBuyCtas { display:contents; }
 .gb-more-name { font-family:'DINBlack',sans-serif; font-size:.8rem; color:var(--accent); margin-bottom:.1rem; }
 .gb-more-meta { font-size:.72rem; color:var(--muted); }
 
-/* ── Footer ── */
-.gb-footer { background:var(--ink); color:rgba(255,255,255,.55); text-align:center; padding:1.8rem 1.5rem; font-size:.76rem; }
-.gb-footer strong { color:#fff; font-family:'DINBlack',sans-serif; }
+/* ── Footer (shared) ── */
 
 /* ── Lightbox ── */
 .gb-lightbox { display:none; position:fixed; inset:0; z-index:500; background:rgba(0,0,0,.92); align-items:center; justify-content:center; cursor:zoom-out; }
@@ -2244,20 +2246,6 @@ body.gb-admin-mode .gb-ph-section { display: block; }
 body.gb-admin-mode .gb-ph-stat { display: flex; }
 .gb-ph-stat strong { opacity: .5; }
 .gb-ph-stat span { opacity: .35; font-style: italic; }
-/* Subscribe band */
-.gb-subscribe-band { background:var(--bg); border-top:1px solid var(--border); padding:4rem 2rem; text-align:center; }
-.gb-subscribe-inner { max-width:720px; margin:0 auto; }
-.gb-subscribe-heading { font-family:'DINBlack',sans-serif; font-size:2.6rem; color:var(--accent); margin-bottom:1rem; line-height:1.1; }
-.gb-subscribe-subtext { color:var(--ink-lt); margin-bottom:1.6rem; font-size:.97rem; }
-.gb-subscribe-form { display:flex; gap:.6rem; justify-content:center; align-items:center; flex-wrap:wrap; }
-.gb-subscribe-input { flex:1 1 200px; max-width:360px; padding:.75rem 1.2rem; border:2px solid var(--border); border-radius:999px; font-size:.95rem; outline:none; transition:border-color .18s; background:#fff; }
-.gb-subscribe-input:focus { border-color:var(--accent); }
-.gb-subscribe-btn { padding:.75rem 1.8rem; border:none; border-radius:999px; background:var(--accent); color:#fff; font-family:'DINBlack',sans-serif; font-size:.85rem; letter-spacing:.03em; cursor:pointer; transition:opacity .18s; white-space:nowrap; }
-.gb-subscribe-btn:hover { opacity:.85; }
-.gb-subscribe-btn:disabled { opacity:.6; cursor:default; }
-.gb-subscribe-msg { margin-top:1rem; font-size:.88rem; min-height:1.2em; }
-.gb-subscribe-msg.ok  { color:#2a7a3a; }
-.gb-subscribe-msg.err { color:#c0392b; }
 /* Cover image button (top-left of hero) */
 .gb-cover-btn { position: absolute; top: .75rem; right: .75rem; z-index: 6; display: none; }
 body.gb-admin-mode .gb-hero.no-cover .gb-cover-btn { display: flex; }
@@ -2608,9 +2596,47 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
 </div><!-- /gb-main -->
 
 <footer class="gb-footer">
-  <strong><?= h($_name) ?></strong>
-  <?php if ($_designers): ?>&nbsp;·&nbsp; Designed by <?= h(implode(' & ', $_designers)) ?><?php endif; ?>
-  <?php if ($_datePub): ?>&nbsp;·&nbsp; Published <?= h($_datePub) ?><?php elseif ($_dateSigned): ?>&nbsp;·&nbsp; Signed <?= h($_dateSigned) ?><?php endif; ?>
+  <!-- Subscribe -->
+  <div class="gb-footer-subscribe">
+    <div class="gb-footer-subscribe-inner">
+      <div>
+        <div class="gb-footer-sub-label"><?= h($_subHeading ?: ($_tagline ?: 'Stay in the loop.')) ?></div>
+        <div class="gb-footer-sub-desc"><?= h($_subText ?: 'Join our newsletter for exciting announcements and special offers!') ?></div>
+      </div>
+      <form class="gb-footer-sub-form" id="gbSubscribeForm" onsubmit="gbSubscribeSubmit(event)">
+        <input type="email" id="gbSubscribeEmail" class="gb-footer-sub-input" placeholder="Your email" required autocomplete="email" />
+        <button type="submit" class="gb-footer-sub-btn" id="gbSubscribeBtn">Subscribe</button>
+      </form>
+    </div>
+    <p class="gb-footer-sub-msg" id="gbSubscribeMsg"></p>
+  </div>
+  <!-- Bar: brand + game credit + social -->
+  <div class="gb-footer-bar">
+    <div class="gb-footer-bar-inner">
+      <div class="gb-footer-bar-left">
+        <?php if ($_pubLogo): ?>
+        <img src="<?= h($_pubLogo) ?>" alt="<?= h($_pubName) ?>" class="gb-footer-logo-img" />
+        <?php elseif ($_pubName): ?>
+        <div class="gb-footer-bar-brand"><?= h($_pubName) ?></div>
+        <?php endif; ?>
+        <span><?= h($_copyright) ?></span>
+        <?php if ($_footerNote): ?><span><?= h($_footerNote) ?></span><?php endif; ?>
+        <?php if ($_designers): ?><span><?= h($_name) ?> · Designed by <?= h(implode(' & ', $_designers)) ?></span><?php endif; ?>
+      </div>
+      <div class="gb-footer-bar-icons">
+        <?php foreach ($_socialDefs as $_sd):
+          $_isSet = !empty($_sd['url']);
+          if (!isset($_gbPublicBase) || $_isSet): ?>
+        <button class="gb-social-btn<?= $_isSet ? ' gb-social-set' : ' gb-social-empty' ?>"
+                data-key="<?= h($_sd['key']) ?>"
+                data-label="<?= h($_sd['label']) ?>"
+                data-url="<?= h($_sd['url']) ?>"
+                onclick="gbClickSocial(this)"
+                title="<?= h($_sd['label']) ?>"><?= $_sd['svg'] ?></button>
+        <?php endif; endforeach; ?>
+      </div>
+    </div>
+  </div>
 </footer>
 
 <div class="gb-lightbox" id="lightbox" onclick="closeLightbox()">
@@ -4507,6 +4533,51 @@ function gbTickerEditCancel() {
   }
   _gbTickerRaf = requestAnimationFrame(step);
 })();
+
+// ── Shared footer ────────────────────────────────────────────────────────────
+function gbClickSocial(btn) {
+  var url = btn.dataset.url;
+  if (url) window.open(url, '_blank', 'noopener');
+}
+// ── Subscribe (shared footer) ─────────────────────────────────────────────────
+function gbSubscribeSubmit(e) {
+  e.preventDefault();
+  var email = (document.getElementById('gbSubscribeEmail').value || '').trim();
+  if (!email) return;
+  var btn = document.getElementById('gbSubscribeBtn');
+  var msg = document.getElementById('gbSubscribeMsg');
+  btn.disabled = true;
+  btn.textContent = 'Subscribing…';
+  msg.textContent = '';
+  msg.className = 'gb-footer-sub-msg';
+  var fd = new FormData();
+  fd.append('id',    SHEET_ID);
+  fd.append('game',  'subscribe');
+  fd.append('name',  '');
+  fd.append('email', email);
+  fd.append('note',  'Newsletter Subscribe');
+  fetch(APP_ROOT + 'push/submitNote.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.ok) {
+        msg.textContent = "You’re subscribed! Thanks for signing up.";
+        msg.className = 'gb-footer-sub-msg ok';
+        document.getElementById('gbSubscribeEmail').value = '';
+        btn.textContent = 'Subscribed ✓';
+      } else {
+        msg.textContent = d.error || 'Something went wrong. Please try again.';
+        msg.className = 'gb-footer-sub-msg err';
+        btn.disabled = false;
+        btn.textContent = 'Subscribe';
+      }
+    })
+    .catch(function() {
+      msg.textContent = 'Network error. Please try again.';
+      msg.className = 'gb-footer-sub-msg err';
+      btn.disabled = false;
+      btn.textContent = 'Subscribe';
+    });
+}
 </script>
 
 <!-- ── Fetch Log dialog ── -->

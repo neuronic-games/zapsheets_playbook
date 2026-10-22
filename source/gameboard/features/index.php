@@ -285,16 +285,6 @@ footer a:hover { color:rgba(255,255,255,.7); }
           </div>
           <span class="live-link-arrow">↗</span>
         </a>
-        <a href="https://zapsheets.com/app/gameboard/a9e4ef63bb33371151169a6e/scurry-up" target="_blank" class="live-link">
-          <div class="live-link-info">
-            <img class="live-link-logo" src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/58d78ab7d75ac7911389.webp" alt="Scurry Up!" style="object-fit:cover;" />
-            <div>
-              <div class="live-link-name">Scurry Up! — Game page</div>
-              <div class="live-link-desc">Individual game detail page</div>
-            </div>
-          </div>
-          <span class="live-link-arrow">↗</span>
-        </a>
       </div>
     </div>
     <div class="demo-browser">

@@ -287,7 +287,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
         </a>
         <a href="https://zapsheets.com/app/gameboard/a9e4ef63bb33371151169a6e/scurry-up" target="_blank" class="live-link">
           <div class="live-link-info">
-            <img class="live-link-logo" src="images/gb_logo.png" alt="Scurry Up!" />
+            <img class="live-link-logo" src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/58d78ab7d75ac7911389.webp" alt="Scurry Up!" style="object-fit:cover;" />
             <div>
               <div class="live-link-name">Scurry Up! — Game page</div>
               <div class="live-link-desc">Individual game detail page</div>
@@ -326,7 +326,9 @@ footer a:hover { color:rgba(255,255,255,.7); }
             </div>
           </div>
           <div class="demo-card">
-            <div class="demo-card-cover-ph" style="background:linear-gradient(135deg,#1a3a1a,#2d5c1e);">🐿️</div>
+            <div class="demo-card-cover">
+              <img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/58d78ab7d75ac7911389.webp" alt="Scurry Up!" />
+            </div>
             <div class="demo-card-body">
               <div class="demo-card-name">Scurry Up!</div>
               <div class="demo-card-meta">👥 2–4 · ⏱ 25 min</div>
@@ -334,7 +336,9 @@ footer a:hover { color:rgba(255,255,255,.7); }
             </div>
           </div>
           <div class="demo-card">
-            <div class="demo-card-cover-ph" style="background:linear-gradient(135deg,#1a1a3a,#2d1e5c);">🌊</div>
+            <div class="demo-card-cover">
+              <img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/ee4916fd02a7dee1c88f.webp" alt="Pressure" />
+            </div>
             <div class="demo-card-body">
               <div class="demo-card-name">Pressure</div>
               <div class="demo-card-meta">👥 2–4</div>
@@ -446,7 +450,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
               </div>
             </div>
             <div class="app-game-card">
-              <div class="app-game-cover" style="background:linear-gradient(135deg,#1a3a1a,#2d5c1e);font-size:22px;display:flex;align-items:center;justify-content:center;">🐿️</div>
+              <div class="app-game-cover"><img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/58d78ab7d75ac7911389.webp" alt="Scurry Up!" /></div>
               <div class="app-game-body">
                 <div class="app-game-name">Scurry Up!</div>
                 <div class="app-game-meta">👥 2–4 · ⏱ 25 min</div>
@@ -454,7 +458,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
               </div>
             </div>
             <div class="app-game-card">
-              <div class="app-game-cover" style="background:linear-gradient(135deg,#1a1a3a,#2d1e5c);font-size:22px;display:flex;align-items:center;justify-content:center;">🌊</div>
+              <div class="app-game-cover"><img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/ee4916fd02a7dee1c88f.webp" alt="Pressure" /></div>
               <div class="app-game-body">
                 <div class="app-game-name">Pressure</div>
                 <div class="app-game-meta">👥 2–4</div>

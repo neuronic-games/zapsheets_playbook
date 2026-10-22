@@ -301,11 +301,6 @@ body.gb-admin-mode .gb-banner-name-editable:focus { border-bottom-color:#fff; op
 body.gb-admin-mode .cat-slide-edit-btn,
 body.gb-admin-mode .cat-slide-del-btn { display:flex; }
 body.gb-admin-mode .cat-slide-edit-btn:hover { background:rgba(0,0,0,.85); }
-/* Add image tile */
-.cat-slide-add-tile { position:absolute; right:0; top:0; bottom:0; width:clamp(80px,12%,120px); background:rgba(255,255,255,.06); border-left:1px solid rgba(255,255,255,.1); display:none; flex-direction:column; align-items:center; justify-content:center; gap:.5rem; cursor:pointer; color:rgba(255,255,255,.5); font-family:'DINBlack',sans-serif; font-size:.65rem; text-transform:uppercase; letter-spacing:.06em; transition:background .15s,color .15s; z-index:11; }
-.cat-slide-add-tile:hover,.cat-slide-add-tile.drag-over { background:rgba(255,255,255,.14); color:#fff; }
-body.gb-admin-mode .cat-slide-add-tile { display:flex; }
-body.gb-admin-mode .cat-carousel { padding-right:clamp(80px,12%,120px); }
 
 /* ── About strip ── */
 .cat-about { max-width:720px; margin:2.5rem auto 0; padding:0 1.5rem; text-align:center; }
@@ -549,17 +544,6 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
     <svg class="cat-carousel-ph-icon" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
     <div class="cat-carousel-ph-text">Drag &amp; drop images or click + to add</div>
   </div>
-<?php endif; ?>
-<?php if (!isset($_gbPublicBase)): ?>
-<div class="cat-slide-add-tile" id="catSlideAdd"
-     onclick="carouselAddSlide()"
-     ondragover="event.preventDefault();this.classList.add('drag-over')"
-     ondragleave="this.classList.remove('drag-over')"
-     ondrop="this.classList.remove('drag-over');carouselDropAdd(event)"
-     title="Add image">
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-  <span>Add Image</span>
-</div>
 <?php endif; ?>
 </div>
 

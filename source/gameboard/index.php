@@ -2083,13 +2083,10 @@ body.gb-admin-mode .gb-gallery-thumb-add { opacity:1; pointer-events:auto; }
 .gb-video-wrap { position:relative; padding-top:56.25%; border-radius:10px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,.13); }
 .gb-video-wrap iframe { position:absolute; inset:0; width:100%; height:100%; border:none; }
 .gb-video-wrap video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#000; }
-/* Video admin overlay (admin only — change/remove) */
-.gb-video-admin-bar { display:none; position:absolute; top:.5rem; right:.5rem; z-index:10; gap:.35rem; }
-body.gb-admin-mode .gb-video-admin-bar { display:flex; }
-.gb-video-admin-bar button { font-family:'DINBlack',sans-serif; font-size:.6rem; text-transform:uppercase; letter-spacing:.06em; padding:.28rem .6rem; border-radius:5px; border:none; background:rgba(0,0,0,.6); color:rgba(255,255,255,.85); cursor:pointer; transition:background .15s; backdrop-filter:blur(4px); }
-.gb-video-admin-bar button:hover { background:rgba(0,0,0,.82); color:#fff; }
-.gb-video-admin-bar .gb-vbar-remove { color:#f87171; }
-.gb-video-admin-bar .gb-vbar-remove:hover { background:rgba(200,0,0,.7); color:#fff; }
+/* Video admin remove button (admin only) */
+.gb-video-del-btn { display:none; position:absolute; top:.4rem; right:.4rem; z-index:10; background:rgba(0,0,0,.55); color:#fff; border:none; border-radius:50%; width:26px; height:26px; font-size:.75rem; line-height:26px; text-align:center; cursor:pointer; padding:0; transition:background .15s; }
+body.gb-admin-mode .gb-video-del-btn { display:block; }
+.gb-video-del-btn:hover { background:rgba(0,0,0,.82); }
 /* Video placeholder (admin only) */
 .gb-video-ph-inner { background:linear-gradient(135deg,#1a1a2e,#2d2d88); border-radius:10px; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:.5rem; opacity:.3; cursor:pointer; transition:opacity .2s; }
 .gb-video-ph-inner:hover { opacity:.5; }
@@ -2743,10 +2740,7 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
       <?php else: ?>
       <video id="videoFrame" src="<?= h($_videoDirect) ?>" controls style="width:100%;border-radius:10px;display:block;"></video>
       <?php endif; ?>
-      <div class="gb-video-admin-bar">
-        <button onclick="gbVideoChangeClick()">✏ Change</button>
-        <button class="gb-vbar-remove" onclick="gbVideoRemoveClick()">✕ Remove</button>
-      </div>
+      <button class="gb-video-del-btn" onclick="gbVideoRemoveClick()" title="Remove video">✕</button>
     </div>
   </div>
   <?php endif; ?>
@@ -3460,20 +3454,17 @@ function gbVideoApplyUrl(url) {
   if (!section) return;
   section.id = 'gbVideoSection';
   section.className = 'gb-section';
-  var adminBar = '<div class="gb-video-admin-bar">'
-    + '<button onclick="gbVideoChangeClick()">✏ Change</button>'
-    + '<button class="gb-vbar-remove" onclick="gbVideoRemoveClick()">✕ Remove</button>'
-    + '</div>';
+  var delBtn = '<button class="gb-video-del-btn" onclick="gbVideoRemoveClick()" title="Remove video">✕</button>';
   if (embed) {
     section.innerHTML = '<div class="gb-section-label">Watch</div>'
       + '<div class="gb-video-wrap" id="videoWrap">'
       + '<iframe id="videoFrame" src="' + embed.replace(/"/g,'&quot;') + '" allow="autoplay; encrypted-media" allowfullscreen></iframe>'
-      + adminBar + '</div>';
+      + delBtn + '</div>';
   } else {
     section.innerHTML = '<div class="gb-section-label">Watch</div>'
       + '<div class="gb-video-wrap" id="videoWrap">'
       + '<video id="videoFrame" src="' + url.replace(/"/g,'&quot;') + '" controls style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;"></video>'
-      + adminBar + '</div>';
+      + delBtn + '</div>';
   }
 }
 function gbSyncVideoSection(url) {
@@ -3512,13 +3503,6 @@ function gbRenderVideoAdminOverlay() {
     '<button onclick="gbVideoChangeClick()" title="Change video">✏ Change</button>'
     + '<button onclick="gbVideoRemoveClick()" title="Remove video" style="color:#f87171;">✕ Remove</button>';
   section.appendChild(bar);
-}
-function gbVideoChangeClick() {
-  var url = prompt('Enter new YouTube or video URL:', _ed.video_url || '');
-  if (url === null) return; // cancelled
-  url = url.trim();
-  _ed.video_url = url;
-  gbSyncVideoSection(url);
 }
 function gbVideoRemoveClick() {
   if (!confirm('Remove this video?')) return;

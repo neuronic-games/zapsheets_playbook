@@ -913,7 +913,6 @@ function _updateGbAuth() {
     if (saveBtn) saveBtn.style.display = '';
     document.body.classList.add('gb-admin-mode');
     document.querySelectorAll('.gb-footer-editable, .gb-banner-name-editable').forEach(function(el){ el.contentEditable = 'true'; });
-    if (document.getElementById('gbVideoSection')) gbRenderVideoAdminOverlay();
   } else {
     document.querySelectorAll('.gb-footer-editable, .gb-banner-name-editable').forEach(function(el){ el.contentEditable = 'false'; });
     var saveBtn = document.getElementById('gbSavePageBtn');
@@ -2743,6 +2742,10 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
       <video id="videoFrame" src="<?= h($_videoDirect) ?>" controls style="width:100%;border-radius:10px;display:block;"></video>
       <?php endif; ?>
     </div>
+    <div class="gb-video-admin-bar">
+      <button onclick="gbVideoChangeClick()">✏ Change</button>
+      <button onclick="gbVideoRemoveClick()" style="color:#f87171;">✕ Remove</button>
+    </div>
   </div>
   <?php endif; ?>
 
@@ -3455,16 +3458,20 @@ function gbVideoApplyUrl(url) {
   if (!section) return;
   section.id = 'gbVideoSection';
   section.className = 'gb-section';
+  var adminBar = '<div class="gb-video-admin-bar">'
+    + '<button onclick="gbVideoChangeClick()">✏ Change</button>'
+    + '<button onclick="gbVideoRemoveClick()" style="color:#f87171;">✕ Remove</button>'
+    + '</div>';
   if (embed) {
     section.innerHTML = '<div class="gb-section-label">Watch</div>'
       + '<div class="gb-video-wrap" id="videoWrap">'
       + '<iframe id="videoFrame" src="' + embed.replace(/"/g,'&quot;') + '" allow="autoplay; encrypted-media" allowfullscreen></iframe>'
-      + '</div>';
+      + '</div>' + adminBar;
   } else {
     section.innerHTML = '<div class="gb-section-label">Watch</div>'
       + '<div class="gb-video-wrap" id="videoWrap">'
       + '<video id="videoFrame" src="' + url.replace(/"/g,'&quot;') + '" controls style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;"></video>'
-      + '</div>';
+      + '</div>' + adminBar;
   }
 }
 function gbSyncVideoSection(url) {

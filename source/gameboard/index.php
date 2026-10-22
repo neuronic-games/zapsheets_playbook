@@ -175,11 +175,18 @@ if (!$_gameSlug) {
     $_catUrl   = $_gbBase;
     $_logoColor = $_template === 'opensea' ? '#00e5ff' : '#7c9eff';
     $_accentHex = $_template === 'opensea' ? '#0097a7' : '#3b3baa';
-    // Carousel images
+    // Carousel images — new format: "Image" → array; old format: "Carousel N" fallback
     $_carousel = [];
-    for ($i = 1; $i <= 6; $i++) {
-        $u = trim($_settings['Carousel ' . $i] ?? '');
-        if ($u) $_carousel[] = $u;
+    if (!empty($_settings['Image'])) {
+        $imgs = $_settings['Image'];
+        foreach ((is_array($imgs) ? $imgs : [$imgs]) as $_u) {
+            $_u = trim($_u); if ($_u) $_carousel[] = $_u;
+        }
+    } else {
+        for ($i = 1; $i <= 6; $i++) {
+            $_u = trim($_settings['Carousel ' . $i] ?? '');
+            if ($_u) $_carousel[] = $_u;
+        }
     }
     // Company copy
     $_about       = trim($_settings['About'] ?? '');
@@ -684,7 +691,7 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
       </div>
 
       <div class="gbed-section">
-        <div class="gbed-section-title">Carousel Images <span style="font-size:.68rem;font-weight:400;color:var(--muted)">(paste image URLs)</span></div>
+        <div class="gbed-section-title">Images <span style="font-size:.68rem;font-weight:400;color:var(--muted)">(paste image URLs)</span></div>
         <?php for ($i = 1; $i <= 6; $i++): ?>
         <div class="gbed-field-group"><label class="gbed-label">Image <?= $i ?></label><input class="gbed-field" id="setCarousel<?= $i ?>" type="url" placeholder="https://…/image.jpg" /></div>
         <?php endfor; ?>
@@ -1490,9 +1497,11 @@ function openSettings(focusFieldId) {
     document.getElementById('setFooterNote').value   = s['Footer Note']  || '';
     document.getElementById('setSubHeading').value   = s['Subscribe Heading'] || '';
     document.getElementById('setSubText').value      = s['Subscribe Text']    || '';
+    var _imgs = s['Image'] || [];
+    if (!Array.isArray(_imgs)) _imgs = _imgs ? [_imgs] : [];
     for (var i = 1; i <= 6; i++) {
       var el = document.getElementById('setCarousel' + i);
-      if (el) el.value = s['Carousel ' + i] || '';
+      if (el) el.value = _imgs[i - 1] || s['Carousel ' + i] || '';
     }
     document.getElementById('setInsta').value   = s['Instagram'] || '';
     document.getElementById('setTwitter').value = s['Twitter']   || '';
@@ -2935,7 +2944,7 @@ _gb_footer(['gameCredit' => $_gameCredit]);
         <div class="gbed-field-group"><label class="gbed-label">About</label><textarea class="gbed-field" id="setAbout" rows="3" style="resize:vertical"></textarea></div>
       </div>
       <div class="gbed-section">
-        <div class="gbed-section-title">Carousel Images</div>
+        <div class="gbed-section-title">Images</div>
         <?php for ($i = 1; $i <= 6; $i++): ?>
         <div class="gbed-field-group"><label class="gbed-label">Image <?= $i ?></label><input class="gbed-field" id="setCarousel<?= $i ?>" type="url" placeholder="https://…/image.jpg" /></div>
         <?php endfor; ?>
@@ -3302,9 +3311,11 @@ function openSettings(focusFieldId) {
     document.getElementById('setBannerColor').value  = s['Banner Color']       || '#1a1a2e';
     document.getElementById('setCopyright').value    = s['Copyright']          || '';
     document.getElementById('setFooterNote').value   = s['Footer Note']        || '';
+    var _imgs = s['Image'] || [];
+    if (!Array.isArray(_imgs)) _imgs = _imgs ? [_imgs] : [];
     for (var i = 1; i <= 6; i++) {
       var el = document.getElementById('setCarousel' + i);
-      if (el) el.value = s['Carousel ' + i] || '';
+      if (el) el.value = _imgs[i - 1] || s['Carousel ' + i] || '';
     }
     document.getElementById('setInsta').value   = s['Instagram'] || '';
     document.getElementById('setTwitter').value = s['Twitter']   || '';

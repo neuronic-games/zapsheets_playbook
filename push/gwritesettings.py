@@ -54,22 +54,36 @@ except Exception as e:
     print(json.dumps({'error': 'could not read Settings tab: ' + str(e)}))
     sys.exit(1)
 
-# Build row-index map: Name → row number (1-indexed)
+# Build row-index map: Name → list of row numbers (1-indexed), to support duplicate keys
 row_map = {}
 for i, row in enumerate(all_values):
     key = row[0].strip() if row else ''
     if key:
-        row_map[key] = i + 1
+        row_map.setdefault(key, []).append(i + 1)
 
 batch = []
 to_append = []
 
 for name, value in data.items():
-    if name in row_map:
-        r = row_map[name]
-        batch.append({'range': f'A{r}:B{r}', 'values': [[name, str(value)]]})
+    existing = row_map.get(name, [])
+    if isinstance(value, list):
+        # Array: write one row per element; update existing rows, append extras, clear leftovers
+        for idx, item in enumerate(value):
+            if idx < len(existing):
+                r = existing[idx]
+                batch.append({'range': f'A{r}:B{r}', 'values': [[name, str(item)]]})
+            else:
+                to_append.append([name, str(item)])
+        # Clear any extra existing rows beyond the new array length
+        for idx in range(len(value), len(existing)):
+            r = existing[idx]
+            batch.append({'range': f'A{r}:B{r}', 'values': [['', '']]})
     else:
-        to_append.append([name, str(value)])
+        if existing:
+            r = existing[0]
+            batch.append({'range': f'A{r}:B{r}', 'values': [[name, str(value)]]})
+        else:
+            to_append.append([name, str(value)])
 
 try:
     if batch:

@@ -41,12 +41,6 @@ $postMap = [
     'gb_template' => 'Gameboard Template',
     'tagline'     => 'Tagline',
     'about'       => 'About',
-    'carousel_1'  => 'Carousel 1',
-    'carousel_2'  => 'Carousel 2',
-    'carousel_3'  => 'Carousel 3',
-    'carousel_4'  => 'Carousel 4',
-    'carousel_5'  => 'Carousel 5',
-    'carousel_6'  => 'Carousel 6',
     'instagram'   => 'Instagram',
     'twitter'     => 'Twitter',
     'facebook'    => 'Facebook',
@@ -64,6 +58,17 @@ foreach ($postMap as $postKey => $settingsKey) {
     if (isset($_POST[$postKey])) {
         $settings[$settingsKey] = trim($_POST[$postKey]);
     }
+}
+
+// Collect carousel image URLs as "Image" array; remove legacy "Carousel N" keys
+if (isset($_POST['carousel_1'])) { // only update when carousel fields were posted
+    $images = [];
+    for ($i = 1; $i <= 6; $i++) {
+        $v = trim($_POST['carousel_' . $i] ?? '');
+        if ($v !== '') $images[] = $v;
+    }
+    $settings['Image'] = $images;
+    for ($i = 1; $i <= 6; $i++) unset($settings['Carousel ' . $i]);
 }
 
 if (file_put_contents($file, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) === false) {

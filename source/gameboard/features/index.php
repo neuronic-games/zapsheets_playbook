@@ -164,6 +164,51 @@ section { padding:5.5rem 2rem; }
 .compare-table tr:last-child td { border-bottom:none; }
 .check { color:var(--green); } .cross { color:var(--text-muted); }
 
+/* ── Live demo ── */
+.live-demo-section { background:var(--dark); padding:4rem 2rem; }
+.live-demo-inner { max-width:1080px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:3.5rem; align-items:center; }
+.live-demo-text .section-label { color:var(--green-light); }
+.live-demo-text .section-title { color:var(--white); }
+.live-demo-text p { font-size:15px; color:rgba(255,255,255,.65); line-height:1.7; margin-bottom:1.75rem; }
+.live-demo-links { display:flex; flex-direction:column; gap:.75rem; }
+.live-link { display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:14px 18px; text-decoration:none; transition:all .15s; }
+.live-link:hover { background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.2); }
+.live-link-info { display:flex; align-items:center; gap:12px; }
+.live-link-logo { width:34px; height:34px; border-radius:8px; object-fit:contain; background:rgba(255,255,255,.08); }
+.live-link-name { font-size:13px; font-weight:600; color:var(--white); }
+.live-link-desc { font-size:11px; color:rgba(255,255,255,.45); margin-top:1px; }
+.live-link-arrow { font-size:14px; color:rgba(255,255,255,.35); }
+.live-link.featured { border-color:rgba(76,170,75,.4); background:rgba(76,170,75,.08); }
+.live-link.featured:hover { background:rgba(76,170,75,.14); }
+.live-link.featured .live-link-arrow { color:var(--green-light); }
+
+/* Demo browser */
+.demo-browser { background:#e8e8e8; border-radius:14px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.4); }
+.demo-chrome { background:#d4d4d4; padding:10px 14px; display:flex; align-items:center; gap:10px; }
+.demo-dots { display:flex; gap:6px; }
+.demo-dots span { width:12px; height:12px; border-radius:50%; }
+.demo-dots .d1 { background:#f87171; } .demo-dots .d2 { background:#fbbf24; } .demo-dots .d3 { background:#4ade80; }
+.demo-url { flex:1; background:var(--white); border-radius:6px; padding:4px 10px; font-size:11px; color:#666; font-family:monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.demo-body { background:var(--app-bg); }
+.demo-banner { padding:11px 14px 10px; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,.06); }
+.demo-logo { width:28px; height:28px; border-radius:7px; object-fit:contain; }
+.demo-co-name { font-size:13px; font-weight:700; color:var(--white); letter-spacing:-.01em; }
+.demo-co-tag  { font-size:8.5px; color:rgba(255,255,255,.4); margin-top:1px; }
+.demo-carousel { height:70px; position:relative; overflow:hidden; }
+.demo-carousel img { width:100%; height:100%; object-fit:cover; }
+.demo-carousel-overlay { position:absolute; inset:0; background:linear-gradient(to top,rgba(26,28,48,.85),transparent 60%); }
+.demo-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; padding:8px 10px 10px; }
+.demo-card { background:var(--app-bg2); border-radius:7px; overflow:hidden; }
+.demo-card-cover { height:50px; overflow:hidden; position:relative; }
+.demo-card-cover img { width:100%; height:100%; object-fit:cover; }
+.demo-card-cover-ph { height:50px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.demo-card-body { padding:5px 7px 6px; }
+.demo-card-name { font-size:8.5px; font-weight:600; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.demo-card-meta { font-size:7.5px; color:rgba(255,255,255,.4); margin-top:1px; }
+.demo-card-badge { margin-top:3px; display:inline-block; font-size:7px; font-weight:600; padding:1px 6px; border-radius:999px; background:rgba(76,170,75,.2); color:#7dcf7c; border:1px solid rgba(76,170,75,.25); }
+
+@media(max-width:820px){ .live-demo-inner { grid-template-columns:1fr; } }
+
 .cta-section { background:var(--green-pale); text-align:center; padding:5rem 2rem; border-top:1px solid rgba(76,170,75,.15); }
 .cta-section .section-label { display:flex; justify-content:center; }
 .cta-section p { font-size:1.05rem; color:var(--text-mid); margin-bottom:2rem; }
@@ -211,6 +256,95 @@ footer a:hover { color:rgba(255,255,255,.7); }
   <span class="stage-pill stage-catalog">Publish catalog</span>
   <span class="stage-arrow">→</span>
   <span class="stage-pill stage-share">Share</span>
+</div>
+
+<div class="live-demo-section">
+  <div class="live-demo-inner">
+    <div class="live-demo-text">
+      <div class="section-label">Live example</div>
+      <h2 class="section-title">See a real GameBoard</h2>
+      <p>UP Games — independent publisher of <em style="color:rgba(255,255,255,.8);font-style:normal;">Floristry</em>, <em style="color:rgba(255,255,255,.8);font-style:normal;">Scurry Up!</em>, and <em style="color:rgba(255,255,255,.8);font-style:normal;">Pressure</em> — uses GameBoard to showcase their catalog. Click through to browse their live pages.</p>
+      <div class="live-demo-links">
+        <a href="https://zapsheets.com/app/gameboard/a9e4ef63bb33371151169a6e/" target="_blank" class="live-link featured">
+          <div class="live-link-info">
+            <img class="live-link-logo" src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/68db6d2fe1c4ff0767a9.png" alt="UP Games" />
+            <div>
+              <div class="live-link-name">UP Games — Full catalog</div>
+              <div class="live-link-desc">zapsheets.com/app/gameboard/…</div>
+            </div>
+          </div>
+          <span class="live-link-arrow">↗</span>
+        </a>
+        <a href="https://zapsheets.com/app/gameboard/a9e4ef63bb33371151169a6e/floristry" target="_blank" class="live-link">
+          <div class="live-link-info">
+            <img class="live-link-logo" src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/e25ee32f4d226062e11c.webp" alt="Floristry" style="object-fit:cover;" />
+            <div>
+              <div class="live-link-name">Floristry — Game page</div>
+              <div class="live-link-desc">Buy links · press quotes · gallery · FAQ</div>
+            </div>
+          </div>
+          <span class="live-link-arrow">↗</span>
+        </a>
+        <a href="https://zapsheets.com/app/gameboard/a9e4ef63bb33371151169a6e/scurry-up" target="_blank" class="live-link">
+          <div class="live-link-info">
+            <img class="live-link-logo" src="images/gb_logo.png" alt="Scurry Up!" />
+            <div>
+              <div class="live-link-name">Scurry Up! — Game page</div>
+              <div class="live-link-desc">Individual game detail page</div>
+            </div>
+          </div>
+          <span class="live-link-arrow">↗</span>
+        </a>
+      </div>
+    </div>
+    <div class="demo-browser">
+      <div class="demo-chrome">
+        <div class="demo-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
+        <div class="demo-url">zapsheets.com/app/gameboard/a9e4ef63bb33371151169a6e/</div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-banner">
+          <img class="demo-logo" src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/68db6d2fe1c4ff0767a9.png" alt="UP Games" />
+          <div>
+            <div class="demo-co-name">UP Games</div>
+            <div class="demo-co-tag">Common Spaces. Uncommon Games.</div>
+          </div>
+        </div>
+        <div class="demo-carousel">
+          <img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/e25ee32f4d226062e11c.webp" alt="UP Games" />
+          <div class="demo-carousel-overlay"></div>
+        </div>
+        <div class="demo-grid">
+          <div class="demo-card">
+            <div class="demo-card-cover">
+              <img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/e25ee32f4d226062e11c.webp" alt="Floristry" />
+            </div>
+            <div class="demo-card-body">
+              <div class="demo-card-name">Floristry</div>
+              <div class="demo-card-meta">👥 2 · ⏱ 20 min</div>
+              <div class="demo-card-badge">Published</div>
+            </div>
+          </div>
+          <div class="demo-card">
+            <div class="demo-card-cover-ph" style="background:linear-gradient(135deg,#1a3a1a,#2d5c1e);">🐿️</div>
+            <div class="demo-card-body">
+              <div class="demo-card-name">Scurry Up!</div>
+              <div class="demo-card-meta">👥 2–4 · ⏱ 25 min</div>
+              <div class="demo-card-badge">Published</div>
+            </div>
+          </div>
+          <div class="demo-card">
+            <div class="demo-card-cover-ph" style="background:linear-gradient(135deg,#1a1a3a,#2d1e5c);">🌊</div>
+            <div class="demo-card-body">
+              <div class="demo-card-name">Pressure</div>
+              <div class="demo-card-meta">👥 2–4</div>
+              <div class="demo-card-badge">Published</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <section id="features">
@@ -292,47 +426,45 @@ footer a:hover { color:rgba(255,255,255,.7); }
         </div>
         <div style="background:var(--app-bg);">
           <div class="app-banner">
-            <img class="app-banner-logo" src="images/gb_logo.png" alt="Gb" />
+            <img class="app-banner-logo" src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/68db6d2fe1c4ff0767a9.png" alt="UP Games" />
             <div>
               <div class="app-banner-name">UP Games</div>
               <div class="app-banner-tag">Common Spaces. Uncommon Games.</div>
             </div>
           </div>
-          <div class="app-carousel">
-            <div class="app-carousel-img"></div>
+          <div class="app-carousel" style="height:90px;">
+            <img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/e25ee32f4d226062e11c.webp" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" alt="" />
             <div class="app-carousel-overlay"></div>
           </div>
           <div class="app-games">
             <div class="app-game-card">
-              <div class="app-game-cover">🎲</div>
-              <div class="app-game-body">
-                <div class="app-game-name">Scurry Up!</div>
-                <div class="app-game-meta">👥 2–4 · ⏱ 20 min</div>
-                <div class="app-game-badge">Published</div>
-              </div>
-            </div>
-            <div class="app-game-card">
-              <div class="app-game-cover">🃏</div>
+              <div class="app-game-cover"><img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/e25ee32f4d226062e11c.webp" alt="Floristry" /></div>
               <div class="app-game-body">
                 <div class="app-game-name">Floristry</div>
-                <div class="app-game-meta">👥 2–6 · ⏱ 45 min</div>
+                <div class="app-game-meta">👥 2 · ⏱ 20 min</div>
                 <div class="app-game-badge">Published</div>
               </div>
             </div>
             <div class="app-game-card">
-              <div class="app-game-cover">🏔️</div>
+              <div class="app-game-cover" style="background:linear-gradient(135deg,#1a3a1a,#2d5c1e);font-size:22px;display:flex;align-items:center;justify-content:center;">🐿️</div>
               <div class="app-game-body">
-                <div class="app-game-name">Summit Run</div>
-                <div class="app-game-meta">👥 1–4 · ⏱ 60 min</div>
+                <div class="app-game-name">Scurry Up!</div>
+                <div class="app-game-meta">👥 2–4 · ⏱ 25 min</div>
                 <div class="app-game-badge">Published</div>
               </div>
             </div>
             <div class="app-game-card">
-              <div class="app-game-cover">🌊</div>
+              <div class="app-game-cover" style="background:linear-gradient(135deg,#1a1a3a,#2d1e5c);font-size:22px;display:flex;align-items:center;justify-content:center;">🌊</div>
               <div class="app-game-body">
-                <div class="app-game-name">Tide & Ruin</div>
-                <div class="app-game-meta">👥 2–5 · ⏱ 90 min</div>
+                <div class="app-game-name">Pressure</div>
+                <div class="app-game-meta">👥 2–4</div>
                 <div class="app-game-badge">Published</div>
+              </div>
+            </div>
+            <div class="app-game-card" style="opacity:.45;">
+              <div class="app-game-cover" style="background:rgba(255,255,255,.04);font-size:22px;display:flex;align-items:center;justify-content:center;">+</div>
+              <div class="app-game-body">
+                <div class="app-game-name" style="color:rgba(255,255,255,.4);">Add a game…</div>
               </div>
             </div>
           </div>
@@ -361,7 +493,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
         </div>
         <div style="background:var(--app-bg);">
           <div class="app-banner">
-            <img class="app-banner-logo" src="images/gb_logo.png" alt="Gb" />
+            <img class="app-banner-logo" src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/68db6d2fe1c4ff0767a9.png" alt="UP Games" />
             <div>
               <div class="app-banner-name">UP Games</div>
             </div>
@@ -369,29 +501,31 @@ footer a:hover { color:rgba(255,255,255,.7); }
               <div class="app-banner-btn active">← All games</div>
             </div>
           </div>
-          <div class="app-hero-img">
-            <div style="position:absolute;inset:0;background:linear-gradient(135deg,#1a3a6b 0%,#0d1829 100%);"></div>
+          <div class="app-hero-img" style="padding:0;height:110px;">
+            <img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/60969024d1b25f859cd8.webp" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" alt="Floristry" />
             <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(13,24,41,.95) 0%,transparent 60%);"></div>
-            <div style="position:relative;z-index:1;">
-              <div class="app-hero-title">Scurry Up!</div>
-              <div class="app-hero-sub">A fast-paced family race game · UP Games</div>
+            <div style="position:relative;z-index:1;padding:8px 12px;margin-top:auto;width:100%;">
+              <div class="app-hero-title">Floristry</div>
+              <div class="app-hero-sub">A real-time, two-player auction game · UP Games</div>
             </div>
           </div>
           <div class="app-game-info">
-            <span class="app-stat-pill">👥 2–4 players</span>
+            <span class="app-stat-pill">👥 2 players</span>
             <span class="app-stat-pill">⏱ 20 min</span>
-            <span class="app-stat-pill">🎯 Ages 6+</span>
           </div>
           <div class="app-buy-row">
-            <div class="app-price">$24.99</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.5);">David Gordon · TAM</div>
             <div style="display:flex;gap:6px;">
-              <div style="font-size:9px;padding:5px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);">Sellsheet</div>
-              <div class="app-buy-btn">Buy Now</div>
+              <div style="font-size:9px;padding:5px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);">Amazon</div>
+              <div class="app-buy-btn">Barnes &amp; Noble</div>
             </div>
           </div>
           <div class="app-desc-area">
             <div class="app-desc-lbl">About the game</div>
-            <div class="app-desc-text">Race your crew of woodland critters through the forest before the others! Scurry Up! is a delightfully chaotic race game where every turn brings a new twist. Perfect for families and new gamers.</div>
+            <div class="app-desc-text">Players compete at the historic Aalsmeer Dutch Auction to win the best flowers and then use them to create the most charming window display.</div>
+            <div style="margin-top:8px;padding-top:7px;border-top:1px solid rgba(255,255,255,.05);">
+              <div style="font-size:8px;font-style:italic;color:rgba(255,255,255,.35);">"This game is just delightful." — Shut Up &amp; Sit Down</div>
+            </div>
           </div>
         </div>
       </div>

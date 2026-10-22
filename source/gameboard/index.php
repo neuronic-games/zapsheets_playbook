@@ -913,6 +913,7 @@ function _updateGbAuth() {
     if (saveBtn) saveBtn.style.display = '';
     document.body.classList.add('gb-admin-mode');
     document.querySelectorAll('.gb-footer-editable, .gb-banner-name-editable').forEach(function(el){ el.contentEditable = 'true'; });
+    if (document.getElementById('gbVideoSection')) gbRenderVideoAdminOverlay();
   } else {
     document.querySelectorAll('.gb-footer-editable, .gb-banner-name-editable').forEach(function(el){ el.contentEditable = 'false'; });
     var saveBtn = document.getElementById('gbSavePageBtn');
@@ -2083,6 +2084,11 @@ body.gb-admin-mode .gb-gallery-thumb-add { opacity:1; pointer-events:auto; }
 .gb-video-wrap { position:relative; padding-top:56.25%; border-radius:10px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,.13); }
 .gb-video-wrap iframe { position:absolute; inset:0; width:100%; height:100%; border:none; }
 .gb-video-wrap video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#000; }
+/* Video admin bar (admin only — change/remove) */
+.gb-video-admin-bar { display:none; margin-top:.6rem; gap:.5rem; }
+body.gb-admin-mode .gb-video-admin-bar { display:flex; }
+.gb-video-admin-bar button { font-family:'DINBlack',sans-serif; font-size:.65rem; text-transform:uppercase; letter-spacing:.06em; padding:.3rem .75rem; border-radius:5px; border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.07); color:rgba(255,255,255,.7); cursor:pointer; transition:background .15s; }
+.gb-video-admin-bar button:hover { background:rgba(255,255,255,.14); color:#fff; }
 /* Video placeholder (admin only) */
 .gb-video-ph-inner { background:linear-gradient(135deg,#1a1a2e,#2d2d88); border-radius:10px; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:.5rem; opacity:.3; cursor:pointer; transition:opacity .2s; }
 .gb-video-ph-inner:hover { opacity:.5; }
@@ -3461,6 +3467,55 @@ function gbVideoApplyUrl(url) {
       + '</div>';
   }
 }
+function gbSyncVideoSection(url) {
+  var placeholder = document.getElementById('gbVideoPlaceholder');
+  var section     = document.getElementById('gbVideoSection');
+  if (!url) {
+    // Clear → restore placeholder, hide live section
+    if (section) {
+      section.id        = 'gbVideoPlaceholder';
+      section.className = 'gb-section gb-ph-section';
+      section.innerHTML =
+        '<div class="gb-section-label">Watch</div>'
+        + '<div class="gb-video-ph-inner"'
+        + ' onclick="gbVideoPhClick(event,this)"'
+        + ' ondragover="gbVideoDragOver(event,this)"'
+        + ' ondragleave="gbVideoDragLeave(event,this)"'
+        + ' ondrop="gbVideoDrop(event,this)">'
+        + '<div class="gb-video-ph-icon" style="font-size:3rem;">▶</div>'
+        + '<div class="gb-video-ph-label" style="font-family:\'DINBlack\',sans-serif;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:#fff;">Drop a video file or click to add URL</div>'
+        + '</div>';
+    }
+  } else {
+    gbVideoApplyUrl(url);
+    gbRenderVideoAdminOverlay();
+  }
+}
+function gbRenderVideoAdminOverlay() {
+  var section = document.getElementById('gbVideoSection');
+  if (!section) return;
+  // Remove any existing overlay
+  var old = section.querySelector('.gb-video-admin-bar');
+  if (old) old.parentNode.removeChild(old);
+  var bar = document.createElement('div');
+  bar.className = 'gb-video-admin-bar';
+  bar.innerHTML =
+    '<button onclick="gbVideoChangeClick()" title="Change video">✏ Change</button>'
+    + '<button onclick="gbVideoRemoveClick()" title="Remove video" style="color:#f87171;">✕ Remove</button>';
+  section.appendChild(bar);
+}
+function gbVideoChangeClick() {
+  var url = prompt('Enter new YouTube or video URL:', _ed.video_url || '');
+  if (url === null) return; // cancelled
+  url = url.trim();
+  _ed.video_url = url;
+  gbSyncVideoSection(url);
+}
+function gbVideoRemoveClick() {
+  if (!confirm('Remove this video?')) return;
+  _ed.video_url = '';
+  gbSyncVideoSection('');
+}
 function gbVideoDragOver(e, el) {
   e.preventDefault();
   el.classList.add('drag-over');
@@ -3548,6 +3603,7 @@ function applyEditDetails() {
   _ed.cover_url      = document.getElementById('gbedCoverUrl').value.trim();
   _ed.image_url      = document.getElementById('gbedImageUrl').value.trim();
   _ed.video_url      = document.getElementById('gbedVideoUrl').value.trim();
+  gbSyncVideoSection(_ed.video_url);
   _ed.page_url       = document.getElementById('gbedPageUrl').value.trim();
   _ed.sellsheet      = document.getElementById('gbedSellsheet').value.trim();
   _ed.rules_url      = document.getElementById('gbedRulesUrl').value.trim();

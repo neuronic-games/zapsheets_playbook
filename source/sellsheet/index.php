@@ -584,7 +584,7 @@ function render() {
   // Priority chain (cached first, direct fallback):
   //   1. PitchImageUrl (game JSON)
   //   2. Image rows (game JSON — same source as the view page slideshow)
-  //   3. Image URL (games.json)
+  //   3. Cover URL / Image URL (games.json)
   //   4. ProductImage (game JSON)
   //   5. splash image
   // Each source tries its cached path, then its direct URL, before moving on.
@@ -595,7 +595,7 @@ function render() {
   // Collect all Image rows from the game tab (uploaded or linked images)
   var _imageRows = gvAll('Image').map(function(r){ return _absUrl(r.Value); }).filter(_isImgUrl);
 
-  var _gameImg  = _absUrl(_games('Image URL'));
+  var _gameImg  = _absUrl(_games('Cover URL') || _games('Image URL'));
   if (!_isImgUrl(_gameImg)) _gameImg = '';
 
   var _productImg = _absUrl(gv('ProductImage'));

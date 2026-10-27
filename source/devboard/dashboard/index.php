@@ -2954,7 +2954,8 @@ function shareGame(gameName) {
 var _sharePopupOpen      = false;
 var _shareCurrentGame    = '';
 var _generatedGameLinks  = {};
-var _generatedReportLinks = {};
+var _generatedReportLinks    = {};
+var _reportDataFingerprint  = {};   // gameName → row count at last generation
 
 function showSharePopup(gameName, collabUrl) {
   if (_sharePopupOpen) {
@@ -3012,12 +3013,13 @@ function showSharePopup(gameName, collabUrl) {
           'style="' + SB + 'font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;width:100%;padding:.5rem 1rem;background:#f0f4f8;color:#1a5f7a;border:1.5px solid #c8d8e4;border-radius:6px;cursor:pointer">Generate Report</button>' +
       '</div>' +
       '<div id="shareReportUrlSection" style="display:none">' +
-        '<div style="display:flex;gap:.5rem">' +
+        '<div style="display:flex;gap:.5rem;align-items:center">' +
           '<input id="shareReportInput" readonly style="flex:1;' + S + 'font-size:.75rem;padding:.42rem .6rem;border:1.5px solid #d0d8e0;border-radius:6px;outline:none;color:#111;background:#f7fafb" />' +
-          '<button id="shareReportCopyBtn" onclick="copyDevReportUrl()" style="' + SB + 'font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;background:#1a5f7a;color:#fff;border:none;border-radius:6px;padding:.42rem .85rem;cursor:pointer;white-space:nowrap">Copy</button>' +
-        '</div>' +
-        '<div style="text-align:right;margin-top:.3rem">' +
-          '<button onclick="generateDevReport(_shareCurrentGame)" style="background:none;border:none;' + S + 'font-size:.75rem;color:#1a5f7a;cursor:pointer;text-decoration:underline;padding:0">Regenerate</button>' +
+          '<button id="shareReportCopyBtn" onclick="shareReportAction()" style="' + SB + 'font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;background:#1a5f7a;color:#fff;border:none;border-radius:6px;padding:.42rem .85rem;cursor:pointer;white-space:nowrap">Copy</button>' +
+          '<button onclick="generateDevReport(_shareCurrentGame)" title="Regenerate report" ' +
+            'style="flex-shrink:0;background:none;border:1.5px solid #c8d8e4;border-radius:6px;padding:.3rem .45rem;cursor:pointer;color:#1a5f7a;display:flex;align-items:center;justify-content:center">' +
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>' +
+          '</button>' +
         '</div>' +
       '</div>' +
       '<p id="shareReportCopiedMsg" style="' + S + 'font-size:.78rem;color:#2e7a52;margin:0;display:none">Link copied!</p>' +
@@ -3041,6 +3043,7 @@ function showSharePopup(gameName, collabUrl) {
   // Restore existing report URL if already generated this session
   if (_generatedReportLinks[gameName]) {
     _showDevReportUrl(_generatedReportLinks[gameName]);
+    _updateReportBtn(gameName);
   }
 }
 
@@ -3092,6 +3095,33 @@ function _showDevReportUrl(url) {
   if (gen) gen.style.display = 'none';
   if (sec) sec.style.display = '';
   if (inp) inp.value = url;
+  _updateReportBtn(_shareCurrentGame);
+}
+
+function _isReportStale(gameName) {
+  var fp = _reportDataFingerprint[gameName];
+  if (fp === undefined) return false;
+  var rows = devCache[gameName];
+  if (!rows) return false;
+  return rows.length !== fp;
+}
+
+function _updateReportBtn(gameName) {
+  var btn = document.getElementById('shareReportCopyBtn');
+  if (!btn) return;
+  var stale = _isReportStale(gameName);
+  btn.dataset.stale = stale ? '1' : '0';
+  btn.textContent   = stale ? 'UPDATE' : 'COPY';
+  btn.style.background = stale ? '#a16207' : '#1a5f7a';
+}
+
+function shareReportAction() {
+  var btn = document.getElementById('shareReportCopyBtn');
+  if (btn && btn.dataset.stale === '1') {
+    generateDevReport(_shareCurrentGame);
+  } else {
+    copyDevReportUrl();
+  }
 }
 
 function copyDevReportUrl() {
@@ -3277,16 +3307,35 @@ function generateDevReport(gameName) {
 
   h += '</div></body></html>';
 
+  // ── Build structured data for the Python PDF generator ───────────────────
+  var _tmPeople = Object.keys(byPerson);
+  var _totalMins = 0, _totalCost = 0;
+  _tmPeople.forEach(function(p) { _totalMins += byPerson[p].mins; _totalCost += byPerson[p].cost; });
+  var reportData = {
+    game: gameName, tagline: tagline, imgUrl: imgUrl, today: today,
+    sessions: allSessions.map(function(s) {
+      return { testnum: s.testnum, date: s.date, location: s.location,
+               length: s.length, testers: s.testers, obs: s.obs };
+    }),
+    tmByPerson: _tmPeople.map(function(p) {
+      return { person: p, mins: byPerson[p].mins, cost: byPerson[p].cost };
+    }),
+    tmTotal: { mins: _totalMins, cost: _totalCost },
+    outPath: '' // filled in by PHP
+  };
+
   // ── POST to server ────────────────────────────────────────────────────────
   var fd2 = new FormData();
-  fd2.append('id',   SHEET_ID);
-  fd2.append('game', gameName);
-  fd2.append('html', h);
+  fd2.append('id',         SHEET_ID);
+  fd2.append('game',       gameName);
+  fd2.append('html',       h);
+  fd2.append('reportData', btoa(unescape(encodeURIComponent(JSON.stringify(reportData)))));
   fetch(APP_BASE + 'push/saveDevReport.php', { method:'POST', body:fd2 })
     .then(function(r) { return r.json(); })
     .then(function(res) {
       if (res.ok && res.url) {
-        _generatedReportLinks[gameName] = res.url;
+        _generatedReportLinks[gameName]   = res.url;
+        _reportDataFingerprint[gameName]  = (devCache[gameName] || []).length;
         _showDevReportUrl(res.url);
         window.open(res.url, '_blank');
       } else {

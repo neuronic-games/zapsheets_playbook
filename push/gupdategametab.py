@@ -1,16 +1,19 @@
-# gupdategametab.py — update Component, Review, and FAQ rows in a [GameName] tab.
+# gupdategametab.py — update rows in a [GameName] tab.
 #
 # Arg:  "{sheet_id}|{base64_encoded_json}"
 # JSON: {
-#   "game":       "Lair",
-#   "components": ["50 Cards", "1 Board"],
-#   "reviews":    [{"attr": "BoardGameGeek", "quote": "Amazing!"}],
-#   "faqs":       [{"q": "How many players?", "a": "2-5 players"}]
+#   "game": "Lair",
+#   "rows": [{"name": "MinPlayers", "value": "2", "extra": ""},
+#             {"name": "Designer",   "value": "Jane", "extra": ""},
+#             {"name": "Component",  "value": "50 Cards", "extra": ""},
+#             ...]
 # }
 # Returns: {"ok": true, "rows_written": N} or {"error": "..."}
 #
-# Strategy: read all rows, replace blocks of Component/Review/FAQ rows
-# with new content (preserving all other rows), then rewrite the sheet.
+# Strategy: read all rows, update rows whose name appears in the payload,
+# keeping all other rows unchanged. Multi-value fields (same name used
+# multiple times) are replaced as a block. Names not yet in the sheet
+# are appended.
 
 import gspread
 import sys, os, json, base64, socket
@@ -37,26 +40,44 @@ pipe_idx = arg.index('|')
 sheet_id = arg[:pipe_idx]
 data     = json.loads(base64.b64decode(arg[pipe_idx + 1:]).decode('utf-8'))
 
-game_name    = data.get('game', '').strip()
-components   = [str(c).strip() for c in data.get('components', []) if str(c).strip()]
-reviews      = data.get('reviews', [])
-videos       = data.get('videos', [])
-faqs         = data.get('faqs', [])
-artists      = [str(a).strip() for a in data.get('artists', []) if str(a).strip()]
-buy_urls     = data.get('buy_urls', [])
-gallery_urls = [str(u).strip() for u in data.get('gallery_urls', []) if str(u).strip()]
-
+game_name = data.get('game', '').strip()
 if not sheet_id or not game_name:
     print(json.dumps({"error": "sheet_id and game are required"}))
     sys.exit(1)
 
+# ── Parse payload ──────────────────────────────────────────────────────────────
+# Accept the new "rows" format: [{name, value, extra}, ...]
+# Group by name so multi-value fields (Designer, Component, etc.) are handled
+# as blocks. Preserve insertion order so the sheet is rebuilt cleanly.
+
+rows_data = data.get('rows', [])
+
+# new_values_by_name: name → list of [name, value, extra]
+# Preserve the order in which names first appear.
+name_order = []
+new_values_by_name = {}
+for row in rows_data:
+    name  = str(row.get('name',  '')).strip()
+    value = str(row.get('value', '')).strip()
+    extra = str(row.get('extra', '')).strip()
+    if name:
+        if name not in new_values_by_name:
+            name_order.append(name)
+            new_values_by_name[name] = []
+        new_values_by_name[name].append([name, value, extra])
+
+# If nothing was sent, nothing to do.
+if not new_values_by_name:
+    print(json.dumps({"ok": True, "rows_written": 0}))
+    sys.exit(0)
+
+# ── Open sheet ─────────────────────────────────────────────────────────────────
 try:
     wb = sa.open_by_key(sheet_id)
 except Exception as e:
     print(json.dumps({"error": "Could not open spreadsheet: " + str(e)}))
     sys.exit(1)
 
-# Find the [GameName] tab (case-insensitive)
 bracketed = '[' + game_name + ']'
 ws = None
 for w in wb.worksheets():
@@ -73,58 +94,44 @@ except Exception as e:
     print(json.dumps({"error": "Could not read tab: " + str(e)}))
     sys.exit(1)
 
-# Build the replacement content for each block type.
-# Each list must have at least one placeholder row so the section stays present.
-BLOCK_TYPES = ('Component', 'Review', 'Video', 'FAQ', 'Artist', 'BuyUrl', 'ProductImage')
-block_content = {
-    'Component':    [['Component', c, ''] for c in components] or [['Component', '', '']],
-    'Review':       [['Review', str(r.get('attr','')), str(r.get('quote',''))] for r in reviews if isinstance(r, dict)] or [['Review', '', '']],
-    'Video':        [['Video', str(v.get('url','')), str(v.get('name',''))] for v in videos if isinstance(v, dict)] or [['Video', '', '']],
-    'FAQ':          [['FAQ', str(f.get('q','')), str(f.get('a',''))] for f in faqs if isinstance(f, dict)] or [['FAQ', '', '']],
-    'Artist':       [['Artist', a, ''] for a in artists] or [['Artist', '', '']],
-    'BuyUrl':       [['BuyUrl', str(b.get('url','')), str(b.get('label',''))] for b in buy_urls if isinstance(b, dict) and b.get('url','')] or [['BuyUrl', '', '']],
-    'ProductImage': [['ProductImage', u, ''] for u in gallery_urls] or [['ProductImage', '', '']],
-}
-
-# Rebuild rows: keep non-Component/Review/FAQ rows as-is,
-# replace each block with new_rows the first time it appears.
-new_rows = []
-blocks_written = set()
+# ── Rebuild rows ───────────────────────────────────────────────────────────────
+# Walk the existing sheet. When we hit a name that's in our update map:
+#   - first occurrence: emit all new rows for that name
+#   - subsequent rows with the same name (old duplicates): skip them
+# All other rows are kept unchanged.
+new_rows      = []
+written_names = set()
 
 i = 0
 while i < len(all_rows):
-    row = all_rows[i]
-    # Normalise to exactly 3 columns
-    padded = (list(row) + ['', '', ''])[:3]
-    row_type = padded[0].strip()
+    row     = all_rows[i]
+    padded  = (list(row) + ['', '', ''])[:3]
+    row_name = padded[0].strip()
 
-    if row_type in BLOCK_TYPES:
-        # Consume all consecutive rows of this block type
-        while i < len(all_rows) and (all_rows[i] + [''])[:1][0].strip() == row_type:
+    if row_name and row_name in new_values_by_name:
+        if row_name not in written_names:
+            new_rows.extend(new_values_by_name[row_name])
+            written_names.add(row_name)
+        # Skip all consecutive rows with this name in the original sheet
+        while i < len(all_rows) and (list(all_rows[i]) + [''])[:1][0].strip() == row_name:
             i += 1
-        # Write replacement content (only once per block type)
-        if row_type not in blocks_written:
-            new_rows.extend(block_content[row_type])
-            blocks_written.add(row_type)
-        # (if the same type appears again in the sheet it gets dropped — unusual but safe)
     else:
         new_rows.append(padded)
         i += 1
 
-# Any block type missing from the original tab gets appended at the end
-for btype in BLOCK_TYPES:
-    if btype not in blocks_written:
+# Append any names from the payload that weren't found in the sheet
+for name in name_order:
+    if name not in written_names:
         new_rows.append(['', '', ''])
-        new_rows.extend(block_content[btype])
+        new_rows.extend(new_values_by_name[name])
 
-# Rewrite the sheet: clear first, then write back all rows
+# ── Write back ─────────────────────────────────────────────────────────────────
 try:
     ws.clear()
     if new_rows:
         try:
             ws.update(range_name='A1', values=new_rows, value_input_option='USER_ENTERED')
         except TypeError:
-            # Older gspread: positional (range, values)
             ws.update('A1', new_rows, value_input_option='USER_ENTERED')
 except Exception as e:
     print(json.dumps({"error": "Could not write tab: " + str(e)}))

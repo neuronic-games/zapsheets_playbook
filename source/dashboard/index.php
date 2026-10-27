@@ -3369,7 +3369,7 @@ function buildGameView(pitches) {
     }
     // Action buttons in sub-bar — single scrollable row on all screen sizes
     html += '<div class="game-action-btns">';
-    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="addBtnClick(this)">New Pitch</button>';
+    html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="addBtnClick(this)">+ Pitch</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="editGameClick(this)">Edit Game</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="viewPageClick(this)">' + (GAME_PAGE_TOKENS[g] ? 'Edit Page' : 'Enable Page') + '</button>';
     html += '<button class="game-action-btn" data-game="' + escHtml(g) + '" onclick="shareGame(this.getAttribute(\'data-game\'))">Share</button>';
@@ -6377,7 +6377,9 @@ function _parsePerson(raw) {
   var m = (raw || '').match(/(\S+@\S+\.\S+)/);
   if (!m) return { name: (raw || '').trim(), email: '' };
   var email = m[1];
-  var name  = raw.replace(email, '').trim();
+  // Remove the email, then strip any separator chars (comma, pipe, whitespace)
+  // that may surround the name — e.g. "Jane, jane@co.com" or "Jane | jane@co.com"
+  var name  = raw.replace(email, '').replace(/[\s,|]+$/, '').replace(/^[\s,|]+/, '').trim();
   return { name: name || (raw || '').trim(), email: email };
 }
 

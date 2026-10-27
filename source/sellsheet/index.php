@@ -584,7 +584,7 @@ function render() {
   // Priority chain (cached first, direct fallback):
   //   1. PitchImageUrl (game JSON)
   //   2. Image rows (game JSON — same source as the view page slideshow)
-  //   3. Cover URL / Image URL (games.json)
+  //   3. Cover URL / Image URL / Image (games.json — strips =IMAGE("…") Sheets formula)
   //   4. ProductImage (game JSON)
   //   5. splash image
   // Each source tries its cached path, then its direct URL, before moving on.
@@ -595,7 +595,15 @@ function render() {
   // Collect all Image rows from the game tab (uploaded or linked images)
   var _imageRows = gvAll('Image').map(function(r){ return _absUrl(r.Value); }).filter(_isImgUrl);
 
-  var _gameImg  = _absUrl(_games('Cover URL') || _games('Image URL'));
+  // Extract URL from a Google Sheets =IMAGE("url") formula, or return the raw value.
+  function _extractFormulaUrl(v) {
+    if (!v) return '';
+    var m = String(v).match(/^=IMAGE\s*\(\s*["']([^"']+)/i);
+    return m ? m[1] : String(v);
+  }
+  var _gameImg = _absUrl(_extractFormulaUrl(
+    _games('Cover URL') || _games('Image URL') || _games('Image') || _games('Sellsheet')
+  ));
   if (!_isImgUrl(_gameImg)) _gameImg = '';
 
   var _productImg = _absUrl(gv('ProductImage'));

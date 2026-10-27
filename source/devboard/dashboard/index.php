@@ -2109,7 +2109,13 @@ function _restoreOpenState(state) {
   state.games.forEach(function(id) { var el = document.getElementById(id); if (el) el.classList.add('open'); });
   if (state.cards && state.cards.length) {
     document.querySelectorAll('.game-card').forEach(function(el) {
-      if (state.cards.indexOf(el.dataset.game) !== -1) el.classList.add('open');
+      if (state.cards.indexOf(el.dataset.game) !== -1) {
+        el.classList.add('open');
+        // Trigger lazy load / re-render just like toggleCard does
+        var name = el.dataset.game;
+        if (devCache[name] === undefined) loadDevData(name);
+        else if (devCache[name] !== null) renderBody(name, devCache[name]);
+      }
     });
   }
   if (state.scroll) requestAnimationFrame(function() { window.scrollTo(0, state.scroll); });

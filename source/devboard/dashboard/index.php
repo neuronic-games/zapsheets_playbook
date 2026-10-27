@@ -3006,7 +3006,7 @@ function showSharePopup(gameName, collabUrl) {
       '<hr style="border:none;border-top:1px solid #edf2f6;margin:.1rem 0" />' +
       '<p style="' + SB + 'font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#888;margin:0">Report</p>' +
       '<p style="' + S + 'font-size:.8rem;color:#555;margin:0">Session notes and time &amp; materials — opens a print dialog so you can save as PDF.</p>' +
-      '<button onclick="generateDevReport(' + JSON.stringify(gameName) + ')" ' +
+      '<button onclick="generateDevReport(_shareCurrentGame)" ' +
         'style="' + SB + 'font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;width:100%;padding:.5rem 1rem;background:#f0f4f8;color:#1a5f7a;border:1.5px solid #c8d8e4;border-radius:6px;cursor:pointer">Print / Save PDF</button>' +
     '</div>';
   document.body.appendChild(overlay);

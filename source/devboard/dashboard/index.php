@@ -2951,9 +2951,10 @@ function shareGame(gameName) {
     .catch(function() { alert('Could not create share link.'); });
 }
 
-var _sharePopupOpen   = false;
-var _shareCurrentGame = '';
-var _generatedGameLinks = {};
+var _sharePopupOpen      = false;
+var _shareCurrentGame    = '';
+var _generatedGameLinks  = {};
+var _generatedReportLinks = {};
 
 function showSharePopup(gameName, collabUrl) {
   if (_sharePopupOpen) {
@@ -3005,9 +3006,21 @@ function showSharePopup(gameName, collabUrl) {
       // ── Section 3: PDF report ─────────────────────────────────────────────
       '<hr style="border:none;border-top:1px solid #edf2f6;margin:.1rem 0" />' +
       '<p style="' + SB + 'font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#888;margin:0">Report</p>' +
-      '<p style="' + S + 'font-size:.8rem;color:#555;margin:0">Session notes and time &amp; materials — opens a print dialog so you can save as PDF.</p>' +
-      '<button onclick="generateDevReport(_shareCurrentGame)" ' +
-        'style="' + SB + 'font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;width:100%;padding:.5rem 1rem;background:#f0f4f8;color:#1a5f7a;border:1.5px solid #c8d8e4;border-radius:6px;cursor:pointer">Print / Save PDF</button>' +
+      '<p style="' + S + 'font-size:.8rem;color:#555;margin:0">Session notes and T&amp;M summary — open the link and print to save as PDF.</p>' +
+      '<div id="shareReportGenSection">' +
+        '<button id="shareReportBtn" onclick="generateDevReport(_shareCurrentGame)" ' +
+          'style="' + SB + 'font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;width:100%;padding:.5rem 1rem;background:#f0f4f8;color:#1a5f7a;border:1.5px solid #c8d8e4;border-radius:6px;cursor:pointer">Generate Report</button>' +
+      '</div>' +
+      '<div id="shareReportUrlSection" style="display:none">' +
+        '<div style="display:flex;gap:.5rem">' +
+          '<input id="shareReportInput" readonly style="flex:1;' + S + 'font-size:.75rem;padding:.42rem .6rem;border:1.5px solid #d0d8e0;border-radius:6px;outline:none;color:#111;background:#f7fafb" />' +
+          '<button id="shareReportCopyBtn" onclick="copyDevReportUrl()" style="' + SB + 'font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;background:#1a5f7a;color:#fff;border:none;border-radius:6px;padding:.42rem .85rem;cursor:pointer;white-space:nowrap">Copy</button>' +
+        '</div>' +
+        '<div style="text-align:right;margin-top:.3rem">' +
+          '<button onclick="generateDevReport(_shareCurrentGame)" style="background:none;border:none;' + S + 'font-size:.75rem;color:#1a5f7a;cursor:pointer;text-decoration:underline;padding:0">Regenerate</button>' +
+        '</div>' +
+      '</div>' +
+      '<p id="shareReportCopiedMsg" style="' + S + 'font-size:.78rem;color:#2e7a52;margin:0;display:none">Link copied!</p>' +
     '</div>';
   document.body.appendChild(overlay);
 
@@ -3023,6 +3036,11 @@ function showSharePopup(gameName, collabUrl) {
           _showDevGamePageUrl(res.viewUrl);
         }
       }).catch(function() {});
+  }
+
+  // Restore existing report URL if already generated this session
+  if (_generatedReportLinks[gameName]) {
+    _showDevReportUrl(_generatedReportLinks[gameName]);
   }
 }
 
@@ -3067,64 +3085,95 @@ function copyDevGamePageUrl() {
   if (msg) { msg.style.display = 'block'; setTimeout(function(){ msg.style.display='none'; }, 2000); }
 }
 
+function _showDevReportUrl(url) {
+  var gen = document.getElementById('shareReportGenSection');
+  var sec = document.getElementById('shareReportUrlSection');
+  var inp = document.getElementById('shareReportInput');
+  if (gen) gen.style.display = 'none';
+  if (sec) sec.style.display = '';
+  if (inp) inp.value = url;
+}
+
+function copyDevReportUrl() {
+  var inp = document.getElementById('shareReportInput');
+  var btn = document.getElementById('shareReportCopyBtn');
+  var msg = document.getElementById('shareReportCopiedMsg');
+  if (!inp || !inp.value) return;
+  inp.select(); inp.setSelectionRange(0, 9999);
+  navigator.clipboard ? navigator.clipboard.writeText(inp.value).catch(function(){}) : (function(){ try { document.execCommand('copy'); } catch(e){} })();
+  if (btn) { btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = 'Copy'; }, 2000); }
+  if (msg) { msg.style.display = 'block'; setTimeout(function(){ msg.style.display = 'none'; }, 2000); }
+}
+
 function closeSharePopup() {
   _sharePopupOpen = false;
   var el = document.getElementById('sharePopupOverlay');
   if (el) el.parentNode.removeChild(el);
 }
 
-// ── Generate & print a PDF report for a game ─────────────────────────────────
+// ── Generate & save a PDF report for a game ──────────────────────────────────
+
+function _reportGameImageUrl(rec) {
+  // Extract a direct image URL from games.json, handling =IMAGE("url") Sheets formulas
+  var raw = rec['Image'] || rec['Cover URL'] || rec['Image URL'] || rec['Sellsheet'] || '';
+  if (!raw) return '';
+  var fm = String(raw).match(/^=IMAGE\s*\(\s*["']([^"']+)/i);
+  if (fm) raw = fm[1];
+  var md = String(raw).match(/^\[.*?\]\((.+?)\)\s*$/);
+  if (md) raw = md[1];
+  // Convert Dropbox share links to direct URLs
+  raw = raw.replace(/[?&]dl=[01]/, function(m) { return m.replace('dl=', 'raw=').slice(0, -1) + '1'; });
+  return raw.trim();
+}
 
 function generateDevReport(gameName) {
   var rows = devCache[gameName];
   if (!rows) {
-    // Load first, then regenerate once ready
+    // Data not loaded yet — load it, then re-run
+    var btn = document.getElementById('shareReportBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
     var fd = new FormData();
     fd.append('id', SHEET_ID);
     fd.append('game', gameName);
-    fetch(APP_BASE + 'push/getDevNotes.php', { method:'POST', body:fd })
+    fetch(APP_BASE + 'push/getDevJson.php', { method:'POST', body:fd })
       .then(function(r) { return r.json(); })
       .then(function(result) {
         devCache[gameName] = Array.isArray(result) ? result : [];
         generateDevReport(gameName);
+      })
+      .catch(function() {
+        var b = document.getElementById('shareReportBtn');
+        if (b) { b.disabled = false; b.textContent = 'Generate Report'; }
       });
     return;
   }
 
-  var gameRec  = GAMES_INDEX[gameName.toLowerCase()] || {};
-  var tagline  = gameRec.Tagline || '';
-  var today    = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  var btn = document.getElementById('shareReportBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
-  // ── Collect sessions (excluding T&M) ────────────────────────────────────
+  var gameRec = GAMES_INDEX[gameName.toLowerCase()] || {};
+  var tagline = gameRec.Tagline || '';
+  var imgUrl  = _reportGameImageUrl(gameRec);
+  var today   = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+  // ── Sessions (newest first, excluding T&M) ───────────────────────────────
   var allSessions = buildSessions(rows).reverse().filter(function(s) {
     var et = (s.eventType || '').toLowerCase();
     return et !== 'time' && et !== 'material';
   });
 
-  // ── Collect T&M rows ─────────────────────────────────────────────────────
-  var tmRows = [];
-  var lastDate = '';
-  rows.forEach(function(row) {
-    var et = (row['Event'] || '').trim().toLowerCase();
-    if (row['Date']) lastDate = row['Date'];
-    if (et !== 'time' && et !== 'material') return;
-    tmRows.push({
-      date:   row['Date'] || lastDate,
-      type:   et,
-      person: _resolveTMPerson((row['People'] || '').trim() || '(unknown)'),
-      amount: (row['Observations'] || row['Observation'] || '').trim(),
-      notes:  (row['Solutions'] || row['Solution'] || '').trim()
-    });
-  });
-
   // ── T&M totals per person ────────────────────────────────────────────────
   var byPerson = {};
-  tmRows.forEach(function(r) {
-    if (!byPerson[r.person]) byPerson[r.person] = { mins:0, cost:0 };
-    if (r.type === 'time') byPerson[r.person].mins += _parseTMMinutes(r.amount);
-    else {
-      var c = parseFloat(r.amount.replace(/[^0-9.]/g, ''));
-      if (!isNaN(c)) byPerson[r.person].cost += c;
+  rows.forEach(function(row) {
+    var et = (row['Event'] || '').trim().toLowerCase();
+    if (et !== 'time' && et !== 'material') return;
+    var person = _resolveTMPerson((row['People'] || '').trim() || '(unknown)');
+    if (!byPerson[person]) byPerson[person] = { mins:0, cost:0 };
+    if (et === 'time') {
+      byPerson[person].mins += _parseTMMinutes(row['Observations'] || row['Observation'] || '');
+    } else {
+      var c = parseFloat((row['Observations'] || row['Observation'] || '').replace(/[^0-9.]/g, ''));
+      if (!isNaN(c)) byPerson[person].cost += c;
     }
   });
 
@@ -3134,37 +3183,72 @@ function generateDevReport(gameName) {
   var h = '<!DOCTYPE html><html><head><meta charset="utf-8">';
   h += '<title>' + escR(gameName) + ' — DevBoard Report</title>';
   h += '<style>';
+  h += '*{box-sizing:border-box}';
   h += 'body{font-family:Georgia,serif;font-size:11pt;color:#111;margin:0;padding:0}';
-  h += '.page{max-width:720px;margin:2rem auto;padding:0 1.5rem}';
-  h += 'h1{font-size:18pt;margin:0 0 .15rem}';
-  h += '.subtitle{font-size:10pt;color:#666;margin:0 0 1.2rem}';
-  h += '.meta{font-size:9pt;color:#888;margin-bottom:1.5rem;border-bottom:1px solid #ddd;padding-bottom:.6rem}';
-  h += 'h2{font-size:12pt;text-transform:uppercase;letter-spacing:.06em;color:#1a5f7a;margin:1.4rem 0 .5rem;border-bottom:1px solid #d0e4ee;padding-bottom:.25rem}';
-  h += 'table{width:100%;border-collapse:collapse;font-size:10pt;margin-bottom:1rem}';
-  h += 'th{text-align:left;font-size:8pt;text-transform:uppercase;letter-spacing:.05em;color:#888;border-bottom:1.5px solid #ddd;padding:.2rem .4rem}';
-  h += 'td{padding:.3rem .4rem;border-bottom:1px solid #eee;vertical-align:top}';
+  h += '.page{max-width:740px;margin:2rem auto;padding:0 1.75rem}';
+  h += '.report-header{display:flex;align-items:flex-start;gap:1.5rem;margin-bottom:1.5rem;padding-bottom:.9rem;border-bottom:2px solid #1a5f7a}';
+  h += '.report-header-text{flex:1}';
+  h += '.report-img{width:120px;height:120px;object-fit:cover;border-radius:8px;flex-shrink:0}';
+  h += 'h1{font-size:20pt;margin:0 0 .2rem;font-family:Georgia,serif}';
+  h += '.subtitle{font-size:10.5pt;color:#555;margin:0 0 .5rem;font-style:italic}';
+  h += '.meta{font-size:9pt;color:#888;margin:0}';
+  h += 'h2{font-size:10.5pt;text-transform:uppercase;letter-spacing:.07em;color:#1a5f7a;margin:1.6rem 0 .5rem;border-bottom:1px solid #cde0ea;padding-bottom:.25rem}';
+  h += 'table{width:100%;border-collapse:collapse;font-size:10pt;margin-bottom:.5rem;table-layout:fixed}';
+  h += 'th{text-align:left;font-size:8pt;text-transform:uppercase;letter-spacing:.05em;color:#999;border-bottom:2px solid #ddd;padding:.25rem .5rem}';
+  h += 'td{padding:.3rem .5rem;border-bottom:1px solid #eee;vertical-align:top;word-wrap:break-word}';
   h += 'tr:last-child td{border-bottom:none}';
-  h += '.session-head{margin:1rem 0 .2rem;font-size:10pt}';
-  h += '.session-label{font-weight:bold}';
-  h += '.session-meta{color:#777;font-size:9pt;margin-left:.5rem}';
-  h += '.testers{font-size:9pt;color:#666;margin:.1rem 0 .35rem}';
-  h += '.obs-cell{width:50%;padding:.25rem .4rem;border-bottom:1px solid #eee;vertical-align:top}';
-  h += '.sol-cell{width:50%;padding:.25rem .4rem;border-bottom:1px solid #eee;vertical-align:top;color:#555}';
-  h += '.col-obs-hdr{color:#1a5f7a}';
-  h += '.col-sol-hdr{color:#555}';
-  h += '.tm-total{font-weight:bold;font-size:9.5pt}';
-  h += '.no-data{color:#999;font-style:italic;font-size:10pt}';
-  h += '@media print{body{margin:0}.page{margin:.4in;max-width:none}}';
+  h += '.session-block{margin:1.1rem 0 .15rem;page-break-inside:avoid}';
+  h += '.session-label{font-weight:bold;font-size:10.5pt}';
+  h += '.session-meta{color:#777;font-size:9pt;margin-left:.4rem}';
+  h += '.session-testers{font-size:9pt;color:#666;margin:.15rem 0 .35rem}';
+  h += '.col-half{width:50%}';
+  h += '.col-obs{color:#1a5f7a;font-size:8pt}';
+  h += '.col-sol{color:#888;font-size:8pt}';
+  h += '.td-sol{color:#444}';
+  h += '.tm-total td{font-weight:bold;border-top:2px solid #ddd;border-bottom:none}';
+  h += '.no-data{color:#aaa;font-style:italic;font-size:10pt;margin:.3rem 0}';
+  h += 'p{margin:.2rem 0 .5rem}';
+  h += '@media print{body{margin:0}.page{margin:.4in .5in;max-width:none}h2{page-break-after:avoid}.session-block{page-break-inside:avoid}}';
   h += '</style></head><body><div class="page">';
 
-  // Header
+  // ── Header ────────────────────────────────────────────────────────────────
+  h += '<div class="report-header">';
+  h += '<div class="report-header-text">';
   h += '<h1>' + escR(gameName) + '</h1>';
   if (tagline) h += '<div class="subtitle">' + escR(tagline) + '</div>';
-  h += '<div class="meta">DevBoard Report &nbsp;·&nbsp; ' + escR(today) + '</div>';
+  h += '<div class="meta">DevBoard Report &nbsp;&middot;&nbsp; ' + escR(today) + '</div>';
+  h += '</div>';
+  if (imgUrl) h += '<img class="report-img" src="' + escR(imgUrl) + '" alt="" onerror="this.style.display=\'none\'">';
+  h += '</div>';
+
+  // ── Sessions ─────────────────────────────────────────────────────────────
+  h += '<h2>Sessions (' + allSessions.length + ')</h2>';
+  if (!allSessions.length) {
+    h += '<p class="no-data">No sessions logged yet.</p>';
+  } else {
+    allSessions.forEach(function(s) {
+      h += '<div class="session-block">';
+      h += '<div><span class="session-label">' + escR(s.testnum) + '</span>';
+      if (s.date)     h += '<span class="session-meta">' + escR(fmtDate(s.date)) + '</span>';
+      if (s.location) h += '<span class="session-meta">&middot; ' + escR(s.location) + '</span>';
+      if (s.length)   h += '<span class="session-meta">&middot; ' + escR(s.length)   + '</span>';
+      h += '</div>';
+      if (s.testers.length) h += '<div class="session-testers">' + s.testers.map(escR).join(', ') + '</div>';
+      if (s.obs.length) {
+        h += '<table><colgroup><col class="col-half"><col class="col-half"></colgroup>';
+        h += '<thead><tr><th class="col-obs">Observation</th><th class="col-sol">Note / Solution</th></tr></thead><tbody>';
+        s.obs.forEach(function(o) {
+          h += '<tr><td>' + escR(o.obs) + '</td><td class="td-sol">' + escR(o.sol) + '</td></tr>';
+        });
+        h += '</tbody></table>';
+      }
+      h += '</div>';
+    });
+  }
 
   // ── T&M Summary ──────────────────────────────────────────────────────────
   var tmPeople = Object.keys(byPerson);
-  h += '<h2>Time &amp; Materials Summary</h2>';
+  h += '<h2>Time &amp; Materials</h2>';
   if (!tmPeople.length) {
     h += '<p class="no-data">No time or materials logged.</p>';
   } else {
@@ -3178,59 +3262,36 @@ function generateDevReport(gameName) {
       h += '<td>' + (d.cost ? '$' + d.cost.toFixed(2) : '—') + '</td></tr>';
     });
     if (tmPeople.length > 1) {
-      h += '<tr class="tm-total"><td><strong>Total</strong></td>';
+      h += '<tr class="tm-total"><td>Total</td>';
       h += '<td>' + (totalMins ? escR(_fmtTMTime(totalMins)) : '—') + '</td>';
-      h += '<td>' + (totalCost ? '<strong>$' + totalCost.toFixed(2) + '</strong>' : '—') + '</td></tr>';
+      h += '<td>' + (totalCost ? '$' + totalCost.toFixed(2) : '—') + '</td></tr>';
     }
     h += '</tbody></table>';
   }
 
-  // ── T&M Detail ───────────────────────────────────────────────────────────
-  if (tmRows.length) {
-    h += '<h2>Time &amp; Materials Detail</h2>';
-    h += '<table><thead><tr><th>Date</th><th>Person</th><th>Type</th><th>Amount</th><th>Notes</th></tr></thead><tbody>';
-    tmRows.forEach(function(r) {
-      h += '<tr>';
-      h += '<td style="white-space:nowrap">' + escR(fmtDate(r.date)) + '</td>';
-      h += '<td>' + escR(r.person) + '</td>';
-      h += '<td>' + escR(r.type.charAt(0).toUpperCase() + r.type.slice(1)) + '</td>';
-      h += '<td style="white-space:nowrap">' + escR(r.amount) + '</td>';
-      h += '<td>' + escR(r.notes) + '</td>';
-      h += '</tr>';
-    });
-    h += '</tbody></table>';
-  }
+  h += '</div></body></html>';
 
-  // ── Sessions ─────────────────────────────────────────────────────────────
-  h += '<h2>Sessions (' + allSessions.length + ')</h2>';
-  if (!allSessions.length) {
-    h += '<p class="no-data">No sessions logged.</p>';
-  } else {
-    allSessions.forEach(function(s) {
-      h += '<div class="session-head">';
-      h += '<span class="session-label">' + escR(s.testnum) + '</span>';
-      if (s.date)     h += '<span class="session-meta">' + escR(fmtDate(s.date)) + '</span>';
-      if (s.location) h += '<span class="session-meta">· ' + escR(s.location) + '</span>';
-      if (s.length)   h += '<span class="session-meta">· ' + escR(s.length)   + '</span>';
-      h += '</div>';
-      if (s.testers.length) h += '<div class="testers">' + s.testers.map(escR).join(', ') + '</div>';
-      if (s.obs.length) {
-        h += '<table><thead><tr><th class="col-obs-hdr">Observation</th><th class="col-sol-hdr">Note / Solution</th></tr></thead><tbody>';
-        s.obs.forEach(function(o) {
-          h += '<tr><td class="obs-cell">' + escR(o.obs) + '</td><td class="sol-cell">' + escR(o.sol) + '</td></tr>';
-        });
-        h += '</tbody></table>';
+  // ── POST to server ────────────────────────────────────────────────────────
+  var fd2 = new FormData();
+  fd2.append('id',   SHEET_ID);
+  fd2.append('game', gameName);
+  fd2.append('html', h);
+  fetch(APP_BASE + 'push/saveDevReport.php', { method:'POST', body:fd2 })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.ok && res.url) {
+        _generatedReportLinks[gameName] = res.url;
+        _showDevReportUrl(res.url);
+        window.open(res.url, '_blank');
+      } else {
+        if (btn) { btn.disabled = false; btn.textContent = 'Generate Report'; }
+        alert('Could not save report: ' + (res.error || 'unknown error'));
       }
+    })
+    .catch(function(e) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Generate Report'; }
+      alert('Could not save report.');
     });
-  }
-
-  h += '</div>';
-  h += '<script>window.onload=function(){window.print();}<\/script>';
-  h += '</body></html>';
-
-  var w = window.open('', '_blank');
-  if (w) { w.document.write(h); w.document.close(); }
-  else   { alert('Allow pop-ups for this page to open the report.'); }
 }
 
 function copyShareLink() {

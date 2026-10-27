@@ -3179,6 +3179,12 @@ function generateDevReport(gameName) {
 
   // ── Build HTML ───────────────────────────────────────────────────────────
   function escR(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  // Render =IMAGE("url") formulas as actual <img> tags; otherwise HTML-escape the text
+  function cellHtml(s) {
+    var m = String(s || '').match(/^=IMAGE\s*\(\s*["']([^"']+)/i);
+    if (m) return '<img src="' + escR(m[1]) + '" style="max-width:100%;max-height:220px;border-radius:4px;display:block" onerror="this.style.display=\'none\'">';
+    return escR(s);
+  }
 
   var h = '<!DOCTYPE html><html><head><meta charset="utf-8">';
   h += '<title>' + escR(gameName) + ' — DevBoard Report</title>';
@@ -3238,7 +3244,7 @@ function generateDevReport(gameName) {
         h += '<table><colgroup><col class="col-half"><col class="col-half"></colgroup>';
         h += '<thead><tr><th class="col-obs">Observation</th><th class="col-sol">Note / Solution</th></tr></thead><tbody>';
         s.obs.forEach(function(o) {
-          h += '<tr><td>' + escR(o.obs) + '</td><td class="td-sol">' + escR(o.sol) + '</td></tr>';
+          h += '<tr><td>' + cellHtml(o.obs) + '</td><td class="td-sol">' + cellHtml(o.sol) + '</td></tr>';
         });
         h += '</tbody></table>';
       }

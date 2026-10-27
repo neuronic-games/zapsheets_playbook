@@ -68,6 +68,12 @@ if ($reportData) {
     $pyScript   = __DIR__ . '/genPdfReport.py';
 
     if (file_exists($pyScript)) {
+        // Inject the server-side outPath into the report data
+        $decoded = json_decode(base64_decode($reportData), true);
+        if ($decoded) {
+            $decoded['outPath'] = $pdfPath;
+            $reportData = base64_encode(json_encode($decoded));
+        }
         $arg = $appRoot . '|' . $reportData;
         $cmd = escapeshellarg($pythonPath) . ' '
              . escapeshellarg($pyScript) . ' '

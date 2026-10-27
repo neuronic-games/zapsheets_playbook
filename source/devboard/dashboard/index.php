@@ -3001,6 +3001,13 @@ function showSharePopup(gameName, collabUrl) {
         '</div>' +
       '</div>' +
       '<p id="sharePageCopiedMsg" style="' + S + 'font-size:.78rem;color:#2e7a52;margin:0;display:none">Link copied!</p>' +
+
+      // ── Section 3: PDF report ─────────────────────────────────────────────
+      '<hr style="border:none;border-top:1px solid #edf2f6;margin:.1rem 0" />' +
+      '<p style="' + SB + 'font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#888;margin:0">Report</p>' +
+      '<p style="' + S + 'font-size:.8rem;color:#555;margin:0">Session notes and time &amp; materials — opens a print dialog so you can save as PDF.</p>' +
+      '<button onclick="generateDevReport(' + JSON.stringify(gameName) + ')" ' +
+        'style="' + SB + 'font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;width:100%;padding:.5rem 1rem;background:#f0f4f8;color:#1a5f7a;border:1.5px solid #c8d8e4;border-radius:6px;cursor:pointer">Print / Save PDF</button>' +
     '</div>';
   document.body.appendChild(overlay);
 
@@ -3065,6 +3072,167 @@ function closeSharePopup() {
   var el = document.getElementById('sharePopupOverlay');
   if (el) el.parentNode.removeChild(el);
 }
+
+// ── Generate & print a PDF report for a game ─────────────────────────────────
+
+function generateDevReport(gameName) {
+  var rows = devCache[gameName];
+  if (!rows) {
+    // Load first, then regenerate once ready
+    var fd = new FormData();
+    fd.append('id', SHEET_ID);
+    fd.append('game', gameName);
+    fetch(APP_BASE + 'push/getDevNotes.php', { method:'POST', body:fd })
+      .then(function(r) { return r.json(); })
+      .then(function(result) {
+        devCache[gameName] = Array.isArray(result) ? result : [];
+        generateDevReport(gameName);
+      });
+    return;
+  }
+
+  var gameRec  = GAMES_INDEX[gameName.toLowerCase()] || {};
+  var tagline  = gameRec.Tagline || '';
+  var today    = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+  // ── Collect sessions (excluding T&M) ────────────────────────────────────
+  var allSessions = buildSessions(rows).reverse().filter(function(s) {
+    var et = (s.eventType || '').toLowerCase();
+    return et !== 'time' && et !== 'material';
+  });
+
+  // ── Collect T&M rows ─────────────────────────────────────────────────────
+  var tmRows = [];
+  var lastDate = '';
+  rows.forEach(function(row) {
+    var et = (row['Event'] || '').trim().toLowerCase();
+    if (row['Date']) lastDate = row['Date'];
+    if (et !== 'time' && et !== 'material') return;
+    tmRows.push({
+      date:   row['Date'] || lastDate,
+      type:   et,
+      person: _resolveTMPerson((row['People'] || '').trim() || '(unknown)'),
+      amount: (row['Observations'] || row['Observation'] || '').trim(),
+      notes:  (row['Solutions'] || row['Solution'] || '').trim()
+    });
+  });
+
+  // ── T&M totals per person ────────────────────────────────────────────────
+  var byPerson = {};
+  tmRows.forEach(function(r) {
+    if (!byPerson[r.person]) byPerson[r.person] = { mins:0, cost:0 };
+    if (r.type === 'time') byPerson[r.person].mins += _parseTMMinutes(r.amount);
+    else {
+      var c = parseFloat(r.amount.replace(/[^0-9.]/g, ''));
+      if (!isNaN(c)) byPerson[r.person].cost += c;
+    }
+  });
+
+  // ── Build HTML ───────────────────────────────────────────────────────────
+  function escR(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  var h = '<!DOCTYPE html><html><head><meta charset="utf-8">';
+  h += '<title>' + escR(gameName) + ' — DevBoard Report</title>';
+  h += '<style>';
+  h += 'body{font-family:Georgia,serif;font-size:11pt;color:#111;margin:0;padding:0}';
+  h += '.page{max-width:720px;margin:2rem auto;padding:0 1.5rem}';
+  h += 'h1{font-size:18pt;margin:0 0 .15rem}';
+  h += '.subtitle{font-size:10pt;color:#666;margin:0 0 1.2rem}';
+  h += '.meta{font-size:9pt;color:#888;margin-bottom:1.5rem;border-bottom:1px solid #ddd;padding-bottom:.6rem}';
+  h += 'h2{font-size:12pt;text-transform:uppercase;letter-spacing:.06em;color:#1a5f7a;margin:1.4rem 0 .5rem;border-bottom:1px solid #d0e4ee;padding-bottom:.25rem}';
+  h += 'table{width:100%;border-collapse:collapse;font-size:10pt;margin-bottom:1rem}';
+  h += 'th{text-align:left;font-size:8pt;text-transform:uppercase;letter-spacing:.05em;color:#888;border-bottom:1.5px solid #ddd;padding:.2rem .4rem}';
+  h += 'td{padding:.3rem .4rem;border-bottom:1px solid #eee;vertical-align:top}';
+  h += 'tr:last-child td{border-bottom:none}';
+  h += '.session-head{margin:1rem 0 .2rem;font-size:10pt}';
+  h += '.session-label{font-weight:bold}';
+  h += '.session-meta{color:#777;font-size:9pt;margin-left:.5rem}';
+  h += '.testers{font-size:9pt;color:#666;margin:.1rem 0 .35rem}';
+  h += '.obs-cell{width:50%;padding:.25rem .4rem;border-bottom:1px solid #eee;vertical-align:top}';
+  h += '.sol-cell{width:50%;padding:.25rem .4rem;border-bottom:1px solid #eee;vertical-align:top;color:#555}';
+  h += '.col-obs-hdr{color:#1a5f7a}';
+  h += '.col-sol-hdr{color:#555}';
+  h += '.tm-total{font-weight:bold;font-size:9.5pt}';
+  h += '.no-data{color:#999;font-style:italic;font-size:10pt}';
+  h += '@media print{body{margin:0}.page{margin:.4in;max-width:none}}';
+  h += '</style></head><body><div class="page">';
+
+  // Header
+  h += '<h1>' + escR(gameName) + '</h1>';
+  if (tagline) h += '<div class="subtitle">' + escR(tagline) + '</div>';
+  h += '<div class="meta">DevBoard Report &nbsp;·&nbsp; ' + escR(today) + '</div>';
+
+  // ── T&M Summary ──────────────────────────────────────────────────────────
+  var tmPeople = Object.keys(byPerson);
+  h += '<h2>Time &amp; Materials Summary</h2>';
+  if (!tmPeople.length) {
+    h += '<p class="no-data">No time or materials logged.</p>';
+  } else {
+    h += '<table><thead><tr><th>Person</th><th>Time</th><th>Materials</th></tr></thead><tbody>';
+    var totalMins = 0, totalCost = 0;
+    tmPeople.forEach(function(p) {
+      var d = byPerson[p];
+      totalMins += d.mins; totalCost += d.cost;
+      h += '<tr><td>' + escR(p) + '</td>';
+      h += '<td>' + (d.mins ? escR(_fmtTMTime(d.mins)) : '—') + '</td>';
+      h += '<td>' + (d.cost ? '$' + d.cost.toFixed(2) : '—') + '</td></tr>';
+    });
+    if (tmPeople.length > 1) {
+      h += '<tr class="tm-total"><td><strong>Total</strong></td>';
+      h += '<td>' + (totalMins ? escR(_fmtTMTime(totalMins)) : '—') + '</td>';
+      h += '<td>' + (totalCost ? '<strong>$' + totalCost.toFixed(2) + '</strong>' : '—') + '</td></tr>';
+    }
+    h += '</tbody></table>';
+  }
+
+  // ── T&M Detail ───────────────────────────────────────────────────────────
+  if (tmRows.length) {
+    h += '<h2>Time &amp; Materials Detail</h2>';
+    h += '<table><thead><tr><th>Date</th><th>Person</th><th>Type</th><th>Amount</th><th>Notes</th></tr></thead><tbody>';
+    tmRows.forEach(function(r) {
+      h += '<tr>';
+      h += '<td style="white-space:nowrap">' + escR(fmtDate(r.date)) + '</td>';
+      h += '<td>' + escR(r.person) + '</td>';
+      h += '<td>' + escR(r.type.charAt(0).toUpperCase() + r.type.slice(1)) + '</td>';
+      h += '<td style="white-space:nowrap">' + escR(r.amount) + '</td>';
+      h += '<td>' + escR(r.notes) + '</td>';
+      h += '</tr>';
+    });
+    h += '</tbody></table>';
+  }
+
+  // ── Sessions ─────────────────────────────────────────────────────────────
+  h += '<h2>Sessions (' + allSessions.length + ')</h2>';
+  if (!allSessions.length) {
+    h += '<p class="no-data">No sessions logged.</p>';
+  } else {
+    allSessions.forEach(function(s) {
+      h += '<div class="session-head">';
+      h += '<span class="session-label">' + escR(s.testnum) + '</span>';
+      if (s.date)     h += '<span class="session-meta">' + escR(fmtDate(s.date)) + '</span>';
+      if (s.location) h += '<span class="session-meta">· ' + escR(s.location) + '</span>';
+      if (s.length)   h += '<span class="session-meta">· ' + escR(s.length)   + '</span>';
+      h += '</div>';
+      if (s.testers.length) h += '<div class="testers">' + s.testers.map(escR).join(', ') + '</div>';
+      if (s.obs.length) {
+        h += '<table><thead><tr><th class="col-obs-hdr">Observation</th><th class="col-sol-hdr">Note / Solution</th></tr></thead><tbody>';
+        s.obs.forEach(function(o) {
+          h += '<tr><td class="obs-cell">' + escR(o.obs) + '</td><td class="sol-cell">' + escR(o.sol) + '</td></tr>';
+        });
+        h += '</tbody></table>';
+      }
+    });
+  }
+
+  h += '</div>';
+  h += '<script>window.onload=function(){window.print();}<\/script>';
+  h += '</body></html>';
+
+  var w = window.open('', '_blank');
+  if (w) { w.document.write(h); w.document.close(); }
+  else   { alert('Allow pop-ups for this page to open the report.'); }
+}
+
 function copyShareLink() {
   var inp = document.getElementById('shareLinkInput');
   if (!inp) return;

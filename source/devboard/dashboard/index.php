@@ -3307,29 +3307,11 @@ function generateDevReport(gameName) {
 
   h += '</div></body></html>';
 
-  // ── Build structured data for the Python PDF generator ───────────────────
-  var _tmPeople = Object.keys(byPerson);
-  var _totalMins = 0, _totalCost = 0;
-  _tmPeople.forEach(function(p) { _totalMins += byPerson[p].mins; _totalCost += byPerson[p].cost; });
-  var reportData = {
-    game: gameName, tagline: tagline, imgUrl: imgUrl, today: today,
-    sessions: allSessions.map(function(s) {
-      return { testnum: s.testnum, date: s.date, location: s.location,
-               length: s.length, testers: s.testers, obs: s.obs };
-    }),
-    tmByPerson: _tmPeople.map(function(p) {
-      return { person: p, mins: byPerson[p].mins, cost: byPerson[p].cost };
-    }),
-    tmTotal: { mins: _totalMins, cost: _totalCost },
-    outPath: '' // filled in by PHP
-  };
-
   // ── POST to server ────────────────────────────────────────────────────────
   var fd2 = new FormData();
-  fd2.append('id',         SHEET_ID);
-  fd2.append('game',       gameName);
-  fd2.append('html',       h);
-  fd2.append('reportData', btoa(unescape(encodeURIComponent(JSON.stringify(reportData)))));
+  fd2.append('id',   SHEET_ID);
+  fd2.append('game', gameName);
+  fd2.append('html', h);
   fetch(APP_BASE + 'push/saveDevReport.php', { method:'POST', body:fd2 })
     .then(function(r) { return r.json(); })
     .then(function(res) {

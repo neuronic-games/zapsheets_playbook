@@ -2095,17 +2095,24 @@ function toggleGameGroup(id) {
   if (el) el.classList.toggle('open');
 }
 
-// Save/restore open state for publisher cards and game groups across re-renders
+// Save/restore open state for publisher cards, game groups, and game cards across re-renders
 function _saveOpenState() {
-  var open = { pubs: [], games: [] };
+  var open = { pubs: [], games: [], cards: [], scroll: window.scrollY };
   document.querySelectorAll('.client-card.open').forEach(function(el) { open.pubs.push(el.id); });
   document.querySelectorAll('.game-group.open').forEach(function(el) { open.games.push(el.id); });
+  document.querySelectorAll('.game-card.open').forEach(function(el) { if (el.dataset.game) open.cards.push(el.dataset.game); });
   return open;
 }
 function _restoreOpenState(state) {
   if (!state) return;
   state.pubs.forEach(function(id)  { var el = document.getElementById(id); if (el) el.classList.add('open'); });
   state.games.forEach(function(id) { var el = document.getElementById(id); if (el) el.classList.add('open'); });
+  if (state.cards && state.cards.length) {
+    document.querySelectorAll('.game-card').forEach(function(el) {
+      if (state.cards.indexOf(el.dataset.game) !== -1) el.classList.add('open');
+    });
+  }
+  if (state.scroll) requestAnimationFrame(function() { window.scrollTo(0, state.scroll); });
 }
 function renderPublishersViewKeepOpen() {
   var state = _saveOpenState();
@@ -4017,12 +4024,14 @@ function submitAddGame() {
         rec['Image URL']= rec.Image            = document.getElementById('gImage').value;
         GAMES_INDEX[key] = rec;
         GAMES_RAW.forEach(function(g) { if ((g.Name||'').toLowerCase() === key) g.Status = rec.Status; });
-        // Refresh card body if cached, then rebuild list
+        // Refresh card body if cached, then rebuild list — preserve open state + scroll
         if (devCache[_editGameOrigName] !== undefined) {
           renderBody(_editGameOrigName, devCache[_editGameOrigName] || []);
         }
+        var _openState = _saveOpenState();
         buildGameList();
         renderCards();
+        _restoreOpenState(_openState);
         closeAddDialog();
       })
       .catch(function(e) {

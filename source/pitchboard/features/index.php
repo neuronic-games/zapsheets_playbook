@@ -544,7 +544,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
 </section>
 
 <footer>
-  <a href="pitchboard">PitchBoard</a> &mdash; built for board game designers &nbsp;·&nbsp; <a href="/">ZapSheets</a>
+  <a href="pitchboard">PitchBoard</a> &mdash; built for board game makers &nbsp;·&nbsp; <a href="/">ZapSheets</a>
 </footer>
 
 </body>

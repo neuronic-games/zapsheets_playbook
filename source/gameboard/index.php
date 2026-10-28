@@ -457,6 +457,14 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
 .btn-adm-primary:hover { opacity:.88; }
 .btn-adm-secondary { background:transparent; color:var(--ink-lt); border-color:var(--border); }
 .btn-adm-secondary:hover { background:#f0f0f8; }
+/* Add-game card (admin only) — matches game card shape: grey image area + white body */
+.gb-add-game-card { display:none; border-radius:12px; border:2px dashed rgba(59,59,170,.22); background:#fff; cursor:pointer; transition:border-color .15s, box-shadow .15s, transform .15s; overflow:hidden; box-shadow:0 2px 14px rgba(0,0,0,.06); }
+body.gb-admin-mode .gb-add-game-card { display:block; }
+.gb-add-game-card:hover { border-color:var(--accent); box-shadow:0 6px 24px rgba(0,0,0,.12); transform:translateY(-3px); }
+.gb-add-game-card-inner { width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:3rem; color:rgba(59,59,170,.28); line-height:1; transition:color .15s, background .15s; background:linear-gradient(135deg,#e8e8f2,#d8d8ec); }
+.gb-add-game-card:hover .gb-add-game-card-inner { color:var(--accent); background:linear-gradient(135deg,#e0e0f0,#cecee8); }
+.gb-add-game-card-label { padding:.75rem .9rem 1rem; font-family:'DINBlack',sans-serif; font-size:.95rem; color:rgba(59,59,170,.45); }
+.gb-add-game-card:hover .gb-add-game-card-label { color:var(--accent); }
 </style>
 </head>
 <body>

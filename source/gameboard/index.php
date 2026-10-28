@@ -1880,6 +1880,18 @@ $_artists = []; // populated after $_rich loads below
 //   3. {lowercase_name}.json in the Playbook Sheet dir (legacy Playbook naming)
 // Format: [{Name, Value, "Value 1", "Value 2"}, ...]
 $_safeName = str_replace(['/', '\\'], '-', $_name);
+
+// In admin mode, always refresh the [GameName] tab cache so edits are immediately visible.
+if (!isset($_gbPublicBase) && $_name) {
+    $_gbPythonPath = $_ENV['PYTHON'] ?? 'python3';
+    $_gbPubScript  = __DIR__ . '/../../push/gpublishgame.py';
+    if (file_exists($_gbPubScript)) {
+        shell_exec(escapeshellarg($_gbPythonPath) . ' '
+            . escapeshellarg(realpath($_gbPubScript)) . ' '
+            . escapeshellarg($_sheetId . '|' . $_name) . ' 2>/dev/null');
+    }
+}
+
 $_rich = [];
 $_richCandidates = [
     $_sDir . '/game-' . $_safeName . '-en.json',

@@ -1452,6 +1452,9 @@ window.carouselPickImage = function(slideEl) {
   inp.click();
 };
 
+function _carouselAddBtnHide() { var b = document.getElementById('catCarouselAddBtn'); if (b) b.style.display = 'none'; }
+function _carouselAddBtnShow() { var b = document.getElementById('catCarouselAddBtn'); if (b) b.style.display = ''; }
+
 // Add a new slide
 window.carouselAddSlide = function() {
   if (!document.body.classList.contains('gb-admin-mode')) return;
@@ -1459,8 +1462,9 @@ window.carouselAddSlide = function() {
   inp.type = 'file'; inp.accept = 'image/*';
   inp.onchange = function() {
     if (!inp.files || !inp.files[0]) return;
+    _carouselAddBtnHide();
     var carousel = document.getElementById('catCarousel');
-    _carouselUpload(inp.files[0], carousel, function(url) { _carouselInsertSlide(url); });
+    _carouselUpload(inp.files[0], carousel, function(url) { _carouselInsertSlide(url); _carouselAddBtnShow(); });
   };
   inp.click();
 };
@@ -1469,8 +1473,9 @@ window.carouselDropAdd = function(e) {
   if (!document.body.classList.contains('gb-admin-mode')) return;
   var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
   if (f) {
+    _carouselAddBtnHide();
     var carousel = document.getElementById('catCarousel');
-    _carouselUpload(f, carousel, function(url) { _carouselInsertSlide(url); });
+    _carouselUpload(f, carousel, function(url) { _carouselInsertSlide(url); _carouselAddBtnShow(); });
   }
 };
 function _carouselInsertSlide(url) {

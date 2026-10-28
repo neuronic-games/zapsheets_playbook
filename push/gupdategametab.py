@@ -95,7 +95,12 @@ if ws is None:
     sys.exit(1)
 
 try:
-    all_rows = ws.get_all_values()
+    # Use FORMULA render so =IMAGE("url") cells come back as formula strings,
+    # not empty strings (which would destroy gallery images on the next save).
+    try:
+        all_rows = ws.get_all_values(value_render_option='FORMULA')
+    except TypeError:
+        all_rows = ws.get_all_values()
 except Exception as e:
     print(json.dumps({"error": "Could not read tab: " + str(e)}))
     sys.exit(1)

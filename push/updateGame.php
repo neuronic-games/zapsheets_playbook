@@ -280,7 +280,7 @@ if ($result !== null && !empty($result['ok'])) {
         foreach ($buyUrlsParsed as $b) {
             $bUrl   = trim((string)($b['url']   ?? ''));
             $bLabel = trim((string)($b['label'] ?? ''));
-            if ($bUrl) $extraRows[] = ['name' => 'BuyUrl', 'value' => $bUrl, 'extra' => $bLabel];
+            if ($bUrl || $bLabel) $extraRows[] = ['name' => 'BuyUrl', 'value' => $bUrl, 'extra' => $bLabel];
         }
         if (empty($buyUrlsParsed)) $deleteNames[] = 'BuyUrl';
     }
@@ -291,7 +291,7 @@ if ($result !== null && !empty($result['ok'])) {
         foreach ($resourceLinksParsed as $rl) {
             $rlUrl   = trim((string)($rl['url']   ?? ''));
             $rlLabel = trim((string)($rl['label'] ?? ''));
-            if ($rlUrl) $extraRows[] = ['name' => 'ResourceLink', 'value' => $rlUrl, 'extra' => $rlLabel];
+            if ($rlUrl || $rlLabel) $extraRows[] = ['name' => 'ResourceLink', 'value' => $rlUrl, 'extra' => $rlLabel];
         }
         if (empty($resourceLinksParsed)) $deleteNames[] = 'ResourceLink';
     }

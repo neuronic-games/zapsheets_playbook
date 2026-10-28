@@ -101,12 +101,13 @@ except Exception as e:
 
 records = []
 for row in all_values:
-    key = row[0].strip() if len(row) > 0 else ''
+    key = str(row[0]).strip() if len(row) > 0 else ''
     if not key:
         continue  # skip blank rows
 
     # Trim trailing empty cells; keep internal structure intact.
-    vals = [c.strip() for c in row[1:]]
+    # FORMULA render may return ints/floats for numeric cells — cast to str.
+    vals = [str(c).strip() for c in row[1:]]
     while vals and not vals[-1]:
         vals.pop()
 

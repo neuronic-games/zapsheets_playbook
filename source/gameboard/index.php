@@ -1881,20 +1881,6 @@ $_artists = []; // populated after $_rich loads below
 // Format: [{Name, Value, "Value 1", "Value 2"}, ...]
 $_safeName = str_replace(['/', '\\'], '-', $_name);
 
-// In admin mode, refresh the [GameName] tab cache if it's more than 5 minutes old.
-if (!isset($_gbPublicBase) && $_name) {
-    $_gbPythonPath = $_ENV['PYTHON'] ?? 'python3';
-    $_gbPubScript  = realpath(__DIR__ . '/../../push/gpublishgame.py')
-                  ?: (dirname(__DIR__, 2) . '/push/gpublishgame.py');
-    $_gbCacheFile  = $_sDir . '/game-' . $_safeName . '-en.json';
-    $_gbCacheAge   = file_exists($_gbCacheFile) ? (time() - filemtime($_gbCacheFile)) : PHP_INT_MAX;
-    if ($_gbCacheAge > 300 && file_exists($_gbPubScript)) {
-        shell_exec(escapeshellarg($_gbPythonPath) . ' '
-            . escapeshellarg($_gbPubScript) . ' '
-            . escapeshellarg($_sheetId . '|' . $_name) . ' 2>/dev/null');
-    }
-}
-
 $_rich = [];
 $_richCandidates = [
     $_sDir . '/game-' . $_safeName . '-en.json',

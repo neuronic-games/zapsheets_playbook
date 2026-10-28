@@ -354,6 +354,7 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 .cat-carousel-add-btn { display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:11; width:4rem; height:4rem; border-radius:50%; border:2.5px dashed rgba(255,255,255,.55); background:rgba(0,0,0,.25); color:rgba(255,255,255,.8); font-size:2rem; line-height:1; cursor:pointer; align-items:center; justify-content:center; transition:background .15s, border-color .15s, color .15s; }
 .cat-carousel-add-btn:hover { background:rgba(0,0,0,.55); border-color:#fff; color:#fff; }
 body.gb-admin-mode .cat-carousel-add-btn { display:flex; }
+#catCarousel.is-uploading .cat-carousel-add-btn { display:none !important; }
 
 /* ── Empty ── */
 .cat-empty { grid-column:1/-1; padding:4rem 1rem; text-align:center; color:var(--muted); }
@@ -1437,11 +1438,13 @@ window.carouselPickImage = function(slideEl) {
   inp.onchange = function() {
     if (!inp.files || !inp.files[0]) return;
     // Show spinner immediately on file selection
+    _carouselAddBtnHide();
     var spinner = document.createElement('div');
     spinner.className = 'cat-slide-loading';
     slideEl.appendChild(spinner);
     _carouselUpload(inp.files[0], null, function(url) {
       spinner.remove();
+      _carouselAddBtnShow();
       slideEl.dataset.url = url;
       slideEl.style.backgroundImage = "url('" + url + "')";
       carouselSaveAll();
@@ -1451,8 +1454,8 @@ window.carouselPickImage = function(slideEl) {
   inp.click();
 };
 
-function _carouselAddBtnHide() { var b = document.getElementById('catCarouselAddBtn'); if (b) b.style.display = 'none'; }
-function _carouselAddBtnShow() { var b = document.getElementById('catCarouselAddBtn'); if (b) b.style.display = ''; }
+function _carouselAddBtnHide() { var c = document.getElementById('catCarousel'); if (c) c.classList.add('is-uploading'); }
+function _carouselAddBtnShow() { var c = document.getElementById('catCarousel'); if (c) c.classList.remove('is-uploading'); }
 
 // Add a new slide
 window.carouselAddSlide = function() {

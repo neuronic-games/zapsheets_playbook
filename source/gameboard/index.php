@@ -3173,7 +3173,7 @@ var APP_ROOT      = <?= json_encode($_appRoot) ?>;
 var ORIG_GAME_NAME = <?= json_encode($_name) ?>;
 var GAME_DATA = <?= json_encode([
     'status'         => $_status,
-    'header_image_url' => $_headerImageUrl ?: $_heroImg,
+    'header_image_url' => $_headerImageUrl,
     'cover_url'      => $_coverUrl,
     'image_url'      => $_imageUrl,
     'video_url'      => $_videoUrl,

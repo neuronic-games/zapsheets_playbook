@@ -246,7 +246,16 @@ if ($result !== null && !empty($result['ok'])) {
         }
         if (empty($galleryRows)) $galleryDelete = true; // gallery cleared — remove all ProductImage rows
     }
-    if ($componentsRaw !== '' || $reviewsRaw !== '' || $videosRaw !== '' || $faqsRaw !== '' || $artistsRaw !== '' || $buyUrlsRaw !== '' || $galleryUrlsRaw !== null) {
+    // If HeaderImage is also being set in the same save, include it in the
+    // gupdategametab.py payload so it's written atomically (avoids the
+    // append-then-read race condition with gpatchtabfields.py).
+    // Also inject HeaderImage into gupdategametab.py payload so it's written
+    // atomically with the gallery — avoids API eventual-consistency race.
+    $headerImageRows = [];
+    if ($headerImageRaw !== '') {
+        $headerImageRows[] = ['name' => 'HeaderImage', 'value' => $headerImage, 'extra' => ''];
+    }
+    if ($componentsRaw !== '' || $reviewsRaw !== '' || $videosRaw !== '' || $faqsRaw !== '' || $artistsRaw !== '' || $buyUrlsRaw !== '' || $galleryUrlsRaw !== null || $headerImageRows) {
         $tabContent = [
             'game'         => $tabGameName,
             'components'   => $componentsRaw  ? (json_decode($componentsRaw,  true) ?: []) : [],
@@ -255,7 +264,7 @@ if ($result !== null && !empty($result['ok'])) {
             'faqs'         => $faqsRaw        ? (json_decode($faqsRaw,        true) ?: []) : [],
             'artists'      => $artistsRaw     ? (json_decode($artistsRaw,     true) ?: []) : [],
             'buy_urls'     => $buyUrlsRaw     ? (json_decode($buyUrlsRaw,     true) ?: []) : [],
-            'rows'         => $galleryRows,
+            'rows'         => array_merge($headerImageRows, $galleryRows),
             'delete_names' => $galleryDelete ? ['ProductImage'] : [],
         ];
         $tabContentEncoded = base64_encode(json_encode($tabContent, JSON_UNESCAPED_UNICODE));

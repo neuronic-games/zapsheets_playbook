@@ -148,7 +148,7 @@ if ($result !== null && !empty($result['ok'])) {
         // Patch fields in the [GameName] tab — runs for both new and existing tabs.
         $patchFields = [];
         if ($description !== '') $patchFields['Description']   = $description;
-        if ($coverRaw    !== '') $patchFields['ProductImage']  = $cover;
+        if ($coverRaw    !== '') $patchFields['ProductImage']  = $coverRaw;
         if ($rules       !== '') $patchFields['Rules PDF Url'] = $rules;
         if ($sellsheet   !== '') $patchFields['Sellsheet URL'] = $sellsheet;
         if ($view        !== '') $patchFields['Page URL']      = $view;
@@ -227,7 +227,7 @@ if ($result !== null && !empty($result['ok'])) {
         foreach ($galleryUrlsParsed as $gUrl) {
             $gUrl = trim((string)$gUrl);
             if ($gUrl) {
-                $galleryRows[] = ['name' => 'ProductImage', 'value' => '=IMAGE("' . $gUrl . '")', 'extra' => ''];
+                $galleryRows[] = ['name' => 'ProductImage', 'value' => $gUrl, 'extra' => ''];
             }
         }
         if (empty($galleryRows)) $galleryDelete = true; // gallery cleared — remove all ProductImage rows

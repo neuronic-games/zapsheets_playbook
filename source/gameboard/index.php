@@ -1831,7 +1831,7 @@ function gbSubscribeSubmit(e) {
 .sync-log-line.skip  { color:#94a3b8; }
 .sync-log-line.error { color:#f87171; }
 .sync-log-line.info  { color:#60a5fa; }
-.sync-dialog-actions { display:flex; align-items:center; justify-content:flex-end; gap:.5rem; }
+.sync-dialog-actions { display:flex; align-items:center; justify-content:flex-end; gap:.5rem; position:sticky; bottom:0; background:#fff; padding-top:.5rem; margin-top:auto; }
 </style>
 
 <div class="gb-save-toast" id="gbSaveToast" style="position:fixed;bottom:1.5rem;right:1.5rem;padding:.55rem 1.1rem;border-radius:8px;font-size:.82rem;font-family:'DINBlack',sans-serif;color:#fff;box-shadow:0 3px 16px rgba(0,0,0,.22);display:none;z-index:9999;"></div>
@@ -2116,13 +2116,12 @@ body.gb-admin-mode .gb-gallery-thumb { cursor:grab; }
 .gb-gt-del { position:absolute; top:2px; right:2px; background:rgba(0,0,0,.6); color:#fff; border:none; border-radius:50%; width:18px; height:18px; font-size:.55rem; cursor:pointer; display:none; align-items:center; justify-content:center; z-index:2; line-height:1; }
 body.gb-admin-mode .gb-gt-del { display:flex; }
 /* "+" add thumb */
-.gb-gallery-thumb-add { width:100px; aspect-ratio:4/3; border-radius:7px; flex-shrink:0; cursor:pointer; border:2px dashed rgba(59,59,170,.25); background:linear-gradient(135deg,#f0f0fa,#e4e4f4); display:flex; align-items:center; justify-content:center; font-size:1.6rem; color:rgba(59,59,170,.35); transition:opacity .18s; opacity:0; pointer-events:none; }
+.gb-gallery-thumb-add { width:100px; aspect-ratio:4/3; border-radius:7px; flex-shrink:0; cursor:pointer; border:2px dashed rgba(59,59,170,.25); background:linear-gradient(135deg,#f0f0fa,#e4e4f4); position:relative; transition:opacity .18s; opacity:0; pointer-events:none; }
 body.gb-admin-mode .gb-gallery-thumb-add { opacity:1; pointer-events:auto; }
 .gb-gallery-thumb-add:hover { opacity:.7 !important; }
 .gb-gallery-thumb-add.gb-drag-over { opacity:1 !important; border-color:var(--accent); background:#e8eaf8; }
 .gb-gallery-thumb-add.gb-uploading { opacity:1 !important; border-color:var(--accent); pointer-events:none; }
-.gb-gallery-thumb-add.gb-uploading::after { content:''; display:block; width:22px; height:22px; border:3px solid rgba(59,59,170,.2); border-top-color:var(--accent); border-radius:50%; animation:gb-spin .7s linear infinite; }
-.gb-gallery-thumb-add.gb-uploading > * { display:none; }
+.gb-gallery-thumb-add.gb-uploading::after { content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:22px; height:22px; border:3px solid rgba(59,59,170,.2); border-top-color:var(--accent); border-radius:50%; animation:gb-spin .7s linear infinite; }
 @keyframes gb-spin { to { transform:rotate(360deg); } }
 
 /* ── Video ── */
@@ -2760,7 +2759,7 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
              onclick="gbPickGalleryImage()" title="Click or drop image here"
              ondragover="event.preventDefault();this.classList.add('gb-drag-over')"
              ondragleave="this.classList.remove('gb-drag-over')"
-             ondrop="event.preventDefault();this.classList.remove('gb-drag-over');gbGalleryDropImage(event)">+</div>
+             ondrop="event.preventDefault();this.classList.remove('gb-drag-over');gbGalleryDropImage(event)"></div>
       </div>
     </div>
   </div>
@@ -4962,7 +4961,7 @@ function gbSubscribeSubmit(e) {
 .sync-log-line.skip  { color:#94a3b8; }
 .sync-log-line.error { color:#f87171; }
 .sync-log-line.info  { color:#60a5fa; }
-.sync-dialog-actions { display:flex; align-items:center; justify-content:flex-end; gap:.5rem; }
+.sync-dialog-actions { display:flex; align-items:center; justify-content:flex-end; gap:.5rem; position:sticky; bottom:0; background:#fff; padding-top:.5rem; margin-top:auto; }
 </style>
 
 </body>

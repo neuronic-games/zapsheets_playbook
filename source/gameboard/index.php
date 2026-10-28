@@ -120,6 +120,13 @@ function _gb_img(string $raw): string {
     return $raw;
 }
 
+// Strip markdown hyperlink [text](url) → url, or =IMAGE("url") → url
+function _gb_link(string $raw): string {
+    $raw = trim($raw);
+    if (preg_match('/^\[.*?\]\((.+?)\)$/', $raw, $m)) return trim($m[1]);
+    return $raw;
+}
+
 function h(string $s): string {
     return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
@@ -1858,14 +1865,14 @@ $_count       = trim($_game['Count']    ?? '');  // may be overridden by tab row
 $_duration    = trim($_game['Duration'] ?? '');  // may be overridden by tab rows below
 $_availability= trim($_game['Availability'] ?? '');
 $_status      = trim($_game['Status']         ?? '');
-$_coverUrl    = _gb_img(trim($_game['Cover URL']    ?? $_game['Image'] ?? ''));
-$_imageUrl    = _gb_img(trim($_game['Image URL']    ?? $_game['Image'] ?? ''));
-$_videoUrl    = trim($_game['Video URL'] ?? $_game['Video'] ?? '');
-$_pageUrl     = trim($_game['Page URL']       ?? '');
-$_sellsheet   = trim($_game['Sellsheet URL']  ?? '');
-$_playUrl     = trim($_game['Play URL']       ?? '');
-$_printUrl    = trim($_game['Print URL']      ?? '');
-$_rulesUrl    = trim($_game['Rules URL']      ?? '');
+$_coverUrl    = _gb_img(_gb_link(trim($_game['Cover URL']    ?? $_game['Image'] ?? '')));
+$_imageUrl    = _gb_img(_gb_link(trim($_game['Image URL']    ?? $_game['Image'] ?? '')));
+$_videoUrl    = _gb_link(trim($_game['Video URL'] ?? $_game['Video'] ?? ''));
+$_pageUrl     = _gb_link(trim($_game['Page URL']       ?? ''));
+$_sellsheet   = _gb_link(trim($_game['Sellsheet URL']  ?? ''));
+$_playUrl     = _gb_link(trim($_game['Play URL']       ?? ''));
+$_printUrl    = _gb_link(trim($_game['Print URL']      ?? ''));
+$_rulesUrl    = _gb_link(trim($_game['Rules URL']      ?? ''));
 $_pbSheetId   = trim($_game['Playbook Sheet ID'] ?? '');
 $_dateSigned  = trim($_game['Date Signed']    ?? '');
 $_datePub     = trim($_game['Date Published'] ?? '');
@@ -1918,9 +1925,9 @@ $_buyUrls     = _gb_rows($_rich, 'BuyUrl');
 $_videoReviews = array_values(array_filter(_gb_rows($_rich, 'Video'), fn($r) => trim($r['Value'] ?? '') !== ''));
 $_mediaImgs      = array_merge(_gb_rows($_rich, 'Media'), _gb_rows($_rich, 'ProductImage'));
 $_productImgUrls = array_values(array_filter(array_map(fn($r) => _gb_img(trim($r['Value'] ?? '')), _gb_rows($_rich, 'ProductImage')), fn($u) => $u !== ''));
-$_headerImageUrl = _gb_img(_gb_val($_rich, 'HeaderImage'));
+$_headerImageUrl = _gb_img(_gb_link(_gb_val($_rich, 'HeaderImage')));
 $_richPrice   = _gb_val($_rich, 'Price');
-$_richRules   = _gb_val($_rich, 'Rules PDF Url') ?: $_rulesUrl;
+$_richRules   = _gb_link(_gb_val($_rich, 'Rules PDF Url')) ?: $_rulesUrl;
 
 // ── Stats from [GameName] tab rows ───────────────────────────────────────────
 $_minPlayers  = _gb_val($_rich, 'MinPlayers');
@@ -3152,7 +3159,6 @@ _gb_footer(['gameCredit' => $_gameCredit]);
           </div>
         </div>
       </div>
-    </div>
     </div>
     <div class="gbed-footer">
       <button class="btn-adm btn-adm-secondary" style="color:var(--ink-lt);border-color:var(--border)" onclick="closeEditDetails()">Cancel</button>

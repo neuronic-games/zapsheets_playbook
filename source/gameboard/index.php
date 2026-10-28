@@ -3247,6 +3247,9 @@ var _siPendingEmail = '', _siPendingPass = '';
         _ed.price = val;
         this.classList.toggle('gb-price-ph', !val);
       };
+      priceEl.onkeydown = function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+      };
       priceEl.onfocus = function() { this.classList.remove('gb-price-ph'); };
       priceEl.onblur  = function() { if (!this.textContent.trim()) this.classList.add('gb-price-ph'); };
     }
@@ -4696,6 +4699,7 @@ function gbInitReviewTicker() {
   function makeItem(r, idx) {
     var item = document.createElement('div');
     item.className = 'gb-ticker-item gb-ticker-item-edit';
+    item.dataset.reviewIdx = String(idx);
     var q = document.createElement('div');
     q.className = 'gb-ticker-quote';
     q.textContent = '"' + r.attr + '"';
@@ -4704,20 +4708,17 @@ function gbInitReviewTicker() {
     a.textContent = r.quote ? '— ' + r.quote : '';
     item.appendChild(q);
     item.appendChild(a);
-    (function(i, el) {
-      item.onclick = function(e) { e.stopPropagation(); gbTickerEditOpen(i, el); };
-    })(idx, item);
     return item;
   }
 
   // Placeholder "+" card
   var ph = document.createElement('div');
   ph.className = 'gb-ticker-item gb-ticker-item-edit gb-ticker-item-ph';
+  ph.dataset.reviewIdx = '-1';
   var phQ = document.createElement('div');
   phQ.className = 'gb-ticker-quote';
   phQ.textContent = '+ Add review';
   ph.appendChild(phQ);
-  ph.onclick = function(e) { e.stopPropagation(); gbTickerEditOpen(-1, ph); };
 
   // Build first pass
   reviews.forEach(function(r, idx) {
@@ -4727,9 +4728,22 @@ function gbInitReviewTicker() {
   track.appendChild(ph);
   track.appendChild(makeDot());
 
-  // Clone first pass for seamless loop (no event handlers on clones)
+  // Clone first pass for seamless loop — clones inherit data attributes, no handler needed
   var originals = Array.prototype.slice.call(track.childNodes);
   originals.forEach(function(node) { track.appendChild(node.cloneNode(true)); });
+
+  // Event delegation on track — works for both originals and clones
+  track.onclick = function(e) {
+    e.stopPropagation();
+    var item = e.target.closest('[data-review-idx]');
+    if (!item) return;
+    // Ignore clicks on the already-open editing card
+    if (item.classList.contains('gb-ticker-item-editing')) return;
+    var idx = parseInt(item.dataset.reviewIdx, 10);
+    // Always open the first (original) card with that index so edits are in place
+    var origItem = track.querySelector('[data-review-idx="' + idx + '"]:not(.gb-ticker-item-editing)');
+    gbTickerEditOpen(idx, origItem || item);
+  };
 
   // Hover pause
   if (wrap) {

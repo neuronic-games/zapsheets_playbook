@@ -167,7 +167,7 @@ if ($result !== null && !empty($result['ok'])) {
         if ($minPlaytime !== '') $patchFields['MinPlaytime']   = $minPlaytime;
         if ($maxPlaytime !== '') $patchFields['MaxPlaytime']   = $maxPlaytime;
         if ($weight      !== '') $patchFields['Weight']        = $weight;
-        if ($price       !== null) $patchFields['Price']        = $price;
+        // Price goes through gupdategametab atomically (see $extraRows below)
         if ($patchFields) {
             $patchData    = ['game' => $tabGameName, 'fields' => $patchFields];
             $patchEncoded = base64_encode(json_encode($patchData, JSON_UNESCAPED_UNICODE));
@@ -246,26 +246,90 @@ if ($result !== null && !empty($result['ok'])) {
         }
         if (empty($galleryRows)) $galleryDelete = true; // gallery cleared — remove all ProductImage rows
     }
-    // If HeaderImage is also being set in the same save, include it in the
-    // gupdategametab.py payload so it's written atomically (avoids the
-    // append-then-read race condition with gpatchtabfields.py).
-    // Also inject HeaderImage into gupdategametab.py payload so it's written
-    // atomically with the gallery — avoids API eventual-consistency race.
-    $headerImageRows = [];
+    // Convert artists/buy_urls/components/reviews/videos/faqs to rows format
+    // (gupdategametab.py only reads 'rows' and 'delete_names').
+    $extraRows    = [];
+    $deleteNames  = $galleryDelete ? ['ProductImage'] : [];
+
+    // HeaderImage — write atomically to avoid API eventual-consistency race
     if ($headerImageRaw !== '') {
-        $headerImageRows[] = ['name' => 'HeaderImage', 'value' => $headerImage, 'extra' => ''];
+        $extraRows[] = ['name' => 'HeaderImage', 'value' => $headerImage, 'extra' => ''];
     }
-    if ($componentsRaw !== '' || $reviewsRaw !== '' || $videosRaw !== '' || $faqsRaw !== '' || $artistsRaw !== '' || $buyUrlsRaw !== '' || $galleryUrlsRaw !== null || $headerImageRows) {
+
+    // Price — write atomically alongside other rows to avoid eventual-consistency races
+    if ($price !== null) {
+        $extraRows[] = ['name' => 'Price', 'value' => $price, 'extra' => ''];
+    }
+
+    // Artists
+    if ($artistsRaw !== '') {
+        $artistsParsed = json_decode($artistsRaw, true) ?: [];
+        foreach ($artistsParsed as $a) {
+            $a = trim((string)$a);
+            if ($a) $extraRows[] = ['name' => 'Artist', 'value' => $a, 'extra' => ''];
+        }
+        if (empty($artistsParsed)) $deleteNames[] = 'Artist';
+    }
+
+    // BuyUrls
+    if ($buyUrlsRaw !== '') {
+        $buyUrlsParsed = json_decode($buyUrlsRaw, true) ?: [];
+        foreach ($buyUrlsParsed as $b) {
+            $bUrl   = trim((string)($b['url']   ?? ''));
+            $bLabel = trim((string)($b['label'] ?? ''));
+            if ($bUrl) $extraRows[] = ['name' => 'BuyUrl', 'value' => $bUrl, 'extra' => $bLabel];
+        }
+        if (empty($buyUrlsParsed)) $deleteNames[] = 'BuyUrl';
+    }
+
+    // Components
+    if ($componentsRaw !== '') {
+        $componentsParsed = json_decode($componentsRaw, true) ?: [];
+        foreach ($componentsParsed as $c) {
+            $c = trim((string)$c);
+            if ($c !== '') $extraRows[] = ['name' => 'Component', 'value' => $c, 'extra' => ''];
+        }
+        if (empty($componentsParsed)) $deleteNames[] = 'Component';
+    }
+
+    // Reviews
+    if ($reviewsRaw !== '') {
+        $reviewsParsed = json_decode($reviewsRaw, true) ?: [];
+        foreach ($reviewsParsed as $rv) {
+            $rvAttr  = trim((string)($rv['attr']  ?? ''));
+            $rvQuote = trim((string)($rv['quote'] ?? ''));
+            if ($rvAttr !== '') $extraRows[] = ['name' => 'Review', 'value' => $rvAttr, 'extra' => $rvQuote];
+        }
+        if (empty($reviewsParsed)) $deleteNames[] = 'Review';
+    }
+
+    // Videos
+    if ($videosRaw !== '') {
+        $videosParsed = json_decode($videosRaw, true) ?: [];
+        foreach ($videosParsed as $vd) {
+            $vdUrl  = trim((string)($vd['url']  ?? ''));
+            $vdName = trim((string)($vd['name'] ?? ''));
+            if ($vdUrl !== '') $extraRows[] = ['name' => 'Video', 'value' => $vdUrl, 'extra' => $vdName];
+        }
+        if (empty($videosParsed)) $deleteNames[] = 'Video';
+    }
+
+    // FAQs
+    if ($faqsRaw !== '') {
+        $faqsParsed = json_decode($faqsRaw, true) ?: [];
+        foreach ($faqsParsed as $fq) {
+            $fqQ = trim((string)($fq['q'] ?? ''));
+            $fqA = trim((string)($fq['a'] ?? ''));
+            if ($fqQ !== '') $extraRows[] = ['name' => 'FAQ', 'value' => $fqQ, 'extra' => $fqA];
+        }
+        if (empty($faqsParsed)) $deleteNames[] = 'FAQ';
+    }
+
+    if ($price !== null || $componentsRaw !== '' || $reviewsRaw !== '' || $videosRaw !== '' || $faqsRaw !== '' || $artistsRaw !== '' || $buyUrlsRaw !== '' || $galleryUrlsRaw !== null || $extraRows) {
         $tabContent = [
             'game'         => $tabGameName,
-            'components'   => $componentsRaw  ? (json_decode($componentsRaw,  true) ?: []) : [],
-            'reviews'      => $reviewsRaw     ? (json_decode($reviewsRaw,     true) ?: []) : [],
-            'videos'       => $videosRaw      ? (json_decode($videosRaw,      true) ?: []) : [],
-            'faqs'         => $faqsRaw        ? (json_decode($faqsRaw,        true) ?: []) : [],
-            'artists'      => $artistsRaw     ? (json_decode($artistsRaw,     true) ?: []) : [],
-            'buy_urls'     => $buyUrlsRaw     ? (json_decode($buyUrlsRaw,     true) ?: []) : [],
-            'rows'         => array_merge($headerImageRows, $galleryRows),
-            'delete_names' => $galleryDelete ? ['ProductImage'] : [],
+            'rows'         => array_merge($extraRows, $galleryRows),
+            'delete_names' => $deleteNames,
         ];
         $tabContentEncoded = base64_encode(json_encode($tabContent, JSON_UNESCAPED_UNICODE));
         $tabContentCmd = escapeshellarg($pythonPath) . ' '

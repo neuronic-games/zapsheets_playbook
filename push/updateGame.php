@@ -121,7 +121,7 @@ if ($result !== null && !empty($result['ok'])) {
                     if ($name        !== '') $_g['Name']           = $name;
                     if ($tagline     !== '') $_g['Tagline']        = $tagline;
                     if ($status      !== '') $_g['Status']         = $status;
-                    if ($coverRaw    !== '') $_g['Cover URL']      = $coverRaw;
+                    if ($coverRaw    !== '') $_g['Cover URL']      = $cover;
                     if ($imageRaw    !== '') {
                         if (array_key_exists('Image URL', $_g)) $_g['Image URL'] = $imageRaw;
                         else $_g['Image'] = $imageRaw;
@@ -148,7 +148,7 @@ if ($result !== null && !empty($result['ok'])) {
         // Patch fields in the [GameName] tab — runs for both new and existing tabs.
         $patchFields = [];
         if ($description !== '') $patchFields['Description']   = $description;
-        if ($coverRaw    !== '') $patchFields['ProductImage']  = $coverRaw;
+        if ($coverRaw    !== '') $patchFields['ProductImage']  = $cover;
         if ($rules       !== '') $patchFields['Rules PDF Url'] = $rules;
         if ($sellsheet   !== '') $patchFields['Sellsheet URL'] = $sellsheet;
         if ($view        !== '') $patchFields['Page URL']      = $view;

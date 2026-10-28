@@ -4159,9 +4159,15 @@ function gbPickImage(callback) {
 function gbHandleFileInput(e) {
   var file = e.target.files[0];
   if (!file || !_gbFileCallback) return;
-  // If the pending callback is gbSetCover, pass the hero as the loading zone
-  var zone = (_gbFileCallback === gbSetCover) ? document.getElementById('gbHero') : null;
-  if (zone) zone.classList.add('gb-cover-loading');
+  // Determine loading zone: hero for cover, gallery add-btn if already in uploading state
+  var zone = null;
+  if (_gbFileCallback === gbSetCover) {
+    zone = document.getElementById('gbHero');
+    zone.classList.add('gb-cover-loading');
+  } else {
+    var addBtn = document.getElementById('gbGalleryAddBtn');
+    if (addBtn && addBtn.classList.contains('gb-uploading')) zone = addBtn;
+  }
   gbUploadImage(file, _gbFileCallback, zone);
   _gbFileCallback = null;
 }
@@ -4292,13 +4298,19 @@ function gbGalleryAutoAdvance() {
 }
 
 function gbPickGalleryImage() {
-  gbPickImage(function(url) {
+  var addBtn = document.getElementById('gbGalleryAddBtn');
+  _gbFileCallback = function(url) {
+    if (addBtn) addBtn.classList.remove('gb-uploading');
     if (!_ed.gallery) _ed.gallery = [];
     _ed.gallery.push(url);
     _gbGalleryIdx = _ed.gallery.length - 1;
     gbRenderGallery();
     gbShowUploadToast('Image added — click Save Changes');
-  });
+  };
+  if (addBtn) addBtn.classList.add('gb-uploading');
+  var inp = document.getElementById('gbFileInput');
+  inp.value = '';
+  inp.click();
 }
 
 function gbGalleryDropImage(e) {

@@ -2086,14 +2086,12 @@ a { color:inherit; text-decoration:none; }
 .gb-stat strong { font-family:'DINBlack',sans-serif; color:#fff; margin-right:.25rem; }
 .gb-hero-ctas { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.75rem; }
 .gb-price-tag {
-  display:inline-flex; align-items:center;
-  height:2.75rem; box-sizing:border-box; /* total height = 2.75rem, same as .btn-buy */
-  padding:0 .85rem;
+  display:inline-block; vertical-align:middle;
+  padding:.55rem .85rem; /* total height: 2px+2px border + 1.1rem + 1.4rem(font) = 44px = 2.75rem */
   border:2px solid rgba(255,255,255,.35); border-radius:6px;
   font-family:'DINBlack',sans-serif; font-size:1.4rem; color:#fff;
   letter-spacing:-.01em; line-height:1;
 }
-#gbEditPrice { display:block; line-height:1; }
 
 /* ── Main ── */
 .gb-main { max-width:940px; margin:0 auto; padding:3rem 1.25rem 5rem; }

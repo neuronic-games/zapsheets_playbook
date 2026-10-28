@@ -2501,6 +2501,9 @@ body.gb-admin-mode .gb-hero.no-cover .gb-cover-btn { display: flex; }
 body.gb-admin-mode .gb-hero:not(.no-cover) .gb-cover-btn { display: none; }
 body.gb-admin-mode .gb-hero:not(.no-cover):hover .gb-cover-btn,
 body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
+/* Hero image upload spinner */
+.gb-hero.gb-cover-loading::after { content:''; position:absolute; top:50%; left:50%; width:44px; height:44px; margin:-22px 0 0 -22px; border:4px solid rgba(255,255,255,.25); border-top-color:#fff; border-radius:50%; animation:gb-spin .7s linear infinite; z-index:20; pointer-events:none; }
+.gb-hero.gb-cover-loading .gb-hero-bg { filter:brightness(.45); transition:filter .2s; }
 /* Gallery upload zones */
 .gb-upload-zone {
   position: relative; cursor: pointer; transition: background .13s, border-color .13s, opacity .13s;
@@ -4156,7 +4159,10 @@ function gbPickImage(callback) {
 function gbHandleFileInput(e) {
   var file = e.target.files[0];
   if (!file || !_gbFileCallback) return;
-  gbUploadImage(file, _gbFileCallback);
+  // If the pending callback is gbSetCover, pass the hero as the loading zone
+  var zone = (_gbFileCallback === gbSetCover) ? document.getElementById('gbHero') : null;
+  if (zone) zone.classList.add('gb-cover-loading');
+  gbUploadImage(file, _gbFileCallback, zone);
   _gbFileCallback = null;
 }
 
@@ -4168,7 +4174,7 @@ function gbUploadImage(file, callback, zoneEl) {
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_ROOT + 'push/uploadImage.php');
   xhr.onload = function() {
-    if (zoneEl) zoneEl.classList.remove('gb-uploading');
+    if (zoneEl) { zoneEl.classList.remove('gb-uploading'); zoneEl.classList.remove('gb-cover-loading'); }
     var r;
     try { r = JSON.parse(xhr.responseText); } catch(e) { r = {error: 'parse error'}; }
     if (r && r.ok && r.url) {
@@ -4178,7 +4184,7 @@ function gbUploadImage(file, callback, zoneEl) {
     }
   };
   xhr.onerror = function() {
-    if (zoneEl) zoneEl.classList.remove('gb-uploading');
+    if (zoneEl) { zoneEl.classList.remove('gb-uploading'); zoneEl.classList.remove('gb-cover-loading'); }
     alert('Image upload failed: network error');
   };
   xhr.send(fd);
@@ -4189,9 +4195,10 @@ function gbSetCover(url) {
   _ed.cover_url = url;
   var hero = document.getElementById('gbHero');
   var bg   = document.getElementById('gbHeroBg');
+  if (hero) hero.classList.remove('gb-cover-loading');
   if (bg)   bg.style.backgroundImage = 'url(' + url + ')';
   if (hero) hero.classList.remove('no-cover');
-  gbShowUploadToast('Cover image ready');
+  gbShowUploadToast('Cover image ready — click Save Changes');
 }
 
 // ── Gallery ───────────────────────────────────────────────────────────────────
@@ -4332,7 +4339,10 @@ function gbShowUploadToast(msg) {
     e.preventDefault();
     hero.classList.remove('gb-drag-over');
     var file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) gbUploadImage(file, gbSetCover);
+    if (file && file.type.startsWith('image/')) {
+      hero.classList.add('gb-cover-loading');
+      gbUploadImage(file, gbSetCover, hero);
+    }
   });
 })();
 
@@ -4437,20 +4447,14 @@ function saveGame() {
       alert('Save failed: unexpected response\n' + JSON.stringify(r));
       return;
     }
-    // Success — show toast, force-refresh JSON cache, then redirect
+    // Success — cache was already refreshed inside updateGame.php; redirect directly
     saveBtn.textContent = '✓ Saved!';
     var toast = document.getElementById('gbSaveToast');
     if (toast) { toast.textContent = '✓ Saved — refreshing…'; toast.classList.add('visible'); }
     var newName = titleEl ? titleEl.textContent.trim() : ORIG_GAME_NAME;
     var newSlug = newName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     var destUrl = APP_ROOT + SHEET_ID + '/gameboard/' + newSlug;
-    // Force-refresh the games.json cache before redirecting so the page shows fresh data
-    var rfFd = new FormData(); rfFd.append('id', SHEET_ID);
-    var rfXhr = new XMLHttpRequest();
-    rfXhr.open('POST', APP_ROOT + 'push/setupGameboard.php');
-    rfXhr.onload  = function() { location.href = destUrl; };
-    rfXhr.onerror = function() { location.href = destUrl; };
-    rfXhr.send(rfFd);
+    setTimeout(function() { location.href = destUrl; }, 400);
   };
   xhr.onerror = function() {
     saveBtn.disabled = false;

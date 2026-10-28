@@ -2086,12 +2086,14 @@ a { color:inherit; text-decoration:none; }
 .gb-stat strong { font-family:'DINBlack',sans-serif; color:#fff; margin-right:.25rem; }
 .gb-hero-ctas { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.75rem; }
 .gb-price-tag {
-  display:inline-block;
+  display:inline-flex; align-items:center;
+  height:2.75rem; box-sizing:border-box; /* total height = 2.75rem, same as .btn-buy */
+  padding:0 .85rem;
+  border:2px solid rgba(255,255,255,.35); border-radius:6px;
   font-family:'DINBlack',sans-serif; font-size:1.4rem; color:#fff;
   letter-spacing:-.01em; line-height:1;
-  padding:.55rem .85rem; /* .55rem × 2 + 1.4rem text + 4px border = 2.75rem, matches buy button */
-  border:2px solid rgba(255,255,255,.35); border-radius:6px;
 }
+#gbEditPrice { display:block; line-height:1; }
 
 /* ── Main ── */
 .gb-main { max-width:940px; margin:0 auto; padding:3rem 1.25rem 5rem; }
@@ -2278,6 +2280,13 @@ body.gb-admin-mode .gb-vrev-grid { display:grid; }
 .gb-vrev-editing .gb-vrev-inline-btns { display:flex; gap:.4rem; margin-top:.1rem; }
 .gb-vrev-editing .gb-vrev-btn-save { padding:.32rem .7rem; border-radius:5px; border:none; background:#4ade80; color:#0f172a; font-size:.72rem; font-weight:700; cursor:pointer; }
 .gb-vrev-editing .gb-vrev-btn-cancel { padding:.32rem .7rem; border-radius:5px; border:none; background:#e2e8f0; color:#334155; font-size:.72rem; font-weight:700; cursor:pointer; }
+
+/* ── Edit Details: image row upload button ── */
+.gbed-img-row { display:flex; gap:.4rem; align-items:center; }
+.gbed-img-row .gbed-field { flex:1; min-width:0; }
+.gbed-upload-btn { flex-shrink:0; padding:.3rem .5rem; border:1px solid var(--border); border-radius:5px; background:#f8f9fa; cursor:pointer; font-size:.9rem; line-height:1; transition:background .13s; }
+.gbed-upload-btn:hover { background:#e8eaed; }
+.gbed-upload-btn.gbed-uploading { opacity:.5; cursor:wait; }
 
 /* ── Price tag: in-place editing (admin) ── */
 .gb-cta-ph { opacity:.45; font-style:italic; }
@@ -2642,8 +2651,9 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
 <!-- Legacy admin bar slot (kept for JS compat, hidden) -->
 <div class="gb-admin-bar" id="gbAdminBarLegacy" style="display:none"></div>
 
-<!-- ── Hidden file input for image uploads ── -->
+<!-- ── Hidden file inputs for image uploads ── -->
 <input type="file" id="gbFileInput" accept="image/*" style="display:none" onchange="gbHandleFileInput(event)">
+<input type="file" id="gbedFileInput" accept="image/*" style="display:none" onchange="gbedHandleFileInput(event)">
 
 <!-- ── Hero ── -->
 <div class="gb-hero<?= $_heroImg ? '' : ' no-cover' ?>" id="gbHero">
@@ -3134,15 +3144,24 @@ _gb_footer(['gameCredit' => $_gameCredit]);
         <div class="gbed-section-title">Images &amp; Media</div>
         <div class="gbed-field-group">
           <label class="gbed-label">Header Image URL (hero banner — overrides ProductImage)</label>
-          <input class="gbed-field" id="gbedHeaderImageUrl" type="url" placeholder="https://…" />
+          <div class="gbed-img-row">
+            <input class="gbed-field" id="gbedHeaderImageUrl" type="url" placeholder="https://…" />
+            <button type="button" class="gbed-upload-btn" onclick="gbedPickImage('gbedHeaderImageUrl')" title="Upload image">📷</button>
+          </div>
         </div>
         <div class="gbed-field-group">
           <label class="gbed-label">Cover URL (background image)</label>
-          <input class="gbed-field" id="gbedCoverUrl" type="url" placeholder="https://…" />
+          <div class="gbed-img-row">
+            <input class="gbed-field" id="gbedCoverUrl" type="url" placeholder="https://…" />
+            <button type="button" class="gbed-upload-btn" onclick="gbedPickImage('gbedCoverUrl')" title="Upload image">📷</button>
+          </div>
         </div>
         <div class="gbed-field-group">
           <label class="gbed-label">Image URL (product photo)</label>
-          <input class="gbed-field" id="gbedImageUrl" type="url" placeholder="https://…" />
+          <div class="gbed-img-row">
+            <input class="gbed-field" id="gbedImageUrl" type="url" placeholder="https://…" />
+            <button type="button" class="gbed-upload-btn" onclick="gbedPickImage('gbedImageUrl')" title="Upload image">📷</button>
+          </div>
         </div>
         <div class="gbed-field-group">
           <label class="gbed-label">Video URL (YouTube)</label>
@@ -4255,6 +4274,36 @@ function gbUploadImage(file, callback, zoneEl) {
     alert('Image upload failed: network error');
   };
   xhr.send(fd);
+}
+
+// ── Edit Details image pick (fills URL input; uses its own file input to avoid gallery conflicts) ─
+var _gbedPickTarget = null;
+function gbedPickImage(inputId) {
+  _gbedPickTarget = inputId;
+  var inp = document.getElementById('gbedFileInput');
+  inp.value = '';
+  inp.click();
+}
+function gbedHandleFileInput(e) {
+  var file = e.target.files[0];
+  if (!file || !_gbedPickTarget) return;
+  var inputId = _gbedPickTarget;
+  _gbedPickTarget = null;
+  var btn = document.querySelector('[onclick="gbedPickImage(\'' + inputId + '\')"]');
+  if (btn) btn.classList.add('gbed-uploading');
+  gbUploadImage(file, function(url) {
+    if (btn) btn.classList.remove('gbed-uploading');
+    var inp = document.getElementById(inputId);
+    if (inp) inp.value = url;
+    // Also update the hero preview if this is the header image
+    if (inputId === 'gbedHeaderImageUrl') {
+      _ed.header_image_url = url;
+      var bg = document.getElementById('gbHeroBg');
+      if (bg) bg.style.backgroundImage = 'url(' + url + ')';
+      var hero = document.getElementById('gbHero');
+      if (hero) hero.classList.remove('no-cover');
+    }
+  }, null);
 }
 
 // ── Hero image (HeaderImage in [{game}] tab) ──────────────────────────────────

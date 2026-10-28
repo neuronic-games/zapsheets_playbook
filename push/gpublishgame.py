@@ -15,7 +15,7 @@
 #                       or {"error": "..."}   for any other failure
 
 import gspread
-import sys, os, json, socket
+import sys, os, json, socket, urllib.parse
 
 # Prevent gspread/httplib2 from hanging indefinitely on slow API responses
 socket.setdefaulttimeout(30)
@@ -60,8 +60,41 @@ if ws is None:
     print(json.dumps({"error": "tab_not_found", "name": game_name}))
     sys.exit(1)
 
+def _get_all_values_formula(ws, sheet_id, sa):
+    """Fetch all cell values with FORMULA render so =IMAGE() cells return their
+    formula string rather than an empty formatted value.  Tries the gspread
+    keyword argument first (gspread ≥ 5); falls back to a direct Sheets API
+    v4 HTTP call that works on any version."""
+    try:
+        return ws.get_all_values(value_render_option='FORMULA')
+    except TypeError:
+        pass  # older gspread — fall through to raw HTTP
+
+    try:
+        from google.auth.transport.requests import Request as GRequest
+        import requests as _req
+        auth = sa.auth
+        if not auth.valid:
+            auth.refresh(GRequest())
+        api_url = (
+            'https://sheets.googleapis.com/v4/spreadsheets/'
+            + urllib.parse.quote(sheet_id, safe='')
+            + '/values/'
+            + urllib.parse.quote(ws.title, safe='')
+            + '?valueRenderOption=FORMULA'
+        )
+        resp = _req.get(api_url,
+                        headers={'Authorization': 'Bearer ' + auth.token},
+                        timeout=30)
+        resp.raise_for_status()
+        return resp.json().get('values', [])
+    except Exception:
+        pass  # fall back to plain read
+
+    return ws.get_all_values()
+
 try:
-    all_values = ws.get_all_values()
+    all_values = _get_all_values_formula(ws, sheet_id, sa)
 except Exception as e:
     print(json.dumps({"error": "get_all_values failed: " + str(e)}))
     sys.exit(1)

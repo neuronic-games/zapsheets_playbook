@@ -2086,10 +2086,11 @@ a { color:inherit; text-decoration:none; }
 .gb-stat strong { font-family:'DINBlack',sans-serif; color:#fff; margin-right:.25rem; }
 .gb-hero-ctas { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.75rem; }
 .gb-price-tag {
-  display:inline-flex; align-items:center;
+  display:inline-block; vertical-align:middle;
   font-family:'DINBlack',sans-serif; font-size:1.4rem; color:#fff;
-  letter-spacing:-.01em; line-height:1;
-  height:2.75rem; padding:0 .85rem;
+  letter-spacing:-.01em;
+  height:2.75rem; line-height:calc(2.75rem - 4px); /* 4px = 2×border; centers in content area */
+  padding:0 .85rem;
   border:2px solid rgba(255,255,255,.35); border-radius:6px;
 }
 
@@ -2281,7 +2282,7 @@ body.gb-admin-mode #gbBuyCtas { display:contents; }
 .gb-buy-cta-del { position:absolute; top:-5px; right:-5px; width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,.6); color:#fff; border:none; font-size:.55rem; line-height:16px; text-align:center; cursor:pointer; padding:0; display:none; z-index:2; }
 .gb-buy-cta-wrap:hover .gb-buy-cta-del { display:block; }
 /* Inline-editable button: label + link icon */
-.gb-buy-cta-inner { display:inline-flex; align-items:center; gap:.35rem; height:2.75rem; padding:0 .85rem; border:2px solid currentColor; border-radius:6px; font-family:'DINBlack',sans-serif; font-size:.72rem; font-weight:900; letter-spacing:.07em; text-transform:uppercase; cursor:default; white-space:nowrap; }
+.gb-buy-cta-inner { display:inline-flex; align-items:center; gap:.35rem; height:2.75rem; line-height:calc(2.75rem - 4px); padding:0 .85rem; border:2px solid currentColor; border-radius:6px; font-family:'DINBlack',sans-serif; font-size:.72rem; font-weight:900; letter-spacing:.07em; text-transform:uppercase; cursor:default; white-space:nowrap; }
 .gb-buy-cta-inner.filled { background:#fff; color:#1a3a5c; }
 .gb-buy-cta-ph .gb-buy-cta-inner { border-style:dashed; opacity:.6; }
 .gb-buy-cta-lbl { outline:none; min-width:2.5rem; cursor:text; }
@@ -2307,9 +2308,9 @@ body.gb-admin-mode #gbBuyCtas { display:contents; }
 /* ── Buy links ── */
 .gb-buy-links { display:flex; flex-wrap:wrap; gap:.6rem; }
 .btn-buy {
-  display:inline-flex; align-items:center;
+  display:inline-block;
   font-family:'DINBlack',sans-serif; font-size:.78rem; text-transform:uppercase;
-  letter-spacing:.07em; height:2.75rem; padding:0 1.2rem; border-radius:7px;
+  letter-spacing:.07em; height:2.75rem; line-height:2.75rem; padding:0 1.2rem; border-radius:7px;
   background:var(--accent); color:#fff; border:none; cursor:pointer;
   transition:background .13s;
 }

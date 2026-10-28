@@ -239,7 +239,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
 </nav>
 
 <section class="hero">
-  <div class="hero-tag">For board game publishers</div>
+  <div class="hero-tag">For board game makers</div>
   <h1>Your games. A <em>polished page</em> — instantly.</h1>
   <p>GameBoard turns your Google Sheet into a beautiful product catalog and individual game pages — no web developer, no monthly subscription.</p>
   <div class="hero-btns">
@@ -253,7 +253,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
   <span class="stage-arrow">→</span>
   <span class="stage-pill stage-brand">Brand it</span>
   <span class="stage-arrow">→</span>
-  <span class="stage-pill stage-catalog">Publish catalog</span>
+  <span class="stage-pill stage-catalog">Game catalog</span>
   <span class="stage-arrow">→</span>
   <span class="stage-pill stage-share">Share</span>
 </div>

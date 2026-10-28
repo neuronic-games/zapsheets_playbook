@@ -2086,14 +2086,11 @@ a { color:inherit; text-decoration:none; }
 .gb-stat strong { font-family:'DINBlack',sans-serif; color:#fff; margin-right:.25rem; }
 .gb-hero-ctas { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.75rem; }
 .gb-price-tag {
-  display:inline-flex; align-items:center;
-  color:#fff; font-size:0; /* font-size:0 prevents the outer element from contributing to line-height baseline */
-  height:2.75rem; padding:0 .85rem;
+  display:inline-block;
+  font-family:'DINBlack',sans-serif; font-size:1.4rem; color:#fff;
+  letter-spacing:-.01em; line-height:1;
+  padding:.55rem .85rem; /* .55rem × 2 + 1.4rem text + 4px border = 2.75rem, matches buy button */
   border:2px solid rgba(255,255,255,.35); border-radius:6px;
-}
-.gb-price-tag > span {
-  font-family:'DINBlack',sans-serif; font-size:1.4rem; letter-spacing:-.01em; line-height:1;
-  transform:translateY(.06em); /* optical correction: DINBlack cap-height sits above em-box center */
 }
 
 /* ── Main ── */

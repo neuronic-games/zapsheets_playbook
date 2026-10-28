@@ -301,9 +301,9 @@ body.gb-admin-mode .gb-banner-name-editable:focus { border-bottom-color:#fff; op
 .cat-slide-dot.active { background:#fff; transform:scale(1.2); }
 /* Carousel admin controls */
 .cat-slide-edit-btn,.cat-slide-del-btn { position:absolute; display:none; align-items:center; justify-content:center; border:none; cursor:pointer; z-index:15; transition:background .14s; }
-.cat-slide-edit-btn { bottom:.75rem; right:.75rem; width:2rem; height:2rem; border-radius:50%; background:rgba(0,0,0,.55); color:#fff; }
+.cat-slide-edit-btn { top:.5rem; right:.5rem; width:2rem; height:2rem; border-radius:50%; background:rgba(0,0,0,.55); color:#fff; }
 .cat-slide-edit-btn svg { pointer-events:none; }
-.cat-slide-del-btn { top:.5rem; right:.5rem; width:1.6rem; height:1.6rem; border-radius:50%; background:rgba(200,50,50,.75); color:#fff; font-size:1rem; line-height:1; }
+.cat-slide-del-btn { bottom:.75rem; right:.75rem; width:1.6rem; height:1.6rem; border-radius:50%; background:rgba(200,50,50,.75); color:#fff; font-size:1rem; line-height:1; }
 .cat-slide-del-btn:hover { background:rgba(200,50,50,1); }
 body.gb-admin-mode .cat-slide-edit-btn,
 body.gb-admin-mode .cat-slide-del-btn { display:flex; }

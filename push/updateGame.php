@@ -231,7 +231,8 @@ if ($result !== null && !empty($result['ok'])) {
     $videosRaw      = trim($_POST['videos']       ?? '');
     $faqsRaw        = trim($_POST['faqs']         ?? '');
     $artistsRaw     = trim($_POST['artists']      ?? '');
-    $buyUrlsRaw     = trim($_POST['buy_urls']     ?? '');
+    $buyUrlsRaw          = trim($_POST['buy_urls']          ?? '');
+    $resourceLinksRaw    = trim($_POST['resource_links']    ?? '');
     $galleryUrlsRaw = isset($_POST['gallery_urls']) ? trim($_POST['gallery_urls']) : null;
     // Convert gallery_urls to ProductImage rows for gupdategametab.py
     $galleryRows    = [];
@@ -284,6 +285,17 @@ if ($result !== null && !empty($result['ok'])) {
         if (empty($buyUrlsParsed)) $deleteNames[] = 'BuyUrl';
     }
 
+    // ResourceLinks
+    if ($resourceLinksRaw !== '') {
+        $resourceLinksParsed = json_decode($resourceLinksRaw, true) ?: [];
+        foreach ($resourceLinksParsed as $rl) {
+            $rlUrl   = trim((string)($rl['url']   ?? ''));
+            $rlLabel = trim((string)($rl['label'] ?? ''));
+            if ($rlUrl) $extraRows[] = ['name' => 'ResourceLink', 'value' => $rlUrl, 'extra' => $rlLabel];
+        }
+        if (empty($resourceLinksParsed)) $deleteNames[] = 'ResourceLink';
+    }
+
     // Components
     if ($componentsRaw !== '') {
         $componentsParsed = json_decode($componentsRaw, true) ?: [];
@@ -327,7 +339,7 @@ if ($result !== null && !empty($result['ok'])) {
         if (empty($faqsParsed)) $deleteNames[] = 'FAQ';
     }
 
-    if ($price !== null || $componentsRaw !== '' || $reviewsRaw !== '' || $videosRaw !== '' || $faqsRaw !== '' || $artistsRaw !== '' || $buyUrlsRaw !== '' || $galleryUrlsRaw !== null || $extraRows) {
+    if ($price !== null || $componentsRaw !== '' || $reviewsRaw !== '' || $videosRaw !== '' || $faqsRaw !== '' || $artistsRaw !== '' || $buyUrlsRaw !== '' || $resourceLinksRaw !== '' || $galleryUrlsRaw !== null || $extraRows) {
         $tabContent = [
             'game'         => $tabGameName,
             'rows'         => array_merge($extraRows, $galleryRows),

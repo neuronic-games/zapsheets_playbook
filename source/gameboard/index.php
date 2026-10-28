@@ -1919,7 +1919,9 @@ function _gb_val(array $rich, string $name): string {
 $_components  = array_values(array_filter(_gb_rows($_rich, 'Component'), fn($r) => trim($r['Value'] ?? '') !== ''));
 $_reviews     = array_values(array_filter(_gb_rows($_rich, 'Review'),    fn($r) => trim($r['Value'] ?? '') !== ''));
 $_faqs        = array_values(array_filter(_gb_rows($_rich, 'FAQ'),       fn($r) => trim($r['Value'] ?? '') !== ''));
-$_buyUrls     = _gb_rows($_rich, 'BuyUrl');
+$_buyUrls        = _gb_rows($_rich, 'BuyUrl');
+$_resourceLinks  = array_values(array_filter(_gb_rows($_rich, 'ResourceLink'), fn($r) => trim($r['Value'] ?? '') !== ''));
+$_hasRichData    = !empty($_rich);
 // Video rows in [GameName] tab = video reviews (col B = URL, col C = name/label)
 // Main video comes from Games sheet Video column only ($videoUrl below)
 $_videoReviews = array_values(array_filter(_gb_rows($_rich, 'Video'), fn($r) => trim($r['Value'] ?? '') !== ''));
@@ -2087,12 +2089,15 @@ a { color:inherit; text-decoration:none; }
 .gb-hero-ctas { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.75rem; }
 .gb-hero-ctas .btn-nav { display:inline-flex; align-items:center; height:2.75rem; box-sizing:border-box; padding:0 1rem; }
 .gb-price-tag {
-  display:inline-flex; align-items:center;
+  display:inline-block; vertical-align:middle;
   height:2.75rem; box-sizing:border-box; padding:0 .85rem;
+  /* line-height = content area height (2.75rem minus 2×2px border) → text is centered */
+  line-height:calc(2.75rem - 4px);
   border:2px solid rgba(255,255,255,.35); border-radius:6px;
   font-family:'DINBlack',sans-serif; font-size:1.4rem; color:#fff;
-  letter-spacing:-.01em; line-height:1;
+  letter-spacing:-.01em;
 }
+#gbEditPrice { display:inline; line-height:inherit; }
 
 /* ── Main ── */
 .gb-main { max-width:940px; margin:0 auto; padding:3rem 1.25rem 5rem; }
@@ -2289,9 +2294,10 @@ body.gb-admin-mode .gb-vrev-grid { display:grid; }
 
 /* ── Price tag: in-place editing (admin) ── */
 .gb-cta-ph { opacity:.45; font-style:italic; }
-body.gb-admin-mode #gbPriceBox { cursor:text; border-style:dashed; outline:none; min-width:5rem; }
-body.gb-admin-mode #gbPriceBox.gb-price-ph::before { content:attr(data-ph); opacity:.4; pointer-events:none; }
-body.gb-admin-mode #gbPriceBox:focus,
+body.gb-admin-mode #gbPriceBox { cursor:text; border-style:dashed; }
+body.gb-admin-mode #gbEditPrice { outline:none; min-width:3rem; }
+body.gb-admin-mode #gbPriceBox.gb-price-ph #gbEditPrice::before { content:attr(data-ph); opacity:.4; pointer-events:none; display:inline; }
+body.gb-admin-mode #gbPriceBox:focus-within,
 body.gb-admin-mode #gbPriceBox:hover { outline:2px solid rgba(255,255,255,.75); border-style:dashed; }
 /* ── Buy links: in-place editing (admin) ── */
 body.gb-admin-mode .gb-buy-pub { display:none; }
@@ -2343,6 +2349,24 @@ body.gb-admin-mode #gbBuyCtas { display:contents; }
   transition:background .12s, color .12s; cursor:pointer;
 }
 .btn-link:hover { background:var(--accent); color:#fff; }
+/* Custom resource link pill buttons */
+.gb-res-btn {
+  display:inline-block;
+  font-size:.88rem; font-weight:600;
+  padding:.5rem 1.3rem; border-radius:2rem;
+  border:2px solid var(--ink); color:var(--ink); background:transparent;
+  text-decoration:none; white-space:nowrap;
+  transition:background .12s, color .12s; cursor:pointer;
+}
+.gb-res-btn:hover { background:var(--ink); color:var(--surface); }
+/* Resource link admin editor rows */
+.gb-reslink-row { display:flex; gap:.4rem; align-items:center; margin-bottom:.35rem; }
+.gb-reslink-label { width:9rem; flex-shrink:0; }
+.gb-reslink-del { background:none; border:1px solid #ddd; border-radius:4px; color:#e53e3e; cursor:pointer; font-size:.8rem; padding:.3rem .5rem; line-height:1; }
+/* Coming Soon section */
+.gb-coming-soon { text-align:center; padding:4rem 2rem; }
+.gb-cs-badge { display:inline-block; font-family:'DINBlack',sans-serif; font-size:.8rem; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); border:2px solid var(--accent); border-radius:2rem; padding:.4rem 1.2rem; margin-bottom:1.2rem; }
+.gb-cs-text { font-size:1.1rem; color:var(--ink-lt); margin:0; }
 
 /* ── More games ── */
 .gb-more-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:.9rem; }
@@ -2724,7 +2748,7 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
     <?php endif; ?>
     <div class="gb-hero-ctas">
       <?php if ($_richPrice || !isset($_gbPublicBase)): ?>
-      <span class="gb-price-tag<?= (!$_richPrice) ? ' gb-cta-ph' : '' ?>" id="gbPriceBox" data-ph="$0.00"><?= h($_richPrice) ?></span>
+      <span class="gb-price-tag<?= (!$_richPrice) ? ' gb-cta-ph' : '' ?>" id="gbPriceBox"><span id="gbEditPrice" data-ph="$0.00"><?= h($_richPrice) ?></span></span>
       <?php endif; ?>
       <?php /* Admin: JS-rendered editable buy buttons */ ?>
       <?php if (!isset($_gbPublicBase)): ?><span id="gbBuyCtas" style="display:none"></span><?php endif; ?>
@@ -2763,6 +2787,14 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
 
 <!-- ── Main ── -->
 <div class="gb-main">
+
+  <!-- Coming Soon (public only, when no rich data published yet) -->
+  <?php if (!$_hasRichData && isset($_gbPublicBase)): ?>
+  <div class="gb-coming-soon">
+    <div class="gb-cs-badge">Coming Soon</div>
+    <p class="gb-cs-text">More details on this game are coming soon. Stay tuned!</p>
+  </div>
+  <?php endif; ?>
 
   <!-- Description (always rendered; hidden in public when empty via .gb-ph-section) -->
   <div class="gb-section<?= $_description ? '' : ' gb-ph-section' ?>">
@@ -2892,19 +2924,26 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
 
   <!-- Resources -->
   <?php
-  $_hasLinks = $_richRules || $_sellsheet || $_playUrl || $_printUrl || $_pageUrl;
-  if ($_hasLinks): ?>
-  <div class="gb-section">
+  $_hasHardLinks = $_richRules || $_sellsheet || $_playUrl || $_printUrl || $_pageUrl;
+  $_hasLinks = $_hasHardLinks || !empty($_resourceLinks);
+  ?>
+  <div class="gb-section<?= (!$_hasLinks && !isset($_gbPublicBase)) ? ' gb-sect-empty' : (!$_hasLinks ? ' gb-sect-hidden' : '') ?>">
     <div class="gb-section-label">Resources</div>
-    <div class="gb-links">
+    <!-- Admin: inline link editor -->
+    <div class="gb-inline-edit" id="gbResLinkEditor"></div>
+    <!-- Display: hardcoded + custom resource link pills -->
+    <div class="gb-links gb-display-content">
       <?php if ($_richRules): ?><a class="btn-link" href="<?= h($_richRules) ?>" target="_blank">📖 Rules PDF</a><?php endif; ?>
       <?php if ($_sellsheet): ?><a class="btn-link" href="<?= h($_sellsheet) ?>" target="_blank">📄 Sellsheet</a><?php endif; ?>
       <?php if ($_playUrl):   ?><a class="btn-link" href="<?= h($_playUrl) ?>" target="_blank">🎮 Play Online</a><?php endif; ?>
       <?php if ($_printUrl):  ?><a class="btn-link" href="<?= h($_printUrl) ?>" target="_blank">🖨 Print &amp; Play</a><?php endif; ?>
       <?php if ($_pageUrl):   ?><a class="btn-link" href="<?= h($_pageUrl) ?>" target="_blank">🔗 Product Page</a><?php endif; ?>
+      <?php foreach ($_resourceLinks as $rl):
+        $rlUrl = trim($rl['Value'] ?? ''); $rlLabel = trim($rl['Value 1'] ?? '');
+        if (!$rlUrl) continue;
+      ?><a class="gb-res-btn" href="<?= h($rlUrl) ?>" target="_blank"><?= h($rlLabel ?: 'Link') ?></a><?php endforeach; ?>
     </div>
   </div>
-  <?php endif; ?>
 
   <!-- More Games -->
   <?php if (!empty($_otherGames)): ?>
@@ -3238,6 +3277,7 @@ var GAME_DATA = <?= json_encode([
     'date_published' => $_datePub,
     'price'          => $_richPrice,
     'buy_urls'       => array_values(array_filter(array_map(function($b) { return ['url' => trim($b['Value'] ?? ''), 'label' => trim($b['Value 1'] ?? '')]; }, $_buyUrls), function($b){ return $b['url'] !== ''; })),
+    'resource_links' => array_values(array_map(function($r) { return ['url' => trim($r['Value'] ?? ''), 'label' => trim($r['Value 1'] ?? '')]; }, $_resourceLinks)),
     'components'     => array_values(array_map(function($c) { return trim($c['Value'] ?? ''); }, $_components)),
     'reviews'        => array_values(array_map(function($r) { return ['attr' => trim($r['Value'] ?? ''), 'quote' => trim($r['Value 1'] ?? '')]; }, $_reviews)),
     'videos'         => array_values(array_map(function($r) { return ['url' => trim($r['Value'] ?? ''), 'name' => trim($r['Value 1'] ?? '')]; }, $_videoReviews)),
@@ -3261,7 +3301,7 @@ var _siPendingEmail = '', _siPendingPass = '';
     // Activate admin mode
     document.body.classList.add('gb-admin-mode');
     // Make text fields contenteditable
-    ['gbEditTitle', 'gbEditSummary', 'gbEditDesc', 'gbPriceBox'].forEach(function(id) {
+    ['gbEditTitle', 'gbEditSummary', 'gbEditDesc', 'gbEditPrice'].forEach(function(id) {
       var el = document.getElementById(id);
       if (!el) return;
       el.contentEditable = 'true';
@@ -3272,22 +3312,24 @@ var _siPendingEmail = '', _siPendingPass = '';
       }
     });
     // Sync price on input; show/hide placeholder class when empty
+    var priceEl  = document.getElementById('gbEditPrice');
     var priceBox = document.getElementById('gbPriceBox');
-    if (priceBox) {
-      if (!priceBox.textContent.trim()) priceBox.classList.add('gb-price-ph');
-      priceBox.oninput = function() {
+    if (priceEl && priceBox) {
+      if (!priceEl.textContent.trim()) priceBox.classList.add('gb-price-ph');
+      priceEl.oninput = function() {
         var val = this.textContent.trim();
         _ed.price = val;
-        this.classList.toggle('gb-price-ph', !val);
+        priceBox.classList.toggle('gb-price-ph', !val);
       };
-      priceBox.onkeydown = function(e) {
+      priceEl.onkeydown = function(e) {
         if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
       };
-      priceBox.onfocus = function() { this.classList.remove('gb-price-ph'); };
-      priceBox.onblur  = function() { if (!this.textContent.trim()) this.classList.add('gb-price-ph'); };
+      priceEl.onfocus = function() { priceBox.classList.remove('gb-price-ph'); };
+      priceEl.onblur  = function() { if (!this.textContent.trim()) priceBox.classList.add('gb-price-ph'); };
     }
     // Build admin buy CTA buttons in hero
     gbInitBuyCtas();
+    gbInitResLinks();
     gbInitInlineEdits();
     _updateGbAuth();
   } catch(e) { console.error('[admin init]', e); }
@@ -4090,6 +4132,46 @@ function gbInitBuyCtas() {
   wrap.appendChild(gbMakeBuyCtaEl({label: 'BUY NOW', url: ''}, -1, true));
 }
 
+function gbInitResLinks() {
+  var editor = document.getElementById('gbResLinkEditor');
+  if (!editor) return;
+  editor.innerHTML = '';
+  if (!_ed.resource_links) _ed.resource_links = (GAME_DATA.resource_links || []).slice();
+  _ed.resource_links.forEach(function(lk, i) { editor.appendChild(gbMakeResLinkRow(lk, i)); });
+  var addBtn = document.createElement('button');
+  addBtn.className = 'gb-vrev-btn-save';
+  addBtn.style.cssText = 'margin-top:.4rem;font-size:.8rem;';
+  addBtn.textContent = '+ Add Link';
+  addBtn.onmousedown = function(e) {
+    e.preventDefault();
+    _ed.resource_links.push({label: '', url: ''});
+    gbInitResLinks();
+    var rows = editor.querySelectorAll('.gb-reslink-row');
+    var last = rows[rows.length - 1];
+    if (last) { var inp = last.querySelector('input'); if (inp) setTimeout(function(){ inp.focus(); }, 20); }
+  };
+  editor.appendChild(addBtn);
+}
+
+function gbMakeResLinkRow(lk, i) {
+  var row = document.createElement('div');
+  row.className = 'gb-reslink-row';
+  var lblInp = document.createElement('input');
+  lblInp.type = 'text'; lblInp.placeholder = 'Label (e.g. BoardGameGeek)';
+  lblInp.value = lk.label || ''; lblInp.className = 'gbed-field gb-reslink-label';
+  lblInp.oninput = function() { if (_ed.resource_links && _ed.resource_links[i]) _ed.resource_links[i].label = this.value; };
+  var urlInp = document.createElement('input');
+  urlInp.type = 'url'; urlInp.placeholder = 'https://…';
+  urlInp.value = lk.url || ''; urlInp.className = 'gbed-field';
+  urlInp.style.flex = '1';
+  urlInp.oninput = function() { if (_ed.resource_links && _ed.resource_links[i]) _ed.resource_links[i].url = this.value.trim(); };
+  var del = document.createElement('button');
+  del.className = 'gb-reslink-del'; del.textContent = '✕'; del.title = 'Remove';
+  del.onmousedown = function(e) { e.preventDefault(); _ed.resource_links.splice(i, 1); gbInitResLinks(); };
+  row.appendChild(lblInp); row.appendChild(urlInp); row.appendChild(del);
+  return row;
+}
+
 function gbBuildFaqEditor(faqs) {
   var list = document.getElementById('gbFaqsList');
   if (!list) return;
@@ -4573,11 +4655,12 @@ function saveGame() {
   fd.append('rules',          _ed.rules_url      || '');
   fd.append('play',           _ed.play_url       || '');
   fd.append('print',          _ed.print_url      || '');
-  // Sync price from contenteditable element before saving
-  var _priceEl = document.getElementById('gbPriceBox');
+  // Sync price from contenteditable span before saving
+  var _priceEl = document.getElementById('gbEditPrice');
   if (_priceEl) _ed.price = _priceEl.textContent.trim();
   if (_ed.price      !== undefined) fd.append('price',     _ed.price     || '');
-  if (_ed.buy_urls   !== undefined) fd.append('buy_urls',  JSON.stringify(_ed.buy_urls  || []));
+  if (_ed.buy_urls        !== undefined) fd.append('buy_urls',        JSON.stringify(_ed.buy_urls        || []));
+  if (_ed.resource_links  !== undefined) fd.append('resource_links',  JSON.stringify(_ed.resource_links  || []));
   if (_ed.components !== undefined) fd.append('components', JSON.stringify(_ed.components || []));
   if (_ed.reviews    !== undefined) fd.append('reviews',    JSON.stringify(_ed.reviews    || []));
   if (_ed.videos     !== undefined) fd.append('videos',     JSON.stringify(_ed.videos     || []));

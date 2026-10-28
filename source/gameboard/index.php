@@ -461,10 +461,15 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
 .gb-add-game-card { display:none; border-radius:12px; border:2px dashed rgba(59,59,170,.22); background:#fff; cursor:pointer; transition:border-color .15s, box-shadow .15s, transform .15s; overflow:hidden; box-shadow:0 2px 14px rgba(0,0,0,.06); }
 body.gb-admin-mode .gb-add-game-card { display:block; }
 .gb-add-game-card:hover { border-color:var(--accent); box-shadow:0 6px 24px rgba(0,0,0,.12); transform:translateY(-3px); }
-.gb-add-game-card-inner { width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:3rem; color:rgba(59,59,170,.28); line-height:1; transition:color .15s, background .15s; background:linear-gradient(135deg,#e8e8f2,#d8d8ec); }
+.gb-add-game-card-inner { position:relative; width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:3rem; color:rgba(59,59,170,.28); line-height:1; transition:color .15s, background .15s; background:linear-gradient(135deg,#e8e8f2,#d8d8ec); overflow:hidden; }
 .gb-add-game-card:hover .gb-add-game-card-inner { color:var(--accent); background:linear-gradient(135deg,#e0e0f0,#cecee8); }
-.gb-add-game-card-label { padding:.75rem .9rem 1rem; font-family:'DINBlack',sans-serif; font-size:.95rem; color:rgba(59,59,170,.45); }
-.gb-add-game-card:hover .gb-add-game-card-label { color:var(--accent); }
+.gb-agc-plus { pointer-events:none; }
+.gb-agc-img-btn { position:absolute; top:.4rem; right:.4rem; z-index:2; }
+.gb-agc-preview { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1; }
+.gb-add-game-card-label { padding:.75rem .9rem 1rem; }
+.gb-agc-name { outline:none; font-family:'DINBlack',sans-serif; font-size:.95rem; color:rgba(59,59,170,.45); cursor:text; display:block; min-width:2ch; transition:color .15s; }
+.gb-add-game-card:hover .gb-agc-name { color:var(--accent); }
+.gb-agc-name:focus { color:var(--accent); border-bottom:1.5px solid var(--accent); }
 </style>
 </head>
 <body>
@@ -618,9 +623,18 @@ body.gb-admin-mode .gb-add-game-card { display:block; }
   </a>
 <?php endforeach; endif; ?>
 <?php if (!isset($_gbPublicBase)): ?>
-  <div class="gb-add-game-card" onclick="openAddGame()" title="Add a new game">
-    <div class="gb-add-game-card-inner">+</div>
-    <div class="gb-add-game-card-label">New Game</div>
+  <div class="gb-add-game-card" id="catAddGameCard" onclick="catAddGameClick(event)">
+    <div class="gb-add-game-card-inner" id="catAddGameInner">
+      <span class="gb-agc-plus">+</span>
+      <button class="gb-img-btn gb-agc-img-btn" title="Set cover image"
+        onclick="catAddGamePickImg(event)"><?= $_imgBtnIcon ?></button>
+    </div>
+    <div class="gb-add-game-card-label">
+      <div class="gb-agc-name" id="catAddGameName" contenteditable="true"
+        onkeydown="catAddGameKey(event)"
+        onfocus="catAddGameNameFocus(this)"
+        onblur="catAddGameNameBlur(this)">New Game</div>
+    </div>
   </div>
 <?php endif; ?>
 </div>
@@ -1825,6 +1839,113 @@ function gbSubscribeSubmit(e) {
       btn.disabled = false;
       btn.textContent = 'Subscribe';
     });
+}
+
+// ── Inline add-game card (catalog page) ──────────────────────────────────────
+var _catAddGameImgUrl = '';
+
+function catAddGameClick(e) {
+  if (e.target.closest('.gb-agc-img-btn')) return;
+  var name = document.getElementById('catAddGameName');
+  if (name) name.focus();
+}
+
+function catAddGameNameFocus(el) {
+  if (el.textContent.trim() === 'New Game') {
+    var r = document.createRange(); r.selectNodeContents(el);
+    var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+}
+
+function catAddGameNameBlur(el) {
+  if (!el.textContent.trim()) el.textContent = 'New Game';
+}
+
+function catAddGameKey(e) {
+  if (e.key === 'Enter') { e.preventDefault(); catAddGameSubmit(); }
+  if (e.key === 'Escape') {
+    var el = document.getElementById('catAddGameName');
+    if (el) { el.textContent = 'New Game'; el.blur(); }
+    _catAddGameImgUrl = '';
+    var inner = document.getElementById('catAddGameInner');
+    if (inner) {
+      var prev = inner.querySelector('.gb-agc-preview'); if (prev) prev.remove();
+      var plus = inner.querySelector('.gb-agc-plus'); if (plus) plus.style.display = '';
+    }
+  }
+}
+
+function catAddGamePickImg(e) {
+  e.preventDefault(); e.stopPropagation();
+  var inp = document.getElementById('catAddGameImgInput');
+  if (!inp) {
+    inp = document.createElement('input');
+    inp.type = 'file'; inp.id = 'catAddGameImgInput'; inp.accept = 'image/*'; inp.style.display = 'none';
+    inp.addEventListener('change', function() {
+      if (inp.files && inp.files[0]) catAddGameUploadImg(inp.files[0]);
+      inp.value = '';
+    });
+    document.body.appendChild(inp);
+  }
+  inp.click();
+}
+
+function catAddGameUploadImg(file) {
+  var inner = document.getElementById('catAddGameInner');
+  var btn = inner ? inner.querySelector('.gb-agc-img-btn') : null;
+  if (inner) inner.classList.add('img-loading');
+  if (btn) btn.disabled = true;
+  var fd = new FormData();
+  fd.append('file', file); fd.append('id', SHEET_ID);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/uploadImage.php');
+  xhr.onload = function() {
+    if (inner) inner.classList.remove('img-loading');
+    if (btn) btn.disabled = false;
+    var r; try { r = JSON.parse(xhr.responseText); } catch(ex) { r = null; }
+    if (!r || r.error) { alert('Upload failed: ' + (r && r.error || 'unknown')); return; }
+    _catAddGameImgUrl = r.url;
+    if (inner) {
+      var prev = inner.querySelector('.gb-agc-preview'); if (prev) prev.remove();
+      var plus = inner.querySelector('.gb-agc-plus'); if (plus) plus.style.display = 'none';
+      var img = document.createElement('img');
+      img.className = 'gb-agc-preview'; img.src = r.url;
+      inner.insertBefore(img, inner.firstChild);
+    }
+  };
+  xhr.onerror = function() {
+    if (inner) inner.classList.remove('img-loading');
+    if (btn) btn.disabled = false;
+    alert('Upload failed. Please try again.');
+  };
+  xhr.send(fd);
+}
+
+function catAddGameSubmit() {
+  var nameEl = document.getElementById('catAddGameName');
+  var name = nameEl ? nameEl.textContent.trim() : '';
+  if (!name || name === 'New Game') { if (nameEl) nameEl.focus(); return; }
+  var card = document.getElementById('catAddGameCard');
+  if (card) { card.style.opacity = '.5'; card.style.pointerEvents = 'none'; }
+  var fd = new FormData();
+  fd.append('id',        SHEET_ID);
+  fd.append('name',      name);
+  fd.append('status',    'Published');
+  fd.append('cover_url', _catAddGameImgUrl || '');
+  fd.append('image',     _catAddGameImgUrl ? '=IMAGE("' + _catAddGameImgUrl + '")' : '');
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/addGame.php');
+  xhr.onload = function() {
+    if (card) { card.style.opacity = ''; card.style.pointerEvents = ''; }
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+    if (!r || r.error) { alert((r && r.error) || 'Unknown error. Please try again.'); return; }
+    location.reload();
+  };
+  xhr.onerror = function() {
+    if (card) { card.style.opacity = ''; card.style.pointerEvents = ''; }
+    alert('Network error. Please try again.');
+  };
+  xhr.send(fd);
 }
 </script>
 

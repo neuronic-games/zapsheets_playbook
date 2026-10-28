@@ -320,7 +320,7 @@ body.gb-admin-mode .cat-slide-edit-btn:hover { background:rgba(0,0,0,.85); }
 
 /* ── Grid ── */
 .cat-grid { max-width:1100px; margin:0 auto 5rem; padding:0 1.25rem; display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1.1rem; }
-.cat-card { background:var(--surface); border-radius:12px; box-shadow:0 2px 14px rgba(0,0,0,.08); overflow:hidden; transition:box-shadow .15s, transform .15s; cursor:pointer; display:flex; flex-direction:column; width:100%; text-decoration:none; }
+.cat-card { background:var(--surface); border-radius:12px; box-shadow:0 2px 14px rgba(0,0,0,.08); overflow:hidden; transition:box-shadow .15s, transform .15s; cursor:pointer; display:flex; flex-direction:column; width:100%; text-decoration:none; flex:1; }
 .cat-card:hover { box-shadow:0 6px 24px rgba(0,0,0,.14); transform:translateY(-3px); }
 .cat-card-img { width:100%; aspect-ratio:1; object-fit:cover; display:block; }
 .cat-card-ph { width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:3.5rem; opacity:.28; background:linear-gradient(135deg,#dde,#c8c8e8); }
@@ -2018,7 +2018,7 @@ function catAddGameInsertCard(name, tagline, imgUrl, slug) {
   var editBtn = document.createElement('button');
   editBtn.className = 'gb-img-btn cat-img-upload-btn'; editBtn.title = 'Change image';
   editBtn.innerHTML = IMG_BTN_ICON;
-  editBtn.setAttribute('onclick', 'catPickImage(event,this.closest('.cat-img-wrap'))');
+  editBtn.setAttribute('onclick', "catPickImage(event,this.closest('.cat-img-wrap'))");
   imgWrap.appendChild(editBtn);
   a.appendChild(imgWrap);
 

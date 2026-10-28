@@ -2135,6 +2135,17 @@ body.gb-admin-mode .gb-gallery-thumb-add { opacity:1; pointer-events:auto; }
 .gb-gallery-thumb-add.gb-uploading > span { visibility:hidden; }
 .gb-gallery-thumb-add.gb-uploading::after { content:''; position:absolute; inset:0; margin:auto; width:22px; height:22px; border:3px solid rgba(59,59,170,.2); border-top-color:var(--accent); border-radius:50%; animation:gb-spin .7s linear infinite; }
 @keyframes gb-spin { to { transform:rotate(360deg); } }
+/* Gallery empty state (admin only) */
+body.gb-admin-mode .gb-gallery-viewer.gb-gallery-empty .gb-gallery-featured {
+  display:flex; align-items:center; justify-content:center;
+  border:2px dashed rgba(59,59,170,.25); background:linear-gradient(135deg,#f0f0fa,#e4e4f4);
+  cursor:pointer;
+}
+body.gb-admin-mode .gb-gallery-viewer.gb-gallery-empty .gb-gallery-featured::after {
+  content:'+'; font-size:3.5rem; color:rgba(59,59,170,.3); line-height:1; pointer-events:none;
+}
+body.gb-admin-mode .gb-gallery-viewer.gb-gallery-empty .gb-gallery-featured-del { display:none !important; }
+body.gb-admin-mode .gb-gallery-viewer.gb-gallery-empty .gb-gallery-featured img { display:none !important; }
 
 /* ── Video ── */
 .gb-video-wrap { position:relative; padding-top:56.25%; border-radius:10px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,.13); }
@@ -2757,7 +2768,7 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
   <!-- Gallery -->
   <div class="gb-section<?= empty($_productImgUrls) && !isset($_gbPublicBase) ? ' gb-sect-empty' : (empty($_productImgUrls) ? ' gb-sect-hidden' : '') ?>" id="gbGallerySection">
     <div class="gb-section-label">Gallery</div>
-    <div class="gb-gallery-viewer" id="gbGalleryViewer">
+    <div class="gb-gallery-viewer<?= empty($_productImgUrls) ? ' gb-gallery-empty' : '' ?>" id="gbGalleryViewer">
       <div class="gb-gallery-featured" id="gbGalleryFeatured">
         <img id="gbGalleryFeaturedImg" src="" alt="<?= h($_name) ?>" onload="this.style.display=''" onclick="openLightbox(this.src)" style="display:none" />
         <button class="gb-gallery-featured-del" title="Remove this image" onclick="gbGalleryDeleteFeatured()">✕</button>
@@ -4270,10 +4281,19 @@ function gbRenderGallery() {
   if (!section || !featEl || !thumbsEl) return;
 
   // Show/hide section
+  var viewer = document.getElementById('gbGalleryViewer');
   if (!imgs.length) {
     section.classList.add('gb-sect-empty');
+    if (viewer) viewer.classList.add('gb-gallery-empty');
   } else {
     section.classList.remove('gb-sect-empty', 'gb-sect-hidden');
+    if (viewer) viewer.classList.remove('gb-gallery-empty');
+  }
+
+  // When empty in admin mode, make featured area a clickable add target
+  var featuredDiv = document.getElementById('gbGalleryFeatured');
+  if (featuredDiv) {
+    featuredDiv.onclick = !imgs.length ? function() { gbPickGalleryImage(); } : null;
   }
 
   // Clamp active index

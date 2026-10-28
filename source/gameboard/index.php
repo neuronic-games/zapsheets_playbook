@@ -1918,6 +1918,7 @@ $_buyUrls     = _gb_rows($_rich, 'BuyUrl');
 $_videoReviews = array_values(array_filter(_gb_rows($_rich, 'Video'), fn($r) => trim($r['Value'] ?? '') !== ''));
 $_mediaImgs      = array_merge(_gb_rows($_rich, 'Media'), _gb_rows($_rich, 'ProductImage'));
 $_productImgUrls = array_values(array_filter(array_map(fn($r) => _gb_img(trim($r['Value'] ?? '')), _gb_rows($_rich, 'ProductImage')), fn($u) => $u !== ''));
+$_headerImageUrl = _gb_img(_gb_val($_rich, 'HeaderImage'));
 $_richPrice   = _gb_val($_rich, 'Price');
 $_richRules   = _gb_val($_rich, 'Rules PDF Url') ?: $_rulesUrl;
 
@@ -1955,7 +1956,8 @@ foreach ($_mediaImgs as $r) {
     if ($u && !in_array($u, $_gallery)) $_gallery[] = $u;
 }
 
-$_heroImg = $_gallery[0] ?? '';
+// Header image: HeaderImage row in [game] tab → first ProductImage → gallery[0]
+$_heroImg = $_headerImageUrl ?: ($_productImgUrls[0] ?? ($_gallery[0] ?? ''));
 
 // Main video: Games sheet Video column only
 $_videoEmbed = _gb_embed($_videoUrl);
@@ -2122,7 +2124,7 @@ body.gb-admin-mode .gb-gallery-thumb-add { opacity:1; pointer-events:auto; }
 .gb-gallery-thumb-add.gb-drag-over { opacity:1 !important; border-color:var(--accent); background:#e8eaf8; }
 .gb-gallery-thumb-add.gb-uploading { opacity:1 !important; border-color:var(--accent); pointer-events:none; }
 .gb-gallery-thumb-add.gb-uploading > span { visibility:hidden; }
-.gb-gallery-thumb-add.gb-uploading::after { content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:22px; height:22px; border:3px solid rgba(59,59,170,.2); border-top-color:var(--accent); border-radius:50%; animation:gb-spin .7s linear infinite; }
+.gb-gallery-thumb-add.gb-uploading::after { content:''; position:absolute; inset:0; margin:auto; width:22px; height:22px; border:3px solid rgba(59,59,170,.2); border-top-color:var(--accent); border-radius:50%; animation:gb-spin .7s linear infinite; }
 @keyframes gb-spin { to { transform:rotate(360deg); } }
 
 /* ── Video ── */
@@ -3109,6 +3111,10 @@ _gb_footer(['gameCredit' => $_gameCredit]);
       <div class="gbed-section">
         <div class="gbed-section-title">Images &amp; Media</div>
         <div class="gbed-field-group">
+          <label class="gbed-label">Header Image URL (hero banner — overrides ProductImage)</label>
+          <input class="gbed-field" id="gbedHeaderImageUrl" type="url" placeholder="https://…" />
+        </div>
+        <div class="gbed-field-group">
           <label class="gbed-label">Cover URL (background image)</label>
           <input class="gbed-field" id="gbedCoverUrl" type="url" placeholder="https://…" />
         </div>
@@ -3161,6 +3167,7 @@ var APP_ROOT      = <?= json_encode($_appRoot) ?>;
 var ORIG_GAME_NAME = <?= json_encode($_name) ?>;
 var GAME_DATA = <?= json_encode([
     'status'         => $_status,
+    'header_image_url' => $_headerImageUrl,
     'cover_url'      => $_coverUrl,
     'image_url'      => $_imageUrl,
     'video_url'      => $_videoUrl,
@@ -3615,6 +3622,7 @@ function openEditDetails() {
   document.getElementById('gbedDateStarted').value   = _ed.date_started   || '';
   document.getElementById('gbedDateSigned').value    = _ed.date_signed    || '';
   document.getElementById('gbedDatePublished').value = _ed.date_published || '';
+  document.getElementById('gbedHeaderImageUrl').value = _ed.header_image_url || '';
   document.getElementById('gbedCoverUrl').value  = _ed.cover_url  || '';
   document.getElementById('gbedImageUrl').value  = _ed.image_url  || '';
   document.getElementById('gbedVideoUrl').value  = _ed.video_url  || '';
@@ -3645,6 +3653,7 @@ function applyEditDetails() {
   _ed.date_started   = document.getElementById('gbedDateStarted').value.trim();
   _ed.date_signed    = document.getElementById('gbedDateSigned').value.trim();
   _ed.date_published = document.getElementById('gbedDatePublished').value.trim();
+  _ed.header_image_url = document.getElementById('gbedHeaderImageUrl').value.trim();
   _ed.cover_url      = document.getElementById('gbedCoverUrl').value.trim();
   _ed.image_url      = document.getElementById('gbedImageUrl').value.trim();
   _ed.video_url      = document.getElementById('gbedVideoUrl').value.trim();
@@ -4185,14 +4194,14 @@ function gbPickImage(callback) {
 function gbHandleFileInput(e) {
   var file = e.target.files[0];
   if (!file || !_gbFileCallback) return;
-  // Determine loading zone: hero for cover, gallery add-btn if already in uploading state
+  // Determine loading zone — apply it NOW (after file is chosen, not on click)
   var zone = null;
   if (_gbFileCallback === gbSetCover) {
     zone = document.getElementById('gbHero');
     zone.classList.add('gb-cover-loading');
   } else {
-    var addBtn = document.getElementById('gbGalleryAddBtn');
-    if (addBtn && addBtn.classList.contains('gb-uploading')) zone = addBtn;
+    zone = document.getElementById('gbGalleryAddBtn');
+    if (zone) zone.classList.add('gb-uploading');
   }
   gbUploadImage(file, _gbFileCallback, zone);
   _gbFileCallback = null;
@@ -4359,7 +4368,6 @@ function gbPickGalleryImage() {
     gbRenderGallery();
     gbShowUploadToast('Image added — click Save Changes');
   };
-  if (addBtn) addBtn.classList.add('gb-uploading');
   var inp = document.getElementById('gbFileInput');
   inp.value = '';
   inp.click();
@@ -4471,6 +4479,7 @@ function saveGame() {
   fd.append('date_started',   _ed.date_started   || '');
   fd.append('date_signed',    _ed.date_signed    || '');
   fd.append('date_published', _ed.date_published || '');
+  fd.append('header_image_url', _ed.header_image_url || '');
   fd.append('cover_url',      _ed.cover_url      || '');
   fd.append('image',          _ed.image_url      || '');
   fd.append('video',          _ed.video_url      || '');

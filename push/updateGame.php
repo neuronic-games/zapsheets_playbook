@@ -32,6 +32,8 @@ $video         = trim($_POST['video']          ?? '');
 $price         = isset($_POST['price']) ? trim($_POST['price']) : null;
 $imageRaw      = trim($_POST['image']          ?? '');
 $image         = $imageRaw ? '=IMAGE("' . $imageRaw . '")' : '';
+$headerImageRaw = trim($_POST['header_image_url'] ?? '');
+$headerImage    = $headerImageRaw ? '=IMAGE("' . $headerImageRaw . '")' : '';
 $coverRaw      = trim($_POST['cover_url']      ?? '');
 $cover         = $coverRaw ? '=IMAGE("' . $coverRaw . '")' : '';
 $availability  = trim($_POST['availability']   ?? '');
@@ -147,8 +149,9 @@ if ($result !== null && !empty($result['ok'])) {
 
         // Patch fields in the [GameName] tab — runs for both new and existing tabs.
         $patchFields = [];
-        if ($description !== '') $patchFields['Description']   = $description;
-        if ($coverRaw    !== '') $patchFields['ProductImage']  = $cover;
+        if ($description     !== '') $patchFields['Description']   = $description;
+        if ($headerImageRaw  !== '') $patchFields['HeaderImage']   = $headerImage;
+        if ($coverRaw        !== '') $patchFields['ProductImage']  = $cover;
         if ($rules       !== '') $patchFields['Rules PDF Url'] = $rules;
         if ($sellsheet   !== '') $patchFields['Sellsheet URL'] = $sellsheet;
         if ($view        !== '') $patchFields['Page URL']      = $view;

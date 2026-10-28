@@ -61,7 +61,12 @@ foreach ($postMap as $postKey => $settingsKey) {
 }
 
 // Collect carousel image URLs as "Image" array; remove legacy "Carousel N" keys
-if (isset($_POST['carousel_1'])) { // only update when carousel fields were posted
+if (isset($_POST['carousel_json'])) {
+    $images = json_decode($_POST['carousel_json'], true) ?: [];
+    $images = array_values(array_filter(array_map('trim', $images)));
+    $settings['Image'] = $images;
+    for ($i = 1; $i <= 20; $i++) unset($settings['Carousel ' . $i]);
+} elseif (isset($_POST['carousel_1'])) { // legacy fallback
     $images = [];
     for ($i = 1; $i <= 6; $i++) {
         $v = trim($_POST['carousel_' . $i] ?? '');

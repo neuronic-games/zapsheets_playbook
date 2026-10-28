@@ -1387,9 +1387,9 @@ window.carouselGo   = function(n) { _carouselGo(n); _carouselStart(); };
 
 // Save all slide URLs to settings (slots 1–6)
 function carouselSaveAll() {
-  var urls = Array.from(_carouselSlides()).map(function(s){ return s.dataset.url || ''; });
+  var urls = Array.from(_carouselSlides()).map(function(s){ return s.dataset.url || ''; }).filter(Boolean);
   var fd = new FormData(); fd.append('id', SHEET_ID);
-  for (var i = 0; i < 6; i++) fd.append('carousel_' + (i + 1), urls[i] || '');
+  fd.append('carousel_json', JSON.stringify(urls));
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
   xhr.onload = function() {
@@ -1442,7 +1442,6 @@ window.carouselPickImage = function(slideEl) {
 // Add a new slide
 window.carouselAddSlide = function() {
   if (!document.body.classList.contains('gb-admin-mode')) return;
-  if (_carouselSlides().length >= 6) { gbShowSaveToast('Max 6 images', false); return; }
   var inp = document.createElement('input');
   inp.type = 'file'; inp.accept = 'image/*';
   inp.onchange = function() {
@@ -1455,7 +1454,6 @@ window.carouselAddSlide = function() {
 window.carouselDropAdd = function(e) {
   e.preventDefault();
   if (!document.body.classList.contains('gb-admin-mode')) return;
-  if (_carouselSlides().length >= 6) return;
   var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
   if (f) {
     var carousel = document.getElementById('catCarousel');
@@ -1498,7 +1496,6 @@ function _carouselInsertSlide(url) {
   _carouselGo(_carouselCur);
   _carouselStart();
   carouselSaveAll();
-  if (_carouselSlides().length >= 6) document.getElementById('catSlideAdd') && (document.getElementById('catSlideAdd').style.opacity = '.4');
 }
 
 // Remove a slide

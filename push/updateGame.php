@@ -256,9 +256,11 @@ if ($result !== null && !empty($result['ok'])) {
         $extraRows[] = ['name' => 'HeaderImage', 'value' => $headerImage, 'extra' => ''];
     }
 
-    // Price — write atomically alongside other rows to avoid eventual-consistency races
+    // Price — write atomically. Prefix with ' so Google Sheets stores it as text,
+    // not as a number (USER_ENTERED interprets "$20" as currency → reads back as 20).
     if ($price !== null) {
-        $extraRows[] = ['name' => 'Price', 'value' => $price, 'extra' => ''];
+        $priceSheet = $price !== '' ? "'" . $price : '';
+        $extraRows[] = ['name' => 'Price', 'value' => $priceSheet, 'extra' => ''];
     }
 
     // Artists

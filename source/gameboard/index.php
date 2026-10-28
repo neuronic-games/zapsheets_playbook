@@ -2086,6 +2086,7 @@ a { color:inherit; text-decoration:none; }
 .gb-stat strong { font-family:'DINBlack',sans-serif; color:#fff; margin-right:.25rem; }
 .gb-hero-ctas { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.75rem; }
 .gb-price-tag {
+  display:inline-flex; align-items:center;
   font-family:'DINBlack',sans-serif; font-size:1.4rem; color:#fff;
   letter-spacing:-.01em; line-height:1;
   padding:.3rem .85rem; border:2px solid rgba(255,255,255,.35); border-radius:6px;

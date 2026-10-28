@@ -50,7 +50,8 @@ if not sheet_id or not game_name:
 # Group by name so multi-value fields (Designer, Component, etc.) are handled
 # as blocks. Preserve insertion order so the sheet is rebuilt cleanly.
 
-rows_data = data.get('rows', [])
+rows_data    = data.get('rows', [])
+delete_names = set(str(n).strip() for n in data.get('delete_names', []) if n)
 
 # new_values_by_name: name → list of [name, value, extra]
 # Preserve the order in which names first appear.
@@ -66,8 +67,13 @@ for row in rows_data:
             new_values_by_name[name] = []
         new_values_by_name[name].append([name, value, extra])
 
+# delete_names: names whose existing rows should be removed with no replacement
+for dn in delete_names:
+    if dn not in new_values_by_name:
+        new_values_by_name[dn] = []  # empty list = delete block on encounter
+
 # If nothing was sent, nothing to do.
-if not new_values_by_name:
+if not new_values_by_name and not delete_names:
     print(json.dumps({"ok": True, "rows_written": 0}))
     sys.exit(0)
 

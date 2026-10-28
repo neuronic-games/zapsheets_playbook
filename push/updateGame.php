@@ -218,8 +218,21 @@ if ($result !== null && !empty($result['ok'])) {
     $faqsRaw        = trim($_POST['faqs']         ?? '');
     $artistsRaw     = trim($_POST['artists']      ?? '');
     $buyUrlsRaw     = trim($_POST['buy_urls']     ?? '');
-    $galleryUrlsRaw = trim($_POST['gallery_urls'] ?? '');
-    if ($componentsRaw !== '' || $reviewsRaw !== '' || $videosRaw !== '' || $faqsRaw !== '' || $artistsRaw !== '' || $buyUrlsRaw !== '' || $galleryUrlsRaw !== '') {
+    $galleryUrlsRaw = isset($_POST['gallery_urls']) ? trim($_POST['gallery_urls']) : null;
+    // Convert gallery_urls to ProductImage rows for gupdategametab.py
+    $galleryRows    = [];
+    $galleryDelete  = false;
+    if ($galleryUrlsRaw !== null) {
+        $galleryUrlsParsed = $galleryUrlsRaw !== '' ? (json_decode($galleryUrlsRaw, true) ?: []) : [];
+        foreach ($galleryUrlsParsed as $gUrl) {
+            $gUrl = trim((string)$gUrl);
+            if ($gUrl) {
+                $galleryRows[] = ['name' => 'ProductImage', 'value' => '=IMAGE("' . $gUrl . '")', 'extra' => ''];
+            }
+        }
+        if (empty($galleryRows)) $galleryDelete = true; // gallery cleared — remove all ProductImage rows
+    }
+    if ($componentsRaw !== '' || $reviewsRaw !== '' || $videosRaw !== '' || $faqsRaw !== '' || $artistsRaw !== '' || $buyUrlsRaw !== '' || $galleryUrlsRaw !== null) {
         $tabContent = [
             'game'         => $tabGameName,
             'components'   => $componentsRaw  ? (json_decode($componentsRaw,  true) ?: []) : [],
@@ -228,7 +241,8 @@ if ($result !== null && !empty($result['ok'])) {
             'faqs'         => $faqsRaw        ? (json_decode($faqsRaw,        true) ?: []) : [],
             'artists'      => $artistsRaw     ? (json_decode($artistsRaw,     true) ?: []) : [],
             'buy_urls'     => $buyUrlsRaw     ? (json_decode($buyUrlsRaw,     true) ?: []) : [],
-            'gallery_urls' => $galleryUrlsRaw ? (json_decode($galleryUrlsRaw, true) ?: []) : [],
+            'rows'         => $galleryRows,
+            'delete_names' => $galleryDelete ? ['ProductImage'] : [],
         ];
         $tabContentEncoded = base64_encode(json_encode($tabContent, JSON_UNESCAPED_UNICODE));
         $tabContentCmd = escapeshellarg($pythonPath) . ' '

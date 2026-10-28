@@ -2083,10 +2083,14 @@ body.gb-admin-mode .gb-gallery-featured-del { display:flex; }
 .gb-gallery-thumbs { display:flex; flex-direction:row; gap:.45rem; overflow-x:auto; padding-bottom:2px; }
 .gb-gallery-thumbs::-webkit-scrollbar { height:3px; }
 .gb-gallery-thumbs::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
-.gb-gallery-thumb { position:relative; width:100px; aspect-ratio:4/3; border-radius:7px; overflow:hidden; flex-shrink:0; cursor:pointer; border:2px solid transparent; transition:border-color .18s; background:#eee; }
-.gb-gallery-thumb img { width:100%; height:100%; object-fit:cover; object-position:center; display:block; }
+.gb-gallery-thumb { position:relative; width:100px; aspect-ratio:4/3; border-radius:7px; overflow:hidden; flex-shrink:0; cursor:pointer; border:2px solid transparent; transition:border-color .18s,opacity .15s; background:#eee; }
+.gb-gallery-thumb img { width:100%; height:100%; object-fit:cover; object-position:center; display:block; pointer-events:none; }
 .gb-gallery-thumb.gb-gt-active { border-color:var(--accent); }
 .gb-gallery-thumb:hover:not(.gb-gt-active) { border-color:rgba(0,0,0,.2); }
+/* drag-to-reorder */
+body.gb-admin-mode .gb-gallery-thumb { cursor:grab; }
+.gb-gallery-thumb.gb-gt-dragging { opacity:.35; cursor:grabbing; }
+.gb-gallery-thumb.gb-gt-drag-over { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent); }
 /* thumb delete btn */
 .gb-gt-del { position:absolute; top:2px; right:2px; background:rgba(0,0,0,.6); color:#fff; border:none; border-radius:50%; width:18px; height:18px; font-size:.55rem; cursor:pointer; display:none; align-items:center; justify-content:center; z-index:2; line-height:1; }
 body.gb-admin-mode .gb-gt-del { display:flex; }
@@ -4210,6 +4214,7 @@ function gbSetCover(url) {
 // ── Gallery ───────────────────────────────────────────────────────────────────
 var _gbGalleryIdx  = 0;
 var _gbGalleryTimer = null;
+var _gbDragIdx = -1;
 
 function gbRenderGallery() {
   var imgs = _ed.gallery || [];
@@ -4246,12 +4251,34 @@ function gbRenderGallery() {
   imgs.forEach(function(url, i) {
     var div = document.createElement('div');
     div.className = 'gb-gallery-thumb' + (i === _gbGalleryIdx ? ' gb-gt-active' : '');
+    div.dataset.idx = i;
+    if (document.body.classList.contains('gb-admin-mode')) {
+      div.draggable = true;
+    }
     var img = document.createElement('img'); img.src = url; img.loading = 'lazy';
     var del = document.createElement('button');
     del.className = 'gb-gt-del'; del.textContent = '✕'; del.title = 'Remove';
     (function(idx) {
       div.onclick = function() { gbGallerySelect(idx); };
       del.onclick = function(e) { e.stopPropagation(); gbGalleryDelete(idx); };
+      div.addEventListener('dragstart', function(e) {
+        _gbDragIdx = idx;
+        div.classList.add('gb-gt-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      div.addEventListener('dragend', function() { div.classList.remove('gb-gt-dragging'); _gbDragIdx = -1; });
+      div.addEventListener('dragover', function(e) { e.preventDefault(); div.classList.add('gb-gt-drag-over'); });
+      div.addEventListener('dragleave', function() { div.classList.remove('gb-gt-drag-over'); });
+      div.addEventListener('drop', function(e) {
+        e.preventDefault(); div.classList.remove('gb-gt-drag-over');
+        if (_gbDragIdx === -1 || _gbDragIdx === idx) return;
+        var arr = _ed.gallery || [];
+        var moved = arr.splice(_gbDragIdx, 1)[0];
+        arr.splice(idx, 0, moved);
+        _ed.gallery = arr;
+        _gbGalleryIdx = idx;
+        gbRenderGallery();
+      });
     })(i);
     div.appendChild(img); div.appendChild(del);
     thumbsEl.insertBefore(div, addBtn);

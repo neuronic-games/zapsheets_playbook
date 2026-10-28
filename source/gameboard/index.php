@@ -1476,7 +1476,7 @@ function _carouselInsertSlide(url) {
   div.style.backgroundImage = "url('" + url + "')";
   var editBtn = document.createElement('button');
   editBtn.className = 'cat-slide-edit-btn'; editBtn.title = 'Change image';
-  editBtn.innerHTML = document.getElementById('IMG_BTN_ICON') ? document.getElementById('IMG_BTN_ICON').innerHTML : '🖼';
+  editBtn.innerHTML = IMG_BTN_ICON;
   editBtn.onclick = function() { carouselPickImage(div); };
   var delBtn = document.createElement('button');
   delBtn.className = 'cat-slide-del-btn'; delBtn.title = 'Remove'; delBtn.textContent = '×';

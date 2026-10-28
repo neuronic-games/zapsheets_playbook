@@ -4026,19 +4026,46 @@ function gbVrevRemove(e, idx) {
   gbInitVrevGrid();
 }
 
+var _buyDragIdx = -1;
 function gbMakeBuyCtaEl(b, i, isPlaceholder) {
   var w = document.createElement('span');
   w.className = 'gb-buy-cta-wrap' + (isPlaceholder ? ' gb-buy-cta-ph' : '');
 
+  // Drag-and-drop reordering (non-placeholder only)
+  if (!isPlaceholder) {
+    w.draggable = true; w.style.cursor = 'grab';
+    w.addEventListener('dragstart', function(e) {
+      _buyDragIdx = i; e.dataTransfer.effectAllowed = 'move';
+      setTimeout(function() { w.style.opacity = '.4'; }, 0);
+    });
+    w.addEventListener('dragend', function() {
+      w.style.opacity = '';
+      document.querySelectorAll('.gb-rl-drop-target').forEach(function(el) { el.classList.remove('gb-rl-drop-target'); });
+    });
+    w.addEventListener('dragover', function(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; w.classList.add('gb-rl-drop-target'); });
+    w.addEventListener('dragleave', function() { w.classList.remove('gb-rl-drop-target'); });
+    w.addEventListener('drop', function(e) {
+      e.preventDefault(); w.classList.remove('gb-rl-drop-target');
+      if (_buyDragIdx < 0 || _buyDragIdx === i) return;
+      var moved = _ed.buy_urls.splice(_buyDragIdx, 1)[0];
+      _ed.buy_urls.splice(i, 0, moved);
+      gbInitBuyCtas();
+    });
+  }
+
   var inner = document.createElement('span');
   inner.className = 'gb-buy-cta-inner filled';
 
-  // Editable label
+  // Editable label — click selects all so user can type replacement immediately
   var lbl = document.createElement('span');
   lbl.className = 'gb-buy-cta-lbl';
   lbl.contentEditable = 'true';
-  lbl.textContent = b.label || 'BUY NOW';
-  lbl.onclick = function(e) { e.stopPropagation(); };
+  lbl.textContent = isPlaceholder ? 'ADD BUY LINK' : (b.label || 'Buy Now');
+  lbl.onclick = function(e) {
+    e.stopPropagation();
+    var range = document.createRange(); range.selectNodeContents(this);
+    var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+  };
   if (i >= 0) {
     lbl.oninput = function() {
       if (_ed.buy_urls && _ed.buy_urls[i]) _ed.buy_urls[i].label = this.textContent.trim() || 'Buy Now';
@@ -4047,18 +4074,14 @@ function gbMakeBuyCtaEl(b, i, isPlaceholder) {
 
   // Inline URL input (hidden until link icon clicked)
   var urlInp = document.createElement('input');
-  urlInp.type = 'url';
-  urlInp.placeholder = 'https://…';
-  urlInp.value = b.url || '';
-  urlInp.className = 'gb-buy-url-inline';
+  urlInp.type = 'url'; urlInp.placeholder = 'https://…';
+  urlInp.value = b.url || ''; urlInp.className = 'gb-buy-url-inline';
   urlInp.style.display = 'none';
   urlInp.onclick = function(e) { e.stopPropagation(); };
 
   // Confirm button (hidden until URL input shown)
   var okBtn = document.createElement('button');
-  okBtn.className = 'gb-buy-url-ok-inline';
-  okBtn.textContent = '✓';
-  okBtn.style.display = 'none';
+  okBtn.className = 'gb-buy-url-ok-inline'; okBtn.textContent = '✓'; okBtn.style.display = 'none';
 
   // Link icon button
   var linkBtn = document.createElement('button');
@@ -4068,21 +4091,14 @@ function gbMakeBuyCtaEl(b, i, isPlaceholder) {
 
   function showUrl(e) {
     if (e) e.preventDefault();
-    lbl.style.display = 'none';
-    linkBtn.style.display = 'none';
-    urlInp.style.display = '';
-    okBtn.style.display = '';
-    urlInp.focus();
-    urlInp.select();
+    lbl.style.display = 'none'; linkBtn.style.display = 'none';
+    urlInp.style.display = ''; okBtn.style.display = '';
+    urlInp.focus(); if (urlInp.value) urlInp.select();
   }
-
   function revertUrl() {
-    urlInp.style.display = 'none';
-    okBtn.style.display = 'none';
-    lbl.style.display = '';
-    linkBtn.style.display = '';
+    urlInp.style.display = 'none'; okBtn.style.display = 'none';
+    lbl.style.display = ''; linkBtn.style.display = '';
   }
-
   function confirmUrl() {
     var url = urlInp.value.trim();
     var label = lbl.textContent.trim() || 'Buy Now';
@@ -4093,25 +4109,23 @@ function gbMakeBuyCtaEl(b, i, isPlaceholder) {
     gbInitBuyCtas();
   }
 
+  // Enter in label → go to URL; Enter in URL → confirm; Escape → revert
+  lbl.onkeydown       = function(e) { if (e.key === 'Enter') { e.preventDefault(); showUrl(null); } };
   linkBtn.onmousedown = showUrl;
-  okBtn.onmousedown = function(e) { e.preventDefault(); confirmUrl(); };
-  urlInp.onkeydown = function(e) {
+  okBtn.onmousedown   = function(e) { e.preventDefault(); confirmUrl(); };
+  urlInp.onkeydown    = function(e) {
     if (e.key === 'Enter')  { e.preventDefault(); confirmUrl(); }
     if (e.key === 'Escape') { revertUrl(); }
   };
 
-  inner.appendChild(lbl);
-  inner.appendChild(urlInp);
-  inner.appendChild(linkBtn);
-  inner.appendChild(okBtn);
+  inner.appendChild(lbl); inner.appendChild(urlInp);
+  inner.appendChild(linkBtn); inner.appendChild(okBtn);
   w.appendChild(inner);
 
   // Delete button (not on placeholder)
   if (!isPlaceholder) {
     var del = document.createElement('button');
-    del.className = 'gb-buy-cta-del';
-    del.textContent = '✕';
-    del.title = 'Remove';
+    del.className = 'gb-buy-cta-del'; del.textContent = '✕'; del.title = 'Remove';
     del.onmousedown = function(e) { e.preventDefault(); _ed.buy_urls.splice(i, 1); gbInitBuyCtas(); };
     w.appendChild(del);
   }
@@ -4123,15 +4137,11 @@ function gbInitBuyCtas() {
   var wrap = document.getElementById('gbBuyCtas');
   if (!wrap) return;
   wrap.innerHTML = '';
-  wrap.style.display = 'contents'; // override inline style="display:none"
+  wrap.style.display = 'contents';
   document.querySelectorAll('.gb-buy-pub').forEach(function(el) { el.style.display = 'none'; });
-
-  (_ed.buy_urls || []).forEach(function(b, i) {
-    if (!b.url) return;
-    wrap.appendChild(gbMakeBuyCtaEl(b, i, false));
-  });
-  // Always append a "BUY NOW" placeholder for adding new links
-  wrap.appendChild(gbMakeBuyCtaEl({label: 'BUY NOW', url: ''}, -1, true));
+  if (!_ed.buy_urls) _ed.buy_urls = (GAME_DATA.buy_urls || []).slice();
+  _ed.buy_urls.forEach(function(b, i) { if (b.url) wrap.appendChild(gbMakeBuyCtaEl(b, i, false)); });
+  wrap.appendChild(gbMakeBuyCtaEl({label: 'ADD BUY LINK', url: ''}, -1, true));
 }
 
 var _rlDragIdx = -1;

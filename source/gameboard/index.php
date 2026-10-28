@@ -2085,6 +2085,7 @@ a { color:inherit; text-decoration:none; }
 .gb-stat { font-size:.82rem; color:rgba(255,255,255,.75); }
 .gb-stat strong { font-family:'DINBlack',sans-serif; color:#fff; margin-right:.25rem; }
 .gb-hero-ctas { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.75rem; }
+.gb-hero-ctas .btn-nav { display:inline-flex; align-items:center; height:2.75rem; box-sizing:border-box; padding:0 1rem; }
 .gb-price-tag {
   display:inline-block; vertical-align:middle;
   padding:.55rem .85rem; /* total height: 2px+2px border + 1.1rem + 1.4rem(font) = 44px = 2.75rem */

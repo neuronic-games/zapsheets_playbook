@@ -1432,14 +1432,21 @@ function _carouselUpload(file, loadingEl, callback) {
 // Replace image on an existing slide
 window.carouselPickImage = function(slideEl) {
   if (!document.body.classList.contains('gb-admin-mode')) return;
+  clearInterval(_carouselTimer); // stop rotation while editing
   var inp = document.createElement('input');
   inp.type = 'file'; inp.accept = 'image/*';
   inp.onchange = function() {
     if (!inp.files || !inp.files[0]) return;
-    _carouselUpload(inp.files[0], slideEl, function(url) {
+    // Show spinner immediately on file selection
+    var spinner = document.createElement('div');
+    spinner.className = 'cat-slide-loading';
+    slideEl.appendChild(spinner);
+    _carouselUpload(inp.files[0], null, function(url) {
+      spinner.remove();
       slideEl.dataset.url = url;
       slideEl.style.backgroundImage = "url('" + url + "')";
       carouselSaveAll();
+      _carouselStart();
     });
   };
   inp.click();

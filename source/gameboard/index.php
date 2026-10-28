@@ -471,7 +471,6 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
     <div class="gb-admin-tools">
       <span class="gb-meta" id="gbMeta"><?= h($_pubName ?: '') ?></span>
       <button class="btn-add-game" id="gbSavePageBtn" onclick="gbSavePage()" style="display:none">Save</button>
-      <button class="btn-add-game" id="gbAddGameBtn" onclick="openAddGame()" style="display:none">+ Game</button>
       <div class="user-menu-wrap">
         <button class="btn-user-icon" id="gbUserBtn" onclick="toggleGbMenu(event)" title="Menu">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -921,7 +920,6 @@ function _updateGbAuth() {
   var siOut = document.getElementById('gbMenuSignInOut');
   var profile = document.getElementById('gbMenuProfile');
   var publishBtn = document.getElementById('gbMenuPublish');
-  var addGameBtn = document.getElementById('gbAddGameBtn');
   if (_gbUser) {
     var name = (_gbUser.bio && (_gbUser.bio['name'] || _gbUser.bio['Name'])) || _gbUser.email || '';
     if (btn) { btn.classList.add('signed-in'); btn.title = 'Signed in as ' + (_gbUser.email || ''); }
@@ -929,7 +927,6 @@ function _updateGbAuth() {
     if (siOut)  { siOut.textContent = 'Sign Out'; siOut.className = 'user-menu-item signout'; }
     if (profile) profile.style.display = '';
     if (publishBtn) publishBtn.style.display = '';
-    if (addGameBtn) addGameBtn.style.display = '';
     var saveBtn = document.getElementById('gbSavePageBtn');
     if (saveBtn) saveBtn.style.display = '';
     document.body.classList.add('gb-admin-mode');
@@ -943,7 +940,6 @@ function _updateGbAuth() {
     if (siOut)  { siOut.textContent = 'Sign In'; siOut.className = 'user-menu-item'; }
     if (profile) profile.style.display = 'none';
     if (publishBtn) publishBtn.style.display = 'none';
-    if (addGameBtn) addGameBtn.style.display = 'none';
     document.body.classList.remove('gb-admin-mode');
   }
 }
@@ -2390,6 +2386,14 @@ a.gb-buy-cta-inner { text-decoration:none; cursor:pointer; }
 .gb-more-body { padding:.55rem .7rem .7rem; }
 .gb-more-name { font-family:'DINBlack',sans-serif; font-size:.8rem; color:var(--accent); margin-bottom:.1rem; }
 .gb-more-meta { font-size:.72rem; color:var(--muted); }
+/* Add-game card (admin only) */
+.gb-add-game-card { display:none; border-radius:10px; border:2px dashed rgba(59,59,170,.25); background:linear-gradient(135deg,#f0f0fa,#e8e8f4); cursor:pointer; transition:border-color .15s, background .15s; overflow:hidden; }
+body.gb-admin-mode .gb-add-game-card { display:block; }
+.gb-add-game-card:hover { border-color:var(--accent); background:linear-gradient(135deg,#e8e8f8,#dcdcf0); }
+.gb-add-game-card-inner { width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:2.8rem; color:rgba(59,59,170,.3); line-height:1; transition:color .15s; }
+.gb-add-game-card:hover .gb-add-game-card-inner { color:var(--accent); }
+.gb-add-game-card-label { padding:.55rem .7rem .7rem; font-family:'DINBlack',sans-serif; font-size:.8rem; color:rgba(59,59,170,.45); }
+.gb-add-game-card:hover .gb-add-game-card-label { color:var(--accent); }
 
 /* ── Footer (shared) ── */
 
@@ -2956,8 +2960,8 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
   </div>
 
   <!-- More Games -->
-  <?php if (!empty($_otherGames)): ?>
-  <div class="gb-section">
+  <?php if (!empty($_otherGames) || !isset($_gbPublicBase)): ?>
+  <div class="gb-section<?= empty($_otherGames) && !isset($_gbPublicBase) ? ' gb-sect-empty' : '' ?>">
     <div class="gb-section-label">More Games</div>
     <div class="gb-more-grid">
       <?php foreach (array_slice($_otherGames, 0, 8) as $og):
@@ -2977,6 +2981,13 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
         </div>
       </a>
       <?php endforeach; ?>
+      <!-- Add-game card: admin only, appended after existing games -->
+      <?php if (!isset($_gbPublicBase)): ?>
+      <div class="gb-add-game-card" onclick="openAddGame()" title="Add a new game">
+        <div class="gb-add-game-card-inner">+</div>
+        <div class="gb-add-game-card-label">New Game</div>
+      </div>
+      <?php endif; ?>
     </div>
   </div>
   <?php endif; ?>

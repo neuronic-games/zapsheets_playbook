@@ -167,12 +167,17 @@ if ($result !== null && !empty($result['ok'])) {
             $patchEncoded = base64_encode(json_encode($patchData, JSON_UNESCAPED_UNICODE));
             $patchCmd     = escapeshellarg($pythonPath) . ' '
                           . escapeshellarg(__DIR__ . '/gpatchtabfields.py') . ' '
-                          . escapeshellarg($sheetId . '|' . $patchEncoded) . ' 2>/dev/null';
+                          . escapeshellarg($sheetId . '|' . $patchEncoded) . ' 2>&1';
             $patchOut = trim((string) shell_exec($patchCmd));
             if ($patchOut) {
                 $patchResult = json_decode($patchOut, true);
-                if (!empty($patchResult['patched'])) {
-                    $result['game_tab_patched'] = $patchResult['patched'];
+                if (!empty($patchResult['patched']) || !empty($patchResult['appended'])) {
+                    $result['game_tab_patched'] = ($patchResult['patched'] ?? 0) + ($patchResult['appended'] ?? 0);
+                }
+                if (!empty($patchResult['error'])) {
+                    $result['patch_error'] = $patchResult['error'];
+                } elseif ($patchResult === null && $patchOut) {
+                    $result['patch_error'] = substr($patchOut, 0, 300);
                 }
             }
         }

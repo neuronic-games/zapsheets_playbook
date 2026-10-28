@@ -4438,6 +4438,10 @@ document.addEventListener('drop', function(e) {
 });
 
 function saveGame() {
+  // If the edit-details dialog is open, flush its values into _ed first
+  if (document.getElementById('gbedOverlay').classList.contains('open')) {
+    applyEditDetails();
+  }
   // Sync inline stat inputs into _ed before building FormData
   var _statSync = {
     gbsiMinPlayers:'min_players', gbsiMaxPlayers:'max_players',

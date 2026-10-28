@@ -465,18 +465,20 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
 .gb-add-game-card { display:none; flex-direction:column; border-radius:12px; border:2px dashed rgba(59,59,170,.22); background:#fff; cursor:pointer; transition:border-color .15s, box-shadow .15s, transform .15s; overflow:hidden; box-shadow:0 2px 14px rgba(0,0,0,.06); }
 body.gb-admin-mode .gb-add-game-card { display:flex; }
 .gb-add-game-card:hover { border-color:var(--accent); box-shadow:0 6px 24px rgba(0,0,0,.12); transform:translateY(-3px); }
-.gb-add-game-card-inner { position:relative; width:100%; flex:1; min-height:0; display:flex; align-items:center; justify-content:center; font-size:3rem; color:rgba(59,59,170,.28); line-height:1; transition:color .15s, background .15s; background:linear-gradient(135deg,#e8e8f2,#d8d8ec); overflow:hidden; }
+.gb-add-game-card-inner { position:relative; width:100%; aspect-ratio:1; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:3rem; color:rgba(59,59,170,.28); line-height:1; transition:color .15s, background .15s; background:linear-gradient(135deg,#e8e8f2,#d8d8ec); overflow:hidden; }
 .gb-add-game-card:hover .gb-add-game-card-inner { color:var(--accent); background:linear-gradient(135deg,#e0e0f0,#cecee8); }
 .gb-agc-plus { pointer-events:none; }
 .gb-agc-img-btn { position:absolute; top:.4rem; right:.4rem; z-index:2; }
 .gb-agc-preview { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1; }
-.gb-add-game-card-label { padding:.75rem .9rem 1rem; flex-shrink:0; display:flex; flex-direction:column; gap:.2rem; }
+.gb-add-game-card-label { padding:.75rem .9rem 1rem; flex:1; display:flex; flex-direction:column; gap:.2rem; }
 .gb-agc-name { outline:none; font-family:'DINBlack',sans-serif; font-size:.95rem; color:rgba(59,59,170,.45); cursor:text; display:block; min-width:2ch; transition:color .15s; }
 .gb-add-game-card:hover .gb-agc-name { color:var(--accent); }
 .gb-agc-name:focus { color:var(--accent); border-bottom:1.5px solid var(--accent); }
 .gb-agc-tagline { outline:none; font-size:.8rem; color:var(--ink-lt); cursor:text; display:none; min-width:2ch; border:none; background:transparent; font-family:'DINRegular',Arial,sans-serif; padding:0; width:100%; }
 .gb-agc-tagline.visible { display:block; }
 .gb-agc-tagline:focus { border-bottom:1px solid var(--border); }
+.gb-agc-tagline-ph { font-size:.8rem; color:var(--ink-lt); opacity:.5; display:block; pointer-events:none; }
+.gb-agc-tagline.visible ~ .gb-agc-tagline-ph { display:none; }
 </style>
 </head>
 <body>
@@ -646,9 +648,10 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
         onfocus="catAddGameNameFocus(this)"
         onblur="catAddGameNameBlur(this)">New Game</div>
       <input class="gb-agc-tagline" id="catAddGameTagline" type="text"
-        placeholder="Short description…"
+        placeholder="Game description goes here."
         onkeydown="catAddGameTaglineKey(event)"
         onclick="event.stopPropagation()" />
+      <span class="gb-agc-tagline-ph" id="catAddGameTaglinePh">Game description goes here.</span>
     </div>
   </div>
 <?php endif; ?>
@@ -688,6 +691,20 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
     </p>
     <div style="display:flex;justify-content:flex-end;margin-top:1rem">
       <button class="gb-btn" onclick="closePublishDialog()">Done</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── Delete game confirm dialog ── -->
+<div class="gb-overlay" id="catDeleteOverlay" onclick="if(event.target===this)closeCatDeleteDialog()">
+  <div class="gb-dialog" onclick="event.stopPropagation()" style="max-width:380px">
+    <button class="gb-dialog-close" onclick="closeCatDeleteDialog()">&#215;</button>
+    <div class="gb-dialog-title">Delete Game</div>
+    <p style="font-size:.88rem;color:var(--ink-lt);margin:.2rem 0 1rem">Delete &#8220;<strong id="catDeleteGameName"></strong>&#8221;? This will permanently remove the game row and its sheet tab and cannot be undone.</p>
+    <div class="gb-dialog-actions">
+      <button class="btn-cancel" onclick="closeCatDeleteDialog()">Cancel</button>
+      <button class="gb-btn" id="catDeleteConfirmBtn" onclick="catDeleteGameConfirmed()" style="background:#e53935;color:#fff;border-color:#e53935">Delete</button>
     </div>
   </div>
 </div>
@@ -1638,6 +1655,7 @@ document.addEventListener('keydown', function(e) {
   if (document.getElementById('signInOverlay').classList.contains('open'))  { forceCloseSignIn(); return; }
   if (document.getElementById('settingsOverlay').classList.contains('open')){ forceCloseSettings(); return; }
   if (document.getElementById('addGameOverlay').classList.contains('open')) { forceCloseAddGame(); return; }
+  if (document.getElementById('catDeleteOverlay').classList.contains('open')) { closeCatDeleteDialog(); return; }
 });
 
 // ── Add Game dialog ──────────────────────────────────────────────────────────
@@ -2050,26 +2068,49 @@ function catAddGameInsertCard(name, tagline, imgUrl, slug) {
   }
 }
 
+var _catDeleteTarget = { name: '', wrap: null };
+
 function catDeleteGame(e, gameName) {
   e.preventDefault(); e.stopPropagation();
-  if (!confirm('Delete "' + gameName + '"?\n\nThis will permanently remove the game row and its sheet tab. This cannot be undone.')) return;
-  var wrap = e.target.closest('.cat-card-wrap');
+  _catDeleteTarget.name = gameName;
+  _catDeleteTarget.wrap = e.target.closest('.cat-card-wrap');
+  document.getElementById('catDeleteGameName').textContent = gameName;
+  document.getElementById('catDeleteOverlay').classList.add('open');
+}
+
+function closeCatDeleteDialog() {
+  document.getElementById('catDeleteOverlay').classList.remove('open');
+}
+
+function catDeleteGameConfirmed() {
+  var gameName = _catDeleteTarget.name;
+  var wrap = _catDeleteTarget.wrap;
+  closeCatDeleteDialog();
   if (wrap) { wrap.style.opacity = '.4'; wrap.style.pointerEvents = 'none'; }
+  var btn = document.getElementById('catDeleteConfirmBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
   var fd = new FormData();
   fd.append('id',   SHEET_ID);
   fd.append('game', gameName);
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_ROOT + 'push/deleteGame.php');
   xhr.onload = function() {
-    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Delete'; }
+    var r; try { r = JSON.parse(xhr.responseText); } catch(ex) { r = null; }
     if (!r || r.error) {
       if (wrap) { wrap.style.opacity = ''; wrap.style.pointerEvents = ''; }
       alert('Delete failed: ' + (r && r.error || 'Unknown error'));
       return;
     }
-    location.reload();
+    if (wrap) wrap.remove();
+    var countEl = document.querySelector('.cat-section-count');
+    if (countEl) {
+      var n = parseInt(countEl.textContent) || 0;
+      countEl.textContent = Math.max(0, n - 1) + ' published';
+    }
   };
   xhr.onerror = function() {
+    if (btn) { btn.disabled = false; btn.textContent = 'Delete'; }
     if (wrap) { wrap.style.opacity = ''; wrap.style.pointerEvents = ''; }
     alert('Network error. Please try again.');
   };

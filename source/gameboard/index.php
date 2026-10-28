@@ -351,6 +351,9 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 /* Loading overlay on carousel slide during upload */
 .cat-slide-loading { position:absolute; inset:0; background:rgba(0,0,0,.45); z-index:12; pointer-events:none; }
 .cat-slide-loading::after { content:''; position:absolute; top:50%; left:50%; width:36px; height:36px; border:3px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:gbImgSpin .7s linear infinite; transform:translate(-50%,-50%); }
+.cat-carousel-add-btn { display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:11; width:4rem; height:4rem; border-radius:50%; border:2.5px dashed rgba(255,255,255,.55); background:rgba(0,0,0,.25); color:rgba(255,255,255,.8); font-size:2rem; line-height:1; cursor:pointer; align-items:center; justify-content:center; transition:background .15s, border-color .15s, color .15s; }
+.cat-carousel-add-btn:hover { background:rgba(0,0,0,.55); border-color:#fff; color:#fff; }
+body.gb-admin-mode .cat-carousel-add-btn { display:flex; }
 
 /* ── Empty ── */
 .cat-empty { grid-column:1/-1; padding:4rem 1rem; text-align:center; color:var(--muted); }
@@ -581,6 +584,9 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
     <svg class="cat-carousel-ph-icon" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
     <div class="cat-carousel-ph-text">Drag &amp; drop images or click + to add</div>
   </div>
+<?php endif; ?>
+<?php if (!isset($_gbPublicBase)): ?>
+<button class="cat-carousel-add-btn" id="catCarouselAddBtn" onclick="carouselAddSlide()" title="Add image">+</button>
 <?php endif; ?>
 </div>
 
@@ -1510,7 +1516,6 @@ window.carouselRemoveSlide = function(slideEl) {
   _carouselRebuildDots();
   _carouselStart();
   carouselSaveAll();
-  if (_carouselSlides().length < 6) { var add = document.getElementById('catSlideAdd'); if (add) add.style.opacity = ''; }
 };
 
 // Init

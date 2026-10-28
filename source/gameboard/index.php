@@ -465,15 +465,18 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
 .gb-add-game-card { display:none; flex-direction:column; border-radius:12px; border:2px dashed rgba(59,59,170,.22); background:#fff; cursor:pointer; transition:border-color .15s, box-shadow .15s, transform .15s; overflow:hidden; box-shadow:0 2px 14px rgba(0,0,0,.06); }
 body.gb-admin-mode .gb-add-game-card { display:flex; }
 .gb-add-game-card:hover { border-color:var(--accent); box-shadow:0 6px 24px rgba(0,0,0,.12); transform:translateY(-3px); }
-.gb-add-game-card-inner { position:relative; width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:3rem; color:rgba(59,59,170,.28); line-height:1; transition:color .15s, background .15s; background:linear-gradient(135deg,#e8e8f2,#d8d8ec); overflow:hidden; flex-shrink:0; }
+.gb-add-game-card-inner { position:relative; width:100%; flex:1; min-height:0; display:flex; align-items:center; justify-content:center; font-size:3rem; color:rgba(59,59,170,.28); line-height:1; transition:color .15s, background .15s; background:linear-gradient(135deg,#e8e8f2,#d8d8ec); overflow:hidden; }
 .gb-add-game-card:hover .gb-add-game-card-inner { color:var(--accent); background:linear-gradient(135deg,#e0e0f0,#cecee8); }
 .gb-agc-plus { pointer-events:none; }
 .gb-agc-img-btn { position:absolute; top:.4rem; right:.4rem; z-index:2; }
 .gb-agc-preview { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1; }
-.gb-add-game-card-label { padding:.75rem .9rem 1rem; flex:1; }
+.gb-add-game-card-label { padding:.75rem .9rem 1rem; flex-shrink:0; display:flex; flex-direction:column; gap:.2rem; }
 .gb-agc-name { outline:none; font-family:'DINBlack',sans-serif; font-size:.95rem; color:rgba(59,59,170,.45); cursor:text; display:block; min-width:2ch; transition:color .15s; }
 .gb-add-game-card:hover .gb-agc-name { color:var(--accent); }
 .gb-agc-name:focus { color:var(--accent); border-bottom:1.5px solid var(--accent); }
+.gb-agc-tagline { outline:none; font-size:.8rem; color:var(--ink-lt); cursor:text; display:none; min-width:2ch; border:none; background:transparent; font-family:'DINRegular',Arial,sans-serif; padding:0; width:100%; }
+.gb-agc-tagline.visible { display:block; }
+.gb-agc-tagline:focus { border-bottom:1px solid var(--border); }
 </style>
 </head>
 <body>
@@ -642,6 +645,10 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
         onkeydown="catAddGameKey(event)"
         onfocus="catAddGameNameFocus(this)"
         onblur="catAddGameNameBlur(this)">New Game</div>
+      <input class="gb-agc-tagline" id="catAddGameTagline" type="text"
+        placeholder="Short description…"
+        onkeydown="catAddGameTaglineKey(event)"
+        onclick="event.stopPropagation()" />
     </div>
   </div>
 <?php endif; ?>
@@ -920,6 +927,7 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
 <script>
 var SHEET_ID   = <?= json_encode($_sheetId) ?>;
 var APP_ROOT   = <?= json_encode($_appRoot) ?>;
+var CAT_URL    = <?= json_encode($_catUrl ?? '') ?>;
 var IMG_BTN_ICON = <?= json_encode($_imgBtnIcon) ?>;
 
 // ── Auth state ──────────────────────────────────────────────────────────────
@@ -1866,20 +1874,36 @@ function catAddGameNameFocus(el) {
 }
 
 function catAddGameNameBlur(el) {
-  if (!el.textContent.trim()) el.textContent = 'New Game';
+  var name = el.textContent.trim();
+  if (!name) { el.textContent = 'New Game'; }
+  var tl = document.getElementById('catAddGameTagline');
+  if (tl) { if (name && name !== 'New Game') tl.classList.add('visible'); else tl.classList.remove('visible'); }
+}
+
+function catAddGameTaglineKey(e) {
+  if (e.key === 'Enter') { e.preventDefault(); catAddGameSubmit(); }
+  if (e.key === 'Escape') { catAddGameReset(); }
 }
 
 function catAddGameKey(e) {
-  if (e.key === 'Enter') { e.preventDefault(); catAddGameSubmit(); }
-  if (e.key === 'Escape') {
-    var el = document.getElementById('catAddGameName');
-    if (el) { el.textContent = 'New Game'; el.blur(); }
-    _catAddGameImgUrl = '';
-    var inner = document.getElementById('catAddGameInner');
-    if (inner) {
-      var prev = inner.querySelector('.gb-agc-preview'); if (prev) prev.remove();
-      var plus = inner.querySelector('.gb-agc-plus'); if (plus) plus.style.display = '';
-    }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    var tl = document.getElementById('catAddGameTagline');
+    if (tl) { tl.classList.add('visible'); tl.focus(); } else { catAddGameSubmit(); }
+  }
+  if (e.key === 'Escape') { catAddGameReset(); }
+}
+
+function catAddGameReset() {
+  var el = document.getElementById('catAddGameName');
+  if (el) { el.textContent = 'New Game'; el.blur(); }
+  var tl = document.getElementById('catAddGameTagline');
+  if (tl) { tl.value = ''; tl.classList.remove('visible'); }
+  _catAddGameImgUrl = '';
+  var inner = document.getElementById('catAddGameInner');
+  if (inner) {
+    var prev = inner.querySelector('.gb-agc-preview'); if (prev) prev.remove();
+    var plus = inner.querySelector('.gb-agc-plus'); if (plus) plus.style.display = '';
   }
 }
 
@@ -1933,11 +1957,14 @@ function catAddGameSubmit() {
   var nameEl = document.getElementById('catAddGameName');
   var name = nameEl ? nameEl.textContent.trim() : '';
   if (!name || name === 'New Game') { if (nameEl) nameEl.focus(); return; }
+  var taglineEl = document.getElementById('catAddGameTagline');
+  var tagline = taglineEl ? taglineEl.value.trim() : '';
   var card = document.getElementById('catAddGameCard');
   if (card) { card.style.opacity = '.5'; card.style.pointerEvents = 'none'; }
   var fd = new FormData();
   fd.append('id',        SHEET_ID);
   fd.append('name',      name);
+  fd.append('tagline',   tagline);
   fd.append('status',    'Published');
   fd.append('cover_url', _catAddGameImgUrl || '');
   fd.append('image',     _catAddGameImgUrl ? '=IMAGE("' + _catAddGameImgUrl + '")' : '');
@@ -1947,13 +1974,80 @@ function catAddGameSubmit() {
     if (card) { card.style.opacity = ''; card.style.pointerEvents = ''; }
     var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
     if (!r || r.error) { alert((r && r.error) || 'Unknown error. Please try again.'); return; }
-    location.reload();
+    // Insert a real game card before the add-game card, then reset
+    catAddGameInsertCard(name, tagline, _catAddGameImgUrl, r.slug || '');
+    catAddGameReset();
   };
   xhr.onerror = function() {
     if (card) { card.style.opacity = ''; card.style.pointerEvents = ''; }
     alert('Network error. Please try again.');
   };
   xhr.send(fd);
+}
+
+function catAddGameInsertCard(name, tagline, imgUrl, slug) {
+  var grid = document.getElementById('catGrid');
+  var addCard = document.getElementById('catAddGameCard');
+  if (!grid || !addCard) return;
+
+  // Build wrap
+  var wrap = document.createElement('div');
+  wrap.className = 'cat-card-wrap';
+
+  var a = document.createElement('a');
+  a.className = 'cat-card';
+  a.href = CAT_URL + (slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+
+  var imgWrap = document.createElement('div');
+  imgWrap.className = 'cat-img-wrap';
+  imgWrap.dataset.game = name;
+  imgWrap.setAttribute('ondragover', 'catDragOver(event,this)');
+  imgWrap.setAttribute('ondragleave', 'catDragLeave(event,this)');
+  imgWrap.setAttribute('ondrop', 'catDrop(event,this)');
+
+  if (imgUrl) {
+    var img = document.createElement('img');
+    img.className = 'cat-card-img'; img.src = imgUrl; img.alt = name; img.loading = 'lazy';
+    imgWrap.appendChild(img);
+  } else {
+    var ph = document.createElement('div');
+    ph.className = 'cat-card-ph';
+    ph.innerHTML = '<img src="' + APP_ROOT + 'images/gb_logo.png" alt="" style="width:64px;height:64px;border-radius:14px;opacity:.35;" />';
+    imgWrap.appendChild(ph);
+  }
+  var editBtn = document.createElement('button');
+  editBtn.className = 'gb-img-btn cat-img-upload-btn'; editBtn.title = 'Change image';
+  editBtn.innerHTML = IMG_BTN_ICON;
+  editBtn.setAttribute('onclick', 'catPickImage(event,this.closest('.cat-img-wrap'))');
+  imgWrap.appendChild(editBtn);
+  a.appendChild(imgWrap);
+
+  var body = document.createElement('div');
+  body.className = 'cat-card-body';
+  var nameDiv = document.createElement('div');
+  nameDiv.className = 'cat-card-name'; nameDiv.textContent = name;
+  body.appendChild(nameDiv);
+  if (tagline) {
+    var sumDiv = document.createElement('div');
+    sumDiv.className = 'cat-card-summary'; sumDiv.textContent = tagline;
+    body.appendChild(sumDiv);
+  }
+  a.appendChild(body);
+  wrap.appendChild(a);
+
+  var delBtn = document.createElement('button');
+  delBtn.className = 'cat-card-del-btn'; delBtn.title = 'Delete game'; delBtn.textContent = '✕';
+  delBtn.setAttribute('onclick', 'catDeleteGame(event,' + JSON.stringify(name) + ')');
+  wrap.appendChild(delBtn);
+
+  grid.insertBefore(wrap, addCard);
+
+  // Update published count
+  var countEl = document.querySelector('.cat-section-count');
+  if (countEl) {
+    var n = parseInt(countEl.textContent) || 0;
+    countEl.textContent = (n + 1) + ' published';
+  }
 }
 
 function catDeleteGame(e, gameName) {

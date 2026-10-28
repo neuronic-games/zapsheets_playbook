@@ -2349,6 +2349,7 @@ body.gb-admin-mode #gbBuyCtas { display:contents; }
   transition:background .12s, color .12s; cursor:pointer;
 }
 .btn-link:hover { background:var(--accent); color:#fff; }
+.gb-rl-drop-target .gb-buy-cta-inner { outline:2px dashed var(--accent); outline-offset:2px; }
 /* Custom resource link pill buttons */
 .gb-res-btn {
   display:inline-block;
@@ -2902,22 +2903,6 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
     </div>
   </div>
 
-  <!-- FAQs -->
-  <div class="gb-section<?= empty($_faqs) ? ' gb-sect-empty' : '' ?>">
-    <div class="gb-section-label">FAQ</div>
-    <div class="gb-faq-editor gb-inline-edit" id="gbFaqsList"></div>
-    <?php foreach ($_faqs as $fi => $fq):
-      $fqQ = trim($fq['Value']   ?? '');
-      $fqA = trim($fq['Value 1'] ?? '');
-      if (!$fqQ) continue;
-    ?>
-    <div class="gb-faq-item gb-display-content" id="faq<?= $fi ?>">
-      <div class="gb-faq-q" onclick="toggleFaq('faq<?= $fi ?>')"><?= h($fqQ) ?></div>
-      <div class="gb-faq-a"><?php if (strncmp($fqA, 'img:', 4) === 0): ?><img class="gb-faq-img" src="<?= h(substr($fqA, 4)) ?>" alt="" loading="lazy"><?php else: ?><?= nl2br(h($fqA)) ?><?php endif; ?></div>
-    </div>
-    <?php endforeach; ?>
-  </div>
-
   <!-- Resources -->
   <?php
   $_hasHardLinks = $_richRules || $_sellsheet || $_playUrl || $_printUrl || $_pageUrl;
@@ -2939,6 +2924,22 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
         if (!$rlUrl) continue;
       ?><a class="gb-res-btn" href="<?= h($rlUrl) ?>" target="_blank"><?= h($rlLabel ?: 'Link') ?></a><?php endforeach; ?>
     </div>
+  </div>
+
+  <!-- FAQs -->
+  <div class="gb-section<?= empty($_faqs) ? ' gb-sect-empty' : '' ?>">
+    <div class="gb-section-label">FAQ</div>
+    <div class="gb-faq-editor gb-inline-edit" id="gbFaqsList"></div>
+    <?php foreach ($_faqs as $fi => $fq):
+      $fqQ = trim($fq['Value']   ?? '');
+      $fqA = trim($fq['Value 1'] ?? '');
+      if (!$fqQ) continue;
+    ?>
+    <div class="gb-faq-item gb-display-content" id="faq<?= $fi ?>">
+      <div class="gb-faq-q" onclick="toggleFaq('faq<?= $fi ?>')"><?= h($fqQ) ?></div>
+      <div class="gb-faq-a"><?php if (strncmp($fqA, 'img:', 4) === 0): ?><img class="gb-faq-img" src="<?= h(substr($fqA, 4)) ?>" alt="" loading="lazy"><?php else: ?><?= nl2br(h($fqA)) ?><?php endif; ?></div>
+    </div>
+    <?php endforeach; ?>
   </div>
 
   <!-- More Games -->
@@ -4128,9 +4129,31 @@ function gbInitBuyCtas() {
   wrap.appendChild(gbMakeBuyCtaEl({label: 'BUY NOW', url: ''}, -1, true));
 }
 
+var _rlDragIdx = -1;
 function gbMakeResLinkEl(rl, i, isPlaceholder) {
   var w = document.createElement('span');
   w.className = 'gb-buy-cta-wrap' + (isPlaceholder ? ' gb-buy-cta-ph' : '');
+  // Drag-and-drop reordering (non-placeholder only)
+  if (!isPlaceholder) {
+    w.draggable = true;
+    w.style.cursor = 'grab';
+    w.addEventListener('dragstart', function(e) {
+      _rlDragIdx = i;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(function() { w.style.opacity = '.4'; }, 0);
+    });
+    w.addEventListener('dragend', function() { w.style.opacity = ''; document.querySelectorAll('.gb-rl-drop-target').forEach(function(el) { el.classList.remove('gb-rl-drop-target'); }); });
+    w.addEventListener('dragover', function(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; w.classList.add('gb-rl-drop-target'); });
+    w.addEventListener('dragleave', function() { w.classList.remove('gb-rl-drop-target'); });
+    w.addEventListener('drop', function(e) {
+      e.preventDefault(); w.classList.remove('gb-rl-drop-target');
+      if (_rlDragIdx < 0 || _rlDragIdx === i) return;
+      var arr = _ed.resource_links;
+      var moved = arr.splice(_rlDragIdx, 1)[0];
+      arr.splice(i, 0, moved);
+      gbInitResLinks();
+    });
+  }
 
   var inner = document.createElement('span');
   inner.className = 'gb-buy-cta-inner'; // outlined, not filled

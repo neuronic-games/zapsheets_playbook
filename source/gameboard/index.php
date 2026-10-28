@@ -4740,9 +4740,8 @@ function gbInitReviewTicker() {
     // Ignore clicks on the already-open editing card
     if (item.classList.contains('gb-ticker-item-editing')) return;
     var idx = parseInt(item.dataset.reviewIdx, 10);
-    // Always open the first (original) card with that index so edits are in place
-    var origItem = track.querySelector('[data-review-idx="' + idx + '"]:not(.gb-ticker-item-editing)');
-    gbTickerEditOpen(idx, origItem || item);
+    // Open the form in the clicked item (may be a clone) so it appears where the user clicked
+    gbTickerEditOpen(idx, item);
   };
 
   // Hover pause

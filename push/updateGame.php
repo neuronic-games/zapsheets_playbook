@@ -140,13 +140,19 @@ if ($result !== null && !empty($result['ok'])) {
     $tabGameName = $name ?: $origName;
     $tabCmd = escapeshellarg($pythonPath) . ' '
             . escapeshellarg(__DIR__ . '/gcreategameboardtab.py') . ' '
-            . escapeshellarg($sheetId . '|' . $tabGameName) . ' 2>/dev/null';
+            . escapeshellarg($sheetId . '|' . $tabGameName) . ' 2>&1';
     $tabOut = trim((string) shell_exec($tabCmd));
     $tabResult = $tabOut ? json_decode($tabOut, true) : null;
+    if ($tabResult === null && $tabOut) {
+        $result['tab_error'] = substr($tabOut, 0, 300);
+    }
+    // Run patch regardless of whether tab-create succeeded — tab may already exist.
+    $tabKnown = !empty($tabResult['tab']) || !empty($tabResult['ok']);
     if (!empty($tabResult['tab'])) {
         $result['game_tab'] = $tabResult['tab'];
         $result['game_tab_created'] = !($tabResult['existed'] ?? true);
-
+    }
+    if ($tabKnown || $tabGameName) {
         // Patch fields in the [GameName] tab — runs for both new and existing tabs.
         $patchFields = [];
         if ($description     !== '') $patchFields['Description']   = $description;

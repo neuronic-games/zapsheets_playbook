@@ -333,6 +333,13 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 .cat-img-wrap { position:relative; display:block; width:100%; }
 .cat-img-upload-btn { position:absolute; top:.4rem; right:.4rem; z-index:2; }
 .cat-img-wrap.drag-over::after { content:'Drop to set image'; position:absolute; inset:0; background:rgba(55,110,200,.75); color:#fff; font-family:'DINBlack',sans-serif; font-size:.8rem; text-transform:uppercase; letter-spacing:.07em; display:flex; align-items:center; justify-content:center; z-index:3; pointer-events:none; }
+/* Loading overlay on card image during upload */
+@keyframes gbImgSpin { to { transform:translate(-50%,-50%) rotate(360deg); } }
+.cat-img-wrap.img-loading::after { content:''; position:absolute; inset:0; background:rgba(0,0,0,.45); z-index:4; pointer-events:none; border-radius:inherit; }
+.cat-img-wrap.img-loading::before { content:''; position:absolute; top:50%; left:50%; width:28px; height:28px; border:3px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:gbImgSpin .7s linear infinite; z-index:5; pointer-events:none; }
+/* Loading overlay on carousel slide during upload */
+.cat-slide-loading { position:absolute; inset:0; background:rgba(0,0,0,.45); z-index:12; pointer-events:none; }
+.cat-slide-loading::after { content:''; position:absolute; top:50%; left:50%; width:36px; height:36px; border:3px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:gbImgSpin .7s linear infinite; transform:translate(-50%,-50%); }
 
 /* ── Empty ── */
 .cat-empty { grid-column:1/-1; padding:4rem 1rem; text-align:center; color:var(--muted); }
@@ -1045,7 +1052,8 @@ function catUploadCardImage(file, wrap) {
   var gameName = wrap.dataset.game;
   if (!gameName) return;
   var btn = wrap.querySelector('.cat-img-upload-btn');
-  if (btn) { btn._orig = btn.innerHTML; btn.textContent = '⏳'; btn.disabled = true; }
+  if (btn) { btn._orig = btn.innerHTML; btn.disabled = true; }
+  wrap.classList.add('img-loading');
 
   var formData = new FormData();
   formData.append('file', file);
@@ -1056,6 +1064,7 @@ function catUploadCardImage(file, wrap) {
   xhr.onload = function() {
     var r; try { r = JSON.parse(xhr.responseText); } catch(ex) { r = {error:'parse error'}; }
     if (!r || r.error) {
+      wrap.classList.remove('img-loading');
       alert('Upload failed: ' + (r && r.error || 'unknown'));
       if (btn) { btn.innerHTML = btn._orig || ''; btn.disabled = false; }
       return;
@@ -1071,26 +1080,33 @@ function catUploadCardImage(file, wrap) {
       if (btn) { btn.innerHTML = btn._orig || ''; btn.disabled = false; }
       var r2; try { r2 = JSON.parse(xhr2.responseText); } catch(ex) { r2 = {error:'parse error'}; }
       if (!r2 || r2.error) {
+        wrap.classList.remove('img-loading');
         alert('Sheet update failed: ' + (r2 && r2.error || 'unknown'));
         return;
       }
-      // Swap image in DOM immediately
+      // Swap image in DOM immediately; remove spinner once new image loads
       var existing = wrap.querySelector('.cat-card-img');
       var ph = wrap.querySelector('.cat-card-ph');
+      var targetImg;
       if (existing) {
+        targetImg = existing;
         existing.src = imageUrl;
       } else {
-        var img = document.createElement('img');
-        img.className = 'cat-card-img';
-        img.src = imageUrl;
-        img.alt = gameName;
-        img.loading = 'lazy';
-        if (ph) ph.parentNode.replaceChild(img, ph);
-        else wrap.insertBefore(img, wrap.firstChild);
+        targetImg = document.createElement('img');
+        targetImg.className = 'cat-card-img';
+        targetImg.src = imageUrl;
+        targetImg.alt = gameName;
+        targetImg.loading = 'lazy';
+        if (ph) ph.parentNode.replaceChild(targetImg, ph);
+        else wrap.insertBefore(targetImg, wrap.firstChild);
       }
+      targetImg.onload  = function() { wrap.classList.remove('img-loading'); };
+      targetImg.onerror = function() { wrap.classList.remove('img-loading'); };
     };
+    xhr2.onerror = function() { wrap.classList.remove('img-loading'); if (btn) { btn.innerHTML = btn._orig || ''; btn.disabled = false; } };
     xhr2.send(fd2);
   };
+  xhr.onerror = function() { wrap.classList.remove('img-loading'); if (btn) { btn.innerHTML = btn._orig || ''; btn.disabled = false; } };
   xhr.send(formData);
 }
 
@@ -1303,17 +1319,25 @@ function carouselSaveAll() {
 }
 
 // Upload a file, then call callback(url)
-function _carouselUpload(file, callback) {
+function _carouselUpload(file, loadingEl, callback) {
   if (!file || !file.type.startsWith('image/')) return;
+  // Show spinner on the target element (slide or carousel container)
+  var spinner = null;
+  if (loadingEl) {
+    spinner = document.createElement('div');
+    spinner.className = 'cat-slide-loading';
+    loadingEl.appendChild(spinner);
+  }
   var fd = new FormData(); fd.append('file', file); fd.append('id', SHEET_ID);
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_ROOT + 'push/uploadImage.php');
   xhr.onload = function() {
+    if (spinner) spinner.remove();
     var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = {}; }
     if (r && r.url) { callback(r.url); }
     else { gbShowSaveToast('Upload failed', true); }
   };
-  xhr.onerror = function() { gbShowSaveToast('Upload failed', true); };
+  xhr.onerror = function() { if (spinner) spinner.remove(); gbShowSaveToast('Upload failed', true); };
   xhr.send(fd);
 }
 
@@ -1324,7 +1348,7 @@ window.carouselPickImage = function(slideEl) {
   inp.type = 'file'; inp.accept = 'image/*';
   inp.onchange = function() {
     if (!inp.files || !inp.files[0]) return;
-    _carouselUpload(inp.files[0], function(url) {
+    _carouselUpload(inp.files[0], slideEl, function(url) {
       slideEl.dataset.url = url;
       slideEl.style.backgroundImage = "url('" + url + "')";
       carouselSaveAll();
@@ -1341,7 +1365,8 @@ window.carouselAddSlide = function() {
   inp.type = 'file'; inp.accept = 'image/*';
   inp.onchange = function() {
     if (!inp.files || !inp.files[0]) return;
-    _carouselUpload(inp.files[0], function(url) { _carouselInsertSlide(url); });
+    var carousel = document.getElementById('catCarousel');
+    _carouselUpload(inp.files[0], carousel, function(url) { _carouselInsertSlide(url); });
   };
   inp.click();
 };
@@ -1350,7 +1375,10 @@ window.carouselDropAdd = function(e) {
   if (!document.body.classList.contains('gb-admin-mode')) return;
   if (_carouselSlides().length >= 6) return;
   var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-  if (f) _carouselUpload(f, function(url) { _carouselInsertSlide(url); });
+  if (f) {
+    var carousel = document.getElementById('catCarousel');
+    _carouselUpload(f, carousel, function(url) { _carouselInsertSlide(url); });
+  }
 };
 function _carouselInsertSlide(url) {
   var carousel = document.getElementById('catCarousel');

@@ -349,7 +349,7 @@ body.gb-admin-mode .gb-img-btn { display:flex; }
 .cat-img-wrap.img-loading::after { content:''; position:absolute; inset:0; background:rgba(0,0,0,.45); z-index:4; pointer-events:none; border-radius:inherit; }
 .cat-img-wrap.img-loading::before { content:''; position:absolute; top:50%; left:50%; width:28px; height:28px; border:3px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:gbImgSpin .7s linear infinite; z-index:5; pointer-events:none; }
 /* Loading overlay on carousel slide during upload */
-.cat-slide-loading { position:absolute; inset:0; background:rgba(0,0,0,.45); z-index:12; pointer-events:none; }
+.cat-slide-loading { position:absolute; inset:0; background:rgba(0,0,0,.45); z-index:20; pointer-events:all; }
 .cat-slide-loading::after { content:''; position:absolute; top:50%; left:50%; width:36px; height:36px; border:3px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:gbImgSpin .7s linear infinite; transform:translate(-50%,-50%); }
 .cat-carousel-add-btn { display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:11; width:4rem; height:4rem; border-radius:50%; border:2.5px dashed rgba(255,255,255,.55); background:rgba(0,0,0,.25); color:rgba(255,255,255,.8); font-size:2rem; line-height:1; cursor:pointer; align-items:center; justify-content:center; transition:background .15s, border-color .15s, color .15s; }
 .cat-carousel-add-btn:hover { background:rgba(0,0,0,.55); border-color:#fff; color:#fff; }
@@ -597,7 +597,6 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
 <!-- ── Games section ── -->
 <div class="cat-section-head">
   <span class="cat-section-title">Our Games</span>
-  <?php if (!empty($_games)): ?><span class="cat-section-count"><?= count($_games) ?> published</span><?php endif; ?>
 </div>
 
 <!-- ── Game grid ── -->

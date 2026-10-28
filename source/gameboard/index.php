@@ -2116,11 +2116,12 @@ body.gb-admin-mode .gb-gallery-thumb { cursor:grab; }
 .gb-gt-del { position:absolute; top:2px; right:2px; background:rgba(0,0,0,.6); color:#fff; border:none; border-radius:50%; width:18px; height:18px; font-size:.55rem; cursor:pointer; display:none; align-items:center; justify-content:center; z-index:2; line-height:1; }
 body.gb-admin-mode .gb-gt-del { display:flex; }
 /* "+" add thumb */
-.gb-gallery-thumb-add { width:100px; aspect-ratio:4/3; border-radius:7px; flex-shrink:0; cursor:pointer; border:2px dashed rgba(59,59,170,.25); background:linear-gradient(135deg,#f0f0fa,#e4e4f4); position:relative; transition:opacity .18s; opacity:0; pointer-events:none; }
+.gb-gallery-thumb-add { width:100px; aspect-ratio:4/3; border-radius:7px; flex-shrink:0; cursor:pointer; border:2px dashed rgba(59,59,170,.25); background:linear-gradient(135deg,#f0f0fa,#e4e4f4); display:flex; align-items:center; justify-content:center; font-size:1.6rem; color:rgba(59,59,170,.35); position:relative; transition:opacity .18s; opacity:0; pointer-events:none; }
 body.gb-admin-mode .gb-gallery-thumb-add { opacity:1; pointer-events:auto; }
 .gb-gallery-thumb-add:hover { opacity:.7 !important; }
 .gb-gallery-thumb-add.gb-drag-over { opacity:1 !important; border-color:var(--accent); background:#e8eaf8; }
 .gb-gallery-thumb-add.gb-uploading { opacity:1 !important; border-color:var(--accent); pointer-events:none; }
+.gb-gallery-thumb-add.gb-uploading > span { visibility:hidden; }
 .gb-gallery-thumb-add.gb-uploading::after { content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:22px; height:22px; border:3px solid rgba(59,59,170,.2); border-top-color:var(--accent); border-radius:50%; animation:gb-spin .7s linear infinite; }
 @keyframes gb-spin { to { transform:rotate(360deg); } }
 
@@ -2759,7 +2760,7 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
              onclick="gbPickGalleryImage()" title="Click or drop image here"
              ondragover="event.preventDefault();this.classList.add('gb-drag-over')"
              ondragleave="this.classList.remove('gb-drag-over')"
-             ondrop="event.preventDefault();this.classList.remove('gb-drag-over');gbGalleryDropImage(event)"></div>
+             ondrop="event.preventDefault();this.classList.remove('gb-drag-over');gbGalleryDropImage(event)"><span>+</span></div>
       </div>
     </div>
   </div>

@@ -344,13 +344,13 @@ footer a:hover { color:rgba(255,255,255,.7); }
 <section id="features">
   <div class="container">
     <div class="section-label">Features</div>
-    <h2 class="section-title">Everything a publisher needs to showcase their games</h2>
+    <h2 class="section-title">Everything you need to showcase your games</h2>
     <p class="section-sub">From a branded catalog to individual game pages with buy links — GameBoard covers the full product presence without a complicated CMS or a monthly bill.</p>
     <div class="features-grid">
       <div class="feat-card">
         <div class="feat-icon green">🗂️</div>
         <h3>Game catalog</h3>
-        <p>A beautiful, filterable catalog page showing all your published games — with cover images, player count, duration, and a summary. Visitors can browse and click through to each game.</p>
+        <p>A beautiful, filterable catalog page showing all your games — with cover images, player count, duration, and a summary. Visitors can browse and click through to each game.</p>
       </div>
       <div class="feat-card">
         <div class="feat-icon amber">📄</div>
@@ -390,7 +390,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="feat-card">
         <div class="feat-icon dark">📊</div>
         <h3>Powered by your Sheet</h3>
-        <p>GameBoard reads directly from your Google Sheet — the same one PitchBoard uses. Mark a game Published and it appears in your catalog automatically.</p>
+        <p>GameBoard reads directly from your Google Sheet — the same one PitchBoard uses. You edit the page directly as you see it.</p>
       </div>
     </div>
   </div>
@@ -404,7 +404,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="shot-text">
         <div class="section-label">Game catalog</div>
         <h2 class="section-title" style="margin-bottom:1rem;">All your games, one beautiful page</h2>
-        <p>Your catalog opens with a branded hero banner and a grid of every published game. Each card shows the cover, name, player count, play time, and a one-line summary.</p>
+        <p>Your catalog opens with a branded hero banner and a grid of every game. Each card shows the cover, name, player count, play time, and a one-line summary.</p>
         <ul>
           <li>Rotating carousel with up to 6 brand images</li>
           <li>Game cards with cover image, stats, and summary</li>

@@ -2306,8 +2306,9 @@ body.gb-admin-mode #gbBuyCtas { display:contents; }
 .gb-buy-cta-del { position:absolute; top:-5px; right:-5px; width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,.6); color:#fff; border:none; font-size:.55rem; line-height:16px; text-align:center; cursor:pointer; padding:0; display:none; z-index:2; }
 .gb-buy-cta-wrap:hover .gb-buy-cta-del { display:block; }
 /* Inline-editable button: label + link icon */
-.gb-buy-cta-inner { display:inline-flex; align-items:center; gap:.35rem; height:2.75rem; padding:0 .85rem; border:2px solid currentColor; border-radius:6px; font-family:'DINBlack',sans-serif; font-size:.72rem; font-weight:900; letter-spacing:.07em; text-transform:uppercase; cursor:default; white-space:nowrap; }
+.gb-buy-cta-inner { display:inline-flex; align-items:center; gap:.35rem; height:2.75rem; padding:0 .85rem; border:2px solid currentColor; border-radius:6px; font-family:'DINBlack',sans-serif; font-size:.72rem; font-weight:900; letter-spacing:.07em; text-transform:uppercase; cursor:default; white-space:nowrap; box-sizing:border-box; }
 .gb-buy-cta-inner.filled { background:#fff; color:#1a3a5c; }
+a.gb-buy-cta-inner { text-decoration:none; cursor:pointer; }
 .gb-buy-cta-ph .gb-buy-cta-inner { border-style:dashed; opacity:.6; }
 .gb-buy-cta-lbl { outline:none; min-width:2.5rem; cursor:text; }
 .gb-buy-cta-lbl:focus { text-decoration:underline; text-underline-offset:2px; }
@@ -2758,7 +2759,7 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
         $bUrl   = trim($b['Value']   ?? '');
         $bLabel = trim($b['Value 1'] ?? '') ?: 'Buy Now';
         if (!$bUrl) continue;
-      ?><a class="btn-nav filled gb-buy-pub" href="<?= h($bUrl) ?>" target="_blank"><?= h($bLabel) ?></a><?php endforeach; ?>
+      ?><a class="gb-buy-cta-inner filled gb-buy-pub" href="<?= h($bUrl) ?>" target="_blank"><?= h($bLabel) ?></a><?php endforeach; ?>
       <?php if ($_richRules): ?><a class="btn-nav" href="<?= h($_richRules) ?>" target="_blank">📖 Rules</a><?php endif; ?>
       <?php if ($_playUrl):   ?><a class="btn-nav" href="<?= h($_playUrl) ?>" target="_blank">🎮 Play Online</a><?php endif; ?>
       <?php if ($_printUrl):  ?><a class="btn-nav" href="<?= h($_printUrl) ?>" target="_blank">🖨 Print &amp; Play</a><?php endif; ?>

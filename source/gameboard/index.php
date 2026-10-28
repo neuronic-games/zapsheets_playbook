@@ -320,7 +320,7 @@ body.gb-admin-mode .cat-slide-edit-btn:hover { background:rgba(0,0,0,.85); }
 
 /* ── Grid ── */
 .cat-grid { max-width:1100px; margin:0 auto 5rem; padding:0 1.25rem; display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1.1rem; }
-.cat-card { background:var(--surface); border-radius:12px; box-shadow:0 2px 14px rgba(0,0,0,.08); overflow:hidden; transition:box-shadow .15s, transform .15s; cursor:pointer; display:flex; flex-direction:column; }
+.cat-card { background:var(--surface); border-radius:12px; box-shadow:0 2px 14px rgba(0,0,0,.08); overflow:hidden; transition:box-shadow .15s, transform .15s; cursor:pointer; display:flex; flex-direction:column; width:100%; text-decoration:none; }
 .cat-card:hover { box-shadow:0 6px 24px rgba(0,0,0,.14); transform:translateY(-3px); }
 .cat-card-img { width:100%; aspect-ratio:1; object-fit:cover; display:block; }
 .cat-card-ph { width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:3.5rem; opacity:.28; background:linear-gradient(135deg,#dde,#c8c8e8); }
@@ -329,6 +329,10 @@ body.gb-admin-mode .cat-slide-edit-btn:hover { background:rgba(0,0,0,.85); }
 .cat-card-summary { font-size:.8rem; color:var(--ink-lt); line-height:1.45; flex:1; margin-top:.1rem; }
 .cat-card-meta { display:flex; flex-wrap:wrap; gap:.3rem .65rem; margin-top:.35rem; }
 .cat-card-stat { font-size:.72rem; color:var(--muted); }
+.cat-card-wrap { position:relative; }
+.cat-card-del-btn { display:none; position:absolute; bottom:.55rem; right:.55rem; width:1.6rem; height:1.6rem; border-radius:50%; border:none; background:rgba(220,50,50,.85); color:#fff; font-size:.7rem; line-height:1; cursor:pointer; align-items:center; justify-content:center; z-index:3; transition:background .13s; padding:0; }
+.cat-card-del-btn:hover { background:#c0392b; }
+body.gb-admin-mode .cat-card-del-btn { display:flex; }
 
 /* ── Shared image-change button (admin mode) ── */
 .gb-img-btn { width:2rem; height:2rem; border-radius:50%; background:rgba(0,0,0,.52); color:#fff; display:none; align-items:center; justify-content:center; cursor:pointer; transition:background .15s; line-height:1; padding:0; user-select:none; border:none; flex-shrink:0; }
@@ -601,6 +605,7 @@ body.gb-admin-mode .gb-add-game-card { display:block; }
     $gSlug    = _gb_slug($gName);
     if (!$gName) continue;
 ?>
+  <div class="cat-card-wrap">
   <a class="cat-card" href="<?= h($_catUrl . $gSlug) ?>">
     <div class="cat-img-wrap" data-game="<?= h($gName) ?>"
       ondragover="catDragOver(event,this)" ondragleave="catDragLeave(event,this)" ondrop="catDrop(event,this)">
@@ -621,6 +626,9 @@ body.gb-admin-mode .gb-add-game-card { display:block; }
       </div>
     </div>
   </a>
+  <button class="cat-card-del-btn" title="Delete game"
+    onclick="catDeleteGame(event,'<?= addslashes(h($gName)) ?>')">✕</button>
+  </div>
 <?php endforeach; endif; ?>
 <?php if (!isset($_gbPublicBase)): ?>
   <div class="gb-add-game-card" id="catAddGameCard" onclick="catAddGameClick(event)">
@@ -1943,6 +1951,32 @@ function catAddGameSubmit() {
   };
   xhr.onerror = function() {
     if (card) { card.style.opacity = ''; card.style.pointerEvents = ''; }
+    alert('Network error. Please try again.');
+  };
+  xhr.send(fd);
+}
+
+function catDeleteGame(e, gameName) {
+  e.preventDefault(); e.stopPropagation();
+  if (!confirm('Delete "' + gameName + '"?\n\nThis will permanently remove the game row and its sheet tab. This cannot be undone.')) return;
+  var wrap = e.target.closest('.cat-card-wrap');
+  if (wrap) { wrap.style.opacity = '.4'; wrap.style.pointerEvents = 'none'; }
+  var fd = new FormData();
+  fd.append('id',   SHEET_ID);
+  fd.append('game', gameName);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/deleteGame.php');
+  xhr.onload = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+    if (!r || r.error) {
+      if (wrap) { wrap.style.opacity = ''; wrap.style.pointerEvents = ''; }
+      alert('Delete failed: ' + (r && r.error || 'Unknown error'));
+      return;
+    }
+    location.reload();
+  };
+  xhr.onerror = function() {
+    if (wrap) { wrap.style.opacity = ''; wrap.style.pointerEvents = ''; }
     alert('Network error. Please try again.');
   };
   xhr.send(fd);

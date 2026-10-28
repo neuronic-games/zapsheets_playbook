@@ -2117,6 +2117,9 @@ a { color:inherit; text-decoration:none; }
 /* admin overlay on featured */
 .gb-gallery-featured-del { position:absolute; top:.5rem; right:.5rem; background:rgba(0,0,0,.55); color:#fff; border:none; border-radius:50%; width:24px; height:24px; font-size:.7rem; cursor:pointer; display:none; align-items:center; justify-content:center; z-index:3; }
 body.gb-admin-mode .gb-gallery-featured-del { display:flex; }
+/* uploading spinner on main featured area */
+.gb-gallery-featured.gb-uploading::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,.35); z-index:4; border-radius:10px; }
+.gb-gallery-featured.gb-uploading::after { content:''; position:absolute; inset:0; margin:auto; width:36px; height:36px; border:4px solid rgba(255,255,255,.25); border-top-color:#fff; border-radius:50%; animation:gb-spin .7s linear infinite; z-index:5; }
 /* Thumbs row */
 .gb-gallery-thumbs { display:flex; flex-direction:row; gap:.45rem; overflow-x:auto; padding-bottom:2px; }
 .gb-gallery-thumbs::-webkit-scrollbar { height:3px; }
@@ -4412,13 +4415,17 @@ function gbHandleFileInput(e) {
   } else {
     zone = document.getElementById('gbGalleryAddBtn');
     if (zone) zone.classList.add('gb-uploading');
+    var featDiv = document.getElementById('gbGalleryFeatured');
+    if (featDiv) featDiv.classList.add('gb-uploading');
   }
-  gbUploadImage(file, _gbFileCallback, zone);
+  var cb = _gbFileCallback;
+  gbUploadImage(file, cb, zone);
   _gbFileCallback = null;
 }
 
 function gbUploadImage(file, callback, zoneEl) {
   if (zoneEl) zoneEl.classList.add('gb-uploading');
+  var featDiv = document.getElementById('gbGalleryFeatured');
   var fd = new FormData();
   fd.append('id', SHEET_ID);
   fd.append('file', file);
@@ -4436,6 +4443,7 @@ function gbUploadImage(file, callback, zoneEl) {
   };
   xhr.onerror = function() {
     if (zoneEl) { zoneEl.classList.remove('gb-uploading'); zoneEl.classList.remove('gb-cover-loading'); }
+    if (featDiv) featDiv.classList.remove('gb-uploading');
     alert('Image upload failed: network error');
   };
   xhr.send(fd);
@@ -4608,8 +4616,10 @@ function gbGalleryAutoAdvance() {
 
 function gbPickGalleryImage() {
   var addBtn = document.getElementById('gbGalleryAddBtn');
+  var featDiv = document.getElementById('gbGalleryFeatured');
   _gbFileCallback = function(url) {
     if (addBtn) addBtn.classList.remove('gb-uploading');
+    if (featDiv) featDiv.classList.remove('gb-uploading');
     if (!_ed.gallery) _ed.gallery = [];
     _ed.gallery.push(url);
     _ed._galleryDirty = true;
@@ -4626,8 +4636,11 @@ function gbGalleryDropImage(e) {
   var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
   if (!file || !file.type.startsWith('image/')) return;
   var addBtn = document.getElementById('gbGalleryAddBtn');
+  var featDiv = document.getElementById('gbGalleryFeatured');
+  if (featDiv) featDiv.classList.add('gb-uploading');
   gbUploadImage(file, function(url) {
     if (addBtn) addBtn.classList.remove('gb-uploading');
+    if (featDiv) featDiv.classList.remove('gb-uploading');
     if (!_ed.gallery) _ed.gallery = [];
     _ed.gallery.push(url);
     _ed._galleryDirty = true;

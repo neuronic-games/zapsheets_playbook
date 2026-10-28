@@ -61,7 +61,7 @@ if ws is None:
     sys.exit(1)
 
 try:
-    all_values = ws.get_all_values()
+    all_values = ws.get_all_values(value_render_option='FORMULA')
 except Exception as e:
     print(json.dumps({"error": "get_all_values failed: " + str(e)}))
     sys.exit(1)

@@ -892,6 +892,22 @@ var _siPendingEmail = '', _siPendingPass = '';
   _updateGbAuth();
 })();
 
+// Restore scroll position after save redirect
+(function() {
+  try {
+    var slug = location.pathname.replace(/\/$/, '').split('/').pop();
+    var key  = 'gb_scroll_' + slug;
+    var y    = sessionStorage.getItem(key);
+    if (y !== null) {
+      sessionStorage.removeItem(key);
+      var yNum = parseInt(y, 10);
+      if (yNum > 0) {
+        window.scrollTo(0, yNum);
+      }
+    }
+  } catch(e) {}
+})();
+
 function _updateGbAuth() {
   var btn = document.getElementById('gbUserBtn');
   var metaEl = document.getElementById('gbMeta');
@@ -1896,7 +1912,7 @@ $_buyUrls     = _gb_rows($_rich, 'BuyUrl');
 // Main video comes from Games sheet Video column only ($videoUrl below)
 $_videoReviews = array_values(array_filter(_gb_rows($_rich, 'Video'), fn($r) => trim($r['Value'] ?? '') !== ''));
 $_mediaImgs      = array_merge(_gb_rows($_rich, 'Media'), _gb_rows($_rich, 'ProductImage'));
-$_productImgUrls = array_values(array_filter(array_map(fn($r) => trim($r['Value'] ?? ''), _gb_rows($_rich, 'ProductImage')), fn($u) => $u !== ''));
+$_productImgUrls = array_values(array_filter(array_map(fn($r) => _gb_img(trim($r['Value'] ?? '')), _gb_rows($_rich, 'ProductImage')), fn($u) => $u !== ''));
 $_richPrice   = _gb_val($_rich, 'Price');
 $_richRules   = _gb_val($_rich, 'Rules PDF Url') ?: $_rulesUrl;
 
@@ -4493,6 +4509,7 @@ function saveGame() {
     var newName = titleEl ? titleEl.textContent.trim() : ORIG_GAME_NAME;
     var newSlug = newName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     var destUrl = APP_ROOT + SHEET_ID + '/gameboard/' + newSlug;
+    try { sessionStorage.setItem('gb_scroll_' + newSlug, window.scrollY); } catch(e) {}
     setTimeout(function() { location.href = destUrl; }, 400);
   };
   xhr.onerror = function() {

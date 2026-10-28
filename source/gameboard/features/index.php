@@ -345,7 +345,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
   <div class="container">
     <div class="section-label">Features</div>
     <h2 class="section-title">Everything you need to showcase your games</h2>
-    <p class="section-sub">From a branded catalog to individual game pages with buy links — GameBoard covers the full product presence without a complicated CMS or a monthly bill.</p>
+    <p class="section-sub">From a branded catalog to individual game pages with buy links — GameBoard covers the full product presence without a complicated CMS.</p>
     <div class="features-grid">
       <div class="feat-card">
         <div class="feat-icon green">🗂️</div>
@@ -590,7 +590,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
   <div class="container">
     <div class="section-label">Data ownership</div>
     <h2 class="section-title">Your catalog lives in your Google Sheet</h2>
-    <p class="section-sub">No CMS, no hosting bill, no vendor lock-in. GameBoard reads from a Google Sheet you own — every game, image URL, and brand setting, in a spreadsheet you control.</p>
+    <p class="section-sub">No CMS, no vendor lock-in. GameBoard reads from a Google Sheet you own — every game, image URL, and brand setting, in a spreadsheet you control.</p>
     <div class="own-grid">
       <div class="own-card">
         <div class="num">$0</div>
@@ -631,7 +631,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <tr><td>Works with PitchBoard</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Shareable token links</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Price &amp; buy links</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">Free</td><td>$16–49 / mo</td><td>Free</td></tr>
+          <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">TBD</td><td>$16–49 / mo</td><td>Free</td></tr>
         </tbody>
       </table>
     </div>

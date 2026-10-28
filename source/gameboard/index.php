@@ -1881,13 +1881,16 @@ $_artists = []; // populated after $_rich loads below
 // Format: [{Name, Value, "Value 1", "Value 2"}, ...]
 $_safeName = str_replace(['/', '\\'], '-', $_name);
 
-// In admin mode, always refresh the [GameName] tab cache so edits are immediately visible.
+// In admin mode, refresh the [GameName] tab cache if it's more than 5 minutes old.
 if (!isset($_gbPublicBase) && $_name) {
     $_gbPythonPath = $_ENV['PYTHON'] ?? 'python3';
-    $_gbPubScript  = __DIR__ . '/../../push/gpublishgame.py';
-    if (file_exists($_gbPubScript)) {
+    $_gbPubScript  = realpath(__DIR__ . '/../../push/gpublishgame.py')
+                  ?: (dirname(__DIR__, 2) . '/push/gpublishgame.py');
+    $_gbCacheFile  = $_sDir . '/game-' . $_safeName . '-en.json';
+    $_gbCacheAge   = file_exists($_gbCacheFile) ? (time() - filemtime($_gbCacheFile)) : PHP_INT_MAX;
+    if ($_gbCacheAge > 300 && file_exists($_gbPubScript)) {
         shell_exec(escapeshellarg($_gbPythonPath) . ' '
-            . escapeshellarg(realpath($_gbPubScript)) . ' '
+            . escapeshellarg($_gbPubScript) . ' '
             . escapeshellarg($_sheetId . '|' . $_name) . ' 2>/dev/null');
     }
 }
@@ -3252,6 +3255,7 @@ var _siPendingEmail = '', _siPendingPass = '';
   // Gallery init runs outside try/catch so errors here are visible
   if (document.body.classList.contains('gb-admin-mode')) {
     if (!_ed.gallery) _ed.gallery = (GAME_DATA.gallery || []).slice();
+    _ed._galleryDirty = false;  // only set true when user adds/removes/reorders
     gbRenderGallery();
     gbGalleryAutoAdvance();
   }
@@ -4304,6 +4308,7 @@ function gbRenderGallery() {
         var moved = arr.splice(_gbDragIdx, 1)[0];
         arr.splice(idx, 0, moved);
         _ed.gallery = arr;
+        _ed._galleryDirty = true;
         _gbGalleryIdx = idx;
         gbRenderGallery();
       });
@@ -4335,6 +4340,7 @@ function gbGallerySelect(idx) {
 function gbGalleryDelete(idx) {
   if (!_ed.gallery || idx < 0 || idx >= _ed.gallery.length) return;
   _ed.gallery.splice(idx, 1);
+  _ed._galleryDirty = true;
   if (_gbGalleryIdx >= _ed.gallery.length) _gbGalleryIdx = Math.max(0, _ed.gallery.length - 1);
   gbRenderGallery();
   gbShowUploadToast('Image removed — click Save Changes');
@@ -4358,6 +4364,7 @@ function gbPickGalleryImage() {
     if (addBtn) addBtn.classList.remove('gb-uploading');
     if (!_ed.gallery) _ed.gallery = [];
     _ed.gallery.push(url);
+    _ed._galleryDirty = true;
     _gbGalleryIdx = _ed.gallery.length - 1;
     gbRenderGallery();
     gbShowUploadToast('Image added — click Save Changes');
@@ -4376,6 +4383,7 @@ function gbGalleryDropImage(e) {
     if (addBtn) addBtn.classList.remove('gb-uploading');
     if (!_ed.gallery) _ed.gallery = [];
     _ed.gallery.push(url);
+    _ed._galleryDirty = true;
     _gbGalleryIdx = _ed.gallery.length - 1;
     gbRenderGallery();
     gbShowUploadToast('Image added — click Save Changes');
@@ -4490,7 +4498,7 @@ function saveGame() {
   if (_ed.reviews    !== undefined) fd.append('reviews',    JSON.stringify(_ed.reviews    || []));
   if (_ed.videos     !== undefined) fd.append('videos',     JSON.stringify(_ed.videos     || []));
   if (_ed.faqs       !== undefined) fd.append('faqs',       JSON.stringify(_ed.faqs       || []));
-  if (_ed.gallery !== undefined) {
+  if (_ed._galleryDirty) {
     fd.append('gallery_urls', JSON.stringify(_ed.gallery || []));
   }
 

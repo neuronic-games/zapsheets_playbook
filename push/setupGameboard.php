@@ -39,10 +39,16 @@ if ($mode === 'game') {
     }
     $pubCmd = escapeshellarg($pythonPath) . ' '
             . escapeshellarg(__DIR__ . '/gpublishgame.py') . ' '
-            . escapeshellarg($sheetId . '|' . $gameName) . ' 2>/dev/null';
+            . escapeshellarg($sheetId . '|' . $gameName) . ' 2>&1';
     $pubOut = trim((string) shell_exec($pubCmd));
     $pubResult = $pubOut ? json_decode($pubOut, true) : null;
-    echo $pubResult ? json_encode($pubResult) : json_encode(['error' => 'No response']);
+    if ($pubResult) {
+        echo json_encode($pubResult);
+    } elseif ($pubOut) {
+        echo json_encode(['error' => 'script_error', 'detail' => substr($pubOut, 0, 500)]);
+    } else {
+        echo json_encode(['error' => 'No response']);
+    }
     exit;
 }
 

@@ -1735,7 +1735,11 @@ function gbDoFetch() {
           .then(function(r) { return r.json(); })
           .then(function(r) {
             if (r && r.ok) { gbSyncLog('  ✓ ' + name, 'ok'); }
-            else { gbSyncLog('  ✗ ' + name + (r && r.error ? ': ' + r.error : ''), 'error'); hasErrors = true; }
+            else {
+              var msg = (r && r.error ? ': ' + r.error : '');
+              if (r && r.detail) msg += ' — ' + r.detail;
+              gbSyncLog('  ✗ ' + name + msg, 'error'); hasErrors = true;
+            }
             nextGame();
           })
           .catch(function() { gbSyncLog('  ✗ ' + name + ': network error', 'error'); hasErrors = true; nextGame(); });
@@ -4610,7 +4614,11 @@ function gbDoFetch() {
           .then(function(r) { return r.json(); })
           .then(function(r) {
             if (r && r.ok) { gbSyncLog('  ✓ ' + name, 'ok'); }
-            else { gbSyncLog('  ✗ ' + name + (r && r.error ? ': ' + r.error : ''), 'error'); hasErrors = true; }
+            else {
+              var msg = (r && r.error ? ': ' + r.error : '');
+              if (r && r.detail) msg += ' — ' + r.detail;
+              gbSyncLog('  ✗ ' + name + msg, 'error'); hasErrors = true;
+            }
             nextGame();
           })
           .catch(function() { gbSyncLog('  ✗ ' + name + ': network error', 'error'); hasErrors = true; nextGame(); });

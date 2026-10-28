@@ -4231,15 +4231,15 @@ function gbUploadImage(file, callback, zoneEl) {
   xhr.send(fd);
 }
 
-// ── Cover image ───────────────────────────────────────────────────────────────
+// ── Hero image (HeaderImage in [{game}] tab) ──────────────────────────────────
 function gbSetCover(url) {
-  _ed.cover_url = url;
+  _ed.header_image_url = url;
   var hero = document.getElementById('gbHero');
   var bg   = document.getElementById('gbHeroBg');
   if (hero) hero.classList.remove('gb-cover-loading');
   if (bg)   bg.style.backgroundImage = 'url(' + url + ')';
   if (hero) hero.classList.remove('no-cover');
-  gbShowUploadToast('Cover image ready — click Save Changes');
+  gbShowUploadToast('Hero image ready — click Save Changes');
 }
 
 // ── Gallery ───────────────────────────────────────────────────────────────────

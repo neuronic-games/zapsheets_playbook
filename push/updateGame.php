@@ -108,6 +108,32 @@ $result = json_decode($output, true);
 if ($result !== null && !empty($result['ok'])) {
     refreshJson($pythonPath, $sheetId, 'games');
 
+    // The Sheets API sometimes returns stale data immediately after a write.
+    // Patch games.json in-place with the values we actually sent so the cache
+    // is always correct on redirect, regardless of the re-read timing.
+    $cacheFile = dirname(__DIR__) . '/sheets/' . $sheetId . '/games.json';
+    if (file_exists($cacheFile)) {
+        $gamesCache = json_decode(file_get_contents($cacheFile), true);
+        if (is_array($gamesCache)) {
+            $lookupName = $origName ?: $name;
+            foreach ($gamesCache as &$_g) {
+                if (isset($_g['Name']) && $_g['Name'] === $lookupName) {
+                    if ($name        !== '') $_g['Name']           = $name;
+                    if ($tagline     !== '') $_g['Tagline']        = $tagline;
+                    if ($status      !== '') $_g['Status']         = $status;
+                    if ($coverRaw    !== '') $_g['Cover URL']      = $coverRaw;
+                    if ($imageRaw    !== '') {
+                        if (array_key_exists('Image URL', $_g)) $_g['Image URL'] = $imageRaw;
+                        else $_g['Image'] = $imageRaw;
+                    }
+                    break;
+                }
+            }
+            unset($_g);
+            file_put_contents($cacheFile, json_encode($gamesCache, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        }
+    }
+
     // Create [GameName] tab if it doesn't exist, then publish its JSON cache
     $tabGameName = $name ?: $origName;
     $tabCmd = escapeshellarg($pythonPath) . ' '

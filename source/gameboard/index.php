@@ -2086,11 +2086,10 @@ a { color:inherit; text-decoration:none; }
 .gb-stat strong { font-family:'DINBlack',sans-serif; color:#fff; margin-right:.25rem; }
 .gb-hero-ctas { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.75rem; }
 .gb-price-tag {
-  display:inline-block; vertical-align:middle;
+  display:inline-flex; align-items:center;
   font-family:'DINBlack',sans-serif; font-size:1.4rem; color:#fff;
-  letter-spacing:-.01em;
-  height:2.75rem; line-height:calc(2.75rem - 4px); /* 4px = 2×border; centers in content area */
-  padding:0 .85rem;
+  letter-spacing:-.01em; line-height:1;
+  height:2.75rem; padding:0 .85rem;
   border:2px solid rgba(255,255,255,.35); border-radius:6px;
 }
 
@@ -2271,10 +2270,11 @@ body.gb-admin-mode .gb-vrev-grid { display:grid; }
 
 /* ── Price tag: in-place editing (admin) ── */
 .gb-cta-ph { opacity:.45; font-style:italic; }
-body.gb-admin-mode #gbEditPrice { cursor:text; border-style:dashed; min-width:3rem; }
-body.gb-admin-mode #gbEditPrice.gb-price-ph::before { content:attr(data-ph); opacity:.4; pointer-events:none; }
-body.gb-admin-mode #gbEditPrice:focus,
-body.gb-admin-mode #gbEditPrice:hover { outline:2px solid rgba(255,255,255,.75); }
+body.gb-admin-mode #gbPriceBox { cursor:text; border-style:dashed; }
+body.gb-admin-mode #gbEditPrice { outline:none; min-width:3rem; }
+body.gb-admin-mode #gbPriceBox.gb-price-ph #gbEditPrice::before { content:attr(data-ph); opacity:.4; pointer-events:none; display:block; }
+body.gb-admin-mode #gbPriceBox:focus-within,
+body.gb-admin-mode #gbPriceBox:hover { outline:2px solid rgba(255,255,255,.75); border-style:dashed; }
 /* ── Buy links: in-place editing (admin) ── */
 body.gb-admin-mode .gb-buy-pub { display:none; }
 body.gb-admin-mode #gbBuyCtas { display:contents; }
@@ -2704,7 +2704,7 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
     <?php endif; ?>
     <div class="gb-hero-ctas">
       <?php if ($_richPrice || !isset($_gbPublicBase)): ?>
-      <span class="gb-price-tag<?= (!$_richPrice) ? ' gb-cta-ph' : '' ?>" id="gbEditPrice" data-ph="$0.00"><?= h($_richPrice) ?></span>
+      <span class="gb-price-tag<?= (!$_richPrice) ? ' gb-cta-ph' : '' ?>" id="gbPriceBox"><span id="gbEditPrice" data-ph="$0.00"><?= h($_richPrice) ?></span></span>
       <?php endif; ?>
       <?php /* Admin: JS-rendered editable buy buttons */ ?>
       <?php if (!isset($_gbPublicBase)): ?><span id="gbBuyCtas" style="display:none"></span><?php endif; ?>
@@ -3243,19 +3243,21 @@ var _siPendingEmail = '', _siPendingPass = '';
       }
     });
     // Sync price on input; show/hide placeholder class when empty
-    var priceEl = document.getElementById('gbEditPrice');
-    if (priceEl) {
-      if (!priceEl.textContent.trim()) priceEl.classList.add('gb-price-ph');
+    // #gbEditPrice is the inner editable span; #gbPriceBox is the styled outer wrapper
+    var priceEl  = document.getElementById('gbEditPrice');
+    var priceBox = document.getElementById('gbPriceBox');
+    if (priceEl && priceBox) {
+      if (!priceEl.textContent.trim()) priceBox.classList.add('gb-price-ph');
       priceEl.oninput = function() {
         var val = this.textContent.trim();
         _ed.price = val;
-        this.classList.toggle('gb-price-ph', !val);
+        priceBox.classList.toggle('gb-price-ph', !val);
       };
       priceEl.onkeydown = function(e) {
         if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
       };
-      priceEl.onfocus = function() { this.classList.remove('gb-price-ph'); };
-      priceEl.onblur  = function() { if (!this.textContent.trim()) this.classList.add('gb-price-ph'); };
+      priceEl.onfocus = function() { priceBox.classList.remove('gb-price-ph'); };
+      priceEl.onblur  = function() { if (!this.textContent.trim()) priceBox.classList.add('gb-price-ph'); };
     }
     // Build admin buy CTA buttons in hero
     gbInitBuyCtas();

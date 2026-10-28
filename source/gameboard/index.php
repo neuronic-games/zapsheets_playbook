@@ -2091,8 +2091,8 @@ a { color:inherit; text-decoration:none; }
 .gb-price-tag {
   display:inline-block; vertical-align:middle;
   height:2.75rem; box-sizing:border-box; padding:0 .85rem;
-  /* slightly above center: subtract a few extra px to nudge text up */
-  line-height:calc(2.75rem - 8px);
+  /* slightly above center */
+  line-height:calc(2.75rem - 14px);
   border:2px solid rgba(255,255,255,.35); border-radius:6px;
   font-family:'DINBlack',sans-serif; font-size:1.4rem; color:#fff;
   letter-spacing:-.01em;

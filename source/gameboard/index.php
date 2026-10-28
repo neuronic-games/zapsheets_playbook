@@ -2343,20 +2343,24 @@ body.gb-admin-mode #gbBuyCtas { display:contents; }
 /* ── Resource links ── */
 .gb-links { display:flex; flex-wrap:wrap; gap:.6rem; }
 .btn-link {
-  font-family:'DINBlack',sans-serif; font-size:.74rem; text-transform:uppercase;
-  letter-spacing:.07em; padding:.48rem 1rem; border-radius:6px;
-  border:2px solid var(--accent); color:var(--accent); background:var(--surface);
+  display:inline-flex; align-items:center; gap:.35rem;
+  height:2.75rem; padding:0 .85rem; border-radius:6px; box-sizing:border-box;
+  font-family:'DINBlack',sans-serif; font-size:.72rem; font-weight:900;
+  letter-spacing:.07em; text-transform:uppercase;
+  border:2px solid var(--accent); color:var(--accent); background:transparent;
+  text-decoration:none; white-space:nowrap;
   transition:background .12s, color .12s; cursor:pointer;
 }
 .btn-link:hover { background:var(--accent); color:#fff; }
 .gb-rl-drop-target .gb-buy-cta-inner { outline:2px dashed var(--accent); outline-offset:2px; }
-/* Custom resource link pill buttons */
+/* Custom resource link pill buttons — match admin gb-buy-cta-inner (outlined) */
 .gb-res-btn {
-  display:inline-block;
-  font-size:.88rem; font-weight:600;
-  padding:.5rem 1.3rem; border-radius:2rem;
-  border:2px solid var(--ink); color:var(--ink); background:transparent;
-  text-decoration:none; white-space:nowrap;
+  display:inline-flex; align-items:center; gap:.35rem;
+  height:2.75rem; padding:0 .85rem; border-radius:6px;
+  border:2px solid currentColor; color:var(--ink);
+  font-family:'DINBlack',sans-serif; font-size:.72rem; font-weight:900;
+  letter-spacing:.07em; text-transform:uppercase;
+  text-decoration:none; white-space:nowrap; box-sizing:border-box;
   transition:background .12s, color .12s; cursor:pointer;
 }
 .gb-res-btn:hover { background:var(--ink); color:var(--surface); }

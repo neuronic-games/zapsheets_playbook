@@ -2708,6 +2708,7 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
       <?php if ($_duration): ?>
       <div class="gb-stat"><svg class="gb-stat-pip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><?= h($_duration) ?></div>
       <?php endif; ?>
+      <?php if ($_weight):       ?><div class="gb-stat"><?= h($_weight) ?></div><?php endif; ?>
       <?php if ($_mechanic):    ?><div class="gb-stat"><?= h($_mechanic) ?></div><?php endif; ?>
       <?php if ($_ages):        ?><div class="gb-stat">Ages <?= h($_ages) ?></div><?php endif; ?>
       <?php if ($_series):      ?><div class="gb-stat"><?= h($_series) ?></div><?php endif; ?>

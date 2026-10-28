@@ -2087,8 +2087,8 @@ a { color:inherit; text-decoration:none; }
 .gb-hero-ctas { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.75rem; }
 .gb-hero-ctas .btn-nav { display:inline-flex; align-items:center; height:2.75rem; box-sizing:border-box; padding:0 1rem; }
 .gb-price-tag {
-  display:inline-block; vertical-align:middle;
-  padding:.55rem .85rem; /* total height: 2px+2px border + 1.1rem + 1.4rem(font) = 44px = 2.75rem */
+  display:inline-flex; align-items:center;
+  height:2.75rem; box-sizing:border-box; padding:0 .85rem;
   border:2px solid rgba(255,255,255,.35); border-radius:6px;
   font-family:'DINBlack',sans-serif; font-size:1.4rem; color:#fff;
   letter-spacing:-.01em; line-height:1;
@@ -2289,10 +2289,9 @@ body.gb-admin-mode .gb-vrev-grid { display:grid; }
 
 /* ── Price tag: in-place editing (admin) ── */
 .gb-cta-ph { opacity:.45; font-style:italic; }
-body.gb-admin-mode #gbPriceBox { cursor:text; border-style:dashed; }
-body.gb-admin-mode #gbEditPrice { outline:none; min-width:3rem; }
-body.gb-admin-mode #gbPriceBox.gb-price-ph #gbEditPrice::before { content:attr(data-ph); opacity:.4; pointer-events:none; display:block; }
-body.gb-admin-mode #gbPriceBox:focus-within,
+body.gb-admin-mode #gbPriceBox { cursor:text; border-style:dashed; outline:none; min-width:5rem; }
+body.gb-admin-mode #gbPriceBox.gb-price-ph::before { content:attr(data-ph); opacity:.4; pointer-events:none; }
+body.gb-admin-mode #gbPriceBox:focus,
 body.gb-admin-mode #gbPriceBox:hover { outline:2px solid rgba(255,255,255,.75); border-style:dashed; }
 /* ── Buy links: in-place editing (admin) ── */
 body.gb-admin-mode .gb-buy-pub { display:none; }
@@ -2686,7 +2685,7 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
         <span class="gb-stat-unit">min</span>
       </div>
       <div class="gb-stat-field">
-        <svg class="gb-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <svg class="gb-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 4-1 7-1s5 1 7 1h2"/></svg>
         <input class="gb-stat-input" id="gbsiWeight" type="text" placeholder="Weight" oninput="_ed.weight=this.value.trim()" />
       </div>
     </div>
@@ -2709,7 +2708,7 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
       <?php if ($_duration): ?>
       <div class="gb-stat"><svg class="gb-stat-pip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><?= h($_duration) ?></div>
       <?php endif; ?>
-      <?php if ($_weight):       ?><div class="gb-stat"><?= h($_weight) ?></div><?php endif; ?>
+      <?php if ($_weight):       ?><div class="gb-stat"><svg class="gb-stat-pip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 4-1 7-1s5 1 7 1h2"/></svg><?= h($_weight) ?></div><?php endif; ?>
       <?php if ($_mechanic):    ?><div class="gb-stat"><?= h($_mechanic) ?></div><?php endif; ?>
       <?php if ($_ages):        ?><div class="gb-stat">Ages <?= h($_ages) ?></div><?php endif; ?>
       <?php if ($_series):      ?><div class="gb-stat"><?= h($_series) ?></div><?php endif; ?>
@@ -2725,7 +2724,7 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
     <?php endif; ?>
     <div class="gb-hero-ctas">
       <?php if ($_richPrice || !isset($_gbPublicBase)): ?>
-      <span class="gb-price-tag<?= (!$_richPrice) ? ' gb-cta-ph' : '' ?>" id="gbPriceBox"><span id="gbEditPrice" data-ph="$0.00"><?= h($_richPrice) ?></span></span>
+      <span class="gb-price-tag<?= (!$_richPrice) ? ' gb-cta-ph' : '' ?>" id="gbPriceBox" data-ph="$0.00"><?= h($_richPrice) ?></span>
       <?php endif; ?>
       <?php /* Admin: JS-rendered editable buy buttons */ ?>
       <?php if (!isset($_gbPublicBase)): ?><span id="gbBuyCtas" style="display:none"></span><?php endif; ?>
@@ -3262,7 +3261,7 @@ var _siPendingEmail = '', _siPendingPass = '';
     // Activate admin mode
     document.body.classList.add('gb-admin-mode');
     // Make text fields contenteditable
-    ['gbEditTitle', 'gbEditSummary', 'gbEditDesc', 'gbEditPrice'].forEach(function(id) {
+    ['gbEditTitle', 'gbEditSummary', 'gbEditDesc', 'gbPriceBox'].forEach(function(id) {
       var el = document.getElementById(id);
       if (!el) return;
       el.contentEditable = 'true';
@@ -3273,21 +3272,19 @@ var _siPendingEmail = '', _siPendingPass = '';
       }
     });
     // Sync price on input; show/hide placeholder class when empty
-    // #gbEditPrice is the inner editable span; #gbPriceBox is the styled outer wrapper
-    var priceEl  = document.getElementById('gbEditPrice');
     var priceBox = document.getElementById('gbPriceBox');
-    if (priceEl && priceBox) {
-      if (!priceEl.textContent.trim()) priceBox.classList.add('gb-price-ph');
-      priceEl.oninput = function() {
+    if (priceBox) {
+      if (!priceBox.textContent.trim()) priceBox.classList.add('gb-price-ph');
+      priceBox.oninput = function() {
         var val = this.textContent.trim();
         _ed.price = val;
-        priceBox.classList.toggle('gb-price-ph', !val);
+        this.classList.toggle('gb-price-ph', !val);
       };
-      priceEl.onkeydown = function(e) {
+      priceBox.onkeydown = function(e) {
         if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
       };
-      priceEl.onfocus = function() { priceBox.classList.remove('gb-price-ph'); };
-      priceEl.onblur  = function() { if (!this.textContent.trim()) priceBox.classList.add('gb-price-ph'); };
+      priceBox.onfocus = function() { this.classList.remove('gb-price-ph'); };
+      priceBox.onblur  = function() { if (!this.textContent.trim()) this.classList.add('gb-price-ph'); };
     }
     // Build admin buy CTA buttons in hero
     gbInitBuyCtas();
@@ -4576,8 +4573,8 @@ function saveGame() {
   fd.append('rules',          _ed.rules_url      || '');
   fd.append('play',           _ed.play_url       || '');
   fd.append('print',          _ed.print_url      || '');
-  // Sync price from contenteditable span before saving
-  var _priceEl = document.getElementById('gbEditPrice');
+  // Sync price from contenteditable element before saving
+  var _priceEl = document.getElementById('gbPriceBox');
   if (_priceEl) _ed.price = _priceEl.textContent.trim();
   if (_ed.price      !== undefined) fd.append('price',     _ed.price     || '');
   if (_ed.buy_urls   !== undefined) fd.append('buy_urls',  JSON.stringify(_ed.buy_urls  || []));

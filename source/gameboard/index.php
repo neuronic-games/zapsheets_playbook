@@ -609,6 +609,12 @@ body.gb-admin-mode .gb-footer-editable:focus { border-bottom-color:rgba(255,255,
     </div>
   </a>
 <?php endforeach; endif; ?>
+<?php if (!isset($_gbPublicBase)): ?>
+  <div class="gb-add-game-card" onclick="openAddGame()" title="Add a new game">
+    <div class="gb-add-game-card-inner">+</div>
+    <div class="gb-add-game-card-label">New Game</div>
+  </div>
+<?php endif; ?>
 </div>
 
 <?php _gb_footer(); ?>

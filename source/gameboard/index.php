@@ -2119,7 +2119,12 @@ a { color:inherit; text-decoration:none; }
 body.gb-admin-mode .gb-gallery-featured-del { display:flex; }
 /* uploading spinner on main featured area */
 .gb-gallery-featured.gb-uploading::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,.35); z-index:4; border-radius:10px; }
-.gb-gallery-featured.gb-uploading::after { content:''; position:absolute; inset:0; margin:auto; width:36px; height:36px; border:4px solid rgba(255,255,255,.25); border-top-color:#fff; border-radius:50%; animation:gb-spin .7s linear infinite; z-index:5; }
+.gb-gallery-featured.gb-uploading::after,
+.gb-gallery-viewer.gb-gallery-empty .gb-gallery-featured.gb-uploading::after {
+  content:''; position:absolute; inset:0; margin:auto; width:36px; height:36px;
+  border:4px solid rgba(255,255,255,.25); border-top-color:#fff; border-radius:50%;
+  animation:gb-spin .7s linear infinite; z-index:5; font-size:0;
+}
 /* Thumbs row */
 .gb-gallery-thumbs { display:flex; flex-direction:row; gap:.45rem; overflow-x:auto; padding-bottom:2px; }
 .gb-gallery-thumbs::-webkit-scrollbar { height:3px; }

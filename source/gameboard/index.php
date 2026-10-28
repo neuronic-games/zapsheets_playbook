@@ -467,7 +467,9 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
 .gb-add-game-card:hover { border-color:var(--accent); box-shadow:0 6px 24px rgba(0,0,0,.12); transform:translateY(-3px); }
 .gb-add-game-card-inner { position:relative; width:100%; aspect-ratio:1; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:3rem; color:rgba(59,59,170,.28); line-height:1; transition:color .15s, background .15s; background:linear-gradient(135deg,#e8e8f2,#d8d8ec); overflow:hidden; }
 .gb-add-game-card:hover .gb-add-game-card-inner { color:var(--accent); background:linear-gradient(135deg,#e0e0f0,#cecee8); }
-.gb-agc-plus { pointer-events:none; }
+.gb-agc-plus { pointer-events:none; transition:opacity .15s; }
+.gb-add-game-card-inner.img-loading .gb-agc-plus { opacity:0; }
+.gb-add-game-card-inner.img-loading::after { content:''; position:absolute; top:50%; left:50%; width:32px; height:32px; border:3px solid rgba(59,59,170,.2); border-top-color:rgba(59,59,170,.7); border-radius:50%; animation:gbImgSpin .7s linear infinite; z-index:3; pointer-events:none; transform:translate(-50%,-50%); }
 .gb-agc-img-btn { position:absolute; top:.4rem; right:.4rem; z-index:2; }
 .gb-agc-preview { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1; }
 .gb-add-game-card-label { padding:.75rem .9rem 1rem; flex:1; display:flex; flex-direction:column; gap:.2rem; }

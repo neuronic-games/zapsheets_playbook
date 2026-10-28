@@ -1920,7 +1920,7 @@ $_components  = array_values(array_filter(_gb_rows($_rich, 'Component'), fn($r) 
 $_reviews     = array_values(array_filter(_gb_rows($_rich, 'Review'),    fn($r) => trim($r['Value'] ?? '') !== ''));
 $_faqs        = array_values(array_filter(_gb_rows($_rich, 'FAQ'),       fn($r) => trim($r['Value'] ?? '') !== ''));
 $_buyUrls        = _gb_rows($_rich, 'BuyUrl');
-$_resourceLinks  = array_values(array_filter(_gb_rows($_rich, 'ResourceLink'), fn($r) => trim($r['Value'] ?? '') !== ''));
+$_resourceLinks  = array_values(array_filter(_gb_rows($_rich, 'ResourceLink'), fn($r) => trim($r['Value'] ?? '') !== '' || trim($r['Value 1'] ?? '') !== ''));
 $_hasRichData    = !empty($_rich);
 // Video rows in [GameName] tab = video reviews (col B = URL, col C = name/label)
 // Main video comes from Games sheet Video column only ($videoUrl below)
@@ -2766,8 +2766,8 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
       <?php foreach ($_buyUrls as $b):
         $bUrl   = trim($b['Value']   ?? '');
         $bLabel = trim($b['Value 1'] ?? '') ?: 'Buy Now';
-        if (!$bUrl) continue;
-      ?><a class="gb-buy-cta-inner filled gb-buy-pub" href="<?= h($bUrl) ?>" target="_blank"><?= h($bLabel) ?></a><?php endforeach; ?>
+        if (!$bUrl && !$bLabel) continue;
+      ?><?php if ($bUrl): ?><a class="gb-buy-cta-inner filled gb-buy-pub" href="<?= h($bUrl) ?>" target="_blank"><?= h($bLabel) ?></a><?php else: ?><span class="gb-buy-cta-inner filled gb-buy-pub"><?= h($bLabel) ?></span><?php endif; ?><?php endforeach; ?>
       <?php if ($_richRules): ?><a class="btn-nav" href="<?= h($_richRules) ?>" target="_blank">📖 Rules</a><?php endif; ?>
       <?php if ($_playUrl):   ?><a class="btn-nav" href="<?= h($_playUrl) ?>" target="_blank">🎮 Play Online</a><?php endif; ?>
       <?php if ($_printUrl):  ?><a class="btn-nav" href="<?= h($_printUrl) ?>" target="_blank">🖨 Print &amp; Play</a><?php endif; ?>
@@ -2934,8 +2934,8 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
       <?php if ($_pageUrl):   ?><a class="btn-link" href="<?= h($_pageUrl) ?>" target="_blank">🔗 Product Page</a><?php endif; ?>
       <?php foreach ($_resourceLinks as $rl):
         $rlUrl = trim($rl['Value'] ?? ''); $rlLabel = trim($rl['Value 1'] ?? '');
-        if (!$rlUrl) continue;
-      ?><a class="gb-res-btn" href="<?= h($rlUrl) ?>" target="_blank"><?= h($rlLabel ?: 'Link') ?></a><?php endforeach; ?>
+        if (!$rlUrl && !$rlLabel) continue;
+      ?><?php if ($rlUrl): ?><a class="gb-res-btn" href="<?= h($rlUrl) ?>" target="_blank"><?= h($rlLabel ?: 'Link') ?></a><?php else: ?><span class="gb-res-btn"><?= h($rlLabel ?: 'Link') ?></span><?php endif; ?><?php endforeach; ?>
     </div>
   </div>
 
@@ -3286,7 +3286,7 @@ var GAME_DATA = <?= json_encode([
     'date_signed'    => $_dateSigned,
     'date_published' => $_datePub,
     'price'          => $_richPrice,
-    'buy_urls'       => array_values(array_filter(array_map(function($b) { return ['url' => trim($b['Value'] ?? ''), 'label' => trim($b['Value 1'] ?? '')]; }, $_buyUrls), function($b){ return $b['url'] !== ''; })),
+    'buy_urls'       => array_values(array_filter(array_map(function($b) { return ['url' => trim($b['Value'] ?? ''), 'label' => trim($b['Value 1'] ?? '')]; }, $_buyUrls), function($b){ return $b['url'] !== '' || $b['label'] !== ''; })),
     'resource_links' => array_values(array_map(function($r) { return ['url' => trim($r['Value'] ?? ''), 'label' => trim($r['Value 1'] ?? '')]; }, $_resourceLinks)),
     'components'     => array_values(array_map(function($c) { return trim($c['Value'] ?? ''); }, $_components)),
     'reviews'        => array_values(array_map(function($r) { return ['attr' => trim($r['Value'] ?? ''), 'quote' => trim($r['Value 1'] ?? '')]; }, $_reviews)),
@@ -4108,9 +4108,9 @@ function gbMakeBuyCtaEl(b, i, isPlaceholder) {
     lbl.style.display = ''; linkBtn.style.display = '';
   }
   function confirmUrl() {
-    var url = urlInp.value.trim();
+    var url   = urlInp.value.trim();
     var label = lbl.textContent.trim() || 'Buy Now';
-    if (!url) { revertUrl(); return; }
+    if (!url && !label) { revertUrl(); return; }
     if (!_ed.buy_urls) _ed.buy_urls = [];
     if (i >= 0) { _ed.buy_urls[i] = {url: url, label: label}; }
     else        { _ed.buy_urls.push({url: url, label: label}); }
@@ -4148,7 +4148,7 @@ function gbInitBuyCtas() {
   wrap.style.display = 'contents';
   document.querySelectorAll('.gb-buy-pub').forEach(function(el) { el.style.display = 'none'; });
   if (!_ed.buy_urls) _ed.buy_urls = (GAME_DATA.buy_urls || []).slice();
-  _ed.buy_urls.forEach(function(b, i) { if (b.url) wrap.appendChild(gbMakeBuyCtaEl(b, i, false)); });
+  _ed.buy_urls.forEach(function(b, i) { if (b.url || b.label) wrap.appendChild(gbMakeBuyCtaEl(b, i, false)); });
   wrap.appendChild(gbMakeBuyCtaEl({label: 'ADD BUY LINK', url: ''}, -1, true));
 }
 
@@ -4224,7 +4224,7 @@ function gbMakeResLinkEl(rl, i, isPlaceholder) {
   function confirmUrl() {
     var url   = urlInp.value.trim();
     var label = lbl.textContent.trim() || 'Resource';
-    if (!url) { revertUrl(); return; }
+    if (!url && !label) { revertUrl(); return; }
     if (!_ed.resource_links) _ed.resource_links = [];
     if (i >= 0) { _ed.resource_links[i] = {url: url, label: label}; }
     else        { _ed.resource_links.push({url: url, label: label}); }

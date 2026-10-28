@@ -2359,10 +2359,6 @@ body.gb-admin-mode #gbBuyCtas { display:contents; }
   transition:background .12s, color .12s; cursor:pointer;
 }
 .gb-res-btn:hover { background:var(--ink); color:var(--surface); }
-/* Resource link admin editor rows */
-.gb-reslink-row { display:flex; gap:.4rem; align-items:center; margin-bottom:.35rem; }
-.gb-reslink-label { width:9rem; flex-shrink:0; }
-.gb-reslink-del { background:none; border:1px solid #ddd; border-radius:4px; color:#e53e3e; cursor:pointer; font-size:.8rem; padding:.3rem .5rem; line-height:1; }
 /* Coming Soon section */
 .gb-coming-soon { text-align:center; padding:4rem 2rem; }
 .gb-cs-badge { display:inline-block; font-family:'DINBlack',sans-serif; font-size:.8rem; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); border:2px solid var(--accent); border-radius:2rem; padding:.4rem 1.2rem; margin-bottom:1.2rem; }
@@ -2927,11 +2923,11 @@ body.gb-admin-mode .gb-hero.gb-drag-over .gb-cover-btn { display: flex; }
   $_hasHardLinks = $_richRules || $_sellsheet || $_playUrl || $_printUrl || $_pageUrl;
   $_hasLinks = $_hasHardLinks || !empty($_resourceLinks);
   ?>
-  <div class="gb-section<?= (!$_hasLinks && !isset($_gbPublicBase)) ? ' gb-sect-empty' : (!$_hasLinks ? ' gb-sect-hidden' : '') ?>">
+  <div class="gb-section<?= (!$_hasLinks && !isset($_gbPublicBase)) ? ' gb-sect-empty' : (!$_hasLinks ? ' gb-sect-hidden' : '') ?>" id="gbResourcesSection">
     <div class="gb-section-label">Resources</div>
-    <!-- Admin: inline link editor -->
-    <div class="gb-inline-edit" id="gbResLinkEditor"></div>
-    <!-- Display: hardcoded + custom resource link pills -->
+    <!-- Admin: JS-rendered inline buttons (same style as buy CTAs) -->
+    <div class="gb-links" id="gbResLinks" style="display:none"></div>
+    <!-- Public: static resource link pills -->
     <div class="gb-links gb-display-content">
       <?php if ($_richRules): ?><a class="btn-link" href="<?= h($_richRules) ?>" target="_blank">📖 Rules PDF</a><?php endif; ?>
       <?php if ($_sellsheet): ?><a class="btn-link" href="<?= h($_sellsheet) ?>" target="_blank">📄 Sellsheet</a><?php endif; ?>
@@ -4132,44 +4128,96 @@ function gbInitBuyCtas() {
   wrap.appendChild(gbMakeBuyCtaEl({label: 'BUY NOW', url: ''}, -1, true));
 }
 
-function gbInitResLinks() {
-  var editor = document.getElementById('gbResLinkEditor');
-  if (!editor) return;
-  editor.innerHTML = '';
-  if (!_ed.resource_links) _ed.resource_links = (GAME_DATA.resource_links || []).slice();
-  _ed.resource_links.forEach(function(lk, i) { editor.appendChild(gbMakeResLinkRow(lk, i)); });
-  var addBtn = document.createElement('button');
-  addBtn.className = 'gb-vrev-btn-save';
-  addBtn.style.cssText = 'margin-top:.4rem;font-size:.8rem;';
-  addBtn.textContent = '+ Add Link';
-  addBtn.onmousedown = function(e) {
-    e.preventDefault();
-    _ed.resource_links.push({label: '', url: ''});
-    gbInitResLinks();
-    var rows = editor.querySelectorAll('.gb-reslink-row');
-    var last = rows[rows.length - 1];
-    if (last) { var inp = last.querySelector('input'); if (inp) setTimeout(function(){ inp.focus(); }, 20); }
-  };
-  editor.appendChild(addBtn);
-}
+function gbMakeResLinkEl(rl, i, isPlaceholder) {
+  var w = document.createElement('span');
+  w.className = 'gb-buy-cta-wrap' + (isPlaceholder ? ' gb-buy-cta-ph' : '');
 
-function gbMakeResLinkRow(lk, i) {
-  var row = document.createElement('div');
-  row.className = 'gb-reslink-row';
-  var lblInp = document.createElement('input');
-  lblInp.type = 'text'; lblInp.placeholder = 'Label (e.g. BoardGameGeek)';
-  lblInp.value = lk.label || ''; lblInp.className = 'gbed-field gb-reslink-label';
-  lblInp.oninput = function() { if (_ed.resource_links && _ed.resource_links[i]) _ed.resource_links[i].label = this.value; };
+  var inner = document.createElement('span');
+  inner.className = 'gb-buy-cta-inner'; // outlined, not filled
+
+  var lbl = document.createElement('span');
+  lbl.className = 'gb-buy-cta-lbl';
+  lbl.contentEditable = 'true';
+  lbl.textContent = (isPlaceholder ? 'ADD RESOURCE' : (rl.label || 'Resource'));
+  // Click: select all text so user can just type the new name
+  lbl.onclick = function(e) {
+    e.stopPropagation();
+    var range = document.createRange(); range.selectNodeContents(this);
+    var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+  };
+  if (i >= 0) {
+    lbl.oninput = function() {
+      if (_ed.resource_links && _ed.resource_links[i]) _ed.resource_links[i].label = this.textContent.trim() || 'Resource';
+    };
+  }
+
   var urlInp = document.createElement('input');
   urlInp.type = 'url'; urlInp.placeholder = 'https://…';
-  urlInp.value = lk.url || ''; urlInp.className = 'gbed-field';
-  urlInp.style.flex = '1';
-  urlInp.oninput = function() { if (_ed.resource_links && _ed.resource_links[i]) _ed.resource_links[i].url = this.value.trim(); };
-  var del = document.createElement('button');
-  del.className = 'gb-reslink-del'; del.textContent = '✕'; del.title = 'Remove';
-  del.onmousedown = function(e) { e.preventDefault(); _ed.resource_links.splice(i, 1); gbInitResLinks(); };
-  row.appendChild(lblInp); row.appendChild(urlInp); row.appendChild(del);
-  return row;
+  urlInp.value = rl.url || ''; urlInp.className = 'gb-buy-url-inline';
+  urlInp.style.display = 'none';
+  urlInp.onclick = function(e) { e.stopPropagation(); };
+
+  var okBtn = document.createElement('button');
+  okBtn.className = 'gb-buy-url-ok-inline'; okBtn.textContent = '✓'; okBtn.style.display = 'none';
+
+  var linkBtn = document.createElement('button');
+  linkBtn.className = 'gb-buy-link-icon';
+  linkBtn.title = isPlaceholder ? 'Set URL' : 'Edit URL';
+  linkBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+
+  function showUrl(e) {
+    if (e) e.preventDefault();
+    lbl.style.display = 'none'; linkBtn.style.display = 'none';
+    urlInp.style.display = ''; okBtn.style.display = '';
+    urlInp.focus(); if (urlInp.value) urlInp.select();
+  }
+  function revertUrl() {
+    urlInp.style.display = 'none'; okBtn.style.display = 'none';
+    lbl.style.display = ''; linkBtn.style.display = '';
+  }
+  function confirmUrl() {
+    var url   = urlInp.value.trim();
+    var label = lbl.textContent.trim() || 'Resource';
+    if (!url) { revertUrl(); return; }
+    if (!_ed.resource_links) _ed.resource_links = [];
+    if (i >= 0) { _ed.resource_links[i] = {url: url, label: label}; }
+    else        { _ed.resource_links.push({url: url, label: label}); }
+    gbInitResLinks();
+  }
+
+  // Enter in label → go to URL
+  lbl.onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); showUrl(null); } };
+  linkBtn.onmousedown = showUrl;
+  okBtn.onmousedown   = function(e) { e.preventDefault(); confirmUrl(); };
+  urlInp.onkeydown    = function(e) {
+    if (e.key === 'Enter')  { e.preventDefault(); confirmUrl(); }
+    if (e.key === 'Escape') { revertUrl(); }
+  };
+
+  inner.appendChild(lbl); inner.appendChild(urlInp);
+  inner.appendChild(linkBtn); inner.appendChild(okBtn);
+  w.appendChild(inner);
+
+  if (!isPlaceholder) {
+    var del = document.createElement('button');
+    del.className = 'gb-buy-cta-del'; del.textContent = '✕'; del.title = 'Remove';
+    del.onmousedown = function(e) { e.preventDefault(); _ed.resource_links.splice(i, 1); gbInitResLinks(); };
+    w.appendChild(del);
+  }
+  return w;
+}
+
+function gbInitResLinks() {
+  var wrap = document.getElementById('gbResLinks');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  wrap.style.display = 'flex';
+  document.querySelectorAll('#gbResourcesSection .gb-display-content').forEach(function(el) { el.style.display = 'none'; });
+  if (!_ed.resource_links) _ed.resource_links = (GAME_DATA.resource_links || []).slice();
+  _ed.resource_links.forEach(function(rl, i) {
+    wrap.appendChild(gbMakeResLinkEl(rl, i, false));
+  });
+  wrap.appendChild(gbMakeResLinkEl({label: 'ADD RESOURCE', url: ''}, -1, true));
 }
 
 function gbBuildFaqEditor(faqs) {

@@ -4796,10 +4796,10 @@ function submitSession() {
 
 function _parsePerson(raw) {
   var m = raw.match(/(\S+@\S+\.\S+)/);
-  if (!m) return { name: raw.trim(), email: '' };
+  if (!m) return { name: raw.trim().replace(/,+$/, '').trim(), email: '' };
   var email = m[1];
-  var name  = raw.replace(email, '').trim();
-  return { name: name || raw.trim(), email: email };
+  var name  = raw.replace(email, '').trim().replace(/,+$/, '').trim();
+  return { name: name || raw.trim().replace(/,+$/, '').trim(), email: email };
 }
 
 // items: array of strings (may include embedded email) or {name, email} objects

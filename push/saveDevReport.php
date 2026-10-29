@@ -37,11 +37,12 @@ $reportsDir = $appRoot . DIRECTORY_SEPARATOR . 'reports';
 
 if (!is_dir($reportsDir)) {
     mkdir($reportsDir, 0755, true);
-    file_put_contents($reportsDir . DIRECTORY_SEPARATOR . '.htaccess',
-        "Options -Indexes\n<Files \"*.html\">\n  Allow from all\n</Files>\n");
 }
+// Always write/refresh .htaccess so extensionless files are served as HTML
+file_put_contents($reportsDir . DIRECTORY_SEPARATOR . '.htaccess',
+    "Options -Indexes\n<Files *>\n  ForceType text/html\n  Allow from all\n</Files>\n");
 
-if (file_put_contents($reportsDir . DIRECTORY_SEPARATOR . $token . '.html', $html) === false) {
+if (file_put_contents($reportsDir . DIRECTORY_SEPARATOR . $token, $html) === false) {
     echo json_encode(['error' => 'Could not write report file']);
     exit;
 }
@@ -49,7 +50,7 @@ if (file_put_contents($reportsDir . DIRECTORY_SEPARATOR . $token . '.html', $htm
 $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host    = $_SERVER['HTTP_HOST'];
 $appPath = rtrim(dirname(dirname($_SERVER['REQUEST_URI'])), '/');
-$url     = $scheme . '://' . $host . $appPath . '/reports/' . $token . '.html';
+$url     = $scheme . '://' . $host . $appPath . '/reports/' . $token;
 
 echo json_encode(['ok' => true, 'url' => $url, 'token' => $token]);
 ?>

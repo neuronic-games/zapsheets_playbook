@@ -485,6 +485,9 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
 .gb-agc-tagline:focus { border-bottom:1px solid var(--border); }
 .gb-agc-tagline-ph { font-size:.8rem; color:var(--ink-lt); opacity:.5; display:block; pointer-events:none; }
 .gb-agc-tagline.visible ~ .gb-agc-tagline-ph { display:none; }
+.gb-agc-save-btn { display:none; margin-top:.55rem; padding:.35rem .85rem; font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; border-radius:6px; border:none; background:var(--accent,#3b3baa); color:#fff; cursor:pointer; transition:background .14s; align-self:flex-start; }
+.gb-agc-save-btn:hover { background:#2a2a8a; }
+.gb-agc-save-btn.visible { display:block; }
 </style>
 </head>
 <body>
@@ -660,6 +663,8 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
         onkeydown="catAddGameTaglineKey(event)"
         onclick="event.stopPropagation()" />
       <span class="gb-agc-tagline-ph" id="catAddGameTaglinePh">Game description goes here.</span>
+      <button class="gb-agc-save-btn" id="catAddGameSaveBtn"
+        onclick="event.stopPropagation();catAddGameSubmit()">Create Game</button>
     </div>
   </div>
 <?php endif; ?>
@@ -1313,6 +1318,13 @@ function gbShowSaveToast(msg, isErr) {
 
 function gbSavePage() {
   if (!document.body.classList.contains('gb-admin-mode')) return;
+  // If the inline add-game card has a name entered, save it first
+  var nameEl = document.getElementById('catAddGameName');
+  var gameName = nameEl ? nameEl.textContent.trim() : '';
+  if (gameName && gameName !== 'New Game') {
+    catAddGameSubmit();
+    return;
+  }
   var btn = document.getElementById('gbSavePageBtn');
   if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
   var fd = new FormData();
@@ -1912,8 +1924,11 @@ function catAddGameNameFocus(el) {
 function catAddGameNameBlur(el) {
   var name = el.textContent.trim();
   if (!name) { el.textContent = 'New Game'; }
+  var active = name && name !== 'New Game';
   var tl = document.getElementById('catAddGameTagline');
-  if (tl) { if (name && name !== 'New Game') tl.classList.add('visible'); else tl.classList.remove('visible'); }
+  if (tl) { if (active) tl.classList.add('visible'); else tl.classList.remove('visible'); }
+  var sb = document.getElementById('catAddGameSaveBtn');
+  if (sb) { if (active) sb.classList.add('visible'); else sb.classList.remove('visible'); }
 }
 
 function catAddGameTaglineKey(e) {
@@ -1935,6 +1950,8 @@ function catAddGameReset() {
   if (el) { el.textContent = 'New Game'; el.blur(); }
   var tl = document.getElementById('catAddGameTagline');
   if (tl) { tl.value = ''; tl.classList.remove('visible'); }
+  var sb = document.getElementById('catAddGameSaveBtn');
+  if (sb) sb.classList.remove('visible');
   _catAddGameImgUrl = '';
   var inner = document.getElementById('catAddGameInner');
   if (inner) {

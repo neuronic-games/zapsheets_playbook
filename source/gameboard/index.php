@@ -485,6 +485,8 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
 .gb-agc-tagline:focus { border-bottom:1px solid var(--border); }
 .gb-agc-tagline-ph { font-size:.8rem; color:var(--ink-lt); opacity:.5; display:block; pointer-events:none; }
 .gb-agc-tagline.visible ~ .gb-agc-tagline-ph { display:none; }
+.cat-draft-badge { position:absolute; top:.45rem; left:.45rem; background:rgba(200,120,0,.88); color:#fff; font-family:'DINBlack',sans-serif; font-size:.6rem; text-transform:uppercase; letter-spacing:.06em; padding:.18rem .45rem; border-radius:4px; pointer-events:none; z-index:2; }
+.cat-draft-wrap .cat-card { pointer-events:none; opacity:.85; }
 </style>
 </head>
 <body>
@@ -1313,31 +1315,28 @@ function gbShowSaveToast(msg, isErr) {
 
 function gbSavePage() {
   if (!document.body.classList.contains('gb-admin-mode')) return;
-  // If the inline add-game card has a name entered, save it first
+  // Auto-queue any name typed but not yet queued
   var nameEl = document.getElementById('catAddGameName');
-  var gameName = nameEl ? nameEl.textContent.trim() : '';
-  if (gameName && gameName !== 'New Game') {
-    catAddGameSubmit();
-    return;
+  if (nameEl && nameEl.textContent.trim() && nameEl.textContent.trim() !== 'New Game') {
+    catAddGameQueue();
   }
-  var btn = document.getElementById('gbSavePageBtn');
-  if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
-  var fd = new FormData();
-  fd.append('id', SHEET_ID);
-  document.querySelectorAll('.gb-footer-editable[data-setting]').forEach(function(el) {
-    fd.append(el.dataset.setting, el.textContent.trim());
-  });
-  var xhr = new XMLHttpRequest();
-  xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
-  xhr.onload = function() {
-    if (btn) { btn.textContent = 'Saved ✓'; btn.disabled = false; setTimeout(function(){ btn.textContent = 'Save'; }, 1800); }
-  };
-  xhr.onerror = function() {
-    if (btn) { btn.textContent = 'Save'; btn.disabled = false; }
-    alert('Save failed — network error.');
-  };
-  xhr.send(fd);
+  if (_catAddGameDrafts.length > 0) {
+    _catSaveDrafts(function() {
+      _catAddGameDrafts = [];
+      window.location.reload();
+    });
+  } else {
+    _catSaveSettings();
+  }
 }
+
+window.addEventListener('beforeunload', function(e) {
+  var nameEl = document.getElementById('catAddGameName');
+  var cardHasName = nameEl && nameEl.textContent.trim() && nameEl.textContent.trim() !== 'New Game';
+  if (_catAddGameDrafts.length > 0 || cardHasName) {
+    e.preventDefault(); e.returnValue = '';
+  }
+});
 
 // ── Social link editor ───────────────────────────────────────────────────────
 var _gbSocialFieldMap = { instagram:'setInsta', twitter:'setTwitter', facebook:'setFb', youtube:'setYt', bgg_url:'setBgg' };
@@ -1924,7 +1923,7 @@ function catAddGameNameBlur(el) {
 }
 
 function catAddGameTaglineKey(e) {
-  if (e.key === 'Enter') { e.preventDefault(); catAddGameSubmit(); }
+  if (e.key === 'Enter') { e.preventDefault(); catAddGameQueue(); }
   if (e.key === 'Escape') { catAddGameReset(); }
 }
 
@@ -1996,38 +1995,110 @@ function catAddGameUploadImg(file) {
   xhr.send(fd);
 }
 
-function catAddGameSubmit() {
+var _catAddGameDrafts = []; // [{name, tagline, imgUrl}] — queued, not yet saved to sheet
+
+function catAddGameQueue() {
   var nameEl = document.getElementById('catAddGameName');
   var name = nameEl ? nameEl.textContent.trim() : '';
   if (!name || name === 'New Game') { if (nameEl) nameEl.focus(); return; }
   var taglineEl = document.getElementById('catAddGameTagline');
   var tagline = taglineEl ? taglineEl.value.trim() : '';
-  var card = document.getElementById('catAddGameCard');
-  var saveBtn = document.getElementById('gbSavePageBtn');
-  if (card) { card.style.opacity = '.5'; card.style.pointerEvents = 'none'; }
-  if (saveBtn) { saveBtn.textContent = 'Saving…'; saveBtn.disabled = true; }
+  var imgUrl = _catAddGameImgUrl || '';
+  _catAddGameDrafts.push({name: name, tagline: tagline, imgUrl: imgUrl});
+  _catAddGameShowDraft(name, tagline, imgUrl);
+  catAddGameReset();
+}
+
+function _catAddGameShowDraft(name, tagline, imgUrl) {
+  var grid = document.getElementById('catGrid');
+  var addCard = document.getElementById('catAddGameCard');
+  if (!grid || !addCard) return;
+  var wrap = document.createElement('div');
+  wrap.className = 'cat-card-wrap cat-draft-wrap';
+  wrap.dataset.draftName = name;
+  var card = document.createElement('div');
+  card.className = 'cat-card';
+  var imgWrap = document.createElement('div');
+  imgWrap.className = 'cat-img-wrap';
+  if (imgUrl) {
+    var img = document.createElement('img');
+    img.className = 'cat-card-img'; img.src = imgUrl; img.alt = name;
+    imgWrap.appendChild(img);
+  } else {
+    var ph = document.createElement('div');
+    ph.className = 'cat-card-ph';
+    ph.innerHTML = '<img src="' + APP_ROOT + 'images/gb_logo.png" alt="" style="width:64px;height:64px;border-radius:14px;opacity:.35;">';
+    imgWrap.appendChild(ph);
+  }
+  var badge = document.createElement('div');
+  badge.className = 'cat-draft-badge'; badge.textContent = 'Unsaved';
+  imgWrap.appendChild(badge);
+  card.appendChild(imgWrap);
+  var body = document.createElement('div');
+  body.className = 'cat-card-body';
+  var nameDiv = document.createElement('div');
+  nameDiv.className = 'cat-card-name'; nameDiv.textContent = name;
+  body.appendChild(nameDiv);
+  if (tagline) {
+    var sumDiv = document.createElement('div');
+    sumDiv.className = 'cat-card-summary'; sumDiv.textContent = tagline;
+    body.appendChild(sumDiv);
+  }
+  card.appendChild(body);
+  wrap.appendChild(card);
+  grid.insertBefore(wrap, addCard);
+}
+
+function _catSaveDrafts(onDone) {
+  var drafts = _catAddGameDrafts.slice();
+  var btn = document.getElementById('gbSavePageBtn');
+  if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
+  var idx = 0;
+  function saveNext() {
+    if (idx >= drafts.length) { if (onDone) onDone(); return; }
+    var d = drafts[idx++];
+    var fd = new FormData();
+    fd.append('id', SHEET_ID); fd.append('name', d.name); fd.append('tagline', d.tagline);
+    fd.append('status', 'Published');
+    fd.append('cover_url', d.imgUrl || '');
+    fd.append('image', d.imgUrl ? '=IMAGE("' + d.imgUrl + '")' : '');
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', APP_ROOT + 'push/addGame.php');
+    xhr.onload = function() {
+      var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+      if (!r || r.error) {
+        if (btn) { btn.textContent = 'Save'; btn.disabled = false; }
+        alert('Error saving "' + d.name + '": ' + ((r && r.error) || 'Unknown error'));
+        return;
+      }
+      saveNext();
+    };
+    xhr.onerror = function() {
+      if (btn) { btn.textContent = 'Save'; btn.disabled = false; }
+      alert('Network error saving "' + d.name + '". Please try again.');
+    };
+    xhr.send(fd);
+  }
+  saveNext();
+}
+
+function _catSaveSettings(onDone) {
+  var btn = document.getElementById('gbSavePageBtn');
+  if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
   var fd = new FormData();
-  fd.append('id',        SHEET_ID);
-  fd.append('name',      name);
-  fd.append('tagline',   tagline);
-  fd.append('status',    'Published');
-  fd.append('cover_url', _catAddGameImgUrl || '');
-  fd.append('image',     _catAddGameImgUrl ? '=IMAGE("' + _catAddGameImgUrl + '")' : '');
+  fd.append('id', SHEET_ID);
+  document.querySelectorAll('.gb-footer-editable[data-setting]').forEach(function(el) {
+    fd.append(el.dataset.setting, el.textContent.trim());
+  });
   var xhr = new XMLHttpRequest();
-  xhr.open('POST', APP_ROOT + 'push/addGame.php');
+  xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
   xhr.onload = function() {
-    if (card) { card.style.opacity = ''; card.style.pointerEvents = ''; }
-    if (saveBtn) { saveBtn.textContent = 'Save'; saveBtn.disabled = false; }
-    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
-    if (!r || r.error) { alert((r && r.error) || 'Unknown error. Please try again.'); return; }
-    // Navigate to the new game's detail page
-    var slug = r.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    window.location.href = CAT_URL + slug;
+    if (btn) { btn.textContent = 'Saved ✓'; btn.disabled = false; setTimeout(function(){ btn.textContent = 'Save'; }, 1800); }
+    if (onDone) onDone();
   };
   xhr.onerror = function() {
-    if (card) { card.style.opacity = ''; card.style.pointerEvents = ''; }
-    if (saveBtn) { saveBtn.textContent = 'Save'; saveBtn.disabled = false; }
-    alert('Network error. Please try again.');
+    if (btn) { btn.textContent = 'Save'; btn.disabled = false; }
+    alert('Save failed — network error.');
   };
   xhr.send(fd);
 }

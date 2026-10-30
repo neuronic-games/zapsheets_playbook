@@ -1371,19 +1371,22 @@ function catUnsavedSave() {
 
 // Intercept link clicks to show our custom dialog when there are unsaved drafts
 document.addEventListener('click', function(e) {
-  if (!_catHasUnsaved()) return;
   var a = e.target.closest('a[href]');
   if (!a) return;
   var href = a.getAttribute('href');
   if (!href || href.charAt(0) === '#') return; // ignore anchors
+  // Auto-queue any name typed but not yet queued
+  var nameEl = document.getElementById('catAddGameName');
+  if (nameEl && nameEl.textContent.trim() && nameEl.textContent.trim() !== 'New Game') catAddGameQueue();
+  if (_catAddGameDrafts.length === 0) return; // nothing unsaved — let navigate
   e.preventDefault();
-  _catUnsavedDest = a.href; // resolved absolute URL
+  _catUnsavedDest = a.href;
   document.getElementById('catUnsavedOverlay').classList.add('open');
-}, true); // capture phase so it fires before other handlers
+}, true);
 
-// Fallback for browser back/forward (can't show custom dialog here)
+// Fallback for browser back/forward only — only blocks when drafts are queued
 window.addEventListener('beforeunload', function(e) {
-  if (_catHasUnsaved()) { e.preventDefault(); e.returnValue = ''; }
+  if (_catAddGameDrafts.length > 0) { e.preventDefault(); e.returnValue = ''; }
 });
 
 // ── Social link editor ───────────────────────────────────────────────────────

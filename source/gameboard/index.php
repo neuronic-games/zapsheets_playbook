@@ -670,6 +670,18 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
 <?php _gb_footer(); ?>
 
 
+<!-- ── Unsaved-changes warning dialog ── -->
+<div class="gb-overlay" id="catUnsavedOverlay" onclick="event.stopPropagation()">
+  <div class="gb-dialog" onclick="event.stopPropagation()" style="max-width:400px;text-align:center">
+    <div style="font-size:1.1rem;font-weight:700;color:var(--ink,#222);margin-bottom:.6rem">⚠️ Unsaved Content</div>
+    <p style="font-size:.88rem;color:var(--ink-lt,#555);line-height:1.55;margin-bottom:1.4rem">You have unsaved content on this page.<br>Would you like to save first?</p>
+    <div style="display:flex;gap:.75rem;justify-content:center">
+      <button class="btn-adm btn-adm-secondary" onclick="catUnsavedGoBack()" style="min-width:100px">Go Back</button>
+      <button class="btn-adm btn-adm-primary" id="catUnsavedSaveBtn" onclick="catUnsavedSave()" style="min-width:100px;background:var(--accent);color:#fff">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Publish Site dialog ── -->
 <div class="gb-overlay" id="gbPublishOverlay" onclick="if(event.target===this)closePublishDialog()">
   <div class="gb-dialog" onclick="event.stopPropagation()" style="max-width:480px">
@@ -1330,12 +1342,48 @@ function gbSavePage() {
   }
 }
 
-window.addEventListener('beforeunload', function(e) {
+var _catUnsavedDest = null;
+
+function _catHasUnsaved() {
   var nameEl = document.getElementById('catAddGameName');
   var cardHasName = nameEl && nameEl.textContent.trim() && nameEl.textContent.trim() !== 'New Game';
-  if (_catAddGameDrafts.length > 0 || cardHasName) {
-    e.preventDefault(); e.returnValue = '';
-  }
+  return _catAddGameDrafts.length > 0 || !!cardHasName;
+}
+
+function catUnsavedGoBack() {
+  document.getElementById('catUnsavedOverlay').classList.remove('open');
+  _catUnsavedDest = null;
+}
+
+function catUnsavedSave() {
+  var btn = document.getElementById('catUnsavedSaveBtn');
+  if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
+  // Auto-queue any name in the card
+  var nameEl = document.getElementById('catAddGameName');
+  if (nameEl && nameEl.textContent.trim() && nameEl.textContent.trim() !== 'New Game') catAddGameQueue();
+  _catSaveDrafts(function() {
+    _catAddGameDrafts = [];
+    var dest = _catUnsavedDest;
+    _catUnsavedDest = null;
+    window.location.href = dest || window.location.href;
+  });
+}
+
+// Intercept link clicks to show our custom dialog when there are unsaved drafts
+document.addEventListener('click', function(e) {
+  if (!_catHasUnsaved()) return;
+  var a = e.target.closest('a[href]');
+  if (!a) return;
+  var href = a.getAttribute('href');
+  if (!href || href.charAt(0) === '#') return; // ignore anchors
+  e.preventDefault();
+  _catUnsavedDest = a.href; // resolved absolute URL
+  document.getElementById('catUnsavedOverlay').classList.add('open');
+}, true); // capture phase so it fires before other handlers
+
+// Fallback for browser back/forward (can't show custom dialog here)
+window.addEventListener('beforeunload', function(e) {
+  if (_catHasUnsaved()) { e.preventDefault(); e.returnValue = ''; }
 });
 
 // ── Social link editor ───────────────────────────────────────────────────────

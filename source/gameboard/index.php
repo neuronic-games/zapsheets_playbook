@@ -510,6 +510,7 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
         <div class="user-menu" id="gbMenu">
           <button class="user-menu-item" id="gbMenuProfile" onclick="gbMenuAction('profile')">Profile</button>
           <button class="user-menu-item" onclick="gbMenuAction('settings')">Settings</button>
+          <button class="user-menu-item" onclick="gbMenuAction('analytics')">📊 Analytics</button>
           <hr class="user-menu-divider" />
           <button class="user-menu-item" onclick="gbMenuAction('fetch')">Fetch</button>
           <button class="user-menu-item" id="gbMenuPublish" onclick="gbMenuAction('publish')" style="display:none">🌐 Publish Site</button>
@@ -669,6 +670,17 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
 
 <?php _gb_footer(); ?>
 
+
+<!-- ── Analytics dialog ── -->
+<div class="gb-overlay" id="gbAnalyticsOverlay" onclick="if(event.target===this)closeAnalyticsDialog()">
+  <div class="gb-dialog" onclick="event.stopPropagation()" style="max-width:560px;width:94%">
+    <button class="gb-dialog-close" onclick="closeAnalyticsDialog()">×</button>
+    <div class="gb-dialog-title">📊 Analytics</div>
+    <div id="gbAnalyticsBody" style="min-height:120px">
+      <div style="text-align:center;padding:2rem 0;color:var(--ink-lt);font-size:.85rem">Loading…</div>
+    </div>
+  </div>
+</div>
 
 <!-- ── Unsaved-changes warning dialog ── -->
 <div class="gb-overlay" id="catUnsavedOverlay" onclick="event.stopPropagation()">
@@ -1047,6 +1059,9 @@ function gbMenuAction(action) {
   } else if (action === 'publish') {
     if (!_gbUser) { openSignIn(); return; }
     gbPublishSite();
+  } else if (action === 'analytics') {
+    if (!_gbUser) { openSignIn(); return; }
+    openAnalyticsDialog();
   } else if (action === 'signout') {
     if (_gbUser) {
       if (confirm('Sign out?')) {
@@ -1055,6 +1070,110 @@ function gbMenuAction(action) {
       }
     } else { openSignIn(); }
   }
+}
+
+// ── Analytics ────────────────────────────────────────────────────────────────
+function openAnalyticsDialog() {
+  document.getElementById('gbAnalyticsOverlay').classList.add('open');
+  document.getElementById('gbAnalyticsBody').innerHTML =
+    '<div style="text-align:center;padding:2rem 0;color:var(--ink-lt);font-size:.85rem">Loading…</div>';
+  var fd = new FormData(); fd.append('id', SHEET_ID);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/getAnalytics.php');
+  xhr.onload = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+    if (!r || r.error) {
+      document.getElementById('gbAnalyticsBody').innerHTML =
+        '<p style="color:#e53935;font-size:.85rem">Could not load analytics.</p>';
+      return;
+    }
+    _renderAnalytics(r.stats, r.storage);
+  };
+  xhr.onerror = function() {
+    document.getElementById('gbAnalyticsBody').innerHTML =
+      '<p style="color:#e53935;font-size:.85rem">Network error.</p>';
+  };
+  xhr.send(fd);
+}
+
+function closeAnalyticsDialog() {
+  document.getElementById('gbAnalyticsOverlay').classList.remove('open');
+}
+
+function _renderAnalytics(stats, storage) {
+  var s = stats || {};
+  var pb   = s['pitchboard'] || {};
+  var sh   = s['share']      || {};
+  var gm   = s['game']       || {};
+
+  function fmt(n) { return (n || 0).toLocaleString(); }
+
+  // ── Summary cards ────────────────────────────────────────────────────────
+  var html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:1.2rem">';
+  function card(label, total, recent) {
+    return '<div style="background:#f5f5fb;border-radius:8px;padding:.75rem .8rem;text-align:center">'
+      + '<div style="font-family:\'DINBlack\',sans-serif;font-size:1.4rem;color:var(--accent)">' + fmt(recent) + '</div>'
+      + '<div style="font-size:.68rem;color:var(--ink-lt);margin:.1rem 0 .3rem;text-transform:uppercase;letter-spacing:.05em">Last 30 days</div>'
+      + '<div style="font-size:.72rem;color:#aaa">' + fmt(total) + ' all time</div>'
+      + '<div style="font-size:.7rem;font-weight:600;color:var(--ink);margin-top:.35rem">' + label + '</div>'
+      + '</div>';
+  }
+  html += card('Catalog', pb.total, pb.recent);
+  html += card('Share Page', sh.total, sh.recent);
+  html += card('Game Detail', gm.total, gm.recent);
+  html += '</div>';
+
+  // ── Per-game breakdown ───────────────────────────────────────────────────
+  // Merge share + game visits by game name
+  var byGame = {};
+  function mergeGame(src) {
+    var bg = (src || {}).byGame || {};
+    Object.keys(bg).forEach(function(g) {
+      if (!byGame[g]) byGame[g] = {total:0, recent:0};
+      byGame[g].total  += bg[g].total  || 0;
+      byGame[g].recent += bg[g].recent || 0;
+    });
+  }
+  mergeGame(sh); mergeGame(gm);
+
+  var games = Object.keys(byGame).sort(function(a,b){ return byGame[b].recent - byGame[a].recent; });
+  if (games.length) {
+    var maxRecent = Math.max.apply(null, games.map(function(g){ return byGame[g].recent; })) || 1;
+    html += '<div style="font-family:\'DINBlack\',sans-serif;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-lt);margin-bottom:.5rem">By Game</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:.35rem;max-height:260px;overflow-y:auto">';
+    games.forEach(function(g) {
+      var d = byGame[g];
+      var pct = Math.max(4, Math.round(d.recent / maxRecent * 100));
+      html += '<div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:.5rem">'
+        + '<div>'
+          + '<div style="font-size:.8rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + _esc(g) + '</div>'
+          + '<div style="height:4px;background:#e8e8f2;border-radius:2px;margin-top:3px">'
+            + '<div style="height:4px;width:' + pct + '%;background:var(--accent);border-radius:2px"></div>'
+          + '</div>'
+        + '</div>'
+        + '<div style="text-align:right;font-size:.8rem;font-weight:700;color:var(--accent);min-width:2rem">' + fmt(d.recent) + '</div>'
+        + '<div style="text-align:right;font-size:.72rem;color:#aaa;min-width:3.5rem">' + fmt(d.total) + ' total</div>'
+        + '</div>';
+    });
+    html += '</div>';
+  } else {
+    html += '<p style="font-size:.82rem;color:var(--ink-lt);text-align:center;padding:.5rem 0">No game visit data yet.</p>';
+  }
+
+  // ── Storage ──────────────────────────────────────────────────────────────
+  if (storage) {
+    var kb = (storage.bytes / 1024).toFixed(1);
+    html += '<div style="margin-top:.9rem;font-size:.72rem;color:#bbb;text-align:right">'
+      + storage.files + ' cached files · ' + kb + ' KB</div>';
+  }
+
+  html += '<div style="font-size:.7rem;color:#ccc;margin-top:.3rem;text-align:right">Last 30 days · 90-day history</div>';
+
+  document.getElementById('gbAnalyticsBody').innerHTML = html;
+}
+
+function _esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ── Publish Site ─────────────────────────────────────────────────────────────
@@ -1726,6 +1845,7 @@ function submitSettings() {
 // ── Esc closes open dialogs ──────────────────────────────────────────────────
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Escape') return;
+  if (document.getElementById('gbAnalyticsOverlay').classList.contains('open')){ closeAnalyticsDialog(); return; }
   if (document.getElementById('gbPublishOverlay').classList.contains('open')){ closePublishDialog(); return; }
   if (document.getElementById('signInOverlay').classList.contains('open'))  { forceCloseSignIn(); return; }
   if (document.getElementById('settingsOverlay').classList.contains('open')){ forceCloseSettings(); return; }

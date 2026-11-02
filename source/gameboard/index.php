@@ -518,6 +518,9 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
           <button class="user-menu-item" onclick="gbMenuAction('fetch')">Fetch</button>
           <button class="user-menu-item" id="gbMenuPublish" onclick="gbMenuAction('publish')" style="display:none">🌐 Publish Site</button>
           <hr class="user-menu-divider" />
+          <button class="user-menu-item" id="gbDonateBtn" onclick="gbMenuAction('donate')" style="color:#e2557a">♥ Donate</button>
+          <button class="user-menu-item" id="gbUpgradeBtn" onclick="gbMenuAction('upgrade')" style="color:#f5a623">⭐ Subscribe</button>
+          <hr class="user-menu-divider" />
           <button class="user-menu-item" id="gbMenuSignInOut" onclick="gbMenuAction('signout')">Sign In</button>
         </div>
       </div>
@@ -673,6 +676,25 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
 
 <?php _gb_footer(); ?>
 
+
+<!-- ── Upgrade to Pro dialog ── -->
+<div class="gb-overlay" id="gbUpgradeOverlay" onclick="if(event.target===this)closeGbUpgradeDialog()">
+  <div class="gb-dialog" onclick="event.stopPropagation()" style="max-width:420px;text-align:center">
+    <button class="gb-dialog-close" onclick="closeGbUpgradeDialog()">×</button>
+    <div style="font-size:1.6rem;margin-bottom:.4rem">⭐</div>
+    <div class="gb-dialog-title" style="margin-bottom:.4rem">Upgrade GameBoard to Pro</div>
+    <p style="font-size:.84rem;color:var(--ink-lt,#555);line-height:1.65;margin-bottom:1rem">
+      GameBoard is free forever. Pro unlocks premium features as we build them —
+      advanced analytics, custom branding, priority support, and more.<br><br>
+      <strong>Support development and get early access to everything new.</strong>
+    </p>
+    <div id="gbUpgradeSubStatus" style="margin-bottom:.8rem;font-size:.8rem;color:#888"></div>
+    <div style="display:flex;gap:.6rem;justify-content:center">
+      <button class="btn-cancel" onclick="closeGbUpgradeDialog()">Maybe Later</button>
+      <button id="gbUpgradeSubBtn" class="btn-primary" onclick="startGbUpgradeCheckout()" style="background:#f5a623;border-color:#f5a623">Subscribe</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── Analytics dialog ── -->
 <div class="gb-overlay" id="gbAnalyticsOverlay" onclick="if(event.target===this)closeAnalyticsDialog()">
@@ -1065,6 +1087,10 @@ function gbMenuAction(action) {
   } else if (action === 'analytics') {
     if (!_gbUser) { openSignIn(); return; }
     openAnalyticsDialog();
+  } else if (action === 'upgrade') {
+    openGbUpgradeDialog();
+  } else if (action === 'donate') {
+    startGbDonation();
   } else if (action === 'signout') {
     if (_gbUser) {
       if (confirm('Sign out?')) {
@@ -1848,6 +1874,7 @@ function submitSettings() {
 // ── Esc closes open dialogs ──────────────────────────────────────────────────
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Escape') return;
+  if (document.getElementById('gbUpgradeOverlay').classList.contains('open'))  { closeGbUpgradeDialog(); return; }
   if (document.getElementById('gbAnalyticsOverlay').classList.contains('open')){ closeAnalyticsDialog(); return; }
   if (document.getElementById('gbPublishOverlay').classList.contains('open')){ closePublishDialog(); return; }
   if (document.getElementById('signInOverlay').classList.contains('open'))  { forceCloseSignIn(); return; }
@@ -2390,6 +2417,138 @@ function catDeleteGameConfirmed() {
   };
   xhr.send(fd);
 }
+
+// ── Pro subscription & donations ──────────────────────────────────────────
+function _gbToast(msg) { gbShowSaveToast(msg, false); }
+var _gbSubStatus = null;
+
+function _gbReturnUrl(flag) {
+  var u = new URL(window.location.href);
+  u.searchParams.delete('sub');
+  u.searchParams.delete('donate');
+  if (flag) u.searchParams.set(flag[0], flag[1]);
+  return u.toString();
+}
+
+function _gbLoadSubStatus(cb) {
+  var fd = new FormData(); fd.append('id', SHEET_ID);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/getSubscription.php');
+  xhr.onload = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+    _gbSubStatus = (r && r.ok) ? r : { ok: false };
+    _gbUpdateSubMenu();
+    if (cb) cb(_gbSubStatus);
+  };
+  xhr.onerror = function() { _gbSubStatus = { ok: false }; if (cb) cb(_gbSubStatus); };
+  xhr.send(fd);
+}
+
+function _gbUpdateSubMenu() {
+  var item = document.getElementById('gbUpgradeBtn');
+  if (!item) return;
+  var pro = !!(_gbSubStatus && _gbSubStatus.is_pro);
+  item.textContent = pro ? '⭐ Pro Active' : '⭐ Subscribe';
+  item.style.color = pro ? '#4caf50' : '#f5a623';
+}
+
+function openGbUpgradeDialog() {
+  document.getElementById('gbUpgradeOverlay').classList.add('open');
+  if (_gbSubStatus === null) {
+    document.getElementById('gbUpgradeSubStatus').textContent = 'Checking subscription…';
+    _gbLoadSubStatus(_renderGbUpgradeStatus);
+  } else {
+    _renderGbUpgradeStatus();
+  }
+}
+
+function _renderGbUpgradeStatus() {
+  var statusEl = document.getElementById('gbUpgradeSubStatus');
+  var btn      = document.getElementById('gbUpgradeSubBtn');
+  var s = _gbSubStatus || {};
+  btn.disabled = false;
+  if (s.status === 'past_due') {
+    statusEl.innerHTML = '<span style="color:#f5a623;font-weight:700">⚠ Payment past due</span>';
+    btn.textContent = 'Update Payment'; btn.onclick = _gbOpenBillingPortal;
+  } else if (s.is_pro) {
+    statusEl.innerHTML = '<span style="color:#4caf50;font-weight:700">✓ Pro active</span>'
+      + (s.period_end ? ' · renews ' + s.period_end : '');
+    btn.textContent = 'Manage Billing'; btn.onclick = _gbOpenBillingPortal;
+  } else {
+    statusEl.textContent = (s.ok === false) ? 'Could not check your subscription right now.' : '';
+    btn.textContent = 'Subscribe'; btn.onclick = startGbUpgradeCheckout;
+  }
+}
+
+function _gbOpenBillingPortal() {
+  var url = _gbSubStatus && _gbSubStatus.portal_url;
+  if (url) { window.open(url, '_blank', 'noopener'); }
+  else { alert('Online billing management is not available yet. Please contact support to change your subscription.'); }
+}
+
+function closeGbUpgradeDialog() {
+  document.getElementById('gbUpgradeOverlay').classList.remove('open');
+}
+
+function startGbUpgradeCheckout() {
+  _gbStartCheckout('subscription', document.getElementById('gbUpgradeSubBtn'), 'Subscribe');
+}
+
+function startGbDonation() {
+  _gbStartCheckout('donation', null, '');
+}
+
+function _gbStartCheckout(type, btn, btnLabel) {
+  if (btn) { btn.textContent = 'Redirecting…'; btn.disabled = true; }
+  else { _gbToast('Opening secure checkout…'); }
+  var fd = new FormData();
+  fd.append('type', type);
+  fd.append('id', SHEET_ID);
+  fd.append('app', 'gameboard');
+  fd.append('success_url', _gbReturnUrl(type === 'donation' ? ['donate', 'thanks'] : ['sub', 'success']));
+  fd.append('cancel_url',  _gbReturnUrl(null));
+  function failed(msg) {
+    if (btn) { btn.textContent = btnLabel; btn.disabled = false; }
+    alert(msg);
+  }
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_ROOT + 'push/stripeCheckout.php');
+  xhr.onload = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+    if (!r || r.error || !r.url) { failed(r && r.error ? r.error : 'Could not start checkout. Please try again.'); return; }
+    window.location.href = r.url;
+  };
+  xhr.onerror = function() { failed('Network error. Please try again.'); };
+  xhr.send(fd);
+}
+
+// On load: handle the return from Stripe Checkout, then load the Pro status.
+(function() {
+  function run() {
+    var u   = new URL(window.location.href);
+    var sub = u.searchParams.get('sub');
+    var don = u.searchParams.get('donate');
+    if (sub || don) {
+      u.searchParams.delete('sub');
+      u.searchParams.delete('donate');
+      history.replaceState(null, '', u.pathname + u.search + u.hash);
+    }
+    if (don === 'thanks') { _gbToast('♥ Thank you for your donation!'); }
+    if (sub !== 'success') { _gbLoadSubStatus(); return; }
+    // The webhook may take a few seconds — confirm before showing Pro.
+    _gbToast('Payment received — activating Pro…');
+    var tries = 0;
+    (function poll() {
+      _gbLoadSubStatus(function(s) {
+        if (s.is_pro) { _gbToast('⭐ Pro is now active. Thank you!'); return; }
+        if (++tries < 10) { setTimeout(poll, 3000); return; }
+        _gbToast('Payment received. Pro will activate shortly — refresh in a minute.');
+      });
+    })();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
+})();
 </script>
 
 <!-- ── Fetch Log dialog ── -->

@@ -3,6 +3,9 @@
 ## Auto-commit
 After every turn in which you modify, create, or delete any file in this repo, run the commit skill automatically — no need for the user to ask. Stage all changes and write a concise commit message describing what changed.
 
+## Small changes
+When I ask for a small, specific change, make the edit directly. Don't explore the codebase, re-read unrelated files, or run checks or tests afterwards unless I ask. Only check or test when I say "check it" or the change is large or risky.
+
 ## Stack
 - PHP + Google Sheets (via Python scripts using gspread)
 - Per-sheet data cached as JSON in `sheets/{sheet_id}/`

@@ -946,6 +946,9 @@ body.session-dialog-open .session-body img { display:none !important; }
         <button class="account-menu-item" onclick="accountMenuRelease()">Releases</button>
         <button class="account-menu-item" onclick="accountMenuHelp()">Help</button>
         <hr class="account-menu-divider" />
+        <button class="account-menu-item" id="dbDonateBtn" onclick="closeAccountMenu();startDonation()" style="color:#e2557a">♥ Donate</button>
+        <button class="account-menu-item" id="dbUpgradeBtn" onclick="closeAccountMenu();openUpgradeDialog()" style="color:#f5a623">⭐ Subscribe</button>
+        <hr class="account-menu-divider" />
         <button class="account-menu-item" id="dashAuthBtn" onclick="closeAccountMenu();_dashMenuAuthAction()">Sign In</button>
       </div>
     </div>
@@ -1655,6 +1658,23 @@ body.session-dialog-open .session-body img { display:none !important; }
     <div class="sync-dialog-actions">
       <button class="notes-close" onclick="_closeConfirmDialog()">Cancel</button>
       <button class="notes-close" id="confirmOkBtn" onclick="_confirmOk()" style="background:#e53e3e;color:#fff;border-color:#e53e3e">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Upgrade to Pro dialog -->
+<div class="overlay" id="upgradeOverlay" onclick="if(event.target===this)closeUpgradeDialog()">
+  <div class="sync-dialog" style="width:min(420px,94vw);text-align:center" onclick="event.stopPropagation()">
+    <h2 style="font-size:1.1rem;margin-bottom:.3rem">⭐ Upgrade DevBoard to Pro</h2>
+    <p style="font-family:'DINRegular',sans-serif;font-size:.85rem;color:#555;line-height:1.6;margin:.4rem 0 1.1rem">
+      DevBoard is free forever. Pro unlocks premium features as we build them —
+      advanced analytics, custom branding, priority support, and more.<br><br>
+      <strong>Support development and get early access to everything new.</strong>
+    </p>
+    <div id="upgradeSubStatus" style="margin-bottom:.9rem;font-size:.8rem;color:#888"></div>
+    <div class="sync-dialog-actions" style="justify-content:center;gap:.6rem">
+      <button class="notes-close" onclick="closeUpgradeDialog()">Maybe Later</button>
+      <button id="upgradeSubBtn" onclick="startUpgradeCheckout()" style="background:#f5a623;color:#fff;border-color:#f5a623;font-family:'DINBlack',sans-serif;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;padding:.45rem 1.1rem;border-radius:6px;border:none;cursor:pointer">Subscribe</button>
     </div>
   </div>
 </div>
@@ -3839,6 +3859,8 @@ document.addEventListener('keydown', function(ev) {
   var el;
   el = document.getElementById('confirmOverlay');
   if (el && el.classList.contains('open')) { _closeConfirmDialog(); return; }
+  el = document.getElementById('upgradeOverlay');
+  if (el && el.classList.contains('open')) { closeUpgradeDialog(); return; }
   el = document.getElementById('companyOverlay');
   if (el && el.classList.contains('open')) {
     closeCompanyDialog();
@@ -5964,6 +5986,137 @@ function showSaveToast(msg) {
   clearTimeout(_saveToastTimer);
   _saveToastTimer = setTimeout(function() { t.classList.remove('visible'); }, 10000);
 }
+
+// ── Pro subscription & donations ──────────────────────────────────────────
+var _dbSubStatus = null;
+
+function _dbReturnUrl(flag) {
+  var u = new URL(window.location.href);
+  u.searchParams.delete('sub');
+  u.searchParams.delete('donate');
+  if (flag) u.searchParams.set(flag[0], flag[1]);
+  return u.toString();
+}
+
+function _dbLoadSubStatus(cb) {
+  var fd = new FormData(); fd.append('id', SHEET_ID);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/getSubscription.php');
+  xhr.onload = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+    _dbSubStatus = (r && r.ok) ? r : { ok: false };
+    _dbUpdateSubMenu();
+    if (cb) cb(_dbSubStatus);
+  };
+  xhr.onerror = function() { _dbSubStatus = { ok: false }; if (cb) cb(_dbSubStatus); };
+  xhr.send(fd);
+}
+
+function _dbUpdateSubMenu() {
+  var item = document.getElementById('dbUpgradeBtn');
+  if (!item) return;
+  var pro = !!(_dbSubStatus && _dbSubStatus.is_pro);
+  item.textContent = pro ? '⭐ Pro Active' : '⭐ Subscribe';
+  item.style.color = pro ? '#4caf50' : '#f5a623';
+}
+
+function openUpgradeDialog() {
+  document.getElementById('upgradeOverlay').classList.add('open');
+  if (_dbSubStatus === null) {
+    document.getElementById('upgradeSubStatus').textContent = 'Checking subscription…';
+    _dbLoadSubStatus(_renderUpgradeStatus);
+  } else {
+    _renderUpgradeStatus();
+  }
+}
+
+function _renderUpgradeStatus() {
+  var statusEl = document.getElementById('upgradeSubStatus');
+  var btn      = document.getElementById('upgradeSubBtn');
+  var s = _dbSubStatus || {};
+  btn.disabled = false;
+  if (s.status === 'past_due') {
+    statusEl.innerHTML = '<span style="color:#f5a623;font-weight:700">⚠ Payment past due</span>';
+    btn.textContent = 'Update Payment'; btn.onclick = _dbOpenBillingPortal;
+  } else if (s.is_pro) {
+    statusEl.innerHTML = '<span style="color:#4caf50;font-weight:700">✓ Pro active</span>'
+      + (s.period_end ? ' · renews ' + s.period_end : '');
+    btn.textContent = 'Manage Billing'; btn.onclick = _dbOpenBillingPortal;
+  } else {
+    statusEl.textContent = (s.ok === false) ? 'Could not check your subscription right now.' : '';
+    btn.textContent = 'Subscribe'; btn.onclick = startUpgradeCheckout;
+  }
+}
+
+function _dbOpenBillingPortal() {
+  var url = _dbSubStatus && _dbSubStatus.portal_url;
+  if (url) { window.open(url, '_blank', 'noopener'); }
+  else { alert('Online billing management is not available yet. Please contact support to change your subscription.'); }
+}
+
+function closeUpgradeDialog() {
+  document.getElementById('upgradeOverlay').classList.remove('open');
+}
+
+function startUpgradeCheckout() {
+  _dbStartCheckout('subscription', document.getElementById('upgradeSubBtn'), 'Subscribe');
+}
+
+function startDonation() {
+  _dbStartCheckout('donation', null, '');
+}
+
+function _dbStartCheckout(type, btn, btnLabel) {
+  if (btn) { btn.textContent = 'Redirecting…'; btn.disabled = true; }
+  else { showSaveToast('Opening secure checkout…'); }
+  var fd = new FormData();
+  fd.append('type', type);
+  fd.append('id', SHEET_ID);
+  fd.append('app', 'devboard');
+  fd.append('success_url', _dbReturnUrl(type === 'donation' ? ['donate', 'thanks'] : ['sub', 'success']));
+  fd.append('cancel_url',  _dbReturnUrl(null));
+  function failed(msg) {
+    if (btn) { btn.textContent = btnLabel; btn.disabled = false; }
+    alert(msg);
+  }
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APP_BASE + 'push/stripeCheckout.php');
+  xhr.onload = function() {
+    var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
+    if (!r || r.error || !r.url) { failed(r && r.error ? r.error : 'Could not start checkout. Please try again.'); return; }
+    window.location.href = r.url;
+  };
+  xhr.onerror = function() { failed('Network error. Please try again.'); };
+  xhr.send(fd);
+}
+
+// On load: handle the return from Stripe Checkout, then load the Pro status.
+(function() {
+  function run() {
+    var u   = new URL(window.location.href);
+    var sub = u.searchParams.get('sub');
+    var don = u.searchParams.get('donate');
+    if (sub || don) {
+      u.searchParams.delete('sub');
+      u.searchParams.delete('donate');
+      history.replaceState(null, '', u.pathname + u.search + u.hash);
+    }
+    if (don === 'thanks') { showSaveToast('♥ Thank you for your donation!'); }
+    if (sub !== 'success') { _dbLoadSubStatus(); return; }
+    // The webhook may take a few seconds — confirm before showing Pro.
+    showSaveToast('Payment received — activating Pro…');
+    var tries = 0;
+    (function poll() {
+      _dbLoadSubStatus(function(s) {
+        if (s.is_pro) { showSaveToast('⭐ Pro is now active. Thank you!'); return; }
+        if (++tries < 10) { setTimeout(poll, 3000); return; }
+        showSaveToast('Payment received. Pro will activate shortly — refresh in a minute.');
+      });
+    })();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
+})();
 </script>
 
 <div class="save-toast" id="saveToast" role="alert">

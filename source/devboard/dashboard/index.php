@@ -6058,6 +6058,15 @@ document.querySelectorAll('input[type="date"]').forEach(function(inp) {
   var w = document.createElement('div'); w.className = 'date-wrap';
   inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
 });
+// Open the calendar when a date field is clicked. The calendar icon is drawn
+// by CSS, and only Chrome reacts to clicks on it natively — Safari and Firefox
+// need showPicker() (supported in current versions of all three).
+document.addEventListener('click', function(e) {
+  var inp = e.target;
+  if (!inp || inp.tagName !== 'INPUT' || inp.type !== 'date' || inp.disabled || inp.readOnly) return;
+  if (typeof inp.showPicker !== 'function') return;
+  try { inp.showPicker(); } catch (err) { /* picker already open or not allowed */ }
+});
 
 // ── Background-save error toast ────────────────────────────────────────────
 var _saveToastTimer = null;

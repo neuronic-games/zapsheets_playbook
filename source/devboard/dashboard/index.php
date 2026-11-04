@@ -556,10 +556,13 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .contract-dialog h2 { font-family:'DINBlack',sans-serif; font-size:1rem; margin:0; }
 .contract-dialog h2 span { font-family:'DINRegular',sans-serif; opacity:.55; }
 .contract-quote-wrap { position:relative; }
-.contract-quote-wrap input { padding-left:1.4rem !important; }
+.contract-quote-wrap input { padding-left:1.4rem !important; width:100%; box-sizing:border-box; }
+/* Same font, size and line-height as the input so "$" sits on the number's baseline */
 .contract-quote-prefix {
-  position:absolute; left:.55rem; top:50%; transform:translateY(-50%);
-  font-size:.82rem; color:#666; pointer-events:none;
+  position:absolute; left:.55rem; top:0; bottom:0;
+  display:flex; align-items:center;
+  font-family:'DINRegular',sans-serif; font-size:.85rem; line-height:normal;
+  letter-spacing:0; text-transform:none; color:#666; pointer-events:none;
 }
 
 /* ── Sessions inside a card ───────────────────────────── */

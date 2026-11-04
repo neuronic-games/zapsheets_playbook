@@ -129,7 +129,7 @@ if (!empty($result['ok'])) {
         'client'       => $client,
         'game'         => $game,
         'estimate_num' => $result['doc_num'] ?? $docId,
-        'amount'       => floatval($unitPrice),
+        'amount'       => floatval($unitPrice) + floatval($printing),   // includes Printing
         'url'          => $result['url']  ?? '',
         'file'         => $result['file'] ?? '',
         'tab'          => '',

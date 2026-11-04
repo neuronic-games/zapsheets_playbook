@@ -30,7 +30,14 @@ $fname   = $docType . ($docNum ? "-$docNum" : '') . '.pdf';
 
 header('Content-Type: application/pdf');
 header('Content-Disposition: inline; filename="' . $fname . '"');
+// The PDF is regenerated in place when a contract is edited, so browsers must
+// check for a newer version every time (cheap 304 when unchanged).
+$mtime = filemtime($pdfFile);
+$etag  = '"' . md5($token . '|' . $mtime . '|' . filesize($pdfFile)) . '"';
+header('Cache-Control: no-cache, private');
+header('ETag: ' . $etag);
+header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $mtime) . ' GMT');
+if (trim($_SERVER['HTTP_IF_NONE_MATCH'] ?? '') === $etag) { http_response_code(304); exit; }
 header('Content-Length: ' . filesize($pdfFile));
-header('Cache-Control: private, max-age=3600');
 readfile($pdfFile);
 ?>

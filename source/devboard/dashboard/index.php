@@ -1040,6 +1040,14 @@ body.session-dialog-open .session-body img { display:none !important; }
           <option value="Fully Paid">Fully Paid</option>
         </select>
       </div>
+      <div class="field-group">
+        <label>Discount Label</label>
+        <input type="text" class="field-input" id="ceDiscountLabel" placeholder="e.g. First-timer discount" autocomplete="off" />
+      </div>
+      <div class="field-group">
+        <label>Discount %</label>
+        <input type="number" class="field-input" id="ceDiscountPct" min="0" max="100" step="1" placeholder="0" />
+      </div>
       <div class="field-group span2">
         <label>Notes</label>
         <input type="text" class="field-input" id="ceNotes" autocomplete="off" />
@@ -2037,6 +2045,9 @@ function renderPublishersView() {
           var shareBody      = encodeURIComponent('Download ' + shareTypeLabel + ': ' + est.url);
           html += '<button type="button" class="btn-contract-action" onclick="event.stopPropagation();window.open(\'mailto:?subject=' + shareSubject + '&body=' + shareBody + '\',\'_self\')">✉ Share</button>';
         }
+        if (est.contract_id) {
+          html += '<button type="button" class="btn-contract-action" onclick="event.stopPropagation();openContractEditForEstimate(' + globalIdx + ')">Edit</button>';
+        }
         html += '<button type="button" class="btn-contract-action invoice" onclick="event.stopPropagation();openInvoiceFromEstimate(' + globalIdx + ')">+ Invoice</button>';
         html += '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_estStartDelete(' + globalIdx + ')">🗑 Delete</button>';
         html += '</div>';
@@ -2096,7 +2107,7 @@ function renderPublishersView() {
           var conShareBody    = encodeURIComponent('Download ' + conType + ': ' + conFilesUrl);
           html += '<button type="button" class="btn-contract-action" onclick="event.stopPropagation();window.open(\'mailto:?subject=' + conShareSubject + '&body=' + conShareBody + '\',\'_self\')">✉ Share</button>';
         }
-        html += '<button type="button" class="btn-contract-action" onclick="event.stopPropagation();openContractEditDialog(' + dataIdx + ')">✎ Edit Contract</button>';
+        html += '<button type="button" class="btn-contract-action" onclick="event.stopPropagation();openContractEditDialog(' + dataIdx + ')">Edit</button>';
         html += '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_conStartDelete(' + dataIdx + ')">🗑 Delete Contract</button>';
         html += '</div>';
         html += '<div class="est-confirm contract-del-confirm" id="cdel-confirm-' + dataIdx + '" style="display:none;padding:.45rem 1rem;">' +
@@ -2426,6 +2437,7 @@ function submitEstimate() {
       }
       // Add to in-memory list and re-render
       if (j.estimate_record) ESTIMATES_RAW.push(j.estimate_record);
+      if (j.contract_record) CONTRACT_RAW.push(j.contract_record);
       forceCloseEstimateDialog();
       renderPublishersViewKeepOpen();
       // Open in new tab
@@ -2558,6 +2570,7 @@ function submitInvoice() {
       // Add to ESTIMATES_RAW so it shows without reload
       if (j.invoice_record) {
         ESTIMATES_RAW.push(j.invoice_record);
+        if (j.contract_record) CONTRACT_RAW.push(j.contract_record);
         renderPublishersViewKeepOpen();
       }
       // Open the new invoice sheet
@@ -5894,13 +5907,27 @@ function isContractEditDirty() {
          f('ceEndDate')     !== (_ceInitial.endDate     || '') ||
          f('ceQuote')       !== (_ceInitial.quote       || '') ||
          f('cePrinting')    !== (_ceInitial.printing    || '') ||
+         f('ceDiscountLabel') !== (_ceInitial.discountLabel || '') ||
+         f('ceDiscountPct') !== (_ceInitial.discountPct || '') ||
          f('cePayment')     !== (_ceInitial.payment     || '') ||
          f('ceNotes')       !== (_ceInitial.notes       || '');
 }
 
-// Printing column value as a plain number for the input (e.g. "$1,200.00" → "1200.00")
-function _cePrintingValue(con) {
-  return String(con.Printing || '').replace(/^'/, '').replace(/[^0-9.]/g, '');
+// Sheet money/number value as a plain number for an input (e.g. "$1,200.00" → "1200.00")
+function _ceNum(v) {
+  return String(v || '').replace(/^'/, '').replace(/[^0-9.]/g, '');
+}
+function _cePrintingValue(con) { return _ceNum(con.Printing); }
+
+// Open the edit dialog from an estimate/invoice card (matched by Ref Number)
+function openContractEditForEstimate(estIdx) {
+  var est = ESTIMATES_RAW[estIdx];
+  if (!est || !est.contract_id) return;
+  for (var i = 0; i < CONTRACT_RAW.length; i++) {
+    var c = CONTRACT_RAW[i];
+    if (c && String(c['Ref Number'] || '') === String(est.contract_id)) { openContractEditDialog(i); return; }
+  }
+  showSaveToast('This contract isn\'t loaded yet. Use Fetch to reload contracts, then try again.');
 }
 
 function openContractEditDialog(idx) {
@@ -5913,7 +5940,9 @@ function openContractEditDialog(idx) {
   document.getElementById('ceTargetEnd').value        = _toDateInput(con['Target End Date']   || '');
   document.getElementById('ceStartDate').value        = _toDateInput(con['Start Date']        || '');
   document.getElementById('ceEndDate').value          = _toDateInput(con['End Date']          || '');
-  document.getElementById('ceQuote').value            = String(con.Quote || '').replace(/^'/, '');
+  document.getElementById('ceQuote').value            = _ceNum(con.Quote);
+  document.getElementById('ceDiscountLabel').value    = con['Discount Label'] || '';
+  document.getElementById('ceDiscountPct').value      = _ceNum(con['Discount %']);
   document.getElementById('cePrinting').value         = _cePrintingValue(con);
   document.getElementById('cePayment').value          = con.Payment || 'Estimate';
   document.getElementById('ceNotes').value            = con.Notes   || '';
@@ -5928,7 +5957,9 @@ function openContractEditDialog(idx) {
     targetEnd:   _toDateInput(con['Target End Date']   || ''),
     startDate:   _toDateInput(con['Start Date']        || ''),
     endDate:     _toDateInput(con['End Date']          || ''),
-    quote:       String(con.Quote || '').replace(/^'/, '').trim(),
+    quote:       _ceNum(con.Quote),
+    discountLabel: (con['Discount Label'] || '').trim(),
+    discountPct: _ceNum(con['Discount %']),
     printing:    _cePrintingValue(con),
     payment:     (con.Payment || 'Estimate').trim(),
     notes:       (con.Notes   || '').trim()
@@ -5964,6 +5995,15 @@ function submitContractEdit() {
   fd.append('end_date',     document.getElementById('ceEndDate').value);
   fd.append('quote',        document.getElementById('ceQuote').value);
   fd.append('printing',     document.getElementById('cePrinting').value);
+  fd.append('discount_label', document.getElementById('ceDiscountLabel').value.trim());
+  fd.append('discount_pct',   document.getElementById('ceDiscountPct').value);
+  // Profile details, used when the estimate/invoice PDF is regenerated
+  fd.append('my_name',      MY_NAME          || '');
+  fd.append('my_phone',     MY_PHONE         || '');
+  fd.append('my_company',   MY_COMPANY       || '');
+  fd.append('my_logo',      MY_LOGO          || '');
+  fd.append('my_address',   MY_COMPANY_ADDRESS || MY_BIO_LOCATION || '');
+  fd.append('my_payment',   MY_PAYMENT_INFO  || '');
   fd.append('payment',      document.getElementById('cePayment').value);
   fd.append('notes',        document.getElementById('ceNotes').value);
   fetch(APP_BASE + 'push/updateContract.php', { method:'POST', body:fd })
@@ -5980,6 +6020,20 @@ function submitContractEdit() {
         con.Printing            = document.getElementById('cePrinting').value;
         con.Payment             = document.getElementById('cePayment').value;
         con.Notes               = document.getElementById('ceNotes').value;
+        con['Discount Label']   = document.getElementById('ceDiscountLabel').value.trim();
+        con['Discount %']       = document.getElementById('ceDiscountPct').value;
+        // Estimate/invoice PDF regenerated on the server → refresh its card
+        var rg = j.regenerated;
+        if (rg && rg.ok && rg.estimate_record) {
+          for (var k = ESTIMATES_RAW.length - 1; k >= 0; k--) {
+            if (ESTIMATES_RAW[k] && String(ESTIMATES_RAW[k].contract_id) === String(rg.estimate_record.contract_id)) {
+              ESTIMATES_RAW[k] = rg.estimate_record; break;
+            }
+          }
+          showSaveToast('Saved and PDF updated.', 'success');
+        } else if (rg && rg.error) {
+          showSaveToast('Saved, but the PDF could not be updated: ' + rg.error);
+        }
         forceCloseContractEditDialog();
         renderPublishersViewKeepOpen();
       } else {

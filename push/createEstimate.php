@@ -43,6 +43,8 @@ $rowPayload = [
     'client'        => $client,
     'quote'         => $unitPrice,
     'printing'      => $printing,
+    'discount_pct'  => $discountPct > 0 ? strval($discountPct) : '',
+    'discount_label'=> $discountPct > 0 ? $discountLbl : '',
     'payment'       => '',
     'tests'         => $numTests,
     'edits'         => $numEdits,
@@ -154,6 +156,15 @@ if (!empty($result['ok'])) {
             unset($c);
             file_put_contents($contractsFile, json_encode($contracts, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
         }
+    }
+
+    // Reload the contracts cache so the new row (with its Printing/Discount
+    // columns) can be edited right away, and hand it back to the page.
+    require_once __DIR__ . '/refreshJson.php';
+    refreshJson($pythonPath, $sheetId, 'contracts');
+    $contractsFile = dirname(__DIR__) . '/sheets/' . $sheetId . '/contracts.json';
+    foreach ((file_exists($contractsFile) ? (json_decode(file_get_contents($contractsFile), true) ?: []) : []) as $c) {
+        if ((string)($c['Ref Number'] ?? '') === (string)$docId) { $result['contract_record'] = $c; break; }
     }
 }
 

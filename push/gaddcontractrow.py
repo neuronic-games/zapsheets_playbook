@@ -6,8 +6,9 @@
 #
 # Arg: {sheet_id}|{base64_encoded_json}
 # JSON: { game, client, quote, printing, payment, notes }
-# If a printing amount is given and the sheet has no "Printing" column yet,
-# the column is added at the end of the header row.
+# If a printing amount or discount is given and the sheet has no "Printing",
+# "Discount Label" or "Discount %" column yet, the column is added at the end
+# of the header row.
 # Returns: { ok, contract_id, row }
 
 import gspread
@@ -33,6 +34,12 @@ game     = data.get('game',     '').strip()
 client   = data.get('client',  '').strip()
 quote    = data.get('quote',   '').strip()
 printing = str(data.get('printing', '')).strip()
+discount_label = str(data.get('discount_label', '')).strip()
+discount_pct   = str(data.get('discount_pct',   '')).strip()
+try:
+    if float(discount_pct or 0) == 0: discount_pct = ''
+except ValueError:
+    discount_pct = ''
 payment  = data.get('payment', '').strip()
 notes    = data.get('notes',   '').strip()
 tests    = str(data.get('tests',    '')).strip()
@@ -87,19 +94,26 @@ type_col         = col('Type')
 ref_num_col      = col('Ref Number')
 notes_col        = col('Notes')
 scope_col        = col('Description')
-printing_col     = col('Printing')
 
-# Add a "Printing" header if a printing amount was given and the column is missing
-if printing and printing_col < 0:
+def ensure_col(name, value):
+    """Return the column index for `name`, adding the header if a value needs it."""
+    idx = col(name)
+    if idx >= 0 or not value:
+        return idx
     try:
-        printing_col = len(headers)
-        if ws.col_count < printing_col + 1:
-            ws.add_cols(printing_col + 1 - ws.col_count)
-        ws.update_cell(1, printing_col + 1, 'Printing')
-        headers.append('Printing')
+        idx = len(headers)
+        if ws.col_count < idx + 1:
+            ws.add_cols(idx + 1 - ws.col_count)
+        ws.update_cell(1, idx + 1, name)
+        headers.append(name)
+        return idx
     except Exception as e:
-        print(json.dumps({"error": f"Could not add Printing column: {str(e)}"}))
+        print(json.dumps({"error": f"Could not add {name} column: {str(e)}"}))
         sys.exit(1)
+
+printing_col  = ensure_col('Printing',       printing)
+disc_lbl_col  = ensure_col('Discount Label', discount_label)
+disc_pct_col  = ensure_col('Discount %',     discount_pct)
 
 if ref_num_col < 0:
     print(json.dumps({"error": "Ref Number column not found in contracts sheet header"}))
@@ -161,6 +175,8 @@ if ref_num_col      >= 0: new_row[ref_num_col]      = ref_code
 if notes_col        >= 0: new_row[notes_col]        = notes
 if scope_col        >= 0: new_row[scope_col]        = scope_of_work
 if printing_col     >= 0: new_row[printing_col]     = printing
+if disc_lbl_col     >= 0: new_row[disc_lbl_col]     = discount_label
+if disc_pct_col     >= 0: new_row[disc_pct_col]     = discount_pct
 
 try:
     ws.append_row(new_row, value_input_option='USER_ENTERED')

@@ -9,6 +9,7 @@
 #   game, client, doc_id, doc_type ("Invoice"|"Estimate"), estimate_num
 #   quote, notes, num_tests, num_edits, qty, unit_price, discount_pct, discount_label,
 #   printing (optional — adds a separate "Printing" line item)
+#   doc_date (optional — original "Submitted on" date, m/d/Y; defaults to today)
 #   my_name, my_phone, my_company, my_logo, my_address, my_payment
 #   tgt_start (due date / target start), base_url
 # Returns: { ok, file, url, hash }
@@ -140,6 +141,14 @@ def wrap_text(c_obj, text, font, size, max_width):
 
 today_obj  = datetime.today()
 today_disp = today_obj.strftime('%m/%d/%Y')
+# When regenerating an existing document, keep its original date
+_doc_date = str(data.get('doc_date', '') or '').strip()
+for _fmt in ('%m/%d/%Y', '%Y-%m-%d'):
+    try:
+        today_disp = datetime.strptime(_doc_date, _fmt).strftime('%m/%d/%Y')
+        break
+    except ValueError:
+        pass
 
 doc_num = ref_code if ref_code else (doc_id or today_obj.strftime('%Y%m%d'))
 due_date     = fmt_date(tgt_start)

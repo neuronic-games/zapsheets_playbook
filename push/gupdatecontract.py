@@ -1,9 +1,11 @@
 # gupdatecontract.py — update a contract row in the contracts sheet by Ref Number
 # Arg: {sheet_id}|{base64_encoded_json}
 # JSON keys: contract_id, game, client, target_start_date, target_end_date,
-#            start_date, end_date, quote, printing, payment, notes
-# If a printing amount is given and the sheet has no "Printing" column yet,
-# the column is added at the end of the header row.
+#            start_date, end_date, quote, printing, payment, notes,
+#            discount_label, discount_pct
+# Printing / Discount Label / Discount % columns are added at the end of the
+# header row when a value needs them and they don't exist yet.
+# Returns { ok, row, record } — record is the full updated row (header → value).
 
 import gspread
 import sys, os, json, base64
@@ -35,6 +37,12 @@ start_date        = data.get('start_date',        '').strip()
 end_date          = data.get('end_date',          '').strip()
 quote             = data.get('quote',             '').strip()
 printing          = str(data.get('printing', '')).strip()
+discount_label    = str(data.get('discount_label', '')).strip()
+discount_pct      = str(data.get('discount_pct',   '')).strip()
+try:
+    if float(discount_pct or 0) == 0: discount_pct = ''
+except ValueError:
+    discount_pct = ''
 payment           = data.get('payment',           '').strip()
 notes             = data.get('notes',             '').strip()
 
@@ -86,16 +94,18 @@ if row_idx is None:
     print(json.dumps({"error": f"Contract Ref Number {contract_id} not found"}))
     sys.exit(1)
 
-# Add a "Printing" header if a printing amount was given and the column is missing
-if printing and col('Printing') < 0:
+# Add Printing / Discount headers when a value needs them and they're missing
+for _name, _value in (('Printing', printing), ('Discount Label', discount_label), ('Discount %', discount_pct)):
+    if not _value or col(_name) >= 0:
+        continue
     try:
         new_idx = len(headers)
         if ws.col_count < new_idx + 1:
             ws.add_cols(new_idx + 1 - ws.col_count)
-        ws.update_cell(1, new_idx + 1, 'Printing')
-        headers.append('Printing')
+        ws.update_cell(1, new_idx + 1, _name)
+        headers.append(_name)
     except Exception as e:
-        print(json.dumps({"error": f"Could not add Printing column: {str(e)}"}))
+        print(json.dumps({"error": f"Could not add {_name} column: {str(e)}"}))
         sys.exit(1)
 
 # Build update map: column name → value
@@ -108,6 +118,8 @@ FIELD_MAP = {
     'End Date':          end_date,
     'Quote':             quote,
     'Printing':          printing,
+    'Discount Label':    discount_label,
+    'Discount %':        discount_pct,
     'Payment':           payment,
     'Notes':             notes,
 }
@@ -121,7 +133,13 @@ try:
             updates.append({'range': cell, 'values': [[value]]})
     if updates:
         ws.batch_update(updates, value_input_option='USER_ENTERED')
-    print(json.dumps({"ok": True, "row": row_idx}))
+    # Full row after the update, so the caller can regenerate the PDF
+    old_row = records[row_idx - 1]
+    record  = {h: (old_row[i] if i < len(old_row) else '') for i, h in enumerate(headers) if h}
+    for field, value in FIELD_MAP.items():
+        if col(field) >= 0:
+            record[field] = value
+    print(json.dumps({"ok": True, "row": row_idx, "record": record}))
 except Exception as e:
     print(json.dumps({"error": f"Update failed: {str(e)}"}))
     sys.exit(1)

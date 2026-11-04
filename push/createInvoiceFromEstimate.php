@@ -50,6 +50,7 @@ $rowPayload = [
     'type'          => 'Invoice',
     'notes'         => $notes ?: ('Invoice from estimate #' . $estimateNum),
     'scope_of_work' => $description,
+    'target_start'  => $tgtStart,
     'date'          => date('n/j/Y'),
 ];
 $rowEncoded = base64_encode(json_encode($rowPayload, JSON_UNESCAPED_UNICODE));
@@ -122,6 +123,7 @@ if (!empty($result['ok'])) {
         'file'         => $result['file'] ?? '',
         'tab'          => '',
         'contract_id'  => $docId,
+        'from_estimate'=> $estimateNum,   // lets Edit Contract regenerate this invoice
         'date'         => date('m/d/Y'),
     ];
     $existing[] = $record;
@@ -142,6 +144,15 @@ if (!empty($result['ok'])) {
             unset($c);
             file_put_contents($contractsFile, json_encode($contracts, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
         }
+    }
+
+    // Reload the contracts cache so the new row (with its Printing/Discount
+    // columns) can be edited right away, and hand it back to the page.
+    require_once __DIR__ . '/refreshJson.php';
+    refreshJson($pythonPath, $sheetId, 'contracts');
+    $contractsFile = dirname(__DIR__) . '/sheets/' . $sheetId . '/contracts.json';
+    foreach ((file_exists($contractsFile) ? (json_decode(file_get_contents($contractsFile), true) ?: []) : []) as $c) {
+        if ((string)($c['Ref Number'] ?? '') === (string)$docId) { $result['contract_record'] = $c; break; }
     }
 }
 

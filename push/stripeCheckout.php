@@ -6,7 +6,7 @@
  * POST params:
  *   type        — 'subscription' (default) | 'donation'
  *   id          — sheet ID (stored in metadata so the webhook can find it)
- *   app         — 'devboard' | 'gameboard'
+ *   app         — 'devboard' | 'gameboard' | 'pitchboard' (PitchBoard: donations only)
  *   email       — pre-fill customer email (optional)
  *   success_url — page to return to on success (must be on this site)
  *   cancel_url  — page to return to on cancel  (must be on this site)

@@ -1709,6 +1709,8 @@ if ($_sheet_id && is_dir($_sheets_root)) {
         <button class="account-menu-item" onclick="accountMenuFeedback()">Feedback</button>
         <button class="account-menu-item" onclick="accountMenuHelp()">Help</button>
         <hr class="account-menu-divider" />
+        <button class="account-menu-item" id="pbDonateBtn" onclick="closeAccountMenu();pbStartDonation()" style="color:#e2557a">Donate</button>
+        <hr class="account-menu-divider" />
         <button class="account-menu-item" id="accountMenuAuthBtn" onclick="closeAccountMenu();_menuAuthAction()">Sign In</button>
       </div>
     </div>
@@ -8761,6 +8763,57 @@ document.querySelectorAll('input[type="date"]').forEach(function(inp) {
   var w = document.createElement('div'); w.className = 'date-wrap';
   inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
 });
+
+// ── Donations (Stripe Checkout) ───────────────────────────────────────────────
+function _pbToast(msg, isErr) {
+  var t = document.getElementById('pbPayToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'pbPayToast';
+    t.setAttribute('role', 'alert');
+    t.style.cssText = 'position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%);color:#fff;'
+      + 'padding:.55rem 1rem;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.25);'
+      + "font-family:'DINRegular',sans-serif;font-size:.8rem;line-height:1.4;max-width:min(420px,90vw);"
+      + 'z-index:9999;cursor:pointer;transition:opacity .2s;';
+    t.onclick = function() { t.style.opacity = '0'; };
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.background = isErr ? '#b91c1c' : '#15803d';
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function() { t.style.opacity = '0'; }, 8000);
+}
+
+function pbStartDonation() {
+  _pbToast('Opening secure checkout…');
+  var u = new URL(window.location.href);
+  u.searchParams.delete('donate');
+  var cancelUrl = u.toString();
+  u.searchParams.set('donate', 'thanks');
+  var fd = new FormData();
+  fd.append('type', 'donation');
+  fd.append('id', sheet_Id);
+  fd.append('app', 'pitchboard');
+  fd.append('success_url', u.toString());
+  fd.append('cancel_url', cancelUrl);
+  fetch(APP_BASE + 'push/stripeCheckout.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(r) {
+      if (!r || r.error || !r.url) { _pbToast(r && r.error ? r.error : 'Could not start checkout. Please try again.', true); return; }
+      window.location.href = r.url;
+    })
+    .catch(function() { _pbToast('Network error. Please try again.', true); });
+}
+
+// Returning from Stripe Checkout after a donation
+(function() {
+  var u = new URL(window.location.href);
+  if (u.searchParams.get('donate') !== 'thanks') return;
+  u.searchParams.delete('donate');
+  history.replaceState(null, '', u.pathname + u.search + u.hash);
+  _pbToast('Thank you for your donation!');
+})();
 </script>
 </body>
 </html>

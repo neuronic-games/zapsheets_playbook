@@ -6,7 +6,7 @@
 $_bpFile = __DIR__ . '/../dotEnv.php';
 if (file_exists($_bpFile)) require_once $_bpFile;
 
-const STRIPE_APPS = ['devboard', 'gameboard'];
+const STRIPE_APPS = ['devboard', 'gameboard', 'pitchboard'];
 
 function stripeFail(string $msg, int $code = 200): void {
     http_response_code($code);

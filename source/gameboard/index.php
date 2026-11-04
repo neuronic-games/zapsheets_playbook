@@ -518,8 +518,8 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
           <button class="user-menu-item" onclick="gbMenuAction('fetch')">Fetch</button>
           <button class="user-menu-item" id="gbMenuPublish" onclick="gbMenuAction('publish')" style="display:none">🌐 Publish Site</button>
           <hr class="user-menu-divider" />
-          <button class="user-menu-item" id="gbDonateBtn" onclick="gbMenuAction('donate')" style="color:#e2557a">♥ Donate</button>
-          <button class="user-menu-item" id="gbUpgradeBtn" onclick="gbMenuAction('upgrade')" style="color:#f5a623">⭐ Subscribe</button>
+          <button class="user-menu-item" id="gbDonateBtn" onclick="gbMenuAction('donate')" style="color:#e2557a">Donate</button>
+          <button class="user-menu-item" id="gbUpgradeBtn" onclick="gbMenuAction('upgrade')" style="color:#f5a623">Subscribe</button>
           <hr class="user-menu-divider" />
           <button class="user-menu-item" id="gbMenuSignInOut" onclick="gbMenuAction('signout')">Sign In</button>
         </div>
@@ -2448,7 +2448,7 @@ function _gbUpdateSubMenu() {
   var item = document.getElementById('gbUpgradeBtn');
   if (!item) return;
   var pro = !!(_gbSubStatus && _gbSubStatus.is_pro);
-  item.textContent = pro ? '⭐ Pro Active' : '⭐ Subscribe';
+  item.textContent = pro ? 'Pro Active' : 'Subscribe';
   item.style.color = pro ? '#4caf50' : '#f5a623';
 }
 

@@ -947,8 +947,8 @@ body.session-dialog-open .session-body img { display:none !important; }
         <button class="account-menu-item" onclick="accountMenuRelease()">Releases</button>
         <button class="account-menu-item" onclick="accountMenuHelp()">Help</button>
         <hr class="account-menu-divider" />
-        <button class="account-menu-item" id="dbDonateBtn" onclick="closeAccountMenu();startDonation()" style="color:#e2557a">♥ Donate</button>
-        <button class="account-menu-item" id="dbUpgradeBtn" onclick="closeAccountMenu();openUpgradeDialog()" style="color:#f5a623">⭐ Subscribe</button>
+        <button class="account-menu-item" id="dbDonateBtn" onclick="closeAccountMenu();startDonation()" style="color:#e2557a">Donate</button>
+        <button class="account-menu-item" id="dbUpgradeBtn" onclick="closeAccountMenu();openUpgradeDialog()" style="color:#f5a623">Subscribe</button>
         <hr class="account-menu-divider" />
         <button class="account-menu-item" id="dashAuthBtn" onclick="closeAccountMenu();_dashMenuAuthAction()">Sign In</button>
       </div>
@@ -6049,7 +6049,7 @@ function _dbUpdateSubMenu() {
   var item = document.getElementById('dbUpgradeBtn');
   if (!item) return;
   var pro = !!(_dbSubStatus && _dbSubStatus.is_pro);
-  item.textContent = pro ? '⭐ Pro Active' : '⭐ Subscribe';
+  item.textContent = pro ? 'Pro Active' : 'Subscribe';
   item.style.color = pro ? '#4caf50' : '#f5a623';
 }
 

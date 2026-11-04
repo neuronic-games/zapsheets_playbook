@@ -1081,12 +1081,21 @@ body.session-dialog-open .session-body img { display:none !important; }
       <textarea id="estimateScopeOfWork" class="ge-input ge-textarea" rows="5" placeholder="Describe what's included…" oninput="_estimateScopeEdited=true"></textarea>
     </label>
     <input type="hidden" id="estimateQty" value="1" />
-    <label class="ge-label">Unit Price
-      <div class="contract-quote-wrap">
-        <span class="contract-quote-prefix">$</span>
-        <input type="number" id="estimateUnitPrice" class="ge-input" style="padding-left:1.4rem" min="0" step="0.01" placeholder="0.00" />
-      </div>
-    </label>
+    <div class="estimate-field-row two">
+      <label class="ge-label">Unit Price
+        <div class="contract-quote-wrap">
+          <span class="contract-quote-prefix">$</span>
+          <input type="number" id="estimateUnitPrice" class="ge-input" style="padding-left:1.4rem" min="0" step="0.01" placeholder="0.00" />
+        </div>
+      </label>
+      <label class="ge-label">
+        <span style="display:flex;justify-content:space-between;align-items:baseline">Printing<span style="font-family:'DINRegular',sans-serif;letter-spacing:0;text-transform:none;opacity:.45;font-size:.65rem">(optional)</span></span>
+        <div class="contract-quote-wrap">
+          <span class="contract-quote-prefix">$</span>
+          <input type="number" id="estimatePrinting" class="ge-input" style="padding-left:1.4rem" min="0" step="0.01" placeholder="0.00" />
+        </div>
+      </label>
+    </div>
     <div class="estimate-field-row dur-dates">
       <label class="ge-label">Duration
         <input type="text" id="estimateDuration" class="ge-input" placeholder="e.g. 2 months" />
@@ -2224,11 +2233,12 @@ function _seedScopeOfWork() {
 function _estimateIsDirty() {
   var game    = (document.getElementById('estimateGame').value      || '').trim();
   var price   = (document.getElementById('estimateUnitPrice').value || '').trim();
+  var printing = (document.getElementById('estimatePrinting').value || '').trim();
   var clientWrap = document.getElementById('estimateClientFieldWrap');
   var clientVal  = (clientWrap && clientWrap.style.display !== 'none')
     ? (document.getElementById('estimateClientVisible').value || '').trim()
     : '';
-  return game !== '' || price !== '' || clientVal !== '';
+  return game !== '' || price !== '' || printing !== '' || clientVal !== '';
 }
 
 function _estimateLog(msg, type) {
@@ -2258,6 +2268,7 @@ function openEstimateDialog(clientName, gameName) {
   document.getElementById('estimateEdits').value             = '2';
   document.getElementById('estimateQty').value               = '1';
   document.getElementById('estimateUnitPrice').value         = '';
+  document.getElementById('estimatePrinting').value          = '';
   document.getElementById('estimateDuration').value          = '';
   document.getElementById('estimateTargetStart').value       = '';
   _estimateScopeEdited = false;
@@ -2378,6 +2389,7 @@ function submitEstimate() {
   fd.append('num_edits',      document.getElementById('estimateEdits').value);
   fd.append('qty',            document.getElementById('estimateQty').value);
   fd.append('unit_price',     unitPrice);
+  fd.append('printing',       document.getElementById('estimatePrinting').value.trim());
   fd.append('duration',       document.getElementById('estimateDuration').value.trim());
   fd.append('target_start',  document.getElementById('estimateTargetStart').value);
   fd.append('target_end',    document.getElementById('estimateTargetEnd').value);

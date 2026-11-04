@@ -5,7 +5,9 @@
 # If the ID cell is empty after appending, falls back to the row index.
 #
 # Arg: {sheet_id}|{base64_encoded_json}
-# JSON: { game, client, quote, payment, notes }
+# JSON: { game, client, quote, printing, payment, notes }
+# If a printing amount is given and the sheet has no "Printing" column yet,
+# the column is added at the end of the header row.
 # Returns: { ok, contract_id, row }
 
 import gspread
@@ -30,6 +32,7 @@ data     = json.loads(base64.b64decode(arg[pipe_idx + 1:]).decode('utf-8'))
 game     = data.get('game',     '').strip()
 client   = data.get('client',  '').strip()
 quote    = data.get('quote',   '').strip()
+printing = str(data.get('printing', '')).strip()
 payment  = data.get('payment', '').strip()
 notes    = data.get('notes',   '').strip()
 tests    = str(data.get('tests',    '')).strip()
@@ -84,6 +87,19 @@ type_col         = col('Type')
 ref_num_col      = col('Ref Number')
 notes_col        = col('Notes')
 scope_col        = col('Description')
+printing_col     = col('Printing')
+
+# Add a "Printing" header if a printing amount was given and the column is missing
+if printing and printing_col < 0:
+    try:
+        printing_col = len(headers)
+        if ws.col_count < printing_col + 1:
+            ws.add_cols(printing_col + 1 - ws.col_count)
+        ws.update_cell(1, printing_col + 1, 'Printing')
+        headers.append('Printing')
+    except Exception as e:
+        print(json.dumps({"error": f"Could not add Printing column: {str(e)}"}))
+        sys.exit(1)
 
 if ref_num_col < 0:
     print(json.dumps({"error": "Ref Number column not found in contracts sheet header"}))
@@ -144,6 +160,7 @@ if type_col         >= 0: new_row[type_col]         = row_type
 if ref_num_col      >= 0: new_row[ref_num_col]      = ref_code
 if notes_col        >= 0: new_row[notes_col]        = notes
 if scope_col        >= 0: new_row[scope_col]        = scope_of_work
+if printing_col     >= 0: new_row[printing_col]     = printing
 
 try:
     ws.append_row(new_row, value_input_option='USER_ENTERED')

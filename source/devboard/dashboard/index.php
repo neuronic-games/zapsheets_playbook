@@ -284,6 +284,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   z-index:9999;
 }
 .save-toast.visible { opacity:1; pointer-events:auto; }
+.save-toast.success { background:#15803d; }
 .save-toast-close {
   background:none; border:none; color:#fff; cursor:pointer;
   font-size:1rem; line-height:1; padding:0; flex-shrink:0; opacity:.8;
@@ -6009,9 +6010,11 @@ document.querySelectorAll('input[type="date"]').forEach(function(inp) {
 
 // ── Background-save error toast ────────────────────────────────────────────
 var _saveToastTimer = null;
-function showSaveToast(msg) {
+// kind: 'success' shows a green toast; anything else the default red
+function showSaveToast(msg, kind) {
   var t = document.getElementById('saveToast');
   document.getElementById('saveToastMsg').textContent = msg;
+  t.classList.toggle('success', kind === 'success');
   t.classList.add('visible');
   clearTimeout(_saveToastTimer);
   _saveToastTimer = setTimeout(function() { t.classList.remove('visible'); }, 10000);
@@ -6098,7 +6101,7 @@ function startDonation() {
 
 function _dbStartCheckout(type, btn, btnLabel) {
   if (btn) { btn.textContent = 'Redirecting…'; btn.disabled = true; }
-  else { showSaveToast('Opening secure checkout…'); }
+  else { showSaveToast('Opening secure checkout…', 'success'); }
   var fd = new FormData();
   fd.append('type', type);
   fd.append('id', SHEET_ID);
@@ -6131,16 +6134,16 @@ function _dbStartCheckout(type, btn, btnLabel) {
       u.searchParams.delete('donate');
       history.replaceState(null, '', u.pathname + u.search + u.hash);
     }
-    if (don === 'thanks') { showSaveToast('♥ Thank you for your donation!'); }
+    if (don === 'thanks') { showSaveToast('♥ Thank you for your donation!', 'success'); }
     if (sub !== 'success') { _dbLoadSubStatus(); return; }
     // The webhook may take a few seconds — confirm before showing Pro.
-    showSaveToast('Payment received — activating Pro…');
+    showSaveToast('Payment received — activating Pro…', 'success');
     var tries = 0;
     (function poll() {
       _dbLoadSubStatus(function(s) {
-        if (s.is_pro) { showSaveToast('⭐ Pro is now active. Thank you!'); return; }
+        if (s.is_pro) { showSaveToast('⭐ Pro is now active. Thank you!', 'success'); return; }
         if (++tries < 10) { setTimeout(poll, 3000); return; }
-        showSaveToast('Payment received. Pro will activate shortly — refresh in a minute.');
+        showSaveToast('Payment received. Pro will activate shortly — refresh in a minute.', 'success');
       });
     })();
   }

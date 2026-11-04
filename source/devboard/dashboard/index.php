@@ -995,7 +995,7 @@ body.session-dialog-open .session-body img { display:none !important; }
 <!-- Edit Contract dialog -->
 <div class="overlay" id="contractEditOverlay" onclick="if(event.target===this){if(isContractEditDirty())shakeDialog(this.querySelector('.contract-dialog'));else closeContractEditDialog();}">
   <div class="contract-dialog">
-    <h2>Edit Contract — <span id="ceGameTitle"></span></h2>
+    <h2><span id="ceDocTitle" style="font-family:inherit;opacity:1">Edit Estimate</span> — <span id="ceGameTitle"></span></h2>
     <div class="field-grid" style="grid-template-columns:1fr 1fr">
       <div class="field-group span2">
         <label>Client</label>
@@ -1031,22 +1031,15 @@ body.session-dialog-open .session-body img { display:none !important; }
           <input type="number" class="field-input" id="cePrinting" min="0" step="0.01" placeholder="0.00" />
         </div>
       </div>
-      <div class="field-group">
-        <label>Payment</label>
-        <select class="field-input" id="cePayment">
-          <option value="Estimate">Estimate</option>
-          <option value="Invoiced">Invoiced</option>
-          <option value="Partial">Partial</option>
-          <option value="Fully Paid">Fully Paid</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label>Discount Label</label>
-        <input type="text" class="field-input" id="ceDiscountLabel" placeholder="e.g. First-timer discount" autocomplete="off" />
-      </div>
-      <div class="field-group">
-        <label>Discount %</label>
-        <input type="number" class="field-input" id="ceDiscountPct" min="0" max="100" step="1" placeholder="0" />
+      <div class="field-group span2" style="display:grid;grid-template-columns:2fr 1fr;gap:inherit">
+        <div class="field-group">
+          <label>Discount Label</label>
+          <input type="text" class="field-input" id="ceDiscountLabel" placeholder="e.g. First-timer discount" autocomplete="off" />
+        </div>
+        <div class="field-group">
+          <label>Discount %</label>
+          <input type="number" class="field-input" id="ceDiscountPct" min="0" max="100" step="1" placeholder="0" />
+        </div>
       </div>
       <div class="field-group span2">
         <label>Notes</label>
@@ -1056,7 +1049,7 @@ body.session-dialog-open .session-body img { display:none !important; }
     <div class="dialog-err" id="ceErr"></div>
     <div class="dialog-actions">
       <button class="btn-cancel" onclick="forceCloseContractEditDialog()">Cancel</button>
-      <button class="btn-dark" id="ceBtn" onclick="submitContractEdit()">Save Contract</button>
+      <button class="btn-dark" id="ceBtn" onclick="submitContractEdit()">Save Estimate</button>
     </div>
   </div>
 </div>
@@ -5897,6 +5890,7 @@ function submitProfile() {
 
 // ── Contract edit dialog ───────────────────────────────────────────────────────
 var _ceIdx = -1;
+var _ceDocLabel = 'Estimate';
 var _ceInitial = {};
 function isContractEditDirty() {
   var f = function(id) { return (document.getElementById(id).value || '').trim(); };
@@ -5909,7 +5903,6 @@ function isContractEditDirty() {
          f('cePrinting')    !== (_ceInitial.printing    || '') ||
          f('ceDiscountLabel') !== (_ceInitial.discountLabel || '') ||
          f('ceDiscountPct') !== (_ceInitial.discountPct || '') ||
-         f('cePayment')     !== (_ceInitial.payment     || '') ||
          f('ceNotes')       !== (_ceInitial.notes       || '');
 }
 
@@ -5944,12 +5937,15 @@ function openContractEditDialog(idx) {
   document.getElementById('ceDiscountLabel').value    = con['Discount Label'] || '';
   document.getElementById('ceDiscountPct').value      = _ceNum(con['Discount %']);
   document.getElementById('cePrinting').value         = _cePrintingValue(con);
-  document.getElementById('cePayment').value          = con.Payment || 'Estimate';
+  // Title and button follow the document type (Estimate / Invoice)
+  var _ceType = (con.Type || '').trim();
+  _ceDocLabel = /^invoice$/i.test(_ceType) ? 'Invoice' : (/^estimate$/i.test(_ceType) ? 'Estimate' : 'Contract');
+  document.getElementById('ceDocTitle').textContent   = 'Edit ' + _ceDocLabel;
   document.getElementById('ceNotes').value            = con.Notes   || '';
   document.getElementById('ceErr').textContent        = '';
   document.getElementById('ceErr').style.display      = 'none';
   document.getElementById('ceBtn').disabled           = false;
-  document.getElementById('ceBtn').textContent        = 'Save Contract';
+  document.getElementById('ceBtn').textContent        = 'Save ' + _ceDocLabel;
   // Capture initial state for dirty checking
   _ceInitial = {
     client:      (con.Client || '').trim(),
@@ -5961,7 +5957,6 @@ function openContractEditDialog(idx) {
     discountLabel: (con['Discount Label'] || '').trim(),
     discountPct: _ceNum(con['Discount %']),
     printing:    _cePrintingValue(con),
-    payment:     (con.Payment || 'Estimate').trim(),
     notes:       (con.Notes   || '').trim()
   };
   document.getElementById('contractEditOverlay').classList.add('open');
@@ -6004,7 +5999,7 @@ function submitContractEdit() {
   fd.append('my_logo',      MY_LOGO          || '');
   fd.append('my_address',   MY_COMPANY_ADDRESS || MY_BIO_LOCATION || '');
   fd.append('my_payment',   MY_PAYMENT_INFO  || '');
-  fd.append('payment',      document.getElementById('cePayment').value);
+  fd.append('payment',      con.Payment || '');   // not editable here — keep the current value
   fd.append('notes',        document.getElementById('ceNotes').value);
   fetch(APP_BASE + 'push/updateContract.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })
@@ -6018,7 +6013,6 @@ function submitContractEdit() {
         con['End Date']         = document.getElementById('ceEndDate').value;
         con.Quote               = document.getElementById('ceQuote').value;
         con.Printing            = document.getElementById('cePrinting').value;
-        con.Payment             = document.getElementById('cePayment').value;
         con.Notes               = document.getElementById('ceNotes').value;
         con['Discount Label']   = document.getElementById('ceDiscountLabel').value.trim();
         con['Discount %']       = document.getElementById('ceDiscountPct').value;
@@ -6039,12 +6033,12 @@ function submitContractEdit() {
       } else {
         errEl.textContent = (j && j.error) ? j.error : 'Save failed.';
         errEl.style.display = 'block';
-        btn.disabled = false; btn.textContent = 'Save Contract';
+        btn.disabled = false; btn.textContent = 'Save ' + _ceDocLabel;
       }
     })
     .catch(function() {
       errEl.textContent = 'Network error.'; errEl.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Save Contract';
+      btn.disabled = false; btn.textContent = 'Save ' + _ceDocLabel;
     });
 }
 

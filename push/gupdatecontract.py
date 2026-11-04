@@ -1,10 +1,13 @@
 # gupdatecontract.py — update a contract row in the contracts sheet by Ref Number
 # Arg: {sheet_id}|{base64_encoded_json}
 # JSON keys: contract_id, game, client, target_start_date, target_end_date,
-#            start_date, end_date, quote, payment, notes
+#            start_date, end_date, quote, printing, payment, notes
+# If a printing amount is given and the sheet has no "Printing" column yet,
+# the column is added at the end of the header row.
 
 import gspread
 import sys, os, json, base64
+from gspread.utils import rowcol_to_a1
 
 credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
 
@@ -31,6 +34,7 @@ target_end_date   = data.get('target_end_date',   '').strip()
 start_date        = data.get('start_date',        '').strip()
 end_date          = data.get('end_date',          '').strip()
 quote             = data.get('quote',             '').strip()
+printing          = str(data.get('printing', '')).strip()
 payment           = data.get('payment',           '').strip()
 notes             = data.get('notes',             '').strip()
 
@@ -82,7 +86,19 @@ if row_idx is None:
     print(json.dumps({"error": f"Contract Ref Number {contract_id} not found"}))
     sys.exit(1)
 
-# Build update map: column letter → value
+# Add a "Printing" header if a printing amount was given and the column is missing
+if printing and col('Printing') < 0:
+    try:
+        new_idx = len(headers)
+        if ws.col_count < new_idx + 1:
+            ws.add_cols(new_idx + 1 - ws.col_count)
+        ws.update_cell(1, new_idx + 1, 'Printing')
+        headers.append('Printing')
+    except Exception as e:
+        print(json.dumps({"error": f"Could not add Printing column: {str(e)}"}))
+        sys.exit(1)
+
+# Build update map: column name → value
 FIELD_MAP = {
     'Game':              game,
     'Client':            client,
@@ -91,6 +107,7 @@ FIELD_MAP = {
     'Start Date':        start_date,
     'End Date':          end_date,
     'Quote':             quote,
+    'Printing':          printing,
     'Payment':           payment,
     'Notes':             notes,
 }
@@ -100,8 +117,7 @@ try:
     for field, value in FIELD_MAP.items():
         c_idx = col(field)
         if c_idx >= 0:
-            col_letter = chr(ord('A') + c_idx)
-            cell = f'{col_letter}{row_idx}'
+            cell = rowcol_to_a1(row_idx, c_idx + 1)   # works past column Z
             updates.append({'range': cell, 'values': [[value]]})
     if updates:
         ws.batch_update(updates, value_input_option='USER_ENTERED')

@@ -15,6 +15,7 @@ $targetEnd   = trim($_POST['target_end']  ?? '');
 $startDate   = trim($_POST['start_date']  ?? '');
 $endDate     = trim($_POST['end_date']    ?? '');
 $quote       = trim($_POST['quote']       ?? '');
+$printing    = trim($_POST['printing']    ?? '');
 $payment     = trim($_POST['payment']     ?? '');
 $notes       = trim($_POST['notes']       ?? '');
 
@@ -32,6 +33,7 @@ $data = [
     'start_date'        => $startDate,
     'end_date'          => $endDate,
     'quote'             => $quote,
+    'printing'          => $printing,
     'payment'           => $payment,
     'notes'             => $notes,
 ];

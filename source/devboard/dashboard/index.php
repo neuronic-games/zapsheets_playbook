@@ -379,7 +379,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .contract-detail-field label { font-size:.62rem; text-transform:uppercase; letter-spacing:.05em; color:#888; display:block; margin-bottom:.1rem; }
 .contract-detail-field span  { font-family:'DINRegular',sans-serif; font-size:.78rem; color:#222; }
 .contract-detail-notes { font-size:.75rem; color:#555; margin-bottom:.5rem; font-style:italic; }
-.contract-del-row { display:flex; justify-content:flex-end; padding:.3rem 0 .1rem; }
+.contract-del-row { display:flex; justify-content:flex-end; gap:.4rem; padding:.3rem 0 .1rem; }
 .contract-detail-actions { display:flex; gap:.5rem; }
 .btn-contract-action { font-family:'DINBlack',sans-serif; font-size:.75rem; text-transform:uppercase; letter-spacing:.06em; background:none; border:1.5px solid #1a5f7a; color:#1a5f7a; border-radius:7px; padding:.35rem .85rem; cursor:pointer; transition:background .15s, color .15s; }
 .btn-contract-action:hover { background:#1a5f7a; color:#fff; }
@@ -1018,6 +1018,13 @@ body.session-dialog-open .session-body img { display:none !important; }
         <div class="contract-quote-wrap">
           <span class="contract-quote-prefix">$</span>
           <input type="number" class="field-input" id="ceQuote" min="0" step="0.01" />
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Printing</label>
+        <div class="contract-quote-wrap">
+          <span class="contract-quote-prefix">$</span>
+          <input type="number" class="field-input" id="cePrinting" min="0" step="0.01" placeholder="0.00" />
         </div>
       </div>
       <div class="field-group">
@@ -2085,6 +2092,7 @@ function renderPublishersView() {
           var conShareBody    = encodeURIComponent('Download ' + conType + ': ' + conFilesUrl);
           html += '<button type="button" class="btn-contract-action" onclick="event.stopPropagation();window.open(\'mailto:?subject=' + conShareSubject + '&body=' + conShareBody + '\',\'_self\')">✉ Share</button>';
         }
+        html += '<button type="button" class="btn-contract-action" onclick="event.stopPropagation();openContractEditDialog(' + dataIdx + ')">✎ Edit Contract</button>';
         html += '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_conStartDelete(' + dataIdx + ')">🗑 Delete Contract</button>';
         html += '</div>';
         html += '<div class="est-confirm contract-del-confirm" id="cdel-confirm-' + dataIdx + '" style="display:none;padding:.45rem 1rem;">' +
@@ -5881,8 +5889,14 @@ function isContractEditDirty() {
          f('ceStartDate')   !== (_ceInitial.startDate   || '') ||
          f('ceEndDate')     !== (_ceInitial.endDate     || '') ||
          f('ceQuote')       !== (_ceInitial.quote       || '') ||
+         f('cePrinting')    !== (_ceInitial.printing    || '') ||
          f('cePayment')     !== (_ceInitial.payment     || '') ||
          f('ceNotes')       !== (_ceInitial.notes       || '');
+}
+
+// Printing column value as a plain number for the input (e.g. "$1,200.00" → "1200.00")
+function _cePrintingValue(con) {
+  return String(con.Printing || '').replace(/^'/, '').replace(/[^0-9.]/g, '');
 }
 
 function openContractEditDialog(idx) {
@@ -5896,6 +5910,7 @@ function openContractEditDialog(idx) {
   document.getElementById('ceStartDate').value        = _toDateInput(con['Start Date']        || '');
   document.getElementById('ceEndDate').value          = _toDateInput(con['End Date']          || '');
   document.getElementById('ceQuote').value            = String(con.Quote || '').replace(/^'/, '');
+  document.getElementById('cePrinting').value         = _cePrintingValue(con);
   document.getElementById('cePayment').value          = con.Payment || 'Estimate';
   document.getElementById('ceNotes').value            = con.Notes   || '';
   document.getElementById('ceErr').textContent        = '';
@@ -5910,6 +5925,7 @@ function openContractEditDialog(idx) {
     startDate:   _toDateInput(con['Start Date']        || ''),
     endDate:     _toDateInput(con['End Date']          || ''),
     quote:       String(con.Quote || '').replace(/^'/, '').trim(),
+    printing:    _cePrintingValue(con),
     payment:     (con.Payment || 'Estimate').trim(),
     notes:       (con.Notes   || '').trim()
   };
@@ -5935,7 +5951,7 @@ function submitContractEdit() {
   btn.disabled = true; btn.textContent = 'Saving…';
   var fd = new FormData();
   fd.append('id',           SHEET_ID);
-  fd.append('contract_id',  con.ID || '');
+  fd.append('contract_id',  con['Ref Number'] || con.ID || '');
   fd.append('game',         con.Game || '');
   fd.append('client',       client);
   fd.append('target_start', document.getElementById('ceTargetStart').value);
@@ -5943,6 +5959,7 @@ function submitContractEdit() {
   fd.append('start_date',   document.getElementById('ceStartDate').value);
   fd.append('end_date',     document.getElementById('ceEndDate').value);
   fd.append('quote',        document.getElementById('ceQuote').value);
+  fd.append('printing',     document.getElementById('cePrinting').value);
   fd.append('payment',      document.getElementById('cePayment').value);
   fd.append('notes',        document.getElementById('ceNotes').value);
   fetch(APP_BASE + 'push/updateContract.php', { method:'POST', body:fd })
@@ -5956,6 +5973,7 @@ function submitContractEdit() {
         con['Start Date']       = document.getElementById('ceStartDate').value;
         con['End Date']         = document.getElementById('ceEndDate').value;
         con.Quote               = document.getElementById('ceQuote').value;
+        con.Printing            = document.getElementById('cePrinting').value;
         con.Payment             = document.getElementById('cePayment').value;
         con.Notes               = document.getElementById('ceNotes').value;
         forceCloseContractEditDialog();

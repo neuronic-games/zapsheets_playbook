@@ -5036,6 +5036,29 @@ function _removeObsImage(idx) {
   }
 }
 
+// Pasting an image into an Observation uploads it, the same as the image button.
+// A row that already has text keeps it; the image goes into the next empty row.
+function onObsPaste(e, idx) {
+  var items = (e.clipboardData && e.clipboardData.items) || [];
+  var file  = null;
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].kind === 'file' && /^image\//.test(items[i].type)) { file = items[i].getAsFile(); break; }
+  }
+  if (!file) return;               // plain text paste — let the browser handle it
+  e.preventDefault();
+  var ta = document.getElementById('sObs-' + idx);
+  var target = idx;
+  if ((ta && _ceGet(ta).trim()) || _obsImages[idx]) {
+    var pairs = document.querySelectorAll('#obsContainer .obs-pair');
+    var last  = pairs[pairs.length - 1];
+    var li    = last ? parseInt(last.dataset.idx, 10) : -1;
+    var lta   = document.getElementById('sObs-' + li);
+    if (last && li !== idx && !_obsImages[li] && !(lta && _ceGet(lta).trim())) target = li;
+    else { addObsPair(); _syncReorderBtns(); target = _obsCount - 1; }
+  }
+  handleObsImageFile(target, file);
+}
+
 function triggerObsImageUpload(idx) {
   var inp = document.getElementById('sImgFile-' + idx);
   if (inp) inp.click();
@@ -5043,6 +5066,7 @@ function triggerObsImageUpload(idx) {
 
 function handleObsImageFile(idx, file) {
   if (!file) return;
+  if (!file.name) file = new File([file], 'pasted-image.' + ((file.type || 'image/png').split('/')[1] || 'png'), { type: file.type || 'image/png' });
   var fd = new FormData();
   fd.append('id',   SHEET_ID);
   fd.append('file', file);
@@ -5071,7 +5095,8 @@ function addObsPair() {
               ' onfocus="this.dataset.empty=\'\'"' +
               ' onblur="_ceNorm(this)"' +
               ' oninput="_autoBullet(this);_ceNorm(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ');toggleObsImgBtn(' + idx + ')"' +
-              ' onkeydown="onObsKeydown(event,' + idx + ',0)"></div>' +
+              ' onkeydown="onObsKeydown(event,' + idx + ',0)"' +
+              ' onpaste="onObsPaste(event,' + idx + ')"></div>' +
             '<div class="obs-img-preview" id="sImgPreview-' + idx + '" style="display:none">' +
               '<button type="button" class="obs-img-trash" data-obs-idx="' + idx + '" title="Remove image">' +
                 '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>' +

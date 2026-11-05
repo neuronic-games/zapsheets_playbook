@@ -706,6 +706,12 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .rounds-label { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#999; letter-spacing:.04em; text-transform:uppercase; display:block; line-height:1; margin-right:.6rem; text-box:trim-both cap alphabetic; }
 /* Trim the DIN font's extra space above capitals so digits centre on the icon */
 #swTime { display:block; line-height:1; text-box:trim-both cap alphabetic; }
+/* Browsers without text-box (Firefox, Safari < 18.2): nudge by the DIN fonts'
+   measured offset between the line box centre and the capital-letter centre */
+@supports not (text-box: trim-both cap alphabetic) {
+  .rounds-count, #swTime { position:relative; top:-.234em; }
+  .rounds-label { position:relative; top:.106em; }
+}
 .sw-wrap { display:flex; align-items:center; flex-shrink:0; }
 .sw-wrap.sw-expanded { display:flex; align-items:center; }
 .sw-panel { display:none; align-items:center; gap:.5rem; background:#fff8f2; border:1.5px solid #e67e22; border-radius:8px; padding:.28rem .5rem .28rem .65rem; animation:sw-expand-in .18s ease; }

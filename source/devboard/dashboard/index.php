@@ -702,8 +702,10 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   .session-dialog-title { flex-basis:100%; width:100%; }
   .session-dialog-controls { margin-left:0; width:100%; justify-content:center; }
 }
-.rounds-count { font-family:'DINBlack',sans-serif; font-size:1rem; color:#1a5f7a; min-width:1.6rem; letter-spacing:.02em; display:flex; align-items:center; justify-content:center; height:1.7rem; line-height:1; }
-.rounds-label { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#999; letter-spacing:.04em; text-transform:uppercase; display:flex; align-items:center; height:2.1rem; line-height:1; margin-right:.6rem; }
+.rounds-count { font-family:'DINBlack',sans-serif; font-size:1rem; color:#1a5f7a; min-width:1.6rem; letter-spacing:.02em; display:block; text-align:center; line-height:1; text-box:trim-both cap alphabetic; }
+.rounds-label { font-family:'DINRegular',sans-serif; font-size:.72rem; color:#999; letter-spacing:.04em; text-transform:uppercase; display:block; line-height:1; margin-right:.6rem; text-box:trim-both cap alphabetic; }
+/* Trim the DIN font's extra space above capitals so digits centre on the icon */
+#swTime { display:block; line-height:1; text-box:trim-both cap alphabetic; }
 .sw-wrap { display:flex; align-items:center; flex-shrink:0; }
 .sw-wrap.sw-expanded { display:flex; align-items:center; }
 .sw-panel { display:none; align-items:center; gap:.5rem; background:#fff8f2; border:1.5px solid #e67e22; border-radius:8px; padding:.28rem .5rem .28rem .65rem; animation:sw-expand-in .18s ease; }
@@ -1554,9 +1556,9 @@ body.session-dialog-open .session-body img { display:none !important; }
       <span class="session-dialog-title"><span id="sessionDialogAction">+ Session</span><span style="color:#1a5f7a"> — </span><span id="sessionGameTitle"></span></span>
       <div class="session-dialog-controls">
       <div class="rounds-wrap" id="roundsWrap">
-        <button type="button" class="rounds-btn" onclick="_roundsChange(-1)" title="Remove a round">−</button>
+        <button type="button" class="rounds-btn" onclick="_roundsChange(-1)" title="Remove a round" aria-label="Remove a round"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" style="display:block"><path d="M2 6h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         <div class="rounds-count" id="roundsCount">0</div>
-        <button type="button" class="rounds-btn" onclick="_roundsChange(1)" title="Add a round">+</button>
+        <button type="button" class="rounds-btn" onclick="_roundsChange(1)" title="Add a round" aria-label="Add a round"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" style="display:block"><path d="M2 6h8M6 2v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         <div class="rounds-label">Rounds</div>
       </div>
       <div class="sw-wrap" id="swWrap">

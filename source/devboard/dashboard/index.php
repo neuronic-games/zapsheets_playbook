@@ -883,6 +883,8 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 /* Preview container: relative so trash button can anchor to it */
 .obs-img-preview { position:relative; }
 .obs-img-preview img { width:100%; display:block; }
+.obs-img-loading { display:flex; align-items:center; justify-content:center; gap:.5rem; min-height:4.5rem; color:#999; font-family:'DINRegular',sans-serif; font-size:.75rem; }
+.obs-img-spinner { width:18px; height:18px; border:2px solid #d0d8e0; border-top-color:#1a5f7a; border-radius:50%; animation:spin .8s linear infinite; }
 /* While an edit dialog is open, hide session-card images so they don't bleed through the overlay */
 body.session-dialog-open .session-body img { display:none !important; }
 /* Trash button: bottom-right of the preview image */
@@ -5072,8 +5074,22 @@ function triggerObsImageUpload(idx) {
   if (inp) inp.click();
 }
 
+// Show a spinner in the observation box while an image uploads
+function _showObsImageLoading(idx) {
+  var ta = document.getElementById('sObs-' + idx);
+  var wrap = ta ? ta.closest('.obs-ta-wrap') : null;
+  var pv = document.getElementById('sImgPreview-' + idx);
+  if (ta) ta.style.display = 'none';
+  if (wrap) wrap.classList.remove('has-obs-text');
+  if (pv) {
+    pv.style.display = 'block';
+    pv.innerHTML = '<div class="obs-img-loading"><span class="obs-img-spinner"></span>Uploading image…</div>';
+  }
+}
+
 function handleObsImageFile(idx, file) {
   if (!file) return;
+  _showObsImageLoading(idx);
   if (!file.name) file = new File([file], 'pasted-image.' + ((file.type || 'image/png').split('/')[1] || 'png'), { type: file.type || 'image/png' });
   var fd = new FormData();
   fd.append('id',   SHEET_ID);
@@ -5081,10 +5097,10 @@ function handleObsImageFile(idx, file) {
   fetch(APP_BASE + 'push/uploadMedia.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })
     .then(function(res) {
-      if (!res.ok || !res.url) { alert('Upload failed: ' + (res.error || 'Unknown error')); return; }
+      if (!res.ok || !res.url) { _removeObsImage(idx); alert('Upload failed: ' + (res.error || 'Unknown error')); return; }
       _showObsImage(idx, res.url);
     })
-    .catch(function() { alert('Upload failed.'); });
+    .catch(function() { _removeObsImage(idx); alert('Upload failed.'); });
 }
 
 function addObsPair() {

@@ -299,10 +299,10 @@ $_gamePageUrl   = file_exists($_gameTokenFile)
     ? $_scheme . '://' . $_SERVER['HTTP_HOST'] . $_bp . '/game/' . $_gameToken
     : '';
 
-// Sellsheet: use internal /game/{token}/sellsheet route when page exists, else fall back to sheet URL
-$_sellsheetUrl = $_gamePageUrl
-    ? $_gamePageUrl . '/sellsheet'
-    : _ps_abs_url(_ps_field($_gameInfo, ['Sellsheet URL', 'Sellsheet', 'Sell Sheet URL', 'Sell Sheet', 'Link Sellsheet']));
+// Sellsheet: a Sell Sheet set in the games sheet wins; otherwise the generated
+// /game/{token}/sellsheet page when the game page exists
+$_ownSellsheet = _ps_abs_url(_ps_field($_gameInfo, ['Sell Sheet', 'Sell Sheet URL', 'Sellsheet URL', 'Sellsheet', 'Link Sellsheet']));
+$_sellsheetUrl = $_ownSellsheet ?: ($_gamePageUrl ? $_gamePageUrl . '/sellsheet' : '');
 
 $_hasFooter = $_rulesUrl || $_playUrl || $_printUrl || $_sellsheetUrl || $_videoUrl || $_gamePageUrl;
 ?>

@@ -3334,7 +3334,12 @@ function buildGameView(pitches) {
         { label:'Rules',     url: absUrl(gfield(['Rules','Rules URL','Rules Link','Link Rules'])) },
         { label:'Print',     url: absUrl(gfield(['Print','Print URL','Print Link','Link Print'])) },
         { label:'Play',      url: absUrl(gfield(['Play','Play URL','Play Link','Link Play'])) },
-        { label:'Sellsheet', url: gpToken ? window.location.origin + APP_BASE + 'game/' + gpToken + '/sellsheet' : absUrl(gfield(['Sellsheet URL','Sellsheet','Sell Sheet URL','Sell Sheet','Link Sellsheet'])), sameTab: !!gpToken },
+        // A Sell Sheet set in the games sheet wins over the generated one
+        (function() {
+          var own = absUrl(gfield(['Sell Sheet','Sell Sheet URL','Sellsheet URL','Sellsheet','Link Sellsheet']));
+          if (own) return { label:'Sellsheet', url: own };
+          return { label:'Sellsheet', url: gpToken ? window.location.origin + APP_BASE + 'game/' + gpToken + '/sellsheet' : '', sameTab: true };
+        })(),
         { label:'Video',     url: absUrl(gfield(['Video','Video URL','Video Link','Link Video','YouTube','YouTube URL'])) },
         { label:'Page', url: gpToken ? window.location.origin + APP_BASE + 'game/' + gpToken : '', sameTab: true }
       ];

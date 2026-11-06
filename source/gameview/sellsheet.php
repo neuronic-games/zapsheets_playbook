@@ -32,6 +32,25 @@ $_gameName = $_meta['game']     ?? '';
 
 if (!$_sheetId || !$_gameName) { http_response_code(404); exit; }
 
+// If the games sheet has its own Sell Sheet for this game, send visitors there
+// instead of the generated sellsheet (covers links that were already shared).
+$_gamesFile = __DIR__ . '/../../sheets/' . preg_replace('/[^A-Za-z0-9_\-]/', '', $_sheetId) . '/games.json';
+if (file_exists($_gamesFile)) {
+    foreach (json_decode(file_get_contents($_gamesFile), true) ?: [] as $_g) {
+        if (($_g['Name'] ?? '') !== $_gameName) continue;
+        foreach (['Sell Sheet', 'Sell Sheet URL', 'Sellsheet URL', 'Sellsheet', 'Link Sellsheet'] as $_k) {
+            $_v = trim(ltrim(trim((string)($_g[$_k] ?? '')), "'"));
+            if (preg_match('/^\[.*?\]\((.+)\)\s*$/', $_v, $_mm)) $_v = trim($_mm[1]);   // [text](url)
+            if (preg_match('/^\[(.+)\]\s*$/', $_v, $_mm))         $_v = trim($_mm[1]);   // [url]
+            if ($_v === '') continue;
+            if (!preg_match('#^https?://#i', $_v)) $_v = 'https://' . $_v;
+            header('Location: ' . $_v, true, 302);
+            exit;
+        }
+        break;
+    }
+}
+
 $GLOBALS['_gv_sheet_id']   = $_sheetId;
 $GLOBALS['_gv_game']       = $_gameName;
 $GLOBALS['_gv_game_token'] = $_token;

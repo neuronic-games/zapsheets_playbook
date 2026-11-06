@@ -37,7 +37,8 @@ $_gpv_dir   = __DIR__ . '/../../shares/pitch-game-view';
 if (is_dir($_gpv_dir)) {
     foreach (glob($_gpv_dir . '/*.json') as $_tf) {
         $_td = json_decode(file_get_contents($_tf), true) ?: [];
-        if (!empty($_td['game'])) {
+        // Only this sheet's pages (another sheet may have a game with the same name)
+        if (!empty($_td['game']) && ($_td['sheet_id'] ?? '') === $_sheet_id) {
             $_gp_tokens[$_td['game']] = basename($_tf, '.json');
         }
     }
@@ -5518,6 +5519,8 @@ function vpSaveEdit() {
       btn.disabled = false;
       btn.textContent = 'Save';
       if (result.error) { alert('Save failed: ' + result.error); return; }
+      // Create the page link if setup didn't get that far, so the PAGE button appears
+      _vpEnsurePageToken(_vpCurrentGame);
       vpCloseEdit();
     })
     .catch(function(e) {
@@ -5641,6 +5644,7 @@ function viewPageClick(btn) {
         }
         _vpCurrentRecords = data;
         _vpPopulateEditFields();
+        _vpEnsurePageToken(gameName);   // game data exists → make sure the page link does too
         document.getElementById('vpLogPanel').style.display = 'none';
         var panel = document.getElementById('vpEditPanel');
         panel.style.display   = 'block';
@@ -5856,6 +5860,26 @@ function submitGameDelete() {
 
 // After a token is freshly created, patch the card in-place so the button
 // label and footer pill update without a full page reload.
+// Make sure the game has its public page link (shares/pitch-game-view token) and
+// that the card shows "Edit Page" + the PAGE button. Safe to call repeatedly.
+function _vpEnsurePageToken(gameName, cb) {
+  if (!gameName || GAME_PAGE_TOKENS[gameName]) { if (cb) cb(); return; }
+  var fd = new FormData();
+  fd.append('id',   sheet_Id);
+  fd.append('game', gameName);
+  fetch(APP_BASE + 'push/createGameView.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      var tok = (res && res.viewUrl) ? (res.viewUrl.split('/game/')[1] || '') : '';
+      if (tok) {
+        GAME_PAGE_TOKENS[gameName] = tok;
+        _patchCardAfterPageEnabled(gameName, tok);
+      }
+      if (cb) cb();
+    })
+    .catch(function() { if (cb) cb(); });
+}
+
 function _patchCardAfterPageEnabled(gameName, token) {
   var card = document.querySelector('.card[data-game="' + gameName.replace(/"/g, '\\"') + '"]');
   if (!card) return;

@@ -14,8 +14,11 @@ $company  = trim($_POST['company']   ?? '');
 $role     = trim($_POST['role']      ?? '');
 $notes    =       $_POST['notes']    ?? '';
 
-if (!$sheetId || !$origName) {
-    echo json_encode(['error' => 'Missing required fields']);
+// New contact (Add Contact): no original name yet — look up / create by the new name
+if ($origName === '') $origName = $name;
+
+if (!$sheetId || $origName === '') {
+    echo json_encode(['error' => 'Please enter a name']);
     exit;
 }
 

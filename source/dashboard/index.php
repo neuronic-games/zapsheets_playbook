@@ -6190,6 +6190,9 @@ function getPublisherList() {
   Object.keys(peopleIndex).forEach(function(key) {
     var co = key.split('|')[1]; if (co) pubs[co] = 1;
   });
+  Object.keys(peopleData).forEach(function(n) {
+    var co = (peopleData[n].Company || '').trim(); if (co) pubs[co] = 1;
+  });
   // Merge in Compendium publishers (no duplicates) when code is set
   if (_validCompCode()) {
     Object.keys(COMPENDIUM_PUBS).forEach(function(k) {
@@ -6211,6 +6214,10 @@ function getContactsForPublisher(publisher) {
   Object.keys(peopleIndex).forEach(function(key) {
     var parts = key.split('|');
     if (parts[1] === publisher && parts[0]) contacts[parts[0]] = 1;
+  });
+  // peopleIndex only holds people with an email — include everyone at this company
+  Object.keys(peopleData).forEach(function(n) {
+    if (n && (peopleData[n].Company || '').trim() === publisher) contacts[n] = 1;
   });
   return Object.keys(contacts).sort(function(a,b){ return a.localeCompare(b); });
 }
@@ -6425,6 +6432,7 @@ function getAllPersonNames() {
   Object.keys(peopleIndex).forEach(function(key) {
     var n = key.split('|')[0]; if (n) names[n] = 1;
   });
+  Object.keys(peopleData).forEach(function(n) { if (n) names[n] = 1; });   // incl. people without email
   // Also include designers already in gamesIndex
   Object.keys(gamesIndex).forEach(function(game) {
     var g = gamesIndex[game];
@@ -6438,6 +6446,7 @@ function getAllPersonNames() {
 function isKnownPerson(name) {
   if (!name) return true;
   var lc = name.toLowerCase();
+  if (Object.keys(peopleData).some(function(n) { return n.toLowerCase() === lc; })) return true;
   var keys = Object.keys(peopleIndex);
   for (var i = 0; i < keys.length; i++) {
     if (keys[i].split('|')[0].toLowerCase() === lc) return true;

@@ -6924,7 +6924,8 @@ function submitDiUpdate() {
   var company = document.getElementById('diCompany').value.trim();
   var role    = document.getElementById('diRole').value.trim();
   var notes   = document.getElementById('diNotes').value;
-  var nameChanged = (name !== _diOrigName);
+  // A new contact (no original name) has nothing to rename in the Games sheet
+  var nameChanged = (_diOrigName !== '' && name !== _diOrigName);
   if (!name) {
     btn.disabled = false; btn.textContent = _diIsNew ? 'Save' : 'Update';
     stat.textContent = 'Please enter a name.';
@@ -7036,6 +7037,8 @@ function submitDiUpdate() {
       });
     } else {
       updateLocalCaches();
+      // A newly added contact now exists — further saves in this dialog update it
+      if (_diOrigName === '') { _diOrigName = name; _diIsNew = false; _btnLabel = 'Update'; }
       var _vs = saveViewState(); buildSummary(allPitches); buildView(); restoreViewState(_vs);
       btn.disabled = false; btn.textContent = _btnLabel;
       stat.style.color = '#16a34a';

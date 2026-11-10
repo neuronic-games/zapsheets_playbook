@@ -1183,8 +1183,8 @@ body.session-dialog-open .session-body img { display:none !important; }
 
     <!-- Amount type + value (all in one label row) -->
     <label class="ge-label">Invoice Amount
-      <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
-        <select id="invoiceAmtType" class="ge-input" style="flex:0 0 auto" onchange="_invoiceAmtTypeChange()">
+      <div style="display:flex;align-items:center;gap:.6rem">
+        <select id="invoiceAmtType" class="ge-input" style="flex:1 1 auto;min-width:0;width:auto" onchange="_invoiceAmtTypeChange()">
           <option value="fixed">Fixed Amount ($)</option>
           <option value="pct">Percentage of Estimate</option>
         </select>
@@ -1194,7 +1194,7 @@ body.session-dialog-open .session-body img { display:none !important; }
           <input type="number" id="invoiceAmount" class="ge-input" style="padding-left:1.4rem" min="0" step="0.01" placeholder="0.00" oninput="_invoiceMarkDirty()" />
         </div>
         <!-- Percentage inputs (shown when pct mode) -->
-        <div id="invoicePctRow" style="display:none;align-items:center;gap:.5rem">
+        <div id="invoicePctRow" style="display:none;align-items:center;gap:.5rem;flex:0 0 auto">
           <div class="contract-quote-wrap" style="flex:0 0 6rem">
             <input type="number" id="invoicePct" class="ge-input" style="padding-right:1.6rem" min="1" max="100" step="1" value="100" oninput="_invoiceUpdatePct()" />
             <span class="contract-quote-prefix" style="left:auto;right:.5rem">%</span>

@@ -338,6 +338,9 @@ if ($_sheet_id && is_dir($_sheets_root)) {
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
     .card-badges { display:flex; align-items:center; gap:.35rem; flex-shrink:0; }
+    /* Publisher card: Add Contact shows in the title bar only while the card is open */
+    .pub-add-contact-btn { display:none; }
+    .card.open > .card-header .pub-add-contact-btn { display:inline-flex; align-items:center; }
     .game-links-designers {
       font-family:'DINRegular',sans-serif; font-size:.72rem;
       color:rgba(255,255,255,.55); white-space:nowrap;
@@ -3633,6 +3636,8 @@ function buildPublisherView(pitches) {
     html += '<div class="card-header" onclick="toggleCard(this)">';
     html += '<span class="card-title">' + escHtml(p) + '</span>';
     html += '<span class="card-badges">' + at + pubHeaderBadge + '</span>';
+    html += '<button class="game-action-btn pub-add-contact-btn" data-publisher="' + escHtml(p) + '"'
+         +  ' onclick="event.stopPropagation();openDiDialog(\'\', this.getAttribute(\'data-publisher\'))">Add Contact</button>';
     if (_hasComp && _validCompCode()) {
       html += '<button class="comp-info-btn" data-publisher="' + escHtml(p) + '"'
            +  ' title="View in Compendium"'
@@ -6869,21 +6874,24 @@ function _getDiCompanyList() {
   return Object.keys(cos).sort(function(a, b) { return a.localeCompare(b); });
 }
 
-function openDiDialog(name) {
+// name: existing person to edit, or '' to add a new contact.
+// company: pre-fills Publisher / Studio for a new contact (Add Contact on a publisher card).
+function openDiDialog(name, company) {
   if (!_requireAuth()) return;
+  name = name || '';
   _diOrigName = name;
-  _diIsNew    = !peopleData[name];
+  _diIsNew    = !name || !peopleData[name];
   var person  = peopleData[name] || {};
   var found   = !_diIsNew;
 
   document.getElementById('diTitle').value          = name;
   document.getElementById('diEmail').value          = person.Email   || '';
-  document.getElementById('diCompany').value        = person.Company || '';
+  document.getElementById('diCompany').value        = person.Company || company || '';
   document.getElementById('diRole').value           = person.Role    || '';
   document.getElementById('diNotes').value          = person.Notes   || '';
   document.getElementById('diStatus').textContent   = '';
   document.getElementById('diStatus').style.color   = '#e57';
-  document.getElementById('diNotFound').style.display = found ? 'none' : '';
+  document.getElementById('diNotFound').style.display = (found || !name) ? 'none' : '';
   var btn = document.getElementById('diUpdateBtn');
   btn.disabled    = false;
   btn.textContent = found ? 'Update' : 'Save';
@@ -6917,6 +6925,12 @@ function submitDiUpdate() {
   var role    = document.getElementById('diRole').value.trim();
   var notes   = document.getElementById('diNotes').value;
   var nameChanged = (name !== _diOrigName);
+  if (!name) {
+    btn.disabled = false; btn.textContent = _diIsNew ? 'Save' : 'Update';
+    stat.textContent = 'Please enter a name.';
+    document.getElementById('diTitle').focus();
+    return;
+  }
 
   var _btnLabel = _diIsNew ? 'Save' : 'Update';
 

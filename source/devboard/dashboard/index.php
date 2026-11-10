@@ -435,6 +435,13 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .estimate-item-actions { display:flex; justify-content:flex-end; gap:.5rem; padding:.4rem 1rem .55rem; border-top:1px solid #edf1f5; }
 .estimate-del-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0c8d0; color:#c0c8d0; border-radius:6px; padding:.35rem .55rem; cursor:pointer; white-space:nowrap; transition:border-color .15s,color .15s; }
 .estimate-del-btn:hover { border-color:#c0392b; color:#c0392b; }
+/* Card action buttons: one line each, all the same height; wrap the row (not the labels) when narrow */
+.estimate-item-actions > div, .contract-del-row { flex-wrap:wrap; justify-content:flex-end; }
+.estimate-item-actions .btn-contract-action, .estimate-item-actions .estimate-del-btn,
+.contract-del-row .btn-contract-action, .contract-del-row .estimate-del-btn {
+  white-space:nowrap; height:2.1rem; box-sizing:border-box;
+  display:inline-flex; align-items:center; justify-content:center; gap:.3rem;
+}
 /* Inline delete confirmation */
 .estimate-item .est-confirm { display:none; }
 /* .confirming removed — delete confirm is now inline within .estimate-item-actions */

@@ -413,8 +413,10 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 /* ── Estimate rows inside game group ──────────────────────── */
 .estimate-item { border-bottom:1px solid #f4f7fb; background:#fafcfe; cursor:pointer; }
 .estimate-item:last-of-type { border-bottom:none; }
-.estimate-item-header { display:grid; grid-template-columns:auto auto 1fr auto auto; gap:.6rem; align-items:center; padding:.38rem 1rem; font-size:.78rem; user-select:none; }
+.estimate-item-header { display:grid; grid-template-columns:auto auto 1fr auto auto; gap:.6rem; align-items:baseline; padding:.38rem 1rem; font-size:.78rem; user-select:none; }   /* baseline: tag, number, date and amount share one text line */
 .estimate-type-pill { font-family:'DINBlack',sans-serif; font-size:.58rem; text-transform:uppercase; letter-spacing:.05em; color:#2e7d9e; background:#e8f4f8; border-radius:4px; padding:.1rem .35rem; white-space:nowrap; }
+/* Centre the DIN capitals inside the tag (trim the font's extra space above capitals) */
+@supports (text-box: trim-both cap alphabetic) { .estimate-type-pill { display:inline-block; text-box:trim-both cap alphabetic; padding:.3rem .4rem; } }
 .estimate-type-pill.invoice { color:#a16207; background:#fef3cd; }
 .estimate-type-pill.paid    { color:#15803d; background:#dcfce7; }
 .estimate-type-pill.partial { color:#9a3412; background:#ffedd5; }

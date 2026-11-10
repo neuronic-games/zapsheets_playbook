@@ -752,6 +752,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 }
 .field-input:focus { border-color:#1a5f7a; background:#fff; }
 input[type="date"].field-input { -webkit-appearance:none; appearance:none; min-height:2.45rem; box-sizing:border-box; }
+/* Contract dialogs: text/number inputs and dropdowns match the date fields' height */
+.contract-dialog input.field-input, .contract-dialog select.field-input { height:2.45rem; box-sizing:border-box; }
 .date-wrap { position:relative; }
 .date-wrap input[type="date"] { -webkit-appearance:none; appearance:none; width:100%; box-sizing:border-box; background:#fff; padding-right:2.2rem; cursor:pointer; }
 .date-wrap input[type="date"]::-webkit-calendar-picker-indicator { position:absolute; right:0; top:0; bottom:0; width:2.2rem; opacity:0; cursor:pointer; }

@@ -3,7 +3,7 @@
 # JSON keys: contract_id, game, client, target_start_date, target_end_date,
 #            start_date, end_date, quote, printing, payment, notes,
 #            discount_label, discount_pct
-# Payment / Printing / Discount Label / Discount % columns are added at the end of the
+# Status / Printing / Discount Label / Discount % columns are added at the end of the
 # header row when a value needs them and they don't exist yet.
 # Returns { ok, row, record } — record is the full updated row (header → value).
 
@@ -95,7 +95,10 @@ if row_idx is None:
     sys.exit(1)
 
 # Add Printing / Discount headers when a value needs them and they're missing
-for _name, _value in (('Payment', payment), ('Printing', printing), ('Discount Label', discount_label), ('Discount %', discount_pct)):
+# Contract status lives in the "Status" column (older sheets: "Payment")
+status_col_name = 'Status' if col('Status') >= 0 else ('Payment' if col('Payment') >= 0 else 'Status')
+
+for _name, _value in ((status_col_name, payment), ('Printing', printing), ('Discount Label', discount_label), ('Discount %', discount_pct)):
     if not _value or col(_name) >= 0:
         continue
     try:
@@ -110,6 +113,7 @@ for _name, _value in (('Payment', payment), ('Printing', printing), ('Discount L
 
 # Build update map: column name → value
 FIELD_MAP = {
+    status_col_name:     payment,
     'Game':              game,
     'Client':            client,
     'Target Start Date': target_start_date,
@@ -120,7 +124,6 @@ FIELD_MAP = {
     'Printing':          printing,
     'Discount Label':    discount_label,
     'Discount %':        discount_pct,
-    'Payment':           payment,
     'Notes':             notes,
 }
 

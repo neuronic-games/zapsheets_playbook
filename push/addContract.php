@@ -32,6 +32,7 @@ $row = [
     'Start Date'       => '',
     'End Date'         => '',
     'Quote'            => $quote,
+    'Status'           => $payment,   // contract status (older sheets: Payment)
     'Payment'          => $payment,
     'Notes'            => $notes,
 ];

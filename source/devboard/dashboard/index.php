@@ -1046,7 +1046,7 @@ body.session-dialog-open .session-body img { display:none !important; }
         </div>
         <div class="field-group">
           <label>Status</label>
-          <!-- Stored in the sheet's Payment column: Estimate / Invoiced / Paid -->
+          <!-- Stored in the sheet's Status column: Estimate / Invoiced / Paid -->
           <select class="field-input" id="ceStatus">
             <option value="Estimate">Estimate</option>
             <option value="Invoiced">Invoice</option>
@@ -1888,7 +1888,7 @@ function renderDashView() {
     recent.forEach(function(c) {
       var quoteNum = parseFloat(c.Quote || '');
       var quote    = isNaN(quoteNum) ? '' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
-      var payment  = (c.Payment || '').trim();
+      var payment  = _conStatus(c);
       var badgeCls = 'client-contract-badge';
       if (payment === 'Paid' || payment === 'Fully Paid') badgeCls += ' paid';
       else if (payment === 'Invoiced') badgeCls += ' invoiced';
@@ -2084,7 +2084,7 @@ function renderPublishersView() {
       sortedCons.forEach(function(con) {
         var quoteNum = parseFloat(con.Quote || '');
         var quote    = isNaN(quoteNum) ? '—' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
-        var payment  = (con.Payment || '').trim();
+        var payment  = _conStatus(con);
         var badgeCls = 'client-contract-badge';
         if (payment === 'Paid' || payment === 'Fully Paid') badgeCls += ' paid';
         else if (payment === 'Invoiced') badgeCls += ' invoiced';
@@ -2097,7 +2097,7 @@ function renderPublishersView() {
         var se = fmtDate(con['End Date']   || '');
         var actualRange = (ss || se) ? (ss || '?') + ' → ' + (se || '?') : '';
         var notes = (con.Notes || '').trim();
-        var status = (con.Status || '').trim();
+        var status = '';   // the Status column is shown as the badge above
 
         html += '<div class="contract-item" id="ci-' + dataIdx + '">';
         html += '<div class="client-contract-row" onclick="toggleContractItem(' + dataIdx + ')">';
@@ -5982,9 +5982,14 @@ function _ceNum(v) {
 }
 function _cePrintingValue(con) { return _ceNum(con.Printing); }
 
-// Status = the sheet's Payment column. Empty → based on the document type.
+// Contract status: the sheet's "Status" column (older sheets: "Payment")
+function _conStatus(con) {
+  return String((con && (con.Status || con.Payment)) || '').trim();
+}
+
+// Status for the edit dialog. Empty → based on the document type.
 function _ceStatusValue(con) {
-  var p = String(con.Payment || '').trim();
+  var p = _conStatus(con);
   if (p) return p;
   return /^invoice$/i.test(String(con.Type || '').trim()) ? 'Invoiced' : 'Estimate';
 }
@@ -6114,7 +6119,8 @@ function submitContractEdit() {
         con['End Date']         = document.getElementById('ceEndDate').value;
         con.Quote               = document.getElementById('ceQuote').value;
         con.Printing            = document.getElementById('cePrinting').value;
-        con.Payment             = document.getElementById('ceStatus').value;
+        con.Status              = document.getElementById('ceStatus').value;
+        if ('Payment' in con) con.Payment = con.Status;
         con.Notes               = document.getElementById('ceNotes').value;
         con['Discount Label']   = document.getElementById('ceDiscountLabel').value.trim();
         con['Discount %']       = document.getElementById('ceDiscountPct').value;

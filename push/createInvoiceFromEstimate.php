@@ -46,7 +46,7 @@ $rowPayload = [
     'game'          => $game,
     'client'        => $client,
     'quote'         => $invoiceAmt,
-    'payment'       => '',
+    'payment'       => 'Invoiced',   // initial Status
     'type'          => 'Invoice',
     'notes'         => $notes ?: ($estimateNum !== '' ? 'Invoice from estimate #' . $estimateNum : ''),
     'scope_of_work' => $description,

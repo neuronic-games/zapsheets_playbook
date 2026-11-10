@@ -45,7 +45,7 @@ $rowPayload = [
     'printing'      => $printing,
     'discount_pct'  => $discountPct > 0 ? strval($discountPct) : '',
     'discount_label'=> $discountPct > 0 ? $discountLbl : '',
-    'payment'       => '',
+    'payment'       => $docType === 'Invoice' ? 'Invoiced' : 'Estimate',   // initial Status
     'tests'         => $numTests,
     'edits'         => $numEdits,
     'duration'      => $duration,

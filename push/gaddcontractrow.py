@@ -111,6 +111,7 @@ def ensure_col(name, value):
         print(json.dumps({"error": f"Could not add {name} column: {str(e)}"}))
         sys.exit(1)
 
+payment_col   = ensure_col('Payment',        payment)
 printing_col  = ensure_col('Printing',       printing)
 disc_lbl_col  = ensure_col('Discount Label', discount_label)
 disc_pct_col  = ensure_col('Discount %',     discount_pct)

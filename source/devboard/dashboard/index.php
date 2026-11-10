@@ -1044,11 +1044,11 @@ body.session-dialog-open .session-body img { display:none !important; }
         </div>
         <div class="field-group">
           <label>Status</label>
-          <!-- Stored in the sheet's Payment column (values match the list badges) -->
+          <!-- Stored in the sheet's Payment column: Estimate / Invoiced / Paid -->
           <select class="field-input" id="ceStatus">
             <option value="Estimate">Estimate</option>
             <option value="Invoiced">Invoice</option>
-            <option value="Fully Paid">Paid</option>
+            <option value="Paid">Paid</option>
           </select>
         </div>
       </div>
@@ -1516,7 +1516,7 @@ body.session-dialog-open .session-body img { display:none !important; }
           <option value="Estimate">Estimate</option>
           <option value="Invoiced">Invoiced</option>
           <option value="Partial">Partial</option>
-          <option value="Fully Paid">Fully Paid</option>
+          <option value="Paid">Paid</option>
         </select>
       </div>
       <div class="field-group span2">
@@ -1888,7 +1888,7 @@ function renderDashView() {
       var quote    = isNaN(quoteNum) ? '' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
       var payment  = (c.Payment || '').trim();
       var badgeCls = 'client-contract-badge';
-      if (payment === 'Fully Paid') badgeCls += ' paid';
+      if (payment === 'Paid' || payment === 'Fully Paid') badgeCls += ' paid';
       else if (payment === 'Invoiced') badgeCls += ' invoiced';
       else if (payment === 'Partial')  badgeCls += ' partial';
       html += '<div class="dash-contract-row">';
@@ -2084,7 +2084,7 @@ function renderPublishersView() {
         var quote    = isNaN(quoteNum) ? '—' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
         var payment  = (con.Payment || '').trim();
         var badgeCls = 'client-contract-badge';
-        if (payment === 'Fully Paid') badgeCls += ' paid';
+        if (payment === 'Paid' || payment === 'Fully Paid') badgeCls += ' paid';
         else if (payment === 'Invoiced') badgeCls += ' invoiced';
         else if (payment === 'Partial')  badgeCls += ' partial';
         var ts = fmtDate(con['Target Start Date'] || '');

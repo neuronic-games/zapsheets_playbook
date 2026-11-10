@@ -416,6 +416,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .estimate-item-header { display:grid; grid-template-columns:auto auto 1fr auto auto; gap:.6rem; align-items:center; padding:.38rem 1rem; font-size:.78rem; user-select:none; }
 .estimate-type-pill { font-family:'DINBlack',sans-serif; font-size:.58rem; text-transform:uppercase; letter-spacing:.05em; color:#2e7d9e; background:#e8f4f8; border-radius:4px; padding:.1rem .35rem; white-space:nowrap; }
 .estimate-type-pill.invoice { color:#a16207; background:#fef3cd; }
+.estimate-type-pill.paid    { color:#15803d; background:#dcfce7; }
+.estimate-type-pill.partial { color:#9a3412; background:#ffedd5; }
 .estimate-num-badge { font-family:'DINRegular',sans-serif; font-size:.7rem; color:#999; }
 .estimate-date { font-family:'DINRegular',sans-serif; font-size:.7rem; color:#bbb; }
 .estimate-amount { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#111; white-space:nowrap; }
@@ -2032,8 +2034,9 @@ function renderPublishersView() {
         html += '<div class="estimate-item" id="est-item-' + globalIdx + '">';
         // Header row — click to expand, no action buttons
         var isInvoice = (est.type === 'invoice');
+        var estTag    = _estStatusTag(est);
         html += '<div class="estimate-item-header" onclick="_estToggle(' + globalIdx + ')">' +
-          '<span class="estimate-type-pill' + (isInvoice ? ' invoice' : '') + '">' + (isInvoice ? 'Invoice' : 'Estimate') + '</span>' +
+          '<span class="estimate-type-pill' + estTag.cls + '">' + estTag.label + '</span>' +
           '<div class="estimate-num-badge">' + esc(est.estimate_num || '') + '</div>' +
           '<div class="estimate-date">' + esc(est.date || '') + '</div>' +
           '<div class="estimate-amount">' + esc(amtFmt) + '</div>' +
@@ -2044,7 +2047,7 @@ function renderPublishersView() {
         // Clickable details area — opens estimate URL
         html += '<div class="estimate-item-details"' + openAttr + '>';
         html += '<dl class="estimate-item-fields">';
-        html += '<div class="estimate-item-field"><dt>' + (isInvoice ? 'Invoice #' : 'Estimate #') + '</dt><dd>' + esc(est.estimate_num || '—') + '</dd></div>';
+        html += '<div class="estimate-item-field"><dt>Contract #</dt><dd>' + esc(est.estimate_num || '—') + '</dd></div>';
         html += '<div class="estimate-item-field"><dt>Amount</dt><dd>' + esc(amtFmt) + '</dd></div>';
         html += '<div class="estimate-item-field"><dt>Date</dt><dd>' + esc(est.date || '—') + '</dd></div>';
         if (est.game)   html += '<div class="estimate-item-field"><dt>Game</dt><dd>' + esc(est.game) + '</dd></div>';
@@ -5981,6 +5984,24 @@ function _ceNum(v) {
   return String(v || '').replace(/^'/, '').replace(/[^0-9.]/g, '');
 }
 function _cePrintingValue(con) { return _ceNum(con.Printing); }
+
+// Tag for an estimate/invoice card, from its contract's Status column
+// (falls back to the document type when the contract has no status yet)
+function _estStatusTag(est) {
+  var st = '';
+  if (est && est.contract_id) {
+    for (var i = 0; i < CONTRACT_RAW.length; i++) {
+      var c = CONTRACT_RAW[i];
+      if (c && String(c['Ref Number'] || '') === String(est.contract_id)) { st = _conStatus(c); break; }
+    }
+  }
+  var k = st.toLowerCase();
+  if (k === 'paid' || k === 'fully paid') return { cls: ' paid',    label: 'Paid' };
+  if (k === 'partial')                    return { cls: ' partial', label: 'Partial' };
+  if (k === 'invoiced' || k === 'invoice') return { cls: ' invoice', label: 'Invoiced' };
+  if (k === 'estimate')                   return { cls: '',         label: 'Estimate' };
+  return est && est.type === 'invoice' ? { cls: ' invoice', label: 'Invoiced' } : { cls: '', label: 'Estimate' };
+}
 
 // Contract status: the sheet's "Status" column (older sheets: "Payment")
 function _conStatus(con) {

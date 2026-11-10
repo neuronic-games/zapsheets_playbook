@@ -1027,18 +1027,29 @@ body.session-dialog-open .session-body img { display:none !important; }
         <label>End Date</label>
         <input type="date" class="field-input" id="ceEndDate" />
       </div>
-      <div class="field-group">
-        <label>Quote</label>
-        <div class="contract-quote-wrap">
-          <span class="contract-quote-prefix">$</span>
-          <input type="number" class="field-input" id="ceQuote" min="0" step="0.01" />
+      <div class="field-group span2" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:inherit">
+        <div class="field-group">
+          <label>Quote</label>
+          <div class="contract-quote-wrap">
+            <span class="contract-quote-prefix">$</span>
+            <input type="number" class="field-input" id="ceQuote" min="0" step="0.01" />
+          </div>
         </div>
-      </div>
-      <div class="field-group">
-        <label>Printing</label>
-        <div class="contract-quote-wrap">
-          <span class="contract-quote-prefix">$</span>
-          <input type="number" class="field-input" id="cePrinting" min="0" step="0.01" placeholder="0.00" />
+        <div class="field-group">
+          <label>Printing</label>
+          <div class="contract-quote-wrap">
+            <span class="contract-quote-prefix">$</span>
+            <input type="number" class="field-input" id="cePrinting" min="0" step="0.01" placeholder="0.00" />
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Status</label>
+          <!-- Stored in the sheet's Payment column (values match the list badges) -->
+          <select class="field-input" id="ceStatus">
+            <option value="Estimate">Estimate</option>
+            <option value="Invoiced">Invoice</option>
+            <option value="Fully Paid">Paid</option>
+          </select>
         </div>
       </div>
       <div class="field-group span2" style="display:grid;grid-template-columns:2fr 1fr;gap:inherit">
@@ -2485,7 +2496,7 @@ function openInvoiceFromEstimate(estIdx) {
   document.getElementById('invoicePctRow').style.display = 'none';
   document.getElementById('invoiceAmtLabel').querySelector('label') && (document.getElementById('invoiceAmtLabel').style.display = '');
   document.getElementById('invoiceDescription').value = est.game || '';
-  document.getElementById('invoiceDueDate').value  = '';
+  document.getElementById('invoiceDueDate').value  = _isoDaysFromToday(14);
   document.getElementById('invoiceNotes').value    = '';
   document.getElementById('invoiceCreateBtn').disabled = false;
   var log = document.getElementById('invoiceLog');
@@ -3664,19 +3675,25 @@ function createReport(gameName, clientName) {
     });
 }
 
+// YYYY-MM-DD for today + n days (local time), for date inputs
+function _isoDaysFromToday(n) {
+  var d = new Date(); d.setDate(d.getDate() + n);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
 function openStandaloneInvoiceDialog(gameName, clientName) {
   _siGame   = gameName   || '';
   _siClient = clientName || '';
   document.getElementById('siGameTitle').textContent    = _siGame;
   document.getElementById('siClientDisplay').textContent = _siClient;
   document.getElementById('siAmount').value          = '';
-  document.getElementById('siDueDate').value         = '';
+  document.getElementById('siDueDate').value         = _isoDaysFromToday(14);
   document.getElementById('siNotes').value           = '';
   document.getElementById('siErr').textContent       = '';
   document.getElementById('siErr').style.display     = 'none';
   document.getElementById('siBtn').disabled          = false;
   document.getElementById('siBtn').textContent       = 'Create Invoice';
-  _siInitial = { client: _siClient, amount: '', dueDate: '', notes: '' };
+  _siInitial = { client: _siClient, amount: '', dueDate: _isoDaysFromToday(14), notes: '' };
   document.getElementById('standaloneInvoiceOverlay').classList.add('open');
   setTimeout(function() { document.getElementById('siAmount').focus(); }, 50);
 }
@@ -3731,6 +3748,7 @@ function submitStandaloneInvoice() {
     .then(function(j) {
       if (j && j.ok) {
         if (j.invoice_record) ESTIMATES_RAW.push(j.invoice_record);
+        if (j.contract_record) CONTRACT_RAW.push(j.contract_record);
         forceCloseStandaloneInvoiceDialog();
         renderPublishersViewKeepOpen();
         if (j.url) window.open(j.url, '_blank');
@@ -5950,6 +5968,7 @@ function isContractEditDirty() {
          f('ceEndDate')     !== (_ceInitial.endDate     || '') ||
          f('ceQuote')       !== (_ceInitial.quote       || '') ||
          f('cePrinting')    !== (_ceInitial.printing    || '') ||
+         f('ceStatus')      !== (_ceInitial.status      || '') ||
          f('ceDiscountLabel') !== (_ceInitial.discountLabel || '') ||
          f('ceDiscountPct') !== (_ceInitial.discountPct || '') ||
          f('ceNotes')       !== (_ceInitial.notes       || '');
@@ -5961,15 +5980,44 @@ function _ceNum(v) {
 }
 function _cePrintingValue(con) { return _ceNum(con.Printing); }
 
+// Status = the sheet's Payment column. Empty → based on the document type.
+function _ceStatusValue(con) {
+  var p = String(con.Payment || '').trim();
+  if (p) return p;
+  return /^invoice$/i.test(String(con.Type || '').trim()) ? 'Invoiced' : 'Estimate';
+}
+function _ceSetStatus(val) {
+  var sel = document.getElementById('ceStatus');
+  // Keep any other existing value (e.g. "Partial") selectable so saving doesn't change it
+  sel.querySelectorAll('option[data-extra]').forEach(function(o) { o.remove(); });
+  if (val && !Array.prototype.some.call(sel.options, function(o) { return o.value === val; })) {
+    var o = document.createElement('option'); o.value = val; o.textContent = val; o.setAttribute('data-extra', '1');
+    sel.appendChild(o);
+  }
+  sel.value = val;
+}
+
 // Open the edit dialog from an estimate/invoice card (matched by Ref Number)
 function openContractEditForEstimate(estIdx) {
   var est = ESTIMATES_RAW[estIdx];
   if (!est || !est.contract_id) return;
+  var ref = String(est.contract_id);
   for (var i = 0; i < CONTRACT_RAW.length; i++) {
     var c = CONTRACT_RAW[i];
-    if (c && String(c['Ref Number'] || '') === String(est.contract_id)) { openContractEditDialog(i); return; }
+    if (c && String(c['Ref Number'] || '') === ref) { openContractEditDialog(i); return; }
   }
-  showSaveToast('This contract isn\'t loaded yet. Use Fetch to reload contracts, then try again.');
+  // Not in memory (created since the page loaded) — check the server's contracts cache
+  fetch(APP_BASE + 'sheets/' + SHEET_ID + '/contracts.json?v=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(list) {
+      var row = (Array.isArray(list) ? list : []).filter(function(c) { return c && String(c['Ref Number'] || '') === ref; })[0];
+      if (!row) throw new Error('missing');
+      CONTRACT_RAW.push(row);
+      openContractEditDialog(CONTRACT_RAW.length - 1);
+    })
+    .catch(function() {
+      showSaveToast('This contract isn\'t loaded yet. Use Fetch to reload contracts, then try again.');
+    });
 }
 
 function openContractEditDialog(idx) {
@@ -5986,6 +6034,7 @@ function openContractEditDialog(idx) {
   document.getElementById('ceDiscountLabel').value    = con['Discount Label'] || '';
   document.getElementById('ceDiscountPct').value      = _ceNum(con['Discount %']);
   document.getElementById('cePrinting').value         = _cePrintingValue(con);
+  _ceSetStatus(_ceStatusValue(con));
   // Title and button follow the document type (Estimate / Invoice)
   var _ceType = (con.Type || '').trim();
   _ceDocLabel = /^invoice$/i.test(_ceType) ? 'Invoice' : (/^estimate$/i.test(_ceType) ? 'Estimate' : 'Contract');
@@ -6006,6 +6055,7 @@ function openContractEditDialog(idx) {
     discountLabel: (con['Discount Label'] || '').trim(),
     discountPct: _ceNum(con['Discount %']),
     printing:    _cePrintingValue(con),
+    status:      _ceStatusValue(con),
     notes:       (con.Notes   || '').trim()
   };
   document.getElementById('contractEditOverlay').classList.add('open');
@@ -6048,7 +6098,7 @@ function submitContractEdit() {
   fd.append('my_logo',      MY_LOGO          || '');
   fd.append('my_address',   MY_COMPANY_ADDRESS || MY_BIO_LOCATION || '');
   fd.append('my_payment',   MY_PAYMENT_INFO  || '');
-  fd.append('payment',      con.Payment || '');   // not editable here — keep the current value
+  fd.append('payment',      document.getElementById('ceStatus').value);
   fd.append('notes',        document.getElementById('ceNotes').value);
   fetch(APP_BASE + 'push/updateContract.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })
@@ -6062,6 +6112,7 @@ function submitContractEdit() {
         con['End Date']         = document.getElementById('ceEndDate').value;
         con.Quote               = document.getElementById('ceQuote').value;
         con.Printing            = document.getElementById('cePrinting').value;
+        con.Payment             = document.getElementById('ceStatus').value;
         con.Notes               = document.getElementById('ceNotes').value;
         con['Discount Label']   = document.getElementById('ceDiscountLabel').value.trim();
         con['Discount %']       = document.getElementById('ceDiscountPct').value;
@@ -6110,12 +6161,14 @@ document.querySelectorAll('input[type="date"]').forEach(function(inp) {
 // Open the calendar when a date field is clicked. The calendar icon is drawn
 // by CSS, and only Chrome reacts to clicks on it natively — Safari and Firefox
 // need showPicker() (supported in current versions of all three).
+// Listen in the capture phase: several dialogs call stopPropagation() on clicks,
+// which would otherwise stop this handler from ever seeing them.
 document.addEventListener('click', function(e) {
   var inp = e.target;
   if (!inp || inp.tagName !== 'INPUT' || inp.type !== 'date' || inp.disabled || inp.readOnly) return;
   if (typeof inp.showPicker !== 'function') return;
   try { inp.showPicker(); } catch (err) { /* picker already open or not allowed */ }
-});
+}, true);
 
 // ── Background-save error toast ────────────────────────────────────────────
 var _saveToastTimer = null;

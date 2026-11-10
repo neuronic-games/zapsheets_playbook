@@ -48,7 +48,7 @@ $rowPayload = [
     'quote'         => $invoiceAmt,
     'payment'       => '',
     'type'          => 'Invoice',
-    'notes'         => $notes ?: ('Invoice from estimate #' . $estimateNum),
+    'notes'         => $notes ?: ($estimateNum !== '' ? 'Invoice from estimate #' . $estimateNum : ''),
     'scope_of_work' => $description,
     'target_start'  => $tgtStart,
     'date'          => date('n/j/Y'),

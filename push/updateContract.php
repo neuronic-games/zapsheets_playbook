@@ -117,7 +117,7 @@ if ($estIdx !== null && in_array($docType, ['Estimate', 'Invoice'], true)) {
         // Invoice created from an estimate: keep the "Estimate #" reference
         $fromEst = trim($ests[$estIdx]['from_estimate'] ?? '');
         if (!$fromEst && preg_match('/^Invoice from estimate #(\S+)$/', $notes, $m)) $fromEst = $m[1];
-        if (preg_match('/^Invoice from estimate #\S+$/', $notes)) $pdfNotes = '';  // auto-note, not shown on the PDF originally
+        if (preg_match('/^Invoice from estimate #\S*$/', $notes)) $pdfNotes = '';  // auto-note, not shown on the PDF originally
         $payload += [
             'quote'        => $quote,
             'description'  => $desc,

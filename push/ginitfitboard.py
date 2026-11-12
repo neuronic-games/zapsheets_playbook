@@ -6,6 +6,7 @@
 # Arg: {sheet_id}
 
 import gspread
+import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json
 
 credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')

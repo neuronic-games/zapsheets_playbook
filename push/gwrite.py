@@ -7,6 +7,7 @@
 # (File › Settings › Timezone in Google Sheets).
 
 import gspread
+import gretry  # retry temporary Google API errors (see gretry.py)
 import sys
 import os
 import re

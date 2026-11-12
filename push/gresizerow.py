@@ -2,6 +2,7 @@
 # Arg: {sheet_id}|{tab_name}|{row_number_1indexed}|{pixel_height}
 
 import gspread
+import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json, socket
 
 socket.setdefaulttimeout(30)

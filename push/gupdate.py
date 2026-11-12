@@ -4,6 +4,7 @@
 #            contact, date, event, status, notes
 
 import gspread
+import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json, base64, socket
 
 # Prevent gspread/httplib2 from hanging indefinitely on slow API responses

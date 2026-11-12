@@ -36,6 +36,7 @@ from reportlab.lib.colors import HexColor, white, black
 
 import gspread
 
+import gretry  # retry temporary Google API errors (see gretry.py)
 CRED_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
 
 # ── Parse args ────────────────────────────────────────────────────────────────

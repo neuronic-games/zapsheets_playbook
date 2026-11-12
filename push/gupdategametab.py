@@ -16,6 +16,7 @@
 # are appended.
 
 import gspread
+import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json, base64, socket
 
 socket.setdefaulttimeout(30)

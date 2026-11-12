@@ -7,6 +7,7 @@
 # so any key not present in the map is passed through unchanged.
 
 import gspread
+import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json
 
 # Map: actual sheet column header → JS-expected field name

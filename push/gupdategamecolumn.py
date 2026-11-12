@@ -9,6 +9,7 @@
 # Returns: {"ok": true, "row": N, "col": N} or {"error": "..."}
 
 import gspread
+import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json, base64
 
 credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')

@@ -8,6 +8,7 @@
 # assembles all DevBoard rows, and writes them in a single gspread batch call.
 
 import gspread, sys, os, json, re, base64, socket
+import gretry  # retry temporary Google API errors (see gretry.py)
 
 socket.setdefaulttimeout(60)
 

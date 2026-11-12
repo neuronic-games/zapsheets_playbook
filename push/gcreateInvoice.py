@@ -7,6 +7,7 @@
 # Arg: {sheet_id}|{base64_json}
 
 import gspread
+import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json, base64, socket, re, urllib.parse
 from datetime import datetime, date, timedelta
 

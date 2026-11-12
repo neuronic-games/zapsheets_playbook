@@ -3,6 +3,7 @@
 # JSON keys: row_id (required), plus any column name → new value pairs to update
 
 import gspread
+import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json, base64, socket
 
 socket.setdefaulttimeout(30)

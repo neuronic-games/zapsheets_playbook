@@ -4661,6 +4661,20 @@ function openEditSessionDialog(gameName, idx) {
   }, 0);
 }
 
+// Turn a server error into a short message: Google's temporary errors arrive as
+// a Python traceback plus a full HTML error page, which isn't useful to read.
+function _friendlySaveError(e) {
+  var msg = String((e && e.message) || 'unknown error');
+  var m = msg.match(/APIError[\s\S]*?Error\s*(\d{3})|\b(5\d\d)\b[^\n]*(Server Error|Bad Gateway|Service Unavailable)/i);
+  if (m || /<!DOCTYPE|<html/i.test(msg)) {
+    var code = m ? (m[1] || m[2]) : '';
+    return 'Google Sheets had a temporary problem' + (code ? ' (error ' + code + ')' : '') +
+           '. Your changes are still here — wait a moment and click Save again.';
+  }
+  if (msg.length > 300) msg = msg.slice(0, 300) + '…';
+  return msg;
+}
+
 // Key identifying a session's timer: a game's new (unsaved) session, or a saved session
 function _swSessionKey(game, date, type, num) {
   return date ? ['edit', game, date, type || '', num || ''].join('|') : 'new|' + game;
@@ -4841,7 +4855,7 @@ function submitSession() {
         btn.disabled = false;
         btn.textContent = 'Save';
         _sCancelBtns.forEach(function(b) { b.disabled = false; });
-        err.textContent = 'Couldn\'t save changes — ' + (e.message || 'unknown error');
+        err.textContent = 'Couldn\'t save changes — ' + _friendlySaveError(e);
         console.error('Save error:', e.message);
         err.style.display = 'block';
       });
@@ -4890,7 +4904,7 @@ function submitSession() {
       btn.disabled = false;
       btn.textContent = 'Add Session';
       _sCancelBtns.forEach(function(b) { b.disabled = false; });
-      err.textContent = 'Couldn\'t save session — ' + (e.message || 'unknown error');
+      err.textContent = 'Couldn\'t save session — ' + _friendlySaveError(e);
       err.style.display = 'block';
     });
 }

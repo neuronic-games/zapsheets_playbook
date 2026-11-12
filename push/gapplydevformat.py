@@ -9,6 +9,7 @@
 #       or {"error": "..."}
 
 import gspread
+import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json, socket
 
 socket.setdefaulttimeout(30)

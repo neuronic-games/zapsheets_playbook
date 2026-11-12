@@ -30,6 +30,7 @@
 #  23  Admin Contact                 → admin_contact
 
 import gspread
+import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json, socket, re
 
 socket.setdefaulttimeout(60)

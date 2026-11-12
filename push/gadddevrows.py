@@ -5,6 +5,7 @@
 # JSON: { "tab": "[GameName] dev", "rows": [ {Date, Event, People, Observations, Solutions}, ... ] }
 
 import gspread
+import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json, base64, socket
 
 socket.setdefaulttimeout(30)

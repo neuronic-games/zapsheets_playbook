@@ -9,6 +9,7 @@
 # Returns (stdout): {"ok": true, "tab": "..."} or {"error": "..."}
 
 import gspread
+import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json, socket
 
 # Prevent gspread/httplib2 from hanging indefinitely on slow API responses

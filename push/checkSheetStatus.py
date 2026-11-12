@@ -3,6 +3,7 @@ import sys, os, json
 
 try:
     import gspread
+    import gretry  # retry temporary Google API errors (see gretry.py)
 except ImportError as e:
     print(json.dumps({"exists": "no", "error": "gspread not installed: " + str(e)}))
     sys.exit(1)

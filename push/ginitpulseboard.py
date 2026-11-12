@@ -30,6 +30,7 @@ if not os.path.exists(cred_path):
 
 try:
     import gspread
+    import gretry  # retry temporary Google API errors (see gretry.py)
     sa = gspread.service_account(filename=cred_path)
 except ImportError:
     fail('gspread not installed')

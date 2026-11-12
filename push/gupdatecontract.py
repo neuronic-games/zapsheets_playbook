@@ -8,6 +8,7 @@
 # Returns { ok, row, record } — record is the full updated row (header → value).
 
 import gspread
+import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json, base64
 from gspread.utils import rowcol_to_a1
 

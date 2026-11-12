@@ -44,6 +44,7 @@ if not game:
 # ── Load session data ─────────────────────────────────────────────────────────
 import gspread
 
+import gretry  # retry temporary Google API errors (see gretry.py)
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 dev_file = os.path.join(base_dir, 'sheets', sheet_id, f'[{game}] dev.json')
 

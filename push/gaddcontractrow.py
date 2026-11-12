@@ -12,6 +12,7 @@
 # Returns: { ok, contract_id, row }
 
 import gspread
+import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json, base64, hashlib, time as _time
 
 credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')

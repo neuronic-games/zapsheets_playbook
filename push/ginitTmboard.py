@@ -4,6 +4,7 @@
 # Returns JSON: { ok, title, tabs_created }
 
 import gspread
+import gretry  # retry temporary Google API errors (see gretry.py)
 from gspread.exceptions import APIError
 import sys, os, json, socket
 

@@ -8,6 +8,7 @@
 # column names for legacy sheets.
 
 import gspread
+import gretry  # retry temporary Google API errors (see gretry.py)
 import gspread.utils
 import sys, os, json, base64
 

@@ -156,6 +156,7 @@ function _roundsChange(delta) {
   _sessionRounds = Math.max(0, _sessionRounds + delta);
   var el = document.getElementById('roundsCount');
   if (el) el.textContent = _sessionRounds;
+  _swPersist();
 }
 
 function _swParseRounds(str) {
@@ -164,9 +165,71 @@ function _swParseRounds(str) {
 }
 
 // ── Stopwatch ─────────────────────────────────────────────────────────────────
-var _swSeconds  = 0;
-var _swRunning  = false;
-var _swInterval = null;
+// The timer belongs to one session (_swKey) and is saved in this browser
+// (localStorage) as a start time, so it keeps running while the dialog is
+// closed and across page reloads. Only the timer button stops it.
+var _swSeconds   = 0;
+var _swRunning   = false;
+var _swInterval  = null;
+var _swKey       = null;   // which session the timer belongs to (null = not saved)
+var _swBase      = 0;      // seconds accumulated before the current run
+var _swStartedAt = null;   // ms timestamp of the current run (null = paused)
+var _SW_STORE    = 'devboard_timers:' + location.pathname;
+
+function _swStoreRead() {
+  try { return JSON.parse(localStorage.getItem(_SW_STORE) || '{}') || {}; } catch (e) { return {}; }
+}
+function _swStoreWrite(map) {
+  try { localStorage.setItem(_SW_STORE, JSON.stringify(map)); } catch (e) {}
+}
+function _swPersist() {
+  if (!_swKey) return;
+  var map = _swStoreRead();
+  map[_swKey] = { base: _swBase, startedAt: _swStartedAt, rounds: _sessionRounds };
+  _swStoreWrite(map);
+}
+function _swForget(key) {
+  if (!key) return;
+  var map = _swStoreRead();
+  if (map[key]) { delete map[key]; _swStoreWrite(map); }
+}
+function _swTick() {
+  _swSeconds = _swBase + (_swStartedAt ? Math.max(0, Math.floor((Date.now() - _swStartedAt) / 1000)) : 0);
+  _swUpdate();
+}
+function _swStartInterval() {
+  clearInterval(_swInterval);
+  _swInterval = setInterval(_swTick, 1000);
+}
+
+// Attach the timer to a session. A saved timer for that session (running or
+// paused) is restored; otherwise it starts paused at fallbackSecs / fallbackRounds.
+function _swLoad(key, fallbackSecs, fallbackRounds) {
+  _swKey = key || null;
+  var saved = _swKey ? _swStoreRead()[_swKey] : null;
+  clearInterval(_swInterval); _swInterval = null;
+  if (saved) {
+    _swBase = saved.base || 0; _swStartedAt = saved.startedAt || null;
+    _sessionRounds = saved.rounds != null ? saved.rounds : (fallbackRounds || 0);
+  } else {
+    _swBase = fallbackSecs || 0; _swStartedAt = null; _sessionRounds = fallbackRounds || 0;
+  }
+  _swRunning = !!_swStartedAt;
+  var btn = document.getElementById('swBtn');
+  if (btn) btn.classList.toggle('sw-running', _swRunning);
+  if (_swRunning) _swStartInterval();
+  var rc = document.getElementById('roundsCount');
+  if (rc) rc.textContent = String(_sessionRounds);
+  _swTick();
+}
+
+// After a session is saved: a running timer moves to the saved session's key
+// (so it keeps going there); a paused one is forgotten (its time is in the sheet).
+function _swAfterSave(newKey) {
+  var oldKey = _swKey;
+  if (_swRunning && newKey) { _swForget(oldKey); _swKey = newKey; _swPersist(); }
+  else { _swForget(oldKey); _swKey = null; }
+}
 
 function _swFormat(secs) {
   if (_swRunning) {
@@ -202,18 +265,19 @@ var _swLongPressTimer = null;
 function toggleStopwatch() {
   var btn = document.getElementById('swBtn');
   if (_swRunning) {
+    _swTick();
+    _swBase = _swSeconds; _swStartedAt = null;
     clearInterval(_swInterval);
     _swInterval = null;
     _swRunning = false;
     if (btn) btn.classList.remove('sw-running');
   } else {
+    _swBase = _swSeconds; _swStartedAt = Date.now();
     _swRunning = true;
     if (btn) btn.classList.add('sw-running');
-    _swInterval = setInterval(function() {
-      _swSeconds++;
-      _swUpdate();
-    }, 1000);
+    _swStartInterval();
   }
+  _swPersist();
   _swUpdate();
 }
 
@@ -226,11 +290,14 @@ function _swStartLongPress() {
 
 function _swExpandOpen() {
   if (_swRunning) {
+    _swTick();
+    _swBase = _swSeconds; _swStartedAt = null;
     clearInterval(_swInterval);
     _swInterval = null;
     _swRunning = false;
     var btn = document.getElementById('swBtn');
     if (btn) btn.classList.remove('sw-running');
+    _swPersist();
   }
   document.getElementById('swWrap').classList.add('sw-expanded');
   var inp = document.getElementById('swPanelInput');
@@ -243,6 +310,8 @@ function _swExpandOpen() {
 function _swExpandCommit() {
   var val = parseInt(document.getElementById('swPanelInput').value, 10);
   _swSeconds = isNaN(val) ? 0 : Math.max(0, val) * 60;
+  _swBase = _swSeconds; _swStartedAt = null;
+  _swPersist();
   document.getElementById('swWrap').classList.remove('sw-expanded');
   _swUpdate();
 }
@@ -266,6 +335,7 @@ function _swReset() {
   _swInterval = null;
   _swRunning  = false;
   _swSeconds  = 0;
+  _swBase = 0; _swStartedAt = null; _swKey = null;
   var btn = document.getElementById('swBtn');
   if (btn) btn.classList.remove('sw-running');
   _swUpdate();

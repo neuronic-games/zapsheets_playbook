@@ -4563,7 +4563,9 @@ function openSessionDialog(gameName) {
   document.getElementById('sessionBtn').textContent      = 'Add Session';
   document.getElementById('deleteSessionBtn').style.display = 'none';
   document.querySelectorAll('#sessionOverlay .btn-cancel').forEach(function(b) { b.disabled = false; });
-  _swReset();  // each new session starts the clock at 00:00
+  _swReset();
+  // New session: restore this game's unsaved timer if one is running, else start at 0
+  _swLoad(_swSessionKey(gameName), 0, 0);
   document.body.classList.add('session-dialog-open');
   document.getElementById('sessionOverlay').classList.add('open');
   setTimeout(function() {
@@ -4593,13 +4595,11 @@ function openEditSessionDialog(gameName, idx) {
   _editOrigEvent      = editEventType;
   _editOrigSessionNum = editSessionNum;
 
-  // Load existing session length and rounds into the controls (paused)
+  // Session length and rounds: a timer still running for this session continues;
+  // otherwise load the saved length (paused)
   _swReset();
-  _swSeconds     = _swParseLength(session.length);
-  _sessionRounds = _swParseRounds(session.length);
-  _swUpdate();
-  var rc = document.getElementById('roundsCount');
-  if (rc) rc.textContent = String(_sessionRounds);
+  _swLoad(_swSessionKey(gameName, session.date, editEventType, editSessionNum),
+          _swParseLength(session.length), _swParseRounds(session.length));
 
   document.getElementById('sessionDialogAction').textContent = 'Edit Session';
   document.getElementById('sessionGameTitle').textContent    = gameName;
@@ -4661,6 +4661,16 @@ function openEditSessionDialog(gameName, idx) {
   }, 0);
 }
 
+// Key identifying a session's timer: a game's new (unsaved) session, or a saved session
+function _swSessionKey(game, date, type, num) {
+  return date ? ['edit', game, date, type || '', num || ''].join('|') : 'new|' + game;
+}
+// Key of the session as currently entered in the dialog (used after saving)
+function _swDialogKey() {
+  return _swSessionKey(_sessionGame, document.getElementById('sDate').value || todayISO(),
+    document.getElementById('sType').value, (document.getElementById('sTestNum').value || '').trim());
+}
+
 function closeSessionDialog() {
   document.getElementById('sessionOverlay').classList.remove('open');
   _editMode = false;
@@ -4720,6 +4730,7 @@ function deleteSession() {
           newCache.push(cr);
         }
         devCache[_sessionGame] = newCache;
+        _swForget(_swKey); _swReset();   // session deleted — drop its timer
         forceCloseSessionDialog();
         renderBody(_sessionGame, devCache[_sessionGame]);
       })
@@ -4821,6 +4832,7 @@ function submitSession() {
       .then(function(r) { return r.json(); })
       .then(function(res) {
         if (res.error) throw new Error(res.error);
+        _swAfterSave(_swDialogKey());
         devCache[_sessionGame] = undefined;
         loadDevData(_sessionGame, true);
         forceCloseSessionDialog();
@@ -4868,6 +4880,7 @@ function submitSession() {
     .then(function(r) { return r.json(); })
     .then(function(res) {
       if (res.error) throw new Error(res.error);
+      _swAfterSave(_swDialogKey());
       if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
       localRows.forEach(function(r) { devCache[_sessionGame].push(r); });
       renderBody(_sessionGame, devCache[_sessionGame]);

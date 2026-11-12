@@ -5469,6 +5469,13 @@ function onObsKeydown(e, idx, col) {
       return;
     }
   }
+  // Plain arrow at the edge of the text → move to the neighbouring cell
+  if (!e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey &&
+      (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') &&
+      e.target.isContentEditable && _obsCaretAtEdge(e.target, e.key)) {
+    if (_obsMoveCell(idx, col, e.key)) e.preventDefault();
+    return;
+  }
   if (!e.metaKey && !e.ctrlKey) return;
   var dir = e.key;
   if (dir !== 'ArrowLeft' && dir !== 'ArrowRight' && dir !== 'ArrowUp' && dir !== 'ArrowDown') return;
@@ -5489,6 +5496,70 @@ function onObsKeydown(e, idx, col) {
   var tgtDataIdx = parseInt(tgtPair.dataset.idx, 10);
   var tgtEl = document.getElementById((tgtCol === 0 ? 'sObs-' : 'sSol-') + tgtDataIdx);
   if (tgtEl) tgtEl.focus();
+}
+
+// ── Arrow-key navigation between observation / solution cells ────────────────
+
+// Screen rectangle of the caret (falls back to its line's element when the line is empty)
+function _obsCaretRect(range) {
+  var r = range.cloneRange(); r.collapse(true);
+  var rects = r.getClientRects();
+  if (rects.length) return rects[0];
+  var n = r.startContainer;
+  var el = n.nodeType === 1 ? (n.childNodes[r.startOffset] || n) : n.parentNode;
+  if (el && el.nodeType !== 1) el = el.parentNode;
+  return el ? el.getBoundingClientRect() : null;
+}
+
+// Is the caret at the edge of `el` in direction `key`?
+//   Up / Down    → on the first / last visual line
+//   Left / Right → at the very start / end of the text
+function _obsCaretAtEdge(el, key) {
+  var sel = window.getSelection();
+  if (!sel || !sel.rangeCount || !sel.isCollapsed) return false;
+  var range = sel.getRangeAt(0);
+  if (!el.contains(range.startContainer)) return false;
+  var caret = _obsCaretRect(range);
+  if (!caret) return false;
+  var before = document.createRange(); before.selectNodeContents(el); before.setEnd(range.startContainer, range.startOffset);
+  var after  = document.createRange(); after.selectNodeContents(el);  after.setStart(range.startContainer, range.startOffset);
+  var onFirstLine = !Array.prototype.some.call(before.getClientRects(), function(r) { return r.height && r.top < caret.top - 2; });
+  var onLastLine  = !Array.prototype.some.call(after.getClientRects(),  function(r) { return r.height && r.bottom > caret.bottom + 2; });
+  if (key === 'ArrowUp')    return onFirstLine;
+  if (key === 'ArrowDown')  return onLastLine;
+  if (key === 'ArrowLeft')  return onFirstLine && before.toString() === '';
+  if (key === 'ArrowRight') return onLastLine  && after.toString()  === '';
+  return false;
+}
+
+// Focus a cell, putting the caret at its start or end
+function _obsFocusCell(el, atEnd) {
+  el.focus();
+  var r = document.createRange(); r.selectNodeContents(el); r.collapse(!atEnd);
+  var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+}
+
+// Move from cell (pair idx, column col) in direction `key`. Returns true if it moved.
+function _obsMoveCell(idx, col, key) {
+  var pairs = Array.from(document.querySelectorAll('#obsContainer .obs-pair'));
+  var pi    = pairs.findIndex(function(p) { return parseInt(p.dataset.idx, 10) === idx; });
+  if (pi < 0) return false;
+  var tPi = pi, tCol = col;
+  if (key === 'ArrowUp')    tPi = pi - 1;
+  if (key === 'ArrowDown')  tPi = pi + 1;
+  if (key === 'ArrowLeft')  tCol = col - 1;
+  if (key === 'ArrowRight') tCol = col + 1;
+  if (tPi < 0 || tPi >= pairs.length || tCol < 0 || tCol > 1) return false;
+  var tIdx = parseInt(pairs[tPi].dataset.idx, 10);
+  var el = document.getElementById((tCol === 0 ? 'sObs-' : 'sSol-') + tIdx);
+  if (!el || el.offsetParent === null) {          // observation shown as an image
+    if (tCol === 0 && (key === 'ArrowUp' || key === 'ArrowDown')) el = document.getElementById('sSol-' + tIdx);
+    else el = null;
+    if (!el || el.offsetParent === null) return false;
+  }
+  // Up / Left land at the end of the text, Down / Right at the start
+  _obsFocusCell(el, key === 'ArrowUp' || key === 'ArrowLeft');
+  return true;
 }
 
 // ── Touch long-press → Edit session ──────────────────────────────────────────

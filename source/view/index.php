@@ -1342,14 +1342,19 @@ function render() {
 
   var _ctaHtml = '';
 
-  // View Sellsheet — shown when unpublished AND the game has a Sellsheet URL
-  var _hasSellsheet = !!_absUrl(_gamesAny('Sellsheet URL', 'Sellsheet', 'SellsheetURL'));
-  if (!_yearPublished && _hasSellsheet) {
-    var _sellsheetUrl = window._gvSheetId
-      ? window.location.origin + _viewPath.replace(/\/$/, '') + '/sellsheet'
-      : window.location.origin + _viewPath.substring(0, _idEnd) + '/sellsheet'
-          + (_gameParam ? '?game=' + encodeURIComponent(_gameParam) : '');
-    _ctaHtml += '<a class="btn-rules" href="' + _sellsheetUrl + '">View Sellsheet</a>';
+  // View Sellsheet — shown while the game is unpublished. Uses the game's own
+  // Sellsheet when one is set in Edit Game, otherwise the generated sellsheet.
+  if (!_yearPublished) {
+    var _ownSellsheet = _absUrl(_gamesAny('Sell Sheet', 'Sell Sheet URL', 'Sellsheet URL', 'Sellsheet', 'SellsheetURL'));
+    if (_ownSellsheet) {
+      _ctaHtml += '<a class="btn-rules" href="' + _ownSellsheet + '" target="_blank" rel="noopener noreferrer">View Sellsheet</a>';
+    } else {
+      var _sellsheetUrl = window._gvSheetId
+        ? window.location.origin + _viewPath.replace(/\/$/, '') + '/sellsheet'
+        : window.location.origin + _viewPath.substring(0, _idEnd) + '/sellsheet'
+            + (_gameParam ? '?game=' + encodeURIComponent(_gameParam) : '');
+      _ctaHtml += '<a class="btn-rules" href="' + _sellsheetUrl + '">View Sellsheet</a>';
+    }
   }
 
   // Read Rules — link out if a URL exists; scroll to Rules tab if rules data exists;

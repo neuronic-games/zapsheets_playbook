@@ -62,7 +62,10 @@ if (file_exists($_gamesFile)) {
             } elseif ($_raw) {
                 $_gameImage = $_raw;
             }
-            $_sellsheetUrl = trim($_g['Sellsheet URL'] ?? '');
+            foreach (['Sell Sheet', 'Sell Sheet URL', 'Sellsheet URL', 'Sellsheet', 'SellsheetURL'] as $_sk) {
+                $_sellsheetUrl = trim(ltrim(trim((string)($_g[$_sk] ?? '')), "'"));
+                if ($_sellsheetUrl !== '') break;
+            }
             break;
         }
     }
@@ -72,6 +75,9 @@ if (file_exists($_gamesFile)) {
 $_gameToken    = substr(md5($_sheetId . '|game|' . $_gameName), 0, 24);
 $_gameViewFile = __DIR__ . '/../../../shares/pitch-game-view/' . $_gameToken . '.json';
 $_gameUrl      = file_exists($_gameViewFile) ? ($_base . 'game/' . $_gameToken) : '';
+// No Sellsheet set in Edit Game → use the generated sellsheet (needs the game page)
+$_sellsheetIsOwn = $_sellsheetUrl !== '';
+if (!$_sellsheetIsOwn && $_gameUrl) $_sellsheetUrl = $_gameUrl . '/sellsheet';
 
 function _ds_e(string $s): string { return htmlspecialchars($s, ENT_QUOTES); }
 
@@ -601,8 +607,9 @@ input[type="date"].field-input { -webkit-appearance:none; appearance:none; min-h
     <span class="game-title"><?= _ds_e($_gameName) ?></span>
     <div class="header-btns">
 <?php if ($_sellsheetUrl): ?>
-      <a class="page-link-btn" href="<?= _ds_e($_sellsheetUrl) ?>">Sellsheet</a>
-<?php elseif ($_gameUrl): ?>
+      <a class="page-link-btn" href="<?= _ds_e($_sellsheetUrl) ?>"<?= $_sellsheetIsOwn ? ' target="_blank" rel="noopener"' : '' ?>>Sellsheet</a>
+<?php endif; ?>
+<?php if ($_gameUrl): ?>
       <a class="page-link-btn" href="<?= _ds_e($_gameUrl) ?>" target="_blank" rel="noopener">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         Info

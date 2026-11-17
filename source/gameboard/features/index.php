@@ -221,6 +221,53 @@ footer a:hover { color:rgba(255,255,255,.7); }
   .nav-links { display:none; }
   .app-games { grid-template-columns:1fr 1fr; }
 }
+/* ── Brand editor animation ── */
+.ie-stage { position:relative; overflow:hidden; background:#f4f5f8; font-family:'Inter',system-ui,sans-serif; user-select:none; }
+.ie-banner { --ie-banner:#1a1c30; position:relative; background:var(--ie-banner); transition:background .6s ease; padding:16px 16px 14px; display:flex; align-items:center; gap:12px; }
+.ie-logo { width:38px; height:38px; border-radius:9px; background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+.ie-titles { min-width:0; flex:1; }
+.ie-edit { position:relative; border-radius:4px; outline:1.5px dashed transparent; outline-offset:3px; transition:outline-color .15s; white-space:nowrap; min-height:1.2em; }
+.ie-name { font-size:18px; font-weight:700; color:#fff; letter-spacing:-.01em; display:inline-block; }
+.ie-tag  { font-size:11px; color:rgba(255,255,255,.62); margin-top:2px; display:inline-block; }
+.ie-titles .ie-edit { display:table; }
+.ie-edit.hover   { outline-color:rgba(255,255,255,.55); }
+.ie-edit.editing { outline:1.5px solid #7dcf7c; background:rgba(255,255,255,.06); }
+.ie-edit.editing::after { content:''; display:inline-block; width:1.5px; height:1em; background:#7dcf7c; margin-left:1px; vertical-align:-.12em; animation:ie-blink 1s steps(1) infinite; }
+.ie-edit.selected { background:rgba(125,207,124,.35); }
+@keyframes ie-blink { 50% { opacity:0; } }
+.ie-paint { width:30px; height:30px; border-radius:8px; border:1.5px dashed rgba(255,255,255,.35); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; transition:border-color .15s, background .15s; }
+.ie-paint.hover { border-color:#fff; background:rgba(255,255,255,.12); }
+.ie-pop { position:absolute; z-index:3; background:#fff; border-radius:9px; box-shadow:0 8px 24px rgba(0,0,0,.22); opacity:0; transform:translateY(-4px) scale(.97); transition:opacity .18s, transform .18s; pointer-events:none; }
+.ie-pop.show { opacity:1; transform:none; }
+.ie-colors { right:12px; top:52px; padding:7px; display:flex; gap:6px; }
+.ie-colors span { width:20px; height:20px; border-radius:50%; display:block; box-shadow:inset 0 0 0 1px rgba(0,0,0,.1); transition:transform .15s; }
+.ie-colors span.pick { transform:scale(1.25); box-shadow:0 0 0 2px #fff, 0 0 0 4px #4caa4b; }
+.ie-mode { background:#fdf3e3; color:#a35f12; font-size:10.5px; font-weight:600; text-align:center; padding:5px; letter-spacing:.02em; transition:background .25s; }
+.ie-hero { height:62px; margin:10px 12px 0; border-radius:8px; background:linear-gradient(135deg,#2a3d6b,#13756f); display:flex; align-items:flex-end; padding:7px 10px; }
+.ie-hero span { font-size:10px; font-weight:600; color:#fff; }
+.ie-games { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:10px 12px; }
+.ie-game { background:#fff; border-radius:7px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+.ie-cover { height:40px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.ie-cover.c1 { background:#f4e2b8; } .ie-cover.c2 { background:#d9e7f5; } .ie-cover.c3 { background:#f6d8cf; }
+.ie-gname { font-size:9.5px; font-weight:600; color:#1e293b; padding:4px 6px 5px; }
+.ie-footer { position:relative; display:flex; align-items:center; justify-content:space-between; padding:9px 14px 11px; border-top:1px solid #e2e8f0; background:#fff; }
+.ie-socials { display:flex; gap:6px; }
+.ie-soc { width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; background:#eef1f5; filter:grayscale(1); opacity:.45; transition:filter .4s, opacity .4s, background .4s, box-shadow .15s; }
+.ie-soc.on { filter:none; opacity:1; background:#e8f4ec; }
+.ie-soc.hover { box-shadow:0 0 0 1.5px #4caa4b; opacity:1; }
+.ie-copy { font-size:10px; color:#64748b; }
+.ie-linkpop { left:10px; bottom:42px; padding:7px 9px; font-size:11px; display:flex; align-items:center; white-space:nowrap; border:1.5px solid #7dcf7c; }
+.ie-pre { color:#94a3b8; } .ie-handle { color:#1e293b; font-weight:500; }
+.ie-handle::after { content:''; display:inline-block; width:1.5px; height:1em; background:#4caa4b; margin-left:1px; vertical-align:-.12em; animation:ie-blink 1s steps(1) infinite; }
+.ie-enter { margin-left:8px; font-size:9px; color:#64748b; border:1px solid #cbd5e1; border-radius:3px; padding:0 4px; opacity:0; transition:opacity .2s; }
+.ie-enter.show { opacity:1; }
+.ie-toast { position:absolute; left:50%; bottom:52px; transform:translate(-50%,8px); background:#15803d; color:#fff; font-size:11px; font-weight:600; padding:6px 12px; border-radius:999px; box-shadow:0 6px 18px rgba(21,128,61,.35); opacity:0; transition:opacity .2s, transform .2s; white-space:nowrap; z-index:4; }
+.ie-toast.show { opacity:1; transform:translate(-50%,0); }
+.ie-mode.step { background:#fde9c4; }
+.ie-cursor { position:absolute; left:0; top:0; z-index:5; transform:translate(260px,250px); filter:drop-shadow(0 2px 3px rgba(0,0,0,.3)); pointer-events:none; }
+.ie-cursor.down { animation:ie-click .18s ease; }
+@keyframes ie-click { 50% { scale:.82; } }
+@media (prefers-reduced-motion: reduce) { .ie-cursor { display:none; } }
 </style>
 </head>
 <body>
@@ -535,7 +582,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="shot-text">
         <div class="section-label">Brand editor</div>
         <h2 class="section-title" style="margin-bottom:1rem;">Edit everything right on the page</h2>
-        <p>Sign in and your catalog becomes editable. Click the company name to rename it. Click the logo to upload a new one. Adjust social links, footer text, and copyright — all saved instantly to your Sheet.</p>
+        <p>Sign in and your catalog becomes editable. Click the company name or tagline and just type — click away and it's saved. Pick a banner color, add a social link, swap the logo — right on the live page, with no settings screens or forms.</p>
         <ul>
           <li>Click-to-edit company name, tagline, and about text</li>
           <li>Upload logo and banner images in-place</li>
@@ -544,46 +591,39 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <li>All changes sync back to the Settings tab in your Sheet</li>
         </ul>
       </div>
-      <div class="browser-frame">
+      <div class="browser-frame ie-frame" aria-label="Animated demo: editing a GameBoard catalog directly on the page">
         <div class="browser-chrome">
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
           <div class="browser-url">zapsheets.com/app/…/gameboard</div>
         </div>
-        <div class="app-settings">
-          <div class="app-settings-hdr">
-            <span class="app-settings-title">Brand Settings</span>
-            <span class="app-save-btn">Save All</span>
+        <div class="ie-stage" id="ieDemo" aria-hidden="true">
+          <div class="ie-banner">
+            <div class="ie-logo">🎲</div>
+            <div class="ie-titles">
+              <div class="ie-edit ie-name" data-k="name">UP Games</div>
+              <div class="ie-edit ie-tag" data-k="tag">Common Spaces. Uncommon Games.</div>
+            </div>
+            <div class="ie-paint" title="Banner color">🎨</div>
+            <div class="ie-pop ie-colors">
+              <span style="background:#1a1c30"></span><span style="background:#7a2e3b"></span><span class="ie-teal" style="background:#13756f"></span><span style="background:#3b3f9e"></span><span style="background:#a35f12"></span>
+            </div>
           </div>
-          <div class="app-field-group">
-            <div class="app-field-label">Company Name</div>
-            <div class="app-field-input green-focus">UP Games</div>
+          <div class="ie-mode">✎ Editing — click anything to change it</div>
+          <div class="ie-hero"><span>Featured: Gnus</span></div>
+          <div class="ie-games">
+            <div class="ie-game"><div class="ie-cover c1">🦓</div><div class="ie-gname">Gnus</div></div>
+            <div class="ie-game"><div class="ie-cover c2">🐈</div><div class="ie-gname">Club K9</div></div>
+            <div class="ie-game"><div class="ie-cover c3">🌅</div><div class="ie-gname">Break of Dawn</div></div>
           </div>
-          <div class="app-field-group">
-            <div class="app-field-label">Tagline</div>
-            <div class="app-field-input">Common Spaces. Uncommon Games.</div>
+          <div class="ie-footer">
+            <div class="ie-socials">
+              <span class="ie-soc ie-ig" title="Instagram">📸</span><span class="ie-soc on">𝕏</span><span class="ie-soc on">🎲</span><span class="ie-soc">📘</span>
+            </div>
+            <div class="ie-copy">© 2026 <span class="ie-copyname">UP Games</span></div>
+            <div class="ie-pop ie-linkpop"><span class="ie-pre">instagram.com/</span><span class="ie-handle"></span><span class="ie-enter">↵</span></div>
           </div>
-          <div class="app-field-group">
-            <div class="app-field-label">Logo URL</div>
-            <div class="app-field-input">https://dropbox.com/…/UP-Games-Logo.png</div>
-          </div>
-          <div class="app-field-group">
-            <div class="app-field-label">About</div>
-            <div class="app-field-input" style="height:36px;">Independent publisher of approachable games…</div>
-          </div>
-          <div class="app-field-group">
-            <div class="app-field-label">Social Links</div>
-          </div>
-          <div class="app-social-row">
-            <div class="app-social-btn set">📸 Instagram</div>
-            <div class="app-social-btn set">🐦 X</div>
-            <div class="app-social-btn set">🎲 BGG</div>
-            <div class="app-social-btn">📘 Facebook</div>
-          </div>
-          <div class="app-field-group">
-            <div class="app-field-label">Carousel Images (1–6)</div>
-            <div class="app-field-input" style="margin-bottom:4px;">https://dropbox.com/…/hero-1.jpg</div>
-            <div class="app-field-input" style="opacity:.5;">https://dropbox.com/…/hero-2.jpg</div>
-          </div>
+          <div class="ie-toast">✓ Saved to your Sheet</div>
+          <svg class="ie-cursor" width="22" height="22" viewBox="0 0 24 24"><path d="M4 2l15 11-7 1.2L8.6 21 4 2z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/></svg>
         </div>
       </div>
     </div>
@@ -658,5 +698,111 @@ footer a:hover { color:rgba(255,255,255,.7); }
   <a href="gameboard">GameBoard</a> &mdash; built for board game makers &nbsp;·&nbsp; <a href="/">ZapSheets</a>
 </footer>
 
+<script>
+// ── Brand editor animation: a cursor edits the catalog in place, then loops ──
+(function() {
+  var stage = document.getElementById('ieDemo');
+  if (!stage) return;
+  var q = function(s) { return stage.querySelector(s); };
+  var cursor = q('.ie-cursor'), toast = q('.ie-toast');
+  var name = q('.ie-name'), tag = q('.ie-tag'), copyName = q('.ie-copyname');
+  var paint = q('.ie-paint'), colors = q('.ie-colors'), teal = q('.ie-teal'), banner = q('.ie-banner');
+  var ig = q('.ie-ig'), linkPop = q('.ie-linkpop'), handle = q('.ie-handle'), enterKey = q('.ie-enter');
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var visible = false;
+  var sleep = function(ms) { return new Promise(function(r) { setTimeout(r, ms); }); };
+
+  function at(el, fx, fy) {
+    var s = stage.getBoundingClientRect(), r = el.getBoundingClientRect();
+    return [r.left - s.left + r.width * (fx == null ? .5 : fx), r.top - s.top + r.height * (fy == null ? .5 : fy)];
+  }
+  function moveTo(el, fx, fy, ms) {
+    ms = ms || 750;
+    var p = at(el, fx, fy);
+    cursor.style.transition = 'transform ' + ms + 'ms cubic-bezier(.45,.05,.25,1)';
+    cursor.style.transform = 'translate(' + (p[0] - 3) + 'px,' + (p[1] - 2) + 'px)';
+    return sleep(ms + 60);
+  }
+  function click() { cursor.classList.remove('down'); void cursor.offsetWidth; cursor.classList.add('down'); return sleep(220); }
+  async function type(el, text) {
+    for (var i = 0; i < text.length; i++) { el.textContent += text[i]; await sleep(55 + Math.random() * 45); }
+  }
+  // Step captions appear in the amber "Editing" bar
+  var mode = q('.ie-mode'), modeDefault = mode.textContent;
+  function say(t) { mode.textContent = t ? '\u270e ' + t : modeDefault; mode.classList.toggle('step', !!t); }
+  async function saved() { toast.classList.add('show'); await sleep(1300); toast.classList.remove('show'); }
+
+  function reset() {
+    name.textContent = 'UP Games'; tag.textContent = 'Common Spaces. Uncommon Games.'; copyName.textContent = 'UP Games';
+    banner.style.setProperty('--ie-banner', '#1a1c30');
+    [name, tag].forEach(function(e) { e.className = e.className.replace(/\s*(hover|editing|selected)/g, ''); });
+    ig.classList.remove('on', 'hover'); paint.classList.remove('hover'); teal.classList.remove('pick');
+    colors.classList.remove('show'); linkPop.classList.remove('show'); enterKey.classList.remove('show');
+    handle.textContent = ''; say('');
+  }
+
+  async function editText(el, label, text) {
+    say(label);
+    await moveTo(el, .35, .55);
+    el.classList.add('hover'); await sleep(450);
+    await click();
+    el.classList.remove('hover'); el.classList.add('editing', 'selected'); await sleep(500);
+    el.classList.remove('selected'); el.textContent = '';
+    await type(el, text);
+    if (el === name) copyName.textContent = text;
+    await sleep(450);
+    say('Click away — saved');
+    await moveTo(q('.ie-hero'), .7, .6, 600); await click();
+    el.classList.remove('editing');
+    await saved();
+  }
+
+  async function play() {
+    reset();
+    await sleep(900);
+    await editText(name, 'Click the name and type', 'Meeple Forge');
+    await editText(tag, 'Same for the tagline', 'Big games for small tables');
+    // Banner color
+    say('Pick a banner color');
+    await moveTo(paint); paint.classList.add('hover'); await sleep(300); await click();
+    colors.classList.add('show'); await sleep(600);
+    await moveTo(teal, .5, .5, 500); teal.classList.add('pick'); await click();
+    banner.style.setProperty('--ie-banner', '#13756f'); paint.classList.remove('hover');
+    await sleep(500); colors.classList.remove('show');
+    await saved();
+    // Social link
+    say('Add a social link');
+    await moveTo(ig); ig.classList.add('hover'); await sleep(350); await click();
+    linkPop.classList.add('show'); await sleep(450);
+    await type(handle, 'meepleforge');
+    enterKey.classList.add('show'); await sleep(500);
+    linkPop.classList.remove('show'); ig.classList.remove('hover'); ig.classList.add('on');
+    await saved();
+    say('That’s it — no settings screens');
+    await moveTo(q('.ie-games'), .5, .55, 900);
+    await sleep(2600);
+  }
+
+  async function loop() {
+    for (;;) {
+      if (!visible) { await sleep(400); continue; }
+      await play();
+    }
+  }
+
+  if (reduce) {
+    // Show the finished result without motion
+    name.textContent = copyName.textContent = 'Meeple Forge';
+    tag.textContent = 'Big games for small tables';
+    banner.style.setProperty('--ie-banner', '#13756f');
+    ig.classList.add('on');
+    return;
+  }
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function(es) { visible = es[0].isIntersecting; }, { threshold: .35 }).observe(stage);
+  } else { visible = true; }
+  loop();
+})();
+</script>
 </body>
 </html>

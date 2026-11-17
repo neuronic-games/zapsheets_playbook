@@ -1722,7 +1722,8 @@ body.session-dialog-open .session-body img { display:none !important; }
   <div class="sync-dialog" style="width:min(420px,94vw);text-align:center" onclick="event.stopPropagation()">
     <h2 style="font-size:1.1rem;margin-bottom:.3rem">⭐ Upgrade DevBoard to Pro</h2>
     <p style="font-family:'DINRegular',sans-serif;font-size:.85rem;color:#555;line-height:1.6;margin:.4rem 0 1.1rem">
-      DevBoard is free forever. Pro unlocks premium features as we build them —
+      <strong style="font-size:1.05rem">DevBoard Pro — $3.99/month</strong><br>
+      Pro unlocks premium features as we build them —
       advanced analytics, custom branding, priority support, and more.<br><br>
       <strong>Support development and get early access to everything new.</strong>
     </p>

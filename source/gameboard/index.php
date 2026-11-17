@@ -684,7 +684,8 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
     <div style="font-size:1.6rem;margin-bottom:.4rem">⭐</div>
     <div class="gb-dialog-title" style="margin-bottom:.4rem">Upgrade GameBoard to Pro</div>
     <p style="font-size:.84rem;color:var(--ink-lt,#555);line-height:1.65;margin-bottom:1rem">
-      GameBoard is free forever. Pro unlocks premium features as we build them —
+      <strong style="font-size:1.05rem">GameBoard Pro — $4.99/month</strong><br>
+      Pro unlocks premium features as we build them —
       advanced analytics, custom branding, priority support, and more.<br><br>
       <strong>Support development and get early access to everything new.</strong>
     </p>

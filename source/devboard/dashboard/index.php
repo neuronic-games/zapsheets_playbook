@@ -885,6 +885,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 /* TODO toggle (light bulb): top-right of the Thoughts cell; stored as a "TODO" note in the sheet */
 .obs-todo-btn { position:absolute; top:.3rem; right:.3rem; width:1.55rem; height:1.55rem; background:rgba(255,255,255,.88); border:1px solid #d0d8e4; border-radius:5px; cursor:pointer; color:#a0a8b4; display:flex; align-items:center; justify-content:center; z-index:2; padding:0; transition:color .15s,background .15s,border-color .15s; }
 .obs-todo-btn:hover { color:#6b7280; border-color:#a0b8c8; background:#fff; }
+.obs-pair:not(.obs-has-text):not(.obs-todo) .obs-todo-btn { display:none; }
 .obs-pair.obs-todo .obs-todo-btn { color:#b8860b; background:#fff8db; border-color:#f5c518; }
 .obs-pair.obs-todo .obs-todo-btn .bulb-glass { fill:#ffd43b; }
 .obs-pair.obs-todo .obs-pair-inputs,
@@ -5196,6 +5197,7 @@ function openEditSessionDialog(gameName, idx) {
     toggleObsImgBtn(oidx);
     _ceSet(document.getElementById('sSol-' + oidx), pair.sol || '');
     if (pair.todo) toggleObsTodo(oidx, true, pair.todoId);
+    _syncTodoBtn(oidx);
   });
   addObsPair();  // trailing empty pair
 
@@ -5634,6 +5636,7 @@ function _showObsImage(idx, url) {
       '<img src="' + esc(url) + '" alt="observation image">';
   }
   // Treat image as data — promote pair and add trailing empty row if it was last
+  _syncTodoBtn(idx);
   if (pair) {
     var pairs = document.querySelectorAll('#obsContainer .obs-pair');
     var last  = pairs[pairs.length - 1];
@@ -5672,6 +5675,7 @@ function _removeObsImage(idx) {
     var sol = _ceGet(document.getElementById('sSol-' + idx));
     if (!sol.trim()) pair.classList.add('obs-pair-empty');
   }
+  _syncTodoBtn(idx);
 }
 
 // Pasting an image into an Observation uploads it, the same as the image button.
@@ -5746,7 +5750,7 @@ function addObsPair() {
               ' data-ph="What happened…" data-empty="1"' +
               ' onfocus="this.dataset.empty=\'\'"' +
               ' onblur="_ceNorm(this)"' +
-              ' oninput="_autoBullet(this);_ceNorm(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ');toggleObsImgBtn(' + idx + ')"' +
+              ' oninput="_autoBullet(this);_ceNorm(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ');toggleObsImgBtn(' + idx + ');_syncTodoBtn(' + idx + ')"' +
               ' onkeydown="onObsKeydown(event,' + idx + ',0)"' +
               ' onpaste="onObsPaste(event,' + idx + ')"></div>' +
             '<div class="obs-img-preview" id="sImgPreview-' + idx + '" style="display:none">' +
@@ -5773,7 +5777,7 @@ function addObsPair() {
             ' data-ph="Thoughts or solutions…" data-empty="1"' +
             ' onfocus="this.dataset.empty=\'\'"' +
             ' onblur="_ceNorm(this)"' +
-            ' oninput="_autoBullet(this);_ceNorm(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ')"' +
+            ' oninput="_autoBullet(this);_ceNorm(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ');_syncTodoBtn(' + idx + ')"' +
             ' onkeydown="onObsKeydown(event,' + idx + ',1)"></div>' +
           '<button type="button" class="obs-todo-btn" title="Mark as TODO" aria-pressed="false" onclick="toggleObsTodo(' + idx + ')">' +
             '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none"><path class="bulb-glass" d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14Z"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>' +
@@ -5797,6 +5801,15 @@ function addObsPair() {
 
 
 // Light-bulb toggle: marks an observation row as TODO (yellow border, "TODO" note in the sheet)
+// The light bulb only shows on rows with something in them (text or an image), or that are already TODOs
+function _syncTodoBtn(idx) {
+  var pair = document.querySelector('#obsContainer .obs-pair[data-idx="' + idx + '"]');
+  if (!pair) return;
+  var o = document.getElementById('sObs-' + idx), so = document.getElementById('sSol-' + idx);
+  var has = !!((o && _ceGet(o).trim()) || (so && _ceGet(so).trim()) || _obsImages[idx]);
+  pair.classList.toggle('obs-has-text', has);
+}
+
 function _newTodoId() {
   var c = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', id = '';
   for (var i = 0; i < 8; i++) id += c.charAt(Math.floor(Math.random() * c.length));

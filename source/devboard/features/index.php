@@ -501,8 +501,8 @@ footer a:hover { color:rgba(255,255,255,.7); }
     <p class="section-sub">No new database to trust. Every session, observation and contract is a row in a spreadsheet you own — search it, export it, share it, back it up.</p>
     <div class="own-grid">
       <div class="own-card">
-        <div class="num">Free</div>
-        <p>DevBoard is free to use. An optional Pro subscription supports development and unlocks new features as they arrive.</p>
+        <div class="num">$3.99</div>
+        <p>Per month. One subscription covers your playtest journal, contracts, estimates and invoices — no separate notes or invoicing app to pay for.</p>
       </div>
       <div class="own-card">
         <div class="num">100%</div>
@@ -541,6 +541,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <tr><td>Paid / unpaid tracking</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>Data in your own Google Sheet</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Works with <a href="https://zapsheets.com/app/pitchboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">PitchBoard</a> &amp; <a href="https://zapsheets.com/app/gameboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">GameBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">$3.99 / mo</td><td><span style="font-size:12px;color:var(--text-muted)">varies</span></td><td><span style="font-size:12px;color:var(--text-muted)">varies</span></td></tr>
         </tbody>
       </table>
     </div>

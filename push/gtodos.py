@@ -36,6 +36,51 @@ try:
 except Exception as e:
     out({'error': f'Could not open spreadsheet: {e}'})
 
+# Column widths (px), same look as the [Game] dev tabs
+WIDTHS = {'ID': 95, 'Game': 150, 'Session': 180, 'Observation': 260, 'Thoughts': 380,
+          'Priority': 85, 'Due': 100, 'Assigned': 150, 'Status': 80, 'Created': 100}
+
+def format_sheet(ws, headers):
+    """Heading row, widths, wrapping and highlight rules like gcreatedevtab.py."""
+    n = len(headers)
+    last = rowcol_to_a1(1, n)
+    ws.freeze(rows=1)
+    ws.format('A1:' + last, {
+        'backgroundColor': {'red': 0.102, 'green': 0.373, 'blue': 0.478},
+        'textFormat': {'bold': True, 'foregroundColor': {'red': 1.0, 'green': 1.0, 'blue': 1.0}},
+    })
+    reqs = []
+    for i, h in enumerate(headers):
+        if h in WIDTHS:
+            reqs.append({'updateDimensionProperties': {
+                'range': {'sheetId': ws.id, 'dimension': 'COLUMNS', 'startIndex': i, 'endIndex': i + 1},
+                'properties': {'pixelSize': WIDTHS[h]}, 'fields': 'pixelSize'}})
+    rows_range = {'sheetId': ws.id, 'startRowIndex': 1, 'endRowIndex': 1000, 'startColumnIndex': 0, 'endColumnIndex': n}
+    # Wrap the text columns; everything aligned to the top so long notes read well
+    reqs.append({'repeatCell': {'range': rows_range,
+                 'cell': {'userEnteredFormat': {'verticalAlignment': 'TOP'}}, 'fields': 'userEnteredFormat.verticalAlignment'}})
+    for h in ('Observation', 'Thoughts'):
+        if h in headers:
+            i = headers.index(h)
+            reqs.append({'repeatCell': {'range': dict(rows_range, startColumnIndex=i, endColumnIndex=i + 1),
+                         'cell': {'userEnteredFormat': {'wrapStrategy': 'WRAP'}}, 'fields': 'userEnteredFormat.wrapStrategy'}})
+    def col_letter(h):
+        return rowcol_to_a1(1, headers.index(h) + 1).rstrip('1')
+    rules = []
+    if 'Status' in headers:   # Done → gray, struck through
+        rules.append((rows_range, '=$' + col_letter('Status') + '2="Done"',
+                      {'textFormat': {'strikethrough': True, 'foregroundColor': {'red': .6, 'green': .6, 'blue': .6}}}))
+    if 'Priority' in headers:
+        i = headers.index('Priority'); pr = dict(rows_range, startColumnIndex=i, endColumnIndex=i + 1)
+        L = col_letter('Priority')
+        rules += [(pr, '=$' + L + '2="High"',   {'backgroundColor': {'red': .99, 'green': .91, 'blue': .91}, 'textFormat': {'foregroundColor': {'red': .71, 'green': .14, 'blue': .09}}}),
+                  (pr, '=$' + L + '2="Medium"', {'backgroundColor': {'red': 1.0, 'green': .96, 'blue': .84}, 'textFormat': {'foregroundColor': {'red': .64, 'green': .37, 'blue': .07}}}),
+                  (pr, '=$' + L + '2="Low"',    {'backgroundColor': {'red': .91, 'green': .96, 'blue': .93}, 'textFormat': {'foregroundColor': {'red': .18, 'green': .49, 'blue': .20}}})]
+    for k, (rng, formula, fmt) in enumerate(rules):
+        reqs.append({'addConditionalFormatRule': {'index': k, 'rule': {'ranges': [rng], 'booleanRule': {
+            'condition': {'type': 'CUSTOM_FORMULA', 'values': [{'userEnteredValue': formula}]}, 'format': fmt}}}})
+    ws.spreadsheet.batch_update({'requests': reqs})
+
 ws = next((w for w in wb.worksheets() if w.title.lower() == TAB), None)
 if ws is None:
     if data.get('action') != 'add':
@@ -43,16 +88,19 @@ if ws is None:
     ws = wb.add_worksheet(title=TAB, rows=200, cols=len(HEADERS))
     ws.update(range_name='A1', values=[HEADERS], value_input_option='RAW')
     try:
-        ws.freeze(rows=1)
-        ws.format('A1:J1', {'textFormat': {'bold': True}})
+        format_sheet(ws, HEADERS)
     except Exception:
-        pass
+        pass   # formatting is cosmetic
 
 values  = ws.get_all_values() or [HEADERS]
 # Repair: if the heading row is missing (e.g. overwritten by data), put it back on top
 if 'ID' not in [h.strip() for h in values[0]]:
     ws.insert_row(HEADERS, 1, value_input_option='RAW')
     values = [HEADERS] + values
+    try:
+        format_sheet(ws, HEADERS)
+    except Exception:
+        pass
 headers = [h.strip() for h in values[0]]
 # Add any missing columns at the end
 missing = [h for h in HEADERS if h not in headers]

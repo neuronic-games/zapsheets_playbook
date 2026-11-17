@@ -110,7 +110,8 @@ def get_records_with_links(service_account_client, sheet_id, sheet_name):
     from google.auth.transport.requests import Request as GoogleAuthRequest
     import requests as requests_lib
 
-    auth = service_account_client.auth
+    # gspread 5: client.auth — gspread 6: client.http_client.auth
+    auth = getattr(service_account_client, 'auth', None) or service_account_client.http_client.auth
     if not auth.valid:
         auth.refresh(GoogleAuthRequest())
 

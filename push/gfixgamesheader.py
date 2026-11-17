@@ -46,7 +46,8 @@ try:
     # Read A1 first so we can report what it currently contains
     current = ws.acell('A1').value
     # Write "Name" to A1 as a plain string (RAW so it is never interpreted as a formula)
-    ws.update('A1', [['Name']], value_input_option='RAW')
+    # Plain Sheets API call: works the same with gspread 5 and 6 (ws.update's argument order differs)
+    ws.spreadsheet.values_update("'" + ws.title.replace("'", "''") + "'!A1", params={'valueInputOption': 'RAW'}, body={'values': [['Name']]})
     print(json.dumps({"ok": True, "was": current, "now": "Name"}))
 except Exception as e:
     print(json.dumps({"error": "Could not update A1: " + str(e)}))

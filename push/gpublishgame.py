@@ -74,7 +74,8 @@ def _get_all_values_formula(ws, sheet_id, sa):
     try:
         from google.auth.transport.requests import Request as GRequest
         import requests as _req
-        auth = sa.auth
+        # gspread 5: client.auth — gspread 6: client.http_client.auth
+        auth = getattr(sa, 'auth', None) or sa.http_client.auth
         if not auth.valid:
             auth.refresh(GRequest())
         api_url = (

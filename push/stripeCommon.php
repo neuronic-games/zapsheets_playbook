@@ -34,9 +34,28 @@ function stripePlanFromSub(array $sub, string $app = ''): string {
  * Subscription info for a sheet: [status, plan ('core'|'pro'|''), is_pro, is_core, period_end, app].
  * Sheets listed in STRIPE_PRO_SHEET_IDS (comma separated) always get Pro — for your own or comped sheets.
  */
-function stripeSheetPlan(string $sheetId): array {
-    $file   = dirname(__DIR__) . '/sheets/' . $sheetId . '/subscription.json';
-    $data   = (stripeValidSheetId($sheetId) && file_exists($file)) ? (json_decode(file_get_contents($file), true) ?: []) : [];
+/**
+ * Each app's subscription is kept in sheets/{id}/subscription-{app}.json, so DevBoard,
+ * PitchBoard and GameBoard on the same sheet don't overwrite each other.
+ * subscription.json is the older single file; it still counts for the app it names.
+ */
+function stripeSubFile(string $sheetId, string $app = ''): string {
+    $dir = dirname(__DIR__) . '/sheets/' . $sheetId;
+    return $dir . (in_array($app, STRIPE_APPS, true) ? '/subscription-' . $app . '.json' : '/subscription.json');
+}
+
+function stripeReadSub(string $sheetId, string $app = ''): array {
+    if (!stripeValidSheetId($sheetId)) return [];
+    $file = stripeSubFile($sheetId, $app);
+    if (file_exists($file)) return json_decode(file_get_contents($file), true) ?: [];
+    $legacy = stripeSubFile($sheetId);
+    $data   = file_exists($legacy) ? (json_decode(file_get_contents($legacy), true) ?: []) : [];
+    if ($app && !empty($data['app']) && $data['app'] !== $app) return [];   // that one belongs to another app
+    return $data;
+}
+
+function stripeSheetPlan(string $sheetId, string $app = ''): array {
+    $data   = stripeReadSub($sheetId, $app);
     $status = $data['status'] ?? 'none';
     $live   = in_array($status, STRIPE_LIVE_STATUSES, true);
     $plan   = $live ? (($data['plan'] ?? 'pro') === 'core' ? 'core' : 'pro') : '';
@@ -54,7 +73,7 @@ function stripeSheetPlan(string $sheetId): array {
 
 /** Stop a DevBoard Pro-only endpoint (contracts, estimates, invoices) for sheets without Pro. */
 function devboardRequirePro(string $sheetId): void {
-    if (stripeSheetPlan($sheetId)['is_pro']) return;
+    if (stripeSheetPlan($sheetId, 'devboard')['is_pro']) return;
     echo json_encode(['error' => 'Contracts, estimates and invoices are part of DevBoard Pro. Upgrade to Pro to use them.', 'need_pro' => true]);
     exit;
 }

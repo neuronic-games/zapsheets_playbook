@@ -490,6 +490,12 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
 .gb-agc-tagline.visible ~ .gb-agc-tagline-ph { display:none; }
 .cat-draft-badge { position:absolute; top:.45rem; left:.45rem; background:rgba(200,120,0,.88); color:#fff; font-family:'DINBlack',sans-serif; font-size:.6rem; text-transform:uppercase; letter-spacing:.06em; padding:.18rem .45rem; border-radius:4px; pointer-events:none; z-index:2; }
 .cat-draft-wrap .cat-card { pointer-events:none; opacity:.85; }
+.gb-plan-title { display:flex; align-items:center; justify-content:center; gap:.5rem; margin-bottom:.45rem; }
+.gb-plan-title img { width:28px; height:28px; border-radius:7px; }
+.gb-plan-current { width:fit-content; margin:0 auto .7rem; font-size:.8rem; color:#555; background:#f1f4f8; border-radius:999px; padding:.22rem .8rem; }
+.gb-plan-current:empty { display:none; }
+.gb-plan-current b { color:#333; } .gb-plan-current span { color:#888; }
+.gb-plan-current.paid { background:#edf7ed; } .gb-plan-current.paid b { color:#2e7d32; }
 </style>
 </head>
 <body>
@@ -681,8 +687,8 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
 <div class="gb-overlay" id="gbUpgradeOverlay" onclick="if(event.target===this)closeGbUpgradeDialog()">
   <div class="gb-dialog" onclick="event.stopPropagation()" style="max-width:420px;text-align:center">
     <button class="gb-dialog-close" onclick="closeGbUpgradeDialog()">×</button>
-    <div style="font-size:1.6rem;margin-bottom:.4rem">⭐</div>
-    <div class="gb-dialog-title" style="margin-bottom:.4rem">Upgrade GameBoard to Pro</div>
+    <div class="gb-dialog-title gb-plan-title"><img src="<?= h($_appRoot) ?>images/gb_icon_180.png" alt="">GameBoard plans</div>
+    <div class="gb-plan-current" id="gbUpgradeCurrent"></div>
     <p style="font-size:.84rem;color:var(--ink-lt,#555);line-height:1.65;margin-bottom:1rem">
       <strong style="font-size:1.05rem">GameBoard Pro — $4.99/month</strong><br>
       Pro unlocks premium features as we build them —
@@ -2432,7 +2438,7 @@ function _gbReturnUrl(flag) {
 }
 
 function _gbLoadSubStatus(cb) {
-  var fd = new FormData(); fd.append('id', SHEET_ID);
+  var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('app', 'gameboard');
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_ROOT + 'push/getSubscription.php');
   xhr.onload = function() {
@@ -2468,12 +2474,17 @@ function _renderGbUpgradeStatus() {
   var btn      = document.getElementById('gbUpgradeSubBtn');
   var s = _gbSubStatus || {};
   btn.disabled = false;
+  var cur = document.getElementById('gbUpgradeCurrent');
+  if (s.ok === false)        cur.innerHTML = 'Current plan: <b>—</b> <span>(couldn’t check right now)</span>';
+  else if (!_gbSubStatus)    cur.textContent = '';
+  else cur.innerHTML = 'Current plan: <b>' + (s.is_pro ? 'Pro' : 'Free') + '</b>' +
+         (s.is_pro && s.period_end ? ' <span>· renews ' + s.period_end.split('-').slice(1).concat(s.period_end.split('-')[0]).join('/') + '</span>' : '');
+  cur.className = 'gb-plan-current' + (s.is_pro ? ' paid' : '');
   if (s.status === 'past_due') {
     statusEl.innerHTML = '<span style="color:#f5a623;font-weight:700">⚠ Payment past due</span>';
     btn.textContent = 'Update Payment'; btn.onclick = _gbOpenBillingPortal;
   } else if (s.is_pro) {
-    statusEl.innerHTML = '<span style="color:#4caf50;font-weight:700">✓ Pro active</span>'
-      + (s.period_end ? ' · renews ' + s.period_end : '');
+    statusEl.textContent = '';
     btn.textContent = 'Manage Billing'; btn.onclick = _gbOpenBillingPortal;
   } else {
     statusEl.textContent = (s.ok === false) ? 'Could not check your subscription right now.' : '';

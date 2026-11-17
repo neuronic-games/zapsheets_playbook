@@ -6923,7 +6923,7 @@ function _dbReturnUrl(flag) {
 }
 
 function _dbLoadSubStatus(cb) {
-  var fd = new FormData(); fd.append('id', SHEET_ID);
+  var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('app', 'devboard');
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_BASE + 'push/getSubscription.php');
   xhr.onload = function() {

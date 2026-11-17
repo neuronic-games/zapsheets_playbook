@@ -12,7 +12,7 @@
  *   customer.subscription.deleted
  *   invoice.payment_failed
  *
- * Writes/updates:  sheets/{sheet_id}/subscription.json
+ * Writes/updates:  sheets/{sheet_id}/subscription-{app}.json  (one per app)
  * Format: {
  *   "email":                  "user@example.com",
  *   "status":                 "active" | "trialing" | "past_due" | "canceled" | "unpaid",
@@ -68,11 +68,11 @@ $event = json_decode($payload, true);
 if (!is_array($event)) stripeFail('Invalid payload', 400);
 
 // ── Helper: write subscription.json ──────────────────────────────────────
-function writeSubscription(string $sheetId, array $data): void {
+function writeSubscription(string $sheetId, array $data, string $app = ''): void {
     if (!stripeValidSheetId($sheetId)) return;
     $dir = dirname(__DIR__) . '/sheets/' . $sheetId;
     if (!is_dir($dir)) return;
-    $file     = $dir . '/subscription.json';
+    $file     = stripeSubFile($sheetId, $app);   // one file per app
     $existing = file_exists($file) ? (json_decode(file_get_contents($file), true) ?: []) : [];
     $merged   = array_merge($existing, $data, ['updated_at' => gmdate('Y-m-d')]);
     file_put_contents($file, json_encode($merged, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
@@ -105,7 +105,7 @@ switch ($type) {
             'stripe_subscription_id' => $subId,
             'period_end'             => $sub ? stripePeriodEnd($sub) : '',
             'plan'                   => $sub ? stripePlanFromSub($sub, $app) : ($object['metadata']['plan'] ?? 'pro'),
-        ]);
+        ], $app);
         break;
 
     case 'customer.subscription.updated':
@@ -115,7 +115,7 @@ switch ($type) {
             'status'     => $object['status'] ?? 'unknown',
             'period_end' => stripePeriodEnd($object),
             'plan'       => stripePlanFromSub($object),
-        ]);
+        ], $object['metadata']['app'] ?? '');
         break;
 
     case 'customer.subscription.deleted':
@@ -124,7 +124,7 @@ switch ($type) {
         writeSubscription($sheetId, [
             'status'     => 'canceled',
             'period_end' => '',
-        ]);
+        ], $object['metadata']['app'] ?? '');
         break;
 
     case 'invoice.payment_failed':
@@ -134,12 +134,14 @@ switch ($type) {
         $subId   = $details['subscription'] ?? ($object['subscription'] ?? '');
         if (is_array($subId)) $subId = $subId['id'] ?? '';
         $sheetId = $details['metadata']['sheet_id'] ?? '';
-        if (!$sheetId && $subId) {
+        $app     = $details['metadata']['app'] ?? '';
+        if ((!$sheetId || !$app) && $subId) {
             $sub     = stripeRequest('GET', 'subscriptions/' . $subId);
-            $sheetId = $sub['metadata']['sheet_id'] ?? '';
+            $sheetId = $sheetId ?: ($sub['metadata']['sheet_id'] ?? '');
+            $app     = $app ?: ($sub['metadata']['app'] ?? '');
         }
         if (!$sheetId) break;
-        writeSubscription($sheetId, ['status' => 'past_due']);
+        writeSubscription($sheetId, ['status' => 'past_due'], $app);
         break;
 }
 

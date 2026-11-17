@@ -1677,7 +1677,23 @@ if ($_sheet_id && is_dir($_sheets_root)) {
     #viewerFrame {
       flex:1; border:none; width:100%; display:block;
     }
-  </style>
+      .pb-plan-dlg { background:#fff; border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.25); padding:1.5rem 1.6rem 1.3rem; width:min(420px,94vw); text-align:center; }
+    .pb-plan-title { display:flex; align-items:center; justify-content:center; gap:.5rem; font-family:'DINBlack',sans-serif; font-size:1.1rem; color:#1a2744; margin-bottom:.45rem; }
+    .pb-plan-title img { width:28px; height:28px; border-radius:7px; }
+    .pb-plan-current { width:fit-content; margin:0 auto .8rem; font-family:'DINRegular',sans-serif; font-size:.8rem; color:#555; background:#f1f4f8; border-radius:999px; padding:.22rem .8rem; }
+    .pb-plan-current:empty { display:none; }
+    .pb-plan-current b { font-family:'DINBlack',sans-serif; color:#333; } .pb-plan-current span { color:#888; }
+    .pb-plan-current.paid { background:#edf7ed; } .pb-plan-current.paid b { color:#2e7d32; }
+    .pb-plan-text { font-family:'DINRegular',sans-serif; font-size:.85rem; color:#555; line-height:1.65; margin:0 0 .9rem; }
+    .pb-plan-text strong:first-child { font-size:1.02rem; color:#222; }
+    .pb-plan-status { font-size:.8rem; color:#888; margin-bottom:.7rem; }
+    .pb-plan-status:empty { display:none; }
+    .pb-plan-btns { display:flex; gap:.6rem; justify-content:center; }
+    .pb-plan-later, .pb-plan-go { font-family:'DINBlack',sans-serif; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; border-radius:6px; padding:.5rem 1.1rem; cursor:pointer; }
+    .pb-plan-later { background:#fff; color:#888; border:1.5px solid #d0d8e0; }
+    .pb-plan-go { background:#f5a623; color:#fff; border:none; }
+    .pb-plan-go:disabled { opacity:.6; cursor:default; }
+</style>
 </head>
 <body>
 
@@ -1714,6 +1730,7 @@ if ($_sheet_id && is_dir($_sheets_root)) {
         <button class="account-menu-item" onclick="accountMenuHelp()">Help</button>
         <hr class="account-menu-divider" />
         <button class="account-menu-item" id="pbDonateBtn" onclick="closeAccountMenu();pbStartDonation()" style="color:#e2557a">Donate</button>
+        <button class="account-menu-item" id="pbUpgradeBtn" onclick="closeAccountMenu();openPbUpgradeDialog()" style="color:#f5a623">Subscribe</button>
         <hr class="account-menu-divider" />
         <button class="account-menu-item" id="accountMenuAuthBtn" onclick="closeAccountMenu();_menuAuthAction()">Sign In</button>
       </div>
@@ -1838,6 +1855,24 @@ if ($_sheet_id && is_dir($_sheets_root)) {
 </div>
 
 <!-- Collab sign-in overlay -->
+<!-- PitchBoard plans -->
+<div class="overlay" id="pbUpgradeOverlay" onclick="if(event.target===this)closePbUpgradeDialog()">
+  <div class="pb-plan-dlg" onclick="event.stopPropagation()">
+    <div class="pb-plan-title"><img src="images/pitchboard_icon_180.png" alt="">PitchBoard plans</div>
+    <div class="pb-plan-current" id="pbUpgradeCurrent"></div>
+    <p class="pb-plan-text">
+      <strong>PitchBoard Pro — $1.99/month</strong><br>
+      Pro unlocks premium features as we build them — and keeps PitchBoard going.<br><br>
+      <strong>Support development and get early access to everything new.</strong>
+    </p>
+    <div class="pb-plan-status" id="pbUpgradeSubStatus"></div>
+    <div class="pb-plan-btns">
+      <button class="pb-plan-later" onclick="closePbUpgradeDialog()">Maybe Later</button>
+      <button class="pb-plan-go" id="pbUpgradeSubBtn" onclick="startPbUpgradeCheckout()">Subscribe</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="collabAuthOverlay" onclick="if(event.target===this)forceCloseCollabAuthDialog()">
   <div class="auth-dialog" onclick="event.stopPropagation()"
        onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();_collabAuthCmdEnter();}">
@@ -8860,6 +8895,89 @@ function pbStartDonation() {
     })
     .catch(function() { _pbToast('Network error. Please try again.', true); });
 }
+
+// ── PitchBoard Pro subscription ─────────────────────────────────────────────
+var _pbSubStatus = null;
+function _pbLoadSubStatus(cb) {
+  var fd = new FormData(); fd.append('id', sheet_Id); fd.append('app', 'pitchboard');
+  fetch(APP_BASE + 'push/getSubscription.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(r) { _pbSubStatus = (r && r.ok) ? r : { ok: false }; })
+    .catch(function() { _pbSubStatus = { ok: false }; })
+    .then(function() { _pbUpdateSubMenu(); if (cb) cb(_pbSubStatus); });
+}
+function _pbUpdateSubMenu() {
+  var item = document.getElementById('pbUpgradeBtn'); if (!item) return;
+  var pro = !!(_pbSubStatus && _pbSubStatus.is_pro);
+  item.textContent = pro ? 'Pro Active' : 'Subscribe';
+  item.style.color = pro ? '#4caf50' : '#f5a623';
+}
+function openPbUpgradeDialog() {
+  document.getElementById('pbUpgradeOverlay').classList.add('open');
+  if (_pbSubStatus === null) {
+    document.getElementById('pbUpgradeSubStatus').textContent = 'Checking subscription…';
+    _pbLoadSubStatus(_renderPbUpgradeStatus);
+  } else _renderPbUpgradeStatus();
+}
+function closePbUpgradeDialog() { document.getElementById('pbUpgradeOverlay').classList.remove('open'); }
+function _renderPbUpgradeStatus() {
+  var statusEl = document.getElementById('pbUpgradeSubStatus'), btn = document.getElementById('pbUpgradeSubBtn');
+  var cur = document.getElementById('pbUpgradeCurrent'), s = _pbSubStatus || {};
+  if (s.ok === false)     cur.innerHTML = 'Current plan: <b>—</b> <span>(couldn’t check right now)</span>';
+  else if (!_pbSubStatus) cur.textContent = '';
+  else cur.innerHTML = 'Current plan: <b>' + (s.is_pro ? 'Pro' : 'Free') + '</b>' +
+         (s.is_pro && s.period_end ? ' <span>· renews ' + s.period_end.split('-').slice(1).concat(s.period_end.split('-')[0]).join('/') + '</span>' : '');
+  cur.className = 'pb-plan-current' + (s.is_pro ? ' paid' : '');
+  btn.disabled = false; statusEl.textContent = '';
+  if (s.status === 'past_due') {
+    statusEl.innerHTML = '<span style="color:#f5a623;font-weight:700">⚠ Payment past due</span>';
+    btn.textContent = 'Update Payment'; btn.onclick = _pbOpenBillingPortal;
+  } else if (s.is_pro) {
+    btn.textContent = 'Manage Billing'; btn.onclick = _pbOpenBillingPortal;
+  } else {
+    if (s.ok === false) statusEl.textContent = 'Could not check your subscription right now.';
+    btn.textContent = 'Subscribe'; btn.onclick = startPbUpgradeCheckout;
+  }
+}
+function _pbOpenBillingPortal() {
+  var url = _pbSubStatus && _pbSubStatus.portal_url;
+  if (url) window.open(url, '_blank', 'noopener');
+  else alert('Online billing management is not available yet. Please contact support to change your subscription.');
+}
+function startPbUpgradeCheckout() {
+  var btn = document.getElementById('pbUpgradeSubBtn');
+  btn.textContent = 'Redirecting…'; btn.disabled = true;
+  var u = new URL(window.location.href);
+  u.searchParams.delete('sub');
+  var cancelUrl = u.toString();
+  u.searchParams.set('sub', 'success');
+  var fd = new FormData();
+  fd.append('type', 'subscription'); fd.append('id', sheet_Id); fd.append('app', 'pitchboard');
+  fd.append('success_url', u.toString()); fd.append('cancel_url', cancelUrl);
+  fetch(APP_BASE + 'push/stripeCheckout.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(r) {
+      if (!r || r.error || !r.url) throw new Error(r && r.error ? r.error : 'Could not start checkout. Please try again.');
+      window.location.href = r.url;
+    })
+    .catch(function(e) { btn.textContent = 'Subscribe'; btn.disabled = false; _pbToast(e.message || 'Network error. Please try again.', true); });
+}
+// On load: returning from a subscription checkout → wait for the webhook, then confirm
+(function() {
+  var u = new URL(window.location.href);
+  if (u.searchParams.get('sub') !== 'success') { _pbLoadSubStatus(); return; }
+  u.searchParams.delete('sub');
+  history.replaceState(null, '', u.pathname + u.search + u.hash);
+  _pbToast('Payment received — activating Pro…');
+  var tries = 0;
+  (function poll() {
+    _pbLoadSubStatus(function(s) {
+      if (s.is_pro) { _pbToast('⭐ PitchBoard Pro is now active. Thank you!'); return; }
+      if (++tries < 10) { setTimeout(poll, 3000); return; }
+      _pbToast('Payment received. Pro will activate shortly — refresh in a minute.');
+    });
+  })();
+})();
 
 // Returning from Stripe Checkout after a donation
 (function() {

@@ -370,6 +370,26 @@ footer a:hover { color:rgba(255,255,255,.7); }
 .ie-cursor.down { animation:ie-click .18s ease; }
 @keyframes ie-click { 50% { scale:.82; } }
 @media (prefers-reduced-motion: reduce) { .ie-cursor { display:none; } }
+/* Product page editing demo */
+.gp-hero { overflow:hidden; }
+.gp-bg { position:absolute; inset:0; background-size:cover; background-position:center top; opacity:0; transition:opacity .6s; }
+.gp-hero::before { z-index:1; }
+.gp-hero .gbp-hero-in { z-index:2; }
+.gp-hero .ie-replace { z-index:3; top:32%; }
+.gp-hero.hover .ie-replace { opacity:1; }
+.gp-hero.hover::after { content:''; position:absolute; inset:0; box-shadow:inset 0 0 0 2px #4caa4b; z-index:3; }
+#gpDemo em { font-style:normal; }
+#gpDemo .gbp-buy.ie-edit.hover { outline-color:#9be29a; }
+.gbp-ticker .ie-edit { display:inline-block; }
+.gbp-ticker .gbp-a { display:block; width:max-content; margin-left:auto; margin-right:auto; }
+.gp-linkpop { width:200px; padding:9px 10px 10px; font-family:'Inter',system-ui,sans-serif; }
+.gp-ll { font-size:8.5px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin:0 0 3px; }
+.gp-f { font-size:10.5px; color:#1e293b; border:1px solid #cbd5e1; border-radius:5px; padding:5px 7px; margin-bottom:7px; min-height:24px; white-space:nowrap; overflow:hidden; }
+.gp-f.editing { border-color:#4caa4b; box-shadow:0 0 0 2px rgba(76,170,75,.18); }
+.gp-f.editing::after { content:''; display:inline-block; width:1.5px; height:1em; background:#4caa4b; margin-left:1px; vertical-align:-.12em; animation:ie-blink 1s steps(1) infinite; }
+.gp-f.selected { background:rgba(76,170,75,.18); }
+.gp-save { display:inline-block; background:#4caa4b; color:#fff; font-size:10px; font-weight:600; border-radius:5px; padding:4px 11px; transition:background .15s; }
+.gp-save.hover { background:#3d8f3c; }
 </style>
 </head>
 <body>
@@ -575,19 +595,26 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
           <div class="browser-url">zapsheets.com/app/gameboard/…/floristry</div>
         </div>
-        <div class="gbx gbp">
+        <div class="gbx gbp ie-stage" id="gpDemo" aria-hidden="true">
           <div class="gbp-nav"><span class="gbp-back">‹ All Games</span><span class="gbp-sep">|</span><span class="gbp-game">Floristry</span><span class="gbp-navbtn">Rules</span></div>
-          <div class="gbp-hero" style="background-image:url('images/gameboard-features/hero-floristry.webp')">
+          <div class="ie-mode">✎ Editing — click anything to change it</div>
+          <div class="gbp-hero gp-hero" style="background-image:url('images/gameboard-features/hero-floristry.webp')">
+            <div class="gp-bg" style="background-image:url('images/gameboard-features/floristry-board.webp')"></div>
+            <div class="ie-replace">⟳ Replace image</div>
             <div class="gbp-hero-in">
               <div class="gbp-title">Floristry</div>
               <div class="gbp-sum">A quick, real time, Dutch auction game for two players.</div>
-              <div class="gbp-stats"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>2 players</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>20 min</span><span>Family, Casual</span></div>
+              <div class="gbp-stats"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>2 players</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><em class="ie-edit gp-time">20 min</em></span><em class="ie-edit gp-genre">Family, Casual</em></div>
               <div class="gbp-cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>David Gordon, TAM</div>
-              <div class="gbp-ctas"><span class="gbp-price">$20</span><span class="gbp-buy">Buy on Amazon</span><span class="gbp-buy">Buy at Barnes &amp; Noble</span></div>
+              <div class="gbp-ctas"><span class="gbp-price">$20</span><span class="gbp-buy">Buy on Amazon</span><span class="gbp-buy ie-edit gp-buy">Buy at Barnes &amp; Noble</span></div>
             </div>
           </div>
-          <div class="gbp-ticker"><div class="gbp-q">“This game is just delightful.”</div><div class="gbp-a">— Shut Up &amp; Sit Down</div></div>
+          <div class="gbp-ticker"><div class="gbp-q ie-edit gp-q">“This game is just delightful.”</div><div class="gbp-a ie-edit gp-a">— Shut Up &amp; Sit Down</div></div>
           <div class="gbp-main"><div class="gbp-label">About the Game</div><div class="gbp-desc">Players compete at the historic Aalsmeer Dutch Auction to win the best flowers and then use them to create the most charming window display.</div></div>
+          <div class="ie-pop gp-linkpop"><div class="gp-ll">Button text</div><div class="gp-f gp-ltext">Buy at Barnes &amp; Noble</div><div class="gp-ll">Link</div><div class="gp-f gp-lurl">barnesandnoble.com/w/floristry</div><div class="gp-save">Save</div></div>
+          <div class="ie-file"><img alt=""><span></span></div>
+          <div class="ie-toast">✓ Saved to your Sheet</div>
+          <svg class="ie-cursor" width="22" height="22" viewBox="0 0 24 24"><path d="M4 2l15 11-7 1.2L8.6 21 4 2z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/></svg>
         </div>
       </div>
     </div>
@@ -831,6 +858,110 @@ footer a:hover { color:rgba(255,255,255,.7); }
     imgB.style.opacity = 1; imgA.style.opacity = 0;
     addCard.classList.add('open', 'has-cover'); gName.textContent = 'Pressure'; gSum.textContent = 'Will you dive the deepest or crack under the pressure!';
     return;
+  }
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function(es) { visible = es[0].isIntersecting; }, { threshold: .35 }).observe(stage);
+  } else { visible = true; }
+  loop();
+})();
+
+// ── Product page animation: replace the hero, edit stats, a buy link and the review ──
+(function() {
+  var stage = document.getElementById('gpDemo');
+  if (!stage) return;
+  var q = function(s) { return stage.querySelector(s); };
+  var cursor = q('.ie-cursor'), toast = q('.ie-toast'), mode = q('.ie-mode'), modeDefault = mode.textContent;
+  var hero = q('.gp-hero'), bg = q('.gp-bg'), time = q('.gp-time'), genre = q('.gp-genre'), buy = q('.gp-buy');
+  var pop = q('.gp-linkpop'), lText = q('.gp-ltext'), lUrl = q('.gp-lurl'), save = q('.gp-save');
+  var quote = q('.gp-q'), author = q('.gp-a'), label = q('.gbp-label');
+  var file = q('.ie-file'), fileImg = file.querySelector('img'), fileName = file.querySelector('span');
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var visible = false;
+  var sleep = function(ms) { return new Promise(function(r) { setTimeout(r, ms); }); };
+  var ORIG = { time: '20 min', genre: 'Family, Casual', buy: 'Buy at Barnes & Noble', url: 'barnesandnoble.com/w/floristry', q: '“This game is just delightful.”', a: '— Shut Up & Sit Down' };
+  var NEW  = { time: '20–30 min', genre: 'Family, Casual, Auction', buy: 'Buy direct', url: 'upgames.com/shop/floristry', q: '“Quick to learn, and the bidding is so tense!”', a: '— Club K9 playtest group' };
+
+  function at(el, fx, fy) {
+    var s = stage.getBoundingClientRect(), r = el.getBoundingClientRect();
+    return [r.left - s.left + r.width * (fx == null ? .5 : fx), r.top - s.top + r.height * (fy == null ? .5 : fy)];
+  }
+  function moveTo(el, fx, fy, ms) {
+    ms = ms || 750; var p = at(el, fx, fy);
+    cursor.style.transition = 'transform ' + ms + 'ms cubic-bezier(.45,.05,.25,1)';
+    cursor.style.transform = 'translate(' + (p[0] - 3) + 'px,' + (p[1] - 2) + 'px)';
+    return sleep(ms + 60);
+  }
+  function click() { cursor.classList.remove('down'); void cursor.offsetWidth; cursor.classList.add('down'); return sleep(220); }
+  async function type(el, text) { for (var i = 0; i < text.length; i++) { el.textContent += text[i]; await sleep(55 + Math.random() * 40); } }
+  function say(t) { mode.textContent = t ? '✎ ' + t : modeDefault; mode.classList.toggle('step', !!t); }
+  async function saved() { toast.classList.add('show'); await sleep(1150); toast.classList.remove('show'); }
+  async function upload(target, src, name) {
+    var p = at(target, .5, .32);
+    fileImg.src = src; fileName.textContent = name;
+    file.style.transition = 'none';
+    file.style.left = Math.max(6, Math.min(stage.clientWidth - 190, p[0] + 30)) + 'px';
+    file.style.top = (p[1] + 34) + 'px';
+    void file.offsetWidth; file.style.transition = '';
+    file.classList.add('show'); await sleep(900);
+    file.style.left = Math.max(6, p[0] - 40) + 'px'; file.style.top = (p[1] - 14) + 'px';
+    await sleep(450); file.classList.remove('show'); await sleep(150);
+  }
+  function clean(el) { el.className = el.className.replace(/\s*(hover|editing|selected)/g, ''); }
+  // click a text, select it, retype it
+  async function retype(el, text, fx) {
+    await moveTo(el, fx == null ? .5 : fx, .55, 650); el.classList.add('hover'); await sleep(300); await click();
+    el.classList.remove('hover'); el.classList.add('editing', 'selected'); await sleep(400);
+    el.classList.remove('selected'); el.textContent = ''; await type(el, text); await sleep(250);
+  }
+  async function done(el) { await moveTo(label, .5, .5, 550); await click(); clean(el); await saved(); }
+
+  function reset() {
+    bg.style.opacity = 0; hero.classList.remove('hover'); file.classList.remove('show'); pop.classList.remove('show');
+    time.textContent = ORIG.time; genre.textContent = ORIG.genre; buy.textContent = ORIG.buy;
+    lText.textContent = ORIG.buy; lUrl.textContent = ORIG.url; quote.textContent = ORIG.q; author.textContent = ORIG.a;
+    [time, genre, buy, quote, author, lText, lUrl, save].forEach(clean); say('');
+  }
+
+  async function play() {
+    reset(); await sleep(900);
+    // 1. Hero image
+    say('Click the hero image to replace it');
+    await moveTo(hero, .5, .3); hero.classList.add('hover'); await sleep(550); await click();
+    await upload(hero, imgSrc('floristry-board.webp'), 'floristry-table.jpg');
+    hero.classList.remove('hover'); bg.style.opacity = 1;
+    await saved();
+    // 2. Stats
+    say('Click a stat to edit it');
+    await retype(time, NEW.time, .6);
+    await moveTo(genre, .98, .55, 500); await click(); clean(time); genre.classList.add('editing');
+    await sleep(300); await type(genre, ', Auction'); await sleep(250);
+    await done(genre); clean(time);
+    // 3. Buy link
+    say('Change a buy button and its link');
+    await moveTo(buy, .5, .5); buy.classList.add('hover'); await sleep(350); await click(); buy.classList.remove('hover');
+    var p = at(buy, 0, 0), sw = stage.clientWidth;
+    pop.style.left = Math.max(8, Math.min(sw - 210, p[0] - 30)) + 'px'; pop.style.top = Math.max(8, p[1] - 158) + 'px';
+    pop.classList.add('show'); await sleep(450);
+    await retype(lText, NEW.buy, .5); clean(lText); buy.textContent = NEW.buy;
+    await retype(lUrl, NEW.url, .5); clean(lUrl);
+    await moveTo(save, .5, .5, 450); save.classList.add('hover'); await click(); await sleep(150);
+    pop.classList.remove('show'); clean(save);
+    await saved();
+    // 4. Review
+    say('Swap in a new review');
+    await retype(quote, NEW.q, .5); clean(quote);
+    await retype(author, NEW.a, .5);
+    await done(author); clean(quote);
+    say('Every change saves to your Sheet');
+    await moveTo(label, .2, .5, 900);
+    await sleep(2800);
+  }
+  function imgSrc(f) { return 'images/gameboard-features/' + f; }
+  async function loop() { for (;;) { if (!visible) { await sleep(400); continue; } await play(); } }
+
+  if (reduce) {
+    bg.style.opacity = 1; time.textContent = NEW.time; genre.textContent = NEW.genre; buy.textContent = NEW.buy;
+    quote.textContent = NEW.q; author.textContent = NEW.a; return;
   }
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(function(es) { visible = es[0].isIntersecting; }, { threshold: .35 }).observe(stage);

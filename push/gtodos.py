@@ -85,10 +85,12 @@ def main():
                 'condition': {'type': 'CUSTOM_FORMULA', 'values': [{'userEnteredValue': formula}]}, 'format': fmt}}}})
         ws.spreadsheet.batch_update({'requests': reqs})
 
+    created = False
     ws = next((w for w in wb.worksheets() if w.title.lower() == TAB), None)
     if ws is None:
-        if data.get('action') != 'add':
+        if data.get('action') not in ('add', 'sync'):
             out({'error': 'There is no todos sheet yet'})
+        created = True
         ws = wb.add_worksheet(title=TAB, rows=200, cols=len(HEADERS))
         ws.update(range_name='A1', values=[HEADERS], value_input_option='RAW')
         try:
@@ -132,15 +134,58 @@ def main():
     action = data.get('action')
     updates = []
 
-    if action == 'add':
+    def scan_notes():
+        """Every observation row with a "TODO" note in the [Game] dev tabs."""
+        dev = [w.title for w in wb.worksheets() if w.title.lower().endswith('] dev')]
+        if not dev:
+            return []
+        meta = wb.fetch_sheet_metadata(params={
+            'includeGridData': 'true',
+            'ranges': ["'" + t.replace("'", "''") + "'" for t in dev],
+            'fields': 'sheets(properties.title,data.rowData.values(formattedValue,note,userEnteredValue))',
+        })
+        def text(c):
+            v = c.get('formattedValue', '')
+            if not v:
+                fv = (c.get('userEnteredValue') or {}).get('formulaValue', '')
+                if fv.strip().upper().startswith('=IMAGE('): v = fv.strip()
+            return clean(v)
+        found = []
+        for sh in meta.get('sheets', []):
+            title = sh['properties']['title']
+            game  = title[1:title.rfind(']')] if title.startswith('[') else title
+            rd    = (sh.get('data') or [{}])[0].get('rowData', [])
+            if not rd: continue
+            hdr = [text(c) for c in rd[0].get('values', [])]
+            def ix(*names): return next((i for i, h in enumerate(hdr) if h in names), -1)
+            iD, iE, iP = ix('Date'), ix('Event'), ix('People')
+            iO, iS = ix('Observations', 'Observation'), ix('Solutions', 'Thoughts', 'Solution')
+            session = ''
+            for row in rd[1:]:
+                cells = row.get('values', [])
+                val = lambda i: text(cells[i]) if 0 <= i < len(cells) else ''
+                if val(iD) or val(iE):
+                    d = val(iD); parts = d.split('-')
+                    if len(parts) == 3 and len(parts[0]) == 4: d = parts[1] + '/' + parts[2] + '/' + parts[0]
+                    session = ' '.join(x for x in (val(iE), val(iP)) if x) + (' · ' + d if d else '')
+                    continue
+                if any(str(c.get('note', '')).strip().upper() == 'TODO' for c in cells):
+                    if val(iO) or val(iS):
+                        found.append({'game': game, 'session': session, 'obs': val(iO), 'sol': val(iS)})
+        return found
+
+    if action in ('add', 'sync'):
+        items = list(data.get('items', []))
+        if action == 'sync' or created:
+            items += scan_notes()     # (re)build from the notes in the session tabs
         new_rows, added = [], 0
-        for it in data.get('items', []):
+        for it in items:
             game, obs, sol = clean(it.get('game')), clean(it.get('obs')), clean(it.get('sol'))
             if not game or not (obs or sol):
                 continue
             i = find_text(game, obs, sol)
             if i >= 0:
-                if cell(rows[i], 'Status').lower() == 'done':
+                if action == 'add' and cell(rows[i], 'Status').lower() == 'done':
                     updates.append({'range': a1(i, 'Status'), 'values': [['Open']]})
                 continue
             r = [''] * len(headers)

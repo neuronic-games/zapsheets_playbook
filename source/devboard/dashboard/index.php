@@ -2162,10 +2162,13 @@ function _btodoDragStart(ev) {
   document.addEventListener('pointercancel', up);
 }
 
+var _todosSynced = false;
 function renderDashView() {
   var wrap = document.getElementById('dashWrap');
   if (!wrap) return;
   _renderBoardTodos();
+  // Once per page load: make sure every light-bulb note is in the todos sheet (recreates it if deleted)
+  if (!_todosSynced) { _todosSynced = true; _todosPost('sync', {}).catch(function() {}); }
 
   // Stat chips
   var activeCount = Object.keys(ACTIVE_KEYS).length;

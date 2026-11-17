@@ -13,7 +13,7 @@ $sheetId = trim($_POST['id'] ?? '');
 $action  = trim($_POST['action'] ?? '');
 $data    = json_decode($_POST['data'] ?? '{}', true) ?: [];
 if (!preg_match('/^[A-Za-z0-9_-]{1,128}$/', $sheetId)) { echo json_encode(['error' => 'Invalid sheet id']); exit; }
-if (!in_array($action, ['add', 'update', 'order', 'status'], true)) { echo json_encode(['error' => 'Invalid action']); exit; }
+if (!in_array($action, ['add', 'sync', 'update', 'order', 'status'], true)) { echo json_encode(['error' => 'Invalid action']); exit; }
 
 $data['action'] = $action;
 $python = $_ENV['PYTHON'] ?? 'python3';

@@ -956,6 +956,24 @@ body.session-dialog-open .session-body img { display:none !important; }
 .plan-pro .plan-btn { background:#f5a623; }
 .plan-btn:disabled { opacity:.5; cursor:default; }
 .pro-badge { display:inline-block; margin-left:.35rem; background:#f5a623; color:#fff; font-family:'DINBlack',sans-serif; font-size:.55rem; letter-spacing:.06em; padding:.08rem .32rem; border-radius:4px; vertical-align:middle; }
+.todo-section { border-bottom:1px solid #e6eaf0; background:#fffdf3; }
+.todo-head { display:flex; align-items:center; gap:.45rem; width:100%; background:none; border:none; cursor:pointer; padding:.6rem 1.25rem; text-align:left; color:#8a6d00; }
+.todo-head-bulb .bulb-glass, .todo-head-bulb path:first-child { fill:#ffd43b; }
+.todo-head-bulb { color:#b8860b; flex-shrink:0; }
+.todo-title { font-family:'DINBlack',sans-serif; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; }
+.todo-count { font-family:'DINBlack',sans-serif; font-size:.66rem; background:#f5c518; color:#fff; border-radius:999px; padding:.08rem .45rem; min-width:1.2rem; text-align:center; }
+.todo-chevron { margin-left:auto; font-size:.7rem; color:#b8a25a; transition:transform .2s; transform:rotate(-90deg); }
+.todo-section.open .todo-chevron { transform:none; }
+.todo-list { display:none; padding:0 1.25rem .7rem; }
+.todo-section.open .todo-list { display:block; }
+.todo-item { display:flex; align-items:flex-start; gap:.6rem; padding:.45rem 0; border-top:1px solid #f1e8c4; cursor:pointer; }
+.todo-item:first-child { border-top:none; }
+.todo-item input { margin-top:.2rem; width:1rem; height:1rem; accent-color:#b8860b; flex-shrink:0; cursor:pointer; }
+.todo-text { display:flex; flex-direction:column; gap:.1rem; min-width:0; font-family:'DINRegular',sans-serif; font-size:.85rem; color:#333; line-height:1.45; }
+.todo-obs { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#1a5f7a; }
+.todo-sol { white-space:pre-line; }
+.todo-meta { font-size:.72rem; color:#999; }
+.todo-item.done .todo-obs, .todo-item.done .todo-sol { text-decoration:line-through; color:#aaa; }
 </style>
 </head>
 <body>
@@ -2941,6 +2959,94 @@ function reloadDevData(gameName) {
 
 var _sessionCache = {};  // gameName → allSessions array (all, not filtered)
 
+// ── TODO list ────────────────────────────────────────────────────────────────
+// Observation rows flagged with the light bulb (a "TODO" note on the sheet cell).
+// Checking an item removes the note; it stays here, struck through, until the next load.
+var _todoItems = {};          // game → [{obs, sol, row, label}]
+var _todoDone  = {};          // "game\u0001obs\u0001sol" → true (checked off in this page view)
+var _todoOpen  = (function() { try { return JSON.parse(localStorage.getItem('devboard_todo_open') || '{}') || {}; } catch (e) { return {}; } })();
+function _todoKey(game, obs, sol) { return game + '\u0001' + obs + '\u0001' + sol; }
+
+function _buildTodoHtml(gameName, sessions) {
+  var items = [];
+  sessions.forEach(function(s) {
+    s.obs.forEach(function(o) {
+      var done = !!_todoDone[_todoKey(gameName, o.obs, o.sol)];
+      if (o.todo === 'TODO' || done) {
+        items.push({ obs: o.obs, sol: o.sol, row: o.row || 0, done: done,
+                     label: [s.testnum, s.date ? fmtDate(s.date) : ''].filter(Boolean).join(' · ') });
+      }
+    });
+  });
+  _todoItems[gameName] = items;
+  if (!items.length) return '';
+  var open  = _todoOpen[gameName] !== false;
+  var left  = items.filter(function(it) { return !it.done; }).length;
+  var gnJ   = esc(gameName).replace(/'/g, "\\'");
+  var html  = '<div class="todo-section' + (open ? ' open' : '') + '" data-todo-game="' + esc(gameName) + '">';
+  html += '<button type="button" class="todo-head" onclick="toggleTodoSection(\'' + gnJ + '\', this)">' +
+            '<svg class="todo-head-bulb" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14Z"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>' +
+            '<span class="todo-title">TODO</span><span class="todo-count">' + left + '</span>' +
+            '<span class="todo-chevron">▼</span></button>';
+  html += '<div class="todo-list">';
+  items.forEach(function(it, i) {
+    var obsText = String(it.obs || '').replace(/=IMAGE\("[^"]*"\)/gi, '🖼 Image').trim();
+    html += '<label class="todo-item' + (it.done ? ' done' : '') + '">' +
+              '<input type="checkbox"' + (it.done ? ' checked' : '') + ' onchange="onTodoCheck(\'' + gnJ + '\',' + i + ',this)">' +
+              '<span class="todo-text">' +
+                (obsText ? '<span class="todo-obs">' + esc(obsText) + '</span>' : '') +
+                (it.sol ? '<span class="todo-sol">' + esc(it.sol) + '</span>' : '') +
+                (it.label ? '<span class="todo-meta">' + esc(it.label) + '</span>' : '') +
+              '</span>' +
+            '</label>';
+  });
+  html += '</div></div>';
+  return html;
+}
+
+function toggleTodoSection(gameName, btn) {
+  var sec = btn.closest('.todo-section');
+  var open = !sec.classList.contains('open');
+  sec.classList.toggle('open', open);
+  _todoOpen[gameName] = open;
+  try { localStorage.setItem('devboard_todo_open', JSON.stringify(_todoOpen)); } catch (e) {}
+}
+
+function _todoSetCacheNote(gameName, it, note) {
+  (devCache[gameName] || []).forEach(function(r) {
+    var o = (r['Observations'] || r['Observation'] || '').trim();
+    var so = (r['Solutions'] || r['Thoughts'] || r['Solution'] || '').trim();
+    if (o === it.obs && so === it.sol) {
+      if (note) r['_notes'] = { 'Solutions': note }; else delete r['_notes'];
+    }
+  });
+}
+
+function onTodoCheck(gameName, i, cb) {
+  var it = (_todoItems[gameName] || [])[i];
+  if (!it) return;
+  var done = cb.checked, label = cb.closest('.todo-item'), sec = cb.closest('.todo-section');
+  function apply(d) {
+    it.done = d; cb.checked = d;
+    label.classList.toggle('done', d);
+    if (d) _todoDone[_todoKey(gameName, it.obs, it.sol)] = true; else delete _todoDone[_todoKey(gameName, it.obs, it.sol)];
+    _todoSetCacheNote(gameName, it, d ? '' : 'TODO');
+    var left = (_todoItems[gameName] || []).filter(function(x) { return !x.done; }).length;
+    var c = sec && sec.querySelector('.todo-count'); if (c) c.textContent = left;
+  }
+  apply(done);
+  cb.disabled = true;
+  var fd = new FormData();
+  fd.append('id', SHEET_ID); fd.append('game', gameName);
+  fd.append('row', it.row || 0); fd.append('obs', it.obs); fd.append('sol', it.sol);
+  fd.append('note', done ? '' : 'TODO');   // done → remove the TODO note from the cell
+  fetch(APP_BASE + 'push/setDevNote.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(res) { if (res.error) throw new Error(res.error); if (res.row) it.row = res.row; })
+    .catch(function(e) { apply(!done); showSaveToast('Couldn\'t update the TODO — ' + _friendlySaveError(e)); })
+    .then(function() { cb.disabled = false; });
+}
+
 function renderBody(gameName, rows) {
   var body = document.getElementById('body-' + safeName(gameName));
   if (!body) return;
@@ -2996,6 +3102,9 @@ function renderBody(gameName, rows) {
     '</button>';
   html += '</div>';
   html += '</div>';
+
+  // TODO list (rows flagged with the light bulb)
+  html += _buildTodoHtml(gameName, allSessions);
 
   // T&M summary row (per-person totals)
   html += _buildTMSummaryHtml(rows);

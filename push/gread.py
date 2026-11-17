@@ -146,7 +146,7 @@ def get_records_with_links(service_account_client, sheet_id, sheet_name):
     with_notes = sheet_name.lower().endswith('] dev')
 
     records = []
-    for row in row_data[1:]:
+    for row_no, row in enumerate(row_data[1:], start=2):
         cells = row.get('values', [])
         row_texts = [get_cell_text(c) for c in cells]
 
@@ -161,6 +161,8 @@ def get_records_with_links(service_account_client, sheet_id, sheet_name):
                 record[h] = row_texts[i] if i < len(row_texts) else ''
                 if with_notes and i < len(cells) and cells[i].get('note'):
                     record.setdefault('_notes', {})[h] = cells[i]['note']
+        if with_notes:
+            record['_row'] = row_no   # sheet row number, used to update that row's note
         records.append(record)
 
     return records

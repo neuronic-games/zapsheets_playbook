@@ -114,9 +114,13 @@ function buildSessions(rows) {
           current.testers.push(tname);
         }
       } else if (obs || sol) {
-        var notes = row['_notes'] || {};
-        var todo  = Object.keys(notes).some(function(k) { return String(notes[k]).trim().toUpperCase() === 'TODO'; });
-        current.obs.push({ obs:obs, sol:sol, todo:todo });
+        // TODO list: a "TODO" or "DONE" note on the row (todo is '' | 'TODO' | 'DONE')
+        var notes = row['_notes'] || {}, todo = '';
+        Object.keys(notes).forEach(function(k) {
+          var n = String(notes[k]).trim().toUpperCase();
+          if (n === 'TODO' || (n === 'DONE' && !todo)) todo = n;
+        });
+        current.obs.push({ obs:obs, sol:sol, todo:todo, row:row['_row'] || 0 });
       }
     }
   });

@@ -40,7 +40,7 @@ foreach ($rows as $row) {
     $snum = $row['session_num'] ?? '';
     $dt   = $row['date']        ?? '';
     $ev   = $row['event']       ?? '';
-    $todo = !empty($row['todo']);
+    $todo = (($row['todo'] ?? '') === 'DONE') ? 'DONE' : (!empty($row['todo']) ? 'TODO' : '');
 
     // Cache format: matches the shape returned by gread.py
     $cacheRows[] = [
@@ -52,7 +52,7 @@ foreach ($rows as $row) {
         'Solutions'    => $sol,
         'Solution'     => $sol,   // legacy column name
     ];
-    if ($todo) $cacheRows[count($cacheRows) - 1]['_notes'] = ['Solutions' => 'TODO'];
+    if ($todo) $cacheRows[count($cacheRows) - 1]['_notes'] = ['Solutions' => $todo];
 
     // Sheet format: same keys, passed to gadddevrows.py
     $sheetRows[] = [

@@ -66,7 +66,7 @@ orig_date        = data.get('orig_date',        '').strip()
 orig_event       = data.get('orig_event',       '').strip()
 orig_session_num = data.get('orig_session_num', '').strip()
 new_rows         = data.get('rows', [])   # list of [date, event, people, observation, solution]
-todo_rows        = data.get('todo_rows', [])  # indexes into rows whose Solution cell gets a "TODO" note
+note_rows        = data.get('note_rows', [])  # [[index into rows, "TODO" | "DONE"], ...] → note on the Solution cell
 
 try:
     wb = sa.open_by_key(sheet_id)
@@ -204,8 +204,8 @@ if new_rows:
             }
         },
     ]
-    # "TODO" notes on the Solution cell (column E) of flagged rows
-    for i in todo_rows:
+    # "TODO" / "DONE" notes on the Solution cell (column E) of flagged rows
+    for i, note in note_rows:
         if isinstance(i, int) and 0 <= i < len(new_rows):
             format_reqs.append({
                 'updateCells': {
@@ -214,7 +214,7 @@ if new_rows:
                         'startRowIndex': header_sheet_row - 1 + i, 'endRowIndex': header_sheet_row + i,
                         'startColumnIndex': 4, 'endColumnIndex': 5,
                     },
-                    'rows': [{'values': [{'note': 'TODO'}]}],
+                    'rows': [{'values': [{'note': str(note)}]}],
                     'fields': 'note',
                 }
             })

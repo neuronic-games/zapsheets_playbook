@@ -105,7 +105,7 @@ try:
                             'startRowIndex': start_idx + i, 'endRowIndex': start_idx + i + 1,
                             'startColumnIndex': sol_col, 'endColumnIndex': sol_col + 1,
                         },
-                        'rows': [{'values': [{'note': 'TODO'}]}],
+                        'rows': [{'values': [{'note': r['_todo'] if isinstance(r['_todo'], str) else 'TODO'}]}],
                         'fields': 'note',
                     }
                 })

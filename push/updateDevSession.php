@@ -10,7 +10,7 @@
 //   event      — New testnum / event label
 //   location   — New location (Observation column of the header row)
 //   testers    — JSON array of tester name strings
-//   obs_pairs  — JSON array of {obs, sol, todo} objects (todo → "TODO" note on the Solution cell)
+//   obs_pairs  — JSON array of {obs, sol, todo} objects (todo "TODO" | "DONE" → note on the Solution cell)
 
 error_reporting(0);
 ini_set('display_errors', '0');
@@ -78,7 +78,7 @@ foreach ($obsPairs as $pair) {
     $obs = trim($pair['obs'] ?? '');
     $sol = trim($pair['sol'] ?? '');
     if ($obs !== '' || $sol !== '') {
-        if (!empty($pair['todo'])) $todoRows[] = count($rows);
+        if (!empty($pair['todo'])) $todoRows[] = [count($rows), ($pair['todo'] === 'DONE') ? 'DONE' : 'TODO'];
         $rows[] = ['', '', '', $obs, $sol];
     }
 }
@@ -91,7 +91,7 @@ $payload = [
     'orig_event'       => $origEvent,
     'orig_session_num' => $origSessionNum,
     'rows'             => $rows,
-    'todo_rows'        => $todoRows,
+    'note_rows'        => $todoRows,
 ];
 $encoded = base64_encode(json_encode($payload, JSON_UNESCAPED_UNICODE));
 $arg     = $sheetId . '|' . $tabName . '|' . $encoded;

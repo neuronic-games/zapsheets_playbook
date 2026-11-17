@@ -237,7 +237,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
   <div class="container">
     <div class="section-label">Features</div>
     <h2 class="section-title">Everything a designer needs to stay on top of pitches</h2>
-    <p class="section-sub">From tracking contacts to sharing a game page — PitchBoard covers the full lifecycle without a complicated tool or a monthly subscription.</p>
+    <p class="section-sub">From tracking contacts to sharing a game page — PitchBoard covers the full lifecycle without a complicated tool or an expensive subscription.</p>
     <div class="features-grid">
       <div class="feat-card">
         <div class="feat-icon teal">📋</div>
@@ -486,11 +486,11 @@ footer a:hover { color:rgba(255,255,255,.7); }
   <div class="container">
     <div class="section-label">Data ownership</div>
     <h2 class="section-title">Your data lives in your Google Sheet</h2>
-    <p class="section-sub">No subscription, no vendor lock-in. PitchBoard reads and writes to a Google Sheet you own. Export it, share it, back it up — it's always yours.</p>
+    <p class="section-sub">No vendor lock-in. PitchBoard reads and writes to a Google Sheet you own. Export it, share it, back it up — it's always yours.</p>
     <div class="own-grid">
       <div class="own-card">
-        <div class="num">$0</div>
-        <p>No monthly fee. PitchBoard runs on infrastructure you already have — your Google account.</p>
+        <div class="num">$1.99</div>
+        <p>Per month. PitchBoard runs on infrastructure you already have — your Google account — so it costs a fraction of other tools.</p>
       </div>
       <div class="own-card">
         <div class="num">100%</div>
@@ -527,7 +527,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <tr><td>Collaborator access (no account)</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>You own the data</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Publisher data (<img src="images/help_compendium/ce-logo-72.png" alt="Cardboard Edison" style="height:1em;vertical-align:middle;margin-right:.2em;">Compendium)</td><td class="ours"><span class="check">✓</span> <span style="font-size:12px;color:var(--text-muted);font-weight:400">with subscription</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:#1a2744;">Free</td><td>$10 / mo</td><td>$5–35 / mo</td></tr>
+          <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:#1a2744;">$1.99 / mo</td><td>$10 / mo</td><td>$5–35 / mo</td></tr>
         </tbody>
       </table>
     </div>

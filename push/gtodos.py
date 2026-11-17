@@ -54,8 +54,22 @@ def main():
 
     def append(ws, rows_):
         title = "'" + ws.title.replace("'", "''") + "'"
-        wb.values_append(title + '!A1', params={'valueInputOption': 'RAW', 'insertDataOption': 'INSERT_ROWS'},
+        # OVERWRITE fills the empty rows under the table (inserted rows would copy the heading's style)
+        wb.values_append(title + '!A1', params={'valueInputOption': 'RAW', 'insertDataOption': 'OVERWRITE'},
                          body={'values': rows_})
+
+    def plain_rows(ws, headers, first, last):
+        """Data-row style for sheet rows first..last (1-based): plain text, top-aligned, notes wrapped."""
+        rng = {'sheetId': ws.id, 'startRowIndex': first - 1, 'endRowIndex': last, 'startColumnIndex': 0, 'endColumnIndex': len(headers)}
+        reqs = [{'repeatCell': {'range': rng, 'cell': {'userEnteredFormat': {'verticalAlignment': 'TOP', 'wrapStrategy': 'CLIP'}},
+                                'fields': 'userEnteredFormat'}}]   # resets colours / bold copied from the heading
+        for h in ('Observation', 'Thoughts'):
+            if h in headers:
+                i = headers.index(h)
+                reqs.append({'repeatCell': {'range': dict(rng, startColumnIndex=i, endColumnIndex=i + 1),
+                             'cell': {'userEnteredFormat': {'verticalAlignment': 'TOP', 'wrapStrategy': 'WRAP'}},
+                             'fields': 'userEnteredFormat(verticalAlignment,wrapStrategy)'}})
+        wb.batch_update({'requests': reqs})
 
     def clear(ws, rng):
         wb.values_clear("'" + ws.title.replace("'", "''") + "'!" + rng)
@@ -220,6 +234,10 @@ def main():
             new_rows.append(r); rows.append(r)
         if new_rows:
             append(ws, new_rows)
+            try:
+                plain_rows(ws, headers, 2, len(rows) + 1)
+            except Exception:
+                pass
         if re_ups:
             write_many(ws, re_ups)
         return len(new_rows), len(re_ups)
@@ -227,6 +245,11 @@ def main():
     # A new (or re-created) todos tab is first rebuilt from the TODO notes in the session tabs
     if created or action == 'sync':
         add_items(scan_notes(), False)
+        if rows:
+            try:
+                plain_rows(ws, headers, 2, len(rows) + 1)
+            except Exception:
+                pass
 
     # Find a TODO by ID, or — if the page's ID is from before the tab was re-created — by game + text
     def find_ref():

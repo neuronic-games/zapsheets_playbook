@@ -982,20 +982,21 @@ body.session-dialog-open .session-body img { display:none !important; }
 .todo-item.done .todo-obs, .todo-item.done .todo-sol { text-decoration:line-through; color:#aaa; }
 .btodo-count { font-family:'DINRegular',sans-serif; text-transform:none; letter-spacing:0; color:#b8860b; margin-left:.3rem; }
 .btodo-list { background:#fff; border:1px solid #e3e8ef; border-radius:10px; overflow:hidden; }
-.btodo-row { display:flex; align-items:flex-start; gap:.6rem; padding:.6rem .8rem .6rem .4rem; border-top:1px solid #eef1f5; background:#fff; }
+.btodo-row { display:flex; align-items:center; gap:.6rem; padding:.35rem .8rem .35rem .4rem; border-top:1px solid #eef1f5; background:#fff; }
 .btodo-row:first-child { border-top:none; }
 .btodo-row.dragging { background:#fffbe6; box-shadow:0 6px 18px rgba(0,0,0,.12); position:relative; z-index:2; }
 .btodo-handle { cursor:grab; color:#c3cad4; font-size:.8rem; letter-spacing:-.15em; padding:.15rem .25rem; touch-action:none; user-select:none; line-height:1.2; }
 .btodo-row.dragging .btodo-handle { cursor:grabbing; }
 .btodo-row.done .btodo-handle { visibility:hidden; }
-.btodo-check { margin-top:.2rem; width:1rem; height:1rem; accent-color:#b8860b; flex-shrink:0; cursor:pointer; }
-.btodo-text { flex:1; min-width:0; display:flex; flex-direction:column; gap:.1rem; font-family:'DINRegular',sans-serif; font-size:.85rem; color:#333; line-height:1.45; }
+.btodo-check { width:1rem; height:1rem; accent-color:#b8860b; flex-shrink:0; cursor:pointer; }
+.btodo-text { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:'DINRegular',sans-serif; font-size:.85rem; color:#333; line-height:1.4; }
+.btodo-text > span + span { margin-left:.5rem; }
 .btodo-obs { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#1a5f7a; }
-.btodo-sol { white-space:pre-line; }
 .btodo-meta { font-size:.72rem; color:#999; }
 .btodo-row.done .btodo-obs, .btodo-row.done .btodo-sol { text-decoration:line-through; color:#aaa; }
-.btodo-fields { display:flex; gap:.35rem; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; max-width:330px; }
-.btodo-fields select, .btodo-fields input { font-family:'DINRegular',sans-serif; font-size:.75rem; color:#444; border:1px solid #d6dde6; border-radius:6px; padding:.25rem .35rem; background:#fff; height:1.9rem; }
+.btodo-fields { display:flex; gap:.35rem; flex-shrink:0; flex-wrap:nowrap; }
+.btodo-fields select, .btodo-fields input { font-family:'DINRegular',sans-serif; font-size:.75rem; color:#444; border:1px solid #d6dde6; border-radius:6px; padding:.15rem .3rem; background:#fff; height:1.65rem; }
+.btodo-who { max-width:9rem; }
 .btodo-pri.pri-high   { background:#fde8e8; color:#b42318; border-color:#f5b5b0; }
 .btodo-pri.pri-medium { background:#fff4d6; color:#a35f12; border-color:#f3d27a; }
 .btodo-pri.pri-low    { background:#e8f4ec; color:#2e7d32; border-color:#b9dcc0; }
@@ -1003,7 +1004,9 @@ body.session-dialog-open .session-body img { display:none !important; }
 .btodo-row.done .btodo-fields { opacity:.5; }
 @media (max-width:640px) {
   .btodo-row { flex-wrap:wrap; }
-  .btodo-fields { max-width:none; width:100%; justify-content:flex-start; padding-left:3.1rem; }
+  .btodo-text { flex:1 1 0; }
+  .btodo-fields { flex:0 0 100%; padding-left:1.6rem; box-sizing:border-box; }
+  .btodo-fields > * { flex:1 1 0; min-width:0; width:0; }
 }
 </style>
 </head>
@@ -1986,7 +1989,7 @@ function _renderBoardTodos() {
     h += '<div class="btodo-row' + (done ? ' done' : '') + '" data-id="' + id + '">';
     h += '<span class="btodo-handle" title="Drag to reorder" onpointerdown="_btodoDragStart(event)">⋮⋮</span>';
     h += '<input type="checkbox" class="btodo-check"' + (done ? ' checked' : '') + ' onchange="onBoardTodoCheck(\'' + id + '\', this)">';
-    h += '<div class="btodo-text">' +
+    h += '<div class="btodo-text" title="' + esc([obs, t.Thoughts, [t.Game, t.Session].filter(Boolean).join(' · ')].filter(Boolean).join('\n')) + '">' +
            (obs ? '<span class="btodo-obs">' + esc(obs) + '</span>' : '') +
            (t.Thoughts ? '<span class="btodo-sol">' + esc(t.Thoughts) + '</span>' : '') +
            '<span class="btodo-meta">' + esc([t.Game, t.Session].filter(Boolean).join(' · ')) + '</span>' +

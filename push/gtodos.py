@@ -40,6 +40,27 @@ def main():
     except Exception as e:
         out({'error': f'Could not open spreadsheet: {e}'})
 
+    def write(ws, rng, values):
+        """Write values at an A1 range. Uses the plain Sheets API call, which every gspread
+        version has (ws.update's argument order differs between versions)."""
+        title = "'" + ws.title.replace("'", "''") + "'"
+        wb.values_update(title + '!' + rng, params={'valueInputOption': 'RAW'}, body={'values': values})
+
+    def write_many(ws, updates):
+        """[{'range': 'B3', 'values': [[...]]}, ...] in one call."""
+        title = "'" + ws.title.replace("'", "''") + "'"
+        wb.values_batch_update({'valueInputOption': 'RAW',
+                                'data': [{'range': title + '!' + u['range'], 'values': u['values']} for u in updates]})
+
+    def append(ws, rows_):
+        title = "'" + ws.title.replace("'", "''") + "'"
+        wb.values_append(title + '!A1', params={'valueInputOption': 'RAW', 'insertDataOption': 'INSERT_ROWS'},
+                         body={'values': rows_})
+
+    def clear(ws, rng):
+        wb.values_clear("'" + ws.title.replace("'", "''") + "'!" + rng)
+
+
     # Column widths (px), same look as the [Game] dev tabs
     WIDTHS = {'ID': 95, 'Game': 150, 'Session': 180, 'Observation': 260, 'Thoughts': 380,
               'Priority': 85, 'Due': 100, 'Assigned': 150, 'Status': 80, 'Created': 100}
@@ -48,12 +69,15 @@ def main():
         """Heading row, widths, wrapping and highlight rules like gcreatedevtab.py."""
         n = len(headers)
         last = rowcol_to_a1(1, n)
-        ws.freeze(rows=1)
-        ws.format('A1:' + last, {
-            'backgroundColor': {'red': 0.102, 'green': 0.373, 'blue': 0.478},
-            'textFormat': {'bold': True, 'foregroundColor': {'red': 1.0, 'green': 1.0, 'blue': 1.0}},
-        })
-        reqs = []
+        reqs = [
+            {'updateSheetProperties': {'properties': {'sheetId': ws.id, 'gridProperties': {'frozenRowCount': 1}},
+                                       'fields': 'gridProperties.frozenRowCount'}},
+            {'repeatCell': {'range': {'sheetId': ws.id, 'startRowIndex': 0, 'endRowIndex': 1, 'startColumnIndex': 0, 'endColumnIndex': n},
+                            'cell': {'userEnteredFormat': {
+                                'backgroundColor': {'red': 0.102, 'green': 0.373, 'blue': 0.478},
+                                'textFormat': {'bold': True, 'foregroundColor': {'red': 1.0, 'green': 1.0, 'blue': 1.0}}}},
+                            'fields': 'userEnteredFormat(backgroundColor,textFormat)'}},
+        ]
         for i, h in enumerate(headers):
             if h in WIDTHS:
                 reqs.append({'updateDimensionProperties': {
@@ -83,14 +107,14 @@ def main():
         for k, (rng, formula, fmt) in enumerate(rules):
             reqs.append({'addConditionalFormatRule': {'index': k, 'rule': {'ranges': [rng], 'booleanRule': {
                 'condition': {'type': 'CUSTOM_FORMULA', 'values': [{'userEnteredValue': formula}]}, 'format': fmt}}}})
-        ws.spreadsheet.batch_update({'requests': reqs})
+        wb.batch_update({'requests': reqs})
 
     created = False
     ws = next((w for w in wb.worksheets() if w.title.lower() == TAB), None)
     if ws is None:
         created = True
         ws = wb.add_worksheet(title=TAB, rows=200, cols=len(HEADERS))
-        ws.update(range_name='A1', values=[HEADERS], value_input_option='RAW')
+        write(ws, 'A1', [HEADERS])
         try:
             format_sheet(ws, HEADERS)
         except Exception:
@@ -99,7 +123,8 @@ def main():
     values  = ws.get_all_values() or [HEADERS]
     # Repair: if the heading row is missing (e.g. overwritten by data), put it back on top
     if 'ID' not in [h.strip() for h in values[0]]:
-        ws.insert_row(HEADERS, 1, value_input_option='RAW')
+        wb.batch_update({'requests': [{'insertDimension': {'range': {'sheetId': ws.id, 'dimension': 'ROWS', 'startIndex': 0, 'endIndex': 1}, 'inheritFromBefore': False}}]})
+        write(ws, 'A1', [HEADERS])
         values = [HEADERS] + values
         try:
             format_sheet(ws, HEADERS)
@@ -111,7 +136,7 @@ def main():
     if missing:
         if ws.col_count < len(headers) + len(missing):
             ws.add_cols(len(headers) + len(missing) - ws.col_count)
-        ws.update(range_name=rowcol_to_a1(1, len(headers) + 1), values=[missing], value_input_option='RAW')
+        write(ws, rowcol_to_a1(1, len(headers) + 1), [missing])
         headers += missing
     C = {h: headers.index(h) for h in HEADERS}
     rows = values[1:]
@@ -194,9 +219,9 @@ def main():
             r[C['Created']]     = datetime.date.today().isoformat()
             new_rows.append(r); rows.append(r)
         if new_rows:
-            ws.append_rows(new_rows, value_input_option='RAW', insert_data_option='INSERT_ROWS', table_range='A1')
+            append(ws, new_rows)
         if re_ups:
-            ws.batch_update(re_ups, value_input_option='RAW')
+            write_many(ws, re_ups)
         return len(new_rows), len(re_ups)
 
     # A new (or re-created) todos tab is first rebuilt from the TODO notes in the session tabs
@@ -221,7 +246,7 @@ def main():
         for h in ('Priority', 'Due', 'Assigned'):
             if h in (data.get('fields') or {}):
                 updates.append({'range': a1(i, h), 'values': [[clean(data['fields'][h])]]})
-        if updates: ws.batch_update(updates, value_input_option='RAW')
+        if updates: write_many(ws, updates)
         out({'ok': True})
 
     if action == 'order':
@@ -236,17 +261,16 @@ def main():
         if ordered:
             width = len(headers)
             ordered = [(list(r) + [''] * width)[:width] for r in ordered]
-            # Explicit keywords: older gspread versions take (range, values) in the other order
-            ws.update(range_name='A2:' + rowcol_to_a1(len(ordered) + 1, width), values=ordered, value_input_option='RAW')
+            write(ws, 'A2:' + rowcol_to_a1(len(ordered) + 1, width), ordered)
         if len(ordered) < len(rows):   # duplicates removed: clear the leftover rows at the bottom
-            ws.batch_clear(['A' + str(len(ordered) + 2) + ':' + rowcol_to_a1(len(rows) + 1, len(headers))])
+            clear(ws, 'A' + str(len(ordered) + 2) + ':' + rowcol_to_a1(len(rows) + 1, len(headers)))
         out({'ok': True})
 
     if action == 'status':
         status = 'Done' if clean(data.get('status')).lower() == 'done' else 'Open'
         i = find_ref()
         if i < 0: out({'ok': True, 'found': False})   # not in the todos sheet (e.g. flagged by hand) — nothing to do
-        ws.batch_update([{'range': a1(i, 'Status'), 'values': [[status]]}], value_input_option='RAW')
+        write_many(ws, [{'range': a1(i, 'Status'), 'values': [[status]]}])
         out({'ok': True, 'found': True})
 
     out({'error': 'Unknown action'})

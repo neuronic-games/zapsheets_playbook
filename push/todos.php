@@ -19,8 +19,16 @@ $data['action'] = $action;
 $python = $_ENV['PYTHON'] ?? 'python3';
 $cmd    = escapeshellarg($python) . ' ' . escapeshellarg(__DIR__ . '/gtodos.py') . ' '
         . escapeshellarg($sheetId . '|' . base64_encode(json_encode($data, JSON_UNESCAPED_UNICODE))) . ' 2>&1';
-$result = json_decode(trim((string) shell_exec($cmd)), true);
-if (!is_array($result)) { echo json_encode(['error' => 'No response from the todos script']); exit; }
+$raw    = trim((string) shell_exec($cmd));
+$result = null;
+foreach (array_reverse(preg_split('/\R/', $raw)) as $line) {   // the answer is the last JSON line
+    $line = trim($line);
+    if ($line !== '' && $line[0] === '{' && is_array($try = json_decode($line, true))) { $result = $try; break; }
+}
+if (!is_array($result)) {
+    echo json_encode(['error' => 'The todos script failed: ' . ($raw !== '' ? mb_substr($raw, -300) : 'no output')]);
+    exit;
+}
 
 if (!empty($result['ok'])) {
     refreshJson($python, $sheetId, 'todos');

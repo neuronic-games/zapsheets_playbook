@@ -263,6 +263,30 @@ footer a:hover { color:rgba(255,255,255,.7); }
 .gbx-btn { font-family:'GBDINBlack','Inter',sans-serif; font-size:9px; letter-spacing:.06em; text-transform:uppercase; border:1px solid #d6d6d6; border-radius:6px; padding:5px 9px; }
 .gbx-btn.dark { background:#1a1c30; border-color:#1a1c30; color:#fff; }
 
+/* product page mock (matches the live GameBoard game page) */
+.gbp { background:#f6f5f2; }
+.gbp-nav { background:#1a1a2e; color:#fff; display:flex; align-items:center; gap:7px; padding:9px 12px; }
+.gbp-back { font-family:'GBDINBlack','Inter',sans-serif; font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:rgba(255,255,255,.78); }
+.gbp-sep { color:rgba(255,255,255,.25); font-size:11px; } .gbp-game { font-size:10.5px; opacity:.55; }
+.gbp-navbtn { margin-left:auto; font-family:'GBDINBlack','Inter',sans-serif; font-size:8.5px; letter-spacing:.07em; text-transform:uppercase; border:1.5px solid rgba(255,255,255,.3); border-radius:4px; padding:3px 8px; }
+.gbp-hero { position:relative; aspect-ratio:1.45/1; background-size:cover; background-position:center top; display:flex; align-items:flex-end; }
+.gbp-hero::before { content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(10,10,28,.95) 0%, rgba(10,10,28,.6) 45%, rgba(10,10,28,.05) 100%); }
+.gbp-hero-in { position:relative; padding:0 16px 16px; color:#fff; }
+.gbp-title { font-family:'GBDINBlack','Inter',sans-serif; font-size:30px; line-height:1.04; letter-spacing:.02em; text-shadow:0 2px 14px rgba(0,0,0,.55); margin-bottom:5px; }
+.gbp-sum { font-size:11.5px; color:rgba(255,255,255,.85); margin-bottom:8px; }
+.gbp-stats { display:flex; flex-wrap:wrap; gap:3px 12px; font-size:10px; color:rgba(255,255,255,.8); }
+.gbp-stats span, .gbp-cred { display:inline-flex; align-items:center; gap:4px; }
+.gbp-stats svg, .gbp-cred svg { width:11px; height:11px; }
+.gbp-cred { font-size:10px; color:rgba(255,255,255,.75); margin-top:4px; }
+.gbp-ctas { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:10px; }
+.gbp-price { font-family:'GBDINBlack','Inter',sans-serif; font-size:15px; border:2px solid rgba(255,255,255,.35); border-radius:5px; padding:4px 8px 3px; }
+.gbp-buy { font-family:'GBDINBlack','Inter',sans-serif; font-size:8.5px; letter-spacing:.07em; text-transform:uppercase; background:#fff; color:#1a3a5c; border:2px solid #fff; border-radius:5px; padding:7px 9px 6px; }
+.gbp-ticker { background:#f5a623; color:#fff; text-align:center; padding:11px 14px; }
+.gbp-q { font-family:'GBDINBlack','Inter',sans-serif; font-style:italic; font-size:12px; }
+.gbp-a { font-size:8.5px; letter-spacing:.07em; text-transform:uppercase; color:rgba(255,255,255,.8); margin-top:3px; }
+.gbp-main { padding:14px 16px 16px; }
+.gbp-label { font-family:'GBDINBlack','Inter',sans-serif; font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; color:#8a8a99; border-bottom:1px solid #e3e1dc; padding-bottom:4px; margin-bottom:7px; }
+.gbp-desc { font-size:10.5px; line-height:1.6; color:#3d3d55; }
 /* ── Brand editor animation ── */
 .ie-stage { position:relative; overflow:hidden; user-select:none; }
 .ie-logo-slot { position:relative; width:34px; height:34px; flex-shrink:0; }
@@ -491,7 +515,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
         <h2 class="section-title" style="margin-bottom:1rem;">Every game gets its own page</h2>
         <p>Click any catalog card to open a dedicated game page — hero image, description, stats, and action buttons. Share the direct link with press, retailers, or convention organizers.</p>
         <ul>
-          <li>Large cover image with a photo gallery</li>
+          <li>Full-width hero image with the title, stats and buy buttons</li>
           <li>Full description, player count, and play time</li>
           <li>Price and Buy Now button for direct sales</li>
           <li>Sell sheet, rules PDF, and page URL buttons</li>
@@ -503,24 +527,19 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
           <div class="browser-url">zapsheets.com/app/gameboard/…/floristry</div>
         </div>
-        <div class="gbx">
-          <div class="gbx-banner"><img class="gbx-logo" src="images/gameboard-features/up-logo.webp" alt="UP Games"><span class="gbx-name">UP Games</span><span class="gbx-back">← All games</span></div>
-          <div class="gbx-gp">
-            <div class="gbx-gp-title">Floristry</div>
-            <div class="gbx-gp-sub">A quick, real time, Dutch auction game for two players</div>
-            <div class="gbx-gp-row">
-              <div>
-                <img class="gbx-gp-img" src="images/gameboard-features/cover-floristry.webp" alt="Floristry" loading="lazy">
-                <div class="gbx-thumbs"><img class="on" src="images/gameboard-features/cover-floristry.webp" alt=""><img src="images/gameboard-features/floristry-board.webp" alt=""></div>
-              </div>
-              <div>
-                <div class="gbx-stats"><div class="gbx-stat"><b>2</b><span>Players</span></div><div class="gbx-stat"><b>20 min</b><span>Play time</span></div></div>
-                <div class="gbx-desc">Players compete at the historic Aalsmeer Dutch Auction to win the best flowers and then use them to create the most charming window display.</div>
-                <div class="gbx-des"><b>DESIGNERS</b>David Gordon, TAM</div>
-                <div class="gbx-btns"><span class="gbx-btn">Read Rules</span><span class="gbx-btn">Sell Sheet</span><span class="gbx-btn dark">Buy Now</span></div>
-              </div>
+        <div class="gbx gbp">
+          <div class="gbp-nav"><span class="gbp-back">‹ All Games</span><span class="gbp-sep">|</span><span class="gbp-game">Floristry</span><span class="gbp-navbtn">Rules</span></div>
+          <div class="gbp-hero" style="background-image:url('images/gameboard-features/hero-floristry.webp')">
+            <div class="gbp-hero-in">
+              <div class="gbp-title">Floristry</div>
+              <div class="gbp-sum">A quick, real time, Dutch auction game for two players.</div>
+              <div class="gbp-stats"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>2 players</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>20 min</span><span>Family, Casual</span></div>
+              <div class="gbp-cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>David Gordon, TAM</div>
+              <div class="gbp-ctas"><span class="gbp-price">$20</span><span class="gbp-buy">Buy on Amazon</span><span class="gbp-buy">Buy at Barnes &amp; Noble</span></div>
             </div>
           </div>
+          <div class="gbp-ticker"><div class="gbp-q">“This game is just delightful.”</div><div class="gbp-a">— Shut Up &amp; Sit Down</div></div>
+          <div class="gbp-main"><div class="gbp-label">About the Game</div><div class="gbp-desc">Players compete at the historic Aalsmeer Dutch Auction to win the best flowers and then use them to create the most charming window display.</div></div>
         </div>
       </div>
     </div>

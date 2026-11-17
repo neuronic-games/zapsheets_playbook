@@ -130,6 +130,12 @@ $_contracts_raw  = file_exists($_contracts_file)
     ? (json_decode(file_get_contents($_contracts_file), true) ?: [])
     : [];
 
+// Load TODOs (the "todos" sheet)
+$_todos_file = __DIR__ . '/../../../sheets/' . $_sheet_id . '/todos.json';
+$_todos_raw  = file_exists($_todos_file)
+    ? (json_decode(file_get_contents($_todos_file), true) ?: [])
+    : [];
+
 // Load estimates
 $_estimates_file = __DIR__ . '/../../../sheets/' . $_sheet_id . '/estimates.json';
 $_estimates_raw  = file_exists($_estimates_file)
@@ -974,6 +980,31 @@ body.session-dialog-open .session-body img { display:none !important; }
 .todo-sol { white-space:pre-line; }
 .todo-meta { font-size:.72rem; color:#999; }
 .todo-item.done .todo-obs, .todo-item.done .todo-sol { text-decoration:line-through; color:#aaa; }
+.btodo-count { font-family:'DINRegular',sans-serif; text-transform:none; letter-spacing:0; color:#b8860b; margin-left:.3rem; }
+.btodo-list { background:#fff; border:1px solid #e3e8ef; border-radius:10px; overflow:hidden; }
+.btodo-row { display:flex; align-items:flex-start; gap:.6rem; padding:.6rem .8rem .6rem .4rem; border-top:1px solid #eef1f5; background:#fff; }
+.btodo-row:first-child { border-top:none; }
+.btodo-row.dragging { background:#fffbe6; box-shadow:0 6px 18px rgba(0,0,0,.12); position:relative; z-index:2; }
+.btodo-handle { cursor:grab; color:#c3cad4; font-size:.8rem; letter-spacing:-.15em; padding:.15rem .25rem; touch-action:none; user-select:none; line-height:1.2; }
+.btodo-row.dragging .btodo-handle { cursor:grabbing; }
+.btodo-row.done .btodo-handle { visibility:hidden; }
+.btodo-check { margin-top:.2rem; width:1rem; height:1rem; accent-color:#b8860b; flex-shrink:0; cursor:pointer; }
+.btodo-text { flex:1; min-width:0; display:flex; flex-direction:column; gap:.1rem; font-family:'DINRegular',sans-serif; font-size:.85rem; color:#333; line-height:1.45; }
+.btodo-obs { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#1a5f7a; }
+.btodo-sol { white-space:pre-line; }
+.btodo-meta { font-size:.72rem; color:#999; }
+.btodo-row.done .btodo-obs, .btodo-row.done .btodo-sol { text-decoration:line-through; color:#aaa; }
+.btodo-fields { display:flex; gap:.35rem; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; max-width:330px; }
+.btodo-fields select, .btodo-fields input { font-family:'DINRegular',sans-serif; font-size:.75rem; color:#444; border:1px solid #d6dde6; border-radius:6px; padding:.25rem .35rem; background:#fff; height:1.9rem; }
+.btodo-pri.pri-high   { background:#fde8e8; color:#b42318; border-color:#f5b5b0; }
+.btodo-pri.pri-medium { background:#fff4d6; color:#a35f12; border-color:#f3d27a; }
+.btodo-pri.pri-low    { background:#e8f4ec; color:#2e7d32; border-color:#b9dcc0; }
+.btodo-pri.pri-none   { color:#999; }
+.btodo-row.done .btodo-fields { opacity:.5; }
+@media (max-width:640px) {
+  .btodo-row { flex-wrap:wrap; }
+  .btodo-fields { max-width:none; width:100%; justify-content:flex-start; padding-left:3.1rem; }
+}
 </style>
 </head>
 <body>
@@ -1829,6 +1860,7 @@ var _profilePhotoUrl = MY_BIO_IMAGE || '';
 var PEOPLE_NAMES  = <?= json_encode(array_values($_people_names), JSON_UNESCAPED_UNICODE) ?>;
 var PEOPLE_DATA   = <?= json_encode(array_values($_people_raw),  JSON_UNESCAPED_UNICODE) ?>;
 var CONTRACT_RAW  = <?= json_encode(array_values($_contracts_raw), JSON_UNESCAPED_UNICODE) ?>;
+var TODOS_RAW     = <?= json_encode(array_values($_todos_raw), JSON_UNESCAPED_UNICODE) ?>;
 var ESTIMATES_RAW = <?= json_encode(array_values($_estimates_raw), JSON_UNESCAPED_UNICODE) ?>;
 
 // Quick lookup: email (lowercase) → display name from People sheet
@@ -1906,9 +1938,134 @@ function _statusStyle(status) {
   return 'background:#e2e8f0;color:#475569';
 }
 
+// ── TODOs: the "todos" sheet and the Board list ─────────────────────────────
+var _boardTodosEl = document.createElement('div');
+_boardTodosEl.className = 'btodo-wrap';
+var TODO_PRIORITIES = ['High', 'Medium', 'Low'];
+
+function _todosPost(action, data, cb) {
+  var fd = new FormData();
+  fd.append('id', SHEET_ID); fd.append('action', action); fd.append('data', JSON.stringify(data));
+  return fetch(APP_BASE + 'push/todos.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.error) throw new Error(res.error);
+      if (res.todos) { TODOS_RAW = res.todos; if (_activeTab === 'dash' && !_btodoDragging) _renderBoardTodos(); }
+      if (cb) cb(res);
+      return res;
+    })
+    .catch(function(e) { showSaveToast('Couldn\'t update TODOs — ' + _friendlySaveError(e)); throw e; });
+}
+
+// After a session save: add its light-bulb rows to the todos sheet (existing ones are left alone)
+function _todosSyncFromSave(game, eventType, sessionNum, date, pairs) {
+  var items = (pairs || []).filter(function(p) { return p.todo; }).map(function(p) {
+    return { game: game, obs: p.obs, sol: p.sol, session: [eventType, sessionNum].filter(Boolean).join(' ') + (date ? ' · ' + fmtDate(date) : '') };
+  });
+  if (items.length) _todosPost('add', { items: items }).catch(function() {});
+}
+
+function _todosSorted() {
+  return TODOS_RAW.slice().sort(function(a, b) {
+    var da = (a.Status || '').toLowerCase() === 'done', db = (b.Status || '').toLowerCase() === 'done';
+    if (da !== db) return da ? 1 : -1;
+    return (parseInt(a.Order, 10) || 9999) - (parseInt(b.Order, 10) || 9999);
+  });
+}
+
+function _renderBoardTodos() {
+  var list = _todosSorted();
+  if (!list.length) { _boardTodosEl.innerHTML = ''; return; }
+  var open = list.filter(function(t) { return (t.Status || '').toLowerCase() !== 'done'; }).length;
+  var h = '<div class="dash-section-hd">TODOs <span class="btodo-count">' + open + ' open</span></div><div class="btodo-list" id="btodoList">';
+  list.forEach(function(t) {
+    var done = (t.Status || '').toLowerCase() === 'done';
+    var id   = esc(t.ID || '');
+    var obs  = String(t.Observation || '').replace(/=IMAGE\("[^"]*"\)/gi, '🖼 Image').trim();
+    var pri  = t.Priority || '';
+    h += '<div class="btodo-row' + (done ? ' done' : '') + '" data-id="' + id + '">';
+    h += '<span class="btodo-handle" title="Drag to reorder" onpointerdown="_btodoDragStart(event)">⋮⋮</span>';
+    h += '<input type="checkbox" class="btodo-check"' + (done ? ' checked' : '') + ' onchange="onBoardTodoCheck(\'' + id + '\', this)">';
+    h += '<div class="btodo-text">' +
+           (obs ? '<span class="btodo-obs">' + esc(obs) + '</span>' : '') +
+           (t.Thoughts ? '<span class="btodo-sol">' + esc(t.Thoughts) + '</span>' : '') +
+           '<span class="btodo-meta">' + esc([t.Game, t.Session].filter(Boolean).join(' · ')) + '</span>' +
+         '</div>';
+    h += '<div class="btodo-fields">';
+    h += '<select class="btodo-pri pri-' + esc(pri.toLowerCase() || 'none') + '" onchange="onBoardTodoField(\'' + id + '\',\'Priority\',this)" title="Priority">' +
+           '<option value="">Priority</option>' + TODO_PRIORITIES.map(function(p) { return '<option' + (p === pri ? ' selected' : '') + '>' + p + '</option>'; }).join('') + '</select>';
+    h += '<input type="date" class="btodo-due" value="' + esc(t.Due || '') + '" onchange="onBoardTodoField(\'' + id + '\',\'Due\',this)" title="Due date">';
+    var names = PEOPLE_NAMES.slice(); if (t.Assigned && names.indexOf(t.Assigned) < 0) names.unshift(t.Assigned);
+    h += '<select class="btodo-who" onchange="onBoardTodoField(\'' + id + '\',\'Assigned\',this)" title="Assigned to">' +
+           '<option value="">Assign…</option>' + names.map(function(n) { return '<option' + (n === t.Assigned ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select>';
+    h += '</div></div>';
+  });
+  h += '</div>';
+  _boardTodosEl.innerHTML = h;
+}
+
+function _todoById(id) { return TODOS_RAW.filter(function(t) { return t.ID === id; })[0]; }
+
+function onBoardTodoField(id, field, el) {
+  var t = _todoById(id); if (!t) return;
+  t[field] = el.value;
+  if (field === 'Priority') el.className = 'btodo-pri pri-' + (el.value.toLowerCase() || 'none');
+  var f = {}; f[field] = el.value;
+  _todosPost('update', { id: id, fields: f }).catch(function() {});
+}
+
+function onBoardTodoCheck(id, cb) {
+  var t = _todoById(id); if (!t) return;
+  var done = cb.checked;
+  t.Status = done ? 'Done' : 'Open';
+  cb.closest('.btodo-row').classList.toggle('done', done);
+  // Keep the game card and the session dialog in step, and update the note on the sheet cell
+  var it = { obs: t.Observation || '', sol: t.Thoughts || '' };
+  if (done) _todoDone[_todoKey(t.Game, it.obs, it.sol)] = true; else delete _todoDone[_todoKey(t.Game, it.obs, it.sol)];
+  _todoSetCacheNote(t.Game, it, done ? '' : 'TODO');
+  if (devCache[t.Game]) renderBody(t.Game, devCache[t.Game]);
+  var fd = new FormData();
+  fd.append('id', SHEET_ID); fd.append('game', t.Game); fd.append('row', 0);
+  fd.append('obs', it.obs); fd.append('sol', it.sol); fd.append('note', done ? '' : 'TODO');
+  fetch(APP_BASE + 'push/setDevNote.php', { method: 'POST', body: fd }).catch(function() {});
+  _todosPost('status', { id: id, status: t.Status }).catch(function() {});
+}
+
+// Drag to reorder (pointer events: mouse and touch)
+var _btodoDragging = null;
+function _btodoDragStart(ev) {
+  var row = ev.target.closest('.btodo-row');
+  if (!row || row.classList.contains('done')) return;
+  ev.preventDefault();
+  _btodoDragging = row;
+  row.classList.add('dragging');
+  var list = row.parentNode;
+  function move(e) {
+    var over = document.elementFromPoint(e.clientX, e.clientY);
+    over = over && over.closest('.btodo-row');
+    if (!over || over === row || over.parentNode !== list || over.classList.contains('done')) return;
+    var r = over.getBoundingClientRect();
+    list.insertBefore(row, e.clientY < r.top + r.height / 2 ? over : over.nextSibling);
+  }
+  function up() {
+    document.removeEventListener('pointermove', move);
+    document.removeEventListener('pointerup', up);
+    document.removeEventListener('pointercancel', up);
+    row.classList.remove('dragging');
+    _btodoDragging = null;
+    var ids = Array.prototype.map.call(list.querySelectorAll('.btodo-row'), function(r) { return r.dataset.id; });
+    ids.forEach(function(id, n) { var t = _todoById(id); if (t) t.Order = String(n + 1); });
+    _todosPost('order', { ids: ids }).catch(function() {});
+  }
+  document.addEventListener('pointermove', move);
+  document.addEventListener('pointerup', up);
+  document.addEventListener('pointercancel', up);
+}
+
 function renderDashView() {
   var wrap = document.getElementById('dashWrap');
   if (!wrap) return;
+  _renderBoardTodos();
 
   // Stat chips
   var activeCount = Object.keys(ACTIVE_KEYS).length;
@@ -1974,6 +2131,7 @@ function renderDashView() {
   }
 
   wrap.innerHTML = html;
+  wrap.insertBefore(_boardTodosEl, wrap.firstChild);
 }
 
 function renderPublishersView() {
@@ -3044,6 +3202,7 @@ function onTodoCheck(gameName, i, cb) {
   fd.append('id', SHEET_ID); fd.append('game', gameName);
   fd.append('row', it.row || 0); fd.append('obs', it.obs); fd.append('sol', it.sol);
   fd.append('note', done ? '' : 'TODO');   // done → remove the TODO note from the cell
+  _todosPost('status', { game: gameName, obs: it.obs, sol: it.sol, status: done ? 'Done' : 'Open' });
   fetch(APP_BASE + 'push/setDevNote.php', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
     .then(function(res) { if (res.error) throw new Error(res.error); if (res.row) it.row = res.row; })
@@ -5009,6 +5168,7 @@ function submitSession() {
       .then(function(res) {
         if (res.error) throw new Error(res.error);
         _swAfterSave(_swDialogKey());
+        _todosSyncFromSave(_sessionGame, eventType, sessionNum, date, obsPairs);
         devCache[_sessionGame] = undefined;
         loadDevData(_sessionGame, true);
         forceCloseSessionDialog();
@@ -5057,6 +5217,7 @@ function submitSession() {
     .then(function(res) {
       if (res.error) throw new Error(res.error);
       _swAfterSave(_swDialogKey());
+      _todosSyncFromSave(_sessionGame, eventType, sessionNum, date, obsPairs);
       if (!devCache[_sessionGame]) devCache[_sessionGame] = [];
       localRows.forEach(function(r) { devCache[_sessionGame].push(r); });
       renderBody(_sessionGame, devCache[_sessionGame]);

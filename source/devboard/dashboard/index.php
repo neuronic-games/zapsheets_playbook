@@ -2002,7 +2002,7 @@ function _todosPost(action, data, cb) {
     .then(function(res) {
       if (res.error) throw new Error(res.error);
       if (res.todos) {
-        TODOS_RAW = res.todos;
+        TODOS_RAW = _todosKeepChecked(res.todos);
         if (_activeTab === 'dash' && !_btodoDragging) _renderBoardTodos();
         if (!_btodoMenuEl) Object.keys(_sessionCache).forEach(_refreshTodoSection);
       }
@@ -2013,6 +2013,37 @@ function _todosPost(action, data, cb) {
 }
 
 // After a session save: add its light-bulb rows to the todos sheet (existing ones are left alone)
+// Checked-off TODOs are deleted from the sheet, but stay on this page (struck through) until reload,
+// so they can be unchecked. ID → { rec: the row as it was, before: ID of the row that followed it }
+var _todosChecked = {};
+function _todosKeepChecked(list) {
+  list = list.slice();
+  Object.keys(_todosChecked).forEach(function(id) {
+    if (list.some(function(t) { return t.ID === id; })) return;
+    var c = _todosChecked[id], rec = Object.assign({}, c.rec, { Status: 'Done' });
+    var at = c.before ? list.findIndex(function(t) { return t.ID === c.before; }) : -1;
+    if (at < 0) list.push(rec); else list.splice(at, 0, rec);
+  });
+  return list;
+}
+
+// Check / uncheck a TODO in the todos sheet: checked → its row is removed; unchecked → put back
+function _todoSetChecked(t, done) {
+  if (!t || !t.ID) return;
+  if (done) {
+    var at = TODOS_RAW.indexOf(t), next = null;
+    for (var i = at + 1; i < TODOS_RAW.length; i++) { if (!_todosChecked[TODOS_RAW[i].ID]) { next = TODOS_RAW[i].ID; break; } }
+    _todosChecked[t.ID] = { rec: Object.assign({}, t), before: next };
+    t.Status = 'Done';
+    _todosPost('status', { id: t.ID, status: 'Done', game: t.Game, obs: t.Observation || '', sol: t.Thoughts || '' }).catch(function() {});
+  } else {
+    var c = _todosChecked[t.ID]; delete _todosChecked[t.ID];
+    t.Status = 'Open';
+    var rec = Object.assign({}, (c && c.rec) || t, { Status: 'Open' });
+    _todosPost('status', { id: t.ID, status: 'Open', todo: rec, before: c ? c.before : '' }).catch(function() {});
+  }
+}
+
 function _todosSyncFromSave(game, eventType, sessionNum, date, pairs) {
   var items = (pairs || []).filter(function(p) { return p.todo; }).map(function(p) {
     return { id: p.todoId, game: game, obs: p.obs, sol: p.sol, session: [eventType, sessionNum].filter(Boolean).join(' ') + (date ? ' · ' + fmtDate(date) : '') };
@@ -2134,7 +2165,6 @@ function _btodoMenu(ev, id, field) {
 function onBoardTodoCheck(id, cb) {
   var t = _todoById(id); if (!t) return;
   var done = cb.checked;
-  t.Status = done ? 'Done' : 'Open';
   cb.closest('.btodo-row').classList.toggle('done', done);
   // Keep the game card and the session dialog in step, and update the note on the dev cell (found by its ID)
   var dev = _todoDevText[id] || { obs: t.Observation || '', sol: t.Thoughts || '' };
@@ -2147,7 +2177,7 @@ function onBoardTodoCheck(id, cb) {
   fd.append('id', SHEET_ID); fd.append('game', t.Game); fd.append('todo_id', id); fd.append('row', 0);
   fd.append('obs', it.obs); fd.append('sol', it.sol); fd.append('note', done ? '' : 'TODO:' + id);
   fetch(APP_BASE + 'push/setDevNote.php', { method: 'POST', body: fd }).catch(function() {});
-  _todosPost('status', { id: id, status: t.Status, game: t.Game, obs: t.Observation || '', sol: t.Thoughts || '' }).catch(function() {});
+  _todoSetChecked(t, done);
 }
 
 // Drag to reorder (pointer events: mouse and touch)
@@ -3409,7 +3439,7 @@ function onTodoCheck(gameName, i, cb) {
   fd.append('id', SHEET_ID); fd.append('game', gameName); fd.append('todo_id', it.todoId || '');
   fd.append('row', it.row || 0); fd.append('obs', it.obs); fd.append('sol', it.sol);
   fd.append('note', done ? '' : 'TODO' + (it.todoId ? ':' + it.todoId : ''));   // done → remove the TODO note from the cell
-  _todosPost('status', { id: it.todoId, game: gameName, obs: it.obs, sol: it.sol, status: done ? 'Done' : 'Open' }).catch(function() {});
+  if (tr) { _todoSetChecked(tr, done); if (_activeTab === 'dash') _renderBoardTodos(); }
   fetch(APP_BASE + 'push/setDevNote.php', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
     .then(function(res) { if (res.error) throw new Error(res.error); if (res.row) it.row = res.row; })

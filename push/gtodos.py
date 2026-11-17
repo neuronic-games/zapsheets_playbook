@@ -5,7 +5,9 @@
 #   add    — items: [{game, session, obs, sol}]   adds new TODOs (re-opens ones already there)
 #   update — id, fields: {Priority, Due, Assigned, Observation, Thoughts}  (the todos sheet only)
 #   order  — ids: [id, ...]                       moves the rows so the sheet is in the Board's order
-#   status — status: "Done" | "Open", and id  or  game + obs + sol
+#   status — "Done": deletes the TODO's row.  "Open": brings it back — todo: {ID, Game, …} is
+#            written back in, before the row of `before` (an ID) if given, else at the end.
+#            The TODO is found by id, or game + obs + sol.
 # Prints {"ok": true, ...} or {"error": "..."}.
 
 import gspread
@@ -317,11 +319,33 @@ def main():
         out({'ok': True})
 
     if action == 'status':
-        status = 'Done' if clean(data.get('status')).lower() == 'done' else 'Open'
+        done = clean(data.get('status')).lower() == 'done'
         i = find_ref()
-        if i < 0: out({'ok': True, 'found': False})   # not in the todos sheet (e.g. flagged by hand) — nothing to do
-        write_many(ws, [{'range': a1(i, 'Status'), 'values': [[status]]}])
-        out({'ok': True, 'found': True})
+        if done:
+            if i < 0: out({'ok': True, 'found': False})   # already gone
+            wb.batch_update({'requests': [{'deleteDimension': {'range': {
+                'sheetId': ws.id, 'dimension': 'ROWS', 'startIndex': i + 1, 'endIndex': i + 2}}}]})
+            out({'ok': True, 'removed': True})
+        if i >= 0:   # still there (e.g. an older row marked Done) — just reopen it
+            write_many(ws, [{'range': a1(i, 'Status'), 'values': [['Open']]}])
+            out({'ok': True, 'found': True})
+        rec = data.get('todo') or {}
+        if not clean(rec.get('ID')):
+            out({'ok': True, 'found': False})
+        r = [''] * len(headers)
+        for h in headers:
+            if h in rec: r[headers.index(h)] = clean(rec[h])
+        r[C['Status']] = 'Open'
+        b = find_id(clean(data.get('before'))) if data.get('before') else -1
+        if b >= 0:   # put it back where it was
+            wb.batch_update({'requests': [{'insertDimension': {'range': {
+                'sheetId': ws.id, 'dimension': 'ROWS', 'startIndex': b + 1, 'endIndex': b + 2}, 'inheritFromBefore': False}}]})
+            write(ws, 'A' + str(b + 2) + ':' + rowcol_to_a1(b + 2, len(headers)), [r])
+            try: plain_rows(ws, headers, b + 2, b + 2)
+            except Exception: pass
+        else:
+            append(ws, [r])
+        out({'ok': True, 'restored': True})
 
     out({'error': 'Unknown action'})
 

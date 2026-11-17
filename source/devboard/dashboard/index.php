@@ -987,7 +987,6 @@ body.session-dialog-open .session-body img { display:none !important; }
 .btodo-row.dragging { background:#fffbe6; box-shadow:0 6px 18px rgba(0,0,0,.12); position:relative; z-index:2; }
 .btodo-handle { cursor:grab; color:#c3cad4; font-size:.8rem; letter-spacing:-.15em; padding:.15rem .25rem; touch-action:none; user-select:none; line-height:1.2; }
 .btodo-row.dragging .btodo-handle { cursor:grabbing; }
-.btodo-row.done .btodo-handle { visibility:hidden; }
 .btodo-check { width:1rem; height:1rem; accent-color:#b8860b; flex-shrink:0; cursor:pointer; }
 .btodo-text { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:'DINRegular',sans-serif; font-size:.85rem; color:#333; line-height:1.4; }
 .btodo-text > span + span { margin-left:.5rem; }
@@ -1970,13 +1969,8 @@ function _todosSyncFromSave(game, eventType, sessionNum, date, pairs) {
   if (items.length) _todosPost('add', { items: items }).catch(function() {});
 }
 
-function _todosSorted() {
-  return TODOS_RAW.slice().sort(function(a, b) {
-    var da = (a.Status || '').toLowerCase() === 'done', db = (b.Status || '').toLowerCase() === 'done';
-    if (da !== db) return da ? 1 : -1;
-    return (parseInt(a.Order, 10) || 9999) - (parseInt(b.Order, 10) || 9999);
-  });
-}
+// The list is in the same order as the rows of the todos sheet
+function _todosSorted() { return TODOS_RAW.slice(); }
 
 function _renderBoardTodos() {
   var list = _todosSorted();
@@ -2087,7 +2081,7 @@ function onBoardTodoCheck(id, cb) {
 var _btodoDragging = null;
 function _btodoDragStart(ev) {
   var row = ev.target.closest('.btodo-row');
-  if (!row || row.classList.contains('done')) return;
+  if (!row) return;
   ev.preventDefault();
   _btodoDragging = row;
   row.classList.add('dragging');
@@ -2095,7 +2089,7 @@ function _btodoDragStart(ev) {
   function move(e) {
     var over = document.elementFromPoint(e.clientX, e.clientY);
     over = over && over.closest('.btodo-row');
-    if (!over || over === row || over.parentNode !== list || over.classList.contains('done')) return;
+    if (!over || over === row || over.parentNode !== list) return;
     var r = over.getBoundingClientRect();
     list.insertBefore(row, e.clientY < r.top + r.height / 2 ? over : over.nextSibling);
   }
@@ -2106,7 +2100,7 @@ function _btodoDragStart(ev) {
     row.classList.remove('dragging');
     _btodoDragging = null;
     var ids = Array.prototype.map.call(list.querySelectorAll('.btodo-row'), function(r) { return r.dataset.id; });
-    ids.forEach(function(id, n) { var t = _todoById(id); if (t) t.Order = String(n + 1); });
+    TODOS_RAW = ids.map(_todoById).filter(Boolean).concat(TODOS_RAW.filter(function(t) { return ids.indexOf(t.ID) < 0; }));
     _todosPost('order', { ids: ids }).catch(function() {});
   }
   document.addEventListener('pointermove', move);

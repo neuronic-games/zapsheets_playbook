@@ -4,7 +4,7 @@
 # JSON: { "action": "add" | "update" | "order" | "status", ... }
 #   add    — items: [{game, session, obs, sol}]   adds new TODOs (re-opens ones already there)
 #   update — id, fields: {Priority, Due, Assigned}
-#   order  — ids: [id, ...]                       saves the Board order (Order = 1, 2, 3 …)
+#   order  — ids: [id, ...]                       moves the rows so the sheet is in the Board's order
 #   status — status: "Done" | "Open", and id  or  game + obs + sol
 # Prints {"ok": true, ...} or {"error": "..."}.
 
@@ -16,7 +16,8 @@ from gspread.utils import rowcol_to_a1
 socket.setdefaulttimeout(30)
 credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
 TAB     = 'todos'
-HEADERS = ['ID', 'Game', 'Session', 'Observation', 'Thoughts', 'Priority', 'Due', 'Assigned', 'Order', 'Status', 'Created']
+HEADERS = ['ID', 'Game', 'Session', 'Observation', 'Thoughts', 'Priority', 'Due', 'Assigned', 'Status', 'Created']
+# The list order IS the row order in the sheet (no order column).
 
 def out(d):
     print(json.dumps(d)); sys.exit(0)
@@ -43,7 +44,7 @@ if ws is None:
     ws.update([HEADERS], 'A1', value_input_option='RAW')
     try:
         ws.freeze(rows=1)
-        ws.format('A1:K1', {'textFormat': {'bold': True}})
+        ws.format('A1:J1', {'textFormat': {'bold': True}})
     except Exception:
         pass
 
@@ -76,8 +77,6 @@ action = data.get('action')
 updates = []
 
 if action == 'add':
-    orders = [int(cell(r, 'Order')) for r in rows if cell(r, 'Order').isdigit()]
-    nxt = (max(orders) if orders else 0) + 1
     new_rows, added = [], 0
     for it in data.get('items', []):
         game, obs, sol = clean(it.get('game')), clean(it.get('obs')), clean(it.get('sol'))
@@ -94,7 +93,6 @@ if action == 'add':
         r[C['Session']]     = clean(it.get('session'))
         r[C['Observation']] = obs
         r[C['Thoughts']]    = sol
-        r[C['Order']]       = str(nxt); nxt += 1
         r[C['Status']]      = 'Open'
         r[C['Created']]     = datetime.date.today().isoformat()
         new_rows.append(r); rows.append(r); added += 1
@@ -114,10 +112,18 @@ if action == 'update':
     out({'ok': True})
 
 if action == 'order':
-    for n, tid in enumerate(data.get('ids', []), start=1):
-        i = find_id(clean(tid))
-        if i >= 0: updates.append({'range': a1(i, 'Order'), 'values': [[str(n)]]})
-    if updates: ws.batch_update(updates, value_input_option='RAW')
+    # Rewrite the data rows in the new order (rows not in the list keep their place at the end)
+    by_id, rest = {}, []
+    for r in rows:
+        tid = cell(r, 'ID')
+        if tid and tid not in by_id: by_id[tid] = r
+        else: rest.append(r)
+    ordered = [by_id.pop(clean(t)) for t in data.get('ids', []) if clean(t) in by_id]
+    ordered += [r for r in rows if cell(r, 'ID') in by_id] + rest
+    if ordered:
+        width = len(headers)
+        ordered = [(list(r) + [''] * width)[:width] for r in ordered]
+        ws.update(ordered, 'A2:' + rowcol_to_a1(len(ordered) + 1, width), value_input_option='RAW')
     out({'ok': True})
 
 if action == 'status':

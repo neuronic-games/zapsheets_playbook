@@ -86,8 +86,8 @@ if (isset($_GET['manifest'])) {
         'background_color' => '#1a1a2e',
         'theme_color'      => '#1a1a2e',
         'icons'            => [
-            ['src' => $base . '/images/pb_icon_192.png', 'sizes' => '192x192', 'type' => 'image/png'],
-            ['src' => $base . '/images/pb_icon_512.png', 'sizes' => '512x512', 'type' => 'image/png'],
+            ['src' => $base . '/images/pitchboard_icon_192.png', 'sizes' => '192x192', 'type' => 'image/png'],
+            ['src' => $base . '/images/pitchboard_icon_512.png', 'sizes' => '512x512', 'type' => 'image/png'],
         ],
     ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
     exit;
@@ -318,8 +318,8 @@ $_hasFooter = $_rulesUrl || $_playUrl || $_printUrl || $_sellsheetUrl || $_video
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="<?= _ps_e($_gameName) ?>" />
-<link rel="icon" type="image/png" sizes="192x192" href="<?= _ps_e($_base) ?>images/pb_icon_192.png" />
-<link rel="apple-touch-icon" sizes="180x180" href="<?= _ps_e($_base) ?>images/pb_icon_180.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="<?= _ps_e($_base) ?>images/pitchboard_icon_192.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="<?= _ps_e($_base) ?>images/pitchboard_icon_180.png" />
 <style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2') format('woff2'),url('fonts/DINBlack.ttf'); }
 @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'),url('fonts/DINMedium.ttf'); }

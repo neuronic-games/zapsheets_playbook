@@ -13,7 +13,7 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>PitchBoard – Help</title>
-<link rel="icon" type="image/png" href="images/pb_icon_180.png" />
+<link rel="icon" type="image/png" href="images/pitchboard_icon_180.png" />
 <style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2')  format('woff2'),url('fonts/DINBlack.ttf')  format('truetype'); }
 @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'),url('fonts/DINMedium.ttf') format('truetype'); }
@@ -590,7 +590,7 @@ code {
 
 <!-- Hero -->
 <div class="hero">
-  <img class="hero-icon" src="images/pb_icon_180.png" alt="PitchBoard" />
+  <img class="hero-icon" src="images/pitchboard_icon_180.png" alt="PitchBoard" />
   <div class="hero-title"><span class="pitch">Pitch</span><span class="board">Board</span></div>
   <p class="hero-sub">Your game pitching command center. Track every submission, publisher, and status — all from your Google Sheet.</p>
   <div class="hero-chips">

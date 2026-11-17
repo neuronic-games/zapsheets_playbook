@@ -16,7 +16,7 @@ $_origin = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'zapsheets.com');
 $_abs    = $_origin . $_base;
 $_pageUrl = htmlspecialchars($_abs . 'pitchboard/features', ENT_QUOTES);
 $_ogImg   = htmlspecialchars($_abs . 'images/og/pitchboard-og.png', ENT_QUOTES);
-$_icon    = htmlspecialchars($_abs . 'images/pb_icon_180.png', ENT_QUOTES);
+$_icon    = htmlspecialchars($_abs . 'images/pitchboard_icon_180.png', ENT_QUOTES);
 ?>
 <title>PitchBoard — Features</title>
 <meta name="description" content="PitchBoard keeps every game, every publisher and every pitch in one place, on your own Google Sheet. For tabletop game designers.">
@@ -37,7 +37,7 @@ $_icon    = htmlspecialchars($_abs . 'images/pb_icon_180.png', ENT_QUOTES);
 <meta name="twitter:description" content="PitchBoard keeps every game, every publisher and every pitch in one place, on your own Google Sheet. For tabletop game designers.">
 <meta name="twitter:image" content="<?= $_ogImg ?>">
 <link rel="apple-touch-icon" href="<?= $_icon ?>">
-<link rel="icon" type="image/png" href="images/pb_icon_180.png" />
+<link rel="icon" type="image/png" href="images/pitchboard_icon_180.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400&display=swap" rel="stylesheet">

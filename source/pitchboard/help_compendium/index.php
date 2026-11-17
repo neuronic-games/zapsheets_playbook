@@ -12,7 +12,7 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>PitchBoard – Compendium Help</title>
-<link rel="icon" type="image/png" href="images/pb_icon_180.png" />
+<link rel="icon" type="image/png" href="images/pitchboard_icon_180.png" />
 <style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2')  format('woff2'),url('fonts/DINBlack.ttf')  format('truetype'); }
 @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'),url('fonts/DINMedium.ttf') format('truetype'); }

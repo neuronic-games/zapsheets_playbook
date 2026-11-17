@@ -16,7 +16,7 @@ $_origin = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'zapsheets.com');
 $_abs    = $_origin . $_base;
 $_pageUrl = htmlspecialchars($_abs . 'gameboard/features', ENT_QUOTES);
 $_ogImg   = htmlspecialchars($_abs . 'images/og/gameboard-og.png', ENT_QUOTES);
-$_icon    = htmlspecialchars($_abs . 'images/gb_logo.png', ENT_QUOTES);
+$_icon    = htmlspecialchars($_abs . 'images/gb_icon_180.png', ENT_QUOTES);
 ?>
 <title>GameBoard — Features</title>
 <meta name="description" content="GameBoard turns your Google Sheet into a polished catalog and game pages for your board games — no web developer, no web hosting.">
@@ -37,7 +37,7 @@ $_icon    = htmlspecialchars($_abs . 'images/gb_logo.png', ENT_QUOTES);
 <meta name="twitter:description" content="GameBoard turns your Google Sheet into a polished catalog and game pages for your board games — no web developer, no web hosting.">
 <meta name="twitter:image" content="<?= $_ogImg ?>">
 <link rel="apple-touch-icon" href="<?= $_icon ?>">
-<link rel="icon" type="image/png" href="images/gb_logo.png" />
+<link rel="icon" type="image/png" href="images/gb_icon_180.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400&display=swap" rel="stylesheet">
@@ -373,7 +373,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
 
 <nav>
   <a class="nav-logo" href="gameboard">
-    <img src="images/gb_logo.png" alt="GameBoard" />
+    <img src="images/gb_icon_180.png" alt="GameBoard" />
     <span class="nav-logo-name">GameBoard</span>
   </a>
   <div class="nav-links">

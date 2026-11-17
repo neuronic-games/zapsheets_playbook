@@ -11,7 +11,7 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ironwood Press — GameBoard Demo</title>
-<link rel="icon" type="image/png" href="images/gb_logo.png" />
+<link rel="icon" type="image/png" href="images/gb_icon_180.png" />
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 

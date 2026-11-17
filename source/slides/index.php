@@ -14,8 +14,8 @@ $_sheet_id = $_bm[2] ?? '';
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>Slides · PitchBoard</title>
-<link rel="apple-touch-icon" sizes="180x180" href="images/pb_icon_180.png" />
-<link rel="icon" type="image/png" href="images/pb_icon_192.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="images/pitchboard_icon_180.png" />
+<link rel="icon" type="image/png" href="images/pitchboard_icon_192.png" />
 <link rel="manifest" href="<?= htmlspecialchars($_base) ?>manifest.php?app=slides&id=<?= urlencode($_sheet_id) ?>&base=<?= urlencode($_base) ?>" />
 <style>
   @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2')  format('woff2'),url('fonts/DINBlack.ttf'); }

@@ -20,7 +20,7 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>PitchBoard – Connect Your Sheet</title>
-<link rel="icon" type="image/png" href="images/pb_icon_180.png" />
+<link rel="icon" type="image/png" href="images/pitchboard_icon_180.png" />
 <style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2')  format('woff2'),url('fonts/DINBlack.ttf')  format('truetype'); }
 @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'),url('fonts/DINMedium.ttf') format('truetype'); }
@@ -187,7 +187,7 @@ body {
 
   <!-- ── Branding ─────────────────────────────────────────────── -->
   <div class="brand">
-    <img class="brand-logo" src="images/pb_icon_180.png" alt="PitchBoard logo" />
+    <img class="brand-logo" src="images/pitchboard_icon_180.png" alt="PitchBoard logo" />
     <div class="brand-name">PitchBoard</div>
     <div class="brand-tagline">Your board game pitch tracker</div>
     <a href="pitchboard/help" style="display:inline-block;margin-top:.6rem;font-family:'DINBlack',sans-serif;font-size:.68rem;letter-spacing:.07em;text-transform:uppercase;color:#c8860a;text-decoration:none;opacity:.8;">How it works →</a>

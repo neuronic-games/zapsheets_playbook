@@ -20,8 +20,8 @@ if ($app === 'slides') {
         'display'          => 'standalone',
         'orientation'      => 'portrait',
         'icons'            => [
-            ['src' => $base . 'images/pb_icon_192.png', 'sizes' => '192x192', 'type' => 'image/png'],
-            ['src' => $base . 'images/pb_icon_512.png', 'sizes' => '512x512', 'type' => 'image/png'],
+            ['src' => $base . 'images/pitchboard_icon_192.png', 'sizes' => '192x192', 'type' => 'image/png'],
+            ['src' => $base . 'images/pitchboard_icon_512.png', 'sizes' => '512x512', 'type' => 'image/png'],
         ],
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 } elseif ($app === 'fitboard') {
@@ -53,8 +53,8 @@ if ($app === 'slides') {
         'background_color' => '#1a1a2e',
         'display'          => 'standalone',
         'icons'            => [
-            ['src' => $base . 'images/pb_icon_192.png', 'sizes' => '192x192', 'type' => 'image/png'],
-            ['src' => $base . 'images/pb_icon_512.png', 'sizes' => '512x512', 'type' => 'image/png'],
+            ['src' => $base . 'images/pitchboard_icon_192.png', 'sizes' => '192x192', 'type' => 'image/png'],
+            ['src' => $base . 'images/pitchboard_icon_512.png', 'sizes' => '512x512', 'type' => 'image/png'],
         ],
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 }

@@ -146,7 +146,7 @@ body {
 
   <!-- Branding -->
   <div class="brand">
-    <div class="brand-icon"><img src="images/gb_logo.png" alt="GameBoard" /></div>
+    <div class="brand-icon"><img src="images/gb_icon_180.png" alt="GameBoard" /></div>
     <div class="brand-name">GameBoard</div>
     <div class="brand-tagline">Polished product pages for your board games</div>
   </div>

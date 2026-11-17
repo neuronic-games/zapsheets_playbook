@@ -34,7 +34,7 @@ $_lastFmt = fmtDate($_lastPublished);
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>The Compendium — Publish to PitchBoard</title>
-<link rel="icon" type="image/png" href="images/pb_icon_180.png" />
+<link rel="icon" type="image/png" href="images/pitchboard_icon_180.png" />
 <style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2')  format('woff2'),url('fonts/DINBlack.ttf')  format('truetype'); }
 @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'),url('fonts/DINMedium.ttf') format('truetype'); }
@@ -319,7 +319,7 @@ body {
 <div class="hero">
   <div class="hero-inner">
     <div class="hero-eyebrow">
-      <img src="images/pb_icon_180.png" alt="" />
+      <img src="images/pitchboard_icon_180.png" alt="" />
       PitchBoard
     </div>
     <div class="hero-title">The Compendium</div>

@@ -3020,6 +3020,10 @@ function _todoSetCacheNote(gameName, it, note) {
       if (note) r['_notes'] = { 'Solutions': note }; else delete r['_notes'];
     }
   });
+  // Sessions shown on the page (the edit dialog reads these): keep the light bulb in step
+  (_sessionCache[gameName] || []).forEach(function(s) {
+    s.obs.forEach(function(o) { if (o.obs === it.obs && o.sol === it.sol) o.todo = note; });
+  });
 }
 
 function onTodoCheck(gameName, i, cb) {

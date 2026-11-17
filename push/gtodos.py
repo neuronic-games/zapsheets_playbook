@@ -88,8 +88,6 @@ def main():
     created = False
     ws = next((w for w in wb.worksheets() if w.title.lower() == TAB), None)
     if ws is None:
-        if data.get('action') not in ('add', 'sync'):
-            out({'error': 'There is no todos sheet yet'})
         created = True
         ws = wb.add_worksheet(title=TAB, rows=200, cols=len(HEADERS))
         ws.update(range_name='A1', values=[HEADERS], value_input_option='RAW')
@@ -174,19 +172,17 @@ def main():
                         found.append({'game': game, 'session': session, 'obs': val(iO), 'sol': val(iS)})
         return found
 
-    if action in ('add', 'sync'):
-        items = list(data.get('items', []))
-        if action == 'sync' or created:
-            items += scan_notes()     # (re)build from the notes in the session tabs
-        new_rows, added = [], 0
+    def add_items(items, reopen):
+        """Append TODOs that aren't in the sheet yet; returns (added, reopened)."""
+        new_rows, re_ups = [], []
         for it in items:
             game, obs, sol = clean(it.get('game')), clean(it.get('obs')), clean(it.get('sol'))
             if not game or not (obs or sol):
                 continue
             i = find_text(game, obs, sol)
             if i >= 0:
-                if action == 'add' and cell(rows[i], 'Status').lower() == 'done':
-                    updates.append({'range': a1(i, 'Status'), 'values': [['Open']]})
+                if reopen and cell(rows[i], 'Status').lower() == 'done':
+                    re_ups.append({'range': a1(i, 'Status'), 'values': [['Open']]})
                 continue
             r = [''] * len(headers)
             r[C['ID']]          = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
@@ -196,16 +192,32 @@ def main():
             r[C['Thoughts']]    = sol
             r[C['Status']]      = 'Open'
             r[C['Created']]     = datetime.date.today().isoformat()
-            new_rows.append(r); rows.append(r); added += 1
+            new_rows.append(r); rows.append(r)
         if new_rows:
             ws.append_rows(new_rows, value_input_option='RAW', insert_data_option='INSERT_ROWS', table_range='A1')
-        if updates:
-            ws.batch_update(updates, value_input_option='RAW')
-        out({'ok': True, 'added': added, 'reopened': len(updates)})
+        if re_ups:
+            ws.batch_update(re_ups, value_input_option='RAW')
+        return len(new_rows), len(re_ups)
+
+    # A new (or re-created) todos tab is first rebuilt from the TODO notes in the session tabs
+    if created or action == 'sync':
+        add_items(scan_notes(), False)
+
+    # Find a TODO by ID, or — if the page's ID is from before the tab was re-created — by game + text
+    def find_ref():
+        i = find_id(clean(data.get('id'))) if data.get('id') else -1
+        if i < 0 and (data.get('obs') or data.get('sol')):
+            i = find_text(clean(data.get('game')), clean(data.get('obs')), clean(data.get('sol')))
+        return i
+
+    if action in ('add', 'sync'):
+        added, reopened = add_items(data.get('items', []), action == 'add')
+        out({'ok': True, 'added': added, 'reopened': reopened, 'created': created})
+
 
     if action == 'update':
-        i = find_id(clean(data.get('id')))
-        if i < 0: out({'error': 'TODO not found — reload and try again'})
+        i = find_ref()
+        if i < 0: out({'ok': True, 'found': False, 'created': created})   # unknown TODO — the refreshed list is returned
         for h in ('Priority', 'Due', 'Assigned'):
             if h in (data.get('fields') or {}):
                 updates.append({'range': a1(i, h), 'values': [[clean(data['fields'][h])]]})
@@ -232,7 +244,7 @@ def main():
 
     if action == 'status':
         status = 'Done' if clean(data.get('status')).lower() == 'done' else 'Open'
-        i = find_id(clean(data.get('id'))) if data.get('id') else find_text(clean(data.get('game')), clean(data.get('obs')), clean(data.get('sol')))
+        i = find_ref()
         if i < 0: out({'ok': True, 'found': False})   # not in the todos sheet (e.g. flagged by hand) — nothing to do
         ws.batch_update([{'range': a1(i, 'Status'), 'values': [[status]]}], value_input_option='RAW')
         out({'ok': True, 'found': True})

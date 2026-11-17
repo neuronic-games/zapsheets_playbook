@@ -2066,7 +2066,7 @@ function _btodoSet(id, field, value) {
   _renderBoardTodos();
   _refreshTodoSection(t.Game);
   var f = {}; f[field] = value;
-  _todosPost('update', { id: id, fields: f }).catch(function() {});
+  _todosPost('update', { id: id, fields: f, game: t.Game, obs: t.Observation || '', sol: t.Thoughts || '' }).catch(function() {});
 }
 
 // Small dropdown under a priority / person / due-date icon
@@ -2128,7 +2128,7 @@ function onBoardTodoCheck(id, cb) {
   fd.append('id', SHEET_ID); fd.append('game', t.Game); fd.append('row', 0);
   fd.append('obs', it.obs); fd.append('sol', it.sol); fd.append('note', done ? '' : 'TODO');
   fetch(APP_BASE + 'push/setDevNote.php', { method: 'POST', body: fd }).catch(function() {});
-  _todosPost('status', { id: id, status: t.Status }).catch(function() {});
+  _todosPost('status', { id: id, status: t.Status, game: t.Game, obs: it.obs, sol: it.sol }).catch(function() {});
 }
 
 // Drag to reorder (pointer events: mouse and touch)

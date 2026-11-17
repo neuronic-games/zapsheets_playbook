@@ -347,6 +347,11 @@ footer a:hover { color:rgba(255,255,255,.7); }
     <h2 class="section-title">Everything you need to showcase your games</h2>
     <p class="section-sub">From a branded catalog to individual game pages with buy links — GameBoard covers the full product presence without a complicated CMS.</p>
     <div class="features-grid">
+      <div class="feat-card" style="grid-column:1/-1">
+        <div class="feat-icon green">🌐</div>
+        <h3>No website to host</h3>
+        <p>You don't need to build, host or maintain your own website. GameBoard gives you a live catalog and game pages at a shareable link — no hosting plan, no web server, no WordPress updates. A typical GoDaddy site runs $10–35 a month plus a domain; with GameBoard there's nothing to host.</p>
+      </div>
       <div class="feat-card">
         <div class="feat-icon green">🗂️</div>
         <h3>Game catalog</h3>
@@ -594,7 +599,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
     <div class="own-grid">
       <div class="own-card">
         <div class="num">$0</div>
-        <p>No monthly fee. GameBoard runs on Google infrastructure you already have — no extra hosting required.</p>
+        <p>No monthly fee. GameBoard runs on Google infrastructure you already have — no web hosting to pay for. A typical GoDaddy site runs $10–35 a month, plus about $23 a year for a domain.</p>
       </div>
       <div class="own-card">
         <div class="num">100%</div>
@@ -612,7 +617,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
   <div class="container">
     <div class="section-label">How we compare</div>
     <h2 class="section-title">Built for publishers, not web designers</h2>
-    <p class="section-sub">GameBoard gives you a polished product presence without Squarespace's learning curve or a developer's retainer.</p>
+    <p class="section-sub">GameBoard gives you a polished product presence without Squarespace's learning curve, a GoDaddy hosting bill, or a developer's retainer.</p>
     <div class="compare-wrap">
       <table class="compare-table">
         <thead>
@@ -620,18 +625,20 @@ footer a:hover { color:rgba(255,255,255,.7); }
             <th>Feature</th>
             <th class="ours">GameBoard</th>
             <th>Squarespace / Wix</th>
+            <th>GoDaddy</th>
             <th>BGG Publisher Page</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td>Game catalog page</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Per-game detail pages</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Inline editing (no CMS)</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Powered by your Google Sheet</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Works with <a href="https://zapsheets.com/app/pitchboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">PitchBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Shareable token links</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Price &amp; buy links</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">TBD</td><td>$16–49 / mo</td><td>Free</td></tr>
+          <tr><td>No website hosting needed</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>Game catalog page</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>Per-game detail pages</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>Inline editing (no CMS)</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td>Powered by your Google Sheet</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td>Works with <a href="https://zapsheets.com/app/pitchboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">PitchBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td>Shareable token links</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td>Price &amp; buy links</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">TBD</td><td>$16–49 / mo</td><td>$10–35 / mo<br><span style="font-size:12px;color:var(--text-muted);font-weight:400">+ ~$23 / yr domain</span></td><td>Free</td></tr>
         </tbody>
       </table>
     </div>

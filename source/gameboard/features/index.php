@@ -288,6 +288,25 @@ footer a:hover { color:rgba(255,255,255,.7); }
 .gbp-label { font-family:'GBDINBlack','Inter',sans-serif; font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; color:#8a8a99; border-bottom:1px solid #e3e1dc; padding-bottom:4px; margin-bottom:7px; }
 .gbp-desc { font-size:10.5px; line-height:1.6; color:#3d3d55; }
 /* ── Brand editor animation ── */
+/* add-a-game step */
+.ie-addcard { transition:box-shadow .2s; }
+.ie-cover-slot { position:relative; aspect-ratio:1/1; background:#ece8e2; }
+.ie-cover-slot img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transform:scale(.96); transition:opacity .4s, transform .4s; }
+.ie-addcard.has-cover .ie-cover-slot img { opacity:1; transform:none; }
+.ie-cover-ph { position:absolute; inset:6px; border:1.5px dashed #b9b1a6; border-radius:6px; display:flex; align-items:center; justify-content:center; font-family:'GBDINBlack','Inter',sans-serif; font-size:10px; color:#8a8073; letter-spacing:.03em; transition:opacity .25s, background .15s, border-color .15s; }
+.ie-cover-ph.hover { border-color:#2d2a8e; color:#2d2a8e; background:rgba(45,42,142,.05); }
+.ie-ph-cover { display:none; }
+.ie-addcard.open .ie-ph-add { display:none; } .ie-addcard.open .ie-ph-cover { display:inline; }
+.ie-addcard.has-cover .ie-cover-ph { opacity:0; }
+.ie-addcard:not(.open) .gbx-card-t, .ie-addcard:not(.open) .gbx-card-s { visibility:hidden; }
+.gbx-card .ie-edit { display:block; outline-offset:1px; min-height:1.35em; }
+.gbx-card .gbx-card-s.ie-edit { min-height:2.7em; }
+.gbx-card .ie-edit.hover { outline-color:rgba(45,42,142,.45); }
+.gbx-card .ie-edit.editing { outline:1.5px solid #4caa4b; }
+.gbx-card .ie-edit.editing::after { background:#4caa4b; }
+.ie-gname:empty::before { content:'Game name'; color:#b8b3c8; }
+.ie-gsum:empty::before { content:'One-line summary'; color:#bbb; }
+.ie-gname.editing:empty::before, .ie-gsum.editing:empty::before { content:''; }
 .ie-stage { position:relative; overflow:hidden; user-select:none; }
 .ie-logo-slot { position:relative; width:34px; height:34px; flex-shrink:0; }
 .ie-logo-slot .gbx-logo { position:absolute; inset:0; opacity:0; transform:scale(.6); transition:opacity .35s, transform .35s cubic-bezier(.3,1.6,.5,1); }
@@ -549,7 +568,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="shot-text">
         <div class="section-label">Brand editor</div>
         <h2 class="section-title" style="margin-bottom:1rem;">Edit everything right on the page</h2>
-        <p>Sign in and your catalog becomes editable. Drop in your logo, click the company name and type, pick your brand color, click any image to replace it — right on the live page, with no settings screens or forms. Every change saves to your Sheet.</p>
+        <p>Sign in and your catalog becomes editable. Drop in your logo, click the company name and type, pick your brand color, add a game with its cover, click any image to replace it — right on the live page, with no settings screens or forms. Every change saves to your Sheet.</p>
         <ul>
           <li>Click-to-edit company name, tagline, and about text</li>
           <li>Upload logo and banner images in-place</li>
@@ -582,7 +601,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
             <div class="gbx-games">
               <div class="gbx-card"><img src="images/gameboard-features/cover-floristry.webp" alt="Floristry" loading="lazy"><div class="gbx-card-t">Floristry</div><div class="gbx-card-s">A quick, real time, Dutch auction game for two players.</div></div>
               <div class="gbx-card"><img src="images/gameboard-features/cover-scurry.webp" alt="Scurry Up!" loading="lazy"><div class="gbx-card-t">Scurry Up!</div><div class="gbx-card-s">Take on the role of a squirrel racing for nuts and berries!</div></div>
-              <div class="gbx-card"><img src="images/gameboard-features/cover-pressure.webp" alt="Pressure" loading="lazy"><div class="gbx-card-t">Pressure</div><div class="gbx-card-s">Will you dive the deepest or crack under the pressure!</div></div>
+              <div class="gbx-card ie-addcard"><div class="ie-cover-slot"><img src="images/gameboard-features/cover-pressure.webp" alt=""><div class="ie-cover-ph"><span class="ie-ph-add">+ Add a game</span><span class="ie-ph-cover">+ Cover image</span></div></div><div class="gbx-card-t ie-edit ie-gname"></div><div class="gbx-card-s ie-edit ie-gsum"></div></div>
             </div>
           </div>
           <div class="gbx-foot"><span>📸 𝕏 🎲</span><span>© 2026 <span class="ie-copyname">Your Company</span></span></div>
@@ -675,6 +694,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
   var paint = q('.ie-paint'), colors = q('.ie-colors'), purple = q('.ie-purple');
   var car = q('.ie-carousel'), imgA = q('.ie-img-a'), imgB = q('.ie-img-b');
   var file = q('.ie-file'), fileImg = file.querySelector('img'), fileName = file.querySelector('span');
+  var addCard = q('.ie-addcard'), coverPh = q('.ie-cover-ph'), gName = q('.ie-gname'), gSum = q('.ie-gsum');
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var visible = false;
   var sleep = function(ms) { return new Promise(function(r) { setTimeout(r, ms); }); };
@@ -715,6 +735,8 @@ footer a:hover { color:rgba(255,255,255,.7); }
     paint.classList.remove('hover'); purple.classList.remove('pick'); colors.classList.remove('show');
     car.classList.remove('hover'); imgA.style.opacity = 1; imgB.style.opacity = 0;
     file.classList.remove('show'); say('');
+    addCard.classList.remove('open', 'has-cover'); coverPh.classList.remove('hover');
+    [gName, gSum].forEach(function(e) { e.textContent = ''; e.className = e.className.replace(/\s*(hover|editing|selected)/g, ''); });
   }
 
   async function play() {
@@ -744,7 +766,23 @@ footer a:hover { color:rgba(255,255,255,.7); }
     banner.style.setProperty('--gbx-brand', '#693f99'); paint.classList.remove('hover');
     await sleep(450); colors.classList.remove('show');
     await saved();
-    // 4. Replace the carousel image
+    // 4. Add a new game
+    say('Add a game right on the page');
+    await moveTo(coverPh, .5, .5, 800); coverPh.classList.add('hover'); await sleep(350); await click();
+    coverPh.classList.remove('hover'); addCard.classList.add('open');
+    gName.classList.add('editing'); await sleep(350);
+    await type(gName, 'Pressure'); await sleep(250);
+    say('Drop in the cover');
+    await moveTo(coverPh, .5, .5, 450); coverPh.classList.add('hover'); await sleep(250); await click();
+    gName.classList.remove('editing');
+    await upload(coverPh, imgSrc('cover-pressure.webp'), 'Pressure-Cover.png');
+    coverPh.classList.remove('hover'); addCard.classList.add('has-cover'); await sleep(350);
+    say('Add a one-line summary');
+    await moveTo(gSum, .3, .3, 450); await click(); gSum.classList.add('editing');
+    await type(gSum, 'Will you dive the deepest or crack under the pressure!');
+    await sleep(300); await moveTo(q('.gbx-h'), .6, .5, 600); await click(); gSum.classList.remove('editing');
+    await saved();
+    // 5. Replace the carousel image
     say('Click any image to replace it');
     await moveTo(car, .5, .45); car.classList.add('hover'); await sleep(550); await click();
     await upload(car, imgSrc('carousel-pieces.webp'), 'scurry-up-pieces.jpg');
@@ -762,6 +800,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
     banner.style.setProperty('--gbx-brand', '#693f99'); logoSlot.classList.add('has');
     name.textContent = copyName.textContent = 'UP Games';
     imgB.style.opacity = 1; imgA.style.opacity = 0;
+    addCard.classList.add('open', 'has-cover'); gName.textContent = 'Pressure'; gSum.textContent = 'Will you dive the deepest or crack under the pressure!';
     return;
   }
   if ('IntersectionObserver' in window) {

@@ -46,6 +46,8 @@ RewriteRule ^devboard/share/([a-f0-9]{24})/?$ source/devboard/shared/index.php [
 
 # /devboard/help — help page (must come before /devboard rule)
 RewriteRule ^devboard/help/?$ source/devboard/help/index.php [L,QSA]
+# /devboard/features — sales / features page (must come before /devboard rule)
+RewriteRule ^devboard/features/?$ source/devboard/features/index.php [L,QSA]
 
 # /devboard — setup landing page (no sheet ID yet)
 RewriteRule ^devboard/?$ source/devboard/index.php [L,QSA]

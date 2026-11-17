@@ -10,7 +10,33 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<?php
+$_scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') ? 'https' : 'http';
+$_origin = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'zapsheets.com');
+$_abs    = $_origin . $_base;
+$_pageUrl = htmlspecialchars($_abs . 'pitchboard/features', ENT_QUOTES);
+$_ogImg   = htmlspecialchars($_abs . 'images/og/pitchboard-og.png', ENT_QUOTES);
+$_icon    = htmlspecialchars($_abs . 'images/pb_icon_180.png', ENT_QUOTES);
+?>
 <title>PitchBoard — Features</title>
+<meta name="description" content="PitchBoard keeps every game, every publisher and every pitch in one place, on your own Google Sheet. For tabletop game designers.">
+<link rel="canonical" href="<?= $_pageUrl ?>">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Zapsheets">
+<meta property="og:title" content="PitchBoard — Features">
+<meta property="og:description" content="PitchBoard keeps every game, every publisher and every pitch in one place, on your own Google Sheet. For tabletop game designers.">
+<meta property="og:url" content="<?= $_pageUrl ?>">
+<meta property="og:image" content="<?= $_ogImg ?>">
+<meta property="og:image:secure_url" content="<?= $_ogImg ?>">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="PitchBoard — features">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PitchBoard — Features">
+<meta name="twitter:description" content="PitchBoard keeps every game, every publisher and every pitch in one place, on your own Google Sheet. For tabletop game designers.">
+<meta name="twitter:image" content="<?= $_ogImg ?>">
+<link rel="apple-touch-icon" href="<?= $_icon ?>">
 <link rel="icon" type="image/png" href="images/pb_icon_180.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

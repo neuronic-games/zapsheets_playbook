@@ -10,8 +10,33 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="DevBoard — playtest notes for game designers and their teams, plus estimates, invoices and reports for development studios. Powered by your Google Sheet.">
+<?php
+$_scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') ? 'https' : 'http';
+$_origin = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'zapsheets.com');
+$_abs    = $_origin . $_base;
+$_pageUrl = htmlspecialchars($_abs . 'devboard/features', ENT_QUOTES);
+$_ogImg   = htmlspecialchars($_abs . 'images/og/devboard-og.png', ENT_QUOTES);
+$_icon    = htmlspecialchars($_abs . 'images/db_icon_180.png', ENT_QUOTES);
+?>
 <title>DevBoard — Features</title>
+<meta name="description" content="DevBoard — playtest notes for game designers and their teams, plus estimates, invoices and reports for development studios. Powered by your Google Sheet.">
+<link rel="canonical" href="<?= $_pageUrl ?>">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Zapsheets">
+<meta property="og:title" content="DevBoard — Features">
+<meta property="og:description" content="DevBoard — playtest notes for game designers and their teams, plus estimates, invoices and reports for development studios. Powered by your Google Sheet.">
+<meta property="og:url" content="<?= $_pageUrl ?>">
+<meta property="og:image" content="<?= $_ogImg ?>">
+<meta property="og:image:secure_url" content="<?= $_ogImg ?>">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DevBoard — features">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DevBoard — Features">
+<meta name="twitter:description" content="DevBoard — playtest notes for game designers and their teams, plus estimates, invoices and reports for development studios. Powered by your Google Sheet.">
+<meta name="twitter:image" content="<?= $_ogImg ?>">
+<link rel="apple-touch-icon" href="<?= $_icon ?>">
 <link rel="icon" type="image/png" href="images/db_icon_180.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

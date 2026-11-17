@@ -986,7 +986,11 @@ body.session-dialog-open .session-body img { display:none !important; }
 .btodo-list { background:#fff; border:1px solid #e3e8ef; border-radius:10px; overflow:hidden; }
 .btodo-row { display:flex; align-items:center; gap:.6rem; padding:.35rem .8rem .35rem .4rem; border-top:1px solid #eef1f5; background:#fff; }
 .btodo-row:first-child { border-top:none; }
-.btodo-row.dragging { background:#fffbe6; box-shadow:0 6px 18px rgba(0,0,0,.12); position:relative; z-index:2; }
+.btodo-row { position:relative; will-change:transform; }
+.btodo-row.dragging { background:#fffbe6; box-shadow:0 12px 28px rgba(15,23,42,.18), 0 2px 6px rgba(15,23,42,.08); z-index:3; border-radius:8px; cursor:grabbing; }
+body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-select:none !important; -webkit-user-select:none !important; }
+.btodo-list { overflow:visible; }
+.btodo-row:first-child { border-radius:10px 10px 0 0; } .btodo-row:last-child { border-radius:0 0 10px 10px; } .btodo-row:only-child { border-radius:10px; }
 .btodo-handle { cursor:grab; color:#c3cad4; font-size:.8rem; letter-spacing:-.15em; padding:.15rem .25rem; touch-action:none; user-select:none; line-height:1.2; }
 .btodo-row.dragging .btodo-handle { cursor:grabbing; }
 .btodo-check { width:1rem; height:1rem; accent-color:#b8860b; flex-shrink:0; cursor:pointer; }
@@ -2189,31 +2193,97 @@ function onBoardTodoCheck(id, cb) {
   _todoSetChecked(t, done);
 }
 
-// Drag to reorder (pointer events: mouse and touch)
-var _btodoDragging = null;
-function _btodoDragStart(ev) {
+// Drag to reorder (pointer events: mouse and touch).
+// Press the ⋮⋮ handle, or press and hold anywhere on a row: the row lifts, follows the pointer,
+// the other rows slide out of the way, and on release it settles into its new place.
+var _btodoDragging = null, _btodoHold = null, _btodoNoClick = false;
+function _btodoDragStart(ev) {          // the ⋮⋮ handle: starts at once
   var row = ev.target.closest('.btodo-row');
-  if (!row) return;
+  if (!row || ev.button > 0) return;
   ev.preventDefault();
-  _btodoDragging = row;
-  row.classList.add('dragging');
+  _btodoBeginDrag(row, ev);
+}
+// Press-and-hold anywhere else on a row (not the checkbox or the icons)
+_boardTodosEl.addEventListener('pointerdown', function(ev) {
+  var row = ev.target.closest('.btodo-row');
+  if (!row || ev.button > 0 || _btodoDragging) return;
+  if (ev.target.closest('.btodo-handle, input, button, select, .btodo-menu')) return;
+  var x0 = ev.clientX, y0 = ev.clientY;
+  function cancel() { clearTimeout(_btodoHold); document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', cancel); document.removeEventListener('pointercancel', cancel); }
+  function mv(e) { if (Math.abs(e.clientX - x0) > 6 || Math.abs(e.clientY - y0) > 6) cancel(); }
+  document.addEventListener('pointermove', mv);
+  document.addEventListener('pointerup', cancel);
+  document.addEventListener('pointercancel', cancel);
+  _btodoHold = setTimeout(function() { cancel(); _btodoNoClick = true; _btodoBeginDrag(row, ev); }, 280);
+});
+// A press-and-hold drag shouldn't also open the TODO when the button is released
+_boardTodosEl.addEventListener('click', function(ev) {
+  if (_btodoNoClick) { _btodoNoClick = false; ev.stopPropagation(); ev.preventDefault(); }
+}, true);
+_boardTodosEl.addEventListener('contextmenu', function(ev) { if (_btodoDragging) ev.preventDefault(); });
+
+function _btodoBeginDrag(row, ev) {
   var list = row.parentNode;
+  var rows = Array.prototype.slice.call(list.querySelectorAll('.btodo-row'));
+  var from = rows.indexOf(row);
+  var rects = rows.map(function(r) { return r.getBoundingClientRect(); });
+  var h = rects[from].height, startY = ev.clientY, to = from;
+  _btodoDragging = row;
+  _btodoCloseMenu && _btodoCloseMenu();
+  document.body.classList.add('btodo-dragging');
+  row.classList.add('dragging');
+  rows.forEach(function(r) { if (r !== row) r.style.transition = 'transform .18s ease'; });
+  row.style.transition = 'box-shadow .15s, transform 0s';
+  row.style.transform = 'translateY(0) scale(1.02)';
+
+  function layout(dy) {
+    var mid = rects[from].top + h / 2 + dy;
+    to = 0;
+    for (var i = 0; i < rows.length; i++) {
+      if (i === from) continue;
+      if (mid > rects[i].top + rects[i].height / 2) to += 1;
+    }
+    rows.forEach(function(r, i) {
+      if (r === row) return;
+      var shift = 0;
+      if (from < to && i > from && i <= to) shift = -h;
+      if (to < from && i >= to && i < from) shift = h;
+      r.style.transform = shift ? 'translateY(' + shift + 'px)' : '';
+    });
+  }
   function move(e) {
-    var over = document.elementFromPoint(e.clientX, e.clientY);
-    over = over && over.closest('.btodo-row');
-    if (!over || over === row || over.parentNode !== list) return;
-    var r = over.getBoundingClientRect();
-    list.insertBefore(row, e.clientY < r.top + r.height / 2 ? over : over.nextSibling);
+    var dy = e.clientY - startY;
+    var min = rects[0].top - rects[from].top, max = rects[rows.length - 1].bottom - rects[from].bottom;
+    dy = Math.max(min - 8, Math.min(max + 8, dy));   // stay within the list
+    row.style.transform = 'translateY(' + dy + 'px) scale(1.02)';
+    layout(dy);
   }
   function up() {
     document.removeEventListener('pointermove', move);
     document.removeEventListener('pointerup', up);
     document.removeEventListener('pointercancel', up);
+    // Glide into the slot, then put the row there for real and save the order
+    var target = 0;
+    if (to > from) for (var i = from + 1; i <= to; i++) target += rects[i].height;
+    if (to < from) for (var j = to; j < from; j++) target -= rects[j].height;
+    row.style.transition = 'transform .18s ease, box-shadow .18s';
+    row.style.transform = 'translateY(' + target + 'px)';
     row.classList.remove('dragging');
-    _btodoDragging = null;
-    var ids = Array.prototype.map.call(list.querySelectorAll('.btodo-row'), function(r) { return r.dataset.id; });
-    TODOS_RAW = ids.map(_todoById).filter(Boolean).concat(TODOS_RAW.filter(function(t) { return ids.indexOf(t.ID) < 0; }));
-    _todosPost('order', { ids: ids }).catch(function() {});
+    setTimeout(function() {
+      rows.forEach(function(r) { r.style.transition = 'none'; r.style.transform = ''; });
+      if (to !== from) {
+        var others = rows.filter(function(r) { return r !== row; });
+        list.insertBefore(row, others[to] || null);
+      }
+      void list.offsetHeight;
+      rows.forEach(function(r) { r.style.transition = ''; });
+      document.body.classList.remove('btodo-dragging');
+      _btodoDragging = null;
+      if (to === from) return;
+      var ids = Array.prototype.map.call(list.querySelectorAll('.btodo-row'), function(r) { return r.dataset.id; });
+      TODOS_RAW = ids.map(_todoById).filter(Boolean).concat(TODOS_RAW.filter(function(t) { return ids.indexOf(t.ID) < 0; }));
+      _todosPost('order', { ids: ids }).catch(function() {});
+    }, 190);
   }
   document.addEventListener('pointermove', move);
   document.addEventListener('pointerup', up);

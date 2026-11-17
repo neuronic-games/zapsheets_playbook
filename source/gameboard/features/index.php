@@ -221,50 +221,80 @@ footer a:hover { color:rgba(255,255,255,.7); }
   .nav-links { display:none; }
   .app-games { grid-template-columns:1fr 1fr; }
 }
+/* ── Mini GameBoard site (mock-ups that look like a real UP Games page) ── */
+@font-face { font-family:'GBDINBlack'; src:url('fonts/DINBlack.woff2') format('woff2'), url('fonts/DINBlack.ttf') format('truetype'); }
+@font-face { font-family:'GBDIN';      src:url('fonts/DINMedium.woff2') format('woff2'), url('fonts/DINMedium.ttf') format('truetype'); }
+.gbx { --gbx-brand:#693f99; background:#f2f0ed; font-family:'GBDIN','Inter',system-ui,sans-serif; color:#222; text-align:left; }
+.gbx-banner { position:relative; background:var(--gbx-brand); transition:background .6s ease; display:flex; align-items:center; gap:11px; padding:11px 16px; min-height:56px; }
+.gbx-logo { width:34px; height:34px; object-fit:contain; flex-shrink:0; }
+.gbx-name { font-family:'GBDINBlack','Inter',sans-serif; font-size:15px; color:#fff; letter-spacing:.02em; white-space:nowrap; }
+.gbx-back { margin-left:auto; font-family:'GBDIN','Inter',sans-serif; font-size:10px; color:rgba(255,255,255,.8); border:1px solid rgba(255,255,255,.4); border-radius:6px; padding:3px 8px; }
+.gbx-carousel { position:relative; aspect-ratio:2.2/1; background:#fff; overflow:hidden; }
+.gbx-carousel img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:opacity .7s ease; }
+.gbx-arrow { position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; border-radius:50%; background:rgba(110,110,110,.7); color:#fff; font-size:15px; line-height:21px; text-align:center; z-index:1; }
+.gbx-arrow.l { left:6px; } .gbx-arrow.r { right:6px; }
+.gbx-dots { position:absolute; left:50%; bottom:6px; transform:translateX(-50%); display:flex; gap:4px; z-index:1; }
+.gbx-dots i { width:6px; height:6px; border-radius:50%; background:rgba(150,150,150,.6); }
+.gbx-dots i.on { background:#fff; box-shadow:0 0 0 1px rgba(0,0,0,.15); }
+.gbx-body { padding:12px 12px 14px; }
+.gbx-h { font-family:'GBDINBlack','Inter',sans-serif; font-size:12px; letter-spacing:.06em; text-transform:uppercase; margin:2px 2px 9px; }
+.gbx-games { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
+.gbx-card { background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.07); }
+.gbx-card img { display:block; width:100%; aspect-ratio:1/1; object-fit:cover; }
+.gbx-card-t { font-family:'GBDINBlack','Inter',sans-serif; font-size:11px; color:#2d2a8e; padding:7px 8px 1px; }
+.gbx-card-s { font-size:9.5px; line-height:1.35; padding:0 8px 9px; color:#222; }
+.gbx-foot { display:flex; justify-content:space-between; align-items:center; padding:8px 14px; background:#fff; border-top:1px solid #e6e2dc; font-size:9.5px; color:#666; }
+/* game page */
+.gbx-gp { background:#fff; padding:14px 16px 16px; }
+.gbx-gp-title { font-family:'GBDINBlack','Inter',sans-serif; font-size:21px; letter-spacing:.02em; text-transform:uppercase; line-height:1.05; }
+.gbx-gp-sub { font-size:11px; color:#555; margin-top:3px; }
+.gbx-gp-row { display:grid; grid-template-columns:42% 1fr; gap:12px; margin-top:12px; }
+.gbx-gp-img { width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:8px; border:1px solid #e3e3e3; }
+.gbx-thumbs { display:flex; gap:5px; margin-top:5px; }
+.gbx-thumbs img { width:34px; height:34px; object-fit:cover; border-radius:4px; border:1px solid #e3e3e3; }
+.gbx-thumbs img.on { border:1.5px solid #c8963e; }
+.gbx-stats { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.gbx-stat { border:1px solid #e3e3e3; border-radius:7px; text-align:center; padding:6px 4px 5px; }
+.gbx-stat b { display:block; font-family:'GBDINBlack','Inter',sans-serif; font-size:13px; font-weight:normal; }
+.gbx-stat span { font-size:8px; letter-spacing:.08em; text-transform:uppercase; color:#777; }
+.gbx-desc { border-left:2px solid #e3dcd2; padding-left:8px; margin-top:8px; font-size:9.5px; line-height:1.5; }
+.gbx-des { font-size:9px; margin-top:7px; } .gbx-des b { font-family:'GBDINBlack','Inter',sans-serif; font-weight:normal; letter-spacing:.06em; color:#777; margin-right:6px; }
+.gbx-btns { display:flex; gap:5px; margin-top:9px; flex-wrap:wrap; }
+.gbx-btn { font-family:'GBDINBlack','Inter',sans-serif; font-size:9px; letter-spacing:.06em; text-transform:uppercase; border:1px solid #d6d6d6; border-radius:6px; padding:5px 9px; }
+.gbx-btn.dark { background:#1a1c30; border-color:#1a1c30; color:#fff; }
+
 /* ── Brand editor animation ── */
-.ie-stage { position:relative; overflow:hidden; background:#f4f5f8; font-family:'Inter',system-ui,sans-serif; user-select:none; }
-.ie-banner { --ie-banner:#1a1c30; position:relative; background:var(--ie-banner); transition:background .6s ease; padding:16px 16px 14px; display:flex; align-items:center; gap:12px; }
-.ie-logo { width:38px; height:38px; border-radius:9px; background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
-.ie-titles { min-width:0; flex:1; }
-.ie-edit { position:relative; border-radius:4px; outline:1.5px dashed transparent; outline-offset:3px; transition:outline-color .15s; white-space:nowrap; min-height:1.2em; }
-.ie-name { font-size:18px; font-weight:700; color:#fff; letter-spacing:-.01em; display:inline-block; }
-.ie-tag  { font-size:11px; color:rgba(255,255,255,.62); margin-top:2px; display:inline-block; }
-.ie-titles .ie-edit { display:table; }
-.ie-edit.hover   { outline-color:rgba(255,255,255,.55); }
-.ie-edit.editing { outline:1.5px solid #7dcf7c; background:rgba(255,255,255,.06); }
-.ie-edit.editing::after { content:''; display:inline-block; width:1.5px; height:1em; background:#7dcf7c; margin-left:1px; vertical-align:-.12em; animation:ie-blink 1s steps(1) infinite; }
-.ie-edit.selected { background:rgba(125,207,124,.35); }
+.ie-stage { position:relative; overflow:hidden; user-select:none; }
+.ie-logo-slot { position:relative; width:34px; height:34px; flex-shrink:0; }
+.ie-logo-slot .gbx-logo { position:absolute; inset:0; opacity:0; transform:scale(.6); transition:opacity .35s, transform .35s cubic-bezier(.3,1.6,.5,1); }
+.ie-logo-slot.has .gbx-logo { opacity:1; transform:none; }
+.ie-logo-ph { position:absolute; inset:0; border:1.5px dashed rgba(255,255,255,.55); border-radius:8px; color:rgba(255,255,255,.8); font-size:8px; line-height:1.1; display:flex; align-items:center; justify-content:center; text-align:center; transition:opacity .25s, background .15s, border-color .15s; }
+.ie-logo-slot.has .ie-logo-ph { opacity:0; }
+.ie-logo-ph.hover { border-color:#fff; background:rgba(255,255,255,.15); }
+.ie-edit { position:relative; border-radius:4px; outline:1.5px dashed transparent; outline-offset:3px; transition:outline-color .15s; min-height:1.1em; }
+.ie-edit.hover   { outline-color:rgba(255,255,255,.7); }
+.ie-edit.editing { outline:1.5px solid #9be29a; }
+.ie-edit.editing::after { content:''; display:inline-block; width:1.5px; height:1em; background:#9be29a; margin-left:1px; vertical-align:-.12em; animation:ie-blink 1s steps(1) infinite; }
+.ie-edit.selected { background:rgba(155,226,154,.35); }
 @keyframes ie-blink { 50% { opacity:0; } }
-.ie-paint { width:30px; height:30px; border-radius:8px; border:1.5px dashed rgba(255,255,255,.35); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; transition:border-color .15s, background .15s; }
-.ie-paint.hover { border-color:#fff; background:rgba(255,255,255,.12); }
-.ie-pop { position:absolute; z-index:3; background:#fff; border-radius:9px; box-shadow:0 8px 24px rgba(0,0,0,.22); opacity:0; transform:translateY(-4px) scale(.97); transition:opacity .18s, transform .18s; pointer-events:none; }
+.ie-paint { margin-left:auto; width:28px; height:28px; border-radius:7px; border:1.5px dashed rgba(255,255,255,.45); display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; transition:border-color .15s, background .15s; }
+.ie-paint.hover { border-color:#fff; background:rgba(255,255,255,.15); }
+.ie-pop { position:absolute; z-index:3; background:#fff; border-radius:9px; box-shadow:0 8px 24px rgba(0,0,0,.25); opacity:0; transform:translateY(-4px) scale(.97); transition:opacity .18s, transform .18s; pointer-events:none; }
 .ie-pop.show { opacity:1; transform:none; }
-.ie-colors { right:12px; top:52px; padding:7px; display:flex; gap:6px; }
+.ie-colors { right:10px; top:50px; padding:7px; display:flex; gap:6px; }
 .ie-colors span { width:20px; height:20px; border-radius:50%; display:block; box-shadow:inset 0 0 0 1px rgba(0,0,0,.1); transition:transform .15s; }
 .ie-colors span.pick { transform:scale(1.25); box-shadow:0 0 0 2px #fff, 0 0 0 4px #4caa4b; }
-.ie-mode { background:#fdf3e3; color:#a35f12; font-size:10.5px; font-weight:600; text-align:center; padding:5px; letter-spacing:.02em; transition:background .25s; }
-.ie-hero { height:62px; margin:10px 12px 0; border-radius:8px; background:linear-gradient(135deg,#2a3d6b,#13756f); display:flex; align-items:flex-end; padding:7px 10px; }
-.ie-hero span { font-size:10px; font-weight:600; color:#fff; }
-.ie-games { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:10px 12px; }
-.ie-game { background:#fff; border-radius:7px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.08); }
-.ie-cover { height:40px; display:flex; align-items:center; justify-content:center; font-size:18px; }
-.ie-cover.c1 { background:#f4e2b8; } .ie-cover.c2 { background:#d9e7f5; } .ie-cover.c3 { background:#f6d8cf; }
-.ie-gname { font-size:9.5px; font-weight:600; color:#1e293b; padding:4px 6px 5px; }
-.ie-footer { position:relative; display:flex; align-items:center; justify-content:space-between; padding:9px 14px 11px; border-top:1px solid #e2e8f0; background:#fff; }
-.ie-socials { display:flex; gap:6px; }
-.ie-soc { width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; background:#eef1f5; filter:grayscale(1); opacity:.45; transition:filter .4s, opacity .4s, background .4s, box-shadow .15s; }
-.ie-soc.on { filter:none; opacity:1; background:#e8f4ec; }
-.ie-soc.hover { box-shadow:0 0 0 1.5px #4caa4b; opacity:1; }
-.ie-copy { font-size:10px; color:#64748b; }
-.ie-linkpop { left:10px; bottom:42px; padding:7px 9px; font-size:11px; display:flex; align-items:center; white-space:nowrap; border:1.5px solid #7dcf7c; }
-.ie-pre { color:#94a3b8; } .ie-handle { color:#1e293b; font-weight:500; }
-.ie-handle::after { content:''; display:inline-block; width:1.5px; height:1em; background:#4caa4b; margin-left:1px; vertical-align:-.12em; animation:ie-blink 1s steps(1) infinite; }
-.ie-enter { margin-left:8px; font-size:9px; color:#64748b; border:1px solid #cbd5e1; border-radius:3px; padding:0 4px; opacity:0; transition:opacity .2s; }
-.ie-enter.show { opacity:1; }
-.ie-toast { position:absolute; left:50%; bottom:52px; transform:translate(-50%,8px); background:#15803d; color:#fff; font-size:11px; font-weight:600; padding:6px 12px; border-radius:999px; box-shadow:0 6px 18px rgba(21,128,61,.35); opacity:0; transition:opacity .2s, transform .2s; white-space:nowrap; z-index:4; }
-.ie-toast.show { opacity:1; transform:translate(-50%,0); }
+.ie-mode { background:#fdf3e3; color:#a35f12; font-family:'Inter',system-ui,sans-serif; font-size:10.5px; font-weight:600; text-align:center; padding:5px; transition:background .25s; }
 .ie-mode.step { background:#fde9c4; }
-.ie-cursor { position:absolute; left:0; top:0; z-index:5; transform:translate(260px,250px); filter:drop-shadow(0 2px 3px rgba(0,0,0,.3)); pointer-events:none; }
+.ie-replace { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:2; background:rgba(17,17,17,.78); color:#fff; font-family:'Inter',system-ui,sans-serif; font-size:10.5px; font-weight:600; padding:6px 11px; border-radius:999px; opacity:0; transition:opacity .2s; white-space:nowrap; }
+.ie-carousel.hover .ie-replace { opacity:1; }
+.ie-carousel.hover::after { content:''; position:absolute; inset:0; box-shadow:inset 0 0 0 2px #4caa4b; z-index:2; }
+.ie-file { position:absolute; z-index:6; display:flex; align-items:center; gap:6px; background:#fff; border-radius:8px; padding:5px 9px 5px 5px; box-shadow:0 8px 22px rgba(0,0,0,.28); font-family:'Inter',system-ui,sans-serif; font-size:10px; color:#1e293b; opacity:0; transform:translateY(10px) scale(.95); transition:opacity .25s, transform .35s ease, left .6s ease, top .6s ease; pointer-events:none; white-space:nowrap; }
+.ie-file img { width:26px; height:26px; object-fit:cover; border-radius:4px; background:#eee; }
+.ie-file.show { opacity:1; transform:none; }
+.ie-toast { position:absolute; left:50%; bottom:46px; transform:translate(-50%,8px); background:#15803d; color:#fff; font-family:'Inter',system-ui,sans-serif; font-size:11px; font-weight:600; padding:6px 12px; border-radius:999px; box-shadow:0 6px 18px rgba(21,128,61,.35); opacity:0; transition:opacity .2s, transform .2s; white-space:nowrap; z-index:5; }
+.ie-toast.show { opacity:1; transform:translate(-50%,0); }
+.ie-cursor { position:absolute; left:0; top:0; z-index:7; transform:translate(300px,330px); filter:drop-shadow(0 2px 3px rgba(0,0,0,.3)); pointer-events:none; }
 .ie-cursor.down { animation:ie-click .18s ease; }
 @keyframes ie-click { 50% { scale:.82; } }
 @media (prefers-reduced-motion: reduce) { .ie-cursor { display:none; } }
@@ -339,47 +369,16 @@ footer a:hover { color:rgba(255,255,255,.7); }
         <div class="demo-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
         <div class="demo-url">zapsheets.com/app/gameboard/a9e4ef63bb33371151169a6e/</div>
       </div>
-      <div class="demo-body">
-        <div class="demo-banner">
-          <img class="demo-logo" src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/68db6d2fe1c4ff0767a9.png" alt="UP Games" />
-          <div>
-            <div class="demo-co-name">UP Games</div>
-            <div class="demo-co-tag">Common Spaces. Uncommon Games.</div>
-          </div>
-        </div>
-        <div class="demo-carousel">
-          <img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/e25ee32f4d226062e11c.webp" alt="UP Games" />
-          <div class="demo-carousel-overlay"></div>
-        </div>
-        <div class="demo-grid">
-          <div class="demo-card">
-            <div class="demo-card-cover">
-              <img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/e25ee32f4d226062e11c.webp" alt="Floristry" />
-            </div>
-            <div class="demo-card-body">
-              <div class="demo-card-name">Floristry</div>
-              <div class="demo-card-meta">👥 2 · ⏱ 20 min</div>
-              <div class="demo-card-badge">Published</div>
-            </div>
-          </div>
-          <div class="demo-card">
-            <div class="demo-card-cover">
-              <img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/58d78ab7d75ac7911389.webp" alt="Scurry Up!" />
-            </div>
-            <div class="demo-card-body">
-              <div class="demo-card-name">Scurry Up!</div>
-              <div class="demo-card-meta">👥 2–4 · ⏱ 25 min</div>
-              <div class="demo-card-badge">Published</div>
-            </div>
-          </div>
-          <div class="demo-card">
-            <div class="demo-card-cover">
-              <img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/ee4916fd02a7dee1c88f.webp" alt="Pressure" />
-            </div>
-            <div class="demo-card-body">
-              <div class="demo-card-name">Pressure</div>
-              <div class="demo-card-meta">👥 2–4</div>
-              <div class="demo-card-badge">Published</div>
+      <div class="demo-body" style="background:#f2f0ed">
+        <div class="gbx">
+          <div class="gbx-banner"><img class="gbx-logo" src="images/gameboard-features/up-logo.webp" alt="UP Games"><span class="gbx-name">UP Games</span></div>
+          <div class="gbx-carousel"><img src="images/gameboard-features/carousel-spread.webp" alt="Scurry Up! game spread" loading="lazy"><span class="gbx-arrow l">‹</span><span class="gbx-arrow r">›</span><div class="gbx-dots"><i class="on"></i><i></i><i></i></div></div>
+          <div class="gbx-body">
+            <div class="gbx-h">Our Games</div>
+            <div class="gbx-games">
+              <div class="gbx-card"><img src="images/gameboard-features/cover-floristry.webp" alt="Floristry" loading="lazy"><div class="gbx-card-t">Floristry</div><div class="gbx-card-s">A quick, real time, Dutch auction game for two players.</div></div>
+              <div class="gbx-card"><img src="images/gameboard-features/cover-scurry.webp" alt="Scurry Up!" loading="lazy"><div class="gbx-card-t">Scurry Up!</div><div class="gbx-card-s">Take on the role of a squirrel racing for nuts and berries!</div></div>
+              <div class="gbx-card"><img src="images/gameboard-features/cover-pressure.webp" alt="Pressure" loading="lazy"><div class="gbx-card-t">Pressure</div><div class="gbx-card-s">Will you dive the deepest or crack under the pressure!</div></div>
             </div>
           </div>
         </div>
@@ -468,50 +467,17 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="browser-frame">
         <div class="browser-chrome">
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-          <div class="browser-url">zapsheets.com/gameboard/…</div>
+          <div class="browser-url">zapsheets.com/app/gameboard/…</div>
         </div>
-        <div style="background:var(--app-bg);">
-          <div class="app-banner">
-            <img class="app-banner-logo" src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/68db6d2fe1c4ff0767a9.png" alt="UP Games" />
-            <div>
-              <div class="app-banner-name">UP Games</div>
-              <div class="app-banner-tag">Common Spaces. Uncommon Games.</div>
-            </div>
-          </div>
-          <div class="app-carousel" style="height:90px;">
-            <img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/e25ee32f4d226062e11c.webp" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" alt="" />
-            <div class="app-carousel-overlay"></div>
-          </div>
-          <div class="app-games">
-            <div class="app-game-card">
-              <div class="app-game-cover"><img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/e25ee32f4d226062e11c.webp" alt="Floristry" /></div>
-              <div class="app-game-body">
-                <div class="app-game-name">Floristry</div>
-                <div class="app-game-meta">👥 2 · ⏱ 20 min</div>
-                <div class="app-game-badge">Published</div>
-              </div>
-            </div>
-            <div class="app-game-card">
-              <div class="app-game-cover"><img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/58d78ab7d75ac7911389.webp" alt="Scurry Up!" /></div>
-              <div class="app-game-body">
-                <div class="app-game-name">Scurry Up!</div>
-                <div class="app-game-meta">👥 2–4 · ⏱ 25 min</div>
-                <div class="app-game-badge">Published</div>
-              </div>
-            </div>
-            <div class="app-game-card">
-              <div class="app-game-cover"><img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/ee4916fd02a7dee1c88f.webp" alt="Pressure" /></div>
-              <div class="app-game-body">
-                <div class="app-game-name">Pressure</div>
-                <div class="app-game-meta">👥 2–4</div>
-                <div class="app-game-badge">Published</div>
-              </div>
-            </div>
-            <div class="app-game-card" style="opacity:.45;">
-              <div class="app-game-cover" style="background:rgba(255,255,255,.04);font-size:22px;display:flex;align-items:center;justify-content:center;">+</div>
-              <div class="app-game-body">
-                <div class="app-game-name" style="color:rgba(255,255,255,.4);">Add a game…</div>
-              </div>
+        <div class="gbx">
+          <div class="gbx-banner"><img class="gbx-logo" src="images/gameboard-features/up-logo.webp" alt="UP Games"><span class="gbx-name">UP Games</span></div>
+          <div class="gbx-carousel"><img src="images/gameboard-features/carousel-pieces.webp" alt="Scurry Up! pieces" loading="lazy"><span class="gbx-arrow l">‹</span><span class="gbx-arrow r">›</span><div class="gbx-dots"><i></i><i class="on"></i><i></i></div></div>
+          <div class="gbx-body">
+            <div class="gbx-h">Our Games</div>
+            <div class="gbx-games">
+              <div class="gbx-card"><img src="images/gameboard-features/cover-floristry.webp" alt="Floristry" loading="lazy"><div class="gbx-card-t">Floristry</div><div class="gbx-card-s">A quick, real time, Dutch auction game for two players.</div></div>
+              <div class="gbx-card"><img src="images/gameboard-features/cover-scurry.webp" alt="Scurry Up!" loading="lazy"><div class="gbx-card-t">Scurry Up!</div><div class="gbx-card-s">Take on the role of a squirrel racing for nuts and berries!</div></div>
+              <div class="gbx-card"><img src="images/gameboard-features/cover-pressure.webp" alt="Pressure" loading="lazy"><div class="gbx-card-t">Pressure</div><div class="gbx-card-s">Will you dive the deepest or crack under the pressure!</div></div>
             </div>
           </div>
         </div>
@@ -525,7 +491,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
         <h2 class="section-title" style="margin-bottom:1rem;">Every game gets its own page</h2>
         <p>Click any catalog card to open a dedicated game page — hero image, description, stats, and action buttons. Share the direct link with press, retailers, or convention organizers.</p>
         <ul>
-          <li>Hero image with game title overlay</li>
+          <li>Large cover image with a photo gallery</li>
           <li>Full description, player count, and play time</li>
           <li>Price and Buy Now button for direct sales</li>
           <li>Sell sheet, rules PDF, and page URL buttons</li>
@@ -535,42 +501,24 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="browser-frame">
         <div class="browser-chrome">
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-          <div class="browser-url">zapsheets.com/gameboard/…/scurry-up</div>
+          <div class="browser-url">zapsheets.com/app/gameboard/…/floristry</div>
         </div>
-        <div style="background:var(--app-bg);">
-          <div class="app-banner">
-            <img class="app-banner-logo" src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/68db6d2fe1c4ff0767a9.png" alt="UP Games" />
-            <div>
-              <div class="app-banner-name">UP Games</div>
-            </div>
-            <div class="app-banner-nav">
-              <div class="app-banner-btn active">← All games</div>
-            </div>
-          </div>
-          <div class="app-hero-img" style="padding:0;height:110px;">
-            <img src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/60969024d1b25f859cd8.webp" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" alt="Floristry" />
-            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(13,24,41,.95) 0%,transparent 60%);"></div>
-            <div style="position:relative;z-index:1;padding:8px 12px;margin-top:auto;width:100%;">
-              <div class="app-hero-title">Floristry</div>
-              <div class="app-hero-sub">A real-time, two-player auction game · UP Games</div>
-            </div>
-          </div>
-          <div class="app-game-info">
-            <span class="app-stat-pill">👥 2 players</span>
-            <span class="app-stat-pill">⏱ 20 min</span>
-          </div>
-          <div class="app-buy-row">
-            <div style="font-size:10px;color:rgba(255,255,255,.5);">David Gordon · TAM</div>
-            <div style="display:flex;gap:6px;">
-              <div style="font-size:9px;padding:5px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);">Amazon</div>
-              <div class="app-buy-btn">Barnes &amp; Noble</div>
-            </div>
-          </div>
-          <div class="app-desc-area">
-            <div class="app-desc-lbl">About the game</div>
-            <div class="app-desc-text">Players compete at the historic Aalsmeer Dutch Auction to win the best flowers and then use them to create the most charming window display.</div>
-            <div style="margin-top:8px;padding-top:7px;border-top:1px solid rgba(255,255,255,.05);">
-              <div style="font-size:8px;font-style:italic;color:rgba(255,255,255,.35);">"This game is just delightful." — Shut Up &amp; Sit Down</div>
+        <div class="gbx">
+          <div class="gbx-banner"><img class="gbx-logo" src="images/gameboard-features/up-logo.webp" alt="UP Games"><span class="gbx-name">UP Games</span><span class="gbx-back">← All games</span></div>
+          <div class="gbx-gp">
+            <div class="gbx-gp-title">Floristry</div>
+            <div class="gbx-gp-sub">A quick, real time, Dutch auction game for two players</div>
+            <div class="gbx-gp-row">
+              <div>
+                <img class="gbx-gp-img" src="images/gameboard-features/cover-floristry.webp" alt="Floristry" loading="lazy">
+                <div class="gbx-thumbs"><img class="on" src="images/gameboard-features/cover-floristry.webp" alt=""><img src="images/gameboard-features/floristry-board.webp" alt=""></div>
+              </div>
+              <div>
+                <div class="gbx-stats"><div class="gbx-stat"><b>2</b><span>Players</span></div><div class="gbx-stat"><b>20 min</b><span>Play time</span></div></div>
+                <div class="gbx-desc">Players compete at the historic Aalsmeer Dutch Auction to win the best flowers and then use them to create the most charming window display.</div>
+                <div class="gbx-des"><b>DESIGNERS</b>David Gordon, TAM</div>
+                <div class="gbx-btns"><span class="gbx-btn">Read Rules</span><span class="gbx-btn">Sell Sheet</span><span class="gbx-btn dark">Buy Now</span></div>
+              </div>
             </div>
           </div>
         </div>
@@ -582,7 +530,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="shot-text">
         <div class="section-label">Brand editor</div>
         <h2 class="section-title" style="margin-bottom:1rem;">Edit everything right on the page</h2>
-        <p>Sign in and your catalog becomes editable. Click the company name or tagline and just type — click away and it's saved. Pick a banner color, add a social link, swap the logo — right on the live page, with no settings screens or forms.</p>
+        <p>Sign in and your catalog becomes editable. Drop in your logo, click the company name and type, pick your brand color, click any image to replace it — right on the live page, with no settings screens or forms. Every change saves to your Sheet.</p>
         <ul>
           <li>Click-to-edit company name, tagline, and about text</li>
           <li>Upload logo and banner images in-place</li>
@@ -591,37 +539,35 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <li>All changes sync back to the Settings tab in your Sheet</li>
         </ul>
       </div>
-      <div class="browser-frame ie-frame" aria-label="Animated demo: editing a GameBoard catalog directly on the page">
+      <div class="browser-frame ie-frame" aria-label="Animated demo: setting up and editing a GameBoard catalog directly on the page">
         <div class="browser-chrome">
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-          <div class="browser-url">zapsheets.com/app/…/gameboard</div>
+          <div class="browser-url">zapsheets.com/app/gameboard/…</div>
         </div>
-        <div class="ie-stage" id="ieDemo" aria-hidden="true">
-          <div class="ie-banner">
-            <div class="ie-logo">🎲</div>
-            <div class="ie-titles">
-              <div class="ie-edit ie-name" data-k="name">UP Games</div>
-              <div class="ie-edit ie-tag" data-k="tag">Common Spaces. Uncommon Games.</div>
-            </div>
-            <div class="ie-paint" title="Banner color">🎨</div>
-            <div class="ie-pop ie-colors">
-              <span style="background:#1a1c30"></span><span style="background:#7a2e3b"></span><span class="ie-teal" style="background:#13756f"></span><span style="background:#3b3f9e"></span><span style="background:#a35f12"></span>
-            </div>
+        <div class="gbx ie-stage" id="ieDemo" aria-hidden="true">
+          <div class="gbx-banner ie-banner">
+            <div class="ie-logo-slot"><div class="ie-logo-ph">+ Logo</div><img class="gbx-logo" src="images/gameboard-features/up-logo.webp" alt=""></div>
+            <span class="gbx-name ie-edit ie-name">Your Company</span>
+            <div class="ie-paint">🎨</div>
+            <div class="ie-pop ie-colors"><span style="background:#2b3a55"></span><span style="background:#7a2e3b"></span><span class="ie-purple" style="background:#693f99"></span><span style="background:#13756f"></span><span style="background:#a35f12"></span></div>
           </div>
           <div class="ie-mode">✎ Editing — click anything to change it</div>
-          <div class="ie-hero"><span>Featured: Gnus</span></div>
-          <div class="ie-games">
-            <div class="ie-game"><div class="ie-cover c1">🦓</div><div class="ie-gname">Gnus</div></div>
-            <div class="ie-game"><div class="ie-cover c2">🐈</div><div class="ie-gname">Club K9</div></div>
-            <div class="ie-game"><div class="ie-cover c3">🌅</div><div class="ie-gname">Break of Dawn</div></div>
+          <div class="gbx-carousel ie-carousel">
+            <img class="ie-img-a" src="images/gameboard-features/carousel-spread.webp" alt="">
+            <img class="ie-img-b" src="images/gameboard-features/carousel-pieces.webp" alt="" style="opacity:0">
+            <span class="gbx-arrow l">‹</span><span class="gbx-arrow r">›</span><div class="gbx-dots"><i class="on"></i><i></i><i></i></div>
+            <div class="ie-replace">⟳ Replace image</div>
           </div>
-          <div class="ie-footer">
-            <div class="ie-socials">
-              <span class="ie-soc ie-ig" title="Instagram">📸</span><span class="ie-soc on">𝕏</span><span class="ie-soc on">🎲</span><span class="ie-soc">📘</span>
+          <div class="gbx-body">
+            <div class="gbx-h">Our Games</div>
+            <div class="gbx-games">
+              <div class="gbx-card"><img src="images/gameboard-features/cover-floristry.webp" alt="Floristry" loading="lazy"><div class="gbx-card-t">Floristry</div><div class="gbx-card-s">A quick, real time, Dutch auction game for two players.</div></div>
+              <div class="gbx-card"><img src="images/gameboard-features/cover-scurry.webp" alt="Scurry Up!" loading="lazy"><div class="gbx-card-t">Scurry Up!</div><div class="gbx-card-s">Take on the role of a squirrel racing for nuts and berries!</div></div>
+              <div class="gbx-card"><img src="images/gameboard-features/cover-pressure.webp" alt="Pressure" loading="lazy"><div class="gbx-card-t">Pressure</div><div class="gbx-card-s">Will you dive the deepest or crack under the pressure!</div></div>
             </div>
-            <div class="ie-copy">© 2026 <span class="ie-copyname">UP Games</span></div>
-            <div class="ie-pop ie-linkpop"><span class="ie-pre">instagram.com/</span><span class="ie-handle"></span><span class="ie-enter">↵</span></div>
           </div>
+          <div class="gbx-foot"><span>📸 𝕏 🎲</span><span>© 2026 <span class="ie-copyname">Your Company</span></span></div>
+          <div class="ie-file"><img alt=""><span></span></div>
           <div class="ie-toast">✓ Saved to your Sheet</div>
           <svg class="ie-cursor" width="22" height="22" viewBox="0 0 24 24"><path d="M4 2l15 11-7 1.2L8.6 21 4 2z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/></svg>
         </div>
@@ -699,15 +645,17 @@ footer a:hover { color:rgba(255,255,255,.7); }
 </footer>
 
 <script>
-// ── Brand editor animation: a cursor edits the catalog in place, then loops ──
+// ── Brand editor animation: a cursor sets up the UP Games catalog in place, then loops ──
 (function() {
   var stage = document.getElementById('ieDemo');
   if (!stage) return;
   var q = function(s) { return stage.querySelector(s); };
-  var cursor = q('.ie-cursor'), toast = q('.ie-toast');
-  var name = q('.ie-name'), tag = q('.ie-tag'), copyName = q('.ie-copyname');
-  var paint = q('.ie-paint'), colors = q('.ie-colors'), teal = q('.ie-teal'), banner = q('.ie-banner');
-  var ig = q('.ie-ig'), linkPop = q('.ie-linkpop'), handle = q('.ie-handle'), enterKey = q('.ie-enter');
+  var cursor = q('.ie-cursor'), toast = q('.ie-toast'), mode = q('.ie-mode'), modeDefault = mode.textContent;
+  var banner = q('.ie-banner'), logoSlot = q('.ie-logo-slot'), logoPh = q('.ie-logo-ph');
+  var name = q('.ie-name'), copyName = q('.ie-copyname');
+  var paint = q('.ie-paint'), colors = q('.ie-colors'), purple = q('.ie-purple');
+  var car = q('.ie-carousel'), imgA = q('.ie-img-a'), imgB = q('.ie-img-b');
+  var file = q('.ie-file'), fileImg = file.querySelector('img'), fileName = file.querySelector('span');
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var visible = false;
   var sleep = function(ms) { return new Promise(function(r) { setTimeout(r, ms); }); };
@@ -724,78 +672,77 @@ footer a:hover { color:rgba(255,255,255,.7); }
     return sleep(ms + 60);
   }
   function click() { cursor.classList.remove('down'); void cursor.offsetWidth; cursor.classList.add('down'); return sleep(220); }
-  async function type(el, text) {
-    for (var i = 0; i < text.length; i++) { el.textContent += text[i]; await sleep(55 + Math.random() * 45); }
+  async function type(el, text) { for (var i = 0; i < text.length; i++) { el.textContent += text[i]; await sleep(60 + Math.random() * 45); } }
+  function say(t) { mode.textContent = t ? '✎ ' + t : modeDefault; mode.classList.toggle('step', !!t); }
+  async function saved() { toast.classList.add('show'); await sleep(1250); toast.classList.remove('show'); }
+  // "Upload": a file card appears near the target, then drops into it
+  async function upload(target, src, label) {
+    var p = at(target, .5, .5);
+    fileImg.src = src; fileName.textContent = label;
+    file.style.transition = 'none';
+    file.style.left = Math.max(6, Math.min(stage.clientWidth - 190, p[0] + 30)) + 'px';
+    file.style.top = (p[1] + 34) + 'px';
+    void file.offsetWidth; file.style.transition = '';
+    file.classList.add('show'); await sleep(900);
+    file.style.left = Math.max(6, p[0] - 40) + 'px'; file.style.top = (p[1] - 14) + 'px';
+    await sleep(450); file.classList.remove('show'); await sleep(150);
   }
-  // Step captions appear in the amber "Editing" bar
-  var mode = q('.ie-mode'), modeDefault = mode.textContent;
-  function say(t) { mode.textContent = t ? '\u270e ' + t : modeDefault; mode.classList.toggle('step', !!t); }
-  async function saved() { toast.classList.add('show'); await sleep(1300); toast.classList.remove('show'); }
 
   function reset() {
-    name.textContent = 'UP Games'; tag.textContent = 'Common Spaces. Uncommon Games.'; copyName.textContent = 'UP Games';
-    banner.style.setProperty('--ie-banner', '#1a1c30');
-    [name, tag].forEach(function(e) { e.className = e.className.replace(/\s*(hover|editing|selected)/g, ''); });
-    ig.classList.remove('on', 'hover'); paint.classList.remove('hover'); teal.classList.remove('pick');
-    colors.classList.remove('show'); linkPop.classList.remove('show'); enterKey.classList.remove('show');
-    handle.textContent = ''; say('');
-  }
-
-  async function editText(el, label, text) {
-    say(label);
-    await moveTo(el, .35, .55);
-    el.classList.add('hover'); await sleep(450);
-    await click();
-    el.classList.remove('hover'); el.classList.add('editing', 'selected'); await sleep(500);
-    el.classList.remove('selected'); el.textContent = '';
-    await type(el, text);
-    if (el === name) copyName.textContent = text;
-    await sleep(450);
-    say('Click away — saved');
-    await moveTo(q('.ie-hero'), .7, .6, 600); await click();
-    el.classList.remove('editing');
-    await saved();
+    banner.style.setProperty('--gbx-brand', '#2b3a55');
+    logoSlot.classList.remove('has'); logoPh.classList.remove('hover');
+    name.textContent = 'Your Company'; copyName.textContent = 'Your Company';
+    name.className = name.className.replace(/\s*(hover|editing|selected)/g, '');
+    paint.classList.remove('hover'); purple.classList.remove('pick'); colors.classList.remove('show');
+    car.classList.remove('hover'); imgA.style.opacity = 1; imgB.style.opacity = 0;
+    file.classList.remove('show'); say('');
   }
 
   async function play() {
     reset();
     await sleep(900);
-    await editText(name, 'Click the name and type', 'Meeple Forge');
-    await editText(tag, 'Same for the tagline', 'Big games for small tables');
-    // Banner color
-    say('Pick a banner color');
-    await moveTo(paint); paint.classList.add('hover'); await sleep(300); await click();
-    colors.classList.add('show'); await sleep(600);
-    await moveTo(teal, .5, .5, 500); teal.classList.add('pick'); await click();
-    banner.style.setProperty('--ie-banner', '#13756f'); paint.classList.remove('hover');
-    await sleep(500); colors.classList.remove('show');
+    // 1. Logo
+    say('Click the logo spot to upload your logo');
+    await moveTo(logoPh); logoPh.classList.add('hover'); await sleep(350); await click();
+    await upload(logoPh, imgSrc('up-logo.webp'), 'UP-Games-Logo.png');
+    logoSlot.classList.add('has'); logoPh.classList.remove('hover');
     await saved();
-    // Social link
-    say('Add a social link');
-    await moveTo(ig); ig.classList.add('hover'); await sleep(350); await click();
-    linkPop.classList.add('show'); await sleep(450);
-    await type(handle, 'meepleforge');
-    enterKey.classList.add('show'); await sleep(500);
-    linkPop.classList.remove('show'); ig.classList.remove('hover'); ig.classList.add('on');
+    // 2. Company name
+    say('Click the name and type');
+    await moveTo(name, .4, .55); name.classList.add('hover'); await sleep(400); await click();
+    name.classList.remove('hover'); name.classList.add('editing', 'selected'); await sleep(450);
+    name.classList.remove('selected'); name.textContent = '';
+    await type(name, 'UP Games'); copyName.textContent = 'UP Games';
+    await sleep(350);
+    say('Click away — it’s saved');
+    await moveTo(q('.gbx-h'), .5, .5, 600); await click(); name.classList.remove('editing');
+    await saved();
+    // 3. Banner color
+    say('Pick your brand color');
+    await moveTo(paint); paint.classList.add('hover'); await sleep(300); await click();
+    colors.classList.add('show'); await sleep(550);
+    await moveTo(purple, .5, .5, 500); purple.classList.add('pick'); await click();
+    banner.style.setProperty('--gbx-brand', '#693f99'); paint.classList.remove('hover');
+    await sleep(450); colors.classList.remove('show');
+    await saved();
+    // 4. Replace the carousel image
+    say('Click any image to replace it');
+    await moveTo(car, .5, .45); car.classList.add('hover'); await sleep(550); await click();
+    await upload(car, imgSrc('carousel-pieces.webp'), 'scurry-up-pieces.jpg');
+    car.classList.remove('hover'); imgB.style.opacity = 1; imgA.style.opacity = 0;
     await saved();
     say('That’s it — no settings screens');
-    await moveTo(q('.ie-games'), .5, .55, 900);
-    await sleep(2600);
+    await moveTo(q('.gbx-games'), .5, .4, 900);
+    await sleep(2800);
   }
+  function imgSrc(f) { var base = imgA.getAttribute('src').replace(/[^/]*$/, ''); return base + f; }
 
-  async function loop() {
-    for (;;) {
-      if (!visible) { await sleep(400); continue; }
-      await play();
-    }
-  }
+  async function loop() { for (;;) { if (!visible) { await sleep(400); continue; } await play(); } }
 
-  if (reduce) {
-    // Show the finished result without motion
-    name.textContent = copyName.textContent = 'Meeple Forge';
-    tag.textContent = 'Big games for small tables';
-    banner.style.setProperty('--ie-banner', '#13756f');
-    ig.classList.add('on');
+  if (reduce) { // finished result, no motion
+    banner.style.setProperty('--gbx-brand', '#693f99'); logoSlot.classList.add('has');
+    name.textContent = copyName.textContent = 'UP Games';
+    imgB.style.opacity = 1; imgA.style.opacity = 0;
     return;
   }
   if ('IntersectionObserver' in window) {

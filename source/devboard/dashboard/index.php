@@ -1024,6 +1024,9 @@ body.session-dialog-open .session-body img { display:none !important; }
 .todo-tag { font-family:'DINRegular',sans-serif; font-size:.75rem; background:#f1f4f8; color:#444; border-radius:999px; padding:.18rem .6rem; }
 .todo-tag.pri-high { background:#fde8e8; color:#b42318; } .todo-tag.pri-medium { background:#fff4d6; color:#a35f12; } .todo-tag.pri-low { background:#e8f4ec; color:#2e7d32; }
 .todo-tag.done { background:#e8f4ec; color:#2e7d32; }
+.btodo-ic:disabled { cursor:default; opacity:.6; } .btodo-ic:disabled:hover { background:none; border-color:transparent; color:#c3cad4; }
+.todo-item .btodo-fields { margin-left:.3rem; }
+.todo-item.done .btodo-fields { opacity:.5; }
 </style>
 </head>
 <body>
@@ -1982,7 +1985,11 @@ function _todosPost(action, data, cb) {
     .then(function(r) { return r.json(); })
     .then(function(res) {
       if (res.error) throw new Error(res.error);
-      if (res.todos) { TODOS_RAW = res.todos; if (_activeTab === 'dash' && !_btodoDragging) _renderBoardTodos(); }
+      if (res.todos) {
+        TODOS_RAW = res.todos;
+        if (_activeTab === 'dash' && !_btodoDragging) _renderBoardTodos();
+        if (!_btodoMenuEl) Object.keys(_sessionCache).forEach(_refreshTodoSection);
+      }
       if (cb) cb(res);
       return res;
     })
@@ -2018,18 +2025,36 @@ function _renderBoardTodos() {
            (t.Thoughts ? '<span class="btodo-sol">' + esc(t.Thoughts) + '</span>' : '') +
            '<span class="btodo-meta">' + esc([t.Game, t.Session].filter(Boolean).join(' · ')) + '</span>' +
          '</div>';
-    var pn = { high: 3, medium: 2, low: 1 }[pri.toLowerCase()] || 0;
-    h += '<div class="btodo-fields">';
-    h += '<button type="button" class="btodo-ic btodo-pri' + (pn ? ' p' + pn : '') + '" title="Priority: ' + esc(pri || 'none') + '" onclick="_btodoMenu(event,\'' + id + '\',\'Priority\')">' + (pn ? '!!!'.slice(0, pn) : '!') + '</button>';
-    h += '<button type="button" class="btodo-ic btodo-who' + (t.Assigned ? ' set' : '') + '" title="' + (t.Assigned ? 'Assigned to ' + esc(t.Assigned) : 'Assign someone') + '" onclick="_btodoMenu(event,\'' + id + '\',\'Assigned\')">' +
-           '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></button>';
-    var overdue = t.Due && !done && t.Due < todayISO();
-    h += '<button type="button" class="btodo-ic btodo-due' + (t.Due ? ' set' : '') + (overdue ? ' overdue' : '') + '" title="' + (t.Due ? 'Due ' + esc(fmtDate(t.Due)) + (overdue ? ' (overdue)' : '') : 'Set a due date') + '" onclick="_btodoMenu(event,\'' + id + '\',\'Due\')">' +
-           '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg></button>';
-    h += '</div></div>';
+    h += _todoIconsHtml(t, done);
+    h += '</div>';
   });
   h += '</div>';
   _boardTodosEl.innerHTML = h;
+}
+
+// Priority / person / due-date icons for a TODO (t = row of the todos sheet; null → not saved there yet)
+function _todoIconsHtml(t, done) {
+  var id = t ? esc(t.ID || '') : '';
+  function click(field) { return t ? ' onclick="_btodoMenu(event,\'' + id + '\',\'' + field + '\')"' : ' disabled'; }
+  var pri = t ? (t.Priority || '') : '', pn = { high: 3, medium: 2, low: 1 }[pri.toLowerCase()] || 0;
+  var who = t ? (t.Assigned || '') : '', due = t ? (t.Due || '') : '';
+  var overdue = due && !done && due < todayISO();
+  var none = 'Save the session to set this';
+  return '<div class="btodo-fields">' +
+    '<button type="button" class="btodo-ic btodo-pri' + (pn ? ' p' + pn : '') + '" title="' + (t ? 'Priority: ' + esc(pri || 'none') : none) + '"' + click('Priority') + '>' + (pn ? '!!!'.slice(0, pn) : '!') + '</button>' +
+    '<button type="button" class="btodo-ic btodo-who' + (who ? ' set' : '') + '" title="' + (t ? (who ? 'Assigned to ' + esc(who) : 'Assign someone') : none) + '"' + click('Assigned') + '>' +
+      '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></button>' +
+    '<button type="button" class="btodo-ic btodo-due' + (due ? ' set' : '') + (overdue ? ' overdue' : '') + '" title="' + (t ? (due ? 'Due ' + esc(fmtDate(due)) + (overdue ? ' (overdue)' : '') : 'Set a due date') : none) + '"' + click('Due') + '>' +
+      '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg></button>' +
+  '</div>';
+}
+
+// The todos-sheet row for a TODO in a game's notes (matched by game + text)
+function _todoFor(game, obs, sol) {
+  var g = String(game || '').toLowerCase();
+  return TODOS_RAW.filter(function(t) {
+    return String(t.Game || '').toLowerCase() === g && (t.Observation || '') === (obs || '') && (t.Thoughts || '') === (sol || '');
+  })[0] || null;
 }
 
 function _todoById(id) { return TODOS_RAW.filter(function(t) { return t.ID === id; })[0]; }
@@ -2039,6 +2064,7 @@ function _btodoSet(id, field, value) {
   t[field] = value;
   _btodoCloseMenu();
   _renderBoardTodos();
+  _refreshTodoSection(t.Game);
   var f = {}; f[field] = value;
   _todosPost('update', { id: id, fields: f }).catch(function() {});
 }
@@ -2097,7 +2123,7 @@ function onBoardTodoCheck(id, cb) {
   var it = { obs: t.Observation || '', sol: t.Thoughts || '' };
   if (done) _todoDone[_todoKey(t.Game, it.obs, it.sol)] = true; else delete _todoDone[_todoKey(t.Game, it.obs, it.sol)];
   _todoSetCacheNote(t.Game, it, done ? '' : 'TODO');
-  if (devCache[t.Game]) renderBody(t.Game, devCache[t.Game]);
+  _refreshTodoSection(t.Game);
   var fd = new FormData();
   fd.append('id', SHEET_ID); fd.append('game', t.Game); fd.append('row', 0);
   fd.append('obs', it.obs); fd.append('sol', it.sol); fd.append('note', done ? '' : 'TODO');
@@ -3230,6 +3256,7 @@ function _buildTodoHtml(gameName, sessions) {
                 (it.sol ? '<span class="todo-sol">' + esc(it.sol) + '</span>' : '') +
                 (it.label ? '<span class="todo-meta">' + esc(it.label) + '</span>' : '') +
               '</span>' +
+              _todoIconsHtml(_todoFor(gameName, it.obs, it.sol), it.done) +
             '</div>';
   });
   html += '</div></div>';
@@ -3249,6 +3276,8 @@ function openTodoDialog(ref) {
     if ((t.Status || '').toLowerCase() === 'done') tags.push('<span class="todo-tag done">✓ Done</span>');
   } else {
     var it = (_todoItems[ref.game] || [])[ref.idx]; if (!it) return;
+    var tr = _todoFor(ref.game, it.obs, it.sol);
+    if (tr) return openTodoDialog({ id: tr.ID });
     obs = it.obs || ''; sol = it.sol || '';
     meta = [ref.game, it.label].filter(Boolean).join(' · ');
     if (it.done) tags.push('<span class="todo-tag done">✓ Done</span>');
@@ -3260,6 +3289,17 @@ function openTodoDialog(ref) {
   document.getElementById('todoOverlay').classList.add('open');
 }
 function closeTodoDialog() { document.getElementById('todoOverlay').classList.remove('open'); }
+
+// Redraw only a game card's TODO section (keeps open sessions open)
+function _refreshTodoSection(gameName) {
+  var body = document.getElementById('body-' + safeName(gameName));
+  var sessions = _sessionCache[gameName];
+  if (!body || !sessions) return;
+  var html = _buildTodoHtml(gameName, sessions);
+  var old = body.querySelector('.todo-section');
+  if (old) { if (html) old.outerHTML = html; else old.remove(); }
+  else if (html) { var sub = body.querySelector('.card-subtitle'); if (sub) sub.insertAdjacentHTML('afterend', html); }
+}
 
 function toggleTodoSection(gameName, btn) {
   var sec = btn.closest('.todo-section');

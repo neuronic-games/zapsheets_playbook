@@ -350,7 +350,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="feat-card" style="grid-column:1/-1">
         <div class="feat-icon green">🌐</div>
         <h3>No website to host</h3>
-        <p>You don't need to build, host or maintain your own website. GameBoard gives you a live catalog and game pages at a shareable link — no hosting plan, no web server, no WordPress updates. A typical GoDaddy site runs $10–35 a month plus a domain; with GameBoard there's nothing to host.</p>
+        <p>You don't need to build, host or maintain your own website. GameBoard gives you a live catalog and game pages at a shareable link — no hosting plan, no web server, no WordPress updates. A typical GoDaddy site runs $10–35 a month for hosting, and you still need to buy your own domain; with GameBoard there's nothing to host.</p>
       </div>
       <div class="feat-card">
         <div class="feat-icon green">🗂️</div>
@@ -599,7 +599,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
     <div class="own-grid">
       <div class="own-card">
         <div class="num">$4.99</div>
-        <p>Per month, with no web hosting to pay for — GameBoard runs on Google infrastructure you already have. A typical GoDaddy site runs $10–35 a month, plus about $23 a year for a domain.</p>
+        <p>Per month, with no web hosting to pay for — GameBoard runs on Google infrastructure you already have. A typical GoDaddy site runs $10–35 a month for hosting, and you still need to buy your own domain.</p>
       </div>
       <div class="own-card">
         <div class="num">100%</div>
@@ -638,7 +638,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <tr><td>Works with <a href="https://zapsheets.com/app/pitchboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">PitchBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Shareable token links</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Price &amp; buy links</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">$4.99 / mo</td><td>$16–49 / mo</td><td>$10–35 / mo<br><span style="font-size:12px;color:var(--text-muted);font-weight:400">+ ~$23 / yr domain</span></td><td>Free</td></tr>
+          <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">$4.99 / mo</td><td>$16–49 / mo</td><td>$10–35 / mo<br><span style="font-size:12px;color:var(--text-muted);font-weight:400">+ you buy your own domain</span></td><td>Free</td></tr>
         </tbody>
       </table>
     </div>

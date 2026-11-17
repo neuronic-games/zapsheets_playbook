@@ -6,6 +6,8 @@ header('Content-Type: application/json');
 require __DIR__ . '/../dotEnv.php';
 
 $sheetId      = trim($_POST['id']             ?? '');
+require_once __DIR__ . '/stripeCommon.php';
+devboardRequirePro($sheetId);
 $game         = trim($_POST['game']           ?? '');
 $client       = trim($_POST['client']         ?? '');
 $numTests     = max(0, intval($_POST['num_tests']     ?? 2));

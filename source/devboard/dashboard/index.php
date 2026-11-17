@@ -933,6 +933,22 @@ body.session-dialog-open .session-body img { display:none !important; }
   /* Prevent iOS Safari from auto-zooming inputs with font-size < 16px */
   .field-input, .field-textarea { font-size:1rem; }
 }
+/* Plan picker */
+.plan-grid { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; text-align:left; }
+@media (max-width:480px) { .plan-grid { grid-template-columns:1fr; } }
+.plan-card { border:1.5px solid #e2e2e2; border-radius:10px; padding:.85rem .9rem .9rem; display:flex; flex-direction:column; position:relative; }
+.plan-card.plan-pro { border-color:#f5a623; }
+.plan-card.current { border-color:#4caf50; background:#f3faf3; }
+.plan-card.current::before { content:'Current plan'; position:absolute; top:-.6rem; left:.8rem; background:#4caf50; color:#fff; font-family:'DINBlack',sans-serif; font-size:.6rem; letter-spacing:.06em; text-transform:uppercase; padding:.12rem .45rem; border-radius:999px; }
+.plan-name { font-family:'DINBlack',sans-serif; font-size:.78rem; letter-spacing:.07em; text-transform:uppercase; color:#555; }
+.plan-price { font-family:'DINBlack',sans-serif; font-size:1.45rem; color:#222; margin:.15rem 0 .4rem; }
+.plan-price span { font-family:'DINRegular',sans-serif; font-size:.78rem; color:#888; margin-left:.15rem; }
+.plan-card ul { list-style:none; margin:0 0 .8rem; padding:0; font-family:'DINRegular',sans-serif; font-size:.8rem; color:#444; line-height:1.55; flex:1; }
+.plan-card li::before { content:'✓ '; color:#4caf50; font-weight:700; }
+.plan-btn { background:#2b3a55; color:#fff; border:none; border-radius:6px; padding:.5rem .6rem; font-family:'DINBlack',sans-serif; font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
+.plan-pro .plan-btn { background:#f5a623; }
+.plan-btn:disabled { opacity:.5; cursor:default; }
+.pro-badge { display:inline-block; margin-left:.35rem; background:#f5a623; color:#fff; font-family:'DINBlack',sans-serif; font-size:.55rem; letter-spacing:.06em; padding:.08rem .32rem; border-radius:4px; vertical-align:middle; }
 </style>
 </head>
 <body>
@@ -1010,7 +1026,7 @@ body.session-dialog-open .session-body img { display:none !important; }
         onkeydown="if(event.key==='Escape'){clearContractsSearch();this.blur();event.stopPropagation();}" />
       <button class="search-clear" onclick="clearContractsSearch()">✕</button>
     </div>
-    <button class="add-game-btn" onclick="openNewContractDialog()">+ Contract</button>
+    <button class="add-game-btn" onclick="openNewContractDialog()">+ Contract<span class="pro-badge" data-pro-badge>PRO</span></button>
   </div>
   <div class="publishers-view-wrap" id="publishersViewWrap"></div>
 </div>
@@ -1719,18 +1735,35 @@ body.session-dialog-open .session-body img { display:none !important; }
 
 <!-- Upgrade to Pro dialog -->
 <div class="overlay" id="upgradeOverlay" onclick="if(event.target===this)closeUpgradeDialog()">
-  <div class="sync-dialog" style="width:min(420px,94vw);text-align:center" onclick="event.stopPropagation()">
-    <h2 style="font-size:1.1rem;margin-bottom:.3rem">⭐ Upgrade DevBoard to Pro</h2>
-    <p style="font-family:'DINRegular',sans-serif;font-size:.85rem;color:#555;line-height:1.6;margin:.4rem 0 1.1rem">
-      <strong style="font-size:1.05rem">DevBoard Pro — $3.99/month</strong><br>
-      Pro unlocks premium features as we build them —
-      advanced analytics, custom branding, priority support, and more.<br><br>
-      <strong>Support development and get early access to everything new.</strong>
-    </p>
-    <div id="upgradeSubStatus" style="margin-bottom:.9rem;font-size:.8rem;color:#888"></div>
+  <div class="sync-dialog" style="width:min(520px,94vw);text-align:center" onclick="event.stopPropagation()">
+    <h2 style="font-size:1.1rem;margin-bottom:.2rem">⭐ DevBoard plans</h2>
+    <p id="upgradeIntro" style="font-family:'DINRegular',sans-serif;font-size:.82rem;color:#666;margin:.2rem 0 .9rem">Pick the plan that fits how you work.</p>
+    <div class="plan-grid">
+      <div class="plan-card" id="planCore">
+        <div class="plan-name">Core</div>
+        <div class="plan-price">$2.99<span>/month</span></div>
+        <ul>
+          <li>Playtest sessions &amp; notes</li>
+          <li>Timer, rounds &amp; photos</li>
+          <li>Team sharing &amp; reports</li>
+        </ul>
+        <button class="plan-btn" id="planCoreBtn" onclick="startUpgradeCheckout('core')">Choose Core</button>
+      </div>
+      <div class="plan-card plan-pro" id="planPro">
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">$3.99<span>/month</span></div>
+        <ul>
+          <li>Everything in Core</li>
+          <li>Contracts &amp; estimates</li>
+          <li>Invoices with PDFs</li>
+        </ul>
+        <button class="plan-btn" id="planProBtn" onclick="startUpgradeCheckout('pro')">Choose Pro</button>
+      </div>
+    </div>
+    <div id="upgradeSubStatus" style="margin:.9rem 0 .7rem;font-size:.8rem;color:#888"></div>
     <div class="sync-dialog-actions" style="justify-content:center;gap:.6rem">
-      <button class="notes-close" onclick="closeUpgradeDialog()">Maybe Later</button>
-      <button id="upgradeSubBtn" onclick="startUpgradeCheckout()" style="background:#f5a623;color:#fff;border-color:#f5a623;font-family:'DINBlack',sans-serif;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;padding:.45rem 1.1rem;border-radius:6px;border:none;cursor:pointer">Subscribe</button>
+      <button class="notes-close" onclick="closeUpgradeDialog()">Close</button>
+      <button id="upgradeSubBtn" style="display:none;background:#f5a623;color:#fff;font-family:'DINBlack',sans-serif;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;padding:.45rem 1.1rem;border-radius:6px;border:none;cursor:pointer">Manage Billing</button>
     </div>
   </div>
 </div>
@@ -2302,6 +2335,7 @@ function _estimateLog(msg, type) {
 }
 
 function openEstimateDialog(clientName, gameName) {
+  var _args = arguments; if (!_dbRequirePro(function() { openEstimateDialog.apply(null, _args); })) return;
   // Close any open combos
   document.getElementById('estimateClientCombo').classList.remove('open');
   document.getElementById('estimateGameCombo').classList.remove('open');
@@ -2399,6 +2433,7 @@ function _estGameKey(e) {
 }
 
 function openNewContractDialog() {
+  var _args = arguments; if (!_dbRequirePro(function() { openNewContractDialog.apply(null, _args); })) return;
   openEstimateDialog('', '');
 }
 
@@ -2491,6 +2526,7 @@ function _invoiceIsDirty() {
 }
 
 function openInvoiceFromEstimate(estIdx) {
+  var _args = arguments; if (!_dbRequirePro(function() { openInvoiceFromEstimate.apply(null, _args); })) return;
   var est = ESTIMATES_RAW[estIdx];
   if (!est) return;
   _invoiceEstIdx = estIdx;
@@ -3616,6 +3652,7 @@ function openAddDialog() {
 var _contractGame = '';
 
 function openContractDialog(name, clientName) {
+  var _args = arguments; if (!_dbRequirePro(function() { openContractDialog.apply(null, _args); })) return;
   _contractGame = name;
   document.getElementById('contractGameTitle').textContent = name;
   document.getElementById('contractClient').value      = clientName || '';
@@ -3697,6 +3734,7 @@ function _isoDaysFromToday(n) {
 }
 
 function openStandaloneInvoiceDialog(gameName, clientName) {
+  var _args = arguments; if (!_dbRequirePro(function() { openStandaloneInvoiceDialog.apply(null, _args); })) return;
   _siGame   = gameName   || '';
   _siClient = clientName || '';
   document.getElementById('siGameTitle').textContent    = _siGame;
@@ -6135,6 +6173,7 @@ function _ceSetStatus(val) {
 
 // Open the edit dialog from an estimate/invoice card (matched by Ref Number)
 function openContractEditForEstimate(estIdx) {
+  var _args = arguments; if (!_dbRequirePro(function() { openContractEditForEstimate.apply(null, _args); })) return;
   var est = ESTIMATES_RAW[estIdx];
   if (!est || !est.contract_id) return;
   var ref = String(est.contract_id);
@@ -6157,6 +6196,7 @@ function openContractEditForEstimate(estIdx) {
 }
 
 function openContractEditDialog(idx) {
+  var _args = arguments; if (!_dbRequirePro(function() { openContractEditDialog.apply(null, _args); })) return;
   var con = CONTRACT_RAW[idx];
   if (!con) return;
   _ceIdx = idx;
@@ -6345,14 +6385,31 @@ function _dbLoadSubStatus(cb) {
 }
 
 function _dbUpdateSubMenu() {
+  var s = _dbSubStatus || {};
   var item = document.getElementById('dbUpgradeBtn');
-  if (!item) return;
-  var pro = !!(_dbSubStatus && _dbSubStatus.is_pro);
-  item.textContent = pro ? 'Pro Active' : 'Subscribe';
-  item.style.color = pro ? '#4caf50' : '#f5a623';
+  if (item) {
+    item.textContent = s.is_pro ? 'Pro Active' : (s.is_core ? 'Core Active' : 'Subscribe');
+    item.style.color = s.is_core ? '#4caf50' : '#f5a623';
+  }
+  document.querySelectorAll('[data-pro-badge]').forEach(function(b) { b.style.display = s.is_pro ? 'none' : ''; });
 }
 
-function openUpgradeDialog() {
+// Contracts, estimates and invoices are DevBoard Pro. Returns true when allowed;
+// otherwise shows the plans (after loading the status first if needed).
+function _dbRequirePro(retry) {
+  if (_dbSubStatus === null) {
+    _dbLoadSubStatus(function(s) { if (s.is_pro || s.ok === false) retry(); else openUpgradeDialog('pro'); });
+    return false;
+  }
+  if (_dbSubStatus.is_pro || _dbSubStatus.ok === false) return true;
+  openUpgradeDialog('pro');
+  return false;
+}
+
+function openUpgradeDialog(reason) {
+  document.getElementById('upgradeIntro').textContent = reason === 'pro'
+    ? 'Contracts, estimates and invoices are part of DevBoard Pro.'
+    : 'Pick the plan that fits how you work.';
   document.getElementById('upgradeOverlay').classList.add('open');
   if (_dbSubStatus === null) {
     document.getElementById('upgradeSubStatus').textContent = 'Checking subscription…';
@@ -6364,19 +6421,32 @@ function openUpgradeDialog() {
 
 function _renderUpgradeStatus() {
   var statusEl = document.getElementById('upgradeSubStatus');
-  var btn      = document.getElementById('upgradeSubBtn');
+  var manage   = document.getElementById('upgradeSubBtn');
+  var coreCard = document.getElementById('planCore'), proCard = document.getElementById('planPro');
+  var coreBtn  = document.getElementById('planCoreBtn'), proBtn = document.getElementById('planProBtn');
   var s = _dbSubStatus || {};
-  btn.disabled = false;
+  coreCard.classList.toggle('current', s.plan === 'core');
+  proCard.classList.toggle('current', s.plan === 'pro');
+  coreBtn.disabled = proBtn.disabled = false;
+  coreBtn.textContent = 'Choose Core'; coreBtn.onclick = function() { startUpgradeCheckout('core'); };
+  proBtn.textContent  = 'Choose Pro';  proBtn.onclick  = function() { startUpgradeCheckout('pro'); };
+  manage.style.display = 'none'; manage.onclick = _dbOpenBillingPortal;
+  coreBtn.style.display = proBtn.style.display = '';
+  if (s.is_core) {
+    // Already subscribed: plan changes go through the billing portal (no second subscription).
+    manage.style.display = '';
+    if (s.plan === 'pro') { coreBtn.style.display = proBtn.style.display = 'none'; }
+    else { coreBtn.style.display = 'none'; proBtn.textContent = 'Upgrade to Pro'; proBtn.onclick = _dbOpenBillingPortal; }
+  }
   if (s.status === 'past_due') {
     statusEl.innerHTML = '<span style="color:#f5a623;font-weight:700">⚠ Payment past due</span>';
-    btn.textContent = 'Update Payment'; btn.onclick = _dbOpenBillingPortal;
-  } else if (s.is_pro) {
-    statusEl.innerHTML = '<span style="color:#4caf50;font-weight:700">✓ Pro active</span>'
+    manage.textContent = 'Update Payment';
+  } else if (s.is_core) {
+    statusEl.innerHTML = '<span style="color:#4caf50;font-weight:700">✓ ' + (s.is_pro ? 'Pro' : 'Core') + ' active</span>'
       + (s.period_end ? ' · renews ' + s.period_end : '');
-    btn.textContent = 'Manage Billing'; btn.onclick = _dbOpenBillingPortal;
+    manage.textContent = 'Manage Billing';
   } else {
     statusEl.textContent = (s.ok === false) ? 'Could not check your subscription right now.' : '';
-    btn.textContent = 'Subscribe'; btn.onclick = startUpgradeCheckout;
   }
 }
 
@@ -6390,21 +6460,24 @@ function closeUpgradeDialog() {
   document.getElementById('upgradeOverlay').classList.remove('open');
 }
 
-function startUpgradeCheckout() {
-  _dbStartCheckout('subscription', document.getElementById('upgradeSubBtn'), 'Subscribe');
+function startUpgradeCheckout(plan) {
+  plan = plan === 'core' ? 'core' : 'pro';
+  var btn = document.getElementById(plan === 'core' ? 'planCoreBtn' : 'planProBtn');
+  _dbStartCheckout('subscription', btn, btn.textContent, plan);
 }
 
 function startDonation() {
   _dbStartCheckout('donation', null, '');
 }
 
-function _dbStartCheckout(type, btn, btnLabel) {
+function _dbStartCheckout(type, btn, btnLabel, plan) {
   if (btn) { btn.textContent = 'Redirecting…'; btn.disabled = true; }
   else { showSaveToast('Opening secure checkout…', 'success'); }
   var fd = new FormData();
   fd.append('type', type);
   fd.append('id', SHEET_ID);
   fd.append('app', 'devboard');
+  if (plan) fd.append('plan', plan);
   fd.append('success_url', _dbReturnUrl(type === 'donation' ? ['donate', 'thanks'] : ['sub', 'success']));
   fd.append('cancel_url',  _dbReturnUrl(null));
   function failed(msg) {
@@ -6436,13 +6509,13 @@ function _dbStartCheckout(type, btn, btnLabel) {
     if (don === 'thanks') { showSaveToast('♥ Thank you for your donation!', 'success'); }
     if (sub !== 'success') { _dbLoadSubStatus(); return; }
     // The webhook may take a few seconds — confirm before showing Pro.
-    showSaveToast('Payment received — activating Pro…', 'success');
+    showSaveToast('Payment received — activating your plan…', 'success');
     var tries = 0;
     (function poll() {
       _dbLoadSubStatus(function(s) {
-        if (s.is_pro) { showSaveToast('⭐ Pro is now active. Thank you!', 'success'); return; }
+        if (s.is_core) { showSaveToast('⭐ DevBoard ' + (s.is_pro ? 'Pro' : 'Core') + ' is now active. Thank you!', 'success'); return; }
         if (++tries < 10) { setTimeout(poll, 3000); return; }
-        showSaveToast('Payment received. Pro will activate shortly — refresh in a minute.', 'success');
+        showSaveToast('Payment received. Your plan will activate shortly — refresh in a minute.', 'success');
       });
     })();
   }

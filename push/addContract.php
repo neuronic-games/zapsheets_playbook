@@ -7,6 +7,8 @@ require __DIR__ . '/../dotEnv.php';
 require_once __DIR__ . '/refreshJson.php';
 
 $sheetId     = trim($_POST['id']           ?? '');
+require_once __DIR__ . '/stripeCommon.php';
+devboardRequirePro($sheetId);
 $game        = trim($_POST['game']         ?? '');
 $client      = trim($_POST['client']       ?? '');
 $targetStart = trim($_POST['target_start'] ?? '');

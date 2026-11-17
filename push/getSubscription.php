@@ -6,7 +6,9 @@
  * Response: {
  *   ok:         true,
  *   status:     "active" | "trialing" | "past_due" | "canceled" | "unpaid" | "none" | …,
- *   is_pro:     true | false,
+ *   plan:       "core" | "pro" | ""  (DevBoard has Core and Pro; other apps only Pro)
+ *   is_pro:     true | false   (Pro plan)
+ *   is_core:    true | false   (any paid plan: Core or Pro)
  *   period_end: "YYYY-MM-DD" | "",
  *   app:        "devboard" | "gameboard" | "",
  *   portal_url: Stripe customer portal login link (STRIPE_PORTAL_URL) | ""
@@ -21,15 +23,15 @@ $sheetId = trim($_POST['id'] ?? '');
 if (!stripeValidSheetId($sheetId)) stripeFail('Invalid sheet id');
 
 $portalUrl = $_ENV['STRIPE_PORTAL_URL'] ?? '';
-$file      = dirname(__DIR__) . '/sheets/' . $sheetId . '/subscription.json';
-$data      = file_exists($file) ? (json_decode(file_get_contents($file), true) ?: []) : [];
-$status    = $data['status'] ?? 'none';
+$info      = stripeSheetPlan($sheetId);
 
 echo json_encode([
     'ok'         => true,
-    'status'     => $status,
-    'is_pro'     => in_array($status, ['active', 'trialing', 'past_due'], true),
-    'period_end' => $data['period_end'] ?? '',
-    'app'        => $data['app']        ?? '',
+    'status'     => $info['status'],
+    'plan'       => $info['plan'],
+    'is_pro'     => $info['is_pro'],
+    'is_core'    => $info['is_core'],
+    'period_end' => $info['period_end'],
+    'app'        => $info['app'],
     'portal_url' => $portalUrl,
 ]);

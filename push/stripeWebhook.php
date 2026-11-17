@@ -17,6 +17,7 @@
  *   "email":                  "user@example.com",
  *   "status":                 "active" | "trialing" | "past_due" | "canceled" | "unpaid",
  *   "app":                    "devboard" | "gameboard",
+ *   "plan":                   "core" | "pro",
  *   "stripe_customer_id":     "cus_xxx",
  *   "stripe_subscription_id": "sub_xxx",
  *   "period_end":             "2026-12-01",
@@ -103,6 +104,7 @@ switch ($type) {
             'stripe_customer_id'     => $object['customer'] ?? '',
             'stripe_subscription_id' => $subId,
             'period_end'             => $sub ? stripePeriodEnd($sub) : '',
+            'plan'                   => $sub ? stripePlanFromSub($sub, $app) : ($object['metadata']['plan'] ?? 'pro'),
         ]);
         break;
 
@@ -112,6 +114,7 @@ switch ($type) {
         writeSubscription($sheetId, [
             'status'     => $object['status'] ?? 'unknown',
             'period_end' => stripePeriodEnd($object),
+            'plan'       => stripePlanFromSub($object),
         ]);
         break;
 

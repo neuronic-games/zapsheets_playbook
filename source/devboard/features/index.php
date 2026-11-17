@@ -355,6 +355,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
 .sa-toast { bottom:18px; }
 .sa-cursor { transform:translate(330px,380px); }
 @media (prefers-reduced-motion: reduce) { .sa-cursor, .sa-key { display:none; } }
+.pro-tag { display:inline-block; margin-left:4px; background:var(--amber-pale); color:#a35f12; font-size:10.5px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; border-radius:999px; vertical-align:2px; }
 </style>
 </head>
 <body>
@@ -411,7 +412,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
         </ul>
       </div>
       <div class="aud-card">
-        <span class="aud-tag">Small studios &amp; freelancers</span>
+        <span class="aud-tag">Small studios &amp; freelancers · Pro</span>
         <h3>Get paid for development work</h3>
         <p>Developing or playtesting games for publishers? Send a professional estimate, turn it into an invoice, attach a playtest report, and see what's been paid — without a separate invoicing app.</p>
         <ul>
@@ -463,12 +464,12 @@ footer a:hover { color:rgba(255,255,255,.7); }
       </div>
       <div class="feat-card">
         <div class="feat-icon teal">🧾</div>
-        <h3>Estimates &amp; invoices</h3>
+        <h3>Estimates &amp; invoices <span class="pro-tag">Pro</span></h3>
         <p>Create estimates and invoices as clean PDFs with your logo, line items, printing costs and discounts. Share them by email with a link.</p>
       </div>
       <div class="feat-card">
         <div class="feat-icon green">✅</div>
-        <h3>Edit &amp; track payment</h3>
+        <h3>Edit &amp; track payment <span class="pro-tag">Pro</span></h3>
         <p>Change an amount and the PDF updates at the same link. Mark each contract Estimate, Invoiced or Paid and see it colour-coded in your client list.</p>
       </div>
       <div class="feat-card">
@@ -578,8 +579,8 @@ footer a:hover { color:rgba(255,255,255,.7); }
     <p class="section-sub">No new database to trust. Every session, observation and contract is a row in a spreadsheet you own — search it, export it, share it, back it up.</p>
     <div class="own-grid">
       <div class="own-card">
-        <div class="num">$3.99</div>
-        <p>Per month. One subscription covers your playtest journal, contracts, estimates and invoices — no separate notes or invoicing app to pay for.</p>
+        <div class="num">$2.99</div>
+        <p>Per month for <strong>Core</strong>: your whole playtest journal, team notes and reports. <strong>Pro</strong>, at $3.99 a month, adds contracts, estimates and invoices — no separate invoicing app to pay for.</p>
       </div>
       <div class="own-card">
         <div class="num">100%</div>
@@ -614,11 +615,11 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <tr><td>Rounds counter &amp; session timer</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Collaborators add notes without sheet access</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Playtest reports for clients</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span> <span style="font-size:12px;color:var(--text-muted)">by hand</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Estimates &amp; invoices (PDF)</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Paid / unpaid tracking</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>Estimates &amp; invoices (PDF)</td><td class="ours"><span class="check">✓</span> <span class="pro-tag">Pro</span></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>Paid / unpaid tracking</td><td class="ours"><span class="check">✓</span> <span class="pro-tag">Pro</span></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>Data in your own Google Sheet</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Works with <a href="https://zapsheets.com/app/pitchboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">PitchBoard</a> &amp; <a href="https://zapsheets.com/app/gameboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">GameBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">$3.99 / mo</td><td><span style="font-size:12px;color:var(--text-muted)">varies</span></td><td><span style="font-size:12px;color:var(--text-muted)">varies</span></td></tr>
+          <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">$2.99 / mo Core<br>$3.99 / mo Pro</td><td><span style="font-size:12px;color:var(--text-muted)">varies</span></td><td><span style="font-size:12px;color:var(--text-muted)">varies</span></td></tr>
         </tbody>
       </table>
     </div>

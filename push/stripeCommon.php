@@ -8,6 +8,57 @@ if (file_exists($_bpFile)) require_once $_bpFile;
 
 const STRIPE_APPS = ['devboard', 'gameboard', 'pitchboard'];
 
+/** Statuses that count as a paid, working subscription. */
+const STRIPE_LIVE_STATUSES = ['active', 'trialing', 'past_due'];
+
+/**
+ * Plans. DevBoard has two: 'core' (STRIPE_PRICE_ID_DEVBOARD_CORE) and
+ * 'pro' (STRIPE_PRICE_ID_DEVBOARD). Other apps only have 'pro'.
+ */
+function stripePlanPriceId(string $app, string $plan): string {
+    $key = 'STRIPE_PRICE_ID_' . strtoupper($app) . ($plan === 'core' ? '_CORE' : '');
+    return $_ENV[$key] ?? '';
+}
+
+/** Work out the plan from a Stripe subscription's price (handles plan switches in the portal). */
+function stripePlanFromSub(array $sub, string $app = ''): string {
+    $app = $app ?: ($sub['metadata']['app'] ?? '');
+    $core = $app ? stripePlanPriceId($app, 'core') : '';
+    foreach ($sub['items']['data'] ?? [] as $item) {
+        if ($core && ($item['price']['id'] ?? '') === $core) return 'core';
+    }
+    return $sub['metadata']['plan'] ?? 'pro';
+}
+
+/**
+ * Subscription info for a sheet: [status, plan ('core'|'pro'|''), is_pro, is_core, period_end, app].
+ * Sheets listed in STRIPE_PRO_SHEET_IDS (comma separated) always get Pro — for your own or comped sheets.
+ */
+function stripeSheetPlan(string $sheetId): array {
+    $file   = dirname(__DIR__) . '/sheets/' . $sheetId . '/subscription.json';
+    $data   = (stripeValidSheetId($sheetId) && file_exists($file)) ? (json_decode(file_get_contents($file), true) ?: []) : [];
+    $status = $data['status'] ?? 'none';
+    $live   = in_array($status, STRIPE_LIVE_STATUSES, true);
+    $plan   = $live ? (($data['plan'] ?? 'pro') === 'core' ? 'core' : 'pro') : '';
+    $comped = array_filter(array_map('trim', explode(',', $_ENV['STRIPE_PRO_SHEET_IDS'] ?? '')));
+    if (in_array($sheetId, $comped, true)) { $plan = 'pro'; $live = true; if ($status === 'none') $status = 'active'; }
+    return [
+        'status'     => $status,
+        'plan'       => $plan,
+        'is_pro'     => $plan === 'pro',
+        'is_core'    => $live,
+        'period_end' => $data['period_end'] ?? '',
+        'app'        => $data['app'] ?? '',
+    ];
+}
+
+/** Stop a DevBoard Pro-only endpoint (contracts, estimates, invoices) for sheets without Pro. */
+function devboardRequirePro(string $sheetId): void {
+    if (stripeSheetPlan($sheetId)['is_pro']) return;
+    echo json_encode(['error' => 'Contracts, estimates and invoices are part of DevBoard Pro. Upgrade to Pro to use them.', 'need_pro' => true]);
+    exit;
+}
+
 function stripeFail(string $msg, int $code = 200): void {
     http_response_code($code);
     echo json_encode(['error' => $msg]);

@@ -356,6 +356,32 @@ footer a:hover { color:rgba(255,255,255,.7); }
 .sa-cursor { transform:translate(330px,380px); }
 @media (prefers-reduced-motion: reduce) { .sa-cursor, .sa-key { display:none; } }
 .pro-tag { display:inline-block; margin-left:4px; background:var(--amber-pale); color:#a35f12; font-size:10.5px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; border-radius:999px; vertical-align:2px; }
+.tdx { padding:16px 14px 18px; }
+.tdx-cap { font-family:'DBDINBlack','Inter',sans-serif; font-size:7.5px; letter-spacing:.08em; text-transform:uppercase; color:#94a3b8; margin:0 0 5px 2px; }
+.tdx-flag { background:#fff; border-color:#f5c518; box-shadow:0 0 0 2px rgba(245,197,24,.3); }
+.tdx-flag > div:last-child { position:relative; padding-right:26px; }
+.tdx-bulb { position:absolute; top:5px; right:5px; width:17px; height:17px; border-radius:4px; border:1px solid #d0d8e4; background:#fff; color:#a0a8b4; display:flex; align-items:center; justify-content:center; }
+.tdx-bulb.on { color:#b8860b; background:#fff8db; border-color:#f5c518; } .tdx-bulb.on .g { fill:#ffd43b; }
+.tdx-list { background:#fff; border:1px solid #e3e8ef; border-radius:8px; }
+.tdx-row { position:relative; display:flex; align-items:center; gap:6px; padding:6px 8px 6px 4px; border-top:1px solid #eef1f5; font-size:9.5px; }
+.tdx-row:first-child { border-top:none; }
+.tdx-row.drag { background:#fffbe6; box-shadow:0 5px 14px rgba(0,0,0,.12); transform:translateX(4px) rotate(-.4deg); border-radius:6px; z-index:2; }
+.tdx-h { color:#c3cad4; font-size:8px; letter-spacing:-.15em; width:10px; }
+.tdx-cb { width:11px; height:11px; border:1.4px solid #9aa4b1; border-radius:3px; flex-shrink:0; font-size:8px; line-height:9px; text-align:center; color:#fff; }
+.tdx-cb.on { background:#b8860b; border-color:#b8860b; }
+.tdx-t { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#334155; }
+.tdx-t b { font-family:'DBDINBlack','Inter',sans-serif; font-weight:normal; color:#1a5f7a; margin-right:4px; }
+.tdx-t i { font-style:normal; color:#94a3b8; font-size:8.5px; margin-left:4px; }
+.tdx-row.done .tdx-t b, .tdx-row.done .tdx-t { text-decoration:line-through; color:#aab2bd; }
+.tdx-row.done .tdx-t i { text-decoration:none; }
+.tdx-row.done .tdx-ic { opacity:.5; }
+.tdx-ic { width:17px; height:17px; display:flex; align-items:center; justify-content:center; color:#c3cad4; font-family:'DBDINBlack','Inter',sans-serif; font-size:10px; letter-spacing:-.05em; border-radius:4px; flex-shrink:0; }
+.tdx-ic.p3 { color:#d92d20; } .tdx-ic.p2 { color:#e08a00; } .tdx-ic.p1 { color:#2e7d32; }
+.tdx-ic.on { color:#1a5f7a; } .tdx-ic.due { color:#7c4dbd; }
+.tdx-ic.act { background:#f3f5f8; border:1px solid #dde3ea; }
+.tdx-menu { position:absolute; right:22px; top:26px; z-index:3; background:#fff; border:1px solid #e1e6ed; border-radius:7px; box-shadow:0 8px 22px rgba(15,23,42,.16); padding:3px; display:flex; flex-direction:column; min-width:88px; }
+.tdx-menu span { padding:4px 7px; border-radius:4px; font-size:9px; color:#334155; }
+.tdx-menu span.cur { background:#eef6fa; color:#1a5f7a; font-family:'DBDINBlack','Inter',sans-serif; }
 </style>
 </head>
 <body>
@@ -473,6 +499,21 @@ footer a:hover { color:rgba(255,255,255,.7); }
         <p>Change an amount and the PDF updates at the same link. Mark each contract Estimate, Invoiced or Paid and see it colour-coded in your client list.</p>
       </div>
       <div class="feat-card">
+        <div class="feat-icon amber">📌</div>
+        <h3>TODOs from your notes</h3>
+        <p>Tap the light bulb on any note to make it a TODO. Every game card lists its open TODOs at the top — tick one off and it's crossed out.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon rose">❗</div>
+        <h3>Priority, owner &amp; due date</h3>
+        <p>All TODOs come together on the Board. Give each one a priority, a person and a due date, and drag them into the order you'll tackle them.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon purple">🗂️</div>
+        <h3>Board overview</h3>
+        <p>See every game by stage — design, prototype, playtesting, signed — next to your TODOs and latest contracts, on one screen.</p>
+      </div>
+      <div class="feat-card">
         <div class="feat-icon dark">📊</div>
         <h3>Lives in your Sheet</h3>
         <p>Sessions, contracts and people are rows in a Google Sheet you own — the same one PitchBoard and GameBoard use. Works on phone, tablet and desktop.</p>
@@ -569,6 +610,40 @@ footer a:hover { color:rgba(255,255,255,.7); }
       </div>
     </div>
 
+    <!-- Screenshot 3: TODOs -->
+    <div class="shot-grid" style="margin-top:5rem;">
+      <div class="shot-text">
+        <div class="section-label">TODOs</div>
+        <h2 class="section-title" style="margin-bottom:1rem;">Turn notes into a to-do list</h2>
+        <p>When a playtest note needs work, tap the light bulb. It shows up on the game's card and on your Board, where you can set who's on it, how urgent it is and when it's due — then drag your list into order.</p>
+        <ul>
+          <li>One tap to flag a note as a TODO</li>
+          <li>Priority from ! to !!!, an owner and a due date</li>
+          <li>Drag and drop to reorder your list</li>
+          <li>Tick it off — it's crossed out everywhere</li>
+          <li>Kept in a "todos" tab in your Sheet</li>
+        </ul>
+      </div>
+      <div class="browser-frame">
+        <div class="browser-chrome">
+          <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
+          <div class="browser-url">zapsheets.com/app/…/devboard</div>
+        </div>
+        <div class="dbx tdx" aria-hidden="true">
+          <div class="tdx-cap">In a session</div>
+          <div class="dbx-pair tdx-flag"><div><b>Components</b></div><div>Show the component list before setup, with counts.<span class="tdx-bulb on"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path class="g" d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14Z"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></span></div></div>
+          <div class="tdx-cap" style="margin-top:12px">On the Board</div>
+          <div class="tdx-list">
+            <div class="tdx-row"><span class="tdx-h">⋮⋮</span><span class="tdx-cb"></span><span class="tdx-t"><b>Components</b> Show the component list before setup… <i>Ghost Party · Playtest 1</i></span><span class="tdx-ic p3">!!!</span><span class="tdx-ic on"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span><span class="tdx-ic due"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg></span></div>
+            <div class="tdx-row drag"><span class="tdx-h">⋮⋮</span><span class="tdx-cb"></span><span class="tdx-t"><b>Bidding</b> Paying to go last is too strong. Cap bids… <i>Club K9 · Playtest 4</i></span><span class="tdx-ic p2">!!</span><span class="tdx-ic on act"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span><span class="tdx-ic"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg></span>
+              <div class="tdx-menu"><span>Maya Chen</span><span class="cur">Leo Park</span><span>Sam Rivera</span></div></div>
+            <div class="tdx-row"><span class="tdx-h">⋮⋮</span><span class="tdx-cb"></span><span class="tdx-t"><b>Fase names</b> Stage 3 shouldn't have a number… <i>Ghost Party · Editing 1</i></span><span class="tdx-ic p1">!</span><span class="tdx-ic"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span><span class="tdx-ic"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg></span></div>
+            <div class="tdx-row done"><span class="tdx-h"></span><span class="tdx-cb on">✓</span><span class="tdx-t"><b>Blockers</b> Add blockers for unused player spaces. <i>Club K9 · Playtest 3</i></span><span class="tdx-ic">!</span><span class="tdx-ic on"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span><span class="tdx-ic"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </section>
 
@@ -617,6 +692,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <tr><td>Playtest reports for clients</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span> <span style="font-size:12px;color:var(--text-muted)">by hand</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Estimates &amp; invoices (PDF)</td><td class="ours"><span class="check">✓</span> <span class="pro-tag">Pro</span></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>Paid / unpaid tracking</td><td class="ours"><span class="check">✓</span> <span class="pro-tag">Pro</span></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>TODO list from your notes</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Data in your own Google Sheet</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Works with <a href="https://zapsheets.com/app/pitchboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">PitchBoard</a> &amp; <a href="https://zapsheets.com/app/gameboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">GameBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">$2.99 / mo Core<br>$3.99 / mo Pro</td><td><span style="font-size:12px;color:var(--text-muted)">varies</span></td><td><span style="font-size:12px;color:var(--text-muted)">varies</span></td></tr>

@@ -526,7 +526,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <tr><td>Public game pages</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Collaborator access (no account)</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>You own the data</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Publisher data</td><td class="ours"><span class="check">✓</span> <span style="font-size:12px;color:var(--text-muted);font-weight:400"><img src="images/help_compendium/ce-logo-72.png" alt="Cardboard Edison" style="height:1em;vertical-align:middle;margin-right:.2em;">Compendium, with subscription</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td>Publisher data</td><td class="ours"><span class="check">✓</span> <span style="font-size:12px;color:var(--text-muted);font-weight:400"><a href="https://cardboardedison.com/directoryinfo" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px"><img src="images/help_compendium/ce-logo-72.png" alt="Cardboard Edison" style="height:1em;vertical-align:middle;margin-right:.2em;">Compendium, with subscription</a></span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:#1a2744;">$1.99 / mo</td><td>$10 / mo</td><td>$5–35 / mo</td></tr>
         </tbody>
       </table>

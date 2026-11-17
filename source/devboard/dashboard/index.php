@@ -1038,6 +1038,13 @@ body.session-dialog-open .session-body img { display:none !important; }
 .btodo-ic:disabled { cursor:default; opacity:.6; } .btodo-ic:disabled:hover { background:none; border-color:transparent; color:#c3cad4; }
 .todo-item .btodo-fields { margin-left:.3rem; }
 .todo-item.done .btodo-fields { opacity:.5; }
+.plan-title { display:flex; align-items:center; justify-content:center; gap:.5rem; font-size:1.1rem; margin-bottom:.35rem; }
+.plan-title img { width:28px; height:28px; border-radius:7px; }
+.plan-current { display:block; width:fit-content; margin:0 auto .2rem; font-family:'DINRegular',sans-serif; font-size:.82rem; color:#555; background:#f1f4f8; border-radius:999px; padding:.22rem .8rem; }
+.plan-current:empty { display:none; }
+.plan-current b { font-family:'DINBlack',sans-serif; color:#333; }
+.plan-current span { color:#888; }
+.plan-current.paid { background:#edf7ed; } .plan-current.paid b { color:#2e7d32; }
 </style>
 </head>
 <body>
@@ -1825,7 +1832,8 @@ body.session-dialog-open .session-body img { display:none !important; }
 <!-- Upgrade to Pro dialog -->
 <div class="overlay" id="upgradeOverlay" onclick="if(event.target===this)closeUpgradeDialog()">
   <div class="sync-dialog" style="width:min(520px,94vw);text-align:center" onclick="event.stopPropagation()">
-    <h2 style="font-size:1.1rem;margin-bottom:.2rem">⭐ DevBoard plans</h2>
+    <h2 class="plan-title"><img src="images/db_icon_180.png" alt="">DevBoard plans</h2>
+    <div class="plan-current" id="upgradeCurrent"></div>
     <p id="upgradeIntro" style="font-family:'DINRegular',sans-serif;font-size:.82rem;color:#666;margin:.2rem 0 .9rem">Pick the plan that fits how you work.</p>
     <div class="plan-grid">
       <div class="plan-card" id="planCore">
@@ -6982,12 +6990,17 @@ function _renderUpgradeStatus() {
     if (s.plan === 'pro') { coreBtn.style.display = proBtn.style.display = 'none'; }
     else { coreBtn.style.display = 'none'; proBtn.textContent = 'Upgrade to Pro'; proBtn.onclick = _dbOpenBillingPortal; }
   }
+  var cur = document.getElementById('upgradeCurrent');
+  if (s.ok === false)   cur.innerHTML = 'Current plan: <b>—</b> <span>(couldn’t check right now)</span>';
+  else if (_dbSubStatus === null) cur.textContent = '';
+  else cur.innerHTML = 'Current plan: <b>' + (s.is_pro ? 'Pro' : s.is_core ? 'Core' : 'Free') + '</b>' +
+         (s.is_core && s.period_end ? ' <span>· renews ' + esc(fmtDate(s.period_end)) + '</span>' : '');
+  cur.className = 'plan-current' + (s.is_core ? ' paid' : '');
   if (s.status === 'past_due') {
     statusEl.innerHTML = '<span style="color:#f5a623;font-weight:700">⚠ Payment past due</span>';
     manage.textContent = 'Update Payment';
   } else if (s.is_core) {
-    statusEl.innerHTML = '<span style="color:#4caf50;font-weight:700">✓ ' + (s.is_pro ? 'Pro' : 'Core') + ' active</span>'
-      + (s.period_end ? ' · renews ' + s.period_end : '');
+    statusEl.textContent = '';
     manage.textContent = 'Manage Billing';
   } else {
     statusEl.textContent = (s.ok === false) ? 'Could not check your subscription right now.' : '';

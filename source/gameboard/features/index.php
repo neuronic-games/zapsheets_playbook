@@ -241,7 +241,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
 <section class="hero">
   <div class="hero-tag">For board game makers</div>
   <h1>Your games. A <em>polished page</em> — instantly.</h1>
-  <p>GameBoard turns your Google Sheet into a beautiful product catalog and individual game pages — no web developer, no monthly subscription.</p>
+  <p>GameBoard turns your Google Sheet into a beautiful product catalog and individual game pages — no web developer, no web hosting.</p>
   <div class="hero-btns">
     <a href="gameboard" class="btn-primary">Get GameBoard</a>
     <a href="gameboard/features#screenshots" class="btn-ghost">See it in action</a>
@@ -598,8 +598,8 @@ footer a:hover { color:rgba(255,255,255,.7); }
     <p class="section-sub">No CMS, no vendor lock-in. GameBoard reads from a Google Sheet you own — every game, image URL, and brand setting, in a spreadsheet you control.</p>
     <div class="own-grid">
       <div class="own-card">
-        <div class="num">$0</div>
-        <p>No monthly fee. GameBoard runs on Google infrastructure you already have — no web hosting to pay for. A typical GoDaddy site runs $10–35 a month, plus about $23 a year for a domain.</p>
+        <div class="num">$4.99</div>
+        <p>Per month, with no web hosting to pay for — GameBoard runs on Google infrastructure you already have. A typical GoDaddy site runs $10–35 a month, plus about $23 a year for a domain.</p>
       </div>
       <div class="own-card">
         <div class="num">100%</div>
@@ -638,7 +638,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <tr><td>Works with <a href="https://zapsheets.com/app/pitchboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">PitchBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Shareable token links</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Price &amp; buy links</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">TBD</td><td>$16–49 / mo</td><td>$10–35 / mo<br><span style="font-size:12px;color:var(--text-muted);font-weight:400">+ ~$23 / yr domain</span></td><td>Free</td></tr>
+          <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">$4.99 / mo</td><td>$16–49 / mo</td><td>$10–35 / mo<br><span style="font-size:12px;color:var(--text-muted);font-weight:400">+ ~$23 / yr domain</span></td><td>Free</td></tr>
         </tbody>
       </table>
     </div>

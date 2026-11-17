@@ -638,7 +638,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <tr><td>Works with <a href="https://zapsheets.com/app/pitchboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">PitchBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Shareable token links</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Price &amp; buy links</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">$4.99 / mo</td><td>$16–49 / mo</td><td>$10–35 / mo<br><span style="font-size:12px;color:var(--text-muted);font-weight:400">+ you buy your own domain</span></td><td>Free</td></tr>
+          <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">$4.99 / mo</td><td>$16–49 / mo</td><td>$10–35 / mo</td><td>Free</td></tr>
         </tbody>
       </table>
     </div>

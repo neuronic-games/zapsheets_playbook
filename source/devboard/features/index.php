@@ -285,6 +285,51 @@ footer a:hover { color:rgba(255,255,255,.7); }
 .dbx-li { display:flex; justify-content:space-between; padding:4px 0; border-top:1px solid #edf1f5; }
 .dbx-li.sub { color:#64748b; } .dbx-li.disc { color:#64748b; }
 .dbx-total { display:flex; justify-content:space-between; margin-top:5px; font-family:'DBDINBlack','Inter',sans-serif; font-size:13px; color:#E8623A; }
+.ie-toast { position:absolute; left:50%; transform:translate(-50%,8px); background:#15803d; color:#fff; font-family:'Inter',system-ui,sans-serif; font-size:11px; font-weight:600; padding:6px 12px; border-radius:999px; box-shadow:0 6px 18px rgba(21,128,61,.35); opacity:0; transition:opacity .2s, transform .2s; white-space:nowrap; z-index:5; }
+.ie-toast.show { opacity:1; transform:translate(-50%,0); }
+.ie-cursor { position:absolute; left:0; top:0; z-index:7; filter:drop-shadow(0 2px 3px rgba(0,0,0,.3)); pointer-events:none; }
+.ie-cursor.down { animation:ie-click .18s ease; }
+@keyframes ie-click { 50% { scale:.82; } }
+/* ── Session entry animation ── */
+.sa-stage { position:relative; overflow:hidden; user-select:none; height:460px; }   /* fixed so the page doesn't jump as rows are added */
+@media (max-width:560px) { .sa-stage { height:auto; min-height:540px; } }
+.sa-dlg { transition:opacity .35s, transform .35s; }
+.sa-dlg.gone { opacity:0; transform:translateY(-8px) scale(.98); }
+.sa-timer { color:#bbb; border-color:#d0d8e0; background:#fff; transition:all .2s; }
+.sa-timer.run { color:#e67e22; border-color:#e67e22; background:#fff8f2; }
+.sa-timer.hover, .sa-plus.hover { box-shadow:0 0 0 2px rgba(26,95,122,.25); }
+.sa-people .dbx-in { min-height:22px; position:relative; }
+.sa-people .dbx-in.ph { color:#a8b3c0; }
+.sa-people .dbx-in.focus, .sa-cell.focus { border-color:#1a5f7a; box-shadow:0 0 0 2px rgba(26,95,122,.12); }
+.sa-drop { position:absolute; left:-1px; right:-1px; top:100%; margin-top:2px; background:#fff; border:1px solid #d1dde6; border-radius:6px; box-shadow:0 6px 16px rgba(0,0,0,.12); font-size:9.5px; z-index:3; overflow:hidden; }
+.sa-drop div { padding:4px 7px; } .sa-drop div.on { background:#e7f2f6; color:#1a5f7a; }
+.sa-rows .dbx-pair { min-height:30px; transition:border-color .15s, box-shadow .15s; }
+.sa-rows .dbx-pair > div { position:relative; min-height:28px; }
+.sa-rows .dbx-pair.focus { border-color:#1a5f7a; box-shadow:0 0 0 2px rgba(26,95,122,.12); }
+.sa-ph { color:#a8b3c0; }
+.sa-caret::after { content:''; display:inline-block; width:1.5px; height:1em; background:#1a5f7a; margin-left:1px; vertical-align:-.15em; animation:ie-blink 1s steps(1) infinite; }
+.sa-upl { display:flex; align-items:center; gap:6px; color:#94a3b8; font-size:9px; height:62px; justify-content:center; }
+.sa-spin { width:13px; height:13px; border:2px solid #d0d8e0; border-top-color:#1a5f7a; border-radius:50%; animation:sa-spin .8s linear infinite; }
+@keyframes sa-spin { to { transform:rotate(360deg); } }
+@keyframes ie-blink { 50% { opacity:0; } }
+.sa-photo { animation:sa-pop .35s ease; }
+@keyframes sa-pop { from { opacity:0; transform:scale(.96); } }
+.sa-save.busy { opacity:.6; }
+.sa-key { position:absolute; z-index:6; background:#1e293b; color:#fff; font-family:'Inter',system-ui,sans-serif; font-size:11px; font-weight:600; padding:4px 8px; border-radius:6px; box-shadow:0 4px 10px rgba(0,0,0,.25); opacity:0; transform:translateY(4px); transition:opacity .15s, transform .15s; pointer-events:none; white-space:nowrap; }
+.sa-key.show { opacity:1; transform:none; }
+.sa-list { position:absolute; inset:14px; opacity:0; transform:translateY(10px); transition:opacity .4s, transform .4s; pointer-events:none; }
+.sa-list.show { opacity:1; transform:none; }
+.sa-game { background:#1a1a2e; color:#fff; border-radius:10px 10px 0 0; padding:10px 12px; display:flex; justify-content:space-between; align-items:baseline; }
+.sa-game b { font-family:'DBDINBlack','Inter',sans-serif; font-weight:normal; font-size:13px; }
+.sa-chips { font-size:9px; color:rgba(255,255,255,.6); }
+.sa-sess { background:#fff; border-top:1px solid #edf1f5; padding:9px 12px; font-size:9.5px; }
+.sa-sess:last-child { border-radius:0 0 10px 10px; }
+.sa-sess-h { display:flex; gap:8px; align-items:baseline; color:#64748b; }
+.sa-sess-p { color:#94a3b8; margin-top:3px; }
+.sa-new { background:#f2fbf4; box-shadow:inset 3px 0 0 #15803d; }
+.sa-toast { bottom:18px; }
+.sa-cursor { transform:translate(330px,380px); }
+@media (prefers-reduced-motion: reduce) { .sa-cursor, .sa-key { display:none; } }
 </style>
 </head>
 <body>
@@ -418,7 +463,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="shot-text">
         <div class="section-label">Playtest notes</div>
         <h2 class="section-title" style="margin-bottom:1rem;">Take notes while the game is on the table</h2>
-        <p>Open a session, start the timer and type as you watch. Each row pairs what happened with what you'll change, so the fixes are waiting for you after the playtest.</p>
+        <p>Start the timer, add who's playing and type as you watch — each row pairs what happened with what you'll change. Paste a photo of the table straight into a note. Save, and it's in your Sheet.</p>
         <ul>
           <li>Playtest, Meeting and Idea sessions</li>
           <li>Testers picked from your People list</li>
@@ -432,23 +477,30 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
           <div class="browser-url">zapsheets.com/app/…/devboard</div>
         </div>
-        <div class="dbx">
-          <div class="dbx-dlg">
+        <div class="dbx sa-stage" id="saDemo" aria-hidden="true">
+          <div class="dbx-dlg sa-dlg">
             <div class="dbx-h">
-              <span class="dbx-title">Edit Session <em>—</em> Club K9</span>
-              <span class="dbx-ctl"><span class="dbx-sq">−</span><span class="dbx-n">3</span><span class="dbx-sq">+</span><span class="dbx-lbl">Rounds</span><span class="dbx-timer">⏱ 42:17</span></span>
+              <span class="dbx-title">+ Session <em>—</em> Club K9</span>
+              <span class="dbx-ctl"><span class="dbx-sq">−</span><span class="dbx-n sa-rounds">0</span><span class="dbx-sq sa-plus">+</span><span class="dbx-lbl">Rounds</span><span class="dbx-timer sa-timer">⏱ 0</span></span>
             </div>
             <div class="dbx-row3">
               <div class="dbx-f"><label>Date</label><div class="dbx-in">11/12/2026</div></div>
               <div class="dbx-f"><label>Type</label><div class="dbx-in">Playtest</div></div>
-              <div class="dbx-f"><label>People</label><div class="dbx-in">Maya Chen</div><div class="dbx-in">Leo Park</div><div class="dbx-in">Sam Rivera</div></div>
+              <div class="dbx-f sa-people"><label>People</label></div>
             </div>
             <div class="dbx-grid-h"><span>Observations</span><span>Solutions</span></div>
-            <div class="dbx-pair"><div>Round 1<br>Maya: 2 $2 · Leo: 10 $6 · Sam: 2 $2</div><div>Is it better to keep money or pay to go last and take the button?</div></div>
-            <div class="dbx-pair"><div>Simultaneous betting for position, no money</div><div>Speeds up the round. Add blockers for unused player spaces.</div></div>
-            <div class="dbx-pair focus"><div><img class="dbx-photo" src="images/gameboard-features/carousel-pieces.webp" alt="Photo of the table" loading="lazy"></div><div class="dbx-ph">Thoughts or solutions…</div></div>
-            <div class="dbx-acts"><span class="dbx-btn">Cancel</span><span class="dbx-btn go">Save</span></div>
+            <div class="sa-rows"></div>
+            <div class="dbx-acts"><span class="dbx-btn">Cancel</span><span class="dbx-btn go sa-save">Add Session</span></div>
           </div>
+          <div class="sa-list">
+            <div class="sa-game"><b>Club K9</b><span class="sa-chips">4 Playtests · 1 Meeting</span></div>
+            <div class="sa-sess sa-new"><div class="sa-sess-h"><span class="dbx-pill est">Playtest 4</span><span class="sa-sum"></span></div><div class="sa-sess-p">Maya Chen, Leo Park, Sam Rivera</div></div>
+            <div class="sa-sess"><div class="sa-sess-h"><span class="dbx-pill est">Playtest 3</span><span>Nov 5 · Game Café · 52 min</span></div><div class="sa-sess-p">Ana Torres, Leo Park</div></div>
+            <div class="sa-sess"><div class="sa-sess-h"><span class="dbx-pill inv">Meeting 1</span><span>Oct 30 · Video call</span></div><div class="sa-sess-p">Co-design call</div></div>
+          </div>
+          <div class="sa-key"></div>
+          <div class="ie-toast sa-toast">✓ Session saved to your Sheet</div>
+          <svg class="ie-cursor sa-cursor" width="22" height="22" viewBox="0 0 24 24"><path d="M4 2l15 11-7 1.2L8.6 21 4 2z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/></svg>
         </div>
       </div>
     </div>
@@ -561,5 +613,133 @@ footer a:hover { color:rgba(255,255,255,.7); }
   <a href="devboard">DevBoard</a> &mdash; built for board game makers &nbsp;·&nbsp; <a href="devboard/help">Help</a> &nbsp;·&nbsp; <a href="/">ZapSheets</a>
 </footer>
 
+<script>
+// ── Session entry animation: a playtest is logged from start to save, then loops ──
+(function() {
+  var stage = document.getElementById('saDemo');
+  if (!stage) return;
+  var q = function(s) { return stage.querySelector(s); };
+  var cursor = q('.sa-cursor'), key = q('.sa-key'), toast = q('.sa-toast');
+  var dlg = q('.sa-dlg'), list = q('.sa-list'), timer = q('.sa-timer'), plus = q('.sa-plus'), roundsEl = q('.sa-rounds');
+  var people = q('.sa-people'), rows = q('.sa-rows'), save = q('.sa-save'), summary = q('.sa-sum');
+  var PHOTO = (document.querySelector('.dbx-photo-src') || {}).value || 'images/gameboard-features/carousel-pieces.webp';
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var visible = false, tick = null, secs = 0, rounds = 0;
+  var sleep = function(ms) { return new Promise(function(r) { setTimeout(r, ms); }); };
+
+  function at(el, fx, fy) {
+    var s = stage.getBoundingClientRect(), r = el.getBoundingClientRect();
+    return [r.left - s.left + r.width * (fx == null ? .5 : fx), r.top - s.top + r.height * (fy == null ? .5 : fy)];
+  }
+  function moveTo(el, fx, fy, ms) {
+    ms = ms || 650; var p = at(el, fx, fy);
+    cursor.style.transition = 'transform ' + ms + 'ms cubic-bezier(.45,.05,.25,1)';
+    cursor.style.transform = 'translate(' + (p[0] - 3) + 'px,' + (p[1] - 2) + 'px)';
+    return sleep(ms + 50);
+  }
+  function click() { cursor.classList.remove('down'); void cursor.offsetWidth; cursor.classList.add('down'); return sleep(200); }
+  async function press(label, el) {
+    var p = at(el, .5, 0);
+    key.textContent = label; key.style.left = (p[0] - 14) + 'px'; key.style.top = (p[1] - 26) + 'px';
+    key.classList.add('show'); await sleep(650); key.classList.remove('show'); await sleep(120);
+  }
+  async function type(el, text) {
+    el.classList.add('sa-caret'); el.textContent = '';
+    for (var i = 0; i < text.length; i++) { el.textContent += text[i]; await sleep(38 + Math.random() * 35); }
+  }
+  function fmt(s) { var m = Math.floor(s / 60); return m + ':' + String(s % 60).padStart(2, '0'); }
+  function showTimer() { timer.textContent = '⏱ ' + (tick ? fmt(secs) : Math.floor(secs / 60)); }
+  function startTimer() { timer.classList.add('run'); tick = setInterval(function() { secs += 7; showTimer(); }, 100); showTimer(); }
+  function stopTimer() { clearInterval(tick); tick = null; }
+
+  function addPerson(ph) {
+    var d = document.createElement('div'); d.className = 'dbx-in ph'; d.textContent = ph || 'Add tester…';
+    people.appendChild(d); return d;
+  }
+  function addRow() {
+    var r = document.createElement('div'); r.className = 'dbx-pair';
+    r.innerHTML = '<div><span class="sa-ph">What happened…</span></div><div><span class="sa-ph">Thoughts or solutions…</span></div>';
+    rows.appendChild(r); return r;
+  }
+  function clearCarets() { stage.querySelectorAll('.sa-caret').forEach(function(e) { e.classList.remove('sa-caret'); }); stage.querySelectorAll('.focus').forEach(function(e) { e.classList.remove('focus'); }); }
+
+  async function tester(name) {
+    var f = people.querySelector('.dbx-in.ph:last-child');
+    await moveTo(f, .3, .5, 450); await click();
+    f.classList.remove('ph'); f.classList.add('focus');
+    await type(f, name.slice(0, 2));
+    var dd = document.createElement('div'); dd.className = 'sa-drop';
+    dd.innerHTML = '<div class="on">' + name + '</div><div>' + (name === 'Leo Park' ? 'Leah Gold' : 'Mark Adams') + '</div>';
+    f.appendChild(dd); await sleep(450);
+    await press('↵ Enter', f);
+    f.textContent = name; f.classList.remove('focus', 'sa-caret');
+    addPerson();
+  }
+  async function cell(row, col, text) {
+    clearCarets(); row.classList.add('focus');
+    var c = row.children[col]; c.innerHTML = '<span></span>';
+    await type(c.firstChild, text);
+  }
+  async function roundUp() {
+    await moveTo(plus, .5, .5, 450); plus.classList.add('hover'); await click(); plus.classList.remove('hover');
+    rounds++; roundsEl.textContent = rounds; await sleep(200);
+  }
+
+  function reset() {
+    stopTimer(); secs = 0; rounds = 0; roundsEl.textContent = '0';
+    timer.classList.remove('run'); showTimer();
+    people.querySelectorAll('.dbx-in').forEach(function(e) { e.remove(); }); addPerson();
+    rows.innerHTML = ''; addRow();
+    save.textContent = 'Add Session'; save.classList.remove('busy');
+    dlg.classList.remove('gone'); list.classList.remove('show');
+  }
+
+  async function play() {
+    reset(); await sleep(800);
+    // Start the timer
+    await moveTo(timer); timer.classList.add('hover'); await sleep(250); await click(); timer.classList.remove('hover');
+    startTimer(); await sleep(500);
+    // Testers
+    await tester('Maya Chen'); await tester('Leo Park'); await tester('Sam Rivera');
+    // Round 1 notes
+    await roundUp();
+    var r1 = rows.lastChild;
+    await moveTo(r1.children[0], .3, .5, 500); await click();
+    await cell(r1, 0, 'Round 1 — Maya 2, Leo 10, Sam 2');
+    await press('→', r1.children[0]);
+    await cell(r1, 1, 'Paying to go last is too strong. Cap bids at 6?');
+    var r2 = addRow(); await sleep(300);
+    // Round 2: paste a photo
+    await roundUp();
+    await moveTo(r2.children[0], .3, .5, 500); await click(); clearCarets(); r2.classList.add('focus');
+    await press('⌘ V  paste photo', r2.children[0]);
+    r2.children[0].innerHTML = '<div class="sa-upl"><span class="sa-spin"></span>Uploading image…</div>';
+    await sleep(1100);
+    r2.children[0].innerHTML = '<img class="dbx-photo sa-photo" src="' + PHOTO + '" alt="">';
+    await sleep(500);
+    await press('→', r2.children[0]);
+    await cell(r2, 1, 'Pieces crowd the board. Add blockers for unused player spaces.');
+    addRow(); await sleep(400); clearCarets();
+    await roundUp();
+    // Save
+    await moveTo(save, .5, .5, 600); await click();
+    save.textContent = 'Saving…'; save.classList.add('busy'); await sleep(800);
+    summary.textContent = 'Nov 12 · ' + rounds + ' rounds · ' + Math.round(secs / 60) + ' min · 2 notes · 📷';
+    stopTimer(); dlg.classList.add('gone'); await sleep(300);
+    list.classList.add('show'); toast.classList.add('show');
+    await moveTo(q('.sa-new'), .7, .6, 800);
+    await sleep(1600); toast.classList.remove('show');
+    await sleep(2200);
+  }
+
+  async function loop() { for (;;) { if (!visible) { await sleep(400); continue; } await play(); } }
+
+  if (reduce) { reset(); list.classList.add('show'); dlg.classList.add('gone'); summary.textContent = 'Nov 12 · 3 rounds · 42 min · 2 notes · 📷'; return; }
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function(es) { visible = es[0].isIntersecting; }, { threshold: .35 }).observe(stage);
+  } else { visible = true; }
+  loop();
+})();
+</script>
 </body>
 </html>

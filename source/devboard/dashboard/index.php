@@ -994,20 +994,22 @@ body.session-dialog-open .session-body img { display:none !important; }
 .btodo-obs { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#1a5f7a; }
 .btodo-meta { font-size:.72rem; color:#999; }
 .btodo-row.done .btodo-obs, .btodo-row.done .btodo-sol { text-decoration:line-through; color:#aaa; }
-.btodo-fields { display:flex; gap:.35rem; flex-shrink:0; flex-wrap:nowrap; }
-.btodo-fields select, .btodo-fields input { font-family:'DINRegular',sans-serif; font-size:.75rem; color:#444; border:1px solid #d6dde6; border-radius:6px; padding:.15rem .3rem; background:#fff; height:1.65rem; }
-.btodo-who { max-width:9rem; }
-.btodo-pri.pri-high   { background:#fde8e8; color:#b42318; border-color:#f5b5b0; }
-.btodo-pri.pri-medium { background:#fff4d6; color:#a35f12; border-color:#f3d27a; }
-.btodo-pri.pri-low    { background:#e8f4ec; color:#2e7d32; border-color:#b9dcc0; }
-.btodo-pri.pri-none   { color:#999; }
+.btodo-fields { display:flex; gap:.2rem; flex-shrink:0; }
+.btodo-ic { width:1.75rem; height:1.75rem; border:1px solid transparent; border-radius:6px; background:none; cursor:pointer; color:#c3cad4; display:flex; align-items:center; justify-content:center; padding:0; font-family:'DINBlack',sans-serif; font-size:.85rem; letter-spacing:-.05em; transition:background .12s,border-color .12s,color .12s; }
+.btodo-ic:hover { background:#f3f5f8; border-color:#dde3ea; color:#8a94a3; }
+.btodo-pri.p3 { color:#d92d20; } .btodo-pri.p2 { color:#e08a00; } .btodo-pri.p1 { color:#2e7d32; }
+.btodo-who.set { color:#1a5f7a; }
+.btodo-due.set { color:#7c4dbd; }
+.btodo-due.overdue { color:#d92d20; }
+.btodo-menu { position:absolute; z-index:1000; background:#fff; border:1px solid #e1e6ed; border-radius:8px; box-shadow:0 10px 28px rgba(15,23,42,.16); padding:.3rem; min-width:9.5rem; max-height:260px; overflow:auto; }
+.btodo-mi { display:flex; align-items:center; gap:.5rem; width:100%; background:none; border:none; border-radius:5px; padding:.4rem .55rem; font-family:'DINRegular',sans-serif; font-size:.82rem; color:#333; text-align:left; cursor:pointer; white-space:nowrap; }
+.btodo-mi:hover { background:#f3f6fa; }
+.btodo-mi.cur { background:#eef6fa; color:#1a5f7a; font-family:'DINBlack',sans-serif; }
+.btodo-bang { font-family:'DINBlack',sans-serif; width:1.4rem; color:#aab; letter-spacing:-.05em; }
+.btodo-bang.p3 { color:#d92d20; } .btodo-bang.p2 { color:#e08a00; } .btodo-bang.p1 { color:#2e7d32; }
+.btodo-date { font-family:'DINRegular',sans-serif; font-size:.85rem; border:1px solid #d6dde6; border-radius:6px; padding:.3rem .4rem; margin:.15rem; }
+.btodo-mempty { font-family:'DINRegular',sans-serif; font-size:.8rem; color:#999; padding:.4rem .55rem; }
 .btodo-row.done .btodo-fields { opacity:.5; }
-@media (max-width:640px) {
-  .btodo-row { flex-wrap:wrap; }
-  .btodo-text { flex:1 1 0; }
-  .btodo-fields { flex:0 0 100%; padding-left:1.6rem; box-sizing:border-box; }
-  .btodo-fields > * { flex:1 1 0; min-width:0; width:0; }
-}
 </style>
 </head>
 <body>
@@ -1994,13 +1996,14 @@ function _renderBoardTodos() {
            (t.Thoughts ? '<span class="btodo-sol">' + esc(t.Thoughts) + '</span>' : '') +
            '<span class="btodo-meta">' + esc([t.Game, t.Session].filter(Boolean).join(' · ')) + '</span>' +
          '</div>';
+    var pn = { high: 3, medium: 2, low: 1 }[pri.toLowerCase()] || 0;
     h += '<div class="btodo-fields">';
-    h += '<select class="btodo-pri pri-' + esc(pri.toLowerCase() || 'none') + '" onchange="onBoardTodoField(\'' + id + '\',\'Priority\',this)" title="Priority">' +
-           '<option value="">Priority</option>' + TODO_PRIORITIES.map(function(p) { return '<option' + (p === pri ? ' selected' : '') + '>' + p + '</option>'; }).join('') + '</select>';
-    h += '<input type="date" class="btodo-due" value="' + esc(t.Due || '') + '" onchange="onBoardTodoField(\'' + id + '\',\'Due\',this)" title="Due date">';
-    var names = PEOPLE_NAMES.slice(); if (t.Assigned && names.indexOf(t.Assigned) < 0) names.unshift(t.Assigned);
-    h += '<select class="btodo-who" onchange="onBoardTodoField(\'' + id + '\',\'Assigned\',this)" title="Assigned to">' +
-           '<option value="">Assign…</option>' + names.map(function(n) { return '<option' + (n === t.Assigned ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select>';
+    h += '<button type="button" class="btodo-ic btodo-pri' + (pn ? ' p' + pn : '') + '" title="Priority: ' + esc(pri || 'none') + '" onclick="_btodoMenu(event,\'' + id + '\',\'Priority\')">' + (pn ? '!!!'.slice(0, pn) : '!') + '</button>';
+    h += '<button type="button" class="btodo-ic btodo-who' + (t.Assigned ? ' set' : '') + '" title="' + (t.Assigned ? 'Assigned to ' + esc(t.Assigned) : 'Assign someone') + '" onclick="_btodoMenu(event,\'' + id + '\',\'Assigned\')">' +
+           '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></button>';
+    var overdue = t.Due && !done && t.Due < todayISO();
+    h += '<button type="button" class="btodo-ic btodo-due' + (t.Due ? ' set' : '') + (overdue ? ' overdue' : '') + '" title="' + (t.Due ? 'Due ' + esc(fmtDate(t.Due)) + (overdue ? ' (overdue)' : '') : 'Set a due date') + '" onclick="_btodoMenu(event,\'' + id + '\',\'Due\')">' +
+           '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg></button>';
     h += '</div></div>';
   });
   h += '</div>';
@@ -2009,12 +2012,58 @@ function _renderBoardTodos() {
 
 function _todoById(id) { return TODOS_RAW.filter(function(t) { return t.ID === id; })[0]; }
 
-function onBoardTodoField(id, field, el) {
+function _btodoSet(id, field, value) {
   var t = _todoById(id); if (!t) return;
-  t[field] = el.value;
-  if (field === 'Priority') el.className = 'btodo-pri pri-' + (el.value.toLowerCase() || 'none');
-  var f = {}; f[field] = el.value;
+  t[field] = value;
+  _btodoCloseMenu();
+  _renderBoardTodos();
+  var f = {}; f[field] = value;
   _todosPost('update', { id: id, fields: f }).catch(function() {});
+}
+
+// Small dropdown under a priority / person / due-date icon
+var _btodoMenuEl = null;
+function _btodoCloseMenu() {
+  if (_btodoMenuEl) { _btodoMenuEl.remove(); _btodoMenuEl = null; }
+  document.removeEventListener('mousedown', _btodoOutside, true);
+  document.removeEventListener('keydown', _btodoEsc, true);
+}
+function _btodoOutside(e) { if (_btodoMenuEl && !_btodoMenuEl.contains(e.target) && !e.target.closest('.btodo-ic')) _btodoCloseMenu(); }
+function _btodoEsc(e) { if (e.key === 'Escape') _btodoCloseMenu(); }
+function _btodoMenu(ev, id, field) {
+  ev.stopPropagation();
+  var btn = ev.currentTarget, same = _btodoMenuEl && _btodoMenuEl.dataset.for === id + field;
+  _btodoCloseMenu();
+  if (same) return;
+  var t = _todoById(id); if (!t) return;
+  var m = document.createElement('div');
+  m.className = 'btodo-menu'; m.dataset.for = id + field;
+  var idJ = id.replace(/'/g, "\\'");
+  function item(label, value, cur, extra) {
+    return '<button type="button" class="btodo-mi' + (cur ? ' cur' : '') + '" onclick="_btodoSet(\'' + idJ + '\',\'' + field + '\',' + JSON.stringify(value).replace(/"/g, '&quot;') + ')">' + (extra || '') + esc(label) + '</button>';
+  }
+  if (field === 'Priority') {
+    m.innerHTML = [['High', '!!!', 3], ['Medium', '!!', 2], ['Low', '!', 1]].map(function(p) {
+      return item(p[0], p[0], t.Priority === p[0], '<span class="btodo-bang p' + p[2] + '">' + p[1] + '</span>');
+    }).join('') + item('No priority', '', !t.Priority, '<span class="btodo-bang">–</span>');
+  } else if (field === 'Assigned') {
+    var names = PEOPLE_NAMES.slice(); if (t.Assigned && names.indexOf(t.Assigned) < 0) names.unshift(t.Assigned);
+    m.innerHTML = names.map(function(n) { return item(n, n, n === t.Assigned); }).join('') +
+                  (names.length ? '' : '<div class="btodo-mempty">No people yet</div>') +
+                  (t.Assigned ? item('Unassign', '', false) : '');
+  } else {
+    m.innerHTML = '<input type="date" class="btodo-date" value="' + esc(t.Due || '') + '" onchange="_btodoSet(\'' + idJ + '\',\'Due\',this.value)">' +
+                  (t.Due ? item('Clear date', '', false) : '');
+  }
+  document.body.appendChild(m);
+  var r = btn.getBoundingClientRect(), w = m.offsetWidth;
+  m.style.top  = (r.bottom + window.scrollY + 4) + 'px';
+  m.style.left = Math.max(8, Math.min(window.scrollX + document.documentElement.clientWidth - w - 8, r.right + window.scrollX - w)) + 'px';
+  _btodoMenuEl = m;
+  var di = m.querySelector('.btodo-date');
+  if (di) { di.focus(); try { di.showPicker(); } catch (e) {} }
+  document.addEventListener('mousedown', _btodoOutside, true);
+  document.addEventListener('keydown', _btodoEsc, true);
 }
 
 function onBoardTodoCheck(id, cb) {

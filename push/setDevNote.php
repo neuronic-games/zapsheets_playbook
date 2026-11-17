@@ -2,7 +2,7 @@
 // setDevNote.php — mark a DevBoard TODO item done / not done.
 // Sets the note on the row's Solutions / Thoughts cell ("TODO" or "DONE"), then refreshes the JSON cache.
 //
-// POST params: id, game, row (sheet row from the cache, optional), obs, sol, note ("TODO" | "DONE" | "")
+// POST params: id, game, todo_id (finds the cell by its "TODO:<id>" note), row (optional), obs, sol, note ("TODO:<id>" | "TODO" | "")
 
 error_reporting(0);
 header('Content-Type: application/json');
@@ -13,10 +13,10 @@ $sheetId = trim($_POST['id']   ?? '');
 $game    = trim($_POST['game'] ?? '');
 $note    = strtoupper(trim($_POST['note'] ?? ''));
 if (!$sheetId || !$game) { echo json_encode(['error' => 'Missing id or game']); exit; }
-if (!in_array($note, ['TODO', 'DONE', ''], true)) { echo json_encode(['error' => 'Invalid note']); exit; }
+if ($note !== '' && !preg_match('/^TODO(:[A-Z0-9]{1,20})?$/', $note)) { echo json_encode(['error' => 'Invalid note']); exit; }
 
 $tab     = '[' . $game . '] dev';
-$payload = ['tab' => $tab, 'row' => (int) ($_POST['row'] ?? 0), 'obs' => $_POST['obs'] ?? '', 'sol' => $_POST['sol'] ?? '', 'note' => $note];
+$payload = ['tab' => $tab, 'todo_id' => strtoupper(trim($_POST['todo_id'] ?? '')), 'row' => (int) ($_POST['row'] ?? 0), 'obs' => $_POST['obs'] ?? '', 'sol' => $_POST['sol'] ?? '', 'note' => $note];
 $python  = $_ENV['PYTHON'] ?? 'python3';
 $cmd     = escapeshellarg($python) . ' ' . escapeshellarg(__DIR__ . '/gsetdevnote.py') . ' '
          . escapeshellarg($sheetId . '|' . base64_encode(json_encode($payload, JSON_UNESCAPED_UNICODE))) . ' 2>&1';

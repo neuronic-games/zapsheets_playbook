@@ -10,7 +10,7 @@
 //   event      — New testnum / event label
 //   location   — New location (Observation column of the header row)
 //   testers    — JSON array of tester name strings
-//   obs_pairs  — JSON array of {obs, sol, todo} objects (todo "TODO" | "DONE" → note on the Solution cell)
+//   obs_pairs  — JSON array of {obs, sol, todo} objects (todo "TODO:<id>" → note on the Solution cell)
 
 error_reporting(0);
 ini_set('display_errors', '0');
@@ -78,7 +78,9 @@ foreach ($obsPairs as $pair) {
     $obs = trim($pair['obs'] ?? '');
     $sol = trim($pair['sol'] ?? '');
     if ($obs !== '' || $sol !== '') {
-        if (!empty($pair['todo'])) $todoRows[] = [count($rows), ($pair['todo'] === 'DONE') ? 'DONE' : 'TODO'];
+        $todo = strtoupper(trim((string) ($pair['todo'] ?? '')));   // "TODO:<id>" note, or ''
+        if ($todo !== '' && !preg_match('/^TODO(:[A-Z0-9]{1,20})?$/', $todo)) $todo = 'TODO';
+        if ($todo !== '') $todoRows[] = [count($rows), $todo];
         $rows[] = ['', '', '', $obs, $sol];
     }
 }

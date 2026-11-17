@@ -40,7 +40,8 @@ foreach ($rows as $row) {
     $snum = $row['session_num'] ?? '';
     $dt   = $row['date']        ?? '';
     $ev   = $row['event']       ?? '';
-    $todo = (($row['todo'] ?? '') === 'DONE') ? 'DONE' : (!empty($row['todo']) ? 'TODO' : '');
+    $todo = strtoupper(trim((string) ($row['todo'] ?? '')));   // "TODO:<id>" note, or ''
+    if ($todo !== '' && !preg_match('/^TODO(:[A-Z0-9]{1,20})?$/', $todo)) $todo = 'TODO';
 
     // Cache format: matches the shape returned by gread.py
     $cacheRows[] = [

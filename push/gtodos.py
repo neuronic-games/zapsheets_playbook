@@ -3,14 +3,14 @@
 # Arg: {sheet_id}|{base64_json}
 # JSON: { "action": "add" | "update" | "order" | "status", ... }
 #   add    — items: [{game, session, obs, sol}]   adds new TODOs (re-opens ones already there)
-#   update — id, fields: {Priority, Due, Assigned}
+#   update — id, fields: {Priority, Due, Assigned, Observation, Thoughts}  (the todos sheet only)
 #   order  — ids: [id, ...]                       moves the rows so the sheet is in the Board's order
 #   status — status: "Done" | "Open", and id  or  game + obs + sol
 # Prints {"ok": true, ...} or {"error": "..."}.
 
 import gspread
 import gretry  # retry temporary Google API errors (see gretry.py)
-import sys, os, json, base64, socket, random, string, datetime
+import sys, os, json, base64, socket, random, string, datetime, re
 from gspread.utils import rowcol_to_a1
 
 socket.setdefaulttimeout(30)
@@ -21,6 +21,13 @@ HEADERS = ['ID', 'Game', 'Session', 'Observation', 'Thoughts', 'Priority', 'Due'
 
 def out(d):
     print(json.dumps(d)); sys.exit(0)
+
+# A dev cell's note is "TODO:<ID>" — the ID links it to its row in the todos sheet.
+# Plain "TODO" (older notes, or typed by hand) gets an ID when the Board catches up.
+NOTE_RE = re.compile(r'^\s*TODO\s*(?::\s*([A-Za-z0-9]+))?\s*$', re.I)
+
+def new_id():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
 def clean(v):
     return str(v if v is not None else '').strip().lstrip("'").strip()
@@ -179,7 +186,7 @@ def main():
         meta = wb.fetch_sheet_metadata(params={
             'includeGridData': 'true',
             'ranges': ["'" + t.replace("'", "''") + "'" for t in dev],
-            'fields': 'sheets(properties.title,data.rowData.values(formattedValue,note,userEnteredValue))',
+            'fields': 'sheets(properties(sheetId,title),data.rowData.values(formattedValue,note,userEnteredValue))',
         })
         def text(c):
             v = c.get('formattedValue', '')
@@ -189,7 +196,7 @@ def main():
             return clean(v)
         found = []
         for sh in meta.get('sheets', []):
-            title = sh['properties']['title']
+            title = sh['properties']['title']; sid = sh['properties'].get('sheetId')
             game  = title[1:title.rfind(']')] if title.startswith('[') else title
             rd    = (sh.get('data') or [{}])[0].get('rowData', [])
             if not rd: continue
@@ -198,7 +205,7 @@ def main():
             iD, iE, iP = ix('Date'), ix('Event'), ix('People')
             iO, iS = ix('Observations', 'Observation'), ix('Solutions', 'Thoughts', 'Solution')
             session = ''
-            for row in rd[1:]:
+            for r_i, row in enumerate(rd[1:], start=1):
                 cells = row.get('values', [])
                 val = lambda i: text(cells[i]) if 0 <= i < len(cells) else ''
                 if val(iD) or val(iE):
@@ -206,9 +213,12 @@ def main():
                     if len(parts) == 3 and len(parts[0]) == 4: d = parts[1] + '/' + parts[2] + '/' + parts[0]
                     session = ' '.join(x for x in (val(iE), val(iP)) if x) + (' · ' + d if d else '')
                     continue
-                if any(str(c.get('note', '')).strip().upper() == 'TODO' for c in cells):
-                    if val(iO) or val(iS):
-                        found.append({'game': game, 'session': session, 'obs': val(iO), 'sol': val(iS)})
+                for c_i, c in enumerate(cells):
+                    m = NOTE_RE.match(str(c.get('note', '')))
+                    if m and (val(iO) or val(iS)):
+                        found.append({'game': game, 'session': session, 'obs': val(iO), 'sol': val(iS),
+                                      'id': (m.group(1) or '').upper(), 'cell': (sid, r_i, c_i)})
+                        break
         return found
 
     def add_items(items, reopen):
@@ -216,15 +226,21 @@ def main():
         new_rows, re_ups = [], []
         for it in items:
             game, obs, sol = clean(it.get('game')), clean(it.get('obs')), clean(it.get('sol'))
+            tid = clean(it.get('id')).upper()
+            it['_id'] = ''
             if not game or not (obs or sol):
                 continue
-            i = find_text(game, obs, sol)
+            i = find_id(tid) if tid else -1
+            if i < 0 and not tid:
+                i = find_text(game, obs, sol)     # an older note without an ID
             if i >= 0:
+                it['_id'] = cell(rows[i], 'ID')
                 if reopen and cell(rows[i], 'Status').lower() == 'done':
                     re_ups.append({'range': a1(i, 'Status'), 'values': [['Open']]})
                 continue
             r = [''] * len(headers)
-            r[C['ID']]          = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+            r[C['ID']]          = tid or new_id()
+            it['_id'] = r[C['ID']]
             r[C['Game']]        = game
             r[C['Session']]     = clean(it.get('session'))
             r[C['Observation']] = obs
@@ -244,7 +260,18 @@ def main():
 
     # A new (or re-created) todos tab is first rebuilt from the TODO notes in the session tabs
     if created or action == 'sync':
-        add_items(scan_notes(), False)
+        scanned = scan_notes()
+        add_items(scanned, False)
+        # Give plain "TODO" notes their ID ("TODO:<ID>") so they stay linked when the text changes
+        note_reqs = []
+        for it in scanned:
+            if it.get('_id') and it.get('id') != it['_id'] and it.get('cell'):
+                sid, r_i, c_i = it['cell']
+                note_reqs.append({'updateCells': {
+                    'range': {'sheetId': sid, 'startRowIndex': r_i, 'endRowIndex': r_i + 1, 'startColumnIndex': c_i, 'endColumnIndex': c_i + 1},
+                    'rows': [{'values': [{'note': 'TODO:' + it['_id']}]}], 'fields': 'note'}})
+        if note_reqs:
+            wb.batch_update({'requests': note_reqs})
         if rows:
             try:
                 plain_rows(ws, headers, 2, len(rows) + 1)
@@ -266,7 +293,7 @@ def main():
     if action == 'update':
         i = find_ref()
         if i < 0: out({'ok': True, 'found': False, 'created': created})   # unknown TODO — the refreshed list is returned
-        for h in ('Priority', 'Due', 'Assigned'):
+        for h in ('Priority', 'Due', 'Assigned', 'Observation', 'Thoughts'):
             if h in (data.get('fields') or {}):
                 updates.append({'range': a1(i, h), 'values': [[clean(data['fields'][h])]]})
         if updates: write_many(ws, updates)

@@ -1014,6 +1014,17 @@ body.session-dialog-open .session-body img { display:none !important; }
 .todo-dlg { width:min(560px,94vw); text-align:left; }
 .todo-dlg-meta { font-family:'DINRegular',sans-serif; font-size:.75rem; color:#999; margin-bottom:.3rem; }
 .todo-dlg h2 { font-family:'DINBlack',sans-serif; font-size:1.05rem; color:#1a5f7a; margin:0 0 .6rem; line-height:1.35; }
+.todo-dlg-lbl { display:block; font-family:'DINBlack',sans-serif; font-size:.65rem; letter-spacing:.08em; text-transform:uppercase; color:#999; margin:.55rem 0 .25rem; }
+.todo-dlg-obs, .todo-dlg-sol { width:100%; box-sizing:border-box; border:1.5px solid #d0d8e0; border-radius:8px; padding:.5rem .65rem; font-family:'DINRegular',sans-serif; font-size:.92rem; color:#333; background:#fff; }
+.todo-dlg-obs { font-family:'DINBlack',sans-serif; color:#1a5f7a; }
+.todo-dlg-sol { resize:vertical; line-height:1.55; background:#fffdf3; border-color:#f1e8c4; min-height:5rem; }
+.todo-dlg-obs:focus, .todo-dlg-sol:focus { outline:none; border-color:#1a5f7a; box-shadow:0 0 0 2px rgba(26,95,122,.12); }
+.todo-dlg-obs[readonly], .todo-dlg-sol[readonly] { background:#f6f7f9; color:#555; }
+.todo-dlg-note { font-family:'DINRegular',sans-serif; font-size:.75rem; color:#999; margin-top:.5rem; }
+.todo-dlg-err { font-family:'DINRegular',sans-serif; font-size:.8rem; color:#c0392b; margin-top:.4rem; }
+.todo-dlg-err:empty { display:none; }
+.todo-dlg-save { background:#1a5f7a; color:#fff; border:none; border-radius:6px; padding:.45rem 1.1rem; font-family:'DINBlack',sans-serif; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
+.todo-dlg-save:disabled { opacity:.6; cursor:default; }
 .todo-dlg h2 img { max-height:180px; }
 .todo-dlg-body { font-family:'DINRegular',sans-serif; font-size:.92rem; color:#333; line-height:1.6; background:#fffdf3; border:1px solid #f1e8c4; border-radius:8px; padding:.7rem .85rem; max-height:55vh; overflow:auto; }
 .todo-dlg-body:empty { display:none; }
@@ -1850,11 +1861,16 @@ body.session-dialog-open .session-body img { display:none !important; }
 <div class="overlay" id="todoOverlay" onclick="if(event.target===this)closeTodoDialog()">
   <div class="sync-dialog todo-dlg" onclick="event.stopPropagation()">
     <div class="todo-dlg-meta" id="todoDlgMeta"></div>
-    <h2 id="todoDlgObs"></h2>
-    <div class="todo-dlg-body" id="todoDlgSol"></div>
+    <label class="todo-dlg-lbl" for="todoDlgObsIn">TODO</label>
+    <input type="text" class="todo-dlg-obs" id="todoDlgObsIn" placeholder="What needs doing">
+    <label class="todo-dlg-lbl" for="todoDlgSolIn">Notes</label>
+    <textarea class="todo-dlg-sol" id="todoDlgSolIn" rows="4" placeholder="Details" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight+4,window.innerHeight*.5)+'px'"></textarea>
     <div class="todo-dlg-tags" id="todoDlgTags"></div>
-    <div class="sync-dialog-actions" style="justify-content:flex-end">
-      <button class="notes-close" onclick="closeTodoDialog()">Close</button>
+    <div class="todo-dlg-note" id="todoDlgNote">Save the session to edit this TODO.</div>
+    <div class="todo-dlg-err" id="todoDlgErr"></div>
+    <div class="sync-dialog-actions" style="justify-content:flex-end;gap:.5rem">
+      <button class="notes-close" onclick="closeTodoDialog()">Cancel</button>
+      <button class="todo-dlg-save" id="todoDlgSave" onclick="saveTodoDialog()">Save</button>
     </div>
   </div>
 </div>
@@ -1999,7 +2015,7 @@ function _todosPost(action, data, cb) {
 // After a session save: add its light-bulb rows to the todos sheet (existing ones are left alone)
 function _todosSyncFromSave(game, eventType, sessionNum, date, pairs) {
   var items = (pairs || []).filter(function(p) { return p.todo; }).map(function(p) {
-    return { game: game, obs: p.obs, sol: p.sol, session: [eventType, sessionNum].filter(Boolean).join(' ') + (date ? ' · ' + fmtDate(date) : '') };
+    return { id: p.todoId, game: game, obs: p.obs, sol: p.sol, session: [eventType, sessionNum].filter(Boolean).join(' ') + (date ? ' · ' + fmtDate(date) : '') };
   });
   if (items.length) _todosPost('add', { items: items }).catch(function() {});
 }
@@ -2050,7 +2066,8 @@ function _todoIconsHtml(t, done) {
 }
 
 // The todos-sheet row for a TODO in a game's notes (matched by game + text)
-function _todoFor(game, obs, sol) {
+function _todoFor(game, obs, sol, id) {
+  if (id) { var byId = _todoById(id); if (byId) return byId; }
   var g = String(game || '').toLowerCase();
   return TODOS_RAW.filter(function(t) {
     return String(t.Game || '').toLowerCase() === g && (t.Observation || '') === (obs || '') && (t.Thoughts || '') === (sol || '');
@@ -2119,16 +2136,18 @@ function onBoardTodoCheck(id, cb) {
   var done = cb.checked;
   t.Status = done ? 'Done' : 'Open';
   cb.closest('.btodo-row').classList.toggle('done', done);
-  // Keep the game card and the session dialog in step, and update the note on the sheet cell
-  var it = { obs: t.Observation || '', sol: t.Thoughts || '' };
-  if (done) _todoDone[_todoKey(t.Game, it.obs, it.sol)] = true; else delete _todoDone[_todoKey(t.Game, it.obs, it.sol)];
-  _todoSetCacheNote(t.Game, it, done ? '' : 'TODO');
+  // Keep the game card and the session dialog in step, and update the note on the dev cell (found by its ID)
+  var dev = _todoDevText[id] || { obs: t.Observation || '', sol: t.Thoughts || '' };
+  var it = { todoId: id, obs: dev.obs, sol: dev.sol };
+  var k = _todoKey(t.Game, it.obs, it.sol, id), kt = _todoKey(t.Game, it.obs, it.sol);
+  if (done) { _todoDone[k] = true; _todoDone[kt] = id; } else { delete _todoDone[k]; delete _todoDone[kt]; }
+  _todoSetCacheNote(t.Game, it, done ? '' : 'TODO:' + id);
   _refreshTodoSection(t.Game);
   var fd = new FormData();
-  fd.append('id', SHEET_ID); fd.append('game', t.Game); fd.append('row', 0);
-  fd.append('obs', it.obs); fd.append('sol', it.sol); fd.append('note', done ? '' : 'TODO');
+  fd.append('id', SHEET_ID); fd.append('game', t.Game); fd.append('todo_id', id); fd.append('row', 0);
+  fd.append('obs', it.obs); fd.append('sol', it.sol); fd.append('note', done ? '' : 'TODO:' + id);
   fetch(APP_BASE + 'push/setDevNote.php', { method: 'POST', body: fd }).catch(function() {});
-  _todosPost('status', { id: id, status: t.Status, game: t.Game, obs: it.obs, sol: it.sol }).catch(function() {});
+  _todosPost('status', { id: id, status: t.Status, game: t.Game, obs: t.Observation || '', sol: t.Thoughts || '' }).catch(function() {});
 }
 
 // Drag to reorder (pointer events: mouse and touch)
@@ -3226,15 +3245,18 @@ var _sessionCache = {};  // gameName → allSessions array (all, not filtered)
 var _todoItems = {};          // game → [{obs, sol, row, label}]
 var _todoDone  = {};          // "game\u0001obs\u0001sol" → true (checked off in this page view)
 var _todoOpen  = (function() { try { return JSON.parse(localStorage.getItem('devboard_todo_open') || '{}') || {}; } catch (e) { return {}; } })();
-function _todoKey(game, obs, sol) { return game + '\u0001' + obs + '\u0001' + sol; }
+function _todoKey(game, obs, sol, id) { return game + '\u0001' + (id ? '#' + id : obs + '\u0001' + sol); }
+var _todoDevText = {};        // TODO id → {obs, sol} as written in the dev tab (its text in the todos sheet may differ)
 
 function _buildTodoHtml(gameName, sessions) {
   var items = [];
   sessions.forEach(function(s) {
     s.obs.forEach(function(o) {
-      var done = !!_todoDone[_todoKey(gameName, o.obs, o.sol)];
+      var mark = _todoDone[_todoKey(gameName, o.obs, o.sol, o.todoId)] || _todoDone[_todoKey(gameName, o.obs, o.sol)];
+      var done = !!mark, tid = o.todoId || (typeof mark === 'string' ? mark : '');
       if (o.todo === 'TODO' || done) {
-        items.push({ obs: o.obs, sol: o.sol, row: o.row || 0, done: done,
+        if (tid) _todoDevText[tid] = { obs: o.obs, sol: o.sol };
+        items.push({ obs: o.obs, sol: o.sol, todoId: tid, row: o.row || 0, done: done,
                      label: [s.testnum, s.date ? fmtDate(s.date) : ''].filter(Boolean).join(' · ') });
       }
     });
@@ -3251,15 +3273,17 @@ function _buildTodoHtml(gameName, sessions) {
             '<span class="todo-chevron">▼</span></button>';
   html += '<div class="todo-list">';
   items.forEach(function(it, i) {
-    var obsText = String(it.obs || '').replace(/=IMAGE\("[^"]*"\)/gi, '🖼 Image').trim();
+    var tr = _todoFor(gameName, it.obs, it.sol, it.todoId);
+    var shownObs = tr ? (tr.Observation || '') : it.obs, shownSol = tr ? (tr.Thoughts || '') : it.sol;
+    var obsText = String(shownObs || '').replace(/=IMAGE\("[^"]*"\)/gi, '🖼 Image').trim();
     html += '<div class="todo-item' + (it.done ? ' done' : '') + '">' +
               '<input type="checkbox"' + (it.done ? ' checked' : '') + ' onchange="onTodoCheck(\'' + gnJ + '\',' + i + ',this)">' +
               '<span class="todo-text" onclick="openTodoDialog({ game: \'' + gnJ + '\', idx: ' + i + ' })">' +
                 (obsText ? '<span class="todo-obs">' + esc(obsText) + '</span>' : '') +
-                (it.sol ? '<span class="todo-sol">' + esc(it.sol) + '</span>' : '') +
+                (shownSol ? '<span class="todo-sol">' + esc(shownSol) + '</span>' : '') +
                 (it.label ? '<span class="todo-meta">' + esc(it.label) + '</span>' : '') +
               '</span>' +
-              _todoIconsHtml(_todoFor(gameName, it.obs, it.sol), it.done) +
+              _todoIconsHtml(tr, it.done) +
             '</div>';
   });
   html += '</div></div>';
@@ -3267,10 +3291,15 @@ function _buildTodoHtml(gameName, sessions) {
 }
 
 // Full notes of a TODO: { game, idx } from a game card, or { id } from the Board
+// Full notes of a TODO: { game, idx } from a game card, or { id } from the Board.
+// A TODO in the todos sheet can be edited here — only the todos sheet changes, not the session notes.
+var _todoDlgId = null;
 function openTodoDialog(ref) {
   var obs = '', sol = '', meta = '', tags = [];
+  _todoDlgId = null;
   if (ref.id) {
     var t = _todoById(ref.id); if (!t) return;
+    _todoDlgId = t.ID;
     obs = t.Observation || ''; sol = t.Thoughts || '';
     meta = [t.Game, t.Session].filter(Boolean).join(' · ');
     if (t.Priority) tags.push('<span class="todo-tag pri-' + esc(t.Priority.toLowerCase()) + '">' + esc({ High: '!!! High', Medium: '!! Medium', Low: '! Low' }[t.Priority] || t.Priority) + '</span>');
@@ -3279,17 +3308,41 @@ function openTodoDialog(ref) {
     if ((t.Status || '').toLowerCase() === 'done') tags.push('<span class="todo-tag done">✓ Done</span>');
   } else {
     var it = (_todoItems[ref.game] || [])[ref.idx]; if (!it) return;
-    var tr = _todoFor(ref.game, it.obs, it.sol);
+    var tr = _todoFor(ref.game, it.obs, it.sol, it.todoId);
     if (tr) return openTodoDialog({ id: tr.ID });
     obs = it.obs || ''; sol = it.sol || '';
     meta = [ref.game, it.label].filter(Boolean).join(' · ');
     if (it.done) tags.push('<span class="todo-tag done">✓ Done</span>');
   }
+  var editable = !!_todoDlgId;
+  var oEl = document.getElementById('todoDlgObsIn'), sEl = document.getElementById('todoDlgSolIn');
+  oEl.value = obs; sEl.value = sol;
+  oEl.readOnly = sEl.readOnly = !editable;
+  document.getElementById('todoDlgSave').style.display = editable ? '' : 'none';
+  document.getElementById('todoDlgNote').style.display = editable ? 'none' : '';
+  document.getElementById('todoDlgErr').textContent = '';
   document.getElementById('todoDlgMeta').textContent = meta;
-  document.getElementById('todoDlgObs').innerHTML = obsHtml(obs) || '<span style="color:#aaa">(no observation)</span>';
-  document.getElementById('todoDlgSol').innerHTML = sol ? obsHtml(sol) : '';
   document.getElementById('todoDlgTags').innerHTML = tags.join('');
   document.getElementById('todoOverlay').classList.add('open');
+  setTimeout(function() { sEl.style.height = 'auto'; sEl.style.height = Math.min(sEl.scrollHeight + 4, window.innerHeight * .5) + 'px'; }, 0);
+}
+
+function saveTodoDialog() {
+  var t = _todoDlgId && _todoById(_todoDlgId); if (!t) return closeTodoDialog();
+  var obs = document.getElementById('todoDlgObsIn').value.trim();
+  var sol = document.getElementById('todoDlgSolIn').value.trim();
+  if (obs === (t.Observation || '') && sol === (t.Thoughts || '')) return closeTodoDialog();
+  var btn = document.getElementById('todoDlgSave');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  _todosPost('update', { id: t.ID, fields: { Observation: obs, Thoughts: sol } })
+    .then(function() {
+      t.Observation = obs; t.Thoughts = sol;
+      closeTodoDialog();
+      _renderBoardTodos();
+      _refreshTodoSection(t.Game);
+    })
+    .catch(function(e) { document.getElementById('todoDlgErr').textContent = 'Couldn\'t save — ' + _friendlySaveError(e); })
+    .then(function() { btn.disabled = false; btn.textContent = 'Save'; });
 }
 function closeTodoDialog() { document.getElementById('todoOverlay').classList.remove('open'); }
 
@@ -3312,17 +3365,26 @@ function toggleTodoSection(gameName, btn) {
   try { localStorage.setItem('devboard_todo_open', JSON.stringify(_todoOpen)); } catch (e) {}
 }
 
+// Update the note on a TODO's row in the page's copy of the dev tab (by its ID, else by its dev text)
 function _todoSetCacheNote(gameName, it, note) {
-  (devCache[gameName] || []).forEach(function(r) {
+  var id = it.todoId || '', dev = (id && _todoDevText[id]) || it;
+  var idRe = id ? new RegExp('^\\s*TODO\\s*:\\s*' + id + '\\s*$', 'i') : null;
+  function isIt(r) {
+    var n = r['_notes'] || {};
+    if (idRe && Object.keys(n).some(function(k) { return idRe.test(String(n[k])); })) return true;
     var o = (r['Observations'] || r['Observation'] || '').trim();
     var so = (r['Solutions'] || r['Thoughts'] || r['Solution'] || '').trim();
-    if (o === it.obs && so === it.sol) {
-      if (note) r['_notes'] = { 'Solutions': note }; else delete r['_notes'];
-    }
+    return o === dev.obs && so === dev.sol;
+  }
+  (devCache[gameName] || []).forEach(function(r) {
+    if (!isIt(r)) return;
+    if (note) r['_notes'] = { 'Solutions': note }; else delete r['_notes'];
   });
   // Sessions shown on the page (the edit dialog reads these): keep the light bulb in step
   (_sessionCache[gameName] || []).forEach(function(s) {
-    s.obs.forEach(function(o) { if (o.obs === it.obs && o.sol === it.sol) o.todo = note; });
+    s.obs.forEach(function(o) {
+      if ((id && o.todoId === id) || (o.obs === dev.obs && o.sol === dev.sol)) { o.todo = note ? 'TODO' : ''; if (id) o.todoId = id; }
+    });
   });
 }
 
@@ -3330,21 +3392,24 @@ function onTodoCheck(gameName, i, cb) {
   var it = (_todoItems[gameName] || [])[i];
   if (!it) return;
   var done = cb.checked, label = cb.closest('.todo-item'), sec = cb.closest('.todo-section');
+  var tr = _todoFor(gameName, it.obs, it.sol, it.todoId);
+  if (!it.todoId && tr) it.todoId = tr.ID;
   function apply(d) {
     it.done = d; cb.checked = d;
     label.classList.toggle('done', d);
-    if (d) _todoDone[_todoKey(gameName, it.obs, it.sol)] = true; else delete _todoDone[_todoKey(gameName, it.obs, it.sol)];
-    _todoSetCacheNote(gameName, it, d ? '' : 'TODO');
+    var k = _todoKey(gameName, it.obs, it.sol, it.todoId), kt = _todoKey(gameName, it.obs, it.sol);
+    if (d) { _todoDone[k] = true; _todoDone[kt] = it.todoId || true; } else { delete _todoDone[k]; delete _todoDone[kt]; }
+    _todoSetCacheNote(gameName, it, d ? '' : 'TODO' + (it.todoId ? ':' + it.todoId : ''));
     var left = (_todoItems[gameName] || []).filter(function(x) { return !x.done; }).length;
     var c = sec && sec.querySelector('.todo-count'); if (c) c.textContent = left;
   }
   apply(done);
   cb.disabled = true;
   var fd = new FormData();
-  fd.append('id', SHEET_ID); fd.append('game', gameName);
+  fd.append('id', SHEET_ID); fd.append('game', gameName); fd.append('todo_id', it.todoId || '');
   fd.append('row', it.row || 0); fd.append('obs', it.obs); fd.append('sol', it.sol);
-  fd.append('note', done ? '' : 'TODO');   // done → remove the TODO note from the cell
-  _todosPost('status', { game: gameName, obs: it.obs, sol: it.sol, status: done ? 'Done' : 'Open' });
+  fd.append('note', done ? '' : 'TODO' + (it.todoId ? ':' + it.todoId : ''));   // done → remove the TODO note from the cell
+  _todosPost('status', { id: it.todoId, game: gameName, obs: it.obs, sol: it.sol, status: done ? 'Done' : 'Open' }).catch(function() {});
   fetch(APP_BASE + 'push/setDevNote.php', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
     .then(function(res) { if (res.error) throw new Error(res.error); if (res.row) it.row = res.row; })
@@ -5092,7 +5157,7 @@ function openEditSessionDialog(gameName, idx) {
     _ceSet(document.getElementById('sObs-' + oidx), obsVal);
     toggleObsImgBtn(oidx);
     _ceSet(document.getElementById('sSol-' + oidx), pair.sol || '');
-    if (pair.todo) toggleObsTodo(oidx, true);
+    if (pair.todo) toggleObsTodo(oidx, true, pair.todoId);
   });
   addObsPair();  // trailing empty pair
 
@@ -5240,7 +5305,8 @@ function submitSession() {
     var obs = _ceGet(document.getElementById('sObs-' + idx)).trim();
     var sol = _ceGet(document.getElementById('sSol-' + idx)).trim();
     if (_obsImages[idx]) obs = '=IMAGE("' + _obsImages[idx] + '")';
-    if (obs || sol) obsPairs.push({ obs: obs, sol: sol, todo: pair.classList.contains('obs-todo') });
+    var todoOn = pair.classList.contains('obs-todo');
+    if (obs || sol) obsPairs.push({ obs: obs, sol: sol, todoId: todoOn ? pair.dataset.todoId : '', todo: todoOn ? 'TODO:' + pair.dataset.todoId : '' });
   });
 
   var date       = document.getElementById('sDate').value || todayISO();
@@ -5261,7 +5327,7 @@ function submitSession() {
   });
   obsPairs.forEach(function(pair) {
     var lr = { 'Date': '', 'Event': '', 'People': '', 'Observations': pair.obs, 'Solutions': pair.sol };
-    if (pair.todo) lr['_notes'] = { 'Solutions': 'TODO' };
+    if (pair.todo) lr['_notes'] = { 'Solutions': pair.todo };
     localRows.push(lr);
   });
 
@@ -5347,7 +5413,7 @@ function submitSession() {
     allRows.push({ date: '', event: '', session_num: t, observation: '', solution: '', type: 'tester' });
   });
   obsPairs.forEach(function(pair) {
-    allRows.push({ date: '', event: '', session_num: '', observation: pair.obs, solution: pair.sol, type: 'obs', todo: !!pair.todo });
+    allRows.push({ date: '', event: '', session_num: '', observation: pair.obs, solution: pair.sol, type: 'obs', todo: pair.todo || '' });
   });
 
   var fd = new FormData();
@@ -5693,11 +5759,20 @@ function addObsPair() {
 
 
 // Light-bulb toggle: marks an observation row as TODO (yellow border, "TODO" note in the sheet)
-function toggleObsTodo(idx, on) {
+function _newTodoId() {
+  var c = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', id = '';
+  for (var i = 0; i < 8; i++) id += c.charAt(Math.floor(Math.random() * c.length));
+  return id;
+}
+
+// Light-bulb toggle: marks an observation row as TODO (yellow border, "TODO:<id>" note in the sheet)
+function toggleObsTodo(idx, on, todoId) {
   var pair = document.querySelector('#obsContainer .obs-pair[data-idx="' + idx + '"]');
   if (!pair) return;
   on = (on === undefined) ? !pair.classList.contains('obs-todo') : !!on;
   pair.classList.toggle('obs-todo', on);
+  if (todoId) pair.dataset.todoId = todoId;
+  if (on && !pair.dataset.todoId) pair.dataset.todoId = _newTodoId();
   var b = pair.querySelector('.obs-todo-btn');
   if (b) { b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.title = on ? 'Marked as TODO — click to clear' : 'Mark as TODO'; }
 }

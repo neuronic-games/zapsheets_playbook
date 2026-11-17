@@ -114,13 +114,13 @@ function buildSessions(rows) {
           current.testers.push(tname);
         }
       } else if (obs || sol) {
-        // TODO list: a "TODO" or "DONE" note on the row (todo is '' | 'TODO' | 'DONE')
-        var notes = row['_notes'] || {}, todo = '';
+        // TODO list: a "TODO:<id>" note on the row (id links it to the todos sheet; plain "TODO" has none yet)
+        var notes = row['_notes'] || {}, todo = '', todoId = '';
         Object.keys(notes).forEach(function(k) {
-          var n = String(notes[k]).trim().toUpperCase();
-          if (n === 'TODO' || (n === 'DONE' && !todo)) todo = n;
+          var m = String(notes[k]).match(/^\s*TODO\s*(?::\s*([A-Za-z0-9]+))?\s*$/i);
+          if (m && !todo) { todo = 'TODO'; todoId = (m[1] || '').toUpperCase(); }
         });
-        current.obs.push({ obs:obs, sol:sol, todo:todo, row:row['_row'] || 0 });
+        current.obs.push({ obs:obs, sol:sol, todo:todo, todoId:todoId, row:row['_row'] || 0 });
       }
     }
   });

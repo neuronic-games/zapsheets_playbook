@@ -41,7 +41,7 @@ if ws is None:
     if data.get('action') != 'add':
         out({'error': 'There is no todos sheet yet'})
     ws = wb.add_worksheet(title=TAB, rows=200, cols=len(HEADERS))
-    ws.update([HEADERS], 'A1', value_input_option='RAW')
+    ws.update(range_name='A1', values=[HEADERS], value_input_option='RAW')
     try:
         ws.freeze(rows=1)
         ws.format('A1:J1', {'textFormat': {'bold': True}})
@@ -49,13 +49,17 @@ if ws is None:
         pass
 
 values  = ws.get_all_values() or [HEADERS]
+# Repair: if the heading row is missing (e.g. overwritten by data), put it back on top
+if 'ID' not in [h.strip() for h in values[0]]:
+    ws.insert_row(HEADERS, 1, value_input_option='RAW')
+    values = [HEADERS] + values
 headers = [h.strip() for h in values[0]]
 # Add any missing columns at the end
 missing = [h for h in HEADERS if h not in headers]
 if missing:
     if ws.col_count < len(headers) + len(missing):
         ws.add_cols(len(headers) + len(missing) - ws.col_count)
-    ws.update([missing], rowcol_to_a1(1, len(headers) + 1), value_input_option='RAW')
+    ws.update(range_name=rowcol_to_a1(1, len(headers) + 1), values=[missing], value_input_option='RAW')
     headers += missing
 C = {h: headers.index(h) for h in HEADERS}
 rows = values[1:]
@@ -116,14 +120,17 @@ if action == 'order':
     by_id, rest = {}, []
     for r in rows:
         tid = cell(r, 'ID')
-        if tid and tid not in by_id: by_id[tid] = r
-        else: rest.append(r)
+        if not tid: rest.append(r)
+        elif tid not in by_id: by_id[tid] = r     # duplicate IDs are dropped
     ordered = [by_id.pop(clean(t)) for t in data.get('ids', []) if clean(t) in by_id]
     ordered += [r for r in rows if cell(r, 'ID') in by_id] + rest
     if ordered:
         width = len(headers)
         ordered = [(list(r) + [''] * width)[:width] for r in ordered]
-        ws.update(ordered, 'A2:' + rowcol_to_a1(len(ordered) + 1, width), value_input_option='RAW')
+        # Explicit keywords: older gspread versions take (range, values) in the other order
+        ws.update(range_name='A2:' + rowcol_to_a1(len(ordered) + 1, width), values=ordered, value_input_option='RAW')
+    if len(ordered) < len(rows):   # duplicates removed: clear the leftover rows at the bottom
+        ws.batch_clear(['A' + str(len(ordered) + 2) + ':' + rowcol_to_a1(len(rows) + 1, len(headers))])
     out({'ok': True})
 
 if action == 'status':

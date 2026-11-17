@@ -972,12 +972,13 @@ body.session-dialog-open .session-body img { display:none !important; }
 .todo-section.open .todo-chevron { transform:none; }
 .todo-list { display:none; padding:0 1.25rem .7rem; }
 .todo-section.open .todo-list { display:block; }
-.todo-item { display:flex; align-items:flex-start; gap:.6rem; padding:.45rem 0; border-top:1px solid #f1e8c4; cursor:pointer; }
+.todo-item { display:flex; align-items:center; gap:.6rem; padding:.3rem 0; border-top:1px solid #f1e8c4; }
 .todo-item:first-child { border-top:none; }
-.todo-item input { margin-top:.2rem; width:1rem; height:1rem; accent-color:#b8860b; flex-shrink:0; cursor:pointer; }
-.todo-text { display:flex; flex-direction:column; gap:.1rem; min-width:0; font-family:'DINRegular',sans-serif; font-size:.85rem; color:#333; line-height:1.45; }
+.todo-item input { width:1rem; height:1rem; accent-color:#b8860b; flex-shrink:0; cursor:pointer; }
+.todo-text { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:'DINRegular',sans-serif; font-size:.85rem; color:#333; line-height:1.4; cursor:pointer; }
+.todo-text > span + span { margin-left:.5rem; }
+.todo-text:hover .todo-sol { color:#1a5f7a; }
 .todo-obs { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#1a5f7a; }
-.todo-sol { white-space:pre-line; }
 .todo-meta { font-size:.72rem; color:#999; }
 .todo-item.done .todo-obs, .todo-item.done .todo-sol { text-decoration:line-through; color:#aaa; }
 .btodo-count { font-family:'DINRegular',sans-serif; text-transform:none; letter-spacing:0; color:#b8860b; margin-left:.3rem; }
@@ -990,6 +991,7 @@ body.session-dialog-open .session-body img { display:none !important; }
 .btodo-check { width:1rem; height:1rem; accent-color:#b8860b; flex-shrink:0; cursor:pointer; }
 .btodo-text { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:'DINRegular',sans-serif; font-size:.85rem; color:#333; line-height:1.4; }
 .btodo-text > span + span { margin-left:.5rem; }
+.btodo-text { cursor:pointer; } .btodo-text:hover .btodo-sol { color:#1a5f7a; }
 .btodo-obs { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#1a5f7a; }
 .btodo-meta { font-size:.72rem; color:#999; }
 .btodo-row.done .btodo-obs, .btodo-row.done .btodo-sol { text-decoration:line-through; color:#aaa; }
@@ -1009,6 +1011,19 @@ body.session-dialog-open .session-body img { display:none !important; }
 .btodo-date { font-family:'DINRegular',sans-serif; font-size:.85rem; border:1px solid #d6dde6; border-radius:6px; padding:.3rem .4rem; margin:.15rem; }
 .btodo-mempty { font-family:'DINRegular',sans-serif; font-size:.8rem; color:#999; padding:.4rem .55rem; }
 .btodo-row.done .btodo-fields { opacity:.5; }
+.todo-dlg { width:min(560px,94vw); text-align:left; }
+.todo-dlg-meta { font-family:'DINRegular',sans-serif; font-size:.75rem; color:#999; margin-bottom:.3rem; }
+.todo-dlg h2 { font-family:'DINBlack',sans-serif; font-size:1.05rem; color:#1a5f7a; margin:0 0 .6rem; line-height:1.35; }
+.todo-dlg h2 img { max-height:180px; }
+.todo-dlg-body { font-family:'DINRegular',sans-serif; font-size:.92rem; color:#333; line-height:1.6; background:#fffdf3; border:1px solid #f1e8c4; border-radius:8px; padding:.7rem .85rem; max-height:55vh; overflow:auto; }
+.todo-dlg-body:empty { display:none; }
+.todo-dlg .obs-line, .todo-dlg .obs-bul { display:block; }
+.todo-dlg .obs-bul { padding-left:var(--bul-indent,1.1em); text-indent:calc(-1 * var(--bul-indent,1.1em)); }
+.todo-dlg-tags { display:flex; flex-wrap:wrap; gap:.4rem; margin:.75rem 0 .2rem; }
+.todo-dlg-tags:empty { display:none; }
+.todo-tag { font-family:'DINRegular',sans-serif; font-size:.75rem; background:#f1f4f8; color:#444; border-radius:999px; padding:.18rem .6rem; }
+.todo-tag.pri-high { background:#fde8e8; color:#b42318; } .todo-tag.pri-medium { background:#fff4d6; color:#a35f12; } .todo-tag.pri-low { background:#e8f4ec; color:#2e7d32; }
+.todo-tag.done { background:#e8f4ec; color:#2e7d32; }
 </style>
 </head>
 <body>
@@ -1828,6 +1843,19 @@ body.session-dialog-open .session-body img { display:none !important; }
   </div>
 </div>
 
+<!-- TODO details -->
+<div class="overlay" id="todoOverlay" onclick="if(event.target===this)closeTodoDialog()">
+  <div class="sync-dialog todo-dlg" onclick="event.stopPropagation()">
+    <div class="todo-dlg-meta" id="todoDlgMeta"></div>
+    <h2 id="todoDlgObs"></h2>
+    <div class="todo-dlg-body" id="todoDlgSol"></div>
+    <div class="todo-dlg-tags" id="todoDlgTags"></div>
+    <div class="sync-dialog-actions" style="justify-content:flex-end">
+      <button class="notes-close" onclick="closeTodoDialog()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Release notes dialog -->
 <div class="rn-overlay" id="rnOverlay" onclick="if(event.target===this)closeRnDialog()">
   <div class="rn-dialog">
@@ -1985,7 +2013,7 @@ function _renderBoardTodos() {
     h += '<div class="btodo-row' + (done ? ' done' : '') + '" data-id="' + id + '">';
     h += '<span class="btodo-handle" title="Drag to reorder" onpointerdown="_btodoDragStart(event)">⋮⋮</span>';
     h += '<input type="checkbox" class="btodo-check"' + (done ? ' checked' : '') + ' onchange="onBoardTodoCheck(\'' + id + '\', this)">';
-    h += '<div class="btodo-text" title="' + esc([obs, t.Thoughts, [t.Game, t.Session].filter(Boolean).join(' · ')].filter(Boolean).join('\n')) + '">' +
+    h += '<div class="btodo-text" onclick="openTodoDialog({ id: \'' + id + '\' })" title="' + esc([obs, t.Thoughts, [t.Game, t.Session].filter(Boolean).join(' · ')].filter(Boolean).join('\n')) + '">' +
            (obs ? '<span class="btodo-obs">' + esc(obs) + '</span>' : '') +
            (t.Thoughts ? '<span class="btodo-sol">' + esc(t.Thoughts) + '</span>' : '') +
            '<span class="btodo-meta">' + esc([t.Game, t.Session].filter(Boolean).join(' · ')) + '</span>' +
@@ -3195,18 +3223,43 @@ function _buildTodoHtml(gameName, sessions) {
   html += '<div class="todo-list">';
   items.forEach(function(it, i) {
     var obsText = String(it.obs || '').replace(/=IMAGE\("[^"]*"\)/gi, '🖼 Image').trim();
-    html += '<label class="todo-item' + (it.done ? ' done' : '') + '">' +
+    html += '<div class="todo-item' + (it.done ? ' done' : '') + '">' +
               '<input type="checkbox"' + (it.done ? ' checked' : '') + ' onchange="onTodoCheck(\'' + gnJ + '\',' + i + ',this)">' +
-              '<span class="todo-text">' +
+              '<span class="todo-text" onclick="openTodoDialog({ game: \'' + gnJ + '\', idx: ' + i + ' })">' +
                 (obsText ? '<span class="todo-obs">' + esc(obsText) + '</span>' : '') +
                 (it.sol ? '<span class="todo-sol">' + esc(it.sol) + '</span>' : '') +
                 (it.label ? '<span class="todo-meta">' + esc(it.label) + '</span>' : '') +
               '</span>' +
-            '</label>';
+            '</div>';
   });
   html += '</div></div>';
   return html;
 }
+
+// Full notes of a TODO: { game, idx } from a game card, or { id } from the Board
+function openTodoDialog(ref) {
+  var obs = '', sol = '', meta = '', tags = [];
+  if (ref.id) {
+    var t = _todoById(ref.id); if (!t) return;
+    obs = t.Observation || ''; sol = t.Thoughts || '';
+    meta = [t.Game, t.Session].filter(Boolean).join(' · ');
+    if (t.Priority) tags.push('<span class="todo-tag pri-' + esc(t.Priority.toLowerCase()) + '">' + esc({ High: '!!! High', Medium: '!! Medium', Low: '! Low' }[t.Priority] || t.Priority) + '</span>');
+    if (t.Assigned) tags.push('<span class="todo-tag">👤 ' + esc(t.Assigned) + '</span>');
+    if (t.Due)      tags.push('<span class="todo-tag">📅 Due ' + esc(fmtDate(t.Due)) + '</span>');
+    if ((t.Status || '').toLowerCase() === 'done') tags.push('<span class="todo-tag done">✓ Done</span>');
+  } else {
+    var it = (_todoItems[ref.game] || [])[ref.idx]; if (!it) return;
+    obs = it.obs || ''; sol = it.sol || '';
+    meta = [ref.game, it.label].filter(Boolean).join(' · ');
+    if (it.done) tags.push('<span class="todo-tag done">✓ Done</span>');
+  }
+  document.getElementById('todoDlgMeta').textContent = meta;
+  document.getElementById('todoDlgObs').innerHTML = obsHtml(obs) || '<span style="color:#aaa">(no observation)</span>';
+  document.getElementById('todoDlgSol').innerHTML = sol ? obsHtml(sol) : '';
+  document.getElementById('todoDlgTags').innerHTML = tags.join('');
+  document.getElementById('todoOverlay').classList.add('open');
+}
+function closeTodoDialog() { document.getElementById('todoOverlay').classList.remove('open'); }
 
 function toggleTodoSection(gameName, btn) {
   var sec = btn.closest('.todo-section');

@@ -114,7 +114,9 @@ function buildSessions(rows) {
           current.testers.push(tname);
         }
       } else if (obs || sol) {
-        current.obs.push({ obs:obs, sol:sol });
+        var notes = row['_notes'] || {};
+        var todo  = Object.keys(notes).some(function(k) { return String(notes[k]).trim().toUpperCase() === 'TODO'; });
+        current.obs.push({ obs:obs, sol:sol, todo:todo });
       }
     }
   });

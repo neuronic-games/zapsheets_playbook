@@ -5,7 +5,7 @@
 // POST params:
 //   id    — Google Spreadsheet ID
 //   game  — Game name (tab = "[game] dev")
-//   rows  — JSON array of row objects {date, event, session_num, observation, solution, type}
+//   rows  — JSON array of row objects {date, event, session_num, observation, solution, type, todo}
 
 error_reporting(0);
 ini_set('display_errors', '0');
@@ -40,6 +40,7 @@ foreach ($rows as $row) {
     $snum = $row['session_num'] ?? '';
     $dt   = $row['date']        ?? '';
     $ev   = $row['event']       ?? '';
+    $todo = !empty($row['todo']);
 
     // Cache format: matches the shape returned by gread.py
     $cacheRows[] = [
@@ -51,6 +52,7 @@ foreach ($rows as $row) {
         'Solutions'    => $sol,
         'Solution'     => $sol,   // legacy column name
     ];
+    if ($todo) $cacheRows[count($cacheRows) - 1]['_notes'] = ['Solutions' => 'TODO'];
 
     // Sheet format: same keys, passed to gadddevrows.py
     $sheetRows[] = [
@@ -61,6 +63,7 @@ foreach ($rows as $row) {
         'Observation'  => $obs,
         'Solutions'    => $sol,
         'Solution'     => $sol,
+        '_todo'        => $todo,   // gadddevrows.py adds a "TODO" note
     ];
 }
 

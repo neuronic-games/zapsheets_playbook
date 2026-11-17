@@ -875,7 +875,14 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .obs-pair-inputs { display:grid; grid-template-columns:1fr 1fr; border:1.5px solid #d0d8e0; border-radius:8px; overflow:hidden; }
 .obs-pair-inputs:focus-within { border-color:#1a5f7a; box-shadow:0 0 0 2px rgba(26,95,122,.12); }
 .obs-obs-col { display:flex; flex-direction:row; align-items:stretch; min-width:0; background:#fff; border-right:1px solid #d0d8e0; }
-.obs-sol-col  { display:flex; flex-direction:column; min-width:0; background:#f5f7fa; }
+.obs-sol-col  { display:flex; flex-direction:column; min-width:0; background:#f5f7fa; position:relative; }
+/* TODO toggle (light bulb): top-right of the Thoughts cell; stored as a "TODO" note in the sheet */
+.obs-todo-btn { position:absolute; top:.3rem; right:.3rem; width:1.55rem; height:1.55rem; background:rgba(255,255,255,.88); border:1px solid #d0d8e4; border-radius:5px; cursor:pointer; color:#a0a8b4; display:flex; align-items:center; justify-content:center; z-index:2; padding:0; transition:color .15s,background .15s,border-color .15s; }
+.obs-todo-btn:hover { color:#6b7280; border-color:#a0b8c8; background:#fff; }
+.obs-pair.obs-todo .obs-todo-btn { color:#b8860b; background:#fff8db; border-color:#f5c518; }
+.obs-pair.obs-todo .obs-todo-btn .bulb-glass { fill:#ffd43b; }
+.obs-pair.obs-todo .obs-pair-inputs,
+.obs-pair.obs-todo .obs-pair-inputs:focus-within { border-color:#f5c518; box-shadow:0 0 0 2px rgba(245,197,24,.35); }
 /* Strip borders/bg from textareas/editables inside the box */
 .obs-pair-inputs .field-textarea { border:none !important; background:transparent !important; border-radius:0 !important; box-shadow:none !important; resize:none; }
 .obs-pair-inputs .field-textarea:focus { border:none !important; box-shadow:none !important; }
@@ -888,7 +895,7 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .obs-ta-wrap { position:relative; flex:1; display:flex; flex-direction:column; min-width:0; }
 /* tighter padding inside obs pairs so row shrinks to the height of the UP/DN buttons */
 .obs-ta-wrap .field-textarea,.obs-ta-wrap .obs-editable { flex:1; padding:.3rem .5rem; }
-.obs-sol-col  .field-textarea,.obs-sol-col  .obs-editable { padding:.3rem .5rem; }
+.obs-sol-col  .field-textarea,.obs-sol-col  .obs-editable { padding:.3rem 2.1rem .3rem .5rem; }
 /* Upload button: overlays top-right of textarea; hidden when obs has text */
 .obs-ta-wrap.has-obs-text .obs-img-btn { display:none; }
 .obs-img-btn { position:absolute; top:.3rem; right:.3rem; width:1.55rem; height:1.55rem; background:rgba(255,255,255,.88); border:1px solid #d0d8e4; border-radius:5px; cursor:pointer; color:#99a; display:flex; align-items:center; justify-content:center; z-index:2; backdrop-filter:blur(2px); transition:color .15s,background .15s,border-color .15s; padding:0; }
@@ -4671,6 +4678,7 @@ function openEditSessionDialog(gameName, idx) {
     _ceSet(document.getElementById('sObs-' + oidx), obsVal);
     toggleObsImgBtn(oidx);
     _ceSet(document.getElementById('sSol-' + oidx), pair.sol || '');
+    if (pair.todo) toggleObsTodo(oidx, true);
   });
   addObsPair();  // trailing empty pair
 
@@ -4818,7 +4826,7 @@ function submitSession() {
     var obs = _ceGet(document.getElementById('sObs-' + idx)).trim();
     var sol = _ceGet(document.getElementById('sSol-' + idx)).trim();
     if (_obsImages[idx]) obs = '=IMAGE("' + _obsImages[idx] + '")';
-    if (obs || sol) obsPairs.push({ obs: obs, sol: sol });
+    if (obs || sol) obsPairs.push({ obs: obs, sol: sol, todo: pair.classList.contains('obs-todo') });
   });
 
   var date       = document.getElementById('sDate').value || todayISO();
@@ -4838,7 +4846,9 @@ function submitSession() {
     localRows.push({ 'Date': '', 'Event': '', 'People': t, 'Observations': '', 'Solutions': '' });
   });
   obsPairs.forEach(function(pair) {
-    localRows.push({ 'Date': '', 'Event': '', 'People': '', 'Observations': pair.obs, 'Solutions': pair.sol });
+    var lr = { 'Date': '', 'Event': '', 'People': '', 'Observations': pair.obs, 'Solutions': pair.sol };
+    if (pair.todo) lr['_notes'] = { 'Solutions': 'TODO' };
+    localRows.push(lr);
   });
 
   // ── Edit mode: optimistically patch the cache, wait for save, then close ──
@@ -4922,7 +4932,7 @@ function submitSession() {
     allRows.push({ date: '', event: '', session_num: t, observation: '', solution: '', type: 'tester' });
   });
   obsPairs.forEach(function(pair) {
-    allRows.push({ date: '', event: '', session_num: '', observation: pair.obs, solution: pair.sol, type: 'obs' });
+    allRows.push({ date: '', event: '', session_num: '', observation: pair.obs, solution: pair.sol, type: 'obs', todo: !!pair.todo });
   });
 
   var fd = new FormData();
@@ -5245,6 +5255,9 @@ function addObsPair() {
             ' onblur="_ceNorm(this)"' +
             ' oninput="_autoBullet(this);_ceNorm(this);syncPairHeight(' + idx + ');onObsInput(' + idx + ')"' +
             ' onkeydown="onObsKeydown(event,' + idx + ',1)"></div>' +
+          '<button type="button" class="obs-todo-btn" title="Mark as TODO" aria-pressed="false" onclick="toggleObsTodo(' + idx + ')">' +
+            '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none"><path class="bulb-glass" d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14Z"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>' +
+          '</button>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -5262,6 +5275,16 @@ function addObsPair() {
   return idx;
 }
 
+
+// Light-bulb toggle: marks an observation row as TODO (yellow border, "TODO" note in the sheet)
+function toggleObsTodo(idx, on) {
+  var pair = document.querySelector('#obsContainer .obs-pair[data-idx="' + idx + '"]');
+  if (!pair) return;
+  on = (on === undefined) ? !pair.classList.contains('obs-todo') : !!on;
+  pair.classList.toggle('obs-todo', on);
+  var b = pair.querySelector('.obs-todo-btn');
+  if (b) { b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.title = on ? 'Marked as TODO — click to clear' : 'Mark as TODO'; }
+}
 
 function syncPairHeight(idx) {
   var obs = document.getElementById('sObs-' + idx);

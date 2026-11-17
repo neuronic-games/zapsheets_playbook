@@ -142,6 +142,9 @@ def get_records_with_links(service_account_client, sheet_id, sheet_name):
     header_cells = row_data[0].get('values', [])
     headers = [get_cell_text(c) for c in header_cells]
 
+    # DevBoard session tabs: also export cell notes (e.g. "TODO") as _notes {header: note}
+    with_notes = sheet_name.lower().endswith('] dev')
+
     records = []
     for row in row_data[1:]:
         cells = row.get('values', [])
@@ -156,6 +159,8 @@ def get_records_with_links(service_account_client, sheet_id, sheet_name):
             h = header.strip()
             if h:
                 record[h] = row_texts[i] if i < len(row_texts) else ''
+                if with_notes and i < len(cells) and cells[i].get('note'):
+                    record.setdefault('_notes', {})[h] = cells[i]['note']
         records.append(record)
 
     return records

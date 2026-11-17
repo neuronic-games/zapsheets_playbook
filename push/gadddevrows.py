@@ -93,6 +93,22 @@ try:
             }
         }
     ]
+    # "TODO" notes on the Solutions / Thoughts cell of flagged rows
+    sol_col = next((c for c, h in enumerate(headers) if h.strip() in ('Solutions', 'Thoughts', 'Solution')), -1)
+    if sol_col >= 0:
+        for i, r in enumerate(rows):
+            if r.get('_todo'):
+                format_reqs.append({
+                    'updateCells': {
+                        'range': {
+                            'sheetId': ws.id,
+                            'startRowIndex': start_idx + i, 'endRowIndex': start_idx + i + 1,
+                            'startColumnIndex': sol_col, 'endColumnIndex': sol_col + 1,
+                        },
+                        'rows': [{'values': [{'note': 'TODO'}]}],
+                        'fields': 'note',
+                    }
+                })
     for i, row in enumerate(sheet_rows):
         for cell in row:
             if isinstance(cell, str) and cell.strip().upper().startswith('=IMAGE('):

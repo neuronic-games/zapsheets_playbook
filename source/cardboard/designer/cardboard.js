@@ -342,10 +342,46 @@ function renderPalette() {
 }
 function renderData() {
   var el = $('dataList'); if (!el) return;
-  if (!FIELDS.length) { el.innerHTML = '<div class="muted">No columns found. The first row of the sheet should hold the column names, with one card per row below.</div>'; return; }
   var sample = ROWS[rowIdx] || ROWS[0] || {};
   if ($('dataCount')) $('dataCount').textContent = FIELDS.length;
-  el.innerHTML = FIELDS.map(function(f) { return chip('data-field="' + esc(f) + '"', '≡', f, looksLikeImage(f) ? '' : textVal(sample[f])); }).join('');
+  var h = '<div class="new-field" id="newField">' +
+          '<button type="button" class="new-btn" onclick="showNewField()" title="Add a column to the sheet">New</button>' +
+          '<form class="new-form" onsubmit="addField(event)"><input class="inp" id="newFieldName" maxlength="60" placeholder="Column name" autocomplete="off" oninput="checkNewField()" onkeydown="if(event.key===\'Escape\')hideNewField()">' +
+          '<button type="submit" class="attr-btn" id="newFieldGo">Add</button><button type="button" class="attr-btn" onclick="hideNewField()" title="Cancel">✕</button></form>' +
+          '<div class="new-msg" id="newFieldMsg"></div></div>';
+  if (!FIELDS.length) h += '<div class="muted">No columns yet. The first row of the sheet holds the column names, with one card per row below — or add one with New.</div>';
+  h += FIELDS.map(function(f) { return chip('data-field="' + esc(f) + '"', '≡', f, looksLikeImage(f) ? '' : textVal(sample[f]), f === _newField ? 'just-added' : ''); }).join('');
+  el.innerHTML = h;
+}
+// New column: added to the sheet's heading row, then ready to drag onto the card
+var _newField = '';
+function showNewField() { var b = $('newField'); b.classList.add('open'); $('newFieldName').value = ''; checkNewField(); $('newFieldName').focus(); }
+function hideNewField() { var b = $('newField'); if (b) b.classList.remove('open'); }
+function newFieldProblem(n) {
+  if (!n) return ' ';
+  if (n.charAt(0) === '_' || /[{}]/.test(n)) return 'Names can\'t use { } or start with _';
+  if (FIELDS.some(function(f) { return f.toLowerCase() === n.toLowerCase(); })) return 'There\'s already a column called "' + n + '"';
+  return '';
+}
+function checkNewField() {
+  var n = $('newFieldName').value.trim().replace(/\s+/g, ' '), msg = newFieldProblem(n);
+  $('newFieldMsg').textContent = msg.trim(); $('newFieldGo').disabled = !!msg;
+}
+function addField(ev) {
+  ev.preventDefault();
+  var n = $('newFieldName').value.trim().replace(/\s+/g, ' ');
+  if (newFieldProblem(n) || !curTab) return;
+  var go = $('newFieldGo'), tab = curTab; go.disabled = true; go.textContent = '…';
+  api('addfield', { tab: tab, name: n })
+    .then(function(r) {
+      if (curTab !== tab) return;
+      FIELDS.push(n); ROWS.forEach(function(row) { row[n] = ''; });
+      _newField = n; renderData();
+      var chipEl = document.querySelector('.field-chip[data-field="' + CSS.escape(n) + '"]'); if (chipEl) chipEl.scrollIntoView({ block: 'nearest' });
+      toast('✓ Added column ' + (r.column ? r.column + ' ' : '') + '"' + n + '" to the sheet');
+      setTimeout(function() { if (_newField === n) { _newField = ''; var c = document.querySelector('.field-chip.just-added'); if (c) c.classList.remove('just-added'); } }, 2500);
+    })
+    .catch(function(e) { $('newFieldMsg').textContent = e.message; go.disabled = false; go.textContent = 'Add'; });
 }
 function chipSpec(c) {
   if (c.dataset.field) return 'data:' + c.dataset.field;

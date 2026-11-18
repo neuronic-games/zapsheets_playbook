@@ -5,6 +5,7 @@
 #   tabs    — every tab except the "cardboard" tab: [{title, rows, cols}]
 #   layouts — {sheet title: layout} from the "cardboard" tab
 #   save    — sheet: tab title, layout: {...}  → one row per sheet in the "cardboard" tab
+#   addfield — sheet: tab title, name: new column name → added after the last column heading
 # Writes use the plain Sheets API calls, which work the same with gspread 5 and 6.
 
 import gspread
@@ -99,6 +100,27 @@ def main():
             wb.values_append(q(ws.title) + '!A1', params={'valueInputOption': 'RAW', 'insertDataOption': 'OVERWRITE'},
                              body={'values': [[name, raw, stamp]]})
         out({'ok': True, 'saved': name, 'updated': stamp})
+
+    if action == 'addfield':
+        name  = str(data.get('sheet', '')).strip()
+        field = str(data.get('name', '')).strip()
+        tws = next((w for w in sheets if w.title == name), None)
+        if tws is None or name.lower() == TAB:
+            out({'error': 'That sheet was not found'})
+        if not field:
+            out({'error': 'Give the field a name'})
+        hdr = (wb.values_get(q(tws.title) + '!1:1').get('values') or [[]])[0]
+        if any(str(h).strip().lower() == field.lower() for h in hdr):
+            out({'error': f'There is already a column called "{field}"'})
+        # first column after the last heading
+        col = len(hdr)
+        while col > 0 and not str(hdr[col - 1]).strip():
+            col -= 1
+        if col + 1 > tws.col_count:
+            tws.add_cols(col + 1 - tws.col_count)
+        a1 = gspread.utils.rowcol_to_a1(1, col + 1)
+        wb.values_update(q(tws.title) + '!' + a1, params={'valueInputOption': 'RAW'}, body={'values': [[field]]})
+        out({'ok': True, 'field': field, 'column': a1.rstrip('0123456789')})
 
     out({'error': 'Unknown action'})
 

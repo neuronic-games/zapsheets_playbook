@@ -39,6 +39,19 @@ if ($action === 'save') {
     exit;
 }
 
+if ($action === 'addfield') {
+    $tab  = trim($_POST['tab'] ?? '');
+    $name = trim(preg_replace('/\s+/u', ' ', $_POST['name'] ?? ''));
+    if ($tab === '' || strpbrk($tab, "/\\") !== false || strtolower($tab) === 'cardboard') { echo json_encode(['error' => 'Invalid tab']); exit; }
+    if ($name === '' || mb_strlen($name) > 60 || $name[0] === '_' || strpbrk($name, '{}') !== false) {
+        echo json_encode(['error' => 'Use up to 60 characters, without { } and not starting with _']); exit;
+    }
+    $res = cbRun($python, $sheetId, ['action' => 'addfield', 'sheet' => $tab, 'name' => $name]);
+    if (!empty($res['ok'])) @unlink(dirname(__DIR__) . '/sheets/' . $sheetId . '/' . strtolower($tab) . '.json');   // re-read next time
+    echo json_encode($res);
+    exit;
+}
+
 if ($action === 'rows') {
     $tab = trim($_POST['tab'] ?? '');
     if ($tab === '' || strpbrk($tab, "/\\") !== false || strtolower($tab) === 'cardboard') {

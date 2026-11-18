@@ -79,6 +79,11 @@ button, input, select, textarea { font-family:inherit; }
 .field-chip .nm { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .field-chip .sample { font-family:'DINRegular',sans-serif; font-size:.68rem; color:#9aa0b8; max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .field-chip.static { color:#555; }
+.shape-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:.3rem; margin-bottom:.35rem; }
+.shape-chip { display:flex; flex-direction:column; align-items:center; gap:.15rem; border:1.5px solid #d6d9e6; border-radius:7px; padding:.35rem .1rem .25rem; background:#fff; cursor:grab; font-size:.6rem; color:#6b6f86; user-select:none; }
+.shape-chip:hover { border-color:#a99cff; background:#f7f5ff; }
+.shape-ico { width:24px; height:20px; display:block; }
+.el.k-shape { overflow:visible; }
 .muted { font-size:.78rem; color:#9aa0b8; line-height:1.5; }
 
 /* ── Canvas ────────────────────────────────────────────── */
@@ -223,12 +228,7 @@ button, input, select, textarea { font-family:inherit; }
     <div class="panel-scroll">
       <span class="lbl">Sheet</span>
       <select class="sel sel-sheet" id="sheetSel" onchange="selectTab(this.value)"></select>
-      <span class="lbl">Fields</span>
-      <div id="fieldList"><div class="muted">Loading…</div></div>
-      <span class="lbl">Add</span>
-      <div class="field-chip static" draggable="true" data-add="text" ondragstart="chipDragStart(event)" onclick="addElement('text')"><span class="ico">T</span><span class="nm">Text</span></div>
-      <div class="field-chip static" draggable="true" data-add="box" ondragstart="chipDragStart(event)" onclick="addElement('box')"><span class="ico">▭</span><span class="nm">Box</span></div>
-      <p class="muted" style="margin-top:.8rem">Drag a field onto the card, or click it to add it in the middle.</p>
+      <div id="palette"></div>
     </div>
   </div>
 

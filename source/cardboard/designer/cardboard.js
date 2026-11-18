@@ -1,4 +1,11 @@
 // CardBoard — card designer. Sizes and positions are in points (1/72 in) so cards print at true size.
+//
+// Element types (left panel):
+//   TEXT       kind 'text'   — fixed wording; may include {Column} placeholders
+//   DATA       kind 'data'   — one column of the sheet; shown as text (default) or as an image
+//   IMAGE      kind 'image'  — a fixed picture from a web address
+//   SHAPE      kind 'shape'  — rect, round, ellipse, line, triangle, diamond, hexagon, star
+//   GENERATED  kind 'gen'    — number sequence, random number, or random pick from a list
 'use strict';
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -20,17 +27,44 @@ var FONTS = [
   ['Arial', 'Arial'], ['Georgia', 'Georgia'], ['Times New Roman', 'Times New Roman'], ['Verdana', 'Verdana'],
   ['Courier New', 'Courier New'], ['Impact', 'Impact']
 ];
+var SHAPES = [
+  ['rect', 'Rectangle'], ['round', 'Rounded'], ['ellipse', 'Circle'], ['line', 'Line'],
+  ['triangle', 'Triangle'], ['diamond', 'Diamond'], ['hexagon', 'Hexagon'], ['star', 'Star']
+];
+var GENS = [['seq', '123', 'Number sequence'], ['rand', '🎲', 'Random number'], ['list', '☰', 'Random from list']];
+var KIND_NAME = { text: 'Text', data: 'Data', image: 'Image', shape: 'Shape', gen: 'Generated' };
 var PX = 96 / 72;   // CSS px per pt
 var _activeTab = 'design';
 
 function newLayout() {
-  return { v: 1, card: { size: 'poker', w: 180, h: 252, bg: '#ffffff', radius: 9, borderColor: '#222222', borderW: 0 }, els: [] };
+  return { v: 2, card: { size: 'poker', w: 180, h: 252, bg: '#ffffff', radius: 9, borderColor: '#222222', borderW: 0 }, els: [] };
 }
 function uid() { return 'e' + Math.random().toString(36).slice(2, 9); }
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function $(id) { return document.getElementById(id); }
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 function r1(v) { return Math.round(v * 10) / 10; }
+function isTextLike(e) { return e.kind === 'text' || e.kind === 'gen' || (e.kind === 'data' && e.as !== 'image'); }
+function isImageLike(e) { return e.kind === 'image' || (e.kind === 'data' && e.as === 'image'); }
+
+// Layouts saved by the first version: box → shape, "{Column}" text/image → data
+function normalize(lay) {
+  if (!lay.card) lay.card = newLayout().card;
+  lay.els = (lay.els || []).map(function(e) {
+    var one = /^\{([^{}]+)\}$/;
+    if (e.kind === 'box') {
+      e = Object.assign(e, { kind: 'shape', shape: e.radius ? 'round' : 'rect', fill: e.bg || '', stroke: e.borderColor || '#000000', strokeW: e.borderW || 0 });
+      delete e.bg; delete e.borderW; delete e.borderColor;
+    } else if (e.kind === 'text' && one.test(e.text || '')) {
+      e.kind = 'data'; e.field = e.text.match(one)[1]; e.as = 'text'; delete e.text;
+    } else if (e.kind === 'image' && one.test(e.src || '')) {
+      e.kind = 'data'; e.field = e.src.match(one)[1]; e.as = 'image'; delete e.src;
+    }
+    return e;
+  });
+  lay.v = 2;
+  return lay;
+}
 
 // ── Server ────────────────────────────────────────────────────────────────────
 function api(action, extra) {
@@ -80,10 +114,28 @@ function fill(tpl, row) {
     return Object.prototype.hasOwnProperty.call(row, k) ? textVal(row[k]) : '{' + k + '}';
   });
 }
-function fillImage(tpl, row) {
-  var t = String(tpl || '').trim(), m = t.match(/^\{([^{}]+)\}$/);
-  if (m) return row ? imageUrl(row[m[1]]) : '';
-  return imageUrl(fill(t, row));
+
+// ── Generated values (seeded, so the preview and the printout match) ──────────
+function seeded(str) {
+  var h = 1779033703 ^ str.length;
+  for (var i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+  h = Math.imul(h ^ (h >>> 16), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909);
+  return ((h ^= h >>> 16) >>> 0) / 4294967296;
+}
+function genItems(e) { return String(e.items || '').split(/\n|,/).map(function(s) { return s.trim(); }).filter(Boolean); }
+function genValue(e, ctx) {
+  var i = (e.per === 'row' ? ctx.row : ctx.card) || 0, seed = (e.seed || e.id) + ':' + i;
+  if (e.mode === 'rand') {
+    var lo = Math.round(+e.min || 0), hi = Math.round(+e.max || 0); if (hi < lo) { var t = lo; lo = hi; hi = t; }
+    return String(lo + Math.floor(seeded(seed) * (hi - lo + 1)));
+  }
+  if (e.mode === 'list') {
+    var it = genItems(e); if (!it.length) return '';
+    return e.pick === 'cycle' ? it[i % it.length] : it[Math.floor(seeded(seed) * it.length)];
+  }
+  var n = (+e.start || 0) + (+e.step || 0) * i, s = String(Math.abs(n));
+  while (s.length < (+e.pad || 0)) s = '0' + s;
+  return (e.prefix || '') + (n < 0 ? '-' : '') + s + (e.suffix || '');
 }
 
 // ── Rendering one card (designer and print share this) ───────────────────────
@@ -93,46 +145,79 @@ function cardStyle(c) {
 }
 function elStyle(e) {
   var s = 'left:' + e.x + 'pt;top:' + e.y + 'pt;width:' + e.w + 'pt;height:' + e.h + 'pt;z-index:' + (e.z || 1) + ';';
+  if (e.rot) s += 'transform:rotate(' + e.rot + 'deg);';
+  if (e.opacity != null && e.opacity < 1) s += 'opacity:' + e.opacity + ';';
+  if (e.kind === 'shape') return s;
   if (e.bg) s += 'background:' + e.bg + ';';
   if (e.borderW) s += 'border:' + e.borderW + 'pt solid ' + (e.borderColor || '#000') + ';';
   if (e.radius) s += 'border-radius:' + e.radius + 'pt;';
-  if (e.kind === 'text') {
+  if (isTextLike(e)) {
     s += 'font-family:"' + (e.font || 'DINRegular') + '",Arial,sans-serif;font-size:' + (e.size || 12) + 'pt;color:' + (e.color || '#111') + ';' +
          'text-align:' + (e.align || 'left') + ';padding:' + (e.pad == null ? 2 : e.pad) + 'pt;line-height:' + (e.lh || 1.15) + ';' +
          (e.bold ? 'font-weight:700;' : 'font-weight:400;') + (e.italic ? 'font-style:italic;' : '') + (e.upper ? 'text-transform:uppercase;' : '');
   }
   return s;
 }
-function elInner(e, row) {
-  if (e.kind === 'text') {
-    var t = fill(e.text, row);
-    return t.trim() ? esc(t) : (row ? '' : '<span class="el-empty">' + esc(e.text || 'Text') + '</span>');
+function shapeSVG(e) {
+  var w = e.w, h = e.h, sw = +e.strokeW || 0, hs = sw / 2, f = e.fill || 'none', st = sw ? (e.stroke || '#000') : 'none';
+  var a = ' fill="' + esc(f) + '" stroke="' + esc(st) + '" stroke-width="' + sw + '" stroke-linejoin="round"', body = '';
+  function pts(p) { return '<polygon points="' + p.map(function(q) { return r1(q[0]) + ',' + r1(q[1]); }).join(' ') + '"' + a + '/>'; }
+  switch (e.shape) {
+    case 'ellipse':  body = '<ellipse cx="' + w / 2 + '" cy="' + h / 2 + '" rx="' + Math.max(0, w / 2 - hs) + '" ry="' + Math.max(0, h / 2 - hs) + '"' + a + '/>'; break;
+    case 'line':     body = '<line x1="0" y1="' + h / 2 + '" x2="' + w + '" y2="' + h / 2 + '" stroke="' + esc(e.stroke || '#000') + '" stroke-width="' + (sw || 1) + '" stroke-linecap="round"/>'; break;
+    case 'triangle': body = pts([[w / 2, hs], [w - hs, h - hs], [hs, h - hs]]); break;
+    case 'diamond':  body = pts([[w / 2, hs], [w - hs, h / 2], [w / 2, h - hs], [hs, h / 2]]); break;
+    case 'hexagon':  body = pts([[w * .25, hs], [w * .75, hs], [w - hs, h / 2], [w * .75, h - hs], [w * .25, h - hs], [hs, h / 2]]); break;
+    case 'star': {
+      var p = [], rx = w / 2 - hs, ry = h / 2 - hs;
+      for (var i = 0; i < 10; i++) { var ang = -Math.PI / 2 + i * Math.PI / 5, k = i % 2 ? .45 : 1; p.push([w / 2 + Math.cos(ang) * rx * k, h / 2 + Math.sin(ang) * ry * k]); }
+      body = pts(p); break;
+    }
+    default: {
+      var r = e.shape === 'round' ? (e.radius == null ? 10 : +e.radius) : (+e.radius || 0);
+      body = '<rect x="' + hs + '" y="' + hs + '" width="' + Math.max(0, w - sw) + '" height="' + Math.max(0, h - sw) + '" rx="' + r + '" ry="' + r + '"' + a + '/>';
+    }
   }
-  if (e.kind === 'image') {
-    var u = fillImage(e.src, row);
-    if (!u) return '<div class="el-img" style="background:#eef0f6;display:flex;align-items:center;justify-content:center;color:#a0a4bb;font-size:8pt">' + esc(e.src || 'Image') + '</div>';
-    var fit = e.fit === 'stretch' ? '100% 100%' : (e.fit || 'cover');
-    return '<div class="el-img" style="background-image:url(&quot;' + esc(u) + '&quot;);background-size:' + fit + '"></div>';
+  return '<svg width="100%" height="100%" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" style="display:block;overflow:visible">' + body + '</svg>';
+}
+function imgDiv(u, e, label) {
+  if (!u) return '<div class="el-img" style="background:#eef0f6;display:flex;align-items:center;justify-content:center;color:#a0a4bb;font-size:8pt;text-align:center">' + esc(label) + '</div>';
+  var fit = e.fit === 'stretch' ? '100% 100%' : (e.fit || 'cover');
+  return '<div class="el-img" style="background-image:url(&quot;' + esc(u) + '&quot;);background-size:' + fit + '"></div>';
+}
+function elInner(e, row, ctx) {
+  switch (e.kind) {
+    case 'text': {
+      var t = fill(e.text, row);
+      return t.trim() ? esc(t) : (row ? '' : '<span class="el-empty">' + esc(e.text || 'Text') + '</span>');
+    }
+    case 'data':
+      if (e.as === 'image') return imgDiv(row ? imageUrl(row[e.field]) : '', e, e.field);
+      return row ? esc(textVal(row[e.field])) : '<span class="el-empty">' + esc(e.field) + '</span>';
+    case 'image': return imgDiv(imageUrl(e.src), e, 'Image');
+    case 'shape': return shapeSVG(e);
+    case 'gen':   return esc(genValue(e, ctx || { card: 0, row: 0 }));
   }
   return '';
 }
-function renderCardHTML(lay, row, designing) {
+function renderCardHTML(lay, row, designing, ctx) {
   var h = '<div class="card' + (designing ? ' designing' : '') + '" style="' + cardStyle(lay.card) + '">';
   lay.els.slice().sort(function(a, b) { return (a.z || 1) - (b.z || 1); }).forEach(function(e) {
-    var cls = 'el' + (e.valign === 'middle' ? ' v-middle' : e.valign === 'bottom' ? ' v-bottom' : '') + (designing && e.id === selId ? ' sel' : '');
+    var cls = 'el k-' + e.kind + (e.valign === 'middle' ? ' v-middle' : e.valign === 'bottom' ? ' v-bottom' : '') + (designing && e.id === selId ? ' sel' : '');
     h += '<div class="' + cls + '" data-id="' + e.id + '" style="' + elStyle(e) + '">';
     h += designing
-      ? '<div class="el-inner">' + elInner(e, row) + '</div>' +
+      ? '<div class="el-inner">' + elInner(e, row, ctx) + '</div>' +
         ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map(function(d) { return '<span class="hdl ' + d + '" data-h="' + d + '"></span>'; }).join('')
-      : elInner(e, row);
+      : elInner(e, row, ctx);
     h += '</div>';
   });
-  if (designing && !lay.els.length) h += '<div class="card-empty-hint">Drag fields here</div>';
+  if (designing && !lay.els.length) h += '<div class="card-empty-hint">Drag elements here</div>';
   return h + '</div>';
 }
 
 // ── Loading ───────────────────────────────────────────────────────────────────
 function init() {
+  renderPalette();
   $('cardHolder').innerHTML = '<div class="loading" style="width:240px;height:200px"><span class="spin"></span>Loading sheet…</div>';
   Promise.all([api('tabs'), api('layouts').catch(function() { return { layouts: {} }; })])
     .then(function(res) {
@@ -143,7 +228,6 @@ function init() {
       var start = '';
       try { start = localStorage.getItem('cb_tab:' + SHEET_ID) || ''; } catch (e) {}
       if (!TABS.some(function(t) { return t.title === start; })) {
-        // Prefer a tab that already has a layout, then the first one
         start = (TABS.filter(function(t) { return LAYOUTS[t.title]; })[0] || TABS[0] || {}).title || '';
       }
       if (!start) { $('cardHolder').innerHTML = '<div class="muted">This spreadsheet has no tabs to design from.</div>'; return; }
@@ -160,16 +244,14 @@ function selectTab(name, first, force) {
   if (!first && dirty && !confirm('You have unsaved changes to the "' + curTab + '" layout. Switch sheets anyway?')) { $('sheetSel').value = curTab; return; }
   curTab = name; selId = null; rowIdx = 0; undoStack = []; redoStack = [];
   try { localStorage.setItem('cb_tab:' + SHEET_ID, name); } catch (e) {}
-  layout = LAYOUTS[name] ? JSON.parse(JSON.stringify(LAYOUTS[name])) : newLayout();
-  if (!layout.card) layout.card = newLayout().card;
-  if (!layout.els) layout.els = [];
+  layout = normalize(LAYOUTS[name] ? JSON.parse(JSON.stringify(LAYOUTS[name])) : newLayout());
   setDirty(false);
   // An unsaved draft from this browser wins (restored, still marked unsaved)
   try {
     var d = localStorage.getItem('cb_draft:' + SHEET_ID + ':' + name);
-    if (d && d !== JSON.stringify(layout)) { layout = JSON.parse(d); setDirty(true, true); toast('Restored your unsaved changes'); }
+    if (d && d !== JSON.stringify(layout)) { layout = normalize(JSON.parse(d)); setDirty(true, true); toast('Restored your unsaved changes'); }
   } catch (e) {}
-  $('fieldList').innerHTML = '<div class="muted">Loading…</div>';
+  $('dataList').innerHTML = '<div class="muted">Loading…</div>';
   $('cardHolder').innerHTML = '<div class="loading" style="width:240px;height:200px"><span class="spin"></span>Loading rows…</div>';
   api('rows', { tab: name, force: force ? '1' : '' })
     .then(function(res) {
@@ -177,75 +259,87 @@ function selectTab(name, first, force) {
       ROWS = (res.rows || []).filter(function(r) { return Object.keys(r).some(function(k) { return k.charAt(0) !== '_' && String(r[k]).trim(); }); });
       FIELDS = [];
       ROWS.forEach(function(r) { Object.keys(r).forEach(function(k) { if (k.charAt(0) !== '_' && FIELDS.indexOf(k) < 0) FIELDS.push(k); }); });
-      renderFields(); fitZoom(); renderAttrs();
+      renderData(); fitZoom(); renderAttrs();
       if (_activeTab === 'print') renderPrint();
       if (force) toast('✓ Reloaded from the sheet');
     })
     .catch(function(e) {
-      ROWS = []; FIELDS = []; renderFields(); render(); renderAttrs();
+      ROWS = []; FIELDS = []; renderData(); render(); renderAttrs();
       toast('Couldn\'t read "' + name + '" — ' + e.message, true);
     });
 }
 function reloadSheet() { if (curTab) selectTab(curTab, true, true); }
 function openInSheets() { window.open('https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit', '_blank', 'noopener'); }
 
-// ── Fields panel ──────────────────────────────────────────────────────────────
-function renderFields() {
-  var el = $('fieldList');
-  if (!FIELDS.length) { el.innerHTML = '<div class="muted">No columns found. The first row of the sheet should hold the field names, with one card per row below.</div>'; return; }
+// ── Left panel: TEXT · DATA · IMAGE · SHAPE · GENERATED ──────────────────────
+function chip(attrs, ico, name, sample, extraCls) {
+  return '<div class="field-chip' + (extraCls ? ' ' + extraCls : '') + '" draggable="true" ' + attrs + ' ondragstart="chipDragStart(event)" onclick="chipClick(this)" title="Drag onto the card, or click to add">' +
+         '<span class="ico">' + ico + '</span><span class="nm">' + esc(name) + '</span>' + (sample ? '<span class="sample">' + esc(sample) + '</span>' : '') + '</div>';
+}
+function renderPalette() {
+  var h = '';
+  h += '<span class="lbl">Text</span>' + chip('data-add="text"', 'T', 'Text');
+  h += '<span class="lbl">Data</span><div id="dataList"><div class="muted">Loading…</div></div>';
+  h += '<span class="lbl">Image</span>' + chip('data-add="image"', '🖼', 'Image');
+  h += '<span class="lbl">Shape</span><div class="shape-grid">' + SHAPES.map(function(s) {
+    var demo = { shape: s[0], w: 24, h: s[0] === 'line' ? 24 : 18, fill: s[0] === 'line' ? 'none' : '#ece9ff', stroke: '#4b3fa8', strokeW: 1.5, radius: s[0] === 'round' ? 5 : 0 };
+    return '<div class="shape-chip" draggable="true" data-shape="' + s[0] + '" ondragstart="chipDragStart(event)" onclick="chipClick(this)" title="' + s[1] + '">' +
+           '<span class="shape-ico">' + shapeSVG(demo) + '</span><span>' + s[1] + '</span></div>';
+  }).join('') + '</div>';
+  h += '<span class="lbl">Generated</span>' + GENS.map(function(g) { return chip('data-gen="' + g[0] + '"', g[1], g[2]); }).join('');
+  h += '<p class="muted" style="margin-top:.8rem">Drag onto the card, or click to add it in the middle.</p>';
+  $('palette').innerHTML = h;
+}
+function renderData() {
+  var el = $('dataList'); if (!el) return;
+  if (!FIELDS.length) { el.innerHTML = '<div class="muted">No columns found. The first row of the sheet should hold the column names, with one card per row below.</div>'; return; }
   var sample = ROWS[rowIdx] || ROWS[0] || {};
-  el.innerHTML = FIELDS.map(function(f) {
-    var img = looksLikeImage(f);
-    return '<div class="field-chip" draggable="true" data-field="' + esc(f) + '" ondragstart="chipDragStart(event)" onclick="addField(this.dataset.field)" title="Drag onto the card">' +
-           '<span class="ico">' + (img ? '🖼' : '≡') + '</span><span class="nm">' + esc(f) + '</span>' +
-           (img ? '' : '<span class="sample">' + esc(textVal(sample[f])) + '</span>') + '</div>';
-  }).join('');
+  el.innerHTML = FIELDS.map(function(f) { return chip('data-field="' + esc(f) + '"', '≡', f, looksLikeImage(f) ? '' : textVal(sample[f])); }).join('');
 }
-function chipDragStart(ev) {
-  var c = ev.currentTarget;
-  ev.dataTransfer.setData('text/plain', c.dataset.field ? 'field:' + c.dataset.field : 'add:' + c.dataset.add);
-  ev.dataTransfer.effectAllowed = 'copy';
+function chipSpec(c) {
+  if (c.dataset.field) return 'data:' + c.dataset.field;
+  if (c.dataset.shape) return 'shape:' + c.dataset.shape;
+  if (c.dataset.gen)   return 'gen:' + c.dataset.gen;
+  return 'add:' + c.dataset.add;
 }
-function newFieldEl(field, x, y) {
-  var c = layout.card;
-  if (looksLikeImage(field)) {
-    var w = Math.round(c.w * .7), h = Math.round(c.w * .55);
-    return { kind: 'image', src: '{' + field + '}', fit: 'cover', w: w, h: h, x: x - w / 2, y: y - h / 2 };
+function chipDragStart(ev) { ev.dataTransfer.setData('text/plain', chipSpec(ev.currentTarget)); ev.dataTransfer.effectAllowed = 'copy'; }
+function chipClick(c) { if (layout) addAt(chipSpec(c), layout.card.w / 2, layout.card.h / 2); }
+
+// A new element for a palette item, centred on (x, y)
+function makeEl(spec, x, y) {
+  var c = layout.card, i = spec.indexOf(':'), type = spec.slice(0, i), arg = spec.slice(i + 1), e;
+  var textStyle = { font: 'DINRegular', size: 11, color: '#1b1b2b', align: 'left' };
+  if (type === 'data') {
+    // Size the box from the longest value in this column (rough DIN Medium metrics: ~0.55 em per character)
+    var size = 11, longest = 0, lines = 1, maxW = c.w - 24;
+    ROWS.forEach(function(r) { var v = textVal(r[arg]); v.split('\n').forEach(function(l) { longest = Math.max(longest, l.length); }); lines = Math.max(lines, v.split('\n').length); });
+    var w = Math.round(clamp(longest * size * .55 + 8, 28, maxW)), wrapped = 0;
+    ROWS.forEach(function(r) { var n = 0; textVal(r[arg]).split('\n').forEach(function(l) { n += Math.max(1, Math.ceil((l.length * size * .55 + 4) / w)); }); wrapped = Math.max(wrapped, n); });
+    e = Object.assign({ kind: 'data', field: arg, as: 'text', w: w, h: Math.round(clamp(Math.max(lines, wrapped) * size * 1.15 + 6, 18, c.h - 24)) }, textStyle);
+  } else if (type === 'add' && arg === 'text') {
+    e = Object.assign({ kind: 'text', text: 'Text', w: c.w - 24, h: 26 }, textStyle, { font: 'DINBlack', size: 14, align: 'center' });
+  } else if (type === 'add' && arg === 'image') {
+    e = { kind: 'image', src: '', fit: 'contain', w: Math.round(c.w * .5), h: Math.round(c.w * .5) };
+  } else if (type === 'shape') {
+    var sq = Math.round(c.w * .4);
+    e = { kind: 'shape', shape: arg, fill: arg === 'line' ? '' : '#ece9ff', stroke: '#4b3fa8', strokeW: arg === 'line' ? 2 : 0,
+          w: arg === 'line' ? c.w - 40 : (/^(rect|round)$/.test(arg) ? c.w - 40 : sq), h: arg === 'line' ? 8 : (/^(rect|round)$/.test(arg) ? 50 : sq) };
+    if (arg === 'round') e.radius = 10;
+  } else if (type === 'gen') {
+    e = Object.assign({ kind: 'gen', mode: arg, per: 'card', w: 50, h: 22 }, textStyle, { font: 'DINBlack', size: 12, align: 'center', valign: 'middle' });
+    if (arg === 'seq')  Object.assign(e, { start: 1, step: 1, pad: 0, prefix: '#', suffix: '' });
+    if (arg === 'rand') Object.assign(e, { min: 1, max: 6 });
+    if (arg === 'list') Object.assign(e, { items: 'Red\nGreen\nBlue', pick: 'random', w: 70 });
   }
-  // Size the box from the longest value in this column (rough DIN Medium metrics: ~0.55 em per character)
-  var size = 11, longest = 0, lines = 1;
-  ROWS.forEach(function(r) {
-    var v = textVal(r[field]);
-    v.split('\n').forEach(function(l) { longest = Math.max(longest, l.length); });
-    lines = Math.max(lines, v.split('\n').length);
-  });
-  var maxW = c.w - 24, natural = longest * size * .55 + 8;
-  var w2 = Math.round(clamp(natural, 28, maxW));
-  var wrapped = 0;
-  ROWS.forEach(function(r) {
-    var n = 0;
-    textVal(r[field]).split('\n').forEach(function(l) { n += Math.max(1, Math.ceil((l.length * size * .55 + 4) / w2)); });
-    wrapped = Math.max(wrapped, n);
-  });
-  var h2 = Math.round(clamp(Math.max(lines, wrapped) * size * 1.15 + 6, 18, c.h - 24));
-  return { kind: 'text', text: '{' + field + '}', font: 'DINRegular', size: size, color: '#1b1b2b', align: 'left', w: w2, h: h2, x: x - w2 / 2, y: y - h2 / 2 };
+  if (!e) return null;
+  e.x = x - e.w / 2; e.y = y - e.h / 2;
+  return e;
 }
-function staticEl(kind) {
-  var c = layout.card;
-  if (kind === 'text') return { kind: 'text', text: 'Text', font: 'DINBlack', size: 14, color: '#1b1b2b', align: 'center', w: c.w - 24, h: 26 };
-  return { kind: 'box', bg: '#ece9ff', radius: 6, w: c.w - 24, h: 60 };
-}
-function addField(field) { addElementAt(newFieldEl(field, layout.card.w / 2, layout.card.h / 2)); }
-function addElement(kind) {
-  if (!layout) return;
-  var c = layout.card, e = staticEl(kind);
-  e.x = (c.w - e.w) / 2; e.y = (c.h - e.h) / 2;
-  addElementAt(e);
-}
+function addAt(spec, x, y) { var e = makeEl(spec, x, y); if (e) addElementAt(e); }
 function addElementAt(e) {
   var c = layout.card;
   e.id = uid(); e.z = layout.els.reduce(function(m, x) { return Math.max(m, x.z || 1); }, 0) + 1;
-  e.w = clamp(e.w, 6, c.w); e.h = clamp(e.h, 6, c.h);
+  e.w = clamp(e.w, 4, c.w); e.h = clamp(e.h, 4, c.h);
   e.x = r1(clamp(e.x, 0, c.w - e.w)); e.y = r1(clamp(e.y, 0, c.h - e.h));
   snapshot(); layout.els.push(e); selId = e.id; changed();
 }
@@ -255,7 +349,7 @@ function render() {
   if (!layout) return;
   var holder = $('cardHolder'), c = layout.card;
   holder.style.width = (c.w * PX * zoom) + 'px'; holder.style.height = (c.h * PX * zoom) + 'px';
-  holder.innerHTML = renderCardHTML(layout, ROWS[rowIdx] || null, true);
+  holder.innerHTML = renderCardHTML(layout, ROWS[rowIdx] || null, true, { card: rowIdx, row: rowIdx });
   var card = holder.firstChild;
   card.style.transform = 'scale(' + zoom + ')';
   card.style.setProperty('--z', zoom * PX);
@@ -264,7 +358,7 @@ function render() {
   $('zoomInfo').textContent = Math.round(zoom * 100) + '%';
   $('undoBtn').disabled = !undoStack.length; $('redoBtn').disabled = !redoStack.length;
 }
-function stepRow(d) { rowIdx = clamp(rowIdx + d, 0, Math.max(0, ROWS.length - 1)); render(); renderFields(); }
+function stepRow(d) { rowIdx = clamp(rowIdx + d, 0, Math.max(0, ROWS.length - 1)); render(); renderData(); }
 function zoomBy(d) {
   var steps = [.5, .75, 1, 1.25, 1.5, 2, 2.5, 3, 4];
   var i = steps.findIndex(function(s) { return s >= zoom - .01; });
@@ -282,7 +376,7 @@ function ptFromEvent(ev) {
   var r = $('cardHolder').getBoundingClientRect();
   return { x: (ev.clientX - r.left) / (PX * zoom), y: (ev.clientY - r.top) / (PX * zoom) };
 }
-// Drop a field (or Text / Box) from the left panel
+// Drop an element from the left panel
 (function() {
   var wrap = $('canvasWrap'), holder = $('cardHolder');
   wrap.addEventListener('dragover', function(ev) { if (!layout) return; ev.preventDefault(); ev.dataTransfer.dropEffect = 'copy'; holder.classList.add('drop-target'); });
@@ -291,9 +385,8 @@ function ptFromEvent(ev) {
     ev.preventDefault(); holder.classList.remove('drop-target');
     if (!layout) return;
     var d = ev.dataTransfer.getData('text/plain') || '', p = ptFromEvent(ev), c = layout.card;
-    p.x = clamp(p.x, 0, c.w); p.y = clamp(p.y, 0, c.h);
-    if (d.indexOf('field:') === 0) return addElementAt(newFieldEl(d.slice(6), p.x, p.y));
-    if (d.indexOf('add:') === 0) { var e = staticEl(d.slice(4)); e.x = p.x - e.w / 2; e.y = p.y - e.h / 2; addElementAt(e); }
+    if (d.indexOf(':') < 0) return;
+    addAt(d, clamp(p.x, 0, c.w), clamp(p.y, 0, c.h));
   });
 })();
 
@@ -315,14 +408,22 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
       e.x = r1(sn(clamp(o.x + dx, -o.w + 6, c.w - 6))); e.y = r1(sn(clamp(o.y + dy, -o.h + 6, c.h - 6)));
     } else {
       var x1 = o.x, y1 = o.y, x2 = o.x + o.w, y2 = o.y + o.h;
-      if (handle.indexOf('w') >= 0) x1 = Math.min(sn(o.x + dx), x2 - 4);
-      if (handle.indexOf('e') >= 0) x2 = Math.max(sn(o.x + o.w + dx), x1 + 4);
-      if (handle.indexOf('n') >= 0) y1 = Math.min(sn(o.y + dy), y2 - 4);
-      if (handle.indexOf('s') >= 0) y2 = Math.max(sn(o.y + o.h + dy), y1 + 4);
+      if (handle.indexOf('w') >= 0) x1 = Math.min(sn(o.x + dx), x2 - 2);
+      if (handle.indexOf('e') >= 0) x2 = Math.max(sn(o.x + o.w + dx), x1 + 2);
+      if (handle.indexOf('n') >= 0) y1 = Math.min(sn(o.y + dy), y2 - 2);
+      if (handle.indexOf('s') >= 0) y2 = Math.max(sn(o.y + o.h + dy), y1 + 2);
+      if (m.shiftKey && e.kind === 'shape' && handle.length === 2) {   // Shift: keep proportions
+        var k = Math.max((x2 - x1) / o.w, (y2 - y1) / o.h);
+        if (handle.indexOf('w') >= 0) x1 = x2 - o.w * k; else x2 = x1 + o.w * k;
+        if (handle.indexOf('n') >= 0) y1 = y2 - o.h * k; else y2 = y1 + o.h * k;
+      }
       e.x = r1(x1); e.y = r1(y1); e.w = r1(x2 - x1); e.h = r1(y2 - y1);
     }
     var node = $('cardHolder').querySelector('.el[data-id="' + e.id + '"]');
-    if (node) { node.style.left = e.x + 'pt'; node.style.top = e.y + 'pt'; node.style.width = e.w + 'pt'; node.style.height = e.h + 'pt'; }
+    if (node) {
+      node.style.left = e.x + 'pt'; node.style.top = e.y + 'pt'; node.style.width = e.w + 'pt'; node.style.height = e.h + 'pt';
+      if (e.kind === 'shape' && handle) node.querySelector('.el-inner').innerHTML = shapeSVG(e);
+    }
     syncGeomInputs(e);
   }
   function up() {
@@ -386,6 +487,7 @@ function deleteSel() { var e = elById(selId); if (!e) return; snapshot(); layout
 function duplicateSel() {
   var e = elById(selId); if (!e) return;
   var c = JSON.parse(JSON.stringify(e)); c.x = r1(c.x + 8); c.y = r1(c.y + 8);
+  if (c.kind === 'gen') c.seed = uid();   // a copy draws its own random values
   addElementAt(c);
 }
 function reorderSel(dir) {
@@ -421,10 +523,36 @@ function colorRow(label, key, val, none, onSet) {
 function numInp(id, label, val, onSet, key, step) {
   return '<div><span class="mini">' + label + '</span><input class="inp" type="number" step="' + (step || 1) + '" id="' + id + '" value="' + r1(val || 0) + '" onchange="' + onSet + '(\'' + key + '\',this.value,true)"></div>';
 }
-function seg(key, opts, cur) {
+function txtInp(label, key, val, ph) {
+  return '<div><span class="mini">' + label + '</span><input class="inp" value="' + esc(val || '') + '" placeholder="' + esc(ph || '') + '" onchange="setProp(\'' + key + '\',this.value)"></div>';
+}
+function seg(key, opts, cur, rerender) {
   return '<div class="seg">' + opts.map(function(o) {
     return '<button type="button" class="' + (o[0] === cur ? 'on' : '') + '" title="' + o[2] + '" onclick="setProp(\'' + key + '\',\'' + o[0] + '\');renderAttrs()">' + o[1] + '</button>';
   }).join('') + '</div>';
+}
+function textAttrs(e) {
+  var h = '<span class="lbl">Font</span><select class="sel" onchange="setProp(\'font\',this.value)">' +
+          FONTS.map(function(f) { return '<option value="' + f[0] + '"' + (f[0] === (e.font || 'DINRegular') ? ' selected' : '') + '>' + f[1] + '</option>'; }).join('') + '</select>';
+  h += '<div class="row2" style="margin-top:.45rem">' + numInp('a_size', 'Size (pt)', e.size || 12, 'setProp', 'size', .5) + numInp('a_lh', 'Line height', e.lh || 1.15, 'setProp', 'lh', .05) + '</div>';
+  h += '<div style="margin-top:.45rem">' + colorRow('Colour', 'color', e.color, false, 'setProp') + '</div>';
+  h += '<div class="row2" style="margin-top:.45rem"><div><span class="mini">Style</span><div class="seg">' +
+       '<button type="button" class="' + (e.bold ? 'on' : '') + '" onclick="setProp(\'bold\',' + !e.bold + ');renderAttrs()" title="Bold"><b>B</b></button>' +
+       '<button type="button" class="' + (e.italic ? 'on' : '') + '" onclick="setProp(\'italic\',' + !e.italic + ');renderAttrs()" title="Italic"><i>I</i></button>' +
+       '<button type="button" class="' + (e.upper ? 'on' : '') + '" onclick="setProp(\'upper\',' + !e.upper + ');renderAttrs()" title="Uppercase">AA</button></div></div>' +
+       '<div><span class="mini">Align</span>' + seg('align', [['left', '⇤', 'Left'], ['center', '↔', 'Centre'], ['right', '⇥', 'Right']], e.align || 'left') + '</div></div>';
+  h += '<div style="margin-top:.45rem"><span class="mini">Vertical</span>' + seg('valign', [['top', 'Top', 'Top'], ['middle', 'Middle', 'Middle'], ['bottom', 'Bottom', 'Bottom']], e.valign || 'top') + '</div>';
+  return h;
+}
+function boxAttrs(e, title) {
+  var h = '<span class="lbl">' + title + '</span>' + colorRow('Fill', 'bg', e.bg, true, 'setProp');
+  h += '<div class="row2" style="margin-top:.45rem">' + numInp('a_bw', 'Border (pt)', e.borderW, 'setProp', 'borderW', .5) + numInp('a_r', 'Corner radius', e.radius, 'setProp', 'radius') + '</div>';
+  h += '<div style="margin-top:.45rem">' + colorRow('Border colour', 'borderColor', e.borderColor, false, 'setProp') + '</div>';
+  if (isTextLike(e)) h += '<div style="margin-top:.45rem">' + numInp('a_pad', 'Padding (pt)', e.pad == null ? 2 : e.pad, 'setProp', 'pad', .5) + '</div>';
+  return h;
+}
+function fitAttrs(e) {
+  return '<div style="margin-top:.45rem"><span class="mini">Fit</span>' + seg('fit', [['cover', 'Fill', 'Fill the box (crops)'], ['contain', 'Fit', 'Show the whole image'], ['stretch', 'Stretch', 'Stretch to the box']], e.fit || 'cover') + '</div>';
 }
 function renderAttrs() {
   var p = $('attrPanel'); if (!layout) { p.innerHTML = ''; return; }
@@ -440,38 +568,59 @@ function renderAttrs() {
     h += '<span class="lbl">Look</span>' + colorRow('Background', 'bg', c.bg, false, 'setCard');
     h += '<div class="row2" style="margin-top:.45rem">' + numInp('c_r', 'Corner radius (pt)', c.radius, 'setCard', 'radius') + numInp('c_bw', 'Border (pt)', c.borderW, 'setCard', 'borderW', .5) + '</div>';
     h += '<div style="margin-top:.45rem">' + colorRow('Border colour', 'borderColor', c.borderColor, false, 'setCard') + '</div>';
-    h += '<span class="lbl">Shortcuts</span><p class="muted" style="margin:0">Arrows nudge 1 pt (Shift: 10) · Alt while dragging: fine moves · ⌘D duplicate · Delete removes · ⌘Z undo · ⌘S save</p>';
+    h += '<span class="lbl">Shortcuts</span><p class="muted" style="margin:0">Arrows nudge 1 pt (Shift: 10) · Alt while dragging: fine moves · Shift+corner: keep a shape\'s proportions · ⌘D duplicate · Delete removes · ⌘Z undo · ⌘S save</p>';
     p.innerHTML = h; return;
   }
-  var kindName = { text: 'Text', image: 'Image', box: 'Box' }[e.kind];
-  h += '<p class="attr-title">' + esc(e.kind === 'text' && /^\{[^{}]+\}$/.test(e.text || '') ? e.text.slice(1, -1) : kindName) + ' <span class="kind">' + kindName + '</span></p>';
+  var title = e.kind === 'data' ? e.field : e.kind === 'shape' ? (SHAPES.filter(function(s) { return s[0] === e.shape; })[0] || ['', 'Shape'])[1]
+            : e.kind === 'gen' ? (GENS.filter(function(g) { return g[0] === e.mode; })[0] || ['', '', 'Generated'])[2] : KIND_NAME[e.kind];
+  h += '<p class="attr-title">' + esc(title) + ' <span class="kind">' + KIND_NAME[e.kind] + '</span></p>';
+
   if (e.kind === 'text') {
     h += '<span class="lbl">Text</span><textarea class="ta" id="a_text" oninput="liveText(this.value)" onchange="setProp(\'text\',this.value)">' + esc(e.text) + '</textarea>';
-    h += '<div class="insert-row"><select class="sel" id="a_ins"><option value="">Insert a field…</option>' + FIELDS.map(function(f) { return '<option>' + esc(f) + '</option>'; }).join('') + '</select>' +
+    h += '<div class="insert-row"><select class="sel" id="a_ins"><option value="">Insert a column…</option>' + FIELDS.map(function(f) { return '<option>' + esc(f) + '</option>'; }).join('') + '</select>' +
          '<button class="attr-btn" style="flex:0 0 auto;padding:0 .7rem" onclick="insertField()">Insert</button></div>';
-    h += '<span class="lbl">Font</span><select class="sel" onchange="setProp(\'font\',this.value)">' +
-         FONTS.map(function(f) { return '<option value="' + f[0] + '"' + (f[0] === (e.font || 'DINRegular') ? ' selected' : '') + '>' + f[1] + '</option>'; }).join('') + '</select>';
-    h += '<div class="row2" style="margin-top:.45rem">' + numInp('a_size', 'Size (pt)', e.size || 12, 'setProp', 'size', .5) + numInp('a_lh', 'Line height', e.lh || 1.15, 'setProp', 'lh', .05) + '</div>';
-    h += '<div style="margin-top:.45rem">' + colorRow('Colour', 'color', e.color, false, 'setProp') + '</div>';
-    h += '<div class="row2" style="margin-top:.45rem"><div><span class="mini">Style</span><div class="seg">' +
-         '<button type="button" class="' + (e.bold ? 'on' : '') + '" onclick="setProp(\'bold\',' + !e.bold + ');renderAttrs()" title="Bold"><b>B</b></button>' +
-         '<button type="button" class="' + (e.italic ? 'on' : '') + '" onclick="setProp(\'italic\',' + !e.italic + ');renderAttrs()" title="Italic"><i>I</i></button>' +
-         '<button type="button" class="' + (e.upper ? 'on' : '') + '" onclick="setProp(\'upper\',' + !e.upper + ');renderAttrs()" title="Uppercase">AA</button></div></div>' +
-         '<div><span class="mini">Align</span>' + seg('align', [['left', '⇤', 'Left'], ['center', '↔', 'Centre'], ['right', '⇥', 'Right']], e.align || 'left') + '</div></div>';
-    h += '<div style="margin-top:.45rem"><span class="mini">Vertical</span>' + seg('valign', [['top', 'Top', 'Top'], ['middle', 'Middle', 'Middle'], ['bottom', 'Bottom', 'Bottom']], e.valign || 'top') + '</div>';
+    h += textAttrs(e) + boxAttrs(e, 'Background');
+  }
+  if (e.kind === 'data') {
+    var known = FIELDS.indexOf(e.field) >= 0;
+    h += '<span class="lbl">Column</span><select class="sel" onchange="setProp(\'field\',this.value);renderAttrs()">' +
+         FIELDS.map(function(f) { return '<option' + (f === e.field ? ' selected' : '') + '>' + esc(f) + '</option>'; }).join('') +
+         (known ? '' : '<option selected>' + esc(e.field) + '</option>') + '</select>';
+    h += '<div style="margin-top:.45rem"><span class="mini">Show as</span>' + seg('as', [['text', 'Text', 'Show the value as text'], ['image', 'Image', 'The value is a picture link']], e.as || 'text') + '</div>';
+    h += e.as === 'image' ? fitAttrs(e) + boxAttrs(e, 'Frame') : textAttrs(e) + boxAttrs(e, 'Background');
   }
   if (e.kind === 'image') {
-    var known = FIELDS.some(function(f) { return '{' + f + '}' === e.src; });
-    h += '<span class="lbl">Image field</span><select class="sel" onchange="setProp(\'src\',this.value)">' +
-         FIELDS.map(function(f) { var v = '{' + f + '}'; return '<option value="' + esc(v) + '"' + (v === e.src ? ' selected' : '') + '>' + esc(f) + '</option>'; }).join('') +
-         (known ? '' : '<option selected value="' + esc(e.src) + '">' + esc(e.src || '—') + '</option>') + '</select>';
-    h += '<div style="margin-top:.45rem"><span class="mini">Fit</span>' + seg('fit', [['cover', 'Fill', 'Fill the box (crops)'], ['contain', 'Fit', 'Show the whole image'], ['stretch', 'Stretch', 'Stretch to the box']], e.fit || 'cover') + '</div>';
+    h += '<span class="lbl">Picture</span><span class="mini">Web address</span><input class="inp" value="' + esc(e.src || '') + '" placeholder="https://… (or a Google Drive link)" onchange="setProp(\'src\',this.value.trim())">';
+    h += '<p class="muted" style="margin:.3rem 0 0">The same picture on every card — a logo, frame or icon. For a different picture per card, use a Data column and set it to Image.</p>';
+    h += fitAttrs(e) + boxAttrs(e, 'Frame');
   }
-  h += '<span class="lbl">' + (e.kind === 'box' ? 'Box' : 'Background') + '</span>' + colorRow('Fill', 'bg', e.bg, true, 'setProp');
-  h += '<div class="row2" style="margin-top:.45rem">' + numInp('a_bw', 'Border (pt)', e.borderW, 'setProp', 'borderW', .5) + numInp('a_r', 'Corner radius', e.radius, 'setProp', 'radius') + '</div>';
-  h += '<div style="margin-top:.45rem">' + colorRow('Border colour', 'borderColor', e.borderColor, false, 'setProp') + '</div>';
-  if (e.kind === 'text') h += '<div style="margin-top:.45rem">' + numInp('a_pad', 'Padding (pt)', e.pad == null ? 2 : e.pad, 'setProp', 'pad', .5) + '</div>';
+  if (e.kind === 'shape') {
+    h += '<span class="lbl">Shape</span><select class="sel" onchange="setProp(\'shape\',this.value);renderAttrs()">' +
+         SHAPES.map(function(s) { return '<option value="' + s[0] + '"' + (s[0] === e.shape ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select>';
+    if (e.shape !== 'line') h += '<div style="margin-top:.45rem">' + colorRow('Fill', 'fill', e.fill, true, 'setProp') + '</div>';
+    h += '<div class="row2" style="margin-top:.45rem">' + numInp('a_sw', e.shape === 'line' ? 'Thickness (pt)' : 'Outline (pt)', e.strokeW, 'setProp', 'strokeW', .5) +
+         (/^(rect|round)$/.test(e.shape) ? numInp('a_r', 'Corner radius', e.shape === 'round' && e.radius == null ? 10 : e.radius, 'setProp', 'radius') : '<div></div>') + '</div>';
+    h += '<div style="margin-top:.45rem">' + colorRow(e.shape === 'line' ? 'Colour' : 'Outline colour', 'stroke', e.stroke, false, 'setProp') + '</div>';
+  }
+  if (e.kind === 'gen') {
+    h += '<span class="lbl">Generate</span>' + seg('mode', [['seq', '123', 'Number sequence'], ['rand', '🎲', 'Random number'], ['list', '☰', 'Random from a list']], e.mode);
+    if (e.mode === 'seq') {
+      h += '<div class="row2" style="margin-top:.45rem">' + numInp('g_start', 'Start at', e.start == null ? 1 : e.start, 'setProp', 'start') + numInp('g_step', 'Step', e.step == null ? 1 : e.step, 'setProp', 'step') + '</div>';
+      h += '<div class="row2" style="margin-top:.45rem">' + numInp('g_pad', 'Digits (pad with 0)', e.pad || 0, 'setProp', 'pad') + '<div></div></div>';
+      h += '<div class="row2" style="margin-top:.45rem">' + txtInp('Before', 'prefix', e.prefix, '#') + txtInp('After', 'suffix', e.suffix, '') + '</div>';
+    }
+    if (e.mode === 'rand') h += '<div class="row2" style="margin-top:.45rem">' + numInp('g_min', 'From', e.min == null ? 1 : e.min, 'setProp', 'min') + numInp('g_max', 'To', e.max == null ? 6 : e.max, 'setProp', 'max') + '</div>';
+    if (e.mode === 'list') {
+      h += '<span class="mini" style="margin-top:.45rem">Values (one per line)</span><textarea class="ta" onchange="setProp(\'items\',this.value)">' + esc(e.items || '') + '</textarea>';
+      h += '<div style="margin-top:.45rem"><span class="mini">Pick</span>' + seg('pick', [['random', 'Random', 'A random value for each card'], ['cycle', 'In order', 'Go through the list in order']], e.pick || 'random') + '</div>';
+    }
+    h += '<div style="margin-top:.45rem"><span class="mini">Counts</span>' + seg('per', [['card', 'Each card printed', 'Copies of a row get their own number'], ['row', 'Each row', 'Copies of a row share the same value']], e.per || 'card') + '</div>';
+    if (e.mode !== 'seq') h += '<div class="attr-btns"><button class="attr-btn" onclick="setProp(\'seed\',uid())">🎲 Re-roll</button></div>';
+    h += textAttrs(e) + boxAttrs(e, 'Background');
+  }
   h += '<span class="lbl">Position (pt)</span><div class="row4">' + numInp('a_x', 'X', e.x, 'setProp', 'x', .5) + numInp('a_y', 'Y', e.y, 'setProp', 'y', .5) + numInp('a_w', 'W', e.w, 'setProp', 'w', .5) + numInp('a_h', 'H', e.h, 'setProp', 'h', .5) + '</div>';
+  h += '<div class="row2" style="margin-top:.45rem">' + numInp('a_rot', 'Rotate (°)', e.rot || 0, 'setProp', 'rot', 1) +
+       '<div><span class="mini">Opacity</span><input class="inp" type="number" min="0" max="100" step="5" value="' + Math.round((e.opacity == null ? 1 : e.opacity) * 100) + '" onchange="setProp(\'opacity\',clamp(this.value/100,0,1),true)"></div></div>';
   h += '<div class="attr-btns"><button class="attr-btn" onclick="centerSel(\'x\')">Centre ↔</button><button class="attr-btn" onclick="centerSel(\'y\')">Centre ↕</button></div>';
   h += '<div class="attr-btns"><button class="attr-btn" onclick="reorderSel(1)">To front</button><button class="attr-btn" onclick="reorderSel(-1)">To back</button></div>';
   h += '<div class="attr-btns"><button class="attr-btn" onclick="duplicateSel()">Duplicate</button><button class="attr-btn danger" onclick="deleteSel()">Delete</button></div>';
@@ -507,10 +656,10 @@ function renderPrint() {
   cs.value = numeric.indexOf(cur) >= 0 ? cur : '';
   cs.onchange = function() { cs.dataset.touched = '1'; renderPrint(); };
   var list = [];
-  ROWS.forEach(function(r) {
+  ROWS.forEach(function(r, ri) {
     var n = cs.value ? parseInt(cleanVal(r[cs.value]), 10) : 1;
     if (isNaN(n)) n = 0;
-    for (var i = 0; i < n; i++) list.push(r);
+    for (var i = 0; i < n; i++) list.push({ row: r, ri: ri });
   });
 
   var paper = PAPER[$('pPaper').value] || PAPER.letter, land = $('pOrient').value === 'landscape';
@@ -531,9 +680,10 @@ function renderPrint() {
     var cards = list.slice(p * per, (p + 1) * per);
     html += '<div class="page-holder" style="width:' + (pw * PX * scale) + 'px;height:' + (ph * PX * scale) + 'px">' +
             '<div class="page" style="width:' + pw + 'pt;height:' + ph + 'pt;transform:scale(' + scale + ')">';
-    cards.forEach(function(row, i) {
+    cards.forEach(function(it, i) {
       var cx = ox + (i % cols) * (c.w + gap), cy = oy + Math.floor(i / cols) * (c.h + gap);
-      html += '<div style="position:absolute;left:' + cx + 'pt;top:' + cy + 'pt;width:' + c.w + 'pt;height:' + c.h + 'pt' + (cut === 'outline' ? ';outline:.5pt solid #9aa0b8' : '') + '">' + renderCardHTML(layout, row, false) + '</div>';
+      html += '<div style="position:absolute;left:' + cx + 'pt;top:' + cy + 'pt;width:' + c.w + 'pt;height:' + c.h + 'pt' + (cut === 'outline' ? ';outline:.5pt solid #9aa0b8' : '') + '">' +
+              renderCardHTML(layout, it.row, false, { card: p * per + i, row: it.ri }) + '</div>';
     });
     if (cut === 'marks' && cards.length) {
       var used = Math.ceil(cards.length / cols), len = 10, xs = [], ys = [];

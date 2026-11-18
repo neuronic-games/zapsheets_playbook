@@ -169,7 +169,10 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .img-btn { position:absolute; top:calc(6px / var(--z, 1)); right:calc(6px / var(--z, 1)); width:calc(30px / var(--z, 1)); height:calc(30px / var(--z, 1)); border-radius:50%; border:none; padding:0; background:rgba(0,0,0,.55); color:#fff; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:55; }
 .img-btn:hover { background:rgba(0,0,0,.82); }
 .img-btn svg { width:52%; height:52%; pointer-events:none; }
-.designing .el.k-image:hover .img-btn, .designing .el.k-image.picked .img-btn { display:flex; }
+.designing .el.k-image:hover .img-btn, .designing .el.k-image.picked .img-btn,
+.designing .el.as-image:hover .img-btn, .designing .el.as-image.picked .img-btn { display:flex; }
+.attr-btn svg { width:13px; height:13px; vertical-align:-2px; margin-right:.25rem; }
+.ip-row { margin:.5rem 0 0 !important; padding:.4rem .5rem; background:#f3f1ff; border-radius:6px; color:#4a4e68 !important; }
 .el.img-loading .el-inner::after, .img-slot.img-loading::after { content:''; position:absolute; inset:0; background:rgba(0,0,0,.4); }
 .el.img-loading .el-inner::before, .img-slot.img-loading::before { content:''; position:absolute; top:50%; left:50%; width:calc(26px / var(--z, 1)); height:calc(26px / var(--z, 1)); margin:calc(-13px / var(--z, 1)) 0 0 calc(-13px / var(--z, 1)); border:calc(3px / var(--z, 1)) solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; z-index:2; }
 .el.img-loading .el-inner { position:relative; }

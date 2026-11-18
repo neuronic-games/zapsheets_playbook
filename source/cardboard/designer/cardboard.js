@@ -242,12 +242,12 @@ function renderCardHTML(lay, row, designing, ctx) {
   var face = faceOf(lay, ctx.side), cs = ctx.side === 'back' ? Object.assign({}, lay.card, { bg: lay.back.bg }) : lay.card;
   var h = '<div class="card' + (designing ? ' designing' : '') + (ctx.side === 'back' ? ' back' : '') + '" style="' + cardStyle(cs) + '">';
   face.els.slice().sort(function(a, b) { return (a.z || 1) - (b.z || 1); }).forEach(function(e) {
-    var cls = 'el k-' + e.kind + (e.valign === 'middle' ? ' v-middle' : e.valign === 'bottom' ? ' v-bottom' : '') + (designing && isSel(e.id) ? ' picked' + (multi.length ? ' multi' : '') : '');
+    var cls = 'el k-' + e.kind + (e.kind === 'data' && e.as === 'image' ? ' as-image' : '') + (e.valign === 'middle' ? ' v-middle' : e.valign === 'bottom' ? ' v-bottom' : '') + (designing && isSel(e.id) ? ' picked' + (multi.length ? ' multi' : '') : '');
     if (designing && UPLOADING[e.id]) cls += ' img-loading';
     h += '<div class="' + cls + '" data-id="' + e.id + '" style="' + elStyle(e) + '">';
     h += designing
       ? '<div class="el-inner">' + elInner(e, row, ctx) + '</div>' +
-        (e.kind === 'image' ? '<button type="button" class="img-btn" title="Change image" onclick="openImagePicker(event,\'' + e.id + '\')">' + IMG_ICON + '</button>' : '') +
+        (isPicEl(e) ? '<button type="button" class="img-btn" title="' + (e.kind === 'data' ? 'Picture for this row' : 'Change image') + '" onclick="openImagePicker(event,\'' + e.id + '\')">' + IMG_ICON + '</button>' : '') +
         ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map(function(d) { return '<span class="hdl ' + d + '" data-h="' + d + '"></span>'; }).join('')
       : elInner(e, row, ctx);
     h += '</div>';
@@ -531,10 +531,59 @@ function droppedLink(dt) {
   if (!u) { var t = (dt.getData('text/plain') || '').trim(); if (/^https?:\/\/\S+$/i.test(t)) u = t; }
   return /^https?:\/\//i.test(u) ? u.trim() : '';
 }
+function isPicEl(e) { return !!e && (e.kind === 'image' || (e.kind === 'data' && e.as === 'image')); }
+function curSrc(e) { return e.kind === 'data' ? cleanVal((ROWS[rowIdx] || {})[e.field]) : (e.src || ''); }
 function setImageSrc(id, src) {
   var e = elById(id); if (!e) return;
+  if (e.kind === 'data') { setRowPicture(e, src); return; }   // a Data column: the picture goes into this row's cell
   snapshot(); e.src = src; changed(selId !== id);
   if (selId === id) renderAttrs();
+}
+// Data column shown as an image: write the picture's address into the current row's cell
+function gridMatch(row, gr) {   // does this sheet row (as typed) look like this card's row?
+  var n = 0;
+  for (var c = 0; c < GRID.header.length; c++) {
+    var h = GRID.header[c]; if (!h || !(h in row)) continue;
+    var gv = String(gr.values[c] == null ? '' : gr.values[c]).trim(), rv = cleanVal(row[h]).trim();
+    if (/^=/.test(gv) || /\]\(/.test(rv)) continue;   // formulas and links read differently; skip them
+    if (gv !== rv) return false;
+    n++;
+  }
+  return n > 0;
+}
+function sheetRowFor(row) {
+  var start = Promise.resolve();
+  if (!GRID || GRID.tab !== curTab) {
+    var tab = curTab;
+    start = api('grid', { tab: tab }).then(function(r) { if (curTab === tab) GRID = { tab: tab, header: r.header || [], rows: r.rows || [] }; });
+  }
+  return start.then(function() {
+    var i = ROWS.indexOf(row), guess = GRID.rows.filter(function(g) { return !g.draft; })[i];
+    if (guess && gridMatch(row, guess)) return guess;
+    var all = GRID.rows.filter(function(g) { return !g.draft && gridMatch(row, g); });
+    if (all.length === 1) return all[0];
+    throw new Error(all.length ? 'several rows look the same — set the picture in the Data tab' : 'couldn\'t find this row in the sheet — try Fetch');
+  });
+}
+function setRowPicture(e, url) {
+  var row = ROWS[rowIdx]; if (!row) { toast('There\'s no row to put the picture in', true); return; }
+  var tab = curTab, field = e.field;
+  UPLOADING[e.id] = true; render();
+  sheetRowFor(row).then(function(gr) {
+    var c = GRID.header.indexOf(field); if (c < 0) throw new Error('the ' + field + ' column wasn\'t found');
+    return api('setcell', { tab: tab, row: gr.row, field: field, value: url, old: gr.values[c] || '' }).then(function(res) {
+      gr.values[c] = res && res.value != null ? res.value : url;
+      row[field] = url;
+      return gr.row;
+    });
+  }).then(function(sheetRow) {
+    delete UPLOADING[e.id]; render(); renderData(); if (_activeTab === 'data') renderGrid();
+    toast(url ? '✓ Picture saved in ' + field + ', row ' + sheetRow : 'Picture removed from ' + field + ', row ' + sheetRow);
+    autoRepublish(tab);
+  }).catch(function(err) {
+    delete UPLOADING[e.id]; render();
+    toast(err.message === 'conflict' ? 'That cell was changed in the sheet — Fetch to see it, then try again' : 'Couldn\'t save the picture — ' + err.message, true);
+  });
 }
 function uploadImage(id, file) {
   if (!isImageFile(file)) { toast('Use a PNG, JPG, GIF or WebP picture', true); return; }
@@ -564,10 +613,11 @@ function openImagePicker(ev, id) {
       '<button type="button" class="ip-choose" onclick="$(\'ipFile\').click()">Choose a file…' + (isPro() ? '' : '<span class="pro-tag">PRO</span>') + '</button>' +
       '<input type="file" id="ipFile" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none"></div>' +
     '<span class="mini">Or a web address</span>' +
-    '<div class="ip-url"><input class="inp" id="ipUrl" placeholder="Dropbox, Google Drive or web link" value="' + esc(/\/images\/[A-Za-z0-9_\-]+\/[0-9a-f]{20}\.\w+$/.test(e.src || '') ? '' : (e.src || '')) + '">' +
+    '<div class="ip-url"><input class="inp" id="ipUrl" placeholder="Dropbox, Google Drive or web link" value="' + esc(/\/images\/[A-Za-z0-9_\-]+\/[0-9a-f]{20}\.\w+$/.test(curSrc(e)) ? '' : curSrc(e)) + '">' +
       '<button type="button" class="attr-btn" id="ipUse">Use</button></div>' +
     '<p class="muted">Links are shown straight from Dropbox, Drive or the website, so when you change the picture there it changes here too. In Drive, share it as “Anyone with the link”.</p>' +
-    (e.src ? '<button type="button" class="attr-btn danger ip-remove" id="ipRemove">Remove picture</button>' : '');
+    (e.kind === 'data' ? '<p class="muted ip-row">For <b>row ' + (rowIdx + 1) + '</b> — saved in its <b>' + esc(e.field) + '</b> cell in the sheet. Uploads are kept on zapsheets.com.</p>' : '') +
+    (curSrc(e) ? '<button type="button" class="attr-btn danger ip-remove" id="ipRemove">Remove picture</button>' : '');
   document.body.appendChild(p);
   // Place it beside the picture button (or the element), kept on screen
   var anchor = $('cardHolder').querySelector('.el[data-id="' + id + '"]'), r = anchor ? anchor.getBoundingClientRect() : { right: innerWidth / 2, top: 100 };
@@ -598,7 +648,7 @@ document.addEventListener('pointerdown', function(ev) {
 document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') closeImagePicker(); });
 // A paste with a picture link or file while an image is selected sets it
 document.addEventListener('paste', function(ev) {
-  var e = elById(selId); if (_activeTab !== 'design' || !e || e.kind !== 'image' || /^(INPUT|TEXTAREA)$/.test((document.activeElement || {}).tagName || '')) return;
+  var e = elById(selId); if (_activeTab !== 'design' || !e || !isPicEl(e) || /^(INPUT|TEXTAREA)$/.test((document.activeElement || {}).tagName || '')) return;
   var f = droppedFile(ev.clipboardData), l = droppedLink(ev.clipboardData);
   if (f) { ev.preventDefault(); closeImagePicker(); uploadImage(e.id, f); }
   else if (l) { ev.preventDefault(); closeImagePicker(); setImageSrc(e.id, l); }
@@ -636,7 +686,7 @@ function flipCard() {
     back.onfinish = function() { _flipping = false; };
   };
 }
-function stepRow(d) { rowIdx = clamp(rowIdx + d, 0, Math.max(0, ROWS.length - 1)); render(); renderData(); }
+function stepRow(d) { rowIdx = clamp(rowIdx + d, 0, Math.max(0, ROWS.length - 1)); render(); renderData(); if (isPicEl(elById(selId))) renderAttrs(); }
 function zoomBy(d) {
   var steps = [.5, .75, 1, 1.25, 1.5, 2, 2.5, 3, 4];
   var i = steps.findIndex(function(s) { return s >= zoom - .01; });
@@ -666,7 +716,7 @@ function ptFromEvent(ev) {
     var file = droppedFile(ev.dataTransfer), link = file ? '' : droppedLink(ev.dataTransfer);
     if (file || link) {
       // Onto an image element: replace its picture. Anywhere else: a new image element there.
-      var hit = document.elementFromPoint(ev.clientX, ev.clientY), node = hit && hit.closest('.el.k-image'), e = node && elById(node.dataset.id);
+      var hit = document.elementFromPoint(ev.clientX, ev.clientY), node = hit && hit.closest('.el.k-image, .el.as-image'), e = node && elById(node.dataset.id);
       if (!e) { addAt('add:image', clamp(p.x, 0, c.w), clamp(p.y, 0, c.h)); e = elById(selId); }
       if (file) uploadImage(e.id, file); else setImageSrc(e.id, link);
       return;
@@ -1125,6 +1175,8 @@ function renderAttrs() {
          FIELDS.map(function(f) { return '<option' + (f === e.field ? ' selected' : '') + '>' + esc(f) + '</option>'; }).join('') +
          (known ? '' : '<option selected>' + esc(e.field) + '</option>') + '</select>';
     h += '<div style="margin-top:.45rem"><span class="mini">Show as</span>' + seg('as', [['text', 'Text', 'Show the value as text'], ['image', 'Image', 'The value is a picture link']], e.as || 'text') + '</div>';
+    if (e.as === 'image') h += '<div class="attr-btns"><button class="attr-btn" onclick="openImagePicker(event,\'' + e.id + '\')">' + IMG_ICON + ' Picture for row ' + (rowIdx + 1) + '</button></div>' +
+      '<p class="muted" style="margin:.35rem 0 0">Each row has its own picture, saved in its <b>' + esc(e.field) + '</b> cell. Pick one here, use the picture button on the card, or drop a file on it. Step through the rows to set the others.</p>';
     h += e.as === 'image' ? fitAttrs(e) + boxAttrs(e, 'Frame') : textAttrs(e) + boxAttrs(e, 'Background');
   }
   if (e.kind === 'image') {

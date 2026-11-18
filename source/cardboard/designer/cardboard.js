@@ -1086,16 +1086,34 @@ function moveSelTo(axis, v) {
 }
 
 // ── Attributes panel ──────────────────────────────────────────────────────────
+// Colour pickers show the colour on the card while you drag (liveColor); the change itself is
+// made when the picker closes, as one undo step. Choosing a border colour with no border width
+// gives it a 1 pt border, so the colour shows.
+var _live = null;   // {obj, key, orig} while a picker is open
+function liveTarget(onSet) { return onSet === 'setCard' ? layout.card : onSet === 'setBackProp' ? layout.back : elById(selId); }
+function liveColor(onSet, key, val) {
+  var o = liveTarget(onSet); if (!o) return;
+  if (!_live || _live.obj !== o || _live.key !== key) _live = { obj: o, key: key, orig: o[key] };
+  o[key] = val; render();
+}
+function endLive(o, key) { if (_live && _live.obj === o && _live.key === key) { o[key] = _live.orig; _live = null; } }
+var STROKE_FOR = { borderColor: 'borderW', stroke: 'strokeW' };
 function setProp(key, val, num) {
   var e = elById(selId); if (!e) return;
+  endLive(e, key);
   if (num) { val = parseFloat(val); if (isNaN(val)) return; }
-  if (e[key] === val) return;
-  snapshot(); e[key] = val; changed(true);
+  if (e[key] === val) { render(); return; }
+  snapshot(); e[key] = val;
+  if (STROKE_FOR[key] && val && !(+e[STROKE_FOR[key]])) { e[STROKE_FOR[key]] = 1; changed(); return; }   // show the border
+  if (key === 'bg' || key === 'color' || key === 'fill' || STROKE_FOR[key]) { changed(); return; }      // refresh the swatch and box
+  changed(true);
 }
-function setBackProp(key, val) { snapshot(); layout.back[key] = val; changed(); }
+function setBackProp(key, val) { endLive(layout.back, key); snapshot(); layout.back[key] = val; changed(); }
 function setCard(key, val, num) {
+  endLive(layout.card, key);
   if (num) { val = parseFloat(val); if (isNaN(val)) return; }
   snapshot(); layout.card[key] = val;
+  if (key === 'borderColor' && val && !(+layout.card.borderW)) layout.card.borderW = 1;
   if (key === 'size') { var s = CARD_SIZES.filter(function(x) { return x.id === val; })[0]; if (s && s.w) { layout.card.w = s.w; layout.card.h = s.h; } }
   if (key === 'w' || key === 'h') layout.card.size = 'custom';
   changed(); if (key === 'size' || key === 'w' || key === 'h') fitZoom();
@@ -1106,7 +1124,7 @@ function syncGeomInputs(e) {
 function colorRow(label, key, val, none, onSet) {
   var hexv = /^#[0-9a-f]{6}$/i.test(val || '') ? val : '#ffffff';
   return '<span class="mini">' + label + '</span><div class="color-row">' +
-    '<input type="color" value="' + hexv + '" onchange="' + onSet + '(\'' + key + '\',this.value)" oninput="this.nextElementSibling.value=this.value">' +
+    '<input type="color" value="' + hexv + '" onchange="' + onSet + '(\'' + key + '\',this.value)" oninput="this.nextElementSibling.value=this.value;liveColor(\'' + onSet + '\',\'' + key + '\',this.value)">' +
     '<input class="inp" value="' + esc(val || '') + '" placeholder="' + (none ? 'none' : '#000000') + '" onchange="' + onSet + '(\'' + key + '\',this.value.trim())"></div>';
 }
 function numInp(id, label, val, onSet, key, step) {

@@ -185,6 +185,20 @@ section { padding:5.5rem 2rem; }
 .kb-btn { font-size:9px; padding:3px 9px; border-radius:4px; border:1px solid var(--border); background:var(--white); color:var(--text-mid); }
 .kb-btn.view  { color:var(--teal); border-color:rgba(29,140,112,.3); }
 .kb-col-count { font-size:9px; color:var(--text-muted); text-align:center; padding-top:3px; }
+/* Drag-a-game animation */
+.kb-stage { position:relative; overflow:hidden; }
+.kb-col { transition:box-shadow .2s, background .2s; }
+.kb-col.drop { box-shadow:inset 0 0 0 2px #a78bfa; background:#efe8ff; }
+.kb-move { overflow:hidden; transition:height .28s ease, margin .28s ease, padding .28s ease, opacity .2s; }
+.kb-ghost { position:absolute; z-index:5; margin:0; pointer-events:none; box-shadow:0 12px 28px rgba(15,23,42,.22); transform-origin:center; transition:transform .25s ease; }
+.kb-signed-date.new { color:#7c3aed; font-weight:600; }
+.kb-cursor { position:absolute; left:0; top:0; z-index:7; filter:drop-shadow(0 2px 3px rgba(0,0,0,.3)); pointer-events:none; transform:translate(-40px,-40px); }
+.kb-cursor.down { animation:kb-click .18s ease; }
+@keyframes kb-click { 50% { scale:.82; } }
+.kb-toast { position:absolute; left:50%; bottom:10px; transform:translate(-50%,8px); background:#15803d; color:#fff; font-size:10.5px; font-weight:600; padding:5px 11px; border-radius:999px; opacity:0; transition:opacity .2s, transform .2s; white-space:nowrap; z-index:6; }
+.kb-toast.show { opacity:1; transform:translate(-50%,0); }
+@media (prefers-reduced-motion: reduce) { .kb-cursor { display:none; } }
+
 
 .shot-section { background:var(--slate-pale); }
 .shot-grid { display:grid; grid-template-columns:1fr 1fr; gap:3rem; align-items:center; }
@@ -457,7 +471,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
           <div class="browser-url">zapsheets.com/app/…/pitchboard</div>
         </div>
-        <div class="browser-body">
+        <div class="browser-body kb-stage" id="kbDemo" aria-hidden="true">
           <div class="app-nav">
             <div><div class="app-nav-brand">PitchBoard</div><div class="app-nav-sub">Your Studio · studio@example.com</div></div>
             <div class="app-nav-btns">
@@ -477,22 +491,22 @@ footer a:hover { color:rgba(255,255,255,.7); }
             <div class="kb-col pitch">
               <div class="kb-col-hdr">Pitch</div>
               <div class="kb-card"><div class="kb-card-name">Stormveil <span class="kb-pill">9</span></div><div class="kb-card-meta">Jordan</div></div>
-              <div class="kb-card open">
+              <div class="kb-card open kb-move">
                 <div class="kb-card-name">Deepwater Run <span class="kb-pill">6</span></div>
                 <div class="kb-card-meta">Alex</div>
                 <div class="kb-card-dates">
                   <div class="kb-date-row"><span class="kb-date-lbl">Started</span><span class="kb-date-val">Jan 2024</span></div>
-                  <div class="kb-date-row"><span class="kb-date-lbl">Signed</span><span class="kb-date-val">—</span></div>
+                  <div class="kb-date-row"><span class="kb-date-lbl">Signed</span><span class="kb-date-val kb-signed-date">—</span></div>
                 </div>
                 <div class="kb-btns"><button class="kb-btn view">View</button><button class="kb-btn">Shelf</button></div>
               </div>
               <div class="kb-card"><div class="kb-card-name">Ironveil Pass <span class="kb-pill">4</span></div><div class="kb-card-meta">—</div></div>
-              <div class="kb-col-count">3 games</div>
+              <div class="kb-col-count kb-pitch-count">3 games</div>
             </div>
             <div class="kb-col signed">
               <div class="kb-col-hdr">Signed</div>
               <div class="kb-card"><div class="kb-card-name">The Cartographer <span class="kb-pill">5</span></div><div class="kb-card-meta">Jordan, Alex</div></div>
-              <div class="kb-col-count">1 game</div>
+              <div class="kb-col-count kb-signed-count">1 game</div>
             </div>
             <div class="kb-col pub">
               <div class="kb-col-hdr">Published</div>
@@ -501,6 +515,8 @@ footer a:hover { color:rgba(255,255,255,.7); }
               <div class="kb-col-count">2 games</div>
             </div>
           </div>
+          <div class="kb-toast">✓ Saved to your Sheet</div>
+          <svg class="kb-cursor" width="20" height="20" viewBox="0 0 24 24"><path d="M4 2l15 11-7 1.2L8.6 21 4 2z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/></svg>
         </div>
       </div>
     </div>
@@ -573,5 +589,84 @@ footer a:hover { color:rgba(255,255,255,.7); }
   <a href="pitchboard">PitchBoard</a> &mdash; built for board game makers &nbsp;·&nbsp; <a href="/">ZapSheets</a>
 </footer>
 
+<script>
+// ── Board animation: drag "Deepwater Run" from Pitch to Signed, then loop ──
+(function() {
+  var stage = document.getElementById('kbDemo');
+  if (!stage || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+  var q = function(s) { return stage.querySelector(s); };
+  var card = q('.kb-move'), cursor = q('.kb-cursor'), toast = q('.kb-toast');
+  var pitch = q('.kb-col.pitch'), signed = q('.kb-col.signed');
+  var pitchCount = q('.kb-pitch-count'), signedCount = q('.kb-signed-count'), date = q('.kb-signed-date');
+  var home = card.nextElementSibling;   // Ironveil Pass — the card goes back in front of it
+  var visible = false;
+  var sleep = function(ms) { return new Promise(function(r) { setTimeout(r, ms); }); };
+  function box(el) { var s = stage.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - s.left, y: r.top - s.top, w: r.width, h: r.height }; }
+  function cursorTo(x, y, ms) {
+    cursor.style.transition = ms ? 'transform ' + ms + 'ms cubic-bezier(.45,.05,.25,1)' : 'none';
+    cursor.style.transform = 'translate(' + (x - 3) + 'px,' + (y - 2) + 'px)';
+    return sleep((ms || 0) + 40);
+  }
+  function click() { cursor.classList.remove('down'); void cursor.offsetWidth; cursor.classList.add('down'); return sleep(200); }
+  function reset() {
+    pitch.insertBefore(card, home);
+    card.style.cssText = '';
+    date.textContent = '—'; date.classList.remove('new');
+    pitchCount.textContent = '3 games'; signedCount.textContent = '1 game';
+    signed.classList.remove('drop');
+  }
+  async function play() {
+    reset(); await sleep(1000);
+    var b = box(card);
+    await cursorTo(b.x + b.w * .45, b.y + 14, 900);
+    await sleep(250); await click();
+    // Pick it up: a lifted copy follows the cursor, the gap in Pitch closes
+    var ghost = card.cloneNode(true);
+    ghost.classList.remove('kb-move'); ghost.classList.add('kb-ghost');
+    ghost.style.left = b.x + 'px'; ghost.style.top = b.y + 'px'; ghost.style.width = b.w + 'px';
+    stage.appendChild(ghost);
+    void ghost.offsetWidth; ghost.style.transform = 'rotate(-2.5deg) scale(1.04)';
+    card.style.visibility = 'hidden'; card.style.height = b.h + 'px';
+    await sleep(250);
+    card.style.height = '0px'; card.style.paddingTop = card.style.paddingBottom = '0px'; card.style.marginBottom = '0px'; card.style.borderWidth = '0px';
+    pitchCount.textContent = '2 games';
+    // Carry it over to Signed
+    var target = box(signed.querySelector('.kb-card'));
+    var dx = target.x - b.x, dy = target.y + target.h + 8 - b.y, steps = 26;
+    for (var i = 1; i <= steps; i++) {
+      var t = i / steps, e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      var x = dx * e, y = dy * e - Math.sin(Math.PI * t) * 18;
+      ghost.style.transition = 'none';
+      ghost.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(-2.5deg) scale(1.04)';
+      cursorTo(b.x + b.w * .45 + x, b.y + 14 + y, 0);
+      if (t > .6) signed.classList.add('drop');
+      await sleep(32);
+    }
+    await sleep(250);
+    // Drop: the card joins Signed, gets its signed date, the counts update
+    signed.insertBefore(card, signedCount);
+    card.style.cssText = ''; card.style.visibility = 'hidden';
+    var land = box(card);
+    ghost.style.transition = 'transform .22s ease';
+    ghost.style.transform = 'translate(' + (land.x - b.x) + 'px,' + (land.y - b.y) + 'px) rotate(0) scale(1)';
+    signed.classList.remove('drop');
+    await sleep(240);
+    ghost.remove(); card.style.visibility = '';
+    signedCount.textContent = '2 games';
+    await sleep(250);
+    date.textContent = 'Nov 2026'; date.classList.add('new');
+    toast.classList.add('show'); await sleep(1300); toast.classList.remove('show');
+    await cursorTo(land.x + land.w + 30, land.y + land.h + 30, 700);
+    await sleep(2600);
+  }
+  async function loop() { for (;;) { if (!visible) { await sleep(400); continue; } await play(); } }
+  stage.style.minHeight = stage.offsetHeight + 'px';   // keep the frame still while the card moves
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function(es) { visible = es[0].isIntersecting; }, { threshold: .35 }).observe(stage);
+  } else { visible = true; }
+  loop();
+})();
+</script>
 </body>
+
 </html>

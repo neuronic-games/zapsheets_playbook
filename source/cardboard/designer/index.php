@@ -319,13 +319,14 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .el .tx { display:block; }
 .tag-img { display:inline-block; height:1.15em; width:auto; vertical-align:-.22em; margin:0 .04em; }
 /* Tags view */
-#view-tags { overflow:auto; background:#f4f3fa; scroll-padding-top:160px; }
+#view-tags { overflow:auto; background:#f4f3fa; scroll-padding-top:130px; }
 .tags-wrap { width:100%; max-width:1000px; margin:0 auto; padding:0 1.4rem 3rem; }
-.tags-stick { position:sticky; top:0; z-index:5; background:#f4f3fa; margin:0 -.6rem; padding:1.4rem .6rem 0; }
-.tags-head { display:flex; align-items:flex-start; gap:1rem; margin-bottom:1rem; }
+.tags-stick { position:sticky; top:0; z-index:5; background:#f4f3fa; margin:0 -.6rem; padding:1rem .6rem 0; }
+.tags-head { display:flex; align-items:center; gap:1rem; margin-bottom:.8rem; }
+.tags-head > div:first-child { min-width:0; }
 .tags-head .e-actions { align-items:center; flex-shrink:0; }
 .tags-title { margin:0 0 .3rem; font-family:'DINBlack',sans-serif; font-weight:400; font-size:1.15rem; color:#2e2763; display:flex; align-items:center; gap:.5rem; }
-.tags-sub { margin:0; font-size:.82rem; color:#6b7090; max-width:560px; line-height:1.5; }
+.tags-sub { margin:0; font-size:.82rem; color:#6b7090; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .tags-sub code, .tag-empty code { background:#ece9ff; color:#4b3fa8; border-radius:4px; padding:0 .3rem; font-size:.78rem; }
 .tags-pro { display:flex; align-items:center; gap:.8rem; background:#fdf6e3; border:1px solid #f5d98c; border-radius:10px; padding:.6rem .8rem; font-size:.8rem; color:#5c4a12; margin-bottom:.9rem; }
 .tags-pro .plan-btn { margin-left:auto; flex-shrink:0; }
@@ -604,7 +605,7 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
     <div class="tags-head">
       <div>
         <h2 class="tags-title">Tags <span class="pro-tag">PRO</span></h2>
-        <p class="tags-sub">Write a tag like <code>{energy}</code> in any text or data, and every card shows its word or picture instead. Tags are kept in your spreadsheet's <b>tags</b> tab.</p>
+        <p class="tags-sub">Type <code>{energy}</code> in any text and cards show its word or picture.</p>
       </div>
       <div class="e-actions"><span class="print-info" id="tagsInfo"></span>
         <button class="print-go ghost" onclick="loadTags()">Reload</button>

@@ -86,6 +86,12 @@ if ($action === 'list') {
     done(['ok' => true, 'published' => (object) $out]);
 }
 
+// Hosting sheets uses server space: CardBoard Pro (removing stays open to everyone)
+if (in_array($action, ['upload', 'finish'], true)) {
+    require_once __DIR__ . '/stripeCommon.php';
+    if (!stripeSheetPlan($sheetId, 'cardboard')['is_pro']) done(['error' => 'Links are part of CardBoard Pro. Upgrade to Pro to host your card sheets.', 'need_pro' => true]);
+}
+
 $target = $_POST['target'] ?? '';
 if (!in_array($target, $targets, true)) done(['error' => 'Unknown target']);
 $token = cbToken($sheetId, $tab, $target);

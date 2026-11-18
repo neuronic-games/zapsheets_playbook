@@ -307,6 +307,44 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
 .page .card { box-shadow:none; }
 .cut { position:absolute; background:#9aa0b8; }
 
+/* Dialogs */
+.overlay { display:none; position:fixed; inset:0; z-index:800; background:rgba(20,18,45,.45); align-items:center; justify-content:center; padding:1rem; }
+.overlay.open { display:flex; }
+.dlg { width:min(420px,94vw); max-height:90vh; overflow:auto; background:#fff; border-radius:14px; padding:1.2rem 1.3rem 1.1rem; box-shadow:0 20px 60px rgba(20,20,60,.3); }
+.dlg .mini { margin-top:.6rem; }
+.dlg-title { margin:0 0 .25rem; font-family:'DINBlack',sans-serif; font-weight:400; font-size:1.05rem; color:#2e2763; letter-spacing:.02em; }
+.dlg-sub { margin:0; font-size:.76rem; color:#7a7f99; line-height:1.45; }
+.dlg-sub code { font-size:.7rem; background:#f3f1ff; color:#4b3fa8; padding:0 .25rem; border-radius:4px; word-break:break-all; }
+.dlg-err { color:#c0392b; font-size:.76rem; min-height:1rem; margin-top:.5rem; }
+.dlg-actions { display:flex; justify-content:flex-end; gap:.5rem; margin-top:.6rem; }
+.dlg-actions .attr-btn { flex:0 0 auto; padding:0 1rem; height:2.05rem; }
+.dlg-actions .print-go { margin-left:0; }
+.dlg.shake { animation:nudge .35s ease; }
+.set-sheet, .set-plan { display:flex; align-items:center; justify-content:space-between; gap:.6rem; font-size:.84rem; color:#2e2763; }
+.set-sheet .attr-btn, .set-plan .attr-btn { flex:0 0 auto; padding:0 .8rem; }
+.plan-title { display:flex; align-items:center; justify-content:center; gap:.5rem; margin:0 0 .35rem; font-family:'DINBlack',sans-serif; font-weight:400; font-size:1.1rem; color:#2e2763; }
+.plan-title img { width:28px; height:28px; border-radius:7px; }
+.plan-current { display:block; width:fit-content; margin:0 auto .2rem; font-size:.82rem; color:#555; background:#f1f2f8; border-radius:999px; padding:.22rem .8rem; }
+.plan-current:empty { display:none; }
+.plan-current b { font-family:'DINBlack',sans-serif; font-weight:400; color:#333; }
+.plan-current span { color:#888; }
+.plan-current.paid { background:#edf7ed; } .plan-current.paid b { color:#2e7d32; }
+.plan-grid { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; text-align:left; }
+@media (max-width:480px) { .plan-grid { grid-template-columns:1fr; } }
+.plan-card { border:1.5px solid #e2e2ea; border-radius:10px; padding:.85rem .9rem .9rem; display:flex; flex-direction:column; position:relative; }
+.plan-card.plan-pro { border-color:#f5a623; }
+.plan-card.current { border-color:#4caf50; background:#f3faf3; }
+.plan-card.current::before { content:'Current plan'; position:absolute; top:-.6rem; left:.8rem; background:#4caf50; color:#fff; font-family:'DINBlack',sans-serif; font-size:.6rem; letter-spacing:.06em; text-transform:uppercase; padding:.12rem .45rem; border-radius:999px; }
+.plan-name { font-family:'DINBlack',sans-serif; font-size:.78rem; letter-spacing:.07em; text-transform:uppercase; color:#555; }
+.plan-price { font-family:'DINBlack',sans-serif; font-size:1.45rem; color:#222; margin:.15rem 0 .4rem; }
+.plan-price span { font-family:'DINRegular',sans-serif; font-size:.78rem; color:#888; margin-left:.15rem; }
+.plan-card ul { list-style:none; margin:0 0 .8rem; padding:0; font-size:.78rem; color:#444; line-height:1.5; flex:1; }
+.plan-card li { padding-left:1.1rem; text-indent:-1.1rem; margin-bottom:.2rem; }
+.plan-card li::before { content:'✓ '; color:#4caf50; font-weight:700; }
+.plan-btn { background:#f5a623; color:#fff; border:none; border-radius:6px; padding:.5rem .6rem; font-family:'DINBlack',sans-serif; font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
+.plan-btn:disabled { opacity:.5; cursor:default; }
+.plan-manage { background:#f5a623; color:#fff; font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; padding:0 1.1rem; height:2.05rem; border-radius:7px; border:none; cursor:pointer; }
+.pro-tag { display:inline-block; margin-left:.35rem; padding:0 .35rem; border-radius:4px; background:#f5a623; color:#fff; font-family:'DINBlack',sans-serif; font-size:.56rem; letter-spacing:.06em; vertical-align:middle; }
 /* Toast */
 .toast { position:fixed; left:50%; bottom:1.4rem; transform:translate(-50%,10px); background:#15803d; color:#fff; font-family:'DINBlack',sans-serif; font-size:.78rem; letter-spacing:.03em; padding:.55rem 1rem; border-radius:999px; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:900; box-shadow:0 6px 18px rgba(0,0,0,.2); }
 .toast.show { opacity:1; transform:translate(-50%,0); }
@@ -362,11 +400,11 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
         <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/></svg>
       </button>
       <div class="account-menu" id="accountMenu">
-        <button class="account-menu-item" onclick="closeAccountMenu();reloadSheet()">Reload Sheet</button>
-        <button class="account-menu-item" onclick="closeAccountMenu();openInSheets()">Open in Sheets</button>
-        <button class="account-menu-item" onclick="closeAccountMenu();switchTab('print')">Print Cards</button>
-        <hr class="account-menu-divider" />
-        <button class="account-menu-item" onclick="closeAccountMenu();startDonation()" style="color:#e2557a">Donate</button>
+        <button class="account-menu-item" onclick="closeAccountMenu();openProfileDialog()">Profile</button>
+        <button class="account-menu-item" onclick="closeAccountMenu();openSettingsDialog()">Settings</button>
+        <button class="account-menu-item" onclick="closeAccountMenu();reloadSheet()" title="Read the latest data from the Google Sheet">Fetch</button>
+        <button class="account-menu-item" id="cbSubBtn" onclick="closeAccountMenu();openPlansDialog()" style="color:#f5a623">Subscribe</button>
+        <button class="account-menu-item" onclick="closeAccountMenu();window.open(APP_BASE + 'cardboard/help', '_blank')">Help</button>
       </div>
     </div>
   </div>
@@ -456,7 +494,7 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
       <select class="sel" id="eCopies"></select></div>
     <div class="grp"><span class="mini">Card back</span><span class="e-note" id="eBackNote"></span></div>
     <label class="e-check"><input type="checkbox" id="eCorners" onchange="renderExport()"> Rounded corners</label>
-    <div class="e-actions"><button class="print-go ghost" id="publishGo" onclick="runPublish()" title="Host the sheets on zapsheets.com at links that stay the same">Get links</button>
+    <div class="e-actions"><button class="print-go ghost" id="publishGo" onclick="runPublish()" title="Host the sheets on zapsheets.com at links that stay the same (Pro)">Get links</button>
     <button class="print-go" id="exportGo" onclick="runExport()">Download</button></div>
   </div>
   <div class="export-info"><span id="exportInfo"></span><div class="export-help" id="exportHelp"></div>
@@ -464,6 +502,72 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
     <div class="export-links" id="exportLinks" style="display:none"></div></div>
   <div class="pages" id="exportPreview"></div>
   <div id="exportStage" aria-hidden="true"></div>
+</div>
+
+<!-- Profile -->
+<div class="overlay" id="profileOverlay" onclick="if(event.target===this)closeDialog('profileOverlay')">
+  <div class="dlg" onclick="event.stopPropagation()">
+    <h2 class="dlg-title">Profile</h2>
+    <p class="dlg-sub">Who's designing these cards. Kept in this spreadsheet's <b>cardboard</b> tab.</p>
+    <label class="mini" for="pfName">Name</label><input class="inp" id="pfName" maxlength="80">
+    <label class="mini" for="pfEmail">Email</label><input class="inp" id="pfEmail" type="email" maxlength="120" placeholder="Used for your receipts when you subscribe">
+    <label class="mini" for="pfStudio">Studio or company</label><input class="inp" id="pfStudio" maxlength="80">
+    <div class="dlg-err" id="pfErr"></div>
+    <div class="dlg-actions"><button class="attr-btn" onclick="closeDialog('profileOverlay')">Cancel</button><button class="print-go" id="pfSave" onclick="saveProfile()">Save</button></div>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="settingsOverlay" onclick="if(event.target===this)closeDialog('settingsOverlay')">
+  <div class="dlg" onclick="event.stopPropagation()">
+    <h2 class="dlg-title">Settings</h2>
+    <span class="lbl">Spreadsheet</span>
+    <div class="set-sheet"><b id="setSheetTitle"></b><button class="attr-btn" onclick="openInSheets()">Open in Sheets ↗</button></div>
+    <p class="dlg-sub" style="margin-top:.35rem">CardBoard reads and writes it as <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> — keep it shared with that address as an Editor.</p>
+    <span class="lbl">Measurements</span>
+    <div class="seg" id="setUnits"><button type="button" data-u="in" onclick="setUnitsChoice('in')">Inches</button><button type="button" data-u="mm" onclick="setUnitsChoice('mm')">Millimetres</button></div>
+    <p class="dlg-sub" style="margin-top:.35rem">Used for the card size. Positions on the card stay in points (1/72 in).</p>
+    <span class="lbl">Plan</span>
+    <div class="set-plan"><span id="setPlan">—</span><button class="attr-btn" onclick="closeDialog('settingsOverlay');openPlansDialog()">Plans</button></div>
+    <div class="dlg-err" id="setErr"></div>
+    <div class="dlg-actions"><button class="attr-btn" onclick="closeDialog('settingsOverlay')">Close</button></div>
+  </div>
+</div>
+
+<!-- Plans -->
+<div class="overlay" id="plansOverlay" onclick="if(event.target===this)closeDialog('plansOverlay')">
+  <div class="dlg" style="width:min(540px,94vw);text-align:center" onclick="event.stopPropagation()">
+    <h2 class="plan-title"><img src="images/cardboard_icon_180.png" alt="">CardBoard plans</h2>
+    <div class="plan-current" id="planCurrent"></div>
+    <p class="dlg-sub" id="planIntro" style="margin:.3rem 0 .9rem">Pick the plan that fits how you work.</p>
+    <div class="plan-grid">
+      <div class="plan-card" id="planFree">
+        <div class="plan-name">Free</div>
+        <div class="plan-price">$0</div>
+        <ul>
+          <li>Card designer, fronts &amp; backs</li>
+          <li>Edit your sheet's data</li>
+          <li>Print sheets &amp; downloads for TTS and Screentop</li>
+          <li>Pictures from Dropbox, Drive or the web</li>
+        </ul>
+      </div>
+      <div class="plan-card plan-pro" id="planPro">
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">$4.99<span>/month</span></div>
+        <ul>
+          <li>Everything in Free</li>
+          <li>Hosted links for Tabletop Simulator &amp; Screentop that update when your cards change</li>
+          <li>Upload pictures to CardBoard</li>
+        </ul>
+        <button class="plan-btn" id="planProBtn" onclick="startProCheckout()">Choose Pro</button>
+      </div>
+    </div>
+    <div class="dlg-sub" id="planStatus" style="margin:.8rem 0 .2rem"></div>
+    <div class="dlg-actions" style="justify-content:center">
+      <button class="attr-btn" onclick="closeDialog('plansOverlay')">Close</button>
+      <button class="plan-manage" id="planManage" style="display:none" onclick="openBillingPortal()">Manage Billing</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>

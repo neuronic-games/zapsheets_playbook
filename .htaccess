@@ -52,6 +52,10 @@ RewriteRule ^devboard/features/?$ source/devboard/features/index.php [L,QSA]
 # /devboard — setup landing page (no sheet ID yet)
 RewriteRule ^devboard/?$ source/devboard/index.php [L,QSA]
 
+# /cardboard/help and /cardboard/features (must come before the /{id}/cardboard rule)
+RewriteRule ^cardboard/help/?$ source/cardboard/help/index.php [L,QSA]
+RewriteRule ^cardboard/features/?$ source/cardboard/features/index.php [L,QSA]
+
 # /cardboard — setup landing page (no sheet ID yet)
 RewriteRule ^cardboard/?$ source/cardboard/index.php [L,QSA]
 

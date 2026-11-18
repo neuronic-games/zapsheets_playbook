@@ -258,6 +258,8 @@ function init() {
   Promise.all([api('tabs'), api('layouts').catch(function() { return { layouts: {} }; })])
     .then(function(res) {
       TABS = res[0].tabs || []; LAYOUTS = res[1].layouts || {};
+      SETTINGS = Object.assign({ units: 'in', profile: {} }, LAYOUTS[SETTINGS_KEY] || {});
+      SHEET_TITLE = res[0].title || '';
       if (res[0].title) { $('subTitle').textContent = res[0].title; document.title = 'CardBoard — ' + res[0].title; }
       var sel = $('sheetSel');
       sel.innerHTML = TABS.map(function(t) { return '<option>' + esc(t.title) + '</option>'; }).join('');
@@ -503,12 +505,14 @@ function setImageSrc(id, src) {
 }
 function uploadImage(id, file) {
   if (!isImageFile(file)) { toast('Use a PNG, JPG, GIF or WebP picture', true); return; }
+  if (!requirePro('upload', function() { uploadImage(id, file); })) return;
   if (file.size > 10 * 1024 * 1024) { toast('That picture is over 10 MB', true); return; }
   UPLOADING[id] = true; render(); if (selId === id) renderAttrs();
-  var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('file', file);
+  var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('app', 'cardboard'); fd.append('file', file);
   fetch(APP_BASE + 'push/uploadImage.php', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
     .then(function(r) {
+      if (r && r.need_pro) { delete UPLOADING[id]; render(); SUB = null; openPlansDialog('upload'); return; }
       if (!r || r.error || !r.url) throw new Error(r && r.error ? r.error : 'Upload failed');
       delete UPLOADING[id]; setImageSrc(id, r.url);
     })
@@ -524,7 +528,7 @@ function openImagePicker(ev, id) {
   p.id = 'imgPicker'; p.className = 'img-picker';
   p.innerHTML =
     '<div class="ip-drop" id="ipDrop">' + IMG_ICON + '<b>Drop a picture here</b><span>or</span>' +
-      '<button type="button" class="ip-choose" onclick="$(\'ipFile\').click()">Choose a file…</button>' +
+      '<button type="button" class="ip-choose" onclick="$(\'ipFile\').click()">Choose a file…' + (isPro() ? '' : '<span class="pro-tag">PRO</span>') + '</button>' +
       '<input type="file" id="ipFile" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none"></div>' +
     '<span class="mini">Or a web address</span>' +
     '<div class="ip-url"><input class="inp" id="ipUrl" placeholder="Dropbox, Google Drive or web link" value="' + esc(/\/images\/[A-Za-z0-9_\-]+\/[0-9a-f]{20}\.\w+$/.test(e.src || '') ? '' : (e.src || '')) + '">' +
@@ -819,8 +823,8 @@ function renderAttrs() {
     h += '<span class="lbl">Size</span><select class="sel" onchange="setCard(\'size\',this.value)">' +
          CARD_SIZES.map(function(s) { return '<option value="' + s.id + '"' + (s.id === (c.size || 'custom') ? ' selected' : '') + '>' + s.name + '</option>'; }).join('') + '</select>';
     h += '<div class="row2" style="margin-top:.45rem">' +
-         '<div><span class="mini">Width (in)</span><input class="inp" type="number" step="0.05" value="' + Math.round(c.w / 72 * 100) / 100 + '" onchange="setCard(\'w\',this.value*72,true)"></div>' +
-         '<div><span class="mini">Height (in)</span><input class="inp" type="number" step="0.05" value="' + Math.round(c.h / 72 * 100) / 100 + '" onchange="setCard(\'h\',this.value*72,true)"></div></div>';
+         '<div><span class="mini">Width (' + unitName() + ')</span><input class="inp" type="number" step="' + unitStep() + '" value="' + toUnit(c.w) + '" onchange="setCard(\'w\',fromUnit(this.value),true)"></div>' +
+         '<div><span class="mini">Height (' + unitName() + ')</span><input class="inp" type="number" step="' + unitStep() + '" value="' + toUnit(c.h) + '" onchange="setCard(\'h\',fromUnit(this.value),true)"></div></div>';
     h += '<span class="lbl">' + (side === 'back' ? 'Both sides' : 'Look') + '</span>' + (side === 'back' ? '' : colorRow('Background', 'bg', c.bg, false, 'setCard'));
     h += '<div class="row2" style="margin-top:.45rem">' + numInp('c_r', 'Corner radius (pt)', c.radius, 'setCard', 'radius') + numInp('c_bw', 'Border (pt)', c.borderW, 'setCard', 'borderW', .5) + '</div>';
     h += '<div style="margin-top:.45rem">' + colorRow('Border colour', 'borderColor', c.borderColor, false, 'setCard') + '</div>';
@@ -1268,6 +1272,7 @@ function loadPublished(tab) {
   }).catch(function() {});
 }
 function publishSet(tab, o, tick) {
+  if (SUB && SUB.ok && !SUB.is_pro) return Promise.reject(new Error('Links are part of CardBoard Pro'));
   return buildExport(o, function(name, blob) { return publishApi('upload', { tab: tab, target: o.target, name: name }, blob); }, tick)
     .then(function(r) {
       var st = Object.assign({}, o); delete st.grid;
@@ -1278,6 +1283,7 @@ function publishSet(tab, o, tick) {
 }
 function runPublish() {
   if (_exporting || !layout) return;
+  if (!requirePro('links', runPublish)) return;
   var o = Object.assign(exportOpts(), { fixed: true }), tab = curTab, old = (PUBLISHED[tab] || {})[o.target];
   o.jpeg = !o.round;
   if (old && old.grid && old.settings && old.settings.quality === o.quality) o.grid = old.grid;   // keep the grid the game was set up with
@@ -1285,7 +1291,7 @@ function runPublish() {
   exportBusy(true);
   publishSet(tab, o, exportTick)
     .then(function() { toast('✓ Links ready — they\'ll update when you save'); if (curTab === tab) renderExport(); })
-    .catch(function(e) { toast('Couldn\'t publish — ' + e.message, true); })
+    .catch(function(e) { if (/CardBoard Pro/.test(e.message)) { SUB = null; openPlansDialog('links'); } else toast('Couldn\'t publish — ' + e.message, true); })
     .then(function() { exportBusy(false); });
 }
 function updateLinksNow(target) {
@@ -1327,7 +1333,7 @@ function copyLink(btn) {
 function renderLinks() {
   var box = $('exportLinks'); if (!box) return;
   var target = $('eTarget').value, m = (PUBLISHED[curTab] || {})[target];
-  $('publishGo').textContent = m ? 'Republish links' : 'Get links';
+  $('publishGo').innerHTML = (m ? 'Republish links' : 'Get links') + (isPro() ? '' : '<span class="pro-tag">PRO</span>');
   if (!m) { box.innerHTML = ''; box.style.display = 'none'; return; }
   var when = new Date(m.updated), g = m.grid || {};
   function row(label, f, extra) {
@@ -1536,6 +1542,135 @@ function refreshRows() {
     var row = GRID.rows[_gridSel.r]; saveGridCell(_gridSel.r, _gridSel.c, t.replace(/\r?\n$/, ''), row.values[_gridSel.c] || '');
   });
 })();
+
+// ── Menu: Profile, Settings, Fetch, Subscribe, Help ──────────────────────────
+// Profile and settings live in the spreadsheet's "cardboard" tab, on their own row.
+var SETTINGS_KEY = '_cardboard_settings', SETTINGS = { units: 'in', profile: {} }, SHEET_TITLE = '';
+function openDialog(id) { $(id).classList.add('open'); }
+function closeDialog(id) { $(id).classList.remove('open'); }
+document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') document.querySelectorAll('.overlay.open').forEach(function(o) { o.classList.remove('open'); }); });
+function saveSettings() { return api('save', { tab: SETTINGS_KEY, layout: JSON.stringify(SETTINGS) }).then(function() { LAYOUTS[SETTINGS_KEY] = JSON.parse(JSON.stringify(SETTINGS)); }); }
+
+function openProfileDialog() {
+  var pf = SETTINGS.profile || {};
+  $('pfName').value = pf.name || ''; $('pfEmail').value = pf.email || ''; $('pfStudio').value = pf.studio || '';
+  $('pfErr').textContent = ''; $('pfSave').disabled = false; $('pfSave').textContent = 'Save';
+  openDialog('profileOverlay'); setTimeout(function() { $('pfName').focus(); }, 60);
+}
+function saveProfile() {
+  var pf = { name: $('pfName').value.trim(), email: $('pfEmail').value.trim(), studio: $('pfStudio').value.trim() };
+  if (pf.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pf.email)) { $('pfErr').textContent = 'That email address doesn\'t look right.'; return; }
+  var btn = $('pfSave'); btn.disabled = true; btn.textContent = 'Saving…';
+  var keep = SETTINGS.profile; SETTINGS.profile = pf;
+  saveSettings().then(function() { closeDialog('profileOverlay'); toast('✓ Profile saved'); })
+    .catch(function(e) { SETTINGS.profile = keep; $('pfErr').textContent = 'Couldn\'t save — ' + e.message; btn.disabled = false; btn.textContent = 'Save'; });
+}
+
+function openSettingsDialog() {
+  $('setSheetTitle').textContent = SHEET_TITLE || 'This spreadsheet';
+  markUnits(); $('setErr').textContent = '';
+  $('setPlan').innerHTML = SUB === null ? 'Checking…' : planLabel();
+  if (SUB === null) loadSub(function() { $('setPlan').innerHTML = planLabel(); });
+  openDialog('settingsOverlay');
+}
+function markUnits() { document.querySelectorAll('#setUnits button').forEach(function(b) { b.classList.toggle('on', b.dataset.u === (SETTINGS.units || 'in')); }); }
+function setUnitsChoice(u) {
+  if (SETTINGS.units === u) return;
+  var keep = SETTINGS.units; SETTINGS.units = u; markUnits(); renderAttrs();
+  saveSettings().catch(function(e) { SETTINGS.units = keep; markUnits(); renderAttrs(); $('setErr').textContent = 'Couldn\'t save — ' + e.message; });
+}
+function unitName() { return SETTINGS.units === 'mm' ? 'mm' : 'in'; }
+function unitStep() { return SETTINGS.units === 'mm' ? '0.5' : '0.05'; }
+function toUnit(pt) { return SETTINGS.units === 'mm' ? Math.round(pt / 72 * 25.4 * 10) / 10 : Math.round(pt / 72 * 100) / 100; }
+function fromUnit(v) { v = parseFloat(v); return SETTINGS.units === 'mm' ? v / 25.4 * 72 : v * 72; }
+
+// Subscription (Stripe, per spreadsheet): Free, or Pro at $4.99/month
+var SUB = null, _subWaiters = [], _subLoading = false;
+function isPro() { return !!(SUB && SUB.is_pro); }
+function planLabel() {
+  var s = SUB || {};
+  if (s.ok === false) return '<b>—</b> <span class="muted">(couldn’t check right now)</span>';
+  return '<b>' + (s.is_pro ? 'Pro' : 'Free') + '</b>' + (s.is_pro && s.period_end ? ' <span class="muted">· renews ' + esc(fmtWhen(s.period_end)) + '</span>' : '');
+}
+function fmtWhen(v) {
+  var d = /^\d+$/.test(String(v)) ? new Date(+v * (+v < 1e12 ? 1000 : 1)) : new Date(v);
+  return isNaN(d) ? String(v) : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function loadSub(cb) {
+  if (cb) _subWaiters.push(cb);
+  if (_subLoading) return;
+  _subLoading = true;
+  var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('app', 'cardboard');
+  fetch(APP_BASE + 'push/getSubscription.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
+    .then(function(r) { SUB = (r && r.ok) ? r : { ok: false }; }, function() { SUB = { ok: false }; })
+    .then(function() {
+      _subLoading = false;
+      updateSubMenu();
+      if (_activeTab === 'export') renderLinks();
+      var w = _subWaiters; _subWaiters = []; w.forEach(function(f) { f(SUB); });
+    });
+}
+function updateSubMenu() {
+  var b = $('cbSubBtn'); if (!b) return;
+  b.textContent = isPro() ? 'Pro Active' : 'Subscribe';
+  b.style.color = isPro() ? '#4caf50' : '#f5a623';
+}
+var PRO_REASONS = {
+  links: 'Hosted links for Tabletop Simulator and Screentop are part of CardBoard Pro — they keep your card sheets on our server and update them when your cards change.',
+  upload: 'Uploading pictures to CardBoard is part of Pro. On Free, use a Dropbox, Google Drive or web link instead.'
+};
+// Returns true when allowed; otherwise shows the plans. If the plan can't be checked, the server decides.
+function requirePro(reason, retry) {
+  if (SUB === null) { loadSub(function(s) { if (s.is_pro || s.ok === false) retry(); else openPlansDialog(reason); }); return false; }
+  if (SUB.is_pro || SUB.ok === false) return true;
+  openPlansDialog(reason); return false;
+}
+function openPlansDialog(reason) {
+  $('planIntro').textContent = PRO_REASONS[reason] || 'Pick the plan that fits how you work.';
+  openDialog('plansOverlay');
+  if (SUB === null) { $('planCurrent').textContent = ''; $('planStatus').textContent = 'Checking your plan…'; loadSub(renderPlans); }
+  else renderPlans();
+}
+function renderPlans() {
+  var s = SUB || {}, pro = !!s.is_pro;
+  $('planFree').classList.toggle('current', s.ok !== false && !pro);
+  $('planPro').classList.toggle('current', pro);
+  $('planCurrent').innerHTML = 'Current plan: ' + planLabel();
+  $('planCurrent').className = 'plan-current' + (pro ? ' paid' : '');
+  var btn = $('planProBtn'); btn.style.display = pro ? 'none' : ''; btn.disabled = false; btn.textContent = 'Choose Pro';
+  $('planManage').style.display = pro ? '' : 'none';
+  $('planManage').textContent = s.status === 'past_due' ? 'Update Payment' : 'Manage Billing';
+  $('planStatus').innerHTML = s.status === 'past_due' ? '<span style="color:#d97706;font-weight:700">⚠ Payment past due</span>' : (s.ok === false ? 'Couldn’t check your plan right now.' : '');
+}
+function openBillingPortal() {
+  var url = SUB && SUB.portal_url;
+  if (url) window.open(url, '_blank', 'noopener');
+  else alert('Online billing management is not available yet. Please contact support to change your subscription.');
+}
+function returnUrl(flag) {
+  var u = new URL(window.location.href); u.searchParams.delete('sub'); u.searchParams.delete('donate');
+  if (flag) u.searchParams.set(flag[0], flag[1]);
+  return u.toString();
+}
+function startProCheckout() {
+  var btn = $('planProBtn'); btn.disabled = true; btn.textContent = 'Redirecting…';
+  var fd = new FormData();
+  fd.append('type', 'subscription'); fd.append('id', SHEET_ID); fd.append('app', 'cardboard'); fd.append('plan', 'pro');
+  if ((SETTINGS.profile || {}).email) fd.append('email', SETTINGS.profile.email);
+  fd.append('success_url', returnUrl(['sub', 'success'])); fd.append('cancel_url', returnUrl(null));
+  fetch(APP_BASE + 'push/stripeCheckout.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
+    .then(function(r) { if (!r || r.error || !r.url) throw new Error(r && r.error ? r.error : 'Could not start checkout'); window.location.href = r.url; })
+    .catch(function(e) { btn.disabled = false; btn.textContent = 'Choose Pro'; $('planStatus').textContent = e.message; });
+}
+(function() {   // back from Stripe Checkout
+  var u = new URL(window.location.href);
+  if (u.searchParams.get('sub') === 'success') {
+    u.searchParams.delete('sub'); window.history.replaceState(null, '', u.pathname + u.search + u.hash);
+    setTimeout(function() { toast('✓ Welcome to CardBoard Pro'); }, 400);
+    setTimeout(function() { SUB = null; loadSub(); }, 2500);   // the webhook may land a moment later
+  }
+})();
+loadSub();
 
 // ── Tabs, menu, donation ──────────────────────────────────────────────────────
 function switchTab(t) {

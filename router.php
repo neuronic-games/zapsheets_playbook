@@ -133,6 +133,12 @@ if (preg_match('#^/pitchboard/features/?$#', $uri)) {
 }
 
 // ── /cardboard — setup landing page; /{id}/cardboard — card designer ─────────
+if (preg_match('#^/cardboard/help/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/cardboard/help/index.php', $MIME);
+}
+if (preg_match('#^/cardboard/features/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/cardboard/features/index.php', $MIME);
+}
 if (preg_match('#^/cardboard/?$#', $uri)) {
     serveFile(__DIR__ . '/source/cardboard/index.php', $MIME);
 }

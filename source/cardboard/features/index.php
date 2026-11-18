@@ -204,15 +204,10 @@ section { padding:5.5rem 2rem; }
 .compare-table td.ours { background:rgba(243,241,255,.6); }
 .compare-table tr:last-child td { border-bottom:none; }
 .check { color:#4caa4b; } .cross { color:var(--text-muted); }
-.price-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:1rem; margin-top:1.5rem; }
-.price-card { border:1px solid var(--border); border-radius:var(--radius); padding:1.25rem 1.35rem; background:#fff; }
-.price-card.ours { border:1.5px solid var(--violet); background:var(--violet-pale); }
-.price-card h3 { font-size:.95rem; font-weight:600; color:var(--dark); margin-bottom:.6rem; }
-.price-line { display:flex; justify-content:space-between; align-items:baseline; gap:.5rem; padding:.35rem 0; border-top:1px solid var(--border); font-size:13.5px; color:var(--text-mid); }
-.price-line:first-of-type { border-top:none; }
-.price-line b { font-family:'Fraunces',Georgia,serif; font-size:1.2rem; font-weight:600; color:var(--dark); white-space:nowrap; }
-.price-card p { margin-top:.6rem; font-size:12.5px; color:var(--text-muted); line-height:1.5; }
 .price-note { margin-top:.9rem; font-size:12px; color:var(--text-muted); }
+.compare-table .nl { font-size:12px; color:var(--text-muted); font-weight:400; margin-left:2px; }
+.compare-table tr.cost td { color:var(--text-mid); line-height:1.5; }
+.compare-table tr.cost b { color:var(--dark); font-weight:600; }
 
 .cta-section { background:var(--violet-pale); text-align:center; padding:5rem 2rem; border-top:1px solid rgba(123,108,246,.15); }
 .cta-section .section-label { display:flex; justify-content:center; }
@@ -417,51 +412,30 @@ footer a { color:var(--text-mid); text-decoration:none; }
 <section id="compare">
   <div class="container">
     <div class="section-label">How we compare</div>
-    <h2 class="section-title">Built for card games, not slides</h2>
-    <p class="section-sub">Most designers lay out cards in a drawing app, or learn a scripting tool. CardBoard sits in between: drag and drop, driven by your sheet.</p>
+    <h2 class="section-title">How CardBoard compares</h2>
+    <p class="section-sub">Dextrous and Component.Studio are popular card design tools. CardBoard works straight from your Google Sheet, designs both sides, and starts free.</p>
     <div class="compare-wrap">
       <table class="compare-table">
-        <thead><tr><th>Feature</th><th class="ours">CardBoard</th><th>Drawing app</th><th>Card scripting tools</th></tr></thead>
+        <thead><tr><th>Feature</th><th class="ours">CardBoard</th><th>Dextrous</th><th>Component.Studio</th></tr></thead>
         <tbody>
-          <tr><td>Cards made from spreadsheet rows</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span> <span style="font-size:12px;color:var(--text-muted)">data merge, limited</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Drag-and-drop layout</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span> <span style="font-size:12px;color:var(--text-muted)">code</span></td></tr>
-          <tr><td>Front and back designer</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span> <span style="font-size:12px;color:var(--text-muted)">by hand</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Edit card data in the app</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Double-sided print sheets</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span> <span style="font-size:12px;color:var(--text-muted)">by hand</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Tabletop Simulator &amp; Screentop sheets</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Hosted export links that stay up to date<br><span style="font-size:12px;color:var(--text-muted);font-weight:400">Tabletop Simulator, Screentop and card images</span></td><td class="ours"><span class="check">✓</span> <span class="pro-tag">Pro</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Works in the browser, nothing to install</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td>Cards made from spreadsheet rows</td><td class="ours"><span class="check">✓</span> <span class="nl">Google Sheets</span></td><td><span class="check">✓</span> <span class="nl">Google Sheets or CSV</span></td><td><span class="check">✓</span> <span class="nl">spreadsheet upload</span></td></tr>
+          <tr><td>Visual drag-and-drop layout</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>Front and back designer</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span> <span class="nl">not listed</span></td><td><span class="cross">—</span> <span class="nl">not listed</span></td></tr>
+          <tr><td>Edit card data in the app</td><td class="ours"><span class="check">✓</span> <span class="nl">saved to your Sheet</span></td><td><span class="cross">—</span> <span class="nl">in Google Sheets</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>Print-and-play sheets</td><td class="ours"><span class="check">✓</span> <span class="nl">double-sided</span></td><td><span class="check">✓</span> <span class="nl">PDF</span></td><td><span class="check">✓</span> <span class="nl">PDF</span></td></tr>
+          <tr><td>Tabletop Simulator &amp; Screentop sheets</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>Hosted export links that stay up to date<br><span class="nl" style="margin:0">Tabletop Simulator, Screentop and card images</span></td><td class="ours"><span class="check">✓</span> <span class="pro-tag">Pro</span></td><td><span class="cross">—</span> <span class="nl">not listed</span></td><td><span class="cross">—</span> <span class="nl">not listed</span></td></tr>
+          <tr><td>Pictures from Dropbox, Drive or the web</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span> <span class="nl">not listed</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>Works in the browser, nothing to install</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>Works with <a href="https://zapsheets.com/app/devboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">DevBoard</a> &amp; <a href="https://zapsheets.com/app/gameboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">GameBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">Free<br>$4.99 / mo Pro</td><td><span style="font-size:12px;color:var(--text-muted)">varies</span></td><td><span style="font-size:12px;color:var(--text-muted)">varies</span></td></tr>
+          <tr class="cost"><td>Monthly cost</td>
+            <td class="ours"><b>Free</b><br><b>$4.99</b> / mo Pro</td>
+            <td><b>Free</b> <span class="nl">2 projects, 10 layouts</span><br><b>$6 – $24</b> / mo<span class="nl" style="display:block;margin:0">Prototyper $6 · Designer $12 · Designer Pro $24</span></td>
+            <td><b>$9.99</b> / mo<span class="nl" style="display:block;margin:0">free trial, no free plan</span></td></tr>
         </tbody>
       </table>
     </div>
-
-    <h3 class="section-title" style="font-size:1.45rem;margin-top:3.5rem;margin-bottom:.4rem;">What it costs</h3>
-    <p class="section-sub" style="margin-bottom:0">Compared with two popular card design tools.</p>
-    <div class="price-grid">
-      <div class="price-card ours">
-        <h3>CardBoard</h3>
-        <div class="price-line"><span>Free</span><b>$0</b></div>
-        <div class="price-line"><span>Pro</span><b>$4.99<span style="font-family:Inter;font-size:12px;font-weight:400;color:var(--text-muted)"> / mo</span></b></div>
-        <p>Free has no limit on decks or cards. Pro adds hosted links for every export (Tabletop Simulator, Screentop and card images), and picture uploads.</p>
-      </div>
-      <div class="price-card">
-        <h3>Dextrous</h3>
-        <div class="price-line"><span>Tester</span><b>$0</b></div>
-        <div class="price-line"><span>Prototyper</span><b>$6<span style="font-family:Inter;font-size:12px;font-weight:400;color:var(--text-muted)"> / mo</span></b></div>
-        <div class="price-line"><span>Designer</span><b>$12<span style="font-family:Inter;font-size:12px;font-weight:400;color:var(--text-muted)"> / mo</span></b></div>
-        <div class="price-line"><span>Designer Pro</span><b>$24<span style="font-family:Inter;font-size:12px;font-weight:400;color:var(--text-muted)"> / mo</span></b></div>
-        <p>The free plan is limited to 2 projects, 10 layouts and 100 MB. Yearly billing costs less.</p>
-      </div>
-      <div class="price-card">
-        <h3>Component.Studio</h3>
-        <div class="price-line"><span>Free plan</span><b>—</b></div>
-        <div class="price-line"><span>Subscription</span><b>$9.99<span style="font-family:Inter;font-size:12px;font-weight:400;color:var(--text-muted)"> / mo</span></b></div>
-        <p>A short free trial, then a monthly subscription. From The Game Crafter, with export straight to their print shop.</p>
-      </div>
-    </div>
-    <p class="price-note">Prices in US dollars as published by each company, November 2026. Check their websites for current plans.</p>
+    <p class="price-note">Dextrous and Component.Studio features and prices as published by them and in reviews, November 2026; “not listed” means we couldn’t find it in their published features. Check their websites for current details.</p>
   </div>
 </section>
 

@@ -1104,7 +1104,7 @@ function setProp(key, val, num) {
   if (num) { val = parseFloat(val); if (isNaN(val)) return; }
   if (e[key] === val) { render(); return; }
   snapshot(); e[key] = val;
-  if (STROKE_FOR[key] && val && !(+e[STROKE_FOR[key]])) { e[STROKE_FOR[key]] = 1; changed(); return; }   // show the border
+  if (STROKE_FOR[key] && val && val !== 'transparent' && !(+e[STROKE_FOR[key]])) { e[STROKE_FOR[key]] = 1; changed(); return; }   // show the border
   if (key === 'bg' || key === 'color' || key === 'fill' || STROKE_FOR[key]) { changed(); return; }      // refresh the swatch and box
   changed(true);
 }
@@ -1113,7 +1113,7 @@ function setCard(key, val, num) {
   endLive(layout.card, key);
   if (num) { val = parseFloat(val); if (isNaN(val)) return; }
   snapshot(); layout.card[key] = val;
-  if (key === 'borderColor' && val && !(+layout.card.borderW)) layout.card.borderW = 1;
+  if (key === 'borderColor' && val && val !== 'transparent' && !(+layout.card.borderW)) layout.card.borderW = 1;
   if (key === 'size') { var s = CARD_SIZES.filter(function(x) { return x.id === val; })[0]; if (s && s.w) { layout.card.w = s.w; layout.card.h = s.h; } }
   if (key === 'w' || key === 'h') layout.card.size = 'custom';
   changed(); if (key === 'size' || key === 'w' || key === 'h') fitZoom();
@@ -1123,7 +1123,9 @@ function syncGeomInputs(e) {
 }
 function colorRow(label, key, val, none, onSet) {
   var hexv = /^#[0-9a-f]{6}$/i.test(val || '') ? val : '#ffffff';
+  var clear = none ? (!val || val === 'transparent' || val === 'none') : val === 'transparent';   // empty text colour means the default, not clear
   return '<span class="mini">' + label + '</span><div class="color-row">' +
+    '<button type="button" class="clear-swatch' + (clear ? ' on' : '') + '" title="Transparent" aria-label="Transparent" onclick="' + onSet + '(\'' + key + '\',\'' + (none ? '' : 'transparent') + '\')"></button>' +
     '<input type="color" value="' + hexv + '" onchange="' + onSet + '(\'' + key + '\',this.value)" oninput="this.nextElementSibling.value=this.value;liveColor(\'' + onSet + '\',\'' + key + '\',this.value)">' +
     '<input class="inp" value="' + esc(val || '') + '" placeholder="' + (none ? 'none' : '#000000') + '" onchange="' + onSet + '(\'' + key + '\',this.value.trim())"></div>';
 }

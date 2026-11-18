@@ -273,6 +273,11 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .color-row { display:flex; gap:.35rem; align-items:center; }
 .color-row input[type=color] { width:2.2rem; height:2.05rem; border:1.5px solid #d6d9e6; border-radius:7px; padding:2px; background:#fff; cursor:pointer; flex-shrink:0; }
 .color-row .inp { flex:1; }
+.clear-swatch { width:2.05rem; height:2.05rem; flex-shrink:0; border:1.5px solid #d6d9e6; border-radius:7px; cursor:pointer; padding:0; position:relative; overflow:hidden;
+  background:repeating-conic-gradient(#e3e5ee 0 25%, #fff 0 50%) 0 0/8px 8px; }
+.clear-swatch::after { content:''; position:absolute; left:-20%; right:-20%; top:50%; height:2px; background:#e5484d; transform:rotate(-45deg); }
+.clear-swatch:hover { border-color:#a99cff; }
+.clear-swatch.on { border-color:#4b3fa8; box-shadow:0 0 0 2px rgba(75,63,168,.2); }
 .attr-btns { display:flex; gap:.4rem; margin-top:1.1rem; flex-wrap:wrap; }
 .attr-btn { flex:1; height:2rem; border:1.5px solid #d6d9e6; border-radius:7px; background:#fff; color:#3b3f5c; font-size:.75rem; cursor:pointer; white-space:nowrap; }
 .attr-btn:hover { border-color:#a99cff; }

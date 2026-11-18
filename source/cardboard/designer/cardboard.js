@@ -11,6 +11,7 @@
 // ── State ─────────────────────────────────────────────────────────────────────
 var TABS = [], LAYOUTS = {}, ROWS = [], FIELDS = [];
 var curTab = '', layout = null, rowIdx = 0, selId = null, zoom = 1, dirty = false;
+var multi = [];   // ids when more than one element is selected (selId is then null)
 var undoStack = [], redoStack = [];
 var side = 'front';   // which face of the card is being designed
 var CARD_SIZES = [
@@ -82,6 +83,8 @@ function normalize(lay) {
     delete lay.card.back;
   }
   lay.back.els = (lay.back.els || []).map(fix);
+  if (!Array.isArray(lay.groups)) lay.groups = [];
+  if (!Array.isArray(lay.back.groups)) lay.back.groups = [];
   if (!Array.isArray(lay.hidden)) lay.hidden = [];
   lay.v = 3;
   return lay;
@@ -237,7 +240,7 @@ function renderCardHTML(lay, row, designing, ctx) {
   var face = faceOf(lay, ctx.side), cs = ctx.side === 'back' ? Object.assign({}, lay.card, { bg: lay.back.bg }) : lay.card;
   var h = '<div class="card' + (designing ? ' designing' : '') + (ctx.side === 'back' ? ' back' : '') + '" style="' + cardStyle(cs) + '">';
   face.els.slice().sort(function(a, b) { return (a.z || 1) - (b.z || 1); }).forEach(function(e) {
-    var cls = 'el k-' + e.kind + (e.valign === 'middle' ? ' v-middle' : e.valign === 'bottom' ? ' v-bottom' : '') + (designing && e.id === selId ? ' picked' : '');
+    var cls = 'el k-' + e.kind + (e.valign === 'middle' ? ' v-middle' : e.valign === 'bottom' ? ' v-bottom' : '') + (designing && isSel(e.id) ? ' picked' + (multi.length ? ' multi' : '') : '');
     if (designing && UPLOADING[e.id]) cls += ' img-loading';
     h += '<div class="' + cls + '" data-id="' + e.id + '" style="' + elStyle(e) + '">';
     h += designing
@@ -247,6 +250,10 @@ function renderCardHTML(lay, row, designing, ctx) {
       : elInner(e, row, ctx);
     h += '</div>';
   });
+  if (designing && multi.length) {   // one box around everything selected (a group or several elements)
+    var bb = selBox(face.els.filter(function(x) { return multi.indexOf(x.id) >= 0; }));
+    if (bb) h += '<div class="sel-box' + (selGroupId() ? ' group' : '') + '" style="left:' + bb.x + 'pt;top:' + bb.y + 'pt;width:' + bb.w + 'pt;height:' + bb.h + 'pt"></div>';
+  }
   if (designing && !face.els.length) h += '<div class="card-empty-hint">' + (ctx.side === 'back' ? 'The back of the card — drag elements here' : 'Drag elements here') + '</div>';
   return h + '</div>';
 }
@@ -283,7 +290,7 @@ function selectTab(name, first, force) {
   if (!first && dirty && !confirm('You have unsaved changes to the "' + curTab + '" layout. Switch sheets anyway?')) { $('sheetSel').value = curTab; $('gridSheet').value = curTab; return; }
   if (_gridEdit) endGridEdit(true);
   $('sheetSel').value = name; $('gridSheet').value = name;
-  curTab = name; selId = null; rowIdx = 0; undoStack = []; redoStack = []; GRID = null; _gridSel = null; _rowsStale = false;
+  curTab = name; selId = null; multi = []; rowIdx = 0; undoStack = []; redoStack = []; GRID = null; _gridSel = null; _rowsStale = false;
   try { localStorage.setItem('cb_tab:' + SHEET_ID, name); } catch (e) {}
   layout = normalize(LAYOUTS[name] ? JSON.parse(JSON.stringify(LAYOUTS[name])) : newLayout());
   setDirty(false);
@@ -483,7 +490,7 @@ function addElementAt(e) {
   e.id = uid(); e.z = curEls().reduce(function(m, x) { return Math.max(m, x.z || 1); }, 0) + 1;
   e.w = clamp(e.w, 4, c.w); e.h = clamp(e.h, 4, c.h);
   e.x = r1(clamp(e.x, 0, c.w - e.w)); e.y = r1(clamp(e.y, 0, c.h - e.h));
-  snapshot(); curEls().push(e); selId = e.id; changed();
+  snapshot(); curEls().push(e); selId = e.id; multi = []; normalizeZ(); changed();
 }
 
 // ── Pictures: upload a file, or link to Dropbox / Google Drive / the web ──────
@@ -593,7 +600,7 @@ function flipCard() {
   if (!layout || _flipping) return;
   closeImagePicker();
   var holder = $('cardHolder'), reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function swap() { side = side === 'back' ? 'front' : 'back'; selId = null; render(); renderAttrs(); }
+  function swap() { side = side === 'back' ? 'front' : 'back'; selId = null; multi = []; render(); renderAttrs(); }
   if (reduce || !holder.animate) { swap(); return; }
   _flipping = true;
   var out = holder.animate([{ transform: 'perspective(1400px) rotateY(0deg)' }, { transform: 'perspective(1400px) rotateY(90deg)' }], { duration: 170, easing: 'ease-in' });
@@ -650,14 +657,34 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
   var e = elById(elDom.dataset.id); if (!e) return;
   ev.preventDefault();
   var handle = ev.target.dataset.h || '';
-  if (selId !== e.id) { selId = e.id; render(); renderAttrs(); }
+  // Clicking part of a group picks the whole group; Shift/⌘-click adds to (or takes from) the selection
+  var unit = e.group ? groupMembers(e.group).map(function(x) { return x.id; }) : [e.id];
+  if (ev.shiftKey || ev.metaKey || ev.ctrlKey) {
+    var cur = selIdsNow(), has = unit.every(function(id) { return cur.indexOf(id) >= 0; });
+    setSel(has ? cur.filter(function(id) { return unit.indexOf(id) < 0; }) : cur.concat(unit));
+    return;
+  }
+  if (!unit.every(isSel)) setSel(unit);
   var start = ptFromEvent(ev), o = { x: e.x, y: e.y, w: e.w, h: e.h }, c = layout.card, moved = false;
+  var group = multi.length ? curEls().filter(function(x) { return multi.indexOf(x.id) >= 0; }) : null;
+  var origin = group && group.map(function(x) { return { x: x.x, y: x.y }; });
+  if (group) handle = '';
   function mv(m) {
     var p = ptFromEvent(m), dx = p.x - start.x, dy = p.y - start.y;
     if (!moved && Math.abs(dx) + Math.abs(dy) < .8) return;
     if (!moved) { snapshot(); moved = true; }
     var snap = m.altKey ? .1 : 1;
     function sn(v) { return Math.round(v / snap) * snap; }
+    if (group) {   // move everything selected together
+      var ddx = sn(dx), ddy = sn(dy);
+      group.forEach(function(x, i) {
+        x.x = r1(origin[i].x + ddx); x.y = r1(origin[i].y + ddy);
+        var nd = $('cardHolder').querySelector('.el[data-id="' + x.id + '"]'); if (nd) { nd.style.left = x.x + 'pt'; nd.style.top = x.y + 'pt'; }
+      });
+      var bx = $('cardHolder').querySelector('.sel-box'), b2 = selBox(group);
+      if (bx && b2) { bx.style.left = b2.x + 'pt'; bx.style.top = b2.y + 'pt'; }
+      return;
+    }
     if (!handle) {
       e.x = r1(sn(clamp(o.x + dx, -o.w + 6, c.w - 6))); e.y = r1(sn(clamp(o.y + dy, -o.h + 6, c.h - 6)));
     } else {
@@ -682,7 +709,7 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
   }
   function up() {
     document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up);
-    if (moved) changed(true);
+    if (moved) changed(!group);   // a group's panel shows its position, so refresh it
   }
   document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);
 });
@@ -695,25 +722,27 @@ document.addEventListener('keydown', function(ev) {
   if (typing || _activeTab !== 'design' || !layout) return;
   if (mod && ev.key.toLowerCase() === 'z') { ev.preventDefault(); if (ev.shiftKey) redo(); else undo(); return; }
   if (mod && ev.key.toLowerCase() === 'd') { ev.preventDefault(); duplicateSel(); return; }
-  var e = elById(selId); if (!e) return;
+  if (mod && ev.key.toLowerCase() === 'g') { ev.preventDefault(); if (ev.shiftKey) ungroupSel(); else groupSel(); return; }
+  if (mod && ev.key.toLowerCase() === 'a') { ev.preventDefault(); setSel(curEls().map(function(x) { return x.id; })); return; }
+  var sel = selEls(); if (!sel.length) return;
   if (ev.key === 'Delete' || ev.key === 'Backspace') { ev.preventDefault(); deleteSel(); return; }
   if (ev.key === 'Escape') { selectEl(null); return; }
   var step = ev.shiftKey ? 10 : 1, d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[ev.key];
-  if (d) { ev.preventDefault(); snapshot(); e.x = r1(e.x + d[0]); e.y = r1(e.y + d[1]); changed(true); syncGeomInputs(e); }
+  if (d) { ev.preventDefault(); snapshot(); sel.forEach(function(x) { x.x = r1(x.x + d[0]); x.y = r1(x.y + d[1]); }); changed(true); if (sel.length === 1) syncGeomInputs(sel[0]); }
 });
 
 // ── Selection, undo, saving ───────────────────────────────────────────────────
 function elById(id) { return layout && curEls().filter(function(e) { return e.id === id; })[0]; }
-function selectEl(id) { selId = id; render(); renderAttrs(); }
+function selectEl(id) { setSel(id ? [id] : []); }
 function snapshot() { undoStack.push(JSON.stringify(layout)); if (undoStack.length > 80) undoStack.shift(); redoStack = []; }
-function undo() { if (!undoStack.length) return; redoStack.push(JSON.stringify(layout)); layout = JSON.parse(undoStack.pop()); if (!elById(selId)) selId = null; changed(); }
-function redo() { if (!redoStack.length) return; undoStack.push(JSON.stringify(layout)); layout = JSON.parse(redoStack.pop()); if (!elById(selId)) selId = null; changed(); }
+function undo() { if (!undoStack.length) return; redoStack.push(JSON.stringify(layout)); layout = JSON.parse(undoStack.pop()); fixSel(); changed(); }
+function redo() { if (!redoStack.length) return; undoStack.push(JSON.stringify(layout)); layout = JSON.parse(redoStack.pop()); fixSel(); changed(); }
 function changed(keepAttrs) {
   setDirty(true);
   if (layout && JSON.stringify(layout.hidden || []) !== _lastHidden) { _lastHidden = JSON.stringify(layout.hidden || []); renderData(); if (GRID && _activeTab === 'data') renderGrid(); }
   try { localStorage.setItem('cb_draft:' + SHEET_ID + ':' + curTab, JSON.stringify(layout)); } catch (e) {}
   render();
-  if (!keepAttrs) renderAttrs();
+  if (!keepAttrs) renderAttrs(); else renderLayers();
 }
 function setDirty(d, restored) {
   dirty = d;
@@ -739,18 +768,240 @@ function saveLayout() {
 }
 window.addEventListener('beforeunload', function(ev) { if (dirty) { ev.preventDefault(); ev.returnValue = ''; } });
 
-function deleteSel() { var e = elById(selId); if (!e) return; snapshot(); var list = curEls(); list.splice(list.indexOf(e), 1); selId = null; changed(); }
+function deleteSel() {
+  var ids = selIdsNow(); if (!ids.length) return; snapshot();
+  var face = faceOf(layout, side);
+  face.els = face.els.filter(function(x) { return ids.indexOf(x.id) < 0; });
+  cleanGroups(); selId = null; multi = []; changed();
+}
 function duplicateSel() {
-  var e = elById(selId); if (!e) return;
-  var c = JSON.parse(JSON.stringify(e)); c.x = r1(c.x + 8); c.y = r1(c.y + 8);
-  if (c.kind === 'gen') c.seed = uid();   // a copy draws its own random values
-  addElementAt(c);
+  var sel = selEls(); if (!sel.length) return; snapshot();
+  var gmap = {}, top = curEls().reduce(function(m, x) { return Math.max(m, x.z || 1); }, 0), ids = [];
+  sel.sort(function(a, b) { return (a.z || 1) - (b.z || 1); }).forEach(function(e) {
+    var c = JSON.parse(JSON.stringify(e)); c.id = uid(); c.x = r1(c.x + 8); c.y = r1(c.y + 8); c.z = ++top;
+    if (c.kind === 'gen') c.seed = uid();   // a copy draws its own random values
+    if (c.group) {   // copies of a group become a new group
+      if (!gmap[c.group]) { var g = groupById(c.group); gmap[c.group] = newGroup((g ? g.name : 'Group') + ' copy'); }
+      c.group = gmap[c.group];
+    }
+    curEls().push(c); ids.push(c.id);
+  });
+  normalizeZ(); setSelQuiet(ids); changed();
 }
 function reorderSel(dir) {
-  var e = elById(selId); if (!e) return; snapshot();
-  var zs = curEls().map(function(x) { return x.z || 1; });
-  e.z = dir > 0 ? Math.max.apply(null, zs) + 1 : Math.min.apply(null, zs) - 1;
-  changed(true);
+  var sel = selEls(); if (!sel.length) return; snapshot();
+  var zs = curEls().map(function(x) { return x.z || 1; }), base = dir > 0 ? Math.max.apply(null, zs) + 1 : Math.min.apply(null, zs) - sel.length;
+  sel.sort(function(a, b) { return (a.z || 1) - (b.z || 1); }).forEach(function(x, i) { x.z = base + i; });
+  normalizeZ(); changed(true);
+}
+
+// ── Selection of several elements, groups and the Layers list ────────────────
+// A group is a name kept on the side of the card it belongs to (face.groups) plus
+// the same "group" id on each member. Members always sit next to each other in
+// the stacking order, so the group moves up and down as one.
+function face() { return faceOf(layout, side); }
+function isSel(id) { return id === selId || multi.indexOf(id) >= 0; }
+function selIdsNow() { return multi.length ? multi.slice() : (selId ? [selId] : []); }
+function selEls() { var ids = selIdsNow(); return curEls().filter(function(x) { return ids.indexOf(x.id) >= 0; }); }
+function setSelQuiet(ids) {
+  var all = curEls().map(function(x) { return x.id; });
+  ids = ids.filter(function(id, i) { return all.indexOf(id) >= 0 && ids.indexOf(id) === i; });
+  if (ids.length > 1) { multi = ids; selId = null; } else { multi = []; selId = ids[0] || null; }
+}
+function setSel(ids) { closeImagePicker(); setSelQuiet(ids); render(); renderAttrs(); }
+function fixSel() { setSelQuiet(selIdsNow()); }
+function selBox(els) {
+  if (!els.length) return null;
+  var x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+  els.forEach(function(e) { x1 = Math.min(x1, e.x); y1 = Math.min(y1, e.y); x2 = Math.max(x2, e.x + e.w); y2 = Math.max(y2, e.y + e.h); });
+  return { x: r1(x1), y: r1(y1), w: r1(x2 - x1), h: r1(y2 - y1) };
+}
+function groupById(gid) { return (face().groups || []).filter(function(g) { return g.id === gid; })[0]; }
+function groupMembers(gid) { return curEls().filter(function(x) { return x.group === gid; }); }
+function newGroup(name) { var f = face(); f.groups = f.groups || []; var g = { id: 'g' + uid().slice(1), name: name }; f.groups.push(g); return g.id; }
+// The selected group's id, when the selection is exactly one whole group
+function selGroupId() {
+  var sel = selEls(); if (sel.length < 2) return '';
+  var gid = sel[0].group; if (!gid || !sel.every(function(x) { return x.group === gid; })) return '';
+  return groupMembers(gid).length === sel.length ? gid : '';
+}
+function cleanGroups() {   // drop groups left with fewer than two members
+  [layout, layout.back].forEach(function(f) {
+    f.groups = (f.groups || []).filter(function(g) {
+      var n = f.els.filter(function(x) { return x.group === g.id; });
+      if (n.length < 2) { n.forEach(function(x) { delete x.group; }); return false; }
+      return true;
+    });
+  });
+}
+// Stacking order as a list of entries, back to front: an element, or a group with its members
+function entries() {
+  var els = curEls().slice().sort(function(a, b) { return (a.z || 1) - (b.z || 1); }), out = [];
+  els.forEach(function(e, i) {
+    if (!e.group) { out.push({ el: e }); return; }
+    var members = els.filter(function(x) { return x.group === e.group; });
+    if (members[members.length - 1] === e) out.push({ group: e.group, els: members });   // the group sits where its top member is
+  });
+  return out;
+}
+function applyEntries(list) {   // list back to front → z 1, 2, 3…
+  var z = 1;
+  list.forEach(function(en) { (en.group ? en.els : [en.el]).forEach(function(x) { x.z = z++; }); });
+}
+function normalizeZ() { cleanGroups(); applyEntries(entries()); }
+function groupSel() {
+  var sel = selEls(); if (sel.length < 2) return;
+  snapshot();
+  var gid = newGroup('Group ' + ((face().groups || []).length + 1));
+  sel.forEach(function(x) { x.group = gid; });
+  normalizeZ(); setSelQuiet(sel.map(function(x) { return x.id; })); changed();
+  toast('Grouped ' + sel.length + ' elements');
+}
+function ungroupSel() {
+  var sel = selEls(), gids = []; sel.forEach(function(x) { if (x.group && gids.indexOf(x.group) < 0) gids.push(x.group); });
+  if (!gids.length) return; snapshot();
+  sel.forEach(function(x) { delete x.group; }); normalizeZ(); changed();
+}
+function renameGroup(gid, name) { var g = groupById(gid); if (!g || !name.trim() || g.name === name.trim()) return; snapshot(); g.name = name.trim(); changed(true); }
+
+// The Layers list (toggled by the button at the top of the right-hand panel); front-most at the top
+var _layersOpen = false, _layerFold = {};
+try { _layersOpen = localStorage.getItem('cb_layers') === '1'; } catch (e) {}
+function toggleLayers() {
+  _layersOpen = !_layersOpen;
+  try { localStorage.setItem('cb_layers', _layersOpen ? '1' : '0'); } catch (e) {}
+  renderLayers();
+}
+function elLabel(e) {
+  if (e.kind === 'data') return e.field;
+  if (e.kind === 'text') return (e.text || 'Text').replace(/\s+/g, ' ').slice(0, 40);
+  if (e.kind === 'shape') return (SHAPES.filter(function(s) { return s[0] === e.shape; })[0] || ['', 'Shape'])[1];
+  if (e.kind === 'gen') return (GENS.filter(function(g) { return g[0] === e.mode; })[0] || ['', '', 'Generated'])[2];
+  if (e.kind === 'image') return 'Image';
+  return KIND_NAME[e.kind] || e.kind;
+}
+function elIcon(e) {
+  if (e.kind === 'shape') return '<span class="ly-ico">' + shapeSVG({ shape: e.shape, w: 14, h: 14, fill: e.fill || 'none', stroke: e.stroke || '#4b3fa8', strokeW: e.strokeW || (e.fill ? 0 : 1.5), radius: 3 }) + '</span>';
+  var t = { text: 'T', data: e.as === 'image' ? IMG_ICON : '≡', image: IMG_ICON, gen: '#' }[e.kind] || '•';
+  return '<span class="ly-ico">' + t + '</span>';
+}
+function renderLayers() {
+  var btn = $('layersBtn'), box = $('layersPanel'); if (!btn || !box) return;
+  btn.classList.toggle('on', _layersOpen);
+  box.style.display = _layersOpen && layout ? 'block' : 'none';
+  if (!_layersOpen || !layout) return;
+  var list = entries().slice().reverse(), n = curEls().length, sel = selIdsNow(), gsel = selGroupId();
+  var h = '<div class="ly-head"><b>Layers</b><span>' + (side === 'back' ? 'Back' : 'Front') + ' · ' + n + '</span>' +
+          (sel.length > 1 && !gsel ? '<button type="button" class="ly-act" onclick="groupSel()" title="⌘G">Group ' + sel.length + '</button>' : '') +
+          (gsel ? '<button type="button" class="ly-act" onclick="ungroupSel()" title="⇧⌘G">Ungroup</button>' : '') + '</div>';
+  if (!n) h += '<div class="muted" style="padding:.4rem .2rem">Nothing on this side yet.</div>';
+  h += '<div class="ly-list" id="lyList">';
+  list.forEach(function(en) {
+    if (en.group) {
+      var g = groupById(en.group) || { name: 'Group' }, open = !_layerFold[en.group], all = en.els.every(function(x) { return sel.indexOf(x.id) >= 0; });
+      h += '<div class="ly-row ly-group' + (all ? ' on' : '') + '" draggable="true" data-g="' + en.group + '">' +
+           '<span class="ly-chev' + (open ? ' open' : '') + '" data-fold="' + en.group + '">▸</span>' +
+           '<span class="ly-ico">▣</span><span class="ly-name" title="Double-click to rename">' + esc(g.name) + '</span><span class="ly-n">' + en.els.length + '</span></div>';
+      if (open) en.els.slice().reverse().forEach(function(e) {
+        h += '<div class="ly-row ly-child' + (sel.indexOf(e.id) >= 0 ? ' on' : '') + '" draggable="true" data-id="' + e.id + '" data-in="' + en.group + '">' + elIcon(e) + '<span class="ly-name">' + esc(elLabel(e)) + '</span><span class="ly-kind">' + KIND_NAME[e.kind] + '</span></div>';
+      });
+    } else {
+      var e = en.el;
+      h += '<div class="ly-row' + (sel.indexOf(e.id) >= 0 ? ' on' : '') + '" draggable="true" data-id="' + e.id + '">' + elIcon(e) + '<span class="ly-name">' + esc(elLabel(e)) + '</span><span class="ly-kind">' + KIND_NAME[e.kind] + '</span></div>';
+    }
+  });
+  h += '</div><p class="ly-tip">Drag to reorder · Shift or ⌘-click to select several, then Group</p>';
+  box.innerHTML = h;
+}
+// Clicks, renaming and drag-to-reorder in the Layers list
+(function() {
+  var box = $('layersPanel'); if (!box) return;
+  box.addEventListener('click', function(ev) {
+    var fold = ev.target.closest('[data-fold]');
+    if (fold) { _layerFold[fold.dataset.fold] = !_layerFold[fold.dataset.fold]; renderLayers(); return; }
+    var row = ev.target.closest('.ly-row'); if (!row) return;
+    var ids = row.dataset.g ? groupMembers(row.dataset.g).map(function(x) { return x.id; }) : [row.dataset.id];
+    if (ev.shiftKey || ev.metaKey || ev.ctrlKey) {
+      var cur = selIdsNow(), has = ids.every(function(id) { return cur.indexOf(id) >= 0; });
+      setSel(has ? cur.filter(function(id) { return ids.indexOf(id) < 0; }) : cur.concat(ids));
+    } else setSel(ids);
+  });
+  box.addEventListener('dblclick', function(ev) {
+    var row = ev.target.closest('.ly-group'); if (!row) return;
+    var nm = row.querySelector('.ly-name'), gid = row.dataset.g, g = groupById(gid); if (!g) return;
+    var inp = document.createElement('input'); inp.className = 'ly-rename'; inp.value = g.name; nm.replaceWith(inp); inp.focus(); inp.select();
+    function done(save) { if (save) renameGroup(gid, inp.value); renderLayers(); }
+    inp.addEventListener('keydown', function(k) { k.stopPropagation(); if (k.key === 'Enter') done(true); if (k.key === 'Escape') done(false); });
+    inp.addEventListener('blur', function() { done(true); });
+  });
+  var drag = null;
+  box.addEventListener('dragstart', function(ev) {
+    var row = ev.target.closest('.ly-row'); if (!row) return;
+    drag = { id: row.dataset.id, g: row.dataset.g, inG: row.dataset.in || '' };
+    ev.dataTransfer.effectAllowed = 'move'; ev.dataTransfer.setData('text/plain', 'layer');
+    setTimeout(function() { row.classList.add('dragging'); }, 0);
+  });
+  function mark(ev) {
+    box.querySelectorAll('.drop-before,.drop-after').forEach(function(x) { x.classList.remove('drop-before', 'drop-after'); });
+    var row = ev.target.closest('.ly-row'); if (!row || !drag) return null;
+    var r = row.getBoundingClientRect(), after = ev.clientY > r.top + r.height / 2;
+    row.classList.add(after ? 'drop-after' : 'drop-before');
+    return { row: row, after: after };
+  }
+  box.addEventListener('dragover', function(ev) { if (!drag) return; ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; mark(ev); });
+  box.addEventListener('dragend', function() { drag = null; renderLayers(); });
+  box.addEventListener('drop', function(ev) {
+    if (!drag) return; ev.preventDefault();
+    var m = mark(ev), d = drag; drag = null;
+    if (!m) { renderLayers(); return; }
+    var t = m.row.dataset, after = m.after;   // the list runs front to back, so "after" means lower
+    if ((d.id && d.id === t.id) || (d.g && d.g === t.g)) { renderLayers(); return; }
+    snapshot();
+    var list = entries().slice().reverse();   // front to back, like the list
+    function take() {   // remove the dragged thing from the list; returns its entry
+      if (d.g) { var k = list.findIndex(function(en) { return en.group === d.g; }); return list.splice(k, 1)[0]; }
+      var el = elById(d.id);
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].el === el) return list.splice(i, 1)[0];
+        if (list[i].group) { var j = list[i].els.indexOf(el); if (j >= 0) { list[i].els.splice(j, 1); return { el: el }; } }
+      }
+    }
+    var moving = take();
+    if (t.in && moving.el && (d.inG === t.in || !d.g)) {
+      // into (or within) a group, next to one of its members
+      var en = list.filter(function(x) { return x.group === t.in; })[0], tgt = elById(t.id);
+      var front = en.els.slice().reverse(), pos = front.indexOf(tgt) + (after ? 1 : 0);
+      front.splice(pos, 0, moving.el); en.els = front.reverse(); moving.el.group = t.in;
+    } else {
+      if (moving.el) delete moving.el.group;   // dragged out of its group
+      var idx = list.findIndex(function(x) { return t.g ? x.group === t.g : (x.el && x.el.id === t.id) || (x.group && x.group === t.in); });
+      if (idx < 0) idx = list.length;
+      list.splice(idx + (after ? 1 : 0), 0, moving);
+    }
+    applyEntries(list.slice().reverse()); cleanGroups(); changed(true);
+  });
+})();
+
+// Several elements, or a group, selected
+function multiAttrs() {
+  var sel = selEls(), gid = selGroupId(), g = gid && groupById(gid), bb = selBox(sel), h = '';
+  h += '<p class="attr-title">' + (g ? esc(g.name) + ' <span class="kind">Group</span>' : sel.length + ' selected') + '</p>';
+  if (g) h += '<span class="lbl">Name</span><input class="inp" value="' + esc(g.name) + '" onchange="renameGroup(\'' + gid + '\',this.value)">';
+  h += '<span class="lbl">Position (pt)</span><div class="row2">' +
+       '<div><span class="mini">X</span><input class="inp" type="number" step=".5" value="' + bb.x + '" onchange="moveSelTo(\'x\',this.value)"></div>' +
+       '<div><span class="mini">Y</span><input class="inp" type="number" step=".5" value="' + bb.y + '" onchange="moveSelTo(\'y\',this.value)"></div></div>';
+  h += '<p class="muted" style="margin:.35rem 0 0">' + r1(bb.w) + ' × ' + r1(bb.h) + ' pt. Drag on the card or use the arrow keys to move ' + (g ? 'the group' : 'them') + ' together.</p>';
+  h += '<div class="attr-btns">' + (g ? '<button class="attr-btn" onclick="ungroupSel()">Ungroup</button>' : '<button class="attr-btn" onclick="groupSel()">Group</button>') + '</div>';
+  h += '<div class="attr-btns"><button class="attr-btn" onclick="centerSel(\'x\')">Centre ↔</button><button class="attr-btn" onclick="centerSel(\'y\')">Centre ↕</button></div>';
+  h += '<div class="attr-btns"><button class="attr-btn" onclick="reorderSel(1)">To front</button><button class="attr-btn" onclick="reorderSel(-1)">To back</button></div>';
+  h += '<div class="attr-btns"><button class="attr-btn" onclick="duplicateSel()">Duplicate</button><button class="attr-btn danger" onclick="deleteSel()">Delete</button></div>';
+  h += '<span class="lbl">Shortcuts</span><p class="muted" style="margin:0">⌘G group · ⇧⌘G ungroup · ⌘A select all · Shift or ⌘-click to add to the selection</p>';
+  return h;
+}
+function moveSelTo(axis, v) {
+  v = parseFloat(v); if (isNaN(v)) return;
+  var sel = selEls(), bb = selBox(sel); if (!bb) return; snapshot();
+  var d = v - bb[axis]; sel.forEach(function(x) { x[axis] = r1(x[axis] + d); }); changed();
 }
 
 // ── Attributes panel ──────────────────────────────────────────────────────────
@@ -812,7 +1063,8 @@ function fitAttrs(e) {
   return '<div style="margin-top:.45rem"><span class="mini">Fit</span>' + seg('fit', [['cover', 'Fill', 'Fill the box (crops)'], ['contain', 'Fit', 'Show the whole image'], ['stretch', 'Stretch', 'Stretch to the box']], e.fit || 'cover') + '</div>';
 }
 function renderAttrs() {
-  var p = $('attrPanel'); if (!layout) { p.innerHTML = ''; return; }
+  var p = $('attrPanel'); renderLayers(); if (!layout) { p.innerHTML = ''; return; }
+  if (multi.length) { p.innerHTML = multiAttrs(); return; }
   var e = elById(selId), h = '';
   if (!e) {
     var c = layout.card;
@@ -913,6 +1165,11 @@ function insertField() {
   setProp('text', ta.value); renderAttrs();
 }
 function centerSel(axis) {
+  if (multi.length) {
+    var sel = selEls(), bb = selBox(sel); snapshot();
+    var d = axis === 'x' ? (layout.card.w - bb.w) / 2 - bb.x : (layout.card.h - bb.h) / 2 - bb.y;
+    sel.forEach(function(x) { x[axis] = r1(x[axis] + d); }); changed(); return;
+  }
   var e = elById(selId); if (!e) return; snapshot();
   if (axis === 'x') e.x = r1((layout.card.w - e.w) / 2); else e.y = r1((layout.card.h - e.h) / 2);
   changed(true); syncGeomInputs(e);

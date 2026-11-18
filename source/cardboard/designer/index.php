@@ -66,7 +66,34 @@ button, input, select, textarea { font-family:inherit; }
 #view-design { gap:0; }
 .panel { background:#fff; border-right:1px solid #e1e4ee; display:flex; flex-direction:column; min-height:0; }
 .panel-left  { width:230px; flex-shrink:0; }
-.panel-right { width:280px; flex-shrink:0; border-right:none; border-left:1px solid #e1e4ee; }
+.panel-right { width:280px; flex-shrink:0; border-right:none; border-left:1px solid #e1e4ee; position:relative; }
+#attrPanel .attr-title { padding-right:2.4rem; }
+.layers-btn { position:absolute; top:.6rem; right:.7rem; z-index:5; width:2rem; height:2rem; border-radius:8px; border:1.5px solid #d6d9e6; background:#fff; color:#4b3fa8; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+.layers-btn:hover { border-color:#a99cff; background:#f7f5ff; }
+.layers-btn.on { background:#4b3fa8; border-color:#4b3fa8; color:#fff; }
+.layers-panel { flex:0 1 auto; max-height:46%; overflow:auto; padding:.75rem .7rem .55rem; border-bottom:1px solid #e1e4ee; background:#fbfbfe; }
+.ly-head { display:flex; align-items:center; gap:.45rem; padding:0 2.4rem .45rem .2rem; font-size:.72rem; color:#8a8fa8; min-height:1.9rem; }
+.ly-head b { font-family:'DINBlack',sans-serif; font-weight:400; letter-spacing:.09em; text-transform:uppercase; color:#2e2763; font-size:.66rem; }
+.ly-act { margin-left:auto; border:1.5px solid #a99cff; background:#f3f1ff; color:#4b3fa8; border-radius:6px; font-family:'DINBlack',sans-serif; font-size:.62rem; letter-spacing:.06em; text-transform:uppercase; padding:.2rem .55rem; cursor:pointer; }
+.ly-act:hover { background:#ece9ff; }
+.ly-list { display:flex; flex-direction:column; gap:2px; }
+.ly-row { display:flex; align-items:center; gap:.4rem; padding:.32rem .45rem; border-radius:6px; background:#fff; border:1px solid #eceef5; font-size:.76rem; color:#2e2763; cursor:pointer; user-select:none; position:relative; }
+.ly-row:hover { border-color:#d6d1f5; }
+.ly-row.on { background:#ece9ff; border-color:#a99cff; }
+.ly-row.dragging { opacity:.35; }
+.ly-row.drop-before::before, .ly-row.drop-after::after { content:''; position:absolute; left:0; right:0; height:2px; background:#7b6cf6; border-radius:2px; }
+.ly-row.drop-before::before { top:-3px; } .ly-row.drop-after::after { bottom:-3px; }
+.ly-child { margin-left:1.1rem; }
+.ly-group { background:#f7f5ff; }
+.ly-chev { width:.8rem; text-align:center; color:#8a8fa8; font-size:.65rem; transition:transform .15s; }
+.ly-chev.open { transform:rotate(90deg); }
+.ly-ico { width:16px; height:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#8a8fa8; font-size:.7rem; }
+.ly-ico svg { width:14px; height:14px; }
+.ly-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ly-kind, .ly-n { font-size:.62rem; color:#a0a4bb; text-transform:uppercase; letter-spacing:.05em; }
+.ly-n { background:#ece9ff; color:#6b62b8; border-radius:999px; padding:0 .4rem; }
+.ly-rename { flex:1; min-width:0; font:inherit; border:1.5px solid #7b6cf6; border-radius:4px; padding:0 .3rem; }
+.ly-tip { margin:.45rem .2rem 0; font-size:.64rem; color:#a0a4bb; }
 .panel-scroll { overflow:auto; padding:.9rem .9rem 1.2rem; flex:1; }
 .lbl { display:block; font-family:'DINBlack',sans-serif; font-size:.62rem; letter-spacing:.09em; text-transform:uppercase; color:#8a8fa8; margin:.9rem 0 .35rem; }
 .lbl:first-child { margin-top:0; }
@@ -196,6 +223,10 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .designing .el.picked { outline:calc(1.5px / var(--z)) solid #4b3fa8; z-index:50; }
 .hdl { position:absolute; width:calc(9px / var(--z)); height:calc(9px / var(--z)); background:#fff; border:calc(1.5px / var(--z)) solid #4b3fa8; border-radius:calc(2px / var(--z)); display:none; z-index:60; }
 .el.picked .hdl { display:block; }
+.el.picked.multi .hdl { display:none; }
+.designing .el.picked.multi { outline-style:dashed; }
+.sel-box { position:absolute; z-index:49; pointer-events:none; outline:calc(1.5px / var(--z)) solid #7b6cf6; outline-offset:calc(2px / var(--z)); }
+.sel-box.group { outline-color:#4b3fa8; }
 .hdl.nw { left:calc(-4.5px / var(--z)); top:calc(-4.5px / var(--z)); cursor:nwse-resize; }
 .hdl.ne { right:calc(-4.5px / var(--z)); top:calc(-4.5px / var(--z)); cursor:nesw-resize; }
 .hdl.sw { left:calc(-4.5px / var(--z)); bottom:calc(-4.5px / var(--z)); cursor:nesw-resize; }
@@ -458,6 +489,9 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
   </div>
 
   <div class="panel panel-right">
+    <button type="button" class="layers-btn" id="layersBtn" onclick="toggleLayers()" title="Layers — every element on the card" aria-label="Layers">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 8l10 5 10-5-10-5z"/><path d="m2 13 10 5 10-5"/><path d="m2 17.5 10 5 10-5" opacity=".55"/></svg></button>
+    <div class="layers-panel" id="layersPanel" style="display:none"></div>
     <div class="panel-scroll" id="attrPanel"></div>
   </div>
 </div>

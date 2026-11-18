@@ -319,8 +319,9 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .el .tx { display:block; }
 .tag-img { display:inline-block; height:1.15em; width:auto; vertical-align:-.22em; margin:0 .04em; }
 /* Tags view */
-#view-tags { overflow:auto; background:#f4f3fa; }
-.tags-wrap { width:100%; max-width:1000px; margin:0 auto; padding:1.4rem 1.4rem 3rem; }
+#view-tags { overflow:auto; background:#f4f3fa; scroll-padding-top:160px; }
+.tags-wrap { width:100%; max-width:1000px; margin:0 auto; padding:0 1.4rem 3rem; }
+.tags-stick { position:sticky; top:0; z-index:5; background:#f4f3fa; margin:0 -.6rem; padding:1.4rem .6rem 0; }
 .tags-head { display:flex; align-items:flex-start; gap:1rem; margin-bottom:1rem; }
 .tags-head .e-actions { align-items:center; flex-shrink:0; }
 .tags-title { margin:0 0 .3rem; font-family:'DINBlack',sans-serif; font-weight:400; font-size:1.15rem; color:#2e2763; display:flex; align-items:center; gap:.5rem; }
@@ -599,6 +600,7 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
 <!-- Tags view -->
 <div class="view" id="view-tags">
   <div class="tags-wrap">
+    <div class="tags-stick">
     <div class="tags-head">
       <div>
         <h2 class="tags-title">Tags <span class="pro-tag">PRO</span></h2>
@@ -610,6 +612,7 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
     </div>
     <div class="tags-pro" id="tagsPro" style="display:none">Tags are part of <b>CardBoard Pro</b>. You can see the tags in this sheet; with Pro you can change them and they show on your cards. <button class="plan-btn" onclick="openPlansDialog('tags')">See plans</button></div>
     <div class="tag-cols"><span>Tag</span><span>Type</span><span>Becomes</span><span>Preview</span><span></span></div>
+    </div>
     <div id="tagList"><div class="loading"><span class="spin"></span>Loading tags…</div></div>
   </div>
 </div>

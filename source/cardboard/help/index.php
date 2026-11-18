@@ -142,7 +142,7 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
     <h2>Plans</h2>
     <div class="cards">
       <div class="card"><b>Free</b><p>The designer with fronts and backs, the Data tab, printing, downloads for Tabletop Simulator and Screentop, and pictures from Dropbox, Drive or the web.</p></div>
-      <div class="card"><b>Pro — $4.99/month</b><p>Everything in Free, plus anything that keeps files on our server: hosted links that update when your cards change, and picture uploads.</p></div>
+      <div class="card"><b>Pro — $4.99/month</b><p>Everything in Free, plus anything that keeps files on our server: hosted links for every export (Tabletop Simulator, Screentop and card images) that update when your cards change, and picture uploads.</p></div>
     </div>
   </section>
 </div>

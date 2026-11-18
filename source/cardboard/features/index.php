@@ -267,7 +267,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
       <div class="feat-card"><div class="feat-icon rose">📋</div><h3>Edit your data in place</h3><p>The Data tab shows your sheet as a grid. Type into a cell and it's saved to Google Sheets — without overwriting someone else's change.</p></div>
       <div class="feat-card"><div class="feat-icon gold">🖨️</div><h3>Print-and-play sheets</h3><p>Letter or A4, crop marks, copies from a Count column, and backs that line up when you print double-sided.</p></div>
       <div class="feat-card"><div class="feat-icon">🧩</div><h3>Tabletop Simulator &amp; Screentop</h3><p>Card sheets in the exact grid each one expects — 10 × 7 for TTS, with the back in the hidden-card slot.</p></div>
-      <div class="feat-card"><div class="feat-icon slate">🔗</div><h3>Links that stay up to date <span class="pro-tag">Pro</span></h3><p>Host your sheets at links that never change. Save your layout and the deck in Tabletop Simulator gets the new cards.</p></div>
+      <div class="feat-card"><div class="feat-icon slate">🔗</div><h3>Links that stay up to date <span class="pro-tag">Pro</span></h3><p>Every export — Tabletop Simulator sheets, Screentop sheets or separate card images — can be hosted at links that never change. Save your layout and everything using those links gets the new cards.</p></div>
       <div class="feat-card"><div class="feat-icon green">☁️</div><h3>Pictures from anywhere</h3><p>Dropbox, Google Drive or web links are shown straight from the source — replace a picture there and your cards follow.</p></div>
     </div>
   </div>
@@ -408,7 +408,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
     <p class="section-sub">Your card text, stats and layouts are all in a spreadsheet you own. Share it with co-designers, sort it, chart it, back it up.</p>
     <div class="own-grid">
       <div class="own-card"><div class="num">Free</div><p>The designer, fronts and backs, the Data tab, printing and downloads for Tabletop Simulator and Screentop.</p></div>
-      <div class="own-card"><div class="num">$4.99</div><p>Per month for <strong>Pro</strong>: hosted links that keep your Tabletop Simulator and Screentop decks up to date, and picture uploads.</p></div>
+      <div class="own-card"><div class="num">$4.99</div><p>Per month for <strong>Pro</strong>: hosted links for every export — Tabletop Simulator, Screentop and card images — that stay up to date, and picture uploads.</p></div>
       <div class="own-card"><div class="num">∞</div><p>Cards and decks. Every tab in your spreadsheet can be its own deck with its own layout.</p></div>
     </div>
   </div>
@@ -429,7 +429,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
           <tr><td>Edit card data in the app</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Double-sided print sheets</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span> <span style="font-size:12px;color:var(--text-muted)">by hand</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>Tabletop Simulator &amp; Screentop sheets</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Links that update your TTS deck</td><td class="ours"><span class="check">✓</span> <span class="pro-tag">Pro</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td>Hosted export links that stay up to date<br><span style="font-size:12px;color:var(--text-muted);font-weight:400">Tabletop Simulator, Screentop and card images</span></td><td class="ours"><span class="check">✓</span> <span class="pro-tag">Pro</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Works in the browser, nothing to install</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Works with <a href="https://zapsheets.com/app/devboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">DevBoard</a> &amp; <a href="https://zapsheets.com/app/gameboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">GameBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">Free<br>$4.99 / mo Pro</td><td><span style="font-size:12px;color:var(--text-muted)">varies</span></td><td><span style="font-size:12px;color:var(--text-muted)">varies</span></td></tr>
@@ -444,7 +444,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
         <h3>CardBoard</h3>
         <div class="price-line"><span>Free</span><b>$0</b></div>
         <div class="price-line"><span>Pro</span><b>$4.99<span style="font-family:Inter;font-size:12px;font-weight:400;color:var(--text-muted)"> / mo</span></b></div>
-        <p>Free has no limit on decks or cards. Pro adds hosted links for Tabletop Simulator and Screentop, and picture uploads.</p>
+        <p>Free has no limit on decks or cards. Pro adds hosted links for every export (Tabletop Simulator, Screentop and card images), and picture uploads.</p>
       </div>
       <div class="price-card">
         <h3>Dextrous</h3>

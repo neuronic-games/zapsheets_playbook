@@ -1616,7 +1616,7 @@ function updateSubMenu() {
   b.style.color = isPro() ? '#4caf50' : '#f5a623';
 }
 var PRO_REASONS = {
-  links: 'Hosted links for Tabletop Simulator and Screentop are part of CardBoard Pro — they keep your card sheets on our server and update them when your cards change.',
+  links: 'Hosted links for exports — Tabletop Simulator, Screentop and card images — are part of CardBoard Pro. They keep the files on our server and update them when your cards change.',
   upload: 'Uploading pictures to CardBoard is part of Pro. On Free, use a Dropbox, Google Drive or web link instead.'
 };
 // Returns true when allowed; otherwise shows the plans. If the plan can't be checked, the server decides.

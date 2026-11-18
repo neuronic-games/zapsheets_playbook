@@ -556,7 +556,7 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
         <div class="plan-price">$4.99<span>/month</span></div>
         <ul>
           <li>Everything in Free</li>
-          <li>Hosted links for Tabletop Simulator &amp; Screentop that update when your cards change</li>
+          <li>Hosted links for every export — Tabletop Simulator, Screentop and card images — that update when your cards change</li>
           <li>Upload pictures to CardBoard</li>
         </ul>
         <button class="plan-btn" id="planProBtn" onclick="startProCheckout()">Choose Pro</button>

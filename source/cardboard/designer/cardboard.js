@@ -82,6 +82,7 @@ function normalize(lay) {
     delete lay.card.back;
   }
   lay.back.els = (lay.back.els || []).map(fix);
+  if (!Array.isArray(lay.hidden)) lay.hidden = [];
   lay.v = 3;
   return lay;
 }
@@ -284,10 +285,11 @@ function selectTab(name, first, force) {
   try { localStorage.setItem('cb_tab:' + SHEET_ID, name); } catch (e) {}
   layout = normalize(LAYOUTS[name] ? JSON.parse(JSON.stringify(LAYOUTS[name])) : newLayout());
   setDirty(false);
+  _lastHidden = JSON.stringify(layout.hidden || []);
   // An unsaved draft from this browser wins (restored, still marked unsaved)
   try {
     var d = localStorage.getItem('cb_draft:' + SHEET_ID + ':' + name);
-    if (d && d !== JSON.stringify(layout)) { layout = normalize(JSON.parse(d)); setDirty(true, true); toast('Restored your unsaved changes'); }
+    if (d && d !== JSON.stringify(layout)) { layout = normalize(JSON.parse(d)); _lastHidden = JSON.stringify(layout.hidden || []); setDirty(true, true); toast('Restored your unsaved changes'); }
   } catch (e) {}
   $('dataList').innerHTML = '<div class="muted">Loading…</div>';
   $('cardHolder').innerHTML = '<div class="loading" style="width:240px;height:200px"><span class="spin"></span>Loading rows…</div>';
@@ -314,7 +316,7 @@ function openInSheets() { window.open('https://docs.google.com/spreadsheets/d/' 
 
 // ── Left panel: TEXT · DATA · IMAGE · SHAPE · GENERATED ──────────────────────
 function chip(attrs, ico, name, sample, extraCls) {
-  return '<div class="field-chip' + (extraCls ? ' ' + extraCls : '') + '" draggable="true" ' + attrs + ' ondragstart="chipDragStart(event)" onclick="chipClick(this)" title="Drag onto the card, or click to add">' +
+  return '<div class="field-chip' + (extraCls ? ' ' + extraCls : '') + '" draggable="true" ' + attrs + ' ondragstart="chipDragStart(event)" onclick="chipClick(this, event)" title="' + (/data-field=/.test(attrs) ? 'Drag onto the card · click for options' : 'Drag onto the card') + '">' +
          '<span class="ico">' + ico + '</span><span class="nm">' + esc(name) + '</span>' + (sample ? '<span class="sample">' + esc(sample) + '</span>' : '') + '</div>';
 }
 // Each section can be folded away; the choice is remembered in this browser
@@ -338,23 +340,29 @@ function renderPalette() {
   h += section('image', 'Image', chip('data-add="image"', IMG_ICON, 'Image'));
   h += section('shape', 'Shape', '<div class="shape-grid">' + SHAPES.map(function(s) {
     var demo = { shape: s[0], w: 24, h: s[0] === 'line' ? 24 : 18, fill: s[0] === 'line' ? 'none' : '#ece9ff', stroke: '#4b3fa8', strokeW: 1.5, radius: s[0] === 'round' ? 5 : 0 };
-    return '<div class="shape-chip" draggable="true" data-shape="' + s[0] + '" ondragstart="chipDragStart(event)" onclick="chipClick(this)" title="' + s[1] + '">' +
+    return '<div class="shape-chip" draggable="true" data-shape="' + s[0] + '" ondragstart="chipDragStart(event)" onclick="chipClick(this, event)" title="' + s[1] + ' — drag onto the card">' +
            '<span class="shape-ico">' + shapeSVG(demo) + '</span><span>' + s[1] + '</span></div>';
   }).join('') + '</div>');
   h += section('gen', 'Generated', GENS.map(function(g) { return chip('data-gen="' + g[0] + '"', g[1], g[2]); }).join(''));
-  h += '<p class="muted" style="margin-top:.8rem">Drag onto the card, or click to add it in the middle. Drop a picture file anywhere on the card to add it as an image.</p>';
+  h += '<p class="muted" style="margin-top:.8rem">Drag onto the card to add. Click a Data field to hide it. Drop a picture file anywhere on the card to add it as an image.</p>';
   $('palette').innerHTML = h;
 }
 function renderData() {
   var el = $('dataList'); if (!el) return;
   var sample = ROWS[rowIdx] || ROWS[0] || {};
-  if ($('dataCount')) $('dataCount').textContent = FIELDS.length;
+  var shown = visibleFields(), hid = FIELDS.filter(isHidden);
+  if ($('dataCount')) $('dataCount').textContent = shown.length;
   var h = '<div class="new-field" id="newField">' +
           '<button type="button" class="new-btn" onclick="showNewField()" title="Add a column to the sheet">New</button>' +
           '<form class="new-form" onsubmit="addField(event)"><input class="inp" id="newFieldName" maxlength="60" placeholder="New column name" title="Enter or click away to add · Esc to cancel" autocomplete="off" oninput="checkNewField()" onblur="addField()" onkeydown="if(event.key===\'Escape\'){this.value=\'\';hideNewField()}"></form>' +
           '<div class="new-msg" id="newFieldMsg"></div></div>';
   if (!FIELDS.length) h += '<div class="muted">No columns yet. The first row of the sheet holds the column names, with one card per row below — or add one with New.</div>';
-  h += FIELDS.map(function(f) { return chip('data-field="' + esc(f) + '"', '≡', f, looksLikeImage(f) ? '' : textVal(sample[f]), f === _newField ? 'just-added' : ''); }).join('');
+  h += shown.map(function(f) { return chip('data-field="' + esc(f) + '"', '≡', f, looksLikeImage(f) ? '' : textVal(sample[f]), f === _newField ? 'just-added' : ''); }).join('');
+  if (hid.length) {
+    h += '<button type="button" class="hidden-toggle' + (_hiddenOpen ? ' open' : '') + '" onclick="_hiddenOpen=!_hiddenOpen;renderData()"><span class="chev">▾</span>' + hid.length + ' hidden field' + (hid.length === 1 ? '' : 's') + '</button>';
+    if (_hiddenOpen) h += '<div class="hidden-list">' + hid.map(function(f) { return chip('data-field="' + esc(f) + '"', '⊘', f, '', 'is-hidden'); }).join('') +
+                         (hid.length > 1 ? '<button type="button" class="lk-act" onclick="showAllFields()">Show all</button>' : '') + '</div>';
+  }
   el.innerHTML = h;
 }
 // New column: added to the sheet's heading row, then ready to drag onto the card
@@ -405,12 +413,37 @@ function chipSpec(c) {
   return 'add:' + c.dataset.add;
 }
 function chipDragStart(ev) { ev.dataTransfer.setData('text/plain', chipSpec(ev.currentTarget)); ev.dataTransfer.effectAllowed = 'copy'; }
-function chipClick(c) {
+// Adding is by drag and drop only; clicking a Data field opens its options
+function chipClick(c, ev) {
   if (!layout) return;
-  var spec = chipSpec(c);
-  addAt(spec, layout.card.w / 2, layout.card.h / 2);
-  if (spec === 'add:image') setTimeout(function() { openImagePicker(null, selId); }, 0);   // straight to choosing the picture
+  if (ev) ev.stopPropagation();
+  if (c.dataset.field) { openFieldMenu(c); return; }
+  c.classList.remove('nudge'); void c.offsetWidth; c.classList.add('nudge');   // a little wiggle: drag me
 }
+function closeFieldMenu() { var m = $('fieldMenu'); if (m) m.remove(); var a = document.querySelector('.field-chip.menu-open'); if (a) a.classList.remove('menu-open'); }
+function openFieldMenu(chipEl) {
+  var f = chipEl.dataset.field, open = chipEl.classList.contains('menu-open');
+  closeFieldMenu(); if (open) return;
+  var hidden = isHidden(f), used = layout.els.concat(layout.back.els).some(function(e) { return e.field === f || (e.kind === 'text' && (e.text || '').indexOf('{' + f + '}') >= 0); });
+  var m = document.createElement('div'); m.id = 'fieldMenu'; m.className = 'field-menu';
+  m.innerHTML = '<button type="button" onclick="setFieldHidden(' + esc(JSON.stringify(f)) + ',' + !hidden + ')">' + (hidden ? '👁 Show field' : '<span class="fm-ico">⊘</span> Hide field') + '</button>' +
+    '<p>' + (hidden ? 'Brings it back in Design and Data.' : 'Hides it here and in the Data tab. The column stays in the sheet' + (used ? ', and it still shows on the card.' : '.')) + '</p>';
+  chipEl.classList.add('menu-open');
+  chipEl.parentNode.insertBefore(m, chipEl.nextSibling);
+}
+document.addEventListener('click', function(ev) { if (!ev.target.closest('#fieldMenu') && !ev.target.closest('.field-chip.menu-open')) closeFieldMenu(); });
+// Hidden fields are kept with the layout (so they stay hidden on every device once saved)
+function isHidden(f) { return !!(layout && layout.hidden && layout.hidden.indexOf(f) >= 0); }
+function visibleFields() { return FIELDS.filter(function(f) { return !isHidden(f); }); }
+function setFieldHidden(f, hide) {
+  closeFieldMenu(); snapshot();
+  layout.hidden = (layout.hidden || []).filter(function(x) { return x !== f; });
+  if (hide) layout.hidden.push(f);
+  changed(true); renderData();
+  if (GRID) renderGrid();
+}
+function showAllFields() { if (!layout.hidden || !layout.hidden.length) return; snapshot(); layout.hidden = []; changed(true); renderData(); if (GRID) renderGrid(); }
+var _hiddenOpen = false, _lastHidden = '[]';
 
 // A new element for a palette item, centred on (x, y)
 function makeEl(spec, x, y) {
@@ -673,6 +706,7 @@ function undo() { if (!undoStack.length) return; redoStack.push(JSON.stringify(l
 function redo() { if (!redoStack.length) return; undoStack.push(JSON.stringify(layout)); layout = JSON.parse(redoStack.pop()); if (!elById(selId)) selId = null; changed(); }
 function changed(keepAttrs) {
   setDirty(true);
+  if (layout && JSON.stringify(layout.hidden || []) !== _lastHidden) { _lastHidden = JSON.stringify(layout.hidden || []); renderData(); if (GRID && _activeTab === 'data') renderGrid(); }
   try { localStorage.setItem('cb_draft:' + SHEET_ID + ':' + curTab, JSON.stringify(layout)); } catch (e) {}
   render();
   if (!keepAttrs) renderAttrs();
@@ -1342,7 +1376,7 @@ function loadGrid(force) {
     _gridSel = null; renderGrid();
   }).catch(function(e) { box.innerHTML = '<div class="muted" style="padding:2rem">Couldn\'t read the sheet — ' + esc(e.message) + '</div>'; });
 }
-function gridCols() { return GRID.header.map(function(h, i) { return { name: h, i: i }; }).filter(function(c) { return c.name; }); }
+function gridCols() { return GRID.header.map(function(h, i) { return { name: h, i: i }; }).filter(function(c) { return c.name && !isHidden(c.name); }); }
 function gridVisibleRows() {
   if (!_gridFilter) return GRID.rows;
   var f = _gridFilter.toLowerCase();
@@ -1351,7 +1385,9 @@ function gridVisibleRows() {
 function renderGrid() {
   var box = $('gridWrap'); if (!GRID) return;
   var cols = gridCols(), rows = gridVisibleRows();
-  $('gridInfo').textContent = GRID.rows.filter(function(r) { return !r.draft; }).length + ' rows · ' + cols.length + ' columns' + (_gridFilter ? ' · ' + rows.length + ' shown' : '');
+  var nHid = GRID.header.filter(function(hd) { return hd && isHidden(hd); }).length;
+  $('gridInfo').innerHTML = GRID.rows.filter(function(r) { return !r.draft; }).length + ' rows · ' + cols.length + ' columns' + (_gridFilter ? ' · ' + rows.length + ' shown' : '') +
+    (nHid ? ' · ' + nHid + ' hidden <button type="button" class="lk-act" onclick="showAllFields()">Show all</button>' : '');
   if (!cols.length) { box.innerHTML = '<div class="muted" style="padding:2rem">This sheet has no column headings yet. Add one with <b>New</b> in the Design tab’s Data list.</div>'; return; }
   var imgCols = {};
   cols.forEach(function(c) { imgCols[c.i] = FIELDS.indexOf(c.name) >= 0 && looksLikeImage(c.name); });

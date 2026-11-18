@@ -108,6 +108,20 @@ button, input, select, textarea { font-family:inherit; }
 .new-field.open .new-form { display:flex; }
 .new-msg { font-size:.68rem; color:#c0392b; margin-top:.2rem; min-height:0; }
 .new-msg:empty { display:none; }
+.field-chip.menu-open { border-color:#7b6cf6; background:#f3f1ff; }
+.field-chip.is-hidden { opacity:.6; border-style:dashed; }
+.field-chip.nudge { animation:nudge .35s ease; }
+@keyframes nudge { 25% { transform:translateX(-3px); } 50% { transform:translateX(3px); } 75% { transform:translateX(-2px); } }
+.field-menu { margin:-.15rem 0 .45rem; padding:.45rem; background:#fff; border:1.5px solid #d6d1f5; border-radius:8px; box-shadow:0 6px 18px rgba(20,20,60,.12); }
+.field-menu button { width:100%; display:flex; align-items:center; gap:.4rem; border:none; background:#f7f5ff; color:#2e2763; border-radius:6px; padding:.4rem .5rem; font-size:.78rem; cursor:pointer; text-align:left; }
+.field-menu button:hover { background:#ece9ff; }
+.field-menu .fm-ico { width:16px; text-align:center; }
+.field-menu p { margin:.35rem .1rem 0; font-size:.68rem; color:#8a8fa8; line-height:1.4; }
+.hidden-toggle { display:flex; align-items:center; gap:.3rem; border:none; background:none; color:#8a8fa8; font-size:.72rem; cursor:pointer; padding:.3rem 0; }
+.hidden-toggle .chev { display:inline-block; transform:rotate(-90deg); transition:transform .15s; }
+.hidden-toggle.open .chev { transform:none; }
+.hidden-toggle:hover { color:#4b3fa8; }
+.hidden-list .lk-act { font-size:.72rem; }
 .field-chip.just-added { border-color:#7b6cf6; background:#ece9ff; box-shadow:0 0 0 3px rgba(123,108,246,.18); }
 /* Picture button on image elements (like GameBoard's) */
 .img-btn { position:absolute; top:calc(6px / var(--z, 1)); right:calc(6px / var(--z, 1)); width:calc(30px / var(--z, 1)); height:calc(30px / var(--z, 1)); border-radius:50%; border:none; padding:0; background:rgba(0,0,0,.55); color:#fff; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:55; }

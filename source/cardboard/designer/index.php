@@ -429,6 +429,8 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
 .page { position:absolute; left:0; top:0; background:#fff; transform-origin:0 0; overflow:hidden; }
 .page .card { box-shadow:none; }
 .cut { position:absolute; background:#9aa0b8; }
+.page-ref { position:absolute; top:7pt; font-family:'DINRegular',Arial,sans-serif; font-size:6pt; line-height:1; color:#9aa0b8; white-space:nowrap; max-width:60%; overflow:hidden; text-overflow:ellipsis; }
+.page-ref.left { left:18pt; } .page-ref.right { right:18pt; text-align:right; }
 
 /* Dialogs */
 .overlay { display:none; position:fixed; inset:0; z-index:800; background:rgba(20,18,45,.45); align-items:center; justify-content:center; padding:1rem; }

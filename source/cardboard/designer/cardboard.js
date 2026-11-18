@@ -1323,7 +1323,11 @@ function renderPrint() {
       if (isBack && backs === 'none') return;
       html += '<div class="page-holder" style="width:' + (pw * PX * scale) + 'px;height:' + (ph * PX * scale) + 'px">' +
               (backs !== 'none' ? '<span class="page-tag">' + (isBack ? 'Back' : 'Front') + ' · page ' + (p + 1) + '</span>' : '') +
-              '<div class="page" style="width:' + pw + 'pt;height:' + ph + 'pt;transform:scale(' + scale + ')">';
+              '<div class="page" style="width:' + pw + 'pt;height:' + ph + 'pt;transform:scale(' + scale + ')">' +
+              // Reference line, small: spreadsheet and sheet at the top left, page and side at the top right
+              '<div class="page-ref left">' + esc((SHEET_TITLE || 'Spreadsheet') + ' · ' + curTab) + '</div>' +
+              '<div class="page-ref right">Page ' + (backs === 'none' ? p + 1 : p * 2 + (isBack ? 2 : 1)) + ' of ' + (backs === 'none' ? nPages : nPages * 2) +
+                (backs === 'none' ? '' : ' · ' + (isBack ? 'Back' : 'Front')) + '</div>';
       cards.forEach(function(it, i) {
         var col = i % cols, row = Math.floor(i / cols);
         if (isBack && backs === 'long') col = cols - 1 - col;   // flipped over the long edge: columns swap
@@ -1338,7 +1342,8 @@ function renderPrint() {
   }
   function cropMarks(count) {
     if (cut !== 'marks' || !count) return '';
-    var out = '', used = Math.ceil(count / cols), len = 10, xs = [], ys = [];
+    var out = '', used = Math.ceil(count / cols), len = clamp(Math.min(oy, ox) - 16, 3, 10),   // shorter marks when the cards come close to the edge, to clear the reference line
+       xs = [], ys = [];
     for (var ci = 0; ci < Math.min(cols, count); ci++) { xs.push(ox + ci * (c.w + gap)); xs.push(ox + ci * (c.w + gap) + c.w); }
     for (var ri = 0; ri < used; ri++) { ys.push(oy + ri * (c.h + gap)); ys.push(oy + ri * (c.h + gap) + c.h); }
     var top = ys[0], bottom = ys[ys.length - 1], left = xs[0], right = xs[xs.length - 1];

@@ -286,8 +286,15 @@ function init() {
     });
 }
 
-function selectTab(name, first, force) {
-  if (!first && dirty && !confirm('You have unsaved changes to the "' + curTab + '" layout. Switch sheets anyway?')) { $('sheetSel').value = curTab; $('gridSheet').value = curTab; return; }
+function selectTab(name, first, force, asked) {
+  if (!first && dirty && !asked) {
+    var from = curTab;
+    $('sheetSel').value = from; $('gridSheet').value = from;
+    askDialog({ title: 'Switch sheets?', message: 'You have unsaved changes to the “' + from + '” layout. They stay in this browser as a draft, but aren’t saved to your Sheet yet.',
+                ok: 'Switch anyway', cancel: 'Stay here' })
+      .then(function(yes) { if (yes) selectTab(name, false, force, true); });
+    return;
+  }
   if (_gridEdit) endGridEdit(true);
   $('sheetSel').value = name; $('gridSheet').value = name;
   curTab = name; selId = null; multi = []; rowIdx = 0; undoStack = []; redoStack = []; GRID = null; _gridSel = null; _rowsStale = false;
@@ -1538,13 +1545,17 @@ function publishSet(tab, o, tick) {
     })
     .then(function(r) { (PUBLISHED[tab] = PUBLISHED[tab] || {})[o.target] = r.published; return r.published; });
 }
-function runPublish() {
+function runPublish(asked) {
   if (_exporting || !layout) return;
   if (!requirePro('links', runPublish)) return;
   var o = Object.assign(exportOpts(), { fixed: true }), tab = curTab, old = (PUBLISHED[tab] || {})[o.target];
   o.jpeg = !o.round;
   if (old && old.grid && old.settings && old.settings.quality === o.quality) o.grid = old.grid;   // keep the grid the game was set up with
-  if (dirty && !confirm('The links will show your unsaved changes too. Publish anyway?')) return;
+  if (dirty && asked !== true) {
+    askDialog({ title: 'Publish unsaved changes?', message: 'Your layout has changes you haven’t saved. The links will show them too.', ok: 'Publish', cancel: 'Cancel' })
+      .then(function(yes) { if (yes) runPublish(true); });
+    return;
+  }
   exportBusy(true);
   publishSet(tab, o, exportTick)
     .then(function() { toast('✓ Links ready — they\'ll update when you save'); if (curTab === tab) renderExport(); })
@@ -1559,8 +1570,13 @@ function updateLinksNow(target) {
     .catch(function(e) { toast('Couldn\'t update — ' + e.message, true); })
     .then(function() { exportBusy(false); });
 }
-function stopSharing(target) {
-  if (!confirm('Remove these files from the server? Anything using the links (like a Tabletop Simulator deck) will lose its pictures.')) return;
+function stopSharing(target, asked) {
+  if (!asked) {
+    askDialog({ title: 'Stop sharing these links?', message: 'The files are removed from the server and the links stop working. Anything using them — like a Tabletop Simulator deck — will lose its pictures.',
+                ok: 'Stop sharing', cancel: 'Keep links', danger: true })
+      .then(function(yes) { if (yes) stopSharing(target, true); });
+    return;
+  }
   var tab = curTab;
   publishApi('remove', { tab: tab, target: target }).then(function() {
     if (PUBLISHED[tab]) delete PUBLISHED[tab][target];
@@ -1800,6 +1816,37 @@ function refreshRows() {
   });
 })();
 
+// ── Dialogs (instead of the browser's confirm/alert) ─────────────────────────
+// askDialog({title, message, ok, cancel, danger}) → Promise<boolean>. cancel: '' shows only the OK button.
+function askDialog(o) {
+  return new Promise(function(done) {
+    var ov = document.createElement('div');
+    ov.className = 'overlay open ask-overlay';
+    ov.innerHTML = '<div class="dlg ask" role="alertdialog" aria-modal="true" aria-labelledby="askTitle">' +
+      '<h2 class="dlg-title" id="askTitle">' + esc(o.title || '') + '</h2>' +
+      '<p class="ask-msg">' + esc(o.message || '') + '</p>' +
+      '<div class="dlg-actions">' + (o.cancel === '' ? '' : '<button type="button" class="attr-btn" data-a="0">' + esc(o.cancel || 'Cancel') + '</button>') +
+      '<button type="button" class="print-go' + (o.danger ? ' danger' : '') + '" data-a="1">' + esc(o.ok || 'OK') + '</button></div></div>';
+    var prev = document.activeElement;
+    function close(v) { document.removeEventListener('keydown', key, true); ov.remove(); if (prev && prev.focus) prev.focus(); done(v); }
+    function key(ev) {
+      if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); close(false); }
+      else if (ev.key === 'Enter') { ev.preventDefault(); ev.stopPropagation(); var f = document.activeElement; close(f && f.dataset && f.dataset.a ? f.dataset.a === '1' : !o.danger); }
+      else if (ev.key === 'Tab') {   // keep focus inside the dialog
+        var b = ov.querySelectorAll('button'), i = Array.prototype.indexOf.call(b, document.activeElement);
+        ev.preventDefault(); b[(i + (ev.shiftKey ? b.length - 1 : 1)) % b.length].focus();
+      }
+    }
+    ov.addEventListener('click', function(ev) {
+      var b = ev.target.closest('[data-a]');
+      if (b) close(b.dataset.a === '1'); else if (ev.target === ov) close(false);
+    });
+    document.addEventListener('keydown', key, true);
+    document.body.appendChild(ov);
+    ov.querySelector(o.danger ? '[data-a="0"]' : '[data-a="1"]').focus();   // risky actions default to Cancel
+  });
+}
+
 // ── Menu: Profile, Settings, Fetch, Subscribe, Help ──────────────────────────
 // Profile and settings live in the spreadsheet's "cardboard" tab, on their own row.
 var SETTINGS_KEY = '_cardboard_settings', SETTINGS = { units: 'in', profile: {} }, SHEET_TITLE = '';
@@ -1902,7 +1949,7 @@ function renderPlans() {
 function openBillingPortal() {
   var url = SUB && SUB.portal_url;
   if (url) window.open(url, '_blank', 'noopener');
-  else alert('Online billing management is not available yet. Please contact support to change your subscription.');
+  else askDialog({ title: 'Billing', message: 'Online billing management isn’t available yet. Please contact support to change your subscription.', ok: 'OK', cancel: '' });
 }
 function returnUrl(flag) {
   var u = new URL(window.location.href); u.searchParams.delete('sub'); u.searchParams.delete('donate');

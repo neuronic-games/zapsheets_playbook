@@ -351,6 +351,16 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
 .dlg-actions .attr-btn { flex:0 0 auto; padding:0 1rem; height:2.05rem; }
 .dlg-actions .print-go { margin-left:0; }
 .dlg.shake { animation:nudge .35s ease; }
+.ask-overlay { z-index:950; animation:askFade .15s ease; }
+.dlg.ask { width:min(400px,92vw); animation:askPop .18s cubic-bezier(.3,1.4,.5,1); }
+.ask-msg { margin:.35rem 0 .2rem; font-size:.86rem; line-height:1.5; color:#4a4e68; }
+.dlg.ask .dlg-actions { margin-top:1.1rem; }
+.dlg.ask .print-go { padding:0 1.2rem; }
+.print-go.danger { background:#c0392b; }
+.print-go.danger:hover { background:#a93226; }
+.dlg.ask button:focus-visible { outline:2px solid #7b6cf6; outline-offset:2px; }
+@keyframes askFade { from { opacity:0; } }
+@keyframes askPop { from { transform:scale(.94); opacity:0; } }
 .set-sheet, .set-plan { display:flex; align-items:center; justify-content:space-between; gap:.6rem; font-size:.84rem; color:#2e2763; }
 .set-sheet .attr-btn, .set-plan .attr-btn { flex:0 0 auto; padding:0 .8rem; }
 .plan-title { display:flex; align-items:center; justify-content:center; gap:.5rem; margin:0 0 .35rem; font-family:'DINBlack',sans-serif; font-weight:400; font-size:1.1rem; color:#2e2763; }

@@ -182,6 +182,10 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^shares/contracts/([A-Za-z0-9]+)/?$ shares/contracts/index.php?token=$1 [L,QSA]
 
+# /shares/cardboard/{token}/{file} — published CardBoard sheet (streams from the sheet's private files via token)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^shares/cardboard/([a-f0-9]{24})/([A-Za-z0-9\-]+\.(?:png|jpg))$ shares/cardboard/index.php?token=$1&file=$2 [L,QSA]
+
 # /share/{token} — shared read-only PulseBoard view
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

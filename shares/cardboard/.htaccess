@@ -1,0 +1,5 @@
+Options -Indexes
+# Share records (token -> sheet) are private; only index.php serves the pictures
+<FilesMatch "\.json$">
+  Deny from all
+</FilesMatch>

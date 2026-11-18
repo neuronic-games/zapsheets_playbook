@@ -170,6 +170,13 @@ if (preg_match('#^/tmboard/share/([a-f0-9]{24})/?$#', $uri)) {
     serveFile(__DIR__ . '/source/tmboard/shared/index.php', $MIME);
 }
 
+// ── /shares/cardboard/{token}/{file} — published CardBoard sheet ─────────────
+if (preg_match('#^/shares/cardboard/([a-f0-9]{24})/([A-Za-z0-9\-]+\.(?:png|jpg))$#', $uri, $_cbm)) {
+    $_GET['token'] = $_cbm[1]; $_GET['file'] = $_cbm[2];
+    require __DIR__ . '/shares/cardboard/index.php';
+    exit;
+}
+
 // ── /gameboard/{token}/{slug} — public game page ─────────────────────────────
 if (preg_match('#^/gameboard/([a-f0-9]{24})/([^/]+)/?$#', $uri)) {
     serveFile(__DIR__ . '/source/gameboard/public/index.php', $MIME);

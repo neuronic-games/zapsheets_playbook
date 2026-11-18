@@ -278,7 +278,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
       <div class="feat-card"><div class="feat-icon gold">🖨️</div><h3>Print-and-play sheets</h3><p>Letter or A4, crop marks, copies from a Count column, and backs that line up when you print double-sided.</p></div>
       <div class="feat-card"><div class="feat-icon">🧩</div><h3>Tabletop Simulator &amp; Screentop</h3><p>Card sheets in the exact grid each one expects — 10 × 7 for TTS, with the back in the hidden-card slot.</p></div>
       <div class="feat-card"><div class="feat-icon slate">🔗</div><h3>Links that stay up to date <span class="pro-tag">Pro</span></h3><p>Every export — Tabletop Simulator sheets, Screentop sheets or separate card images — can be hosted at links that never change. Save your layout and everything using those links gets the new cards.</p></div>
-      <div class="feat-card"><div class="feat-icon gold">⚡</div><h3>Tags for icons <span class="pro-tag">Pro</span></h3><p>Write <code>{energy}</code> in your sheet and every card shows its icon. Pick from the icon library, upload a picture, or have a tag become words.</p></div>
+      <div class="feat-card"><div class="feat-icon gold">⚡</div><h3>Tags for icons <span class="pro-tag">Pro</span></h3><p>Write <code>[energy]</code> in your sheet and every card shows its icon. Pick from the icon library, upload a picture, or have a tag become words.</p></div>
       <div class="feat-card"><div class="feat-icon rose">🗂️</div><h3>Layers and groups</h3><p>See everything on the card in one list. Drag to change what's on top, tick several to move them together, and group them.</p></div>
       <div class="feat-card"><div class="feat-icon slate">🎨</div><h3>Fonts, colors and effects</h3><p>Choose fonts and colors — with your recent colors and transparent a click away — and rotate, fade or round the corners of anything on the card.</p></div>
       <div class="feat-card"><div class="feat-icon green">☁️</div><h3>Pictures from anywhere</h3><p>Dropbox, Google Drive or web links are shown straight from the source — replace a picture there and your cards follow. With Pro, upload pictures from your computer.</p></div>
@@ -393,24 +393,24 @@ footer a { color:var(--text-mid); text-decoration:none; }
     <div class="shot-grid">
       <div class="shot-text">
         <div class="section-label">Tags <span class="pro-tag">Pro</span></div>
-        <h2 class="section-title" style="margin-bottom:1rem;">Write {energy}, see the icon</h2>
+        <h2 class="section-title" style="margin-bottom:1rem;">Write [energy], see the icon</h2>
         <p>Give a tag a word or a picture once, then type it anywhere in your sheet. Every card shows the icon in place of the tag — change the picture and the whole deck follows.</p>
         <ul>
           <li>Pick from the icon library, upload a picture or paste a link</li>
-          <li>Or have a tag become words, like <b>{VP}</b> → victory points</li>
-          <li>Works in text and in data from your sheet</li>
+          <li>Or have a tag become words, like <b>[VP]</b> → victory points</li>
+          <li>Works in text and in data — <b>{Columns}</b> still fill in from your sheet</li>
           <li>Kept in a <b>tags</b> tab in your Google Sheet</li>
         </ul>
       </div>
       <div class="browser-frame">
         <div class="browser-chrome"><div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="browser-url">zapsheets.com/app/…/cardboard — Tags</div></div>
         <div class="tags-mock">
-          <div class="tm-row"><code>{energy}</code><span><svg class="ti" viewBox="0 0 24 24"><path d="M13.5 2 4.5 13.5h6.5L10 22l9-11.5h-6.5z" fill="#f2b705"/></svg> Icon</span></div>
-          <div class="tm-row"><code>{coin}</code><span><svg class="ti" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#e9a81c"/><circle cx="12" cy="12" r="7" fill="#f7c948" stroke="#c98a0c" stroke-width="1.2"/></svg> Icon</span></div>
-          <div class="tm-row"><code>{VP}</code><span>victory points</span></div>
+          <div class="tm-row"><code>[energy]</code><span><svg class="ti" viewBox="0 0 24 24"><path d="M13.5 2 4.5 13.5h6.5L10 22l9-11.5h-6.5z" fill="#f2b705"/></svg> Icon</span></div>
+          <div class="tm-row"><code>[coin]</code><span><svg class="ti" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#e9a81c"/><circle cx="12" cy="12" r="7" fill="#f7c948" stroke="#c98a0c" stroke-width="1.2"/></svg> Icon</span></div>
+          <div class="tm-row"><code>[VP]</code><span>victory points</span></div>
           <div class="tm-card">
-            <div class="raw"><span class="lbl">In your sheet</span>Gain 1 {energy}. Pay 2 {coin} to score 1 {VP}.</div>
-            <div class="out"><span class="lbl">On the card</span>Gain 1 <svg class="ti" viewBox="0 0 24 24"><path d="M13.5 2 4.5 13.5h6.5L10 22l9-11.5h-6.5z" fill="#f2b705"/></svg>. Pay 2 <svg class="ti" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#e9a81c"/><circle cx="12" cy="12" r="7" fill="#f7c948" stroke="#c98a0c" stroke-width="1.2"/></svg> to score 1 victory points.</div>
+            <div class="raw"><span class="lbl">In your sheet</span>Gain {Amount} [energy]. Pay 2 [coin] to score 1 [VP].</div>
+            <div class="out"><span class="lbl">On the card</span>Gain 2 <svg class="ti" viewBox="0 0 24 24"><path d="M13.5 2 4.5 13.5h6.5L10 22l9-11.5h-6.5z" fill="#f2b705"/></svg>. Pay 2 <svg class="ti" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#e9a81c"/><circle cx="12" cy="12" r="7" fill="#f7c948" stroke="#c98a0c" stroke-width="1.2"/></svg> to score 1 victory points.</div>
           </div>
         </div>
       </div>
@@ -474,7 +474,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
           <tr><td>Print-and-play sheets</td><td class="ours"><span class="check">✓</span> <span class="nl">double-sided</span></td><td><span class="check">✓</span> <span class="nl">PDF</span></td><td><span class="check">✓</span> <span class="nl">PDF</span></td></tr>
           <tr><td>Tabletop Simulator &amp; Screentop sheets</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>Hosted export links that stay up to date<br><span class="nl" style="margin:0">Tabletop Simulator, Screentop and card images</span></td><td class="ours"><span class="check">✓</span> <span class="pro-tag">Pro</span></td><td><span class="check">✓</span> <span class="nl">Tabletop Simulator</span></td><td><span class="check">✓</span> <span class="nl">Tabletop Simulator</span></td></tr>
-          <tr><td><code>{tags}</code> into an icon or words</td><td class="ours"><span class="check">✓</span> <span class="pro-tag">Pro</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td><code>[tags]</code> into an icon or words</td><td class="ours"><span class="check">✓</span> <span class="pro-tag">Pro</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>Pictures from Dropbox, Drive or the web</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span> <span class="nl">not listed</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>Works in the browser, nothing to install</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>Works with <a href="https://zapsheets.com/app/devboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">DevBoard</a> &amp; <a href="https://zapsheets.com/app/gameboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">GameBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>

@@ -605,7 +605,7 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
     <div class="tags-head">
       <div>
         <h2 class="tags-title">Tags <span class="pro-tag">PRO</span></h2>
-        <p class="tags-sub">Type <code>{energy}</code> in any text and cards show its word or picture.</p>
+        <p class="tags-sub">Type <code>[energy]</code> in any text and cards show its word or picture.</p>
       </div>
       <div class="e-actions"><span class="print-info" id="tagsInfo"></span>
         <button class="print-go ghost" onclick="loadTags()">Reload</button>
@@ -758,7 +758,7 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
           <li>Everything in Free</li>
           <li>Hosted links for every export — Tabletop Simulator, Screentop and card images — that update when your cards change</li>
           <li>Upload pictures to CardBoard</li>
-          <li>Tags: <code>{energy}</code> becomes an icon or word on every card</li>
+          <li>Tags: <code>[energy]</code> becomes an icon or word on every card</li>
         </ul>
         <button class="plan-btn" id="planProBtn" onclick="startProCheckout()">Choose Pro</button>
       </div>

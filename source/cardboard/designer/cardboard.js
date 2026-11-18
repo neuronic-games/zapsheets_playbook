@@ -2015,8 +2015,8 @@ function refreshRows() {
   });
 })();
 
-// ── Tags (Pro): {name} in any text becomes a word or a picture ───────────────
-// Kept in the spreadsheet's "tags" tab as name/value pairs: Tag = "{energy}", Value =
+// ── Tags (Pro): [name] in any text becomes a word or a picture ───────────────
+// ({Column} stays for sheet columns.) Kept in the spreadsheet's "tags" tab as name/value pairs: Tag = "[energy]", Value =
 // text, a picture link, or "icon:bolt:#f2c14e" for an icon from the library below.
 var TAGS = [], TAGMAP = {};
 var ICONS = {
@@ -2058,8 +2058,8 @@ function iconSvg(name, color) {
 }
 function iconUri(name, color) { return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(iconSvg(name, color)); }
 function parseIcon(v) { var m = /^icon:([a-z]+)(?::(#[0-9a-f]{3,8}))?$/i.exec(String(v || '').trim()); return m ? { name: m[1].toLowerCase(), color: m[2] || '#2e2763' } : null; }
-function tagKey(n) { return String(n || '').trim().replace(/^\{+|\}+$/g, '').trim().toLowerCase(); }
-function braced(n) { n = String(n || '').trim().replace(/^\{+|\}+$/g, '').trim(); return n ? '{' + n + '}' : ''; }
+function tagKey(n) { return String(n || '').trim().replace(/^[{\[]+|[}\]]+$/g, '').trim().toLowerCase(); }
+function braced(n) { n = String(n || '').trim().replace(/^[{\[]+|[}\]]+$/g, '').trim(); return n ? '[' + n + ']' : ''; }   // tag names are written [energy]
 function tagPicture(v) {   // the picture address for an image tag, or '' for a text tag
   var ic = parseIcon(v); if (ic) return iconUri(ic.name, ic.color);
   v = String(v || '').trim();
@@ -2067,6 +2067,7 @@ function tagPicture(v) {   // the picture address for an image tag, or '' for a 
 }
 function setTags(list) {
   TAGS = list; TAGMAP = {};
+  TAGS.forEach(function(t) { t.tag = braced(t.tag); });   // older sheets saved {energy}
   TAGS.forEach(function(t) { TAGMAP[tagKey(t.tag)] = t; });
 }
 function tagsOn() { return TAGS.length > 0 && !!SUB && (SUB.is_pro || SUB.ok === false); }
@@ -2074,7 +2075,7 @@ function tagsOn() { return TAGS.length > 0 && !!SUB && (SUB.is_pro || SUB.ok ===
 function rich(t, ctx) { return '<span class="tx">' + expandTags(esc(t), ctx || {}) + '</span>'; }
 function expandTags(html, ctx) {
   if (!tagsOn()) return html;
-  return html.replace(/\{([^{}<>]{1,60})\}/g, function(all, name) {
+  return html.replace(/\[([^\[\]{}<>]{1,60})\]/g, function(all, name) {
     var t = TAGMAP[tagKey(name)]; if (!t) return all;
     var pic = tagPicture(t.value);
     if (!pic) return esc(t.value);
@@ -2100,7 +2101,7 @@ function renderTags() {
   $('tagsPro').style.display = SUB && SUB.ok && !SUB.is_pro ? '' : 'none';
   $('tagsInfo').textContent = TAGS.length + (TAGS.length === 1 ? ' tag' : ' tags');
   var list = (_tagDraft ? [_tagDraft] : []).concat(TAGS);
-  if (!list.length) { box.innerHTML = '<div class="tag-empty">No tags yet. <b>+ Add tag</b>, name it (like <code>energy</code>), and give it a word or a picture. Then write <code>{energy}</code> in any text or data on your cards.</div>'; return; }
+  if (!list.length) { box.innerHTML = '<div class="tag-empty">No tags yet. <b>+ Add tag</b>, name it (like <code>energy</code>), and give it a word or a picture. Then write <code>[energy]</code> in any text or data on your cards.</div>'; return; }
   box.innerHTML = list.map(function(t, i) {
     var draft = t === _tagDraft, img = draft ? t.kind === 'image' : (t.kind || (tagPicture(t.value) ? 'image' : 'text')) === 'image';
     var idx = draft ? -1 : TAGS.indexOf(t);
@@ -2108,12 +2109,12 @@ function renderTags() {
       ? '<div class="tag-img-box">' + (tagPicture(t.value) ? '<img src="' + esc(tagPicture(t.value)) + '" alt="" referrerpolicy="no-referrer">' : '<span class="muted">No picture</span>') +
         '<button type="button" class="tag-pick" onclick="pickTagImage(' + idx + ')" title="Choose a picture"' + (pro ? '' : ' disabled') + '>' + IMG_ICON + ' Choose</button>' +
         '<input class="inp" value="' + esc(parseIcon(t.value) ? '' : t.value) + '" placeholder="or paste a picture link" onchange="setTagValue(' + idx + ',this.value.trim())"' + (pro ? '' : ' disabled') + '></div>'
-      : '<input class="inp" value="' + esc(t.value) + '" placeholder="What {tag} becomes" onchange="setTagValue(' + idx + ',this.value)"' + (pro ? '' : ' disabled') + '>';
+      : '<input class="inp" value="' + esc(t.value) + '" placeholder="What [tag] becomes" onchange="setTagValue(' + idx + ',this.value)"' + (pro ? '' : ' disabled') + '>';
     return '<div class="tag-row' + (draft ? ' draft' : '') + '">' +
-      '<input class="inp tag-name" value="' + esc(draft ? t.tag : t.tag) + '" placeholder="{name}" onchange="renameTag(' + idx + ',this.value,this)"' + (draft ? ' id="tagDraftName"' : '') + (pro ? '' : ' disabled') + '>' +
+      '<input class="inp tag-name" value="' + esc(draft ? t.tag : t.tag) + '" placeholder="[name]" onchange="renameTag(' + idx + ',this.value,this)"' + (draft ? ' id="tagDraftName"' : '') + (pro ? '' : ' disabled') + '>' +
       '<div class="seg tag-kind"><button type="button" class="' + (img ? '' : 'on') + '" onclick="setTagKind(' + idx + ',\'text\')"' + (pro ? '' : ' disabled') + '>Text</button><button type="button" class="' + (img ? 'on' : '') + '" onclick="setTagKind(' + idx + ',\'image\')"' + (pro ? '' : ' disabled') + '>Image</button></div>' +
       '<div class="tag-val">' + val + '</div>' +
-      '<div class="tag-prev" title="How it looks on a card">Gain 1 ' + (draft && !t.value ? '<span class="muted">' + esc(t.tag || '{…}') + '</span>' : tagPreview(t)) + '</div>' +
+      '<div class="tag-prev" title="How it looks on a card">Gain 1 ' + (draft && !t.value ? '<span class="muted">' + esc(t.tag || '[…]') + '</span>' : tagPreview(t)) + '</div>' +
       '<button type="button" class="tag-del" onclick="deleteTag(' + idx + ')" title="Delete this tag"' + (pro ? '' : ' disabled') + '>✕</button></div>';
   }).join('');
 }
@@ -2345,7 +2346,7 @@ function updateSubMenu() {
 var PRO_REASONS = {
   links: 'Hosted links for exports — Tabletop Simulator, Screentop and card images — are part of CardBoard Pro. They keep the files on our server and update them when your cards change.',
   upload: 'Uploading pictures to CardBoard is part of Pro. On Free, use a Dropbox, Google Drive or web link instead.',
-  tags: 'Tags are part of CardBoard Pro: write {energy} in your text or data and it becomes a word or an icon on every card.'
+  tags: 'Tags are part of CardBoard Pro: write [energy] in your text or data and it becomes a word or an icon on every card.'
 };
 // Returns true when allowed; otherwise shows the plans. If the plan can't be checked, the server decides.
 function requirePro(reason, retry) {

@@ -31,13 +31,13 @@ function cbRun(string $python, string $sheetId, array $data): array {
 if ($action === 'tabs')    { echo json_encode(cbRun($python, $sheetId, ['action' => 'tabs'])); exit; }
 if ($action === 'layouts') { echo json_encode(cbRun($python, $sheetId, ['action' => 'layouts'])); exit; }
 
-// Tags: {name} → text or a picture, kept in the "tags" tab. Changing them is CardBoard Pro.
+// Tags: [name] → text or a picture, kept in the "tags" tab. Changing them is CardBoard Pro.
 if ($action === 'tags') { echo json_encode(cbRun($python, $sheetId, ['action' => 'tags']), JSON_UNESCAPED_UNICODE); exit; }
 if ($action === 'settag' || $action === 'deltag') {
     require_once __DIR__ . '/stripeCommon.php';
     if (!stripeSheetPlan($sheetId, 'cardboard')['is_pro']) { echo json_encode(['error' => 'Tags are part of CardBoard Pro.', 'need_pro' => true]); exit; }
-    $tag = trim((string) ($_POST['tag'] ?? ''), " \t{}");
-    if ($tag === '' || mb_strlen($tag) > 60 || strpbrk($tag, '{}') !== false) { echo json_encode(['error' => 'Use up to 60 characters for the tag name, without { or } inside']); exit; }
+    $tag = trim((string) ($_POST['tag'] ?? ''), " \t{}[]");
+    if ($tag === '' || mb_strlen($tag) > 60 || strpbrk($tag, '{}[]') !== false) { echo json_encode(['error' => 'Use up to 60 characters for the tag name, without brackets or braces inside']); exit; }
     $req = ['action' => $action, 'tag' => $tag];
     if ($action === 'settag') {
         $req['value'] = (string) ($_POST['value'] ?? '');

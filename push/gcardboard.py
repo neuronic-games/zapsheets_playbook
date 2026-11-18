@@ -5,7 +5,7 @@
 #   tabs    — every visible tab except the "layouts" tab: [{title, rows, cols}]
 #   layouts — {sheet title: layout} from the "layouts" tab
 #   save    — sheet: tab title, layout: {...}  → one row per sheet in the "layouts" tab
-#   tags    — {tags: [{tag, value}]} from the "tags" tab (tag names are stored with braces: {energy})
+#   tags    — {tags: [{tag, value}]} from the "tags" tab (tag names are stored with square brackets: [energy])
 #   settag  — tag, value, old (previous name when renaming) → one row in the "tags" tab (created if missing)
 #   deltag  — tag → removes its row
 #   addfield — sheet: tab title, name: new column name → added after the last column heading
@@ -60,9 +60,9 @@ def main():
 
     if action in ('tags', 'settag', 'deltag'):
         tws = next((w for w in sheets if w.title.lower() == TAGS_TAB), None)
-        def brace(n):
-            n = str(n or '').strip().strip('{}').strip()
-            return '{' + n + '}' if n else ''
+        def brace(n):   # tag names are written [energy]; older rows saved as {energy} are read the same way
+            n = str(n or '').strip().strip('{}[]').strip()
+            return '[' + n + ']' if n else ''
         def rows_of(w):
             vals = wb.values_get(q(w.title), params={'valueRenderOption': 'FORMULA'}).get('values', [])
             return vals

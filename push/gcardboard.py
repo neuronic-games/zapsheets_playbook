@@ -2,9 +2,9 @@
 #
 # Arg: {sheet_id}|{base64_json}
 # JSON: { "action": "tabs" | "layouts" | "save", ... }
-#   tabs    — every tab except the "cardboard" tab: [{title, rows, cols}]
-#   layouts — {sheet title: layout} from the "cardboard" tab
-#   save    — sheet: tab title, layout: {...}  → one row per sheet in the "cardboard" tab
+#   tabs    — every visible tab except the "layouts" tab: [{title, rows, cols}]
+#   layouts — {sheet title: layout} from the "layouts" tab
+#   save    — sheet: tab title, layout: {...}  → one row per sheet in the "layouts" tab
 #   addfield — sheet: tab title, name: new column name → added after the last column heading
 #   grid    — sheet → {header, rows: [{row, values}]} as typed in the sheet (formulas, not results)
 #   setcell — sheet, row, field, value, old → writes one cell (as if typed); refuses if the cell
@@ -19,11 +19,17 @@ warnings.filterwarnings('ignore')
 socket.setdefaulttimeout(30)
 
 credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
-TAB     = 'cardboard'
+TAB     = 'layouts'   # CardBoard's own tab: one row per sheet's layout, plus settings
 HEADERS = ['Sheet', 'Layout', 'Updated']
 
 def out(d):
     print(json.dumps(d, ensure_ascii=False)); sys.exit(0)
+
+def hidden(ws):
+    # Hidden tabs in Google Sheets aren't offered (gspread 6 has isSheetHidden; 5.x keeps it in _properties)
+    v = getattr(ws, 'isSheetHidden', None)
+    if isinstance(v, bool): return v
+    return bool(getattr(ws, '_properties', {}).get('hidden', False))
 
 def q(title):
     return "'" + title.replace("'", "''") + "'"
@@ -45,7 +51,7 @@ def main():
     if action == 'tabs':
         out({'ok': True, 'title': wb.title,
              'tabs': [{'title': w.title, 'rows': w.row_count, 'cols': w.col_count}
-                      for w in sheets if w.title.lower() != TAB]})
+                      for w in sheets if w.title.lower() != TAB and not hidden(w)]})
 
     ws = next((w for w in sheets if w.title.lower() == TAB), None)
 

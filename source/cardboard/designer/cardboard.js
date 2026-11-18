@@ -1670,7 +1670,7 @@ function renderGrid() {
   if (!cols.length) { box.innerHTML = '<div class="muted" style="padding:2rem">This sheet has no column headings yet. Add one with <b>New</b> in the Design tab’s Data list.</div>'; return; }
   var imgCols = {};
   cols.forEach(function(c) { imgCols[c.i] = FIELDS.indexOf(c.name) >= 0 && looksLikeImage(c.name); });
-  var h = '<table class="grid"><thead><tr><th class="rn"></th>' + cols.map(function(c) { return '<th data-c="' + c.i + '">' + esc(c.name) + '</th>'; }).join('') + '</tr></thead><tbody>';
+  var h = '<table class="grid"><thead><tr><th class="rn"></th>' + cols.map(function(c) { return '<th data-c="' + c.i + '" title="Click for options">' + esc(c.name) + '<span class="th-caret">▾</span></th>'; }).join('') + '</tr></thead><tbody>';
   rows.forEach(function(r) {
     var ri = GRID.rows.indexOf(r);
     h += '<tr data-r="' + ri + '"' + (r.draft ? ' class="draft"' : '') + '><td class="rn">' + (r.draft ? '+' : r.row) + '</td>';
@@ -1769,6 +1769,25 @@ function addGridRow() {
   var first = gridCols()[0]; if (first) { selectGridCell(GRID.rows.length - 1, first.i); startGridEdit(); }
 }
 function filterGrid(v) { _gridFilter = v.trim(); renderGrid(); }
+// Column heading menu: hide the column here and in the Design list
+function closeColumnMenu() { var m = $('colMenu'); if (m) m.remove(); document.querySelectorAll('table.grid th.menu-open').forEach(function(t) { t.classList.remove('menu-open'); }); }
+function openColumnMenu(th) {
+  var open = th.classList.contains('menu-open'); closeColumnMenu(); if (open) return;
+  var name = GRID.header[+th.dataset.c]; if (!name) return;
+  var used = layout && layout.els.concat(layout.back.els).some(function(e) { return e.field === name || (e.kind === 'text' && (e.text || '').indexOf('{' + name + '}') >= 0); });
+  var m = document.createElement('div'); m.id = 'colMenu'; m.className = 'field-menu col-menu';
+  m.innerHTML = '<div class="col-menu-name">' + esc(name) + '</div><button type="button"><span class="fm-ico">⊘</span> Hide field</button>' +
+    '<p>Hides the column here and in the Design list. It stays in the sheet' + (used ? ', and still shows on the card.' : '.') + ' “Show all” above brings it back.</p>';
+  m.querySelector('button').onclick = function() { closeColumnMenu(); setFieldHidden(name, true); toast('Hid “' + name + '”'); };
+  document.body.appendChild(m);
+  var r = th.getBoundingClientRect();
+  m.style.left = Math.min(r.left, innerWidth - m.offsetWidth - 12) + 'px'; m.style.top = (r.bottom + 4) + 'px';
+  th.classList.add('menu-open');
+}
+document.addEventListener('mousedown', function(ev) { if ($('colMenu') && !ev.target.closest('#colMenu') && !ev.target.closest('th.menu-open')) closeColumnMenu(); });
+document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') closeColumnMenu(); });
+$('gridWrap').addEventListener('scroll', closeColumnMenu);
+
 // Rows changed here: re-read them for the card designer when leaving the Data tab
 function refreshRows() {
   var tab = curTab; _rowsStale = false;
@@ -1786,6 +1805,9 @@ function refreshRows() {
 }
 (function() {
   var wrap = $('gridWrap');
+  wrap.addEventListener('click', function(ev) {
+    var th = ev.target.closest('th[data-c]'); if (th) openColumnMenu(th);
+  });
   wrap.addEventListener('mousedown', function(ev) {
     var td = ev.target.closest('td[data-c]'); if (!td || ev.target.classList.contains('g-editor')) return;
     selectGridCell(+td.dataset.r, +td.dataset.c);
@@ -1848,7 +1870,7 @@ function askDialog(o) {
 }
 
 // ── Menu: Profile, Settings, Fetch, Subscribe, Help ──────────────────────────
-// Profile and settings live in the spreadsheet's "cardboard" tab, on their own row.
+// Profile and settings live in the spreadsheet's "layouts" tab, on their own row.
 var SETTINGS_KEY = '_cardboard_settings', SETTINGS = { units: 'in', profile: {} }, SHEET_TITLE = '';
 function openDialog(id) { $(id).classList.add('open'); }
 function closeDialog(id) { $(id).classList.remove('open'); }

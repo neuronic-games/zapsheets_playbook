@@ -74,7 +74,7 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
       <li>Share the spreadsheet with <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> as an <b>Editor</b>.</li>
       <li>Open <a href="cardboard">CardBoard</a>, paste the sheet's link, and pick the tab with your cards.</li>
     </ol>
-    <p>CardBoard adds a tab called <b>cardboard</b> to the spreadsheet. It holds your layouts, profile and settings — leave it in place.</p>
+    <p>CardBoard adds a tab called <b>layouts</b> to the spreadsheet. It holds your layouts, profile and settings — leave it in place. Hidden tabs aren’t listed, so hide any tab you don’t want to design from.</p>
   </section>
 
   <section class="section" id="data">

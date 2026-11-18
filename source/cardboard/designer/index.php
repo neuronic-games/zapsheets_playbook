@@ -4,7 +4,7 @@
  * URL: /{id}/cardboard  or  /sheets/{id}/cardboard
  *
  * Pick a tab of the sheet (one row per card, one column per field), drag fields onto the card,
- * set their attributes, then print sheets of cards. Layouts are saved in the sheet's "cardboard" tab.
+ * set their attributes, then print sheets of cards. Layouts are saved in the sheet's "layouts" tab.
  */
 $_rp = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 preg_match('#^(.*?)(?:sheets/)?([A-Za-z0-9_\-]+)/cardboard/?$#', $_rp, $_bm);
@@ -143,6 +143,11 @@ button, input, select, textarea { font-family:inherit; }
 .field-menu button { width:100%; display:flex; align-items:center; gap:.4rem; border:none; background:#f7f5ff; color:#2e2763; border-radius:6px; padding:.4rem .5rem; font-size:.78rem; cursor:pointer; text-align:left; }
 .field-menu button:hover { background:#ece9ff; }
 .field-menu .fm-ico { width:16px; text-align:center; }
+.col-menu { position:fixed; z-index:700; width:230px; margin:0; }
+.col-menu-name { font-family:'DINBlack',sans-serif; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:#8a8fa8; padding:.1rem .2rem .4rem; }
+table.grid thead th[data-c] { cursor:pointer; }
+table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e6e1ff; }
+.th-caret { margin-left:.35rem; font-size:.6rem; color:#a99cff; }
 .field-menu p { margin:.35rem .1rem 0; font-size:.68rem; color:#8a8fa8; line-height:1.4; }
 .hidden-toggle { display:flex; align-items:center; gap:.3rem; border:none; background:none; color:#8a8fa8; font-size:.72rem; cursor:pointer; padding:.3rem 0; }
 .hidden-toggle .chev { display:inline-block; transform:rotate(-90deg); transition:transform .15s; }
@@ -552,7 +557,7 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
 <div class="overlay" id="profileOverlay" onclick="if(event.target===this)closeDialog('profileOverlay')">
   <div class="dlg" onclick="event.stopPropagation()">
     <h2 class="dlg-title">Profile</h2>
-    <p class="dlg-sub">Who's designing these cards. Kept in this spreadsheet's <b>cardboard</b> tab.</p>
+    <p class="dlg-sub">Who's designing these cards. Kept in this spreadsheet's <b>layouts</b> tab.</p>
     <label class="mini" for="pfName">Name</label><input class="inp" id="pfName" maxlength="80">
     <label class="mini" for="pfEmail">Email</label><input class="inp" id="pfEmail" type="email" maxlength="120" placeholder="Used for your receipts when you subscribe">
     <label class="mini" for="pfStudio">Studio or company</label><input class="inp" id="pfStudio" maxlength="80">

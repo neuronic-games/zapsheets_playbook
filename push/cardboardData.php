@@ -42,7 +42,7 @@ if ($action === 'save') {
 if ($action === 'addfield') {
     $tab  = trim($_POST['tab'] ?? '');
     $name = trim(preg_replace('/\s+/u', ' ', $_POST['name'] ?? ''));
-    if ($tab === '' || strpbrk($tab, "/\\") !== false || strtolower($tab) === 'cardboard') { echo json_encode(['error' => 'Invalid tab']); exit; }
+    if ($tab === '' || strpbrk($tab, "/\\") !== false || strtolower($tab) === 'layouts') { echo json_encode(['error' => 'Invalid tab']); exit; }
     if ($name === '' || mb_strlen($name) > 60 || $name[0] === '_' || strpbrk($name, '{}') !== false) {
         echo json_encode(['error' => 'Use up to 60 characters, without { } and not starting with _']); exit;
     }
@@ -55,7 +55,7 @@ if ($action === 'addfield') {
 // Data tab: the sheet as typed, and edits written straight back
 if (in_array($action, ['grid', 'setcell', 'addrow'], true)) {
     $tab = trim($_POST['tab'] ?? '');
-    if ($tab === '' || strpbrk($tab, "/\\") !== false || strtolower($tab) === 'cardboard') { echo json_encode(['error' => 'Invalid tab']); exit; }
+    if ($tab === '' || strpbrk($tab, "/\\") !== false || strtolower($tab) === 'layouts') { echo json_encode(['error' => 'Invalid tab']); exit; }
     $req = ['action' => $action, 'sheet' => $tab];
     if ($action === 'setcell') {
         $req += ['row' => (int) ($_POST['row'] ?? 0), 'field' => (string) ($_POST['field'] ?? ''), 'value' => (string) ($_POST['value'] ?? '')];
@@ -74,7 +74,7 @@ if (in_array($action, ['grid', 'setcell', 'addrow'], true)) {
 
 if ($action === 'rows') {
     $tab = trim($_POST['tab'] ?? '');
-    if ($tab === '' || strpbrk($tab, "/\\") !== false || strtolower($tab) === 'cardboard') {
+    if ($tab === '' || strpbrk($tab, "/\\") !== false || strtolower($tab) === 'layouts') {
         echo json_encode(['error' => 'Invalid tab']); exit;
     }
     $file = dirname(__DIR__) . '/sheets/' . $sheetId . '/' . strtolower($tab) . '.json';

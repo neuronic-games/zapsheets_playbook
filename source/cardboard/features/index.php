@@ -204,6 +204,15 @@ section { padding:5.5rem 2rem; }
 .compare-table td.ours { background:rgba(243,241,255,.6); }
 .compare-table tr:last-child td { border-bottom:none; }
 .check { color:#4caa4b; } .cross { color:var(--text-muted); }
+.price-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:1rem; margin-top:1.5rem; }
+.price-card { border:1px solid var(--border); border-radius:var(--radius); padding:1.25rem 1.35rem; background:#fff; }
+.price-card.ours { border:1.5px solid var(--violet); background:var(--violet-pale); }
+.price-card h3 { font-size:.95rem; font-weight:600; color:var(--dark); margin-bottom:.6rem; }
+.price-line { display:flex; justify-content:space-between; align-items:baseline; gap:.5rem; padding:.35rem 0; border-top:1px solid var(--border); font-size:13.5px; color:var(--text-mid); }
+.price-line:first-of-type { border-top:none; }
+.price-line b { font-family:'Fraunces',Georgia,serif; font-size:1.2rem; font-weight:600; color:var(--dark); white-space:nowrap; }
+.price-card p { margin-top:.6rem; font-size:12.5px; color:var(--text-muted); line-height:1.5; }
+.price-note { margin-top:.9rem; font-size:12px; color:var(--text-muted); }
 
 .cta-section { background:var(--violet-pale); text-align:center; padding:5rem 2rem; border-top:1px solid rgba(123,108,246,.15); }
 .cta-section .section-label { display:flex; justify-content:center; }
@@ -427,6 +436,32 @@ footer a { color:var(--text-mid); text-decoration:none; }
         </tbody>
       </table>
     </div>
+
+    <h3 class="section-title" style="font-size:1.45rem;margin-top:3.5rem;margin-bottom:.4rem;">What it costs</h3>
+    <p class="section-sub" style="margin-bottom:0">Compared with two popular card design tools.</p>
+    <div class="price-grid">
+      <div class="price-card ours">
+        <h3>CardBoard</h3>
+        <div class="price-line"><span>Free</span><b>$0</b></div>
+        <div class="price-line"><span>Pro</span><b>$4.99<span style="font-family:Inter;font-size:12px;font-weight:400;color:var(--text-muted)"> / mo</span></b></div>
+        <p>Free has no limit on decks or cards. Pro adds hosted links for Tabletop Simulator and Screentop, and picture uploads.</p>
+      </div>
+      <div class="price-card">
+        <h3>Dextrous</h3>
+        <div class="price-line"><span>Tester</span><b>$0</b></div>
+        <div class="price-line"><span>Prototyper</span><b>$6<span style="font-family:Inter;font-size:12px;font-weight:400;color:var(--text-muted)"> / mo</span></b></div>
+        <div class="price-line"><span>Designer</span><b>$12<span style="font-family:Inter;font-size:12px;font-weight:400;color:var(--text-muted)"> / mo</span></b></div>
+        <div class="price-line"><span>Designer Pro</span><b>$24<span style="font-family:Inter;font-size:12px;font-weight:400;color:var(--text-muted)"> / mo</span></b></div>
+        <p>The free plan is limited to 2 projects, 10 layouts and 100 MB. Yearly billing costs less.</p>
+      </div>
+      <div class="price-card">
+        <h3>Component.Studio</h3>
+        <div class="price-line"><span>Free plan</span><b>—</b></div>
+        <div class="price-line"><span>Subscription</span><b>$9.99<span style="font-family:Inter;font-size:12px;font-weight:400;color:var(--text-muted)"> / mo</span></b></div>
+        <p>A short free trial, then a monthly subscription. From The Game Crafter, with export straight to their print shop.</p>
+      </div>
+    </div>
+    <p class="price-note">Prices in US dollars as published by each company, November 2026. Check their websites for current plans.</p>
   </div>
 </section>
 

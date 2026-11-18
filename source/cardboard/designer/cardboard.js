@@ -260,13 +260,14 @@ function init() {
       if (res[0].title) { $('subTitle').textContent = res[0].title; document.title = 'CardBoard — ' + res[0].title; }
       var sel = $('sheetSel');
       sel.innerHTML = TABS.map(function(t) { return '<option>' + esc(t.title) + '</option>'; }).join('');
+      $('gridSheet').innerHTML = sel.innerHTML;
       var start = '';
       try { start = localStorage.getItem('cb_tab:' + SHEET_ID) || ''; } catch (e) {}
       if (!TABS.some(function(t) { return t.title === start; })) {
         start = (TABS.filter(function(t) { return LAYOUTS[t.title]; })[0] || TABS[0] || {}).title || '';
       }
       if (!start) { $('cardHolder').innerHTML = '<div class="muted">This spreadsheet has no tabs to design from.</div>'; return; }
-      sel.value = start;
+      sel.value = start; $('gridSheet').value = start;
       selectTab(start, true);
     })
     .catch(function(e) {
@@ -276,8 +277,10 @@ function init() {
 }
 
 function selectTab(name, first, force) {
-  if (!first && dirty && !confirm('You have unsaved changes to the "' + curTab + '" layout. Switch sheets anyway?')) { $('sheetSel').value = curTab; return; }
-  curTab = name; selId = null; rowIdx = 0; undoStack = []; redoStack = [];
+  if (!first && dirty && !confirm('You have unsaved changes to the "' + curTab + '" layout. Switch sheets anyway?')) { $('sheetSel').value = curTab; $('gridSheet').value = curTab; return; }
+  if (_gridEdit) endGridEdit(true);
+  $('sheetSel').value = name; $('gridSheet').value = name;
+  curTab = name; selId = null; rowIdx = 0; undoStack = []; redoStack = []; GRID = null; _gridSel = null; _rowsStale = false;
   try { localStorage.setItem('cb_tab:' + SHEET_ID, name); } catch (e) {}
   layout = normalize(LAYOUTS[name] ? JSON.parse(JSON.stringify(LAYOUTS[name])) : newLayout());
   setDirty(false);
@@ -298,6 +301,7 @@ function selectTab(name, first, force) {
       renderData(); fitZoom(); renderAttrs();
       if (_activeTab === 'print') renderPrint();
       if (_activeTab === 'export') renderExport();
+      if (_activeTab === 'data') loadGrid(force);
       if (force) { toast('✓ Reloaded from the sheet'); autoRepublish(name); }
     })
     .catch(function(e) {
@@ -524,7 +528,7 @@ document.addEventListener('pointerdown', function(ev) {
 document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') closeImagePicker(); });
 // A paste with a picture link or file while an image is selected sets it
 document.addEventListener('paste', function(ev) {
-  var e = elById(selId); if (!e || e.kind !== 'image' || /^(INPUT|TEXTAREA)$/.test((document.activeElement || {}).tagName || '')) return;
+  var e = elById(selId); if (_activeTab !== 'design' || !e || e.kind !== 'image' || /^(INPUT|TEXTAREA)$/.test((document.activeElement || {}).tagName || '')) return;
   var f = droppedFile(ev.clipboardData), l = droppedLink(ev.clipboardData);
   if (f) { ev.preventDefault(); closeImagePicker(); uploadImage(e.id, f); }
   else if (l) { ev.preventDefault(); closeImagePicker(); setImageSrc(e.id, l); }
@@ -1322,14 +1326,191 @@ function renderLinks() {
   box.innerHTML = h; box.style.display = 'block';
 }
 
+// ── Data tab: the sheet as a grid you can edit ───────────────────────────────
+// Cells show what's typed in the sheet (formulas too). An edit is written to
+// that one cell as if typed in Sheets; if someone changed the cell in the
+// meantime, nothing is overwritten and the new value is shown instead.
+var GRID = null, _gridSel = null, _gridEdit = null, _rowsStale = false, _gridFilter = '';
+function loadGrid(force) {
+  var tab = curTab, box = $('gridWrap');
+  if (!tab) return;
+  if (GRID && GRID.tab === tab && !force) { renderGrid(); return; }
+  box.innerHTML = '<div class="loading"><span class="spin"></span>Loading “' + esc(tab) + '”…</div>';
+  api('grid', { tab: tab }).then(function(r) {
+    if (curTab !== tab) return;
+    GRID = { tab: tab, header: r.header || [], rows: r.rows || [] };
+    _gridSel = null; renderGrid();
+  }).catch(function(e) { box.innerHTML = '<div class="muted" style="padding:2rem">Couldn\'t read the sheet — ' + esc(e.message) + '</div>'; });
+}
+function gridCols() { return GRID.header.map(function(h, i) { return { name: h, i: i }; }).filter(function(c) { return c.name; }); }
+function gridVisibleRows() {
+  if (!_gridFilter) return GRID.rows;
+  var f = _gridFilter.toLowerCase();
+  return GRID.rows.filter(function(r) { return r.draft || r.values.some(function(v) { return String(v).toLowerCase().indexOf(f) >= 0; }); });
+}
+function renderGrid() {
+  var box = $('gridWrap'); if (!GRID) return;
+  var cols = gridCols(), rows = gridVisibleRows();
+  $('gridInfo').textContent = GRID.rows.filter(function(r) { return !r.draft; }).length + ' rows · ' + cols.length + ' columns' + (_gridFilter ? ' · ' + rows.length + ' shown' : '');
+  if (!cols.length) { box.innerHTML = '<div class="muted" style="padding:2rem">This sheet has no column headings yet. Add one with <b>New</b> in the Design tab’s Data list.</div>'; return; }
+  var imgCols = {};
+  cols.forEach(function(c) { imgCols[c.i] = FIELDS.indexOf(c.name) >= 0 && looksLikeImage(c.name); });
+  var h = '<table class="grid"><thead><tr><th class="rn"></th>' + cols.map(function(c) { return '<th data-c="' + c.i + '">' + esc(c.name) + '</th>'; }).join('') + '</tr></thead><tbody>';
+  rows.forEach(function(r) {
+    var ri = GRID.rows.indexOf(r);
+    h += '<tr data-r="' + ri + '"' + (r.draft ? ' class="draft"' : '') + '><td class="rn">' + (r.draft ? '+' : r.row) + '</td>';
+    cols.forEach(function(c) {
+      var v = r.values[c.i] || '', st = (r.state || {})[c.i] || '';
+      var thumb = imgCols[c.i] && imageUrl(v) ? '<img class="g-thumb" src="' + esc(imageUrl(v)) + '" alt="" referrerpolicy="no-referrer">' : '';
+      h += '<td data-r="' + ri + '" data-c="' + c.i + '" class="' + (st ? 'st-' + st : '') + (/^=/.test(v) ? ' formula' : '') + '" title="' + esc(v.length > 60 ? v : '') + '">' + thumb + '<span>' + esc(v) + '</span></td>';
+    });
+    h += '</tr>';
+  });
+  h += '</tbody></table>';
+  if (!rows.length) h += '<div class="muted" style="padding:1rem">No rows' + (_gridFilter ? ' match “' + esc(_gridFilter) + '”' : '') + '.</div>';
+  var sx = box.scrollLeft, sy = box.scrollTop;
+  box.innerHTML = h; box.scrollLeft = sx; box.scrollTop = sy;
+  if (_gridSel) markGridSel();
+}
+function gridCell(r, c) { return $('gridWrap').querySelector('td[data-r="' + r + '"][data-c="' + c + '"]'); }
+function markGridSel() {
+  var old = $('gridWrap').querySelector('td.sel'); if (old) old.classList.remove('sel');
+  var td = _gridSel && gridCell(_gridSel.r, _gridSel.c); if (td) { td.classList.add('sel'); td.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+}
+function selectGridCell(r, c) { _gridSel = { r: r, c: c }; markGridSel(); }
+function moveGridSel(dr, dc) {
+  if (!_gridSel) return;
+  var rows = gridVisibleRows().map(function(x) { return GRID.rows.indexOf(x); }), cols = gridCols().map(function(x) { return x.i; });
+  var ri = rows.indexOf(_gridSel.r), ci = cols.indexOf(_gridSel.c);
+  ri = clamp(ri + dr, 0, rows.length - 1); ci = clamp(ci + dc, 0, cols.length - 1);
+  selectGridCell(rows[ri], cols[ci]);
+}
+function startGridEdit(typed) {
+  if (!_gridSel || _gridEdit) return;
+  var td = gridCell(_gridSel.r, _gridSel.c); if (!td) return;
+  var r = GRID.rows[_gridSel.r], v = r.values[_gridSel.c] || '';
+  var rect = td.getBoundingClientRect(), wrap = $('gridWrap').getBoundingClientRect();
+  var ta = document.createElement('textarea');
+  ta.className = 'g-editor'; ta.value = typed != null ? typed : v;
+  ta.style.left = (rect.left - wrap.left + $('gridWrap').scrollLeft) + 'px'; ta.style.top = (rect.top - wrap.top + $('gridWrap').scrollTop) + 'px';
+  ta.style.minWidth = Math.max(rect.width, 180) + 'px'; ta.style.minHeight = rect.height + 'px';
+  $('gridWrap').appendChild(ta);
+  _gridEdit = { r: _gridSel.r, c: _gridSel.c, ta: ta, old: v };
+  ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+  function fit() { ta.style.height = 'auto'; ta.style.height = Math.min(260, ta.scrollHeight + 2) + 'px'; }
+  fit(); ta.addEventListener('input', fit);
+  ta.addEventListener('keydown', function(ev) {
+    ev.stopPropagation();   // the grid's own keys (Enter = edit, arrows = move) mustn't see these
+    if (ev.key === 'Escape') { ev.preventDefault(); endGridEdit(false); }
+    else if (ev.key === 'Enter' && !ev.shiftKey && !ev.altKey) { ev.preventDefault(); endGridEdit(true); moveGridSel(1, 0); }   // Shift/Alt+Enter: new line
+    else if (ev.key === 'Tab') { ev.preventDefault(); endGridEdit(true); moveGridSel(0, ev.shiftKey ? -1 : 1); }
+  });
+  ta.addEventListener('blur', function() { if (_gridEdit && _gridEdit.ta === ta) endGridEdit(true); });
+}
+function endGridEdit(save) {
+  var ed = _gridEdit; if (!ed) return;
+  _gridEdit = null;
+  var val = ed.ta.value; ed.ta.remove();
+  if (save && val !== ed.old) saveGridCell(ed.r, ed.c, val, ed.old);
+}
+function setCellState(r, c, st) { var row = GRID.rows[r]; (row.state = row.state || {})[c] = st; var td = gridCell(r, c); if (td) { td.className = td.className.replace(/\bst-\w+/g, '').trim() + (st ? ' st-' + st : ''); } }
+function paintCell(r, c) {
+  var td = gridCell(r, c); if (!td) return;
+  var v = GRID.rows[r].values[c] || '';
+  td.querySelector('span').textContent = v;
+  td.classList.toggle('formula', /^=/.test(v));
+}
+function saveGridCell(r, c, val, old) {
+  var row = GRID.rows[r], field = GRID.header[c], tab = GRID.tab;
+  row.values[c] = val; paintCell(r, c); setCellState(r, c, 'saving');
+  var req = row.draft
+    ? api('addrow', { tab: tab, values: JSON.stringify((function() { var o = {}; GRID.header.forEach(function(h, i) { if (h && row.values[i]) o[h] = row.values[i]; }); return o; })()) })
+        .then(function(res) { row.draft = false; row.row = res.row; renderGrid(); return { value: val }; })
+    : api('setcell', { tab: tab, row: row.row, field: field, value: val, old: old });
+  req.then(function(res) {
+    _rowsStale = true;
+    if (res && res.value != null && !row.draft) { row.values[c] = res.value; paintCell(r, c); }
+    setCellState(r, c, 'saved');
+    setTimeout(function() { if ((row.state || {})[c] === 'saved') setCellState(r, c, ''); }, 1200);
+  }).catch(function(e) {
+    if (e.message === 'conflict') {
+      // Someone changed this cell in the sheet: keep their value
+      api('grid', { tab: tab }).then(function(g) {
+        var fresh = (g.rows || []).filter(function(x) { return x.row === row.row; })[0];
+        if (fresh) { row.values = fresh.values; renderGrid(); }
+      });
+      setCellState(r, c, 'error');
+      toast('That cell was changed in the sheet since you loaded it — showing the new value', true);
+    } else {
+      row.values[c] = old; paintCell(r, c); setCellState(r, c, 'error');
+      toast('Couldn\'t save — ' + e.message, true);
+    }
+  });
+}
+function addGridRow() {
+  if (!GRID) return;
+  var n = GRID.header.length, r = { row: 0, draft: true, values: new Array(n).fill('') };
+  GRID.rows.push(r); _gridFilter = ''; $('gridFilter').value = ''; renderGrid();
+  var first = gridCols()[0]; if (first) { selectGridCell(GRID.rows.length - 1, first.i); startGridEdit(); }
+}
+function filterGrid(v) { _gridFilter = v.trim(); renderGrid(); }
+// Rows changed here: re-read them for the card designer when leaving the Data tab
+function refreshRows() {
+  var tab = curTab; _rowsStale = false;
+  return api('rows', { tab: tab, force: '1' }).then(function(res) {
+    if (curTab !== tab) return;
+    ROWS = (res.rows || []).filter(function(r) { return Object.keys(r).some(function(k) { return k.charAt(0) !== '_' && String(r[k]).trim(); }); });
+    FIELDS = [];
+    ROWS.forEach(function(r) { Object.keys(r).forEach(function(k) { if (k.charAt(0) !== '_' && FIELDS.indexOf(k) < 0) FIELDS.push(k); }); });
+    rowIdx = Math.min(rowIdx, Math.max(0, ROWS.length - 1));
+    renderData(); render();
+    if (_activeTab === 'print') renderPrint();
+    if (_activeTab === 'export') renderExport();
+    autoRepublish(tab);
+  }).catch(function(e) { toast('Couldn\'t refresh the rows — ' + e.message, true); });
+}
+(function() {
+  var wrap = $('gridWrap');
+  wrap.addEventListener('mousedown', function(ev) {
+    var td = ev.target.closest('td[data-c]'); if (!td || ev.target.classList.contains('g-editor')) return;
+    selectGridCell(+td.dataset.r, +td.dataset.c);
+  });
+  wrap.addEventListener('dblclick', function(ev) { if (ev.target.closest('td[data-c]')) startGridEdit(); });
+  document.addEventListener('keydown', function(ev) {
+    if (_activeTab !== 'data' || _gridEdit || !_gridSel || !GRID) return;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '')) return;
+    var k = ev.key, mod = ev.metaKey || ev.ctrlKey;
+    if (k === 'ArrowUp') { ev.preventDefault(); moveGridSel(-1, 0); }
+    else if (k === 'ArrowDown') { ev.preventDefault(); moveGridSel(1, 0); }
+    else if (k === 'ArrowLeft') { ev.preventDefault(); moveGridSel(0, -1); }
+    else if (k === 'ArrowRight' || k === 'Tab') { ev.preventDefault(); moveGridSel(0, ev.shiftKey && k === 'Tab' ? -1 : 1); }
+    else if (k === 'Enter' || k === 'F2') { ev.preventDefault(); startGridEdit(); }
+    else if ((k === 'Delete' || k === 'Backspace') && !mod) {
+      ev.preventDefault(); var row = GRID.rows[_gridSel.r], old = row.values[_gridSel.c] || '';
+      if (old) saveGridCell(_gridSel.r, _gridSel.c, '', old);
+    }
+    else if (mod && k.toLowerCase() === 'c') { var v = GRID.rows[_gridSel.r].values[_gridSel.c] || ''; if (navigator.clipboard) navigator.clipboard.writeText(v); }
+    else if (k.length === 1 && !mod && !ev.altKey) { ev.preventDefault(); startGridEdit(k); }   // typing replaces, like a spreadsheet
+  });
+  document.addEventListener('paste', function(ev) {
+    if (_activeTab !== 'data' || _gridEdit || !_gridSel || !GRID) return;
+    if (/^(INPUT|TEXTAREA)$/.test((document.activeElement || {}).tagName || '')) return;
+    var t = (ev.clipboardData && ev.clipboardData.getData('text/plain')) || '';
+    if (!t) return; ev.preventDefault();
+    var row = GRID.rows[_gridSel.r]; saveGridCell(_gridSel.r, _gridSel.c, t.replace(/\r?\n$/, ''), row.values[_gridSel.c] || '');
+  });
+})();
+
 // ── Tabs, menu, donation ──────────────────────────────────────────────────────
 function switchTab(t) {
   _activeTab = t;
-  ['design', 'print', 'export'].forEach(function(k) {
+  if (_gridEdit) endGridEdit(true);
+  if (t !== 'data' && _rowsStale) refreshRows();
+  ['data', 'design', 'print', 'export'].forEach(function(k) {
     var cap = k.charAt(0).toUpperCase() + k.slice(1);
     $('tab' + cap).classList.toggle('active', t === k); $('view-' + k).classList.toggle('active', t === k);
   });
-  if (t === 'print') renderPrint(); else if (t === 'export') renderExport(); else fitZoom();
+  if (t === 'print') renderPrint(); else if (t === 'export') renderExport(); else if (t === 'data') loadGrid(); else fitZoom();
 }
 function toggleAccountMenu(ev) { if (ev) ev.stopPropagation(); $('accountMenu').classList.toggle('open'); }
 function closeAccountMenu() { $('accountMenu').classList.remove('open'); }

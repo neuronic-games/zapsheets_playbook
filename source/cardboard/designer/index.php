@@ -216,6 +216,28 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 /* ── Print view ────────────────────────────────────────── */
 #view-print { flex-direction:column; }
 #view-export { flex-direction:column; }
+#view-data { flex-direction:column; }
+/* Export: the info and links panel takes at most half the height; both halves scroll */
+#view-export .export-info { flex:0 1 auto; max-height:50%; overflow:auto; }
+#view-export #exportPreview { flex:1 1 50%; min-height:0; }
+.grid-hint { margin:0; padding:.4rem 1.1rem; font-size:.72rem; color:#8a8fa8; background:#fbfbfe; border-bottom:1px solid #e1e4ee; }
+.grid-wrap { position:relative; flex:1; min-height:0; overflow:auto; background:#fff; }
+table.grid { border-collapse:separate; border-spacing:0; font-size:.8rem; color:#1b1b2b; min-width:100%; }
+table.grid th, table.grid td { border-right:1px solid #e6e8f0; border-bottom:1px solid #e6e8f0; padding:0 .5rem; height:2rem; max-width:22rem; min-width:7rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left; vertical-align:middle; }
+table.grid thead th { position:sticky; top:0; z-index:3; background:#f3f1ff; color:#2e2763; font-family:'DINBlack',sans-serif; font-weight:400; font-size:.72rem; letter-spacing:.03em; border-bottom:1.5px solid #d6d1f5; }
+table.grid .rn { position:sticky; left:0; z-index:2; min-width:2.6rem; width:2.6rem; text-align:center; background:#f7f8fc; color:#9aa0b8; font-size:.7rem; }
+table.grid thead .rn { z-index:4; background:#ece9ff; }
+table.grid td { cursor:cell; background:#fff; }
+table.grid td > span { vertical-align:middle; }
+table.grid td.formula > span { color:#4b3fa8; font-family:ui-monospace,Menlo,monospace; font-size:.74rem; }
+table.grid td.sel { box-shadow:inset 0 0 0 2px #4b3fa8; }
+table.grid td.st-saving { background:#fffbea; }
+table.grid td.st-saved { background:#ecfdf3; transition:background .8s; }
+table.grid td.st-error { background:#fef2f2; box-shadow:inset 0 0 0 1.5px #e5484d; }
+table.grid tr.draft td { background:#faf9ff; }
+table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
+.g-thumb { width:22px; height:22px; object-fit:cover; border-radius:4px; vertical-align:middle; margin-right:.4rem; background:#eef0f6; }
+.g-editor { position:absolute; z-index:20; border:2px solid #4b3fa8; border-radius:2px; padding:.4rem .5rem; font:inherit; font-size:.8rem; line-height:1.35; resize:none; background:#fff; box-shadow:0 6px 20px rgba(20,20,60,.18); outline:none; max-width:32rem; }
 .e-note { font-size:.8rem; color:#3b3f5c; height:2.05rem; display:flex; align-items:center; }
 .e-back { display:flex; gap:.3rem; align-items:center; }
 .e-back input[type=color] { width:2.05rem; height:2.05rem; border:1.5px solid #d6d9e6; border-radius:7px; padding:2px; background:#fff; cursor:pointer; }
@@ -293,7 +315,7 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 /* ── Printing: only the pages, at true size ────────────── */
 @media print {
   body { background:#fff; display:block; }
-  .top-bar, .print-bar, #view-design, #view-export, .toast { display:none !important; }
+  .top-bar, .print-bar, #view-design, #view-export, #view-data, .toast { display:none !important; }
   #view-print { display:block !important; }
   .pages { display:block; padding:0; background:#fff; overflow:visible; }
   .page-holder { box-shadow:none; width:auto !important; height:auto !important; break-after:page; page-break-after:always; }
@@ -316,6 +338,7 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
       </div>
     </div>
     <div class="top-tab-btns">
+      <button class="top-tab" id="tabData" onclick="switchTab('data')">Data</button>
       <button class="top-tab active" id="tabDesign" onclick="switchTab('design')">Design</button>
       <button class="top-tab" id="tabPrint" onclick="switchTab('print')">Print</button>
       <button class="top-tab" id="tabExport" onclick="switchTab('export')">Export</button>
@@ -333,6 +356,22 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
       </div>
     </div>
   </div>
+</div>
+
+<!-- Data view -->
+<div class="view" id="view-data">
+  <div class="print-bar grid-bar">
+    <div class="grp"><span class="mini">Sheet</span>
+      <select class="sel sel-sheet" id="gridSheet" onchange="selectTab(this.value)"></select></div>
+    <div class="grp"><span class="mini">Find</span>
+      <input class="inp" id="gridFilter" placeholder="Search the rows" oninput="filterGrid(this.value)" style="width:14rem"></div>
+    <span class="print-info" id="gridInfo"></span>
+    <div class="e-actions">
+      <button class="print-go ghost" onclick="loadGrid(true)" title="Read the sheet again">Reload</button>
+      <button class="print-go" onclick="addGridRow()">+ Add row</button></div>
+  </div>
+  <p class="grid-hint">Click a cell and type, or double-click to edit · Enter saves (Shift+Enter for a new line) · Tab moves right · Esc cancels. Changes go straight to the Google Sheet.</p>
+  <div class="grid-wrap" id="gridWrap"></div>
 </div>
 
 <!-- Design view -->

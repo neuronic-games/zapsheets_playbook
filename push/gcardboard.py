@@ -6,6 +6,10 @@
 #   layouts — {sheet title: layout} from the "cardboard" tab
 #   save    — sheet: tab title, layout: {...}  → one row per sheet in the "cardboard" tab
 #   addfield — sheet: tab title, name: new column name → added after the last column heading
+#   grid    — sheet → {header, rows: [{row, values}]} as typed in the sheet (formulas, not results)
+#   setcell — sheet, row, field, value, old → writes one cell (as if typed); refuses if the cell
+#             no longer holds "old" (someone changed it in the meantime)
+#   addrow  — sheet, values: {field: value} → appended after the last row
 # Writes use the plain Sheets API calls, which work the same with gspread 5 and 6.
 
 import gspread
@@ -121,6 +125,57 @@ def main():
         a1 = gspread.utils.rowcol_to_a1(1, col + 1)
         wb.values_update(q(tws.title) + '!' + a1, params={'valueInputOption': 'RAW'}, body={'values': [[field]]})
         out({'ok': True, 'field': field, 'column': a1.rstrip('0123456789')})
+
+    if action in ('grid', 'setcell', 'addrow'):
+        name = str(data.get('sheet', '')).strip()
+        tws = next((w for w in sheets if w.title == name), None)
+        if tws is None or name.lower() == TAB:
+            out({'error': 'That sheet was not found'})
+
+        def read(rng, formulas=True):
+            return wb.values_get(q(tws.title) + '!' + rng, params={
+                'valueRenderOption': 'FORMULA' if formulas else 'FORMATTED_VALUE',
+                'dateTimeRenderOption': 'FORMATTED_STRING'}).get('values', [])
+
+        def cellstr(v):
+            if isinstance(v, float) and v.is_integer(): return str(int(v))
+            return '' if v is None else str(v)
+
+        hdr = [cellstr(h).strip() for h in ((read('1:1', False) or [[]])[0])]
+
+        if action == 'grid':
+            vals = read('A2:' + gspread.utils.rowcol_to_a1(tws.row_count, max(1, len(hdr))).rstrip('0123456789') + str(tws.row_count))
+            rows = []
+            for i, r in enumerate(vals):
+                r = [cellstr(v) for v in r]
+                if any(x.strip() for x in r):
+                    rows.append({'row': i + 2, 'values': r + [''] * (len(hdr) - len(r))})
+            out({'ok': True, 'header': hdr, 'rows': rows})
+
+        if action == 'setcell':
+            field = str(data.get('field', ''))
+            try: row = int(data.get('row', 0))
+            except Exception: row = 0
+            if row < 2 or field not in hdr:
+                out({'error': 'That cell was not found — reload the data'})
+            a1 = gspread.utils.rowcol_to_a1(row, hdr.index(field) + 1)
+            cur = read(a1)
+            cur = cellstr(cur[0][0]) if cur and cur[0] else ''
+            if 'old' in data and cur != str(data.get('old') or ''):
+                out({'error': 'conflict', 'current': cur})
+            value = str(data.get('value', ''))
+            wb.values_update(q(tws.title) + '!' + a1, params={'valueInputOption': 'USER_ENTERED'}, body={'values': [[value]]})
+            now = read(a1)
+            out({'ok': True, 'value': cellstr(now[0][0]) if now and now[0] else ''})
+
+        if action == 'addrow':
+            vals = data.get('values') or {}
+            line = [str(vals.get(h, '')) if h else '' for h in hdr] or ['']
+            res = wb.values_append(q(tws.title) + '!A1', params={'valueInputOption': 'USER_ENTERED', 'insertDataOption': 'INSERT_ROWS'},
+                                   body={'values': [line]})
+            rng = ((res or {}).get('updates') or {}).get('updatedRange', '')
+            m = __import__('re').search(r'![A-Z]+(\d+)', rng)
+            out({'ok': True, 'row': int(m.group(1)) if m else 0, 'values': line})
 
     out({'error': 'Unknown action'})
 

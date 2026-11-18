@@ -52,6 +52,26 @@ if ($action === 'addfield') {
     exit;
 }
 
+// Data tab: the sheet as typed, and edits written straight back
+if (in_array($action, ['grid', 'setcell', 'addrow'], true)) {
+    $tab = trim($_POST['tab'] ?? '');
+    if ($tab === '' || strpbrk($tab, "/\\") !== false || strtolower($tab) === 'cardboard') { echo json_encode(['error' => 'Invalid tab']); exit; }
+    $req = ['action' => $action, 'sheet' => $tab];
+    if ($action === 'setcell') {
+        $req += ['row' => (int) ($_POST['row'] ?? 0), 'field' => (string) ($_POST['field'] ?? ''), 'value' => (string) ($_POST['value'] ?? '')];
+        if (isset($_POST['old'])) $req['old'] = (string) $_POST['old'];
+        if (mb_strlen($req['value']) > 50000) { echo json_encode(['error' => 'That is too long for one cell']); exit; }
+    }
+    if ($action === 'addrow') {
+        $vals = json_decode($_POST['values'] ?? '{}', true);
+        $req['values'] = is_array($vals) ? $vals : [];
+    }
+    $res = cbRun($python, $sheetId, $req);
+    if ($action !== 'grid' && !empty($res['ok'])) @unlink(dirname(__DIR__) . '/sheets/' . $sheetId . '/' . strtolower($tab) . '.json');   // cached rows are stale now
+    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 if ($action === 'rows') {
     $tab = trim($_POST['tab'] ?? '');
     if ($tab === '' || strpbrk($tab, "/\\") !== false || strtolower($tab) === 'cardboard') {

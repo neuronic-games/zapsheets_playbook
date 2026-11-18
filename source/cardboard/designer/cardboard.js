@@ -105,6 +105,8 @@ function toast(msg, err) {
 }
 
 // ── Values from the sheet ─────────────────────────────────────────────────────
+// Keys the app adds to each row for itself (not columns of the sheet). Columns may start with _ (like _Action).
+function isInternal(k) { return k === '_row' || k === '_notes'; }
 function cleanVal(v) {
   v = String(v == null ? '' : v);
   if (v.charAt(0) === "'") v = v.slice(1);
@@ -314,9 +316,9 @@ function selectTab(name, first, force, asked) {
   api('rows', { tab: name, force: force ? '1' : '' })
     .then(function(res) {
       if (curTab !== name) return;
-      ROWS = (res.rows || []).filter(function(r) { return Object.keys(r).some(function(k) { return k.charAt(0) !== '_' && String(r[k]).trim(); }); });
+      ROWS = (res.rows || []).filter(function(r) { return Object.keys(r).some(function(k) { return !isInternal(k) && String(r[k]).trim(); }); });
       FIELDS = [];
-      ROWS.forEach(function(r) { Object.keys(r).forEach(function(k) { if (k.charAt(0) !== '_' && FIELDS.indexOf(k) < 0) FIELDS.push(k); }); });
+      ROWS.forEach(function(r) { Object.keys(r).forEach(function(k) { if (!isInternal(k) && FIELDS.indexOf(k) < 0) FIELDS.push(k); }); });
       renderData(); fitZoom(); renderAttrs();
       if (_activeTab === 'print') renderPrint();
       if (_activeTab === 'export') renderExport();
@@ -396,7 +398,7 @@ function showNewField() { var b = $('newField'); b.classList.add('open'); $('new
 function hideNewField() { var b = $('newField'); if (b) b.classList.remove('open'); if ($('newFieldMsg')) $('newFieldMsg').textContent = ''; }
 function newFieldProblem(n) {
   if (!n) return ' ';
-  if (n.charAt(0) === '_' || /[{}]/.test(n)) return 'Names can\'t use { } or start with _';
+  if (isInternal(n) || /[{}]/.test(n)) return isInternal(n) ? '“' + n + '” is used by CardBoard' : 'Names can\'t use { or }';
   if (FIELDS.some(function(f) { return f.toLowerCase() === n.toLowerCase(); })) return 'There\'s already a column called "' + n + '"';
   return '';
 }
@@ -1807,7 +1809,7 @@ function addColumn(ev) {
   var n = inp.value.trim().replace(/\s+/g, ' ');
   if (!n) { hideAddColumn(); return; }
   var known = (GRID ? GRID.header : []).concat(FIELDS).filter(Boolean);
-  var problem = (n.charAt(0) === '_' || /[{}]/.test(n)) ? 'Names can\'t use { } or start with _'
+  var problem = isInternal(n) ? '“' + n + '” is used by CardBoard' : /[{}]/.test(n) ? 'Names can\'t use { or }'
               : known.some(function(f) { return f.toLowerCase() === n.toLowerCase(); }) ? 'There\'s already a column called “' + n + '”' : '';
   if (problem) { $('gridAddColMsg').textContent = problem; return; }
   var tab = curTab; _addingCol = true; inp.disabled = true; box.classList.add('busy');
@@ -1851,9 +1853,9 @@ function refreshRows() {
   var tab = curTab; _rowsStale = false;
   return api('rows', { tab: tab, force: '1' }).then(function(res) {
     if (curTab !== tab) return;
-    ROWS = (res.rows || []).filter(function(r) { return Object.keys(r).some(function(k) { return k.charAt(0) !== '_' && String(r[k]).trim(); }); });
+    ROWS = (res.rows || []).filter(function(r) { return Object.keys(r).some(function(k) { return !isInternal(k) && String(r[k]).trim(); }); });
     FIELDS = [];
-    ROWS.forEach(function(r) { Object.keys(r).forEach(function(k) { if (k.charAt(0) !== '_' && FIELDS.indexOf(k) < 0) FIELDS.push(k); }); });
+    ROWS.forEach(function(r) { Object.keys(r).forEach(function(k) { if (!isInternal(k) && FIELDS.indexOf(k) < 0) FIELDS.push(k); }); });
     rowIdx = Math.min(rowIdx, Math.max(0, ROWS.length - 1));
     renderData(); render();
     if (_activeTab === 'print') renderPrint();

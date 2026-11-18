@@ -536,8 +536,8 @@ function render() {
   var holder = $('cardHolder'), c = layout.card;
   holder.style.width = (c.w * PX * zoom) + 'px'; holder.style.height = (c.h * PX * zoom) + 'px';
   holder.innerHTML = renderCardHTML(layout, ROWS[rowIdx] || null, true, { card: rowIdx, row: rowIdx, side: side }) +
-    '<button type="button" class="flip-btn' + (side === 'back' ? ' on' : '') + '" onclick="flipCard()" title="' + (side === 'back' ? 'Back of the card — click for the front' : 'Front of the card — click for the back') + '">' + FLIP_ICON +
-    '<span>' + (side === 'back' ? 'Back' : 'Front') + '</span></button>';
+    '<div class="side-label">' + (side === 'back' ? 'Back' : 'Front') + '</div>' +
+    '<button type="button" class="flip-btn' + (side === 'back' ? ' on' : '') + '" onclick="flipCard()" title="Flip the card — show the ' + (side === 'back' ? 'front' : 'back') + '" aria-label="Flip the card">' + FLIP_ICON + '</button>';
   var card = holder.firstChild;
   card.style.transform = 'scale(' + zoom + ')';
   card.style.setProperty('--z', zoom * PX);

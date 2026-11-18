@@ -90,6 +90,10 @@ button, input, select, textarea { font-family:inherit; }
 .ly-row.drop-before::before, .ly-row.drop-after::after { content:''; position:absolute; left:0; right:0; height:2px; background:#7b6cf6; border-radius:2px; }
 .ly-row.drop-before::before { top:-3px; } .ly-row.drop-after::after { bottom:-3px; }
 .ly-child { margin-left:1.1rem; }
+.ly-cb { width:15px; height:15px; flex-shrink:0; border:1.5px solid #c9cce0; border-radius:4px; background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.ly-cb:hover { border-color:#7b6cf6; }
+.ly-cb.on { background:#4b3fa8; border-color:#4b3fa8; }
+.ly-cb.on::after { content:''; width:7px; height:4px; border-left:2px solid #fff; border-bottom:2px solid #fff; transform:translateY(-1px) rotate(-45deg); }
 .ly-group { background:#f7f5ff; }
 .ly-chev { width:.8rem; text-align:center; color:#8a8fa8; font-size:.65rem; transition:transform .15s; }
 .ly-chev.open { transform:rotate(90deg); }

@@ -981,17 +981,17 @@ function renderLayers() {
     if (en.group) {
       var g = groupById(en.group) || { name: 'Group' }, open = !_layerFold[en.group], all = en.els.every(function(x) { return sel.indexOf(x.id) >= 0; });
       h += '<div class="ly-row ly-group' + (all ? ' on' : '') + '" draggable="true" data-g="' + en.group + '">' +
-           '<span class="ly-chev' + (open ? ' open' : '') + '" data-fold="' + en.group + '">▸</span>' +
+           '<span class="ly-cb' + (all ? ' on' : '') + '" data-cb title="Select (with others)"></span>' + '<span class="ly-chev' + (open ? ' open' : '') + '" data-fold="' + en.group + '">▸</span>' +
            '<span class="ly-ico">▣</span><span class="ly-name" title="Double-click to rename">' + esc(g.name) + '</span><span class="ly-n">' + en.els.length + '</span></div>';
       if (open) en.els.slice().reverse().forEach(function(e) {
-        h += '<div class="ly-row ly-child' + (sel.indexOf(e.id) >= 0 ? ' on' : '') + '" draggable="true" data-id="' + e.id + '" data-in="' + en.group + '">' + elIcon(e) + '<span class="ly-name">' + esc(elLabel(e)) + '</span><span class="ly-kind">' + KIND_NAME[e.kind] + '</span></div>';
+        h += '<div class="ly-row ly-child' + (sel.indexOf(e.id) >= 0 ? ' on' : '') + '" draggable="true" data-id="' + e.id + '" data-in="' + en.group + '">' + '<span class="ly-cb' + (sel.indexOf(e.id) >= 0 ? ' on' : '') + '" data-cb title="Select (with others)"></span>' + elIcon(e) + '<span class="ly-name">' + esc(elLabel(e)) + '</span><span class="ly-kind">' + KIND_NAME[e.kind] + '</span></div>';
       });
     } else {
       var e = en.el;
-      h += '<div class="ly-row' + (sel.indexOf(e.id) >= 0 ? ' on' : '') + '" draggable="true" data-id="' + e.id + '">' + elIcon(e) + '<span class="ly-name">' + esc(elLabel(e)) + '</span><span class="ly-kind">' + KIND_NAME[e.kind] + '</span></div>';
+      h += '<div class="ly-row' + (sel.indexOf(e.id) >= 0 ? ' on' : '') + '" draggable="true" data-id="' + e.id + '">' + '<span class="ly-cb' + (sel.indexOf(e.id) >= 0 ? ' on' : '') + '" data-cb title="Select (with others)"></span>' + elIcon(e) + '<span class="ly-name">' + esc(elLabel(e)) + '</span><span class="ly-kind">' + KIND_NAME[e.kind] + '</span></div>';
     }
   });
-  h += '</div><p class="ly-tip">Drag to reorder · Shift or ⌘-click to select several, then Group</p>';
+  h += '</div><p class="ly-tip">Drag to reorder · tick the boxes (or Shift/⌘-click) to select several, then Group</p>';
   box.innerHTML = h;
 }
 // Clicks, renaming and drag-to-reorder in the Layers list
@@ -1002,7 +1002,7 @@ function renderLayers() {
     if (fold) { _layerFold[fold.dataset.fold] = !_layerFold[fold.dataset.fold]; renderLayers(); return; }
     var row = ev.target.closest('.ly-row'); if (!row) return;
     var ids = row.dataset.g ? groupMembers(row.dataset.g).map(function(x) { return x.id; }) : [row.dataset.id];
-    if (ev.shiftKey || ev.metaKey || ev.ctrlKey) {
+    if (ev.shiftKey || ev.metaKey || ev.ctrlKey || ev.target.closest('[data-cb]')) {   // the checkbox adds to (or takes from) the selection
       var cur = selIdsNow(), has = ids.every(function(id) { return cur.indexOf(id) >= 0; });
       setSel(has ? cur.filter(function(id) { return ids.indexOf(id) < 0; }) : cur.concat(ids));
     } else setSel(ids);

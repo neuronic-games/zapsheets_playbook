@@ -32,6 +32,8 @@ var SHAPES = [
   ['triangle', 'Triangle'], ['diamond', 'Diamond'], ['hexagon', 'Hexagon'], ['star', 'Star']
 ];
 var GENS = [['seq', '123', 'Number sequence'], ['rand', '🎲', 'Random number'], ['list', '☰', 'Random from list']];
+var IMG_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+var UPLOADING = {};   // element id → true while its picture uploads
 var KIND_NAME = { text: 'Text', data: 'Data', image: 'Image', shape: 'Shape', gen: 'Generated' };
 var PX = 96 / 72;   // CSS px per pt
 var _activeTab = 'design';
@@ -86,12 +88,19 @@ function cleanVal(v) {
   if (v.charAt(0) === "'") v = v.slice(1);
   return v;
 }
+// Links are shown straight from their source (never copied to our server), so
+// changing the picture in Dropbox or Drive changes it on the cards too.
 function imageUrl(v) {
   v = cleanVal(v).trim();
   var m = v.match(/^=IMAGE\(\s*"([^"]+)"/i); if (m) v = m[1];
   m = v.match(/^\[[^\]]*\]\(([^)]+)\)$/); if (m) v = m[1];
-  m = v.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([A-Za-z0-9_-]+)/);
-  if (m) v = 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1600';
+  // Google Drive: /file/d/ID/view, open?id=ID, uc?id=ID, thumbnail?id=ID → an embeddable image
+  m = v.match(/(?:drive|docs)\.google\.com\/(?:.*\/)?(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=|thumbnail\?id=)([A-Za-z0-9_-]{10,})/);
+  if (m) v = 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w2000';
+  // Dropbox: share links (dl=0) show a page; raw=1 serves the image itself
+  if (/^https?:\/\/(www\.)?dropbox\.com\//i.test(v)) {
+    v = /[?&](dl|raw)=/.test(v) ? v.replace(/([?&])(dl|raw)=[^&#]*/, '$1raw=1') : v + (v.indexOf('?') < 0 ? '?' : '&') + 'raw=1';
+  }
   return /^(https?:)?\/\//i.test(v) || /^data:image\//.test(v) ? v : '';
 }
 function textVal(v) {
@@ -103,7 +112,7 @@ function looksLikeImage(field) {
   var n = 0, img = 0;
   ROWS.slice(0, 12).forEach(function(r) {
     var v = cleanVal(r[field]).trim();
-    if (v) { n++; if (imageUrl(v) && /\.(png|jpe?g|gif|webp|svg)(\?|$)|=IMAGE|drive\.google|googleusercontent/i.test(v)) img++; }
+    if (v) { n++; if (imageUrl(v) && /\.(png|jpe?g|gif|webp|svg)(\?|$|&)|=IMAGE|drive\.google|googleusercontent|dropbox(usercontent)?\.com/i.test(v)) img++; }
   });
   return n > 0 && img / n >= .5;
 }
@@ -186,6 +195,7 @@ function imgDiv(u, e, label) {
   return '<div class="el-img" style="background-image:url(&quot;' + esc(u) + '&quot;);background-size:' + fit + '"></div>';
 }
 function elInner(e, row, ctx) {
+  ctx = ctx || { card: 0, row: 0 };
   switch (e.kind) {
     case 'text': {
       var t = fill(e.text, row);
@@ -194,19 +204,22 @@ function elInner(e, row, ctx) {
     case 'data':
       if (e.as === 'image') return imgDiv(row ? imageUrl(row[e.field]) : '', e, e.field);
       return row ? esc(textVal(row[e.field])) : '<span class="el-empty">' + esc(e.field) + '</span>';
-    case 'image': return imgDiv(imageUrl(e.src), e, 'Image');
+    case 'image': return imageUrl(e.src) || ctx && ctx.designing ? imgDiv(imageUrl(e.src), e, 'Drop an image here, or click the picture button') : '';
     case 'shape': return shapeSVG(e);
-    case 'gen':   return esc(genValue(e, ctx || { card: 0, row: 0 }));
+    case 'gen':   return esc(genValue(e, ctx));
   }
   return '';
 }
 function renderCardHTML(lay, row, designing, ctx) {
+  ctx = Object.assign({ card: 0, row: 0 }, ctx || {}, { designing: !!designing });
   var h = '<div class="card' + (designing ? ' designing' : '') + '" style="' + cardStyle(lay.card) + '">';
   lay.els.slice().sort(function(a, b) { return (a.z || 1) - (b.z || 1); }).forEach(function(e) {
-    var cls = 'el k-' + e.kind + (e.valign === 'middle' ? ' v-middle' : e.valign === 'bottom' ? ' v-bottom' : '') + (designing && e.id === selId ? ' sel' : '');
+    var cls = 'el k-' + e.kind + (e.valign === 'middle' ? ' v-middle' : e.valign === 'bottom' ? ' v-bottom' : '') + (designing && e.id === selId ? ' picked' : '');
+    if (designing && UPLOADING[e.id]) cls += ' img-loading';
     h += '<div class="' + cls + '" data-id="' + e.id + '" style="' + elStyle(e) + '">';
     h += designing
       ? '<div class="el-inner">' + elInner(e, row, ctx) + '</div>' +
+        (e.kind === 'image' ? '<button type="button" class="img-btn" title="Change image" onclick="openImagePicker(event,\'' + e.id + '\')">' + IMG_ICON + '</button>' : '') +
         ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map(function(d) { return '<span class="hdl ' + d + '" data-h="' + d + '"></span>'; }).join('')
       : elInner(e, row, ctx);
     h += '</div>';
@@ -276,24 +289,39 @@ function chip(attrs, ico, name, sample, extraCls) {
   return '<div class="field-chip' + (extraCls ? ' ' + extraCls : '') + '" draggable="true" ' + attrs + ' ondragstart="chipDragStart(event)" onclick="chipClick(this)" title="Drag onto the card, or click to add">' +
          '<span class="ico">' + ico + '</span><span class="nm">' + esc(name) + '</span>' + (sample ? '<span class="sample">' + esc(sample) + '</span>' : '') + '</div>';
 }
+// Each section can be folded away; the choice is remembered in this browser
+function paletteClosed() { try { return JSON.parse(localStorage.getItem('cb_closed') || '{}'); } catch (e) { return {}; } }
+function section(key, title, body, count) {
+  var closed = !!paletteClosed()[key];
+  return '<div class="pal-sec' + (closed ? ' closed' : '') + '" data-sec="' + key + '">' +
+         '<button type="button" class="pal-head" onclick="toggleSection(\'' + key + '\')"><span class="chev">▾</span>' + title +
+         (count != null ? '<span class="pal-count" id="' + key + 'Count">' + count + '</span>' : '') + '</button>' +
+         '<div class="pal-body">' + body + '</div></div>';
+}
+function toggleSection(key) {
+  var c = paletteClosed(); c[key] = !c[key];
+  try { localStorage.setItem('cb_closed', JSON.stringify(c)); } catch (e) {}
+  var el = document.querySelector('.pal-sec[data-sec="' + key + '"]'); if (el) el.classList.toggle('closed', !!c[key]);
+}
 function renderPalette() {
   var h = '';
-  h += '<span class="lbl">Text</span>' + chip('data-add="text"', 'T', 'Text');
-  h += '<span class="lbl">Data</span><div id="dataList"><div class="muted">Loading…</div></div>';
-  h += '<span class="lbl">Image</span>' + chip('data-add="image"', '🖼', 'Image');
-  h += '<span class="lbl">Shape</span><div class="shape-grid">' + SHAPES.map(function(s) {
+  h += section('text', 'Text', chip('data-add="text"', 'T', 'Text'));
+  h += section('data', 'Data', '<div id="dataList"><div class="muted">Loading…</div></div>', '');
+  h += section('image', 'Image', chip('data-add="image"', IMG_ICON, 'Image'));
+  h += section('shape', 'Shape', '<div class="shape-grid">' + SHAPES.map(function(s) {
     var demo = { shape: s[0], w: 24, h: s[0] === 'line' ? 24 : 18, fill: s[0] === 'line' ? 'none' : '#ece9ff', stroke: '#4b3fa8', strokeW: 1.5, radius: s[0] === 'round' ? 5 : 0 };
     return '<div class="shape-chip" draggable="true" data-shape="' + s[0] + '" ondragstart="chipDragStart(event)" onclick="chipClick(this)" title="' + s[1] + '">' +
            '<span class="shape-ico">' + shapeSVG(demo) + '</span><span>' + s[1] + '</span></div>';
-  }).join('') + '</div>';
-  h += '<span class="lbl">Generated</span>' + GENS.map(function(g) { return chip('data-gen="' + g[0] + '"', g[1], g[2]); }).join('');
-  h += '<p class="muted" style="margin-top:.8rem">Drag onto the card, or click to add it in the middle.</p>';
+  }).join('') + '</div>');
+  h += section('gen', 'Generated', GENS.map(function(g) { return chip('data-gen="' + g[0] + '"', g[1], g[2]); }).join(''));
+  h += '<p class="muted" style="margin-top:.8rem">Drag onto the card, or click to add it in the middle. Drop a picture file anywhere on the card to add it as an image.</p>';
   $('palette').innerHTML = h;
 }
 function renderData() {
   var el = $('dataList'); if (!el) return;
   if (!FIELDS.length) { el.innerHTML = '<div class="muted">No columns found. The first row of the sheet should hold the column names, with one card per row below.</div>'; return; }
   var sample = ROWS[rowIdx] || ROWS[0] || {};
+  if ($('dataCount')) $('dataCount').textContent = FIELDS.length;
   el.innerHTML = FIELDS.map(function(f) { return chip('data-field="' + esc(f) + '"', '≡', f, looksLikeImage(f) ? '' : textVal(sample[f])); }).join('');
 }
 function chipSpec(c) {
@@ -303,7 +331,12 @@ function chipSpec(c) {
   return 'add:' + c.dataset.add;
 }
 function chipDragStart(ev) { ev.dataTransfer.setData('text/plain', chipSpec(ev.currentTarget)); ev.dataTransfer.effectAllowed = 'copy'; }
-function chipClick(c) { if (layout) addAt(chipSpec(c), layout.card.w / 2, layout.card.h / 2); }
+function chipClick(c) {
+  if (!layout) return;
+  var spec = chipSpec(c);
+  addAt(spec, layout.card.w / 2, layout.card.h / 2);
+  if (spec === 'add:image') setTimeout(function() { openImagePicker(null, selId); }, 0);   // straight to choosing the picture
+}
 
 // A new element for a palette item, centred on (x, y)
 function makeEl(spec, x, y) {
@@ -343,6 +376,89 @@ function addElementAt(e) {
   e.x = r1(clamp(e.x, 0, c.w - e.w)); e.y = r1(clamp(e.y, 0, c.h - e.h));
   snapshot(); layout.els.push(e); selId = e.id; changed();
 }
+
+// ── Pictures: upload a file, or link to Dropbox / Google Drive / the web ──────
+// Uploaded files are stored with the app (push/uploadImage.php — the same as
+// GameBoard). Links are kept as links and loaded from their source every time.
+function isImageFile(f) { return f && /^image\/(png|jpe?g|gif|webp)$/i.test(f.type); }
+function droppedFile(dt) { return dt && dt.files && Array.prototype.filter.call(dt.files, isImageFile)[0]; }
+function droppedLink(dt) {
+  if (!dt) return '';
+  var u = (dt.getData('text/uri-list') || '').split('\n').filter(function(l) { return l && l.charAt(0) !== '#'; })[0] || '';
+  if (!u) { var hm = (dt.getData('text/html') || '').match(/<img[^>]+src="([^"]+)"/i); if (hm) u = hm[1].replace(/&amp;/g, '&'); }
+  if (!u) { var t = (dt.getData('text/plain') || '').trim(); if (/^https?:\/\/\S+$/i.test(t)) u = t; }
+  return /^https?:\/\//i.test(u) ? u.trim() : '';
+}
+function setImageSrc(id, src) {
+  var e = elById(id); if (!e) return;
+  snapshot(); e.src = src; changed(selId !== id);
+  if (selId === id) renderAttrs();
+}
+function uploadImage(id, file) {
+  if (!isImageFile(file)) { toast('Use a PNG, JPG, GIF or WebP picture', true); return; }
+  if (file.size > 10 * 1024 * 1024) { toast('That picture is over 10 MB', true); return; }
+  UPLOADING[id] = true; render(); if (selId === id) renderAttrs();
+  var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('file', file);
+  fetch(APP_BASE + 'push/uploadImage.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(r) {
+      if (!r || r.error || !r.url) throw new Error(r && r.error ? r.error : 'Upload failed');
+      delete UPLOADING[id]; setImageSrc(id, r.url);
+    })
+    .catch(function(err) { delete UPLOADING[id]; render(); toast('Couldn\'t upload — ' + err.message, true); });
+}
+function closeImagePicker() { var p = $('imgPicker'); if (p) p.remove(); }
+function openImagePicker(ev, id) {
+  if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+  var e = elById(id); if (!e) return;
+  if (selId !== id) selectEl(id);
+  closeImagePicker();
+  var p = document.createElement('div');
+  p.id = 'imgPicker'; p.className = 'img-picker';
+  p.innerHTML =
+    '<div class="ip-drop" id="ipDrop">' + IMG_ICON + '<b>Drop a picture here</b><span>or</span>' +
+      '<button type="button" class="ip-choose" onclick="$(\'ipFile\').click()">Choose a file…</button>' +
+      '<input type="file" id="ipFile" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none"></div>' +
+    '<span class="mini">Or a web address</span>' +
+    '<div class="ip-url"><input class="inp" id="ipUrl" placeholder="Dropbox, Google Drive or web link" value="' + esc(/\/images\/[A-Za-z0-9_\-]+\/[0-9a-f]{20}\.\w+$/.test(e.src || '') ? '' : (e.src || '')) + '">' +
+      '<button type="button" class="attr-btn" id="ipUse">Use</button></div>' +
+    '<p class="muted">Links are shown straight from Dropbox, Drive or the website, so when you change the picture there it changes here too. In Drive, share it as “Anyone with the link”.</p>' +
+    (e.src ? '<button type="button" class="attr-btn danger ip-remove" id="ipRemove">Remove picture</button>' : '');
+  document.body.appendChild(p);
+  // Place it beside the picture button (or the element), kept on screen
+  var anchor = $('cardHolder').querySelector('.el[data-id="' + id + '"]'), r = anchor ? anchor.getBoundingClientRect() : { right: innerWidth / 2, top: 100 };
+  var left = Math.min(r.right + 10, innerWidth - p.offsetWidth - 12), top = clamp(r.top, 70, innerHeight - p.offsetHeight - 12);
+  if (left < r.right && anchor) left = Math.max(12, r.left - p.offsetWidth - 10);
+  p.style.left = left + 'px'; p.style.top = top + 'px';
+  var drop = $('ipDrop');
+  drop.addEventListener('dragover', function(d) { d.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', function() { drop.classList.remove('over'); });
+  drop.addEventListener('drop', function(d) {
+    d.preventDefault(); d.stopPropagation(); drop.classList.remove('over');
+    var f = droppedFile(d.dataTransfer), l = droppedLink(d.dataTransfer);
+    if (f) { closeImagePicker(); uploadImage(id, f); } else if (l) { closeImagePicker(); setImageSrc(id, l); }
+  });
+  $('ipFile').addEventListener('change', function() { var f = this.files[0]; if (f) { closeImagePicker(); uploadImage(id, f); } });
+  function useUrl() {
+    var u = $('ipUrl').value.trim();
+    if (u && !imageUrl(u)) { toast('That doesn\'t look like a web address', true); return; }
+    closeImagePicker(); setImageSrc(id, u);
+  }
+  $('ipUse').onclick = useUrl;
+  $('ipUrl').addEventListener('keydown', function(k) { if (k.key === 'Enter') useUrl(); if (k.key === 'Escape') closeImagePicker(); });
+  if ($('ipRemove')) $('ipRemove').onclick = function() { closeImagePicker(); setImageSrc(id, ''); };
+}
+document.addEventListener('pointerdown', function(ev) {
+  var p = $('imgPicker'); if (p && !p.contains(ev.target) && !ev.target.closest('.img-btn')) closeImagePicker();
+});
+document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') closeImagePicker(); });
+// A paste with a picture link or file while an image is selected sets it
+document.addEventListener('paste', function(ev) {
+  var e = elById(selId); if (!e || e.kind !== 'image' || /^(INPUT|TEXTAREA)$/.test((document.activeElement || {}).tagName || '')) return;
+  var f = droppedFile(ev.clipboardData), l = droppedLink(ev.clipboardData);
+  if (f) { ev.preventDefault(); closeImagePicker(); uploadImage(e.id, f); }
+  else if (l) { ev.preventDefault(); closeImagePicker(); setImageSrc(e.id, l); }
+});
 
 // ── Canvas ────────────────────────────────────────────────────────────────────
 function render() {
@@ -385,13 +501,22 @@ function ptFromEvent(ev) {
     ev.preventDefault(); holder.classList.remove('drop-target');
     if (!layout) return;
     var d = ev.dataTransfer.getData('text/plain') || '', p = ptFromEvent(ev), c = layout.card;
-    if (d.indexOf(':') < 0) return;
+    var file = droppedFile(ev.dataTransfer), link = file ? '' : droppedLink(ev.dataTransfer);
+    if (file || link) {
+      // Onto an image element: replace its picture. Anywhere else: a new image element there.
+      var hit = document.elementFromPoint(ev.clientX, ev.clientY), node = hit && hit.closest('.el.k-image'), e = node && elById(node.dataset.id);
+      if (!e) { addAt('add:image', clamp(p.x, 0, c.w), clamp(p.y, 0, c.h)); e = elById(selId); }
+      if (file) uploadImage(e.id, file); else setImageSrc(e.id, link);
+      return;
+    }
+    if (d.indexOf(':') < 0 || /^https?:/i.test(d)) return;
     addAt(d, clamp(p.x, 0, c.w), clamp(p.y, 0, c.h));
   });
 })();
 
 // Move / resize elements on the card
 $('cardHolder').addEventListener('pointerdown', function(ev) {
+  if (ev.target.closest('.img-btn')) return;
   var elDom = ev.target.closest('.el'); if (!elDom || ev.button > 0) return;
   var e = elById(elDom.dataset.id); if (!e) return;
   ev.preventDefault();
@@ -590,7 +715,12 @@ function renderAttrs() {
     h += e.as === 'image' ? fitAttrs(e) + boxAttrs(e, 'Frame') : textAttrs(e) + boxAttrs(e, 'Background');
   }
   if (e.kind === 'image') {
-    h += '<span class="lbl">Picture</span><span class="mini">Web address</span><input class="inp" value="' + esc(e.src || '') + '" placeholder="https://… (or a Google Drive link)" onchange="setProp(\'src\',this.value.trim())">';
+    var u = imageUrl(e.src), src = e.src || '', uploaded = /\/images\/[A-Za-z0-9_\-]+\/[0-9a-f]{20}\.\w+$/.test(src);
+    var from = !src ? '' : uploaded ? 'Uploaded file' : /dropbox\.com/i.test(src) ? 'Dropbox link' : /google\.com/i.test(src) ? 'Google Drive link' : 'Web link';
+    h += '<span class="lbl">Picture</span><div class="img-slot' + (UPLOADING[e.id] ? ' img-loading' : '') + '" id="imgSlot" onclick="openImagePicker(event,\'' + e.id + '\')" title="Click or drop a picture to change it">' +
+         (u ? '<div class="el-img" style="background-image:url(&quot;' + esc(u) + '&quot;);background-size:contain"></div>' : '<div class="img-slot-empty">' + IMG_ICON + '<span>Drop a picture, or click to choose</span></div>') +
+         '<span class="img-btn">' + IMG_ICON + '</span></div>';
+    if (from) h += '<p class="muted" style="margin:.3rem 0 0">' + from + (uploaded ? '' : ' — loaded from the source, so changes there show up here') + '</p>';
     h += '<p class="muted" style="margin:.3rem 0 0">The same picture on every card — a logo, frame or icon. For a different picture per card, use a Data column and set it to Image.</p>';
     h += fitAttrs(e) + boxAttrs(e, 'Frame');
   }
@@ -625,6 +755,16 @@ function renderAttrs() {
   h += '<div class="attr-btns"><button class="attr-btn" onclick="reorderSel(1)">To front</button><button class="attr-btn" onclick="reorderSel(-1)">To back</button></div>';
   h += '<div class="attr-btns"><button class="attr-btn" onclick="duplicateSel()">Duplicate</button><button class="attr-btn danger" onclick="deleteSel()">Delete</button></div>';
   p.innerHTML = h;
+  var slot = $('imgSlot');
+  if (slot) {
+    slot.addEventListener('dragover', function(d) { d.preventDefault(); slot.classList.add('over'); });
+    slot.addEventListener('dragleave', function() { slot.classList.remove('over'); });
+    slot.addEventListener('drop', function(d) {
+      d.preventDefault(); slot.classList.remove('over');
+      var f = droppedFile(d.dataTransfer), l = droppedLink(d.dataTransfer);
+      if (f) uploadImage(e.id, f); else if (l) setImageSrc(e.id, l);
+    });
+  }
 }
 function liveText(v) {   // show typing on the card right away; one undo step when the box loses focus
   var e = elById(selId); if (!e) return;

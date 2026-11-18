@@ -84,6 +84,46 @@ button, input, select, textarea { font-family:inherit; }
 .shape-chip:hover { border-color:#a99cff; background:#f7f5ff; }
 .shape-ico { width:24px; height:20px; display:block; }
 .el.k-shape { overflow:visible; }
+/* Left panel sections (fold away with the header) */
+.pal-sec { margin-top:.75rem; }
+.pal-head { display:flex; align-items:center; gap:.3rem; width:100%; background:none; border:none; padding:.15rem 0; margin:0 0 .35rem; cursor:pointer; font-family:'DINBlack',sans-serif; font-size:.62rem; letter-spacing:.09em; text-transform:uppercase; color:#8a8fa8; text-align:left; }
+.pal-head:hover { color:#4b3fa8; }
+.pal-head .chev { display:inline-block; width:.8rem; transition:transform .15s; }
+.pal-sec.closed .chev { transform:rotate(-90deg); }
+.pal-sec.closed .pal-body { display:none; }
+.pal-count { margin-left:auto; font-family:'DINRegular',sans-serif; letter-spacing:0; background:#eceaf9; color:#6b62b8; border-radius:999px; padding:0 .45rem; font-size:.62rem; }
+.pal-count:empty { display:none; }
+.field-chip .ico svg { display:block; margin:0 auto; }
+/* Picture button on image elements (like GameBoard's) */
+.img-btn { position:absolute; top:calc(6px / var(--z, 1)); right:calc(6px / var(--z, 1)); width:calc(30px / var(--z, 1)); height:calc(30px / var(--z, 1)); border-radius:50%; border:none; padding:0; background:rgba(0,0,0,.55); color:#fff; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:55; }
+.img-btn:hover { background:rgba(0,0,0,.82); }
+.img-btn svg { width:52%; height:52%; pointer-events:none; }
+.designing .el.k-image:hover .img-btn, .designing .el.k-image.picked .img-btn { display:flex; }
+.el.img-loading .el-inner::after, .img-slot.img-loading::after { content:''; position:absolute; inset:0; background:rgba(0,0,0,.4); }
+.el.img-loading .el-inner::before, .img-slot.img-loading::before { content:''; position:absolute; top:50%; left:50%; width:calc(26px / var(--z, 1)); height:calc(26px / var(--z, 1)); margin:calc(-13px / var(--z, 1)) 0 0 calc(-13px / var(--z, 1)); border:calc(3px / var(--z, 1)) solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; z-index:2; }
+.el.img-loading .el-inner { position:relative; }
+.el.k-image .el-img { color:#a0a4bb; }
+/* Picture slot in the attributes panel */
+.img-slot { position:relative; height:130px; border:1.5px dashed #c9cce0; border-radius:8px; background:#f6f7fb; cursor:pointer; overflow:hidden; }
+.img-slot:hover, .img-slot.over { border-color:#7b6cf6; background:#f3f1ff; }
+.img-slot .img-btn { display:flex; top:6px; right:6px; width:28px; height:28px; }
+.img-slot-empty { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.35rem; color:#9aa0b8; font-size:.72rem; }
+.img-slot-empty svg { width:26px; height:26px; }
+.img-slot.over::before { content:'Drop to set the picture'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(75,63,168,.78); color:#fff; font-family:'DINBlack',sans-serif; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; z-index:3; }
+/* Picture chooser */
+.img-picker { position:fixed; z-index:400; width:280px; background:#fff; border-radius:12px; box-shadow:0 14px 40px rgba(20,20,60,.28); padding:.8rem; }
+.img-picker .muted { font-size:.68rem; margin:.5rem 0 0; }
+.ip-drop { display:flex; flex-direction:column; align-items:center; gap:.25rem; border:1.5px dashed #c9cce0; border-radius:9px; padding:.9rem .5rem; color:#8a8fa8; font-size:.72rem; margin-bottom:.6rem; text-align:center; }
+.ip-drop svg { width:26px; height:26px; }
+.ip-drop b { color:#2e2763; font-family:'DINBlack',sans-serif; font-weight:400; font-size:.78rem; }
+.ip-drop.over { border-color:#7b6cf6; background:#f3f1ff; }
+.ip-choose { margin-top:.15rem; height:1.9rem; padding:0 .9rem; border:none; border-radius:7px; background:#4b3fa8; color:#fff; font-family:'DINBlack',sans-serif; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
+.ip-choose:hover { background:#3b3192; }
+.ip-url { display:flex; gap:.35rem; }
+.ip-url .inp { flex:1; min-width:0; }
+.ip-url .attr-btn { flex:0 0 auto; padding:0 .8rem; }
+.ip-remove { width:100%; margin-top:.6rem; }
+@media print { .img-btn { display:none !important; } }
 .muted { font-size:.78rem; color:#9aa0b8; line-height:1.5; }
 
 /* ── Canvas ────────────────────────────────────────────── */
@@ -113,9 +153,9 @@ button, input, select, textarea { font-family:inherit; }
 .designing .el { cursor:move; outline:calc(1px / var(--z)) dashed transparent; overflow:visible; }
 .designing .el > .el-inner { overflow:hidden; width:100%; height:100%; display:flex; flex-direction:column; justify-content:inherit; }
 .designing .el:hover { outline-color:rgba(75,63,168,.45); }
-.designing .el.sel { outline:calc(1.5px / var(--z)) solid #4b3fa8; z-index:50; }
+.designing .el.picked { outline:calc(1.5px / var(--z)) solid #4b3fa8; z-index:50; }
 .hdl { position:absolute; width:calc(9px / var(--z)); height:calc(9px / var(--z)); background:#fff; border:calc(1.5px / var(--z)) solid #4b3fa8; border-radius:calc(2px / var(--z)); display:none; z-index:60; }
-.el.sel .hdl { display:block; }
+.el.picked .hdl { display:block; }
 .hdl.nw { left:calc(-4.5px / var(--z)); top:calc(-4.5px / var(--z)); cursor:nwse-resize; }
 .hdl.ne { right:calc(-4.5px / var(--z)); top:calc(-4.5px / var(--z)); cursor:nesw-resize; }
 .hdl.sw { left:calc(-4.5px / var(--z)); bottom:calc(-4.5px / var(--z)); cursor:nesw-resize; }

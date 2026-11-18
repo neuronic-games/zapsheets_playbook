@@ -365,7 +365,11 @@ footer a:hover { color:rgba(255,255,255,.7); }
 .tdx-list { background:#fff; border:1px solid #e3e8ef; border-radius:8px; }
 .tdx-row { position:relative; display:flex; align-items:center; gap:6px; padding:6px 8px 6px 4px; border-top:1px solid #eef1f5; font-size:9.5px; }
 .tdx-row:first-child { border-top:none; }
-.tdx-row.drag { background:#fffbe6; box-shadow:0 5px 14px rgba(0,0,0,.12); transform:translateX(4px) rotate(-.4deg); border-radius:6px; z-index:2; }
+.tdx { position:relative; overflow:hidden; padding-bottom:24px; }
+.tdx-row { transition:transform .22s ease, box-shadow .18s, background .18s; background:#fff; }
+.tdx-row.lift { background:#fffbe6; box-shadow:0 8px 20px rgba(15,23,42,.18); z-index:3; transition:box-shadow .18s, background .18s; border-radius:6px; }
+.tdx-say { transition:color .2s; min-height:10px; }
+.tdx-say.step { color:#b8860b; }
 .tdx-h { color:#c3cad4; font-size:8px; letter-spacing:-.15em; width:10px; }
 .tdx-cb { width:11px; height:11px; border:1.4px solid #9aa4b1; border-radius:3px; flex-shrink:0; font-size:8px; line-height:9px; text-align:center; color:#fff; }
 .tdx-cb.on { background:#b8860b; border-color:#b8860b; }
@@ -377,10 +381,15 @@ footer a:hover { color:rgba(255,255,255,.7); }
 .tdx-row.done .tdx-ic { opacity:.5; }
 .tdx-ic { width:17px; height:17px; display:flex; align-items:center; justify-content:center; color:#c3cad4; font-family:'DBDINBlack','Inter',sans-serif; font-size:10px; letter-spacing:-.05em; border-radius:4px; flex-shrink:0; }
 .tdx-ic.p3 { color:#d92d20; } .tdx-ic.p2 { color:#e08a00; } .tdx-ic.p1 { color:#2e7d32; }
+.tdx-ic { transition:color .25s, background .15s, border-color .15s; border:1px solid transparent; }
 .tdx-ic.on { color:#1a5f7a; } .tdx-ic.due { color:#7c4dbd; }
-.tdx-ic.act { background:#f3f5f8; border:1px solid #dde3ea; }
-.tdx-menu { position:absolute; right:22px; top:26px; z-index:3; background:#fff; border:1px solid #e1e6ed; border-radius:7px; box-shadow:0 8px 22px rgba(15,23,42,.16); padding:3px; display:flex; flex-direction:column; min-width:88px; }
+.tdx-ic.act { background:#f3f5f8; border-color:#dde3ea; }
+.tdx-h.act { color:#64748b; }
+.tdx-toast { bottom:6px; }
+.tdx-menu { position:absolute; right:0; top:0; opacity:0; transform:translateY(-3px); transition:opacity .15s, transform .15s; pointer-events:none; z-index:3; background:#fff; border:1px solid #e1e6ed; border-radius:7px; box-shadow:0 8px 22px rgba(15,23,42,.16); padding:3px; display:flex; flex-direction:column; min-width:88px; }
 .tdx-menu span { padding:4px 7px; border-radius:4px; font-size:9px; color:#334155; }
+.tdx-menu span { transition:background .12s; }
+.tdx-menu.show { opacity:1; transform:none; }
 .tdx-menu span.cur { background:#eef6fa; color:#1a5f7a; font-family:'DBDINBlack','Inter',sans-serif; }
 </style>
 </head>
@@ -629,17 +638,17 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
           <div class="browser-url">zapsheets.com/app/…/devboard</div>
         </div>
-        <div class="dbx tdx" aria-hidden="true">
-          <div class="tdx-cap">In a session</div>
-          <div class="dbx-pair tdx-flag"><div><b>Components</b></div><div>Show the component list before setup, with counts.<span class="tdx-bulb on"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path class="g" d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14Z"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></span></div></div>
-          <div class="tdx-cap" style="margin-top:12px">On the Board</div>
+        <div class="dbx tdx" id="tdDemo" aria-hidden="true">
+          <div class="tdx-cap tdx-say">Your TODOs, on the Board</div>
           <div class="tdx-list">
-            <div class="tdx-row"><span class="tdx-h">⋮⋮</span><span class="tdx-cb"></span><span class="tdx-t"><b>Components</b> Show the component list before setup… <i>Ghost Party · Playtest 1</i></span><span class="tdx-ic p3">!!!</span><span class="tdx-ic on"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span><span class="tdx-ic due"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg></span></div>
-            <div class="tdx-row drag"><span class="tdx-h">⋮⋮</span><span class="tdx-cb"></span><span class="tdx-t"><b>Bidding</b> Paying to go last is too strong. Cap bids… <i>Club K9 · Playtest 4</i></span><span class="tdx-ic p2">!!</span><span class="tdx-ic on act"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span><span class="tdx-ic"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg></span>
-              <div class="tdx-menu"><span>Maya Chen</span><span class="cur">Leo Park</span><span>Sam Rivera</span></div></div>
-            <div class="tdx-row"><span class="tdx-h">⋮⋮</span><span class="tdx-cb"></span><span class="tdx-t"><b>Fase names</b> Stage 3 shouldn't have a number… <i>Ghost Party · Editing 1</i></span><span class="tdx-ic p1">!</span><span class="tdx-ic"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span><span class="tdx-ic"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg></span></div>
-            <div class="tdx-row done"><span class="tdx-h"></span><span class="tdx-cb on">✓</span><span class="tdx-t"><b>Blockers</b> Add blockers for unused player spaces. <i>Club K9 · Playtest 3</i></span><span class="tdx-ic">!</span><span class="tdx-ic on"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span><span class="tdx-ic"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg></span></div>
+            <div class="tdx-row"><span class="tdx-h">⋮⋮</span><span class="tdx-cb"></span><span class="tdx-t"><b>Components</b> Show the component list before setup… <i>Ghost Party · Playtest 1</i></span><span class="tdx-ic p3">!!!</span><span class="tdx-ic tdx-who on"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span><span class="tdx-ic due"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg></span></div>
+            <div class="tdx-row tdx-bid"><span class="tdx-h">⋮⋮</span><span class="tdx-cb"></span><span class="tdx-t"><b>Bidding</b> Paying to go last is too strong. Cap bids… <i>Club K9 · Playtest 4</i></span><span class="tdx-ic p2">!!</span><span class="tdx-ic tdx-who"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span><span class="tdx-ic"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg></span></div>
+            <div class="tdx-row"><span class="tdx-h">⋮⋮</span><span class="tdx-cb"></span><span class="tdx-t"><b>Fase names</b> Stage 3 shouldn't have a number… <i>Ghost Party · Editing 1</i></span><span class="tdx-ic p1">!</span><span class="tdx-ic tdx-who"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span><span class="tdx-ic"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg></span></div>
+            <div class="tdx-row done"><span class="tdx-h">⋮⋮</span><span class="tdx-cb on">✓</span><span class="tdx-t"><b>Blockers</b> Add blockers for unused player spaces. <i>Club K9 · Playtest 3</i></span><span class="tdx-ic ">!</span><span class="tdx-ic tdx-who on"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span><span class="tdx-ic"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg></span></div>
           </div>
+          <div class="tdx-menu"><span>Maya Chen</span><span class="tdx-leo">Leo Park</span><span>Sam Rivera</span></div>
+          <div class="ie-toast tdx-toast">✓ Saved to your Sheet</div>
+          <svg class="ie-cursor tdx-cursor" width="22" height="22" viewBox="0 0 24 24"><path d="M4 2l15 11-7 1.2L8.6 21 4 2z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/></svg>
         </div>
       </div>
     </div>
@@ -837,6 +846,92 @@ footer a:hover { color:rgba(255,255,255,.7); }
   async function loop() { for (;;) { if (!visible) { await sleep(400); continue; } await play(); } }
 
   if (reduce) { reset(); list.classList.add('show'); dlg.classList.add('gone'); summary.textContent = 'Nov 12 · 3 rounds · 42 min · 2 notes · 📷'; return; }
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function(es) { visible = es[0].isIntersecting; }, { threshold: .35 }).observe(stage);
+  } else { visible = true; }
+  loop();
+})();
+// ── TODO list animation: assign a person, then drag the TODO to the top, then loop ──
+(function() {
+  var stage = document.getElementById('tdDemo');
+  if (!stage) return;
+  var q = function(s) { return stage.querySelector(s); };
+  var cursor = q('.tdx-cursor'), menu = q('.tdx-menu'), leo = q('.tdx-leo'), toast = q('.tdx-toast'), say = q('.tdx-say');
+  var list = q('.tdx-list'), sayDefault = say.textContent;
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var visible = false;
+  var sleep = function(ms) { return new Promise(function(r) { setTimeout(r, ms); }); };
+  function at(el, fx, fy) {
+    var s = stage.getBoundingClientRect(), r = el.getBoundingClientRect();
+    return [r.left - s.left + r.width * (fx == null ? .5 : fx), r.top - s.top + r.height * (fy == null ? .5 : fy)];
+  }
+  function moveTo(el, fx, fy, ms) {
+    ms = ms || 650; var p = at(el, fx, fy);
+    cursor.style.transition = 'transform ' + ms + 'ms cubic-bezier(.45,.05,.25,1)';
+    cursor.style.transform = 'translate(' + (p[0] - 3) + 'px,' + (p[1] - 2) + 'px)';
+    return sleep(ms + 50);
+  }
+  function click() { cursor.classList.remove('down'); void cursor.offsetWidth; cursor.classList.add('down'); return sleep(200); }
+  function caption(t) { say.textContent = t || sayDefault; say.classList.toggle('step', !!t); }
+  async function saved() { toast.classList.add('show'); await sleep(1000); toast.classList.remove('show'); }
+  function bid() { return q('.tdx-bid'); }
+
+  function reset() {
+    var b = bid(), rows = list.querySelectorAll('.tdx-row');
+    if (rows[0] === b) list.insertBefore(b, rows[2]);   // back to second place
+    list.querySelectorAll('.tdx-row').forEach(function(r) { r.style.transition = 'none'; r.style.transform = ''; r.classList.remove('lift'); });
+    void list.offsetHeight;
+    list.querySelectorAll('.tdx-row').forEach(function(r) { r.style.transition = ''; });
+    b.querySelector('.tdx-who').classList.remove('on', 'act');
+    b.querySelector('.tdx-h').classList.remove('act');
+    menu.classList.remove('show'); leo.classList.remove('cur');
+    caption('');
+  }
+
+  async function play() {
+    reset(); await sleep(900);
+    var b = bid(), who = b.querySelector('.tdx-who');
+    // 1. Assign someone
+    caption('Click the person icon to assign it');
+    await moveTo(who, .5, .55, 800); who.classList.add('act'); await sleep(250); await click();
+    var p = at(who, 1, 1);
+    menu.style.left = (p[0] - menu.offsetWidth) + 'px'; menu.style.top = (p[1] + 4) + 'px';
+    menu.classList.add('show'); await sleep(450);
+    await moveTo(leo, .35, .55, 450); leo.classList.add('cur'); await sleep(250); await click();
+    menu.classList.remove('show'); who.classList.remove('act'); who.classList.add('on');
+    await saved();
+    // 2. Drag it to the top
+    caption('Drag it up — the list order is the order in your Sheet');
+    var handle = b.querySelector('.tdx-h'), first = list.querySelector('.tdx-row');
+    await moveTo(handle, .5, .55, 700); handle.classList.add('act'); await sleep(200); await click();
+    b.classList.add('lift'); b.style.transform = 'scale(1.03)'; await sleep(300);
+    var dy = first.getBoundingClientRect().top - b.getBoundingClientRect().top;
+    var steps = 14;
+    for (var i = 1; i <= steps; i++) {
+      var y = dy * i / steps;
+      b.style.transform = 'translateY(' + y + 'px) scale(1.03)';
+      var c = at(handle, .5, .55); cursor.style.transition = 'none'; cursor.style.transform = 'translate(' + (c[0] - 3) + 'px,' + (c[1] - 2) + 'px)';
+      if (i === Math.round(steps / 2)) first.style.transform = 'translateY(' + b.offsetHeight + 'px)';
+      await sleep(45);
+    }
+    await sleep(150);
+    b.classList.remove('lift'); b.style.transform = 'translateY(' + dy + 'px)'; handle.classList.remove('act');
+    await sleep(240);
+    list.querySelectorAll('.tdx-row').forEach(function(r) { r.style.transition = 'none'; r.style.transform = ''; });
+    list.insertBefore(b, first);
+    void list.offsetHeight;
+    list.querySelectorAll('.tdx-row').forEach(function(r) { r.style.transition = ''; });
+    await saved();
+    caption('Your list, in your order');
+    await moveTo(list, .55, 1.25, 900);
+    await sleep(2600);
+  }
+  async function loop() { for (;;) { if (!visible) { await sleep(400); continue; } await play(); } }
+
+  if (reduce) {   // finished state, no motion
+    var b0 = bid(); b0.querySelector('.tdx-who').classList.add('on'); list.insertBefore(b0, list.firstChild);
+    cursor.style.display = 'none'; return;
+  }
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(function(es) { visible = es[0].isIntersecting; }, { threshold: .35 }).observe(stage);
   } else { visible = true; }

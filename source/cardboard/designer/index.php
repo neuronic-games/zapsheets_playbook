@@ -115,6 +115,10 @@ button, input, select, textarea { font-family:inherit; }
 .pal-sec { margin-top:.75rem; }
 .pal-head { display:flex; align-items:center; gap:.3rem; width:100%; background:none; border:none; padding:.15rem 0; margin:0 0 .35rem; cursor:pointer; font-family:'DINBlack',sans-serif; font-size:.62rem; letter-spacing:.09em; text-transform:uppercase; color:#8a8fa8; text-align:left; }
 .pal-head:hover { color:#4b3fa8; }
+.pal-head:focus-visible { outline:2px solid #a99cff; outline-offset:2px; border-radius:4px; }
+.eye-btn { margin-left:.35rem; width:1.5rem; height:1.3rem; display:inline-flex; align-items:center; justify-content:center; border:none; border-radius:5px; background:none; color:#a0a4bb; cursor:pointer; padding:0; }
+.eye-btn:hover { background:#ece9ff; color:#4b3fa8; }
+.eye-btn.on { color:#4b3fa8; background:#ece9ff; }
 .pal-head .chev { display:inline-block; width:.8rem; transition:transform .15s; }
 .pal-sec.closed .chev { transform:rotate(-90deg); }
 .pal-sec.closed .pal-body { display:none; }
@@ -265,11 +269,23 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 
 /* ── Print view ────────────────────────────────────────── */
 #view-print { flex-direction:column; }
-#view-export { flex-direction:column; }
+#view-export { flex-direction:row; }
 #view-data { flex-direction:column; }
 /* Export: the info and links panel takes at most half the height; both halves scroll */
-#view-export .export-info { flex:0 1 auto; max-height:50%; overflow:auto; }
-#view-export #exportPreview { flex:1 1 50%; min-height:0; }
+/* Export: settings and links on the left, the preview on the right; each scrolls on its own */
+.export-side { width:440px; flex-shrink:0; display:flex; flex-direction:column; min-height:0; overflow:auto; background:#fbfbfe; border-right:1px solid #e1e4ee; }
+#view-export .print-bar { flex-direction:column; align-items:stretch; gap:.65rem; border-bottom:1px solid #e1e4ee; }
+#view-export .print-bar .grp .sel, #view-export .print-bar .grp .inp { width:100%; }
+#view-export .e-actions { margin-left:0; }
+#view-export .e-actions .print-go { flex:1; }
+#view-export .export-info { border-bottom:none; }
+#view-export .export-links { padding:.6rem .65rem; }
+#view-export .lk-row { grid-template-columns:minmax(0,1fr) auto; row-gap:.2rem; margin-bottom:.6rem; }
+#view-export .lk-name { grid-column:1 / -1; }
+#view-export .lk-meta { grid-column:1 / -1; justify-self:start; }
+#view-export .lk-meta.empty { display:none; }
+#view-export #exportPreview { flex:1; min-width:0; min-height:0; }
+@media (max-width:900px) { #view-export { flex-direction:column; } .export-side { width:auto; max-height:50%; border-right:none; border-bottom:1px solid #e1e4ee; } }
 .grid-hint { margin:0; padding:.4rem 1.1rem; font-size:.72rem; color:#8a8fa8; background:#fbfbfe; border-bottom:1px solid #e1e4ee; }
 .grid-wrap { position:relative; flex:1; min-height:0; overflow:auto; background:#fff; }
 table.grid { border-collapse:separate; border-spacing:0; font-size:.8rem; color:#1b1b2b; min-width:100%; }
@@ -534,6 +550,7 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
 
 <!-- Export view -->
 <div class="view" id="view-export">
+  <div class="export-side">
   <div class="print-bar">
     <div class="grp"><span class="mini">For</span>
       <select class="sel" id="eTarget" onchange="renderExport()"><option value="tts">Tabletop Simulator</option><option value="screentop">Screentop</option><option value="images">Separate images</option></select></div>
@@ -549,6 +566,7 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
   <div class="export-info"><span id="exportInfo"></span><div class="export-help" id="exportHelp"></div>
     <div class="export-progress" id="exportProgress" style="display:none"><div></div></div><span class="muted" id="exportStatus"></span>
     <div class="export-links" id="exportLinks" style="display:none"></div></div>
+  </div>
   <div class="pages" id="exportPreview"></div>
   <div id="exportStage" aria-hidden="true"></div>
 </div>

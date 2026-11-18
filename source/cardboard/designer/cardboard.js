@@ -337,11 +337,11 @@ function chip(attrs, ico, name, sample, extraCls) {
 }
 // Each section can be folded away; the choice is remembered in this browser
 function paletteClosed() { try { return JSON.parse(localStorage.getItem('cb_closed') || '{}'); } catch (e) { return {}; } }
-function section(key, title, body, count) {
+function section(key, title, body, count, extra) {
   var closed = !!paletteClosed()[key];
   return '<div class="pal-sec' + (closed ? ' closed' : '') + '" data-sec="' + key + '">' +
-         '<button type="button" class="pal-head" onclick="toggleSection(\'' + key + '\')"><span class="chev">▾</span>' + title +
-         (count != null ? '<span class="pal-count" id="' + key + 'Count">' + count + '</span>' : '') + '</button>' +
+         '<div class="pal-head" role="button" tabindex="0" onclick="toggleSection(\'' + key + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();toggleSection(\'' + key + '\')}"><span class="chev">▾</span>' + title +
+         (extra || '') + (count != null ? '<span class="pal-count" id="' + key + 'Count">' + count + '</span>' : '') + '</div>' +
          '<div class="pal-body">' + body + '</div></div>';
 }
 function toggleSection(key) {
@@ -352,7 +352,8 @@ function toggleSection(key) {
 function renderPalette() {
   var h = '';
   h += section('text', 'Text', chip('data-add="text"', 'T', 'Text'));
-  h += section('data', 'Data', '<div id="dataList"><div class="muted">Loading…</div></div>', '');
+  h += section('data', 'Data', '<div id="dataList"><div class="muted">Loading…</div></div>', '',
+    '<button type="button" class="eye-btn" id="eyeBtn" onclick="event.stopPropagation();toggleShowHidden()" style="display:none"></button>');
   h += section('image', 'Image', chip('data-add="image"', IMG_ICON, 'Image'));
   h += section('shape', 'Shape', '<div class="shape-grid">' + SHAPES.map(function(s) {
     var demo = { shape: s[0], w: 24, h: s[0] === 'line' ? 24 : 18, fill: s[0] === 'line' ? 'none' : '#ece9ff', stroke: '#4b3fa8', strokeW: 1.5, radius: s[0] === 'round' ? 5 : 0 };
@@ -373,13 +374,20 @@ function renderData() {
           '<form class="new-form" onsubmit="addField(event)"><input class="inp" id="newFieldName" maxlength="60" placeholder="New column name" title="Enter or click away to add · Esc to cancel" autocomplete="off" oninput="checkNewField()" onblur="addField()" onkeydown="if(event.key===\'Escape\'){this.value=\'\';hideNewField()}"></form>' +
           '<div class="new-msg" id="newFieldMsg"></div></div>';
   if (!FIELDS.length) h += '<div class="muted">No columns yet. The first row of the sheet holds the column names, with one card per row below — or add one with New.</div>';
-  h += shown.map(function(f) { return chip('data-field="' + esc(f) + '"', '≡', f, looksLikeImage(f) ? '' : textVal(sample[f]), f === _newField ? 'just-added' : ''); }).join('');
-  if (hid.length) {
-    h += '<button type="button" class="hidden-toggle' + (_hiddenOpen ? ' open' : '') + '" onclick="_hiddenOpen=!_hiddenOpen;renderData()"><span class="chev">▾</span>' + hid.length + ' hidden field' + (hid.length === 1 ? '' : 's') + '</button>';
-    if (_hiddenOpen) h += '<div class="hidden-list">' + hid.map(function(f) { return chip('data-field="' + esc(f) + '"', '⊘', f, '', 'is-hidden'); }).join('') +
-                         (hid.length > 1 ? '<button type="button" class="lk-act" onclick="showAllFields()">Show all</button>' : '') + '</div>';
-  }
+  // The eye in the Data heading shows hidden fields too (greyed), in their place in the list
+  var list = _hiddenOpen ? FIELDS : shown;
+  h += list.map(function(f) {
+    return isHidden(f) ? chip('data-field="' + esc(f) + '"', '⊘', f, '', 'is-hidden')
+                       : chip('data-field="' + esc(f) + '"', '≡', f, looksLikeImage(f) ? '' : textVal(sample[f]), f === _newField ? 'just-added' : '');
+  }).join('');
   el.innerHTML = h;
+  var eye = $('eyeBtn');
+  if (eye) {
+    eye.style.display = hid.length ? '' : 'none';
+    eye.classList.toggle('on', _hiddenOpen);
+    eye.innerHTML = _hiddenOpen ? EYE_OPEN : EYE_SHUT;
+    eye.title = (_hiddenOpen ? 'Hide' : 'Show') + ' the ' + hid.length + ' hidden field' + (hid.length === 1 ? '' : 's');
+  }
 }
 // New column: added to the sheet's heading row, then ready to drag onto the card
 var _newField = '';
@@ -460,6 +468,14 @@ function setFieldHidden(f, hide) {
 }
 function showAllFields() { if (!layout.hidden || !layout.hidden.length) return; snapshot(); layout.hidden = []; changed(true); renderData(); if (GRID) renderGrid(); }
 var _hiddenOpen = false, _lastHidden = '[]';
+try { _hiddenOpen = localStorage.getItem('cb_showHidden') === '1'; } catch (e) {}
+var EYE_OPEN = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+var EYE_SHUT = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.9 17.9A10.4 10.4 0 0 1 12 19c-7 0-11-7-11-7a19.8 19.8 0 0 1 5.1-5.9M9.9 5.2A9.6 9.6 0 0 1 12 5c7 0 11 7 11 7a19.9 19.9 0 0 1-2.2 3.2"/><path d="M14.1 14.1a3 3 0 0 1-4.2-4.2"/><path d="M1 1l22 22"/></svg>';
+function toggleShowHidden() {
+  _hiddenOpen = !_hiddenOpen;
+  try { localStorage.setItem('cb_showHidden', _hiddenOpen ? '1' : '0'); } catch (e) {}
+  renderData();
+}
 
 // A new element for a palette item, centred on (x, y)
 function makeEl(spec, x, y) {

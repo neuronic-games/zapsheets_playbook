@@ -275,7 +275,7 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .seg { display:flex; border:1.5px solid #d6d9e6; border-radius:7px; overflow:hidden; }
 .seg button { flex:1; height:1.9rem; border:none; background:#fff; color:#6b7090; cursor:pointer; font-size:.8rem; border-left:1px solid #e3e5ee; }
 .seg button:first-child { border-left:none; }
-.seg button.on { background:#ece9ff; color:#2e2763; font-family:'DINBlack',sans-serif; }
+.seg button.on { background:#ece9ff; color:#2e2763; font-weight:700; -webkit-text-stroke:.35px currentColor; }   /* DINBlack sits lower than DINMedium, so bold the same font instead */
 .color-row { display:flex; gap:.35rem; align-items:center; }
 .color-row input[type=color] { width:2.2rem; height:2.05rem; border:1.5px solid #d6d9e6; border-radius:7px; padding:2px; background:#fff; cursor:pointer; flex-shrink:0; }
 .color-row .inp { flex:1; }

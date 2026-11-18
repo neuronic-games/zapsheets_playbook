@@ -609,7 +609,7 @@ function openImagePicker(ev, id) {
   var p = document.createElement('div');
   p.id = 'imgPicker'; p.className = 'img-picker';
   p.innerHTML =
-    '<div class="ip-drop" id="ipDrop">' + IMG_ICON + '<b>Drop a picture here</b><span>or</span>' +
+    '<div class="ip-drop' + (isPro() ? '' : ' locked') + '" id="ipDrop">' + IMG_ICON + '<b>' + (isPro() ? 'Drop a picture here' : 'Upload a picture <span class="pro-tag">PRO</span>') + '</b><span>' + (isPro() ? 'or' : 'Uploading is part of Pro — on Free, paste a link below') + '</span>' +
       '<button type="button" class="ip-choose" onclick="$(\'ipFile\').click()">Choose a file…' + (isPro() ? '' : '<span class="pro-tag">PRO</span>') + '</button>' +
       '<input type="file" id="ipFile" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none"></div>' +
     '<span class="mini">Or a web address</span>' +
@@ -716,9 +716,14 @@ function ptFromEvent(ev) {
     var file = droppedFile(ev.dataTransfer), link = file ? '' : droppedLink(ev.dataTransfer);
     if (file || link) {
       // Onto an image element: replace its picture. Anywhere else: a new image element there.
-      var hit = document.elementFromPoint(ev.clientX, ev.clientY), node = hit && hit.closest('.el.k-image, .el.as-image'), e = node && elById(node.dataset.id);
-      if (!e) { addAt('add:image', clamp(p.x, 0, c.w), clamp(p.y, 0, c.h)); e = elById(selId); }
-      if (file) uploadImage(e.id, file); else setImageSrc(e.id, link);
+      var hit = document.elementFromPoint(ev.clientX, ev.clientY), node = hit && hit.closest('.el.k-image, .el.as-image'), target = node && elById(node.dataset.id);
+      var place = function() {
+        var e = target;
+        if (!e) { addAt('add:image', clamp(p.x, 0, c.w), clamp(p.y, 0, c.h)); e = elById(selId); }
+        if (file) uploadImage(e.id, file); else setImageSrc(e.id, link);
+      };
+      if (file && !requirePro('upload', place)) return;   // uploads are Pro: don't leave an empty image behind
+      place();
       return;
     }
     if (d.indexOf(':') < 0 || /^https?:/i.test(d)) return;

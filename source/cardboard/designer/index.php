@@ -22,7 +22,7 @@ $_sheet_id = $_bm[2] ?? '';
 <link rel="icon" type="image/png" sizes="16x16" href="images/cardboard_icon_16.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="images/cardboard_icon_180.png" />
 <meta name="apple-mobile-web-app-title" content="CardBoard" />
-<title>CardBoard</title>
+<title>Loading…</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Cinzel:wght@500;700&family=Lilita+One&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Roboto+Condensed:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" crossorigin="anonymous">
@@ -268,9 +268,26 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .insert-row { display:flex; gap:.35rem; margin-top:.35rem; }
 
 /* ── Print view ────────────────────────────────────────── */
-#view-print { flex-direction:column; }
+#view-print { flex-direction:row; }
+/* Print: settings on the left, pages on the right */
+#view-print .print-bar { width:300px; flex-shrink:0; flex-direction:column; align-items:stretch; gap:.65rem; overflow:auto; border-bottom:none; border-right:1px solid #e1e4ee; background:#fbfbfe; }
+#view-print .print-bar .sel { width:100%; }
+#view-print .print-info { align-self:flex-start; margin-top:.2rem; line-height:1.45; }
+#view-print .print-go { margin-left:0; width:100%; }
+#view-print .pages { min-width:0; }
+@media (max-width:900px) { #view-print { flex-direction:column; } #view-print .print-bar { width:auto; border-right:none; border-bottom:1px solid #e1e4ee; } }
 #view-export { flex-direction:row; }
 #view-data { flex-direction:column; }
+.add-col { position:relative; display:flex; }
+.add-col-form { display:none; position:relative; }
+.add-col.open .add-col-btn { display:none; }
+.add-col.open .add-col-form { display:block; }
+.add-col-form .inp { width:12rem; height:2.05rem; }
+.add-col.busy .add-col-form::after { content:''; position:absolute; right:.6rem; top:50%; width:14px; height:14px; margin-top:-7px; border:2px solid #d6d9e6; border-top-color:#4b3fa8; border-radius:50%; animation:spin .7s linear infinite; }
+.add-col-msg { position:absolute; top:100%; left:0; margin-top:.25rem; white-space:nowrap; font-size:.7rem; color:#c0392b; }
+.add-col-msg:empty { display:none; }
+table.grid thead th.just-added { animation:colFlash 1.6s ease; }
+@keyframes colFlash { 0%,40% { background:#d9d2ff; } }
 /* Export: the info and links panel takes at most half the height; both halves scroll */
 /* Export: settings and links on the left, the preview on the right; each scrolls on its own */
 .export-side { width:440px; flex-shrink:0; display:flex; flex-direction:column; min-height:0; overflow:auto; background:#fbfbfe; border-right:1px solid #e1e4ee; }
@@ -481,6 +498,12 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
       <input class="inp" id="gridFilter" placeholder="Search the rows" oninput="filterGrid(this.value)" style="width:14rem"></div>
     <span class="print-info" id="gridInfo"></span>
     <div class="e-actions">
+      <div class="add-col" id="gridAddCol">
+        <button class="print-go ghost add-col-btn" onclick="showAddColumn()" title="Add a column to the sheet">+ Add column</button>
+        <form class="add-col-form" onsubmit="addColumn(event)"><input class="inp" id="gridAddColName" maxlength="60" placeholder="New column name" autocomplete="off" title="Enter or click away to add · Esc to cancel"
+          oninput="$('gridAddColMsg').textContent=''" onblur="addColumn()" onkeydown="if(event.key==='Escape'){this.value='';hideAddColumn()}"></form>
+        <div class="add-col-msg" id="gridAddColMsg"></div>
+      </div>
       <button class="print-go ghost" onclick="loadGrid(true)" title="Read the sheet again">Reload</button>
       <button class="print-go" onclick="addGridRow()">+ Add row</button></div>
   </div>

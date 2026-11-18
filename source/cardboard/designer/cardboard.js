@@ -267,7 +267,7 @@ function init() {
       TABS = res[0].tabs || []; LAYOUTS = res[1].layouts || {};
       SETTINGS = Object.assign({ units: 'in', profile: {} }, LAYOUTS[SETTINGS_KEY] || {});
       SHEET_TITLE = res[0].title || '';
-      if (res[0].title) { $('subTitle').textContent = res[0].title; document.title = 'CardBoard — ' + res[0].title; }
+      if (res[0].title) { $('subTitle').textContent = res[0].title; document.title = res[0].title; }
       var sel = $('sheetSel');
       sel.innerHTML = TABS.map(function(t) { return '<option>' + esc(t.title) + '</option>'; }).join('');
       $('gridSheet').innerHTML = sel.innerHTML;
@@ -419,7 +419,7 @@ function addField(ev) {
     .then(function(r) {
       _addingField = false;
       if (curTab !== tab) return;
-      FIELDS.push(n); ROWS.forEach(function(row) { row[n] = ''; });
+      FIELDS.push(n); ROWS.forEach(function(row) { row[n] = ''; }); gridAddedColumn(n);
       _newField = n; renderData();
       var chipEl = document.querySelector('.field-chip[data-field="' + CSS.escape(n) + '"]'); if (chipEl) chipEl.scrollIntoView({ block: 'nearest' });
       toast('✓ Added column ' + (r.column ? r.column + ' ' : '') + '"' + n + '" to the sheet');
@@ -1785,6 +1785,47 @@ function addGridRow() {
   var first = gridCols()[0]; if (first) { selectGridCell(GRID.rows.length - 1, first.i); startGridEdit(); }
 }
 function filterGrid(v) { _gridFilter = v.trim(); renderGrid(); }
+// + Add column (Data tab): a new heading in the sheet, ready to fill in
+function gridAddedColumn(n) {   // keep the grid in step when a column is added from either tab
+  if (!GRID || GRID.tab !== curTab || GRID.header.indexOf(n) >= 0) return;
+  var at = GRID.header.length;
+  while (at > 0 && !GRID.header[at - 1]) at--;   // first slot after the last heading
+  GRID.header[at] = n; GRID.rows.forEach(function(r) { while (r.values.length < GRID.header.length) r.values.push(''); });
+  if (_activeTab === 'data') renderGrid();
+}
+function showAddColumn() {
+  var box = $('gridAddCol'); box.classList.add('open');
+  var inp = $('gridAddColName'); inp.value = ''; inp.disabled = false; $('gridAddColMsg').textContent = ''; inp.focus();
+}
+function hideAddColumn() { var box = $('gridAddCol'); if (box) box.classList.remove('open'); $('gridAddColMsg').textContent = ''; }
+var _addingCol = false;
+function addColumn(ev) {
+  if (ev) ev.preventDefault();
+  var box = $('gridAddCol'), inp = $('gridAddColName');
+  if (_addingCol || !box.classList.contains('open')) return;
+  var n = inp.value.trim().replace(/\s+/g, ' ');
+  if (!n) { hideAddColumn(); return; }
+  var known = (GRID ? GRID.header : []).concat(FIELDS).filter(Boolean);
+  var problem = (n.charAt(0) === '_' || /[{}]/.test(n)) ? 'Names can\'t use { } or start with _'
+              : known.some(function(f) { return f.toLowerCase() === n.toLowerCase(); }) ? 'There\'s already a column called “' + n + '”' : '';
+  if (problem) { $('gridAddColMsg').textContent = problem; return; }
+  var tab = curTab; _addingCol = true; inp.disabled = true; box.classList.add('busy');
+  api('addfield', { tab: tab, name: n })
+    .then(function(r) {
+      if (curTab !== tab) return;
+      if (FIELDS.indexOf(n) < 0) { FIELDS.push(n); ROWS.forEach(function(row) { row[n] = ''; }); renderData(); }
+      gridAddedColumn(n); hideAddColumn();
+      var c = GRID ? GRID.header.indexOf(n) : -1, first = GRID && GRID.rows.length ? 0 : -1;
+      if (c >= 0) {
+        var th = $('gridWrap').querySelector('th[data-c="' + c + '"]'); if (th) { th.scrollIntoView({ inline: 'nearest', block: 'nearest' }); th.classList.add('just-added'); }
+        if (first >= 0) selectGridCell(first, c);
+      }
+      toast('✓ Added column ' + (r.column ? r.column + ' ' : '') + '“' + n + '” to the sheet');
+    })
+    .catch(function(e) { $('gridAddColMsg').textContent = e.message; inp.disabled = false; inp.focus(); })
+    .then(function() { _addingCol = false; box.classList.remove('busy'); });
+}
+
 // Column heading menu: hide the column here and in the Design list
 function closeColumnMenu() { var m = $('colMenu'); if (m) m.remove(); document.querySelectorAll('table.grid th.menu-open').forEach(function(t) { t.classList.remove('menu-open'); }); }
 function openColumnMenu(th) {

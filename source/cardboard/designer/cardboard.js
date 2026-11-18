@@ -1991,7 +1991,7 @@ function renderTags() {
         '<input class="inp" value="' + esc(parseIcon(t.value) ? '' : t.value) + '" placeholder="or paste a picture link" onchange="setTagValue(' + idx + ',this.value.trim())"' + (pro ? '' : ' disabled') + '></div>'
       : '<input class="inp" value="' + esc(t.value) + '" placeholder="What {tag} becomes" onchange="setTagValue(' + idx + ',this.value)"' + (pro ? '' : ' disabled') + '>';
     return '<div class="tag-row' + (draft ? ' draft' : '') + '">' +
-      '<input class="inp tag-name" value="' + esc(draft ? t.tag : t.tag) + '" placeholder="{name}" onchange="renameTag(' + idx + ',this.value)"' + (draft ? ' id="tagDraftName"' : '') + (pro ? '' : ' disabled') + '>' +
+      '<input class="inp tag-name" value="' + esc(draft ? t.tag : t.tag) + '" placeholder="{name}" onchange="renameTag(' + idx + ',this.value,this)"' + (draft ? ' id="tagDraftName"' : '') + (pro ? '' : ' disabled') + '>' +
       '<div class="seg tag-kind"><button type="button" class="' + (img ? '' : 'on') + '" onclick="setTagKind(' + idx + ',\'text\')"' + (pro ? '' : ' disabled') + '>Text</button><button type="button" class="' + (img ? 'on' : '') + '" onclick="setTagKind(' + idx + ',\'image\')"' + (pro ? '' : ' disabled') + '>Image</button></div>' +
       '<div class="tag-val">' + val + '</div>' +
       '<div class="tag-prev" title="How it looks on a card">Gain 1 ' + (draft && !t.value ? '<span class="muted">' + esc(t.tag || '{…}') + '</span>' : tagPreview(t)) + '</div>' +
@@ -2001,27 +2001,43 @@ function renderTags() {
 function addTag() {
   if (!requirePro('tags', addTag)) return;
   if (_tagDraft) { var d = $('tagDraftName'); if (d) d.focus(); return; }
-  _tagDraft = { tag: '', value: '', kind: 'text' }; renderTags();
+  _tagDraft = { tag: '', value: '', kind: 'text' }; _lastDraft = null; renderTags();
   var n = $('tagDraftName'); if (n) n.focus();
 }
-function tagAt(i) { return i < 0 ? _tagDraft : TAGS[i]; }
+var _lastDraft = null;   // a new tag that was just saved: clicks on its old row still find it
+// Redraw the list once nothing is being clicked or typed in, so a save finishing mid-click can't swallow the click
+var _tagPtr = false, _tagRedraw = false;
+document.addEventListener('pointerdown', function() { _tagPtr = true; }, true);
+document.addEventListener('pointerup', function() { _tagPtr = false; if (_tagRedraw) setTimeout(laterRenderTags, 0); }, true);
+function laterRenderTags() {
+  var a = document.activeElement, typing = a && $('tagList') && $('tagList').contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName);
+  if (_tagPtr || typing) { _tagRedraw = true; if (typing) a.addEventListener('blur', function() { setTimeout(laterRenderTags, 0); }, { once: true }); return; }
+  _tagRedraw = false; renderTags();
+}
+function tagAt(i) { return i < 0 ? (_tagDraft || _lastDraft) : TAGS[i]; }
+var _tagSaves = Promise.resolve();   // one save at a time, so a new tag's name and value can't race
 function saveTag(t, old) {
   if (!t.tag) return Promise.resolve();
-  var p = api('settag', Object.assign({ tag: t.tag, value: t.value || '' }, old ? { old: old } : {}));
+  var p = _tagSaves = _tagSaves.catch(function() {}).then(function() {
+    return api('settag', Object.assign({ tag: t.tag, value: t.value || '' }, old && tagKey(old) !== tagKey(t.tag) ? { old: old } : {}));
+  });
   return p.then(function() {
-    if (t === _tagDraft) { _tagDraft = null; TAGS.push({ tag: t.tag, value: t.value, kind: t.kind }); }
-    setTags(TAGS); refreshCards(); renderTags(); toast('✓ Saved ' + t.tag);
+    if (t === _tagDraft) { _tagDraft = null; _lastDraft = t; TAGS.push(t); }
+    setTags(TAGS); refreshCards();
+    laterRenderTags();
+    toast('✓ Saved ' + t.tag);
   }).catch(function(e) {
     if (/Pro/.test(e.message)) { SUB = null; openPlansDialog('tags'); } else toast('Couldn\'t save the tag — ' + e.message, true);
     loadTags();
   });
 }
-function renameTag(i, v) {
+function renameTag(i, v, input) {
   var t = tagAt(i), name = braced(v); if (!t) return;
   if (!name) { if (t === _tagDraft) { _tagDraft = null; renderTags(); } else renderTags(); return; }
   if (TAGS.some(function(x) { return x !== t && tagKey(x.tag) === tagKey(name); })) { toast('There\'s already a tag called ' + name, true); renderTags(); return; }
   var old = t === _tagDraft ? '' : t.tag;
-  t.tag = name; renderTags(); saveTag(t, old);
+  // Show the braces now, but don't redraw the list yet: the click that moved focus away (Image, Choose…) must still land
+  t.tag = name; if (input) input.value = name; saveTag(t, old);
 }
 function setTagValue(i, v) {
   var t = tagAt(i); if (!t) return;

@@ -38,6 +38,11 @@ button, input, select, textarea { font-family:inherit; }
 /* ── Top bar (same layout as DevBoard) ─────────────────── */
 .top-bar { background:#2e2763; color:#fff; padding:.75rem 1.25rem; position:sticky; top:0; z-index:100; flex-shrink:0; }
 .top-bar-inner { display:flex; align-items:center; gap:.75rem; }
+/* Tabs centred in the bar (like the other apps): name on the left, menu on the right */
+@media (min-width:561px) {
+  .top-bar-inner { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); }
+  .top-bar-inner > .account-menu-wrap { justify-self:end; }
+}
 .top-bar-left  { flex:1; min-width:0; display:flex; align-items:center; gap:.65rem; }
 .top-bar-left img { width:2.2rem; height:2.2rem; border-radius:7px; flex-shrink:0; }
 .top-bar h1    { font-family:'DINBlack',sans-serif; font-size:1rem; margin:0; letter-spacing:.03em; cursor:pointer; }

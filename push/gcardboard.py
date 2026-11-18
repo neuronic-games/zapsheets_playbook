@@ -102,12 +102,17 @@ def main():
                 wb.batch_update({'requests': [{'deleteDimension': {'range': {'sheetId': tws.id, 'dimension': 'ROWS', 'startIndex': row - 1, 'endIndex': row}}}]})
             out({'ok': True})
         # settag: a new name must not clash with another tag; renaming keeps the row
+        # Without "old" this updates the tag's row (or adds one). Renaming (old given, different
+        # name) keeps the old row, and refuses a name another tag already has.
         old = brace(data.get('old'))
-        row = find(old) if old else 0
         other = find(tag)
-        if other and other != row:
-            out({'error': f'There is already a tag called {tag}'})
-        row = row or other
+        if old and old.lower() != tag.lower():
+            row = find(old)
+            if other and other != row:
+                out({'error': f'There is already a tag called {tag}'})
+            row = row or other
+        else:
+            row = other
         value = str(data.get('value', ''))
         if row:
             wb.values_update(q(tws.title) + '!A' + str(row) + ':B' + str(row), params={'valueInputOption': 'RAW'}, body={'values': [[tag, value]]})

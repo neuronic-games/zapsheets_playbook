@@ -186,6 +186,20 @@ section { padding:5.5rem 2rem; }
 .link-row span { flex:1; background:#f7f8fc; border:1px solid #e1e4ee; border-radius:5px; padding:4px 7px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .link-row b { font-family:'Inter',sans-serif; font-weight:600; font-size:10px; color:#2e2763; border:1px solid #d6d9e6; border-radius:5px; padding:3px 9px; }
 
+.tags-mock { background:#fff; font-family:'Inter',sans-serif; padding:14px; }
+.tags-mock .tm-row { display:grid; grid-template-columns:96px 1fr; gap:8px; align-items:center; border:1px solid #e5e3f0; border-radius:8px; padding:7px 10px; margin-bottom:6px; font-size:11px; color:#2a2d3e; }
+.tags-mock .tm-row code { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:#4b3fa8; background:#f3f1ff; border-radius:4px; padding:1px 6px; justify-self:start; }
+.tags-mock .tm-row span { display:flex; align-items:center; gap:6px; color:#4a4e68; }
+.tags-mock .ti { width:1.15em; height:1.15em; vertical-align:-.22em; display:inline-block; }
+.tm-card { margin-top:12px; background:#2e2763; border-radius:10px; padding:16px 18px; color:#fff; font-size:15px; font-weight:500; display:grid; }
+.tm-card > div { grid-area:1/1; transition:opacity .4s; }
+.tm-card .raw { font-family:ui-monospace,Menlo,monospace; font-size:13px; color:#cfc8ff; animation:tmRaw 6s infinite; }
+.tm-card .out { animation:tmOut 6s infinite; }
+.tm-card .lbl { display:block; font-family:'Inter',sans-serif; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:#a99cff; margin-bottom:6px; font-weight:600; }
+@keyframes tmRaw { 0%,40% { opacity:1; } 50%,90% { opacity:0; } 100% { opacity:1; } }
+@keyframes tmOut { 0%,40% { opacity:0; } 50%,90% { opacity:1; } 100% { opacity:0; } }
+@media (prefers-reduced-motion:reduce) { .tm-card .raw { animation:none; opacity:0; } .tm-card .out { animation:none; opacity:1; } }
+
 .ownership-section { background:var(--dark); color:var(--white); }
 .ownership-section .section-label { color:var(--violet-light); }
 .ownership-section .section-title { color:var(--white); }
@@ -226,6 +240,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
   <div class="nav-links">
     <a href="cardboard/features#features">Features</a>
     <a href="cardboard/features#see">See it in action</a>
+    <a href="cardboard/features#tags">Tags</a>
     <a href="cardboard/features#export">Tabletop Simulator</a>
     <a href="cardboard/features#compare">Compare</a>
   </div>
@@ -263,7 +278,10 @@ footer a { color:var(--text-mid); text-decoration:none; }
       <div class="feat-card"><div class="feat-icon gold">🖨️</div><h3>Print-and-play sheets</h3><p>Letter or A4, crop marks, copies from a Count column, and backs that line up when you print double-sided.</p></div>
       <div class="feat-card"><div class="feat-icon">🧩</div><h3>Tabletop Simulator &amp; Screentop</h3><p>Card sheets in the exact grid each one expects — 10 × 7 for TTS, with the back in the hidden-card slot.</p></div>
       <div class="feat-card"><div class="feat-icon slate">🔗</div><h3>Links that stay up to date <span class="pro-tag">Pro</span></h3><p>Every export — Tabletop Simulator sheets, Screentop sheets or separate card images — can be hosted at links that never change. Save your layout and everything using those links gets the new cards.</p></div>
-      <div class="feat-card"><div class="feat-icon green">☁️</div><h3>Pictures from anywhere</h3><p>Dropbox, Google Drive or web links are shown straight from the source — replace a picture there and your cards follow.</p></div>
+      <div class="feat-card"><div class="feat-icon gold">⚡</div><h3>Tags for icons <span class="pro-tag">Pro</span></h3><p>Write <code>{energy}</code> in your sheet and every card shows its icon. Pick from the icon library, upload a picture, or have a tag become words.</p></div>
+      <div class="feat-card"><div class="feat-icon rose">🗂️</div><h3>Layers and groups</h3><p>See everything on the card in one list. Drag to change what's on top, tick several to move them together, and group them.</p></div>
+      <div class="feat-card"><div class="feat-icon slate">🎨</div><h3>Fonts, colors and effects</h3><p>Choose fonts and colors — with your recent colors and transparent a click away — and rotate, fade or round the corners of anything on the card.</p></div>
+      <div class="feat-card"><div class="feat-icon green">☁️</div><h3>Pictures from anywhere</h3><p>Dropbox, Google Drive or web links are shown straight from the source — replace a picture there and your cards follow. With Pro, upload pictures from your computer.</p></div>
     </div>
   </div>
 </section>
@@ -370,9 +388,47 @@ footer a { color:var(--text-mid); text-decoration:none; }
   </div>
 </section>
 
-<section class="shot-section" id="export" style="background:#fff">
+<section class="shot-section" id="tags" style="background:#fff">
   <div class="container">
     <div class="shot-grid">
+      <div class="shot-text">
+        <div class="section-label">Tags <span class="pro-tag">Pro</span></div>
+        <h2 class="section-title" style="margin-bottom:1rem;">Write {energy}, see the icon</h2>
+        <p>Give a tag a word or a picture once, then type it anywhere in your sheet. Every card shows the icon in place of the tag — change the picture and the whole deck follows.</p>
+        <ul>
+          <li>Pick from the icon library, upload a picture or paste a link</li>
+          <li>Or have a tag become words, like <b>{VP}</b> → victory points</li>
+          <li>Works in text and in data from your sheet</li>
+          <li>Kept in a <b>tags</b> tab in your Google Sheet</li>
+        </ul>
+      </div>
+      <div class="browser-frame">
+        <div class="browser-chrome"><div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="browser-url">zapsheets.com/app/…/cardboard — Tags</div></div>
+        <div class="tags-mock">
+          <div class="tm-row"><code>{energy}</code><span><svg class="ti" viewBox="0 0 24 24"><path d="M13.5 2 4.5 13.5h6.5L10 22l9-11.5h-6.5z" fill="#f2b705"/></svg> Icon</span></div>
+          <div class="tm-row"><code>{coin}</code><span><svg class="ti" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#e9a81c"/><circle cx="12" cy="12" r="7" fill="#f7c948" stroke="#c98a0c" stroke-width="1.2"/></svg> Icon</span></div>
+          <div class="tm-row"><code>{VP}</code><span>victory points</span></div>
+          <div class="tm-card">
+            <div class="raw"><span class="lbl">In your sheet</span>Gain 1 {energy}. Pay 2 {coin} to score 1 {VP}.</div>
+            <div class="out"><span class="lbl">On the card</span>Gain 1 <svg class="ti" viewBox="0 0 24 24"><path d="M13.5 2 4.5 13.5h6.5L10 22l9-11.5h-6.5z" fill="#f2b705"/></svg>. Pay 2 <svg class="ti" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#e9a81c"/><circle cx="12" cy="12" r="7" fill="#f7c948" stroke="#c98a0c" stroke-width="1.2"/></svg> to score 1 victory points.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="shot-section" id="export">
+  <div class="container">
+    <div class="shot-grid">
+      <div class="browser-frame">
+        <div class="browser-chrome"><div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="browser-url">zapsheets.com/app/…/cardboard — Export</div></div>
+        <div class="tts-mock">
+          <img src="images/gameboard-features/cover-floristry.webp" alt=""><img src="images/gameboard-features/cover-floristry.webp" alt=""><img src="images/gameboard-features/cover-scurry.webp" alt=""><img src="images/gameboard-features/cover-scurry.webp" alt=""><img src="images/gameboard-features/cover-scurry.webp" alt="">
+          <img src="images/gameboard-features/cover-pressure.webp" alt=""><img src="images/gameboard-features/cover-floristry.webp" alt=""><img src="images/gameboard-features/cover-pressure.webp" alt=""><img src="images/gameboard-features/cover-scurry.webp" alt=""><div class="bk">★</div>
+        </div>
+        <div class="link-row"><span>https://zapsheets.com/app/shares/cardboard/206e3c…/faces-1.jpg</span><b>Copy</b></div>
+      </div>
       <div class="shot-text">
         <div class="section-label">Tabletop Simulator &amp; Screentop</div>
         <h2 class="section-title" style="margin-bottom:1rem;">Play-test online the moment you save</h2>
@@ -383,14 +439,6 @@ footer a { color:var(--text-mid); text-decoration:none; }
           <li>Copies from a Count column</li>
           <li>Links carry a share code, never your spreadsheet's ID</li>
         </ul>
-      </div>
-      <div class="browser-frame">
-        <div class="browser-chrome"><div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="browser-url">zapsheets.com/app/…/cardboard — Export</div></div>
-        <div class="tts-mock">
-          <img src="images/gameboard-features/cover-floristry.webp" alt=""><img src="images/gameboard-features/cover-floristry.webp" alt=""><img src="images/gameboard-features/cover-scurry.webp" alt=""><img src="images/gameboard-features/cover-scurry.webp" alt=""><img src="images/gameboard-features/cover-scurry.webp" alt="">
-          <img src="images/gameboard-features/cover-pressure.webp" alt=""><img src="images/gameboard-features/cover-floristry.webp" alt=""><img src="images/gameboard-features/cover-pressure.webp" alt=""><img src="images/gameboard-features/cover-scurry.webp" alt=""><div class="bk">★</div>
-        </div>
-        <div class="link-row"><span>https://zapsheets.com/app/shares/cardboard/206e3c…/faces-1.jpg</span><b>Copy</b></div>
       </div>
     </div>
   </div>
@@ -403,7 +451,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
     <p class="section-sub">Your card text, stats and layouts are all in a spreadsheet you own. Share it with co-designers, sort it, chart it, back it up.</p>
     <div class="own-grid">
       <div class="own-card"><div class="num">Free</div><p>The designer, fronts and backs, the Data tab, printing and downloads for Tabletop Simulator and Screentop.</p></div>
-      <div class="own-card"><div class="num">$4.99</div><p>Per month for <strong>Pro</strong>: hosted links for every export — Tabletop Simulator, Screentop and card images — that stay up to date, and picture uploads.</p></div>
+      <div class="own-card"><div class="num">$4.99</div><p>Per month for <strong>Pro</strong>: hosted links for every export — Tabletop Simulator, Screentop and card images — that stay up to date, picture uploads and tags.</p></div>
       <div class="own-card"><div class="num">∞</div><p>Cards and decks. Every tab in your spreadsheet can be its own deck with its own layout.</p></div>
     </div>
   </div>

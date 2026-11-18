@@ -288,6 +288,7 @@ function selectTab(name, first, force) {
   } catch (e) {}
   $('dataList').innerHTML = '<div class="muted">Loading…</div>';
   $('cardHolder').innerHTML = '<div class="loading" style="width:240px;height:200px"><span class="spin"></span>Loading rows…</div>';
+  if (!PUBLISHED[name]) loadPublished(name);
   api('rows', { tab: name, force: force ? '1' : '' })
     .then(function(res) {
       if (curTab !== name) return;
@@ -297,7 +298,7 @@ function selectTab(name, first, force) {
       renderData(); fitZoom(); renderAttrs();
       if (_activeTab === 'print') renderPrint();
       if (_activeTab === 'export') renderExport();
-      if (force) toast('✓ Reloaded from the sheet');
+      if (force) { toast('✓ Reloaded from the sheet'); autoRepublish(name); }
     })
     .catch(function(e) {
       ROWS = []; FIELDS = []; renderData(); render(); renderAttrs();
@@ -679,6 +680,7 @@ function saveLayout() {
       try { localStorage.removeItem('cb_draft:' + SHEET_ID + ':' + tab); } catch (e) {}
       if (curTab === tab && JSON.stringify(layout) === snap) setDirty(false);
       toast('✓ Layout saved to your Sheet');
+      autoRepublish(tab);
     })
     .catch(function(e) { toast('Couldn\'t save — ' + e.message, true); setDirty(true); })
     .then(function() { btn.textContent = 'Save'; btn.disabled = !dirty; });
@@ -970,34 +972,59 @@ function backHTML(it, i, ctx) {
   return renderCardHTML(ctx && ctx.lay || layout, it ? it.row : (ROWS[0] || null), false, Object.assign({ side: 'back', card: i || 0, row: it ? it.ri : 0 }, ctx || {}));
 }
 
+// Export settings from the bar (also stored with published links, so updates match)
+function exportOpts() {
+  return { target: $('eTarget').value, quality: +$('eQuality').value || 4096, copies: $('eCopies').value || '', round: $('eCorners').checked };
+}
+function listFor(copies) {
+  var list = [];
+  if (copies && FIELDS.indexOf(copies) < 0) copies = '';   // that column is gone: one of each
+  ROWS.forEach(function(r, ri) {
+    var n = copies ? parseInt(cleanVal(r[copies]), 10) : 1;
+    if (isNaN(n)) n = 0;
+    for (var i = 0; i < n; i++) list.push({ row: r, ri: ri });
+  });
+  return list;
+}
 // How the cards fall onto sheets for the chosen target
-function exportPlan() {
-  var t = EXPORT_TARGETS[$('eTarget').value] || EXPORT_TARGETS.tts, c = layout.card;
-  var list = cardList($('eCopies'), renderExport), n = list.length;
-  var maxPx = +$('eQuality').value || 4096, round = $('eCorners').checked;
+function exportPlan(o, lay) {
+  lay = lay || layout;
+  var t = EXPORT_TARGETS[o.target] || EXPORT_TARGETS.tts, c = lay.card;
+  var list = listFor(o.copies), n = list.length, maxPx = o.quality || 4096;
   if (t.single) {
     var w1 = Math.round(Math.min(maxPx / 4, 1500));
-    return { t: t, list: list, single: true, cardW: w1, cardH: Math.round(w1 * c.h / c.w), round: round, sheets: [] };
+    return { o: o, t: t, list: list, single: true, cardW: w1, cardH: Math.round(w1 * c.h / c.w), round: o.round, sheets: [] };
   }
   var slots = n + (t.backLast ? 1 : 0), cols, rows, cardW;
-  if (t.maxCols) {               // TTS: up to 10 × 7 per sheet, the last slot is the hidden-card image
+  if (o.grid && o.grid.cols) {   // published links keep their grid, so the game's settings stay right
+    cols = o.grid.cols; rows = o.grid.rows;
+  } else if (t.maxCols && o.fixed) {   // first publish for TTS: the full 10 × 7, with room to grow
+    cols = t.maxCols; rows = t.maxRows;
+  } else if (t.maxCols) {               // TTS: up to 10 × 7 per sheet, the last slot is the hidden-card image
     cols = Math.max(2, Math.min(t.maxCols, slots)); rows = Math.max(2, Math.min(t.maxRows, Math.ceil(slots / cols)));
   } else {                       // Screentop: as square a grid as fits the size limit
     var ratio = c.h / c.w; cols = Math.max(1, Math.ceil(Math.sqrt(slots * ratio))); rows = Math.ceil(slots / cols);
     while (cols * rows < slots) rows++;
     var minW = 150;              // keep cards legible; overflow goes onto more sheets
-    var fitCols = Math.floor(maxPx / minW), fitRows = Math.floor(maxPx / (minW * ratio));
-    cols = Math.min(cols, fitCols); rows = Math.min(rows, fitRows);
+    cols = Math.min(cols, Math.floor(maxPx / minW)); rows = Math.min(rows, Math.floor(maxPx / (minW * ratio)));
   }
   cardW = Math.floor(Math.min(maxPx / cols, maxPx / rows * c.w / c.h));
   var per = cols * rows - (t.backLast ? 1 : 0), sheets = [];
   for (var i = 0; i < Math.max(1, Math.ceil(n / per)); i++) sheets.push(list.slice(i * per, (i + 1) * per));
-  return { t: t, list: list, cols: cols, rows: rows, per: per, cardW: cardW, cardH: Math.round(cardW * c.h / c.w), sheets: sheets, round: round };
+  return { o: o, t: t, list: list, cols: cols, rows: rows, per: per, cardW: cardW, cardH: Math.round(cardW * c.h / c.w), sheets: sheets, round: o.round };
+}
+function exportLayout(round) {   // a frozen copy, so editing during a background update can't mix in
+  var lay = JSON.parse(JSON.stringify(layout));
+  if (!round) lay.card.radius = 0;
+  return lay;
 }
 
 function renderExport() {
   var box = $('exportPreview'); if (!layout) { box.innerHTML = ''; return; }
-  var P = exportPlan(), c = layout.card, varies = backVaries();
+  cardList($('eCopies'), renderExport);   // fills the Copies choices
+  var o = exportOpts(), pub = (PUBLISHED[curTab] || {})[o.target];
+  if (pub && pub.grid && pub.settings && pub.settings.quality === o.quality) o.grid = pub.grid;   // match the published links
+  var P = exportPlan(o), c = layout.card, varies = backVaries();
   $('eBackNote').textContent = varies ? 'Each card has its own back' : 'All cards share one back';
   var info;
   if (P.single) info = P.list.length + ' cards → ' + P.list.length + ' images + back, ' + P.cardW + ' × ' + P.cardH + ' px each';
@@ -1005,9 +1032,9 @@ function renderExport() {
              ' · ' + (P.cols * P.cardW) + ' × ' + (P.rows * P.cardH) + ' px · ' + P.cardW + ' × ' + P.cardH + ' px per card';
   $('exportInfo').textContent = info;
   $('exportHelp').innerHTML = exportHelp(P);
+  renderLinks();
   // Preview (HTML, scaled down) — the download draws the real pictures
-  var h = '', cw = c.w * PX, chh = c.h * PX, flat = P.round ? c : Object.assign({}, c, { radius: 0 });
-  var lay = P.round ? layout : Object.assign({}, layout, { card: flat });
+  var h = '', cw = c.w * PX, chh = c.h * PX, lay = exportLayout(P.round);
   function cell(inner) { return '<div class="x-cell" style="width:' + cw + 'px;height:' + chh + 'px">' + inner + '</div>'; }
   if (P.single) {
     var sc1 = 110 / cw;
@@ -1030,8 +1057,7 @@ function renderExport() {
   box.innerHTML = P.list.length ? h : '<div class="muted">No cards to export.</div>';
 }
 function exportHelp(P) {
-  var tgt = $('eTarget').value;
-  var uniq = backVaries();
+  var tgt = P.o.target, uniq = backVaries();
   if (tgt === 'tts') return '<b>In Tabletop Simulator:</b> Objects → Components → Custom → <b>Deck</b>. For each sheet: Face = <code>faces-N.png</code>, ' +
     (uniq ? 'tick <b>Unique backs</b> and set Back = <code>backs-N.png</code>, ' : 'Back = <code>back.png</code> (Unique backs off), ') +
     'Width <b>' + P.cols + '</b>, Height <b>' + P.rows + '</b>, Number = the cards on that sheet (shown above each one). Tick <b>Back is hidden</b>. ' +
@@ -1043,8 +1069,8 @@ function exportHelp(P) {
 
 // Draw one card (or the back) into a canvas at w × h px
 var _fontCSS = null;
-function drawCard(html, w, h) {
-  var c = layout.card, holder = $('exportStage');
+function drawCard(html, w, c) {
+  var holder = $('exportStage');
   holder.innerHTML = html;
   var node = holder.firstChild;
   node.style.boxShadow = 'none'; node.style.transform = 'none';
@@ -1064,84 +1090,220 @@ function fontSampler() {
   return document.fonts.ready.then(function() { return htmlToImage.getFontEmbedCSS(d); }).then(function(css) { d.remove(); return css; }, function(e) { d.remove(); throw e; });
 }
 function canvasBlob(cv, type) { return new Promise(function(ok) { cv.toBlob(ok, type || 'image/png', .92); }); }
+// Published links use JPEG (a fraction of the size) unless rounded corners need transparency
+function fileBlob(cv, o) {
+  if (!o.jpeg) return canvasBlob(cv);
+  var w = document.createElement('canvas'); w.width = cv.width; w.height = cv.height;
+  var g = w.getContext('2d'); g.fillStyle = '#ffffff'; g.fillRect(0, 0, w.width, w.height); g.drawImage(cv, 0, 0);
+  return canvasBlob(w, 'image/jpeg');
+}
 
-function runExport() {
-  if (_exporting || !layout) return;
-  var P = exportPlan(); if (!P.list.length) { toast('No cards to export', true); return; }
-  var btn = $('exportGo'), bar = $('exportProgress'), total = P.list.length + 1, done = 0;
-  var lay = P.round ? layout : Object.assign({}, layout, { card: Object.assign({}, layout.card, { radius: 0 }) });
-  var keep = layout, uniq = backVaries();
-  if (uniq) total += P.list.length;
-  _exporting = true; btn.disabled = true; bar.style.display = 'block';
-  function tick(msg) { bar.firstChild.style.width = Math.round(done / total * 100) + '%'; $('exportStatus').textContent = msg; }
-  tick('Loading…');
-  var zip, back;
-  exportLibs()
+// Draw every file for an export. onFile(name, blob, info) is called for each and may return a promise.
+// Only one export draws at a time (they share the off-screen stage), so calls queue up.
+var _drawQueue = Promise.resolve();
+function buildExport(o, onFile, tick) {
+  var run = _drawQueue.then(function() { return buildExportNow(o, onFile, tick || function() {}); });
+  _drawQueue = run.catch(function() {});
+  return run;
+}
+function buildExportNow(o, onFile, tick) {
+  var lay = exportLayout(o.round), P = exportPlan(o, lay), c = lay.card, uniq = backVaries(lay), ext = o.jpeg ? '.jpg' : '.png';
+  function blob(cv) { return fileBlob(cv, o); }
+  var total = P.list.length * (uniq ? 2 : 1) + 1, done = 0, back, files = [];
+  function step(msg) { tick(done / total, msg); }
+  function emit(name, blob, info) { files.push(Object.assign({ name: name }, info || {})); return onFile(name, blob, info); }
+  if (!P.list.length) return Promise.reject(new Error('No cards to export'));
+  step('Loading…');
+  return exportLibs()
     .then(function() {
-      zip = new JSZip();
-      layout = lay;   // drawn with the export's corner setting
       if (uniq) return;
-      return drawCard(backHTML(P.list[0], 0, { lay: lay, proxy: true }), P.cardW, P.cardH).then(function(cv) { back = cv; return canvasBlob(cv); }).then(function(b) { zip.file('back.png', b); });
+      return drawCard(backHTML(P.list[0], 0, { lay: lay, proxy: true }), P.cardW, c)
+        .then(function(cv) { back = cv; done++; return blob(cv); }).then(function(b) { return emit('back' + ext, b, { kind: 'back' }); });
     })
     .then(function() {
       var chain = Promise.resolve(), index = 0;
       if (P.single) {
         P.list.forEach(function(it, i) {
           chain = chain.then(function() {
-            tick('Drawing card ' + (i + 1) + ' of ' + P.list.length + '…');
+            step('Drawing card ' + (i + 1) + ' of ' + P.list.length + '…');
             var nm = 'card-' + String(i + 1).padStart(3, '0');
-            return drawCard(renderCardHTML(lay, it.row, false, { card: i, row: it.ri, proxy: true }), P.cardW, P.cardH)
-              .then(canvasBlob).then(function(b) { zip.file(nm + '.png', b); done++; })
-              .then(function() { if (uniq) return drawCard(backHTML(it, i, { lay: lay, proxy: true }), P.cardW, P.cardH).then(canvasBlob).then(function(b) { zip.file(nm + '-back.png', b); done++; }); });
+            return drawCard(renderCardHTML(lay, it.row, false, { card: i, row: it.ri, proxy: true }), P.cardW, c)
+              .then(blob).then(function(b) { done++; return emit(nm + ext, b, { kind: 'card' }); })
+              .then(function() {
+                if (uniq) return drawCard(backHTML(it, i, { lay: lay, proxy: true }), P.cardW, c).then(blob)
+                  .then(function(b) { done++; return emit(nm + '-back' + ext, b, { kind: 'card-back' }); });
+              });
           });
         });
         return chain;
       }
-      var prefix = $('eTarget').value === 'tts' ? 'faces-' : 'sheet-';
+      var prefix = o.target === 'tts' ? 'faces-' : 'sheet-';
       P.sheets.forEach(function(cards, si) {
-        var sheet = document.createElement('canvas'), bsheet = document.createElement('canvas');
         chain = chain.then(function() {
+          var sheet = document.createElement('canvas'), bsheet = document.createElement('canvas');
           sheet.width = bsheet.width = P.cols * P.cardW; sheet.height = bsheet.height = P.rows * P.cardH;
-          var g = sheet.getContext('2d'), bg = bsheet.getContext('2d'), hidden = null;
-          var inner = Promise.resolve();
+          var g = sheet.getContext('2d'), bg = bsheet.getContext('2d'), hidden = null, inner = Promise.resolve();
           cards.forEach(function(it, i) {
             var k = index++;
             inner = inner.then(function() {
-              tick('Sheet ' + (si + 1) + ': card ' + (i + 1) + ' of ' + cards.length + '…');
+              step('Sheet ' + (si + 1) + ': card ' + (i + 1) + ' of ' + cards.length + '…');
               var x = (i % P.cols) * P.cardW, y = Math.floor(i / P.cols) * P.cardH;
-              return drawCard(renderCardHTML(lay, it.row, false, { card: k, row: it.ri, proxy: true }), P.cardW, P.cardH)
+              return drawCard(renderCardHTML(lay, it.row, false, { card: k, row: it.ri, proxy: true }), P.cardW, c)
                 .then(function(cv) { g.drawImage(cv, x, y); done++; })
-                .then(function() { if (uniq) return drawCard(backHTML(it, k, { lay: lay, proxy: true }), P.cardW, P.cardH).then(function(cv) { bg.drawImage(cv, x, y); if (!hidden) hidden = cv; done++; }); });
+                .then(function() {
+                  if (uniq) return drawCard(backHTML(it, k, { lay: lay, proxy: true }), P.cardW, c).then(function(cv) { bg.drawImage(cv, x, y); if (!hidden) hidden = cv; done++; });
+                });
             });
           });
+          var info = { kind: 'faces', sheet: si + 1, cards: cards.length };
           return inner.then(function() {
             var hx = (P.cols - 1) * P.cardW, hy = (P.rows - 1) * P.cardH;
             if (P.t.backLast) { g.drawImage(uniq ? hidden : back, hx, hy); if (uniq) bg.drawImage(hidden, hx, hy); }
-            return canvasBlob(sheet);
-          }).then(function(b) {
-            zip.file(prefix + (si + 1) + '.png', b);
-            if (uniq) return canvasBlob(bsheet).then(function(b2) { zip.file('backs-' + (si + 1) + '.png', b2); });
-          });
+            return blob(sheet);
+          }).then(function(b) { return emit(prefix + (si + 1) + ext, b, info); })
+            .then(function() { if (uniq) return blob(bsheet).then(function(b2) { return emit('backs-' + (si + 1) + ext, b2, { kind: 'backs', sheet: si + 1, cards: cards.length }); }); });
         });
       });
       return chain;
     })
-    .then(function() {
-      done = total; tick('Packing…');
-      zip.file('README.txt', exportHelp(P).replace(/<[^>]+>/g, '') + '\n\nMade with CardBoard — zapsheets.com\n');
-      return zip.generateAsync({ type: 'blob' });
-    })
-    .then(function(blob) {
-      var a = document.createElement('a'), name = (curTab || 'cards').replace(/[^\w\- ]+/g, '').trim() || 'cards';
-      a.href = URL.createObjectURL(blob); a.download = name + ' - ' + EXPORT_TARGETS[$('eTarget').value].name + '.zip';
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(function() { URL.revokeObjectURL(a.href); }, 60000);
-      toast('✓ Exported ' + P.list.length + ' cards');
+    .then(function() { $('exportStage').innerHTML = ''; tick(1, ''); return { P: P, files: files, uniq: uniq }; },
+          function(e) { $('exportStage').innerHTML = ''; throw e; });
+}
+
+function exportBusy(on, btn) {
+  _exporting = on; $('exportGo').disabled = on; $('publishGo').disabled = on;
+  $('exportProgress').style.display = on ? 'block' : 'none';
+  if (!on) $('exportStatus').textContent = '';
+}
+function exportTick(f, msg) { $('exportProgress').firstChild.style.width = Math.round(f * 100) + '%'; $('exportStatus').textContent = msg; }
+
+function runExport() {
+  if (_exporting || !layout) return;
+  var o = exportOpts(), zip, pub = (PUBLISHED[curTab] || {})[o.target];
+  if (pub && pub.grid && pub.settings && pub.settings.quality === o.quality) o.grid = pub.grid;
+  exportBusy(true);
+  exportLibs()
+    .then(function() { zip = new JSZip(); return buildExport(o, function(name, blob) { zip.file(name, blob); }, exportTick); })
+    .then(function(r) {
+      exportTick(1, 'Packing…');
+      zip.file('README.txt', exportHelp(r.P).replace(/<[^>]+>/g, '') + '\n\nMade with CardBoard — zapsheets.com\n');
+      return zip.generateAsync({ type: 'blob' }).then(function(blob) {
+        var a = document.createElement('a'), name = (curTab || 'cards').replace(/[^\w\- ]+/g, '').trim() || 'cards';
+        a.href = URL.createObjectURL(blob); a.download = name + ' - ' + EXPORT_TARGETS[o.target].name + '.zip';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function() { URL.revokeObjectURL(a.href); }, 60000);
+        toast('✓ Exported ' + r.P.list.length + ' cards');
+      });
     })
     .catch(function(e) { toast('Export failed — ' + e.message, true); })
-    .then(function() {
-      layout = keep; _exporting = false; btn.disabled = false; bar.style.display = 'none'; $('exportStage').innerHTML = ''; $('exportStatus').textContent = '';
+    .then(function() { exportBusy(false); });
+}
+
+// ── Links: sheets hosted on our server at addresses that never change ────────
+// Publishing uploads the same file names each time, so a link pasted into
+// Tabletop Simulator shows the newest cards. Saving the layout or reloading the
+// sheet data updates every published set for that sheet tab.
+var PUBLISHED = {};   // tab → {target: manifest}
+function publishApi(action, extra, file) {
+  var fd = new FormData();
+  fd.append('id', SHEET_ID); fd.append('action', action);
+  Object.keys(extra || {}).forEach(function(k) { fd.append(k, extra[k]); });
+  if (file) fd.append('file', file, extra.name);
+  return fetch(APP_BASE + 'push/cardboardPublish.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(r) { if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response'); return r; });
+}
+function loadPublished(tab) {
+  return publishApi('list', { tab: tab }).then(function(r) {
+    PUBLISHED[tab] = r.published || {};
+    if (curTab === tab && _activeTab === 'export') renderLinks();
+  }).catch(function() {});
+}
+function publishSet(tab, o, tick) {
+  return buildExport(o, function(name, blob) { return publishApi('upload', { tab: tab, target: o.target, name: name }, blob); }, tick)
+    .then(function(r) {
+      var st = Object.assign({}, o); delete st.grid;
+      var man = { files: r.files, count: r.P.list.length, grid: r.P.single ? null : { cols: r.P.cols, rows: r.P.rows, uniqueBacks: r.uniq }, settings: st };
+      return publishApi('finish', { tab: tab, target: o.target, manifest: JSON.stringify(man) });
+    })
+    .then(function(r) { (PUBLISHED[tab] = PUBLISHED[tab] || {})[o.target] = r.published; return r.published; });
+}
+function runPublish() {
+  if (_exporting || !layout) return;
+  var o = Object.assign(exportOpts(), { fixed: true }), tab = curTab, old = (PUBLISHED[tab] || {})[o.target];
+  o.jpeg = !o.round;
+  if (old && old.grid && old.settings && old.settings.quality === o.quality) o.grid = old.grid;   // keep the grid the game was set up with
+  if (dirty && !confirm('The links will show your unsaved changes too. Publish anyway?')) return;
+  exportBusy(true);
+  publishSet(tab, o, exportTick)
+    .then(function() { toast('✓ Links ready — they\'ll update when you save'); if (curTab === tab) renderExport(); })
+    .catch(function(e) { toast('Couldn\'t publish — ' + e.message, true); })
+    .then(function() { exportBusy(false); });
+}
+function updateLinksNow(target) {
+  var m = (PUBLISHED[curTab] || {})[target]; if (!m || _exporting) return;
+  var tab = curTab; exportBusy(true);
+  publishSet(tab, Object.assign({}, m.settings || {}, { target: target, grid: m.grid }), exportTick)
+    .then(function() { toast('✓ Links updated'); if (curTab === tab) renderLinks(); })
+    .catch(function(e) { toast('Couldn\'t update — ' + e.message, true); })
+    .then(function() { exportBusy(false); });
+}
+function stopSharing(target) {
+  if (!confirm('Remove these files from the server? Anything using the links (like a Tabletop Simulator deck) will lose its pictures.')) return;
+  var tab = curTab;
+  publishApi('remove', { tab: tab, target: target }).then(function() {
+    if (PUBLISHED[tab]) delete PUBLISHED[tab][target];
+    toast('Links removed'); renderLinks();
+  }).catch(function(e) { toast('Couldn\'t remove — ' + e.message, true); });
+}
+// After a save or a data reload: refresh every published set for that tab, quietly
+var _autoPending = {};
+function autoRepublish(tab) {
+  var sets = PUBLISHED[tab]; if (!sets || curTab !== tab) return;
+  Object.keys(sets).forEach(function(target) {
+    if (_autoPending[tab + ':' + target]) return;
+    _autoPending[tab + ':' + target] = true;
+    setLinkStatus('Updating links…');
+    publishSet(tab, Object.assign({}, sets[target].settings || {}, { target: target, grid: sets[target].grid }))
+      .then(function() { setLinkStatus(''); toast('✓ ' + EXPORT_TARGETS[target].name + ' links updated'); if (curTab === tab && _activeTab === 'export') renderLinks(); })
+      .catch(function(e) { setLinkStatus(''); toast('Couldn\'t update the ' + EXPORT_TARGETS[target].name + ' links — ' + e.message, true); })
+      .then(function() { delete _autoPending[tab + ':' + target]; });
+  });
+}
+function setLinkStatus(msg) { var st = $('saveStatus'); if (!st) return; if (msg) { st.dataset.prev = st.textContent; st.textContent = msg; } else if (st.dataset.prev != null) { st.textContent = dirty ? 'Unsaved changes' : 'Saved'; delete st.dataset.prev; } }
+function copyLink(btn) {
+  var inp = btn.previousElementSibling; inp.select();
+  (navigator.clipboard ? navigator.clipboard.writeText(inp.value) : Promise.reject()).catch(function() { document.execCommand('copy'); });
+  btn.textContent = 'Copied'; setTimeout(function() { btn.textContent = 'Copy'; }, 1400);
+}
+function renderLinks() {
+  var box = $('exportLinks'); if (!box) return;
+  var target = $('eTarget').value, m = (PUBLISHED[curTab] || {})[target];
+  $('publishGo').textContent = m ? 'Republish links' : 'Get links';
+  if (!m) { box.innerHTML = ''; box.style.display = 'none'; return; }
+  var when = new Date(m.updated), g = m.grid || {};
+  function row(label, f, extra) {
+    return '<div class="lk-row"><span class="lk-name">' + label + '</span><input class="inp" readonly value="' + esc(f.url) + '" onclick="this.select()"><button type="button" class="attr-btn" onclick="copyLink(this)">Copy</button>' + (extra || '') + '</div>';
+  }
+  var h = '<div class="lk-head"><b>Links</b> · ' + m.count + ' cards · updated ' + esc(when.toLocaleString()) +
+          ' <button type="button" class="lk-act" onclick="updateLinksNow(\'' + target + '\')">Update now</button><button type="button" class="lk-act danger" onclick="stopSharing(\'' + target + '\')">Stop sharing</button></div>';
+  var faces = m.files.filter(function(f) { return f.kind === 'faces'; }), backs = m.files.filter(function(f) { return f.kind === 'backs'; }), back = m.files.filter(function(f) { return f.kind === 'back'; })[0];
+  if (faces.length) {
+    faces.forEach(function(f) {
+      var b = backs.filter(function(x) { return x.sheet === f.sheet; })[0];
+      h += row((faces.length > 1 ? 'Sheet ' + f.sheet + ' face' : 'Face'), f, target === 'tts' ? '<span class="lk-meta">Width ' + g.cols + ' · Height ' + g.rows + ' · Number ' + f.cards + '</span>' : '');
+      if (b) h += row((faces.length > 1 ? 'Sheet ' + f.sheet + ' backs' : 'Backs'), b);
     });
+    if (back) h += row('Back', back);
+  } else {
+    h += '<div class="muted">' + m.files.length + ' pictures — the first ones:</div>';
+    m.files.slice(0, 4).forEach(function(f) { h += row(esc(f.name), f); });
+  }
+  if (target === 'tts') h += '<p class="muted lk-note">Paste these into the Custom Deck dialog instead of choosing files. When you save the layout or reload the sheet data here, the pictures at these links are replaced. ' +
+       'Tabletop Simulator keeps its own copy of downloaded pictures, so a game may show the old cards until TTS fetches them again. ' +
+       'If you add cards, raise Number in TTS to match; past ' + (g.cols * g.rows - 1) + ' cards a new sheet (and link) is added.</p>';
+  else h += '<p class="muted lk-note">These links stay the same; saving the layout or reloading the sheet data replaces the pictures behind them.</p>';
+  box.innerHTML = h; box.style.display = 'block';
 }
 
 // ── Tabs, menu, donation ──────────────────────────────────────────────────────

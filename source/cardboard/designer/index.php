@@ -224,6 +224,22 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .export-info { padding:.6rem 1.1rem .7rem; background:#fbfbfe; border-bottom:1px solid #e1e4ee; font-size:.8rem; color:#6b7090; }
 .export-help { margin-top:.3rem; font-size:.76rem; line-height:1.45; color:#4a4e68; max-width:70rem; }
 .export-help code { background:#eceaf9; color:#4b3fa8; border-radius:4px; padding:0 .3rem; font-size:.72rem; }
+.e-actions { display:flex; gap:.5rem; margin-left:auto; }
+.e-actions .print-go { margin-left:0; }
+.print-go.ghost { background:#fff; color:#4b3fa8; border:1.5px solid #a99cff; }
+.print-go.ghost:hover { background:#f7f5ff; }
+.print-go:disabled { opacity:.5; cursor:default; }
+.export-links { margin-top:.7rem; padding:.7rem .8rem; background:#fff; border:1.5px solid #e1e4ee; border-radius:10px; max-width:70rem; }
+.lk-head { font-size:.78rem; color:#6b7090; margin-bottom:.5rem; display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
+.lk-head b { color:#2e2763; font-family:'DINBlack',sans-serif; font-weight:400; letter-spacing:.05em; text-transform:uppercase; font-size:.7rem; }
+.lk-act { border:none; background:none; color:#4b3fa8; font-size:.76rem; cursor:pointer; padding:0; text-decoration:underline; }
+.lk-act.danger { color:#c0392b; }
+.lk-row { display:flex; align-items:center; gap:.4rem; margin-bottom:.35rem; flex-wrap:wrap; }
+.lk-name { width:6.5rem; flex-shrink:0; font-size:.72rem; color:#3b3f5c; font-family:'DINBlack',sans-serif; letter-spacing:.03em; }
+.lk-row .inp { flex:1; min-width:16rem; height:1.9rem; font-size:.74rem; color:#4a4e68; background:#f7f8fc; }
+.lk-row .attr-btn { flex:0 0 auto; height:1.9rem; padding:0 .8rem; }
+.lk-meta { font-size:.72rem; color:#6b62b8; background:#f3f1ff; border-radius:6px; padding:.2rem .5rem; }
+.lk-note { margin:.4rem 0 0; font-size:.72rem; }
 .export-progress { height:6px; background:#e4e6ef; border-radius:999px; overflow:hidden; margin:.5rem 0 .25rem; max-width:30rem; }
 .export-progress > div { height:100%; width:0; background:#7b6cf6; transition:width .2s; }
 .x-label { font-family:'DINBlack',sans-serif; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:#8a8fa8; margin-bottom:-1rem; }
@@ -379,10 +395,12 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
       <select class="sel" id="eCopies"></select></div>
     <div class="grp"><span class="mini">Card back</span><span class="e-note" id="eBackNote"></span></div>
     <label class="e-check"><input type="checkbox" id="eCorners" onchange="renderExport()"> Rounded corners</label>
-    <button class="print-go" id="exportGo" onclick="runExport()">Download</button>
+    <div class="e-actions"><button class="print-go ghost" id="publishGo" onclick="runPublish()" title="Host the sheets on zapsheets.com at links that stay the same">Get links</button>
+    <button class="print-go" id="exportGo" onclick="runExport()">Download</button></div>
   </div>
   <div class="export-info"><span id="exportInfo"></span><div class="export-help" id="exportHelp"></div>
-    <div class="export-progress" id="exportProgress" style="display:none"><div></div></div><span class="muted" id="exportStatus"></span></div>
+    <div class="export-progress" id="exportProgress" style="display:none"><div></div></div><span class="muted" id="exportStatus"></span>
+    <div class="export-links" id="exportLinks" style="display:none"></div></div>
   <div class="pages" id="exportPreview"></div>
   <div id="exportStage" aria-hidden="true"></div>
 </div>

@@ -234,11 +234,18 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .lk-head b { color:#2e2763; font-family:'DINBlack',sans-serif; font-weight:400; letter-spacing:.05em; text-transform:uppercase; font-size:.7rem; }
 .lk-act { border:none; background:none; color:#4b3fa8; font-size:.76rem; cursor:pointer; padding:0; text-decoration:underline; }
 .lk-act.danger { color:#c0392b; }
-.lk-row { display:flex; align-items:center; gap:.4rem; margin-bottom:.35rem; flex-wrap:wrap; }
-.lk-name { width:6.5rem; flex-shrink:0; font-size:.72rem; color:#3b3f5c; font-family:'DINBlack',sans-serif; letter-spacing:.03em; }
-.lk-row .inp { flex:1; min-width:16rem; height:1.9rem; font-size:.74rem; color:#4a4e68; background:#f7f8fc; }
+.lk-row { display:grid; grid-template-columns:6.5rem minmax(0,1fr) auto 14rem; align-items:center; gap:.4rem; margin-bottom:.35rem; }
+.lk-name { font-size:.72rem; color:#3b3f5c; font-family:'DINBlack',sans-serif; letter-spacing:.03em; }
+.lk-row .inp { width:100%; min-width:0; height:1.9rem; font-size:.74rem; color:#4a4e68; background:#f7f8fc; }
 .lk-row .attr-btn { flex:0 0 auto; height:1.9rem; padding:0 .8rem; }
-.lk-meta { font-size:.72rem; color:#6b62b8; background:#f3f1ff; border-radius:6px; padding:.2rem .5rem; }
+.lk-meta { font-size:.72rem; color:#6b62b8; background:#f3f1ff; border-radius:6px; padding:.2rem .5rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lk-meta.empty { visibility:hidden; }
+.lk-backs { font-size:.76rem; color:#4a4e68; border-radius:8px; padding:.45rem .6rem; margin-bottom:.55rem; line-height:1.45; }
+.lk-backs.on { background:#f3f1ff; }
+.lk-backs.off { background:#f6f7fb; }
+.lk-backs > b:first-child { color:#2e2763; }
+.lk-warn { display:block; color:#b45309; margin-top:.2rem; }
+@media (max-width:900px) { .lk-row { grid-template-columns:1fr auto; } .lk-name, .lk-meta { grid-column:1 / -1; } }
 .lk-note { margin:.4rem 0 0; font-size:.72rem; }
 .export-progress { height:6px; background:#e4e6ef; border-radius:999px; overflow:hidden; margin:.5rem 0 .25rem; max-width:30rem; }
 .export-progress > div { height:100%; width:0; background:#7b6cf6; transition:width .2s; }

@@ -1025,7 +1025,7 @@ function renderExport() {
   var o = exportOpts(), pub = (PUBLISHED[curTab] || {})[o.target];
   if (pub && pub.grid && pub.settings && pub.settings.quality === o.quality) o.grid = pub.grid;   // match the published links
   var P = exportPlan(o), c = layout.card, varies = backVaries();
-  $('eBackNote').textContent = varies ? 'Each card has its own back' : 'All cards share one back';
+  $('eBackNote').innerHTML = varies ? '<b>Unique backs</b>&nbsp;— the back has per-card fields' : 'One back for every card';
   var info;
   if (P.single) info = P.list.length + ' cards → ' + P.list.length + ' images + back, ' + P.cardW + ' × ' + P.cardH + ' px each';
   else info = P.list.length + ' cards → ' + P.sheets.length + (P.sheets.length === 1 ? ' sheet' : ' sheets') + ' of ' + P.cols + ' × ' + P.rows +
@@ -1283,18 +1283,24 @@ function renderLinks() {
   if (!m) { box.innerHTML = ''; box.style.display = 'none'; return; }
   var when = new Date(m.updated), g = m.grid || {};
   function row(label, f, extra) {
-    return '<div class="lk-row"><span class="lk-name">' + label + '</span><input class="inp" readonly value="' + esc(f.url) + '" onclick="this.select()"><button type="button" class="attr-btn" onclick="copyLink(this)">Copy</button>' + (extra || '') + '</div>';
+    return '<div class="lk-row"><span class="lk-name">' + label + '</span><input class="inp" readonly value="' + esc(f.url) + '" onclick="this.select()"><button type="button" class="attr-btn" onclick="copyLink(this)">Copy</button><span class="lk-meta' + (extra ? '' : ' empty') + '">' + (extra || '') + '</span></div>';
   }
   var h = '<div class="lk-head"><b>Links</b> · ' + m.count + ' cards · updated ' + esc(when.toLocaleString()) +
           ' <button type="button" class="lk-act" onclick="updateLinksNow(\'' + target + '\')">Update now</button><button type="button" class="lk-act danger" onclick="stopSharing(\'' + target + '\')">Stop sharing</button></div>';
+  // Unique backs: on when the back layout has something that changes per card (a Data field, {Column} text, a generated value)
+  var pubUniq = !!g.uniqueBacks || m.files.some(function(f) { return f.kind === 'backs' || f.kind === 'card-back'; }), nowUniq = backVaries();
+  h += '<div class="lk-backs ' + (pubUniq ? 'on' : 'off') + '"><b>Unique backs: ' + (pubUniq ? 'On' : 'Off') + '</b> — ' +
+       (pubUniq ? 'the back has fields that change from card to card, so every card gets its own back' + (target === 'tts' ? ' (tick <b>Unique backs</b> in TTS and use the backs link)' : '')
+                : 'the back is the same on every card, so there\'s one back picture' + (target === 'tts' ? ' (leave <b>Unique backs</b> unticked in TTS)' : '')) + '.' +
+       (pubUniq !== nowUniq ? ' <span class="lk-warn">The back layout now ' + (nowUniq ? 'has' : 'no longer has') + ' per-card fields — this switches to ' + (nowUniq ? 'On' : 'Off') + ' with the next update, and the TTS deck will need its Back link and Unique backs setting changed.</span>' : '') + '</div>';
   var faces = m.files.filter(function(f) { return f.kind === 'faces'; }), backs = m.files.filter(function(f) { return f.kind === 'backs'; }), back = m.files.filter(function(f) { return f.kind === 'back'; })[0];
   if (faces.length) {
     faces.forEach(function(f) {
       var b = backs.filter(function(x) { return x.sheet === f.sheet; })[0];
-      h += row((faces.length > 1 ? 'Sheet ' + f.sheet + ' face' : 'Face'), f, target === 'tts' ? '<span class="lk-meta">Width ' + g.cols + ' · Height ' + g.rows + ' · Number ' + f.cards + '</span>' : '');
-      if (b) h += row((faces.length > 1 ? 'Sheet ' + f.sheet + ' backs' : 'Backs'), b);
+      h += row((faces.length > 1 ? 'Sheet ' + f.sheet + ' face' : 'Face'), f, target === 'tts' ? 'Width ' + g.cols + ' · Height ' + g.rows + ' · Number ' + f.cards : '');
+      if (b) h += row((faces.length > 1 ? 'Sheet ' + f.sheet + ' backs' : 'Backs'), b, target === 'tts' ? 'Unique backs ✓' : '');
     });
-    if (back) h += row('Back', back);
+    if (back) h += row('Back', back, target === 'tts' ? 'Same back for all' : '');
   } else {
     h += '<div class="muted">' + m.files.length + ' pictures — the first ones:</div>';
     m.files.slice(0, 4).forEach(function(f) { h += row(esc(f.name), f); });

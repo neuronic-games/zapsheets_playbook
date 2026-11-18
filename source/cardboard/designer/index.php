@@ -25,7 +25,7 @@ $_sheet_id = $_bm[2] ?? '';
 <title>CardBoard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Cinzel:wght@500;700&family=Lilita+One&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Roboto+Condensed:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Cinzel:wght@500;700&family=Lilita+One&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Roboto+Condensed:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" crossorigin="anonymous">
 <style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2') format('woff2'),url('fonts/DINBlack.ttf'); }
 @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'),url('fonts/DINMedium.ttf'); }
@@ -147,7 +147,18 @@ button, input, select, textarea { font-family:inherit; }
 .card { position:absolute; left:0; top:0; transform-origin:0 0; overflow:hidden; background:#fff; box-shadow:0 10px 30px rgba(20,20,60,.22); }
 .el { position:absolute; overflow:hidden; display:flex; flex-direction:column; white-space:pre-wrap; word-break:break-word; line-height:1.15; }
 .el.v-middle { justify-content:center; } .el.v-bottom { justify-content:flex-end; }
-.el-img { width:100%; height:100%; background-repeat:no-repeat; background-position:center; }
+.el-img { display:block; width:100%; height:100%; object-position:center; background-repeat:no-repeat; background-position:center; }
+img.el-img { -webkit-user-drag:none; user-select:none; }
+/* Print card colours and fills even when "Background graphics" is off */
+.card, .card * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+/* Flip button (top right of the card) */
+.flip-btn { position:absolute; top:0; right:-3.1rem; width:2.5rem; height:2.5rem; border-radius:50%; border:1.5px solid #d6d9e6; background:#fff; color:#4b3fa8; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; cursor:pointer; box-shadow:0 3px 10px rgba(20,20,60,.12); padding:0; z-index:5; }
+.flip-btn span { font-family:'DINBlack',sans-serif; font-size:.46rem; letter-spacing:.06em; text-transform:uppercase; margin-top:-1px; }
+.flip-btn svg { width:15px; height:15px; }
+.flip-btn:hover { border-color:#7b6cf6; }
+.flip-btn.on { background:#4b3fa8; color:#fff; border-color:#4b3fa8; }
+.card-holder { transform-style:preserve-3d; }
+.page-tag { position:absolute; top:-1.15rem; left:0; font-family:'DINBlack',sans-serif; font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:#8a8fa8; }
 .el-empty { color:#b8bccc; font-style:italic; }
 /* designer-only: selection + handles (sized against the zoom with --z) */
 .designing .el { cursor:move; outline:calc(1px / var(--z)) dashed transparent; overflow:visible; }
@@ -189,12 +200,34 @@ button, input, select, textarea { font-family:inherit; }
 
 /* ── Print view ────────────────────────────────────────── */
 #view-print { flex-direction:column; }
+#view-export { flex-direction:column; }
+.e-note { font-size:.8rem; color:#3b3f5c; height:2.05rem; display:flex; align-items:center; }
+.e-back { display:flex; gap:.3rem; align-items:center; }
+.e-back input[type=color] { width:2.05rem; height:2.05rem; border:1.5px solid #d6d9e6; border-radius:7px; padding:2px; background:#fff; cursor:pointer; }
+.e-back .inp { width:15rem; }
+.e-upload { flex:0 0 auto; width:2.05rem; height:2.05rem; display:flex; align-items:center; justify-content:center; padding:0; font-size:1rem; }
+.e-check { display:flex; align-items:center; gap:.35rem; font-size:.8rem; color:#3b3f5c; height:2.05rem; cursor:pointer; }
+.export-info { padding:.6rem 1.1rem .7rem; background:#fbfbfe; border-bottom:1px solid #e1e4ee; font-size:.8rem; color:#6b7090; }
+.export-help { margin-top:.3rem; font-size:.76rem; line-height:1.45; color:#4a4e68; max-width:70rem; }
+.export-help code { background:#eceaf9; color:#4b3fa8; border-radius:4px; padding:0 .3rem; font-size:.72rem; }
+.export-progress { height:6px; background:#e4e6ef; border-radius:999px; overflow:hidden; margin:.5rem 0 .25rem; max-width:30rem; }
+.export-progress > div { height:100%; width:0; background:#7b6cf6; transition:width .2s; }
+.x-label { font-family:'DINBlack',sans-serif; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:#8a8fa8; margin-bottom:-1rem; }
+.x-sheet { position:relative; flex-shrink:0; background:#fff; box-shadow:0 6px 24px rgba(20,20,60,.18); overflow:hidden; }
+.x-grid { display:grid; transform-origin:0 0; }
+.x-cell { position:relative; overflow:hidden; background:repeating-conic-gradient(#f1f2f7 0 25%, #fff 0 50%) 0 0/16px 16px; }
+.x-cell .card { box-shadow:none; }
+.x-back { outline:3px dashed #7b6cf6; outline-offset:-3px; }
+.x-flow { display:flex; flex-wrap:wrap; gap:10px; padding:12px; max-width:900px; background:transparent; box-shadow:none; }
+.x-thumb { position:relative; overflow:hidden; box-shadow:0 2px 8px rgba(20,20,60,.15); }
+#exportStage { position:fixed; left:-20000px; top:0; width:2000px; height:2000px; overflow:hidden; pointer-events:none; }
+#exportStage .card { position:absolute; left:0; top:0; }
 .print-bar { display:flex; align-items:flex-end; gap:.8rem; flex-wrap:wrap; padding:.8rem 1.1rem; background:#fff; border-bottom:1px solid #e1e4ee; }
 .print-bar .grp { display:flex; flex-direction:column; gap:.2rem; }
 .print-bar .sel { width:auto; min-width:7.5rem; }
 .print-go { height:2.05rem; border:none; border-radius:7px; background:#4b3fa8; color:#fff; font-family:'DINBlack',sans-serif; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; padding:0 1.2rem; cursor:pointer; margin-left:auto; }
 .print-info { font-size:.8rem; color:#6b7090; align-self:center; }
-.pages { flex:1; overflow:auto; padding:1.5rem; display:flex; flex-direction:column; align-items:center; gap:1.5rem; background:#e4e6ef; }
+.pages { flex:1; overflow:auto; padding:1.5rem; display:flex; flex-direction:column; align-items:center; gap:2.2rem; background:#e4e6ef; }
 .page-holder { position:relative; flex-shrink:0; box-shadow:0 6px 24px rgba(20,20,60,.18); background:#fff; }
 .page { position:absolute; left:0; top:0; background:#fff; transform-origin:0 0; overflow:hidden; }
 .page .card { box-shadow:none; }
@@ -222,12 +255,13 @@ button, input, select, textarea { font-family:inherit; }
 /* ── Printing: only the pages, at true size ────────────── */
 @media print {
   body { background:#fff; display:block; }
-  .top-bar, .print-bar, #view-design, .toast { display:none !important; }
+  .top-bar, .print-bar, #view-design, #view-export, .toast { display:none !important; }
   #view-print { display:block !important; }
   .pages { display:block; padding:0; background:#fff; overflow:visible; }
   .page-holder { box-shadow:none; width:auto !important; height:auto !important; break-after:page; page-break-after:always; }
   .page-holder:last-child { break-after:auto; page-break-after:auto; }
   .page { position:relative; transform:none !important; }
+  .page-tag { display:none; }
 }
 </style>
 <style id="pageSizeStyle">@page { size: letter portrait; margin: 0; }</style>
@@ -246,6 +280,7 @@ button, input, select, textarea { font-family:inherit; }
     <div class="top-tab-btns">
       <button class="top-tab active" id="tabDesign" onclick="switchTab('design')">Design</button>
       <button class="top-tab" id="tabPrint" onclick="switchTab('print')">Print</button>
+      <button class="top-tab" id="tabExport" onclick="switchTab('export')">Export</button>
     </div>
     <div class="account-menu-wrap">
       <button class="top-btn" onclick="toggleAccountMenu(event)" title="Menu">
@@ -311,10 +346,31 @@ button, input, select, textarea { font-family:inherit; }
       <select class="sel" id="pCut" onchange="renderPrint()"><option value="marks">Crop marks</option><option value="outline">Card outlines</option><option value="none">None</option></select></div>
     <div class="grp"><span class="mini">Copies</span>
       <select class="sel" id="pCopies" onchange="renderPrint()"></select></div>
+    <div class="grp"><span class="mini">Backs</span>
+      <select class="sel" id="pBacks" onchange="renderPrint()"><option value="none">Fronts only</option><option value="long">Double-sided (flip on long edge)</option><option value="short">Double-sided (flip on short edge)</option></select></div>
     <span class="print-info" id="printInfo"></span>
     <button class="print-go" onclick="window.print()">Print</button>
   </div>
   <div class="pages" id="pages"></div>
+</div>
+
+<!-- Export view -->
+<div class="view" id="view-export">
+  <div class="print-bar">
+    <div class="grp"><span class="mini">For</span>
+      <select class="sel" id="eTarget" onchange="renderExport()"><option value="tts">Tabletop Simulator</option><option value="screentop">Screentop</option><option value="images">Separate images</option></select></div>
+    <div class="grp"><span class="mini">Size</span>
+      <select class="sel" id="eQuality" onchange="renderExport()"><option value="4096">Standard (up to 4096 px)</option><option value="8192">Large (up to 8192 px)</option><option value="2048">Small (up to 2048 px)</option></select></div>
+    <div class="grp"><span class="mini">Copies</span>
+      <select class="sel" id="eCopies"></select></div>
+    <div class="grp"><span class="mini">Card back</span><span class="e-note" id="eBackNote"></span></div>
+    <label class="e-check"><input type="checkbox" id="eCorners" onchange="renderExport()"> Rounded corners</label>
+    <button class="print-go" id="exportGo" onclick="runExport()">Download</button>
+  </div>
+  <div class="export-info"><span id="exportInfo"></span><div class="export-help" id="exportHelp"></div>
+    <div class="export-progress" id="exportProgress" style="display:none"><div></div></div><span class="muted" id="exportStatus"></span></div>
+  <div class="pages" id="exportPreview"></div>
+  <div id="exportStage" aria-hidden="true"></div>
 </div>
 
 <div class="toast" id="toast"></div>

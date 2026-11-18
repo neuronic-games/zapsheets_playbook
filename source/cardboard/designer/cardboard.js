@@ -1086,9 +1086,9 @@ function moveSelTo(axis, v) {
 }
 
 // ── Attributes panel ──────────────────────────────────────────────────────────
-// Colour pickers show the colour on the card while you drag (liveColor); the change itself is
-// made when the picker closes, as one undo step. Choosing a border colour with no border width
-// gives it a 1 pt border, so the colour shows.
+// Color pickers show the color on the card while you drag (liveColor); the change itself is
+// made when the picker closes, as one undo step. Choosing a border color with no border width
+// gives it a 1 pt border, so the color shows.
 var _live = null;   // {obj, key, orig} while a picker is open
 function liveTarget(onSet) { return onSet === 'setCard' ? layout.card : onSet === 'setBackProp' ? layout.back : elById(selId); }
 function liveColor(onSet, key, val) {
@@ -1121,14 +1121,49 @@ function setCard(key, val, num) {
 function syncGeomInputs(e) {
   ['x', 'y', 'w', 'h'].forEach(function(k) { var i = $('a_' + k); if (i && document.activeElement !== i) i.value = r1(e[k]); });
 }
+// A color field: a swatch that opens CardBoard's color chooser (transparent, a palette, recent
+// colors, or any color), and a box to type a color.
 function colorRow(label, key, val, none, onSet) {
-  var hexv = /^#[0-9a-f]{6}$/i.test(val || '') ? val : '#ffffff';
-  var clear = none ? (!val || val === 'transparent' || val === 'none') : val === 'transparent';   // empty text colour means the default, not clear
+  var clear = none ? (!val || val === 'transparent' || val === 'none') : val === 'transparent';   // empty text color means the default, not clear
   return '<span class="mini">' + label + '</span><div class="color-row">' +
-    '<button type="button" class="clear-swatch' + (clear ? ' on' : '') + '" title="Transparent" aria-label="Transparent" onclick="' + onSet + '(\'' + key + '\',\'' + (none ? '' : 'transparent') + '\')"></button>' +
-    '<input type="color" value="' + hexv + '" onchange="' + onSet + '(\'' + key + '\',this.value)" oninput="this.nextElementSibling.value=this.value;liveColor(\'' + onSet + '\',\'' + key + '\',this.value)">' +
+    '<button type="button" class="swatch' + (clear ? ' clear' : '') + '" style="--c:' + esc(clear ? 'transparent' : (val || (none ? 'transparent' : '#111111'))) + '" title="Choose a color" aria-label="Choose a color"' +
+      ' onclick="openColorPop(this,\'' + onSet + '\',\'' + key + '\',' + (none ? 'true' : 'false') + ')"></button>' +
     '<input class="inp" value="' + esc(val || '') + '" placeholder="' + (none ? 'none' : '#000000') + '" onchange="' + onSet + '(\'' + key + '\',this.value.trim())"></div>';
 }
+var PALETTE = ['#000000', '#3a3a3a', '#7a7a7a', '#bdbdbd', '#ffffff', '#fff8e8',
+               '#2e2763', '#4b3fa8', '#7b6cf6', '#1a5f7a', '#2f80ed', '#56ccf2',
+               '#1e7d4f', '#27ae60', '#a3d977', '#f2c14e', '#f2994a', '#eb5757',
+               '#b0306b', '#e2557a', '#8e5b3a', '#c8a27a', '#765151', '#443131'];
+function recentColors() { try { return JSON.parse(localStorage.getItem('cb_recentColors') || '[]'); } catch (e) { return []; } }
+function rememberColor(v) {
+  if (!/^#[0-9a-f]{6}$/i.test(v)) return;
+  var r = recentColors().filter(function(x) { return x.toLowerCase() !== v.toLowerCase(); }); r.unshift(v);
+  try { localStorage.setItem('cb_recentColors', JSON.stringify(r.slice(0, 12))); } catch (e) {}
+}
+function closeColorPop() { var p = $('colorPop'); if (p) p.remove(); }
+function openColorPop(btn, onSet, key, none) {
+  var open = $('colorPop') && $('colorPop').dataset.key === onSet + ':' + key; closeColorPop(); if (open) return;
+  var target = liveTarget(onSet), cur = target ? String(target[key] || '') : '';
+  var pick = function(v) { closeColorPop(); if (v && v !== 'transparent') rememberColor(v); window[onSet](key, v); };
+  var tile = function(c) { return '<button type="button" class="cp-tile' + (cur.toLowerCase() === c.toLowerCase() ? ' on' : '') + '" style="--c:' + c + '" data-c="' + c + '" title="' + c + '"></button>'; };
+  var rec = recentColors();
+  var p = document.createElement('div'); p.id = 'colorPop'; p.className = 'color-pop'; p.dataset.key = onSet + ':' + key;
+  p.innerHTML =
+    '<button type="button" class="cp-clear' + ((none ? !cur || cur === 'transparent' : cur === 'transparent') ? ' on' : '') + '" data-c="' + (none ? '' : 'transparent') + '"><span class="cp-tile clear"></span>Transparent</button>' +
+    '<div class="cp-grid">' + PALETTE.map(tile).join('') + '</div>' +
+    (rec.length ? '<span class="mini">Recent</span><div class="cp-grid">' + rec.map(tile).join('') + '</div>' : '') +
+    '<div class="cp-custom"><label class="cp-more"><input type="color" value="' + (/^#[0-9a-f]{6}$/i.test(cur) ? cur : '#7b6cf6') + '">Custom color…</label></div>';
+  document.body.appendChild(p);
+  var r = btn.getBoundingClientRect();
+  p.style.left = Math.max(8, Math.min(r.left, innerWidth - p.offsetWidth - 8)) + 'px';
+  p.style.top = (r.bottom + p.offsetHeight + 8 > innerHeight ? Math.max(8, r.top - p.offsetHeight - 6) : r.bottom + 6) + 'px';
+  p.addEventListener('click', function(ev) { var t = ev.target.closest('[data-c]'); if (t) pick(t.dataset.c); });
+  var nat = p.querySelector('input[type=color]');
+  nat.addEventListener('input', function() { liveColor(onSet, key, nat.value); btn.style.setProperty('--c', nat.value); btn.classList.remove('clear'); });
+  nat.addEventListener('change', function() { pick(nat.value); });
+}
+document.addEventListener('pointerdown', function(ev) { var p = $('colorPop'); if (p && !p.contains(ev.target) && !ev.target.closest('.swatch')) closeColorPop(); });
+document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') closeColorPop(); });
 function numInp(id, label, val, onSet, key, step) {
   return '<div><span class="mini">' + label + '</span><input class="inp" type="number" step="' + (step || 1) + '" id="' + id + '" value="' + r1(val || 0) + '" onchange="' + onSet + '(\'' + key + '\',this.value,true)"></div>';
 }
@@ -1144,7 +1179,7 @@ function textAttrs(e) {
   var h = '<span class="lbl">Font</span><select class="sel" onchange="setProp(\'font\',this.value)">' +
           FONTS.map(function(f) { return '<option value="' + f[0] + '"' + (f[0] === (e.font || 'DINRegular') ? ' selected' : '') + '>' + f[1] + '</option>'; }).join('') + '</select>';
   h += '<div class="row2" style="margin-top:.45rem">' + numInp('a_size', 'Size (pt)', e.size || 12, 'setProp', 'size', .5) + numInp('a_lh', 'Line height', e.lh || 1.15, 'setProp', 'lh', .05) + '</div>';
-  h += '<div style="margin-top:.45rem">' + colorRow('Colour', 'color', e.color, false, 'setProp') + '</div>';
+  h += '<div style="margin-top:.45rem">' + colorRow('Color', 'color', e.color, false, 'setProp') + '</div>';
   h += '<div class="row2" style="margin-top:.45rem"><div><span class="mini">Style</span><div class="seg">' +
        '<button type="button" class="' + (e.bold ? 'on' : '') + '" onclick="setProp(\'bold\',' + !e.bold + ');renderAttrs()" title="Bold"><b>B</b></button>' +
        '<button type="button" class="' + (e.italic ? 'on' : '') + '" onclick="setProp(\'italic\',' + !e.italic + ');renderAttrs()" title="Italic"><i>I</i></button>' +
@@ -1156,7 +1191,7 @@ function textAttrs(e) {
 function boxAttrs(e, title) {
   var h = '<span class="lbl">' + title + '</span>' + colorRow('Fill', 'bg', e.bg, true, 'setProp');
   h += '<div class="row2" style="margin-top:.45rem">' + numInp('a_bw', 'Border (pt)', e.borderW, 'setProp', 'borderW', .5) + numInp('a_r', 'Corner radius', e.radius, 'setProp', 'radius') + '</div>';
-  h += '<div style="margin-top:.45rem">' + colorRow('Border colour', 'borderColor', e.borderColor, false, 'setProp') + '</div>';
+  h += '<div style="margin-top:.45rem">' + colorRow('Border color', 'borderColor', e.borderColor, false, 'setProp') + '</div>';
   if (isTextLike(e)) h += '<div style="margin-top:.45rem">' + numInp('a_pad', 'Padding (pt)', e.pad == null ? 2 : e.pad, 'setProp', 'pad', .5) + '</div>';
   return h;
 }
@@ -1180,7 +1215,7 @@ function renderAttrs() {
          '<div><span class="mini">Height (' + unitName() + ')</span><input class="inp" type="number" step="' + unitStep() + '" value="' + toUnit(c.h) + '" onchange="setCard(\'h\',fromUnit(this.value),true)"></div></div>';
     h += '<span class="lbl">' + (side === 'back' ? 'Both sides' : 'Look') + '</span>' + (side === 'back' ? '' : colorRow('Background', 'bg', c.bg, false, 'setCard'));
     h += '<div class="row2" style="margin-top:.45rem">' + numInp('c_r', 'Corner radius (pt)', c.radius, 'setCard', 'radius') + numInp('c_bw', 'Border (pt)', c.borderW, 'setCard', 'borderW', .5) + '</div>';
-    h += '<div style="margin-top:.45rem">' + colorRow('Border colour', 'borderColor', c.borderColor, false, 'setCard') + '</div>';
+    h += '<div style="margin-top:.45rem">' + colorRow('Border color', 'borderColor', c.borderColor, false, 'setCard') + '</div>';
     h += '<span class="lbl">Shortcuts</span><p class="muted" style="margin:0">Arrows nudge 1 pt (Shift: 10) · Alt while dragging: fine moves · Shift+corner: keep a shape\'s proportions · ⌘D duplicate · Delete removes · ⌘Z undo · ⌘S save</p>';
     p.innerHTML = h; return;
   }
@@ -1220,7 +1255,7 @@ function renderAttrs() {
     if (e.shape !== 'line') h += '<div style="margin-top:.45rem">' + colorRow('Fill', 'fill', e.fill, true, 'setProp') + '</div>';
     h += '<div class="row2" style="margin-top:.45rem">' + numInp('a_sw', e.shape === 'line' ? 'Thickness (pt)' : 'Outline (pt)', e.strokeW, 'setProp', 'strokeW', .5) +
          (/^(rect|round)$/.test(e.shape) ? numInp('a_r', 'Corner radius', e.shape === 'round' && e.radius == null ? 10 : e.radius, 'setProp', 'radius') : '<div></div>') + '</div>';
-    h += '<div style="margin-top:.45rem">' + colorRow(e.shape === 'line' ? 'Colour' : 'Outline colour', 'stroke', e.stroke, false, 'setProp') + '</div>';
+    h += '<div style="margin-top:.45rem">' + colorRow(e.shape === 'line' ? 'Color' : 'Outline color', 'stroke', e.stroke, false, 'setProp') + '</div>';
   }
   if (e.kind === 'gen') {
     h += '<span class="lbl">Generate</span>' + seg('mode', [['seq', '123', 'Number sequence'], ['rand', '🎲', 'Random number'], ['list', '☰', 'Random from a list']], e.mode);
@@ -2163,7 +2198,7 @@ function pickTagImage(i) {
     var h = '<div class="dlg tag-dlg"><h2 class="dlg-title">Picture for ' + esc(t.tag || 'this tag') + '</h2>' +
       '<div class="seg tag-tabs">' + [['icons', 'Icons'], ['upload', 'Upload'], ['link', 'Link']].map(function(x) { return '<button type="button" data-tab="' + x[0] + '" class="' + (tab === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div>';
     if (tab === 'icons') {
-      h += '<div class="icon-color"><span class="mini">Colour</span><input type="color" value="' + esc(color.length === 7 ? color : '#2e2763') + '" data-color></div><div class="icon-grid">' +
+      h += '<div class="icon-color"><span class="mini">Color</span><input type="color" value="' + esc(color.length === 7 ? color : '#2e2763') + '" data-color></div><div class="icon-grid">' +
         Object.keys(ICONS).map(function(n) { return '<button type="button" class="icon-cell' + (cur.name === n ? ' on' : '') + '" data-icon="' + n + '" title="' + n + '"><img src="' + iconUri(n, color) + '" alt="' + n + '"></button>'; }).join('') + '</div>';
     } else if (tab === 'upload') {
       h += '<label class="ip-drop tag-drop" data-drop>' + IMG_ICON + '<b>Drop a picture here</b><span>or click to choose a file</span>' + (isPro() ? '' : '<span class="pro-tag">PRO</span>') +

@@ -227,7 +227,7 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .el.v-middle { justify-content:center; } .el.v-bottom { justify-content:flex-end; }
 .el-img { display:block; width:100%; height:100%; object-position:center; background-repeat:no-repeat; background-position:center; }
 img.el-img { -webkit-user-drag:none; user-select:none; }
-/* Print card colours and fills even when "Background graphics" is off */
+/* Print card colors and fills even when "Background graphics" is off */
 .card, .card * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 /* Flip button (top right of the card) */
 .flip-btn { position:absolute; top:0; right:-3.1rem; width:2.5rem; height:2.5rem; border-radius:50%; border:1.5px solid #d6d9e6; background:#fff; color:#4b3fa8; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; cursor:pointer; box-shadow:0 3px 10px rgba(20,20,60,.12); padding:0; z-index:5; }
@@ -273,11 +273,24 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .color-row { display:flex; gap:.35rem; align-items:center; }
 .color-row input[type=color] { width:2.2rem; height:2.05rem; border:1.5px solid #d6d9e6; border-radius:7px; padding:2px; background:#fff; cursor:pointer; flex-shrink:0; }
 .color-row .inp { flex:1; }
-.clear-swatch { width:2.05rem; height:2.05rem; flex-shrink:0; border:1.5px solid #d6d9e6; border-radius:7px; cursor:pointer; padding:0; position:relative; overflow:hidden;
-  background:repeating-conic-gradient(#e3e5ee 0 25%, #fff 0 50%) 0 0/8px 8px; }
-.clear-swatch::after { content:''; position:absolute; left:-20%; right:-20%; top:50%; height:2px; background:#e5484d; transform:rotate(-45deg); }
-.clear-swatch:hover { border-color:#a99cff; }
-.clear-swatch.on { border-color:#4b3fa8; box-shadow:0 0 0 2px rgba(75,63,168,.2); }
+.swatch { width:2.2rem; height:2.05rem; flex-shrink:0; border:1.5px solid #d6d9e6; border-radius:7px; padding:3px; cursor:pointer; background:#fff; position:relative; }
+.swatch::before { content:''; position:absolute; inset:3px; border-radius:4px; background:var(--c,#fff); box-shadow:inset 0 0 0 1px rgba(0,0,0,.12); }
+.swatch:hover { border-color:#a99cff; }
+.swatch.clear::before, .cp-tile.clear { background:repeating-conic-gradient(#e3e5ee 0 25%, #fff 0 50%) 0 0/8px 8px; }
+.swatch.clear::after, .cp-tile.clear::after { content:''; position:absolute; left:-10%; right:-10%; top:50%; height:2px; background:#e5484d; transform:rotate(-45deg); }
+.color-pop { position:fixed; z-index:760; width:232px; background:#fff; border:1px solid #e1e4ee; border-radius:12px; box-shadow:0 14px 40px rgba(20,20,60,.22); padding:.6rem; }
+.color-pop .mini { margin:.55rem 0 .3rem; }
+.cp-clear { display:flex; align-items:center; gap:.5rem; width:100%; border:1.5px solid #e5e3f0; border-radius:8px; background:#fff; padding:.3rem .45rem; margin-bottom:.5rem; font-size:.78rem; color:#2e2763; cursor:pointer; }
+.cp-clear:hover { border-color:#a99cff; background:#f7f5ff; }
+.cp-clear.on { border-color:#4b3fa8; background:#f3f1ff; }
+.cp-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:5px; }
+.cp-tile { position:relative; overflow:hidden; display:block; width:100%; aspect-ratio:1; min-width:22px; border-radius:6px; border:none; padding:0; cursor:pointer; background:var(--c); box-shadow:inset 0 0 0 1px rgba(0,0,0,.14); }
+.cp-clear .cp-tile { width:22px; height:22px; aspect-ratio:auto; flex-shrink:0; }
+.cp-tile:hover { transform:scale(1.08); }
+.cp-tile.on { box-shadow:0 0 0 2px #fff, 0 0 0 4px #4b3fa8; }
+.cp-custom { margin-top:.55rem; }
+.cp-more { display:flex; align-items:center; gap:.45rem; font-size:.78rem; color:#4b3fa8; cursor:pointer; }
+.cp-more input { width:1.9rem; height:1.6rem; border:1.5px solid #d6d9e6; border-radius:6px; padding:1px; background:#fff; cursor:pointer; }
 .attr-btns { display:flex; gap:.4rem; margin-top:1.1rem; flex-wrap:wrap; }
 .attr-btn { flex:1; height:2rem; border:1.5px solid #d6d9e6; border-radius:7px; background:#fff; color:#3b3f5c; font-size:.75rem; cursor:pointer; white-space:nowrap; }
 .attr-btn:hover { border-color:#a99cff; }

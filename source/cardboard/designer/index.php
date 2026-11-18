@@ -32,6 +32,12 @@ $_sheet_id = $_bm[2] ?? '';
 @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'),url('fonts/DINMedium.ttf'); }
 *, *::before, *::after { box-sizing:border-box; }
 html, body { height:100%; }
+/* footer */
+.zs-footer { text-align:center; font-size:.72rem; line-height:1.6; color:#9aa0b8; padding:1.4rem 1rem 2.4rem; }
+.zs-footer a { color:inherit; text-decoration:none; } .zs-footer a:hover { color:#555; text-decoration:underline; }
+.zs-footer .sep { margin:0 .45rem; opacity:.6; }
+@media print { .zs-footer { display:none; } }
+.zs-footer.cb-footer { flex-shrink:0; padding:.35rem 1rem .45rem; font-size:.68rem; background:#fff; border-top:1px solid #e1e4ee; }
 body { margin:0; background:#eef0f6; font-family:'DINRegular',Arial,sans-serif; color:#1b1b2b; display:flex; flex-direction:column; }
 button, input, select, textarea { font-family:inherit; }
 
@@ -690,6 +696,9 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
   <div class="pages" id="exportPreview"></div>
   <div id="exportStage" aria-hidden="true"></div>
 </div>
+
+<!-- Footer: copyright, and a little room at the bottom of the app -->
+<footer class="zs-footer cb-footer">© <?= date('Y') ?> ZapSheets. All rights reserved.<span class="sep">·</span><a href="cardboard/features" target="_blank" rel="noopener">CardBoard</a><span class="sep">·</span><a href="cardboard/help" target="_blank" rel="noopener">Help</a></footer>
 
 <!-- Profile -->
 <div class="overlay" id="profileOverlay" onclick="if(event.target===this)closeDialog('profileOverlay')">

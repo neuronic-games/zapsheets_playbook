@@ -494,7 +494,11 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .add-game-btn:hover { background:#2d2d4e; }
 
 /* ── Content ──────────────────────────────────────────── */
-.content { padding:.4rem 1.25rem 3rem; max-width:860px; margin:0 auto; }
+.content { padding:.4rem 1.25rem 1rem; max-width:860px; margin:0 auto; }
+.zs-footer { text-align:center; font-size:.72rem; line-height:1.6; color:#9aa0b8; padding:1.4rem 1rem 2.4rem; }
+.zs-footer a { color:inherit; text-decoration:none; } .zs-footer a:hover { color:#555; text-decoration:underline; }
+.zs-footer .sep { margin:0 .45rem; opacity:.6; }
+@media print { .zs-footer { display:none; } }
 
 /* ── Game card ────────────────────────────────────────── */
 .game-card { background:#fff; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,.08); margin-bottom:.75rem; overflow:hidden; }
@@ -1132,6 +1136,9 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
   </div>
   <div class="publishers-view-wrap" id="publishersViewWrap"></div>
 </div>
+
+<!-- Footer: copyright, and room at the bottom of the page -->
+<footer class="zs-footer">© <?= date('Y') ?> ZapSheets. All rights reserved.<span class="sep">·</span><a href="devboard/features" target="_blank" rel="noopener">DevBoard</a><span class="sep">·</span><a href="devboard/help" target="_blank" rel="noopener">Help</a></footer>
 
 <!-- Edit Contract dialog -->
 <div class="overlay" id="contractEditOverlay" onclick="if(event.target===this){if(isContractEditDirty())shakeDialog(this.querySelector('.contract-dialog'));else closeContractEditDialog();}">

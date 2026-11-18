@@ -318,7 +318,11 @@ if ($_sheet_id && is_dir($_sheets_root)) {
     .new-game-btn:hover { background:#2d2d4e; }
 
     /* ── Content ─────────────────────────────────────── */
-    .content { padding:.4rem 1.25rem 3rem; max-width:900px; margin:0 auto; }
+    .content { padding:.4rem 1.25rem 1rem; max-width:900px; margin:0 auto; }
+    .zs-footer { text-align:center; font-size:.72rem; line-height:1.6; color:#9aa0b8; padding:1.4rem 1rem 2.4rem; }
+    .zs-footer a { color:inherit; text-decoration:none; } .zs-footer a:hover { color:#555; text-decoration:underline; }
+    .zs-footer .sep { margin:0 .45rem; opacity:.6; }
+    @media print { .zs-footer { display:none; } }
 
     /* ── Card ────────────────────────────────────────── */
     .card {
@@ -2384,6 +2388,9 @@ if ($_sheet_id && is_dir($_sheets_root)) {
   <button class="new-game-btn" onclick="openNewGameDialog()">+ Game</button>
 </div>
 <div class="content" id="content"><div class="empty">Loading…</div></div>
+
+<!-- Footer: copyright, and room at the bottom of the page -->
+<footer class="zs-footer">© <?= date('Y') ?> ZapSheets. All rights reserved.<span class="sep">·</span><a href="pitchboard/features" target="_blank" rel="noopener">PitchBoard</a><span class="sep">·</span><a href="pitchboard/help" target="_blank" rel="noopener">Help</a></footer>
 
 <script>
 // ── Routing ───────────────────────────────────────────

@@ -99,6 +99,7 @@ $RESERVED = [
     'pulseboard',   // setup landing page — handled below, reserved so /{id} never grabs it
     'tmboard',      // setup landing page — handled below, reserved so /{id} never grabs it
     'gameboard',    // setup landing page + public share routes — handled below
+    'cardboard',    // setup landing page — handled below
 ];
 
 // ── /pushsite → push/pushsite.php ────────────────────────────────────────────
@@ -129,6 +130,14 @@ if (preg_match('#^/devboard/features/?$#', $uri)) {
 // ── /pitchboard/features — sales / features page ──────────────────────────────
 if (preg_match('#^/pitchboard/features/?$#', $uri)) {
     serveFile(__DIR__ . '/source/pitchboard/features/index.php', $MIME);
+}
+
+// ── /cardboard — setup landing page; /{id}/cardboard — card designer ─────────
+if (preg_match('#^/cardboard/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/cardboard/index.php', $MIME);
+}
+if (preg_match('#^/(?:sheets/)?([A-Za-z0-9_\-]+)/cardboard/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/cardboard/designer/index.php', $MIME);
 }
 
 // ── /fitboard — setup landing page (no sheet ID yet) ─────────────────────────

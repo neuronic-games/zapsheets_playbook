@@ -52,6 +52,14 @@ RewriteRule ^devboard/features/?$ source/devboard/features/index.php [L,QSA]
 # /devboard — setup landing page (no sheet ID yet)
 RewriteRule ^devboard/?$ source/devboard/index.php [L,QSA]
 
+# /cardboard — setup landing page (no sheet ID yet)
+RewriteRule ^cardboard/?$ source/cardboard/index.php [L,QSA]
+
+# Short-URL: /{id}/cardboard → card designer (also /sheets/{id}/cardboard)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(?:sheets/)?([A-Za-z0-9_\-]+)/cardboard/?$ source/cardboard/designer/index.php [L,QSA]
+
 # /fitboard — setup landing page (no sheet ID yet)
 RewriteRule ^fitboard/?$ source/fitboard/setup/index.php [L,QSA]
 
@@ -295,5 +303,5 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 # Guard 2: skip known top-level names regardless of subdirectory prefix.
 #          Matches  /anything/name/  or  /anything/name  at end of URI.
-RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard|devboard|fitboard|noteboard|pulseboard|tmboard|gameboard|slides-sw|game|shares)(/|$)
+RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard|devboard|cardboard|fitboard|noteboard|pulseboard|tmboard|gameboard|slides-sw|game|shares)(/|$)
 RewriteRule ^([A-Za-z0-9_\-]+)(/.*)?$ sheets/$1$2 [R=302,L]

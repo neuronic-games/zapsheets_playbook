@@ -6,7 +6,7 @@
 $_bpFile = __DIR__ . '/../dotEnv.php';
 if (file_exists($_bpFile)) require_once $_bpFile;
 
-const STRIPE_APPS = ['devboard', 'gameboard', 'pitchboard'];
+const STRIPE_APPS = ['devboard', 'gameboard', 'pitchboard', 'cardboard'];
 
 /** Statuses that count as a paid, working subscription. */
 const STRIPE_LIVE_STATUSES = ['active', 'trialing', 'past_due'];

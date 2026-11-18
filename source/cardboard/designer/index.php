@@ -16,6 +16,7 @@ $_sheet_id = $_bm[2] ?? '';
 <html lang="en">
 <head>
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
+<script src="js/activationKey.js" defer></script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/png" sizes="32x32" href="images/cardboard_icon_32.png" />
@@ -718,6 +719,7 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
       </div>
     </div>
     <div class="dlg-sub" id="planStatus" style="margin:.8rem 0 .2rem"></div>
+    <div id="planActKey"></div>
     <div class="dlg-actions" style="justify-content:center">
       <button class="attr-btn" onclick="closeDialog('plansOverlay')">Close</button>
       <button class="plan-manage" id="planManage" style="display:none" onclick="openBillingPortal()">Manage Billing</button>

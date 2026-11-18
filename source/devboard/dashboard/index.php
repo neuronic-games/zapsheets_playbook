@@ -151,6 +151,7 @@ $_client_count = count(array_unique(array_filter(array_map(
 <html lang="en">
 <head>
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
+<script src="js/activationKey.js" defer></script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/png" sizes="32x32" href="images/db_icon_32.png" />
@@ -1863,6 +1864,7 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
       </div>
     </div>
     <div id="upgradeSubStatus" style="margin:.9rem 0 .7rem;font-size:.8rem;color:#888"></div>
+    <div id="upgradeActKey" style="margin:-.3rem 0 .8rem"></div>
     <div class="sync-dialog-actions" style="justify-content:center;gap:.6rem">
       <button class="notes-close" onclick="closeUpgradeDialog()">Close</button>
       <button id="upgradeSubBtn" style="display:none;background:#f5a623;color:#fff;font-family:'DINBlack',sans-serif;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;padding:.45rem 1.1rem;border-radius:6px;border:none;cursor:pointer">Manage Billing</button>
@@ -7055,6 +7057,16 @@ function openUpgradeDialog(reason) {
 }
 
 function _renderUpgradeStatus() {
+  _renderUpgradeStatusMain();
+  var s = _dbSubStatus || {};
+  if (s.activated) {   // unlocked with an activation key: nothing to buy or manage
+    ['upgradeSubBtn', 'planCoreBtn', 'planProBtn'].forEach(function(id) { var b = document.getElementById(id); if (b) b.style.display = 'none'; });
+    document.getElementById('upgradeSubStatus').textContent = '';
+  }
+  if (window.zsActivationKey) zsActivationKey({ el: document.getElementById('upgradeActKey'), base: APP_BASE, sheetId: SHEET_ID, activated: !!s.activated,
+    onActivated: function() { _dbSubStatus = null; _dbLoadSubStatus(_renderUpgradeStatus); } });
+}
+function _renderUpgradeStatusMain() {
   var statusEl = document.getElementById('upgradeSubStatus');
   var manage   = document.getElementById('upgradeSubBtn');
   var coreCard = document.getElementById('planCore'), proCard = document.getElementById('planPro');

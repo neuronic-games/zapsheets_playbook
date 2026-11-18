@@ -81,6 +81,7 @@ if ($_sheet_id && is_dir($_sheets_root)) {
 <html lang="en">
 <head>
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
+<script src="js/activationKey.js" defer></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PitchBoard</title>
@@ -1866,6 +1867,7 @@ if ($_sheet_id && is_dir($_sheets_root)) {
       <strong>Support development and get early access to everything new.</strong>
     </p>
     <div class="pb-plan-status" id="pbUpgradeSubStatus"></div>
+    <div id="pbUpgradeActKey" style="margin:-.2rem 0 .8rem"></div>
     <div class="pb-plan-btns">
       <button class="pb-plan-later" onclick="closePbUpgradeDialog()">Maybe Later</button>
       <button class="pb-plan-go" id="pbUpgradeSubBtn" onclick="startPbUpgradeCheckout()">Subscribe</button>
@@ -8921,6 +8923,14 @@ function openPbUpgradeDialog() {
 }
 function closePbUpgradeDialog() { document.getElementById('pbUpgradeOverlay').classList.remove('open'); }
 function _renderPbUpgradeStatus() {
+  _renderPbUpgradeStatusMain();
+  var s = _pbSubStatus || {};
+  if (s.activated) { document.getElementById('pbUpgradeSubBtn').style.display = 'none'; document.getElementById('pbUpgradeSubStatus').textContent = ''; }
+  else document.getElementById('pbUpgradeSubBtn').style.display = '';
+  if (window.zsActivationKey) zsActivationKey({ el: document.getElementById('pbUpgradeActKey'), base: APP_BASE, sheetId: sheet_Id, activated: !!s.activated,
+    onActivated: function() { _pbSubStatus = null; _pbLoadSubStatus(_renderPbUpgradeStatus); } });
+}
+function _renderPbUpgradeStatusMain() {
   var statusEl = document.getElementById('pbUpgradeSubStatus'), btn = document.getElementById('pbUpgradeSubBtn');
   var cur = document.getElementById('pbUpgradeCurrent'), s = _pbSubStatus || {};
   if (s.ok === false)     cur.innerHTML = 'Current plan: <b>—</b> <span>(couldn’t check right now)</span>';

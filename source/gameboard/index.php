@@ -684,6 +684,7 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
 
 
 <!-- ── Upgrade to Pro dialog ── -->
+<script src="<?= h($_appRoot) ?>js/activationKey.js" defer></script>
 <div class="gb-overlay" id="gbUpgradeOverlay" onclick="if(event.target===this)closeGbUpgradeDialog()">
   <div class="gb-dialog" onclick="event.stopPropagation()" style="max-width:420px;text-align:center">
     <button class="gb-dialog-close" onclick="closeGbUpgradeDialog()">×</button>
@@ -696,6 +697,7 @@ body.gb-admin-mode .gb-add-game-card { display:flex; }
       <strong>Support development and get early access to everything new.</strong>
     </p>
     <div id="gbUpgradeSubStatus" style="margin-bottom:.8rem;font-size:.8rem;color:#888"></div>
+    <div id="gbUpgradeActKey" style="margin:-.3rem 0 .9rem"></div>
     <div style="display:flex;gap:.6rem;justify-content:center">
       <button class="btn-cancel" onclick="closeGbUpgradeDialog()">Maybe Later</button>
       <button id="gbUpgradeSubBtn" class="btn-primary" onclick="startGbUpgradeCheckout()" style="background:#f5a623;border-color:#f5a623">Subscribe</button>
@@ -2470,6 +2472,14 @@ function openGbUpgradeDialog() {
 }
 
 function _renderGbUpgradeStatus() {
+  _renderGbUpgradeStatusMain();
+  var s = _gbSubStatus || {};
+  if (s.activated) { document.getElementById('gbUpgradeSubBtn').style.display = 'none'; document.getElementById('gbUpgradeSubStatus').textContent = ''; }
+  else document.getElementById('gbUpgradeSubBtn').style.display = '';
+  if (window.zsActivationKey) zsActivationKey({ el: document.getElementById('gbUpgradeActKey'), base: APP_ROOT, sheetId: SHEET_ID, activated: !!s.activated,
+    onActivated: function() { _gbSubStatus = null; _gbLoadSubStatus(_renderGbUpgradeStatus); } });
+}
+function _renderGbUpgradeStatusMain() {
   var statusEl = document.getElementById('gbUpgradeSubStatus');
   var btn      = document.getElementById('gbUpgradeSubBtn');
   var s = _gbSubStatus || {};

@@ -2234,6 +2234,9 @@ function renderPlans() {
   $('planManage').style.display = pro ? '' : 'none';
   $('planManage').textContent = s.status === 'past_due' ? 'Update Payment' : 'Manage Billing';
   $('planStatus').innerHTML = s.status === 'past_due' ? '<span style="color:#d97706;font-weight:700">⚠ Payment past due</span>' : (s.ok === false ? 'Couldn’t check your plan right now.' : '');
+  if (s.activated) { $('planManage').style.display = 'none'; $('planStatus').textContent = ''; }   // unlocked with a key: no billing
+  if (window.zsActivationKey) zsActivationKey({ el: $('planActKey'), base: APP_BASE, sheetId: SHEET_ID, activated: !!s.activated,
+    onActivated: function() { SUB = null; loadSub(function() { renderPlans(); refreshCards(); if (_activeTab === 'tags') renderTags(); }); } });
 }
 function openBillingPortal() {
   var url = SUB && SUB.portal_url;

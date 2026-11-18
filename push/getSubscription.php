@@ -35,5 +35,6 @@ echo json_encode([
     'is_core'    => $info['is_core'],
     'period_end' => $info['period_end'],
     'app'        => $info['app'],
+    'activated'  => $info['activated'],   // Pro from an activation key (no billing to manage)
     'portal_url' => $portalUrl,
 ]);

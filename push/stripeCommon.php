@@ -61,6 +61,8 @@ function stripeSheetPlan(string $sheetId, string $app = ''): array {
     $plan   = $live ? (($data['plan'] ?? 'pro') === 'core' ? 'core' : 'pro') : '';
     $comped = array_filter(array_map('trim', explode(',', $_ENV['STRIPE_PRO_SHEET_IDS'] ?? '')));
     if (in_array($sheetId, $comped, true)) { $plan = 'pro'; $live = true; if ($status === 'none') $status = 'active'; }
+    $activated = activationActive($sheetId);
+    if ($activated) { $plan = 'pro'; $live = true; if (!in_array($status, STRIPE_LIVE_STATUSES, true)) $status = 'active'; }
     return [
         'status'     => $status,
         'plan'       => $plan,
@@ -68,7 +70,30 @@ function stripeSheetPlan(string $sheetId, string $app = ''): array {
         'is_core'    => $live,
         'period_end' => $data['period_end'] ?? '',
         'app'        => $data['app'] ?? '',
+        'activated'  => $activated,
     ];
+}
+
+/**
+ * Activation keys: a key entered in any app's plans dialog unlocks Pro in every app
+ * for that sheet. Stored as sheets/{id}/activation.json. Valid keys are compared by
+ * SHA-256 of the lower-cased key: ACTIVATION_KEY_HASHES in .env (comma separated)
+ * replaces the built-in list.
+ */
+const ACTIVATION_KEY_HASHES = ['3e71e46d644e6274b1967c05bcbf7f4358722909316ba04501c50035c8f67d39'];
+
+function activationFile(string $sheetId): string { return dirname(__DIR__) . '/sheets/' . $sheetId . '/activation.json'; }
+
+function activationActive(string $sheetId): bool {
+    return stripeValidSheetId($sheetId) && is_file(activationFile($sheetId));
+}
+
+function activationKeyValid(string $key): bool {
+    $hashes = array_filter(array_map('trim', explode(',', strtolower($_ENV['ACTIVATION_KEY_HASHES'] ?? ''))));
+    if (!$hashes) $hashes = ACTIVATION_KEY_HASHES;
+    $h = hash('sha256', strtolower(trim($key)));
+    foreach ($hashes as $ok) if (hash_equals($ok, $h)) return true;
+    return false;
 }
 
 /** Stop a DevBoard Pro-only endpoint (contracts, estimates, invoices) for sheets without Pro. */

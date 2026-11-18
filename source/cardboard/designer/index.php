@@ -278,6 +278,51 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 @media (max-width:900px) { #view-print { flex-direction:column; } #view-print .print-bar { width:auto; border-right:none; border-bottom:1px solid #e1e4ee; } }
 #view-export { flex-direction:row; }
 #view-data { flex-direction:column; }
+/* Tags on cards: an inline picture the height of the text */
+.el .tx { display:block; }
+.tag-img { display:inline-block; height:1.15em; width:auto; vertical-align:-.22em; margin:0 .04em; }
+/* Tags view */
+#view-tags { overflow:auto; background:#f4f3fa; }
+.tags-wrap { width:100%; max-width:1000px; margin:0 auto; padding:1.4rem 1.4rem 3rem; }
+.tags-head { display:flex; align-items:flex-start; gap:1rem; margin-bottom:1rem; }
+.tags-head .e-actions { align-items:center; flex-shrink:0; }
+.tags-title { margin:0 0 .3rem; font-family:'DINBlack',sans-serif; font-weight:400; font-size:1.15rem; color:#2e2763; display:flex; align-items:center; gap:.5rem; }
+.tags-sub { margin:0; font-size:.82rem; color:#6b7090; max-width:560px; line-height:1.5; }
+.tags-sub code, .tag-empty code { background:#ece9ff; color:#4b3fa8; border-radius:4px; padding:0 .3rem; font-size:.78rem; }
+.tags-pro { display:flex; align-items:center; gap:.8rem; background:#fdf6e3; border:1px solid #f5d98c; border-radius:10px; padding:.6rem .8rem; font-size:.8rem; color:#5c4a12; margin-bottom:.9rem; }
+.tags-pro .plan-btn { margin-left:auto; flex-shrink:0; }
+.tag-cols, .tag-row { display:grid; grid-template-columns:170px 132px minmax(0,1fr) 150px 2rem; gap:.6rem; align-items:center; }
+.tag-cols { padding:0 .8rem .35rem; font-family:'DINBlack',sans-serif; font-size:.6rem; letter-spacing:.09em; text-transform:uppercase; color:#8a8fa8; }
+.tag-row { background:#fff; border:1px solid #e5e3f0; border-radius:10px; padding:.55rem .8rem; margin-bottom:.45rem; }
+.tag-row.draft { border-color:#a99cff; box-shadow:0 0 0 3px rgba(123,108,246,.12); }
+.tag-name { font-family:ui-monospace,Menlo,monospace; font-size:.8rem; color:#4b3fa8; }
+.tag-kind button { height:1.9rem; }
+.tag-val .inp { width:100%; }
+.tag-img-box { display:flex; align-items:center; gap:.45rem; }
+.tag-img-box > img { width:30px; height:30px; object-fit:contain; border-radius:5px; background:#f4f3fa; flex-shrink:0; }
+.tag-img-box .inp { flex:1; min-width:0; }
+.tag-pick { flex-shrink:0; display:inline-flex; align-items:center; gap:.3rem; height:1.9rem; padding:0 .6rem; border:1.5px solid #d6d9e6; border-radius:7px; background:#fff; color:#2e2763; font-size:.74rem; cursor:pointer; }
+.tag-pick:hover:not(:disabled) { border-color:#a99cff; background:#f7f5ff; }
+.tag-pick svg { width:14px; height:14px; }
+.tag-prev { font-family:'DINRegular',sans-serif; font-size:.9rem; color:#2b2140; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tag-prev img { height:1.2em; vertical-align:-.25em; }
+.tag-prev i { color:#b0b4c8; }
+.tag-del { width:2rem; height:2rem; border:none; background:none; color:#b0b4c8; border-radius:6px; cursor:pointer; }
+.tag-del:hover:not(:disabled) { background:#fff1f2; color:#c0392b; }
+.tag-row :disabled { opacity:.6; cursor:default; }
+.tag-empty { background:#fff; border:1.5px dashed #d6d1f5; border-radius:12px; padding:1.6rem; text-align:center; font-size:.86rem; color:#6b7090; line-height:1.6; }
+.tag-dlg { width:min(470px,94vw); }
+.tag-tabs { margin:.6rem 0 .2rem; }
+.icon-color { display:flex; align-items:center; gap:.5rem; margin:.7rem 0 .5rem; }
+.icon-color .mini { margin:0; }
+.icon-color input { width:2.2rem; height:1.8rem; border:1.5px solid #d6d9e6; border-radius:6px; padding:2px; background:#fff; cursor:pointer; }
+.icon-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(44px,1fr)); gap:.35rem; max-height:260px; overflow:auto; }
+.icon-cell { height:44px; border:1.5px solid #e5e3f0; border-radius:8px; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.icon-cell img { width:24px; height:24px; }
+.icon-cell:hover { border-color:#a99cff; background:#f7f5ff; }
+.icon-cell.on { border-color:#4b3fa8; box-shadow:0 0 0 2px rgba(75,63,168,.2); }
+.tag-drop { margin:.8rem 0 .3rem; cursor:pointer; }
+@media (max-width:900px) { .tag-cols { display:none; } .tag-row { grid-template-columns:1fr 1fr; } .tag-val, .tag-prev { grid-column:1 / -1; } }
 .add-col { position:relative; display:flex; }
 .add-col-form { display:none; position:relative; }
 .add-col.open .add-col-btn { display:none; }
@@ -446,7 +491,7 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
 /* ── Printing: only the pages, at true size ────────────── */
 @media print {
   body { background:#fff; display:block; }
-  .top-bar, .print-bar, #view-design, #view-export, #view-data, .toast { display:none !important; }
+  .top-bar, .print-bar, #view-design, #view-export, #view-data, #view-tags, .toast { display:none !important; }
   #view-print { display:block !important; }
   .pages { display:block; padding:0; background:#fff; overflow:visible; }
   .page-holder { box-shadow:none; width:auto !important; height:auto !important; break-after:page; page-break-after:always; }
@@ -470,6 +515,7 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
     </div>
     <div class="top-tab-btns">
       <button class="top-tab" id="tabData" onclick="switchTab('data')">Data</button>
+      <button class="top-tab" id="tabTags" onclick="switchTab('tags')">Tags</button>
       <button class="top-tab active" id="tabDesign" onclick="switchTab('design')">Design</button>
       <button class="top-tab" id="tabPrint" onclick="switchTab('print')">Print</button>
       <button class="top-tab" id="tabExport" onclick="switchTab('export')">Export</button>
@@ -509,6 +555,24 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
   </div>
   <p class="grid-hint">Click a cell and type, or double-click to edit · Enter saves (Shift+Enter for a new line) · Tab moves right · Esc cancels. Changes go straight to the Google Sheet.</p>
   <div class="grid-wrap" id="gridWrap"></div>
+</div>
+
+<!-- Tags view -->
+<div class="view" id="view-tags">
+  <div class="tags-wrap">
+    <div class="tags-head">
+      <div>
+        <h2 class="tags-title">Tags <span class="pro-tag">PRO</span></h2>
+        <p class="tags-sub">Write a tag like <code>{energy}</code> in any text or data, and every card shows its word or picture instead. Tags are kept in your spreadsheet's <b>tags</b> tab.</p>
+      </div>
+      <div class="e-actions"><span class="print-info" id="tagsInfo"></span>
+        <button class="print-go ghost" onclick="loadTags()">Reload</button>
+        <button class="print-go" onclick="addTag()">+ Add tag</button></div>
+    </div>
+    <div class="tags-pro" id="tagsPro" style="display:none">Tags are part of <b>CardBoard Pro</b>. You can see the tags in this sheet; with Pro you can change them and they show on your cards. <button class="plan-btn" onclick="openPlansDialog('tags')">See plans</button></div>
+    <div class="tag-cols"><span>Tag</span><span>Type</span><span>Becomes</span><span>Preview</span><span></span></div>
+    <div id="tagList"><div class="loading"><span class="spin"></span>Loading tags…</div></div>
+  </div>
 </div>
 
 <!-- Design view -->
@@ -648,6 +712,7 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
           <li>Everything in Free</li>
           <li>Hosted links for every export — Tabletop Simulator, Screentop and card images — that update when your cards change</li>
           <li>Upload pictures to CardBoard</li>
+          <li>Tags: <code>{energy}</code> becomes an icon or word on every card</li>
         </ul>
         <button class="plan-btn" id="planProBtn" onclick="startProCheckout()">Choose Pro</button>
       </div>

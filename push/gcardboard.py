@@ -5,6 +5,9 @@
 #   tabs    — every visible tab except the "layouts" tab: [{title, rows, cols}]
 #   layouts — {sheet title: layout} from the "layouts" tab
 #   save    — sheet: tab title, layout: {...}  → one row per sheet in the "layouts" tab
+#   tags    — {tags: [{tag, value}]} from the "tags" tab (tag names are stored with braces: {energy})
+#   settag  — tag, value, old (previous name when renaming) → one row in the "tags" tab (created if missing)
+#   deltag  — tag → removes its row
 #   addfield — sheet: tab title, name: new column name → added after the last column heading
 #   grid    — sheet → {header, rows: [{row, values}]} as typed in the sheet (formulas, not results)
 #   setcell — sheet, row, field, value, old → writes one cell (as if typed); refuses if the cell
@@ -19,6 +22,8 @@ warnings.filterwarnings('ignore')
 socket.setdefaulttimeout(30)
 
 credFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
+TAGS_TAB = 'tags'
+TAGS_HEADERS = ['Tag', 'Value']
 TAB     = 'layouts'   # CardBoard's own tab: one row per sheet's layout, plus settings
 HEADERS = ['Sheet', 'Layout', 'Updated']
 
@@ -51,7 +56,64 @@ def main():
     if action == 'tabs':
         out({'ok': True, 'title': wb.title,
              'tabs': [{'title': w.title, 'rows': w.row_count, 'cols': w.col_count}
-                      for w in sheets if w.title.lower() != TAB and not hidden(w)]})
+                      for w in sheets if w.title.lower() not in (TAB, TAGS_TAB) and not hidden(w)]})
+
+    if action in ('tags', 'settag', 'deltag'):
+        tws = next((w for w in sheets if w.title.lower() == TAGS_TAB), None)
+        def brace(n):
+            n = str(n or '').strip().strip('{}').strip()
+            return '{' + n + '}' if n else ''
+        def rows_of(w):
+            vals = wb.values_get(q(w.title), params={'valueRenderOption': 'FORMULA'}).get('values', [])
+            return vals
+        if action == 'tags':
+            if tws is None: out({'ok': True, 'tags': []})
+            vals = rows_of(tws); tags = []
+            for i, r in enumerate(vals[1:]):
+                t = brace(r[0] if r else '')
+                if t: tags.append({'tag': t, 'value': str(r[1]) if len(r) > 1 else '', 'row': i + 2})
+            out({'ok': True, 'tags': tags})
+        tag = brace(data.get('tag'))
+        if not tag: out({'error': 'Give the tag a name'})
+        if tws is None:
+            if action == 'deltag': out({'ok': True})
+            tws = wb.add_worksheet(title=TAGS_TAB, rows=100, cols=len(TAGS_HEADERS))
+            wb.values_update(q(TAGS_TAB) + '!A1', params={'valueInputOption': 'RAW'}, body={'values': [TAGS_HEADERS]})
+            try:
+                wb.batch_update({'requests': [
+                    {'updateSheetProperties': {'properties': {'sheetId': tws.id, 'gridProperties': {'frozenRowCount': 1}}, 'fields': 'gridProperties.frozenRowCount'}},
+                    {'repeatCell': {'range': {'sheetId': tws.id, 'startRowIndex': 0, 'endRowIndex': 1, 'startColumnIndex': 0, 'endColumnIndex': 2},
+                                    'cell': {'userEnteredFormat': {'backgroundColor': {'red': .23, 'green': .2, 'blue': .45},
+                                             'textFormat': {'bold': True, 'foregroundColor': {'red': 1, 'green': 1, 'blue': 1}}}},
+                                    'fields': 'userEnteredFormat(backgroundColor,textFormat)'}},
+                    {'updateDimensionProperties': {'range': {'sheetId': tws.id, 'dimension': 'COLUMNS', 'startIndex': 0, 'endIndex': 1},
+                                                   'properties': {'pixelSize': 160}, 'fields': 'pixelSize'}},
+                    {'updateDimensionProperties': {'range': {'sheetId': tws.id, 'dimension': 'COLUMNS', 'startIndex': 1, 'endIndex': 2},
+                                                   'properties': {'pixelSize': 460}, 'fields': 'pixelSize'}},
+                ]})
+            except Exception:
+                pass
+        vals = rows_of(tws)
+        def find(t):
+            return next((i + 1 for i, r in enumerate(vals) if i > 0 and r and brace(r[0]).lower() == t.lower()), 0)
+        if action == 'deltag':
+            row = find(tag)
+            if row:
+                wb.batch_update({'requests': [{'deleteDimension': {'range': {'sheetId': tws.id, 'dimension': 'ROWS', 'startIndex': row - 1, 'endIndex': row}}}]})
+            out({'ok': True})
+        # settag: a new name must not clash with another tag; renaming keeps the row
+        old = brace(data.get('old'))
+        row = find(old) if old else 0
+        other = find(tag)
+        if other and other != row:
+            out({'error': f'There is already a tag called {tag}'})
+        row = row or other
+        value = str(data.get('value', ''))
+        if row:
+            wb.values_update(q(tws.title) + '!A' + str(row) + ':B' + str(row), params={'valueInputOption': 'RAW'}, body={'values': [[tag, value]]})
+        else:
+            res = wb.values_append(q(tws.title) + '!A1', params={'valueInputOption': 'RAW', 'insertDataOption': 'INSERT_ROWS'}, body={'values': [[tag, value]]})
+        out({'ok': True, 'tag': tag, 'value': value})
 
     ws = next((w for w in sheets if w.title.lower() == TAB), None)
 

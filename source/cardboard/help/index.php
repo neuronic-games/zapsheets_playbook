@@ -63,7 +63,7 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
 
 <div class="toc-wrap"><nav class="toc">
   <a href="#start">Getting started</a><a href="#data">Data</a><a href="#design">Design</a><a href="#elements">Elements</a>
-  <a href="#backs">Card backs</a><a href="#print">Print</a><a href="#export">Export</a><a href="#pictures">Pictures</a><a href="#menu">Menu</a><a href="#plans">Plans</a>
+  <a href="#tags">Tags</a><a href="#backs">Card backs</a><a href="#print">Print</a><a href="#export">Export</a><a href="#pictures">Pictures</a><a href="#menu">Menu</a><a href="#plans">Plans</a>
 </nav></div>
 
 <div class="page">
@@ -106,6 +106,11 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
     </ul>
   </section>
 
+  <section class="section" id="tags">
+    <h2>Tags <span class="pro">PRO</span></h2>
+    <p>Write a tag like <code>{energy}</code> in any text or data, and every card shows a word or a picture in its place — <em>“Gain 1 {energy}”</em> becomes “Gain 1 ⚡”. Set tags up in the <b>Tags</b> view: give each one a name (with or without the braces) and either text or a picture. Pictures can be an icon from the library, a link, or an upload. Tags are kept in your spreadsheet's <b>tags</b> tab, with the names in braces.</p>
+  </section>
+
   <section class="section" id="backs">
     <h2>Card backs</h2>
     <p>The round button at the top right of the card flips it over so you can design the back. If the back has nothing that changes from card to card, every card shares one back. Add a Data field, a <code>{Column}</code> in text, or a Generated value, and each card gets its own back (<b>Unique backs</b>).</p>
@@ -142,7 +147,7 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
     <h2>Plans</h2>
     <div class="cards">
       <div class="card"><b>Free</b><p>The designer with fronts and backs, the Data tab, printing, downloads for Tabletop Simulator and Screentop, and pictures from Dropbox, Drive or the web.</p></div>
-      <div class="card"><b>Pro — $4.99/month</b><p>Everything in Free, plus anything that keeps files on our server: hosted links for every export (Tabletop Simulator, Screentop and card images) that update when your cards change, and picture uploads.</p></div>
+      <div class="card"><b>Pro — $4.99/month</b><p>Everything in Free, plus tags (<code>{energy}</code> → an icon or word) and anything that keeps files on our server: hosted links for every export (Tabletop Simulator, Screentop and card images) that update when your cards change, and picture uploads.</p></div>
     </div>
   </section>
 </div>

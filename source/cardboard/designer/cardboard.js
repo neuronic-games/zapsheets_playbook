@@ -224,14 +224,14 @@ function elInner(e, row, ctx) {
   switch (e.kind) {
     case 'text': {
       var t = fill(e.text, row);
-      return t.trim() ? esc(t) : (row ? '' : '<span class="el-empty">' + esc(e.text || 'Text') + '</span>');
+      return t.trim() ? rich(t, ctx) : (row ? '' : '<span class="el-empty">' + esc(e.text || 'Text') + '</span>');
     }
     case 'data':
       if (e.as === 'image') return imgDiv(row ? imageUrl(row[e.field]) : '', e, ctx.designing ? e.field : '', ctx);
-      return row ? esc(textVal(row[e.field])) : '<span class="el-empty">' + esc(e.field) + '</span>';
+      return row ? rich(textVal(row[e.field]), ctx) : '<span class="el-empty">' + esc(e.field) + '</span>';
     case 'image': return imageUrl(e.src) || ctx && ctx.designing ? imgDiv(imageUrl(e.src), e, 'Drop an image here, or click the picture button', ctx) : '';
     case 'shape': return shapeSVG(e);
-    case 'gen':   return esc(genValue(e, ctx));
+    case 'gen':   return rich(genValue(e, ctx), ctx);
   }
   return '';
 }
@@ -262,6 +262,7 @@ function renderCardHTML(lay, row, designing, ctx) {
 function init() {
   renderPalette();
   $('cardHolder').innerHTML = '<div class="loading" style="width:240px;height:200px"><span class="spin"></span>Loading sheet…</div>';
+  loadTags();
   Promise.all([api('tabs'), api('layouts').catch(function() { return { layouts: {} }; })])
     .then(function(res) {
       TABS = res[0].tabs || []; LAYOUTS = res[1].layouts || {};
@@ -1179,7 +1180,7 @@ function renderAttrs() {
 function liveText(v) {   // show typing on the card right away; one undo step when the box loses focus
   var e = elById(selId); if (!e) return;
   var node = $('cardHolder').querySelector('.el[data-id="' + e.id + '"] .el-inner');
-  if (node) { var t = fill(v, ROWS[rowIdx]); node.innerHTML = t.trim() ? esc(t) : ''; }
+  if (node) { var t = fill(v, ROWS[rowIdx]); node.innerHTML = t.trim() ? rich(t, {}) : ''; }
 }
 function insertField() {
   var f = $('a_ins').value, ta = $('a_text'); if (!f || !ta) return;
@@ -1895,6 +1896,212 @@ function refreshRows() {
   });
 })();
 
+// ── Tags (Pro): {name} in any text becomes a word or a picture ───────────────
+// Kept in the spreadsheet's "tags" tab as name/value pairs: Tag = "{energy}", Value =
+// text, a picture link, or "icon:bolt:#f2c14e" for an icon from the library below.
+var TAGS = [], TAGMAP = {};
+var ICONS = {
+  bolt: '<path d="M13 2 3 14h7l-1 8 10-12h-7z"/>',
+  coin: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6.5" fill="#fff" fill-opacity=".35"/>',
+  heart: '<path d="M12 21s-7.5-4.6-9.5-9.3C1.1 8.3 3.3 4.5 7 4.5c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 3.7 0 5.9 3.8 4.5 7.2C19.5 16.4 12 21 12 21z"/>',
+  star: '<path d="M12 2.5l2.9 6.6 7.1.6-5.4 4.7 1.7 7-6.3-3.8-6.3 3.8 1.7-7L2 9.7l7.1-.6z"/>',
+  sparkle: '<path d="M12 2l2 7 7 3-7 3-2 7-2-7-7-3 7-3z"/>',
+  shield: '<path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5z"/>',
+  sword: '<path d="M14.5 3H21v6.5L10.8 19.7l1.4 1.4-1.4 1.4-2.8-2.8-2.5 2.5-1.4-1.4 2.5-2.5-2.8-2.8 1.4-1.4 1.4 1.4z"/>',
+  gem: '<path d="M6 3h12l4 6-10 12L2 9z"/>',
+  crown: '<path d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5z"/>',
+  trophy: '<path fill-rule="evenodd" d="M7 3h10v2h4v3a4 4 0 0 1-4 4h-.4A5 5 0 0 1 13 15v3h3v3H8v-3h3v-3a5 5 0 0 1-3.6-3H7a4 4 0 0 1-4-4V5h4zM5 7v1a2 2 0 0 0 2 2V7zm14 0h-2v3a2 2 0 0 0 2-2z"/>',
+  drop: '<path d="M12 2s7 7.6 7 12.5A7 7 0 0 1 5 14.5C5 9.6 12 2 12 2z"/>',
+  flame: '<path d="M12 2c1 4 5 5.5 5 11a5 5 0 0 1-10 0c0-2.5 1.2-4 2.5-5 .2 1.8 1 3 2.5 3.5C11 8.5 11 5 12 2z"/>',
+  leaf: '<path d="M20 4C9 4 4 9 4 16c0 1.4.2 2.7.5 4 1-3.5 4-7.5 9.5-9-4 2.5-6.5 6-7.5 9.5C15 20 20 14 20 4z"/>',
+  sun: '<circle cx="12" cy="12" r="4.5"/><path d="M11 1h2v4h-2zM11 19h2v4h-2zM1 11h4v2H1zM19 11h4v2h-4zM4.2 5.6l1.4-1.4 2.8 2.8-1.4 1.4zM15.6 17l1.4-1.4 2.8 2.8-1.4 1.4zM4.2 18.4l2.8-2.8 1.4 1.4-2.8 2.8zM15.6 7l2.8-2.8 1.4 1.4-2.8 2.8z"/>',
+  moon: '<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5z"/>',
+  cube: '<path fill-rule="evenodd" d="M12 2 3 7v10l9 5 9-5V7zm0 2.3 6.5 3.6L12 11.5 5.5 7.9z"/>',
+  card: '<path fill-rule="evenodd" d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm1 3v14h10V5z"/>',
+  die: '<path fill-rule="evenodd" d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm3 3.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm8 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-4 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-4 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm8 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>',
+  hourglass: '<path d="M6 2h12v2h-1v3l-4 5 4 5v3h1v2H6v-2h1v-3l4-5-4-5V4H6z"/>',
+  clock: '<path fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 4.5h-2V13l5 3 1-1.7-4-2.4z"/>',
+  skull: '<path fill-rule="evenodd" d="M12 2C6.5 2 3 5.8 3 10.5c0 3 1.5 5 3.5 6V20h3v-2h1v2h3v-2h1v2h3v-3.5c2-1 3.5-3 3.5-6C21 5.8 17.5 2 12 2zM8.5 9a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm7 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/>',
+  person: '<circle cx="12" cy="7" r="4"/><path d="M4 21c0-4.4 3.6-7.5 8-7.5s8 3.1 8 7.5z"/>',
+  eye: '<path fill-rule="evenodd" d="M12 5C6 5 2 12 2 12s4 7 10 7 10-7 10-7-4-7-10-7zm0 3.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7z"/>',
+  key: '<circle cx="7.5" cy="12" r="4.5"/><path d="M11 10.5h11v3h-2v3h-3v-3h-6z"/>',
+  lock: '<path fill-rule="evenodd" d="M7 10V7a5 5 0 0 1 10 0v3h1a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V11a1 1 0 0 1 1-1zm2.5 0h5V7a2.5 2.5 0 0 0-5 0z"/>',
+  flag: '<path d="M5 2h2v20H5zM8 3h11l-3 4.5L19 12H8z"/>',
+  house: '<path d="M12 3 2 12h3v9h5v-6h4v6h5v-9h3z"/>',
+  arrow: '<path d="M4 10.5h11l-4-4L13 4.5 20.5 12 13 19.5l-2-2 4-4H4z"/>',
+  plus: '<path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z"/>',
+  minus: '<path d="M3 10h18v4H3z"/>',
+  check: '<path d="M9 15.6 4.9 11.5 2.8 13.6 9 19.8 21.2 7.6l-2.1-2.1z"/>',
+  cross: '<path d="M6.3 4.2 12 9.9l5.7-5.7 2.1 2.1-5.7 5.7 5.7 5.7-2.1 2.1-5.7-5.7-5.7 5.7-2.1-2.1 5.7-5.7-5.7-5.7z"/>'
+};
+function iconSvg(name, color) {
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="' + (color || '#2e2763') + '">' + (ICONS[name] || ICONS.star) + '</svg>';
+}
+function iconUri(name, color) { return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(iconSvg(name, color)); }
+function parseIcon(v) { var m = /^icon:([a-z]+)(?::(#[0-9a-f]{3,8}))?$/i.exec(String(v || '').trim()); return m ? { name: m[1].toLowerCase(), color: m[2] || '#2e2763' } : null; }
+function tagKey(n) { return String(n || '').trim().replace(/^\{+|\}+$/g, '').trim().toLowerCase(); }
+function braced(n) { n = String(n || '').trim().replace(/^\{+|\}+$/g, '').trim(); return n ? '{' + n + '}' : ''; }
+function tagPicture(v) {   // the picture address for an image tag, or '' for a text tag
+  var ic = parseIcon(v); if (ic) return iconUri(ic.name, ic.color);
+  v = String(v || '').trim();
+  return /^(https?:)?\/\//i.test(v) || /^=IMAGE\(/i.test(v) || /^data:image\//.test(v) ? imageUrl(v) : '';
+}
+function setTags(list) {
+  TAGS = list; TAGMAP = {};
+  TAGS.forEach(function(t) { TAGMAP[tagKey(t.tag)] = t; });
+}
+function tagsOn() { return TAGS.length > 0 && !!SUB && (SUB.is_pro || SUB.ok === false); }
+// One block of text, so an inline tag picture sits in the line instead of becoming its own flex item
+function rich(t, ctx) { return '<span class="tx">' + expandTags(esc(t), ctx || {}) + '</span>'; }
+function expandTags(html, ctx) {
+  if (!tagsOn()) return html;
+  return html.replace(/\{([^{}<>]{1,60})\}/g, function(all, name) {
+    var t = TAGMAP[tagKey(name)]; if (!t) return all;
+    var pic = tagPicture(t.value);
+    if (!pic) return esc(t.value);
+    if (ctx.proxy) pic = proxied(pic);
+    return '<img class="tag-img" src="' + esc(pic) + '" alt="' + esc(name) + '" draggable="false" referrerpolicy="no-referrer">';
+  });
+}
+function refreshCards() { render(); if (_activeTab === 'print') renderPrint(); if (_activeTab === 'export') renderExport(); }
+function loadTags() {
+  return api('tags').then(function(r) { setTags(r.tags || []); refreshCards(); if (_activeTab === 'tags') renderTags(); })
+    .catch(function(e) { if (_activeTab === 'tags') $('tagList').innerHTML = '<div class="muted" style="padding:1rem">Couldn\'t read the tags — ' + esc(e.message) + '</div>'; });
+}
+
+// The Tags view
+var _tagDraft = null;   // a new tag not saved yet
+function tagPreview(t) {
+  var pic = tagPicture(t.value);
+  return pic ? '<img src="' + esc(pic) + '" alt="" referrerpolicy="no-referrer">' : '<span>' + (t.value ? esc(t.value) : '<i>empty</i>') + '</span>';
+}
+function renderTags() {
+  var box = $('tagList'); if (!box) return;
+  var pro = !SUB || SUB.is_pro || SUB.ok === false;
+  $('tagsPro').style.display = SUB && SUB.ok && !SUB.is_pro ? '' : 'none';
+  $('tagsInfo').textContent = TAGS.length + (TAGS.length === 1 ? ' tag' : ' tags');
+  var list = (_tagDraft ? [_tagDraft] : []).concat(TAGS);
+  if (!list.length) { box.innerHTML = '<div class="tag-empty">No tags yet. <b>+ Add tag</b>, name it (like <code>energy</code>), and give it a word or a picture. Then write <code>{energy}</code> in any text or data on your cards.</div>'; return; }
+  box.innerHTML = list.map(function(t, i) {
+    var draft = t === _tagDraft, img = draft ? t.kind === 'image' : (t.kind || (tagPicture(t.value) ? 'image' : 'text')) === 'image';
+    var idx = draft ? -1 : TAGS.indexOf(t);
+    var val = img
+      ? '<div class="tag-img-box">' + (tagPicture(t.value) ? '<img src="' + esc(tagPicture(t.value)) + '" alt="" referrerpolicy="no-referrer">' : '<span class="muted">No picture</span>') +
+        '<button type="button" class="tag-pick" onclick="pickTagImage(' + idx + ')" title="Choose a picture"' + (pro ? '' : ' disabled') + '>' + IMG_ICON + ' Choose</button>' +
+        '<input class="inp" value="' + esc(parseIcon(t.value) ? '' : t.value) + '" placeholder="or paste a picture link" onchange="setTagValue(' + idx + ',this.value.trim())"' + (pro ? '' : ' disabled') + '></div>'
+      : '<input class="inp" value="' + esc(t.value) + '" placeholder="What {tag} becomes" onchange="setTagValue(' + idx + ',this.value)"' + (pro ? '' : ' disabled') + '>';
+    return '<div class="tag-row' + (draft ? ' draft' : '') + '">' +
+      '<input class="inp tag-name" value="' + esc(draft ? t.tag : t.tag) + '" placeholder="{name}" onchange="renameTag(' + idx + ',this.value)"' + (draft ? ' id="tagDraftName"' : '') + (pro ? '' : ' disabled') + '>' +
+      '<div class="seg tag-kind"><button type="button" class="' + (img ? '' : 'on') + '" onclick="setTagKind(' + idx + ',\'text\')"' + (pro ? '' : ' disabled') + '>Text</button><button type="button" class="' + (img ? 'on' : '') + '" onclick="setTagKind(' + idx + ',\'image\')"' + (pro ? '' : ' disabled') + '>Image</button></div>' +
+      '<div class="tag-val">' + val + '</div>' +
+      '<div class="tag-prev" title="How it looks on a card">Gain 1 ' + (draft && !t.value ? '<span class="muted">' + esc(t.tag || '{…}') + '</span>' : tagPreview(t)) + '</div>' +
+      '<button type="button" class="tag-del" onclick="deleteTag(' + idx + ')" title="Delete this tag"' + (pro ? '' : ' disabled') + '>✕</button></div>';
+  }).join('');
+}
+function addTag() {
+  if (!requirePro('tags', addTag)) return;
+  if (_tagDraft) { var d = $('tagDraftName'); if (d) d.focus(); return; }
+  _tagDraft = { tag: '', value: '', kind: 'text' }; renderTags();
+  var n = $('tagDraftName'); if (n) n.focus();
+}
+function tagAt(i) { return i < 0 ? _tagDraft : TAGS[i]; }
+function saveTag(t, old) {
+  if (!t.tag) return Promise.resolve();
+  var p = api('settag', Object.assign({ tag: t.tag, value: t.value || '' }, old ? { old: old } : {}));
+  return p.then(function() {
+    if (t === _tagDraft) { _tagDraft = null; TAGS.push({ tag: t.tag, value: t.value, kind: t.kind }); }
+    setTags(TAGS); refreshCards(); renderTags(); toast('✓ Saved ' + t.tag);
+  }).catch(function(e) {
+    if (/Pro/.test(e.message)) { SUB = null; openPlansDialog('tags'); } else toast('Couldn\'t save the tag — ' + e.message, true);
+    loadTags();
+  });
+}
+function renameTag(i, v) {
+  var t = tagAt(i), name = braced(v); if (!t) return;
+  if (!name) { if (t === _tagDraft) { _tagDraft = null; renderTags(); } else renderTags(); return; }
+  if (TAGS.some(function(x) { return x !== t && tagKey(x.tag) === tagKey(name); })) { toast('There\'s already a tag called ' + name, true); renderTags(); return; }
+  var old = t === _tagDraft ? '' : t.tag;
+  t.tag = name; renderTags(); saveTag(t, old);
+}
+function setTagValue(i, v) {
+  var t = tagAt(i); if (!t) return;
+  t.value = v; if (t === _tagDraft && !t.tag) { renderTags(); return; }
+  saveTag(t, '');
+}
+function setTagKind(i, kind) {
+  var t = tagAt(i); if (!t) return;
+  var isImg = !!tagPicture(t.value);
+  t.kind = kind;
+  if ((kind === 'image') !== isImg && t.value) { t.value = ''; if (t.tag && t !== _tagDraft) saveTag(t, ''); }
+  renderTags();
+  if (kind === 'image' && !t.value) pickTagImage(i);
+}
+function deleteTag(i) {
+  var t = tagAt(i); if (!t) return;
+  if (t === _tagDraft) { _tagDraft = null; renderTags(); return; }
+  askDialog({ title: 'Delete ' + t.tag + '?', message: 'Cards will show ' + t.tag + ' as plain text again. The row is removed from the tags tab.', ok: 'Delete', cancel: 'Keep', danger: true })
+    .then(function(yes) {
+      if (!yes) return;
+      api('deltag', { tag: t.tag }).then(function() { TAGS.splice(TAGS.indexOf(t), 1); setTags(TAGS); refreshCards(); renderTags(); toast('Deleted ' + t.tag); })
+        .catch(function(e) { toast('Couldn\'t delete — ' + e.message, true); });
+    });
+}
+
+// Choosing a tag's picture: an icon from the library, an upload, or a link
+function uploadPicture(file) {
+  if (!isImageFile(file)) return Promise.reject(new Error('Use a PNG, JPG, GIF or WebP picture'));
+  if (file.size > 10 * 1024 * 1024) return Promise.reject(new Error('That picture is over 10 MB'));
+  var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('app', 'cardboard'); fd.append('file', file);
+  return fetch(APP_BASE + 'push/uploadImage.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
+    .then(function(r) { if (r && r.need_pro) { SUB = null; throw new Error('Uploading pictures is part of CardBoard Pro'); } if (!r || r.error || !r.url) throw new Error(r && r.error ? r.error : 'Upload failed'); return r.url; });
+}
+function pickTagImage(i) {
+  var t = tagAt(i); if (!t) return;
+  var cur = parseIcon(t.value) || { name: '', color: '#2e2763' }, color = cur.color, tab = parseIcon(t.value) || !t.value ? 'icons' : 'link';
+  var ov = document.createElement('div'); ov.className = 'overlay open ask-overlay';
+  function body() {
+    var h = '<div class="dlg tag-dlg"><h2 class="dlg-title">Picture for ' + esc(t.tag || 'this tag') + '</h2>' +
+      '<div class="seg tag-tabs">' + [['icons', 'Icons'], ['upload', 'Upload'], ['link', 'Link']].map(function(x) { return '<button type="button" data-tab="' + x[0] + '" class="' + (tab === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div>';
+    if (tab === 'icons') {
+      h += '<div class="icon-color"><span class="mini">Colour</span><input type="color" value="' + esc(color.length === 7 ? color : '#2e2763') + '" data-color></div><div class="icon-grid">' +
+        Object.keys(ICONS).map(function(n) { return '<button type="button" class="icon-cell' + (cur.name === n ? ' on' : '') + '" data-icon="' + n + '" title="' + n + '"><img src="' + iconUri(n, color) + '" alt="' + n + '"></button>'; }).join('') + '</div>';
+    } else if (tab === 'upload') {
+      h += '<label class="ip-drop tag-drop" data-drop>' + IMG_ICON + '<b>Drop a picture here</b><span>or click to choose a file</span>' + (isPro() ? '' : '<span class="pro-tag">PRO</span>') +
+           '<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none" data-file></label><p class="dlg-sub">Saved on zapsheets.com.</p><div class="dlg-err" data-err></div>';
+    } else {
+      h += '<span class="mini" style="margin-top:.8rem">Picture link</span><input class="inp" data-url value="' + esc(parseIcon(t.value) ? '' : t.value) + '" placeholder="Dropbox, Google Drive or web link">' +
+           '<p class="dlg-sub" style="margin-top:.35rem">Shown straight from the source, so changing the picture there changes your cards.</p>';
+    }
+    h += '<div class="dlg-actions"><button type="button" class="attr-btn" data-close>Cancel</button>' + (tab === 'link' ? '<button type="button" class="print-go" data-use>Use link</button>' : '') + '</div></div>';
+    ov.innerHTML = h;
+    var file = ov.querySelector('[data-file]'), drop = ov.querySelector('[data-drop]');
+    if (file) file.onchange = function() { if (file.files[0]) upload(file.files[0]); };
+    if (drop) {
+      drop.addEventListener('dragover', function(e) { e.preventDefault(); drop.classList.add('over'); });
+      drop.addEventListener('dragleave', function() { drop.classList.remove('over'); });
+      drop.addEventListener('drop', function(e) { e.preventDefault(); drop.classList.remove('over'); var f = droppedFile(e.dataTransfer); if (f) upload(f); });
+    }
+    var cin = ov.querySelector('[data-color]');
+    if (cin) cin.oninput = function() { color = cin.value; ov.querySelectorAll('.icon-cell img').forEach(function(im) { im.src = iconUri(im.alt, color); }); };
+    var u = ov.querySelector('[data-url]'); if (u) setTimeout(function() { u.focus(); }, 30);
+  }
+  function done(v) { ov.remove(); document.removeEventListener('keydown', key, true); if (v != null) setTagValue(i, v); }
+  function upload(f) {
+    if (!isPro()) { done(null); requirePro('upload', function() {}); return; }
+    var err = ov.querySelector('[data-err]'); err.textContent = 'Uploading…';
+    uploadPicture(f).then(function(url) { done(url); }).catch(function(e) { err.textContent = e.message; });
+  }
+  function key(e) { if (e.key === 'Escape') { e.stopPropagation(); done(null); } if (e.key === 'Enter' && tab === 'link') { e.preventDefault(); done(ov.querySelector('[data-url]').value.trim()); } }
+  ov.addEventListener('click', function(e) {
+    if (e.target === ov || e.target.closest('[data-close]')) { done(null); return; }
+    var tb = e.target.closest('[data-tab]'); if (tb) { tab = tb.dataset.tab; body(); return; }
+    var ic = e.target.closest('[data-icon]'); if (ic) { done('icon:' + ic.dataset.icon + ':' + color); return; }
+    if (e.target.closest('[data-use]')) done(ov.querySelector('[data-url]').value.trim());
+  });
+  document.addEventListener('keydown', key, true);
+  body(); document.body.appendChild(ov);
+}
+
 // ── Dialogs (instead of the browser's confirm/alert) ─────────────────────────
 // askDialog({title, message, ok, cancel, danger}) → Promise<boolean>. cancel: '' shows only the OK button.
 function askDialog(o) {
@@ -1990,6 +2197,8 @@ function loadSub(cb) {
       _subLoading = false;
       updateSubMenu();
       if (_activeTab === 'export') renderLinks();
+      if (TAGS.length) refreshCards();   // tags only show on cards with Pro
+      if (_activeTab === 'tags') renderTags();
       var w = _subWaiters; _subWaiters = []; w.forEach(function(f) { f(SUB); });
     });
 }
@@ -2000,7 +2209,8 @@ function updateSubMenu() {
 }
 var PRO_REASONS = {
   links: 'Hosted links for exports — Tabletop Simulator, Screentop and card images — are part of CardBoard Pro. They keep the files on our server and update them when your cards change.',
-  upload: 'Uploading pictures to CardBoard is part of Pro. On Free, use a Dropbox, Google Drive or web link instead.'
+  upload: 'Uploading pictures to CardBoard is part of Pro. On Free, use a Dropbox, Google Drive or web link instead.',
+  tags: 'Tags are part of CardBoard Pro: write {energy} in your text or data and it becomes a word or an icon on every card.'
 };
 // Returns true when allowed; otherwise shows the plans. If the plan can't be checked, the server decides.
 function requirePro(reason, retry) {
@@ -2060,11 +2270,11 @@ function switchTab(t) {
   _activeTab = t;
   if (_gridEdit) endGridEdit(true);
   if (t !== 'data' && _rowsStale) refreshRows();
-  ['data', 'design', 'print', 'export'].forEach(function(k) {
+  ['data', 'tags', 'design', 'print', 'export'].forEach(function(k) {
     var cap = k.charAt(0).toUpperCase() + k.slice(1);
     $('tab' + cap).classList.toggle('active', t === k); $('view-' + k).classList.toggle('active', t === k);
   });
-  if (t === 'print') renderPrint(); else if (t === 'export') renderExport(); else if (t === 'data') loadGrid(); else fitZoom();
+  if (t === 'print') renderPrint(); else if (t === 'export') renderExport(); else if (t === 'data') loadGrid(); else if (t === 'tags') renderTags(); else fitZoom();
 }
 function toggleAccountMenu(ev) { if (ev) ev.stopPropagation(); $('accountMenu').classList.toggle('open'); }
 function closeAccountMenu() { $('accountMenu').classList.remove('open'); }

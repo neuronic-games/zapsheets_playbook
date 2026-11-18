@@ -101,8 +101,9 @@ button, input, select, textarea { font-family:inherit; }
 .new-btn:hover { background:#ece9ff; border-style:solid; }
 .new-form { display:none; gap:.3rem; }
 .new-form .inp { flex:1; min-width:0; height:2.26rem; }
-.new-form .attr-btn { flex:0 0 auto; height:2.26rem; padding:0 .6rem; }
-.new-form .attr-btn:disabled { opacity:.45; cursor:default; }
+.new-form { position:relative; }
+.new-form.busy .inp { color:#9aa0b8; background:#f7f5ff; }
+.new-form.busy::after { content:''; position:absolute; right:.6rem; top:50%; width:14px; height:14px; margin-top:-7px; border:2px solid #d6d9e6; border-top-color:#4b3fa8; border-radius:50%; animation:spin .7s linear infinite; }
 .new-field.open .new-btn { display:none; }
 .new-field.open .new-form { display:flex; }
 .new-msg { font-size:.68rem; color:#c0392b; margin-top:.2rem; min-height:0; }

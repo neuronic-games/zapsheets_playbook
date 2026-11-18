@@ -347,8 +347,7 @@ function renderData() {
   if ($('dataCount')) $('dataCount').textContent = FIELDS.length;
   var h = '<div class="new-field" id="newField">' +
           '<button type="button" class="new-btn" onclick="showNewField()" title="Add a column to the sheet">New</button>' +
-          '<form class="new-form" onsubmit="addField(event)"><input class="inp" id="newFieldName" maxlength="60" placeholder="Column name" autocomplete="off" oninput="checkNewField()" onkeydown="if(event.key===\'Escape\')hideNewField()">' +
-          '<button type="submit" class="attr-btn" id="newFieldGo">Add</button><button type="button" class="attr-btn" onclick="hideNewField()" title="Cancel">✕</button></form>' +
+          '<form class="new-form" onsubmit="addField(event)"><input class="inp" id="newFieldName" maxlength="60" placeholder="New column name" title="Enter or click away to add · Esc to cancel" autocomplete="off" oninput="checkNewField()" onblur="addField()" onkeydown="if(event.key===\'Escape\'){this.value=\'\';hideNewField()}"></form>' +
           '<div class="new-msg" id="newFieldMsg"></div></div>';
   if (!FIELDS.length) h += '<div class="muted">No columns yet. The first row of the sheet holds the column names, with one card per row below — or add one with New.</div>';
   h += FIELDS.map(function(f) { return chip('data-field="' + esc(f) + '"', '≡', f, looksLikeImage(f) ? '' : textVal(sample[f]), f === _newField ? 'just-added' : ''); }).join('');
@@ -357,7 +356,7 @@ function renderData() {
 // New column: added to the sheet's heading row, then ready to drag onto the card
 var _newField = '';
 function showNewField() { var b = $('newField'); b.classList.add('open'); $('newFieldName').value = ''; checkNewField(); $('newFieldName').focus(); }
-function hideNewField() { var b = $('newField'); if (b) b.classList.remove('open'); }
+function hideNewField() { var b = $('newField'); if (b) b.classList.remove('open'); if ($('newFieldMsg')) $('newFieldMsg').textContent = ''; }
 function newFieldProblem(n) {
   if (!n) return ' ';
   if (n.charAt(0) === '_' || /[{}]/.test(n)) return 'Names can\'t use { } or start with _';
@@ -365,16 +364,24 @@ function newFieldProblem(n) {
   return '';
 }
 function checkNewField() {
-  var n = $('newFieldName').value.trim().replace(/\s+/g, ' '), msg = newFieldProblem(n);
-  $('newFieldMsg').textContent = msg.trim(); $('newFieldGo').disabled = !!msg;
-}
-function addField(ev) {
-  ev.preventDefault();
   var n = $('newFieldName').value.trim().replace(/\s+/g, ' ');
-  if (newFieldProblem(n) || !curTab) return;
-  var go = $('newFieldGo'), tab = curTab; go.disabled = true; go.textContent = '…';
+  $('newFieldMsg').textContent = newFieldProblem(n).trim();
+}
+// Leaving the box (or Enter) adds the column; an empty box just closes
+var _addingField = false;
+function addField(ev) {
+  if (ev) ev.preventDefault();
+  var inp = $('newFieldName'); if (!inp || _addingField || !$('newField').classList.contains('open')) return;
+  var n = inp.value.trim().replace(/\s+/g, ' ');
+  if (!n) { hideNewField(); return; }
+  var problem = newFieldProblem(n);
+  if (problem) { $('newFieldMsg').textContent = problem; return; }   // stays open so it can be fixed
+  if (!curTab) return;
+  var tab = curTab; _addingField = true; inp.disabled = true; $('newFieldMsg').textContent = '';
+  inp.parentNode.classList.add('busy');
   api('addfield', { tab: tab, name: n })
     .then(function(r) {
+      _addingField = false;
       if (curTab !== tab) return;
       FIELDS.push(n); ROWS.forEach(function(row) { row[n] = ''; });
       _newField = n; renderData();
@@ -382,7 +389,10 @@ function addField(ev) {
       toast('✓ Added column ' + (r.column ? r.column + ' ' : '') + '"' + n + '" to the sheet');
       setTimeout(function() { if (_newField === n) { _newField = ''; var c = document.querySelector('.field-chip.just-added'); if (c) c.classList.remove('just-added'); } }, 2500);
     })
-    .catch(function(e) { $('newFieldMsg').textContent = e.message; go.disabled = false; go.textContent = 'Add'; });
+    .catch(function(e) {
+      _addingField = false; inp.disabled = false; inp.parentNode.classList.remove('busy');
+      $('newFieldMsg').textContent = e.message;
+    });
 }
 function chipSpec(c) {
   if (c.dataset.field) return 'data:' + c.dataset.field;

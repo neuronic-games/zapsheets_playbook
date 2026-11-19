@@ -640,7 +640,7 @@ function openImagePicker(ev, id, slot) {   // slot: pick the picture for one val
     (cur ? '<button type="button" class="attr-btn danger ip-remove" id="ipRemove">Remove picture</button>' : '');
   document.body.appendChild(p);
   // Place it beside the picture button (or the element), kept on screen
-  var anchor = slot != null ? document.querySelector('.map-thumb[data-i="' + slot + '"]') : $('cardHolder').querySelector('.el[data-id="' + id + '"]'), r = anchor ? anchor.getBoundingClientRect() : { right: innerWidth / 2, top: 100 };
+  var anchor = slot != null ? document.querySelector('.map-slot[data-i="' + slot + '"]') : $('cardHolder').querySelector('.el[data-id="' + id + '"]'), r = anchor ? anchor.getBoundingClientRect() : { right: innerWidth / 2, top: 100 };
   var left = Math.min(r.right + 10, innerWidth - p.offsetWidth - 12), top = clamp(r.top, 70, innerHeight - p.offsetHeight - 12);
   if (left < r.right && anchor) left = Math.max(12, r.left - p.offsetWidth - 10);
   p.style.left = left + 'px'; p.style.top = top + 'px';
@@ -1327,11 +1327,11 @@ function renderAttrs() {
     var from = !src ? '' : uploaded ? 'Uploaded file' : /dropbox\.com/i.test(src) ? 'Dropbox link' : /google\.com/i.test(src) ? 'Google Drive link' : 'Web link';
     var mapOn = !!(e.mapOn && e.map);
     h += '<span class="lbl">' + (mapOn ? 'Default picture' : 'Picture') + '</span><div class="img-slot' + (UPLOADING[e.id] ? ' img-loading' : '') + '" id="imgSlot" onclick="openImagePicker(event,\'' + e.id + '\')" title="Click or drop a picture to change it">' +
-         '<button type="button" class="map-btn' + (mapOn ? ' on' : '') + '" onclick="event.stopPropagation();toggleImgMap()" title="' + (mapOn ? 'Stop choosing the picture by field value' : 'Choose the picture by a field\'s value') + '" aria-pressed="' + mapOn + '">[ ]</button>' +
+         '<button type="button" class="map-btn' + (mapOn ? ' on' : '') + '" onclick="event.stopPropagation();toggleImgMap()" title="' + (mapOn ? 'Stop choosing the picture by field value' : 'Choose the picture by a field\'s value') + '" aria-pressed="' + mapOn + '">[]</button>' +
          (u ? '<div class="el-img" style="background-image:url(&quot;' + esc(u) + '&quot;);background-size:contain"></div>' : '<div class="img-slot-empty">' + IMG_ICON + '<span>Drop a picture, or click to choose</span></div>') +
          '<span class="img-btn">' + IMG_ICON + '</span></div>';
     if (from) h += '<p class="muted" style="margin:.3rem 0 0">' + from + (uploaded ? '' : ' — loaded from the source, so changes there show up here') + '</p>';
-    if (mapOn) h += mapAttrs(e);
+    if (mapOn) h += '<div class="map-drawer" id="mapDrawer"><div class="map-drawer-in">' + mapAttrs(e) + '</div></div>';
     else h += '<p class="muted" style="margin:.3rem 0 0">The same picture on every card — a logo, frame or icon. Press <b>[ ]</b> to choose the picture by a field\'s value instead.</p>';
     h += fitAttrs(e) + boxAttrs(e, 'Frame');
   }
@@ -1375,7 +1375,10 @@ function renderAttrs() {
       if (f) uploadImage(e.id, f); else if (l) setImageSrc(e.id, l);
     });
   }
-  p.querySelectorAll('.map-thumb').forEach(function(t) {
+  var dr = $('mapDrawer');
+  if (dr && _mapAnim === 'open' && dr.animate && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) dr.animate([{ height: '0px', opacity: 0 }, { height: dr.scrollHeight + 'px', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.7,.3,1)' });
+  _mapAnim = '';
+  p.querySelectorAll('.map-slot').forEach(function(t) {
     var i = +t.dataset.i;
     t.addEventListener('dragover', function(d) { d.preventDefault(); t.classList.add('over'); });
     t.addEventListener('dragleave', function() { t.classList.remove('over'); });
@@ -1390,28 +1393,43 @@ function renderAttrs() {
 // always ending with an empty row for the next one
 function mapAttrs(e) {
   var mp = e.map, items = mp.items || [], rows = items.concat([{ v: '', src: '' }]);
+  var cur = mp.field && ROWS[rowIdx] ? cleanVal(ROWS[rowIdx][mp.field]).trim().toLowerCase() : null;
+  var vals = [];   // the values the field has in the sheet, for the value boxes' lists
+  if (mp.field) ROWS.forEach(function(r) { var v = cleanVal(r[mp.field]).trim(); if (v && vals.indexOf(v) < 0 && vals.length < 300) vals.push(v); });
   var h = '<span class="lbl">Field</span><input class="inp" list="mapFieldList" value="' + esc(mp.field || '') + '" placeholder="Choose a field" onchange="setMapField(this.value)">' +
-    '<datalist id="mapFieldList">' + FIELDS.map(function(f) { return '<option value="' + esc(f) + '">'; }).join('') + '</datalist>';
-  h += '<span class="mini" style="margin-top:.55rem;display:block">Picture for each value</span><div class="map-list">';
+    '<datalist id="mapFieldList">' + FIELDS.map(function(f) { return '<option value="' + esc(f) + '">'; }).join('') + '</datalist>' +
+    '<datalist id="mapValList">' + vals.map(function(v) { return '<option value="' + esc(v) + '">'; }).join('') + '</datalist>';
+  h += '<div class="map-list">';
   rows.forEach(function(it, i) {
-    var u = imageUrl(picRef(it.src));
-    h += '<div class="map-row' + (i === items.length ? ' new' : '') + '">' +
-      '<div class="map-thumb" data-i="' + i + '" onclick="openImagePicker(event,\'' + e.id + '\',' + i + ')" title="' + (it.src ? 'Change the picture' : 'Choose a picture') + '">' +
-        (u ? '<div class="el-img" style="background-image:url(&quot;' + esc(u) + '&quot;);background-size:contain"></div>' : IMG_ICON) + '</div>' +
-      '<input class="inp" value="' + esc(it.v || '') + '" placeholder="' + (i === items.length ? 'Add a value…' : 'Value') + '" onchange="setMapVal(' + i + ',this.value)">' +
-      (i < items.length ? '<button type="button" class="map-x" onclick="delMapItem(' + i + ')" title="Remove" aria-label="Remove">×</button>' : '<span></span>') + '</div>';
+    var u = imageUrl(picRef(it.src)), isNew = i === items.length, on = cur !== null && it.v && it.v.trim().toLowerCase() === cur;
+    h += '<div class="map-item' + (isNew ? ' new' : '') + '">' +
+      '<div class="img-slot map-slot' + (on ? ' cur' : '') + '" data-i="' + i + '" onclick="openImagePicker(event,\'' + e.id + '\',' + i + ')" title="Click or drop a picture">' +
+        (u ? '<div class="el-img" style="background-image:url(&quot;' + esc(u) + '&quot;);background-size:contain"></div>' : '<div class="img-slot-empty">' + IMG_ICON + '<span>' + (isNew ? 'Picture for another value' : 'No picture — uses the link in ' + esc(mp.field || 'the field')) + '</span></div>') +
+        (isNew ? '' : '<button type="button" class="map-x" onclick="event.stopPropagation();delMapItem(' + i + ')" title="Remove this value" aria-label="Remove this value">×</button>') +
+        '<span class="img-btn">' + IMG_ICON + '</span></div>' +
+      '<input class="inp map-val" list="mapValList" value="' + esc(it.v || '') + '" placeholder="' + (mp.field ? 'When ' + esc(mp.field) + ' is…' : 'Value') + '" onchange="setMapVal(' + i + ',this.value)">' +
+      '</div>';
   });
   h += '</div><p class="muted" style="margin:.35rem 0 0">' + (mp.field
-    ? 'When <b>' + esc(mp.field) + '</b> matches a value, its picture is used. Otherwise the picture link in <b>' + esc(mp.field) + '</b> is used, or the default picture if it has none. Values and pictures can be tags like <code>[fire]</code>.'
+    ? 'A card whose <b>' + esc(mp.field) + '</b> matches a value shows its picture. Otherwise it shows the picture link in <b>' + esc(mp.field) + '</b>, or the default picture. Values and pictures can be tags like <code>[fire]</code>.'
     : 'Choose the field whose value picks the picture.') + '</p>';
   return h;
 }
+var _mapAnim = '';
 function mapEl() { var e = elById(selId); return e && e.kind === 'image' && e.map ? e : null; }
 function toggleImgMap() {
   var e = elById(selId); if (!e || e.kind !== 'image') return;
-  snapshot(); e.mapOn = !e.mapOn;
-  if (e.mapOn && !e.map) e.map = { field: '', items: [] };
-  changed();
+  var dr = $('mapDrawer');
+  function flip() {
+    snapshot(); e.mapOn = !e.mapOn;
+    if (e.mapOn && !e.map) e.map = { field: '', items: [] };
+    _mapAnim = e.mapOn ? 'open' : '';
+    changed();
+  }
+  if (e.mapOn && dr && dr.animate && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {   // slide the drawer shut first
+    dr.style.overflow = 'hidden';
+    dr.animate([{ height: dr.offsetHeight + 'px', opacity: 1 }, { height: '0px', opacity: 0 }], { duration: 200, easing: 'ease-in', fill: 'forwards' }).onfinish = flip;
+  } else flip();
 }
 function setMapField(v) { var e = mapEl(); if (!e || e.map.field === v.trim()) return; snapshot(); e.map.field = v.trim(); changed(); }
 function setMapVal(i, v) {

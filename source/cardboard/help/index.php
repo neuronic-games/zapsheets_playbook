@@ -190,6 +190,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
       <li><b>Exact numbers:</b> X, Y, W and H in the right panel (in points; 72 pt = 1 inch). <b>Opacity</b> fades an element.</li>
       <li><b>Stacking:</b> <b>To front</b> / <b>To back</b>, or drag in the Layers panel.</li>
       <li><b>Duplicate</b> (<kbd>⌘D</kbd>) and <b>Delete</b> (<kbd>Delete</kbd>).</li>
+      <li><b>Copy, cut and paste</b> (<kbd>⌘C</kbd>, <kbd>⌘X</kbd>, <kbd>⌘V</kbd>, or the <b>Copy</b> / <b>Cut</b> buttons) work between the front and back, between tabs, and between spreadsheets — even in another CardBoard window. Groups (and their list settings) come along. Pasted elements keep their position, nudged over if they'd land right on top of the originals. If a pasted Data field uses a column this sheet doesn't have, CardBoard tells you so you can pick another column.</li>
     </ul>
     <h3>Lining up</h3>
     <p>When something is selected, round dots appear past the card's right and bottom edges, with dotted lines leading back to the card. Click a dot to line up with that line:</p>
@@ -329,6 +330,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
     <table class="keys">
       <tr><td><kbd>⌘S</kbd></td><td>Save the layout</td></tr>
       <tr><td><kbd>⌘Z</kbd> / <kbd>⇧⌘Z</kbd></td><td>Undo / redo</td></tr>
+      <tr><td><kbd>⌘C</kbd> / <kbd>⌘X</kbd> / <kbd>⌘V</kbd></td><td>Copy / cut / paste elements — into any side, tab or spreadsheet</td></tr>
       <tr><td><kbd>⌘D</kbd></td><td>Duplicate the selection</td></tr>
       <tr><td><kbd>⌘G</kbd> / <kbd>⇧⌘G</kbd></td><td>Group / ungroup</td></tr>
       <tr><td><kbd>⌘A</kbd></td><td>Select everything on this side</td></tr>

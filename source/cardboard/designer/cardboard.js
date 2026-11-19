@@ -1205,6 +1205,67 @@ function saveLayout() {
 }
 window.addEventListener('beforeunload', function(ev) { if (dirty) { ev.preventDefault(); ev.returnValue = ''; } });
 
+// ── Copy, cut and paste — between sides, tabs and spreadsheets ───────────────
+// The copied elements (with their groups) are kept in this browser, and also put on the
+// system clipboard so a paste in another CardBoard window works too.
+var CLIP_MARK = 'cardboard-elements:';
+function clipData() {
+  var sel = selEls().sort(function(a, b) { return (a.z || 1) - (b.z || 1); }); if (!sel.length) return null;
+  var gids = []; sel.forEach(function(e) { if (e.group && gids.indexOf(e.group) < 0) gids.push(e.group); });
+  return { v: 1, from: curTab + ':' + side, els: JSON.parse(JSON.stringify(sel)),
+           groups: gids.map(function(g) { return groupById(g); }).filter(Boolean).map(function(g) { return JSON.parse(JSON.stringify(g)); }) };
+}
+function storeClip(d) { try { localStorage.setItem('cb_clip', JSON.stringify(d)); } catch (e) {} }
+function readClip(text) {
+  if (text != null) {
+    if (text.indexOf(CLIP_MARK) !== 0) return null;
+    try { var t = JSON.parse(text.slice(CLIP_MARK.length)); return t && t.els && t.els.length ? t : null; } catch (e) { return null; }
+  }
+  try { var d = JSON.parse(localStorage.getItem('cb_clip') || 'null'); return d && d.els && d.els.length ? d : null; } catch (e) { return null; }
+}
+function copySel(ev) {
+  var d = clipData(); if (!d) return false;
+  storeClip(d);
+  var txt = CLIP_MARK + JSON.stringify(d);
+  if (ev && ev.clipboardData) { ev.clipboardData.setData('text/plain', txt); ev.preventDefault(); }
+  else if (navigator.clipboard) navigator.clipboard.writeText(txt).catch(function() {});
+  toast('Copied ' + d.els.length + ' element' + (d.els.length === 1 ? '' : 's') + ' — paste into any layout');
+  return true;
+}
+function cutSel(ev) { if (!hasAccess()) return; if (copySel(ev)) deleteSel(); }
+function pasteClip(d) {
+  d = d || readClip(); if (!d || !layout) return;
+  if (!requirePro('edit', function() { pasteClip(d); })) return;
+  snapshot();
+  var els = curEls(), c = layout.card, top = els.reduce(function(m, x) { return Math.max(m, x.z || 1); }, 0), gmap = {}, ids = [];
+  // Offset when it would land exactly on what's already there (pasting again in the same place)
+  var off = 0;
+  while (d.els.some(function(e) { return els.some(function(x) { return x.kind === e.kind && Math.abs(x.x - (e.x + off)) < .01 && Math.abs(x.y - (e.y + off)) < .01; }); }) && off < 200) off += 8;
+  var missing = [];
+  d.els.forEach(function(e) {
+    var n = JSON.parse(JSON.stringify(e)); n.id = uid(); n.z = ++top;
+    n.x = r1(clamp(n.x + off, -n.w + 6, c.w - 6)); n.y = r1(clamp(n.y + off, -n.h + 6, c.h - 6));   // keep it on this card, which may be smaller
+    if (n.kind === 'gen') n.seed = uid();
+    if (n.group) {
+      if (!gmap[n.group]) { var g = (d.groups || []).filter(function(x) { return x.id === n.group; })[0] || { name: 'Group' }; var gid = newGroup(g.name); var ng = groupById(gid); if (g.list) ng.list = g.list; if (g.gap != null) ng.gap = g.gap; gmap[n.group] = gid; }
+      n.group = gmap[n.group];
+    }
+    if (n.kind === 'data' && FIELDS.length && FIELDS.indexOf(n.field) < 0 && missing.indexOf(n.field) < 0) missing.push(n.field);
+    els.push(n); ids.push(n.id);
+  });
+  cleanGroups(); normalizeZ(); setSelQuiet(ids); changed();
+  toast('Pasted ' + ids.length + ' element' + (ids.length === 1 ? '' : 's') + (missing.length ? ' — this sheet has no ' + missing.map(function(f) { return '“' + f + '”'; }).join(', ') + ' column' : ''), !!missing.length);
+}
+function clipTarget() { return _activeTab === 'design' && layout && !/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '') && !(document.activeElement && document.activeElement.isContentEditable); }
+document.addEventListener('copy', function(ev) { if (clipTarget() && selEls().length && !String(window.getSelection() || '')) copySel(ev); });
+document.addEventListener('cut', function(ev) { if (clipTarget() && selEls().length && !String(window.getSelection() || '')) cutSel(ev); });
+document.addEventListener('paste', function(ev) {
+  if (!clipTarget()) return;
+  var text = ev.clipboardData ? ev.clipboardData.getData('text/plain') : '';
+  var d = readClip(text) || (!text && !(ev.clipboardData && ev.clipboardData.files && ev.clipboardData.files.length) ? readClip() : null);
+  if (!d) return;   // not ours: a picture link or file is handled by the image paste
+  ev.preventDefault(); ev.stopImmediatePropagation(); pasteClip(d);
+}, true);
 function deleteSel() {
   var ids = selIdsNow(); if (!ids.length) return; snapshot();
   var face = faceOf(layout, side);
@@ -1465,6 +1526,7 @@ function multiAttrs() {
   }
   h += '<div class="attr-btns">' + (g ? '<button class="attr-btn" onclick="ungroupSel()">Ungroup</button>' : '<button class="attr-btn" onclick="groupSel()">Group</button>') + '</div>';
   h += '<div class="attr-btns"><button class="attr-btn" onclick="reorderSel(1)">To front</button><button class="attr-btn" onclick="reorderSel(-1)">To back</button></div>';
+  h += '<div class="attr-btns"><button class="attr-btn" onclick="copySel()" title="⌘C — paste into any layout with ⌘V">Copy</button><button class="attr-btn" onclick="cutSel()" title="⌘X">Cut</button></div>';
   h += '<div class="attr-btns"><button class="attr-btn" onclick="duplicateSel()">Duplicate</button><button class="attr-btn danger" onclick="deleteSel()">Delete</button></div>';
   h += '<span class="lbl">Shortcuts</span><p class="muted" style="margin:0">⌘G group · ⇧⌘G ungroup · ⌘A select all · Shift or ⌘-click to add to the selection</p>';
   return h;
@@ -1608,6 +1670,8 @@ function renderAttrs() {
   var e = elById(selId), h = '';
   if (!e) {
     var c = layout.card;
+    var clip = readClip();
+    if (clip) h += '<div class="attr-btns" style="margin-top:0"><button class="attr-btn" onclick="pasteClip()" title="⌘V">Paste ' + clip.els.length + ' element' + (clip.els.length === 1 ? '' : 's') + '</button></div>';
     h += '<p class="attr-title">' + (side === 'back' ? 'Card back' : 'Card') + '</p><p class="muted" style="margin:0 0 .4rem">Select something on the card to change it. ' +
          (side === 'back' ? 'Flip the card (top left) to work on the front.' : 'Flip the card (top left) to design its back.') + '</p>';
     if (side === 'back') h += '<span class="lbl">Back</span>' + colorRow('Background', 'bg', layout.back.bg, false, 'setBackProp') +
@@ -1695,6 +1759,7 @@ function renderAttrs() {
   h += '<div class="row2" style="margin-top:.45rem">' + numInp('a_rot', 'Rotate (°)', e.rot || 0, 'setProp', 'rot', 1) +
        '<div><span class="mini">Opacity</span><input class="inp" type="number" min="0" max="100" step="5" value="' + Math.round((e.opacity == null ? 1 : e.opacity) * 100) + '" onchange="setProp(\'opacity\',clamp(this.value/100,0,1),true)"></div></div>';
   h += '<div class="attr-btns"><button class="attr-btn" onclick="reorderSel(1)">To front</button><button class="attr-btn" onclick="reorderSel(-1)">To back</button></div>';
+  h += '<div class="attr-btns"><button class="attr-btn" onclick="copySel()" title="⌘C — paste into any layout with ⌘V">Copy</button><button class="attr-btn" onclick="cutSel()" title="⌘X">Cut</button></div>';
   h += '<div class="attr-btns"><button class="attr-btn" onclick="duplicateSel()">Duplicate</button><button class="attr-btn danger" onclick="deleteSel()">Delete</button></div>';
   p.innerHTML = h;
   var slot = $('imgSlot');

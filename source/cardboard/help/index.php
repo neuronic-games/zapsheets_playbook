@@ -195,6 +195,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
     <ul>
       <li>With <b>one element or one group</b> selected, the dots line it up with the card — its top, middle, bottom, left edge, center or right edge.</li>
       <li>With <b>several</b> selected, the dots line them up with each other.</li>
+      <li>With several selected, <b>click one of them</b> (without dragging) to make it the <b>key object</b>. It gets a solid outline and the dots move around it; clicking a dot lines the others up with the key, which stays put. Click another selected element to change the key, or the key again to go back to lining them up with each other.</li>
     </ul>
   </section>
 

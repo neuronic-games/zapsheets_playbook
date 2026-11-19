@@ -319,6 +319,8 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .el.picked .hdl { display:block; }
 .el.picked.multi .hdl { display:none; }
 .designing .el.picked.multi { outline-style:dashed; }
+/* The key object: the others line up with it */
+.designing .el.picked.multi.key { outline:calc(2.5px / var(--z)) solid #7b6cf6; outline-offset:calc(1.5px / var(--z)); }
 /* Align dots: shown past the card's right and bottom edges when several things are selected */
 .al-guide { position:absolute; pointer-events:none; z-index:4; }
 .al-h { height:0; border-top:1.5px dotted #4a4e68; }

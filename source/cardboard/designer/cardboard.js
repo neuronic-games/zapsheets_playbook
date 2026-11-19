@@ -258,12 +258,14 @@ function renderCardHTML(lay, row, designing, ctx) {
   ctx = Object.assign({ card: 0, row: 0 }, ctx || {}, { designing: !!designing });
   var face = faceOf(lay, ctx.side), cs = ctx.side === 'back' ? Object.assign({}, lay.card, { bg: lay.back.bg }) : lay.card;
   var h = '<div class="card' + (designing ? ' designing' : '') + (ctx.side === 'back' ? ' back' : '') + '" style="' + cardStyle(cs) + '">';
+  var keyIds = designing ? (keyUnit() || []).map(function(x) { return x.id; }) : [];
   function elHTML(e, list) {
     var inner = elInner(e, row, ctx);
     // In a list, a text or picture with nothing to show takes no room at all
     if (list && (inner === '' || (isTextLike(e) && !/<(img|svg)\b/.test(inner) && !inner.replace(/<[^>]*>/g, '').trim()))) return '';
     var cls = 'el k-' + e.kind + (e.kind === 'data' && e.as === 'image' ? ' as-image' : '') + (e.valign === 'middle' ? ' v-middle' : e.valign === 'bottom' ? ' v-bottom' : '') + (designing && isSel(e.id) ? ' picked' + (multi.length ? ' multi' : '') : '');
     if (designing && UPLOADING[e.id]) cls += ' img-loading';
+    if (keyIds.indexOf(e.id) >= 0) cls += ' key';
     var st = elStyle(e);
     if (list) {   // sized by its contents along the list: as wide (or as tall) as it needs, up to its own box
       cls += ' in-list';
@@ -843,29 +845,37 @@ function alignPlan() {
       if (seen[e.group]) return; seen[e.group] = true; units.push(groupMembers(e.group));
     } else units.push([e]);
   });
+  var ku = keyUnit();
+  if (ku && units.length > 1) {
+    var kids = ku.map(function(x) { return x.id; });
+    return { card: false, key: true, units: units.filter(function(u) { return !u.some(function(x) { return kids.indexOf(x.id) >= 0; }); }), ref: selBox(ku) };
+  }
   if (units.length > 1) return { card: false, units: units, ref: selBox(sel) };
   return { card: true, units: [sel], ref: { x: 0, y: 0, w: layout.card.w, h: layout.card.h } };
 }
 var ALIGN_TITLES = {
+  key:  { top: 'Line up the tops with the key object', middle: 'Line up the middles with the key object', bottom: 'Line up the bottoms with the key object', left: 'Line up the left edges with the key object', center: 'Line up the centers with the key object', right: 'Line up the right edges with the key object' },
   sel:  { top: 'Line up the tops', middle: 'Line up the middles', bottom: 'Line up the bottoms', left: 'Line up the left edges', center: 'Line up the centers', right: 'Line up the right edges' },
   card: { top: 'Move to the top of the card', middle: 'Center up and down on the card', bottom: 'Move to the bottom of the card', left: 'Move to the left edge of the card', center: 'Center across the card', right: 'Move to the right edge of the card' }
 };
 function alignDotsHTML() {
   var plan = alignPlan(); if (!plan) return '';
-  var bb = plan.ref, T = ALIGN_TITLES[plan.card ? 'card' : 'sel'], k = PX * zoom, W = layout.card.w * k, H = layout.card.h * k, h = '';
+  var bb = plan.ref, T = ALIGN_TITLES[plan.card ? 'card' : plan.key ? 'key' : 'sel'], k = PX * zoom, W = layout.card.w * k, H = layout.card.h * k, h = '';
   var ys = { top: bb.y, middle: bb.y + bb.h / 2, bottom: bb.y + bb.h }, xs = { left: bb.x, center: bb.x + bb.w / 2, right: bb.x + bb.w };
-  var offR = 34, offB = 34;   // dots sit out past the card's right and bottom edges
+  var offR = 34, offB = 34;   // dots sit out past the card's right and bottom edges…
+  var CW = W, CH = H;   // the hover guides still run across the whole card
+  if (plan.key) { W = Math.round((bb.x + bb.w) * k); H = Math.round((bb.y + bb.h) * k); offR = 26; offB = 26; }   // …or around the key object
   Object.keys(ys).forEach(function(n) {
     var y = Math.round(ys[n] * k);
     h += '<div class="al-guide al-h" style="left:' + W + 'px;top:' + y + 'px;width:' + offR + 'px"></div>' +
       '<button type="button" class="al-dot" style="left:' + (W + offR) + 'px;top:' + y + 'px" onclick="alignSel(\'' + n + '\')" title="' + T[n] + '" aria-label="' + T[n] + '"></button>' +
-      '<div class="al-guide al-h in" style="left:0;top:' + y + 'px;width:' + W + 'px"></div>';
+      '<div class="al-guide al-h in" style="left:0;top:' + y + 'px;width:' + Math.max(W, CW) + 'px"></div>';
   });
   Object.keys(xs).forEach(function(n) {
     var x = Math.round(xs[n] * k);
     h += '<div class="al-guide al-v" style="top:' + H + 'px;left:' + x + 'px;height:' + offB + 'px"></div>' +
       '<button type="button" class="al-dot" style="top:' + (H + offB) + 'px;left:' + x + 'px" onclick="alignSel(\'' + n + '\')" title="' + T[n] + '" aria-label="' + T[n] + '"></button>' +
-      '<div class="al-guide al-v in" style="top:0;left:' + x + 'px;height:' + H + 'px"></div>';
+      '<div class="al-guide al-v in" style="top:0;left:' + x + 'px;height:' + Math.max(H, CH) + 'px"></div>';
   });
   return h;
 }
@@ -1026,7 +1036,8 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
     setSel(has ? cur.filter(function(id) { return unit.indexOf(id) < 0; }) : cur.concat(unit));
     return;
   }
-  if (!unit.every(isSel)) setSel(unit);
+  var clickedSel = unit.every(isSel);
+  if (!clickedSel) setSel(unit);
   var start = ptFromEvent(ev), o = { x: e.x, y: e.y, w: e.w, h: e.h }, c = layout.card, moved = false;
   var group = multi.length ? curEls().filter(function(x) { return multi.indexOf(x.id) >= 0; }) : null;
   var origin = group && group.map(function(x) { return { x: x.x, y: x.y }; });
@@ -1072,10 +1083,12 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
     }
     syncGeomInputs(e);
   }
+  var wasSel = group && unit.every(function(id) { return group.some(function(x) { return x.id === id; }); }) && multi.length > unit.length;
   function up() {
     document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up);
     $('cardHolder').classList.remove('moving');
     if (moved) changed(!group);   // a group's panel shows its position, so refresh it
+    else if (wasSel && clickedSel) { keyId = keyId === e.id || (keyUnit() || []).some(function(x) { return x.id === e.id; }) ? null : e.id; render(); renderAttrs(); }   // pick (or drop) the key object
   }
   document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);
 });
@@ -1197,6 +1210,15 @@ function setSelQuiet(ids) {
   var all = curEls().map(function(x) { return x.id; });
   ids = ids.filter(function(id, i) { return all.indexOf(id) >= 0 && ids.indexOf(id) === i; });
   if (ids.length > 1) { multi = ids; selId = null; } else { multi = []; selId = ids[0] || null; }
+  if (keyId && (ids.length < 2 || ids.indexOf(keyId) < 0)) keyId = null;
+}
+// The key object: with several selected, click one of them (without dragging) and the others line up to it
+var keyId = null;
+function keyUnit() {
+  if (!keyId || multi.length < 2 || multi.indexOf(keyId) < 0) return null;
+  var e = elById(keyId); if (!e) return null;
+  if (e.group && groupMembers(e.group).every(function(m) { return isSel(m.id); })) return groupMembers(e.group);
+  return [e];
 }
 function setSel(ids) { closeImagePicker(); setSelQuiet(ids); render(); renderAttrs(); }
 function fixSel() { setSelQuiet(selIdsNow()); }
@@ -1396,6 +1418,7 @@ function multiAttrs() {
        '<div><span class="mini">X</span><input class="inp" type="number" step=".5" value="' + bb.x + '" onchange="moveSelTo(\'x\',this.value)"></div>' +
        '<div><span class="mini">Y</span><input class="inp" type="number" step=".5" value="' + bb.y + '" onchange="moveSelTo(\'y\',this.value)"></div></div>';
   h += '<p class="muted" style="margin:.35rem 0 0">' + r1(bb.w) + ' × ' + r1(bb.h) + ' pt. Drag on the card or use the arrow keys to move ' + (g ? 'the group' : 'them') + ' together.</p>';
+  if (!g) { var ku = keyUnit(); h += '<p class="muted" style="margin:.35rem 0 0">' + (ku ? 'Lining up to <b>' + esc(ku.length > 1 && ku[0].group ? (groupById(ku[0].group) || { name: 'the group' }).name : elLabel(ku[0])) + '</b> — the dots around it line the others up with it. Click it again to line up with each other.' : 'Click one of them to make it the <b>key object</b>: the others line up with it.') + '</p>'; }
   if (g) {
     var mode = g.list === 'h' || g.list === 'v' ? g.list : '';
     function btn(o) { return '<button type="button" class="' + (o[0] === mode ? 'on' : '') + '" title="' + o[1] + '" aria-label="' + o[1].split(':')[0] + '" onclick="setGroupList(\'' + gid + '\',\'' + o[0] + '\')">' + LIST_ICONS[o[0] || 'free'] + '</button>'; }

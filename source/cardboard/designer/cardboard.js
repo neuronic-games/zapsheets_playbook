@@ -373,17 +373,18 @@ function renderData() {
   var sample = ROWS[rowIdx] || ROWS[0] || {};
   var shown = visibleFields(), hid = FIELDS.filter(isHidden);
   if ($('dataCount')) $('dataCount').textContent = shown.length;
-  var h = '<div class="new-field" id="newField">' +
+  var nf = '<div class="new-field" id="newField">' +
           '<button type="button" class="new-btn" onclick="showNewField()" title="Add a column to the sheet">New</button>' +
           '<form class="new-form" onsubmit="addField(event)"><input class="inp" id="newFieldName" maxlength="60" placeholder="New column name" title="Enter or click away to add · Esc to cancel" autocomplete="off" oninput="checkNewField()" onblur="addField()" onkeydown="if(event.key===\'Escape\'){this.value=\'\';hideNewField()}"></form>' +
           '<div class="new-msg" id="newFieldMsg"></div></div>';
+  var h = '';   // New goes last: a new column is added after the others
   if (!FIELDS.length) h += '<div class="muted">No columns yet. The first row of the sheet holds the column names, with one card per row below — or add one with New.</div>';
   // The eye in the Data heading shows hidden fields too (greyed), in their place in the list
   var list = _hiddenOpen ? FIELDS : shown;
   h += list.map(function(f) {
     return isHidden(f) ? chip('data-field="' + esc(f) + '"', '⊘', f, '', 'is-hidden')
                        : chip('data-field="' + esc(f) + '"', GRIP_ICON, f, looksLikeImage(f) ? '' : textVal(sample[f]), f === _newField ? 'just-added' : '');
-  }).join('');
+  }).join('') + nf;
   el.innerHTML = h;
   var eye = $('eyeBtn');
   if (eye) {

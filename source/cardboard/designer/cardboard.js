@@ -33,7 +33,7 @@ var SHAPES = [
   ['rect', 'Rectangle'], ['round', 'Rounded'], ['ellipse', 'Circle'], ['line', 'Line'],
   ['triangle', 'Triangle'], ['diamond', 'Diamond'], ['hexagon', 'Hexagon'], ['star', 'Star']
 ];
-var GRIP_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="currentColor"><circle cx="9" cy="5.5" r="1.9"/><circle cx="15" cy="5.5" r="1.9"/><circle cx="9" cy="12" r="1.9"/><circle cx="15" cy="12" r="1.9"/><circle cx="9" cy="18.5" r="1.9"/><circle cx="15" cy="18.5" r="1.9"/></svg>';   // drag handle on Data fields
+var DATA_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.55 3.36 2.8 7.5 2.8s7.5-1.25 7.5-2.8v-13"/><path d="M4.5 12c0 1.55 3.36 2.8 7.5 2.8s7.5-1.25 7.5-2.8"/></svg>';   // a sheet column (Data field)
 var DIE_ICON = '<svg class="die-ico" viewBox="0 0 24 24" width="1.05em" height="1.05em" aria-hidden="true" style="vertical-align:-.15em"><rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><g fill="currentColor"><circle cx="8" cy="8" r="1.6"/><circle cx="16" cy="8" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="8" cy="16" r="1.6"/><circle cx="16" cy="16" r="1.6"/></g></svg>';
 var GENS = [['seq', '123', 'Number sequence'], ['rand', DIE_ICON, 'Random number'], ['list', '☰', 'Random from list']];
 var IMG_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
@@ -384,7 +384,7 @@ function renderData() {
   var list = _hiddenOpen ? FIELDS : shown;
   h += list.map(function(f) {
     return isHidden(f) ? chip('data-field="' + esc(f) + '"', '⊘', f, '', 'is-hidden')
-                       : chip('data-field="' + esc(f) + '"', GRIP_ICON, f, looksLikeImage(f) ? '' : textVal(sample[f]), f === _newField ? 'just-added' : '');
+                       : chip('data-field="' + esc(f) + '"', DATA_ICON, f, looksLikeImage(f) ? '' : textVal(sample[f]), f === _newField ? 'just-added' : '');
   }).join('') + nf;
   el.innerHTML = h;
   var eye = $('eyeBtn');
@@ -1128,7 +1128,7 @@ function elLabel(e) {
 }
 function elIcon(e) {
   if (e.kind === 'shape') return '<span class="ly-ico">' + shapeSVG({ shape: e.shape, w: 14, h: 14, fill: e.fill || 'none', stroke: e.stroke || '#4b3fa8', strokeW: e.strokeW || (e.fill ? 0 : 1.5), radius: 3 }) + '</span>';
-  var t = { text: 'T', data: e.as === 'image' ? IMG_ICON : '≡', image: IMG_ICON, gen: '#' }[e.kind] || '•';
+  var t = { text: 'T', data: e.as === 'image' ? IMG_ICON : DATA_ICON, image: IMG_ICON, gen: '#' }[e.kind] || '•';
   return '<span class="ly-ico">' + t + '</span>';
 }
 function renderLayers() {

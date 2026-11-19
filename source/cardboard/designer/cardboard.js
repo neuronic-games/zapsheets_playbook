@@ -1083,7 +1083,7 @@ function ungroupSel() {
 function renameGroup(gid, name) { var g = groupById(gid); if (!g || !name.trim() || g.name === name.trim()) return; snapshot(); g.name = name.trim(); changed(true); }
 
 // The Layers list (toggled by the button at the top of the right-hand panel); front-most at the top
-var _layersOpen = false, _layerFold = {};
+var _layersOpen = false, _layerFold = {}, _lyClick = {};
 try { _layersOpen = localStorage.getItem('cb_layers') === '1'; } catch (e) {}
 function toggleLayers() {
   _layersOpen = !_layersOpen;
@@ -1138,20 +1138,31 @@ function renderLayers() {
     var fold = ev.target.closest('[data-fold]');
     if (fold) { _layerFold[fold.dataset.fold] = !_layerFold[fold.dataset.fold]; renderLayers(); return; }
     var row = ev.target.closest('.ly-row'); if (!row) return;
+    var now = Date.now(), plain = !(ev.shiftKey || ev.metaKey || ev.ctrlKey || ev.target.closest('[data-cb]'));
+    if (row.dataset.g && plain && _lyClick.g === row.dataset.g && now - _lyClick.t < 450) { _lyClick = {}; box._startRename(row.dataset.g); return; }
+    _lyClick = { g: row.dataset.g || '', t: now };
     var ids = row.dataset.g ? groupMembers(row.dataset.g).map(function(x) { return x.id; }) : [row.dataset.id];
     if (ev.shiftKey || ev.metaKey || ev.ctrlKey || ev.target.closest('[data-cb]')) {   // the checkbox adds to (or takes from) the selection
       var cur = selIdsNow(), has = ids.every(function(id) { return cur.indexOf(id) >= 0; });
       setSel(has ? cur.filter(function(id) { return ids.indexOf(id) < 0; }) : cur.concat(ids));
     } else setSel(ids);
   });
-  box.addEventListener('dblclick', function(ev) {
-    var row = ev.target.closest('.ly-group'); if (!row) return;
-    var nm = row.querySelector('.ly-name'), gid = row.dataset.g, g = groupById(gid); if (!g) return;
+  // Double-click a group to rename it. A click redraws the list, and the browser won't send a
+  // dblclick when the second click lands on a new row, so count the two clicks here.
+  function startRename(gid) {
+    var g = groupById(gid), row = box.querySelector('.ly-group[data-g="' + gid + '"]');
+    var nm = row && row.querySelector('.ly-name'); if (!g || !nm) return;
+    row.draggable = false;
     var inp = document.createElement('input'); inp.className = 'ly-rename'; inp.value = g.name; nm.replaceWith(inp); inp.focus(); inp.select();
-    function done(save) { if (save) renameGroup(gid, inp.value); renderLayers(); }
+    var finished = false;
+    function done(save) { if (finished) return; finished = true; if (save) renameGroup(gid, inp.value); renderLayers(); }
+    inp.addEventListener('click', function(c) { c.stopPropagation(); });
+    inp.addEventListener('dblclick', function(c) { c.stopPropagation(); });
     inp.addEventListener('keydown', function(k) { k.stopPropagation(); if (k.key === 'Enter') done(true); if (k.key === 'Escape') done(false); });
     inp.addEventListener('blur', function() { done(true); });
-  });
+  }
+  box.addEventListener('dblclick', function(ev) { var hit = ev.target.closest('.ly-group'); if (hit && !box.querySelector('.ly-rename')) startRename(hit.dataset.g); });
+  box._startRename = startRename;
   var drag = null;
   box.addEventListener('dragstart', function(ev) {
     var row = ev.target.closest('.ly-row'); if (!row) return;

@@ -292,6 +292,11 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .hdl.s  { left:calc(50% - 4.5px / var(--z)); bottom:calc(-4.5px / var(--z)); cursor:ns-resize; }
 .hdl.w  { top:calc(50% - 4.5px / var(--z)); left:calc(-4.5px / var(--z)); cursor:ew-resize; }
 .hdl.e  { top:calc(50% - 4.5px / var(--z)); right:calc(-4.5px / var(--z)); cursor:ew-resize; }
+.hdl.rot { left:calc(50% - 5.5px / var(--z)); top:calc(-28px / var(--z)); width:calc(11px / var(--z)); height:calc(11px / var(--z)); border-radius:50%; cursor:grab; }
+.hdl.rot::after { content:''; position:absolute; left:50%; top:100%; width:calc(1.5px / var(--z)); height:calc(16px / var(--z)); margin-left:calc(-.75px / var(--z)); background:#4b3fa8; }
+.hdl.rot:active { cursor:grabbing; background:#7b6cf6; }
+.el[data-angle]::before { content:attr(data-angle); position:absolute; left:50%; top:calc(-52px / var(--z)); transform:translateX(-50%); background:#2a2d3e; color:#fff; font:600 calc(11px / var(--z))/1.6 Inter,system-ui,sans-serif; padding:0 calc(6px / var(--z)); border-radius:calc(4px / var(--z)); z-index:70; white-space:nowrap; pointer-events:none; }
+.moving .el.picked .hdl:not(.rot) { visibility:hidden; }
 .card-empty-hint { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:12pt; color:#b0b4c8; font-size:10pt; pointer-events:none; }
 
 /* ── Attributes ────────────────────────────────────────── */

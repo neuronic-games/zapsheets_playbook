@@ -88,7 +88,7 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
     <h2>Design</h2>
     <div class="cards">
       <div class="card"><b>Add</b><p>Drag anything from the left panel onto the card. Drop a picture file on the card to add it as an image.</p></div>
-      <div class="card"><b>Arrange</b><p>Drag to move, pull the handles to resize. Arrow keys nudge 1 pt (<kbd>Shift</kbd>: 10). Hold <kbd>Alt</kbd> for fine moves.</p></div>
+      <div class="card"><b>Arrange</b><p>Drag to move, pull the handles to resize, and turn it with the round handle on top (<kbd>Shift</kbd> for 15° steps). Arrow keys nudge 1 pt (<kbd>Shift</kbd>: 10). Hold <kbd>Alt</kbd> for fine moves.</p></div>
       <div class="card"><b>Style</b><p>Select something to change its font, colors, alignment, rotation and more on the right.</p></div>
       <div class="card"><b>Rows</b><p>Step through your rows with the arrows above the card to see every card.</p></div>
       <div class="card"><b>Save</b><p><kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>S</kbd> saves the layout to the sheet. Undo with <kbd>⌘Z</kbd>; duplicate with <kbd>⌘D</kbd>.</p></div>

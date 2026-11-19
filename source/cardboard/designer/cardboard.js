@@ -249,7 +249,8 @@ function renderCardHTML(lay, row, designing, ctx) {
     h += '<div class="' + cls + '" data-id="' + e.id + '" style="' + elStyle(e) + '">';
     h += designing
       ? '<div class="el-inner">' + elInner(e, row, ctx) + '</div>' +
-        ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map(function(d) { return '<span class="hdl ' + d + '" data-h="' + d + '"></span>'; }).join('')
+        ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map(function(d) { return '<span class="hdl ' + d + '" data-h="' + d + '"></span>'; }).join('') +
+        '<span class="hdl rot" data-h="rot" title="Drag to rotate · Shift: 15° steps"></span>'
       : elInner(e, row, ctx);
     h += '</div>';
   });
@@ -877,6 +878,7 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
   var e = elById(elDom.dataset.id); if (!e) return;
   ev.preventDefault();
   var handle = ev.target.dataset.h || '';
+  if (handle === 'rot' && isSel(e.id) && !multi.length) { rotateDrag(ev, e, elDom); return; }   // before Shift-click, so Shift can snap the angle
   // Clicking part of a group picks the whole group; Shift/⌘-click adds to (or takes from) the selection
   var unit = e.group ? groupMembers(e.group).map(function(x) { return x.id; }) : [e.id];
   if (ev.shiftKey || ev.metaKey || ev.ctrlKey) {
@@ -934,6 +936,29 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
   }
   document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);
 });
+
+// Drag the round handle above an element to turn it about its middle. Shift snaps to 15°.
+function rotateDrag(ev, e, node) {
+  var r = node.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  function ang(m) { return Math.atan2(m.clientY - cy, m.clientX - cx) * 180 / Math.PI; }
+  var a0 = ang(ev), rot0 = +e.rot || 0, moved = false;
+  function mv(m) {
+    var d = ang(m) - a0; if (!moved && Math.abs(d) < 1) return;
+    if (!moved) { snapshot(); moved = true; $('cardHolder').classList.add('moving'); }
+    var v = rot0 + d; v = m.shiftKey ? Math.round(v / 15) * 15 : Math.round(v);
+    v = ((v % 360) + 540) % 360 - 180; if (v === -180) v = 180;
+    e.rot = v;
+    node.style.transform = v ? 'rotate(' + v + 'deg)' : '';
+    var inp = $('a_rot'); if (inp) inp.value = v;
+    node.setAttribute('data-angle', v + '°');
+  }
+  function up() {
+    document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up);
+    $('cardHolder').classList.remove('moving'); node.removeAttribute('data-angle');
+    if (moved) changed();
+  }
+  document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);
+}
 
 // ── Keyboard ──────────────────────────────────────────────────────────────────
 document.addEventListener('keydown', function(ev) {

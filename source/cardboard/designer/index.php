@@ -327,7 +327,7 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 
 /* ── Attributes ────────────────────────────────────────── */
 .attr-title { font-family:'DINBlack',sans-serif; font-size:.85rem; color:#2e2763; margin:0 0 .2rem; display:flex; align-items:center; gap:.4rem; }
-.attr-title .kind { font-family:'DINRegular',sans-serif; font-size:.68rem; color:#fff; background:#a99cff; border-radius:999px; padding:.05rem .45rem; text-transform:uppercase; letter-spacing:.06em; }
+.attr-title .kind { position:relative; top:.15rem; display:inline-flex; align-items:center; height:1.2rem; font-family:'DINRegular',sans-serif; font-size:.62rem; line-height:1; color:#fff; background:#a99cff; border-radius:999px; padding:.1rem .55rem 0; text-transform:uppercase; letter-spacing:.07em; }
 .row2 { display:grid; grid-template-columns:1fr 1fr; gap:.45rem; }
 .row4 { display:grid; grid-template-columns:repeat(4,1fr); gap:.35rem; }
 .mini { display:block; font-size:.62rem; color:#9aa0b8; margin-bottom:.15rem; text-transform:uppercase; letter-spacing:.06em; }

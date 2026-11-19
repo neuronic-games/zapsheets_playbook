@@ -119,7 +119,8 @@ button, input, select, textarea { font-family:inherit; }
 .field-chip { display:flex; align-items:center; gap:.45rem; border:1.5px solid #d6d9e6; border-radius:7px; padding:.38rem .55rem; margin-bottom:.35rem; background:#fff; cursor:grab; font-family:'DINBlack',sans-serif; font-size:.74rem; letter-spacing:.03em; color:#2e2763; user-select:none; transition:border-color .12s, background .12s; }
 .field-chip:hover { border-color:#a99cff; background:#f7f5ff; }
 .field-chip .ico { width:16px; text-align:center; color:#a0a4bb; font-family:'DINRegular',sans-serif; flex-shrink:0; }
-.field-chip .nm { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.field-chip .nm { position:relative; top:-.22em; line-height:1.5;   /* DINBlack draws low; lift it level with the icon and the value */
+  flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .field-chip .sample { font-family:'DINRegular',sans-serif; font-size:.68rem; color:#9aa0b8; max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .field-chip.static { color:#555; }
 .shape-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:.3rem; margin-bottom:.35rem; }

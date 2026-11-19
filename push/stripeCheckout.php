@@ -9,6 +9,7 @@
  *   app         — 'devboard' | 'gameboard' | 'pitchboard' | 'cardboard'
  *   plan        — 'pro' (default) | 'core' (DevBoard only)
  *   email       — pre-fill customer email (optional)
+ *   cbt         — CardBoard account token (CardBoard subscriptions belong to the signed-in email)
  *   success_url — page to return to on success (must be on this site)
  *   cancel_url  — page to return to on cancel  (must be on this site)
  *
@@ -61,6 +62,15 @@ if ($type === 'donation') {
 }
 if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $params['customer_email'] = $email;
+}
+// CardBoard: the subscription belongs to the signed-in person (their row in the CardBoard Admin sheet)
+if ($app === 'cardboard' && $type === 'subscription') {
+    require_once __DIR__ . '/cardboardAuth.php';
+    $who = cbReadToken(cbRequestToken());
+    if (!$who) stripeFail('Sign in to CardBoard first');
+    $params['customer_email']                          = $who['e'];
+    $params['metadata[cb_email]']                      = $who['e'];
+    $params['subscription_data[metadata][cb_email]']   = $who['e'];
 }
 
 $result = stripeRequest('POST', 'checkout/sessions', $params);

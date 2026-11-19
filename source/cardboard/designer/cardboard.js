@@ -97,9 +97,21 @@ function api(action, extra) {
   var fd = new FormData();
   fd.append('id', SHEET_ID); fd.append('action', action);
   Object.keys(extra || {}).forEach(function(k) { fd.append(k, extra[k]); });
-  return fetch(APP_BASE + 'push/cardboardData.php', { method: 'POST', body: fd })
-    .then(function(r) { return r.json(); })
+  return cbPost(APP_BASE + 'push/cardboardData.php', fd)
     .then(function(res) { if (!res || res.error) throw new Error(res && res.error ? res.error : 'No response'); return res; });
+}
+// POST with the account token. A stale sign-in is refreshed once and the request sent again;
+// no sign-in asks for one; a finished free week locks the designer.
+function cbPost(url, fd, again) {
+  if (ACCT && ACCT.token) fd.set('cbt', ACCT.token);
+  return fetch(url, { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(res) {
+    if (res && res.need_auth && !again) {
+      var next = res.refresh && ACCT ? acctRefresh(true) : askSignIn();
+      return next.then(function() { return cbPost(url, fd, true); }, function() { return res; });
+    }
+    if (res && res.locked) { acctRefresh(true).then(applyAcct, applyAcct); if (!again) openPlansDialog('locked'); }
+    return res;
+  });
 }
 function toast(msg, err) {
   var t = $('toast'); t.textContent = msg; t.className = 'toast show' + (err ? ' err' : '');
@@ -267,6 +279,7 @@ function renderCardHTML(lay, row, designing, ctx) {
 
 // ── Loading ───────────────────────────────────────────────────────────────────
 function init() {
+  startAccount();
   renderPalette();
   $('cardHolder').innerHTML = '<div class="loading" style="width:240px;height:200px"><span class="spin"></span>Loading sheet…</div>';
   loadTags();
@@ -506,6 +519,7 @@ function checkNewField() {
 var _addingField = false;
 function addField(ev) {
   if (ev) ev.preventDefault();
+  if (!hasAccess()) { requirePro('edit', function() {}); return; }
   var inp = $('newFieldName'); if (!inp || _addingField || !$('newField').classList.contains('open')) return;
   var n = inp.value.trim().replace(/\s+/g, ' ');
   if (!n) { hideNewField(); return; }
@@ -706,10 +720,8 @@ function uploadImage(id, file, slot) {   // slot: a mapping item's index, for it
   if (file.size > 10 * 1024 * 1024) { toast('That picture is over 10 MB', true); return; }
   UPLOADING[id] = true; render(); if (selId === id) renderAttrs();
   var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('app', 'cardboard'); fd.append('file', file);
-  fetch(APP_BASE + 'push/uploadImage.php', { method: 'POST', body: fd })
-    .then(function(r) { return r.json(); })
+  cbPost(APP_BASE + 'push/uploadImage.php', fd)
     .then(function(r) {
-      if (r && r.need_pro) { delete UPLOADING[id]; render(); SUB = null; openPlansDialog('upload'); return; }
       if (!r || r.error || !r.url) throw new Error(r && r.error ? r.error : 'Upload failed');
       delete UPLOADING[id]; if (slot == null) setImageSrc(id, r.url); else setMapSrc(id, slot, r.url);
     })
@@ -726,8 +738,8 @@ function openImagePicker(ev, id, slot) {   // slot: pick the picture for one val
   var p = document.createElement('div');
   p.id = 'imgPicker'; p.className = 'img-picker';
   p.innerHTML =
-    '<div class="ip-drop' + (isPro() ? '' : ' locked') + '" id="ipDrop">' + IMG_ICON + '<b>' + (isPro() ? 'Drop a picture here' : 'Upload a picture <span class="pro-tag">PRO</span>') + '</b><span>' + (isPro() ? 'or' : 'Uploading is part of Pro — on Free, paste a link below') + '</span>' +
-      '<button type="button" class="ip-choose" onclick="$(\'ipFile\').click()">Choose a file…' + (isPro() ? '' : '<span class="pro-tag">PRO</span>') + '</button>' +
+    '<div class="ip-drop" id="ipDrop">' + IMG_ICON + '<b>Drop a picture here</b><span>or</span>' +
+      '<button type="button" class="ip-choose" onclick="$(\'ipFile\').click()">Choose a file…</button>' +
       '<input type="file" id="ipFile" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none"></div>' +
     '<span class="mini">Or a web address</span>' +
     '<div class="ip-url"><input class="inp" id="ipUrl" placeholder="Link, or an image tag like [fire]" value="' + esc(/\/images\/[A-Za-z0-9_\-]+\/[0-9a-f]{20}\.\w+$/.test(cur) ? '' : cur) + '">' +
@@ -900,7 +912,7 @@ function ptFromEvent(ev) {
         if (!e) { addAt('add:image', clamp(p.x, 0, c.w), clamp(p.y, 0, c.h)); e = elById(selId); }
         if (file) uploadImage(e.id, file); else setImageSrc(e.id, link);
       };
-      if (file && !requirePro('upload', place)) return;   // uploads are Pro: don't leave an empty image behind
+      if (!requirePro('upload', place)) return;   // locked: don't leave an empty image behind
       place();
       return;
     }
@@ -918,6 +930,7 @@ $('cardHolder').addEventListener('dblclick', function(ev) {
 // Double-click a Data field shown as text to edit this row's value right on the card.
 // Enter saves to the sheet (Shift+Enter for a new line), Esc cancels, clicking away saves.
 function editCellInPlace(e) {
+  if (!requirePro('edit', function() {})) return;
   var row = ROWS[rowIdx]; if (!row) { toast('There\'s no row to edit', true); return; }
   if (!isSel(e.id) || multi.length) setSel([e.id]);
   var node = $('cardHolder').querySelector('.el[data-id="' + e.id + '"]'), inner = node && node.querySelector('.el-inner');
@@ -1060,7 +1073,7 @@ document.addEventListener('keydown', function(ev) {
   var typing = /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '') || !!(document.activeElement && document.activeElement.isContentEditable);
   var mod = ev.metaKey || ev.ctrlKey;
   if (mod && ev.key.toLowerCase() === 's') { ev.preventDefault(); saveLayout(); return; }
-  if (typing || _activeTab !== 'design' || !layout) return;
+  if (typing || _activeTab !== 'design' || !layout || !hasAccess()) return;   // read-only once the free week is over
   if (mod && ev.key.toLowerCase() === 'z') { ev.preventDefault(); if (ev.shiftKey) redo(); else undo(); return; }
   if (mod && ev.key.toLowerCase() === 'd') { ev.preventDefault(); duplicateSel(); return; }
   if (mod && ev.key.toLowerCase() === 'g') { ev.preventDefault(); if (ev.shiftKey) ungroupSel(); else groupSel(); return; }
@@ -1094,6 +1107,7 @@ function setDirty(d, restored) {
 }
 function saveLayout() {
   if (!dirty || !curTab) return;
+  if (!requirePro('save', saveLayout)) return;
   var btn = $('saveBtn'), snap = JSON.stringify(layout), tab = curTab;
   btn.disabled = true; btn.textContent = 'Saving…';
   api('save', { tab: tab, layout: snap })
@@ -1475,7 +1489,7 @@ function renderAttrs() {
   if (!e) {
     var c = layout.card;
     h += '<p class="attr-title">' + (side === 'back' ? 'Card back' : 'Card') + '</p><p class="muted" style="margin:0 0 .4rem">Select something on the card to change it. ' +
-         (side === 'back' ? 'Flip the card (top right) to work on the front.' : 'Flip the card (top right) to design its back.') + '</p>';
+         (side === 'back' ? 'Flip the card (top left) to work on the front.' : 'Flip the card (top left) to design its back.') + '</p>';
     if (side === 'back') h += '<span class="lbl">Back</span>' + colorRow('Background', 'bg', layout.back.bg, false, 'setBackProp') +
       '<p class="muted" style="margin:.3rem 0 0">' + (backVaries() ? 'This back changes from card to card, so exports include a back for every card.' : 'Every card shares this back.') + '</p>';
     h += '<span class="lbl">Size</span><select class="sel" onchange="setCard(\'size\',this.value)">' +
@@ -1979,6 +1993,7 @@ function exportTick(f, msg) { $('exportProgress').firstChild.style.width = Math.
 
 function runExport() {
   if (_exporting || !layout) return;
+  if (!requirePro('export', runExport)) return;
   var o = exportOpts(), zip, pub = (PUBLISHED[curTab] || {})[o.target];
   if (pub && pub.grid && pub.settings && pub.settings.quality === o.quality) o.grid = pub.grid;
   exportBusy(true);
@@ -2009,8 +2024,7 @@ function publishApi(action, extra, file) {
   fd.append('id', SHEET_ID); fd.append('action', action);
   Object.keys(extra || {}).forEach(function(k) { fd.append(k, extra[k]); });
   if (file) fd.append('file', file, extra.name);
-  return fetch(APP_BASE + 'push/cardboardPublish.php', { method: 'POST', body: fd })
-    .then(function(r) { return r.json(); })
+  return cbPost(APP_BASE + 'push/cardboardPublish.php', fd)
     .then(function(r) { if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response'); return r; });
 }
 function loadPublished(tab) {
@@ -2020,7 +2034,7 @@ function loadPublished(tab) {
   }).catch(function() {});
 }
 function publishSet(tab, o, tick) {
-  if (SUB && SUB.ok && !SUB.is_pro) return Promise.reject(new Error('Links are part of CardBoard Pro'));
+  if (!hasAccess()) return Promise.reject(new Error('your free week has ended'));
   return buildExport(o, function(name, blob) { return publishApi('upload', { tab: tab, target: o.target, name: name }, blob); }, tick)
     .then(function(r) {
       var st = Object.assign({}, o); delete st.grid;
@@ -2043,7 +2057,7 @@ function runPublish(asked) {
   exportBusy(true);
   publishSet(tab, o, exportTick)
     .then(function() { toast('✓ Links ready — they\'ll update when you save'); if (curTab === tab) renderExport(); })
-    .catch(function(e) { if (/CardBoard Pro/.test(e.message)) { SUB = null; openPlansDialog('links'); } else toast('Couldn\'t publish — ' + e.message, true); })
+    .catch(function(e) { toast('Couldn\'t publish — ' + e.message, true); })
     .then(function() { exportBusy(false); });
 }
 function updateLinksNow(target) {
@@ -2091,7 +2105,7 @@ function copyLink(btn) {
 function renderLinks() {
   var box = $('exportLinks'); if (!box) return;
   var target = $('eTarget').value, m = (PUBLISHED[curTab] || {})[target];
-  $('publishGo').innerHTML = (m ? 'Republish links' : 'Get links') + (isPro() ? '' : '<span class="pro-tag">PRO</span>');
+  $('publishGo').innerHTML = m ? 'Republish links' : 'Get links';
   if (!m) { box.innerHTML = ''; box.style.display = 'none'; return; }
   var when = new Date(m.updated), g = m.grid || {};
   function row(label, f, extra) {
@@ -2187,6 +2201,7 @@ function moveGridSel(dr, dc) {
 }
 function startGridEdit(typed) {
   if (!_gridSel || _gridEdit) return;
+  if (!requirePro('edit', function() {})) return;
   var td = gridCell(_gridSel.r, _gridSel.c); if (!td) return;
   var r = GRID.rows[_gridSel.r], v = r.values[_gridSel.c] || '';
   var rect = td.getBoundingClientRect(), wrap = $('gridWrap').getBoundingClientRect();
@@ -2270,6 +2285,7 @@ function hideAddColumn() { var box = $('gridAddCol'); if (box) box.classList.rem
 var _addingCol = false;
 function addColumn(ev) {
   if (ev) ev.preventDefault();
+  if (!hasAccess()) { requirePro('edit', function() {}); return; }
   var box = $('gridAddCol'), inp = $('gridAddColName');
   if (_addingCol || !box.classList.contains('open')) return;
   var n = inp.value.trim().replace(/\s+/g, ' ');
@@ -2419,7 +2435,7 @@ function setTags(list) {
   TAGS.forEach(function(t) { t.tag = braced(t.tag); });   // older sheets saved {energy}
   TAGS.forEach(function(t) { TAGMAP[tagKey(t.tag)] = t; });
 }
-function tagsOn() { return TAGS.length > 0 && !!SUB && (SUB.is_pro || SUB.ok === false); }
+function tagsOn() { return TAGS.length > 0; }
 // One block of text, so an inline tag picture sits in the line instead of becoming its own flex item
 function rich(t, ctx) { return '<span class="tx">' + expandTags(esc(t), ctx || {}) + '</span>'; }
 function expandTags(html, ctx) {
@@ -2446,8 +2462,7 @@ function tagPreview(t) {
 }
 function renderTags() {
   var box = $('tagList'); if (!box) return;
-  var pro = !SUB || SUB.is_pro || SUB.ok === false;
-  $('tagsPro').style.display = SUB && SUB.ok && !SUB.is_pro ? '' : 'none';
+  var pro = hasAccess();   // read-only once the free week is over
   $('tagsInfo').textContent = TAGS.length + (TAGS.length === 1 ? ' tag' : ' tags');
   var list = (_tagDraft ? [_tagDraft] : []).concat(TAGS);
   if (!list.length) { box.innerHTML = '<div class="tag-empty">No tags yet. <b>+ Add tag</b>, name it (like <code>energy</code>), and give it a word or a picture. Then write <code>[energy]</code> in any text or data on your cards.</div>'; return; }
@@ -2496,7 +2511,7 @@ function saveTag(t, old) {
     laterRenderTags();
     toast('✓ Saved ' + t.tag);
   }).catch(function(e) {
-    if (/Pro/.test(e.message)) { SUB = null; openPlansDialog('tags'); } else toast('Couldn\'t save the tag — ' + e.message, true);
+    toast('Couldn\'t save the tag — ' + e.message, true);
     loadTags();
   });
 }
@@ -2537,8 +2552,8 @@ function uploadPicture(file) {
   if (!isImageFile(file)) return Promise.reject(new Error('Use a PNG, JPG, GIF or WebP picture'));
   if (file.size > 10 * 1024 * 1024) return Promise.reject(new Error('That picture is over 10 MB'));
   var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('app', 'cardboard'); fd.append('file', file);
-  return fetch(APP_BASE + 'push/uploadImage.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
-    .then(function(r) { if (r && r.need_pro) { SUB = null; throw new Error('Uploading pictures is part of CardBoard Pro'); } if (!r || r.error || !r.url) throw new Error(r && r.error ? r.error : 'Upload failed'); return r.url; });
+  return cbPost(APP_BASE + 'push/uploadImage.php', fd)
+    .then(function(r) { if (!r || r.error || !r.url) throw new Error(r && r.error ? r.error : 'Upload failed'); return r.url; });
 }
 function pickTagImage(i) {
   var t = tagAt(i); if (!t) return;
@@ -2551,7 +2566,7 @@ function pickTagImage(i) {
       h += '<div class="icon-color"><span class="mini">Color</span><input type="color" value="' + esc(color.length === 7 ? color : '#2e2763') + '" data-color></div><div class="icon-grid">' +
         Object.keys(ICONS).map(function(n) { return '<button type="button" class="icon-cell' + (cur.name === n ? ' on' : '') + '" data-icon="' + n + '" title="' + n + '"><img src="' + iconUri(n, color) + '" alt="' + n + '"></button>'; }).join('') + '</div>';
     } else if (tab === 'upload') {
-      h += '<label class="ip-drop tag-drop" data-drop>' + IMG_ICON + '<b>Drop a picture here</b><span>or click to choose a file</span>' + (isPro() ? '' : '<span class="pro-tag">PRO</span>') +
+      h += '<label class="ip-drop tag-drop" data-drop>' + IMG_ICON + '<b>Drop a picture here</b><span>or click to choose a file</span>' +
            '<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none" data-file></label><p class="dlg-sub">Saved on zapsheets.com.</p><div class="dlg-err" data-err></div>';
     } else {
       h += '<span class="mini" style="margin-top:.8rem">Picture link</span><input class="inp" data-url value="' + esc(parseIcon(t.value) ? '' : t.value) + '" placeholder="Dropbox, Google Drive or web link">' +
@@ -2572,7 +2587,7 @@ function pickTagImage(i) {
   }
   function done(v) { ov.remove(); document.removeEventListener('keydown', key, true); if (v != null) setTagValue(i, v); }
   function upload(f) {
-    if (!isPro()) { done(null); requirePro('upload', function() {}); return; }
+    if (!hasAccess()) { done(null); requirePro('upload', function() {}); return; }
     var err = ov.querySelector('[data-err]'); err.textContent = 'Uploading…';
     uploadPicture(f).then(function(url) { done(url); }).catch(function(e) { err.textContent = e.message; });
   }
@@ -2644,8 +2659,7 @@ function saveProfile() {
 function openSettingsDialog() {
   $('setSheetTitle').textContent = SHEET_TITLE || 'This spreadsheet';
   markUnits(); $('setErr').textContent = '';
-  $('setPlan').innerHTML = SUB === null ? 'Checking…' : planLabel();
-  if (SUB === null) loadSub(function() { $('setPlan').innerHTML = planLabel(); });
+  $('setPlan').innerHTML = planLabel();
   openDialog('settingsOverlay');
 }
 function markUnits() { document.querySelectorAll('#setUnits button').forEach(function(b) { b.classList.toggle('on', b.dataset.u === (SETTINGS.units || 'in')); }); }
@@ -2659,72 +2673,107 @@ function unitStep() { return SETTINGS.units === 'mm' ? '0.5' : '0.05'; }
 function toUnit(pt) { return SETTINGS.units === 'mm' ? Math.round(pt / 72 * 25.4 * 10) / 10 : Math.round(pt / 72 * 100) / 100; }
 function fromUnit(v) { v = parseFloat(v); return SETTINGS.units === 'mm' ? v / 25.4 * 72 : v * 72; }
 
-// Subscription (Stripe, per spreadsheet): Free, or Pro at $4.99/month
-var SUB = null, _subWaiters = [], _subLoading = false;
-function isPro() { return !!(SUB && SUB.is_pro); }
+// ── Account: a free week with every feature, then $4.99/month ────────────────
+// People sign in with a code sent to their email. The account (and its signed token) is kept
+// in this browser, so the app knows the plan straight away; it's checked with the server
+// (the CardBoard Admin sheet) every few hours, and right after subscribing.
+var ACCT = null, ACCT_KEY = 'cb_account', ACCT_MAX_AGE = 4 * 3600 * 1000;
+try { ACCT = JSON.parse(localStorage.getItem(ACCT_KEY) || 'null'); } catch (e) { ACCT = null; }
+function acctInfo() { return (ACCT && ACCT.account) || null; }
+function storeAcct(res) {
+  ACCT = { token: res.token, account: res.account, sheet: SHEET_ID, checked: Date.now() };
+  try { localStorage.setItem(ACCT_KEY, JSON.stringify(ACCT)); } catch (e) {}
+  applyAcct();
+}
+function forgetAcct() { ACCT = null; try { localStorage.removeItem(ACCT_KEY); } catch (e) {} applyAcct(); }
+function hasAccess() {
+  var a = acctInfo(); if (!a) return false;
+  if (a.sheet_unlocked && ACCT.sheet === SHEET_ID) return true;
+  return a.state !== 'locked' && new Date(a.until).getTime() > Date.now();
+}
+function daysLeft() { var a = acctInfo(); return a ? Math.max(0, Math.ceil((new Date(a.until).getTime() - Date.now()) / 86400000)) : 0; }
+function accountPost(action, extra) {
+  var fd = new FormData(); fd.append('action', action); fd.append('sheet', SHEET_ID);
+  Object.keys(extra || {}).forEach(function(k) { fd.append(k, extra[k]); });
+  if (ACCT && ACCT.token) fd.append('cbt', ACCT.token);
+  return fetch(APP_BASE + 'push/cardboardAccount.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
+    .then(function(r) { if (!r || r.error) { var e = new Error(r && r.error ? r.error : 'No response'); e.needAuth = !!(r && r.need_auth); throw e; } return r; });
+}
+var _acctRefreshing = null;
+function acctRefresh(force) {
+  if (!ACCT) return Promise.reject(new Error('Not signed in'));
+  if (!force && ACCT.sheet === SHEET_ID && Date.now() - (ACCT.checked || 0) < ACCT_MAX_AGE) return Promise.resolve(ACCT);
+  if (_acctRefreshing) return _acctRefreshing;
+  _acctRefreshing = accountPost('refresh').then(function(r) { storeAcct(r); return ACCT; })
+    .catch(function(e) { if (e.needAuth) forgetAcct(); throw e; })
+    .then(function(a) { _acctRefreshing = null; return a; }, function(e) { _acctRefreshing = null; throw e; });
+  return _acctRefreshing;
+}
+// The designer follows the account: everything while it has access, read-only once the week is over
+function applyAcct() {
+  var a = acctInfo(), ok = hasAccess();
+  document.body.classList.toggle('cb-locked', !ok);
+  var bar = $('lockBar');
+  if (bar) {
+    bar.hidden = ok;
+    if (!a) { $('lockMsg').innerHTML = '<b>Sign in to start designing</b> — your first week is free, with every feature.'; $('lockBtn').textContent = 'Sign in'; $('lockBtn').onclick = function() { askSignIn().catch(function() {}); }; }
+    else { $('lockMsg').innerHTML = '<b>Your free week has ended.</b> Your cards and sheets are safe — subscribe for $4.99/month to keep designing.'; $('lockBtn').textContent = 'Subscribe'; $('lockBtn').onclick = function() { openPlansDialog('locked'); }; }
+  }
+  updateSubMenu();
+  if (_activeTab === 'export' && typeof renderLinks === 'function') renderLinks();
+  if (_activeTab === 'tags' && typeof renderTags === 'function') renderTags();
+  if (typeof renderAttrs === 'function' && layout) renderAttrs();
+}
 function planLabel() {
-  var s = SUB || {};
-  if (s.ok === false) return '<b>—</b> <span class="muted">(couldn’t check right now)</span>';
-  return '<b>' + (s.is_pro ? 'Pro' : 'Free') + '</b>' + (s.is_pro && s.period_end ? ' <span class="muted">· renews ' + esc(fmtWhen(s.period_end)) + '</span>' : '');
+  var a = acctInfo();
+  if (!a) return '<b>Not signed in</b>';
+  if (a.sheet_unlocked && ACCT.sheet === SHEET_ID) return '<b>Unlocked</b> <span class="muted">· activation key</span>';
+  if (a.state === 'activated') return '<b>Unlocked</b> <span class="muted">· activation key</span>';
+  if (a.state === 'subscribed') return '<b>Subscribed</b>' + (a.period_end ? ' <span class="muted">· renews ' + esc(fmtWhen(a.period_end)) + '</span>' : '');
+  if (a.state === 'trial') { var d = daysLeft(); return '<b>Free week</b> <span class="muted">· ' + d + (d === 1 ? ' day' : ' days') + ' left</span>'; }
+  return '<b>Free week ended</b>';
 }
 function fmtWhen(v) {
   var d = /^\d+$/.test(String(v)) ? new Date(+v * (+v < 1e12 ? 1000 : 1)) : new Date(v);
   return isNaN(d) ? String(v) : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
-function loadSub(cb) {
-  if (cb) _subWaiters.push(cb);
-  if (_subLoading) return;
-  _subLoading = true;
-  var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('app', 'cardboard');
-  fetch(APP_BASE + 'push/getSubscription.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
-    .then(function(r) { SUB = (r && r.ok) ? r : { ok: false }; }, function() { SUB = { ok: false }; })
-    .then(function() {
-      _subLoading = false;
-      updateSubMenu();
-      if (_activeTab === 'export') renderLinks();
-      if (TAGS.length) refreshCards();   // tags only show on cards with Pro
-      if (_activeTab === 'tags') renderTags();
-      var w = _subWaiters; _subWaiters = []; w.forEach(function(f) { f(SUB); });
-    });
-}
 function updateSubMenu() {
   var b = $('cbSubBtn'); if (!b) return;
-  b.textContent = isPro() ? 'Pro Active' : 'Subscribe';
-  b.style.color = isPro() ? '#4caf50' : '#f5a623';
+  var a = acctInfo(), st = a && (a.sheet_unlocked && ACCT.sheet === SHEET_ID ? 'activated' : a.state);
+  b.textContent = !a ? 'Sign in' : st === 'subscribed' ? 'Subscribed' : st === 'activated' ? 'Unlocked' : st === 'trial' ? 'Subscribe · ' + daysLeft() + 'd free left' : 'Subscribe';
+  b.style.color = st === 'subscribed' || st === 'activated' ? '#4caf50' : '#f5a623';
+  var so = $('cbSignOut'); if (so) so.hidden = !a;
 }
-var PRO_REASONS = {
-  links: 'Hosted links for exports — Tabletop Simulator, Screentop and card images — are part of CardBoard Pro. They keep the files on our server and update them when your cards change.',
-  upload: 'Uploading pictures to CardBoard is part of Pro. On Free, use a Dropbox, Google Drive or web link instead.',
-  tags: 'Tags are part of CardBoard Pro: write [energy] in your text or data and it becomes a word or an icon on every card.'
-};
-// Returns true when allowed; otherwise shows the plans. If the plan can't be checked, the server decides.
+// Returns true when allowed; otherwise asks to sign in or shows the plans
 function requirePro(reason, retry) {
-  if (SUB === null) { loadSub(function(s) { if (s.is_pro || s.ok === false) retry(); else openPlansDialog(reason); }); return false; }
-  if (SUB.is_pro || SUB.ok === false) return true;
-  openPlansDialog(reason); return false;
+  if (hasAccess()) return true;
+  if (!ACCT) askSignIn().then(function() { if (hasAccess()) retry(); }, function() {});
+  else openPlansDialog('locked');
+  return false;
 }
+var LOCK_REASONS = { locked: 'Your free week has ended. Subscribe to keep designing — your layouts and sheets are just as you left them.' };
 function openPlansDialog(reason) {
-  $('planIntro').textContent = PRO_REASONS[reason] || 'Pick the plan that fits how you work.';
-  openDialog('plansOverlay');
-  if (SUB === null) { $('planCurrent').textContent = ''; $('planStatus').textContent = 'Checking your plan…'; loadSub(renderPlans); }
-  else renderPlans();
+  if (!ACCT) { askSignIn().then(function() { openPlansDialog(reason); }, function() {}); return; }
+  $('planIntro').textContent = LOCK_REASONS[reason] || 'Every feature, for a week free. Then $4.99 a month to keep designing.';
+  openDialog('plansOverlay'); renderPlans();
+  acctRefresh(false).then(renderPlans, function() {});
 }
 function renderPlans() {
-  var s = SUB || {}, pro = !!s.is_pro;
-  $('planFree').classList.toggle('current', s.ok !== false && !pro);
-  $('planPro').classList.toggle('current', pro);
-  $('planCurrent').innerHTML = 'Current plan: ' + planLabel();
-  $('planCurrent').className = 'plan-current' + (pro ? ' paid' : '');
-  var btn = $('planProBtn'); btn.style.display = pro ? 'none' : ''; btn.disabled = false; btn.textContent = 'Choose Pro';
-  $('planManage').style.display = pro ? '' : 'none';
-  $('planManage').textContent = s.status === 'past_due' ? 'Update Payment' : 'Manage Billing';
-  $('planStatus').innerHTML = s.status === 'past_due' ? '<span style="color:#d97706;font-weight:700">⚠ Payment past due</span>' : (s.ok === false ? 'Couldn’t check your plan right now.' : '');
-  if (s.activated) { $('planManage').style.display = 'none'; $('planStatus').textContent = ''; }   // unlocked with a key: no billing
-  if (window.zsActivationKey) zsActivationKey({ el: $('planActKey'), base: APP_BASE, sheetId: SHEET_ID, activated: !!s.activated,
-    onActivated: function() { SUB = null; loadSub(function() { renderPlans(); refreshCards(); if (_activeTab === 'tags') renderTags(); }); } });
+  var a = acctInfo() || {}, unlocked = a.state === 'activated' || (a.sheet_unlocked && ACCT && ACCT.sheet === SHEET_ID), sub = a.state === 'subscribed';
+  $('planFree').classList.toggle('current', a.state === 'trial' && !unlocked);
+  $('planPro').classList.toggle('current', sub || unlocked);
+  $('planCurrent').innerHTML = planLabel();
+  $('planCurrent').className = 'plan-current' + (sub || unlocked ? ' paid' : '');
+  var btn = $('planProBtn'); btn.style.display = sub || unlocked ? 'none' : ''; btn.disabled = false; btn.textContent = 'Subscribe';
+  $('planManage').style.display = sub ? '' : 'none';
+  $('planManage').textContent = a.status === 'past_due' ? 'Update Payment' : 'Manage Billing';
+  $('planStatus').innerHTML = a.status === 'past_due' ? '<span style="color:#d97706;font-weight:700">⚠ Payment past due</span>' : '';
+  $('planWho').innerHTML = a.email ? 'Signed in as <b>' + esc(a.email) + '</b>' : '';
+  if (window.zsActivationKey) zsActivationKey({ el: $('planActKey'), base: APP_BASE, sheetId: SHEET_ID, activated: !!unlocked,
+    onActivated: function() { acctRefresh(true).then(function() { renderPlans(); refreshCards(); }, function() {}); } });
 }
 function openBillingPortal() {
-  var url = SUB && SUB.portal_url;
+  var url = acctInfo() && acctInfo().portal_url;
   if (url) window.open(url, '_blank', 'noopener');
   else askDialog({ title: 'Billing', message: 'Online billing management isn’t available yet. Please contact support to change your subscription.', ok: 'OK', cancel: '' });
 }
@@ -2737,21 +2786,66 @@ function startProCheckout() {
   var btn = $('planProBtn'); btn.disabled = true; btn.textContent = 'Redirecting…';
   var fd = new FormData();
   fd.append('type', 'subscription'); fd.append('id', SHEET_ID); fd.append('app', 'cardboard'); fd.append('plan', 'pro');
-  if ((SETTINGS.profile || {}).email) fd.append('email', SETTINGS.profile.email);
+  if (ACCT && ACCT.token) fd.append('cbt', ACCT.token);
   fd.append('success_url', returnUrl(['sub', 'success'])); fd.append('cancel_url', returnUrl(null));
   fetch(APP_BASE + 'push/stripeCheckout.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
     .then(function(r) { if (!r || r.error || !r.url) throw new Error(r && r.error ? r.error : 'Could not start checkout'); window.location.href = r.url; })
-    .catch(function(e) { btn.disabled = false; btn.textContent = 'Choose Pro'; $('planStatus').textContent = e.message; });
+    .catch(function(e) { btn.disabled = false; btn.textContent = 'Subscribe'; $('planStatus').textContent = e.message; });
 }
-(function() {   // back from Stripe Checkout
+function signOut() {
+  askDialog({ title: 'Sign out?', message: 'You can sign back in any time with a code sent to your email.', ok: 'Sign out', cancel: 'Cancel' })
+    .then(function(yes) { if (yes) { forgetAcct(); toast('Signed out'); } });
+}
+
+// Sign in: email → 6-digit code. Resolves once signed in; rejects if closed.
+var _signIn = null;
+function askSignIn() {
+  if (_signIn) { openDialog('signinOverlay'); return _signIn.promise; }
+  var d = {}; d.promise = new Promise(function(res, rej) { d.res = res; d.rej = rej; }); _signIn = d;
+  $('siStep1').hidden = false; $('siStep2').hidden = true; $('siErr').textContent = '';
+  $('siEmail').value = (acctInfo() && acctInfo().email) || (SETTINGS && SETTINGS.profile && SETTINGS.profile.email) || '';
+  $('siSend').disabled = false; $('siSend').textContent = 'Email me a code';
+  openDialog('signinOverlay'); setTimeout(function() { $('siEmail').focus(); }, 60);
+  return d.promise;
+}
+function closeSignIn() { closeDialog('signinOverlay'); if (_signIn) { var d = _signIn; _signIn = null; d.rej(new Error('Not signed in')); } }
+function signInSend() {
+  var em = $('siEmail').value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { $('siErr').textContent = 'Enter your email address.'; return; }
+  var b = $('siSend'); b.disabled = true; b.textContent = 'Sending…'; $('siErr').textContent = '';
+  accountPost('send', { email: em }).then(function(r) {
+    $('siTo').textContent = em; $('siStep1').hidden = true; $('siStep2').hidden = false; $('siCode').value = r.debug_code || '';
+    setTimeout(function() { $('siCode').focus(); }, 40);
+  }).catch(function(e) { $('siErr').textContent = e.message; }).then(function() { b.disabled = false; b.textContent = 'Email me a code'; });
+}
+function signInVerify() {
+  var code = $('siCode').value.replace(/\D/g, '');
+  if (code.length !== 6) { $('siErr').textContent = 'Enter the 6-digit code from the email.'; return; }
+  var b = $('siGo'); b.disabled = true; b.textContent = 'Signing in…'; $('siErr').textContent = '';
+  var name = (SETTINGS && SETTINGS.profile && SETTINGS.profile.name) || '';
+  accountPost('verify', { email: $('siTo').textContent, code: code, name: name }).then(function(r) {
+    storeAcct(r); closeDialog('signinOverlay');
+    var a = r.account; toast(a.state === 'trial' ? '✓ Signed in — ' + daysLeft() + ' days of your free week left' : '✓ Signed in');
+    if (_signIn) { var d = _signIn; _signIn = null; d.res(ACCT); }
+  }).catch(function(e) { $('siErr').textContent = e.message; }).then(function() { b.disabled = false; b.textContent = 'Sign in'; });
+}
+function signInBack() { $('siStep2').hidden = true; $('siStep1').hidden = false; $('siErr').textContent = ''; $('siEmail').focus(); }
+
+(function() {   // back from Stripe Checkout: check the account again once the webhook has landed
   var u = new URL(window.location.href);
   if (u.searchParams.get('sub') === 'success') {
     u.searchParams.delete('sub'); window.history.replaceState(null, '', u.pathname + u.search + u.hash);
-    setTimeout(function() { toast('✓ Welcome to CardBoard Pro'); }, 400);
-    setTimeout(function() { SUB = null; loadSub(); }, 2500);   // the webhook may land a moment later
+    setTimeout(function() { toast('✓ Thanks for subscribing to CardBoard'); }, 400);
+    [2500, 8000].forEach(function(ms) { setTimeout(function() { if (ACCT) acctRefresh(true).then(function() { refreshCards(); }, function() {}); }, ms); });
   }
 })();
-loadSub();
+// On load: use the account kept in this browser right away; check it again if it's old
+// (or locked, in case they've subscribed elsewhere). No account: ask to sign in.
+function startAccount() {
+  applyAcct();
+  if (!ACCT) { setTimeout(function() { askSignIn().catch(function() {}); }, 600); return; }
+  acctRefresh(!hasAccess()).then(function() {}, function() {});
+}
 
 // ── Tabs, menu, donation ──────────────────────────────────────────────────────
 function switchTab(t) {

@@ -30,14 +30,18 @@ function cbRun(string $python, string $sheetId, array $data): array {
     return ['error' => 'The CardBoard script failed: ' . ($raw !== '' ? mb_substr($raw, -300) : 'no output')];
 }
 
+// Anything that changes the spreadsheet needs the free week, a subscription or an unlocked sheet
+if (in_array($action, ['save', 'addfield', 'setcell', 'addrow', 'settag', 'deltag'], true)) {
+    require_once __DIR__ . '/cardboardAuth.php';
+    cbRequireAccess($sheetId);
+}
+
 if ($action === 'tabs')    { echo json_encode(cbRun($python, $sheetId, ['action' => 'tabs'])); exit; }
 if ($action === 'layouts') { echo json_encode(cbRun($python, $sheetId, ['action' => 'layouts'])); exit; }
 
-// Tags: [name] → text or a picture, kept in the "tags" tab. Changing them is CardBoard Pro.
+// Tags: [name] → text or a picture, kept in the "tags" tab.
 if ($action === 'tags') { echo json_encode(cbRun($python, $sheetId, ['action' => 'tags']), JSON_UNESCAPED_UNICODE); exit; }
 if ($action === 'settag' || $action === 'deltag') {
-    require_once __DIR__ . '/stripeCommon.php';
-    if (!stripeSheetPlan($sheetId, 'cardboard')['is_pro']) { echo json_encode(['error' => 'Tags are part of CardBoard Pro.', 'need_pro' => true]); exit; }
     $tag = trim((string) ($_POST['tag'] ?? ''), " \t{}[]");
     if ($tag === '' || mb_strlen($tag) > 60 || strpbrk($tag, '{}[]') !== false) { echo json_encode(['error' => 'Use up to 60 characters for the tag name, without brackets or braces inside']); exit; }
     $req = ['action' => $action, 'tag' => $tag];

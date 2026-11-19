@@ -553,6 +553,20 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
 .set-sheet .attr-btn, .set-plan .attr-btn { flex:0 0 auto; padding:0 .8rem; }
 .plan-title { display:flex; align-items:center; justify-content:center; gap:.5rem; margin:0 0 .35rem; font-family:'DINBlack',sans-serif; font-weight:400; font-size:1.1rem; color:#2e2763; }
 .plan-title img { width:28px; height:28px; border-radius:7px; }
+.lock-bar { display:flex; align-items:center; justify-content:center; gap:1rem; flex-wrap:wrap; padding:.55rem 1rem; background:#fff7e6; border-bottom:1px solid #f5d98c; color:#5c4a12; font-size:.82rem; flex-shrink:0; }
+.lock-bar[hidden] { display:none; }
+.lock-bar .plan-btn { width:auto; padding:.45rem 1rem; }
+body.cb-locked .panel-left .panel-scroll, body.cb-locked #attrPanel, body.cb-locked .tags-stick .print-go:not(.ghost), body.cb-locked #exportGo, body.cb-locked #publishGo { opacity:.5; pointer-events:none; }
+body.cb-locked #cardHolder .el { pointer-events:none; }
+body.cb-locked #saveBtn { display:none; }
+.plan-who { font-size:.76rem; color:#8a8fa8; margin:-.2rem 0 .5rem; }
+.plan-who:empty { display:none; }
+.signin-dlg { width:min(420px,94vw); text-align:center; }
+.si-row { display:flex; gap:.5rem; margin-top:.8rem; }
+.si-row .inp { flex:1; height:2.4rem; font-size:.95rem; }
+.si-row .print-go { white-space:nowrap; }
+.si-code { letter-spacing:.35em; text-align:center; font-family:ui-monospace,Menlo,monospace; }
+.si-link { margin-top:.6rem; background:none; border:none; color:#6b7090; font-size:.78rem; text-decoration:underline; cursor:pointer; }
 .plan-current { display:block; width:fit-content; margin:0 auto .2rem; font-size:.82rem; color:#555; background:#f1f2f8; border-radius:999px; padding:.22rem .8rem; }
 .plan-current:empty { display:none; }
 .plan-current b { font-family:'DINBlack',sans-serif; font-weight:400; color:#333; }
@@ -635,10 +649,14 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
         <button class="account-menu-item" onclick="closeAccountMenu();reloadSheet()" title="Read the latest data from the Google Sheet">Fetch</button>
         <button class="account-menu-item" id="cbSubBtn" onclick="closeAccountMenu();openPlansDialog()" style="color:#f5a623">Subscribe</button>
         <button class="account-menu-item" onclick="closeAccountMenu();window.open(APP_BASE + 'cardboard/help', '_blank')">Help</button>
+        <button class="account-menu-item" id="cbSignOut" onclick="closeAccountMenu();signOut()" hidden>Sign out</button>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Shown when not signed in, or when the free week has ended: the designer is read-only -->
+<div class="lock-bar" id="lockBar" hidden><span id="lockMsg"></span><button type="button" class="plan-btn" id="lockBtn">Subscribe</button></div>
 
 <!-- Data view -->
 <div class="view" id="view-data">
@@ -668,14 +686,14 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
     <div class="tags-stick">
     <div class="tags-head">
       <div>
-        <h2 class="tags-title">Tags <span class="pro-tag">PRO</span></h2>
+        <h2 class="tags-title">Tags</h2>
         <p class="tags-sub">Type <code>[energy]</code> in any text and cards show its word or picture.</p>
       </div>
       <div class="e-actions"><span class="print-info" id="tagsInfo"></span>
         <button class="print-go ghost" onclick="loadTags()">Reload</button>
         <button class="print-go" onclick="addTag()">+ Add tag</button></div>
     </div>
-    <div class="tags-pro" id="tagsPro" style="display:none">Tags are part of <b>CardBoard Pro</b>. You can see the tags in this sheet; with Pro you can change them and they show on your cards. <button class="plan-btn" onclick="openPlansDialog('tags')">See plans</button></div>
+    
     <div class="tag-cols"><span>Tag</span><span>Type</span><span>Becomes</span><span>Preview</span><span></span></div>
     </div>
     <div id="tagList"><div class="loading"><span class="spin"></span>Loading tags…</div></div>
@@ -737,7 +755,7 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
     <div class="grp"><span class="mini">Backs</span>
       <select class="sel" id="pBacks" onchange="renderPrint()"><option value="none">Fronts only</option><option value="long">Double-sided (flip on long edge)</option><option value="short">Double-sided (flip on short edge)</option></select></div>
     <span class="print-info" id="printInfo"></span>
-    <button class="print-go" onclick="window.print()">Print</button>
+    <button class="print-go" onclick="if (requirePro('print', function() { window.print(); })) window.print()">Print</button>
   </div>
   <div class="pages" id="pages"></div>
 </div>
@@ -802,29 +820,31 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
 <div class="overlay" id="plansOverlay" onclick="if(event.target===this)closeDialog('plansOverlay')">
   <div class="dlg" style="width:min(540px,94vw);text-align:center" onclick="event.stopPropagation()">
     <h2 class="plan-title"><img src="images/cardboard_icon_180.png" alt="">CardBoard plans</h2>
+    <div class="plan-who" id="planWho"></div>
     <div class="plan-current" id="planCurrent"></div>
     <p class="dlg-sub" id="planIntro" style="margin:.3rem 0 .9rem">Pick the plan that fits how you work.</p>
     <div class="plan-grid">
       <div class="plan-card" id="planFree">
-        <div class="plan-name">Free</div>
-        <div class="plan-price">$0</div>
+        <div class="plan-name">Free week</div>
+        <div class="plan-price">$0<span>for 7 days</span></div>
         <ul>
-          <li>Card designer, fronts &amp; backs</li>
-          <li>Edit your sheet's data</li>
-          <li>Print sheets &amp; downloads for TTS and Screentop</li>
-          <li>Pictures from Dropbox, Drive or the web</li>
+          <li>Every feature, from the day you sign in</li>
+          <li>Designer, fronts &amp; backs, tags</li>
+          <li>Print, Tabletop Simulator &amp; Screentop</li>
+          <li>Hosted links and picture uploads</li>
+          <li>No card needed</li>
         </ul>
       </div>
       <div class="plan-card plan-pro" id="planPro">
-        <div class="plan-name">Pro</div>
+        <div class="plan-name">CardBoard</div>
         <div class="plan-price">$4.99<span>/month</span></div>
         <ul>
-          <li>Everything in Free</li>
-          <li>Hosted links for every export — Tabletop Simulator, Screentop and card images — that update when your cards change</li>
-          <li>Upload pictures to CardBoard</li>
-          <li>Tags: <code>[energy]</code> becomes an icon or word on every card</li>
+          <li>Everything, after your free week</li>
+          <li>Hosted links that update when your cards change</li>
+          <li>Picture uploads</li>
+          <li>Cancel any time — your sheet and layouts stay yours</li>
         </ul>
-        <button class="plan-btn" id="planProBtn" onclick="startProCheckout()">Choose Pro</button>
+        <button class="plan-btn" id="planProBtn" onclick="startProCheckout()">Subscribe</button>
       </div>
     </div>
     <div class="dlg-sub" id="planStatus" style="margin:.8rem 0 .2rem"></div>
@@ -833,6 +853,26 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
       <button class="attr-btn" onclick="closeDialog('plansOverlay')">Close</button>
       <button class="plan-manage" id="planManage" style="display:none" onclick="openBillingPortal()">Manage Billing</button>
     </div>
+  </div>
+</div>
+
+<!-- Sign in: an action-only panel (no dirty check) -->
+<div class="overlay" id="signinOverlay" onclick="if(event.target===this)closeSignIn()">
+  <div class="dlg signin-dlg" onclick="event.stopPropagation()">
+    <h2 class="plan-title"><img src="images/cardboard_icon_180.png" alt="">Sign in to CardBoard</h2>
+    <p class="dlg-sub">New here? Your first week is free — every feature, no card needed.</p>
+    <form id="siStep1" class="si-row" onsubmit="event.preventDefault();signInSend()">
+      <input class="inp" id="siEmail" type="email" autocomplete="email" placeholder="you@example.com" aria-label="Email">
+      <button type="submit" class="print-go" id="siSend">Email me a code</button>
+    </form>
+    <form id="siStep2" hidden onsubmit="event.preventDefault();signInVerify()">
+      <p class="dlg-sub">We sent a 6-digit code to <b id="siTo"></b>.</p>
+      <div class="si-row"><input class="inp si-code" id="siCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" aria-label="Code">
+      <button type="submit" class="print-go" id="siGo">Sign in</button></div>
+      <button type="button" class="si-link" onclick="signInBack()">Use a different email</button>
+    </form>
+    <div class="dlg-err" id="siErr"></div>
+    <div class="dlg-actions" style="justify-content:center"><button type="button" class="attr-btn" onclick="closeSignIn()">Not now</button></div>
   </div>
 </div>
 

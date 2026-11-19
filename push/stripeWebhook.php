@@ -13,6 +13,7 @@
  *   invoice.payment_failed
  *
  * Writes/updates:  sheets/{sheet_id}/subscription-{app}.json  (one per app)
+ *                  CardBoard: also the person's row in the CardBoard Admin sheet (metadata cb_email)
  * Format: {
  *   "email":                  "user@example.com",
  *   "status":                 "active" | "trialing" | "past_due" | "canceled" | "unpaid",
@@ -78,6 +79,13 @@ function writeSubscription(string $sheetId, array $data, string $app = ''): void
     file_put_contents($file, json_encode($merged, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
 }
 
+// CardBoard subscriptions belong to a person: keep their row in the CardBoard Admin sheet up to date
+function cbAccountUpdate(string $email, array $fields): void {
+    if (!$email) return;
+    require_once __DIR__ . '/cardboardAuth.php';
+    cbAdmin(['action' => 'update', 'email' => $email, 'fields' => $fields]);
+}
+
 // ── Event dispatch ────────────────────────────────────────────────────────
 $type   = $event['type']           ?? '';
 $object = $event['data']['object'] ?? [];
@@ -106,6 +114,10 @@ switch ($type) {
             'period_end'             => $sub ? stripePeriodEnd($sub) : '',
             'plan'                   => $sub ? stripePlanFromSub($sub, $app) : ($object['metadata']['plan'] ?? 'pro'),
         ], $app);
+        if ($app === 'cardboard') cbAccountUpdate($object['metadata']['cb_email'] ?? ($sub['metadata']['cb_email'] ?? ''), [
+            'Status' => $sub['status'] ?? 'active', 'Plan' => 'pro', 'Period End' => $sub ? stripePeriodEnd($sub) : '',
+            'Stripe Customer' => $object['customer'] ?? '', 'Stripe Subscription' => $subId,
+        ]);
         break;
 
     case 'customer.subscription.updated':
@@ -116,6 +128,9 @@ switch ($type) {
             'period_end' => stripePeriodEnd($object),
             'plan'       => stripePlanFromSub($object),
         ], $object['metadata']['app'] ?? '');
+        if (($object['metadata']['app'] ?? '') === 'cardboard') cbAccountUpdate($object['metadata']['cb_email'] ?? '', [
+            'Status' => $object['status'] ?? 'unknown', 'Period End' => stripePeriodEnd($object),
+        ]);
         break;
 
     case 'customer.subscription.deleted':
@@ -125,6 +140,7 @@ switch ($type) {
             'status'     => 'canceled',
             'period_end' => '',
         ], $object['metadata']['app'] ?? '');
+        if (($object['metadata']['app'] ?? '') === 'cardboard') cbAccountUpdate($object['metadata']['cb_email'] ?? '', ['Status' => 'canceled', 'Period End' => '']);
         break;
 
     case 'invoice.payment_failed':
@@ -139,6 +155,11 @@ switch ($type) {
             $sub     = stripeRequest('GET', 'subscriptions/' . $subId);
             $sheetId = $sheetId ?: ($sub['metadata']['sheet_id'] ?? '');
             $app     = $app ?: ($sub['metadata']['app'] ?? '');
+        }
+        if ($app === 'cardboard') {
+            $cbEmail = $details['metadata']['cb_email'] ?? '';
+            if (!$cbEmail && $subId) { $sub = $sub ?? stripeRequest('GET', 'subscriptions/' . $subId); $cbEmail = $sub['metadata']['cb_email'] ?? ''; }
+            cbAccountUpdate($cbEmail, ['Status' => 'past_due']);
         }
         if (!$sheetId) break;
         writeSubscription($sheetId, ['status' => 'past_due'], $app);

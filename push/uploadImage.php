@@ -21,13 +21,10 @@ if (!$sheetId || !preg_match('/^[A-Za-z0-9_\-]+$/', $sheetId)) {
     exit;
 }
 
-// CardBoard: uploading pictures to our server is part of Pro (links to Dropbox, Drive or the web are free)
+// CardBoard: uploads need the free week, a subscription or an unlocked sheet
 if (($_POST['app'] ?? '') === 'cardboard') {
-    require_once __DIR__ . '/stripeCommon.php';
-    if (!stripeSheetPlan($sheetId, 'cardboard')['is_pro']) {
-        echo json_encode(['error' => 'Uploading pictures is part of CardBoard Pro. You can still use a Dropbox, Google Drive or web link.', 'need_pro' => true]);
-        exit;
-    }
+    require_once __DIR__ . '/cardboardAuth.php';
+    cbRequireAccess($sheetId);
 }
 
 if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {

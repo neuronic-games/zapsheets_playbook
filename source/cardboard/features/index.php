@@ -277,8 +277,8 @@ footer a { color:var(--text-mid); text-decoration:none; }
       <div class="feat-card"><div class="feat-icon rose">📋</div><h3>Edit your data in place</h3><p>The Data tab shows your sheet as a grid. Type into a cell and it's saved to Google Sheets — without overwriting someone else's change.</p></div>
       <div class="feat-card"><div class="feat-icon gold">🖨️</div><h3>Print-and-play sheets</h3><p>Letter or A4, crop marks, copies from a Count column, and backs that line up when you print double-sided.</p></div>
       <div class="feat-card"><div class="feat-icon">🧩</div><h3>Tabletop Simulator &amp; Screentop</h3><p>Card sheets in the exact grid each one expects — 10 × 7 for TTS, with the back in the hidden-card slot.</p></div>
-      <div class="feat-card"><div class="feat-icon slate">🔗</div><h3>Links that stay up to date <span class="pro-tag">Pro</span></h3><p>Every export — Tabletop Simulator sheets, Screentop sheets or separate card images — can be hosted at links that never change. Save your layout and everything using those links gets the new cards.</p></div>
-      <div class="feat-card"><div class="feat-icon gold">⚡</div><h3>Tags for icons <span class="pro-tag">Pro</span></h3><p>Write <code>[energy]</code> in your sheet and every card shows its icon. Pick from the icon library, upload a picture, or have a tag become words.</p></div>
+      <div class="feat-card"><div class="feat-icon slate">🔗</div><h3>Links that stay up to date</h3><p>Every export — Tabletop Simulator sheets, Screentop sheets or separate card images — can be hosted at links that never change. Save your layout and everything using those links gets the new cards.</p></div>
+      <div class="feat-card"><div class="feat-icon gold">⚡</div><h3>Tags for icons</h3><p>Write <code>[energy]</code> in your sheet and every card shows its icon. Pick from the icon library, upload a picture, or have a tag become words.</p></div>
       <div class="feat-card"><div class="feat-icon rose">🗂️</div><h3>Layers and groups</h3><p>See everything on the card in one list. Drag to change what's on top, tick several to move them together, and group them.</p></div>
       <div class="feat-card"><div class="feat-icon slate">🎨</div><h3>Fonts, colors and effects</h3><p>Choose fonts and colors — with your recent colors and transparent a click away — and rotate, fade or round the corners of anything on the card.</p></div>
       <div class="feat-card"><div class="feat-icon green">☁️</div><h3>Pictures from anywhere</h3><p>Dropbox, Google Drive or web links are shown straight from the source — replace a picture there and your cards follow. With Pro, upload pictures from your computer.</p></div>
@@ -392,7 +392,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
   <div class="container">
     <div class="shot-grid">
       <div class="shot-text">
-        <div class="section-label">Tags <span class="pro-tag">Pro</span></div>
+        <div class="section-label">Tags</div>
         <h2 class="section-title" style="margin-bottom:1rem;">Write [energy], see the icon</h2>
         <p>Give a tag a word or a picture once, then type it anywhere in your sheet. Every card shows the icon in place of the tag — change the picture and the whole deck follows.</p>
         <ul>
@@ -450,8 +450,8 @@ footer a { color:var(--text-mid); text-decoration:none; }
     <h2 class="section-title">Your cards live in your Google Sheet</h2>
     <p class="section-sub">Your card text, stats and layouts are all in a spreadsheet you own. Share it with co-designers, sort it, chart it, back it up.</p>
     <div class="own-grid">
-      <div class="own-card"><div class="num">Free</div><p>The designer, fronts and backs, the Data tab, printing and downloads for Tabletop Simulator and Screentop.</p></div>
-      <div class="own-card"><div class="num">$4.99</div><p>Per month for <strong>Pro</strong>: hosted links for every export — Tabletop Simulator, Screentop and card images — that stay up to date, picture uploads and tags.</p></div>
+      <div class="own-card"><div class="num">7 days</div><p>Free, with every feature — sign in with your email, no card needed.</p></div>
+      <div class="own-card"><div class="num">$4.99</div><p>Per month after your free week, for everything: the designer, tags, printing, exports, hosted links that stay up to date and picture uploads.</p></div>
       <div class="own-card"><div class="num">∞</div><p>Cards and decks. Every tab in your spreadsheet can be its own deck with its own layout.</p></div>
     </div>
   </div>
@@ -461,7 +461,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
   <div class="container">
     <div class="section-label">How we compare</div>
     <h2 class="section-title">How CardBoard compares</h2>
-    <p class="section-sub">Dextrous and Component.Studio are popular card design tools. CardBoard works straight from your Google Sheet, designs both sides, and starts free.</p>
+    <p class="section-sub">Dextrous and Component.Studio are popular card design tools. CardBoard works straight from your Google Sheet, designs both sides, and your first week is free.</p>
     <div class="compare-wrap">
       <table class="compare-table">
         <thead><tr><th>Feature</th><th class="ours">CardBoard</th><th>Dextrous</th><th>Component.Studio</th></tr></thead>
@@ -473,13 +473,13 @@ footer a { color:var(--text-mid); text-decoration:none; }
           <tr><td>Edits saved to your Google Sheet automatically</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Print-and-play sheets</td><td class="ours"><span class="check">✓</span> <span class="nl">double-sided</span></td><td><span class="check">✓</span> <span class="nl">PDF</span></td><td><span class="check">✓</span> <span class="nl">PDF</span></td></tr>
           <tr><td>Tabletop Simulator &amp; Screentop sheets</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Hosted export links that stay up to date<br><span class="nl" style="margin:0">Tabletop Simulator, Screentop and card images</span></td><td class="ours"><span class="check">✓</span> <span class="pro-tag">Pro</span></td><td><span class="check">✓</span> <span class="nl">Tabletop Simulator</span></td><td><span class="check">✓</span> <span class="nl">Tabletop Simulator</span></td></tr>
-          <tr><td><code>[tags]</code> into an icon or words</td><td class="ours"><span class="check">✓</span> <span class="pro-tag">Pro</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>Hosted export links that stay up to date<br><span class="nl" style="margin:0">Tabletop Simulator, Screentop and card images</span></td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span> <span class="nl">Tabletop Simulator</span></td><td><span class="check">✓</span> <span class="nl">Tabletop Simulator</span></td></tr>
+          <tr><td><code>[tags]</code> into an icon or words</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>Pictures from Dropbox, Drive or the web</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span> <span class="nl">not listed</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>Works in the browser, nothing to install</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>Works with <a href="https://zapsheets.com/app/devboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">DevBoard</a> &amp; <a href="https://zapsheets.com/app/gameboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">GameBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr class="cost"><td>Monthly cost</td>
-            <td class="ours"><b>Free</b><br><b>$4.99</b> / mo Pro</td>
+            <td class="ours"><b>$4.99</b> / mo<span class="nl" style="display:block;margin:0">first week free, every feature</span></td>
             <td><b>Free</b> <span class="nl">2 projects, 10 layouts</span><br><b>$6 – $24</b> / mo<span class="nl" style="display:block;margin:0">Prototyper $6 · Designer $12 · Designer Pro $24</span></td>
             <td><b>$9.99</b> / mo<span class="nl" style="display:block;margin:0">free trial, no free plan</span></td></tr>
         </tbody>

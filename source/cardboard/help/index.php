@@ -73,6 +73,7 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
       <li>Put your cards in a Google Sheet: column names in the first row, one card per row below.</li>
       <li>Share the spreadsheet with <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> as an <b>Editor</b>.</li>
       <li>Open <a href="cardboard">CardBoard</a>, paste the sheet's link, and pick the tab with your cards.</li>
+      <li>Sign in with your email: CardBoard sends a 6-digit code. Your first week is free, with every feature.</li>
     </ol>
     <p>CardBoard adds a tab called <b>layouts</b> to the spreadsheet. It holds your layouts, profile and settings — leave it in place. Hidden tabs aren’t listed, so hide any tab you don’t want to design from.</p>
   </section>
@@ -108,7 +109,7 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
   </section>
 
   <section class="section" id="tags">
-    <h2>Tags <span class="pro">PRO</span></h2>
+    <h2>Tags</h2>
     <p>Write a tag in square brackets, like <code>[energy]</code>, in any text or data, and every card shows a word or a picture in its place — <em>“Gain 1 [energy]”</em> becomes “Gain 1 ⚡”. Curly braces stay for columns, so <em>“Gain {Amount} [energy]”</em> uses both. Set tags up in the <b>Tags</b> view: give each one a name (with or without the brackets) and either text or a picture. Pictures can be an icon from the library, a link, or an upload. Tags are kept in your spreadsheet's <b>tags</b> tab, with the names in brackets.</p>
   </section>
 
@@ -125,13 +126,13 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
   <section class="section" id="export">
     <h2>Export</h2>
     <p><b>Download</b> makes a zip of card sheets: for <b>Tabletop Simulator</b> (up to 10 × 7 per sheet, with the back in the last slot), <b>Screentop</b> (sheets up to 4096 px), or one picture per card.</p>
-    <p><b>Get links</b> <span class="pro">PRO</span> hosts the sheets on zapsheets.com at links that never change. Paste them into Tabletop Simulator's Custom Deck dialog. When you save the layout, fetch new data or edit the Data tab, the pictures behind the links are replaced with your latest cards. The links carry a share code, not your spreadsheet's ID.</p>
+    <p><b>Get links</b> hosts the sheets on zapsheets.com at links that never change. Paste them into Tabletop Simulator's Custom Deck dialog. When you save the layout, fetch new data or edit the Data tab, the pictures behind the links are replaced with your latest cards. The links carry a share code, not your spreadsheet's ID.</p>
     <div class="note">Tabletop Simulator keeps its own copy of downloaded pictures, so a game may show the old cards until it downloads them again. If you add cards, raise <b>Number</b> in TTS to match.</div>
   </section>
 
   <section class="section" id="pictures">
     <h2>Pictures</h2>
-    <p>Paste a <b>Dropbox</b>, <b>Google Drive</b> or web link — CardBoard shows it straight from the source, so changing the picture there changes your cards. In Drive, share the file as “Anyone with the link”. Uploading a file from your computer <span class="pro">PRO</span> stores it on zapsheets.com.</p>
+    <p>Paste a <b>Dropbox</b>, <b>Google Drive</b> or web link — CardBoard shows it straight from the source, so changing the picture there changes your cards. In Drive, share the file as “Anyone with the link”. Uploading a file from your computer stores it on zapsheets.com.</p>
   </section>
 
   <section class="section" id="menu">
@@ -140,15 +141,17 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
       <li><b>Profile</b> — your name, email and studio. The email is used for receipts when you subscribe.</li>
       <li><b>Settings</b> — open the spreadsheet, choose inches or millimetres, and see your plan.</li>
       <li><b>Fetch</b> — read the latest data from the Google Sheet.</li>
-      <li><b>Subscribe</b> — CardBoard plans.</li>
+      <li><b>Subscribe</b> — your free week, the subscription and activation keys.</li>
+      <li><b>Sign out</b> — sign in again any time with a code sent to your email.</li>
     </ul>
   </section>
 
   <section class="section" id="plans">
     <h2>Plans</h2>
     <div class="cards">
-      <div class="card"><b>Free</b><p>The designer with fronts and backs, the Data tab, printing, downloads for Tabletop Simulator and Screentop, and pictures from Dropbox, Drive or the web.</p></div>
-      <div class="card"><b>Pro — $4.99/month</b><p>Everything in Free, plus tags (<code>[energy]</code> → an icon or word) and anything that keeps files on our server: hosted links for every export (Tabletop Simulator, Screentop and card images) that update when your cards change, and picture uploads.</p></div>
+      <div class="card"><b>Free week</b><p>Sign in with your email — CardBoard sends a 6-digit code — and every feature is yours for 7 days. No card needed.</p></div>
+      <div class="card"><b>$4.99/month</b><p>Keep designing after the free week: the designer, tags, printing, exports, hosted links that update when your cards change, and picture uploads. Cancel any time.</p></div>
+      <div class="card"><b>After the free week</b><p>Without a subscription CardBoard opens read-only: you can look through your cards and data, and your sheet and layouts stay exactly as they are. Hosted links keep working.</p></div>
     </div>
   </section>
 </div>

@@ -195,7 +195,19 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
     <ul>
       <li>With <b>one element or one group</b> selected, the dots line it up with the card — its top, middle, bottom, left edge, center or right edge.</li>
       <li>With <b>several</b> selected, the dots line them up with each other.</li>
-      <li>With several selected, <b>click one of them</b> (without dragging) to make it the <b>key object</b>. It gets a solid outline and the dots move around it; clicking a dot lines the others up with the key, which stays put. Click another selected element to change the key, or the key again to go back to lining them up with each other.</li>
+    </ul>
+    <h3>Lining up to a key object</h3>
+    <p>To line several things up with one particular element — without moving that element — make it the <b>key object</b>:</p>
+    <ol>
+      <li>Select the elements (<kbd>Shift</kbd> or <kbd>⌘</kbd>-click, or tick them in Layers), including the one to line up to.</li>
+      <li>Click that one again, without dragging. It gets a <b>solid purple outline</b>, and the alignment dots move around it — to its right for top, middle and bottom, and below it for left, center and right.</li>
+      <li>Click a dot. The others line up with the key object's edge or middle; the key stays where it is.</li>
+    </ol>
+    <ul>
+      <li>To change the key, click a different element in the selection. Click the key again to go back to lining them up with each other.</li>
+      <li>If you click part of a group that's fully selected, the whole group becomes the key.</li>
+      <li>Dragging still moves everything selected together — only a click sets the key.</li>
+      <li>The right panel names the current key object.</li>
     </ul>
   </section>
 
@@ -320,6 +332,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
       <tr><td><kbd>⌘G</kbd> / <kbd>⇧⌘G</kbd></td><td>Group / ungroup</td></tr>
       <tr><td><kbd>⌘A</kbd></td><td>Select everything on this side</td></tr>
       <tr><td><kbd>Shift</kbd> or <kbd>⌘</kbd>-click</td><td>Add to (or remove from) the selection</td></tr>
+      <tr><td>Click inside a selection</td><td>Make that element the key object for lining up (click it again to clear)</td></tr>
       <tr><td>Arrow keys</td><td>Nudge 1 pt — with <kbd>Shift</kbd>, 10 pt</td></tr>
       <tr><td><kbd>Alt</kbd> while dragging</td><td>Fine moves</td></tr>
       <tr><td><kbd>Shift</kbd> on a corner</td><td>Keep a shape's proportions</td></tr>

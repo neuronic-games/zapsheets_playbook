@@ -282,7 +282,7 @@ function init() {
         start = (TABS.filter(function(t) { return LAYOUTS[t.title]; })[0] || TABS[0] || {}).title || '';
       }
       if (!start) { $('cardHolder').innerHTML = '<div class="muted">This spreadsheet has no tabs to design from.</div>'; return; }
-      sel.value = start; $('gridSheet').value = start;
+      sel.value = start; $('gridSheet').value = start; refreshSheetCombos();
       selectTab(start, true);
     })
     .catch(function(e) {
@@ -291,10 +291,65 @@ function init() {
     });
 }
 
+// ── Sheet picker: a combo box over the hidden <select>s (sheetSel, gridSheet) ────
+// Type to filter the tabs; sheets that already have a layout show the layout icon.
+var LAYOUT_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M5 8h14"/><rect x="8" y="11" width="8" height="4.5" rx="1" fill="currentColor" stroke="none"/><path d="M8 18.3h5"/></svg>';
+function hasLayout(t) { return !!LAYOUTS[t] && t !== SETTINGS_KEY; }
+function refreshSheetCombos() {
+  ['sheetSel', 'gridSheet'].forEach(function(id) {
+    var sel = $(id); if (!sel) return;
+    var box = sel.nextElementSibling && sel.nextElementSibling.classList.contains('sheet-combo') ? sel.nextElementSibling : null;
+    if (!box) { box = makeSheetCombo(sel); }
+    var v = sel.value, inp = box.querySelector('input');
+    if (document.activeElement !== inp) inp.value = v;
+    box.querySelector('.sc-ico').innerHTML = hasLayout(v) ? LAYOUT_ICON : '';
+    box.classList.toggle('has-layout', hasLayout(v));
+  });
+}
+function makeSheetCombo(sel) {
+  sel.style.display = 'none';
+  var box = document.createElement('div');
+  box.className = 'sheet-combo' + (sel.id === 'gridSheet' ? ' compact' : '');
+  box.innerHTML = '<span class="sc-ico" title="Has a layout"></span><input class="inp sel-sheet" autocomplete="off" spellcheck="false" aria-label="Sheet" role="combobox" aria-expanded="false">' +
+    '<button type="button" class="sc-caret" tabindex="-1" aria-label="Show sheets"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div class="sc-list" role="listbox"></div>';
+  sel.parentNode.insertBefore(box, sel.nextSibling);
+  var inp = box.querySelector('input'), list = box.querySelector('.sc-list'), hi = 0, items = [];
+  function draw(filter) {
+    var f = (filter || '').trim().toLowerCase();
+    items = TABS.map(function(t) { return t.title; }).filter(function(t) { return !f || t.toLowerCase().indexOf(f) >= 0; });
+    hi = Math.max(0, items.indexOf(sel.value)); if (f) hi = 0;
+    list.innerHTML = items.length ? items.map(function(t, i) {
+      return '<div class="sc-item' + (i === hi ? ' hi' : '') + (t === sel.value ? ' cur' : '') + '" role="option" data-i="' + i + '">' +
+        '<span class="sc-mark">' + (hasLayout(t) ? LAYOUT_ICON : '') + '</span><span class="sc-name">' + esc(t) + '</span>' + (t === sel.value ? '<span class="sc-check">✓</span>' : '') + '</div>';
+    }).join('') : '<div class="sc-none">No sheet called “' + esc(filter) + '”</div>';
+    var h = list.querySelector('.hi'); if (h) h.scrollIntoView({ block: 'nearest' });
+  }
+  function open() { if (box.classList.contains('open')) return; box.classList.add('open'); inp.setAttribute('aria-expanded', 'true'); draw(''); inp.select(); }
+  function close(restore) { box.classList.remove('open'); inp.setAttribute('aria-expanded', 'false'); if (restore !== false) inp.value = sel.value; }
+  function pick(t) {
+    close(false); inp.value = t; inp.blur();
+    if (t !== sel.value) { sel.value = t; selectTab(t); } else refreshSheetCombos();
+  }
+  inp.addEventListener('focus', open);
+  inp.addEventListener('mousedown', function() { if (document.activeElement === inp) open(); });
+  inp.addEventListener('input', function() { open(); draw(inp.value); });
+  inp.addEventListener('keydown', function(k) {
+    k.stopPropagation();
+    if (k.key === 'ArrowDown' || k.key === 'ArrowUp') { k.preventDefault(); open(); hi = clamp(hi + (k.key === 'ArrowDown' ? 1 : -1), 0, items.length - 1);
+      list.querySelectorAll('.sc-item').forEach(function(n, i) { n.classList.toggle('hi', i === hi); }); var h = list.querySelector('.hi'); if (h) h.scrollIntoView({ block: 'nearest' }); }
+    else if (k.key === 'Enter') { k.preventDefault(); if (items[hi] != null) pick(items[hi]); }
+    else if (k.key === 'Escape') { k.preventDefault(); close(); inp.blur(); }
+  });
+  inp.addEventListener('blur', function() { setTimeout(function() { if (document.activeElement !== inp) close(); }, 120); });
+  box.querySelector('.sc-caret').addEventListener('mousedown', function(m) { m.preventDefault(); if (box.classList.contains('open')) { close(); inp.blur(); } else inp.focus(); });
+  list.addEventListener('mousedown', function(m) { m.preventDefault(); var it = m.target.closest('.sc-item'); if (it) pick(items[+it.dataset.i]); });
+  return box;
+}
+
 function selectTab(name, first, force, asked) {
   if (!first && dirty && !asked) {
     var from = curTab;
-    $('sheetSel').value = from; $('gridSheet').value = from;
+    $('sheetSel').value = from; $('gridSheet').value = from; refreshSheetCombos();
     askDialog({ title: 'Switch sheets?', message: 'You have unsaved changes to the “' + from + '” layout. They stay in this browser as a draft, but aren’t saved to your Sheet yet.',
                 ok: 'Switch anyway', cancel: 'Stay here' })
       .then(function(yes) { if (yes) selectTab(name, false, force, true); });
@@ -302,7 +357,7 @@ function selectTab(name, first, force, asked) {
   }
   if (_gridEdit) endGridEdit(true);
   $('sheetSel').value = name; $('gridSheet').value = name;
-  curTab = name; selId = null; multi = []; rowIdx = 0; undoStack = []; redoStack = []; GRID = null; _gridSel = null; _rowsStale = false;
+  curTab = name; refreshSheetCombos(); selId = null; multi = []; rowIdx = 0; undoStack = []; redoStack = []; GRID = null; _gridSel = null; _rowsStale = false;
   try { localStorage.setItem('cb_tab:' + SHEET_ID, name); } catch (e) {}
   layout = normalize(LAYOUTS[name] ? JSON.parse(JSON.stringify(LAYOUTS[name])) : newLayout());
   setDirty(false);
@@ -1003,7 +1058,7 @@ function saveLayout() {
   btn.disabled = true; btn.textContent = 'Saving…';
   api('save', { tab: tab, layout: snap })
     .then(function() {
-      LAYOUTS[tab] = JSON.parse(snap);
+      LAYOUTS[tab] = JSON.parse(snap); refreshSheetCombos();
       try { localStorage.removeItem('cb_draft:' + SHEET_ID + ':' + tab); } catch (e) {}
       if (curTab === tab && JSON.stringify(layout) === snap) setDirty(false);
       toast('✓ Layout saved to your Sheet');

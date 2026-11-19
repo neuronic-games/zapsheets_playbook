@@ -7,7 +7,8 @@
 #   update — email, fields: {Header: value} → changes those cells (adds the person if missing)
 #   find   — field, value → the first row whose Header equals value (e.g. Stripe Customer)
 #   redeem — email, code → a free code from the "Codes" tab: CardBoard unlocked for its Length
-#            (added on top of any code time left). Each person can use each code once; Max Uses
+#            (added on top of any code time left). Each person can use each code once (their Users row
+#            lists them in Codes Used); Max Uses
 #            (blank = no limit) and Expires (blank = never) are optional.
 # Answer: {ok, user: {Header: value, …}}
 #
@@ -28,7 +29,7 @@ HEADERS = ['Email', 'Name', 'Studio', 'Trial Start', 'Trial End', 'Status', 'Pla
            'Stripe Customer', 'Stripe Subscription', 'Activated', 'Sheets', 'Created', 'Last Seen', 'Password Hash', 'Code Until', 'Codes Used']
 TRIAL_DAYS = 7
 CODES_TAB = 'Codes'   # free codes you hand out: each unlocks CardBoard for its Length, once per person
-CODES_HEADERS = ['Code', 'Length', 'Max Uses', 'Used', 'Used By', 'Expires', 'Note']
+CODES_HEADERS = ['Code', 'Length', 'Max Uses', 'Used', 'Expires', 'Note']   # who used which: the Users tab's Codes Used
 
 PERPETUAL = -1   # "Perpetual" (or forever / lifetime / unlimited): unlocked for good
 
@@ -141,13 +142,14 @@ def main():
                 try: ed = datetime.datetime.strptime(exp.split(' ')[0] if fmt in ('%Y-%m-%d', '%m/%d/%Y', '%Y/%m/%d') else exp, fmt); break
                 except ValueError: pass
             if ed and ed + datetime.timedelta(days=1) < now(): out({'error': 'That code has expired'})
-        used_by = [x.strip().lower() for x in str(row[ci('Used By')] if ci('Used By') >= 0 else '').split(',') if x.strip()]
-        if email in used_by: out({'error': 'You’ve already used that code'})
+        # Once per person: the codes each person has used are listed in their Users row (Codes Used)
+        mine = [c.strip().lower() for c in str(u.get('Codes Used', '')).split(',') if c.strip()]
+        if code.lower() in mine: out({'error': 'You’ve already used that code'})
+        used = str(row[ci('Used')]).strip() if ci('Used') >= 0 else ''
+        used = int(used) if used.isdigit() else 0
         mx = str(row[ci('Max Uses')]).strip() if ci('Max Uses') >= 0 else ''
-        if mx.isdigit() and len(used_by) >= int(mx): out({'error': 'That code has been used up'})
-        used_by.append(email)
-        if ci('Used By') >= 0: row[ci('Used By')] = ', '.join(used_by)
-        if ci('Used') >= 0: row[ci('Used')] = str(len(used_by))
+        if mx.isdigit() and used >= int(mx): out({'error': 'That code has been used up'})
+        if ci('Used') >= 0: row[ci('Used')] = str(used + 1)
         wb.values_update(q(cws.title) + '!A' + str(row_no) + ':' + col(len(ch)) + str(row_no), params={'valueInputOption': 'RAW'}, body={'values': [row[:len(ch)]]})
         try: cur = datetime.datetime.strptime(str(u.get('Code Until', ''))[:19], '%Y-%m-%d %H:%M:%S')
         except ValueError: cur = None

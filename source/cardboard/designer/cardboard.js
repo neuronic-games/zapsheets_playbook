@@ -33,7 +33,8 @@ var SHAPES = [
   ['rect', 'Rectangle'], ['round', 'Rounded'], ['ellipse', 'Circle'], ['line', 'Line'],
   ['triangle', 'Triangle'], ['diamond', 'Diamond'], ['hexagon', 'Hexagon'], ['star', 'Star']
 ];
-var GENS = [['seq', '123', 'Number sequence'], ['rand', '🎲', 'Random number'], ['list', '☰', 'Random from list']];
+var DIE_ICON = '<svg class="die-ico" viewBox="0 0 24 24" width="1.05em" height="1.05em" aria-hidden="true" style="vertical-align:-.15em"><rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><g fill="currentColor"><circle cx="8" cy="8" r="1.6"/><circle cx="16" cy="8" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="8" cy="16" r="1.6"/><circle cx="16" cy="16" r="1.6"/></g></svg>';
+var GENS = [['seq', '123', 'Number sequence'], ['rand', DIE_ICON, 'Random number'], ['list', '☰', 'Random from list']];
 var IMG_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
 var FLIP_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>';
 var UPLOADING = {};   // element id → true while its picture uploads
@@ -1413,7 +1414,7 @@ function renderAttrs() {
     h += '<div style="margin-top:.45rem">' + colorRow(e.shape === 'line' ? 'Color' : 'Outline color', 'stroke', e.stroke, false, 'setProp') + '</div>';
   }
   if (e.kind === 'gen') {
-    h += '<span class="lbl">Generate</span>' + seg('mode', [['seq', '123', 'Number sequence'], ['rand', '🎲', 'Random number'], ['list', '☰', 'Random from a list']], e.mode);
+    h += '<span class="lbl">Generate</span>' + seg('mode', [['seq', '123', 'Number sequence'], ['rand', DIE_ICON, 'Random number'], ['list', '☰', 'Random from a list']], e.mode);
     if (e.mode === 'seq') {
       h += '<div class="row2" style="margin-top:.45rem">' + numInp('g_start', 'Start at', e.start == null ? 1 : e.start, 'setProp', 'start') + numInp('g_step', 'Step', e.step == null ? 1 : e.step, 'setProp', 'step') + '</div>';
       h += '<div class="row2" style="margin-top:.45rem">' + numInp('g_pad', 'Digits (pad with 0)', e.pad || 0, 'setProp', 'pad') + '<div></div></div>';
@@ -1425,7 +1426,7 @@ function renderAttrs() {
       h += '<div style="margin-top:.45rem"><span class="mini">Pick</span>' + seg('pick', [['random', 'Random', 'A random value for each card'], ['cycle', 'In order', 'Go through the list in order']], e.pick || 'random') + '</div>';
     }
     h += '<div style="margin-top:.45rem"><span class="mini">Counts</span>' + seg('per', [['card', 'Each card printed', 'Copies of a row get their own number'], ['row', 'Each row', 'Copies of a row share the same value']], e.per || 'card') + '</div>';
-    if (e.mode !== 'seq') h += '<div class="attr-btns"><button class="attr-btn" onclick="setProp(\'seed\',uid())">🎲 Re-roll</button></div>';
+    if (e.mode !== 'seq') h += '<div class="attr-btns"><button class="attr-btn" onclick="setProp(\'seed\',uid())">' + DIE_ICON + ' Re-roll</button></div>';
     h += textAttrs(e) + boxAttrs(e, 'Background');
   }
   h += '<span class="lbl">Position (pt)</span><div class="row4">' + numInp('a_x', 'X', e.x, 'setProp', 'x', .5) + numInp('a_y', 'Y', e.y, 'setProp', 'y', .5) + numInp('a_w', 'W', e.w, 'setProp', 'w', .5) + numInp('a_h', 'H', e.h, 'setProp', 'h', .5) + '</div>';

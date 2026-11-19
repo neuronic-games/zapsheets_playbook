@@ -100,7 +100,7 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
     <ul>
       <li><b>Text</b> — fixed wording. Put a column name in braces, like <code>{Cost}</code>, to fill it from each row.</li>
       <li><b>Data</b> — one column of the sheet, shown as text, or switched to <b>Image</b> when the column holds picture links.</li>
-      <li><b>Image</b> — the same picture on every card: a logo, frame or icon.</li>
+      <li><b>Image</b> — the same picture on every card: a logo, frame or icon. Press <b>[ ]</b> on its picture to choose the picture by a column's value instead: pick the column, then give each value its picture (<em>Market</em> → a basket, <em>Action</em> → a boot). Values without a picture use the picture link in that column, or the default picture. Values and pictures can be tags like <code>[fire]</code>.</li>
       <li><b>Shape</b> — rectangle, rounded, circle, line, triangle, diamond, hexagon or star, with fill and outline.</li>
       <li><b>Generated</b> — a number sequence (<code>#001</code>…), a random number, or a pick from a list. Values stay the same between the preview and the printout; <b>Re-roll</b> draws new ones.</li>
     </ul>

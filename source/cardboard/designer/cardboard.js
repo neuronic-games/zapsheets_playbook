@@ -55,7 +55,7 @@ function faceOf(lay, s) { return s === 'back' ? lay.back : lay; }
 function curEls() { return faceOf(layout, side).els; }
 // Does the back change from card to card (column values, generated values)?
 function backVaries(lay) {
-  return (lay || layout).back.els.some(function(e) { return e.kind === 'data' || e.kind === 'gen' || (e.kind === 'text' && /\{[^{}]+\}/.test(e.text || '')); });
+  return (lay || layout).back.els.some(function(e) { return e.kind === 'data' || e.kind === 'gen' || (e.kind === 'text' && /\{[^{}]+\}/.test(e.text || '')) || (e.kind === 'image' && e.mapOn && e.map && e.map.field); });
 }
 function isImageLike(e) { return e.kind === 'image' || (e.kind === 'data' && e.as === 'image'); }
 
@@ -231,7 +231,7 @@ function elInner(e, row, ctx) {
     case 'data':
       if (e.as === 'image') return imgDiv(row ? imageUrl(row[e.field]) : '', e, ctx.designing ? e.field : '', ctx);
       return row ? rich(textVal(row[e.field]), ctx) : '<span class="el-empty">' + esc(e.field) + '</span>';
-    case 'image': return imageUrl(e.src) || ctx && ctx.designing ? imgDiv(imageUrl(e.src), e, 'Drop an image here, or click the picture button', ctx) : '';
+    case 'image': { var iu = imageUrl(imgSrcFor(e, row)); return iu || ctx && ctx.designing ? imgDiv(iu, e, 'Drop an image here, or double-click to choose', ctx) : ''; }
     case 'shape': return shapeSVG(e);
     case 'gen':   return rich(genValue(e, ctx), ctx);
   }
@@ -531,6 +531,24 @@ function droppedLink(dt) {
   return /^https?:\/\//i.test(u) ? u.trim() : '';
 }
 function isPicEl(e) { return !!e && (e.kind === 'image' || (e.kind === 'data' && e.as === 'image')); }
+// Image mapping: an image element can pick its picture from a field's value.
+// e.map = {field, items:[{v, src}]}, used while e.mapOn. A value that matches an item uses its
+// picture; otherwise a picture link (or an image [tag]) in the field; otherwise the element's own picture.
+function picRef(s) {   // a picture address, or the picture of an image tag written [name]
+  var m = /^\s*\[([^\[\]]+)\]\s*$/.exec(s || '');
+  if (m) { var t = tagsOn() && TAGMAP[tagKey(m[1])]; return t ? tagPicture(t.value) : ''; }
+  return s || '';
+}
+function imgSrcFor(e, row) {
+  var mp = e.mapOn && e.map;
+  if (!mp || !mp.field || !row) return picRef(e.src);
+  var raw = cleanVal(row[mp.field]).trim(), low = raw.toLowerCase();
+  var hit = (mp.items || []).filter(function(it) { return it.src && String(it.v || '').trim() && String(it.v).trim().toLowerCase() === low; })[0];
+  if (hit) return picRef(hit.src);
+  if (/^\[[^\[\]]+\]$/.test(raw)) { var tp = picRef(raw); if (tp) return tp; }
+  if (/^(https?:\/\/|=IMAGE\(|\[[^\]]*\]\(https?:)/i.test(raw)) return raw;
+  return picRef(e.src);
+}
 function curSrc(e) { return e.kind === 'data' ? cleanVal((ROWS[rowIdx] || {})[e.field]) : (e.src || ''); }
 function setImageSrc(id, src) {
   var e = elById(id); if (!e) return;
@@ -584,9 +602,9 @@ function setRowPicture(e, url) {
     toast(err.message === 'conflict' ? 'That cell was changed in the sheet — Fetch to see it, then try again' : 'Couldn\'t save the picture — ' + err.message, true);
   });
 }
-function uploadImage(id, file) {
+function uploadImage(id, file, slot) {   // slot: a mapping item's index, for its picture
   if (!isImageFile(file)) { toast('Use a PNG, JPG, GIF or WebP picture', true); return; }
-  if (!requirePro('upload', function() { uploadImage(id, file); })) return;
+  if (!requirePro('upload', function() { uploadImage(id, file, slot); })) return;
   if (file.size > 10 * 1024 * 1024) { toast('That picture is over 10 MB', true); return; }
   UPLOADING[id] = true; render(); if (selId === id) renderAttrs();
   var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('app', 'cardboard'); fd.append('file', file);
@@ -595,16 +613,18 @@ function uploadImage(id, file) {
     .then(function(r) {
       if (r && r.need_pro) { delete UPLOADING[id]; render(); SUB = null; openPlansDialog('upload'); return; }
       if (!r || r.error || !r.url) throw new Error(r && r.error ? r.error : 'Upload failed');
-      delete UPLOADING[id]; setImageSrc(id, r.url);
+      delete UPLOADING[id]; if (slot == null) setImageSrc(id, r.url); else setMapSrc(id, slot, r.url);
     })
     .catch(function(err) { delete UPLOADING[id]; render(); toast('Couldn\'t upload — ' + err.message, true); });
 }
 function closeImagePicker() { var p = $('imgPicker'); if (p) p.remove(); }
-function openImagePicker(ev, id) {
+function openImagePicker(ev, id, slot) {   // slot: pick the picture for one value of an image mapping
   if (ev) { ev.preventDefault(); ev.stopPropagation(); }
   var e = elById(id); if (!e) return;
   if (selId !== id) selectEl(id);
   closeImagePicker();
+  var cur = slot == null ? curSrc(e) : ((e.map && e.map.items[slot]) || {}).src || '';
+  var set = function(u) { if (slot == null) setImageSrc(id, u); else setMapSrc(id, slot, u); };
   var p = document.createElement('div');
   p.id = 'imgPicker'; p.className = 'img-picker';
   p.innerHTML =
@@ -612,14 +632,15 @@ function openImagePicker(ev, id) {
       '<button type="button" class="ip-choose" onclick="$(\'ipFile\').click()">Choose a file…' + (isPro() ? '' : '<span class="pro-tag">PRO</span>') + '</button>' +
       '<input type="file" id="ipFile" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none"></div>' +
     '<span class="mini">Or a web address</span>' +
-    '<div class="ip-url"><input class="inp" id="ipUrl" placeholder="Dropbox, Google Drive or web link" value="' + esc(/\/images\/[A-Za-z0-9_\-]+\/[0-9a-f]{20}\.\w+$/.test(curSrc(e)) ? '' : curSrc(e)) + '">' +
+    '<div class="ip-url"><input class="inp" id="ipUrl" placeholder="Link, or an image tag like [fire]" value="' + esc(/\/images\/[A-Za-z0-9_\-]+\/[0-9a-f]{20}\.\w+$/.test(cur) ? '' : cur) + '">' +
       '<button type="button" class="attr-btn" id="ipUse">Use</button></div>' +
     '<p class="muted">Links are shown straight from Dropbox, Drive or the website, so when you change the picture there it changes here too. In Drive, share it as “Anyone with the link”.</p>' +
+    (slot != null ? '<p class="muted ip-row">Used when <b>' + esc(e.map.field) + '</b> is <b>' + esc(((e.map.items[slot] || {}).v) || '…') + '</b>.</p>' : '') +
     (e.kind === 'data' ? '<p class="muted ip-row">For <b>row ' + (rowIdx + 1) + '</b> — saved in its <b>' + esc(e.field) + '</b> cell in the sheet. Uploads are kept on zapsheets.com.</p>' : '') +
-    (curSrc(e) ? '<button type="button" class="attr-btn danger ip-remove" id="ipRemove">Remove picture</button>' : '');
+    (cur ? '<button type="button" class="attr-btn danger ip-remove" id="ipRemove">Remove picture</button>' : '');
   document.body.appendChild(p);
   // Place it beside the picture button (or the element), kept on screen
-  var anchor = $('cardHolder').querySelector('.el[data-id="' + id + '"]'), r = anchor ? anchor.getBoundingClientRect() : { right: innerWidth / 2, top: 100 };
+  var anchor = slot != null ? document.querySelector('.map-thumb[data-i="' + slot + '"]') : $('cardHolder').querySelector('.el[data-id="' + id + '"]'), r = anchor ? anchor.getBoundingClientRect() : { right: innerWidth / 2, top: 100 };
   var left = Math.min(r.right + 10, innerWidth - p.offsetWidth - 12), top = clamp(r.top, 70, innerHeight - p.offsetHeight - 12);
   if (left < r.right && anchor) left = Math.max(12, r.left - p.offsetWidth - 10);
   p.style.left = left + 'px'; p.style.top = top + 'px';
@@ -629,17 +650,18 @@ function openImagePicker(ev, id) {
   drop.addEventListener('drop', function(d) {
     d.preventDefault(); d.stopPropagation(); drop.classList.remove('over');
     var f = droppedFile(d.dataTransfer), l = droppedLink(d.dataTransfer);
-    if (f) { closeImagePicker(); uploadImage(id, f); } else if (l) { closeImagePicker(); setImageSrc(id, l); }
+    if (f) { closeImagePicker(); uploadImage(id, f, slot); } else if (l) { closeImagePicker(); set(l); }
   });
-  $('ipFile').addEventListener('change', function() { var f = this.files[0]; if (f) { closeImagePicker(); uploadImage(id, f); } });
+  $('ipFile').addEventListener('change', function() { var f = this.files[0]; if (f) { closeImagePicker(); uploadImage(id, f, slot); } });
   function useUrl() {
     var u = $('ipUrl').value.trim();
-    if (u && !imageUrl(u)) { toast('That doesn\'t look like a web address', true); return; }
-    closeImagePicker(); setImageSrc(id, u);
+    if (/^\{?\[[^\[\]]+\]\}?$/.test(u)) u = braced(u);   // an image tag
+    else if (u && !imageUrl(u)) { toast('That doesn\'t look like a web address or a [tag]', true); return; }
+    closeImagePicker(); set(u);
   }
   $('ipUse').onclick = useUrl;
   $('ipUrl').addEventListener('keydown', function(k) { if (k.key === 'Enter') useUrl(); if (k.key === 'Escape') closeImagePicker(); });
-  if ($('ipRemove')) $('ipRemove').onclick = function() { closeImagePicker(); setImageSrc(id, ''); };
+  if ($('ipRemove')) $('ipRemove').onclick = function() { closeImagePicker(); set(''); };
 }
 document.addEventListener('pointerdown', function(ev) {
   var p = $('imgPicker'); if (p && !p.contains(ev.target) && !ev.target.closest('.img-btn')) closeImagePicker();
@@ -1302,13 +1324,16 @@ function renderAttrs() {
     h += e.as === 'image' ? fitAttrs(e) + boxAttrs(e, 'Frame') : textAttrs(e) + boxAttrs(e, 'Background');
   }
   if (e.kind === 'image') {
-    var u = imageUrl(e.src), src = e.src || '', uploaded = /\/images\/[A-Za-z0-9_\-]+\/[0-9a-f]{20}\.\w+$/.test(src);
+    var u = imageUrl(picRef(e.src)), src = e.src || '', uploaded = /\/images\/[A-Za-z0-9_\-]+\/[0-9a-f]{20}\.\w+$/.test(src);
     var from = !src ? '' : uploaded ? 'Uploaded file' : /dropbox\.com/i.test(src) ? 'Dropbox link' : /google\.com/i.test(src) ? 'Google Drive link' : 'Web link';
-    h += '<span class="lbl">Picture</span><div class="img-slot' + (UPLOADING[e.id] ? ' img-loading' : '') + '" id="imgSlot" onclick="openImagePicker(event,\'' + e.id + '\')" title="Click or drop a picture to change it">' +
+    var mapOn = !!(e.mapOn && e.map);
+    h += '<span class="lbl">' + (mapOn ? 'Default picture' : 'Picture') + '</span><div class="img-slot' + (UPLOADING[e.id] ? ' img-loading' : '') + '" id="imgSlot" onclick="openImagePicker(event,\'' + e.id + '\')" title="Click or drop a picture to change it">' +
+         '<button type="button" class="map-btn' + (mapOn ? ' on' : '') + '" onclick="event.stopPropagation();toggleImgMap()" title="' + (mapOn ? 'Stop choosing the picture by field value' : 'Choose the picture by a field\'s value') + '" aria-pressed="' + mapOn + '">[ ]</button>' +
          (u ? '<div class="el-img" style="background-image:url(&quot;' + esc(u) + '&quot;);background-size:contain"></div>' : '<div class="img-slot-empty">' + IMG_ICON + '<span>Drop a picture, or click to choose</span></div>') +
          '<span class="img-btn">' + IMG_ICON + '</span></div>';
     if (from) h += '<p class="muted" style="margin:.3rem 0 0">' + from + (uploaded ? '' : ' — loaded from the source, so changes there show up here') + '</p>';
-    h += '<p class="muted" style="margin:.3rem 0 0">The same picture on every card — a logo, frame or icon. For a different picture per card, use a Data column and set it to Image.</p>';
+    if (mapOn) h += mapAttrs(e);
+    else h += '<p class="muted" style="margin:.3rem 0 0">The same picture on every card — a logo, frame or icon. Press <b>[ ]</b> to choose the picture by a field\'s value instead.</p>';
     h += fitAttrs(e) + boxAttrs(e, 'Frame');
   }
   if (e.kind === 'shape') {
@@ -1351,7 +1376,60 @@ function renderAttrs() {
       if (f) uploadImage(e.id, f); else if (l) setImageSrc(e.id, l);
     });
   }
+  p.querySelectorAll('.map-thumb').forEach(function(t) {
+    var i = +t.dataset.i;
+    t.addEventListener('dragover', function(d) { d.preventDefault(); t.classList.add('over'); });
+    t.addEventListener('dragleave', function() { t.classList.remove('over'); });
+    t.addEventListener('drop', function(d) {
+      d.preventDefault(); t.classList.remove('over');
+      var f = droppedFile(d.dataTransfer), l = droppedLink(d.dataTransfer);
+      if (f) uploadImage(e.id, f, i); else if (l) setMapSrc(e.id, i, l);
+    });
+  });
 }
+// The image mapping part of an image element's panel: a field, then value → picture rows,
+// always ending with an empty row for the next one
+function mapAttrs(e) {
+  var mp = e.map, items = mp.items || [], rows = items.concat([{ v: '', src: '' }]);
+  var h = '<span class="lbl">Field</span><input class="inp" list="mapFieldList" value="' + esc(mp.field || '') + '" placeholder="Choose a field" onchange="setMapField(this.value)">' +
+    '<datalist id="mapFieldList">' + FIELDS.map(function(f) { return '<option value="' + esc(f) + '">'; }).join('') + '</datalist>';
+  h += '<span class="mini" style="margin-top:.55rem;display:block">Picture for each value</span><div class="map-list">';
+  rows.forEach(function(it, i) {
+    var u = imageUrl(picRef(it.src));
+    h += '<div class="map-row' + (i === items.length ? ' new' : '') + '">' +
+      '<div class="map-thumb" data-i="' + i + '" onclick="openImagePicker(event,\'' + e.id + '\',' + i + ')" title="' + (it.src ? 'Change the picture' : 'Choose a picture') + '">' +
+        (u ? '<div class="el-img" style="background-image:url(&quot;' + esc(u) + '&quot;);background-size:contain"></div>' : IMG_ICON) + '</div>' +
+      '<input class="inp" value="' + esc(it.v || '') + '" placeholder="' + (i === items.length ? 'Add a value…' : 'Value') + '" onchange="setMapVal(' + i + ',this.value)">' +
+      (i < items.length ? '<button type="button" class="map-x" onclick="delMapItem(' + i + ')" title="Remove" aria-label="Remove">×</button>' : '<span></span>') + '</div>';
+  });
+  h += '</div><p class="muted" style="margin:.35rem 0 0">' + (mp.field
+    ? 'When <b>' + esc(mp.field) + '</b> matches a value, its picture is used. Otherwise the picture link in <b>' + esc(mp.field) + '</b> is used, or the default picture if it has none. Values and pictures can be tags like <code>[fire]</code>.'
+    : 'Choose the field whose value picks the picture.') + '</p>';
+  return h;
+}
+function mapEl() { var e = elById(selId); return e && e.kind === 'image' && e.map ? e : null; }
+function toggleImgMap() {
+  var e = elById(selId); if (!e || e.kind !== 'image') return;
+  snapshot(); e.mapOn = !e.mapOn;
+  if (e.mapOn && !e.map) e.map = { field: '', items: [] };
+  changed();
+}
+function setMapField(v) { var e = mapEl(); if (!e || e.map.field === v.trim()) return; snapshot(); e.map.field = v.trim(); changed(); }
+function setMapVal(i, v) {
+  var e = mapEl(); if (!e) return; var items = e.map.items; v = v.trim();
+  if (i >= items.length) { if (!v) return; snapshot(); items.push({ v: v, src: '' }); }
+  else { if (items[i].v === v) return; snapshot(); items[i].v = v; }
+  e.map.items = items.filter(function(it) { return it.v || it.src; });
+  changed();
+}
+function setMapSrc(id, i, src) {
+  var e = elById(id); if (!e || !e.map) return; var items = e.map.items;
+  snapshot();
+  if (i >= items.length) { if (!src) return; items.push({ v: '', src: src }); } else items[i].src = src;
+  e.map.items = items.filter(function(it) { return it.v || it.src; });
+  changed(selId !== id);
+}
+function delMapItem(i) { var e = mapEl(); if (!e) return; snapshot(); e.map.items.splice(i, 1); changed(); }
 // Clicking outside the attribute panel (the card, the canvas, a layer) used to change the selection
 // before the field's change event fired, so the typed text was lost. Commit the field first.
 document.addEventListener('pointerdown', function(ev) {

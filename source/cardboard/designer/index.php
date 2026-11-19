@@ -191,6 +191,19 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .img-slot { position:relative; height:130px; border:1.5px dashed #c9cce0; border-radius:8px; background:#f6f7fb; cursor:pointer; overflow:hidden; }
 .img-slot:hover, .img-slot.over { border-color:#7b6cf6; background:#f3f1ff; }
 .img-slot .img-btn { display:flex; top:6px; right:6px; width:28px; height:28px; }
+.map-btn { position:absolute; top:6px; left:6px; z-index:2; height:28px; min-width:34px; padding:0 .45rem; border:none; border-radius:14px; background:rgba(0,0,0,.55); color:#fff; font-family:ui-monospace,Menlo,monospace; font-size:.78rem; font-weight:700; letter-spacing:.02em; cursor:pointer; }
+.map-btn:hover { background:rgba(0,0,0,.82); }
+.map-btn.on { background:#7b6cf6; }
+.map-list { display:flex; flex-direction:column; gap:.35rem; margin-top:.25rem; }
+.map-row { display:grid; grid-template-columns:44px minmax(0,1fr) 1.6rem; gap:.4rem; align-items:center; }
+.map-thumb { position:relative; width:44px; height:44px; border:1.5px dashed #c9cce0; border-radius:7px; background:#f6f7fb; cursor:pointer; overflow:hidden; display:flex; align-items:center; justify-content:center; color:#b4b8cc; }
+.map-thumb svg { width:18px; height:18px; }
+.map-thumb .el-img { position:absolute; inset:2px; background-repeat:no-repeat; background-position:center; }
+.map-thumb:hover, .map-thumb.over { border-color:#7b6cf6; background:#f3f1ff; }
+.map-row:not(.new) .map-thumb:has(.el-img) { border-style:solid; }
+.map-row.new .inp { border-style:dashed; }
+.map-x { width:1.6rem; height:1.6rem; border:none; background:none; color:#9aa0b8; font-size:1.1rem; line-height:1; cursor:pointer; border-radius:5px; padding:0; }
+.map-x:hover { background:#fdecea; color:#c0392b; }
 .img-slot-empty { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.35rem; color:#9aa0b8; font-size:.72rem; }
 .img-slot-empty svg { width:26px; height:26px; }
 .img-slot.over::before { content:'Drop to set the picture'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(75,63,168,.78); color:#fff; font-family:'DINBlack',sans-serif; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; z-index:3; }

@@ -17,14 +17,14 @@ $_abs    = $_origin . $_base;
 $_pageUrl = htmlspecialchars($_abs . 'cardboard/features', ENT_QUOTES);
 $_ogImg   = htmlspecialchars($_abs . 'images/og/cardboard-og.png', ENT_QUOTES);
 $_icon    = htmlspecialchars($_abs . 'images/cardboard_icon_180.png', ENT_QUOTES);
-$_desc    = 'CardBoard — design board game cards from your Google Sheet. Lay out the front and back once, then print them or send them to Tabletop Simulator and Screentop.';
+$_desc    = 'Design board game cards from your Google Sheet, then print them or send them to Tabletop Simulator and Screentop.';
 ?>
-<title>CardBoard — Features</title>
+<title>CardBoard — Board Game Card Designer for Google Sheets</title>
 <meta name="description" content="<?= $_desc ?>">
 <link rel="canonical" href="<?= $_pageUrl ?>">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Zapsheets">
-<meta property="og:title" content="CardBoard — Features">
+<meta property="og:title" content="CardBoard — Board Game Card Designer for Google Sheets">
 <meta property="og:description" content="<?= $_desc ?>">
 <meta property="og:url" content="<?= $_pageUrl ?>">
 <meta property="og:image" content="<?= $_ogImg ?>">
@@ -34,7 +34,7 @@ $_desc    = 'CardBoard — design board game cards from your Google Sheet. Lay o
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="CardBoard — features">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="CardBoard — Features">
+<meta name="twitter:title" content="CardBoard — Board Game Card Designer for Google Sheets">
 <meta name="twitter:description" content="<?= $_desc ?>">
 <meta name="twitter:image" content="<?= $_ogImg ?>">
 <link rel="apple-touch-icon" href="<?= $_icon ?>">

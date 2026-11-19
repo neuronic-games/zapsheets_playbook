@@ -585,7 +585,7 @@ function sheetRowFor(row) {
 function setRowPicture(e, url) {
   var row = ROWS[rowIdx]; if (!row) { toast('There\'s no row to put the picture in', true); return; }
   var tab = curTab, field = e.field;
-  UPLOADING[e.id] = true; render();
+  UPLOADING[e.id] = true; render(); if (selId === e.id) renderAttrs();
   sheetRowFor(row).then(function(gr) {
     var c = GRID.header.indexOf(field); if (c < 0) throw new Error('the ' + field + ' column wasn\'t found');
     return api('setcell', { tab: tab, row: gr.row, field: field, value: url, old: gr.values[c] || '' }).then(function(res) {
@@ -594,11 +594,11 @@ function setRowPicture(e, url) {
       return gr.row;
     });
   }).then(function(sheetRow) {
-    delete UPLOADING[e.id]; render(); renderData(); if (_activeTab === 'data') renderGrid();
+    delete UPLOADING[e.id]; render(); renderData(); if (_activeTab === 'data') renderGrid(); if (selId === e.id) renderAttrs();
     toast(url ? '✓ Picture saved in ' + field + ', row ' + sheetRow : 'Picture removed from ' + field + ', row ' + sheetRow);
     autoRepublish(tab);
   }).catch(function(err) {
-    delete UPLOADING[e.id]; render();
+    delete UPLOADING[e.id]; render(); if (selId === e.id) renderAttrs();
     toast(err.message === 'conflict' ? 'That cell was changed in the sheet — Fetch to see it, then try again' : 'Couldn\'t save the picture — ' + err.message, true);
   });
 }
@@ -1318,8 +1318,13 @@ function renderAttrs() {
          FIELDS.map(function(f) { return '<option' + (f === e.field ? ' selected' : '') + '>' + esc(f) + '</option>'; }).join('') +
          (known ? '' : '<option selected>' + esc(e.field) + '</option>') + '</select>';
     h += '<div style="margin-top:.45rem"><span class="mini">Show as</span>' + seg('as', [['text', 'Text', 'Show the value as text'], ['image', 'Image', 'The value is a picture link']], e.as || 'text') + '</div>';
-    if (e.as === 'image') h += '<div class="attr-btns"><button class="attr-btn" onclick="openImagePicker(event,\'' + e.id + '\')">' + IMG_ICON + ' Picture for row ' + (rowIdx + 1) + '</button></div>' +
-      '<p class="muted" style="margin:.35rem 0 0">Each row has its own picture, saved in its <b>' + esc(e.field) + '</b> cell. Pick one here, use the picture button on the card, or drop a file on it. Step through the rows to set the others.</p>';
+    if (e.as === 'image') {
+      var ru = ROWS[rowIdx] ? imageUrl(curSrc(e)) : '';
+      h += '<span class="lbl">Picture for row ' + (rowIdx + 1) + '</span><div class="img-slot' + (UPLOADING[e.id] ? ' img-loading' : '') + '" id="imgSlot" onclick="openImagePicker(event,\'' + e.id + '\')" title="Click or drop a picture to change it">' +
+        (ru ? '<div class="el-img" style="background-image:url(&quot;' + esc(ru) + '&quot;);background-size:contain"></div>' : '<div class="img-slot-empty">' + IMG_ICON + '<span>' + (ROWS[rowIdx] ? 'No picture in this row — drop one, or click to choose' : 'No rows yet') + '</span></div>') +
+        '<span class="img-btn">' + IMG_ICON + '</span></div>' +
+        '<p class="muted" style="margin:.35rem 0 0">Each row has its own picture, saved in its <b>' + esc(e.field) + '</b> cell. Click or drop a picture here, or double-click it on the card. Step through the rows to set the others.</p>';
+    }
     h += e.as === 'image' ? fitAttrs(e) + boxAttrs(e, 'Frame') : textAttrs(e) + boxAttrs(e, 'Background');
   }
   if (e.kind === 'image') {

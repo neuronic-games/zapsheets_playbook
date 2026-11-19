@@ -113,7 +113,7 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
 
   <section class="section" id="backs">
     <h2>Card backs</h2>
-    <p>The round button at the top right of the card flips it over so you can design the back. If the back has nothing that changes from card to card, every card shares one back. Add a Data field, a <code>{Column}</code> in text, or a Generated value, and each card gets its own back (<b>Unique backs</b>).</p>
+    <p>The round button at the top left of the card flips it over so you can design the back. If the back has nothing that changes from card to card, every card shares one back. Add a Data field, a <code>{Column}</code> in text, or a Generated value, and each card gets its own back (<b>Unique backs</b>).</p>
   </section>
 
   <section class="section" id="print">

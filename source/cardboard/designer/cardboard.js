@@ -715,8 +715,7 @@ function alignDotsHTML() {
   var plan = alignPlan(); if (!plan) return '';
   var bb = plan.ref, T = ALIGN_TITLES[plan.card ? 'card' : 'sel'], k = PX * zoom, W = layout.card.w * k, H = layout.card.h * k, h = '';
   var ys = { top: bb.y, middle: bb.y + bb.h / 2, bottom: bb.y + bb.h }, xs = { left: bb.x, center: bb.x + bb.w / 2, right: bb.x + bb.w };
-  // Dots sit out past the card; on the right, keep clear of the flip button at the top
-  var offR = Object.keys(ys).some(function(n) { return ys[n] * k < 52; }) ? 84 : 34, offB = 34;
+  var offR = 34, offB = 34;   // dots sit out past the card's right and bottom edges
   Object.keys(ys).forEach(function(n) {
     var y = Math.round(ys[n] * k);
     h += '<div class="al-guide al-h" style="left:' + W + 'px;top:' + y + 'px;width:' + offR + 'px"></div>' +

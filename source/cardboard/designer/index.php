@@ -249,7 +249,7 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 /* Print card colors and fills even when "Background graphics" is off */
 .card, .card * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 /* Flip button (top right of the card) */
-.flip-btn { position:absolute; top:0; right:-3.1rem; width:2.5rem; height:2.5rem; border-radius:50%; border:1.5px solid #d6d9e6; background:#fff; color:#4b3fa8; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; cursor:pointer; box-shadow:0 3px 10px rgba(20,20,60,.12); padding:0; z-index:5; }
+.flip-btn { position:absolute; top:0; left:-3.1rem; width:2.5rem; height:2.5rem; border-radius:50%; border:1.5px solid #d6d9e6; background:#fff; color:#4b3fa8; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; cursor:pointer; box-shadow:0 3px 10px rgba(20,20,60,.12); padding:0; z-index:5; }
 .flip-btn svg { width:18px; height:18px; }
 .side-label { position:absolute; left:0; right:0; bottom:100%; margin-bottom:.45rem; text-align:center; font-family:'DINBlack',sans-serif; font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; color:#6b62b8; pointer-events:none; }
 .flip-btn:hover { border-color:#7b6cf6; }

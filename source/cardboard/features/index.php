@@ -136,7 +136,7 @@ section { padding:5.5rem 2rem; }
 .cbx-canvas { position:relative; display:flex; align-items:center; justify-content:center; background-image:radial-gradient(#cfd2df 1px,transparent 1px); background-size:14px 14px; }
 .cbx-side { position:absolute; top:22px; left:0; right:0; text-align:center; font-family:'CBDINBlack',sans-serif; font-size:8.5px; letter-spacing:.16em; text-transform:uppercase; color:#6b62b8; }
 .cbx-holder { position:relative; width:180px; height:252px; margin-top:14px; perspective:900px; }
-.cbx-flip { position:absolute; top:0; right:-38px; width:28px; height:28px; border-radius:50%; background:#fff; border:1.3px solid #d6d9e6; color:#4b3fa8; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 8px rgba(20,20,60,.12); transition:background .2s, color .2s; z-index:3; }
+.cbx-flip { position:absolute; top:0; left:-38px; width:28px; height:28px; border-radius:50%; background:#fff; border:1.3px solid #d6d9e6; color:#4b3fa8; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 8px rgba(20,20,60,.12); transition:background .2s, color .2s; z-index:3; }
 .cbx-flip.on { background:#4b3fa8; color:#fff; border-color:#4b3fa8; }
 .cbx-flip.press { transform:scale(.88); }
 .cbx-card3d { position:absolute; inset:0; transform-style:preserve-3d; transition:transform .75s cubic-bezier(.4,.1,.2,1); }

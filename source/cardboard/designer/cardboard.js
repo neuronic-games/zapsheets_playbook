@@ -467,7 +467,22 @@ function showLoadStatus() {
   el.hidden = !_rowsPartial;
   el.textContent = !_rowsPartial ? '' : ROWS.length ? 'Loading the other rows…' : 'Loading rows…';
 }
-function reloadSheet() { if (curTab) selectTab(curTab, true, true); }
+// Fetch: the tab list too (tabs added, renamed or removed in Google Sheets), then this tab's rows
+function reloadSheet() {
+  api('tabs').then(function(r) {
+    var tabs = (r && r.tabs) || []; if (!tabs.length) return;
+    var before = TABS.map(function(t) { return t.title; }).join('\u0001');
+    TABS = tabs;
+    if (TABS.map(function(t) { return t.title; }).join('\u0001') !== before) {
+      var sel = $('sheetSel'); sel.innerHTML = TABS.map(function(t) { return '<option>' + esc(t.title) + '</option>'; }).join('');
+      $('gridSheet').innerHTML = sel.innerHTML;
+      var keep = TABS.some(function(t) { return t.title === curTab; }) ? curTab : (TABS[0] || {}).title;
+      sel.value = keep; $('gridSheet').value = keep; refreshSheetCombos();
+      if (keep !== curTab) { selectTab(keep, true, true); return; }
+    }
+    if (curTab) selectTab(curTab, true, true);
+  }).catch(function() { if (curTab) selectTab(curTab, true, true); });
+}
 function openInSheets() { window.open('https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit', '_blank', 'noopener'); }
 
 // ── Left panel: TEXT · DATA · IMAGE · SHAPE · GENERATED ──────────────────────

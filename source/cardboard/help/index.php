@@ -113,7 +113,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
     <ul>
       <li><b>Profile</b> — your name, email and studio.</li>
       <li><b>Settings</b> — open the spreadsheet in Google Sheets, choose inches or millimetres for measurements, and see your plan.</li>
-      <li><b>Fetch</b> — re-read everything from the Google Sheet (use it after editing in Sheets).</li>
+      <li><b>Fetch</b> — re-read everything from the Google Sheet, including tabs you’ve added, renamed or removed (use it after editing in Sheets).</li>
       <li><b>Subscription</b> — your free week or subscription, billing, and codes.</li>
       <li><b>Enter a code</b> — unlock time with a free code.</li>
       <li><b>Help</b> — this page. <b>Sign out</b> — sign out of this browser.</li>

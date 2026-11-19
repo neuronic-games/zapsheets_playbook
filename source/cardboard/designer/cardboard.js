@@ -247,7 +247,6 @@ function renderCardHTML(lay, row, designing, ctx) {
     h += '<div class="' + cls + '" data-id="' + e.id + '" style="' + elStyle(e) + '">';
     h += designing
       ? '<div class="el-inner">' + elInner(e, row, ctx) + '</div>' +
-        (isPicEl(e) ? '<button type="button" class="img-btn" title="' + (e.kind === 'data' ? 'Picture for this row' : 'Change image') + '" onclick="openImagePicker(event,\'' + e.id + '\')">' + IMG_ICON + '</button>' : '') +
         ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map(function(d) { return '<span class="hdl ' + d + '" data-h="' + d + '"></span>'; }).join('')
       : elInner(e, row, ctx);
     h += '</div>';
@@ -789,6 +788,11 @@ function ptFromEvent(ev) {
   });
 })();
 
+// Double-click a picture on the card to change it (the panel on the right has the same button)
+$('cardHolder').addEventListener('dblclick', function(ev) {
+  var node = ev.target.closest('.el'), e = node && elById(node.dataset.id);
+  if (e && isPicEl(e)) openImagePicker(ev, e.id);
+});
 // Move / resize elements on the card
 $('cardHolder').addEventListener('pointerdown', function(ev) {
   if (ev.target.closest('.img-btn')) return;

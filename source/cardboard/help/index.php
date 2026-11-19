@@ -108,6 +108,11 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
     </ul>
   </section>
 
+  <section class="section" id="groups">
+    <h2>Groups and lists</h2>
+    <p>Select several elements and press <b>⌘G</b> (or <b>Group</b>) to move them as one. With the group selected, <b>Arrange</b> sets how its members sit: <b>Free</b> keeps them where you put them; <b>Horizontal list</b> puts them side by side and <b>Vertical list</b> one under another, starting from the group’s top-left corner. In a list, each text takes only the room its words need on that card, and a text or picture with nothing to show takes no room at all. <b>Gap</b> sets the space between them. The list follows the Layers order, top first — drag there to reorder.</p>
+  </section>
+
   <section class="section" id="tags">
     <h2>Tags</h2>
     <p>Write a tag in square brackets, like <code>[energy]</code>, in any text or data, and every card shows a word or a picture in its place — <em>“Gain 1 [energy]”</em> becomes “Gain 1 ⚡”. Curly braces stay for columns, so <em>“Gain {Amount} [energy]”</em> uses both. Set tags up in the <b>Tags</b> view: give each one a name (with or without the brackets) and either text or a picture. Pictures can be an icon from the library, a link, or an upload. Tags are kept in your spreadsheet's <b>tags</b> tab, with the names in brackets.</p>

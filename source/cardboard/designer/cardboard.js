@@ -258,18 +258,37 @@ function renderCardHTML(lay, row, designing, ctx) {
   ctx = Object.assign({ card: 0, row: 0 }, ctx || {}, { designing: !!designing });
   var face = faceOf(lay, ctx.side), cs = ctx.side === 'back' ? Object.assign({}, lay.card, { bg: lay.back.bg }) : lay.card;
   var h = '<div class="card' + (designing ? ' designing' : '') + (ctx.side === 'back' ? ' back' : '') + '" style="' + cardStyle(cs) + '">';
-  face.els.slice().sort(function(a, b) { return (a.z || 1) - (b.z || 1); }).forEach(function(e) {
+  function elHTML(e, list) {
+    var inner = elInner(e, row, ctx);
+    // In a list, a text or picture with nothing to show takes no room at all
+    if (list && (inner === '' || (isTextLike(e) && !/<(img|svg)\b/.test(inner) && !inner.replace(/<[^>]*>/g, '').trim()))) return '';
     var cls = 'el k-' + e.kind + (e.kind === 'data' && e.as === 'image' ? ' as-image' : '') + (e.valign === 'middle' ? ' v-middle' : e.valign === 'bottom' ? ' v-bottom' : '') + (designing && isSel(e.id) ? ' picked' + (multi.length ? ' multi' : '') : '');
     if (designing && UPLOADING[e.id]) cls += ' img-loading';
-    h += '<div class="' + cls + '" data-id="' + e.id + '" style="' + elStyle(e) + '">';
-    h += designing
-      ? '<div class="el-inner">' + elInner(e, row, ctx) + '</div>' +
+    var st = elStyle(e);
+    if (list) {   // sized by its contents along the list: as wide (or as tall) as it needs, up to its own box
+      cls += ' in-list';
+      if (isTextLike(e)) st += list === 'h' ? 'width:auto;max-width:' + e.w + 'pt;' : 'height:auto;max-height:' + e.h + 'pt;';
+    }
+    return '<div class="' + cls + '" data-id="' + e.id + '" style="' + st + '">' + (designing
+      ? '<div class="el-inner">' + inner + '</div>' +
         ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map(function(d) { return '<span class="hdl ' + d + '" data-h="' + d + '"></span>'; }).join('') +
         '<span class="hdl rot" data-h="rot" title="Drag to rotate · Shift: 15° steps"></span>'
-      : elInner(e, row, ctx);
-    h += '</div>';
+      : inner) + '</div>';
+  }
+  // Groups set out as a horizontal or vertical list flow their members, in Layers order, from the group's top-left corner
+  var lists = {}, selG = designing && multi.length ? selGroupId() : '';
+  (face.groups || []).forEach(function(g) { if (g.list === 'h' || g.list === 'v') lists[g.id] = g; });
+  var sorted = face.els.slice().sort(function(a, b) { return (a.z || 1) - (b.z || 1); });
+  sorted.forEach(function(e) {
+    var g = e.group && lists[e.group];
+    if (!g) { h += elHTML(e); return; }
+    var members = sorted.filter(function(x) { return x.group === g.id; });
+    if (members[members.length - 1] !== e) return;   // the list is drawn once, where its top member sits
+    var bb = selBox(members), gap = g.gap == null ? 4 : +g.gap || 0;
+    h += '<div class="el-list list-' + g.list + (g.id === selG ? ' picked' : '') + '" data-g="' + g.id + '" style="left:' + bb.x + 'pt;top:' + bb.y + 'pt;z-index:' + (e.z || 1) + ';gap:' + gap + 'pt">' +
+         members.slice().reverse().map(function(x) { return elHTML(x, g.list); }).join('') + '</div>';
   });
-  if (designing && multi.length) {   // one box around everything selected (a group or several elements)
+  if (designing && multi.length && !(selG && lists[selG])) {   // one box around everything selected (a group or several elements)
     var bb = selBox(face.els.filter(function(x) { return multi.indexOf(x.id) >= 0; }));
     if (bb) h += '<div class="sel-box' + (selGroupId() ? ' group' : '') + '" style="left:' + bb.x + 'pt;top:' + bb.y + 'pt;width:' + bb.w + 'pt;height:' + bb.h + 'pt"></div>';
   }
@@ -1021,6 +1040,9 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
       });
       var bx = $('cardHolder').querySelector('.sel-box'), b2 = selBox(group);
       if (bx && b2) { bx.style.left = b2.x + 'pt'; bx.style.top = b2.y + 'pt'; }
+      $('cardHolder').querySelectorAll('.el-list').forEach(function(l) {   // a list group moves from its corner
+        var lb = selBox(groupMembers(l.dataset.g)); if (lb) { l.style.left = lb.x + 'pt'; l.style.top = lb.y + 'pt'; }
+      });
       return;
     }
     if (!handle) {
@@ -1177,6 +1199,10 @@ function selBox(els) {
   if (!els.length) return null;
   var x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
   els.forEach(function(e) { x1 = Math.min(x1, e.x); y1 = Math.min(y1, e.y); x2 = Math.max(x2, e.x + e.w); y2 = Math.max(y2, e.y + e.h); });
+  // A list group is as big as it's drawn on the card (it fits this row's contents), from its top-left corner
+  var gid = els[0].group, lg = gid && els.every(function(e) { return e.group === gid; }) && groupMembers(gid).length === els.length && groupById(gid);
+  var node = lg && lg.list && $('cardHolder') && $('cardHolder').querySelector('.el-list[data-g="' + gid + '"]');
+  if (node && zoom) { var r = node.getBoundingClientRect(), k = zoom * PX; return { x: r1(x1), y: r1(y1), w: r1(r.width / k), h: r1(r.height / k) }; }
   return { x: r1(x1), y: r1(y1), w: r1(x2 - x1), h: r1(y2 - y1) };
 }
 function groupById(gid) { return (face().groups || []).filter(function(g) { return g.id === gid; })[0]; }
@@ -1365,11 +1391,33 @@ function multiAttrs() {
        '<div><span class="mini">X</span><input class="inp" type="number" step=".5" value="' + bb.x + '" onchange="moveSelTo(\'x\',this.value)"></div>' +
        '<div><span class="mini">Y</span><input class="inp" type="number" step=".5" value="' + bb.y + '" onchange="moveSelTo(\'y\',this.value)"></div></div>';
   h += '<p class="muted" style="margin:.35rem 0 0">' + r1(bb.w) + ' × ' + r1(bb.h) + ' pt. Drag on the card or use the arrow keys to move ' + (g ? 'the group' : 'them') + ' together.</p>';
+  if (g) {
+    var mode = g.list === 'h' || g.list === 'v' ? g.list : '';
+    h += '<span class="lbl">Arrange</span><div class="seg list-seg">' + [['', 'Free: members stay where you put them', LIST_ICONS.free], ['h', 'Horizontal list: side by side, each only as wide as it needs', LIST_ICONS.h], ['v', 'Vertical list: one under another, each only as tall as it needs', LIST_ICONS.v]].map(function(o) {
+      return '<button type="button" class="' + (o[0] === mode ? 'on' : '') + '" title="' + o[1] + '" aria-label="' + o[1].split(':')[0] + '" onclick="setGroupList(\'' + gid + '\',\'' + o[0] + '\')">' + o[2] + '</button>';
+    }).join('') + '</div>';
+    if (mode) h += '<div class="row2" style="margin-top:.45rem">' + numInp('g_gap', 'Gap (pt)', g.gap == null ? 4 : g.gap, 'setGroupGap', gid, .5) + '<div></div></div>' +
+      '<p class="muted" style="margin:.35rem 0 0">In the Layers order, top first — drag there to reorder. Empty text and pictures take no room.</p>';
+  }
   h += '<div class="attr-btns">' + (g ? '<button class="attr-btn" onclick="ungroupSel()">Ungroup</button>' : '<button class="attr-btn" onclick="groupSel()">Group</button>') + '</div>';
   h += '<div class="attr-btns"><button class="attr-btn" onclick="reorderSel(1)">To front</button><button class="attr-btn" onclick="reorderSel(-1)">To back</button></div>';
   h += '<div class="attr-btns"><button class="attr-btn" onclick="duplicateSel()">Duplicate</button><button class="attr-btn danger" onclick="deleteSel()">Delete</button></div>';
   h += '<span class="lbl">Shortcuts</span><p class="muted" style="margin:0">⌘G group · ⇧⌘G ungroup · ⌘A select all · Shift or ⌘-click to add to the selection</p>';
   return h;
+}
+var LIST_ICONS = {
+  free: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><rect x="3" y="4" width="8" height="6" rx="1.5"/><rect x="13" y="9" width="8" height="5" rx="1.5" opacity=".7"/><rect x="6" y="15" width="7" height="5" rx="1.5" opacity=".45"/></svg>',
+  h: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><rect x="2" y="8" width="6" height="8" rx="1.5"/><rect x="9.5" y="8" width="5" height="8" rx="1.5" opacity=".7"/><rect x="16" y="8" width="6" height="8" rx="1.5" opacity=".45"/></svg>',
+  v: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><rect x="6" y="2" width="12" height="5.5" rx="1.5"/><rect x="6" y="9.25" width="9" height="5.5" rx="1.5" opacity=".7"/><rect x="6" y="16.5" width="11" height="5.5" rx="1.5" opacity=".45"/></svg>'
+};
+function setGroupList(gid, mode) {
+  var g = groupById(gid); if (!g || (g.list || '') === mode) return;
+  snapshot(); if (mode) g.list = mode; else delete g.list;
+  changed(); renderAttrs();
+}
+function setGroupGap(gid, v) {
+  var g = groupById(gid); v = parseFloat(v); if (!g || isNaN(v)) return;
+  snapshot(); g.gap = Math.max(0, v); changed(true);
 }
 function moveSelTo(axis, v) {
   v = parseFloat(v); if (isNaN(v)) return;

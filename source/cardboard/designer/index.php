@@ -272,6 +272,13 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .card { position:absolute; left:0; top:0; transform-origin:0 0; overflow:hidden; background:#fff; box-shadow:0 10px 30px rgba(20,20,60,.22); }
 .el { position:absolute; overflow:hidden; display:flex; flex-direction:column; white-space:pre-wrap; word-break:break-word; line-height:1.15; }
 .el.v-middle { justify-content:center; } .el.v-bottom { justify-content:flex-end; }
+/* A group set out as a list: its members flow side by side (or one under another), each as big as its contents need */
+.el-list { position:absolute; display:flex; }
+.el-list.list-h { flex-direction:row; align-items:center; }
+.el-list.list-v { flex-direction:column; align-items:flex-start; }
+.el-list > .el.in-list { position:relative; left:auto !important; top:auto !important; flex:0 0 auto; }
+.designing .el-list.picked { outline:calc(1.5px / var(--z)) dashed #4b3fa8; outline-offset:calc(2px / var(--z)); z-index:50 !important; }
+.list-seg button { display:flex; align-items:center; justify-content:center; }
 .el-img { display:block; width:100%; height:100%; object-position:center; background-repeat:no-repeat; background-position:center; }
 /* Picture still loading in the designer: a spinner over it (shown after a moment, so cached pictures don't flash) */
 .img-spin { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(238,240,246,.85); pointer-events:none; opacity:0; animation:imgSpinIn .15s .2s forwards; }

@@ -100,6 +100,13 @@ function cbSheetUnlocked(string $sheetId): bool {
     return in_array($sheetId, $comped, true) || activationActive($sheetId);
 }
 
+/** Stop any request (even reading the sheet) from someone who hasn't signed in. */
+function cbRequireSignIn(): void {
+    $p = cbReadToken(cbRequestToken());
+    if (!$p) { echo json_encode(['error' => 'Sign in to CardBoard first.', 'need_auth' => true]); exit; }
+    if (($p['x'] ?? 0) < time()) { echo json_encode(['error' => 'Your sign-in needs refreshing.', 'need_auth' => true, 'refresh' => true]); exit; }
+}
+
 /**
  * Stop a request that changes something unless the person is in their free week, subscribed,
  * activated, or the spreadsheet is unlocked. Answers the browser with need_auth / locked.

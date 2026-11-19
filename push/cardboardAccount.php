@@ -4,7 +4,8 @@
  * account token fresh. See cardboardAuth.php for the token and the free week.
  *
  * POST action and params:
- *   send     — email                       → {ok}            (emails a 6-digit code, valid 15 minutes)
+ *   send     — email, mode? (login|trial)  → {ok, existing}  (emails a 6-digit code, valid 15 minutes;
+ *                                                                login refuses an email with no account)
  *   verify   — email, code, name?, sheet?  → {ok, token, account}
  *   refresh  — cbt (token), sheet?         → {ok, token, account}   (re-reads the Admin sheet)
  *   activate — cbt, key, sheet?            → {ok, token, account}   (activation key: everything, no time limit)
@@ -78,13 +79,22 @@ if ($action === 'send') {
     $email = strtolower(trim((string) ($_POST['email'] ?? '')));
     if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 200) fail('Enter a valid email address');
     if (!cbLimit('send|' . $email, 5) || !cbLimit('sendip|' . $ip, 20)) fail('Too many codes asked for — please wait a while and try again');
+    // mode: login (only an existing account) | trial (new or existing — an existing account signs in, the week isn't restarted)
+    $mode = $_POST['mode'] ?? '';
+    $existing = null;
+    if ($mode === 'login' || $mode === 'trial') {
+        $f = cbAdmin(['action' => 'find', 'field' => 'Email', 'value' => $email]);
+        if (empty($f['ok'])) fail($f['error'] ?? 'Couldn’t check your account');
+        $existing = !empty($f['user']);
+        if ($mode === 'login' && !$existing) fail('There’s no CardBoard account for that email yet — start your free week instead.', ['no_account' => true]);
+    }
     $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
     $file = cbPrivateDir('codes') . '/' . hash('sha256', $email) . '.json';
     file_put_contents($file, json_encode(['h' => hash_hmac('sha256', $email . '|' . $code, cbSecret()), 'x' => time() + 900, 'tries' => 0]), LOCK_EX);
     $body = "Your CardBoard sign-in code is:\r\n\r\n    $code\r\n\r\nIt works for 15 minutes. If you didn't ask for it, you can ignore this email.\r\n\r\n— CardBoard by ZapSheets";
     $why  = cbSendMail($email, 'Your CardBoard code: ' . $code, $body, cbCodeEmailHtml($code));
     if ($why !== '' && empty($_ENV['CARDBOARD_AUTH_DEBUG'])) { @unlink($file); fail('The email couldn’t be sent — please try again later'); }
-    ok(!empty($_ENV['CARDBOARD_AUTH_DEBUG']) ? ['debug_code' => $code] : []);   // debug only on a test server
+    ok(['existing' => $existing] + (!empty($_ENV['CARDBOARD_AUTH_DEBUG']) ? ['debug_code' => $code] : []));   // debug code only on a test server
 }
 
 if ($action === 'verify') {

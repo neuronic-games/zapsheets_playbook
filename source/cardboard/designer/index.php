@@ -565,7 +565,20 @@ body.cb-locked #saveBtn { display:none; }
 .pf-note { margin:.25rem 0 0; font-size:.72rem; color:#9aa0b8; }
 .plan-who { font-size:.76rem; color:#8a8fa8; margin:-.2rem 0 .5rem; }
 .plan-who:empty { display:none; }
-.signin-dlg { width:min(420px,94vw); text-align:center; }
+.signin-dlg { width:min(440px,94vw); text-align:center; }
+.si-choose { display:flex; flex-direction:column; gap:.6rem; margin-top:1rem; }
+.si-opt { display:flex; flex-direction:column; align-items:center; gap:.15rem; padding:.85rem 1rem; border:1.5px solid #d6d9e6; border-radius:10px; background:#fff; color:#2e2763; cursor:pointer; font:inherit; transition:border-color .12s, background .12s; }
+.si-opt b { font-family:'DINBlack',sans-serif; font-weight:400; font-size:.95rem; letter-spacing:.03em; }
+.si-opt span { font-size:.76rem; color:#8a8fa8; }
+.si-opt:hover { border-color:#a99cff; background:#f7f5ff; }
+.si-opt.primary { background:#4b3fa8; border-color:#4b3fa8; color:#fff; }
+.si-opt.primary span { color:rgba(255,255,255,.75); }
+.si-opt.primary:hover { background:#3b3190; }
+#siSwitch:empty { display:none; }
+#signinOverlay [hidden] { display:none !important; }   /* .si-row is a flex row: keep hidden steps hidden */
+/* First visit: nothing behind the sign-in panel until they're in */
+body.cb-gate > *:not(#signinOverlay):not(.toast) { visibility:hidden; }
+body.cb-gate #signinOverlay { background:#2e2763; }
 .si-row { display:flex; gap:.5rem; margin-top:.8rem; }
 .si-row .inp { flex:1; height:2.4rem; font-size:.95rem; }
 .si-row .print-go { white-space:nowrap; }
@@ -861,23 +874,30 @@ body.cb-locked #saveBtn { display:none; }
   </div>
 </div>
 
-<!-- Sign in: an action-only panel (no dirty check) -->
-<div class="overlay" id="signinOverlay" onclick="if(event.target===this)closeSignIn()">
+<!-- Sign in / start the free week: an action-only panel (no dirty check) -->
+<div class="overlay" id="signinOverlay" onclick="if(event.target===this&&!document.body.classList.contains('cb-gate'))closeSignIn()">
   <div class="dlg signin-dlg" onclick="event.stopPropagation()">
-    <h2 class="plan-title"><img src="images/cardboard_icon_180.png" alt="">Sign in to CardBoard</h2>
-    <p class="dlg-sub">New here? Your first week is free — every feature, no card needed.</p>
-    <form id="siStep1" class="si-row" onsubmit="event.preventDefault();signInSend()">
+    <h2 class="plan-title"><img src="images/cardboard_icon_180.png" alt=""><span id="siTitle">Welcome to CardBoard</span></h2>
+    <p class="dlg-sub" id="siSub">Design and print cards from your Google Sheet.</p>
+    <div id="siChoose" class="si-choose">
+      <button type="button" class="si-opt primary" onclick="signInChoose('trial')"><b>Start your free week</b><span>Every feature for 7 days · no card needed</span></button>
+      <button type="button" class="si-opt" onclick="signInChoose('login')"><b>Log in</b><span>I already have a CardBoard account</span></button>
+    </div>
+    <form id="siStep1" class="si-row" hidden onsubmit="event.preventDefault();signInSend()">
       <input class="inp" id="siEmail" type="email" autocomplete="email" placeholder="you@example.com" aria-label="Email">
       <button type="submit" class="print-go" id="siSend">Email me a code</button>
     </form>
     <form id="siStep2" hidden onsubmit="event.preventDefault();signInVerify()">
-      <p class="dlg-sub">We sent a 6-digit code to <b id="siTo"></b>.</p>
+      <p class="dlg-sub" id="siSent">We sent a 6-digit code.</p><span id="siTo" hidden></span>
       <div class="si-row"><input class="inp si-code" id="siCode" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" aria-label="Code" oninput="var v=this.value.replace(/\D/g,'').slice(0,6);if(v!==this.value)this.value=v">
       <button type="submit" class="print-go" id="siGo">Sign in</button></div>
       <button type="button" class="si-link" onclick="signInBack()">Use a different email</button>
     </form>
     <div class="dlg-err" id="siErr"></div>
-    <div class="dlg-actions" style="justify-content:center"><button type="button" class="attr-btn" onclick="closeSignIn()">Not now</button></div>
+    <div class="dlg-actions" style="justify-content:center;flex-wrap:wrap">
+      <button type="button" class="si-link" id="siSwitch" onclick="signInSwitch()" style="margin:0 auto .3rem;flex-basis:100%"></button>
+      <button type="button" class="attr-btn" id="siClose" onclick="closeSignIn()">Not now</button>
+    </div>
   </div>
 </div>
 

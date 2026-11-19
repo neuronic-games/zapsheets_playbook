@@ -30,7 +30,10 @@ function cbRun(string $python, string $sheetId, array $data): array {
     return ['error' => 'The CardBoard script failed: ' . ($raw !== '' ? mb_substr($raw, -300) : 'no output')];
 }
 
-// Anything that changes the spreadsheet needs the free week, a subscription or an unlocked sheet
+// Nothing is read before signing in; anything that changes the spreadsheet also needs the
+// free week, a subscription or an unlocked sheet
+require_once __DIR__ . '/cardboardAuth.php';
+cbRequireSignIn();
 if (in_array($action, ['save', 'addfield', 'setcell', 'addrow', 'settag', 'deltag'], true)) {
     require_once __DIR__ . '/cardboardAuth.php';
     cbRequireAccess($sheetId);

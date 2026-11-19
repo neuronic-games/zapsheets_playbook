@@ -278,8 +278,15 @@ function renderCardHTML(lay, row, designing, ctx) {
 }
 
 // ── Loading ───────────────────────────────────────────────────────────────────
+// Nothing is read from the spreadsheet until the person has signed in (or started their free week)
 function init() {
-  startAccount();
+  applyAcct();
+  if (!ACCT) {
+    $('cardHolder').innerHTML = '';
+    askSignIn(true).then(function() { init(); }, function() {});
+    return;
+  }
+  acctRefresh(!hasAccess()).then(function() {}, function() {});
   renderPalette();
   $('cardHolder').innerHTML = '<div class="loading" style="width:240px;height:200px"><span class="spin"></span>Loading sheet…</div>';
   loadTags();
@@ -2799,27 +2806,45 @@ function startProCheckout() {
 }
 function signOut() {
   askDialog({ title: 'Sign out?', message: 'You can sign back in any time with a code sent to your email.', ok: 'Sign out', cancel: 'Cancel' })
-    .then(function(yes) { if (yes) { forgetAcct(); toast('Signed out'); } });
+    .then(function(yes) { if (yes) { forgetAcct(); window.location.href = APP_BASE + 'cardboard'; } });
 }
 
 // Sign in: email → 6-digit code. Resolves once signed in; rejects if closed.
-var _signIn = null;
-function askSignIn() {
+var _signIn = null, _siMode = '';
+// gate: first visit — the page stays empty behind it, and it can't be closed (only left for the start page)
+function askSignIn(gate) {
   if (_signIn) { openDialog('signinOverlay'); return _signIn.promise; }
   var d = {}; d.promise = new Promise(function(res, rej) { d.res = res; d.rej = rej; }); _signIn = d;
-  $('siStep1').hidden = false; $('siStep2').hidden = true; $('siErr').textContent = '';
+  document.body.classList.toggle('cb-gate', !!gate);
+  $('siClose').textContent = gate ? 'Back to start' : 'Not now';
+  signInChoose('');
   $('siEmail').value = (acctInfo() && acctInfo().email) || (SETTINGS && SETTINGS.profile && SETTINGS.profile.email) || '';
   $('siSend').disabled = false; $('siSend').textContent = 'Email me a code';
   openDialog('signinOverlay'); setTimeout(function() { $('siEmail').focus(); }, 60);
   return d.promise;
 }
-function closeSignIn() { closeDialog('signinOverlay'); if (_signIn) { var d = _signIn; _signIn = null; d.rej(new Error('Not signed in')); } }
+function closeSignIn() {
+  if (document.body.classList.contains('cb-gate')) { window.location.href = APP_BASE + 'cardboard'; return; }
+  closeDialog('signinOverlay'); if (_signIn) { var d = _signIn; _signIn = null; d.rej(new Error('Not signed in')); }
+}
+// '' = choose; 'trial' = start the free week; 'login' = an existing account
+function signInChoose(mode) {
+  _siMode = mode;
+  $('siChoose').hidden = !!mode; $('siStep1').hidden = !mode; $('siStep2').hidden = true; $('siErr').textContent = '';
+  $('siTitle').textContent = mode === 'login' ? 'Log in to CardBoard' : mode === 'trial' ? 'Start your free week' : 'Welcome to CardBoard';
+  $('siSub').textContent = mode === 'login' ? 'Enter the email you use with CardBoard and we’ll send you a code.'
+    : mode === 'trial' ? 'Every feature for 7 days — no card needed. Enter your email and we’ll send you a code.'
+    : 'Design and print cards from your Google Sheet.';
+  $('siSwitch').textContent = mode === 'login' ? 'New here? Start your free week' : mode === 'trial' ? 'Already have an account? Log in' : '';
+  if (mode) setTimeout(function() { $('siEmail').focus(); }, 40);
+}
 function signInSend() {
   var em = $('siEmail').value.trim();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { $('siErr').textContent = 'Enter your email address.'; return; }
   var b = $('siSend'); b.disabled = true; b.textContent = 'Sending…'; $('siErr').textContent = '';
-  accountPost('send', { email: em }).then(function(r) {
+  accountPost('send', { email: em, mode: _siMode }).then(function(r) {
     $('siTo').textContent = em; $('siStep1').hidden = true; $('siStep2').hidden = false; $('siCode').value = r.debug_code || '';
+    $('siSent').innerHTML = (_siMode === 'trial' && r.existing ? 'Welcome back — you already have an account, so this signs you in. ' : '') + 'We sent a 6-digit code to <b>' + esc(em) + '</b>.';
     setTimeout(function() { $('siCode').focus(); }, 40);
   }).catch(function(e) { $('siErr').textContent = e.message; }).then(function() { b.disabled = false; b.textContent = 'Email me a code'; });
 }
@@ -2829,12 +2854,13 @@ function signInVerify() {
   var b = $('siGo'); b.disabled = true; b.textContent = 'Signing in…'; $('siErr').textContent = '';
   var name = (SETTINGS && SETTINGS.profile && SETTINGS.profile.name) || '';
   accountPost('verify', { email: $('siTo').textContent, code: code, name: name }).then(function(r) {
-    storeAcct(r); closeDialog('signinOverlay');
+    storeAcct(r); closeDialog('signinOverlay'); document.body.classList.remove('cb-gate');
     var a = r.account; toast(a.state === 'trial' ? '✓ Signed in — ' + daysLeft() + ' days of your free week left' : '✓ Signed in');
     if (_signIn) { var d = _signIn; _signIn = null; d.res(ACCT); }
   }).catch(function(e) { $('siErr').textContent = e.message; }).then(function() { b.disabled = false; b.textContent = 'Sign in'; });
 }
 function signInBack() { $('siStep2').hidden = true; $('siStep1').hidden = false; $('siErr').textContent = ''; $('siEmail').focus(); }
+function signInSwitch() { signInChoose(_siMode === 'login' ? 'trial' : 'login'); }
 
 (function() {   // back from Stripe Checkout: check the account again once the webhook has landed
   var u = new URL(window.location.href);
@@ -2844,13 +2870,6 @@ function signInBack() { $('siStep2').hidden = true; $('siStep1').hidden = false;
     [2500, 8000].forEach(function(ms) { setTimeout(function() { if (ACCT) acctRefresh(true).then(function() { refreshCards(); }, function() {}); }, ms); });
   }
 })();
-// On load: use the account kept in this browser right away; check it again if it's old
-// (or locked, in case they've subscribed elsewhere). No account: ask to sign in.
-function startAccount() {
-  applyAcct();
-  if (!ACCT) { setTimeout(function() { askSignIn().catch(function() {}); }, 600); return; }
-  acctRefresh(!hasAccess()).then(function() {}, function() {});
-}
 
 // ── Tabs, menu, donation ──────────────────────────────────────────────────────
 function switchTab(t) {

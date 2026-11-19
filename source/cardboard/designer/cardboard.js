@@ -270,23 +270,31 @@ function init() {
   renderPalette();
   $('cardHolder').innerHTML = '<div class="loading" style="width:240px;height:200px"><span class="spin"></span>Loading sheet…</div>';
   loadTags();
-  Promise.all([api('tabs'), api('layouts').catch(function() { return { layouts: {} }; })])
+  // One quick call: the tabs, the layouts and the first rows of the tab to show. The rest of
+  // that tab's rows load in the background. (Older servers: tabs + layouts, then the rows.)
+  var want = '';
+  try { want = localStorage.getItem('cb_tab:' + SHEET_ID) || ''; } catch (e) {}
+  api('start', { tab: want })
+    .catch(function(e) {
+      if (!/unknown action/i.test(e.message)) throw e;
+      return Promise.all([api('tabs'), api('layouts').catch(function() { return { layouts: {} }; })])
+        .then(function(r) { return { title: r[0].title, tabs: r[0].tabs, layouts: r[1].layouts }; });
+    })
     .then(function(res) {
-      TABS = res[0].tabs || []; LAYOUTS = res[1].layouts || {};
+      TABS = res.tabs || []; LAYOUTS = res.layouts || {};
       SETTINGS = Object.assign({ units: 'in', profile: {} }, LAYOUTS[SETTINGS_KEY] || {});
-      SHEET_TITLE = res[0].title || '';
-      if (res[0].title) { $('subTitle').textContent = res[0].title; document.title = res[0].title; }
+      SHEET_TITLE = res.title || '';
+      if (res.title) { $('subTitle').textContent = res.title; document.title = res.title; }
       var sel = $('sheetSel');
       sel.innerHTML = TABS.map(function(t) { return '<option>' + esc(t.title) + '</option>'; }).join('');
       $('gridSheet').innerHTML = sel.innerHTML;
-      var start = '';
-      try { start = localStorage.getItem('cb_tab:' + SHEET_ID) || ''; } catch (e) {}
+      var start = res.tab || want;
       if (!TABS.some(function(t) { return t.title === start; })) {
         start = (TABS.filter(function(t) { return LAYOUTS[t.title]; })[0] || TABS[0] || {}).title || '';
       }
       if (!start) { $('cardHolder').innerHTML = '<div class="muted">This spreadsheet has no tabs to design from.</div>'; return; }
       sel.value = start; $('gridSheet').value = start; refreshSheetCombos();
-      selectTab(start, true);
+      selectTab(start, true, false, false, res.rows && res.tab === start ? res : null);
     })
     .catch(function(e) {
       $('cardHolder').innerHTML = '<div class="muted" style="max-width:360px;text-align:center">Couldn\'t open the sheet — ' + esc(e.message) +
@@ -349,7 +357,7 @@ function makeSheetCombo(sel) {
   return box;
 }
 
-function selectTab(name, first, force, asked) {
+function selectTab(name, first, force, asked, pre) {   // pre: {rows, full} already fetched for this tab
   if (!first && dirty && !asked) {
     var from = curTab;
     $('sheetSel').value = from; $('gridSheet').value = from; refreshSheetCombos();
@@ -373,22 +381,49 @@ function selectTab(name, first, force, asked) {
   $('dataList').innerHTML = '<div class="muted">Loading…</div>';
   $('cardHolder').innerHTML = '<div class="loading" style="width:240px;height:200px"><span class="spin"></span>Loading rows…</div>';
   if (!PUBLISHED[name]) loadPublished(name);
-  api('rows', { tab: name, force: force ? '1' : '' })
-    .then(function(res) {
+  var shown = false;
+  function useRows(rows, partial) {
+    ROWS = (rows || []).filter(function(r) { return Object.keys(r).some(function(k) { return !isInternal(k) && String(r[k]).trim(); }); });
+    FIELDS = [];
+    ROWS.forEach(function(r) { Object.keys(r).forEach(function(k) { if (!isInternal(k) && FIELDS.indexOf(k) < 0) FIELDS.push(k); }); });
+    _rowsPartial = !!partial; showLoadStatus();
+    rowIdx = Math.min(rowIdx, Math.max(0, ROWS.length - 1));
+    renderData(); if (shown) render(); else fitZoom(); renderAttrs();
+    shown = true;
+    if (_activeTab === 'print') renderPrint();
+    if (_activeTab === 'export') renderExport();
+  }
+  function allLoaded() {
+    if (_activeTab === 'data') loadGrid(force);
+    if (force) { toast('✓ Reloaded from the sheet'); autoRepublish(name); }
+    else if (_republishWaiting === name) { _republishWaiting = ''; autoRepublish(name); }
+  }
+  function failed(e) {
+    _rowsPartial = false; showLoadStatus();
+    if (shown) { toast('Couldn\'t read the rest of "' + name + '" — ' + e.message, true); return; }
+    ROWS = []; FIELDS = []; renderData(); render(); renderAttrs();
+    toast('Couldn\'t read "' + name + '" — ' + e.message, true);
+  }
+  ROWS = []; _rowsPartial = true; showLoadStatus();   // until the first rows arrive
+  // First the first few rows (quick), so the card shows; then every row
+  var first = force ? Promise.resolve(null)
+    : pre ? Promise.resolve(pre)
+    : api('peek', { tab: name }).catch(function() { return null; });
+  first.then(function(res) {
+    if (curTab !== name) return;
+    if (res && res.rows) { useRows(res.rows, !res.full); if (res.full) { allLoaded(); return; } }
+    return api('rows', { tab: name, force: force ? '1' : '' }).then(function(r) {
       if (curTab !== name) return;
-      ROWS = (res.rows || []).filter(function(r) { return Object.keys(r).some(function(k) { return !isInternal(k) && String(r[k]).trim(); }); });
-      FIELDS = [];
-      ROWS.forEach(function(r) { Object.keys(r).forEach(function(k) { if (!isInternal(k) && FIELDS.indexOf(k) < 0) FIELDS.push(k); }); });
-      renderData(); fitZoom(); renderAttrs();
-      if (_activeTab === 'print') renderPrint();
-      if (_activeTab === 'export') renderExport();
-      if (_activeTab === 'data') loadGrid(force);
-      if (force) { toast('✓ Reloaded from the sheet'); autoRepublish(name); }
-    })
-    .catch(function(e) {
-      ROWS = []; FIELDS = []; renderData(); render(); renderAttrs();
-      toast('Couldn\'t read "' + name + '" — ' + e.message, true);
+      useRows(r.rows, false); allLoaded();
     });
+  }).catch(function(e) { if (curTab === name) failed(e); });
+}
+var _rowsPartial = false, _republishWaiting = '';
+// Beside Save: "Loading rows…" until every row of the sheet is in
+function showLoadStatus() {
+  var el = $('loadStatus'); if (!el) return;
+  el.hidden = !_rowsPartial;
+  el.textContent = !_rowsPartial ? '' : ROWS.length ? 'Loading the other rows…' : 'Loading rows…';
 }
 function reloadSheet() { if (curTab) selectTab(curTab, true, true); }
 function openInSheets() { window.open('https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit', '_blank', 'noopener'); }
@@ -750,7 +785,9 @@ function render() {
   var card = holder.firstChild;
   card.style.transform = 'scale(' + zoom + ')';
   card.style.setProperty('--z', zoom * PX);
-  $('rowInfo').textContent = ROWS.length ? 'Row ' + (rowIdx + 1) + ' of ' + ROWS.length : 'No rows';
+  $('rowInfo').textContent = ROWS.length ? 'Row ' + (rowIdx + 1) + ' of ' + ROWS.length + (_rowsPartial ? '…' : '') : (_rowsPartial ? 'Loading rows…' : 'No rows');
+  $('rowInfo').title = _rowsPartial ? 'Loading the other rows…' : '';
+  $('rowInfo').classList.toggle('partial', _rowsPartial);
   $('rowPrev').disabled = rowIdx <= 0; $('rowNext').disabled = rowIdx >= ROWS.length - 1;
   $('zoomInfo').textContent = Math.round(zoom * 100) + '%';
   $('undoBtn').disabled = !undoStack.length; $('redoBtn').disabled = !redoStack.length;
@@ -1864,6 +1901,7 @@ function fileBlob(cv, o) {
 // Only one export draws at a time (they share the off-screen stage), so calls queue up.
 var _drawQueue = Promise.resolve();
 function buildExport(o, onFile, tick) {
+  if (_rowsPartial) return Promise.reject(new Error('the rows are still loading — try again in a moment'));
   var run = _drawQueue.then(function() { return buildExportNow(o, onFile, tick || function() {}); });
   _drawQueue = run.catch(function() {});
   return run;
@@ -2033,6 +2071,7 @@ function stopSharing(target, asked) {
 var _autoPending = {};
 function autoRepublish(tab) {
   var sets = PUBLISHED[tab]; if (!sets || curTab !== tab) return;
+  if (_rowsPartial) { _republishWaiting = tab; return; }   // wait for every row, or the links would get only the first cards
   Object.keys(sets).forEach(function(target) {
     if (_autoPending[tab + ':' + target]) return;
     _autoPending[tab + ':' + target] = true;

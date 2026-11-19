@@ -259,6 +259,10 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .tb-save:disabled { background:#c9c4ea; cursor:default; }
 .tb-status { font-size:.74rem; color:#9aa0b8; }
 .tb-status.dirty { color:#c2570c; }
+.tb-statuses { margin-left:auto; display:flex; align-items:center; gap:.9rem; }
+.tb-loading { display:inline-flex; align-items:center; gap:.4rem; color:#6b62b8; }
+.tb-loading[hidden] { display:none; }
+.tb-loading::before { content:''; width:.75rem; height:.75rem; border:2px solid #d9d3ff; border-top-color:#7b6cf6; border-radius:50%; animation:spin .7s linear infinite; }
 .canvas-wrap { flex:1; min-height:0; overflow:auto; display:flex; align-items:flex-start; justify-content:center; padding:2.2rem;
   background-color:#e4e6ef; background-image:radial-gradient(#cfd2df 1px, transparent 1px); background-size:16px 16px; }
 .card-holder { position:relative; flex-shrink:0; }
@@ -701,7 +705,7 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
       <span class="tb-sep"></span>
       <button class="tb-btn" id="undoBtn" onclick="undo()" title="Undo (⌘Z)">↶</button>
       <button class="tb-btn" id="redoBtn" onclick="redo()" title="Redo (⇧⌘Z)">↷</button>
-      <span class="tb-status" id="saveStatus" style="margin-left:auto"></span>
+      <span class="tb-statuses"><span class="tb-status tb-loading" id="loadStatus" hidden></span><span class="tb-status" id="saveStatus"></span></span>
       <button class="tb-save" id="saveBtn" onclick="saveLayout()" disabled style="margin-left:.5rem">Save</button>
     </div>
     <div class="canvas-wrap" id="canvasWrap" onpointerdown="if(event.target===this)selectEl(null)">

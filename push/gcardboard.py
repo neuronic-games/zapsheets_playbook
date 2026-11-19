@@ -13,6 +13,9 @@
 #   setcell — sheet, row, field, value, old → writes one cell (as if typed); refuses if the cell
 #             no longer holds "old" (someone changed it in the meantime)
 #   addrow  — sheet, values: {field: value} → appended after the last row
+#   start   — tab (the one the browser opened last) → tabs, layouts and the first card's row of the
+#             tab to show, all in one go so the designer appears quickly; the other rows load after
+#   peek    — tab → the first card's row of that tab
 # Writes use the plain Sheets API calls, which work the same with gspread 5 and 6.
 
 import gspread
@@ -38,6 +41,67 @@ def hidden(ws):
 
 def q(title):
     return "'" + title.replace("'", "''") + "'"
+
+def cell_text(cell):
+    # The same text gread.py keeps for a cell: links as [text](url), =IMAGE() formulas kept
+    text = cell.get('formattedValue', '')
+    if not text:
+        f = (cell.get('userEnteredValue') or {}).get('formulaValue', '')
+        return f.strip() if f and f.strip().upper().startswith('=IMAGE(') else ''
+    runs = cell.get('textFormatRuns', [])
+    if runs and any(r.get('format', {}).get('link', {}).get('uri') for r in runs):
+        res = ''
+        for i, run in enumerate(runs):
+            a = run.get('startIndex', 0)
+            b = runs[i + 1].get('startIndex', len(text)) if i + 1 < len(runs) else len(text)
+            chunk, uri = text[a:b], run.get('format', {}).get('link', {}).get('uri', '')
+            res += f'[{chunk}]({uri})' if (uri and chunk) else chunk
+        return res
+    if cell.get('hyperlink'):
+        return f'[{text}]({cell["hyperlink"]})'
+    return text
+
+def peek_rows(wb, title, n=8):
+    # The heading row and the first rows of a tab, as records like gread.py's — only the
+    # first n rows are fetched, so it's quick even on a big sheet
+    rng = q(title) + '!1:' + str(n + 1)
+    try:
+        from google.auth.transport.requests import Request as GoogleAuthRequest
+        import requests as requests_lib, urllib.parse
+        auth = getattr(wb.client, 'auth', None) or wb.client.http_client.auth
+        if not auth.valid: auth.refresh(GoogleAuthRequest())
+        url = ('https://sheets.googleapis.com/v4/spreadsheets/' + urllib.parse.quote(wb.id, safe='') +
+               '?includeGridData=true&ranges=' + urllib.parse.quote(rng, safe='') +
+               '&fields=' + urllib.parse.quote('sheets.data.rowData.values(formattedValue,hyperlink,textFormatRuns,userEnteredValue)', safe=''))
+        r = requests_lib.get(url, headers={'Authorization': f'Bearer {auth.token}'}, timeout=30)
+        r.raise_for_status()
+        rd = ((r.json().get('sheets') or [{}])[0].get('data') or [{}])[0].get('rowData', [])
+        grid = [[cell_text(c) for c in row.get('values', [])] for row in rd]
+    except Exception:
+        grid = wb.values_get(rng).get('values', [])
+    if not grid: return []
+    hdr = [str(h).strip() for h in grid[0]]
+    recs = []
+    for row in grid[1:]:
+        if not any(str(v).strip() for v in row): continue
+        recs.append({h: (str(row[i]) if i < len(row) else '') for i, h in enumerate(hdr) if h})
+    return recs
+
+def read_layouts(wb, ws):
+    if ws is None: return {}
+    vals = wb.values_get(q(ws.title)).get('values', [])
+    layouts = {}
+    if vals:
+        hdr = [h.strip() for h in vals[0]]
+        iS = hdr.index('Sheet') if 'Sheet' in hdr else 0
+        iL = hdr.index('Layout') if 'Layout' in hdr else 1
+        for r in vals[1:]:
+            name = r[iS].strip() if iS < len(r) else ''
+            raw  = r[iL] if iL < len(r) else ''
+            if not name or not raw: continue
+            try: layouts[name] = json.loads(raw)
+            except Exception: pass
+    return layouts
 
 def main():
     try:
@@ -123,21 +187,23 @@ def main():
     ws = next((w for w in sheets if w.title.lower() == TAB), None)
 
     if action == 'layouts':
-        if ws is None:
-            out({'ok': True, 'layouts': {}})
-        vals = wb.values_get(q(ws.title)).get('values', [])
-        layouts = {}
-        if vals:
-            hdr = [h.strip() for h in vals[0]]
-            iS = hdr.index('Sheet') if 'Sheet' in hdr else 0
-            iL = hdr.index('Layout') if 'Layout' in hdr else 1
-            for r in vals[1:]:
-                name = r[iS].strip() if iS < len(r) else ''
-                raw  = r[iL] if iL < len(r) else ''
-                if not name or not raw: continue
-                try: layouts[name] = json.loads(raw)
-                except Exception: pass
-        out({'ok': True, 'layouts': layouts})
+        out({'ok': True, 'layouts': read_layouts(wb, ws)})
+
+    if action == 'start':
+        tabs = [{'title': w.title, 'rows': w.row_count, 'cols': w.col_count}
+                for w in sheets if w.title.lower() not in (TAB, TAGS_TAB) and not hidden(w)]
+        layouts = read_layouts(wb, ws)
+        want = str(data.get('tab') or '')
+        titles = [t['title'] for t in tabs]
+        tab = want if want in titles else next((t for t in titles if t in layouts), titles[0] if titles else '')
+        out({'ok': True, 'title': wb.title, 'tabs': tabs, 'layouts': layouts, 'tab': tab,
+             'rows': peek_rows(wb, tab) if tab else []})
+
+    if action == 'peek':
+        tab = str(data.get('tab') or '')
+        w = next((x for x in sheets if x.title == tab), None)
+        if w is None: out({'error': 'No tab called ' + tab})
+        out({'ok': True, 'rows': peek_rows(wb, tab)})
 
     if action == 'save':
         name   = str(data.get('sheet', '')).strip()

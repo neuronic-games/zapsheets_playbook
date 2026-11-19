@@ -6,6 +6,8 @@
 //   rows    — tab, force (optional)  → {ok, rows:[{header: value}]}   (cached in sheets/{id}/{tab}.json)
 //   layouts —                       → {ok, layouts:{tab: layout}}
 //   save    — tab, layout (JSON)     → {ok, saved, updated}
+//   start   — tab (optional)         → {ok, title, tabs, layouts, tab, rows, full}  (first rows only unless cached)
+//   peek    — tab                    → {ok, rows, full}
 
 error_reporting(0);
 header('Content-Type: application/json');
@@ -85,6 +87,36 @@ if (in_array($action, ['grid', 'setcell', 'addrow'], true)) {
     }
     $res = cbRun($python, $sheetId, $req);
     if ($action !== 'grid' && !empty($res['ok'])) @unlink(dirname(__DIR__) . '/sheets/' . $sheetId . '/' . strtolower($tab) . '.json');   // cached rows are stale now
+    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// Quick start: tabs, layouts and the first rows of the tab to show, in one Google call.
+// When this server already has the tab's rows saved they're sent whole ("full").
+function cbCached(string $sheetId, string $tab): ?array {
+    if ($tab === '' || strpbrk($tab, "/\\") !== false) return null;
+    $f = dirname(__DIR__) . '/sheets/' . $sheetId . '/' . strtolower($tab) . '.json';
+    if (!is_file($f)) return null;
+    $rows = json_decode((string) @file_get_contents($f), true);
+    return is_array($rows) ? $rows : null;
+}
+if ($action === 'start') {
+    $res = cbRun($python, $sheetId, ['action' => 'start', 'tab' => trim($_POST['tab'] ?? '')]);
+    if (!empty($res['ok'])) {
+        $all = cbCached($sheetId, (string) ($res['tab'] ?? ''));
+        if ($all !== null) { $res['rows'] = $all; $res['full'] = true; } else $res['full'] = false;
+        if (empty($res['layouts'])) $res['layouts'] = new stdClass();   // {} rather than [] in the JSON
+    }
+    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+if ($action === 'peek') {
+    $tab = trim($_POST['tab'] ?? '');
+    if ($tab === '' || strpbrk($tab, "/\\") !== false || strtolower($tab) === 'layouts') { echo json_encode(['error' => 'Invalid tab']); exit; }
+    $all = cbCached($sheetId, $tab);
+    if ($all !== null) { echo json_encode(['ok' => true, 'rows' => $all, 'full' => true], JSON_UNESCAPED_UNICODE); exit; }
+    $res = cbRun($python, $sheetId, ['action' => 'peek', 'tab' => $tab]);
+    if (!empty($res['ok'])) $res['full'] = false;
     echo json_encode($res, JSON_UNESCAPED_UNICODE);
     exit;
 }

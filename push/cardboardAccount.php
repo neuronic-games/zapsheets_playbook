@@ -48,13 +48,9 @@ if ($action === 'send') {
     $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
     $file = cbPrivateDir('codes') . '/' . hash('sha256', $email) . '.json';
     file_put_contents($file, json_encode(['h' => hash_hmac('sha256', $email . '|' . $code, cbSecret()), 'x' => time() + 900, 'tries' => 0]), LOCK_EX);
-    $host = preg_replace('/[^a-z0-9.\-]/i', '', $_SERVER['HTTP_HOST'] ?? 'zapsheets.com');
-    $from = $_ENV['CARDBOARD_MAIL_FROM'] ?? ('CardBoard <no-reply@' . preg_replace('/^www\./', '', $host) . '>');
     $body = "Your CardBoard sign-in code is:\r\n\r\n    $code\r\n\r\nIt works for 15 minutes. If you didn't ask for it, you can ignore this email.\r\n\r\n— ZapSheets";
-    $sent = @mail($email, 'Your CardBoard code: ' . $code, $body, implode("\r\n", [
-        'From: ' . $from, 'Content-Type: text/plain; charset=UTF-8', 'X-Mailer: PHP/' . PHP_VERSION,
-    ]));
-    if (!$sent && empty($_ENV['CARDBOARD_AUTH_DEBUG'])) { @unlink($file); fail('The email couldn’t be sent — please try again later'); }
+    $why  = cbSendMail($email, 'Your CardBoard code: ' . $code, $body);
+    if ($why !== '' && empty($_ENV['CARDBOARD_AUTH_DEBUG'])) { @unlink($file); fail('The email couldn’t be sent — please try again later'); }
     ok(!empty($_ENV['CARDBOARD_AUTH_DEBUG']) ? ['debug_code' => $code] : []);   // debug only on a test server
 }
 

@@ -111,3 +111,66 @@ function cbRequireAccess(string $sheetId): void {
     if (($p['x'] ?? 0) < time()) { echo json_encode(['error' => 'Your sign-in needs refreshing.', 'need_auth' => true, 'refresh' => true]); exit; }
     if (($p['u'] ?? 0) < time()) { echo json_encode(['error' => 'Your free week has ended — subscribe to keep designing.', 'locked' => true]); exit; }
 }
+
+/**
+ * Send an email, using the first that's set up in .env:
+ *   RESEND_API_KEY                         — Resend (https://resend.com), over HTTPS
+ *   SMTP_HOST, SMTP_PORT (465 or 587), SMTP_USER, SMTP_PASS — any mail server (Gmail app password, your host's mail…)
+ *   otherwise PHP's mail(), which needs a mail program on the server
+ * The sender is CARDBOARD_MAIL_FROM (e.g. "CardBoard <no-reply@zapsheets.com>"); with SMTP it
+ * must be an address that server may send from. Each try is logged (without the address) to
+ * sheets/_cardboard_auth/mail.log. Returns '' when sent, else what went wrong.
+ */
+function cbSendMail(string $to, string $subject, string $text): string {
+    $from = $_ENV['CARDBOARD_MAIL_FROM'] ?? ($_ENV['SMTP_FROM'] ?? 'CardBoard <no-reply@zapsheets.com>');
+    if (!empty($_ENV['RESEND_API_KEY'])) {
+        $ch = curl_init('https://api.resend.com/emails');
+        curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20,
+            CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $_ENV['RESEND_API_KEY'], 'Content-Type: application/json'],
+            CURLOPT_POSTFIELDS => json_encode(['from' => $from, 'to' => [$to], 'subject' => $subject, 'text' => $text])]);
+        $out = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); $err = curl_error($ch); curl_close($ch);
+        $why = ($code >= 200 && $code < 300) ? '' : ('Resend ' . $code . ' ' . ($err ?: mb_substr((string) $out, 0, 200)));
+        $via = 'resend';
+    } elseif (!empty($_ENV['SMTP_HOST'])) {
+        $why = cbSmtp($to, $from, $subject, $text); $via = 'smtp';
+    } else {
+        $ok = @mail($to, $subject, $text, implode("\r\n", ['From: ' . $from, 'Content-Type: text/plain; charset=UTF-8']));
+        $why = $ok ? '' : 'mail() failed — this server has no mail program; set RESEND_API_KEY or SMTP_HOST in .env';
+        $via = 'mail()';
+    }
+    @file_put_contents(cbPrivateDir() . '/mail.log', gmdate('c') . "  $via  " . preg_replace('/^.*@/', '…@', $to) . '  ' . ($why === '' ? 'sent' : $why) . "\n", FILE_APPEND | LOCK_EX);
+    return $why;
+}
+
+/** A small SMTP client: port 465 (TLS) or 587/25 (STARTTLS), AUTH LOGIN. Returns '' when sent. */
+function cbSmtp(string $to, string $from, string $subject, string $text): string {
+    $host = $_ENV['SMTP_HOST']; $port = (int) ($_ENV['SMTP_PORT'] ?? 587);
+    $fs = @stream_socket_client(($port === 465 ? 'ssl://' : 'tcp://') . $host . ':' . $port, $en, $es, 20);
+    if (!$fs) return "SMTP connect to $host:$port failed: $es";
+    stream_set_timeout($fs, 20);
+    $read = function () use ($fs) { $r = ''; while (($l = fgets($fs, 1000)) !== false) { $r .= $l; if (strlen($l) < 4 || $l[3] === ' ') break; } return $r; };
+    $cmd  = function ($c, $want) use ($fs, $read) { if ($c !== null) fwrite($fs, $c . "\r\n"); $r = $read(); if ((int) substr($r, 0, 3) !== $want) throw new Exception(trim(($c && stripos($c, 'AUTH') === false ? $c . ' → ' : '') . $r)); return $r; };
+    preg_match('/<([^>]+)>/', $from, $m); $fromAddr = $m[1] ?? trim($from);
+    try {
+        $cmd(null, 220);
+        $me = preg_replace('/[^a-z0-9.\-]/i', '', $_SERVER['HTTP_HOST'] ?? 'localhost');
+        $ehlo = $cmd('EHLO ' . $me, 250);
+        if ($port !== 465 && stripos($ehlo, 'STARTTLS') !== false) {
+            $cmd('STARTTLS', 220);
+            if (!stream_socket_enable_crypto($fs, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) throw new Exception('STARTTLS failed');
+            $cmd('EHLO ' . $me, 250);
+        }
+        if (!empty($_ENV['SMTP_USER'])) {
+            $cmd('AUTH LOGIN', 334); $cmd(base64_encode($_ENV['SMTP_USER']), 334); $cmd(base64_encode($_ENV['SMTP_PASS'] ?? ''), 235);
+        }
+        $cmd('MAIL FROM:<' . $fromAddr . '>', 250);
+        $cmd('RCPT TO:<' . $to . '>', 250);
+        $cmd('DATA', 354);
+        $msg = 'From: ' . $from . "\r\nTo: <$to>\r\nSubject: " . $subject . "\r\nDate: " . date('r') . "\r\nMessage-ID: <" . bin2hex(random_bytes(8)) . '@' . $me . ">\r\n" .
+               "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n" . preg_replace('/^\./m', '..', str_replace("\n", "\r\n", str_replace("\r\n", "\n", $text)));
+        $cmd($msg . "\r\n.", 250);
+        $cmd('QUIT', 221);
+        fclose($fs); return '';
+    } catch (Exception $e) { @fclose($fs); return 'SMTP: ' . $e->getMessage(); }
+}
+

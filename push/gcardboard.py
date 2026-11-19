@@ -10,6 +10,8 @@
 #   deltag  — tag → removes its row
 #   addfield — sheet: tab title, name: new column name → added after the last column heading
 #   renamefield — sheet, old, name → the heading "old" becomes "name"
+#   deleterow — sheet, row, values → deletes the row if it still holds those values
+#   deletefield — sheet, field → deletes that column
 #   grid    — sheet → {header, rows: [{row, values}]} as typed in the sheet (formulas, not results)
 #   setcell — sheet, row, field, value, old → writes one cell (as if typed); refuses if the cell
 #             no longer holds "old" (someone changed it in the meantime)
@@ -285,7 +287,7 @@ def main():
         wb.values_update(q(tws.title) + '!' + a1, params={'valueInputOption': 'RAW'}, body={'values': [[field]]})
         out({'ok': True, 'old': old, 'field': field, 'column': a1.rstrip('0123456789')})
 
-    if action in ('grid', 'setcell', 'addrow'):
+    if action in ('grid', 'setcell', 'addrow', 'deleterow', 'deletefield'):
         name = str(data.get('sheet', '')).strip()
         tws = next((w for w in sheets if w.title == name), None)
         if tws is None or name.lower() == TAB:
@@ -326,6 +328,30 @@ def main():
             wb.values_update(q(tws.title) + '!' + a1, params={'valueInputOption': 'USER_ENTERED'}, body={'values': [[value]]})
             now = read(a1)
             out({'ok': True, 'value': cellstr(now[0][0]) if now and now[0] else ''})
+
+        def delete_dim(dim, i):   # i: 0-based row or column index
+            wb.batch_update({'requests': [{'deleteDimension': {'range': {'sheetId': tws.id, 'dimension': dim, 'startIndex': i, 'endIndex': i + 1}}}]})
+
+        if action == 'deleterow':
+            try: row = int(data.get('row', 0))
+            except Exception: row = 0
+            if row < 2: out({'error': 'That row was not found — reload the data'})
+            # Only if the row still holds what the browser showed (rows may have moved since)
+            want = [str(v) for v in (data.get('values') or [])]
+            cur = read('A' + str(row) + ':' + gspread.utils.rowcol_to_a1(row, max(1, len(hdr), len(want))))
+            cur = [cellstr(v) for v in (cur[0] if cur else [])]
+            n = max(len(cur), len(want))
+            if (cur + [''] * (n - len(cur))) != (want + [''] * (n - len(want))):
+                out({'error': 'conflict'})
+            delete_dim('ROWS', row - 1)
+            out({'ok': True, 'row': row})
+
+        if action == 'deletefield':
+            field = str(data.get('field', '')).strip()
+            if not field or field not in hdr:
+                out({'error': f'The column "{field}" wasn\'t found — Fetch to see the latest'})
+            delete_dim('COLUMNS', hdr.index(field))
+            out({'ok': True, 'field': field})
 
         if action == 'addrow':
             vals = data.get('values') or {}

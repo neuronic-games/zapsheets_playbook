@@ -34,7 +34,7 @@ function cbRun(string $python, string $sheetId, array $data): array {
 // free week, a subscription or an unlocked sheet
 require_once __DIR__ . '/cardboardAuth.php';
 cbRequireSignIn();
-if (in_array($action, ['save', 'addfield', 'renamefield', 'setcell', 'addrow', 'settag', 'deltag'], true)) {
+if (in_array($action, ['save', 'addfield', 'renamefield', 'setcell', 'addrow', 'deleterow', 'deletefield', 'settag', 'deltag'], true)) {
     require_once __DIR__ . '/cardboardAuth.php';
     cbRequireAccess($sheetId);
 }
@@ -93,7 +93,7 @@ if ($action === 'addfield') {
 }
 
 // Data tab: the sheet as typed, and edits written straight back
-if (in_array($action, ['grid', 'setcell', 'addrow'], true)) {
+if (in_array($action, ['grid', 'setcell', 'addrow', 'deleterow', 'deletefield'], true)) {
     $tab = trim($_POST['tab'] ?? '');
     if ($tab === '' || strpbrk($tab, "/\\") !== false || strtolower($tab) === 'layouts') { echo json_encode(['error' => 'Invalid tab']); exit; }
     $req = ['action' => $action, 'sheet' => $tab];
@@ -106,6 +106,11 @@ if (in_array($action, ['grid', 'setcell', 'addrow'], true)) {
         $vals = json_decode($_POST['values'] ?? '{}', true);
         $req['values'] = is_array($vals) ? $vals : [];
     }
+    if ($action === 'deleterow') {
+        $vals = json_decode($_POST['values'] ?? '[]', true);
+        $req += ['row' => (int) ($_POST['row'] ?? 0), 'values' => is_array($vals) ? array_values($vals) : []];
+    }
+    if ($action === 'deletefield') $req['field'] = trim((string) ($_POST['field'] ?? ''));
     $res = cbRun($python, $sheetId, $req);
     if ($action !== 'grid' && !empty($res['ok'])) @unlink(dirname(__DIR__) . '/sheets/' . $sheetId . '/' . strtolower($tab) . '.json');   // cached rows are stale now
     echo json_encode($res, JSON_UNESCAPED_UNICODE);

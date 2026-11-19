@@ -134,6 +134,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
     <ul>
       <li><b>+ Add row</b> adds a card at the bottom — it's written to the sheet once you type in it.</li>
       <li><b>+ Add column</b> adds a new heading at the end of the sheet.</li>
+      <li><b>Delete a row:</b> click its row number → <b>Delete row</b>. <b>Delete a column:</b> click its heading → <b>Delete column</b>. CardBoard asks first, then deletes it from your Google Sheet (undo it there with Edit → Undo or version history). If the row changed in Sheets since you loaded it, nothing is deleted and the latest is shown instead.</li>
       <li><b>Search the rows</b> shows only rows containing what you type.</li>
       <li><b>Reload</b> re-reads this tab from the sheet.</li>
       <li><b>Move a column:</b> drag its heading sideways and drop it where the purple line shows. <b>Resize:</b> drag the right edge of a heading; double-click the edge to fit its contents again. Column widths stay put while you work. This order and these widths are only for this view — your sheet's column order doesn't change.</li>

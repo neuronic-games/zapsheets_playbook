@@ -2562,16 +2562,77 @@ function openColumnMenu(th) {
   var name = GRID.header[+th.dataset.c]; if (!name) return;
   var used = layout && layout.els.concat(layout.back.els).some(function(e) { return e.field === name || (e.kind === 'text' && (e.text || '').indexOf('{' + name + '}') >= 0); });
   var m = document.createElement('div'); m.id = 'colMenu'; m.className = 'field-menu col-menu';
-  m.innerHTML = '<div class="col-menu-name">' + esc(name) + '</div><button type="button" class="cm-rename"><span class="fm-ico">✎</span> Rename</button><button type="button" class="cm-hide"><span class="fm-ico">⊘</span> Hide field</button>' +
+  m.innerHTML = '<div class="col-menu-name">' + esc(name) + '</div><button type="button" class="cm-rename"><span class="fm-ico">✎</span> Rename</button><button type="button" class="cm-hide"><span class="fm-ico">⊘</span> Hide field</button><button type="button" class="cm-del danger"><span class="fm-ico">🗑</span> Delete column</button>' +
     '<p>Hides the column here and in the Design list. It stays in the sheet' + (used ? ', and still shows on the card.' : '.') + ' “Show all” above brings it back.</p>';
   m.querySelector('.cm-hide').onclick = function() { closeColumnMenu(); setFieldHidden(name, true); toast('Hid “' + name + '”'); };
   m.querySelector('.cm-rename').onclick = function() { closeColumnMenu(); startColumnRename(+th.dataset.c); };
+  m.querySelector('.cm-del').onclick = function() { closeColumnMenu(); deleteGridColumn(name, used); };
   document.body.appendChild(m);
   var r = th.getBoundingClientRect();
   m.style.left = Math.min(r.left, innerWidth - m.offsetWidth - 12) + 'px'; m.style.top = (r.bottom + 4) + 'px';
   th.classList.add('menu-open');
 }
 document.addEventListener('mousedown', function(ev) { if ($('colMenu') && !ev.target.closest('#colMenu') && !ev.target.closest('th.menu-open')) closeColumnMenu(); });
+// Delete a column from the sheet (after asking). Cards that used it show nothing there.
+function deleteGridColumn(name, used) {
+  if (!requirePro('edit', function() {})) return;
+  askDialog({ title: 'Delete “' + name + '”?', danger: true, ok: 'Delete column',
+    message: 'This deletes the whole column, and everything in it, from your Google Sheet.' + (used ? ' Cards that show it will have nothing there.' : '') + ' You can undo it in Google Sheets (Edit → Undo, or version history).' })
+  .then(function(yes) {
+    if (!yes) return;
+    var tab = curTab;
+    api('deletefield', { tab: tab, field: name }).then(function() {
+      if (!GRID || GRID.tab !== tab) return;
+      var i = GRID.header.indexOf(name);
+      if (i >= 0) { GRID.header.splice(i, 1); GRID.rows.forEach(function(r) { r.values.splice(i, 1); if (r.state) r.state = {}; }); }
+      FIELDS = FIELDS.filter(function(f) { return f !== name; });
+      ROWS.forEach(function(r) { delete r[name]; });
+      var p = (SETTINGS.grid || {})[tab];
+      if (p) { if (p.order) p.order = p.order.filter(function(x) { return x !== name; }); if (p.w) delete p.w[name]; }
+      if (layout && layout.hidden) layout.hidden = layout.hidden.filter(function(x) { return x !== name; });
+      _gridSel = null; _rowsStale = true;
+      renderGrid(); renderData(); render();
+      toast('Deleted the “' + name + '” column');
+    }).catch(function(e) { toast('Couldn\'t delete — ' + e.message, true); });
+  });
+}
+// Click a row number for its menu: Delete row
+function closeRowMenu() { var m = $('rowMenu'); if (m) m.remove(); document.querySelectorAll('table.grid td.rn.menu-open').forEach(function(t) { t.classList.remove('menu-open'); }); }
+function openRowMenu(td) {
+  var open = td.classList.contains('menu-open'); closeRowMenu(); closeColumnMenu(); if (open) return;
+  var ri = +td.parentNode.dataset.r, r = GRID.rows[ri]; if (!r) return;
+  var m = document.createElement('div'); m.id = 'rowMenu'; m.className = 'field-menu col-menu';
+  m.innerHTML = '<div class="col-menu-name">' + (r.draft ? 'New row' : 'Row ' + r.row) + '</div><button type="button" class="danger"><span class="fm-ico">🗑</span> Delete row</button>';
+  m.querySelector('button').onclick = function() { closeRowMenu(); deleteGridRow(ri); };
+  document.body.appendChild(m);
+  var b = td.getBoundingClientRect();
+  m.style.left = (b.right + 4) + 'px'; m.style.top = Math.min(b.top, innerHeight - m.offsetHeight - 12) + 'px';
+  td.classList.add('menu-open');
+}
+document.addEventListener('mousedown', function(ev) { if ($('rowMenu') && !ev.target.closest('#rowMenu') && !ev.target.closest('td.rn.menu-open')) closeRowMenu(); });
+document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') closeRowMenu(); });
+function deleteGridRow(ri) {
+  var r = GRID.rows[ri]; if (!r) return;
+  if (r.draft) { GRID.rows.splice(ri, 1); _gridSel = null; renderGrid(); return; }   // never written to the sheet
+  if (!requirePro('edit', function() {})) return;
+  var first = GRID.header.map(function(h, i) { return h ? r.values[i] : ''; }).filter(function(v) { return String(v || '').trim(); })[0] || '';
+  askDialog({ title: 'Delete row ' + r.row + '?', danger: true, ok: 'Delete row',
+    message: (first ? '“' + String(first).slice(0, 60) + '” — ' : '') + 'this deletes the row from your Google Sheet, and its card with it. You can undo it in Google Sheets (Edit → Undo, or version history).' })
+  .then(function(yes) {
+    if (!yes) return;
+    var tab = curTab, rowNo = r.row;
+    api('deleterow', { tab: tab, row: rowNo, values: JSON.stringify(r.values) }).then(function() {
+      if (!GRID || GRID.tab !== tab) return;
+      var k = GRID.rows.indexOf(r); if (k >= 0) GRID.rows.splice(k, 1);
+      GRID.rows.forEach(function(x) { if (!x.draft && x.row > rowNo) x.row--; });
+      _gridSel = null; _rowsStale = true; renderGrid();
+      toast('Deleted row ' + rowNo);
+    }).catch(function(e) {
+      if (e.message === 'conflict') { toast('That row changed in the sheet since you loaded it — showing the latest, try again', true); loadGrid(true); }
+      else toast('Couldn\'t delete — ' + e.message, true);
+    });
+  });
+}
 // Rename a column: edit its heading (double-click it, or Rename in its menu). The sheet's heading
 // changes, and so does everything that uses it: this tab's layout, hidden fields and column widths.
 function startColumnRename(c) {
@@ -2610,6 +2671,13 @@ function renameInLayout(lay, a, b) {
 }
 function renameColumn(a, b) {
   var tab = curTab;
+  // The column keeps its place and width under its new name straight away (put back if the rename fails)
+  var p = (SETTINGS.grid || {})[tab], gridChanged = false, oldPrefs = p ? JSON.stringify(p) : null;
+  if (p) {
+    if (p.order && p.order.indexOf(a) >= 0) { p.order = p.order.map(function(x) { return x === a ? b : x; }); gridChanged = true; }
+    if (p.w && p.w[a] != null) { p.w[b] = p.w[a]; delete p.w[a]; gridChanged = true; }
+  }
+  var auto = _gridAutoW[tab + '\u0001' + a]; if (auto) _gridAutoW[tab + '\u0001' + b] = auto;
   var c = GRID.header.indexOf(a); if (c >= 0) GRID.header[c] = b; renderGrid();   // show the new name straight away
   api('renamefield', { tab: tab, old: a, name: b }).then(function() {
     // the data in memory
@@ -2620,11 +2688,6 @@ function renameColumn(a, b) {
     if (curTab === tab && layout) renameInLayout(layout, a, b);
     [undoStack, redoStack].forEach(function(st) { for (var i = 0; i < st.length; i++) st[i] = JSON.stringify(renameInLayout(JSON.parse(st[i]), a, b)); });
     if (dirty) { try { localStorage.setItem('cb_draft:' + SHEET_ID + ':' + tab, JSON.stringify(layout)); } catch (e) {} }
-    var p = (SETTINGS.grid || {})[tab], gridChanged = false;
-    if (p) {
-      if (p.order) { p.order = p.order.map(function(x) { return x === a ? b : x; }); gridChanged = true; }
-      if (p.w && p.w[a] != null) { p.w[b] = p.w[a]; delete p.w[a]; gridChanged = true; }
-    }
     renderData(); render(); renderAttrs(); if (_activeTab === 'data') renderGrid();
     var jobs = [];
     if (saved) jobs.push(api('save', { tab: tab, layout: JSON.stringify(saved) }).then(function() { LAYOUTS[tab] = saved; if (!dirty) setDirty(false); }));
@@ -2635,11 +2698,12 @@ function renameColumn(a, b) {
     });
   }).catch(function(e) {
     var k = GRID.header.indexOf(b); if (k >= 0 && FIELDS.indexOf(b) < 0) GRID.header[k] = a;
+    if (p && oldPrefs && FIELDS.indexOf(b) < 0) SETTINGS.grid[tab] = JSON.parse(oldPrefs);
     renderGrid(); toast('Couldn\'t rename — ' + e.message, true);
   });
 }
 document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') closeColumnMenu(); });
-$('gridWrap').addEventListener('scroll', closeColumnMenu);
+$('gridWrap').addEventListener('scroll', function() { closeColumnMenu(); closeRowMenu(); });
 
 // Rows changed here: re-read them for the card designer when leaving the Data tab
 function refreshRows() {
@@ -2660,6 +2724,7 @@ function refreshRows() {
   var wrap = $('gridWrap');
   wrap.addEventListener('click', function(ev) {
     if (_colDragged) { _colDragged = false; return; }
+    var rn = ev.target.closest('tbody td.rn'); if (rn) { openRowMenu(rn); return; }
     if (ev.target.classList.contains('col-rs')) return;
     var th = ev.target.closest('th[data-c]'); if (th) openColumnMenu(th);
   });

@@ -188,6 +188,9 @@ select.sel { -webkit-appearance:none; appearance:none; padding-right:2rem; backg
 .th-rename { width:100%; height:1.55rem; border:1.5px solid #7b6cf6; border-radius:5px; padding:0 .35rem; font:inherit; letter-spacing:inherit; color:#2e2763; background:#fff; outline:none; text-transform:none; }
 table.grid thead th.renaming { padding:0 .25rem; background:#e6e1ff; }
 table.grid thead th.renaming .th-caret, table.grid thead th.renaming .col-rs { display:none; }
+table.grid tbody td.rn { cursor:pointer; }
+table.grid tbody td.rn:hover, table.grid tbody td.rn.menu-open { background:#e6e1ff; color:#4b3fa8; }
+.col-menu button.danger { color:#d4373d; }
 .col-menu-name { font-family:'DINBlack',sans-serif; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:#8a8fa8; padding:.1rem .2rem .4rem; }
 table.grid thead th[data-c] { cursor:pointer; }
 table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e6e1ff; }

@@ -586,6 +586,11 @@ body.cb-gate #signinOverlay { background:#2e2763; }
 .si-form .si-link { align-self:center; margin-top:.2rem; }
 .si-form .dlg-sub { text-align:center; margin:0; }
 #siSub:empty { display:none; }
+.pw-rules { list-style:none; margin:.1rem 0 0; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:.2rem .8rem; font-size:.76rem; color:#9aa0b8; }
+.pw-rules li { display:flex; align-items:center; gap:.4rem; transition:color .15s; }
+.pw-rules li::before { content:''; width:.95rem; height:.95rem; flex-shrink:0; border-radius:50%; border:1.5px solid #c9cce0; box-sizing:border-box; transition:background .15s, border-color .15s; }
+.pw-rules li.ok { color:#2e7d32; }
+.pw-rules li.ok::before { border-color:#2e9d4c; background:#2e9d4c url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/70% no-repeat; }
 .si-row .inp { flex:1; height:2.4rem; font-size:.95rem; }
 .si-row .print-go { white-space:nowrap; }
 .si-code { letter-spacing:.35em; text-align:center; font-family:ui-monospace,Menlo,monospace; }
@@ -893,6 +898,9 @@ body.cb-gate #signinOverlay { background:#2e2763; }
       <input class="inp" id="siEmail" type="email" autocomplete="email" placeholder="Email" aria-label="Email">
       <input class="inp" id="siPass" type="password" autocomplete="current-password" placeholder="Password" aria-label="Password">
       <input class="inp" id="siPass2" type="password" autocomplete="new-password" placeholder="Password again" aria-label="Password again">
+      <ul class="pw-rules" id="siRules" aria-live="polite">
+        <li data-rule="len">At least 8 characters</li><li data-rule="letter">A letter</li><li data-rule="num">A number</li><li data-rule="match">Both passwords match</li>
+      </ul>
       <button type="submit" class="print-go si-wide" id="siSend">Log in</button>
       <button type="button" class="si-link" id="siForgot" onclick="signInStep('reset')">Forgot password?</button>
     </form>

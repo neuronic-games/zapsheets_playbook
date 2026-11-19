@@ -2848,12 +2848,20 @@ function signInStep(mode) {   // '' = the two choices
   $('siPass').value = ''; $('siPass2').value = '';
   $('siPass').placeholder = mode === 'login' ? 'Password' : 'Password (8 or more characters)';
   $('siPass').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
-  $('siPass2').hidden = mode === 'login';
+  $('siPass2').hidden = $('siRules').hidden = mode === 'login'; checkPwRules();
   $('siForgot').hidden = mode !== 'login';
   $('siSend').disabled = false; $('siSend').textContent = { login: 'Log in', signup: 'Create account', reset: 'Email me a code' }[mode] || '';
   $('siSwitch').textContent = mode === 'login' ? 'New here? Start your free week' : mode ? 'Already have an account? Log in' : '';
   if (mode) setTimeout(function() { ($('siEmail').value ? $('siPass') : $('siEmail')).focus(); }, 40);
 }
+// New password: tick off each rule as it's met (the server checks the same rules)
+function checkPwRules() {
+  var pw = $('siPass').value, all = true, ok = {
+    len: pw.length >= 8, letter: /\p{L}/u.test(pw), num: /\d/.test(pw), match: pw !== '' && pw === $('siPass2').value };
+  $('siRules').querySelectorAll('li').forEach(function(li) { var y = ok[li.dataset.rule]; li.classList.toggle('ok', y); if (!y) all = false; });
+  return all;
+}
+document.addEventListener('input', function(ev) { if (ev.target.id === 'siPass' || ev.target.id === 'siPass2') checkPwRules(); });
 function signInSwitch() { signInStep(_siMode === 'login' ? 'signup' : 'login'); }
 function signedIn(r) {
   storeAcct(r); closeDialog('signinOverlay'); document.body.classList.remove('cb-gate');
@@ -2864,10 +2872,7 @@ function signInSubmit() {
   var em = $('siEmail').value.trim(), pw = $('siPass').value;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { $('siErr').textContent = 'Enter your email address.'; return; }
   if (_siMode === 'login') { if (!pw) { $('siErr').textContent = 'Enter your password.'; return; } }
-  else {
-    if (pw.length < 8) { $('siErr').textContent = 'Use at least 8 characters for your password.'; return; }
-    if (pw !== $('siPass2').value) { $('siErr').textContent = 'The two passwords don’t match.'; return; }
-  }
+  else if (!checkPwRules()) { $('siErr').textContent = 'Your password needs everything on the list.'; return; }
   var b = $('siSend'), label = b.textContent; b.disabled = true; b.textContent = _siMode === 'login' ? 'Logging in…' : 'Sending…'; $('siErr').textContent = '';
   var done = function() { b.disabled = false; b.textContent = label; };
   if (_siMode === 'login') {

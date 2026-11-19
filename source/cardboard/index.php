@@ -136,6 +136,11 @@ body {
 .auth-col { display:flex; flex-direction:column; gap:.6rem; }
 .auth-col .sheet-input { margin:0; }
 .auth-col .connect-btn { width:100%; margin:0; }
+.pw-rules { list-style:none; margin:.1rem 0 .2rem; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:.25rem .9rem; font-size:.8rem; color:#9aa0b8; }
+.pw-rules li { display:flex; align-items:center; gap:.45rem; transition:color .15s; }
+.pw-rules li::before { content:''; width:1rem; height:1rem; flex-shrink:0; border-radius:50%; border:1.5px solid #c9cce0; box-sizing:border-box; transition:background .15s, border-color .15s; }
+.pw-rules li.ok { color:#2e7d32; }
+.pw-rules li.ok::before { border-color:#2e9d4c; background:#2e9d4c url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/70% no-repeat; }
 /* Signed out: CardBoard's purple, like the designer's sign-in page */
 body.signed-out { background:#2e2763; }
 body.signed-out .brand-name { color:#fff; }
@@ -180,6 +185,9 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
         <input class="sheet-input" id="authAddr" type="email" autocomplete="email" placeholder="Email" aria-label="Email">
         <input class="sheet-input" id="authPass" type="password" autocomplete="current-password" placeholder="Password" aria-label="Password">
         <input class="sheet-input" id="authPass2" type="password" autocomplete="new-password" placeholder="Password again" aria-label="Password again">
+        <ul class="pw-rules" id="authRules" aria-live="polite">
+          <li data-rule="len">At least 8 characters</li><li data-rule="letter">A letter</li><li data-rule="num">A number</li><li data-rule="match">Both passwords match</li>
+        </ul>
         <button type="submit" class="connect-btn" id="authSendBtn">Log in</button>
       </div>
       <div class="auth-err" id="authErr1"></div>
@@ -303,7 +311,7 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
     $('authPass').value = ''; $('authPass2').value = '';
     $('authPass').placeholder = m === 'login' ? 'Password' : 'Password (8 or more characters)';
     $('authPass').setAttribute('autocomplete', m === 'login' ? 'current-password' : 'new-password');
-    $('authPass2').hidden = m === 'login';
+    $('authPass2').hidden = $('authRules').hidden = m === 'login'; checkRules();
     $('authForgot').hidden = $('authForgotSep').hidden = m !== 'login';
     $('authSendBtn').textContent = { login: 'Log in', signup: 'Create account', reset: 'Email me a code' }[m] || '';
     $('authSwitch').textContent = m === 'login' ? 'New here? Start your free week' : 'Already have an account? Log in';
@@ -318,10 +326,7 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
     var m = window._mode, em = $('authAddr').value.trim(), pw = $('authPass').value, err = $('authErr1');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { err.textContent = 'Enter your email address.'; return; }
     if (m === 'login') { if (!pw) { err.textContent = 'Enter your password.'; return; } }
-    else {
-      if (pw.length < 8) { err.textContent = 'Use at least 8 characters for your password.'; return; }
-      if (pw !== $('authPass2').value) { err.textContent = 'The two passwords don’t match.'; return; }
-    }
+    else if (!checkRules()) { err.textContent = 'Your password needs everything on the list.'; return; }
     var b = $('authSendBtn'), label = b.textContent; b.disabled = true; b.textContent = m === 'login' ? 'Logging in…' : 'Sending…'; err.textContent = '';
     var done = function() { b.disabled = false; b.textContent = label; };
     if (m === 'login') {
@@ -336,6 +341,15 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
       setTimeout(function() { $('authCodeIn').focus(); }, 30);
     }).catch(function(e) { err.textContent = e.message; }).then(done);
   };
+  // New password: tick off each rule as it's met (the server checks the same rules)
+  function checkRules() {
+    var pw = $('authPass').value, all = true, ok = {
+      len: pw.length >= 8, letter: /\p{L}/u.test(pw), num: /\d/.test(pw), match: pw !== '' && pw === $('authPass2').value };
+    $('authRules').querySelectorAll('li').forEach(function(li) { var y = ok[li.dataset.rule]; li.classList.toggle('ok', y); if (!y) all = false; });
+    return all;
+  }
+  function onPw() { if (checkRules()) $('authErr1').textContent = ''; }
+  $('authPass').addEventListener('input', onPw); $('authPass2').addEventListener('input', onPw);
   window.authVerify = function() {
     var code = $('authCodeIn').value.replace(/\D/g, '');
     if (!pending) { authMode(window._mode); return; }

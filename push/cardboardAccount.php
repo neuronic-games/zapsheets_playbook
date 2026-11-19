@@ -84,7 +84,10 @@ function cbEmailIn(): string {
 }
 function cbPasswordIn(): string {
     $pw = (string) ($_POST['password'] ?? '');
+    // The same rules the sign-up form checks off as you type
     if (strlen($pw) < 8) fail('Use at least 8 characters for your password');
+    if (!preg_match('/\pL/u', $pw)) fail('Include at least one letter in your password');
+    if (!preg_match('/\d/', $pw)) fail('Include at least one number in your password');
     if (strlen($pw) > 200) fail('That password is too long');
     return $pw;
 }

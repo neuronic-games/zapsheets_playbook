@@ -2162,7 +2162,29 @@ function loadGrid(force) {
     _gridSel = null; renderGrid();
   }).catch(function(e) { box.innerHTML = '<div class="muted" style="padding:2rem">Couldn\'t read the sheet — ' + esc(e.message) + '</div>'; });
 }
-function gridCols() { return GRID.header.map(function(h, i) { return { name: h, i: i }; }).filter(function(c) { return c.name && !isHidden(c.name); }); }
+// Column order and widths in the Data view are kept per tab in _cardboard_settings (the sheet itself is unchanged)
+function gridPrefs(tab) { var g = SETTINGS.grid = SETTINGS.grid || {}; return g[tab || GRID.tab] = g[tab || GRID.tab] || {}; }
+function gridCols() {
+  var cols = GRID.header.map(function(h, i) { return { name: h, i: i }; }).filter(function(c) { return c.name && !isHidden(c.name); });
+  var order = gridPrefs().order || [];
+  return cols.map(function(c, k) { var o = order.indexOf(c.name); return { c: c, k: o < 0 ? order.length + k : o }; })
+    .sort(function(a, b) { return a.k - b.k; }).map(function(x) { return x.c; });
+}
+var _gridAutoW = {};   // a column's starting width, measured once from its contents so it doesn't change while editing
+function gridColWidth(name, i) {
+  var w = (gridPrefs().w || {})[name]; if (w) return w;
+  var key = GRID.tab + '\u0001' + name; if (_gridAutoW[key]) return _gridAutoW[key];
+  var cv = gridColWidth._cv || (gridColWidth._cv = document.createElement('canvas').getContext('2d'));
+  cv.font = '12.8px system-ui, sans-serif'; var m = cv.measureText(name.toUpperCase()).width * 1.15 + 34;
+  cv.font = '12.8px system-ui, sans-serif';
+  GRID.rows.slice(0, 200).forEach(function(r) { var v = String(r.values[i] || ''); if (v) m = Math.max(m, cv.measureText(v.slice(0, 80)).width + 22 + (imageUrl(v) && looksLikeImage(name) ? 30 : 0)); });
+  return _gridAutoW[key] = Math.round(Math.max(90, Math.min(320, m)));
+}
+var _gridPrefsTimer = null;
+function saveGridPrefs() {
+  clearTimeout(_gridPrefsTimer);
+  _gridPrefsTimer = setTimeout(function() { if (hasAccess()) saveSettings().catch(function(e) { toast('Couldn\'t save the column layout — ' + e.message, true); }); }, 600);
+}
 function gridVisibleRows() {
   if (!_gridFilter) return GRID.rows;
   var f = _gridFilter.toLowerCase();
@@ -2177,7 +2199,9 @@ function renderGrid() {
   if (!cols.length) { box.innerHTML = '<div class="muted" style="padding:2rem">This sheet has no column headings yet. Add one with <b>New</b> in the Design tab’s Data list.</div>'; return; }
   var imgCols = {};
   cols.forEach(function(c) { imgCols[c.i] = FIELDS.indexOf(c.name) >= 0 && looksLikeImage(c.name); });
-  var h = '<table class="grid"><thead><tr><th class="rn"></th>' + cols.map(function(c) { return '<th data-c="' + c.i + '" title="Click for options">' + esc(c.name) + '<span class="th-caret">▾</span></th>'; }).join('') + '</tr></thead><tbody>';
+  var widths = cols.map(function(c) { return gridColWidth(c.name, c.i); }), total = 42 + widths.reduce(function(a, b) { return a + b; }, 0);
+  var h = '<table class="grid" style="width:' + total + 'px"><colgroup><col style="width:42px">' + widths.map(function(w, k) { return '<col data-c="' + cols[k].i + '" style="width:' + w + 'px">'; }).join('') + '</colgroup>' +
+    '<thead><tr><th class="rn"></th>' + cols.map(function(c) { return '<th data-c="' + c.i + '" title="Click for options · drag to move · drag the edge to resize"><span class="th-name">' + esc(c.name) + '</span><span class="th-caret">▾</span><span class="col-rs" title="Drag to resize · double-click to fit"></span></th>'; }).join('') + '</tr></thead><tbody>';
   rows.forEach(function(r) {
     var ri = GRID.rows.indexOf(r);
     h += '<tr data-r="' + ri + '"' + (r.draft ? ' class="draft"' : '') + '><td class="rn">' + (r.draft ? '+' : r.row) + '</td>';
@@ -2356,7 +2380,67 @@ function refreshRows() {
 (function() {
   var wrap = $('gridWrap');
   wrap.addEventListener('click', function(ev) {
+    if (_colDragged) { _colDragged = false; return; }
+    if (ev.target.classList.contains('col-rs')) return;
     var th = ev.target.closest('th[data-c]'); if (th) openColumnMenu(th);
+  });
+  // Resize: drag a heading's right edge. Double-click the edge to fit its contents again.
+  wrap.addEventListener('dblclick', function(ev) {
+    if (!ev.target.classList.contains('col-rs')) return;
+    var name = GRID.header[+ev.target.closest('th').dataset.c], w = gridPrefs().w;
+    if (w && w[name]) { delete w[name]; saveGridPrefs(); } renderGrid();
+  });
+  var _colDragged = false;
+  wrap.addEventListener('mousedown', function(ev) {
+    var th = ev.target.closest('th[data-c]'); if (!th || ev.button !== 0) return;
+    var c = +th.dataset.c, name = GRID.header[c], table = wrap.querySelector('table.grid'), col = table.querySelector('col[data-c="' + c + '"]');
+    var x0 = ev.clientX, moved = false;
+    if (ev.target.classList.contains('col-rs')) {
+      ev.preventDefault(); closeColumnMenu();
+      var w0 = th.getBoundingClientRect().width, t0 = table.getBoundingClientRect().width;
+      document.body.classList.add('col-resizing');
+      var mv = function(e) { var w = Math.max(50, Math.round(w0 + e.clientX - x0)); col.style.width = w + 'px'; table.style.width = (t0 - w0 + w) + 'px'; moved = true; };
+      var up = function() {
+        document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); document.body.classList.remove('col-resizing');
+        if (!moved) return;
+        var p = gridPrefs(); (p.w = p.w || {})[name] = parseInt(col.style.width, 10); saveGridPrefs(); _colDragged = true;
+        setTimeout(function() { _colDragged = false; }, 0);
+      };
+      document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
+      return;
+    }
+    // Move: drag a heading sideways and drop it where the marker shows
+    var marker = null, ghost = null, target = -1, ths = [].slice.call(table.querySelectorAll('thead th[data-c]'));
+    var mv2 = function(e) {
+      if (!moved && Math.abs(e.clientX - x0) < 6) return;
+      if (!moved) {
+        moved = true; closeColumnMenu(); document.body.classList.add('col-moving'); th.classList.add('col-src');
+        ghost = document.createElement('div'); ghost.className = 'col-ghost'; ghost.textContent = name; document.body.appendChild(ghost);
+        marker = document.createElement('div'); marker.className = 'col-marker'; wrap.appendChild(marker);
+      }
+      ghost.style.left = (e.clientX + 10) + 'px'; ghost.style.top = (e.clientY + 8) + 'px';
+      var wr = wrap.getBoundingClientRect(), best = 0, bx = 0, bd = 1e9;
+      for (var k = 0; k <= ths.length; k++) {
+        var r = ths[Math.min(k, ths.length - 1)].getBoundingClientRect(), x = k < ths.length ? r.left : r.right, d = Math.abs(e.clientX - x);
+        if (d < bd) { bd = d; best = k; bx = x; }
+      }
+      target = best;
+      marker.style.left = (bx - wr.left + wrap.scrollLeft - 1) + 'px'; marker.style.top = wrap.scrollTop + 'px'; marker.style.height = Math.min(table.offsetHeight, wrap.clientHeight) + 'px';
+      if (e.clientX > wr.right - 30) wrap.scrollLeft += 12; else if (e.clientX < wr.left + 60) wrap.scrollLeft -= 12;
+    };
+    var up2 = function() {
+      document.removeEventListener('mousemove', mv2); document.removeEventListener('mouseup', up2);
+      if (!moved) return;
+      document.body.classList.remove('col-moving'); th.classList.remove('col-src'); ghost.remove(); marker.remove();
+      _colDragged = true; setTimeout(function() { _colDragged = false; }, 0);
+      var names = gridCols().map(function(x) { return x.name; }), from = names.indexOf(name);
+      if (target < 0 || target === from || target === from + 1) return;
+      names.splice(from, 1); names.splice(target > from ? target - 1 : target, 0, name);
+      var p = gridPrefs(), all = (p.order || []).filter(function(n) { return names.indexOf(n) < 0 && GRID.header.indexOf(n) >= 0; });
+      p.order = names.concat(all);   // hidden columns keep a place at the end
+      renderGrid(); saveGridPrefs();
+    };
+    document.addEventListener('mousemove', mv2); document.addEventListener('mouseup', up2);
   });
   wrap.addEventListener('mousedown', function(ev) {
     var td = ev.target.closest('td[data-c]'); if (!td || ev.target.classList.contains('g-editor')) return;

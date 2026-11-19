@@ -453,8 +453,18 @@ table.grid thead th.just-added { animation:colFlash 1.6s ease; }
 @media (max-width:900px) { #view-export { flex-direction:column; } .export-side { width:auto; max-height:50%; border-right:none; border-bottom:1px solid #e1e4ee; } }
 .grid-hint { margin:0; padding:.4rem 1.1rem; font-size:.72rem; color:#8a8fa8; background:#fbfbfe; border-bottom:1px solid #e1e4ee; }
 .grid-wrap { position:relative; flex:1; min-height:0; overflow:auto; background:#fff; }
-table.grid { border-collapse:separate; border-spacing:0; font-size:.8rem; color:#1b1b2b; min-width:100%; }
-table.grid th, table.grid td { border-right:1px solid #e6e8f0; border-bottom:1px solid #e6e8f0; padding:0 .5rem; height:2rem; max-width:22rem; min-width:7rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left; vertical-align:middle; }
+table.grid { border-collapse:separate; border-spacing:0; font-size:.8rem; color:#1b1b2b; table-layout:fixed; }
+table.grid thead th[data-c] { position:sticky; padding-right:1.1rem; }
+table.grid .th-name { overflow:hidden; text-overflow:ellipsis; }
+table.grid thead th .th-caret { position:absolute; right:.55rem; top:50%; transform:translateY(-50%); margin:0; }
+.col-rs { position:absolute; top:0; right:0; width:7px; height:100%; cursor:col-resize; z-index:2; }
+.col-rs:hover, body.col-resizing .col-rs:hover { background:linear-gradient(90deg, transparent 4px, #7b6cf6 4px, #7b6cf6 6px, transparent 6px); }
+body.col-resizing, body.col-resizing * { cursor:col-resize !important; user-select:none; }
+body.col-moving, body.col-moving * { cursor:grabbing !important; user-select:none; }
+table.grid thead th.col-src { background:#ddd6ff; color:#7b6cf6; }
+.col-marker { position:absolute; width:3px; background:#7b6cf6; border-radius:2px; z-index:6; pointer-events:none; box-shadow:0 0 0 2px rgba(123,108,246,.18); }
+.col-ghost { position:fixed; z-index:9999; pointer-events:none; padding:.3rem .6rem; border-radius:6px; background:#2e2763; color:#fff; font-family:'DINBlack',sans-serif; font-size:.72rem; letter-spacing:.03em; text-transform:uppercase; box-shadow:0 6px 18px rgba(30,20,80,.3); }
+table.grid th, table.grid td { border-right:1px solid #e6e8f0; border-bottom:1px solid #e6e8f0; padding:0 .5rem; height:2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:left; vertical-align:middle; }
 table.grid thead th { position:sticky; top:0; z-index:3; background:#f3f1ff; color:#2e2763; font-family:'DINBlack',sans-serif; font-weight:400; font-size:.72rem; letter-spacing:.03em; border-bottom:1.5px solid #d6d1f5; }
 table.grid .rn { position:sticky; left:0; z-index:2; min-width:2.6rem; width:2.6rem; text-align:center; background:#f7f8fc; color:#9aa0b8; font-size:.7rem; }
 table.grid thead .rn { z-index:4; background:#ece9ff; }
@@ -705,7 +715,7 @@ body.cb-gate #signinOverlay { background:#2e2763; }
       <button class="print-go ghost" onclick="loadGrid(true)" title="Read the sheet again">Reload</button>
       <button class="print-go" onclick="addGridRow()">+ Add row</button></div>
   </div>
-  <p class="grid-hint">Click a cell and type, or double-click to edit · Enter saves (Shift+Enter for a new line) · Tab moves right · Esc cancels. Changes go straight to the Google Sheet.</p>
+  <p class="grid-hint">Click a cell and type, or double-click to edit · Enter saves (Shift+Enter for a new line) · Tab moves right · Esc cancels · Drag a heading to move it, or its edge to resize. Changes go straight to the Google Sheet.</p>
   <div class="grid-wrap" id="gridWrap"></div>
 </div>
 

@@ -278,6 +278,9 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .al-dot:hover, .al-dot:focus-visible { background:#7b6cf6; transform:scale(1.3); outline:none; }
 .al-dot:hover + .al-guide.in, .al-dot:focus-visible + .al-guide.in { opacity:1; }
 .moving .al-dot, .moving .al-guide { display:none; }
+.el.editing { z-index:60 !important; }
+.el.editing .el-inner { cursor:text; user-select:text; -webkit-user-select:text; white-space:pre-wrap; outline:calc(2px / var(--z, 1)) solid #7b6cf6; outline-offset:calc(1px / var(--z, 1)); background:rgba(255,255,255,.9); }
+.el.editing .hdl { display:none; }
 .sel-box { position:absolute; z-index:49; pointer-events:none; outline:calc(1.5px / var(--z)) solid #7b6cf6; outline-offset:calc(2px / var(--z)); }
 .sel-box.group { outline-color:#4b3fa8; }
 .hdl.nw { left:calc(-4.5px / var(--z)); top:calc(-4.5px / var(--z)); cursor:nwse-resize; }

@@ -568,7 +568,8 @@ function gridMatch(row, gr) {   // does this sheet row (as typed) look like this
   }
   return n > 0;
 }
-function sheetRowFor(row) {
+function sheetRowFor(row, like) {   // like: the row's values as the sheet has them (when the card already shows an edit)
+  like = like || row;
   var start = Promise.resolve();
   if (!GRID || GRID.tab !== curTab) {
     var tab = curTab;
@@ -576,8 +577,8 @@ function sheetRowFor(row) {
   }
   return start.then(function() {
     var i = ROWS.indexOf(row), guess = GRID.rows.filter(function(g) { return !g.draft; })[i];
-    if (guess && gridMatch(row, guess)) return guess;
-    var all = GRID.rows.filter(function(g) { return !g.draft && gridMatch(row, g); });
+    if (guess && gridMatch(like, guess)) return guess;
+    var all = GRID.rows.filter(function(g) { return !g.draft && gridMatch(like, g); });
     if (all.length === 1) return all[0];
     throw new Error(all.length ? 'several rows look the same — set the picture in the Data tab' : 'couldn\'t find this row in the sheet — try Fetch');
   });
@@ -813,10 +814,62 @@ function ptFromEvent(ev) {
 $('cardHolder').addEventListener('dblclick', function(ev) {
   var node = ev.target.closest('.el'), e = node && elById(node.dataset.id);
   if (e && isPicEl(e)) openImagePicker(ev, e.id);
+  else if (e && e.kind === 'data') editCellInPlace(e);
 });
+// Double-click a Data field shown as text to edit this row's value right on the card.
+// Enter saves to the sheet (Shift+Enter for a new line), Esc cancels, clicking away saves.
+function editCellInPlace(e) {
+  var row = ROWS[rowIdx]; if (!row) { toast('There\'s no row to edit', true); return; }
+  if (!isSel(e.id) || multi.length) setSel([e.id]);
+  var node = $('cardHolder').querySelector('.el[data-id="' + e.id + '"]'), inner = node && node.querySelector('.el-inner');
+  if (!inner) return;
+  var old = cleanVal(row[e.field]), done = false;
+  node.classList.add('editing');
+  inner.textContent = old;
+  try { inner.contentEditable = 'plaintext-only'; } catch (x) {}
+  if (inner.contentEditable !== 'plaintext-only') inner.contentEditable = 'true';
+  inner.focus();
+  var rg = document.createRange(); rg.selectNodeContents(inner); var sl = getSelection(); sl.removeAllRanges(); sl.addRange(rg);
+  function finish(save) {
+    if (done) return; done = true;
+    var v = inner.innerText.replace(/\r/g, '').replace(/\n$/, '');
+    inner.removeAttribute('contenteditable'); node.classList.remove('editing');
+    if (save && v !== old) setRowCell(e, v); else render();
+  }
+  inner.addEventListener('keydown', function(k) {
+    k.stopPropagation();
+    if (k.key === 'Enter' && !k.shiftKey) { k.preventDefault(); finish(true); }
+    else if (k.key === 'Escape') { k.preventDefault(); finish(false); }
+  });
+  inner.addEventListener('blur', function() { finish(true); });
+}
+// Write a text value into this row's cell for a Data field. Shown on the card straight away;
+// put back if the sheet can't be updated.
+function setRowCell(e, value) {
+  var row = ROWS[rowIdx]; if (!row) return;
+  var tab = curTab, field = e.field, before = row[field];
+  var like = Object.assign({}, row); like[field] = before;
+  row[field] = value; render(); renderData();
+  sheetRowFor(row, like).then(function(gr) {
+    var c = GRID.header.indexOf(field); if (c < 0) throw new Error('the ' + field + ' column wasn\'t found');
+    if (/^=/.test(String(gr.values[c] == null ? '' : gr.values[c]))) throw new Error('that cell is a formula — change it in the sheet');
+    return api('setcell', { tab: tab, row: gr.row, field: field, value: value, old: gr.values[c] == null ? '' : gr.values[c] }).then(function(res) {
+      gr.values[c] = res && res.value != null ? res.value : value;
+      return gr.row;
+    });
+  }).then(function(sheetRow) {
+    render(); renderData(); if (_activeTab === 'data') renderGrid(); if (selId === e.id) renderAttrs();
+    toast('✓ Saved in ' + field + ', row ' + sheetRow);
+    autoRepublish(tab);
+  }).catch(function(err) {
+    if (row[field] === value) row[field] = before;
+    render(); renderData();
+    toast(err.message === 'conflict' ? 'That cell was changed in the sheet — Fetch to see it, then try again' : 'Couldn\'t save — ' + err.message, true);
+  });
+}
 // Move / resize elements on the card
 $('cardHolder').addEventListener('pointerdown', function(ev) {
-  if (ev.target.closest('.img-btn')) return;
+  if (ev.target.closest('.img-btn') || ev.target.closest('.el.editing')) return;
   var elDom = ev.target.closest('.el'); if (!elDom || ev.button > 0) return;
   var e = elById(elDom.dataset.id); if (!e) return;
   ev.preventDefault();
@@ -881,7 +934,7 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
 
 // ── Keyboard ──────────────────────────────────────────────────────────────────
 document.addEventListener('keydown', function(ev) {
-  var typing = /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '');
+  var typing = /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '') || !!(document.activeElement && document.activeElement.isContentEditable);
   var mod = ev.metaKey || ev.ctrlKey;
   if (mod && ev.key.toLowerCase() === 's') { ev.preventDefault(); saveLayout(); return; }
   if (typing || _activeTab !== 'design' || !layout) return;
@@ -1457,6 +1510,7 @@ function delMapItem(i) { var e = mapEl(); if (!e) return; snapshot(); e.map.item
 document.addEventListener('pointerdown', function(ev) {
   var a = document.activeElement, p = $('attrPanel');
   if (a && p && p.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName) && !p.contains(ev.target)) a.blur();
+  if (a && a.isContentEditable && a.closest('.el.editing') && !a.contains(ev.target)) a.blur();   // editing a value on the card
 }, true);
 function liveText(v) {   // show typing on the card right away; one undo step when the box loses focus
   var e = elById(selId); if (!e) return;

@@ -81,6 +81,7 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
     <h2>Data</h2>
     <p>The <b>Data</b> tab shows the sheet as a grid. Click a cell and type, or double-click to edit. <kbd>Enter</kbd> saves (<kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line), <kbd>Tab</kbd> moves right and <kbd>Esc</kbd> cancels. Each change goes straight to the Google Sheet.</p>
     <p>If someone changed a cell in Sheets since you loaded it, CardBoard won't overwrite it — the cell turns red and shows their value. <b>+ Add row</b> adds a card; it's written once you type in it.</p>
+    <p>In the Design tab, double-click a Data field on the card to edit that card's value in place. <kbd>Enter</kbd> saves it to the sheet (<kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line) and <kbd>Esc</kbd> cancels.</p>
   </section>
 
   <section class="section" id="design">

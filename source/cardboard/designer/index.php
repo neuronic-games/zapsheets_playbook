@@ -84,8 +84,8 @@ button, input, select, textarea { font-family:inherit; }
 .layers-btn:hover { border-color:#a99cff; background:#f7f5ff; }
 .layers-btn.on { background:#4b3fa8; border-color:#4b3fa8; color:#fff; }
 .layers-panel { flex:0 1 auto; max-height:46%; overflow:auto; padding:.75rem .7rem .55rem; border-bottom:1px solid #e1e4ee; background:#fbfbfe; }
-.ly-head { display:flex; align-items:center; gap:.45rem; padding:0 2.4rem .45rem .2rem; font-size:.72rem; color:#8a8fa8; min-height:1.9rem; }
-.ly-head b { font-family:'DINBlack',sans-serif; font-weight:400; letter-spacing:.09em; text-transform:uppercase; color:#2e2763; font-size:.66rem; }
+.ly-head { display:flex; align-items:center; gap:.45rem; padding:0 2.4rem 0 .2rem; margin-bottom:.45rem; font-size:.72rem; color:#8a8fa8; min-height:1.9rem; }
+.ly-head b { position:relative; top:-.2em; font-family:'DINBlack',sans-serif; font-weight:400; letter-spacing:.09em; text-transform:uppercase; color:#2e2763; font-size:.66rem; }
 .ly-act { margin-left:auto; border:1.5px solid #a99cff; background:#f3f1ff; color:#4b3fa8; border-radius:6px; font-family:'DINBlack',sans-serif; font-size:.62rem; letter-spacing:.06em; text-transform:uppercase; padding:.2rem .55rem; cursor:pointer; }
 .ly-act:hover { background:#ece9ff; }
 .ly-list { display:flex; flex-direction:column; gap:2px; }

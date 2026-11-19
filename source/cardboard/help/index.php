@@ -141,7 +141,8 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
       <li><b>Profile</b> — your name, email and studio. The email is used for receipts when you subscribe.</li>
       <li><b>Settings</b> — open the spreadsheet, choose inches or millimetres, and see your plan.</li>
       <li><b>Fetch</b> — read the latest data from the Google Sheet.</li>
-      <li><b>Subscribe</b> — your free week, the subscription and activation keys.</li>
+      <li><b>Subscription</b> — your free week, the subscription and activation keys.</li>
+      <li><b>Enter a code</b> — use a free code (a week, a month or a year).</li>
       <li><b>Sign out</b> — log in again any time with your email and password. Forgot it? <b>Forgot password?</b> emails you a code to set a new one.</li>
     </ul>
   </section>
@@ -152,7 +153,7 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
       <div class="card"><b>Free week</b><p>Sign up with your email and a password, confirm the email with a 6-digit code, and every feature is yours for 7 days. No card needed.</p></div>
       <div class="card"><b>$4.99/month</b><p>Keep designing after the free week: the designer, tags, printing, exports, hosted links that update when your cards change, and picture uploads. Cancel any time.</p></div>
       <div class="card"><b>After the free week</b><p>Without a subscription CardBoard opens read-only: you can look through your cards and data, and your sheet and layouts stay exactly as they are. Hosted links keep working.</p></div>
-      <div class="card"><b>Codes</b><p>Got a code from us? Open <b>Subscribe</b> and click <b>Have a code?</b>. It unlocks every feature for its time — a week, a month or a year — added on top of any time you have left. Each code works once per account.</p></div>
+      <div class="card"><b>Codes</b><p>Got a code from us? Open the account menu and choose <b>Enter a code</b> (or <b>Subscription</b> → <b>Have a code?</b>). It unlocks every feature for its time — a week, a month or a year — starting when the time you have now runs out (after your free week, or after an earlier code). Each code works once per account.</p></div>
     </div>
   </section>
 </div>

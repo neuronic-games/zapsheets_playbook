@@ -151,9 +151,12 @@ def main():
         if mx.isdigit() and used >= int(mx): out({'error': 'That code has been used up'})
         if ci('Used') >= 0: row[ci('Used')] = str(used + 1)
         wb.values_update(q(cws.title) + '!A' + str(row_no) + ':' + col(len(ch)) + str(row_no), params={'valueInputOption': 'RAW'}, body={'values': [row[:len(ch)]]})
-        try: cur = datetime.datetime.strptime(str(u.get('Code Until', ''))[:19], '%Y-%m-%d %H:%M:%S')
-        except ValueError: cur = None
-        start = cur if cur and cur > now() else now()
+        # The new time starts when the current access runs out: after any code time left, or after the free week
+        start = now()
+        for k in ('Code Until', 'Trial End'):
+            try: cur = datetime.datetime.strptime(str(u.get(k, ''))[:19], '%Y-%m-%d %H:%M:%S')
+            except ValueError: cur = None
+            if cur and cur > start: start = cur
         if days == PERPETUAL: u['Activated'] = now().strftime('%Y-%m-%d')   # unlocked for good
         else: u['Code Until'] = iso(start + datetime.timedelta(days=days))
         u['Codes Used'] = ', '.join([c for c in str(u.get('Codes Used', '')).split(', ') if c] + [str(row[ci('Code')]).strip()])

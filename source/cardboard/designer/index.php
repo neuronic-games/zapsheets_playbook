@@ -676,6 +676,7 @@ body.cb-gate #signinOverlay { background:#2e2763; }
         <button class="account-menu-item" onclick="closeAccountMenu();openSettingsDialog()">Settings</button>
         <button class="account-menu-item" onclick="closeAccountMenu();reloadSheet()" title="Read the latest data from the Google Sheet">Fetch</button>
         <button class="account-menu-item" id="cbSubBtn" onclick="closeAccountMenu();openPlansDialog()" style="color:#f5a623">Subscribe</button>
+        <button class="account-menu-item" id="cbCodeBtn" onclick="closeAccountMenu();openCodeDialog()" hidden>Enter a code</button>
         <button class="account-menu-item" onclick="closeAccountMenu();window.open(APP_BASE + 'cardboard/help', '_blank')">Help</button>
         <button class="account-menu-item" id="cbSignOut" onclick="closeAccountMenu();signOut()" hidden>Sign out</button>
       </div>

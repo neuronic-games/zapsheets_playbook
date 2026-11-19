@@ -2761,9 +2761,11 @@ function fmtWhen(v) {
 function updateSubMenu() {
   var b = $('cbSubBtn'); if (!b) return;
   var a = acctInfo(), st = a && (a.sheet_unlocked && ACCT.sheet === SHEET_ID ? 'activated' : a.state);
-  b.textContent = !a ? 'Sign in' : st === 'subscribed' ? 'Subscribed' : st === 'activated' ? 'Unlocked' : st === 'code' ? 'Unlocked · ' + daysLeft() + 'd left' : st === 'trial' ? 'Subscribe · ' + daysLeft() + 'd free left' : 'Subscribe';
+  b.textContent = !a ? 'Sign in' : 'Subscription';
+  b.title = a ? planLabel().replace(/<[^>]+>/g, '') : '';
   b.style.color = st === 'subscribed' || st === 'activated' || st === 'code' ? '#4caf50' : '#f5a623';
   var so = $('cbSignOut'); if (so) so.hidden = !a;
+  var cb = $('cbCodeBtn'); if (cb) cb.hidden = !a || a.state === 'activated';   // the person's own account, not a comped sheet
 }
 // Returns true when allowed; otherwise asks to sign in or shows the plans
 function requirePro(reason, retry) {
@@ -2776,7 +2778,7 @@ var LOCK_REASONS = { locked: 'Your free week has ended. Subscribe to keep design
 function openPlansDialog(reason) {
   if (!ACCT) { askSignIn().then(function() { openPlansDialog(reason); }, function() {}); return; }
   $('planIntro').textContent = LOCK_REASONS[reason] || 'Every feature, for a week free. Then $4.99 a month to keep designing.';
-  openDialog('plansOverlay'); renderPlans();
+  $('planActKey').innerHTML = ''; openDialog('plansOverlay'); renderPlans();
   acctRefresh(false).then(renderPlans, function() {});
 }
 function renderPlans() {
@@ -2790,12 +2792,18 @@ function renderPlans() {
   $('planManage').textContent = a.status === 'past_due' ? 'Update Payment' : 'Manage Billing';
   $('planStatus').innerHTML = a.status === 'past_due' ? '<span style="color:#d97706;font-weight:700">⚠ Payment past due</span>' : '';
   $('planWho').innerHTML = a.email ? 'Signed in as <b>' + esc(a.email) + '</b>' : '';
-  renderCodeBox($('planActKey'), unlocked);
+  renderCodeBox($('planActKey'), a.state === 'activated');
+}
+// Account menu → Enter a code: the plans dialog with the code box already open
+function openCodeDialog() {
+  openPlansDialog();
+  var link = document.querySelector('#planActKey .zs-ak-link'); if (link) link.click();
 }
 // "Have a code?": a free code from the Admin sheet's Codes tab (a week, a month, a year…), or an activation key
 function renderCodeBox(el, unlocked) {
   if (!el) return;
   if (unlocked) { el.innerHTML = '<div class="zs-ak"><span class="zs-ak-ok">✓ Unlocked with an activation key</span></div>'; return; }
+  if (el.querySelector('form')) return;   // keep a code box that is open (a fresh dialog clears it)
   el.innerHTML = '<div class="zs-ak"><button type="button" class="zs-ak-link">Have a code?</button></div>';
   el.querySelector('.zs-ak-link').onclick = function() {
     var box = el.querySelector('.zs-ak');
@@ -2807,7 +2815,7 @@ function renderCodeBox(el, unlocked) {
       var code = inp.value.trim(); if (!code) { inp.focus(); return; }
       btn.disabled = true; btn.textContent = 'Checking…'; msg.textContent = '';
       accountPost('redeem', { code: code }).then(function(r) {
-        storeAcct(r); renderPlans(); refreshCards();
+        storeAcct(r); el.innerHTML = ''; renderPlans(); refreshCards();
         toast(r.days > 0 ? '✓ Unlocked until ' + fmtWhen(r.account.until) : '✓ CardBoard unlocked for good');
       }).catch(function(err) { msg.textContent = err.message; btn.disabled = false; btn.textContent = 'Use code'; inp.select(); });
     };
@@ -2834,7 +2842,7 @@ function startProCheckout() {
     .catch(function(e) { btn.disabled = false; btn.textContent = 'Subscribe'; $('planStatus').textContent = e.message; });
 }
 function signOut() {
-  askDialog({ title: 'Sign out?', message: 'You can sign back in any time with a code sent to your email.', ok: 'Sign out', cancel: 'Cancel' })
+  askDialog({ title: 'Sign out?', message: 'You can sign back in any time with your email and password.', ok: 'Sign out', cancel: 'Cancel' })
     .then(function(yes) { if (yes) { forgetAcct(); window.location.href = APP_BASE + 'cardboard'; } });
 }
 

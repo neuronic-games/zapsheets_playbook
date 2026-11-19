@@ -2750,6 +2750,7 @@ function planLabel() {
   if (a.sheet_unlocked && ACCT.sheet === SHEET_ID) return '<b>Unlocked</b> <span class="muted">· activation key</span>';
   if (a.state === 'activated') return '<b>Unlocked</b> <span class="muted">· activation key</span>';
   if (a.state === 'subscribed') return '<b>Subscribed</b>' + (a.period_end ? ' <span class="muted">· renews ' + esc(fmtWhen(a.period_end)) + '</span>' : '');
+  if (a.state === 'code') return '<b>Unlocked with a code</b> <span class="muted">· until ' + esc(fmtWhen(a.until)) + '</span>';
   if (a.state === 'trial') { var d = daysLeft(); return '<b>Free week</b> <span class="muted">· ' + d + (d === 1 ? ' day' : ' days') + ' left</span>'; }
   return '<b>Free week ended</b>';
 }
@@ -2760,8 +2761,8 @@ function fmtWhen(v) {
 function updateSubMenu() {
   var b = $('cbSubBtn'); if (!b) return;
   var a = acctInfo(), st = a && (a.sheet_unlocked && ACCT.sheet === SHEET_ID ? 'activated' : a.state);
-  b.textContent = !a ? 'Sign in' : st === 'subscribed' ? 'Subscribed' : st === 'activated' ? 'Unlocked' : st === 'trial' ? 'Subscribe · ' + daysLeft() + 'd free left' : 'Subscribe';
-  b.style.color = st === 'subscribed' || st === 'activated' ? '#4caf50' : '#f5a623';
+  b.textContent = !a ? 'Sign in' : st === 'subscribed' ? 'Subscribed' : st === 'activated' ? 'Unlocked' : st === 'code' ? 'Unlocked · ' + daysLeft() + 'd left' : st === 'trial' ? 'Subscribe · ' + daysLeft() + 'd free left' : 'Subscribe';
+  b.style.color = st === 'subscribed' || st === 'activated' || st === 'code' ? '#4caf50' : '#f5a623';
   var so = $('cbSignOut'); if (so) so.hidden = !a;
 }
 // Returns true when allowed; otherwise asks to sign in or shows the plans
@@ -2789,8 +2790,28 @@ function renderPlans() {
   $('planManage').textContent = a.status === 'past_due' ? 'Update Payment' : 'Manage Billing';
   $('planStatus').innerHTML = a.status === 'past_due' ? '<span style="color:#d97706;font-weight:700">⚠ Payment past due</span>' : '';
   $('planWho').innerHTML = a.email ? 'Signed in as <b>' + esc(a.email) + '</b>' : '';
-  if (window.zsActivationKey) zsActivationKey({ el: $('planActKey'), base: APP_BASE, sheetId: SHEET_ID, activated: !!unlocked,
-    onActivated: function() { acctRefresh(true).then(function() { renderPlans(); refreshCards(); }, function() {}); } });
+  renderCodeBox($('planActKey'), unlocked);
+}
+// "Have a code?": a free code from the Admin sheet's Codes tab (a week, a month, a year…), or an activation key
+function renderCodeBox(el, unlocked) {
+  if (!el) return;
+  if (unlocked) { el.innerHTML = '<div class="zs-ak"><span class="zs-ak-ok">✓ Unlocked with an activation key</span></div>'; return; }
+  el.innerHTML = '<div class="zs-ak"><button type="button" class="zs-ak-link">Have a code?</button></div>';
+  el.querySelector('.zs-ak-link').onclick = function() {
+    var box = el.querySelector('.zs-ak');
+    box.innerHTML = '<label class="zs-ak-lbl">Code</label><form class="zs-ak-row"><input type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Code"><button type="submit">Use code</button></form><div class="zs-ak-msg" role="status"></div>';
+    var form = box.querySelector('form'), inp = box.querySelector('input'), btn = box.querySelector('button'), msg = box.querySelector('.zs-ak-msg');
+    inp.focus(); inp.addEventListener('keydown', function(k) { k.stopPropagation(); });
+    form.onsubmit = function(e) {
+      e.preventDefault();
+      var code = inp.value.trim(); if (!code) { inp.focus(); return; }
+      btn.disabled = true; btn.textContent = 'Checking…'; msg.textContent = '';
+      accountPost('redeem', { code: code }).then(function(r) {
+        storeAcct(r); renderPlans(); refreshCards();
+        toast(r.days ? '✓ Unlocked until ' + fmtWhen(r.account.until) : '✓ CardBoard unlocked');
+      }).catch(function(err) { msg.textContent = err.message; btn.disabled = false; btn.textContent = 'Use code'; inp.select(); });
+    };
+  };
 }
 function openBillingPortal() {
   var url = acctInfo() && acctInfo().portal_url;
@@ -2861,7 +2882,7 @@ function checkPwRules() {
   $('siRules').querySelectorAll('li').forEach(function(li) { var y = ok[li.dataset.rule]; li.classList.toggle('ok', y); if (!y) all = false; });
   return all;
 }
-document.addEventListener('input', function(ev) { if (ev.target.id === 'siPass' || ev.target.id === 'siPass2') checkPwRules(); });
+document.addEventListener('input', function(ev) { if ((ev.target.id === 'siPass' || ev.target.id === 'siPass2') && checkPwRules()) $('siErr').textContent = ''; });
 function signInSwitch() { signInStep(_siMode === 'login' ? 'signup' : 'login'); }
 function signedIn(r) {
   storeAcct(r); closeDialog('signinOverlay'); document.body.classList.remove('cb-gate');

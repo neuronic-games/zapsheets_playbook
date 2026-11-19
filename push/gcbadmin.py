@@ -6,6 +6,9 @@
 #            and the sheet ID is added to Sheets.
 #   update — email, fields: {Header: value} → changes those cells (adds the person if missing)
 #   find   — field, value → the first row whose Header equals value (e.g. Stripe Customer)
+#   redeem — email, code → a free code from the "Codes" tab: CardBoard unlocked for its Length
+#            (added on top of any code time left). Each person can use each code once; Max Uses
+#            (blank = no limit) and Expires (blank = never) are optional.
 # Answer: {ok, user: {Header: value, …}}
 #
 # The Admin sheet is the one PHP passes as "admin" (CARDBOARD_ADMIN_SHEET in .env), or the built-in ID below.
@@ -22,8 +25,18 @@ CRED = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentia
 ADMIN_SHEET = '1heNPe8GCggJVoUlGvDVwBt697LvD7vtQT5yDfsnV4M0'
 TAB = 'Users'
 HEADERS = ['Email', 'Name', 'Studio', 'Trial Start', 'Trial End', 'Status', 'Plan', 'Period End',
-           'Stripe Customer', 'Stripe Subscription', 'Activated', 'Sheets', 'Created', 'Last Seen', 'Password Hash']
+           'Stripe Customer', 'Stripe Subscription', 'Activated', 'Sheets', 'Created', 'Last Seen', 'Password Hash', 'Code Until', 'Codes Used']
 TRIAL_DAYS = 7
+CODES_TAB = 'Codes'   # free codes you hand out: each unlocks CardBoard for its Length, once per person
+CODES_HEADERS = ['Code', 'Length', 'Max Uses', 'Used', 'Used By', 'Expires', 'Note']
+
+def length_days(v):
+    # "1 week", "2 weeks", "1 month", "1 year", "30 days", or a plain number of days
+    import re
+    m = re.match(r'^\s*(\d+(?:\.\d+)?)?\s*(d|day|days|w|wk|week|weeks|m|mo|month|months|y|yr|year|years)?\s*$', str(v or '').strip().lower())
+    if not m or not (m.group(1) or m.group(2)): return 0
+    n = float(m.group(1) or 1); u = (m.group(2) or 'd')[0]
+    return int(round(n * {'d': 1, 'w': 7, 'm': 30, 'y': 365}[u]))
 
 def out(d):
     print(json.dumps(d, ensure_ascii=False)); sys.exit(0)
@@ -52,6 +65,9 @@ def main():
     if ws is None:
         ws = wb.add_worksheet(title=TAB, rows=200, cols=len(HEADERS))
         wb.values_update(q(TAB) + '!A1', params={'valueInputOption': 'RAW'}, body={'values': [HEADERS]})
+    if not any(w.title.lower() == CODES_TAB.lower() for w in wb.worksheets()):   # ready for you to add codes
+        wb.add_worksheet(title=CODES_TAB, rows=100, cols=len(CODES_HEADERS))
+        wb.values_update(q(CODES_TAB) + '!A1', params={'valueInputOption': 'RAW'}, body={'values': [CODES_HEADERS]})
     vals = wb.values_get(q(ws.title)).get('values', [])
     hdr = [h.strip() for h in (vals[0] if vals else [])]
     missing = [h for h in HEADERS if h not in hdr]
@@ -100,6 +116,42 @@ def main():
         u['Last Seen'] = iso(now())
         write(n, u)
         out({'ok': True, 'user': u})
+
+    if action == 'redeem':
+        if not u: out({'error': 'Sign in first'})
+        code = str(data.get('code') or '').strip()
+        cws = next((w for w in wb.worksheets() if w.title.lower() == CODES_TAB.lower()), None)
+        cv = wb.values_get(q(cws.title)).get('values', []) if cws else []
+        ch = [h.strip() for h in (cv[0] if cv else [])]
+        def ci(name): return ch.index(name) if name in ch else -1
+        row_no, row = 0, None
+        for k, r in enumerate(cv[1:]):
+            if ci('Code') >= 0 and ci('Code') < len(r) and str(r[ci('Code')]).strip().lower() == code.lower() and code:
+                row_no, row = k + 2, list(r) + [''] * (len(ch) - len(r)); break
+        if not row: out({'ok': False, 'unknown': True})
+        days = length_days(row[ci('Length')] if ci('Length') >= 0 else '')
+        if days <= 0: out({'error': 'That code isn’t set up yet — ask whoever gave it to you'})
+        exp = str(row[ci('Expires')]).strip() if ci('Expires') >= 0 else ''
+        if exp:
+            try:
+                if datetime.datetime.strptime(exp[:10], '%Y-%m-%d') + datetime.timedelta(days=1) < now(): out({'error': 'That code has expired'})
+            except ValueError: pass
+        used_by = [x.strip().lower() for x in str(row[ci('Used By')] if ci('Used By') >= 0 else '').split(',') if x.strip()]
+        if email in used_by: out({'error': 'You’ve already used that code'})
+        mx = str(row[ci('Max Uses')]).strip() if ci('Max Uses') >= 0 else ''
+        if mx.isdigit() and len(used_by) >= int(mx): out({'error': 'That code has been used up'})
+        used_by.append(email)
+        if ci('Used By') >= 0: row[ci('Used By')] = ', '.join(used_by)
+        if ci('Used') >= 0: row[ci('Used')] = str(len(used_by))
+        wb.values_update(q(cws.title) + '!A' + str(row_no) + ':' + col(len(ch)) + str(row_no), params={'valueInputOption': 'RAW'}, body={'values': [row[:len(ch)]]})
+        try: cur = datetime.datetime.strptime(str(u.get('Code Until', ''))[:19], '%Y-%m-%d %H:%M:%S')
+        except ValueError: cur = None
+        start = cur if cur and cur > now() else now()
+        u['Code Until'] = iso(start + datetime.timedelta(days=days))
+        u['Codes Used'] = ', '.join([c for c in str(u.get('Codes Used', '')).split(', ') if c] + [str(row[ci('Code')]).strip()])
+        u['Last Seen'] = iso(now())
+        write(n, u)
+        out({'ok': True, 'user': u, 'days': days})
 
     if action == 'update':
         u = u or new_person(email)

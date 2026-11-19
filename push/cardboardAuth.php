@@ -9,7 +9,7 @@
  *
  *   token = base64url(JSON {e: email, n: name, st: state, u: access until, te: trial end,
  *                           pe: period end, x: token expires}) . "." . HMAC-SHA256
- *   state = trial | subscribed | activated | locked
+ *   state = trial | code | subscribed | activated | locked
  *
  * An activation key or a comped sheet (STRIPE_PRO_SHEET_IDS) unlocks a spreadsheet for anyone.
  * The signing secret is CARDBOARD_AUTH_SECRET in .env, or one derived from credentials.json.
@@ -62,10 +62,12 @@ function cbAccessFromUser(array $u): array {
     $act   = in_array(strtolower(trim((string) ($u['Activated'] ?? ''))), ['yes', 'true', '1', 'y'], true)
           || preg_match('/^\d{4}-\d\d-\d\d/', (string) ($u['Activated'] ?? ''));
     $subUntil = $live ? ($peT ?: $now + 3 * 86400) : 0;
+    $cu   = strtotime((string) ($u['Code Until'] ?? '') . ' UTC') ?: 0;   // a free code from the Codes tab
     if ($act)                       { $st = 'activated';  $until = 4102444800; }   // 2100
-    elseif ($subUntil > $now)       { $st = 'subscribed'; $until = max($subUntil, $te); }
+    elseif ($subUntil > $now)       { $st = 'subscribed'; $until = max($subUntil, $te, $cu); }
+    elseif ($cu > $now)             { $st = 'code';       $until = max($cu, $te); }
     elseif ($te > $now)             { $st = 'trial';      $until = $te; }
-    else                            { $st = 'locked';     $until = max($te, $subUntil); }
+    else                            { $st = 'locked';     $until = max($te, $subUntil, $cu); }
     return [
         'e' => strtolower(trim((string) ($u['Email'] ?? ''))), 'n' => (string) ($u['Name'] ?? ''),
         'st' => $st, 'u' => $until, 'te' => $te, 'pe' => $pe,

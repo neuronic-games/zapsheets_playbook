@@ -12,6 +12,8 @@
  *   refresh  — cbt (token), sheet?         → {ok, token, account}   (re-reads the Admin sheet)
  *   activate — cbt, key, sheet?            → {ok, token, account}   (activation key: everything, no time limit)
  *   profile  — cbt, name, studio           → {ok, token, account}   (saved in the person's Admin-sheet row)
+ *   redeem   — cbt, code                   → {ok, token, account, days}  (a free code from the Admin sheet's Codes tab,
+ *                                            or an activation key: unlocked with no time limit)
  * account = {email, name, state: trial|subscribed|activated|locked, until, trial_end, period_end, status, sheet_unlocked}
  */
 error_reporting(0);
@@ -150,6 +152,22 @@ if ($action === 'login') {
     $r = cbAdmin(['action' => 'user', 'email' => $email, 'sheet' => $sheet]);
     if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t open your account');
     cbSignedIn($r['user'], $sheet);
+}
+
+if ($action === 'redeem') {
+    $p = cbReadToken(cbRequestToken());
+    if (!$p || ($p['x'] ?? 0) < time() - 30 * 86400) fail('Please sign in again', ['need_auth' => true]);
+    $code = trim((string) ($_POST['code'] ?? ''));
+    if ($code === '' || strlen($code) > 100) fail('Enter a code');
+    if (!cbLimit('redeem|' . $p['e'], 10)) fail('Too many tries — please wait an hour and try again');
+    $r = cbAdmin(['action' => 'redeem', 'email' => $p['e'], 'code' => $code]);
+    if (!empty($r['unknown'])) {   // not a free code: an activation key unlocks with no time limit
+        if (!activationKeyValid($code)) { usleep(600000); fail('That code isn’t valid'); }
+        $r = cbAdmin(['action' => 'update', 'email' => $p['e'], 'fields' => ['Activated' => gmdate('Y-m-d')]]);
+    }
+    if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t use that code');
+    $a = cbAccessFromUser($r['user']);
+    ok(['token' => cbIssueToken($a), 'account' => cbAccountOut($a, $sheet), 'days' => (int) ($r['days'] ?? 0)]);
 }
 
 if ($action === 'refresh' || $action === 'activate' || $action === 'profile') {

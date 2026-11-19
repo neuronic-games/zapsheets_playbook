@@ -152,6 +152,7 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
       <div class="card"><b>Free week</b><p>Sign up with your email and a password, confirm the email with a 6-digit code, and every feature is yours for 7 days. No card needed.</p></div>
       <div class="card"><b>$4.99/month</b><p>Keep designing after the free week: the designer, tags, printing, exports, hosted links that update when your cards change, and picture uploads. Cancel any time.</p></div>
       <div class="card"><b>After the free week</b><p>Without a subscription CardBoard opens read-only: you can look through your cards and data, and your sheet and layouts stay exactly as they are. Hosted links keep working.</p></div>
+      <div class="card"><b>Codes</b><p>Got a code from us? Open <b>Subscribe</b> and click <b>Have a code?</b>. It unlocks every feature for its time — a week, a month or a year — added on top of any time you have left. Each code works once per account.</p></div>
     </div>
   </section>
 </div>

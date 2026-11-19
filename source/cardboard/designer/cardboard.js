@@ -662,6 +662,7 @@ function render() {
   holder.innerHTML = renderCardHTML(layout, ROWS[rowIdx] || null, true, { card: rowIdx, row: rowIdx, side: side }) +
     '<div class="side-label">' + (side === 'back' ? 'Back' : 'Front') + '</div>' +
     '<button type="button" class="flip-btn' + (side === 'back' ? ' on' : '') + '" onclick="flipCard()" title="Flip the card — show the ' + (side === 'back' ? 'front' : 'back') + '" aria-label="Flip the card">' + FLIP_ICON + '</button>';
+  holder.insertAdjacentHTML('beforeend', alignDotsHTML());
   var card = holder.firstChild;
   card.style.transform = 'scale(' + zoom + ')';
   card.style.setProperty('--z', zoom * PX);
@@ -669,6 +670,57 @@ function render() {
   $('rowPrev').disabled = rowIdx <= 0; $('rowNext').disabled = rowIdx >= ROWS.length - 1;
   $('zoomInfo').textContent = Math.round(zoom * 100) + '%';
   $('undoBtn').disabled = !undoStack.length; $('redoBtn').disabled = !redoStack.length;
+}
+// ── Align several elements ───────────────────────────────────────────────────
+// Each unit moves as one: a whole group that's selected, or a single element. When the
+// selection is exactly one group, its members are lined up inside it.
+function alignUnits() {
+  var sel = selEls(); if (sel.length < 2) return [];
+  var oneGroup = selGroupId(), seen = {}, units = [];
+  sel.forEach(function(e) {
+    if (!oneGroup && e.group && groupMembers(e.group).every(function(m) { return isSel(m.id); })) {
+      if (seen[e.group]) return; seen[e.group] = true; units.push(groupMembers(e.group));
+    } else units.push([e]);
+  });
+  return units.length > 1 ? units : [];
+}
+var ALIGN_TITLES = { top: 'Line up the tops', middle: 'Line up the middles', bottom: 'Line up the bottoms', left: 'Line up the left edges', center: 'Line up the centers', right: 'Line up the right edges' };
+function alignDotsHTML() {
+  if (!multi.length || !alignUnits().length) return '';
+  var bb = selBox(selEls()), k = PX * zoom, W = layout.card.w * k, H = layout.card.h * k, h = '';
+  var ys = { top: bb.y, middle: bb.y + bb.h / 2, bottom: bb.y + bb.h }, xs = { left: bb.x, center: bb.x + bb.w / 2, right: bb.x + bb.w };
+  // Dots sit out past the card; on the right, keep clear of the flip button at the top
+  var offR = Object.keys(ys).some(function(n) { return ys[n] * k < 52; }) ? 84 : 34, offB = 34;
+  Object.keys(ys).forEach(function(n) {
+    var y = Math.round(ys[n] * k);
+    h += '<div class="al-guide al-h" style="left:' + W + 'px;top:' + y + 'px;width:' + offR + 'px"></div>' +
+      '<button type="button" class="al-dot" style="left:' + (W + offR) + 'px;top:' + y + 'px" onclick="alignSel(\'' + n + '\')" title="' + ALIGN_TITLES[n] + '" aria-label="' + ALIGN_TITLES[n] + '"></button>' +
+      '<div class="al-guide al-h in" style="left:0;top:' + y + 'px;width:' + W + 'px"></div>';
+  });
+  Object.keys(xs).forEach(function(n) {
+    var x = Math.round(xs[n] * k);
+    h += '<div class="al-guide al-v" style="top:' + H + 'px;left:' + x + 'px;height:' + offB + 'px"></div>' +
+      '<button type="button" class="al-dot" style="top:' + (H + offB) + 'px;left:' + x + 'px" onclick="alignSel(\'' + n + '\')" title="' + ALIGN_TITLES[n] + '" aria-label="' + ALIGN_TITLES[n] + '"></button>' +
+      '<div class="al-guide al-v in" style="top:0;left:' + x + 'px;height:' + H + 'px"></div>';
+  });
+  return h;
+}
+function alignSel(edge) {
+  var units = alignUnits(); if (!units.length) return;
+  var bb = selBox(selEls()), moved = false;
+  units.forEach(function(u) {
+    var b = selBox(u), dx = 0, dy = 0;
+    if (edge === 'left') dx = bb.x - b.x;
+    else if (edge === 'center') dx = bb.x + bb.w / 2 - (b.x + b.w / 2);
+    else if (edge === 'right') dx = bb.x + bb.w - (b.x + b.w);
+    else if (edge === 'top') dy = bb.y - b.y;
+    else if (edge === 'middle') dy = bb.y + bb.h / 2 - (b.y + b.h / 2);
+    else if (edge === 'bottom') dy = bb.y + bb.h - (b.y + b.h);
+    if (Math.abs(dx) < .05 && Math.abs(dy) < .05) return;
+    if (!moved) { snapshot(); moved = true; }
+    u.forEach(function(e) { e.x = r1(e.x + dx); e.y = r1(e.y + dy); });
+  });
+  if (moved) changed(); else toast('Already lined up');
 }
 // Turn the card over, with a flip animation
 var _flipping = false;
@@ -758,6 +810,7 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
     function sn(v) { return Math.round(v / snap) * snap; }
     if (group) {   // move everything selected together
       var ddx = sn(dx), ddy = sn(dy);
+      $('cardHolder').classList.add('moving');
       group.forEach(function(x, i) {
         x.x = r1(origin[i].x + ddx); x.y = r1(origin[i].y + ddy);
         var nd = $('cardHolder').querySelector('.el[data-id="' + x.id + '"]'); if (nd) { nd.style.left = x.x + 'pt'; nd.style.top = x.y + 'pt'; }
@@ -790,6 +843,7 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
   }
   function up() {
     document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up);
+    $('cardHolder').classList.remove('moving');
     if (moved) changed(!group);   // a group's panel shows its position, so refresh it
   }
   document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);

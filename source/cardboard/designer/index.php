@@ -253,6 +253,15 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .el.picked .hdl { display:block; }
 .el.picked.multi .hdl { display:none; }
 .designing .el.picked.multi { outline-style:dashed; }
+/* Align dots: shown past the card's right and bottom edges when several things are selected */
+.al-guide { position:absolute; pointer-events:none; z-index:4; }
+.al-h { height:0; border-top:1.5px dotted #4a4e68; }
+.al-v { width:0; border-left:1.5px dotted #4a4e68; }
+.al-guide.in { z-index:60; border-color:#7b6cf6; opacity:0; transition:opacity .12s; }
+.al-dot { position:absolute; width:14px; height:14px; margin:-7px 0 0 -7px; padding:0; border-radius:50%; border:2px solid #fff; background:#2a2d3e; box-shadow:0 1px 4px rgba(20,20,60,.3); cursor:pointer; z-index:6; transition:transform .12s, background .12s; }
+.al-dot:hover, .al-dot:focus-visible { background:#7b6cf6; transform:scale(1.3); outline:none; }
+.al-dot:hover + .al-guide.in, .al-dot:focus-visible + .al-guide.in { opacity:1; }
+.moving .al-dot, .moving .al-guide { display:none; }
 .sel-box { position:absolute; z-index:49; pointer-events:none; outline:calc(1.5px / var(--z)) solid #7b6cf6; outline-offset:calc(2px / var(--z)); }
 .sel-box.group { outline-color:#4b3fa8; }
 .hdl.nw { left:calc(-4.5px / var(--z)); top:calc(-4.5px / var(--z)); cursor:nwse-resize; }

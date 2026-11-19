@@ -15,7 +15,7 @@ $_scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SER
 $_origin = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'zapsheets.com');
 $_abs    = $_origin . $_base;
 $_pageUrl = htmlspecialchars($_abs . 'gameboard/features', ENT_QUOTES);
-$_ogImg   = htmlspecialchars($_abs . 'images/og/gameboard-og.png', ENT_QUOTES);
+$_ogImg   = htmlspecialchars($_abs . 'images/og/gameboard-og.png?v=2', ENT_QUOTES);
 $_icon    = htmlspecialchars($_abs . 'images/gb_icon_180.png', ENT_QUOTES);
 ?>
 <title>GameBoard — Features</title>

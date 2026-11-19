@@ -15,7 +15,7 @@ $_scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SER
 $_origin = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'zapsheets.com');
 $_abs    = $_origin . $_base;
 $_pageUrl = htmlspecialchars($_abs . 'devboard/features', ENT_QUOTES);
-$_ogImg   = htmlspecialchars($_abs . 'images/og/devboard-og.png', ENT_QUOTES);
+$_ogImg   = htmlspecialchars($_abs . 'images/og/devboard-og.png?v=2', ENT_QUOTES);
 $_icon    = htmlspecialchars($_abs . 'images/db_icon_180.png', ENT_QUOTES);
 ?>
 <title>DevBoard — Features</title>

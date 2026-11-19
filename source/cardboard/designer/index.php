@@ -278,7 +278,19 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .el-list.list-v { flex-direction:column; align-items:flex-start; }
 .el-list > .el.in-list { position:relative; left:auto !important; top:auto !important; flex:0 0 auto; }
 .designing .el-list.picked { outline:calc(1.5px / var(--z)) dashed #4b3fa8; outline-offset:calc(2px / var(--z)); z-index:50 !important; }
-.list-seg button { display:flex; align-items:center; justify-content:center; }
+.arr-row { display:flex; gap:.45rem; align-items:stretch; }
+.arr-row .seg button { display:flex; align-items:center; justify-content:center; height:2.1rem; padding:0 .55rem; }
+.arr-free { flex:0 0 auto; }
+.arr-list { flex:1; display:flex; align-items:center; border:1.5px solid #d6d9e6; border-radius:7px; overflow:hidden; background:#fff; }
+.arr-list.on { border-color:#a99cff; }
+.arr-list .seg { border:none; border-radius:0; flex:0 0 auto; }
+.arr-list .seg button { border-left:1px solid #e3e5ee; }
+.arr-list .seg button:first-child { border-left:none; }
+.arr-gap { flex:1; display:flex; align-items:center; gap:.35rem; padding:0 .45rem; border-left:1px solid #e3e5ee; height:100%; min-width:0; }
+.arr-gap span { font-family:'DINBlack',sans-serif; font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:#8a8fa8; }
+.arr-gap .inp { height:1.6rem; padding:0 .35rem; min-width:0; width:100%; }
+.arr-gap .inp:disabled { opacity:.45; }
+.arr-list:not(.on) .arr-gap span { opacity:.5; }
 .el-img { display:block; width:100%; height:100%; object-position:center; background-repeat:no-repeat; background-position:center; }
 /* Picture still loading in the designer: a spinner over it (shown after a moment, so cached pictures don't flash) */
 .img-spin { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(238,240,246,.85); pointer-events:none; opacity:0; animation:imgSpinIn .15s .2s forwards; }

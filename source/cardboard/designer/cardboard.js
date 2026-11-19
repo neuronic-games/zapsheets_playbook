@@ -1393,11 +1393,13 @@ function multiAttrs() {
   h += '<p class="muted" style="margin:.35rem 0 0">' + r1(bb.w) + ' × ' + r1(bb.h) + ' pt. Drag on the card or use the arrow keys to move ' + (g ? 'the group' : 'them') + ' together.</p>';
   if (g) {
     var mode = g.list === 'h' || g.list === 'v' ? g.list : '';
-    h += '<span class="lbl">Arrange</span><div class="seg list-seg">' + [['', 'Free: members stay where you put them', LIST_ICONS.free], ['h', 'Horizontal list: side by side, each only as wide as it needs', LIST_ICONS.h], ['v', 'Vertical list: one under another, each only as tall as it needs', LIST_ICONS.v]].map(function(o) {
-      return '<button type="button" class="' + (o[0] === mode ? 'on' : '') + '" title="' + o[1] + '" aria-label="' + o[1].split(':')[0] + '" onclick="setGroupList(\'' + gid + '\',\'' + o[0] + '\')">' + o[2] + '</button>';
-    }).join('') + '</div>';
-    if (mode) h += '<div class="row2" style="margin-top:.45rem">' + numInp('g_gap', 'Gap (pt)', g.gap == null ? 4 : g.gap, 'setGroupGap', gid, .5) + '<div></div></div>' +
-      '<p class="muted" style="margin:.35rem 0 0">In the Layers order, top first — drag there to reorder. Empty text and pictures take no room.</p>';
+    function btn(o) { return '<button type="button" class="' + (o[0] === mode ? 'on' : '') + '" title="' + o[1] + '" aria-label="' + o[1].split(':')[0] + '" onclick="setGroupList(\'' + gid + '\',\'' + o[0] + '\')">' + LIST_ICONS[o[0] || 'free'] + '</button>'; }
+    // One row: Free on its own, then the two lists with their Gap
+    h += '<span class="lbl">Arrange</span><div class="arr-row">' +
+      '<div class="seg arr-free">' + btn(['', 'Free: members stay where you put them']) + '</div>' +
+      '<div class="arr-list' + (mode ? ' on' : '') + '"><div class="seg">' + btn(['h', 'Horizontal list: side by side, each only as wide as it needs']) + btn(['v', 'Vertical list: one under another, each only as tall as it needs']) + '</div>' +
+      '<label class="arr-gap" title="Space between the members of the list (pt)"><span>Gap</span><input class="inp" type="number" step=".5" min="0" id="g_gap" value="' + r1(g.gap == null ? 4 : g.gap) + '"' + (mode ? '' : ' disabled') + ' onchange="setGroupGap(\'' + gid + '\',this.value)"></label></div></div>';
+    if (mode) h += '<p class="muted" style="margin:.35rem 0 0">In the Layers order, top first — drag there to reorder. Empty text and pictures take no room.</p>';
   }
   h += '<div class="attr-btns">' + (g ? '<button class="attr-btn" onclick="ungroupSel()">Ungroup</button>' : '<button class="attr-btn" onclick="groupSel()">Group</button>') + '</div>';
   h += '<div class="attr-btns"><button class="attr-btn" onclick="reorderSel(1)">To front</button><button class="attr-btn" onclick="reorderSel(-1)">To back</button></div>';

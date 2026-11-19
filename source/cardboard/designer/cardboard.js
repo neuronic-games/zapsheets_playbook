@@ -903,7 +903,7 @@ function flipCard() {
     back.onfinish = function() { _flipping = false; };
   };
 }
-function stepRow(d) { rowIdx = clamp(rowIdx + d, 0, Math.max(0, ROWS.length - 1)); render(); renderData(); if (isPicEl(elById(selId))) renderAttrs(); }
+function stepRow(d) { rowIdx = clamp(rowIdx + d, 0, Math.max(0, ROWS.length - 1)); render(); renderData(); var se = elById(selId); if (se && se.kind === 'data') renderAttrs(); else if (isPicEl(se)) renderAttrs(); }
 function zoomBy(d) {
   var steps = [.5, .75, 1, 1.25, 1.5, 2, 2.5, 3, 4];
   var i = steps.findIndex(function(s) { return s >= zoom - .01; });
@@ -984,6 +984,11 @@ function editCellInPlace(e) {
 }
 // Write a text value into this row's cell for a Data field. Shown on the card straight away;
 // put back if the sheet can't be updated.
+function setRowValue(v) {
+  var e = elById(selId), row = ROWS[rowIdx]; if (!e || e.kind !== 'data' || !row) return;
+  if (!requirePro('edit', function() {})) { renderAttrs(); return; }
+  if (String(row[e.field] == null ? '' : row[e.field]) !== v) setRowCell(e, v);
+}
 function setRowCell(e, value) {
   var row = ROWS[rowIdx]; if (!row) return;
   var tab = curTab, field = e.field, before = row[field];
@@ -1583,6 +1588,12 @@ function renderAttrs() {
         (ru ? '<div class="el-img" style="background-image:url(&quot;' + esc(ru) + '&quot;);background-size:contain"></div>' : '<div class="img-slot-empty">' + IMG_ICON + '<span>' + (ROWS[rowIdx] ? 'No picture in this row — drop one, or click to choose' : 'No rows yet') + '</span></div>') +
         '<span class="img-btn">' + IMG_ICON + '</span></div>' +
         '<p class="muted" style="margin:.35rem 0 0">Each row has its own picture, saved in its <b>' + esc(e.field) + '</b> cell. Click or drop a picture here, or double-click it on the card. Step through the rows to set the others.</p>';
+    }
+    if (e.as !== 'image') {   // this row's value as typed in the sheet (tags not yet turned into words or pictures) — handy when it's empty on the card
+      var rv = ROWS[rowIdx] ? (ROWS[rowIdx][e.field] == null ? '' : String(ROWS[rowIdx][e.field])) : '';
+      h += '<span class="lbl">Value for row ' + (rowIdx + 1) + '</span><textarea class="ta" id="a_val"' + (ROWS[rowIdx] ? '' : ' disabled') +
+           ' placeholder="' + (ROWS[rowIdx] ? 'Empty in this row — type to fill it in' : 'No rows yet') + '" onchange="setRowValue(this.value)">' + esc(rv) + '</textarea>' +
+           '<p class="muted" style="margin:.3rem 0 0">Saved in the <b>' + esc(e.field) + '</b> cell for this row.</p>';
     }
     h += e.as === 'image' ? fitAttrs(e) + boxAttrs(e, 'Frame') : textAttrs(e) + boxAttrs(e, 'Background');
   }

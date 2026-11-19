@@ -2808,7 +2808,7 @@ function renderCodeBox(el, unlocked) {
       btn.disabled = true; btn.textContent = 'Checking…'; msg.textContent = '';
       accountPost('redeem', { code: code }).then(function(r) {
         storeAcct(r); renderPlans(); refreshCards();
-        toast(r.days ? '✓ Unlocked until ' + fmtWhen(r.account.until) : '✓ CardBoard unlocked');
+        toast(r.days > 0 ? '✓ Unlocked until ' + fmtWhen(r.account.until) : '✓ CardBoard unlocked for good');
       }).catch(function(err) { msg.textContent = err.message; btn.disabled = false; btn.textContent = 'Use code'; inp.select(); });
     };
   };

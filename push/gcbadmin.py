@@ -30,9 +30,12 @@ TRIAL_DAYS = 7
 CODES_TAB = 'Codes'   # free codes you hand out: each unlocks CardBoard for its Length, once per person
 CODES_HEADERS = ['Code', 'Length', 'Max Uses', 'Used', 'Used By', 'Expires', 'Note']
 
+PERPETUAL = -1   # "Perpetual" (or forever / lifetime / unlimited): unlocked for good
+
 def length_days(v):
-    # "1 week", "2 weeks", "1 month", "1 year", "30 days", or a plain number of days
+    # "1 week", "2 weeks", "1 month", "1 year", "30 days", a plain number of days, or Perpetual
     import re
+    if str(v or '').strip().lower() in ('perpetual', 'forever', 'lifetime', 'unlimited', 'permanent'): return PERPETUAL
     m = re.match(r'^\s*(\d+(?:\.\d+)?)?\s*(d|day|days|w|wk|week|weeks|m|mo|month|months|y|yr|year|years)?\s*$', str(v or '').strip().lower())
     if not m or not (m.group(1) or m.group(2)): return 0
     n = float(m.group(1) or 1); u = (m.group(2) or 'd')[0]
@@ -130,12 +133,14 @@ def main():
                 row_no, row = k + 2, list(r) + [''] * (len(ch) - len(r)); break
         if not row: out({'ok': False, 'unknown': True})
         days = length_days(row[ci('Length')] if ci('Length') >= 0 else '')
-        if days <= 0: out({'error': 'That code isn’t set up yet — ask whoever gave it to you'})
+        if days == 0: out({'error': 'That code isn’t set up yet — ask whoever gave it to you'})
         exp = str(row[ci('Expires')]).strip() if ci('Expires') >= 0 else ''
-        if exp:
-            try:
-                if datetime.datetime.strptime(exp[:10], '%Y-%m-%d') + datetime.timedelta(days=1) < now(): out({'error': 'That code has expired'})
-            except ValueError: pass
+        if exp:   # typed as 2026-12-31, or shown by Sheets as 12/31/2026
+            ed = None
+            for fmt in ('%Y-%m-%d', '%m/%d/%Y', '%Y/%m/%d', '%d %b %Y', '%b %d, %Y'):
+                try: ed = datetime.datetime.strptime(exp.split(' ')[0] if fmt in ('%Y-%m-%d', '%m/%d/%Y', '%Y/%m/%d') else exp, fmt); break
+                except ValueError: pass
+            if ed and ed + datetime.timedelta(days=1) < now(): out({'error': 'That code has expired'})
         used_by = [x.strip().lower() for x in str(row[ci('Used By')] if ci('Used By') >= 0 else '').split(',') if x.strip()]
         if email in used_by: out({'error': 'You’ve already used that code'})
         mx = str(row[ci('Max Uses')]).strip() if ci('Max Uses') >= 0 else ''
@@ -147,7 +152,8 @@ def main():
         try: cur = datetime.datetime.strptime(str(u.get('Code Until', ''))[:19], '%Y-%m-%d %H:%M:%S')
         except ValueError: cur = None
         start = cur if cur and cur > now() else now()
-        u['Code Until'] = iso(start + datetime.timedelta(days=days))
+        if days == PERPETUAL: u['Activated'] = now().strftime('%Y-%m-%d')   # unlocked for good
+        else: u['Code Until'] = iso(start + datetime.timedelta(days=days))
         u['Codes Used'] = ', '.join([c for c in str(u.get('Codes Used', '')).split(', ') if c] + [str(row[ci('Code')]).strip()])
         u['Last Seen'] = iso(now())
         write(n, u)

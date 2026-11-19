@@ -163,7 +163,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
     <h2>Elements</h2>
     <p>Drag anything from the left panel onto the card. You can also drop a picture file from your computer onto the card to add it as an image.</p>
     <div class="cards">
-      <div class="card"><b>Text</b><p>Fixed wording, like a title or rules. Put a column name in braces — <code>{Cost}</code> — to fill it from each row: <em>“Costs {Cost} gold”</em>. <b>Insert a column</b> under the text box adds one for you.</p></div>
+      <div class="card"><b>Text</b><p>Fixed wording, like a title or rules. Put a column name in braces — <code>{Cost}</code> — to fill it from each row: <em>“Costs {Cost} gold”</em>. <b>Insert a column</b> under the text box adds one for you. Double-click it on the card to edit the wording right there.</p></div>
       <div class="card"><b>Data</b><p>One column of your sheet. The list shows each column with its value for the current row. Choose <b>Show as</b> Text or Image (for columns of picture links).</p></div>
       <div class="card"><b>Image</b><p>A picture: the same on every card (a logo, frame or icon), or chosen by a column's value with <b>[ ]</b> (see <a href="cardboard/help#pictures">Pictures</a>).</p></div>
       <div class="card"><b>Shape</b><p>Rectangle, rounded rectangle, circle, line, triangle, diamond, hexagon or star, with a fill, outline color and outline width.</p></div>
@@ -342,7 +342,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
       <tr><td><kbd>Shift</kbd> while rotating</td><td>Snap to 15° steps</td></tr>
       <tr><td><kbd>Delete</kbd></td><td>Delete the selection</td></tr>
       <tr><td><kbd>Esc</kbd></td><td>Deselect, or cancel an edit</td></tr>
-      <tr><td>Double-click</td><td>Edit a Data field in place · choose an image · rename a group in Layers</td></tr>
+      <tr><td>Double-click</td><td>Edit a Text element or Data field in place · choose an image · rename a group in Layers</td></tr>
     </table>
   </section>
 

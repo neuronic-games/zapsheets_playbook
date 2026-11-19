@@ -997,7 +997,36 @@ $('cardHolder').addEventListener('dblclick', function(ev) {
   var node = ev.target.closest('.el'), e = node && elById(node.dataset.id);
   if (e && isPicEl(e)) openImagePicker(ev, e.id);
   else if (e && e.kind === 'data') editCellInPlace(e);
+  else if (e && e.kind === 'text') editTextInPlace(e);
 });
+// Double-click a Text element to edit its wording on the card — as written, with {Column} and [tag]
+// still showing. Enter saves (Shift+Enter for a new line), Esc cancels, clicking away saves.
+function editTextInPlace(e) {
+  if (!requirePro('edit', function() {})) return;
+  if (!isSel(e.id) || multi.length) setSel([e.id]);
+  var node = $('cardHolder').querySelector('.el[data-id="' + e.id + '"]'), inner = node && node.querySelector('.el-inner');
+  if (!inner) return;
+  var old = e.text || '', done = false;
+  node.classList.add('editing');
+  inner.textContent = old;
+  try { inner.contentEditable = 'plaintext-only'; } catch (x) {}
+  if (inner.contentEditable !== 'plaintext-only') inner.contentEditable = 'true';
+  inner.focus();
+  var rg = document.createRange(); rg.selectNodeContents(inner); var sl = getSelection(); sl.removeAllRanges(); sl.addRange(rg);
+  function finish(save) {
+    if (done) return; done = true;
+    var v = inner.innerText.replace(/\r/g, '').replace(/\n$/, '');
+    inner.removeAttribute('contenteditable'); node.classList.remove('editing');
+    if (save && v !== old) { snapshot(); e.text = v; changed(); }
+    else render();
+  }
+  inner.addEventListener('keydown', function(k) {
+    k.stopPropagation();
+    if (k.key === 'Enter' && !k.shiftKey) { k.preventDefault(); finish(true); }
+    else if (k.key === 'Escape') { k.preventDefault(); finish(false); }
+  });
+  inner.addEventListener('blur', function() { finish(true); });
+}
 // Double-click a Data field shown as text to edit this row's value right on the card.
 // Enter saves to the sheet (Shift+Enter for a new line), Esc cancels, clicking away saves.
 function editCellInPlace(e) {

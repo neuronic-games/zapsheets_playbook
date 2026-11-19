@@ -1388,6 +1388,8 @@ function renderPrint() {
   var pages = $('pages');
   if (!layout) { pages.innerHTML = ''; return; }
   var list = cardList($('pCopies'), renderPrint);
+  // Printed cards are cut square, so draw them without rounded corners
+  var sq = Object.assign({}, layout, { card: Object.assign({}, layout.card, { radius: 0 }) });
 
   var paper = PAPER[$('pPaper').value] || PAPER.letter, land = $('pOrient').value === 'landscape';
   var pw = land ? paper[1] : paper[0], ph = land ? paper[0] : paper[1];
@@ -1424,7 +1426,7 @@ function renderPrint() {
         if (isBack && backs === 'short') row = rowsN - 1 - row; // flipped over the short edge: rows swap
         var cx = ox + col * (c.w + gap), cy = oy + row * (c.h + gap);
         html += '<div style="position:absolute;left:' + cx + 'pt;top:' + cy + 'pt;width:' + c.w + 'pt;height:' + c.h + 'pt' + (cut === 'outline' ? ';outline:.5pt solid #9aa0b8' : '') + '">' +
-                renderCardHTML(layout, it.row, false, { card: p * per + i, row: it.ri, side: isBack ? 'back' : 'front' }) + '</div>';
+                renderCardHTML(sq, it.row, false, { card: p * per + i, row: it.ri, side: isBack ? 'back' : 'front' }) + '</div>';
       });
       if (!isBack) html += cropMarks(cards.length);
       html += '</div></div>';

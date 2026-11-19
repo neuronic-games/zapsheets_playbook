@@ -267,6 +267,12 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .el { position:absolute; overflow:hidden; display:flex; flex-direction:column; white-space:pre-wrap; word-break:break-word; line-height:1.15; }
 .el.v-middle { justify-content:center; } .el.v-bottom { justify-content:flex-end; }
 .el-img { display:block; width:100%; height:100%; object-position:center; background-repeat:no-repeat; background-position:center; }
+/* Picture still loading in the designer: a spinner over it (shown after a moment, so cached pictures don't flash) */
+.img-spin { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(238,240,246,.85); pointer-events:none; opacity:0; animation:imgSpinIn .15s .2s forwards; }
+.img-spin::after { content:''; width:calc(22px / var(--z, 1)); height:calc(22px / var(--z, 1)); border:calc(2.5px / var(--z, 1)) solid #d6d9e6; border-top-color:#7b6cf6; border-radius:50%; animation:spin .7s linear infinite; }
+.img-spin.failed { background:#f6f1f1; animation:none; opacity:1; }
+.img-spin.failed::after { content:'Picture didn’t load'; width:auto; height:auto; border:none; animation:none; color:#b0605a; font:600 calc(9px / var(--z, 1)) Inter,system-ui,sans-serif; text-align:center; }
+@keyframes imgSpinIn { to { opacity:1; } }
 img.el-img { -webkit-user-drag:none; user-select:none; }
 /* Print card colors and fills even when "Background graphics" is off */
 .card, .card * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }

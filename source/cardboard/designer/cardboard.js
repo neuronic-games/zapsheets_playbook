@@ -221,7 +221,10 @@ function imgDiv(u, e, label, ctx) {
   if (!u) return '<div class="el-img" style="background:#eef0f6;display:flex;align-items:center;justify-content:center;color:#a0a4bb;font-size:8pt;text-align:center">' + esc(label) + '</div>';
   // A real <img>, not a CSS background: browsers leave backgrounds out when printing
   var fit = e.fit === 'stretch' ? 'fill' : (e.fit || 'cover');
-  return '<img class="el-img" src="' + esc(u) + '" alt="" draggable="false" referrerpolicy="no-referrer" style="object-fit:' + fit + '">';
+  var img = '<img class="el-img" src="' + esc(u) + '" alt="" draggable="false" referrerpolicy="no-referrer" style="object-fit:' + fit + '"';
+  if (!(ctx && ctx.designing)) return img + '>';
+  // In the designer, a spinner sits over the picture until it has loaded (or failed)
+  return img + ' onload="var s=this.nextElementSibling;if(s)s.remove()" onerror="var s=this.nextElementSibling;if(s)s.className=\'img-spin failed\'"><span class="img-spin"></span>';
 }
 function elInner(e, row, ctx) {
   ctx = ctx || { card: 0, row: 0 };

@@ -671,44 +671,49 @@ function render() {
   $('zoomInfo').textContent = Math.round(zoom * 100) + '%';
   $('undoBtn').disabled = !undoStack.length; $('redoBtn').disabled = !redoStack.length;
 }
-// ── Align several elements ───────────────────────────────────────────────────
-// Each unit moves as one: a whole group that's selected, or a single element. When the
-// selection is exactly one group, its members are lined up inside it.
-function alignUnits() {
-  var sel = selEls(); if (sel.length < 2) return [];
-  var oneGroup = selGroupId(), seen = {}, units = [];
-  sel.forEach(function(e) {
-    if (!oneGroup && e.group && groupMembers(e.group).every(function(m) { return isSel(m.id); })) {
+// ── Align ────────────────────────────────────────────────────────────────────
+// Dots past the card's right and bottom edges. With one element or one group selected they
+// line it up with the card's edges or middle; with several, they line those up with each other.
+// A whole group in the selection moves as one unit.
+function alignPlan() {
+  var sel = selEls(); if (!sel.length) return null;
+  var seen = {}, units = [];
+  if (!selGroupId()) sel.forEach(function(e) {
+    if (e.group && groupMembers(e.group).every(function(m) { return isSel(m.id); })) {
       if (seen[e.group]) return; seen[e.group] = true; units.push(groupMembers(e.group));
     } else units.push([e]);
   });
-  return units.length > 1 ? units : [];
+  if (units.length > 1) return { card: false, units: units, ref: selBox(sel) };
+  return { card: true, units: [sel], ref: { x: 0, y: 0, w: layout.card.w, h: layout.card.h } };
 }
-var ALIGN_TITLES = { top: 'Line up the tops', middle: 'Line up the middles', bottom: 'Line up the bottoms', left: 'Line up the left edges', center: 'Line up the centers', right: 'Line up the right edges' };
+var ALIGN_TITLES = {
+  sel:  { top: 'Line up the tops', middle: 'Line up the middles', bottom: 'Line up the bottoms', left: 'Line up the left edges', center: 'Line up the centers', right: 'Line up the right edges' },
+  card: { top: 'Move to the top of the card', middle: 'Center up and down on the card', bottom: 'Move to the bottom of the card', left: 'Move to the left edge of the card', center: 'Center across the card', right: 'Move to the right edge of the card' }
+};
 function alignDotsHTML() {
-  if (!multi.length || !alignUnits().length) return '';
-  var bb = selBox(selEls()), k = PX * zoom, W = layout.card.w * k, H = layout.card.h * k, h = '';
+  var plan = alignPlan(); if (!plan) return '';
+  var bb = plan.ref, T = ALIGN_TITLES[plan.card ? 'card' : 'sel'], k = PX * zoom, W = layout.card.w * k, H = layout.card.h * k, h = '';
   var ys = { top: bb.y, middle: bb.y + bb.h / 2, bottom: bb.y + bb.h }, xs = { left: bb.x, center: bb.x + bb.w / 2, right: bb.x + bb.w };
   // Dots sit out past the card; on the right, keep clear of the flip button at the top
   var offR = Object.keys(ys).some(function(n) { return ys[n] * k < 52; }) ? 84 : 34, offB = 34;
   Object.keys(ys).forEach(function(n) {
     var y = Math.round(ys[n] * k);
     h += '<div class="al-guide al-h" style="left:' + W + 'px;top:' + y + 'px;width:' + offR + 'px"></div>' +
-      '<button type="button" class="al-dot" style="left:' + (W + offR) + 'px;top:' + y + 'px" onclick="alignSel(\'' + n + '\')" title="' + ALIGN_TITLES[n] + '" aria-label="' + ALIGN_TITLES[n] + '"></button>' +
+      '<button type="button" class="al-dot" style="left:' + (W + offR) + 'px;top:' + y + 'px" onclick="alignSel(\'' + n + '\')" title="' + T[n] + '" aria-label="' + T[n] + '"></button>' +
       '<div class="al-guide al-h in" style="left:0;top:' + y + 'px;width:' + W + 'px"></div>';
   });
   Object.keys(xs).forEach(function(n) {
     var x = Math.round(xs[n] * k);
     h += '<div class="al-guide al-v" style="top:' + H + 'px;left:' + x + 'px;height:' + offB + 'px"></div>' +
-      '<button type="button" class="al-dot" style="top:' + (H + offB) + 'px;left:' + x + 'px" onclick="alignSel(\'' + n + '\')" title="' + ALIGN_TITLES[n] + '" aria-label="' + ALIGN_TITLES[n] + '"></button>' +
+      '<button type="button" class="al-dot" style="top:' + (H + offB) + 'px;left:' + x + 'px" onclick="alignSel(\'' + n + '\')" title="' + T[n] + '" aria-label="' + T[n] + '"></button>' +
       '<div class="al-guide al-v in" style="top:0;left:' + x + 'px;height:' + H + 'px"></div>';
   });
   return h;
 }
 function alignSel(edge) {
-  var units = alignUnits(); if (!units.length) return;
-  var bb = selBox(selEls()), moved = false;
-  units.forEach(function(u) {
+  var plan = alignPlan(); if (!plan) return;
+  var bb = plan.ref, moved = false;
+  plan.units.forEach(function(u) {
     var b = selBox(u), dx = 0, dy = 0;
     if (edge === 'left') dx = bb.x - b.x;
     else if (edge === 'center') dx = bb.x + bb.w / 2 - (b.x + b.w / 2);
@@ -720,7 +725,8 @@ function alignSel(edge) {
     if (!moved) { snapshot(); moved = true; }
     u.forEach(function(e) { e.x = r1(e.x + dx); e.y = r1(e.y + dy); });
   });
-  if (moved) changed(); else toast('Already lined up');
+  if (!moved) { toast(plan.card ? 'Already there' : 'Already lined up'); return; }
+  changed(true); var one = elById(selId); if (one) syncGeomInputs(one); else renderAttrs();
 }
 // Turn the card over, with a flip animation
 var _flipping = false;
@@ -805,12 +811,11 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
   function mv(m) {
     var p = ptFromEvent(m), dx = p.x - start.x, dy = p.y - start.y;
     if (!moved && Math.abs(dx) + Math.abs(dy) < .8) return;
-    if (!moved) { snapshot(); moved = true; }
+    if (!moved) { snapshot(); moved = true; $('cardHolder').classList.add('moving'); }   // hide the align dots until it's dropped
     var snap = m.altKey ? .1 : 1;
     function sn(v) { return Math.round(v / snap) * snap; }
     if (group) {   // move everything selected together
       var ddx = sn(dx), ddy = sn(dy);
-      $('cardHolder').classList.add('moving');
       group.forEach(function(x, i) {
         x.x = r1(origin[i].x + ddx); x.y = r1(origin[i].y + ddy);
         var nd = $('cardHolder').querySelector('.el[data-id="' + x.id + '"]'); if (nd) { nd.style.left = x.x + 'pt'; nd.style.top = x.y + 'pt'; }
@@ -1127,7 +1132,6 @@ function multiAttrs() {
        '<div><span class="mini">Y</span><input class="inp" type="number" step=".5" value="' + bb.y + '" onchange="moveSelTo(\'y\',this.value)"></div></div>';
   h += '<p class="muted" style="margin:.35rem 0 0">' + r1(bb.w) + ' × ' + r1(bb.h) + ' pt. Drag on the card or use the arrow keys to move ' + (g ? 'the group' : 'them') + ' together.</p>';
   h += '<div class="attr-btns">' + (g ? '<button class="attr-btn" onclick="ungroupSel()">Ungroup</button>' : '<button class="attr-btn" onclick="groupSel()">Group</button>') + '</div>';
-  h += '<div class="attr-btns"><button class="attr-btn" onclick="centerSel(\'x\')">Centre ↔</button><button class="attr-btn" onclick="centerSel(\'y\')">Centre ↕</button></div>';
   h += '<div class="attr-btns"><button class="attr-btn" onclick="reorderSel(1)">To front</button><button class="attr-btn" onclick="reorderSel(-1)">To back</button></div>';
   h += '<div class="attr-btns"><button class="attr-btn" onclick="duplicateSel()">Duplicate</button><button class="attr-btn danger" onclick="deleteSel()">Delete</button></div>';
   h += '<span class="lbl">Shortcuts</span><p class="muted" style="margin:0">⌘G group · ⇧⌘G ungroup · ⌘A select all · Shift or ⌘-click to add to the selection</p>';
@@ -1330,7 +1334,6 @@ function renderAttrs() {
   h += '<span class="lbl">Position (pt)</span><div class="row4">' + numInp('a_x', 'X', e.x, 'setProp', 'x', .5) + numInp('a_y', 'Y', e.y, 'setProp', 'y', .5) + numInp('a_w', 'W', e.w, 'setProp', 'w', .5) + numInp('a_h', 'H', e.h, 'setProp', 'h', .5) + '</div>';
   h += '<div class="row2" style="margin-top:.45rem">' + numInp('a_rot', 'Rotate (°)', e.rot || 0, 'setProp', 'rot', 1) +
        '<div><span class="mini">Opacity</span><input class="inp" type="number" min="0" max="100" step="5" value="' + Math.round((e.opacity == null ? 1 : e.opacity) * 100) + '" onchange="setProp(\'opacity\',clamp(this.value/100,0,1),true)"></div></div>';
-  h += '<div class="attr-btns"><button class="attr-btn" onclick="centerSel(\'x\')">Centre ↔</button><button class="attr-btn" onclick="centerSel(\'y\')">Centre ↕</button></div>';
   h += '<div class="attr-btns"><button class="attr-btn" onclick="reorderSel(1)">To front</button><button class="attr-btn" onclick="reorderSel(-1)">To back</button></div>';
   h += '<div class="attr-btns"><button class="attr-btn" onclick="duplicateSel()">Duplicate</button><button class="attr-btn danger" onclick="deleteSel()">Delete</button></div>';
   p.innerHTML = h;
@@ -1361,16 +1364,6 @@ function insertField() {
   var s = ta.selectionStart == null ? ta.value.length : ta.selectionStart, en = ta.selectionEnd == null ? s : ta.selectionEnd;
   ta.value = ta.value.slice(0, s) + '{' + f + '}' + ta.value.slice(en);
   setProp('text', ta.value); renderAttrs();
-}
-function centerSel(axis) {
-  if (multi.length) {
-    var sel = selEls(), bb = selBox(sel); snapshot();
-    var d = axis === 'x' ? (layout.card.w - bb.w) / 2 - bb.x : (layout.card.h - bb.h) / 2 - bb.y;
-    sel.forEach(function(x) { x[axis] = r1(x[axis] + d); }); changed(); return;
-  }
-  var e = elById(selId); if (!e) return; snapshot();
-  if (axis === 'x') e.x = r1((layout.card.w - e.w) / 2); else e.y = r1((layout.card.h - e.h) / 2);
-  changed(true); syncGeomInputs(e);
 }
 
 // ── Print sheets ──────────────────────────────────────────────────────────────

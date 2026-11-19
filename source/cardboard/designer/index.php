@@ -867,7 +867,7 @@ body.cb-locked #saveBtn { display:none; }
     </form>
     <form id="siStep2" hidden onsubmit="event.preventDefault();signInVerify()">
       <p class="dlg-sub">We sent a 6-digit code to <b id="siTo"></b>.</p>
-      <div class="si-row"><input class="inp si-code" id="siCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" aria-label="Code">
+      <div class="si-row"><input class="inp si-code" id="siCode" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" aria-label="Code" oninput="var v=this.value.replace(/\D/g,'').slice(0,6);if(v!==this.value)this.value=v">
       <button type="submit" class="print-go" id="siGo">Sign in</button></div>
       <button type="button" class="si-link" onclick="signInBack()">Use a different email</button>
     </form>

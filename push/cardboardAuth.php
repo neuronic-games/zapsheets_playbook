@@ -113,7 +113,7 @@ function cbRequireAccess(string $sheetId): void {
 }
 
 /**
- * Send an email, using the first that's set up in .env:
+ * Send an email (plain text, plus an HTML version when given), using the first that's set up in .env:
  *   RESEND_API_KEY                         — Resend (https://resend.com), over HTTPS
  *   SMTP_HOST, SMTP_PORT (465 or 587), SMTP_USER, SMTP_PASS — any mail server (Gmail app password, your host's mail…)
  *   otherwise PHP's mail(), which needs a mail program on the server
@@ -121,20 +121,27 @@ function cbRequireAccess(string $sheetId): void {
  * must be an address that server may send from. Each try is logged (without the address) to
  * sheets/_cardboard_auth/mail.log. Returns '' when sent, else what went wrong.
  */
-function cbSendMail(string $to, string $subject, string $text): string {
+function cbSendMail(string $to, string $subject, string $text, string $html = ''): string {
+    // With an HTML version, mail() and SMTP send both parts (multipart/alternative); mail apps pick one
+    $boundary = 'cb' . bin2hex(random_bytes(8));
+    $mime = $html === '' ? ['Content-Type: text/plain; charset=UTF-8', $text]
+        : ['MIME-Version: 1.0' . "\r\n" . 'Content-Type: multipart/alternative; boundary="' . $boundary . '"',
+           "--$boundary\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n" . str_replace("\n", "\r\n", str_replace("\r\n", "\n", $text)) .
+           "\r\n--$boundary\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" . chunk_split(base64_encode($html)) .
+           "--$boundary--"];
     $from = $_ENV['CARDBOARD_MAIL_FROM'] ?? ($_ENV['SMTP_FROM'] ?? 'CardBoard <no-reply@zapsheets.com>');
     if (!empty($_ENV['RESEND_API_KEY'])) {
         $ch = curl_init('https://api.resend.com/emails');
         curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20,
             CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $_ENV['RESEND_API_KEY'], 'Content-Type: application/json'],
-            CURLOPT_POSTFIELDS => json_encode(['from' => $from, 'to' => [$to], 'subject' => $subject, 'text' => $text])]);
+            CURLOPT_POSTFIELDS => json_encode(['from' => $from, 'to' => [$to], 'subject' => $subject, 'text' => $text] + ($html !== '' ? ['html' => $html] : []))]);
         $out = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); $err = curl_error($ch); curl_close($ch);
         $why = ($code >= 200 && $code < 300) ? '' : ('Resend ' . $code . ' ' . ($err ?: mb_substr((string) $out, 0, 200)));
         $via = 'resend';
     } elseif (!empty($_ENV['SMTP_HOST'])) {
-        $why = cbSmtp($to, $from, $subject, $text); $via = 'smtp';
+        $why = cbSmtp($to, $from, $subject, $mime); $via = 'smtp';
     } else {
-        $ok = @mail($to, $subject, $text, implode("\r\n", ['From: ' . $from, 'Content-Type: text/plain; charset=UTF-8']));
+        $ok = @mail($to, $subject, $mime[1], 'From: ' . $from . "\r\n" . $mime[0]);
         $why = $ok ? '' : 'mail() failed — this server has no mail program; set RESEND_API_KEY or SMTP_HOST in .env';
         $via = 'mail()';
     }
@@ -143,7 +150,7 @@ function cbSendMail(string $to, string $subject, string $text): string {
 }
 
 /** A small SMTP client: port 465 (TLS) or 587/25 (STARTTLS), AUTH LOGIN. Returns '' when sent. */
-function cbSmtp(string $to, string $from, string $subject, string $text): string {
+function cbSmtp(string $to, string $from, string $subject, array $mime): string {   // $mime: [content headers, body]
     $host = $_ENV['SMTP_HOST']; $port = (int) ($_ENV['SMTP_PORT'] ?? 587);
     $fs = @stream_socket_client(($port === 465 ? 'ssl://' : 'tcp://') . $host . ':' . $port, $en, $es, 20);
     if (!$fs) return "SMTP connect to $host:$port failed: $es";
@@ -167,7 +174,7 @@ function cbSmtp(string $to, string $from, string $subject, string $text): string
         $cmd('RCPT TO:<' . $to . '>', 250);
         $cmd('DATA', 354);
         $msg = 'From: ' . $from . "\r\nTo: <$to>\r\nSubject: " . $subject . "\r\nDate: " . date('r') . "\r\nMessage-ID: <" . bin2hex(random_bytes(8)) . '@' . $me . ">\r\n" .
-               "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n" . preg_replace('/^\./m', '..', str_replace("\n", "\r\n", str_replace("\r\n", "\n", $text)));
+               (strpos($mime[0], 'MIME-Version') === 0 ? '' : "MIME-Version: 1.0\r\n") . $mime[0] . "\r\n\r\n" . preg_replace('/^\./m', '..', str_replace("\n", "\r\n", str_replace("\r\n", "\n", $mime[1])));
         $cmd($msg . "\r\n.", 250);
         $cmd('QUIT', 221);
         fclose($fs); return '';

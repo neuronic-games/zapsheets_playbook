@@ -36,6 +36,38 @@ function cbSignedIn(array $u, string $sheet): void {
     ok(['token' => cbIssueToken($a), 'account' => cbAccountOut($a, $sheet)]);
 }
 
+/** The sign-in email in CardBoard's colors: navy band, gold/lavender wordmark, the code large. Tables and inline styles for mail apps. */
+function cbCodeEmailHtml(string $code): string {
+    $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host   = preg_replace('/[^a-z0-9.\-:]/i', '', $_SERVER['HTTP_HOST'] ?? 'zapsheets.com');
+    $base   = $scheme . '://' . $host . rtrim($_ENV['BASE_PATH'] ?? '', '/') . '/';
+    $logo   = htmlspecialchars($base . 'images/cardboard_icon_180.png', ENT_QUOTES);
+    $app    = htmlspecialchars($base . 'cardboard', ENT_QUOTES);
+    // One box, spaced out but copied as plain digits (separate boxes copy with gaps between them)
+    $digits = '<td style="padding:14px 22px 14px 30px;background:#f3f1ff;border:1px solid #ddd6ff;border-radius:12px;font-family:\'SFMono-Regular\',Menlo,Consolas,monospace;font-size:32px;font-weight:700;letter-spacing:10px;color:#2e2763;">' . $code . '</td>';
+    $font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><title>Your CardBoard code</title></head>' .
+      '<body style="margin:0;padding:0;background:#f3f2fa;">' .
+      '<div style="display:none;max-height:0;overflow:hidden;">Your CardBoard sign-in code is ' . $code . '. It works for 15 minutes.</div>' .
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f2fa;"><tr><td align="center" style="padding:32px 16px;">' .
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 18px rgba(46,39,99,.10);">' .
+        '<tr><td style="background:#2e2763;padding:22px 28px;">' .
+          '<table role="presentation" cellpadding="0" cellspacing="0"><tr>' .
+            '<td style="padding-right:12px;"><img src="' . $logo . '" width="40" height="40" alt="" style="display:block;border-radius:9px;"></td>' .
+            '<td style="font-family:' . $font . ';font-size:22px;font-weight:800;letter-spacing:.5px;"><span style="color:#f2c14e;">Card</span><span style="color:#a99cff;">Board</span></td>' .
+          '</tr></table></td></tr>' .
+        '<tr><td style="padding:30px 28px 8px;font-family:' . $font . ';color:#1b1b2b;">' .
+          '<div style="font-size:20px;font-weight:700;color:#2e2763;margin:0 0 8px;">Your sign-in code</div>' .
+          '<div style="font-size:15px;line-height:1.55;color:#555a70;margin:0 0 22px;">Enter this code in CardBoard to sign in. It works for 15 minutes.</div>' .
+          '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;"><tr>' . $digits . '</tr></table>' .
+          '<div style="font-size:13px;line-height:1.55;color:#8a8fa8;margin:0 0 22px;">New to CardBoard? Your first week is free, with every feature. If you didn’t ask for this code, you can ignore this email.</div>' .
+        '</td></tr>' .
+        '<tr><td style="padding:16px 28px 22px;border-top:1px solid #eeecf6;font-family:' . $font . ';font-size:12px;color:#9aa0b8;">' .
+          '<a href="' . $app . '" style="color:#7b6cf6;text-decoration:none;font-weight:600;">Open CardBoard</a> &nbsp;·&nbsp; Card designs from your Google Sheet &nbsp;·&nbsp; © ' . gmdate('Y') . ' ZapSheets' .
+        '</td></tr>' .
+      '</table></td></tr></table></body></html>';
+}
+
 $action = $_POST['action'] ?? '';
 $sheet  = trim((string) ($_POST['sheet'] ?? ''));
 if ($sheet !== '' && !stripeValidSheetId($sheet)) $sheet = '';
@@ -48,8 +80,8 @@ if ($action === 'send') {
     $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
     $file = cbPrivateDir('codes') . '/' . hash('sha256', $email) . '.json';
     file_put_contents($file, json_encode(['h' => hash_hmac('sha256', $email . '|' . $code, cbSecret()), 'x' => time() + 900, 'tries' => 0]), LOCK_EX);
-    $body = "Your CardBoard sign-in code is:\r\n\r\n    $code\r\n\r\nIt works for 15 minutes. If you didn't ask for it, you can ignore this email.\r\n\r\n— ZapSheets";
-    $why  = cbSendMail($email, 'Your CardBoard code: ' . $code, $body);
+    $body = "Your CardBoard sign-in code is:\r\n\r\n    $code\r\n\r\nIt works for 15 minutes. If you didn't ask for it, you can ignore this email.\r\n\r\n— CardBoard by ZapSheets";
+    $why  = cbSendMail($email, 'Your CardBoard code: ' . $code, $body, cbCodeEmailHtml($code));
     if ($why !== '' && empty($_ENV['CARDBOARD_AUTH_DEBUG'])) { @unlink($file); fail('The email couldn’t be sent — please try again later'); }
     ok(!empty($_ENV['CARDBOARD_AUTH_DEBUG']) ? ['debug_code' => $code] : []);   // debug only on a test server
 }

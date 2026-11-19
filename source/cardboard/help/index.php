@@ -185,6 +185,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
       <li><b>Select</b> an element by clicking it. <kbd>Shift</kbd> or <kbd>⌘</kbd>-click adds to the selection; <kbd>⌘A</kbd> selects everything; <kbd>Esc</kbd> selects nothing.</li>
       <li><b>Move</b> by dragging, or nudge with the arrow keys (1 pt; <kbd>Shift</kbd>: 10 pt). Hold <kbd>Alt</kbd> while dragging for fine moves.</li>
       <li><b>Resize</b> with the square handles. Hold <kbd>Shift</kbd> on a shape's corner to keep its proportions.</li>
+      <li><b>Full width / full height:</b> with anything selected, a round ↔ button appears at the middle of the card's top edge and a ↕ button at the middle of its left edge. Click one to stretch everything selected across the whole width or height of the card.</li>
       <li><b>Rotate</b> with the round handle above the element (<kbd>Shift</kbd> snaps to 15° steps), or type an angle in <b>Rotate</b>.</li>
       <li><b>Exact numbers:</b> X, Y, W and H in the right panel (in points; 72 pt = 1 inch). <b>Opacity</b> fades an element.</li>
       <li><b>Stacking:</b> <b>To front</b> / <b>To back</b>, or drag in the Layers panel.</li>

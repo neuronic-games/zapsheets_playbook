@@ -837,7 +837,7 @@ function render() {
   holder.innerHTML = renderCardHTML(layout, ROWS[rowIdx] || null, true, { card: rowIdx, row: rowIdx, side: side }) +
     '<div class="side-label">' + (side === 'back' ? 'Back' : 'Front') + '</div>' +
     '<button type="button" class="flip-btn' + (side === 'back' ? ' on' : '') + '" onclick="flipCard()" title="Flip the card — show the ' + (side === 'back' ? 'front' : 'back') + '" aria-label="Flip the card">' + FLIP_ICON + '</button>';
-  holder.insertAdjacentHTML('beforeend', alignDotsHTML());
+  holder.insertAdjacentHTML('beforeend', alignDotsHTML() + fillBtnsHTML());
   var card = holder.firstChild;
   card.style.transform = 'scale(' + zoom + ')';
   card.style.setProperty('--z', zoom * PX);
@@ -893,6 +893,25 @@ function alignDotsHTML() {
       '<div class="al-guide al-v in" style="top:0;left:' + x + 'px;height:' + Math.max(H, CH) + 'px"></div>';
   });
   return h;
+}
+// Full width / full height: round buttons at the middle of the card's top and left edges
+var FILL_ICONS = {
+  w: '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg>',
+  h: '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg>'
+};
+function fillBtnsHTML() {
+  if (!selEls().length) return '';
+  var k = PX * zoom, W = layout.card.w * k, H = layout.card.h * k;
+  return '<button type="button" class="fill-btn" style="left:' + Math.round(W / 2) + 'px;top:-20px" onclick="fillSel(\'w\')" title="Make the full width of the card" aria-label="Make the full width of the card">' + FILL_ICONS.w + '</button>' +
+         '<button type="button" class="fill-btn" style="left:-20px;top:' + Math.round(H / 2) + 'px" onclick="fillSel(\'h\')" title="Make the full height of the card" aria-label="Make the full height of the card">' + FILL_ICONS.h + '</button>';
+}
+function fillSel(dim) {
+  var sel = selEls(); if (!sel.length) return;
+  var c = layout.card, done = sel.every(function(e) { return dim === 'w' ? e.x === 0 && e.w === c.w : e.y === 0 && e.h === c.h; });
+  if (done) { toast('Already the full ' + (dim === 'w' ? 'width' : 'height')); return; }
+  snapshot();
+  sel.forEach(function(e) { if (dim === 'w') { e.x = 0; e.w = c.w; } else { e.y = 0; e.h = c.h; } });
+  changed(true); var one = elById(selId); if (one) syncGeomInputs(one); else renderAttrs();
 }
 function alignSel(edge) {
   var plan = alignPlan(); if (!plan) return;

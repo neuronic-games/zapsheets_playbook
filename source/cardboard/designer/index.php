@@ -304,7 +304,7 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 /* Flip button (top right of the card) */
 .flip-btn { position:absolute; top:0; left:-3.1rem; width:2.5rem; height:2.5rem; border-radius:50%; border:1.5px solid #d6d9e6; background:#fff; color:#4b3fa8; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; cursor:pointer; box-shadow:0 3px 10px rgba(20,20,60,.12); padding:0; z-index:5; }
 .flip-btn svg { width:18px; height:18px; }
-.side-label { position:absolute; left:0; right:0; bottom:100%; margin-bottom:.45rem; text-align:center; font-family:'DINBlack',sans-serif; font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; color:#6b62b8; pointer-events:none; }
+.side-label { position:absolute; left:0; right:0; bottom:100%; margin-bottom:.45rem; text-align:left; font-family:'DINBlack',sans-serif; font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; color:#6b62b8; pointer-events:none; }
 .flip-btn:hover { border-color:#7b6cf6; }
 .flip-btn.on { background:#4b3fa8; color:#fff; border-color:#4b3fa8; }
 .card-holder { transform-style:preserve-3d; }
@@ -329,6 +329,9 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .al-dot { position:absolute; width:14px; height:14px; margin:-7px 0 0 -7px; padding:0; border-radius:50%; border:2px solid #fff; background:#2a2d3e; box-shadow:0 1px 4px rgba(20,20,60,.3); cursor:pointer; z-index:6; transition:transform .12s, background .12s; }
 .al-dot:hover, .al-dot:focus-visible { background:#7b6cf6; transform:scale(1.3); outline:none; }
 .al-dot:hover + .al-guide.in, .al-dot:focus-visible + .al-guide.in { opacity:1; }
+.fill-btn { position:absolute; width:24px; height:24px; margin:-12px 0 0 -12px; padding:0; border-radius:50%; border:2px solid #fff; background:#2a2d3e; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 5px rgba(20,20,60,.3); cursor:pointer; z-index:6; transition:transform .12s, background .12s; }
+.fill-btn:hover, .fill-btn:focus-visible { background:#7b6cf6; transform:scale(1.15); outline:none; }
+.moving .fill-btn { display:none; }
 .moving .al-dot, .moving .al-guide { display:none; }
 .el.editing { z-index:60 !important; }
 .el.editing .el-inner { cursor:text; user-select:text; -webkit-user-select:text; white-space:pre-wrap; outline:calc(2px / var(--z, 1)) solid #7b6cf6; outline-offset:calc(1px / var(--z, 1)); background:rgba(255,255,255,.9); }

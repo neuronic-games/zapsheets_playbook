@@ -411,7 +411,8 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 #view-data { flex-direction:column; }
 /* Tags on cards: an inline picture the height of the text */
 .el .tx { display:block; }
-.tag-img { display:inline-block; height:1.15em; width:auto; vertical-align:-.22em; margin:0 .04em; }
+/* A tag picture fills the whole height of its text line (the line height), as big as it can be without spreading the lines apart */
+.tag-img { display:inline-block; height:1.15em; height:1lh; width:auto; vertical-align:top; margin:0 .04em; }
 /* Tags view */
 #view-tags { overflow:auto; background:#f4f3fa; scroll-padding-top:130px; }
 .tags-wrap { width:100%; max-width:1000px; margin:0 auto; padding:0 1.4rem 3rem; }

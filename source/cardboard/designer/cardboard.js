@@ -1291,6 +1291,12 @@ function renderAttrs() {
     });
   }
 }
+// Clicking outside the attribute panel (the card, the canvas, a layer) used to change the selection
+// before the field's change event fired, so the typed text was lost. Commit the field first.
+document.addEventListener('pointerdown', function(ev) {
+  var a = document.activeElement, p = $('attrPanel');
+  if (a && p && p.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName) && !p.contains(ev.target)) a.blur();
+}, true);
 function liveText(v) {   // show typing on the card right away; one undo step when the box loses focus
   var e = elById(selId); if (!e) return;
   var node = $('cardHolder').querySelector('.el[data-id="' + e.id + '"] .el-inner');

@@ -194,8 +194,12 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .map-btn { position:absolute; top:6px; left:6px; z-index:2; width:28px; height:28px; padding:0; border:none; border-radius:50%; background:rgba(0,0,0,.55); color:#fff; font-family:ui-monospace,Menlo,monospace; font-size:.72rem; font-weight:700; letter-spacing:-.02em; line-height:28px; text-align:center; cursor:pointer; }
 .map-btn:hover { background:rgba(0,0,0,.82); }
 .map-btn.on { background:#7b6cf6; }
-.map-drawer { overflow:hidden; }
-.map-drawer-in { padding-top:.15rem; }
+.map-drawer { overflow:hidden; margin-top:.6rem; border-radius:10px; }
+.map-drawer-in { background:#efecff; border:1px solid #d9d3ff; border-radius:10px; padding:.2rem .7rem .75rem; }
+.map-drawer-in > .lbl:first-child { margin-top:.45rem; }
+.map-drawer .img-slot { background:#fff; border-color:#c4bbf5; }
+.map-drawer .inp { background:#fff; }
+.map-drawer .muted { color:#6b6795; }
 .map-list { display:flex; flex-direction:column; gap:.8rem; margin-top:.6rem; }
 .map-item .map-val { margin-top:.35rem; }
 .map-item.new .map-val { border-style:dashed; }

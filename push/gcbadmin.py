@@ -21,7 +21,7 @@ socket.setdefaulttimeout(30)
 CRED = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentials.json')
 ADMIN_SHEET = '1heNPe8GCggJVoUlGvDVwBt697LvD7vtQT5yDfsnV4M0'
 TAB = 'Users'
-HEADERS = ['Email', 'Name', 'Trial Start', 'Trial End', 'Status', 'Plan', 'Period End',
+HEADERS = ['Email', 'Name', 'Studio', 'Trial Start', 'Trial End', 'Status', 'Plan', 'Period End',
            'Stripe Customer', 'Stripe Subscription', 'Activated', 'Sheets', 'Created', 'Last Seen']
 TRIAL_DAYS = 7
 
@@ -89,7 +89,7 @@ def main():
 
     if action == 'user':
         u = u or new_person(email)
-        if data.get('name'): u['Name'] = str(data['name'])[:100]
+        if data.get('name') and not u.get('Name'): u['Name'] = str(data['name'])[:100]   # only a first name; Profile changes it after
         sheet = str(data.get('sheet') or '').strip()
         if sheet:
             have = [s for s in str(u.get('Sheets', '')).split(',') if s.strip()]

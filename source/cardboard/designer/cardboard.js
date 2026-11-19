@@ -2641,19 +2641,24 @@ function closeDialog(id) { $(id).classList.remove('open'); }
 document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') document.querySelectorAll('.overlay.open').forEach(function(o) { o.classList.remove('open'); }); });
 function saveSettings() { return api('save', { tab: SETTINGS_KEY, layout: JSON.stringify(SETTINGS) }).then(function() { LAYOUTS[SETTINGS_KEY] = JSON.parse(JSON.stringify(SETTINGS)); }); }
 
+// Profile: kept with the person's CardBoard account (their row in the Admin sheet). The email is
+// the one they sign in with; changing it means signing in with the other address.
 function openProfileDialog() {
-  var pf = SETTINGS.profile || {};
-  $('pfName').value = pf.name || ''; $('pfEmail').value = pf.email || ''; $('pfStudio').value = pf.studio || '';
+  if (!ACCT) { askSignIn().then(openProfileDialog, function() {}); return; }
+  var a = acctInfo(), old = SETTINGS.profile || {};   // older versions kept the profile in the layouts tab
+  $('pfName').value = a.name || old.name || ''; $('pfEmail').value = a.email || ''; $('pfStudio').value = a.studio || old.studio || '';
   $('pfErr').textContent = ''; $('pfSave').disabled = false; $('pfSave').textContent = 'Save';
   openDialog('profileOverlay'); setTimeout(function() { $('pfName').focus(); }, 60);
 }
 function saveProfile() {
-  var pf = { name: $('pfName').value.trim(), email: $('pfEmail').value.trim(), studio: $('pfStudio').value.trim() };
-  if (pf.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pf.email)) { $('pfErr').textContent = 'That email address doesn\'t look right.'; return; }
   var btn = $('pfSave'); btn.disabled = true; btn.textContent = 'Saving…';
-  var keep = SETTINGS.profile; SETTINGS.profile = pf;
-  saveSettings().then(function() { closeDialog('profileOverlay'); toast('✓ Profile saved'); })
-    .catch(function(e) { SETTINGS.profile = keep; $('pfErr').textContent = 'Couldn\'t save — ' + e.message; btn.disabled = false; btn.textContent = 'Save'; });
+  accountPost('profile', { name: $('pfName').value.trim(), studio: $('pfStudio').value.trim() })
+    .then(function(r) { storeAcct(r); closeDialog('profileOverlay'); toast('✓ Profile saved'); })
+    .catch(function(e) { $('pfErr').textContent = 'Couldn\'t save — ' + e.message; btn.disabled = false; btn.textContent = 'Save'; });
+}
+function changeSignInEmail() {
+  askDialog({ title: 'Use a different email?', message: 'You’ll be signed out, then you can sign in with the other address. Each email has its own free week and subscription.', ok: 'Continue', cancel: 'Cancel' })
+    .then(function(yes) { if (!yes) return; closeDialog('profileOverlay'); forgetAcct(); askSignIn().then(openProfileDialog, function() {}); });
 }
 
 function openSettingsDialog() {

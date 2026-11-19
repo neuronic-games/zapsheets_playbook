@@ -559,6 +559,10 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
 body.cb-locked .panel-left .panel-scroll, body.cb-locked #attrPanel, body.cb-locked .tags-stick .print-go:not(.ghost), body.cb-locked #exportGo, body.cb-locked #publishGo { opacity:.5; pointer-events:none; }
 body.cb-locked #cardHolder .el { pointer-events:none; }
 body.cb-locked #saveBtn { display:none; }
+.pf-email { display:flex; gap:.6rem; align-items:center; }
+.pf-email .inp { flex:1; background:#f6f7fb; color:#555a70; cursor:default; }
+.pf-email .si-link { margin:0; white-space:nowrap; }
+.pf-note { margin:.25rem 0 0; font-size:.72rem; color:#9aa0b8; }
 .plan-who { font-size:.76rem; color:#8a8fa8; margin:-.2rem 0 .5rem; }
 .plan-who:empty { display:none; }
 .signin-dlg { width:min(420px,94vw); text-align:center; }
@@ -790,9 +794,10 @@ body.cb-locked #saveBtn { display:none; }
 <div class="overlay" id="profileOverlay" onclick="if(event.target===this)closeDialog('profileOverlay')">
   <div class="dlg" onclick="event.stopPropagation()">
     <h2 class="dlg-title">Profile</h2>
-    <p class="dlg-sub">Who's designing these cards. Kept in this spreadsheet's <b>layouts</b> tab.</p>
+    <p class="dlg-sub">Who's designing these cards. Saved with your CardBoard account.</p>
     <label class="mini" for="pfName">Name</label><input class="inp" id="pfName" maxlength="80">
-    <label class="mini" for="pfEmail">Email</label><input class="inp" id="pfEmail" type="email" maxlength="120" placeholder="Used for your receipts when you subscribe">
+    <label class="mini" for="pfEmail">Email</label><div class="pf-email"><input class="inp" id="pfEmail" type="email" readonly tabindex="-1" aria-describedby="pfEmailNote"><button type="button" class="si-link" onclick="changeSignInEmail()">Change</button></div>
+    <p class="pf-note" id="pfEmailNote">The email you sign in with — codes and receipts go here.</p>
     <label class="mini" for="pfStudio">Studio or company</label><input class="inp" id="pfStudio" maxlength="80">
     <div class="dlg-err" id="pfErr"></div>
     <div class="dlg-actions"><button class="attr-btn" onclick="closeDialog('profileOverlay')">Cancel</button><button class="print-go" id="pfSave" onclick="saveProfile()">Save</button></div>

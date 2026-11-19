@@ -69,7 +69,7 @@ function cbAccessFromUser(array $u): array {
     return [
         'e' => strtolower(trim((string) ($u['Email'] ?? ''))), 'n' => (string) ($u['Name'] ?? ''),
         'st' => $st, 'u' => $until, 'te' => $te, 'pe' => $pe,
-        'status' => (string) ($u['Status'] ?? ''),
+        'status' => (string) ($u['Status'] ?? ''), 'studio' => (string) ($u['Studio'] ?? ''),
     ];
 }
 

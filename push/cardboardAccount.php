@@ -8,6 +8,7 @@
  *   verify   — email, code, name?, sheet?  → {ok, token, account}
  *   refresh  — cbt (token), sheet?         → {ok, token, account}   (re-reads the Admin sheet)
  *   activate — cbt, key, sheet?            → {ok, token, account}   (activation key: everything, no time limit)
+ *   profile  — cbt, name, studio           → {ok, token, account}   (saved in the person's Admin-sheet row)
  * account = {email, name, state: trial|subscribed|activated|locked, until, trial_end, period_end, status, sheet_unlocked}
  */
 error_reporting(0);
@@ -27,7 +28,7 @@ function cbLimit(string $key, int $max): bool {
 }
 function cbAccountOut(array $a, string $sheet): array {
     $d = function ($t) { return $t ? gmdate('c', $t) : ''; };
-    return ['email' => $a['e'], 'name' => $a['n'], 'state' => $a['st'], 'until' => $d($a['u']), 'trial_end' => $d($a['te']),
+    return ['email' => $a['e'], 'name' => $a['n'], 'studio' => $a['studio'] ?? '', 'state' => $a['st'], 'until' => $d($a['u']), 'trial_end' => $d($a['te']),
             'period_end' => $a['pe'], 'status' => $a['status'] ?? '', 'sheet_unlocked' => $sheet !== '' && cbSheetUnlocked($sheet),
             'portal_url' => $_ENV['STRIPE_PORTAL_URL'] ?? ''];
 }
@@ -104,7 +105,7 @@ if ($action === 'verify') {
     cbSignedIn($r['user'], $sheet);
 }
 
-if ($action === 'refresh' || $action === 'activate') {
+if ($action === 'refresh' || $action === 'activate' || $action === 'profile') {
     $p = cbReadToken(cbRequestToken());
     if (!$p || ($p['x'] ?? 0) < time() - 30 * 86400) fail('Please sign in again', ['need_auth' => true]);
     if ($action === 'activate') {
@@ -114,6 +115,11 @@ if ($action === 'refresh' || $action === 'activate') {
         if (!activationKeyValid($key)) { usleep(700000); fail('That activation key isn’t valid'); }
         $r = cbAdmin(['action' => 'update', 'email' => $p['e'], 'fields' => ['Activated' => gmdate('Y-m-d')]]);
         if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t update your account');
+    }
+    if ($action === 'profile') {
+        $clean = function ($v) { return mb_substr(trim(preg_replace('/\s+/u', ' ', (string) $v)), 0, 100); };
+        $r = cbAdmin(['action' => 'update', 'email' => $p['e'], 'fields' => ['Name' => $clean($_POST['name'] ?? ''), 'Studio' => $clean($_POST['studio'] ?? '')]]);
+        if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t save your profile');
     }
     $r = cbAdmin(['action' => 'user', 'email' => $p['e'], 'sheet' => $sheet]);
     if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t open your account');

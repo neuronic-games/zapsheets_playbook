@@ -302,7 +302,8 @@ function init() {
     })
     .then(function(res) {
       TABS = res.tabs || []; LAYOUTS = res.layouts || {};
-      SETTINGS = Object.assign({ units: 'in', profile: {} }, LAYOUTS[SETTINGS_KEY] || {});
+      SETTINGS = Object.assign({ units: 'in' }, LAYOUTS[SETTINGS_KEY] || {});
+      _oldProfile = SETTINGS.profile || null; delete SETTINGS.profile;   // the profile lives with the account now
       SHEET_TITLE = res.title || '';
       if (res.title) { $('subTitle').textContent = res.title; document.title = res.title; }
       var sel = $('sheetSel');
@@ -2642,17 +2643,21 @@ function askDialog(o) {
 
 // ── Menu: Profile, Settings, Fetch, Subscribe, Help ──────────────────────────
 // Profile and settings live in the spreadsheet's "layouts" tab, on their own row.
-var SETTINGS_KEY = '_cardboard_settings', SETTINGS = { units: 'in', profile: {} }, SHEET_TITLE = '';
+// _cardboard_settings keeps this spreadsheet's settings only (units). The profile is the account's.
+var SETTINGS_KEY = '_cardboard_settings', SETTINGS = { units: 'in' }, SHEET_TITLE = '', _oldProfile = null;
 function openDialog(id) { $(id).classList.add('open'); }
 function closeDialog(id) { $(id).classList.remove('open'); }
 document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') document.querySelectorAll('.overlay.open').forEach(function(o) { o.classList.remove('open'); }); });
-function saveSettings() { return api('save', { tab: SETTINGS_KEY, layout: JSON.stringify(SETTINGS) }).then(function() { LAYOUTS[SETTINGS_KEY] = JSON.parse(JSON.stringify(SETTINGS)); }); }
+function saveSettings() {
+  var keep = Object.assign({}, SETTINGS); delete keep.profile;
+  return api('save', { tab: SETTINGS_KEY, layout: JSON.stringify(keep) }).then(function() { LAYOUTS[SETTINGS_KEY] = keep; _oldProfile = null; });
+}
 
 // Profile: kept with the person's CardBoard account (their row in the Admin sheet). The email is
 // the one they sign in with; changing it means signing in with the other address.
 function openProfileDialog() {
   if (!ACCT) { askSignIn().then(openProfileDialog, function() {}); return; }
-  var a = acctInfo(), old = SETTINGS.profile || {};   // older versions kept the profile in the layouts tab
+  var a = acctInfo(), old = _oldProfile || {};   // older versions kept a profile in _cardboard_settings
   $('pfName').value = a.name || old.name || ''; $('pfEmail').value = a.email || ''; $('pfStudio').value = a.studio || old.studio || '';
   $('pfErr').textContent = ''; $('pfSave').disabled = false; $('pfSave').textContent = 'Save';
   openDialog('profileOverlay'); setTimeout(function() { $('pfName').focus(); }, 60);
@@ -2660,7 +2665,10 @@ function openProfileDialog() {
 function saveProfile() {
   var btn = $('pfSave'); btn.disabled = true; btn.textContent = 'Saving…';
   accountPost('profile', { name: $('pfName').value.trim(), studio: $('pfStudio').value.trim() })
-    .then(function(r) { storeAcct(r); closeDialog('profileOverlay'); toast('✓ Profile saved'); })
+    .then(function(r) {
+      storeAcct(r); closeDialog('profileOverlay'); toast('✓ Profile saved');
+      if (_oldProfile && hasAccess()) saveSettings().catch(function() {});   // take the old copy out of the sheet
+    })
     .catch(function(e) { $('pfErr').textContent = 'Couldn\'t save — ' + e.message; btn.disabled = false; btn.textContent = 'Save'; });
 }
 function changeSignInEmail() {
@@ -2820,7 +2828,7 @@ function askSignIn(gate) {
   var d = {}; d.promise = new Promise(function(res, rej) { d.res = res; d.rej = rej; }); _signIn = d;
   document.body.classList.toggle('cb-gate', !!gate);
   $('siClose').textContent = gate ? 'Back to start' : 'Not now';
-  $('siEmail').value = (acctInfo() && acctInfo().email) || (SETTINGS && SETTINGS.profile && SETTINGS.profile.email) || '';
+  $('siEmail').value = (acctInfo() && acctInfo().email) || '';
   signInStep('');
   openDialog('signinOverlay');
   return d.promise;
@@ -2881,8 +2889,7 @@ function signInVerify() {
   if (!_siPending) { signInStep(_siMode || 'signup'); return; }
   if (code.length !== 6) { $('siErr').textContent = 'Enter the 6-digit code from the email.'; return; }
   var b = $('siGo'), label = b.textContent; b.disabled = true; b.textContent = 'Checking…'; $('siErr').textContent = '';
-  var name = (SETTINGS && SETTINGS.profile && SETTINGS.profile.name) || '';
-  accountPost('verify', { email: _siPending.email, password: _siPending.password, code: code, name: name }).then(function(r) { _siPending = null; signedIn(r); })
+  accountPost('verify', { email: _siPending.email, password: _siPending.password, code: code }).then(function(r) { _siPending = null; signedIn(r); })
     .catch(function(e) { $('siErr').textContent = e.message; }).then(function() { b.disabled = false; b.textContent = label; });
 }
 function signInBack() { var em = $('siEmail').value; signInStep(_siMode || 'signup'); $('siEmail').value = em; }

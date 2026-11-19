@@ -133,6 +133,14 @@ body {
 .opt.primary span { color:rgba(255,255,255,.78); }
 .opt.primary:hover { background:#3b3190; transform:translateY(-1px); }
 .auth-row { display:flex; gap:.5rem; }
+.auth-col { display:flex; flex-direction:column; gap:.6rem; }
+.auth-col .sheet-input { margin:0; }
+.auth-col .connect-btn { width:100%; margin:0; }
+/* Signed out: CardBoard's purple, like the designer's sign-in page */
+body.signed-out { background:#2e2763; }
+body.signed-out .brand-name { color:#fff; }
+body.signed-out .brand-tagline { color:rgba(255,255,255,.65); }
+body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
 .auth-row .sheet-input { margin:0; flex:1; }
 .auth-row .connect-btn { width:auto; padding:0 1.1rem; white-space:nowrap; }
 .code-input { letter-spacing:.35em; text-align:center; font-family:ui-monospace,Menlo,monospace; }
@@ -161,25 +169,29 @@ body {
       <div class="card-title" style="text-align:center">Welcome</div>
       <p class="auth-msg" style="text-align:center">Sign in to design your cards. New to CardBoard? Your first week is free, with every feature.</p>
       <div class="choose">
-        <button type="button" class="opt primary" onclick="authMode('trial')"><b>Start your free week</b><span>Every feature for 7 days · no card needed</span></button>
+        <button type="button" class="opt primary" onclick="authMode('signup')"><b>Start your free week</b><span>Every feature for 7 days · no card needed</span></button>
         <button type="button" class="opt" onclick="authMode('login')"><b>Log in</b><span>I already have a CardBoard account</span></button>
       </div>
     </div>
-    <form id="authEmail" hidden onsubmit="event.preventDefault();authSend()">
-      <div class="card-title" id="authTitle">Start your free week</div>
+    <form id="authEmail" hidden onsubmit="event.preventDefault();authSubmit()">
+      <div class="card-title" id="authTitle">Log in</div>
       <p class="auth-msg" id="authMsg"></p>
-      <div class="auth-row"><input class="sheet-input" id="authAddr" type="email" autocomplete="email" placeholder="you@example.com" aria-label="Email">
-        <button type="submit" class="connect-btn" id="authSendBtn">Email me a code</button></div>
+      <div class="auth-col">
+        <input class="sheet-input" id="authAddr" type="email" autocomplete="email" placeholder="Email" aria-label="Email">
+        <input class="sheet-input" id="authPass" type="password" autocomplete="current-password" placeholder="Password" aria-label="Password">
+        <input class="sheet-input" id="authPass2" type="password" autocomplete="new-password" placeholder="Password again" aria-label="Password again">
+        <button type="submit" class="connect-btn" id="authSendBtn">Log in</button>
+      </div>
       <div class="auth-err" id="authErr1"></div>
-      <div class="auth-foot"><button type="button" class="link-btn" id="authSwitch" onclick="authMode(_mode === 'login' ? 'trial' : 'login')"></button> &nbsp;·&nbsp; <button type="button" class="link-btn" onclick="authMode('')">Back</button></div>
+      <div class="auth-foot"><button type="button" class="link-btn" id="authForgot" onclick="authMode('reset')">Forgot password?</button><span id="authForgotSep"> &nbsp;·&nbsp; </span><button type="button" class="link-btn" id="authSwitch" onclick="authMode(_mode === 'login' ? 'signup' : 'login')"></button> &nbsp;·&nbsp; <button type="button" class="link-btn" onclick="authMode('')">Back</button></div>
     </form>
     <form id="authCode" hidden onsubmit="event.preventDefault();authVerify()">
       <div class="card-title">Check your email</div>
       <p class="auth-msg" id="authSent"></p>
-      <div class="auth-row"><input class="sheet-input code-input" id="authCodeIn" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" aria-label="Code" oninput="var v=this.value.replace(/\D/g,'').slice(0,6);if(v!==this.value)this.value=v">
-        <button type="submit" class="connect-btn" id="authGo">Sign in</button></div>
+      <div class="auth-col"><input class="sheet-input code-input" id="authCodeIn" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" aria-label="Code" oninput="var v=this.value.replace(/\D/g,'').slice(0,6);if(v!==this.value)this.value=v">
+        <button type="submit" class="connect-btn" id="authGo">Confirm</button></div>
       <div class="auth-err" id="authErr2"></div>
-      <div class="auth-foot"><button type="button" class="link-btn" onclick="authMode(_mode)">Use a different email</button></div>
+      <div class="auth-foot"><button type="button" class="link-btn" onclick="authMode(_mode)">Back</button></div>
     </form>
   </div>
 
@@ -268,6 +280,7 @@ body {
       .then(function(r) { if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response'); return r; });
   }
   function show() {
+    document.body.classList.toggle('signed-out', !acct);
     $('authCard').hidden = !!acct; $('connectCard').hidden = !acct; $('whoLine').hidden = !acct;
     if (acct) {
       var a = acct.account || {}, left = Math.max(0, Math.ceil((new Date(a.until).getTime() - Date.now()) / 864e5));
@@ -277,34 +290,59 @@ body {
       setTimeout(function() { $('sheetInput').focus(); }, 30);
     } else authMode('');
   }
+  // '' = the two choices; login = email + password; signup / reset = email + password, then a code from the email
+  var pending = null;
   window.authMode = function(m) {
-    window._mode = m;
+    window._mode = m; pending = null;
     $('authChoose').hidden = !!m; $('authEmail').hidden = !m; $('authCode').hidden = true;
     $('authErr1').textContent = ''; $('authErr2').textContent = '';
-    $('authTitle').textContent = m === 'login' ? 'Log in' : 'Start your free week';
-    $('authMsg').textContent = m === 'login' ? 'Enter the email you use with CardBoard and we’ll send you a code.' : 'Every feature for 7 days — no card needed. Enter your email and we’ll send you a code.';
+    $('authTitle').textContent = { login: 'Log in', signup: 'Start your free week', reset: 'Reset your password' }[m] || '';
+    $('authMsg').textContent = { login: 'Use your CardBoard email and password.',
+      signup: 'Every feature for 7 days — no card needed. Choose a password; we’ll email you a code to confirm.',
+      reset: 'Choose a new password; we’ll email you a code to confirm it’s you.' }[m] || '';
+    $('authPass').value = ''; $('authPass2').value = '';
+    $('authPass').placeholder = m === 'login' ? 'Password' : 'Password (8 or more characters)';
+    $('authPass').setAttribute('autocomplete', m === 'login' ? 'current-password' : 'new-password');
+    $('authPass2').hidden = m === 'login';
+    $('authForgot').hidden = $('authForgotSep').hidden = m !== 'login';
+    $('authSendBtn').textContent = { login: 'Log in', signup: 'Create account', reset: 'Email me a code' }[m] || '';
     $('authSwitch').textContent = m === 'login' ? 'New here? Start your free week' : 'Already have an account? Log in';
-    if (m) setTimeout(function() { $('authAddr').focus(); }, 30);
+    if (m) setTimeout(function() { ($('authAddr').value ? $('authPass') : $('authAddr')).focus(); }, 30);
   };
-  window.authSend = function() {
-    var em = $('authAddr').value.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { $('authErr1').textContent = 'Enter your email address.'; return; }
-    var b = $('authSendBtn'); b.disabled = true; b.textContent = 'Sending…'; $('authErr1').textContent = '';
-    post({ action: 'send', email: em, mode: window._mode }).then(function(r) {
+  function signedIn(r) {
+    acct = { token: r.token, account: r.account, sheet: '', checked: Date.now() };
+    try { localStorage.setItem('cb_account', JSON.stringify(acct)); } catch (e) {}
+    show();
+  }
+  window.authSubmit = function() {
+    var m = window._mode, em = $('authAddr').value.trim(), pw = $('authPass').value, err = $('authErr1');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { err.textContent = 'Enter your email address.'; return; }
+    if (m === 'login') { if (!pw) { err.textContent = 'Enter your password.'; return; } }
+    else {
+      if (pw.length < 8) { err.textContent = 'Use at least 8 characters for your password.'; return; }
+      if (pw !== $('authPass2').value) { err.textContent = 'The two passwords don’t match.'; return; }
+    }
+    var b = $('authSendBtn'), label = b.textContent; b.disabled = true; b.textContent = m === 'login' ? 'Logging in…' : 'Sending…'; err.textContent = '';
+    var done = function() { b.disabled = false; b.textContent = label; };
+    if (m === 'login') {
+      post({ action: 'login', email: em, password: pw }).then(signedIn).catch(function(e) { err.textContent = e.message; }).then(done);
+      return;
+    }
+    post({ action: 'send', email: em, mode: m }).then(function(r) {
+      pending = { email: em, password: pw };
       $('authEmail').hidden = true; $('authCode').hidden = false; $('authCodeIn').value = r.debug_code || '';
-      $('authSent').innerHTML = (window._mode === 'trial' && r.existing ? 'Welcome back — you already have an account, so this signs you in. ' : '') + 'We sent a 6-digit code to <b>' + esc(em) + '</b>. It works for 15 minutes.';
-      $('authCode').dataset.email = em; setTimeout(function() { $('authCodeIn').focus(); }, 30);
-    }).catch(function(e) { $('authErr1').textContent = e.message; }).then(function() { b.disabled = false; b.textContent = 'Email me a code'; });
+      $('authSent').innerHTML = 'We sent a 6-digit code to <b>' + esc(em) + '</b>. Enter it to ' + (m === 'reset' ? 'set your new password.' : 'confirm your email and start your free week.') + ' It works for 15 minutes.';
+      $('authGo').textContent = m === 'reset' ? 'Set password' : 'Start my free week';
+      setTimeout(function() { $('authCodeIn').focus(); }, 30);
+    }).catch(function(e) { err.textContent = e.message; }).then(done);
   };
   window.authVerify = function() {
     var code = $('authCodeIn').value.replace(/\D/g, '');
+    if (!pending) { authMode(window._mode); return; }
     if (code.length !== 6) { $('authErr2').textContent = 'Enter the 6-digit code from the email.'; return; }
-    var b = $('authGo'); b.disabled = true; b.textContent = 'Signing in…'; $('authErr2').textContent = '';
-    post({ action: 'verify', email: $('authCode').dataset.email, code: code }).then(function(r) {
-      acct = { token: r.token, account: r.account, sheet: '', checked: Date.now() };
-      try { localStorage.setItem('cb_account', JSON.stringify(acct)); } catch (e) {}
-      show();
-    }).catch(function(e) { $('authErr2').textContent = e.message; }).then(function() { b.disabled = false; b.textContent = 'Sign in'; });
+    var b = $('authGo'), label = b.textContent; b.disabled = true; b.textContent = 'Checking…'; $('authErr2').textContent = '';
+    post({ action: 'verify', email: pending.email, password: pending.password, code: code }).then(function(r) { pending = null; signedIn(r); })
+      .catch(function(e) { $('authErr2').textContent = e.message; }).then(function() { b.disabled = false; b.textContent = label; });
   };
   window.authSignOut = function() { acct = null; try { localStorage.removeItem('cb_account'); } catch (e) {} show(); };
   show();

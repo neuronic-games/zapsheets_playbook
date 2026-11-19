@@ -1,7 +1,7 @@
 # gcbadmin.py — CardBoard accounts, one row per person (by email) in the CardBoard Admin sheet.
 #
 # Arg: base64 JSON { "action": ..., "email": ..., ... }
-#   user   — email, name (optional), sheet (optional) → the person's row; a new person gets
+#   user   — email, name?, sheet?, fields? → the person's row; a new person gets
 #            a free week (Trial Start = now, Trial End = now + 7 days). Last Seen is updated
 #            and the sheet ID is added to Sheets.
 #   update — email, fields: {Header: value} → changes those cells (adds the person if missing)
@@ -22,7 +22,7 @@ CRED = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentia
 ADMIN_SHEET = '1heNPe8GCggJVoUlGvDVwBt697LvD7vtQT5yDfsnV4M0'
 TAB = 'Users'
 HEADERS = ['Email', 'Name', 'Studio', 'Trial Start', 'Trial End', 'Status', 'Plan', 'Period End',
-           'Stripe Customer', 'Stripe Subscription', 'Activated', 'Sheets', 'Created', 'Last Seen']
+           'Stripe Customer', 'Stripe Subscription', 'Activated', 'Sheets', 'Created', 'Last Seen', 'Password Hash']
 TRIAL_DAYS = 7
 
 def out(d):
@@ -95,6 +95,8 @@ def main():
             have = [s for s in str(u.get('Sheets', '')).split(',') if s.strip()]
             if sheet not in have: have.append(sheet)
             u['Sheets'] = ','.join(have[-50:])
+        for k, v in (data.get('fields') or {}).items():   # e.g. the password hash when signing up
+            if k in hdr and k != 'Email': u[k] = '' if v is None else str(v)
         u['Last Seen'] = iso(now())
         write(n, u)
         out({'ok': True, 'user': u})

@@ -2809,58 +2809,83 @@ function signOut() {
     .then(function(yes) { if (yes) { forgetAcct(); window.location.href = APP_BASE + 'cardboard'; } });
 }
 
-// Sign in: email → 6-digit code. Resolves once signed in; rejects if closed.
-var _signIn = null, _siMode = '';
+// Sign in. Resolves once signed in; rejects if closed.
+//   login  — email + password
+//   signup — email + password, then a code from the email confirms it and starts the free week
+//   reset  — email + new password, then a code from the email
+var _signIn = null, _siMode = '', _siPending = null;
 // gate: first visit — the page stays empty behind it, and it can't be closed (only left for the start page)
 function askSignIn(gate) {
   if (_signIn) { openDialog('signinOverlay'); return _signIn.promise; }
   var d = {}; d.promise = new Promise(function(res, rej) { d.res = res; d.rej = rej; }); _signIn = d;
   document.body.classList.toggle('cb-gate', !!gate);
   $('siClose').textContent = gate ? 'Back to start' : 'Not now';
-  signInChoose('');
   $('siEmail').value = (acctInfo() && acctInfo().email) || (SETTINGS && SETTINGS.profile && SETTINGS.profile.email) || '';
-  $('siSend').disabled = false; $('siSend').textContent = 'Email me a code';
-  openDialog('signinOverlay'); setTimeout(function() { $('siEmail').focus(); }, 60);
+  signInStep('');
+  openDialog('signinOverlay');
   return d.promise;
 }
 function closeSignIn() {
   if (document.body.classList.contains('cb-gate')) { window.location.href = APP_BASE + 'cardboard'; return; }
   closeDialog('signinOverlay'); if (_signIn) { var d = _signIn; _signIn = null; d.rej(new Error('Not signed in')); }
 }
-// '' = choose; 'trial' = start the free week; 'login' = an existing account
-function signInChoose(mode) {
-  _siMode = mode;
+function signInChoose(mode) { signInStep(mode === 'trial' ? 'signup' : mode); }
+function signInStep(mode) {   // '' = the two choices
+  _siMode = mode; _siPending = null;
   $('siChoose').hidden = !!mode; $('siStep1').hidden = !mode; $('siStep2').hidden = true; $('siErr').textContent = '';
-  $('siTitle').textContent = mode === 'login' ? 'Log in to CardBoard' : mode === 'trial' ? 'Start your free week' : 'Welcome to CardBoard';
-  $('siSub').textContent = mode === 'login' ? 'Enter the email you use with CardBoard and we’ll send you a code.'
-    : mode === 'trial' ? 'Every feature for 7 days — no card needed. Enter your email and we’ll send you a code.'
-    : 'Design and print cards from your Google Sheet.';
-  $('siSwitch').textContent = mode === 'login' ? 'New here? Start your free week' : mode === 'trial' ? 'Already have an account? Log in' : '';
-  if (mode) setTimeout(function() { $('siEmail').focus(); }, 40);
+  $('siTitle').textContent = { login: 'Log in', signup: 'Start your free week', reset: 'Reset your password' }[mode] || 'Welcome to CardBoard';
+  $('siSub').textContent = { login: 'Use your CardBoard email and password.',
+    signup: 'Every feature for 7 days — no card needed. Choose a password; we’ll email you a code to confirm.',
+    reset: 'Choose a new password; we’ll email you a code to confirm it’s you.' }[mode] || 'Design and print cards from your Google Sheet.';
+  $('siPass').value = ''; $('siPass2').value = '';
+  $('siPass').placeholder = mode === 'login' ? 'Password' : 'Password (8 or more characters)';
+  $('siPass').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+  $('siPass2').hidden = mode === 'login';
+  $('siForgot').hidden = mode !== 'login';
+  $('siSend').disabled = false; $('siSend').textContent = { login: 'Log in', signup: 'Create account', reset: 'Email me a code' }[mode] || '';
+  $('siSwitch').textContent = mode === 'login' ? 'New here? Start your free week' : mode ? 'Already have an account? Log in' : '';
+  if (mode) setTimeout(function() { ($('siEmail').value ? $('siPass') : $('siEmail')).focus(); }, 40);
 }
-function signInSend() {
-  var em = $('siEmail').value.trim();
+function signInSwitch() { signInStep(_siMode === 'login' ? 'signup' : 'login'); }
+function signedIn(r) {
+  storeAcct(r); closeDialog('signinOverlay'); document.body.classList.remove('cb-gate');
+  var a = r.account; toast(a.state === 'trial' ? '✓ Signed in — ' + daysLeft() + (daysLeft() === 1 ? ' day' : ' days') + ' of your free week left' : '✓ Signed in');
+  if (_signIn) { var d = _signIn; _signIn = null; d.res(ACCT); }
+}
+function signInSubmit() {
+  var em = $('siEmail').value.trim(), pw = $('siPass').value;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { $('siErr').textContent = 'Enter your email address.'; return; }
-  var b = $('siSend'); b.disabled = true; b.textContent = 'Sending…'; $('siErr').textContent = '';
+  if (_siMode === 'login') { if (!pw) { $('siErr').textContent = 'Enter your password.'; return; } }
+  else {
+    if (pw.length < 8) { $('siErr').textContent = 'Use at least 8 characters for your password.'; return; }
+    if (pw !== $('siPass2').value) { $('siErr').textContent = 'The two passwords don’t match.'; return; }
+  }
+  var b = $('siSend'), label = b.textContent; b.disabled = true; b.textContent = _siMode === 'login' ? 'Logging in…' : 'Sending…'; $('siErr').textContent = '';
+  var done = function() { b.disabled = false; b.textContent = label; };
+  if (_siMode === 'login') {
+    accountPost('login', { email: em, password: pw }).then(signedIn)
+      .catch(function(e) { $('siErr').textContent = e.message; }).then(done);
+    return;
+  }
   accountPost('send', { email: em, mode: _siMode }).then(function(r) {
-    $('siTo').textContent = em; $('siStep1').hidden = true; $('siStep2').hidden = false; $('siCode').value = r.debug_code || '';
-    $('siSent').innerHTML = (_siMode === 'trial' && r.existing ? 'Welcome back — you already have an account, so this signs you in. ' : '') + 'We sent a 6-digit code to <b>' + esc(em) + '</b>.';
+    _siPending = { email: em, password: pw };
+    $('siSent').innerHTML = 'We sent a 6-digit code to <b>' + esc(em) + '</b>. Enter it to ' + (_siMode === 'reset' ? 'set your new password.' : 'confirm your email and start your free week.');
+    $('siTitle').textContent = 'Check your email'; $('siSub').textContent = '';
+    $('siStep1').hidden = true; $('siStep2').hidden = false; $('siSwitch').textContent = ''; $('siCode').value = r.debug_code || '';
+    $('siGo').textContent = _siMode === 'reset' ? 'Set password' : 'Start my free week';
     setTimeout(function() { $('siCode').focus(); }, 40);
-  }).catch(function(e) { $('siErr').textContent = e.message; }).then(function() { b.disabled = false; b.textContent = 'Email me a code'; });
+  }).catch(function(e) { $('siErr').textContent = e.message; }).then(done);
 }
 function signInVerify() {
   var code = $('siCode').value.replace(/\D/g, '');
+  if (!_siPending) { signInStep(_siMode || 'signup'); return; }
   if (code.length !== 6) { $('siErr').textContent = 'Enter the 6-digit code from the email.'; return; }
-  var b = $('siGo'); b.disabled = true; b.textContent = 'Signing in…'; $('siErr').textContent = '';
+  var b = $('siGo'), label = b.textContent; b.disabled = true; b.textContent = 'Checking…'; $('siErr').textContent = '';
   var name = (SETTINGS && SETTINGS.profile && SETTINGS.profile.name) || '';
-  accountPost('verify', { email: $('siTo').textContent, code: code, name: name }).then(function(r) {
-    storeAcct(r); closeDialog('signinOverlay'); document.body.classList.remove('cb-gate');
-    var a = r.account; toast(a.state === 'trial' ? '✓ Signed in — ' + daysLeft() + ' days of your free week left' : '✓ Signed in');
-    if (_signIn) { var d = _signIn; _signIn = null; d.res(ACCT); }
-  }).catch(function(e) { $('siErr').textContent = e.message; }).then(function() { b.disabled = false; b.textContent = 'Sign in'; });
+  accountPost('verify', { email: _siPending.email, password: _siPending.password, code: code, name: name }).then(function(r) { _siPending = null; signedIn(r); })
+    .catch(function(e) { $('siErr').textContent = e.message; }).then(function() { b.disabled = false; b.textContent = label; });
 }
-function signInBack() { $('siStep2').hidden = true; $('siStep1').hidden = false; $('siErr').textContent = ''; $('siEmail').focus(); }
-function signInSwitch() { signInChoose(_siMode === 'login' ? 'trial' : 'login'); }
+function signInBack() { var em = $('siEmail').value; signInStep(_siMode || 'signup'); $('siEmail').value = em; }
 
 (function() {   // back from Stripe Checkout: check the account again once the webhook has landed
   var u = new URL(window.location.href);

@@ -580,6 +580,12 @@ body.cb-locked #saveBtn { display:none; }
 body.cb-gate > *:not(#signinOverlay):not(.toast) { visibility:hidden; }
 body.cb-gate #signinOverlay { background:#2e2763; }
 .si-row { display:flex; gap:.5rem; margin-top:.8rem; }
+.si-form { display:flex; flex-direction:column; gap:.55rem; margin-top:.9rem; text-align:left; }
+.si-form .inp { height:2.5rem; font-size:.95rem; }
+.si-form .si-wide { height:2.5rem; width:100%; margin-top:.15rem; }
+.si-form .si-link { align-self:center; margin-top:.2rem; }
+.si-form .dlg-sub { text-align:center; margin:0; }
+#siSub:empty { display:none; }
 .si-row .inp { flex:1; height:2.4rem; font-size:.95rem; }
 .si-row .print-go { white-space:nowrap; }
 .si-code { letter-spacing:.35em; text-align:center; font-family:ui-monospace,Menlo,monospace; }
@@ -883,15 +889,18 @@ body.cb-gate #signinOverlay { background:#2e2763; }
       <button type="button" class="si-opt primary" onclick="signInChoose('trial')"><b>Start your free week</b><span>Every feature for 7 days · no card needed</span></button>
       <button type="button" class="si-opt" onclick="signInChoose('login')"><b>Log in</b><span>I already have a CardBoard account</span></button>
     </div>
-    <form id="siStep1" class="si-row" hidden onsubmit="event.preventDefault();signInSend()">
-      <input class="inp" id="siEmail" type="email" autocomplete="email" placeholder="you@example.com" aria-label="Email">
-      <button type="submit" class="print-go" id="siSend">Email me a code</button>
+    <form id="siStep1" class="si-form" hidden onsubmit="event.preventDefault();signInSubmit()">
+      <input class="inp" id="siEmail" type="email" autocomplete="email" placeholder="Email" aria-label="Email">
+      <input class="inp" id="siPass" type="password" autocomplete="current-password" placeholder="Password" aria-label="Password">
+      <input class="inp" id="siPass2" type="password" autocomplete="new-password" placeholder="Password again" aria-label="Password again">
+      <button type="submit" class="print-go si-wide" id="siSend">Log in</button>
+      <button type="button" class="si-link" id="siForgot" onclick="signInStep('reset')">Forgot password?</button>
     </form>
-    <form id="siStep2" hidden onsubmit="event.preventDefault();signInVerify()">
-      <p class="dlg-sub" id="siSent">We sent a 6-digit code.</p><span id="siTo" hidden></span>
-      <div class="si-row"><input class="inp si-code" id="siCode" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" aria-label="Code" oninput="var v=this.value.replace(/\D/g,'').slice(0,6);if(v!==this.value)this.value=v">
-      <button type="submit" class="print-go" id="siGo">Sign in</button></div>
-      <button type="button" class="si-link" onclick="signInBack()">Use a different email</button>
+    <form id="siStep2" class="si-form" hidden onsubmit="event.preventDefault();signInVerify()">
+      <p class="dlg-sub" id="siSent">We sent a 6-digit code.</p>
+      <input class="inp si-code" id="siCode" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" aria-label="Code" oninput="var v=this.value.replace(/\D/g,'').slice(0,6);if(v!==this.value)this.value=v">
+      <button type="submit" class="print-go si-wide" id="siGo">Confirm</button>
+      <button type="button" class="si-link" onclick="signInBack()">Back</button>
     </form>
     <div class="dlg-err" id="siErr"></div>
     <div class="dlg-actions" style="justify-content:center;flex-wrap:wrap">

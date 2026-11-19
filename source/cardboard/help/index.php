@@ -73,7 +73,7 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
       <li>Put your cards in a Google Sheet: column names in the first row, one card per row below.</li>
       <li>Share the spreadsheet with <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> as an <b>Editor</b>.</li>
       <li>Open <a href="cardboard">CardBoard</a>, paste the sheet's link, and pick the tab with your cards.</li>
-      <li>Sign in with your email: CardBoard sends a 6-digit code. Your first week is free, with every feature.</li>
+      <li>Click <b>Start your free week</b>: enter your email and choose a password, then type the 6-digit code CardBoard emails you. Your first week is free, with every feature. Next time, <b>Log in</b> with your email and password.</li>
     </ol>
     <p>CardBoard adds a tab called <b>layouts</b> to the spreadsheet. It holds your layouts, profile and settings — leave it in place. Hidden tabs aren’t listed, so hide any tab you don’t want to design from.</p>
   </section>
@@ -142,14 +142,14 @@ kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background
       <li><b>Settings</b> — open the spreadsheet, choose inches or millimetres, and see your plan.</li>
       <li><b>Fetch</b> — read the latest data from the Google Sheet.</li>
       <li><b>Subscribe</b> — your free week, the subscription and activation keys.</li>
-      <li><b>Sign out</b> — sign in again any time with a code sent to your email.</li>
+      <li><b>Sign out</b> — log in again any time with your email and password. Forgot it? <b>Forgot password?</b> emails you a code to set a new one.</li>
     </ul>
   </section>
 
   <section class="section" id="plans">
     <h2>Plans</h2>
     <div class="cards">
-      <div class="card"><b>Free week</b><p>Sign in with your email — CardBoard sends a 6-digit code — and every feature is yours for 7 days. No card needed.</p></div>
+      <div class="card"><b>Free week</b><p>Sign up with your email and a password, confirm the email with a 6-digit code, and every feature is yours for 7 days. No card needed.</p></div>
       <div class="card"><b>$4.99/month</b><p>Keep designing after the free week: the designer, tags, printing, exports, hosted links that update when your cards change, and picture uploads. Cancel any time.</p></div>
       <div class="card"><b>After the free week</b><p>Without a subscription CardBoard opens read-only: you can look through your cards and data, and your sheet and layouts stay exactly as they are. Hosted links keep working.</p></div>
     </div>

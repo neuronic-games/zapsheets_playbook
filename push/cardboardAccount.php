@@ -4,9 +4,11 @@
  * account token fresh. See cardboardAuth.php for the token and the free week.
  *
  * POST action and params:
- *   send     — email, mode? (login|trial)  → {ok, existing}  (emails a 6-digit code, valid 15 minutes;
- *                                                                login refuses an email with no account)
- *   verify   — email, code, name?, sheet?  → {ok, token, account}
+ *   send     — email, mode (signup|reset)  → {ok, existing}  (emails a 6-digit code, valid 15 minutes;
+ *                                            signup refuses an account that has a password; reset needs an account)
+ *   verify   — email, code, password, name?, sheet? → {ok, token, account}  (creates the account or sets the password)
+ *   login    — email, password, sheet?     → {ok, token, account}
+ * Passwords are kept only as password_hash() in the Admin sheet's "Password Hash" column.
  *   refresh  — cbt (token), sheet?         → {ok, token, account}   (re-reads the Admin sheet)
  *   activate — cbt, key, sheet?            → {ok, token, account}   (activation key: everything, no time limit)
  *   profile  — cbt, name, studio           → {ok, token, account}   (saved in the person's Admin-sheet row)
@@ -39,7 +41,7 @@ function cbSignedIn(array $u, string $sheet): void {
 }
 
 /** The sign-in email in CardBoard's colors: navy band, gold/lavender wordmark, the code large. Tables and inline styles for mail apps. */
-function cbCodeEmailHtml(string $code): string {
+function cbCodeEmailHtml(string $code, string $mode = 'signup'): string {
     $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host   = preg_replace('/[^a-z0-9.\-:]/i', '', $_SERVER['HTTP_HOST'] ?? 'zapsheets.com');
     $base   = $scheme . '://' . $host . rtrim($_ENV['BASE_PATH'] ?? '', '/') . '/';
@@ -50,7 +52,7 @@ function cbCodeEmailHtml(string $code): string {
     $font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
     return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><title>Your CardBoard code</title></head>' .
       '<body style="margin:0;padding:0;background:#f3f2fa;">' .
-      '<div style="display:none;max-height:0;overflow:hidden;">Your CardBoard sign-in code is ' . $code . '. It works for 15 minutes.</div>' .
+      '<div style="display:none;max-height:0;overflow:hidden;">Your CardBoard code is ' . $code . '. It works for 15 minutes.</div>' .
       '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f2fa;"><tr><td align="center" style="padding:32px 16px;">' .
       '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 18px rgba(46,39,99,.10);">' .
         '<tr><td style="background:#2e2763;padding:22px 28px;">' .
@@ -59,8 +61,8 @@ function cbCodeEmailHtml(string $code): string {
             '<td style="font-family:' . $font . ';font-size:22px;font-weight:800;letter-spacing:.5px;"><span style="color:#f2c14e;">Card</span><span style="color:#a99cff;">Board</span></td>' .
           '</tr></table></td></tr>' .
         '<tr><td style="padding:30px 28px 8px;font-family:' . $font . ';color:#1b1b2b;">' .
-          '<div style="font-size:20px;font-weight:700;color:#2e2763;margin:0 0 8px;">Your sign-in code</div>' .
-          '<div style="font-size:15px;line-height:1.55;color:#555a70;margin:0 0 22px;">Enter this code in CardBoard to sign in. It works for 15 minutes.</div>' .
+          '<div style="font-size:20px;font-weight:700;color:#2e2763;margin:0 0 8px;">' . ($mode === 'reset' ? 'Reset your password' : 'Confirm your email') . '</div>' .
+          '<div style="font-size:15px;line-height:1.55;color:#555a70;margin:0 0 22px;">' . ($mode === 'reset' ? 'Enter this code in CardBoard to choose a new password.' : 'Enter this code in CardBoard to finish creating your account.') . ' It works for 15 minutes.</div>' .
           '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;"><tr>' . $digits . '</tr></table>' .
           '<div style="font-size:13px;line-height:1.55;color:#8a8fa8;margin:0 0 22px;">New to CardBoard? Your first week is free, with every feature. If you didn’t ask for this code, you can ignore this email.</div>' .
         '</td></tr>' .
@@ -75,30 +77,46 @@ $sheet  = trim((string) ($_POST['sheet'] ?? ''));
 if ($sheet !== '' && !stripeValidSheetId($sheet)) $sheet = '';
 $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 
-if ($action === 'send') {
+function cbEmailIn(): string {
     $email = strtolower(trim((string) ($_POST['email'] ?? '')));
     if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 200) fail('Enter a valid email address');
-    if (!cbLimit('send|' . $email, 5) || !cbLimit('sendip|' . $ip, 20)) fail('Too many codes asked for — please wait a while and try again');
-    // mode: login (only an existing account) | trial (new or existing — an existing account signs in, the week isn't restarted)
-    $mode = $_POST['mode'] ?? '';
-    $existing = null;
-    if ($mode === 'login' || $mode === 'trial') {
-        $f = cbAdmin(['action' => 'find', 'field' => 'Email', 'value' => $email]);
-        if (empty($f['ok'])) fail($f['error'] ?? 'Couldn’t check your account');
-        $existing = !empty($f['user']);
-        if ($mode === 'login' && !$existing) fail('There’s no CardBoard account for that email yet — start your free week instead.', ['no_account' => true]);
-    }
-    $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-    $file = cbPrivateDir('codes') . '/' . hash('sha256', $email) . '.json';
-    file_put_contents($file, json_encode(['h' => hash_hmac('sha256', $email . '|' . $code, cbSecret()), 'x' => time() + 900, 'tries' => 0]), LOCK_EX);
-    $body = "Your CardBoard sign-in code is:\r\n\r\n    $code\r\n\r\nIt works for 15 minutes. If you didn't ask for it, you can ignore this email.\r\n\r\n— CardBoard by ZapSheets";
-    $why  = cbSendMail($email, 'Your CardBoard code: ' . $code, $body, cbCodeEmailHtml($code));
-    if ($why !== '' && empty($_ENV['CARDBOARD_AUTH_DEBUG'])) { @unlink($file); fail('The email couldn’t be sent — please try again later'); }
-    ok(['existing' => $existing] + (!empty($_ENV['CARDBOARD_AUTH_DEBUG']) ? ['debug_code' => $code] : []));   // debug code only on a test server
+    return $email;
+}
+function cbPasswordIn(): string {
+    $pw = (string) ($_POST['password'] ?? '');
+    if (strlen($pw) < 8) fail('Use at least 8 characters for your password');
+    if (strlen($pw) > 200) fail('That password is too long');
+    return $pw;
+}
+function cbFind(string $email): ?array {
+    $f = cbAdmin(['action' => 'find', 'field' => 'Email', 'value' => $email]);
+    if (empty($f['ok'])) fail($f['error'] ?? 'Couldn’t check your account');
+    return $f['user'] ?: null;
 }
 
+// Signing up and resetting a password both prove the email with a code first.
+//   mode signup — a new account (an account that has no password yet may set one here)
+//   mode reset  — an existing account chooses a new password
+if ($action === 'send') {
+    $email = cbEmailIn();
+    $mode  = ($_POST['mode'] ?? '') === 'reset' ? 'reset' : 'signup';
+    if (!cbLimit('send|' . $email, 5) || !cbLimit('sendip|' . $ip, 20)) fail('Too many codes asked for — please wait a while and try again');
+    $u = cbFind($email);
+    if ($mode === 'signup' && $u && trim((string) ($u['Password Hash'] ?? '')) !== '') fail('You already have a CardBoard account — log in instead.', ['has_account' => true]);
+    if ($mode === 'reset' && !$u) fail('There’s no CardBoard account for that email — start your free week instead.', ['no_account' => true]);
+    $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+    $file = cbPrivateDir('codes') . '/' . hash('sha256', $email) . '.json';
+    file_put_contents($file, json_encode(['h' => hash_hmac('sha256', $email . '|' . $code, cbSecret()), 'x' => time() + 900, 'tries' => 0, 'mode' => $mode]), LOCK_EX);
+    $body = "Your CardBoard code is:\r\n\r\n    $code\r\n\r\nIt works for 15 minutes. If you didn't ask for it, you can ignore this email.\r\n\r\n— CardBoard by ZapSheets";
+    $why  = cbSendMail($email, 'Your CardBoard code: ' . $code, $body, cbCodeEmailHtml($code, $mode));
+    if ($why !== '' && empty($_ENV['CARDBOARD_AUTH_DEBUG'])) { @unlink($file); fail('The email couldn’t be sent — please try again later'); }
+    ok(['existing' => (bool) $u] + (!empty($_ENV['CARDBOARD_AUTH_DEBUG']) ? ['debug_code' => $code] : []));   // debug code only on a test server
+}
+
+// The code from the email, plus the password to keep: creates the account (free week) or sets the new password
 if ($action === 'verify') {
-    $email = strtolower(trim((string) ($_POST['email'] ?? '')));
+    $email = cbEmailIn();
+    $pw    = cbPasswordIn();
     $code  = preg_replace('/\D/', '', (string) ($_POST['code'] ?? ''));
     $file  = cbPrivateDir('codes') . '/' . hash('sha256', $email) . '.json';
     $c = json_decode((string) @file_get_contents($file), true);
@@ -110,7 +128,23 @@ if ($action === 'verify') {
         fail('That code isn’t right');
     }
     @unlink($file);
-    $r = cbAdmin(['action' => 'user', 'email' => $email, 'name' => trim((string) ($_POST['name'] ?? '')), 'sheet' => $sheet]);
+    $r = cbAdmin(['action' => 'user', 'email' => $email, 'name' => trim((string) ($_POST['name'] ?? '')), 'sheet' => $sheet,
+                  'fields' => ['Password Hash' => password_hash($pw, PASSWORD_DEFAULT)]]);
+    if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t open your account');
+    cbSignedIn($r['user'], $sheet);
+}
+
+// Log in with email and password
+if ($action === 'login') {
+    $email = cbEmailIn();
+    $pw    = (string) ($_POST['password'] ?? '');
+    if ($pw === '') fail('Enter your password');
+    if (!cbLimit('login|' . $email, 10) || !cbLimit('loginip|' . $ip, 40)) fail('Too many tries — please wait a while, or reset your password');
+    $u = cbFind($email);
+    $hash = $u ? trim((string) ($u['Password Hash'] ?? '')) : '';
+    if ($u && $hash === '') fail('This account doesn’t have a password yet — use “Forgot password?” to set one.', ['no_password' => true]);
+    if (!$u || !password_verify($pw, $hash)) { usleep(500000); fail('That email and password don’t match'); }
+    $r = cbAdmin(['action' => 'user', 'email' => $email, 'sheet' => $sheet]);
     if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t open your account');
     cbSignedIn($r['user'], $sheet);
 }

@@ -34,7 +34,7 @@ function cbRun(string $python, string $sheetId, array $data): array {
 // free week, a subscription or an unlocked sheet
 require_once __DIR__ . '/cardboardAuth.php';
 cbRequireSignIn();
-if (in_array($action, ['save', 'addfield', 'setcell', 'addrow', 'settag', 'deltag'], true)) {
+if (in_array($action, ['save', 'addfield', 'renamefield', 'setcell', 'addrow', 'settag', 'deltag'], true)) {
     require_once __DIR__ . '/cardboardAuth.php';
     cbRequireAccess($sheetId);
 }
@@ -62,6 +62,20 @@ if ($action === 'save') {
     $layout = json_decode($_POST['layout'] ?? '', true);
     if ($tab === '' || !is_array($layout)) { echo json_encode(['error' => 'Missing tab or layout']); exit; }
     echo json_encode(cbRun($python, $sheetId, ['action' => 'save', 'sheet' => $tab, 'layout' => $layout]));
+    exit;
+}
+
+if ($action === 'renamefield') {
+    $tab  = trim($_POST['tab'] ?? '');
+    $old  = trim((string) ($_POST['old'] ?? ''));
+    $name = trim(preg_replace('/\s+/u', ' ', $_POST['name'] ?? ''));
+    if ($tab === '' || strpbrk($tab, "/\\") !== false || strtolower($tab) === 'layouts') { echo json_encode(['error' => 'Invalid tab']); exit; }
+    if ($old === '' || $name === '' || mb_strlen($name) > 60 || in_array(strtolower($name), ['_row', '_notes'], true) || strpbrk($name, '{}[]') !== false) {
+        echo json_encode(['error' => 'Use up to 60 characters, without { } [ ] (and not _row or _notes)']); exit;
+    }
+    $res = cbRun($python, $sheetId, ['action' => 'renamefield', 'sheet' => $tab, 'old' => $old, 'name' => $name]);
+    if (!empty($res['ok'])) @unlink(dirname(__DIR__) . '/sheets/' . $sheetId . '/' . strtolower($tab) . '.json');   // re-read next time
+    echo json_encode($res);
     exit;
 }
 

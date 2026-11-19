@@ -137,6 +137,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
       <li><b>Search the rows</b> shows only rows containing what you type.</li>
       <li><b>Reload</b> re-reads this tab from the sheet.</li>
       <li><b>Move a column:</b> drag its heading sideways and drop it where the purple line shows. <b>Resize:</b> drag the right edge of a heading; double-click the edge to fit its contents again. Column widths stay put while you work. This order and these widths are only for this view — your sheet's column order doesn't change.</li>
+      <li><b>Rename a column:</b> double-click its heading (or click it → <b>Rename</b>), type the new name and press <kbd>Enter</kbd> (<kbd>Esc</kbd> cancels). The heading changes in your Google Sheet, and the layout follows automatically: Data fields, <code>{Column}</code> in text, pictures chosen by that column, hidden fields and column widths all switch to the new name.</li>
       <li><b>Hide a column:</b> click its heading → <b>Hide field</b>. It's hidden here and in the Design list, but stays in the sheet (and on any card that uses it). <b>Show all</b> above the grid brings hidden ones back.</li>
     </ul>
     <div class="note">If someone changed a cell in Google Sheets since you loaded it, CardBoard won't overwrite their work: the cell turns red and shows their value.</div>

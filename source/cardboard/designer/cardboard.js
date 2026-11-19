@@ -2562,15 +2562,82 @@ function openColumnMenu(th) {
   var name = GRID.header[+th.dataset.c]; if (!name) return;
   var used = layout && layout.els.concat(layout.back.els).some(function(e) { return e.field === name || (e.kind === 'text' && (e.text || '').indexOf('{' + name + '}') >= 0); });
   var m = document.createElement('div'); m.id = 'colMenu'; m.className = 'field-menu col-menu';
-  m.innerHTML = '<div class="col-menu-name">' + esc(name) + '</div><button type="button"><span class="fm-ico">⊘</span> Hide field</button>' +
+  m.innerHTML = '<div class="col-menu-name">' + esc(name) + '</div><button type="button" class="cm-rename"><span class="fm-ico">✎</span> Rename</button><button type="button" class="cm-hide"><span class="fm-ico">⊘</span> Hide field</button>' +
     '<p>Hides the column here and in the Design list. It stays in the sheet' + (used ? ', and still shows on the card.' : '.') + ' “Show all” above brings it back.</p>';
-  m.querySelector('button').onclick = function() { closeColumnMenu(); setFieldHidden(name, true); toast('Hid “' + name + '”'); };
+  m.querySelector('.cm-hide').onclick = function() { closeColumnMenu(); setFieldHidden(name, true); toast('Hid “' + name + '”'); };
+  m.querySelector('.cm-rename').onclick = function() { closeColumnMenu(); startColumnRename(+th.dataset.c); };
   document.body.appendChild(m);
   var r = th.getBoundingClientRect();
   m.style.left = Math.min(r.left, innerWidth - m.offsetWidth - 12) + 'px'; m.style.top = (r.bottom + 4) + 'px';
   th.classList.add('menu-open');
 }
 document.addEventListener('mousedown', function(ev) { if ($('colMenu') && !ev.target.closest('#colMenu') && !ev.target.closest('th.menu-open')) closeColumnMenu(); });
+// Rename a column: edit its heading (double-click it, or Rename in its menu). The sheet's heading
+// changes, and so does everything that uses it: this tab's layout, hidden fields and column widths.
+function startColumnRename(c) {
+  if (!requirePro('edit', function() {})) return;
+  var th = $('gridWrap').querySelector('th[data-c="' + c + '"]'), name = GRID.header[c]; if (!th || !name) return;
+  closeColumnMenu();
+  th.classList.add('renaming');
+  th.innerHTML = '<input class="th-rename" maxlength="60" spellcheck="false" autocomplete="off">';
+  var inp = th.querySelector('input'), done = false; inp.value = name; inp.focus(); inp.select();
+  function finish(save) {
+    if (done) return; done = true;
+    var nu = inp.value.trim().replace(/\s+/g, ' ');
+    if (!save || !nu || nu === name) { renderGrid(); return; }
+    var bad = isInternal(nu) ? '“' + nu + '” is used by CardBoard' : /[{}\[\]]/.test(nu) ? 'Names can\'t use { } [ or ]'
+      : FIELDS.concat(GRID.header).some(function(f) { return f && f !== name && f.toLowerCase() === nu.toLowerCase(); }) ? 'There\'s already a column called “' + nu + '”' : '';
+    if (bad) { toast(bad, true); renderGrid(); return; }
+    renameColumn(name, nu);
+  }
+  inp.addEventListener('keydown', function(k) { k.stopPropagation(); if (k.key === 'Enter') { k.preventDefault(); finish(true); } else if (k.key === 'Escape') { k.preventDefault(); finish(false); } });
+  inp.addEventListener('blur', function() { finish(true); });
+  inp.addEventListener('mousedown', function(k) { k.stopPropagation(); });
+  inp.addEventListener('click', function(k) { k.stopPropagation(); });
+}
+// Swap a column name everywhere a layout uses it
+function renameInLayout(lay, a, b) {
+  if (!lay) return lay;
+  [lay, lay.back].forEach(function(f) {
+    (f && f.els || []).forEach(function(e) {
+      if (e.field === a) e.field = b;
+      if (e.kind === 'text' && e.text) e.text = e.text.split('{' + a + '}').join('{' + b + '}');
+      if (e.map && e.map.field === a) e.map.field = b;
+    });
+  });
+  if (lay.hidden) lay.hidden = lay.hidden.map(function(x) { return x === a ? b : x; });
+  return lay;
+}
+function renameColumn(a, b) {
+  var tab = curTab;
+  var c = GRID.header.indexOf(a); if (c >= 0) GRID.header[c] = b; renderGrid();   // show the new name straight away
+  api('renamefield', { tab: tab, old: a, name: b }).then(function() {
+    // the data in memory
+    ROWS.forEach(function(r) { if (Object.prototype.hasOwnProperty.call(r, a)) { r[b] = r[a]; delete r[a]; } });
+    FIELDS = FIELDS.map(function(f) { return f === a ? b : f; });
+    // the layout: what's saved in the sheet, what's on screen (saved or not), the undo history and any draft
+    var saved = LAYOUTS[tab] ? renameInLayout(JSON.parse(JSON.stringify(LAYOUTS[tab])), a, b) : null;
+    if (curTab === tab && layout) renameInLayout(layout, a, b);
+    [undoStack, redoStack].forEach(function(st) { for (var i = 0; i < st.length; i++) st[i] = JSON.stringify(renameInLayout(JSON.parse(st[i]), a, b)); });
+    if (dirty) { try { localStorage.setItem('cb_draft:' + SHEET_ID + ':' + tab, JSON.stringify(layout)); } catch (e) {} }
+    var p = (SETTINGS.grid || {})[tab], gridChanged = false;
+    if (p) {
+      if (p.order) { p.order = p.order.map(function(x) { return x === a ? b : x; }); gridChanged = true; }
+      if (p.w && p.w[a] != null) { p.w[b] = p.w[a]; delete p.w[a]; gridChanged = true; }
+    }
+    renderData(); render(); renderAttrs(); if (_activeTab === 'data') renderGrid();
+    var jobs = [];
+    if (saved) jobs.push(api('save', { tab: tab, layout: JSON.stringify(saved) }).then(function() { LAYOUTS[tab] = saved; if (!dirty) setDirty(false); }));
+    if (gridChanged) jobs.push(saveSettings());
+    return Promise.all(jobs).then(function() {
+      toast('✓ Renamed “' + a + '” to “' + b + '”' + (saved ? ' — the layout uses the new name' : ''));
+      autoRepublish(tab);
+    });
+  }).catch(function(e) {
+    var k = GRID.header.indexOf(b); if (k >= 0 && FIELDS.indexOf(b) < 0) GRID.header[k] = a;
+    renderGrid(); toast('Couldn\'t rename — ' + e.message, true);
+  });
+}
 document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') closeColumnMenu(); });
 $('gridWrap').addEventListener('scroll', closeColumnMenu);
 
@@ -2598,13 +2665,15 @@ function refreshRows() {
   });
   // Resize: drag a heading's right edge. Double-click the edge to fit its contents again.
   wrap.addEventListener('dblclick', function(ev) {
+    var hd = ev.target.closest('th[data-c]');
+    if (hd && !ev.target.classList.contains('col-rs') && !ev.target.closest('.th-rename')) { startColumnRename(+hd.dataset.c); return; }
     if (!ev.target.classList.contains('col-rs')) return;
     var name = GRID.header[+ev.target.closest('th').dataset.c], w = gridPrefs().w;
     if (w && w[name]) { delete w[name]; saveGridPrefs(); } renderGrid();
   });
   var _colDragged = false;
   wrap.addEventListener('mousedown', function(ev) {
-    var th = ev.target.closest('th[data-c]'); if (!th || ev.button !== 0) return;
+    var th = ev.target.closest('th[data-c]'); if (!th || ev.button !== 0 || th.classList.contains('renaming')) return;
     var c = +th.dataset.c, name = GRID.header[c], table = wrap.querySelector('table.grid'), col = table.querySelector('col[data-c="' + c + '"]');
     var x0 = ev.clientX, moved = false;
     if (ev.target.classList.contains('col-rs')) {

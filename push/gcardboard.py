@@ -9,6 +9,7 @@
 #   settag  — tag, value, old (previous name when renaming) → one row in the "tags" tab (created if missing)
 #   deltag  — tag → removes its row
 #   addfield — sheet: tab title, name: new column name → added after the last column heading
+#   renamefield — sheet, old, name → the heading "old" becomes "name"
 #   grid    — sheet → {header, rows: [{row, values}]} as typed in the sheet (formulas, not results)
 #   setcell — sheet, row, field, value, old → writes one cell (as if typed); refuses if the cell
 #             no longer holds "old" (someone changed it in the meantime)
@@ -264,6 +265,25 @@ def main():
         a1 = gspread.utils.rowcol_to_a1(1, col + 1)
         wb.values_update(q(tws.title) + '!' + a1, params={'valueInputOption': 'RAW'}, body={'values': [[field]]})
         out({'ok': True, 'field': field, 'column': a1.rstrip('0123456789')})
+
+    if action == 'renamefield':
+        name = str(data.get('sheet', '')).strip()
+        old = str(data.get('old', '')).strip()
+        field = str(data.get('name', '')).strip()
+        tws = next((w for w in sheets if w.title == name), None)
+        if tws is None or name.lower() == TAB:
+            out({'error': 'That sheet was not found'})
+        if not field or not old:
+            out({'error': 'Give the column a name'})
+        hdr = (wb.values_get(q(tws.title) + '!1:1').get('values') or [[]])[0]
+        idx = next((i for i, h in enumerate(hdr) if str(h).strip() == old), -1)
+        if idx < 0:
+            out({'error': f'The column "{old}" wasn\'t found — Fetch to see the latest'})
+        if any(i != idx and str(h).strip().lower() == field.lower() for i, h in enumerate(hdr)):
+            out({'error': f'There is already a column called "{field}"'})
+        a1 = gspread.utils.rowcol_to_a1(1, idx + 1)
+        wb.values_update(q(tws.title) + '!' + a1, params={'valueInputOption': 'RAW'}, body={'values': [[field]]})
+        out({'ok': True, 'old': old, 'field': field, 'column': a1.rstrip('0123456789')})
 
     if action in ('grid', 'setcell', 'addrow'):
         name = str(data.get('sheet', '')).strip()

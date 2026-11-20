@@ -130,7 +130,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
       <li>Until you save, your changes are only in this browser — other people, exports and hosted links see the last saved version. Hosted links update after you save.</li>
       <li>If someone changed a cell in Google Sheets after you loaded it, your edit to that cell isn't written: the cell turns red and shows their value.</li>
       <li><b>Fetch</b> with unsaved changes asks first: <b>Save, then fetch</b>, or <b>Fetch without saving</b> — your changes then stay in this browser, shown on top of the latest data.</li>
-      <li>Renaming or deleting a column, deleting a row and editing tags go to the sheet straight away.</li>
+      <li>Renaming a column and editing tags go to the sheet straight away.</li>
     </ul>
     <div class="note">Changes kept in a browser stay in that browser only — they don't follow you to another computer, and clearing the browser's site data (or closing a private window) removes them. Save before you switch computers.</div>
   </section>
@@ -149,7 +149,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
     <ul>
       <li><b>New rows:</b> there's always an empty row at the bottom. Type in it and it becomes a card (added to the sheet when you save), with a fresh empty row below. New rows show the row number they'll have in the sheet.</li>
       <li><b>New columns:</b> there's always an empty column at the end. Click its empty heading and type a name, or just type in one of its cells — it's named after its letter (like <b>Column H</b>) until you rename it. New columns go to the sheet when you save.</li>
-      <li><b>Delete a row:</b> click its row number → <b>Delete row</b>. <b>Delete a column:</b> click its heading → <b>Delete column</b>. CardBoard asks first, then deletes it from your Google Sheet (undo it there with Edit → Undo or version history). If the row changed in Sheets since you loaded it, nothing is deleted and the latest is shown instead.</li>
+      <li><b>Delete a row:</b> click its row number → <b>Delete row</b>. <b>Delete a column:</b> click its heading → <b>Delete column</b>. It disappears straight away and is deleted from the sheet when you save. (If someone changed that row in Google Sheets meanwhile, it's kept.)</li>
       <li><b>Search the rows</b> shows only rows containing what you type.</li>
       <li><b>Reload</b> re-reads this tab from the sheet.</li>
       <li><b>Move a column:</b> drag its heading sideways and drop it where the purple line shows. <b>Resize:</b> drag the right edge of a heading; double-click the edge to fit its contents again. Column widths stay put while you work. This order and these widths are only for this view — your sheet's column order doesn't change.</li>

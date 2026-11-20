@@ -12,7 +12,8 @@
 #   renamefield — sheet, old, name → the heading "old" becomes "name"
 #   deleterow — sheet, row, values → deletes the row if it still holds those values
 #   deletefield — sheet, field → deletes that column
-#   savecells — sheet, cols [names], cells [{row, field, value, old}], adds [{key, values}] → many edits in one go
+#   savecells — sheet, cols [names], cells [{row, field, value, old}], adds [{key, values}],
+#               delrows [{row, values}], delcols [names] → many edits in one go (deletions last)
 #   grid    — sheet → {header, rows: [{row, values}]} as typed in the sheet (formulas, not results)
 #   setcell — sheet, row, field, value, old → writes one cell (as if typed); refuses if the cell
 #             no longer holds "old" (someone changed it in the meantime)
@@ -378,7 +379,33 @@ def main():
                 m = __import__('re').search(r'![A-Z]+(\d+)', rng)
                 first = int(m.group(1)) if m else 0
                 added = [{'key': a.get('key'), 'row': (first + i) if first else 0} for i, a in enumerate(adds)]
-            out({'ok': True, 'results': results, 'added': added, 'cols': cols_added})
+            # Deletions last, so the row numbers above stay right: rows (only if they still hold what the
+            # browser showed), then columns, each from the bottom/right up so the others don't move first
+            reqs, deleted_rows, deleted_cols, row_conflicts = [], [], [], []
+            dels = []
+            for d in (data.get('delrows') or []):
+                try: dels.append((int(d.get('row', 0)), [str(v) for v in (d.get('values') or [])]))
+                except Exception: pass
+            dels = sorted({r: v for r, v in dels if r >= 2}.items(), reverse=True)
+            if dels:
+                width = max([len(hdr)] + [len(v) for _, v in dels]) or 1
+                curs = wb.values_batch_get(['A%d:%s' % (r, gspread.utils.rowcol_to_a1(r, width)) for r, _ in dels], params={'valueRenderOption': 'FORMULA', 'dateTimeRenderOption': 'FORMATTED_STRING'}).get('valueRanges', [])
+                for (r, want), vr in zip(dels, curs):
+                    cur = [cellstr(x) for x in ((vr.get('values') or [[]])[0])]
+                    n = max(len(cur), len(want))
+                    if (cur + [''] * (n - len(cur))) != (want + [''] * (n - len(want))):
+                        row_conflicts.append(r); continue
+                    reqs.append({'deleteDimension': {'range': {'sheetId': tws.id, 'dimension': 'ROWS', 'startIndex': r - 1, 'endIndex': r}}})
+                    deleted_rows.append(r)
+            for i in sorted({hdr.index(str(c)) for c in (data.get('delcols') or []) if str(c) in hdr}, reverse=True):
+                reqs.append({'deleteDimension': {'range': {'sheetId': tws.id, 'dimension': 'COLUMNS', 'startIndex': i, 'endIndex': i + 1}}})
+                deleted_cols.append(hdr[i])
+            if reqs:
+                wb.batch_update({'requests': reqs})
+                for a in added:   # new rows sit below the deleted ones, so they move up
+                    if a['row']: a['row'] -= len([r for r in deleted_rows if r < a['row']])
+            out({'ok': True, 'results': results, 'added': added, 'cols': cols_added,
+                 'deleted_rows': deleted_rows, 'deleted_cols': deleted_cols, 'row_conflicts': row_conflicts})
 
         def delete_dim(dim, i):   # i: 0-based row or column index
             wb.batch_update({'requests': [{'deleteDimension': {'range': {'sheetId': tws.id, 'dimension': dim, 'startIndex': i, 'endIndex': i + 1}}}]})

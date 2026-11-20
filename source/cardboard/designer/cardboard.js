@@ -723,9 +723,10 @@ function sheetRowFor(row, like) {   // like: the row's values as the sheet has t
     start = api('grid', { tab: tab }).then(function(r) { if (curTab === tab) { GRID = { tab: tab, header: r.header || [], rows: r.rows || [] }; overlayGrid(); } });
   }
   return start.then(function() {
-    var i = ROWS.indexOf(row), guess = GRID.rows.filter(function(g) { return !g.draft; })[i];
+    var live = GRID.rows.filter(function(g) { return !g.draft && !rowDeleted(g.row); });
+    var i = ROWS.indexOf(row), guess = live[i];
     if (guess && gridMatch(like, guess)) return guess;
-    var all = GRID.rows.filter(function(g) { return !g.draft && gridMatch(like, g); });
+    var all = live.filter(function(g) { return gridMatch(like, g); });
     if (all.length === 1) return all[0];
     throw new Error(all.length ? 'several rows look the same — set the picture in the Data tab' : 'couldn\'t find this row in the sheet — try Fetch');
   });
@@ -1240,15 +1241,18 @@ function draftTabs() {
   });
 }
 function dataKey(tab) { return 'cb_data:' + SHEET_ID + ':' + tab; }
-function dataPend(tab) { var p = lsGet(dataKey(tab)) || {}; p.cells = p.cells || []; p.adds = p.adds || []; p.cols = p.cols || []; return p; }
-function setDataPend(tab, p) { lsSet(dataKey(tab), p.cells.length || p.adds.length || p.cols.length ? p : null); updateSaveBtn(); }
-function dataTabs() { return lsTabs('data').filter(function(t) { var p = dataPend(t); return p.cells.length || p.adds.length || p.cols.length; }); }
+function dataPend(tab) { var p = lsGet(dataKey(tab)) || {}; ['cells', 'adds', 'cols', 'delrows', 'delcols'].forEach(function(k) { p[k] = p[k] || []; }); return p; }
+function pendSize(p) { return p.cells.length + p.adds.length + p.cols.length + p.delrows.length + p.delcols.length; }
+function setDataPend(tab, p) { lsSet(dataKey(tab), pendSize(p) ? p : null); updateSaveBtn(); }
+function dataTabs() { return lsTabs('data').filter(function(t) { return pendSize(dataPend(t)) > 0; }); }
+function rowDeleted(row) { return !!GRID && dataPend(GRID.tab).delrows.some(function(d) { return d.row === row; }); }
+function colDeleted(name) { return !!name && !!curTab && dataPend(curTab).delcols.indexOf(name) >= 0; }
 function pendingCol(tab, name) { return dataPend(tab).cols.indexOf(name) >= 0; }
 function settingsPending() { return !!lsGet('cb_settings:' + SHEET_ID); }
 function markSettings() { var keep = Object.assign({}, SETTINGS); delete keep.profile; lsSet('cb_settings:' + SHEET_ID, keep); updateSaveBtn(); }
 function pendingCount() {
   var n = draftTabs().length + (settingsPending() ? 1 : 0);
-  dataTabs().forEach(function(t) { var p = dataPend(t); n += p.cells.length + p.adds.length + p.cols.length; });
+  dataTabs().forEach(function(t) { n += pendSize(dataPend(t)); });
   return n;
 }
 var _saving = false, _savingP = null, _saveSteps = 0, _saveDone = 0;
@@ -1284,16 +1288,17 @@ function pendingOld(tab, row, field) { var c = dataPend(tab).cells.filter(functi
 function overlayPending(partial) {
   var tab = curTab, p = dataPend(tab);
   p.cols.forEach(function(n) { if (FIELDS.indexOf(n) < 0) FIELDS.push(n); ROWS.forEach(function(r) { if (!(n in r)) r[n] = ''; }); });   // columns not in the sheet yet
+  p.delcols.forEach(function(n) { FIELDS = FIELDS.filter(function(f) { return f !== n; }); ROWS.forEach(function(r) { delete r[n]; }); });   // columns deleted here
   if (!partial) p.adds.forEach(function(a) {   // new rows become cards at the end
     if (ROWS.some(function(r) { return r._pend === a.key; })) return;
     var r = { _pend: a.key }; FIELDS.forEach(function(f) { r[f] = a.values[f] || ''; }); ROWS.push(r);
   });
-  if (!p.cells.length) { overlayGrid(); return; }
+  if (!p.cells.length && !p.delrows.length) { overlayGrid(); return; }
   var go = function() { if (curTab !== tab || !GRID) return; overlayGrid(); render(); renderData(); if (_activeTab === 'data') renderGrid(); };
   if (GRID && GRID.tab === tab) go();
   else api('grid', { tab: tab }).then(function(r) { if (curTab !== tab || (GRID && GRID.tab === tab)) return go(); GRID = { tab: tab, header: r.header || [], rows: r.rows || [] }; go(); }).catch(function() {});
 }
-function gridCardIndex(gr) { return GRID.rows.filter(function(g) { return !g.draft; }).indexOf(gr); }   // which card a sheet row is
+function gridCardIndex(gr) { return GRID.rows.filter(function(g) { return !g.draft && !rowDeleted(g.row); }).indexOf(gr); }   // which card a sheet row is
 function overlayGrid() {
   if (!GRID || GRID.tab !== curTab) return;
   var p = dataPend(curTab);
@@ -1302,6 +1307,13 @@ function overlayGrid() {
     var at = GRID.header.length; while (at > 0 && !GRID.header[at - 1]) at--;
     GRID.header[at] = n; GRID.rows.forEach(function(r) { while (r.values.length < GRID.header.length) r.values.push(''); });
   });
+  // Rows deleted here: their cards go (once for each set of rows read from the sheet)
+  if (p.delrows.length && !ROWS._delDone) {
+    var all = GRID.rows.filter(function(g) { return !g.draft; }), drop = [];
+    p.delrows.forEach(function(d) { var k = all.findIndex(function(g) { return g.row === d.row; }); if (k >= 0 && k < ROWS.length) drop.push(k); });
+    drop.sort(function(a, b) { return b - a; }).forEach(function(k) { ROWS.splice(k, 1); });
+    ROWS._delDone = true; rowIdx = Math.min(rowIdx, Math.max(0, ROWS.length - 1));
+  }
   p.cells.forEach(function(c) {
     var gr = GRID.rows.filter(function(g) { return !g.draft && g.row === c.row; })[0], col = GRID.header.indexOf(c.field);
     if (!gr || col < 0) return;
@@ -1328,7 +1340,7 @@ function saveAll(auto) {
   dataTabs().forEach(function(tab) {
     chain = chain.then(function() {
       var sent = dataPend(tab);
-      return api('savecells', { tab: tab, cols: JSON.stringify(sent.cols), cells: JSON.stringify(sent.cells), adds: JSON.stringify(sent.adds) })
+      return api('savecells', { tab: tab, cols: JSON.stringify(sent.cols), cells: JSON.stringify(sent.cells), adds: JSON.stringify(sent.adds), delrows: JSON.stringify(sent.delrows), delcols: JSON.stringify(sent.delcols) })
         .then(function(res) { conflicts += applySaveResults(tab, sent, res); if (savedTabs.indexOf(tab) < 0) savedTabs.push(tab); })
         .catch(function(e) { errors.push('“' + tab + '” data: ' + e.message); }).then(step);
     });
@@ -1356,8 +1368,9 @@ function saveAll(auto) {
     _saving = false; refreshSheetCombos(); updateSaveBtn();
     // Hosted links show the saved cards: update them now for this tab, the others when they're next opened
     savedTabs.forEach(function(t) { if (t !== curTab && PUBLISHED[t]) { try { localStorage.setItem('cb_repub:' + SHEET_ID + ':' + t, '1'); } catch (e) {} } });
+    if (_reloadGrid[curTab] && GRID && GRID.tab === curTab) { GRID = null; _gridSel = null; if (_activeTab === 'data') loadGrid(true); }   // rows or columns were deleted: numbers changed
     if (savedTabs.indexOf(curTab) >= 0) { if (_lastSaveData[curTab]) refreshRows(); else autoRepublish(curTab); }
-    _lastSaveData = {};
+    _lastSaveData = {}; _reloadGrid = {};
     if (errors.length) toast('Couldn’t save everything — ' + errors[0] + (errors.length > 1 ? ' (and ' + (errors.length - 1) + ' more)' : '') + '. Your changes are still in this browser; try Save again.', true);
     else if (conflicts) toast('Saved — but ' + conflicts + ' cell' + (conflicts === 1 ? ' was' : 's were') + ' changed in the sheet meanwhile, so the sheet’s value' + (conflicts === 1 ? ' was' : 's were') + ' kept (marked red)', true);
     else toast(auto === true ? '✓ Saved to your Google Sheet in the background' : '✓ Saved to your Google Sheet');
@@ -1365,7 +1378,7 @@ function saveAll(auto) {
   });
   return _savingP;
 }
-var _lastSaveData = {};
+var _lastSaveData = {}, _reloadGrid = {};
 // What the sheet said about each saved cell; anything edited again during the save stays pending
 function applySaveResults(tab, sent, res) {
   var p = dataPend(tab), conflicts = 0, g = GRID && GRID.tab === tab ? GRID : null;
@@ -1396,7 +1409,19 @@ function applySaveResults(tab, sent, res) {
     if (gr && ad.row) { gr.draft = false; gr.row = ad.row; delete gr.key; gr.state = {}; }
     var card = tab === curTab ? ROWS.filter(function(r) { return r._pend === ad.key; })[0] : null; if (card) delete card._pend;
   });
+  // Deletions: done (or, for a row someone changed meanwhile, skipped). Rows below a deleted one move up.
+  p.delcols = p.delcols.filter(function(n) { return sent.delcols.indexOf(n) < 0; });
+  p.delrows = p.delrows.filter(function(d) { return !sent.delrows.some(function(x) { return x.row === d.row; }); });
+  var gone = (res.deleted_rows || []).slice().sort(function(a, b) { return a - b; });
+  if (gone.length) {
+    var shift = function(row) { return row - gone.filter(function(x) { return x < row; }).length; };
+    p.cells.forEach(function(x) { x.row = shift(x.row); });
+    p.delrows.forEach(function(x) { x.row = shift(x.row); });
+  }
+  conflicts += (res.row_conflicts || []).length;
+  if (gone.length || (res.deleted_cols || []).length || (res.row_conflicts || []).length) _reloadGrid[tab] = true;
   setDataPend(tab, p);
+  if (_reloadGrid[tab]) return conflicts;   // the grid is read again after the save
   if (g && _activeTab === 'data' && curTab === tab) {
     renderGrid();
     setTimeout(function() { if (!GRID || GRID !== g) return; g.rows.forEach(function(r) { Object.keys(r.state || {}).forEach(function(c) { if (r.state[c] === 'saved') delete r.state[c]; }); }); if (_activeTab === 'data') renderGrid(); }, 1200);
@@ -2548,7 +2573,7 @@ function loadGrid(force) {
 // Column order and widths in the Data view are kept per tab in _cardboard_settings (the sheet itself is unchanged)
 function gridPrefs(tab) { var g = SETTINGS.grid = SETTINGS.grid || {}; return g[tab || GRID.tab] = g[tab || GRID.tab] || {}; }
 function gridCols() {
-  var cols = GRID.header.map(function(h, i) { return { name: h, i: i }; }).filter(function(c) { return c.name && !isHidden(c.name); });
+  var cols = GRID.header.map(function(h, i) { return { name: h, i: i }; }).filter(function(c) { return c.name && !isHidden(c.name) && !colDeleted(c.name); });
   var order = gridPrefs().order || [];
   return cols.map(function(c, k) { var o = order.indexOf(c.name); return { c: c, k: o < 0 ? order.length + k : o }; })
     .sort(function(a, b) { return a.k - b.k; }).map(function(x) { return x.c; });
@@ -2578,16 +2603,18 @@ function saveGridPrefs() {
   _gridPrefsTimer = setTimeout(function() { if (hasAccess()) markSettings(); }, 300);
 }
 function gridVisibleRows() {
-  if (!_gridFilter) return GRID.rows;
+  var dels = dataPend(GRID.tab).delrows.map(function(d) { return d.row; });
+  var rows = GRID.rows.filter(function(r) { return r.draft || dels.indexOf(r.row) < 0; });
+  if (!_gridFilter) return rows;
   var f = _gridFilter.toLowerCase();
-  return GRID.rows.filter(function(r) { return r.draft || r.values.some(function(v) { return String(v).toLowerCase().indexOf(f) >= 0; }); });
+  return rows.filter(function(r) { return r.draft || r.values.some(function(v) { return String(v).toLowerCase().indexOf(f) >= 0; }); });
 }
 function renderGrid() {
   var box = $('gridWrap'); if (!GRID) return;
   ensureTrailingRow();
   var cols = gridColsAll(), rows = gridVisibleRows();
   var nHid = GRID.header.filter(function(hd) { return hd && isHidden(hd); }).length;
-  $('gridInfo').innerHTML = GRID.rows.filter(function(r) { return !r.draft; }).length + ' rows · ' + (cols.length - 1) + ' columns' + (_gridFilter ? ' · ' + rows.length + ' shown' : '') +
+  $('gridInfo').innerHTML = GRID.rows.filter(function(r) { return !r.draft && !rowDeleted(r.row); }).length + ' rows · ' + (cols.length - 1) + ' columns' + (_gridFilter ? ' · ' + rows.length + ' shown' : '') +
     (nHid ? ' · ' + nHid + ' hidden <button type="button" class="lk-act" onclick="showAllFields()">Show all</button>' : '');
   var imgCols = {};
   cols.forEach(function(c) { imgCols[c.i] = FIELDS.indexOf(c.name) >= 0 && looksLikeImage(c.name); });
@@ -2747,7 +2774,7 @@ function openColumnMenu(th) {
     '<p>Hides the column here and in the Design list. It stays in the sheet' + (used ? ', and still shows on the card.' : '.') + ' “Show all” above brings it back.</p>';
   m.querySelector('.cm-hide').onclick = function() { closeColumnMenu(); setFieldHidden(name, true); toast('Hid “' + name + '”'); };
   m.querySelector('.cm-rename').onclick = function() { closeColumnMenu(); startColumnRename(+th.dataset.c); };
-  m.querySelector('.cm-del').onclick = function() { closeColumnMenu(); deleteGridColumn(name, used); };
+  m.querySelector('.cm-del').onclick = function() { closeColumnMenu(); deleteGridColumn(name); };
   document.body.appendChild(m);
   var r = th.getBoundingClientRect();
   m.style.left = Math.min(r.left, innerWidth - m.offsetWidth - 12) + 'px'; m.style.top = (r.bottom + 4) + 'px';
@@ -2755,29 +2782,24 @@ function openColumnMenu(th) {
 }
 document.addEventListener('mousedown', function(ev) { if ($('colMenu') && !ev.target.closest('#colMenu') && !ev.target.closest('th.menu-open')) closeColumnMenu(); });
 // Delete a column from the sheet (after asking). Cards that used it show nothing there.
-function deleteGridColumn(name, used) {
+function deleteGridColumn(name) {   // kept in this browser until Save, like every other change
   if (!requirePro('edit', function() {})) return;
-  askDialog({ title: 'Delete “' + name + '”?', danger: true, ok: 'Delete column',
-    message: 'This deletes the whole column, and everything in it, from your Google Sheet.' + (used ? ' Cards that show it will have nothing there.' : '') + ' You can undo it in Google Sheets (Edit → Undo, or version history).' })
-  .then(function(yes) {
-    if (!yes) return;
-    var tab = curTab;
-    var unsaved = pendingCol(tab, name);
-    (unsaved ? Promise.resolve() : api('deletefield', { tab: tab, field: name })).then(function() {
-      if (!GRID || GRID.tab !== tab) return;
-      var i = GRID.header.indexOf(name);
-      if (i >= 0) { GRID.header.splice(i, 1); GRID.rows.forEach(function(r) { r.values.splice(i, 1); if (r.state) r.state = {}; }); }
-      FIELDS = FIELDS.filter(function(f) { return f !== name; });
-      ROWS.forEach(function(r) { delete r[name]; });
-      var pd = dataPend(tab); pd.cells = pd.cells.filter(function(x) { return x.field !== name; }); pd.adds.forEach(function(x) { delete x.values[name]; }); pd.cols = pd.cols.filter(function(x) { return x !== name; }); setDataPend(tab, pd);
-      var p = (SETTINGS.grid || {})[tab];
-      if (p) { if (p.order) p.order = p.order.filter(function(x) { return x !== name; }); if (p.w) delete p.w[name]; }
-      if (layout && layout.hidden) layout.hidden = layout.hidden.filter(function(x) { return x !== name; });
-      _gridSel = null; _rowsStale = true;
-      renderGrid(); renderData(); render();
-      toast('Deleted the “' + name + '” column');
-    }).catch(function(e) { toast('Couldn\'t delete — ' + e.message, true); });
-  });
+  var tab = curTab, pd = dataPend(tab);
+  pd.cells = pd.cells.filter(function(x) { return x.field !== name; });
+  pd.adds.forEach(function(x) { delete x.values[name]; });
+  if (pd.cols.indexOf(name) >= 0) {   // never in the sheet: just forget it
+    pd.cols = pd.cols.filter(function(x) { return x !== name; });
+    var i = GRID ? GRID.header.indexOf(name) : -1;
+    if (i >= 0) { GRID.header.splice(i, 1); GRID.rows.forEach(function(r) { r.values.splice(i, 1); }); }
+  } else if (pd.delcols.indexOf(name) < 0) pd.delcols.push(name);
+  setDataPend(tab, pd);
+  FIELDS = FIELDS.filter(function(f) { return f !== name; });
+  ROWS.forEach(function(r) { delete r[name]; });
+  var p = (SETTINGS.grid || {})[tab];
+  if (p) { if (p.order) p.order = p.order.filter(function(x) { return x !== name; }); if (p.w) delete p.w[name]; }
+  if (layout && layout.hidden) layout.hidden = layout.hidden.filter(function(x) { return x !== name; });
+  _gridSel = null;
+  renderGrid(); renderData(); render();
 }
 // Click a row number for its menu: Delete row
 function closeRowMenu() { var m = $('rowMenu'); if (m) m.remove(); document.querySelectorAll('table.grid td.rn.menu-open').forEach(function(t) { t.classList.remove('menu-open'); }); }
@@ -2785,7 +2807,7 @@ function openRowMenu(td) {
   var open = td.classList.contains('menu-open'); closeRowMenu(); closeColumnMenu(); if (open) return;
   var ri = +td.parentNode.dataset.r, r = GRID.rows[ri]; if (!r) return;
   var m = document.createElement('div'); m.id = 'rowMenu'; m.className = 'field-menu col-menu';
-  m.innerHTML = '<div class="col-menu-name">' + (r.draft ? 'New row (not saved yet)' : 'Row ' + r.row) + '</div><button type="button" class="danger"><span class="fm-ico">🗑</span> Delete row</button>';
+  m.innerHTML = '<div class="col-menu-name">Row ' + esc(td.textContent) + '</div><button type="button" class="danger"><span class="fm-ico">🗑</span> Delete row</button>';
   m.querySelector('button').onclick = function() { closeRowMenu(); deleteGridRow(ri); };
   document.body.appendChild(m);
   var b = td.getBoundingClientRect();
@@ -2794,33 +2816,27 @@ function openRowMenu(td) {
 }
 document.addEventListener('mousedown', function(ev) { if ($('rowMenu') && !ev.target.closest('#rowMenu') && !ev.target.closest('td.rn.menu-open')) closeRowMenu(); });
 document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') closeRowMenu(); });
-function deleteGridRow(ri) {
+function deleteGridRow(ri) {   // kept in this browser until Save
   var r = GRID.rows[ri]; if (!r) return;
-  if (r.draft) {   // never written to the sheet
-    if (r.key) { var pa = dataPend(curTab); pa.adds = pa.adds.filter(function(x) { return x.key !== r.key; }); setDataPend(curTab, pa); ROWS = ROWS.filter(function(x) { return x._pend !== r.key; }); renderData(); render(); }
-    GRID.rows.splice(ri, 1); _gridSel = null; renderGrid(); return;
-  }
   if (!requirePro('edit', function() {})) return;
-  var first = GRID.header.map(function(h, i) { return h ? r.values[i] : ''; }).filter(function(v) { return String(v || '').trim(); })[0] || '';
-  askDialog({ title: 'Delete row ' + r.row + '?', danger: true, ok: 'Delete row',
-    message: (first ? '“' + String(first).slice(0, 60) + '” — ' : '') + 'this deletes the row from your Google Sheet, and its card with it. You can undo it in Google Sheets (Edit → Undo, or version history).' })
-  .then(function(yes) {
-    if (!yes) return;
-    var tab = curTab, rowNo = r.row;
-    var asSheet = r.values.map(function(v, i) { var o = GRID.header[i] ? pendingOld(tab, rowNo, GRID.header[i]) : null; return o != null ? o : v; });
-    api('deleterow', { tab: tab, row: rowNo, values: JSON.stringify(asSheet) }).then(function() {
-      // unsaved edits: the deleted row's go, the rows below move up one
-      var pd = dataPend(tab); pd.cells = pd.cells.filter(function(x) { return x.row !== rowNo; }); pd.cells.forEach(function(x) { if (x.row > rowNo) x.row--; }); setDataPend(tab, pd);
-      if (!GRID || GRID.tab !== tab) return;
-      var k = GRID.rows.indexOf(r); if (k >= 0) GRID.rows.splice(k, 1);
-      GRID.rows.forEach(function(x) { if (!x.draft && x.row > rowNo) x.row--; });
-      _gridSel = null; _rowsStale = true; renderGrid();
-      toast('Deleted row ' + rowNo);
-    }).catch(function(e) {
-      if (e.message === 'conflict') { toast('That row changed in the sheet since you loaded it — showing the latest, try again', true); loadGrid(true); }
-      else toast('Couldn\'t delete — ' + e.message, true);
+  var tab = curTab, pd = dataPend(tab);
+  if (r.draft) {   // never written to the sheet
+    if (r.key) { pd.adds = pd.adds.filter(function(x) { return x.key !== r.key; }); setDataPend(tab, pd); ROWS = ROWS.filter(function(x) { return x._pend !== r.key; }); }
+    GRID.rows.splice(ri, 1);
+  } else {
+    // What the sheet has in this row (not this browser's edits), so Save only deletes it if nobody changed it meanwhile
+    var asSheet = r.values.map(function(v, i) {
+      var h = GRID.header[i]; if (!h || pd.cols.indexOf(h) >= 0) return h ? '' : v;
+      var o = pendingOld(tab, r.row, h); return o != null ? o : v;
     });
-  });
+    var card = gridCardIndex(r);
+    pd.cells = pd.cells.filter(function(x) { return x.row !== r.row; });
+    if (!pd.delrows.some(function(d) { return d.row === r.row; })) pd.delrows.push({ row: r.row, values: asSheet });
+    setDataPend(tab, pd);
+    if (card >= 0 && ROWS[card] && !ROWS[card]._pend) { ROWS.splice(card, 1); ROWS._delDone = true; }
+  }
+  rowIdx = Math.min(rowIdx, Math.max(0, ROWS.length - 1));
+  _gridSel = null; renderGrid(); renderData(); render();
 }
 // Rename a column: edit its heading (double-click it, or Rename in its menu). The sheet's heading
 // changes, and so does everything that uses it: this tab's layout, hidden fields and column widths.

@@ -322,6 +322,9 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .arr-gap .inp { height:1.6rem; padding:0 .35rem; min-width:0; width:100%; }
 .arr-gap .inp:disabled { opacity:.45; }
 .arr-list:not(.on) .arr-gap span { opacity:.5; }
+.arr-align { display:flex; align-items:center; gap:.55rem; margin-top:.45rem; }
+.arr-align .mini { margin:0; }
+.arr-align .seg button { display:flex; align-items:center; justify-content:center; height:2.1rem; padding:0 .7rem; }
 .el-img { display:block; width:100%; height:100%; object-position:center; background-repeat:no-repeat; background-position:center; }
 /* Picture still loading in the designer: a spinner over it (shown after a moment, so cached pictures don't flash) */
 .img-spin { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(238,240,246,.85); pointer-events:none; opacity:0; animation:imgSpinIn .15s .2s forwards; }

@@ -306,8 +306,8 @@ function renderCardHTML(lay, row, designing, ctx) {
     if (!g) { h += elHTML(e); return; }
     var members = sorted.filter(function(x) { return x.group === g.id; });
     if (members[members.length - 1] !== e) return;   // the list is drawn once, where its top member sits
-    var bb = selBox(members), gap = g.gap == null ? 4 : +g.gap || 0;
-    h += '<div class="el-list list-' + g.list + (g.id === selG ? ' picked' : '') + '" data-g="' + g.id + '" style="left:' + bb.x + 'pt;top:' + bb.y + 'pt;z-index:' + (e.z || 1) + ';gap:' + gap + 'pt">' +
+    var bb = selBox(members), gap = g.gap == null ? 4 : +g.gap || 0, al = { start: 'flex-start', center: 'center', end: 'flex-end' }[listAlign(g)];
+    h += '<div class="el-list list-' + g.list + (g.id === selG ? ' picked' : '') + '" data-g="' + g.id + '" style="left:' + bb.x + 'pt;top:' + bb.y + 'pt;z-index:' + (e.z || 1) + ';gap:' + gap + 'pt;align-items:' + al + '">' +
          members.slice().reverse().map(function(x) { return elHTML(x, g.list); }).join('') + '</div>';
   });
   if (designing && multi.length && !(selG && lists[selG])) {   // one box around everything selected (a group or several elements)
@@ -1501,7 +1501,7 @@ function pasteClip(d) {
     n.x = r1(clamp(n.x + off, -n.w + 6, c.w - 6)); n.y = r1(clamp(n.y + off, -n.h + 6, c.h - 6));   // keep it on this card, which may be smaller
     if (n.kind === 'gen') n.seed = uid();
     if (n.group) {
-      if (!gmap[n.group]) { var g = (d.groups || []).filter(function(x) { return x.id === n.group; })[0] || { name: 'Group' }; var gid = newGroup(g.name); var ng = groupById(gid); if (g.list) ng.list = g.list; if (g.gap != null) ng.gap = g.gap; gmap[n.group] = gid; }
+      if (!gmap[n.group]) { var g = (d.groups || []).filter(function(x) { return x.id === n.group; })[0] || { name: 'Group' }; var gid = newGroup(g.name); var ng = groupById(gid); if (g.list) ng.list = g.list; if (g.gap != null) ng.gap = g.gap; if (g.align) ng.align = g.align; gmap[n.group] = gid; }
       n.group = gmap[n.group];
     }
     if (n.kind === 'data' && FIELDS.length && FIELDS.indexOf(n.field) < 0 && missing.indexOf(n.field) < 0) missing.push(n.field);
@@ -1776,6 +1776,12 @@ function multiAttrs() {
       '<div class="seg arr-free">' + btn(['', 'Free: members stay where you put them']) + '</div>' +
       '<div class="arr-list' + (mode ? ' on' : '') + '"><div class="seg">' + btn(['h', 'Horizontal list: side by side, each only as wide as it needs']) + btn(['v', 'Vertical list: one under another, each only as tall as it needs']) + '</div>' +
       '<label class="arr-gap" title="Space between the members of the list (pt)"><span>Gap</span><input class="inp" type="number" step=".5" min="0" id="g_gap" value="' + r1(g.gap == null ? 4 : g.gap) + '"' + (mode ? '' : ' disabled') + ' onchange="setGroupGap(\'' + gid + '\',this.value)"></label></div></div>';
+    if (mode) {
+      var ga = listAlign(g), names = mode === 'v' ? ['Left', 'Center', 'Right'] : ['Top', 'Middle', 'Bottom'];
+      h += '<div class="arr-align"><span class="mini">Align</span><div class="seg">' + ['start', 'center', 'end'].map(function(a, i) {
+        return '<button type="button" class="' + (a === ga ? 'on' : '') + '" title="' + names[i] + '" aria-label="' + names[i] + '" onclick="setGroupAlign(\'' + gid + '\',\'' + a + '\')">' + ALIGN_ICONS[mode][a] + '</button>';
+      }).join('') + '</div></div>';
+    }
     if (mode) h += '<p class="muted" style="margin:.35rem 0 0">In the Layers order, top first — drag there to reorder. Empty text and pictures take no room.</p>';
   }
   h += '<div class="attr-btns">' + (g ? '<button class="attr-btn" onclick="ungroupSel()">Ungroup</button>' : '<button class="attr-btn" onclick="groupSel()">Group</button>') + '</div>';
@@ -1795,6 +1801,26 @@ function setGroupList(gid, mode) {
   snapshot(); if (mode) g.list = mode; else delete g.list;
   changed(); renderAttrs();
 }
+// Alignment across the list: a vertical list lines its members up left / center / right,
+// a horizontal one top / middle / bottom. Defaults: vertical → left, horizontal → middle.
+function listAlign(g) { return g.align || (g.list === 'h' ? 'center' : 'start'); }
+function setGroupAlign(gid, a) {
+  var g = groupById(gid); if (!g || listAlign(g) === a) return;
+  snapshot(); g.align = a; changed(); renderAttrs();
+}
+function alignIco(rects) { return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">' + rects + '</svg>'; }
+var ALIGN_ICONS = {
+  v: {
+    start:  alignIco('<rect x="3" y="2" width="1.6" height="20" rx=".8" opacity=".5"/><rect x="6" y="5" width="14" height="5" rx="1.5"/><rect x="6" y="14" width="9" height="5" rx="1.5" opacity=".7"/>'),
+    center: alignIco('<rect x="11.2" y="2" width="1.6" height="20" rx=".8" opacity=".5"/><rect x="5" y="5" width="14" height="5" rx="1.5"/><rect x="7.5" y="14" width="9" height="5" rx="1.5" opacity=".7"/>'),
+    end:    alignIco('<rect x="19.4" y="2" width="1.6" height="20" rx=".8" opacity=".5"/><rect x="4" y="5" width="14" height="5" rx="1.5"/><rect x="9" y="14" width="9" height="5" rx="1.5" opacity=".7"/>')
+  },
+  h: {
+    start:  alignIco('<rect x="2" y="3" width="20" height="1.6" rx=".8" opacity=".5"/><rect x="5" y="6" width="5" height="14" rx="1.5"/><rect x="14" y="6" width="5" height="9" rx="1.5" opacity=".7"/>'),
+    center: alignIco('<rect x="2" y="11.2" width="20" height="1.6" rx=".8" opacity=".5"/><rect x="5" y="5" width="5" height="14" rx="1.5"/><rect x="14" y="7.5" width="5" height="9" rx="1.5" opacity=".7"/>'),
+    end:    alignIco('<rect x="2" y="19.4" width="20" height="1.6" rx=".8" opacity=".5"/><rect x="5" y="4" width="5" height="14" rx="1.5"/><rect x="14" y="9" width="5" height="9" rx="1.5" opacity=".7"/>')
+  }
+};
 function setGroupGap(gid, v) {
   var g = groupById(gid); v = parseFloat(v); if (!g || isNaN(v)) return;
   snapshot(); g.gap = Math.max(0, v); changed(true);

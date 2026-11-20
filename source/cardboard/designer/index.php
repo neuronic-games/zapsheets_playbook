@@ -204,9 +204,7 @@ table.grid thead th.renaming .th-caret, table.grid thead th.renaming .col-rs { d
 table.grid tbody td.rn { cursor:pointer; }
 table.grid tbody td.rn:hover, table.grid tbody td.rn.menu-open { background:#e6e1ff; color:#4b3fa8; }
 .col-menu button.danger { color:#d4373d; }
-.ghost-col { background:#fbfaff !important; }
-table.grid thead th.ghost-col { color:#b3abe6; font-style:italic; cursor:text; border-bottom-style:dashed; }
-table.grid thead th.ghost-col:hover { background:#efebff !important; color:#7b6cf6; }
+table.grid thead th.ghost-col { cursor:text; }
 .col-menu-name { font-family:'DINBlack',sans-serif; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:#8a8fa8; padding:.1rem .2rem .4rem; }
 table.grid thead th[data-c] { cursor:pointer; }
 table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e6e1ff; }
@@ -524,7 +522,6 @@ table.grid td.sel { box-shadow:inset 0 0 0 2px #4b3fa8; }
 table.grid td.st-saving { background:#fffbea; }
 table.grid td.st-saved { background:#ecfdf3; transition:background .8s; }
 table.grid td.st-error { background:#fef2f2; box-shadow:inset 0 0 0 1.5px #e5484d; }
-table.grid tr.draft td { background:#faf9ff; }
 table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
 .g-thumb { width:22px; height:22px; object-fit:cover; border-radius:4px; vertical-align:middle; margin-right:.4rem; background:#eef0f6; }
 .g-editor { position:absolute; z-index:20; border:2px solid #4b3fa8; border-radius:2px; padding:.4rem .5rem; font:inherit; font-size:.8rem; line-height:1.35; resize:none; background:#fff; box-shadow:0 6px 20px rgba(20,20,60,.18); outline:none; max-width:32rem; }

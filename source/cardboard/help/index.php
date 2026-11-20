@@ -147,8 +147,8 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
     </ul>
     <h3>Rows and columns</h3>
     <ul>
-      <li><b>New rows:</b> there's always an empty row at the bottom. Type in it and it becomes a card (added to the sheet when you save), with a fresh empty row below.</li>
-      <li><b>New columns:</b> there's always an empty column at the end. Click its <b>New column</b> heading to name it, or just type in one of its cells — it's named after its letter (like <b>Column H</b>) until you rename it. New columns go to the sheet when you save.</li>
+      <li><b>New rows:</b> there's always an empty row at the bottom. Type in it and it becomes a card (added to the sheet when you save), with a fresh empty row below. New rows show the row number they'll have in the sheet.</li>
+      <li><b>New columns:</b> there's always an empty column at the end. Click its empty heading and type a name, or just type in one of its cells — it's named after its letter (like <b>Column H</b>) until you rename it. New columns go to the sheet when you save.</li>
       <li><b>Delete a row:</b> click its row number → <b>Delete row</b>. <b>Delete a column:</b> click its heading → <b>Delete column</b>. CardBoard asks first, then deletes it from your Google Sheet (undo it there with Edit → Undo or version history). If the row changed in Sheets since you loaded it, nothing is deleted and the latest is shown instead.</li>
       <li><b>Search the rows</b> shows only rows containing what you type.</li>
       <li><b>Reload</b> re-reads this tab from the sheet.</li>

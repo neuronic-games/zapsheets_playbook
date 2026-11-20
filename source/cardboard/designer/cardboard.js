@@ -2594,11 +2594,14 @@ function renderGrid() {
   var widths = cols.map(function(c) { return c.ghost ? 130 : gridColWidth(c.name, c.i); }), total = 42 + widths.reduce(function(a, b) { return a + b; }, 0);
   var h = '<table class="grid" style="width:' + total + 'px"><colgroup><col style="width:42px">' + widths.map(function(w, k) { return '<col data-c="' + cols[k].i + '" style="width:' + w + 'px">'; }).join('') + '</colgroup>' +
     '<thead><tr><th class="rn"></th>' + cols.map(function(c) {
-      if (c.ghost) return '<th class="ghost-col" data-ghost="' + c.i + '" title="Click to name a new column — or just type in a cell below"><span class="th-name">New column</span></th>';
+      if (c.ghost) return '<th class="ghost-col" data-ghost="' + c.i + '" title="Type a name here, or in a cell below, to add a column"></th>';
       return '<th data-c="' + c.i + '" title="Click for options · drag to move · drag the edge to resize"><span class="th-name">' + esc(c.name) + '</span><span class="th-caret">▾</span><span class="col-rs" title="Drag to resize · double-click to fit"></span></th>'; }).join('') + '</tr></thead><tbody>';
+  // New rows get the numbers they'll have in the sheet: after the last row with data
+  var lastRow = GRID.rows.reduce(function(m, x) { return x.draft ? m : Math.max(m, x.row); }, 1), nextNo = {};
+  GRID.rows.forEach(function(x) { if (x.draft) nextNo[GRID.rows.indexOf(x)] = ++lastRow; });
   rows.forEach(function(r) {
     var ri = GRID.rows.indexOf(r);
-    h += '<tr data-r="' + ri + '"' + (r.draft ? ' class="draft"' : '') + '><td class="rn">' + (r.draft ? '' : r.row) + '</td>';
+    h += '<tr data-r="' + ri + '"' + (r.draft ? ' class="draft"' : '') + '><td class="rn">' + (r.draft ? nextNo[ri] : r.row) + '</td>';
     cols.forEach(function(c) {
       var v = r.values[c.i] || '', st = (r.state || {})[c.i] || '';
       var thumb = imgCols[c.i] && imageUrl(v) ? '<img class="g-thumb" src="' + esc(imageUrl(v)) + '" alt="" referrerpolicy="no-referrer">' : '';
@@ -2701,7 +2704,7 @@ function createColumn(n) {   // kept in this browser until Save, like every othe
 function nameNewColumn(th) {
   if (!requirePro('edit', function() {}) || th.classList.contains('renaming')) return;
   th.classList.add('renaming');
-  th.innerHTML = '<input class="th-rename" maxlength="60" spellcheck="false" autocomplete="off" placeholder="Column name">';
+  th.innerHTML = '<input class="th-rename" maxlength="60" spellcheck="false" autocomplete="off">';
   var inp = th.querySelector('input'), done = false; inp.focus();
   function finish(save) {
     if (done) return; done = true;
@@ -2782,7 +2785,7 @@ function openRowMenu(td) {
   var open = td.classList.contains('menu-open'); closeRowMenu(); closeColumnMenu(); if (open) return;
   var ri = +td.parentNode.dataset.r, r = GRID.rows[ri]; if (!r) return;
   var m = document.createElement('div'); m.id = 'rowMenu'; m.className = 'field-menu col-menu';
-  m.innerHTML = '<div class="col-menu-name">' + (r.draft ? 'New row' : 'Row ' + r.row) + '</div><button type="button" class="danger"><span class="fm-ico">🗑</span> Delete row</button>';
+  m.innerHTML = '<div class="col-menu-name">' + (r.draft ? 'New row (not saved yet)' : 'Row ' + r.row) + '</div><button type="button" class="danger"><span class="fm-ico">🗑</span> Delete row</button>';
   m.querySelector('button').onclick = function() { closeRowMenu(); deleteGridRow(ri); };
   document.body.appendChild(m);
   var b = td.getBoundingClientRect();
@@ -2917,7 +2920,7 @@ function refreshRows() {
   var wrap = $('gridWrap');
   wrap.addEventListener('click', function(ev) {
     if (_colDragged) { _colDragged = false; return; }
-    var rn = ev.target.closest('tbody td.rn'); if (rn) { if (rn.textContent) openRowMenu(rn); return; }
+    var rn = ev.target.closest('tbody td.rn'); if (rn) { var rr = GRID.rows[+rn.parentNode.dataset.r]; if (rr && !(rr.draft && rowEmpty(rr))) openRowMenu(rn); return; }
     var gh = ev.target.closest('th.ghost-col'); if (gh) { nameNewColumn(gh); return; }
     if (ev.target.classList.contains('col-rs')) return;
     var th = ev.target.closest('th[data-c]'); if (th) openColumnMenu(th);

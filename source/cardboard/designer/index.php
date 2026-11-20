@@ -250,6 +250,17 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .map-arrow { color:#a0a4bb; font-size:.8rem; }
 .map-tx { width:1.5rem; height:1.5rem; padding:0; border:none; border-radius:50%; background:none; color:#a0a4bb; font-size:1rem; line-height:1.5rem; cursor:pointer; }
 .map-tx:hover { background:#fdecea; color:#c0392b; }
+.map-out-wrap { position:relative; min-width:0; }
+.map-out-wrap .map-out { width:100%; padding-right:1.9rem; }
+.map-img-btn { position:absolute; right:3px; top:50%; transform:translateY(-50%); width:1.6rem; height:1.6rem; padding:0; border:none; border-radius:5px; background:none; color:#a0a4bb; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.map-img-btn:hover, .map-img-btn.over { background:#ece9ff; color:#4b3fa8; }
+.map-pic { display:flex; align-items:center; gap:.35rem; min-width:0; height:2.05rem; padding:0 .25rem 0 .2rem; border:1.5px solid #d6d9e6; border-radius:7px; background:#fff; cursor:pointer; }
+.map-pic:hover, .map-pic.over { border-color:#a99cff; background:#f7f5ff; }
+.map-thumb { width:1.6rem; height:1.6rem; flex-shrink:0; border-radius:4px; background:#eef0f6 center/contain no-repeat; display:flex; align-items:center; justify-content:center; color:#a0a4bb; }
+.map-pic-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.74rem; color:#6b7090; }
+.map-pic-x { width:1.3rem; height:1.3rem; padding:0; border:none; border-radius:50%; background:none; color:#a0a4bb; cursor:pointer; line-height:1.3rem; }
+.map-pic-x:hover { background:#fdecea; color:#c0392b; }
+.map-trow.cur .map-pic { border-color:#a99cff; }
 .img-slot-empty { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.35rem; color:#9aa0b8; font-size:.72rem; }
 .img-slot-empty svg { width:26px; height:26px; }
 .img-slot.over::before { content:'Drop to set the picture'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(75,63,168,.78); color:#fff; font-family:'DINBlack',sans-serif; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; z-index:3; }

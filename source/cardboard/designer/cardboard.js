@@ -2660,7 +2660,8 @@ function renderGrid() {
   ensureTrailingRow();
   var cols = gridColsAll(), rows = gridVisibleRows();
   var nHid = GRID.header.filter(function(hd) { return hd && isHidden(hd); }).length;
-  $('gridInfo').innerHTML = GRID.rows.filter(function(r) { return !r.draft && !rowDeleted(r.row); }).length + ' rows · ' + (cols.length - 1) + ' columns' + (_gridFilter ? ' · ' + rows.length + ' shown' : '') +
+  var nCards = GRID.rows.filter(function(r) { return !r.draft && !rowDeleted(r.row); }).length;
+  $('gridInfo').innerHTML = nCards + (nCards === 1 ? ' card · ' : ' cards · ') + (cols.length - 1) + ' columns' + (_gridFilter ? ' · ' + rows.length + ' shown' : '') +
     (nHid ? ' · ' + nHid + ' hidden <button type="button" class="lk-act" onclick="showAllFields()">Show all</button>' : '');
   var imgCols = {};
   cols.forEach(function(c) { imgCols[c.i] = FIELDS.indexOf(c.name) >= 0 && looksLikeImage(c.name); });
@@ -2674,7 +2675,7 @@ function renderGrid() {
   GRID.rows.forEach(function(x) { if (x.draft) nextNo[GRID.rows.indexOf(x)] = ++lastRow; });
   rows.forEach(function(r) {
     var ri = GRID.rows.indexOf(r);
-    h += '<tr data-r="' + ri + '"' + (r.draft ? ' class="draft"' : '') + '><td class="rn">' + (r.draft ? nextNo[ri] : r.row) + '</td>';
+    h += '<tr data-r="' + ri + '"' + (r.draft ? ' class="draft"' : '') + '><td class="rn" title="Card options">' + (r.draft && rowEmpty(r) ? '' : CARD_ICON) + '</td>';
     cols.forEach(function(c) {
       var v = r.values[c.i] || '', st = (r.state || {})[c.i] || '';
       var thumb = imgCols[c.i] && imageUrl(v) ? '<img class="g-thumb" src="' + esc(imageUrl(v)) + '" alt="" referrerpolicy="no-referrer">' : '';
@@ -2847,13 +2848,23 @@ function deleteGridColumn(name) {   // kept in this browser until Save, like eve
   _gridSel = null;
   renderGrid(); renderData(); render();
 }
-// Click a row number for its menu: Delete row
+// Click a row's card icon for its menu: a preview of the card, and Delete card
+var CARD_ICON = '<svg class="rn-ico" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M5 8h14"/><path d="M8 12.5h8M8 16h5"/></svg>';
 function closeRowMenu() { var m = $('rowMenu'); if (m) m.remove(); document.querySelectorAll('table.grid td.rn.menu-open').forEach(function(t) { t.classList.remove('menu-open'); }); }
+function rowPreviewHTML(r, ri) {
+  if (!layout) return '';
+  var obj = {};
+  GRID.header.forEach(function(hd, i) { if (hd) obj[hd] = r.values[i] || ''; });
+  var c = layout.card, maxW = 200, s = Math.min(1, maxW / (c.w * PX));
+  return '<div class="row-prev" style="width:' + (c.w * PX * s) + 'px;height:' + (c.h * PX * s) + 'px">' +
+         '<div style="width:' + c.w + 'pt;height:' + c.h + 'pt;transform:scale(' + s + ');transform-origin:0 0">' +
+         renderCardHTML(layout, obj, false, { card: ri, row: ri }) + '</div></div>';
+}
 function openRowMenu(td) {
   var open = td.classList.contains('menu-open'); closeRowMenu(); closeColumnMenu(); if (open) return;
   var ri = +td.parentNode.dataset.r, r = GRID.rows[ri]; if (!r) return;
   var m = document.createElement('div'); m.id = 'rowMenu'; m.className = 'field-menu col-menu';
-  m.innerHTML = '<div class="col-menu-name">Row ' + esc(td.textContent) + '</div><button type="button" class="danger"><span class="fm-ico">🗑</span> Delete row</button>';
+  m.innerHTML = rowPreviewHTML(r, ri) + '<button type="button" class="danger"><span class="fm-ico">🗑</span> Delete card</button>';
   m.querySelector('button').onclick = function() { closeRowMenu(); deleteGridRow(ri); };
   document.body.appendChild(m);
   var b = td.getBoundingClientRect();

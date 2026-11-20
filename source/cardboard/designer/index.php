@@ -205,7 +205,9 @@ table.grid tbody td.rn { cursor:pointer; }
 table.grid tbody td.rn:hover, table.grid tbody td.rn.menu-open { background:#e6e1ff; color:#4b3fa8; }
 .col-menu button.danger { color:#d4373d; }
 table.grid thead th.ghost-col { cursor:text; }
-.col-menu-name { font-family:'DINBlack',sans-serif; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:#8a8fa8; padding:.1rem .2rem .4rem; }
+#rowMenu .row-prev { margin:.15rem auto .5rem; overflow:hidden; border-radius:6px; box-shadow:0 2px 8px rgba(20,20,60,.18); }
+table.grid tbody td.rn .rn-ico { display:block; margin:0 auto; }
+.col-menu-name {font-family:'DINBlack',sans-serif; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:#8a8fa8; padding:.1rem .2rem .4rem; }
 table.grid thead th[data-c] { cursor:pointer; }
 table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e6e1ff; }
 .th-caret { margin-left:.35rem; font-size:.6rem; color:#a99cff; }
@@ -750,7 +752,7 @@ body.cb-gate #signinOverlay { background:#2e2763; }
     <div class="grp"><span class="mini">Deck</span>
       <select class="sel sel-sheet" id="gridSheet" onchange="selectTab(this.value)"></select></div>
     <div class="grp"><span class="mini">Find</span>
-      <input class="inp" id="gridFilter" placeholder="Search the rows" oninput="filterGrid(this.value)" style="width:14rem"></div>
+      <input class="inp" id="gridFilter" placeholder="Search the cards" oninput="filterGrid(this.value)" style="width:14rem"></div>
     <span class="print-info" id="gridInfo"></span>
     <div class="e-actions">
       <button class="print-go ghost" onclick="loadGrid(true)" title="Read the sheet again">Reload</button>

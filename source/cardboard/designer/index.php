@@ -821,6 +821,8 @@ body.cb-gate #signinOverlay { background:#2e2763; }
 <!-- Print view -->
 <div class="view" id="view-print">
   <div class="print-bar">
+    <div class="grp"><span class="mini">Deck</span>
+      <select id="pSheet"></select></div>
     <div class="grp"><span class="mini">Paper</span>
       <select class="sel" id="pPaper" onchange="renderPrint()"><option value="letter">Letter (8.5 × 11 in)</option><option value="a4">A4 (210 × 297 mm)</option></select></div>
     <div class="grp"><span class="mini">Orientation</span>
@@ -843,6 +845,8 @@ body.cb-gate #signinOverlay { background:#2e2763; }
 <div class="view" id="view-export">
   <div class="export-side">
   <div class="print-bar">
+    <div class="grp"><span class="mini">Deck</span>
+      <select id="eSheet"></select></div>
     <div class="grp"><span class="mini">For</span>
       <select class="sel" id="eTarget" onchange="renderExport()"><option value="tts">Tabletop Simulator</option><option value="screentop">Screentop</option><option value="images">Separate images</option></select></div>
     <div class="grp"><span class="mini">Size</span>

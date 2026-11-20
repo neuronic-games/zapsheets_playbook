@@ -13,6 +13,7 @@ var TABS = [], LAYOUTS = {}, ROWS = [], FIELDS = [];
 var curTab = '', layout = null, rowIdx = 0, selId = null, zoom = 1, dirty = false;
 var multi = [];   // ids when more than one element is selected (selId is then null)
 var undoStack = [], redoStack = [];
+var _printSettings = {}, _exportSettings = {};   // per-tab print/export settings
 var side = 'front';   // which face of the card is being designed
 var CARD_SIZES = [
   { id: 'poker',  name: 'Poker — 2.5 × 3.5 in',   w: 180, h: 252 },
@@ -330,12 +331,15 @@ function init() {
       var sel = $('sheetSel');
       sel.innerHTML = TABS.map(function(t) { return '<option>' + esc(t.title) + '</option>'; }).join('');
       $('gridSheet').innerHTML = sel.innerHTML;
+      $('pSheet').innerHTML = sel.innerHTML;
+      $('eSheet').innerHTML = sel.innerHTML;
       var start = res.tab || want;
       if (!TABS.some(function(t) { return t.title === start; })) {
         start = (TABS.filter(function(t) { return LAYOUTS[t.title]; })[0] || TABS[0] || {}).title || '';
       }
       if (!start) { $('cardHolder').innerHTML = '<div class="muted">This spreadsheet has no decks to design from — each tab of the spreadsheet is a deck.</div>'; return; }
-      sel.value = start; $('gridSheet').value = start; refreshSheetCombos(); updateSaveBtn();
+      sel.value = start; $('gridSheet').value = start; $('pSheet').value = start; $('eSheet').value = start;
+      refreshSheetCombos(); updateSaveBtn();
       selectTab(start, true, false, false, res.rows && res.tab === start ? res : null);
     })
     .catch(function(e) {
@@ -349,7 +353,7 @@ function init() {
 var LAYOUT_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M5 8h14"/><rect x="8" y="11" width="8" height="4.5" rx="1" fill="currentColor" stroke="none"/><path d="M8 18.3h5"/></svg>';
 function hasLayout(t) { return !!LAYOUTS[t] && t !== SETTINGS_KEY; }
 function refreshSheetCombos() {
-  ['sheetSel', 'gridSheet'].forEach(function(id) {
+  ['sheetSel', 'gridSheet', 'pSheet', 'eSheet'].forEach(function(id) {
     var sel = $(id); if (!sel) return;
     var box = sel.nextElementSibling && sel.nextElementSibling.classList.contains('sheet-combo') ? sel.nextElementSibling : null;
     if (!box) { box = makeSheetCombo(sel); }
@@ -362,7 +366,7 @@ function refreshSheetCombos() {
 function makeSheetCombo(sel) {
   sel.style.display = 'none';
   var box = document.createElement('div');
-  box.className = 'sheet-combo' + (sel.id === 'gridSheet' ? ' compact' : '');
+  box.className = 'sheet-combo' + (['gridSheet', 'pSheet', 'eSheet'].indexOf(sel.id) >= 0 ? ' compact' : '');
   box.innerHTML = '<span class="sc-ico" title="Has a layout"></span><input class="inp sel-sheet" autocomplete="off" spellcheck="false" aria-label="Deck" role="combobox" aria-expanded="false">' +
     '<button type="button" class="sc-caret" tabindex="-1" aria-label="Show decks"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div class="sc-list" role="listbox"></div>';
   sel.parentNode.insertBefore(box, sel.nextSibling);
@@ -402,8 +406,9 @@ function makeSheetCombo(sel) {
 function selectTab(name, first, force, asked, pre) {   // pre: {rows, full} already fetched for this tab
   // Unsaved changes stay in this browser (layouts, cells, settings) — switching sheets keeps them
   if (_gridEdit) endGridEdit(true);
-  $('sheetSel').value = name; $('gridSheet').value = name;
-  curTab = name; refreshSheetCombos(); selId = null; multi = []; rowIdx = 0; undoStack = []; redoStack = []; GRID = null; _gridSel = null; _rowsStale = false;
+  $('sheetSel').value = name; $('gridSheet').value = name; $('pSheet').value = name; $('eSheet').value = name;
+  curTab = name; refreshSheetCombos();
+  restorePrintSettings(name); restoreExportSettings(name); selId = null; multi = []; rowIdx = 0; undoStack = []; redoStack = []; GRID = null; _gridSel = null; _rowsStale = false;
   try { localStorage.setItem('cb_tab:' + SHEET_ID, name); } catch (e) {}
   layout = normalize(LAYOUTS[name] ? JSON.parse(JSON.stringify(LAYOUTS[name])) : newLayout());
   setDirty(false);
@@ -476,9 +481,9 @@ function reloadSheet(asked) {
     TABS = tabs;
     if (TABS.map(function(t) { return t.title; }).join('\u0001') !== before) {
       var sel = $('sheetSel'); sel.innerHTML = TABS.map(function(t) { return '<option>' + esc(t.title) + '</option>'; }).join('');
-      $('gridSheet').innerHTML = sel.innerHTML;
+      $('gridSheet').innerHTML = sel.innerHTML; $('pSheet').innerHTML = sel.innerHTML; $('eSheet').innerHTML = sel.innerHTML;
       var keep = TABS.some(function(t) { return t.title === curTab; }) ? curTab : (TABS[0] || {}).title;
-      sel.value = keep; $('gridSheet').value = keep; refreshSheetCombos();
+      sel.value = keep; $('gridSheet').value = keep; $('pSheet').value = keep; $('eSheet').value = keep; refreshSheetCombos();
       if (keep !== curTab) { selectTab(keep, true, true); return; }
     }
     if (curTab) selectTab(curTab, true, true);
@@ -2106,9 +2111,45 @@ function cardList(cs, onChange) {
   return list;
 }
 var PAPER = { letter: [612, 792], a4: [595.3, 841.9] };
+
+// ── Per-tab print / export settings ──────────────────────────────────────────
+function savePrintSettings(tab) {
+  if (!tab || !layout) return;
+  _printSettings[tab] = { paper: $('pPaper').value, orient: $('pOrient').value, gap: $('pGap').value, cut: $('pCut').value, copies: $('pCopies').value, backs: $('pBacks').value };
+  try { localStorage.setItem('cb_print:' + SHEET_ID + ':' + tab, JSON.stringify(_printSettings[tab])); } catch (e) {}
+}
+function restorePrintSettings(tab) {
+  var s = _printSettings[tab];
+  if (!s) { try { s = JSON.parse(localStorage.getItem('cb_print:' + SHEET_ID + ':' + tab) || 'null'); } catch (e) {} }
+  if (!s) return;
+  _printSettings[tab] = s;
+  if (s.paper) $('pPaper').value = s.paper;
+  if (s.orient) $('pOrient').value = s.orient;
+  if (s.gap != null) $('pGap').value = s.gap;
+  if (s.cut) $('pCut').value = s.cut;
+  if (s.backs) $('pBacks').value = s.backs;
+  if (s.copies) { $('pCopies').value = s.copies; $('pCopies').dataset.touched = '1'; }
+}
+function saveExportSettings(tab) {
+  if (!tab || !layout) return;
+  _exportSettings[tab] = { target: $('eTarget').value, quality: $('eQuality').value, copies: $('eCopies').value, corners: $('eCorners').checked };
+  try { localStorage.setItem('cb_export:' + SHEET_ID + ':' + tab, JSON.stringify(_exportSettings[tab])); } catch (e) {}
+}
+function restoreExportSettings(tab) {
+  var s = _exportSettings[tab];
+  if (!s) { try { s = JSON.parse(localStorage.getItem('cb_export:' + SHEET_ID + ':' + tab) || 'null'); } catch (e) {} }
+  if (!s) return;
+  _exportSettings[tab] = s;
+  if (s.target) $('eTarget').value = s.target;
+  if (s.quality) $('eQuality').value = s.quality;
+  if (s.copies) { $('eCopies').value = s.copies; $('eCopies').dataset.touched = '1'; }
+  $('eCorners').checked = !!s.corners;
+}
+
 function renderPrint() {
   var pages = $('pages');
   if (!layout) { pages.innerHTML = ''; return; }
+  savePrintSettings(curTab);
   var list = cardList($('pCopies'), renderPrint);
   // Printed cards are cut square, so draw them without rounded corners
   var sq = Object.assign({}, layout, { card: Object.assign({}, layout.card, { radius: 0 }) });
@@ -2250,6 +2291,7 @@ function exportLayout(round) {   // a frozen copy, so editing during a backgroun
 
 function renderExport() {
   var box = $('exportPreview'); if (!layout) { box.innerHTML = ''; return; }
+  saveExportSettings(curTab);
   cardList($('eCopies'), renderExport);   // fills the Copies choices
   var o = exportOpts(), pub = (PUBLISHED[curTab] || {})[o.target];
   if (pub && pub.grid && pub.settings && pub.settings.quality === o.quality) o.grid = pub.grid;   // match the published links

@@ -12,7 +12,7 @@
 #   renamefield — sheet, old, name → the heading "old" becomes "name"
 #   deleterow — sheet, row, values → deletes the row if it still holds those values
 #   deletefield — sheet, field → deletes that column
-#   savecells — sheet, cells [{row, field, value, old}], adds [{key, values}] → many edits in one go
+#   savecells — sheet, cols [names], cells [{row, field, value, old}], adds [{key, values}] → many edits in one go
 #   grid    — sheet → {header, rows: [{row, values}]} as typed in the sheet (formulas, not results)
 #   setcell — sheet, row, field, value, old → writes one cell (as if typed); refuses if the cell
 #             no longer holds "old" (someone changed it in the meantime)
@@ -336,6 +336,18 @@ def main():
             # Each cell is written only if it still holds "old"; otherwise it's a conflict and the sheet's value stays.
             cells = data.get('cells') or []
             adds = data.get('adds') or []
+            # New columns first: their headings go after the last heading, in order
+            cols_added = []
+            newcols = [str(c).strip() for c in (data.get('cols') or []) if str(c).strip()]
+            have = [h.lower() for h in hdr]
+            newcols = [c for i, c in enumerate(newcols) if c.lower() not in have and c.lower() not in [x.lower() for x in newcols[:i]]]
+            if newcols:
+                at = len(hdr)
+                while at > 0 and not hdr[at - 1]: at -= 1
+                if at + len(newcols) > tws.col_count: tws.add_cols(at + len(newcols) - tws.col_count)
+                wb.values_update(q(tws.title) + '!' + gspread.utils.rowcol_to_a1(1, at + 1), params={'valueInputOption': 'RAW'}, body={'values': [newcols]})
+                hdr = hdr[:at] + newcols
+                cols_added = newcols
             results, todo = [], []
             for c in cells:
                 field = str(c.get('field', ''))
@@ -366,7 +378,7 @@ def main():
                 m = __import__('re').search(r'![A-Z]+(\d+)', rng)
                 first = int(m.group(1)) if m else 0
                 added = [{'key': a.get('key'), 'row': (first + i) if first else 0} for i, a in enumerate(adds)]
-            out({'ok': True, 'results': results, 'added': added})
+            out({'ok': True, 'results': results, 'added': added, 'cols': cols_added})
 
         def delete_dim(dim, i):   # i: 0-based row or column index
             wb.batch_update({'requests': [{'deleteDimension': {'range': {'sheetId': tws.id, 'dimension': dim, 'startIndex': i, 'endIndex': i + 1}}}]})

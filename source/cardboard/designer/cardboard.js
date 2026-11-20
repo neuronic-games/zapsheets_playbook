@@ -571,22 +571,13 @@ function addField(ev) {
   var problem = newFieldProblem(n);
   if (problem) { $('newFieldMsg').textContent = problem; return; }   // stays open so it can be fixed
   if (!curTab) return;
-  var tab = curTab; _addingField = true; inp.disabled = true; $('newFieldMsg').textContent = '';
-  inp.parentNode.classList.add('busy');
-  api('addfield', { tab: tab, name: n })
-    .then(function(r) {
-      _addingField = false;
-      if (curTab !== tab) return;
-      FIELDS.push(n); ROWS.forEach(function(row) { row[n] = ''; }); gridAddedColumn(n);
+  createColumn(n)
+    .then(function() {
       _newField = n; renderData();
       var chipEl = document.querySelector('.field-chip[data-field="' + CSS.escape(n) + '"]'); if (chipEl) chipEl.scrollIntoView({ block: 'nearest' });
-      toast('✓ Added column ' + (r.column ? r.column + ' ' : '') + '"' + n + '" to the sheet');
       setTimeout(function() { if (_newField === n) { _newField = ''; var c = document.querySelector('.field-chip.just-added'); if (c) c.classList.remove('just-added'); } }, 2500);
     })
-    .catch(function(e) {
-      _addingField = false; inp.disabled = false; inp.parentNode.classList.remove('busy');
-      $('newFieldMsg').textContent = e.message;
-    });
+    .catch(function(e) { $('newFieldMsg').textContent = e.message; });
 }
 function chipSpec(c) {
   if (c.dataset.field) return 'data:' + c.dataset.field;
@@ -1227,14 +1218,15 @@ function draftTabs() {
   });
 }
 function dataKey(tab) { return 'cb_data:' + SHEET_ID + ':' + tab; }
-function dataPend(tab) { var p = lsGet(dataKey(tab)) || {}; p.cells = p.cells || []; p.adds = p.adds || []; return p; }
-function setDataPend(tab, p) { lsSet(dataKey(tab), p.cells.length || p.adds.length ? p : null); updateSaveBtn(); }
-function dataTabs() { return lsTabs('data').filter(function(t) { var p = dataPend(t); return p.cells.length || p.adds.length; }); }
+function dataPend(tab) { var p = lsGet(dataKey(tab)) || {}; p.cells = p.cells || []; p.adds = p.adds || []; p.cols = p.cols || []; return p; }
+function setDataPend(tab, p) { lsSet(dataKey(tab), p.cells.length || p.adds.length || p.cols.length ? p : null); updateSaveBtn(); }
+function dataTabs() { return lsTabs('data').filter(function(t) { var p = dataPend(t); return p.cells.length || p.adds.length || p.cols.length; }); }
+function pendingCol(tab, name) { return dataPend(tab).cols.indexOf(name) >= 0; }
 function settingsPending() { return !!lsGet('cb_settings:' + SHEET_ID); }
 function markSettings() { var keep = Object.assign({}, SETTINGS); delete keep.profile; lsSet('cb_settings:' + SHEET_ID, keep); updateSaveBtn(); }
 function pendingCount() {
   var n = draftTabs().length + (settingsPending() ? 1 : 0);
-  dataTabs().forEach(function(t) { var p = dataPend(t); n += p.cells.length + p.adds.length; });
+  dataTabs().forEach(function(t) { var p = dataPend(t); n += p.cells.length + p.adds.length + p.cols.length; });
   return n;
 }
 var _saving = false, _savingP = null;
@@ -1265,6 +1257,7 @@ function pendingOld(tab, row, field) { var c = dataPend(tab).cells.filter(functi
 // Show this tab's unsaved cell edits and new rows on top of what was read from the sheet
 function overlayPending(partial) {
   var tab = curTab, p = dataPend(tab);
+  p.cols.forEach(function(n) { if (FIELDS.indexOf(n) < 0) FIELDS.push(n); ROWS.forEach(function(r) { if (!(n in r)) r[n] = ''; }); });   // columns not in the sheet yet
   if (!partial) p.adds.forEach(function(a) {   // new rows become cards at the end
     if (ROWS.some(function(r) { return r._pend === a.key; })) return;
     var r = { _pend: a.key }; FIELDS.forEach(function(f) { r[f] = a.values[f] || ''; }); ROWS.push(r);
@@ -1278,6 +1271,11 @@ function gridCardIndex(gr) { return GRID.rows.filter(function(g) { return !g.dra
 function overlayGrid() {
   if (!GRID || GRID.tab !== curTab) return;
   var p = dataPend(curTab);
+  p.cols.forEach(function(n) {
+    if (GRID.header.indexOf(n) >= 0) return;
+    var at = GRID.header.length; while (at > 0 && !GRID.header[at - 1]) at--;
+    GRID.header[at] = n; GRID.rows.forEach(function(r) { while (r.values.length < GRID.header.length) r.values.push(''); });
+  });
   p.cells.forEach(function(c) {
     var gr = GRID.rows.filter(function(g) { return !g.draft && g.row === c.row; })[0], col = GRID.header.indexOf(c.field);
     if (!gr || col < 0) return;
@@ -1301,7 +1299,7 @@ function saveAll() {
   dataTabs().forEach(function(tab) {
     chain = chain.then(function() {
       var sent = dataPend(tab);
-      return api('savecells', { tab: tab, cells: JSON.stringify(sent.cells), adds: JSON.stringify(sent.adds) })
+      return api('savecells', { tab: tab, cols: JSON.stringify(sent.cols), cells: JSON.stringify(sent.cells), adds: JSON.stringify(sent.adds) })
         .then(function(res) { conflicts += applySaveResults(tab, sent, res); if (savedTabs.indexOf(tab) < 0) savedTabs.push(tab); })
         .catch(function(e) { errors.push('“' + tab + '” data: ' + e.message); });
     });
@@ -1342,6 +1340,7 @@ var _lastSaveData = {};
 function applySaveResults(tab, sent, res) {
   var p = dataPend(tab), conflicts = 0, g = GRID && GRID.tab === tab ? GRID : null;
   _lastSaveData[tab] = true;
+  p.cols = p.cols.filter(function(n) { return sent.cols.indexOf(n) < 0; });   // those headings are in the sheet now
   (res.results || []).forEach(function(r) {
     var s0 = sent.cells.filter(function(x) { return x.row === r.row && x.field === r.field; })[0]; if (!s0) return;
     var cur = p.cells.filter(function(x) { return x.row === r.row && x.field === r.field; })[0];
@@ -2659,18 +2658,15 @@ function saveGridCell(r, c, val, old) {   // kept in this browser until Save
 }
 function gspreadLetter(n) { var s = ''; while (n > 0) { var m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; }
 var _addingCol = false;
-function createColumn(n) {
+function createColumn(n) {   // kept in this browser until Save, like every other change
   if (!hasAccess()) { requirePro('edit', function() {}); return Promise.reject(new Error('locked')); }
-  var tab = curTab; _addingCol = true;
-  return api('addfield', { tab: tab, name: n }).then(function(r) {
-    _addingCol = false;
-    if (curTab !== tab) return;
-    if (FIELDS.indexOf(n) < 0) { FIELDS.push(n); ROWS.forEach(function(row) { row[n] = ''; }); renderData(); }
-    gridAddedColumn(n);
-    var c = GRID ? GRID.header.indexOf(n) : -1, th = c >= 0 && $('gridWrap').querySelector('th[data-c="' + c + '"]');
-    if (th) th.classList.add('just-added');
-    toast('✓ Added column ' + (r.column ? r.column + ' ' : '') + '“' + n + '” to the sheet');
-  }, function(e) { _addingCol = false; toast('Couldn\'t add the column — ' + e.message, true); throw e; });
+  var tab = curTab, pd = dataPend(tab);
+  if (pd.cols.indexOf(n) < 0) pd.cols.push(n); setDataPend(tab, pd);
+  if (FIELDS.indexOf(n) < 0) { FIELDS.push(n); ROWS.forEach(function(row) { row[n] = ''; }); renderData(); }
+  gridAddedColumn(n);
+  var c = GRID ? GRID.header.indexOf(n) : -1, th = c >= 0 && $('gridWrap').querySelector('th[data-c="' + c + '"]');
+  if (th) th.classList.add('just-added');
+  return Promise.resolve();
 }
 function nameNewColumn(th) {
   if (!requirePro('edit', function() {}) || th.classList.contains('renaming')) return;
@@ -2733,13 +2729,14 @@ function deleteGridColumn(name, used) {
   .then(function(yes) {
     if (!yes) return;
     var tab = curTab;
-    api('deletefield', { tab: tab, field: name }).then(function() {
+    var unsaved = pendingCol(tab, name);
+    (unsaved ? Promise.resolve() : api('deletefield', { tab: tab, field: name })).then(function() {
       if (!GRID || GRID.tab !== tab) return;
       var i = GRID.header.indexOf(name);
       if (i >= 0) { GRID.header.splice(i, 1); GRID.rows.forEach(function(r) { r.values.splice(i, 1); if (r.state) r.state = {}; }); }
       FIELDS = FIELDS.filter(function(f) { return f !== name; });
       ROWS.forEach(function(r) { delete r[name]; });
-      var pd = dataPend(tab); pd.cells = pd.cells.filter(function(x) { return x.field !== name; }); pd.adds.forEach(function(x) { delete x.values[name]; }); setDataPend(tab, pd);
+      var pd = dataPend(tab); pd.cells = pd.cells.filter(function(x) { return x.field !== name; }); pd.adds.forEach(function(x) { delete x.values[name]; }); pd.cols = pd.cols.filter(function(x) { return x !== name; }); setDataPend(tab, pd);
       var p = (SETTINGS.grid || {})[tab];
       if (p) { if (p.order) p.order = p.order.filter(function(x) { return x !== name; }); if (p.w) delete p.w[name]; }
       if (layout && layout.hidden) layout.hidden = layout.hidden.filter(function(x) { return x !== name; });
@@ -2838,16 +2835,18 @@ function renameColumn(a, b) {
   }
   var auto = _gridAutoW[tab + '\u0001' + a]; if (auto) _gridAutoW[tab + '\u0001' + b] = auto;
   var c = GRID.header.indexOf(a); if (c >= 0) GRID.header[c] = b; renderGrid();   // show the new name straight away
-  api('renamefield', { tab: tab, old: a, name: b }).then(function() {
+  var unsaved = pendingCol(tab, a);
+  (unsaved ? Promise.resolve() : api('renamefield', { tab: tab, old: a, name: b })).then(function() {
     // the data in memory
     ROWS.forEach(function(r) { if (Object.prototype.hasOwnProperty.call(r, a)) { r[b] = r[a]; delete r[a]; } });
     FIELDS = FIELDS.map(function(f) { return f === a ? b : f; });
     var pd = dataPend(tab);   // unsaved edits in this browser follow the new name
     pd.cells.forEach(function(x) { if (x.field === a) x.field = b; });
+    pd.cols = pd.cols.map(function(x) { return x === a ? b : x; });
     pd.adds.forEach(function(x) { if (Object.prototype.hasOwnProperty.call(x.values, a)) { x.values[b] = x.values[a]; delete x.values[a]; } });
     setDataPend(tab, pd);
     // the layout: what's saved in the sheet, what's on screen (saved or not), the undo history and any draft
-    var saved = LAYOUTS[tab] ? renameInLayout(JSON.parse(JSON.stringify(LAYOUTS[tab])), a, b) : null;
+    var saved = LAYOUTS[tab] && !unsaved ? renameInLayout(JSON.parse(JSON.stringify(LAYOUTS[tab])), a, b) : null;
     if (curTab === tab && layout) renameInLayout(layout, a, b);
     [undoStack, redoStack].forEach(function(st) { for (var i = 0; i < st.length; i++) st[i] = JSON.stringify(renameInLayout(JSON.parse(st[i]), a, b)); });
     if (dirty) { try { localStorage.setItem('cb_draft:' + SHEET_ID + ':' + tab, JSON.stringify(layout)); } catch (e) {} }
@@ -2857,7 +2856,7 @@ function renameColumn(a, b) {
     if (gridChanged) markSettings();
     return Promise.all(jobs).then(function() {
       toast('✓ Renamed “' + a + '” to “' + b + '”' + (saved ? ' — the layout uses the new name' : ''));
-      autoRepublish(tab);
+      if (!unsaved) autoRepublish(tab);
     });
   }).catch(function(e) {
     var k = GRID.header.indexOf(b); if (k >= 0 && FIELDS.indexOf(b) < 0) GRID.header[k] = a;

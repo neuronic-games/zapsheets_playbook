@@ -124,6 +124,9 @@ if (in_array($action, ['grid', 'setcell', 'addrow', 'deleterow', 'deletefield', 
         $cells = json_decode($_POST['cells'] ?? '[]', true); $adds = json_decode($_POST['adds'] ?? '[]', true);
         $req['cells'] = is_array($cells) ? array_values($cells) : [];
         $req['adds'] = is_array($adds) ? array_values($adds) : [];
+        $cols = json_decode($_POST['cols'] ?? '[]', true);
+        $req['cols'] = is_array($cols) ? array_values(array_filter(array_map(function ($c) { return trim(preg_replace('/\s+/u', ' ', (string) $c)); }, $cols), function ($c) {
+            return $c !== '' && mb_strlen($c) <= 60 && strpbrk($c, '{}[]') === false && !in_array(strtolower($c), ['_row', '_notes'], true); })) : [];
         if (count($req['cells']) + count($req['adds']) > 2000) { echo json_encode(['error' => 'Too many changes at once']); exit; }
         foreach ($req['cells'] as $c) if (mb_strlen((string) ($c['value'] ?? '')) > 50000) { echo json_encode(['error' => 'One of the cells is too long']); exit; }
     }

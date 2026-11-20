@@ -122,7 +122,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
 
   <section class="section" id="saving">
     <h2>Saving</h2>
-    <p>Everything you change — layouts on every tab, cell edits and new rows, column widths and settings — is kept in this browser as you work. It stays there if you switch sheets, reload the page or close the window by accident.</p>
+    <p>Everything you change — layouts on every tab, cell edits, new rows and new columns, column widths and settings — is kept in this browser as you work. It stays there if you switch sheets, reload the page or close the window by accident.</p>
     <ul>
       <li><b>Save</b> (top right, beside the menu, or <kbd>⌘S</kbd>) sends all of it to your Google Sheet in one go. The number on the button is how many changes are waiting.</li>
       <li>Saving happens in the background: keep working while it runs. Anything you change meanwhile waits for the next Save.</li>
@@ -147,7 +147,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
     <h3>Rows and columns</h3>
     <ul>
       <li><b>New rows:</b> there's always an empty row at the bottom. Type in it and it becomes a card (added to the sheet when you save), with a fresh empty row below.</li>
-      <li><b>New columns:</b> there's always an empty column at the end. Click its <b>New column</b> heading to name it, or just type in one of its cells — the column is added to the sheet straight away, named after its letter (like <b>Column H</b>) until you rename it.</li>
+      <li><b>New columns:</b> there's always an empty column at the end. Click its <b>New column</b> heading to name it, or just type in one of its cells — it's named after its letter (like <b>Column H</b>) until you rename it. New columns go to the sheet when you save.</li>
       <li><b>Delete a row:</b> click its row number → <b>Delete row</b>. <b>Delete a column:</b> click its heading → <b>Delete column</b>. CardBoard asks first, then deletes it from your Google Sheet (undo it there with Edit → Undo or version history). If the row changed in Sheets since you loaded it, nothing is deleted and the latest is shown instead.</li>
       <li><b>Search the rows</b> shows only rows containing what you type.</li>
       <li><b>Reload</b> re-reads this tab from the sheet.</li>
@@ -190,7 +190,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
       <li><b>Column</b> switches which column the field shows.</li>
       <li><b>Value for row N</b> shows that row's value exactly as typed in the sheet (tags still in brackets) — handy when it's empty and invisible on the card. Edit it and click away; it goes to the sheet with your next Save.</li>
       <li>Or double-click a Data field on the card to edit it in place: <kbd>Enter</kbd> keeps it (it goes to the sheet when you save), <kbd>Shift</kbd>+<kbd>Enter</kbd> adds a line, <kbd>Esc</kbd> cancels.</li>
-      <li><b>+ New</b> at the bottom of the Data list adds a column to the sheet, ready to drag onto the card.</li>
+      <li><b>+ New</b> at the bottom of the Data list adds a column, ready to drag onto the card (it goes to the sheet when you save).</li>
       <li>Click a field in the list → <b>Hide field</b> to tuck away columns you don't use. The eye button in the Data heading shows hidden fields again (greyed) so you can unhide them.</li>
     </ul>
   </section>

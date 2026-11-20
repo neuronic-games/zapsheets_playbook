@@ -68,7 +68,7 @@ function faceOf(lay, s) { return s === 'back' ? lay.back : lay; }
 function curEls() { return faceOf(layout, side).els; }
 // Does the back change from card to card (column values, generated values)?
 function backVaries(lay) {
-  return (lay || layout).back.els.some(function(e) { return e.kind === 'data' || e.kind === 'gen' || (e.kind === 'text' && /\{[^{}]+\}/.test(e.text || '')) || (e.kind === 'image' && e.mapOn && e.map && e.map.field); });
+  return (lay || layout).back.els.some(function(e) { return e.kind === 'data' || e.kind === 'gen' || (e.kind === 'text' && /\{[^{}]+\}/.test(e.text || '')); });
 }
 function isImageLike(e) { return e.kind === 'image' || dataIsImage(e); }
 
@@ -84,6 +84,15 @@ function normalize(lay) {
       e.kind = 'data'; e.field = e.text.match(one)[1]; e.as = 'text'; delete e.text;
     } else if (e.kind === 'image' && one.test(e.src || '')) {
       e.kind = 'data'; e.field = e.src.match(one)[1]; e.as = 'image'; delete e.src;
+    } else if (e.kind === 'image' && (e.map || e.mapOn)) {
+      // The old image mapping (an image picking its picture by a field's value) becomes a Card field shown as a Mapping
+      var om = e.map || {};
+      if (e.mapOn && om.field) {
+        e.kind = 'data'; e.field = om.field; e.as = 'map';
+        e.map = { type: 'image', items: (om.items || []).map(function(it) { return { v: it.v || '', src: it.src || '' }; }) };
+        delete e.src;
+      } else delete e.map;
+      delete e.mapOn;
     }
     return e;
   }
@@ -268,7 +277,7 @@ function elInner(e, row, ctx) {
         return rich(hit ? (hit.t || '') : textVal(row[e.field]), ctx);
       }
       return row ? rich(textVal(row[e.field]), ctx) : '<span class="el-empty">' + esc(e.field) + '</span>';
-    case 'image': { var iu = imageUrl(imgSrcFor(e, row)); return iu || ctx && ctx.designing ? imgDiv(iu, e, 'Drop an image here, or double-click to choose', ctx) : ''; }
+    case 'image': { var iu = imageUrl(picRef(e.src)); return iu || ctx && ctx.designing ? imgDiv(iu, e, 'Drop an image here, or double-click to choose', ctx) : ''; }
     case 'shape': return shapeSVG(e);
     case 'gen':   return rich(genValue(e, ctx), ctx);
   }
@@ -707,23 +716,10 @@ function droppedLink(dt) {
   return /^https?:\/\//i.test(u) ? u.trim() : '';
 }
 function isPicEl(e) { return !!e && (e.kind === 'image' || (e.kind === 'data' && e.as === 'image')); }
-// Image mapping: an image element can pick its picture from a field's value.
-// e.map = {field, items:[{v, src}]}, used while e.mapOn. A value that matches an item uses its
-// picture; otherwise a picture link (or an image [tag]) in the field; otherwise the element's own picture.
 function picRef(s) {   // a picture address, or the picture of an image tag written [name]
   var m = /^\s*\[([^\[\]]+)\]\s*$/.exec(s || '');
   if (m) { var t = tagsOn() && TAGMAP[tagKey(m[1])]; return t ? tagPicture(t.value) : ''; }
   return s || '';
-}
-function imgSrcFor(e, row) {
-  var mp = e.mapOn && e.map;
-  if (!mp || !mp.field || !row) return picRef(e.src);
-  var raw = cleanVal(row[mp.field]).trim(), low = raw.toLowerCase();
-  var hit = (mp.items || []).filter(function(it) { return it.src && String(it.v || '').trim() && String(it.v).trim().toLowerCase() === low; })[0];
-  if (hit) return picRef(hit.src);
-  if (/^\[[^\[\]]+\]$/.test(raw)) { var tp = picRef(raw); if (tp) return tp; }
-  if (/^(https?:\/\/|=IMAGE\(|\[[^\]]*\]\(https?:)/i.test(raw)) return raw;
-  return picRef(e.src);
 }
 function curSrc(e) { return e.kind === 'data' ? cleanVal((ROWS[rowIdx] || {})[e.field]) : (e.src || ''); }
 function setImageSrc(id, src) {
@@ -796,7 +792,7 @@ function openImagePicker(ev, id, slot) {   // slot: pick the picture for one val
     '<div class="ip-url"><input class="inp" id="ipUrl" placeholder="Link, or an image tag like [fire]" value="' + esc(/\/images\/[A-Za-z0-9_\-]+\/[0-9a-f]{20}\.\w+$/.test(cur) ? '' : cur) + '">' +
       '<button type="button" class="attr-btn" id="ipUse">Use</button></div>' +
     '<p class="muted">Links are shown straight from Dropbox, Drive or the website, so when you change the picture there it changes here too. In Drive, share it as “Anyone with the link”.</p>' +
-    (slot != null ? '<p class="muted ip-row">Used when <b>' + esc(e.kind === 'data' ? e.field : e.map.field) + '</b> is <b>' + esc(((e.map.items[slot] || {}).v) || '…') + '</b>.</p>' : '') +
+    (slot != null ? '<p class="muted ip-row">Used when <b>' + esc(e.field) + '</b> is <b>' + esc(((e.map.items[slot] || {}).v) || '…') + '</b>.</p>' : '') +
     (e.kind === 'data' && slot == null ?'<p class="muted ip-row">For <b>row ' + (rowIdx + 1) + '</b> — saved in its <b>' + esc(e.field) + '</b> cell in the sheet. Uploads are kept on zapsheets.com.</p>' : '') +
     (cur ? '<button type="button" class="attr-btn danger ip-remove" id="ipRemove">Remove picture</button>' : '');
   document.body.appendChild(p);
@@ -2051,14 +2047,11 @@ function renderAttrs() {
   if (e.kind === 'image') {
     var u = imageUrl(picRef(e.src)), src = e.src || '', uploaded = /\/images\/[A-Za-z0-9_\-]+\/[0-9a-f]{20}\.\w+$/.test(src);
     var from = !src ? '' : uploaded ? 'Uploaded file' : /dropbox\.com/i.test(src) ? 'Dropbox link' : /google\.com/i.test(src) ? 'Google Drive link' : 'Web link';
-    var mapOn = !!(e.mapOn && e.map);
-    h += '<span class="lbl">' + (mapOn ? 'Default picture' : 'Picture') + '</span><div class="img-slot' + (UPLOADING[e.id] ? ' img-loading' : '') + '" id="imgSlot" onclick="openImagePicker(event,\'' + e.id + '\')" title="Click or drop a picture to change it">' +
-         '<button type="button" class="map-btn' + (mapOn ? ' on' : '') + '" onclick="event.stopPropagation();toggleImgMap()" title="' + (mapOn ? 'Stop choosing the picture by field value' : 'Choose the picture by a field\'s value') + '" aria-pressed="' + mapOn + '">[]</button>' +
+    h += '<span class="lbl">Picture</span><div class="img-slot' + (UPLOADING[e.id] ? ' img-loading' : '') + '" id="imgSlot" onclick="openImagePicker(event,\'' + e.id + '\')" title="Click or drop a picture to change it">' +
          (u ? '<div class="el-img" style="background-image:url(&quot;' + esc(u) + '&quot;);background-size:contain"></div>' : '<div class="img-slot-empty">' + IMG_ICON + '<span>Drop a picture, or click to choose</span></div>') +
          '<span class="img-btn">' + IMG_ICON + '</span></div>';
     if (from) h += '<p class="muted" style="margin:.3rem 0 0">' + from + (uploaded ? '' : ' — loaded from the source, so changes there show up here') + '</p>';
-    if (mapOn) h += '<div class="map-drawer" id="mapDrawer"><div class="map-drawer-in">' + mapAttrs(e) + '</div></div>';
-    else h += '<p class="muted" style="margin:.3rem 0 0">The same picture on every card — a logo, frame or icon. Press <b>[ ]</b> to choose the picture by a field\'s value instead.</p>';
+    h += '<p class="muted" style="margin:.3rem 0 0">The same picture on every card — a logo, frame or icon. To pick a picture by a card\'s value, use a Card field shown as a Mapping.</p>';
     h += fitAttrs(e) + boxAttrs(e, 'Frame');
   }
   if (e.kind === 'shape') {
@@ -2102,9 +2095,6 @@ function renderAttrs() {
       if (f) uploadImage(e.id, f); else if (l) setImageSrc(e.id, l);
     });
   }
-  var dr = $('mapDrawer');
-  if (dr && _mapAnim === 'open' && dr.animate && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) dr.animate([{ height: '0px', opacity: 0 }, { height: dr.scrollHeight + 'px', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.7,.3,1)' });
-  _mapAnim = '';
   p.querySelectorAll('.map-slot').forEach(function(t) {
     var i = +t.dataset.i;
     t.addEventListener('dragover', function(d) { d.preventDefault(); t.classList.add('over'); });
@@ -2116,34 +2106,7 @@ function renderAttrs() {
     });
   });
 }
-// The image mapping part of an image element's panel: a field, then value → picture rows,
-// always ending with an empty row for the next one
-function mapAttrs(e) {
-  var mp = e.map, items = mp.items || [], rows = items.concat([{ v: '', src: '' }]);
-  var cur = mp.field && ROWS[rowIdx] ? cleanVal(ROWS[rowIdx][mp.field]).trim().toLowerCase() : null;
-  var vals = [];   // the values the field has in the sheet, for the value boxes' lists
-  if (mp.field) ROWS.forEach(function(r) { var v = cleanVal(r[mp.field]).trim(); if (v && vals.indexOf(v) < 0 && vals.length < 300) vals.push(v); });
-  var h = '<span class="lbl">Field</span><input class="inp" list="mapFieldList" value="' + esc(mp.field || '') + '" placeholder="Choose a field" onchange="setMapField(this.value)">' +
-    '<datalist id="mapFieldList">' + FIELDS.map(function(f) { return '<option value="' + esc(f) + '">'; }).join('') + '</datalist>' +
-    '<datalist id="mapValList">' + vals.map(function(v) { return '<option value="' + esc(v) + '">'; }).join('') + '</datalist>';
-  h += '<div class="map-list">';
-  rows.forEach(function(it, i) {
-    var u = imageUrl(picRef(it.src)), isNew = i === items.length, on = cur !== null && it.v && it.v.trim().toLowerCase() === cur;
-    h += '<div class="map-item' + (isNew ? ' new' : '') + '">' +
-      '<div class="img-slot map-slot' + (on ? ' cur' : '') + '" data-i="' + i + '" onclick="openImagePicker(event,\'' + e.id + '\',' + i + ')" title="Click or drop a picture">' +
-        (u ? '<div class="el-img" style="background-image:url(&quot;' + esc(u) + '&quot;);background-size:contain"></div>' : '<div class="img-slot-empty">' + IMG_ICON + '<span>' + (isNew ? 'Picture for another value' : 'No picture — uses the link in ' + esc(mp.field || 'the field')) + '</span></div>') +
-        (isNew ? '' : '<button type="button" class="map-x" onclick="event.stopPropagation();delMapItem(' + i + ')" title="Remove this value" aria-label="Remove this value">×</button>') +
-        '<span class="img-btn">' + IMG_ICON + '</span></div>' +
-      '<input class="inp map-val" list="mapValList" value="' + esc(it.v || '') + '" placeholder="' + (mp.field ? 'When ' + esc(mp.field) + ' is…' : 'Value') + '" onchange="setMapVal(' + i + ',this.value)">' +
-      '</div>';
-  });
-  h += '</div><p class="muted" style="margin:.35rem 0 0">' + (mp.field
-    ? 'A card whose <b>' + esc(mp.field) + '</b> matches a value shows its picture. Otherwise it shows the picture link in <b>' + esc(mp.field) + '</b>, or the default picture. Values and pictures can be tags like <code>[fire]</code>.'
-    : 'Choose the field whose value picks the picture.') + '</p>';
-  return h;
-}
-var _mapAnim = '';
-function mapEl() { var e = elById(selId); return e && e.map && (e.kind === 'image' || (e.kind === 'data' && e.as === 'map')) ? e : null; }
+function mapEl() { var e = elById(selId); return e && e.map && e.kind === 'data' && e.as === 'map' ? e : null; }
 // A data element's mapping: a Text / Image switch, then value → text (or picture) rows,
 // always ending with an empty row for the next one
 function dataMapAttrs(e) {
@@ -2181,21 +2144,6 @@ function setDataMapType(t) {
   var e = elById(selId); if (!e || e.kind !== 'data' || !e.map || dataMapType(e) === t) return;
   snapshot(); e.map.type = t; changed(); renderAttrs();
 }
-function toggleImgMap() {
-  var e = elById(selId); if (!e || e.kind !== 'image') return;
-  var dr = $('mapDrawer');
-  function flip() {
-    snapshot(); e.mapOn = !e.mapOn;
-    if (e.mapOn && !e.map) e.map = { field: '', items: [] };
-    _mapAnim = e.mapOn ? 'open' : '';
-    changed();
-  }
-  if (e.mapOn && dr && dr.animate && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {   // slide the drawer shut first
-    dr.style.overflow = 'hidden';
-    dr.animate([{ height: dr.offsetHeight + 'px', opacity: 1 }, { height: '0px', opacity: 0 }], { duration: 200, easing: 'ease-in', fill: 'forwards' }).onfinish = flip;
-  } else flip();
-}
-function setMapField(v) { var e = mapEl(); if (!e || e.map.field === v.trim()) return; snapshot(); e.map.field = v.trim(); changed(); }
 function setMapVal(i, v) {
   var e = mapEl(); if (!e) return; var items = e.map.items; v = v.trim();
   if (i >= items.length) { if (!v) return; snapshot(); items.push({ v: v, src: '' }); }
@@ -3064,7 +3012,6 @@ function renameInLayout(lay, a, b) {
     (f && f.els || []).forEach(function(e) {
       if (e.field === a) e.field = b;
       if (e.kind === 'text' && e.text) e.text = e.text.split('{' + a + '}').join('{' + b + '}');
-      if (e.map && e.map.field === a) e.map.field = b;
     });
   });
   if (lay.hidden) lay.hidden = lay.hidden.map(function(x) { return x === a ? b : x; });

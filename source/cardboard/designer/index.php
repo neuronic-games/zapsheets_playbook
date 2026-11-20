@@ -198,6 +198,9 @@ table.grid thead th.renaming .th-caret, table.grid thead th.renaming .col-rs { d
 table.grid tbody td.rn { cursor:pointer; }
 table.grid tbody td.rn:hover, table.grid tbody td.rn.menu-open { background:#e6e1ff; color:#4b3fa8; }
 .col-menu button.danger { color:#d4373d; }
+.ghost-col { background:#fbfaff !important; }
+table.grid thead th.ghost-col { color:#b3abe6; font-style:italic; cursor:text; border-bottom-style:dashed; }
+table.grid thead th.ghost-col:hover { background:#efebff !important; color:#7b6cf6; }
 .col-menu-name { font-family:'DINBlack',sans-serif; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:#8a8fa8; padding:.1rem .2rem .4rem; }
 table.grid thead th[data-c] { cursor:pointer; }
 table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e6e1ff; }
@@ -512,7 +515,7 @@ table.grid td { cursor:cell; background:#fff; }
 table.grid td > span { vertical-align:middle; }
 table.grid td.formula > span { color:#4b3fa8; font-family:ui-monospace,Menlo,monospace; font-size:.74rem; }
 table.grid td.sel { box-shadow:inset 0 0 0 2px #4b3fa8; }
-table.grid td.st-saving, table.grid td.st-pending { background:#fff6d6; box-shadow:inset 3px 0 0 #f2c14e; }
+table.grid td.st-saving { background:#fffbea; }
 table.grid td.st-saved { background:#ecfdf3; transition:background .8s; }
 table.grid td.st-error { background:#fef2f2; box-shadow:inset 0 0 0 1.5px #e5484d; }
 table.grid tr.draft td { background:#faf9ff; }
@@ -747,16 +750,10 @@ body.cb-gate #signinOverlay { background:#2e2763; }
       <input class="inp" id="gridFilter" placeholder="Search the rows" oninput="filterGrid(this.value)" style="width:14rem"></div>
     <span class="print-info" id="gridInfo"></span>
     <div class="e-actions">
-      <div class="add-col" id="gridAddCol">
-        <button class="print-go ghost add-col-btn" onclick="showAddColumn()" title="Add a column to the sheet">+ Add column</button>
-        <form class="add-col-form" onsubmit="addColumn(event)"><input class="inp" id="gridAddColName" maxlength="60" placeholder="New column name" autocomplete="off" title="Enter or click away to add · Esc to cancel"
-          oninput="$('gridAddColMsg').textContent=''" onblur="addColumn()" onkeydown="if(event.key==='Escape'){this.value='';hideAddColumn()}"></form>
-        <div class="add-col-msg" id="gridAddColMsg"></div>
-      </div>
       <button class="print-go ghost" onclick="loadGrid(true)" title="Read the sheet again">Reload</button>
-      <button class="print-go" onclick="addGridRow()">+ Add row</button></div>
+</div>
   </div>
-  <p class="grid-hint">Click a cell and type, or double-click to edit · Enter saves (Shift+Enter for a new line) · Tab moves right · Esc cancels · Drag a heading to move it, or its edge to resize. Changes go straight to the Google Sheet.</p>
+  <p class="grid-hint">Click a cell and type, or double-click to edit · Enter saves (Shift+Enter for a new line) · Tab moves right · Esc cancels · Drag a heading to move it, or its edge to resize · Type in the empty row or column at the end to add one · Save sends your changes to the Google Sheet.</p>
   <div class="grid-wrap" id="gridWrap"></div>
 </div>
 

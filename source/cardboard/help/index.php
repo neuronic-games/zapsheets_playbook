@@ -142,12 +142,12 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
       <li>Click a cell and start typing to replace it, or double-click (or press <kbd>Enter</kbd> / <kbd>F2</kbd>) to edit what's there.</li>
       <li><kbd>Enter</kbd> saves and moves down; <kbd>Shift</kbd>+<kbd>Enter</kbd> adds a new line; <kbd>Tab</kbd> saves and moves right; <kbd>Esc</kbd> cancels.</li>
       <li>Arrow keys move around. <kbd>Delete</kbd> clears a cell. <kbd>⌘C</kbd> copies a cell and <kbd>⌘V</kbd> pastes into it.</li>
-      <li>An edited cell is marked yellow until it's saved, then flashes green. Formulas show in purple; their results appear on the cards after saving.</li>
+      <li>Formulas show in purple; their results appear on the cards after saving.</li>
     </ul>
     <h3>Rows and columns</h3>
     <ul>
-      <li><b>+ Add row</b> adds a card at the bottom — it's added to the sheet when you save.</li>
-      <li><b>+ Add column</b> adds a new heading at the end of the sheet.</li>
+      <li><b>New rows:</b> there's always an empty row at the bottom. Type in it and it becomes a card (added to the sheet when you save), with a fresh empty row below.</li>
+      <li><b>New columns:</b> there's always an empty column at the end. Click its <b>New column</b> heading to name it, or just type in one of its cells — the column is added to the sheet straight away, named after its letter (like <b>Column H</b>) until you rename it.</li>
       <li><b>Delete a row:</b> click its row number → <b>Delete row</b>. <b>Delete a column:</b> click its heading → <b>Delete column</b>. CardBoard asks first, then deletes it from your Google Sheet (undo it there with Edit → Undo or version history). If the row changed in Sheets since you loaded it, nothing is deleted and the latest is shown instead.</li>
       <li><b>Search the rows</b> shows only rows containing what you type.</li>
       <li><b>Reload</b> re-reads this tab from the sheet.</li>

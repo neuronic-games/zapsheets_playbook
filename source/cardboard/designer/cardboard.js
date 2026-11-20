@@ -2524,6 +2524,15 @@ function gridCols() {
   return cols.map(function(c, k) { var o = order.indexOf(c.name); return { c: c, k: o < 0 ? order.length + k : o }; })
     .sort(function(a, b) { return a.k - b.k; }).map(function(x) { return x.c; });
 }
+// After the last column there's always an empty one, and after the last row an empty row: typing
+// into them adds a column (named "Column H" unless you name it in its heading) or a row.
+function ghostCol() { var at = GRID.header.length; while (at > 0 && !GRID.header[at - 1]) at--; return at; }
+function gridColsAll() { return gridCols().concat([{ name: '', i: ghostCol(), ghost: true }]); }
+function rowEmpty(r) { return !r.values.some(function(v) { return String(v || '').trim(); }); }
+function ensureTrailingRow() {
+  var last = GRID.rows[GRID.rows.length - 1];
+  if (!last || !last.draft || !rowEmpty(last)) GRID.rows.push({ row: 0, draft: true, key: uid(), values: new Array(GRID.header.length).fill('') });
+}
 var _gridAutoW = {};   // a column's starting width, measured once from its contents so it doesn't change while editing
 function gridColWidth(name, i) {
   var w = (gridPrefs().w || {})[name]; if (w) return w;
@@ -2546,23 +2555,25 @@ function gridVisibleRows() {
 }
 function renderGrid() {
   var box = $('gridWrap'); if (!GRID) return;
-  var cols = gridCols(), rows = gridVisibleRows();
+  ensureTrailingRow();
+  var cols = gridColsAll(), rows = gridVisibleRows();
   var nHid = GRID.header.filter(function(hd) { return hd && isHidden(hd); }).length;
-  $('gridInfo').innerHTML = GRID.rows.filter(function(r) { return !r.draft; }).length + ' rows · ' + cols.length + ' columns' + (_gridFilter ? ' · ' + rows.length + ' shown' : '') +
+  $('gridInfo').innerHTML = GRID.rows.filter(function(r) { return !r.draft; }).length + ' rows · ' + (cols.length - 1) + ' columns' + (_gridFilter ? ' · ' + rows.length + ' shown' : '') +
     (nHid ? ' · ' + nHid + ' hidden <button type="button" class="lk-act" onclick="showAllFields()">Show all</button>' : '');
-  if (!cols.length) { box.innerHTML = '<div class="muted" style="padding:2rem">This sheet has no column headings yet. Add one with <b>New</b> in the Design tab’s Data list.</div>'; return; }
   var imgCols = {};
   cols.forEach(function(c) { imgCols[c.i] = FIELDS.indexOf(c.name) >= 0 && looksLikeImage(c.name); });
-  var widths = cols.map(function(c) { return gridColWidth(c.name, c.i); }), total = 42 + widths.reduce(function(a, b) { return a + b; }, 0);
+  var widths = cols.map(function(c) { return c.ghost ? 130 : gridColWidth(c.name, c.i); }), total = 42 + widths.reduce(function(a, b) { return a + b; }, 0);
   var h = '<table class="grid" style="width:' + total + 'px"><colgroup><col style="width:42px">' + widths.map(function(w, k) { return '<col data-c="' + cols[k].i + '" style="width:' + w + 'px">'; }).join('') + '</colgroup>' +
-    '<thead><tr><th class="rn"></th>' + cols.map(function(c) { return '<th data-c="' + c.i + '" title="Click for options · drag to move · drag the edge to resize"><span class="th-name">' + esc(c.name) + '</span><span class="th-caret">▾</span><span class="col-rs" title="Drag to resize · double-click to fit"></span></th>'; }).join('') + '</tr></thead><tbody>';
+    '<thead><tr><th class="rn"></th>' + cols.map(function(c) {
+      if (c.ghost) return '<th class="ghost-col" data-ghost="' + c.i + '" title="Click to name a new column — or just type in a cell below"><span class="th-name">New column</span></th>';
+      return '<th data-c="' + c.i + '" title="Click for options · drag to move · drag the edge to resize"><span class="th-name">' + esc(c.name) + '</span><span class="th-caret">▾</span><span class="col-rs" title="Drag to resize · double-click to fit"></span></th>'; }).join('') + '</tr></thead><tbody>';
   rows.forEach(function(r) {
     var ri = GRID.rows.indexOf(r);
-    h += '<tr data-r="' + ri + '"' + (r.draft ? ' class="draft"' : '') + '><td class="rn">' + (r.draft ? '+' : r.row) + '</td>';
+    h += '<tr data-r="' + ri + '"' + (r.draft ? ' class="draft"' : '') + '><td class="rn">' + (r.draft ? '' : r.row) + '</td>';
     cols.forEach(function(c) {
       var v = r.values[c.i] || '', st = (r.state || {})[c.i] || '';
       var thumb = imgCols[c.i] && imageUrl(v) ? '<img class="g-thumb" src="' + esc(imageUrl(v)) + '" alt="" referrerpolicy="no-referrer">' : '';
-      h += '<td data-r="' + ri + '" data-c="' + c.i + '" class="' + (st ? 'st-' + st : '') + (/^=/.test(v) ? ' formula' : '') + '" title="' + esc(v.length > 60 ? v : '') + '">' + thumb + '<span>' + esc(v) + '</span></td>';
+      h += '<td data-r="' + ri + '" data-c="' + c.i + '" class="' + (st ? 'st-' + st : '') + (c.ghost ? ' ghost-col' : '') + (/^=/.test(v) ? ' formula' : '') + '" title="' + esc(v.length > 60 ? v : '') + '">' + thumb + '<span>' + esc(v) + '</span></td>';
     });
     h += '</tr>';
   });
@@ -2580,7 +2591,7 @@ function markGridSel() {
 function selectGridCell(r, c) { _gridSel = { r: r, c: c }; markGridSel(); }
 function moveGridSel(dr, dc) {
   if (!_gridSel) return;
-  var rows = gridVisibleRows().map(function(x) { return GRID.rows.indexOf(x); }), cols = gridCols().map(function(x) { return x.i; });
+  var rows = gridVisibleRows().map(function(x) { return GRID.rows.indexOf(x); }), cols = gridColsAll().map(function(x) { return x.i; });
   var ri = rows.indexOf(_gridSel.r), ci = cols.indexOf(_gridSel.c);
   ri = clamp(ri + dr, 0, rows.length - 1); ci = clamp(ci + dc, 0, cols.length - 1);
   selectGridCell(rows[ri], cols[ci]);
@@ -2622,21 +2633,63 @@ function paintCell(r, c) {
   td.classList.toggle('formula', /^=/.test(v));
 }
 function saveGridCell(r, c, val, old) {   // kept in this browser until Save
-  var row = GRID.rows[r], field = GRID.header[c], tab = GRID.tab; if (!field) return;
-  row.values[c] = val; paintCell(r, c); setCellState(r, c, 'pending');
+  var row = GRID.rows[r], field = GRID.header[c], tab = GRID.tab;
+  if (!field) {   // the empty column at the end: add it to the sheet, then the value
+    if (!String(val).trim() || c !== ghostCol()) return;
+    var letter = gspreadLetter(c + 1), name = 'Column ' + letter, k = 2;
+    while (GRID.header.concat(FIELDS).some(function(f) { return f && f.toLowerCase() === name.toLowerCase(); })) name = 'Column ' + letter + ' ' + (k++);
+    row.values[c] = val; paintCell(r, c);
+    createColumn(name).then(function() { if (GRID && GRID.tab === tab) saveGridCell(GRID.rows.indexOf(row), c, val, ''); }, function() { row.values[c] = ''; renderGrid(); });
+    return;
+  }
+  row.values[c] = val; paintCell(r, c);
   if (row.draft) {
     var o = {}; GRID.header.forEach(function(h, i) { if (h) o[h] = row.values[i] || ''; });
     row.key = row.key || uid(); queueAdd(tab, row.key, o);
     var card = ROWS.filter(function(x) { return x._pend === row.key; })[0];
     if (!card && Object.keys(o).some(function(k) { return String(o[k]).trim(); })) { card = { _pend: row.key }; ROWS.push(card); }
     if (card) FIELDS.forEach(function(f) { card[f] = o[f] || ''; });
+    if (GRID.rows[GRID.rows.length - 1] === row && !rowEmpty(row)) { var sel = _gridSel; renderGrid(); _gridSel = sel; if (sel) markGridSel(); }   // a fresh empty row below
   } else {
     var was = pendingOld(tab, row.row, field);
     queueCell(tab, row.row, field, val, was != null ? was : old);
-    if (pendingOld(tab, row.row, field) == null) setCellState(r, c, '');   // back to what the sheet has
     var cardRow = ROWS[gridCardIndex(row)]; if (cardRow && !cardRow._pend) cardRow[field] = val;
   }
   if (tab === curTab) { renderData(); if (_activeTab === 'print') renderPrint(); }
+}
+function gspreadLetter(n) { var s = ''; while (n > 0) { var m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; }
+var _addingCol = false;
+function createColumn(n) {
+  if (!hasAccess()) { requirePro('edit', function() {}); return Promise.reject(new Error('locked')); }
+  var tab = curTab; _addingCol = true;
+  return api('addfield', { tab: tab, name: n }).then(function(r) {
+    _addingCol = false;
+    if (curTab !== tab) return;
+    if (FIELDS.indexOf(n) < 0) { FIELDS.push(n); ROWS.forEach(function(row) { row[n] = ''; }); renderData(); }
+    gridAddedColumn(n);
+    var c = GRID ? GRID.header.indexOf(n) : -1, th = c >= 0 && $('gridWrap').querySelector('th[data-c="' + c + '"]');
+    if (th) th.classList.add('just-added');
+    toast('✓ Added column ' + (r.column ? r.column + ' ' : '') + '“' + n + '” to the sheet');
+  }, function(e) { _addingCol = false; toast('Couldn\'t add the column — ' + e.message, true); throw e; });
+}
+function nameNewColumn(th) {
+  if (!requirePro('edit', function() {}) || th.classList.contains('renaming')) return;
+  th.classList.add('renaming');
+  th.innerHTML = '<input class="th-rename" maxlength="60" spellcheck="false" autocomplete="off" placeholder="Column name">';
+  var inp = th.querySelector('input'), done = false; inp.focus();
+  function finish(save) {
+    if (done) return; done = true;
+    var n = inp.value.trim().replace(/\s+/g, ' ');
+    if (!save || !n) { renderGrid(); return; }
+    var bad = isInternal(n) ? '“' + n + '” is used by CardBoard' : /[{}\[\]]/.test(n) ? 'Names can\'t use { } [ or ]'
+      : GRID.header.concat(FIELDS).some(function(f) { return f && f.toLowerCase() === n.toLowerCase(); }) ? 'There\'s already a column called “' + n + '”' : '';
+    if (bad) { toast(bad, true); renderGrid(); return; }
+    createColumn(n).catch(function() { renderGrid(); });
+  }
+  inp.addEventListener('keydown', function(k) { k.stopPropagation(); if (k.key === 'Enter') { k.preventDefault(); finish(true); } else if (k.key === 'Escape') { k.preventDefault(); finish(false); } });
+  inp.addEventListener('blur', function() { finish(true); });
+  inp.addEventListener('mousedown', function(k) { k.stopPropagation(); });
+  inp.addEventListener('click', function(k) { k.stopPropagation(); });
 }
 function addGridRow() {
   if (!GRID) return;
@@ -2652,39 +2705,6 @@ function gridAddedColumn(n) {   // keep the grid in step when a column is added 
   while (at > 0 && !GRID.header[at - 1]) at--;   // first slot after the last heading
   GRID.header[at] = n; GRID.rows.forEach(function(r) { while (r.values.length < GRID.header.length) r.values.push(''); });
   if (_activeTab === 'data') renderGrid();
-}
-function showAddColumn() {
-  var box = $('gridAddCol'); box.classList.add('open');
-  var inp = $('gridAddColName'); inp.value = ''; inp.disabled = false; $('gridAddColMsg').textContent = ''; inp.focus();
-}
-function hideAddColumn() { var box = $('gridAddCol'); if (box) box.classList.remove('open'); $('gridAddColMsg').textContent = ''; }
-var _addingCol = false;
-function addColumn(ev) {
-  if (ev) ev.preventDefault();
-  if (!hasAccess()) { requirePro('edit', function() {}); return; }
-  var box = $('gridAddCol'), inp = $('gridAddColName');
-  if (_addingCol || !box.classList.contains('open')) return;
-  var n = inp.value.trim().replace(/\s+/g, ' ');
-  if (!n) { hideAddColumn(); return; }
-  var known = (GRID ? GRID.header : []).concat(FIELDS).filter(Boolean);
-  var problem = isInternal(n) ? '“' + n + '” is used by CardBoard' : /[{}]/.test(n) ? 'Names can\'t use { or }'
-              : known.some(function(f) { return f.toLowerCase() === n.toLowerCase(); }) ? 'There\'s already a column called “' + n + '”' : '';
-  if (problem) { $('gridAddColMsg').textContent = problem; return; }
-  var tab = curTab; _addingCol = true; inp.disabled = true; box.classList.add('busy');
-  api('addfield', { tab: tab, name: n })
-    .then(function(r) {
-      if (curTab !== tab) return;
-      if (FIELDS.indexOf(n) < 0) { FIELDS.push(n); ROWS.forEach(function(row) { row[n] = ''; }); renderData(); }
-      gridAddedColumn(n); hideAddColumn();
-      var c = GRID ? GRID.header.indexOf(n) : -1, first = GRID && GRID.rows.length ? 0 : -1;
-      if (c >= 0) {
-        var th = $('gridWrap').querySelector('th[data-c="' + c + '"]'); if (th) { th.scrollIntoView({ inline: 'nearest', block: 'nearest' }); th.classList.add('just-added'); }
-        if (first >= 0) selectGridCell(first, c);
-      }
-      toast('✓ Added column ' + (r.column ? r.column + ' ' : '') + '“' + n + '” to the sheet');
-    })
-    .catch(function(e) { $('gridAddColMsg').textContent = e.message; inp.disabled = false; inp.focus(); })
-    .then(function() { _addingCol = false; box.classList.remove('busy'); });
 }
 
 // Column heading menu: hide the column here and in the Design list
@@ -2868,7 +2888,8 @@ function refreshRows() {
   var wrap = $('gridWrap');
   wrap.addEventListener('click', function(ev) {
     if (_colDragged) { _colDragged = false; return; }
-    var rn = ev.target.closest('tbody td.rn'); if (rn) { openRowMenu(rn); return; }
+    var rn = ev.target.closest('tbody td.rn'); if (rn) { if (rn.textContent) openRowMenu(rn); return; }
+    var gh = ev.target.closest('th.ghost-col'); if (gh) { nameNewColumn(gh); return; }
     if (ev.target.classList.contains('col-rs')) return;
     var th = ev.target.closest('th[data-c]'); if (th) openColumnMenu(th);
   });

@@ -366,7 +366,7 @@ function refreshSheetCombos() {
 function makeSheetCombo(sel) {
   sel.style.display = 'none';
   var box = document.createElement('div');
-  box.className = 'sheet-combo' + (['gridSheet', 'pSheet', 'eSheet'].indexOf(sel.id) >= 0 ? ' compact' : '');
+  box.className = 'sheet-combo' + (sel.id === 'gridSheet' ? ' compact' : '');
   box.innerHTML = '<span class="sc-ico" title="Has a layout"></span><input class="inp sel-sheet" autocomplete="off" spellcheck="false" aria-label="Deck" role="combobox" aria-expanded="false">' +
     '<button type="button" class="sc-caret" tabindex="-1" aria-label="Show decks"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div class="sc-list" role="listbox"></div>';
   sel.parentNode.insertBefore(box, sel.nextSibling);
@@ -426,6 +426,11 @@ function selectTab(name, first, force, asked, pre) {   // pre: {rows, full} alre
     ROWS = (rows || []).filter(function(r) { return Object.keys(r).some(function(k) { return !isInternal(k) && String(r[k]).trim(); }); });
     FIELDS = [];
     ROWS.forEach(function(r) { Object.keys(r).forEach(function(k) { if (!isInternal(k) && FIELDS.indexOf(k) < 0) FIELDS.push(k); }); });
+    // If no data rows yet, seed FIELDS from the tab's column headers so the palette still shows draggable chips
+    if (!FIELDS.length) {
+      var tabMeta = TABS.filter(function(t) { return t.title === name; })[0];
+      if (tabMeta && tabMeta.cols) tabMeta.cols.forEach(function(c) { if (!isInternal(c) && FIELDS.indexOf(c) < 0) FIELDS.push(c); });
+    }
     _rowsPartial = !!partial; showLoadStatus();
     overlayPending(partial);   // this browser's unsaved cell edits (and, once every row is in, new rows) on top
     rowIdx = Math.min(rowIdx, Math.max(0, ROWS.length - 1));
@@ -1272,7 +1277,7 @@ function updateSaveBtn() {
                           : 'Save' + (n ? '<span class="sv-n">' + n + '</span>' : '');
   btn.title = _saving ? 'Saving to your Google Sheet — keep working' : n ? n + ' unsaved change' + (n === 1 ? '' : 's') + ' in this browser — save them to the sheet (⌘S)' : 'Everything is saved';
   var st = $('saveStatus');
-  if (st && st.dataset.prev == null) { st.textContent = _saving ? 'Saving…' : n ? 'Unsaved changes' : 'All saved'; st.className = 'tb-status' + (n ? ' dirty' : ''); }
+  if (st && st.dataset.prev == null) { st.textContent = _saving ? 'Saving…' : ''; st.className = 'tb-status'; }
 }
 // Cell edits: one entry per cell, keeping the value the sheet had before the first edit (to spot edits made in Sheets meanwhile)
 function queueCell(tab, row, field, value, old) {
@@ -2132,7 +2137,7 @@ function restorePrintSettings(tab) {
 }
 function saveExportSettings(tab) {
   if (!tab || !layout) return;
-  _exportSettings[tab] = { target: $('eTarget').value, quality: $('eQuality').value, copies: $('eCopies').value, corners: $('eCorners').checked };
+  _exportSettings[tab] = { target: $('eTarget').value, quality: $('eQuality').value, copies: $('eCopies').value };
   try { localStorage.setItem('cb_export:' + SHEET_ID + ':' + tab, JSON.stringify(_exportSettings[tab])); } catch (e) {}
 }
 function restoreExportSettings(tab) {
@@ -2143,7 +2148,6 @@ function restoreExportSettings(tab) {
   if (s.target) $('eTarget').value = s.target;
   if (s.quality) $('eQuality').value = s.quality;
   if (s.copies) { $('eCopies').value = s.copies; $('eCopies').dataset.touched = '1'; }
-  $('eCorners').checked = !!s.corners;
 }
 
 function renderPrint() {
@@ -2244,7 +2248,7 @@ function backHTML(it, i, ctx) {
 
 // Export settings from the bar (also stored with published links, so updates match)
 function exportOpts() {
-  return { target: $('eTarget').value, quality: +$('eQuality').value || 4096, copies: $('eCopies').value || '', round: $('eCorners').checked };
+  return { target: $('eTarget').value, quality: +$('eQuality').value || 4096, copies: $('eCopies').value || '', round: false };
 }
 function listFor(copies) {
   var list = [];

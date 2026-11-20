@@ -415,7 +415,7 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 /* ── Print view ────────────────────────────────────────── */
 #view-print { flex-direction:row; }
 /* Print: settings on the left, pages on the right */
-#view-print .print-bar { width:300px; flex-shrink:0; flex-direction:column; align-items:stretch; gap:.65rem; overflow:auto; border-bottom:none; border-right:1px solid #e1e4ee; background:#fbfbfe; }
+#view-print .print-bar { width:220px; flex-shrink:0; flex-direction:column; align-items:stretch; gap:.65rem; overflow:auto; border-bottom:none; border-right:1px solid #e1e4ee; background:#fbfbfe; }
 #view-print .print-bar .sel { width:100%; }
 #view-print .print-info { align-self:flex-start; margin-top:.2rem; line-height:1.45; }
 #view-print .print-go { margin-left:0; width:100%; }
@@ -485,7 +485,7 @@ table.grid thead th.just-added { animation:colFlash 1.6s ease; }
 @keyframes colFlash { 0%,40% { background:#d9d2ff; } }
 /* Export: the info and links panel takes at most half the height; both halves scroll */
 /* Export: settings and links on the left, the preview on the right; each scrolls on its own */
-.export-side { width:440px; flex-shrink:0; display:flex; flex-direction:column; min-height:0; overflow:auto; background:#fbfbfe; border-right:1px solid #e1e4ee; }
+.export-side { width:280px; flex-shrink:0; display:flex; flex-direction:column; min-height:0; overflow:auto; background:#fbfbfe; border-right:1px solid #e1e4ee; }
 #view-export .print-bar { flex-direction:column; align-items:stretch; gap:.65rem; border-bottom:1px solid #e1e4ee; }
 #view-export .print-bar .grp .sel, #view-export .print-bar .grp .inp { width:100%; }
 #view-export .e-actions { margin-left:0; }
@@ -854,7 +854,6 @@ body.cb-gate #signinOverlay { background:#2e2763; }
     <div class="grp"><span class="mini">Copies</span>
       <select class="sel" id="eCopies"></select></div>
     <div class="grp"><span class="mini">Card back</span><span class="e-note" id="eBackNote"></span></div>
-    <label class="e-check"><input type="checkbox" id="eCorners" onchange="renderExport()"> Rounded corners</label>
     <div class="e-actions"><button class="print-go ghost" id="publishGo" onclick="runPublish()" title="Host the sheets on zapsheets.com at links that stay the same (Pro)">Get links</button>
     <button class="print-go" id="exportGo" onclick="runExport()">Download</button></div>
   </div>

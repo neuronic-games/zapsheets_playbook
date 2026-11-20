@@ -2567,7 +2567,7 @@ function copyLink(btn) {
 function renderLinks() {
   var box = $('exportLinks'); if (!box) return;
   var target = $('eTarget').value, m = (PUBLISHED[curTab] || {})[target];
-  $('publishGo').innerHTML = m ? 'Republish links' : 'Get links';
+  $('publishGo').innerHTML = m ? 'Update links' : 'Get links';
   if (!m) { box.innerHTML = ''; box.style.display = 'none'; return; }
   var when = new Date(m.updated), g = m.grid || {};
   function row(label, f, extra) {

@@ -719,7 +719,7 @@ body.cb-gate #signinOverlay { background:#2e2763; }
     <div class="top-tab-btns">
       <button class="top-tab" id="tabData" onclick="switchTab('data')">Cards</button>
       <button class="top-tab" id="tabTags" onclick="switchTab('tags')">Tags</button>
-      <button class="top-tab active" id="tabDesign" onclick="switchTab('design')">Design</button>
+      <button class="top-tab active" id="tabDesign" onclick="switchTab('design')">Layout</button>
       <button class="top-tab" id="tabPrint" onclick="switchTab('print')">Print</button>
       <button class="top-tab" id="tabExport" onclick="switchTab('export')">Export</button>
     </div>

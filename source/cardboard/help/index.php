@@ -68,7 +68,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
 </div>
 
 <div class="toc-wrap"><nav class="toc">
-  <a href="cardboard/help#start">Getting started</a><a href="cardboard/help#account">Account</a><a href="cardboard/help#tour">The screen</a><a href="cardboard/help#saving">Saving</a><a href="cardboard/help#data">Data</a>
+  <a href="cardboard/help#start">Getting started</a><a href="cardboard/help#account">Account</a><a href="cardboard/help#tour">The screen</a><a href="cardboard/help#saving">Saving</a><a href="cardboard/help#data">Cards</a>
   <a href="cardboard/help#card">The card</a><a href="cardboard/help#elements">Elements</a><a href="cardboard/help#editing">Moving &amp; sizing</a><a href="cardboard/help#text">Text style</a>
   <a href="cardboard/help#pictures">Pictures</a><a href="cardboard/help#generated">Generated</a><a href="cardboard/help#layers">Layers &amp; groups</a><a href="cardboard/help#tags">Tags</a>
   <a href="cardboard/help#backs">Backs</a><a href="cardboard/help#print">Print</a><a href="cardboard/help#export">Export</a><a href="cardboard/help#keys">Shortcuts</a><a href="cardboard/help#plans">Plans</a><a href="cardboard/help#trouble">Troubleshooting</a>
@@ -79,13 +79,13 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
   <section class="section" id="start">
     <h2>Getting started</h2>
     <ol>
-      <li><b>Set up your sheet.</b> In Google Sheets, put the column names in the first row (<em>Name</em>, <em>Cost</em>, <em>Text</em>, <em>Art</em>…) and one card per row below. Each tab can be its own deck.</li>
+      <li><b>Set up your sheet.</b> In Google Sheets, put the column names in the first row (<em>Name</em>, <em>Cost</em>, <em>Text</em>, <em>Art</em>…) and one card per row below. Each tab of the spreadsheet is a <b>deck</b>.</li>
       <li><b>Share it with CardBoard.</b> Click <b>Share</b> in Sheets and add <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> as an <b>Editor</b>. CardBoard reads and writes your sheet through that address.</li>
       <li><b>Sign in.</b> Open <a href="cardboard">CardBoard</a> and choose <b>Start your free week</b> (or <b>Log in</b> if you already have an account).</li>
-      <li><b>Connect the sheet.</b> Paste the spreadsheet's link (or its ID) and continue. The designer opens on your first tab — bookmark that page to come straight back.</li>
-      <li><b>Pick a tab.</b> Use the <b>Sheet</b> list at the top left of the Design view. Tabs that already have a layout show a small layout icon.</li>
+      <li><b>Connect the sheet.</b> Paste the spreadsheet's link (or its ID) and continue. The designer opens on your first deck — bookmark that page to come straight back.</li>
+      <li><b>Pick a deck.</b> Use the <b>Deck</b> list at the top left of the Design view. Decks that already have a layout show a small layout icon.</li>
     </ol>
-    <p>CardBoard adds a tab called <b>layouts</b> to your spreadsheet. It holds every tab's card design and your settings for that spreadsheet — leave it in place. Hidden tabs aren't listed, so hide any tab you don't want to design from.</p>
+    <p>CardBoard adds a tab called <b>layouts</b> to your spreadsheet. It holds every deck's card design and your settings for that spreadsheet — leave it in place. Hidden tabs aren't listed as decks, so hide any tab you don't want to design from.</p>
     <div class="tip">To start fast, the designer shows your card as soon as the first few rows arrive and loads the rest in the background — the status above the card shows when everything is in.</div>
   </section>
 
@@ -103,7 +103,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
     <h2>The screen</h2>
     <p>The tabs across the top switch between the five views:</p>
     <ul>
-      <li><b>Data</b> — your sheet as an editable grid.</li>
+      <li><b>Cards</b> — the deck as an editable grid: one row per card.</li>
       <li><b>Tags</b> — words and icons that <code>[tags]</code> turn into.</li>
       <li><b>Design</b> — the card designer: elements on the left, the card in the middle, settings on the right.</li>
       <li><b>Print</b> — sheets of cards ready for your printer.</li>
@@ -122,7 +122,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
 
   <section class="section" id="saving">
     <h2>Saving</h2>
-    <p>Everything you change — layouts on every tab, cell edits, new rows and new columns, column widths and settings — is kept in this browser as you work. It stays there if you switch sheets, reload the page or close the window by accident.</p>
+    <p>Everything you change — layouts for every deck, cell edits, new rows and new columns, column widths and settings — is kept in this browser as you work. It stays there if you switch sheets, reload the page or close the window by accident.</p>
     <ul>
       <li><b>Save</b> (top right, beside the menu, or <kbd>⌘S</kbd>) sends all of it to your Google Sheet in one go. The number on the button is how many changes are waiting.</li>
       <li>Saving happens in the background: the button fills up as each part is saved (“Saving 2/3”), and you can keep working while it runs. Anything you change meanwhile waits for the next Save.</li>
@@ -136,8 +136,8 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
   </section>
 
   <section class="section" id="data">
-    <h2>Data</h2>
-    <p>The <b>Data</b> view shows the chosen tab as a grid. Your edits are kept in this browser and go to the Google Sheet when you press <b>Save</b> (see <a href="cardboard/help#saving">Saving</a>).</p>
+    <h2>Cards</h2>
+    <p>The <b>Cards</b> view shows the chosen deck as a grid, one row per card. Your edits are kept in this browser and go to the Google Sheet when you press <b>Save</b> (see <a href="cardboard/help#saving">Saving</a>).</p>
     <h3>Editing cells</h3>
     <ul>
       <li>Click a cell and start typing to replace it, or double-click (or press <kbd>Enter</kbd> / <kbd>F2</kbd>) to edit what's there.</li>
@@ -151,9 +151,9 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
       <li><b>New columns:</b> there's always an empty column at the end. Click its empty heading and type a name, or just type in one of its cells — it's named after its letter (like <b>Column H</b>) until you rename it. New columns go to the sheet when you save.</li>
       <li><b>Delete a row:</b> click its row number → <b>Delete row</b>. <b>Delete a column:</b> click its heading → <b>Delete column</b>. It disappears straight away and is deleted from the sheet when you save. (If someone changed that row in Google Sheets meanwhile, it's kept.)</li>
       <li><b>Search the rows</b> shows only rows containing what you type.</li>
-      <li><b>Reload</b> re-reads this tab from the sheet.</li>
+      <li><b>Reload</b> re-reads this deck from the sheet.</li>
       <li><b>Move a column:</b> drag its heading sideways and drop it where the purple line shows. <b>Resize:</b> drag the right edge of a heading; double-click the edge to fit its contents again. Column widths stay put while you work. This order and these widths are only for this view — your sheet's column order doesn't change.</li>
-      <li><b>Rename a column:</b> double-click its heading (or click it → <b>Rename</b>), type the new name and press <kbd>Enter</kbd> (<kbd>Esc</kbd> cancels). The heading changes in your Google Sheet, and the layout follows automatically: Data fields, <code>{Column}</code> in text, pictures chosen by that column, hidden fields and column widths all switch to the new name.</li>
+      <li><b>Rename a column:</b> double-click its heading (or click it → <b>Rename</b>), type the new name and press <kbd>Enter</kbd> (<kbd>Esc</kbd> cancels). The heading changes in your Google Sheet, and the layout follows automatically: Card fields, <code>{Column}</code> in text, pictures chosen by that column, hidden fields and column widths all switch to the new name.</li>
       <li><b>Hide a column:</b> click its heading → <b>Hide field</b>. It's hidden here and in the Design list, but stays in the sheet (and on any card that uses it). <b>Show all</b> above the grid brings hidden ones back.</li>
     </ul>
     <div class="note">If someone changed a cell in Google Sheets since you loaded it, CardBoard won't overwrite their work: the cell turns red and shows their value.</div>
@@ -181,18 +181,18 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
     <p>Drag anything from the left panel onto the card. You can also drop a picture file from your computer onto the card to add it as an image.</p>
     <div class="cards">
       <div class="card"><b>Text</b><p>Fixed wording, like a title or rules. Put a column name in braces — <code>{Cost}</code> — to fill it from each row: <em>“Costs {Cost} gold”</em>. <b>Insert a column</b> under the text box adds one for you. Double-click it on the card to edit the wording right there.</p></div>
-      <div class="card"><b>Data</b><p>One column of your sheet. The list shows each column with its value for the current row. Choose <b>Show as</b> Text or Image (for columns of picture links).</p></div>
+      <div class="card"><b>Card</b><p>One column of your deck (a card field, like Name or Cost). The list shows each column with its value for the current row. Choose <b>Show as</b> Text or Image (for columns of picture links).</p></div>
       <div class="card"><b>Image</b><p>A picture: the same on every card (a logo, frame or icon), or chosen by a column's value with <b>[ ]</b> (see <a href="cardboard/help#pictures">Pictures</a>).</p></div>
       <div class="card"><b>Shape</b><p>Rectangle, rounded rectangle, circle, line, triangle, diamond, hexagon or star, with a fill, outline color and outline width.</p></div>
       <div class="card"><b>Generated</b><p>A number sequence, a random number, or a pick from a list — see <a href="cardboard/help#generated">Generated</a>.</p></div>
     </div>
-    <h3>Data fields</h3>
+    <h3>Card fields</h3>
     <ul>
       <li><b>Column</b> switches which column the field shows.</li>
       <li><b>Value for row N</b> shows that row's value exactly as typed in the sheet (tags still in brackets) — handy when it's empty and invisible on the card. Edit it and click away; it goes to the sheet with your next Save.</li>
-      <li>Or double-click a Data field on the card to edit it in place: <kbd>Enter</kbd> keeps it (it goes to the sheet when you save), <kbd>Shift</kbd>+<kbd>Enter</kbd> adds a line, <kbd>Esc</kbd> cancels.</li>
-      <li><b>+ New</b> at the bottom of the Data list adds a column, ready to drag onto the card (it goes to the sheet when you save).</li>
-      <li>Click a field in the list → <b>Hide field</b> to tuck away columns you don't use. The eye button in the Data heading shows hidden fields again (greyed) so you can unhide them.</li>
+      <li>Or double-click a Card field on the card to edit it in place: <kbd>Enter</kbd> keeps it (it goes to the sheet when you save), <kbd>Shift</kbd>+<kbd>Enter</kbd> adds a line, <kbd>Esc</kbd> cancels.</li>
+      <li><b>+ New</b> at the bottom of the Card list adds a column, ready to drag onto the card (it goes to the sheet when you save).</li>
+      <li>Click a field in the list → <b>Hide field</b> to tuck away columns you don't use. The eye button in the Card heading shows hidden fields again (greyed) so you can unhide them.</li>
     </ul>
   </section>
 
@@ -207,7 +207,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
       <li><b>Exact numbers:</b> X, Y, W and H in the right panel (in points; 72 pt = 1 inch). <b>Opacity</b> fades an element.</li>
       <li><b>Stacking:</b> <b>To front</b> / <b>To back</b>, or drag in the Layers panel.</li>
       <li><b>Duplicate</b> (<kbd>⌘D</kbd>) and <b>Delete</b> (<kbd>Delete</kbd>).</li>
-      <li><b>Copy, cut and paste</b> (<kbd>⌘C</kbd>, <kbd>⌘X</kbd>, <kbd>⌘V</kbd>, or the <b>Copy</b> / <b>Cut</b> buttons) work between the front and back, between tabs, and between spreadsheets — even in another CardBoard window. Groups (and their list settings) come along. Pasted elements keep their position, nudged over if they'd land right on top of the originals. If a pasted Data field uses a column this sheet doesn't have, CardBoard tells you so you can pick another column.</li>
+      <li><b>Copy, cut and paste</b> (<kbd>⌘C</kbd>, <kbd>⌘X</kbd>, <kbd>⌘V</kbd>, or the <b>Copy</b> / <b>Cut</b> buttons) work between the front and back, between decks, and between spreadsheets — even in another CardBoard window. Groups (and their list settings) come along. Pasted elements keep their position, nudged over if they'd land right on top of the originals. If a pasted Card field uses a column this deck doesn't have, CardBoard tells you so you can pick another column.</li>
     </ul>
     <h3>Lining up</h3>
     <p>When something is selected, round dots appear past the card's right and bottom edges, with dotted lines leading back to the card. Click a dot to line up with that line:</p>
@@ -232,7 +232,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
 
   <section class="section" id="text">
     <h2>Text style</h2>
-    <p>Text, Data (as text) and Generated elements share these settings:</p>
+    <p>Text, Card (as text) and Generated elements share these settings:</p>
     <ul>
       <li><b>Font</b> — DIN Black, DIN Medium, Bangers, Cinzel, Lilita One, Merriweather, Roboto Condensed and more.</li>
       <li><b>Size</b> (pt), <b>Line height</b> and <b>Color</b>.</li>
@@ -253,7 +253,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
       <li><b>Fit</b> — <b>Fill</b> covers the box (cropping the edges), <b>Fit</b> shows the whole picture, <b>Stretch</b> fills the box exactly. <b>Frame</b> adds a fill, border and rounded corners.</li>
     </ul>
     <h3>Pictures from your sheet</h3>
-    <p>For a column that holds picture links, add it as a <b>Data</b> field and set <b>Show as</b> → <b>Image</b>. Each row's picture appears on its card. The right panel shows the current row's picture: drop or choose a new one and it's saved into that row's cell.</p>
+    <p>For a column that holds picture links, add it as a <b>Card</b> field and set <b>Show as</b> → <b>Image</b>. Each row's picture appears on its card. The right panel shows the current row's picture: drop or choose a new one and it's saved into that row's cell.</p>
     <h3>Choosing a picture by value <code>[ ]</code></h3>
     <p>On an Image element, the round <b>[ ]</b> button opens a drawer for choosing the picture by a column's value — for example a basket for <em>Market</em> cards and a boot for <em>Action</em> cards:</p>
     <ol>
@@ -312,7 +312,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
     <p>Click the round flip button at the top left of the card to design the back — it works just like the front, with its own background color.</p>
     <ul>
       <li>If nothing on the back changes from card to card, every card shares one back.</li>
-      <li>Add a Data field, a <code>{Column}</code> in text, a Generated value, or a picture chosen by value, and each card gets its own back.</li>
+      <li>Add a Card field, a <code>{Column}</code> in text, a Generated value, or a picture chosen by value, and each card gets its own back.</li>
     </ul>
   </section>
 
@@ -337,7 +337,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
       <li><b>Copies</b> — one of each, or from a number column.</li>
       <li><b>Rounded corners</b> — cut the corners like your card's corner radius.</li>
     </ul>
-    <p><b>Download</b> makes a zip of the images. <b>Get links</b> hosts them on zapsheets.com at links that never change — paste them into Tabletop Simulator's <b>Custom Deck</b> dialog. When you save the layout, fetch new data or edit the Data view, the pictures behind the links are replaced with your latest cards. The links carry a share code, not your spreadsheet's ID.</p>
+    <p><b>Download</b> makes a zip of the images. <b>Get links</b> hosts them on zapsheets.com at links that never change — paste them into Tabletop Simulator's <b>Custom Deck</b> dialog. When you save the layout, fetch new data or edit the Cards view, the pictures behind the links are replaced with your latest cards. The links carry a share code, not your spreadsheet's ID.</p>
     <div class="note">Tabletop Simulator keeps its own copy of downloaded pictures, so a game may show old cards until it downloads them again. If you add cards, raise <b>Number</b> in the Custom Deck settings to match.</div>
   </section>
 
@@ -347,7 +347,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
     <table class="keys">
       <tr><td><kbd>⌘S</kbd></td><td>Save everything to the sheet</td></tr>
       <tr><td><kbd>⌘Z</kbd> / <kbd>⇧⌘Z</kbd></td><td>Undo / redo</td></tr>
-      <tr><td><kbd>⌘C</kbd> / <kbd>⌘X</kbd> / <kbd>⌘V</kbd></td><td>Copy / cut / paste elements — into any side, tab or spreadsheet</td></tr>
+      <tr><td><kbd>⌘C</kbd> / <kbd>⌘X</kbd> / <kbd>⌘V</kbd></td><td>Copy / cut / paste elements — into any side, deck or spreadsheet</td></tr>
       <tr><td><kbd>⌘D</kbd></td><td>Duplicate the selection</td></tr>
       <tr><td><kbd>⌘G</kbd> / <kbd>⇧⌘G</kbd></td><td>Group / ungroup</td></tr>
       <tr><td><kbd>⌘A</kbd></td><td>Select everything on this side</td></tr>
@@ -359,7 +359,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
       <tr><td><kbd>Shift</kbd> while rotating</td><td>Snap to 15° steps</td></tr>
       <tr><td><kbd>Delete</kbd></td><td>Delete the selection</td></tr>
       <tr><td><kbd>Esc</kbd></td><td>Deselect, or cancel an edit</td></tr>
-      <tr><td>Double-click</td><td>Edit a Text element or Data field in place · choose an image · rename a group in Layers</td></tr>
+      <tr><td>Double-click</td><td>Edit a Text element or Card field in place · choose an image · rename a group in Layers</td></tr>
     </table>
   </section>
 

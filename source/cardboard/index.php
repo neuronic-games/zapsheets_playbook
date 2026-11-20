@@ -383,7 +383,7 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
     panel.style.display = '';
 
     addLog('Connecting to Google Sheet…', 'inf');
-    _pending.push(setTimeout(function() { addLog('Reading the tabs…', 'inf'); }, 700));
+    _pending.push(setTimeout(function() { addLog('Reading the decks…', 'inf'); }, 700));
 
     var xhr = new XMLHttpRequest();
     xhr.open('POST', APP_BASE + 'push/cardboardData.php');
@@ -422,7 +422,7 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
 
       if (result.title) addLog('✓  Sheet: ' + result.title, 'ok');
       var tabs = result.tabs || [];
-      addLog('✓  ' + tabs.length + (tabs.length === 1 ? ' tab: ' : ' tabs: ') + tabs.map(function(t) { return t.title; }).join(', '), 'ok');
+      addLog('✓  ' + tabs.length + (tabs.length === 1 ? ' deck: ' : ' decks: ') + tabs.map(function(t) { return t.title; }).join(', '), 'ok');
       addLog('✓  Ready — opening CardBoard…', 'ok');
 
       setTimeout(function() {

@@ -717,7 +717,7 @@ body.cb-gate #signinOverlay { background:#2e2763; }
       </div>
     </div>
     <div class="top-tab-btns">
-      <button class="top-tab" id="tabData" onclick="switchTab('data')">Data</button>
+      <button class="top-tab" id="tabData" onclick="switchTab('data')">Cards</button>
       <button class="top-tab" id="tabTags" onclick="switchTab('tags')">Tags</button>
       <button class="top-tab active" id="tabDesign" onclick="switchTab('design')">Design</button>
       <button class="top-tab" id="tabPrint" onclick="switchTab('print')">Print</button>
@@ -747,7 +747,7 @@ body.cb-gate #signinOverlay { background:#2e2763; }
 <!-- Data view -->
 <div class="view" id="view-data">
   <div class="print-bar grid-bar">
-    <div class="grp"><span class="mini">Sheet</span>
+    <div class="grp"><span class="mini">Deck</span>
       <select class="sel sel-sheet" id="gridSheet" onchange="selectTab(this.value)"></select></div>
     <div class="grp"><span class="mini">Find</span>
       <input class="inp" id="gridFilter" placeholder="Search the rows" oninput="filterGrid(this.value)" style="width:14rem"></div>
@@ -784,7 +784,7 @@ body.cb-gate #signinOverlay { background:#2e2763; }
 <div class="view active" id="view-design">
   <div class="panel panel-left">
     <div class="panel-scroll">
-      <span class="lbl">Sheet</span>
+      <span class="lbl">Deck</span>
       <select class="sel sel-sheet" id="sheetSel" onchange="selectTab(this.value)"></select>
       <div id="palette"></div>
     </div>

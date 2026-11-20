@@ -39,7 +39,7 @@ var GENS = [['seq', '123', 'Number sequence'], ['rand', DIE_ICON, 'Random number
 var IMG_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
 var FLIP_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>';
 var UPLOADING = {};   // element id → true while its picture uploads
-var KIND_NAME = { text: 'Text', data: 'Data', image: 'Image', shape: 'Shape', gen: 'Generated' };
+var KIND_NAME = { text: 'Text', data: 'Card', image: 'Image', shape: 'Shape', gen: 'Generated' };   // "Card": a field from the deck's cards
 var PX = 96 / 72;   // CSS px per pt
 var _activeTab = 'design';
 
@@ -334,7 +334,7 @@ function init() {
       if (!TABS.some(function(t) { return t.title === start; })) {
         start = (TABS.filter(function(t) { return LAYOUTS[t.title]; })[0] || TABS[0] || {}).title || '';
       }
-      if (!start) { $('cardHolder').innerHTML = '<div class="muted">This spreadsheet has no tabs to design from.</div>'; return; }
+      if (!start) { $('cardHolder').innerHTML = '<div class="muted">This spreadsheet has no decks to design from — each tab of the spreadsheet is a deck.</div>'; return; }
       sel.value = start; $('gridSheet').value = start; refreshSheetCombos(); updateSaveBtn();
       selectTab(start, true, false, false, res.rows && res.tab === start ? res : null);
     })
@@ -363,8 +363,8 @@ function makeSheetCombo(sel) {
   sel.style.display = 'none';
   var box = document.createElement('div');
   box.className = 'sheet-combo' + (sel.id === 'gridSheet' ? ' compact' : '');
-  box.innerHTML = '<span class="sc-ico" title="Has a layout"></span><input class="inp sel-sheet" autocomplete="off" spellcheck="false" aria-label="Sheet" role="combobox" aria-expanded="false">' +
-    '<button type="button" class="sc-caret" tabindex="-1" aria-label="Show sheets"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div class="sc-list" role="listbox"></div>';
+  box.innerHTML = '<span class="sc-ico" title="Has a layout"></span><input class="inp sel-sheet" autocomplete="off" spellcheck="false" aria-label="Deck" role="combobox" aria-expanded="false">' +
+    '<button type="button" class="sc-caret" tabindex="-1" aria-label="Show decks"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div class="sc-list" role="listbox"></div>';
   sel.parentNode.insertBefore(box, sel.nextSibling);
   var inp = box.querySelector('input'), list = box.querySelector('.sc-list'), hi = 0, items = [];
   function draw(filter) {
@@ -374,7 +374,7 @@ function makeSheetCombo(sel) {
     list.innerHTML = items.length ? items.map(function(t, i) {
       return '<div class="sc-item' + (i === hi ? ' hi' : '') + (t === sel.value ? ' cur' : '') + '" role="option" data-i="' + i + '">' +
         '<span class="sc-mark">' + (hasLayout(t) ? LAYOUT_ICON : '') + '</span><span class="sc-name">' + esc(t) + '</span>' + (t === sel.value ? '<span class="sc-check">✓</span>' : '') + '</div>';
-    }).join('') : '<div class="sc-none">No sheet called “' + esc(filter) + '”</div>';
+    }).join('') : '<div class="sc-none">No deck called “' + esc(filter) + '”</div>';
     var h = list.querySelector('.hi'); if (h) h.scrollIntoView({ block: 'nearest' });
   }
   function open() { if (box.classList.contains('open')) return; box.classList.add('open'); inp.setAttribute('aria-expanded', 'true'); draw(''); inp.select(); }
@@ -508,7 +508,7 @@ function toggleSection(key) {
 function renderPalette() {
   var h = '';
   h += section('text', 'Text', chip('data-add="text"', 'T', 'Text'));
-  h += section('data', 'Data', '<div id="dataList"><div class="muted">Loading…</div></div>', '',
+  h += section('data', 'Card', '<div id="dataList"><div class="muted">Loading…</div></div>', '',
     '<button type="button" class="eye-btn" id="eyeBtn" onclick="event.stopPropagation();toggleShowHidden()" style="display:none"></button>');
   h += section('image', 'Image', chip('data-add="image"', IMG_ICON, 'Image'));
   h += section('shape', 'Shape', '<div class="shape-grid">' + SHAPES.map(function(s) {
@@ -600,7 +600,7 @@ function openFieldMenu(chipEl) {
   var hidden = isHidden(f), used = layout.els.concat(layout.back.els).some(function(e) { return e.field === f || (e.kind === 'text' && (e.text || '').indexOf('{' + f + '}') >= 0); });
   var m = document.createElement('div'); m.id = 'fieldMenu'; m.className = 'field-menu';
   m.innerHTML = '<button type="button" onclick="setFieldHidden(' + esc(JSON.stringify(f)) + ',' + !hidden + ')">' + (hidden ? '👁 Show field' : '<span class="fm-ico">⊘</span> Hide field') + '</button>' +
-    '<p>' + (hidden ? 'Brings it back in Design and Data.' : 'Hides it here and in the Data tab. The column stays in the sheet' + (used ? ', and it still shows on the card.' : '.')) + '</p>';
+    '<p>' + (hidden ? 'Brings it back in Design and Cards.' : 'Hides it here and in the Cards tab. The column stays in the sheet' + (used ? ', and it still shows on the card.' : '.')) + '</p>';
   chipEl.classList.add('menu-open');
   chipEl.parentNode.insertBefore(m, chipEl.nextSibling);
 }
@@ -728,7 +728,7 @@ function sheetRowFor(row, like) {   // like: the row's values as the sheet has t
     if (guess && gridMatch(like, guess)) return guess;
     var all = live.filter(function(g) { return gridMatch(like, g); });
     if (all.length === 1) return all[0];
-    throw new Error(all.length ? 'several rows look the same — set the picture in the Data tab' : 'couldn\'t find this row in the sheet — try Fetch');
+    throw new Error(all.length ? 'several rows look the same — set the picture in the Cards tab' : 'couldn\'t find this row in the sheet — try Fetch');
   });
 }
 function setRowPicture(e, url) {   // the picture's address goes into this row's cell — kept in this browser until Save
@@ -3381,7 +3381,7 @@ function applyAcct() {
   if (bar) {
     bar.hidden = ok;
     if (!a) { $('lockMsg').innerHTML = '<b>Sign in to start designing</b> — your first week is free, with every feature.'; $('lockBtn').textContent = 'Sign in'; $('lockBtn').onclick = function() { askSignIn().catch(function() {}); }; }
-    else { $('lockMsg').innerHTML = '<b>Your free week has ended.</b> Your cards and sheets are safe — subscribe for $4.99/month to keep designing.'; $('lockBtn').textContent = 'Subscribe'; $('lockBtn').onclick = function() { openPlansDialog('locked'); }; }
+    else { $('lockMsg').innerHTML = '<b>Your free week has ended.</b> Your cards and decks are safe — subscribe for $4.99/month to keep designing.'; $('lockBtn').textContent = 'Subscribe'; $('lockBtn').onclick = function() { openPlansDialog('locked'); }; }
   }
   updateSubMenu();
   if (_activeTab === 'export' && typeof renderLinks === 'function') renderLinks();
@@ -3418,7 +3418,7 @@ function requirePro(reason, retry) {
   else openPlansDialog('locked');
   return false;
 }
-var LOCK_REASONS = { locked: 'Your free week has ended. Subscribe to keep designing — your layouts and sheets are just as you left them.' };
+var LOCK_REASONS = { locked: 'Your free week has ended. Subscribe to keep designing — your layouts and decks are just as you left them.' };
 function openPlansDialog(reason) {
   if (!ACCT) { askSignIn().then(function() { openPlansDialog(reason); }, function() {}); return; }
   $('planIntro').textContent = LOCK_REASONS[reason] || 'Every feature, for a week free. Then $4.99 a month to keep designing.';

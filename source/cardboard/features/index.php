@@ -274,7 +274,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
       <div class="feat-card"><div class="feat-icon gold">🔄</div><h3>Fronts and backs</h3><p>Flip the card to design its back. One shared back, or a different back for each card when it shows data from the row.</p></div>
       <div class="feat-card"><div class="feat-icon slate">🔤</div><h3>Text, pictures, shapes</h3><p>Fixed text with <code>{Column}</code> placeholders, pictures from a column or a link, and stars, circles, hexagons and more.</p></div>
       <div class="feat-card"><div class="feat-icon green">🎲</div><h3>Generated values</h3><p>Number your cards, roll a random value, or pick from a list — the same in the preview and on the printout.</p></div>
-      <div class="feat-card"><div class="feat-icon rose">📋</div><h3>Edit your data in place</h3><p>The Data tab shows your sheet as a grid. Type into a cell and it's saved to Google Sheets — without overwriting someone else's change.</p></div>
+      <div class="feat-card"><div class="feat-icon rose">📋</div><h3>Edit your cards in place</h3><p>The Cards tab shows each deck as a grid. Type into a cell, add rows and columns as you go, and Save sends it all to Google Sheets — without overwriting someone else's change.</p></div>
       <div class="feat-card"><div class="feat-icon gold">🖨️</div><h3>Print-and-play sheets</h3><p>Letter or A4, crop marks, copies from a Count column, and backs that line up when you print double-sided.</p></div>
       <div class="feat-card"><div class="feat-icon">🧩</div><h3>Tabletop Simulator &amp; Screentop</h3><p>Card sheets in the exact grid each one expects — 10 × 7 for TTS, with the back in the hidden-card slot.</p></div>
       <div class="feat-card"><div class="feat-icon slate">🔗</div><h3>Links that stay up to date</h3><p>Every export — Tabletop Simulator sheets, Screentop sheets or separate card images — can be hosted at links that never change. Save your layout and everything using those links gets the new cards.</p></div>
@@ -307,10 +307,10 @@ footer a { color:var(--text-mid); text-decoration:none; }
         </div>
         <div class="cbx" id="cbDemo" aria-hidden="true">
           <div class="cbx-top"><img src="images/cardboard_icon_180.png" alt=""><span class="cbx-name"><span class="c">Card</span><span class="b">Board</span></span>
-            <div class="cbx-tabs"><span>Data</span><span class="on">Design</span><span>Print</span><span>Export</span></div></div>
+            <div class="cbx-tabs"><span>Cards</span><span class="on">Design</span><span>Print</span><span>Export</span></div></div>
           <div class="cbx-body">
             <div class="cbx-left">
-              <div class="cbx-lbl">Data</div>
+              <div class="cbx-lbl">Card</div>
               <div class="cbx-chip" data-k="art"><i>≡</i>Art</div>
               <div class="cbx-chip" data-k="name"><i>≡</i>Name<em class="cbx-sample-name">Floristry</em></div>
               <div class="cbx-chip" data-k="cost"><i>≡</i>Cost<em class="cbx-sample-cost">3</em></div>
@@ -376,7 +376,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
       <div class="shot-text">
         <div class="section-label">Your data</div>
         <h2 class="section-title" style="margin-bottom:1rem;">Balance your cards without leaving the app</h2>
-        <p>The Data tab is your Google Sheet as a grid. Tweak a cost or reword a card, and it's saved straight to the sheet — the designer, the print sheets and your Tabletop Simulator deck all pick it up.</p>
+        <p>The Cards tab is your deck as a grid. Tweak a cost or reword a card, press Save, and it's in your Google Sheet — the designer, the print sheets and your Tabletop Simulator deck all pick it up.</p>
         <ul>
           <li>Edit like a spreadsheet: type, Enter, Tab, Esc</li>
           <li>Add rows and columns from CardBoard</li>

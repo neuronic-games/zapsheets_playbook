@@ -1183,7 +1183,7 @@ function redo() { if (!redoStack.length) return; undoStack.push(JSON.stringify(l
 function changed(keepAttrs) {
   setDirty(true);
   if (layout && JSON.stringify(layout.hidden || []) !== _lastHidden) { _lastHidden = JSON.stringify(layout.hidden || []); renderData(); if (GRID && _activeTab === 'data') renderGrid(); }
-  try { localStorage.setItem('cb_draft:' + SHEET_ID + ':' + curTab, JSON.stringify(layout)); } catch (e) {}
+  lsPut('cb_draft:' + SHEET_ID + ':' + curTab, JSON.stringify(layout));
   render();
   if (!keepAttrs) renderAttrs(); else renderLayers();
 }
@@ -1199,9 +1199,31 @@ function setDirty(d, restored) {
 // for the next Save.
 function lsGet(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }
 var _lsWarned = false;
-function lsSet(k, v) {
-  try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); }
-  catch (e) { if (!_lsWarned) { _lsWarned = true; toast('This browser’s storage is full — Save now so nothing is lost', true); } }
+function lsSet(k, v) { lsPut(k, v == null ? null : JSON.stringify(v)); }
+function lsPut(k, str) {   // a raw string (or null to remove); if storage is full, save to the sheet to make room
+  try { if (str == null) localStorage.removeItem(k); else localStorage.setItem(k, str); }
+  catch (e) {
+    if (!_lsWarned) { _lsWarned = true; toast('This browser’s storage is full — saving to your sheet to make room', true); setTimeout(function() { _lsWarned = false; }, 15000); }
+    autoSave(true); return false;
+  }
+  storageCheck(); return true;
+}
+// Browsers give a site about 5 MB here (Safari counts it as ~2.5 million characters, so that's the budget).
+// When CardBoard's own data passes 60% of it, everything is saved to the sheet in the background.
+var LS_BUDGET = 2500000, LS_AUTO = 0.6, _storageTimer = null;
+function storageUsed() {
+  var n = 0;
+  try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); n += k.length + (localStorage.getItem(k) || '').length; } } catch (e) {}
+  return n;
+}
+function storageCheck() {
+  clearTimeout(_storageTimer);
+  _storageTimer = setTimeout(function() { if (storageUsed() > LS_BUDGET * LS_AUTO) autoSave(false); }, 800);
+}
+function autoSave(full) {
+  if (_saving || !pendingCount() || !hasAccess()) return;
+  toast(full ? 'Storage is full — saving your changes to the sheet' : 'This browser’s storage is running low — saving your changes to the sheet in the background');
+  saveAll(true);
 }
 function lsTabs(kind) {   // tabs with something kept under cb_<kind>:<sheet>:<tab>
   var pre = 'cb_' + kind + ':' + SHEET_ID + ':', out = [];
@@ -1229,12 +1251,16 @@ function pendingCount() {
   dataTabs().forEach(function(t) { var p = dataPend(t); n += p.cells.length + p.adds.length + p.cols.length; });
   return n;
 }
-var _saving = false, _savingP = null;
+var _saving = false, _savingP = null, _saveSteps = 0, _saveDone = 0;
 function updateSaveBtn() {
   var btn = $('saveBtn'), n = pendingCount(); if (!btn) return;
   btn.disabled = _saving || !n;
   btn.classList.toggle('saving', _saving);
-  btn.innerHTML = _saving ? '<span class="sv-spin"></span>Saving…' : 'Save' + (n ? '<span class="sv-n">' + n + '</span>' : '');
+  // While saving, the button fills up as each part (a tab's data, a layout, settings) is saved
+  var pct = _saving ? Math.max(8, Math.round(100 * (_saveDone + .35) / Math.max(1, _saveSteps))) : 0;
+  btn.style.setProperty('--sv', Math.min(100, pct) + '%');
+  btn.innerHTML = _saving ? '<span class="sv-fill"></span><span class="sv-txt"><span class="sv-spin"></span>Saving' + (_saveSteps > 1 ? ' ' + Math.min(_saveDone + 1, _saveSteps) + '/' + _saveSteps : '…') + '</span>'
+                          : 'Save' + (n ? '<span class="sv-n">' + n + '</span>' : '');
   btn.title = _saving ? 'Saving to your Google Sheet — keep working' : n ? n + ' unsaved change' + (n === 1 ? '' : 's') + ' in this browser — save them to the sheet (⌘S)' : 'Everything is saved';
   var st = $('saveStatus');
   if (st && st.dataset.prev == null) { st.textContent = _saving ? 'Saving…' : n ? 'Unsaved changes' : 'All saved'; st.className = 'tb-status' + (n ? ' dirty' : ''); }
@@ -1289,31 +1315,34 @@ function overlayGrid() {
   });
 }
 // Save everything kept in this browser, one tab at a time, in the background
-function saveAll() {
+function saveAll(auto) {
   if (_saving) return _savingP;
-  if (!pendingCount()) { toast('Everything is already saved'); return Promise.resolve(); }
+  if (!pendingCount()) { if (auto !== true) toast('Everything is already saved'); return Promise.resolve(); }
   if (!requirePro('save', saveAll)) return Promise.resolve();
-  if (_gridEdit) endGridEdit(true);
-  _saving = true; updateSaveBtn();
+  if (_gridEdit && auto !== true) endGridEdit(true);
+  _saving = true; _saveDone = 0;
+  _saveSteps = dataTabs().length + draftTabs().length + (settingsPending() ? 1 : 0);
+  updateSaveBtn();
+  var step = function() { _saveDone++; updateSaveBtn(); };
   var errors = [], conflicts = 0, savedTabs = [], chain = Promise.resolve();
   dataTabs().forEach(function(tab) {
     chain = chain.then(function() {
       var sent = dataPend(tab);
       return api('savecells', { tab: tab, cols: JSON.stringify(sent.cols), cells: JSON.stringify(sent.cells), adds: JSON.stringify(sent.adds) })
         .then(function(res) { conflicts += applySaveResults(tab, sent, res); if (savedTabs.indexOf(tab) < 0) savedTabs.push(tab); })
-        .catch(function(e) { errors.push('“' + tab + '” data: ' + e.message); });
+        .catch(function(e) { errors.push('“' + tab + '” data: ' + e.message); }).then(step);
     });
   });
   draftTabs().forEach(function(tab) {
     chain = chain.then(function() {
       var snap = tab === curTab && layout ? JSON.stringify(layout) : localStorage.getItem('cb_draft:' + SHEET_ID + ':' + tab);
-      if (!snap) return;
+      if (!snap) { step(); return; }
       return api('save', { tab: tab, layout: snap }).then(function() {
         LAYOUTS[tab] = JSON.parse(snap);
         var now = tab === curTab && layout ? JSON.stringify(layout) : localStorage.getItem('cb_draft:' + SHEET_ID + ':' + tab);
         if (now === snap) { try { localStorage.removeItem('cb_draft:' + SHEET_ID + ':' + tab); } catch (e) {} if (tab === curTab) dirty = false; }
         if (savedTabs.indexOf(tab) < 0) savedTabs.push(tab);
-      }).catch(function(e) { errors.push('“' + tab + '” layout: ' + e.message); });
+      }).catch(function(e) { errors.push('“' + tab + '” layout: ' + e.message); }).then(step);
     });
   });
   if (settingsPending()) chain = chain.then(function() {
@@ -1321,7 +1350,7 @@ function saveAll() {
     return api('save', { tab: SETTINGS_KEY, layout: snap }).then(function() {
       LAYOUTS[SETTINGS_KEY] = JSON.parse(snap); _oldProfile = null;
       if (JSON.stringify(lsGet('cb_settings:' + SHEET_ID)) === snap) lsSet('cb_settings:' + SHEET_ID, null);
-    }).catch(function(e) { errors.push('settings: ' + e.message); });
+    }).catch(function(e) { errors.push('settings: ' + e.message); }).then(step);
   });
   _savingP = chain.then(function() {
     _saving = false; refreshSheetCombos(); updateSaveBtn();
@@ -1331,7 +1360,8 @@ function saveAll() {
     _lastSaveData = {};
     if (errors.length) toast('Couldn’t save everything — ' + errors[0] + (errors.length > 1 ? ' (and ' + (errors.length - 1) + ' more)' : '') + '. Your changes are still in this browser; try Save again.', true);
     else if (conflicts) toast('Saved — but ' + conflicts + ' cell' + (conflicts === 1 ? ' was' : 's were') + ' changed in the sheet meanwhile, so the sheet’s value' + (conflicts === 1 ? ' was' : 's were') + ' kept (marked red)', true);
-    else toast('✓ Saved to your Google Sheet');
+    else toast(auto === true ? '✓ Saved to your Google Sheet in the background' : '✓ Saved to your Google Sheet');
+    storageCheck();
   });
   return _savingP;
 }

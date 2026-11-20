@@ -125,7 +125,8 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
     <p>Everything you change — layouts on every tab, cell edits, new rows and new columns, column widths and settings — is kept in this browser as you work. It stays there if you switch sheets, reload the page or close the window by accident.</p>
     <ul>
       <li><b>Save</b> (top right, beside the menu, or <kbd>⌘S</kbd>) sends all of it to your Google Sheet in one go. The number on the button is how many changes are waiting.</li>
-      <li>Saving happens in the background: keep working while it runs. Anything you change meanwhile waits for the next Save.</li>
+      <li>Saving happens in the background: the button fills up as each part is saved (“Saving 2/3”), and you can keep working while it runs. Anything you change meanwhile waits for the next Save.</li>
+      <li>If this browser's storage starts running low (it holds about 5 MB for the whole site), CardBoard saves everything to your sheet automatically in the background to make room.</li>
       <li>Until you save, your changes are only in this browser — other people, exports and hosted links see the last saved version. Hosted links update after you save.</li>
       <li>If someone changed a cell in Google Sheets after you loaded it, your edit to that cell isn't written: the cell turns red and shows their value.</li>
       <li><b>Fetch</b> with unsaved changes asks first: <b>Save, then fetch</b>, or <b>Fetch without saving</b> — your changes then stay in this browser, shown on top of the latest data.</li>

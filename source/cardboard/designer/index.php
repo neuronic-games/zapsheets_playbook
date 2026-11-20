@@ -68,9 +68,15 @@ button, input, select, textarea { font-family:inherit; }
 .top-save { display:inline-flex; align-items:center; gap:.4rem; height:2.1rem; padding:0 .95rem; border:none; border-radius:999px; background:#f2c14e; color:#2e2763; font-family:'DINBlack',sans-serif; font-size:.7rem; letter-spacing:.09em; text-transform:uppercase; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.18); transition:background .15s, opacity .15s; }
 .top-save:hover:not(:disabled) { background:#ffd36b; }
 .top-save:disabled { background:rgba(255,255,255,.14); color:rgba(255,255,255,.55); box-shadow:none; cursor:default; }
-.top-save.saving:disabled { background:rgba(255,255,255,.22); color:#fff; }
 .top-save .sv-n { min-width:1.2rem; height:1.2rem; padding:0 .3rem; border-radius:999px; background:#2e2763; color:#fff; font-size:.62rem; letter-spacing:0; display:inline-flex; align-items:center; justify-content:center; }
-.top-save .sv-spin { width:.8rem; height:.8rem; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; }
+.top-save { position:relative; overflow:hidden; }
+.top-save .sv-txt { position:relative; display:inline-flex; align-items:center; gap:.4rem; }
+.top-save .sv-spin { width:.8rem; height:.8rem; border:2px solid rgba(46,39,99,.25); border-top-color:#2e2763; border-radius:50%; animation:spin .7s linear infinite; }
+/* Saving in the background: the button fills from left to right, with moving stripes so it's clearly busy */
+.top-save.saving:disabled { background:#fbeec4; color:#2e2763; box-shadow:0 2px 8px rgba(0,0,0,.18); }
+.top-save .sv-fill { position:absolute; left:0; top:0; bottom:0; width:var(--sv, 8%); background:#f2c14e linear-gradient(-45deg, rgba(255,255,255,.28) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.28) 50%, rgba(255,255,255,.28) 75%, transparent 75%) 0 0 / 14px 14px; animation:svStripes .6s linear infinite; transition:width .35s ease; }
+.top-save.saving .sv-txt { color:#2e2763; }
+@keyframes svStripes { to { background-position:14px 0; } }
 .account-menu { display:none; position:absolute; top:calc(100% + .4rem); right:0; background:#1a1a2e; border:1px solid rgba(255,255,255,.2); border-radius:8px; min-width:160px; z-index:300; box-shadow:0 6px 20px rgba(0,0,0,.4); overflow:hidden; }
 .account-menu.open { display:block; }
 .account-menu-item { display:block; width:100%; background:none; border:none; color:rgba(255,255,255,.85); text-align:left; cursor:pointer; font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; padding:.6rem 1rem; transition:background .12s; }

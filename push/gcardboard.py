@@ -12,6 +12,7 @@
 #   renamefield — sheet, old, name → the heading "old" becomes "name"
 #   deleterow — sheet, row, values → deletes the row if it still holds those values
 #   deletefield — sheet, field → deletes that column
+#   savecells — sheet, cells [{row, field, value, old}], adds [{key, values}] → many edits in one go
 #   grid    — sheet → {header, rows: [{row, values}]} as typed in the sheet (formulas, not results)
 #   setcell — sheet, row, field, value, old → writes one cell (as if typed); refuses if the cell
 #             no longer holds "old" (someone changed it in the meantime)
@@ -109,6 +110,7 @@ def read_layouts(wb, ws):
 def main():
     try:
         sheet_id, enc = sys.argv[1].split('|', 1)
+        if enc == '-': enc = sys.stdin.read()   # big requests come in on stdin (a command-line argument is capped near 128 KB)
         data = json.loads(base64.b64decode(enc).decode('utf-8'))
     except Exception as e:
         out({'error': f'Bad argument: {e}'})
@@ -287,7 +289,7 @@ def main():
         wb.values_update(q(tws.title) + '!' + a1, params={'valueInputOption': 'RAW'}, body={'values': [[field]]})
         out({'ok': True, 'old': old, 'field': field, 'column': a1.rstrip('0123456789')})
 
-    if action in ('grid', 'setcell', 'addrow', 'deleterow', 'deletefield'):
+    if action in ('grid', 'setcell', 'addrow', 'deleterow', 'deletefield', 'savecells'):
         name = str(data.get('sheet', '')).strip()
         tws = next((w for w in sheets if w.title == name), None)
         if tws is None or name.lower() == TAB:
@@ -328,6 +330,43 @@ def main():
             wb.values_update(q(tws.title) + '!' + a1, params={'valueInputOption': 'USER_ENTERED'}, body={'values': [[value]]})
             now = read(a1)
             out({'ok': True, 'value': cellstr(now[0][0]) if now and now[0] else ''})
+
+        if action == 'savecells':
+            # Many edits in one go: cells [{row, field, value, old}] and new rows adds [{key, values}].
+            # Each cell is written only if it still holds "old"; otherwise it's a conflict and the sheet's value stays.
+            cells = data.get('cells') or []
+            adds = data.get('adds') or []
+            results, todo = [], []
+            for c in cells:
+                field = str(c.get('field', ''))
+                try: row = int(c.get('row', 0))
+                except Exception: row = 0
+                if row < 2 or field not in hdr:
+                    results.append({'row': row, 'field': field, 'status': 'missing'}); continue
+                todo.append((c, row, field, q(tws.title) + '!' + gspread.utils.rowcol_to_a1(row, hdr.index(field) + 1)))
+            def batch_get(ranges):
+                if not ranges: return []
+                got = wb.values_batch_get(ranges, params={'valueRenderOption': 'FORMULA', 'dateTimeRenderOption': 'FORMATTED_STRING'})
+                vr = got.get('valueRanges', [])
+                return [cellstr(v['values'][0][0]) if v.get('values') and v['values'][0] else '' for v in vr]
+            writes, written = [], []
+            for (c, row, field, a1), cur in zip(todo, batch_get([t[3] for t in todo])):
+                if cur != str(c.get('old') or ''):
+                    results.append({'row': row, 'field': field, 'status': 'conflict', 'current': cur}); continue
+                writes.append({'range': a1, 'values': [[str(c.get('value', ''))]]}); written.append((row, field, a1))
+            if writes:
+                wb.values_batch_update({'valueInputOption': 'USER_ENTERED', 'data': writes})
+                for (row, field, a1), now in zip(written, batch_get([w[2] for w in written])):
+                    results.append({'row': row, 'field': field, 'status': 'ok', 'value': now})
+            added = []
+            lines = [[str((a.get('values') or {}).get(h, '')) if h else '' for h in hdr] or [''] for a in adds]
+            if lines:
+                res = wb.values_append(q(tws.title) + '!A1', params={'valueInputOption': 'USER_ENTERED', 'insertDataOption': 'INSERT_ROWS'}, body={'values': lines})
+                rng = ((res or {}).get('updates') or {}).get('updatedRange', '')
+                m = __import__('re').search(r'![A-Z]+(\d+)', rng)
+                first = int(m.group(1)) if m else 0
+                added = [{'key': a.get('key'), 'row': (first + i) if first else 0} for i, a in enumerate(adds)]
+            out({'ok': True, 'results': results, 'added': added})
 
         def delete_dim(dim, i):   # i: 0-based row or column index
             wb.batch_update({'requests': [{'deleteDimension': {'range': {'sheetId': tws.id, 'dimension': dim, 'startIndex': i, 'endIndex': i + 1}}}]})

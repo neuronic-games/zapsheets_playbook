@@ -63,7 +63,14 @@ button, input, select, textarea { font-family:inherit; }
 .top-btn:hover { background:rgba(255,255,255,.25); }
 
 /* ── Account menu (same style as the other apps) ───────── */
-.account-menu-wrap { position:relative; flex-shrink:0; }
+.account-menu-wrap { position:relative; flex-shrink:0; display:flex; align-items:center; gap:.55rem; }
+/* Save (top right): everything kept in this browser goes to the sheet in the background */
+.top-save { display:inline-flex; align-items:center; gap:.4rem; height:2.1rem; padding:0 .95rem; border:none; border-radius:999px; background:#f2c14e; color:#2e2763; font-family:'DINBlack',sans-serif; font-size:.7rem; letter-spacing:.09em; text-transform:uppercase; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.18); transition:background .15s, opacity .15s; }
+.top-save:hover:not(:disabled) { background:#ffd36b; }
+.top-save:disabled { background:rgba(255,255,255,.14); color:rgba(255,255,255,.55); box-shadow:none; cursor:default; }
+.top-save.saving:disabled { background:rgba(255,255,255,.22); color:#fff; }
+.top-save .sv-n { min-width:1.2rem; height:1.2rem; padding:0 .3rem; border-radius:999px; background:#2e2763; color:#fff; font-size:.62rem; letter-spacing:0; display:inline-flex; align-items:center; justify-content:center; }
+.top-save .sv-spin { width:.8rem; height:.8rem; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; }
 .account-menu { display:none; position:absolute; top:calc(100% + .4rem); right:0; background:#1a1a2e; border:1px solid rgba(255,255,255,.2); border-radius:8px; min-width:160px; z-index:300; box-shadow:0 6px 20px rgba(0,0,0,.4); overflow:hidden; }
 .account-menu.open { display:block; }
 .account-menu-item { display:block; width:100%; background:none; border:none; color:rgba(255,255,255,.85); text-align:left; cursor:pointer; font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; padding:.6rem 1rem; transition:background .12s; }
@@ -505,7 +512,7 @@ table.grid td { cursor:cell; background:#fff; }
 table.grid td > span { vertical-align:middle; }
 table.grid td.formula > span { color:#4b3fa8; font-family:ui-monospace,Menlo,monospace; font-size:.74rem; }
 table.grid td.sel { box-shadow:inset 0 0 0 2px #4b3fa8; }
-table.grid td.st-saving { background:#fffbea; }
+table.grid td.st-saving, table.grid td.st-pending { background:#fff6d6; box-shadow:inset 3px 0 0 #f2c14e; }
 table.grid td.st-saved { background:#ecfdf3; transition:background .8s; }
 table.grid td.st-error { background:#fef2f2; box-shadow:inset 0 0 0 1.5px #e5484d; }
 table.grid tr.draft td { background:#faf9ff; }
@@ -711,6 +718,7 @@ body.cb-gate #signinOverlay { background:#2e2763; }
       <button class="top-tab" id="tabExport" onclick="switchTab('export')">Export</button>
     </div>
     <div class="account-menu-wrap">
+      <button class="top-save" id="saveBtn" onclick="saveAll()" disabled title="Everything is saved">Save</button>
       <button class="top-btn" onclick="toggleAccountMenu(event)" title="Menu">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/></svg>
       </button>
@@ -796,7 +804,6 @@ body.cb-gate #signinOverlay { background:#2e2763; }
       <button class="tb-btn" id="undoBtn" onclick="undo()" title="Undo (⌘Z)">↶</button>
       <button class="tb-btn" id="redoBtn" onclick="redo()" title="Redo (⇧⌘Z)">↷</button>
       <span class="tb-statuses"><span class="tb-status tb-loading" id="loadStatus" hidden></span><span class="tb-status" id="saveStatus"></span></span>
-      <button class="tb-save" id="saveBtn" onclick="saveLayout()" disabled style="margin-left:.5rem">Save</button>
     </div>
     <div class="canvas-wrap" id="canvasWrap" onpointerdown="if(event.target===this)selectEl(null)">
       <div class="card-holder" id="cardHolder"></div>

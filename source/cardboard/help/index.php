@@ -68,7 +68,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
 </div>
 
 <div class="toc-wrap"><nav class="toc">
-  <a href="cardboard/help#start">Getting started</a><a href="cardboard/help#account">Account</a><a href="cardboard/help#tour">The screen</a><a href="cardboard/help#data">Data</a>
+  <a href="cardboard/help#start">Getting started</a><a href="cardboard/help#account">Account</a><a href="cardboard/help#tour">The screen</a><a href="cardboard/help#saving">Saving</a><a href="cardboard/help#data">Data</a>
   <a href="cardboard/help#card">The card</a><a href="cardboard/help#elements">Elements</a><a href="cardboard/help#editing">Moving &amp; sizing</a><a href="cardboard/help#text">Text style</a>
   <a href="cardboard/help#pictures">Pictures</a><a href="cardboard/help#generated">Generated</a><a href="cardboard/help#layers">Layers &amp; groups</a><a href="cardboard/help#tags">Tags</a>
   <a href="cardboard/help#backs">Backs</a><a href="cardboard/help#print">Print</a><a href="cardboard/help#export">Export</a><a href="cardboard/help#keys">Shortcuts</a><a href="cardboard/help#plans">Plans</a><a href="cardboard/help#trouble">Troubleshooting</a>
@@ -86,7 +86,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
       <li><b>Pick a tab.</b> Use the <b>Sheet</b> list at the top left of the Design view. Tabs that already have a layout show a small layout icon.</li>
     </ol>
     <p>CardBoard adds a tab called <b>layouts</b> to your spreadsheet. It holds every tab's card design and your settings for that spreadsheet — leave it in place. Hidden tabs aren't listed, so hide any tab you don't want to design from.</p>
-    <div class="tip">To start fast, the designer shows your card as soon as the first few rows arrive and loads the rest in the background — the status beside <b>Save</b> shows when everything is in.</div>
+    <div class="tip">To start fast, the designer shows your card as soon as the first few rows arrive and loads the rest in the background — the status above the card shows when everything is in.</div>
   </section>
 
   <section class="section" id="account">
@@ -120,19 +120,33 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
     </ul>
   </section>
 
+  <section class="section" id="saving">
+    <h2>Saving</h2>
+    <p>Everything you change — layouts on every tab, cell edits and new rows, column widths and settings — is kept in this browser as you work. It stays there if you switch sheets, reload the page or close the window by accident.</p>
+    <ul>
+      <li><b>Save</b> (top right, beside the menu, or <kbd>⌘S</kbd>) sends all of it to your Google Sheet in one go. The number on the button is how many changes are waiting.</li>
+      <li>Saving happens in the background: keep working while it runs. Anything you change meanwhile waits for the next Save.</li>
+      <li>Until you save, your changes are only in this browser — other people, exports and hosted links see the last saved version. Hosted links update after you save.</li>
+      <li>If someone changed a cell in Google Sheets after you loaded it, your edit to that cell isn't written: the cell turns red and shows their value.</li>
+      <li><b>Fetch</b> with unsaved changes asks first: <b>Save, then fetch</b>, or <b>Fetch without saving</b> — your changes then stay in this browser, shown on top of the latest data.</li>
+      <li>Renaming or deleting a column, deleting a row and editing tags go to the sheet straight away.</li>
+    </ul>
+    <div class="note">Changes kept in a browser stay in that browser only — they don't follow you to another computer, and clearing the browser's site data (or closing a private window) removes them. Save before you switch computers.</div>
+  </section>
+
   <section class="section" id="data">
     <h2>Data</h2>
-    <p>The <b>Data</b> view shows the chosen tab as a grid. Every change is written straight to the Google Sheet.</p>
+    <p>The <b>Data</b> view shows the chosen tab as a grid. Your edits are kept in this browser and go to the Google Sheet when you press <b>Save</b> (see <a href="cardboard/help#saving">Saving</a>).</p>
     <h3>Editing cells</h3>
     <ul>
       <li>Click a cell and start typing to replace it, or double-click (or press <kbd>Enter</kbd> / <kbd>F2</kbd>) to edit what's there.</li>
       <li><kbd>Enter</kbd> saves and moves down; <kbd>Shift</kbd>+<kbd>Enter</kbd> adds a new line; <kbd>Tab</kbd> saves and moves right; <kbd>Esc</kbd> cancels.</li>
       <li>Arrow keys move around. <kbd>Delete</kbd> clears a cell. <kbd>⌘C</kbd> copies a cell and <kbd>⌘V</kbd> pastes into it.</li>
-      <li>A cell turns yellow while it saves and green when it's saved. Formulas show in purple; their results appear on the cards.</li>
+      <li>An edited cell is marked yellow until it's saved, then flashes green. Formulas show in purple; their results appear on the cards after saving.</li>
     </ul>
     <h3>Rows and columns</h3>
     <ul>
-      <li><b>+ Add row</b> adds a card at the bottom — it's written to the sheet once you type in it.</li>
+      <li><b>+ Add row</b> adds a card at the bottom — it's added to the sheet when you save.</li>
       <li><b>+ Add column</b> adds a new heading at the end of the sheet.</li>
       <li><b>Delete a row:</b> click its row number → <b>Delete row</b>. <b>Delete a column:</b> click its heading → <b>Delete column</b>. CardBoard asks first, then deletes it from your Google Sheet (undo it there with Edit → Undo or version history). If the row changed in Sheets since you loaded it, nothing is deleted and the latest is shown instead.</li>
       <li><b>Search the rows</b> shows only rows containing what you type.</li>
@@ -156,7 +170,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
       <li><b>Rows</b> — the arrows above the card step through your rows, so you can check every card.</li>
       <li><b>Zoom</b> — <b>−</b> and <b>+</b> zoom out and in; <b>Fit</b> fits the card to the window.</li>
       <li><b>Undo / Redo</b> — the curved arrows, or <kbd>⌘Z</kbd> and <kbd>⇧⌘Z</kbd>.</li>
-      <li><b>Save</b> — saves the layout to your sheet's <b>layouts</b> tab (<kbd>⌘S</kbd>). “Unsaved changes” shows until you do.</li>
+      <li><b>Save</b> — top right, beside the menu: see <a href="cardboard/help#saving">Saving</a>.</li>
       <li><b>Flip</b> — the round button at the top left of the card turns it over to design the back (see <a href="cardboard/help#backs">Backs</a>).</li>
     </ul>
   </section>
@@ -174,8 +188,8 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
     <h3>Data fields</h3>
     <ul>
       <li><b>Column</b> switches which column the field shows.</li>
-      <li><b>Value for row N</b> shows that row's value exactly as typed in the sheet (tags still in brackets) — handy when it's empty and invisible on the card. Edit it and click away to save it to the sheet.</li>
-      <li>Or double-click a Data field on the card to edit it in place: <kbd>Enter</kbd> saves to the sheet, <kbd>Shift</kbd>+<kbd>Enter</kbd> adds a line, <kbd>Esc</kbd> cancels.</li>
+      <li><b>Value for row N</b> shows that row's value exactly as typed in the sheet (tags still in brackets) — handy when it's empty and invisible on the card. Edit it and click away; it goes to the sheet with your next Save.</li>
+      <li>Or double-click a Data field on the card to edit it in place: <kbd>Enter</kbd> keeps it (it goes to the sheet when you save), <kbd>Shift</kbd>+<kbd>Enter</kbd> adds a line, <kbd>Esc</kbd> cancels.</li>
       <li><b>+ New</b> at the bottom of the Data list adds a column to the sheet, ready to drag onto the card.</li>
       <li>Click a field in the list → <b>Hide field</b> to tuck away columns you don't use. The eye button in the Data heading shows hidden fields again (greyed) so you can unhide them.</li>
     </ul>
@@ -330,7 +344,7 @@ table.keys td:first-child { white-space:nowrap; width:1%; }
     <h2>Keyboard shortcuts</h2>
     <p><kbd>⌘</kbd> is <kbd>Ctrl</kbd> on Windows.</p>
     <table class="keys">
-      <tr><td><kbd>⌘S</kbd></td><td>Save the layout</td></tr>
+      <tr><td><kbd>⌘S</kbd></td><td>Save everything to the sheet</td></tr>
       <tr><td><kbd>⌘Z</kbd> / <kbd>⇧⌘Z</kbd></td><td>Undo / redo</td></tr>
       <tr><td><kbd>⌘C</kbd> / <kbd>⌘X</kbd> / <kbd>⌘V</kbd></td><td>Copy / cut / paste elements — into any side, tab or spreadsheet</td></tr>
       <tr><td><kbd>⌘D</kbd></td><td>Duplicate the selection</td></tr>

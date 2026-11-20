@@ -20,9 +20,18 @@ if (!preg_match('/^[A-Za-z0-9_-]{10,128}$/', $sheetId)) { echo json_encode(['err
 $python = $_ENV['PYTHON'] ?? 'python3';
 
 function cbRun(string $python, string $sheetId, array $data): array {
-    $cmd = escapeshellarg($python) . ' ' . escapeshellarg(__DIR__ . '/gcardboard.py') . ' '
-         . escapeshellarg($sheetId . '|' . base64_encode(json_encode($data, JSON_UNESCAPED_UNICODE))) . ' 2>&1';
-    $raw = trim((string) shell_exec($cmd));
+    $enc = base64_encode(json_encode($data, JSON_UNESCAPED_UNICODE));
+    $cmd = escapeshellarg($python) . ' ' . escapeshellarg(__DIR__ . '/gcardboard.py') . ' ';
+    if (strlen($enc) < 60000 || !function_exists('proc_open')) {
+        $raw = trim((string) shell_exec($cmd . escapeshellarg($sheetId . '|' . $enc) . ' 2>&1'));
+    } else {   // a command-line argument is capped near 128 KB, so big requests go in on stdin
+        $raw = '';
+        $p = proc_open($cmd . escapeshellarg($sheetId . '|-') . ' 2>&1', [0 => ['pipe', 'r'], 1 => ['pipe', 'w']], $pipes);
+        if (is_resource($p)) {
+            fwrite($pipes[0], $enc); fclose($pipes[0]);
+            $raw = trim((string) stream_get_contents($pipes[1])); fclose($pipes[1]); proc_close($p);
+        }
+    }
     foreach (array_reverse(preg_split('/\R/', $raw)) as $line) {   // the answer is the last JSON line
         $line = trim($line);
         if ($line !== '' && $line[0] === '{' && is_array($r = json_decode($line, true))) return $r;
@@ -34,7 +43,7 @@ function cbRun(string $python, string $sheetId, array $data): array {
 // free week, a subscription or an unlocked sheet
 require_once __DIR__ . '/cardboardAuth.php';
 cbRequireSignIn();
-if (in_array($action, ['save', 'addfield', 'renamefield', 'setcell', 'addrow', 'deleterow', 'deletefield', 'settag', 'deltag'], true)) {
+if (in_array($action, ['save', 'addfield', 'renamefield', 'setcell', 'addrow', 'deleterow', 'deletefield', 'savecells', 'settag', 'deltag'], true)) {
     require_once __DIR__ . '/cardboardAuth.php';
     cbRequireAccess($sheetId);
 }
@@ -93,7 +102,7 @@ if ($action === 'addfield') {
 }
 
 // Data tab: the sheet as typed, and edits written straight back
-if (in_array($action, ['grid', 'setcell', 'addrow', 'deleterow', 'deletefield'], true)) {
+if (in_array($action, ['grid', 'setcell', 'addrow', 'deleterow', 'deletefield', 'savecells'], true)) {
     $tab = trim($_POST['tab'] ?? '');
     if ($tab === '' || strpbrk($tab, "/\\") !== false || strtolower($tab) === 'layouts') { echo json_encode(['error' => 'Invalid tab']); exit; }
     $req = ['action' => $action, 'sheet' => $tab];
@@ -111,6 +120,13 @@ if (in_array($action, ['grid', 'setcell', 'addrow', 'deleterow', 'deletefield'],
         $req += ['row' => (int) ($_POST['row'] ?? 0), 'values' => is_array($vals) ? array_values($vals) : []];
     }
     if ($action === 'deletefield') $req['field'] = trim((string) ($_POST['field'] ?? ''));
+    if ($action === 'savecells') {
+        $cells = json_decode($_POST['cells'] ?? '[]', true); $adds = json_decode($_POST['adds'] ?? '[]', true);
+        $req['cells'] = is_array($cells) ? array_values($cells) : [];
+        $req['adds'] = is_array($adds) ? array_values($adds) : [];
+        if (count($req['cells']) + count($req['adds']) > 2000) { echo json_encode(['error' => 'Too many changes at once']); exit; }
+        foreach ($req['cells'] as $c) if (mb_strlen((string) ($c['value'] ?? '')) > 50000) { echo json_encode(['error' => 'One of the cells is too long']); exit; }
+    }
     $res = cbRun($python, $sheetId, $req);
     if ($action !== 'grid' && !empty($res['ok'])) @unlink(dirname(__DIR__) . '/sheets/' . $sheetId . '/' . strtolower($tab) . '.json');   // cached rows are stale now
     echo json_encode($res, JSON_UNESCAPED_UNICODE);

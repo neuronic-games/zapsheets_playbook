@@ -322,9 +322,14 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .arr-gap .inp { height:1.6rem; padding:0 .35rem; min-width:0; width:100%; }
 .arr-gap .inp:disabled { opacity:.45; }
 .arr-list:not(.on) .arr-gap span { opacity:.5; }
-.arr-align { display:flex; align-items:center; gap:.55rem; margin-top:.45rem; }
-.arr-align .mini { margin:0; }
-.arr-align .seg button { display:flex; align-items:center; justify-content:center; height:2.1rem; padding:0 .7rem; }
+/* List buttons: press and hold for the alignments */
+.arr-hold { position:relative; touch-action:none; -webkit-user-select:none; user-select:none; }
+.arr-hold::after { content:''; position:absolute; right:3px; bottom:3px; border:3px solid transparent; border-right-color:#a0a4bb; border-bottom-color:#a0a4bb; }
+.arr-hold.holding { background:#ece9ff; }
+.arr-fly { position:fixed; z-index:800; display:flex; flex-direction:column; gap:2px; padding:.3rem; background:#fff; border:1px solid #d6d1f5; border-radius:9px; box-shadow:0 10px 28px rgba(20,20,60,.2); }
+.arr-fly button { display:flex; align-items:center; gap:.5rem; padding:.35rem .7rem .35rem .45rem; border:none; border-radius:6px; background:none; color:#2e2763; font-size:.78rem; cursor:pointer; text-align:left; }
+.arr-fly button.on { color:#4b3fa8; background:#f3f1ff; }
+.arr-fly button.hi, .arr-fly button:hover { background:#ece9ff; }
 .el-img { display:block; width:100%; height:100%; object-position:center; background-repeat:no-repeat; background-position:center; }
 /* Picture still loading in the designer: a spinner over it (shown after a moment, so cached pictures don't flash) */
 .img-spin { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(238,240,246,.85); pointer-events:none; opacity:0; animation:imgSpinIn .15s .2s forwards; }

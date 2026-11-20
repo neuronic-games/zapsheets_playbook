@@ -1770,18 +1770,19 @@ function multiAttrs() {
   if (!g) { var ku = keyUnit(); h += '<p class="muted" style="margin:.35rem 0 0">' + (ku ? 'Lining up to <b>' + esc(ku.length > 1 && ku[0].group ? (groupById(ku[0].group) || { name: 'the group' }).name : elLabel(ku[0])) + '</b> — the dots around it line the others up with it. Click it again to line up with each other.' : 'Click one of them to make it the <b>key object</b>: the others line up with it.') + '</p>'; }
   if (g) {
     var mode = g.list === 'h' || g.list === 'v' ? g.list : '';
-    function btn(o) { return '<button type="button" class="' + (o[0] === mode ? 'on' : '') + '" title="' + o[1] + '" aria-label="' + o[1].split(':')[0] + '" onclick="setGroupList(\'' + gid + '\',\'' + o[0] + '\')">' + LIST_ICONS[o[0] || 'free'] + '</button>'; }
+    // The list buttons: click to choose, or press and hold for the alignments (slide to one and let go).
+    // The chosen list shows its alignment in its icon.
+    function btn(o) {
+      var lst = o[0] === 'h' || o[0] === 'v', ico = lst && o[0] === mode ? ALIGN_ICONS[mode][listAlign(g)] : LIST_ICONS[o[0] || 'free'];
+      return '<button type="button" class="' + (o[0] === mode ? 'on' : '') + (lst ? ' arr-hold' : '') + '" title="' + o[1] + (lst ? ' · press and hold to align' : '') + '" aria-label="' + o[1].split(':')[0] + '"' +
+        (lst ? ' onpointerdown="arrPress(event,\'' + gid + '\',\'' + o[0] + '\')" onclick="if(!event.detail)setGroupList(\'' + gid + '\',\'' + o[0] + '\')"'
+             : ' onclick="setGroupList(\'' + gid + '\',\'' + o[0] + '\')"') + '>' + ico + '</button>';
+    }
     // One row: Free on its own, then the two lists with their Gap
     h += '<span class="lbl">Arrange</span><div class="arr-row">' +
       '<div class="seg arr-free">' + btn(['', 'Free: members stay where you put them']) + '</div>' +
       '<div class="arr-list' + (mode ? ' on' : '') + '"><div class="seg">' + btn(['h', 'Horizontal list: side by side, each only as wide as it needs']) + btn(['v', 'Vertical list: one under another, each only as tall as it needs']) + '</div>' +
       '<label class="arr-gap" title="Space between the members of the list (pt)"><span>Gap</span><input class="inp" type="number" step=".5" min="0" id="g_gap" value="' + r1(g.gap == null ? 4 : g.gap) + '"' + (mode ? '' : ' disabled') + ' onchange="setGroupGap(\'' + gid + '\',this.value)"></label></div></div>';
-    if (mode) {
-      var ga = listAlign(g), names = mode === 'v' ? ['Left', 'Center', 'Right'] : ['Top', 'Middle', 'Bottom'];
-      h += '<div class="arr-align"><span class="mini">Align</span><div class="seg">' + ['start', 'center', 'end'].map(function(a, i) {
-        return '<button type="button" class="' + (a === ga ? 'on' : '') + '" title="' + names[i] + '" aria-label="' + names[i] + '" onclick="setGroupAlign(\'' + gid + '\',\'' + a + '\')">' + ALIGN_ICONS[mode][a] + '</button>';
-      }).join('') + '</div></div>';
-    }
     if (mode) h += '<p class="muted" style="margin:.35rem 0 0">In the Layers order, top first — drag there to reorder. Empty text and pictures take no room.</p>';
   }
   h += '<div class="attr-btns">' + (g ? '<button class="attr-btn" onclick="ungroupSel()">Ungroup</button>' : '<button class="attr-btn" onclick="groupSel()">Group</button>') + '</div>';
@@ -1804,10 +1805,52 @@ function setGroupList(gid, mode) {
 // Alignment across the list: a vertical list lines its members up left / center / right,
 // a horizontal one top / middle / bottom. Defaults: vertical → left, horizontal → middle.
 function listAlign(g) { return g.align || (g.list === 'h' ? 'center' : 'start'); }
-function setGroupAlign(gid, a) {
-  var g = groupById(gid); if (!g || listAlign(g) === a) return;
-  snapshot(); g.align = a; changed(); renderAttrs();
+function setGroupListAlign(gid, mode, a) {
+  var g = groupById(gid); if (!g || (g.list === mode && listAlign(g) === a)) return;
+  snapshot(); g.list = mode; g.align = a; changed(); renderAttrs();
 }
+// Press and hold a list button: the alignments open in a column below it
+var _arr = null;
+function closeArrFly() { var f = $('arrFly'); if (f) f.remove(); }
+function arrPress(ev, gid, mode) {
+  if (ev.button) return;
+  ev.preventDefault();
+  closeArrFly();
+  var b = ev.currentTarget, g = groupById(gid); if (!g) return;
+  _arr = { gid: gid, mode: mode, btn: b, fly: null, hi: '' };
+  _arr.timer = setTimeout(function() {
+    if (!_arr) return;
+    var names = mode === 'v' ? ['Left', 'Center', 'Right'] : ['Top', 'Middle', 'Bottom'], cur = g.list === mode ? listAlign(g) : '';
+    var f = document.createElement('div'); f.id = 'arrFly'; f.className = 'arr-fly';
+    f.innerHTML = ['start', 'center', 'end'].map(function(a, i) {
+      return '<button type="button" data-a="' + a + '" class="' + (a === cur ? 'on' : '') + '" title="' + names[i] + '">' + ALIGN_ICONS[mode][a] + '<span>' + names[i] + '</span></button>';
+    }).join('');
+    f.querySelectorAll('button').forEach(function(x) { x.onclick = function() { closeArrFly(); setGroupListAlign(gid, mode, x.dataset.a); }; });
+    document.body.appendChild(f);
+    var r = b.getBoundingClientRect();
+    f.style.left = Math.min(r.left, innerWidth - f.offsetWidth - 8) + 'px';
+    f.style.top = Math.min(r.bottom + 4, innerHeight - f.offsetHeight - 8) + 'px';
+    b.classList.add('holding');
+    _arr.fly = f;
+  }, 320);
+}
+document.addEventListener('pointermove', function(ev) {
+  if (!_arr || !_arr.fly) return;
+  var t = document.elementFromPoint(ev.clientX, ev.clientY), hit = t && t.closest('#arrFly button');
+  _arr.hi = hit ? hit.dataset.a : '';
+  _arr.fly.querySelectorAll('button').forEach(function(x) { x.classList.toggle('hi', x === hit); });
+});
+document.addEventListener('pointerup', function(ev) {
+  if (!_arr) return;
+  var a = _arr; _arr = null; clearTimeout(a.timer); a.btn.classList.remove('holding');
+  if (!a.fly) { setGroupList(a.gid, a.mode); return; }   // a quick click: just the list
+  if (a.hi) { closeArrFly(); setGroupListAlign(a.gid, a.mode, a.hi); return; }
+  // Let go on the button itself: keep the column open to click one; anywhere else closes it
+  var t = document.elementFromPoint(ev.clientX, ev.clientY);
+  if (!(t && a.btn.contains(t))) closeArrFly();
+});
+document.addEventListener('pointerdown', function(ev) { if ($('arrFly') && !ev.target.closest('#arrFly') && !ev.target.closest('.arr-hold')) closeArrFly(); });
+document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') closeArrFly(); });
 function alignIco(rects) { return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">' + rects + '</svg>'; }
 var ALIGN_ICONS = {
   v: {

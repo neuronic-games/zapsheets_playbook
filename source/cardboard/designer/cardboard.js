@@ -52,7 +52,17 @@ function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').repla
 function $(id) { return document.getElementById(id); }
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 function r1(v) { return Math.round(v * 10) / 10; }
-function isTextLike(e) { return e.kind === 'text' || e.kind === 'gen' || (e.kind === 'data' && e.as !== 'image'); }
+function isTextLike(e) { return e.kind === 'text' || e.kind === 'gen' || (e.kind === 'data' && !dataIsImage(e)); }
+// Data shown through a mapping: e.as === 'map', e.map = {type: 'text'|'image', items:[{v, t, src}]}.
+// The card's value in e.field picks the item whose v matches (ignoring case); it shows that item's
+// text (t) or picture (src). A value with no match shows as it is.
+function dataMapType(e) { return e.map && e.map.type === 'image' ? 'image' : 'text'; }
+function dataIsImage(e) { return e.kind === 'data' && (e.as === 'image' || (e.as === 'map' && dataMapType(e) === 'image')); }
+function mapHit(e, row) {
+  if (!row || !e.map) return null;
+  var low = cleanVal(row[e.field]).trim().toLowerCase(); if (!low) return null;
+  return (e.map.items || []).filter(function(it) { return String(it.v || '').trim().toLowerCase() === low; })[0] || null;
+}
 // The front is the layout itself; the back is layout.back ({bg, els})
 function faceOf(lay, s) { return s === 'back' ? lay.back : lay; }
 function curEls() { return faceOf(layout, side).els; }
@@ -60,7 +70,7 @@ function curEls() { return faceOf(layout, side).els; }
 function backVaries(lay) {
   return (lay || layout).back.els.some(function(e) { return e.kind === 'data' || e.kind === 'gen' || (e.kind === 'text' && /\{[^{}]+\}/.test(e.text || '')) || (e.kind === 'image' && e.mapOn && e.map && e.map.field); });
 }
-function isImageLike(e) { return e.kind === 'image' || (e.kind === 'data' && e.as === 'image'); }
+function isImageLike(e) { return e.kind === 'image' || dataIsImage(e); }
 
 // Layouts saved by the first version: box → shape, "{Column}" text/image → data
 function normalize(lay) {
@@ -248,6 +258,15 @@ function elInner(e, row, ctx) {
     }
     case 'data':
       if (e.as === 'image') return imgDiv(row ? imageUrl(row[e.field]) : '', e, ctx.designing ? e.field : '', ctx);
+      if (e.as === 'map') {
+        var hit = mapHit(e, row), raw = row ? cleanVal(row[e.field]).trim() : '';
+        if (dataMapType(e) === 'image') {
+          var mu = imageUrl(picRef(hit && hit.src ? hit.src : raw));
+          return imgDiv(mu, e, ctx.designing ? (raw || e.field) : '', ctx);
+        }
+        if (!row) return '<span class="el-empty">' + esc(e.field) + '</span>';
+        return rich(hit ? (hit.t || '') : textVal(row[e.field]), ctx);
+      }
       return row ? rich(textVal(row[e.field]), ctx) : '<span class="el-empty">' + esc(e.field) + '</span>';
     case 'image': { var iu = imageUrl(imgSrcFor(e, row)); return iu || ctx && ctx.designing ? imgDiv(iu, e, 'Drop an image here, or double-click to choose', ctx) : ''; }
     case 'shape': return shapeSVG(e);
@@ -264,7 +283,7 @@ function renderCardHTML(lay, row, designing, ctx) {
     var inner = elInner(e, row, ctx);
     // In a list, a text or picture with nothing to show takes no room at all
     if (list && (inner === '' || (isTextLike(e) && !/<(img|svg)\b/.test(inner) && !inner.replace(/<[^>]*>/g, '').trim()))) return '';
-    var cls = 'el k-' + e.kind + (e.kind === 'data' && e.as === 'image' ? ' as-image' : '') + (e.valign === 'middle' ? ' v-middle' : e.valign === 'bottom' ? ' v-bottom' : '') + (designing && isSel(e.id) ? ' picked' + (multi.length ? ' multi' : '') : '');
+    var cls = 'el k-' + e.kind + (dataIsImage(e) ? ' as-image' : '') + (e.valign === 'middle' ? ' v-middle' : e.valign === 'bottom' ? ' v-bottom' : '') + (designing && isSel(e.id) ? ' picked' + (multi.length ? ' multi' : '') : '');
     if (designing && UPLOADING[e.id]) cls += ' img-loading';
     if (keyIds.indexOf(e.id) >= 0) cls += ' key';
     var st = elStyle(e);
@@ -777,8 +796,8 @@ function openImagePicker(ev, id, slot) {   // slot: pick the picture for one val
     '<div class="ip-url"><input class="inp" id="ipUrl" placeholder="Link, or an image tag like [fire]" value="' + esc(/\/images\/[A-Za-z0-9_\-]+\/[0-9a-f]{20}\.\w+$/.test(cur) ? '' : cur) + '">' +
       '<button type="button" class="attr-btn" id="ipUse">Use</button></div>' +
     '<p class="muted">Links are shown straight from Dropbox, Drive or the website, so when you change the picture there it changes here too. In Drive, share it as “Anyone with the link”.</p>' +
-    (slot != null ? '<p class="muted ip-row">Used when <b>' + esc(e.map.field) + '</b> is <b>' + esc(((e.map.items[slot] || {}).v) || '…') + '</b>.</p>' : '') +
-    (e.kind === 'data' ? '<p class="muted ip-row">For <b>row ' + (rowIdx + 1) + '</b> — saved in its <b>' + esc(e.field) + '</b> cell in the sheet. Uploads are kept on zapsheets.com.</p>' : '') +
+    (slot != null ? '<p class="muted ip-row">Used when <b>' + esc(e.kind === 'data' ? e.field : e.map.field) + '</b> is <b>' + esc(((e.map.items[slot] || {}).v) || '…') + '</b>.</p>' : '') +
+    (e.kind === 'data' && slot == null ?'<p class="muted ip-row">For <b>row ' + (rowIdx + 1) + '</b> — saved in its <b>' + esc(e.field) + '</b> cell in the sheet. Uploads are kept on zapsheets.com.</p>' : '') +
     (cur ? '<button type="button" class="attr-btn danger ip-remove" id="ipRemove">Remove picture</button>' : '');
   document.body.appendChild(p);
   // Place it beside the picture button (or the element), kept on screen
@@ -1628,7 +1647,7 @@ function elLabel(e) {
 }
 function elIcon(e) {
   if (e.kind === 'shape') return '<span class="ly-ico">' + shapeSVG({ shape: e.shape, w: 14, h: 14, fill: e.fill || 'none', stroke: e.stroke || '#4b3fa8', strokeW: e.strokeW || (e.fill ? 0 : 1.5), radius: 3 }) + '</span>';
-  var t = { text: 'T', data: e.as === 'image' ? IMG_ICON : DATA_ICON, image: IMG_ICON, gen: '#' }[e.kind] || '•';
+  var t = { text: 'T', data: dataIsImage(e) ? IMG_ICON : DATA_ICON, image: IMG_ICON, gen: '#' }[e.kind] || '•';
   return '<span class="ly-ico">' + t + '</span>';
 }
 function renderLayers() {
@@ -1937,7 +1956,14 @@ function renderAttrs() {
     h += '<span class="lbl">Column</span><select class="sel" onchange="setProp(\'field\',this.value);renderAttrs()">' +
          FIELDS.map(function(f) { return '<option' + (f === e.field ? ' selected' : '') + '>' + esc(f) + '</option>'; }).join('') +
          (known ? '' : '<option selected>' + esc(e.field) + '</option>') + '</select>';
-    h += '<div style="margin-top:.45rem"><span class="mini">Show as</span>' + seg('as', [['text', 'Text', 'Show the value as text'], ['image', 'Image', 'The value is a picture link']], e.as || 'text') + '</div>';
+    h += '<div style="margin-top:.45rem"><span class="mini">Show as</span>' + seg('as', [['text', 'Text', 'Show the value as text'], ['image', 'Image', 'The value is a picture link'], ['map', 'Mapping', 'Each value shows a text or picture you choose']], e.as || 'text') + '</div>';
+    if (e.as === 'map') {
+      if (!e.map || !e.map.items) e.map = { type: 'text', items: [] };
+      h += dataMapAttrs(e);
+      var mv = ROWS[rowIdx] ? cleanVal(ROWS[rowIdx][e.field]) : '';
+      h += '<span class="lbl">Value for this card</span><input class="inp" list="mapValList"' + (ROWS[rowIdx] ? '' : ' disabled') + ' value="' + esc(mv) + '" placeholder="' + (ROWS[rowIdx] ? 'Empty — type a value' : 'No cards yet') + '" onchange="setRowValue(this.value)">' +
+           '<p class="muted" style="margin:.3rem 0 0">Saved in the <b>' + esc(e.field) + '</b> cell for this card.</p>';
+    }
     if (e.as === 'image') {
       var ru = ROWS[rowIdx] ? imageUrl(curSrc(e)) : '';
       h += '<span class="lbl">Picture for row ' + (rowIdx + 1) + '</span><div class="img-slot' + (UPLOADING[e.id] ? ' img-loading' : '') + '" id="imgSlot" onclick="openImagePicker(event,\'' + e.id + '\')" title="Click or drop a picture to change it">' +
@@ -1945,13 +1971,13 @@ function renderAttrs() {
         '<span class="img-btn">' + IMG_ICON + '</span></div>' +
         '<p class="muted" style="margin:.35rem 0 0">Each row has its own picture, saved in its <b>' + esc(e.field) + '</b> cell. Click or drop a picture here, or double-click it on the card. Step through the rows to set the others.</p>';
     }
-    if (e.as !== 'image') {   // this row's value as typed in the sheet (tags not yet turned into words or pictures) — handy when it's empty on the card
+    if (e.as !== 'image' && e.as !== 'map') {   // this row's value as typed in the sheet (tags not yet turned into words or pictures) — handy when it's empty on the card
       var rv = ROWS[rowIdx] ? (ROWS[rowIdx][e.field] == null ? '' : String(ROWS[rowIdx][e.field])) : '';
       h += '<span class="lbl">Value for row ' + (rowIdx + 1) + '</span><textarea class="ta" id="a_val"' + (ROWS[rowIdx] ? '' : ' disabled') +
            ' placeholder="' + (ROWS[rowIdx] ? 'Empty in this row — type to fill it in' : 'No rows yet') + '" onchange="setRowValue(this.value)">' + esc(rv) + '</textarea>' +
            '<p class="muted" style="margin:.3rem 0 0">Saved in the <b>' + esc(e.field) + '</b> cell for this row.</p>';
     }
-    h += e.as === 'image' ? fitAttrs(e) + boxAttrs(e, 'Frame') : textAttrs(e) + boxAttrs(e, 'Background');
+    h += dataIsImage(e) ? fitAttrs(e) + boxAttrs(e, 'Frame') : textAttrs(e) + boxAttrs(e, 'Background');
   }
   if (e.kind === 'image') {
     var u = imageUrl(picRef(e.src)), src = e.src || '', uploaded = /\/images\/[A-Za-z0-9_\-]+\/[0-9a-f]{20}\.\w+$/.test(src);
@@ -2048,7 +2074,44 @@ function mapAttrs(e) {
   return h;
 }
 var _mapAnim = '';
-function mapEl() { var e = elById(selId); return e && e.kind === 'image' && e.map ? e : null; }
+function mapEl() { var e = elById(selId); return e && e.map && (e.kind === 'image' || (e.kind === 'data' && e.as === 'map')) ? e : null; }
+// A data element's mapping: a Text / Image switch, then value → text (or picture) rows,
+// always ending with an empty row for the next one
+function dataMapAttrs(e) {
+  var mp = e.map, items = mp.items || [], rows = items.concat([{ v: '', t: '', src: '' }]), img = dataMapType(e) === 'image';
+  var cur = ROWS[rowIdx] ? cleanVal(ROWS[rowIdx][e.field]).trim().toLowerCase() : null;
+  var vals = [];
+  ROWS.forEach(function(r) { var v = cleanVal(r[e.field]).trim(); if (v && vals.indexOf(v) < 0 && vals.length < 300) vals.push(v); });
+  var h = '<div style="margin-top:.45rem"><span class="mini">Maps to</span><div class="seg">' +
+    [['text', 'Text', 'Each value shows a text'], ['image', 'Image', 'Each value shows a picture']].map(function(o) {
+      return '<button type="button" class="' + ((img ? 'image' : 'text') === o[0] ? 'on' : '') + '" title="' + o[2] + '" onclick="setDataMapType(\'' + o[0] + '\')">' + o[1] + '</button>';
+    }).join('') + '</div></div>';
+  h += '<datalist id="mapValList">' + vals.map(function(v) { return '<option value="' + esc(v) + '">'; }).join('') + '</datalist>';
+  h += '<span class="lbl">Mappings</span><div class="map-list' + (img ? '' : ' map-text') + '">';
+  rows.forEach(function(it, i) {
+    var isNew = i === items.length, on = cur !== null && it.v && it.v.trim().toLowerCase() === cur;
+    var valInp = '<input class="inp map-val" list="mapValList" value="' + esc(it.v || '') + '" placeholder="When ' + esc(e.field) + ' is…" onchange="setMapVal(' + i + ',this.value)">';
+    if (img) {
+      var u = imageUrl(picRef(it.src));
+      h += '<div class="map-item' + (isNew ? ' new' : '') + '">' +
+        '<div class="img-slot map-slot' + (on ? ' cur' : '') + '" data-i="' + i + '" onclick="openImagePicker(event,\'' + e.id + '\',' + i + ')" title="Click or drop a picture">' +
+          (u ? '<div class="el-img" style="background-image:url(&quot;' + esc(u) + '&quot;);background-size:contain"></div>' : '<div class="img-slot-empty">' + IMG_ICON + '<span>' + (isNew ? 'Picture for another value' : 'No picture yet') + '</span></div>') +
+          (isNew ? '' : '<button type="button" class="map-x" onclick="event.stopPropagation();delMapItem(' + i + ')" title="Remove this value" aria-label="Remove this value">×</button>') +
+          '<span class="img-btn">' + IMG_ICON + '</span></div>' + valInp + '</div>';
+    } else {
+      h += '<div class="map-trow' + (on ? ' cur' : '') + (isNew ? ' new' : '') + '">' + valInp +
+        '<span class="map-arrow">→</span><input class="inp map-out" value="' + esc(it.t || '') + '" placeholder="' + (isNew ? 'Shows…' : 'Shows') + '" onchange="setMapText(' + i + ',this.value)">' +
+        (isNew ? '<span class="map-x-sp"></span>' : '<button type="button" class="map-tx" onclick="delMapItem(' + i + ')" title="Remove this value" aria-label="Remove this value">×</button>') + '</div>';
+    }
+  });
+  h += '</div><p class="muted" style="margin:.35rem 0 0">A card whose <b>' + esc(e.field) + '</b> matches a value shows its ' + (img ? 'picture' : 'text') +
+       '; any other value shows as it is. Double-click the element on the card to change this card’s <b>' + esc(e.field) + '</b>.</p>';
+  return h;
+}
+function setDataMapType(t) {
+  var e = elById(selId); if (!e || e.kind !== 'data' || !e.map || dataMapType(e) === t) return;
+  snapshot(); e.map.type = t; changed(); renderAttrs();
+}
 function toggleImgMap() {
   var e = elById(selId); if (!e || e.kind !== 'image') return;
   var dr = $('mapDrawer');
@@ -2068,14 +2131,21 @@ function setMapVal(i, v) {
   var e = mapEl(); if (!e) return; var items = e.map.items; v = v.trim();
   if (i >= items.length) { if (!v) return; snapshot(); items.push({ v: v, src: '' }); }
   else { if (items[i].v === v) return; snapshot(); items[i].v = v; }
-  e.map.items = items.filter(function(it) { return it.v || it.src; });
+  e.map.items = items.filter(function(it) { return it.v || it.src || it.t; });
+  changed();
+}
+function setMapText(i, t) {   // the text a value maps to (a data element mapping to text)
+  var e = mapEl(); if (!e) return; var items = e.map.items;
+  if (i >= items.length) { if (!t) return; snapshot(); items.push({ v: '', t: t }); }
+  else { if ((items[i].t || '') === t) return; snapshot(); items[i].t = t; }
+  e.map.items = items.filter(function(it) { return it.v || it.src || it.t; });
   changed();
 }
 function setMapSrc(id, i, src) {
   var e = elById(id); if (!e || !e.map) return; var items = e.map.items;
   snapshot();
   if (i >= items.length) { if (!src) return; items.push({ v: '', src: src }); } else items[i].src = src;
-  e.map.items = items.filter(function(it) { return it.v || it.src; });
+  e.map.items = items.filter(function(it) { return it.v || it.src || it.t; });
   changed(selId !== id);
 }
 function delMapItem(i) { var e = mapEl(); if (!e) return; snapshot(); e.map.items.splice(i, 1); changed(); }

@@ -250,6 +250,15 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .map-slot.cur { border-style:solid; border-color:#7b6cf6; box-shadow:0 0 0 3px rgba(123,108,246,.15); }
 .map-x { position:absolute; top:6px; left:6px; z-index:2; width:28px; height:28px; padding:0; border:none; border-radius:50%; background:rgba(0,0,0,.55); color:#fff; font-size:1.05rem; line-height:28px; text-align:center; cursor:pointer; }
 .map-x:hover { background:#c0392b; }
+/* Data mapping to text: value → text rows */
+.map-list.map-text { gap:.35rem; margin-top:0; }
+.map-trow { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) 1.5rem; align-items:center; gap:.3rem; border-radius:8px; }
+.map-trow .inp { min-width:0; }
+.map-trow.cur .map-val { border-color:#a99cff; background:#f7f5ff; }
+.map-trow.new .inp { border-style:dashed; }
+.map-arrow { color:#a0a4bb; font-size:.8rem; }
+.map-tx { width:1.5rem; height:1.5rem; padding:0; border:none; border-radius:50%; background:none; color:#a0a4bb; font-size:1rem; line-height:1.5rem; cursor:pointer; }
+.map-tx:hover { background:#fdecea; color:#c0392b; }
 .img-slot-empty { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.35rem; color:#9aa0b8; font-size:.72rem; }
 .img-slot-empty svg { width:26px; height:26px; }
 .img-slot.over::before { content:'Drop to set the picture'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(75,63,168,.78); color:#fff; font-family:'DINBlack',sans-serif; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; z-index:3; }
@@ -358,6 +367,7 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .el.editing { z-index:60 !important; }
 .el.editing .el-inner { cursor:text; user-select:text; -webkit-user-select:text; white-space:pre-wrap; outline:calc(2px / var(--z, 1)) solid #7b6cf6; outline-offset:calc(1px / var(--z, 1)); background:rgba(255,255,255,.9); }
 .el.editing .hdl { display:none; }
+.el.as-image.editing .el-inner { font-family:'DINRegular',Arial,sans-serif; font-size:10pt; color:#1b1b2b; display:flex; align-items:center; justify-content:center; text-align:center; }
 .sel-box { position:absolute; z-index:49; pointer-events:none; outline:calc(1.5px / var(--z)) solid #7b6cf6; outline-offset:calc(2px / var(--z)); }
 .sel-box.group { outline-color:#4b3fa8; }
 .hdl.nw { left:calc(-4.5px / var(--z)); top:calc(-4.5px / var(--z)); cursor:nwse-resize; }

@@ -3112,9 +3112,11 @@ function renderGrid() {
   ensureTrailingRow();
   var cols = gridColsAll(), rows = gridVisibleRows();
   var nHid = GRID.header.filter(function(hd) { return hd && isHidden(hd); }).length;
-  var nCards = GRID.rows.filter(function(r) { return !r.draft && !rowDeleted(r.row); }).length;
-  $('gridInfo').innerHTML = nCards + (nCards === 1 ? ' card · ' : ' cards · ') + (cols.length - 1) + ' columns' + (_gridFilter ? ' · ' + rows.length + ' shown' : '') +
-    (nHid ? ' · ' + nHid + ' hidden <button type="button" class="lk-act" onclick="showAllFields()">Show all</button>' : '');
+  // Only what's worth knowing: how many a search shows, and hidden columns (the Deck box has the card count)
+  var info = [];
+  if (_gridFilter) info.push(rows.filter(function(r) { return !(r.draft && rowEmpty(r)); }).length + ' shown');
+  if (nHid) info.push(nHid + ' hidden <button type="button" class="lk-act" onclick="showAllFields()">Show all</button>');
+  $('gridInfo').innerHTML = info.join(' · ');
   var imgCols = {};
   cols.forEach(function(c) { imgCols[c.i] = FIELDS.indexOf(c.name) >= 0 && looksLikeImage(c.name); });
   var widths = cols.map(function(c) { return c.ghost ? 130 : gridColWidth(c.name, c.i); }), total = 42 + widths.reduce(function(a, b) { return a + b; }, 0);

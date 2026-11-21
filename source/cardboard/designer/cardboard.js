@@ -846,7 +846,7 @@ function render() {
   var card = holder.firstChild;
   card.style.transform = 'scale(' + zoom + ')';
   card.style.setProperty('--z', zoom * PX);
-  $('rowInfo').textContent = ROWS.length ? 'Row ' + (rowIdx + 1) + ' of ' + ROWS.length + (_rowsPartial ? '…' : '') : (_rowsPartial ? 'Loading rows…' : 'No rows');
+  $('rowInfo').innerHTML = ROWS.length ? cardNo(rowIdx + 1) + '<span class="tb-of">of ' + ROWS.length + (_rowsPartial ? '…' : '') + '</span>' : esc(_rowsPartial ? 'Loading cards…' : 'No cards');
   $('rowInfo').title = _rowsPartial ? 'Loading the other rows…' : '';
   $('rowInfo').classList.toggle('partial', _rowsPartial);
   $('rowPrev').disabled = rowIdx <= 0; $('rowNext').disabled = rowIdx >= ROWS.length - 1;
@@ -2750,12 +2750,11 @@ function renderGrid() {
     '<thead><tr><th class="rn"></th>' + cols.map(function(c) {
       if (c.ghost) return '<th class="ghost-col" data-ghost="' + c.i + '" title="Type a name here, or in a cell below, to add a column"></th>';
       return '<th data-c="' + c.i + '" title="Click for options · drag to move · drag the edge to resize"><span class="th-name">' + esc(c.name) + '</span><span class="th-caret">▾</span><span class="col-rs" title="Drag to resize · double-click to fit"></span></th>'; }).join('') + '</tr></thead><tbody>';
-  // New rows get the numbers they'll have in the sheet: after the last row with data
-  var lastRow = GRID.rows.reduce(function(m, x) { return x.draft ? m : Math.max(m, x.row); }, 1), nextNo = {};
-  GRID.rows.forEach(function(x) { if (x.draft) nextNo[GRID.rows.indexOf(x)] = ++lastRow; });
+  var cardN = {}, nn = 0;   // card numbers, 1 up, in deck order — empty and deleted rows aren't cards
+  GRID.rows.forEach(function(x, i) { if (!rowEmpty(x) && !(!x.draft && rowDeleted(x.row))) cardN[i] = ++nn; });
   rows.forEach(function(r) {
     var ri = GRID.rows.indexOf(r);
-    h += '<tr data-r="' + ri + '"' + (r.draft ? ' class="draft"' : '') + '><td class="rn" title="Card options">' + (r.draft && rowEmpty(r) ? '' : CARD_ICON) + '</td>';
+    h += '<tr data-r="' + ri + '"' + (r.draft ? ' class="draft"' : '') + '><td class="rn" title="Card options">' + (cardN[ri] ? cardNo(cardN[ri]) : '') + '</td>';
     cols.forEach(function(c) {
       var v = r.values[c.i] || '', st = (r.state || {})[c.i] || '';
       var thumb = imgCols[c.i] && imageUrl(v) ? '<img class="g-thumb" src="' + esc(imageUrl(v)) + '" alt="" referrerpolicy="no-referrer">' : '';
@@ -2929,7 +2928,7 @@ function deleteGridColumn(name) {   // kept in this browser until Save, like eve
   renderGrid(); renderData(); render();
 }
 // Click a row's card icon for its menu: a preview of the card, and Delete card
-var CARD_ICON = '<svg class="rn-ico" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M5 8h14"/><path d="M8 12.5h8M8 16h5"/></svg>';
+function cardNo(n) { return '<span class="card-no">' + n + '</span>'; }   // a little card with its number
 function closeRowMenu() { var m = $('rowMenu'); if (m) m.remove(); document.querySelectorAll('table.grid td.rn.menu-open').forEach(function(t) { t.classList.remove('menu-open'); }); }
 function rowPreviewHTML(r, ri) {
   if (!layout) return '';

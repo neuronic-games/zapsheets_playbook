@@ -206,7 +206,12 @@ table.grid tbody td.rn:hover, table.grid tbody td.rn.menu-open { background:#e6e
 .col-menu button.danger { color:#d4373d; }
 table.grid thead th.ghost-col { cursor:text; }
 #rowMenu .row-prev { margin:.15rem auto .5rem; overflow:hidden; border-radius:6px; box-shadow:0 2px 8px rgba(20,20,60,.18); }
-table.grid tbody td.rn .rn-ico { display:block; margin:0 auto; }
+/* A little card with its number (Cards view rows, Layout view card picker) */
+.card-no { display:inline-flex; align-items:center; justify-content:center; min-width:1.15rem; height:1.55rem; padding:0 .2rem; box-sizing:border-box; border:1.5px solid currentColor; border-radius:3px; background:#fff; font-family:'DINBlack',sans-serif; font-size:.62rem; line-height:1; letter-spacing:0; color:inherit; vertical-align:middle; }
+table.grid tbody td.rn .card-no { display:flex; margin:0 auto; width:fit-content; }
+table.grid tbody td.rn:hover .card-no, table.grid tbody td.rn.menu-open .card-no { background:#f7f5ff; }
+#rowInfo { display:inline-flex; align-items:center; gap:.35rem; color:#4b3fa8; }
+#rowInfo .tb-of { color:#6b7090; }
 .col-menu-name {font-family:'DINBlack',sans-serif; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:#8a8fa8; padding:.1rem .2rem .4rem; }
 table.grid thead th[data-c] { cursor:pointer; }
 table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e6e1ff; }

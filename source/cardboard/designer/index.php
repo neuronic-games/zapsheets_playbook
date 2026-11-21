@@ -551,6 +551,7 @@ table.grid .rn { position:sticky; left:0; z-index:2; min-width:2.6rem; width:2.6
 table.grid thead .rn { z-index:4; background:#ece9ff; }
 table.grid td { cursor:cell; background:#fff; }
 table.grid td > span { vertical-align:middle; }
+table.grid td .tag-img { height:1.15em; width:auto; vertical-align:-.22em; margin:0 .05em; }
 table.grid td.formula > span { color:#4b3fa8; font-family:ui-monospace,Menlo,monospace; font-size:.74rem; }
 table.grid td.sel { box-shadow:inset 0 0 0 2px #4b3fa8; }
 table.grid td.st-saving { background:#fffbea; }

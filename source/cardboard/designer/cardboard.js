@@ -2809,6 +2809,20 @@ function gridVisibleRows() {
   var f = _gridFilter.toLowerCase();
   return rows.filter(function(r) { return r.draft || r.values.some(function(v) { return String(v).toLowerCase().indexOf(f) >= 0; }); });
 }
+// What a cell shows: the text as it ends up on the card — [tags] as their words or pictures, and
+// for a column the layout shows through a Mapping, the mapped text or picture. Double-click a cell
+// to edit what's really in the sheet. Formulas show as written.
+function gridShown(name, v) {
+  if (/^=/.test(v)) return '<span>' + esc(v) + '</span>';
+  var m = layout && (layout.els || []).concat((layout.back || {}).els || []).filter(function(e) { return e.kind === 'data' && e.as === 'map' && e.field === name && e.map; })[0];
+  if (m && String(v).trim()) {
+    var row = {}; row[name] = v;
+    var hit = mapHit(m, row);
+    if (hit && hit.src) { var u = imageUrl(picRef(hit.src)); if (u) return '<img class="g-thumb" src="' + esc(u) + '" alt="" referrerpolicy="no-referrer">'; }
+    if (hit) return rich(hit.t || '');
+  }
+  return rich(textVal(v));
+}
 function renderGrid() {
   var box = $('gridWrap'); if (!GRID) return;
   ensureTrailingRow();
@@ -2832,7 +2846,7 @@ function renderGrid() {
     cols.forEach(function(c) {
       var v = r.values[c.i] || '', st = (r.state || {})[c.i] || '';
       var thumb = imgCols[c.i] && imageUrl(v) ? '<img class="g-thumb" src="' + esc(imageUrl(v)) + '" alt="" referrerpolicy="no-referrer">' : '';
-      h += '<td data-r="' + ri + '" data-c="' + c.i + '" class="' + (st ? 'st-' + st : '') + (c.ghost ? ' ghost-col' : '') + (/^=/.test(v) ? ' formula' : '') + '" title="' + esc(v.length > 60 ? v : '') + '">' + thumb + '<span>' + esc(v) + '</span></td>';
+      h += '<td data-r="' + ri + '" data-c="' + c.i + '" class="' + (st ? 'st-' + st : '') + (c.ghost ? ' ghost-col' : '') + (/^=/.test(v) ? ' formula' : '') + '" title="' + esc(v.length > 60 ? v : '') + '">' + thumb + (c.ghost ? '<span>' + esc(v) + '</span>' : gridShown(c.name, v)) + '</td>';
     });
     h += '</tr>';
   });

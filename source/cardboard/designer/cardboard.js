@@ -3124,19 +3124,26 @@ function renameColumn(a, b) {
     pd.cols = pd.cols.map(function(x) { return x === a ? b : x; });
     pd.adds.forEach(function(x) { if (Object.prototype.hasOwnProperty.call(x.values, a)) { x.values[b] = x.values[a]; delete x.values[a]; } });
     setDataPend(tab, pd);
-    // the layout: what's saved in the sheet, what's on screen (saved or not), the undo history and any draft
-    var saved = LAYOUTS[tab] && !unsaved ? renameInLayout(JSON.parse(JSON.stringify(LAYOUTS[tab])), a, b) : null;
-    if (curTab === tab && layout) renameInLayout(layout, a, b);
+    // The layout follows the new name: on screen, in the undo history, and kept as this tab's draft in
+    // this browser straight away (so reloading keeps it). It goes to the sheet with the next Save — or
+    // the quiet save when you pause. (It used to be saved only when nothing else was unsaved, and not at
+    // all for a column that wasn't in the sheet yet, so a reload could bring back the old name.)
+    var key = 'cb_draft:' + SHEET_ID + ':' + tab, layoutRenamed = false;
+    if (curTab === tab && layout) {
+      var before = JSON.stringify(layout);
+      renameInLayout(layout, a, b);
+      if (JSON.stringify(layout) !== before) { layoutRenamed = true; setDirty(true); lsPut(key, JSON.stringify(layout)); }
+    } else {   // switched decks while the rename was on its way: update that deck's draft (or saved layout)
+      var src = null; try { src = localStorage.getItem(key); } catch (x) {}
+      if (!src && LAYOUTS[tab]) src = JSON.stringify(LAYOUTS[tab]);
+      if (src) { var nl = JSON.stringify(renameInLayout(JSON.parse(src), a, b)); if (nl !== src) { layoutRenamed = true; lsPut(key, nl); } }
+    }
     [undoStack, redoStack].forEach(function(st) { for (var i = 0; i < st.length; i++) st[i] = JSON.stringify(renameInLayout(JSON.parse(st[i]), a, b)); });
-    if (dirty) { try { localStorage.setItem('cb_draft:' + SHEET_ID + ':' + tab, JSON.stringify(layout)); } catch (e) {} }
     renderData(); render(); renderAttrs(); if (_activeTab === 'data') renderGrid();
-    var jobs = [];
-    if (saved) jobs.push(api('save', { tab: tab, layout: JSON.stringify(saved) }).then(function() { LAYOUTS[tab] = saved; if (!dirty) setDirty(false); }));
     if (gridChanged) markSettings();
-    return Promise.all(jobs).then(function() {
-      toast('✓ Renamed “' + a + '” to “' + b + '”' + (saved ? ' — the layout uses the new name' : ''));
-      if (!unsaved) autoRepublish(tab);
-    });
+    updateSaveBtn();
+    toast('✓ Renamed “' + a + '” to “' + b + '”' + (layoutRenamed ? ' — the layout uses the new name' : ''));
+    if (!unsaved) autoRepublish(tab);
   }).catch(function(e) {
     var k = GRID.header.indexOf(b); if (k >= 0 && FIELDS.indexOf(b) < 0) GRID.header[k] = a;
     if (p && oldPrefs && FIELDS.indexOf(b) < 0) SETTINGS.grid[tab] = JSON.parse(oldPrefs);

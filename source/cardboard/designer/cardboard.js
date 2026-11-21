@@ -1192,6 +1192,18 @@ function editCellInPlace(e) {
   });
   inner.addEventListener('blur', function() { finish(true); });
 }
+// + Card beside the card navigator: a new, empty card at the end of the deck. It's kept once
+// something is typed into it (an empty row isn't a card); an empty one is reused rather than doubled.
+function addCard() {
+  if (!layout || !curTab) return;
+  if (!requirePro('edit', function() {})) return;
+  var last = ROWS[ROWS.length - 1];
+  var blank = last && last._pend && !FIELDS.some(function(f) { return String(last[f] || '').trim(); });
+  if (blank) rowIdx = ROWS.length - 1; else newCardRow();
+  render(); renderData(); renderAttrs();
+  if (_activeTab === 'print') renderPrint(); if (_activeTab === 'export') renderExport();
+  toast('New card ' + (rowIdx + 1) + ' — double-click a field on the card to fill it in');
+}
 // A new card (a new row, kept in this browser until Save), shown in the designer straight away
 function newCardRow() {
   var r = { _pend: uid() }; FIELDS.forEach(function(f) { r[f] = ''; });

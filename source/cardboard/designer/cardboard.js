@@ -123,12 +123,95 @@ function api(action, extra) {
     if (action === 'peek' || action === 'rows') return Promise.resolve({ ok: true, rows: [], full: true });
     if (action === 'grid') return Promise.resolve({ ok: true, header: [], rows: [] });
   }
+  extra = extra || {};
+  if (CACHE_READS[action] && !extra.force) return cachedRead(action, extra);   // what's kept here first
+  return apiNet(action, extra).then(function(res) { cacheAfter(action, extra, res); return res; });
+}
+function apiNet(action, extra) {
   var fd = new FormData();
   fd.append('id', SHEET_ID); fd.append('action', action);
   Object.keys(extra || {}).forEach(function(k) { fd.append(k, extra[k]); });
   return cbPost(APP_BASE + 'push/cardboardData.php', fd)
     .then(function(res) { if (!res || res.error) throw new Error(res && res.error ? res.error : 'No response'); return res; });
 }
+
+// ── Kept in this browser: the sheet's data, so the designer opens and switches decks without
+// reading Google Sheets again, and keeps working offline. In IndexedDB (lots of room, apart from the
+// unsaved changes in local storage), per spreadsheet:
+//   start (title, decks, layouts) · rows:<deck> (the cards) · grid:<deck> (the Cards view) · tags · pub:<deck>
+// Read from the sheet only when it isn't here, after Save changes it, or with Fetch (which clears it all).
+var CACHE_READS = { start: 1, peek: 1, rows: 1, grid: 1, tags: 1 };
+var _idb = null;
+function idb() {
+  if (_idb) return _idb;
+  _idb = new Promise(function(ok, no) {
+    try {
+      var r = indexedDB.open('cardboard', 1);
+      r.onupgradeneeded = function() { r.result.createObjectStore('kv'); };
+      r.onsuccess = function() { ok(r.result); }; r.onerror = function() { no(r.error); };
+    } catch (e) { no(e); }
+  });
+  return _idb;
+}
+function ck(k) { return 'cb:' + SHEET_ID + ':' + k; }
+function cacheGet(k) {
+  return idb().then(function(db) { return new Promise(function(ok) {
+    var q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = function() { ok(q.result); }; q.onerror = function() { ok(undefined); };
+  }); }).catch(function() { return undefined; });
+}
+function cacheSet(k, v) {
+  var copy = JSON.parse(JSON.stringify(v));   // as it is now: what's in memory keeps changing
+  return idb().then(function(db) { return new Promise(function(ok) {
+    var t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(copy, k); t.oncomplete = ok; t.onerror = ok; t.onabort = ok;
+  }); }).catch(function() {});
+}
+function cacheDel(k) {
+  return idb().then(function(db) { return new Promise(function(ok) {
+    var t = db.transaction('kv', 'readwrite'); t.objectStore('kv').delete(k); t.oncomplete = ok; t.onerror = ok; t.onabort = ok;
+  }); }).catch(function() {});
+}
+function cacheClear() {   // everything kept for this spreadsheet
+  var lo = ck(''), hi = lo + '\uffff';
+  return idb().then(function(db) { return new Promise(function(ok) {
+    var t = db.transaction('kv', 'readwrite'); t.objectStore('kv').delete(IDBKeyRange.bound(lo, hi)); t.oncomplete = ok; t.onerror = ok; t.onabort = ok;
+  }); }).catch(function() {});
+}
+function cachedRead(action, x) {
+  var net = function() { return apiNet(action, x).then(function(res) { cacheAfter(action, x, res); return res; }); };
+  if (action === 'start') return cacheGet(ck('start')).then(function(st) {
+    if (!st || !st.tabs) return net();
+    var titles = st.tabs.map(function(t) { return t.title; }), lay = st.layouts || {};
+    var tab = titles.indexOf(x.tab) >= 0 ? x.tab : (titles.filter(function(t) { return lay[t]; })[0] || titles[0] || '');
+    return cacheGet(ck('rows:' + tab)).then(function(rows) {
+      return { ok: true, title: st.title, tabs: st.tabs, layouts: lay, tab: tab, rows: rows || [], full: !!rows, cached: true };
+    });
+  });
+  var key = action === 'tags' ? 'tags' : (action === 'grid' ? 'grid:' : 'rows:') + x.tab;
+  return cacheGet(ck(key)).then(function(v) {
+    if (v == null) return action === 'peek' ? apiNet('peek', x) : net();   // the first few rows aren't kept; all of them are
+    if (action === 'grid') return { ok: true, header: v.header || [], rows: v.rows || [] };
+    if (action === 'tags') return v;
+    return { ok: true, rows: v, full: true };
+  });
+}
+function cacheAfter(action, x, res) {   // keep what was read; forget what a change made out of date
+  if (!res || res.error) return;
+  var tab = x.tab || x.sheet || '';
+  if (action === 'start') {
+    cacheSet(ck('start'), { title: res.title, tabs: res.tabs || [], layouts: res.layouts || {} });
+    if (res.full && res.tab && res.rows) cacheSet(ck('rows:' + res.tab), res.rows);
+  }
+  else if (action === 'rows') cacheSet(ck('rows:' + tab), res.rows || []);
+  else if (action === 'grid') cacheSet(ck('grid:' + tab), { header: res.header || [], rows: res.rows || [] });
+  else if (action === 'tags') cacheSet(ck('tags'), res);
+  else if (/^(savecells|setcell|addrow|deleterow|deletefield|renamefield|addfield)$/.test(action)) { cacheDel(ck('rows:' + tab)); cacheDel(ck('grid:' + tab)); }
+  else if (action === 'settag' || action === 'deltag') cacheDel(ck('tags'));
+}
+function writeStartCache() {   // the decks and saved layouts as they are now (after Save)
+  if (!SHEET_TITLE && !TABS.length) return;
+  cacheSet(ck('start'), { title: SHEET_TITLE, tabs: TABS.filter(function(t) { return !t.pending; }).map(function(t) { return { title: t.title, rows: t.rows, cols: t.cols }; }), layouts: LAYOUTS });
+}
+function savePub(tab) { cacheSet(ck('pub:' + tab), PUBLISHED[tab] || {}); }
 // POST with the account token. A stale sign-in is refreshed once and the request sent again;
 // no sign-in asks for one; a finished free week locks the designer.
 function cbPost(url, fd, again) {
@@ -591,18 +674,11 @@ function reloadSheet(asked) {
       .then(function(a) { if (a === true) saveAll().then(function() { reloadSheet(true); }); else if (a === 'alt') reloadSheet(true); });
     return;
   }
-  api('tabs').then(function(r) {
-    var tabs = (r && r.tabs) || []; if (!tabs.length) return;
-    var before = TABS.map(function(t) { return t.title; }).join('\u0001');
-    TABS = tabs; mergeNewTabs();
-    if (TABS.map(function(t) { return t.title; }).join('\u0001') !== before) {
-      var sel = $('sheetSel'); fillDeckSelects();
-      var keep = TABS.some(function(t) { return t.title === curTab; }) ? curTab : (TABS[0] || {}).title;
-      sel.value = keep; $('gridSheet').value = keep; $('pSheet').value = keep; $('eSheet').value = keep; refreshSheetCombos();
-      if (keep !== curTab) { selectTab(keep, true, true); return; }
-    }
-    if (curTab) selectTab(curTab, true, true);
-  }).catch(function() { if (curTab) selectTab(curTab, true, true); });
+  // Fetch reads everything again from the sheet: what's kept in this browser is forgotten (your unsaved
+  // changes stay — they're kept apart) and the page opens fresh
+  if (!navigator.onLine) { toast('You’re offline — Fetch needs a connection', true); return; }
+  toast('Fetching the latest from your sheet…');
+  cacheClear().then(function() { location.reload(); });
 }
 function openInSheets() { window.open('https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit', '_blank', 'noopener'); }
 
@@ -1461,11 +1537,15 @@ function busyEditing() {
   return !!a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable);
 }
 function idleSave(force) {
-  if (_saving || !pendingCount() || !hasAccess()) return;
+  if (_saving || !navigator.onLine || !pendingCount() || !hasAccess()) return;
   if (!force && (Date.now() - _lastActivity < IDLE_SAVE_MS || busyEditing())) return;
   _quietSave = true; saveAll(true);
 }
 setInterval(idleSave, 4000);
+window.addEventListener('offline', function() { toast('You’re offline — keep working. Changes stay in this browser until you save.'); });
+window.addEventListener('online', function() { toast('Back online' + (pendingCount() ? ' — your changes will be saved when you pause' : '')); });
+// The page itself, its fonts and the card pictures are kept too (cardboard-sw.js), so it opens offline
+if ('serviceWorker' in navigator) navigator.serviceWorker.register(APP_BASE + 'cardboard-sw.js', { scope: APP_BASE + SHEET_ID + '/cardboard' }).catch(function() {});
 document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'hidden') idleSave(true); });
 function updateSaveBtn() {
   var btn = $('saveBtn'), n = pendingCount(); if (!btn) return;
@@ -1556,6 +1636,7 @@ function overlayGrid() {
 function saveAll(auto) {
   if (_saving) return _savingP;
   if (!pendingCount()) { if (auto !== true) toast('Everything is already saved'); return Promise.resolve(); }
+  if (!navigator.onLine) { if (auto !== true) toast('You’re offline — your changes are kept in this browser. Save again when you’re back online.', true); return Promise.resolve(); }
   if (!requirePro('save', saveAll)) return Promise.resolve();
   if (_gridEdit && auto !== true) endGridEdit(true);
   _saving = true; _saveDone = 0;
@@ -1602,7 +1683,7 @@ function saveAll(auto) {
     }).catch(function(e) { errors.push('settings: ' + e.message); }).then(step);
   });
   _savingP = chain.then(function() {
-    _saving = false; refreshSheetCombos(); updateSaveBtn();
+    _saving = false; refreshSheetCombos(); updateSaveBtn(); writeStartCache();
     // Hosted links show the saved cards: update them now for this tab, the others when they're next opened
     savedTabs.forEach(function(t) { if (t !== curTab && PUBLISHED[t]) { try { localStorage.setItem('cb_repub:' + SHEET_ID + ':' + t, '1'); } catch (e) {} } });
     if (_reloadGrid[curTab] && GRID && GRID.tab === curTab) { GRID = null; _gridSel = null; if (_activeTab === 'data') loadGrid(true); }   // rows or columns were deleted: numbers changed
@@ -2782,9 +2863,12 @@ function publishApi(action, extra, file) {
     .then(function(r) { if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response'); return r; });
 }
 function loadPublished(tab) {
-  return publishApi('list', { tab: tab }).then(function(r) {
-    PUBLISHED[tab] = r.published || {};
-    if (curTab === tab && _activeTab === 'export') renderLinks();
+  return cacheGet(ck('pub:' + tab)).then(function(c) {
+    if (c) { PUBLISHED[tab] = c; if (curTab === tab && _activeTab === 'export') renderLinks(); return; }
+    return publishApi('list', { tab: tab }).then(function(r) {
+      PUBLISHED[tab] = r.published || {}; savePub(tab);
+      if (curTab === tab && _activeTab === 'export') renderLinks();
+    });
   }).catch(function() {});
 }
 function publishSet(tab, o, tick) {
@@ -2795,7 +2879,7 @@ function publishSet(tab, o, tick) {
       var man = { files: r.files, count: r.P.list.length, grid: r.P.single ? null : { cols: r.P.cols, rows: r.P.rows, uniqueBacks: r.uniq }, settings: st };
       return publishApi('finish', { tab: tab, target: o.target, manifest: JSON.stringify(man) });
     })
-    .then(function(r) { (PUBLISHED[tab] = PUBLISHED[tab] || {})[o.target] = r.published; return r.published; });
+    .then(function(r) { (PUBLISHED[tab] = PUBLISHED[tab] || {})[o.target] = r.published; savePub(tab); return r.published; });
 }
 function runPublish(asked) {
   if (_exporting || !layout) return;
@@ -2831,7 +2915,7 @@ function stopSharing(target, asked) {
   }
   var tab = curTab;
   publishApi('remove', { tab: tab, target: target }).then(function() {
-    if (PUBLISHED[tab]) delete PUBLISHED[tab][target];
+    if (PUBLISHED[tab]) delete PUBLISHED[tab][target]; savePub(tab);
     toast('Links removed'); renderLinks();
   }).catch(function(e) { toast('Couldn\'t remove — ' + e.message, true); });
 }
@@ -2902,7 +2986,7 @@ function loadGrid(force) {
   if (!tab) return;
   if (GRID && GRID.tab === tab && !force) { overlayGrid(); renderGrid(); return; }   // already in memory: no need to read the sheet
   box.innerHTML = '<div class="loading"><span class="spin"></span>Loading “' + esc(tab) + '”…</div>';
-  api('grid', { tab: tab }).then(function(r) {
+  api('grid', { tab: tab, force: force ? '1' : '' }).then(function(r) {
     if (curTab !== tab) return;
     GRID = { tab: tab, header: r.header || [], rows: r.rows || [] };
     overlayGrid(); _gridSel = null; renderGrid();
@@ -3667,7 +3751,7 @@ function closeDialog(id) { $(id).classList.remove('open'); }
 document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') document.querySelectorAll('.overlay.open').forEach(function(o) { o.classList.remove('open'); }); });
 function saveSettings() {
   var keep = Object.assign({}, SETTINGS); delete keep.profile;
-  return api('save', { tab: SETTINGS_KEY, layout: JSON.stringify(keep) }).then(function() { LAYOUTS[SETTINGS_KEY] = keep; _oldProfile = null; });
+  return api('save', { tab: SETTINGS_KEY, layout: JSON.stringify(keep) }).then(function() { LAYOUTS[SETTINGS_KEY] = keep; _oldProfile = null; writeStartCache(); });
 }
 
 // Profile: kept with the person's CardBoard account (their row in the Admin sheet). The email is

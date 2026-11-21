@@ -91,7 +91,7 @@ $RESERVED = [
     'js', 'css', 'fonts', 'images', 'sheets', 'source',
     'push', 'menu', 'steps',
     'index', 'manifest', 'result', 'dotEnv',
-    'sw_playbook', 'sw_map', 'pitchboard-sw', 'fitboard-sw', 'slides-sw', 'router', 'start',
+    'sw_playbook', 'sw_map', 'pitchboard-sw', 'fitboard-sw', 'slides-sw', 'cardboard-sw', 'router', 'start',
     'clear-sw', 'debug-jquery',
     'pitchboard',   // setup landing page — handled below, reserved so /{id} never grabs it
     'fitboard',     // setup landing page — handled below, reserved so /{id} never grabs it

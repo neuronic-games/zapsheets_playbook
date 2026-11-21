@@ -2812,8 +2812,11 @@ function gridVisibleRows() {
 // What a cell shows: the text as it ends up on the card — [tags] as their words or pictures, and
 // for a column the layout shows through a Mapping, the mapped text or picture. Double-click a cell
 // to edit what's really in the sheet. Formulas show as written.
-function gridShown(name, v) {
-  if (/^=/.test(v)) return '<span>' + esc(v) + '</span>';
+function gridShown(name, v, res) {   // res: [formula, its result] from the sheet
+  if (/^=/.test(v)) {
+    if (res && res[0] === v) v = res[1];   // the formula's result, while the formula is the one the sheet has
+    else return '<span class="g-formula">' + esc(v) + '</span>';   // a new formula: its result comes with Save
+  }
   var m = layout && (layout.els || []).concat((layout.back || {}).els || []).filter(function(e) { return e.kind === 'data' && e.as === 'map' && e.field === name && e.map; })[0];
   if (m && String(v).trim()) {
     var row = {}; row[name] = v;
@@ -2846,7 +2849,7 @@ function renderGrid() {
     cols.forEach(function(c) {
       var v = r.values[c.i] || '', st = (r.state || {})[c.i] || '';
       var thumb = imgCols[c.i] && imageUrl(v) ? '<img class="g-thumb" src="' + esc(imageUrl(v)) + '" alt="" referrerpolicy="no-referrer">' : '';
-      h += '<td data-r="' + ri + '" data-c="' + c.i + '" class="' + (st ? 'st-' + st : '') + (c.ghost ? ' ghost-col' : '') + (/^=/.test(v) ? ' formula' : '') + '" title="' + esc(v.length > 60 ? v : '') + '">' + thumb + (c.ghost ? '<span>' + esc(v) + '</span>' : gridShown(c.name, v)) + '</td>';
+      h += '<td data-r="' + ri + '" data-c="' + c.i + '" class="' + (st ? 'st-' + st : '') + (c.ghost ? ' ghost-col' : '') + (/^=/.test(v) ? ' formula' : '') + '" title="' + esc(v.length > 60 ? v : '') + '">' + thumb + (c.ghost ? '<span>' + esc(v) + '</span>' : gridShown(c.name, v, r.shown && r.shown[c.i])) + '</td>';
     });
     h += '</tr>';
   });

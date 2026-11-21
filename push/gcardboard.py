@@ -308,12 +308,21 @@ def main():
         hdr = [cellstr(h).strip() for h in ((read('1:1', False) or [[]])[0])]
 
         if action == 'grid':
-            vals = read('A2:' + gspread.utils.rowcol_to_a1(tws.row_count, max(1, len(hdr))).rstrip('0123456789') + str(tws.row_count))
+            rng = 'A2:' + gspread.utils.rowcol_to_a1(tws.row_count, max(1, len(hdr))).rstrip('0123456789') + str(tws.row_count)
+            vals = read(rng)
+            shown = None   # formulas' results, read only when there are formulas
             rows = []
             for i, r in enumerate(vals):
                 r = [cellstr(v) for v in r]
                 if any(x.strip() for x in r):
-                    rows.append({'row': i + 2, 'values': r + [''] * (len(hdr) - len(r))})
+                    row = {'row': i + 2, 'values': r + [''] * (len(hdr) - len(r))}
+                    fj = [j for j, x in enumerate(r) if x.startswith('=')]
+                    if fj:
+                        if shown is None: shown = read(rng, False)
+                        sv = shown[i] if i < len(shown) else []
+                        # column index → [formula, result]: the result is only used while the formula is unchanged
+                        row['shown'] = {str(j): [r[j], cellstr(sv[j]) if j < len(sv) else ''] for j in fj}
+                    rows.append(row)
             out({'ok': True, 'header': hdr, 'rows': rows})
 
         if action == 'setcell':

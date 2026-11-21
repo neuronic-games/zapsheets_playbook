@@ -1430,6 +1430,11 @@ function rotateDrag(ev, e, node) {
 }
 
 // ── Keyboard ──────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', function(ev) {   // ⌘Z / ⇧⌘Z in the Cards view (not while typing in a cell)
+  if (_activeTab !== 'data' || !(ev.metaKey || ev.ctrlKey) || ev.key.toLowerCase() !== 'z') return;
+  var a = document.activeElement; if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) return;
+  ev.preventDefault(); ev.stopPropagation(); dataUndo(ev.shiftKey);
+}, true);
 document.addEventListener('keydown', function(ev) {
   var typing = /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '') || !!(document.activeElement && document.activeElement.isContentEditable);
   var mod = ev.metaKey || ev.ctrlKey;
@@ -1514,7 +1519,59 @@ function draftTabs() {
 function dataKey(tab) { return 'cb_data:' + SHEET_ID + ':' + tab; }
 function dataPend(tab) { var p = lsGet(dataKey(tab)) || {}; ['cells', 'adds', 'cols', 'delrows', 'delcols'].forEach(function(k) { p[k] = p[k] || []; }); return p; }
 function pendSize(p) { return p.cells.length + p.adds.length + p.cols.length + p.delrows.length + p.delcols.length; }
-function setDataPend(tab, p) { lsSet(dataKey(tab), pendSize(p) ? p : null); updateSaveBtn(); }
+function setDataPend(tab, p) {
+  if (!_dUndoQuiet) dataUndoMark(tab);
+  lsSet(dataKey(tab), pendSize(p) ? p : null); updateSaveBtn();
+}
+// ── Undo / Redo in the Cards view ─────────────────────────────────────────────
+// Every change to the cards is kept in this browser until Save (cell edits, new and deleted rows and
+// columns), so a step back is the kept changes as they were before, shown again on top of the sheet's
+// data (kept here too, so no reading). Changes made in one go (a paste, a delete) are one step.
+// Save clears the steps: what's saved is in the sheet now.
+var _dUndo = {}, _dRedo = {}, _dUndoQuiet = false, _dUndoOpen = {};
+function dataSnap(tab) { return JSON.stringify({ p: lsGet(dataKey(tab)), g: ((SETTINGS.grid || {})[tab]) || null }); }
+function dataUndoMark(tab) {
+  if (_dUndoOpen[tab]) return;   // already marked for this change
+  _dUndoOpen[tab] = true; setTimeout(function() { _dUndoOpen[tab] = false; }, 0);
+  var u = _dUndo[tab] = _dUndo[tab] || [];
+  u.push(dataSnap(tab)); if (u.length > 100) u.shift();
+  _dRedo[tab] = [];
+  updateDataUndoBtns();
+}
+function dataUndoClear(tab) { if (tab) { delete _dUndo[tab]; delete _dRedo[tab]; } else { _dUndo = {}; _dRedo = {}; } updateDataUndoBtns(); }
+function updateDataUndoBtns() {
+  var u = $('gridUndo'), r = $('gridRedo'); if (!u || !r) return;
+  u.disabled = !(_dUndo[curTab] || []).length || _saving; r.disabled = !(_dRedo[curTab] || []).length || _saving;
+}
+function dataUndo(redo) {
+  var tab = curTab, from = redo ? _dRedo[tab] : _dUndo[tab], to = redo ? (_dUndo[tab] = _dUndo[tab] || []) : (_dRedo[tab] = _dRedo[tab] || []);
+  if (!from || !from.length || _saving) return;
+  if (_gridEdit) endGridEdit(false);
+  to.push(dataSnap(tab));
+  var snap = JSON.parse(from.pop());
+  _dUndoQuiet = true;
+  lsSet(dataKey(tab), snap.p);
+  var g = SETTINGS.grid = SETTINGS.grid || {};
+  if (JSON.stringify(g[tab] || null) !== JSON.stringify(snap.g)) { if (snap.g) g[tab] = snap.g; else delete g[tab]; saveGridPrefs(); }
+  _dUndoQuiet = false;
+  updateSaveBtn(); updateDataUndoBtns();
+  reapplyPending(tab);
+}
+// The sheet's data (as kept) with this browser's changes on top again — for the grid and the cards
+function reapplyPending(tab) {
+  return Promise.all([api('grid', { tab: tab }), api('rows', { tab: tab })]).then(function(r) {
+    if (curTab !== tab) return;
+    GRID = { tab: tab, header: r[0].header || [], rows: r[0].rows || [] };
+    ROWS = (r[1].rows || []).filter(function(x) { return Object.keys(x).some(function(k) { return !isInternal(k) && String(x[k]).trim(); }); });
+    FIELDS = []; ROWS.forEach(function(x) { Object.keys(x).forEach(function(k) { if (!isInternal(k) && FIELDS.indexOf(k) < 0) FIELDS.push(k); }); });
+    GRID.header.forEach(function(h) { if (h && !isInternal(h) && FIELDS.indexOf(h) < 0) FIELDS.push(h); });
+    overlayPending(); overlayGrid();
+    rowIdx = Math.min(rowIdx, Math.max(0, ROWS.length - 1));
+    if (_gridSel && (!GRID.rows[_gridSel.r] || _gridSel.c >= GRID.header.length + 1)) _gridSel = null;
+    if (_activeTab === 'data') renderGrid();
+    renderData(); render(); renderAttrs();
+  }).catch(function(e) { toast('Couldn\'t show that step — ' + e.message, true); });
+}
 function dataTabs() { return lsTabs('data').filter(function(t) { return pendSize(dataPend(t)) > 0; }); }
 function rowDeleted(row) { return !!GRID && dataPend(GRID.tab).delrows.some(function(d) { return d.row === row; }); }
 function colDeleted(name) { return !!name && !!curTab && dataPend(curTab).delcols.indexOf(name) >= 0; }
@@ -1548,6 +1605,7 @@ window.addEventListener('online', function() { toast('Back online' + (pendingCou
 if ('serviceWorker' in navigator) navigator.serviceWorker.register(APP_BASE + 'cardboard-sw.js', { scope: APP_BASE + SHEET_ID + '/cardboard' }).catch(function() {});
 document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'hidden') idleSave(true); });
 function updateSaveBtn() {
+  updateDataUndoBtns();
   var btn = $('saveBtn'), n = pendingCount(); if (!btn) return;
   btn.disabled = _saving || !n;
   btn.classList.toggle('saving', _saving);
@@ -1683,7 +1741,7 @@ function saveAll(auto) {
     }).catch(function(e) { errors.push('settings: ' + e.message); }).then(step);
   });
   _savingP = chain.then(function() {
-    _saving = false; refreshSheetCombos(); updateSaveBtn(); writeStartCache();
+    _saving = false; refreshSheetCombos(); updateSaveBtn(); writeStartCache(); dataUndoClear();
     // Hosted links show the saved cards: update them now for this tab, the others when they're next opened
     savedTabs.forEach(function(t) { if (t !== curTab && PUBLISHED[t]) { try { localStorage.setItem('cb_repub:' + SHEET_ID + ':' + t, '1'); } catch (e) {} } });
     if (_reloadGrid[curTab] && GRID && GRID.tab === curTab) { GRID = null; _gridSel = null; if (_activeTab === 'data') loadGrid(true); }   // rows or columns were deleted: numbers changed
@@ -3361,6 +3419,7 @@ function renameColumn(a, b) {
     renderData(); render(); renderAttrs(); if (_activeTab === 'data') renderGrid();
     if (gridChanged) markSettings();
     updateSaveBtn();
+    dataUndoClear(tab);   // the sheet has the new name now: earlier steps don't fit it
     toast('✓ Renamed “' + a + '” to “' + b + '”' + (layoutRenamed ? ' — the layout uses the new name' : ''));
     if (!unsaved) autoRepublish(tab);
   }).catch(function(e) {

@@ -800,6 +800,8 @@ body.cb-gate #signinOverlay { background:#2e2763; }
       <input class="inp" id="gridFilter" placeholder="Search the cards" oninput="filterGrid(this.value)" style="width:14rem"></div>
     <span class="print-info" id="gridInfo"></span>
     <div class="e-actions">
+      <button class="tb-btn" id="gridUndo" onclick="dataUndo(false)" title="Undo (⌘Z)" disabled>↶</button>
+      <button class="tb-btn" id="gridRedo" onclick="dataUndo(true)" title="Redo (⇧⌘Z)" disabled>↷</button>
       <button class="print-go ghost" onclick="loadGrid(true)" title="Read the sheet again">Reload</button>
 </div>
   </div>

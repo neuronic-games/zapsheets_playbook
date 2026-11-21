@@ -305,25 +305,55 @@ def main():
             if isinstance(v, float) and v.is_integer(): return str(int(v))
             return '' if v is None else str(v)
 
-        hdr = [cellstr(h).strip() for h in ((read('1:1', False) or [[]])[0])]
-
         if action == 'grid':
-            rng = 'A2:' + gspread.utils.rowcol_to_a1(tws.row_count, max(1, len(hdr))).rstrip('0123456789') + str(tws.row_count)
-            vals = read(rng)
-            shown = None   # formulas' results, read only when there are formulas
+            # One call for both: what's in each cell (formulas as written, numbers unformatted — what
+            # editing shows) and what the sheet displays (formula results, number and date formats).
+            # Each row's 'values' are the raw values; 'shown' maps a column to [raw, displayed] where they differ.
+            def raw_of(c):
+                uv = c.get('userEnteredValue') or {}
+                fmt = ((c.get('effectiveFormat') or {}).get('numberFormat') or {}).get('type', '')
+                if 'formulaValue' in uv: return uv['formulaValue']
+                if 'stringValue' in uv: return uv['stringValue']
+                if 'boolValue' in uv: return 'TRUE' if uv['boolValue'] else 'FALSE'
+                if 'numberValue' in uv:
+                    if fmt in ('DATE', 'TIME', 'DATE_TIME'): return c.get('formattedValue', '')
+                    return cellstr(uv['numberValue'])
+                return ''
+            grid = None
+            try:
+                from google.auth.transport.requests import Request as GoogleAuthRequest
+                import requests as requests_lib, urllib.parse
+                auth = getattr(wb.client, 'auth', None) or wb.client.http_client.auth
+                if not auth.valid: auth.refresh(GoogleAuthRequest())
+                url = ('https://sheets.googleapis.com/v4/spreadsheets/' + urllib.parse.quote(wb.id, safe='') +
+                       '?includeGridData=true&ranges=' + urllib.parse.quote(q(tws.title), safe='') +
+                       '&fields=' + urllib.parse.quote('sheets.data(startRow,rowData.values(formattedValue,userEnteredValue,effectiveFormat.numberFormat.type))', safe=''))
+                rq = requests_lib.get(url, headers={'Authorization': f'Bearer {auth.token}'}, timeout=60)
+                rq.raise_for_status()
+                rd = ((rq.json().get('sheets') or [{}])[0].get('data') or [{}])[0].get('rowData', [])
+                grid = [[(raw_of(c), cellstr(c.get('formattedValue', ''))) for c in row.get('values', [])] for row in rd]
+            except Exception:
+                grid = None
+            if grid is None:   # the API call failed: two plain reads instead
+                fv = read('1:' + str(tws.row_count), False); rv = read('1:' + str(tws.row_count))
+                grid = []
+                for i in range(max(len(fv), len(rv))):
+                    a = fv[i] if i < len(fv) else []; b = rv[i] if i < len(rv) else []
+                    grid.append([(cellstr(b[j]) if j < len(b) else '', cellstr(a[j]) if j < len(a) else '') for j in range(max(len(a), len(b)))])
+            hdr = [d.strip() for _, d in (grid[0] if grid else [])]
+            while hdr and not hdr[-1]: hdr.pop()
             rows = []
-            for i, r in enumerate(vals):
-                r = [cellstr(v) for v in r]
+            for i, cells in enumerate(grid[1:]):
+                cells = cells[:len(hdr)]
+                r = [c[0] for c in cells]
                 if any(x.strip() for x in r):
                     row = {'row': i + 2, 'values': r + [''] * (len(hdr) - len(r))}
-                    fj = [j for j, x in enumerate(r) if x.startswith('=')]
-                    if fj:
-                        if shown is None: shown = read(rng, False)
-                        sv = shown[i] if i < len(shown) else []
-                        # column index → [formula, result]: the result is only used while the formula is unchanged
-                        row['shown'] = {str(j): [r[j], cellstr(sv[j]) if j < len(sv) else ''] for j in fj}
+                    diff = {str(j): [c[0], c[1]] for j, c in enumerate(cells) if c[0] != c[1] and c[0] != ''}
+                    if diff: row['shown'] = diff
                     rows.append(row)
             out({'ok': True, 'header': hdr, 'rows': rows})
+
+        hdr = [cellstr(h).strip() for h in ((read('1:1', False) or [[]])[0])]
 
         if action == 'setcell':
             field = str(data.get('field', ''))

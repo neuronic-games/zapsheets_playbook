@@ -2809,14 +2809,15 @@ function gridVisibleRows() {
   var f = _gridFilter.toLowerCase();
   return rows.filter(function(r) { return r.draft || r.values.some(function(v) { return String(v).toLowerCase().indexOf(f) >= 0; }); });
 }
-// What a cell shows: the text as it ends up on the card — [tags] as their words or pictures, and
-// for a column the layout shows through a Mapping, the mapped text or picture. Double-click a cell
-// to edit what's really in the sheet. Formulas show as written.
-function gridShown(name, v, res) {   // res: [formula, its result] from the sheet
-  if (/^=/.test(v)) {
-    if (res && res[0] === v) v = res[1];   // the formula's result, while the formula is the one the sheet has
-    else return '<span class="g-formula">' + esc(v) + '</span>';   // a new formula: its result comes with Save
-  }
+// What a cell shows: what the sheet displays (formula results, number and date formats), then as it
+// ends up on the card — [tags] as their words or pictures, and for a column the layout shows through a
+// Mapping, the mapped text or picture. Double-click a cell to edit what's really in it.
+// GRID rows keep both: values (what's in the cell) and shown ({column: [value, displayed]}, from the
+// same read). The displayed one is used only while the cell still holds that value — once it's
+// edited here, the new value shows (a new formula as written) until the next load after Save.
+function gridShown(name, v, res) {
+  if (res && res[0] === v) v = res[1];
+  else if (/^=/.test(v)) return '<span class="g-formula">' + esc(v) + '</span>';
   var m = layout && (layout.els || []).concat((layout.back || {}).els || []).filter(function(e) { return e.kind === 'data' && e.as === 'map' && e.field === name && e.map; })[0];
   if (m && String(v).trim()) {
     var row = {}; row[name] = v;

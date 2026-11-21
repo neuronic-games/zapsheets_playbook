@@ -580,12 +580,13 @@ function renderData() {
   var h = '';   // New goes last: a new column is added after the others
   if (!FIELDS.length) h += '<div class="muted">No columns yet. The first row of the sheet holds the column names, with one card per row below — or add one with New.</div>';
   // The eye in the Data heading shows hidden fields too (greyed), in their place in the list
-  var list = _hiddenOpen ? FIELDS : shown;
+  var list = orderedFields(_hiddenOpen ? FIELDS : shown);
   h += list.map(function(f) {
     return isHidden(f) ? chip('data-field="' + esc(f) + '"', '⊘', f, '', 'is-hidden')
                        : chip('data-field="' + esc(f) + '"', DATA_ICON, f, looksLikeImage(f) ? '' : textVal(sample[f]), f === _newField ? 'just-added' : '');
   }).join('') + nf;
   el.innerHTML = h;
+  wireFieldReorder(el);
   var eye = $('eyeBtn');
   if (eye) {
     eye.style.display = hid.length ? '' : 'none';
@@ -633,7 +634,55 @@ function chipSpec(c) {
   if (c.dataset.gen)   return 'gen:' + c.dataset.gen;
   return 'add:' + c.dataset.add;
 }
-function chipDragStart(ev) { ev.dataTransfer.setData('text/plain', chipSpec(ev.currentTarget)); ev.dataTransfer.effectAllowed = 'copy'; }
+function chipDragStart(ev) {
+  var c = ev.currentTarget;
+  ev.dataTransfer.setData('text/plain', chipSpec(c)); ev.dataTransfer.effectAllowed = 'copyMove';
+  _dragField = c.dataset.field || '';
+  if (_dragField) setTimeout(function() { c.classList.add('dragging'); }, 0);
+}
+// Data fields keep the same order as the columns in the Cards view (SETTINGS.grid[tab].order).
+// Drag a field up or down the list to move it; a line shows where it will go.
+var _dragField = '';
+function fieldOrder() { var g = SETTINGS.grid && SETTINGS.grid[curTab]; return (g && g.order) || []; }
+function orderedFields(list) {
+  var order = fieldOrder();
+  return list.map(function(f, k) { var o = order.indexOf(f); return { f: f, k: o < 0 ? order.length + k : o }; })
+    .sort(function(a, b) { return a.k - b.k; }).map(function(x) { return x.f; });
+}
+function wireFieldReorder(el) {
+  if (el._reorder) return; el._reorder = true;
+  function clear() { el.querySelectorAll('.drop-before, .drop-after').forEach(function(c) { c.classList.remove('drop-before', 'drop-after'); }); }
+  function spot(y) {   // where the dragged field would go: [chip, before?]
+    var chips = [].slice.call(el.querySelectorAll('.field-chip[data-field]'));
+    for (var i = 0; i < chips.length; i++) { var r = chips[i].getBoundingClientRect(); if (y < r.top + r.height / 2) return [chips[i], true]; }
+    return chips.length ? [chips[chips.length - 1], false] : null;
+  }
+  el.addEventListener('dragover', function(ev) {
+    if (!_dragField) return;
+    ev.preventDefault(); ev.dataTransfer.dropEffect = 'move';
+    var s = spot(ev.clientY); clear();
+    if (s) s[0].classList.add(s[1] ? 'drop-before' : 'drop-after');
+  });
+  el.addEventListener('dragleave', function(ev) { if (!el.contains(ev.relatedTarget)) clear(); });
+  el.addEventListener('drop', function(ev) {
+    if (!_dragField) return;
+    ev.preventDefault(); ev.stopPropagation();
+    var f = _dragField, s = spot(ev.clientY); clear(); _dragField = '';
+    if (!s || s[0].dataset.field === f) return;
+    var names = [].slice.call(el.querySelectorAll('.field-chip[data-field]')).map(function(c) { return c.dataset.field; });
+    var target = names.indexOf(s[0].dataset.field) + (s[1] ? 0 : 1), from = names.indexOf(f);
+    if (from < 0 || target === from || target === from + 1) return;
+    names.splice(from, 1); names.splice(target > from ? target - 1 : target, 0, f);
+    var p = gridPrefs(curTab), rest = orderedFields(FIELDS).filter(function(n) { return names.indexOf(n) < 0; });
+    p.order = names.concat(rest);   // fields not in the list (hidden ones) keep their place after
+    saveGridPrefs(); renderData();
+    if (GRID && GRID.tab === curTab) renderGrid();
+  });
+}
+document.addEventListener('dragend', function() {
+  _dragField = '';
+  document.querySelectorAll('.field-chip.dragging, .field-chip.drop-before, .field-chip.drop-after').forEach(function(c) { c.classList.remove('dragging', 'drop-before', 'drop-after'); });
+});
 // Adding is by drag and drop only; clicking a Data field opens its options
 function chipClick(c, ev) {
   if (!layout) return;

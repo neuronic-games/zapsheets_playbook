@@ -158,6 +158,12 @@ select.sel { -webkit-appearance:none; appearance:none; padding-right:2rem; backg
   flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .field-chip .sample { font-family:'DINRegular',sans-serif; font-size:.68rem; color:#9aa0b8; max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .field-chip.static { color:#555; }
+/* Reordering the Data fields: a line where the dragged one will go */
+.field-chip[data-field] { position:relative; }
+.field-chip.dragging { opacity:.4; }
+.field-chip.drop-before::before, .field-chip.drop-after::after { content:''; position:absolute; left:-2px; right:-2px; height:2px; background:#7b6cf6; border-radius:2px; pointer-events:none; }
+.field-chip.drop-before::before { top:calc(-.175rem - 2.5px); }
+.field-chip.drop-after::after { bottom:calc(-.175rem - 2.5px); }
 .shape-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:.3rem; margin-bottom:.35rem; }
 .shape-chip { display:flex; flex-direction:column; align-items:center; gap:.15rem; border:1.5px solid #d6d9e6; border-radius:7px; padding:.35rem .1rem .25rem; background:#fff; cursor:grab; font-size:.6rem; color:#6b6f86; user-select:none; }
 .shape-chip:hover { border-color:#a99cff; background:#f7f5ff; }

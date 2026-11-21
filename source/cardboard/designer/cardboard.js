@@ -528,11 +528,6 @@ function selectTab(name, first, force, asked, pre) {   // pre: {rows, full} alre
     _countTab = name;
     FIELDS = [];
     ROWS.forEach(function(r) { Object.keys(r).forEach(function(k) { if (!isInternal(k) && FIELDS.indexOf(k) < 0) FIELDS.push(k); }); });
-    // If no data rows yet, seed FIELDS from the tab's column headers so the palette still shows draggable chips
-    if (!FIELDS.length) {
-      var tabMeta = TABS.filter(function(t) { return t.title === name; })[0];
-      if (tabMeta && tabMeta.cols) tabMeta.cols.forEach(function(c) { if (!isInternal(c) && FIELDS.indexOf(c) < 0) FIELDS.push(c); });
-    }
     _rowsPartial = !!partial; showLoadStatus();
     overlayPending(partial);   // this browser's unsaved cell edits (and, once every row is in, new rows) on top
     rowIdx = Math.min(rowIdx, Math.max(0, ROWS.length - 1));
@@ -542,6 +537,7 @@ function selectTab(name, first, force, asked, pre) {   // pre: {rows, full} alre
     if (_activeTab === 'export') renderExport();
   }
   function allLoaded() {
+    if (!FIELDS.length || FIELDS.length === dataPend(name).cols.length) headerFields(name);   // no cards: the columns come from the heading row
     if (_activeTab === 'data') loadGrid(force);
     var due = false; try { due = !!localStorage.getItem('cb_repub:' + SHEET_ID + ':' + name); localStorage.removeItem('cb_repub:' + SHEET_ID + ':' + name); } catch (e) {}
     if (force) { toast('✓ Reloaded from the sheet'); autoRepublish(name); }
@@ -568,6 +564,19 @@ function selectTab(name, first, force, asked, pre) {   // pre: {rows, full} alre
   }).catch(function(e) { if (curTab === name) failed(e); });
 }
 var _rowsPartial = false, _republishWaiting = '';
+// The fields come from the cards' rows, so a deck with columns but no cards yet would have none.
+// Then read the heading row (the Cards view's read, kept for it too) and offer its columns.
+function headerFields(tab) {
+  return api('grid', { tab: tab }).then(function(r) {
+    if (curTab !== tab) return;
+    var add = (r.header || []).filter(function(h) { return h && !isInternal(h) && FIELDS.indexOf(h) < 0 && !colDeleted(h); });
+    if (!GRID || GRID.tab !== tab) { GRID = { tab: tab, header: r.header || [], rows: r.rows || [] }; overlayGrid(); }
+    if (!add.length) return;
+    FIELDS = add.concat(FIELDS.filter(function(f) { return add.indexOf(f) < 0; }));
+    ROWS.forEach(function(row) { add.forEach(function(f) { if (!(f in row)) row[f] = ''; }); });
+    renderData(); render(); renderAttrs();
+  }).catch(function() {});
+}
 // Beside Save: "Loading rows…" until every row of the sheet is in
 function showLoadStatus() {
   var el = $('loadStatus'); if (!el) return;
@@ -3243,6 +3252,7 @@ function refreshRows() {
     FIELDS = [];
     ROWS.forEach(function(r) { Object.keys(r).forEach(function(k) { if (!isInternal(k) && FIELDS.indexOf(k) < 0) FIELDS.push(k); }); });
     overlayPending();
+    if (!FIELDS.length || FIELDS.length === dataPend(tab).cols.length) headerFields(tab);
     rowIdx = Math.min(rowIdx, Math.max(0, ROWS.length - 1));
     renderData(); render();
     if (_activeTab === 'print') renderPrint();

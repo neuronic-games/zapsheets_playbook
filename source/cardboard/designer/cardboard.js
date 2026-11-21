@@ -448,8 +448,7 @@ function makeSheetCombo(sel) {
     if (naming) {   // naming a new deck: just a hint (or what's wrong with the name)
       var n = inp.value.trim().replace(/\s+/g, ' '), why = n ? newDeckProblem(n) : '';
       items = [];
-      list.innerHTML = '<div class="sc-none sc-newhint' + (why ? ' bad' : '') + '">' + esc(why || (n ? 'Press Enter to add “' + n + '”' : 'Type the new deck’s name, then press Enter')) +
-        '<br><span>It’s kept in this browser until you Save.</span></div>';
+      list.innerHTML = '<div class="sc-none sc-newhint' + (why ? ' bad' : '') + '">' + esc(why || (n ? 'Press Enter to add “' + n + '”' : 'Type the new deck’s name, then press Enter')) + '</div>';
       return;
     }
     var f = (filter || '').trim().toLowerCase(); typed = (filter || '').trim().replace(/\s+/g, ' ');

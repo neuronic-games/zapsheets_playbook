@@ -156,7 +156,6 @@ select.sel { -webkit-appearance:none; appearance:none; padding-right:2rem; backg
 .sc-item.sc-new .sc-mark { justify-content:center; font-size:1rem; line-height:1; }
 .sc-pend { font-family:'DINRegular',Arial,sans-serif; font-size:.62rem; text-transform:none; letter-spacing:0; color:#c07a00; background:#fff4dc; border-radius:999px; padding:0 .4rem; }
 .sc-newhint { text-transform:none; letter-spacing:0; line-height:1.45; }
-.sc-newhint span { font-size:.7rem; color:#b0b4c8; }
 .sc-newhint.bad { color:#c0392b; }
 .sheet-combo.naming .inp { border-color:#7b6cf6; }
 .sheet-combo.naming .sc-ico, .sheet-combo.naming .sc-count { display:none; }

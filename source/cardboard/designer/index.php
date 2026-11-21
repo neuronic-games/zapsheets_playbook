@@ -307,7 +307,9 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .tb-btn { height:1.9rem; min-width:1.9rem; border:1.5px solid #d6d9e6; border-radius:7px; background:#fff; color:#3b3f5c; cursor:pointer; font-size:.8rem; padding:0 .5rem; display:inline-flex; align-items:center; justify-content:center; gap:.3rem; }
 .tb-btn:hover:not(:disabled) { border-color:#a99cff; color:#2e2763; }
 .tb-btn:disabled { opacity:.4; cursor:default; }
-.tb-btn.tb-add { width:auto; padding:0 .6rem; font-family:'DINBlack',sans-serif; font-size:.66rem; letter-spacing:.07em; text-transform:uppercase; color:#4b3fa8; white-space:nowrap; }
+.tb-btn.tb-add { color:#4b3fa8; }
+.card-no.card-add { font-size:.9rem; font-family:'DINRegular',Arial,sans-serif; border-style:dashed; background:none; }
+.tb-btn.tb-add:hover .card-no.card-add { border-style:solid; background:#f7f5ff; }
 .tb-txt { font-size:.78rem; color:#6b7090; min-width:2.6rem; text-align:center; }
 .tb-sep { width:1px; height:1.3rem; background:#dde0ea; margin:0 .2rem; }
 .tb-save { margin-left:auto; height:1.9rem; border:none; border-radius:7px; background:#4b3fa8; color:#fff; font-family:'DINBlack',sans-serif; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; padding:0 1rem; cursor:pointer; }
@@ -837,10 +839,12 @@ body.cb-gate #signinOverlay { background:#2e2763; }
 
   <div class="stage">
     <div class="toolbar">
-      <button class="tb-btn" id="rowPrev" onclick="stepRow(-1)" title="Previous row">◀</button>
+      <button class="tb-btn" id="rowFirst" onclick="firstCard()" title="First card"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><rect x="4" y="5" width="2.6" height="14" rx="1"/><path d="M19 5.5v13L8.5 12z"/></svg></button>
+      <button class="tb-btn" id="rowPrev" onclick="stepRow(-1)" title="Previous card">◀</button>
       <span class="tb-txt" id="rowInfo">—</span>
-      <button class="tb-btn" id="rowNext" onclick="stepRow(1)" title="Next row">▶</button>
-      <button class="tb-btn tb-add" id="addCardBtn" onclick="addCard()" title="Add a new card">+ Card</button>
+      <button class="tb-btn" id="rowNext" onclick="stepRow(1)" title="Next card">▶</button>
+      <button class="tb-btn" id="rowLast" onclick="lastCard()" title="Last card"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><rect x="17.4" y="5" width="2.6" height="14" rx="1"/><path d="M5 5.5v13L15.5 12z"/></svg></button>
+      <button class="tb-btn tb-add" id="addCardBtn" onclick="addCard()" title="Add a card after this one" aria-label="Add a card after this one"><span class="card-no card-add">+</span></button>
       <span class="tb-sep"></span>
       <button class="tb-btn" onclick="zoomBy(-1)" title="Zoom out">−</button>
       <span class="tb-txt" id="zoomInfo">100%</span>

@@ -422,13 +422,41 @@ def main():
                 for (row, field, a1), now in zip(written, batch_get([w[2] for w in written])):
                     results.append({'row': row, 'field': field, 'status': 'ok', 'value': now})
             added = []
-            lines = [[str((a.get('values') or {}).get(h, '')) if h else '' for h in hdr] or [''] for a in adds]
-            if lines:
-                res = wb.values_append(q(tws.title) + '!A1', params={'valueInputOption': 'USER_ENTERED', 'insertDataOption': 'INSERT_ROWS'}, body={'values': lines})
+            def line(a): return [str((a.get('values') or {}).get(h, '')) if h else '' for h in hdr] or ['']
+            def anchor(a):   # a new card placed after sheet row "after" (1 = the top, under the headings); else at the end
+                try: n = int(a.get('after') or 0)
+                except Exception: n = 0
+                return n if n >= 1 else 0
+            ends = [a for a in adds if not anchor(a)]
+            placed = [a for a in adds if anchor(a)]
+            if ends:
+                res = wb.values_append(q(tws.title) + '!A1', params={'valueInputOption': 'USER_ENTERED', 'insertDataOption': 'INSERT_ROWS'}, body={'values': [line(a) for a in ends]})
                 rng = ((res or {}).get('updates') or {}).get('updatedRange', '')
                 m = __import__('re').search(r'![A-Z]+(\d+)', rng)
                 first = int(m.group(1)) if m else 0
-                added = [{'key': a.get('key'), 'row': (first + i) if first else 0} for i, a in enumerate(adds)]
+                added = [{'key': a.get('key'), 'row': (first + i) if first else 0} for i, a in enumerate(ends)]
+            # Cards placed after another card: rows inserted there (in the order sent), bottom group first so
+            # the anchors above stay put; then every row below an insert moves down by the rows put in above it
+            inserted = []   # (anchor, count)
+            if placed:
+                groups = {}
+                for a in placed: groups.setdefault(anchor(a), []).append(a)
+                order = sorted(groups)
+                reqs_i = [{'insertDimension': {'range': {'sheetId': tws.id, 'dimension': 'ROWS', 'startIndex': at, 'endIndex': at + len(groups[at])},
+                                               'inheritFromBefore': at > 1}} for at in sorted(groups, reverse=True)]
+                wb.batch_update({'requests': reqs_i})
+                writes_i, shift = [], 0
+                for at in order:
+                    start = at + 1 + shift
+                    for k, a in enumerate(groups[at]):
+                        writes_i.append({'range': q(tws.title) + '!' + gspread.utils.rowcol_to_a1(start + k, 1), 'values': [line(a)]})
+                        added.append({'key': a.get('key'), 'row': start + k})
+                    shift += len(groups[at]); inserted.append((at, len(groups[at])))
+                wb.values_batch_update({'valueInputOption': 'USER_ENTERED', 'data': writes_i})
+                total = sum(n for _, n in inserted)
+                for a in added[:len(ends)]:   # the appended ones are below every insert
+                    if a['row']: a['row'] += total
+            def moved(r): return r + sum(n for at, n in inserted if at < r)
             # Deletions last, so the row numbers above stay right: rows (only if they still hold what the
             # browser showed), then columns, each from the bottom/right up so the others don't move first
             reqs, deleted_rows, deleted_cols, row_conflicts = [], [], [], []
@@ -436,7 +464,9 @@ def main():
             for d in (data.get('delrows') or []):
                 try: dels.append((int(d.get('row', 0)), [str(v) for v in (d.get('values') or [])]))
                 except Exception: pass
-            dels = sorted({r: v for r, v in dels if r >= 2}.items(), reverse=True)
+            orig = {moved(r): r for r, _ in dels}   # row numbers now (after any inserts) → as the browser knows them
+            dels = sorted({moved(r): v for r, v in dels if r >= 2}.items(), reverse=True)
+            gone_now = []
             if dels:
                 width = max([len(hdr)] + [len(v) for _, v in dels]) or 1
                 curs = wb.values_batch_get(['A%d:%s' % (r, gspread.utils.rowcol_to_a1(r, width)) for r, _ in dels], params={'valueRenderOption': 'FORMULA', 'dateTimeRenderOption': 'FORMATTED_STRING'}).get('valueRanges', [])
@@ -444,16 +474,16 @@ def main():
                     cur = [cellstr(x) for x in ((vr.get('values') or [[]])[0])]
                     n = max(len(cur), len(want))
                     if (cur + [''] * (n - len(cur))) != (want + [''] * (n - len(want))):
-                        row_conflicts.append(r); continue
+                        row_conflicts.append(orig.get(r, r)); continue
                     reqs.append({'deleteDimension': {'range': {'sheetId': tws.id, 'dimension': 'ROWS', 'startIndex': r - 1, 'endIndex': r}}})
-                    deleted_rows.append(r)
+                    deleted_rows.append(orig.get(r, r)); gone_now.append(r)
             for i in sorted({hdr.index(str(c)) for c in (data.get('delcols') or []) if str(c) in hdr}, reverse=True):
                 reqs.append({'deleteDimension': {'range': {'sheetId': tws.id, 'dimension': 'COLUMNS', 'startIndex': i, 'endIndex': i + 1}}})
                 deleted_cols.append(hdr[i])
             if reqs:
                 wb.batch_update({'requests': reqs})
                 for a in added:   # new rows sit below the deleted ones, so they move up
-                    if a['row']: a['row'] -= len([r for r in deleted_rows if r < a['row']])
+                    if a['row']: a['row'] -= len([r for r in gone_now if r < a['row']])
             out({'ok': True, 'results': results, 'added': added, 'cols': cols_added,
                  'deleted_rows': deleted_rows, 'deleted_cols': deleted_cols, 'row_conflicts': row_conflicts})
 

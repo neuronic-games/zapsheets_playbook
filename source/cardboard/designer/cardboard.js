@@ -979,7 +979,7 @@ function render() {
   $('rowInfo').title = ROWS.length ? 'Card ' + (rowIdx + 1) + ' of ' + ROWS.length + (_rowsPartial ? ' (loading the rest…)' : '') : '';
   updateDeckCount();
   $('rowInfo').classList.toggle('partial', _rowsPartial);
-  $('rowPrev').disabled = rowIdx <= 0; $('rowNext').disabled = rowIdx >= ROWS.length - 1;
+  $('rowPrev').disabled = $('rowFirst').disabled = rowIdx <= 0; $('rowNext').disabled = $('rowLast').disabled = rowIdx >= ROWS.length - 1;
   $('zoomInfo').textContent = Math.round(zoom * 100) + '%';
   $('undoBtn').disabled = !undoStack.length; $('redoBtn').disabled = !redoStack.length;
 }
@@ -1082,6 +1082,8 @@ function flipCard() {
     back.onfinish = function() { _flipping = false; };
   };
 }
+function firstCard() { stepRow(-ROWS.length); }
+function lastCard() { stepRow(ROWS.length); }
 function stepRow(d) { rowIdx = clamp(rowIdx + d, 0, Math.max(0, ROWS.length - 1)); render(); renderData(); var se = elById(selId); if (se && se.kind === 'data') renderAttrs(); else if (isPicEl(se)) renderAttrs(); }
 function zoomBy(d) {
   var steps = [.5, .75, 1, 1.25, 1.5, 2, 2.5, 3, 4];
@@ -1192,23 +1194,32 @@ function editCellInPlace(e) {
   });
   inner.addEventListener('blur', function() { finish(true); });
 }
-// + Card beside the card navigator: a new, empty card at the end of the deck. It's kept once
-// something is typed into it (an empty row isn't a card); an empty one is reused rather than doubled.
+// + Card beside the card navigator: a new, empty card straight after the one on screen. It's kept
+// once something is typed into it (an empty row isn't a card), and Save puts its row in the sheet in
+// that place: under the card before it (or at the top), after a new card it follows.
 function addCard() {
   if (!layout || !curTab) return;
   if (!requirePro('edit', function() {})) return;
-  var last = ROWS[ROWS.length - 1];
-  var blank = last && last._pend && !FIELDS.some(function(f) { return String(last[f] || '').trim(); });
-  if (blank) rowIdx = ROWS.length - 1; else newCardRow();
+  var cur = ROWS[rowIdx], next = ROWS[rowIdx + 1];
+  var blank = function(r) { return r && r._pend && !FIELDS.some(function(f) { return String(r[f] || '').trim(); }); };
+  if (blank(cur)) { toast('This card is still empty — fill it in first'); return; }
+  if (blank(next)) { stepRow(1); return; }
+  var at = ROWS.length ? rowIdx + 1 : 0, tab = curTab;
+  var r = newCardRow(at), prev = ROWS[at - 1];
+  if (prev && prev._pend) { r._prevKey = prev._pend; if (prev._after) r._after = prev._after; }
+  else if (prev && at < ROWS.length - 1) {   // under a card that's in the sheet (at the end it's simply added last)
+    var like = Object.assign({}, prev);
+    sheetRowFor(prev, like).then(function(gr) { if (gr && gr.row) r._after = gr.row; }).catch(function() {});
+  }
   render(); renderData(); renderAttrs();
   if (_activeTab === 'print') renderPrint(); if (_activeTab === 'export') renderExport();
   toast('New card ' + (rowIdx + 1) + ' — double-click a field on the card to fill it in');
 }
 // A new card (a new row, kept in this browser until Save), shown in the designer straight away
-function newCardRow() {
+function newCardRow(at) {   // at: its place in the deck (default: the end)
   var r = { _pend: uid() }; FIELDS.forEach(function(f) { r[f] = ''; });
-  ROWS.push(r); rowIdx = ROWS.length - 1;
-  if (GRID && GRID.tab === curTab) { GRID = null; _gridSel = null; }   // the Cards view picks it up when it's next shown
+  at = at == null ? ROWS.length : clamp(at, 0, ROWS.length);
+  ROWS.splice(at, 0, r); rowIdx = at;   // the Cards view adds it (from the saved-for-later rows) when it's next shown
   return r;
 }
 // Write a text value into this row's cell for a Data field. Shown on the card straight away;
@@ -1223,7 +1234,7 @@ function setRowCell(e, value) {   // kept in this browser until Save
   var row = ROWS[rowIdx]; if (!row) return;
   var tab = curTab, field = e.field, before = row[field];
   if (row._pend) {   // a new row that isn't in the sheet yet
-    row[field] = value; var o = {}; FIELDS.forEach(function(f) { o[f] = row[f] || ''; }); queueAdd(tab, row._pend, o);
+    row[field] = value; var o = {}; FIELDS.forEach(function(f) { o[f] = row[f] || ''; }); queueAdd(tab, row._pend, o, { after: row._after, prevKey: row._prevKey });
     if (GRID && GRID.tab === tab) { var gd = GRID.rows.filter(function(g) { return g.key === row._pend; })[0], c0 = GRID.header.indexOf(field); if (gd && c0 >= 0) { gd.values[c0] = value; (gd.state = gd.state || {})[c0] = 'pending'; } }
     render(); renderData(); if (selId === e.id) renderAttrs(); return;
   }
@@ -1470,11 +1481,17 @@ function queueCell(tab, row, field, value, old) {
   else if (value !== old) p.cells.push({ row: row, field: field, value: value, old: old == null ? '' : old });
   setDataPend(tab, p);
 }
-function queueAdd(tab, key, values) {
+// place: {after: sheet row it goes under (1 = the top), prevKey: a new card it follows} — where + Card put it
+function queueAdd(tab, key, values, place) {
   var p = dataPend(tab), a = p.adds.filter(function(x) { return x.key === key; })[0];
   var empty = !Object.keys(values).some(function(k) { return String(values[k]).trim(); });
   if (a) { if (empty) p.adds.splice(p.adds.indexOf(a), 1); else a.values = values; }
-  else if (!empty) p.adds.push({ key: key, values: values });
+  else if (!empty) {
+    var na = { key: key, values: values }; if (place && place.after >= 1) na.after = place.after;
+    var prev = place && place.prevKey ? p.adds.filter(function(x) { return x.key === place.prevKey; })[0] : null;
+    if (prev) { if (prev.after) na.after = prev.after; else delete na.after; p.adds.splice(p.adds.indexOf(prev) + 1, 0, na); }   // straight after the new card it follows
+    else p.adds.push(na);
+  }
   setDataPend(tab, p);
 }
 function pendingOld(tab, row, field) { var c = dataPend(tab).cells.filter(function(x) { return x.row === row && x.field === field; })[0]; return c ? c.old : null; }
@@ -1514,10 +1531,12 @@ function overlayGrid() {
     gr.values[col] = c.value; (gr.state = gr.state || {})[col] = 'pending';
     var card = ROWS[gridCardIndex(gr)]; if (card && !card._pend) card[c.field] = c.value;
   });
+  var tail = GRID.rows.length;   // new rows go above the empty row(s) kept at the end for typing into
+  while (tail > 0 && GRID.rows[tail - 1].draft && rowEmpty(GRID.rows[tail - 1]) && !p.adds.some(function(a) { return a.key === GRID.rows[tail - 1].key; })) tail--;
   p.adds.forEach(function(a) {
     if (GRID.rows.some(function(g) { return g.key === a.key; })) return;
     var st = {};
-    GRID.rows.push({ row: 0, draft: true, key: a.key, values: GRID.header.map(function(h, i) { if (h && a.values[h]) st[i] = 'pending'; return h ? (a.values[h] || '') : ''; }), state: st });
+    GRID.rows.splice(tail++, 0, { row: 0, draft: true, key: a.key, values: GRID.header.map(function(h, i) { if (h && a.values[h]) st[i] = 'pending'; return h ? (a.values[h] || '') : ''; }), state: st });
   });
 }
 // Save everything kept in this browser, one tab at a time, in the background
@@ -1619,13 +1638,14 @@ function applySaveResults(tab, sent, res) {
   p.delcols = p.delcols.filter(function(n) { return sent.delcols.indexOf(n) < 0; });
   p.delrows = p.delrows.filter(function(d) { return !sent.delrows.some(function(x) { return x.row === d.row; }); });
   var gone = (res.deleted_rows || []).slice().sort(function(a, b) { return a - b; });
-  if (gone.length) {
-    var shift = function(row) { return row - gone.filter(function(x) { return x < row; }).length; };
+  var ins = (sent.adds || []).map(function(a) { return +a.after || 0; }).filter(function(x) { return x >= 1; });   // cards put in under a row
+  if (gone.length || ins.length) {
+    var shift = function(row) { return row + ins.filter(function(x) { return x < row; }).length - gone.filter(function(x) { return x < row; }).length; };
     p.cells.forEach(function(x) { x.row = shift(x.row); });
     p.delrows.forEach(function(x) { x.row = shift(x.row); });
   }
   conflicts += (res.row_conflicts || []).length;
-  if (gone.length || (res.deleted_cols || []).length || (res.row_conflicts || []).length) _reloadGrid[tab] = true;
+  if (gone.length || ins.length || (res.deleted_cols || []).length || (res.row_conflicts || []).length) _reloadGrid[tab] = true;
   setDataPend(tab, p);
   if (_reloadGrid[tab]) return conflicts;   // the grid is read again after the save
   if (g && _activeTab === 'data' && curTab === tab) {
@@ -2867,7 +2887,7 @@ var GRID = null, _gridSel = null, _gridEdit = null, _rowsStale = false, _gridFil
 function loadGrid(force) {
   var tab = curTab, box = $('gridWrap');
   if (!tab) return;
-  if (GRID && GRID.tab === tab && !force) { renderGrid(); return; }
+  if (GRID && GRID.tab === tab && !force) { overlayGrid(); renderGrid(); return; }   // already in memory: no need to read the sheet
   box.innerHTML = '<div class="loading"><span class="spin"></span>Loading “' + esc(tab) + '”…</div>';
   api('grid', { tab: tab }).then(function(r) {
     if (curTab !== tab) return;

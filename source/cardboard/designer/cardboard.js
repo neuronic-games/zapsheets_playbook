@@ -171,11 +171,14 @@ function textVal(v) {
   if (/^=IMAGE\(/i.test(v)) return '';
   return v.replace(/\[([^\]]*)\]\(([^)]+)\)/g, '$1');
 }
+// A value that is a picture: an image file link, =IMAGE(), or a Drive / Dropbox / Google-hosted picture
+var IMG_LINK_RE = /\.(png|jpe?g|gif|webp|svg)(\?|$|&)|=IMAGE|drive\.google|googleusercontent|dropbox(usercontent)?\.com/i;
+function isImageLink(v) { v = cleanVal(v).trim(); return !!imageUrl(v) && IMG_LINK_RE.test(v); }
 function looksLikeImage(field) {
   var n = 0, img = 0;
   ROWS.slice(0, 12).forEach(function(r) {
     var v = cleanVal(r[field]).trim();
-    if (v) { n++; if (imageUrl(v) && /\.(png|jpe?g|gif|webp|svg)(\?|$|&)|=IMAGE|drive\.google|googleusercontent|dropbox(usercontent)?\.com/i.test(v)) img++; }
+    if (v) { n++; if (isImageLink(v)) img++; }
   });
   return n > 0 && img / n >= .5;
 }
@@ -2849,7 +2852,7 @@ function renderGrid() {
     h += '<tr data-r="' + ri + '"' + (r.draft ? ' class="draft"' : '') + '><td class="rn" title="Card options">' + (cardN[ri] ? cardNo(cardN[ri]) : '') + '</td>';
     cols.forEach(function(c) {
       var v = r.values[c.i] || '', st = (r.state || {})[c.i] || '';
-      var thumb = imgCols[c.i] && imageUrl(v) ? '<img class="g-thumb" src="' + esc(imageUrl(v)) + '" alt="" referrerpolicy="no-referrer">' : '';
+      var thumb = !c.ghost && imageUrl(v) && (imgCols[c.i] || isImageLink(v)) ? '<img class="g-thumb" src="' + esc(imageUrl(v)) + '" alt="" referrerpolicy="no-referrer">' : '';
       h += '<td data-r="' + ri + '" data-c="' + c.i + '" class="' + (st ? 'st-' + st : '') + (c.ghost ? ' ghost-col' : '') + (/^=/.test(v) ? ' formula' : '') + '" title="' + esc(v.length > 60 ? v : '') + '">' + thumb + (c.ghost ? '<span>' + esc(v) + '</span>' : gridShown(c.name, v, r.shown && r.shown[c.i])) + '</td>';
     });
     h += '</tr>';

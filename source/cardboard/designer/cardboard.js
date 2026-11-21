@@ -382,6 +382,12 @@ function init() {
 // Type to filter the tabs; sheets that already have a layout show the layout icon.
 var LAYOUT_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M5 8h14"/><rect x="8" y="11" width="8" height="4.5" rx="1" fill="currentColor" stroke="none"/><path d="M8 18.3h5"/></svg>';
 function hasLayout(t) { return !!LAYOUTS[t] && t !== SETTINGS_KEY; }
+// The current deck's card count, shown in each Deck box (once its rows are in)
+var _countTab = '';
+function updateDeckCount() {
+  var txt = !curTab || _countTab !== curTab || (!ROWS.length && _rowsPartial) ? '' : ROWS.length + (_rowsPartial ? '…' : '') + (ROWS.length === 1 ? ' card' : ' cards');
+  document.querySelectorAll('.sheet-combo .sc-count').forEach(function(c) { c.textContent = txt; c.hidden = !txt; });
+}
 function refreshSheetCombos() {
   ['sheetSel', 'gridSheet', 'pSheet', 'eSheet'].forEach(function(id) {
     var sel = $(id); if (!sel) return;
@@ -392,12 +398,13 @@ function refreshSheetCombos() {
     box.querySelector('.sc-ico').innerHTML = hasLayout(v) ? LAYOUT_ICON : '';
     box.classList.toggle('has-layout', hasLayout(v));
   });
+  updateDeckCount();
 }
 function makeSheetCombo(sel) {
   sel.style.display = 'none';
   var box = document.createElement('div');
   box.className = 'sheet-combo' + (sel.id === 'gridSheet' ? ' compact' : '');
-  box.innerHTML = '<span class="sc-ico" title="Has a layout"></span><input class="inp sel-sheet" autocomplete="off" spellcheck="false" aria-label="Deck" role="combobox" aria-expanded="false">' +
+  box.innerHTML = '<span class="sc-ico" title="Has a layout"></span><input class="inp sel-sheet" autocomplete="off" spellcheck="false" aria-label="Deck" role="combobox" aria-expanded="false"><span class="sc-count" hidden></span>' +
     '<button type="button" class="sc-caret" tabindex="-1" aria-label="Show decks"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div class="sc-list" role="listbox"></div>';
   sel.parentNode.insertBefore(box, sel.nextSibling);
   var inp = box.querySelector('input'), list = box.querySelector('.sc-list'), hi = 0, items = [];
@@ -454,6 +461,7 @@ function selectTab(name, first, force, asked, pre) {   // pre: {rows, full} alre
   var shown = false;
   function useRows(rows, partial) {
     ROWS = (rows || []).filter(function(r) { return Object.keys(r).some(function(k) { return !isInternal(k) && String(r[k]).trim(); }); });
+    _countTab = name;
     FIELDS = [];
     ROWS.forEach(function(r) { Object.keys(r).forEach(function(k) { if (!isInternal(k) && FIELDS.indexOf(k) < 0) FIELDS.push(k); }); });
     // If no data rows yet, seed FIELDS from the tab's column headers so the palette still shows draggable chips
@@ -846,8 +854,9 @@ function render() {
   var card = holder.firstChild;
   card.style.transform = 'scale(' + zoom + ')';
   card.style.setProperty('--z', zoom * PX);
-  $('rowInfo').innerHTML = ROWS.length ? cardNo(rowIdx + 1) + '<span class="tb-of">of ' + ROWS.length + (_rowsPartial ? '…' : '') + '</span>' : esc(_rowsPartial ? 'Loading cards…' : 'No cards');
-  $('rowInfo').title = _rowsPartial ? 'Loading the other rows…' : '';
+  $('rowInfo').innerHTML = ROWS.length ? cardNo(rowIdx + 1) : esc(_rowsPartial ? 'Loading cards…' : 'No cards');
+  $('rowInfo').title = ROWS.length ? 'Card ' + (rowIdx + 1) + ' of ' + ROWS.length + (_rowsPartial ? ' (loading the rest…)' : '') : '';
+  updateDeckCount();
   $('rowInfo').classList.toggle('partial', _rowsPartial);
   $('rowPrev').disabled = rowIdx <= 0; $('rowNext').disabled = rowIdx >= ROWS.length - 1;
   $('zoomInfo').textContent = Math.round(zoom * 100) + '%';

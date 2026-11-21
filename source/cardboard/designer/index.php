@@ -134,6 +134,9 @@ select.sel { -webkit-appearance:none; appearance:none; padding-right:2rem; backg
 .sheet-combo.compact { width:15rem; }
 .sheet-combo .inp { width:100%; padding-right:2rem; cursor:pointer; }
 .sheet-combo.has-layout .inp { padding-left:2rem; }
+.sheet-combo .inp { padding-right:5.4rem; }
+.sc-count { position:absolute; right:2.1rem; top:50%; transform:translateY(-50%); pointer-events:none; font-family:'DINRegular',Arial,sans-serif; font-size:.72rem; letter-spacing:0; text-transform:none; color:#9aa0b8; white-space:nowrap; }
+.sheet-combo.open .sc-count { display:none; }
 .sheet-combo.open .inp { cursor:text; border-color:#7b6cf6; box-shadow:0 0 0 3px rgba(123,108,246,.15); }
 .sc-ico { position:absolute; left:.6rem; top:50%; transform:translateY(-50%); color:#7b6cf6; display:flex; pointer-events:none; }
 .sc-caret { position:absolute; right:.25rem; top:50%; transform:translateY(-50%); width:1.6rem; height:1.6rem; border:none; background:none; color:#6b7090; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
@@ -210,7 +213,6 @@ table.grid thead th.ghost-col { cursor:text; }
 table.grid tbody td.rn .card-no { display:flex; margin:0 auto; width:fit-content; }
 table.grid tbody td.rn:hover .card-no, table.grid tbody td.rn.menu-open .card-no { background:#f7f5ff; }
 #rowInfo { display:inline-flex; align-items:center; gap:.35rem; color:#4b3fa8; }
-#rowInfo .tb-of { color:#6b7090; }
 .col-menu-name {font-family:'DINBlack',sans-serif; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:#8a8fa8; padding:.1rem .2rem .4rem; }
 table.grid thead th[data-c] { cursor:pointer; }
 table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e6e1ff; }

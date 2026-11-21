@@ -879,7 +879,7 @@ function sheetRowFor(row, like) {   // like: the row's values as the sheet has t
   });
 }
 function setRowPicture(e, url) {   // the picture's address goes into this row's cell — kept in this browser until Save
-  var row = ROWS[rowIdx]; if (!row) { toast('There\'s no row to put the picture in', true); return; }
+  if (!ROWS[rowIdx]) { if (!url) return; newCardRow(); }   // no cards yet: the picture starts the first one
   setRowCell(e, url);
   toast(url ? 'Picture set for this row — Save to put it in the sheet' : 'Picture removed from this row — Save to update the sheet');
 }
@@ -1157,11 +1157,11 @@ function editTextInPlace(e) {
 // Enter saves to the sheet (Shift+Enter for a new line), Esc cancels, clicking away saves.
 function editCellInPlace(e) {
   if (!requirePro('edit', function() {})) return;
-  var row = ROWS[rowIdx]; if (!row) { toast('There\'s no row to edit', true); return; }
+  var row = ROWS[rowIdx], fresh = !row;   // no cards yet: typing here makes the first one
   if (!isSel(e.id) || multi.length) setSel([e.id]);
   var node = $('cardHolder').querySelector('.el[data-id="' + e.id + '"]'), inner = node && node.querySelector('.el-inner');
   if (!inner) return;
-  var old = cleanVal(row[e.field]), done = false;
+  var old = fresh ? '' : cleanVal(row[e.field]), done = false;
   node.classList.add('editing');
   inner.textContent = old;
   try { inner.contentEditable = 'plaintext-only'; } catch (x) {}
@@ -1172,7 +1172,9 @@ function editCellInPlace(e) {
     if (done) return; done = true;
     var v = inner.innerText.replace(/\r/g, '').replace(/\n$/, '');
     inner.removeAttribute('contenteditable'); node.classList.remove('editing');
-    if (save && v !== old) setRowCell(e, v); else render();
+    if (!save || v === old || (fresh && !v.trim())) { render(); return; }
+    if (fresh || !ROWS[rowIdx]) newCardRow();
+    setRowCell(e, v);
   }
   inner.addEventListener('keydown', function(k) {
     k.stopPropagation();
@@ -1181,11 +1183,19 @@ function editCellInPlace(e) {
   });
   inner.addEventListener('blur', function() { finish(true); });
 }
+// A new card (a new row, kept in this browser until Save), shown in the designer straight away
+function newCardRow() {
+  var r = { _pend: uid() }; FIELDS.forEach(function(f) { r[f] = ''; });
+  ROWS.push(r); rowIdx = ROWS.length - 1;
+  if (GRID && GRID.tab === curTab) { GRID = null; _gridSel = null; }   // the Cards view picks it up when it's next shown
+  return r;
+}
 // Write a text value into this row's cell for a Data field. Shown on the card straight away;
 // put back if the sheet can't be updated.
 function setRowValue(v) {
-  var e = elById(selId), row = ROWS[rowIdx]; if (!e || e.kind !== 'data' || !row) return;
+  var e = elById(selId), row = ROWS[rowIdx]; if (!e || e.kind !== 'data') return;
   if (!requirePro('edit', function() {})) { renderAttrs(); return; }
+  if (!row) { if (!String(v).trim()) return; newCardRow(); setRowCell(e, v); return; }   // the first card
   if (String(row[e.field] == null ? '' : row[e.field]) !== v) setRowCell(e, v);
 }
 function setRowCell(e, value) {   // kept in this browser until Save
@@ -2177,7 +2187,7 @@ function renderAttrs() {
       delete e.map.type;
       h += dataMapAttrs(e);
       var mv = ROWS[rowIdx] ? cleanVal(ROWS[rowIdx][e.field]) : '';
-      h += '<span class="lbl">Value for this card</span><input class="inp" list="mapValList"' + (ROWS[rowIdx] ? '' : ' disabled') + ' value="' + esc(mv) + '" placeholder="' + (ROWS[rowIdx] ? 'Empty — type a value' : 'No cards yet') + '" onchange="setRowValue(this.value)">' +
+      h += '<span class="lbl">Value for this card</span><input class="inp" list="mapValList" value="' + esc(mv) + '" placeholder="' + (ROWS[rowIdx] ? 'Empty — type a value' : 'No cards yet — type to add one') + '" onchange="setRowValue(this.value)">' +
            '<p class="muted" style="margin:.3rem 0 0">Saved in the <b>' + esc(e.field) + '</b> cell for this card.</p>';
     }
     if (e.as === 'image') {
@@ -2189,8 +2199,8 @@ function renderAttrs() {
     }
     if (e.as !== 'image' && e.as !== 'map') {   // this row's value as typed in the sheet (tags not yet turned into words or pictures) — handy when it's empty on the card
       var rv = ROWS[rowIdx] ? (ROWS[rowIdx][e.field] == null ? '' : String(ROWS[rowIdx][e.field])) : '';
-      h += '<span class="lbl">Value for row ' + (rowIdx + 1) + '</span><textarea class="ta" id="a_val"' + (ROWS[rowIdx] ? '' : ' disabled') +
-           ' placeholder="' + (ROWS[rowIdx] ? 'Empty in this row — type to fill it in' : 'No rows yet') + '" onchange="setRowValue(this.value)">' + esc(rv) + '</textarea>' +
+      h += '<span class="lbl">Value for row ' + (rowIdx + 1) + '</span><textarea class="ta" id="a_val"' +
+           ' placeholder="' + (ROWS[rowIdx] ? 'Empty in this row — type to fill it in' : 'No cards yet — type to add one') + '" onchange="setRowValue(this.value)">' + esc(rv) + '</textarea>' +
            '<p class="muted" style="margin:.3rem 0 0">Saved in the <b>' + esc(e.field) + '</b> cell for this row.</p>';
     }
     h += dataIsImage(e) ? fitAttrs(e) + boxAttrs(e, 'Frame') : e.as === 'map' ? textAttrs(e) + fitAttrs(e) + boxAttrs(e, 'Background') : textAttrs(e) + boxAttrs(e, 'Background');

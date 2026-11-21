@@ -2193,7 +2193,7 @@ function renderAttrs() {
     if (e.as === 'image') {
       var ru = ROWS[rowIdx] ? imageUrl(curSrc(e)) : '';
       h += '<span class="lbl">Picture for row ' + (rowIdx + 1) + '</span><div class="img-slot' + (UPLOADING[e.id] ? ' img-loading' : '') + '" id="imgSlot" onclick="openImagePicker(event,\'' + e.id + '\')" title="Click or drop a picture to change it">' +
-        (ru ? '<div class="el-img" style="background-image:url(&quot;' + esc(ru) + '&quot;);background-size:contain"></div>' : '<div class="img-slot-empty">' + IMG_ICON + '<span>' + (ROWS[rowIdx] ? 'No picture in this row — drop one, or click to choose' : 'No rows yet') + '</span></div>') +
+        (ru ? '<div class="el-img" style="background-image:url(&quot;' + esc(ru) + '&quot;);background-size:contain"></div>' : '<div class="img-slot-empty">' + IMG_ICON + '<span>' + (ROWS[rowIdx] ? 'No picture in this row — drop one, or click to choose' : 'No cards yet — drop a picture to add one') + '</span></div>') +
         '<span class="img-btn">' + IMG_ICON + '</span></div>' +
         '<p class="muted" style="margin:.35rem 0 0">Each row has its own picture, saved in its <b>' + esc(e.field) + '</b> cell. Click or drop a picture here, or double-click it on the card. Step through the rows to set the others.</p>';
     }

@@ -135,7 +135,7 @@ select.sel { -webkit-appearance:none; appearance:none; padding-right:2rem; backg
 .sheet-combo .inp { width:100%; padding-right:2rem; cursor:pointer; }
 .sheet-combo.has-layout .inp { padding-left:2rem; }
 .sheet-combo .inp { padding-right:5.4rem; }
-.sc-count { position:absolute; right:2.1rem; top:50%; transform:translateY(-50%); pointer-events:none; font-family:'DINRegular',Arial,sans-serif; font-size:.72rem; letter-spacing:0; text-transform:none; color:#9aa0b8; white-space:nowrap; }
+.sc-count { position:absolute; right:2.1rem; top:50%; transform:translateY(calc(-50% + .14em));   /* DINBlack in the box sits low: line the count up with it */ pointer-events:none; font-family:'DINRegular',Arial,sans-serif; font-size:.72rem; letter-spacing:0; text-transform:none; color:#9aa0b8; white-space:nowrap; }
 .sheet-combo.open .sc-count { display:none; }
 .sheet-combo.open .inp { cursor:text; border-color:#7b6cf6; box-shadow:0 0 0 3px rgba(123,108,246,.15); }
 .sc-ico { position:absolute; left:.6rem; top:50%; transform:translateY(-50%); color:#7b6cf6; display:flex; pointer-events:none; }

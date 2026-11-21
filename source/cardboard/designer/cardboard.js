@@ -1282,7 +1282,23 @@ function pendingCount() {
   dataTabs().forEach(function(t) { n += pendSize(dataPend(t)); });
   return n;
 }
-var _saving = false, _savingP = null, _saveSteps = 0, _saveDone = 0;
+var _saving = false, _savingP = null, _saveSteps = 0, _saveDone = 0, _quietSave = false;
+// Save by itself when the person pauses: every few seconds, if there are changes and nothing has
+// been typed, clicked or dropped for a while (and nothing is mid-edit), save in the background quietly.
+var IDLE_SAVE_MS = 10000, _lastActivity = Date.now();
+['keydown', 'pointerdown', 'input', 'drop', 'wheel'].forEach(function(t) { document.addEventListener(t, function() { _lastActivity = Date.now(); }, true); });
+function busyEditing() {
+  if (_gridEdit || document.querySelector('.el.editing, #imgPicker, #arrFly')) return true;
+  var a = document.activeElement;
+  return !!a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable);
+}
+function idleSave(force) {
+  if (_saving || !pendingCount() || !hasAccess()) return;
+  if (!force && (Date.now() - _lastActivity < IDLE_SAVE_MS || busyEditing())) return;
+  _quietSave = true; saveAll(true);
+}
+setInterval(idleSave, 4000);
+document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'hidden') idleSave(true); });
 function updateSaveBtn() {
   var btn = $('saveBtn'), n = pendingCount(); if (!btn) return;
   btn.disabled = _saving || !n;
@@ -1290,9 +1306,8 @@ function updateSaveBtn() {
   // While saving, the button fills up as each part (a tab's data, a layout, settings) is saved
   var pct = _saving ? Math.max(8, Math.round(100 * (_saveDone + .35) / Math.max(1, _saveSteps))) : 0;
   btn.style.setProperty('--sv', Math.min(100, pct) + '%');
-  btn.innerHTML = _saving ? '<span class="sv-fill"></span><span class="sv-txt"><span class="sv-spin"></span>Saving' + (_saveSteps > 1 ? ' ' + Math.min(_saveDone + 1, _saveSteps) + '/' + _saveSteps : '…') + '</span>'
-                          : 'Save' + (n ? '<span class="sv-n">' + n + '</span>' : '');
-  btn.title = _saving ? 'Saving to your Google Sheet — keep working' : n ? n + ' unsaved change' + (n === 1 ? '' : 's') + ' in this browser — save them to the sheet (⌘S)' : 'Everything is saved';
+  btn.innerHTML = _saving ? '<span class="sv-fill"></span><span class="sv-txt"><span class="sv-spin"></span>Saving</span>' : 'Save';
+  btn.title = _saving ? 'Saving to your Google Sheet — keep working' : n ? 'Save your changes to the sheet (⌘S) — they’re also saved by themselves when you pause' : 'Everything is saved';
   var st = $('saveStatus');
   if (st && st.dataset.prev == null) { st.textContent = _saving ? 'Saving…' : ''; st.className = 'tb-status'; }
 }
@@ -1400,7 +1415,8 @@ function saveAll(auto) {
     _lastSaveData = {}; _reloadGrid = {};
     if (errors.length) toast('Couldn’t save everything — ' + errors[0] + (errors.length > 1 ? ' (and ' + (errors.length - 1) + ' more)' : '') + '. Your changes are still in this browser; try Save again.', true);
     else if (conflicts) toast('Saved — but ' + conflicts + ' cell' + (conflicts === 1 ? ' was' : 's were') + ' changed in the sheet meanwhile, so the sheet’s value' + (conflicts === 1 ? ' was' : 's were') + ' kept (marked red)', true);
-    else toast(auto === true ? '✓ Saved to your Google Sheet in the background' : '✓ Saved to your Google Sheet');
+    else if (!_quietSave) toast(auto === true ? '✓ Saved to your Google Sheet in the background' : '✓ Saved to your Google Sheet');
+    _quietSave = false;
     storageCheck();
   });
   return _savingP;

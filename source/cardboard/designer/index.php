@@ -68,8 +68,7 @@ button, input, select, textarea { font-family:inherit; }
 .top-save { display:inline-flex; align-items:center; gap:.4rem; height:2.1rem; padding:0 .95rem; border:none; border-radius:999px; background:#f2c14e; color:#2e2763; font-family:'DINBlack',sans-serif; font-size:.7rem; letter-spacing:.09em; text-transform:uppercase; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.18); transition:background .15s, opacity .15s; }
 .top-save:hover:not(:disabled) { background:#ffd36b; }
 .top-save:disabled { background:rgba(255,255,255,.14); color:rgba(255,255,255,.55); box-shadow:none; cursor:default; }
-.top-save .sv-n { min-width:1.2rem; height:1.2rem; padding:0 .3rem; border-radius:999px; background:#2e2763; color:#fff; font-size:.62rem; letter-spacing:0; display:inline-flex; align-items:center; justify-content:center; }
-.top-save { position:relative; overflow:hidden; }
+.top-save { position:relative; overflow:hidden; width:6.6rem; padding:0; justify-content:center; }   /* the same size saving or not */
 .top-save .sv-txt { position:relative; display:inline-flex; align-items:center; gap:.4rem; }
 .top-save .sv-spin { width:.8rem; height:.8rem; border:2px solid rgba(46,39,99,.25); border-top-color:#2e2763; border-radius:50%; animation:spin .7s linear infinite; }
 /* Saving in the background: the button fills from left to right, with moving stripes so it's clearly busy */

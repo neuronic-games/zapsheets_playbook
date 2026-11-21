@@ -1209,7 +1209,12 @@ function addCard() {
   if (prev && prev._pend) { r._prevKey = prev._pend; if (prev._after) r._after = prev._after; }
   else if (prev && at < ROWS.length - 1) {   // under a card that's in the sheet (at the end it's simply added last)
     var like = Object.assign({}, prev);
-    sheetRowFor(prev, like).then(function(gr) { if (gr && gr.row) r._after = gr.row; }).catch(function() {});
+    sheetRowFor(prev, like).then(function(gr) {
+      if (!gr || !gr.row) return;
+      r._after = gr.row;
+      var pd = dataPend(tab), a = pd.adds.filter(function(x) { return x.key === r._pend; })[0];   // already typed into: place it now
+      if (a && !a.after) { a.after = gr.row; setDataPend(tab, pd); }
+    }).catch(function() {});
   }
   render(); renderData(); renderAttrs();
   if (_activeTab === 'print') renderPrint(); if (_activeTab === 'export') renderExport();
@@ -1533,10 +1538,18 @@ function overlayGrid() {
   });
   var tail = GRID.rows.length;   // new rows go above the empty row(s) kept at the end for typing into
   while (tail > 0 && GRID.rows[tail - 1].draft && rowEmpty(GRID.rows[tail - 1]) && !p.adds.some(function(a) { return a.key === GRID.rows[tail - 1].key; })) tail--;
+  // A card added after another one sits under that card's row (after the new cards already there),
+  // the same place it will have in the sheet; the others go at the end
   p.adds.forEach(function(a) {
-    if (GRID.rows.some(function(g) { return g.key === a.key; })) return;
-    var st = {};
-    GRID.rows.splice(tail++, 0, { row: 0, draft: true, key: a.key, values: GRID.header.map(function(h, i) { if (h && a.values[h]) st[i] = 'pending'; return h ? (a.values[h] || '') : ''; }), state: st });
+    var have = GRID.rows.filter(function(g) { return g.key === a.key; })[0];
+    if (have && !a.after) return;
+    var st = {}, gr = have || { row: 0, draft: true, key: a.key, values: GRID.header.map(function(h, i) { if (h && a.values[h]) st[i] = 'pending'; return h ? (a.values[h] || '') : ''; }), state: st };
+    if (!a.after) { GRID.rows.splice(tail++, 0, gr); return; }
+    if (have) { var hi = GRID.rows.indexOf(have); GRID.rows.splice(hi, 1); if (hi < tail) tail--; }
+    var at = a.after <= 1 ? 0 : GRID.rows.findIndex(function(g) { return !g.draft && g.row === a.after; }) + 1;
+    if (a.after > 1 && at <= 0) at = tail;   // that row isn't here any more: at the end
+    while (at < tail && GRID.rows[at].draft && p.adds.some(function(x) { return x.key === GRID.rows[at].key && x.after === a.after; })) at++;
+    GRID.rows.splice(at, 0, gr); if (at <= tail) tail++;
   });
 }
 // Save everything kept in this browser, one tab at a time, in the background

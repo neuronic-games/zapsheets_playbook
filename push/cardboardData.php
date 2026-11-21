@@ -43,7 +43,7 @@ function cbRun(string $python, string $sheetId, array $data): array {
 // free week, a subscription or an unlocked sheet
 require_once __DIR__ . '/cardboardAuth.php';
 cbRequireSignIn();
-if (in_array($action, ['save', 'addfield', 'renamefield', 'setcell', 'addrow', 'deleterow', 'deletefield', 'savecells', 'settag', 'deltag'], true)) {
+if (in_array($action, ['save', 'addtab', 'addfield', 'renamefield', 'setcell', 'addrow', 'deleterow', 'deletefield', 'savecells', 'settag', 'deltag'], true)) {
     require_once __DIR__ . '/cardboardAuth.php';
     cbRequireAccess($sheetId);
 }
@@ -85,6 +85,16 @@ if ($action === 'renamefield') {
     $res = cbRun($python, $sheetId, ['action' => 'renamefield', 'sheet' => $tab, 'old' => $old, 'name' => $name]);
     if (!empty($res['ok'])) @unlink(dirname(__DIR__) . '/sheets/' . $sheetId . '/' . strtolower($tab) . '.json');   // re-read next time
     echo json_encode($res);
+    exit;
+}
+
+// A new deck: a new tab in the spreadsheet (made when the browser's Save sends its new decks)
+if ($action === 'addtab') {
+    $name = trim(preg_replace('/\s+/u', ' ', (string) ($_POST['name'] ?? '')));
+    if ($name === '' || mb_strlen($name) > 100 || strpbrk($name, "/\\") !== false || in_array(strtolower($name), ['layouts', 'tags'], true) || $name === '_cardboard_settings') {
+        echo json_encode(['error' => 'That name can’t be used for a deck']); exit;
+    }
+    echo json_encode(cbRun($python, $sheetId, ['action' => 'addtab', 'name' => $name]), JSON_UNESCAPED_UNICODE);
     exit;
 }
 

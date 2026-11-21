@@ -151,6 +151,16 @@ select.sel { -webkit-appearance:none; appearance:none; padding-right:2rem; backg
 .sc-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .sc-check { color:#7b6cf6; }
 .sc-none { padding:.5rem .6rem; font-size:.78rem; color:#9aa0b8; }
+/* New deck: the last entry in the list, then naming it in the box */
+.sc-item.sc-new { color:#4b3fa8; border-top:1px solid #eceef5; margin-top:.2rem; padding-top:.5rem; border-radius:0 0 6px 6px; }
+.sc-item.sc-new .sc-mark { justify-content:center; font-size:1rem; line-height:1; }
+.sc-pend { font-family:'DINRegular',Arial,sans-serif; font-size:.62rem; text-transform:none; letter-spacing:0; color:#c07a00; background:#fff4dc; border-radius:999px; padding:0 .4rem; }
+.sc-newhint { text-transform:none; letter-spacing:0; line-height:1.45; }
+.sc-newhint span { font-size:.7rem; color:#b0b4c8; }
+.sc-newhint.bad { color:#c0392b; }
+.sheet-combo.naming .inp { border-color:#7b6cf6; }
+.sheet-combo.naming .sc-ico, .sheet-combo.naming .sc-count { display:none; }
+.sheet-combo.naming.has-layout .inp { padding-left:.5rem; }
 .field-chip { display:flex; align-items:center; gap:.45rem; border:1.5px solid #d6d9e6; border-radius:7px; padding:.38rem .55rem; margin-bottom:.35rem; background:#fff; cursor:grab; font-family:'DINBlack',sans-serif; font-size:.74rem; letter-spacing:.03em; color:#2e2763; user-select:none; transition:border-color .12s, background .12s; }
 .field-chip:hover { border-color:#a99cff; background:#f7f5ff; }
 .field-chip .ico { width:16px; text-align:center; color:#a0a4bb; font-family:'DINRegular',sans-serif; flex-shrink:0; }

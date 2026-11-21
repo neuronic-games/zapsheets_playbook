@@ -128,6 +128,17 @@ def main():
              'tabs': [{'title': w.title, 'rows': w.row_count, 'cols': w.col_count}
                       for w in sheets if w.title.lower() not in (TAB, TAGS_TAB) and not hidden(w)]})
 
+    if action == 'addtab':
+        # A new deck from the designer: an empty tab (its headings, rows and layout follow in the same Save)
+        name = str(data.get('name') or '').strip()
+        if not name or name.lower() in (TAB, TAGS_TAB): out({'error': 'That name can\'t be used for a deck'})
+        if any(w.title.lower() == name.lower() for w in sheets): out({'ok': True, 'existed': True})
+        try:
+            wb.add_worksheet(title=name, rows=200, cols=10)
+        except Exception as e:
+            out({'error': 'Couldn\'t add the tab: ' + str(e)})
+        out({'ok': True})
+
     if action in ('tags', 'settag', 'deltag'):
         tws = next((w for w in sheets if w.title.lower() == TAGS_TAB), None)
         def brace(n):   # tag names are written [energy]; older rows saved as {energy} are read the same way

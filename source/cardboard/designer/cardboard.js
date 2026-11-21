@@ -119,6 +119,10 @@ function normalize(lay) {
 
 // ── Server ────────────────────────────────────────────────────────────────────
 function api(action, extra) {
+  if (extra && extra.tab && isNewTab(extra.tab)) {   // a deck added here and not saved yet: nothing in the sheet to read
+    if (action === 'peek' || action === 'rows') return Promise.resolve({ ok: true, rows: [], full: true });
+    if (action === 'grid') return Promise.resolve({ ok: true, header: [], rows: [] });
+  }
   var fd = new FormData();
   fd.append('id', SHEET_ID); fd.append('action', action);
   Object.keys(extra || {}).forEach(function(k) { fd.append(k, extra[k]); });
@@ -361,12 +365,9 @@ function init() {
       _oldProfile = SETTINGS.profile || null; delete SETTINGS.profile;   // the profile lives with the account now
       SHEET_TITLE = res.title || '';
       if (res.title) { $('subTitle').textContent = res.title; document.title = res.title; }
+      mergeNewTabs(); fillDeckSelects();
       var sel = $('sheetSel');
-      sel.innerHTML = TABS.map(function(t) { return '<option>' + esc(t.title) + '</option>'; }).join('');
-      $('gridSheet').innerHTML = sel.innerHTML;
-      $('pSheet').innerHTML = sel.innerHTML;
-      $('eSheet').innerHTML = sel.innerHTML;
-      var start = res.tab || want;
+      var start = isNewTab(want) ? want : (res.tab || want);
       if (!TABS.some(function(t) { return t.title === start; })) {
         start = (TABS.filter(function(t) { return LAYOUTS[t.title]; })[0] || TABS[0] || {}).title || '';
       }
@@ -385,6 +386,37 @@ function init() {
 // Type to filter the tabs; sheets that already have a layout show the layout icon.
 var LAYOUT_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M5 8h14"/><rect x="8" y="11" width="8" height="4.5" rx="1" fill="currentColor" stroke="none"/><path d="M8 18.3h5"/></svg>';
 function hasLayout(t) { return !!LAYOUTS[t] && t !== SETTINGS_KEY; }
+// ── New decks: added from the Deck box, kept in this browser (cb_newtabs:<sheet>) until Save,
+// which adds the tab to the spreadsheet first, then its columns, cards and layout.
+function newTabs() { var l = lsGet('cb_newtabs:' + SHEET_ID); return Array.isArray(l) ? l : []; }
+function isNewTab(t) { return !!t && newTabs().indexOf(t) >= 0; }
+function setNewTabs(l) { lsSet('cb_newtabs:' + SHEET_ID, l.length ? l : null); updateSaveBtn(); }
+function mergeNewTabs() {   // the new decks go at the end of the list; drop any the sheet now has
+  var have = TABS.map(function(t) { return t.title.toLowerCase(); }), keep = [];
+  newTabs().forEach(function(n) { if (have.indexOf(n.toLowerCase()) < 0) { keep.push(n); TABS.push({ title: n, rows: 0, cols: 0, pending: true }); } });
+  if (keep.length !== newTabs().length) setNewTabs(keep);
+}
+function fillDeckSelects() {
+  var opts = TABS.map(function(t) { return '<option>' + esc(t.title) + '</option>'; }).join('');
+  ['sheetSel', 'gridSheet', 'pSheet', 'eSheet'].forEach(function(id) { var s = $(id); if (s) { var v = s.value; s.innerHTML = opts; if (v) s.value = v; } });
+}
+function newDeckProblem(n) {
+  if (!n) return 'Type a name for the new deck';
+  if (n.length > 100) return 'Use up to 100 characters';
+  if (/[\/\\]/.test(n)) return 'Names can\'t use / or \\';
+  if (/^(layouts|tags)$/i.test(n) || n === SETTINGS_KEY) return '“' + n + '” is used by CardBoard';
+  if (TABS.some(function(t) { return t.title.toLowerCase() === n.toLowerCase(); })) return 'There\'s already a deck called “' + n + '”';
+  return '';
+}
+function addNewDeck(n) {
+  n = String(n || '').trim().replace(/\s+/g, ' ');
+  if (!hasAccess()) { requirePro('edit', function() {}); return; }
+  var why = newDeckProblem(n); if (why) { toast(why, true); return; }
+  var l = newTabs(); l.push(n); setNewTabs(l);
+  TABS.push({ title: n, rows: 0, cols: 0, pending: true });
+  fillDeckSelects(); selectTab(n);
+  toast('New deck “' + n + '” — add columns and cards, then Save to put it in your sheet');
+}
 // The current deck's card count, shown in each Deck box (once its rows are in)
 var _countTab = '';
 function updateDeckCount() {
@@ -410,28 +442,58 @@ function makeSheetCombo(sel) {
   box.innerHTML = '<span class="sc-ico" title="Has a layout"></span><input class="inp sel-sheet" autocomplete="off" spellcheck="false" aria-label="Deck" role="combobox" aria-expanded="false"><span class="sc-count" hidden></span>' +
     '<button type="button" class="sc-caret" tabindex="-1" aria-label="Show decks"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div class="sc-list" role="listbox"></div>';
   sel.parentNode.insertBefore(box, sel.nextSibling);
-  var inp = box.querySelector('input'), list = box.querySelector('.sc-list'), hi = 0, items = [];
+  var inp = box.querySelector('input'), list = box.querySelector('.sc-list'), hi = 0, items = [], naming = false, typed = '';
+  var NEW = '\u0000new';   // the "New deck" entry at the end of the list
   function draw(filter) {
-    var f = (filter || '').trim().toLowerCase();
+    if (naming) {   // naming a new deck: just a hint (or what's wrong with the name)
+      var n = inp.value.trim().replace(/\s+/g, ' '), why = n ? newDeckProblem(n) : '';
+      items = [];
+      list.innerHTML = '<div class="sc-none sc-newhint' + (why ? ' bad' : '') + '">' + esc(why || (n ? 'Press Enter to add “' + n + '”' : 'Type the new deck’s name, then press Enter')) +
+        '<br><span>It’s kept in this browser until you Save.</span></div>';
+      return;
+    }
+    var f = (filter || '').trim().toLowerCase(); typed = (filter || '').trim().replace(/\s+/g, ' ');
     items = TABS.map(function(t) { return t.title; }).filter(function(t) { return !f || t.toLowerCase().indexOf(f) >= 0; });
+    var exact = f && TABS.some(function(t) { return t.title.toLowerCase() === f; });
+    if (!exact) items.push(NEW);
     hi = Math.max(0, items.indexOf(sel.value)); if (f) hi = 0;
-    list.innerHTML = items.length ? items.map(function(t, i) {
+    list.innerHTML = items.map(function(t, i) {
+      if (t === NEW) return '<div class="sc-item sc-new' + (i === hi ? ' hi' : '') + '" role="option" data-i="' + i + '"><span class="sc-mark">+</span><span class="sc-name">' +
+        (typed ? 'New deck “' + esc(typed) + '”' : 'New deck…') + '</span></div>';
+      var pend = isNewTab(t);
       return '<div class="sc-item' + (i === hi ? ' hi' : '') + (t === sel.value ? ' cur' : '') + '" role="option" data-i="' + i + '">' +
-        '<span class="sc-mark">' + (hasLayout(t) ? LAYOUT_ICON : '') + '</span><span class="sc-name">' + esc(t) + '</span>' + (t === sel.value ? '<span class="sc-check">✓</span>' : '') + '</div>';
-    }).join('') : '<div class="sc-none">No deck called “' + esc(filter) + '”</div>';
+        '<span class="sc-mark">' + (hasLayout(t) ? LAYOUT_ICON : '') + '</span><span class="sc-name">' + esc(t) + '</span>' +
+        (pend ? '<span class="sc-pend" title="Added here — Save to put it in your sheet">unsaved</span>' : '') + (t === sel.value ? '<span class="sc-check">✓</span>' : '') + '</div>';
+    }).join('');
     var h = list.querySelector('.hi'); if (h) h.scrollIntoView({ block: 'nearest' });
   }
+  function startNaming(name) {
+    naming = true; box.classList.add('naming');
+    inp.value = name || ''; inp.placeholder = 'New deck name'; inp.focus(); draw();
+  }
+  function stopNaming() { naming = false; box.classList.remove('naming'); inp.placeholder = ''; }
   function open() { if (box.classList.contains('open')) return; box.classList.add('open'); inp.setAttribute('aria-expanded', 'true'); draw(''); inp.select(); }
-  function close(restore) { box.classList.remove('open'); inp.setAttribute('aria-expanded', 'false'); if (restore !== false) inp.value = sel.value; }
+  function close(restore) { stopNaming(); box.classList.remove('open'); inp.setAttribute('aria-expanded', 'false'); if (restore !== false) inp.value = sel.value; }
   function pick(t) {
+    if (t === NEW) { if (typed && !newDeckProblem(typed)) { close(false); inp.blur(); addNewDeck(typed); } else startNaming(typed); return; }
     close(false); inp.value = t; inp.blur();
     if (t !== sel.value) { sel.value = t; selectTab(t); } else refreshSheetCombos();
+  }
+  function createTyped() {
+    var n = inp.value.trim().replace(/\s+/g, ' '), why = newDeckProblem(n);
+    if (why) { draw(); return; }
+    close(false); inp.blur(); addNewDeck(n);
   }
   inp.addEventListener('focus', open);
   inp.addEventListener('mousedown', function() { if (document.activeElement === inp) open(); });
   inp.addEventListener('input', function() { open(); draw(inp.value); });
   inp.addEventListener('keydown', function(k) {
     k.stopPropagation();
+    if (naming) {
+      if (k.key === 'Enter') { k.preventDefault(); createTyped(); }
+      else if (k.key === 'Escape') { k.preventDefault(); stopNaming(); inp.value = ''; draw(''); }
+      return;
+    }
     if (k.key === 'ArrowDown' || k.key === 'ArrowUp') { k.preventDefault(); open(); hi = clamp(hi + (k.key === 'ArrowDown' ? 1 : -1), 0, items.length - 1);
       list.querySelectorAll('.sc-item').forEach(function(n, i) { n.classList.toggle('hi', i === hi); }); var h = list.querySelector('.hi'); if (h) h.scrollIntoView({ block: 'nearest' }); }
     else if (k.key === 'Enter') { k.preventDefault(); if (items[hi] != null) pick(items[hi]); }
@@ -524,10 +586,9 @@ function reloadSheet(asked) {
   api('tabs').then(function(r) {
     var tabs = (r && r.tabs) || []; if (!tabs.length) return;
     var before = TABS.map(function(t) { return t.title; }).join('\u0001');
-    TABS = tabs;
+    TABS = tabs; mergeNewTabs();
     if (TABS.map(function(t) { return t.title; }).join('\u0001') !== before) {
-      var sel = $('sheetSel'); sel.innerHTML = TABS.map(function(t) { return '<option>' + esc(t.title) + '</option>'; }).join('');
-      $('gridSheet').innerHTML = sel.innerHTML; $('pSheet').innerHTML = sel.innerHTML; $('eSheet').innerHTML = sel.innerHTML;
+      var sel = $('sheetSel'); fillDeckSelects();
       var keep = TABS.some(function(t) { return t.title === curTab; }) ? curTab : (TABS[0] || {}).title;
       sel.value = keep; $('gridSheet').value = keep; $('pSheet').value = keep; $('eSheet').value = keep; refreshSheetCombos();
       if (keep !== curTab) { selectTab(keep, true, true); return; }
@@ -1339,7 +1400,7 @@ function pendingCol(tab, name) { return dataPend(tab).cols.indexOf(name) >= 0; }
 function settingsPending() { return !!lsGet('cb_settings:' + SHEET_ID); }
 function markSettings() { var keep = Object.assign({}, SETTINGS); delete keep.profile; lsSet('cb_settings:' + SHEET_ID, keep); updateSaveBtn(); }
 function pendingCount() {
-  var n = draftTabs().length + (settingsPending() ? 1 : 0);
+  var n = newTabs().length + draftTabs().length + (settingsPending() ? 1 : 0);
   dataTabs().forEach(function(t) { n += pendSize(dataPend(t)); });
   return n;
 }
@@ -1436,12 +1497,22 @@ function saveAll(auto) {
   if (!requirePro('save', saveAll)) return Promise.resolve();
   if (_gridEdit && auto !== true) endGridEdit(true);
   _saving = true; _saveDone = 0;
-  _saveSteps = dataTabs().length + draftTabs().length + (settingsPending() ? 1 : 0);
+  _saveSteps = newTabs().length + dataTabs().length + draftTabs().length + (settingsPending() ? 1 : 0);
   updateSaveBtn();
   var step = function() { _saveDone++; updateSaveBtn(); };
-  var errors = [], conflicts = 0, savedTabs = [], chain = Promise.resolve();
+  var errors = [], conflicts = 0, savedTabs = [], chain = Promise.resolve(), failedNew = [];
+  // New decks first: the tab has to be in the spreadsheet before its columns, cards and layout
+  newTabs().forEach(function(tab) {
+    chain = chain.then(function() {
+      return api('addtab', { name: tab }).then(function() {
+        setNewTabs(newTabs().filter(function(x) { return x !== tab; }));
+        TABS.forEach(function(t) { if (t.title === tab) delete t.pending; });
+      }).catch(function(e) { failedNew.push(tab); errors.push('new deck “' + tab + '”: ' + e.message); }).then(step);
+    });
+  });
   dataTabs().forEach(function(tab) {
     chain = chain.then(function() {
+      if (isNewTab(tab)) { step(); return; }   // its tab couldn't be added: keep its changes for the next Save
       var sent = dataPend(tab);
       return api('savecells', { tab: tab, cols: JSON.stringify(sent.cols), cells: JSON.stringify(sent.cells), adds: JSON.stringify(sent.adds), delrows: JSON.stringify(sent.delrows), delcols: JSON.stringify(sent.delcols) })
         .then(function(res) { conflicts += applySaveResults(tab, sent, res); if (savedTabs.indexOf(tab) < 0) savedTabs.push(tab); })
@@ -1450,6 +1521,7 @@ function saveAll(auto) {
   });
   draftTabs().forEach(function(tab) {
     chain = chain.then(function() {
+      if (isNewTab(tab)) { step(); return; }
       var snap = tab === curTab && layout ? JSON.stringify(layout) : localStorage.getItem('cb_draft:' + SHEET_ID + ':' + tab);
       if (!snap) { step(); return; }
       return api('save', { tab: tab, layout: snap }).then(function() {

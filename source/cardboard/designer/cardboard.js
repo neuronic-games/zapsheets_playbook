@@ -385,8 +385,8 @@ function hasLayout(t) { return !!LAYOUTS[t] && t !== SETTINGS_KEY; }
 // The current deck's card count, shown in each Deck box (once its rows are in)
 var _countTab = '';
 function updateDeckCount() {
-  var txt = !curTab || _countTab !== curTab || (!ROWS.length && _rowsPartial) ? '' : ROWS.length + (_rowsPartial ? '…' : '') + (ROWS.length === 1 ? ' card' : ' cards');
-  document.querySelectorAll('.sheet-combo .sc-count').forEach(function(c) { c.textContent = txt; c.hidden = !txt; });
+  var txt = !curTab || _countTab !== curTab || (!ROWS.length && _rowsPartial) ? '' : ROWS.length + (_rowsPartial ? '…' : '');
+  document.querySelectorAll('.sheet-combo .sc-count').forEach(function(c) { c.textContent = txt; c.hidden = !txt; c.title = txt ? ROWS.length + (ROWS.length === 1 ? ' card' : ' cards') : ''; });
 }
 function refreshSheetCombos() {
   ['sheetSel', 'gridSheet', 'pSheet', 'eSheet'].forEach(function(id) {

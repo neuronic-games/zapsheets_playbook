@@ -68,6 +68,13 @@ body {
 .instructions ol { padding-left:1.35rem; margin-top:.5rem; }
 .instructions li { margin-bottom:.25rem; }
 .instructions strong { color:#333; }
+.why { margin:.75rem 0 .2rem; border:1px solid #e3e0f5; border-radius:9px; background:#f8f7fe; padding:.45rem .8rem; }
+.why summary { cursor:pointer; font-family:'DINBlack',sans-serif; font-size:.78rem; letter-spacing:.05em; text-transform:uppercase; color:#4b3fa8; }
+.why[open] summary { margin-bottom:.35rem; }
+.why p { margin:.35rem 0; font-size:.84rem; }
+.why ul { margin:.3rem 0 .4rem; padding-left:1.15rem; font-size:.84rem; }
+.why li { margin-bottom:.25rem; }
+.why b { color:#333; }
 
 .copy-email-btn {
   display:inline-flex; align-items:center; gap:.28rem;
@@ -209,6 +216,17 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
     <div class="card-title">Connect Your Google Sheet</div>
     <div class="instructions">
       Keep your cards in a Google Sheet — one tab per deck, one row per card, one column per field (Name, Cost, Text, Image…). CardBoard turns each row into a card using a layout you design, then lays them out on print sheets.
+      <details class="why">
+        <summary>Why a Google Sheet?</summary>
+        <p><b>It’s where your cards live.</b> CardBoard doesn’t keep your game on its own servers — your cards, your layouts and your tags are all saved in your sheet (CardBoard adds a <i>layouts</i> and a <i>tags</i> tab for its part). That’s why it needs one to start.</p>
+        <ul>
+          <li><b>Yours to keep.</b> The sheet stays in your Google Drive. Stop using CardBoard any time and everything is still there.</li>
+          <li><b>Edit cards the fast way.</b> Change numbers across a whole deck, sort, filter, use formulas or paste in a list — then Fetch, and every card follows.</li>
+          <li><b>Work with others.</b> Share the sheet with co-designers or playtesters the usual Google way.</li>
+          <li><b>Nothing gets lost.</b> Google keeps the sheet’s version history, so you can always go back.</li>
+        </ul>
+        <p><b>Why share it with that address?</b> It’s CardBoard’s own Google account — it lets CardBoard read your cards and save your designs back. It only sees the sheets you share with it, and you can remove it whenever you like.</p>
+      </details>
       <ol>
         <li>Open (or create) a Google Spreadsheet and share it with the CardBoard service account.</li>
         <li>Click <strong>Share</strong> and add <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> <button class="copy-email-btn" id="copyEmailBtn" onclick="copyEmail()">Copy</button> with <strong>Editor</strong> rights.</li>

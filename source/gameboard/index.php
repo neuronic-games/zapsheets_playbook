@@ -82,6 +82,16 @@ nav { position:sticky; top:0; z-index:50; display:flex; align-items:center; just
 .hero::before { content:''; position:absolute; top:-160px; left:50%; transform:translateX(-50%); width:820px; height:820px; background:radial-gradient(circle closest-side, rgba(229,96,79,.22) 0%, transparent 65%); pointer-events:none; }
 .hero::after { content:''; position:absolute; bottom:-120px; right:8%; width:520px; height:520px; background:radial-gradient(circle closest-side, rgba(246,239,226,.08) 0%, transparent 70%); pointer-events:none; }
 .hero > * { position:relative; }
+/* The hero fills the first screen (under the 64px menu bar), its content centred, with a cue to scroll on */
+.hero { min-height:calc(100vh - 64px); min-height:calc(100svh - 64px); display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:4rem; padding-bottom:7rem; box-sizing:border-box; }
+.scroll-cue { position:absolute !important; left:50%; bottom:22px; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:8px; color:rgba(255,255,255,.6); text-decoration:none; font-size:11.5px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; z-index:2; transition:color .15s; }
+.scroll-cue:hover { color:#fff; }
+.scroll-cue .mouse { width:24px; height:38px; border:2px solid currentColor; border-radius:14px; position:relative; }
+.scroll-cue .mouse::after { content:''; position:absolute; left:50%; top:7px; width:4px; height:8px; margin-left:-2px; border-radius:2px; background:currentColor; animation:wheel 1.8s ease-in-out infinite; }
+@keyframes wheel { 0% { opacity:0; transform:translateY(-2px); } 30% { opacity:1; } 70% { opacity:1; transform:translateY(10px); } 100% { opacity:0; transform:translateY(12px); } }
+.scroll-cue .chev { width:12px; height:12px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); margin-top:-4px; animation:chev 1.8s ease-in-out infinite; }
+@keyframes chev { 0%,100% { transform:translateY(0) rotate(45deg); opacity:.5; } 50% { transform:translateY(6px) rotate(45deg); opacity:1; } }
+@media (max-height:620px) { .scroll-cue { display:none; } }
 .tag { display:inline-block; font-size:12px; font-weight:500; letter-spacing:.08em; text-transform:uppercase; color:#f3b4aa; border:1px solid rgba(243,180,170,.35); border-radius:999px; padding:5px 14px; margin-bottom:1.6rem; }
 .hero h1 { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(2.3rem,5vw,3.7rem); line-height:1.1; letter-spacing:-.03em; max-width:820px; margin:0 auto 1.4rem; }
 .hero h1 em { font-style:italic; font-weight:400; color:var(--red); }
@@ -608,6 +618,7 @@ footer a:hover { color:var(--navy); }
     <button type="button" class="btn primary" id="heroCta" onclick="acctClick('signup')">Start your free week</button>
     <a class="btn ghost" href="#pricing">Pricing</a>
   </div>
+  <a class="scroll-cue" href="#action" aria-label="Scroll down to see the apps in action"><span class="mouse"></span><span>See them in action</span><span class="chev"></span></a>
 </header>
 
 <section class="action" id="action">

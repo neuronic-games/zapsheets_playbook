@@ -172,6 +172,168 @@ footer a:hover { color:var(--navy); }
 .rules li.ok::before { content:'● '; }
 .err { color:#c0392b; font-size:13px; min-height:1.1rem; margin-top:.5rem; }
 .foot { text-align:center; margin-top:.8rem; }
+
+/* ── Hero: the four app icons float around the headline ─────────────────── */
+.floaters { position:absolute; inset:0; pointer-events:none; }
+.floaters img { position:absolute; width:74px; height:74px; border-radius:18px; box-shadow:0 18px 40px rgba(0,0,0,.45); animation:bob 7s ease-in-out infinite; opacity:.95; }
+.floaters img:nth-child(1) { left:7%;  top:24%; transform:rotate(-10deg); animation-delay:0s; }
+.floaters img:nth-child(2) { left:12%; top:64%; transform:rotate(7deg);  animation-delay:-2s; width:62px; height:62px; }
+.floaters img:nth-child(3) { right:8%; top:22%; transform:rotate(9deg);  animation-delay:-4s; }
+.floaters img:nth-child(4) { right:12%; top:62%; transform:rotate(-6deg); animation-delay:-1s; width:62px; height:62px; }
+@keyframes bob { 0%,100% { translate:0 0; } 50% { translate:0 -16px; } }
+@media (max-width:980px) { .floaters { display:none; } }
+.hero h1 em { background:linear-gradient(90deg,#f0766a,#f7b267,#9ed29f,#7b6cf6,#49c4d4,#f0766a); background-size:300% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:shine 10s linear infinite; }
+@keyframes shine { to { background-position:300% 0; } }
+
+/* ── See them in action: one animated window per app ─────────────────────── */
+.action { background:var(--navy); color:#fff; position:relative; overflow:hidden; }
+.action::before { content:''; position:absolute; top:10%; left:-10%; width:600px; height:600px; background:radial-gradient(circle, rgba(123,108,246,.18), transparent 65%); pointer-events:none; }
+.action h2 { color:#fff; }
+.action .sub { color:rgba(255,255,255,.65); }
+.show { display:grid; grid-template-columns:1fr 1.15fr; gap:3.5rem; align-items:center; margin:0 auto 5.5rem; max-width:1040px; position:relative; }
+.show:last-child { margin-bottom:0; }
+.show.flip { grid-template-columns:1.15fr 1fr; }
+.show.flip .show-text { order:2; }
+@media (max-width:860px) { .show, .show.flip { grid-template-columns:1fr; gap:1.8rem; } .show.flip .show-text { order:0; } }
+.show-text .badge { display:inline-flex; align-items:center; gap:.55rem; font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--c); margin-bottom:.8rem; }
+.show-text .badge img { width:34px; height:34px; border-radius:8px; }
+.show-text h3 { font-family:'Fraunces',Georgia,serif; font-size:clamp(1.6rem,2.8vw,2.1rem); line-height:1.15; letter-spacing:-.02em; margin-bottom:.8rem; }
+.show-text p { color:rgba(255,255,255,.7); margin-bottom:1.2rem; }
+.show-text a { color:var(--c); font-weight:600; text-decoration:none; }
+.show-text a:hover { text-decoration:underline; }
+
+.win { background:#fff; color:var(--text); border-radius:14px; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06); position:relative; }
+.win-bar { display:flex; align-items:center; gap:6px; height:34px; padding:0 12px; background:#f1eff6; border-bottom:1px solid #e6e3ee; }
+.win-bar i { width:10px; height:10px; border-radius:50%; background:#e2dfea; }
+.win-bar i:nth-child(1) { background:#f0766a; } .win-bar i:nth-child(2) { background:#f7c65a; } .win-bar i:nth-child(3) { background:#7fd08a; }
+.win-bar span { margin-left:10px; flex:1; font-size:11.5px; color:#8a8fa8; background:#fff; border-radius:6px; padding:3px 10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.win-body { height:340px; position:relative; overflow:hidden; }
+@keyframes appear { 0% { opacity:0; transform:translateY(10px); } 6%,82% { opacity:1; transform:none; } 90%,100% { opacity:0; transform:none; } }
+
+/* DevBoard: a playtest being logged */
+.dv { padding:16px 18px; font-size:13px; }
+.win-body.dv { height:auto; min-height:340px; }
+.dv-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+.dv-head b { display:block; font-size:15px; color:#16324f; }
+.dv-head span { color:#8a93a6; font-size:12px; }
+.dv-timer { display:flex; align-items:center; gap:7px; font:600 15px ui-monospace,Menlo,monospace; color:#16324f; background:#eaf8fa; border-radius:8px; padding:5px 10px; }
+.rec { width:9px; height:9px; border-radius:50%; background:#e5604f; animation:blink 1.2s steps(2) infinite; }
+@keyframes blink { 50% { opacity:.2; } }
+.dv-round { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#49c4d4; margin:4px 0 8px; }
+.dv-note { display:flex; gap:9px; align-items:flex-start; background:#f6fafb; border:1px solid #e3eef0; border-radius:9px; padding:8px 10px; margin-bottom:7px; opacity:0; animation:appear 12s infinite; color:#2b3a4a; }
+.dv-note.n2 { animation-delay:1.6s; margin-left:22px; } .dv-note.n3 { animation-delay:3.2s; }
+.dvt { flex-shrink:0; font-style:normal; font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; border-radius:5px; padding:2px 6px; margin-top:1px; }
+.dvt.obs { background:#fff1dc; color:#b26a00; } .dvt.sol { background:#e2f6e5; color:#2e7d32; }
+.dv-todo { margin-top:12px; border-top:1px dashed #dde6ea; padding-top:10px; }
+.dv-todo b { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#8a93a6; display:block; margin-bottom:6px; }
+.dv-todo div { display:flex; align-items:center; gap:8px; margin-bottom:6px; color:#2b3a4a; opacity:0; animation:appear 12s infinite 4.4s; }
+.dv-todo div.t2 { animation-delay:5s; }
+.cbx { width:16px; height:16px; border-radius:4px; border:1.5px solid #b8c6cc; position:relative; flex-shrink:0; }
+.cbx::after { content:'✓'; position:absolute; inset:-2px 0 0 2px; font-size:13px; font-weight:800; color:#fff; opacity:0; }
+.t1 .cbx { animation:tick 12s infinite; } .t1 span { animation:strike 12s infinite; }
+@keyframes tick { 0%,58% { background:#fff; border-color:#b8c6cc; } 62%,88% { background:#49c4d4; border-color:#49c4d4; } 92%,100% { background:#fff; } }
+@keyframes strike { 0%,58% { text-decoration:none; color:#2b3a4a; } 62%,88% { text-decoration:line-through; color:#9aa5b1; } }
+.t1 .cbx::after { animation:tickmark 12s infinite; }
+@keyframes tickmark { 0%,58% { opacity:0; } 62%,88% { opacity:1; } 92%,100% { opacity:0; } }
+
+/* CardBoard: a card being built from the sheet, flipped, then laid out to print */
+.cbm { display:grid; grid-template-columns:96px 1fr; background:#eef0f6; }
+.cb-pal { background:#fff; border-right:1px solid #e1e4ee; padding:12px 9px; display:flex; flex-direction:column; gap:7px; }
+.cb-pal small { font-size:9.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:#8a8fa8; }
+.chip { font-size:11.5px; font-weight:600; color:#2e2763; border:1.5px solid #d6d9e6; border-radius:7px; padding:5px 7px; background:#fff; animation:chip 12s infinite; }
+.chip.c2 { animation-delay:1s; } .chip.c3 { animation-delay:2s; } .chip.c4 { animation-delay:3s; }
+@keyframes chip { 0%,2% { border-color:#d6d9e6; background:#fff; } 4%,8% { border-color:#7b6cf6; background:#f3f1ff; transform:translateX(6px); } 12%,100% { border-color:#d6d9e6; background:#fff; transform:none; } }
+.cb-stage { position:relative; display:flex; align-items:center; justify-content:center; perspective:900px; }
+.cb-flip { width:168px; height:236px; position:relative; transform-style:preserve-3d; animation:flip 12s infinite; }
+@keyframes flip { 0%,48% { transform:rotateY(0); } 54%,66% { transform:rotateY(180deg); } 72%,100% { transform:rotateY(360deg); } }
+.cb-card { position:absolute; inset:0; border-radius:10px; backface-visibility:hidden; -webkit-backface-visibility:hidden; box-shadow:0 10px 26px rgba(30,25,80,.25); overflow:hidden; }
+.cb-card.front { background:#fffaf0; border:5px solid #2e2763; padding:8px; display:flex; flex-direction:column; }
+.cb-card.back { transform:rotateY(180deg); background:#2e2763 radial-gradient(circle at 50% 45%, #4b3fa8, #2e2763 70%); display:flex; align-items:center; justify-content:center; }
+.cb-card.back b { font-family:'Fraunces',Georgia,serif; font-size:24px; color:#f2c14e; letter-spacing:.04em; }
+.cb-art, .cb-name, .cb-cost, .cb-text, .cb-type { opacity:0; animation:pop 12s infinite; }
+.cb-art { height:108px; border-radius:6px; overflow:hidden; animation-delay:2.1s; } .cb-art img { width:100%; height:100%; object-fit:cover; display:block; }
+.cb-name { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:17px; color:#2e2763; margin:7px 0 0; animation-delay:.1s; }
+.cb-type { font-size:9px; font-weight:800; letter-spacing:.12em; color:#b0802a; animation-delay:.1s; }
+.cb-cost { position:absolute; top:6px; right:6px; width:30px; height:30px; border-radius:50%; background:#f2c14e; color:#2e2763; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,.25); z-index:2; animation-delay:1.1s; }
+.cb-text { font-size:11.5px; color:#444; line-height:1.35; margin-top:5px; animation-delay:3.1s; }
+@keyframes pop { 0% { opacity:0; transform:scale(.6); } 4%,90% { opacity:1; transform:none; } 96%,100% { opacity:0; } }
+.cb-sheet { position:absolute; inset:14px; background:#fff; border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,.18); display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:12px; opacity:0; animation:sheet 12s infinite; }
+@keyframes sheet { 0%,74% { opacity:0; transform:scale(.9); } 78%,94% { opacity:1; transform:none; } 98%,100% { opacity:0; } }
+.cb-sheet div { border:1px dashed #c9cce0; border-radius:4px; background:#fffaf0 center/cover; }
+.cb-sheet-tag { position:absolute; right:14px; bottom:14px; font-size:11px; font-weight:700; color:#fff; background:#7b6cf6; border-radius:999px; padding:3px 10px; opacity:0; animation:sheet 12s infinite; }
+
+/* PitchBoard: a pitch moving across the board to Signed */
+.pb { padding:14px; background:#fbf7f1; }
+.pb-cols { display:grid; grid-template-columns:repeat(3,1fr); height:100%; position:relative; }
+.pb-col { padding:0 5px; }
+.pb-col h5 { font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:#a07a4c; margin:2px 0 8px; display:flex; justify-content:space-between; }
+.pb-col h5 em { font-style:normal; background:#f3e6d3; color:#8a5c25; border-radius:999px; padding:0 7px; }
+.pb-card { background:#fff; border:1px solid #efe4d4; border-radius:9px; padding:8px; display:flex; gap:8px; align-items:center; margin-bottom:8px; box-shadow:0 2px 6px rgba(120,80,20,.06); font-size:12px; }
+.pb-card img { width:34px; height:34px; border-radius:6px; object-fit:cover; flex-shrink:0; }
+.pb-card b { display:block; color:#3a2a14; font-size:12.5px; }
+.pb-card span { color:#a08a6c; font-size:11px; }
+.pb-move { position:absolute; left:5px; top:96px; width:calc(33.333% - 10px); z-index:3; animation:pitch 12s infinite; }
+.pb-move .pb-card { border-color:#e7a35a; box-shadow:0 10px 24px rgba(200,120,30,.22); }
+@keyframes pitch { 0% { transform:translateX(0); opacity:0; } 3%,16% { transform:translateX(0); opacity:1; } 24%,44% { transform:translateX(calc(100% + 10px)); opacity:1; } 52%,92% { transform:translateX(calc(200% + 20px)); opacity:1; } 100% { transform:translateX(calc(200% + 20px)); opacity:0; } }
+.stamp { position:absolute; right:-6px; top:-10px; font:800 11px 'Inter',sans-serif; letter-spacing:.08em; color:#fff; background:#2e9d4c; border-radius:6px; padding:3px 7px; transform:rotate(8deg) scale(0); animation:stamp 12s infinite; }
+@keyframes stamp { 0%,54% { transform:rotate(8deg) scale(0); } 58% { transform:rotate(8deg) scale(1.25); } 61%,90% { transform:rotate(8deg) scale(1); } 96%,100% { transform:rotate(8deg) scale(0); } }
+.pb-dates { position:absolute; left:14px; right:14px; bottom:12px; display:flex; gap:8px; }
+.pb-dates div { flex:1; background:#fff; border:1px solid #efe4d4; border-radius:8px; padding:6px 9px; font-size:11px; color:#8a6a40; }
+.pb-dates b { color:#3a2a14; display:block; font-size:12px; }
+.confetti { position:absolute; right:16%; top:30%; width:8px; height:8px; border-radius:2px; opacity:0; animation:conf 12s infinite; }
+.confetti:nth-child(2) { right:10%; top:26%; background:#7b6cf6 !important; animation-delay:.1s; } .confetti:nth-child(3) { right:22%; top:24%; background:#49c4d4 !important; animation-delay:.2s; }
+@keyframes conf { 0%,56% { opacity:0; transform:translateY(0) rotate(0); } 58% { opacity:1; } 70% { opacity:0; transform:translateY(-46px) rotate(220deg); } 100% { opacity:0; } }
+
+/* BillBoard: a catalog with a rolling banner and games rising in */
+.bbm { background:#fff; }
+.bb-banner { height:128px; position:relative; overflow:hidden; background:#693f99; }
+.bb-slides { display:flex; width:300%; height:100%; animation:slides 12s infinite; }
+.bb-slides div { flex:1; background:center/cover; }
+@keyframes slides { 0%,28% { transform:translateX(0); } 33%,61% { transform:translateX(-33.333%); } 66%,94% { transform:translateX(-66.666%); } 100% { transform:translateX(0); } }
+.bb-brand { position:absolute; left:12px; bottom:10px; display:flex; align-items:center; gap:8px; background:rgba(20,19,42,.72); color:#fff; border-radius:10px; padding:5px 10px 5px 5px; font-weight:600; font-size:13px; }
+.bb-brand img { width:26px; height:26px; border-radius:6px; }
+.bb-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:12px; }
+.bb-g { border:1px solid #eee; border-radius:9px; overflow:hidden; font-size:11.5px; opacity:0; animation:appear 12s infinite; }
+.bb-g:nth-child(2) { animation-delay:.4s; } .bb-g:nth-child(3) { animation-delay:.8s; }
+.bb-g img { width:100%; height:86px; object-fit:cover; display:block; }
+.bb-g div { padding:6px 7px; }
+.bb-g b { display:block; color:#1b1b2b; font-size:12.5px; }
+.bb-g span { color:#888; }
+.bb-buy { position:absolute; right:14px; bottom:14px; background:#2e9d4c; color:#fff; font-weight:700; font-size:12px; border-radius:999px; padding:7px 14px; box-shadow:0 6px 16px rgba(46,157,76,.4); animation:buy 2.4s ease-in-out infinite; }
+@keyframes buy { 0%,100% { transform:scale(1); } 50% { transform:scale(1.07); } }
+.cursor { position:absolute; width:18px; height:18px; z-index:5; left:50%; top:300px; animation:cur 12s infinite; }
+@keyframes cur { 0%,20% { left:50%; top:300px; opacity:0; } 26% { opacity:1; } 40%,60% { left:17%; top:200px; } 47% { transform:scale(.8); } 49% { transform:none; } 72%,86% { left:calc(100% - 52px); top:314px; } 87% { transform:scale(.8); } 89% { transform:none; } 92%,100% { left:calc(100% - 52px); top:314px; opacity:0; } }
+
+/* ── Who it's for: makers × apps ─────────────────────────────────────────── */
+.who { background:linear-gradient(180deg,#fff, var(--paper)); }
+.matrix { max-width:960px; margin:0 auto; border:1px solid var(--line); border-radius:18px; background:#fff; overflow:hidden; box-shadow:0 18px 50px rgba(20,19,42,.07); }
+.mx-row { display:grid; grid-template-columns:minmax(0,1fr) repeat(4,92px); align-items:center; border-bottom:1px solid #f0ece4; transition:background .15s; }
+.mx-row:last-child { border-bottom:none; }
+.mx-row:not(.mx-head):hover { background:#fcfaf6; }
+.mx-head { background:var(--navy); color:#fff; }
+.mx-head div { text-align:center; padding:14px 4px 12px; font-size:12px; font-weight:600; }
+.mx-head img { width:40px; height:40px; border-radius:10px; display:block; margin:0 auto 5px; }
+.mx-head .mx-lead { text-align:left; padding-left:22px; font-family:'Fraunces',Georgia,serif; font-size:1.15rem; font-weight:600; }
+.mx-who { display:flex; align-items:center; gap:14px; padding:14px 22px; }
+.mx-ico { width:46px; height:46px; border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.mx-ico svg { width:24px; height:24px; }
+.mx-who b { display:block; color:var(--navy); font-size:15px; }
+.mx-who span { font-size:13px; color:var(--mid); }
+.mx-dot { display:flex; justify-content:center; }
+.mx-dot i { width:22px; height:22px; border-radius:50%; background:var(--c); box-shadow:0 0 0 5px color-mix(in srgb, var(--c) 22%, transparent); transition:transform .45s cubic-bezier(.3,1.6,.5,1); }
+.matrix.anim .mx-dot i { transform:scale(0); }
+.mx-dot i.half { background:transparent; border:3px solid var(--c); box-shadow:none; width:18px; height:18px; }
+.matrix.anim.in .mx-dot i { transform:scale(1); }
+.mx-key { max-width:960px; margin:1rem auto 0; display:flex; gap:1.4rem; justify-content:center; font-size:13px; color:var(--mid); flex-wrap:wrap; }
+.mx-key span { display:inline-flex; align-items:center; gap:.45rem; }
+.mx-key i { width:14px; height:14px; border-radius:50%; background:var(--navy); display:inline-block; }
+.mx-key i.half { background:transparent; border:2.5px solid var(--navy); width:12px; height:12px; }
+@media (max-width:700px) {
+  .mx-row { grid-template-columns:minmax(0,1fr) repeat(4,44px); }
+  .mx-head img { width:30px; height:30px; } .mx-head div span { display:none; }
+  .mx-who { padding:12px 12px; gap:10px; } .mx-ico { width:36px; height:36px; } .mx-who div span { display:none; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; } .dv-note, .dv-todo div, .cb-art, .cb-name, .cb-cost, .cb-text, .cb-type, .bb-g { opacity:1 !important; } .mx-dot i { transform:scale(1); } }
 </style>
 </head>
 <body>
@@ -180,14 +342,17 @@ footer a:hover { color:var(--navy); }
   <a class="brand" href="<?= e($_onDomain ? '/' : 'gameboard') ?>"><img src="images/gameboard_icon_180.png" alt=""><b>GameBoard</b></a>
   <div class="nav-links">
     <a href="#apps">Apps</a>
+    <a href="#action">In action</a>
+    <a href="#who">Who it’s for</a>
     <a href="#account">Your account</a>
     <button type="button" class="acct-btn" id="navAcct" onclick="acctClick()">Sign in</button>
   </div>
 </nav>
 
 <header class="hero">
+  <div class="floaters" aria-hidden="true"><img src="images/db_icon_180.png" alt=""><img src="images/cardboard_icon_180.png" alt=""><img src="images/pb_icon_180.png" alt=""><img src="images/bb_icon_180.png" alt=""></div>
   <span class="tag">For board game makers</span>
-  <h1>Four apps for every step of <em>your game</em>.</h1>
+  <h1>Tools for every step of <em>your game</em>.</h1>
   <p>Playtest it, make its cards, pitch it to publishers and put it on show. Each app runs on a Google Sheet you own — and one GameBoard account signs you in.</p>
   <div class="btns">
     <button type="button" class="btn primary" id="heroCta" onclick="acctClick('signup')">Start your free week</button>
@@ -222,6 +387,118 @@ footer a:hover { color:var(--navy); }
   </div>
 </section>
 
+
+<section class="action" id="action">
+  <div class="wrap">
+    <div class="kicker" style="color:#f3b4aa">See them in action</div>
+    <h2>Built for the way games get made</h2>
+    <p class="sub">Each app works right on the page — type, drag, click — and saves to your Google Sheet as you go.</p>
+
+    <div class="show" style="--c:#49c4d4">
+      <div class="show-text">
+        <div class="badge"><img src="images/db_icon_180.png" alt="">DevBoard · Playtest &amp; develop</div>
+        <h3>Every playtest, remembered.</h3>
+        <p>Start the timer, then jot what you see, round by round. Pair each observation with a fix, turn notes into TODOs, and hand the team a clean report afterwards.</p>
+        <a href="<?= e($_apps . 'devboard/features') ?>">DevBoard features →</a>
+      </div>
+      <div class="win" aria-hidden="true"><div class="win-bar"><i></i><i></i><i></i><span>DevBoard · Floristry · Playtest #12</span></div>
+        <div class="win-body dv">
+          <div class="dv-head"><div><b>Playtest #12</b><span>4 players · Lantern Café</span></div><div class="dv-timer"><span class="rec"></span><span id="dvTime">00:14:32</span></div></div>
+          <div class="dv-round">Round 2</div>
+          <div class="dv-note n1"><em class="dvt obs">Seen</em>Auctions in round 2 drag on — 4 bids or more each time</div>
+          <div class="dv-note n2"><em class="dvt sol">Fix</em>Cap every auction at 3 bids</div>
+          <div class="dv-note n3"><em class="dvt obs">Seen</em>Everyone loves the tulip combo 🌷</div>
+          <div class="dv-todo"><b>TODOs</b>
+            <div class="t1"><i class="cbx"></i><span>Test the 3-bid cap with 2 players</span></div>
+            <div class="t2"><i class="cbx"></i><span>Reprint the bid tokens</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="show flip" style="--c:#a99cff">
+      <div class="show-text">
+        <div class="badge"><img src="images/cardboard_icon_180.png" alt="">CardBoard · Design &amp; print cards</div>
+        <h3>Your cards, straight from your sheet.</h3>
+        <p>Drag your sheet’s columns onto a card, style it once, and every row becomes a card — fronts and backs. Print sheets with crop marks, or send the deck to Tabletop Simulator.</p>
+        <a href="<?= e($_apps . 'cardboard/features') ?>">CardBoard features →</a>
+      </div>
+      <div class="win" aria-hidden="true"><div class="win-bar"><i></i><i></i><i></i><span>CardBoard · Market deck · Layout</span></div>
+        <div class="win-body cbm">
+          <div class="cb-pal"><small>Card</small><span class="chip c1">Name</span><span class="chip c2">Cost</span><span class="chip c3">Art</span><span class="chip c4">Text</span></div>
+          <div class="cb-stage">
+            <div class="cb-flip">
+              <div class="cb-card front"><div class="cb-cost">3</div><div class="cb-art"><img src="images/billboard-features/cover-floristry.webp" alt=""></div><div class="cb-name">Floristry</div><div class="cb-type">MARKET</div><div class="cb-text">Draw 2 flower cards. Discard 1.</div></div>
+              <div class="cb-card back"><b>MARKET</b></div>
+            </div>
+            <div class="cb-sheet"><div style="background-image:url(images/billboard-features/cover-floristry.webp)"></div><div style="background-image:url(images/billboard-features/cover-scurry.webp)"></div><div style="background-image:url(images/billboard-features/cover-pressure.webp)"></div><div style="background-image:url(images/billboard-features/cover-scurry.webp)"></div><div style="background-image:url(images/billboard-features/cover-pressure.webp)"></div><div style="background-image:url(images/billboard-features/cover-floristry.webp)"></div></div>
+            <span class="cb-sheet-tag">Print sheet · 9 per page</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="show" style="--c:#f7b267">
+      <div class="show-text">
+        <div class="badge"><img src="images/pb_icon_180.png" alt="">PitchBoard · Pitch to publishers</div>
+        <h3>From first sketch to signed deal — tracked.</h3>
+        <p>See every game and every publisher on one board. Send a sell sheet, note the reply, and PitchBoard reminds you when it’s time to follow up.</p>
+        <a href="<?= e($_apps . 'pitchboard/features') ?>">PitchBoard features →</a>
+      </div>
+      <div class="win" aria-hidden="true"><div class="win-bar"><i></i><i></i><i></i><span>PitchBoard · Board</span></div>
+        <div class="win-body pb">
+          <div class="pb-cols">
+            <div class="pb-col"><h5>Pitched <em>2</em></h5><div class="pb-card"><img src="images/billboard-features/cover-pressure.webp" alt=""><div><b>Pressure</b><span>Owl &amp; Oak Games</span></div></div></div>
+            <div class="pb-col"><h5>Reviewing <em>1</em></h5><div class="pb-card"><img src="images/billboard-features/cover-scurry.webp" alt=""><div><b>Scurry Up!</b><span>Northwind Play</span></div></div></div>
+            <div class="pb-col"><h5>Signed <em>✓</em></h5></div>
+            <div class="pb-move"><div class="pb-card" style="position:relative"><img src="images/billboard-features/cover-floristry.webp" alt=""><div><b>Floristry</b><span>Lantern Press</span></div><span class="stamp">SIGNED</span></div></div>
+            <i class="confetti" style="background:#e7a35a"></i><i class="confetti"></i><i class="confetti"></i>
+          </div>
+          <div class="pb-dates"><div><b>Sell sheet sent</b>Lantern Press · 3 Mar</div><div><b>Follow up</b>Northwind · in 4 days</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="show flip" style="--c:#9ed29f">
+      <div class="show-text">
+        <div class="badge"><img src="images/bb_icon_180.png" alt="">BillBoard · Show &amp; sell</div>
+        <h3>Your games. A polished page — instantly.</h3>
+        <p>A branded catalog of your games and a page for each one, with prices and buy links. Edit it right on the page — no website to build or host.</p>
+        <a href="<?= e($_apps . 'billboard/features') ?>">BillBoard features →</a>
+      </div>
+      <div class="win" aria-hidden="true"><div class="win-bar"><i></i><i></i><i></i><span>billboard · UP Games</span></div>
+        <div class="win-body bbm">
+          <div class="bb-banner"><div class="bb-slides"><div style="background-image:url(images/billboard-features/hero-floristry.webp)"></div><div style="background-image:url(images/billboard-features/carousel-pieces.webp)"></div><div style="background-image:url(images/billboard-features/carousel-spread.webp)"></div></div>
+            <div class="bb-brand"><img src="images/billboard-features/up-logo.webp" alt="">UP Games</div></div>
+          <div class="bb-grid">
+            <div class="bb-g"><img src="images/billboard-features/cover-floristry.webp" alt=""><div><b>Floristry</b><span>2 players · 20 min</span></div></div>
+            <div class="bb-g"><img src="images/billboard-features/cover-scurry.webp" alt=""><div><b>Scurry Up!</b><span>2–4 · 30 min</span></div></div>
+            <div class="bb-g"><img src="images/billboard-features/cover-pressure.webp" alt=""><div><b>Pressure</b><span>3–6 · 25 min</span></div></div>
+          </div>
+          <span class="bb-buy">Buy now · $20</span>
+          <svg class="cursor" viewBox="0 0 24 24"><path d="M4 2l16 9-7 2-3 7z" fill="#14132a" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="who" id="who">
+  <div class="wrap">
+    <div class="kicker">Who it’s for</div>
+    <h2>Find the apps that fit your part in the game</h2>
+    <p class="sub">Designer, studio, artist or publisher — start with the app you need today and add the others as your game moves along.</p>
+    <div class="matrix" id="matrix"><div class="mx-row mx-head"><div class="mx-lead">You’re one of…</div><div><img src="images/db_icon_180.png" alt=""><span>DevBoard</span></div><div><img src="images/cardboard_icon_180.png" alt=""><span>CardBoard</span></div><div><img src="images/pb_icon_180.png" alt=""><span>PitchBoard</span></div><div><img src="images/bb_icon_180.png" alt=""><span>BillBoard</span></div></div><div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#fdeceb;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg></span><div><b>Game designers</b><span>Prototype, playtest and pitch your own games</span></div></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.00s"></i></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.05s"></i></div><div class="mx-dot" style="--c:#e7a35a"><i style="transition-delay:0.10s"></i></div><div class="mx-dot" style="--c:#7fcf8a"><i style="transition-delay:0.15s" class="half"></i></div></div>
+<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#e6f7f9;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3.5"/><path d="M2.5 21a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="8.5" r="2.8"/><path d="M16 14.2a5 5 0 0 1 6 4.8"/></svg></span><div><b>Co-designers &amp; playtesters</b><span>Share sessions, notes and cards with the team</span></div></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.08s"></i></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.13s" class="half"></i></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"></div></div>
+<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#eef3fb;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12h18"/></svg></span><div><b>Development studios</b><span>Develop games for clients — estimates, invoices, reports</span></div></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.16s"></i></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.21s" class="half"></i></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"></div></div>
+<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#f1effe;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L11 15.8 8.2 13z"/><path d="M8 14c-2.2 0-4 1.8-4 4 0 1.3-.7 2.3-2 3 4 1 9 0 9-4"/></svg></span><div><b>Artists &amp; graphic designers</b><span>Lay out cards and print-ready sheets</span></div></div><div class="mx-dot" style="--c:#49c4d4"></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.29s"></i></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"></div></div>
+<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#f1effe;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/><rect x="7" y="7.5" width="4" height="6" rx=".8"/><rect x="13" y="7.5" width="4" height="6" rx=".8"/></svg></span><div><b>Digital prototypers</b><span>Send decks to Tabletop Simulator and Screentop</span></div></div><div class="mx-dot" style="--c:#49c4d4"></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.37s"></i></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"></div></div>
+<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#fff3e6;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/></svg></span><div><b>Self-publishers</b><span>Make the game, then put it on sale</span></div></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.40s" class="half"></i></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.45s"></i></div><div class="mx-dot" style="--c:#e7a35a"><i style="transition-delay:0.50s" class="half"></i></div><div class="mx-dot" style="--c:#7fcf8a"><i style="transition-delay:0.55s"></i></div></div>
+<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#edf7ee;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z"/><path d="M5 13v8h14v-8M10 21v-5h4v5"/></svg></span><div><b>Publishers</b><span>A catalog and a page for every title</span></div></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.48s" class="half"></i></div><div class="mx-dot" style="--c:#7b6cf6"></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"><i style="transition-delay:0.63s"></i></div></div>
+</div>
+    <div class="mx-key"><span><i></i>Made for you</span><span><i class="half"></i>Handy too</span></div>
+  </div>
+</section>
 <section class="account" id="account">
   <div class="wrap acct-grid">
     <div>
@@ -413,6 +690,15 @@ footer a:hover { color:var(--navy); }
     post({ action: 'refresh', cbt: acct.token }).then(store).catch(function(e) { if (/sign in/i.test(e.message)) signOut(); });
   }
   show();
+
+  // The DevBoard window's playtest timer keeps running; the who-it's-for dots pop in when scrolled to
+  var t0 = 14 * 60 + 32, tEl = $('dvTime');
+  setInterval(function() { t0++; var m = Math.floor(t0 / 60), sec = t0 % 60; if (tEl) tEl.textContent = '00:' + (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec; }, 1000);
+  var mx = $('matrix');
+  if (mx && 'IntersectionObserver' in window) {   // without it the dots simply show
+    mx.classList.add('anim');
+    new IntersectionObserver(function(es, o) { es.forEach(function(en) { if (en.isIntersecting) { mx.classList.add('in'); o.disconnect(); } }); }, { threshold: .2 }).observe(mx);
+  }
 })();
 </script>
 </body>

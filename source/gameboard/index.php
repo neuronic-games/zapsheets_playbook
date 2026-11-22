@@ -239,31 +239,87 @@ footer a:hover { color:var(--navy); }
 .t1 .cbx::after { animation:tickmark 12s infinite; }
 @keyframes tickmark { 0%,58% { opacity:0; } 62%,88% { opacity:1; } 92%,100% { opacity:0; } }
 
-/* CardBoard: a card being built from the sheet, flipped, then laid out to print */
-.cbm { display:grid; grid-template-columns:96px 1fr; background:#eef0f6; }
-.cb-pal { background:#fff; border-right:1px solid #e1e4ee; padding:12px 9px; display:flex; flex-direction:column; gap:7px; }
-.cb-pal small { font-size:9.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:#8a8fa8; }
-.chip { font-size:11.5px; font-weight:600; color:#2e2763; border:1.5px solid #d6d9e6; border-radius:7px; padding:5px 7px; background:#fff; animation:chip 12s infinite; }
-.chip.c2 { animation-delay:1s; } .chip.c3 { animation-delay:2s; } .chip.c4 { animation-delay:3s; }
-@keyframes chip { 0%,2% { border-color:#d6d9e6; background:#fff; } 4%,8% { border-color:#7b6cf6; background:#f3f1ff; transform:translateX(6px); } 12%,100% { border-color:#d6d9e6; background:#fff; transform:none; } }
-.cb-stage { position:relative; display:flex; align-items:center; justify-content:center; perspective:900px; }
-.cb-flip { width:168px; height:236px; position:relative; transform-style:preserve-3d; animation:flip 12s infinite; }
-@keyframes flip { 0%,48% { transform:rotateY(0); } 54%,66% { transform:rotateY(180deg); } 72%,100% { transform:rotateY(360deg); } }
-.cb-card { position:absolute; inset:0; border-radius:10px; backface-visibility:hidden; -webkit-backface-visibility:hidden; box-shadow:0 10px 26px rgba(30,25,80,.25); overflow:hidden; }
-.cb-card.front { background:#fffaf0; border:5px solid #2e2763; padding:8px; display:flex; flex-direction:column; }
-.cb-card.back { transform:rotateY(180deg); background:#2e2763 radial-gradient(circle at 50% 45%, #4b3fa8, #2e2763 70%); display:flex; align-items:center; justify-content:center; }
-.cb-card.back b { font-family:'Fraunces',Georgia,serif; font-size:24px; color:#f2c14e; letter-spacing:.04em; }
-.cb-art, .cb-name, .cb-cost, .cb-text, .cb-type { opacity:0; animation:pop 12s infinite; }
-.cb-art { height:108px; border-radius:6px; overflow:hidden; animation-delay:2.1s; } .cb-art img { width:100%; height:100%; object-fit:cover; display:block; }
-.cb-name { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:17px; color:#2e2763; margin:7px 0 0; animation-delay:.1s; }
-.cb-type { font-size:9px; font-weight:800; letter-spacing:.12em; color:#b0802a; animation-delay:.1s; }
-.cb-cost { position:absolute; top:6px; right:6px; width:30px; height:30px; border-radius:50%; background:#f2c14e; color:#2e2763; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,.25); z-index:2; animation-delay:1.1s; }
-.cb-text { font-size:11.5px; color:#444; line-height:1.35; margin-top:5px; animation-delay:3.1s; }
-@keyframes pop { 0% { opacity:0; transform:scale(.6); } 4%,90% { opacity:1; transform:none; } 96%,100% { opacity:0; } }
-.cb-sheet { position:absolute; inset:14px; background:#fff; border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,.18); display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:12px; opacity:0; animation:sheet 12s infinite; }
-@keyframes sheet { 0%,74% { opacity:0; transform:scale(.9); } 78%,94% { opacity:1; transform:none; } 98%,100% { opacity:0; } }
-.cb-sheet div { border:1px dashed #c9cce0; border-radius:4px; background:#fffaf0 center/cover; }
-.cb-sheet-tag { position:absolute; right:14px; bottom:14px; font-size:11px; font-weight:700; color:#fff; background:#7b6cf6; border-radius:999px; padding:3px 10px; opacity:0; animation:sheet 12s infinite; }
+/* CardBoard: the Layout view — a poker card built from the sheet's columns, flipped to its back —
+   then the Print view, where every card on the sheet is the same design with its own row */
+.cbv { height:390px; background:#eef0f6; font-size:11px; position:relative; }
+.cbv-top { height:38px; background:#2e2763; color:#fff; display:flex; align-items:center; gap:8px; padding:0 10px; }
+.cbv-logo { font-weight:800; letter-spacing:.03em; font-size:12px; white-space:nowrap; } .cbv-logo i { font-style:normal; color:#f2c14e; } .cbv-logo u { text-decoration:none; color:#a99cff; }
+.cbv-tabs { display:flex; background:rgba(255,255,255,.12); border-radius:7px; padding:2px; margin:0 auto; }
+.cbv-tabs span { font-size:9px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; padding:4px 7px; border-radius:5px; color:rgba(255,255,255,.6); }
+.cbv-tabs .t-lay { animation:tabLay 16s infinite; } .cbv-tabs .t-pr { animation:tabPr 16s infinite; }
+@keyframes tabLay { 0%,52% { background:#fff; color:#2e2763; } 53%,96% { background:transparent; color:rgba(255,255,255,.6); } 97%,100% { background:#fff; color:#2e2763; } }
+@keyframes tabPr  { 0%,52% { background:transparent; color:rgba(255,255,255,.6); } 53%,96% { background:#fff; color:#2e2763; } 97%,100% { background:transparent; color:rgba(255,255,255,.6); } }
+.cbv-save { font-size:9px; font-weight:800; letter-spacing:.08em; background:#f2c14e; color:#2e2763; border-radius:999px; padding:4px 10px; }
+.cbv-lay, .cbv-pr { position:absolute; left:0; right:0; top:38px; bottom:0; }
+.cbv-lay { display:grid; grid-template-columns:112px 1fr 118px; animation:viewLay 16s infinite; }
+.cbv-pr { display:grid; grid-template-columns:104px 1fr; opacity:0; animation:viewPr 16s infinite; }
+@keyframes viewLay { 0%,51% { opacity:1; visibility:visible; } 54%,95% { opacity:0; visibility:hidden; } 98%,100% { opacity:1; visibility:visible; } }
+@keyframes viewPr  { 0%,51% { opacity:0; visibility:hidden; } 54%,95% { opacity:1; visibility:visible; } 98%,100% { opacity:0; visibility:hidden; } }
+.cbv-pal, .cbv-attr, .cbv-pset { background:#fff; padding:8px; overflow:hidden; }
+.cbv-pal { border-right:1px solid #e1e4ee; } .cbv-attr { border-left:1px solid #e1e4ee; } .cbv-pset { border-right:1px solid #e1e4ee; background:#fbfbfe; }
+.cbv-l { display:block; font-size:8.5px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:#8a8fa8; margin:7px 0 4px; }
+.cbv-l:first-child { margin-top:0; }
+.cbv-deck { display:flex; justify-content:space-between; border:1.5px solid #d6d9e6; border-radius:6px; padding:4px 6px; font-weight:800; font-size:9.5px; letter-spacing:.04em; color:#2e2763; }
+.cbv-deck em { font-style:normal; font-weight:500; color:#9aa0b8; }
+.fc { display:flex; align-items:center; gap:4px; border:1.5px solid #d6d9e6; border-radius:6px; padding:3px 5px; margin-bottom:4px; font-weight:700; color:#2e2763; font-size:10px; white-space:nowrap; overflow:hidden; animation:fcHi 16s infinite; }
+.fc small { margin-left:auto; font-weight:400; color:#9aa0b8; font-size:9px; overflow:hidden; text-overflow:ellipsis; max-width:42px; }
+@keyframes fcHi { 0%,1% { border-color:#d6d9e6; background:#fff; transform:none; } 2%,5% { border-color:#7b6cf6; background:#f3f1ff; transform:translateX(4px); } 7%,100% { border-color:#d6d9e6; background:#fff; transform:none; } }
+.cbv-stage { display:flex; flex-direction:column; min-width:0; }
+.cbv-tool { height:26px; display:flex; align-items:center; justify-content:center; gap:5px; background:#fff; border-bottom:1px solid #e1e4ee; color:#3b3f5c; font-size:9.5px; }
+.cbv-tool b { border:1.5px solid #4b3fa8; color:#4b3fa8; border-radius:3px; padding:0 4px; font-size:9px; }
+.cbv-tool span { border:1.5px solid #d6d9e6; border-radius:5px; padding:0 5px; line-height:15px; }
+.cbv-canvas { flex:1; position:relative; display:flex; align-items:center; justify-content:center; background:#eef0f6 radial-gradient(#d3d6e4 1px, transparent 1.2px) 0 0/14px 14px; perspective:900px; }
+.cbv-front { position:absolute; left:12px; top:8px; font-size:8.5px; font-weight:800; letter-spacing:.1em; color:#4b3fa8; }
+.cbv-flipb { position:absolute; left:10px; top:24px; width:26px; height:26px; border-radius:50%; background:#fff; box-shadow:0 2px 6px rgba(20,20,60,.15); color:#4b3fa8; display:flex; align-items:center; justify-content:center; font-size:13px; animation:flipBtn 16s infinite; }
+@keyframes flipBtn { 0%,41% { transform:none; } 42% { transform:scale(.85); background:#ece9ff; } 44%,100% { transform:none; background:#fff; } }
+.cbv-flip { width:150px; height:210px; position:relative; transform-style:preserve-3d; animation:pkFlip 16s infinite; }
+@keyframes pkFlip { 0%,42% { transform:rotateY(0); } 45%,48% { transform:rotateY(180deg); } 51%,100% { transform:rotateY(0); } }
+.cbv-flip > .pk { position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; box-shadow:0 12px 30px rgba(30,25,80,.28); }
+.cbv-flip > .pk-back { transform:rotateY(180deg); }
+.cbv-attr .at { position:relative; height:16px; margin-bottom:6px; }
+.cbv-attr .at span { position:absolute; left:0; top:0; font-weight:800; color:#2e2763; font-size:11px; opacity:0; white-space:nowrap; animation:atName 16s infinite; }
+.cbv-attr .at span em { font-style:normal; font-size:8px; letter-spacing:.06em; color:#9aa0b8; margin-left:4px; text-transform:uppercase; }
+@keyframes atName { 0%,1% { opacity:0; } 2%,7% { opacity:1; } 8%,100% { opacity:0; } }
+.cbv-attr .at span.last { animation:atLast 16s infinite; }
+@keyframes atLast { 0%,1% { opacity:0; } 2%,46% { opacity:1; } 47%,100% { opacity:0; } }
+.af { border:1.5px solid #d6d9e6; border-radius:5px; padding:2px 5px; margin-bottom:5px; color:#1b1b2b; font-size:9.5px; display:flex; justify-content:space-between; }
+.sws { display:flex; gap:3px; margin-bottom:6px; } .sws i { width:14px; height:14px; border-radius:4px; border:1px solid rgba(0,0,0,.1); }
+.segm { display:flex; border:1.5px solid #d6d9e6; border-radius:5px; overflow:hidden; } .segm span { flex:1; text-align:center; font-size:9px; padding:1px 0; color:#666; } .segm span.on { background:#ece9ff; color:#4b3fa8; font-weight:700; }
+
+/* The poker card (2.5 × 3.5 in), drawn the same way in the Layout view and on the print sheet */
+.pk { width:150px; height:210px; border-radius:9px; background:#1f4e3d; padding:6px; font-family:'Inter',sans-serif; position:relative; overflow:hidden; }
+.pk-in { position:absolute; inset:6px; background:#fbf4e4; border-radius:5px; overflow:hidden; }
+.pk-name { position:absolute; left:28px; right:6px; top:6px; height:22px; background:#1f4e3d; color:#fbf4e4; border-radius:0 11px 11px 0; font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:13px; line-height:22px; padding-left:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pk-cost { position:absolute; left:4px; top:3px; width:30px; height:30px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #ffe08a, #e0a526 70%); border:2px solid #fbf4e4; box-shadow:0 2px 5px rgba(0,0,0,.3); color:#3a2a06; font-weight:800; font-size:15px; display:flex; align-items:center; justify-content:center; z-index:2; }
+.pk-art { position:absolute; left:6px; right:6px; top:34px; height:86px; border-radius:6px; background:#ddd center/cover; box-shadow:inset 0 0 0 2px #1f4e3d; }
+.pk-type { position:absolute; left:14px; right:14px; top:112px; height:16px; background:#c9a24a; color:#2b1f05; border-radius:3px; font-size:7.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; text-align:center; line-height:16px; box-shadow:0 2px 4px rgba(0,0,0,.18); }
+.pk-text { position:absolute; left:8px; right:8px; top:134px; bottom:24px; background:#f2e6cc; border-radius:5px; padding:6px 7px; font-size:8.6px; line-height:1.35; color:#3b3020; text-align:center; display:flex; align-items:center; justify-content:center; }
+.pk-pts { position:absolute; right:6px; bottom:4px; width:20px; height:20px; border-radius:50%; background:#1f4e3d; color:#f7d57f; font-weight:800; font-size:10px; display:flex; align-items:center; justify-content:center; }
+.pk-set { position:absolute; left:9px; bottom:7px; font-size:6.5px; letter-spacing:.08em; color:#8a7a58; }
+.pk-back { background:#1f4e3d radial-gradient(circle at 50% 50%, #2e6b54 0, #1f4e3d 60%); display:flex; align-items:center; justify-content:center; }
+.pk-back::before { content:''; position:absolute; inset:10px; border:1.5px solid #c9a24a; border-radius:6px; }
+.pk-back b { font-family:'Fraunces',Georgia,serif; font-size:19px; color:#f7d57f; letter-spacing:.06em; }
+.pk-back i { position:absolute; width:30px; height:30px; border-radius:50% 0; background:#c9a24a; opacity:.85; }
+.pk-back i:nth-of-type(1) { top:24px; left:50%; margin-left:-15px; transform:rotate(45deg); } .pk-back i:nth-of-type(2) { bottom:24px; left:50%; margin-left:-15px; transform:rotate(45deg); }
+/* built one field at a time in the Layout view (each selected as it lands) */
+.bld .pk-name, .bld .pk-cost, .bld .pk-art, .bld .pk-type, .bld .pk-text, .bld .pk-pts, .bld .pk-set { opacity:0; animation:pkPop 16s infinite; }
+@keyframes pkPop { 0% { opacity:0; transform:scale(.7); box-shadow:none; } 2% { opacity:1; transform:none; box-shadow:0 0 0 2px #7b6cf6; } 6% { box-shadow:0 0 0 2px #7b6cf6; } 7%,88% { opacity:1; box-shadow:none; } 92%,100% { opacity:0; box-shadow:none; } }
+.bld .pk-art { animation-name:pkPopArt; }
+@keyframes pkPopArt { 0% { opacity:0; transform:scale(.7); box-shadow:inset 0 0 0 2px #1f4e3d; } 2% { opacity:1; transform:none; box-shadow:inset 0 0 0 2px #1f4e3d, 0 0 0 2px #7b6cf6; } 6% { box-shadow:inset 0 0 0 2px #1f4e3d, 0 0 0 2px #7b6cf6; } 7%,88% { opacity:1; box-shadow:inset 0 0 0 2px #1f4e3d; } 92%,100% { opacity:0; box-shadow:inset 0 0 0 2px #1f4e3d; } }
+.bld .pk-name { animation-delay:.6s; } .bld .pk-cost { animation-delay:1.6s; } .bld .pk-art { animation-delay:2.6s; }
+.bld .pk-type { animation-delay:3.6s; } .bld .pk-text { animation-delay:4.6s; } .bld .pk-pts, .bld .pk-set { animation-delay:5.6s; }
+
+/* The Print view: settings, then a letter page of nine cards with crop marks */
+.cbv-pset .af { font-size:9px; }
+.cbv-pset .go { display:block; margin-top:8px; text-align:center; background:#4b3fa8; color:#fff; font-weight:800; font-size:9px; letter-spacing:.08em; border-radius:5px; padding:5px 0; }
+.cbv-pages { display:flex; align-items:center; justify-content:center; background:#e6e8f0; position:relative; }
+.cbv-page { width:238px; height:308px; background:#fff; box-shadow:0 6px 22px rgba(20,20,60,.2); position:relative; }
+.cbv-page-tag { position:absolute; top:-13px; left:0; font-size:8px; font-weight:800; letter-spacing:.08em; color:#8a8fa8; }
+.cbv-grid { position:absolute; left:20px; top:16px; display:grid; grid-template-columns:repeat(3,66px); grid-auto-rows:92px; }
+.cbv-cell { width:66px; height:92px; overflow:hidden; opacity:0; animation:cellIn 16s infinite; }
+.cbv-cell > .pk { transform:scale(.44); transform-origin:0 0; border-radius:0; }
+@keyframes cellIn { 0%,53% { opacity:0; transform:scale(.9); } 56%,95% { opacity:1; transform:none; } 98%,100% { opacity:0; } }
+.cut { position:absolute; background:#1b1b2b; }
 
 /* PitchBoard: the board view — a game dragged from Pitch to Signed, its date filled in, saved to the sheet */
 .kbw { background:#fff; font-size:12px; }
@@ -502,19 +558,76 @@ footer a:hover { color:var(--navy); }
       <div class="show-text">
         <div class="badge"><img src="images/cardboard_icon_180.png" alt="">CardBoard · Design &amp; print cards</div>
         <h3>Your cards, straight from your sheet.</h3>
-        <p>Drag your sheet’s columns onto a card, style it once, and every row becomes a card — fronts and backs. Print sheets with crop marks, or send the deck to Tabletop Simulator.</p>
+        <p>Drag your sheet’s columns onto a poker card — name, cost, art, type, rules — and style it once. Every row becomes a card, fronts and backs. Print sheets with crop marks, or send the deck to Tabletop Simulator.</p>
         <a href="<?= e($_apps . 'cardboard/features') ?>">CardBoard features →</a>
       </div>
-      <div class="win" aria-hidden="true"><div class="win-bar"><i></i><i></i><i></i><span>CardBoard · Market deck · Layout</span></div>
-        <div class="win-body cbm">
-          <div class="cb-pal"><small>Card</small><span class="chip c1">Name</span><span class="chip c2">Cost</span><span class="chip c3">Art</span><span class="chip c4">Text</span></div>
-          <div class="cb-stage">
-            <div class="cb-flip">
-              <div class="cb-card front"><div class="cb-cost">3</div><div class="cb-art"><img src="images/billboard-features/cover-floristry.webp" alt=""></div><div class="cb-name">Floristry</div><div class="cb-type">MARKET</div><div class="cb-text">Draw 2 flower cards. Discard 1.</div></div>
-              <div class="cb-card back"><b>MARKET</b></div>
+      <?php
+      // One design: the card in the Layout view and every card on the print sheet are drawn by pk()
+      $PKROWS = [
+        ['Tulip Stall',    '3', 'images/billboard-features/cover-floristry.webp', 'Market',  'Draw 2 flower cards. Keep 1, discard the other.', '2'],
+        ['Window Box',     '5', 'images/billboard-features/hero-floristry.webp',  'Display', 'Score 1 point for each tulip in your window.',   '4'],
+        ['Auction Hall',   '2', 'images/billboard-features/floristry-board.webp', 'Event',   'Each player bids once, starting with you.',      '1'],
+      ];
+      function pk($r, $n, $build = false) {
+        return '<div class="pk' . ($build ? ' bld' : '') . '"><div class="pk-in">'
+          . '<div class="pk-name">' . e($r[0]) . '</div><div class="pk-cost">' . e($r[1]) . '</div>'
+          . '<div class="pk-art" style="background-image:url(' . e($r[2]) . ')"></div><div class="pk-type">' . e($r[3]) . '</div>'
+          . '<div class="pk-text">' . e($r[4]) . '</div><div class="pk-set">FLORISTRY · ' . sprintf('%02d', $n) . '/40</div><div class="pk-pts">' . e($r[5]) . '</div>'
+          . '</div></div>';
+      }
+      ?>
+      <div class="win" aria-hidden="true"><div class="win-bar"><i></i><i></i><i></i><span>mygameboard.app/…/cardboard</span></div>
+        <div class="win-body cbv">
+          <div class="cbv-top"><span class="cbv-logo"><i>Card</i><u>Board</u></span>
+            <div class="cbv-tabs"><span>Cards</span><span>Tags</span><span class="t-lay">Layout</span><span class="t-pr">Print</span><span>Export</span></div>
+            <span class="cbv-save">SAVE</span></div>
+
+          <div class="cbv-lay">
+            <div class="cbv-pal">
+              <span class="cbv-l">Deck</span><div class="cbv-deck">MARKET <em>40</em></div>
+              <span class="cbv-l">Card</span>
+              <div class="fc" style="animation-delay:.6s">Name <small>Tulip Stall</small></div>
+              <div class="fc" style="animation-delay:1.6s">Cost <small>3</small></div>
+              <div class="fc" style="animation-delay:2.6s">Art <small>▣</small></div>
+              <div class="fc" style="animation-delay:3.6s">Type <small>Market</small></div>
+              <div class="fc" style="animation-delay:4.6s">Rules <small>Draw 2…</small></div>
+              <div class="fc" style="animation-delay:5.6s">Points <small>2</small></div>
+              <span class="cbv-l">Shape</span><div class="fc" style="animation:none">◯ ▭ ⬡</div>
             </div>
-            <div class="cb-sheet"><div style="background-image:url(images/billboard-features/cover-floristry.webp)"></div><div style="background-image:url(images/billboard-features/cover-scurry.webp)"></div><div style="background-image:url(images/billboard-features/cover-pressure.webp)"></div><div style="background-image:url(images/billboard-features/cover-scurry.webp)"></div><div style="background-image:url(images/billboard-features/cover-pressure.webp)"></div><div style="background-image:url(images/billboard-features/cover-floristry.webp)"></div></div>
-            <span class="cb-sheet-tag">Print sheet · 9 per page</span>
+            <div class="cbv-stage">
+              <div class="cbv-tool"><span>◀</span><b>1</b><span>▶</span>&nbsp;<span>−</span>100%<span>+</span>&nbsp;<span>↶</span><span>↷</span></div>
+              <div class="cbv-canvas">
+                <span class="cbv-front">FRONT</span><span class="cbv-flipb">⟲</span>
+                <div class="cbv-flip"><?= pk($PKROWS[0], 1, true) ?><div class="pk pk-back"><i></i><b>FLORISTRY</b><i></i></div></div>
+              </div>
+            </div>
+            <div class="cbv-attr">
+              <div class="at"><span style="animation-delay:.6s">Name<em>Card</em></span><span style="animation-delay:1.6s">Cost<em>Card</em></span><span style="animation-delay:2.6s">Art<em>Image</em></span><span style="animation-delay:3.6s">Type<em>Card</em></span><span style="animation-delay:4.6s">Rules<em>Card</em></span><span class="last" style="animation-delay:5.6s">Points<em>Card</em></span></div>
+              <span class="cbv-l">Font</span><div class="af">Fraunces <span>▾</span></div>
+              <span class="cbv-l">Size · Line</span><div class="af"><span>13 pt</span><span>1.15</span></div>
+              <span class="cbv-l">Color</span><div class="sws"><i style="background:#1f4e3d"></i><i style="background:#c9a24a"></i><i style="background:#fbf4e4"></i><i style="background:#3b3020"></i></div>
+              <span class="cbv-l">Align</span><div class="segm"><span>L</span><span class="on">C</span><span>R</span></div>
+              <span class="cbv-l">Position (pt)</span><div class="af"><span>X 18</span><span>Y 9</span></div>
+            </div>
+          </div>
+
+          <div class="cbv-pr">
+            <div class="cbv-pset">
+              <span class="cbv-l">Deck</span><div class="cbv-deck">MARKET <em>40</em></div>
+              <span class="cbv-l">Paper</span><div class="af">Letter <span>▾</span></div>
+              <span class="cbv-l">Cut lines</span><div class="af">Crop marks <span>▾</span></div>
+              <span class="cbv-l">Copies</span><div class="af">From “Count” <span>▾</span></div>
+              <span class="cbv-l">Backs</span><div class="af">Double-sided <span>▾</span></div>
+              <span class="go">PRINT</span>
+            </div>
+            <div class="cbv-pages">
+              <div class="cbv-page"><span class="cbv-page-tag">PAGE 1 OF 5 · FRONT</span>
+                <div class="cbv-grid"><?php for ($k = 0; $k < 9; $k++): ?><div class="cbv-cell" style="animation-delay:<?= number_format($k * 0.07, 2) ?>s"><?= pk($PKROWS[$k % 3], $k + 1) ?></div><?php endfor; ?></div>
+                <?php // crop marks: short lines outside the grid at every card edge
+                  foreach ([20, 86, 152, 218] as $x) { echo '<span class="cut" style="left:' . ($x - .5) . 'px;top:4px;width:1px;height:9px"></span><span class="cut" style="left:' . ($x - .5) . 'px;top:295px;width:1px;height:9px"></span>'; }
+                  foreach ([16, 108, 200, 292] as $y) { echo '<span class="cut" style="top:' . ($y - .5) . 'px;left:7px;width:9px;height:1px"></span><span class="cut" style="top:' . ($y - .5) . 'px;left:222px;width:9px;height:1px"></span>'; } ?>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -606,7 +606,7 @@ footer a:hover { color:var(--navy); }
   <p>Playtest it, make its cards, pitch it to publishers and put it on show. Each app runs on a Google Sheet you own — and one GameBoard account signs you in.</p>
   <div class="btns">
     <button type="button" class="btn primary" id="heroCta" onclick="acctClick('signup')">Start your free week</button>
-    <a class="btn ghost" href="#pricing">See the apps</a>
+    <a class="btn ghost" href="#pricing">Pricing</a>
   </div>
   <div class="journey" aria-label="From playtest to shelf">
     <?php foreach ($APPS as $i => $a): ?>

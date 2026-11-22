@@ -78,13 +78,10 @@ nav { position:sticky; top:0; z-index:50; display:flex; align-items:center; just
 .acct-btn:hover { background:var(--navy-2); }
 @media (max-width:720px) { .nav-links a { display:none; } nav { padding:0 1rem; } }
 
-.hero { position:relative; overflow:hidden; background:var(--navy); color:#fff; text-align:center; padding:6.5rem 1.5rem 5rem; }
+.hero { position:relative; overflow:hidden; background:linear-gradient(180deg, #2a2148 0%, #221b3e 100%); border-bottom:1px solid rgba(255,255,255,.08); color:#fff; text-align:center; padding:6.5rem 1.5rem 5rem; }
 .hero::before { content:''; position:absolute; top:-160px; left:50%; transform:translateX(-50%); width:820px; height:820px; background:radial-gradient(circle closest-side, rgba(229,96,79,.22) 0%, transparent 65%); pointer-events:none; }
 .hero::after { content:''; position:absolute; bottom:-120px; right:8%; width:520px; height:520px; background:radial-gradient(circle closest-side, rgba(246,239,226,.08) 0%, transparent 70%); pointer-events:none; }
 .hero > * { position:relative; }
-.hero > *:not(.hero-fade):not(.floaters) { z-index:2; }
-.hero-fade { position:absolute !important; left:0; right:0; bottom:0; height:260px; z-index:1;   /* above the glows (::after comes after it), below the text */ background:linear-gradient(to bottom, rgba(20,19,42,0), var(--navy)); pointer-events:none; }
-.hero + .action { padding-top:2.5rem; }
 .tag { display:inline-block; font-size:12px; font-weight:500; letter-spacing:.08em; text-transform:uppercase; color:#f3b4aa; border:1px solid rgba(243,180,170,.35); border-radius:999px; padding:5px 14px; margin-bottom:1.6rem; }
 .hero h1 { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(2.3rem,5vw,3.7rem); line-height:1.1; letter-spacing:-.03em; max-width:820px; margin:0 auto 1.4rem; }
 .hero h1 em { font-style:italic; font-weight:400; color:var(--red); }
@@ -611,7 +608,6 @@ footer a:hover { color:var(--navy); }
     <button type="button" class="btn primary" id="heroCta" onclick="acctClick('signup')">Start your free week</button>
     <a class="btn ghost" href="#pricing">Pricing</a>
   </div>
-  <div class="hero-fade" aria-hidden="true"></div>
 </header>
 
 <section class="action" id="action">

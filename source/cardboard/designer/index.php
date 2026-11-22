@@ -579,6 +579,9 @@ table.grid td.st-saving { background:#fffbea; }
 table.grid td.st-saved { background:#ecfdf3; transition:background .8s; }
 table.grid td.st-error { background:#fef2f2; box-shadow:inset 0 0 0 1.5px #e5484d; }
 table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
+.g-mapv { color:#6b7090; }
+.g-arrow { color:#a99cff; margin:0 .35rem; }
+.g-thumb.g-mapimg { margin-right:0; }
 .g-thumb { width:22px; height:22px; object-fit:cover; border-radius:4px; vertical-align:middle; margin-right:.4rem; background:#eef0f6; }
 .g-editor { position:absolute; z-index:20; border:2px solid #4b3fa8; border-radius:2px; padding:.4rem .5rem; font:inherit; font-size:.8rem; line-height:1.35; resize:none; background:#fff; box-shadow:0 6px 20px rgba(20,20,60,.18); outline:none; max-width:32rem; }
 .e-note { font-size:.8rem; color:#3b3f5c; height:2.05rem; display:flex; align-items:center; }

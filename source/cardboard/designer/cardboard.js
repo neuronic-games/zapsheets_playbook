@@ -3115,9 +3115,10 @@ function gridShown(name, v, res) {
   var m = layout && (layout.els || []).concat((layout.back || {}).els || []).filter(function(e) { return e.kind === 'data' && e.as === 'map' && e.field === name && e.map; })[0];
   if (m && String(v).trim()) {
     var row = {}; row[name] = v;
-    var hit = mapHit(m, row);
-    if (hit && hit.src) { var u = imageUrl(picRef(hit.src)); if (u) return '<img class="g-thumb" src="' + esc(u) + '" alt="" referrerpolicy="no-referrer">'; }
-    if (hit) return rich(hit.t || '');
+    var hit = mapHit(m, row);   // a mapped value: what's typed → what the card shows
+    var lead = '<span class="g-mapv">' + esc(textVal(v)) + '</span><span class="g-arrow">→</span>';
+    if (hit && hit.src) { var u = imageUrl(picRef(hit.src)); if (u) return lead + '<img class="g-thumb g-mapimg" src="' + esc(u) + '" alt="" referrerpolicy="no-referrer">'; }
+    if (hit) return lead + rich(hit.t || '');
   }
   return rich(textVal(v));
 }

@@ -126,21 +126,34 @@ h2 { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(1.8r
 .pricing { background:var(--navy); color:#fff; position:relative; overflow:hidden; }
 .pricing::before { content:''; position:absolute; right:-10%; top:-20%; width:640px; height:640px; background:radial-gradient(circle, rgba(229,96,79,.2), transparent 65%); pointer-events:none; }
 .pricing h2 { color:#fff; } .pricing .sub { color:rgba(255,255,255,.65); }
-.price-grid { display:grid; grid-template-columns:repeat(4,1fr) 1.35fr; gap:1rem; align-items:stretch; position:relative; }
-@media (max-width:1000px) { .price-grid { grid-template-columns:repeat(2,1fr); } .pc.all { grid-column:1 / -1; } }
+.price-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; align-items:stretch; position:relative; }
+.pc.all { grid-column:1 / -1; margin-top:1.2rem; }
+@media (min-width:861px) { .pc.all { display:grid; grid-template-columns:1fr 1.3fr auto; gap:2rem; align-items:center; padding:1.8rem 2rem; } .pc.all ul { margin:0; } .pc.all button { padding:13px 30px; } .pc.all .pc-was { margin-bottom:0; } }
+@media (max-width:1000px) { .price-grid { grid-template-columns:repeat(2,1fr); } }
 @media (max-width:520px) { .price-grid { grid-template-columns:1fr; } }
 .pc { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:1.3rem 1.2rem; display:flex; flex-direction:column; }
 .pc-head { display:flex; align-items:center; gap:.6rem; margin-bottom:.9rem; }
-.pc-head img { width:36px; height:36px; border-radius:9px; }
+.pc-head img { width:40px; height:40px; border-radius:10px; }
+.pc-head small { display:block; font-size:10.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-top:2px; }
+.pc { border-top:3px solid var(--c, rgba(255,255,255,.12)); }
+.pc-line { font-family:'Fraunces',Georgia,serif; font-style:italic; font-size:1rem; color:rgba(255,255,255,.92); margin:-.2rem 0 .8rem; line-height:1.35; }
+.pc-feat { list-style:none; margin:0 0 1rem; flex:1; }
+.pc-feat li { position:relative; padding-left:1.1rem; font-size:13.5px; color:rgba(255,255,255,.72); margin-bottom:.45rem; line-height:1.45; }
+.pc-feat li::before { content:''; position:absolute; left:0; top:.55em; width:6px; height:6px; border-radius:2px; background:var(--c); }
+.pc-btns { display:flex; gap:.45rem; }
+.pc-btns a { flex:1; }
+.pc-btns a:first-child { background:#fff; color:var(--navy); border-color:#fff; }
+.pc-btns a:first-child:hover { background:#f1eee8; }
+.pc-was { font-size:13px; color:rgba(255,255,255,.9); margin:.35rem 0 .9rem; } .pc-was s { opacity:.75; }
 .pc-head b { font-family:'Fraunces',Georgia,serif; font-size:1.1rem; }
-.pc-price { font-family:'Fraunces',Georgia,serif; font-size:2rem; font-weight:600; line-height:1; }
+.pc-price { font-family:'Fraunces',Georgia,serif; font-size:2rem; font-weight:600; line-height:1; white-space:nowrap; padding-top:.9rem; border-top:1px dashed rgba(255,255,255,.15); }
 .pc-price small { font-family:'Inter',sans-serif; font-size:13px; font-weight:400; color:rgba(255,255,255,.6); margin-left:.2rem; }
-.pc-note { font-size:13px; color:rgba(255,255,255,.65); margin:.5rem 0 1.1rem; flex:1; }
+.pc-note { font-size:13px; color:rgba(255,255,255,.65); margin:.45rem 0 1rem; min-height:2.9em; }
 .pc a, .pc button { display:block; text-align:center; text-decoration:none; font:600 14px 'Inter',sans-serif; color:#fff; border:1px solid rgba(255,255,255,.3); border-radius:10px; padding:10px; background:transparent; cursor:pointer; }
 .pc a:hover { border-color:#fff; }
 .pc.all { background:linear-gradient(160deg, #f0766a 0%, #e5604f 45%, #c94a3a 100%); border:none; box-shadow:0 24px 60px rgba(229,96,79,.35); position:relative; }
-.pc.all .ribbon { position:absolute; top:14px; right:14px; background:#fff; color:#c94a3a; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; border-radius:999px; padding:4px 10px; }
-.pc.all .pc-price { font-size:2.6rem; }
+.pc.all .ribbon { position:absolute; top:-12px; left:50%; transform:translateX(-50%); white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,.2); background:#fff; color:#c94a3a; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; border-radius:999px; padding:4px 10px; }
+.pc.all .pc-price { font-size:2.6rem; border-top:none; padding-top:0; } .pc.all { border-top:none; }
 .pc.all .pc-price small, .pc.all .pc-note { color:rgba(255,255,255,.88); }
 .pc.all .icons { display:flex; gap:6px; margin-bottom:.9rem; } .pc.all .icons img { width:34px; height:34px; border-radius:9px; box-shadow:0 4px 10px rgba(0,0,0,.25); }
 .pc.all ul { list-style:none; margin:.2rem 0 1.1rem; flex:1; }
@@ -578,10 +591,9 @@ footer a:hover { color:var(--navy); }
 <nav>
   <a class="brand" href="<?= e($_onDomain ? '/' : 'gameboard') ?>"><img src="images/gameboard_icon_180.png" alt=""><b>GameBoard</b></a>
   <div class="nav-links">
-    <a href="#apps">Apps</a>
     <a href="#action">In action</a>
     <a href="#who">Who it’s for</a>
-    <a href="#pricing">Pricing</a>
+    <a href="#pricing">Apps &amp; pricing</a>
     <a href="#account">Your account</a>
     <button type="button" class="acct-btn" id="navAcct" onclick="acctClick()">Sign in</button>
   </div>
@@ -594,7 +606,7 @@ footer a:hover { color:var(--navy); }
   <p>Playtest it, make its cards, pitch it to publishers and put it on show. Each app runs on a Google Sheet you own — and one GameBoard account signs you in.</p>
   <div class="btns">
     <button type="button" class="btn primary" id="heroCta" onclick="acctClick('signup')">Start your free week</button>
-    <a class="btn ghost" href="#apps">See the apps</a>
+    <a class="btn ghost" href="#pricing">See the apps</a>
   </div>
   <div class="journey" aria-label="From playtest to shelf">
     <?php foreach ($APPS as $i => $a): ?>
@@ -603,29 +615,6 @@ footer a:hover { color:var(--navy); }
     <?php endforeach; ?>
   </div>
 </header>
-
-<section id="apps">
-  <div class="wrap">
-    <div class="kicker">The apps</div>
-    <h2>From the first playtest to the shelf</h2>
-    <p class="sub">Use one or all four. They share the way they work — your data in your own Google Sheet, edited right on the page — so moving from one to the next feels familiar.</p>
-    <div class="apps">
-      <?php foreach ($APPS as $a): ?>
-      <article class="app" id="<?= e($a[0]) ?>" style="--c:<?= e($a[5]) ?>">
-        <div class="app-head"><img src="images/<?= e($a[2]) ?>" alt=""><div><div class="app-name"><?= e($a[1]) ?></div><div class="app-stage"><?= e($a[3]) ?></div></div></div>
-        <p class="app-line"><?= e($a[4]) ?></p>
-        <ul><?php foreach ($a[7] as $li): ?><li><?= e($li) ?></li><?php endforeach; ?></ul>
-        <div class="app-price"><b><?= e($a[8][0]) ?></b><span>/ month · <?= $a[8][1] ?></span></div>
-        <div class="app-btns">
-          <a class="f" href="<?= e($_apps . $a[6] . '/features') ?>">Features</a>
-          <a class="o app-open" data-app="<?= e($a[6]) ?>" href="<?= e($_apps . $a[6]) ?>" title="Open <?= e($a[1]) ?>">Open</a>
-        </div>
-      </article>
-      <?php endforeach; ?>
-    </div>
-  </div>
-</section>
-
 
 <section class="action" id="action">
   <div class="wrap">
@@ -850,23 +839,28 @@ footer a:hover { color:var(--navy); }
 
 <section class="pricing" id="pricing">
   <div class="wrap">
-    <div class="kicker" style="color:#f3b4aa">Pricing</div>
+    <div class="kicker" style="color:#f3b4aa">The apps &amp; pricing</div>
     <h2>Pay for the apps you use — or get them all</h2>
-    <p class="sub">Each app has its own monthly plan. Or take all four with the all-in-one and save every month. Cancel any time — your games stay in your Google Sheet.</p>
+    <p class="sub">Use one or all four — they work the same way, with your data in your own Google Sheet, edited right on the page. Each app has its own monthly plan, or take all four with the all-in-one. Cancel any time — your games stay in your Sheet.</p>
     <div class="price-grid">
       <?php foreach ($APPS as $a): ?>
-      <div class="pc">
-        <div class="pc-head"><img src="images/<?= e($a[2]) ?>" alt=""><b><?= e($a[1]) ?></b></div>
+      <div class="pc" id="<?= e($a[0]) ?>" style="--c:<?= e($a[5]) ?>">
+        <div class="pc-head"><img src="images/<?= e($a[2]) ?>" alt=""><div><b><?= e($a[1]) ?></b><small><?= e($a[3]) ?></small></div></div>
+        <p class="pc-line"><?= e($a[4]) ?></p>
+        <ul class="pc-feat"><?php foreach ($a[7] as $li): ?><li><?= e($li) ?></li><?php endforeach; ?></ul>
         <div class="pc-price"><?= e($a[8][0]) ?><small>/ month</small></div>
         <div class="pc-note"><?= $a[8][1] === 'every feature' ? 'Every feature.' : ucfirst($a[8][1]) . '.' ?></div>
-        <a href="<?= e($_apps . $a[6] . '/features') ?>">See <?= e($a[1]) ?></a>
+        <div class="pc-btns"><a href="<?= e($_apps . $a[6] . '/features') ?>">Features</a><a class="app-open" data-app="<?= e($a[6]) ?>" href="<?= e($_apps . $a[6]) ?>" title="Open <?= e($a[1]) ?>">Open</a></div>
       </div>
       <?php endforeach; ?>
       <div class="pc all">
         <span class="ribbon">Best value</span>
-        <div class="icons"><?php foreach ($APPS as $a): ?><img src="images/<?= e($a[2]) ?>" alt=""><?php endforeach; ?></div>
-        <b style="font-family:'Fraunces',Georgia,serif;font-size:1.3rem">All-in-one</b>
-        <div class="pc-price" style="margin-top:.4rem">$11.99<small>/ month</small><span class="save">$15.96</span></div>
+        <div class="all-a">
+          <div class="icons"><?php foreach ($APPS as $a): ?><img src="images/<?= e($a[2]) ?>" alt=""><?php endforeach; ?></div>
+          <b style="font-family:'Fraunces',Georgia,serif;font-size:1.3rem">All-in-one</b>
+          <div class="pc-price" style="margin-top:.4rem">$11.99<small>/ month</small></div>
+          <div class="pc-was">instead of <s>$15.96</s> for all four</div>
+        </div>
         <ul>
           <li>DevBoard, CardBoard, PitchBoard and BillBoard</li>
           <li>Every Pro feature, including DevBoard estimates &amp; invoices</li>

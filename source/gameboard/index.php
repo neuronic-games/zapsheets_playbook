@@ -34,7 +34,7 @@ $APPS = [
         ['A pitch log for every game, and a board view', 'Sell sheet generator', 'Game pages and links for collaborators'],
         ['$1.99', 'every feature']],
   ['bill', 'BillBoard',  'bb_icon_180.png',        'Show & sell', 'Your games. A polished page — instantly.', '#9ed29f', 'billboard',
-        ['A catalog of your games, and a page for each', 'Prices and buy links', 'Shareable public links — no website to host'],
+        ['A catalog of your games, and a page for each', 'Edit pages in place — images, stats, reviews, prices and buy links', 'Shareable public links — no website to host'],
         ['$4.99', 'every feature']],
 ];
 ?><!DOCTYPE html>

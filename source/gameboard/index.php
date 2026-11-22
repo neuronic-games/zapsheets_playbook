@@ -262,27 +262,53 @@ footer a:hover { color:var(--navy); }
 .cb-sheet div { border:1px dashed #c9cce0; border-radius:4px; background:#fffaf0 center/cover; }
 .cb-sheet-tag { position:absolute; right:14px; bottom:14px; font-size:11px; font-weight:700; color:#fff; background:#7b6cf6; border-radius:999px; padding:3px 10px; opacity:0; animation:sheet 12s infinite; }
 
-/* PitchBoard: a pitch moving across the board to Signed */
-.pb { padding:14px; background:#fbf7f1; }
-.pb-cols { display:grid; grid-template-columns:repeat(3,1fr); height:100%; position:relative; }
-.pb-col { padding:0 5px; }
-.pb-col h5 { font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:#a07a4c; margin:2px 0 8px; display:flex; justify-content:space-between; }
-.pb-col h5 em { font-style:normal; background:#f3e6d3; color:#8a5c25; border-radius:999px; padding:0 7px; }
-.pb-card { background:#fff; border:1px solid #efe4d4; border-radius:9px; padding:8px; display:flex; gap:8px; align-items:center; margin-bottom:8px; box-shadow:0 2px 6px rgba(120,80,20,.06); font-size:12px; }
-.pb-card img { width:34px; height:34px; border-radius:6px; object-fit:cover; flex-shrink:0; }
-.pb-card b { display:block; color:#3a2a14; font-size:12.5px; }
-.pb-card span { color:#a08a6c; font-size:11px; }
-.pb-move { position:absolute; left:5px; top:96px; width:calc(33.333% - 10px); z-index:3; animation:pitch 12s infinite; }
-.pb-move .pb-card { border-color:#e7a35a; box-shadow:0 10px 24px rgba(200,120,30,.22); }
-@keyframes pitch { 0% { transform:translateX(0); opacity:0; } 3%,16% { transform:translateX(0); opacity:1; } 24%,44% { transform:translateX(calc(100% + 10px)); opacity:1; } 52%,92% { transform:translateX(calc(200% + 20px)); opacity:1; } 100% { transform:translateX(calc(200% + 20px)); opacity:0; } }
-.stamp { position:absolute; right:-6px; top:-10px; font:800 11px 'Inter',sans-serif; letter-spacing:.08em; color:#fff; background:#2e9d4c; border-radius:6px; padding:3px 7px; transform:rotate(8deg) scale(0); animation:stamp 12s infinite; }
-@keyframes stamp { 0%,54% { transform:rotate(8deg) scale(0); } 58% { transform:rotate(8deg) scale(1.25); } 61%,90% { transform:rotate(8deg) scale(1); } 96%,100% { transform:rotate(8deg) scale(0); } }
-.pb-dates { position:absolute; left:14px; right:14px; bottom:12px; display:flex; gap:8px; }
-.pb-dates div { flex:1; background:#fff; border:1px solid #efe4d4; border-radius:8px; padding:6px 9px; font-size:11px; color:#8a6a40; }
-.pb-dates b { color:#3a2a14; display:block; font-size:12px; }
-.confetti { position:absolute; right:16%; top:30%; width:8px; height:8px; border-radius:2px; opacity:0; animation:conf 12s infinite; }
-.confetti:nth-child(2) { right:10%; top:26%; background:#7b6cf6 !important; animation-delay:.1s; } .confetti:nth-child(3) { right:22%; top:24%; background:#49c4d4 !important; animation-delay:.2s; }
-@keyframes conf { 0%,56% { opacity:0; transform:translateY(0) rotate(0); } 58% { opacity:1; } 70% { opacity:0; transform:translateY(-46px) rotate(220deg); } 100% { opacity:0; } }
+/* PitchBoard: the board view — a game dragged from Pitch to Signed, its date filled in, saved to the sheet */
+.kbw { background:#fff; font-size:12px; }
+.kb-nav { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid #eef0f4; }
+.kb-nav b { font-family:'Fraunces',Georgia,serif; font-size:15px; color:#1a1a2e; display:block; line-height:1.1; }
+.kb-nav small { font-size:10px; color:#94a3b8; }
+.kb-tabs { display:flex; gap:4px; }
+.kb-tabs span { font-size:9.5px; font-weight:700; letter-spacing:.06em; color:#64748b; border:1px solid #e2e8f0; border-radius:6px; padding:4px 7px; }
+.kb-tabs span.on { background:#1a1a2e; border-color:#1a1a2e; color:#fff; }
+.kb-title { padding:10px 14px 2px; font-size:11px; font-weight:600; color:#475569; }
+.kb-cols { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:8px 14px 14px; align-items:start; }
+.kb-col { border-radius:9px; padding:8px; min-height:200px; transition:none; }
+.kb-col.design { background:#f8fafc; border:1px solid #e2e8f0; }
+.kb-col.pitch  { background:#f0faf6; border:1px solid #c6ead9; }
+.kb-col.signed { background:#f7f3ff; border:1px solid #ddd6fe; animation:droptarget 12s infinite; }
+.kb-col.pub    { background:#eff6ff; border:1px solid #bfdbfe; }
+@keyframes droptarget { 0%,20% { box-shadow:none; } 24%,36% { box-shadow:inset 0 0 0 2px #a78bfa; background:#efe8ff; } 40%,100% { box-shadow:none; background:#f7f3ff; } }
+.kb-h { font-size:9.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; margin-bottom:7px; }
+.design .kb-h { color:#64748b; } .pitch .kb-h { color:#1d8c70; } .signed .kb-h { color:#7c3aed; } .pub .kb-h { color:#1d4ed8; }
+.kb-c { background:#fff; border:1px solid #e5e7eb; border-radius:7px; padding:7px 8px; margin-bottom:6px; position:relative; }
+.kb-n { font-size:11px; font-weight:600; color:#1a1a2e; display:flex; justify-content:space-between; align-items:center; gap:4px; }
+.kb-m { font-size:10px; color:#94a3b8; margin-top:2px; }
+.kb-pill { font-size:9.5px; font-weight:600; background:#f1f5f9; color:#64748b; border-radius:999px; padding:1px 6px; flex-shrink:0; }
+.kb-cnt { font-size:9.5px; color:#94a3b8; text-align:center; position:relative; height:14px; }
+.kb-cnt span { position:absolute; left:0; right:0; }
+.kb-cnt .a { animation:cntA 12s infinite; } .kb-cnt .b { animation:cntB 12s infinite; }
+@keyframes cntA { 0%,36% { opacity:1; } 38%,94% { opacity:0; } 98%,100% { opacity:1; } }
+@keyframes cntB { 0%,36% { opacity:0; } 38%,94% { opacity:1; } 98%,100% { opacity:0; } }
+/* the card being moved: lifted in Pitch, carried one column right, then it lands in Signed's open slot */
+.kb-mover { border-left:2px solid #f59e0b; z-index:4; animation:carry 12s infinite; }
+@keyframes carry {
+  0%,16% { transform:none; box-shadow:none; opacity:1; }
+  20% { transform:translateY(-3px) rotate(2deg) scale(1.04); box-shadow:0 14px 28px rgba(15,23,42,.22); }
+  34% { transform:translateX(calc(100% + 26px)) translateY(-3px) rotate(2deg) scale(1.04); box-shadow:0 14px 28px rgba(15,23,42,.22); opacity:1; }
+  35%,100% { transform:translateX(calc(100% + 26px)); opacity:0; } }
+.kb-slot-from { animation:closeslot 12s infinite; overflow:visible; }
+@keyframes closeslot { 0%,35% { max-height:80px; margin-bottom:6px; } 40%,94% { max-height:0; margin-bottom:0; } 98%,100% { max-height:80px; margin-bottom:6px; } }
+.kb-slot-to { overflow:hidden; animation:openslot 12s infinite; }
+@keyframes openslot { 0%,24% { max-height:0; } 30%,94% { max-height:140px; } 98%,100% { max-height:0; } }
+.kb-landed { opacity:0; animation:landed 12s infinite; }
+@keyframes landed { 0%,34% { opacity:0; } 35%,92% { opacity:1; } 96%,100% { opacity:0; } }
+.kb-date { display:flex; justify-content:space-between; border-top:1px solid #eef0f4; margin-top:6px; padding-top:5px; font-size:9.5px; color:#94a3b8; }
+.kb-date b { color:#7c3aed; font-weight:700; animation:datefill 12s infinite; border-radius:4px; padding:0 3px; }
+@keyframes datefill { 0%,38% { background:transparent; } 42%,56% { background:#ede9fe; } 62%,100% { background:transparent; } }
+.kb-toast { position:absolute; left:50%; top:58px; transform:translateX(-50%); background:#1a1a2e; color:#fff; font-size:11.5px; font-weight:600; border-radius:999px; padding:6px 14px; opacity:0; animation:toast 12s infinite; white-space:nowrap; }
+@keyframes toast { 0%,40% { opacity:0; transform:translate(-50%,-8px); } 44%,62% { opacity:1; transform:translate(-50%,0); } 68%,100% { opacity:0; } }
+.kb-cursor { position:absolute; width:18px; height:18px; z-index:6; left:85%; top:300px; animation:kbcur 12s infinite; }
+@keyframes kbcur { 0% { left:85%; top:300px; opacity:0; } 6% { opacity:1; } 16%,20% { left:calc(37.5% + 10px); top:168px; } 34% { left:calc(62.5% + 14px); top:165px; } 38% { left:calc(62.5% + 14px); top:168px; } 52% { left:80%; top:290px; opacity:1; } 58%,100% { left:80%; top:290px; opacity:0; } }
 
 /* BillBoard: a catalog with a rolling banner and games rising in */
 .bbm { background:#fff; }
@@ -442,19 +468,34 @@ footer a:hover { color:var(--navy); }
       <div class="show-text">
         <div class="badge"><img src="images/pb_icon_180.png" alt="">PitchBoard · Pitch to publishers</div>
         <h3>From first sketch to signed deal — tracked.</h3>
-        <p>See every game and every publisher on one board. Send a sell sheet, note the reply, and PitchBoard reminds you when it’s time to follow up.</p>
+        <p>Every game sits on a board by stage — Design, Pitch, Signed, Published — with how many publishers you’ve pitched it to. Drag a game to its next stage and its dates fill in, saved to your Sheet.</p>
         <a href="<?= e($_apps . 'pitchboard/features') ?>">PitchBoard features →</a>
       </div>
-      <div class="win" aria-hidden="true"><div class="win-bar"><i></i><i></i><i></i><span>PitchBoard · Board</span></div>
-        <div class="win-body pb">
-          <div class="pb-cols">
-            <div class="pb-col"><h5>Pitched <em>2</em></h5><div class="pb-card"><img src="images/billboard-features/cover-pressure.webp" alt=""><div><b>Pressure</b><span>Owl &amp; Oak Games</span></div></div></div>
-            <div class="pb-col"><h5>Reviewing <em>1</em></h5><div class="pb-card"><img src="images/billboard-features/cover-scurry.webp" alt=""><div><b>Scurry Up!</b><span>Northwind Play</span></div></div></div>
-            <div class="pb-col"><h5>Signed <em>✓</em></h5></div>
-            <div class="pb-move"><div class="pb-card" style="position:relative"><img src="images/billboard-features/cover-floristry.webp" alt=""><div><b>Floristry</b><span>Lantern Press</span></div><span class="stamp">SIGNED</span></div></div>
-            <i class="confetti" style="background:#e7a35a"></i><i class="confetti"></i><i class="confetti"></i>
+      <div class="win" aria-hidden="true"><div class="win-bar"><i></i><i></i><i></i><span>zapsheets.com/app/…/pitchboard</span></div>
+        <div class="win-body kbw">
+          <div class="kb-nav"><div><b>PitchBoard</b><small>Your Studio</small></div><div class="kb-tabs"><span class="on">BOARD</span><span>12 GAMES</span><span>31 PUBLISHERS</span></div></div>
+          <div class="kb-title">Games by stage</div>
+          <div class="kb-cols">
+            <div class="kb-col design"><div class="kb-h">Design</div>
+              <div class="kb-c"><div class="kb-n">Verdant Depths</div><div class="kb-m">Alex, Jordan</div></div>
+              <div class="kb-c"><div class="kb-n">The Glass Engine</div><div class="kb-m">—</div></div>
+              <div class="kb-cnt"><span>2 games</span></div></div>
+            <div class="kb-col pitch"><div class="kb-h">Pitch</div>
+              <div class="kb-c"><div class="kb-n">Stormveil <span class="kb-pill">9</span></div><div class="kb-m">Jordan</div></div>
+              <div class="kb-slot-from"><div class="kb-c kb-mover"><div class="kb-n">Deepwater Run <span class="kb-pill">6</span></div><div class="kb-m">Alex</div></div></div>
+              <div class="kb-c"><div class="kb-n">Ironveil Pass <span class="kb-pill">4</span></div><div class="kb-m">—</div></div>
+              <div class="kb-cnt"><span class="a">3 games</span><span class="b">2 games</span></div></div>
+            <div class="kb-col signed"><div class="kb-h">Signed</div>
+              <div class="kb-c"><div class="kb-n">The Cartographer <span class="kb-pill">5</span></div><div class="kb-m">Jordan, Alex</div></div>
+              <div class="kb-slot-to"><div class="kb-c kb-landed" style="border-left:2px solid #f59e0b"><div class="kb-n">Deepwater Run <span class="kb-pill">6</span></div><div class="kb-m">Alex</div><div class="kb-date">Signed <b>Mar 2026</b></div></div></div>
+              <div class="kb-cnt"><span class="a">1 game</span><span class="b">2 games</span></div></div>
+            <div class="kb-col pub"><div class="kb-h">Published</div>
+              <div class="kb-c"><div class="kb-n">Nocturne Market</div><div class="kb-m">Jordan</div></div>
+              <div class="kb-c"><div class="kb-n">Thornwood</div><div class="kb-m">—</div></div>
+              <div class="kb-cnt"><span>2 games</span></div></div>
           </div>
-          <div class="pb-dates"><div><b>Sell sheet sent</b>Lantern Press · 3 Mar</div><div><b>Follow up</b>Northwind · in 4 days</div></div>
+          <div class="kb-toast">✓ Saved to your Sheet</div>
+          <svg class="kb-cursor" viewBox="0 0 24 24"><path d="M4 2l16 9-7 2-3 7z" fill="#14132a" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>
         </div>
       </div>
     </div>

@@ -14,8 +14,10 @@ const STRIPE_LIVE_STATUSES = ['active', 'trialing', 'past_due'];
 /**
  * Plans. DevBoard has two: 'core' (STRIPE_PRICE_ID_DEVBOARD_CORE) and
  * 'pro' (STRIPE_PRICE_ID_DEVBOARD). Other apps only have 'pro'.
+ * app 'all' is the all-in-one (STRIPE_PRICE_ID_ALL): every app, Pro.
  */
 function stripePlanPriceId(string $app, string $plan): string {
+    if ($app === 'all') return $_ENV['STRIPE_PRICE_ID_ALL'] ?? '';   // the all-in-one: every app
     $key = 'STRIPE_PRICE_ID_' . strtoupper($app) . ($plan === 'core' ? '_CORE' : '');
     return $_ENV[$key] ?? '';
 }

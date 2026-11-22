@@ -5,17 +5,19 @@
  *
  * POST params:
  *   type        — 'subscription' (default) | 'donation'
- *   id          — sheet ID (stored in metadata so the webhook can find it)
- *   app         — 'devboard' | 'billboard' | 'pitchboard' | 'cardboard'
+ *   id          — sheet ID (stored in metadata so the webhook can find it; optional for the all-in-one)
+ *   app         — 'devboard' | 'billboard' | 'pitchboard' | 'cardboard' | 'all' (the all-in-one: every app)
  *   plan        — 'pro' (default) | 'core' (DevBoard only)
  *   email       — pre-fill customer email (optional)
- *   cbt         — CardBoard account token (CardBoard subscriptions belong to the signed-in email)
+ *   cbt         — GameBoard account token: the subscription is recorded on that account (its app column in the
+ *                 Admin sheet). Needed for CardBoard and the all-in-one; used by the other apps when given.
  *   success_url — page to return to on success (must be on this site)
  *   cancel_url  — page to return to on cancel  (must be on this site)
  *
  * Prices (in .env):
  *   STRIPE_PRICE_ID_DEVBOARD / _BILLBOARD / _PITCHBOARD / _CARDBOARD — recurring Pro price
  *   STRIPE_PRICE_ID_DEVBOARD_CORE — recurring DevBoard Core price
+ *   STRIPE_PRICE_ID_ALL — recurring all-in-one price ($11.99)
  *   STRIPE_PRICE_ID_DONATION — one-time price set to "Customer chooses what to pay"
  *
  * Response: { ok, url } — redirect the browser there
@@ -31,8 +33,8 @@ $email   = trim($_POST['email'] ?? '');
 $plan    = (($_POST['plan'] ?? '') === 'core' && $app === 'devboard') ? 'core' : 'pro';
 
 if (!stripeSecretKey())                     stripeFail('Payments are not configured yet');
-if (!stripeValidSheetId($sheetId))          stripeFail('Invalid sheet id');
-if (!in_array($app, STRIPE_APPS, true))     stripeFail('Invalid app');
+if (!in_array($app, STRIPE_APPS, true) && !($app === 'all' && $type === 'subscription')) stripeFail('Invalid app');
+if (!stripeValidSheetId($sheetId) && !($app === 'all' && $sheetId === '')) stripeFail('Invalid sheet id');
 
 $priceId = $type === 'donation' ? ($_ENV['STRIPE_PRICE_ID_DONATION'] ?? '') : stripePlanPriceId($app, $plan);
 if (!$priceId) {
@@ -63,14 +65,18 @@ if ($type === 'donation') {
 if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $params['customer_email'] = $email;
 }
-// CardBoard: the subscription belongs to the signed-in person (their row in the GameBoard Admin sheet)
-if ($app === 'cardboard' && $type === 'subscription') {
+// The subscription is recorded on the signed-in GameBoard account (its row in the Admin sheet). CardBoard and the
+// all-in-one need an account; the other apps still work per sheet, and add the account when someone is signed in.
+if ($type === 'subscription') {
     require_once __DIR__ . '/gameboardAuth.php';
     $who = cbReadToken(cbRequestToken());
-    if (!$who) stripeFail('Sign in with your GameBoard account first');
-    $params['customer_email']                          = $who['e'];
-    $params['metadata[cb_email]']                      = $who['e'];
-    $params['subscription_data[metadata][cb_email]']   = $who['e'];
+    if (!$who && ($app === 'cardboard' || $app === 'all')) stripeFail('Sign in with your GameBoard account first');
+    if ($who && $app === 'all' && !empty($who['all'])) stripeFail('You already have the all-in-one — every app is yours');
+    if ($who) {
+        $params['customer_email']                          = $who['e'];
+        $params['metadata[cb_email]']                      = $who['e'];
+        $params['subscription_data[metadata][cb_email]']   = $who['e'];
+    }
 }
 
 $result = stripeRequest('POST', 'checkout/sessions', $params);

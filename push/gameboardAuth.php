@@ -8,8 +8,10 @@
  * Admin sheet; it lasts 12 hours, then the browser asks for a fresh one (gameboardAccount.php).
  *
  *   token = base64url(JSON {e: email, n: name, st: state, u: access until, te: trial end,
- *                           pe: period end, x: token expires}) . "." . HMAC-SHA256
- *   state = trial | code | subscribed | activated | locked
+ *                           pe: period end, a: {app: {st, u, pe, p}}, all: all-in-one,
+ *                           x: token expires}) . "." . HMAC-SHA256
+ *   state = trial | code | subscribed | activated | locked — for each app in a (st/u/pe are CardBoard's)
+ *   Which apps are paid for is kept in the Admin sheet's app columns (CardBoard … BillBoard, All Apps).
  *
  * An activation key or a comped sheet (STRIPE_PRO_SHEET_IDS) unlocks a spreadsheet for anyone.
  * The signing secret is GAMEBOARD_AUTH_SECRET in .env (CARDBOARD_AUTH_SECRET still works), or one derived from credentials.json.
@@ -52,32 +54,68 @@ function cbAdmin(array $req): array {
     return ['error' => 'The account service failed' . ($raw !== '' ? ': ' . mb_substr($raw, -200) : '')];
 }
 
-/** What a person's Admin-sheet row allows. */
+/** The Admin-sheet column for each app's paid time; "All Apps" is the all-in-one plan. */
+const GB_APP_COLS = ['cardboard' => 'CardBoard', 'devboard' => 'DevBoard', 'pitchboard' => 'PitchBoard', 'billboard' => 'BillBoard'];
+const GB_ALL_COL  = 'All Apps';
+const GB_FOREVER  = 4102444800;   // 2100
+
+/** An app column's value → [paid until (with a couple of days' grace for renewals), plan, date as written]. */
+function gbPaidUntil(string $v): array {
+    $v = trim($v);
+    if ($v === '') return [0, '', ''];
+    if (preg_match('/^(perpetual|forever|lifetime|unlimited|permanent)$/i', $v)) return [GB_FOREVER, 'pro', ''];
+    $date = preg_match('/\d{4}-\d\d-\d\d/', $v, $m) ? $m[0] : (preg_split('/\s+/', $v)[0] ?? '');
+    $t = strtotime($date . ' UTC');
+    return [$t ? $t + 3 * 86400 : 0, stripos($v, 'core') !== false ? 'core' : 'pro', $t ? gmdate('Y-m-d', $t) : ''];
+}
+
+/**
+ * What a person's Admin-sheet row allows, app by app. The free week, free codes and activation count for
+ * every app; a subscription counts for its own app (or every app with the all-in-one).
+ * Before the app columns, CardBoard's subscription was kept in Status and Period End: that still counts for CardBoard.
+ */
 function cbAccessFromUser(array $u): array {
     $now   = time();
     $te    = strtotime((string) ($u['Trial End'] ?? '') . ' UTC') ?: 0;
-    $pe    = (string) ($u['Period End'] ?? '');
-    $peT   = $pe !== '' ? (strtotime($pe . ' UTC') ?: 0) + 2 * 86400 : 0;   // a couple of days' grace for renewals
-    $live  = in_array(strtolower((string) ($u['Status'] ?? '')), STRIPE_LIVE_STATUSES, true);
     $act   = in_array(strtolower(trim((string) ($u['Activated'] ?? ''))), ['yes', 'true', '1', 'y'], true)
           || preg_match('/^\d{4}-\d\d-\d\d/', (string) ($u['Activated'] ?? ''));
-    $subUntil = $live ? ($peT ?: $now + 3 * 86400) : 0;
-    $cu   = strtotime((string) ($u['Code Until'] ?? '') . ' UTC') ?: 0;   // a free code from the Codes tab
-    if ($act)                       { $st = 'activated';  $until = 4102444800; }   // 2100
-    elseif ($subUntil > $now)       { $st = 'subscribed'; $until = max($subUntil, $te, $cu); }
-    elseif ($cu > $now)             { $st = 'code';       $until = max($cu, $te); }
-    elseif ($te > $now)             { $st = 'trial';      $until = $te; }
-    else                            { $st = 'locked';     $until = max($te, $subUntil, $cu); }
+    $cu    = strtotime((string) ($u['Code Until'] ?? '') . ' UTC') ?: 0;   // a free code from the Codes tab
+    $all   = gbPaidUntil((string) ($u[GB_ALL_COL] ?? ''));
+    $apps  = [];
+    foreach (GB_APP_COLS as $app => $colName) {
+        [$t, $plan, $pe] = gbPaidUntil((string) ($u[$colName] ?? ''));
+        if ($app === 'cardboard' && $t === 0 && in_array(strtolower((string) ($u['Status'] ?? '')), STRIPE_LIVE_STATUSES, true)) {
+            $pe = (string) ($u['Period End'] ?? '');   // the older single subscription
+            $t  = $pe !== '' ? (strtotime($pe . ' UTC') ?: 0) + 2 * 86400 : $now + 3 * 86400;
+            $plan = 'pro';
+        }
+        if ($all[0] > $t) { $t = $all[0]; $plan = 'pro'; $pe = $all[2]; }
+        if ($act)            { $st = 'activated';  $until = GB_FOREVER; $plan = 'pro'; }
+        elseif ($t > $now)   { $st = 'subscribed'; $until = max($t, $te, $cu); }
+        elseif ($cu > $now)  { $st = 'code';       $until = max($cu, $te); }
+        elseif ($te > $now)  { $st = 'trial';      $until = $te; }
+        else                 { $st = 'locked';     $until = max($te, $t, $cu); }
+        $apps[$app] = ['st' => $st, 'u' => $until, 'pe' => $t > $now ? $pe : '', 'p' => $t > $now || $act ? $plan : ''];
+    }
     $sh = array_values(array_filter(array_map('trim', explode(',', (string) ($u['Sheets'] ?? ''))), 'stripeValidSheetId'));
+    $c  = $apps['cardboard'];
     return [
         'e' => strtolower(trim((string) ($u['Email'] ?? ''))), 'n' => (string) ($u['Name'] ?? ''),
-        'st' => $st, 'u' => $until, 'te' => $te, 'pe' => $pe, 'sh' => $sh,   // sh: the sheets this person created (they edit; others only view)
+        'st' => $c['st'], 'u' => $c['u'], 'te' => $te, 'pe' => $c['pe'], 'sh' => $sh,   // st/u/pe: CardBoard's, for older pages
+        'a' => $apps, 'all' => $all[0] > $now,   // a: each app's {st, u, pe, p}; all: has the all-in-one
         'status' => (string) ($u['Status'] ?? ''), 'studio' => (string) ($u['Studio'] ?? ''),
     ];
 }
 
+/** One app's access from a token or cbAccessFromUser(); tokens from before the app columns only knew CardBoard. */
+function gbAppAccess(array $p, string $app): array {
+    if (isset($p['a'][$app])) return $p['a'][$app];
+    return ['st' => $p['st'] ?? 'locked', 'u' => $p['u'] ?? 0, 'pe' => $p['pe'] ?? '', 'p' => ''];
+}
+
 function cbIssueToken(array $a): string {
     $p = ['e' => $a['e'], 'n' => $a['n'], 'st' => $a['st'], 'u' => $a['u'], 'te' => $a['te'], 'pe' => $a['pe'],
+          'a' => $a['a'] ?? [], 'all' => !empty($a['all']),
           'sh' => array_values($a['sh'] ?? []), 'x' => time() + CB_TOKEN_HOURS * 3600];
     $body = cbB64(json_encode($p, JSON_UNESCAPED_UNICODE));
     return $body . '.' . cbB64(hash_hmac('sha256', $body, cbSecret(), true));
@@ -114,7 +152,7 @@ function cbRequireSignIn(): void {
  * Stop a request that changes something unless the person is in their free week, subscribed,
  * activated, or the spreadsheet is unlocked. Answers the browser with need_auth / locked.
  */
-function cbRequireAccess(string $sheetId): void {
+function cbRequireAccess(string $sheetId, string $app = 'cardboard'): void {
     $p = cbReadToken(cbRequestToken());
     if (!$p) { echo json_encode(['error' => 'Sign in with your GameBoard account to make changes.', 'need_auth' => true]); exit; }
     if (($p['x'] ?? 0) < time()) { echo json_encode(['error' => 'Your sign-in needs refreshing.', 'need_auth' => true, 'refresh' => true]); exit; }
@@ -123,7 +161,10 @@ function cbRequireAccess(string $sheetId): void {
     if (!isset($p['sh'])) { echo json_encode(['error' => 'Your sign-in needs refreshing.', 'need_auth' => true, 'refresh' => true]); exit; }
     if (!in_array($sheetId, (array) $p['sh'], true)) { echo json_encode(['error' => 'This sheet belongs to another GameBoard account — you can view it, not change it.', 'view_only' => true]); exit; }
     if (cbSheetUnlocked($sheetId)) return;
-    if (($p['u'] ?? 0) < time()) { echo json_encode(['error' => 'Your free week has ended — subscribe to keep designing.', 'locked' => true]); exit; }
+    if (gbAppAccess($p, $app)['u'] < time()) {
+        $name = array_key_exists($app, GB_APP_COLS) ? GB_APP_COLS[$app] : 'this app';
+        echo json_encode(['error' => 'Your free week has ended — subscribe to ' . $name . ' (or get all four) to keep going.', 'locked' => true]); exit;
+    }
 }
 
 /**

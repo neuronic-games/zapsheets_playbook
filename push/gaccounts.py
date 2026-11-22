@@ -7,7 +7,8 @@
 #            views). A sheet is added only with claim (Connect on the CardBoard home page, or "Make it
 #            mine" on a sheet nobody has), and only if no one else's Sheets has it. The answer says
 #            whether someone else has it (taken).
-#   update — email, fields: {Header: value} → changes those cells (adds the person if missing)
+#   update — email, fields: {Header: value} → changes those cells (adds the person if missing).
+#            A Header written "+Header" adds the value to that cell's comma list instead (Stripe Subscription).
 #   find   — field, value → the first row whose Header equals value (e.g. Stripe Customer)
 #   redeem — email, code → a free code from the "Codes" tab: CardBoard unlocked for its Length
 #            (added on top of any code time left). Each person can use each code once (their Users row
@@ -29,7 +30,11 @@ CRED = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'credentia
 ADMIN_SHEET = '1heNPe8GCggJVoUlGvDVwBt697LvD7vtQT5yDfsnV4M0'
 TAB = 'Users'
 HEADERS = ['Email', 'Name', 'Studio', 'Trial Start', 'Trial End', 'Status', 'Plan', 'Period End',
-           'Stripe Customer', 'Stripe Subscription', 'Activated', 'Sheets', 'Created', 'Last Seen', 'Password Hash', 'Code Until', 'Codes Used']
+           'Stripe Customer', 'Stripe Subscription', 'Activated', 'Sheets', 'Created', 'Last Seen', 'Password Hash', 'Code Until', 'Codes Used',
+           'CardBoard', 'DevBoard', 'PitchBoard', 'BillBoard', 'All Apps']
+# The app columns say which apps the person pays for: the date the paid time runs to (the Stripe webhook keeps
+# it current; blank when cancelled). DevBoard's cheaper plan is written "2026-12-20 core". "Perpetual" (typed by
+# you) unlocks that app for good. All Apps is the all-in-one plan: every app.
 TRIAL_DAYS = 7
 CODES_TAB = 'Codes'   # free codes you hand out: each unlocks CardBoard for its Length, once per person
 CODES_HEADERS = ['Code', 'Length', 'Max Uses', 'Used', 'Expires', 'Note']   # who used which: the Users tab's Codes Used
@@ -174,7 +179,10 @@ def main():
     if action == 'update':
         u = u or new_person(email)
         for k, v in (data.get('fields') or {}).items():
-            if k in hdr and k != 'Email': u[k] = '' if v is None else str(v)
+            if k.startswith('+') and k[1:] in hdr and v:   # add to a comma list, once
+                have = [x.strip() for x in str(u.get(k[1:], '')).split(',') if x.strip()]
+                if str(v) not in have: u[k[1:]] = ','.join(have + [str(v)])
+            elif k in hdr and k != 'Email': u[k] = '' if v is None else str(v)
         write(n, u)
         out({'ok': True, 'user': u})
 

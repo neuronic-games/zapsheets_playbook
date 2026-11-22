@@ -205,6 +205,14 @@ h2 { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(1.8r
 .me span { font-size:13px; color:var(--muted); }
 .plan { font-size:13px; background:#fdf0ed; color:#a8463a; border-radius:8px; padding:.55rem .75rem; margin-bottom:1rem; }
 .plan.ok { background:#edf7ee; color:#2e7d32; }
+.my-apps { list-style:none; margin:-.4rem 0 1rem; padding:0; }
+.my-apps li { display:flex; align-items:center; gap:.6rem; padding:.42rem 0; border-bottom:1px solid #f0ece4; font-size:13px; }
+.my-apps li:last-child { border-bottom:none; }
+.my-apps img { width:26px; height:26px; border-radius:7px; flex-shrink:0; }
+.my-apps b { color:var(--navy); font-weight:600; min-width:84px; }
+.my-apps span { color:var(--muted); margin-left:auto; text-align:right; }
+.my-apps span.paid { color:#2e7d32; font-weight:600; }
+.pc.all button:disabled { opacity:.85; cursor:default; background:#fff; }
 .link { background:none; border:none; color:var(--mid); text-decoration:underline; text-underline-offset:2px; font:inherit; font-size:13px; cursor:pointer; }
 
 .own { text-align:center; }
@@ -889,7 +897,7 @@ footer a:hover { color:var(--navy); }
           <li>One GameBoard account for all four</li>
           <li>Save $3.97 every month</li>
         </ul>
-        <button type="button" onclick="acctClick('signup')">Get all four</button>
+        <button type="button" id="allBtn" onclick="buyAll()">Get all four</button>
       </div>
     </div>
   </div>
@@ -915,7 +923,8 @@ footer a:hover { color:var(--navy); }
       <div id="acctIn" hidden>
         <div class="me"><div class="me-dot" id="meDot"></div><div><b id="meName"></b><span id="meEmail"></span></div></div>
         <div class="plan" id="mePlan"></div>
-        <button type="button" class="go" onclick="location.hash='apps'">Open an app</button>
+        <ul class="my-apps" id="meApps"></ul>
+        <button type="button" class="go" onclick="location.hash='pricing'">Open an app</button>
         <div class="foot"><button type="button" class="link" onclick="signOut()">Sign out</button></div>
       </div>
     </div>
@@ -980,6 +989,8 @@ footer a:hover { color:var(--navy); }
   var APP_BASE = document.querySelector('base').getAttribute('href');
   var APPS_URL = <?= json_encode($_apps) ?>;
   var KEY = 'cb_account';   // the account kept in this browser — the same key the apps read
+  var APPS = <?= json_encode(array_map(function ($a) { return ['key' => $a[6], 'name' => $a[1], 'icon' => 'images/' . $a[2]]; }, $APPS)) ?>;
+  var wantAll = false;   // "Get all four" before signing in: go on to checkout after
   var acct = null;
   try { acct = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
   window._mode = '';
@@ -994,6 +1005,7 @@ footer a:hover { color:var(--navy); }
     acct = { token: r.token, account: r.account, sheet: '', checked: Date.now() };
     try { localStorage.setItem(KEY, JSON.stringify(acct)); } catch (e) {}
     show();
+    if (wantAll) { wantAll = false; setTimeout(buyAll, 50); }
   }
   // The apps run on zapsheets.com: on mygameboard.app, the "Open" links carry the account over
   function crossOrigin() { try { return new URL(APPS_URL, location.href).origin !== location.origin; } catch (e) { return false; } }
@@ -1012,22 +1024,52 @@ footer a:hover { color:var(--navy); }
       var nm = a.name || (a.email || '').split('@')[0];
       $('meDot').textContent = (nm || '?').charAt(0).toUpperCase();
       $('meName').textContent = nm; $('meEmail').textContent = a.email || '';
-      var left = Math.max(0, Math.ceil((new Date(a.until).getTime() - Date.now()) / 864e5));
-      var txt = a.state === 'trial' ? 'Free week — ' + left + (left === 1 ? ' day' : ' days') + ' left, with every feature.'
-              : a.state === 'subscribed' ? 'Subscribed — thank you!' : a.state === 'activated' ? 'Activated — every feature, no time limit.'
+      var apps = a.apps || {}, days = function(t) { return Math.max(0, Math.ceil((new Date(t).getTime() - Date.now()) / 864e5)); };
+      var when = function(d) { return d ? new Date(d + (d.length === 10 ? 'T12:00:00Z' : '')).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''; };
+      var paid = APPS.filter(function(x) { return (apps[x.key] || {}).state === 'subscribed'; }).map(function(x) { return x.name; });
+      var left = days(a.trial_end || a.until);
+      var txt = a.state === 'activated' ? 'Activated — every app, every feature, no time limit.'
+              : a.all_in_one ? 'All-in-one — every app, every feature. Thank you!'
+              : paid.length ? 'Subscribed to ' + paid.join(', ').replace(/, ([^,]*)$/, ' and $1') + ' — thank you!'
+              : a.state === 'trial' ? 'Free week — ' + left + (left === 1 ? ' day' : ' days') + ' left, with every app and feature.'
               : a.state === 'code' ? 'Unlocked with a code until ' + new Date(a.until).toLocaleDateString() + '.'
-              : 'Your free week has ended — subscribe in any app to keep designing.';
-      $('mePlan').textContent = txt; $('mePlan').classList.toggle('ok', a.state !== 'locked');
+              : 'Your free week has ended — subscribe to an app, or get all four.';
+      $('mePlan').textContent = txt;
+      $('mePlan').classList.toggle('ok', a.state !== 'locked' || paid.length > 0);
+      // Each app: what this account has
+      $('meApps').innerHTML = a.state === 'activated' || !a.apps ? '' : APPS.map(function(x) {
+        var p = apps[x.key] || {}, st = p.state, d;
+        var label = st === 'subscribed' ? (a.all_in_one ? 'All-in-one' : (p.plan === 'core' ? 'Core' : 'Subscribed')) + (p.period_end ? ' · renews ' + when(p.period_end) : '')
+                  : st === 'code' ? 'Code · until ' + when(p.until)
+                  : st === 'trial' ? 'Free week · ' + (d = days(p.until)) + (d === 1 ? ' day' : ' days') + ' left'
+                  : 'Not subscribed';
+        return '<li><img src="' + esc(x.icon) + '" alt=""><b>' + esc(x.name) + '</b><span class="' + (st === 'subscribed' ? 'paid' : '') + '">' + esc(label) + '</span></li>';
+      }).join('');
     }
+    var ab = $('allBtn'), have = a && (a.all_in_one || a.state === 'activated');
+    ab.disabled = !!have; ab.textContent = have ? '✓ You have all four' : 'Get all four';
     linkApps();
   }
   window.acctClick = function(mode) {
     if (acct) { location.hash = 'account'; return; }
     openAuth(mode || '');
   };
+  // The all-in-one: Stripe checkout for the signed-in account (sign in or start the free week first)
+  window.buyAll = function() {
+    if (!acct || !acct.token) { wantAll = true; openAuth('signup'); return; }
+    var b = $('allBtn'), back = location.origin + location.pathname;
+    b.disabled = true; b.textContent = 'Opening checkout…';
+    var fd = new FormData();
+    fd.append('type', 'subscription'); fd.append('app', 'all'); fd.append('id', ''); fd.append('cbt', acct.token);
+    if (acct.account && acct.account.email) fd.append('email', acct.account.email);
+    fd.append('success_url', back + '?bought=all#account'); fd.append('cancel_url', back + '#pricing');
+    fetch(APP_BASE + 'push/stripeCheckout.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
+      .then(function(r) { if (!r || !r.url) throw new Error(r && r.error ? r.error : 'Checkout isn’t available right now'); location.href = r.url; })
+      .catch(function(e) { alert(e.message); show(); });
+  };
   window.signOut = function() { acct = null; try { localStorage.removeItem(KEY); } catch (e) {} show(); };
   function openAuth(m) { $('authOverlay').classList.add('open'); authMode(m); }
-  window.closeAuth = function() { $('authOverlay').classList.remove('open'); };
+  window.closeAuth = function() { $('authOverlay').classList.remove('open'); wantAll = false; };
   document.addEventListener('keydown', function(k) { if (k.key === 'Escape') closeAuth(); });
 
   var pending = null;
@@ -1080,9 +1122,11 @@ footer a:hover { color:var(--navy); }
   };
 
   // Keep the account current (plan, days left) when it was last checked a while ago
-  if (acct && acct.token && Date.now() - (acct.checked || 0) > 3600e3) {
-    post({ action: 'refresh', cbt: acct.token }).then(store).catch(function(e) { if (/sign in/i.test(e.message)) signOut(); });
-  }
+  // Back from checkout: the payment reaches the account a moment later, so check now and again shortly
+  var bought = /[?&]bought=/.test(location.search);
+  function refresh() { post({ action: 'refresh', cbt: acct.token }).then(store).catch(function(e) { if (/sign in/i.test(e.message)) signOut(); }); }
+  if (acct && acct.token && (bought || Date.now() - (acct.checked || 0) > 3600e3 || !(acct.account && acct.account.apps))) refresh();
+  if (bought && acct && acct.token) { setTimeout(refresh, 4000); setTimeout(refresh, 12000); history.replaceState(null, '', location.pathname + location.hash); }
   show();
 
   // The DevBoard window's playtest timer keeps running; the who-it's-for dots pop in when scrolled to

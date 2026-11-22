@@ -73,17 +73,30 @@ function writeSubscription(string $sheetId, array $data, string $app = ''): void
     if (!stripeValidSheetId($sheetId)) return;
     $dir = dirname(__DIR__) . '/sheets/' . $sheetId;
     if (!is_dir($dir)) return;
+    if ($app === 'all') {   // the all-in-one: Pro in every app on this sheet
+        foreach (STRIPE_APPS as $one) writeSubscription($sheetId, array_merge($data, ['app' => $one], isset($data['plan']) ? ['plan' => 'pro'] : []), $one);
+        return;
+    }
     $file     = stripeSubFile($sheetId, $app);   // one file per app
     $existing = file_exists($file) ? (json_decode(file_get_contents($file), true) ?: []) : [];
     $merged   = array_merge($existing, $data, ['updated_at' => gmdate('Y-m-d')]);
     file_put_contents($file, json_encode($merged, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
 }
 
-// CardBoard subscriptions belong to a person: keep their row in the GameBoard Admin sheet up to date
-function cbAccountUpdate(string $email, array $fields): void {
+/**
+ * Record a subscription on the person's GameBoard account: the app's column in the Admin sheet (All Apps for the
+ * all-in-one) holds the date the paid time runs to, "… core" for DevBoard Core, blank when it has ended.
+ * CardBoard also keeps Status and Period End, as before the app columns.
+ */
+function gbRecordSub(string $email, string $app, string $status, string $periodEnd, string $plan = 'pro', array $extra = []): void {
     if (!$email) return;
     require_once __DIR__ . '/gameboardAuth.php';
-    cbAdmin(['action' => 'update', 'email' => $email, 'fields' => $fields]);
+    $col = $app === 'all' ? GB_ALL_COL : (array_key_exists($app, GB_APP_COLS) ? GB_APP_COLS[$app] : '');
+    if ($col === '') return;
+    $live   = in_array($status, STRIPE_LIVE_STATUSES, true);
+    $fields = [$col => $live ? ($periodEnd ?: gmdate('Y-m-d', time() + 31 * 86400)) . ($plan === 'core' ? ' core' : '') : ''];
+    if ($app === 'cardboard') $fields += ['Status' => $status, 'Period End' => $live ? $periodEnd : ''];
+    cbAdmin(['action' => 'update', 'email' => $email, 'fields' => $fields + $extra]);
 }
 
 // ── Event dispatch ────────────────────────────────────────────────────────
@@ -104,48 +117,50 @@ switch ($type) {
         $sheetId = $object['metadata']['sheet_id'] ?? ($sub['metadata']['sheet_id'] ?? '');
         $app     = $object['metadata']['app']      ?? ($sub['metadata']['app']      ?? '');
         $email   = $object['customer_details']['email'] ?? ($object['customer_email'] ?? '');
+        $status  = $sub['status'] ?? 'active';
+        $pe      = $sub ? stripePeriodEnd($sub) : '';
+        $plan    = $sub ? stripePlanFromSub($sub, $app === 'all' ? '' : $app) : ($object['metadata']['plan'] ?? 'pro');
 
         writeSubscription($sheetId, [
             'email'                  => $email,
-            'status'                 => $sub['status'] ?? 'active',
+            'status'                 => $status,
             'app'                    => $app,
             'stripe_customer_id'     => $object['customer'] ?? '',
             'stripe_subscription_id' => $subId,
-            'period_end'             => $sub ? stripePeriodEnd($sub) : '',
-            'plan'                   => $sub ? stripePlanFromSub($sub, $app) : ($object['metadata']['plan'] ?? 'pro'),
+            'period_end'             => $pe,
+            'plan'                   => $plan,
         ], $app);
-        if ($app === 'cardboard') cbAccountUpdate($object['metadata']['cb_email'] ?? ($sub['metadata']['cb_email'] ?? ''), [
-            'Status' => $sub['status'] ?? 'active', 'Plan' => 'pro', 'Period End' => $sub ? stripePeriodEnd($sub) : '',
-            'Stripe Customer' => $object['customer'] ?? '', 'Stripe Subscription' => $subId,
-        ]);
+        gbRecordSub($object['metadata']['cb_email'] ?? ($sub['metadata']['cb_email'] ?? ''), $app, $status, $pe, $plan,
+                    ['Stripe Customer' => $object['customer'] ?? '', '+Stripe Subscription' => $subId]);
         break;
 
     case 'customer.subscription.updated':
+        $app = $object['metadata']['app'] ?? '';
+        gbRecordSub($object['metadata']['cb_email'] ?? '', $app, $object['status'] ?? 'unknown', stripePeriodEnd($object), stripePlanFromSub($object, $app === 'all' ? '' : $app));
         $sheetId = $object['metadata']['sheet_id'] ?? '';
         if (!$sheetId) break;
         writeSubscription($sheetId, [
             'status'     => $object['status'] ?? 'unknown',
             'period_end' => stripePeriodEnd($object),
-            'plan'       => stripePlanFromSub($object),
-        ], $object['metadata']['app'] ?? '');
-        if (($object['metadata']['app'] ?? '') === 'cardboard') cbAccountUpdate($object['metadata']['cb_email'] ?? '', [
-            'Status' => $object['status'] ?? 'unknown', 'Period End' => stripePeriodEnd($object),
-        ]);
+            'plan'       => stripePlanFromSub($object, $app === 'all' ? '' : $app),
+        ], $app);
         break;
 
     case 'customer.subscription.deleted':
+        gbRecordSub($object['metadata']['cb_email'] ?? '', $object['metadata']['app'] ?? '', 'canceled', '');
         $sheetId = $object['metadata']['sheet_id'] ?? '';
         if (!$sheetId) break;
         writeSubscription($sheetId, [
             'status'     => 'canceled',
             'period_end' => '',
         ], $object['metadata']['app'] ?? '');
-        if (($object['metadata']['app'] ?? '') === 'cardboard') cbAccountUpdate($object['metadata']['cb_email'] ?? '', ['Status' => 'canceled', 'Period End' => '']);
         break;
 
     case 'invoice.payment_failed':
         // 2025-03-31 "basil" and later: invoice.parent.subscription_details;
         // older API versions: invoice.subscription.
+        // The account's app column keeps its date (past_due still works, and customer.subscription.updated
+        // follows with the new state); only CardBoard's older Status column is changed here.
         $details = $object['parent']['subscription_details'] ?? [];
         $subId   = $details['subscription'] ?? ($object['subscription'] ?? '');
         if (is_array($subId)) $subId = $subId['id'] ?? '';
@@ -159,7 +174,7 @@ switch ($type) {
         if ($app === 'cardboard') {
             $cbEmail = $details['metadata']['cb_email'] ?? '';
             if (!$cbEmail && $subId) { $sub = $sub ?? stripeRequest('GET', 'subscriptions/' . $subId); $cbEmail = $sub['metadata']['cb_email'] ?? ''; }
-            cbAccountUpdate($cbEmail, ['Status' => 'past_due']);
+            if ($cbEmail) { require_once __DIR__ . '/gameboardAuth.php'; cbAdmin(['action' => 'update', 'email' => $cbEmail, 'fields' => ['Status' => 'past_due']]); }
         }
         if (!$sheetId) break;
         writeSubscription($sheetId, ['status' => 'past_due'], $app);

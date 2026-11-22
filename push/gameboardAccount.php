@@ -14,7 +14,9 @@
  *   profile  — cbt, name, studio           → {ok, token, account}   (saved in the person's Admin-sheet row)
  *   redeem   — cbt, code                   → {ok, token, account, days}  (a free code from the Admin sheet's Codes tab,
  *                                            or an activation key: unlocked with no time limit)
- * account = {email, name, state: trial|subscribed|activated|locked, until, trial_end, period_end, status, sheet_unlocked}
+ * app (optional, default cardboard) — the app asking: account.state/until/period_end are that app's.
+ * account = {email, name, state: trial|code|subscribed|activated|locked, until, trial_end, period_end, status, sheet_unlocked,
+ *            apps: {cardboard|devboard|pitchboard|billboard: {state, until, period_end, plan}}, all_in_one}
  */
 error_reporting(0);
 header('Content-Type: application/json');
@@ -33,8 +35,17 @@ function cbLimit(string $key, int $max): bool {
 }
 function cbAccountOut(array $a, string $sheet): array {
     $d = function ($t) { return $t ? gmdate('c', $t) : ''; };
-    return ['email' => $a['e'], 'name' => $a['n'], 'studio' => $a['studio'] ?? '', 'state' => $a['st'], 'until' => $d($a['u']), 'trial_end' => $d($a['te']),
-            'period_end' => $a['pe'], 'status' => $a['status'] ?? '', 'sheet_unlocked' => $sheet !== '' && cbSheetUnlocked($sheet),
+    $app = (string) ($_POST['app'] ?? 'cardboard');   // the app asking: state/until/period_end are its own
+    if (!array_key_exists($app, GB_APP_COLS)) $app = 'cardboard';
+    $apps = [];
+    foreach (array_keys(GB_APP_COLS) as $k) {
+        $x = gbAppAccess($a, $k);
+        $apps[$k] = ['state' => $x['st'], 'until' => $d($x['u']), 'period_end' => $x['pe'], 'plan' => $x['p']];
+    }
+    return ['email' => $a['e'], 'name' => $a['n'], 'studio' => $a['studio'] ?? '', 'state' => $apps[$app]['state'], 'until' => $apps[$app]['until'],
+            'trial_end' => $d($a['te']), 'period_end' => $apps[$app]['period_end'], 'status' => $a['status'] ?? '',
+            'apps' => $apps, 'all_in_one' => !empty($a['all']),   // every app's access; the all-in-one plan
+            'sheet_unlocked' => $sheet !== '' && cbSheetUnlocked($sheet),
             'owner' => $sheet !== '' && in_array($sheet, $a['sh'] ?? [], true),   // set this sheet up: may change it (else view only)
             'portal_url' => $_ENV['STRIPE_PORTAL_URL'] ?? ''];
 }

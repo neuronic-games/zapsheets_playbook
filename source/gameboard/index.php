@@ -21,7 +21,7 @@ $_abs  = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'zapsheets.com') . $_base;
 require_once dirname(__DIR__, 2) . '/dotEnv.php';
 $_apps = $_onDomain ? $_base : gbLinkBase();
 $_page = gbLinkBase() === $_base ? $_abs . 'gameboard' : 'https://' . $_ENV['GAMEBOARD_HOST'] . '/';
-$_desc = 'Tools for board game makers: capture playtests, design and print cards, track publisher pitches and show off your games — everything edited right on the page, with one GameBoard account.';
+$_desc = 'Built for game makers, from the first prototype to the store shelf.';
 function e($s) { return htmlspecialchars((string) $s, ENT_QUOTES); }
 $APPS = [
   ['card', 'CardBoard',  'cardboard_icon_180.png', 'Design & print cards', 'Your cards, straight from your sheet.', '#7b6cf6', 'cardboard',

@@ -21,7 +21,7 @@ $_abs  = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'zapsheets.com') . $_base;
 require_once dirname(__DIR__, 2) . '/dotEnv.php';
 $_apps = $_onDomain ? $_base : gbLinkBase();
 $_page = gbLinkBase() === $_base ? $_abs . 'gameboard' : 'https://' . $_ENV['GAMEBOARD_HOST'] . '/';
-$_desc = 'Apps for board game makers: playtest notes, card design, publisher pitches and a catalog for your games — each on a Google Sheet you own, with one GameBoard account.';
+$_desc = 'Tools for board game makers: playtest notes, card design, publisher pitches and a catalog for your games — each on a Google Sheet you own, with one GameBoard account.';
 function e($s) { return htmlspecialchars((string) $s, ENT_QUOTES); }
 $APPS = [
   ['dev',  'DevBoard',   'db_icon_180.png',        'Playtest & develop', 'Every playtest, remembered.', '#49c4d4', 'devboard',
@@ -43,12 +43,12 @@ $APPS = [
 <base href="<?= e($_base) ?>" />
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GameBoard — Apps for Board Game Makers</title>
+<title>GameBoard — Tools for Board Game Makers</title>
 <meta name="description" content="<?= e($_desc) ?>">
 <link rel="canonical" href="<?= e($_page) ?>">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="GameBoard">
-<meta property="og:title" content="GameBoard — Apps for Board Game Makers">
+<meta property="og:title" content="GameBoard — Tools for Board Game Makers">
 <meta property="og:description" content="<?= e($_desc) ?>">
 <meta property="og:url" content="<?= e($_page) ?>">
 <meta property="og:image" content="<?= e($_abs . 'images/gameboard_icon_512.png') ?>">

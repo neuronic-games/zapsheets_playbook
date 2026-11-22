@@ -70,7 +70,7 @@ function cbCodeEmailHtml(string $code, string $mode = 'signup'): string {
           '<div style="font-size:13px;line-height:1.55;color:#8a8fa8;margin:0 0 22px;">One account for PitchBoard, DevBoard, CardBoard and BillBoard. Your first week is free, with every feature. If you didn’t ask for this code, you can ignore this email.</div>' .
         '</td></tr>' .
         '<tr><td style="padding:16px 28px 22px;border-top:1px solid #eeecf6;font-family:' . $font . ';font-size:12px;color:#9aa0b8;">' .
-          '<a href="' . $app . '" style="color:#d9534a;text-decoration:none;font-weight:600;">Open GameBoard</a> &nbsp;·&nbsp; Apps for board game makers &nbsp;·&nbsp; © ' . gmdate('Y') . ' ZapSheets' .
+          '<a href="' . $app . '" style="color:#d9534a;text-decoration:none;font-weight:600;">Open GameBoard</a> &nbsp;·&nbsp; Tools for board game makers &nbsp;·&nbsp; © ' . gmdate('Y') . ' ZapSheets' .
         '</td></tr>' .
       '</table></td></tr></table></body></html>';
 }

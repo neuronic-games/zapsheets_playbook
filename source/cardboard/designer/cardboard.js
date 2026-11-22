@@ -2348,7 +2348,7 @@ function renderAttrs() {
   if (!e) {
     var c = layout.card;
     var clip = readClip();
-    if (clip) h += '<div class="attr-btns" style="margin-top:0"><button class="attr-btn" onclick="pasteClip()" title="⌘V">Paste ' + clip.els.length + ' element' + (clip.els.length === 1 ? '' : 's') + '</button></div>';
+    if (clip && hasAccess()) h += '<div class="attr-btns" style="margin-top:0"><button class="attr-btn" onclick="pasteClip()" title="⌘V">Paste ' + clip.els.length + ' element' + (clip.els.length === 1 ? '' : 's') + '</button></div>';
     h += '<p class="attr-title">' + (side === 'back' ? 'Card back' : 'Card') + '</p><p class="muted" style="margin:0 0 .4rem">Select something on the card to change it. ' +
          (side === 'back' ? 'Flip the card (top left) to work on the front.' : 'Flip the card (top left) to design its back.') + '</p>';
     if (side === 'back') h += '<span class="lbl">Back</span>' + colorRow('Background', 'bg', layout.back.bg, false, 'setBackProp') +

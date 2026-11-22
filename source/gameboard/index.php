@@ -97,14 +97,16 @@ nav { position:sticky; top:0; z-index:50; display:flex; align-items:center; just
 .hero h1 em { font-style:italic; font-weight:400; color:var(--red); }
 .hero p { color:rgba(255,255,255,.72); font-size:1.12rem; max-width:600px; margin:0 auto 1.6rem; }
 /* A little game-board path: each app's space lights up in turn */
-.path { position:relative; display:grid; grid-template-columns:repeat(4, 92px); justify-content:center; gap:0 34px; margin:0 auto 2.4rem; }
+.path { position:relative; display:grid; grid-template-columns:repeat(4, 92px); justify-content:center; gap:0 34px; margin:0 auto 1.6rem; padding-bottom:52px; }
 .path-line { position:absolute; left:calc(50% - 189px); right:calc(50% - 189px); top:26px; height:3px; border-radius:2px; background:repeating-linear-gradient(90deg, rgba(255,255,255,.28) 0 8px, transparent 8px 16px); }
 .space { position:relative; display:flex; flex-direction:column; align-items:center; gap:8px; }
 .space img { width:52px; height:52px; border-radius:13px; box-shadow:0 6px 16px rgba(0,0,0,.35); animation:spaceOn 6s infinite; animation-delay:var(--d); }
-.space b { font-family:'DINBlack','Inter',sans-serif; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.45); animation:spaceTxt 6s infinite; animation-delay:var(--d); }
-@keyframes spaceOn { 0%,4% { transform:none; box-shadow:0 6px 16px rgba(0,0,0,.35); } 9%,22% { transform:translateY(-3px) scale(1.08); box-shadow:0 0 0 3px var(--c), 0 0 26px var(--c); } 30%,100% { transform:none; box-shadow:0 6px 16px rgba(0,0,0,.35); } }
-@keyframes spaceTxt { 0%,4% { color:rgba(255,255,255,.45); } 9%,22% { color:var(--c); } 30%,100% { color:rgba(255,255,255,.45); } }
-@media (max-width:520px) { .path { grid-template-columns:repeat(4, 64px); gap:0 14px; } .path-line { display:none; } .space img { width:44px; height:44px; } .space b { font-size:10.5px; } }
+.sp-lab { position:absolute; top:62px; left:50%; transform:translate(-50%,6px); white-space:nowrap; text-align:center; opacity:0; animation:spaceTxt 6s infinite; animation-delay:var(--d); pointer-events:none; }
+.sp-lab b { display:block; font-family:'Fraunces',Georgia,serif; font-size:16px; font-weight:600; color:var(--c); }
+.sp-lab small { display:block; font-size:12.5px; color:rgba(255,255,255,.7); margin-top:1px; }
+@keyframes spaceOn { 0% { transform:none; box-shadow:0 6px 16px rgba(0,0,0,.35); } 3%,22% { transform:translateY(-3px) scale(1.08); box-shadow:0 0 0 3px var(--c), 0 0 26px var(--c); } 26%,100% { transform:none; box-shadow:0 6px 16px rgba(0,0,0,.35); } }
+@keyframes spaceTxt { 0% { opacity:0; transform:translate(-50%,6px); } 4%,21% { opacity:1; transform:translate(-50%,0); } 25%,100% { opacity:0; transform:translate(-50%,6px); } }
+@media (max-width:520px) { .path { grid-template-columns:repeat(4, 64px); gap:0 14px; } .path-line { display:none; } .space img { width:44px; height:44px; } .sp-lab { top:54px; } }
 .btns { display:flex; gap:.9rem; justify-content:center; flex-wrap:wrap; }
 .btn { display:inline-block; text-decoration:none; font:600 15px 'Inter',sans-serif; padding:13px 26px; border-radius:999px; cursor:pointer; border:none; }
 .btn.primary { background:var(--red); color:#fff; }
@@ -623,10 +625,10 @@ footer a:hover { color:var(--navy); }
   <span class="tag">For board game makers</span>
   <h1>Tools for every step of <em>your game</em>.</h1>
   <p>Built for game designers, from the first prototype to the store shelf.</p>
-  <div class="path" aria-label="Playtest, design, pitch, sell">
+  <div class="path" aria-label="Design, playtest, pitch, sell">
     <span class="path-line"></span>
-    <?php foreach ([['db_icon_180.png','Playtest','#49c4d4'],['cardboard_icon_180.png','Design','#a99cff'],['pb_icon_180.png','Pitch','#f0766a'],['bb_icon_180.png','Sell','#9ed29f']] as $k => $sp): ?>
-    <span class="space" style="--c:<?= $sp[2] ?>;--d:<?= $k * 1.5 - 0.3 ?>s"><img src="images/<?= $sp[0] ?>" alt=""><b><?= $sp[1] ?></b></span>
+    <?php foreach ([['cardboard_icon_180.png','CardBoard','Design &amp; print cards','#a99cff'],['db_icon_180.png','DevBoard','Playtest &amp; develop','#49c4d4'],['pb_icon_180.png','PitchBoard','Pitch to publishers','#f0766a'],['bb_icon_180.png','BillBoard','Show &amp; sell your games','#9ed29f']] as $k => $sp): ?>
+    <span class="space" style="--c:<?= $sp[3] ?>;--d:<?= $k * 1.5 ?>s"><img src="images/<?= $sp[0] ?>" alt="<?= $sp[1] ?>"><span class="sp-lab"><b><?= $sp[1] ?></b><small><?= $sp[2] ?></small></span></span>
     <?php endforeach; ?>
   </div>
   <div class="btns">

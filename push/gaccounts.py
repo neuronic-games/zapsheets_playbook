@@ -98,9 +98,14 @@ def main():
     if ws is None:
         ws = wb.add_worksheet(title=TAB, rows=200, cols=len(HEADERS))
         wb.values_update(q(TAB) + '!A1', params={'valueInputOption': 'RAW'}, body={'values': [HEADERS]})
-    if not any(w.title.lower() == CODES_TAB.lower() for w in wb.worksheets()):   # ready for you to add codes
+    cws0 = next((w for w in wb.worksheets() if w.title.lower() == CODES_TAB.lower()), None)
+    if cws0 is None:   # ready for you to add codes
         wb.add_worksheet(title=CODES_TAB, rows=100, cols=len(CODES_HEADERS))
         wb.values_update(q(CODES_TAB) + '!A1', params={'valueInputOption': 'RAW'}, body={'values': [CODES_HEADERS]})
+    else:              # an older Codes tab: add the headings this version needs (App)
+        ch0 = [h.strip() for h in (wb.values_get(q(cws0.title) + '!1:1').get('values', [[]]) or [[]])[0]]
+        if ch0 and any(h not in ch0 for h in CODES_HEADERS):
+            wb.values_update(q(cws0.title) + '!A1', params={'valueInputOption': 'RAW'}, body={'values': [ch0 + [h for h in CODES_HEADERS if h not in ch0]]})
     vals = wb.values_get(q(ws.title)).get('values', [])
     hdr = [h.strip() for h in (vals[0] if vals else [])]
     missing = [h for h in HEADERS if h not in hdr]

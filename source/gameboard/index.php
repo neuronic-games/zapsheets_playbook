@@ -248,7 +248,7 @@ footer a:hover { color:var(--navy); }
 .dvs-ol { display:grid; grid-template-columns:1fr 1fr; }
 .dvs-pair { display:grid; grid-template-columns:1fr 1fr; border:1.5px solid #d0d8e0; border-radius:8px; overflow:hidden; margin-bottom:5px; position:relative; }
 .dvs-pair > div { padding:6px 8px; min-height:30px; white-space:nowrap; overflow:hidden; }
-.dvs-pair > div:first-child { border-right:1px solid #d0d8e0; background:#fff; }
+.dvs-pair > div:first-child { border-right:1px solid #d0d8e0; background:#fff; position:relative; }
 .dvs-pair > div:nth-child(2) { background:#f5f7fa; }
 .dvs-pair.p1 { animation:dvsTodo 18s infinite; }
 @keyframes dvsTodo { 0%,50% { border-color:#d0d8e0; box-shadow:none; } 51%,96% { border-color:#f5c518; box-shadow:0 0 0 2px rgba(245,197,24,.35); } 99%,100% { border-color:#d0d8e0; box-shadow:none; } }
@@ -267,6 +267,10 @@ footer a:hover { color:var(--navy); }
 @keyframes dvsRowH { 0%,60% { height:30px; } 65%,96% { height:74px; } 99%,100% { height:30px; } }
 .dvs-ib { position:absolute; right:5px; top:5px; width:20px; height:20px; border-radius:5px; border:1px solid #d0d8e4; background:#fff; color:#99a; display:flex; align-items:center; justify-content:center; animation:dvsIb 18s infinite; }
 .dvs-ib svg { width:12px; height:12px; }
+/* In the app the image button sits in every empty observation, and goes as soon as you start typing in it */
+.dvs-ib.ib1 { animation-name:dvsIb1; } .dvs-ib.ib2 { animation-name:dvsIb2; }
+@keyframes dvsIb1 { 0%,24% { opacity:1; } 24.5%,98% { opacity:0; } 99%,100% { opacity:1; } }
+@keyframes dvsIb2 { 0%,52% { opacity:1; } 52.5%,98% { opacity:0; } 99%,100% { opacity:1; } }
 @keyframes dvsIb { 0%,58% { opacity:1; transform:none; color:#99a; } 59.5% { transform:scale(.82); color:#1a5f7a; border-color:#a0b8c8; } 60.5%,97% { opacity:0; } 99%,100% { opacity:1; } }
 .dvs-upl { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:6px; color:#999; font-size:10px; opacity:0; animation:dvsUpl 18s infinite; }
 .dvs-upl i { width:13px; height:13px; border:2px solid #d0d8e0; border-top-color:#1a5f7a; border-radius:50%; animation:spin .8s linear infinite; }
@@ -615,8 +619,8 @@ footer a:hover { color:var(--navy); }
             </div>
             <hr class="dvs-hr">
             <div class="dvs-ol"><label>Observations</label><label>Solutions</label></div>
-            <div class="dvs-pair p1"><div><span class="ty o1">Auctions in round 2 drag on</span></div><div><span class="ty s1">Cap every auction at 3 bids</span></div><span class="dvs-bulb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="glass" d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg></span></div>
-            <div class="dvs-pair"><div><span class="ty o2">Everyone loves the tulips</span></div><div></div></div>
+            <div class="dvs-pair p1"><div><span class="dvs-ib ib1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="ty o1">Auctions in round 2 drag on</span></div><div><span class="ty s1">Cap every auction at 3 bids</span></div><span class="dvs-bulb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="glass" d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg></span></div>
+            <div class="dvs-pair"><div><span class="dvs-ib ib2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="ty o2">Everyone loves the tulips</span></div><div></div></div>
             <div class="dvs-pair p3"><div><span class="dvs-ib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="dvs-upl"><i></i>Uploading…</span><span class="dvs-photo"><span class="dvs-trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></span></span></div><div><span class="ty s3">Shorter bid track</span></div></div>
             <div class="dvs-hint">⌘ / Ctrl + Arrow — move between fields · ⌘ / Ctrl + Enter — save</div>
             <div class="dvs-act"><span>Cancel</span><span class="add">Add Session</span></div>

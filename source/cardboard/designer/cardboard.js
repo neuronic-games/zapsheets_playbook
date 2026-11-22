@@ -428,7 +428,7 @@ function init() {
     askSignIn(true).then(function() { init(); }, function() {});
     return;
   }
-  acctRefresh(!hasAccess() || (acctInfo() && acctInfo().owner == null)).then(function() {}, function() {});
+  acctRefresh(navigator.onLine || !hasAccess())   // who owns the sheet can change: check every time it opens.then(function() {}, function() {});
   renderPalette();
   $('cardHolder').innerHTML = '<div class="loading" style="width:240px;height:200px"><span class="spin"></span>Loading sheet…</div>';
   loadTags();
@@ -3893,6 +3893,10 @@ function accountPost(action, extra) {
     .then(function(r) { if (!r || r.error) { var e = new Error(r && r.error ? r.error : 'No response'); e.needAuth = !!(r && r.need_auth); throw e; } return r; });
 }
 var _acctRefreshing = null;
+function claimSheet() {   // a sheet nobody has set up: it becomes this account's
+  accountPost('claim').then(function(r) { storeAcct(r); toast(isOwner() ? '✓ This sheet is yours now' : 'Someone else has set this sheet up', !isOwner()); })
+    .catch(function(e) { toast('Couldn’t make it yours — ' + e.message, true); });
+}
 function acctRefresh(force) {
   if (!ACCT) return Promise.reject(new Error('Not signed in'));
   if (!force && ACCT.sheet === SHEET_ID && Date.now() - (ACCT.checked || 0) < ACCT_MAX_AGE) return Promise.resolve(ACCT);
@@ -3912,6 +3916,7 @@ function applyAcct() {
     $('lockBtn').hidden = false;
     if (!a) { $('lockMsg').innerHTML = '<b>Sign in to start designing</b> — your first week is free, with every feature.'; $('lockBtn').textContent = 'Sign in'; $('lockBtn').onclick = function() { askSignIn().catch(function() {}); }; }
     else if (!acctChecked()) { $('lockMsg').innerHTML = 'Checking your account…'; $('lockBtn').hidden = true; }
+    else if (!isOwner() && a.unclaimed) { $('lockMsg').innerHTML = '<b>View only.</b> Nobody has set this sheet up in CardBoard yet — if it’s yours, make it yours to design its cards.'; $('lockBtn').textContent = 'Make it mine'; $('lockBtn').onclick = claimSheet; }
     else if (!isOwner()) { $('lockMsg').innerHTML = '<b>View only.</b> This sheet was set up by another CardBoard account — you can look through its cards and layouts, but not change them.'; $('lockBtn').hidden = true; }
     else { $('lockMsg').innerHTML = '<b>Your free week has ended.</b> Your cards and decks are safe — subscribe for $4.99/month to keep designing.'; $('lockBtn').textContent = 'Subscribe'; $('lockBtn').onclick = function() { openPlansDialog('locked'); }; }
   }

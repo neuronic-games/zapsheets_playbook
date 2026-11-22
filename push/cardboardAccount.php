@@ -38,9 +38,11 @@ function cbAccountOut(array $a, string $sheet): array {
             'owner' => $sheet !== '' && in_array($sheet, $a['sh'] ?? [], true),   // set this sheet up: may change it (else view only)
             'portal_url' => $_ENV['STRIPE_PORTAL_URL'] ?? ''];
 }
-function cbSignedIn(array $u, string $sheet): void {
+function cbSignedIn(array $u, string $sheet, bool $taken = true): void {
     $a = cbAccessFromUser($u);
-    ok(['token' => cbIssueToken($a), 'account' => cbAccountOut($a, $sheet)]);
+    $acc = cbAccountOut($a, $sheet);
+    $acc['unclaimed'] = $sheet !== '' && !$acc['owner'] && !$taken;   // nobody has set this sheet up: it can be made yours
+    ok(['token' => cbIssueToken($a), 'account' => $acc]);
 }
 
 /** The sign-in email in CardBoard's colors: navy band, gold/lavender wordmark, the code large. Tables and inline styles for mail apps. */
@@ -137,7 +139,7 @@ if ($action === 'verify') {
     $r = cbAdmin(['action' => 'user', 'email' => $email, 'name' => trim((string) ($_POST['name'] ?? '')), 'sheet' => $sheet,
                   'fields' => ['Password Hash' => password_hash($pw, PASSWORD_DEFAULT)]]);
     if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t open your account');
-    cbSignedIn($r['user'], $sheet);
+    cbSignedIn($r['user'], $sheet, !empty($r['taken']));
 }
 
 // Log in with email and password
@@ -152,7 +154,7 @@ if ($action === 'login') {
     if (!$u || !password_verify($pw, $hash)) { usleep(500000); fail('That email and password don’t match'); }
     $r = cbAdmin(['action' => 'user', 'email' => $email, 'sheet' => $sheet]);
     if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t open your account');
-    cbSignedIn($r['user'], $sheet);
+    cbSignedIn($r['user'], $sheet, !empty($r['taken']));
 }
 
 if ($action === 'redeem') {
@@ -171,7 +173,8 @@ if ($action === 'redeem') {
     ok(['token' => cbIssueToken($a), 'account' => cbAccountOut($a, $sheet), 'days' => (int) ($r['days'] ?? 0)]);
 }
 
-if ($action === 'refresh' || $action === 'activate' || $action === 'profile') {
+// claim — cbt, sheet: set this sheet up as yours (Connect on the home page, or "Make it mine" when nobody has it)
+if ($action === 'refresh' || $action === 'activate' || $action === 'profile' || $action === 'claim') {
     $p = cbReadToken(cbRequestToken());
     if (!$p || ($p['x'] ?? 0) < time() - 30 * 86400) fail('Please sign in again', ['need_auth' => true]);
     if ($action === 'activate') {
@@ -187,9 +190,10 @@ if ($action === 'refresh' || $action === 'activate' || $action === 'profile') {
         $r = cbAdmin(['action' => 'update', 'email' => $p['e'], 'fields' => ['Name' => $clean($_POST['name'] ?? ''), 'Studio' => $clean($_POST['studio'] ?? '')]]);
         if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t save your profile');
     }
-    $r = cbAdmin(['action' => 'user', 'email' => $p['e'], 'sheet' => $sheet]);
+    if ($action === 'claim' && $sheet === '') fail('Which sheet?');
+    $r = cbAdmin(['action' => 'user', 'email' => $p['e'], 'sheet' => $sheet, 'claim' => $action === 'claim']);
     if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t open your account');
-    cbSignedIn($r['user'], $sheet);
+    cbSignedIn($r['user'], $sheet, !empty($r['taken']));
 }
 
 fail('Unknown action');

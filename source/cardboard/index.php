@@ -423,11 +423,15 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
       if (result.title) addLog('✓  Sheet: ' + result.title, 'ok');
       var tabs = result.tabs || [];
       addLog('✓  ' + tabs.length + (tabs.length === 1 ? ' deck: ' : ' decks: ') + tabs.map(function(t) { return t.title; }).join(', '), 'ok');
-      addLog('✓  Ready — opening CardBoard…', 'ok');
-
-      setTimeout(function() {
-        window.location.href = APP_BASE + sheetId + '/cardboard';
-      }, 1000);
+      // Connecting sets the sheet up as yours (unless someone else already has): you design it, others view it
+      post({ action: 'claim', cbt: acct.token, sheet: sheetId }).then(function(r) {
+        acct = { token: r.token, account: r.account, sheet: sheetId, checked: Date.now() };
+        try { localStorage.setItem('cb_account', JSON.stringify(acct)); } catch (e) {}
+        addLog(r.account && r.account.owner ? '✓  Set up as yours' : '✓  Someone else set this sheet up — it opens view only', 'ok');
+      }).catch(function(e) { addLog('!  ' + e.message, 'err'); }).then(function() {
+        addLog('✓  Ready — opening CardBoard…', 'ok');
+        setTimeout(function() { window.location.href = APP_BASE + sheetId + '/cardboard'; }, 800);
+      });
     };
 
     xhr.onerror = function() {

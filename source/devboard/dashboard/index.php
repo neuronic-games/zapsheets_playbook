@@ -428,6 +428,11 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .estimate-type-pill.invoice { color:#a16207; background:#fef3cd; }
 .estimate-type-pill.paid    { color:#15803d; background:#dcfce7; }
 .estimate-type-pill.partial { color:#9a3412; background:#ffedd5; }
+.estimate-type-pill.payout  { color:#6d28d9; background:#ede9fe; }   /* a payment to a collaborator (money out) */
+.pay-payee { font-family:'DINBlack',sans-serif; font-size:.78rem; color:#333; }
+.estimate-amount.out { color:#6d28d9; }
+.btn-contract-action.payment { border-color:#6d28d9; color:#6d28d9; }
+.btn-contract-action.payment:hover { background:#6d28d9; color:#fff; }
 .estimate-num-badge { font-family:'DINRegular',sans-serif; font-size:.7rem; color:#999; }
 .estimate-date { font-family:'DINRegular',sans-serif; font-size:.7rem; color:#bbb; }
 .estimate-amount { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#111; white-space:nowrap; }
@@ -1672,6 +1677,45 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
   </div>
 </div>
 
+<!-- Payment dialog: record a payment to a collaborator (a Contracts row with Type "Payment") -->
+<div class="overlay" id="paymentOverlay" onclick="if(event.target===this){closePaymentDialog();}">
+  <div class="contract-dialog" style="position:relative;overflow:visible" onclick="event.stopPropagation()"
+       onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitPayment();}">
+    <button onclick="closePaymentDialog()" style="position:absolute;top:.75rem;right:.75rem;background:none;border:none;cursor:pointer;font-size:1rem;color:#888;line-height:1;padding:.25rem .4rem;" title="Close">&#x2715;</button>
+    <h2>Payment — <span id="payGameTitle"></span></h2>
+    <div class="field-grid" style="grid-template-columns:1fr 1fr">
+      <div class="field-group span2">
+        <label>Paid to</label>
+        <div class="combo-wrap" id="payPersonCombo">
+          <input type="text" id="payPersonInput" class="field-input combo-input" placeholder="Collaborator" autocomplete="off"
+            oninput="payPersonRebuild(this.value)" onfocus="payPersonRebuild(this.value)" onkeydown="payPersonKey(event)" />
+          <div class="combo-dropdown" id="payPersonDrop"></div>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Amount</label>
+        <div class="contract-quote-wrap">
+          <span class="contract-quote-prefix">$</span>
+          <input type="number" class="field-input" id="payAmount" placeholder="0.00" min="0" step="0.01" />
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Date paid</label>
+        <div class="date-wrap"><input type="date" class="field-input" id="payDate" /></div>
+      </div>
+      <div class="field-group span2">
+        <label>Notes</label>
+        <input type="text" class="field-input" id="payNotes" placeholder="e.g. Art for the box cover, via PayPal" autocomplete="off" />
+      </div>
+    </div>
+    <div class="dialog-err" id="payErr"></div>
+    <div class="dialog-actions">
+      <button class="btn-cancel" onclick="forceClosePaymentDialog()">Cancel</button>
+      <button class="btn-dark" id="payBtn" onclick="submitPayment()">Save Payment</button>
+    </div>
+  </div>
+</div>
+
 <!-- Standalone Invoice dialog -->
 <div class="overlay" id="standaloneInvoiceOverlay" onclick="if(event.target===this){closeStandaloneInvoiceDialog();}">
   <div class="contract-dialog" style="position:relative" onclick="event.stopPropagation()">
@@ -2314,7 +2358,7 @@ function renderDashView() {
   var html = '<div class="dash-stat-row">';
   html += '<div class="dash-stat"><div class="dash-stat-num">' + GAMES_RAW.length + '</div><div class="dash-stat-label">Games</div></div>';
   html += '<div class="dash-stat"><div class="dash-stat-num">' + activeCount + '</div><div class="dash-stat-label">Active Dev</div></div>';
-  html += '<div class="dash-stat"><div class="dash-stat-num">' + CONTRACT_RAW.length + '</div><div class="dash-stat-label">Contracts</div></div>';
+  html += '<div class="dash-stat"><div class="dash-stat-num">' + CONTRACT_RAW.filter(function(c) { return c && !_isPaymentRow(c); }).length + '</div><div class="dash-stat-label">Contracts</div></div>';
   var _pubCount = Object.keys(CONTRACT_RAW.reduce(function(a,c){if((c.Client||'').trim())a[(c.Client||'').trim().toLowerCase()]=1;return a},{})).length;
   html += '<div class="dash-stat"><div class="dash-stat-num">' + (_pubCount || '—') + '</div><div class="dash-stat-label">Publishers</div></div>';
   html += '</div>';
@@ -2350,7 +2394,7 @@ function renderDashView() {
 
   // Recent contracts
   if (CONTRACT_RAW.length) {
-    var recent = CONTRACT_RAW.slice().reverse().slice(0, 8);
+    var recent = CONTRACT_RAW.filter(Boolean).slice().reverse().slice(0, 8);
     html += '<div>';
     html += '<div class="dash-section-hd">Contracts</div>';
     html += '<div class="dash-contracts">';
@@ -2363,7 +2407,9 @@ function renderDashView() {
       else if (payment === 'Invoiced') badgeCls += ' invoiced';
       else if (payment === 'Partial')  badgeCls += ' partial';
       html += '<div class="dash-contract-row">';
-      html += '<div><div class="dash-contract-game">' + esc(c.Game || '—') + '</div><div class="dash-contract-client">' + esc(c.Client || '') + '</div></div>';
+      var isPay = /^payment$/i.test(String(c.Type || '').trim());
+      if (isPay) { payment = 'Paid out'; badgeCls = 'client-contract-badge'; }
+      html += '<div><div class="dash-contract-game">' + esc(c.Game || '—') + '</div><div class="dash-contract-client">' + esc(isPay ? '→ ' + (c.Payee || '') : (c.Client || '')) + '</div></div>';
       html += '<div style="color:#888;font-size:.72rem">' + esc(fmtDate(c.Date)) + '</div>';
       html += '<div style="font-family:DINBlack,sans-serif;font-size:.78rem">' + esc(quote) + '</div>';
       html += '<div><span class="' + badgeCls + '">' + esc(payment || '—') + '</span></div>';
@@ -2382,6 +2428,7 @@ function renderPublishersView() {
 
   var byClient = {};
   CONTRACT_RAW.forEach(function(con) {
+    if (!con) return;   // deleted this session
     var name = (con.Client || '').trim();
     if (!name) return;
     var key = name.toLowerCase();
@@ -2429,7 +2476,7 @@ function renderPublishersView() {
     html += '<div class="client-card-header" onclick="togglePublisherCard(this.parentNode)">' +
       '<span>' + esc(pub.name) + '</span>' +
       '<span style="display:flex;align-items:center;gap:.5rem">' +
-        '<span class="client-card-count">' + contracts.length + (contracts.length === 1 ? ' contract' : ' contracts') + '</span>' +
+        '<span class="client-card-count">' + _pubConCount(contracts) + '</span>' +
         '<span class="client-card-chevron">▼</span>' +
       '</span>' +
     '</div>';
@@ -2443,7 +2490,7 @@ function renderPublishersView() {
     });
     pubEstimates.forEach(function(est) {
       var k = gameKey(est.game);
-      if (!gameMap[k]) gameMap[k] = { name: est.game || '—', estimates: [], contracts: [] };
+      if (!gameMap[k]) gameMap[k] = { name: est.game || '—', estimates: [], contracts: [], payments: [] };
       gameMap[k].estimates.push(est);
     });
     contracts.forEach(function(con) {
@@ -2451,9 +2498,10 @@ function renderPublishersView() {
       var conType = (con.Type || '').trim().toLowerCase();
       if (conType === 'estimate' || conType === 'invoice') return;
       var k = gameKey(con.Game);
-      if (!gameMap[k]) gameMap[k] = { name: con.Game || '—', estimates: [], contracts: [] };
+      if (!gameMap[k]) gameMap[k] = { name: con.Game || '—', estimates: [], contracts: [], payments: [] };
       else if (con.Game) gameMap[k].name = con.Game; // contracts have canonical casing
-      gameMap[k].contracts.push(con);
+      if (conType === 'payment') gameMap[k].payments.push(con);   // money paid out to a collaborator
+      else gameMap[k].contracts.push(con);
     });
     var gameKeys = Object.keys(gameMap).sort(function(a, b) {
       return gameMap[a].name.localeCompare(gameMap[b].name);
@@ -2468,6 +2516,7 @@ function renderPublishersView() {
       if (estOnlyCount) summaryParts.push(estOnlyCount + (estOnlyCount === 1 ? ' estimate' : ' estimates'));
       if (invCount)     summaryParts.push(invCount     + (invCount     === 1 ? ' invoice'  : ' invoices'));
       if (g.contracts.length) summaryParts.push(g.contracts.length + (g.contracts.length === 1 ? ' contract' : ' contracts'));
+      if (g.payments.length)  summaryParts.push(g.payments.length  + (g.payments.length  === 1 ? ' payment'  : ' payments'));
 
       html += '<div class="game-group" id="' + ggId + '">';
       html += '<div class="game-group-header" onclick="toggleGameGroup(\'' + ggId + '\')">' +
@@ -2548,6 +2597,10 @@ function renderPublishersView() {
         html += '</div>'; // .estimate-item
       });
 
+      // Payments to collaborators for this game — latest first
+      g.payments.slice().sort(function(a, b) { return CONTRACT_RAW.indexOf(b) - CONTRACT_RAW.indexOf(a); })
+        .forEach(function(pay) { html += _paymentItemHtml(pay); });
+
       // Contracts for this game — latest sheet row first
       var sortedCons = g.contracts.slice().sort(function(a, b) {
         return CONTRACT_RAW.indexOf(b) - CONTRACT_RAW.indexOf(a);
@@ -2611,6 +2664,7 @@ function renderPublishersView() {
       html += '<button class="btn-contract-action" onclick="event.stopPropagation();openEditGame(' + esc(JSON.stringify(g.name)) + ')">Edit Game</button>';
       html += '<button type="button" class="btn-card-subtitle" onclick="event.stopPropagation();openEstimateDialog(' + esc(JSON.stringify(pub.name)) + ',' + esc(JSON.stringify(g.name)) + ')">+ Estimate</button>';
       html += '<button type="button" class="btn-contract-action invoice" onclick="event.stopPropagation();openStandaloneInvoiceDialog(' + esc(JSON.stringify(g.name)) + ',' + esc(JSON.stringify(pub.name)) + ')">+ Invoice</button>';
+      html += '<button type="button" class="btn-contract-action payment" onclick="event.stopPropagation();openPaymentDialog(' + esc(JSON.stringify(pub.name)) + ',' + esc(JSON.stringify(g.name)) + ')">+ Payment</button>';
       html += '<button type="button" class="btn-contract-action report" onclick="event.stopPropagation();createReport(' + esc(JSON.stringify(g.name)) + ',' + esc(JSON.stringify(pub.name)) + ')">+ Report</button>';
       html += '</div>';
       html += '<div style="display:flex;gap:.4rem;align-items:center"></div>';
@@ -2632,6 +2686,110 @@ function togglePublisherCard(card) {
 function toggleGameGroup(id) {
   var el = document.getElementById(id);
   if (el) el.classList.toggle('open');
+}
+
+// ── Payments to collaborators ─────────────────────────────────────────────────
+// A payment is a Contracts row with Type "Payment": Payee (who was paid), Quote (amount), Date, Notes, and
+// Client/Game so it sits with that publisher's game. Shown in purple — money going out.
+function _isPaymentRow(con) { return !!con && /^payment$/i.test(String(con.Type || '').trim()); }
+function _pubConCount(contracts) {
+  var pays = contracts.filter(_isPaymentRow).length, cons = contracts.length - pays;
+  var parts = [];
+  if (cons || !pays) parts.push(cons + (cons === 1 ? ' contract' : ' contracts'));
+  if (pays) parts.push(pays + (pays === 1 ? ' payment' : ' payments'));
+  return parts.join(' · ');
+}
+function _paymentItemHtml(pay) {
+  var idx = CONTRACT_RAW.indexOf(pay), n = parseFloat(pay.Quote || '');
+  var amt = isNaN(n) ? '—' : '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  var when = fmtDate(pay.Date || '') || pay.Date || '';
+  var h = '<div class="estimate-item pay-item" id="ci-' + idx + '">';
+  h += '<div class="estimate-item-header" onclick="_payToggle(' + idx + ')">' +
+    '<span class="estimate-type-pill payout">Paid out</span>' +
+    '<div class="pay-payee">' + esc(pay.Payee || '—') + '</div>' +
+    '<div class="estimate-date">' + esc(when) + '</div>' +
+    '<div class="estimate-amount out">' + esc(amt) + '</div>' +
+    '<div class="estimate-item-chevron">▼</div></div>';
+  h += '<div class="estimate-item-body"><div class="estimate-item-details" style="cursor:default"><dl class="estimate-item-fields">' +
+    '<div class="estimate-item-field"><dt>Paid to</dt><dd>' + esc(pay.Payee || '—') + '</dd></div>' +
+    '<div class="estimate-item-field"><dt>Amount</dt><dd>' + esc(amt) + '</dd></div>' +
+    '<div class="estimate-item-field"><dt>Date</dt><dd>' + esc(when || '—') + '</dd></div>' +
+    (pay['Ref Number'] ? '<div class="estimate-item-field"><dt>Ref #</dt><dd>' + esc(pay['Ref Number']) + '</dd></div>' : '') +
+    '</dl>' + (pay.Notes ? '<div class="contract-detail-notes" style="margin:.4rem 0 0">' + esc(pay.Notes) + '</div>' : '') + '</div>';
+  h += '<div class="estimate-item-actions">' +
+    '<div id="cdel-row-' + idx + '" style="display:flex;gap:.5rem;align-items:center">' +
+      '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_conStartDelete(' + idx + ')">🗑 Delete Payment</button></div>' +
+    '<div id="cdel-confirm-' + idx + '" style="display:none;align-items:center;justify-content:flex-end;gap:.5rem">' +
+      '<button type="button" class="est-nocancel-btn" onclick="event.stopPropagation();_conCancelDelete(' + idx + ')">Don\'t Delete</button>' +
+      '<button type="button" class="est-confirm-btn" id="cdel-btn-' + idx + '" onclick="event.stopPropagation();_conConfirmDelete(' + idx + ')">Confirm</button></div>' +
+    '</div></div></div>';
+  return h;
+}
+function _payToggle(idx) { var el = document.getElementById('ci-' + idx); if (el) el.classList.toggle('open'); }
+
+var _payCtx = null, _payInitial = {};
+function _payValues() {
+  return { person: document.getElementById('payPersonInput').value.trim(), amount: document.getElementById('payAmount').value.trim(),
+           date: document.getElementById('payDate').value, notes: document.getElementById('payNotes').value.trim() };
+}
+function openPaymentDialog(client, game) {
+  _payCtx = { client: client || '', game: game || '' };
+  document.getElementById('payGameTitle').textContent = game || '';
+  document.getElementById('payPersonInput').value = '';
+  document.getElementById('payAmount').value = '';
+  var d = new Date(); document.getElementById('payDate').value = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  document.getElementById('payNotes').value = '';
+  document.getElementById('payErr').style.display = 'none';
+  var b = document.getElementById('payBtn'); b.disabled = false; b.textContent = 'Save Payment';
+  document.getElementById('payPersonCombo').classList.remove('open');
+  _payInitial = _payValues();
+  document.getElementById('paymentOverlay').classList.add('open');
+  setTimeout(function() { document.getElementById('payPersonInput').focus(); }, 60);
+}
+function _payIsDirty() { var v = _payValues(); return Object.keys(v).some(function(k) { return v[k] !== _payInitial[k]; }); }
+function closePaymentDialog() {
+  if (_payIsDirty()) { shakeDialog(document.getElementById('paymentOverlay').querySelector('.contract-dialog')); return; }
+  forceClosePaymentDialog();
+}
+function forceClosePaymentDialog() { document.getElementById('paymentOverlay').classList.remove('open'); }
+function payPersonRebuild(filter) {
+  var drop = document.getElementById('payPersonDrop'), lower = (filter || '').toLowerCase();
+  var items = (PEOPLE_NAMES || []).filter(function(n) { return n && (!lower || n.toLowerCase().indexOf(lower) !== -1); });
+  if (!items.length) { drop.innerHTML = ''; document.getElementById('payPersonCombo').classList.remove('open'); return; }
+  drop.innerHTML = items.map(function(n) {
+    return '<div class="combo-item" data-name="' + esc(n) + '" onmousedown="payPersonPick(this.dataset.name)">' + esc(n) + '</div>';
+  }).join('');
+  document.getElementById('payPersonCombo').classList.add('open');
+}
+function payPersonPick(n) {
+  document.getElementById('payPersonInput').value = n;
+  document.getElementById('payPersonDrop').innerHTML = '';
+  document.getElementById('payPersonCombo').classList.remove('open');
+  document.getElementById('payAmount').focus();
+}
+function payPersonKey(e) {
+  if (e.key === 'Escape') { document.getElementById('payPersonCombo').classList.remove('open'); }
+  if (e.key === 'Enter' && !(e.metaKey || e.ctrlKey)) { var first = document.querySelector('#payPersonDrop .combo-item'); if (first) { e.preventDefault(); payPersonPick(first.dataset.name); } }
+}
+function submitPayment() {
+  var v = _payValues(), err = document.getElementById('payErr'), btn = document.getElementById('payBtn');
+  var fail = function(m) { err.textContent = m; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Save Payment'; };
+  if (!v.person) { fail('Who was paid?'); document.getElementById('payPersonInput').focus(); return; }
+  if (!(parseFloat(v.amount) > 0)) { fail('Enter the amount paid.'); document.getElementById('payAmount').focus(); return; }
+  err.style.display = 'none'; btn.disabled = true; btn.textContent = 'Saving…';
+  var fd = new FormData();
+  fd.append('id', SHEET_ID); fd.append('game', _payCtx.game); fd.append('client', _payCtx.client);
+  fd.append('payee', v.person); fd.append('amount', v.amount); fd.append('date', v.date); fd.append('notes', v.notes);
+  fetch(APP_BASE + 'push/addPayment.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(j) {
+      if (!j || !j.ok) { fail((j && j.error) || 'Save failed.'); return; }
+      CONTRACT_RAW.push(j.row);
+      forceClosePaymentDialog();
+      var st = _saveOpenState(); renderPublishersView(); _restoreOpenState(st);
+      if (typeof showSaveToast === 'function') showSaveToast('✓ Payment to ' + v.person + ' saved', 'success');
+    })
+    .catch(function() { fail('Network error.'); });
 }
 
 // Save/restore open state for publisher cards, game groups, and game cards across re-renders
@@ -2809,7 +2967,7 @@ function _estClientRebuild(filter) {
   var drop  = document.getElementById('estimateClientDrop');
   var lower = (filter || '').toLowerCase();
   var knownClients = {};
-  CONTRACT_RAW.forEach(function(c) { var n = (c.Client || '').trim(); if (n) knownClients[n.toLowerCase()] = n; });
+  CONTRACT_RAW.forEach(function(c) { if (!c) return; var n = (c.Client || '').trim(); if (n) knownClients[n.toLowerCase()] = n; });
   var items = Object.keys(knownClients).sort()
     .map(function(k) { return knownClients[k]; })
     .filter(function(n) { return !lower || n.toLowerCase().indexOf(lower) !== -1; });
@@ -4607,6 +4765,12 @@ document.addEventListener('keydown', function(ev) {
   el = document.getElementById('standaloneInvoiceOverlay');
   if (el && el.classList.contains('open')) {
     closeStandaloneInvoiceDialog();
+    return;
+  }
+  el = document.getElementById('paymentOverlay');
+  if (el && el.classList.contains('open')) {
+    if (document.getElementById('payPersonCombo').classList.contains('open')) { document.getElementById('payPersonCombo').classList.remove('open'); return; }
+    closePaymentDialog();
     return;
   }
   el = document.getElementById('contractOverlay');

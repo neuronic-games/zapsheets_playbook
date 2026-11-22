@@ -75,6 +75,19 @@ if not headers:
 # Pull special keys before building the sheet row
 bg_color_hex = row_data.pop('__bg_color__', '')
 
+# __add_headers__: headings this row needs that older sheets may not have yet (added after the last one)
+add_headers = [str(h).strip() for h in (row_data.pop('__add_headers__', None) or []) if str(h).strip()]
+missing = [h for h in add_headers if h not in [x.strip() for x in headers]]
+if missing:
+    headers = list(headers) + missing
+    try:
+        if ws.col_count < len(headers):
+            ws.add_cols(len(headers) - ws.col_count)
+        ws.update(range_name='A1', values=[headers], value_input_option='RAW')
+    except Exception as e:
+        print(json.dumps({"error": f"Could not add the {', '.join(missing)} column: {str(e)}"}))
+        sys.exit(1)
+
 # ── For Pitches: check if Date+Game+Publisher already exists; merge if so ────
 if sheet_name.lower() == 'pitches':
     col_map = {h.strip(): i for i, h in enumerate(headers)}

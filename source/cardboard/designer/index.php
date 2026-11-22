@@ -936,7 +936,7 @@ body.cb-gate #signinOverlay { background:#2e2763; }
 <div class="overlay" id="profileOverlay" onclick="if(event.target===this)closeDialog('profileOverlay')">
   <div class="dlg" onclick="event.stopPropagation()">
     <h2 class="dlg-title">Profile</h2>
-    <p class="dlg-sub">Who's designing these cards. Saved with your CardBoard account.</p>
+    <p class="dlg-sub">Who's designing these cards. Saved with your GameBoard account.</p>
     <label class="mini" for="pfName">Name</label><input class="inp" id="pfName" maxlength="80">
     <label class="mini" for="pfEmail">Email</label><div class="pf-email"><input class="inp" id="pfEmail" type="email" readonly tabindex="-1" aria-describedby="pfEmailNote"><button type="button" class="si-link" onclick="changeSignInEmail()">Change</button></div>
     <p class="pf-note" id="pfEmailNote">The email you sign in with — codes and receipts go here.</p>
@@ -1010,7 +1010,7 @@ body.cb-gate #signinOverlay { background:#2e2763; }
     <p class="dlg-sub" id="siSub">Design and print cards from your Google Sheet.</p>
     <div id="siChoose" class="si-choose">
       <button type="button" class="si-opt primary" onclick="signInChoose('trial')"><b>Start your free week</b><span>Every feature for 7 days · no card needed</span></button>
-      <button type="button" class="si-opt" onclick="signInChoose('login')"><b>Log in</b><span>I already have a CardBoard account</span></button>
+      <button type="button" class="si-opt" onclick="signInChoose('login')"><b>Log in</b><span>I already have a GameBoard account</span></button>
     </div>
     <form id="siStep1" class="si-form" hidden onsubmit="event.preventDefault();signInSubmit()">
       <input class="inp" id="siEmail" type="email" autocomplete="email" placeholder="Email" aria-label="Email">

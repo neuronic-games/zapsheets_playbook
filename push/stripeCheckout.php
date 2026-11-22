@@ -63,11 +63,11 @@ if ($type === 'donation') {
 if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $params['customer_email'] = $email;
 }
-// CardBoard: the subscription belongs to the signed-in person (their row in the CardBoard Admin sheet)
+// CardBoard: the subscription belongs to the signed-in person (their row in the GameBoard Admin sheet)
 if ($app === 'cardboard' && $type === 'subscription') {
-    require_once __DIR__ . '/cardboardAuth.php';
+    require_once __DIR__ . '/gameboardAuth.php';
     $who = cbReadToken(cbRequestToken());
-    if (!$who) stripeFail('Sign in to CardBoard first');
+    if (!$who) stripeFail('Sign in with your GameBoard account first');
     $params['customer_email']                          = $who['e'];
     $params['metadata[cb_email]']                      = $who['e'];
     $params['subscription_data[metadata][cb_email]']   = $who['e'];

@@ -1,18 +1,18 @@
 <?php
 /**
- * cardboardAuth.php — CardBoard accounts: a free week, then a subscription.
+ * gameboardAuth.php — GameBoard accounts (shared by the board game apps; CardBoard uses them today): a free week, then a subscription.
  *
- * Each person is one row (by email) in the CardBoard Admin sheet (gcbadmin.py). After signing
+ * Each person is one row (by email) in the GameBoard Admin sheet (gaccounts.py). After signing
  * in with a code sent to their email, the browser keeps a signed account token. The token
  * carries what the person may do and until when, so the server checks it without reading the
- * Admin sheet; it lasts 12 hours, then the browser asks for a fresh one (cardboardAccount.php).
+ * Admin sheet; it lasts 12 hours, then the browser asks for a fresh one (gameboardAccount.php).
  *
  *   token = base64url(JSON {e: email, n: name, st: state, u: access until, te: trial end,
  *                           pe: period end, x: token expires}) . "." . HMAC-SHA256
  *   state = trial | code | subscribed | activated | locked
  *
  * An activation key or a comped sheet (STRIPE_PRO_SHEET_IDS) unlocks a spreadsheet for anyone.
- * The signing secret is CARDBOARD_AUTH_SECRET in .env, or one derived from credentials.json.
+ * The signing secret is GAMEBOARD_AUTH_SECRET in .env (CARDBOARD_AUTH_SECRET still works), or one derived from credentials.json.
  */
 require_once __DIR__ . '/stripeCommon.php';
 
@@ -20,7 +20,7 @@ const CB_TOKEN_HOURS = 12;
 const CB_ADMIN_SHEET = '1heNPe8GCggJVoUlGvDVwBt697LvD7vtQT5yDfsnV4M0';
 
 function cbSecret(): string {
-    $s = $_ENV['CARDBOARD_AUTH_SECRET'] ?? '';
+    $s = $_ENV['GAMEBOARD_AUTH_SECRET'] ?? ($_ENV['CARDBOARD_AUTH_SECRET'] ?? '');
     if ($s !== '') return $s;
     return hash('sha256', (string) @file_get_contents(dirname(__DIR__) . '/credentials.json') . '|cardboard-auth');
 }
@@ -38,11 +38,11 @@ function cbPrivateDir(string $sub = ''): string {
     return $d;
 }
 
-/** Run gcbadmin.py with a request; returns its answer. */
+/** Run gaccounts.py with a request; returns its answer. */
 function cbAdmin(array $req): array {
     $python = $_ENV['PYTHON'] ?? 'python3';
-    $req['admin'] = $_ENV['CARDBOARD_ADMIN_SHEET'] ?? CB_ADMIN_SHEET;
-    $cmd = escapeshellarg($python) . ' ' . escapeshellarg(__DIR__ . '/gcbadmin.py') . ' '
+    $req['admin'] = $_ENV['GAMEBOARD_ADMIN_SHEET'] ?? ($_ENV['CARDBOARD_ADMIN_SHEET'] ?? CB_ADMIN_SHEET);
+    $cmd = escapeshellarg($python) . ' ' . escapeshellarg(__DIR__ . '/gaccounts.py') . ' '
          . escapeshellarg(base64_encode(json_encode($req, JSON_UNESCAPED_UNICODE))) . ' 2>&1';
     $raw = trim((string) shell_exec($cmd));
     foreach (array_reverse(preg_split('/\R/', $raw)) as $line) {
@@ -106,7 +106,7 @@ function cbSheetUnlocked(string $sheetId): bool {
 /** Stop any request (even reading the sheet) from someone who hasn't signed in. */
 function cbRequireSignIn(): void {
     $p = cbReadToken(cbRequestToken());
-    if (!$p) { echo json_encode(['error' => 'Sign in to CardBoard first.', 'need_auth' => true]); exit; }
+    if (!$p) { echo json_encode(['error' => 'Sign in with your GameBoard account first.', 'need_auth' => true]); exit; }
     if (($p['x'] ?? 0) < time()) { echo json_encode(['error' => 'Your sign-in needs refreshing.', 'need_auth' => true, 'refresh' => true]); exit; }
 }
 
@@ -116,12 +116,12 @@ function cbRequireSignIn(): void {
  */
 function cbRequireAccess(string $sheetId): void {
     $p = cbReadToken(cbRequestToken());
-    if (!$p) { echo json_encode(['error' => 'Sign in to CardBoard to make changes.', 'need_auth' => true]); exit; }
+    if (!$p) { echo json_encode(['error' => 'Sign in with your GameBoard account to make changes.', 'need_auth' => true]); exit; }
     if (($p['x'] ?? 0) < time()) { echo json_encode(['error' => 'Your sign-in needs refreshing.', 'need_auth' => true, 'refresh' => true]); exit; }
     // Only the person who set the sheet up changes it; everyone else views it. A sign-in from before owners
     // existed has no list: it's refreshed first (the browser does that by itself and tries again).
     if (!isset($p['sh'])) { echo json_encode(['error' => 'Your sign-in needs refreshing.', 'need_auth' => true, 'refresh' => true]); exit; }
-    if (!in_array($sheetId, (array) $p['sh'], true)) { echo json_encode(['error' => 'This sheet belongs to another CardBoard account — you can view it, not change it.', 'view_only' => true]); exit; }
+    if (!in_array($sheetId, (array) $p['sh'], true)) { echo json_encode(['error' => 'This sheet belongs to another GameBoard account — you can view it, not change it.', 'view_only' => true]); exit; }
     if (cbSheetUnlocked($sheetId)) return;
     if (($p['u'] ?? 0) < time()) { echo json_encode(['error' => 'Your free week has ended — subscribe to keep designing.', 'locked' => true]); exit; }
 }
@@ -131,7 +131,7 @@ function cbRequireAccess(string $sheetId): void {
  *   RESEND_API_KEY                         — Resend (https://resend.com), over HTTPS
  *   SMTP_HOST, SMTP_PORT (465 or 587), SMTP_USER, SMTP_PASS — any mail server (Gmail app password, your host's mail…)
  *   otherwise PHP's mail(), which needs a mail program on the server
- * The sender is CARDBOARD_MAIL_FROM (e.g. "CardBoard <no-reply@zapsheets.com>"); with SMTP it
+ * The sender is GAMEBOARD_MAIL_FROM (or CARDBOARD_MAIL_FROM; e.g. "GameBoard <no-reply@zapsheets.com>"); with SMTP it
  * must be an address that server may send from. Each try is logged (without the address) to
  * sheets/_cardboard_auth/mail.log. Returns '' when sent, else what went wrong.
  */
@@ -143,7 +143,7 @@ function cbSendMail(string $to, string $subject, string $text, string $html = ''
            "--$boundary\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n" . str_replace("\n", "\r\n", str_replace("\r\n", "\n", $text)) .
            "\r\n--$boundary\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" . chunk_split(base64_encode($html)) .
            "--$boundary--"];
-    $from = $_ENV['CARDBOARD_MAIL_FROM'] ?? ($_ENV['SMTP_FROM'] ?? 'CardBoard <no-reply@zapsheets.com>');
+    $from = $_ENV['GAMEBOARD_MAIL_FROM'] ?? ($_ENV['CARDBOARD_MAIL_FROM'] ?? ($_ENV['SMTP_FROM'] ?? 'GameBoard <no-reply@zapsheets.com>'));
     if (!empty($_ENV['RESEND_API_KEY'])) {
         $ch = curl_init('https://api.resend.com/emails');
         curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20,

@@ -1,4 +1,4 @@
-# gcbadmin.py — CardBoard accounts, one row per person (by email) in the CardBoard Admin sheet.
+# gaccounts.py — GameBoard accounts, one row per person (by email) in the GameBoard Admin sheet.
 #
 # Arg: base64 JSON { "action": ..., "email": ..., ... }
 #   user   — email, name?, sheet?, fields? → the person's row; a new person gets
@@ -66,7 +66,7 @@ def main():
     try:
         wb = gspread.service_account(filename=CRED).open_by_key(str(data.get('admin') or ADMIN_SHEET))
     except Exception as e:
-        out({'error': f'Could not open the CardBoard Admin sheet (share it with the service account as an Editor): {e}'})
+        out({'error': f'Could not open the GameBoard Admin sheet (share it with the service account as an Editor): {e}'})
 
     ws = next((w for w in wb.worksheets() if w.title.lower() == TAB.lower()), None)
     if ws is None:

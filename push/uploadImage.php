@@ -23,7 +23,7 @@ if (!$sheetId || !preg_match('/^[A-Za-z0-9_\-]+$/', $sheetId)) {
 
 // CardBoard: uploads need the free week, a subscription or an unlocked sheet
 if (($_POST['app'] ?? '') === 'cardboard') {
-    require_once __DIR__ . '/cardboardAuth.php';
+    require_once __DIR__ . '/gameboardAuth.php';
     cbRequireAccess($sheetId);
 }
 

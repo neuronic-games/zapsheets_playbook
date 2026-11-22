@@ -13,7 +13,7 @@
  *   invoice.payment_failed
  *
  * Writes/updates:  sheets/{sheet_id}/subscription-{app}.json  (one per app)
- *                  CardBoard: also the person's row in the CardBoard Admin sheet (metadata cb_email)
+ *                  CardBoard: also the person's row in the GameBoard Admin sheet (metadata cb_email)
  * Format: {
  *   "email":                  "user@example.com",
  *   "status":                 "active" | "trialing" | "past_due" | "canceled" | "unpaid",
@@ -79,10 +79,10 @@ function writeSubscription(string $sheetId, array $data, string $app = ''): void
     file_put_contents($file, json_encode($merged, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
 }
 
-// CardBoard subscriptions belong to a person: keep their row in the CardBoard Admin sheet up to date
+// CardBoard subscriptions belong to a person: keep their row in the GameBoard Admin sheet up to date
 function cbAccountUpdate(string $email, array $fields): void {
     if (!$email) return;
-    require_once __DIR__ . '/cardboardAuth.php';
+    require_once __DIR__ . '/gameboardAuth.php';
     cbAdmin(['action' => 'update', 'email' => $email, 'fields' => $fields]);
 }
 

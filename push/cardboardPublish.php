@@ -74,7 +74,7 @@ function cbWriteShare($app, $token, $sheetId, $tab, $target) {
 }
 
 $action = $_POST['action'] ?? '';
-require_once __DIR__ . '/cardboardAuth.php';
+require_once __DIR__ . '/gameboardAuth.php';
 cbRequireSignIn();   // the share links themselves are public; managing them needs a sign-in
 
 if ($action === 'list') {
@@ -90,7 +90,7 @@ if ($action === 'list') {
 
 // Hosting needs a free week, a subscription or an unlocked sheet (removing stays open to everyone)
 if (in_array($action, ['upload', 'finish'], true)) {
-    require_once __DIR__ . '/cardboardAuth.php';
+    require_once __DIR__ . '/gameboardAuth.php';
     cbRequireAccess($sheetId);
 }
 

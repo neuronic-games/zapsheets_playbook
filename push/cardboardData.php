@@ -41,10 +41,10 @@ function cbRun(string $python, string $sheetId, array $data): array {
 
 // Nothing is read before signing in; anything that changes the spreadsheet also needs the
 // free week, a subscription or an unlocked sheet
-require_once __DIR__ . '/cardboardAuth.php';
+require_once __DIR__ . '/gameboardAuth.php';
 cbRequireSignIn();
 if (in_array($action, ['save', 'addtab', 'addfield', 'renamefield', 'setcell', 'addrow', 'deleterow', 'deletefield', 'savecells', 'settag', 'deltag'], true)) {
-    require_once __DIR__ . '/cardboardAuth.php';
+    require_once __DIR__ . '/gameboardAuth.php';
     cbRequireAccess($sheetId);
 }
 

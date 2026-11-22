@@ -1,7 +1,7 @@
 <?php
 /**
- * cardboardAccount.php — sign in to CardBoard with a code sent by email, and keep the
- * account token fresh. See cardboardAuth.php for the token and the free week.
+ * gameboardAccount.php — sign in to a GameBoard account (shared by the board game apps) with a code sent by email, and keep the
+ * account token fresh. See gameboardAuth.php for the token and the free week.
  *
  * POST action and params:
  *   send     — email, mode (signup|reset)  → {ok, existing}  (emails a 6-digit code, valid 15 minutes;
@@ -18,7 +18,7 @@
  */
 error_reporting(0);
 header('Content-Type: application/json');
-require_once __DIR__ . '/cardboardAuth.php';
+require_once __DIR__ . '/gameboardAuth.php';
 
 function fail(string $m, array $extra = []): void { echo json_encode(['error' => $m] + $extra); exit; }
 function ok(array $d): void { echo json_encode(['ok' => true] + $d, JSON_UNESCAPED_UNICODE); exit; }
@@ -45,34 +45,34 @@ function cbSignedIn(array $u, string $sheet, bool $taken = true): void {
     ok(['token' => cbIssueToken($a), 'account' => $acc]);
 }
 
-/** The sign-in email in CardBoard's colors: navy band, gold/lavender wordmark, the code large. Tables and inline styles for mail apps. */
+/** The sign-in email in GameBoard's colors: navy band, cream/red wordmark, the code large. Tables and inline styles for mail apps. */
 function cbCodeEmailHtml(string $code, string $mode = 'signup'): string {
     $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host   = preg_replace('/[^a-z0-9.\-:]/i', '', $_SERVER['HTTP_HOST'] ?? 'zapsheets.com');
     $base   = $scheme . '://' . $host . rtrim($_ENV['BASE_PATH'] ?? '', '/') . '/';
-    $logo   = htmlspecialchars($base . 'images/cardboard_icon_180.png', ENT_QUOTES);
-    $app    = htmlspecialchars($base . 'cardboard', ENT_QUOTES);
+    $logo   = htmlspecialchars($base . 'images/gameboard_icon_180.png', ENT_QUOTES);
+    $app    = htmlspecialchars($base . 'gameboard', ENT_QUOTES);
     // One box, spaced out but copied as plain digits (separate boxes copy with gaps between them)
     $digits = '<td style="padding:14px 22px 14px 30px;background:#f3f1ff;border:1px solid #ddd6ff;border-radius:12px;font-family:\'SFMono-Regular\',Menlo,Consolas,monospace;font-size:32px;font-weight:700;letter-spacing:10px;color:#2e2763;">' . $code . '</td>';
     $font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
-    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><title>Your CardBoard code</title></head>' .
+    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><title>Your GameBoard code</title></head>' .
       '<body style="margin:0;padding:0;background:#f3f2fa;">' .
-      '<div style="display:none;max-height:0;overflow:hidden;">Your CardBoard code is ' . $code . '. It works for 15 minutes.</div>' .
+      '<div style="display:none;max-height:0;overflow:hidden;">Your GameBoard code is ' . $code . '. It works for 15 minutes.</div>' .
       '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f2fa;"><tr><td align="center" style="padding:32px 16px;">' .
       '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 18px rgba(46,39,99,.10);">' .
-        '<tr><td style="background:#2e2763;padding:22px 28px;">' .
+        '<tr><td style="background:#14132a;padding:22px 28px;">' .
           '<table role="presentation" cellpadding="0" cellspacing="0"><tr>' .
             '<td style="padding-right:12px;"><img src="' . $logo . '" width="40" height="40" alt="" style="display:block;border-radius:9px;"></td>' .
-            '<td style="font-family:' . $font . ';font-size:22px;font-weight:800;letter-spacing:.5px;"><span style="color:#f2c14e;">Card</span><span style="color:#a99cff;">Board</span></td>' .
+            '<td style="font-family:' . $font . ';font-size:22px;font-weight:800;letter-spacing:.5px;"><span style="color:#f6efe2;">Game</span><span style="color:#f0766a;">Board</span></td>' .
           '</tr></table></td></tr>' .
         '<tr><td style="padding:30px 28px 8px;font-family:' . $font . ';color:#1b1b2b;">' .
           '<div style="font-size:20px;font-weight:700;color:#2e2763;margin:0 0 8px;">' . ($mode === 'reset' ? 'Reset your password' : 'Confirm your email') . '</div>' .
-          '<div style="font-size:15px;line-height:1.55;color:#555a70;margin:0 0 22px;">' . ($mode === 'reset' ? 'Enter this code in CardBoard to choose a new password.' : 'Enter this code in CardBoard to finish creating your account.') . ' It works for 15 minutes.</div>' .
+          '<div style="font-size:15px;line-height:1.55;color:#555a70;margin:0 0 22px;">' . ($mode === 'reset' ? 'Enter this code to choose a new password for your GameBoard account.' : 'Enter this code to finish creating your GameBoard account.') . ' It works for 15 minutes.</div>' .
           '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;"><tr>' . $digits . '</tr></table>' .
-          '<div style="font-size:13px;line-height:1.55;color:#8a8fa8;margin:0 0 22px;">New to CardBoard? Your first week is free, with every feature. If you didn’t ask for this code, you can ignore this email.</div>' .
+          '<div style="font-size:13px;line-height:1.55;color:#8a8fa8;margin:0 0 22px;">One account for PitchBoard, DevBoard, CardBoard and BillBoard. Your first week is free, with every feature. If you didn’t ask for this code, you can ignore this email.</div>' .
         '</td></tr>' .
         '<tr><td style="padding:16px 28px 22px;border-top:1px solid #eeecf6;font-family:' . $font . ';font-size:12px;color:#9aa0b8;">' .
-          '<a href="' . $app . '" style="color:#7b6cf6;text-decoration:none;font-weight:600;">Open CardBoard</a> &nbsp;·&nbsp; Card designs from your Google Sheet &nbsp;·&nbsp; © ' . gmdate('Y') . ' ZapSheets' .
+          '<a href="' . $app . '" style="color:#d9534a;text-decoration:none;font-weight:600;">Open GameBoard</a> &nbsp;·&nbsp; Apps for board game makers &nbsp;·&nbsp; © ' . gmdate('Y') . ' ZapSheets' .
         '</td></tr>' .
       '</table></td></tr></table></body></html>';
 }
@@ -110,15 +110,15 @@ if ($action === 'send') {
     $mode  = ($_POST['mode'] ?? '') === 'reset' ? 'reset' : 'signup';
     if (!cbLimit('send|' . $email, 5) || !cbLimit('sendip|' . $ip, 20)) fail('Too many codes asked for — please wait a while and try again');
     $u = cbFind($email);
-    if ($mode === 'signup' && $u && trim((string) ($u['Password Hash'] ?? '')) !== '') fail('You already have a CardBoard account — log in instead.', ['has_account' => true]);
-    if ($mode === 'reset' && !$u) fail('There’s no CardBoard account for that email — start your free week instead.', ['no_account' => true]);
+    if ($mode === 'signup' && $u && trim((string) ($u['Password Hash'] ?? '')) !== '') fail('You already have a GameBoard account — log in instead.', ['has_account' => true]);
+    if ($mode === 'reset' && !$u) fail('There’s no GameBoard account for that email — start your free week instead.', ['no_account' => true]);
     $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
     $file = cbPrivateDir('codes') . '/' . hash('sha256', $email) . '.json';
     file_put_contents($file, json_encode(['h' => hash_hmac('sha256', $email . '|' . $code, cbSecret()), 'x' => time() + 900, 'tries' => 0, 'mode' => $mode]), LOCK_EX);
-    $body = "Your CardBoard code is:\r\n\r\n    $code\r\n\r\nIt works for 15 minutes. If you didn't ask for it, you can ignore this email.\r\n\r\n— CardBoard by ZapSheets";
-    $why  = cbSendMail($email, 'Your CardBoard code: ' . $code, $body, cbCodeEmailHtml($code, $mode));
-    if ($why !== '' && empty($_ENV['CARDBOARD_AUTH_DEBUG'])) { @unlink($file); fail('The email couldn’t be sent — please try again later'); }
-    ok(['existing' => (bool) $u] + (!empty($_ENV['CARDBOARD_AUTH_DEBUG']) ? ['debug_code' => $code] : []));   // debug code only on a test server
+    $body = "Your GameBoard code is:\r\n\r\n    $code\r\n\r\nIt works for 15 minutes. If you didn't ask for it, you can ignore this email.\r\n\r\n— GameBoard by ZapSheets";
+    $why  = cbSendMail($email, 'Your GameBoard code: ' . $code, $body, cbCodeEmailHtml($code, $mode));
+    if ($why !== '' && empty($_ENV['GAMEBOARD_AUTH_DEBUG'] ?? ($_ENV['CARDBOARD_AUTH_DEBUG'] ?? ''))) { @unlink($file); fail('The email couldn’t be sent — please try again later'); }
+    ok(['existing' => (bool) $u] + (!empty($_ENV['GAMEBOARD_AUTH_DEBUG'] ?? ($_ENV['CARDBOARD_AUTH_DEBUG'] ?? '')) ? ['debug_code' => $code] : []));   // debug code only on a test server
 }
 
 // The code from the email, plus the password to keep: creates the account (free week) or sets the new password

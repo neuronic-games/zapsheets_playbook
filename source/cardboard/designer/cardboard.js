@@ -3834,7 +3834,7 @@ function saveSettings() {
   return api('save', { tab: SETTINGS_KEY, layout: JSON.stringify(keep) }).then(function() { LAYOUTS[SETTINGS_KEY] = keep; _oldProfile = null; writeStartCache(); });
 }
 
-// Profile: kept with the person's CardBoard account (their row in the Admin sheet). The email is
+// Profile: kept with the person's GameBoard account (their row in the Admin sheet). The email is
 // the one they sign in with; changing it means signing in with the other address.
 function openProfileDialog() {
   if (!ACCT) { askSignIn().then(openProfileDialog, function() {}); return; }
@@ -3877,7 +3877,7 @@ function fromUnit(v) { v = parseFloat(v); return SETTINGS.units === 'mm' ? v / 2
 // ── Account: a free week with every feature, then $4.99/month ────────────────
 // People sign in with a code sent to their email. The account (and its signed token) is kept
 // in this browser, so the app knows the plan straight away; it's checked with the server
-// (the CardBoard Admin sheet) every few hours, and right after subscribing.
+// (the GameBoard Admin sheet) every few hours, and right after subscribing.
 var ACCT = null, ACCT_KEY = 'cb_account', ACCT_MAX_AGE = 4 * 3600 * 1000;
 try { ACCT = JSON.parse(localStorage.getItem(ACCT_KEY) || 'null'); } catch (e) { ACCT = null; }
 function acctInfo() { return (ACCT && ACCT.account) || null; }
@@ -3903,7 +3903,7 @@ function accountPost(action, extra) {
   var fd = new FormData(); fd.append('action', action); fd.append('sheet', SHEET_ID);
   Object.keys(extra || {}).forEach(function(k) { fd.append(k, extra[k]); });
   if (ACCT && ACCT.token) fd.append('cbt', ACCT.token);
-  return fetch(APP_BASE + 'push/cardboardAccount.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
+  return fetch(APP_BASE + 'push/gameboardAccount.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
     .then(function(r) { if (!r || r.error) { var e = new Error(r && r.error ? r.error : 'No response'); e.needAuth = !!(r && r.need_auth); throw e; } return r; });
 }
 var _acctRefreshing = null;
@@ -3931,7 +3931,7 @@ function applyAcct() {
     if (!a) { $('lockMsg').innerHTML = '<b>Sign in to start designing</b> — your first week is free, with every feature.'; $('lockBtn').textContent = 'Sign in'; $('lockBtn').onclick = function() { askSignIn().catch(function() {}); }; }
     else if (!acctChecked()) { $('lockMsg').innerHTML = 'Checking your account…'; $('lockBtn').hidden = true; }
     else if (!isOwner() && a.unclaimed) { $('lockMsg').innerHTML = '<b>View only.</b> Nobody has set this sheet up in CardBoard yet — if it’s yours, make it yours to design its cards.'; $('lockBtn').textContent = 'Make it mine'; $('lockBtn').onclick = claimSheet; }
-    else if (!isOwner()) { $('lockMsg').innerHTML = '<b>View only.</b> This sheet was set up by another CardBoard account — you can look through its cards and layouts, but not change them.'; $('lockBtn').hidden = true; }
+    else if (!isOwner()) { $('lockMsg').innerHTML = '<b>View only.</b> This sheet was set up by another GameBoard account — you can look through its cards and layouts, but not change them.'; $('lockBtn').hidden = true; }
     else { $('lockMsg').innerHTML = '<b>Your free week has ended.</b> Your cards and decks are safe — subscribe for $4.99/month to keep designing.'; $('lockBtn').textContent = 'Subscribe'; $('lockBtn').onclick = function() { openPlansDialog('locked'); }; }
   }
   updateSubMenu();
@@ -3965,7 +3965,7 @@ function updateSubMenu() {
 // Returns true when allowed; otherwise asks to sign in or shows the plans
 function requirePro(reason, retry) {
   if (hasAccess()) return true;
-  if (viewOnly()) { toast(acctChecked() ? 'View only — this sheet belongs to another CardBoard account' : 'Checking your account…', true); return false; }
+  if (viewOnly()) { toast(acctChecked() ? 'View only — this sheet belongs to another GameBoard account' : 'Checking your account…', true); return false; }
   if (!ACCT) askSignIn().then(function() { if (hasAccess()) retry(); }, function() {});
   else openPlansDialog('locked');
   return false;
@@ -4067,7 +4067,7 @@ function signInStep(mode) {   // '' = the two choices
   _siMode = mode; _siPending = null;
   $('siChoose').hidden = !!mode; $('siStep1').hidden = !mode; $('siStep2').hidden = true; $('siErr').textContent = '';
   $('siTitle').textContent = { login: 'Log in', signup: 'Start your free week', reset: 'Reset your password' }[mode] || 'Welcome to CardBoard';
-  $('siSub').textContent = { login: 'Use your CardBoard email and password.',
+  $('siSub').textContent = { login: 'Use your GameBoard email and password.',
     signup: 'Every feature for 7 days — no card needed. Choose a password; we’ll email you a code to confirm.',
     reset: 'Choose a new password; we’ll email you a code to confirm it’s you.' }[mode] || 'Design and print cards from your Google Sheet.';
   $('siPass').value = ''; $('siPass2').value = '';

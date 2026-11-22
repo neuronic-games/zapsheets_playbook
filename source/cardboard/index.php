@@ -182,7 +182,7 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
       <p class="auth-msg" style="text-align:center">Sign in to design your cards. New to CardBoard? Your first week is free, with every feature.</p>
       <div class="choose">
         <button type="button" class="opt primary" onclick="authMode('signup')"><b>Start your free week</b><span>Every feature for 7 days · no card needed</span></button>
-        <button type="button" class="opt" onclick="authMode('login')"><b>Log in</b><span>I already have a CardBoard account</span></button>
+        <button type="button" class="opt" onclick="authMode('login')"><b>Log in</b><span>I already have a GameBoard account</span></button>
       </div>
     </div>
     <form id="authEmail" hidden onsubmit="event.preventDefault();authSubmit()">
@@ -302,7 +302,7 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function post(fields) {
     var fd = new FormData(); Object.keys(fields).forEach(function(k) { fd.append(k, fields[k]); });
-    return fetch(APP_BASE + 'push/cardboardAccount.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
+    return fetch(APP_BASE + 'push/gameboardAccount.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
       .then(function(r) { if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response'); return r; });
   }
   function show() {
@@ -323,7 +323,7 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
     $('authChoose').hidden = !!m; $('authEmail').hidden = !m; $('authCode').hidden = true;
     $('authErr1').textContent = ''; $('authErr2').textContent = '';
     $('authTitle').textContent = { login: 'Log in', signup: 'Start your free week', reset: 'Reset your password' }[m] || '';
-    $('authMsg').textContent = { login: 'Use your CardBoard email and password.',
+    $('authMsg').textContent = { login: 'Use your GameBoard email and password.',
       signup: 'Every feature for 7 days — no card needed. Choose a password; we’ll email you a code to confirm.',
       reset: 'Choose a new password; we’ll email you a code to confirm it’s you.' }[m] || '';
     $('authPass').value = ''; $('authPass2').value = '';

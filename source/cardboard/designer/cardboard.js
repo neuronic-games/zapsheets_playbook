@@ -3115,10 +3115,11 @@ function gridVisibleRows() {
 function gridShown(name, v, res) {
   if (res && res[0] === v) v = res[1];
   else if (/^=/.test(v)) return '<span class="g-formula">' + esc(v) + '</span>';
-  var m = layout && (layout.els || []).concat((layout.back || {}).els || []).filter(function(e) { return e.kind === 'data' && e.as === 'map' && e.field === name && e.map; })[0];
-  if (m && String(v).trim()) {
-    var row = {}; row[name] = v;
-    var hit = mapHit(m, row);   // a mapped value: what's typed → what the card shows
+  // Every element (front and back) that shows this column through a Mapping: the first that has this value wins
+  var maps = layout ? (layout.els || []).concat((layout.back || {}).els || []).filter(function(e) { return e.kind === 'data' && e.as === 'map' && e.map && String(e.field || '').trim().toLowerCase() === String(name).trim().toLowerCase(); }) : [];
+  if (maps.length && String(v).trim()) {
+    var row = {}, hit = null; row[name] = v;
+    maps.some(function(m) { var r = {}; r[m.field] = v; hit = mapHit(m, r); return !!hit; });   // a mapped value: what's typed → what the card shows
     var lead = '<span class="g-mapv">' + esc(textVal(v)) + '</span><span class="g-arrow">→</span>';
     if (hit && hit.src) { var u = imageUrl(picRef(hit.src)); if (u) return lead + '<img class="g-thumb g-mapimg" src="' + esc(u) + '" alt="" referrerpolicy="no-referrer">'; }
     if (hit) return lead + rich(hit.t || '');

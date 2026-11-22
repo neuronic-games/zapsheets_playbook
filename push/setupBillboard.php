@@ -10,6 +10,7 @@
  *
  * Returns JSON: { ok, title, tabs, json_refreshed } or { error }
  */
+require_once __DIR__ . '/gbGate.php'; gbGate(['billboard'], false);   // GameBoard account: signed in, the sheet's owner, the app unlocked
 error_reporting(0);
 ini_set('display_errors', '0');
 header('Content-Type: application/json');

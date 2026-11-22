@@ -7,6 +7,7 @@
  * GET  ?id=&game=  → check only, returns { ok: bool, viewUrl? }
  * POST id=&game=   → create/refresh, returns { ok: true, viewUrl }
  */
+require_once __DIR__ . '/gbGate.php'; gbGate(['pitchboard', 'devboard', 'billboard']);   // GameBoard account: signed in, the sheet's owner, the app unlocked
 error_reporting(0);
 header('Content-Type: application/json');
 

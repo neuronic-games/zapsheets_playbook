@@ -11,6 +11,7 @@
  * Same game always gets the same token, so regenerating overwrites in place.
  * The URL exposes only the token — no sheet ID.
  */
+require_once __DIR__ . '/gbGate.php'; gbGate(['devboard']);   // GameBoard account: signed in, the sheet's owner, the app unlocked
 error_reporting(0);
 header('Content-Type: application/json');
 

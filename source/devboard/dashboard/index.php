@@ -152,6 +152,7 @@ $_client_count = count(array_unique(array_filter(array_map(
 <head>
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
 <script src="js/activationKey.js" defer></script>
+<script src="js/gb-account.js?v=1"></script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/png" sizes="32x32" href="images/db_icon_32.png" />
@@ -7188,5 +7189,36 @@ function _dbStartCheckout(type, btn, btnLabel, plan) {
   <span id="saveToastMsg"></span>
   <button class="save-toast-close" onclick="this.parentNode.classList.remove('visible')" aria-label="Dismiss">✕</button>
 </div>
+<script>
+// The GameBoard account: one sign-in for every app. The dashboard is for the sheet's owner; after the free
+// week it needs a DevBoard plan (Core, or Pro for contracts, estimates and invoices) or the all-in-one.
+// Sheets paid for before accounts keep their plan.
+(function() {
+  var loadSheetPlan = _dbLoadSubStatus;   // the sheet's own subscription file (paid before accounts)
+  function fromAccount(s) {
+    var a = s.account || {}, x = s.app || {}, live = s.canEdit;
+    _dbSubStatus = { ok: true, is_core: live, is_pro: live && !(x.state === 'subscribed' && x.plan === 'core'),
+                     status: a.status || '', portal_url: a.portal_url || '', activated: x.state === 'activated' };
+    var item = document.getElementById('dbUpgradeBtn');
+    if (item) { item.textContent = s.signedIn ? 'Subscription' : 'Subscribe'; item.style.color = x.state === 'subscribed' || x.state === 'activated' || x.state === 'code' ? '#4caf50' : '#f5a623'; }
+    document.querySelectorAll('[data-pro-badge]').forEach(function(b) { b.style.display = _dbSubStatus.is_pro ? 'none' : ''; });
+    var auth = document.getElementById('dashAuthBtn'); if (auth) auth.textContent = s.signedIn ? 'Sign Out' : 'Sign In';
+    // Sessions and notes are signed with the account's email and name
+    if (s.signedIn && a.email && (!_dashCollabUser || (_dashCollabUser.email || '').toLowerCase() !== a.email.toLowerCase())) {
+      _dashCollabUser = { email: a.email, bio: { name: a.name || '' } }; _dashSaveStoredUser(_dashCollabUser);
+    }
+    if (a.sheet_paid) loadSheetPlan();   // Core or Pro: the sheet's file knows
+  }
+  GBAccount.init({
+    app: 'devboard', name: 'DevBoard', sheet: SHEET_ID, base: APP_BASE, home: 'devboard/features', icon: 'images/db_icon_180.png',
+    plans: [{ plan: 'core', label: 'Core', price: '$2.99', note: 'sessions, TODOs, reports' }, { plan: 'pro', label: 'Pro', price: '$3.99', note: 'adds contracts, estimates & invoices' }],
+    intros: { pro: 'Contracts, estimates and invoices are part of DevBoard Pro (and the all-in-one).' },
+    onChange: fromAccount
+  });
+  window._dbLoadSubStatus = function(cb) { fromAccount(GBAccount.state()); if (cb) cb(_dbSubStatus); };
+  window.openUpgradeDialog = function(reason) { GBAccount.openPlans(reason === 'pro' ? 'pro' : ''); };
+  window._dashMenuAuthAction = function() { if (GBAccount.account()) GBAccount.signOut(); else GBAccount.signIn().catch(function() {}); };
+})();
+</script>
 </body>
 </html>

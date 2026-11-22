@@ -3889,7 +3889,7 @@ function storeAcct(res) {
 function forgetAcct() { ACCT = null; try { localStorage.removeItem(ACCT_KEY); } catch (e) {} applyAcct(); }
 // The sheet's owner — the account that set it up (its Admin-sheet Sheets list) — changes it; everyone
 // else sees it read-only. Until the account has been checked for this sheet, it's read-only too.
-function acctChecked() { return !!(ACCT && ACCT.sheet === SHEET_ID); }
+function acctChecked() { return !!(ACCT && ACCT.sheet === SHEET_ID && (!ACCT.app || ACCT.app === 'cardboard')); }   // the other apps keep the same account, checked for themselves
 function isOwner() { var a = acctInfo(); return !!a && acctChecked() && a.owner === true; }   // an account checked before owners existed isn't one until checked again
 function viewOnly() { return !!acctInfo() && !isOwner(); }
 function hasAccess() {
@@ -4012,7 +4012,8 @@ function renderCodeBox(el, unlocked) {
       btn.disabled = true; btn.textContent = 'Checking…'; msg.textContent = '';
       accountPost('redeem', { code: code }).then(function(r) {
         storeAcct(r); el.innerHTML = ''; renderPlans(); refreshCards();
-        toast(r.days > 0 ? '✓ Unlocked until ' + fmtWhen(r.account.until) : '✓ CardBoard unlocked for good');
+        var forCb = !r.apps || !r.apps.length || r.apps.indexOf('CardBoard') >= 0;   // a code can be for other apps only
+        toast(!forCb ? '✓ Code added for ' + r.apps.join(', ') : r.days > 0 ? '✓ Unlocked until ' + fmtWhen(r.account.until) : '✓ CardBoard unlocked for good');
       }).catch(function(err) { msg.textContent = err.message; btn.disabled = false; btn.textContent = 'Use code'; inp.select(); });
     };
   };

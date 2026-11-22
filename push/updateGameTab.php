@@ -7,6 +7,7 @@
 //   game — Game name
 //   rows — JSON array of {name, value, extra} objects
 
+require_once __DIR__ . '/gbGate.php'; gbGate(['pitchboard']);   // GameBoard account: signed in, the sheet's owner, the app unlocked
 error_reporting(0);
 ini_set('display_errors', '0');
 header('Content-Type: application/json');

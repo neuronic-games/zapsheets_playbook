@@ -1,5 +1,6 @@
 <?php
     // Suppress PHP notices/warnings so they don't corrupt JSON responses
+require_once __DIR__ . '/gbGate.php'; gbGate(['pitchboard', 'devboard', 'billboard'], false);   // GameBoard account: signed in, the sheet's owner, the app unlocked
     error_reporting(0);
     ini_set('display_errors', '0');
 

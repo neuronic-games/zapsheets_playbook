@@ -8,6 +8,7 @@
  *   image_url  — uploaded image URL (bare URL; will be wrapped as =IMAGE("url"))
  */
 
+require_once __DIR__ . '/gbGate.php'; gbGate(['billboard']);   // GameBoard account: signed in, the sheet's owner, the app unlocked
 header('Content-Type: application/json');
 require __DIR__ . '/../dotEnv.php';
 

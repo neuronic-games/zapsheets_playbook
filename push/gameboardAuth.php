@@ -81,6 +81,11 @@ function cbAccessFromUser(array $u): array {
           || preg_match('/^\d{4}-\d\d-\d\d/', (string) ($u['Activated'] ?? ''));
     $cu    = strtotime((string) ($u['Code Until'] ?? '') . ' UTC') ?: 0;   // a free code from the Codes tab
     $all   = gbPaidUntil((string) ($u[GB_ALL_COL] ?? ''));
+    $codes = [];   // App Codes: "DevBoard 2026-12-20 10:00:00, CardBoard Perpetual" — free codes made for one app
+    foreach (explode(',', (string) ($u['App Codes'] ?? '')) as $part) {
+        $bits = preg_split('/\s+/', trim($part), 2);
+        if (count($bits) === 2) $codes[strtolower($bits[0])] = preg_match('/^perpetual/i', $bits[1]) ? GB_FOREVER : (strtotime($bits[1] . ' UTC') ?: 0);
+    }
     $apps  = [];
     foreach (GB_APP_COLS as $app => $colName) {
         [$t, $plan, $pe] = gbPaidUntil((string) ($u[$colName] ?? ''));
@@ -90,11 +95,12 @@ function cbAccessFromUser(array $u): array {
             $plan = 'pro';
         }
         if ($all[0] > $t) { $t = $all[0]; $plan = 'pro'; $pe = $all[2]; }
+        $c = max($cu, $codes[strtolower($colName)] ?? 0);   // a code for every app, or one for this app
         if ($act)            { $st = 'activated';  $until = GB_FOREVER; $plan = 'pro'; }
-        elseif ($t > $now)   { $st = 'subscribed'; $until = max($t, $te, $cu); }
-        elseif ($cu > $now)  { $st = 'code';       $until = max($cu, $te); }
+        elseif ($t > $now)   { $st = 'subscribed'; $until = max($t, $te, $c); }
+        elseif ($c > $now)   { $st = 'code';       $until = max($c, $te); }
         elseif ($te > $now)  { $st = 'trial';      $until = $te; }
-        else                 { $st = 'locked';     $until = max($te, $t, $cu); }
+        else                 { $st = 'locked';     $until = max($te, $t, $c); }
         $apps[$app] = ['st' => $st, 'u' => $until, 'pe' => $t > $now ? $pe : '', 'p' => $t > $now || $act ? $plan : ''];
     }
     $sh = array_values(array_filter(array_map('trim', explode(',', (string) ($u['Sheets'] ?? ''))), 'stripeValidSheetId'));

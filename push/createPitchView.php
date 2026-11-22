@@ -4,6 +4,7 @@
  * Stores shares/pitch-collab-readonly/{token}.json → { sheet_id, game }
  * Returns the public view URL — no sheet ID exposed.
  */
+require_once __DIR__ . '/gbGate.php'; gbGate(['pitchboard']);   // GameBoard account: signed in, the sheet's owner, the app unlocked
 error_reporting(0);
 header('Content-Type: application/json');
 

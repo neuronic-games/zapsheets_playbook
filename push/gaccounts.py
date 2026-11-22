@@ -10,7 +10,7 @@
 #   update — email, fields: {Header: value} → changes those cells (adds the person if missing).
 #            A Header written "+Header" adds the value to that cell's comma list instead (Stripe Subscription).
 #   find   — field, value → the first row whose Header equals value (e.g. Stripe Customer)
-#   redeem — email, code → a free code from the "Codes" tab: CardBoard unlocked for its Length
+#   redeem — email, code → a free code from the "Codes" tab: every app (or the code's App) unlocked for its Length
 #            (added on top of any code time left). Each person can use each code once (their Users row
 #            lists them in Codes Used); Max Uses
 #            (blank = no limit) and Expires (blank = never) are optional.
@@ -31,13 +31,34 @@ ADMIN_SHEET = '1heNPe8GCggJVoUlGvDVwBt697LvD7vtQT5yDfsnV4M0'
 TAB = 'Users'
 HEADERS = ['Email', 'Name', 'Studio', 'Trial Start', 'Trial End', 'Status', 'Plan', 'Period End',
            'Stripe Customer', 'Stripe Subscription', 'Activated', 'Sheets', 'Created', 'Last Seen', 'Password Hash', 'Code Until', 'Codes Used',
-           'CardBoard', 'DevBoard', 'PitchBoard', 'BillBoard', 'All Apps']
+           'CardBoard', 'DevBoard', 'PitchBoard', 'BillBoard', 'All Apps', 'App Codes']
 # The app columns say which apps the person pays for: the date the paid time runs to (the Stripe webhook keeps
 # it current; blank when cancelled). DevBoard's cheaper plan is written "2026-12-20 core". "Perpetual" (typed by
 # you) unlocks that app for good. All Apps is the all-in-one plan: every app.
+# App Codes: time from free codes made for one app — "DevBoard 2026-12-20, CardBoard Perpetual".
+# (A code for every app goes in Code Until, or Activated when it's Perpetual.)
 TRIAL_DAYS = 7
 CODES_TAB = 'Codes'   # free codes you hand out: each unlocks CardBoard for its Length, once per person
-CODES_HEADERS = ['Code', 'Length', 'Max Uses', 'Used', 'Expires', 'Note']   # who used which: the Users tab's Codes Used
+CODES_HEADERS = ['Code', 'Length', 'Max Uses', 'Used', 'Expires', 'Note', 'App']   # who used which: the Users tab's Codes Used
+# App: blank (or All) = every app; else the app it unlocks — CardBoard, DevBoard, PitchBoard or BillBoard
+# (several, comma separated, are fine).
+APP_NAMES = {'cardboard': 'CardBoard', 'cb': 'CardBoard', 'devboard': 'DevBoard', 'db': 'DevBoard',
+             'pitchboard': 'PitchBoard', 'pb': 'PitchBoard', 'billboard': 'BillBoard', 'bb': 'BillBoard'}
+
+def code_apps(v):
+    # The App cell → [] for every app, else the app names; None when it names an app we don't know
+    parts = [x.strip().lower().replace(' ', '') for x in str(v or '').split(',') if x.strip()]
+    if not parts or any(x in ('all', 'allapps', 'every', 'everyapp') for x in parts): return []
+    if any(x not in APP_NAMES for x in parts): return None
+    return list(dict.fromkeys(APP_NAMES[x] for x in parts))
+
+def app_codes(v):
+    # "DevBoard 2026-12-20, CardBoard Perpetual" → {'DevBoard': '2026-12-20', 'CardBoard': 'Perpetual'}
+    d = {}
+    for part in str(v or '').split(','):
+        bits = part.strip().split(None, 1)
+        if len(bits) == 2 and bits[0] in APP_NAMES.values(): d[bits[0]] = bits[1].strip()
+    return d
 
 PERPETUAL = -1   # "Perpetual" (or forever / lifetime / unlimited): unlocked for good
 
@@ -139,6 +160,9 @@ def main():
         cws = next((w for w in wb.worksheets() if w.title.lower() == CODES_TAB.lower()), None)
         cv = wb.values_get(q(cws.title)).get('values', []) if cws else []
         ch = [h.strip() for h in (cv[0] if cv else [])]
+        if cws and ch and any(h not in ch for h in CODES_HEADERS):   # older Codes tabs: add the App heading
+            ch = ch + [h for h in CODES_HEADERS if h not in ch]
+            wb.values_update(q(cws.title) + '!A1', params={'valueInputOption': 'RAW'}, body={'values': [ch]})
         def ci(name): return ch.index(name) if name in ch else -1
         row_no, row = 0, None
         for k, r in enumerate(cv[1:]):
@@ -147,6 +171,8 @@ def main():
         if not row: out({'ok': False, 'unknown': True})
         days = length_days(row[ci('Length')] if ci('Length') >= 0 else '')
         if days == 0: out({'error': 'That code isn’t set up yet — ask whoever gave it to you'})
+        apps = code_apps(row[ci('App')] if 0 <= ci('App') < len(row) else '')
+        if apps is None: out({'error': 'That code isn’t set up right (its App isn’t one of the four) — ask whoever gave it to you'})
         exp = str(row[ci('Expires')]).strip() if ci('Expires') >= 0 else ''
         if exp:   # typed as 2026-12-31, or shown by Sheets as 12/31/2026
             ed = None
@@ -164,17 +190,30 @@ def main():
         if ci('Used') >= 0: row[ci('Used')] = str(used + 1)
         wb.values_update(q(cws.title) + '!A' + str(row_no) + ':' + col(len(ch)) + str(row_no), params={'valueInputOption': 'RAW'}, body={'values': [row[:len(ch)]]})
         # The new time starts when the current access runs out: after any code time left, or after the free week
-        start = now()
-        for k in ('Code Until', 'Trial End'):
-            try: cur = datetime.datetime.strptime(str(u.get(k, ''))[:19], '%Y-%m-%d %H:%M:%S')
-            except ValueError: cur = None
-            if cur and cur > start: start = cur
-        if days == PERPETUAL: u['Activated'] = now().strftime('%Y-%m-%d')   # unlocked for good
-        else: u['Code Until'] = iso(start + datetime.timedelta(days=days))
+        def when(v):
+            try: return datetime.datetime.strptime(str(v or '')[:19], '%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                try: return datetime.datetime.strptime(str(v or '')[:10], '%Y-%m-%d')
+                except ValueError: return None
+        def later(*vals):
+            start = now()
+            for v in vals:
+                cur = when(v)
+                if cur and cur > start: start = cur
+            return start
+        if not apps:   # every app
+            if days == PERPETUAL: u['Activated'] = now().strftime('%Y-%m-%d')   # unlocked for good
+            else: u['Code Until'] = iso(later(u.get('Code Until'), u.get('Trial End')) + datetime.timedelta(days=days))
+        else:          # only the code's apps
+            have = app_codes(u.get('App Codes', ''))
+            for a in apps:
+                if have.get(a, '').lower() == 'perpetual': continue
+                have[a] = 'Perpetual' if days == PERPETUAL else iso(later(have.get(a), u.get('Code Until'), u.get('Trial End')) + datetime.timedelta(days=days))
+            u['App Codes'] = ', '.join(k + ' ' + v for k, v in have.items())
         u['Codes Used'] = ', '.join([c for c in str(u.get('Codes Used', '')).split(', ') if c] + [str(row[ci('Code')]).strip()])
         u['Last Seen'] = iso(now())
         write(n, u)
-        out({'ok': True, 'user': u, 'days': days})
+        out({'ok': True, 'user': u, 'days': days, 'apps': apps})
 
     if action == 'update':
         u = u or new_person(email)

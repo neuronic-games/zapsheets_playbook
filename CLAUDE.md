@@ -151,6 +151,14 @@ Renames the email key in `accounts.json` preserving insertion order; validates n
 - `guardedOpenSessionDialog()` / `guardedOpenEditDialog()` — check `_collabUser`; redirect to Profile dialog if not signed in
 - Edit buttons on session cards are only rendered when `_collabUser` is set
 
+## GameBoard Accounts (CardBoard, DevBoard, PitchBoard, BillBoard)
+- One account per email in the GameBoard Admin sheet's Users tab (`push/gaccounts.py`); token logic in `push/gameboardAuth.php`, endpoints in `push/gameboardAccount.php`
+- Paid apps: columns CardBoard / DevBoard / PitchBoard / BillBoard / All Apps hold the paid-through date ("… core" for DevBoard Core, "Perpetual" to comp); App Codes holds app-specific code time; Code Until / Activated count for every app
+- Codes tab: optional App column (blank = every app; else CardBoard, DevBoard, PitchBoard, BillBoard, comma separated)
+- Client: `js/gb-account.js` (`GBAccount.init({...})`) on the DevBoard, PitchBoard and BillBoard owner pages — it adds X-CB-Token / X-GB-App to every push/ request and handles need_auth / locked / view_only answers; CardBoard keeps its own copy in cardboard.js
+- Server: owner-page write endpoints start with `gbGate([...apps])`; endpoints the shared collab pages also use pass `false` (checked only when X-GB-App is sent). New write endpoints for these apps should do the same
+- After the free week each app locks unless that app (or All Apps) is paid, a code covers it, the account is activated, or the sheet is paid/activated/comped (per-sheet files from before accounts)
+
 ## Games Data (`sheets/{sheet_id}/games.json`)
 Known columns: `Name`, `Status`, `Summary`, `Description`, `Count`, `Duration`, `Availability`, `Designer1–4`, `Cover URL`, `Image URL`, `Page URL`, `Video URL`, `Sellsheet URL`, `Play URL`, `Print URL`, `Rules URL`, `Playbook Sheet ID`, `Date Started`, `Date Signed`, `Date Published`
 

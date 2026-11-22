@@ -498,6 +498,7 @@ body.bb-admin-mode .bb-add-game-card { display:flex; }
 .bb-plan-current.paid { background:#edf7ed; } .bb-plan-current.paid b { color:#2e7d32; }
 </style>
 <link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=1" />
+<?php if (!isset($_bbPublicBase)): ?><script src="<?= h($_appRoot) ?>js/gb-account.js?v=1"></script><?php endif; ?>
 </head>
 <body<?= isset($_bbPublicBase) ? '' : ' class="gb-app gb-bill"' ?>>
 
@@ -2599,6 +2600,42 @@ function _bbStartCheckout(type, btn, btnLabel) {
 
 <div class="bb-save-toast" id="bbSaveToast" style="position:fixed;bottom:1.5rem;right:1.5rem;padding:.55rem 1.1rem;border-radius:8px;font-size:.82rem;font-family:'DINBlack',sans-serif;color:#fff;box-shadow:0 3px 16px rgba(0,0,0,.22);display:none;z-index:9999;"></div>
 
+<?php if (!isset($_bbPublicBase)): ?>
+<script>
+// The GameBoard account: one sign-in for every app. Editing (admin mode) is for the sheet's owner — the
+// account that set it up — and follows the account: the page reloads into admin mode once it's checked.
+(function() {
+  var KEY = 'billboard_owner_' + SHEET_ID;
+  function had() { try { return !!sessionStorage.getItem(KEY); } catch (e) { return false; } }
+  GBAccount.init({
+    app: 'billboard', name: 'BillBoard', sheet: SHEET_ID, base: APP_ROOT, home: SHEET_ID + '/billboard', gate: false,
+    icon: APP_ROOT + 'images/bb_icon_180.png', plans: [{ plan: 'pro', label: '', price: '$4.99', note: 'every feature' }],
+    onChange: function(s) {
+      var up = document.getElementById('bbUpgradeBtn');
+      if (up) { up.textContent = s.signedIn ? 'Subscription' : 'Subscribe'; up.style.color = s.app && /subscribed|activated|code/.test(s.app.state) ? '#4caf50' : '#f5a623'; }
+      if (s.signedIn && !s.checked) return;   // wait until the account is checked for this sheet
+      var was = had();
+      if (s.owner) {
+        try { sessionStorage.setItem(KEY, JSON.stringify({ email: s.account.email, bio: { name: s.account.name || '' } })); } catch (e) {}
+        if (!was) location.reload();
+      } else {
+        try { sessionStorage.removeItem(KEY); } catch (e) {}
+        if (was) location.reload();
+      }
+    }
+  });
+  window.openSignIn = function() { GBAccount.signIn().catch(function() {}); };
+  window.openBbUpgradeDialog = function() { GBAccount.openPlans(); };
+  window._bbLoadSubStatus = function(cb) { if (cb) cb({}); };
+  var menu = window.bbMenuAction;
+  window.bbMenuAction = function(action) {
+    if (action === 'signout') { if (typeof closeBbMenu === 'function') closeBbMenu(); if (GBAccount.account()) GBAccount.signOut(); else openSignIn(); return; }
+    if (action === 'upgrade') { if (typeof closeBbMenu === 'function') closeBbMenu(); GBAccount.openPlans(); return; }
+    menu(action);
+  };
+})();
+</script>
+<?php endif; ?>
 </body>
 </html>
 <?php
@@ -3407,6 +3444,7 @@ body.bb-admin-mode .bb-hero.bb-drag-over .bb-cover-btn { display: flex; }
 .bb-social-empty { display:none; }
 </style>
 <link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=1" />
+<?php if (!isset($_bbPublicBase)): ?><script src="<?= h($_appRoot) ?>js/gb-account.js?v=1"></script><?php endif; ?>
 </head>
 <body<?= isset($_bbPublicBase) ? '' : ' class="gb-app gb-bill"' ?>>
 
@@ -6031,5 +6069,41 @@ function bbSubscribeSubmit(e) {
 .sync-dialog-actions { display:flex; align-items:center; justify-content:flex-end; gap:.5rem; position:sticky; bottom:0; background:#fff; padding-top:.5rem; margin-top:auto; }
 </style>
 
+<?php if (!isset($_bbPublicBase)): ?>
+<script>
+// The GameBoard account: one sign-in for every app. Editing (admin mode) is for the sheet's owner — the
+// account that set it up — and follows the account: the page reloads into admin mode once it's checked.
+(function() {
+  var KEY = 'billboard_owner_' + SHEET_ID;
+  function had() { try { return !!sessionStorage.getItem(KEY); } catch (e) { return false; } }
+  GBAccount.init({
+    app: 'billboard', name: 'BillBoard', sheet: SHEET_ID, base: APP_ROOT, home: SHEET_ID + '/billboard', gate: false,
+    icon: APP_ROOT + 'images/bb_icon_180.png', plans: [{ plan: 'pro', label: '', price: '$4.99', note: 'every feature' }],
+    onChange: function(s) {
+      var up = document.getElementById('bbUpgradeBtn');
+      if (up) { up.textContent = s.signedIn ? 'Subscription' : 'Subscribe'; up.style.color = s.app && /subscribed|activated|code/.test(s.app.state) ? '#4caf50' : '#f5a623'; }
+      if (s.signedIn && !s.checked) return;   // wait until the account is checked for this sheet
+      var was = had();
+      if (s.owner) {
+        try { sessionStorage.setItem(KEY, JSON.stringify({ email: s.account.email, bio: { name: s.account.name || '' } })); } catch (e) {}
+        if (!was) location.reload();
+      } else {
+        try { sessionStorage.removeItem(KEY); } catch (e) {}
+        if (was) location.reload();
+      }
+    }
+  });
+  window.openSignIn = function() { GBAccount.signIn().catch(function() {}); };
+  window.openBbUpgradeDialog = function() { GBAccount.openPlans(); };
+  window._bbLoadSubStatus = function(cb) { if (cb) cb({}); };
+  var menu = window.bbMenuAction;
+  window.bbMenuAction = function(action) {
+    if (action === 'signout') { if (typeof closeBbMenu === 'function') closeBbMenu(); if (GBAccount.account()) GBAccount.signOut(); else openSignIn(); return; }
+    if (action === 'upgrade') { if (typeof closeBbMenu === 'function') closeBbMenu(); GBAccount.openPlans(); return; }
+    menu(action);
+  };
+})();
+</script>
+<?php endif; ?>
 </body>
 </html>

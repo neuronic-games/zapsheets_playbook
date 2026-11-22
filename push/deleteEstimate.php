@@ -7,6 +7,7 @@
 //   contract_id — (optional) contract row to also remove
 //   file_url    — Share/PDF URL to delete for PDF-based records
 
+require_once __DIR__ . '/gbGate.php'; gbGate(['devboard']);   // GameBoard account: signed in, the sheet's owner, the app unlocked
 error_reporting(0);
 ini_set('display_errors', '0');
 header('Content-Type: application/json');

@@ -8,6 +8,7 @@
 //   orig_event      — Event/type of the session header (lookup key)
 //   orig_session_num — Session number in People col (lookup key; may be empty)
 
+require_once __DIR__ . '/gbGate.php'; gbGate(['devboard'], false);   // GameBoard account: signed in, the sheet's owner, the app unlocked
 error_reporting(0);
 ini_set('display_errors', '0');
 header('Content-Type: application/json');

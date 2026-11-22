@@ -9,6 +9,7 @@
  * Returns JSON: { ok: true, url: "https://…/sheets/{id}/cache/{filename}" }
  *           or  { error: "reason" }
  */
+require_once __DIR__ . '/gbGate.php'; gbGate(['pitchboard', 'devboard', 'billboard'], false);   // GameBoard account: signed in, the sheet's owner, the app unlocked
 error_reporting(0);
 header('Content-Type: application/json');
 

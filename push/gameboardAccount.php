@@ -12,7 +12,8 @@
  *   refresh  — cbt (token), sheet?         → {ok, token, account}   (re-reads the Admin sheet)
  *   activate — cbt, key, sheet?            → {ok, token, account}   (activation key: everything, no time limit)
  *   profile  — cbt, name, studio           → {ok, token, account}   (saved in the person's Admin-sheet row)
- *   redeem   — cbt, code                   → {ok, token, account, days}  (a free code from the Admin sheet's Codes tab,
+ *   redeem   — cbt, code                   → {ok, token, account, days, apps}  (a free code from the Admin sheet's Codes tab —
+ *                                            every app, or only the apps in its App column —
  *                                            or an activation key: unlocked with no time limit)
  * app (optional, default cardboard) — the app asking: account.state/until/period_end are that app's.
  * account = {email, name, state: trial|code|subscribed|activated|locked, until, trial_end, period_end, status, sheet_unlocked,
@@ -46,6 +47,7 @@ function cbAccountOut(array $a, string $sheet): array {
             'trial_end' => $d($a['te']), 'period_end' => $apps[$app]['period_end'], 'status' => $a['status'] ?? '',
             'apps' => $apps, 'all_in_one' => !empty($a['all']),   // every app's access; the all-in-one plan
             'sheet_unlocked' => $sheet !== '' && cbSheetUnlocked($sheet),
+            'sheet_paid' => $sheet !== '' && $app !== 'cardboard' && stripeSheetPlan($sheet, $app)['is_core'],   // paid on the sheet, before accounts
             'owner' => $sheet !== '' && in_array($sheet, $a['sh'] ?? [], true),   // set this sheet up: may change it (else view only)
             'portal_url' => $_ENV['STRIPE_PORTAL_URL'] ?? ''];
 }
@@ -179,7 +181,7 @@ if ($action === 'redeem') {
     }
     if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t use that code');
     $a = cbAccessFromUser($r['user']);
-    ok(['token' => cbIssueToken($a), 'account' => cbAccountOut($a, $sheet), 'days' => (int) ($r['days'] ?? 0)]);
+    ok(['token' => cbIssueToken($a), 'account' => cbAccountOut($a, $sheet), 'days' => (int) ($r['days'] ?? 0), 'apps' => $r['apps'] ?? []]);   // apps: the code's apps ([] = every app)
 }
 
 // claim — cbt, sheet: set this sheet up as yours (Connect on the home page, or "Make it mine" when nobody has it)

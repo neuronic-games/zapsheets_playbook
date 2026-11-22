@@ -4,6 +4,7 @@
  * Stores shares/dev-collab/{token}.json → { sheet_id, game, sharer }
  * Returns the public view URL — no sheet ID exposed.
  */
+require_once __DIR__ . '/gbGate.php'; gbGate(['devboard']);   // GameBoard account: signed in, the sheet's owner, the app unlocked
 error_reporting(0);
 header('Content-Type: application/json');
 

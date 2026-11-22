@@ -4,6 +4,7 @@
 //
 // POST params: id, game, todo_id (finds the cell by its "TODO:<id>" note), row (optional), obs, sol, note ("TODO:<id>" | "TODO" | "")
 
+require_once __DIR__ . '/gbGate.php'; gbGate(['devboard']);   // GameBoard account: signed in, the sheet's owner, the app unlocked
 error_reporting(0);
 header('Content-Type: application/json');
 require __DIR__ . '/../dotEnv.php';

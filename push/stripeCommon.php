@@ -101,6 +101,14 @@ function activationKeyValid(string $key): bool {
 /** Stop a DevBoard Pro-only endpoint (contracts, estimates, invoices) for sheets without Pro. */
 function devboardRequirePro(string $sheetId): void {
     if (stripeSheetPlan($sheetId, 'devboard')['is_pro']) return;
+    // The GameBoard account: the free week, codes and activation have every feature; a DevBoard subscription
+    // counts when it's Pro (the all-in-one is Pro)
+    require_once __DIR__ . '/gameboardAuth.php';
+    $p = cbReadToken(cbRequestToken());
+    if ($p) {
+        $a = gbAppAccess($p, 'devboard');
+        if ($a['u'] >= time() && ($a['st'] !== 'subscribed' || $a['p'] !== 'core')) return;
+    }
     echo json_encode(['error' => 'Contracts, estimates and invoices are part of DevBoard Pro. Upgrade to Pro to use them.', 'need_pro' => true]);
     exit;
 }

@@ -4,6 +4,7 @@
 // POST params: id (sheet ID), action (add | update | order | status), data (JSON for that action)
 // Response: the script's result plus "todos" — the refreshed list (sheets/{id}/todos.json).
 
+require_once __DIR__ . '/gbGate.php'; gbGate(['devboard']);   // GameBoard account: signed in, the sheet's owner, the app unlocked
 error_reporting(0);
 header('Content-Type: application/json');
 require __DIR__ . '/../dotEnv.php';

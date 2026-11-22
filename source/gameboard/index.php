@@ -213,31 +213,75 @@ footer a:hover { color:var(--navy); }
 .win-body { height:340px; position:relative; overflow:hidden; }
 @keyframes appear { 0% { opacity:0; transform:translateY(10px); } 6%,82% { opacity:1; transform:none; } 90%,100% { opacity:0; transform:none; } }
 
-/* DevBoard: a playtest being logged */
-.dv { padding:16px 18px; font-size:13px; }
-.win-body.dv { height:auto; min-height:340px; }
-.dv-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
-.dv-head b { display:block; font-size:15px; color:#16324f; }
-.dv-head span { color:#8a93a6; font-size:12px; }
-.dv-timer { display:flex; align-items:center; gap:7px; font:600 15px ui-monospace,Menlo,monospace; color:#16324f; background:#eaf8fa; border-radius:8px; padding:5px 10px; }
-.rec { width:9px; height:9px; border-radius:50%; background:#e5604f; animation:blink 1.2s steps(2) infinite; }
-@keyframes blink { 50% { opacity:.2; } }
-.dv-round { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#49c4d4; margin:4px 0 8px; }
-.dv-note { display:flex; gap:9px; align-items:flex-start; background:#f6fafb; border:1px solid #e3eef0; border-radius:9px; padding:8px 10px; margin-bottom:7px; opacity:0; animation:appear 12s infinite; color:#2b3a4a; }
-.dv-note.n2 { animation-delay:1.6s; margin-left:22px; } .dv-note.n3 { animation-delay:3.2s; }
-.dvt { flex-shrink:0; font-style:normal; font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; border-radius:5px; padding:2px 6px; margin-top:1px; }
-.dvt.obs { background:#fff1dc; color:#b26a00; } .dvt.sol { background:#e2f6e5; color:#2e7d32; }
-.dv-todo { margin-top:12px; border-top:1px dashed #dde6ea; padding-top:10px; }
-.dv-todo b { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:#8a93a6; display:block; margin-bottom:6px; }
-.dv-todo div { display:flex; align-items:center; gap:8px; margin-bottom:6px; color:#2b3a4a; opacity:0; animation:appear 12s infinite 4.4s; }
-.dv-todo div.t2 { animation-delay:5s; }
-.cbx { width:16px; height:16px; border-radius:4px; border:1.5px solid #b8c6cc; position:relative; flex-shrink:0; }
-.cbx::after { content:'✓'; position:absolute; inset:-2px 0 0 2px; font-size:13px; font-weight:800; color:#fff; opacity:0; }
-.t1 .cbx { animation:tick 12s infinite; } .t1 span { animation:strike 12s infinite; }
-@keyframes tick { 0%,58% { background:#fff; border-color:#b8c6cc; } 62%,88% { background:#49c4d4; border-color:#49c4d4; } 92%,100% { background:#fff; } }
-@keyframes strike { 0%,58% { text-decoration:none; color:#2b3a4a; } 62%,88% { text-decoration:line-through; color:#9aa5b1; } }
-.t1 .cbx::after { animation:tickmark 12s infinite; }
-@keyframes tickmark { 0%,58% { opacity:0; } 62%,88% { opacity:1; } 92%,100% { opacity:0; } }
+/* DevBoard: the "+ Session" dialog — rounds and timer, who's playing (a new tester's email goes to
+   People), observations beside solutions, the light bulb making a TODO — then the saved session */
+.dvs { height:340px; background:#e9eef3; position:relative; font-size:11px; color:#1e2b38; }
+.dvs-dlg { position:absolute; inset:10px; background:#fff; border-radius:12px; box-shadow:0 10px 30px rgba(20,40,60,.18); padding:10px 12px; animation:dvsDlg 18s infinite; }
+@keyframes dvsDlg { 0%,70% { opacity:1; transform:none; } 73%,95% { opacity:0; transform:scale(.97); } 98%,100% { opacity:1; transform:none; } }
+.dvs-h { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.dvs-h b { font-size:14px; color:#16324f; } .dvs-h b em { font-style:normal; color:#1a5f7a; }
+.dvs-ctl { display:flex; align-items:center; gap:8px; }
+.dvs-rounds { display:flex; align-items:center; gap:4px; font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:#7a8a99; }
+.dvs-rb { width:18px; height:18px; border-radius:5px; border:1.5px solid #c9d3dc; display:flex; align-items:center; justify-content:center; color:#1a5f7a; font-weight:800; }
+.dvs-rb.plus { animation:dvsPress 18s infinite; animation-delay:.9s; }
+@keyframes dvsPress { 0%,1% { background:#fff; transform:none; } 2%,3% { background:#e3f1f5; transform:scale(.88); } 4%,100% { background:#fff; transform:none; } }
+.dvs-rc { min-width:18px; text-align:center; font:800 13px 'Inter',sans-serif; color:#16324f; }
+.dvs-sw { display:flex; align-items:center; gap:5px; background:#1a5f7a; color:#fff; border-radius:999px; padding:3px 9px; font:700 11px ui-monospace,Menlo,monospace; }
+.dvs-sw i { width:7px; height:7px; border-radius:50%; background:#ff8f7d; animation:blink 1.2s steps(2) infinite; }
+.dvs-meta { display:grid; grid-template-columns:1fr 1fr 1.15fr; gap:6px 8px; }
+.dvs-fg label, .dvs-ol label { display:block; font-size:8.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:#8796a5; margin-bottom:2px; }
+.dvs-in { border:1.5px solid #d0d8e0; border-radius:6px; padding:3px 6px; min-height:22px; white-space:nowrap; overflow:hidden; position:relative; }
+.dvs-in.ro { background:#f0f4f8; color:#888; }
+.dvs-people { grid-row:span 2; grid-column:3; }
+.dvs-people .dvs-in { margin-bottom:4px; }
+.dvs-new { animation:dvsFocus 18s infinite; }
+@keyframes dvsFocus { 0%,7% { border-color:#d0d8e0; box-shadow:none; } 8%,22% { border-color:#1a5f7a; box-shadow:0 0 0 2px rgba(26,95,122,.15); } 24%,100% { border-color:#d0d8e0; box-shadow:none; } }
+.dvs-mail { color:#1a5f7a; }
+.sw2 { display:inline-grid; } .sw2 > * { grid-area:1/1; }
+.dvs-new .full { clip-path:inset(0 100% 0 0); animation:dvsTypeMail 18s infinite steps(30); }
+@keyframes dvsTypeMail { 0%,8% { clip-path:inset(0 100% 0 0); opacity:1; } 21%,66% { clip-path:inset(0 0 0 0); opacity:1; } 67%,100% { clip-path:inset(0 0 0 0); opacity:0; } }
+.dvs-new .clean { opacity:0; animation:dvsClean 18s infinite; }
+@keyframes dvsClean { 0%,66% { opacity:0; } 67%,96% { opacity:1; } 99%,100% { opacity:0; } }
+.dvs-rcs .a { animation:dvsA 18s infinite; } .dvs-rcs .b { animation:dvsB 18s infinite; }
+@keyframes dvsA { 0%,5% { opacity:1; } 6%,96% { opacity:0; } 99%,100% { opacity:1; } } @keyframes dvsB { 0%,5% { opacity:0; } 6%,96% { opacity:1; } 99%,100% { opacity:0; } }
+.dvs-hr { border:none; border-top:1px solid #e6ebf0; margin:8px 0 6px; }
+.dvs-ol { display:grid; grid-template-columns:1fr 1fr; }
+.dvs-pair { display:grid; grid-template-columns:1fr 1fr; border:1.5px solid #d0d8e0; border-radius:8px; overflow:hidden; margin-bottom:5px; position:relative; }
+.dvs-pair > div { padding:6px 8px; min-height:30px; white-space:nowrap; overflow:hidden; }
+.dvs-pair > div:first-child { border-right:1px solid #d0d8e0; background:#fff; }
+.dvs-pair > div:nth-child(2) { background:#f5f7fa; }
+.dvs-pair.p1 { animation:dvsTodo 18s infinite; }
+@keyframes dvsTodo { 0%,50% { border-color:#d0d8e0; box-shadow:none; } 51%,96% { border-color:#f5c518; box-shadow:0 0 0 2px rgba(245,197,24,.35); } 99%,100% { border-color:#d0d8e0; box-shadow:none; } }
+.dvs-bulb { position:absolute; right:5px; top:5px; width:20px; height:20px; border-radius:5px; border:1px solid #d0d8e4; background:rgba(255,255,255,.9); color:#a0a8b4; display:flex; align-items:center; justify-content:center; animation:dvsBulb 18s infinite; opacity:0; }
+.dvs-bulb svg { width:13px; height:13px; }
+@keyframes dvsBulb { 0%,26% { opacity:0; } 28%,49% { opacity:1; color:#a0a8b4; background:#fff; border-color:#d0d8e4; transform:none; } 50% { transform:scale(.85); } 51%,96% { opacity:1; color:#b8860b; background:#fff8db; border-color:#f5c518; transform:none; } 99%,100% { opacity:0; } }
+.dvs-bulb .glass { fill:none; animation:dvsGlass 18s infinite; } @keyframes dvsGlass { 0%,50% { fill:none; } 51%,96% { fill:#ffd43b; } 99%,100% { fill:none; } }
+.ty { display:inline-block; clip-path:inset(0 100% 0 0); }
+.ty.o1 { animation:dvsT1 18s infinite steps(28); } .ty.s1 { animation:dvsT2 18s infinite steps(26); } .ty.o2 { animation:dvsT3 18s infinite steps(24); }
+@keyframes dvsT1 { 0%,24% { clip-path:inset(0 100% 0 0); } 34%,96% { clip-path:inset(0 0 0 0); } 99%,100% { clip-path:inset(0 100% 0 0); } }
+@keyframes dvsT2 { 0%,36% { clip-path:inset(0 100% 0 0); } 46%,96% { clip-path:inset(0 0 0 0); } 99%,100% { clip-path:inset(0 100% 0 0); } }
+@keyframes dvsT3 { 0%,53% { clip-path:inset(0 100% 0 0); } 62%,96% { clip-path:inset(0 0 0 0); } 99%,100% { clip-path:inset(0 100% 0 0); } }
+.dvs-hint { font-size:8.5px; color:#9aa7b3; }
+.dvs-act { display:flex; justify-content:flex-end; gap:6px; margin-top:4px; }
+.dvs-act span { font-weight:700; font-size:10.5px; border-radius:7px; padding:5px 11px; background:#eef2f5; color:#555; }
+.dvs-act span.add { background:#1a5f7a; color:#fff; animation:dvsAdd 18s infinite; }
+@keyframes dvsAdd { 0%,64% { transform:none; } 65% { transform:scale(.9); } 66%,100% { transform:none; } }
+.dvs-pop { position:absolute; right:14px; top:132px; background:#16324f; color:#fff; font-size:10.5px; border-radius:8px; padding:6px 10px; opacity:0; animation:dvsPop 18s infinite; z-index:3; }
+.dvs-pop b { color:#9fe0ee; font-weight:600; }
+@keyframes dvsPop { 0%,66% { opacity:0; transform:translateY(6px); } 68%,72% { opacity:1; transform:none; } 74%,100% { opacity:0; } }
+/* after Save: the game's card, with the new session and its TODO at the top */
+.dvs-card { position:absolute; inset:10px; background:#fff; border-radius:12px; box-shadow:0 10px 30px rgba(20,40,60,.18); padding:12px 14px; opacity:0; animation:dvsCard 18s infinite; }
+@keyframes dvsCard { 0%,72% { opacity:0; transform:translateY(10px); } 75%,94% { opacity:1; transform:none; } 97%,100% { opacity:0; } }
+.dvs-card h4 { font-size:15px; color:#16324f; margin-bottom:2px; } .dvs-card small { color:#8796a5; }
+.dvs-todos { background:#fff8db; border:1.5px solid #f5c518; border-radius:8px; padding:7px 9px; margin:9px 0; }
+.dvs-todos b { font-size:9px; letter-spacing:.07em; text-transform:uppercase; color:#b8860b; display:flex; align-items:center; gap:5px; margin-bottom:4px; }
+.dvs-todos div { display:flex; align-items:center; gap:7px; color:#3a3000; }
+.dvs-todos i { width:13px; height:13px; border:1.5px solid #c9a227; border-radius:3px; display:inline-block; }
+.dvs-sess { border-top:1px solid #eef1f4; padding:7px 0; }
+.dvs-sess b { color:#16324f; } .dvs-sess span { display:block; color:#7a8a99; font-size:10.5px; }
+.dvs-sess.new { background:linear-gradient(90deg, rgba(73,196,212,.14), transparent); border-radius:6px; padding-left:6px; }
+.dvs-toast { position:absolute; left:50%; bottom:20px; transform:translateX(-50%); background:#16324f; color:#fff; font-size:11px; font-weight:600; border-radius:999px; padding:6px 13px; white-space:nowrap; opacity:0; animation:dvsToast 18s infinite; }
+@keyframes dvsToast { 0%,75% { opacity:0; } 78%,90% { opacity:1; } 93%,100% { opacity:0; } }
 
 /* CardBoard: the Layout view — a poker card built from the sheet's columns, flipped to its back —
    then the Print view, where every card on the sheet is the same design with its own row */
@@ -536,19 +580,36 @@ footer a:hover { color:var(--navy); }
       <div class="show-text">
         <div class="badge"><img src="images/db_icon_180.png" alt="">DevBoard · Playtest &amp; develop</div>
         <h3>Every playtest, remembered.</h3>
-        <p>Start the timer, then jot what you see, round by round. Pair each observation with a fix, turn notes into TODOs, and hand the team a clean report afterwards.</p>
+        <p>Open a session, start the timer and count the rounds. Add who’s playing — type a new tester’s email after their name and they’re added to your People. Write each observation beside its solution, and tap the light bulb to make it a TODO on the game’s card.</p>
         <a href="<?= e($_apps . 'devboard/features') ?>">DevBoard features →</a>
       </div>
-      <div class="win" aria-hidden="true"><div class="win-bar"><i></i><i></i><i></i><span>DevBoard · Floristry · Playtest #12</span></div>
-        <div class="win-body dv">
-          <div class="dv-head"><div><b>Playtest #12</b><span>4 players · Lantern Café</span></div><div class="dv-timer"><span class="rec"></span><span id="dvTime">00:14:32</span></div></div>
-          <div class="dv-round">Round 2</div>
-          <div class="dv-note n1"><em class="dvt obs">Seen</em>Auctions in round 2 drag on — 4 bids or more each time</div>
-          <div class="dv-note n2"><em class="dvt sol">Fix</em>Cap every auction at 3 bids</div>
-          <div class="dv-note n3"><em class="dvt obs">Seen</em>Everyone loves the tulip combo 🌷</div>
-          <div class="dv-todo"><b>TODOs</b>
-            <div class="t1"><i class="cbx"></i><span>Test the 3-bid cap with 2 players</span></div>
-            <div class="t2"><i class="cbx"></i><span>Reprint the bid tokens</span></div>
+      <div class="win" aria-hidden="true"><div class="win-bar"><i></i><i></i><i></i><span>mygameboard.app/…/devboard</span></div>
+        <div class="win-body dvs">
+          <div class="dvs-dlg">
+            <div class="dvs-h"><b>+ Session <em>— Floristry</em></b>
+              <div class="dvs-ctl"><div class="dvs-rounds"><span class="dvs-rb">−</span><span class="dvs-rc sw2 dvs-rcs"><span class="a">1</span><span class="b">2</span></span><span class="dvs-rb plus">+</span>Rounds</div><span class="dvs-sw"><i></i><span id="dvTime">14</span></span></div></div>
+            <div class="dvs-meta">
+              <div class="dvs-fg"><label>Date</label><div class="dvs-in">11/22/2026</div></div>
+              <div class="dvs-fg"><label>Type</label><div class="dvs-in">Playtest ▾</div></div>
+              <div class="dvs-fg dvs-people"><label>People</label><div class="dvs-in">Maya Chen</div><div class="dvs-in">Leo Park</div>
+                <div class="dvs-in dvs-new"><span class="sw2"><span class="full">Sam Rivera <span class="dvs-mail">sam@rivera.games</span></span><span class="clean">Sam Rivera</span></span></div></div>
+              <div class="dvs-fg"><label>Location</label><div class="dvs-in">Lantern Café</div></div>
+              <div class="dvs-fg"><label>Session number</label><div class="dvs-in ro">12</div></div>
+            </div>
+            <hr class="dvs-hr">
+            <div class="dvs-ol"><label>Observations</label><label>Solutions</label></div>
+            <div class="dvs-pair p1"><div><span class="ty o1">Auctions in round 2 drag on</span></div><div><span class="ty s1">Cap every auction at 3 bids</span></div><span class="dvs-bulb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="glass" d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg></span></div>
+            <div class="dvs-pair"><div><span class="ty o2">Everyone loves the tulips</span></div><div></div></div>
+            <div class="dvs-hint">⌘ / Ctrl + Arrow — move between fields · ⌘ / Ctrl + Enter — save</div>
+            <div class="dvs-act"><span>Cancel</span><span class="add">Add Session</span></div>
+          </div>
+          <div class="dvs-pop">Added <b>Sam Rivera</b> to People · sam@rivera.games</div>
+          <div class="dvs-card">
+            <h4>Floristry</h4><small>Playtesting · 12 playtests · 2 meetings</small>
+            <div class="dvs-todos"><b><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="glass" style="fill:#ffd43b" d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>TODOs (1)</b><div><i></i>Cap every auction at 3 bids</div></div>
+            <div class="dvs-sess new"><b>Playtest 12</b><span>Nov 22 · Lantern Café · 14 min · 2 rounds</span><span>Maya Chen, Leo Park, Sam Rivera</span></div>
+            <div class="dvs-sess"><b>Playtest 11</b><span>Nov 15 · Game Night at Leo’s · 38 min</span><span>Ana Torres, Leo Park</span></div>
+            <div class="dvs-toast">✓ Session saved to your Sheet</div>
           </div>
         </div>
       </div>
@@ -921,8 +982,8 @@ footer a:hover { color:var(--navy); }
   show();
 
   // The DevBoard window's playtest timer keeps running; the who-it's-for dots pop in when scrolled to
-  var t0 = 14 * 60 + 32, tEl = $('dvTime');
-  setInterval(function() { t0++; var m = Math.floor(t0 / 60), sec = t0 % 60; if (tEl) tEl.textContent = '00:' + (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec; }, 1000);
+  var t0 = 14 * 60, tEl = $('dvTime');   // the session stopwatch counts minutes, like DevBoard's
+  setInterval(function() { t0 += 3; if (tEl) tEl.textContent = Math.floor(t0 / 60); }, 1000);
   var mx = $('matrix');
   if (mx && 'IntersectionObserver' in window) {   // without it the dots simply show
     mx.classList.add('anim');

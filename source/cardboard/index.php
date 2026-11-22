@@ -378,6 +378,12 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
   };
   window.authSignOut = function() { acct = null; try { localStorage.removeItem('cb_account'); } catch (e) {} show(); };
   show();
+  // Coming from the GameBoard home on mygameboard.app: the account comes along in the link (#gbt=…)
+  (function() {
+    var m = /[#&]gbt=([^&]+)/.exec(location.hash || ''); if (!m) return;
+    history.replaceState(null, '', location.pathname + location.search);
+    post({ action: 'refresh', cbt: decodeURIComponent(m[1]) }).then(signedIn).catch(function() {});
+  })();
 
   window.startSetup = function() {
     if (!acct) { show(); return; }

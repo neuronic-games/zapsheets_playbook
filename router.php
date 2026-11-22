@@ -99,6 +99,7 @@ $RESERVED = [
     'pulseboard',   // setup landing page — handled below, reserved so /{id} never grabs it
     'tmboard',      // setup landing page — handled below, reserved so /{id} never grabs it
     'billboard',    // setup landing page + public share routes — handled below
+    'gameboard',    // the GameBoard hub — handled below
     'cardboard',    // setup landing page — handled below
 ];
 
@@ -181,6 +182,11 @@ if (preg_match('#^/shares/cardboard/([a-f0-9]{24})/([A-Za-z0-9\-]+\.(?:png|jpg))
     $_GET['token'] = $_cbm[1]; $_GET['file'] = $_cbm[2];
     require __DIR__ . '/shares/cardboard/index.php';
     exit;
+}
+
+// ── /gameboard — the GameBoard hub (and the root of mygameboard.app) ──────────
+if (preg_match('#^/gameboard/?$#', $uri) || ($uri === '/' && preg_match('/(^|\.)mygameboard\.app$/i', preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? '')))) {
+    serveFile(__DIR__ . '/source/gameboard/index.php', $MIME);
 }
 
 // ── /billboard/{token}/{slug} — public game page ─────────────────────────────

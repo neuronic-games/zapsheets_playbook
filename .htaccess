@@ -36,6 +36,13 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^pitchboard/share/([a-f0-9]{24})/?$ source/pitchboard/shared/index.php [L,QSA]
 
+# mygameboard.app — its home page is the GameBoard hub (the domain's document root is this folder)
+RewriteCond %{HTTP_HOST} ^(www\.)?mygameboard\.app$ [NC]
+RewriteRule ^$ source/gameboard/index.php [L,QSA]
+
+# /gameboard — the GameBoard hub: the board game apps and the GameBoard account
+RewriteRule ^gameboard/?$ source/gameboard/index.php [L,QSA]
+
 # /pitchboard — setup landing page
 RewriteRule ^pitchboard/?$ source/pitchboard/index.php [L,QSA]
 
@@ -311,5 +318,5 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 # Guard 2: skip known top-level names regardless of subdirectory prefix.
 #          Matches  /anything/name/  or  /anything/name  at end of URI.
-RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard|devboard|cardboard|fitboard|noteboard|pulseboard|tmboard|billboard|slides-sw|game|shares)(/|$)
+RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard|devboard|cardboard|fitboard|noteboard|pulseboard|tmboard|billboard|gameboard|slides-sw|game|shares)(/|$)
 RewriteRule ^([A-Za-z0-9_\-]+)(/.*)?$ sheets/$1$2 [R=302,L]

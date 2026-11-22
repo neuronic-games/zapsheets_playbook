@@ -24,12 +24,12 @@ $_page = gbLinkBase() === $_base ? $_abs . 'gameboard' : 'https://' . $_ENV['GAM
 $_desc = 'Tools for board game makers: capture playtests, design and print cards, track publisher pitches and show off your games — everything edited right on the page, with one GameBoard account.';
 function e($s) { return htmlspecialchars((string) $s, ENT_QUOTES); }
 $APPS = [
-  ['dev',  'DevBoard',   'db_icon_180.png',        'Playtest & develop', 'Every playtest, remembered.', '#49c4d4', 'devboard',
-        ['Session log with observations and solutions', 'TODOs from your notes, with owner and due date', 'Estimates, invoices and reports for studios'],
-        ['$2.99', 'Core · $3.99 Pro with estimates &amp; invoices']],
   ['card', 'CardBoard',  'cardboard_icon_180.png', 'Design & print cards', 'Your cards, straight from your sheet.', '#7b6cf6', 'cardboard',
         ['Drag-and-drop card designer, fronts and backs', 'Print-and-play sheets, ready to cut', 'Tabletop Simulator and Screentop export'],
         ['$4.99', 'after a free week']],
+  ['dev',  'DevBoard',   'db_icon_180.png',        'Playtest & develop', 'Every playtest, remembered.', '#49c4d4', 'devboard',
+        ['Session log with observations and solutions', 'TODOs from your notes, with owner and due date', 'Estimates, invoices and reports for studios'],
+        ['$2.99', 'Core · $3.99 Pro with estimates &amp; invoices']],
   ['pitch','PitchBoard', 'pitchboard_icon_180.png',        'Pitch to publishers', 'From first sketch to signed deal — tracked.', '#e7a35a', 'pitchboard',
         ['A pitch log for every game, and a board view', 'Sell sheet generator', 'Game pages and links for collaborators'],
         ['$1.99', 'every feature']],
@@ -621,7 +621,7 @@ footer a:hover { color:var(--navy); }
 </nav>
 
 <header class="hero">
-  <div class="floaters" aria-hidden="true"><img src="images/db_icon_180.png" alt=""><img src="images/cardboard_icon_180.png" alt=""><img src="images/pitchboard_icon_180.png" alt=""><img src="images/bb_icon_180.png" alt=""></div>
+  <div class="floaters" aria-hidden="true"><img src="images/cardboard_icon_180.png" alt=""><img src="images/db_icon_180.png" alt=""><img src="images/pitchboard_icon_180.png" alt=""><img src="images/bb_icon_180.png" alt=""></div>
   <span class="tag">For board game makers</span>
   <h1>Tools for every step of <em>your game</em>.</h1>
   <p>Built for game makers, from the first prototype to the store shelf.</p>
@@ -644,47 +644,7 @@ footer a:hover { color:var(--navy); }
     <h2>Built for the way games get made</h2>
     <p class="sub">Each app works right on the page — type, drag, click — and saves to your Google Sheet as you go.</p>
 
-    <div class="show" style="--c:#49c4d4">
-      <div class="show-text">
-        <div class="badge"><img src="images/db_icon_180.png" alt="">DevBoard · Playtest &amp; develop</div>
-        <h3>Every playtest, remembered.</h3>
-        <p>Open a session, start the timer and count the rounds. Add who’s playing — type a new tester’s email after their name and they’re added to your People. Write each observation beside its solution, paste or add a photo of the table right into a note, and tap the light bulb to make it a TODO on the game’s card.</p>
-        <a href="<?= e($_apps . 'devboard/features') ?>">DevBoard features →</a>
-      </div>
-      <div class="win" aria-hidden="true"><div class="win-bar"><i></i><i></i><i></i><span>mygameboard.app/…/devboard</span></div>
-        <div class="win-body dvs">
-          <div class="dvs-dlg">
-            <div class="dvs-h"><b>+ Session <em>— Floristry</em></b>
-              <div class="dvs-ctl"><div class="dvs-rounds"><span class="dvs-rb">−</span><span class="dvs-rc sw2 dvs-rcs"><span class="a">1</span><span class="b">2</span></span><span class="dvs-rb plus">+</span>Rounds</div><span class="dvs-sw"><i></i><span id="dvTime">14</span></span></div></div>
-            <div class="dvs-meta">
-              <div class="dvs-fg"><label>Date</label><div class="dvs-in">11/22/2026</div></div>
-              <div class="dvs-fg"><label>Type</label><div class="dvs-in">Playtest ▾</div></div>
-              <div class="dvs-fg dvs-people"><label>People</label><div class="dvs-in">Maya Chen</div><div class="dvs-in">Leo Park</div>
-                <div class="dvs-in dvs-new"><span class="sw2"><span class="full">Sam Rivera <span class="dvs-mail">sam@rivera.games</span></span><span class="clean">Sam Rivera</span></span></div></div>
-              <div class="dvs-fg"><label>Location</label><div class="dvs-in">Lantern Café</div></div>
-              <div class="dvs-fg"><label>Session number</label><div class="dvs-in ro">12</div></div>
-            </div>
-            <hr class="dvs-hr">
-            <div class="dvs-ol"><label>Observations</label><label>Solutions</label></div>
-            <div class="dvs-pair p1"><div><span class="dvs-ib ib1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="ty o1">Auctions in round 2 drag on</span></div><div><span class="ty s1">Cap every auction at 3 bids</span></div><span class="dvs-bulb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="glass" d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg></span></div>
-            <div class="dvs-pair"><div><span class="dvs-ib ib2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="ty o2">Everyone loves the tulips</span></div><div></div></div>
-            <div class="dvs-pair p3"><div><span class="dvs-ib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="dvs-upl"><i></i>Uploading…</span><span class="dvs-photo"><span class="dvs-trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></span></span></div><div><span class="ty s3">Shorter bid track</span></div></div>
-            <div class="dvs-hint">⌘ / Ctrl + Arrow — move between fields · ⌘ / Ctrl + Enter — save</div>
-            <div class="dvs-act"><span>Cancel</span><span class="add">Add Session</span></div>
-          </div>
-          <div class="dvs-pop">Added <b>Sam Rivera</b> to People · sam@rivera.games</div>
-          <div class="dvs-card">
-            <h4>Floristry</h4><small>Playtesting · 12 playtests · 2 meetings</small>
-            <div class="dvs-todos"><b><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="glass" style="fill:#ffd43b" d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>TODOs (1)</b><div><i></i>Cap every auction at 3 bids</div></div>
-            <div class="dvs-sess new"><span class="thumb"></span><b>Playtest 12</b><span>Nov 22 · Lantern Café · 14 min · 2 rounds</span><span>Maya Chen, Leo Park, Sam Rivera</span></div>
-            <div class="dvs-sess"><b>Playtest 11</b><span>Nov 15 · Game Night at Leo’s · 38 min</span><span>Ana Torres, Leo Park</span></div>
-            <div class="dvs-toast">✓ Session saved to your Sheet</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="show flip" style="--c:#a99cff">
+    <div class="show" style="--c:#a99cff">
       <div class="show-text">
         <div class="badge"><img src="images/cardboard_icon_180.png" alt="">CardBoard · Design &amp; print cards</div>
         <h3>Your cards, straight from your sheet.</h3>
@@ -758,6 +718,46 @@ footer a:hover { color:var(--navy); }
                   foreach ([16, 108, 200, 292] as $y) { echo '<span class="cut" style="top:' . ($y - .5) . 'px;left:7px;width:9px;height:1px"></span><span class="cut" style="top:' . ($y - .5) . 'px;left:222px;width:9px;height:1px"></span>'; } ?>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="show flip" style="--c:#49c4d4">
+      <div class="show-text">
+        <div class="badge"><img src="images/db_icon_180.png" alt="">DevBoard · Playtest &amp; develop</div>
+        <h3>Every playtest, remembered.</h3>
+        <p>Open a session, start the timer and count the rounds. Add who’s playing — type a new tester’s email after their name and they’re added to your People. Write each observation beside its solution, paste or add a photo of the table right into a note, and tap the light bulb to make it a TODO on the game’s card.</p>
+        <a href="<?= e($_apps . 'devboard/features') ?>">DevBoard features →</a>
+      </div>
+      <div class="win" aria-hidden="true"><div class="win-bar"><i></i><i></i><i></i><span>mygameboard.app/…/devboard</span></div>
+        <div class="win-body dvs">
+          <div class="dvs-dlg">
+            <div class="dvs-h"><b>+ Session <em>— Floristry</em></b>
+              <div class="dvs-ctl"><div class="dvs-rounds"><span class="dvs-rb">−</span><span class="dvs-rc sw2 dvs-rcs"><span class="a">1</span><span class="b">2</span></span><span class="dvs-rb plus">+</span>Rounds</div><span class="dvs-sw"><i></i><span id="dvTime">14</span></span></div></div>
+            <div class="dvs-meta">
+              <div class="dvs-fg"><label>Date</label><div class="dvs-in">11/22/2026</div></div>
+              <div class="dvs-fg"><label>Type</label><div class="dvs-in">Playtest ▾</div></div>
+              <div class="dvs-fg dvs-people"><label>People</label><div class="dvs-in">Maya Chen</div><div class="dvs-in">Leo Park</div>
+                <div class="dvs-in dvs-new"><span class="sw2"><span class="full">Sam Rivera <span class="dvs-mail">sam@rivera.games</span></span><span class="clean">Sam Rivera</span></span></div></div>
+              <div class="dvs-fg"><label>Location</label><div class="dvs-in">Lantern Café</div></div>
+              <div class="dvs-fg"><label>Session number</label><div class="dvs-in ro">12</div></div>
+            </div>
+            <hr class="dvs-hr">
+            <div class="dvs-ol"><label>Observations</label><label>Solutions</label></div>
+            <div class="dvs-pair p1"><div><span class="dvs-ib ib1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="ty o1">Auctions in round 2 drag on</span></div><div><span class="ty s1">Cap every auction at 3 bids</span></div><span class="dvs-bulb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="glass" d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg></span></div>
+            <div class="dvs-pair"><div><span class="dvs-ib ib2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="ty o2">Everyone loves the tulips</span></div><div></div></div>
+            <div class="dvs-pair p3"><div><span class="dvs-ib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="dvs-upl"><i></i>Uploading…</span><span class="dvs-photo"><span class="dvs-trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></span></span></div><div><span class="ty s3">Shorter bid track</span></div></div>
+            <div class="dvs-hint">⌘ / Ctrl + Arrow — move between fields · ⌘ / Ctrl + Enter — save</div>
+            <div class="dvs-act"><span>Cancel</span><span class="add">Add Session</span></div>
+          </div>
+          <div class="dvs-pop">Added <b>Sam Rivera</b> to People · sam@rivera.games</div>
+          <div class="dvs-card">
+            <h4>Floristry</h4><small>Playtesting · 12 playtests · 2 meetings</small>
+            <div class="dvs-todos"><b><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="glass" style="fill:#ffd43b" d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>TODOs (1)</b><div><i></i>Cap every auction at 3 bids</div></div>
+            <div class="dvs-sess new"><span class="thumb"></span><b>Playtest 12</b><span>Nov 22 · Lantern Café · 14 min · 2 rounds</span><span>Maya Chen, Leo Park, Sam Rivera</span></div>
+            <div class="dvs-sess"><b>Playtest 11</b><span>Nov 15 · Game Night at Leo’s · 38 min</span><span>Ana Torres, Leo Park</span></div>
+            <div class="dvs-toast">✓ Session saved to your Sheet</div>
           </div>
         </div>
       </div>
@@ -847,13 +847,13 @@ footer a:hover { color:var(--navy); }
     <div class="kicker">Who it’s for</div>
     <h2>Find the apps that fit your part in the game</h2>
     <p class="sub">Designer, studio, artist or publisher — start with the app you need today and add the others as your game moves along.</p>
-    <div class="matrix" id="matrix"><div class="mx-row mx-head"><div class="mx-lead">You’re one of…</div><div><img src="images/db_icon_180.png" alt=""><span>DevBoard</span></div><div><img src="images/cardboard_icon_180.png" alt=""><span>CardBoard</span></div><div><img src="images/pitchboard_icon_180.png" alt=""><span>PitchBoard</span></div><div><img src="images/bb_icon_180.png" alt=""><span>BillBoard</span></div></div><div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#fdeceb;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg></span><div><b>Game designers</b><span>Prototype, playtest and pitch your own games</span></div></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.00s"></i></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.05s"></i></div><div class="mx-dot" style="--c:#e7a35a"><i style="transition-delay:0.10s"></i></div><div class="mx-dot" style="--c:#7fcf8a"><i style="transition-delay:0.15s" class="half"></i></div></div>
-<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#e6f7f9;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3.5"/><path d="M2.5 21a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="8.5" r="2.8"/><path d="M16 14.2a5 5 0 0 1 6 4.8"/></svg></span><div><b>Co-designers &amp; playtesters</b><span>Share sessions, notes and cards with the team</span></div></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.08s"></i></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.13s" class="half"></i></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"></div></div>
-<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#eef3fb;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12h18"/></svg></span><div><b>Development studios</b><span>Develop games for clients — estimates, invoices, reports</span></div></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.16s"></i></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.21s" class="half"></i></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"></div></div>
-<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#f1effe;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L11 15.8 8.2 13z"/><path d="M8 14c-2.2 0-4 1.8-4 4 0 1.3-.7 2.3-2 3 4 1 9 0 9-4"/></svg></span><div><b>Artists &amp; graphic designers</b><span>Lay out cards and print-ready sheets</span></div></div><div class="mx-dot" style="--c:#49c4d4"></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.29s"></i></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"></div></div>
-<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#f1effe;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/><rect x="7" y="7.5" width="4" height="6" rx=".8"/><rect x="13" y="7.5" width="4" height="6" rx=".8"/></svg></span><div><b>Digital prototypers</b><span>Send decks to Tabletop Simulator and Screentop</span></div></div><div class="mx-dot" style="--c:#49c4d4"></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.37s"></i></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"></div></div>
-<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#fff3e6;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/></svg></span><div><b>Self-publishers</b><span>Make the game, then put it on sale</span></div></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.40s" class="half"></i></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.45s"></i></div><div class="mx-dot" style="--c:#e7a35a"><i style="transition-delay:0.50s" class="half"></i></div><div class="mx-dot" style="--c:#7fcf8a"><i style="transition-delay:0.55s"></i></div></div>
-<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#edf7ee;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z"/><path d="M5 13v8h14v-8M10 21v-5h4v5"/></svg></span><div><b>Publishers</b><span>A catalog and a page for every title</span></div></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.48s" class="half"></i></div><div class="mx-dot" style="--c:#7b6cf6"></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"><i style="transition-delay:0.63s"></i></div></div>
+    <div class="matrix" id="matrix"><div class="mx-row mx-head"><div class="mx-lead">You’re one of…</div><div><img src="images/cardboard_icon_180.png" alt=""><span>CardBoard</span></div><div><img src="images/db_icon_180.png" alt=""><span>DevBoard</span></div><div><img src="images/pitchboard_icon_180.png" alt=""><span>PitchBoard</span></div><div><img src="images/bb_icon_180.png" alt=""><span>BillBoard</span></div></div><div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#fdeceb;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg></span><div><b>Game designers</b><span>Prototype, playtest and pitch your own games</span></div></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.00s"></i></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.05s"></i></div><div class="mx-dot" style="--c:#e7a35a"><i style="transition-delay:0.10s"></i></div><div class="mx-dot" style="--c:#7fcf8a"><i style="transition-delay:0.15s" class="half"></i></div></div>
+<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#e6f7f9;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3.5"/><path d="M2.5 21a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="8.5" r="2.8"/><path d="M16 14.2a5 5 0 0 1 6 4.8"/></svg></span><div><b>Co-designers &amp; playtesters</b><span>Share sessions, notes and cards with the team</span></div></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.08s" class="half"></i></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.13s"></i></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"></div></div>
+<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#eef3fb;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12h18"/></svg></span><div><b>Development studios</b><span>Develop games for clients — estimates, invoices, reports</span></div></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.16s" class="half"></i></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.21s"></i></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"></div></div>
+<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#f1effe;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L11 15.8 8.2 13z"/><path d="M8 14c-2.2 0-4 1.8-4 4 0 1.3-.7 2.3-2 3 4 1 9 0 9-4"/></svg></span><div><b>Artists &amp; graphic designers</b><span>Lay out cards and print-ready sheets</span></div></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.29s"></i></div><div class="mx-dot" style="--c:#49c4d4"></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"></div></div>
+<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#f1effe;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/><rect x="7" y="7.5" width="4" height="6" rx=".8"/><rect x="13" y="7.5" width="4" height="6" rx=".8"/></svg></span><div><b>Digital prototypers</b><span>Send decks to Tabletop Simulator and Screentop</span></div></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.37s"></i></div><div class="mx-dot" style="--c:#49c4d4"></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"></div></div>
+<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#fff3e6;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/></svg></span><div><b>Self-publishers</b><span>Make the game, then put it on sale</span></div></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.40s"></i></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.45s" class="half"></i></div><div class="mx-dot" style="--c:#e7a35a"><i style="transition-delay:0.50s" class="half"></i></div><div class="mx-dot" style="--c:#7fcf8a"><i style="transition-delay:0.55s"></i></div></div>
+<div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#edf7ee;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z"/><path d="M5 13v8h14v-8M10 21v-5h4v5"/></svg></span><div><b>Publishers</b><span>A catalog and a page for every title</span></div></div><div class="mx-dot" style="--c:#7b6cf6"></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.48s" class="half"></i></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"><i style="transition-delay:0.63s"></i></div></div>
 </div>
     <div class="mx-key"><span><i></i>Made for you</span><span><i class="half"></i>Handy too</span></div>
   </div>

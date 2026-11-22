@@ -1979,6 +1979,9 @@ var _profilePhotoUrl = MY_BIO_IMAGE || '';
 var PEOPLE_NAMES  = <?= json_encode(array_values($_people_names), JSON_UNESCAPED_UNICODE) ?>;
 var PEOPLE_DATA   = <?= json_encode(array_values($_people_raw),  JSON_UNESCAPED_UNICODE) ?>;
 var CONTRACT_RAW  = <?= json_encode(array_values($_contracts_raw), JSON_UNESCAPED_UNICODE) ?>;
+// Each person's payment details from their bio (Bios tab "Payment"), by email — shown on payments to them
+var BIO_PAYMENT   = <?= json_encode((object) array_filter(array_reduce($_bios, function ($m, $b) {
+  $e = strtolower(ltrim(trim((string) ($b['Email'] ?? '')), "'")); if ($e !== '') $m[$e] = ltrim(trim((string) ($b['Payment'] ?? '')), "'"); return $m; }, [])), JSON_UNESCAPED_UNICODE) ?>;
 var TODOS_RAW     = <?= json_encode(array_values($_todos_raw), JSON_UNESCAPED_UNICODE) ?>;
 var ESTIMATES_RAW = <?= json_encode(array_values($_estimates_raw), JSON_UNESCAPED_UNICODE) ?>;
 
@@ -2715,14 +2718,12 @@ function _paymentItemHtml(pay) {
     '<div class="estimate-item-field"><dt>Amount</dt><dd>' + esc(amt) + '</dd></div>' +
     '<div class="estimate-item-field"><dt>Date</dt><dd>' + esc(when || '—') + '</dd></div>' +
     (pay['Ref Number'] ? '<div class="estimate-item-field"><dt>Ref #</dt><dd>' + esc(pay['Ref Number']) + '</dd></div>' : '') +
+    (_payeePayment(pay.Payee) ? '<div class="estimate-item-field"><dt>Paid via</dt><dd>' + esc(_payeePayment(pay.Payee)) + '</dd></div>' : '') +
     '</dl>' + (pay.Notes ? '<div class="contract-detail-notes" style="margin:.4rem 0 0">' + esc(pay.Notes) + '</div>' : '') + '</div>';
   h += '<div class="estimate-item-actions">' +
     '<div id="cdel-row-' + idx + '" style="display:flex;gap:.5rem;align-items:center">' +
-      (pay.Files
-        ? '<button type="button" class="btn-contract-action" onclick="event.stopPropagation();_paySlipShare(' + idx + ')">✉ Share</button>' +
-          '<button type="button" class="btn-contract-action payment" onclick="event.stopPropagation();window.open(' + esc(JSON.stringify(pay.Files)) + ',\'_blank\')">Payment Slip</button>' +
-          '<button type="button" class="btn-contract-action" id="pay-slip-btn-' + idx + '" title="Make the slip again (e.g. after editing a bio)" onclick="event.stopPropagation();_payMakeSlip(' + idx + ')">↻</button>'
-        : '<button type="button" class="btn-contract-action payment" id="pay-slip-btn-' + idx + '" onclick="event.stopPropagation();_payMakeSlip(' + idx + ')">Make Payment Slip</button>') +
+      '<button type="button" class="btn-contract-action" id="pay-share-btn-' + idx + '" onclick="event.stopPropagation();_paySlipShare(' + idx + ')">✉ Share</button>' +
+      '<button type="button" class="btn-contract-action payment" id="pay-slip-btn-' + idx + '" onclick="event.stopPropagation();_payOpenSlip(' + idx + ')">Payment Slip</button>' +
       '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_conStartDelete(' + idx + ')">🗑 Delete Payment</button></div>' +
     '<div id="cdel-confirm-' + idx + '" style="display:none;align-items:center;justify-content:flex-end;gap:.5rem">' +
       '<button type="button" class="est-nocancel-btn" onclick="event.stopPropagation();_conCancelDelete(' + idx + ')">Don\'t Delete</button>' +
@@ -2744,16 +2745,11 @@ function _payeeEmail(name) {
   }
   return /@/.test(n) ? n : '';
 }
-function _paySlipShare(idx) {
-  var pay = CONTRACT_RAW[idx]; if (!pay || !pay.Files) return;
-  var n = parseFloat(pay.Quote || ''), amt = isNaN(n) ? '' : '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  var subject = 'Payment ' + (pay['Ref Number'] || '') + (pay.Game ? ' — ' + pay.Game : '');
-  var body = 'Hi ' + String(pay.Payee || '').split(' ')[0] + ',\n\nI sent you ' + amt + (pay.Game ? ' for ' + pay.Game : '') + '. Here is the payment slip:\n' + pay.Files + '\n\nThanks!\n' + (MY_NAME || '');
-  window.open('mailto:' + encodeURIComponent(_payeeEmail(pay.Payee)) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body), '_self');
-}
-function _payMakeSlip(idx) {
+function _payeePayment(name) { var e = _payeeEmail(name).toLowerCase(); return (e && BIO_PAYMENT && BIO_PAYMENT[e]) || ''; }
+// Make the slip on the server (always fresh: today's bio and settings), then hand its link to done(url)
+function _payMakeSlip(idx, btn, done, fail) {
   var pay = CONTRACT_RAW[idx]; if (!pay) return;
-  var btn = document.getElementById('pay-slip-btn-' + idx), label = btn ? btn.textContent : '';
+  var label = btn ? btn.textContent : '';
   if (btn) { btn.disabled = true; btn.textContent = 'Making…'; }
   var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('ref', pay['Ref Number'] || pay.ID || ''); _payAppendMe(fd);
   fetch(APP_BASE + 'push/createPaymentSlip.php', { method: 'POST', body: fd })
@@ -2761,13 +2757,29 @@ function _payMakeSlip(idx) {
     .then(function(j) {
       if (!j || !j.ok) throw new Error((j && j.error) || 'Could not make the slip');
       pay.Files = j.url;
-      var st = _saveOpenState(); renderPublishersView(); _restoreOpenState(st);
-      var el = document.getElementById('ci-' + idx); if (el) el.classList.add('open');
-      window.open(j.url, '_blank');
+      if (btn) { btn.disabled = false; btn.textContent = label; }
+      done(j.url);
     })
-    .catch(function(e) { if (btn) { btn.disabled = false; btn.textContent = label; } alert(e.message); });
+    .catch(function(e) { if (btn) { btn.disabled = false; btn.textContent = label; } if (fail) fail(); alert(e.message); });
 }
-
+// Payment Slip: a tab opens straight away (so it isn't blocked), and shows the slip once it's made
+function _payOpenSlip(idx) {
+  var win = window.open('', '_blank');
+  if (win) win.document.write('<p style="font:16px -apple-system,Arial,sans-serif;color:#666;padding:2rem">Making the payment slip…</p>');
+  _payMakeSlip(idx, document.getElementById('pay-slip-btn-' + idx),
+    function(url) { if (win) win.location.href = url; else window.open(url, '_blank'); },
+    function() { if (win) win.close(); });
+}
+function _paySlipShare(idx) {
+  var pay = CONTRACT_RAW[idx]; if (!pay) return;
+  var send = function(url) {
+    var n = parseFloat(pay.Quote || ''), amt = isNaN(n) ? '' : '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var subject = 'Payment ' + (pay['Ref Number'] || '') + (pay.Game ? ' — ' + pay.Game : '');
+    var body = 'Hi ' + String(pay.Payee || '').split(' ')[0] + ',\n\nI sent you ' + amt + (pay.Game ? ' for ' + pay.Game : '') + '. Here is the payment slip:\n' + url + '\n\nThanks!\n' + (MY_NAME || '');
+    window.location.href = 'mailto:' + encodeURIComponent(_payeeEmail(pay.Payee)) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  };
+  if (pay.Files) send(pay.Files); else _payMakeSlip(idx, document.getElementById('pay-share-btn-' + idx), send);
+}
 var _payCtx = null, _payInitial = {};
 function _payValues() {
   return { person: document.getElementById('payPersonInput').value.trim(), amount: document.getElementById('payAmount').value.trim(),

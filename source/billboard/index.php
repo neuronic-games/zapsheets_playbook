@@ -497,8 +497,9 @@ body.bb-admin-mode .bb-add-game-card { display:flex; }
 .bb-plan-current b { color:#333; } .bb-plan-current span { color:#888; }
 .bb-plan-current.paid { background:#edf7ed; } .bb-plan-current.paid b { color:#2e7d32; }
 </style>
+<link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=1" />
 </head>
-<body>
+<body<?= isset($_bbPublicBase) ? '' : ' class="gb-app gb-bill"' ?>>
 
 <!-- ── Sticky top wrapper ── -->
 <div class="bb-top-wrap">
@@ -3405,8 +3406,9 @@ body.bb-admin-mode .bb-hero.bb-drag-over .bb-cover-btn { display: flex; }
 .bb-social-set:hover { border-color:rgba(255,255,255,.6); background:rgba(255,255,255,.08); }
 .bb-social-empty { display:none; }
 </style>
+<link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=1" />
 </head>
-<body>
+<body<?= isset($_bbPublicBase) ? '' : ' class="gb-app gb-bill"' ?>>
 
 <!-- ── Nav ── -->
 <nav class="bb-nav">

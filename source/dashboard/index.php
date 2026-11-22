@@ -1699,8 +1699,9 @@ if ($_sheet_id && is_dir($_sheets_root)) {
     .pb-plan-go { background:#f5a623; color:#fff; border:none; }
     .pb-plan-go:disabled { opacity:.6; cursor:default; }
 </style>
+<link rel="stylesheet" href="css/gameboard-ui.css?v=1" />
 </head>
-<body>
+<body class="gb-app gb-page gb-pitch">
 
 <!-- Top bar -->
 <div class="top-bar">

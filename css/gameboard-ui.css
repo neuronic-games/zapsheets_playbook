@@ -1,0 +1,113 @@
+/*
+ * GameBoard UI — the shared look of the board game apps: PitchBoard, DevBoard, CardBoard, BillBoard.
+ *
+ * Each app loads this last and tags its <body>:
+ *   class="gb-app gb-page gb-pitch"   PitchBoard   (gb-page: the app's own page background)
+ *   class="gb-app gb-page gb-dev"     DevBoard
+ *   class="gb-app gb-page gb-card"    CardBoard
+ *   class="gb-app gb-bill"            BillBoard — only while editing, and only its tools (top menu,
+ *                                     dialogs, toasts): a published catalog keeps its own brand colors.
+ *
+ * Fonts: DIN everywhere — DIN Black for titles, labels and buttons, DIN Medium for text.
+ * Colors: one set of neutrals, one dark top bar, the same buttons, fields, dialogs and toasts;
+ * each app keeps one accent from its icon (--gb-accent) for primary buttons, focus and highlights.
+ * Shapes only change here (colors, borders, corners, type) — sizes and layout stay each app's own.
+ */
+.gb-app {
+  --gb-nav:#1a1a2e;  --gb-nav-2:#24243d;
+  --gb-bg:#f2f3f7;   --gb-surface:#fff;
+  --gb-line:#d6dbe5; --gb-line-2:#e7eaf0;
+  --gb-ink:#1b1d2b;  --gb-mid:#4a5068; --gb-muted:#8a90a6;
+  --gb-danger:#c0392b; --gb-ok:#2e9d4c;
+  --gb-r:8px; --gb-r-lg:14px;
+  --gb-shadow:0 18px 50px rgba(20,19,42,.28);
+  --gb-black:'DINBlack',Arial,sans-serif; --gb-text:'DINRegular',Arial,sans-serif;
+  accent-color:var(--gb-accent);
+}
+.gb-dev   { --gb-accent:#1a7f93; --gb-accent-dk:#146878; --gb-accent-lt:#dff3f6; }   /* DevBoard teal   */
+.gb-card  { --gb-accent:#5b4fd6; --gb-accent-dk:#4b3fa8; --gb-accent-lt:#ece9ff; }   /* CardBoard violet */
+.gb-pitch { --gb-accent:#d9574a; --gb-accent-dk:#bc4437; --gb-accent-lt:#fdeceb; }   /* PitchBoard coral */
+.gb-bill  { --gb-accent:#2e8b57; --gb-accent-dk:#246f45; --gb-accent-lt:#e3f3ea; }   /* BillBoard green  */
+
+/* ── Page ─────────────────────────────────────────────────────────────────── */
+body.gb-page { background:var(--gb-bg); font-family:var(--gb-text); color:var(--gb-ink); }
+
+/* ── Top bar: the same dark bar everywhere, with the app's accent along the bottom ── */
+.gb-app .top-bar { background:var(--gb-nav); color:#fff; box-shadow:inset 0 -3px 0 var(--gb-accent); }
+.gb-app .top-bar h1 { font-family:var(--gb-black); font-size:1rem; letter-spacing:.03em; }
+.gb-app .top-bar .sub { font-size:.73rem; opacity:.6; }
+.gb-app .top-btn { background:rgba(255,255,255,.14); color:#fff; }
+.gb-app .top-btn:hover { background:rgba(255,255,255,.24); }
+.gb-app .top-tab-btns { background:rgba(255,255,255,.12); border-radius:var(--gb-r); padding:3px; }
+.gb-app .top-tab { font-family:var(--gb-black); font-size:.62rem; text-transform:uppercase; letter-spacing:.07em; border-radius:6px; color:rgba(255,255,255,.62); }
+.gb-app .top-tab.active { background:#fff; color:var(--gb-nav); }
+.gb-app .top-tab:not(.active):hover { color:#fff; }
+
+/* ── Account menu (one style in every app) ── */
+.gb-app .account-menu, .gb-app .user-menu { background:var(--gb-nav); border:1px solid rgba(255,255,255,.18); border-radius:var(--gb-r); box-shadow:0 8px 24px rgba(0,0,0,.4); }
+.gb-app .account-menu-item, .gb-app .user-menu-item { font-family:var(--gb-black); font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; color:rgba(255,255,255,.85); }
+.gb-app .account-menu-item:hover, .gb-app .user-menu-item:hover { background:rgba(255,255,255,.1); color:#fff; }
+
+/* ── Dialogs: the backdrop, the box, the title ── */
+.gb-app .overlay, .gb-bill .bb-overlay, .gb-bill .bbed-overlay { background:rgba(20,19,42,.55); -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px); }
+.gb-app .overlay > div, .gb-bill .bb-dialog, .gb-bill .bbed-dialog { border-radius:var(--gb-r-lg); box-shadow:var(--gb-shadow); }
+.gb-app .overlay h2, .gb-card .dlg-title, .gb-bill .bb-dialog-title, .gb-bill .bbed-title {
+  font-family:var(--gb-black); font-size:1.05rem; letter-spacing:.02em; text-transform:none; color:var(--gb-ink); }
+
+/* ── Labels above fields ── */
+.gb-app .field-group label, .gb-app .ge-label, .gb-card .lbl, .gb-bill .bb-dialog label, .gb-bill .bbed-dialog label {
+  font-family:var(--gb-black); text-transform:uppercase; letter-spacing:.07em; color:var(--gb-muted); }
+
+/* ── Fields ── */
+.gb-pitch .auth-field-input, .gb-pitch .notes-field-input, .gb-pitch .ge-input, .gb-pitch .auth-ge-textarea,
+.gb-dev .field-input, .gb-dev .ge-input, .gb-dev .combo-input,
+.gb-card .inp, .gb-card .sel, .gb-card .ta,
+.gb-bill .bb-dialog input:not([type=checkbox]):not([type=radio]):not([type=color]), .gb-bill .bb-dialog select, .gb-bill .bb-dialog textarea,
+.gb-bill .bbed-dialog input:not([type=checkbox]):not([type=radio]):not([type=color]), .gb-bill .bbed-dialog select, .gb-bill .bbed-dialog textarea {
+  border:1.5px solid var(--gb-line); border-radius:var(--gb-r); background-color:var(--gb-surface); color:var(--gb-ink); font-family:var(--gb-text); }
+.gb-pitch .auth-field-input:focus, .gb-pitch .notes-field-input:focus, .gb-pitch .ge-input:focus, .gb-pitch .auth-ge-textarea:focus,
+.gb-dev .field-input:focus, .gb-dev .ge-input:focus, .gb-dev .combo-input:focus,
+.gb-card .inp:focus, .gb-card .sel:focus, .gb-card .ta:focus,
+.gb-bill .bb-dialog input:focus, .gb-bill .bb-dialog select:focus, .gb-bill .bb-dialog textarea:focus,
+.gb-bill .bbed-dialog input:focus, .gb-bill .bbed-dialog select:focus, .gb-bill .bbed-dialog textarea:focus {
+  outline:none; border-color:var(--gb-accent); box-shadow:0 0 0 3px var(--gb-accent-lt); background-color:var(--gb-surface); }
+
+/* ── Buttons: primary (the app's accent), secondary, danger ── */
+.gb-pitch .auth-btn-primary, .gb-pitch .add-submit-btn, .gb-pitch .ge-save-btn, .gb-pitch .notes-update-btn, .gb-pitch .sync-update-btn, .gb-pitch .sync-done-btn, .gb-pitch .shelf-confirm-btn,
+.gb-dev .btn-primary, .gb-dev .subtitle-btn-primary, .gb-dev .est-confirm-btn,
+.gb-card .print-go:not(.ghost),
+.gb-bill .bb-dialog .btn-primary, .gb-bill .bbed-dialog .btn-primary {
+  background:var(--gb-accent); color:#fff; border:none; border-radius:var(--gb-r);
+  font-family:var(--gb-black); text-transform:uppercase; letter-spacing:.07em; }
+.gb-pitch .auth-btn-primary:hover:not(:disabled), .gb-pitch .add-submit-btn:hover:not(:disabled), .gb-pitch .ge-save-btn:hover:not(:disabled), .gb-pitch .notes-update-btn:hover:not(:disabled), .gb-pitch .sync-update-btn:hover:not(:disabled), .gb-pitch .sync-done-btn:hover:not(:disabled), .gb-pitch .shelf-confirm-btn:hover:not(:disabled),
+.gb-dev .btn-primary:hover:not(:disabled), .gb-dev .subtitle-btn-primary:hover:not(:disabled), .gb-dev .est-confirm-btn:hover:not(:disabled),
+.gb-card .print-go:not(.ghost):hover:not(:disabled),
+.gb-bill .bb-dialog .btn-primary:hover:not(:disabled), .gb-bill .bbed-dialog .btn-primary:hover:not(:disabled) {
+  background:var(--gb-accent-dk); opacity:1; }
+
+.gb-pitch .auth-btn-cancel, .gb-pitch .add-cancel-btn, .gb-pitch .ge-cancel-btn,
+.gb-dev .btn-cancel, .gb-dev .est-nocancel-btn,
+.gb-card .print-go.ghost, .gb-card .attr-btn,
+.gb-bill .bb-dialog .btn-cancel, .gb-bill .bbed-dialog .btn-cancel {
+  background:var(--gb-surface); color:var(--gb-mid); border:1.5px solid var(--gb-line); border-radius:var(--gb-r); }
+.gb-pitch .auth-btn-cancel, .gb-pitch .add-cancel-btn, .gb-pitch .ge-cancel-btn,
+.gb-dev .btn-cancel, .gb-dev .est-nocancel-btn, .gb-card .print-go.ghost,
+.gb-bill .bb-dialog .btn-cancel, .gb-bill .bbed-dialog .btn-cancel {
+  font-family:var(--gb-black); text-transform:uppercase; letter-spacing:.07em; }
+.gb-pitch .auth-btn-cancel:hover, .gb-pitch .add-cancel-btn:hover, .gb-pitch .ge-cancel-btn:hover,
+.gb-dev .btn-cancel:hover, .gb-dev .est-nocancel-btn:hover,
+.gb-card .print-go.ghost:hover, .gb-card .attr-btn:hover,
+.gb-bill .bb-dialog .btn-cancel:hover, .gb-bill .bbed-dialog .btn-cancel:hover {
+  border-color:var(--gb-accent); color:var(--gb-accent-dk); background:var(--gb-surface); }
+
+.gb-pitch .ge-delete-btn, .gb-pitch .notes-delete-btn, .gb-dev .btn-delete, .gb-dev .estimate-del-btn, .gb-card .attr-btn.danger {
+  color:var(--gb-danger); border-color:rgba(192,57,43,.35); }
+
+/* ── Toasts: dark for done, red for problems ── */
+.gb-dev .save-toast { background:var(--gb-danger); border-radius:var(--gb-r); }
+.gb-dev .save-toast.success, .gb-card .toast { background:var(--gb-nav); color:#fff; border-radius:var(--gb-r); box-shadow:0 8px 24px rgba(20,19,42,.3); }
+.gb-card .toast.err { background:var(--gb-danger); }
+.gb-bill .bb-save-toast { background:var(--gb-nav); border-color:transparent; color:#fff; border-radius:var(--gb-r); }
+
+/* ── Links and small highlights in the app's accent ── */
+.gb-app .lk-act, .gb-app .link-btn:hover { color:var(--gb-accent-dk); }

@@ -912,7 +912,7 @@ footer a:hover { color:var(--navy); }
   </div>
 </section>
 
-<footer>© <?= date('Y') ?> ZapSheets ·
+<footer>Powered by <a href="https://zapsheets.com" style="margin:0">ZapSheets</a> ·
   <?php foreach ($APPS as $a): ?><a href="<?= e($_apps . $a[6] . '/features') ?>"><?= e($a[1]) ?></a><?php endforeach; ?>
 </footer>
 

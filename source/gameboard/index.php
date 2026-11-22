@@ -30,7 +30,7 @@ $APPS = [
   ['card', 'CardBoard',  'cardboard_icon_180.png', 'Design & print cards', 'Your cards, straight from your sheet.', '#7b6cf6', 'cardboard',
         ['Drag-and-drop card designer, fronts and backs', 'Print-and-play sheets, ready to cut', 'Tabletop Simulator and Screentop export'],
         ['$4.99', 'after a free week']],
-  ['pitch','PitchBoard', 'pb_icon_180.png',        'Pitch to publishers', 'From first sketch to signed deal — tracked.', '#e7a35a', 'pitchboard',
+  ['pitch','PitchBoard', 'pitchboard_icon_180.png',        'Pitch to publishers', 'From first sketch to signed deal — tracked.', '#e7a35a', 'pitchboard',
         ['A pitch log for every game, and a board view', 'Sell sheet generator', 'Game pages and links for collaborators'],
         ['$1.99', 'every feature']],
   ['bill', 'BillBoard',  'bb_icon_180.png',        'Show & sell', 'Your games. A polished page — instantly.', '#9ed29f', 'billboard',
@@ -621,13 +621,13 @@ footer a:hover { color:var(--navy); }
 </nav>
 
 <header class="hero">
-  <div class="floaters" aria-hidden="true"><img src="images/db_icon_180.png" alt=""><img src="images/cardboard_icon_180.png" alt=""><img src="images/pb_icon_180.png" alt=""><img src="images/bb_icon_180.png" alt=""></div>
+  <div class="floaters" aria-hidden="true"><img src="images/db_icon_180.png" alt=""><img src="images/cardboard_icon_180.png" alt=""><img src="images/pitchboard_icon_180.png" alt=""><img src="images/bb_icon_180.png" alt=""></div>
   <span class="tag">For board game makers</span>
   <h1>Tools for every step of <em>your game</em>.</h1>
-  <p>Built for game designers, from the first prototype to the store shelf.</p>
+  <p>Built for game makers, from the first prototype to the store shelf.</p>
   <div class="path" aria-label="Design, playtest, pitch, sell">
     <span class="path-line"></span>
-    <?php foreach ([['cardboard_icon_180.png','CardBoard','Design &amp; print cards','#a99cff'],['db_icon_180.png','DevBoard','Playtest &amp; develop','#49c4d4'],['pb_icon_180.png','PitchBoard','Pitch to publishers','#f0766a'],['bb_icon_180.png','BillBoard','Show &amp; sell your games','#9ed29f']] as $k => $sp): ?>
+    <?php foreach ([['cardboard_icon_180.png','CardBoard','Design &amp; print cards','#a99cff'],['db_icon_180.png','DevBoard','Playtest &amp; develop','#49c4d4'],['pitchboard_icon_180.png','PitchBoard','Pitch to publishers','#f0766a'],['bb_icon_180.png','BillBoard','Show &amp; sell your games','#9ed29f']] as $k => $sp): ?>
     <span class="space" style="--c:<?= $sp[3] ?>;--d:<?= $k * 1.5 ?>s"><img src="images/<?= $sp[0] ?>" alt="<?= $sp[1] ?>"><span class="sp-lab"><b><?= $sp[1] ?></b><small><?= $sp[2] ?></small></span></span>
     <?php endforeach; ?>
   </div>
@@ -765,7 +765,7 @@ footer a:hover { color:var(--navy); }
 
     <div class="show" style="--c:#f7b267">
       <div class="show-text">
-        <div class="badge"><img src="images/pb_icon_180.png" alt="">PitchBoard · Pitch to publishers</div>
+        <div class="badge"><img src="images/pitchboard_icon_180.png" alt="">PitchBoard · Pitch to publishers</div>
         <h3>From first sketch to signed deal — tracked.</h3>
         <p>Every game sits on a board by stage — Design, Pitch, Signed, Published — with how many publishers you’ve pitched it to. Drag a game to its next stage and its dates fill in, saved to your Sheet.</p>
         <a href="<?= e($_apps . 'pitchboard/features') ?>">PitchBoard features →</a>
@@ -847,7 +847,7 @@ footer a:hover { color:var(--navy); }
     <div class="kicker">Who it’s for</div>
     <h2>Find the apps that fit your part in the game</h2>
     <p class="sub">Designer, studio, artist or publisher — start with the app you need today and add the others as your game moves along.</p>
-    <div class="matrix" id="matrix"><div class="mx-row mx-head"><div class="mx-lead">You’re one of…</div><div><img src="images/db_icon_180.png" alt=""><span>DevBoard</span></div><div><img src="images/cardboard_icon_180.png" alt=""><span>CardBoard</span></div><div><img src="images/pb_icon_180.png" alt=""><span>PitchBoard</span></div><div><img src="images/bb_icon_180.png" alt=""><span>BillBoard</span></div></div><div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#fdeceb;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg></span><div><b>Game designers</b><span>Prototype, playtest and pitch your own games</span></div></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.00s"></i></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.05s"></i></div><div class="mx-dot" style="--c:#e7a35a"><i style="transition-delay:0.10s"></i></div><div class="mx-dot" style="--c:#7fcf8a"><i style="transition-delay:0.15s" class="half"></i></div></div>
+    <div class="matrix" id="matrix"><div class="mx-row mx-head"><div class="mx-lead">You’re one of…</div><div><img src="images/db_icon_180.png" alt=""><span>DevBoard</span></div><div><img src="images/cardboard_icon_180.png" alt=""><span>CardBoard</span></div><div><img src="images/pitchboard_icon_180.png" alt=""><span>PitchBoard</span></div><div><img src="images/bb_icon_180.png" alt=""><span>BillBoard</span></div></div><div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#fdeceb;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg></span><div><b>Game designers</b><span>Prototype, playtest and pitch your own games</span></div></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.00s"></i></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.05s"></i></div><div class="mx-dot" style="--c:#e7a35a"><i style="transition-delay:0.10s"></i></div><div class="mx-dot" style="--c:#7fcf8a"><i style="transition-delay:0.15s" class="half"></i></div></div>
 <div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#e6f7f9;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3.5"/><path d="M2.5 21a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="8.5" r="2.8"/><path d="M16 14.2a5 5 0 0 1 6 4.8"/></svg></span><div><b>Co-designers &amp; playtesters</b><span>Share sessions, notes and cards with the team</span></div></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.08s"></i></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.13s" class="half"></i></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"></div></div>
 <div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#eef3fb;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12h18"/></svg></span><div><b>Development studios</b><span>Develop games for clients — estimates, invoices, reports</span></div></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.16s"></i></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.21s" class="half"></i></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"></div></div>
 <div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#f1effe;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L11 15.8 8.2 13z"/><path d="M8 14c-2.2 0-4 1.8-4 4 0 1.3-.7 2.3-2 3 4 1 9 0 9-4"/></svg></span><div><b>Artists &amp; graphic designers</b><span>Lay out cards and print-ready sheets</span></div></div><div class="mx-dot" style="--c:#49c4d4"></div><div class="mx-dot" style="--c:#7b6cf6"><i style="transition-delay:0.29s"></i></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"></div></div>

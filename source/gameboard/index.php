@@ -879,7 +879,6 @@ footer a:hover { color:var(--navy); }
         <li>One email and password for the board game apps.</li>
         <li>Your first week is free, with every feature — no card needed.</li>
         <li>Your sheets stay yours: the sheets you set up, you edit; people you share them with can view them.</li>
-        <li>CardBoard signs in with it today; PitchBoard, DevBoard and BillBoard are moving to it next.</li>
       </ul>
     </div>
     <div class="card" id="acctCard">

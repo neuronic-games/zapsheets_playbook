@@ -2139,10 +2139,7 @@ function multiAttrs() {
       '<label class="arr-gap" title="Space between the members of the list (pt)"><span>Gap</span><input class="inp" type="number" step=".5" min="0" id="g_gap" value="' + r1(g.gap == null ? 4 : g.gap) + '"' + (mode ? '' : ' disabled') + ' onchange="setGroupGap(\'' + gid + '\',this.value)"></label></div></div>';
     if (mode) h += '<p class="muted" style="margin:.35rem 0 0">In the Layers order, top first — drag there to reorder. Empty text and pictures take no room.</p>';
   }
-  h += '<div class="attr-btns">' + (g ? '<button class="attr-btn" onclick="ungroupSel()">Ungroup</button>' : '<button class="attr-btn" onclick="groupSel()">Group</button>') + '</div>';
-  h += '<div class="attr-btns"><button class="attr-btn" onclick="reorderSel(1)">To front</button><button class="attr-btn" onclick="reorderSel(-1)">To back</button></div>';
-  h += '<div class="attr-btns"><button class="attr-btn" onclick="copySel()" title="⌘C — paste into any layout with ⌘V">Copy</button><button class="attr-btn" onclick="cutSel()" title="⌘X">Cut</button></div>';
-  h += '<div class="attr-btns"><button class="attr-btn" onclick="duplicateSel()">Duplicate</button><button class="attr-btn danger" onclick="deleteSel()">Delete</button></div>';
+  h += actionsHTML(g ? 'ungroup' : 'group');
   h += '<span class="lbl">Shortcuts</span><p class="muted" style="margin:0">⌘G group · ⇧⌘G ungroup · ⌘A select all · Shift or ⌘-click to add to the selection</p>';
   return h;
 }
@@ -2341,14 +2338,27 @@ function boxAttrs(e, title) {
 function fitAttrs(e) {
   return '<div style="margin-top:.45rem"><span class="mini">Fit</span>' + seg('fit', [['cover', 'Fill', 'Fill the box (crops)'], ['contain', 'Fit', 'Show the whole image'], ['stretch', 'Stretch', 'Stretch to the box']], e.fit || 'cover') + '</div>';
 }
+// The Actions section: the same buttons in the same places, with Paste among them (greyed until
+// something's been copied). extra: 'group' / 'ungroup' for a selection of several, 'paste' alone for the card
+function actionsHTML(extra) {
+  var clip = readClip(), n = clip ? clip.els.length : 0;
+  var b = function(on, label, title, cls, off) { return '<button class="attr-btn' + (cls ? ' ' + cls : '') + '" onclick="' + on + '"' + (title ? ' title="' + title + '"' : '') + (off ? ' disabled' : '') + '>' + label + '</button>'; };
+  var h = '<span class="lbl">Actions</span><div class="act-grid">';
+  if (extra === 'paste') return h + b('pasteClip()', 'Paste ' + n + (n === 1 ? ' element' : ' elements'), '⌘V', 'wide') + '</div>';
+  if (extra === 'group') h += b('groupSel()', 'Group', '⌘G', 'wide');
+  if (extra === 'ungroup') h += b('ungroupSel()', 'Ungroup', '⇧⌘G', 'wide');
+  h += b('reorderSel(1)', 'To front') + b('reorderSel(-1)', 'To back') +
+       b('copySel()', 'Copy', '⌘C — paste into any layout with ⌘V') + b('cutSel()', 'Cut', '⌘X') +
+       b('pasteClip()', n > 1 ? 'Paste ' + n : 'Paste', n ? '⌘V' : 'Copy or cut something first', '', !n) + b('duplicateSel()', 'Duplicate', '⌘D') +
+       b('deleteSel()', 'Delete', 'Delete or Backspace', 'danger wide');
+  return h + '</div>';
+}
 function renderAttrs() {
   var p = $('attrPanel'); renderLayers(); if (!layout) { p.innerHTML = ''; return; }
   if (multi.length) { p.innerHTML = multiAttrs(); return; }
   var e = elById(selId), h = '';
   if (!e) {
     var c = layout.card;
-    var clip = readClip();
-    if (clip && hasAccess()) h += '<div class="attr-btns" style="margin-top:0;padding-right:2.6rem"><button class="attr-btn" onclick="pasteClip()" title="⌘V">Paste ' + clip.els.length + ' element' + (clip.els.length === 1 ? '' : 's') + '</button></div>';
     h += '<p class="attr-title">' + (side === 'back' ? 'Card back' : 'Card') + '</p><p class="muted" style="margin:0 0 .4rem">Select something on the card to change it. ' +
          (side === 'back' ? 'Flip the card (top left) to work on the front.' : 'Flip the card (top left) to design its back.') + '</p>';
     if (side === 'back') h += '<span class="lbl">Back</span>' + colorRow('Background', 'bg', layout.back.bg, false, 'setBackProp') +
@@ -2362,6 +2372,7 @@ function renderAttrs() {
     h += '<div class="row2" style="margin-top:.45rem">' + numInp('c_r', 'Corner radius (pt)', c.radius, 'setCard', 'radius') + numInp('c_bw', 'Border (pt)', c.borderW, 'setCard', 'borderW', .5) + '</div>';
     h += '<div style="margin-top:.45rem">' + colorRow('Border color', 'borderColor', c.borderColor, false, 'setCard') + '</div>';
     h += '<span class="lbl">Shortcuts</span><p class="muted" style="margin:0">Arrows nudge 1 pt (Shift: 10) · Alt while dragging: fine moves · Shift+corner: keep a shape\'s proportions · ⌘D duplicate · Delete removes · ⌘Z undo · ⌘S save</p>';
+    if (hasAccess() && readClip()) h += actionsHTML('paste');
     p.innerHTML = h; return;
   }
   var title = e.kind === 'data' ? e.field : e.kind === 'shape' ? (SHAPES.filter(function(s) { return s[0] === e.shape; })[0] || ['', 'Shape'])[1]
@@ -2440,9 +2451,7 @@ function renderAttrs() {
   h += '<span class="lbl">Position (pt)</span><div class="row4">' + numInp('a_x', 'X', e.x, 'setProp', 'x', .5) + numInp('a_y', 'Y', e.y, 'setProp', 'y', .5) + numInp('a_w', 'W', e.w, 'setProp', 'w', .5) + numInp('a_h', 'H', e.h, 'setProp', 'h', .5) + '</div>';
   h += '<div class="row2" style="margin-top:.45rem">' + numInp('a_rot', 'Rotate (°)', e.rot || 0, 'setProp', 'rot', 1) +
        '<div><span class="mini">Opacity</span><input class="inp" type="number" min="0" max="100" step="5" value="' + Math.round((e.opacity == null ? 1 : e.opacity) * 100) + '" onchange="setProp(\'opacity\',clamp(this.value/100,0,1),true)"></div></div>';
-  h += '<div class="attr-btns"><button class="attr-btn" onclick="reorderSel(1)">To front</button><button class="attr-btn" onclick="reorderSel(-1)">To back</button></div>';
-  h += '<div class="attr-btns"><button class="attr-btn" onclick="copySel()" title="⌘C — paste into any layout with ⌘V">Copy</button><button class="attr-btn" onclick="cutSel()" title="⌘X">Cut</button></div>';
-  h += '<div class="attr-btns"><button class="attr-btn" onclick="duplicateSel()">Duplicate</button><button class="attr-btn danger" onclick="deleteSel()">Delete</button></div>';
+  h += actionsHTML();
   p.innerHTML = h;
   var slot = $('imgSlot');
   if (slot) {

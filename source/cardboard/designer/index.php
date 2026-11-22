@@ -458,6 +458,9 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .cp-more { display:flex; align-items:center; gap:.45rem; font-size:.78rem; color:#4b3fa8; cursor:pointer; }
 .cp-more input { width:1.9rem; height:1.6rem; border:1.5px solid #d6d9e6; border-radius:6px; padding:1px; background:#fff; cursor:pointer; }
 .attr-btns { display:flex; gap:.4rem; margin-top:1.1rem; flex-wrap:wrap; }
+.act-grid { display:grid; grid-template-columns:1fr 1fr; gap:.4rem; }
+.act-grid .wide { grid-column:1 / -1; }
+.attr-btn:disabled { opacity:.45; cursor:default; }
 .attr-btn { flex:1; height:2rem; border:1.5px solid #d6d9e6; border-radius:7px; background:#fff; color:#3b3f5c; font-size:.75rem; cursor:pointer; white-space:nowrap; }
 .attr-btn:hover { border-color:#a99cff; }
 .attr-btn.danger { color:#c0392b; border-color:#f0c7c2; }

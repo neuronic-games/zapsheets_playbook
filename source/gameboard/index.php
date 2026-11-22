@@ -608,12 +608,6 @@ footer a:hover { color:var(--navy); }
     <button type="button" class="btn primary" id="heroCta" onclick="acctClick('signup')">Start your free week</button>
     <a class="btn ghost" href="#pricing">Pricing</a>
   </div>
-  <div class="journey" aria-label="From playtest to shelf">
-    <?php foreach ($APPS as $i => $a): ?>
-      <?php if ($i): ?><span class="arrow">→</span><?php endif; ?>
-      <a class="step" href="#<?= e($a[0]) ?>"><img src="images/<?= e($a[2]) ?>" alt=""><?= e($a[3]) ?></a>
-    <?php endforeach; ?>
-  </div>
 </header>
 
 <section class="action" id="action">

@@ -215,9 +215,9 @@ footer a:hover { color:var(--navy); }
 
 /* DevBoard: the "+ Session" dialog — rounds and timer, who's playing (a new tester's email goes to
    People), observations beside solutions, the light bulb making a TODO — then the saved session */
-.dvs { height:340px; background:#e9eef3; position:relative; font-size:11px; color:#1e2b38; }
+.dvs { height:410px; background:#e9eef3; position:relative; font-size:11px; color:#1e2b38; }
 .dvs-dlg { position:absolute; inset:10px; background:#fff; border-radius:12px; box-shadow:0 10px 30px rgba(20,40,60,.18); padding:10px 12px; animation:dvsDlg 18s infinite; }
-@keyframes dvsDlg { 0%,70% { opacity:1; transform:none; } 73%,95% { opacity:0; transform:scale(.97); } 98%,100% { opacity:1; transform:none; } }
+@keyframes dvsDlg { 0%,74% { opacity:1; transform:none; } 77%,95% { opacity:0; transform:scale(.97); } 98%,100% { opacity:1; transform:none; } }
 .dvs-h { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
 .dvs-h b { font-size:14px; color:#16324f; } .dvs-h b em { font-style:normal; color:#1a5f7a; }
 .dvs-ctl { display:flex; align-items:center; gap:8px; }
@@ -239,9 +239,9 @@ footer a:hover { color:var(--navy); }
 .dvs-mail { color:#1a5f7a; }
 .sw2 { display:inline-grid; } .sw2 > * { grid-area:1/1; }
 .dvs-new .full { clip-path:inset(0 100% 0 0); animation:dvsTypeMail 18s infinite steps(30); }
-@keyframes dvsTypeMail { 0%,8% { clip-path:inset(0 100% 0 0); opacity:1; } 21%,66% { clip-path:inset(0 0 0 0); opacity:1; } 67%,100% { clip-path:inset(0 0 0 0); opacity:0; } }
+@keyframes dvsTypeMail { 0%,8% { clip-path:inset(0 100% 0 0); opacity:1; } 21%,69% { clip-path:inset(0 0 0 0); opacity:1; } 70%,100% { clip-path:inset(0 0 0 0); opacity:0; } }
 .dvs-new .clean { opacity:0; animation:dvsClean 18s infinite; }
-@keyframes dvsClean { 0%,66% { opacity:0; } 67%,96% { opacity:1; } 99%,100% { opacity:0; } }
+@keyframes dvsClean { 0%,69% { opacity:0; } 70%,96% { opacity:1; } 99%,100% { opacity:0; } }
 .dvs-rcs .a { animation:dvsA 18s infinite; } .dvs-rcs .b { animation:dvsB 18s infinite; }
 @keyframes dvsA { 0%,5% { opacity:1; } 6%,96% { opacity:0; } 99%,100% { opacity:1; } } @keyframes dvsB { 0%,5% { opacity:0; } 6%,96% { opacity:1; } 99%,100% { opacity:0; } }
 .dvs-hr { border:none; border-top:1px solid #e6ebf0; margin:8px 0 6px; }
@@ -260,18 +260,35 @@ footer a:hover { color:var(--navy); }
 .ty.o1 { animation:dvsT1 18s infinite steps(28); } .ty.s1 { animation:dvsT2 18s infinite steps(26); } .ty.o2 { animation:dvsT3 18s infinite steps(24); }
 @keyframes dvsT1 { 0%,24% { clip-path:inset(0 100% 0 0); } 34%,96% { clip-path:inset(0 0 0 0); } 99%,100% { clip-path:inset(0 100% 0 0); } }
 @keyframes dvsT2 { 0%,36% { clip-path:inset(0 100% 0 0); } 46%,96% { clip-path:inset(0 0 0 0); } 99%,100% { clip-path:inset(0 100% 0 0); } }
-@keyframes dvsT3 { 0%,53% { clip-path:inset(0 100% 0 0); } 62%,96% { clip-path:inset(0 0 0 0); } 99%,100% { clip-path:inset(0 100% 0 0); } }
+@keyframes dvsT3 { 0%,52% { clip-path:inset(0 100% 0 0); } 58%,96% { clip-path:inset(0 0 0 0); } 99%,100% { clip-path:inset(0 100% 0 0); } }
 .dvs-hint { font-size:8.5px; color:#9aa7b3; }
+/* A photo in an observation: the image button (empty cells only), uploading, then the picture with its trash button */
+.dvs-pair.p3 > div:first-child { position:relative; padding:0; min-height:30px; animation:dvsRowH 18s infinite; }
+@keyframes dvsRowH { 0%,60% { height:30px; } 65%,96% { height:74px; } 99%,100% { height:30px; } }
+.dvs-ib { position:absolute; right:5px; top:5px; width:20px; height:20px; border-radius:5px; border:1px solid #d0d8e4; background:#fff; color:#99a; display:flex; align-items:center; justify-content:center; animation:dvsIb 18s infinite; }
+.dvs-ib svg { width:12px; height:12px; }
+@keyframes dvsIb { 0%,58% { opacity:1; transform:none; color:#99a; } 59.5% { transform:scale(.82); color:#1a5f7a; border-color:#a0b8c8; } 60.5%,97% { opacity:0; } 99%,100% { opacity:1; } }
+.dvs-upl { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:6px; color:#999; font-size:10px; opacity:0; animation:dvsUpl 18s infinite; }
+.dvs-upl i { width:13px; height:13px; border:2px solid #d0d8e0; border-top-color:#1a5f7a; border-radius:50%; animation:spin .8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes dvsUpl { 0%,60% { opacity:0; } 61%,64% { opacity:1; } 65%,100% { opacity:0; } }
+.dvs-photo { position:absolute; inset:0; background:url(images/billboard-features/floristry-board.webp) center/cover; opacity:0; animation:dvsPhoto 18s infinite; }
+@keyframes dvsPhoto { 0%,64% { opacity:0; } 66%,96% { opacity:1; } 99%,100% { opacity:0; } }
+.dvs-trash { position:absolute; right:5px; bottom:5px; width:20px; height:20px; border-radius:5px; border:1px solid #e8c0c0; background:rgba(255,255,255,.92); color:#c0392b; display:flex; align-items:center; justify-content:center; }
+.dvs-trash svg { width:12px; height:12px; }
+.ty.s3 { animation:dvsT4 18s infinite steps(22); }
+@keyframes dvsT4 { 0%,65% { clip-path:inset(0 100% 0 0); } 68%,96% { clip-path:inset(0 0 0 0); } 99%,100% { clip-path:inset(0 100% 0 0); } }
+.dvs-sess .thumb { float:right; width:46px; height:34px; border-radius:5px; background:url(images/billboard-features/floristry-board.webp) center/cover; margin-left:8px; box-shadow:0 1px 3px rgba(0,0,0,.15); }
 .dvs-act { display:flex; justify-content:flex-end; gap:6px; margin-top:4px; }
 .dvs-act span { font-weight:700; font-size:10.5px; border-radius:7px; padding:5px 11px; background:#eef2f5; color:#555; }
 .dvs-act span.add { background:#1a5f7a; color:#fff; animation:dvsAdd 18s infinite; }
-@keyframes dvsAdd { 0%,64% { transform:none; } 65% { transform:scale(.9); } 66%,100% { transform:none; } }
-.dvs-pop { position:absolute; right:14px; top:132px; background:#16324f; color:#fff; font-size:10.5px; border-radius:8px; padding:6px 10px; opacity:0; animation:dvsPop 18s infinite; z-index:3; }
+@keyframes dvsAdd { 0%,68% { transform:none; } 69% { transform:scale(.9); } 70%,100% { transform:none; } }
+.dvs-pop { position:absolute; right:14px; top:212px; background:#16324f; color:#fff; font-size:10.5px; border-radius:8px; padding:6px 10px; opacity:0; animation:dvsPop 18s infinite; z-index:3; }
 .dvs-pop b { color:#9fe0ee; font-weight:600; }
-@keyframes dvsPop { 0%,66% { opacity:0; transform:translateY(6px); } 68%,72% { opacity:1; transform:none; } 74%,100% { opacity:0; } }
+@keyframes dvsPop { 0%,69% { opacity:0; transform:translateY(6px); } 71%,75% { opacity:1; transform:none; } 77%,100% { opacity:0; } }
 /* after Save: the game's card, with the new session and its TODO at the top */
 .dvs-card { position:absolute; inset:10px; background:#fff; border-radius:12px; box-shadow:0 10px 30px rgba(20,40,60,.18); padding:12px 14px; opacity:0; animation:dvsCard 18s infinite; }
-@keyframes dvsCard { 0%,72% { opacity:0; transform:translateY(10px); } 75%,94% { opacity:1; transform:none; } 97%,100% { opacity:0; } }
+@keyframes dvsCard { 0%,76% { opacity:0; transform:translateY(10px); } 79%,95% { opacity:1; transform:none; } 97%,100% { opacity:0; } }
 .dvs-card h4 { font-size:15px; color:#16324f; margin-bottom:2px; } .dvs-card small { color:#8796a5; }
 .dvs-todos { background:#fff8db; border:1.5px solid #f5c518; border-radius:8px; padding:7px 9px; margin:9px 0; }
 .dvs-todos b { font-size:9px; letter-spacing:.07em; text-transform:uppercase; color:#b8860b; display:flex; align-items:center; gap:5px; margin-bottom:4px; }
@@ -281,7 +298,7 @@ footer a:hover { color:var(--navy); }
 .dvs-sess b { color:#16324f; } .dvs-sess span { display:block; color:#7a8a99; font-size:10.5px; }
 .dvs-sess.new { background:linear-gradient(90deg, rgba(73,196,212,.14), transparent); border-radius:6px; padding-left:6px; }
 .dvs-toast { position:absolute; left:50%; bottom:20px; transform:translateX(-50%); background:#16324f; color:#fff; font-size:11px; font-weight:600; border-radius:999px; padding:6px 13px; white-space:nowrap; opacity:0; animation:dvsToast 18s infinite; }
-@keyframes dvsToast { 0%,75% { opacity:0; } 78%,90% { opacity:1; } 93%,100% { opacity:0; } }
+@keyframes dvsToast { 0%,79% { opacity:0; } 82%,93% { opacity:1; } 93%,100% { opacity:0; } }
 
 /* CardBoard: the Layout view — a poker card built from the sheet's columns, flipped to its back —
    then the Print view, where every card on the sheet is the same design with its own row */
@@ -580,7 +597,7 @@ footer a:hover { color:var(--navy); }
       <div class="show-text">
         <div class="badge"><img src="images/db_icon_180.png" alt="">DevBoard · Playtest &amp; develop</div>
         <h3>Every playtest, remembered.</h3>
-        <p>Open a session, start the timer and count the rounds. Add who’s playing — type a new tester’s email after their name and they’re added to your People. Write each observation beside its solution, and tap the light bulb to make it a TODO on the game’s card.</p>
+        <p>Open a session, start the timer and count the rounds. Add who’s playing — type a new tester’s email after their name and they’re added to your People. Write each observation beside its solution, paste or add a photo of the table right into a note, and tap the light bulb to make it a TODO on the game’s card.</p>
         <a href="<?= e($_apps . 'devboard/features') ?>">DevBoard features →</a>
       </div>
       <div class="win" aria-hidden="true"><div class="win-bar"><i></i><i></i><i></i><span>mygameboard.app/…/devboard</span></div>
@@ -600,6 +617,7 @@ footer a:hover { color:var(--navy); }
             <div class="dvs-ol"><label>Observations</label><label>Solutions</label></div>
             <div class="dvs-pair p1"><div><span class="ty o1">Auctions in round 2 drag on</span></div><div><span class="ty s1">Cap every auction at 3 bids</span></div><span class="dvs-bulb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="glass" d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg></span></div>
             <div class="dvs-pair"><div><span class="ty o2">Everyone loves the tulips</span></div><div></div></div>
+            <div class="dvs-pair p3"><div><span class="dvs-ib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="dvs-upl"><i></i>Uploading…</span><span class="dvs-photo"><span class="dvs-trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></span></span></div><div><span class="ty s3">Shorter bid track</span></div></div>
             <div class="dvs-hint">⌘ / Ctrl + Arrow — move between fields · ⌘ / Ctrl + Enter — save</div>
             <div class="dvs-act"><span>Cancel</span><span class="add">Add Session</span></div>
           </div>
@@ -607,7 +625,7 @@ footer a:hover { color:var(--navy); }
           <div class="dvs-card">
             <h4>Floristry</h4><small>Playtesting · 12 playtests · 2 meetings</small>
             <div class="dvs-todos"><b><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="glass" style="fill:#ffd43b" d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>TODOs (1)</b><div><i></i>Cap every auction at 3 bids</div></div>
-            <div class="dvs-sess new"><b>Playtest 12</b><span>Nov 22 · Lantern Café · 14 min · 2 rounds</span><span>Maya Chen, Leo Park, Sam Rivera</span></div>
+            <div class="dvs-sess new"><span class="thumb"></span><b>Playtest 12</b><span>Nov 22 · Lantern Café · 14 min · 2 rounds</span><span>Maya Chen, Leo Park, Sam Rivera</span></div>
             <div class="dvs-sess"><b>Playtest 11</b><span>Nov 15 · Game Night at Leo’s · 38 min</span><span>Ana Torres, Leo Park</span></div>
             <div class="dvs-toast">✓ Session saved to your Sheet</div>
           </div>

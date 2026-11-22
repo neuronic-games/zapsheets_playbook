@@ -218,7 +218,7 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
       Keep your cards in a Google Sheet — one tab per deck, one row per card, one column per field (Name, Cost, Text, Image…). CardBoard turns each row into a card using a layout you design, then lays them out on print sheets.
       <details class="why">
         <summary>Why a Google Sheet?</summary>
-        <p><b>It’s where your cards live.</b> CardBoard doesn’t keep your game on its own servers — your cards, your layouts and your tags are all saved in your sheet (CardBoard adds a <i>layouts</i> and a <i>tags</i> tab for its part). That’s why it needs one to start.</p>
+        <p><b>It’s where your cards live.</b> Your cards, your layouts and your tags are all saved in your sheet (CardBoard adds a <i>layouts</i> and a <i>tags</i> tab for its part) — CardBoard is the designer, the sheet is the home. That’s why it needs one to start.</p>
         <ul>
           <li><b>Yours to keep.</b> The sheet stays in your Google Drive. Stop using CardBoard any time and everything is still there.</li>
           <li><b>Edit cards the fast way.</b> Change numbers across a whole deck, sort, filter, use formulas or paste in a list — then Fetch, and every card follows.</li>

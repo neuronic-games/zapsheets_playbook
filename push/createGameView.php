@@ -28,7 +28,7 @@ $token = substr(md5($sheetId . '|game|' . $gameName), 0, 24);
 $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host    = $_SERVER['HTTP_HOST'];
 $appRoot = rtrim(dirname(dirname($_SERVER['REQUEST_URI'])), '/');
-$viewUrl = $scheme . '://' . $host . $appRoot . '/game/' . $token;
+$viewUrl = rtrim(gbLinkBase(), '/') . '/game/' . $token;
 
 $viewsDir = realpath(__DIR__ . '/..') . DIRECTORY_SEPARATOR . 'shares' . DIRECTORY_SEPARATOR . 'pitch-game-view';
 

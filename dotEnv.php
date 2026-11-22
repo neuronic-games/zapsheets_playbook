@@ -34,6 +34,27 @@ if (empty($_ENV['PYTHON']))      { $_ENV['PYTHON']      = 'python3'; }
 if (empty($_ENV['BASE_PATH']))   { $_ENV['BASE_PATH']   = '/'; }
 if (empty($_ENV['APP_DOMAIN']))  { $_ENV['APP_DOMAIN']  = 'http://localhost:8000'; }
 
+// ── mygameboard.app: the home of the board game apps (PitchBoard, DevBoard, CardBoard, BillBoard,
+// GameBoard). Its document root is this same folder, so there everything sits at the root ("/")
+// rather than under BASE_PATH ("/app/" on zapsheets.com). Old zapsheets.com links keep working;
+// links the apps make from now on (share links, published links, uploads, emails) use
+// mygameboard.app — see gbLinkBase().
+if (empty($_ENV['GAMEBOARD_HOST'])) { $_ENV['GAMEBOARD_HOST'] = 'mygameboard.app'; }
+if (!function_exists('gbRequestHost')) {
+    function gbRequestHost(): string { return strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? '')); }
+    function gbOnGameDomain(): bool { $h = gbRequestHost(); $g = strtolower($_ENV['GAMEBOARD_HOST']); return $h !== '' && ($h === $g || $h === 'www.' . $g); }
+    /** Where new links for the board game apps point: https://mygameboard.app/ in production (from
+     *  either domain); this server and BASE_PATH anywhere else (local development). Ends with "/". */
+    function gbLinkBase(): string {
+        $h = gbRequestHost();
+        if (gbOnGameDomain() || preg_match('/(^|\.)zapsheets\.com$/', $h)) return 'https://' . $_ENV['GAMEBOARD_HOST'] . '/';
+        $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+        $bp = trim($_ENV['BASE_PATH'] ?? '/', '/');
+        return ($https ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/' . ($bp !== '' ? $bp . '/' : '');
+    }
+}
+if (gbOnGameDomain()) { $_ENV['BASE_PATH'] = '/'; putenv('BASE_PATH=/'); }
+
 // The web-server process often runs without HOME set, which breaks Python
 // virtualenv wrapper scripts (e.g. set_env_vars.py) that call os.environ['HOME'].
 // Derive HOME from the project path if it is not already in the environment.

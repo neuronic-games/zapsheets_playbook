@@ -14,6 +14,8 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 $_scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') ? 'https' : 'http';
 $_origin = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'zapsheets.com');
 $_abs    = $_origin . $_base;
+require_once dirname(__DIR__, 3) . '/dotEnv.php';
+$_abs    = gbLinkBase();   // canonical and share links: mygameboard.app
 $_pageUrl = htmlspecialchars($_abs . 'devboard/features', ENT_QUOTES);
 $_ogImg   = htmlspecialchars($_abs . 'images/og/devboard-og.png?v=2', ENT_QUOTES);
 $_icon    = htmlspecialchars($_abs . 'images/db_icon_180.png', ENT_QUOTES);
@@ -551,7 +553,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="browser-frame">
         <div class="browser-chrome">
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-          <div class="browser-url">zapsheets.com/app/…/devboard</div>
+          <div class="browser-url">mygameboard.app/…/devboard</div>
         </div>
         <div class="dbx sa-stage" id="saDemo" aria-hidden="true">
           <div class="dbx-dlg sa-dlg">
@@ -597,7 +599,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="browser-frame">
         <div class="browser-chrome">
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-          <div class="browser-url">zapsheets.com/app/…/devboard</div>
+          <div class="browser-url">mygameboard.app/…/devboard</div>
         </div>
         <div class="dbx">
           <div class="dbx-client"><b>Riverbend Games</b><span>3 contracts</span></div>
@@ -636,7 +638,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="browser-frame">
         <div class="browser-chrome">
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-          <div class="browser-url">zapsheets.com/app/…/devboard</div>
+          <div class="browser-url">mygameboard.app/…/devboard</div>
         </div>
         <div class="dbx tdx" id="tdDemo" aria-hidden="true">
           <div class="tdx-cap tdx-say">Your TODOs, on the Board</div>
@@ -703,7 +705,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <tr><td>Paid / unpaid tracking</td><td class="ours"><span class="check">✓</span> <span class="pro-tag">Pro</span></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>TODO list from your notes</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Data in your own Google Sheet</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Works with <a href="https://zapsheets.com/app/pitchboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">PitchBoard</a> &amp; <a href="https://zapsheets.com/app/billboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">BillBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td>Works with <a href="https://mygameboard.app/pitchboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">PitchBoard</a> &amp; <a href="https://mygameboard.app/billboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">BillBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">$2.99 / mo Core<br>$3.99 / mo Pro</td><td><span style="font-size:12px;color:var(--text-muted)">varies</span></td><td><span style="font-size:12px;color:var(--text-muted)">varies</span></td></tr>
         </tbody>
       </table>

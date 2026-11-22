@@ -50,7 +50,7 @@ if (file_put_contents($reportsDir . DIRECTORY_SEPARATOR . $token, $html) === fal
 $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host    = $_SERVER['HTTP_HOST'];
 $appPath = rtrim(dirname(dirname($_SERVER['REQUEST_URI'])), '/');
-$url     = $scheme . '://' . $host . $appPath . '/reports/' . $token;
+$url     = rtrim(gbLinkBase(), '/') . '/reports/' . $token;
 
 echo json_encode(['ok' => true, 'url' => $url, 'token' => $token]);
 ?>

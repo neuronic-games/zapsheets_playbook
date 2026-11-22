@@ -47,11 +47,11 @@ if (file_put_contents($filepath, $jsonData) === false) {
 $scheme   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host     = $_SERVER['HTTP_HOST'];
 $appRoot  = rtrim(dirname(dirname($_SERVER['REQUEST_URI'])), '/');
-$shareUrl = $scheme . '://' . $host . $appRoot . '/shares/pitch-collab-export/' . $filename;
+$shareUrl = rtrim(gbLinkBase(), '/') . '/shares/pitch-collab-export/' . $filename;
 
 // View-only link — no sheet ID exposed
 $hash    = substr($filename, 0, -5); // strip .json
-$viewUrl = $scheme . '://' . $host . $appRoot . '/pitchboard/share/' . $hash;
+$viewUrl = rtrim(gbLinkBase(), '/') . '/pitchboard/share/' . $hash;
 
 echo json_encode(['ok' => true, 'url' => $shareUrl, 'viewUrl' => $viewUrl, 'filename' => $filename]);
 ?>

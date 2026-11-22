@@ -14,6 +14,8 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 $_scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') ? 'https' : 'http';
 $_origin = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'zapsheets.com');
 $_abs    = $_origin . $_base;
+require_once dirname(__DIR__, 3) . '/dotEnv.php';
+$_abs    = gbLinkBase();   // canonical and share links: mygameboard.app
 $_pageUrl = htmlspecialchars($_abs . 'billboard/features', ENT_QUOTES);
 $_ogImg   = htmlspecialchars($_abs . 'images/og/billboard-og.png?v=3', ENT_QUOTES);
 $_icon    = htmlspecialchars($_abs . 'images/bb_icon_180.png', ENT_QUOTES);
@@ -434,19 +436,19 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <h2 class="section-title">See a real BillBoard</h2>
       <p>UP Games — independent publisher of <em style="color:rgba(255,255,255,.8);font-style:normal;">Floristry</em>, <em style="color:rgba(255,255,255,.8);font-style:normal;">Scurry Up!</em>, and <em style="color:rgba(255,255,255,.8);font-style:normal;">Pressure</em> — uses BillBoard to showcase their catalog. Click through to browse their live pages.</p>
       <div class="live-demo-links">
-        <a href="https://zapsheets.com/app/billboard/a9e4ef63bb33371151169a6e/" target="_blank" class="live-link featured">
+        <a href="https://mygameboard.app/billboard/a9e4ef63bb33371151169a6e/" target="_blank" class="live-link featured">
           <div class="live-link-info">
-            <img class="live-link-logo" src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/68db6d2fe1c4ff0767a9.png" alt="UP Games" />
+            <img class="live-link-logo" src="https://mygameboard.app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/68db6d2fe1c4ff0767a9.png" alt="UP Games" />
             <div>
               <div class="live-link-name">UP Games — Full catalog</div>
-              <div class="live-link-desc">zapsheets.com/app/billboard/…</div>
+              <div class="live-link-desc">mygameboard.app/billboard/…</div>
             </div>
           </div>
           <span class="live-link-arrow">↗</span>
         </a>
-        <a href="https://zapsheets.com/app/billboard/a9e4ef63bb33371151169a6e/floristry" target="_blank" class="live-link">
+        <a href="https://mygameboard.app/billboard/a9e4ef63bb33371151169a6e/floristry" target="_blank" class="live-link">
           <div class="live-link-info">
-            <img class="live-link-logo" src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/e25ee32f4d226062e11c.webp" alt="Floristry" style="object-fit:cover;" />
+            <img class="live-link-logo" src="https://mygameboard.app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/e25ee32f4d226062e11c.webp" alt="Floristry" style="object-fit:cover;" />
             <div>
               <div class="live-link-name">Floristry — Game page</div>
               <div class="live-link-desc">Buy links · press quotes · gallery · FAQ</div>
@@ -459,7 +461,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
     <div class="demo-browser">
       <div class="demo-chrome">
         <div class="demo-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-        <div class="demo-url">zapsheets.com/app/billboard/a9e4ef63bb33371151169a6e/</div>
+        <div class="demo-url">mygameboard.app/billboard/a9e4ef63bb33371151169a6e/</div>
       </div>
       <div class="demo-body" style="background:#f2f0ed">
         <div class="bbx">
@@ -559,7 +561,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="browser-frame">
         <div class="browser-chrome">
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-          <div class="browser-url">zapsheets.com/app/billboard/…</div>
+          <div class="browser-url">mygameboard.app/billboard/…</div>
         </div>
         <div class="bbx">
           <div class="bbx-banner"><img class="bbx-logo" src="images/billboard-features/up-logo.webp" alt="UP Games"><span class="bbx-name">UP Games</span></div>
@@ -593,7 +595,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="browser-frame">
         <div class="browser-chrome">
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-          <div class="browser-url">zapsheets.com/app/billboard/…/floristry</div>
+          <div class="browser-url">mygameboard.app/billboard/…/floristry</div>
         </div>
         <div class="bbx bbp ie-stage" id="gpDemo" aria-hidden="true">
           <div class="bbp-nav"><span class="bbp-back">‹ All Games</span><span class="bbp-sep">|</span><span class="bbp-game">Floristry</span><span class="bbp-navbtn">Rules</span></div>
@@ -636,7 +638,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="browser-frame ie-frame" aria-label="Animated demo: setting up and editing a BillBoard catalog directly on the page">
         <div class="browser-chrome">
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-          <div class="browser-url">zapsheets.com/app/billboard/…</div>
+          <div class="browser-url">mygameboard.app/billboard/…</div>
         </div>
         <div class="bbx ie-stage" id="ieDemo" aria-hidden="true">
           <div class="bbx-banner ie-banner">
@@ -715,7 +717,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <tr><td>Per-game detail pages</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>Inline editing (no CMS)</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Powered by your Google Sheet</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Works with <a href="https://zapsheets.com/app/pitchboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">PitchBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td>Works with <a href="https://mygameboard.app/pitchboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">PitchBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Shareable token links</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Price &amp; buy links</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">$4.99 / mo</td><td>$16–49 / mo</td><td>$10–35 / mo</td><td>Free</td></tr>

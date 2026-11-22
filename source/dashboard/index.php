@@ -2405,6 +2405,9 @@ function getSheetId() {
 }
 var sheet_Id = getSheetId();
 var APP_BASE = document.querySelector('base').getAttribute('href');
+// Links people share (game pages, sell sheets) point to mygameboard.app — the home of the board game apps —
+// whichever domain this page was opened on; anywhere else (local development) they stay on this server
+var LINK_BASE = /(^|\.)(zapsheets\.com|mygameboard\.app)$/.test(location.hostname) ? 'https://mygameboard.app/' : location.origin + APP_BASE;
 var BASE     = APP_BASE + 'sheets/' + sheet_Id + '/';
 var NOTEBOARD_HASHES    = <?= json_encode($_nb_hashes,    JSON_UNESCAPED_UNICODE) ?>; // game name → 12-char hash
 var NOTEBOARD_HAS_NOTES = <?= json_encode(array_fill_keys(array_keys($_nb_has_notes), true), JSON_UNESCAPED_UNICODE) ?>; // safe_name → true
@@ -3385,10 +3388,10 @@ function buildGameView(pitches) {
         (function() {
           var own = absUrl(gfield(['Sell Sheet','Sell Sheet URL','Sellsheet URL','Sellsheet','Link Sellsheet']));
           if (own) return { label:'Sellsheet', url: own };
-          return { label:'Sellsheet', url: gpToken ? window.location.origin + APP_BASE + 'game/' + gpToken + '/sellsheet' : '', sameTab: true };
+          return { label:'Sellsheet', url: gpToken ? LINK_BASE + 'game/' + gpToken + '/sellsheet' : '', sameTab: true };
         })(),
         { label:'Video',     url: absUrl(gfield(['Video','Video URL','Video Link','Link Video','YouTube','YouTube URL'])) },
-        { label:'Page', url: gpToken ? window.location.origin + APP_BASE + 'game/' + gpToken : '', sameTab: true }
+        { label:'Page', url: gpToken ? LINK_BASE + 'game/' + gpToken : '', sameTab: true }
       ];
       var out = '';
       linkDefs.forEach(function(lp) {
@@ -4479,7 +4482,7 @@ function buildEmailBody(gameName) {
   var urls = [];
   var _gpTok = GAME_PAGE_TOKENS[gameName] || '';
   if (_gpTok) {
-    urls.push('Game Info: ' + window.location.origin + APP_BASE + 'game/' + _gpTok);
+    urls.push('Game Info: ' + LINK_BASE + 'game/' + _gpTok);
   }
   if (f.sellsheet) urls.push('Sellsheet: ' + f.sellsheet);
   if (f.video)     urls.push('Video: '     + f.video);
@@ -5943,7 +5946,7 @@ function _patchCardAfterPageEnabled(gameName, token) {
   btns.forEach(function(b) { b.textContent = 'Edit Page'; });
 
   // 2. Add "Page" pill to the footer action row
-  var pageUrl = window.location.origin + APP_BASE + 'game/' + token;
+  var pageUrl = LINK_BASE + 'game/' + token;
   var row = card.querySelector('.game-action-row');
   if (row) {
     // Only add if not already present
@@ -7845,7 +7848,7 @@ function sendShareEmail() {
     + 'Go to PitchBoard and use Menu → Import the link below to import their pitches into your PitchBoard.\n'
     + shareUrl + '\n\n'
     + 'Don\'t have PitchBoard yet? Get started at:\n'
-    + 'https://www.zapsheets.com/app/pitchboard\n';
+    + 'https://mygameboard.app/pitchboard\n';
 
   if (fromName || fromEmail) {
     body += '\n--\n';

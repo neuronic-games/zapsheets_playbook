@@ -34,7 +34,7 @@ $targets = ['tts', 'screentop', 'images'];
 
 $bp     = rtrim($_ENV['BASE_PATH'] ?? '', '/');
 $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$base   = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $bp . '/shares/cardboard/';
+$base   = rtrim(gbLinkBase(), '/') . '/shares/cardboard/';
 
 // Stable token per sheet + tab + target: the same deck always gets the same links
 function cbToken($sheetId, $tab, $target) { return substr(md5($sheetId . '|cardboard|' . $tab . '|' . $target), 0, 24); }

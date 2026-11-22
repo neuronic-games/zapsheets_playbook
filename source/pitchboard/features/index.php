@@ -14,6 +14,8 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 $_scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') ? 'https' : 'http';
 $_origin = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'zapsheets.com');
 $_abs    = $_origin . $_base;
+require_once dirname(__DIR__, 3) . '/dotEnv.php';
+$_abs    = gbLinkBase();   // canonical and share links: mygameboard.app
 $_pageUrl = htmlspecialchars($_abs . 'pitchboard/features', ENT_QUOTES);
 $_ogImg   = htmlspecialchars($_abs . 'images/og/pitchboard-og.png?v=2', ENT_QUOTES);
 $_icon    = htmlspecialchars($_abs . 'images/pitchboard_icon_180.png', ENT_QUOTES);
@@ -259,7 +261,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
   <p>PitchBoard keeps every game, every publisher, and every pitch in one place. Built on your Google Sheet, so your data stays yours.</p>
   <div class="hero-btns">
     <a href="pitchboard" class="btn-primary">Get PitchBoard</a>
-    <a href="https://zapsheets.com/app/1tCL9R2mCG9i1egFFsYUM0Rw7jY3itxb4vJHcnlBJi8c/pitchboard" class="btn-ghost" target="_blank" rel="noopener">See it in action</a>
+    <a href="https://mygameboard.app/1tCL9R2mCG9i1egFFsYUM0Rw7jY3itxb4vJHcnlBJi8c/pitchboard" class="btn-ghost" target="_blank" rel="noopener">See it in action</a>
   </div>
 </section>
 
@@ -336,7 +338,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="browser-frame">
         <div class="browser-chrome">
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-          <div class="browser-url">zapsheets.com/app/…/pitchboard</div>
+          <div class="browser-url">mygameboard.app/…/pitchboard</div>
         </div>
         <div class="browser-body">
           <div class="app-nav">
@@ -397,7 +399,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="browser-frame">
         <div class="browser-chrome">
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-          <div class="browser-url">zapsheets.com/app/…/pitchboard</div>
+          <div class="browser-url">mygameboard.app/…/pitchboard</div>
         </div>
         <div class="browser-body">
           <div class="app-nav">
@@ -469,7 +471,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="browser-frame">
         <div class="browser-chrome">
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-          <div class="browser-url">zapsheets.com/app/…/pitchboard</div>
+          <div class="browser-url">mygameboard.app/…/pitchboard</div>
         </div>
         <div class="browser-body kb-stage" id="kbDemo" aria-hidden="true">
           <div class="app-nav">

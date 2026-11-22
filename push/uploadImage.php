@@ -125,6 +125,6 @@ if ($converted) {
 $bp     = rtrim($_ENV['BASE_PATH'] ?? '', '/');
 $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$url    = $scheme . '://' . $host . $bp . '/images/' . $sheetId . '/' . $filename;
+$url    = rtrim(gbLinkBase(), '/') . '/images/' . $sheetId . '/' . $filename;
 
 echo json_encode(['ok' => true, 'url' => $url, 'filename' => $filename]);

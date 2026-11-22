@@ -391,12 +391,15 @@ function getLang() {
 var sheet_Id = getSheetId();
 var lang     = getLang();
 var APP_BASE = document.querySelector('base').getAttribute('href');
+// Links people share (game pages, sell sheets) point to mygameboard.app — the home of the board game apps —
+// whichever domain this page was opened on; anywhere else (local development) they stay on this server
+var LINK_BASE = /(^|\.)(zapsheets\.com|mygameboard\.app)$/.test(location.hostname) ? 'https://mygameboard.app/' : location.origin + APP_BASE;
 var BASE     = APP_BASE + 'sheets/' + sheet_Id + '/';
 
 function getViewUrl(game) {
   // Only use the token-based public game page URL (no sheet ID exposed)
   if (window._gvGameToken) {
-    return window.location.origin + APP_BASE + 'game/' + window._gvGameToken;
+    return LINK_BASE + 'game/' + window._gvGameToken;
   }
   return '';
 }

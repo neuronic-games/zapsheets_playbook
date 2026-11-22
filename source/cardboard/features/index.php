@@ -14,6 +14,8 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 $_scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') ? 'https' : 'http';
 $_origin = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'zapsheets.com');
 $_abs    = $_origin . $_base;
+require_once dirname(__DIR__, 3) . '/dotEnv.php';
+$_abs    = gbLinkBase();   // canonical and share links: mygameboard.app
 $_pageUrl = htmlspecialchars($_abs . 'cardboard/features', ENT_QUOTES);
 $_ogImg   = htmlspecialchars($_abs . 'images/og/cardboard-og.png?v=2', ENT_QUOTES);
 $_icon    = htmlspecialchars($_abs . 'images/cardboard_icon_180.png', ENT_QUOTES);
@@ -303,7 +305,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
       <div class="browser-frame">
         <div class="browser-chrome">
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-          <div class="browser-url">zapsheets.com/app/…/cardboard</div>
+          <div class="browser-url">mygameboard.app/…/cardboard</div>
         </div>
         <div class="cbx" id="cbDemo" aria-hidden="true">
           <div class="cbx-top"><img src="images/cardboard_icon_180.png" alt=""><span class="cbx-name"><span class="c">Card</span><span class="b">Board</span></span>
@@ -362,7 +364,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
   <div class="container">
     <div class="shot-grid">
       <div class="browser-frame">
-        <div class="browser-chrome"><div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="browser-url">zapsheets.com/app/…/cardboard — Data</div></div>
+        <div class="browser-chrome"><div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="browser-url">mygameboard.app/…/cardboard — Data</div></div>
         <div class="sheet-mock">
           <table>
             <tr><th class="rn"></th><th>Name</th><th>Cost</th><th>Type</th><th>Text</th><th>Count</th></tr>
@@ -403,7 +405,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
         </ul>
       </div>
       <div class="browser-frame">
-        <div class="browser-chrome"><div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="browser-url">zapsheets.com/app/…/cardboard — Tags</div></div>
+        <div class="browser-chrome"><div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="browser-url">mygameboard.app/…/cardboard — Tags</div></div>
         <div class="tags-mock">
           <div class="tm-row"><code>[energy]</code><span><svg class="ti" viewBox="0 0 24 24"><path d="M13.5 2 4.5 13.5h6.5L10 22l9-11.5h-6.5z" fill="#f2b705"/></svg> Icon</span></div>
           <div class="tm-row"><code>[coin]</code><span><svg class="ti" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#e9a81c"/><circle cx="12" cy="12" r="7" fill="#f7c948" stroke="#c98a0c" stroke-width="1.2"/></svg> Icon</span></div>
@@ -422,12 +424,12 @@ footer a { color:var(--text-mid); text-decoration:none; }
   <div class="container">
     <div class="shot-grid">
       <div class="browser-frame">
-        <div class="browser-chrome"><div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="browser-url">zapsheets.com/app/…/cardboard — Export</div></div>
+        <div class="browser-chrome"><div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="browser-url">mygameboard.app/…/cardboard — Export</div></div>
         <div class="tts-mock">
           <img src="images/billboard-features/cover-floristry.webp" alt=""><img src="images/billboard-features/cover-floristry.webp" alt=""><img src="images/billboard-features/cover-scurry.webp" alt=""><img src="images/billboard-features/cover-scurry.webp" alt=""><img src="images/billboard-features/cover-scurry.webp" alt="">
           <img src="images/billboard-features/cover-pressure.webp" alt=""><img src="images/billboard-features/cover-floristry.webp" alt=""><img src="images/billboard-features/cover-pressure.webp" alt=""><img src="images/billboard-features/cover-scurry.webp" alt=""><div class="bk">★</div>
         </div>
-        <div class="link-row"><span>https://zapsheets.com/app/shares/cardboard/206e3c…/faces-1.jpg</span><b>Copy</b></div>
+        <div class="link-row"><span>https://mygameboard.app/shares/cardboard/206e3c…/faces-1.jpg</span><b>Copy</b></div>
       </div>
       <div class="shot-text">
         <div class="section-label">Tabletop Simulator &amp; Screentop</div>
@@ -477,7 +479,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
           <tr><td><code>[tags]</code> into an icon or words</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>Pictures from Dropbox, Drive or the web</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span> <span class="nl">not listed</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>Works in the browser, nothing to install</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Works with <a href="https://zapsheets.com/app/devboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">DevBoard</a> &amp; <a href="https://zapsheets.com/app/billboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">BillBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td>Works with <a href="https://mygameboard.app/devboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">DevBoard</a> &amp; <a href="https://mygameboard.app/billboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">BillBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr class="cost"><td>Monthly cost</td>
             <td class="ours"><b>$4.99</b> / mo<span class="nl" style="display:block;margin:0">first week free, every feature</span></td>
             <td><b>Free</b> <span class="nl">2 projects, 10 layouts</span><br><b>$6 – $24</b> / mo<span class="nl" style="display:block;margin:0">Prototyper $6 · Designer $12 · Designer Pro $24</span></td>

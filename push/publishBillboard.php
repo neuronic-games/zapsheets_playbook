@@ -63,6 +63,6 @@ if (file_put_contents($shareFile, json_encode($shareData, JSON_UNESCAPED_UNICODE
 $bp     = rtrim($_ENV['BASE_PATH'] ?? '', '/');
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$url    = $scheme . '://' . $host . $bp . '/billboard/' . $token;
+$url    = rtrim(gbLinkBase(), '/') . '/billboard/' . $token;
 
 echo json_encode(['ok' => true, 'token' => $token, 'url' => $url]);

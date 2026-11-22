@@ -70,6 +70,6 @@ if (!move_uploaded_file($_FILES['file']['tmp_name'], $dest)) {
 $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host    = $_SERVER['HTTP_HOST'];
 $appRoot = rtrim(dirname(dirname($_SERVER['REQUEST_URI'])), '/');
-$url     = $scheme . '://' . $host . $appRoot . '/sheets/' . $sheetId . '/cache/' . $filename;
+$url     = rtrim(gbLinkBase(), '/') . '/sheets/' . $sheetId . '/cache/' . $filename;
 
 echo json_encode(['ok' => true, 'url' => $url]);

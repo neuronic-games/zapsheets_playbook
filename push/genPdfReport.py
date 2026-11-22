@@ -99,9 +99,9 @@ def _fetch_image(url, max_w, max_h):
     if not url:
         return None
     try:
-        # Convert zapsheets.com/app/ URLs to local file paths
+        # Our own files (zapsheets.com/app/… or mygameboard.app/…) are read straight from disk
         local = None
-        m = re.match(r'https?://[^/]+/app/(.+)', url)
+        m = re.match(r'https?://[^/]+/app/(.+)', url) or re.match(r'https?://(?:www\.)?mygameboard\.app/(.+)', url)
         if m:
             local = os.path.join(app_root, m.group(1))
         if local and os.path.exists(local):

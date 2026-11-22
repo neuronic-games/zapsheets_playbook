@@ -4,8 +4,9 @@
  * and of the GameBoard account that signs people in to them.
  * URL: {base}gameboard, and the root of mygameboard.app.
  *
- * The apps themselves run at zapsheets.com/app/…; on mygameboard.app the links go there, and the
- * account is handed over in the link (#gbt=…, read by the app and never sent to the server in the URL).
+ * The apps run on mygameboard.app too (its document root is this folder); zapsheets.com/app/… still works.
+ * From zapsheets.com the links go to mygameboard.app, and the account is handed over in the link
+ * (#gbt=…, read by the app and never sent to the server in the URL).
  */
 $_raw  = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
 $_host = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
@@ -15,9 +16,11 @@ if ($_base === $_raw) $_base = '/';
 if (substr($_base, -1) !== '/') $_base .= '/';
 $_scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') ? 'https' : 'http';
 $_abs  = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'zapsheets.com') . $_base;
-// Where the apps live: here on zapsheets.com, or zapsheets.com/app/ when this is mygameboard.app
-$_apps = $_onDomain ? 'https://zapsheets.com/app/' : $_base;
-$_page = $_onDomain ? 'https://mygameboard.app/' : $_abs . 'gameboard';
+// The apps live on mygameboard.app (this same folder is its document root): links point there — on
+// mygameboard.app itself they're just this site; from zapsheets.com (old links) they go over to it.
+require_once dirname(__DIR__, 2) . '/dotEnv.php';
+$_apps = $_onDomain ? $_base : gbLinkBase();
+$_page = gbLinkBase() === $_base ? $_abs . 'gameboard' : 'https://' . $_ENV['GAMEBOARD_HOST'] . '/';
 $_desc = 'Apps for board game makers: playtest notes, card design, publisher pitches and a catalog for your games — each on a Google Sheet you own, with one GameBoard account.';
 function e($s) { return htmlspecialchars((string) $s, ENT_QUOTES); }
 $APPS = [
@@ -471,7 +474,7 @@ footer a:hover { color:var(--navy); }
         <p>Every game sits on a board by stage — Design, Pitch, Signed, Published — with how many publishers you’ve pitched it to. Drag a game to its next stage and its dates fill in, saved to your Sheet.</p>
         <a href="<?= e($_apps . 'pitchboard/features') ?>">PitchBoard features →</a>
       </div>
-      <div class="win" aria-hidden="true"><div class="win-bar"><i></i><i></i><i></i><span>zapsheets.com/app/…/pitchboard</span></div>
+      <div class="win" aria-hidden="true"><div class="win-bar"><i></i><i></i><i></i><span>mygameboard.app/…/pitchboard</span></div>
         <div class="win-body kbw">
           <div class="kb-nav"><div><b>PitchBoard</b><small>Your Studio</small></div><div class="kb-tabs"><span class="on">BOARD</span><span>12 GAMES</span><span>31 PUBLISHERS</span></div></div>
           <div class="kb-title">Games by stage</div>

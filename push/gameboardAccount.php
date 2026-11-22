@@ -47,9 +47,7 @@ function cbSignedIn(array $u, string $sheet, bool $taken = true): void {
 
 /** The sign-in email in GameBoard's colors: navy band, cream/red wordmark, the code large. Tables and inline styles for mail apps. */
 function cbCodeEmailHtml(string $code, string $mode = 'signup'): string {
-    $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host   = preg_replace('/[^a-z0-9.\-:]/i', '', $_SERVER['HTTP_HOST'] ?? 'zapsheets.com');
-    $base   = $scheme . '://' . $host . rtrim($_ENV['BASE_PATH'] ?? '', '/') . '/';
+    $base   = gbLinkBase();   // https://mygameboard.app/ in production
     $logo   = htmlspecialchars($base . 'images/gameboard_icon_180.png', ENT_QUOTES);
     $app    = htmlspecialchars($base . 'gameboard', ENT_QUOTES);
     // One box, spaced out but copied as plain digits (separate boxes copy with gaps between them)

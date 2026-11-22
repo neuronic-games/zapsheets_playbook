@@ -139,7 +139,7 @@ if ($result !== null && !empty($result['ok'])) {
     // Create [GameName] tab if it doesn't exist, then publish its JSON cache
     $tabGameName = $name ?: $origName;
     $tabCmd = escapeshellarg($pythonPath) . ' '
-            . escapeshellarg(__DIR__ . '/gcreategameboardtab.py') . ' '
+            . escapeshellarg(__DIR__ . '/gcreatebillboardtab.py') . ' '
             . escapeshellarg($sheetId . '|' . $tabGameName) . ' 2>&1';
     $tabOut = trim((string) shell_exec($tabCmd));
     $tabResult = $tabOut ? json_decode($tabOut, true) : null;

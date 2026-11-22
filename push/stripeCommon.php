@@ -6,7 +6,7 @@
 $_bpFile = __DIR__ . '/../dotEnv.php';
 if (file_exists($_bpFile)) require_once $_bpFile;
 
-const STRIPE_APPS = ['devboard', 'gameboard', 'pitchboard', 'cardboard'];
+const STRIPE_APPS = ['devboard', 'billboard', 'pitchboard', 'cardboard'];
 
 /** Statuses that count as a paid, working subscription. */
 const STRIPE_LIVE_STATUSES = ['active', 'trialing', 'past_due'];
@@ -36,7 +36,7 @@ function stripePlanFromSub(array $sub, string $app = ''): string {
  */
 /**
  * Each app's subscription is kept in sheets/{id}/subscription-{app}.json, so DevBoard,
- * PitchBoard and GameBoard on the same sheet don't overwrite each other.
+ * PitchBoard and BillBoard on the same sheet don't overwrite each other.
  * subscription.json is the older single file; it still counts for the app it names.
  */
 function stripeSubFile(string $sheetId, string $app = ''): string {

@@ -525,7 +525,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="feat-card">
         <div class="feat-icon dark">📊</div>
         <h3>Lives in your Sheet</h3>
-        <p>Sessions, contracts and people are rows in a Google Sheet you own — the same one PitchBoard and GameBoard use. Works on phone, tablet and desktop.</p>
+        <p>Sessions, contracts and people are rows in a Google Sheet you own — the same one PitchBoard and BillBoard use. Works on phone, tablet and desktop.</p>
       </div>
     </div>
   </div>
@@ -703,7 +703,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <tr><td>Paid / unpaid tracking</td><td class="ours"><span class="check">✓</span> <span class="pro-tag">Pro</span></td><td><span class="cross">—</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>TODO list from your notes</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Data in your own Google Sheet</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
-          <tr><td>Works with <a href="https://zapsheets.com/app/pitchboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">PitchBoard</a> &amp; <a href="https://zapsheets.com/app/gameboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">GameBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td>Works with <a href="https://zapsheets.com/app/pitchboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">PitchBoard</a> &amp; <a href="https://zapsheets.com/app/billboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">BillBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr><td>Monthly cost</td><td class="ours" style="font-weight:600;color:var(--dark);">$2.99 / mo Core<br>$3.99 / mo Pro</td><td><span style="font-size:12px;color:var(--text-muted)">varies</span></td><td><span style="font-size:12px;color:var(--text-muted)">varies</span></td></tr>
         </tbody>
       </table>
@@ -733,7 +733,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
   var cursor = q('.sa-cursor'), key = q('.sa-key'), toast = q('.sa-toast');
   var dlg = q('.sa-dlg'), list = q('.sa-list'), timer = q('.sa-timer'), plus = q('.sa-plus'), roundsEl = q('.sa-rounds');
   var people = q('.sa-people'), rows = q('.sa-rows'), save = q('.sa-save'), summary = q('.sa-sum');
-  var PHOTO = (document.querySelector('.dbx-photo-src') || {}).value || 'images/gameboard-features/carousel-pieces.webp';
+  var PHOTO = (document.querySelector('.dbx-photo-src') || {}).value || 'images/billboard-features/carousel-pieces.webp';
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var visible = false, tick = null, secs = 0, rounds = 0;
   var sleep = function(ms) { return new Promise(function(r) { setTimeout(r, ms); }); };

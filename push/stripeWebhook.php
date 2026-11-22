@@ -17,7 +17,7 @@
  * Format: {
  *   "email":                  "user@example.com",
  *   "status":                 "active" | "trialing" | "past_due" | "canceled" | "unpaid",
- *   "app":                    "devboard" | "gameboard",
+ *   "app":                    "devboard" | "billboard",
  *   "plan":                   "core" | "pro",
  *   "stripe_customer_id":     "cus_xxx",
  *   "stripe_subscription_id": "sub_xxx",

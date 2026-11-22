@@ -1,9 +1,9 @@
 <?php
 /**
- * GameBoard setup landing page.
- * Shown when the user navigates to /gameboard (no sheet ID yet).
- * Accepts a Google Sheet URL or ID, runs setupGameboard.php,
- * streams a status log, and redirects to /{id}/gameboard/ on success.
+ * BillBoard setup landing page.
+ * Shown when the user navigates to /billboard (no sheet ID yet).
+ * Accepts a Google Sheet URL or ID, runs setupBillboard.php,
+ * streams a status log, and redirects to /{id}/billboard/ on success.
  *
  * Works for both:
  *   - New blank sheets  (tabs get created automatically)
@@ -11,7 +11,7 @@
  */
 
 $_raw  = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$_base = preg_replace('#/gameboard(/setup)?/?$#', '/', $_raw);
+$_base = preg_replace('#/billboard(/setup)?/?$#', '/', $_raw);
 if (!$_base || $_base === $_raw) { $_base = '/'; }
 if (substr($_base, -1) !== '/') { $_base .= '/'; }
 ?>
@@ -21,7 +21,7 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>GameBoard — Connect Your Sheet</title>
+<title>BillBoard — Connect Your Sheet</title>
 <style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2')  format('woff2'),url('fonts/DINBlack.ttf')  format('truetype'); }
 @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'),url('fonts/DINMedium.ttf') format('truetype'); }
@@ -146,16 +146,16 @@ body {
 
   <!-- Branding -->
   <div class="brand">
-    <div class="brand-icon"><img src="images/gb_icon_180.png" alt="GameBoard" /></div>
-    <div class="brand-name">GameBoard</div>
-    <div class="brand-tagline">Polished product pages for your board games</div>
+    <div class="brand-icon"><img src="images/bb_icon_180.png" alt="BillBoard" /></div>
+    <div class="brand-name">BillBoard</div>
+    <div class="brand-tagline">Put your board games on show</div>
   </div>
 
   <!-- Setup card -->
   <div class="card">
     <div class="card-title">Connect Your Google Sheet</div>
     <div class="instructions">
-      Use your existing <strong>PitchBoard</strong> sheet, or start with a new blank Google Spreadsheet. Either way, share it with the GameBoard service account and paste the URL below.
+      Use your existing <strong>PitchBoard</strong> sheet, or start with a new blank Google Spreadsheet. Either way, share it with the BillBoard service account and paste the URL below.
       <ol>
         <li>Open your spreadsheet in Google Sheets (new or existing).</li>
         <li>Click <strong>Share</strong> and add <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> <button class="copy-email-btn" id="copyEmailBtn" onclick="copyEmail()">Copy</button> with <strong>Editor</strong> rights.</li>
@@ -174,7 +174,7 @@ body {
     />
 
     <button id="connectBtn" class="connect-btn" onclick="startSetup()">
-      Connect &amp; Launch GameBoard
+      Connect &amp; Launch BillBoard
     </button>
 
     <div id="logPanel" class="log-panel" style="display:none"></div>
@@ -257,7 +257,7 @@ body {
     scheduledLog(2000, 'Caching games data…', 'inf');
 
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', APP_BASE + 'push/setupGameboard.php');
+    xhr.open('POST', APP_BASE + 'push/setupBillboard.php');
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
     xhr.onload = function() {
@@ -267,7 +267,7 @@ body {
 
       if (!result || result.error) {
         addLog('✕  ' + ((result && result.error) || xhr.responseText || 'Unknown error'), 'err');
-        btn.disabled = false; btn.textContent = 'Connect & Launch GameBoard';
+        btn.disabled = false; btn.textContent = 'Connect & Launch BillBoard';
         return;
       }
 
@@ -283,24 +283,24 @@ body {
       });
 
       if (!allGood) {
-        btn.disabled = false; btn.textContent = 'Connect & Launch GameBoard';
+        btn.disabled = false; btn.textContent = 'Connect & Launch BillBoard';
         return;
       }
 
       if ((result.json_refreshed || []).length) {
         addLog('✓  Games data cached (' + result.json_refreshed.join(', ') + ')', 'ok');
       }
-      addLog('✓  All done — launching GameBoard…', 'ok');
+      addLog('✓  All done — launching BillBoard…', 'ok');
 
       setTimeout(function() {
-        window.location.href = APP_BASE + sheetId + '/gameboard/';
+        window.location.href = APP_BASE + sheetId + '/billboard/';
       }, 900);
     };
 
     xhr.onerror = function() {
       cancelPending();
       addLog('✕  Network error — could not reach the server.', 'err');
-      btn.disabled = false; btn.textContent = 'Connect & Launch GameBoard';
+      btn.disabled = false; btn.textContent = 'Connect & Launch BillBoard';
     };
 
     xhr.send('id=' + encodeURIComponent(sheetId));

@@ -14,10 +14,10 @@ RewriteRule ^pitchboard/help_compendium/?$ source/pitchboard/help_compendium/ind
 RewriteRule ^pitchboard/help/?$ source/pitchboard/help/index.php [L,QSA]
 # /pitchboard/features — sales / features page (must come before /pitchboard rule)
 RewriteRule ^pitchboard/features/?$ source/pitchboard/features/index.php [L,QSA]
-# /gameboard/features — sales / features page (must come before /gameboard rules)
-RewriteRule ^gameboard/features/?$ source/gameboard/features/index.php [L,QSA]
-# /gameboard/demo — demo catalog page (must come before /gameboard rules)
-RewriteRule ^gameboard/demo/?$ source/gameboard/demo/index.php [L,QSA]
+# /billboard/features — sales / features page (must come before /billboard rules)
+RewriteRule ^billboard/features/?$ source/billboard/features/index.php [L,QSA]
+# /billboard/demo — demo catalog page (must come before /billboard rules)
+RewriteRule ^billboard/demo/?$ source/billboard/demo/index.php [L,QSA]
 # /pitchboard/compendium — Compendium publish page (must come before /pitchboard rule)
 RewriteRule ^pitchboard/compendium/?$ source/pitchboard/compendium/index.php [L,QSA]
 
@@ -209,37 +209,37 @@ RewriteRule ^tmboard/share/([a-f0-9]{24})/?$ source/tmboard/shared/index.php [L,
 # /tmboard — setup landing page
 RewriteRule ^tmboard/?$ source/tmboard/index.php [L,QSA]
 
-# /gameboard/{token}/{slug} — public game page (must come before bare token rule)
+# /billboard/{token}/{slug} — public game page (must come before bare token rule)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^gameboard/([a-f0-9]{24})/([^/]+)/?$ source/gameboard/public/index.php [L,QSA]
+RewriteRule ^billboard/([a-f0-9]{24})/([^/]+)/?$ source/billboard/public/index.php [L,QSA]
 
-# /gameboard/{token} — public gameboard catalog (no sheet ID in URL)
+# /billboard/{token} — public billboard catalog (no sheet ID in URL)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^gameboard/([a-f0-9]{24})/?$ source/gameboard/public/index.php [L,QSA]
+RewriteRule ^billboard/([a-f0-9]{24})/?$ source/billboard/public/index.php [L,QSA]
 
-# /gameboard — setup landing page (no sheet ID yet)
-RewriteRule ^gameboard/?$ source/gameboard/setup/index.php [L,QSA]
+# /billboard — setup landing page (no sheet ID yet)
+RewriteRule ^billboard/?$ source/billboard/setup/index.php [L,QSA]
 
-# Short-URL: /{id}/gameboard/{slug} → source/gameboard/index.php (must come before bare /{id}/gameboard rule)
+# Short-URL: /{id}/billboard/{slug} → source/billboard/index.php (must come before bare /{id}/billboard rule)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^([A-Za-z0-9_\-]+)/gameboard/([^/]+)/?$ source/gameboard/index.php [L,QSA]
+RewriteRule ^([A-Za-z0-9_\-]+)/billboard/([^/]+)/?$ source/billboard/index.php [L,QSA]
 
-# Short-URL: /{id}/gameboard → redirect to first game
+# Short-URL: /{id}/billboard → redirect to first game
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^([A-Za-z0-9_\-]+)/gameboard/?$ source/gameboard/index.php [L,QSA]
+RewriteRule ^([A-Za-z0-9_\-]+)/billboard/?$ source/billboard/index.php [L,QSA]
 
-# Also cover sheets/{id}/gameboard/{slug}
+# Also cover sheets/{id}/billboard/{slug}
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^sheets/([A-Za-z0-9_\-]+)/gameboard/([^/]+)/?$ source/gameboard/index.php [L,QSA]
+RewriteRule ^sheets/([A-Za-z0-9_\-]+)/billboard/([^/]+)/?$ source/billboard/index.php [L,QSA]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^sheets/([A-Za-z0-9_\-]+)/gameboard/?$ source/gameboard/index.php [L,QSA]
+RewriteRule ^sheets/([A-Za-z0-9_\-]+)/billboard/?$ source/billboard/index.php [L,QSA]
 
 # Short-URL: /{id}/tmboard → source/tmboard/dashboard/index.php
 RewriteCond %{REQUEST_FILENAME} !-f
@@ -311,5 +311,5 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 # Guard 2: skip known top-level names regardless of subdirectory prefix.
 #          Matches  /anything/name/  or  /anything/name  at end of URI.
-RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard|devboard|cardboard|fitboard|noteboard|pulseboard|tmboard|gameboard|slides-sw|game|shares)(/|$)
+RewriteCond %{REQUEST_URI} !/(js|css|fonts|images|sheets|source|push|menu|steps|manifest|sw_playbook|result|dotEnv|clear-sw|debug-jquery|router|start|test|index|site|pitchboard|devboard|cardboard|fitboard|noteboard|pulseboard|tmboard|billboard|slides-sw|game|shares)(/|$)
 RewriteRule ^([A-Za-z0-9_\-]+)(/.*)?$ sheets/$1$2 [R=302,L]

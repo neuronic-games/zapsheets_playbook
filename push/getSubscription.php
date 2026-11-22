@@ -2,7 +2,7 @@
 /**
  * getSubscription.php — return the Pro subscription status for a sheet.
  *
- * POST params:  id — sheet ID, app — devboard | gameboard | pitchboard
+ * POST params:  id — sheet ID, app — devboard | billboard | pitchboard
  * Response: {
  *   ok:         true,
  *   status:     "active" | "trialing" | "past_due" | "canceled" | "unpaid" | "none" | …,
@@ -10,7 +10,7 @@
  *   is_pro:     true | false   (Pro plan)
  *   is_core:    true | false   (any paid plan: Core or Pro)
  *   period_end: "YYYY-MM-DD" | "",
- *   app:        "devboard" | "gameboard" | "",
+ *   app:        "devboard" | "billboard" | "",
  *   portal_url: Stripe customer portal login link (STRIPE_PORTAL_URL) | ""
  * }
  * The subscriber's email is deliberately not returned.
@@ -20,7 +20,7 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/stripeCommon.php';
 
 $sheetId = trim($_POST['id'] ?? '');
-$app     = trim($_POST['app'] ?? '');   // devboard | gameboard | pitchboard
+$app     = trim($_POST['app'] ?? '');   // devboard | billboard | pitchboard
 if (!stripeValidSheetId($sheetId)) stripeFail('Invalid sheet id');
 if ($app !== '' && !in_array($app, STRIPE_APPS, true)) stripeFail('Invalid app');
 

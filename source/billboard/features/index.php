@@ -1,6 +1,6 @@
 <?php
 $_raw  = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$_base = preg_replace('#/gameboard/features/?$#', '/', $_raw);
+$_base = preg_replace('#/billboard/features/?$#', '/', $_raw);
 if (!$_base || $_base === $_raw) { $_base = '/'; }
 if (substr($_base, -1) !== '/') { $_base .= '/'; }
 ?>
@@ -14,30 +14,30 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 $_scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') ? 'https' : 'http';
 $_origin = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'zapsheets.com');
 $_abs    = $_origin . $_base;
-$_pageUrl = htmlspecialchars($_abs . 'gameboard/features', ENT_QUOTES);
-$_ogImg   = htmlspecialchars($_abs . 'images/og/gameboard-og.png?v=2', ENT_QUOTES);
-$_icon    = htmlspecialchars($_abs . 'images/gb_icon_180.png', ENT_QUOTES);
+$_pageUrl = htmlspecialchars($_abs . 'billboard/features', ENT_QUOTES);
+$_ogImg   = htmlspecialchars($_abs . 'images/og/billboard-og.png?v=3', ENT_QUOTES);
+$_icon    = htmlspecialchars($_abs . 'images/bb_icon_180.png', ENT_QUOTES);
 ?>
-<title>GameBoard — Features</title>
-<meta name="description" content="GameBoard turns your Google Sheet into a polished catalog and game pages for your board games — no web developer, no web hosting.">
+<title>BillBoard — Features</title>
+<meta name="description" content="BillBoard puts your board games on show: a polished catalog and game pages from your Google Sheet — no web developer, no web hosting.">
 <link rel="canonical" href="<?= $_pageUrl ?>">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Zapsheets">
-<meta property="og:title" content="GameBoard — Features">
-<meta property="og:description" content="GameBoard turns your Google Sheet into a polished catalog and game pages for your board games — no web developer, no web hosting.">
+<meta property="og:title" content="BillBoard — Features">
+<meta property="og:description" content="BillBoard puts your board games on show: a polished catalog and game pages from your Google Sheet — no web developer, no web hosting.">
 <meta property="og:url" content="<?= $_pageUrl ?>">
 <meta property="og:image" content="<?= $_ogImg ?>">
 <meta property="og:image:secure_url" content="<?= $_ogImg ?>">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="GameBoard — features">
+<meta property="og:image:alt" content="BillBoard — features">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="GameBoard — Features">
-<meta name="twitter:description" content="GameBoard turns your Google Sheet into a polished catalog and game pages for your board games — no web developer, no web hosting.">
+<meta name="twitter:title" content="BillBoard — Features">
+<meta name="twitter:description" content="BillBoard puts your board games on show: a polished catalog and game pages from your Google Sheet — no web developer, no web hosting.">
 <meta name="twitter:image" content="<?= $_ogImg ?>">
 <link rel="apple-touch-icon" href="<?= $_icon ?>">
-<link rel="icon" type="image/png" href="images/gb_icon_180.png" />
+<link rel="icon" type="image/png" href="images/bb_icon_180.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400&display=swap" rel="stylesheet">
@@ -247,99 +247,99 @@ footer a:hover { color:rgba(255,255,255,.7); }
   .nav-links { display:none; }
   .app-games { grid-template-columns:1fr 1fr; }
 }
-/* ── Mini GameBoard site (mock-ups that look like a real UP Games page) ── */
-@font-face { font-family:'GBDINBlack'; src:url('fonts/DINBlack.woff2') format('woff2'), url('fonts/DINBlack.ttf') format('truetype'); }
-@font-face { font-family:'GBDIN';      src:url('fonts/DINMedium.woff2') format('woff2'), url('fonts/DINMedium.ttf') format('truetype'); }
-.gbx { --gbx-brand:#693f99; background:#f2f0ed; font-family:'GBDIN','Inter',system-ui,sans-serif; color:#222; text-align:left; }
-.gbx-banner { position:relative; background:var(--gbx-brand); transition:background .6s ease; display:flex; align-items:center; gap:11px; padding:11px 16px; min-height:56px; }
-.gbx-logo { width:34px; height:34px; object-fit:contain; flex-shrink:0; }
-.gbx-name { font-family:'GBDINBlack','Inter',sans-serif; font-size:15px; color:#fff; letter-spacing:.02em; white-space:nowrap; }
-.gbx-back { margin-left:auto; font-family:'GBDIN','Inter',sans-serif; font-size:10px; color:rgba(255,255,255,.8); border:1px solid rgba(255,255,255,.4); border-radius:6px; padding:3px 8px; }
-.gbx-carousel { position:relative; aspect-ratio:2.2/1; background:#fff; overflow:hidden; }
-.gbx-carousel img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:opacity .7s ease; }
-.gbx-arrow { position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; border-radius:50%; background:rgba(110,110,110,.7); color:#fff; font-size:15px; line-height:21px; text-align:center; z-index:1; }
-.gbx-arrow.l { left:6px; } .gbx-arrow.r { right:6px; }
-.gbx-dots { position:absolute; left:50%; bottom:6px; transform:translateX(-50%); display:flex; gap:4px; z-index:1; }
-.gbx-dots i { width:6px; height:6px; border-radius:50%; background:rgba(150,150,150,.6); }
-.gbx-dots i.on { background:#fff; box-shadow:0 0 0 1px rgba(0,0,0,.15); }
-.gbx-body { padding:12px 12px 14px; }
-.gbx-h { font-family:'GBDINBlack','Inter',sans-serif; font-size:12px; letter-spacing:.06em; text-transform:uppercase; margin:2px 2px 9px; }
-.gbx-games { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
-.gbx-card { background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.07); }
-.gbx-card img { display:block; width:100%; aspect-ratio:1/1; object-fit:cover; }
-.gbx-card-t { font-family:'GBDINBlack','Inter',sans-serif; font-size:11px; color:#2d2a8e; padding:7px 8px 1px; }
-.gbx-card-s { font-size:9.5px; line-height:1.35; padding:0 8px 9px; color:#222; }
-.gbx-foot { display:flex; justify-content:space-between; align-items:center; padding:8px 14px; background:#fff; border-top:1px solid #e6e2dc; font-size:9.5px; color:#666; }
-.gbx-socs { display:flex; gap:5px; }
-.gbx-soc { width:17px; height:17px; border-radius:50%; border:1px solid #d6d1ca; display:flex; align-items:center; justify-content:center; }
-.gbx-soc svg { fill:#666; display:block; }
+/* ── Mini BillBoard site (mock-ups that look like a real UP Games page) ── */
+@font-face { font-family:'BBDINBlack'; src:url('fonts/DINBlack.woff2') format('woff2'), url('fonts/DINBlack.ttf') format('truetype'); }
+@font-face { font-family:'BBDIN';      src:url('fonts/DINMedium.woff2') format('woff2'), url('fonts/DINMedium.ttf') format('truetype'); }
+.bbx { --bbx-brand:#693f99; background:#f2f0ed; font-family:'BBDIN','Inter',system-ui,sans-serif; color:#222; text-align:left; }
+.bbx-banner { position:relative; background:var(--bbx-brand); transition:background .6s ease; display:flex; align-items:center; gap:11px; padding:11px 16px; min-height:56px; }
+.bbx-logo { width:34px; height:34px; object-fit:contain; flex-shrink:0; }
+.bbx-name { font-family:'BBDINBlack','Inter',sans-serif; font-size:15px; color:#fff; letter-spacing:.02em; white-space:nowrap; }
+.bbx-back { margin-left:auto; font-family:'BBDIN','Inter',sans-serif; font-size:10px; color:rgba(255,255,255,.8); border:1px solid rgba(255,255,255,.4); border-radius:6px; padding:3px 8px; }
+.bbx-carousel { position:relative; aspect-ratio:2.2/1; background:#fff; overflow:hidden; }
+.bbx-carousel img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:opacity .7s ease; }
+.bbx-arrow { position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; border-radius:50%; background:rgba(110,110,110,.7); color:#fff; font-size:15px; line-height:21px; text-align:center; z-index:1; }
+.bbx-arrow.l { left:6px; } .bbx-arrow.r { right:6px; }
+.bbx-dots { position:absolute; left:50%; bottom:6px; transform:translateX(-50%); display:flex; gap:4px; z-index:1; }
+.bbx-dots i { width:6px; height:6px; border-radius:50%; background:rgba(150,150,150,.6); }
+.bbx-dots i.on { background:#fff; box-shadow:0 0 0 1px rgba(0,0,0,.15); }
+.bbx-body { padding:12px 12px 14px; }
+.bbx-h { font-family:'BBDINBlack','Inter',sans-serif; font-size:12px; letter-spacing:.06em; text-transform:uppercase; margin:2px 2px 9px; }
+.bbx-games { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
+.bbx-card { background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.07); }
+.bbx-card img { display:block; width:100%; aspect-ratio:1/1; object-fit:cover; }
+.bbx-card-t { font-family:'BBDINBlack','Inter',sans-serif; font-size:11px; color:#2d2a8e; padding:7px 8px 1px; }
+.bbx-card-s { font-size:9.5px; line-height:1.35; padding:0 8px 9px; color:#222; }
+.bbx-foot { display:flex; justify-content:space-between; align-items:center; padding:8px 14px; background:#fff; border-top:1px solid #e6e2dc; font-size:9.5px; color:#666; }
+.bbx-socs { display:flex; gap:5px; }
+.bbx-soc { width:17px; height:17px; border-radius:50%; border:1px solid #d6d1ca; display:flex; align-items:center; justify-content:center; }
+.bbx-soc svg { fill:#666; display:block; }
 /* game page */
-.gbx-gp { background:#fff; padding:14px 16px 16px; }
-.gbx-gp-title { font-family:'GBDINBlack','Inter',sans-serif; font-size:21px; letter-spacing:.02em; text-transform:uppercase; line-height:1.05; }
-.gbx-gp-sub { font-size:11px; color:#555; margin-top:3px; }
-.gbx-gp-row { display:grid; grid-template-columns:42% 1fr; gap:12px; margin-top:12px; }
-.gbx-gp-img { width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:8px; border:1px solid #e3e3e3; }
-.gbx-thumbs { display:flex; gap:5px; margin-top:5px; }
-.gbx-thumbs img { width:34px; height:34px; object-fit:cover; border-radius:4px; border:1px solid #e3e3e3; }
-.gbx-thumbs img.on { border:1.5px solid #c8963e; }
-.gbx-stats { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
-.gbx-stat { border:1px solid #e3e3e3; border-radius:7px; text-align:center; padding:6px 4px 5px; }
-.gbx-stat b { display:block; font-family:'GBDINBlack','Inter',sans-serif; font-size:13px; font-weight:normal; }
-.gbx-stat span { font-size:8px; letter-spacing:.08em; text-transform:uppercase; color:#777; }
-.gbx-desc { border-left:2px solid #e3dcd2; padding-left:8px; margin-top:8px; font-size:9.5px; line-height:1.5; }
-.gbx-des { font-size:9px; margin-top:7px; } .gbx-des b { font-family:'GBDINBlack','Inter',sans-serif; font-weight:normal; letter-spacing:.06em; color:#777; margin-right:6px; }
-.gbx-btns { display:flex; gap:5px; margin-top:9px; flex-wrap:wrap; }
-.gbx-btn { font-family:'GBDINBlack','Inter',sans-serif; font-size:9px; letter-spacing:.06em; text-transform:uppercase; border:1px solid #d6d6d6; border-radius:6px; padding:5px 9px; }
-.gbx-btn.dark { background:#1a1c30; border-color:#1a1c30; color:#fff; }
+.bbx-gp { background:#fff; padding:14px 16px 16px; }
+.bbx-gp-title { font-family:'BBDINBlack','Inter',sans-serif; font-size:21px; letter-spacing:.02em; text-transform:uppercase; line-height:1.05; }
+.bbx-gp-sub { font-size:11px; color:#555; margin-top:3px; }
+.bbx-gp-row { display:grid; grid-template-columns:42% 1fr; gap:12px; margin-top:12px; }
+.bbx-gp-img { width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:8px; border:1px solid #e3e3e3; }
+.bbx-thumbs { display:flex; gap:5px; margin-top:5px; }
+.bbx-thumbs img { width:34px; height:34px; object-fit:cover; border-radius:4px; border:1px solid #e3e3e3; }
+.bbx-thumbs img.on { border:1.5px solid #c8963e; }
+.bbx-stats { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.bbx-stat { border:1px solid #e3e3e3; border-radius:7px; text-align:center; padding:6px 4px 5px; }
+.bbx-stat b { display:block; font-family:'BBDINBlack','Inter',sans-serif; font-size:13px; font-weight:normal; }
+.bbx-stat span { font-size:8px; letter-spacing:.08em; text-transform:uppercase; color:#777; }
+.bbx-desc { border-left:2px solid #e3dcd2; padding-left:8px; margin-top:8px; font-size:9.5px; line-height:1.5; }
+.bbx-des { font-size:9px; margin-top:7px; } .bbx-des b { font-family:'BBDINBlack','Inter',sans-serif; font-weight:normal; letter-spacing:.06em; color:#777; margin-right:6px; }
+.bbx-btns { display:flex; gap:5px; margin-top:9px; flex-wrap:wrap; }
+.bbx-btn { font-family:'BBDINBlack','Inter',sans-serif; font-size:9px; letter-spacing:.06em; text-transform:uppercase; border:1px solid #d6d6d6; border-radius:6px; padding:5px 9px; }
+.bbx-btn.dark { background:#1a1c30; border-color:#1a1c30; color:#fff; }
 
-/* product page mock (matches the live GameBoard game page) */
-.gbp { background:#f6f5f2; }
-.gbp-nav { background:#1a1a2e; color:#fff; display:flex; align-items:center; gap:7px; padding:9px 12px; }
-.gbp-back { font-family:'GBDINBlack','Inter',sans-serif; font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:rgba(255,255,255,.78); }
-.gbp-sep { color:rgba(255,255,255,.25); font-size:11px; } .gbp-game { font-size:10.5px; opacity:.55; }
-.gbp-navbtn { margin-left:auto; font-family:'GBDINBlack','Inter',sans-serif; font-size:8.5px; letter-spacing:.07em; text-transform:uppercase; border:1.5px solid rgba(255,255,255,.3); border-radius:4px; padding:3px 8px; }
-.gbp-hero { position:relative; aspect-ratio:1.45/1; background-size:cover; background-position:center top; display:flex; align-items:flex-end; }
-.gbp-hero::before { content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(10,10,28,.95) 0%, rgba(10,10,28,.6) 45%, rgba(10,10,28,.05) 100%); }
-.gbp-hero-in { position:relative; padding:0 16px 16px; color:#fff; }
-.gbp-title { font-family:'GBDINBlack','Inter',sans-serif; font-size:30px; line-height:1.04; letter-spacing:.02em; text-shadow:0 2px 14px rgba(0,0,0,.55); margin-bottom:5px; }
-.gbp-sum { font-size:11.5px; color:rgba(255,255,255,.85); margin-bottom:8px; }
-.gbp-stats { display:flex; flex-wrap:wrap; gap:3px 12px; font-size:10px; color:rgba(255,255,255,.8); }
-.gbp-stats span, .gbp-cred { display:inline-flex; align-items:center; gap:4px; }
-.gbp-stats svg, .gbp-cred svg { width:11px; height:11px; }
-.gbp-cred { font-size:10px; color:rgba(255,255,255,.75); margin-top:4px; }
-.gbp-ctas { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:10px; }
-.gbp-price { font-family:'GBDINBlack','Inter',sans-serif; font-size:15px; border:2px solid rgba(255,255,255,.35); border-radius:5px; padding:4px 8px 3px; }
-.gbp-buy { font-family:'GBDINBlack','Inter',sans-serif; font-size:8.5px; letter-spacing:.07em; text-transform:uppercase; background:#fff; color:#1a3a5c; border:2px solid #fff; border-radius:5px; padding:7px 9px 6px; }
-.gbp-ticker { background:#f5a623; color:#fff; text-align:center; padding:11px 14px; }
-.gbp-q { font-family:'GBDINBlack','Inter',sans-serif; font-style:italic; font-size:12px; }
-.gbp-a { font-size:8.5px; letter-spacing:.07em; text-transform:uppercase; color:rgba(255,255,255,.8); margin-top:3px; }
-.gbp-main { padding:14px 16px 16px; }
-.gbp-label { font-family:'GBDINBlack','Inter',sans-serif; font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; color:#8a8a99; border-bottom:1px solid #e3e1dc; padding-bottom:4px; margin-bottom:7px; }
-.gbp-desc { font-size:10.5px; line-height:1.6; color:#3d3d55; }
+/* product page mock (matches the live BillBoard game page) */
+.bbp { background:#f6f5f2; }
+.bbp-nav { background:#1a1a2e; color:#fff; display:flex; align-items:center; gap:7px; padding:9px 12px; }
+.bbp-back { font-family:'BBDINBlack','Inter',sans-serif; font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:rgba(255,255,255,.78); }
+.bbp-sep { color:rgba(255,255,255,.25); font-size:11px; } .bbp-game { font-size:10.5px; opacity:.55; }
+.bbp-navbtn { margin-left:auto; font-family:'BBDINBlack','Inter',sans-serif; font-size:8.5px; letter-spacing:.07em; text-transform:uppercase; border:1.5px solid rgba(255,255,255,.3); border-radius:4px; padding:3px 8px; }
+.bbp-hero { position:relative; aspect-ratio:1.45/1; background-size:cover; background-position:center top; display:flex; align-items:flex-end; }
+.bbp-hero::before { content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(10,10,28,.95) 0%, rgba(10,10,28,.6) 45%, rgba(10,10,28,.05) 100%); }
+.bbp-hero-in { position:relative; padding:0 16px 16px; color:#fff; }
+.bbp-title { font-family:'BBDINBlack','Inter',sans-serif; font-size:30px; line-height:1.04; letter-spacing:.02em; text-shadow:0 2px 14px rgba(0,0,0,.55); margin-bottom:5px; }
+.bbp-sum { font-size:11.5px; color:rgba(255,255,255,.85); margin-bottom:8px; }
+.bbp-stats { display:flex; flex-wrap:wrap; gap:3px 12px; font-size:10px; color:rgba(255,255,255,.8); }
+.bbp-stats span, .bbp-cred { display:inline-flex; align-items:center; gap:4px; }
+.bbp-stats svg, .bbp-cred svg { width:11px; height:11px; }
+.bbp-cred { font-size:10px; color:rgba(255,255,255,.75); margin-top:4px; }
+.bbp-ctas { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:10px; }
+.bbp-price { font-family:'BBDINBlack','Inter',sans-serif; font-size:15px; border:2px solid rgba(255,255,255,.35); border-radius:5px; padding:4px 8px 3px; }
+.bbp-buy { font-family:'BBDINBlack','Inter',sans-serif; font-size:8.5px; letter-spacing:.07em; text-transform:uppercase; background:#fff; color:#1a3a5c; border:2px solid #fff; border-radius:5px; padding:7px 9px 6px; }
+.bbp-ticker { background:#f5a623; color:#fff; text-align:center; padding:11px 14px; }
+.bbp-q { font-family:'BBDINBlack','Inter',sans-serif; font-style:italic; font-size:12px; }
+.bbp-a { font-size:8.5px; letter-spacing:.07em; text-transform:uppercase; color:rgba(255,255,255,.8); margin-top:3px; }
+.bbp-main { padding:14px 16px 16px; }
+.bbp-label { font-family:'BBDINBlack','Inter',sans-serif; font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; color:#8a8a99; border-bottom:1px solid #e3e1dc; padding-bottom:4px; margin-bottom:7px; }
+.bbp-desc { font-size:10.5px; line-height:1.6; color:#3d3d55; }
 /* ── Brand editor animation ── */
 /* add-a-game step */
 .ie-addcard { transition:box-shadow .2s; }
 .ie-cover-slot { position:relative; aspect-ratio:1/1; background:#ece8e2; }
 .ie-cover-slot img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transform:scale(.96); transition:opacity .4s, transform .4s; }
 .ie-addcard.has-cover .ie-cover-slot img { opacity:1; transform:none; }
-.ie-cover-ph { position:absolute; inset:6px; border:1.5px dashed #b9b1a6; border-radius:6px; display:flex; align-items:center; justify-content:center; font-family:'GBDINBlack','Inter',sans-serif; font-size:10px; color:#8a8073; letter-spacing:.03em; transition:opacity .25s, background .15s, border-color .15s; }
+.ie-cover-ph { position:absolute; inset:6px; border:1.5px dashed #b9b1a6; border-radius:6px; display:flex; align-items:center; justify-content:center; font-family:'BBDINBlack','Inter',sans-serif; font-size:10px; color:#8a8073; letter-spacing:.03em; transition:opacity .25s, background .15s, border-color .15s; }
 .ie-cover-ph.hover { border-color:#2d2a8e; color:#2d2a8e; background:rgba(45,42,142,.05); }
 .ie-ph-cover { display:none; }
 .ie-addcard.open .ie-ph-add { display:none; } .ie-addcard.open .ie-ph-cover { display:inline; }
 .ie-addcard.has-cover .ie-cover-ph { opacity:0; }
-.ie-addcard:not(.open) .gbx-card-t, .ie-addcard:not(.open) .gbx-card-s { visibility:hidden; }
-.gbx-card .ie-edit { display:block; outline-offset:1px; min-height:1.35em; }
-.gbx-card .gbx-card-s.ie-edit { min-height:2.7em; }
-.gbx-card .ie-edit.hover { outline-color:rgba(45,42,142,.45); }
-.gbx-card .ie-edit.editing { outline:1.5px solid #4caa4b; }
-.gbx-card .ie-edit.editing::after { background:#4caa4b; }
+.ie-addcard:not(.open) .bbx-card-t, .ie-addcard:not(.open) .bbx-card-s { visibility:hidden; }
+.bbx-card .ie-edit { display:block; outline-offset:1px; min-height:1.35em; }
+.bbx-card .bbx-card-s.ie-edit { min-height:2.7em; }
+.bbx-card .ie-edit.hover { outline-color:rgba(45,42,142,.45); }
+.bbx-card .ie-edit.editing { outline:1.5px solid #4caa4b; }
+.bbx-card .ie-edit.editing::after { background:#4caa4b; }
 .ie-gname:empty::before { content:'Game name'; color:#b8b3c8; }
 .ie-gsum:empty::before { content:'One-line summary'; color:#bbb; }
 .ie-gname.editing:empty::before, .ie-gsum.editing:empty::before { content:''; }
 .ie-stage { position:relative; overflow:hidden; user-select:none; }
 .ie-logo-slot { position:relative; width:34px; height:34px; flex-shrink:0; }
-.ie-logo-slot .gbx-logo { position:absolute; inset:0; opacity:0; transform:scale(.6); transition:opacity .35s, transform .35s cubic-bezier(.3,1.6,.5,1); }
-.ie-logo-slot.has .gbx-logo { opacity:1; transform:none; }
+.ie-logo-slot .bbx-logo { position:absolute; inset:0; opacity:0; transform:scale(.6); transition:opacity .35s, transform .35s cubic-bezier(.3,1.6,.5,1); }
+.ie-logo-slot.has .bbx-logo { opacity:1; transform:none; }
 .ie-logo-ph { position:absolute; inset:0; border:1.5px dashed rgba(255,255,255,.55); border-radius:8px; color:rgba(255,255,255,.8); font-size:8px; line-height:1.1; display:flex; align-items:center; justify-content:center; text-align:center; transition:opacity .25s, background .15s, border-color .15s; }
 .ie-logo-slot.has .ie-logo-ph { opacity:0; }
 .ie-logo-ph.hover { border-color:#fff; background:rgba(255,255,255,.15); }
@@ -374,14 +374,14 @@ footer a:hover { color:rgba(255,255,255,.7); }
 .gp-hero { overflow:hidden; }
 .gp-bg { position:absolute; inset:0; background-size:cover; background-position:center top; opacity:0; transition:opacity .6s; }
 .gp-hero::before { z-index:1; }
-.gp-hero .gbp-hero-in { z-index:2; }
+.gp-hero .bbp-hero-in { z-index:2; }
 .gp-hero .ie-replace { z-index:3; top:32%; }
 .gp-hero.hover .ie-replace { opacity:1; }
 .gp-hero.hover::after { content:''; position:absolute; inset:0; box-shadow:inset 0 0 0 2px #4caa4b; z-index:3; }
 #gpDemo em { font-style:normal; }
-#gpDemo .gbp-buy.ie-edit.hover { outline-color:#9be29a; }
-.gbp-ticker .ie-edit { display:inline-block; }
-.gbp-ticker .gbp-a { display:block; width:max-content; margin-left:auto; margin-right:auto; }
+#gpDemo .bbp-buy.ie-edit.hover { outline-color:#9be29a; }
+.bbp-ticker .ie-edit { display:inline-block; }
+.bbp-ticker .bbp-a { display:block; width:max-content; margin-left:auto; margin-right:auto; }
 .gp-linkpop { width:200px; padding:9px 10px 10px; font-family:'Inter',system-ui,sans-serif; }
 .gp-ll { font-size:8.5px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin:0 0 3px; }
 .gp-f { font-size:10.5px; color:#1e293b; border:1px solid #cbd5e1; border-radius:5px; padding:5px 7px; margin-bottom:7px; min-height:24px; white-space:nowrap; overflow:hidden; }
@@ -395,25 +395,25 @@ footer a:hover { color:rgba(255,255,255,.7); }
 <body>
 
 <nav>
-  <a class="nav-logo" href="gameboard">
-    <img src="images/gb_icon_180.png" alt="GameBoard" />
-    <span class="nav-logo-name">GameBoard</span>
+  <a class="nav-logo" href="billboard">
+    <img src="images/bb_icon_180.png" alt="BillBoard" />
+    <span class="nav-logo-name">BillBoard</span>
   </a>
   <div class="nav-links">
     <a href="#features">Features</a>
     <a href="#screenshots">See it in action</a>
     <a href="#compare">Compare</a>
   </div>
-  <a href="gameboard" class="nav-cta">Get started</a>
+  <a href="billboard" class="nav-cta">Get started</a>
 </nav>
 
 <section class="hero">
   <div class="hero-tag">For board game makers</div>
   <h1>Your games. A <em>polished page</em> — instantly.</h1>
-  <p>GameBoard turns your Google Sheet into a beautiful product catalog and individual game pages — no web developer, no web hosting.</p>
+  <p>Put your games up on the BillBoard. It turns your Google Sheet into a beautiful product catalog and a page for every game — no web developer, no web hosting.</p>
   <div class="hero-btns">
-    <a href="gameboard" class="btn-primary">Get GameBoard</a>
-    <a href="gameboard/features#screenshots" class="btn-ghost">See it in action</a>
+    <a href="billboard" class="btn-primary">Get BillBoard</a>
+    <a href="billboard/features#screenshots" class="btn-ghost">See it in action</a>
   </div>
 </section>
 
@@ -431,20 +431,20 @@ footer a:hover { color:rgba(255,255,255,.7); }
   <div class="live-demo-inner">
     <div class="live-demo-text">
       <div class="section-label">Live example</div>
-      <h2 class="section-title">See a real GameBoard</h2>
-      <p>UP Games — independent publisher of <em style="color:rgba(255,255,255,.8);font-style:normal;">Floristry</em>, <em style="color:rgba(255,255,255,.8);font-style:normal;">Scurry Up!</em>, and <em style="color:rgba(255,255,255,.8);font-style:normal;">Pressure</em> — uses GameBoard to showcase their catalog. Click through to browse their live pages.</p>
+      <h2 class="section-title">See a real BillBoard</h2>
+      <p>UP Games — independent publisher of <em style="color:rgba(255,255,255,.8);font-style:normal;">Floristry</em>, <em style="color:rgba(255,255,255,.8);font-style:normal;">Scurry Up!</em>, and <em style="color:rgba(255,255,255,.8);font-style:normal;">Pressure</em> — uses BillBoard to showcase their catalog. Click through to browse their live pages.</p>
       <div class="live-demo-links">
-        <a href="https://zapsheets.com/app/gameboard/a9e4ef63bb33371151169a6e/" target="_blank" class="live-link featured">
+        <a href="https://zapsheets.com/app/billboard/a9e4ef63bb33371151169a6e/" target="_blank" class="live-link featured">
           <div class="live-link-info">
             <img class="live-link-logo" src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/68db6d2fe1c4ff0767a9.png" alt="UP Games" />
             <div>
               <div class="live-link-name">UP Games — Full catalog</div>
-              <div class="live-link-desc">zapsheets.com/app/gameboard/…</div>
+              <div class="live-link-desc">zapsheets.com/app/billboard/…</div>
             </div>
           </div>
           <span class="live-link-arrow">↗</span>
         </a>
-        <a href="https://zapsheets.com/app/gameboard/a9e4ef63bb33371151169a6e/floristry" target="_blank" class="live-link">
+        <a href="https://zapsheets.com/app/billboard/a9e4ef63bb33371151169a6e/floristry" target="_blank" class="live-link">
           <div class="live-link-info">
             <img class="live-link-logo" src="https://zapsheets.com/app/images/1Aa9L2PX4uteoJNy4kyS3QPwWhn9plAPkc-1y4XUQDmQ/e25ee32f4d226062e11c.webp" alt="Floristry" style="object-fit:cover;" />
             <div>
@@ -459,18 +459,18 @@ footer a:hover { color:rgba(255,255,255,.7); }
     <div class="demo-browser">
       <div class="demo-chrome">
         <div class="demo-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-        <div class="demo-url">zapsheets.com/app/gameboard/a9e4ef63bb33371151169a6e/</div>
+        <div class="demo-url">zapsheets.com/app/billboard/a9e4ef63bb33371151169a6e/</div>
       </div>
       <div class="demo-body" style="background:#f2f0ed">
-        <div class="gbx">
-          <div class="gbx-banner"><img class="gbx-logo" src="images/gameboard-features/up-logo.webp" alt="UP Games"><span class="gbx-name">UP Games</span></div>
-          <div class="gbx-carousel"><img src="images/gameboard-features/carousel-spread.webp" alt="Scurry Up! game spread" loading="lazy"><span class="gbx-arrow l">‹</span><span class="gbx-arrow r">›</span><div class="gbx-dots"><i class="on"></i><i></i><i></i></div></div>
-          <div class="gbx-body">
-            <div class="gbx-h">Our Games</div>
-            <div class="gbx-games">
-              <div class="gbx-card"><img src="images/gameboard-features/cover-floristry.webp" alt="Floristry" loading="lazy"><div class="gbx-card-t">Floristry</div><div class="gbx-card-s">A quick, real time, Dutch auction game for two players.</div></div>
-              <div class="gbx-card"><img src="images/gameboard-features/cover-scurry.webp" alt="Scurry Up!" loading="lazy"><div class="gbx-card-t">Scurry Up!</div><div class="gbx-card-s">Take on the role of a squirrel racing for nuts and berries!</div></div>
-              <div class="gbx-card"><img src="images/gameboard-features/cover-pressure.webp" alt="Pressure" loading="lazy"><div class="gbx-card-t">Pressure</div><div class="gbx-card-s">Will you dive the deepest or crack under the pressure!</div></div>
+        <div class="bbx">
+          <div class="bbx-banner"><img class="bbx-logo" src="images/billboard-features/up-logo.webp" alt="UP Games"><span class="bbx-name">UP Games</span></div>
+          <div class="bbx-carousel"><img src="images/billboard-features/carousel-spread.webp" alt="Scurry Up! game spread" loading="lazy"><span class="bbx-arrow l">‹</span><span class="bbx-arrow r">›</span><div class="bbx-dots"><i class="on"></i><i></i><i></i></div></div>
+          <div class="bbx-body">
+            <div class="bbx-h">Our Games</div>
+            <div class="bbx-games">
+              <div class="bbx-card"><img src="images/billboard-features/cover-floristry.webp" alt="Floristry" loading="lazy"><div class="bbx-card-t">Floristry</div><div class="bbx-card-s">A quick, real time, Dutch auction game for two players.</div></div>
+              <div class="bbx-card"><img src="images/billboard-features/cover-scurry.webp" alt="Scurry Up!" loading="lazy"><div class="bbx-card-t">Scurry Up!</div><div class="bbx-card-s">Take on the role of a squirrel racing for nuts and berries!</div></div>
+              <div class="bbx-card"><img src="images/billboard-features/cover-pressure.webp" alt="Pressure" loading="lazy"><div class="bbx-card-t">Pressure</div><div class="bbx-card-s">Will you dive the deepest or crack under the pressure!</div></div>
             </div>
           </div>
         </div>
@@ -482,13 +482,13 @@ footer a:hover { color:rgba(255,255,255,.7); }
 <section id="features">
   <div class="container">
     <div class="section-label">Features</div>
-    <h2 class="section-title">Everything you need to showcase your games</h2>
-    <p class="section-sub">From a branded catalog to individual game pages with buy links — GameBoard covers the full product presence without a complicated CMS.</p>
+    <h2 class="section-title">Everything you need to put your games on show</h2>
+    <p class="section-sub">Like a playbill for your whole line-up: a branded catalog, a page for each game and buy links — BillBoard covers your full product presence without a complicated CMS.</p>
     <div class="features-grid">
       <div class="feat-card" style="grid-column:1/-1">
         <div class="feat-icon green">🌐</div>
         <h3>No website to host</h3>
-        <p>You don't need to build, host or maintain your own website. GameBoard gives you a live catalog and game pages at a shareable link — no hosting plan, no web server, no WordPress updates. A typical GoDaddy site runs $10–35 a month for hosting, and you still need to buy your own domain; with GameBoard there's nothing to host.</p>
+        <p>You don't need to build, host or maintain your own website. BillBoard gives you a live catalog and game pages at a shareable link — no hosting plan, no web server, no WordPress updates. A typical GoDaddy site runs $10–35 a month for hosting, and you still need to buy your own domain; with BillBoard there's nothing to host.</p>
       </div>
       <div class="feat-card">
         <div class="feat-icon green">🗂️</div>
@@ -518,7 +518,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="feat-card">
         <div class="feat-icon slate">🔗</div>
         <h3>Shareable public links</h3>
-        <p>Generate a secure token link to share your GameBoard publicly — without exposing your Sheet ID. Give it to press, convention attendees, or put it in your email signature.</p>
+        <p>Generate a secure token link to share your BillBoard publicly — without exposing your Sheet ID. Give it to press, convention attendees, or put it in your email signature.</p>
       </div>
       <div class="feat-card">
         <div class="feat-icon green">📱</div>
@@ -533,7 +533,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="feat-card">
         <div class="feat-icon dark">📊</div>
         <h3>Powered by your Sheet</h3>
-        <p>GameBoard reads directly from your Google Sheet — the same one PitchBoard uses. You edit the page directly as you see it.</p>
+        <p>BillBoard reads directly from your Google Sheet — the same one PitchBoard uses. You edit the page directly as you see it.</p>
       </div>
     </div>
   </div>
@@ -559,17 +559,17 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="browser-frame">
         <div class="browser-chrome">
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-          <div class="browser-url">zapsheets.com/app/gameboard/…</div>
+          <div class="browser-url">zapsheets.com/app/billboard/…</div>
         </div>
-        <div class="gbx">
-          <div class="gbx-banner"><img class="gbx-logo" src="images/gameboard-features/up-logo.webp" alt="UP Games"><span class="gbx-name">UP Games</span></div>
-          <div class="gbx-carousel"><img src="images/gameboard-features/carousel-pieces.webp" alt="Scurry Up! pieces" loading="lazy"><span class="gbx-arrow l">‹</span><span class="gbx-arrow r">›</span><div class="gbx-dots"><i></i><i class="on"></i><i></i></div></div>
-          <div class="gbx-body">
-            <div class="gbx-h">Our Games</div>
-            <div class="gbx-games">
-              <div class="gbx-card"><img src="images/gameboard-features/cover-floristry.webp" alt="Floristry" loading="lazy"><div class="gbx-card-t">Floristry</div><div class="gbx-card-s">A quick, real time, Dutch auction game for two players.</div></div>
-              <div class="gbx-card"><img src="images/gameboard-features/cover-scurry.webp" alt="Scurry Up!" loading="lazy"><div class="gbx-card-t">Scurry Up!</div><div class="gbx-card-s">Take on the role of a squirrel racing for nuts and berries!</div></div>
-              <div class="gbx-card"><img src="images/gameboard-features/cover-pressure.webp" alt="Pressure" loading="lazy"><div class="gbx-card-t">Pressure</div><div class="gbx-card-s">Will you dive the deepest or crack under the pressure!</div></div>
+        <div class="bbx">
+          <div class="bbx-banner"><img class="bbx-logo" src="images/billboard-features/up-logo.webp" alt="UP Games"><span class="bbx-name">UP Games</span></div>
+          <div class="bbx-carousel"><img src="images/billboard-features/carousel-pieces.webp" alt="Scurry Up! pieces" loading="lazy"><span class="bbx-arrow l">‹</span><span class="bbx-arrow r">›</span><div class="bbx-dots"><i></i><i class="on"></i><i></i></div></div>
+          <div class="bbx-body">
+            <div class="bbx-h">Our Games</div>
+            <div class="bbx-games">
+              <div class="bbx-card"><img src="images/billboard-features/cover-floristry.webp" alt="Floristry" loading="lazy"><div class="bbx-card-t">Floristry</div><div class="bbx-card-s">A quick, real time, Dutch auction game for two players.</div></div>
+              <div class="bbx-card"><img src="images/billboard-features/cover-scurry.webp" alt="Scurry Up!" loading="lazy"><div class="bbx-card-t">Scurry Up!</div><div class="bbx-card-s">Take on the role of a squirrel racing for nuts and berries!</div></div>
+              <div class="bbx-card"><img src="images/billboard-features/cover-pressure.webp" alt="Pressure" loading="lazy"><div class="bbx-card-t">Pressure</div><div class="bbx-card-s">Will you dive the deepest or crack under the pressure!</div></div>
             </div>
           </div>
         </div>
@@ -593,24 +593,24 @@ footer a:hover { color:rgba(255,255,255,.7); }
       <div class="browser-frame">
         <div class="browser-chrome">
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-          <div class="browser-url">zapsheets.com/app/gameboard/…/floristry</div>
+          <div class="browser-url">zapsheets.com/app/billboard/…/floristry</div>
         </div>
-        <div class="gbx gbp ie-stage" id="gpDemo" aria-hidden="true">
-          <div class="gbp-nav"><span class="gbp-back">‹ All Games</span><span class="gbp-sep">|</span><span class="gbp-game">Floristry</span><span class="gbp-navbtn">Rules</span></div>
+        <div class="bbx bbp ie-stage" id="gpDemo" aria-hidden="true">
+          <div class="bbp-nav"><span class="bbp-back">‹ All Games</span><span class="bbp-sep">|</span><span class="bbp-game">Floristry</span><span class="bbp-navbtn">Rules</span></div>
           <div class="ie-mode">✎ Editing — click anything to change it</div>
-          <div class="gbp-hero gp-hero" style="background-image:url('images/gameboard-features/hero-floristry.webp')">
-            <div class="gp-bg" style="background-image:url('images/gameboard-features/floristry-board.webp')"></div>
+          <div class="bbp-hero gp-hero" style="background-image:url('images/billboard-features/hero-floristry.webp')">
+            <div class="gp-bg" style="background-image:url('images/billboard-features/floristry-board.webp')"></div>
             <div class="ie-replace">⟳ Replace image</div>
-            <div class="gbp-hero-in">
-              <div class="gbp-title">Floristry</div>
-              <div class="gbp-sum">A quick, real time, Dutch auction game for two players.</div>
-              <div class="gbp-stats"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>2 players</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><em class="ie-edit gp-time">20 min</em></span><em class="ie-edit gp-genre">Family, Casual</em></div>
-              <div class="gbp-cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>David Gordon, TAM</div>
-              <div class="gbp-ctas"><span class="gbp-price">$20</span><span class="gbp-buy">Buy on Amazon</span><span class="gbp-buy ie-edit gp-buy">Buy at Barnes &amp; Noble</span></div>
+            <div class="bbp-hero-in">
+              <div class="bbp-title">Floristry</div>
+              <div class="bbp-sum">A quick, real time, Dutch auction game for two players.</div>
+              <div class="bbp-stats"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>2 players</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><em class="ie-edit gp-time">20 min</em></span><em class="ie-edit gp-genre">Family, Casual</em></div>
+              <div class="bbp-cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>David Gordon, TAM</div>
+              <div class="bbp-ctas"><span class="bbp-price">$20</span><span class="bbp-buy">Buy on Amazon</span><span class="bbp-buy ie-edit gp-buy">Buy at Barnes &amp; Noble</span></div>
             </div>
           </div>
-          <div class="gbp-ticker"><div class="gbp-q ie-edit gp-q">“This game is just delightful.”</div><div class="gbp-a ie-edit gp-a">— Shut Up &amp; Sit Down</div></div>
-          <div class="gbp-main"><div class="gbp-label">About the Game</div><div class="gbp-desc">Players compete at the historic Aalsmeer Dutch Auction to win the best flowers and then use them to create the most charming window display.</div></div>
+          <div class="bbp-ticker"><div class="bbp-q ie-edit gp-q">“This game is just delightful.”</div><div class="bbp-a ie-edit gp-a">— Shut Up &amp; Sit Down</div></div>
+          <div class="bbp-main"><div class="bbp-label">About the Game</div><div class="bbp-desc">Players compete at the historic Aalsmeer Dutch Auction to win the best flowers and then use them to create the most charming window display.</div></div>
           <div class="ie-pop gp-linkpop"><div class="gp-ll">Button text</div><div class="gp-f gp-ltext">Buy at Barnes &amp; Noble</div><div class="gp-ll">Link</div><div class="gp-f gp-lurl">barnesandnoble.com/w/floristry</div><div class="gp-save">Save</div></div>
           <div class="ie-file"><img alt=""><span></span></div>
           <div class="ie-toast">✓ Saved to your Sheet</div>
@@ -633,34 +633,34 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <li>All changes sync back to the Settings tab in your Sheet</li>
         </ul>
       </div>
-      <div class="browser-frame ie-frame" aria-label="Animated demo: setting up and editing a GameBoard catalog directly on the page">
+      <div class="browser-frame ie-frame" aria-label="Animated demo: setting up and editing a BillBoard catalog directly on the page">
         <div class="browser-chrome">
           <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
-          <div class="browser-url">zapsheets.com/app/gameboard/…</div>
+          <div class="browser-url">zapsheets.com/app/billboard/…</div>
         </div>
-        <div class="gbx ie-stage" id="ieDemo" aria-hidden="true">
-          <div class="gbx-banner ie-banner">
-            <div class="ie-logo-slot"><div class="ie-logo-ph">+ Logo</div><img class="gbx-logo" src="images/gameboard-features/up-logo.webp" alt=""></div>
-            <span class="gbx-name ie-edit ie-name">Your Company</span>
+        <div class="bbx ie-stage" id="ieDemo" aria-hidden="true">
+          <div class="bbx-banner ie-banner">
+            <div class="ie-logo-slot"><div class="ie-logo-ph">+ Logo</div><img class="bbx-logo" src="images/billboard-features/up-logo.webp" alt=""></div>
+            <span class="bbx-name ie-edit ie-name">Your Company</span>
             <div class="ie-paint">🎨</div>
             <div class="ie-pop ie-colors"><span style="background:#2b3a55"></span><span style="background:#7a2e3b"></span><span class="ie-purple" style="background:#693f99"></span><span style="background:#13756f"></span><span style="background:#a35f12"></span></div>
           </div>
           <div class="ie-mode">✎ Editing — click anything to change it</div>
-          <div class="gbx-carousel ie-carousel">
-            <img class="ie-img-a" src="images/gameboard-features/carousel-spread.webp" alt="">
-            <img class="ie-img-b" src="images/gameboard-features/carousel-pieces.webp" alt="" style="opacity:0">
-            <span class="gbx-arrow l">‹</span><span class="gbx-arrow r">›</span><div class="gbx-dots"><i class="on"></i><i></i><i></i></div>
+          <div class="bbx-carousel ie-carousel">
+            <img class="ie-img-a" src="images/billboard-features/carousel-spread.webp" alt="">
+            <img class="ie-img-b" src="images/billboard-features/carousel-pieces.webp" alt="" style="opacity:0">
+            <span class="bbx-arrow l">‹</span><span class="bbx-arrow r">›</span><div class="bbx-dots"><i class="on"></i><i></i><i></i></div>
             <div class="ie-replace">⟳ Replace image</div>
           </div>
-          <div class="gbx-body">
-            <div class="gbx-h">Our Games</div>
-            <div class="gbx-games">
-              <div class="gbx-card"><img src="images/gameboard-features/cover-floristry.webp" alt="Floristry" loading="lazy"><div class="gbx-card-t">Floristry</div><div class="gbx-card-s">A quick, real time, Dutch auction game for two players.</div></div>
-              <div class="gbx-card"><img src="images/gameboard-features/cover-scurry.webp" alt="Scurry Up!" loading="lazy"><div class="gbx-card-t">Scurry Up!</div><div class="gbx-card-s">Take on the role of a squirrel racing for nuts and berries!</div></div>
-              <div class="gbx-card ie-addcard"><div class="ie-cover-slot"><img src="images/gameboard-features/cover-pressure.webp" alt=""><div class="ie-cover-ph"><span class="ie-ph-add">+ Add a game</span><span class="ie-ph-cover">+ Cover image</span></div></div><div class="gbx-card-t ie-edit ie-gname"></div><div class="gbx-card-s ie-edit ie-gsum"></div></div>
+          <div class="bbx-body">
+            <div class="bbx-h">Our Games</div>
+            <div class="bbx-games">
+              <div class="bbx-card"><img src="images/billboard-features/cover-floristry.webp" alt="Floristry" loading="lazy"><div class="bbx-card-t">Floristry</div><div class="bbx-card-s">A quick, real time, Dutch auction game for two players.</div></div>
+              <div class="bbx-card"><img src="images/billboard-features/cover-scurry.webp" alt="Scurry Up!" loading="lazy"><div class="bbx-card-t">Scurry Up!</div><div class="bbx-card-s">Take on the role of a squirrel racing for nuts and berries!</div></div>
+              <div class="bbx-card ie-addcard"><div class="ie-cover-slot"><img src="images/billboard-features/cover-pressure.webp" alt=""><div class="ie-cover-ph"><span class="ie-ph-add">+ Add a game</span><span class="ie-ph-cover">+ Cover image</span></div></div><div class="bbx-card-t ie-edit ie-gname"></div><div class="bbx-card-s ie-edit ie-gsum"></div></div>
             </div>
           </div>
-          <div class="gbx-foot"><span class="gbx-socs"><span class="gbx-soc" title="Instagram"><svg width="9" height="9" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></span><span class="gbx-soc" title="X"><svg width="9" height="9" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></span><span class="gbx-soc" title="Facebook"><svg width="9" height="9" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></span></span><span>© 2026 <span class="ie-copyname">Your Company</span></span></div>
+          <div class="bbx-foot"><span class="bbx-socs"><span class="bbx-soc" title="Instagram"><svg width="9" height="9" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></span><span class="bbx-soc" title="X"><svg width="9" height="9" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></span><span class="bbx-soc" title="Facebook"><svg width="9" height="9" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></span></span><span>© 2026 <span class="ie-copyname">Your Company</span></span></div>
           <div class="ie-file"><img alt=""><span></span></div>
           <div class="ie-toast">✓ Saved to your Sheet</div>
           <svg class="ie-cursor" width="22" height="22" viewBox="0 0 24 24"><path d="M4 2l15 11-7 1.2L8.6 21 4 2z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/></svg>
@@ -675,11 +675,11 @@ footer a:hover { color:rgba(255,255,255,.7); }
   <div class="container">
     <div class="section-label">Data ownership</div>
     <h2 class="section-title">Your catalog lives in your Google Sheet</h2>
-    <p class="section-sub">No CMS, no vendor lock-in. GameBoard reads from a Google Sheet you own — every game, image URL, and brand setting, in a spreadsheet you control.</p>
+    <p class="section-sub">No CMS, no vendor lock-in. BillBoard reads from a Google Sheet you own — every game, image URL, and brand setting, in a spreadsheet you control.</p>
     <div class="own-grid">
       <div class="own-card">
         <div class="num">$4.99</div>
-        <p>Per month, with no web hosting to pay for — GameBoard runs on Google infrastructure you already have. A typical GoDaddy site runs $10–35 a month for hosting, and you still need to buy your own domain.</p>
+        <p>Per month, with no web hosting to pay for — BillBoard runs on Google infrastructure you already have. A typical GoDaddy site runs $10–35 a month for hosting, and you still need to buy your own domain.</p>
       </div>
       <div class="own-card">
         <div class="num">100%</div>
@@ -697,13 +697,13 @@ footer a:hover { color:rgba(255,255,255,.7); }
   <div class="container">
     <div class="section-label">How we compare</div>
     <h2 class="section-title">Built for publishers, not web designers</h2>
-    <p class="section-sub">GameBoard gives you a polished product presence without Squarespace's learning curve, a GoDaddy hosting bill, or a developer's retainer.</p>
+    <p class="section-sub">BillBoard gives you a polished product presence without Squarespace's learning curve, a GoDaddy hosting bill, or a developer's retainer.</p>
     <div class="compare-wrap">
       <table class="compare-table">
         <thead>
           <tr>
             <th>Feature</th>
-            <th class="ours">GameBoard</th>
+            <th class="ours">BillBoard</th>
             <th>Squarespace / Wix</th>
             <th>GoDaddy</th>
             <th>BGG Publisher Page</th>
@@ -730,12 +730,12 @@ footer a:hover { color:rgba(255,255,255,.7); }
     <div class="section-label">Ready to launch?</div>
     <h2 class="section-title" style="text-align:center;max-width:540px;margin:0 auto 1rem;">Your games deserve a page as polished as they are</h2>
     <p>Connect your Google Sheet and get a full product catalog and individual game pages — in minutes.</p>
-    <a href="gameboard" class="btn-primary" style="font-size:16px;padding:15px 36px;">Get GameBoard</a>
+    <a href="billboard" class="btn-primary" style="font-size:16px;padding:15px 36px;">Get BillBoard</a>
   </div>
 </section>
 
 <footer>
-  <a href="gameboard">GameBoard</a> &mdash; built for board game makers &nbsp;·&nbsp; <a href="/">ZapSheets</a>
+  <a href="billboard">BillBoard</a> &mdash; built for board game makers &nbsp;·&nbsp; <a href="/">ZapSheets</a>
 </footer>
 
 <script>
@@ -784,7 +784,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
   }
 
   function reset() {
-    banner.style.setProperty('--gbx-brand', '#2b3a55');
+    banner.style.setProperty('--bbx-brand', '#2b3a55');
     logoSlot.classList.remove('has'); logoPh.classList.remove('hover');
     name.textContent = 'Your Company'; copyName.textContent = 'Your Company';
     name.className = name.className.replace(/\s*(hover|editing|selected)/g, '');
@@ -812,14 +812,14 @@ footer a:hover { color:rgba(255,255,255,.7); }
     await type(name, 'UP Games'); copyName.textContent = 'UP Games';
     await sleep(350);
     say('Click away — it’s saved');
-    await moveTo(q('.gbx-h'), .5, .5, 600); await click(); name.classList.remove('editing');
+    await moveTo(q('.bbx-h'), .5, .5, 600); await click(); name.classList.remove('editing');
     await saved();
     // 3. Banner color
     say('Pick your brand color');
     await moveTo(paint); paint.classList.add('hover'); await sleep(300); await click();
     colors.classList.add('show'); await sleep(550);
     await moveTo(purple, .5, .5, 500); purple.classList.add('pick'); await click();
-    banner.style.setProperty('--gbx-brand', '#693f99'); paint.classList.remove('hover');
+    banner.style.setProperty('--bbx-brand', '#693f99'); paint.classList.remove('hover');
     await sleep(450); colors.classList.remove('show');
     await saved();
     // 4. Add a new game
@@ -836,7 +836,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
     say('Add a one-line summary');
     await moveTo(gSum, .3, .3, 450); await click(); gSum.classList.add('editing');
     await type(gSum, 'Will you dive the deepest or crack under the pressure!');
-    await sleep(300); await moveTo(q('.gbx-h'), .6, .5, 600); await click(); gSum.classList.remove('editing');
+    await sleep(300); await moveTo(q('.bbx-h'), .6, .5, 600); await click(); gSum.classList.remove('editing');
     await saved();
     // 5. Replace the carousel image
     say('Click any image to replace it');
@@ -845,7 +845,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
     car.classList.remove('hover'); imgB.style.opacity = 1; imgA.style.opacity = 0;
     await saved();
     say('That’s it — no settings screens');
-    await moveTo(q('.gbx-games'), .5, .4, 900);
+    await moveTo(q('.bbx-games'), .5, .4, 900);
     await sleep(2800);
   }
   function imgSrc(f) { var base = imgA.getAttribute('src').replace(/[^/]*$/, ''); return base + f; }
@@ -853,7 +853,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
   async function loop() { for (;;) { if (!visible) { await sleep(400); continue; } await play(); } }
 
   if (reduce) { // finished result, no motion
-    banner.style.setProperty('--gbx-brand', '#693f99'); logoSlot.classList.add('has');
+    banner.style.setProperty('--bbx-brand', '#693f99'); logoSlot.classList.add('has');
     name.textContent = copyName.textContent = 'UP Games';
     imgB.style.opacity = 1; imgA.style.opacity = 0;
     addCard.classList.add('open', 'has-cover'); gName.textContent = 'Pressure'; gSum.textContent = 'Will you dive the deepest or crack under the pressure!';
@@ -873,7 +873,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
   var cursor = q('.ie-cursor'), toast = q('.ie-toast'), mode = q('.ie-mode'), modeDefault = mode.textContent;
   var hero = q('.gp-hero'), bg = q('.gp-bg'), time = q('.gp-time'), genre = q('.gp-genre'), buy = q('.gp-buy');
   var pop = q('.gp-linkpop'), lText = q('.gp-ltext'), lUrl = q('.gp-lurl'), save = q('.gp-save');
-  var quote = q('.gp-q'), author = q('.gp-a'), label = q('.gbp-label');
+  var quote = q('.gp-q'), author = q('.gp-a'), label = q('.bbp-label');
   var file = q('.ie-file'), fileImg = file.querySelector('img'), fileName = file.querySelector('span');
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var visible = false;
@@ -956,7 +956,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
     await moveTo(label, .2, .5, 900);
     await sleep(2800);
   }
-  function imgSrc(f) { return 'images/gameboard-features/' + f; }
+  function imgSrc(f) { return 'images/billboard-features/' + f; }
   async function loop() { for (;;) { if (!visible) { await sleep(400); continue; } await play(); } }
 
   if (reduce) {

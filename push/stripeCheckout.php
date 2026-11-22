@@ -6,7 +6,7 @@
  * POST params:
  *   type        — 'subscription' (default) | 'donation'
  *   id          — sheet ID (stored in metadata so the webhook can find it)
- *   app         — 'devboard' | 'gameboard' | 'pitchboard' | 'cardboard'
+ *   app         — 'devboard' | 'billboard' | 'pitchboard' | 'cardboard'
  *   plan        — 'pro' (default) | 'core' (DevBoard only)
  *   email       — pre-fill customer email (optional)
  *   cbt         — CardBoard account token (CardBoard subscriptions belong to the signed-in email)
@@ -14,7 +14,7 @@
  *   cancel_url  — page to return to on cancel  (must be on this site)
  *
  * Prices (in .env):
- *   STRIPE_PRICE_ID_DEVBOARD / _GAMEBOARD / _PITCHBOARD / _CARDBOARD — recurring Pro price
+ *   STRIPE_PRICE_ID_DEVBOARD / _BILLBOARD / _PITCHBOARD / _CARDBOARD — recurring Pro price
  *   STRIPE_PRICE_ID_DEVBOARD_CORE — recurring DevBoard Core price
  *   STRIPE_PRICE_ID_DONATION — one-time price set to "Customer chooses what to pay"
  *

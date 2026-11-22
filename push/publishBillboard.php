@@ -1,6 +1,6 @@
 <?php
 /**
- * publishGameboard.php — create (or refresh) a public share token for a GameBoard catalog.
+ * publishBillboard.php — create (or refresh) a public share token for a BillBoard catalog.
  *
  * POST params:
  *   id    — Google Sheet ID
@@ -9,8 +9,8 @@
  * Token is deterministic: substr(md5($sheetId), 0, 24)
  * Re-publishing the same sheet always gives the same URL.
  *
- * Saved to: shares/gameboard/{token}.json
- * Returns:  {"ok": true, "token": "...", "url": "https://…/gameboard/{token}"}
+ * Saved to: shares/billboard/{token}.json
+ * Returns:  {"ok": true, "token": "...", "url": "https://…/billboard/{token}"}
  */
 error_reporting(0);
 ini_set('display_errors', '0');
@@ -29,11 +29,11 @@ if (!$sheetId || !preg_match('/^[A-Za-z0-9_\-]+$/', $sheetId)) {
 // Stable 24-char hex token derived from the sheet ID
 $token = substr(md5($sheetId), 0, 24);
 
-// Directory for gameboard share files
-$sharesDir = dirname(__DIR__) . '/shares/gameboard';
+// Directory for billboard share files
+$sharesDir = dirname(__DIR__) . '/shares/billboard';
 if (!is_dir($sharesDir)) {
     if (!mkdir($sharesDir, 0755, true)) {
-        echo json_encode(['error' => 'Could not create shares/gameboard directory']);
+        echo json_encode(['error' => 'Could not create shares/billboard directory']);
         exit;
     }
     file_put_contents($sharesDir . '/.htaccess', "Options -Indexes\n");
@@ -63,6 +63,6 @@ if (file_put_contents($shareFile, json_encode($shareData, JSON_UNESCAPED_UNICODE
 $bp     = rtrim($_ENV['BASE_PATH'] ?? '', '/');
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$url    = $scheme . '://' . $host . $bp . '/gameboard/' . $token;
+$url    = $scheme . '://' . $host . $bp . '/billboard/' . $token;
 
 echo json_encode(['ok' => true, 'token' => $token, 'url' => $url]);

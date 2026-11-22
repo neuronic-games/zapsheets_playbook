@@ -1,6 +1,6 @@
 <?php
 /**
- * uploadImage.php — upload an image file for a GameBoard game page.
+ * uploadImage.php — upload an image file for a BillBoard game page.
  *
  * POST params:
  *   id   — Google Spreadsheet ID (used to namespace the folder)

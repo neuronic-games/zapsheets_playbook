@@ -1,4 +1,4 @@
-# gcreategameboardtab.py — create a [GameName] tab for a GameBoard game page.
+# gcreatebillboardtab.py — create a [GameName] tab for a BillBoard game page.
 #
 # If the tab already exists, returns {"ok": true, "tab": "...", "existed": true}.
 # If created fresh, pre-populates from games.json values.

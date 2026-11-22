@@ -1,6 +1,6 @@
 <?php
 /**
- * setupGameboard.php — one-call setup for a GameBoard sheet.
+ * setupBillboard.php — one-call setup for a BillBoard sheet.
  *
  * Works for:
  *   - A new blank sheet  → creates Games (and People) tabs with headers
@@ -78,7 +78,7 @@ if (isset($pyResult['error'])) {
     exit;
 }
 
-// Normalize tabs: "already exists" is not an error for GameBoard setup —
+// Normalize tabs: "already exists" is not an error for BillBoard setup —
 // it just means this is an existing sheet (e.g. a PitchBoard sheet).
 $rawTabs     = $pyResult['tabs'] ?? [];
 $normalTabs  = [];
@@ -106,7 +106,7 @@ if (!is_dir($sheetDir)) {
     mkdir($sheetDir, 0775, true);
 }
 
-// ── Step 3: Refresh JSON caches needed by GameBoard ───────────────────────────
+// ── Step 3: Refresh JSON caches needed by BillBoard ───────────────────────────
 $refreshed = [];
 $refreshErrors = [];
 foreach (['games', 'people'] as $tab) {

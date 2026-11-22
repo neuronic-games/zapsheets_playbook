@@ -245,7 +245,7 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .hidden-toggle:hover { color:#4b3fa8; }
 .hidden-list .lk-act { font-size:.72rem; }
 .field-chip.just-added { border-color:#7b6cf6; background:#ece9ff; box-shadow:0 0 0 3px rgba(123,108,246,.18); }
-/* Picture button on image elements (like GameBoard's) */
+/* Picture button on image elements (like BillBoard's) */
 .img-btn { position:absolute; top:calc(6px / var(--z, 1)); right:calc(6px / var(--z, 1)); width:calc(30px / var(--z, 1)); height:calc(30px / var(--z, 1)); border-radius:50%; border:none; padding:0; background:rgba(0,0,0,.55); color:#fff; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:55; }
 .img-btn:hover { background:rgba(0,0,0,.82); }
 .img-btn svg { width:52%; height:52%; pointer-events:none; }

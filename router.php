@@ -98,7 +98,7 @@ $RESERVED = [
     'noteboard',    // setup landing page — handled below, reserved so /{id} never grabs it
     'pulseboard',   // setup landing page — handled below, reserved so /{id} never grabs it
     'tmboard',      // setup landing page — handled below, reserved so /{id} never grabs it
-    'gameboard',    // setup landing page + public share routes — handled below
+    'billboard',    // setup landing page + public share routes — handled below
     'cardboard',    // setup landing page — handled below
 ];
 
@@ -183,19 +183,19 @@ if (preg_match('#^/shares/cardboard/([a-f0-9]{24})/([A-Za-z0-9\-]+\.(?:png|jpg))
     exit;
 }
 
-// ── /gameboard/{token}/{slug} — public game page ─────────────────────────────
-if (preg_match('#^/gameboard/([a-f0-9]{24})/([^/]+)/?$#', $uri)) {
-    serveFile(__DIR__ . '/source/gameboard/public/index.php', $MIME);
+// ── /billboard/{token}/{slug} — public game page ─────────────────────────────
+if (preg_match('#^/billboard/([a-f0-9]{24})/([^/]+)/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/billboard/public/index.php', $MIME);
 }
 
-// ── /gameboard/{token} — public gameboard catalog ────────────────────────────
-if (preg_match('#^/gameboard/([a-f0-9]{24})/?$#', $uri)) {
-    serveFile(__DIR__ . '/source/gameboard/public/index.php', $MIME);
+// ── /billboard/{token} — public billboard catalog ────────────────────────────
+if (preg_match('#^/billboard/([a-f0-9]{24})/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/billboard/public/index.php', $MIME);
 }
 
-// ── /gameboard — setup landing page ──────────────────────────────────────────
-if (preg_match('#^/gameboard/?$#', $uri)) {
-    serveFile(__DIR__ . '/source/gameboard/setup/index.php', $MIME);
+// ── /billboard — setup landing page ──────────────────────────────────────────
+if (preg_match('#^/billboard/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/billboard/setup/index.php', $MIME);
 }
 
 // ── Backward compat: sheets/{id}/view|dashboard|sellsheet|fitboard|trmnl ──

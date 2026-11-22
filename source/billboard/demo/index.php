@@ -1,6 +1,6 @@
 <?php
 $_raw  = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$_base = preg_replace('#/gameboard/demo/?$#', '/', $_raw);
+$_base = preg_replace('#/billboard/demo/?$#', '/', $_raw);
 if (!$_base || $_base === $_raw) { $_base = '/'; }
 if (substr($_base, -1) !== '/') { $_base .= '/'; }
 ?>
@@ -10,8 +10,8 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ironwood Press — GameBoard Demo</title>
-<link rel="icon" type="image/png" href="images/gb_icon_180.png" />
+<title>Ironwood Press — BillBoard Demo</title>
+<link rel="icon" type="image/png" href="images/bb_icon_180.png" />
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -173,22 +173,22 @@ footer a:hover { color: var(--muted); }
 <!-- Banner -->
 <div class="banner">
   <div class="banner-inner">
-    <img class="banner-logo" src="images/gb_logo.png" alt="Gb" />
+    <img class="banner-logo" src="images/bb_logo.png" alt="BillBoard" />
     <div class="banner-brand">
       <div class="banner-name">Ironwood Press</div>
       <div class="banner-tag">Independent board game publisher · Est. 2017</div>
     </div>
     <div class="banner-nav">
-      <a href="gameboard/demo" class="banner-btn">Our Games</a>
-      <a href="gameboard/demo" class="banner-btn">About</a>
-      <a href="gameboard/features" class="banner-btn primary">Get GameBoard</a>
+      <a href="billboard/demo" class="banner-btn">Our Games</a>
+      <a href="billboard/demo" class="banner-btn">About</a>
+      <a href="billboard/features" class="banner-btn primary">Get BillBoard</a>
     </div>
   </div>
 </div>
 
 <!-- Demo notice -->
 <div class="demo-notice">
-  🎲 This is a <strong>GameBoard demo</strong> — fictional publisher, made-up games. &nbsp;<a href="gameboard/features">Learn how to build yours →</a>
+  🎲 This is a <strong>BillBoard demo</strong> — fictional publisher, made-up games. &nbsp;<a href="billboard/features">Learn how to build yours →</a>
 </div>
 
 <!-- Carousel -->
@@ -380,7 +380,7 @@ footer a:hover { color: var(--muted); }
   <div class="about-inner">
     <div>
       <div class="about-brand">
-        <img class="about-logo" src="images/gb_logo.png" alt="Ironwood Press" />
+        <img class="about-logo" src="images/bb_logo.png" alt="Ironwood Press" />
         <div>
           <div class="about-name">Ironwood Press</div>
           <div class="about-loc">📍 Portland, OR</div>
@@ -401,7 +401,7 @@ footer a:hover { color: var(--muted); }
 </div>
 
 <footer>
-  Powered by <a href="gameboard/features">GameBoard</a> — the catalog tool for board game publishers &nbsp;·&nbsp; <a href="/">ZapSheets</a>
+  Powered by <a href="billboard/features">BillBoard</a> — the catalog tool for board game publishers &nbsp;·&nbsp; <a href="/">ZapSheets</a>
 </footer>
 
 </body>

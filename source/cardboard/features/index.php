@@ -332,7 +332,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
                 <div class="cbx-card3d">
                   <div class="cbx-face cbx-front">
                     <div class="cbx-hint">Drag elements here</div>
-                    <div class="cbx-art pop" data-el="art"><img src="images/gameboard-features/cover-floristry.webp" alt=""></div>
+                    <div class="cbx-art pop" data-el="art"><img src="images/billboard-features/cover-floristry.webp" alt=""></div>
                     <div class="cbx-title pop" data-el="name">Floristry</div>
                     <div class="cbx-coin pop" data-el="circle"><b>3</b></div>
                     <div class="cbx-text pop" data-el="text">Draw 2 flower cards. Discard 1.</div>
@@ -424,8 +424,8 @@ footer a { color:var(--text-mid); text-decoration:none; }
       <div class="browser-frame">
         <div class="browser-chrome"><div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="browser-url">zapsheets.com/app/…/cardboard — Export</div></div>
         <div class="tts-mock">
-          <img src="images/gameboard-features/cover-floristry.webp" alt=""><img src="images/gameboard-features/cover-floristry.webp" alt=""><img src="images/gameboard-features/cover-scurry.webp" alt=""><img src="images/gameboard-features/cover-scurry.webp" alt=""><img src="images/gameboard-features/cover-scurry.webp" alt="">
-          <img src="images/gameboard-features/cover-pressure.webp" alt=""><img src="images/gameboard-features/cover-floristry.webp" alt=""><img src="images/gameboard-features/cover-pressure.webp" alt=""><img src="images/gameboard-features/cover-scurry.webp" alt=""><div class="bk">★</div>
+          <img src="images/billboard-features/cover-floristry.webp" alt=""><img src="images/billboard-features/cover-floristry.webp" alt=""><img src="images/billboard-features/cover-scurry.webp" alt=""><img src="images/billboard-features/cover-scurry.webp" alt=""><img src="images/billboard-features/cover-scurry.webp" alt="">
+          <img src="images/billboard-features/cover-pressure.webp" alt=""><img src="images/billboard-features/cover-floristry.webp" alt=""><img src="images/billboard-features/cover-pressure.webp" alt=""><img src="images/billboard-features/cover-scurry.webp" alt=""><div class="bk">★</div>
         </div>
         <div class="link-row"><span>https://zapsheets.com/app/shares/cardboard/206e3c…/faces-1.jpg</span><b>Copy</b></div>
       </div>
@@ -477,7 +477,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
           <tr><td><code>[tags]</code> into an icon or words</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>Pictures from Dropbox, Drive or the web</td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span> <span class="nl">not listed</span></td><td><span class="check">✓</span></td></tr>
           <tr><td>Works in the browser, nothing to install</td><td class="ours"><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Works with <a href="https://zapsheets.com/app/devboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">DevBoard</a> &amp; <a href="https://zapsheets.com/app/gameboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">GameBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+          <tr><td>Works with <a href="https://zapsheets.com/app/devboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">DevBoard</a> &amp; <a href="https://zapsheets.com/app/billboard/features" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:2px">BillBoard</a></td><td class="ours"><span class="check">✓</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
           <tr class="cost"><td>Monthly cost</td>
             <td class="ours"><b>$4.99</b> / mo<span class="nl" style="display:block;margin:0">first week free, every feature</span></td>
             <td><b>Free</b> <span class="nl">2 projects, 10 layouts</span><br><b>$6 – $24</b> / mo<span class="nl" style="display:block;margin:0">Prototyper $6 · Designer $12 · Designer Pro $24</span></td>
@@ -512,9 +512,9 @@ footer a { color:var(--text-mid); text-decoration:none; }
   var card = q('.cbx-card3d'), flipBtn = q('.cbx-flip'), side = q('.cbx-side'), rowInfo = q('.cbx-rowinfo'), next = q('.cbx-next');
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var ROWS = [
-    { name: 'Floristry', cost: '3', type: 'MARKET', art: 'images/gameboard-features/cover-floristry.webp', text: 'Draw 2 flower cards. Discard 1.' },
-    { name: 'Scurry Up!', cost: '1', type: 'ACTION', art: 'images/gameboard-features/cover-scurry.webp', text: 'Move a squirrel two spaces.' },
-    { name: 'Pressure', cost: '5', type: 'EVENT', art: 'images/gameboard-features/cover-pressure.webp', text: 'Every player dives one level deeper.' }
+    { name: 'Floristry', cost: '3', type: 'MARKET', art: 'images/billboard-features/cover-floristry.webp', text: 'Draw 2 flower cards. Discard 1.' },
+    { name: 'Scurry Up!', cost: '1', type: 'ACTION', art: 'images/billboard-features/cover-scurry.webp', text: 'Move a squirrel two spaces.' },
+    { name: 'Pressure', cost: '5', type: 'EVENT', art: 'images/billboard-features/cover-pressure.webp', text: 'Every player dives one level deeper.' }
   ];
   var visible = false, running = false;
   var sleep = function(ms) { return new Promise(function(r) { setTimeout(r, ms); }); };

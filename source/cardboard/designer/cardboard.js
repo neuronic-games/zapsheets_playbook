@@ -920,7 +920,7 @@ function addElementAt(e) {
 
 // ── Pictures: upload a file, or link to Dropbox / Google Drive / the web ──────
 // Uploaded files are stored with the app (push/uploadImage.php — the same as
-// GameBoard). Links are kept as links and loaded from their source every time.
+// BillBoard). Links are kept as links and loaded from their source every time.
 function isImageFile(f) { return f && /^image\/(png|jpe?g|gif|webp)$/i.test(f.type); }
 function droppedFile(dt) { return dt && dt.files && Array.prototype.filter.call(dt.files, isImageFile)[0]; }
 function droppedLink(dt) {

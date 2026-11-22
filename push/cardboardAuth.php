@@ -68,16 +68,17 @@ function cbAccessFromUser(array $u): array {
     elseif ($cu > $now)             { $st = 'code';       $until = max($cu, $te); }
     elseif ($te > $now)             { $st = 'trial';      $until = $te; }
     else                            { $st = 'locked';     $until = max($te, $subUntil, $cu); }
+    $sh = array_values(array_filter(array_map('trim', explode(',', (string) ($u['Sheets'] ?? ''))), 'stripeValidSheetId'));
     return [
         'e' => strtolower(trim((string) ($u['Email'] ?? ''))), 'n' => (string) ($u['Name'] ?? ''),
-        'st' => $st, 'u' => $until, 'te' => $te, 'pe' => $pe,
+        'st' => $st, 'u' => $until, 'te' => $te, 'pe' => $pe, 'sh' => $sh,   // sh: the sheets this person created (they edit; others only view)
         'status' => (string) ($u['Status'] ?? ''), 'studio' => (string) ($u['Studio'] ?? ''),
     ];
 }
 
 function cbIssueToken(array $a): string {
     $p = ['e' => $a['e'], 'n' => $a['n'], 'st' => $a['st'], 'u' => $a['u'], 'te' => $a['te'], 'pe' => $a['pe'],
-          'x' => time() + CB_TOKEN_HOURS * 3600];
+          'sh' => array_values($a['sh'] ?? []), 'x' => time() + CB_TOKEN_HOURS * 3600];
     $body = cbB64(json_encode($p, JSON_UNESCAPED_UNICODE));
     return $body . '.' . cbB64(hash_hmac('sha256', $body, cbSecret(), true));
 }
@@ -114,10 +115,12 @@ function cbRequireSignIn(): void {
  * activated, or the spreadsheet is unlocked. Answers the browser with need_auth / locked.
  */
 function cbRequireAccess(string $sheetId): void {
-    if (cbSheetUnlocked($sheetId)) return;
     $p = cbReadToken(cbRequestToken());
     if (!$p) { echo json_encode(['error' => 'Sign in to CardBoard to make changes.', 'need_auth' => true]); exit; }
     if (($p['x'] ?? 0) < time()) { echo json_encode(['error' => 'Your sign-in needs refreshing.', 'need_auth' => true, 'refresh' => true]); exit; }
+    // Only the person who set the sheet up changes it; everyone else views it (tokens from before this have no list)
+    if (isset($p['sh']) && !in_array($sheetId, (array) $p['sh'], true)) { echo json_encode(['error' => 'This sheet belongs to another CardBoard account — you can view it, not change it.', 'view_only' => true]); exit; }
+    if (cbSheetUnlocked($sheetId)) return;
     if (($p['u'] ?? 0) < time()) { echo json_encode(['error' => 'Your free week has ended — subscribe to keep designing.', 'locked' => true]); exit; }
 }
 

@@ -11,6 +11,9 @@ preg_match('#^(.*?)(?:sheets/)?([A-Za-z0-9_\-]+)/cardboard/?$#', $_rp, $_bm);
 $_base = (isset($_bm[1]) && $_bm[1] !== '') ? $_bm[1] : '/';
 if (substr($_base, -1) !== '/') $_base .= '/';
 $_sheet_id = $_bm[2] ?? '';
+// The spreadsheet's name (kept by push/cardboardData.php): the page title and the Home Screen name
+$_cb_title = $_sheet_id !== '' ? trim((string) @file_get_contents(dirname(__DIR__, 3) . '/sheets/' . preg_replace('/[^A-Za-z0-9_\-]/', '', $_sheet_id) . '/_cardboard_title.txt')) : '';
+$_cb_name  = $_cb_title !== '' ? $_cb_title : 'CardBoard';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -22,8 +25,11 @@ $_sheet_id = $_bm[2] ?? '';
 <link rel="icon" type="image/png" sizes="32x32" href="images/cardboard_icon_32.png" />
 <link rel="icon" type="image/png" sizes="16x16" href="images/cardboard_icon_16.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="images/cardboard_icon_180.png" />
-<meta name="apple-mobile-web-app-title" content="CardBoard" />
-<title>Loading…</title>
+<meta name="apple-mobile-web-app-title" content="<?= htmlspecialchars($_cb_name, ENT_QUOTES) ?>" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<link rel="manifest" id="cbManifest" href="manifest.php?app=cardboard&amp;id=<?= urlencode($_sheet_id) ?>&amp;base=<?= urlencode($_base) ?>" />
+<title><?= htmlspecialchars($_cb_title !== '' ? $_cb_title : 'Loading…', ENT_QUOTES) ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Cinzel:wght@500;700&family=Lilita+One&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Roboto+Condensed:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" crossorigin="anonymous">

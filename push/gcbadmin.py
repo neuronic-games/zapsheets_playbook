@@ -2,8 +2,10 @@
 #
 # Arg: base64 JSON { "action": ..., "email": ..., ... }
 #   user   — email, name?, sheet?, fields? → the person's row; a new person gets
-#            a free week (Trial Start = now, Trial End = now + 7 days). Last Seen is updated
-#            and the sheet ID is added to Sheets.
+#            a free week (Trial Start = now, Trial End = now + 7 days). Last Seen is updated.
+#            Sheets lists the spreadsheets the person created: the first account to open a sheet
+#            gets it (it's added to their Sheets only if no one else's Sheets has it). Everyone
+#            else sees that sheet read-only.
 #   update — email, fields: {Header: value} → changes those cells (adds the person if missing)
 #   find   — field, value → the first row whose Header equals value (e.g. Stripe Customer)
 #   redeem — email, code → a free code from the "Codes" tab: CardBoard unlocked for its Length
@@ -112,9 +114,14 @@ def main():
         if data.get('name') and not u.get('Name'): u['Name'] = str(data['name'])[:100]   # only a first name; Profile changes it after
         sheet = str(data.get('sheet') or '').strip()
         if sheet:
-            have = [s for s in str(u.get('Sheets', '')).split(',') if s.strip()]
-            if sheet not in have: have.append(sheet)
-            u['Sheets'] = ','.join(have[-50:])
+            have = [s.strip() for s in str(u.get('Sheets', '')).split(',') if s.strip()]
+            if sheet not in have:
+                si = hdr.index('Sheets') if 'Sheets' in hdr else -1
+                taken = si >= 0 and any(k + 2 != n and sheet in [x.strip() for x in str(r[si] if si < len(r) else '').split(',')]
+                                        for k, r in enumerate(rows))
+                if not taken:   # nobody has it yet: this person set it up
+                    have.append(sheet)
+                    u['Sheets'] = ','.join(have[-50:])
         for k, v in (data.get('fields') or {}).items():   # e.g. the password hash when signing up
             if k in hdr and k != 'Email': u[k] = '' if v is None else str(v)
         u['Last Seen'] = iso(now())

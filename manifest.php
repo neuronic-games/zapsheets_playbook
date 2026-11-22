@@ -7,7 +7,26 @@ $app  = trim($_GET['app']  ?? 'pitchboard');
 $base = trim($_GET['base'] ?? '/');
 if (substr($base, -1) !== '/') $base .= '/';
 
-if ($app === 'slides') {
+if ($app === 'cardboard') {
+    // CardBoard: added to the Home Screen under the spreadsheet's name (kept by push/cardboardData.php)
+    $name = trim((string) @file_get_contents(__DIR__ . '/sheets/' . $id . '/_cardboard_title.txt'));
+    if ($name === '') $name = trim(mb_substr(preg_replace('/[\x00-\x1f<>]/u', '', (string) ($_GET['name'] ?? '')), 0, 80));
+    if ($name === '') $name = 'CardBoard';
+    echo json_encode([
+        'name'             => $name,
+        'short_name'       => mb_strlen($name) > 14 ? mb_substr($name, 0, 13) . '…' : $name,
+        'id'               => 'CardBoard_' . $id,
+        'start_url'        => $base . $id . '/cardboard',
+        'scope'            => $base . $id . '/cardboard',
+        'theme_color'      => '#2e2763',
+        'background_color' => '#2e2763',
+        'display'          => 'standalone',
+        'icons'            => [
+            ['src' => $base . 'images/cardboard_icon_192.png', 'sizes' => '192x192', 'type' => 'image/png'],
+            ['src' => $base . 'images/cardboard_icon_512.png', 'sizes' => '512x512', 'type' => 'image/png'],
+        ],
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+} elseif ($app === 'slides') {
     $startUrl = $base . $id . '/pitchboard/slides';
     echo json_encode([
         'name'             => 'PitchBoard Slides',

@@ -447,7 +447,7 @@ function init() {
       SETTINGS = Object.assign({ units: 'in' }, LAYOUTS[SETTINGS_KEY] || {}, lsGet('cb_settings:' + SHEET_ID) || {});
       _oldProfile = SETTINGS.profile || null; delete SETTINGS.profile;   // the profile lives with the account now
       SHEET_TITLE = res.title || '';
-      if (res.title) { $('subTitle').textContent = res.title; document.title = res.title; }
+      if (res.title) { $('subTitle').textContent = res.title; document.title = res.title; setHomeName(res.title); }
       mergeNewTabs(); fillDeckSelects();
       var sel = $('sheetSel');
       var start = isNewTab(want) ? want : (res.tab || want);
@@ -469,6 +469,11 @@ function init() {
 // Type to filter the tabs; sheets that already have a layout show the layout icon.
 var LAYOUT_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M5 8h14"/><rect x="8" y="11" width="8" height="4.5" rx="1" fill="currentColor" stroke="none"/><path d="M8 18.3h5"/></svg>';
 function hasLayout(t) { return !!LAYOUTS[t] && t !== SETTINGS_KEY; }
+// Added to the Home Screen under the spreadsheet's name (iOS reads the meta tag, others the manifest)
+function setHomeName(t) {
+  var m = document.querySelector('meta[name="apple-mobile-web-app-title"]'); if (m && m.content !== t) m.content = t;
+  var l = $('cbManifest'); if (l && l.href.indexOf('&name=') < 0) l.href = l.href + '&name=' + encodeURIComponent(t);
+}
 // ── New decks: added from the Deck box, kept in this browser (cb_newtabs:<sheet>) until Save,
 // which adds the tab to the spreadsheet first, then its columns, cards and layout.
 function newTabs() { var l = lsGet('cb_newtabs:' + SHEET_ID); return Array.isArray(l) ? l : []; }
@@ -3868,8 +3873,14 @@ function storeAcct(res) {
   applyAcct();
 }
 function forgetAcct() { ACCT = null; try { localStorage.removeItem(ACCT_KEY); } catch (e) {} applyAcct(); }
+// The sheet's owner — the account that set it up (its Admin-sheet Sheets list) — changes it; everyone
+// else sees it read-only. Until the account has been checked for this sheet, it's read-only too.
+function acctChecked() { return !!(ACCT && ACCT.sheet === SHEET_ID); }
+function isOwner() { var a = acctInfo(); return !!a && acctChecked() && a.owner !== false; }
+function viewOnly() { return !!acctInfo() && !isOwner(); }
 function hasAccess() {
   var a = acctInfo(); if (!a) return false;
+  if (!isOwner()) return false;
   if (a.sheet_unlocked && ACCT.sheet === SHEET_ID) return true;
   return a.state !== 'locked' && new Date(a.until).getTime() > Date.now();
 }
@@ -3898,7 +3909,10 @@ function applyAcct() {
   var bar = $('lockBar');
   if (bar) {
     bar.hidden = ok;
+    $('lockBtn').hidden = false;
     if (!a) { $('lockMsg').innerHTML = '<b>Sign in to start designing</b> — your first week is free, with every feature.'; $('lockBtn').textContent = 'Sign in'; $('lockBtn').onclick = function() { askSignIn().catch(function() {}); }; }
+    else if (!acctChecked()) { $('lockMsg').innerHTML = 'Checking your account…'; $('lockBtn').hidden = true; }
+    else if (!isOwner()) { $('lockMsg').innerHTML = '<b>View only.</b> This sheet was set up by another CardBoard account — you can look through its cards and layouts, but not change them.'; $('lockBtn').hidden = true; }
     else { $('lockMsg').innerHTML = '<b>Your free week has ended.</b> Your cards and decks are safe — subscribe for $4.99/month to keep designing.'; $('lockBtn').textContent = 'Subscribe'; $('lockBtn').onclick = function() { openPlansDialog('locked'); }; }
   }
   updateSubMenu();
@@ -3932,6 +3946,7 @@ function updateSubMenu() {
 // Returns true when allowed; otherwise asks to sign in or shows the plans
 function requirePro(reason, retry) {
   if (hasAccess()) return true;
+  if (viewOnly()) { toast(acctChecked() ? 'View only — this sheet belongs to another CardBoard account' : 'Checking your account…', true); return false; }
   if (!ACCT) askSignIn().then(function() { if (hasAccess()) retry(); }, function() {});
   else openPlansDialog('locked');
   return false;

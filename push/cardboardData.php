@@ -48,7 +48,15 @@ if (in_array($action, ['save', 'addtab', 'addfield', 'renamefield', 'setcell', '
     cbRequireAccess($sheetId);
 }
 
-if ($action === 'tabs')    { echo json_encode(cbRun($python, $sheetId, ['action' => 'tabs'])); exit; }
+// The spreadsheet's name, kept on the server so the designer page (and its Home Screen name) can show it
+function cbKeepTitle(string $sheetId, $title): void {
+    $title = trim((string) $title); if ($title === '') return;
+    $dir = dirname(__DIR__) . '/sheets/' . $sheetId;
+    if (!is_dir($dir)) @mkdir($dir, 0755, true);
+    $f = $dir . '/_cardboard_title.txt';
+    if (@file_get_contents($f) !== $title) @file_put_contents($f, $title, LOCK_EX);
+}
+if ($action === 'tabs')    { $res = cbRun($python, $sheetId, ['action' => 'tabs']); if (!empty($res['ok'])) cbKeepTitle($sheetId, $res['title'] ?? ''); echo json_encode($res); exit; }
 if ($action === 'layouts') { echo json_encode(cbRun($python, $sheetId, ['action' => 'layouts'])); exit; }
 
 // Tags: [name] → text or a picture, kept in the "tags" tab.
@@ -161,6 +169,7 @@ function cbCached(string $sheetId, string $tab): ?array {
 if ($action === 'start') {
     $res = cbRun($python, $sheetId, ['action' => 'start', 'tab' => trim($_POST['tab'] ?? '')]);
     if (!empty($res['ok'])) {
+        cbKeepTitle($sheetId, $res['title'] ?? '');
         $all = cbCached($sheetId, (string) ($res['tab'] ?? ''));
         if ($all !== null) { $res['rows'] = $all; $res['full'] = true; } else $res['full'] = false;
         if (empty($res['layouts'])) $res['layouts'] = new stdClass();   // {} rather than [] in the JSON

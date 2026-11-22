@@ -35,6 +35,7 @@ function cbAccountOut(array $a, string $sheet): array {
     $d = function ($t) { return $t ? gmdate('c', $t) : ''; };
     return ['email' => $a['e'], 'name' => $a['n'], 'studio' => $a['studio'] ?? '', 'state' => $a['st'], 'until' => $d($a['u']), 'trial_end' => $d($a['te']),
             'period_end' => $a['pe'], 'status' => $a['status'] ?? '', 'sheet_unlocked' => $sheet !== '' && cbSheetUnlocked($sheet),
+            'owner' => $sheet !== '' && in_array($sheet, $a['sh'] ?? [], true),   // set this sheet up: may change it (else view only)
             'portal_url' => $_ENV['STRIPE_PORTAL_URL'] ?? ''];
 }
 function cbSignedIn(array $u, string $sheet): void {

@@ -95,7 +95,23 @@ nav { position:sticky; top:0; z-index:50; display:flex; align-items:center; just
 .tag { display:inline-block; font-size:12px; font-weight:500; letter-spacing:.08em; text-transform:uppercase; color:#f3b4aa; border:1px solid rgba(243,180,170,.35); border-radius:999px; padding:5px 14px; margin-bottom:1.6rem; }
 .hero h1 { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(2.3rem,5vw,3.7rem); line-height:1.1; letter-spacing:-.03em; max-width:820px; margin:0 auto 1.4rem; }
 .hero h1 em { font-style:italic; font-weight:400; color:var(--red); }
-.hero p { color:rgba(255,255,255,.72); font-size:1.12rem; max-width:600px; margin:0 auto 2.3rem; }
+.hero p { color:rgba(255,255,255,.72); font-size:1.12rem; max-width:600px; margin:0 auto 1.6rem; }
+/* A little game-board path: a pawn hops from app to app, and each space lights up as it lands */
+.path { position:relative; display:grid; grid-template-columns:repeat(4, 92px); justify-content:center; gap:0 34px; margin:0 auto 2.4rem; padding-top:34px; }
+.path-line { position:absolute; left:calc(50% - 189px); right:calc(50% - 189px); top:60px; height:3px; border-radius:2px; background:repeating-linear-gradient(90deg, rgba(255,255,255,.28) 0 8px, transparent 8px 16px); }
+.space { position:relative; display:flex; flex-direction:column; align-items:center; gap:8px; }
+.space img { width:52px; height:52px; border-radius:13px; box-shadow:0 6px 16px rgba(0,0,0,.35); animation:spaceOn 6s infinite; animation-delay:var(--d); }
+.space b { font-family:'DINBlack','Inter',sans-serif; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.45); animation:spaceTxt 6s infinite; animation-delay:var(--d); }
+@keyframes spaceOn { 0%,4% { transform:none; box-shadow:0 6px 16px rgba(0,0,0,.35); } 9%,22% { transform:translateY(-3px) scale(1.08); box-shadow:0 0 0 3px var(--c), 0 0 26px var(--c); } 30%,100% { transform:none; box-shadow:0 6px 16px rgba(0,0,0,.35); } }
+@keyframes spaceTxt { 0%,4% { color:rgba(255,255,255,.45); } 9%,22% { color:var(--c); } 30%,100% { color:rgba(255,255,255,.45); } }
+.pawn { position:absolute; top:0; width:22px; height:28px; fill:#fff; filter:drop-shadow(0 4px 6px rgba(0,0,0,.45)); left:calc(50% - 200px); animation:hop 6s infinite cubic-bezier(.45,0,.3,1); z-index:2; }
+@keyframes hop {   /* one space every 1.5s: lands at 0, 25%, 50%, 75% */
+  0%,15% { transform:translate(0,0); opacity:1; }
+  20% { transform:translate(63px,-22px); } 25%,40% { transform:translate(126px,0); }
+  45% { transform:translate(189px,-22px); } 50%,65% { transform:translate(252px,0); }
+  70% { transform:translate(315px,-22px); } 75%,90% { transform:translate(378px,0); opacity:1; }
+  95% { transform:translate(378px,0); opacity:0; } 96%,99% { transform:translate(0,0); opacity:0; } 100% { transform:translate(0,0); opacity:1; } }
+@media (max-width:520px) { .path { grid-template-columns:repeat(4, 64px); gap:0 14px; } .path-line, .pawn { display:none; } .space img { width:44px; height:44px; } .space b { font-size:10.5px; } }
 .btns { display:flex; gap:.9rem; justify-content:center; flex-wrap:wrap; }
 .btn { display:inline-block; text-decoration:none; font:600 15px 'Inter',sans-serif; padding:13px 26px; border-radius:999px; cursor:pointer; border:none; }
 .btn.primary { background:var(--red); color:#fff; }
@@ -613,7 +629,14 @@ footer a:hover { color:var(--navy); }
   <div class="floaters" aria-hidden="true"><img src="images/db_icon_180.png" alt=""><img src="images/cardboard_icon_180.png" alt=""><img src="images/pb_icon_180.png" alt=""><img src="images/bb_icon_180.png" alt=""></div>
   <span class="tag">For board game makers</span>
   <h1>Tools for every step of <em>your game</em>.</h1>
-  <p>Built for game designers, from the first prototype to the store shelf. Capture playtests as they happen, lay out and print your cards, track every pitch and put your games on show — click anything to change it, right where you see it. One account opens every tool.</p>
+  <p>Built for game designers, from the first prototype to the store shelf.</p>
+  <div class="path" aria-label="Playtest, design, pitch, sell">
+    <span class="path-line"></span>
+    <svg class="pawn" viewBox="0 0 24 30" aria-hidden="true"><circle cx="12" cy="7" r="5.5"/><path d="M5 28c0-6 2.5-10 7-13 4.5 3 7 7 7 13z"/></svg>
+    <?php foreach ([['db_icon_180.png','Playtest','#49c4d4'],['cardboard_icon_180.png','Design','#a99cff'],['pb_icon_180.png','Pitch','#f0766a'],['bb_icon_180.png','Sell','#9ed29f']] as $k => $sp): ?>
+    <span class="space" style="--c:<?= $sp[2] ?>;--d:<?= $k * 1.5 - 0.3 ?>s"><img src="images/<?= $sp[0] ?>" alt=""><b><?= $sp[1] ?></b></span>
+    <?php endforeach; ?>
+  </div>
   <div class="btns">
     <button type="button" class="btn primary" id="heroCta" onclick="acctClick('signup')">Start your free week</button>
     <a class="btn ghost" href="#pricing">Pricing</a>

@@ -104,7 +104,8 @@ nav { position:sticky; top:0; z-index:50; display:flex; align-items:center; just
 .space b { font-family:'DINBlack','Inter',sans-serif; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.45); animation:spaceTxt 6s infinite; animation-delay:var(--d); }
 @keyframes spaceOn { 0%,4% { transform:none; box-shadow:0 6px 16px rgba(0,0,0,.35); } 9%,22% { transform:translateY(-3px) scale(1.08); box-shadow:0 0 0 3px var(--c), 0 0 26px var(--c); } 30%,100% { transform:none; box-shadow:0 6px 16px rgba(0,0,0,.35); } }
 @keyframes spaceTxt { 0%,4% { color:rgba(255,255,255,.45); } 9%,22% { color:var(--c); } 30%,100% { color:rgba(255,255,255,.45); } }
-@media (max-width:520px) { .path { grid-template-columns:repeat(4, 64px); gap:0 14px; } .path-line, .btns { display:flex; gap:.9rem; justify-content:center; flex-wrap:wrap; }
+@media (max-width:520px) { .path { grid-template-columns:repeat(4, 64px); gap:0 14px; } .path-line { display:none; } .space img { width:44px; height:44px; } .space b { font-size:10.5px; } }
+.btns { display:flex; gap:.9rem; justify-content:center; flex-wrap:wrap; }
 .btn { display:inline-block; text-decoration:none; font:600 15px 'Inter',sans-serif; padding:13px 26px; border-radius:999px; cursor:pointer; border:none; }
 .btn.primary { background:var(--red); color:#fff; }
 .btn.primary:hover { background:var(--red-dark); }

@@ -880,7 +880,10 @@ function toggleShowHidden() {
 function makeEl(spec, x, y) {
   var c = layout.card, i = spec.indexOf(':'), type = spec.slice(0, i), arg = spec.slice(i + 1), e;
   var textStyle = { font: 'DINRegular', size: 11, color: '#1b1b2b', align: 'left' };
-  if (type === 'data') {
+  if (type === 'data' && looksLikeImage(arg)) {
+    // A column of picture links: shown as a picture to start with (Show as in the panel changes it)
+    e = { kind: 'data', field: arg, as: 'image', fit: 'contain', w: Math.round(c.w * .5), h: Math.round(c.w * .5) };
+  } else if (type === 'data') {
     // Size the box from the longest value in this column (rough DIN Medium metrics: ~0.55 em per character)
     var size = 11, longest = 0, lines = 1, maxW = c.w - 24;
     ROWS.forEach(function(r) { var v = textVal(r[arg]); v.split('\n').forEach(function(l) { longest = Math.max(longest, l.length); }); lines = Math.max(lines, v.split('\n').length); });

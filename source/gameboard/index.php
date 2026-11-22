@@ -21,7 +21,7 @@ $_abs  = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'zapsheets.com') . $_base;
 require_once dirname(__DIR__, 2) . '/dotEnv.php';
 $_apps = $_onDomain ? $_base : gbLinkBase();
 $_page = gbLinkBase() === $_base ? $_abs . 'gameboard' : 'https://' . $_ENV['GAMEBOARD_HOST'] . '/';
-$_desc = 'Tools for board game makers: playtest notes, card design, publisher pitches and a catalog for your games — each on a Google Sheet you own, with one GameBoard account.';
+$_desc = 'Tools for board game makers: capture playtests, design and print cards, track publisher pitches and show off your games — everything edited right on the page, with one GameBoard account.';
 function e($s) { return htmlspecialchars((string) $s, ENT_QUOTES); }
 $APPS = [
   ['dev',  'DevBoard',   'db_icon_180.png',        'Playtest & develop', 'Every playtest, remembered.', '#49c4d4', 'devboard',
@@ -613,7 +613,7 @@ footer a:hover { color:var(--navy); }
   <div class="floaters" aria-hidden="true"><img src="images/db_icon_180.png" alt=""><img src="images/cardboard_icon_180.png" alt=""><img src="images/pb_icon_180.png" alt=""><img src="images/bb_icon_180.png" alt=""></div>
   <span class="tag">For board game makers</span>
   <h1>Tools for every step of <em>your game</em>.</h1>
-  <p>Playtest it, make its cards, pitch it to publishers and put it on show. Each app runs on a Google Sheet you own — and one GameBoard account signs you in.</p>
+  <p>Built for game designers, from the first prototype to the store shelf. Capture playtests as they happen, lay out and print your cards, track every pitch and put your games on show — click anything to change it, right where you see it. One account opens every tool.</p>
   <div class="btns">
     <button type="button" class="btn primary" id="heroCta" onclick="acctClick('signup')">Start your free week</button>
     <a class="btn ghost" href="#pricing">Pricing</a>

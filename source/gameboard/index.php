@@ -79,9 +79,12 @@ nav { position:sticky; top:0; z-index:50; display:flex; align-items:center; just
 @media (max-width:720px) { .nav-links a { display:none; } nav { padding:0 1rem; } }
 
 .hero { position:relative; overflow:hidden; background:var(--navy); color:#fff; text-align:center; padding:6.5rem 1.5rem 5rem; }
-.hero::before { content:''; position:absolute; top:-160px; left:50%; transform:translateX(-50%); width:820px; height:820px; background:radial-gradient(circle, rgba(229,96,79,.22) 0%, transparent 65%); pointer-events:none; }
-.hero::after { content:''; position:absolute; bottom:-120px; right:8%; width:520px; height:520px; background:radial-gradient(circle, rgba(246,239,226,.08) 0%, transparent 70%); pointer-events:none; }
+.hero::before { content:''; position:absolute; top:-160px; left:50%; transform:translateX(-50%); width:820px; height:820px; background:radial-gradient(circle closest-side, rgba(229,96,79,.22) 0%, transparent 65%); pointer-events:none; }
+.hero::after { content:''; position:absolute; bottom:-120px; right:8%; width:520px; height:520px; background:radial-gradient(circle closest-side, rgba(246,239,226,.08) 0%, transparent 70%); pointer-events:none; }
 .hero > * { position:relative; }
+.hero > *:not(.hero-fade):not(.floaters) { z-index:2; }
+.hero-fade { position:absolute !important; left:0; right:0; bottom:0; height:260px; z-index:1;   /* above the glows (::after comes after it), below the text */ background:linear-gradient(to bottom, rgba(20,19,42,0), var(--navy)); pointer-events:none; }
+.hero + .action { padding-top:2.5rem; }
 .tag { display:inline-block; font-size:12px; font-weight:500; letter-spacing:.08em; text-transform:uppercase; color:#f3b4aa; border:1px solid rgba(243,180,170,.35); border-radius:999px; padding:5px 14px; margin-bottom:1.6rem; }
 .hero h1 { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(2.3rem,5vw,3.7rem); line-height:1.1; letter-spacing:-.03em; max-width:820px; margin:0 auto 1.4rem; }
 .hero h1 em { font-style:italic; font-weight:400; color:var(--red); }
@@ -124,7 +127,7 @@ h2 { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(1.8r
 .app-btns { display:flex; gap:.5rem; }
 /* Pricing: one app at a time, or all four */
 .pricing { background:var(--navy); color:#fff; position:relative; overflow:hidden; }
-.pricing::before { content:''; position:absolute; right:-10%; top:-20%; width:640px; height:640px; background:radial-gradient(circle, rgba(229,96,79,.2), transparent 65%); pointer-events:none; }
+.pricing::before { content:''; position:absolute; right:-10%; top:-20%; width:640px; height:640px; background:radial-gradient(circle closest-side, rgba(229,96,79,.2), transparent 65%); pointer-events:none; }
 .pricing h2 { color:#fff; } .pricing .sub { color:rgba(255,255,255,.65); }
 .price-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; align-items:stretch; position:relative; }
 .pc.all { grid-column:1 / -1; margin-top:1.2rem; }
@@ -237,7 +240,7 @@ footer a:hover { color:var(--navy); }
 
 /* ── See them in action: one animated window per app ─────────────────────── */
 .action { background:var(--navy); color:#fff; position:relative; overflow:hidden; }
-.action::before { content:''; position:absolute; top:10%; left:-10%; width:600px; height:600px; background:radial-gradient(circle, rgba(123,108,246,.18), transparent 65%); pointer-events:none; }
+.action::before { content:''; position:absolute; top:10%; left:-10%; width:600px; height:600px; background:radial-gradient(circle closest-side, rgba(123,108,246,.18), transparent 65%); pointer-events:none; }
 .action h2 { color:#fff; }
 .action .sub { color:rgba(255,255,255,.65); }
 .show { display:grid; grid-template-columns:1fr 1.15fr; gap:3.5rem; align-items:center; margin:0 auto 5.5rem; max-width:1040px; position:relative; }
@@ -608,6 +611,7 @@ footer a:hover { color:var(--navy); }
     <button type="button" class="btn primary" id="heroCta" onclick="acctClick('signup')">Start your free week</button>
     <a class="btn ghost" href="#pricing">Pricing</a>
   </div>
+  <div class="hero-fade" aria-hidden="true"></div>
 </header>
 
 <section class="action" id="action">

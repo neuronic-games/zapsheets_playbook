@@ -5,8 +5,9 @@
 // publisher it belongs with (so it shows under that publisher's game), Status "Paid". Sheets without
 // Type / Payee / Ref Number columns get them added.
 //
-// POST params: id (sheet), game, client, payee, amount, date (YYYY-MM-DD, default today), notes
-// Returns: { ok, row: { …the Contracts row… } }
+// POST params: id (sheet), game, client, payee, amount, date (YYYY-MM-DD, default today), notes,
+//              my_name, my_phone, my_company, my_logo, my_address (for the payment slip)
+// Returns: { ok, row: { …the Contracts row, Files = the payment slip's link… }, slip_error? }
 require_once __DIR__ . '/gbGate.php'; gbGate(['devboard']);   // GameBoard account: signed in, the sheet's owner, the app unlocked
 error_reporting(0);
 ini_set('display_errors', '0');
@@ -14,6 +15,7 @@ header('Content-Type: application/json');
 
 require __DIR__ . '/../dotEnv.php';
 require_once __DIR__ . '/refreshJson.php';
+require_once __DIR__ . '/paymentSlip.php';
 
 $sheetId = trim($_POST['id']     ?? '');
 require_once __DIR__ . '/stripeCommon.php';
@@ -60,4 +62,8 @@ if (empty($result['ok'])) { echo json_encode($result); exit; }
 
 refreshJson($pythonPath, $sheetId, 'contracts');
 unset($row['__add_headers__']);
-echo json_encode(['ok' => true, 'row' => $row], JSON_UNESCAPED_UNICODE);
+
+// The payment slip to send to the person (PDF, like estimates and invoices)
+$slip = pbMakePaymentSlip($sheetId, $row, $_POST);
+if (!empty($slip['ok'])) $row['Files'] = $slip['url'];
+echo json_encode(['ok' => true, 'row' => $row] + (empty($slip['ok']) ? ['slip_error' => $slip['error'] ?? 'Could not make the slip'] : []), JSON_UNESCAPED_UNICODE);

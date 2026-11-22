@@ -2718,6 +2718,11 @@ function _paymentItemHtml(pay) {
     '</dl>' + (pay.Notes ? '<div class="contract-detail-notes" style="margin:.4rem 0 0">' + esc(pay.Notes) + '</div>' : '') + '</div>';
   h += '<div class="estimate-item-actions">' +
     '<div id="cdel-row-' + idx + '" style="display:flex;gap:.5rem;align-items:center">' +
+      (pay.Files
+        ? '<button type="button" class="btn-contract-action" onclick="event.stopPropagation();_paySlipShare(' + idx + ')">✉ Share</button>' +
+          '<button type="button" class="btn-contract-action payment" onclick="event.stopPropagation();window.open(' + esc(JSON.stringify(pay.Files)) + ',\'_blank\')">Payment Slip</button>' +
+          '<button type="button" class="btn-contract-action" id="pay-slip-btn-' + idx + '" title="Make the slip again (e.g. after editing a bio)" onclick="event.stopPropagation();_payMakeSlip(' + idx + ')">↻</button>'
+        : '<button type="button" class="btn-contract-action payment" id="pay-slip-btn-' + idx + '" onclick="event.stopPropagation();_payMakeSlip(' + idx + ')">Make Payment Slip</button>') +
       '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_conStartDelete(' + idx + ')">🗑 Delete Payment</button></div>' +
     '<div id="cdel-confirm-' + idx + '" style="display:none;align-items:center;justify-content:flex-end;gap:.5rem">' +
       '<button type="button" class="est-nocancel-btn" onclick="event.stopPropagation();_conCancelDelete(' + idx + ')">Don\'t Delete</button>' +
@@ -2726,6 +2731,42 @@ function _paymentItemHtml(pay) {
   return h;
 }
 function _payToggle(idx) { var el = document.getElementById('ci-' + idx); if (el) el.classList.toggle('open'); }
+// The sender's details for the slip — the same ones estimates and invoices use
+function _payAppendMe(fd) {
+  fd.append('my_name', MY_NAME || ''); fd.append('my_phone', MY_PHONE || ''); fd.append('my_company', MY_COMPANY || '');
+  fd.append('my_logo', MY_LOGO || ''); fd.append('my_address', MY_COMPANY_ADDRESS || MY_BIO_LOCATION || '');
+}
+function _payeeEmail(name) {
+  var n = String(name || '').trim().toLowerCase();
+  for (var i = 0; i < (PEOPLE_DATA || []).length; i++) {
+    var p = PEOPLE_DATA[i] || {};
+    if (String(p.Name || '').replace(/^'/, '').trim().toLowerCase() === n) return String(p.Email || '').replace(/^'/, '').trim();
+  }
+  return /@/.test(n) ? n : '';
+}
+function _paySlipShare(idx) {
+  var pay = CONTRACT_RAW[idx]; if (!pay || !pay.Files) return;
+  var n = parseFloat(pay.Quote || ''), amt = isNaN(n) ? '' : '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  var subject = 'Payment ' + (pay['Ref Number'] || '') + (pay.Game ? ' — ' + pay.Game : '');
+  var body = 'Hi ' + String(pay.Payee || '').split(' ')[0] + ',\n\nI sent you ' + amt + (pay.Game ? ' for ' + pay.Game : '') + '. Here is the payment slip:\n' + pay.Files + '\n\nThanks!\n' + (MY_NAME || '');
+  window.open('mailto:' + encodeURIComponent(_payeeEmail(pay.Payee)) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body), '_self');
+}
+function _payMakeSlip(idx) {
+  var pay = CONTRACT_RAW[idx]; if (!pay) return;
+  var btn = document.getElementById('pay-slip-btn-' + idx), label = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Making…'; }
+  var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('ref', pay['Ref Number'] || pay.ID || ''); _payAppendMe(fd);
+  fetch(APP_BASE + 'push/createPaymentSlip.php', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(j) {
+      if (!j || !j.ok) throw new Error((j && j.error) || 'Could not make the slip');
+      pay.Files = j.url;
+      var st = _saveOpenState(); renderPublishersView(); _restoreOpenState(st);
+      var el = document.getElementById('ci-' + idx); if (el) el.classList.add('open');
+      window.open(j.url, '_blank');
+    })
+    .catch(function(e) { if (btn) { btn.disabled = false; btn.textContent = label; } alert(e.message); });
+}
 
 var _payCtx = null, _payInitial = {};
 function _payValues() {
@@ -2780,6 +2821,7 @@ function submitPayment() {
   var fd = new FormData();
   fd.append('id', SHEET_ID); fd.append('game', _payCtx.game); fd.append('client', _payCtx.client);
   fd.append('payee', v.person); fd.append('amount', v.amount); fd.append('date', v.date); fd.append('notes', v.notes);
+  _payAppendMe(fd);
   fetch(APP_BASE + 'push/addPayment.php', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
     .then(function(j) {
@@ -2787,7 +2829,7 @@ function submitPayment() {
       CONTRACT_RAW.push(j.row);
       forceClosePaymentDialog();
       var st = _saveOpenState(); renderPublishersView(); _restoreOpenState(st);
-      if (typeof showSaveToast === 'function') showSaveToast('✓ Payment to ' + v.person + ' saved', 'success');
+      if (typeof showSaveToast === 'function') showSaveToast(j.slip_error ? 'Payment saved — the slip didn’t work: ' + j.slip_error : '✓ Payment to ' + v.person + ' saved, with its payment slip', j.slip_error ? '' : 'success');
     })
     .catch(function() { fail('Network error.'); });
 }

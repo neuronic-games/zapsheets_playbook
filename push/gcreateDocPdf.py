@@ -6,7 +6,8 @@
 #
 # Arg: {sheet_id}|{base64_json}
 # JSON keys:
-#   game, client, doc_id, doc_type ("Invoice"|"Estimate"), estimate_num
+#   game, client, doc_id, doc_type ("Invoice"|"Estimate"|"Payment"), estimate_num
+#   payee (Payment: who was paid — the slip is "Payment Slip", paid on doc_date, no payment instructions)
 #   quote, notes, num_tests, num_edits, qty, unit_price, discount_pct, discount_label,
 #   printing (optional — adds a separate "Printing" line item)
 #   doc_date (optional — original "Submitted on" date, m/d/Y; defaults to today)
@@ -80,6 +81,9 @@ tgt_end       = data.get('tgt_end',       '').strip()
 duration      = data.get('duration',      '').strip()
 base_url      = data.get('base_url',      '').strip()
 ref_code      = data.get('ref_code',      '').strip()
+payee         = data.get('payee',         '').strip()
+payee_payment = data.get('payee_payment', '').strip()   # the payee's payment details, from their bio
+is_payment    = doc_type == 'Payment'
 # T&M mode — two line items: Time & Labor + Hardware & Materials
 tm_mode       = bool(data.get('tm_mode',      False))
 tm_time_cost  = data.get('tm_time_cost',  '').strip()
@@ -232,6 +236,21 @@ elif doc_type == 'Estimate':
     quote_fmt    = fmt_money(total_val)
     subtotal_fmt = fmt_money(subtotal_val)
 
+elif is_payment:
+    # A payment slip: one line — the game (and what the payment was for, from the notes) — and the amount paid
+    paid_val     = parse_money(quote_raw)
+    quote_val    = paid_val
+    quote_fmt    = fmt_money(paid_val)
+    subtotal_val = paid_val or 0.0
+    subtotal_fmt = quote_fmt
+    desc_lines   = ([game] if game else []) + [l for l in notes.replace('\r\n', '\n').split('\n') if l.strip()]
+    pay_lines    = [l.strip() for l in payee_payment.replace('\r\n', '\n').split('\n') if l.strip()]
+    if pay_lines:
+        desc_lines += ['Paid via: ' + pay_lines[0]] + pay_lines[1:]
+    line_items.append({'desc': desc_lines or ['Payment'], 'qty': '1', 'unit': quote_fmt, 'total': quote_fmt})
+    notes = ''          # shown as the line's description
+    my_payment = ''     # payment instructions are for invoices
+
 else:  # Invoice
     work_val     = parse_money(quote_raw)
     printing_val = parse_money(printing_raw) or 0.0
@@ -311,7 +330,7 @@ if my_logo:
 # ── Generate PDF ───────────────────────────────────────────────────────────────
 buf = BytesIO()
 c = canvas.Canvas(buf, pagesize=letter)
-c.setTitle(f"{doc_type} {doc_num}")
+c.setTitle(f"{'Payment Slip' if is_payment else doc_type} {doc_num}")
 
 # ── Orange top bar ──────────────────────────────────────────────────────────────
 c.setFillColor(ORANGE)
@@ -346,11 +365,11 @@ if my_phone:
 # ── Document heading ────────────────────────────────────────────────────────────
 c.setFont('Helvetica-Bold', 36)
 c.setFillColor(DARK)
-c.drawString(ML, yt(118), doc_type)
+c.drawString(ML, yt(118), 'Payment Slip' if is_payment else doc_type)
 
 c.setFont('Helvetica', 10)
 c.setFillColor(MID_GRAY)
-c.drawString(ML, yt(143), f'Submitted on {today_disp}')
+c.drawString(ML, yt(143), f'{"Paid on" if is_payment else "Submitted on"} {today_disp}')
 
 # ── Info section ────────────────────────────────────────────────────────────────
 Y_LBL = yt(175)
@@ -371,9 +390,12 @@ else:
 
 c.setFont('Helvetica-Bold', 9)
 c.setFillColor(DARK)
-c.drawString(col_prep, Y_LBL, 'Prepared for')
+if is_payment:   # Paid to · For (the publisher it's with) · Payment #
+    timeline_str = client
+    client = payee
+c.drawString(col_prep, Y_LBL, 'Paid to' if is_payment else 'Prepared for')
 if timeline_str:
-    c.drawString(col_due, Y_LBL, 'Due Date')
+    c.drawString(col_due, Y_LBL, 'For' if is_payment else 'Due Date')
 c.drawString(col_num,  Y_LBL, f'{doc_type} #')
 if show_est_col:
     c.drawString(col_est, Y_LBL, 'Estimate #')
@@ -422,7 +444,7 @@ c.drawString(T_LEFT + CELL_PAD, hy, 'Description')
 if not is_estimate:
     c.drawString(T_QTY,  hy, 'Qty')
     c.drawString(T_UNIT, hy, 'Unit price')
-c.drawRightString(T_TOTAL_R - CELL_PAD, hy, 'Price')
+c.drawRightString(T_TOTAL_R - CELL_PAD, hy, 'Amount' if is_payment else 'Price')
 
 cur_y -= HEADER_H
 
@@ -459,15 +481,16 @@ for item in line_items:
 SUB_H       = 22
 LABEL_X     = T_TOTAL_R - CELL_PAD - 130   # label left-edge, well clear of numbers
 
-# Subtotal row
-sub_y = cur_y - SUB_H
-c.setFont('Helvetica', 9)
-c.setFillColor(MID_GRAY)
-c.drawString(LABEL_X, sub_y + 7, 'Subtotal')
-c.setFont('Helvetica-Bold', 9)
-c.setFillColor(DARK)
-c.drawRightString(T_TOTAL_R - CELL_PAD, sub_y + 7, subtotal_fmt)
-cur_y = sub_y
+# Subtotal row (a payment slip has one line: no subtotal)
+if not is_payment:
+    sub_y = cur_y - SUB_H
+    c.setFont('Helvetica', 9)
+    c.setFillColor(MID_GRAY)
+    c.drawString(LABEL_X, sub_y + 7, 'Subtotal')
+    c.setFont('Helvetica-Bold', 9)
+    c.setFillColor(DARK)
+    c.drawRightString(T_TOTAL_R - CELL_PAD, sub_y + 7, subtotal_fmt)
+    cur_y = sub_y
 
 # Discount row (only if discount applied)
 if disc_amt > 0:
@@ -535,7 +558,7 @@ num_str   = quote_fmt
 num_width = c.stringWidth(num_str, 'Helvetica-Bold', 28)
 num_right = T_TOTAL_R - CELL_PAD
 num_left  = num_right - num_width
-lbl_str   = 'Total  '
+lbl_str   = 'Paid  ' if is_payment else 'Total  '
 lbl_width = c.stringWidth(lbl_str, 'Helvetica-Bold', 18)
 c.setFont('Helvetica-Bold', 18)
 c.setFillColor(MID_GRAY)

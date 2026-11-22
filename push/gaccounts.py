@@ -187,13 +187,21 @@ def main():
             if ed and ed + datetime.timedelta(days=1) < now(): out({'error': 'That code has expired'})
         # Once per person: the codes each person has used are listed in their Users row (Codes Used)
         mine = [c.strip().lower() for c in str(u.get('Codes Used', '')).split(',') if c.strip()]
-        if code.lower() in mine: out({'error': 'You’ve already used that code'})
-        used = str(row[ci('Used')]).strip() if ci('Used') >= 0 else ''
-        used = int(used) if used.isdigit() else 0
-        mx = str(row[ci('Max Uses')]).strip() if ci('Max Uses') >= 0 else ''
-        if mx.isdigit() and used >= int(mx): out({'error': 'That code has been used up'})
-        if ci('Used') >= 0: row[ci('Used')] = str(used + 1)
-        wb.values_update(q(cws.title) + '!A' + str(row_no) + ':' + col(len(ch)) + str(row_no), params={'valueInputOption': 'RAW'}, body={'values': [row[:len(ch)]]})
+        # A Perpetual code used before but not showing on the account (its Length was changed to Perpetual later,
+        # or the row was edited): it's applied again, without counting another use
+        again = False
+        if code.lower() in mine:
+            have_it = (str(u.get('Activated', '')).strip() != '') if not apps else \
+                      all(app_codes(u.get('App Codes', '')).get(a, '').lower() == 'perpetual' for a in apps)
+            if days != PERPETUAL or have_it: out({'error': 'You’ve already used that code'})
+            again = True
+        if not again:
+            used = str(row[ci('Used')]).strip() if ci('Used') >= 0 else ''
+            used = int(used) if used.isdigit() else 0
+            mx = str(row[ci('Max Uses')]).strip() if ci('Max Uses') >= 0 else ''
+            if mx.isdigit() and used >= int(mx): out({'error': 'That code has been used up'})
+            if ci('Used') >= 0: row[ci('Used')] = str(used + 1)
+            wb.values_update(q(cws.title) + '!A' + str(row_no) + ':' + col(len(ch)) + str(row_no), params={'valueInputOption': 'RAW'}, body={'values': [row[:len(ch)]]})
         # The new time starts when the current access runs out: after any code time left, or after the free week
         def when(v):
             try: return datetime.datetime.strptime(str(v or '')[:19], '%Y-%m-%d %H:%M:%S')
@@ -215,7 +223,7 @@ def main():
                 if have.get(a, '').lower() == 'perpetual': continue
                 have[a] = 'Perpetual' if days == PERPETUAL else iso(later(have.get(a), u.get('Code Until'), u.get('Trial End')) + datetime.timedelta(days=days))
             u['App Codes'] = ', '.join(k + ' ' + v for k, v in have.items())
-        u['Codes Used'] = ', '.join([c for c in str(u.get('Codes Used', '')).split(', ') if c] + [str(row[ci('Code')]).strip()])
+        if not again: u['Codes Used'] = ', '.join([c for c in str(u.get('Codes Used', '')).split(', ') if c] + [str(row[ci('Code')]).strip()])
         u['Last Seen'] = iso(now())
         write(n, u)
         out({'ok': True, 'user': u, 'days': days, 'apps': apps})

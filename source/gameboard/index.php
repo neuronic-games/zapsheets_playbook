@@ -313,25 +313,78 @@ footer a:hover { color:var(--navy); }
 .kb-cursor { position:absolute; width:18px; height:18px; z-index:6; left:85%; top:300px; animation:kbcur 12s infinite; }
 @keyframes kbcur { 0% { left:85%; top:300px; opacity:0; } 6% { opacity:1; } 16%,20% { left:calc(37.5% + 10px); top:168px; } 34% { left:calc(62.5% + 14px); top:165px; } 38% { left:calc(62.5% + 14px); top:168px; } 52% { left:80%; top:290px; opacity:1; } 58%,100% { left:80%; top:290px; opacity:0; } }
 
-/* BillBoard: a catalog with a rolling banner and games rising in */
-.bbm { background:#fff; }
-.bb-banner { height:128px; position:relative; overflow:hidden; background:#693f99; }
-.bb-slides { display:flex; width:300%; height:100%; animation:slides 12s infinite; }
-.bb-slides div { flex:1; background:center/cover; }
-@keyframes slides { 0%,28% { transform:translateX(0); } 33%,61% { transform:translateX(-33.333%); } 66%,94% { transform:translateX(-66.666%); } 100% { transform:translateX(0); } }
-.bb-brand { position:absolute; left:12px; bottom:10px; display:flex; align-items:center; gap:8px; background:rgba(20,19,42,.72); color:#fff; border-radius:10px; padding:5px 10px 5px 5px; font-weight:600; font-size:13px; }
-.bb-brand img { width:26px; height:26px; border-radius:6px; }
-.bb-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:12px; }
-.bb-g { border:1px solid #eee; border-radius:9px; overflow:hidden; font-size:11.5px; opacity:0; animation:appear 12s infinite; }
-.bb-g:nth-child(2) { animation-delay:.4s; } .bb-g:nth-child(3) { animation-delay:.8s; }
-.bb-g img { width:100%; height:86px; object-fit:cover; display:block; }
-.bb-g div { padding:6px 7px; }
-.bb-g b { display:block; color:#1b1b2b; font-size:12.5px; }
-.bb-g span { color:#888; }
-.bb-buy { position:absolute; right:14px; bottom:14px; background:#2e9d4c; color:#fff; font-weight:700; font-size:12px; border-radius:999px; padding:7px 14px; box-shadow:0 6px 16px rgba(46,157,76,.4); animation:buy 2.4s ease-in-out infinite; }
-@keyframes buy { 0%,100% { transform:scale(1); } 50% { transform:scale(1.07); } }
-.cursor { position:absolute; width:18px; height:18px; z-index:5; left:50%; top:300px; animation:cur 12s infinite; }
-@keyframes cur { 0%,20% { left:50%; top:300px; opacity:0; } 26% { opacity:1; } 40%,60% { left:17%; top:200px; } 47% { transform:scale(.8); } 49% { transform:none; } 72%,86% { left:calc(100% - 52px); top:314px; } 87% { transform:scale(.8); } 89% { transform:none; } 92%,100% { left:calc(100% - 52px); top:314px; opacity:0; } }
+/* BillBoard: editing a game page — add the hero image, set the stats, add a review, Save */
+.bbe { height:360px; background:#fff; font-size:12px; }
+.bbe-nav { height:36px; display:flex; align-items:center; gap:8px; padding:0 12px; border-bottom:1px solid #eee; font-size:12px; color:#555; }
+.bbe-nav b { color:#1b1b2b; }
+.bbe-mode { margin-left:auto; font-size:10.5px; font-weight:600; color:#693f99; background:#f3ecfb; border-radius:999px; padding:3px 9px; }
+.bbe-save { font-size:10.5px; font-weight:800; letter-spacing:.08em; color:#fff; background:#693f99; border-radius:999px; padding:5px 12px; animation:bbsave 16s infinite; }
+@keyframes bbsave { 0%,77% { transform:none; box-shadow:none; } 78% { transform:scale(.92); } 80%,90% { transform:none; box-shadow:0 0 0 4px rgba(105,63,153,.25); } 94%,100% { box-shadow:none; } }
+.bbe-hero { position:relative; height:158px; background:#2b2440; overflow:hidden; }
+.bbe-ph { position:absolute; top:10px; right:10px; width:44%; height:70px; z-index:3; border:2px dashed rgba(255,255,255,.35); border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:rgba(255,255,255,.75); font-weight:600; animation:bbph 16s infinite; }
+.bbe-ph svg { width:22px; height:22px; }
+@keyframes bbph { 0%,11% { opacity:1; background:rgba(20,15,35,.35); } 12%,20% { opacity:1; background:rgba(255,255,255,.14); } 23%,96% { opacity:0; } 100% { opacity:1; } }
+.bbe-up { position:absolute; left:20%; right:20%; bottom:6px; height:5px; border-radius:3px; background:rgba(255,255,255,.2); overflow:hidden; opacity:0; animation:bbupw 16s infinite; }
+.bbe-up i { display:block; height:100%; width:0; background:#9ed29f; animation:bbup 16s infinite; }
+@keyframes bbupw { 0%,12% { opacity:0; } 13%,20% { opacity:1; } 22%,100% { opacity:0; } }
+@keyframes bbup { 0%,13% { width:0; } 20%,100% { width:100%; } }
+.bbe-img { position:absolute; inset:0; background:url(images/billboard-features/hero-floristry.webp) center/cover; opacity:0; animation:bbimg 16s infinite; }
+.bbe-img::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg, rgba(20,15,35,.9) 0%, rgba(20,15,35,.62) 55%, rgba(20,15,35,.3) 100%); }
+@keyframes bbimg { 0%,20% { opacity:0; transform:scale(1.06); } 24%,94% { opacity:1; transform:none; } 98%,100% { opacity:0; } }
+.bbe-in { position:absolute; left:14px; right:14px; bottom:12px; color:#fff; z-index:2; }
+.bbe-title { font-family:'Fraunces',Georgia,serif; font-size:22px; font-weight:600; line-height:1.1; }
+.bbe-tag { font-size:11.5px; color:rgba(255,255,255,.8); margin:2px 0 8px; }
+.bbe-stats { display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+.bbe-f { display:inline-flex; align-items:center; gap:4px; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.28); border-radius:7px; padding:3px 7px; font-size:11.5px; }
+.bbe-f svg { width:12px; height:12px; opacity:.8; }
+.bbe-n { min-width:16px; text-align:center; background:rgba(255,255,255,.16); border-radius:4px; padding:0 3px; position:relative; }
+.bbe-n.ed1 { animation:bbfocus1 16s infinite; } .bbe-n.ed2 { animation:bbfocus2 16s infinite; }
+@keyframes bbfocus1 { 0%,30% { box-shadow:none; background:rgba(255,255,255,.16); } 31%,38% { box-shadow:0 0 0 2px #f7d57f; background:rgba(255,255,255,.3); } 40%,100% { box-shadow:none; background:rgba(255,255,255,.16); } }
+@keyframes bbfocus2 { 0%,39% { box-shadow:none; background:rgba(255,255,255,.16); } 40%,46% { box-shadow:0 0 0 2px #f7d57f; background:rgba(255,255,255,.3); } 48%,100% { box-shadow:none; background:rgba(255,255,255,.16); } }
+.sw { display:inline-grid; } .sw > span { grid-area:1/1; }
+.sw .o1 { animation:old1 16s infinite; } .sw .n1 { animation:new1 16s infinite; }
+.sw .o2 { animation:old2 16s infinite; } .sw .n2 { animation:new2 16s infinite; }
+@keyframes old1 { 0%,33% { opacity:1; } 34%,96% { opacity:0; } 100% { opacity:1; } } @keyframes new1 { 0%,33% { opacity:0; } 34%,96% { opacity:1; } 100% { opacity:0; } }
+@keyframes old2 { 0%,42% { opacity:1; } 43%,96% { opacity:0; } 100% { opacity:1; } } @keyframes new2 { 0%,42% { opacity:0; } 43%,96% { opacity:1; } 100% { opacity:0; } }
+.bbe-buy { position:absolute; right:14px; bottom:12px; z-index:2; display:flex; gap:6px; align-items:center; }
+.bbe-buy em { font-style:normal; font-weight:800; color:#fff; font-size:13px; }
+.bbe-buy span { background:#2e9d4c; color:#fff; font-weight:700; font-size:11px; border-radius:999px; padding:5px 11px; }
+.bbe-tick { height:44px; background:#faf7fd; border-bottom:1px solid #efe9f6; display:flex; align-items:center; gap:10px; padding:0 14px; overflow:hidden; white-space:nowrap; }
+.bbe-tick > * { flex-shrink:0; }
+.bbe-q { font-family:'Fraunces',Georgia,serif; font-style:italic; color:#3b2a55; }
+.bbe-q small { font-family:'Inter',sans-serif; font-style:normal; color:#8b7aa6; margin-left:6px; }
+.bbe-dot { width:4px; height:4px; border-radius:50%; background:#c9b8e0; flex-shrink:0; }
+.bbe-newq { opacity:0; max-width:0; overflow:hidden; display:inline-flex; align-items:center; gap:10px; animation:bbnewq 16s infinite; }
+@keyframes bbnewq { 0%,66% { opacity:0; max-width:0; } 70%,94% { opacity:1; max-width:400px; } 98%,100% { opacity:0; max-width:0; } }
+.bbe-addrev { border:1.5px dashed #c9b8e0; color:#693f99; font-weight:600; border-radius:7px; padding:3px 9px; flex-shrink:0; animation:bbadd 16s infinite; }
+@keyframes bbadd { 0%,48% { background:transparent; } 49%,51% { background:#efe6fa; } 52%,100% { background:transparent; } }
+.bbe-about { padding:10px 14px; }
+.bbe-about b { font-size:10px; letter-spacing:.09em; text-transform:uppercase; color:#999; display:block; margin-bottom:3px; }
+.bbe-about p { color:#555; line-height:1.45; font-size:11.5px; }
+.bbe-pop { position:absolute; left:14px; top:232px; width:min(300px, calc(100% - 28px)); background:#fff; border:1px solid #e4daf0; border-radius:10px; box-shadow:0 16px 36px rgba(40,20,70,.22); padding:10px; z-index:4; opacity:0; animation:bbpop 16s infinite; }
+@keyframes bbpop { 0%,50% { opacity:0; transform:translateY(6px); } 52%,65% { opacity:1; transform:none; } 67%,100% { opacity:0; transform:translateY(6px); } }
+.bbe-ta, .bbe-src { border:1.5px solid #e4daf0; border-radius:7px; padding:6px 8px; color:#3b2a55; margin-bottom:6px; white-space:nowrap; overflow:hidden; }
+.bbe-ta { font-family:'Fraunces',Georgia,serif; font-style:italic; min-height:30px; border-color:#b89be0; }
+.type { display:inline-block; clip-path:inset(0 100% 0 0); }
+.bbe-ta .type { animation:typeq 16s infinite steps(30); } .bbe-src .type { animation:types 16s infinite steps(20); }
+@keyframes typeq { 0%,53% { clip-path:inset(0 100% 0 0); } 59%,100% { clip-path:inset(0 0 0 0); } }
+@keyframes types { 0%,59% { clip-path:inset(0 100% 0 0); } 63%,100% { clip-path:inset(0 0 0 0); } }
+.bbe-pbtns { display:flex; gap:6px; }
+.bbe-pbtns span { font-size:10.5px; font-weight:700; border-radius:6px; padding:4px 10px; background:#f1edf6; color:#666; }
+.bbe-pbtns span:first-child { background:#693f99; color:#fff; animation:bbpsave 16s infinite; }
+@keyframes bbpsave { 0%,64% { transform:none; } 65% { transform:scale(.9); } 66%,100% { transform:none; } }
+.bbe-toast { position:absolute; left:50%; top:44px; transform:translateX(-50%); background:#1b1b2b; color:#fff; font-size:11.5px; font-weight:600; border-radius:999px; padding:6px 14px; z-index:5; opacity:0; white-space:nowrap; animation:bbtoast 16s infinite; }
+@keyframes bbtoast { 0%,78% { opacity:0; transform:translate(-50%,-6px); } 81%,92% { opacity:1; transform:translate(-50%,0); } 95%,100% { opacity:0; } }
+.bbe-cur { position:absolute; width:18px; height:18px; z-index:6; left:80%; top:330px; animation:bbcur 16s infinite; }
+@keyframes bbcur {
+  0% { left:80%; top:330px; opacity:0; transform:none; } 4% { opacity:1; }
+  10% { left:calc(77% - 10px); top:78px; transform:none; } 11.5% { left:calc(77% - 10px); top:78px; transform:scale(.8); } 13% { left:calc(77% - 10px); top:78px; transform:none; }
+  29% { left:78px; top:169px; } 30.5% { left:78px; top:169px; transform:scale(.8); } 32% { left:78px; top:169px; transform:none; }
+  38% { left:212px; top:169px; } 39.5% { left:212px; top:169px; transform:scale(.8); } 41% { left:212px; top:169px; transform:none; }
+  47% { left:63px; top:216px; } 48.5% { left:63px; top:216px; transform:scale(.8); } 50% { left:63px; top:216px; transform:none; }
+  63% { left:40px; top:322px; } 64.5% { left:40px; top:322px; transform:scale(.8); } 66% { left:40px; top:322px; transform:none; }
+  75% { left:calc(100% - 44px); top:18px; } 77.5% { left:calc(100% - 44px); top:18px; transform:scale(.8); } 79% { left:calc(100% - 44px); top:18px; transform:none; opacity:1; }
+  90%,100% { left:calc(100% - 44px); top:18px; opacity:0; } }
 
 /* ── Who it's for: makers × apps ─────────────────────────────────────────── */
 .who { background:linear-gradient(180deg,#fff, var(--paper)); }
@@ -507,20 +560,39 @@ footer a:hover { color:var(--navy); }
       <div class="show-text">
         <div class="badge"><img src="images/bb_icon_180.png" alt="">BillBoard · Show &amp; sell</div>
         <h3>Your games. A polished page — instantly.</h3>
-        <p>A branded catalog of your games and a page for each one, with prices and buy links. Edit it right on the page — no website to build or host.</p>
+        <p>Sign in and each game’s page turns editable, right where it is. Drop in a hero image, set the player count and play time, add press quotes, prices and buy links — then Save puts it all in your Sheet. No website to build or host.</p>
         <a href="<?= e($_apps . 'billboard/features') ?>">BillBoard features →</a>
       </div>
-      <div class="win" aria-hidden="true"><div class="win-bar"><i></i><i></i><i></i><span>billboard · UP Games</span></div>
-        <div class="win-body bbm">
-          <div class="bb-banner"><div class="bb-slides"><div style="background-image:url(images/billboard-features/hero-floristry.webp)"></div><div style="background-image:url(images/billboard-features/carousel-pieces.webp)"></div><div style="background-image:url(images/billboard-features/carousel-spread.webp)"></div></div>
-            <div class="bb-brand"><img src="images/billboard-features/up-logo.webp" alt="">UP Games</div></div>
-          <div class="bb-grid">
-            <div class="bb-g"><img src="images/billboard-features/cover-floristry.webp" alt=""><div><b>Floristry</b><span>2 players · 20 min</span></div></div>
-            <div class="bb-g"><img src="images/billboard-features/cover-scurry.webp" alt=""><div><b>Scurry Up!</b><span>2–4 · 30 min</span></div></div>
-            <div class="bb-g"><img src="images/billboard-features/cover-pressure.webp" alt=""><div><b>Pressure</b><span>3–6 · 25 min</span></div></div>
+      <div class="win" aria-hidden="true"><div class="win-bar"><i></i><i></i><i></i><span>mygameboard.app/billboard/…/floristry</span></div>
+        <div class="win-body bbe">
+          <div class="bbe-nav"><span>‹ All Games</span><span>|</span><b>Floristry</b><span class="bbe-mode">✎ Editing</span><span class="bbe-save">SAVE</span></div>
+          <div class="bbe-hero">
+            <div class="bbe-img"></div>
+            <div class="bbe-ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>+ Add image<div class="bbe-up"><i></i></div></div>
+            <div class="bbe-in">
+              <div class="bbe-title">Floristry</div>
+              <div class="bbe-tag">A quick, real time, Dutch auction game.</div>
+              <div class="bbe-stats">
+                <span class="bbe-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg><span class="bbe-n">2</span>–<span class="bbe-n ed1 sw"><span class="o1">2</span><span class="n1">4</span></span> players</span>
+                <span class="bbe-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="bbe-n">20</span>–<span class="bbe-n ed2 sw"><span class="o2">20</span><span class="n2">30</span></span> min</span>
+                <span class="bbe-f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v18M7 21h10M3 7h18M6 7l-3 7a3 3 0 0 0 6 0zM18 7l-3 7a3 3 0 0 0 6 0z"/></svg>Light</span>
+              </div>
+            </div>
+            <div class="bbe-buy"><em>$20</em><span>Buy now</span></div>
           </div>
-          <span class="bb-buy">Buy now · $20</span>
-          <svg class="cursor" viewBox="0 0 24 24"><path d="M4 2l16 9-7 2-3 7z" fill="#14132a" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          <div class="bbe-tick">
+            <span class="bbe-addrev">+ Add review</span>
+            <span class="bbe-newq"><span class="bbe-q">“This game is just delightful.”<small>— Shut Up &amp; Sit Down</small></span><span class="bbe-dot"></span></span>
+            <span class="bbe-q">“Fast, clever and gorgeous.”<small>— Board Game Breakfast</small></span>
+          </div>
+          <div class="bbe-about"><b>About the game</b><p>Players compete at the historic Aalsmeer Dutch Auction to win the best flowers, then use them to create the most charming window display.</p></div>
+          <div class="bbe-pop">
+            <div class="bbe-ta"><span class="type">“This game is just delightful.”</span></div>
+            <div class="bbe-src"><span class="type">— Shut Up &amp; Sit Down</span></div>
+            <div class="bbe-pbtns"><span>Save</span><span>Cancel</span></div>
+          </div>
+          <div class="bbe-toast">✓ Saved to your Sheet</div>
+          <svg class="bbe-cur" viewBox="0 0 24 24"><path d="M4 2l16 9-7 2-3 7z" fill="#14132a" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>
         </div>
       </div>
     </div>

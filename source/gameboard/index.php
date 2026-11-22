@@ -25,13 +25,17 @@ $_desc = 'Apps for board game makers: playtest notes, card design, publisher pit
 function e($s) { return htmlspecialchars((string) $s, ENT_QUOTES); }
 $APPS = [
   ['dev',  'DevBoard',   'db_icon_180.png',        'Playtest & develop', 'Every playtest, remembered.', '#49c4d4', 'devboard',
-        ['Session log with observations and solutions', 'TODOs from your notes, with owner and due date', 'Estimates, invoices and reports for studios']],
+        ['Session log with observations and solutions', 'TODOs from your notes, with owner and due date', 'Estimates, invoices and reports for studios'],
+        ['$2.99', 'Core · $3.99 Pro with estimates &amp; invoices']],
   ['card', 'CardBoard',  'cardboard_icon_180.png', 'Design & print cards', 'Your cards, straight from your sheet.', '#7b6cf6', 'cardboard',
-        ['Drag-and-drop card designer, fronts and backs', 'Print-and-play sheets, ready to cut', 'Tabletop Simulator and Screentop export']],
+        ['Drag-and-drop card designer, fronts and backs', 'Print-and-play sheets, ready to cut', 'Tabletop Simulator and Screentop export'],
+        ['$4.99', 'after a free week']],
   ['pitch','PitchBoard', 'pb_icon_180.png',        'Pitch to publishers', 'From first sketch to signed deal — tracked.', '#e7a35a', 'pitchboard',
-        ['A pitch log for every game, and a board view', 'Sell sheet generator', 'Game pages and links for collaborators']],
+        ['A pitch log for every game, and a board view', 'Sell sheet generator', 'Game pages and links for collaborators'],
+        ['$1.99', 'every feature']],
   ['bill', 'BillBoard',  'bb_icon_180.png',        'Show & sell', 'Your games. A polished page — instantly.', '#9ed29f', 'billboard',
-        ['A catalog of your games, and a page for each', 'Prices and buy links', 'Shareable public links — no website to host']],
+        ['A catalog of your games, and a page for each', 'Prices and buy links', 'Shareable public links — no website to host'],
+        ['$4.99', 'every feature']],
 ];
 ?><!DOCTYPE html>
 <html lang="en">
@@ -114,7 +118,37 @@ h2 { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(1.8r
 .app ul { list-style:none; margin-bottom:1.4rem; flex:1; }
 .app li { position:relative; padding-left:1.25rem; font-size:14px; color:var(--mid); margin-bottom:.45rem; }
 .app li::before { content:''; position:absolute; left:0; top:.55em; width:7px; height:7px; border-radius:2px; background:var(--c); }
+.app-price { display:flex; align-items:baseline; gap:.35rem; margin:-.4rem 0 1rem; padding-top:.8rem; border-top:1px dashed var(--line); }
+.app-price b { font-family:'Fraunces',Georgia,serif; font-size:1.45rem; color:var(--navy); }
+.app-price span { font-size:12.5px; color:var(--muted); }
 .app-btns { display:flex; gap:.5rem; }
+/* Pricing: one app at a time, or all four */
+.pricing { background:var(--navy); color:#fff; position:relative; overflow:hidden; }
+.pricing::before { content:''; position:absolute; right:-10%; top:-20%; width:640px; height:640px; background:radial-gradient(circle, rgba(229,96,79,.2), transparent 65%); pointer-events:none; }
+.pricing h2 { color:#fff; } .pricing .sub { color:rgba(255,255,255,.65); }
+.price-grid { display:grid; grid-template-columns:repeat(4,1fr) 1.35fr; gap:1rem; align-items:stretch; position:relative; }
+@media (max-width:1000px) { .price-grid { grid-template-columns:repeat(2,1fr); } .pc.all { grid-column:1 / -1; } }
+@media (max-width:520px) { .price-grid { grid-template-columns:1fr; } }
+.pc { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:1.3rem 1.2rem; display:flex; flex-direction:column; }
+.pc-head { display:flex; align-items:center; gap:.6rem; margin-bottom:.9rem; }
+.pc-head img { width:36px; height:36px; border-radius:9px; }
+.pc-head b { font-family:'Fraunces',Georgia,serif; font-size:1.1rem; }
+.pc-price { font-family:'Fraunces',Georgia,serif; font-size:2rem; font-weight:600; line-height:1; }
+.pc-price small { font-family:'Inter',sans-serif; font-size:13px; font-weight:400; color:rgba(255,255,255,.6); margin-left:.2rem; }
+.pc-note { font-size:13px; color:rgba(255,255,255,.65); margin:.5rem 0 1.1rem; flex:1; }
+.pc a, .pc button { display:block; text-align:center; text-decoration:none; font:600 14px 'Inter',sans-serif; color:#fff; border:1px solid rgba(255,255,255,.3); border-radius:10px; padding:10px; background:transparent; cursor:pointer; }
+.pc a:hover { border-color:#fff; }
+.pc.all { background:linear-gradient(160deg, #f0766a 0%, #e5604f 45%, #c94a3a 100%); border:none; box-shadow:0 24px 60px rgba(229,96,79,.35); position:relative; }
+.pc.all .ribbon { position:absolute; top:14px; right:14px; background:#fff; color:#c94a3a; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; border-radius:999px; padding:4px 10px; }
+.pc.all .pc-price { font-size:2.6rem; }
+.pc.all .pc-price small, .pc.all .pc-note { color:rgba(255,255,255,.88); }
+.pc.all .icons { display:flex; gap:6px; margin-bottom:.9rem; } .pc.all .icons img { width:34px; height:34px; border-radius:9px; box-shadow:0 4px 10px rgba(0,0,0,.25); }
+.pc.all ul { list-style:none; margin:.2rem 0 1.1rem; flex:1; }
+.pc.all li { padding-left:1.4rem; position:relative; font-size:14px; margin-bottom:.4rem; }
+.pc.all li::before { content:'✓'; position:absolute; left:0; font-weight:800; }
+.pc.all button { background:#fff; color:#c94a3a; border:none; }
+.pc.all button:hover { background:#fff3ef; }
+.save { text-decoration:line-through; opacity:.7; font-size:15px; margin-left:.4rem; font-family:'Inter',sans-serif; font-weight:500; }
 .app-btns a { flex:1; display:flex; align-items:center; justify-content:center; text-align:center; text-decoration:none; font:600 14px 'Inter',sans-serif; padding:10px 12px; border-radius:10px; }
 .app-btns .f { background:var(--navy); color:#fff; }
 .app-btns .f:hover { background:var(--navy-2); }
@@ -547,6 +581,7 @@ footer a:hover { color:var(--navy); }
     <a href="#apps">Apps</a>
     <a href="#action">In action</a>
     <a href="#who">Who it’s for</a>
+    <a href="#pricing">Pricing</a>
     <a href="#account">Your account</a>
     <button type="button" class="acct-btn" id="navAcct" onclick="acctClick()">Sign in</button>
   </div>
@@ -580,6 +615,7 @@ footer a:hover { color:var(--navy); }
         <div class="app-head"><img src="images/<?= e($a[2]) ?>" alt=""><div><div class="app-name"><?= e($a[1]) ?></div><div class="app-stage"><?= e($a[3]) ?></div></div></div>
         <p class="app-line"><?= e($a[4]) ?></p>
         <ul><?php foreach ($a[7] as $li): ?><li><?= e($li) ?></li><?php endforeach; ?></ul>
+        <div class="app-price"><b><?= e($a[8][0]) ?></b><span>/ month · <?= $a[8][1] ?></span></div>
         <div class="app-btns">
           <a class="f" href="<?= e($_apps . $a[6] . '/features') ?>">Features</a>
           <a class="o app-open" data-app="<?= e($a[6]) ?>" href="<?= e($_apps . $a[6]) ?>" title="Open <?= e($a[1]) ?>">Open</a>
@@ -809,6 +845,37 @@ footer a:hover { color:var(--navy); }
 <div class="mx-row"><div class="mx-who"><span class="mx-ico" style="background:#edf7ee;color:#14132a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z"/><path d="M5 13v8h14v-8M10 21v-5h4v5"/></svg></span><div><b>Publishers</b><span>A catalog and a page for every title</span></div></div><div class="mx-dot" style="--c:#49c4d4"><i style="transition-delay:0.48s" class="half"></i></div><div class="mx-dot" style="--c:#7b6cf6"></div><div class="mx-dot" style="--c:#e7a35a"></div><div class="mx-dot" style="--c:#7fcf8a"><i style="transition-delay:0.63s"></i></div></div>
 </div>
     <div class="mx-key"><span><i></i>Made for you</span><span><i class="half"></i>Handy too</span></div>
+  </div>
+</section>
+
+<section class="pricing" id="pricing">
+  <div class="wrap">
+    <div class="kicker" style="color:#f3b4aa">Pricing</div>
+    <h2>Pay for the apps you use — or get them all</h2>
+    <p class="sub">Each app has its own monthly plan. Or take all four with the all-in-one and save every month. Cancel any time — your games stay in your Google Sheet.</p>
+    <div class="price-grid">
+      <?php foreach ($APPS as $a): ?>
+      <div class="pc">
+        <div class="pc-head"><img src="images/<?= e($a[2]) ?>" alt=""><b><?= e($a[1]) ?></b></div>
+        <div class="pc-price"><?= e($a[8][0]) ?><small>/ month</small></div>
+        <div class="pc-note"><?= $a[8][1] === 'every feature' ? 'Every feature.' : ucfirst($a[8][1]) . '.' ?></div>
+        <a href="<?= e($_apps . $a[6] . '/features') ?>">See <?= e($a[1]) ?></a>
+      </div>
+      <?php endforeach; ?>
+      <div class="pc all">
+        <span class="ribbon">Best value</span>
+        <div class="icons"><?php foreach ($APPS as $a): ?><img src="images/<?= e($a[2]) ?>" alt=""><?php endforeach; ?></div>
+        <b style="font-family:'Fraunces',Georgia,serif;font-size:1.3rem">All-in-one</b>
+        <div class="pc-price" style="margin-top:.4rem">$11.99<small>/ month</small><span class="save">$15.96</span></div>
+        <ul>
+          <li>DevBoard, CardBoard, PitchBoard and BillBoard</li>
+          <li>Every Pro feature, including DevBoard estimates &amp; invoices</li>
+          <li>One GameBoard account for all four</li>
+          <li>Save $3.97 every month</li>
+        </ul>
+        <button type="button" onclick="acctClick('signup')">Get all four</button>
+      </div>
+    </div>
   </div>
 </section>
 <section class="account" id="account">

@@ -118,8 +118,10 @@ function cbRequireAccess(string $sheetId): void {
     $p = cbReadToken(cbRequestToken());
     if (!$p) { echo json_encode(['error' => 'Sign in to CardBoard to make changes.', 'need_auth' => true]); exit; }
     if (($p['x'] ?? 0) < time()) { echo json_encode(['error' => 'Your sign-in needs refreshing.', 'need_auth' => true, 'refresh' => true]); exit; }
-    // Only the person who set the sheet up changes it; everyone else views it (tokens from before this have no list)
-    if (isset($p['sh']) && !in_array($sheetId, (array) $p['sh'], true)) { echo json_encode(['error' => 'This sheet belongs to another CardBoard account — you can view it, not change it.', 'view_only' => true]); exit; }
+    // Only the person who set the sheet up changes it; everyone else views it. A sign-in from before owners
+    // existed has no list: it's refreshed first (the browser does that by itself and tries again).
+    if (!isset($p['sh'])) { echo json_encode(['error' => 'Your sign-in needs refreshing.', 'need_auth' => true, 'refresh' => true]); exit; }
+    if (!in_array($sheetId, (array) $p['sh'], true)) { echo json_encode(['error' => 'This sheet belongs to another CardBoard account — you can view it, not change it.', 'view_only' => true]); exit; }
     if (cbSheetUnlocked($sheetId)) return;
     if (($p['u'] ?? 0) < time()) { echo json_encode(['error' => 'Your free week has ended — subscribe to keep designing.', 'locked' => true]); exit; }
 }

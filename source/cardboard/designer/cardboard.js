@@ -428,7 +428,7 @@ function init() {
     askSignIn(true).then(function() { init(); }, function() {});
     return;
   }
-  acctRefresh(!hasAccess()).then(function() {}, function() {});
+  acctRefresh(!hasAccess() || (acctInfo() && acctInfo().owner == null)).then(function() {}, function() {});
   renderPalette();
   $('cardHolder').innerHTML = '<div class="loading" style="width:240px;height:200px"><span class="spin"></span>Loading sheet…</div>';
   loadTags();
@@ -3876,7 +3876,7 @@ function forgetAcct() { ACCT = null; try { localStorage.removeItem(ACCT_KEY); } 
 // The sheet's owner — the account that set it up (its Admin-sheet Sheets list) — changes it; everyone
 // else sees it read-only. Until the account has been checked for this sheet, it's read-only too.
 function acctChecked() { return !!(ACCT && ACCT.sheet === SHEET_ID); }
-function isOwner() { var a = acctInfo(); return !!a && acctChecked() && a.owner !== false; }
+function isOwner() { var a = acctInfo(); return !!a && acctChecked() && a.owner === true; }   // an account checked before owners existed isn't one until checked again
 function viewOnly() { return !!acctInfo() && !isOwner(); }
 function hasAccess() {
   var a = acctInfo(); if (!a) return false;

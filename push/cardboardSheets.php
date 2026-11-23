@@ -53,7 +53,10 @@ $out = [];
 foreach ($ids as $id) {
     $d = csDir($id);
     $isMine = in_array($id, $mine, true);
-    if (!$isMine && !is_dir($d)) continue;   // a viewed sheet CardBoard doesn't know (any more)
+    // Only sheets opened in CardBoard (the account's sheets are shared with DevBoard, PitchBoard, BillBoard)
+    $used = false;
+    foreach (['_cardboard_info.json', '_cardboard_title.txt', '_cardboard_thumb.jpg', '_cardboard_edited'] as $f) if (is_file($d . '/' . $f)) { $used = true; break; }
+    if (!$used) continue;
     $info = json_decode((string) @file_get_contents($d . '/_cardboard_info.json'), true) ?: [];
     $title = trim((string) ($info['title'] ?? ''));
     if ($title === '') $title = trim((string) @file_get_contents($d . '/_cardboard_title.txt'));

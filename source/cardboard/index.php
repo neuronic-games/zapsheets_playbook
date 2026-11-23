@@ -176,6 +176,9 @@ body.designs .app { display:flex; flex-direction:column; }
 .d-brand { display:flex; align-items:center; gap:.7rem; text-decoration:none; color:#fff; }
 .d-brand img { width:38px; height:38px; border-radius:9px; }
 .d-brand b { font-family:'DINBlack',sans-serif; font-weight:400; font-size:1.45rem; letter-spacing:.02em; }
+.d-name { display:flex; flex-direction:column; line-height:1.05; }
+.d-name small { font-size:.74rem; color:rgba(255,255,255,.68); letter-spacing:.02em; margin-top:.2rem; }
+@media (max-width:520px) { .d-name small { display:none; } }
 .d-brand .c1 { color:#f2c14e; } .d-brand .c2 { color:#a99cff; }
 .d-top .grow { flex:1; }
 .d-create { display:inline-flex; align-items:center; gap:.45rem; height:40px; padding:0 1.15rem; border:2px solid #fff; border-radius:999px; background:transparent; color:#fff; font:inherit; font-size:.98rem; cursor:pointer; transition:background .12s, color .12s; }
@@ -317,7 +320,7 @@ body.designs .app { display:flex; flex-direction:column; }
 <!-- Signed in: the Designs page -->
 <div class="app" id="app">
   <header class="d-top">
-    <a class="d-brand" href="cardboard" title="Your designs"><img src="images/cardboard_icon_180.png" alt=""><b><span class="c1">Card</span><span class="c2">Board</span></b></a>
+    <a class="d-brand" href="cardboard" title="Your designs"><img src="images/cardboard_icon_180.png" alt=""><span class="d-name"><b><span class="c1">Card</span><span class="c2">Board</span></b><small>Design, print, and share your card deck — fast.</small></span></a>
     <div class="grow"></div>
     <button type="button" class="d-create" onclick="openCreateDialog()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>Design</span></button>
     <span class="d-av" id="topAv" title=""></span>

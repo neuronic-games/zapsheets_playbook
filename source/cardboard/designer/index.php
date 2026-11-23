@@ -447,7 +447,7 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .color-row input[type=color] { width:2.2rem; height:2.05rem; border:1.5px solid #d6d9e6; border-radius:7px; padding:2px; background:#fff; cursor:pointer; flex-shrink:0; }
 .color-row .inp { flex:1; }
 .swatch { width:2.2rem; height:2.05rem; flex-shrink:0; border:1.5px solid #d6d9e6; border-radius:7px; padding:3px; cursor:pointer; background:#fff; position:relative; }
-.swatch::before { content:''; position:absolute; inset:3px; border-radius:4px; background:var(--c,#fff); box-shadow:inset 0 0 0 1px rgba(0,0,0,.12); }
+.swatch::before { content:''; position:absolute; inset:3px; border-radius:4px; background:linear-gradient(var(--c,#fff), var(--c,#fff)), repeating-conic-gradient(#e3e5ee 0 25%, #fff 0 50%) 0 0/8px 8px; box-shadow:inset 0 0 0 1px rgba(0,0,0,.12); }   /* see-through colors show the checks */
 .swatch:hover { border-color:#a99cff; }
 .swatch.clear::before, .cp-tile.clear { background:repeating-conic-gradient(#e3e5ee 0 25%, #fff 0 50%) 0 0/8px 8px; }
 .swatch.clear::after, .cp-tile.clear::after { content:''; position:absolute; left:-10%; right:-10%; top:50%; height:2px; background:#e5484d; transform:rotate(-45deg); }
@@ -462,6 +462,12 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .cp-tile:hover { transform:scale(1.08); }
 .cp-tile.on { box-shadow:0 0 0 2px #fff, 0 0 0 4px #4b3fa8; }
 .cp-custom { margin-top:.55rem; }
+.cp-alpha { display:flex; align-items:center; gap:.5rem; }
+.cp-alpha b { font-weight:400; font-size:.75rem; color:#4a4e69; width:2.4rem; text-align:right; }
+.cp-alpha input { flex:1; -webkit-appearance:none; appearance:none; height:14px; border-radius:7px; margin:0; cursor:pointer; box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);
+  background:linear-gradient(90deg, transparent, var(--c,#7b6cf6)), repeating-conic-gradient(#e3e5ee 0 25%, #fff 0 50%) 0 0/8px 8px; }
+.cp-alpha input::-webkit-slider-thumb { -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:#fff; border:2px solid #4b3fa8; box-shadow:0 1px 3px rgba(0,0,0,.3); }
+.cp-alpha input::-moz-range-thumb { width:14px; height:14px; border-radius:50%; background:#fff; border:2px solid #4b3fa8; }
 .cp-more { display:flex; align-items:center; gap:.45rem; font-size:.78rem; color:#4b3fa8; cursor:pointer; }
 .cp-more input { width:1.9rem; height:1.6rem; border:1.5px solid #d6d9e6; border-radius:6px; padding:1px; background:#fff; cursor:pointer; }
 .attr-btns { display:flex; gap:.4rem; margin-top:1.1rem; flex-wrap:wrap; }

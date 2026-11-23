@@ -2386,31 +2386,54 @@ var PALETTE = ['#000000', '#3a3a3a', '#7a7a7a', '#bdbdbd', '#ffffff', '#fff8e8',
                '#b0306b', '#e2557a', '#8e5b3a', '#c8a27a', '#765151', '#443131'];
 function recentColors() { try { return JSON.parse(localStorage.getItem('cb_recentColors') || '[]'); } catch (e) { return []; } }
 function rememberColor(v) {
-  if (!/^#[0-9a-f]{6}$/i.test(v)) return;
+  if (!/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(v)) return;
   var r = recentColors().filter(function(x) { return x.toLowerCase() !== v.toLowerCase(); }); r.unshift(v);
   try { localStorage.setItem('cb_recentColors', JSON.stringify(r.slice(0, 12))); } catch (e) {}
 }
 function closeColorPop() { var p = $('colorPop'); if (p) p.remove(); }
+// Colors are #rrggbb, or #rrggbbaa when see-through (the Opacity slider)
+function colorParts(v) {
+  v = String(v || '').trim();
+  if (/^#[0-9a-f]{3}$/i.test(v)) v = '#' + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
+  var m = /^#([0-9a-f]{6})([0-9a-f]{2})?$/i.exec(v);
+  return m ? { hex: '#' + m[1].toLowerCase(), a: m[2] ? parseInt(m[2], 16) / 255 : 1 } : null;
+}
+function withAlpha(hex, a) {
+  var p = colorParts(hex); if (!p) return hex;
+  a = Math.max(0, Math.min(1, a));
+  return a >= .999 ? p.hex : p.hex + ('0' + Math.round(a * 255).toString(16)).slice(-2);
+}
 function openColorPop(btn, onSet, key, none) {
   var open = $('colorPop') && $('colorPop').dataset.key === onSet + ':' + key; closeColorPop(); if (open) return;
   var target = liveTarget(onSet), cur = target ? String(target[key] || '') : '';
+  var cp = colorParts(cur), alpha = cp ? cp.a : 1, base = cp ? cp.hex : '';
   var pick = function(v) { closeColorPop(); if (v && v !== 'transparent') rememberColor(v); window[onSet](key, v); };
-  var tile = function(c) { return '<button type="button" class="cp-tile' + (cur.toLowerCase() === c.toLowerCase() ? ' on' : '') + '" style="--c:' + c + '" data-c="' + c + '" title="' + c + '"></button>'; };
+  var tile = function(c) { var cc = colorParts(c); return '<button type="button" class="cp-tile' + (cp && cc && cc.hex === cp.hex ? ' on' : '') + '" style="--c:' + c + '" data-c="' + c + '" title="' + c + '"></button>'; };
   var rec = recentColors();
   var p = document.createElement('div'); p.id = 'colorPop'; p.className = 'color-pop'; p.dataset.key = onSet + ':' + key;
   p.innerHTML =
     '<button type="button" class="cp-clear' + ((none ? !cur || cur === 'transparent' : cur === 'transparent') ? ' on' : '') + '" data-c="' + (none ? '' : 'transparent') + '"><span class="cp-tile clear"></span>Transparent</button>' +
     '<div class="cp-grid">' + PALETTE.map(tile).join('') + '</div>' +
     (rec.length ? '<span class="mini">Recent</span><div class="cp-grid">' + rec.map(tile).join('') + '</div>' : '') +
-    '<div class="cp-custom"><label class="cp-more"><input type="color" value="' + (/^#[0-9a-f]{6}$/i.test(cur) ? cur : '#7b6cf6') + '">Custom color…</label></div>';
+    '<span class="mini">Opacity</span><div class="cp-alpha"><input type="range" min="0" max="100" step="1" value="' + Math.round(alpha * 100) + '"><b>' + Math.round(alpha * 100) + '%</b></div>' +
+    '<div class="cp-custom"><label class="cp-more"><input type="color" value="' + (base || '#7b6cf6') + '">Custom color…</label></div>';
   document.body.appendChild(p);
   var r = btn.getBoundingClientRect();
   p.style.left = Math.max(8, Math.min(r.left, innerWidth - p.offsetWidth - 8)) + 'px';
   p.style.top = (r.bottom + p.offsetHeight + 8 > innerHeight ? Math.max(8, r.top - p.offsetHeight - 6) : r.bottom + 6) + 'px';
-  p.addEventListener('click', function(ev) { var t = ev.target.closest('[data-c]'); if (t) pick(t.dataset.c); });
-  var nat = p.querySelector('input[type=color]');
-  nat.addEventListener('input', function() { liveColor(onSet, key, nat.value); btn.style.setProperty('--c', nat.value); btn.classList.remove('clear'); });
-  nat.addEventListener('change', function() { pick(nat.value); });
+  var rng = p.querySelector('.cp-alpha input'), pct = p.querySelector('.cp-alpha b'), nat = p.querySelector('input[type=color]');
+  function paintRange() { rng.style.setProperty('--c', base || nat.value); }
+  paintRange();
+  function show(v) { btn.style.setProperty('--c', v); btn.classList.remove('clear'); }
+  // a palette color keeps the opacity chosen below it
+  p.addEventListener('click', function(ev) { var t = ev.target.closest('[data-c]'); if (!t) return; var c = t.dataset.c; pick(colorParts(c) ? withAlpha(c, alpha) : c); });
+  rng.addEventListener('input', function() {
+    alpha = rng.value / 100; pct.textContent = rng.value + '%';
+    var v = withAlpha(base || nat.value, alpha); liveColor(onSet, key, v); show(v);
+  });
+  rng.addEventListener('change', function() { var v = withAlpha(base || nat.value, alpha); if (_live && _live.obj === liveTarget(onSet)) endLive(liveTarget(onSet), key); rememberColor(v); window[onSet](key, v); });
+  nat.addEventListener('input', function() { base = nat.value; paintRange(); var v = withAlpha(base, alpha); liveColor(onSet, key, v); show(v); });
+  nat.addEventListener('change', function() { pick(withAlpha(nat.value, alpha)); });
 }
 document.addEventListener('pointerdown', function(ev) { var p = $('colorPop'); if (p && !p.contains(ev.target) && !ev.target.closest('.swatch')) closeColorPop(); });
 document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') closeColorPop(); });

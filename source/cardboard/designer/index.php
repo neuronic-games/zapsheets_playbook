@@ -808,9 +808,9 @@ body.cb-gate #signinOverlay { background:#2e2763; }
 <div class="top-bar">
   <div class="top-bar-inner">
     <div class="top-bar-left">
-      <img src="images/cardboard_icon_180.png" alt="">
+      <img src="images/cardboard_icon_180.png" alt="Your designs" title="Your designs" style="cursor:pointer" onclick="window.location.href=APP_BASE+'cardboard'">
       <div style="min-width:0">
-        <h1 onclick="window.location.href=APP_BASE+'cardboard'"><span class="cb-card">Card</span><span class="cb-board">Board</span></h1>
+        <h1 title="Your designs" onclick="window.location.href=APP_BASE+'cardboard'"><span class="cb-card">Card</span><span class="cb-board">Board</span></h1>
         <p class="sub" id="subTitle">Card Designer</p>
       </div>
     </div>

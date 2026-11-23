@@ -1,7 +1,8 @@
 <?php
 /**
- * CardBoard setup landing page.
- * Paste a Google Sheet ID/URL — CardBoard checks it can read the sheet, then opens the card designer.
+ * CardBoard home (/cardboard).
+ * Signed out: start the free week or log in. Signed in: the Designs page — every sheet you've set up
+ * (and the ones you've viewed), with a picture of its first card; + Create connects a new Google Sheet.
  */
 
 $_raw  = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -165,6 +166,106 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
 .who { text-align:center; font-size:.82rem; color:#8a8fa8; margin:-.4rem 0 1rem; }
 .who b { color:#2e2763; }
 [hidden] { display:none !important; }
+
+/* ── Designs page (signed in) ─────────────────────────────────────────── */
+body.designs { display:block; padding:0; background:#f3f4f8; }
+body.designs .page { display:none; }
+.app { display:none; min-height:100vh; }
+body.designs .app { display:flex; flex-direction:column; }
+.d-top { height:64px; flex-shrink:0; background:#2e2763; color:#fff; display:flex; align-items:center; gap:1rem; padding:0 1.4rem; position:sticky; top:0; z-index:20; box-shadow:0 2px 10px rgba(0,0,0,.18); }
+.d-brand { display:flex; align-items:center; gap:.7rem; text-decoration:none; color:#fff; }
+.d-brand img { width:38px; height:38px; border-radius:9px; }
+.d-brand b { font-family:'DINBlack',sans-serif; font-weight:400; font-size:1.45rem; letter-spacing:.02em; }
+.d-brand .c1 { color:#f2c14e; } .d-brand .c2 { color:#a99cff; }
+.d-top .grow { flex:1; }
+.d-create { display:inline-flex; align-items:center; gap:.45rem; height:40px; padding:0 1.15rem; border:2px solid #fff; border-radius:999px; background:transparent; color:#fff; font:inherit; font-size:.98rem; cursor:pointer; transition:background .12s, color .12s; }
+.d-create:hover { background:#fff; color:#2e2763; }
+.d-create svg { width:18px; height:18px; }
+.d-av { width:40px; height:40px; border-radius:50%; background:#f2c14e; color:#2e2763; display:inline-flex; align-items:center; justify-content:center; font-family:'DINBlack',sans-serif; font-size:1.05rem; border:2px solid rgba(255,255,255,.85); flex-shrink:0; }
+.d-body { flex:1; display:flex; min-height:0; }
+.d-side { width:250px; flex-shrink:0; background:#fff; border-right:1px solid #e1e4ee; display:flex; flex-direction:column; }
+.d-me { text-align:center; padding:1.6rem 1rem 1.3rem; border-bottom:1px solid #e1e4ee; }
+.d-me .d-av { width:84px; height:84px; font-size:2.1rem; border:none; box-shadow:0 3px 12px rgba(46,39,99,.2); }
+.d-me .nm { margin-top:.7rem; font-family:'DINBlack',sans-serif; font-size:1.05rem; color:#1f1b47; word-break:break-word; }
+.d-me .em { font-size:.78rem; color:#8a8fa8; word-break:break-all; margin-top:.15rem; }
+.d-me .pl { display:inline-block; margin-top:.55rem; font-size:.74rem; padding:.15rem .6rem; border-radius:999px; background:#f1effc; color:#4b3fa8; }
+.d-nav { padding:.8rem .7rem; display:flex; flex-direction:column; gap:.25rem; }
+.d-nav a, .d-nav button { display:flex; align-items:center; gap:.85rem; padding:.7rem .9rem; border-radius:12px; color:#2b2d42; text-decoration:none; font:inherit; font-size:1rem; background:none; border:2px solid transparent; cursor:pointer; text-align:left; }
+.d-nav a:hover, .d-nav button:hover { background:#f4f3fb; }
+.d-nav .on { border-color:#4b3fa8; color:#4b3fa8; background:#f7f5ff; }
+.d-nav svg { width:22px; height:22px; flex-shrink:0; }
+.d-side .foot { margin-top:auto; padding:1rem; border-top:1px solid #e1e4ee; text-align:center; }
+.d-main { flex:1; min-width:0; padding:2rem 2.2rem 3rem; }
+.d-head { display:flex; align-items:center; gap:1rem; margin-bottom:1.4rem; }
+.d-head h1 { font-family:'DINRegular',sans-serif; font-weight:400; font-size:2rem; color:#1f1b47; flex:1; }
+.d-search { position:relative; width:min(380px, 45vw); }
+.d-search input { width:100%; height:44px; border:1.5px solid #cfd2e0; border-radius:999px; padding:0 2.6rem 0 1.1rem; font:inherit; font-size:.98rem; background:#fff; outline:none; }
+.d-search input:focus { border-color:#4b3fa8; }
+.d-search svg { position:absolute; right:.95rem; top:50%; transform:translateY(-50%); width:20px; height:20px; color:#8a8fa8; pointer-events:none; }
+.d-search .x { position:absolute; right:.7rem; top:50%; transform:translateY(-50%); border:none; background:#e6e7ef; width:22px; height:22px; border-radius:50%; cursor:pointer; color:#555; font-size:.9rem; line-height:1; display:none; }
+.d-search.has .x { display:block; } .d-search.has svg { display:none; }
+.d-bar { display:flex; align-items:center; gap:.4rem; margin-bottom:1.4rem; flex-wrap:wrap; }
+.d-chip { display:inline-flex; align-items:center; gap:.5rem; height:44px; padding:0 1.15rem; border:2px solid transparent; border-radius:999px; background:none; color:#4a4e69; font:inherit; font-size:1rem; cursor:pointer; }
+.d-chip:hover { background:#e9e8f5; }
+.d-chip.on { border-color:#4b3fa8; color:#4b3fa8; background:#fff; }
+.d-chip svg { width:20px; height:20px; }
+.d-chip .n { font-size:.78rem; color:#8a8fa8; }
+.d-bar .grow { flex:1; }
+.d-sort { display:inline-flex; align-items:center; gap:.35rem; color:#2b2d42; font-size:.98rem; }
+.d-sort select { border:none; background:transparent; font:inherit; font-family:'DINBlack',sans-serif; color:#1f1b47; cursor:pointer; padding:.3rem .2rem; outline:none; }
+.d-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:1.4rem; }
+.d-card { position:relative; background:#fff; border:1px solid #dfe2ec; border-radius:10px; cursor:pointer; text-decoration:none; color:inherit; display:flex; flex-direction:column; transition:box-shadow .15s, transform .15s, border-color .15s; }
+.d-card:hover { box-shadow:0 8px 24px rgba(46,39,99,.14); transform:translateY(-2px); border-color:#c9c4ee; }
+.d-thumb { aspect-ratio:4 / 3; background:#eef0f6; border-radius:10px 10px 0 0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.d-thumb img { max-width:72%; max-height:86%; object-fit:contain; filter:drop-shadow(0 6px 12px rgba(20,20,50,.22)); border-radius:6px; }
+.d-thumb .ph { width:34%; aspect-ratio:5 / 7; border-radius:8px; background:#fff; border:2px dashed #c9cde0; display:flex; align-items:center; justify-content:center; color:#b1b5cc; }
+.d-thumb .ph svg { width:42%; height:42%; }
+.d-info { position:relative; padding:.85rem 1rem .9rem; }
+.d-info .t { font-size:1.02rem; color:#1f1b47; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:1.6rem; }
+.d-info .m { display:flex; justify-content:space-between; align-items:flex-end; gap:.5rem; margin-top:.45rem; font-size:.82rem; color:#7d8199; line-height:1.45; }
+.d-info .m .r { display:inline-flex; align-items:center; gap:.3rem; white-space:nowrap; }
+.d-info .m svg { width:15px; height:15px; }
+.d-tag { color:#4b3fa8; } .d-tag.view { color:#9a8a5a; }
+.d-more { position:absolute; right:.4rem; top:.6rem; width:30px; height:30px; border:none; border-radius:50%; background:transparent; color:#7d8199; cursor:pointer; font-size:1.2rem; line-height:1; display:flex; align-items:center; justify-content:center; }
+.d-more:hover { background:#eef0f6; color:#2e2763; }
+.d-card:has(.d-menu) { z-index:6; }
+.d-menu { position:absolute; right:.3rem; top:2.5rem; z-index:5; background:#fff; border:1px solid #dfe2ec; border-radius:10px; box-shadow:0 10px 30px rgba(20,20,50,.18); padding:.35rem; min-width:190px; max-width:calc(100vw - 2rem); }
+.d-menu button { display:block; width:100%; text-align:left; border:none; background:none; padding:.55rem .75rem; border-radius:7px; font:inherit; font-size:.9rem; color:#2b2d42; cursor:pointer; }
+.d-menu button:hover { background:#f4f3fb; }
+.d-empty { text-align:center; padding:4rem 1rem; color:#6b7090; }
+.d-empty b { display:block; font-family:'DINBlack',sans-serif; font-size:1.25rem; color:#1f1b47; margin-bottom:.4rem; }
+.d-empty .connect-btn { width:auto; padding:0 1.6rem; margin-top:1.2rem; }
+.d-loading { color:#8a8fa8; padding:2rem 0; }
+.d-toast { position:fixed; left:50%; bottom:1.5rem; transform:translateX(-50%) translateY(300%); opacity:0; background:#2e2763; color:#fff; padding:.6rem 1.1rem; border-radius:9px; font-size:.9rem; transition:transform .2s; z-index:80; }
+.d-toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+
+/* + Create: connect a Google Sheet */
+.d-ov { position:fixed; inset:0; background:rgba(20,18,45,.55); display:none; align-items:flex-start; justify-content:center; padding:5vh 1rem; z-index:60; overflow:auto; }
+.d-ov.open { display:flex; }
+.d-dlg { position:relative; width:100%; max-width:560px; }
+.d-dlg .card { margin:0; }
+.d-dlg .x-btn { position:absolute; right:1rem; top:1rem; width:32px; height:32px; border:none; border-radius:50%; background:#f1f2f7; color:#555; font-size:1.1rem; cursor:pointer; }
+.d-dlg .x-btn:hover { background:#e4e5ee; }
+.d-start { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; margin:.2rem 0 1.3rem; }
+.d-start a { display:flex; flex-direction:column; gap:.2rem; padding:.85rem .95rem; border:1.5px solid #d6d9e6; border-radius:11px; color:#2e2763; text-decoration:none; transition:border-color .12s, background .12s; }
+.d-start a:hover { border-color:#a99cff; background:#f7f5ff; }
+.d-start b { font-family:'DINBlack',sans-serif; font-weight:400; font-size:.92rem; }
+.d-start span { font-size:.78rem; color:#8a8fa8; line-height:1.4; }
+.d-btns { display:flex; gap:.6rem; }
+.d-btns .connect-btn { flex:1; }
+.cancel-btn { height:2.85rem; padding:0 1.2rem; border:1.5px solid #d6d9e6; border-radius:9px; background:#fff; color:#4a4e69; font:inherit; cursor:pointer; }
+.cancel-btn:hover { background:#f6f6fa; }
+@keyframes dshake { 0%,100% { transform:translateX(0); } 20%,60% { transform:translateX(-8px); } 40%,80% { transform:translateX(8px); } }
+.d-dlg.shake { animation:dshake .35s; }
+
+@media (max-width:760px) {
+  .d-side { display:none; }
+  .d-main { padding:1.3rem 1rem 2.5rem; }
+  .d-head { flex-wrap:wrap; } .d-head h1 { font-size:1.6rem; } .d-search { width:100%; }
+  .d-create span { display:none; } .d-create { padding:0 .7rem; }
+  .d-grid { grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:.9rem; }
+  .d-start { grid-template-columns:1fr; }
+}
 </style>
 </head>
 <body>
@@ -211,10 +312,53 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
     </form>
   </div>
 
-  <div class="who" id="whoLine" hidden></div>
+</div>
 
-  <div class="card" id="connectCard" hidden>
-    <div class="card-title">Connect Your Google Sheet</div>
+<!-- Signed in: the Designs page -->
+<div class="app" id="app">
+  <header class="d-top">
+    <a class="d-brand" href="cardboard" title="Your designs"><img src="images/cardboard_icon_180.png" alt=""><b><span class="c1">Card</span><span class="c2">Board</span></b></a>
+    <div class="grow"></div>
+    <button type="button" class="d-create" onclick="openCreateDialog()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>Create</span></button>
+    <span class="d-av" id="topAv" title=""></span>
+  </header>
+  <div class="d-body">
+    <aside class="d-side">
+      <div class="d-me"><span class="d-av" id="sideAv"></span><div class="nm" id="meName"></div><div class="em" id="meEmail"></div><span class="pl" id="mePlan"></span></div>
+      <nav class="d-nav">
+        <a href="cardboard" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>Designs</a>
+        <a href="cardboard/help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.3-2.5 4"/><circle cx="12" cy="17.3" r=".6" fill="currentColor"/></svg>Help</a>
+        <a href="cardboard/features"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg>Features</a>
+        <a href="gameboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3.5 10.5 12 4l8.5 6.5V20h-6v-5.5h-5V20h-6z"/></svg>GameBoard</a>
+      </nav>
+      <div class="foot"><button type="button" class="link-btn" onclick="authSignOut()">Sign out</button></div>
+    </aside>
+    <main class="d-main">
+      <div class="d-head">
+        <h1>Your designs</h1>
+        <label class="d-search" id="dSearchWrap"><input type="search" id="dSearch" placeholder="Search" autocomplete="off" oninput="dRender()"><button type="button" class="x" onclick="dClearSearch()" title="Clear">×</button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg></label>
+      </div>
+      <div class="d-bar">
+        <button type="button" class="d-chip on" data-f="all" onclick="dFilter('all')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>All</button>
+        <button type="button" class="d-chip" data-f="mine" onclick="dFilter('mine')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>Yours <span class="n" id="nMine"></span></button>
+        <button type="button" class="d-chip" data-f="seen" id="chipSeen" onclick="dFilter('seen')" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Viewed <span class="n" id="nSeen"></span></button>
+        <div class="grow"></div>
+        <label class="d-sort"><select id="dSort" onchange="dRender()"><option value="edited">Edited</option><option value="name">Name</option></select></label>
+      </div>
+      <div id="dGrid"><div class="d-loading">Loading your designs…</div></div>
+    </main>
+  </div>
+</div>
+
+<div class="d-ov" id="createOverlay" onclick="closeCreateDialog()">
+  <div class="d-dlg" id="createDlg" onclick="event.stopPropagation()" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();startSetup();}">
+    <button type="button" class="x-btn" onclick="closeCreateDialog()" title="Close">×</button>
+  <div class="card" id="connectCard">
+    <div class="card-title">New design</div>
+    <div class="d-start">
+      <a href="https://docs.google.com/spreadsheets/d/1sy20Ig_fmfpTfnpkEUXibgErXj2XISiqr-Ag6Xe3uRc/copy" target="_blank" rel="noopener"><b>Copy the sample deck</b><span>Sea Creatures — 18 cards with a finished layout, to play with</span></a>
+      <a href="https://sheets.new" target="_blank" rel="noopener"><b>Start a blank sheet</b><span>A new Google Sheet: one tab per deck, one row per card</span></a>
+    </div>
     <div class="instructions">
       Keep your cards in a Google Sheet — one tab per deck, one row per card, one column per field (Name, Cost, Text, Image…). CardBoard turns each row into a card using a layout you design, then lays them out on print sheets.
       <details class="why">
@@ -229,7 +373,7 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
         <p><b>Why share it with that address?</b> It’s CardBoard’s own Google account — it lets CardBoard read your cards and save your designs back. It only sees the sheets you share with it, and you can remove it whenever you like.</p>
       </details>
       <ol>
-        <li>Open (or create) a Google Spreadsheet and share it with the CardBoard service account.</li>
+        <li>Open (or make, above) a Google Spreadsheet and share it with the CardBoard service account.</li>
         <li>Click <strong>Share</strong> and add <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> <button class="copy-email-btn" id="copyEmailBtn" onclick="copyEmail()">Copy</button> with <strong>Editor</strong> rights.</li>
         <li>Paste the spreadsheet URL or ID below.</li>
       </ol>
@@ -240,14 +384,17 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
       onkeydown="if(event.key==='Enter')startSetup()"
       autocomplete="off" spellcheck="false" />
 
-    <button id="connectBtn" class="connect-btn" onclick="startSetup()">
-      Connect &amp; Open
-    </button>
+    <div class="d-btns">
+      <button type="button" class="cancel-btn" onclick="forceCloseCreateDialog()">Cancel</button>
+      <button id="connectBtn" class="connect-btn" onclick="startSetup()">Connect &amp; Open</button>
+    </div>
 
     <div id="logPanel" class="log-panel" style="display:none"></div>
   </div>
-
+  </div>
 </div>
+<div class="d-toast" id="dToast"></div>
+
 
 <script>
 (function() {
@@ -308,15 +455,137 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
   }
   function show() {
     document.body.classList.toggle('signed-out', !acct);
-    $('authCard').hidden = !!acct; $('connectCard').hidden = !acct; $('whoLine').hidden = !acct;
-    if (acct) {
-      var a = acct.account || {}, left = Math.max(0, Math.ceil((new Date(a.until).getTime() - Date.now()) / 864e5));
-      $('whoLine').innerHTML = 'Signed in as <b>' + esc(a.email || '') + '</b>' +
-        (a.state === 'trial' ? ' · ' + left + (left === 1 ? ' day' : ' days') + ' of your free week left' : a.state === 'locked' ? ' · free week ended' : '') +
-        ' · <button type="button" class="link-btn" onclick="authSignOut()">Sign out</button>';
-      setTimeout(function() { $('sheetInput').focus(); }, 30);
-    } else authMode('');
+    document.body.classList.toggle('designs', !!acct);
+    $('authCard').hidden = !!acct;
+    if (acct) { fillMe(); dLoad(); }
+    else authMode('');
   }
+
+  // ── The Designs page ───────────────────────────────────────────────────────
+  var DES = null, _filter = 'all';
+  try { DES = JSON.parse(localStorage.getItem('cb_designs') || 'null'); } catch (e) {}
+  function fillMe() {
+    var a = acct.account || {}, em = a.email || '', nm = (a.name || '').trim() || em.split('@')[0];
+    var ini = (nm.match(/[A-Za-z0-9]/) || ['?'])[0].toUpperCase();
+    $('topAv').textContent = $('sideAv').textContent = ini; $('topAv').title = em;
+    $('meName').textContent = nm; $('meEmail').textContent = em;
+    var left = Math.max(0, Math.ceil((new Date(a.until).getTime() - Date.now()) / 864e5));
+    $('mePlan').textContent = a.state === 'trial' ? 'Free week · ' + left + (left === 1 ? ' day' : ' days') + ' left'
+      : a.state === 'subscribed' ? 'Subscribed' : a.state === 'activated' ? 'Unlocked' : a.state === 'code' ? 'Unlocked with a code' : a.state === 'locked' ? 'Free week ended' : '';
+    $('mePlan').hidden = !$('mePlan').textContent;
+  }
+  function seenIds() { try { var l = JSON.parse(localStorage.getItem('cb_seen') || '[]'); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
+  function storeAcct(r) { acct = { token: r.token, account: r.account, sheet: '', checked: Date.now() }; try { localStorage.setItem('cb_account', JSON.stringify(acct)); } catch (e) {} }
+  function listPost() {
+    var fd = new FormData(); fd.append('cbt', acct.token); fd.append('seen', seenIds().map(function(x) { return x.id; }).join(','));
+    return fetch(APP_BASE + 'push/cardboardSheets.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); });
+  }
+  function dLoad() {
+    if (DES) dRender();
+    // a fresh sign-in first: it carries the sheets set up since (on any device)
+    post({ action: 'refresh', cbt: acct.token }).then(function(r) { storeAcct(r); fillMe(); }, function(e) { if (/sign in/i.test(e.message)) { authSignOut(); throw e; } })
+      .then(listPost)
+      .then(function(r) {
+        if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response');
+        DES = r.sheets || []; try { localStorage.setItem('cb_designs', JSON.stringify(DES)); } catch (e) {}
+        dRender();
+      })
+      .catch(function(e) { if (!DES) $('dGrid').innerHTML = '<div class="d-empty"><b>Couldn’t load your designs</b>' + esc(e.message || '') + '</div>'; });
+  }
+  function ago(t) {
+    if (!t) return '';
+    var s = Math.max(0, Date.now() / 1000 - t), m = s / 60, h = m / 60, d = h / 24;
+    if (s < 60) return 'just now';
+    if (m < 60) return Math.round(m) === 1 ? 'a minute ago' : Math.round(m) + ' minutes ago';
+    if (h < 24) return Math.round(h) === 1 ? 'an hour ago' : Math.round(h) + ' hours ago';
+    if (d < 30) return Math.round(d) === 1 ? 'a day ago' : Math.round(d) + ' days ago';
+    if (d < 365) return Math.round(d / 30) <= 1 ? 'a month ago' : Math.round(d / 30) + ' months ago';
+    return Math.round(d / 365) <= 1 ? 'a year ago' : Math.round(d / 365) + ' years ago';
+  }
+  var DECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="7" y="3" width="12" height="16" rx="2"/><path d="M4.5 6.5v12A2.5 2.5 0 0 0 7 21h9"/></svg>';
+  var CARD_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>';
+  window.dFilter = function(f) {
+    _filter = f;
+    document.querySelectorAll('.d-chip').forEach(function(c) { c.classList.toggle('on', c.dataset.f === f); });
+    dRender();
+  };
+  window.dClearSearch = function() { $('dSearch').value = ''; dRender(); $('dSearch').focus(); };
+  window.dRender = function() {
+    var list = DES || [], q = $('dSearch').value.trim().toLowerCase(), sort = $('dSort').value;
+    $('dSearchWrap').classList.toggle('has', !!q);
+    var mine = list.filter(function(x) { return x.mine; }).length, seen = list.length - mine;
+    $('nMine').textContent = mine || ''; $('nSeen').textContent = seen || ''; $('chipSeen').hidden = !seen;
+    if (!seen && _filter === 'seen') _filter = 'all';
+    var seenAt = {}; seenIds().forEach(function(x) { seenAt[x.id] = Math.round((x.t || 0) / 1000); });
+    var show = list.filter(function(x) {
+      if (_filter === 'mine' && !x.mine) return false;
+      if (_filter === 'seen' && x.mine) return false;
+      if (!q) return true;
+      return (x.title || '').toLowerCase().indexOf(q) >= 0 || (x.decks || []).some(function(d) { return d.toLowerCase().indexOf(q) >= 0; });
+    }).map(function(x) { return Object.assign({}, x, { when: Math.max(x.edited || 0, x.mine ? 0 : seenAt[x.id] || 0) }); });
+    show.sort(sort === 'name' ? function(a, b) { return (a.title || 'zzz').localeCompare(b.title || 'zzz', undefined, { sensitivity: 'base' }); } : function(a, b) { return b.when - a.when; });
+    if (!list.length) {
+      $('dGrid').innerHTML = '<div class="d-empty"><b>No designs yet</b>Connect a Google Sheet — or copy the sample deck — to design your first cards.<br><button type="button" class="connect-btn" onclick="openCreateDialog()">+ Create</button></div>';
+      return;
+    }
+    if (!show.length) { $('dGrid').innerHTML = '<div class="d-empty"><b>Nothing matches</b>' + (q ? 'No design or deck called “' + esc(q) + '”.' : '') + '</div>'; return; }
+    $('dGrid').innerHTML = '<div class="d-grid">' + show.map(function(x) {
+      var n = (x.decks || []).length, title = x.title || 'Untitled sheet';
+      return '<a class="d-card" href="' + esc(x.id) + '/cardboard" data-id="' + esc(x.id) + '">' +
+        '<div class="d-thumb">' + (x.thumb ? '<img src="' + esc(x.thumb) + '" alt="" loading="lazy" onerror="this.outerHTML=\'<div class=ph>' + CARD_SVG.replace(/"/g, '&quot;') + '</div>\'">' : '<div class="ph">' + CARD_SVG + '</div>') + '</div>' +
+        '<div class="d-info"><div class="t" title="' + esc(title) + '">' + esc(title) + '</div>' +
+        '<div class="m"><span>' + (x.when ? (x.mine ? 'Edited ' : 'Viewed ') + ago(x.when) : '&nbsp;') + '<br><span class="d-tag' + (x.mine ? '' : ' view') + '">' + (x.mine ? 'Yours' : 'View only') + '</span></span>' +
+        '<span class="r" title="' + esc((x.decks || []).join(', ')) + '">' + DECK_SVG + n + (n === 1 ? ' deck' : ' decks') + '</span></div>' +
+        '<button type="button" class="d-more" title="More" onclick="dMenu(event, this)">⋯</button></div></a>';
+    }).join('') + '</div>';
+  };
+  function closeMenu() { var m = document.querySelector('.d-menu'); if (m) m.remove(); }
+  window.dMenu = function(ev, btn) {
+    ev.preventDefault(); ev.stopPropagation();
+    var card = btn.closest('.d-card'), had = card.querySelector('.d-menu'); closeMenu(); if (had) return;
+    var id = card.dataset.id, x = (DES || []).filter(function(d) { return d.id === id; })[0] || {};
+    var m = document.createElement('div'); m.className = 'd-menu';
+    m.innerHTML = '<button type="button" data-a="open">Open</button><button type="button" data-a="tab">Open in a new tab</button>' +
+      '<button type="button" data-a="sheet">Open the Google Sheet</button><button type="button" data-a="copy">Copy link</button>' +
+      (x.mine ? '' : '<button type="button" data-a="forget">Remove from this list</button>');
+    m.addEventListener('click', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var a = e.target.dataset.a, url = location.origin + APP_BASE + id + '/cardboard'; closeMenu();
+      if (a === 'open') location.href = url;
+      if (a === 'tab') window.open(url, '_blank');
+      if (a === 'sheet') window.open('https://docs.google.com/spreadsheets/d/' + id + '/edit', '_blank');
+      if (a === 'copy') (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function() { dToast('✓ Link copied'); }, function() { prompt('Copy this link', url); });
+      if (a === 'forget') {
+        try { localStorage.setItem('cb_seen', JSON.stringify(seenIds().filter(function(s) { return s.id !== id; }))); } catch (er) {}
+        DES = (DES || []).filter(function(d) { return d.id !== id; }); try { localStorage.setItem('cb_designs', JSON.stringify(DES)); } catch (er) {}
+        dRender();
+      }
+    });
+    btn.parentNode.appendChild(m);
+  };
+  document.addEventListener('click', function(e) { if (!e.target.closest('.d-menu') && !e.target.closest('.d-more')) closeMenu(); });
+  function dToast(t) { var el = $('dToast'); el.textContent = t; el.classList.add('show'); clearTimeout(el._h); el._h = setTimeout(function() { el.classList.remove('show'); }, 1800); }
+
+  // + Create (the dialog pattern: dirty-check on ×/Esc/backdrop, Cancel always closes, ⌘Enter connects)
+  var _createInitial = null;
+  window.openCreateDialog = function() {
+    $('sheetInput').value = ''; $('logPanel').innerHTML = ''; $('logPanel').style.display = 'none';
+    $('connectBtn').disabled = false; $('connectBtn').textContent = 'Connect & Open';
+    _createInitial = { url: '' };
+    $('createOverlay').classList.add('open');
+    setTimeout(function() { $('sheetInput').focus(); }, 30);
+  };
+  window.forceCloseCreateDialog = function() { $('createOverlay').classList.remove('open'); };
+  window.closeCreateDialog = function() {
+    if (_createInitial && $('sheetInput').value.trim() !== _createInitial.url && !$('connectBtn').disabled) {
+      var d = $('createDlg'); d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake'); return;
+    }
+    forceCloseCreateDialog();
+  };
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { if (document.querySelector('.d-menu')) { closeMenu(); return; } if ($('createOverlay').classList.contains('open')) closeCreateDialog(); }
+  });
+
   // '' = the two choices; login = email + password; signup / reset = email + password, then a code from the email
   var pending = null;
   window.authMode = function(m) {
@@ -377,7 +646,7 @@ body.signed-out .card { box-shadow:0 18px 50px rgba(0,0,0,.35); }
     post({ action: 'verify', email: pending.email, password: pending.password, code: code }).then(function(r) { pending = null; signedIn(r); })
       .catch(function(e) { $('authErr2').textContent = e.message; }).then(function() { b.disabled = false; b.textContent = label; });
   };
-  window.authSignOut = function() { acct = null; try { localStorage.removeItem('cb_account'); } catch (e) {} show(); };
+  window.authSignOut = function() { acct = null; DES = null; try { localStorage.removeItem('cb_account'); localStorage.removeItem('cb_designs'); } catch (e) {} show(); };
   show();
   // Coming from the GameBoard home on mygameboard.app: the account comes along in the link (#gbt=…)
   (function() {

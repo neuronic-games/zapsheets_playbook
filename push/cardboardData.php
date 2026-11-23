@@ -45,6 +45,7 @@ require_once __DIR__ . '/gameboardAuth.php';
 if (in_array($action, ['save', 'addtab', 'addfield', 'renamefield', 'setcell', 'addrow', 'deleterow', 'deletefield', 'savecells', 'reorder', 'settag', 'deltag'], true)) {
     require_once __DIR__ . '/gameboardAuth.php';
     cbRequireAccess($sheetId);
+    if (is_dir(dirname(__DIR__) . '/sheets/' . $sheetId)) @touch(dirname(__DIR__) . '/sheets/' . $sheetId . '/_cardboard_edited');   // "edited 3 minutes ago" on the Designs page
 }
 
 // The spreadsheet's name, kept on the server so the designer page (and its Home Screen name) can show it

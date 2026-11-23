@@ -389,7 +389,7 @@ function elInner(e, row, ctx) {
       return row ? rich(textVal(row[e.field]), ctx) : '<span class="el-empty">' + esc(e.field) + '</span>';
     case 'image': { var iu = imageUrl(picRef(e.src)); return iu || ctx && ctx.designing ? imgDiv(iu, e, 'Drop an image here, or double-click to choose', ctx) : ''; }
     case 'shape': return shapeSVG(e);
-    case 'gen':   return rich(genValue(e, ctx), ctx);
+    case 'gen':   return rich(fill(genValue(e, ctx), row), ctx);   // {Field} in Before / After / the list: that card's value
   }
   return '';
 }
@@ -2525,7 +2525,7 @@ function renderAttrs() {
     if (e.mode === 'seq') {
       h += '<div class="row2" style="margin-top:.45rem">' + numInp('g_start', 'Start at', e.start == null ? 1 : e.start, 'setProp', 'start') + numInp('g_step', 'Step', e.step == null ? 1 : e.step, 'setProp', 'step') + '</div>';
       h += '<div class="row2" style="margin-top:.45rem">' + numInp('g_pad', 'Digits (pad with 0)', e.pad || 0, 'setProp', 'pad') + '<div></div></div>';
-      h += '<div class="row2" style="margin-top:.45rem">' + txtInp('Before', 'prefix', e.prefix, '#') + txtInp('After', 'suffix', e.suffix, '') + '</div>';
+      h += '<div class="row2" style="margin-top:.45rem">' + txtInp('Before', 'prefix', e.prefix, '#') + txtInp('After', 'suffix', e.suffix, 'e.g. / {Count}') + '</div>';
     }
     if (e.mode === 'rand') h += '<div class="row2" style="margin-top:.45rem">' + numInp('g_min', 'From', e.min == null ? 1 : e.min, 'setProp', 'min') + numInp('g_max', 'To', e.max == null ? 6 : e.max, 'setProp', 'max') + '</div>';
     if (e.mode === 'list') {

@@ -435,7 +435,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .btn-contract-action.payment { border-color:#6d28d9; color:#6d28d9; }
 .btn-contract-action.payment:hover { background:#6d28d9; color:#fff; }
 .estimate-num-badge { font-family:'DINRegular',sans-serif; font-size:.7rem; color:#999; }
-.estimate-date { font-family:'DINRegular',sans-serif; font-size:.7rem; color:#bbb; }
+.estimate-date { font-family:'DINRegular',sans-serif; font-size:.7rem; color:#bbb; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.estimate-sum { margin-left:.7rem; font-size:.8rem; color:#2b2d42; }   /* the contract's one-line Summary */
 .estimate-amount { font-family:'DINBlack',sans-serif; font-size:.8rem; color:#111; white-space:nowrap; }
 .estimate-item-chevron { font-size:.6rem; opacity:.35; transition:transform .2s; }
 .estimate-item.open .estimate-item-chevron { transform:rotate(180deg); opacity:.65; }
@@ -2594,7 +2595,7 @@ function renderPublishersView() {
         html += '<div class="estimate-item-header" onclick="_estToggle(' + globalIdx + ')">' +
           '<span class="estimate-type-pill' + estTag.cls + '">' + estTag.label + '</span>' +
           '<div class="estimate-num-badge">' + esc(est.estimate_num || '') + '</div>' +
-          '<div class="estimate-date">' + esc(est.date || '') + '</div>' +
+          '<div class="estimate-date">' + esc(est.date || '') + (function(sm) { return sm ? '<span class="estimate-sum" title="' + esc(sm) + '">' + esc(sm) + '</span>' : ''; })(_contractSummaryFor(est.contract_id || est.estimate_num)) + '</div>' +
           '<div class="estimate-amount">' + esc(amtFmt) + '</div>' +
           '<div class="estimate-item-chevron">▼</div>' +
         '</div>';

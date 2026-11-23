@@ -44,7 +44,11 @@ $_contracts_all  = file_exists($_contracts_file) ? (json_decode(file_get_content
 $_tm_all = [];
 foreach (array_reverse($_contracts_all) as $_c) {
     if (strcasecmp(trim((string) ($_c['Type'] ?? '')), 'Invoice') !== 0) continue;   // T&M goes with invoices
-    $_sm = trim(preg_replace('/\s+/', ' ', ltrim((string) ($_c['Summary'] ?? ''), "'")));
+    $_sm = '';
+    foreach (['Summary', 'Description', 'Game'] as $_k) {   // older invoices have no Summary yet
+        $_sm = trim(preg_replace('/\s+/', ' ', ltrim((string) ($_c[$_k] ?? ''), "'")));
+        if ($_sm !== '') break;
+    }
     if ($_sm === '') continue;
     $_it = ['s' => $_sm, 'ref' => trim(ltrim((string) ($_c['Ref Number'] ?? ($_c['ID'] ?? '')), "'"))];   // shown as "summary (Ref #)"
     if (!in_array($_it, $_tm_all, true)) $_tm_all[] = $_it;

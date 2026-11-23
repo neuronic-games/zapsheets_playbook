@@ -2832,7 +2832,7 @@ function _contractSummaries(game) {   // [{s: summary, ref: Ref Number}]
   var g = String(game || '').trim().toLowerCase(), mine = [], all = [], seen = {};
   CONTRACT_RAW.slice().reverse().forEach(function(c) {
     if (!/^invoice$/i.test(String(c.Type || '').trim())) return;   // T&M and payouts go with invoices (not estimates or payments)
-    var sm = _cleanSummary(c.Summary); if (!sm) return;
+    var sm = _cleanSummary(c.Summary) || _cleanSummary(c.Description) || _cleanSummary(c.Game);   // older invoices have no Summary yet
     var it = { s: sm, ref: String(c['Ref Number'] || c.ID || '').replace(/^'/, '').trim() }, k = it.s + '\u0001' + it.ref;
     if (seen[k]) return; seen[k] = 1;
     all.push(it);

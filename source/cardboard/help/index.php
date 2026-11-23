@@ -400,7 +400,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
     <li>A value with no row shows as it is (or as its picture, if it's a picture link or a tag).</li>
     <li>Results can be <a href="cardboard/help#tags">tags</a> like <code>[fire]</code>, so changing the tag changes every card.</li>
     <li>Double-click the element on the card to change that card's value.</li>
-    <li><b>Mappings are remembered for the field</b>, even if you delete the element or set it back to Text: choose <b>Mapping</b> again on any element showing that field and they come back. The Cards view keeps showing <em>value → result</em> for the field either way.</li>
+    <li><b>Mappings are remembered for the field</b>, even if you delete the element or set it back to Text: choose <b>Mapping</b> again on any element showing that field and they come back. The Cards view always shows the values as they are in your sheet, since different elements can map the same field differently.</li>
   </ul>
 </section>
 

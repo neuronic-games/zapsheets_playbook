@@ -2879,8 +2879,10 @@ function openPaymentDialog(client, game) {
   _payCtx = { client: client || '', game: game || '' };
   document.getElementById('payGameTitle').textContent = game || '';
   document.getElementById('payPersonInput').value = '';
-  document.getElementById('paySummary').value = '';
   _sumSrc.pay = _contractSummaries(game);
+  var _one = _sumSrc.pay.length === 1 ? _sumSrc.pay[0] : null;   // only one invoice: it's the one
+  document.getElementById('paySummary').value = _one ? _one.s : '';
+  document.getElementById('paySummary').dataset.ref = _one ? _one.ref : '';
   document.getElementById('paySumCombo').classList.remove('open');
   document.getElementById('payAmount').value = '';
   var d = new Date(); document.getElementById('payDate').value = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);

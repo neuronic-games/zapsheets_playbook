@@ -2391,6 +2391,12 @@ function rememberColor(v) {
   try { localStorage.setItem('cb_recentColors', JSON.stringify(r.slice(0, 12))); } catch (e) {}
 }
 function closeColorPop() { var p = $('colorPop'); if (p) p.remove(); }
+// Light enough that it needs a dark background to be seen
+function isLight(c) {
+  var p = colorParts(c); if (!p) return false;
+  var n = parseInt(p.hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.72;
+}
 // Colors are #rrggbb, or #rrggbbaa when see-through (the Opacity slider)
 function colorParts(v) {
   v = String(v || '').trim();
@@ -4062,7 +4068,10 @@ function pickTagImage(i) {
     var h = '<div class="dlg tag-dlg"><h2 class="dlg-title">Picture for ' + esc(t.tag || 'this tag') + '</h2>' +
       '<div class="seg tag-tabs">' + [['icons', 'Icons'], ['upload', 'Upload'], ['link', 'Link']].map(function(x) { return '<button type="button" data-tab="' + x[0] + '" class="' + (tab === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div>';
     if (tab === 'icons') {
-      h += '<div class="icon-color"><span class="mini">Color</span><input type="color" value="' + esc(color.length === 7 ? color : '#2e2763') + '" data-color></div><div class="icon-grid">' +
+      var rec = recentColors().filter(function(c) { return /^#[0-9a-f]{6}$/i.test(c); }), sw = (rec.length ? rec : PALETTE.slice(0, 12)).slice(0, 12);
+      h += '<div class="icon-color"><span class="mini">Color</span><input type="color" value="' + esc(color.length === 7 ? color : '#2e2763') + '" data-color title="Any color">' +
+        '<div class="icon-recent" title="' + (rec.length ? 'Recent colors' : 'Colors') + '">' + sw.map(function(c) { return '<button type="button" class="cp-tile' + (c.toLowerCase() === String(color).toLowerCase() ? ' on' : '') + '" style="--c:' + c + '" data-pc="' + c + '" title="' + c + '"></button>'; }).join('') + '</div></div>' +
+        '<div class="icon-grid' + (isLight(color) ? ' dark' : '') + '">' +
         Object.keys(ICONS).map(function(n) { return '<button type="button" class="icon-cell' + (cur.name === n ? ' on' : '') + '" data-icon="' + n + '" title="' + n + '"><img src="' + iconUri(n, color) + '" alt="' + n + '"></button>'; }).join('') + '</div>';
     } else if (tab === 'upload') {
       h += '<label class="ip-drop tag-drop" data-drop>' + IMG_ICON + '<b>Drop a picture here</b><span>or click to choose a file</span>' +
@@ -4081,8 +4090,16 @@ function pickTagImage(i) {
       drop.addEventListener('drop', function(e) { e.preventDefault(); drop.classList.remove('over'); var f = droppedFile(e.dataTransfer); if (f) upload(f); });
     }
     var cin = ov.querySelector('[data-color]');
-    if (cin) cin.oninput = function() { color = cin.value; ov.querySelectorAll('.icon-cell img').forEach(function(im) { im.src = iconUri(im.alt, color); }); };
+    if (cin) { cin.oninput = function() { setIconColor(cin.value); }; cin.onchange = function() { rememberColor(cin.value); }; }
     var u = ov.querySelector('[data-url]'); if (u) setTimeout(function() { u.focus(); }, 30);
+  }
+  // the icons in the chosen color; light colors on a dark background so they show
+  function setIconColor(c) {
+    color = c;
+    ov.querySelectorAll('.icon-cell img').forEach(function(im) { im.src = iconUri(im.alt, color); });
+    var g = ov.querySelector('.icon-grid'); if (g) g.classList.toggle('dark', isLight(color));
+    ov.querySelectorAll('.icon-recent [data-pc]').forEach(function(b) { b.classList.toggle('on', b.dataset.pc.toLowerCase() === color.toLowerCase()); });
+    var ci = ov.querySelector('[data-color]'); if (ci && ci.value.toLowerCase() !== color.toLowerCase()) ci.value = color;
   }
   function done(v) { ov.remove(); document.removeEventListener('keydown', key, true); if (v != null) setTagValue(i, v); }
   function upload(f) {
@@ -4094,7 +4111,8 @@ function pickTagImage(i) {
   ov.addEventListener('click', function(e) {
     if (e.target === ov || e.target.closest('[data-close]')) { done(null); return; }
     var tb = e.target.closest('[data-tab]'); if (tb) { tab = tb.dataset.tab; body(); return; }
-    var ic = e.target.closest('[data-icon]'); if (ic) { done('icon:' + ic.dataset.icon + ':' + color); return; }
+    var pc = e.target.closest('[data-pc]'); if (pc) { setIconColor(pc.dataset.pc); return; }
+    var ic = e.target.closest('[data-icon]'); if (ic) { rememberColor(color); done('icon:' + ic.dataset.icon + ':' + color); return; }
     if (e.target.closest('[data-use]')) done(ov.querySelector('[data-url]').value.trim());
   });
   document.addEventListener('keydown', key, true);

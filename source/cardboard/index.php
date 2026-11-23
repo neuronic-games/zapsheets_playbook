@@ -172,19 +172,27 @@ body.designs { display:block; padding:0; background:#f3f4f8; }
 body.designs .page { display:none; }
 .app { display:none; min-height:100vh; }
 body.designs .app { display:flex; flex-direction:column; }
-.d-top { height:64px; flex-shrink:0; background:#1a1a2e; color:#fff; display:flex; align-items:center; gap:1rem; padding:0 1.4rem; position:sticky; top:0; z-index:20; box-shadow:inset 0 -3px 0 #5b4fd6, 0 2px 10px rgba(0,0,0,.18); }   /* the designer's bar (css/gameboard-ui.css) */
-.d-brand { display:flex; align-items:center; gap:.7rem; text-decoration:none; color:#fff; }
-.d-brand img { width:38px; height:38px; border-radius:9px; }
-.d-brand b { font-family:'DINBlack',sans-serif; font-weight:400; font-size:1.45rem; letter-spacing:.02em; }
-.d-name { display:flex; flex-direction:column; line-height:1.05; }
-.d-name small { font-size:.74rem; color:rgba(255,255,255,.68); letter-spacing:.02em; margin-top:.2rem; }
-@media (max-width:520px) { .d-name small { display:none; } }
+.d-top { flex-shrink:0; background:#1a1a2e; color:#fff; display:flex; align-items:center; gap:.75rem; padding:.75rem 1.25rem; position:sticky; top:0; z-index:20; box-shadow:inset 0 -3px 0 #5b4fd6; }   /* the designer's bar */
+.d-brand { display:flex; align-items:center; gap:.65rem; text-decoration:none; color:#fff; min-width:0; }
+.d-brand img { width:2.2rem; height:2.2rem; border-radius:7px; flex-shrink:0; }
+.d-name { display:flex; flex-direction:column; min-width:0; }
+.d-name b { font-family:'DINBlack',sans-serif; font-weight:400; font-size:1rem; letter-spacing:.03em; line-height:1.25; }
+.d-name small { font-size:.73rem; opacity:.6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .d-brand .c1 { color:#f2c14e; } .d-brand .c2 { color:#a99cff; }
 .d-top .grow { flex:1; }
-.d-create { display:inline-flex; align-items:center; gap:.45rem; height:40px; padding:0 1.15rem; border:2px solid #fff; border-radius:999px; background:transparent; color:#fff; font:inherit; font-size:.98rem; cursor:pointer; transition:background .12s, color .12s; }
-.d-create:hover { background:#fff; color:#1a1a2e; }
-.d-create svg { width:18px; height:18px; }
-.d-av { width:40px; height:40px; border-radius:50%; background:#f2c14e; color:#1a1a2e; display:inline-flex; align-items:center; justify-content:center; font-family:'DINBlack',sans-serif; font-size:1.05rem; border:2px solid rgba(255,255,255,.85); flex-shrink:0; }
+.d-create { display:inline-flex; align-items:center; justify-content:center; width:6.6rem; height:2.1rem; padding:0; border:none; border-radius:999px; background:#f2c14e; color:#2e2763; font-family:'DINBlack',sans-serif; font-size:.7rem; letter-spacing:.09em; text-transform:uppercase; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.18); transition:background .15s; flex-shrink:0; }   /* the designer's Save button */
+.d-create:hover { background:#ffd36b; }
+.d-menu-wrap { position:relative; flex-shrink:0; }
+.top-btn { background:rgba(255,255,255,.14); border:none; color:#fff; width:2.1rem; height:2.1rem; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.top-btn:hover { background:rgba(255,255,255,.24); }
+.main-menu { display:none; position:absolute; top:calc(100% + .4rem); right:0; background:#1a1a2e; border:1px solid rgba(255,255,255,.18); border-radius:8px; min-width:190px; z-index:300; box-shadow:0 8px 24px rgba(0,0,0,.4); padding:.25rem 0; }
+.main-menu.open { display:block; }
+.mm-who { padding:.55rem 1rem .5rem; font-size:.75rem; color:rgba(255,255,255,.55); border-bottom:1px solid rgba(255,255,255,.12); margin-bottom:.2rem; word-break:break-all; }
+.mm-who b { display:block; color:#fff; font-size:.85rem; }
+.mm-item { display:block; width:100%; background:none; border:none; color:rgba(255,255,255,.85); text-align:left; cursor:pointer; font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; padding:.6rem 1rem; text-decoration:none; }
+.mm-item:hover { background:rgba(255,255,255,.1); color:#fff; }
+.mm-div { border:none; border-top:1px solid rgba(255,255,255,.12); margin:.2rem 0; }
+.d-av { border-radius:50%; background:#f2c14e; color:#1a1a2e; display:inline-flex; align-items:center; justify-content:center; font-family:'DINBlack',sans-serif; flex-shrink:0; }
 .d-body { flex:1; display:flex; min-height:0; }
 .d-side { width:250px; flex-shrink:0; background:#fff; border-right:1px solid #e1e4ee; display:flex; flex-direction:column; }
 .d-me { text-align:center; padding:1.6rem 1rem 1.3rem; border-bottom:1px solid #e1e4ee; }
@@ -265,7 +273,7 @@ body.designs .app { display:flex; flex-direction:column; }
   .d-side { display:none; }
   .d-main { padding:1.3rem 1rem 2.5rem; }
   .d-head { flex-wrap:wrap; } .d-head h1 { font-size:1.6rem; } .d-search { width:100%; }
-  .d-create span { display:none; } .d-create { padding:0 .7rem; }
+  .d-name small { display:none; }
   .d-grid { grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:.9rem; }
   .d-start { grid-template-columns:1fr; }
 }
@@ -322,8 +330,18 @@ body.designs .app { display:flex; flex-direction:column; }
   <header class="d-top">
     <a class="d-brand" href="cardboard" title="Your designs"><img src="images/cardboard_icon_180.png" alt=""><span class="d-name"><b><span class="c1">Card</span><span class="c2">Board</span></b><small>Design, print, and share your card deck — fast.</small></span></a>
     <div class="grow"></div>
-    <button type="button" class="d-create" onclick="openCreateDialog()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>Design</span></button>
-    <span class="d-av" id="topAv" title=""></span>
+    <button type="button" class="d-create" onclick="openCreateDialog()">+ Design</button>
+    <div class="d-menu-wrap">
+      <button type="button" class="top-btn" onclick="toggleMainMenu(event)" title="Menu"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/></svg></button>
+      <div class="main-menu" id="mainMenu">
+        <div class="mm-who" id="mmWho"></div>
+        <a class="mm-item" href="cardboard/help" target="_blank">Help</a>
+        <a class="mm-item" href="cardboard/features">Features</a>
+        <a class="mm-item" href="gameboard">GameBoard</a>
+        <hr class="mm-div">
+        <button type="button" class="mm-item" onclick="authSignOut()">Sign out</button>
+      </div>
+    </div>
   </header>
   <div class="d-body">
     <aside class="d-side">
@@ -470,7 +488,7 @@ body.designs .app { display:flex; flex-direction:column; }
   function fillMe() {
     var a = acct.account || {}, em = a.email || '', nm = (a.name || '').trim() || em.split('@')[0];
     var ini = (nm.match(/[A-Za-z0-9]/) || ['?'])[0].toUpperCase();
-    $('topAv').textContent = $('sideAv').textContent = ini; $('topAv').title = em;
+    $('sideAv').textContent = ini; $('mmWho').innerHTML = '<b>' + esc(nm) + '</b>' + esc(em);
     $('meName').textContent = nm; $('meEmail').textContent = em;
     var left = Math.max(0, Math.ceil((new Date(a.until).getTime() - Date.now()) / 864e5));
     $('mePlan').textContent = a.state === 'trial' ? 'Free week · ' + left + (left === 1 ? ' day' : ' days') + ' left'
@@ -542,6 +560,8 @@ body.designs .app { display:flex; flex-direction:column; }
         '<button type="button" class="d-more" title="More" onclick="dMenu(event, this)">⋯</button></div></a>';
     }).join('') + '</div>';
   };
+  window.toggleMainMenu = function(e) { e.stopPropagation(); $('mainMenu').classList.toggle('open'); };
+  document.addEventListener('click', function(e) { if (!e.target.closest('.d-menu-wrap')) $('mainMenu').classList.remove('open'); });
   function closeMenu() { var m = document.querySelector('.d-menu'); if (m) m.remove(); }
   window.dMenu = function(ev, btn) {
     ev.preventDefault(); ev.stopPropagation();

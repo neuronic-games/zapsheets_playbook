@@ -68,6 +68,22 @@ function mapHit(e, row) {
   var low = cleanVal(row[e.field]).trim().toLowerCase(); if (!low) return null;
   return (e.map.items || []).filter(function(it) { return String(it.v || '').trim().toLowerCase() === low; })[0] || null;
 }
+// Each field's mappings are also kept with the layout (lay.maps = {field: {items}}), so they stay when the element
+// showing them is deleted or set back to Text: choosing Mapping again brings them back, and the Cards view keeps
+// showing "value → result" for that field.
+function rememberMaps(lay) {
+  lay = lay || layout; if (!lay) return;
+  if (!lay.maps) lay.maps = {};
+  [lay, lay.back || {}].forEach(function(f) {
+    (f.els || []).forEach(function(e) {
+      if (e.kind === 'data' && e.as === 'map' && e.map && e.field) lay.maps[e.field] = { items: JSON.parse(JSON.stringify(e.map.items || [])) };
+    });
+  });
+}
+function savedMap(field) {   // a copy of the field's remembered mappings, or an empty one
+  var m = layout && layout.maps && layout.maps[field];
+  return { items: m && m.items ? JSON.parse(JSON.stringify(m.items)) : [] };
+}
 // The front is the layout itself; the back is layout.back ({bg, els})
 function faceOf(lay, s) { return s === 'back' ? lay.back : lay; }
 function curEls() { return faceOf(layout, side).els; }
@@ -113,6 +129,8 @@ function normalize(lay) {
   if (!Array.isArray(lay.groups)) lay.groups = [];
   if (!Array.isArray(lay.back.groups)) lay.back.groups = [];
   if (!Array.isArray(lay.hidden)) lay.hidden = [];
+  if (!lay.maps || typeof lay.maps !== 'object' || Array.isArray(lay.maps)) lay.maps = {};
+  rememberMaps(lay);
   lay.v = 3;
   return lay;
 }
@@ -1466,6 +1484,7 @@ function snapshot() { undoStack.push(JSON.stringify(layout)); if (undoStack.leng
 function undo() { if (!undoStack.length) return; redoStack.push(JSON.stringify(layout)); layout = JSON.parse(undoStack.pop()); fixSel(); changed(); }
 function redo() { if (!redoStack.length) return; undoStack.push(JSON.stringify(layout)); layout = JSON.parse(redoStack.pop()); fixSel(); changed(); }
 function changed(keepAttrs) {
+  rememberMaps();
   setDirty(true);
   if (layout && JSON.stringify(layout.hidden || []) !== _lastHidden) { _lastHidden = JSON.stringify(layout.hidden || []); renderData(); if (GRID && _activeTab === 'data') renderGrid(); }
   lsPut('cb_draft:' + SHEET_ID + ':' + curTab, JSON.stringify(layout));
@@ -2247,6 +2266,7 @@ function setProp(key, val, num) {
   if (num) { val = parseFloat(val); if (isNaN(val)) return; }
   if (e[key] === val) { render(); return; }
   snapshot(); e[key] = val;
+  if (key === 'field' && e.kind === 'data' && e.as === 'map') e.map = savedMap(val);   // the new column's own mappings
   if (STROKE_FOR[key] && val && val !== 'transparent' && !(+e[STROKE_FOR[key]])) { e[STROKE_FOR[key]] = 1; changed(); return; }   // show the border
   if (key === 'bg' || key === 'color' || key === 'fill' || STROKE_FOR[key]) { changed(); return; }      // refresh the swatch and box
   changed(true);
@@ -2395,7 +2415,7 @@ function renderAttrs() {
          (known ? '' : '<option selected>' + esc(e.field) + '</option>') + '</select>';
     h += '<div style="margin-top:.45rem"><span class="mini">Show as</span>' + seg('as', [['text', 'Text', 'Show the value as text'], ['image', 'Image', 'The value is a picture link'], ['map', 'Mapping', 'Each value shows a text or picture you choose']], e.as || 'text') + '</div>';
     if (e.as === 'map') {
-      if (!e.map || !e.map.items) e.map = { items: [] };
+      if (!e.map || !e.map.items || !e.map.items.length) e.map = savedMap(e.field);   // remembered for this field
       delete e.map.type;
       h += dataMapAttrs(e);
       var mv = ROWS[rowIdx] ? cleanVal(ROWS[rowIdx][e.field]) : '';
@@ -3117,6 +3137,10 @@ function gridShown(name, v, res) {
   else if (/^=/.test(v)) return '<span class="g-formula">' + esc(v) + '</span>';
   // Every element (front and back) that shows this column through a Mapping: the first that has this value wins
   var maps = layout ? (layout.els || []).concat((layout.back || {}).els || []).filter(function(e) { return e.kind === 'data' && e.as === 'map' && e.map && String(e.field || '').trim().toLowerCase() === String(name).trim().toLowerCase(); }) : [];
+  // …and the field's remembered mappings, kept when no element shows them any more
+  if (layout && layout.maps) Object.keys(layout.maps).forEach(function(f) {
+    if (f.trim().toLowerCase() === String(name).trim().toLowerCase() && (layout.maps[f].items || []).length) maps.push({ field: name, map: layout.maps[f] });
+  });
   if (maps.length && String(v).trim()) {
     var row = {}, hit = null; row[name] = v;
     maps.some(function(m) { var r = {}; r[m.field] = v; hit = mapHit(m, r); return !!hit; });   // a mapped value: what's typed → what the card shows
@@ -3400,6 +3424,7 @@ function renameInLayout(lay, a, b) {
     });
   });
   if (lay.hidden) lay.hidden = lay.hidden.map(function(x) { return x === a ? b : x; });
+  if (lay.maps && lay.maps[a]) { lay.maps[b] = lay.maps[a]; delete lay.maps[a]; }
   return lay;
 }
 function renameColumn(a, b) {

@@ -1130,6 +1130,7 @@ var ALIGN_TITLES = {
   card: { top: 'Move to the top of the card', middle: 'Center up and down on the card', bottom: 'Move to the bottom of the card', left: 'Move to the left edge of the card', center: 'Center across the card', right: 'Move to the right edge of the card' }
 };
 function alignDotsHTML() {
+  if (!hasAccess()) return '';   // read only: nothing to line up
   var plan = alignPlan(); if (!plan) return '';
   var bb = plan.ref, T = ALIGN_TITLES[plan.card ? 'card' : plan.key ? 'key' : 'sel'], k = PX * zoom, W = layout.card.w * k, H = layout.card.h * k, h = '';
   var ys = { top: bb.y, middle: bb.y + bb.h / 2, bottom: bb.y + bb.h }, xs = { left: bb.x, center: bb.x + bb.w / 2, right: bb.x + bb.w };
@@ -1156,7 +1157,7 @@ var FILL_ICONS = {
   h: '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg>'
 };
 function fillBtnsHTML() {
-  if (!selEls().length) return '';
+  if (!selEls().length || !hasAccess()) return '';   // read only: nothing to resize
   var k = PX * zoom, W = layout.card.w * k, H = layout.card.h * k;
   return '<button type="button" class="fill-btn" style="left:' + Math.round(W / 2) + 'px;top:-20px" onclick="fillSel(\'w\')" title="Make the full width of the card" aria-label="Make the full width of the card">' + FILL_ICONS.w + '</button>' +
          '<button type="button" class="fill-btn" style="left:-20px;top:' + Math.round(H / 2) + 'px" onclick="fillSel(\'h\')" title="Make the full height of the card" aria-label="Make the full height of the card">' + FILL_ICONS.h + '</button>';

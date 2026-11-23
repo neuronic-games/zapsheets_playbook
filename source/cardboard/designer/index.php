@@ -720,6 +720,8 @@ body.cb-locked #saveBtn { display:none; }
 .si-opt.primary { background:#4b3fa8; border-color:#4b3fa8; color:#fff; }
 .si-opt.primary span { color:rgba(255,255,255,.75); }
 .si-opt.primary:hover { background:#3b3190; }
+.si-guest { display:none; border-style:dashed; }
+body.cb-gate .si-guest { display:flex; }
 #siSwitch:empty { display:none; }
 #signinOverlay [hidden] { display:none !important; }   /* .si-row is a flex row: keep hidden steps hidden */
 /* First visit: nothing behind the sign-in panel until they're in */
@@ -1049,6 +1051,7 @@ body.cb-gate #signinOverlay { background:#2e2763; }
     <div id="siChoose" class="si-choose">
       <button type="button" class="si-opt primary" onclick="signInChoose('trial')"><b>Start your free week</b><span>Every feature for 7 days · no card needed</span></button>
       <button type="button" class="si-opt" onclick="signInChoose('login')"><b>Log in</b><span>I already have a GameBoard account</span></button>
+      <button type="button" class="si-opt si-guest" onclick="viewAsGuest()"><b>View read only</b><span>Look through the cards without signing in</span></button>
     </div>
     <form id="siStep1" class="si-form" hidden onsubmit="event.preventDefault();signInSubmit()">
       <input class="inp" id="siEmail" type="email" autocomplete="email" placeholder="Email" aria-label="Email">

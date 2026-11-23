@@ -441,12 +441,12 @@ function renderCardHTML(lay, row, designing, ctx) {
 // Nothing is read from the spreadsheet until the person has signed in (or started their free week)
 function init() {
   applyAcct();
-  if (!ACCT) {
+  if (!ACCT && !_guest) {
     $('cardHolder').innerHTML = '';
     askSignIn(true).then(function() { init(); }, function() {});
     return;
   }
-  acctRefresh(navigator.onLine || !hasAccess())   // who owns the sheet can change: check every time it opens.then(function() {}, function() {});
+  if (ACCT) acctRefresh(navigator.onLine || !hasAccess())   // who owns the sheet can change: check every time it opens.then(function() {}, function() {});
   renderPalette();
   $('cardHolder').innerHTML = '<div class="loading" style="width:240px;height:200px"><span class="spin"></span>Loading sheet…</div>';
   loadTags();
@@ -4157,7 +4157,8 @@ function applyAcct() {
   if (bar) {
     bar.hidden = ok;
     $('lockBtn').hidden = false;
-    if (!a) { $('lockMsg').innerHTML = '<b>Sign in to start designing</b> — your first week is free, with every feature.'; $('lockBtn').textContent = 'Sign in'; $('lockBtn').onclick = function() { askSignIn().catch(function() {}); }; }
+    if (!a && _guest) { $('lockMsg').innerHTML = '<b>Read only.</b> You’re viewing this deck without signing in — sign in to design your own cards (first week free).'; $('lockBtn').textContent = 'Sign in'; $('lockBtn').onclick = function() { askSignIn().then(function() { location.reload(); }, function() {}); }; }
+    else if (!a) { $('lockMsg').innerHTML = '<b>Sign in to start designing</b> — your first week is free, with every feature.'; $('lockBtn').textContent = 'Sign in'; $('lockBtn').onclick = function() { askSignIn().catch(function() {}); }; }
     else if (!acctChecked()) { $('lockMsg').innerHTML = 'Checking your account…'; $('lockBtn').hidden = true; }
     else if (!isOwner() && a.unclaimed) { $('lockMsg').innerHTML = '<b>View only.</b> Nobody has set this sheet up in CardBoard yet — if it’s yours, make it yours to design its cards.'; $('lockBtn').textContent = 'Make it mine'; $('lockBtn').onclick = claimSheet; }
     else if (!isOwner()) { $('lockMsg').innerHTML = '<b>View only.</b> This sheet was set up by another GameBoard account — you can look through its cards and layouts, but not change them.'; $('lockBtn').hidden = true; }
@@ -4291,6 +4292,13 @@ function askSignIn(gate) {
 function closeSignIn() {
   if (document.body.classList.contains('cb-gate')) { window.location.href = APP_BASE + 'cardboard'; return; }
   closeDialog('signinOverlay'); if (_signIn) { var d = _signIn; _signIn = null; d.rej(new Error('Not signed in')); }
+}
+// A shared link opened without an account: look through the cards, read-only
+var _guest = false;
+function viewAsGuest() {
+  _guest = true; document.body.classList.remove('cb-gate'); closeDialog('signinOverlay');
+  if (_signIn) { var d = _signIn; _signIn = null; d.rej(new Error('Viewing read only')); }
+  init();
 }
 function signInChoose(mode) { signInStep(mode === 'trial' ? 'signup' : mode); }
 function signInStep(mode) {   // '' = the two choices

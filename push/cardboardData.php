@@ -39,10 +39,9 @@ function cbRun(string $python, string $sheetId, array $data): array {
     return ['error' => 'The CardBoard script failed: ' . ($raw !== '' ? mb_substr($raw, -300) : 'no output')];
 }
 
-// Nothing is read before signing in; anything that changes the spreadsheet also needs the
-// free week, a subscription or an unlocked sheet
+// Anyone with the link can view the sheet (read-only); anything that changes it needs a sign-in
+// and the free week, a subscription or an unlocked sheet
 require_once __DIR__ . '/gameboardAuth.php';
-cbRequireSignIn();
 if (in_array($action, ['save', 'addtab', 'addfield', 'renamefield', 'setcell', 'addrow', 'deleterow', 'deletefield', 'savecells', 'reorder', 'settag', 'deltag'], true)) {
     require_once __DIR__ . '/gameboardAuth.php';
     cbRequireAccess($sheetId);

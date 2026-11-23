@@ -2827,11 +2827,11 @@ function _contractSummaryFor(ref) {   // a contract's Summary by its Ref Number
   }
   return '';
 }
-// The contracts' summaries for a game (newest first), for T&M and payments to pick from; every game's if none
+// The invoices' summaries for a game (newest first), for T&M and payments to pick from; every game's if none
 function _contractSummaries(game) {   // [{s: summary, ref: Ref Number}]
   var g = String(game || '').trim().toLowerCase(), mine = [], all = [], seen = {};
   CONTRACT_RAW.slice().reverse().forEach(function(c) {
-    if (/^payment$/i.test(String(c.Type || '').trim())) return;
+    if (!/^invoice$/i.test(String(c.Type || '').trim())) return;   // T&M and payouts go with invoices (not estimates or payments)
     var sm = _cleanSummary(c.Summary); if (!sm) return;
     var it = { s: sm, ref: String(c['Ref Number'] || c.ID || '').replace(/^'/, '').trim() }, k = it.s + '\u0001' + it.ref;
     if (seen[k]) return; seen[k] = 1;

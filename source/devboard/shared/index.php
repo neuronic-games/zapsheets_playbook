@@ -43,7 +43,7 @@ $_contracts_file = __DIR__ . '/../../../sheets/' . $_sheetId . '/contracts.json'
 $_contracts_all  = file_exists($_contracts_file) ? (json_decode(file_get_contents($_contracts_file), true) ?: []) : [];
 $_tm_all = [];
 foreach (array_reverse($_contracts_all) as $_c) {
-    if (strcasecmp(trim((string) ($_c['Type'] ?? '')), 'Payment') === 0) continue;
+    if (strcasecmp(trim((string) ($_c['Type'] ?? '')), 'Invoice') !== 0) continue;   // T&M goes with invoices
     $_sm = trim(preg_replace('/\s+/', ' ', ltrim((string) ($_c['Summary'] ?? ''), "'")));
     if ($_sm === '') continue;
     $_it = ['s' => $_sm, 'ref' => trim(ltrim((string) ($_c['Ref Number'] ?? ($_c['ID'] ?? '')), "'"))];   // shown as "summary (Ref #)"

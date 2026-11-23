@@ -135,7 +135,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 .foot { text-align:center; font-size:.78rem; color:var(--muted); padding:2.5rem 1rem 3rem; }
 @media (max-width:980px) {
   .wrap { grid-template-columns:1fr; }
-  .side { position:fixed; top:52px; left:0; bottom:0; width:min(320px,86vw); z-index:60; transform:translateX(-105%); transition:transform .2s; box-shadow:10px 0 40px rgba(0,0,0,.2); height:auto; }
+  .side { position:fixed; top:59px; left:0; bottom:0; width:min(320px,86vw); z-index:60; transform:translateX(-105%); transition:transform .2s; box-shadow:10px 0 40px rgba(0,0,0,.2); height:auto; }
   body.nav-open .side { transform:none; }
   .menu-btn { display:block; }
   .hero { grid-template-columns:1fr; } .hero img { display:none; }

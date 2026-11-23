@@ -405,6 +405,7 @@ function renderCardHTML(lay, row, designing, ctx) {
     var cls = 'el k-' + e.kind + (dataIsImage(e) || (e.kind === 'data' && e.as === 'map' && mapPicture(e, row)) ? ' as-image' : '') + (e.valign === 'middle' ? ' v-middle' : e.valign === 'bottom' ? ' v-bottom' : '') + (designing && isSel(e.id) ? ' picked' + (multi.length ? ' multi' : '') : '');
     if (designing && UPLOADING[e.id]) cls += ' img-loading';
     if (keyIds.indexOf(e.id) >= 0) cls += ' key';
+    if (e.group && off[e.group]) cls += ' when-off';
     var st = elStyle(e);
     if (list) {   // sized by its contents along the list: as wide (or as tall) as it needs, up to its own box
       cls += ' in-list';
@@ -419,7 +420,10 @@ function renderCardHTML(lay, row, designing, ctx) {
   // Groups set out as a horizontal or vertical list flow their members, in Layers order, from the group's top-left corner
   var lists = {}, selG = designing && multi.length ? selGroupId() : '';
   (face.groups || []).forEach(function(g) { if (g.list === 'h' || g.list === 'v') lists[g.id] = g; });
-  var sorted = face.els.slice().sort(function(a, b) { return (a.z || 1) - (b.z || 1); });
+  // A group with a Mapping shows only on cards whose value is one of its values (faint while designing, so it can still be picked)
+  var off = {};
+  (face.groups || []).forEach(function(g) { if (!groupShows(g, row)) off[g.id] = 1; });
+  var sorted = face.els.filter(function(e) { return designing || !(e.group && off[e.group]); }).sort(function(a, b) { return (a.z || 1) - (b.z || 1); });
   sorted.forEach(function(e) {
     var g = e.group && lists[e.group];
     if (!g) { h += elHTML(e); return; }
@@ -2249,6 +2253,7 @@ function multiAttrs() {
       '<label class="arr-gap" title="Space between the members of the list (pt)"><span>Gap</span><input class="inp" type="number" step=".5" min="0" id="g_gap" value="' + r1(g.gap == null ? 4 : g.gap) + '"' + (mode ? '' : ' disabled') + ' onchange="setGroupGap(\'' + gid + '\',this.value)"></label></div></div>';
     if (mode) h += '<p class="muted" style="margin:.35rem 0 0">In the Layers order, top first — drag there to reorder. Empty text and pictures take no room.</p>';
   }
+  if (g) h += groupWhenAttrs(gid, g);
   h += actionsHTML(g ? 'ungroup' : 'group');
   h += '<span class="lbl">Shortcuts</span><p class="muted" style="margin:0">⌘G group · ⇧⌘G ungroup · ⌘A select all · Shift or ⌘-click to add to the selection</p>';
   return h;
@@ -2258,6 +2263,51 @@ var LIST_ICONS = {
   h: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><rect x="2" y="8" width="6" height="8" rx="1.5"/><rect x="9.5" y="8" width="5" height="8" rx="1.5" opacity=".7"/><rect x="16" y="8" width="6" height="8" rx="1.5" opacity=".45"/></svg>',
   v: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor"><rect x="6" y="2" width="12" height="5.5" rx="1.5"/><rect x="6" y="9.25" width="9" height="5.5" rx="1.5" opacity=".7"/><rect x="6" y="16.5" width="11" height="5.5" rx="1.5" opacity=".45"/></svg>'
 };
+// ── A group's Mapping: show it only on cards whose value in a column is one of its values ──
+function groupShows(g, row) {
+  var w = g && g.when; if (!w || !w.field || !row) return true;
+  var v = cleanVal(row[w.field]).trim().toLowerCase();
+  return (w.values || []).some(function(x) { return String(x).trim().toLowerCase() === v; });
+}
+function groupWhenAttrs(gid, g) {
+  var w = g.when, h = '<span class="lbl">Show</span><div class="seg">' +
+    '<button type="button" class="' + (w ? '' : 'on') + '" title="The group shows on every card" onclick="setGroupWhen(\'' + gid + '\',false)">Every card</button>' +
+    '<button type="button" class="' + (w ? 'on' : '') + '" title="Show the group only on cards whose value in a column is one you pick" onclick="setGroupWhen(\'' + gid + '\',true)">Mapping</button></div>';
+  if (!w) return h;
+  var known = FIELDS.indexOf(w.field) >= 0;
+  h += '<span class="mini" style="margin-top:.45rem">Column</span><select class="sel" onchange="setGroupWhenField(\'' + gid + '\',this.value)">' +
+       FIELDS.map(function(f) { return '<option' + (f === w.field ? ' selected' : '') + '>' + esc(f) + '</option>'; }).join('') + (known ? '' : '<option selected>' + esc(w.field) + '</option>') + '</select>';
+  var vals = [], seen = {};
+  (w.values || []).concat(ROWS.map(function(r) { return cleanVal(r[w.field]).trim(); })).forEach(function(v) {
+    var k = String(v).trim().toLowerCase(); if (!k || seen[k] || vals.length >= 80) return; seen[k] = 1; vals.push(String(v).trim());
+  });
+  var on = (w.values || []).map(function(x) { return String(x).trim().toLowerCase(); });
+  h += '<span class="mini" style="margin-top:.45rem">Show when ' + esc(w.field) + ' is</span><div class="when-vals">' +
+       (vals.length ? vals.map(function(v) { return '<button type="button" class="when-v' + (on.indexOf(v.toLowerCase()) >= 0 ? ' on' : '') + '" data-v="' + esc(v) + '" onclick="toggleGroupWhenVal(\'' + gid + '\',this.dataset.v)">' + esc(v) + '</button>'; }).join('')
+                    : '<span class="muted">No values in this column yet.</span>') + '</div>';
+  var row = ROWS[rowIdx];
+  h += '<p class="muted" style="margin:.35rem 0 0">' + (!on.length ? 'Pick one or more values — until then the group shows on no card.'
+       : row ? 'This card’s ' + esc(w.field) + ' is <b>' + esc(cleanVal(row[w.field]).trim() || 'empty') + '</b>, so the group ' + (groupShows(g, row) ? 'shows.' : 'is hidden (faint here while you design).') : '') + '</p>';
+  return h;
+}
+function setGroupWhen(gid, on) {
+  var g = groupById(gid); if (!g || !!g.when === on) return;
+  snapshot();
+  if (on) { var f = mapColumnGuess(), cur = ROWS[rowIdx] ? cleanVal(ROWS[rowIdx][f]).trim() : ''; g.when = { field: f, values: cur ? [cur] : [] }; }
+  else delete g.when;
+  changed(); renderAttrs();
+}
+function setGroupWhenField(gid, f) {
+  var g = groupById(gid); if (!g || !g.when || g.when.field === f) return;
+  snapshot(); var cur = ROWS[rowIdx] ? cleanVal(ROWS[rowIdx][f]).trim() : '';
+  g.when = { field: f, values: cur ? [cur] : [] }; changed(); renderAttrs();
+}
+function toggleGroupWhenVal(gid, v) {
+  var g = groupById(gid); if (!g || !g.when) return;
+  snapshot(); var k = v.toLowerCase(), l = (g.when.values || []).filter(function(x) { return String(x).toLowerCase() !== k; });
+  if (l.length === (g.when.values || []).length) l.push(v);
+  g.when.values = l; changed(); renderAttrs();
+}
 function setGroupList(gid, mode) {
   var g = groupById(gid); if (!g || (g.list || '') === mode) return;
   snapshot(); if (mode) g.list = mode; else delete g.list;

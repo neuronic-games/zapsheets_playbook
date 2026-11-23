@@ -447,6 +447,11 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .color-row { display:flex; gap:.35rem; align-items:center; }
 .color-row input[type=color] { width:2.2rem; height:2.05rem; border:1.5px solid #d6d9e6; border-radius:7px; padding:2px; background:#fff; cursor:pointer; flex-shrink:0; }
 .color-row .inp { flex:1; }
+.when-vals { display:flex; flex-wrap:wrap; gap:.3rem; }
+.when-v { border:1.5px solid #d6d9e6; border-radius:999px; background:#fff; color:#4a4e69; font:inherit; font-size:.78rem; padding:.2rem .65rem; cursor:pointer; }
+.when-v:hover { border-color:#a99cff; }
+.when-v.on { border-color:#4b3fa8; background:#4b3fa8; color:#fff; }
+.card .el.when-off { opacity:.22; }   /* a group not shown on this card (its Mapping), still there to pick */
 .swatch { width:2.2rem; height:2.05rem; flex-shrink:0; border:1.5px solid #d6d9e6; border-radius:7px; padding:3px; cursor:pointer; background:#fff; position:relative; }
 .swatch::before { content:''; position:absolute; inset:3px; border-radius:4px; background:linear-gradient(var(--c,#fff), var(--c,#fff)), repeating-conic-gradient(#e3e5ee 0 25%, #fff 0 50%) 0 0/8px 8px; box-shadow:inset 0 0 0 1px rgba(0,0,0,.12); }   /* see-through colors show the checks */
 .swatch:hover { border-color:#a99cff; }

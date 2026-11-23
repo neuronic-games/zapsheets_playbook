@@ -40,17 +40,20 @@ body { background:var(--bg); font-family:'DINRegular',Arial,sans-serif; color:va
 a { color:var(--violet); }
 /* ── Top bar ── */
 .top { position:sticky; top:0; z-index:50; background:#1a1a2e; color:#fff; box-shadow:inset 0 -3px 0 var(--violet); }
-.top-in { display:flex; align-items:center; gap:.75rem; padding:.7rem 1.25rem; }
-.top img { width:30px; height:30px; border-radius:8px; }
-.brand { font-family:'DINBlack',sans-serif; font-size:1.05rem; letter-spacing:.03em; }
+.top-in { display:flex; align-items:center; gap:.75rem; padding:.75rem 1.25rem; }
+/* the same logo as the designer and the Designs page; it goes back to the Designs page */
+.top-home { display:flex; align-items:center; gap:.65rem; color:#fff; text-decoration:none; min-width:0; }
+.top img { width:2.2rem; height:2.2rem; border-radius:7px; flex-shrink:0; }
+.top-name { display:flex; flex-direction:column; min-width:0; }
+.brand { font-family:'DINBlack',sans-serif; font-size:1rem; letter-spacing:.03em; line-height:1.25; }
 .brand .c { color:var(--gold); } .brand .b { color:var(--lav); }
-.top-lbl { font-family:'DINBlack',sans-serif; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; opacity:.6; }
+.top-lbl { font-size:.73rem; opacity:.6; white-space:nowrap; }
 .top-sp { flex:1; }
 .top a.open { font-family:'DINBlack',sans-serif; font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:#fff; text-decoration:none; background:var(--violet); padding:.45rem .9rem; border-radius:8px; }
 .menu-btn { display:none; background:rgba(255,255,255,.14); color:#fff; border:none; border-radius:8px; padding:.45rem .7rem; font:inherit; font-size:.8rem; cursor:pointer; }
 /* ── Layout: topics on the left, details on the right ── */
 .wrap { display:grid; grid-template-columns:var(--side) minmax(0,1fr); max-width:1320px; margin:0 auto; }
-.side { position:sticky; top:52px; height:calc(100vh - 52px); overflow-y:auto; padding:1.2rem .9rem 2rem 1.25rem; border-right:1px solid var(--line); background:#fff; scrollbar-width:thin; }
+.side { position:sticky; top:59px; height:calc(100vh - 59px); overflow-y:auto; padding:1.2rem .9rem 2rem 1.25rem; border-right:1px solid var(--line); background:#fff; scrollbar-width:thin; }
 .find { width:100%; padding:.55rem .75rem; border:1.5px solid var(--line); border-radius:9px; font:inherit; font-size:.88rem; margin-bottom:.9rem; background:#fafaff; }
 .find:focus { outline:none; border-color:var(--violet); box-shadow:0 0 0 3px #ece9ff; background:#fff; }
 .side h4 { font-family:'DINBlack',sans-serif; font-weight:400; font-size:.64rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:1.1rem .5rem .35rem; }
@@ -145,9 +148,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 <body>
 <header class="top"><div class="top-in">
   <button type="button" class="menu-btn" onclick="document.body.classList.toggle('nav-open')" aria-label="Topics">☰ Topics</button>
-  <img src="images/cardboard_icon_180.png" alt="">
-  <span class="brand"><span class="c">Card</span><span class="b">Board</span></span>
-  <span class="top-lbl">Help</span>
+  <a class="top-home" href="cardboard" title="Your designs"><img src="images/cardboard_icon_180.png" alt=""><span class="top-name"><span class="brand"><span class="c">Card</span><span class="b">Board</span></span><span class="top-lbl">Help</span></span></a>
   <span class="top-sp"></span>
   <a class="open" href="cardboard">Open CardBoard</a>
 </div></header>

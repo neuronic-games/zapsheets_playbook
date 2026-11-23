@@ -2271,7 +2271,7 @@ function groupShows(g, row) {
 }
 function groupWhenAttrs(gid, g) {
   var w = g.when, h = '<span class="lbl">Show as</span><div class="seg">' +
-    '<button type="button" class="' + (w ? '' : 'on') + '" title="The group shows on every card" onclick="setGroupWhen(\'' + gid + '\',false)">Every card</button>' +
+    '<button type="button" class="' + (w ? '' : 'on') + '" title="The group shows on every card" onclick="setGroupWhen(\'' + gid + '\',false)">Fixed</button>' +
     '<button type="button" class="' + (w ? 'on' : '') + '" title="Show the group only on cards whose value in a column is one you pick" onclick="setGroupWhen(\'' + gid + '\',true)">Mapping</button></div>';
   if (!w) return h;
   h += '<div class="map-box" style="--n:2">';
@@ -2615,7 +2615,7 @@ function _renderAttrs() {
 
   if (e.kind === 'text') {
     h += '<span class="lbl">Text</span><textarea class="ta" id="a_text" oninput="liveText(this.value)" onchange="setProp(\'text\',this.value)">' + esc(e.text) + '</textarea>';
-    h += showSeg('fixed', 'Same text');
+    h += showSeg('fixed', 'Fixed');
     h += '<div class="insert-row"><select class="sel" id="a_ins"><option value="">Insert a column…</option>' + FIELDS.map(function(f) { return '<option>' + esc(f) + '</option>'; }).join('') + '</select>' +
          '<button class="attr-btn" style="flex:0 0 auto;padding:0 .7rem" onclick="insertField()">Insert</button></div>';
     h += textAttrs(e) + boxAttrs(e, 'Background');
@@ -2626,7 +2626,7 @@ function _renderAttrs() {
          FIELDS.map(function(f) { return '<option' + (f === e.field ? ' selected' : '') + '>' + esc(f) + '</option>'; }).join('') +
          (known ? '' : '<option selected>' + esc(e.field) + '</option>') + '</select>';
     h += '<span class="lbl">Show as</span>' + seg('as', [['text', 'Text', 'Show the value as text'], ['image', 'Image', 'The value is a picture link'], ['map', 'Mapping', 'Each value shows a text or picture you choose']], e.as || 'text')
-      .replace('<div class="seg">', '<div class="seg">' + (e.was ? '<button type="button" title="The same on every card" onclick="fromMapping()">' + (e.was.kind === 'image' ? 'Same picture' : 'Same text') + '</button>' : ''));
+      .replace('<div class="seg">', '<div class="seg">' + (e.was ? '<button type="button" title="The same on every card" onclick="fromMapping()">' + 'Fixed' + '</button>' : ''));
     if (e.as === 'map') {
       if (!e.map || !e.map.items || !e.map.items.length) e.map = savedMap(e.field);   // remembered for this field
       delete e.map.type;
@@ -2658,7 +2658,7 @@ function _renderAttrs() {
          '<span class="img-btn">' + IMG_ICON + '</span></div>';
     if (from) h += '<p class="muted" style="margin:.3rem 0 0">' + from + (uploaded ? '' : ' — loaded from the source, so changes there show up here') + '</p>';
     h += '<p class="muted" style="margin:.3rem 0 0">The same picture on every card — a logo, frame or icon. To pick a picture by each card\'s value, switch to Mapping.</p>';
-    h += showSeg('fixed', 'Same picture');
+    h += showSeg('fixed', 'Fixed');
     h += fitAttrs(e) + boxAttrs(e, 'Frame');
   }
   if (e.kind === 'shape') {

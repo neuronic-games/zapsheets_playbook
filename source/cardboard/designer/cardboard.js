@@ -2451,6 +2451,41 @@ function numInp(id, label, val, onSet, key, step) {
 function txtInp(label, key, val, ph) {
   return '<div><span class="mini">' + label + '</span><input class="inp" value="' + esc(val || '') + '" placeholder="' + esc(ph || '') + '" onchange="setProp(\'' + key + '\',this.value)"></div>';
 }
+// A Text or Image element can become a Mapping: each card's value in a column picks its text or picture.
+// It becomes a data element (so it has Show as Text / Image / Mapping like any column) and remembers
+// what it was, so "Same on every card" turns it back.
+function mapColumnGuess() {   // the column with the fewest different values (a type, a color, a suit…)
+  var best = '', bestN = 1e9;
+  FIELDS.filter(function(f) { return !isHidden(f) && !looksLikeImage(f); }).forEach(function(f) {
+    var seen = {}; ROWS.forEach(function(r) { var v = cleanVal(r[f]).trim(); if (v) seen[v.toLowerCase()] = 1; });
+    var n = Object.keys(seen).length; if (n > 1 && n < bestN) { best = f; bestN = n; }
+  });
+  return best || FIELDS[0] || '';
+}
+function toMapping() {
+  var e = elById(selId); if (!e || (e.kind !== 'text' && e.kind !== 'image')) return;
+  if (!FIELDS.length) { toast('Add a column to the sheet first — a Mapping picks by a column’s value', true); return; }
+  snapshot();
+  e.was = e.kind === 'text' ? { kind: 'text', text: e.text } : { kind: 'image', src: e.src };
+  var f = mapColumnGuess();
+  e.kind = 'data'; e.field = f; e.as = 'map'; e.map = savedMap(f);
+  if (e.was.kind === 'image' && !e.fit) e.fit = 'contain';
+  delete e.text; delete e.src;
+  changed();
+}
+function fromMapping() {
+  var e = elById(selId); if (!e || !e.was) return;
+  snapshot();
+  var w = e.was; e.kind = w.kind;
+  if (w.kind === 'text') e.text = w.text || ''; else e.src = w.src || '';
+  delete e.field; delete e.as; delete e.map; delete e.was;
+  changed();
+}
+function showSeg(cur, fixedLabel) {   // Text / Image elements: the same on every card, or a Mapping
+  return '<div style="margin-top:.45rem"><span class="mini">Show</span><div class="seg">' +
+    '<button type="button" class="' + (cur === 'fixed' ? 'on' : '') + '" title="The same on every card" onclick="' + (cur === 'fixed' ? '' : 'fromMapping()') + '">' + fixedLabel + '</button>' +
+    '<button type="button" class="' + (cur === 'map' ? 'on' : '') + '" title="Each card’s value in a column picks its text or picture" onclick="' + (cur === 'map' ? '' : 'toMapping()') + '">Mapping</button></div></div>';
+}
 function seg(key, opts, cur, rerender) {
   return '<div class="seg">' + opts.map(function(o) {
     return '<button type="button" class="' + (o[0] === cur ? 'on' : '') + '" title="' + o[2] + '" onclick="setProp(\'' + key + '\',\'' + o[0] + '\');renderAttrs()">' + o[1] + '</button>';
@@ -2530,6 +2565,7 @@ function _renderAttrs() {
 
   if (e.kind === 'text') {
     h += '<span class="lbl">Text</span><textarea class="ta" id="a_text" oninput="liveText(this.value)" onchange="setProp(\'text\',this.value)">' + esc(e.text) + '</textarea>';
+    h += showSeg('fixed', 'Same text');
     h += '<div class="insert-row"><select class="sel" id="a_ins"><option value="">Insert a column…</option>' + FIELDS.map(function(f) { return '<option>' + esc(f) + '</option>'; }).join('') + '</select>' +
          '<button class="attr-btn" style="flex:0 0 auto;padding:0 .7rem" onclick="insertField()">Insert</button></div>';
     h += textAttrs(e) + boxAttrs(e, 'Background');
@@ -2539,6 +2575,7 @@ function _renderAttrs() {
     h += '<span class="lbl">Column</span><select class="sel" onchange="setProp(\'field\',this.value);renderAttrs()">' +
          FIELDS.map(function(f) { return '<option' + (f === e.field ? ' selected' : '') + '>' + esc(f) + '</option>'; }).join('') +
          (known ? '' : '<option selected>' + esc(e.field) + '</option>') + '</select>';
+    if (e.was) h += showSeg('map', e.was.kind === 'image' ? 'Same picture' : 'Same text');
     h += '<div style="margin-top:.45rem"><span class="mini">Show as</span>' + seg('as', [['text', 'Text', 'Show the value as text'], ['image', 'Image', 'The value is a picture link'], ['map', 'Mapping', 'Each value shows a text or picture you choose']], e.as || 'text') + '</div>';
     if (e.as === 'map') {
       if (!e.map || !e.map.items || !e.map.items.length) e.map = savedMap(e.field);   // remembered for this field
@@ -2570,7 +2607,8 @@ function _renderAttrs() {
          (u ? '<div class="el-img" style="background-image:url(&quot;' + esc(u) + '&quot;);background-size:contain"></div>' : '<div class="img-slot-empty">' + IMG_ICON + '<span>Drop a picture, or click to choose</span></div>') +
          '<span class="img-btn">' + IMG_ICON + '</span></div>';
     if (from) h += '<p class="muted" style="margin:.3rem 0 0">' + from + (uploaded ? '' : ' — loaded from the source, so changes there show up here') + '</p>';
-    h += '<p class="muted" style="margin:.3rem 0 0">The same picture on every card — a logo, frame or icon. To pick a picture by a card\'s value, use a Card field shown as a Mapping.</p>';
+    h += '<p class="muted" style="margin:.3rem 0 0">The same picture on every card — a logo, frame or icon. To pick a picture by each card\'s value, switch to Mapping.</p>';
+    h += showSeg('fixed', 'Same picture');
     h += fitAttrs(e) + boxAttrs(e, 'Frame');
   }
   if (e.kind === 'shape') {

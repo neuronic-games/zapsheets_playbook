@@ -172,7 +172,7 @@ body.designs { display:block; padding:0; background:#f3f4f8; }
 body.designs .page { display:none; }
 .app { display:none; min-height:100vh; }
 body.designs .app { display:flex; flex-direction:column; }
-.d-top { height:64px; flex-shrink:0; background:#2e2763; color:#fff; display:flex; align-items:center; gap:1rem; padding:0 1.4rem; position:sticky; top:0; z-index:20; box-shadow:0 2px 10px rgba(0,0,0,.18); }
+.d-top { height:64px; flex-shrink:0; background:#1a1a2e; color:#fff; display:flex; align-items:center; gap:1rem; padding:0 1.4rem; position:sticky; top:0; z-index:20; box-shadow:inset 0 -3px 0 #5b4fd6, 0 2px 10px rgba(0,0,0,.18); }   /* the designer's bar (css/gameboard-ui.css) */
 .d-brand { display:flex; align-items:center; gap:.7rem; text-decoration:none; color:#fff; }
 .d-brand img { width:38px; height:38px; border-radius:9px; }
 .d-brand b { font-family:'DINBlack',sans-serif; font-weight:400; font-size:1.45rem; letter-spacing:.02em; }
@@ -182,9 +182,9 @@ body.designs .app { display:flex; flex-direction:column; }
 .d-brand .c1 { color:#f2c14e; } .d-brand .c2 { color:#a99cff; }
 .d-top .grow { flex:1; }
 .d-create { display:inline-flex; align-items:center; gap:.45rem; height:40px; padding:0 1.15rem; border:2px solid #fff; border-radius:999px; background:transparent; color:#fff; font:inherit; font-size:.98rem; cursor:pointer; transition:background .12s, color .12s; }
-.d-create:hover { background:#fff; color:#2e2763; }
+.d-create:hover { background:#fff; color:#1a1a2e; }
 .d-create svg { width:18px; height:18px; }
-.d-av { width:40px; height:40px; border-radius:50%; background:#f2c14e; color:#2e2763; display:inline-flex; align-items:center; justify-content:center; font-family:'DINBlack',sans-serif; font-size:1.05rem; border:2px solid rgba(255,255,255,.85); flex-shrink:0; }
+.d-av { width:40px; height:40px; border-radius:50%; background:#f2c14e; color:#1a1a2e; display:inline-flex; align-items:center; justify-content:center; font-family:'DINBlack',sans-serif; font-size:1.05rem; border:2px solid rgba(255,255,255,.85); flex-shrink:0; }
 .d-body { flex:1; display:flex; min-height:0; }
 .d-side { width:250px; flex-shrink:0; background:#fff; border-right:1px solid #e1e4ee; display:flex; flex-direction:column; }
 .d-me { text-align:center; padding:1.6rem 1rem 1.3rem; border-bottom:1px solid #e1e4ee; }

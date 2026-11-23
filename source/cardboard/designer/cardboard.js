@@ -3371,28 +3371,15 @@ function gridVisibleRows() {
   var f = _gridFilter.toLowerCase();
   return rows.filter(function(r) { return r.draft || r.values.some(function(v) { return String(v).toLowerCase().indexOf(f) >= 0; }); });
 }
-// What a cell shows: what the sheet displays (formula results, number and date formats), then as it
-// ends up on the card — [tags] as their words or pictures, and for a column the layout shows through a
-// Mapping, the mapped text or picture. Double-click a cell to edit what's really in it.
+// What a cell shows: what the sheet displays (formula results, number and date formats), with [tags]
+// as their words or pictures (not mappings — an element's own). Double-click a cell to edit what's really in it.
 // GRID rows keep both: values (what's in the cell) and shown ({column: [value, displayed]}, from the
 // same read). The displayed one is used only while the cell still holds that value — once it's
 // edited here, the new value shows (a new formula as written) until the next load after Save.
 function gridShown(name, v, res) {
   if (res && res[0] === v) v = res[1];
   else if (/^=/.test(v)) return '<span class="g-formula">' + esc(v) + '</span>';
-  // Every element (front and back) that shows this column through a Mapping: the first that has this value wins
-  var maps = layout ? (layout.els || []).concat((layout.back || {}).els || []).filter(function(e) { return e.kind === 'data' && e.as === 'map' && e.map && String(e.field || '').trim().toLowerCase() === String(name).trim().toLowerCase(); }) : [];
-  // …and the field's remembered mappings, kept when no element shows them any more
-  if (layout && layout.maps) Object.keys(layout.maps).forEach(function(f) {
-    if (f.trim().toLowerCase() === String(name).trim().toLowerCase() && (layout.maps[f].items || []).length) maps.push({ field: name, map: layout.maps[f] });
-  });
-  if (maps.length && String(v).trim()) {
-    var row = {}, hit = null; row[name] = v;
-    maps.some(function(m) { var r = {}; r[m.field] = v; hit = mapHit(m, r); return !!hit; });   // a mapped value: what's typed → what the card shows
-    var lead = '<span class="g-mapv">' + esc(textVal(v)) + '</span><span class="g-arrow">→</span>';
-    if (hit && hit.src) { var u = imageUrl(picRef(hit.src)); if (u) return lead + '<img class="g-thumb g-mapimg" src="' + esc(u) + '" alt="" referrerpolicy="no-referrer">'; }
-    if (hit) return lead + rich(hit.t || '');
-  }
+  // Mappings aren't shown here: the same column can map differently in different elements of the layout
   return rich(textVal(v));
 }
 function renderGrid() {

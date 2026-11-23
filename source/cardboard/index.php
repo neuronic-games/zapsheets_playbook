@@ -319,7 +319,7 @@ body.designs .app { display:flex; flex-direction:column; }
   <header class="d-top">
     <a class="d-brand" href="cardboard" title="Your designs"><img src="images/cardboard_icon_180.png" alt=""><b><span class="c1">Card</span><span class="c2">Board</span></b></a>
     <div class="grow"></div>
-    <button type="button" class="d-create" onclick="openCreateDialog()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>Create</span></button>
+    <button type="button" class="d-create" onclick="openCreateDialog()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>Design</span></button>
     <span class="d-av" id="topAv" title=""></span>
   </header>
   <div class="d-body">
@@ -525,7 +525,7 @@ body.designs .app { display:flex; flex-direction:column; }
     }).map(function(x) { return Object.assign({}, x, { when: Math.max(x.edited || 0, x.mine ? 0 : seenAt[x.id] || 0) }); });
     show.sort(sort === 'name' ? function(a, b) { return (a.title || 'zzz').localeCompare(b.title || 'zzz', undefined, { sensitivity: 'base' }); } : function(a, b) { return b.when - a.when; });
     if (!list.length) {
-      $('dGrid').innerHTML = '<div class="d-empty"><b>No designs yet</b>Connect a Google Sheet — or copy the sample deck — to design your first cards.<br><button type="button" class="connect-btn" onclick="openCreateDialog()">+ Create</button></div>';
+      $('dGrid').innerHTML = '<div class="d-empty"><b>No designs yet</b>Connect a Google Sheet — or copy the sample deck — to design your first cards.<br><button type="button" class="connect-btn" onclick="openCreateDialog()">+ Design</button></div>';
       return;
     }
     if (!show.length) { $('dGrid').innerHTML = '<div class="d-empty"><b>Nothing matches</b>' + (q ? 'No design or deck called “' + esc(q) + '”.' : '') + '</div>'; return; }

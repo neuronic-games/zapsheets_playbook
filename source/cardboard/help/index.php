@@ -288,7 +288,15 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
     <li><kbd>Enter</kbd> keeps it and moves down; <kbd>Shift</kbd>+<kbd>Enter</kbd> adds a new line; <kbd>Tab</kbd> moves right; <kbd>Esc</kbd> cancels. Arrow keys move around, <kbd>Delete</kbd> clears.</li>
     <li><b>Formulas</b> show their result, as Sheets does; editing the cell shows the formula.</li>
     <li>A field shown through a <a href="cardboard/help#mapping">mapping</a> shows what you typed and what the card shows: <em>Fire → 🔥</em>.</li>
-    <li><b>Find</b> shows only the cards containing what you type. <b>↶ ↷</b> undo and redo your edits here (<kbd>⌘Z</kbd>, <kbd>⇧⌘Z</kbd>). <b>Reload</b> reads this deck from the sheet again.</li>
+    <li><b>↶ ↷</b> undo and redo your edits here (<kbd>⌘Z</kbd>, <kbd>⇧⌘Z</kbd>). <b>Reload</b> reads this deck from the sheet again.</li>
+  </ul>
+  <h3>Find and replace</h3>
+  <?= shot('find', 'Find marks every match; <b>Replace with</b> slides out beside it.') ?>
+  <ul>
+    <li><b>Find</b> shows only the cards containing what you type (upper or lower case), with every match marked in yellow. The <b>×</b> in the box (or <kbd>Esc</kbd>) clears it.</li>
+    <li>Once there's something to find, <b>Replace with</b> slides out to the right. Type the new text and click <b>Replace N</b> (or press <kbd>Enter</kbd>) — the button counts the cells it will change.</li>
+    <li>Afterwards Find looks for the new text, so the changed cells stay in view and marked. Cells holding a formula are left alone.</li>
+    <li>Replacements are kept in this browser until you save, like any edit, and one <kbd>⌘Z</kbd> undoes the whole replace.</li>
   </ul>
   <h3>Rows and columns</h3>
   <div class="two">
@@ -388,6 +396,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
     <li>A value with no row shows as it is (or as its picture, if it's a picture link or a tag).</li>
     <li>Results can be <a href="cardboard/help#tags">tags</a> like <code>[fire]</code>, so changing the tag changes every card.</li>
     <li>Double-click the element on the card to change that card's value.</li>
+    <li><b>Mappings are remembered for the field</b>, even if you delete the element or set it back to Text: choose <b>Mapping</b> again on any element showing that field and they come back. The Cards view keeps showing <em>value → result</em> for the field either way.</li>
   </ul>
 </section>
 
@@ -492,7 +501,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
   <?= shot('export', 'A Tabletop Simulator sheet: 10 × 7 cards at most, with the back in the last slot.') ?>
   <ul>
     <li><b>For</b> — <b>Tabletop Simulator</b>, <b>Screentop</b>, or <b>Separate images</b> (one picture per card). <b>Size</b> — Standard (up to 4096 px), Large or Small. <b>Copies</b> as in Print.</li>
-    <li><b>Download</b> makes a zip of the images. The panel explains exactly what to enter in Tabletop Simulator's <b>Custom Deck</b> dialog.</li>
+    <li><b>Download</b> (the arrow button) makes a zip of the images. The panel explains exactly what to enter in Tabletop Simulator's <b>Custom Deck</b> dialog.</li>
     <li><b>Get links</b> hosts the sheets at links that never change — paste them into Tabletop Simulator. After that the button reads <b>Update links</b>: the pictures behind the links are replaced with your latest cards (this also happens by itself after you save). The links carry a share code, not your spreadsheet's ID.</li>
   </ul>
   <div class="note"><b>Tabletop Simulator</b> keeps its own copy of downloaded pictures, so a game may show old cards until it loads them again. If you add cards, raise <b>Number</b> in the Custom Deck settings to match.</div>

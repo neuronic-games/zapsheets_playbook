@@ -28,7 +28,7 @@ function steps(array $frames, string $title): string {
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>CardBoard – Help</title>
-<meta name="description" content="How to design, print and export board game cards from a Google Sheet with CardBoard.">
+<meta name="description" content="Design, print, and share your card deck — fast.">
 <link rel="icon" type="image/png" sizes="32x32" href="images/cardboard_icon_32.png" />
 <style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2')  format('woff2'),url('fonts/DINBlack.ttf')  format('truetype'); }

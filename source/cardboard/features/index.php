@@ -19,7 +19,7 @@ $_abs    = gbLinkBase();   // canonical and share links: mygameboard.app
 $_pageUrl = htmlspecialchars($_abs . 'cardboard/features', ENT_QUOTES);
 $_ogImg   = htmlspecialchars($_abs . 'images/og/cardboard-og.png?v=2', ENT_QUOTES);
 $_icon    = htmlspecialchars($_abs . 'images/cardboard_icon_180.png', ENT_QUOTES);
-$_desc    = 'Design board game cards from your Google Sheet, then print them or send them to Tabletop Simulator and Screentop.';
+$_desc    = 'Design, print, and share your card deck — fast.';   // the tagline, as in every CardBoard link preview (push/linkPreview.php)
 ?>
 <title>CardBoard — Board Game Card Designer for Google Sheets</title>
 <meta name="description" content="<?= $_desc ?>">

@@ -3393,6 +3393,8 @@ function markFound(root) {
   var f = _gridFilter.toLowerCase(), n = f.length;
   var cells = root.tagName === 'TD' ? [root] : Array.prototype.slice.call(root.querySelectorAll('td:not(.rn):not(.ghost-col)'));
   cells.forEach(function(td) {
+    // A [tag] shows as its picture: mark the picture when the search is (part of) the tag as typed
+    td.querySelectorAll('img.tag-img').forEach(function(im) { im.classList.toggle('g-hit-img', ('[' + (im.alt || '') + ']').toLowerCase().indexOf(f) >= 0); });
     var walker = document.createTreeWalker(td, NodeFilter.SHOW_TEXT), nodes = [], t;
     while ((t = walker.nextNode())) if (!t.parentNode.closest('mark.g-hit') && t.nodeValue.toLowerCase().indexOf(f) >= 0) nodes.push(t);
     nodes.forEach(function(node) {

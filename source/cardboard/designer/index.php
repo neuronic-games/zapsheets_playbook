@@ -585,6 +585,7 @@ table.grid td { cursor:cell; background:#fff; }
 table.grid td > span { vertical-align:middle; }
 table.grid td .tag-img { height:1.15em; width:auto; vertical-align:-.22em; margin:0 .05em; }
 /* Find: the found text is marked; Replace slides out to the right of Find */
+table.grid td img.g-hit-img { background:#ffe37a; border-radius:3px; box-shadow:0 0 0 2px #ffe37a, 0 0 0 3px #f2c14e; }
 table.grid td mark.g-hit { background:#ffe37a; color:inherit; border-radius:2px; padding:0 1px; box-shadow:0 0 0 1px #f2c14e; }
 .grid-replace { max-width:0; opacity:0; overflow:hidden; transform:translateX(-14px); pointer-events:none; transition:max-width .28s ease, opacity .2s ease, transform .28s ease; white-space:nowrap; }
 .grid-replace.open { max-width:26rem; opacity:1; transform:none; pointer-events:auto; }

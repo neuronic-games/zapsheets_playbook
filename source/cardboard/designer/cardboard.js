@@ -2274,8 +2274,9 @@ function groupWhenAttrs(gid, g) {
     '<button type="button" class="' + (w ? '' : 'on') + '" title="The group shows on every card" onclick="setGroupWhen(\'' + gid + '\',false)">Every card</button>' +
     '<button type="button" class="' + (w ? 'on' : '') + '" title="Show the group only on cards whose value in a column is one you pick" onclick="setGroupWhen(\'' + gid + '\',true)">Mapping</button></div>';
   if (!w) return h;
+  h += '<div class="map-box">';
   var known = FIELDS.indexOf(w.field) >= 0;
-  h += '<span class="mini" style="margin-top:.45rem">Column</span><select class="sel" onchange="setGroupWhenField(\'' + gid + '\',this.value)">' +
+  h += '<span class="mini">Column</span><select class="sel" onchange="setGroupWhenField(\'' + gid + '\',this.value)">' +
        FIELDS.map(function(f) { return '<option' + (f === w.field ? ' selected' : '') + '>' + esc(f) + '</option>'; }).join('') + (known ? '' : '<option selected>' + esc(w.field) + '</option>') + '</select>';
   var vals = [], seen = {};
   (w.values || []).concat(ROWS.map(function(r) { return cleanVal(r[w.field]).trim(); })).forEach(function(v) {
@@ -2288,7 +2289,7 @@ function groupWhenAttrs(gid, g) {
   var row = ROWS[rowIdx];
   h += '<p class="muted" style="margin:.35rem 0 0">' + (!on.length ? 'Pick one or more values — until then the group shows on no card.'
        : row ? 'This card’s ' + esc(w.field) + ' is <b>' + esc(cleanVal(row[w.field]).trim() || 'empty') + '</b>, so the group ' + (groupShows(g, row) ? 'shows.' : 'is hidden (faint here while you design).') : '') + '</p>';
-  return h;
+  return h + '</div>';
 }
 function setGroupWhen(gid, on) {
   var g = groupById(gid); if (!g || !!g.when === on) return;
@@ -2736,7 +2737,7 @@ function dataMapAttrs(e) {
   });
   h += '</div><p class="muted" style="margin:.35rem 0 0">A card whose <b>' + esc(e.field) + '</b> matches a value shows its text or picture; any other value shows as it is. ' +
        'Double-click the element on the card to change this card’s <b>' + esc(e.field) + '</b>.</p>';
-  return h;
+  return '<div class="map-box">' + h + '</div>';   // the mappings, kept together on their own background
 }
 function setMapVal(i, v) {
   var e = mapEl(); if (!e) return; var items = e.map.items; v = v.trim();

@@ -70,6 +70,7 @@ discount_pct  = float(data.get('discount_pct',  0) or 0)
 discount_lbl  = data.get('discount_label','').strip()
 scope_of_work = data.get('scope_of_work', '').strip()
 description   = data.get('description',   '').strip()
+summary       = ' '.join(str(data.get('summary', '') or '').split())   # the contract's one-line summary, under the date
 my_name       = data.get('my_name',       '').strip()
 my_phone      = data.get('my_phone',      '').strip()
 my_company    = data.get('my_company',    '').strip()
@@ -371,9 +372,20 @@ c.setFont('Helvetica', 10)
 c.setFillColor(MID_GRAY)
 c.drawString(ML, yt(143), f'{"Paid on" if is_payment else "Submitted on"} {today_disp}')
 
+# The contract's summary: one line under the date (everything below moves down to make room)
+SUM_DY = 0
+if summary:
+    c.setFont('Helvetica-Bold', 12)
+    c.setFillColor(DARK)
+    _sum = summary
+    while _sum and c.stringWidth(_sum, 'Helvetica-Bold', 12) > CW:
+        _sum = _sum[:-2].rstrip() + '…'
+    c.drawString(ML, yt(163), _sum)
+    SUM_DY = 22
+
 # ── Info section ────────────────────────────────────────────────────────────────
-Y_LBL = yt(175)
-Y_VAL = yt(190)
+Y_LBL = yt(175 + SUM_DY)
+Y_VAL = yt(190 + SUM_DY)
 
 # 4-column layout when invoice has an estimate ref; 3-column otherwise
 show_est_col = (doc_type == 'Invoice' and bool(estimate_num))
@@ -412,7 +424,7 @@ if show_est_col:
     c.drawString(col_est, Y_VAL, estimate_num)
 
 # ── Separator ───────────────────────────────────────────────────────────────────
-SEP_Y = yt(222)
+SEP_Y = yt(222 + SUM_DY)
 c.setStrokeColor(SEP_GRAY)
 c.setLineWidth(0.5)
 c.line(ML, SEP_Y, PAGE_W - MR, SEP_Y)
@@ -431,7 +443,7 @@ HEADER_H  = 24
 ROW_INNER = 13   # pt per text line
 ROW_PAD   = 12   # vertical padding inside data rows
 
-cur_y = yt(237)   # top of table header
+cur_y = yt(237 + SUM_DY)   # top of table header
 
 # Header row
 c.setFillColor(ORANGE)

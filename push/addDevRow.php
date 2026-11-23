@@ -25,6 +25,7 @@ $sessionNum  = trim($_POST['session_num'] ?? '');   // new schema: session numbe
 $observation = trim($_POST['observation'] ?? '');
 $solution    = trim($_POST['solution']    ?? '');
 $rowType     = trim($_POST['row_type']    ?? '');
+$contract    = trim(preg_replace('/\s+/', ' ', (string) ($_POST['contract'] ?? '')));   // T&M: the contract it's for (its one-line Summary)
 
 if (!$sheetId || !$gameName) {
     echo json_encode(['error' => 'Missing id or game']);
@@ -79,6 +80,7 @@ if ($isTesterRow) {
     // T&M rows get a background color in the sheet
     $bgColor = '';
     if ($event === 'Time' || $event === 'Material') $bgColor = 'FFF8E1';  // light amber
+    if (($event === 'Time' || $event === 'Material') && $contract === '') { echo json_encode(['error' => 'Pick the contract this time or material is for']); exit; }
 
     $row     = [
         'Date'          => $date,
@@ -91,6 +93,7 @@ if ($isTesterRow) {
         'Solution'      => $solution,      // legacy column name
         '__bg_color__'  => $bgColor,       // consumed by gadd.py, not written to sheet
     ];
+    if ($event === 'Time' || $event === 'Material') { $row['Contract'] = $contract; $row['__add_headers__'] = ['Contract']; }
     $encoded = base64_encode(json_encode($row, JSON_UNESCAPED_UNICODE));
     $arg     = $sheetId . '|' . $tabName . '|' . $encoded;
     $cmd     = escapeshellarg($pythonPath) . ' '

@@ -39,6 +39,7 @@ function pbMakePaymentSlip(string $sheetId, array $row, array $me): array {
         'payee_payment' => pbPayeePayment($sheetId, (string) ($row['Payee'] ?? '')),
         'quote'         => (string) ($row['Quote'] ?? ''),
         'notes'         => (string) ($row['Notes'] ?? ''),
+        'summary'       => (string) ($row['Summary'] ?? ''),
         'my_name'       => (string) ($me['my_name'] ?? ''),
         'my_phone'      => (string) ($me['my_phone'] ?? ''),
         'my_company'    => (string) ($me['my_company'] ?? ''),

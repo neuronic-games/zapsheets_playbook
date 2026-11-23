@@ -1157,6 +1157,10 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
         <label>Client</label>
         <input type="text" class="field-input" id="ceClient" autocomplete="off" />
       </div>
+      <div class="field-group span2">
+        <label>Summary</label>
+        <input type="text" class="field-input" id="ceSummary" maxlength="120" placeholder="One line: what this contract is for" autocomplete="off" />
+      </div>
       <div class="field-group">
         <label>Target Start Date</label>
         <input type="date" class="field-input" id="ceTargetStart" />
@@ -1248,6 +1252,9 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
         <div class="combo-dropdown" id="estimateGameDrop"></div>
       </div>
     </div>
+    <label class="ge-label">Summary
+      <input type="text" id="estimateSummary" class="ge-input" maxlength="120" autocomplete="off" placeholder="One line: what this contract is for, e.g. Rules edit and 2 playtests" />
+    </label>
     <div class="estimate-field-row two">
       <label class="ge-label"># of Tests
         <input type="number" id="estimateTests" class="ge-input" value="2" min="0" step="1" oninput="_seedScopeOfWork()" />
@@ -1347,6 +1354,9 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
       </div>
     </label>
 
+    <label class="ge-label">Summary
+      <input type="text" id="invoiceSummary" class="ge-input" maxlength="120" autocomplete="off" placeholder="One line: what this invoice is for" oninput="_invoiceMarkDirty()" />
+    </label>
     <label class="ge-label">Description
       <textarea id="invoiceDescription" class="ge-input ge-textarea" rows="3" oninput="_invoiceMarkDirty()"></textarea>
     </label>
@@ -1641,6 +1651,10 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
           <div class="combo-dropdown" id="contractClientDrop"></div>
         </div>
       </div>
+      <div class="field-group span2">
+        <label>Summary</label>
+        <input type="text" class="field-input" id="contractSummary" maxlength="120" placeholder="One line: what this contract is for" autocomplete="off" />
+      </div>
       <div class="field-group">
         <label>Target Start Date</label>
         <input type="date" class="field-input" id="contractTargetStart" />
@@ -1693,6 +1707,14 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
           <div class="combo-dropdown" id="payPersonDrop"></div>
         </div>
       </div>
+      <div class="field-group span2">
+        <label>Contract</label>
+        <div class="combo-wrap" id="paySumCombo">
+          <input type="text" id="paySummary" class="field-input combo-input" placeholder="Pick a contract’s summary, or type one" autocomplete="off" maxlength="120"
+            oninput="sumRebuild('pay',this.value)" onfocus="sumRebuild('pay',this.value)" onkeydown="sumKey('pay',event)" />
+          <div class="combo-dropdown" id="paySumDrop"></div>
+        </div>
+      </div>
       <div class="field-group">
         <label>Amount</label>
         <div class="contract-quote-wrap">
@@ -1726,6 +1748,10 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
       <div class="field-group span2">
         <label>Client</label>
         <div id="siClientDisplay" style="font-family:'DINRegular',sans-serif;font-size:.9rem;color:#333;padding:.45rem 0"></div>
+      </div>
+      <div class="field-group span2">
+        <label>Summary</label>
+        <input type="text" class="field-input" id="siSummary" maxlength="120" placeholder="One line: what this invoice is for" autocomplete="off" />
       </div>
       <div class="field-group">
         <label>Amount</label>
@@ -1842,6 +1868,15 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
   <div class="session-dialog" style="max-width:500px;position:relative" onclick="event.stopPropagation()" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitDashTM();}">
     <button onclick="closeDashTMDialog()" style="position:absolute;top:.75rem;right:.75rem;background:none;border:none;cursor:pointer;font-size:1rem;color:#888;line-height:1;padding:.25rem .4rem" title="Close">&#x2715;</button>
     <h2>Time &amp; Materials — <span id="dashTMGameTitle"></span></h2>
+
+    <div class="field-group" style="margin:0 0 .6rem">
+      <label>Contract</label>
+      <div class="combo-wrap" id="dashTMSumCombo">
+        <input type="text" id="dashTMSummary" class="field-input combo-input" placeholder="Pick a contract’s summary, or type one" autocomplete="off" maxlength="120"
+          oninput="sumRebuild('dashTM',this.value)" onfocus="sumRebuild('dashTM',this.value)" onkeydown="sumKey('dashTM',event)" />
+        <div class="combo-dropdown" id="dashTMSumDrop"></div>
+      </div>
+    </div>
 
     <div style="display:grid;grid-template-columns:1fr 110px;gap:.5rem .6rem;margin-bottom:.6rem">
       <div class="field-group" style="margin:0">
@@ -2710,12 +2745,13 @@ function _paymentItemHtml(pay) {
   var h = '<div class="estimate-item pay-item" id="ci-' + idx + '">';
   h += '<div class="estimate-item-header" onclick="_payToggle(' + idx + ')">' +
     '<span class="estimate-type-pill payout">Paid out</span>' +
-    '<div class="pay-payee">' + esc(pay.Payee || '—') + '</div>' +
+    '<div class="pay-payee">' + esc(pay.Payee || '—') + (_cleanSummary(pay.Summary) ? ' <span style="opacity:.6">· ' + esc(_cleanSummary(pay.Summary)) + '</span>' : '') + '</div>' +
     '<div class="estimate-date">' + esc(when) + '</div>' +
     '<div class="estimate-amount out">' + esc(amt) + '</div>' +
     '<div class="estimate-item-chevron">▼</div></div>';
   h += '<div class="estimate-item-body"><div class="estimate-item-details" style="cursor:default"><dl class="estimate-item-fields">' +
     '<div class="estimate-item-field"><dt>Paid to</dt><dd>' + esc(pay.Payee || '—') + '</dd></div>' +
+    (_cleanSummary(pay.Summary) ? '<div class="estimate-item-field"><dt>For</dt><dd>' + esc(_cleanSummary(pay.Summary)) + '</dd></div>' : '') +
     '<div class="estimate-item-field"><dt>Amount</dt><dd>' + esc(amt) + '</dd></div>' +
     '<div class="estimate-item-field"><dt>Date</dt><dd>' + esc(when || '—') + '</dd></div>' +
     (pay['Ref Number'] ? '<div class="estimate-item-field"><dt>Ref #</dt><dd>' + esc(pay['Ref Number']) + '</dd></div>' : '') +
@@ -2782,14 +2818,58 @@ function _paySlipShare(idx) {
   if (pay.Files) send(pay.Files); else _payMakeSlip(idx, document.getElementById('pay-share-btn-' + idx), send);
 }
 var _payCtx = null, _payInitial = {};
+// ── Contract summaries: the one-line Summary every contract has ─────────────
+function _cleanSummary(v) { return String(v || '').replace(/^'/, '').replace(/\s+/g, ' ').trim(); }
+function _contractSummaryFor(ref) {   // a contract's Summary by its Ref Number
+  ref = String(ref || ''); if (!ref) return '';
+  for (var i = 0; i < CONTRACT_RAW.length; i++) {
+    var c = CONTRACT_RAW[i]; if (String(c['Ref Number'] || c.ID || '') === ref) return _cleanSummary(c.Summary);
+  }
+  return '';
+}
+// The contracts' summaries for a game (newest first), for T&M and payments to pick from; every game's if none
+function _contractSummaries(game) {
+  var g = String(game || '').trim().toLowerCase(), mine = [], all = [];
+  CONTRACT_RAW.slice().reverse().forEach(function(c) {
+    if (/^payment$/i.test(String(c.Type || '').trim())) return;
+    var sm = _cleanSummary(c.Summary); if (!sm) return;
+    if (all.indexOf(sm) < 0) all.push(sm);
+    if (g && String(c.Game || '').trim().toLowerCase() === g && mine.indexOf(sm) < 0) mine.push(sm);
+  });
+  return mine.length ? mine : all;
+}
+// A summary combo (the combo box pattern): fooSum…(prefix) — input #{prefix}Summary, list #{prefix}SumDrop in #{prefix}SumCombo
+var _sumSrc = {};
+function sumRebuild(px, filter) {
+  var drop = document.getElementById(px + 'SumDrop'), lower = (filter || '').toLowerCase();
+  var items = (_sumSrc[px] || []).filter(function(n) { return !lower || n.toLowerCase().indexOf(lower) !== -1; });
+  if (!items.length) { drop.innerHTML = ''; document.getElementById(px + 'SumCombo').classList.remove('open'); return; }
+  drop.innerHTML = items.map(function(n) {
+    return '<div class="combo-item" data-name="' + esc(n) + '" onmousedown="sumPick(\'' + px + '\',this.dataset.name)">' + esc(n) + '</div>';
+  }).join('');
+  document.getElementById(px + 'SumCombo').classList.add('open');
+}
+function sumPick(px, n) {
+  document.getElementById(px + 'Summary').value = n;
+  document.getElementById(px + 'SumDrop').innerHTML = '';
+  document.getElementById(px + 'SumCombo').classList.remove('open');
+}
+function sumKey(px, e) {
+  if (e.key === 'Escape') { document.getElementById(px + 'SumCombo').classList.remove('open'); }
+  if (e.key === 'Enter' && !(e.metaKey || e.ctrlKey)) { var first = document.querySelector('#' + px + 'SumDrop .combo-item'); if (first) { e.preventDefault(); sumPick(px, first.dataset.name); } }
+}
+
 function _payValues() {
-  return { person: document.getElementById('payPersonInput').value.trim(), amount: document.getElementById('payAmount').value.trim(),
+  return { person: document.getElementById('payPersonInput').value.trim(), summary: document.getElementById('paySummary').value.trim(), amount: document.getElementById('payAmount').value.trim(),
            date: document.getElementById('payDate').value, notes: document.getElementById('payNotes').value.trim() };
 }
 function openPaymentDialog(client, game) {
   _payCtx = { client: client || '', game: game || '' };
   document.getElementById('payGameTitle').textContent = game || '';
   document.getElementById('payPersonInput').value = '';
+  document.getElementById('paySummary').value = '';
+  _sumSrc.pay = _contractSummaries(game);
+  document.getElementById('paySumCombo').classList.remove('open');
   document.getElementById('payAmount').value = '';
   var d = new Date(); document.getElementById('payDate').value = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
   document.getElementById('payNotes').value = '';
@@ -2819,7 +2899,7 @@ function payPersonPick(n) {
   document.getElementById('payPersonInput').value = n;
   document.getElementById('payPersonDrop').innerHTML = '';
   document.getElementById('payPersonCombo').classList.remove('open');
-  document.getElementById('payAmount').focus();
+  document.getElementById('paySummary').focus();
 }
 function payPersonKey(e) {
   if (e.key === 'Escape') { document.getElementById('payPersonCombo').classList.remove('open'); }
@@ -2829,11 +2909,13 @@ function submitPayment() {
   var v = _payValues(), err = document.getElementById('payErr'), btn = document.getElementById('payBtn');
   var fail = function(m) { err.textContent = m; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Save Payment'; };
   if (!v.person) { fail('Who was paid?'); document.getElementById('payPersonInput').focus(); return; }
+  v.summary = v.summary.replace(/\s+/g, ' ');
+  if (!v.summary) { fail('Which contract is it for? Pick or type its summary.'); document.getElementById('paySummary').focus(); return; }
   if (!(parseFloat(v.amount) > 0)) { fail('Enter the amount paid.'); document.getElementById('payAmount').focus(); return; }
   err.style.display = 'none'; btn.disabled = true; btn.textContent = 'Saving…';
   var fd = new FormData();
   fd.append('id', SHEET_ID); fd.append('game', _payCtx.game); fd.append('client', _payCtx.client);
-  fd.append('payee', v.person); fd.append('amount', v.amount); fd.append('date', v.date); fd.append('notes', v.notes);
+  fd.append('payee', v.person); fd.append('summary', v.summary); fd.append('amount', v.amount); fd.append('date', v.date); fd.append('notes', v.notes);
   _payAppendMe(fd);
   fetch(APP_BASE + 'push/addPayment.php', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
@@ -2955,6 +3037,7 @@ function _seedScopeOfWork() {
 
 function _estimateIsDirty() {
   var game    = (document.getElementById('estimateGame').value      || '').trim();
+  if ((document.getElementById('estimateSummary').value || '').trim()) return true;
   var price   = (document.getElementById('estimateUnitPrice').value || '').trim();
   var printing = (document.getElementById('estimatePrinting').value || '').trim();
   var clientWrap = document.getElementById('estimateClientFieldWrap');
@@ -2988,6 +3071,7 @@ function openEstimateDialog(clientName, gameName) {
   document.getElementById('estimateClient').value            = clientName;
   document.getElementById('estimateGame').value              = gameName || '';
   document.getElementById('estimateType').value              = 'estimate';
+  document.getElementById('estimateSummary').value           = '';
   document.getElementById('estimateTests').value             = '2';
   document.getElementById('estimateEdits').value             = '2';
   document.getElementById('estimateQty').value               = '1';
@@ -3101,6 +3185,8 @@ function submitEstimate() {
   if (clientRequired && !client) { _estimateLog('Please enter a publisher name.', 'error'); return; }
   if (!game)      { _estimateLog('Please enter a game name.', 'error'); return; }
   if (!unitPrice) { _estimateLog('Please enter a unit price.', 'error'); return; }
+  var summary = document.getElementById('estimateSummary').value.replace(/\s+/g, ' ').trim();
+  if (!summary) { _estimateLog('Please add a one-line summary.', 'error'); document.getElementById('estimateSummary').focus(); return; }
 
   document.getElementById('estimateCreateBtn').disabled = true;
   _estimateLog('Creating contract…', '');
@@ -3122,6 +3208,7 @@ function submitEstimate() {
   fd.append('discount_label', document.getElementById('estimateDiscountLabel').value.trim());
   fd.append('notes',          document.getElementById('estimateNotes').value.trim());
   fd.append('scope_of_work',  document.getElementById('estimateScopeOfWork').value.trim());
+  fd.append('summary',        summary);
   fd.append('my_name',        MY_NAME          || '');
   fd.append('my_phone',       MY_PHONE         || '');
   fd.append('my_company',     MY_COMPANY       || '');
@@ -3185,6 +3272,7 @@ function openInvoiceFromEstimate(estIdx) {
   document.getElementById('invoicePctRow').style.display = 'none';
   document.getElementById('invoiceAmtLabel').querySelector('label') && (document.getElementById('invoiceAmtLabel').style.display = '');
   document.getElementById('invoiceDescription').value = est.game || '';
+  document.getElementById('invoiceSummary').value  = _contractSummaryFor(est.contract_id || est.estimate_num);   // the estimate's own
   document.getElementById('invoiceDueDate').value  = _isoDaysFromToday(14);
   document.getElementById('invoiceNotes').value    = '';
   document.getElementById('invoiceCreateBtn').disabled = false;
@@ -3231,6 +3319,13 @@ function submitInvoice() {
     ? parseFloat((document.getElementById('invoicePctCalc').textContent || '').replace(/[^0-9.]/g, '')) || 0
     : parseFloat(document.getElementById('invoiceAmount').value)  || 0;
   var notes    = document.getElementById('invoiceNotes').value.trim();
+  var invSummary = document.getElementById('invoiceSummary').value.replace(/\s+/g, ' ').trim();
+  if (!invSummary) {
+    var lg = document.getElementById('invoiceLog');
+    lg.textContent = '✕  Please add a one-line summary.'; lg.className = 'sync-log error'; lg.style.display = '';
+    document.getElementById('invoiceSummary').focus();
+    return;
+  }
 
   if (!amount) {
     var log = document.getElementById('invoiceLog');
@@ -3252,6 +3347,7 @@ function submitInvoice() {
   fd.append('estimate_amt', est.amount        || '0');
   fd.append('invoice_amt',  amount);
   fd.append('description',  document.getElementById('invoiceDescription').value.trim());
+  fd.append('summary',      invSummary);
   fd.append('tgt_start',    document.getElementById('invoiceDueDate').value || '');
   fd.append('notes',        notes);
   fd.append('my_name',      MY_NAME          || '');
@@ -4480,6 +4576,7 @@ function openContractDialog(name, clientName) {
   document.getElementById('contractQuote').value       = '';
   document.getElementById('contractPayment').value     = 'Estimate';
   document.getElementById('contractNotes').value       = '';
+  document.getElementById('contractSummary').value     = '';
   document.getElementById('contractErr').textContent   = '';
   document.getElementById('contractErr').style.display = 'none';
   document.getElementById('contractBtn').disabled      = false;
@@ -4490,7 +4587,7 @@ function openContractDialog(name, clientName) {
 }
 
 function hasContractData() {
-  return !!(document.getElementById('contractClient').value.trim());
+  return !!(document.getElementById('contractClient').value.trim() || document.getElementById('contractSummary').value.trim());
 }
 function closeContractDialog() {
   if (hasContractData()) { shakeDialog(document.getElementById('contractOverlay').querySelector('.contract-dialog')); return; }
@@ -4561,17 +4658,19 @@ function openStandaloneInvoiceDialog(gameName, clientName) {
   document.getElementById('siAmount').value          = '';
   document.getElementById('siDueDate').value         = _isoDaysFromToday(14);
   document.getElementById('siNotes').value           = '';
+  document.getElementById('siSummary').value         = '';
   document.getElementById('siErr').textContent       = '';
   document.getElementById('siErr').style.display     = 'none';
   document.getElementById('siBtn').disabled          = false;
   document.getElementById('siBtn').textContent       = 'Create Invoice';
   _siInitial = { client: _siClient, amount: '', dueDate: _isoDaysFromToday(14), notes: '' };
   document.getElementById('standaloneInvoiceOverlay').classList.add('open');
-  setTimeout(function() { document.getElementById('siAmount').focus(); }, 50);
+  setTimeout(function() { document.getElementById('siSummary').focus(); }, 50);
 }
 
 function _siIsDirty() {
-  return document.getElementById('siAmount').value  !== _siInitial.amount  ||
+  return document.getElementById('siSummary').value.trim() !== '' ||
+         document.getElementById('siAmount').value  !== _siInitial.amount  ||
          document.getElementById('siDueDate').value !== _siInitial.dueDate ||
          document.getElementById('siNotes').value   !== _siInitial.notes;
 }
@@ -4596,6 +4695,8 @@ function submitStandaloneInvoice() {
   var errEl   = document.getElementById('siErr');
   errEl.textContent   = '';
   errEl.style.display = 'none';
+  var siSummary = document.getElementById('siSummary').value.replace(/\s+/g, ' ').trim();
+  if (!siSummary) { errEl.textContent = 'Add a one-line summary.'; errEl.style.display = 'block'; document.getElementById('siSummary').focus(); return; }
   if (!amount || parseFloat(amount) <= 0) { errEl.textContent = 'Amount is required.'; errEl.style.display = 'block'; return; }
   var btn = document.getElementById('siBtn');
   btn.disabled    = true;
@@ -4607,6 +4708,7 @@ function submitStandaloneInvoice() {
   fd.append('estimate_num', '');
   fd.append('estimate_amt', '0');
   fd.append('invoice_amt',  amount);
+  fd.append('summary',      siSummary);
   fd.append('tgt_start',    dueDate);
   fd.append('notes',        notes);
   fd.append('my_name',      MY_NAME            || '');
@@ -4678,6 +4780,8 @@ function submitContract() {
   errEl.textContent   = '';
   errEl.style.display = 'none';
   if (!client) { errEl.textContent = 'Client is required.'; errEl.style.display = 'block'; return; }
+  var summary = document.getElementById('contractSummary').value.replace(/\s+/g, ' ').trim();
+  if (!summary) { errEl.textContent = 'Add a one-line summary.'; errEl.style.display = 'block'; document.getElementById('contractSummary').focus(); return; }
   var btn = document.getElementById('contractBtn');
   btn.disabled    = true;
   btn.textContent = 'Saving…';
@@ -4690,6 +4794,7 @@ function submitContract() {
   fd.append('quote',        quote);
   fd.append('payment',      payment);
   fd.append('notes',        notes);
+  fd.append('summary',      summary);
   fetch(APP_BASE + 'push/addContract.php', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
     .then(function(j) {
@@ -4943,7 +5048,7 @@ function _buildTMSummaryHtml(rows) {
   return html;
 }
 
-var _dashTMGame = '';
+var _dashTMGame = '', _dashTMInitialSum = '';
 var _dashTMMaterialCount = 0;
 var _dashTMTimeOptions = ['15 min','30 min','45 min','1 hr','1 hr 15 min','1 hr 30 min','1 hr 45 min','2 hr','2 hr 30 min','3 hr','3 hr 30 min','4 hr','5 hr','6 hr','7 hr','8 hr'];
 
@@ -4973,6 +5078,7 @@ function _pickDashTMTime(val) {
 }
 
 function _dashTMIsDirty() {
+  if ((document.getElementById('dashTMSummary').value || '').trim() !== (_dashTMInitialSum || '')) return true;
   if ((document.getElementById('dashTMTimeMinutes').value || '').trim()) return true;
   if ((document.getElementById('dashTMTimeNotes').value   || '').trim()) return true;
   for (var i = 1; i <= _dashTMMaterialCount; i++) {
@@ -5011,13 +5117,18 @@ function openDashTMDialog(gameName) {
   document.getElementById('dashTMTimeMinutes').value  = '';
   document.getElementById('dashTMTimeNotes').value    = '';
   document.getElementById('dashTMErr').textContent    = '';
+  // T&M belongs to a contract: pick one of this game's (the only one is filled in)
+  _sumSrc.dashTM = _contractSummaries(gameName);
+  _dashTMInitialSum = _sumSrc.dashTM.length === 1 ? _sumSrc.dashTM[0] : '';
+  document.getElementById('dashTMSummary').value = _dashTMInitialSum;
+  document.getElementById('dashTMSumCombo').classList.remove('open');
   _dashTMMaterialCount = 0;
   document.getElementById('dashTMMaterialsContainer').innerHTML = '';
   _addDashTMMaterialRow();
   document.getElementById('dashTMBtn').disabled    = false;
   document.getElementById('dashTMBtn').textContent = 'Save';
   document.getElementById('dashTMOverlay').classList.add('open');
-  setTimeout(function() { document.getElementById('dashTMTimeNotes').focus(); }, 80);
+  setTimeout(function() { document.getElementById(_dashTMInitialSum ? 'dashTMTimeNotes' : 'dashTMSummary').focus(); }, 80);
 }
 
 function closeDashTMDialog() {
@@ -5051,6 +5162,8 @@ async function submitDashTM() {
     }
   }
 
+  var tmContract = document.getElementById('dashTMSummary').value.replace(/\s+/g, ' ').trim();
+  if (!tmContract) { document.getElementById('dashTMErr').textContent = 'Pick the contract this is for.'; document.getElementById('dashTMSummary').focus(); return; }
   if (!rows.length) { document.getElementById('dashTMErr').textContent = 'Enter at least one time or material entry.'; return; }
 
   var btn = document.getElementById('dashTMBtn');
@@ -5070,6 +5183,7 @@ async function submitDashTM() {
     fd.append('observation', row.observation);
     fd.append('solution',    row.solution);
     fd.append('row_type',    'header');
+    fd.append('contract',    tmContract);
     try {
       var resp = await fetch(APP_BASE + 'push/addDevRow.php', { method:'POST', body: fd });
       var data = await resp.json();
@@ -6978,6 +7092,7 @@ var _ceInitial = {};
 function isContractEditDirty() {
   var f = function(id) { return (document.getElementById(id).value || '').trim(); };
   return f('ceClient')      !== (_ceInitial.client      || '') ||
+         f('ceSummary')     !== (_ceInitial.summary     || '') ||
          f('ceTargetStart') !== (_ceInitial.targetStart || '') ||
          f('ceTargetEnd')   !== (_ceInitial.targetEnd   || '') ||
          f('ceStartDate')   !== (_ceInitial.startDate   || '') ||
@@ -7067,6 +7182,7 @@ function openContractEditDialog(idx) {
   _ceIdx = idx;
   document.getElementById('ceGameTitle').textContent  = con.Game || '';
   document.getElementById('ceClient').value           = con.Client || '';
+  document.getElementById('ceSummary').value          = (con.Summary || '').replace(/^'/, '');
   document.getElementById('ceTargetStart').value      = _toDateInput(con['Target Start Date'] || '');
   document.getElementById('ceTargetEnd').value        = _toDateInput(con['Target End Date']   || '');
   document.getElementById('ceStartDate').value        = _toDateInput(con['Start Date']        || '');
@@ -7088,6 +7204,7 @@ function openContractEditDialog(idx) {
   // Capture initial state for dirty checking
   _ceInitial = {
     client:      (con.Client || '').trim(),
+    summary:     (con.Summary || '').replace(/^'/, '').trim(),
     targetStart: _toDateInput(con['Target Start Date'] || ''),
     targetEnd:   _toDateInput(con['Target End Date']   || ''),
     startDate:   _toDateInput(con['Start Date']        || ''),
@@ -7117,6 +7234,8 @@ function submitContractEdit() {
   errEl.textContent = ''; errEl.style.display = 'none';
   var client = document.getElementById('ceClient').value.trim();
   if (!client) { errEl.textContent = 'Client is required.'; errEl.style.display = 'block'; return; }
+  var ceSummary = document.getElementById('ceSummary').value.replace(/\s+/g, ' ').trim();
+  if (!ceSummary) { errEl.textContent = 'Add a one-line summary.'; errEl.style.display = 'block'; document.getElementById('ceSummary').focus(); return; }
   var btn = document.getElementById('ceBtn');
   btn.disabled = true; btn.textContent = 'Saving…';
   var fd = new FormData();
@@ -7124,6 +7243,7 @@ function submitContractEdit() {
   fd.append('contract_id',  con['Ref Number'] || con.ID || '');
   fd.append('game',         con.Game || '');
   fd.append('client',       client);
+  fd.append('summary',      ceSummary);
   fd.append('target_start', document.getElementById('ceTargetStart').value);
   fd.append('target_end',   document.getElementById('ceTargetEnd').value);
   fd.append('start_date',   document.getElementById('ceStartDate').value);
@@ -7147,6 +7267,7 @@ function submitContractEdit() {
       if (j && j.ok) {
         // Update in-memory record
         con.Client              = client;
+        con.Summary             = ceSummary;
         con['Target Start Date']= document.getElementById('ceTargetStart').value;
         con['Target End Date']  = document.getElementById('ceTargetEnd').value;
         con['Start Date']       = document.getElementById('ceStartDate').value;

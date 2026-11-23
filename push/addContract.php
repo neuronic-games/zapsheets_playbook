@@ -17,9 +17,14 @@ $targetEnd   = trim($_POST['target_end']   ?? '');
 $quote       = trim($_POST['quote']        ?? '');
 $payment     = trim($_POST['payment']      ?? '');
 $notes       = trim($_POST['notes']        ?? '');
+$summary     = trim(preg_replace('/\s+/', ' ', (string) ($_POST['summary'] ?? '')));
 
 if (!$sheetId || !$client) {
     echo json_encode(['error' => 'Missing required fields']);
+    exit;
+}
+if ($summary === '') {
+    echo json_encode(['error' => 'Add a one-line summary']);
     exit;
 }
 
@@ -38,6 +43,8 @@ $row = [
     'Status'           => $payment,   // contract status (older sheets: Payment)
     'Payment'          => $payment,
     'Notes'            => $notes,
+    'Summary'          => $summary,
+    '__add_headers__'  => ['Summary'],
 ];
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';

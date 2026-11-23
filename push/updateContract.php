@@ -23,9 +23,14 @@ $payment       = trim($_POST['payment']        ?? '');
 $notes         = trim($_POST['notes']          ?? '');
 $discountLabel = trim($_POST['discount_label'] ?? '');
 $discountPct   = max(0, floatval($_POST['discount_pct'] ?? 0));
+$summary       = isset($_POST['summary']) ? trim(preg_replace('/\s+/', ' ', (string) $_POST['summary'])) : null;   // one line; not sent = unchanged
 
 if (!$sheetId || !$contractId) {
     echo json_encode(['error' => 'Missing required fields']);
+    exit;
+}
+if ($summary !== null && $summary === '') {
+    echo json_encode(['error' => 'Add a one-line summary']);
     exit;
 }
 
@@ -44,6 +49,7 @@ $data = [
     'discount_label'    => $discountPct > 0 ? $discountLabel : '',
     'discount_pct'      => $discountPct > 0 ? strval($discountPct) : '',
 ];
+if ($summary !== null) $data['summary'] = $summary;
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 $encoded    = base64_encode(json_encode($data, JSON_UNESCAPED_UNICODE));
@@ -104,6 +110,7 @@ if ($estIdx !== null && in_array($docType, ['Estimate', 'Invoice'], true)) {
         'my_address' => trim($_POST['my_address'] ?? ''),
         'my_payment' => trim($_POST['my_payment'] ?? ''),
         'base_url'   => $baseUrl,
+        'summary'    => $summary !== null ? $summary : trim($record['Summary'] ?? ''),
     ];
     if ($docType === 'Estimate') {
         $payload += [

@@ -37,6 +37,20 @@ $_scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https'
 $_host    = $_SERVER['HTTP_HOST'];
 $_base    = $_scheme . '://' . $_host . $_bp . '/';
 
+// The contracts' one-line summaries for this game (T&M picks the contract it's for); every game's if none
+$_tm_contracts = [];
+$_contracts_file = __DIR__ . '/../../../sheets/' . $_sheetId . '/contracts.json';
+$_contracts_all  = file_exists($_contracts_file) ? (json_decode(file_get_contents($_contracts_file), true) ?: []) : [];
+$_tm_all = [];
+foreach (array_reverse($_contracts_all) as $_c) {
+    if (strcasecmp(trim((string) ($_c['Type'] ?? '')), 'Payment') === 0) continue;
+    $_sm = trim(preg_replace('/\s+/', ' ', ltrim((string) ($_c['Summary'] ?? ''), "'")));
+    if ($_sm === '') continue;
+    if (!in_array($_sm, $_tm_all, true)) $_tm_all[] = $_sm;
+    if (strcasecmp(trim((string) ($_c['Game'] ?? '')), $_gameName) === 0 && !in_array($_sm, $_tm_contracts, true)) $_tm_contracts[] = $_sm;
+}
+if (!$_tm_contracts) $_tm_contracts = $_tm_all;
+
 // Load people names for tester autocomplete
 $_people_file  = __DIR__ . '/../../../sheets/' . $_sheetId . '/people.json';
 $_people_raw   = file_exists($_people_file)
@@ -637,6 +651,15 @@ input[type="date"].field-input { -webkit-appearance:none; appearance:none; min-h
     <button onclick="closeTMDialog()" style="position:absolute;top:.75rem;right:.75rem;background:none;border:none;cursor:pointer;font-size:1rem;color:#888;line-height:1;padding:.25rem .4rem" title="Close">&#x2715;</button>
     <h2>Time &amp; Materials — <span><?= _ds_e($_gameName) ?></span></h2>
 
+    <div class="field-group" style="margin:0 0 .6rem">
+      <label>Contract</label>
+      <div class="combo-wrap" id="tmSumCombo">
+        <input type="text" id="tmSummary" class="field-input combo-input" placeholder="Pick a contract’s summary, or type one" autocomplete="off" maxlength="120"
+          oninput="tmSumRebuild(this.value)" onfocus="tmSumRebuild(this.value)" onkeydown="tmSumKey(event)" />
+        <div class="combo-dropdown" id="tmSumDrop"></div>
+      </div>
+    </div>
+
     <div style="display:grid;grid-template-columns:1fr 110px;gap:.5rem .6rem;margin-bottom:.6rem">
       <div class="field-group" style="margin:0">
         <label>Notes</label>
@@ -913,6 +936,7 @@ input[type="date"].field-input { -webkit-appearance:none; appearance:none; min-h
 var APP_BASE     = document.querySelector('base').getAttribute('href');
 var SHEET_ID     = <?= json_encode($_sheetId) ?>;
 var GAME_NAME    = <?= json_encode($_gameName) ?>;
+var TM_CONTRACTS = <?= json_encode(array_values($_tm_contracts), JSON_UNESCAPED_UNICODE) ?>;   // contract summaries for T&M
 var PEOPLE_NAMES = <?= json_encode(array_values($_people_names), JSON_UNESCAPED_UNICODE) ?>;
 
 // ── Utilities ────────────────────────────────────────────────────────────────
@@ -1364,9 +1388,33 @@ function _pickTMTime(val) {
   if (list) list.classList.remove('open');
 }
 
-var _tmMaterialCount = 0;
+var _tmMaterialCount = 0, _tmInitialSum = '';
+
+// The contract combo (combo box pattern)
+function tmSumRebuild(filter) {
+  var drop = document.getElementById('tmSumDrop'), lower = (filter || '').toLowerCase();
+  var items = TM_CONTRACTS.filter(function(n) { return !lower || n.toLowerCase().indexOf(lower) !== -1; });
+  if (!items.length) { drop.innerHTML = ''; document.getElementById('tmSumCombo').classList.remove('open'); return; }
+  drop.innerHTML = items.map(function(n) {
+    var e = String(n).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    return '<div class="combo-option" data-name="' + e + '" onmousedown="tmSumPick(this.dataset.name)">' + e + '</div>';
+  }).join('');
+  document.getElementById('tmSumCombo').classList.add('open');
+}
+function tmSumPick(n) {
+  document.getElementById('tmSummary').value = n;
+  document.getElementById('tmSumDrop').innerHTML = '';
+  document.getElementById('tmSumCombo').classList.remove('open');
+}
+function tmSumKey(e) {
+  if (e.key === 'Escape') { document.getElementById('tmSumCombo').classList.remove('open'); }
+  if (e.key === 'Enter' && !(e.metaKey || e.ctrlKey)) { var first = document.querySelector('#tmSumDrop .combo-option'); if (first) { e.preventDefault(); tmSumPick(first.dataset.name); } }
+}
 
 function openTMDialog() {
+  _tmInitialSum = TM_CONTRACTS.length === 1 ? TM_CONTRACTS[0] : '';
+  document.getElementById('tmSummary').value = _tmInitialSum;
+  document.getElementById('tmSumCombo').classList.remove('open');
   document.getElementById('tmTimeMinutes').value  = '';
   document.getElementById('tmTimeNotes').value    = '';
   document.getElementById('tmErr').textContent    = '';
@@ -1376,10 +1424,11 @@ function openTMDialog() {
   document.getElementById('tmBtn').disabled    = false;
   document.getElementById('tmBtn').textContent = 'Save';
   document.getElementById('tmOverlay').classList.add('open');
-  setTimeout(function() { document.getElementById('tmTimeNotes').focus(); }, 80);
+  setTimeout(function() { document.getElementById(_tmInitialSum ? 'tmTimeNotes' : 'tmSummary').focus(); }, 80);
 }
 
 function _tmIsDirty() {
+  if ((document.getElementById('tmSummary').value || '').trim() !== _tmInitialSum) return true;
   if ((document.getElementById('tmTimeMinutes').value || '').trim()) return true;
   if ((document.getElementById('tmTimeNotes').value   || '').trim()) return true;
   for (var i = 1; i <= _tmMaterialCount; i++) {
@@ -1463,6 +1512,8 @@ async function submitTM() {
     }
   }
 
+  var tmContract = document.getElementById('tmSummary').value.replace(/\s+/g, ' ').trim();
+  if (!tmContract) { document.getElementById('tmErr').textContent = 'Pick the contract this is for.'; document.getElementById('tmSummary').focus(); return; }
   if (!rows.length) {
     document.getElementById('tmErr').textContent = 'Enter at least one time or material entry.';
     return;
@@ -1484,6 +1535,7 @@ async function submitTM() {
     fd.append('observation', row.observation);
     fd.append('solution',    row.solution);
     fd.append('row_type',    'header');
+    fd.append('contract',    tmContract);
     try {
       var resp = await fetch(APP_BASE + 'push/addDevRow.php', { method:'POST', body: fd });
       var data = await resp.json();

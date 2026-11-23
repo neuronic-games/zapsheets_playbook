@@ -5,7 +5,7 @@
 // publisher it belongs with (so it shows under that publisher's game), Status "Paid". Sheets without
 // Type / Payee / Ref Number columns get them added.
 //
-// POST params: id (sheet), game, client, payee, amount, date (YYYY-MM-DD, default today), notes,
+// POST params: id (sheet), game, client, payee, amount, date (YYYY-MM-DD, default today), summary (required), notes,
 //              my_name, my_phone, my_company, my_logo, my_address (for the payment slip)
 // Returns: { ok, row: { …the Contracts row, Files = the payment slip's link… }, slip_error? }
 require_once __DIR__ . '/gbGate.php'; gbGate(['devboard']);   // GameBoard account: signed in, the sheet's owner, the app unlocked
@@ -26,9 +26,11 @@ $payee   = trim($_POST['payee']  ?? '');
 $amount  = trim($_POST['amount'] ?? '');
 $date    = trim($_POST['date']   ?? '');
 $notes   = trim($_POST['notes']  ?? '');
+$summary = trim(preg_replace('/\s+/', ' ', (string) ($_POST['summary'] ?? '')));   // the contract it's for (its one-line Summary)
 
 if (!$sheetId || $payee === '') { echo json_encode(['error' => 'Who was paid?']); exit; }
 if (!is_numeric($amount) || (float) $amount <= 0) { echo json_encode(['error' => 'Enter the amount paid']); exit; }
+if ($summary === '') { echo json_encode(['error' => 'Which contract is it for? Add its summary']); exit; }
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) $date = date('Y-m-d');
 
 // A short reference, like the other contract rows (used to find the row again, e.g. to delete it)
@@ -47,8 +49,9 @@ $row = [
     'Quote'      => number_format((float) $amount, 2, '.', ''),
     'Status'     => 'Paid',
     'Payment'    => 'Paid',
+    'Summary'    => $summary,
     'Notes'      => $notes,
-    '__add_headers__' => ['Type', 'Ref Number', 'Payee'],
+    '__add_headers__' => ['Type', 'Ref Number', 'Payee', 'Summary'],
 ];
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';

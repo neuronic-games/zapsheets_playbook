@@ -41,6 +41,20 @@ if (!$sheetId) {
     exit;
 }
 
+
+// The contract's one-line Summary: sent, or the estimate's / contract's own (contracts.json)
+function dbContractSummary(string $sheetId, string $ref): string {
+    $s = trim(preg_replace('/\s+/', ' ', (string) ($_POST['summary'] ?? '')));
+    if ($s !== '' || $ref === '') return $s;
+    $f = dirname(__DIR__) . '/sheets/' . $sheetId . '/contracts.json';
+    foreach ((file_exists($f) ? (json_decode(file_get_contents($f), true) ?: []) : []) as $c) {
+        if ((string) ($c['Ref Number'] ?? '') === $ref) return trim((string) ($c['Summary'] ?? ''));
+    }
+    return '';
+}
+$summary = dbContractSummary($sheetId, $estimateNum);
+if ($summary === '') { echo json_encode(['error' => 'Add a one-line summary']); exit; }
+
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 
 // Step 1: add a new row to the contracts sheet with Type = "Invoice"
@@ -53,6 +67,7 @@ $rowPayload = [
     'type'          => 'Invoice',
     'notes'         => $notes ?: ($estimateNum !== '' ? 'Invoice from estimate #' . $estimateNum : ''),
     'scope_of_work' => $description,
+    'summary'       => $summary,
     'target_start'  => $tgtStart,
     'date'          => date('n/j/Y'),
 ];
@@ -82,6 +97,7 @@ $payload = [
     'estimate_num' => $estimateNum,
     'quote'        => $invoiceAmt,
     'description'  => $description,
+    'summary'      => $summary,
     'notes'        => $notes,
     'tgt_start'    => $tgtStart,
     'ref_code'     => $refCode,

@@ -24,6 +24,7 @@ $discountPct  = max(0, floatval($_POST['discount_pct']   ?? 0));
 $discountLbl  = trim($_POST['discount_label'] ?? '');
 $notes        = trim($_POST['notes']          ?? '');
 $scopeOfWork  = trim($_POST['scope_of_work'] ?? '');
+$summary      = trim(preg_replace('/\s+/', ' ', (string) ($_POST['summary'] ?? '')));   // required: one line, what it's for
 $myName       = trim($_POST['my_name']        ?? '');
 $myPhone      = trim($_POST['my_phone']       ?? '');
 $myCompany    = trim($_POST['my_company']     ?? '');
@@ -34,6 +35,10 @@ $docType      = strtolower(trim($_POST['type'] ?? 'estimate')) === 'invoice' ? '
 
 if (!$sheetId) {
     echo json_encode(['error' => 'Missing sheet ID']);
+    exit;
+}
+if ($summary === '') {
+    echo json_encode(['error' => 'Add a one-line summary']);
     exit;
 }
 
@@ -57,6 +62,7 @@ $rowPayload = [
     'type'          => $docType,
     'notes'         => $notes,
     'scope_of_work' => $scopeOfWork,
+    'summary'       => $summary,
     'date'          => date('n/j/Y'),
 ];
 $rowEncoded = base64_encode(json_encode($rowPayload, JSON_UNESCAPED_UNICODE));
@@ -91,6 +97,7 @@ $payload = [
     'discount_label'=> $discountLbl,
     'notes'         => $notes,
     'scope_of_work' => $scopeOfWork,
+    'summary'       => $summary,
     'description'   => $scopeOfWork,
     'quote'         => strval(floatval($qty) * floatval($unitPrice)),
     'my_name'       => $myName,

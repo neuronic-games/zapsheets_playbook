@@ -5,7 +5,7 @@
 # If the ID cell is empty after appending, falls back to the row index.
 #
 # Arg: {sheet_id}|{base64_encoded_json}
-# JSON: { game, client, quote, printing, payment, notes }
+# JSON: { game, client, quote, printing, payment, notes, summary }
 # If a printing amount or discount is given and the sheet has no "Printing",
 # "Discount Label" or "Discount %" column yet, the column is added at the end
 # of the header row.
@@ -51,6 +51,7 @@ target_end   = data.get('target_end',   '').strip()
 row_type     = data.get('type',         '').strip()   # "Estimate" or "Invoice"
 date_val     = data.get('date',         '').strip()   # MM/DD/YYYY; caller supplies today
 scope_of_work = data.get('scope_of_work', '').strip()
+summary       = str(data.get('summary', '')).strip()   # one line: what the contract is for
 
 try:
     wb = sa.open_by_key(sheet_id)
@@ -117,6 +118,7 @@ payment_col   = col('Status') if col('Status') >= 0 else (col('Payment') if col(
 printing_col  = ensure_col('Printing',       printing)
 disc_lbl_col  = ensure_col('Discount Label', discount_label)
 disc_pct_col  = ensure_col('Discount %',     discount_pct)
+summary_col   = ensure_col('Summary',        summary)
 
 if ref_num_col < 0:
     print(json.dumps({"error": "Ref Number column not found in contracts sheet header"}))
@@ -180,6 +182,7 @@ if scope_col        >= 0: new_row[scope_col]        = scope_of_work
 if printing_col     >= 0: new_row[printing_col]     = printing
 if disc_lbl_col     >= 0: new_row[disc_lbl_col]     = discount_label
 if disc_pct_col     >= 0: new_row[disc_pct_col]     = discount_pct
+if summary_col      >= 0: new_row[summary_col]      = summary
 
 try:
     ws.append_row(new_row, value_input_option='USER_ENTERED')

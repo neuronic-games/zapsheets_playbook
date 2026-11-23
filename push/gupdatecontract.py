@@ -46,6 +46,8 @@ except ValueError:
     discount_pct = ''
 payment           = data.get('payment',           '').strip()
 notes             = data.get('notes',             '').strip()
+summary           = data.get('summary')   # None: leave the Summary as it is
+summary           = None if summary is None else ' '.join(str(summary).split())
 
 if not contract_id:
     print(json.dumps({"error": "contract_id is required"}))
@@ -99,7 +101,7 @@ if row_idx is None:
 # Contract status lives in the "Status" column (older sheets: "Payment")
 status_col_name = 'Status' if col('Status') >= 0 else ('Payment' if col('Payment') >= 0 else 'Status')
 
-for _name, _value in ((status_col_name, payment), ('Printing', printing), ('Discount Label', discount_label), ('Discount %', discount_pct)):
+for _name, _value in ((status_col_name, payment), ('Printing', printing), ('Discount Label', discount_label), ('Discount %', discount_pct), ('Summary', summary or '')):
     if not _value or col(_name) >= 0:
         continue
     try:
@@ -127,6 +129,7 @@ FIELD_MAP = {
     'Discount %':        discount_pct,
     'Notes':             notes,
 }
+if summary is not None: FIELD_MAP['Summary'] = summary
 
 try:
     updates = []

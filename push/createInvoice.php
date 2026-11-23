@@ -73,6 +73,19 @@ if ($docId) {
     }
 }
 
+
+// The contract's one-line Summary: sent, or the estimate's / contract's own (contracts.json)
+function dbContractSummary(string $sheetId, string $ref): string {
+    $s = trim(preg_replace('/\s+/', ' ', (string) ($_POST['summary'] ?? '')));
+    if ($s !== '' || $ref === '') return $s;
+    $f = dirname(__DIR__) . '/sheets/' . $sheetId . '/contracts.json';
+    foreach ((file_exists($f) ? (json_decode(file_get_contents($f), true) ?: []) : []) as $c) {
+        if ((string) ($c['Ref Number'] ?? '') === $ref) return trim((string) ($c['Summary'] ?? ''));
+    }
+    return '';
+}
+$summary = dbContractSummary($sheetId, $docId);
+
 $appDomain = rtrim($_ENV['APP_DOMAIN'] ?? 'http://localhost:8000', '/');
 $basePath  = trim($_ENV['BASE_PATH']  ?? '', '/');
 $baseUrl   = $basePath ? "$appDomain/$basePath" : $appDomain;
@@ -84,6 +97,7 @@ $payload = [
     'doc_type'   => 'Invoice',
     'quote'      => $quote,
     'description'=> $description,
+    'summary'    => $summary,
     'notes'      => $notes,
     'tgt_start'  => $tgtStart,
     'my_name'    => $myName,

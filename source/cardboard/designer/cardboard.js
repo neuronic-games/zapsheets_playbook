@@ -2441,7 +2441,15 @@ function actionsHTML(extra) {
        b('deleteSel()', 'Delete', 'Delete or Backspace', 'danger wide');
   return h + '</div>';
 }
-function renderAttrs() {
+// Read only (signed out, someone else's sheet, week over): the attributes still show, nothing in them can be changed
+function lockAttrs() {
+  if (hasAccess()) return;
+  var p = $('attrPanel'); if (!p) return;
+  p.querySelectorAll('input,select,textarea,button').forEach(function(x) { x.disabled = true; x.tabIndex = -1; });
+  p.querySelectorAll('[contenteditable]').forEach(function(x) { x.contentEditable = 'false'; });
+}
+function renderAttrs() { _renderAttrs(); lockAttrs(); }
+function _renderAttrs() {
   var p = $('attrPanel'); renderLayers(); if (!layout) { p.innerHTML = ''; return; }
   if (multi.length) { p.innerHTML = multiAttrs(); return; }
   var e = elById(selId), h = '';

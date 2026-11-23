@@ -702,8 +702,12 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
 .lock-bar { display:flex; align-items:center; justify-content:center; gap:1rem; flex-wrap:wrap; padding:.55rem 1rem; background:#fff7e6; border-bottom:1px solid #f5d98c; color:#5c4a12; font-size:.82rem; flex-shrink:0; }
 .lock-bar[hidden] { display:none; }
 .lock-bar .plan-btn { width:auto; padding:.45rem 1rem; }
-body.cb-locked .panel-left .panel-scroll, body.cb-locked #attrPanel, body.cb-locked .tags-stick .print-go:not(.ghost), body.cb-locked #exportGo, body.cb-locked #publishGo { opacity:.5; pointer-events:none; }
+body.cb-locked .panel-left .panel-scroll, body.cb-locked .tags-stick .print-go:not(.ghost), body.cb-locked #exportGo, body.cb-locked #publishGo { opacity:.5; pointer-events:none; }
 body.cb-locked #cardHolder .el { pointer-events:none; }
+/* read only: the attributes show, but nothing in them can be clicked or typed into (the panel still scrolls) */
+body.cb-locked #attrPanel * { pointer-events:none !important; }
+body.cb-locked #attrPanel :is(input,select,textarea,button):disabled { opacity:1; color:inherit; }
+body.cb-locked #attrPanel .act-grid, body.cb-locked #attrPanel .lbl:has(+ .act-grid) { display:none; }
 body.cb-locked #saveBtn { display:none; }
 .pf-email { display:flex; gap:.6rem; align-items:center; }
 .pf-email .inp { flex:1; background:#f6f7fb; color:#555a70; cursor:default; }

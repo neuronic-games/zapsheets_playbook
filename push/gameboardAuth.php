@@ -110,6 +110,7 @@ function cbAccessFromUser(array $u): array {
         'st' => $c['st'], 'u' => $c['u'], 'te' => $te, 'pe' => $c['pe'], 'sh' => $sh,   // st/u/pe: CardBoard's, for older pages
         'a' => $apps, 'all' => $all[0] > $now,   // a: each app's {st, u, pe, p}; all: has the all-in-one
         'status' => (string) ($u['Status'] ?? ''), 'studio' => (string) ($u['Studio'] ?? ''),
+        'image' => (string) ($u['Image'] ?? ''),   // profile picture (a link)
     ];
 }
 

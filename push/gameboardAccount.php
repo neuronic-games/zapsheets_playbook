@@ -12,6 +12,8 @@
  *   refresh  — cbt (token), sheet?         → {ok, token, account}   (re-reads the Admin sheet)
  *   activate — cbt, key, sheet?            → {ok, token, account}   (activation key: everything, no time limit)
  *   profile  — cbt, name, studio           → {ok, token, account}   (saved in the person's Admin-sheet row)
+ *   image    — cbt, file (a picture)       → {ok, token, account}   (profile picture: squared to 256 px, kept in
+ *                                            images/avatars/, its link in the Admin sheet's Image column; no file = remove)
  *   redeem   — cbt, code                   → {ok, token, account, days, apps}  (a free code from the Admin sheet's Codes tab —
  *                                            every app, or only the apps in its App column —
  *                                            or an activation key: unlocked with no time limit)
@@ -43,7 +45,7 @@ function cbAccountOut(array $a, string $sheet): array {
         $x = gbAppAccess($a, $k);
         $apps[$k] = ['state' => $x['st'], 'until' => $d($x['u']), 'period_end' => $x['pe'], 'plan' => $x['p']];
     }
-    return ['email' => $a['e'], 'name' => $a['n'], 'studio' => $a['studio'] ?? '', 'state' => $apps[$app]['state'], 'until' => $apps[$app]['until'],
+    return ['email' => $a['e'], 'name' => $a['n'], 'studio' => $a['studio'] ?? '', 'image' => $a['image'] ?? '', 'state' => $apps[$app]['state'], 'until' => $apps[$app]['until'],
             'trial_end' => $d($a['te']), 'period_end' => $apps[$app]['period_end'], 'status' => $a['status'] ?? '',
             'apps' => $apps, 'all_in_one' => !empty($a['all']),   // every app's access; the all-in-one plan
             'sheet_unlocked' => $sheet !== '' && cbSheetUnlocked($sheet),
@@ -185,7 +187,7 @@ if ($action === 'redeem') {
 }
 
 // claim — cbt, sheet: set this sheet up as yours (Connect on the home page, or "Make it mine" when nobody has it)
-if ($action === 'refresh' || $action === 'activate' || $action === 'profile' || $action === 'claim') {
+if ($action === 'refresh' || $action === 'activate' || $action === 'profile' || $action === 'claim' || $action === 'image') {
     $p = cbReadToken(cbRequestToken());
     if (!$p || ($p['x'] ?? 0) < time() - 30 * 86400) fail('Please sign in again', ['need_auth' => true]);
     if ($action === 'activate') {
@@ -200,6 +202,33 @@ if ($action === 'refresh' || $action === 'activate' || $action === 'profile' || 
         $clean = function ($v) { return mb_substr(trim(preg_replace('/\s+/u', ' ', (string) $v)), 0, 100); };
         $r = cbAdmin(['action' => 'update', 'email' => $p['e'], 'fields' => ['Name' => $clean($_POST['name'] ?? ''), 'Studio' => $clean($_POST['studio'] ?? '')]]);
         if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t save your profile');
+    }
+    if ($action === 'image') {
+        $url = '';
+        $tmp = $_FILES['file']['tmp_name'] ?? '';
+        if ($tmp !== '') {
+            if (!is_uploaded_file($tmp) || filesize($tmp) > 15 * 1024 * 1024) fail('That picture is too big (15 MB at most)');
+            $info = @getimagesize($tmp);
+            $src = !$info ? false : ($info[2] === IMAGETYPE_JPEG ? @imagecreatefromjpeg($tmp) : ($info[2] === IMAGETYPE_PNG ? @imagecreatefrompng($tmp)
+                 : ($info[2] === IMAGETYPE_GIF ? @imagecreatefromgif($tmp) : ($info[2] === IMAGETYPE_WEBP && function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($tmp) : false))));
+            if (!$src) fail('Use a JPEG, PNG, GIF or WebP picture');
+            if ($info[2] === IMAGETYPE_JPEG && function_exists('exif_read_data')) {   // phone photos: turn them the right way up
+                $o = (int) (@exif_read_data($tmp)['Orientation'] ?? 1);
+                if ($o === 3) $src = imagerotate($src, 180, 0); elseif ($o === 6) $src = imagerotate($src, -90, 0); elseif ($o === 8) $src = imagerotate($src, 90, 0);
+            }
+            $w = imagesx($src); $h = imagesy($src); $side = min($w, $h); $N = 256;   // the middle square, 256 px
+            $dst = imagecreatetruecolor($N, $N);
+            imagefill($dst, 0, 0, imagecolorallocate($dst, 255, 255, 255));
+            imagecopyresampled($dst, $src, 0, 0, (int) (($w - $side) / 2), (int) (($h - $side) / 2), $N, $N, $side, $side);
+            $dir = dirname(__DIR__) . '/images/avatars';
+            if (!is_dir($dir)) @mkdir($dir, 0755, true);
+            $name = substr(hash('sha256', $p['e'] . '|' . cbSecret()), 0, 20) . '-' . time() . '.jpg';
+            foreach (glob($dir . '/' . substr($name, 0, 20) . '-*.jpg') ?: [] as $old) @unlink($old);   // the one before
+            if (!@imagejpeg($dst, $dir . '/' . $name, 86)) fail('Couldn’t keep the picture');
+            $url = (function_exists('gbLinkBase') ? gbLinkBase() : '/') . 'images/avatars/' . $name;
+        }
+        $r = cbAdmin(['action' => 'update', 'email' => $p['e'], 'fields' => ['Image' => $url]]);
+        if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t save your picture');
     }
     if ($action === 'claim' && $sheet === '') fail('Which sheet?');
     $r = cbAdmin(['action' => 'user', 'email' => $p['e'], 'sheet' => $sheet, 'claim' => $action === 'claim']);

@@ -197,6 +197,15 @@ body.designs .app { display:flex; flex-direction:column; }
 .d-side { width:250px; flex-shrink:0; background:#fff; border-right:1px solid #e1e4ee; display:flex; flex-direction:column; }
 .d-me { text-align:center; padding:1.6rem 1rem 1.3rem; border-bottom:1px solid #e1e4ee; }
 .d-me .d-av { width:84px; height:84px; font-size:2.1rem; border:none; box-shadow:0 3px 12px rgba(46,39,99,.2); }
+.d-pic { position:relative; overflow:hidden; cursor:pointer; }
+.d-pic img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.d-pic .cam { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(26,26,46,.5); color:#fff; opacity:0; transition:opacity .15s; }
+.d-pic .cam svg { width:30px; height:30px; }
+.d-pic:hover .cam, .d-pic.drop .cam, .d-pic.busy .cam { opacity:1; }
+.d-pic.drop { outline:3px dashed #5b4fd6; outline-offset:3px; }
+.d-pic.busy .cam svg { display:none; }
+.d-pic.busy .cam::after { content:''; width:26px; height:26px; border:3px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:dspin .7s linear infinite; }
+@keyframes dspin { to { transform:rotate(360deg); } }
 .d-me .nm { margin-top:.7rem; font-family:'DINBlack',sans-serif; font-size:1.05rem; color:#1f1b47; word-break:break-word; }
 .d-me .em { font-size:.78rem; color:#8a8fa8; word-break:break-all; margin-top:.15rem; }
 .d-me .pl { display:inline-block; margin-top:.55rem; font-size:.74rem; padding:.15rem .6rem; border-radius:999px; background:#f1effc; color:#4b3fa8; }
@@ -345,7 +354,7 @@ body.designs .app { display:flex; flex-direction:column; }
   </header>
   <div class="d-body">
     <aside class="d-side">
-      <div class="d-me"><span class="d-av" id="sideAv"></span><div class="nm" id="meName"></div><div class="em" id="meEmail"></div><span class="pl" id="mePlan"></span></div>
+      <div class="d-me"><label class="d-av d-pic" id="sideAv" title="Click or drop a picture to change it" ondragover="event.preventDefault();this.classList.add('drop')" ondragleave="this.classList.remove('drop')" ondrop="picDrop(event)"><span class="ini" id="sideIni"></span><img id="sideImg" alt="" hidden><span class="cam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><input type="file" accept="image/*" hidden onchange="picPick(this)"></label><div class="nm" id="meName"></div><div class="em" id="meEmail"></div><span class="pl" id="mePlan"></span></div>
       <nav class="d-nav">
         <a href="cardboard" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>Designs</a>
         <a href="cardboard/help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.3-2.5 4"/><circle cx="12" cy="17.3" r=".6" fill="currentColor"/></svg>Help</a>
@@ -488,13 +497,42 @@ body.designs .app { display:flex; flex-direction:column; }
   function fillMe() {
     var a = acct.account || {}, em = a.email || '', nm = (a.name || '').trim() || em.split('@')[0];
     var ini = (nm.match(/[A-Za-z0-9]/) || ['?'])[0].toUpperCase();
-    $('sideAv').textContent = ini; $('mmWho').innerHTML = '<b>' + esc(nm) + '</b>' + esc(em);
+    $('sideIni').textContent = ini; $('sideImg').hidden = !a.image; if (a.image && $('sideImg').getAttribute('src') !== a.image) $('sideImg').src = a.image; $('sideIni').hidden = !!a.image; $('mmWho').innerHTML = '<b>' + esc(nm) + '</b>' + esc(em);
     $('meName').textContent = nm; $('meEmail').textContent = em;
     var left = Math.max(0, Math.ceil((new Date(a.until).getTime() - Date.now()) / 864e5));
     $('mePlan').textContent = a.state === 'trial' ? 'Free week · ' + left + (left === 1 ? ' day' : ' days') + ' left'
       : a.state === 'subscribed' ? 'Subscribed' : a.state === 'activated' ? 'Unlocked' : a.state === 'code' ? 'Unlocked with a code' : a.state === 'locked' ? 'Free week ended' : '';
     $('mePlan').hidden = !$('mePlan').textContent;
   }
+  // Profile picture: click or drop one on the circle. Made smaller here first; the server squares it.
+  function shrink(file) {
+    return new Promise(function(ok) {
+      var url = URL.createObjectURL(file), im = new Image();
+      im.onload = function() {
+        var k = Math.min(1, 1024 / Math.max(im.width, im.height)), c = document.createElement('canvas');
+        c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+        c.toBlob(function(b) { ok(b || file); }, 'image/jpeg', .9);
+      };
+      im.onerror = function() { URL.revokeObjectURL(url); ok(file); };
+      im.src = url;
+    });
+  }
+  function picUpload(file) {
+    if (!file || !/^image\//.test(file.type)) { dToast('Drop a picture (JPEG, PNG, GIF or WebP)'); return; }
+    var el = $('sideAv'); el.classList.add('busy');
+    shrink(file).then(function(b) {
+      var fd = new FormData(); fd.append('action', 'image'); fd.append('cbt', acct.token); fd.append('file', b, 'picture.jpg');
+      return fetch(APP_BASE + 'push/gameboardAccount.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); });
+    }).then(function(r) {
+      if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response');
+      storeAcct(r); fillMe(); dToast('✓ Picture updated');
+    }).catch(function(e) { dToast('Couldn’t change your picture — ' + e.message); })
+      .then(function() { el.classList.remove('busy'); });
+  }
+  window.picPick = function(inp) { var f = inp.files && inp.files[0]; inp.value = ''; picUpload(f); };
+  window.picDrop = function(e) { e.preventDefault(); $('sideAv').classList.remove('drop'); picUpload(e.dataTransfer.files && e.dataTransfer.files[0]); };
+
   function seenIds() { try { var l = JSON.parse(localStorage.getItem('cb_seen') || '[]'); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
   function storeAcct(r) { acct = { token: r.token, account: r.account, sheet: '', checked: Date.now() }; try { localStorage.setItem('cb_account', JSON.stringify(acct)); } catch (e) {} }
   function listPost() {

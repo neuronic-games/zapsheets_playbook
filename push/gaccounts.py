@@ -22,7 +22,7 @@
 
 import gspread
 import gretry  # retry temporary Google API errors (see gretry.py)
-import sys, os, json, base64, socket, datetime, warnings
+import sys, os, re, json, base64, socket, datetime, warnings
 warnings.filterwarnings('ignore')
 socket.setdefaulttimeout(30)
 
@@ -31,7 +31,7 @@ ADMIN_SHEET = '1heNPe8GCggJVoUlGvDVwBt697LvD7vtQT5yDfsnV4M0'
 TAB = 'Users'
 HEADERS = ['Email', 'Name', 'Studio', 'Trial Start', 'Trial End', 'Status', 'Plan', 'Period End',
            'Stripe Customer', 'Stripe Subscription', 'Activated', 'Sheets', 'Created', 'Last Seen', 'Password Hash', 'Code Until', 'Codes Used',
-           'CardBoard', 'DevBoard', 'PitchBoard', 'BillBoard', 'All Apps', 'App Codes']
+           'CardBoard', 'DevBoard', 'PitchBoard', 'BillBoard', 'All Apps', 'App Codes', 'Image']
 # The app columns say which apps the person pays for: the date the paid time runs to (the Stripe webhook keeps
 # it current; blank when cancelled). DevBoard's cheaper plan is written "2026-12-20 core". "Perpetual" (typed by
 # you) unlocks that app for good. All Apps is the all-in-one plan: every app.
@@ -113,6 +113,17 @@ def main():
         hdr = hdr + missing
         wb.values_update(q(ws.title) + '!A1', params={'valueInputOption': 'RAW'}, body={'values': [hdr]})
     rows = vals[1:] if vals else []
+    # Image holds =IMAGE("link") (so the sheet shows the picture): read the formula and keep only the link
+    if 'Image' in hdr and rows:
+        ic = col(hdr.index('Image') + 1)
+        fv = wb.values_get(q(ws.title) + '!' + ic + '2:' + ic, params={'valueRenderOption': 'FORMULA'}).get('values', [])
+        ii = hdr.index('Image')
+        for n, r in enumerate(rows):
+            f = str(fv[n][0]) if n < len(fv) and fv[n] else ''
+            m = re.match(r'^\s*=\s*IMAGE\(\s*"([^"]+)"', f, re.I)
+            v = m.group(1) if m else f
+            while len(r) <= ii: r.append('')
+            r[ii] = v
 
     def rec(r): return {h: (r[i] if i < len(r) else '') for i, h in enumerate(hdr)}
     def find(field, value):
@@ -123,8 +134,13 @@ def main():
         return 0, None
     def write(rowno, d):
         line = [d.get(h, '') for h in hdr]
+        img = str(d.get('Image', '') or '').strip() if 'Image' in hdr else ''
+        if img: line[hdr.index('Image')] = ''   # written as a formula below
         if rowno:
             wb.values_update(q(ws.title) + '!A' + str(rowno) + ':' + col(len(hdr)) + str(rowno), params={'valueInputOption': 'RAW'}, body={'values': [line]})
+            if img and re.match(r'^https?://[^"\s]+$', img):
+                ic = col(hdr.index('Image') + 1)
+                wb.values_update(q(ws.title) + '!' + ic + str(rowno), params={'valueInputOption': 'USER_ENTERED'}, body={'values': [['=IMAGE("' + img + '")']]})
         else:
             wb.values_append(q(ws.title) + '!A1', params={'valueInputOption': 'RAW', 'insertDataOption': 'INSERT_ROWS'}, body={'values': [line]})
     def new_person(email):

@@ -278,7 +278,7 @@ function textVal(v) {
 }
 // A value that is a picture: an image file link, =IMAGE(), or a Drive / Dropbox / Google-hosted picture
 var IMG_LINK_RE = /\.(png|jpe?g|gif|webp|svg)(\?|$|&)|=IMAGE|drive\.google|googleusercontent|dropbox(usercontent)?\.com/i;
-function isImageLink(v) { v = cleanVal(v).trim(); return !!imageUrl(v) && IMG_LINK_RE.test(v); }
+function isImageLink(v) { v = cleanVal(v).trim(); var u = imageUrl(v); return !!u && (IMG_LINK_RE.test(v) || IMG_LINK_RE.test(u)); }   // also a link written [name](url)
 function looksLikeImage(field) {
   var n = 0, img = 0;
   ROWS.slice(0, 12).forEach(function(r) {

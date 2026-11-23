@@ -87,8 +87,10 @@ if (function_exists('imagewebp')) {
     ];
     $loader = $loaders[$mime] ?? null;
     if ($loader && function_exists($loader)) {
-        $src = $loader($tmpPath);
+        $src = @$loader($tmpPath);
         if ($src) {
+            // WebP can't be written from a palette image (8-bit PNG/GIF): GD writes an empty file. Make it full colour, keeping transparency.
+            if (!imageistruecolor($src)) { imagepalettetotruecolor($src); imagealphablending($src, false); imagesavealpha($src, true); }
             $ow = imagesx($src);
             $oh = imagesy($src);
             $maxDim = 1200;
@@ -104,9 +106,12 @@ if (function_exists('imagewebp')) {
                 imagedestroy($src);
                 $src = $dst;
             }
-            if (imagewebp($src, $destPath, 85)) {
+            if (@imagewebp($src, $destPath, 85) && @filesize($destPath) > 0) {
                 $converted = true;
+            } else {
+                @unlink($destPath);   // an empty or broken WebP: keep the original instead
             }
+            clearstatcache();
             imagedestroy($src);
         }
     }

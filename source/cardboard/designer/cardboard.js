@@ -3183,7 +3183,9 @@ function renderGrid() {
   if (!rows.length) h += '<div class="muted" style="padding:1rem">No rows' + (_gridFilter ? ' match “' + esc(_gridFilter) + '”' : '') + '.</div>';
   var sx = box.scrollLeft, sy = box.scrollTop;
   box.innerHTML = h; box.scrollLeft = sx; box.scrollTop = sy;
+  markFound(box);
   if (_gridSel) markGridSel();
+  if (_gridFilter) updateReplaceBtn();
 }
 function gridCell(r, c) { return $('gridWrap').querySelector('td[data-r="' + r + '"][data-c="' + c + '"]'); }
 function markGridSel() {
@@ -3233,6 +3235,8 @@ function paintCell(r, c) {
   var v = GRID.rows[r].values[c] || '';
   td.querySelector('span').textContent = v;
   td.classList.toggle('formula', /^=/.test(v));
+  markFound(td);
+  if (_gridFilter) updateReplaceBtn();
 }
 function saveGridCell(r, c, val, old) {   // kept in this browser until Save
   var row = GRID.rows[r], field = GRID.header[c], tab = GRID.tab;
@@ -3296,7 +3300,65 @@ function addGridRow() {
   GRID.rows.push(r); _gridFilter = ''; $('gridFilter').value = ''; renderGrid();
   var first = gridCols()[0]; if (first) { selectGridCell(GRID.rows.length - 1, first.i); startGridEdit(); }
 }
-function filterGrid(v) { _gridFilter = v.trim(); renderGrid(); }
+function filterGrid(v) {
+  _gridFilter = v.trim(); renderGrid();
+  // Replace slides out once there's something to find (and only for someone who may change the sheet)
+  var box = $('gridReplace'), on = !!_gridFilter && hasAccess();
+  box.classList.toggle('open', on); box.setAttribute('aria-hidden', on ? 'false' : 'true');
+  ['gridReplaceIn', 'gridReplaceBtn'].forEach(function(id) { $(id).tabIndex = on ? 0 : -1; });
+  updateReplaceBtn();
+}
+// The cells Replace would change: found in what's typed in them (not formulas, which are left alone)
+function replaceTargets() {
+  var f = _gridFilter.toLowerCase(), out = [];
+  if (!f || !GRID) return out;
+  gridVisibleRows().forEach(function(r) {
+    if (r.draft && rowEmpty(r)) return;
+    var ri = GRID.rows.indexOf(r);
+    GRID.header.forEach(function(name, c) {
+      var v = String(r.values[c] || '');
+      if (name && !/^=/.test(v) && v.toLowerCase().indexOf(f) >= 0) out.push({ r: ri, c: c, v: v });
+    });
+  });
+  return out;
+}
+function updateReplaceBtn() {
+  var b = $('gridReplaceBtn'); if (!b) return;
+  var n = replaceTargets().length;
+  b.textContent = n ? 'Replace ' + n : 'Replace all'; b.disabled = !n;
+  b.title = n ? 'Replace in ' + n + (n === 1 ? ' cell' : ' cells') + ' — kept in this browser until you save (⌘Z undoes it)' : 'Nothing to replace';
+}
+function replaceInGrid() {
+  if (!requirePro('edit', function() {})) return;
+  var find = _gridFilter, by = $('gridReplaceIn').value, list = replaceTargets();
+  if (!find || !list.length) return;
+  var re = new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+  list.forEach(function(t) { saveGridCell(t.r, t.c, t.v.replace(re, function() { return by; }), t.v); });   // one undo step: all in one go
+  toast('✓ Replaced in ' + list.length + (list.length === 1 ? ' cell' : ' cells'));
+  // Keep looking for what was put in, so the changed cells stay in view and marked
+  $('gridReplaceIn').value = '';
+  if (by.trim()) { $('gridFilter').value = by; filterGrid(by); } else filterGrid(find);
+}
+// Mark what Find found in the cells as they're shown (text only — not inside pictures or tags' images)
+function markFound(root) {
+  if (!_gridFilter || !root) return;
+  var f = _gridFilter.toLowerCase(), n = f.length;
+  var cells = root.tagName === 'TD' ? [root] : Array.prototype.slice.call(root.querySelectorAll('td:not(.rn):not(.ghost-col)'));
+  cells.forEach(function(td) {
+    var walker = document.createTreeWalker(td, NodeFilter.SHOW_TEXT), nodes = [], t;
+    while ((t = walker.nextNode())) if (!t.parentNode.closest('mark.g-hit') && t.nodeValue.toLowerCase().indexOf(f) >= 0) nodes.push(t);
+    nodes.forEach(function(node) {
+      var s = node.nodeValue, low = s.toLowerCase(), frag = document.createDocumentFragment(), at = 0, i;
+      while ((i = low.indexOf(f, at)) >= 0) {
+        if (i > at) frag.appendChild(document.createTextNode(s.slice(at, i)));
+        var m = document.createElement('mark'); m.className = 'g-hit'; m.textContent = s.slice(i, i + n); frag.appendChild(m);
+        at = i + n;
+      }
+      if (at < s.length) frag.appendChild(document.createTextNode(s.slice(at)));
+      node.parentNode.replaceChild(frag, node);
+    });
+  });
+}
 // + Add column (Data tab): a new heading in the sheet, ready to fill in
 function gridAddedColumn(n) {   // keep the grid in step when a column is added from either tab
   if (!GRID || GRID.tab !== curTab || GRID.header.indexOf(n) >= 0) return;

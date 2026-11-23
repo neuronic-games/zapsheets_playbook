@@ -573,6 +573,13 @@ table.grid thead .rn { z-index:4; background:#ece9ff; }
 table.grid td { cursor:cell; background:#fff; }
 table.grid td > span { vertical-align:middle; }
 table.grid td .tag-img { height:1.15em; width:auto; vertical-align:-.22em; margin:0 .05em; }
+/* Find: the found text is marked; Replace slides out to the right of Find */
+table.grid td mark.g-hit { background:#ffe37a; color:inherit; border-radius:2px; padding:0 1px; box-shadow:0 0 0 1px #f2c14e; }
+.grid-replace { max-width:0; opacity:0; overflow:hidden; transform:translateX(-14px); pointer-events:none; transition:max-width .28s ease, opacity .2s ease, transform .28s ease; white-space:nowrap; }
+.grid-replace.open { max-width:26rem; opacity:1; transform:none; pointer-events:auto; }
+.grid-replace .gr-row { display:flex; gap:.4rem; align-items:center; }
+.grid-replace .inp { width:12rem; }
+.grid-replace .print-go { white-space:nowrap; }
 table.grid td .g-formula { color:#4b3fa8; font-family:ui-monospace,Menlo,monospace; font-size:.74rem; }
 table.grid td.sel { box-shadow:inset 0 0 0 2px #4b3fa8; }
 table.grid td.st-saving { background:#fffbea; }
@@ -810,7 +817,11 @@ body.cb-gate #signinOverlay { background:#2e2763; }
     <div class="grp"><span class="mini">Deck</span>
       <select class="sel sel-sheet" id="gridSheet" onchange="selectTab(this.value)"></select></div>
     <div class="grp"><span class="mini">Find</span>
-      <input class="inp" id="gridFilter" placeholder="Search the cards" oninput="filterGrid(this.value)" style="width:14rem"></div>
+      <input class="inp" id="gridFilter" placeholder="Search the cards" oninput="filterGrid(this.value)" onkeydown="if(event.key==='Escape'){this.value='';filterGrid('');}" style="width:14rem"></div>
+    <!-- Replace: slides out once there's something to find -->
+    <div class="grp grid-replace" id="gridReplace" aria-hidden="true"><span class="mini">Replace with</span>
+      <div class="gr-row"><input class="inp" id="gridReplaceIn" placeholder="New text" tabindex="-1" onkeydown="if(event.key==='Enter'){event.preventDefault();replaceInGrid();}">
+      <button type="button" class="print-go" id="gridReplaceBtn" tabindex="-1" onclick="replaceInGrid()">Replace all</button></div></div>
     <span class="print-info" id="gridInfo"></span>
     <div class="e-actions">
       <button class="tb-btn" id="gridUndo" onclick="dataUndo(false)" title="Undo (⌘Z)" disabled>↶</button>

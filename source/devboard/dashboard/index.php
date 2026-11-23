@@ -2828,13 +2828,15 @@ function _contractSummaryFor(ref) {   // a contract's Summary by its Ref Number
   return '';
 }
 // The contracts' summaries for a game (newest first), for T&M and payments to pick from; every game's if none
-function _contractSummaries(game) {
-  var g = String(game || '').trim().toLowerCase(), mine = [], all = [];
+function _contractSummaries(game) {   // [{s: summary, ref: Ref Number}]
+  var g = String(game || '').trim().toLowerCase(), mine = [], all = [], seen = {};
   CONTRACT_RAW.slice().reverse().forEach(function(c) {
     if (/^payment$/i.test(String(c.Type || '').trim())) return;
     var sm = _cleanSummary(c.Summary); if (!sm) return;
-    if (all.indexOf(sm) < 0) all.push(sm);
-    if (g && String(c.Game || '').trim().toLowerCase() === g && mine.indexOf(sm) < 0) mine.push(sm);
+    var it = { s: sm, ref: String(c['Ref Number'] || c.ID || '').replace(/^'/, '').trim() }, k = it.s + '\u0001' + it.ref;
+    if (seen[k]) return; seen[k] = 1;
+    all.push(it);
+    if (g && String(c.Game || '').trim().toLowerCase() === g) mine.push(it);
   });
   return mine.length ? mine : all;
 }
@@ -2842,10 +2844,11 @@ function _contractSummaries(game) {
 var _sumSrc = {};
 function sumRebuild(px, filter) {
   var drop = document.getElementById(px + 'SumDrop'), lower = (filter || '').toLowerCase();
-  var items = (_sumSrc[px] || []).filter(function(n) { return !lower || n.toLowerCase().indexOf(lower) !== -1; });
+  var items = (_sumSrc[px] || []).filter(function(n) { return !lower || (n.s + ' ' + n.ref).toLowerCase().indexOf(lower) !== -1; });
   if (!items.length) { drop.innerHTML = ''; document.getElementById(px + 'SumCombo').classList.remove('open'); return; }
-  drop.innerHTML = items.map(function(n) {
-    return '<div class="combo-item" data-name="' + esc(n) + '" onmousedown="sumPick(\'' + px + '\',this.dataset.name)">' + esc(n) + '</div>';
+  drop.innerHTML = items.map(function(n) {   // the summary, with its Ref # in brackets
+    return '<div class="combo-item" data-name="' + esc(n.s) + '" onmousedown="sumPick(\'' + px + '\',this.dataset.name)">' + esc(n.s) +
+      (n.ref ? ' <span style="opacity:.55">(' + esc(n.ref) + ')</span>' : '') + '</div>';
   }).join('');
   document.getElementById(px + 'SumCombo').classList.add('open');
 }
@@ -5097,7 +5100,7 @@ function openDashTMDialog(gameName) {
   document.getElementById('dashTMErr').textContent    = '';
   // T&M belongs to a contract: pick one of this game's (the only one is filled in)
   _sumSrc.dashTM = _contractSummaries(gameName);
-  _dashTMInitialSum = _sumSrc.dashTM.length === 1 ? _sumSrc.dashTM[0] : '';
+  _dashTMInitialSum = _sumSrc.dashTM.length === 1 ? _sumSrc.dashTM[0].s : '';
   document.getElementById('dashTMSummary').value = _dashTMInitialSum;
   document.getElementById('dashTMSumCombo').classList.remove('open');
   _dashTMMaterialCount = 0;

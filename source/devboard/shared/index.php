@@ -46,8 +46,9 @@ foreach (array_reverse($_contracts_all) as $_c) {
     if (strcasecmp(trim((string) ($_c['Type'] ?? '')), 'Payment') === 0) continue;
     $_sm = trim(preg_replace('/\s+/', ' ', ltrim((string) ($_c['Summary'] ?? ''), "'")));
     if ($_sm === '') continue;
-    if (!in_array($_sm, $_tm_all, true)) $_tm_all[] = $_sm;
-    if (strcasecmp(trim((string) ($_c['Game'] ?? '')), $_gameName) === 0 && !in_array($_sm, $_tm_contracts, true)) $_tm_contracts[] = $_sm;
+    $_it = ['s' => $_sm, 'ref' => trim(ltrim((string) ($_c['Ref Number'] ?? ($_c['ID'] ?? '')), "'"))];   // shown as "summary (Ref #)"
+    if (!in_array($_it, $_tm_all, true)) $_tm_all[] = $_it;
+    if (strcasecmp(trim((string) ($_c['Game'] ?? '')), $_gameName) === 0 && !in_array($_it, $_tm_contracts, true)) $_tm_contracts[] = $_it;
 }
 if (!$_tm_contracts) $_tm_contracts = $_tm_all;
 
@@ -1393,11 +1394,11 @@ var _tmMaterialCount = 0, _tmInitialSum = '';
 // The contract combo (combo box pattern)
 function tmSumRebuild(filter) {
   var drop = document.getElementById('tmSumDrop'), lower = (filter || '').toLowerCase();
-  var items = TM_CONTRACTS.filter(function(n) { return !lower || n.toLowerCase().indexOf(lower) !== -1; });
+  var items = TM_CONTRACTS.filter(function(n) { return !lower || (n.s + ' ' + n.ref).toLowerCase().indexOf(lower) !== -1; });
   if (!items.length) { drop.innerHTML = ''; document.getElementById('tmSumCombo').classList.remove('open'); return; }
-  drop.innerHTML = items.map(function(n) {
-    var e = String(n).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-    return '<div class="combo-option" data-name="' + e + '" onmousedown="tmSumPick(this.dataset.name)">' + e + '</div>';
+  var q = function(v) { return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+  drop.innerHTML = items.map(function(n) {   // the summary, with its Ref # in brackets
+    return '<div class="combo-option" data-name="' + q(n.s) + '" onmousedown="tmSumPick(this.dataset.name)">' + q(n.s) + (n.ref ? ' <span style="opacity:.55">(' + q(n.ref) + ')</span>' : '') + '</div>';
   }).join('');
   document.getElementById('tmSumCombo').classList.add('open');
 }
@@ -1412,7 +1413,7 @@ function tmSumKey(e) {
 }
 
 function openTMDialog() {
-  _tmInitialSum = TM_CONTRACTS.length === 1 ? TM_CONTRACTS[0] : '';
+  _tmInitialSum = TM_CONTRACTS.length === 1 ? TM_CONTRACTS[0].s : '';
   document.getElementById('tmSummary').value = _tmInitialSum;
   document.getElementById('tmSumCombo').classList.remove('open');
   document.getElementById('tmTimeMinutes').value  = '';

@@ -40,7 +40,7 @@ var GENS = [['seq', '123', 'Number sequence'], ['rand', DIE_ICON, 'Random number
 var IMG_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
 var FLIP_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>';
 var UPLOADING = {};   // element id → true while its picture uploads
-var KIND_NAME = { text: 'Text', data: 'Card', image: 'Image', shape: 'Shape', gen: 'Generated' };   // "Card": a field from the deck's cards
+var KIND_NAME = { text: 'Text', data: 'Card', image: 'Image', shape: 'Shape', gen: 'Gen' };   // "Card": a field from the deck's cards
 var PX = 96 / 72;   // CSS px per pt
 var _activeTab = 'design';
 

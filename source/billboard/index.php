@@ -213,6 +213,7 @@ if (!$_gameSlug) {
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?= h($_pubName ?: 'BillBoard') ?></title>
+<?php require_once dirname(__DIR__, 2) . '/push/linkPreview.php'; echo gbLinkPreview('billboard', $_sheetId, array_filter(['title' => $_pubName ?: null, 'image' => (trim($_settings['Logo URL'] ?? '') && preg_match('#^https?://#', trim($_settings['Logo URL'] ?? ''))) ? trim($_settings['Logo URL']) : null])); ?>
 <style>
 @font-face { font-family:'DINBlack';   src:url('<?= h($_appRoot) ?>fonts/DINBlack.woff2')  format('woff2'); }
 @font-face { font-family:'DINRegular'; src:url('<?= h($_appRoot) ?>fonts/DINMedium.woff2') format('woff2'); }
@@ -2785,8 +2786,7 @@ foreach ($_allGames as $g) {
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?= h($_name) ?><?= $_summary ? ' — ' . h($_summary) : '' ?></title>
-<meta name="description" content="<?= h(substr($_description ?: $_summary, 0, 160)) ?>" />
-<?php if ($_heroImg): ?><meta property="og:image" content="<?= h($_heroImg) ?>" /><?php endif; ?>
+<?php require_once dirname(__DIR__, 2) . '/push/linkPreview.php'; echo gbLinkPreview('billboard', $_sheetId, array_filter(['title' => $_name . ($_summary ? ' — ' . $_summary : ''), 'description' => mb_substr(trim(strip_tags($_description ?: $_summary)), 0, 200) ?: null, 'image' => preg_match('#^https?://#', (string) $_heroImg) ? $_heroImg : null])); ?>
 <style>
 @font-face { font-family:'DINBlack';   src:url('<?= $_appRoot ?>fonts/DINBlack.woff2')  format('woff2'); }
 @font-face { font-family:'DINRegular'; src:url('<?= $_appRoot ?>fonts/DINMedium.woff2') format('woff2'); }

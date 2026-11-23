@@ -161,6 +161,7 @@ $_client_count = count(array_unique(array_filter(array_map(
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="DevBoard" />
 <title>DevBoard</title>
+<?php require_once dirname(__DIR__, 3) . '/push/linkPreview.php'; echo gbLinkPreview('devboard', $_sheet_id); ?>
 <style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2') format('woff2'),url('fonts/DINBlack.ttf'); }
 @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'),url('fonts/DINMedium.ttf'); }

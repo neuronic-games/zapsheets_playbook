@@ -20,6 +20,7 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>PitchBoard – Connect Your Sheet</title>
+<?php require_once dirname(__DIR__, 2) . '/push/linkPreview.php'; echo gbLinkPreview('pitchboard', '', ['title' => 'PitchBoard — Pitch to publishers', 'description' => 'Track your board game pitches to publishers from a Google Sheet. Part of GameBoard — tools for board game makers.']); ?>
 <link rel="icon" type="image/png" href="images/pitchboard_icon_180.png" />
 <style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2')  format('woff2'),url('fonts/DINBlack.ttf')  format('truetype'); }

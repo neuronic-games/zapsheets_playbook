@@ -30,6 +30,7 @@ $_cb_name  = $_cb_title !== '' ? $_cb_title : 'CardBoard';
 <meta name="mobile-web-app-capable" content="yes" />
 <link rel="manifest" id="cbManifest" href="manifest.php?app=cardboard&amp;id=<?= urlencode($_sheet_id) ?>&amp;base=<?= urlencode($_base) ?>" />
 <title><?= htmlspecialchars($_cb_title !== '' ? $_cb_title : 'Loading…', ENT_QUOTES) ?></title>
+<?php require_once dirname(__DIR__, 3) . '/push/linkPreview.php'; echo gbLinkPreview('cardboard', $_sheet_id); ?>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Cinzel:wght@500;700&family=Lilita+One&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Roboto+Condensed:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" crossorigin="anonymous">

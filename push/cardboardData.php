@@ -56,7 +56,17 @@ function cbKeepTitle(string $sheetId, $title): void {
     $f = $dir . '/_cardboard_title.txt';
     if (@file_get_contents($f) !== $title) @file_put_contents($f, $title, LOCK_EX);
 }
-if ($action === 'tabs')    { $res = cbRun($python, $sheetId, ['action' => 'tabs']); if (!empty($res['ok'])) cbKeepTitle($sheetId, $res['title'] ?? ''); echo json_encode($res); exit; }
+// What a shared link's preview tells about the sheet (push/linkPreview.php): its name, its decks, which have a design
+function cbKeepInfo(string $sheetId, array $res): void {
+    $dir = dirname(__DIR__) . '/sheets/' . $sheetId; if (!is_dir($dir)) return;
+    $f = $dir . '/_cardboard_info.json';
+    $old = json_decode((string) @file_get_contents($f), true) ?: [];
+    $decks = array_values(array_map(function ($t) { return (string) ($t['title'] ?? ''); }, $res['tabs'] ?? []));
+    $lay = isset($res['layouts']) ? array_values(array_filter(array_keys((array) $res['layouts']), function ($k) use ($decks) { return in_array($k, $decks, true); })) : ($old['designed'] ?? []);
+    $info = ['title' => (string) ($res['title'] ?? ($old['title'] ?? '')), 'decks' => $decks, 'designed' => $lay];
+    if ($info !== $old) @file_put_contents($f, json_encode($info, JSON_UNESCAPED_UNICODE), LOCK_EX);
+}
+if ($action === 'tabs')    { $res = cbRun($python, $sheetId, ['action' => 'tabs']); if (!empty($res['ok'])) { cbKeepTitle($sheetId, $res['title'] ?? ''); cbKeepInfo($sheetId, $res); } echo json_encode($res); exit; }
 if ($action === 'layouts') { echo json_encode(cbRun($python, $sheetId, ['action' => 'layouts'])); exit; }
 
 // Tags: [name] → text or a picture, kept in the "tags" tab.
@@ -174,7 +184,7 @@ function cbCached(string $sheetId, string $tab): ?array {
 if ($action === 'start') {
     $res = cbRun($python, $sheetId, ['action' => 'start', 'tab' => trim($_POST['tab'] ?? '')]);
     if (!empty($res['ok'])) {
-        cbKeepTitle($sheetId, $res['title'] ?? '');
+        cbKeepTitle($sheetId, $res['title'] ?? ''); cbKeepInfo($sheetId, $res);
         $all = cbCached($sheetId, (string) ($res['tab'] ?? ''));
         if ($all !== null) { $res['rows'] = $all; $res['full'] = true; } else $res['full'] = false;
         if (empty($res['layouts'])) $res['layouts'] = new stdClass();   // {} rather than [] in the JSON

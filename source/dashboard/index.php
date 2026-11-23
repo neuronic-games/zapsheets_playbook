@@ -86,6 +86,7 @@ if ($_sheet_id && is_dir($_sheets_root)) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PitchBoard</title>
+<?php require_once dirname(__DIR__, 2) . '/push/linkPreview.php'; echo gbLinkPreview('pitchboard', $_sheet_id); ?>
   <link rel="apple-touch-icon" sizes="180x180" href="<?= htmlspecialchars($_base) ?>images/pitchboard_icon_180.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="<?= htmlspecialchars($_base) ?>images/pitchboard_icon_192.png" />
   <link rel="manifest" href="<?= htmlspecialchars($_base) ?>manifest.php?id=<?= urlencode($_sheet_id) ?>&amp;app=pitchboard&amp;base=<?= urlencode($_base) ?>" />

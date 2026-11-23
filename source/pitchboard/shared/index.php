@@ -312,6 +312,7 @@ $_hasFooter = $_rulesUrl || $_playUrl || $_printUrl || $_sellsheetUrl || $_video
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?= _ps_e($_gameName) ?> — Pitch Overview</title>
+<?php require_once dirname(__DIR__, 3) . '/push/linkPreview.php'; echo gbLinkPreview('pitchboard', $_sheetId, ['title' => $_gameName . ' — Pitch Overview', 'description' => 'Where ' . $_gameName . ' has been pitched, and what publishers said — shared with PitchBoard.']); ?>
 <base href="<?= _ps_e($_base) ?>" />
 <link rel="manifest" href="<?= _ps_e($_rp) ?>?manifest" />
 <meta name="theme-color" content="#1a1a2e" />

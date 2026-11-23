@@ -16,6 +16,7 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>CardBoard – Card Designer</title>
+<?php require_once dirname(__DIR__, 2) . '/push/linkPreview.php'; echo gbLinkPreview('cardboard', '', ['title' => 'CardBoard — Card Designer', 'description' => 'Design and print board game cards from a Google Sheet. Part of GameBoard — tools for board game makers.']); ?>
 <link rel="icon" type="image/png" sizes="32x32" href="images/cardboard_icon_32.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="images/cardboard_icon_180.png" />
 <style>

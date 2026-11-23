@@ -176,6 +176,7 @@ select.sel { -webkit-appearance:none; appearance:none; padding-right:2rem; backg
 .field-chip .ico { width:16px; text-align:center; color:#a0a4bb; font-family:'DINRegular',sans-serif; flex-shrink:0; }
 .field-chip .nm { position:relative; top:-.22em; line-height:1.5;   /* DINBlack draws low; lift it level with the icon and the value */
   flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.field-chip .sample-pic { margin-left:auto; width:26px; height:26px; flex-shrink:0; border-radius:5px; background:#eef0f6 center/cover no-repeat; box-shadow:inset 0 0 0 1px rgba(0,0,0,.1); }
 .field-chip .sample { font-family:'DINRegular',sans-serif; font-size:.68rem; color:#9aa0b8; max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .field-chip.static { color:#555; }
 /* Reordering the Data fields: a line where the dragged one will go */

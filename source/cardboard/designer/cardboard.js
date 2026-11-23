@@ -716,7 +716,9 @@ function openInSheets() { window.open('https://docs.google.com/spreadsheets/d/' 
 // ── Left panel: TEXT · DATA · IMAGE · SHAPE · GENERATED ──────────────────────
 function chip(attrs, ico, name, sample, extraCls) {
   return '<div class="field-chip' + (extraCls ? ' ' + extraCls : '') + '" draggable="true" ' + attrs + ' ondragstart="chipDragStart(event)" onclick="chipClick(this, event)" title="' + (/data-field=/.test(attrs) ? 'Drag onto the card · click for options' : 'Drag onto the card') + '">' +
-         '<span class="ico">' + ico + '</span><span class="nm">' + esc(name) + '</span>' + (sample ? '<span class="sample">' + esc(sample) + '</span>' : '') + '</div>';
+         '<span class="ico">' + ico + '</span><span class="nm">' + esc(name) + '</span>' +
+         (sample && sample.pic ? '<span class="sample-pic" style="background-image:url(&quot;' + esc(sample.pic) + '&quot;)"></span>'   // a picture link: its thumbnail
+           : sample ? '<span class="sample">' + esc(sample) + '</span>' : '') + '</div>';
 }
 // Each section can be folded away; the choice is remembered in this browser
 function paletteClosed() { try { return JSON.parse(localStorage.getItem('cb_closed') || '{}'); } catch (e) { return {}; } }
@@ -762,7 +764,7 @@ function renderData() {
   var list = orderedFields(_hiddenOpen ? FIELDS : shown);
   h += list.map(function(f) {
     return isHidden(f) ? chip('data-field="' + esc(f) + '"', '⊘', f, '', 'is-hidden')
-                       : chip('data-field="' + esc(f) + '"', DATA_ICON, f, looksLikeImage(f) ? '' : textVal(sample[f]), f === _newField ? 'just-added' : '');
+                       : chip('data-field="' + esc(f) + '"', DATA_ICON, f, isImageLink(sample[f]) ? { pic: imageUrl(cleanVal(sample[f]).trim()) } : looksLikeImage(f) ? '' : textVal(sample[f]), f === _newField ? 'just-added' : '');
   }).join('') + nf;
   el.innerHTML = h;
   wireFieldReorder(el);

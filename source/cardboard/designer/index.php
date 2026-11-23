@@ -543,6 +543,10 @@ table.grid thead th.just-added { animation:colFlash 1.6s ease; }
 .export-side { width:280px; flex-shrink:0; display:flex; flex-direction:column; min-height:0; overflow:auto; background:#fbfbfe; border-right:1px solid #e1e4ee; }
 #view-export .print-bar { flex-direction:column; align-items:stretch; gap:.65rem; border-bottom:1px solid #e1e4ee; }
 #view-export .print-bar .grp .sel, #view-export .print-bar .grp .inp { width:100%; }
+/* Get / Update links takes the room; Download is an icon */
+#view-export .e-actions { display:flex; gap:.5rem; }
+#view-export #publishGo { flex:1; white-space:nowrap; }
+#view-export .dl-go { flex:0 0 auto; display:flex; align-items:center; justify-content:center; padding-left:.9rem; padding-right:.9rem; }
 #view-export .e-actions { margin-left:0; }
 #view-export .e-actions .print-go { flex:1; }
 #view-export .export-info { border-bottom:none; }
@@ -939,7 +943,7 @@ body.cb-gate #signinOverlay { background:#2e2763; }
       <select class="sel" id="eCopies"></select></div>
     <div class="grp"><span class="mini">Card back</span><span class="e-note" id="eBackNote"></span></div>
     <div class="e-actions"><button class="print-go ghost" id="publishGo" onclick="runPublish()" title="Host the sheets on zapsheets.com at links that stay the same (Pro)">Get links</button>
-    <button class="print-go" id="exportGo" onclick="runExport()">Download</button></div>
+    <button class="print-go dl-go" id="exportGo" onclick="runExport()" title="Download the card images (zip)" aria-label="Download"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10.5 5 5 5-5"/><path d="M5 20h14"/></svg></button></div>
   </div>
   <div class="export-info"><span id="exportInfo"></span><div class="export-help" id="exportHelp"></div>
     <div class="export-progress" id="exportProgress" style="display:none"><div></div></div><span class="muted" id="exportStatus"></span>

@@ -52,6 +52,7 @@ row_type     = data.get('type',         '').strip()   # "Estimate" or "Invoice"
 date_val     = data.get('date',         '').strip()   # MM/DD/YYYY; caller supplies today
 scope_of_work = data.get('scope_of_work', '').strip()
 summary       = str(data.get('summary', '')).strip()   # one line: what the contract is for
+summary_note  = str(data.get('summary_note', '')).strip()   # e.g. the Ref Number of the estimate it's based on
 
 try:
     wb = sa.open_by_key(sheet_id)
@@ -185,9 +186,22 @@ if disc_pct_col     >= 0: new_row[disc_pct_col]     = discount_pct
 if summary_col      >= 0: new_row[summary_col]      = summary
 
 try:
-    ws.append_row(new_row, value_input_option='USER_ENTERED')
+    _app = ws.append_row(new_row, value_input_option='USER_ENTERED')
 except Exception as e:
     print(json.dumps({"error": f"Could not append row: {str(e)}"}))
     sys.exit(1)
+
+# A note on the Summary cell (the Ref Number of the contract or estimate it's based on) — non-fatal
+if summary_note and summary_col >= 0:
+    try:
+        import re as _re
+        _m = _re.search(r'![A-Z]+(\d+)', ((_app or {}).get('updates') or {}).get('updatedRange', ''))
+        if _m:
+            _r = int(_m.group(1))
+            wb.batch_update({'requests': [{'updateCells': {
+                'range': {'sheetId': ws.id, 'startRowIndex': _r - 1, 'endRowIndex': _r, 'startColumnIndex': summary_col, 'endColumnIndex': summary_col + 1},
+                'rows': [{'values': [{'note': summary_note}]}], 'fields': 'note'}}]})
+    except Exception:
+        pass
 
 print(json.dumps({"ok": True, "contract_id": ref_code, "row": -1, "ref_code": ref_code}))

@@ -53,6 +53,8 @@ $row = [
     'Notes'      => $notes,
     '__add_headers__' => ['Type', 'Ref Number', 'Payee', 'Summary'],
 ];
+$contractRef = trim((string) ($_POST['contract_ref'] ?? ''));   // the contract it's for: its Ref Number as a note on the Summary
+if ($contractRef !== '') $row['__notes__'] = ['Summary' => 'Ref Number: ' . $contractRef];
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 $arg = $sheetId . '|contracts|' . base64_encode(json_encode($row, JSON_UNESCAPED_UNICODE));
@@ -64,7 +66,7 @@ if ($result === null) { echo json_encode(['error' => $output]); exit; }
 if (empty($result['ok'])) { echo json_encode($result); exit; }
 
 refreshJson($pythonPath, $sheetId, 'contracts');
-unset($row['__add_headers__']);
+unset($row['__add_headers__'], $row['__notes__']);
 
 // The payment slip to send to the person (PDF, like estimates and invoices)
 $slip = pbMakePaymentSlip($sheetId, $row, $_POST);

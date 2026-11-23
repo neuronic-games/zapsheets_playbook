@@ -68,6 +68,7 @@ $rowPayload = [
     'notes'         => $notes ?: ($estimateNum !== '' ? 'Invoice from estimate #' . $estimateNum : ''),
     'scope_of_work' => $description,
     'summary'       => $summary,
+    'summary_note'  => ($srcRef = trim((string) ($_POST['source_ref'] ?? '')) ?: $estimateNum) !== '' ? 'Ref Number: ' . $srcRef : '',   // the estimate it's based on
     'target_start'  => $tgtStart,
     'date'          => date('n/j/Y'),
 ];

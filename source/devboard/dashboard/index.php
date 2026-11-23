@@ -2927,7 +2927,7 @@ function submitPayment() {
   err.style.display = 'none'; btn.disabled = true; btn.textContent = 'Saving…';
   var fd = new FormData();
   fd.append('id', SHEET_ID); fd.append('game', _payCtx.game); fd.append('client', _payCtx.client);
-  fd.append('payee', v.person); fd.append('summary', v.summary); fd.append('amount', v.amount); fd.append('date', v.date); fd.append('notes', v.notes);
+  fd.append('payee', v.person); fd.append('summary', v.summary); fd.append('contract_ref', sumRef('pay')); fd.append('amount', v.amount); fd.append('date', v.date); fd.append('notes', v.notes);
   _payAppendMe(fd);
   fetch(APP_BASE + 'push/addPayment.php', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
@@ -3356,6 +3356,7 @@ function submitInvoice() {
   fd.append('game',         est.game         || '');
   fd.append('client',       est.client       || '');
   fd.append('estimate_num', est.estimate_num  || '');
+  fd.append('source_ref',   est.contract_id   || '');   // the estimate's Ref Number (a note on the invoice's Summary)
   fd.append('estimate_amt', est.amount        || '0');
   fd.append('invoice_amt',  amount);
   fd.append('description',  document.getElementById('invoiceDescription').value.trim());

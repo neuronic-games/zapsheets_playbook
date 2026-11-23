@@ -703,7 +703,8 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
 .lock-bar[hidden] { display:none; }
 .lock-bar .plan-btn { width:auto; padding:.45rem 1rem; }
 body.cb-locked .panel-left .panel-scroll, body.cb-locked .tags-stick .print-go:not(.ghost), body.cb-locked #exportGo, body.cb-locked #publishGo { opacity:.5; pointer-events:none; }
-body.cb-locked #cardHolder .el { pointer-events:none; }
+body.cb-locked #cardHolder .el { cursor:default; }
+body.cb-locked #cardHolder [data-h] { display:none; }
 /* read only: the attributes show, but nothing in them can be clicked or typed into (the panel still scrolls) */
 body.cb-locked #attrPanel * { pointer-events:none !important; }
 body.cb-locked #attrPanel :is(input,select,textarea,button):disabled { opacity:1; color:inherit; }

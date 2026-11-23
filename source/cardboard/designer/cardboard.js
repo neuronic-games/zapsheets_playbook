@@ -1252,6 +1252,7 @@ function ptFromEvent(ev) {
 
 // Double-click a picture on the card to change it (the panel on the right has the same button)
 $('cardHolder').addEventListener('dblclick', function(ev) {
+  if (!hasAccess()) return;
   var node = ev.target.closest('.el'), e = node && elById(node.dataset.id);
   if (e && isPicEl(e)) openImagePicker(ev, e.id);
   else if (e && e.kind === 'data') editCellInPlace(e);
@@ -1386,6 +1387,11 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
   var e = elById(elDom.dataset.id); if (!e) return;
   ev.preventDefault();
   var handle = ev.target.dataset.h || '';
+  if (!hasAccess()) {   // read only: clicking selects (to see its attributes), nothing moves
+    var u = e.group ? groupMembers(e.group).map(function(x) { return x.id; }) : [e.id];
+    if (!u.every(isSel) || multi.length) setSel(u);
+    return;
+  }
   if (handle === 'rot' && isSel(e.id) && !multi.length) { rotateDrag(ev, e, elDom); return; }   // before Shift-click, so Shift can snap the angle
   // Clicking part of a group picks the whole group; Shift/⌘-click adds to (or takes from) the selection
   var unit = e.group ? groupMembers(e.group).map(function(x) { return x.id; }) : [e.id];
@@ -1484,6 +1490,7 @@ document.addEventListener('keydown', function(ev) {
   var typing = /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '') || !!(document.activeElement && document.activeElement.isContentEditable);
   var mod = ev.metaKey || ev.ctrlKey;
   if (mod && ev.key.toLowerCase() === 's') { ev.preventDefault(); saveAll(); return; }
+  if (!typing && _activeTab === 'design' && layout && ev.key === 'Escape' && selEls().length) { selectEl(null); return; }
   if (typing || _activeTab !== 'design' || !layout || !hasAccess()) return;   // read-only once the free week is over
   if (mod && ev.key.toLowerCase() === 'z') { ev.preventDefault(); if (ev.shiftKey) redo(); else undo(); return; }
   if (mod && ev.key.toLowerCase() === 'd') { ev.preventDefault(); duplicateSel(); return; }

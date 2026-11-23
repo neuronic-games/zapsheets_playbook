@@ -2270,7 +2270,7 @@ function groupShows(g, row) {
   return (w.values || []).some(function(x) { return String(x).trim().toLowerCase() === v; });
 }
 function groupWhenAttrs(gid, g) {
-  var w = g.when, h = '<span class="lbl">Show</span><div class="seg">' +
+  var w = g.when, h = '<span class="lbl">Show as</span><div class="seg">' +
     '<button type="button" class="' + (w ? '' : 'on') + '" title="The group shows on every card" onclick="setGroupWhen(\'' + gid + '\',false)">Every card</button>' +
     '<button type="button" class="' + (w ? 'on' : '') + '" title="Show the group only on cards whose value in a column is one you pick" onclick="setGroupWhen(\'' + gid + '\',true)">Mapping</button></div>';
   if (!w) return h;
@@ -2531,9 +2531,9 @@ function fromMapping() {
   changed();
 }
 function showSeg(cur, fixedLabel) {   // Text / Image elements: the same on every card, or a Mapping
-  return '<div style="margin-top:.45rem"><span class="mini">Show</span><div class="seg">' +
+  return '<span class="lbl">Show as</span><div class="seg">' +
     '<button type="button" class="' + (cur === 'fixed' ? 'on' : '') + '" title="The same on every card" onclick="' + (cur === 'fixed' ? '' : 'fromMapping()') + '">' + fixedLabel + '</button>' +
-    '<button type="button" class="' + (cur === 'map' ? 'on' : '') + '" title="Each card’s value in a column picks its text or picture" onclick="' + (cur === 'map' ? '' : 'toMapping()') + '">Mapping</button></div></div>';
+    '<button type="button" class="' + (cur === 'map' ? 'on' : '') + '" title="Each card’s value in a column picks its text or picture" onclick="' + (cur === 'map' ? '' : 'toMapping()') + '">Mapping</button></div>';
 }
 function seg(key, opts, cur, rerender) {
   return '<div class="seg">' + opts.map(function(o) {
@@ -2624,8 +2624,8 @@ function _renderAttrs() {
     h += '<span class="lbl">Column</span><select class="sel" onchange="setProp(\'field\',this.value);renderAttrs()">' +
          FIELDS.map(function(f) { return '<option' + (f === e.field ? ' selected' : '') + '>' + esc(f) + '</option>'; }).join('') +
          (known ? '' : '<option selected>' + esc(e.field) + '</option>') + '</select>';
-    if (e.was) h += showSeg('map', e.was.kind === 'image' ? 'Same picture' : 'Same text');
-    h += '<div style="margin-top:.45rem"><span class="mini">Show as</span>' + seg('as', [['text', 'Text', 'Show the value as text'], ['image', 'Image', 'The value is a picture link'], ['map', 'Mapping', 'Each value shows a text or picture you choose']], e.as || 'text') + '</div>';
+    h += '<span class="lbl">Show as</span>' + seg('as', [['text', 'Text', 'Show the value as text'], ['image', 'Image', 'The value is a picture link'], ['map', 'Mapping', 'Each value shows a text or picture you choose']], e.as || 'text')
+      .replace('<div class="seg">', '<div class="seg">' + (e.was ? '<button type="button" title="The same on every card" onclick="fromMapping()">' + (e.was.kind === 'image' ? 'Same picture' : 'Same text') + '</button>' : ''));
     if (e.as === 'map') {
       if (!e.map || !e.map.items || !e.map.items.length) e.map = savedMap(e.field);   // remembered for this field
       delete e.map.type;

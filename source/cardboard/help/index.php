@@ -194,7 +194,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 <div class="hero">
   <div>
     <h1><span class="c">Card</span><span class="b">Board</span> Help</h1>
-    <p>Design board game cards from a Google Sheet — one row per card — then print them or send them to Tabletop Simulator and Screentop. Every picture on this page is the real app.</p>
+    <p>Design board game cards from a Google Sheet — one row per card — then print them or send them to Tabletop Simulator and Screentop.</p>
     <div class="quick"><a href="cardboard/help#sheet">Set up a sheet</a><a href="cardboard/help#elements">Design a card</a><a href="cardboard/help#mapping">Mappings</a><a href="cardboard/help#print">Print</a><a href="cardboard/help#saving">Saving</a></div>
   </div>
   <img src="<?= $IMG ?>layout.jpg" alt="The CardBoard designer">

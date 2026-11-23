@@ -447,7 +447,11 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .color-row { display:flex; gap:.35rem; align-items:center; }
 .color-row input[type=color] { width:2.2rem; height:2.05rem; border:1.5px solid #d6d9e6; border-radius:7px; padding:2px; background:#fff; cursor:pointer; flex-shrink:0; }
 .color-row .inp { flex:1; }
-.map-box { margin-top:.7rem; padding:.2rem .65rem .7rem; background:#f3f1ff; border:1px solid #e3dfff; border-radius:10px; }   /* a Mapping's settings, kept together */
+.map-box { position:relative; margin-top:.75rem; padding:.2rem .65rem .7rem; background:#f3f1ff; border:1px solid #e3dfff; border-radius:10px; }
+/* a little speech tail up to the Mapping button (the last of --n buttons above) */
+.map-box::before, .map-box::after { content:''; position:absolute; right:calc(100% / (2 * var(--n, 3))); transform:translateX(50%); width:0; height:0; border-style:solid; }
+.map-box::before { top:-9px; border-width:0 9px 9px 9px; border-color:transparent transparent #e3dfff transparent; }
+.map-box::after { top:-7.5px; border-width:0 8px 8px 8px; border-color:transparent transparent #f3f1ff transparent; }   /* a Mapping's settings, kept together */
 .map-box > .lbl:first-of-type, .map-box > .mini:first-child { margin-top:.5rem; }
 .map-box .inp, .map-box .sel { background:#fff; }
 .when-vals { display:flex; flex-wrap:wrap; gap:.3rem; }

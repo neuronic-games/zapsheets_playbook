@@ -13,10 +13,11 @@
 require_once dirname(__DIR__) . '/dotEnv.php';
 
 const GB_PREVIEW_APPS = [
-    'cardboard'  => ['CardBoard',  'cardboard_icon_512.png',  'Board game cards designed from a Google Sheet with CardBoard.'],
-    'devboard'   => ['DevBoard',   'db_icon_512.png',         'Playtests, sessions and notes, kept with DevBoard.'],
-    'pitchboard' => ['PitchBoard', 'pitchboard_icon_512.png', 'Games and publisher pitches, tracked with PitchBoard.'],
-    'billboard'  => ['BillBoard',  'bb_icon_512.png',         'A catalog of board games, made with BillBoard.'],
+    // the app's name, its logo, and its tag line (the headline of its features page)
+    'cardboard'  => ['CardBoard',  'cardboard_icon_512.png',  'Your cards, straight from your sheet.'],
+    'devboard'   => ['DevBoard',   'db_icon_512.png',         'Every playtest, remembered.'],
+    'pitchboard' => ['PitchBoard', 'pitchboard_icon_512.png', 'From first sketch to signed deal — tracked.'],
+    'billboard'  => ['BillBoard',  'bb_icon_512.png',         'Your games. A polished page — instantly.'],
 ];
 
 function gbPreviewJson(string $sheetId, string $file): array {
@@ -81,7 +82,7 @@ function gbSheetSummary(string $app, string $sheetId): array {
 function gbLinkPreview(string $app, string $sheetId = '', array $o = []): string {
     $a = GB_PREVIEW_APPS[$app] ?? GB_PREVIEW_APPS['cardboard'];
     [$sheetTitle, $what] = $sheetId !== '' ? gbSheetSummary($app, $sheetId) : ['', ''];
-    $title = $o['title'] ?? ($sheetTitle !== '' ? $sheetTitle . ' — ' . $a[0] : $a[0]);
+    $title = $o['title'] ?? ($sheetTitle !== '' ? $sheetTitle : $a[0]);   // the sheet's own name (the app shows above it)
     $desc  = $o['description'] ?? trim(($what !== '' ? $what . '. ' : '') . $a[2]);
     $base  = function_exists('gbLinkBase') ? gbLinkBase() : '/';
     $img   = $o['image'] ?? ($base . 'images/' . $a[1]);

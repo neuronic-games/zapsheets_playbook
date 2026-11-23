@@ -12,7 +12,7 @@
  *   refresh  — cbt (token), sheet?         → {ok, token, account}   (re-reads the Admin sheet)
  *   activate — cbt, key, sheet?            → {ok, token, account}   (activation key: everything, no time limit)
  *   profile  — cbt, name, studio           → {ok, token, account}   (saved in the person's Admin-sheet row)
- *   image    — cbt, file (a picture)       → {ok, token, account}   (profile picture: squared to 256 px, kept in
+ *   image    — cbt, file (a picture)       → {ok, token, account}   (profile picture: squared to 256 px WebP, kept in
  *                                            images/avatars/, its link in the Admin sheet's Image column; no file = remove)
  *   redeem   — cbt, code                   → {ok, token, account, days, apps}  (a free code from the Admin sheet's Codes tab —
  *                                            every app, or only the apps in its App column —
@@ -222,9 +222,14 @@ if ($action === 'refresh' || $action === 'activate' || $action === 'profile' || 
             imagecopyresampled($dst, $src, 0, 0, (int) (($w - $side) / 2), (int) (($h - $side) / 2), $N, $N, $side, $side);
             $dir = dirname(__DIR__) . '/images/avatars';
             if (!is_dir($dir)) @mkdir($dir, 0755, true);
-            $name = substr(hash('sha256', $p['e'] . '|' . cbSecret()), 0, 20) . '-' . time() . '.jpg';
-            foreach (glob($dir . '/' . substr($name, 0, 20) . '-*.jpg') ?: [] as $old) @unlink($old);   // the one before
-            if (!@imagejpeg($dst, $dir . '/' . $name, 86)) fail('Couldn’t keep the picture');
+            $webp = function_exists('imagewebp');   // WebP (smaller); JPEG where the server can't make WebP
+            $name = substr(hash('sha256', $p['e'] . '|' . cbSecret()), 0, 20) . '-' . time() . ($webp ? '.webp' : '.jpg');
+            foreach (glob($dir . '/' . substr($name, 0, 20) . '-*.{jpg,webp}', GLOB_BRACE) ?: [] as $old) @unlink($old);   // the one before
+            $okSave = $webp ? @imagewebp($dst, $dir . '/' . $name, 82) : @imagejpeg($dst, $dir . '/' . $name, 86);
+            if ($okSave && $webp && @filesize($dir . '/' . $name) === 0) {   // some GD builds write an empty WebP: fall back to JPEG
+                @unlink($dir . '/' . $name); $name = substr($name, 0, -5) . '.jpg'; $okSave = @imagejpeg($dst, $dir . '/' . $name, 86);
+            }
+            if (!$okSave) fail('Couldn’t keep the picture');
             $url = (function_exists('gbLinkBase') ? gbLinkBase() : '/') . 'images/avatars/' . $name;
         }
         $r = cbAdmin(['action' => 'update', 'email' => $p['e'], 'fields' => ['Image' => $url]]);

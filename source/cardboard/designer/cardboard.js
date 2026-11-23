@@ -1574,8 +1574,20 @@ function sortSlots(arr, movable, rank) {   // reorder the movable items among th
   at.forEach(function(i, k) { arr[i] = items[k]; });
 }
 function orderRank(order) { return function(row) { var k = order.indexOf(row); return k < 0 ? 1e6 + row : k; }; }
+// The cards (ROWS) come in sheet order without their row numbers; the grid has them. While the cards are still
+// in sheet order (before any are dropped or moved), the n-th card is the n-th sheet row that holds a card.
+function numberCards(tab) {
+  if (tab !== curTab || !GRID || GRID.tab !== tab) return;
+  var mine = ROWS.filter(function(r) { return !r._pend; });
+  if (!mine.length || mine.every(function(r) { return r._row; })) return;
+  var nums = GRID.rows.filter(function(g) { return !g.draft; }).map(function(g) { return g.row; }).sort(function(a, b) { return a - b; });
+  if (ROWS._delDone) { var del = dataPend(tab).delrows.map(function(d) { return d.row; }); nums = nums.filter(function(n) { return del.indexOf(n) < 0; }); }   // cards deleted here are gone already
+  if (nums.length !== mine.length) return;
+  mine.forEach(function(r, i) { r._row = nums[i]; });
+}
 function applyRowOrder(tab) {
   var o = dataPend(tab).order, rank = orderRank(o || []);
+  numberCards(tab);
   if (!o || !o.length) return;
   if (tab === curTab) sortSlots(ROWS, function(r) { return !r._pend && r._row; }, function(r) { return rank(r._row); });
   if (GRID && GRID.tab === tab) sortSlots(GRID.rows, function(g) { return !g.draft; }, function(g) { return rank(g.row); });
@@ -1709,7 +1721,7 @@ function overlayPending(partial) {
     if (ROWS.some(function(r) { return r._pend === a.key; })) return;
     var r = { _pend: a.key }; FIELDS.forEach(function(f) { r[f] = a.values[f] || ''; }); ROWS.push(r);
   });
-  if (!p.cells.length && !p.delrows.length) { overlayGrid(); return; }
+  if (!p.cells.length && !p.delrows.length && !(p.order && p.order.length)) { overlayGrid(); return; }   // moved cards need the grid's row numbers
   var go = function() { if (curTab !== tab || !GRID) return; overlayGrid(); render(); renderData(); if (_activeTab === 'data') renderGrid(); };
   if (GRID && GRID.tab === tab) go();
   else api('grid', { tab: tab }).then(function(r) { if (curTab !== tab || (GRID && GRID.tab === tab)) return go(); GRID = { tab: tab, header: r.header || [], rows: r.rows || [] }; go(); }).catch(function() {});

@@ -1657,9 +1657,12 @@ function pendingCount() {
   return n;
 }
 var _saving = false, _savingP = null, _saveSteps = 0, _saveDone = 0, _quietSave = false;
-// Save by itself when the person pauses: every few seconds, if there are changes and nothing has
-// been typed, clicked or dropped for a while (and nothing is mid-edit), save in the background quietly.
-var IDLE_SAVE_MS = 10000, _lastActivity = Date.now();
+// Save by itself as rarely as possible: changes pile up in this browser (where they're safe — closing the
+// page keeps them) and go to the sheet in one batch once the person has stopped for a good while
+// (IDLE_SAVE_MS, nothing mid-edit). Changes that have waited a long time (LONG_WAIT_MS) go at a shorter
+// pause (LONG_IDLE_MS), so a long session still reaches the sheet. Switching to another tab or app isn't
+// a save by itself — it simply counts as being away. Save (⌘S) still saves at once.
+var IDLE_SAVE_MS = 90000, LONG_WAIT_MS = 15 * 60000, LONG_IDLE_MS = 20000, _lastActivity = Date.now(), _pendingSince = 0;
 ['keydown', 'pointerdown', 'input', 'drop', 'wheel'].forEach(function(t) { document.addEventListener(t, function() { _lastActivity = Date.now(); }, true); });
 function busyEditing() {
   if (_gridEdit || document.querySelector('.el.editing, #imgPicker, #arrFly')) return true;
@@ -1667,16 +1670,18 @@ function busyEditing() {
   return !!a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable);
 }
 function idleSave(force) {
-  if (_saving || !navigator.onLine || !pendingCount() || !hasAccess()) return;
-  if (!force && (Date.now() - _lastActivity < IDLE_SAVE_MS || busyEditing())) return;
-  _quietSave = true; saveAll(true);
+  if (!pendingCount()) { _pendingSince = 0; return; }
+  if (!_pendingSince) _pendingSince = Date.now();
+  if (_saving || !navigator.onLine || !hasAccess()) return;
+  var idle = Date.now() - _lastActivity, waited = Date.now() - _pendingSince;
+  if (!force && (busyEditing() || idle < (waited > LONG_WAIT_MS ? LONG_IDLE_MS : IDLE_SAVE_MS))) return;
+  _quietSave = true; _pendingSince = 0; saveAll(true);
 }
-setInterval(idleSave, 4000);
+setInterval(idleSave, 5000);
 window.addEventListener('offline', function() { toast('You’re offline — keep working. Changes stay in this browser until you save.'); });
-window.addEventListener('online', function() { toast('Back online' + (pendingCount() ? ' — your changes will be saved when you pause' : '')); });
+window.addEventListener('online', function() { toast('Back online' + (pendingCount() ? ' — your changes will be saved once you take a break' : '')); });
 // The page itself, its fonts and the card pictures are kept too (cardboard-sw.js), so it opens offline
 if ('serviceWorker' in navigator) navigator.serviceWorker.register(APP_BASE + 'cardboard-sw.js', { scope: APP_BASE + SHEET_ID + '/cardboard' }).catch(function() {});
-document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'hidden') idleSave(true); });
 function updateSaveBtn() {
   updateDataUndoBtns();
   var btn = $('saveBtn'), n = pendingCount(); if (!btn) return;
@@ -1686,7 +1691,7 @@ function updateSaveBtn() {
   var pct = _saving ? Math.max(8, Math.round(100 * (_saveDone + .35) / Math.max(1, _saveSteps))) : 0;
   btn.style.setProperty('--sv', Math.min(100, pct) + '%');
   btn.innerHTML = _saving ? '<span class="sv-fill"></span><span class="sv-txt"><span class="sv-spin"></span>Saving</span>' : 'Save';
-  btn.title = _saving ? 'Saving to your Google Sheet — keep working' : n ? 'Save your changes to the sheet (⌘S) — they’re also saved by themselves when you pause' : 'Everything is saved';
+  btn.title = _saving ? 'Saving to your Google Sheet — keep working' : n ? 'Save your changes to the sheet now (⌘S) — otherwise they’re saved together after you’ve stopped for a minute or two' : 'Everything is saved';
   var st = $('saveStatus');
   if (st && st.dataset.prev == null) { st.textContent = _saving ? 'Saving…' : ''; st.className = 'tb-status'; }
 }

@@ -519,12 +519,12 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
   <?= steps([['save-pending', '<b>Save</b> turns yellow when changes are waiting.'], ['save-saving', 'Saving runs in the background: the button fills as each part is saved, and you can keep working.']], 'Save') ?>
   <ul>
     <li><b>Save</b> (or <kbd>⌘S</kbd>) sends everything at once.</li>
-    <li>CardBoard also <b>saves by itself</b> when you pause for about 10 seconds (not while you're typing), when you switch to another tab or window, and when this browser's storage starts to fill up.</li>
+    <li>CardBoard <b>saves by itself</b> as rarely as it can: your changes pile up in this browser and go to the sheet together once you've stopped for a minute and a half (never while you're typing). Changes that have waited 15 minutes go at a shorter pause, and it also saves when this browser's storage starts to fill up. Closing the page or switching apps doesn't lose anything — the changes stay here until they're saved.</li>
     <li>Until it's saved, a change is only in this browser — other people, exports and hosted links see the last saved version.</li>
     <li><b>Fetch</b> (menu) reads everything from the sheet again; with unsaved changes it asks whether to save first.</li>
   </ul>
   <h3>Offline</h3>
-  <p>CardBoard keeps the page, its fonts, your decks and the card pictures in this browser, so it opens and works without a connection. Keep designing — your changes are saved when you're back online and pause.</p>
+  <p>CardBoard keeps the page, its fonts, your decks and the card pictures in this browser, so it opens and works without a connection. Keep designing — your changes are saved once you're back online and take a break.</p>
   <div class="note"><b>One browser:</b> unsaved changes don't follow you to another computer, and clearing the browser's site data (or closing a private window) removes them. Save before you switch.</div>
 </section>
 

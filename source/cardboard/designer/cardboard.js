@@ -235,7 +235,7 @@ function savePub(tab) { cacheSet(ck('pub:' + tab), PUBLISHED[tab] || {}); }
 function cbPost(url, fd, again) {
   if (ACCT && ACCT.token) fd.set('cbt', ACCT.token);
   return fetch(url, { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(res) {
-    if (res && res.need_auth && !again) {
+    if (res && res.need_auth && !again && !_guest) {   // a read-only viewer isn't asked to sign in by the page itself
       var next = res.refresh && ACCT ? acctRefresh(true) : askSignIn();
       return next.then(function() { return cbPost(url, fd, true); }, function() { return res; });
     }

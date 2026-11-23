@@ -75,7 +75,7 @@ function cbWriteShare($app, $token, $sheetId, $tab, $target) {
 
 $action = $_POST['action'] ?? '';
 require_once __DIR__ . '/gameboardAuth.php';
-cbRequireSignIn();   // the share links themselves are public; managing them needs a sign-in
+if ($action !== 'list') cbRequireSignIn();   // the share links themselves are public (a read-only viewer sees them); managing them needs a sign-in
 
 if ($action === 'list') {
     $out = [];

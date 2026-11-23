@@ -713,7 +713,7 @@ function reloadSheet(asked) {
 }
 function openInSheets() { window.open('https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit', '_blank', 'noopener'); }
 
-// ── Left panel: TEXT · DATA · IMAGE · SHAPE · GENERATED ──────────────────────
+// ── Left panel: FIXED (text, image) · CARD · SHAPE · GENERATED ──────────────────────
 function chip(attrs, ico, name, sample, extraCls) {
   return '<div class="field-chip' + (extraCls ? ' ' + extraCls : '') + '" draggable="true" ' + attrs + ' ondragstart="chipDragStart(event)" onclick="chipClick(this, event)" title="' + (/data-field=/.test(attrs) ? 'Drag onto the card · click for options' : 'Drag onto the card') + '">' +
          '<span class="ico">' + ico + '</span><span class="nm">' + esc(name) + '</span>' +
@@ -736,10 +736,9 @@ function toggleSection(key) {
 }
 function renderPalette() {
   var h = '';
-  h += section('text', 'Text', chip('data-add="text"', 'T', 'Text'));
+  h += section('fixed', 'Fixed', chip('data-add="text"', 'T', 'Text') + chip('data-add="image"', IMG_ICON, 'Image'));   // the same on every card
   h += section('data', 'Card', '<div id="dataList"><div class="muted">Loading…</div></div>', '',
     '<button type="button" class="eye-btn" id="eyeBtn" onclick="event.stopPropagation();toggleShowHidden()" style="display:none"></button>');
-  h += section('image', 'Image', chip('data-add="image"', IMG_ICON, 'Image'));
   h += section('shape', 'Shape', '<div class="shape-grid">' + SHAPES.map(function(s) {
     var demo = { shape: s[0], w: 24, h: s[0] === 'line' ? 24 : 18, fill: s[0] === 'line' ? 'none' : '#ece9ff', stroke: '#4b3fa8', strokeW: 1.5, radius: s[0] === 'round' ? 5 : 0 };
     return '<div class="shape-chip" draggable="true" data-shape="' + s[0] + '" ondragstart="chipDragStart(event)" onclick="chipClick(this, event)" title="' + s[1] + ' — drag onto the card">' +

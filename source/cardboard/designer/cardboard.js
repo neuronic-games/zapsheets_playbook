@@ -650,7 +650,7 @@ function selectTab(name, first, force, asked, pre) {   // pre: {rows, full} alre
     if (_activeTab === 'export') renderExport();
   }
   function allLoaded() {
-    setTimeout(function() { keepThumb(false); }, 3000);   // the Designs page's picture, if it's old
+    setTimeout(keepThumb, 2500);   // the Designs page's picture, if the first card looks different now
     if (!FIELDS.length || FIELDS.length === dataPend(name).cols.length) headerFields(name);   // no cards: the columns come from the heading row
     if (_activeTab === 'data') loadGrid(force);
     var due = false; try { due = !!localStorage.getItem('cb_repub:' + SHEET_ID + ':' + name); localStorage.removeItem('cb_repub:' + SHEET_ID + ':' + name); } catch (e) {}
@@ -1859,8 +1859,8 @@ function saveAll(auto) {
     savedTabs.forEach(function(t) { if (t !== curTab && PUBLISHED[t]) { try { localStorage.setItem('cb_repub:' + SHEET_ID + ':' + t, '1'); } catch (e) {} } });
     if (_reloadGrid[curTab] && GRID && GRID.tab === curTab) { GRID = null; _gridSel = null; if (_activeTab === 'data') loadGrid(true); }   // rows or columns were deleted: numbers changed
     if (savedTabs.indexOf(curTab) >= 0) { if (_lastSaveData[curTab]) refreshRows(); else autoRepublish(curTab); }
-    if (!errors.length && savedTabs.indexOf(curTab) >= 0) setTimeout(function() { keepThumb(true); }, 1500);
     _lastSaveData = {}; _reloadGrid = {};
+    setTimeout(keepThumb, 2500);   // the Designs page's picture (skipped while the rows reload; done when they're in)
     if (errors.length) toast('Couldn’t save everything — ' + errors[0] + (errors.length > 1 ? ' (and ' + (errors.length - 1) + ' more)' : '') + '. Your changes are still in this browser; try Save again.', true);
     else if (conflicts) toast('Saved — but ' + conflicts + ' cell' + (conflicts === 1 ? ' was' : 's were') + ' changed in the sheet meanwhile, so the sheet’s value' + (conflicts === 1 ? ' was' : 's were') + ' kept (marked red)', true);
     else if (!_quietSave) toast(auto === true ? '✓ Saved to your Google Sheet in the background' : '✓ Saved to your Google Sheet');
@@ -2939,17 +2939,19 @@ function fileBlob(cv, o) {
 // Draw every file for an export. onFile(name, blob, info) is called for each and may return a promise.
 // Only one export draws at a time (they share the off-screen stage), so calls queue up.
 var _drawQueue = Promise.resolve();
-// The sheet's picture on the Designs page (/cardboard): its first card, sent after a save
-// (and now and then on opening). Only the owner's copy counts, and it never gets in the way.
-function keepThumb(force) {
-  if (!isOwner() || !layout || !ROWS.length || !curTab) return;
-  var k = 'cb_thumb:' + SHEET_ID, last = 0;
-  try { last = +localStorage.getItem(k) || 0; } catch (e) {}
-  if (!force && Date.now() - last < 6 * 3600e3) return;
-  try { localStorage.setItem(k, String(Date.now())); } catch (e) {}
-  var lay = layout, c = lay.card, w = 360;
+// The sheet's picture on the Designs page (/cardboard): its first card. Sent whenever that card looks
+// different from the last one sent (after a save, a fetch or on opening), never in the way of anything else.
+var _thumbBusy = false;
+function keepThumb() {
+  if (!isOwner() || !layout || !ROWS.length || !curTab || _rowsPartial || _thumbBusy) return;
+  var lay = JSON.parse(JSON.stringify(layout)), row = ROWS[0], c = lay.card, w = 360;
+  var html = renderCardHTML(lay, row, false, { card: 0, row: 0, proxy: true });
+  var decks = TABS.filter(function(t) { return !t.pending; }).map(function(t) { return t.title; });
+  var sig = String(html.length) + ':' + hashStr(html + '|' + decks.join('|') + '|' + SHEET_TITLE), k = 'cb_thumb:' + SHEET_ID;
+  try { if (localStorage.getItem(k) === sig) return; } catch (e) {}
+  _thumbBusy = true;
   _drawQueue = _drawQueue.then(function() {
-    return exportLibs().then(function() { return drawCard(renderCardHTML(lay, ROWS[0], false, { card: 0, row: 0, proxy: true }), w, c); })
+    return exportLibs().then(function() { return drawCard(html, w, c); })
       .then(function(cv) {
         var t = document.createElement('canvas'); t.width = cv.width; t.height = cv.height;
         var g = t.getContext('2d'); g.fillStyle = '#eef0f6'; g.fillRect(0, 0, t.width, t.height); g.drawImage(cv, 0, 0);
@@ -2958,11 +2960,14 @@ function keepThumb(force) {
       .then(function(b) {
         if (!b) return;
         var fd = new FormData(); fd.append('action', 'thumb'); fd.append('id', SHEET_ID); fd.append('file', b, 'thumb.jpg');
+        fd.append('title', SHEET_TITLE || ''); fd.append('decks', JSON.stringify(decks));
         if (ACCT && ACCT.token) fd.append('cbt', ACCT.token);
-        return fetch(APP_BASE + 'push/cardboardSheets.php', { method: 'POST', body: fd });
+        return fetch(APP_BASE + 'push/cardboardSheets.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
+          .then(function(r) { if (r && r.ok) { try { localStorage.setItem(k, sig); } catch (e) {} } });
       });
-  }).catch(function() {});
+  }).catch(function() {}).then(function() { _thumbBusy = false; });
 }
+function hashStr(str) { var h = 5381; for (var i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
 function buildExport(o, onFile, tick) {
   if (_rowsPartial) return Promise.reject(new Error('the rows are still loading — try again in a moment'));
   var run = _drawQueue.then(function() { return buildExportNow(o, onFile, tick || function() {}); });

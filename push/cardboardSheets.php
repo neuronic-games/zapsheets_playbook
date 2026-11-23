@@ -43,6 +43,16 @@ if (($_POST['action'] ?? '') === 'thumb') {
     if (!$info || !in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG], true)) csOut(['error' => 'Not a picture']);
     if (!@move_uploaded_file($tmp, csDir($id) . '/_cardboard_thumb.jpg')) csOut(['error' => 'Couldn’t keep the picture']);
     @touch(csDir($id) . '/_cardboard_edited');
+    // the sheet's name and decks, as the designer has them (the tile shows them)
+    $decks = json_decode((string) ($_POST['decks'] ?? ''), true);
+    if (is_array($decks)) {
+        $f = csDir($id) . '/_cardboard_info.json';
+        $info = json_decode((string) @file_get_contents($f), true) ?: [];
+        $info['decks'] = array_values(array_map(function ($d) { return mb_substr((string) $d, 0, 100); }, array_slice($decks, 0, 200)));
+        $t = trim((string) ($_POST['title'] ?? '')); if ($t !== '') $info['title'] = mb_substr($t, 0, 200);
+        $info += ['designed' => []];
+        @file_put_contents($f, json_encode($info, JSON_UNESCAPED_UNICODE), LOCK_EX);
+    }
     csOut(['ok' => true]);
 }
 

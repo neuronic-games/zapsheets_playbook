@@ -311,12 +311,14 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
     <li><b>Hide field</b> tucks a column away here and in the Card list; it stays in the sheet and on any card that uses it. <b>Show all</b> brings hidden ones back.</li>
     <li><b>Delete</b> a card or column: it disappears straight away and is deleted from the sheet when you save.</li>
   </ul>
+  <?= steps([['move-1', 'Press on a card’s number…'], ['move-2', '…drag it up or down; the line shows where it will go.'], ['move-3', 'Let go. The card moves here, in Layout, Print and Export — and in your sheet when you save.']], 'Move a card') ?>
   <div class="note"><b>Someone else edited the sheet?</b> If a cell changed in Google Sheets after you loaded it, CardBoard won't overwrite it: the cell turns red and shows their value.</div>
 </section>
 
 <section class="topic" id="addcard">
   <h2><span class="n">8</span>Stepping through &amp; adding cards</h2>
   <p>Above the card in the Layout view: <b>first</b>, <b>previous</b>, the card number, <b>next</b> and <b>last</b> — check your design on every card. Click the card number to type another and press <kbd>Enter</kbd> to go straight to it. The dashed <b>+</b> adds a card right after the one you're on.</p>
+  <?= steps([['cardno-1', 'Click the card number and type the card you want.'], ['cardno-2', 'Press <kbd>Enter</kbd> — there it is. (<kbd>Esc</kbd> stays put.)']], 'Go to a card by number') ?>
   <?= steps([['card-nav', 'Click <b>+</b> beside the card navigator.'], ['card-added', 'A blank card appears after this one. Double-click a field on the card to fill it in.']], 'Add a card from the Layout view') ?>
   <p>New cards are kept in this browser until you save; they take their place in the sheet right below the card you added them after.</p>
 </section>
@@ -587,7 +589,9 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
     <tr><td><kbd>Shift</kbd> on a corner / while rotating</td><td>Keep proportions / snap to 15°</td></tr>
     <tr><td><kbd>Delete</kbd> · <kbd>Esc</kbd></td><td>Delete the selection · select nothing, or cancel an edit</td></tr>
     <tr><td>Double-click</td><td>Edit text or a field on the card · choose a picture · rename a group in Layers</td></tr>
+    <tr><td>Click the card number</td><td>Type a card number and press <kbd>Enter</kbd> to go to it</td></tr>
     <tr class="h"><td colspan="2">Cards view</td></tr>
+    <tr><td>Drag a card's number</td><td>Move the card up or down (the row moves in the sheet on Save)</td></tr>
     <tr><td><kbd>Enter</kbd> / <kbd>F2</kbd></td><td>Edit the cell · <kbd>Enter</kbd> again keeps it and moves down</td></tr>
     <tr><td><kbd>Shift</kbd>+<kbd>Enter</kbd> · <kbd>Tab</kbd> · <kbd>Esc</kbd></td><td>New line · keep and move right · cancel</td></tr>
   </table>

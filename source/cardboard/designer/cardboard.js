@@ -768,7 +768,7 @@ function renderData() {
 }
 // New column: added to the sheet's heading row, then ready to drag onto the card
 var _newField = '';
-function showNewField() { var b = $('newField'); b.classList.add('open'); $('newFieldName').value = ''; checkNewField(); $('newFieldName').focus(); }
+function showNewField() { if (!hasAccess()) { readOnlyWarn(); return; } var b = $('newField'); b.classList.add('open'); $('newFieldName').value = ''; checkNewField(); $('newFieldName').focus(); }
 function hideNewField() { var b = $('newField'); if (b) b.classList.remove('open'); if ($('newFieldMsg')) $('newFieldMsg').textContent = ''; }
 function newFieldProblem(n) {
   if (!n) return ' ';
@@ -805,8 +805,13 @@ function chipSpec(c) {
   if (c.dataset.gen)   return 'gen:' + c.dataset.gen;
   return 'add:' + c.dataset.add;
 }
+// Read only: say why nothing happens (instead of asking a viewer to sign in)
+function readOnlyWarn() {
+  toast(!ACCT ? 'Read only — sign in to design your own cards' : viewOnly() ? 'View only — this sheet belongs to another GameBoard account' : 'Your free week has ended — subscribe to keep designing', true);
+}
 function chipDragStart(ev) {
   var c = ev.currentTarget;
+  if (!hasAccess()) { ev.preventDefault(); readOnlyWarn(); return; }
   ev.dataTransfer.setData('text/plain', chipSpec(c)); ev.dataTransfer.effectAllowed = 'copyMove';
   _dragField = c.dataset.field || '';
   if (_dragField) setTimeout(function() { c.classList.add('dragging'); }, 0);
@@ -858,7 +863,7 @@ document.addEventListener('dragend', function() {
 function chipClick(c, ev) {
   if (!layout) return;
   if (ev) ev.stopPropagation();
-  if (c.dataset.field) { openFieldMenu(c); return; }
+  if (c.dataset.field && hasAccess()) { openFieldMenu(c); return; }
   c.classList.remove('nudge'); void c.offsetWidth; c.classList.add('nudge');   // a little wiggle: drag me
 }
 function closeFieldMenu() { var m = $('fieldMenu'); if (m) m.remove(); var a = document.querySelector('.field-chip.menu-open'); if (a) a.classList.remove('menu-open'); }
@@ -877,6 +882,7 @@ document.addEventListener('click', function(ev) { if (!ev.target.closest('#field
 function isHidden(f) { return !!(layout && layout.hidden && layout.hidden.indexOf(f) >= 0); }
 function visibleFields() { return FIELDS.filter(function(f) { return !isHidden(f); }); }
 function setFieldHidden(f, hide) {
+  if (!hasAccess()) { readOnlyWarn(); return; }
   closeFieldMenu(); snapshot();
   layout.hidden = (layout.hidden || []).filter(function(x) { return x !== f; });
   if (hide) layout.hidden.push(f);

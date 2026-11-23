@@ -888,14 +888,14 @@ footer a:hover { color:var(--navy); }
         <div class="all-a">
           <div class="icons"><?php foreach ($APPS as $a): ?><img src="images/<?= e($a[2]) ?>" alt=""><?php endforeach; ?></div>
           <b style="font-family:'Fraunces',Georgia,serif;font-size:1.3rem">All-in-one</b>
-          <div class="pc-price" style="margin-top:.4rem">$11.99<small>/ month</small></div>
+          <div class="pc-price" style="margin-top:.4rem">$9.99<small>/ month</small></div>
           <div class="pc-was">instead of <s>$15.96</s> for all four</div>
         </div>
         <ul>
           <li>DevBoard, CardBoard, PitchBoard and BillBoard</li>
           <li>Every Pro feature, including DevBoard estimates &amp; invoices</li>
           <li>One GameBoard account for all four</li>
-          <li>Save $3.97 every month</li>
+          <li>Save $5.97 every month</li>
         </ul>
         <button type="button" id="allBtn" onclick="buyAll()">Get all four</button>
       </div>

@@ -333,7 +333,7 @@
       return '<div class="gba-plan' + (mine ? ' cur' : '') + '"><div><b>' + esc(O.name + (p.label ? ' ' + p.label : '')) + '</b><small>' + esc(p.price) + ' / month' + (p.note ? ' · ' + esc(p.note) : '') + '</small></div>' +
         (forever || a.all_in_one || mine ? '' : '<button type="button" class="gba-go" data-plan="' + esc(p.plan) + '">' + (sub ? 'Switch' : 'Subscribe') + '</button>') + '</div>';
     });
-    rows.push('<div class="gba-plan all' + (a.all_in_one ? ' cur' : '') + '"><div><b>All-in-one</b><small>$11.99 / month · CardBoard, DevBoard, PitchBoard and BillBoard</small></div>' +
+    rows.push('<div class="gba-plan all' + (a.all_in_one ? ' cur' : '') + '"><div><b>All-in-one</b><small>$9.99 / month · CardBoard, DevBoard, PitchBoard and BillBoard</small></div>' +
       (forever || a.all_in_one ? '' : '<button type="button" class="gba-go" data-plan="all">Get all four</button>') + '</div>');
     $('gbaPlList').innerHTML = rows.join('');
     $('gbaPlList').querySelectorAll('[data-plan]').forEach(function(b) { b.onclick = function() { checkout(b.getAttribute('data-plan'), b); }; });

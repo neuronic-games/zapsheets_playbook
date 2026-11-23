@@ -549,7 +549,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
       <div class="cards" style="grid-template-columns:1fr;margin-top:0">
         <div class="card"><b>Free week</b><p>Every feature for 7 days from sign-up. No card needed.</p></div>
         <div class="card"><b>CardBoard — $4.99/month</b><p>Keep designing after the free week. Cancel any time from <b>Manage billing</b>.</p></div>
-        <div class="card"><b>All-in-one — $11.99/month</b><p>CardBoard, DevBoard, PitchBoard and BillBoard together, from the GameBoard home page.</p></div>
+        <div class="card"><b>All-in-one — $9.99/month</b><p>CardBoard, DevBoard, PitchBoard and BillBoard together, from the GameBoard home page.</p></div>
         <div class="card"><b>Codes</b><p><b>Have a code?</b> in the plans (or menu → <b>Enter a code</b>). A code unlocks time — a week, a month, a year or for good — for every app, or just the app it was made for. Each works once per account.</p></div>
       </div>
     </div>

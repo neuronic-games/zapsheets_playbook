@@ -17,7 +17,7 @@
  * Prices (in .env):
  *   STRIPE_PRICE_ID_DEVBOARD / _BILLBOARD / _PITCHBOARD / _CARDBOARD — recurring Pro price
  *   STRIPE_PRICE_ID_DEVBOARD_CORE — recurring DevBoard Core price
- *   STRIPE_PRICE_ID_ALL — recurring all-in-one price ($11.99)
+ *   STRIPE_PRICE_ID_ALL — recurring all-in-one price ($9.99)
  *   STRIPE_PRICE_ID_DONATION — one-time price set to "Customer chooses what to pay"
  *
  * Response: { ok, url } — redirect the browser there

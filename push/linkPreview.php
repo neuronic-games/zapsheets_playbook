@@ -14,7 +14,7 @@ require_once dirname(__DIR__) . '/dotEnv.php';
 
 const GB_PREVIEW_APPS = [
     // the app's name, its logo, and its tag line (the headline of its features page)
-    'cardboard'  => ['CardBoard',  'cardboard_icon_512.png',  'Your cards, straight from your sheet.'],
+    'cardboard'  => ['CardBoard',  'cardboard_icon_512.png',  'Design, print, and share your card deck — fast.'],
     'devboard'   => ['DevBoard',   'db_icon_512.png',         'Every playtest, remembered.'],
     'pitchboard' => ['PitchBoard', 'pitchboard_icon_512.png', 'From first sketch to signed deal — tracked.'],
     'billboard'  => ['BillBoard',  'bb_icon_512.png',         'Your games. A polished page — instantly.'],

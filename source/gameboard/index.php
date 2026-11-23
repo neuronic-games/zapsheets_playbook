@@ -24,7 +24,7 @@ $_page = gbLinkBase() === $_base ? $_abs . 'gameboard' : 'https://' . $_ENV['GAM
 $_desc = 'Built for game makers, from the first prototype to the store shelf.';
 function e($s) { return htmlspecialchars((string) $s, ENT_QUOTES); }
 $APPS = [
-  ['card', 'CardBoard',  'cardboard_icon_180.png', 'Design & print cards', 'Your cards, straight from your sheet.', '#7b6cf6', 'cardboard',
+  ['card', 'CardBoard',  'cardboard_icon_180.png', 'Design & print cards', 'Design, print, and share your card deck — fast.', '#7b6cf6', 'cardboard',
         ['Drag-and-drop card designer, fronts and backs', 'Print-and-play sheets, ready to cut', 'Tabletop Simulator and Screentop export'],
         ['$4.99', 'after a free week']],
   ['dev',  'DevBoard',   'db_icon_180.png',        'Playtest & develop', 'Every playtest, remembered.', '#49c4d4', 'devboard',
@@ -655,7 +655,7 @@ footer a:hover { color:var(--navy); }
     <div class="show" style="--c:#a99cff">
       <div class="show-text">
         <div class="badge"><img src="images/cardboard_icon_180.png" alt="">CardBoard · Design &amp; print cards</div>
-        <h3>Your cards, straight from your sheet.</h3>
+        <h3>Design, print, and share your card deck — fast.</h3>
         <p>Drag your sheet’s columns onto a poker card — name, cost, art, type, rules — and style it once. Every row becomes a card, fronts and backs. Print sheets with crop marks, or send the deck to Tabletop Simulator.</p>
         <a href="<?= e($_apps . 'cardboard/features') ?>">CardBoard features →</a>
       </div>

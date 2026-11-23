@@ -251,7 +251,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
 
 <section class="hero">
   <div class="hero-tag">For board game designers</div>
-  <h1>Your cards, <em>straight from your sheet</em>.</h1>
+  <h1>Design, print, and share your card deck <em>— fast</em>.</h1>
   <p>Keep your cards in a Google Sheet — one row per card. Lay out the front and back once, and CardBoard makes every card: ready to print, or to play in Tabletop Simulator and Screentop.</p>
   <div class="hero-btns">
     <a href="cardboard" class="btn-primary">Get CardBoard</a>

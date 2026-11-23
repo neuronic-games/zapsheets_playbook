@@ -43,7 +43,7 @@ function cbRun(string $python, string $sheetId, array $data): array {
 // free week, a subscription or an unlocked sheet
 require_once __DIR__ . '/gameboardAuth.php';
 cbRequireSignIn();
-if (in_array($action, ['save', 'addtab', 'addfield', 'renamefield', 'setcell', 'addrow', 'deleterow', 'deletefield', 'savecells', 'settag', 'deltag'], true)) {
+if (in_array($action, ['save', 'addtab', 'addfield', 'renamefield', 'setcell', 'addrow', 'deleterow', 'deletefield', 'savecells', 'reorder', 'settag', 'deltag'], true)) {
     require_once __DIR__ . '/gameboardAuth.php';
     cbRequireAccess($sheetId);
 }
@@ -120,7 +120,7 @@ if ($action === 'addfield') {
 }
 
 // Data tab: the sheet as typed, and edits written straight back
-if (in_array($action, ['grid', 'setcell', 'addrow', 'deleterow', 'deletefield', 'savecells'], true)) {
+if (in_array($action, ['grid', 'setcell', 'addrow', 'deleterow', 'deletefield', 'savecells', 'reorder'], true)) {
     $tab = trim($_POST['tab'] ?? '');
     if ($tab === '' || strpbrk($tab, "/\\") !== false || strtolower($tab) === 'layouts') { echo json_encode(['error' => 'Invalid tab']); exit; }
     $req = ['action' => $action, 'sheet' => $tab];
@@ -138,6 +138,11 @@ if (in_array($action, ['grid', 'setcell', 'addrow', 'deleterow', 'deletefield', 
         $req += ['row' => (int) ($_POST['row'] ?? 0), 'values' => is_array($vals) ? array_values($vals) : []];
     }
     if ($action === 'deletefield') $req['field'] = trim((string) ($_POST['field'] ?? ''));
+    if ($action === 'reorder') {   // the card rows in their new order
+        $ord = json_decode($_POST['order'] ?? '[]', true);
+        $req['order'] = is_array($ord) ? array_values(array_map('intval', $ord)) : [];
+        if (count($req['order']) > 5000) { echo json_encode(['error' => 'Too many cards to move at once']); exit; }
+    }
     if ($action === 'savecells') {
         $cells = json_decode($_POST['cells'] ?? '[]', true); $adds = json_decode($_POST['adds'] ?? '[]', true);
         $req['cells'] = is_array($cells) ? array_values($cells) : [];

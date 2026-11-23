@@ -301,7 +301,7 @@ def main():
         wb.values_update(q(tws.title) + '!' + a1, params={'valueInputOption': 'RAW'}, body={'values': [[field]]})
         out({'ok': True, 'old': old, 'field': field, 'column': a1.rstrip('0123456789')})
 
-    if action in ('grid', 'setcell', 'addrow', 'deleterow', 'deletefield', 'savecells'):
+    if action in ('grid', 'setcell', 'addrow', 'deleterow', 'deletefield', 'savecells', 'reorder'):
         name = str(data.get('sheet', '')).strip()
         tws = next((w for w in sheets if w.title == name), None)
         if tws is None or name.lower() == TAB:
@@ -503,6 +503,33 @@ def main():
                 out({'error': 'conflict'})
             delete_dim('ROWS', row - 1)
             out({'ok': True, 'row': row})
+
+        if action == 'reorder':
+            # order: the sheet rows holding cards, in their new order. Those rows keep the same places in the
+            # sheet (empty rows stay put) and the cards are moved into them with moveDimension, so formulas
+            # (=C2+D2) move with their row. Refused when the sheet's cards aren't the rows the browser had.
+            try: order = [int(x) for x in (data.get('order') or [])]
+            except Exception: order = []
+            if not order or len(set(order)) != len(order) or min(order) < 2: out({'error': 'Bad order'})
+            vals = read('2:' + str(max(tws.row_count, 2)))
+            have = [i + 2 for i, r in enumerate(vals) if any(cellstr(v).strip() for v in r)]
+            if sorted(have) != sorted(order):
+                out({'error': 'The sheet\'s cards changed meanwhile — Fetch, then move them again', 'conflict': True})
+            lo, hi = min(order), max(order)
+            slots = sorted(order)                       # the rows the cards sit in, top first
+            cur = list(range(lo, hi + 1))               # what's in each row of the block now (by original row number)
+            want = list(cur)
+            for slot, r in zip(slots, order): want[slot - lo] = r
+            reqs = []
+            for i, r in enumerate(want):                # fill from the top: move each row up into place
+                j = cur.index(r)
+                if j == i: continue
+                reqs.append({'moveDimension': {'source': {'sheetId': tws.id, 'dimension': 'ROWS', 'startIndex': lo - 1 + j, 'endIndex': lo + j},
+                                              'destinationIndex': lo - 1 + i}})
+                cur.insert(i, cur.pop(j))
+            for k in range(0, len(reqs), 500):
+                wb.batch_update({'requests': reqs[k:k + 500]})
+            out({'ok': True, 'moved': len(reqs), 'map': {str(r): slot for slot, r in zip(slots, order)}})
 
         if action == 'deletefield':
             field = str(data.get('field', '')).strip()

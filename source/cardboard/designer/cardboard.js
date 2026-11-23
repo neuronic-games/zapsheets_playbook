@@ -222,7 +222,7 @@ function cacheAfter(action, x, res) {   // keep what was read; forget what a cha
   else if (action === 'rows') cacheSet(ck('rows:' + tab), res.rows || []);
   else if (action === 'grid') cacheSet(ck('grid:' + tab), { header: res.header || [], rows: res.rows || [] });
   else if (action === 'tags') cacheSet(ck('tags'), res);
-  else if (/^(savecells|setcell|addrow|deleterow|deletefield|renamefield|addfield)$/.test(action)) { cacheDel(ck('rows:' + tab)); cacheDel(ck('grid:' + tab)); }
+  else if (/^(savecells|setcell|addrow|deleterow|deletefield|renamefield|addfield|reorder)$/.test(action)) { cacheDel(ck('rows:' + tab)); cacheDel(ck('grid:' + tab)); }
   else if (action === 'settag' || action === 'deltag') cacheDel(ck('tags'));
 }
 function writeStartCache() {   // the decks and saved layouts as they are now (after Save)
@@ -1545,7 +1545,22 @@ function draftTabs() {
 }
 function dataKey(tab) { return 'cb_data:' + SHEET_ID + ':' + tab; }
 function dataPend(tab) { var p = lsGet(dataKey(tab)) || {}; ['cells', 'adds', 'cols', 'delrows', 'delcols'].forEach(function(k) { p[k] = p[k] || []; }); return p; }
-function pendSize(p) { return p.cells.length + p.adds.length + p.cols.length + p.delrows.length + p.delcols.length; }
+function pendSize(p) { return p.cells.length + p.adds.length + p.cols.length + p.delrows.length + p.delcols.length + (p.order && p.order.length ? 1 : 0); }
+// Cards moved in the Cards view: p.order is the sheet rows holding cards, in their new order. Until Save,
+// the grid and the cards (Layout, Print, Export) show that order; Save moves the rows in the sheet first.
+function sortSlots(arr, movable, rank) {   // reorder the movable items among the places they hold; the rest stay put
+  var at = [], items = [];
+  arr.forEach(function(x, i) { if (movable(x)) { at.push(i); items.push(x); } });
+  items.sort(function(a, b) { return rank(a) - rank(b); });
+  at.forEach(function(i, k) { arr[i] = items[k]; });
+}
+function orderRank(order) { return function(row) { var k = order.indexOf(row); return k < 0 ? 1e6 + row : k; }; }
+function applyRowOrder(tab) {
+  var o = dataPend(tab).order, rank = orderRank(o || []);
+  if (!o || !o.length) return;
+  if (tab === curTab) sortSlots(ROWS, function(r) { return !r._pend && r._row; }, function(r) { return rank(r._row); });
+  if (GRID && GRID.tab === tab) sortSlots(GRID.rows, function(g) { return !g.draft; }, function(g) { return rank(g.row); });
+}
 function setDataPend(tab, p) {
   if (!_dUndoQuiet) dataUndoMark(tab);
   lsSet(dataKey(tab), pendSize(p) ? p : null); updateSaveBtn();
@@ -1668,6 +1683,7 @@ function pendingOld(tab, row, field) { var c = dataPend(tab).cells.filter(functi
 // Show this tab's unsaved cell edits and new rows on top of what was read from the sheet
 function overlayPending(partial) {
   var tab = curTab, p = dataPend(tab);
+  applyRowOrder(tab);
   p.cols.forEach(function(n) { if (FIELDS.indexOf(n) < 0) FIELDS.push(n); ROWS.forEach(function(r) { if (!(n in r)) r[n] = ''; }); });   // columns not in the sheet yet
   p.delcols.forEach(function(n) { FIELDS = FIELDS.filter(function(f) { return f !== n; }); ROWS.forEach(function(r) { delete r[n]; }); });   // columns deleted here
   if (!partial) p.adds.forEach(function(a) {   // new rows become cards at the end
@@ -1683,6 +1699,7 @@ function gridCardIndex(gr) { return GRID.rows.filter(function(g) { return !g.dra
 function overlayGrid() {
   if (!GRID || GRID.tab !== curTab) return;
   var p = dataPend(curTab);
+  applyRowOrder(curTab);
   p.cols.forEach(function(n) {
     if (GRID.header.indexOf(n) >= 0) return;
     var at = GRID.header.length; while (at > 0 && !GRID.header[at - 1]) at--;
@@ -1741,10 +1758,22 @@ function saveAll(auto) {
   dataTabs().forEach(function(tab) {
     chain = chain.then(function() {
       if (isNewTab(tab)) { step(); return; }   // its tab couldn't be added: keep its changes for the next Save
-      var sent = dataPend(tab);
-      return api('savecells', { tab: tab, cols: JSON.stringify(sent.cols), cells: JSON.stringify(sent.cells), adds: JSON.stringify(sent.adds), delrows: JSON.stringify(sent.delrows), delcols: JSON.stringify(sent.delcols) })
-        .then(function(res) { conflicts += applySaveResults(tab, sent, res); if (savedTabs.indexOf(tab) < 0) savedTabs.push(tab); })
-        .catch(function(e) { errors.push('“' + tab + '” data: ' + e.message); }).then(step);
+      var sent = dataPend(tab), moved = Promise.resolve();
+      if (sent.order && sent.order.length) moved = api('reorder', { tab: tab, order: JSON.stringify(sent.order) }).then(function(res) {
+        var map = res.map || {}, to = function(r) { return map[String(r)] || r; }, p = dataPend(tab);
+        p.cells.forEach(function(x) { x.row = to(x.row); });
+        p.delrows.forEach(function(x) { x.row = to(x.row); });
+        p.adds.forEach(function(a) { if (a.after > 1) a.after = to(a.after); });
+        if (p.order && JSON.stringify(p.order) !== JSON.stringify(sent.order)) p.order = p.order.map(to); else delete p.order;   // moved again while saving: next time
+        _dUndoQuiet = true; setDataPend(tab, p); _dUndoQuiet = false;
+        _reloadGrid[tab] = true; _lastSaveData[tab] = true; if (savedTabs.indexOf(tab) < 0) savedTabs.push(tab);
+        sent = dataPend(tab);
+      });
+      return moved.then(function() {
+        if (!pendSize(sent) || (sent.order && sent.order.length)) return;
+        return api('savecells', { tab: tab, cols: JSON.stringify(sent.cols), cells: JSON.stringify(sent.cells), adds: JSON.stringify(sent.adds), delrows: JSON.stringify(sent.delrows), delcols: JSON.stringify(sent.delcols) })
+        .then(function(res) { conflicts += applySaveResults(tab, sent, res); if (savedTabs.indexOf(tab) < 0) savedTabs.push(tab); });
+      }).catch(function(e) { errors.push('“' + tab + '” data: ' + e.message); }).then(step);
     });
   });
   draftTabs().forEach(function(tab) {
@@ -3431,6 +3460,26 @@ function openRowMenu(td) {
 }
 document.addEventListener('mousedown', function(ev) { if ($('rowMenu') && !ev.target.closest('#rowMenu') && !ev.target.closest('td.rn.menu-open')) closeRowMenu(); });
 document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') closeRowMenu(); });
+function moveCardRow(src, before) {   // before: a grid row, or 'end'
+  var tab = GRID.tab, list = GRID.rows.filter(function(g) { return !g.draft; }).map(function(g) { return g.row; });
+  var from = list.indexOf(src.row); if (from < 0) return;
+  list.splice(from, 1);
+  var at = before === 'end' ? list.length : list.indexOf(before.row); if (at < 0) at = list.length;
+  list.splice(at, 0, src.row);
+  var natural = list.slice().sort(function(a, b) { return a - b; });
+  var p = dataPend(tab);
+  if (list.join() === natural.join()) delete p.order; else p.order = list;
+  setDataPend(tab, p);
+  var shown = src;   // the card on screen stays the one that moved
+  applyRowOrder(tab);
+  if (p.order == null) {   // back to the sheet's order
+    GRID.rows.sort(function(a, b) { return (a.draft ? 1e9 : a.row) - (b.draft ? 1e9 : b.row); });
+    ROWS.sort(function(a, b) { return (a._pend ? 1e9 : a._row || 0) - (b._pend ? 1e9 : b._row || 0); });
+  }
+  renderGrid(); renderData(); render();
+  var ci = gridCardIndex(shown); if (ci >= 0 && tab === curTab) rowIdx = ci;
+  if (_activeTab === 'print') renderPrint();
+}
 function deleteGridRow(ri) {   // kept in this browser until Save
   var r = GRID.rows[ri]; if (!r) return;
   if (!requirePro('edit', function() {})) return;
@@ -3624,6 +3673,42 @@ function refreshRows() {
       renderGrid(); saveGridPrefs();
     };
     document.addEventListener('mousemove', mv2); document.addEventListener('mouseup', up2);
+  });
+  // Move a card: drag its number up or down and drop it where the line shows. The card moves in the
+  // sheet when you save (kept in this browser until then, like every edit); one undo step.
+  wrap.addEventListener('mousedown', function(ev) {
+    var rn = ev.target.closest('tbody td.rn'); if (!rn || ev.button !== 0) return;
+    var ri = +rn.parentNode.dataset.r, src = GRID.rows[ri]; if (!src || src.draft) return;
+    var y0 = ev.clientY, moved = false, marker = null, ghost = null, target = null, table = wrap.querySelector('table.grid');
+    var trs = [].slice.call(table.querySelectorAll('tbody tr')).filter(function(tr) { var g = GRID.rows[+tr.dataset.r]; return g && !g.draft; });
+    var mv = function(e) {
+      if (!moved && Math.abs(e.clientY - y0) < 6) return;
+      if (!moved) {
+        if (!hasAccess()) { up(); requirePro('edit', function() {}); return; }
+        moved = true; closeRowMenu(); document.body.classList.add('row-moving'); rn.parentNode.classList.add('row-src');
+        ghost = document.createElement('div'); ghost.className = 'col-ghost';
+        ghost.textContent = (src.values.filter(function(v) { return String(v).trim(); })[0] || 'Card').slice(0, 40); document.body.appendChild(ghost);
+        marker = document.createElement('div'); marker.className = 'row-marker'; wrap.appendChild(marker);
+      }
+      ghost.style.left = (e.clientX + 12) + 'px'; ghost.style.top = (e.clientY + 8) + 'px';
+      var wr = wrap.getBoundingClientRect(), best = 0, by = 0, bd = 1e9;
+      for (var k = 0; k <= trs.length; k++) {
+        var r = trs[Math.min(k, trs.length - 1)].getBoundingClientRect(), y = k < trs.length ? r.top : r.bottom, d = Math.abs(e.clientY - y);
+        if (d < bd) { bd = d; best = k; by = y; }
+      }
+      target = best < trs.length ? GRID.rows[+trs[best].dataset.r] : 'end';
+      marker.style.top = (by - wr.top + wrap.scrollTop - 1) + 'px'; marker.style.left = wrap.scrollLeft + 'px'; marker.style.width = Math.min(table.offsetWidth, wrap.clientWidth) + 'px';
+      if (e.clientY > wr.bottom - 30) wrap.scrollTop += 12; else if (e.clientY < wr.top + 60) wrap.scrollTop -= 12;
+    };
+    var up = function() {
+      document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up);
+      if (!moved) return;
+      document.body.classList.remove('row-moving'); rn.parentNode.classList.remove('row-src'); ghost.remove(); marker.remove();
+      _colDragged = true; setTimeout(function() { _colDragged = false; }, 0);
+      if (!target || target === src) return;
+      moveCardRow(src, target);
+    };
+    document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
   });
   wrap.addEventListener('mousedown', function(ev) {
     var td = ev.target.closest('td[data-c]'); if (!td || ev.target.classList.contains('g-editor')) return;

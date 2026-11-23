@@ -567,6 +567,11 @@ table.grid thead th .th-caret { position:absolute; right:.55rem; top:50%; transf
 .col-rs:hover, body.col-resizing .col-rs:hover { background:linear-gradient(90deg, transparent 4px, #7b6cf6 4px, #7b6cf6 6px, transparent 6px); }
 body.col-resizing, body.col-resizing * { cursor:col-resize !important; user-select:none; }
 body.col-moving, body.col-moving * { cursor:grabbing !important; user-select:none; }
+/* Moving a card: drag its number; a line shows where it goes */
+body.row-moving, body.row-moving * { cursor:grabbing !important; user-select:none; }
+table.grid tbody td.rn { cursor:grab; }
+table.grid tr.row-src td { opacity:.45; }
+.row-marker { position:absolute; height:3px; background:#7b6cf6; border-radius:2px; z-index:5; pointer-events:none; box-shadow:0 0 0 2px rgba(123,108,246,.2); }
 table.grid thead th.col-src { background:#ddd6ff; color:#7b6cf6; }
 .col-marker { position:absolute; width:3px; background:#7b6cf6; border-radius:2px; z-index:6; pointer-events:none; box-shadow:0 0 0 2px rgba(123,108,246,.18); }
 .col-ghost { position:fixed; z-index:9999; pointer-events:none; padding:.3rem .6rem; border-radius:6px; background:#2e2763; color:#fff; font-family:'DINBlack',sans-serif; font-size:.72rem; letter-spacing:.03em; text-transform:uppercase; box-shadow:0 6px 18px rgba(30,20,80,.3); }

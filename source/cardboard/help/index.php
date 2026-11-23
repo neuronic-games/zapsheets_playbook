@@ -305,6 +305,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
   </div>
   <ul>
     <li><b>New card:</b> type in the empty row at the bottom — it becomes a card, with a fresh empty row below. <b>New column:</b> type a name in the empty heading at the end, or just type in one of its cells.</li>
+    <li><b>Move a card:</b> drag its number up or down and drop it where the line shows. The card order changes everywhere — Layout, Print and Export — and the row moves in your sheet when you save (formulas move with it). <kbd>⌘Z</kbd> undoes it.</li>
     <li><b>Move a column:</b> drag its heading and drop it where the line shows. <b>Resize:</b> drag a heading's right edge (double-click the edge to fit). This order is also the order of the fields in the Layout view's Card list — your sheet's columns don't move.</li>
     <li><b>Rename</b> changes the heading in your sheet, and the layout follows: Card fields, <code>{Column}</code> in text, mappings and hidden fields all switch to the new name.</li>
     <li><b>Hide field</b> tucks a column away here and in the Card list; it stays in the sheet and on any card that uses it. <b>Show all</b> brings hidden ones back.</li>

@@ -608,6 +608,9 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
 .g-arrow { color:#a99cff; margin:0 .35rem; }
 .g-thumb.g-mapimg { margin-right:0; }
 .g-thumb { width:22px; height:22px; object-fit:cover; border-radius:4px; vertical-align:middle; margin-right:.4rem; background:#eef0f6; }
+/* While a picture loads: a spinner in its place; one that doesn't load: a crossed-out picture */
+.g-thumb.ld { background:#eef0f6 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='8' fill='none' stroke='%23c9c5ef' stroke-width='3'/%3E%3Cpath d='M12 4a8 8 0 0 1 8 8' fill='none' stroke='%235b4fd6' stroke-width='3' stroke-linecap='round'%3E%3CanimateTransform attributeName='transform' type='rotate' from='0 12 12' to='360 12 12' dur='.8s' repeatCount='indefinite'/%3E%3C/path%3E%3C/svg%3E") center / 16px no-repeat; }
+.g-thumb.bad { background:#fdeceb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c0392b' stroke-width='2'%3E%3Crect x='4' y='4' width='16' height='16' rx='2'/%3E%3Cpath d='M4 20 20 4'/%3E%3C/svg%3E") center / 14px no-repeat; }
 .g-editor { position:absolute; z-index:20; border:2px solid #4b3fa8; border-radius:2px; padding:.4rem .5rem; font:inherit; font-size:.8rem; line-height:1.35; resize:none; background:#fff; box-shadow:0 6px 20px rgba(20,20,60,.18); outline:none; max-width:32rem; }
 .e-note { font-size:.8rem; color:#3b3f5c; height:2.05rem; display:flex; align-items:center; }
 .e-back { display:flex; gap:.3rem; align-items:center; }

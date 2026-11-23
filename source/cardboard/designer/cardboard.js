@@ -3238,7 +3238,7 @@ function renderGrid() {
     h += '<tr data-r="' + ri + '"' + (r.draft ? ' class="draft"' : '') + '><td class="rn" title="Card options">' + (cardN[ri] ? cardNo(cardN[ri]) : '') + '</td>';
     cols.forEach(function(c) {
       var v = r.values[c.i] || '', st = (r.state || {})[c.i] || '';
-      var thumb = !c.ghost && imageUrl(v) && (imgCols[c.i] || isImageLink(v)) ? '<img class="g-thumb" src="' + esc(imageUrl(v)) + '" alt="" referrerpolicy="no-referrer">' : '';
+      var thumb = !c.ghost && imageUrl(v) && (imgCols[c.i] || isImageLink(v)) ? gridThumb(v) : '';
       h += '<td data-r="' + ri + '" data-c="' + c.i + '" class="' + (st ? 'st-' + st : '') + (c.ghost ? ' ghost-col' : '') + (/^=/.test(v) ? ' formula' : '') + '" title="' + esc(v.length > 60 ? v : '') + '">' + thumb + (c.ghost ? '<span>' + esc(v) + '</span>' : gridShown(c.name, v, r.shown && r.shown[c.i])) + '</td>';
     });
     h += '</tr>';
@@ -3294,10 +3294,29 @@ function endGridEdit(save) {
   if (save && val !== ed.old) saveGridCell(ed.r, ed.c, val, ed.old);
 }
 function setCellState(r, c, st) { var row = GRID.rows[r]; (row.state = row.state || {})[c] = st; var td = gridCell(r, c); if (td) { td.className = td.className.replace(/\bst-\w+/g, '').trim() + (st ? ' st-' + st : ''); } }
-function paintCell(r, c) {
+// A cell's picture: a placeholder with a spinner straight away, the picture once it has loaded
+var BLANK_GIF = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+function gridThumb(v) {   // the placeholder (spinner) shows at once; the picture replaces it when it has loaded
+  return '<img class="g-thumb ld" src="' + BLANK_GIF + '" data-src="' + esc(imageUrl(v)) + '" alt="" onload="thumbLoad(this)">';
+}
+function thumbLoad(img) {
+  if (img.dataset.go) return; img.dataset.go = '1';
+  var u = img.dataset.src, t = new Image();
+  t.referrerPolicy = 'no-referrer';
+  t.onload = function() { img.referrerPolicy = 'no-referrer'; img.src = u; img.classList.remove('ld'); };
+  t.onerror = function() { img.classList.remove('ld'); img.classList.add('bad'); img.title = 'This picture didn’t load'; };
+  t.src = u;
+}
+function paintCell(r, c) {   // show a cell again after it changed: its picture (for a picture link), tags, mapped value
   var td = gridCell(r, c); if (!td) return;
-  var v = GRID.rows[r].values[c] || '';
-  td.querySelector('span').textContent = v;
+  var row = GRID.rows[r], v = row.values[c] || '', name = GRID.header[c];
+  if (!name) { var sp = td.querySelector('span'); if (sp) sp.textContent = v; else td.innerHTML = '<span>' + esc(v) + '</span>'; }
+  else {
+    var thumb = imageUrl(v) && (isImageLink(v) || (FIELDS.indexOf(name) >= 0 && looksLikeImage(name))) ? gridThumb(v) : '';
+    var res = row.shown && row.shown[c] && row.shown[c][0] === v ? row.shown[c] : null;
+    td.innerHTML = thumb + gridShown(name, v, res);
+  }
+  td.title = v.length > 60 ? v : '';
   td.classList.toggle('formula', /^=/.test(v));
   markFound(td);
   if (_gridFilter) updateReplaceBtn();

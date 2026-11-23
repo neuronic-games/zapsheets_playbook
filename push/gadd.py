@@ -74,6 +74,8 @@ if not headers:
 
 # Pull special keys before building the sheet row
 bg_color_hex = row_data.pop('__bg_color__', '')
+# __notes__: {heading: note} — a note on that cell of the new row (e.g. a T&M row's contract Ref #)
+cell_notes = row_data.pop('__notes__', None) or {}
 
 # __add_headers__: headings this row needs that older sheets may not have yet (added after the last one)
 add_headers = [str(h).strip() for h in (row_data.pop('__add_headers__', None) or []) if str(h).strip()]
@@ -148,18 +150,36 @@ new_row = [safe_str(row_data.get(h.strip(), '')) for h in headers]
 # INSERT_ROWS which can fail on protected sheets). The API appends after the last
 # row that contains data in the table starting at A1.
 try:
-    ws.append_rows(
+    _app = ws.append_rows(
         [new_row],
         value_input_option='USER_ENTERED',
         insert_data_option='OVERWRITE',
         table_range='A1',
     )
     approx_row = len(all_values) + 1
+    try:   # the row the API actually wrote, e.g. "'Tab'!A28:K28"
+        import re as _re
+        _m = _re.search(r'![A-Z]+(\d+)', ((_app or {}).get('updates') or {}).get('updatedRange', ''))
+        if _m: approx_row = int(_m.group(1))
+    except Exception:
+        pass
 except Exception as e:
     print(json.dumps({"error": f"Could not write row: {str(e)}"}))
     sys.exit(1)
 
 non_empty = sum(1 for v in new_row if v)
+
+if cell_notes:
+    try:
+        _hs = [h.strip() for h in headers]
+        _reqs = [{'updateCells': {
+            'range': {'sheetId': ws.id, 'startRowIndex': approx_row - 1, 'endRowIndex': approx_row,
+                      'startColumnIndex': _hs.index(k), 'endColumnIndex': _hs.index(k) + 1},
+            'rows': [{'values': [{'note': str(v)}]}], 'fields': 'note'}}
+            for k, v in cell_notes.items() if k in _hs and str(v).strip()]
+        if _reqs: mGoogleSheet.batch_update({'requests': _reqs})
+    except Exception:
+        pass  # non-fatal: the note is extra
 
 # Apply background color to the appended row if requested
 if bg_color_hex:

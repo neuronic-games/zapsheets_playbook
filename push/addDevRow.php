@@ -26,6 +26,7 @@ $observation = trim($_POST['observation'] ?? '');
 $solution    = trim($_POST['solution']    ?? '');
 $rowType     = trim($_POST['row_type']    ?? '');
 $contract    = trim(preg_replace('/\s+/', ' ', (string) ($_POST['contract'] ?? '')));   // T&M: the contract it's for (its one-line Summary)
+$contractRef = trim((string) ($_POST['contract_ref'] ?? ''));   // …and its Ref Number, kept as a note on that cell
 
 if (!$sheetId || !$gameName) {
     echo json_encode(['error' => 'Missing id or game']);
@@ -93,7 +94,10 @@ if ($isTesterRow) {
         'Solution'      => $solution,      // legacy column name
         '__bg_color__'  => $bgColor,       // consumed by gadd.py, not written to sheet
     ];
-    if ($event === 'Time' || $event === 'Material') { $row['Contract'] = $contract; $row['__add_headers__'] = ['Contract']; }
+    if ($event === 'Time' || $event === 'Material') {
+        $row['Contract'] = $contract; $row['__add_headers__'] = ['Contract'];
+        if ($contractRef !== '') $row['__notes__'] = ['Contract' => 'Ref Number: ' . $contractRef];
+    }
     $encoded = base64_encode(json_encode($row, JSON_UNESCAPED_UNICODE));
     $arg     = $sheetId . '|' . $tabName . '|' . $encoded;
     $cmd     = escapeshellarg($pythonPath) . ' '

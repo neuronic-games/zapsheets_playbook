@@ -2847,19 +2847,28 @@ function sumRebuild(px, filter) {
   var items = (_sumSrc[px] || []).filter(function(n) { return !lower || (n.s + ' ' + n.ref).toLowerCase().indexOf(lower) !== -1; });
   if (!items.length) { drop.innerHTML = ''; document.getElementById(px + 'SumCombo').classList.remove('open'); return; }
   drop.innerHTML = items.map(function(n) {   // the summary, with its Ref # in brackets
-    return '<div class="combo-item" data-name="' + esc(n.s) + '" onmousedown="sumPick(\'' + px + '\',this.dataset.name)">' + esc(n.s) +
+    return '<div class="combo-item" data-name="' + esc(n.s) + '" data-ref="' + esc(n.ref) + '" onmousedown="sumPick(\'' + px + '\',this.dataset.name,this.dataset.ref)">' + esc(n.s) +
       (n.ref ? ' <span style="opacity:.55">(' + esc(n.ref) + ')</span>' : '') + '</div>';
   }).join('');
   document.getElementById(px + 'SumCombo').classList.add('open');
 }
-function sumPick(px, n) {
+function sumPick(px, n, ref) {
   document.getElementById(px + 'Summary').value = n;
+  document.getElementById(px + 'Summary').dataset.ref = ref || '';
   document.getElementById(px + 'SumDrop').innerHTML = '';
   document.getElementById(px + 'SumCombo').classList.remove('open');
 }
 function sumKey(px, e) {
   if (e.key === 'Escape') { document.getElementById(px + 'SumCombo').classList.remove('open'); }
-  if (e.key === 'Enter' && !(e.metaKey || e.ctrlKey)) { var first = document.querySelector('#' + px + 'SumDrop .combo-item'); if (first) { e.preventDefault(); sumPick(px, first.dataset.name); } }
+  if (e.key === 'Enter' && !(e.metaKey || e.ctrlKey)) { var first = document.querySelector('#' + px + 'SumDrop .combo-item'); if (first) { e.preventDefault(); sumPick(px, first.dataset.name, first.dataset.ref); } }
+}
+// The Ref Number of the contract chosen in a summary combo (the one picked, else the first with that summary)
+function sumRef(px) {
+  var inp = document.getElementById(px + 'Summary'), v = _cleanSummary(inp.value);
+  var src = _sumSrc[px] || [], picked = inp.dataset.ref || '';
+  if (picked && src.some(function(n) { return n.s === v && n.ref === picked; })) return picked;
+  var m = src.filter(function(n) { return n.s.toLowerCase() === v.toLowerCase(); })[0];
+  return m ? m.ref : '';
 }
 
 function _payValues() {
@@ -5102,6 +5111,7 @@ function openDashTMDialog(gameName) {
   _sumSrc.dashTM = _contractSummaries(gameName);
   _dashTMInitialSum = _sumSrc.dashTM.length === 1 ? _sumSrc.dashTM[0].s : '';
   document.getElementById('dashTMSummary').value = _dashTMInitialSum;
+  document.getElementById('dashTMSummary').dataset.ref = _sumSrc.dashTM.length === 1 ? _sumSrc.dashTM[0].ref : '';
   document.getElementById('dashTMSumCombo').classList.remove('open');
   _dashTMMaterialCount = 0;
   document.getElementById('dashTMMaterialsContainer').innerHTML = '';
@@ -5165,6 +5175,7 @@ async function submitDashTM() {
     fd.append('solution',    row.solution);
     fd.append('row_type',    'header');
     fd.append('contract',    tmContract);
+    fd.append('contract_ref', sumRef('dashTM'));
     try {
       var resp = await fetch(APP_BASE + 'push/addDevRow.php', { method:'POST', body: fd });
       var data = await resp.json();

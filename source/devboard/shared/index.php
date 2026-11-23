@@ -1398,23 +1398,31 @@ function tmSumRebuild(filter) {
   if (!items.length) { drop.innerHTML = ''; document.getElementById('tmSumCombo').classList.remove('open'); return; }
   var q = function(v) { return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
   drop.innerHTML = items.map(function(n) {   // the summary, with its Ref # in brackets
-    return '<div class="combo-option" data-name="' + q(n.s) + '" onmousedown="tmSumPick(this.dataset.name)">' + q(n.s) + (n.ref ? ' <span style="opacity:.55">(' + q(n.ref) + ')</span>' : '') + '</div>';
+    return '<div class="combo-option" data-name="' + q(n.s) + '" data-ref="' + q(n.ref) + '" onmousedown="tmSumPick(this.dataset.name,this.dataset.ref)">' + q(n.s) + (n.ref ? ' <span style="opacity:.55">(' + q(n.ref) + ')</span>' : '') + '</div>';
   }).join('');
   document.getElementById('tmSumCombo').classList.add('open');
 }
-function tmSumPick(n) {
+function tmSumPick(n, ref) {
   document.getElementById('tmSummary').value = n;
+  document.getElementById('tmSummary').dataset.ref = ref || '';
   document.getElementById('tmSumDrop').innerHTML = '';
   document.getElementById('tmSumCombo').classList.remove('open');
 }
 function tmSumKey(e) {
   if (e.key === 'Escape') { document.getElementById('tmSumCombo').classList.remove('open'); }
-  if (e.key === 'Enter' && !(e.metaKey || e.ctrlKey)) { var first = document.querySelector('#tmSumDrop .combo-option'); if (first) { e.preventDefault(); tmSumPick(first.dataset.name); } }
+  if (e.key === 'Enter' && !(e.metaKey || e.ctrlKey)) { var first = document.querySelector('#tmSumDrop .combo-option'); if (first) { e.preventDefault(); tmSumPick(first.dataset.name, first.dataset.ref); } }
+}
+function tmSumRef() {   // the chosen contract's Ref Number (the one picked, else the first with that summary)
+  var inp = document.getElementById('tmSummary'), v = inp.value.replace(/\s+/g, ' ').trim(), picked = inp.dataset.ref || '';
+  if (picked && TM_CONTRACTS.some(function(n) { return n.s === v && n.ref === picked; })) return picked;
+  var m = TM_CONTRACTS.filter(function(n) { return n.s.toLowerCase() === v.toLowerCase(); })[0];
+  return m ? m.ref : '';
 }
 
 function openTMDialog() {
   _tmInitialSum = TM_CONTRACTS.length === 1 ? TM_CONTRACTS[0].s : '';
   document.getElementById('tmSummary').value = _tmInitialSum;
+  document.getElementById('tmSummary').dataset.ref = TM_CONTRACTS.length === 1 ? TM_CONTRACTS[0].ref : '';
   document.getElementById('tmSumCombo').classList.remove('open');
   document.getElementById('tmTimeMinutes').value  = '';
   document.getElementById('tmTimeNotes').value    = '';
@@ -1537,6 +1545,7 @@ async function submitTM() {
     fd.append('solution',    row.solution);
     fd.append('row_type',    'header');
     fd.append('contract',    tmContract);
+    fd.append('contract_ref', tmSumRef());
     try {
       var resp = await fetch(APP_BASE + 'push/addDevRow.php', { method:'POST', body: fd });
       var data = await resp.json();

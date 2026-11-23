@@ -1078,7 +1078,7 @@ function render() {
   card.style.transform = 'scale(' + zoom + ')';
   card.style.setProperty('--z', zoom * PX);
   $('rowInfo').innerHTML = ROWS.length ? cardNo(rowIdx + 1) : esc(_rowsPartial ? 'Loading cards…' : 'No cards');
-  $('rowInfo').title = ROWS.length ? 'Card ' + (rowIdx + 1) + ' of ' + ROWS.length + (_rowsPartial ? ' (loading the rest…)' : '') : '';
+  $('rowInfo').title = ROWS.length ? 'Card ' + (rowIdx + 1) + ' of ' + ROWS.length + ' — click to type a number' + (_rowsPartial ? ' (loading the rest…)' : '') : '';
   updateDeckCount();
   $('rowInfo').classList.toggle('partial', _rowsPartial);
   $('rowPrev').disabled = $('rowFirst').disabled = rowIdx <= 0; $('rowNext').disabled = $('rowLast').disabled = rowIdx >= ROWS.length - 1;
@@ -1186,6 +1186,25 @@ function flipCard() {
 }
 function firstCard() { stepRow(-ROWS.length); }
 function lastCard() { stepRow(ROWS.length); }
+// Go to a card: click its number above the card and type another (Enter goes, Esc keeps this one)
+function editCardNo() {
+  var box = $('rowInfo'); if (!ROWS.length || box.querySelector('input')) return;
+  var n = ROWS.length;
+  box.innerHTML = '<input class="card-no-in" type="text" inputmode="numeric" aria-label="Go to card" value="' + (rowIdx + 1) + '" style="width:' + (String(n).length + 1.6) + 'ch">';
+  var inp = box.querySelector('input'), done = false;
+  var finish = function(go) {
+    if (done) return; done = true;
+    var v = parseInt(inp.value, 10);
+    if (go && !isNaN(v)) { rowIdx = clamp(v, 1, n) - 1; stepRow(0); } else render();
+  };
+  inp.addEventListener('keydown', function(e) {
+    e.stopPropagation();   // typed digits are for the box, not the designer's shortcuts
+    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+    else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+  });
+  inp.addEventListener('blur', function() { finish(true); });
+  inp.focus(); inp.select();
+}
 function stepRow(d) { rowIdx = clamp(rowIdx + d, 0, Math.max(0, ROWS.length - 1)); render(); renderData(); var se = elById(selId); if (se && se.kind === 'data') renderAttrs(); else if (isPicEl(se)) renderAttrs(); }
 function zoomBy(d) {
   var steps = [.5, .75, 1, 1.25, 1.5, 2, 2.5, 3, 4];

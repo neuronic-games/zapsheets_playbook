@@ -316,7 +316,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 
 <section class="topic" id="addcard">
   <h2><span class="n">8</span>Stepping through &amp; adding cards</h2>
-  <p>Above the card in the Layout view: <b>first</b>, <b>previous</b>, the card number, <b>next</b> and <b>last</b> — check your design on every card. The dashed <b>+</b> adds a card right after the one you're on.</p>
+  <p>Above the card in the Layout view: <b>first</b>, <b>previous</b>, the card number, <b>next</b> and <b>last</b> — check your design on every card. Click the card number to type another and press <kbd>Enter</kbd> to go straight to it. The dashed <b>+</b> adds a card right after the one you're on.</p>
   <?= steps([['card-nav', 'Click <b>+</b> beside the card navigator.'], ['card-added', 'A blank card appears after this one. Double-click a field on the card to fill it in.']], 'Add a card from the Layout view') ?>
   <p>New cards are kept in this browser until you save; they take their place in the sheet right below the card you added them after.</p>
 </section>

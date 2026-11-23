@@ -314,6 +314,8 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .tb-btn:hover:not(:disabled) { border-color:#a99cff; color:#2e2763; }
 .tb-btn:disabled { opacity:.4; cursor:default; }
 .tb-btn.tb-add { color:#4b3fa8; }
+#rowInfo .card-no { cursor:text; } #rowInfo .card-no:hover { background:#f7f5ff; }
+.card-no-in { height:1.55rem; box-sizing:border-box; border:1.5px solid #5b4fd6; border-radius:5px; padding:0 .2rem; text-align:center; font:inherit; font-family:'DINBlack',sans-serif; font-size:.78rem; color:#2e2763; outline:none; box-shadow:0 0 0 3px #ece9ff; }
 .card-no.card-add { font-size:.9rem; font-family:'DINRegular',Arial,sans-serif; border-style:dashed; background:none; }
 .tb-btn.tb-add:hover .card-no.card-add { border-style:solid; background:#f7f5ff; }
 .tb-txt { font-size:.78rem; color:#6b7090; min-width:2.6rem; text-align:center; }
@@ -884,7 +886,7 @@ body.cb-gate #signinOverlay { background:#2e2763; }
     <div class="toolbar">
       <button class="tb-btn" id="rowFirst" onclick="firstCard()" title="First card"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><rect x="4" y="5" width="2.6" height="14" rx="1"/><path d="M19 5.5v13L8.5 12z"/></svg></button>
       <button class="tb-btn" id="rowPrev" onclick="stepRow(-1)" title="Previous card">◀</button>
-      <span class="tb-txt" id="rowInfo">—</span>
+      <span class="tb-txt row-info" id="rowInfo" onclick="editCardNo()">—</span>
       <button class="tb-btn" id="rowNext" onclick="stepRow(1)" title="Next card">▶</button>
       <button class="tb-btn" id="rowLast" onclick="lastCard()" title="Last card"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><rect x="17.4" y="5" width="2.6" height="14" rx="1"/><path d="M5 5.5v13L15.5 12z"/></svg></button>
       <button class="tb-btn tb-add" id="addCardBtn" onclick="addCard()" title="Add a card after this one" aria-label="Add a card after this one"><span class="card-no card-add">+</span></button>

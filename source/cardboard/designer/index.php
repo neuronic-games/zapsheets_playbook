@@ -68,6 +68,8 @@ button, input, select, textarea { font-family:inherit; }
 .top-tab:not(.active):hover { color:#fff; }
 .top-btn { background:rgba(255,255,255,.15); border:none; color:#fff; width:2.1rem; height:2.1rem; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; }
 .top-btn:hover { background:rgba(255,255,255,.25); }
+.top-btn { overflow:hidden; padding:0; }
+.top-pic { width:100%; height:100%; object-fit:cover; border-radius:50%; }
 
 /* ── Account menu (same style as the other apps) ───────── */
 .account-menu-wrap { position:relative; flex-shrink:0; display:flex; align-items:center; gap:.55rem; }
@@ -823,8 +825,8 @@ body.cb-gate #signinOverlay { background:#2e2763; }
     </div>
     <div class="account-menu-wrap">
       <button class="top-save" id="saveBtn" onclick="saveAll()" disabled title="Everything is saved">Save</button>
-      <button class="top-btn" onclick="toggleAccountMenu(event)" title="Menu">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/></svg>
+      <button class="top-btn" id="menuBtn" onclick="toggleAccountMenu(event)" title="Menu"><img class="top-pic" id="menuPic" alt="" hidden>
+        <svg id="menuIco" width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/></svg>
       </button>
       <div class="account-menu" id="accountMenu">
         <button class="account-menu-item" onclick="closeAccountMenu();openProfileDialog()">Profile</button>

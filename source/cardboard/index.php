@@ -185,6 +185,8 @@ body.designs .app { display:flex; flex-direction:column; }
 .d-menu-wrap { position:relative; flex-shrink:0; }
 .top-btn { background:rgba(255,255,255,.14); border:none; color:#fff; width:2.1rem; height:2.1rem; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; }
 .top-btn:hover { background:rgba(255,255,255,.24); }
+.top-btn { overflow:hidden; padding:0; }
+.top-pic { width:100%; height:100%; object-fit:cover; border-radius:50%; }
 .main-menu { display:none; position:absolute; top:calc(100% + .4rem); right:0; background:#1a1a2e; border:1px solid rgba(255,255,255,.18); border-radius:8px; min-width:190px; z-index:300; box-shadow:0 8px 24px rgba(0,0,0,.4); padding:.25rem 0; }
 .main-menu.open { display:block; }
 .mm-who { padding:.55rem 1rem .5rem; font-size:.75rem; color:rgba(255,255,255,.55); border-bottom:1px solid rgba(255,255,255,.12); margin-bottom:.2rem; word-break:break-all; }
@@ -341,7 +343,7 @@ body.designs .app { display:flex; flex-direction:column; }
     <div class="grow"></div>
     <button type="button" class="d-create" onclick="openCreateDialog()">+ Design</button>
     <div class="d-menu-wrap">
-      <button type="button" class="top-btn" onclick="toggleMainMenu(event)" title="Menu"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/></svg></button>
+      <button type="button" class="top-btn" id="menuBtn" onclick="toggleMainMenu(event)" title="Menu"><img class="top-pic" id="menuPic" alt="" hidden><svg id="menuIco" width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/></svg></button>
       <div class="main-menu" id="mainMenu">
         <div class="mm-who" id="mmWho"></div>
         <a class="mm-item" href="cardboard/help" target="_blank">Help</a>
@@ -497,7 +499,7 @@ body.designs .app { display:flex; flex-direction:column; }
   function fillMe() {
     var a = acct.account || {}, em = a.email || '', nm = (a.name || '').trim() || em.split('@')[0];
     var ini = (nm.match(/[A-Za-z0-9]/) || ['?'])[0].toUpperCase();
-    $('sideIni').textContent = ini; $('sideImg').hidden = !a.image; if (a.image && $('sideImg').getAttribute('src') !== a.image) $('sideImg').src = a.image; $('sideIni').hidden = !!a.image; $('mmWho').innerHTML = '<b>' + esc(nm) + '</b>' + esc(em);
+    $('sideIni').textContent = ini; $('sideImg').hidden = !a.image; if (a.image && $('sideImg').getAttribute('src') !== a.image) $('sideImg').src = a.image; $('sideIni').hidden = !!a.image; $('menuPic').hidden = !a.image; $('menuIco').style.display = a.image ? 'none' : ''; if (a.image && $('menuPic').getAttribute('src') !== a.image) $('menuPic').src = a.image; $('mmWho').innerHTML = '<b>' + esc(nm) + '</b>' + esc(em);
     $('meName').textContent = nm; $('meEmail').textContent = em;
     var left = Math.max(0, Math.ceil((new Date(a.until).getTime() - Date.now()) / 864e5));
     $('mePlan').textContent = a.state === 'trial' ? 'Free week · ' + left + (left === 1 ? ' day' : ' days') + ' left'

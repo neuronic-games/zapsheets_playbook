@@ -2658,6 +2658,7 @@ function setMapVal(i, v) {
 }
 function setMapText(i, t) {   // the text a value maps to (a data element mapping to text)
   var e = mapEl(); if (!e) return; var items = e.map.items;
+  if (isImageLink(t)) { setMapSrc(e.id, i, cleanVal(t).trim()); return; }   // a pasted picture link becomes the picture
   if (i >= items.length) { if (!t) return; snapshot(); items.push({ v: '', t: t }); }
   else { if ((items[i].t || '') === t) return; snapshot(); items[i].t = t; if (t) delete items[i].src; }
   e.map.items = items.filter(function(it) { return it.v || it.src || it.t; });

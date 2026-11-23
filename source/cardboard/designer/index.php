@@ -578,6 +578,12 @@ table.grid td mark.g-hit { background:#ffe37a; color:inherit; border-radius:2px;
 .grid-replace { max-width:0; opacity:0; overflow:hidden; transform:translateX(-14px); pointer-events:none; transition:max-width .28s ease, opacity .2s ease, transform .28s ease; white-space:nowrap; }
 .grid-replace.open { max-width:26rem; opacity:1; transform:none; pointer-events:auto; }
 .grid-replace .gr-row { display:flex; gap:.4rem; align-items:center; }
+/* A text box with an × to clear it, shown once something is typed */
+.clr-wrap { position:relative; display:inline-block; }
+.clr-wrap .inp { padding-right:1.9rem; }
+.clr-x { position:absolute; right:.35rem; top:50%; transform:translateY(-50%); width:1.3rem; height:1.3rem; border:none; border-radius:50%; background:#e4e6ef; color:#5a607a; font-size:.95rem; line-height:1; cursor:pointer; display:none; align-items:center; justify-content:center; padding:0; }
+.clr-x:hover { background:#d3d6e4; color:#1b1d2b; }
+.clr-wrap.has .clr-x { display:flex; }
 .grid-replace .inp { width:12rem; }
 .grid-replace .print-go { white-space:nowrap; }
 table.grid td .g-formula { color:#4b3fa8; font-family:ui-monospace,Menlo,monospace; font-size:.74rem; }
@@ -817,10 +823,12 @@ body.cb-gate #signinOverlay { background:#2e2763; }
     <div class="grp"><span class="mini">Deck</span>
       <select class="sel sel-sheet" id="gridSheet" onchange="selectTab(this.value)"></select></div>
     <div class="grp"><span class="mini">Find</span>
-      <input class="inp" id="gridFilter" placeholder="Search the cards" oninput="filterGrid(this.value)" onkeydown="if(event.key==='Escape'){this.value='';filterGrid('');}" style="width:14rem"></div>
+      <div class="clr-wrap"><input class="inp" id="gridFilter" placeholder="Search the cards" oninput="filterGrid(this.value)" onkeydown="if(event.key==='Escape'){this.value='';filterGrid('');}" style="width:14rem">
+      <button type="button" class="clr-x" tabindex="-1" aria-label="Clear" title="Clear" onclick="var i=$('gridFilter');i.value='';filterGrid('');i.focus()">×</button></div></div>
     <!-- Replace: slides out once there's something to find -->
     <div class="grp grid-replace" id="gridReplace" aria-hidden="true"><span class="mini">Replace with</span>
-      <div class="gr-row"><input class="inp" id="gridReplaceIn" placeholder="New text" tabindex="-1" onkeydown="if(event.key==='Enter'){event.preventDefault();replaceInGrid();}">
+      <div class="gr-row"><div class="clr-wrap"><input class="inp" id="gridReplaceIn" placeholder="New text" tabindex="-1" oninput="clrSync(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();replaceInGrid();}">
+      <button type="button" class="clr-x" tabindex="-1" aria-label="Clear" title="Clear" onclick="var i=$('gridReplaceIn');i.value='';clrSync(i);i.focus()">×</button></div>
       <button type="button" class="print-go" id="gridReplaceBtn" tabindex="-1" onclick="replaceInGrid()">Replace all</button></div></div>
     <span class="print-info" id="gridInfo"></span>
     <div class="e-actions">

@@ -3157,7 +3157,6 @@ function renderGrid() {
   var nHid = GRID.header.filter(function(hd) { return hd && isHidden(hd); }).length;
   // Only what's worth knowing: how many a search shows, and hidden columns (the Deck box has the card count)
   var info = [];
-  if (_gridFilter) info.push(rows.filter(function(r) { return !(r.draft && rowEmpty(r)); }).length + ' shown');
   if (nHid) info.push(nHid + ' hidden <button type="button" class="lk-act" onclick="showAllFields()">Show all</button>');
   $('gridInfo').innerHTML = info.join(' · ');
   var imgCols = {};
@@ -3297,11 +3296,12 @@ function nameNewColumn(th) {
 function addGridRow() {
   if (!GRID) return;
   var n = GRID.header.length, r = { row: 0, draft: true, key: uid(), values: new Array(n).fill('') };
-  GRID.rows.push(r); _gridFilter = ''; $('gridFilter').value = ''; renderGrid();
+  GRID.rows.push(r); $('gridFilter').value = ''; filterGrid('');
   var first = gridCols()[0]; if (first) { selectGridCell(GRID.rows.length - 1, first.i); startGridEdit(); }
 }
+function clrSync(inp) { var w = inp && inp.closest('.clr-wrap'); if (w) w.classList.toggle('has', !!inp.value); }   // the × shows once something is typed
 function filterGrid(v) {
-  _gridFilter = v.trim(); renderGrid();
+  _gridFilter = v.trim(); renderGrid(); clrSync($('gridFilter')); clrSync($('gridReplaceIn'));
   // Replace slides out once there's something to find (and only for someone who may change the sheet)
   var box = $('gridReplace'), on = !!_gridFilter && hasAccess();
   box.classList.toggle('open', on); box.setAttribute('aria-hidden', on ? 'false' : 'true');

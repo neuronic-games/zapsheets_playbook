@@ -2562,7 +2562,7 @@ function boxAttrs(e, title) {
   return h;
 }
 function fitAttrs(e) {
-  return '<div><span class="lbl">Fit</span>' + seg('fit', [['cover', 'Fill', 'Fill the box (crops)'], ['contain', 'Fit', 'Show the whole image'], ['stretch', 'Stretch', 'Stretch to the box']], e.fit || 'cover') + '</div>';
+  return '<span class="lbl">Fit</span>' + seg('fit', [['cover', 'Fill', 'Fill the box (crops)'], ['contain', 'Fit', 'Show the whole image'], ['stretch', 'Stretch', 'Stretch to the box']], e.fit || 'cover');
 }
 // The Actions section: the same buttons in the same places, with Paste among them (greyed until
 // something's been copied). extra: 'group' / 'ungroup' for a selection of several, 'paste' alone for the card

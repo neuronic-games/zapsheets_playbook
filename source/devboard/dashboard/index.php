@@ -5157,7 +5157,7 @@ async function submitDashTM() {
   }
 
   var tmContract = document.getElementById('dashTMSummary').value.replace(/\s+/g, ' ').trim();
-  if (!tmContract) { document.getElementById('dashTMErr').textContent = 'Pick the contract this is for.'; document.getElementById('dashTMSummary').focus(); return; }
+  if (!tmContract || !sumRef('dashTM')) { document.getElementById('dashTMErr').textContent = 'Pick the invoice this is for from the list.'; document.getElementById('dashTMSummary').focus(); return; }
   if (!rows.length) { document.getElementById('dashTMErr').textContent = 'Enter at least one time or material entry.'; return; }
 
   var btn = document.getElementById('dashTMBtn');

@@ -1522,7 +1522,7 @@ async function submitTM() {
   }
 
   var tmContract = document.getElementById('tmSummary').value.replace(/\s+/g, ' ').trim();
-  if (!tmContract) { document.getElementById('tmErr').textContent = 'Pick the contract this is for.'; document.getElementById('tmSummary').focus(); return; }
+  if (!tmContract || !tmSumRef()) { document.getElementById('tmErr').textContent = 'Pick the invoice this is for from the list.'; document.getElementById('tmSummary').focus(); return; }
   if (!rows.length) {
     document.getElementById('tmErr').textContent = 'Enter at least one time or material entry.';
     return;

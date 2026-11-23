@@ -2947,7 +2947,7 @@ function _restoreOpenState(state) {
         el.classList.add('open');
         // Trigger lazy load / re-render just like toggleCard does
         var name = el.dataset.game;
-        if (devCache[name] === undefined) loadDevData(name);
+        if (devCache[name] === undefined || _devIsStale(name)) loadDevData(name, _devIsStale(name));
         else if (devCache[name] !== null) renderBody(name, devCache[name]);
       }
     });
@@ -3607,12 +3607,25 @@ function applySearchFilter(q) {
 
 // ── Toggle + lazy load ────────────────────────────────────────────────────────
 
+// After a Fetch, every game's dev tab is read fresh from the sheet the next time its card opens
+function _devStaleKey() { return 'devboard_dev_stale:' + SHEET_ID; }
+function _devStaleMark() {
+  try { localStorage.setItem(_devStaleKey(), JSON.stringify({})); } catch (e) {}   // {} = no game refreshed yet
+  Object.keys(devCache).forEach(function(k) { delete devCache[k]; });
+}
+function _devIsStale(name) {
+  try { var m = JSON.parse(localStorage.getItem(_devStaleKey()) || 'null'); return !!m && !m[name.toLowerCase()]; } catch (e) { return false; }
+}
+function _devFresh(name) {
+  try { var m = JSON.parse(localStorage.getItem(_devStaleKey()) || 'null'); if (!m) return; m[name.toLowerCase()] = 1; localStorage.setItem(_devStaleKey(), JSON.stringify(m)); } catch (e) {}
+}
+
 function toggleCard(card) {
   var wasOpen = card.classList.contains('open');
   card.classList.toggle('open');
   if (!wasOpen) {
     var name = card.dataset.game;
-    if (devCache[name] === undefined) loadDevData(name);
+    if (devCache[name] === undefined || _devIsStale(name)) loadDevData(name, _devIsStale(name));
     else if (devCache[name] !== null) renderBody(name, devCache[name]);
   }
 }
@@ -3626,6 +3639,7 @@ function loadDevData(gameName, force) {
   fetch(APP_BASE + 'push/getDevJson.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })
     .then(function(rows) {
+      if (force && Array.isArray(rows)) _devFresh(gameName);
       devCache[gameName] = Array.isArray(rows) ? rows : [];
       renderBody(gameName, devCache[gameName]);
     })
@@ -3654,6 +3668,7 @@ function reloadDevData(gameName) {
   fetch(APP_BASE + 'push/getDevJson.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })
     .then(function(rows) {
+      if (Array.isArray(rows)) _devFresh(gameName);
       devCache[gameName] = Array.isArray(rows) ? rows : [];
       renderBody(gameName, devCache[gameName]);
       if (reloadBtn) reloadBtn.classList.remove('loading');
@@ -4426,7 +4441,6 @@ function doFetch() {
   var sheets = ['games', 'people', 'bios', 'contracts', 'settings'];
 
   var pushBase    = APP_BASE + 'push/pushSheetUpdate.php';
-  var devJsonBase = APP_BASE + 'push/getDevJson.php';
   var idx = 0;
 
   function finish() {
@@ -4436,45 +4450,9 @@ function doFetch() {
     document.getElementById('syncDoneBtn').disabled = false;
   }
 
-  // After main sheets are done, re-fetch all active [GameName] dev tabs
-  function fetchDevTabs() {
-    var activeGames = Object.keys(ACTIVE_KEYS);   // lowercased game names with dev tabs
-    // Match to proper-cased names from GAMES_RAW
-    var gameNames = (GAMES_RAW || [])
-      .map(function(g) { return (g.Name || '').trim(); })
-      .filter(function(n) { return n && ACTIVE_KEYS.hasOwnProperty(n.toLowerCase()); });
-
-    if (!gameNames.length) { finish(); return; }
-
-    syncLog('Refreshing dev tabs…', 'info');
-    var gi = 0;
-    function nextDev() {
-      if (gi >= gameNames.length) { finish(); return; }
-      var gameName = gameNames[gi++];
-      var fd = new FormData();
-      fd.append('id',    SHEET_ID);
-      fd.append('game',  gameName);
-      fd.append('force', '1');
-      fetch(devJsonBase, { method:'POST', body:fd })
-        .then(function(r) { return r.json(); })
-        .then(function(rows) {
-          if (rows && rows.__error) {
-            syncLog('  ⚠ [' + gameName + '] dev: ' + (rows.message || 'error'), 'error');
-          } else {
-            syncLog('  ✓ [' + gameName + '] dev (' + (Array.isArray(rows) ? rows.length : 0) + ' rows)', 'ok');
-          }
-          nextDev();
-        })
-        .catch(function() {
-          syncLog('  ✗ [' + gameName + '] dev: network error', 'error');
-          nextDev();
-        });
-    }
-    nextDev();
-  }
-
+  // The dev tabs aren't fetched here: each game's is read fresh from the sheet when its card is next opened
   function pushNext() {
-    if (idx >= sheets.length) { fetchDevTabs(); return; }
+    if (idx >= sheets.length) { _devStaleMark(); finish(); return; }
     var sheetName = sheets[idx++];
     syncLog('Fetching ' + sheetName + '…', 'info');
     var xhr = new XMLHttpRequest();

@@ -158,3 +158,34 @@ body.gb-page { background:var(--gb-bg); font-family:var(--gb-text); color:var(--
 
 /* ── Links and small highlights in the app's accent ── */
 .gb-app .lk-act, .gb-app .link-btn:hover { color:var(--gb-accent-dk); }
+
+/* ── Setup pages (/pitchboard, /devboard, /billboard): the top bar, then a "New sheet" card like
+ *    CardBoard's "New design" dialog — body class="gb-app gb-setup gb-pitch|gb-dev|gb-bill" ── */
+body.gb-setup { display:block; margin:0; padding:0; min-height:100vh; background:var(--gb-bg); font-family:var(--gb-text); color:var(--gb-ink); }
+body.gb-setup .top-bar-left { text-decoration:none; color:#fff; }
+body.gb-setup .account-menu { display:none; position:absolute; top:calc(100% + .4rem); right:0; min-width:190px; z-index:300; padding:.25rem 0; }
+body.gb-setup .account-menu.open { display:block; }
+body.gb-setup .account-menu-item { display:block; width:100%; box-sizing:border-box; background:none; border:none; text-align:left; cursor:pointer; padding:.6rem 1rem; text-decoration:none; }
+body.gb-setup .account-menu hr { border:none; border-top:1px solid rgba(255,255,255,.12); margin:.2rem 0; }
+body.gb-setup .page { width:100%; max-width:600px; margin:0 auto; padding:2.5rem 1rem 3rem; }
+body.gb-setup .card { background:#fff; border-radius:16px; padding:2rem 2rem 2.1rem; box-shadow:0 2px 24px rgba(0,0,0,.08); margin:0; }
+body.gb-setup .card-title { font-family:var(--gb-black); font-weight:400; font-size:1.05rem; text-transform:uppercase; letter-spacing:.07em; color:#111; margin:0 0 .9rem; }
+body.gb-setup .gs-start { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; margin:.2rem 0 1.3rem; }
+body.gb-setup .gs-start a { display:flex; flex-direction:column; gap:.2rem; padding:.85rem .95rem; border:1.5px solid #d6d9e6; border-radius:11px; color:#2e2763; text-decoration:none; transition:border-color .12s, background .12s; }
+body.gb-setup .gs-start a:hover { border-color:var(--gb-accent); background:var(--gb-accent-lt); }
+body.gb-setup .gs-start b { font-family:var(--gb-black); font-weight:400; font-size:.92rem; }
+body.gb-setup .gs-start span { font-size:.78rem; color:#8a8fa8; line-height:1.4; }
+body.gb-setup .instructions { font-size:.88rem; color:#555; line-height:1.65; margin:0 0 1.5rem; }
+body.gb-setup .instructions ol { padding-left:1.35rem; margin:.6rem 0 0; }
+body.gb-setup .instructions li { margin-bottom:.25rem; }
+body.gb-setup .instructions strong { color:#333; }
+body.gb-setup .copy-email-btn { color:var(--gb-accent-dk); background:var(--gb-accent-lt); border:1px solid var(--gb-accent); border-radius:999px; padding:.1rem .45rem; font-family:var(--gb-text); font-size:.75rem; cursor:pointer; }
+body.gb-setup .sheet-input { display:block; width:100%; box-sizing:border-box; padding:.7rem .9rem; font-family:var(--gb-text); font-size:.95rem; color:#111; border:1.5px solid #d0ccc5; border-radius:9px; outline:none; margin:0 0 1rem; background:#fafaf8; }
+body.gb-setup .sheet-input:focus { border-color:var(--gb-accent); background:#fff; }
+body.gb-setup .gs-btns { display:flex; gap:.6rem; }
+body.gb-setup .gs-cancel { height:2.85rem; padding:0 1.2rem; border:1.5px solid #d6d9e6; border-radius:9px; background:#fff; color:#4a4e69; font-family:var(--gb-text); font-size:1rem; cursor:pointer; display:inline-flex; align-items:center; text-decoration:none; }
+body.gb-setup .gs-cancel:hover { background:#f6f6fa; }
+body.gb-setup .connect-btn { flex:1; width:auto; height:2.85rem; margin:0; background:var(--gb-accent); color:#fff; font-family:var(--gb-black); font-size:.9rem; text-transform:uppercase; letter-spacing:.09em; border:none; border-radius:9px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.18); }
+body.gb-setup .connect-btn:hover:not(:disabled) { background:var(--gb-accent-dk); }
+body.gb-setup .connect-btn:disabled { opacity:.5; cursor:default; }
+@media (max-width:560px) { body.gb-setup .gs-start { grid-template-columns:1fr; } body.gb-setup .card { padding:1.5rem 1.2rem 1.6rem; } }

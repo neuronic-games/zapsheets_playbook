@@ -152,7 +152,7 @@ $_client_count = count(array_unique(array_filter(array_map(
 <head>
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
 <script src="js/activationKey.js" defer></script>
-<script src="js/gb-account.js?v=7"></script>
+<script src="js/gb-account.js?v=8"></script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/png" sizes="32x32" href="images/db_icon_32.png" />
@@ -1064,7 +1064,7 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
 .plan-current span { color:#888; }
 .plan-current.paid { background:#edf7ed; } .plan-current.paid b { color:#2e7d32; }
 </style>
-<link rel="stylesheet" href="css/gameboard-ui.css?v=4" />
+<link rel="stylesheet" href="css/gameboard-ui.css?v=5" />
 </head>
 <body class="gb-app gb-page gb-dev">
 

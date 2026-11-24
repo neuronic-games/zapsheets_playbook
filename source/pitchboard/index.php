@@ -181,49 +181,49 @@ body {
 .ll.ok  { color: #4ade80; }
 .ll.err { color: #ff8a80; }
 </style>
+<link rel="stylesheet" href="css/gameboard-ui.css?v=5" />
 </head>
-<body>
+<body class="gb-app gb-setup gb-pitch">
+
+<!-- The top bar, the same as in the app -->
+<div class="top-bar"><div class="top-bar-inner">
+  <a class="top-bar-left" href="pitchboard"><img class="top-bar-icon" src="images/pitchboard_icon_180.png" alt=""><div class="top-bar-name"><h1><span style="color:#ef4444">Pitch</span><span style="color:#16a34a">Board</span></h1><p class="sub">Your board game pitch tracker</p></div></a>
+  <div class="account-menu-wrap">
+    <button type="button" class="top-btn top-menu-btn" id="accountBtn" onclick="event.stopPropagation();document.getElementById('accountMenu').classList.toggle('open')" title="Menu" aria-label="Menu"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/></svg></button>
+    <div class="account-menu" id="accountMenu"><a class="account-menu-item" href="pitchboard/help">Help</a><a class="account-menu-item" href="pitchboard/features">Features</a><hr><button type="button" class="account-menu-item" id="gsAuthBtn" onclick="gsAuth()">Sign in</button></div>
+  </div>
+</div></div>
 
 <div class="page">
-
-  <!-- ── Branding ─────────────────────────────────────────────── -->
-  <div class="brand">
-    <img class="brand-logo" src="images/pitchboard_icon_180.png" alt="PitchBoard logo" />
-    <div class="brand-name">PitchBoard</div>
-    <div class="brand-tagline">Your board game pitch tracker</div>
-    <a href="pitchboard/help" style="display:inline-block;margin-top:.6rem;font-family:'DINBlack',sans-serif;font-size:.68rem;letter-spacing:.07em;text-transform:uppercase;color:#c8860a;text-decoration:none;opacity:.8;">How it works →</a>
-  </div>
-
-  <!-- ── Setup card ───────────────────────────────────────────── -->
+  <!-- New sheet: like CardBoard's "New design" -->
   <div class="card">
-    <div class="card-title">Connect Your Google Sheet</div>
+    <div class="card-title">New sheet</div>
+    <div class="gs-start">
+      <a href="https://docs.google.com/spreadsheets/" target="_blank" rel="noopener"><b>Open a sheet</b><span>Pick one of your Google Sheets to use with PitchBoard</span></a>
+      <a href="https://sheets.new" target="_blank" rel="noopener"><b>Start a blank sheet</b><span>A new Google Sheet — PitchBoard sets up the tabs it needs</span></a>
+    </div>
     <div class="instructions">
-      Create a blank Google Spreadsheet, share it with the PitchBoard service account, then paste the URL or ID below. PitchBoard will set up all the required tabs automatically.
+      Keep your pitches in a Google Sheet. PitchBoard sets up the tabs it needs (Pitches, Games, People, Settings) — a blank sheet is all it takes, and a DevBoard or BillBoard sheet works too.
       <ol>
-        <li>Open <strong>Google Sheets</strong> and create a new blank spreadsheet.</li>
+        <li>Open (or make, above) a Google Spreadsheet and share it with the PitchBoard service account.</li>
         <li>Click <strong>Share</strong> and add <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> <button class="copy-email-btn" id="copyEmailBtn" onclick="copyEmail()">Copy</button> with <strong>Editor</strong> rights.</li>
-        <li>Copy the spreadsheet URL (or just the ID) and paste it below.</li>
+        <li>Paste the spreadsheet URL or ID below.</li>
       </ol>
     </div>
 
-    <input
-      type="text"
-      id="sheetInput"
-      class="sheet-input"
+    <input type="text" id="sheetInput" class="sheet-input"
       placeholder="https://docs.google.com/spreadsheets/d/… or sheet ID"
       onkeydown="if(event.key==='Enter')startSetup()"
-      autocomplete="off"
-      spellcheck="false"
-    />
+      autocomplete="off" spellcheck="false" />
 
-    <button id="connectBtn" class="connect-btn" onclick="startSetup()">
-      Connect &amp; Set Up
-    </button>
+    <div class="gs-btns">
+      <a class="gs-cancel" href="dashboard">Cancel</a>
+      <button id="connectBtn" class="connect-btn" onclick="startSetup()">Connect &amp; Open</button>
+    </div>
 
     <div id="logPanel" class="log-panel" style="display:none"></div>
   </div>
-
-</div><!-- /.page -->
+</div>
 
 <script>
 (function() {
@@ -337,7 +337,7 @@ body {
           addLog('✕  ' + errMsg, 'err');
         }
         btn.disabled    = false;
-        btn.textContent = 'Connect & Set Up';
+        btn.textContent = 'Connect & Open';
         return;
       }
 
@@ -363,7 +363,7 @@ body {
 
       if (!allGood) {
         btn.disabled    = false;
-        btn.textContent = 'Connect & Set Up';
+        btn.textContent = 'Connect & Open';
         return;
       }
 
@@ -378,7 +378,7 @@ body {
       cancelPending();
       addLog('✕  Network error — could not reach the server.', 'err');
       btn.disabled    = false;
-      btn.textContent = 'Connect & Set Up';
+      btn.textContent = 'Connect & Open';
     };
 
     xhr.send('id=' + encodeURIComponent(sheetId));
@@ -386,5 +386,13 @@ body {
 })();
 </script>
 
+<script src="js/gb-account.js?v=8"></script>
+<script>
+// The GameBoard account in the top bar's menu (no sheet here yet: no bar)
+GBAccount.init({ app: 'pitchboard', name: 'PitchBoard', sheet: '', home: 'pitchboard', gate: false, bar: false, icon: 'images/pitchboard_icon_180.png', plans: [],
+  onChange: function(s) { var b = document.getElementById('gsAuthBtn'); if (b) b.textContent = s.signedIn ? 'Sign out' : 'Sign in'; } });
+window.gsAuth = function() { document.getElementById('accountMenu').classList.remove('open'); if (GBAccount.account()) GBAccount.signOut(); else GBAccount.signIn().catch(function() {}); };
+document.addEventListener('click', function(e) { if (!e.target.closest('.account-menu-wrap')) document.getElementById('accountMenu').classList.remove('open'); });
+</script>
 </body>
 </html>

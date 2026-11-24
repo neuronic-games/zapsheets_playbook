@@ -245,7 +245,8 @@
   function apply() {
     var a = info(), ok = hasAccess(), bar = $('gbaBar');
     document.body.classList.toggle('gba-locked', !ok);
-    if (bar) {
+    if (bar && O.bar === false) bar.hidden = true;   // pages without a sheet (the setup pages): no bar
+    else if (bar) {
       var btn = $('gbaBarBtn'), msg = $('gbaBarMsg'); btn.hidden = false;
       if (!a) { msg.innerHTML = '<b>Sign in to make changes</b> — your first week of ' + esc(O.name) + ' is free, with every feature.'; btn.textContent = 'Sign in'; btn.onclick = function() { signIn().catch(function() {}); }; }
       else if (!checked() && _failed) { msg.innerHTML = '<b>Couldn’t check your account.</b> Trying again — or try now.'; btn.textContent = 'Try again'; btn.onclick = function() { _failed = 0; apply(); refresh(true).catch(function() {}); }; }

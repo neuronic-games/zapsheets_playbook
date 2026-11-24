@@ -347,8 +347,8 @@ body {
   font-size: 1rem; letter-spacing: .03em;
   color: #fff; text-decoration: none;
 }
-.top-bar-logo .pb-pitch { color: #A8C8F0; }
-.top-bar-logo .pb-board { color: #FF8A80; }
+.top-bar-logo .pb-pitch, .top-bar-name .pb-pitch { color: #ef4444; }   /* the logo's red P   */
+.top-bar-logo .pb-board, .top-bar-name .pb-board { color: #16a34a; }   /* the logo's green b */
 .top-bar-sep  { color: rgba(255,255,255,.3); }
 .top-bar-game { font-family: 'DINBlack', sans-serif; font-size: .88rem; color: rgba(255,255,255,.85); letter-spacing: .03em; }
 .top-bar-readonly {

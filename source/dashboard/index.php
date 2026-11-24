@@ -1566,8 +1566,8 @@ if ($_sheet_id && is_dir($_sheets_root)) {
 
     /* ── PitchBoard brand ───────────────────────────────────── */
     /* Used in the top-bar h1 on the dark (#1a1a2e) background  */
-    .pb-pitch { color: #A8C8F0; }  /* soft blue  */
-    .pb-board { color: #FF8A80; }  /* soft coral */
+    .pb-pitch { color: #ef4444; }  /* the logo's red P   */
+    .pb-board { color: #16a34a; }  /* the logo's green b */
 
     /* ── View Page publish dialog (inherits sync-* styles) ─ */
     #vpOverlay { z-index:5000; }

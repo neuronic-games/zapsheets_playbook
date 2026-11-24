@@ -253,12 +253,12 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
 <section class="topic" id="board">
   <h2><span class="n">6</span>The Summary</h2>
   <p class="lead">Everything that needs doing, and where each game stands.</p>
-  <?= shot('board', 'The Summary: the totals at the top, then TODOs, the timeline and contracts.') ?>
+  <?= shot('board', 'The Summary: the totals at the top, then TODOs, the timeline and your activity.') ?>
   <ul>
     <li><b>The totals</b> — games, games in active development, contracts and publishers.</li>
     <li><b>TODOs</b> — every open TODO from every game, with the number still open. See <a href="devboard/help#todos">TODOs</a>.</li>
     <li><b>Timeline</b> — your active projects, from start to due date. See <a href="devboard/help#timeline">Timeline</a>.</li>
-    <li><b>Contracts</b> — your latest estimates, invoices, contracts and payments, with their amounts and status.</li>
+    <li><b>Activity</b> — your contracts and playtest sessions together, newest first: estimates, invoices and payments with their amounts and status, and each session with its type, where it was and how many played. Click a contract to open it, or a session to open its game. <b>Show more</b> goes further back.</li>
   </ul>
 </section>
 <section class="topic" id="timeline">

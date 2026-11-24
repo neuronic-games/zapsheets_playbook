@@ -142,6 +142,32 @@ $_estimates_raw  = file_exists($_estimates_file)
     ? (json_decode(file_get_contents($_estimates_file), true) ?: [])
     : [];
 
+// Sessions of every game (from the cached "[Game] dev" tabs), in brief, for the Summary's Activity list:
+// one entry per session — game, date, type and number, where, and who played
+$_sessions_brief = [];
+if (is_dir($_sheets_dir)) {
+    $_gname = [];
+    foreach ($_games_raw as $_g) { $_n = trim((string) ($_g['Name'] ?? '')); if ($_n !== '') $_gname[strtolower($_n)] = $_n; }
+    foreach (scandir($_sheets_dir) as $_f) {
+        if (!preg_match('/^\[(.+)\] dev\.json$/i', $_f, $_m)) continue;
+        $_rows = json_decode((string) @file_get_contents($_sheets_dir . $_f), true);
+        if (!is_array($_rows)) continue;
+        $_game = $_gname[strtolower($_m[1])] ?? $_m[1];
+        $_cur = null;
+        foreach ($_rows as $_r) {
+            $_d = trim((string) ($_r['Date'] ?? '')); $_e = trim((string) ($_r['Event'] ?? '')); $_p = trim((string) ($_r['People'] ?? ''));
+            if ($_d !== '' || $_e !== '') {
+                if ($_cur !== null) $_sessions_brief[] = $_cur;
+                $_cur = in_array(strtolower($_e), ['time', 'material'], true) ? null   // time & materials rows aren't sessions
+                      : ['g' => $_game, 'd' => $_d, 'e' => $_e, 'n' => $_p, 'w' => mb_substr(trim((string) ($_r['Observations'] ?? $_r['Observation'] ?? '')), 0, 80), 't' => 0];
+            } elseif ($_cur !== null && $_p !== '' && strpos($_p, '[sub:') !== 0) {
+                $_cur['t']++;
+            }
+        }
+        if ($_cur !== null) $_sessions_brief[] = $_cur;
+    }
+}
+
 // Publisher count — unique clients from Contracts sheet
 $_client_count = count(array_unique(array_filter(array_map(
     fn($c) => trim($c['Client'] ?? ''), $_contracts_raw
@@ -378,8 +404,15 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .dtl-due.soon span { color:#b7791f; } .dtl-due.late span { color:#d92d20; font-family:'DINBlack',sans-serif; }
 @media (max-width:640px) { .dtl-row { grid-template-columns:110px 1fr 84px; gap:.5rem; padding:.4rem .6rem; } }
 .dash-contracts { background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.07); }
-.dash-contract-row { display:grid; grid-template-columns:1fr auto auto auto; gap:.75rem; align-items:center; padding:.48rem .85rem; border-bottom:1px solid #f0f4f8; font-size:.78rem; }
+.dash-contract-row { display:grid; grid-template-columns:1fr 5.5rem 4.5rem 6.5rem; gap:.75rem; align-items:center; padding:.48rem .85rem; border-bottom:1px solid #f0f4f8; font-size:.78rem; }
 .dash-contract-row:last-child { border-bottom:none; }
+.dash-contract-row > :nth-child(2) { text-align:right; } .dash-contract-row > :nth-child(3) { text-align:right; } .dash-contract-row > :nth-child(4) { text-align:right; }
+@media (max-width:560px) { .dash-contract-row { grid-template-columns:1fr auto auto; } .dash-contract-row > :nth-child(3) { display:none; } }
+.act-row { cursor:pointer; } .act-row:hover { background:#f8fafc; }
+.act-badge { display:inline-block; padding:.2rem .6rem; border-radius:999px; color:#fff; font-family:'DINBlack',sans-serif; font-size:.6rem; text-transform:uppercase; letter-spacing:.07em; background:#1a5f7a; }
+.act-badge.stat-meeting { background:#6b3fa8; } .act-badge.stat-idea { background:#2e7a52; } .act-badge.stat-editing { background:#a0522d; } .act-badge.stat-reporting { background:#2d3a8c; }
+.act-more { display:block; width:100%; padding:.6rem; border:none; border-top:1px solid #f0f4f8; background:#fff; color:#1a5f7a; font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.08em; cursor:pointer; }
+.act-more:hover { background:#f8fafc; }
 .dash-contract-game { font-family:'DINBlack',sans-serif; color:#1a5f7a; }
 .dash-contract-client { color:#666; font-size:.72rem; }
 
@@ -2051,6 +2084,7 @@ var BIO_PAYMENT   = <?= json_encode((object) array_filter(array_reduce($_bios, f
   $e = strtolower(ltrim(trim((string) ($b['Email'] ?? '')), "'")); if ($e !== '') $m[$e] = ltrim(trim((string) ($b['Payment'] ?? '')), "'"); return $m; }, [])), JSON_UNESCAPED_UNICODE) ?>;
 var TODOS_RAW     = <?= json_encode(array_values($_todos_raw), JSON_UNESCAPED_UNICODE) ?>;
 var ESTIMATES_RAW = <?= json_encode(array_values($_estimates_raw), JSON_UNESCAPED_UNICODE) ?>;
+var SESSIONS_BRIEF = <?= json_encode($_sessions_brief, JSON_UNESCAPED_UNICODE) ?>;   // {g game, d date, e type, n number, w where, t people}
 
 // Quick lookup: email (lowercase) → display name from People sheet
 var _peopleByEmail = {};
@@ -2456,6 +2490,59 @@ function _dashAddDuration(t, dur) {
   d.setUTCMonth(d.getUTCMonth() + whole);
   return d.getTime() + Math.round((months - whole) * 30 * 864e5);
 }
+// ── Summary: Activity — contracts and sessions together, newest first ─────────
+var _actShown = 12;
+function _dbDay(v) {   // a date as written in the sheet → noon UTC that day (0 when there's none)
+  var s = String(v || '').trim(), m;
+  if ((m = /^(\d{4})-(\d\d)-(\d\d)/.exec(s))) return Date.UTC(+m[1], m[2] - 1, +m[3], 12);
+  if ((m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s))) return Date.UTC(+m[3], m[1] - 1, +m[2], 12);
+  if (/^\d{5}$/.test(s)) return Date.UTC(1899, 11, 30, 12) + s * 864e5;
+  var d = new Date(s); return isNaN(d) || !s ? 0 : Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 12);
+}
+function _dashActivityHtml() {
+  var items = [];
+  CONTRACT_RAW.forEach(function(c, i) { if (c) items.push({ k: 'c', c: c, i: i, t: _dbDay(c.Date), o: i }); });
+  (SESSIONS_BRIEF || []).forEach(function(s, i) { items.push({ k: 's', s: s, t: _dbDay(s.d), o: i }); });
+  if (!items.length) return '';
+  // Newest first; undated last. Same day: sessions before contracts, then later rows first
+  items.sort(function(a, b) { return (b.t || -1) - (a.t || -1) || (a.k === b.k ? b.o - a.o : a.k === 's' ? -1 : 1); });
+  var html = '<div><div class="dash-section-hd">Activity</div><div class="dash-contracts">';
+  items.slice(0, _actShown).forEach(function(x) {
+    var when = x.t ? fmtDate(new Date(x.t).toISOString().slice(0, 10)) : '';
+    if (x.k === 's') {
+      var s = x.s, type = s.e || 'Session', cls = 'stat-' + type.toLowerCase().replace(/[^a-z]/g, '');
+      var sub = [type + (s.n ? ' ' + s.n : ''), s.w, s.t ? s.t + (s.t === 1 ? ' person' : ' people') : ''].filter(Boolean).join(' · ');
+      html += '<div class="dash-contract-row act-row" onclick="_actOpenGame(' + JSON.stringify(s.g).replace(/"/g, '&quot;') + ')" title="Open ' + esc(s.g) + '">' +
+        '<div><div class="dash-contract-game">' + esc(s.g) + '</div><div class="dash-contract-client">' + esc(sub) + '</div></div>' +
+        '<div style="color:#888;font-size:.72rem">' + esc(when) + '</div><div></div>' +
+        '<div><span class="act-badge ' + cls + '">' + esc(type) + '</span></div></div>';
+      return;
+    }
+    var c = x.c, quoteNum = parseFloat(String(c.Quote || '').replace(/[$,]/g, ''));
+    var quote = isNaN(quoteNum) ? '' : '$' + quoteNum.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    var isPay = _isPaymentRow(c);
+    var payment = isPay ? 'Paid out' : (_conStatus(c) || (/^(estimate|invoice)$/i.test(String(c.Type || '').trim()) ? _ceStatusValue(c) : ''));
+    var badgeCls = 'client-contract-badge';
+    if (!isPay) { if (payment === 'Paid' || payment === 'Fully Paid') badgeCls += ' paid'; else if (payment === 'Invoiced') badgeCls += ' invoiced'; else if (payment === 'Partial') badgeCls += ' partial'; }
+    var what = String(c.Summary || '').trim();
+    html += '<div class="dash-contract-row act-row"' + (isPay ? '' : ' onclick="openContractEditDialog(' + x.i + ')"') + '>' +
+      '<div><div class="dash-contract-game">' + esc(c.Game || '—') + '</div><div class="dash-contract-client">' + esc(isPay ? '→ ' + (c.Payee || '') : [c.Client || '', what].filter(Boolean).join(' · ')) + '</div></div>' +
+      '<div style="color:#888;font-size:.72rem">' + esc(when) + '</div>' +
+      '<div style="font-family:DINBlack,sans-serif;font-size:.78rem">' + esc(quote) + '</div>' +
+      '<div><span class="' + badgeCls + '">' + esc(payment || '—') + '</span></div></div>';
+  });
+  if (items.length > _actShown) html += '<button type="button" class="act-more" onclick="_actShown+=12;renderDashView()">Show more (' + (items.length - _actShown) + ')</button>';
+  return html + '</div></div>';
+}
+// A session in Activity: open its game on the Games tab
+function _actOpenGame(name) {
+  switchTab('games');
+  var card = Array.prototype.filter.call(document.querySelectorAll('#cardList [data-game]'), function(c) { return String(c.dataset.game).toLowerCase() === String(name).toLowerCase(); })[0];
+  if (!card) return;
+  if (!card.classList.contains('open')) toggleCard(card);
+  setTimeout(function() { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+}
+
 // The hover card on a timeline row: the contract's summary first, then who, when and how the date was found
 function _dtlTip(ev, row) {
   var tip = document.getElementById('dtlTip');
@@ -2568,31 +2655,8 @@ function renderDashView() {
   // Timeline: active projects (contracts with a target end date, not finished), by due date
   html += _dashTimelineHtml();
 
-  // Recent contracts
-  if (CONTRACT_RAW.length) {
-    var recent = CONTRACT_RAW.filter(Boolean).slice().reverse().slice(0, 8);
-    html += '<div>';
-    html += '<div class="dash-section-hd">Contracts</div>';
-    html += '<div class="dash-contracts">';
-    recent.forEach(function(c) {
-      var quoteNum = parseFloat(c.Quote || '');
-      var quote    = isNaN(quoteNum) ? '' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
-      var payment  = _conStatus(c);
-      var badgeCls = 'client-contract-badge';
-      if (payment === 'Paid' || payment === 'Fully Paid') badgeCls += ' paid';
-      else if (payment === 'Invoiced') badgeCls += ' invoiced';
-      else if (payment === 'Partial')  badgeCls += ' partial';
-      html += '<div class="dash-contract-row">';
-      var isPay = /^payment$/i.test(String(c.Type || '').trim());
-      if (isPay) { payment = 'Paid out'; badgeCls = 'client-contract-badge'; }
-      html += '<div><div class="dash-contract-game">' + esc(c.Game || '—') + '</div><div class="dash-contract-client">' + esc(isPay ? '→ ' + (c.Payee || '') : (c.Client || '')) + '</div></div>';
-      html += '<div style="color:#888;font-size:.72rem">' + esc(fmtDate(c.Date)) + '</div>';
-      html += '<div style="font-family:DINBlack,sans-serif;font-size:.78rem">' + esc(quote) + '</div>';
-      html += '<div><span class="' + badgeCls + '">' + esc(payment || '—') + '</span></div>';
-      html += '</div>';
-    });
-    html += '</div></div>';
-  }
+  // Activity: contracts and sessions, newest first
+  html += _dashActivityHtml();
 
   wrap.innerHTML = html;
   // The totals at the top, then the TODOs, the timeline and the contracts

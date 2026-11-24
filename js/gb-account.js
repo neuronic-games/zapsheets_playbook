@@ -141,6 +141,12 @@
   var TAGS = { pitchboard: 'Your board game pitch tracker', devboard: 'Playtest notes for your games', billboard: 'Put your board games on show', cardboard: 'Design and print cards from your Google Sheet' };
   var CSS =
     '.gba-bar{position:sticky;top:0;z-index:900;display:flex;align-items:center;justify-content:center;gap:.9rem;flex-wrap:wrap;padding:.55rem 1rem;background:#fff8e6;color:#5c4400;border-bottom:1px solid #f0dca0;font:500 .86rem/1.35 var(--gb-text,"DINRegular",Arial,sans-serif);text-align:center}' +
+    '.gba-tip{position:fixed;z-index:9500;max-width:min(300px,calc(100vw - 16px));display:flex;align-items:center;gap:.55rem;padding:.6rem .85rem;background:#fff;color:#2a2a35;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.06);font:500 .84rem/1.35 var(--gb-text,"DINRegular",Arial,sans-serif);transform-origin:var(--ax,90%) 0;animation:gbaTipIn .28s cubic-bezier(.2,.9,.3,1.25)}' +
+    '.gba-tip[hidden]{display:none}.gba-tip:before{content:"";position:absolute;top:-6px;left:var(--ax,90%);width:12px;height:12px;margin-left:-6px;background:#fff;transform:rotate(45deg);border-radius:2px 0 0 0;box-shadow:-1px -1px 0 rgba(0,0,0,.05)}' +
+    '.gba-tip b{font-family:var(--gb-black,"DINBlack",Arial,sans-serif);font-weight:normal}' +
+    '.gba-tip .gba-tspin{flex:none;width:15px;height:15px;border-radius:50%;border:2px solid rgba(0,0,0,.12);border-top-color:var(--gb-accent,#5b4fd6);animation:gbaTipSpin .8s linear infinite}' +
+    '.gba-tip button{flex:none;background:var(--gb-accent,#5b4fd6);color:#fff;border:none;border-radius:7px;padding:.3rem .7rem;font:inherit;font-family:var(--gb-black,"DINBlack",Arial,sans-serif);text-transform:uppercase;letter-spacing:.05em;font-size:.68rem;cursor:pointer}' +
+    '@keyframes gbaTipIn{from{opacity:0;transform:scale(.3) translateY(-6px)}}@keyframes gbaTipSpin{to{transform:rotate(360deg)}}' +
     '.gba-bar[hidden]{display:none}.gba-bar b{font-family:var(--gb-black,"DINBlack",Arial,sans-serif);font-weight:normal}' +
     '.gba-bar button{background:var(--gb-accent,#5b4fd6);color:#fff;border:none;border-radius:8px;padding:.38rem .95rem;font:inherit;font-family:var(--gb-black,"DINBlack",Arial,sans-serif);text-transform:uppercase;letter-spacing:.06em;font-size:.72rem;cursor:pointer}' +
     '.gba-ov{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;padding:1rem;background:rgba(20,19,42,.55);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}' +
@@ -213,6 +219,10 @@
     var bar = document.createElement('div'); bar.className = 'gba-bar'; bar.id = 'gbaBar'; bar.hidden = true;
     bar.innerHTML = '<span id="gbaBarMsg"></span><button type="button" id="gbaBarBtn"></button>';
     document.body.insertBefore(bar, document.body.firstChild);
+    // Checking the account: a callout from the profile button, so nothing on the page moves
+    var tip = document.createElement('div'); tip.className = 'gba-tip'; tip.id = 'gbaTip'; tip.hidden = true; tip.setAttribute('role', 'status');
+    document.body.appendChild(tip);
+    window.addEventListener('resize', placeTip); window.addEventListener('scroll', placeTip, true);
     var icon = O.icon ? '<img class="gba-logo" src="' + esc(O.icon) + '" alt="">' : '';
     var wrap = document.createElement('div');
     wrap.innerHTML =
@@ -274,6 +284,28 @@
     t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(function() { t.classList.remove('show'); }, 2600);
   }
 
+  // ── The callout under the profile button ───────────────────────────────────
+  function menuBtn() { return O.menuButton ? $(O.menuButton) : ($('accountBtn') || $('menuBtn') || $('bbUserBtn') || document.querySelector('.top-menu-btn, .user-menu-wrap > button')); }
+  function placeTip() {
+    var tip = $('gbaTip'), b = menuBtn(); if (!tip || tip.hidden || !b) return;
+    var r = b.getBoundingClientRect(), w = tip.offsetWidth, cx = r.left + r.width / 2;
+    var left = Math.max(8, Math.min(window.innerWidth - w - 8, r.right - w + 6));
+    tip.style.left = left + 'px'; tip.style.top = (r.bottom + 10) + 'px';
+    tip.style.setProperty('--ax', Math.max(14, Math.min(w - 14, cx - left)) + 'px');
+  }
+  function showTip(html, btnText, onBtn) {
+    var tip = $('gbaTip'); if (!tip) return;
+    var key = html + '|' + (btnText || '');
+    if (tip._k !== key) {
+      tip._k = key;
+      tip.innerHTML = (btnText ? '' : '<span class="gba-tspin"></span>') + '<span>' + html + '</span>' + (btnText ? '<button type="button">' + esc(btnText) + '</button>' : '');
+      if (btnText) tip.querySelector('button').onclick = onBtn;
+    }
+    var was = tip.hidden; tip.hidden = false; placeTip();
+    if (was) { tip.style.animation = 'none'; void tip.offsetWidth; tip.style.animation = ''; }   // roll out again
+  }
+  function hideTip() { var tip = $('gbaTip'); if (tip) { tip.hidden = true; tip._k = ''; } }
+
   // ── The bar, and the page's own hook ───────────────────────────────────────
   function apply() {
     var a = info(), ok = hasAccess(), bar = $('gbaBar');
@@ -288,7 +320,14 @@
       else if (!isOwner()) { msg.innerHTML = '<b>View only.</b> This sheet belongs to another GameBoard account — you can look, not change it.'; btn.hidden = true; }
       else { msg.innerHTML = '<b>Your free week has ended.</b> Everything is safe in your sheet — subscribe to keep using ' + esc(O.name) + '.'; btn.textContent = 'See plans'; btn.onclick = function() { openPlans('locked'); }; }
       bar.hidden = ok || (!a && O.gate === false) || (a && !checked() && !_failed && Date.now() < _quiet);   // pages anyone may look at: no bar until someone signs in
-    }
+      // Checking (or couldn't check) the account: the callout from the profile button instead of the bar
+      if (a && !checked() && menuBtn()) {
+        bar.hidden = true;
+        if (_failed) showTip('<b style="white-space:nowrap">Couldn’t check your account</b><br>Trying again by itself…', 'Try again', function() { _failed = 0; apply(); refresh(true).catch(function() {}); });
+        else if (Date.now() >= _quiet) showTip('Checking your account…');
+        else hideTip();
+      } else hideTip();
+    } else hideTip();
     menu();
     _listeners.forEach(function(fn) { try { fn(api.state()); } catch (e) {} });
   }

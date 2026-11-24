@@ -6641,7 +6641,7 @@ function _dashClearStoredUser() {
 }
 function _dashUpdateSignedInState() {
   var btn = document.getElementById('dashAuthBtn');
-  if (btn) btn.textContent = _dashCollabUser ? 'Sign Out' : 'Sign In';
+  if (btn) btn.textContent = (window.GBAccount && GBAccount.account()) ? 'Sign Out' : 'Sign In';   // the GameBoard account, whatever else is going on
 }
 function _dashMenuAuthAction() {
   if (_dashCollabUser) { _dashClearStoredUser(); _dashUpdateSignedInState(); }

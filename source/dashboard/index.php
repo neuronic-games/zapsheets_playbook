@@ -8648,7 +8648,7 @@ function _clearCollabUser() {
 function _updateCollabMenu() {
   var btn = document.getElementById('accountMenuAuthBtn');
   if (!btn) return;
-  btn.textContent = _collabUser ? 'Sign Out' : 'Sign In';
+  btn.textContent = (window.GBAccount && GBAccount.account()) ? 'Sign Out' : 'Sign In';   // the GameBoard account, whatever else is going on
 }
 
 function _menuAuthAction() {

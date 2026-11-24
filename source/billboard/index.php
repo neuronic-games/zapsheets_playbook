@@ -1076,7 +1076,7 @@ function _updateBbAuth() {
     if (saveBtn) saveBtn.style.display = 'none';
     if (btn) { btn.classList.remove('signed-in'); btn.title = 'Menu'; }
     if (metaEl) metaEl.textContent = <?= json_encode($_pubName ?: 'Games') ?>;
-    if (siOut)  { siOut.textContent = 'Sign In'; siOut.className = 'user-menu-item'; }
+    if (siOut)  { var _in = (window.GBAccount && GBAccount.account()); siOut.textContent = _in ? 'Sign Out' : 'Sign In'; siOut.className = 'user-menu-item' + (_in ? ' signout' : ''); }
     if (profile) profile.style.display = 'none';
     if (publishBtn) publishBtn.style.display = 'none';
     document.body.classList.remove('bb-admin-mode');
@@ -2628,6 +2628,8 @@ function _bbStartCheckout(type, btn, btnLabel) {
     app: 'billboard', name: 'BillBoard', sheet: SHEET_ID, base: APP_ROOT, home: SHEET_ID + '/billboard', gate: false,
     icon: APP_ROOT + 'images/bb_icon_180.png', plans: [{ plan: 'pro', label: '', price: '$4.99', note: 'every feature' }],
     onChange: function(s) {
+      // Signed in to the account (owner of this sheet or not): Sign Out
+      var so = document.getElementById('bbMenuSignInOut'); if (so) { so.textContent = s.signedIn ? 'Sign Out' : 'Sign In'; so.classList.toggle('signout', s.signedIn); }
       var up = document.getElementById('bbUpgradeBtn');
       if (up) { up.textContent = s.signedIn ? 'Subscription' : 'Subscribe'; up.style.color = s.app && /subscribed|activated|code/.test(s.app.state) ? '#4caf50' : '#f5a623'; }
       if (s.signedIn && !s.checked) return;   // wait until the account is checked for this sheet
@@ -4190,7 +4192,7 @@ function _updateBbAuth() {
     document.body.classList.add('bb-admin-mode');
   } else {
     if (btn) { btn.classList.remove('signed-in'); btn.title = 'Sign In'; }
-    if (siOut) { siOut.textContent = 'Sign In'; siOut.className = 'user-menu-item'; }
+    if (siOut) { var _in = (window.GBAccount && GBAccount.account()); siOut.textContent = _in ? 'Sign Out' : 'Sign In'; siOut.className = 'user-menu-item' + (_in ? ' signout' : ''); }
     document.body.classList.remove('bb-admin-mode');
   }
 }
@@ -6096,6 +6098,8 @@ function bbSubscribeSubmit(e) {
     app: 'billboard', name: 'BillBoard', sheet: SHEET_ID, base: APP_ROOT, home: SHEET_ID + '/billboard', gate: false,
     icon: APP_ROOT + 'images/bb_icon_180.png', plans: [{ plan: 'pro', label: '', price: '$4.99', note: 'every feature' }],
     onChange: function(s) {
+      // Signed in to the account (owner of this sheet or not): Sign Out
+      var so = document.getElementById('bbMenuSignInOut'); if (so) { so.textContent = s.signedIn ? 'Sign Out' : 'Sign In'; so.classList.toggle('signout', s.signedIn); }
       var up = document.getElementById('bbUpgradeBtn');
       if (up) { up.textContent = s.signedIn ? 'Subscription' : 'Subscribe'; up.style.color = s.app && /subscribed|activated|code/.test(s.app.state) ? '#4caf50' : '#f5a623'; }
       if (s.signedIn && !s.checked) return;   // wait until the account is checked for this sheet

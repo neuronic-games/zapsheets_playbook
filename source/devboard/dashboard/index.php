@@ -2620,10 +2620,13 @@ function renderPublishersView() {
       if (!gameMap[k]) gameMap[k] = { name: est.game || '—', estimates: [], contracts: [], payments: [] };
       gameMap[k].estimates.push(est);
     });
+    // Estimates and invoices DevBoard made itself are listed from their documents (above); ones written
+    // straight into the sheet (older ones, or added by hand) have no document, so they're listed as rows here
+    var haveDoc = {};
+    pubEstimates.forEach(function(e) { [e.contract_id, e.estimate_num].forEach(function(r) { r = String(r || '').replace(/^'/, '').trim(); if (r) haveDoc[r] = 1; }); });
     contracts.forEach(function(con) {
-      // Skip rows that are Estimates or Invoices — they appear in the estimates list already
       var conType = (con.Type || '').trim().toLowerCase();
-      if (conType === 'estimate' || conType === 'invoice') return;
+      if ((conType === 'estimate' || conType === 'invoice') && haveDoc[String(con['Ref Number'] || '').replace(/^'/, '').trim()]) return;
       var k = gameKey(con.Game);
       if (!gameMap[k]) gameMap[k] = { name: con.Game || '—', estimates: [], contracts: [], payments: [] };
       else if (con.Game) gameMap[k].name = con.Game; // contracts have canonical casing
@@ -2642,7 +2645,15 @@ function renderPublishersView() {
       var invCount     = g.estimates.filter(function(e) { return e.type === 'invoice'; }).length;
       if (estOnlyCount) summaryParts.push(estOnlyCount + (estOnlyCount === 1 ? ' estimate' : ' estimates'));
       if (invCount)     summaryParts.push(invCount     + (invCount     === 1 ? ' invoice'  : ' invoices'));
-      if (g.contracts.length) summaryParts.push(g.contracts.length + (g.contracts.length === 1 ? ' contract' : ' contracts'));
+      // Rows without a document count by their type
+      var rowType = function(c) { return (c.Type || '').trim().toLowerCase(); };
+      estOnlyCount += g.contracts.filter(function(c) { return rowType(c) === 'estimate'; }).length;
+      invCount     += g.contracts.filter(function(c) { return rowType(c) === 'invoice'; }).length;
+      var conCount  = g.contracts.filter(function(c) { return rowType(c) !== 'estimate' && rowType(c) !== 'invoice'; }).length;
+      summaryParts = [];
+      if (estOnlyCount) summaryParts.push(estOnlyCount + (estOnlyCount === 1 ? ' estimate' : ' estimates'));
+      if (invCount)     summaryParts.push(invCount     + (invCount     === 1 ? ' invoice'  : ' invoices'));
+      if (conCount) summaryParts.push(conCount + (conCount === 1 ? ' contract' : ' contracts'));
       if (g.payments.length)  summaryParts.push(g.payments.length  + (g.payments.length  === 1 ? ' payment'  : ' payments'));
 
       html += '<div class="game-group" id="' + ggId + '">';
@@ -2735,7 +2746,7 @@ function renderPublishersView() {
       sortedCons.forEach(function(con) {
         var quoteNum = parseFloat(con.Quote || '');
         var quote    = isNaN(quoteNum) ? '—' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
-        var payment  = _conStatus(con);
+        var payment  = _conStatus(con) || (/^(estimate|invoice)$/i.test(String(con.Type || '').trim()) ? _ceStatusValue(con) : '');
         var badgeCls = 'client-contract-badge';
         if (payment === 'Paid' || payment === 'Fully Paid') badgeCls += ' paid';
         else if (payment === 'Invoiced') badgeCls += ' invoiced';
@@ -2752,7 +2763,9 @@ function renderPublishersView() {
 
         html += '<div class="contract-item" id="ci-' + dataIdx + '">';
         html += '<div class="client-contract-row" onclick="toggleContractItem(' + dataIdx + ')">';
-        html += '<div>' + (dateRange ? '<div class="client-contract-dates">' + esc(dateRange) + '</div>' : '') + '</div>';
+        var refLbl = String(con['Ref Number'] || '').replace(/^'/, '').trim();
+        html += '<div>' + (dateRange ? '<div class="client-contract-dates">' + esc(dateRange) + '</div>'
+          : '<div class="client-contract-dates">' + esc([fmtDate(con.Date || ''), refLbl ? '#' + refLbl : ''].filter(Boolean).join(' · ')) + '</div>') + '</div>';
         html += '<div class="client-contract-quote">' + esc(quote) + '</div>';
         html += '<div><span class="' + badgeCls + '">' + esc(payment || '—') + '</span></div>';
         html += '<div class="client-contract-row-chevron">▼</div>';

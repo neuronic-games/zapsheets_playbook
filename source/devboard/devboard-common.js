@@ -33,7 +33,9 @@ function fmtDate(raw) {
       var p = iso.split('-');
       d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2]));
     } else {
+      // "11/30/2026" and the like are read as local midnight: keep that day (getUTC… below would shift it east of UTC)
       d = new Date(raw);
+      if (!isNaN(d.getTime())) d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     }
   }
   if (!d || isNaN(d.getTime())) return String(raw);

@@ -163,7 +163,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   <a href="devboard/help#owner"><span class="n">4</span>Your sheets &amp; view only</a>
   <a href="devboard/help#screen"><span class="n">5</span>The screen</a>
   <h4>Playtesting</h4>
-  <a href="devboard/help#board"><span class="n">6</span>The Board</a>
+  <a href="devboard/help#board"><span class="n">6</span>The Summary</a>
   <a href="devboard/help#games"><span class="n">7</span>Games</a>
   <a href="devboard/help#session"><span class="n">8</span>Logging a session</a>
   <a href="devboard/help#sessions"><span class="n">9</span>Reading &amp; editing sessions</a>
@@ -250,13 +250,13 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
 
 <hr class="sep">
 <section class="topic" id="board">
-  <h2><span class="n">6</span>The Board</h2>
+  <h2><span class="n">6</span>The Summary</h2>
   <p class="lead">Everything that needs doing, and where each game stands.</p>
-  <?= shot('board', 'The Board: TODOs first, then the totals, games by status and contracts.') ?>
+  <?= shot('board', 'The Summary: the totals at the top, then TODOs, the timeline and contracts.') ?>
   <ul>
-    <li><b>TODOs</b> — every open TODO from every game, with the number still open. See <a href="devboard/help#todos">TODOs</a>.</li>
     <li><b>The totals</b> — games, games in active development, contracts and publishers.</li>
-    <li><b>Games by status</b> — Design, Signed, Published, Pitching and Shelved, from each game’s Status. Games in bold have sessions; click one to open it.</li>
+    <li><b>TODOs</b> — every open TODO from every game, with the number still open. See <a href="devboard/help#todos">TODOs</a>.</li>
+    <li><b>Timeline</b> — your active projects: each contract with a <b>Target End Date</b> that isn’t finished, as a bar from its target start to its due date, soonest first. A line marks today; bars turn amber a week before they’re due and red once late. Estimates are striped. Click one to open the contract.</li>
     <li><b>Contracts</b> — your latest estimates, invoices, contracts and payments, with their amounts and status.</li>
   </ul>
 </section>

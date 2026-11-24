@@ -343,6 +343,31 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .dash-status-game:hover { background:#f8fafc; }
 .dash-status-game.has-dev { font-family:'DINBlack',sans-serif; color:#1a5f7a; }
 .dash-status-empty { padding:.32rem .75rem; font-size:.72rem; color:#ccc; border-top:1px solid #f0f4f8; }
+.dtl { background:#fff; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,.07); padding:.35rem 0 .45rem; }
+.dtl-empty { padding:.9rem 1rem; font-size:.8rem; color:#888; }
+.dtl-row { display:grid; grid-template-columns:minmax(150px,24%) 1fr 112px; gap:.9rem; align-items:center; padding:.42rem .9rem; cursor:pointer; }
+.dtl-row:not(.dtl-head):hover { background:#f6fafc; }
+.dtl-head { cursor:default; padding-top:.2rem; padding-bottom:0; }
+.dtl-head .dtl-track { height:1.4rem; }
+.dtl-name { min-width:0; }
+.dtl-name b { display:block; font-family:'DINBlack',sans-serif; font-weight:normal; font-size:.8rem; color:#1a5f7a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.dtl-name span { display:block; font-size:.7rem; color:#888; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.dtl-track { position:relative; height:1.05rem; }
+.dtl-row:not(.dtl-head) .dtl-track { background:repeating-linear-gradient(90deg,transparent 0 calc(100% - 1px),transparent 0); border-radius:6px; background-color:#f3f6f9; }
+.dtl-mark { position:absolute; top:0; bottom:-.3rem; border-left:1px solid #e3e8ee; }
+.dtl-mark i { position:absolute; top:.15rem; left:.3rem; font-style:normal; font-family:'DINBlack',sans-serif; font-size:.58rem; text-transform:uppercase; letter-spacing:.08em; color:#a3adb8; white-space:nowrap; }
+.dtl-today { position:absolute; top:-.45rem; bottom:-.45rem; border-left:2px solid #e2557a; z-index:2; }
+.dtl-head .dtl-today { top:auto; bottom:-.3rem; height:.55rem; }
+.dtl-today i { position:absolute; bottom:.55rem; left:-1.1rem; width:2.2rem; text-align:center; font-style:normal; font-family:'DINBlack',sans-serif; font-size:.55rem; text-transform:uppercase; letter-spacing:.06em; color:#e2557a; }
+.dtl-bar { position:absolute; top:0; bottom:0; border-radius:6px; background:#2a8fa8; min-width:6px; }
+.dtl-bar.soon { background:#e8a33d; }
+.dtl-bar.late { background:#d92d20; }
+.dtl-bar.est { background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.45) 0 5px,transparent 5px 10px); opacity:.75; }
+.dtl-due { text-align:right; line-height:1.2; }
+.dtl-due b { display:block; font-family:'DINBlack',sans-serif; font-weight:normal; font-size:.76rem; color:#333; }
+.dtl-due span { font-size:.68rem; color:#8a95a1; }
+.dtl-due.soon span { color:#b7791f; } .dtl-due.late span { color:#d92d20; font-family:'DINBlack',sans-serif; }
+@media (max-width:640px) { .dtl-row { grid-template-columns:110px 1fr 84px; gap:.5rem; padding:.4rem .6rem; } }
 .dash-contracts { background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.07); }
 .dash-contract-row { display:grid; grid-template-columns:1fr auto auto auto; gap:.75rem; align-items:center; padding:.48rem .85rem; border-bottom:1px solid #f0f4f8; font-size:.78rem; }
 .dash-contract-row:last-child { border-bottom:none; }
@@ -2382,6 +2407,56 @@ function _btodoBeginDrag(row, ev) {
 }
 
 var _todosSynced = false;
+// ── Summary: timeline of active projects ─────────────────────────────────────
+// A project is a contract (not a payment) with a Target End Date that isn't finished: no actual End Date,
+// and not paid (or only estimated) with its due date gone by. Estimates show striped. Bars run from the target start (or the contract date) to the due date.
+function _dashTimelineHtml() {
+  var DAY = 864e5, today = new Date(todayISO() + 'T12:00:00Z').getTime();
+  var day = function(v) { var s = String(v || '').trim().slice(0, 10); if (!/^\d{4}-\d\d-\d\d$/.test(s)) { var d = new Date(v); if (isNaN(d)) return 0; s = d.toISOString().slice(0, 10); } return new Date(s + 'T12:00:00Z').getTime(); };
+  var items = [];
+  CONTRACT_RAW.forEach(function(c, i) {
+    if (!c || _isPaymentRow(c)) return;
+    var end = day(c['Target End Date']); if (!end) return;
+    if (String(c['End Date'] || '').trim()) return;                                   // finished
+    var st = _conStatus(c), paid = st === 'Paid' || st === 'Fully Paid';
+    if (paid && end < today) return;                                                    // paid and done
+    var start = day(c['Target Start Date']) || day(c['Start Date']) || day(c.Date) || end - 14 * DAY;
+    if (start > end) start = end;
+    var est = /^estimate$/i.test(st || _ceStatusValue(c));
+    if (est && end < today) return;                                                     // an estimate whose dates have gone by
+    items.push({ i: i, c: c, start: start, end: end, est: est });
+  });
+  var out = '<div><div class="dash-section-hd">Timeline · active projects</div>';
+  if (!items.length) return out + '<div class="dtl dtl-empty">No active projects with due dates yet. Give a contract a <b>Target End Date</b> and it shows here.</div></div>';
+  items.sort(function(a, b) { return a.end - b.end || a.start - b.start; });
+  var lo = Math.min(today - 7 * DAY, Math.min.apply(null, items.map(function(x) { return x.start; })));
+  var hi = Math.max(today + 21 * DAY, Math.max.apply(null, items.map(function(x) { return x.end; }))) + 4 * DAY;
+  if (hi - lo > 400 * DAY) lo = Math.max(lo, today - 90 * DAY);                       // a very long span: start a while before today
+  var pct = function(t) { return Math.max(0, Math.min(100, (t - lo) / (hi - lo) * 100)); };
+  // Month marks
+  var marks = '', d = new Date(lo); d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1, 12));
+  while (d.getTime() < hi) {
+    var lbl = d.toLocaleDateString(undefined, { month: 'short', timeZone: 'UTC' }) + (d.getUTCMonth() === 0 ? ' ' + d.getUTCFullYear() : '');
+    marks += '<span class="dtl-mark" style="left:' + pct(d.getTime()).toFixed(2) + '%"><i>' + esc(lbl) + '</i></span>';
+    d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1, 12));
+  }
+  var todayX = pct(today).toFixed(2);
+  out += '<div class="dtl"><div class="dtl-row dtl-head"><div></div><div class="dtl-track">' + marks + '<span class="dtl-today" style="left:' + todayX + '%"><i>Today</i></span></div><div></div></div>';
+  items.forEach(function(x) {
+    var c = x.c, left = pct(x.start), right = pct(x.end), w = Math.max(1.2, right - left);
+    var days = Math.round((x.end - today) / DAY);
+    var cls = days < 0 ? 'late' : days <= 7 ? 'soon' : 'ok';
+    var due = days < 0 ? (-days) + (days === -1 ? ' day' : ' days') + ' late' : days === 0 ? 'Due today' : days === 1 ? 'Due tomorrow' : 'Due in ' + days + ' days';
+    var who = String(c.Client || '').trim(), what = String(c.Summary || c.Description || '').trim().split('\n')[0];
+    var tip = (c.Game || '') + (who ? ' · ' + who : '') + '\n' + fmtDate(new Date(x.start).toISOString().slice(0, 10)) + ' → ' + fmtDate(new Date(x.end).toISOString().slice(0, 10)) + (x.est ? '\nEstimate' : '');
+    out += '<div class="dtl-row" onclick="openContractEditDialog(' + x.i + ')" title="' + esc(tip) + '">' +
+      '<div class="dtl-name"><b>' + esc(c.Game || '—') + '</b><span>' + esc(who || what || '') + (x.est ? ' · Estimate' : '') + '</span></div>' +
+      '<div class="dtl-track"><span class="dtl-today" style="left:' + todayX + '%"></span><span class="dtl-bar ' + cls + (x.est ? ' est' : '') + '" style="left:' + left.toFixed(2) + '%;width:' + w.toFixed(2) + '%"></span></div>' +
+      '<div class="dtl-due ' + cls + '"><b>' + esc(fmtDate(new Date(x.end).toISOString().slice(0, 10))) + '</b><span>' + esc(due) + '</span></div></div>';
+  });
+  return out + '</div></div>';
+}
+
 function renderDashView() {
   var wrap = document.getElementById('dashWrap');
   if (!wrap) return;
@@ -2399,34 +2474,8 @@ function renderDashView() {
   html += '<div class="dash-stat"><div class="dash-stat-num">' + (_pubCount || '—') + '</div><div class="dash-stat-label">Publishers</div></div>';
   html += '</div>';
 
-  // Games by status
-  var STATUS_ORDER = ['Design','Prototype','Playtesting','Signed','Published'];
-  var byStatus = {};
-  GAMES_RAW.forEach(function(g) {
-    var s = (g.Status || 'Design').trim();
-    if (!byStatus[s]) byStatus[s] = [];
-    byStatus[s].push(g.Name || '');
-  });
-  // Sort columns: known order first, then any others
-  var cols = STATUS_ORDER.filter(function(s) { return byStatus[s] && byStatus[s].length; });
-  Object.keys(byStatus).forEach(function(s) { if (STATUS_ORDER.indexOf(s) === -1) cols.push(s); });
-
-  if (cols.length) {
-    html += '<div>';
-    html += '<div class="dash-section-hd">Games by Status</div>';
-    html += '<div class="dash-status-cols">';
-    cols.forEach(function(status) {
-      var style = _statusStyle(status);
-      html += '<div class="dash-status-col">';
-      html += '<div class="dash-status-col-hd" style="' + style + '">' + esc(status) + ' <span style="opacity:.6;font-family:DINRegular,sans-serif">(' + byStatus[status].length + ')</span></div>';
-      byStatus[status].forEach(function(name) {
-        var hasDev = ACTIVE_KEYS.hasOwnProperty(name.toLowerCase());
-        html += '<div class="dash-status-game' + (hasDev ? ' has-dev' : '') + '" onclick="switchTab(\'games\')">' + esc(name) + '</div>';
-      });
-      html += '</div>';
-    });
-    html += '</div></div>';
-  }
+  // Timeline: active projects (contracts with a target end date, not finished), by due date
+  html += _dashTimelineHtml();
 
   // Recent contracts
   if (CONTRACT_RAW.length) {
@@ -2455,7 +2504,9 @@ function renderDashView() {
   }
 
   wrap.innerHTML = html;
-  wrap.insertBefore(_boardTodosEl, wrap.firstChild);
+  // The totals at the top, then the TODOs, the timeline and the contracts
+  var stats = wrap.querySelector('.dash-stat-row');
+  wrap.insertBefore(_boardTodosEl, stats ? stats.nextSibling : wrap.firstChild);
 }
 
 function renderPublishersView() {

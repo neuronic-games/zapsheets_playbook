@@ -220,6 +220,18 @@ h2 { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(1.8r
 .card p { font-size:14px; color:var(--mid); margin-bottom:1rem; }
 .me { display:flex; align-items:center; gap:.8rem; margin-bottom:1rem; }
 .me-dot { width:44px; height:44px; border-radius:50%; background:var(--navy); color:var(--cream); display:flex; align-items:center; justify-content:center; font:600 18px 'Inter',sans-serif; flex-shrink:0; }
+/* Your picture: click or drop one on it to change it */
+label.me-dot { position:relative; overflow:hidden; cursor:pointer; }
+.me-dot img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.me-dot .cam { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(22,20,40,.55); color:#fff; opacity:0; transition:opacity .15s; }
+.me-dot .cam svg { width:18px; height:18px; }
+.me-dot:hover .cam, .me-dot.drop .cam, .me-dot.busy .cam { opacity:1; }
+.me-dot.drop { outline:3px dashed var(--navy); outline-offset:3px; }
+.me-dot.busy .cam svg { display:none; }
+.me-dot.busy .cam::after { content:''; width:16px; height:16px; border:2.5px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:mespin .7s linear infinite; }
+@keyframes mespin { to { transform:rotate(360deg); } }
+.me-msg { display:block; font-size:12px; color:var(--muted); min-height:0; }
+.me-msg.err { color:#c0392b; }
 .me b { display:block; color:var(--navy); }
 .me span { font-size:13px; color:var(--muted); }
 .plan { font-size:13px; background:#fdf0ed; color:#a8463a; border-radius:8px; padding:.55rem .75rem; margin-bottom:1rem; }
@@ -991,7 +1003,7 @@ footer a:hover { color:var(--navy); }
         <div class="foot"><button type="button" class="link" onclick="acctClick('login')">I already have an account — log in</button></div>
       </div>
       <div id="acctIn" hidden>
-        <div class="me"><div class="me-dot" id="meDot"></div><div><b id="meName"></b><span id="meEmail"></span></div></div>
+        <div class="me"><label class="me-dot" id="meDot" title="Change your picture — click, or drop one here" ondragover="event.preventDefault();this.classList.add('drop')" ondragleave="this.classList.remove('drop')" ondrop="mePicDrop(event)"><span id="meIni"></span><img id="meImg" alt="" hidden><span class="cam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><input type="file" accept="image/*" hidden onchange="mePicPick(this)"></label><div><b id="meName"></b><span id="meEmail"></span><span class="me-msg" id="meMsg"></span></div></div>
         <div class="plan" id="mePlan"></div>
         <ul class="my-apps" id="meApps" hidden></ul>
         <div class="my-sheets" id="meSheets" hidden></div>
@@ -1118,7 +1130,10 @@ footer a:hover { color:var(--navy); }
     $('acctOut').hidden = DASH && !!a; $('acctIn').hidden = !(DASH && a);
     if (a) {
       var nm = a.name || (a.email || '').split('@')[0];
-      $('meDot').textContent = (nm || '?').charAt(0).toUpperCase();
+      $('meIni').textContent = (nm || '?').charAt(0).toUpperCase();
+      var mi = $('meImg'), mu = a.image ? String(a.image) : '';
+      if (mu && mi.getAttribute('src') !== mu) mi.src = mu;
+      mi.hidden = !mu; $('meIni').hidden = !!mu;
       $('meName').textContent = nm; $('meEmail').textContent = a.email || '';
       var apps = a.apps || {}, days = function(t) { return Math.max(0, Math.ceil((new Date(t).getTime() - Date.now()) / 864e5)); };
       var when = function(d) { return d ? new Date(d + (d.length === 10 ? 'T12:00:00Z' : '')).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''; };
@@ -1237,6 +1252,36 @@ footer a:hover { color:var(--navy); }
       .then(function(r) { if (!r || !r.url) throw new Error(r && r.error ? r.error : 'Checkout isn’t available right now'); location.href = r.url; })
       .catch(function(e) { alert(e.message); show(); });
   };
+  // Your picture (the same as in CardBoard): made smaller here, then kept with the account
+  function shrinkPic(file) {
+    return new Promise(function(ok) {
+      var url = URL.createObjectURL(file), im = new Image();
+      im.onload = function() {
+        var k = Math.min(1, 1024 / Math.max(im.width, im.height)), c = document.createElement('canvas');
+        c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+        c.toBlob(function(b) { ok(b || file); }, 'image/jpeg', .9);
+      };
+      im.onerror = function() { URL.revokeObjectURL(url); ok(file); };
+      im.src = url;
+    });
+  }
+  function mePicMsg(m, err) { var el = $('meMsg'); el.textContent = m || ''; el.classList.toggle('err', !!err); clearTimeout(el._t); if (m && !err) el._t = setTimeout(function() { el.textContent = ''; }, 2500); }
+  function mePicUpload(file) {
+    if (!acct || !acct.token) return;
+    if (!file || !/^image\//.test(file.type)) { mePicMsg('Use a picture (JPEG, PNG, GIF or WebP)', true); return; }
+    var el = $('meDot'); el.classList.add('busy'); mePicMsg('');
+    shrinkPic(file).then(function(b) {
+      var fd = new FormData(); fd.append('action', 'image'); fd.append('cbt', acct.token); fd.append('file', b, 'picture.jpg');
+      return fetch(APP_BASE + 'push/gameboardAccount.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); });
+    }).then(function(r) {
+      if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response');
+      store(r); mePicMsg('✓ Picture updated');
+    }).catch(function(e) { mePicMsg('Couldn’t change your picture — ' + e.message, true); })
+      .then(function() { el.classList.remove('busy'); });
+  }
+  window.mePicPick = function(inp) { var f = inp.files && inp.files[0]; inp.value = ''; mePicUpload(f); };
+  window.mePicDrop = function(e) { e.preventDefault(); $('meDot').classList.remove('drop'); mePicUpload(e.dataTransfer.files && e.dataTransfer.files[0]); };
   window.toggleNavMenu = function(ev) { ev.stopPropagation(); $('navMenu').classList.toggle('open'); };
   window.closeNavMenu = function() { $('navMenu').classList.remove('open'); };
   document.addEventListener('click', function(ev) { if (!ev.target.closest('#navMenu')) window.closeNavMenu(); });

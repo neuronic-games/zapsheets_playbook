@@ -2625,7 +2625,7 @@ function _bbStartCheckout(type, btn, btnLabel) {
   var KEY = 'billboard_owner_' + SHEET_ID;
   function had() { try { return !!sessionStorage.getItem(KEY); } catch (e) { return false; } }
   GBAccount.init({
-    app: 'billboard', name: 'BillBoard', sheet: SHEET_ID, base: APP_ROOT, home: SHEET_ID + '/billboard', gate: false,
+    app: 'billboard', name: 'BillBoard', sheet: SHEET_ID, sheetName: <?= json_encode(gbSheetName((string) $_sheetId)) ?>, base: APP_ROOT, home: SHEET_ID + '/billboard', gate: false,
     icon: APP_ROOT + 'images/bb_icon_180.png', plans: [{ plan: 'pro', label: '', price: '$4.99', note: 'every feature' }],
     onChange: function(s) {
       // Signed in to the account (owner of this sheet or not): Sign Out
@@ -6095,7 +6095,7 @@ function bbSubscribeSubmit(e) {
   var KEY = 'billboard_owner_' + SHEET_ID;
   function had() { try { return !!sessionStorage.getItem(KEY); } catch (e) { return false; } }
   GBAccount.init({
-    app: 'billboard', name: 'BillBoard', sheet: SHEET_ID, base: APP_ROOT, home: SHEET_ID + '/billboard', gate: false,
+    app: 'billboard', name: 'BillBoard', sheet: SHEET_ID, sheetName: <?= json_encode(gbSheetName((string) $_sheetId)) ?>, base: APP_ROOT, home: SHEET_ID + '/billboard', gate: false,
     icon: APP_ROOT + 'images/bb_icon_180.png', plans: [{ plan: 'pro', label: '', price: '$4.99', note: 'every feature' }],
     onChange: function(s) {
       // Signed in to the account (owner of this sheet or not): Sign Out

@@ -778,6 +778,7 @@ body.designs .app { display:flex; flex-direction:column; }
       }
 
       if (result.title) addLog('✓  Sheet: ' + result.title, 'ok');
+      if (result.title) try { var _n = JSON.parse(localStorage.getItem('gb_sheet_names') || '{}'); _n[sheetId] = result.title; localStorage.setItem('gb_sheet_names', JSON.stringify(_n)); } catch (e) {}   // the GameBoard dashboard lists it by name
       var tabs = result.tabs || [];
       addLog('✓  ' + tabs.length + (tabs.length === 1 ? ' deck: ' : ' decks: ') + tabs.map(function(t) { return t.title; }).join(', '), 'ok');
       // Connecting sets the sheet up as yours (unless someone else already has): you design it, others view it

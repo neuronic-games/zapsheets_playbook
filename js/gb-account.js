@@ -50,6 +50,11 @@
     try { localStorage.setItem(KEY, JSON.stringify(ACCT)); } catch (e) {}
     apply();
   }
+  // The names of the sheets opened in this browser — the GameBoard dashboard lists them by name
+  function rememberSheetName(id, name) {
+    if (!id || !name) return;
+    try { var n = JSON.parse(localStorage.getItem('gb_sheet_names') || '{}'); if (n[id] !== name) { n[id] = String(name); localStorage.setItem('gb_sheet_names', JSON.stringify(n)); } } catch (e) {}
+  }
   function forget() { ACCT = null; try { localStorage.removeItem(KEY); } catch (e) {} apply(); }
   // Signed out (or in as someone else) in another tab or app — GameBoard's menu included: follow it here
   function follow() {
@@ -526,6 +531,7 @@
   var api = {
     init: function(opts) {
       O = opts || {}; O.base = O.base || (document.querySelector('base') || {}).href || '/';
+      if (O.sheet && O.sheetName) rememberSheetName(O.sheet, O.sheetName);
       if (typeof O.onChange === 'function') _listeners.push(O.onChange);
       var go = function() {
         build();
@@ -555,6 +561,7 @@
     },
     // A sheet just connected (the setup pages): set it up as this account's — unless someone else already has.
     // Resolves true when it's yours.
+    rememberSheetName: rememberSheetName,
     claimSheet: function(id) {
       if (!ACCT) return Promise.reject(new Error('Not signed in'));
       O.sheet = id;

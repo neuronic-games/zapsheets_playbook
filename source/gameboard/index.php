@@ -1196,12 +1196,13 @@ footer a:hover { color:var(--navy); }
     eye.title = on ? 'Hide the sheet ID' : 'Show the sheet ID'; eye.setAttribute('aria-label', eye.title);
   }, true);
   function renderSheets(list) {
-    var box = $('meSheets'), h = '', have = myApps();
+    var box = $('meSheets'), h = '', have = myApps(), names = {};
+    try { names = JSON.parse(localStorage.getItem('gb_sheet_names') || '{}') || {}; } catch (e) {}
     have.forEach(function(x) {
       var mine = list.filter(function(s) { return s.app === x.key; });
       h += '<a class="app-row" href="' + esc(appUrl(x.key)) + '"><img src="' + esc(x.icon) + '" alt=""><b>' + esc(x.name) + (planOf(x) ? '<small>' + esc(planOf(x)) + '</small>' : '') + '</b><span>Open</span></a>' + mine.map(function(s) {
-        // The Google Sheet's name, what's in it underneath; the eye shows the sheet's ID
-        var name = s.name || (x.key === 'cardboard' ? s.title : '') || s.summary || s.title || 'Untitled sheet';
+        // The sheet's name — kept in this browser by the apps when they open it — what's in it underneath; the eye shows its ID
+        var name = names[s.id] || (x.key === 'cardboard' ? s.title : '') || s.summary || s.title || ('Sheet ' + s.id.slice(0, 8) + '…');
         var what = s.summary && s.summary !== name ? s.summary : '';
         return '<a class="sh" href="' + esc(sheetUrl(s.id, x.key)) + '"><span class="sh-nm"><b>' + esc(name) + '</b>' + (what ? '<small>' + esc(what) + '</small>' : '') +
           '<code class="sh-id">' + esc(s.id) + '</code></span>' +
@@ -1211,7 +1212,7 @@ footer a:hover { color:var(--navy); }
     });
     var loose = have.length ? list.filter(function(s) { return !s.app; }) : [];
     if (loose.length) h += '<h4>Not opened in an app yet</h4>' + loose.map(function(s) {
-      return '<div class="sh-new"><b style="font-size:13px;color:var(--navy);margin-right:.3rem" title="' + esc(s.id) + '">' + esc(s.name || ('Sheet ' + s.id.slice(0, 8) + '…')) + '</b>' +
+      return '<div class="sh-new"><b style="font-size:13px;color:var(--navy);margin-right:.3rem" title="' + esc(s.id) + '">' + esc('Sheet ' + s.id.slice(0, 8) + '…') + '</b>' +
         have.map(function(x) { return '<a href="' + esc(sheetUrl(s.id, x.key)) + '">' + esc(x.name) + '</a>'; }).join('') + '</div>';
     }).join('');
     box.innerHTML = h ? '<h4 style="margin:0 0 .5rem;color:var(--navy)">Your apps</h4>' + h : '';

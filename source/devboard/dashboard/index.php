@@ -7541,7 +7541,7 @@ function _dbStartCheckout(type, btn, btnLabel, plan) {
     if (a.sheet_paid) loadSheetPlan();   // Core or Pro: the sheet's file knows
   }
   GBAccount.init({
-    app: 'devboard', name: 'DevBoard', sheet: SHEET_ID, base: APP_BASE, home: 'devboard/features', icon: 'images/db_icon_180.png',
+    app: 'devboard', name: 'DevBoard', sheet: SHEET_ID, sheetName: <?= json_encode(gbSheetName((string) $_sheet_id)) ?>, base: APP_BASE, home: 'devboard/features', icon: 'images/db_icon_180.png',
     plans: [{ plan: 'core', label: 'Core', price: '$2.99', note: 'sessions, TODOs, reports' }, { plan: 'pro', label: 'Pro', price: '$3.99', note: 'adds contracts, estimates & invoices' }],
     intros: { pro: 'Contracts, estimates and invoices are part of DevBoard Pro (and the all-in-one).' },
     onChange: fromAccount

@@ -469,6 +469,7 @@ function init() {
       SETTINGS = Object.assign({ units: 'in' }, LAYOUTS[SETTINGS_KEY] || {}, lsGet('cb_settings:' + SHEET_ID) || {});
       _oldProfile = SETTINGS.profile || null; delete SETTINGS.profile;   // the profile lives with the account now
       SHEET_TITLE = res.title || '';
+      if (SHEET_TITLE) try { var _n = JSON.parse(localStorage.getItem('gb_sheet_names') || '{}'); _n[SHEET_ID] = SHEET_TITLE; localStorage.setItem('gb_sheet_names', JSON.stringify(_n)); } catch (e) {}   // the GameBoard dashboard lists it by name
       rememberSeen();
       if (res.title) { $('subTitle').textContent = res.title; document.title = res.title; setHomeName(res.title); }
       mergeNewTabs(); fillDeckSelects();

@@ -9028,7 +9028,7 @@ function startPbUpgradeCheckout() {
     }
   }
   GBAccount.init({
-    app: 'pitchboard', name: 'PitchBoard', sheet: sheet_Id, base: APP_BASE, home: 'pitchboard', icon: 'images/pitchboard_icon_180.png',
+    app: 'pitchboard', name: 'PitchBoard', sheet: sheet_Id, sheetName: <?= json_encode(gbSheetName((string) $_sheet_id)) ?>, base: APP_BASE, home: 'pitchboard', icon: 'images/pitchboard_icon_180.png',
     plans: [{ plan: 'pro', label: '', price: '$1.99', note: 'every feature' }],
     onChange: fromAccount
   });

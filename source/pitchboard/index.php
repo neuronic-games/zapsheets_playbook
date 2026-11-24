@@ -344,6 +344,7 @@ body {
       // Sheet title (set by ginitsheet.py → passed through by setupSheet.php)
       if (result.title) {
         addLog('✓  Sheet: ' + result.title, 'ok');
+      if (result.title) try { var _n = JSON.parse(localStorage.getItem('gb_sheet_names') || '{}'); _n[sheetId] = result.title; localStorage.setItem('gb_sheet_names', JSON.stringify(_n)); } catch (e) {}   // the GameBoard dashboard lists it by name
       }
 
       // Per-tab results

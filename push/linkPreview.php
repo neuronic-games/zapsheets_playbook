@@ -52,22 +52,6 @@ function gbSaveSheetName(string $sheetId, string $title): void {
     if (!is_dir($dir)) @mkdir($dir, 0775, true);
     @file_put_contents($dir . '/_title.txt', mb_substr($title, 0, 200));
 }
-/** Look up the names of sheets not known yet (a few at a time), keep them, and return id => name. */
-function gbFetchSheetNames(array $ids): array {
-    $root = dirname(__DIR__) . '/sheets/';
-    // A sheet that couldn't be opened is tried again a day later, not on every visit
-    $ids = array_values(array_filter($ids, function ($id) use ($root) { return preg_match('/^[A-Za-z0-9_\-]{10,128}$/', $id) && @filemtime($root . $id . '/_title_tried') < time() - 86400; }));
-    if (!$ids) return [];
-    $py = $_ENV['PYTHON'] ?? 'python3';
-    $cmd = escapeshellarg($py) . ' ' . escapeshellarg(__DIR__ . '/gsheettitles.py');
-    foreach ($ids as $id) $cmd .= ' ' . escapeshellarg($id);
-    $r = json_decode((string) shell_exec($cmd . ' 2>/dev/null'), true);
-    $got = is_array($r['titles'] ?? null) ? $r['titles'] : [];
-    foreach ($got as $id => $t) gbSaveSheetName((string) $id, (string) $t);
-    foreach ($ids as $id) if (!isset($got[$id]) && is_dir($root . $id)) @touch($root . $id . '/_title_tried');
-    return $got;
-}
-
 // The sheet's own name and what's in it, from what the server keeps
 function gbSheetSummary(string $app, string $sheetId): array {
     $title = ''; $parts = [];

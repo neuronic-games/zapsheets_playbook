@@ -864,6 +864,7 @@ body:has(.overlay.open) { overflow: hidden; }
     <div class="account-menu" id="accountMenu">
       <div class="account-menu-label" id="collabUserLabel"></div>
       <button class="account-menu-item" onclick="closeAccountMenu();openProfileDialog()">Profile</button>
+      <a class="account-menu-item" href="<?= _ps_e($_base) ?>gameboard" style="text-decoration:none;display:block">GameBoard</a>
       <hr class="account-menu-divider" />
       <button class="account-menu-item" id="accountMenuAuthBtn" onclick="closeAccountMenu();_menuAuthAction()">Sign In</button>
     </div>

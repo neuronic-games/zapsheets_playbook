@@ -598,6 +598,7 @@ input[type="date"].field-input { -webkit-appearance:none; appearance:none; min-h
         <button class="account-menu-item" onclick="closeAccountMenu();openProfileDialog()">Profile</button>
         <button class="account-menu-item" onclick="closeAccountMenu();openRnDialog()">Releases</button>
         <button class="account-menu-item" onclick="closeAccountMenu();window.open('<?= htmlspecialchars($_base, ENT_QUOTES) ?>devboard/help','_blank')">Help</button>
+        <a class="account-menu-item" href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>gameboard" style="text-decoration:none;display:block">GameBoard</a>
         <hr class="account-menu-divider" />
         <button class="account-menu-item" id="accountMenuAuthBtn" onclick="closeAccountMenu();_menuAuthAction()">Sign In</button>
       </div>

@@ -272,6 +272,15 @@
       }
     }
     if (code) code.style.display = !a || (appInfo() || {}).state === 'activated' || unlocked() ? 'none' : '';
+    // "GameBoard" — back to the GameBoard home, just above Sign in / Sign out (the menu's last item)
+    if (!list.querySelector('.gba-mhome')) {
+      var items = list.querySelectorAll('button, a'), last = items[items.length - 1], ref = last;
+      if (last && last.previousElementSibling && last.previousElementSibling.tagName === 'HR') ref = last.previousElementSibling;
+      var home = document.createElement('a'); home.className = ((last && last.className) || '').replace(/\b(signout|active)\b/g, '') + ' gba-mhome';
+      home.href = (O.base || '/') + 'gameboard'; home.textContent = 'GameBoard';
+      home.style.textDecoration = 'none'; home.style.display = 'block'; home.style.boxSizing = 'border-box';
+      if (ref) list.insertBefore(home, ref); else list.appendChild(home);
+    }
   }
   function openCode() {   // the plans, with the code box already open
     if (!ACCT) { signIn().then(openCode, function() {}); return; }

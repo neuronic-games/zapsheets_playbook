@@ -87,10 +87,8 @@
           ['readyState', 'status', 'statusText', 'responseText', 'response', 'responseURL'].forEach(function(k, i) {
             Object.defineProperty(xhr, k, { configurable: true, value: [4, 200, 'OK', OK, xhr.responseType === 'json' ? JSON.parse(OK) : OK, g.u][i] });
           });
-          ['readystatechange', 'load', 'loadend'].forEach(function(t) {
-            var ev = new Event(t); if (typeof xhr['on' + t] === 'function') { try { xhr['on' + t](ev); } catch (e) { setTimeout(function() { throw e; }); } }
-            xhr.dispatchEvent(ev);
-          });
+          // dispatchEvent also runs the page's onload / onreadystatechange — once each
+          ['readystatechange', 'load', 'loadend'].forEach(function(t) { xhr.dispatchEvent(new Event(t)); });
         }, 0);
         return;
       }

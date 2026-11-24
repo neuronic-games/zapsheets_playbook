@@ -154,7 +154,7 @@ body {
 
 <div class="page">
   <!-- New sheet: like CardBoard's "New design" -->
-  <div class="card">
+  <div class="card" id="gsCard" hidden>
     <div class="card-title">New sheet</div>
     <div class="gs-start">
       <a href="https://docs.google.com/spreadsheets/" target="_blank" rel="noopener"><b>Open a sheet</b><span>Pick one of your Google Sheets to use with BillBoard</span></a>
@@ -311,9 +311,10 @@ body {
 
 <script src="js/gb-account.js?v=8"></script>
 <script>
-// The GameBoard account in the top bar's menu (no sheet here yet: no bar)
-GBAccount.init({ app: 'billboard', name: 'BillBoard', sheet: '', home: 'billboard', gate: false, bar: false, icon: 'images/bb_icon_180.png', plans: [],
-  onChange: function(s) { var b = document.getElementById('gsAuthBtn'); if (b) b.textContent = s.signedIn ? 'Sign out' : 'Sign in'; } });
+// The GameBoard account in the top bar's menu (no sheet here yet: no bar). Signed out: the sign-in screen,
+// and the New sheet card only once signed in. "Not now" goes back to the GameBoard home.
+GBAccount.init({ app: 'billboard', name: 'BillBoard', sheet: '', home: 'gameboard', gate: true, bar: false, icon: 'images/bb_icon_180.png', plans: [],
+  onChange: function(s) { document.getElementById('gsCard').hidden = !s.signedIn; var b = document.getElementById('gsAuthBtn'); if (b) b.textContent = s.signedIn ? 'Sign out' : 'Sign in'; } });
 window.gsAuth = function() { document.getElementById('accountMenu').classList.remove('open'); if (GBAccount.account()) GBAccount.signOut(); else GBAccount.signIn().catch(function() {}); };
 document.addEventListener('click', function(e) { if (!e.target.closest('.account-menu-wrap')) document.getElementById('accountMenu').classList.remove('open'); });
 </script>

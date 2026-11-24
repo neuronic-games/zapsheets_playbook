@@ -158,8 +158,13 @@ if (is_dir($_sheets_dir)) {
             $_d = trim((string) ($_r['Date'] ?? '')); $_e = trim((string) ($_r['Event'] ?? '')); $_p = trim((string) ($_r['People'] ?? ''));
             if ($_d !== '' || $_e !== '') {
                 if ($_cur !== null) $_sessions_brief[] = $_cur;
-                $_cur = in_array(strtolower($_e), ['time', 'material'], true) ? null   // time & materials rows aren't sessions
-                      : ['g' => $_game, 'd' => $_d, 'e' => $_e, 'n' => $_p, 'w' => mb_substr(trim((string) ($_r['Observations'] ?? $_r['Observation'] ?? '')), 0, 80), 't' => 0];
+                $_cur = null;
+                if (in_array(strtolower($_e), ['time', 'material'], true)) {   // time & materials: one row each — who, how long or how much, and a note
+                    $_sessions_brief[] = ['g' => $_game, 'd' => $_d, 'e' => ucfirst(strtolower($_e)), 'tm' => 1, 'p' => $_p,
+                        'v' => trim((string) ($_r['Observations'] ?? $_r['Observation'] ?? '')), 'w' => mb_substr(trim((string) ($_r['Solutions'] ?? $_r['Thoughts'] ?? '')), 0, 80)];
+                    continue;
+                }
+                $_cur = ['g' => $_game, 'd' => $_d, 'e' => $_e, 'n' => $_p, 'w' => mb_substr(trim((string) ($_r['Observations'] ?? $_r['Observation'] ?? '')), 0, 80), 't' => 0];
             } elseif ($_cur !== null && $_p !== '' && strpos($_p, '[sub:') !== 0) {
                 $_cur['t']++;
             }
@@ -404,13 +409,14 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .dtl-due.soon span { color:#b7791f; } .dtl-due.late span { color:#d92d20; font-family:'DINBlack',sans-serif; }
 @media (max-width:640px) { .dtl-row { grid-template-columns:110px 1fr 84px; gap:.5rem; padding:.4rem .6rem; } }
 .dash-contracts { background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.07); }
-.dash-contract-row { display:grid; grid-template-columns:1fr 5.5rem 4.5rem 6.5rem; gap:.75rem; align-items:center; padding:.48rem .85rem; border-bottom:1px solid #f0f4f8; font-size:.78rem; }
+.dash-contract-row { display:grid; grid-template-columns:1fr 5.5rem 6.5rem 6.5rem; gap:.75rem; align-items:center; padding:.48rem .85rem; border-bottom:1px solid #f0f4f8; font-size:.78rem; }
 .dash-contract-row:last-child { border-bottom:none; }
 .dash-contract-row > :nth-child(2) { text-align:right; } .dash-contract-row > :nth-child(3) { text-align:right; } .dash-contract-row > :nth-child(4) { text-align:right; }
 @media (max-width:560px) { .dash-contract-row { grid-template-columns:1fr auto auto; } .dash-contract-row > :nth-child(3) { display:none; } }
 .act-row { cursor:pointer; } .act-row:hover { background:#f8fafc; }
 .act-badge { display:inline-block; padding:.2rem .6rem; border-radius:999px; color:#fff; font-family:'DINBlack',sans-serif; font-size:.6rem; text-transform:uppercase; letter-spacing:.07em; background:#1a5f7a; }
 .act-badge.stat-meeting { background:#6b3fa8; } .act-badge.stat-idea { background:#2e7a52; } .act-badge.stat-editing { background:#a0522d; } .act-badge.stat-reporting { background:#2d3a8c; }
+.act-badge.act-tm { background:#eef3f6; color:#4a5a6a; }
 .act-more { display:block; width:100%; padding:.6rem; border:none; border-top:1px solid #f0f4f8; background:#fff; color:#1a5f7a; font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.08em; cursor:pointer; }
 .act-more:hover { background:#f8fafc; }
 .dash-contract-game { font-family:'DINBlack',sans-serif; color:#1a5f7a; }
@@ -2502,13 +2508,38 @@ function _dbDay(v) {   // a date as written in the sheet → noon UTC that day (
 function _dashActivityHtml() {
   var items = [];
   CONTRACT_RAW.forEach(function(c, i) { if (c) items.push({ k: 'c', c: c, i: i, t: _dbDay(c.Date), o: i }); });
-  (SESSIONS_BRIEF || []).forEach(function(s, i) { items.push({ k: 's', s: s, t: _dbDay(s.d), o: i }); });
+  // Time & materials: one line per game, person and day (time added up, materials added up)
+  var tmDay = {};
+  (SESSIONS_BRIEF || []).forEach(function(s, i) {
+    if (!s.tm) { items.push({ k: 's', s: s, t: _dbDay(s.d), o: i }); return; }
+    var who = _resolveTMPerson(s.p || '') || '', key = s.g.toLowerCase() + '|' + who.toLowerCase() + '|' + _dbDay(s.d);
+    var x = tmDay[key];
+    if (!x) { x = tmDay[key] = { k: 'tm', g: s.g, who: who, t: _dbDay(s.d), o: i, mins: 0, cost: 0, notes: [] }; items.push(x); }
+    x.o = i;
+    if (s.e === 'Time') x.mins += _parseTMMinutes(s.v); else { var c = parseFloat(String(s.v || '').replace(/[^0-9.]/g, '')); if (!isNaN(c)) x.cost += c; }
+    if (s.w && x.notes.indexOf(s.w) < 0) x.notes.push(s.w);
+  });
   if (!items.length) return '';
   // Newest first; undated last. Same day: sessions before contracts, then later rows first
-  items.sort(function(a, b) { return (b.t || -1) - (a.t || -1) || (a.k === b.k ? b.o - a.o : a.k === 's' ? -1 : 1); });
+  var rank = { s: 0, tm: 1, c: 2 };
+  items.sort(function(a, b) { return (b.t || -1) - (a.t || -1) || (a.k === b.k ? b.o - a.o : rank[a.k] - rank[b.k]); });
   var html = '<div><div class="dash-section-hd">Activity</div><div class="dash-contracts">';
   items.slice(0, _actShown).forEach(function(x) {
     var when = x.t ? fmtDate(new Date(x.t).toISOString().slice(0, 10)) : '';
+    if (x.k === 'tm') {
+      var parts = [], amt = [];
+      if (x.mins) { parts.push(_fmtTMTime(x.mins)); amt.push(_fmtTMTime(x.mins)); }
+      var money = '$' + x.cost.toLocaleString('en-US', { minimumFractionDigits: x.cost % 1 ? 2 : 0, maximumFractionDigits: 2 });
+      if (x.cost) { parts.push('materials ' + money); amt.push(money); }
+      var tsub = [x.who, x.notes.join('; ')].filter(Boolean).join(' · ');
+      var label = x.mins && x.cost ? 'T&M' : x.mins ? 'Time' : 'Materials';
+      html += '<div class="dash-contract-row act-row" onclick="_actOpenGame(' + JSON.stringify(x.g).replace(/"/g, '&quot;') + ')" title="' + esc(x.g + ' — ' + parts.join(', ')) + '">' +
+        '<div><div class="dash-contract-game">' + esc(x.g) + '</div><div class="dash-contract-client">' + esc(tsub || parts.join(' · ')) + '</div></div>' +
+        '<div style="color:#888;font-size:.72rem">' + esc(when) + '</div>' +
+        '<div style="font-family:DINBlack,sans-serif;font-size:.78rem;white-space:nowrap">' + esc(amt.join(' + ')) + '</div>' +
+        '<div><span class="act-badge act-tm">' + esc(label) + '</span></div></div>';
+      return;
+    }
     if (x.k === 's') {
       var s = x.s, type = s.e || 'Session', cls = 'stat-' + type.toLowerCase().replace(/[^a-z]/g, '');
       var sub = [type + (s.n ? ' ' + s.n : ''), s.w, s.t ? s.t + (s.t === 1 ? ' person' : ' people') : ''].filter(Boolean).join(' · ');

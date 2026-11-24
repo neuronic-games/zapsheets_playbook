@@ -203,7 +203,7 @@ table.keys tr.h td { background:#fffafa; font-family:'DINBlack',sans-serif; font
   <h2><span class="n">1</span>What PitchBoard does</h2>
   <p class="lead">Your Google Sheet holds the list: every <b>game</b> you’re pitching, every <b>publisher</b> and contact, and one row per <b>pitch</b> — a meeting, an email, a convention chat. PitchBoard turns it into a dashboard you can work from.</p>
   <div class="cards">
-    <div class="card"><b>Board</b><p>Totals, charts and every game by stage at a glance.</p></div>
+    <div class="card"><b>Overview</b><p>Totals, charts and every game by stage at a glance.</p></div>
     <div class="card"><b>Games</b><p>Each game with the publishers it’s been pitched to and where each one stands.</p></div>
     <div class="card"><b>Publishers</b><p>Each publisher with its contacts and the games they’ve seen.</p></div>
     <div class="card"><b>Game pages</b><p>A public page for a game — art, player count, how to play — to send with a pitch.</p></div>
@@ -248,7 +248,7 @@ table.keys tr.h td { background:#fffafa; font-family:'DINBlack',sans-serif; font
   <h2><span class="n">5</span>The screen</h2>
   <?= shot('games', 'The Games list: the status counts, search and sort, and a card for each game.') ?>
   <ul>
-    <li><b>Tabs</b> at the top: <b>Board</b> (the overview), <b>Games</b> and <b>Publishers</b>, with how many of each.</li>
+    <li><b>Tabs</b> at the top: <b>Overview</b> (totals and charts), <b>Games</b> and <b>Publishers</b>, with how many of each.</li>
     <li><b>Save</b> (top right) sends your changes to the sheet — see <a href="pitchboard/help#saving">Saving</a>. The round person button (your picture, once you’ve added one) opens the <a href="pitchboard/help#settings">menu</a>.</li>
     <li>Under the tabs: the <b>status counts</b>, the <b>search</b> box, <b>Date</b> / <b>A–Z</b> sort and <b>+ Game</b>.</li>
   </ul>

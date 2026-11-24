@@ -1718,7 +1718,7 @@ if ($_sheet_id && is_dir($_sheets_root)) {
       </div>
     </div>
     <div class="top-tab-btns">
-      <button class="top-tab" id="btnDashboard"              onclick="setView('dashboard')">Board</button>
+      <button class="top-tab" id="btnDashboard"              onclick="setView('dashboard')">Overview</button>
       <button class="top-tab active" id="btnGame"      onclick="setView('game')">Games</button>
       <button class="top-tab" id="btnPublisher"               onclick="setView('publisher')">Publishers</button>
     </div>

@@ -104,6 +104,7 @@ section { padding:5.5rem 2rem; }
 .feat-card p { font-size:14px; color:var(--text-mid); line-height:1.65; }
 
 /* ── Browser frame ── */
+.shot-img { display:block; width:100%; height:auto; background:#f1f3f6; }
 .browser-frame { background:#e8e8e8; border-radius:14px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.18); }
 .browser-chrome { background:#d4d4d4; padding:10px 14px; display:flex; align-items:center; gap:10px; }
 .browser-dots { display:flex; gap:6px; }
@@ -521,8 +522,8 @@ footer a:hover { color:rgba(255,255,255,.7); }
       </div>
       <div class="feat-card">
         <div class="feat-icon purple">🗂️</div>
-        <h3>Board overview</h3>
-        <p>See every game by stage — design, prototype, playtesting, signed — next to your TODOs and latest contracts, on one screen.</p>
+        <h3>Project timeline</h3>
+        <p>Every active project on one timeline, from start to due date — amber when it's close, red when it's late. Your totals, TODOs and latest contracts sit alongside.</p>
       </div>
       <div class="feat-card">
         <div class="feat-icon dark">📊</div>
@@ -652,6 +653,29 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <div class="ie-toast tdx-toast">✓ Saved to your Sheet</div>
           <svg class="ie-cursor tdx-cursor" width="22" height="22" viewBox="0 0 24 24"><path d="M4 2l15 11-7 1.2L8.6 21 4 2z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/></svg>
         </div>
+      </div>
+    </div>
+
+    <!-- Screenshot 4: Timeline -->
+    <div class="shot-grid flip" style="margin-top:5rem;">
+      <div class="shot-text">
+        <div class="section-label">Timeline</div>
+        <h2 class="section-title" style="margin-bottom:1rem;">See what's due, at a glance</h2>
+        <p>The Summary puts every active project on a timeline — each contract a bar from its start to its due date, with today marked. You know straight away what's late, what's next and what's still only an estimate.</p>
+        <ul>
+          <li>Bars turn amber a week before they're due, red once late</li>
+          <li>No due date? It's worked out from the contract's duration</li>
+          <li>Several contracts for one game, grouped together</li>
+          <li>Estimates not invoiced yet are striped</li>
+          <li>Hover for the summary; click to open the contract</li>
+        </ul>
+      </div>
+      <div class="browser-frame">
+        <div class="browser-chrome">
+          <div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
+          <div class="browser-url">mygameboard.app/…/devboard</div>
+        </div>
+        <img class="shot-img" src="images/devboard-features/timeline.jpg" alt="DevBoard's timeline of active projects: bars from start to due date, with today marked, late projects in red and estimates striped" loading="lazy" width="1496" height="676">
       </div>
     </div>
 

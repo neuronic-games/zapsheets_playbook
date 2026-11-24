@@ -73,7 +73,8 @@ TABS = {
 results = {}
 
 # Build map of currently existing worksheets (by title)
-existing = {w.title: w for w in wb.worksheets()}
+# Google Sheets tab names ignore case ("Games" and "games" can't both exist): match the same way
+existing = {w.title.strip().lower(): w for w in wb.worksheets()}
 
 # ── Create missing required worksheets only ────────────────────────────────────
 # If a tab already exists we leave it completely untouched — never clear or
@@ -81,9 +82,9 @@ existing = {w.title: w for w in wb.worksheets()}
 # (e.g. [Monopoly]) created by gcreategametab.py are preserved.
 for tab_name, rows in TABS.items():
     try:
-        if tab_name in existing:
-            # Tab exists — data is intact, nothing to do.
-            ws = existing[tab_name]
+        if tab_name.lower() in existing:
+            # Tab exists (any case) — data is intact, nothing to do.
+            ws = existing[tab_name.lower()]
             results[tab_name] = 'ok'
         else:
             num_cols = max(len(r) for r in rows) if rows else 2

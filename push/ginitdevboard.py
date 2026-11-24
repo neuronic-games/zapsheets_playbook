@@ -74,11 +74,12 @@ TABS = {
     },
 }
 
-existing   = {w.title: w for w in wb.worksheets()}
+# Google Sheets tab names ignore case ("Games" and "games" can't both exist): match the same way
+existing   = {w.title.strip().lower(): w for w in wb.worksheets()}
 tabs_created = []
 
 for tab_name, cfg in TABS.items():
-    if tab_name in existing:
+    if tab_name.lower() in existing:   # already there (any case): use it
         continue
     try:
         rows = cfg['rows']

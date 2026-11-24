@@ -1906,7 +1906,7 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
         <div class="session-meta-row">
           <div class="field-group">
             <label>Location</label>
-            <input type="text" class="field-input" id="sLocation" placeholder="" autocomplete="off" />
+            <div class="combo-wrap name-combo" id="sLocationCombo"><input type="text" class="field-input combo-input" id="sLocation" placeholder="Pick or type a place…" autocomplete="off" /><button type="button" class="combo-toggle" tabindex="-1" aria-label="Show places">▾</button><div class="combo-dropdown"></div></div>
           </div>
           <div class="field-group">
             <label>Session Number</label>
@@ -3176,11 +3176,13 @@ function payPersonKey(e) {
 // A name box with a list: type to filter the people you know (People tab), pick with the mouse or the
 // arrow keys and Enter, or keep typing a new name. ▾ shows everyone. Names already picked in the
 // boxes of the same group are left out.
-function _nameCombo(inputId, group) {
+function _nameCombo(inputId, group, opts) {
+  opts = opts || {};
   var inp = document.getElementById(inputId); if (!inp || inp._combo) return; inp._combo = true;
   var wrap = inp.parentNode, drop = wrap.querySelector('.combo-dropdown'), hl = -1;
   function taken() { return (group || []).filter(function(id) { return id !== inputId; }).map(function(id) { var e = document.getElementById(id); return e ? e.value.trim().toLowerCase() : ''; }).filter(Boolean); }
   function names() {
+    if (opts.source) return opts.source();
     var seen = {}, out = [];
     [MY_NAME].concat(PEOPLE_NAMES || []).forEach(function(n) { n = String(n || '').trim(); var k = n.toLowerCase(); if (n && !seen[k]) { seen[k] = 1; out.push(n); } });
     return out.sort(function(a, b) { return a.localeCompare(b); });
@@ -3189,8 +3191,8 @@ function _nameCombo(inputId, group) {
     var q = all ? '' : inp.value.trim().toLowerCase(), skip = taken();
     var list = names().filter(function(n) { var k = n.toLowerCase(); return skip.indexOf(k) < 0 && (!q || k.indexOf(q) >= 0) && k !== q; });
     hl = -1;
-    if (!list.length) { drop.innerHTML = q ? '<div class="combo-empty">New name — it’s added to People when you save</div>' : ''; wrap.classList.toggle('open', !!q); return; }
-    drop.innerHTML = list.map(function(n) { return '<div class="combo-item" data-name="' + esc(n) + '">' + esc(n) + (n === MY_NAME ? '<small>you</small>' : '') + '</div>'; }).join('');
+    if (!list.length) { drop.innerHTML = q ? '<div class="combo-empty">' + (opts.newText || 'New name — it’s added to People when you save') + '</div>' : ''; wrap.classList.toggle('open', !!q); return; }
+    drop.innerHTML = list.map(function(n) { return '<div class="combo-item" data-name="' + esc(n) + '">' + esc(n) + (!opts.source && n === MY_NAME ? '<small>you</small>' : '') + '</div>'; }).join('');
     wrap.classList.add('open');
   }
   function close() { wrap.classList.remove('open'); hl = -1; }
@@ -3213,7 +3215,18 @@ function _nameCombo(inputId, group) {
 }
 (function() {
   var ids = ['gDesigner1', 'gDesigner2', 'gDesigner3', 'gDesigner4'];
-  var go = function() { ids.forEach(function(id) { _nameCombo(id, ids); }); };
+  var go = function() {
+    ids.forEach(function(id) { _nameCombo(id, ids); });
+    // A session's location: the places used before, in every game — the most used first
+    _nameCombo('sLocation', null, { newText: 'A new place', source: function() {
+      var n = {}, add = function(v) { v = String(v || '').trim(); if (v && v.length <= 60 && !/^length:/i.test(v)) { var k = v.toLowerCase(); n[k] = n[k] || { v: v, c: 0 }; n[k].c++; } };
+      var cache = typeof _sessionCache !== 'undefined' ? _sessionCache : {}, fresh = {};
+      Object.keys(cache).forEach(function(g) { fresh[g.toLowerCase()] = 1; });   // games opened here: their own (newer) sessions count, not the brief
+      (SESSIONS_BRIEF || []).forEach(function(s) { if (!s.tm && !fresh[String(s.g).toLowerCase()]) add(s.w); });
+      Object.keys(cache).forEach(function(g) { (_sessionCache[g] || []).forEach(function(s) { add(s.location); }); });
+      return Object.keys(n).map(function(k) { return n[k]; }).sort(function(a, b) { return b.c - a.c || a.v.localeCompare(b.v); }).map(function(x) { return x.v; });
+    } });
+  };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
 })();
 

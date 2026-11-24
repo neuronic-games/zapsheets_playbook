@@ -661,7 +661,7 @@ footer a:hover { color:var(--navy); }
       <button type="button" id="navMineBtn" onclick="closeNavMenu();location.hash='account'">Your account</button>
       <button type="button" onclick="closeNavMenu();location.hash='pricing'">Apps &amp; pricing</button>
       <button type="button" id="navStartBtn" onclick="closeNavMenu();acctClick('signup')">Start your free week</button>
-      <button type="button" id="navAuthBtn" onclick="closeNavMenu();if(acct)signOut();else acctClick('login')">Sign in</button>
+      <button type="button" id="navAuthBtn" onclick="navAuth()">Sign in</button>
     </div>
   </div>
 </div></nav>
@@ -1151,6 +1151,7 @@ footer a:hover { color:var(--navy); }
   window.toggleNavMenu = function(ev) { ev.stopPropagation(); $('navMenu').classList.toggle('open'); };
   window.closeNavMenu = function() { $('navMenu').classList.remove('open'); };
   document.addEventListener('click', function(ev) { if (!ev.target.closest('#navMenu')) window.closeNavMenu(); });
+  window.navAuth = function() { window.closeNavMenu(); if (acct) window.signOut(); else acctClick('login'); };
   window.signOut = function() { acct = null; try { localStorage.removeItem(KEY); } catch (e) {} show(); };
   function openAuth(m) { $('authOverlay').classList.add('open'); authMode(m); }
   window.closeAuth = function() { $('authOverlay').classList.remove('open'); wantAll = false; };

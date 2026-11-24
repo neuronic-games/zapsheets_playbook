@@ -43,7 +43,43 @@ body.gb-page { background:var(--gb-bg); font-family:var(--gb-text); color:var(--
 .gb-app .top-tab.active { background:#fff; color:var(--gb-nav); }
 .gb-app .top-tab:not(.active):hover { color:#fff; }
 
+/* ── Top bar layout: the same in every app (CardBoard's is the model) ──
+ *   <div class="top-bar"><div class="top-bar-inner">
+ *     <div class="top-bar-left"><img class="top-bar-icon" src="images/…_icon_180.png">
+ *       <div class="top-bar-name"><h1>App<span>Name</span></h1><p class="sub">the sheet or game</p></div></div>
+ *     <div class="top-tab-btns"><button class="top-tab active">…</button>…</div>      (optional)
+ *     <div class="account-menu-wrap">[Save]<button class="top-btn top-menu-btn">person icon</button>
+ *       <div class="account-menu">…</div></div>
+ *   </div></div>
+ * The icon and name sit left, the tabs in the middle, Save and the round menu button (profile picture) right. */
+.gb-app .top-bar { padding:.75rem 1.25rem; position:sticky; top:0; z-index:100; }
+.gb-app .top-bar-inner { width:100%; max-width:none; margin:0; display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:.75rem; }
+.gb-app .top-bar-inner > :only-child, .gb-app .top-bar-inner > .top-bar-left:nth-last-child(2) { grid-column:1; }
+.gb-app .top-bar-inner > .top-bar-left:nth-last-child(2) + .account-menu-wrap { grid-column:3; }
+.gb-app .top-bar-left { flex:none; display:flex; align-items:center; gap:.65rem; min-width:0; }
+.gb-app .top-bar-icon { width:2.2rem; height:2.2rem; border-radius:7px; flex-shrink:0; object-fit:cover; cursor:pointer; }
+.gb-app .top-bar-name { min-width:0; display:flex; flex-direction:column; }
+.gb-app .top-bar h1 { margin:0; line-height:1.15; cursor:pointer; white-space:nowrap; }
+.gb-app .top-bar h1 a { color:inherit; text-decoration:none; }
+.gb-app .top-bar .sub { margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:.01em; }
+.gb-app .top-tab-btns { display:flex; align-items:center; justify-self:center; overflow:visible; }
+.gb-app .top-tab { padding:.3rem .9rem; border:none; background:transparent; cursor:pointer; white-space:nowrap; }
+.gb-app .top-bar .account-menu-wrap { justify-self:end; position:relative; flex-shrink:0; display:flex; align-items:center; gap:.55rem; margin:0; }
+.gb-app .top-menu-btn { width:2.1rem; height:2.1rem; padding:0; border:none; border-radius:50%; display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; flex-shrink:0; }
+.gb-app .top-menu-btn svg { width:17px; height:17px; }
+.gb-app .top-menu-btn .top-pic { display:none; width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.gb-app .top-menu-btn.has-pic .top-pic { display:block; }
+.gb-app .top-menu-btn.has-pic svg { display:none; }
+@media (max-width:560px) {
+  .gb-app .top-bar { padding:.5rem 1rem; }
+  .gb-app .top-bar-inner { display:flex; flex-wrap:wrap; gap:.4rem; }
+  .gb-app .top-bar-left { flex:1; }
+  .gb-app .top-tab-btns { order:3; width:100%; justify-content:center; }
+}
+
 /* ── Account menu (one style in every app) ── */
+.gb-app .account-menu-label { padding:.55rem 1rem .5rem; font-size:.75rem; line-height:1.35; color:rgba(255,255,255,.55); border-bottom:1px solid rgba(255,255,255,.12); margin-bottom:.2rem; word-break:break-all; }
+.gb-app .account-menu-label:empty { display:none; }
 .gb-app .account-menu, .gb-app .user-menu { background:var(--gb-nav); border:1px solid rgba(255,255,255,.18); border-radius:var(--gb-r); box-shadow:0 8px 24px rgba(0,0,0,.4); }
 .gb-app .account-menu-item, .gb-app .user-menu-item { font-family:var(--gb-black); font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; color:rgba(255,255,255,.85); }
 .gb-app .account-menu-item:hover, .gb-app .user-menu-item:hover { background:rgba(255,255,255,.1); color:#fff; }

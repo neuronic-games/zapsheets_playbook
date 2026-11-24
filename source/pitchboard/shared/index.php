@@ -843,28 +843,31 @@ body:has(.overlay.open) { overflow: hidden; }
 }
 .dialog-shake { animation:dialog-shake .35s ease; }
 </style>
+<link rel="stylesheet" href="<?= _ps_e($_base) ?>css/gameboard-ui.css?v=2" />
 </head>
-<body>
+<body class="gb-app gb-pitch">
 
 <div class="top-bar">
-  <div style="display:flex;flex-direction:column;gap:.1rem">
-    <div style="display:flex;align-items:center;gap:.5rem">
-      <a class="top-bar-logo" href="<?= _ps_e($_pbUrl) ?>"><span class="pb-pitch">Pitch</span><span class="pb-board">Board</span></a>
-      <span class="top-bar-sep">›</span>
-      <span class="top-bar-game"><?= _ps_e($_gameName) ?></span>
+  <div class="top-bar-inner">
+    <div class="top-bar-left">
+      <a href="<?= _ps_e($_pbUrl) ?>"><img class="top-bar-icon" src="<?= _ps_e($_base) ?>images/pitchboard_icon_180.png" alt="PitchBoard"></a>
+      <div class="top-bar-name">
+        <h1><a href="<?= _ps_e($_pbUrl) ?>"><span class="pb-pitch">Pitch</span><span class="pb-board">Board</span></a></h1>
+        <p class="sub"><?= _ps_e($_gameName) ?></p>
+        <span id="topBarUserLine" style="display:none"></span>
+      </div>
     </div>
-    <div id="topBarUserLine" style="display:none;font-family:'DINRegular',sans-serif;font-size:.72rem;color:rgba(255,255,255,.55);padding-left:.05rem"></div>
-  </div>
-  <div class="account-menu-wrap" style="margin-left:auto">
-    <button class="top-btn-collab" id="accountMenuBtn" title="Account" onclick="toggleAccountMenu()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-    </button>
+    <div class="account-menu-wrap">
+      <button class="top-btn top-menu-btn" id="accountMenuBtn" title="Account" onclick="toggleAccountMenu()"><img class="top-pic" id="accountMenuPic" alt="">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/></svg>
+      </button>
     <div class="account-menu" id="accountMenu">
       <div class="account-menu-label" id="collabUserLabel"></div>
       <button class="account-menu-item" onclick="closeAccountMenu();openProfileDialog()">Profile</button>
       <hr class="account-menu-divider" />
       <button class="account-menu-item" id="accountMenuAuthBtn" onclick="closeAccountMenu();_menuAuthAction()">Sign In</button>
     </div>
+  </div>
   </div>
 </div>
 
@@ -1519,13 +1522,17 @@ function _clearStoredUser() {
   try { sessionStorage.removeItem(STORAGE_KEY); } catch(e){}
 }
 
+function _escMenu(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function _updateMenuLabel() {
   var lbl = document.getElementById('collabUserLabel');
   var btn = document.getElementById('accountMenuAuthBtn');
   if (!lbl || !btn) return;
+  var mb = document.getElementById('accountMenuBtn'), pic = document.getElementById('accountMenuPic');
+  var im = _collabUser && _collabUser.bio ? (_collabUser.bio.image || _collabUser.bio.photo || '') : '';
+  if (mb && pic) { if (im && pic.getAttribute('src') !== im) pic.src = im; mb.classList.toggle('has-pic', !!im); }
   if (_collabUser) {
     var display = (_collabUser.bio && _collabUser.bio.name) ? _collabUser.bio.name : _collabUser.email;
-    lbl.textContent = display;
+    lbl.innerHTML = '<b style="display:block;color:#fff;font-size:.86rem">' + _escMenu(display) + '</b>' + (display !== _collabUser.email ? _escMenu(_collabUser.email || '') : '');
     lbl.style.display = 'block';
     btn.textContent = 'Sign Out';
   } else {
@@ -1542,7 +1549,7 @@ function _updateSignedInState() {
     if (_collabUser) {
       var display = (_collabUser.bio && _collabUser.bio.name) ? _collabUser.bio.name : _collabUser.email;
       userLine.textContent = display;
-      userLine.style.display = 'block';
+      userLine.style.display = 'none';   // the menu says who's signed in
     } else {
       userLine.style.display = 'none';
     }

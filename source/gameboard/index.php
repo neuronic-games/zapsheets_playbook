@@ -67,16 +67,32 @@ body { font-family:'Inter',system-ui,sans-serif; color:var(--text); background:#
 a { color:inherit; }
 [hidden] { display:none !important; }
 
-nav { position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0 2rem; height:64px; background:rgba(255,255,255,.94); backdrop-filter:blur(12px); border-bottom:1px solid var(--line); }
-.brand { display:flex; align-items:center; gap:.55rem; text-decoration:none; }
-.brand img { width:32px; height:32px; border-radius:8px; }
-.brand b { font-family:'Fraunces',Georgia,serif; font-size:1.2rem; font-weight:600; letter-spacing:-.02em; color:var(--navy); }
-.nav-links { display:flex; align-items:center; gap:1.6rem; font-size:14px; }
-.nav-links a { text-decoration:none; color:var(--mid); }
-.nav-links a:hover { color:var(--navy); }
-.acct-btn { background:var(--navy); color:#fff; border:none; border-radius:999px; padding:8px 18px; font:500 14px 'Inter',sans-serif; cursor:pointer; white-space:nowrap; }
-.acct-btn:hover { background:var(--navy-2); }
-@media (max-width:720px) { .nav-links a { display:none; } nav { padding:0 1rem; } }
+/* Top bar: the same layout as every GameBoard app (CardBoard's) — icon and name left, sections in the
+   middle, the round account button (profile picture) with its menu on the right */
+@font-face { font-family:'DINBlack'; src:url('fonts/DINBlack.woff2') format('woff2'), url('fonts/DINBlack.ttf') format('truetype'); }
+@font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'), url('fonts/DINMedium.ttf') format('truetype'); }
+nav.gbn { position:sticky; top:0; z-index:50; background:#1a1a2e; color:#fff; padding:.75rem 1.25rem; box-shadow:inset 0 -3px 0 var(--red); }
+.gbn-in { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:.75rem; }
+.brand { display:flex; align-items:center; gap:.65rem; text-decoration:none; color:#fff; min-width:0; }
+.brand img { width:2.2rem; height:2.2rem; border-radius:7px; flex-shrink:0; }
+.brand b { display:block; font-family:'DINBlack',sans-serif; font-weight:400; font-size:1rem; letter-spacing:.03em; line-height:1.15; }
+.brand b span { color:var(--red); }
+.brand small { display:block; font-family:'DINRegular',sans-serif; font-size:.73rem; opacity:.6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.nav-links { display:flex; align-items:center; background:rgba(255,255,255,.12); border-radius:8px; padding:3px; }
+.nav-links a { font-family:'DINBlack',sans-serif; font-size:.62rem; text-transform:uppercase; letter-spacing:.07em; padding:.3rem .9rem; border-radius:6px; color:rgba(255,255,255,.62); text-decoration:none; white-space:nowrap; }
+.nav-links a:hover { color:#fff; }
+.gbn-right { justify-self:end; position:relative; }
+.acct-btn { width:2.1rem; height:2.1rem; padding:0; border:none; border-radius:50%; background:rgba(255,255,255,.14); color:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; }
+.acct-btn:hover { background:rgba(255,255,255,.24); }
+.acct-btn img { display:none; width:100%; height:100%; object-fit:cover; }
+.acct-btn.has-pic img { display:block; } .acct-btn.has-pic svg { display:none; }
+.gbn-menu { display:none; position:absolute; top:calc(100% + .4rem); right:0; min-width:200px; background:#1a1a2e; border:1px solid rgba(255,255,255,.18); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.4); padding:.25rem 0; z-index:300; }
+.gbn-menu.open { display:block; }
+.gbn-who { padding:.55rem 1rem .5rem; font-size:.75rem; line-height:1.35; color:rgba(255,255,255,.55); border-bottom:1px solid rgba(255,255,255,.12); margin-bottom:.2rem; word-break:break-all; }
+.gbn-who b { display:block; color:#fff; font-size:.86rem; word-break:normal; }
+.gbn-menu button { display:block; width:100%; background:none; border:none; text-align:left; cursor:pointer; padding:.6rem 1rem; font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; color:rgba(255,255,255,.85); }
+.gbn-menu button:hover { background:rgba(255,255,255,.1); color:#fff; }
+@media (max-width:720px) { nav.gbn { padding:.5rem 1rem; } .gbn-in { display:flex; justify-content:space-between; } .nav-links { display:none; } }
 
 .hero { position:relative; overflow:hidden; background:linear-gradient(180deg, #2a2148 0%, #221b3e 100%); border-bottom:1px solid rgba(255,255,255,.08); color:#fff; text-align:center; padding:6.5rem 1.5rem 5rem; }
 .hero::before { content:''; position:absolute; top:-160px; left:50%; transform:translateX(-50%); width:820px; height:820px; background:radial-gradient(circle closest-side, rgba(229,96,79,.22) 0%, transparent 65%); pointer-events:none; }
@@ -617,16 +633,25 @@ footer a:hover { color:var(--navy); }
 </head>
 <body>
 
-<nav>
-  <a class="brand" href="<?= e($_onDomain ? '/' : 'gameboard') ?>"><img src="images/gameboard_icon_180.png" alt=""><b>GameBoard</b></a>
+<nav class="gbn"><div class="gbn-in">
+  <a class="brand" href="<?= e($_onDomain ? '/' : 'gameboard') ?>"><img src="images/gameboard_icon_180.png" alt=""><span><b>Game<span>Board</span></b><small>Tools for Board Game Makers</small></span></a>
   <div class="nav-links">
     <a href="#action">In action</a>
     <a href="#who">Who it’s for</a>
     <a href="#pricing">Apps &amp; pricing</a>
     <a href="#account">Your account</a>
-    <button type="button" class="acct-btn" id="navAcct" onclick="acctClick()">Sign in</button>
   </div>
-</nav>
+  <div class="gbn-right">
+    <button type="button" class="acct-btn" id="navAcct" onclick="toggleNavMenu(event)" title="Menu" aria-label="Menu"><img id="navPic" alt=""><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/></svg></button>
+    <div class="gbn-menu" id="navMenu">
+      <div class="gbn-who" id="navWho" hidden></div>
+      <button type="button" id="navMineBtn" onclick="closeNavMenu();location.hash='account'">Your account</button>
+      <button type="button" onclick="closeNavMenu();location.hash='pricing'">Apps &amp; pricing</button>
+      <button type="button" id="navStartBtn" onclick="closeNavMenu();acctClick('signup')">Start your free week</button>
+      <button type="button" id="navAuthBtn" onclick="closeNavMenu();if(acct)signOut();else acctClick('login')">Sign in</button>
+    </div>
+  </div>
+</div></nav>
 
 <header class="hero">
   <div class="floaters" aria-hidden="true"><img src="images/cardboard_icon_180.png" alt=""><img src="images/db_icon_180.png" alt=""><img src="images/pitchboard_icon_180.png" alt=""><img src="images/bb_icon_180.png" alt=""></div>
@@ -1017,7 +1042,13 @@ footer a:hover { color:var(--navy); }
   }
   function show() {
     var a = acct && acct.account;
-    $('navAcct').textContent = a ? (a.name || a.email || 'Account') : 'Sign in';
+    // The account button: profile picture (or the person icon); the menu says who's signed in
+    var pic = $('navPic'), im = a && a.image ? String(a.image) : '';
+    if (im && pic.getAttribute('src') !== im) pic.src = im;
+    $('navAcct').classList.toggle('has-pic', !!im); $('navAcct').title = a ? (a.name || a.email || 'Menu') : 'Menu';
+    $('navWho').hidden = !a;
+    if (a) $('navWho').innerHTML = '<b>' + esc(a.name || (a.email || '').split('@')[0]) + '</b>' + esc(a.email || '');
+    $('navMineBtn').hidden = !a; $('navStartBtn').hidden = !!a; $('navAuthBtn').textContent = a ? 'Sign out' : 'Sign in';
     $('heroCta').textContent = a ? 'Your account' : 'Start your free week';
     $('acctOut').hidden = !!a; $('acctIn').hidden = !a;
     if (a) {
@@ -1067,6 +1098,9 @@ footer a:hover { color:var(--navy); }
       .then(function(r) { if (!r || !r.url) throw new Error(r && r.error ? r.error : 'Checkout isn’t available right now'); location.href = r.url; })
       .catch(function(e) { alert(e.message); show(); });
   };
+  window.toggleNavMenu = function(ev) { ev.stopPropagation(); $('navMenu').classList.toggle('open'); };
+  window.closeNavMenu = function() { $('navMenu').classList.remove('open'); };
+  document.addEventListener('click', function(ev) { if (!ev.target.closest('#navMenu')) window.closeNavMenu(); });
   window.signOut = function() { acct = null; try { localStorage.removeItem(KEY); } catch (e) {} show(); };
   function openAuth(m) { $('authOverlay').classList.add('open'); authMode(m); }
   window.closeAuth = function() { $('authOverlay').classList.remove('open'); wantAll = false; };

@@ -252,6 +252,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .db-board { color:#48c4d2; }
 .top-bar .sub  { font-size:.73rem; opacity:.6; margin:0; }
 .top-bar-logo  { height:2.5rem; width:auto; object-fit:contain; flex-shrink:0; border-radius:3px; }
+.gb-app #topBarLogo { object-fit:contain; }   /* a studio's logo shows whole */
 
 .top-btn {
   display:inline-flex; align-items:center; justify-content:center;
@@ -1064,7 +1065,7 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
 .plan-current span { color:#888; }
 .plan-current.paid { background:#edf7ed; } .plan-current.paid b { color:#2e7d32; }
 </style>
-<link rel="stylesheet" href="css/gameboard-ui.css?v=1" />
+<link rel="stylesheet" href="css/gameboard-ui.css?v=2" />
 </head>
 <body class="gb-app gb-page gb-dev">
 
@@ -1072,13 +1073,10 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
 <div class="top-bar">
   <div class="top-bar-inner">
     <div class="top-bar-left">
-      <?php if ($_logo_url): ?>
-      <img src="<?= htmlspecialchars($_logo_url, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($_company, ENT_QUOTES) ?>"
-           class="top-bar-logo" id="topBarLogo">
-      <?php else: ?>
-      <img src="" alt="" class="top-bar-logo" id="topBarLogo" style="display:none">
-      <?php endif; ?>
-      <div>
+      <!-- The app icon, or the studio's logo when one is set in Company -->
+      <img src="<?= htmlspecialchars($_logo_url ?: 'images/db_icon_180.png', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($_logo_url ? $_company : 'DevBoard', ENT_QUOTES) ?>"
+           class="top-bar-icon" id="topBarLogo" onclick="window.location.href=APP_BASE+'devboard'">
+      <div class="top-bar-name">
         <h1 onclick="window.location.href=APP_BASE+'devboard'"><span class="db-dev">Dev</span><span class="db-board">Board</span></h1>
         <p class="sub" id="subTitle">Playtest Notes</p>
       </div>
@@ -1091,7 +1089,7 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
     </div>
 
     <div class="account-menu-wrap">
-      <button class="top-btn" onclick="toggleAccountMenu()" title="Menu">
+      <button class="top-btn top-menu-btn" id="accountBtn" onclick="toggleAccountMenu()" title="Menu">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <circle cx="12" cy="7.5" r="4.5"/>
           <path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/>
@@ -6926,8 +6924,9 @@ function _profileIsDirty() {
 function _updateTopBarLogo(url, alt) {
   var el = document.getElementById('topBarLogo');
   if (!el) return;
-  if (url) { el.src = url; el.alt = alt || ''; el.style.display = ''; }
-  else { el.src = ''; el.style.display = 'none'; }
+  if (url) { el.src = url; el.alt = alt || ''; }
+  else { el.src = APP_BASE + 'images/db_icon_180.png'; el.alt = 'DevBoard'; }   // no logo: the app icon
+  el.style.display = '';
 }
 function openProfileDialog() {
   document.getElementById('profileName').value     = MY_NAME         || '';

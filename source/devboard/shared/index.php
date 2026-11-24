@@ -573,28 +573,29 @@ input[type="date"].field-input { -webkit-appearance:none; appearance:none; min-h
 }
 .dialog-shake { animation:dialog-shake .35s ease; }
 </style>
+<link rel="stylesheet" href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>css/gameboard-ui.css?v=2" />
 </head>
-<body>
+<body class="gb-app gb-dev">
 
 <div class="top-bar">
   <div class="top-bar-inner">
-    <div class="top-bar-left-wrap">
-      <?php if ($_logo_url): ?>
-      <img src="<?= htmlspecialchars($_logo_url, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($_company, ENT_QUOTES) ?>" class="top-bar-logo">
-      <?php endif; ?>
-      <div style="display:flex;flex-direction:column;gap:.1rem">
+    <div class="top-bar-left">
+      <!-- The app icon, or the studio's logo -->
+      <img class="top-bar-icon" style="object-fit:contain" src="<?= htmlspecialchars($_logo_url ?: $_base . 'images/db_icon_180.png', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($_logo_url ? $_company : 'DevBoard', ENT_QUOTES) ?>">
+      <div class="top-bar-name">
         <h1><span class="db-dev">Dev</span><span class="db-board">Board</span></h1>
-        <span id="collabUserLabel" style="font-family:'DINRegular',sans-serif;font-size:.72rem;color:rgba(255,255,255,.5);display:none"></span>
+        <p class="sub"><?= htmlspecialchars($_gameName, ENT_QUOTES) ?></p>
       </div>
     </div>
     <div class="account-menu-wrap">
-      <button class="top-btn-collab" onclick="toggleAccountMenu()" title="Account" id="accountMenuBtn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <button class="top-btn top-menu-btn" onclick="toggleAccountMenu()" title="Account" id="accountMenuBtn"><img class="top-pic" id="accountMenuPic" alt="">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <circle cx="12" cy="7.5" r="4.5"/>
           <path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/>
         </svg>
       </button>
       <div class="account-menu" id="accountMenu">
+        <div class="account-menu-label" id="collabUserLabel" style="display:none"></div>
         <button class="account-menu-item" onclick="closeAccountMenu();openProfileDialog()">Profile</button>
         <button class="account-menu-item" onclick="closeAccountMenu();openRnDialog()">Releases</button>
         <button class="account-menu-item" onclick="closeAccountMenu();window.open('<?= htmlspecialchars($_base, ENT_QUOTES) ?>devboard/help','_blank')">Help</button>
@@ -2033,10 +2034,14 @@ function _menuAuthAction() {
 function _updateMenuLabel() {
   var el = document.getElementById('collabUserLabel');
   if (!el) return;
+  var mb = document.getElementById('accountMenuBtn'), pic = document.getElementById('accountMenuPic');
+  var im = _collabUser && _collabUser.bio ? (_collabUser.bio.image || '') : '';   // the profile photo on the menu button
+  if (mb && pic) { if (im && pic.getAttribute('src') !== im) pic.src = im; mb.classList.toggle('has-pic', !!im); }
   if (_collabUser) {
     var name  = (_collabUser.bio && _collabUser.bio.name) || '';
     var email = _collabUser.email || '';
-    el.textContent = name ? name + '  ·  ' + email : email;
+    var e = function(t) { return String(t).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    el.innerHTML = '<b style="display:block;color:#fff;font-size:.86rem">' + e(name || email) + '</b>' + (name ? e(email) : '');
     el.style.display = '';
   } else {
     el.style.display = 'none';

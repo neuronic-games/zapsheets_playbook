@@ -830,7 +830,7 @@ body.cb-gate #signinOverlay { background:#2e2763; }
 }
 </style>
 <style id="pageSizeStyle">@page { size: letter portrait; margin: 0; }</style>
-<link rel="stylesheet" href="css/gameboard-ui.css?v=1" />
+<link rel="stylesheet" href="css/gameboard-ui.css?v=2" />
 </head>
 <body class="gb-app gb-page gb-card">
 

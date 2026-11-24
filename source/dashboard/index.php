@@ -1701,7 +1701,7 @@ if ($_sheet_id && is_dir($_sheets_root)) {
     .pb-plan-go { background:#f5a623; color:#fff; border:none; }
     .pb-plan-go:disabled { opacity:.6; cursor:default; }
 </style>
-<link rel="stylesheet" href="css/gameboard-ui.css?v=1" />
+<link rel="stylesheet" href="css/gameboard-ui.css?v=2" />
 </head>
 <body class="gb-app gb-page gb-pitch">
 
@@ -1709,23 +1709,24 @@ if ($_sheet_id && is_dir($_sheets_root)) {
 <div class="top-bar">
   <div class="top-bar-inner">
     <div class="top-bar-left">
-      <h1 onclick="window.location.href=APP_BASE+'pitchboard'"><span class="pb-pitch">Pitch</span><span class="pb-board">Board</span></h1>
-      <p class="sub" id="subTitle">Loading…</p>
-      <p class="sub version-tag" id="versionTag" style="display:none"></p>
+      <img class="top-bar-icon" src="images/pitchboard_icon_180.png" alt="PitchBoard" title="PitchBoard" onclick="window.location.href=APP_BASE+'pitchboard'">
+      <div class="top-bar-name">
+        <h1 onclick="window.location.href=APP_BASE+'pitchboard'"><span class="pb-pitch">Pitch</span><span class="pb-board">Board</span></h1>
+        <p class="sub" id="subTitle">Loading…</p>
+        <p class="sub version-tag" id="versionTag" style="display:none"></p>
+      </div>
     </div>
-    <div class="view-toggle">
-      <button id="btnDashboard"              onclick="setView('dashboard')">Board</button>
-      <button id="btnGame"      class="active" onclick="setView('game')">Games</button>
-      <button id="btnPublisher"               onclick="setView('publisher')">Publishers</button>
+    <div class="top-tab-btns">
+      <button class="top-tab" id="btnDashboard"              onclick="setView('dashboard')">Board</button>
+      <button class="top-tab active" id="btnGame"      onclick="setView('game')">Games</button>
+      <button class="top-tab" id="btnPublisher"               onclick="setView('publisher')">Publishers</button>
     </div>
     <div class="account-menu-wrap">
-      <button class="sync-btn" id="accountBtn" onclick="toggleAccountMenu()" title="Menu">
-        <span class="sync-icon">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <circle cx="12" cy="7.5" r="4.5"/>
-            <path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/>
-          </svg>
-        </span>
+      <button class="top-btn top-menu-btn" id="accountBtn" onclick="toggleAccountMenu()" title="Menu">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="12" cy="7.5" r="4.5"/>
+          <path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/>
+        </svg>
       </button>
       <div class="account-menu" id="accountMenu">
         <button class="account-menu-item" onclick="closeAccountMenu();openCollabAuthDialog()">Profile</button>

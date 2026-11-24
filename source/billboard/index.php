@@ -234,6 +234,8 @@ a { color:inherit; text-decoration:none; }
 /* ── Admin bar (hidden in public) ── */
 .bb-admin-bar { background:#0d0d1a; color:rgba(255,255,255,.55); display:flex; align-items:center; justify-content:space-between; padding:.3rem 1.25rem; gap:1rem; }
 .bb-admin-label { font-family:'DINBlack',sans-serif; font-size:.6rem; text-transform:uppercase; letter-spacing:.12em; color:rgba(255,255,255,.22); }
+.bb-wm-bill { color:#9fe0b8; } .bb-wm-board { color:#f2c14e; }
+.user-menu-wrap { position:relative; }
 .bb-admin-tools { display:flex; align-items:center; gap:.5rem; flex-shrink:0; }
 .bb-meta { font-size:.72rem; opacity:.55; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px; }
 .btn-add-game { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; padding:.28rem .8rem; border-radius:5px; border:1.5px solid rgba(255,255,255,.35); color:#fff; background:transparent; cursor:pointer; transition:background .14s,border-color .14s; white-space:nowrap; }
@@ -498,7 +500,7 @@ body.bb-admin-mode .bb-add-game-card { display:flex; }
 .bb-plan-current b { color:#333; } .bb-plan-current span { color:#888; }
 .bb-plan-current.paid { background:#edf7ed; } .bb-plan-current.paid b { color:#2e7d32; }
 </style>
-<link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=1" />
+<link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=2" />
 <?php if (!isset($_bbPublicBase)): ?><script src="<?= h($_appRoot) ?>js/gb-account.js?v=2"></script><?php endif; ?>
 </head>
 <body<?= isset($_bbPublicBase) ? '' : ' class="gb-app gb-bill"' ?>>
@@ -507,17 +509,21 @@ body.bb-admin-mode .bb-add-game-card { display:flex; }
 <div class="bb-top-wrap">
 
   <?php if (!isset($_bbPublicBase)): ?>
-  <!-- Admin bar: editing tools only, hidden in public mode -->
-  <div class="bb-admin-bar">
-    <span class="bb-admin-label">BillBoard Admin</span>
-    <div class="bb-admin-tools">
-      <span class="bb-meta" id="bbMeta"><?= h($_pubName ?: '') ?></span>
+  <!-- Admin bar: editing tools only, hidden in public mode. The same top bar as every GameBoard app. -->
+  <div class="top-bar bb-admin-bar">
+   <div class="top-bar-inner">
+    <div class="top-bar-left">
+      <img class="top-bar-icon" src="<?= h($_appRoot) ?>images/bb_icon_180.png" alt="BillBoard">
+      <div class="top-bar-name">
+        <h1><span class="bb-wm-bill">Bill</span><span class="bb-wm-board">Board</span></h1>
+        <p class="sub" id="bbMeta"><?= h($_pubName ?: 'Games') ?></p>
+      </div>
+    </div>
+    <div class="account-menu-wrap bb-admin-tools">
       <button class="btn-add-game" id="bbSavePageBtn" onclick="bbSavePage()" style="display:none">Save</button>
       <div class="user-menu-wrap">
-        <button class="btn-user-icon" id="bbUserBtn" onclick="toggleBbMenu(event)" title="Menu">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-          </svg>
+        <button class="btn-user-icon top-btn top-menu-btn" id="bbUserBtn" onclick="toggleBbMenu(event)" title="Menu">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/></svg>
         </button>
         <div class="user-menu" id="bbMenu">
           <button class="user-menu-item" id="bbMenuProfile" onclick="bbMenuAction('profile')">Profile</button>
@@ -535,6 +541,7 @@ body.bb-admin-mode .bb-add-game-card { display:flex; }
       </div>
     </div>
   </div>
+   </div>
   <?php endif; ?>
 
   <!-- Page banner: logo + nav, always shown (public + admin) -->
@@ -1055,7 +1062,7 @@ function _updateBbAuth() {
   if (_bbUser) {
     var name = (_bbUser.bio && (_bbUser.bio['name'] || _bbUser.bio['Name'])) || _bbUser.email || '';
     if (btn) { btn.classList.add('signed-in'); btn.title = 'Signed in as ' + (_bbUser.email || ''); }
-    if (metaEl) metaEl.textContent = (name || <?= json_encode($_pubName ?: 'Games') ?>) + ' · BillBoard';
+    if (metaEl) metaEl.textContent = <?= json_encode($_pubName ?: 'Games') ?>;
     if (siOut)  { siOut.textContent = 'Sign Out'; siOut.className = 'user-menu-item signout'; }
     if (profile) profile.style.display = '';
     if (publishBtn) publishBtn.style.display = '';
@@ -3443,7 +3450,7 @@ body.bb-admin-mode .bb-hero.bb-drag-over .bb-cover-btn { display: flex; }
 .bb-social-set:hover { border-color:rgba(255,255,255,.6); background:rgba(255,255,255,.08); }
 .bb-social-empty { display:none; }
 </style>
-<link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=1" />
+<link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=2" />
 <?php if (!isset($_bbPublicBase)): ?><script src="<?= h($_appRoot) ?>js/gb-account.js?v=2"></script><?php endif; ?>
 </head>
 <body<?= isset($_bbPublicBase) ? '' : ' class="gb-app gb-bill"' ?>>

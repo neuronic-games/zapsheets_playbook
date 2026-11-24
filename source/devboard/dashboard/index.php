@@ -344,6 +344,12 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .dash-status-game.has-dev { font-family:'DINBlack',sans-serif; color:#1a5f7a; }
 .dash-status-empty { padding:.32rem .75rem; font-size:.72rem; color:#ccc; border-top:1px solid #f0f4f8; }
 .dtl { background:#fff; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,.07); padding:.35rem 0 .45rem; }
+.dtl-row.grp.first:not(:nth-child(2)) { border-top:1px solid #eef1f5; margin-top:.25rem; padding-top:.6rem; }
+.dtl-row.cont { padding-top:.15rem; }
+.dtl-row.after-grp { border-top:1px solid #eef1f5; margin-top:.25rem; padding-top:.6rem; }
+.dtl-row.cont .dtl-name { padding-left:.7rem; border-left:2px solid #e3e8ee; }
+.dtl-row.cont .dtl-name span { color:#667; }
+.dtl-name b em { font-style:normal; font-family:'DINRegular',sans-serif; font-size:.66rem; color:#9aa5b1; margin-left:.3rem; letter-spacing:.02em; }
 .dtl-empty { padding:.9rem 1rem; font-size:.8rem; color:#888; }
 .dtl-row { display:grid; grid-template-columns:minmax(150px,24%) 1fr 112px; gap:.9rem; align-items:center; padding:.42rem .9rem; cursor:pointer; }
 .dtl-row:not(.dtl-head):hover { background:#f6fafc; }
@@ -2094,8 +2100,17 @@ function _toDateInput(v) {
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
 var _activeTab = 'games';
+// The tabs say how many, as in PitchBoard: "14 Games", "26 Contracts"
+function _dbTabCounts() {
+  var g = document.getElementById('tabGames'), c = document.getElementById('tabPublishers');
+  var ng = (typeof allGames !== 'undefined' && allGames.length) ? allGames.length : GAMES_RAW.length;
+  var nc = CONTRACT_RAW.filter(function(x) { return x && !_isPaymentRow(x); }).length;
+  if (g) g.textContent = ng + (ng === 1 ? ' Game' : ' Games');
+  if (c) c.textContent = nc + (nc === 1 ? ' Contract' : ' Contracts');
+}
 function switchTab(tab) {
   _activeTab = tab;
+  _dbTabCounts();
   ['Dash','Games','Publishers'].forEach(function(t) {
     var btn = document.getElementById('tab' + t);
     if (btn) btn.classList.toggle('active', t.toLowerCase() === tab);
@@ -2467,7 +2482,11 @@ function _dashTimelineHtml() {
   });
   var out = '<div><div class="dash-section-hd">Timeline · active projects</div>';
   if (!items.length) return out + '<div class="dtl dtl-empty">No active projects with due dates yet. Give a contract a <b>Target End Date</b> and it shows here.</div></div>';
-  items.sort(function(a, b) { return a.end - b.end || a.start - b.start; });
+  // A game with several contracts: its contracts together, under the game's name; games by their soonest due date
+  var gk = function(x) { return String(x.c.Game || '').trim().toLowerCase(); }, first = {};
+  items.forEach(function(x) { var k = gk(x); if (!(k in first) || x.end < first[k]) first[k] = x.end; });
+  items.sort(function(a, b) { return first[gk(a)] - first[gk(b)] || (gk(a) < gk(b) ? -1 : gk(a) > gk(b) ? 1 : 0) || a.end - b.end || a.start - b.start; });
+  var perGame = {}; items.forEach(function(x) { perGame[gk(x)] = (perGame[gk(x)] || 0) + 1; });
   var lo = Math.min(today - 7 * DAY, Math.min.apply(null, items.map(function(x) { return x.start; })));
   var hi = Math.max(today + 21 * DAY, Math.max.apply(null, items.map(function(x) { return x.end; }))) + 4 * DAY;
   if (hi - lo > 400 * DAY) lo = Math.max(lo, today - 90 * DAY);                       // a very long span: start a while before today
@@ -2481,15 +2500,20 @@ function _dashTimelineHtml() {
   }
   var todayX = pct(today).toFixed(2);
   out += '<div class="dtl"><div class="dtl-row dtl-head"><div></div><div class="dtl-track">' + marks + '<span class="dtl-today" style="left:' + todayX + '%"><i>Today</i></span></div><div></div></div>';
+  var prevGame = null, firstWho = '', prevMany = false;
   items.forEach(function(x) {
+    var k = gk(x), firstOfGame = k !== prevGame, many = perGame[k] > 1; prevGame = k;
     var c = x.c, left = pct(x.start), right = pct(x.end), w = Math.max(1.2, right - left);
     var days = Math.round((x.end - today) / DAY);
     var cls = days < 0 ? 'late' : days <= 7 ? 'soon' : 'ok';
     var due = days < 0 ? (-days) + (days === -1 ? ' day' : ' days') + ' late' : days === 0 ? 'Due today' : days === 1 ? 'Due tomorrow' : 'Due in ' + days + ' days';
-    var who = String(c.Client || '').trim(), what = String(c.Summary || c.Description || '').trim().split('\n')[0];
+    var who = String(c.Client || '').trim(), what = String(c.Summary || '').trim().split('\n')[0] || (c['Ref Number'] ? '#' + String(c['Ref Number']).replace(/^'/, '') : '');
+    var sub = (firstOfGame ? [who, many ? what : ''] : [what, who !== String(firstWho || '').trim() ? who : '']).filter(Boolean).join(' · ') + (x.est ? ' · Estimate' : '');
+    if (firstOfGame) firstWho = who;
+    var afterGrp = firstOfGame && prevMany; prevMany = many;
     var tip = (c.Game || '') + (who ? ' · ' + who : '') + '\n' + fmtDate(new Date(x.start).toISOString().slice(0, 10)) + ' → ' + fmtDate(new Date(x.end).toISOString().slice(0, 10)) + (x.dur ? '\nDue date worked out from the duration (' + String(c.Duration).trim() + ')' : '') + (x.est ? '\nEstimate' : '');
-    out += '<div class="dtl-row" onclick="openContractEditDialog(' + x.i + ')" title="' + esc(tip) + '">' +
-      '<div class="dtl-name"><b>' + esc(c.Game || '—') + '</b><span>' + esc(who || what || '') + (x.est ? ' · Estimate' : '') + '</span></div>' +
+    out += '<div class="dtl-row' + (many ? (firstOfGame ? ' grp first' : ' grp more') : '') + (firstOfGame ? '' : ' cont') + (afterGrp && !many ? ' after-grp' : '') + '" onclick="openContractEditDialog(' + x.i + ')" title="' + esc(tip) + '">' +
+      '<div class="dtl-name">' + (firstOfGame ? '<b>' + esc(c.Game || '—') + (many ? ' <em>' + perGame[k] + ' contracts</em>' : '') + '</b>' : '') + '<span>' + esc(sub || what) + '</span></div>' +
       '<div class="dtl-track"><span class="dtl-today" style="left:' + todayX + '%"></span><span class="dtl-bar ' + cls + (x.est ? ' est' : '') + '" style="left:' + left.toFixed(2) + '%;width:' + w.toFixed(2) + '%"></span></div>' +
       '<div class="dtl-due ' + cls + '"><b>' + (x.dur ? '<small title="From the duration">≈ </small>' : '') + esc(fmtDate(new Date(x.end).toISOString().slice(0, 10))) + '</b><span>' + esc(due) + '</span></div></div>';
   });
@@ -2499,6 +2523,7 @@ function _dashTimelineHtml() {
 function renderDashView() {
   var wrap = document.getElementById('dashWrap');
   if (!wrap) return;
+  _dbTabCounts();
   _renderBoardTodos();
   // Once per page load: make sure every light-bulb note is in the todos sheet (recreates it if deleted)
   if (!_todosSynced) { _todosSynced = true; _todosPost('sync', {}).catch(function() {}); }
@@ -2552,6 +2577,7 @@ function renderDashView() {
 function renderPublishersView() {
   var wrap = document.getElementById('publishersViewWrap');
   if (!wrap) return;
+  _dbTabCounts();
 
   var byClient = {};
   CONTRACT_RAW.forEach(function(con) {
@@ -3657,6 +3683,7 @@ function renderCards() {
   // Does NOT filter visibility — applySearchFilter does that afterwards.
   var list = document.getElementById('cardList');
   list.innerHTML = '';
+  _dbTabCounts();
   if (!allGames.length) {
     list.innerHTML = '<div class="no-games"><strong>No games yet</strong>Click "+ Game" to start tracking a game.</div>';
     return;

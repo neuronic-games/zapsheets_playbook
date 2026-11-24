@@ -252,7 +252,6 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .db-board { color:#48c4d2; }
 .top-bar .sub  { font-size:.73rem; opacity:.6; margin:0; }
 .top-bar-logo  { height:2.5rem; width:auto; object-fit:contain; flex-shrink:0; border-radius:3px; }
-.gb-app #topBarLogo { object-fit:contain; }   /* a studio's logo shows whole */
 
 .top-btn {
   display:inline-flex; align-items:center; justify-content:center;
@@ -1073,9 +1072,7 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
 <div class="top-bar">
   <div class="top-bar-inner">
     <div class="top-bar-left">
-      <!-- The app icon, or the studio's logo when one is set in Company -->
-      <img src="<?= htmlspecialchars($_logo_url ?: 'images/db_icon_180.png', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($_logo_url ? $_company : 'DevBoard', ENT_QUOTES) ?>"
-           class="top-bar-icon" id="topBarLogo" onclick="window.location.href=APP_BASE+'devboard'">
+      <img src="images/db_icon_180.png" alt="DevBoard" title="DevBoard" class="top-bar-icon" onclick="window.location.href=APP_BASE+'devboard'">
       <div class="top-bar-name">
         <h1 onclick="window.location.href=APP_BASE+'devboard'"><span class="db-dev">Dev</span><span class="db-board">Board</span></h1>
         <p class="sub" id="subTitle">Playtest Notes</p>
@@ -6921,12 +6918,11 @@ function _profileIsDirty() {
          f('profileNotes')    !== (_profileInitial.notes    || '') ||
          document.getElementById('profilePhotoFile').files.length > 0;
 }
-function _updateTopBarLogo(url, alt) {
+function _updateTopBarLogo(url, alt) {   // the top bar shows the DevBoard icon, like every app (the studio's logo stays on its documents)
   var el = document.getElementById('topBarLogo');
   if (!el) return;
-  if (url) { el.src = url; el.alt = alt || ''; }
-  else { el.src = APP_BASE + 'images/db_icon_180.png'; el.alt = 'DevBoard'; }   // no logo: the app icon
-  el.style.display = '';
+  if (url) { el.src = url; el.alt = alt || ''; el.style.display = ''; }
+  else { el.src = ''; el.style.display = 'none'; }
 }
 function openProfileDialog() {
   document.getElementById('profileName').value     = MY_NAME         || '';

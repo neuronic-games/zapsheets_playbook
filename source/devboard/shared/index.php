@@ -580,8 +580,7 @@ input[type="date"].field-input { -webkit-appearance:none; appearance:none; min-h
 <div class="top-bar">
   <div class="top-bar-inner">
     <div class="top-bar-left">
-      <!-- The app icon, or the studio's logo -->
-      <img class="top-bar-icon" style="object-fit:contain" src="<?= htmlspecialchars($_logo_url ?: $_base . 'images/db_icon_180.png', ENT_QUOTES) ?>" alt="<?= htmlspecialchars($_logo_url ? $_company : 'DevBoard', ENT_QUOTES) ?>">
+      <img class="top-bar-icon" src="<?= htmlspecialchars($_base, ENT_QUOTES) ?>images/db_icon_180.png" alt="DevBoard">
       <div class="top-bar-name">
         <h1><span class="db-dev">Dev</span><span class="db-board">Board</span></h1>
         <p class="sub"><?= htmlspecialchars($_gameName, ENT_QUOTES) ?></p>

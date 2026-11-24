@@ -44,6 +44,22 @@ $APPS = [
 <html lang="en">
 <head>
 <base href="<?= e($_base) ?>" />
+<?php if (!$_dash): ?>
+<script>
+// Already signed in: straight to your dashboard. The home page still shows with ?home (the logo on the
+// dashboard), or with a link to one of its sections (#pricing…), or when signing out (#gbsignout).
+(function() {
+  try {
+    if (location.hash || /[?&]home\b/.test(location.search)) return;
+    var a = JSON.parse(localStorage.getItem('cb_account') || 'null');
+    if (!a || !a.token) return;
+    var apps = <?= json_encode($_apps) ?>, base = <?= json_encode($_base) ?>;
+    var cross = new URL(apps, location.href).origin !== location.origin;
+    location.replace(cross ? apps + 'dashboard#gbt=' + encodeURIComponent(a.token) : base + 'dashboard');
+  } catch (e) {}
+})();
+</script>
+<?php endif; ?>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?= $_dash ? 'Your dashboard — GameBoard' : 'GameBoard — Tools for Board Game Makers' ?></title>
@@ -681,7 +697,7 @@ footer a:hover { color:var(--navy); }
 <body>
 
 <nav class="gbn"><div class="gbn-in">
-  <a class="brand" href="<?= e($_onDomain ? '/' : 'gameboard') ?>"><img src="images/gameboard_icon_180.png" alt=""><span><b>Game<span>Board</span></b><small>Tools for Board Game Makers</small></span></a>
+  <a class="brand" href="<?= e(($_onDomain ? '/' : 'gameboard') . ($_dash ? '?home' : '')) ?>"><img src="images/gameboard_icon_180.png" alt=""><span><b>Game<span>Board</span></b><small>Tools for Board Game Makers</small></span></a>
   <div class="nav-links">
     <a href="<?= e($_hp) ?>#action">In action</a>
     <a href="<?= e($_hp) ?>#who">Who it’s for</a>

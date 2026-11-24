@@ -59,7 +59,7 @@ body.gb-page { background:var(--gb-bg); font-family:var(--gb-text); color:var(--
 .gb-app .top-bar-left { flex:none; display:flex; align-items:center; gap:.65rem; min-width:0; }
 .gb-app .top-bar-icon { width:2.2rem; height:2.2rem; border-radius:7px; flex-shrink:0; object-fit:cover; cursor:pointer; }
 .gb-app .top-bar-name { min-width:0; display:flex; flex-direction:column; }
-.gb-app .top-bar h1 { margin:0; line-height:1.15; cursor:pointer; white-space:nowrap; }
+.gb-app .top-bar h1 { margin:0; line-height:normal; cursor:pointer; white-space:nowrap; }
 .gb-app .top-bar h1 a { color:inherit; text-decoration:none; }
 .gb-app .top-bar .sub { margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:.01em; }
 .gb-app .top-tab-btns { display:flex; align-items:center; justify-self:center; overflow:visible; }

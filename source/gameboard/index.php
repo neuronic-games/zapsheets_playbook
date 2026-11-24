@@ -228,6 +228,19 @@ h2 { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(1.8r
 .my-apps b { color:var(--navy); font-weight:600; min-width:84px; }
 .my-apps span { color:var(--muted); margin-left:auto; text-align:right; }
 .my-apps span.paid { color:#2e7d32; font-weight:600; }
+/* Your sheets, by app: each opens in its app */
+.my-sheets { margin:-.2rem 0 1rem; max-height:340px; overflow:auto; }
+.my-sheets h4 { display:flex; align-items:center; gap:.45rem; margin:.9rem 0 .2rem; font:600 12px 'Inter',sans-serif; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+.my-sheets h4:first-child { margin-top:0; }
+.my-sheets h4 img { width:20px; height:20px; border-radius:5px; }
+.my-sheets a.sh { display:flex; align-items:baseline; gap:.6rem; padding:.45rem .5rem; margin:0 -.5rem; border-radius:8px; text-decoration:none; color:var(--navy); font-size:13px; }
+.my-sheets a.sh:hover { background:#f6f2ea; }
+.my-sheets a.sh b { font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.my-sheets a.sh span { margin-left:auto; color:var(--muted); font-size:12px; white-space:nowrap; flex-shrink:0; }
+.my-sheets .sh-new { display:flex; flex-wrap:wrap; gap:.3rem; margin:.15rem 0 .4rem; }
+.my-sheets .sh-new a { font-size:12px; color:var(--mid); border:1px solid var(--line); border-radius:999px; padding:.15rem .6rem; text-decoration:none; }
+.my-sheets .sh-new a:hover { border-color:var(--navy); color:var(--navy); }
+.my-sheets .sh-none { font-size:13px; color:var(--muted); margin:0; }
 .pc.all button:disabled { opacity:.85; cursor:default; background:#fff; }
 .link { background:none; border:none; color:var(--mid); text-decoration:underline; text-underline-offset:2px; font:inherit; font-size:13px; cursor:pointer; }
 
@@ -949,6 +962,7 @@ footer a:hover { color:var(--navy); }
         <div class="me"><div class="me-dot" id="meDot"></div><div><b id="meName"></b><span id="meEmail"></span></div></div>
         <div class="plan" id="mePlan"></div>
         <ul class="my-apps" id="meApps"></ul>
+        <div class="my-sheets" id="meSheets" hidden></div>
         <button type="button" class="go" onclick="location.hash='pricing'">Open an app</button>
         <div class="foot"><button type="button" class="link" onclick="signOut()">Sign out</button></div>
       </div>
@@ -1077,9 +1091,45 @@ footer a:hover { color:var(--navy); }
         return '<li><img src="' + esc(x.icon) + '" alt=""><b>' + esc(x.name) + '</b><span class="' + (st === 'subscribed' ? 'paid' : '') + '">' + esc(label) + '</span></li>';
       }).join('');
     }
+    if (a) loadSheets(); else { _sheetsFor = ''; $('meSheets').hidden = true; }
     var ab = $('allBtn'), have = a && (a.all_in_one || a.state === 'activated');
     ab.disabled = !!have; ab.textContent = have ? '✓ You have all four' : 'Get all four';
     linkApps();
+  }
+  // Your sheets, grouped by app — each link opens the sheet in its app
+  var _sheetsFor = '';
+  function loadSheets() {
+    if (!acct || !acct.token || _sheetsFor === acct.token) return;
+    _sheetsFor = acct.token;
+    post({ action: 'sheets', cbt: acct.token }).then(function(r) { renderSheets(r.sheets || []); }).catch(function() { _sheetsFor = ''; });
+  }
+  function ago(t) {
+    if (!t) return '';
+    var s = Math.max(0, Date.now() / 1000 - t), d = Math.floor(s / 86400);
+    return s < 3600 ? 'just now' : s < 86400 ? Math.floor(s / 3600) + ' h ago' : d === 1 ? 'yesterday' : d < 30 ? d + ' days ago' : new Date(t * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  function sheetUrl(id, app) {
+    var u = APPS_URL + encodeURIComponent(id) + '/' + app;
+    return acct && acct.token && crossOrigin() ? u + '#gbt=' + encodeURIComponent(acct.token) : u;
+  }
+  function renderSheets(list) {
+    var box = $('meSheets'), h = '';
+    APPS.forEach(function(x) {
+      var mine = list.filter(function(s) { return s.app === x.key; }); if (!mine.length) return;
+      h += '<h4><img src="' + esc(x.icon) + '" alt="">' + esc(x.name) + '</h4>' + mine.map(function(s) {
+        // CardBoard knows the spreadsheet's name; for the others the title is the studio, so what's in it reads better
+        var name = (x.key === 'cardboard' ? s.title : '') || s.summary || s.title || ('Sheet ' + s.id.slice(0, 8) + '…');
+        var tip = [s.title, s.summary].filter(Boolean).join(' — ');
+        return '<a class="sh" href="' + esc(sheetUrl(s.id, x.key)) + '" title="' + esc(tip) + '"><b>' + esc(name) + '</b><span>' + esc(ago(s.opened)) + '</span></a>';
+      }).join('');
+    });
+    var loose = list.filter(function(s) { return !s.app; });
+    if (loose.length) h += '<h4>Not opened in an app yet</h4>' + loose.map(function(s) {
+      return '<div class="sh-new"><b style="font-size:13px;color:var(--navy);margin-right:.3rem">Sheet ' + esc(s.id.slice(0, 8)) + '…</b>' +
+        APPS.map(function(x) { return '<a href="' + esc(sheetUrl(s.id, x.key)) + '">' + esc(x.name) + '</a>'; }).join('') + '</div>';
+    }).join('');
+    box.innerHTML = h ? '<h4 style="margin:0 0 .3rem;color:var(--navy)">Your sheets</h4>' + h : '';
+    box.hidden = !h;
   }
   window.acctClick = function(mode) {
     if (acct) { location.hash = 'account'; return; }

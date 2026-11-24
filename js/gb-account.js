@@ -238,8 +238,9 @@
   //   - when signed in, the menu starts with the name, email and plan, and has "Enter a code" below the subscription
   // Found by O.menuButton / O.menu (element ids), or the usual ids and classes of the apps.
   function menu() {
-    var btn = O.menuButton ? $(O.menuButton) : document.querySelector('#accountBtn, #menuBtn, #bbUserBtn, .account-menu-wrap > button, .user-menu-wrap > button');
-    var list = O.menu ? $(O.menu) : document.querySelector('#accountMenu, #bbMenu, .account-menu, .user-menu');
+    // The menu button by its id first (a wrapper can also hold Save, which must never get the picture)
+    var btn = O.menuButton ? $(O.menuButton) : ($('accountBtn') || $('menuBtn') || $('bbUserBtn') || document.querySelector('.top-menu-btn, .user-menu-wrap > button'));
+    var list = O.menu ? $(O.menu) : ($('accountMenu') || $('bbMenu') || document.querySelector('.account-menu, .user-menu'));
     var a = info(), img = a && a.image ? String(a.image) : '';
     if (btn) {
       var pic = btn.querySelector('.gba-pic');

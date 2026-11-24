@@ -843,7 +843,7 @@ body:has(.overlay.open) { overflow: hidden; }
 }
 .dialog-shake { animation:dialog-shake .35s ease; }
 </style>
-<link rel="stylesheet" href="<?= _ps_e($_base) ?>css/gameboard-ui.css?v=2" />
+<link rel="stylesheet" href="<?= _ps_e($_base) ?>css/gameboard-ui.css?v=3" />
 </head>
 <body class="gb-app gb-pitch">
 

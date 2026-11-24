@@ -14,6 +14,7 @@
  *   profile  — cbt, name, studio           → {ok, token, account}   (saved in the person's Admin-sheet row)
  *   image    — cbt, file (a picture)       → {ok, token, account}   (profile picture: squared to 256 px WebP, kept in
  *                                            images/avatars/, its link in the Admin sheet's Image column; no file = remove)
+ *   sheets   — cbt                         → {ok, sheets: [{id, app, title, summary, opened}]}  (your sheets, by app)
  *   redeem   — cbt, code                   → {ok, token, account, days, apps}  (a free code from the Admin sheet's Codes tab —
  *                                            every app, or only the apps in its App column —
  *                                            or an activation key: unlocked with no time limit)
@@ -53,9 +54,22 @@ function cbAccountOut(array $a, string $sheet): array {
             'owner' => $sheet !== '' && in_array($sheet, $a['sh'] ?? [], true),   // set this sheet up: may change it (else view only)
             'portal_url' => $_ENV['STRIPE_PORTAL_URL'] ?? ''];
 }
+// Which apps a sheet is used in, and when each last opened it (sheets/{id}/_gb_apps.json) — the GameBoard home lists
+// your sheets by app. Kept when the sheet's owner opens it in an app.
+function gbNoteApp(string $sheet, string $app): void {
+    if ($sheet === '' || !array_key_exists($app, GB_APP_COLS)) return;
+    $dir = dirname(__DIR__) . '/sheets/' . $sheet;
+    if (!is_dir($dir) && !@mkdir($dir, 0755, true)) return;
+    $f = $dir . '/_gb_apps.json';
+    $apps = json_decode((string) @file_get_contents($f), true) ?: [];
+    if (($apps[$app] ?? 0) > time() - 600) return;   // at most every ten minutes
+    $apps[$app] = time();
+    @file_put_contents($f, json_encode($apps), LOCK_EX);
+}
 function cbSignedIn(array $u, string $sheet, bool $taken = true): void {
     $a = cbAccessFromUser($u);
     $acc = cbAccountOut($a, $sheet);
+    if (!empty($acc['owner'])) gbNoteApp($sheet, (string) ($_POST['app'] ?? 'cardboard'));
     $acc['unclaimed'] = $sheet !== '' && !$acc['owner'] && !$taken;   // nobody has set this sheet up: it can be made yours
     ok(['token' => cbIssueToken($a), 'account' => $acc]);
 }
@@ -184,6 +198,36 @@ if ($action === 'redeem') {
     if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t use that code');
     $a = cbAccessFromUser($r['user']);
     ok(['token' => cbIssueToken($a), 'account' => cbAccountOut($a, $sheet), 'days' => (int) ($r['days'] ?? 0), 'apps' => $r['apps'] ?? []]);   // apps: the code's apps ([] = every app)
+}
+
+// sheets — cbt → {ok, sheets: [{id, app, title, summary, opened (unix)}]}: the sheets this account set up, one entry for
+// each app the sheet is used in (newest first). The app comes from _gb_apps.json, or for older sheets from what the
+// server keeps for them (CardBoard's files, pitches, contracts, a BillBoard site).
+if ($action === 'sheets') {
+    $p = cbReadToken(cbRequestToken());
+    if (!$p || ($p['x'] ?? 0) < time() - 30 * 86400) fail('Please sign in again', ['need_auth' => true]);
+    require_once __DIR__ . '/linkPreview.php';
+    $out = [];
+    foreach (array_reverse((array) ($p['sh'] ?? [])) as $id) {
+        if (!stripeValidSheetId($id)) continue;
+        $dir = dirname(__DIR__) . '/sheets/' . $id;
+        $apps = json_decode((string) @file_get_contents($dir . '/_gb_apps.json'), true) ?: [];
+        $has = function ($f) use ($dir) { return is_file($dir . '/' . $f); };
+        $guess = [
+            'cardboard'  => $has('_cardboard_info.json') || $has('_cardboard_title.txt') || $has('_cardboard_edited'),
+            'pitchboard' => $has('pitches.json'),
+            'devboard'   => $has('contracts.json') || $has('estimates.json') || $has('todos.json'),
+            'billboard'  => $has('site.json') || $has('about.json'),
+        ];
+        foreach ($guess as $k => $yes) if ($yes && !isset($apps[$k])) $apps[$k] = (int) @filemtime($dir);
+        if (!$apps) $apps = ['' => (int) @filemtime($dir)];   // not opened in an app yet
+        foreach ($apps as $app => $when) {
+            [$title, $what] = $app !== '' ? gbSheetSummary($app, $id) : ['', ''];
+            $out[] = ['id' => $id, 'app' => $app, 'title' => $title, 'summary' => $what, 'opened' => (int) $when];
+        }
+    }
+    usort($out, function ($x, $y) { return $y['opened'] <=> $x['opened']; });
+    ok(['sheets' => $out]);
 }
 
 // claim — cbt, sheet: set this sheet up as yours (Connect on the home page, or "Make it mine" when nobody has it)

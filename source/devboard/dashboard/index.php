@@ -152,7 +152,8 @@ $_client_count = count(array_unique(array_filter(array_map(
 <head>
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
 <script src="js/activationKey.js" defer></script>
-<script src="js/gb-account.js?v=10"></script>
+<script src="js/gb-account.js?v=11"></script>
+<script src="js/gb-queue.js?v=1"></script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/png" sizes="32x32" href="images/db_icon_32.png" />
@@ -7546,6 +7547,10 @@ function _dbStartCheckout(type, btn, btnLabel, plan) {
     intros: { pro: 'Contracts, estimates and invoices are part of DevBoard Pro (and the all-in-one).' },
     onChange: fromAccount
   });
+  // Changes to the sheet are kept in this browser and saved together (Save, ⌘S, or by themselves after a pause) — like CardBoard
+  GBQueue.init({ app: 'devboard', sheet: SHEET_ID, base: APP_BASE, reloadAfterPending: true,
+    queue: ['updateGame', 'addGame', 'updateDevSession', 'addDevRows', 'addDevRow', 'deleteDevSession', 'setDevNote', 'updateContract', 'addContract', 'deleteContract', 'addPerson', 'updateProfile', 'updateBio'],
+    free: ['gameboardAccount', 'getSubscription', 'getAnalytics', 'pageViewLogger', 'stripeCheckout', 'uploadMedia', 'collabAuth', 'collabGetBio', 'collabUpdateEmail'] });
   window._dbLoadSubStatus = function(cb) { fromAccount(GBAccount.state()); if (cb) cb(_dbSubStatus); };
   window.openUpgradeDialog = function(reason) { GBAccount.openPlans(reason === 'pro' ? 'pro' : ''); };
   window._dashMenuAuthAction = function() { if (GBAccount.account()) GBAccount.signOut(); else GBAccount.signIn().catch(function() {}); };

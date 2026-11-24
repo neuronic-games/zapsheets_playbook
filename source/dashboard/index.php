@@ -82,7 +82,8 @@ if ($_sheet_id && is_dir($_sheets_root)) {
 <head>
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
 <script src="js/activationKey.js" defer></script>
-<script src="js/gb-account.js?v=10"></script>
+<script src="js/gb-account.js?v=11"></script>
+<script src="js/gb-queue.js?v=1"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PitchBoard</title>
@@ -9032,6 +9033,10 @@ function startPbUpgradeCheckout() {
     plans: [{ plan: 'pro', label: '', price: '$1.99', note: 'every feature' }],
     onChange: fromAccount
   });
+  // Changes to the sheet are kept in this browser and saved together (Save, ⌘S, or by themselves after a pause) — like CardBoard
+  GBQueue.init({ app: 'pitchboard', sheet: sheet_Id, base: APP_BASE, reloadAfterPending: true,
+    queue: ['updateGame', 'addGame', 'addRow', 'updateRow', 'deleteRow', 'addPerson', 'updatePerson', 'renameDesigner', 'deleteGame', 'updateGameTab', 'updateProfile'],
+    free: ['gameboardAccount', 'getSubscription', 'getAnalytics', 'pageViewLogger', 'stripeCheckout', 'uploadMedia', 'collabAuth', 'collabGetBio', 'collabUpdateEmail'] });
   window._pbLoadSubStatus = function(cb) { fromAccount(GBAccount.state()); if (cb) cb(_pbSubStatus); };
   window.openPbUpgradeDialog = function() { GBAccount.openPlans(); };
   window._menuAuthAction = function() { if (GBAccount.account()) GBAccount.signOut(); else GBAccount.signIn().catch(function() {}); };

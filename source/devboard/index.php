@@ -285,7 +285,7 @@ body {
   };
 })();
 </script>
-<script src="js/gb-account.js?v=10"></script>
+<script src="js/gb-account.js?v=11"></script>
 <script>
 // The GameBoard account in the top bar's menu (no sheet here yet: no bar). Signed out: the sign-in screen,
 // and the New sheet card only once signed in. "Not now" goes back to the GameBoard home.

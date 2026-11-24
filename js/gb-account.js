@@ -567,6 +567,7 @@
       O.sheet = id;
       return accountPost('claim').then(function(r) { store(r); return isOwner(); });
     },
+    toast: function(m) { build(); toast(m); },
     signIn: function() { return signIn(false); }, signOut: signOut, openPlans: openPlans, openCode: openCode, refresh: refresh, onChange: function(fn) { _listeners.push(fn); },
     planLabel: function() { return planLabel().replace(/<[^>]+>/g, ''); }
   };

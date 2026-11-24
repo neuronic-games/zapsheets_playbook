@@ -10,8 +10,8 @@
 # before calling this script.
 
 # Tab names are the same in every GameBoard app, so one sheet works in all of them:
-#   Games, People, Settings, Pitches, Bios, Contracts  (shared tabs, capitalized)
-#   [Game], [Game] dev, [Game] notes, notes, todos, layouts, tags  (each app's own tabs, as they are)
+#   games, people, settings, pitches, bios, contracts  (shared tabs — lowercase)
+#   [Game], [Game] dev, [Game] notes, notes, todos, layouts, tags  (each app's own tabs)
 import gspread
 import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json
@@ -48,10 +48,10 @@ except Exception as e:
 # Order matters: validation rules reference other tabs, so create dependencies first.
 # People has no deps → Settings has no deps → Games references People → Pitches references Games + People.
 TABS = {
-    'People': [
+    'people': [
         ['Name', 'Email', 'Company', 'Role', 'Notes'],
     ],
-    'Settings': [
+    'settings': [
         ['My Name',         ''],
         ['My Email',        ''],
         ['My Phone',        ''],
@@ -59,16 +59,16 @@ TABS = {
         ['PublishedOn',     ''],
         ['Version',         ''],
     ],
-    'Games': [
+    'games': [
         ['Name', 'Tagline', 'Status',
          'Date Started', 'Date Signed', 'Date Published',
          'Designer1', 'Designer2', 'Designer3', 'Designer4',
          'Description', 'Rules', 'Play', 'Print', 'Sellsheet', 'BGG', 'Video', 'Image'],
     ],
-    'Pitches': [
+    'pitches': [
         ['Date', 'Game', 'Publisher', 'Contact', 'Event', 'Status', 'Notes'],
     ],
-    'Bios': [
+    'bios': [
         ['Email', 'Image', 'Description', 'Skills', 'Address', 'Phone', 'Messaging', 'Payment', 'Notes'],
     ],
 }
@@ -99,7 +99,7 @@ for tab_name, rows in TABS.items():
                 end_cell = gspread.utils.rowcol_to_a1(len(rows), max(len(r) for r in rows))
                 ws.update(rows, f'A1:{end_cell}', value_input_option='RAW')
             # Freeze and format the header row on tabs that have one (not Settings)
-            if tab_name != 'Settings':
+            if tab_name != 'settings':
                 ws.freeze(rows=1)
                 header_end = gspread.utils.rowcol_to_a1(1, num_cols)
                 ws.format(f'A1:{header_end}', {
@@ -115,7 +115,7 @@ for tab_name, rows in TABS.items():
         # Pitches tab: apply dropdown validation regardless of whether the tab
         # was just created or already existed — setDataValidation is idempotent.
         # Pitches columns: Date(A/0), Game(B/1), Publisher(C/2), Contact(D/3), Event(E/4), Status(F/5)
-        if tab_name == 'Pitches':
+        if tab_name == 'pitches':
             PITCH_STATUS_VALUES = [
                 'Planned', 'Pitched', 'Interested', 'Passed', 'Gone Cold', 'Signed', 'Published', 'Returned',
             ]
@@ -209,8 +209,8 @@ for tab_name, rows in TABS.items():
             wb.batch_update({'requests': requests})
 
         # Games tab: Designer1–4 validate against People.Name — idempotent.
-        if tab_name == 'Games':
-            games_headers = TABS['Games'][0]
+        if tab_name == 'games':
+            games_headers = TABS['games'][0]
             designer_indices = [
                 i for i, h in enumerate(games_headers)
                 if h.lower().startswith('designer')

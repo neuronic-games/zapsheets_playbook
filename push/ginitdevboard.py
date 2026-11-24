@@ -10,8 +10,8 @@
 #       or {"error": "..."}
 
 # Tab names are the same in every GameBoard app, so one sheet works in all of them:
-#   Games, People, Settings, Pitches, Bios, Contracts  (shared tabs, capitalized)
-#   [Game], [Game] dev, [Game] notes, notes, todos, layouts, tags  (each app's own tabs, as they are)
+#   games, people, settings, pitches, bios, contracts  (shared tabs — lowercase)
+#   [Game], [Game] dev, [Game] notes, notes, todos, layouts, tags  (each app's own tabs)
 import gspread
 import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json, socket
@@ -41,25 +41,25 @@ except Exception as e:
     sys.exit(1)
 
 TABS = {
-    'Games': {
+    'games': {
         'rows': [['Name', 'Tagline', 'Status',
                   'Date Started', 'Date Signed', 'Date Published',
                   'Designer1', 'Designer2', 'Designer3', 'Designer4',
                   'Description', 'Rules', 'Play', 'Print', 'Sellsheet', 'BGG', 'Video']],
         'freeze': True,
     },
-    'People': {
+    'people': {
         'rows': [['Name', 'Email', 'Company', 'Role', 'Notes']],
         'freeze': True,
     },
-    'Contracts': {
+    'contracts': {
         'rows': [['ID', 'Date', 'Game', 'Client', 'Quote', 'Payment',
                   'Tests', 'Edits', 'Duration', 'Target Start Date', 'Target End Date',
                   'Type', 'Ref Number', 'Notes', 'Description', 'Files',
                   'Start Date', 'End Date', 'Status']],
         'freeze': True,
     },
-    'Settings': {
+    'settings': {
         'rows': [
             ['My Name',     ''],
             ['My Email',    ''],
@@ -71,7 +71,7 @@ TABS = {
         ],
         'freeze': False,
     },
-    'Bios': {
+    'bios': {
         'rows': [['Email', 'Image', 'Description', 'Skills', 'Address', 'Phone', 'Messaging', 'Payment', 'Notes']],
         'freeze': True,
     },

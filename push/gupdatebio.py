@@ -66,7 +66,7 @@ ws = next((w for w in all_ws if w.title.lower() == 'bios'), None)
 if ws is None:
     # Auto-create the Bios tab with the standard headers
     try:
-        ws = wb.add_worksheet(title='Bios', rows=200, cols=10)
+        ws = wb.add_worksheet(title='bios', rows=200, cols=10)
         ws.append_row(
             ['Email', 'Image', 'Description', 'Skills', 'Address', 'Phone', 'Messaging', 'Payment', 'Notes'],
             value_input_option='USER_ENTERED'

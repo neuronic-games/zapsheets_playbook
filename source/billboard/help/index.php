@@ -265,9 +265,9 @@ table.keys tr.h td { background:#f8fcf9; font-family:'DINBlack',sans-serif; font
   <h2><span class="n">7</span>Name, logo &amp; colors</h2>
   <?= shot('brand', 'Your banner: the logo button, your name, and the color button on the right.') ?>
   <ul>
-    <li><b>Name</b> — click it and type. It’s saved when you click away.</li>
+    <li><b>Name</b> — click it and type. It’s kept when you click away and saved with your next <a href="billboard/help#saving">Save</a>.</li>
     <li><b>Logo</b> — the picture button on the logo: pick an image from your computer. It’s uploaded and used at once — in the banner, the footer and on shared links.</li>
-    <li><b>Banner color</b> — the palette button at the right of the banner. The color changes as you pick and is saved when you close the picker.</li>
+    <li><b>Banner color</b> — the palette button at the right of the banner. The color changes as you pick and is kept when you close the picker, for your next Save.</li>
     <li>More in menu → <b>Settings</b>: the tagline, the template (<b>Classic</b> or <b>OpenSea</b>) and the rest — see <a href="billboard/help#settings">Settings</a>.</li>
   </ul>
 </section>
@@ -284,10 +284,10 @@ table.keys tr.h td { background:#f8fcf9; font-family:'DINBlack',sans-serif; font
 <section class="topic" id="addgame">
   <h2><span class="n">9</span>Adding games</h2>
   <p class="lead">Add a game right in the catalog — then fill in its page.</p>
-  <?= steps([['add-1', 'The last card in <b>Our Games</b> is an empty one, with a <b>+</b>.'], ['add-2', 'Click <b>New Game</b> and type the name; add a one-line description under it. <b>Enter</b> adds another.'], ['add-3', '<b>Save</b>: the game is added to your sheet, and its card is in the catalog.']], 'Add a game') ?>
+  <?= steps([['add-1', 'The last card in <b>Our Games</b> is an empty one, with a <b>+</b>.'], ['add-2', 'Click <b>New Game</b> and type the name; add a one-line description under it. <b>Enter</b> adds another.'], ['add-3', '<b>Save</b> (or <kbd>⌘S</kbd>): the game is added to your sheet, and its card is in the catalog.']], 'Add a game') ?>
   <ul>
     <li>Games added here are set to <b>Published</b>, so they show straight away. Each gets a row in <b>games</b> and its own <b>[Game]</b> tab for its page.</li>
-    <li>Leaving the page before you’ve saved asks first: <b>Save</b>, or go back.</li>
+    <li>New games show as <em>Unsaved</em> cards until they’re saved. Leaving the page doesn’t lose them — they’re kept in this browser and saved the next time you open BillBoard.</li>
     <li>A game from your sheet appears once its <b>Status</b> is <em>Published</em> — set it in PitchBoard, in the sheet, or with <a href="billboard/help#details">Edit Details</a> on its page.</li>
   </ul>
 </section>
@@ -303,7 +303,7 @@ table.keys tr.h td { background:#f8fcf9; font-family:'DINBlack',sans-serif; font
 <section class="topic" id="footer">
   <h2><span class="n">11</span>Footer, links &amp; sign-ups</h2>
   <ul>
-    <li><b>Copyright line</b> and <b>footer note</b> — click and type; saved when you click away.</li>
+    <li><b>Copyright line</b> and <b>footer note</b> — click and type; kept when you click away and saved with your next Save.</li>
     <li><b>Social links</b> — Instagram, X, Facebook, YouTube and BoardGameGeek. Click an icon to add or change its link; icons without a link only show while you’re editing.</li>
     <li><b>Sign-up form</b> — visitors leave their email to hear about new games. Its heading and text are in menu → <b>Settings</b> → Newsletter Subscribe. Each sign-up is added to a <b>[subscribe] notes</b> tab in your sheet.</li>
   </ul>
@@ -318,7 +318,7 @@ table.keys tr.h td { background:#f8fcf9; font-family:'DINBlack',sans-serif; font
     <li><b>The top bar</b>: <b>All Games</b> back to the catalog; on the right <b>Edit Details</b>, <b>Save Changes</b> and <b>Cancel</b>.</li>
     <li>Then, from the top: the <b>hero</b> (picture, title, tagline, stats, designers and artists, price and buttons), <b>reviews</b>, <b>About the game</b>, <b>Gallery</b>, <b>Watch</b>, <b>What’s in the box</b>, <b>Video reviews</b>, <b>Resources</b>, <b>FAQ</b> and <b>More games</b>.</li>
     <li>Sections you haven’t filled in only show while you’re editing — visitors never see empty boxes.</li>
-    <li>Changes on a game page are kept until you click <b>Save Changes</b>; <b>Cancel</b> drops them.</li>
+    <li>Changes on a game page are kept in this browser and saved with <b>Save Changes</b> (or <kbd>⌘S</kbd>, or by themselves after a pause); <b>Cancel</b> drops the ones not saved yet.</li>
   </ul>
 </section>
 <section class="topic" id="stats">
@@ -403,9 +403,12 @@ table.keys tr.h td { background:#f8fcf9; font-family:'DINBlack',sans-serif; font
   <h2><span class="n">19</span>Saving &amp; Fetch</h2>
   <?= shot('save', '<b>Save</b> in the BillBoard bar.', 'small') ?>
   <ul>
-    <li><b>On the catalog:</b> words you change (your name, about, footer) are saved when you click away; pictures and the banner color as soon as you pick them. <b>Save</b> adds the new games you’ve typed and saves all the words at once — it shows <em>Saving…</em>, then <em>Saved ✓</em>.</li>
-    <li><b>On a game page:</b> everything waits for <b>Save Changes</b>; <b>Cancel</b> drops what you changed.</li>
-    <li>Leaving the catalog with new games not saved yet asks first.</li>
+    <li>As in CardBoard, your changes are <b>kept in this browser</b> as you make them — your name, the footer, the banner color, new and deleted games, pictures on cards, and everything on a game page — and sent to your sheet together.</li>
+    <li><b>Save</b> (or <kbd>⌘S</kbd>) sends them now; on a game page the button is <b>Save Changes</b>. It’s lit while there’s something to save, fills up as it goes, and you can keep working.</li>
+    <li>BillBoard also <b>saves by itself</b> once you’ve stopped for about a minute and a half (never while you’re typing). Closing the page doesn’t lose anything — unsaved changes are saved the next time you open BillBoard.</li>
+    <li><b>Cancel</b> on a game page drops the changes to that game that aren’t saved yet.</li>
+    <li>Pictures upload as soon as you pick them; <b>Settings</b> and <b>Add Game</b> (the dialog) save when you click their button. Anything that reads from the sheet — Settings, Publish — saves your changes first.</li>
+    <li>If the server can’t be reached, your changes wait for the next Save.</li>
     <li><b>Fetch</b> (menu) reads your games and settings from the sheet again — use it after editing the sheet in Google Sheets or in PitchBoard.</li>
   </ul>
 </section>

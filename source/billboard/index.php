@@ -501,7 +501,7 @@ body.bb-admin-mode .bb-add-game-card { display:flex; }
 .bb-plan-current.paid { background:#edf7ed; } .bb-plan-current.paid b { color:#2e7d32; }
 </style>
 <link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=6" />
-<?php if (!isset($_bbPublicBase)): ?><script src="<?= h($_appRoot) ?>js/gb-account.js?v=11"></script><?php endif; ?>
+<?php if (!isset($_bbPublicBase)): ?><script src="<?= h($_appRoot) ?>js/gb-account.js?v=11"></script><script src="<?= h($_appRoot) ?>js/gb-queue.js?v=3"></script><?php endif; ?>
 </head>
 <body<?= isset($_bbPublicBase) ? '' : ' class="gb-app gb-bill"' ?>>
 
@@ -1471,7 +1471,7 @@ function bbSaveFooterField(el) {
   xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
   xhr.onload = function() {
     var r = {}; try { r = JSON.parse(xhr.responseText); } catch(e) {}
-    console.log('tmSaveSettings response:', r);
+    if (r.queued) return;   // kept in this browser: the Save button saves it
     if (!r.ok) { bbShowSaveToast('Save failed', true); return; }
     if (!r.sheetOk) {
       bbShowSaveToast('Saved locally — sheet sync failed', true);
@@ -1495,6 +1495,7 @@ function bbShowSaveToast(msg, isErr) {
 
 // The Save button (CardBoard's style): 'saving' (striped, spinner), 'saved' (a moment), or back to Save
 function bbSaveBtn(state) {
+  if (window.GBQueue && GBQueue.refresh) { GBQueue.refresh(); return; }   // the save queue runs the button
   var btn = document.getElementById('bbSavePageBtn'); if (!btn) return;
   clearTimeout(btn._t);
   btn.classList.toggle('saving', state === 'saving');
@@ -1504,6 +1505,7 @@ function bbSaveBtn(state) {
 }
 function bbSavePage() {
   if (!document.body.classList.contains('bb-admin-mode')) return;
+  if (window.GBQueue && GBQueue.active()) { GBQueue.save(); return; }   // drafts and edits go in together (beforeSave)
   // Auto-queue any name typed but not yet queued
   var nameEl = document.getElementById('catAddGameName');
   if (nameEl && nameEl.textContent.trim() && nameEl.textContent.trim() !== 'New Game') {
@@ -1555,7 +1557,7 @@ document.addEventListener('click', function(e) {
   // Auto-queue any name typed but not yet queued
   var nameEl = document.getElementById('catAddGameName');
   if (nameEl && nameEl.textContent.trim() && nameEl.textContent.trim() !== 'New Game') catAddGameQueue();
-  if (_catAddGameDrafts.length === 0) return; // nothing unsaved — let navigate
+  if (_catAddGameDrafts.length === 0 || _catKeepDrafts()) return; // nothing unsaved, or kept in this browser — let navigate
   e.preventDefault();
   _catUnsavedDest = a.href;
   document.getElementById('catUnsavedOverlay').classList.add('open');
@@ -1563,7 +1565,8 @@ document.addEventListener('click', function(e) {
 
 // Fallback for browser back/forward only — only blocks when drafts are queued
 window.addEventListener('beforeunload', function(e) {
-  if (_catAddGameDrafts.length > 0) { e.preventDefault(); e.returnValue = ''; }
+  if (_catTypedName()) catAddGameQueue();
+  if (_catAddGameDrafts.length > 0 && !_catKeepDrafts()) { e.preventDefault(); e.returnValue = ''; }
 });
 
 // ── Social link editor ───────────────────────────────────────────────────────
@@ -1633,8 +1636,8 @@ function carouselSaveAll() {
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
   xhr.onload = function() {
-    var ok = false; try { ok = JSON.parse(xhr.responseText).ok; } catch(e) {}
-    bbShowSaveToast(ok ? 'Saved' : 'Save failed', !ok);
+    var ok = false, q = false; try { var j = JSON.parse(xhr.responseText); ok = j.ok; q = j.queued; } catch(e) {}
+    if (!q) bbShowSaveToast(ok ? 'Saved' : 'Save failed', !ok);
   };
   xhr.onerror = function() { bbShowSaveToast('Save failed', true); };
   xhr.send(fd);
@@ -1889,6 +1892,7 @@ function submitSettings() {
     btn.disabled = false;
     var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = {error: xhr.responseText}; }
     if (r.error) { document.getElementById('setErr').textContent = r.error; return; }
+    if (r.queued) { forceCloseSettings(); GBQueue.save().then(function() { if (!GBQueue.pending()) location.reload(); }); return; }   // the page is built from the settings: save, then show them
     if (!r.sheetOk && r.sheetErr) {
       console.warn('Sheet sync error:', r.sheetErr);
       document.getElementById('setErr').textContent = 'Saved locally — sheet sync: ' + r.sheetErr;
@@ -1991,6 +1995,7 @@ function submitAddGame() {
       return;
     }
     forceCloseAddGame();
+    if (r.queued) { GBQueue.save(); return; }   // the new game shows once it's saved (see onSaved)
     location.reload();
   };
   xhr.onerror = function() {
@@ -2237,6 +2242,25 @@ function catAddGameQueue() {
   _catAddGameDrafts.push({name: name, tagline: tagline, imgUrl: imgUrl});
   _catAddGameShowDraft(name, tagline, imgUrl);
   catAddGameReset();
+  _catKeepDrafts();
+}
+// New games are kept in this browser with the rest of the changes and saved together (the Save button,
+// ⌘S, or after a pause) — like CardBoard. They show as cards once saved.
+function _catKeepDrafts() {
+  if (!(window.GBQueue && GBQueue.active())) return false;
+  _catAddGameDrafts = _catAddGameDrafts.filter(function(d) {
+    var fd = new FormData();
+    fd.append('id', SHEET_ID); fd.append('name', d.name); fd.append('tagline', d.tagline);
+    fd.append('status', 'Published');
+    fd.append('cover_url', d.imgUrl || '');
+    fd.append('image', d.imgUrl ? '=IMAGE("' + d.imgUrl + '")' : '');
+    return !GBQueue.put(APP_ROOT + 'push/addGame.php', fd);
+  });
+  return !_catAddGameDrafts.length;
+}
+function _catTypedName() {
+  var nameEl = document.getElementById('catAddGameName');
+  return !!(nameEl && nameEl.textContent.trim() && nameEl.textContent.trim() !== 'New Game');
 }
 
 function _catAddGameShowDraft(name, tagline, imgUrl) {
@@ -2644,6 +2668,17 @@ function _bbStartCheckout(type, btn, btnLabel) {
       }
     }
   });
+  // Changes are kept in this browser and saved to the sheet together, as in CardBoard
+  GBQueue.init({ app: 'billboard', sheet: SHEET_ID, base: APP_ROOT, reloadAfterPending: true,
+    button: 'bbSavePageBtn', label: 'Save',
+    queue: ['tmSaveSettings', 'addGame', 'deleteGame', 'updateGameImage', 'updateGame'],
+    free: ['uploadImage', 'uploadMedia', 'linkPreview', 'submitNote', 'bbAuth', 'collabAuth', 'gameboardAccount', 'getSubscription', 'getAnalytics', 'pageViewLogger', 'stripeCheckout'],
+    extraPending: function() { return _catAddGameDrafts.length + (_catTypedName() ? 1 : 0); },
+    beforeSave: function() { if (_catTypedName() && !(document.activeElement && document.activeElement.id === 'catAddGameName')) catAddGameQueue(); _catKeepDrafts(); },
+    onSaved: function(r) {
+      // New games are built by the server: show them
+      if (r.sent.some(function(x) { return x.ok && x.endpoint === 'addGame'; })) { location.reload(); return true; }
+    } });
   window.openSignIn = function() { GBAccount.signIn().catch(function() {}); };
   window.openBbUpgradeDialog = function() { GBAccount.openPlans(); };
   window._bbLoadSubStatus = function(cb) { if (cb) cb({}); };
@@ -3463,7 +3498,7 @@ body.bb-admin-mode .bb-hero.bb-drag-over .bb-cover-btn { display: flex; }
 .bb-social-empty { display:none; }
 </style>
 <link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=6" />
-<?php if (!isset($_bbPublicBase)): ?><script src="<?= h($_appRoot) ?>js/gb-account.js?v=11"></script><?php endif; ?>
+<?php if (!isset($_bbPublicBase)): ?><script src="<?= h($_appRoot) ?>js/gb-account.js?v=11"></script><script src="<?= h($_appRoot) ?>js/gb-queue.js?v=3"></script><?php endif; ?>
 </head>
 <body<?= isset($_bbPublicBase) ? '' : ' class="gb-app gb-bill"' ?>>
 
@@ -4376,7 +4411,7 @@ function bbCopyUrl(inputId) {
   if (btn) { var old = btn.textContent; btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = old; }, 1500); }
 }
 
-function cancelEdit() { location.reload(); }
+function cancelEdit() { _bbCancelled = true; if (window.GBQueue) GBQueue.remove(BB_GAME_KEY); location.reload(); }
 
 // ── Edit Details modal ───────────────────────────────────────────────────────
 function openEditDetailsAt(fieldId) {
@@ -5537,7 +5572,8 @@ document.addEventListener('drop', function(e) {
   if (file && file.type.startsWith('image/')) bbUploadImage(file, bbSetGalleryImage, zone);
 });
 
-function saveGame() {
+// The game's edits as the form updateGame.php takes
+function bbGameForm() {
   // If the edit-details dialog is open, flush its values into _ed first
   if (document.getElementById('bbedOverlay').classList.contains('open')) {
     applyEditDetails();
@@ -5552,10 +5588,6 @@ function saveGame() {
     var el = document.getElementById(id);
     if (el) _ed[_statSync[id]] = el.value.trim();
   });
-
-  var saveBtn = document.getElementById('bbSaveBtn');
-  saveBtn.disabled = true;
-  saveBtn.textContent = 'Saving…';
 
   var titleEl = document.getElementById('bbEditTitle');
   var summaryEl = document.getElementById('bbEditSummary');
@@ -5605,7 +5637,58 @@ function saveGame() {
   if (_ed._galleryDirty) {
     fd.append('gallery_urls', JSON.stringify(_ed.gallery || []));
   }
+  return fd;
+}
 
+// ── Saving, as in CardBoard: edits are kept in this browser as you go and saved to the sheet together —
+// Save Changes (or ⌘S) now, otherwise after you've paused. Cancel drops them.
+var BB_GAME_KEY = 'game:' + ORIG_GAME_NAME, _bbBase = null, _bbKept = null, _bbCancelled = false, _bbSaveClicked = false;
+function _bbSnap(pairs) { return JSON.stringify(pairs); }
+function _bbFormPairs(fd) { var p = []; fd.forEach(function(v, k) { p.push([k, v]); }); return p; }
+function bbGameChanged() {
+  if (_bbBase === null || _bbCancelled || !document.body.classList.contains('bb-admin-mode')) return false;
+  var s = _bbSnap(_bbFormPairs(bbGameForm()));
+  return s !== (_bbKept !== null ? _bbKept : _bbBase);
+}
+function bbKeepGame() {
+  if (_bbBase === null || _bbCancelled || !(window.GBQueue && GBQueue.active()) || !document.body.classList.contains('bb-admin-mode')) return false;
+  var fd = bbGameForm(), s = _bbSnap(_bbFormPairs(fd));
+  if (s === (_bbKept !== null ? _bbKept : _bbBase)) return true;
+  _bbKept = s;
+  if (s === _bbBase) GBQueue.remove(BB_GAME_KEY); else GBQueue.put(APP_ROOT + 'push/updateGame.php', fd, BB_GAME_KEY);
+  return true;
+}
+window.addEventListener('load', function() { setTimeout(function() { if (document.body.classList.contains('bb-admin-mode')) _bbBase = _bbSnap(_bbFormPairs(bbGameForm())); }, 300); });
+var _bbKeepT = null;
+['input', 'change'].forEach(function(ev) { document.addEventListener(ev, function() { clearTimeout(_bbKeepT); _bbKeepT = setTimeout(function() { bbKeepGame(); }, 1200); }, true); });
+window.addEventListener('pagehide', function() { bbKeepGame(); });
+// What was saved: the sheet now has it; a new name means a new address
+function bbGameSaved(r) {
+  var x = r.sent.filter(function(s) { return s.ok && s.endpoint === 'updateGame' && s.data.orig_name === ORIG_GAME_NAME; }).pop();
+  if (!x) { _bbSaveClicked = false; return; }
+  _bbBase = _bbSnap(Object.keys(x.data).map(function(k) { return [k, x.data[k]]; })); _bbKept = null;
+  var newName = x.data.name || ORIG_GAME_NAME;
+  if (newName === ORIG_GAME_NAME && !_bbSaveClicked) return;
+  _bbSaveClicked = false;
+  var newSlug = newName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  try { sessionStorage.setItem('bb_scroll_' + newSlug, window.scrollY); } catch(e) {}
+  setTimeout(function() { location.href = APP_ROOT + SHEET_ID + '/billboard/' + newSlug; }, 400);
+  return true;
+}
+
+function saveGame() {
+  if (window.GBQueue && GBQueue.active() && _bbBase !== null) {
+    bbKeepGame();
+    if (!GBQueue.pending()) { GBQueue.save(); return; }   // “Everything is already saved”
+    _bbSaveClicked = true;
+    GBQueue.save();
+    return;
+  }
+  var saveBtn = document.getElementById('bbSaveBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+  var titleEl = document.getElementById('bbEditTitle');
+  var fd = bbGameForm();
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_ROOT + 'push/updateGame.php');
   xhr.onload = function() {
@@ -6115,6 +6198,14 @@ function bbSubscribeSubmit(e) {
       }
     }
   });
+  // Changes are kept in this browser and saved to the sheet together, as in CardBoard
+  GBQueue.init({ app: 'billboard', sheet: SHEET_ID, base: APP_ROOT, reloadAfterPending: true,
+    button: 'bbSaveBtn', label: 'Save Changes',
+    queue: ['tmSaveSettings', 'addGame', 'deleteGame', 'updateGameImage', 'updateGame'],
+    free: ['uploadImage', 'uploadMedia', 'linkPreview', 'submitNote', 'bbAuth', 'collabAuth', 'gameboardAccount', 'getSubscription', 'getAnalytics', 'pageViewLogger', 'stripeCheckout'],
+    extraPending: function() { return bbGameChanged() ? 1 : 0; },
+    beforeSave: function() { bbKeepGame(); },
+    onSaved: function(r) { return bbGameSaved(r); } });
   window.openSignIn = function() { GBAccount.signIn().catch(function() {}); };
   window.openBbUpgradeDialog = function() { GBAccount.openPlans(); };
   window._bbLoadSubStatus = function(cb) { if (cb) cb({}); };

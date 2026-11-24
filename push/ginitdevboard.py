@@ -9,6 +9,9 @@
 # Returns: {"ok": true, "title": "...", "tabs_created": [...]}
 #       or {"error": "..."}
 
+# Tab names are the same in every GameBoard app, so one sheet works in all of them:
+#   Games, People, Settings, Pitches, Bios, Contracts  (shared tabs, capitalized)
+#   [Game], [Game] dev, [Game] notes, notes, todos, layouts, tags  (each app's own tabs, as they are)
 import gspread
 import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json, socket
@@ -38,14 +41,14 @@ except Exception as e:
     sys.exit(1)
 
 TABS = {
-    'games': {
+    'Games': {
         'rows': [['Name', 'Tagline', 'Status',
                   'Date Started', 'Date Signed', 'Date Published',
                   'Designer1', 'Designer2', 'Designer3', 'Designer4',
                   'Description', 'Rules', 'Play', 'Print', 'Sellsheet', 'BGG', 'Video']],
         'freeze': True,
     },
-    'people': {
+    'People': {
         'rows': [['Name', 'Email', 'Company', 'Role', 'Notes']],
         'freeze': True,
     },
@@ -56,7 +59,7 @@ TABS = {
                   'Start Date', 'End Date', 'Status']],
         'freeze': True,
     },
-    'settings': {
+    'Settings': {
         'rows': [
             ['My Name',     ''],
             ['My Email',    ''],
@@ -76,10 +79,15 @@ TABS = {
 
 # Google Sheets tab names ignore case ("Games" and "games" can't both exist): match the same way
 existing   = {w.title.strip().lower(): w for w in wb.worksheets()}
+tabs_renamed = []
 tabs_created = []
 
 for tab_name, cfg in TABS.items():
-    if tab_name.lower() in existing:   # already there (any case): use it
+    if tab_name.lower() in existing:   # already there (any case): use it, with the standard name
+        ws = existing[tab_name.lower()]
+        if ws.title != tab_name:
+            try: ws.update_title(tab_name); tabs_renamed.append(tab_name)
+            except Exception: pass   # a name we can't change is still fine to use
         continue
     try:
         rows = cfg['rows']
@@ -101,4 +109,4 @@ for tab_name, cfg in TABS.items():
         print(json.dumps({"error": f"Failed to create '{tab_name}' tab: {str(e)}"}))
         sys.exit(1)
 
-print(json.dumps({"ok": True, "title": wb.title, "tabs_created": tabs_created}))
+print(json.dumps({"ok": True, "title": wb.title, "tabs_created": tabs_created, "tabs_renamed": tabs_renamed}))

@@ -78,7 +78,7 @@ else:
         })
     except Exception as e:
         if 'already exists' in str(e).lower():
-            ws = next((w for w in wb.worksheets() if w.title == tab_name), None)
+            ws = next((w for w in wb.worksheets() if w.title.lower() == tab_name.lower()), None)
             if not ws:
                 print(json.dumps({"error": f"Could not find or create tab: {str(e)}"}))
                 sys.exit(1)

@@ -37,6 +37,8 @@ except Exception as e:
     sys.exit(1)
 
 ws = next((w for w in wb.worksheets() if w.title == tab_name), None)
+if not ws:   # tab names ignore case in Google Sheets
+    ws = next((w for w in wb.worksheets() if w.title.lower() == tab_name.lower()), None)
 if not ws:
     print(json.dumps({"error": f"Tab '{tab_name}' not found"}))
     sys.exit(1)

@@ -9,6 +9,9 @@
 # NOTE: the spreadsheet must already be shared with the service-account email
 # before calling this script.
 
+# Tab names are the same in every GameBoard app, so one sheet works in all of them:
+#   Games, People, Settings, Pitches, Bios, Contracts  (shared tabs, capitalized)
+#   [Game], [Game] dev, [Game] notes, notes, todos, layouts, tags  (each app's own tabs, as they are)
 import gspread
 import gretry  # retry temporary Google API errors (see gretry.py)
 import sys, os, json
@@ -83,8 +86,11 @@ existing = {w.title.strip().lower(): w for w in wb.worksheets()}
 for tab_name, rows in TABS.items():
     try:
         if tab_name.lower() in existing:
-            # Tab exists (any case) — data is intact, nothing to do.
+            # Tab exists (any case) — data is intact; just give it the standard name (same in every app)
             ws = existing[tab_name.lower()]
+            if ws.title != tab_name:
+                try: ws.update_title(tab_name)
+                except Exception: pass   # a name we can't change is still fine to use
             results[tab_name] = 'ok'
         else:
             num_cols = max(len(r) for r in rows) if rows else 2

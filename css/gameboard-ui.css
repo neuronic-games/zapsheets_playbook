@@ -77,6 +77,17 @@ body.gb-page { background:var(--gb-bg); font-family:var(--gb-text); color:var(--
   .gb-app .top-tab-btns { order:3; width:100%; justify-content:center; }
 }
 
+/* ── Save in the top bar: CardBoard's gold pill, the same size saving or not; striped while saving ── */
+.gb-app .top-save { position:relative; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; gap:.4rem; width:6.6rem; height:2.1rem; padding:0; border:none; border-radius:999px; background:#f2c14e; color:#2e2763; font-family:var(--gb-black); font-size:.7rem; letter-spacing:.09em; text-transform:uppercase; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.18); transition:background .15s; flex-shrink:0; }
+.gb-app .top-save:hover:not(:disabled) { background:#ffd36b; }
+.gb-app .top-save:disabled { background:rgba(255,255,255,.14); color:rgba(255,255,255,.55); box-shadow:none; cursor:default; }
+.gb-app .top-save.saving:disabled { background:#fbeec4; color:#2e2763; box-shadow:0 2px 8px rgba(0,0,0,.18); }
+.gb-app .top-save .sv-txt { position:relative; display:inline-flex; align-items:center; gap:.4rem; }
+.gb-app .top-save .sv-spin { width:.8rem; height:.8rem; border:2px solid rgba(46,39,99,.25); border-top-color:#2e2763; border-radius:50%; animation:gbSvSpin .7s linear infinite; }
+.gb-app .top-save .sv-fill { position:absolute; left:0; top:0; bottom:0; width:var(--sv, 100%); background:#f2c14e linear-gradient(-45deg, rgba(255,255,255,.28) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.28) 50%, rgba(255,255,255,.28) 75%, transparent 75%) 0 0 / 14px 14px; animation:gbSvStripes .6s linear infinite; }
+@keyframes gbSvStripes { to { background-position:14px 0; } }
+@keyframes gbSvSpin { to { transform:rotate(360deg); } }
+
 /* ── Account menu (one style in every app) ── */
 .gb-app .account-menu-label { padding:.55rem 1rem .5rem; font-size:.75rem; line-height:1.35; color:rgba(255,255,255,.55); border-bottom:1px solid rgba(255,255,255,.12); margin-bottom:.2rem; word-break:break-all; }
 .gb-app .account-menu-label:empty { display:none; }

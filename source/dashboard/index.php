@@ -1701,7 +1701,7 @@ if ($_sheet_id && is_dir($_sheets_root)) {
     .pb-plan-go { background:#f5a623; color:#fff; border:none; }
     .pb-plan-go:disabled { opacity:.6; cursor:default; }
 </style>
-<link rel="stylesheet" href="css/gameboard-ui.css?v=3" />
+<link rel="stylesheet" href="css/gameboard-ui.css?v=4" />
 </head>
 <body class="gb-app gb-page gb-pitch">
 

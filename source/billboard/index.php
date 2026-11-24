@@ -410,8 +410,7 @@ body.bb-admin-mode .bb-footer-editable:hover { border-bottom-color:rgba(255,255,
 body.bb-admin-mode .bb-footer-editable:focus { border-bottom-color:rgba(255,255,255,.75); outline:none; }
 .bb-footer-editable:empty:before { content:attr(data-placeholder); color:rgba(255,255,255,.22); pointer-events:none; font-style:italic; }
 /* Save button highlight */
-#bbSavePageBtn { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.45); color:#fff; }
-#bbSavePageBtn:hover { background:rgba(255,255,255,.22); border-color:#fff; }
+
 
 /* ── Overlay / Dialog (sign-in + settings) ── */
 .bb-overlay {
@@ -500,7 +499,7 @@ body.bb-admin-mode .bb-add-game-card { display:flex; }
 .bb-plan-current b { color:#333; } .bb-plan-current span { color:#888; }
 .bb-plan-current.paid { background:#edf7ed; } .bb-plan-current.paid b { color:#2e7d32; }
 </style>
-<link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=3" />
+<link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=4" />
 <?php if (!isset($_bbPublicBase)): ?><script src="<?= h($_appRoot) ?>js/gb-account.js?v=4"></script><?php endif; ?>
 </head>
 <body<?= isset($_bbPublicBase) ? '' : ' class="gb-app gb-bill"' ?>>
@@ -520,7 +519,7 @@ body.bb-admin-mode .bb-add-game-card { display:flex; }
       </div>
     </div>
     <div class="account-menu-wrap bb-admin-tools">
-      <button class="btn-add-game" id="bbSavePageBtn" onclick="bbSavePage()" style="display:none">Save</button>
+      <button class="top-save" id="bbSavePageBtn" onclick="bbSavePage()" style="display:none">Save</button>
       <div class="user-menu-wrap">
         <button class="btn-user-icon top-btn top-menu-btn" id="bbUserBtn" onclick="toggleBbMenu(event)" title="Menu">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/></svg>
@@ -1492,6 +1491,15 @@ function bbShowSaveToast(msg, isErr) {
   t._tid = setTimeout(function(){ t.classList.remove('visible'); }, 1800);
 }
 
+// The Save button (CardBoard's style): 'saving' (striped, spinner), 'saved' (a moment), or back to Save
+function bbSaveBtn(state) {
+  var btn = document.getElementById('bbSavePageBtn'); if (!btn) return;
+  clearTimeout(btn._t);
+  btn.classList.toggle('saving', state === 'saving');
+  btn.disabled = state === 'saving';
+  btn.innerHTML = state === 'saving' ? '<span class="sv-fill"></span><span class="sv-txt"><span class="sv-spin"></span>Saving…</span>' : state === 'saved' ? 'Saved ✓' : 'Save';
+  if (state === 'saved') btn._t = setTimeout(function() { bbSaveBtn(''); }, 1800);
+}
 function bbSavePage() {
   if (!document.body.classList.contains('bb-admin-mode')) return;
   // Auto-queue any name typed but not yet queued
@@ -2272,7 +2280,7 @@ function _catAddGameShowDraft(name, tagline, imgUrl) {
 function _catSaveDrafts(onDone) {
   var drafts = _catAddGameDrafts.slice();
   var btn = document.getElementById('bbSavePageBtn');
-  if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
+  bbSaveBtn('saving');
   var idx = 0;
   function saveNext() {
     if (idx >= drafts.length) { if (onDone) onDone(); return; }
@@ -2287,14 +2295,14 @@ function _catSaveDrafts(onDone) {
     xhr.onload = function() {
       var r; try { r = JSON.parse(xhr.responseText); } catch(e) { r = null; }
       if (!r || r.error) {
-        if (btn) { btn.textContent = 'Save'; btn.disabled = false; }
+        bbSaveBtn('');
         alert('Error saving "' + d.name + '": ' + ((r && r.error) || 'Unknown error'));
         return;
       }
       saveNext();
     };
     xhr.onerror = function() {
-      if (btn) { btn.textContent = 'Save'; btn.disabled = false; }
+      bbSaveBtn('');
       alert('Network error saving "' + d.name + '". Please try again.');
     };
     xhr.send(fd);
@@ -2304,7 +2312,7 @@ function _catSaveDrafts(onDone) {
 
 function _catSaveSettings(onDone) {
   var btn = document.getElementById('bbSavePageBtn');
-  if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
+  bbSaveBtn('saving');
   var fd = new FormData();
   fd.append('id', SHEET_ID);
   document.querySelectorAll('.bb-footer-editable[data-setting]').forEach(function(el) {
@@ -2313,11 +2321,11 @@ function _catSaveSettings(onDone) {
   var xhr = new XMLHttpRequest();
   xhr.open('POST', APP_ROOT + 'push/tmSaveSettings.php');
   xhr.onload = function() {
-    if (btn) { btn.textContent = 'Saved ✓'; btn.disabled = false; setTimeout(function(){ btn.textContent = 'Save'; }, 1800); }
+    bbSaveBtn('saved');
     if (onDone) onDone();
   };
   xhr.onerror = function() {
-    if (btn) { btn.textContent = 'Save'; btn.disabled = false; }
+    bbSaveBtn('');
     alert('Save failed — network error.');
   };
   xhr.send(fd);
@@ -3450,7 +3458,7 @@ body.bb-admin-mode .bb-hero.bb-drag-over .bb-cover-btn { display: flex; }
 .bb-social-set:hover { border-color:rgba(255,255,255,.6); background:rgba(255,255,255,.08); }
 .bb-social-empty { display:none; }
 </style>
-<link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=3" />
+<link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=4" />
 <?php if (!isset($_bbPublicBase)): ?><script src="<?= h($_appRoot) ?>js/gb-account.js?v=4"></script><?php endif; ?>
 </head>
 <body<?= isset($_bbPublicBase) ? '' : ' class="gb-app gb-bill"' ?>>

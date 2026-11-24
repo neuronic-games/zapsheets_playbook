@@ -1064,7 +1064,7 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
 .plan-current span { color:#888; }
 .plan-current.paid { background:#edf7ed; } .plan-current.paid b { color:#2e7d32; }
 </style>
-<link rel="stylesheet" href="css/gameboard-ui.css?v=3" />
+<link rel="stylesheet" href="css/gameboard-ui.css?v=4" />
 </head>
 <body class="gb-app gb-page gb-dev">
 

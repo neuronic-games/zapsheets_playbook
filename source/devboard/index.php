@@ -265,9 +265,12 @@ body {
       if (!created.length) addLog('✓  Tabs already in place', 'ok');
       addLog('✓  Ready — opening DevBoard…', 'ok');
 
-      setTimeout(function() {
-        window.location.href = APP_BASE + sheetId + '/devboard';
-      }, 1000);
+      // Connecting sets the sheet up as yours (unless someone else already has): you change it, others view it
+      GBAccount.claimSheet(sheetId).then(function(mine) {
+        addLog(mine ? '✓  Set up as yours' : '✓  Someone else set this sheet up — it opens view only', 'ok');
+      }, function(e) { addLog('!  ' + e.message, 'err'); }).then(function() {
+        setTimeout(function() { window.location.href = APP_BASE + sheetId + '/devboard'; }, 800);
+      });
     };
 
     xhr.onerror = function() {
@@ -281,7 +284,7 @@ body {
   };
 })();
 </script>
-<script src="js/gb-account.js?v=9"></script>
+<script src="js/gb-account.js?v=10"></script>
 <script>
 // The GameBoard account in the top bar's menu (no sheet here yet: no bar). Signed out: the sign-in screen,
 // and the New sheet card only once signed in. "Not now" goes back to the GameBoard home.

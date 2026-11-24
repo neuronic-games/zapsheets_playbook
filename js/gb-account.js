@@ -69,8 +69,8 @@
   // ── Talking to the server ──────────────────────────────────────────────────
   var _fetch = window.fetch ? window.fetch.bind(window) : null;
   function accountPost(action, extra) {
-    var fd = new FormData(); fd.append('action', action); fd.append('sheet', O.sheet || ''); fd.append('app', O.app);
-    Object.keys(extra || {}).forEach(function(k) { fd.append(k, extra[k]); });
+    var fd = new FormData(); fd.append('action', action); fd.append('sheet', (extra && extra.sheet) || O.sheet || ''); fd.append('app', O.app);
+    Object.keys(extra || {}).forEach(function(k) { if (k !== 'sheet') fd.append(k, extra[k]); });
     if (ACCT && ACCT.token && !fd.has('cbt')) fd.append('cbt', ACCT.token);
     var ctl = window.AbortController ? new AbortController() : null, tm = ctl ? setTimeout(function() { ctl.abort(); }, 20000) : 0;   // never wait forever
     return _fetch(O.base + 'push/gameboardAccount.php', { method: 'POST', body: fd, signal: ctl ? ctl.signal : undefined })
@@ -552,6 +552,13 @@
       else if (checked() && !isOwner()) toast(info() && info().unclaimed ? 'View only — make this sheet yours first' : 'View only — this sheet belongs to another GameBoard account');
       else openPlans('locked');
       return false;
+    },
+    // A sheet just connected (the setup pages): set it up as this account's — unless someone else already has.
+    // Resolves true when it's yours.
+    claimSheet: function(id) {
+      if (!ACCT) return Promise.reject(new Error('Not signed in'));
+      O.sheet = id;
+      return accountPost('claim').then(function(r) { store(r); return isOwner(); });
     },
     signIn: function() { return signIn(false); }, signOut: signOut, openPlans: openPlans, openCode: openCode, refresh: refresh, onChange: function(fn) { _listeners.push(fn); },
     planLabel: function() { return planLabel().replace(/<[^>]+>/g, ''); }

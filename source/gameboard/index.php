@@ -1152,7 +1152,22 @@ footer a:hover { color:var(--navy); }
   window.closeNavMenu = function() { $('navMenu').classList.remove('open'); };
   document.addEventListener('click', function(ev) { if (!ev.target.closest('#navMenu')) window.closeNavMenu(); });
   window.navAuth = function() { window.closeNavMenu(); if (acct) window.signOut(); else acctClick('login'); };
-  window.signOut = function() { acct = null; try { localStorage.removeItem(KEY); } catch (e) {} show(); };
+  window.signOut = function() {
+    var away = crossOrigin() && acct;
+    acct = null; try { localStorage.removeItem(KEY); } catch (e) {} show();
+    // The apps keep the sign-in on their own site (mygameboard.app): sign out there too
+    if (away) location.href = APPS_URL + '#gbsignout';
+  };
+  // Signed out here from the GameBoard home on the other domain
+  if (/[#&]gbsignout\b/.test(location.hash)) { acct = null; try { localStorage.removeItem(KEY); } catch (e) {} history.replaceState(null, '', location.pathname + location.search); }
+  // Signed in or out in another tab or app: follow it
+  function follow() {
+    var s = null; try { s = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+    if ((s && s.token || '') === (acct && acct.token || '')) return;
+    acct = s && s.token ? s : null; show();
+  }
+  window.addEventListener('storage', function(ev) { if (ev.key === KEY || ev.key === null) follow(); });
+  document.addEventListener('visibilitychange', function() { if (!document.hidden) follow(); });
   function openAuth(m) { $('authOverlay').classList.add('open'); authMode(m); }
   window.closeAuth = function() { $('authOverlay').classList.remove('open'); wantAll = false; };
   document.addEventListener('keydown', function(k) { if (k.key === 'Escape') closeAuth(); });

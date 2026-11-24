@@ -4295,6 +4295,16 @@ function storeAcct(res) {
   applyAcct();
 }
 function forgetAcct() { ACCT = null; try { localStorage.removeItem(ACCT_KEY); } catch (e) {} applyAcct(); }
+// Signed out (or in as someone else) in another tab or app — GameBoard's menu included: follow it here
+function followAcct() {
+  var s = null; try { s = JSON.parse(localStorage.getItem(ACCT_KEY) || 'null'); } catch (e) {}
+  var tok = s && s.token ? s.token : '';
+  if (tok === ((ACCT && ACCT.token) || '')) return;
+  if (!tok) { ACCT = null; applyAcct(); return; }
+  window.location.reload();   // a different account: start over with it
+}
+window.addEventListener('storage', function(ev) { if (ev.key === ACCT_KEY || ev.key === null) followAcct(); });
+document.addEventListener('visibilitychange', function() { if (!document.hidden) followAcct(); });
 // The sheet's owner — the account that set it up (its Admin-sheet Sheets list) — changes it; everyone
 // else sees it read-only. Until the account has been checked for this sheet, it's read-only too.
 function acctChecked() { return !!(ACCT && ACCT.sheet === SHEET_ID && (!ACCT.app || ACCT.app === 'cardboard')); }   // the other apps keep the same account, checked for themselves

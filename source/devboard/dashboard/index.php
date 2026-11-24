@@ -152,7 +152,7 @@ $_client_count = count(array_unique(array_filter(array_map(
 <head>
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
 <script src="js/activationKey.js" defer></script>
-<script src="js/gb-account.js?v=4"></script>
+<script src="js/gb-account.js?v=5"></script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/png" sizes="32x32" href="images/db_icon_32.png" />

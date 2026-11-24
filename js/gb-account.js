@@ -51,6 +51,16 @@
     apply();
   }
   function forget() { ACCT = null; try { localStorage.removeItem(KEY); } catch (e) {} apply(); }
+  // Signed out (or in as someone else) in another tab or app — GameBoard's menu included: follow it here
+  function follow() {
+    var s = null; try { s = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+    var tok = s && s.token ? s.token : '';
+    if (tok === ((ACCT && ACCT.token) || '')) return;
+    if (!tok) { ACCT = null; apply(); return; }
+    ACCT = s; apply(); refresh(true).catch(function() {});
+  }
+  window.addEventListener('storage', function(ev) { if (ev.key === KEY || ev.key === null) follow(); });
+  document.addEventListener('visibilitychange', function() { if (!document.hidden) follow(); });
 
   // ── Talking to the server ──────────────────────────────────────────────────
   var _fetch = window.fetch ? window.fetch.bind(window) : null;

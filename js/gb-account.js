@@ -373,9 +373,43 @@
     accountPost('verify', { email: _pending.email, password: _pending.password, code: code }).then(function(r) { _pending = null; signedIn(r); })
       .catch(function(e) { $('gbaErr').textContent = e.message; }).then(function() { b.disabled = false; b.textContent = label; });
   }
+  // A small question in a dialog (the same as CardBoard's): resolves true (OK) or false (Cancel, Esc, outside)
+  function ask(o) {
+    if (!$('gbaAskCss')) {
+      var st = document.createElement('style'); st.id = 'gbaAskCss';
+      st.textContent = '.gba-ask-ov{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(20,18,45,.45);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);animation:gbaAskFade .15s ease}' +
+        '.gba-ask{width:min(400px,92vw);background:#fff;border-radius:14px;padding:1.2rem 1.3rem 1.1rem;box-shadow:0 20px 60px rgba(20,20,60,.3);text-align:left;animation:gbaAskPop .18s cubic-bezier(.3,1.4,.5,1)}' +
+        '.gba-ask h2{margin:0 0 .25rem;font:normal 1.05rem var(--gb-black,"DINBlack",Arial,sans-serif);color:#1b1d2b;letter-spacing:.02em;text-transform:none}' +
+        '.gba-ask p{margin:.35rem 0 .2rem;font:normal .86rem/1.5 var(--gb-text,"DINRegular",Arial,sans-serif);color:#4a4e68}' +
+        '.gba-ask-btns{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1.1rem}' +
+        '.gba-ask button{height:2.05rem;border-radius:7px;cursor:pointer;padding:0 1.1rem;font-size:.75rem}' +
+        '.gba-ask .no{border:1.5px solid #d6d9e6;background:#fff;color:#3b3f5c;font-family:var(--gb-text,"DINRegular",Arial,sans-serif)}' +
+        '.gba-ask .no:hover{border-color:#a99cff}' +
+        '.gba-ask .yes{border:none;background:#5b4fd6;color:#fff;font-family:var(--gb-black,"DINBlack",Arial,sans-serif);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;padding:0 1.2rem}' +
+        '.gba-ask .yes:hover{filter:brightness(1.08)}' +
+        '.gba-ask button:focus-visible{outline:2px solid #7b6cf6;outline-offset:2px}' +
+        '@keyframes gbaAskFade{from{opacity:0}}@keyframes gbaAskPop{from{opacity:0;transform:scale(.94)}}';
+      document.head.appendChild(st);
+    }
+    return new Promise(function(done) {
+      var ov = document.createElement('div'); ov.className = 'gba-ask-ov';
+      ov.innerHTML = '<div class="gba-ask" role="alertdialog" aria-modal="true" aria-labelledby="gbaAskT"><h2 id="gbaAskT">' + esc(o.title) + '</h2><p>' + esc(o.message) + '</p>' +
+        '<div class="gba-ask-btns"><button type="button" class="no" data-a="0">' + esc(o.cancel || 'Cancel') + '</button><button type="button" class="yes" data-a="1">' + esc(o.ok || 'OK') + '</button></div></div>';
+      var prev = document.activeElement;
+      function close(v) { document.removeEventListener('keydown', key, true); ov.remove(); if (prev && prev.focus) prev.focus(); done(v); }
+      function key(ev) {
+        if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); close(false); }
+        else if (ev.key === 'Enter') { ev.preventDefault(); ev.stopPropagation(); var f = document.activeElement; close(f && f.dataset && f.dataset.a ? f.dataset.a === '1' : true); }
+        else if (ev.key === 'Tab') { var b = ov.querySelectorAll('button'), i = Array.prototype.indexOf.call(b, document.activeElement); ev.preventDefault(); b[(i + (ev.shiftKey ? b.length - 1 : 1)) % b.length].focus(); }
+      }
+      ov.addEventListener('click', function(ev) { var b = ev.target.closest('[data-a]'); if (b) close(b.dataset.a === '1'); else if (ev.target === ov) close(false); });
+      document.addEventListener('keydown', key, true);
+      document.body.appendChild(ov);
+    });
+  }
   function signOut() {
-    if (!window.confirm('Sign out of your GameBoard account? You can sign back in any time.')) return;
-    forget(); location.href = O.base + (O.home || '');
+    return ask({ title: 'Sign out?', message: 'You can sign back in any time with your email and password.', ok: 'Sign out' })
+      .then(function(yes) { if (yes) { forget(); location.href = O.base + (O.home || ''); } return yes; });
   }
 
   // ── Plans ──────────────────────────────────────────────────────────────────

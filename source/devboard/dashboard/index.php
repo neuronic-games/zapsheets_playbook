@@ -937,6 +937,12 @@ select.field-input { height:2.45rem; -webkit-appearance:none; appearance:none; b
 .combo-wrap.open .combo-dropdown { display:block; }
 .combo-option, .combo-item { padding:.5rem .8rem; font-family:'DINRegular',sans-serif; font-size:.85rem; cursor:pointer; color:#222; }
 .combo-option:hover, .combo-option.highlighted, .combo-item:hover { background:#e8f4f8; color:#1a5f7a; }
+.name-combo .combo-input { padding-right:2.1rem; }
+.combo-toggle { position:absolute; right:.25rem; top:50%; transform:translateY(-50%); width:1.8rem; height:1.8rem; border:none; background:none; color:#8a95a1; font-size:.9rem; cursor:pointer; border-radius:5px; }
+.combo-toggle:hover { background:#eef3f6; color:#1a5f7a; }
+.name-combo.open .combo-toggle { color:#1a5f7a; transform:translateY(-50%) rotate(180deg); }
+.combo-item.hl { background:#e8f4f8; color:#1a5f7a; }
+.combo-item small { color:#9aa5b1; margin-left:.35rem; }
 .combo-empty { padding:.5rem .8rem; font-size:.8rem; color:#aaa; font-style:italic; }
 
 /* Dynamic tester rows */
@@ -1614,19 +1620,19 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
       <div class="field-grid" style="grid-template-columns:1fr 1fr;margin-bottom:.9rem">
         <div class="field-group">
           <label>Designer 1</label>
-          <input type="text" class="field-input" id="gDesigner1" placeholder="Search or enter name…" autocomplete="off" />
+          <div class="combo-wrap name-combo" id="gDesigner1Combo"><input type="text" class="field-input combo-input" id="gDesigner1" placeholder="Pick or type a name…" autocomplete="off" /><button type="button" class="combo-toggle" tabindex="-1" aria-label="Show names">▾</button><div class="combo-dropdown"></div></div>
         </div>
         <div class="field-group">
           <label>Designer 2</label>
-          <input type="text" class="field-input" id="gDesigner2" placeholder="Search or enter name…" autocomplete="off" />
+          <div class="combo-wrap name-combo" id="gDesigner2Combo"><input type="text" class="field-input combo-input" id="gDesigner2" placeholder="Pick or type a name…" autocomplete="off" /><button type="button" class="combo-toggle" tabindex="-1" aria-label="Show names">▾</button><div class="combo-dropdown"></div></div>
         </div>
         <div class="field-group">
           <label>Designer 3</label>
-          <input type="text" class="field-input" id="gDesigner3" placeholder="Search or enter name…" autocomplete="off" />
+          <div class="combo-wrap name-combo" id="gDesigner3Combo"><input type="text" class="field-input combo-input" id="gDesigner3" placeholder="Pick or type a name…" autocomplete="off" /><button type="button" class="combo-toggle" tabindex="-1" aria-label="Show names">▾</button><div class="combo-dropdown"></div></div>
         </div>
         <div class="field-group">
           <label>Designer 4</label>
-          <input type="text" class="field-input" id="gDesigner4" placeholder="Search or enter name…" autocomplete="off" />
+          <div class="combo-wrap name-combo" id="gDesigner4Combo"><input type="text" class="field-input combo-input" id="gDesigner4" placeholder="Pick or type a name…" autocomplete="off" /><button type="button" class="combo-toggle" tabindex="-1" aria-label="Show names">▾</button><div class="combo-dropdown"></div></div>
         </div>
       </div>
 
@@ -3167,6 +3173,50 @@ function payPersonKey(e) {
   if (e.key === 'Escape') { document.getElementById('payPersonCombo').classList.remove('open'); }
   if (e.key === 'Enter' && !(e.metaKey || e.ctrlKey)) { var first = document.querySelector('#payPersonDrop .combo-item'); if (first) { e.preventDefault(); payPersonPick(first.dataset.name); } }
 }
+// A name box with a list: type to filter the people you know (People tab), pick with the mouse or the
+// arrow keys and Enter, or keep typing a new name. ▾ shows everyone. Names already picked in the
+// boxes of the same group are left out.
+function _nameCombo(inputId, group) {
+  var inp = document.getElementById(inputId); if (!inp || inp._combo) return; inp._combo = true;
+  var wrap = inp.parentNode, drop = wrap.querySelector('.combo-dropdown'), hl = -1;
+  function taken() { return (group || []).filter(function(id) { return id !== inputId; }).map(function(id) { var e = document.getElementById(id); return e ? e.value.trim().toLowerCase() : ''; }).filter(Boolean); }
+  function names() {
+    var seen = {}, out = [];
+    [MY_NAME].concat(PEOPLE_NAMES || []).forEach(function(n) { n = String(n || '').trim(); var k = n.toLowerCase(); if (n && !seen[k]) { seen[k] = 1; out.push(n); } });
+    return out.sort(function(a, b) { return a.localeCompare(b); });
+  }
+  function build(all) {
+    var q = all ? '' : inp.value.trim().toLowerCase(), skip = taken();
+    var list = names().filter(function(n) { var k = n.toLowerCase(); return skip.indexOf(k) < 0 && (!q || k.indexOf(q) >= 0) && k !== q; });
+    hl = -1;
+    if (!list.length) { drop.innerHTML = q ? '<div class="combo-empty">New name — it’s added to People when you save</div>' : ''; wrap.classList.toggle('open', !!q); return; }
+    drop.innerHTML = list.map(function(n) { return '<div class="combo-item" data-name="' + esc(n) + '">' + esc(n) + (n === MY_NAME ? '<small>you</small>' : '') + '</div>'; }).join('');
+    wrap.classList.add('open');
+  }
+  function close() { wrap.classList.remove('open'); hl = -1; }
+  function pick(n) { inp.value = n; close(); inp.dispatchEvent(new Event('input', { bubbles: true })); close(); }
+  function mark() { drop.querySelectorAll('.combo-item').forEach(function(x, i) { x.classList.toggle('hl', i === hl); if (i === hl) x.scrollIntoView({ block: 'nearest' }); }); }
+  inp.addEventListener('input', function() { if (document.activeElement === inp) build(false); });
+  inp.addEventListener('focus', function() { build(false); });
+  inp.addEventListener('blur', function() { setTimeout(close, 120); });
+  inp.addEventListener('keydown', function(e) {
+    var items = drop.querySelectorAll('.combo-item');
+    if (e.key === 'ArrowDown') { e.preventDefault(); if (!wrap.classList.contains('open')) build(true); hl = Math.min(items.length - 1, hl + 1); mark(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); hl = Math.max(0, hl - 1); mark(); }
+    else if (e.key === 'Enter' && wrap.classList.contains('open') && hl >= 0 && items[hl]) { e.preventDefault(); pick(items[hl].dataset.name); }
+    else if (e.key === 'Escape' && wrap.classList.contains('open')) { e.stopPropagation(); close(); }
+    else if (e.key === 'Tab') close();
+  });
+  drop.addEventListener('mousedown', function(e) { var it = e.target.closest('.combo-item'); if (it) { e.preventDefault(); pick(it.dataset.name); } });
+  var tg = wrap.querySelector('.combo-toggle');
+  if (tg) tg.addEventListener('mousedown', function(e) { e.preventDefault(); if (wrap.classList.contains('open')) close(); else { inp.focus(); build(true); } });
+}
+(function() {
+  var ids = ['gDesigner1', 'gDesigner2', 'gDesigner3', 'gDesigner4'];
+  var go = function() { ids.forEach(function(id) { _nameCombo(id, ids); }); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+})();
+
 function submitPayment() {
   var v = _payValues(), err = document.getElementById('payErr'), btn = document.getElementById('payBtn');
   var fail = function(m) { err.textContent = m; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Save Payment'; };

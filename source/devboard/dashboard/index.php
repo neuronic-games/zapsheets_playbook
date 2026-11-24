@@ -350,6 +350,9 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .dtl-row.cont .dtl-name { padding-left:.7rem; border-left:2px solid #e3e8ee; }
 .dtl-row.cont .dtl-name span { color:#667; }
 .dtl-name b em { font-style:normal; font-family:'DINRegular',sans-serif; font-size:.66rem; color:#9aa5b1; margin-left:.3rem; letter-spacing:.02em; }
+.dtl-tip { position:fixed; z-index:9000; display:none; max-width:300px; padding:.55rem .75rem; background:#1f2733; color:#fff; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.25); pointer-events:none; font-size:.74rem; line-height:1.4; }
+.dtl-tip b { display:block; font-family:'DINBlack',sans-serif; font-weight:normal; font-size:.8rem; margin-bottom:.15rem; }
+.dtl-tip span { display:block; color:rgba(255,255,255,.72); }
 .dtl-empty { padding:.9rem 1rem; font-size:.8rem; color:#888; }
 .dtl-row { display:grid; grid-template-columns:minmax(150px,24%) 1fr 112px; gap:.9rem; align-items:center; padding:.42rem .9rem; cursor:pointer; }
 .dtl-row:not(.dtl-head):hover { background:#f6fafc; }
@@ -2453,6 +2456,18 @@ function _dashAddDuration(t, dur) {
   d.setUTCMonth(d.getUTCMonth() + whole);
   return d.getTime() + Math.round((months - whole) * 30 * 864e5);
 }
+// The hover card on a timeline row: the contract's summary first, then who, when and how the date was found
+function _dtlTip(ev, row) {
+  var tip = document.getElementById('dtlTip');
+  if (!ev) { if (tip) tip.style.display = 'none'; return; }
+  if (!tip) { tip = document.createElement('div'); tip.id = 'dtlTip'; tip.className = 'dtl-tip'; document.body.appendChild(tip); }
+  var lines = String(row.getAttribute('data-tip') || '').split('\n');
+  if (tip._for !== row) { tip._for = row; tip.innerHTML = '<b>' + esc(lines[0]) + '</b>' + lines.slice(1).map(function(l) { return '<span>' + esc(l) + '</span>'; }).join(''); }
+  tip.style.display = 'block';
+  var x = Math.min(ev.clientX + 14, window.innerWidth - tip.offsetWidth - 10), y = ev.clientY + 16;
+  if (y + tip.offsetHeight > window.innerHeight - 8) y = ev.clientY - tip.offsetHeight - 12;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
 function _dashTimelineHtml() {
   var DAY = 864e5, today = new Date(todayISO() + 'T12:00:00Z').getTime();
   // A date as written in the sheet (2026-11-30, 11/30/2026, a Sheets serial number…) → noon UTC that day
@@ -2463,6 +2478,16 @@ function _dashTimelineHtml() {
     if (/^\d{5}$/.test(s)) return Date.UTC(1899, 11, 30, 12) + s * DAY;
     var d = new Date(s); return isNaN(d) || !s ? 0 : Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 12);
   };
+  // Estimates that were invoiced (a deposit, say) are going ahead: projects, not just offers
+  var ref = function(c) { return String((c && c['Ref Number']) || '').replace(/^'/, '').trim(); };
+  var invoiced = {};
+  CONTRACT_RAW.forEach(function(c) {
+    if (!c || !/^invoice$/i.test(String(c.Type || '').trim())) return;
+    String(c.Notes || '').replace(/#([0-9A-Za-z]+)/g, function(m, r) { invoiced[r] = 1; });
+    var sm = String(c.Summary || '').trim().toLowerCase(), gm = String(c.Game || '').trim().toLowerCase();   // same game and summary
+    if (sm) CONTRACT_RAW.forEach(function(e) { if (e && /^estimate$/i.test(String(e.Type || '').trim()) && String(e.Summary || '').trim().toLowerCase() === sm && String(e.Game || '').trim().toLowerCase() === gm) invoiced[ref(e)] = 1; });
+  });
+  (typeof ESTIMATES_RAW !== 'undefined' ? ESTIMATES_RAW : []).forEach(function(e) { if (e && e.from_estimate) invoiced[String(e.from_estimate).trim()] = 1; });
   var items = [];
   CONTRACT_RAW.forEach(function(c, i) {
     if (!c || _isPaymentRow(c)) return;
@@ -2476,8 +2501,8 @@ function _dashTimelineHtml() {
     var st = _conStatus(c), paid = st === 'Paid' || st === 'Fully Paid';
     if (paid && end < today) return;                                                    // paid and done
     if (start > end) start = end;
-    var est = /^estimate$/i.test(st || _ceStatusValue(c));
-    if (est && end < today) return;                                                     // an estimate whose dates have gone by
+    var est = /^estimate$/i.test(st || _ceStatusValue(c)) && !invoiced[ref(c)];       // only an offer so far (striped)
+    if (est && end < today) return;                                                     // an offer whose dates have gone by
     items.push({ i: i, c: c, start: start, end: end, est: est, dur: fromDur });
   });
   var out = '<div><div class="dash-section-hd">Timeline · active projects</div>';
@@ -2511,8 +2536,9 @@ function _dashTimelineHtml() {
     var sub = (firstOfGame ? [who, many ? what : ''] : [what, who !== String(firstWho || '').trim() ? who : '']).filter(Boolean).join(' · ') + (x.est ? ' · Estimate' : '');
     if (firstOfGame) firstWho = who;
     var afterGrp = firstOfGame && prevMany; prevMany = many;
-    var tip = (c.Game || '') + (who ? ' · ' + who : '') + '\n' + fmtDate(new Date(x.start).toISOString().slice(0, 10)) + ' → ' + fmtDate(new Date(x.end).toISOString().slice(0, 10)) + (x.dur ? '\nDue date worked out from the duration (' + String(c.Duration).trim() + ')' : '') + (x.est ? '\nEstimate' : '');
-    out += '<div class="dtl-row' + (many ? (firstOfGame ? ' grp first' : ' grp more') : '') + (firstOfGame ? '' : ' cont') + (afterGrp && !many ? ' after-grp' : '') + '" onclick="openContractEditDialog(' + x.i + ')" title="' + esc(tip) + '">' +
+    var smry = String(c.Summary || '').trim();
+    var tip = (smry ? smry + '\n' : '') + (c.Game || '') + (who ? ' · ' + who : '') + (ref(c) ? ' · #' + ref(c) : '') + '\n' + fmtDate(new Date(x.start).toISOString().slice(0, 10)) + ' → ' + fmtDate(new Date(x.end).toISOString().slice(0, 10)) + (x.dur ? '\nDue date worked out from the duration (' + String(c.Duration).trim() + ')' : '') + (x.est ? '\nEstimate' : '');
+    out += '<div class="dtl-row' + (many ? (firstOfGame ? ' grp first' : ' grp more') : '') + (firstOfGame ? '' : ' cont') + (afterGrp && !many ? ' after-grp' : '') + '" onclick="openContractEditDialog(' + x.i + ')" data-tip="' + esc(tip) + '" onmousemove="_dtlTip(event,this)" onmouseleave="_dtlTip(null)">' +
       '<div class="dtl-name">' + (firstOfGame ? '<b>' + esc(c.Game || '—') + (many ? ' <em>' + perGame[k] + ' contracts</em>' : '') + '</b>' : '') + '<span>' + esc(sub || what) + '</span></div>' +
       '<div class="dtl-track"><span class="dtl-today" style="left:' + todayX + '%"></span><span class="dtl-bar ' + cls + (x.est ? ' est' : '') + '" style="left:' + left.toFixed(2) + '%;width:' + w.toFixed(2) + '%"></span></div>' +
       '<div class="dtl-due ' + cls + '"><b>' + (x.dur ? '<small title="From the duration">≈ </small>' : '') + esc(fmtDate(new Date(x.end).toISOString().slice(0, 10))) + '</b><span>' + esc(due) + '</span></div></div>';

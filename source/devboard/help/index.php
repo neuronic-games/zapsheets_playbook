@@ -256,7 +256,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   <ul>
     <li><b>The totals</b> — games, games in active development, contracts and publishers.</li>
     <li><b>TODOs</b> — every open TODO from every game, with the number still open. See <a href="devboard/help#todos">TODOs</a>.</li>
-    <li><b>Timeline</b> — your active projects: each contract with a <b>Target End Date</b> (or a <b>Duration</b> — the due date is then worked out from the start, and shown with ≈) that isn’t finished, as a bar from its target start to its due date, soonest first. A line marks today; bars turn amber a week before they’re due and red once late. Estimates are striped. A game with several contracts shows each one, grouped under the game. Click one to open the contract.</li>
+    <li><b>Timeline</b> — your active projects: each contract with a <b>Target End Date</b> (or a <b>Duration</b> — the due date is then worked out from the start, and shown with ≈) that isn’t finished, as a bar from its target start to its due date, soonest first. A line marks today; bars turn amber a week before they’re due and red once late. Estimates not invoiced yet are striped (and drop off once their date has passed); once an estimate has an invoice — a deposit, say — it’s solid and stays until it’s finished. Hover over a bar for the contract’s summary. A game with several contracts shows each one, grouped under the game. Click one to open the contract.</li>
     <li><b>Contracts</b> — your latest estimates, invoices, contracts and payments, with their amounts and status.</li>
   </ul>
 </section>

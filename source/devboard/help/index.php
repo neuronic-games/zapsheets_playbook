@@ -1,9 +1,25 @@
 <?php
 $_raw  = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$_self = rtrim($_raw, '/');
 $_base = preg_replace('#/devboard/help/?$#', '/', $_raw);
 if (!$_base || $_base === $_raw) { $_base = '/'; }
 if (substr($_base, -1) !== '/') { $_base .= '/'; }
+$IMG = 'images/help/devboard/';
+// A screenshot from the app: click to see it bigger
+function shot(string $file, string $caption, string $cls = ''): string {
+    global $IMG;
+    return '<figure class="shot ' . $cls . '"><img loading="lazy" src="' . $IMG . $file . '.jpg" alt="' . htmlspecialchars(strip_tags($caption), ENT_QUOTES) . '">' .
+           '<figcaption>' . $caption . '</figcaption></figure>';
+}
+// Animated steps: the frames play in turn; each step's text lights up with its frame
+function steps(array $frames, string $title): string {
+    global $IMG;
+    $h = '<div class="steps" data-steps><div class="steps-head"><span class="steps-tag">Watch</span><b>' . $title . '</b>' .
+         '<button type="button" class="steps-play" aria-label="Pause">❚❚</button></div><div class="steps-stage">';
+    foreach ($frames as $i => $f) $h .= '<img loading="lazy" src="' . $IMG . $f[0] . '.jpg" alt="Step ' . ($i + 1) . '"' . ($i ? '' : ' class="on"') . '>';
+    $h .= '<div class="steps-bar"><i></i></div></div><ol class="steps-list">';
+    foreach ($frames as $i => $f) $h .= '<li' . ($i ? '' : ' class="on"') . '><button type="button">' . $f[1] . '</button></li>';
+    return $h . '</ol></div>';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -12,460 +28,524 @@ if (substr($_base, -1) !== '/') { $_base .= '/'; }
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>DevBoard – Help</title>
+<meta name="description" content="Playtest notes for your board games — every session, observation and TODO, plus contracts, estimates and invoices, from your Google Sheet.">
+<link rel="icon" type="image/png" sizes="32x32" href="images/db_icon_32.png" />
 <style>
 @font-face { font-family:'DINBlack';   src:url('fonts/DINBlack.woff2')  format('woff2'),url('fonts/DINBlack.ttf')  format('truetype'); }
 @font-face { font-family:'DINRegular'; src:url('fonts/DINMedium.woff2') format('woff2'),url('fonts/DINMedium.ttf') format('truetype'); }
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-  --navy:   #1a1a2e;
-  --teal:   #1a5f7a;
-  --lteal:  #A8D8EA;
-  --cream:  #f0f4f8;
-  --border: #d8eaf2;
-  --amber:  #c8860a;
-  --slate:  #64748b;
-  --green:  #2e7a52;
-  --purple: #6b3fa8;
-}
-
-html { scroll-behavior: smooth; }
-body { background: var(--cream); font-family: 'DINRegular', Arial, sans-serif; color: #1a1a1a; line-height: 1.6; }
-
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+:root { --navy:#0f3640; --ink:#1b1d2b; --violet:#1a7f93; --lav:#48c4d2; --gold:#a8bcd7; --bg:#f2f6f7; --line:#d9e8ec; --mid:#4a5068; --muted:#8a90a6; --side:280px; }
+html { scroll-behavior:smooth; }
+body { background:var(--bg); font-family:'DINRegular',Arial,sans-serif; color:var(--ink); line-height:1.6; }
+a { color:var(--violet); }
 /* ── Top bar ── */
-.top-bar { background: var(--teal); color: #fff; padding: .85rem 1.5rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,.25); }
-.top-bar-inner { max-width: 860px; margin: 0 auto; display: flex; align-items: center; gap: 1rem; }
-.brand-name { font-family: 'DINBlack', sans-serif; font-size: 1.1rem; letter-spacing: .06em; text-transform: uppercase; line-height: 1; color: #fff; }
-.brand-name .dev { color: var(--lteal); }
-.top-bar-divider { opacity: .3; font-size: 1.1rem; }
-.top-bar-label { font-family: 'DINBlack', sans-serif; font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; opacity: .75; }
-.top-bar-back { margin-left: auto; font-family: 'DINBlack', sans-serif; font-size: .7rem; letter-spacing: .07em; text-transform: uppercase; color: rgba(255,255,255,.55); text-decoration: none; border: 1px solid rgba(255,255,255,.2); border-radius: 6px; padding: .28rem .65rem; transition: color .15s, border-color .15s; }
-.top-bar-back:hover { color: #fff; border-color: rgba(255,255,255,.5); }
-
-/* ── Hero ── */
-.hero { background: var(--navy); color: #fff; padding: 4rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
-.hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 110%, rgba(26,95,122,.35) 0%, transparent 70%); pointer-events: none; }
-.hero-title { font-family: 'DINBlack', sans-serif; font-size: clamp(2rem, 6vw, 3rem); letter-spacing: .06em; text-transform: uppercase; line-height: 1; margin-bottom: .7rem; }
-.hero-title .dev { color: var(--lteal); }
-.hero-sub { font-size: clamp(.95rem, 2.5vw, 1.15rem); color: rgba(255,255,255,.65); max-width: 520px; margin: 0 auto 2rem; line-height: 1.55; }
-.hero-chips { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; }
-.hero-chip { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); border-radius: 999px; padding: .3rem .85rem; font-family: 'DINBlack', sans-serif; font-size: .7rem; letter-spacing: .07em; text-transform: uppercase; color: rgba(255,255,255,.8); }
-
-/* ── Nav pills ── */
-.toc-wrap { background: #fff; border-bottom: 1px solid var(--border); position: sticky; top: 54px; z-index: 90; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-.toc-wrap::-webkit-scrollbar { display: none; }
-.toc { display: flex; gap: .1rem; padding: .6rem 1.25rem; max-width: 860px; margin: 0 auto; white-space: nowrap; }
-.toc a { font-family: 'DINBlack', sans-serif; font-size: .67rem; letter-spacing: .07em; text-transform: uppercase; color: var(--slate); text-decoration: none; padding: .3rem .6rem; border-radius: 6px; transition: background .15s, color .15s; flex-shrink: 0; }
-.toc a:hover { background: var(--cream); color: var(--navy); }
-
-/* ── Page body ── */
-.page-body { max-width: 860px; margin: 0 auto; padding: 0 1.25rem 5rem; }
-
-/* ── Section ── */
-.section { padding-top: 3rem; }
-.section-header { display: flex; align-items: center; gap: .75rem; margin-bottom: 1.25rem; padding-bottom: .75rem; border-bottom: 2px solid var(--teal); }
-.section-num { font-family: 'DINBlack', sans-serif; font-size: .65rem; letter-spacing: .12em; text-transform: uppercase; color: var(--amber); background: rgba(200,134,10,.1); border: 1px solid rgba(200,134,10,.25); border-radius: 6px; padding: .2rem .5rem; flex-shrink: 0; }
-.section-title { font-family: 'DINBlack', sans-serif; font-size: 1.3rem; letter-spacing: .04em; text-transform: uppercase; color: var(--navy); line-height: 1.1; }
-.section p, .section li { font-size: .93rem; color: #444; line-height: 1.7; }
-.section p + p { margin-top: .75rem; }
-
-/* ── Cards grid ── */
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .85rem; margin-top: 1.25rem; }
-.card { background: #fff; border-radius: 12px; padding: 1.1rem 1.25rem; box-shadow: 0 1px 6px rgba(0,0,0,.07); border: 1px solid var(--border); }
-.card-icon { font-size: 1.5rem; margin-bottom: .5rem; display: block; }
-.card-title { font-family: 'DINBlack', sans-serif; font-size: .82rem; text-transform: uppercase; letter-spacing: .06em; color: var(--navy); margin-bottom: .35rem; }
-.card p { font-size: .82rem; color: #666; line-height: 1.55; }
-
-/* ── Step list ── */
-.steps { counter-reset: step; margin-top: 1.1rem; display: flex; flex-direction: column; gap: .7rem; }
-.step { display: flex; gap: .9rem; align-items: flex-start; background: #fff; border-radius: 10px; padding: .9rem 1.1rem; box-shadow: 0 1px 4px rgba(0,0,0,.06); border: 1px solid var(--border); }
-.step::before { counter-increment: step; content: counter(step); font-family: 'DINBlack', sans-serif; font-size: .8rem; background: var(--teal); color: #fff; border-radius: 50%; width: 1.6rem; height: 1.6rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: .05rem; }
-.step-body { flex: 1; min-width: 0; }
-.step-title { font-family: 'DINBlack', sans-serif; font-size: .83rem; text-transform: uppercase; letter-spacing: .05em; color: var(--navy); margin-bottom: .2rem; }
-.step p { font-size: .83rem; color: #555; line-height: 1.6; margin: 0; }
-
-/* ── Tip box ── */
-.tip { background: rgba(200,134,10,.08); border: 1px solid rgba(200,134,10,.25); border-left: 3px solid var(--amber); border-radius: 8px; padding: .8rem 1rem; margin-top: 1.1rem; font-size: .84rem; color: #555; line-height: 1.6; }
-.tip strong { color: var(--amber); }
-
-/* ── Mock session UI ── */
-.mock-board { background: var(--navy); border-radius: 14px; overflow: hidden; margin-top: 1.4rem; box-shadow: 0 4px 24px rgba(0,0,0,.18); }
-.mock-game-bar { background: var(--teal); padding: .6rem 1rem; font-family: 'DINBlack', sans-serif; font-size: .85rem; color: #fff; letter-spacing: .03em; display: flex; align-items: center; justify-content: space-between; }
-.mock-game-bar span { font-family: 'DINRegular', sans-serif; font-size: .7rem; opacity: .6; }
-.mock-chips { padding: .5rem .8rem; display: flex; gap: .4rem; background: rgba(255,255,255,.04); border-bottom: 1px solid rgba(255,255,255,.07); }
-.mock-chip { font-family: 'DINBlack', sans-serif; font-size: .6rem; letter-spacing: .07em; text-transform: uppercase; border-radius: 999px; padding: .22rem .6rem; }
-.mock-chip.play { background: rgba(26,95,122,.5); color: #a8d8ea; }
-.mock-chip.meet { background: rgba(107,63,168,.5); color: #d0b8f5; }
-.mock-chip.idea { background: rgba(46,122,82,.4); color: #86efac; }
-.mock-session { padding: .55rem 1rem; border-bottom: 1px solid rgba(255,255,255,.05); display: flex; flex-direction: column; gap: .2rem; }
-.mock-session-row { display: flex; align-items: center; gap: .5rem; }
-.mock-session-type { font-family: 'DINBlack', sans-serif; font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; }
-.mock-session-type.play { color: #7dd3fc; }
-.mock-session-type.meet { color: #c084fc; }
-.mock-session-date { font-size: .68rem; color: rgba(255,255,255,.4); }
-.mock-session-loc  { font-size: .68rem; color: rgba(255,255,255,.5); }
-.mock-session-testers { font-size: .67rem; color: rgba(255,255,255,.35); font-style: italic; }
-
-/* ── Session type badges ── */
-.type-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: .7rem; margin-top: 1.25rem; }
-.type-item { background: #fff; border-radius: 10px; padding: .85rem 1rem; border: 1px solid var(--border); }
-.type-badge { font-family: 'DINBlack', sans-serif; font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; padding: .2rem .55rem; border-radius: 4px; display: inline-block; margin-bottom: .45rem; }
-.type-badge.play { background: #cff3fc; color: #0c6880; }
-.type-badge.meet { background: #ede9fe; color: #5b21b6; }
-.type-badge.idea { background: #dcfce7; color: #166534; }
-.type-item p { font-size: .8rem; color: #666; line-height: 1.5; margin: 0; }
-
-/* ── Inline code ── */
-code { font-family: 'Courier New', monospace; font-size: .82em; background: rgba(0,0,0,.06); border-radius: 4px; padding: .1em .35em; color: #333; }
-
-/* ── Footer ── */
-.footer { text-align: center; padding: 3rem 1.5rem 2.5rem; border-top: 1px solid var(--border); margin-top: 2rem; }
-.footer-brand { font-family: 'DINBlack', sans-serif; font-size: 1.4rem; letter-spacing: .08em; text-transform: uppercase; margin-bottom: .4rem; color: var(--teal); }
-.footer-brand .dev { color: var(--lteal); }
-.footer p { font-size: .82rem; color: #999; }
-
-@media (max-width: 540px) {
-  .hero { padding: 2.8rem 1.25rem 3.5rem; }
-  .cards { grid-template-columns: 1fr; }
-  .type-grid { grid-template-columns: 1fr; }
-  .section-title { font-size: 1.1rem; }
+.top { position:sticky; top:0; z-index:50; background:#1a1a2e; color:#fff; box-shadow:inset 0 -3px 0 var(--violet); }
+.top-in { display:flex; align-items:center; gap:.75rem; padding:.75rem 1.25rem; }
+/* the same logo as the designer and the Designs page; it goes back to the Designs page */
+.top-home { display:flex; align-items:center; gap:.65rem; color:#fff; text-decoration:none; min-width:0; }
+.top img { width:2.2rem; height:2.2rem; border-radius:7px; flex-shrink:0; }
+.top-name { display:flex; flex-direction:column; min-width:0; }
+.brand { font-family:'DINBlack',sans-serif; font-size:1rem; letter-spacing:.03em; line-height:1.25; }
+.brand .c { color:var(--gold); } .brand .b { color:var(--lav); }
+.top-lbl { font-size:.73rem; opacity:.6; white-space:nowrap; }
+.top-sp { flex:1; }
+.top a.open { font-family:'DINBlack',sans-serif; font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:#fff; text-decoration:none; background:var(--violet); padding:.45rem .9rem; border-radius:8px; }
+.menu-btn { display:none; background:rgba(255,255,255,.14); color:#fff; border:none; border-radius:8px; padding:.45rem .7rem; font:inherit; font-size:.8rem; cursor:pointer; }
+/* ── Layout: topics on the left, details on the right ── */
+.wrap { display:grid; grid-template-columns:var(--side) minmax(0,1fr); max-width:1320px; margin:0 auto; }
+.side { position:sticky; top:59px; height:calc(100vh - 59px); overflow-y:auto; padding:1.2rem .9rem 2rem 1.25rem; border-right:1px solid var(--line); background:#fff; scrollbar-width:thin; }
+.find { width:100%; padding:.55rem .75rem; border:1.5px solid var(--line); border-radius:9px; font:inherit; font-size:.88rem; margin-bottom:.9rem; background:#f8fcfd; }
+.find:focus { outline:none; border-color:var(--violet); box-shadow:0 0 0 3px #dff3f6; background:#fff; }
+.side h4 { font-family:'DINBlack',sans-serif; font-weight:400; font-size:.64rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:1.1rem .5rem .35rem; }
+.side h4:first-of-type { margin-top:.2rem; }
+.side a { display:flex; align-items:center; gap:.55rem; padding:.36rem .55rem; border-radius:8px; color:var(--mid); text-decoration:none; font-size:.9rem; line-height:1.3; }
+.side a .n { font-family:'DINBlack',sans-serif; font-size:.62rem; color:#b4b8c9; width:1.3rem; text-align:right; flex-shrink:0; }
+.side a:hover { background:#eef8fa; color:var(--navy); }
+.side a.on { background:#dff3f6; color:var(--navy); font-family:'DINBlack',sans-serif; font-size:.86rem; }
+.side a.on .n { color:var(--violet); }
+.side a.hide, .side h4.hide { display:none; }
+.main { padding:2rem clamp(1.2rem,4vw,3.5rem) 6rem; min-width:0; }
+.hero { background:linear-gradient(135deg,#1c1a2b 0%,#0f3640 70%,#146878 100%); color:#fff; border-radius:18px; padding:2.2rem 2.2rem 2.2rem; display:grid; grid-template-columns:1fr 300px; gap:2rem; align-items:center; overflow:hidden; }
+.hero h1 { font-family:'DINBlack',sans-serif; font-weight:400; font-size:clamp(1.6rem,3.4vw,2.3rem); line-height:1.1; letter-spacing:.02em; }
+.hero h1 .c { color:var(--gold); } .hero h1 .b { color:var(--lav); }
+.hero p { color:rgba(255,255,255,.78); margin-top:.7rem; max-width:520px; }
+.hero .quick { display:flex; flex-wrap:wrap; gap:.45rem; margin-top:1.2rem; }
+.hero .quick a { color:#fff; text-decoration:none; font-size:.8rem; border:1px solid rgba(255,255,255,.3); border-radius:999px; padding:.3rem .8rem; }
+.hero .quick a:hover { background:rgba(255,255,255,.12); }
+.hero img { width:100%; border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.45); transform:rotate(2deg); }
+/* ── Topics ── */
+.topic { padding-top:2.6rem; scroll-margin-top:70px; max-width:900px; }
+.topic > h2 { display:flex; align-items:baseline; gap:.7rem; font-family:'DINBlack',sans-serif; font-weight:400; font-size:1.45rem; letter-spacing:.02em; color:var(--navy); margin-bottom:.4rem; }
+.topic > h2 .n { font-size:.8rem; color:var(--violet); background:#dff3f6; border-radius:6px; padding:.05rem .45rem; }
+.topic > .lead { font-size:1.02rem; color:var(--mid); margin-bottom:1rem; }
+.topic h3 { font-family:'DINBlack',sans-serif; font-weight:400; font-size:.8rem; letter-spacing:.09em; text-transform:uppercase; color:var(--violet); margin:1.5rem 0 .4rem; }
+.topic p, .topic li { font-size:.95rem; color:#3c4052; }
+.topic p + p { margin-top:.6rem; }
+.topic ul, .topic ol { padding-left:1.3rem; margin-top:.4rem; }
+.topic li { margin-bottom:.35rem; }
+.topic li::marker { color:var(--violet); }
+.sep { border:none; border-top:1px solid var(--line); margin:2.6rem 0 0; max-width:900px; }
+kbd, code { font-family:ui-monospace,Menlo,monospace; font-size:.8em; background:#dff3f6; color:#146878; border-radius:4px; padding:.05rem .32rem; }
+.btn-like { display:inline-block; font-family:'DINBlack',sans-serif; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; border:1.5px solid #b5dbe3; border-radius:6px; padding:0 .4rem; color:var(--navy); background:#fff; white-space:nowrap; }
+.tip, .note { border-radius:10px; padding:.75rem 1rem; margin-top:1rem; font-size:.9rem; }
+.tip  { background:#fff9e8; border-left:4px solid var(--gold); color:#5a4a1f; }
+.note { background:#fff; border-left:4px solid var(--violet); color:#3c4052; box-shadow:0 1px 4px rgba(0,0,0,.04); }
+.tip b:first-child, .note b:first-child { font-family:'DINBlack',sans-serif; font-weight:400; }
+.two { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1.2rem; align-items:start; margin-top:.6rem; }
+.two.narrow-left { grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr); }
+.cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:.75rem; margin-top:.9rem; }
+.card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:.9rem 1rem; }
+.card b { display:block; font-family:'DINBlack',sans-serif; font-weight:400; font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; color:var(--navy); margin-bottom:.25rem; }
+.card p { font-size:.86rem; color:#5a5f74; }
+table.keys { width:100%; border-collapse:collapse; margin-top:.8rem; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; font-size:.9rem; }
+table.keys td { padding:.5rem .9rem; border-bottom:1px solid #d9e8ec; color:#3c4052; vertical-align:top; }
+table.keys tr:last-child td { border-bottom:none; }
+table.keys td:first-child { white-space:nowrap; width:1%; }
+table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+/* ── Screenshots ── */
+.shot { margin:1rem 0 0; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; box-shadow:0 6px 22px rgba(15,54,64,.08); }
+.shot img { display:block; width:100%; height:auto; cursor:zoom-in; }
+.shot figcaption { padding:.5rem .85rem .6rem; font-size:.8rem; color:var(--muted); border-top:1px solid #d9e8ec; }
+.shot.small { max-width:360px; }
+.shot.mid { max-width:560px; }
+.two .shot { margin-top:0; }
+/* ── Animated steps ── */
+.steps { margin-top:1.1rem; background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; box-shadow:0 6px 22px rgba(15,54,64,.08); }
+.steps-head { display:flex; align-items:center; gap:.6rem; padding:.6rem .9rem; border-bottom:1px solid #d9e8ec; }
+.steps-head b { font-family:'DINBlack',sans-serif; font-weight:400; font-size:.88rem; color:var(--navy); flex:1; }
+.steps-tag { font-family:'DINBlack',sans-serif; font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:#fff; background:#e8623a; border-radius:5px; padding:.12rem .45rem; }
+.steps-play { border:1.5px solid var(--line); background:#fff; border-radius:7px; width:2rem; height:1.7rem; font-size:.62rem; color:var(--navy); cursor:pointer; }
+.steps-stage { position:relative; background:#eef0f6; }
+.steps-stage img { display:block; width:100%; height:auto; opacity:0; transition:opacity .45s ease; position:absolute; inset:0; cursor:zoom-in; }
+.steps-stage img.on { opacity:1; position:relative; }
+.steps-stage img.on ~ img.on { position:absolute; }
+.steps-bar { position:absolute; left:0; right:0; bottom:0; height:3px; background:rgba(0,0,0,.06); }
+.steps-bar i { display:block; height:100%; width:0; background:#e8623a; }
+.steps-list { list-style:none; padding:.4rem !important; margin:0 !important; display:grid; grid-auto-flow:column; grid-auto-columns:1fr; gap:.3rem; counter-reset:st; border-top:1px solid #d9e8ec; }
+.steps-list li { margin:0 !important; }
+.steps-list button { width:100%; height:100%; text-align:left; border:none; background:none; border-radius:9px; padding:.5rem .6rem .5rem 2.1rem; font:inherit; font-size:.82rem; line-height:1.35; color:var(--muted); cursor:pointer; position:relative; }
+.steps-list li { counter-increment:st; }
+.steps-list button::before { content:counter(st); position:absolute; left:.55rem; top:.5rem; width:1.15rem; height:1.15rem; border-radius:50%; background:#d9e8ec; color:var(--mid); font-family:'DINBlack',sans-serif; font-size:.62rem; display:flex; align-items:center; justify-content:center; }
+.steps-list li.on button { background:#eef8fa; color:var(--ink); }
+.steps-list li.on button::before { background:#e8623a; color:#fff; }
+/* ── Zoomed picture ── */
+.lb { position:fixed; inset:0; z-index:200; background:rgba(20,19,42,.82); display:none; align-items:center; justify-content:center; padding:2rem; cursor:zoom-out; }
+.lb.open { display:flex; }
+.lb img { max-width:100%; max-height:100%; border-radius:10px; box-shadow:0 30px 80px rgba(0,0,0,.5); background:#fff; }
+.foot { text-align:center; font-size:.78rem; color:var(--muted); padding:2.5rem 1rem 3rem; }
+@media (max-width:980px) {
+  .wrap { grid-template-columns:1fr; }
+  .side { position:fixed; top:59px; left:0; bottom:0; width:min(320px,86vw); z-index:60; transform:translateX(-105%); transition:transform .2s; box-shadow:10px 0 40px rgba(0,0,0,.2); height:auto; }
+  body.nav-open .side { transform:none; }
+  .menu-btn { display:block; }
+  .hero { grid-template-columns:1fr; } .hero img { display:none; }
+  .two, .two.narrow-left { grid-template-columns:1fr; }
+  .steps-list { grid-auto-flow:row; }
 }
+@media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } .steps-stage img { transition:none; } }
 </style>
 </head>
 <body>
+<header class="top"><div class="top-in">
+  <button type="button" class="menu-btn" onclick="document.body.classList.toggle('nav-open')" aria-label="Topics">☰ Topics</button>
+  <a class="top-home" href="dashboard" title="Your sheets"><img src="images/db_icon_180.png" alt=""><span class="top-name"><span class="brand"><span class="c">Dev</span><span class="b">Board</span></span><span class="top-lbl">Help</span></span></a>
+  <span class="top-sp"></span>
+  <a class="open" href="dashboard">Open DevBoard</a>
+</div></header>
 
-<!-- Top bar -->
-<div class="top-bar">
-  <div class="top-bar-inner">
-    <div class="brand-name"><span class="dev">Dev</span>Board</div>
-    <span class="top-bar-divider">/</span>
-    <span class="top-bar-label">Help</span>
-    <a class="top-bar-back" href="devboard" id="helpBackBtn">← Back</a>
-  </div>
-</div>
+<div class="wrap">
+<nav class="side" id="side" aria-label="Help topics">
+  <input class="find" id="find" type="search" placeholder="Find a topic…" aria-label="Find a topic">
+  <h4>Getting started</h4>
+  <a href="devboard/help#welcome"><span class="n">1</span>What DevBoard does</a>
+  <a href="devboard/help#sheet"><span class="n">2</span>Set up your sheet</a>
+  <a href="devboard/help#account"><span class="n">3</span>Sign in</a>
+  <a href="devboard/help#owner"><span class="n">4</span>Your sheets &amp; view only</a>
+  <a href="devboard/help#screen"><span class="n">5</span>The screen</a>
+  <h4>Playtesting</h4>
+  <a href="devboard/help#board"><span class="n">6</span>The Board</a>
+  <a href="devboard/help#games"><span class="n">7</span>Games</a>
+  <a href="devboard/help#session"><span class="n">8</span>Logging a session</a>
+  <a href="devboard/help#sessions"><span class="n">9</span>Reading &amp; editing sessions</a>
+  <a href="devboard/help#todos"><span class="n">10</span>TODOs</a>
+  <a href="devboard/help#share"><span class="n">11</span>Sharing &amp; reports</a>
+  <h4>Contracts &amp; money</h4>
+  <a href="devboard/help#contracts"><span class="n">12</span>The Contracts list</a>
+  <a href="devboard/help#estimates"><span class="n">13</span>Contracts &amp; estimates</a>
+  <a href="devboard/help#invoices"><span class="n">14</span>Invoices</a>
+  <a href="devboard/help#payments"><span class="n">15</span>Payments</a>
+  <a href="devboard/help#tm"><span class="n">16</span>Time &amp; materials</a>
+  <a href="devboard/help#company"><span class="n">17</span>Your company details</a>
+  <h4>Saving</h4>
+  <a href="devboard/help#saving"><span class="n">18</span>Saving &amp; Fetch</a>
+  <h4>Account</h4>
+  <a href="devboard/help#plans"><span class="n">19</span>Plans &amp; codes</a>
+  <a href="devboard/help#settings"><span class="n">20</span>Profile, settings &amp; menu</a>
+  <a href="devboard/help#keys"><span class="n">21</span>Keyboard shortcuts</a>
+  <a href="devboard/help#trouble"><span class="n">22</span>Troubleshooting</a>
 
-<!-- Hero -->
+</nav>
+
+<main class="main" id="main">
 <div class="hero">
-  <div class="hero-title"><span class="dev">Dev</span>Board</div>
-  <p class="hero-sub">Your playtest journal. Log every session, track what was tested, who played, and what you learned — all stored in your Google Sheet.</p>
-  <div class="hero-chips">
-    <span class="hero-chip">Google Sheets–powered</span>
-    <span class="hero-chip">Playtests, Meetings &amp; Ideas</span>
-    <span class="hero-chip">Observation tracking</span>
-    <span class="hero-chip">Per-game history</span>
-    <span class="hero-chip">Edit sessions</span>
-    <span class="hero-chip">Works on iPad &amp; mobile</span>
+  <div>
+    <h1><span class="c">Dev</span><span class="b">Board</span> Help</h1>
+    <p>Every playtest, remembered: who played, how long it took, what happened and what to change — and the contracts, estimates and invoices for your design work. All in your own Google Sheet.</p>
+    <div class="quick"><a href="devboard/help#sheet">Set up a sheet</a><a href="devboard/help#session">Log a session</a><a href="devboard/help#todos">TODOs</a><a href="devboard/help#estimates">Estimates</a><a href="devboard/help#saving">Saving</a></div>
   </div>
+  <img src="<?= $IMG ?>hero.jpg" alt="DevBoard">
 </div>
 
-<!-- TOC -->
-<div class="toc-wrap">
-  <nav class="toc">
-    <a href="<?= $_self ?>#what-is">What is DevBoard?</a>
-    <a href="<?= $_self ?>#getting-started">Getting Started</a>
-    <a href="<?= $_self ?>#sessions">Session Types</a>
-    <a href="<?= $_self ?>#logging">Logging a Session</a>
-    <a href="<?= $_self ?>#editing">Editing Sessions</a>
-    <a href="<?= $_self ?>#sheet">The Sheet</a>
-    <a href="<?= $_self ?>#tips">Tips</a>
-  </nav>
+<section class="topic" id="welcome">
+  <h2><span class="n">1</span>What DevBoard does</h2>
+  <p class="lead">Your Google Sheet holds the notes: a <b>[Game] dev</b> tab for each game you’re developing, with one block of rows per <b>session</b> — a playtest, a meeting, an idea. DevBoard turns them into a log you can read, search and share.</p>
+  <div class="cards">
+    <div class="card"><b>Sessions</b><p>Playtests, meetings, ideas, editing and reporting — with a timer and round counter.</p></div>
+    <div class="card"><b>Observations</b><p>What happened, and what to do about it, side by side.</p></div>
+    <div class="card"><b>TODOs</b><p>Turn any observation into a TODO with a priority, a person and a due date.</p></div>
+    <div class="card"><b>Sharing</b><p>Links for playtesters and collaborators, a public game page, and printable reports.</p></div>
+    <div class="card"><b>Contracts</b><p>Estimates and invoices as PDFs, payments, and time &amp; materials.</p></div>
+  </div>
+</section>
+<section class="topic" id="sheet">
+  <h2><span class="n">2</span>Set up your sheet</h2>
+  <?= shot('newsheet', 'The DevBoard start page: open one of your sheets or start a blank one, then paste its link.') ?>
+  <ol>
+    <li><b>Open or make a sheet.</b> <b>Open a sheet</b> goes to your Google Sheets; <b>Start a blank sheet</b> makes a new one. Your PitchBoard sheet works too — your games are already there.</li>
+    <li><b>Share it with DevBoard.</b> In Sheets, click <b>Share</b> and add <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> (the <b>Copy</b> button copies it) as an <b>Editor</b>.</li>
+    <li><b>Connect it.</b> Paste the sheet’s link and click <b>Connect &amp; Open</b>. DevBoard adds the tabs it needs and opens your board — bookmark that page to come straight back.</li>
+  </ol>
+  <p>DevBoard uses these tabs: <b>games</b>, <b>people</b>, <b>contracts</b>, <b>settings</b> and <b>bios</b>, plus a <b>[Game] dev</b> tab for each game you develop and a <b>todos</b> tab. Tabs that are already there are used as they are, and the same names are used by every GameBoard app.</p>
+  <div class="tip"><b>Your sheets:</b> every sheet you’ve connected is listed on your GameBoard <a href="dashboard">dashboard</a>, with an Open link for each app.</div>
+</section>
+<section class="topic" id="account">
+  <h2><span class="n">3</span>Sign in</h2>
+  <p class="lead">DevBoard uses your <b>GameBoard account</b> — one email and password for DevBoard, PitchBoard, CardBoard and BillBoard.</p>
+  <?= shot('signin', 'Start your free week, or log in.', 'mid') ?>
+  <ul>
+    <li><b>Start your free week</b> — your email and a password (8 or more characters, with a letter and a number). We email you a 6-digit code; type it in and you’re in, with every feature for 7 days.</li>
+    <li><b>Log in</b> — your email and password. You stay signed in on that browser, in every GameBoard app.</li>
+    <li><b>Forgot password?</b> — on the log-in screen. We email a code; enter it with your new password.</li>
+  </ul>
+</section>
+<section class="topic" id="owner">
+  <h2><span class="n">4</span>Your sheets &amp; view only</h2>
+  <p class="lead">The account that connects a sheet owns it: only that account changes it. Anyone else who opens it can look, not change.</p>
+  <?= shot('viewonly', 'A sheet that belongs to another account opens view only.') ?>
+  <ul>
+    <li>Connecting a sheet on the DevBoard start page makes it yours straight away.</li>
+    <li><b>Make it mine</b> appears on a sheet nobody has set up — click it to take it on.</li>
+    <li>To let playtesters or a co-designer add sessions, send them a <a href="devboard/help#share">Collaborate link</a> instead.</li>
+  </ul>
+</section>
+<section class="topic" id="screen">
+  <h2><span class="n">5</span>The screen</h2>
+  <?= shot('games', 'The Games tab: search and + Game, then each game you’re developing.') ?>
+  <ul>
+    <li><b>Tabs</b> at the top: <b>Board</b> (the overview), <b>Games</b> (your sessions) and <b>Contracts</b>.</li>
+    <li><b>Save</b> (top right) sends your changes to the sheet — see <a href="devboard/help#saving">Saving</a>. The round person button (your photo, once you’ve added one) opens the <a href="devboard/help#settings">menu</a>.</li>
+    <li>Each tab has its own <b>search</b>: sessions, people and notes on Games; publishers, games and contracts on Contracts.</li>
+  </ul>
+</section>
+
+<hr class="sep">
+<section class="topic" id="board">
+  <h2><span class="n">6</span>The Board</h2>
+  <p class="lead">Everything that needs doing, and where each game stands.</p>
+  <?= shot('board', 'The Board: TODOs first, then the totals, games by status and contracts.') ?>
+  <ul>
+    <li><b>TODOs</b> — every open TODO from every game, with the number still open. See <a href="devboard/help#todos">TODOs</a>.</li>
+    <li><b>The totals</b> — games, games in active development, contracts and publishers.</li>
+    <li><b>Games by status</b> — Design, Signed, Published, Pitching and Shelved, from each game’s Status. Games in bold have sessions; click one to open it.</li>
+    <li><b>Contracts</b> — your latest estimates, invoices, contracts and payments, with their amounts and status.</li>
+  </ul>
+</section>
+<section class="topic" id="games">
+  <h2><span class="n">7</span>Games</h2>
+  <p class="lead">Each game you’re developing, with its sessions newest first.</p>
+  <ul>
+    <li><b>+ Game</b> starts development on a game: pick one from your games list or type a new name. DevBoard adds a <b>[Game] dev</b> tab for its sessions (and a row in <b>games</b> for a new game).</li>
+    <li>Open a game to see its <b>session counts</b> (<em>3 Playtests</em>, <em>1 Meeting</em>…) — click one to show only that kind — and its buttons: <b>Share</b>, <b>Edit</b> (the game’s name, designers, status, dates and links), <b>+ Session</b>, <b>+ T&amp;M</b> and the round arrow, which reloads the game’s sessions from the sheet.</li>
+    <li>The designers are listed on the game’s bar.</li>
+  </ul>
+  <?= shot('game', 'Edit: the game’s details, the same as in PitchBoard.', 'mid') ?>
+</section>
+<section class="topic" id="session">
+  <h2><span class="n">8</span>Logging a session</h2>
+  <p class="lead">A session is one sitting with the game — a playtest, a meeting, an idea, an editing pass or a report.</p>
+  <?= steps([['log-1', 'Open the game and click <b>+ Session</b>.'], ['log-2', 'Fill in the date, type, where, who played — then what you saw and what to do about it.'], ['log-3', '<b>Add Session</b>: it’s at the top of the game’s list at once.']], 'Log a playtest') ?>
+  <ul>
+    <li><b>Date</b>, <b>Type</b> (Playtest, Meeting, Idea, Editing, Reporting) and <b>Location</b>. The <b>Session number</b> counts up by itself for each type.</li>
+    <li><b>People</b> — who played. Type a name (or pick one from your people); a new box appears for the next. New names are added to your people list.</li>
+    <li><b>Rounds</b> — the <b>−</b> and <b>+</b> at the top count rounds as you play. The <b>stopwatch</b> times the session; click it to start and stop, or set the minutes by hand.</li>
+    <li><b>Observations</b> and <b>Solutions</b> — one pair per thing you noticed: what happened on the left, what to change on the right. A new pair appears as you type. The picture button adds a photo.</li>
+    <li>The <b>light bulb</b> on an observation makes it a <a href="devboard/help#todos">TODO</a>.</li>
+    <li><kbd>⌘</kbd>+arrow keys move between the boxes; <kbd>⌘</kbd>+<kbd>Enter</kbd> adds the session.</li>
+  </ul>
+  <?= shot('session', 'The session dialog, filled in: rounds and timer at the top, two testers, and two observations.') ?>
+</section>
+<section class="topic" id="sessions">
+  <h2><span class="n">9</span>Reading &amp; editing sessions</h2>
+  <?= shot('session-open', 'Click a session to open it: each observation beside its solution.') ?>
+  <ul>
+    <li>A session’s row shows its type and number, date, location, length and rounds, who played and how many notes it has. Click it to open it.</li>
+    <li>Click an open session’s notes to <b>edit</b> it — the same dialog, with <b>Delete</b> to remove the session.</li>
+    <li><b>Search</b> finds sessions by what was said, who played, or where.</li>
+    <li>Each session is a block of rows in the game’s <b>[Game] dev</b> tab: the first row has the date, type and number, then one row per player, then one per observation.</li>
+  </ul>
+</section>
+<section class="topic" id="todos">
+  <h2><span class="n">10</span>TODOs</h2>
+  <p class="lead">Turn what you noticed into a list of what to do.</p>
+  <div class="two narrow-left">
+    <?= shot('todo', 'A TODO: the observation, notes, priority, who and when.') ?>
+    <div>
+      <ul>
+        <li>Click the <b>light bulb</b> on an observation in a session to make it a TODO. It shows on the game and on the <b>Board</b>.</li>
+        <li>Tick a TODO when it’s done; drag the <b>⋮⋮</b> handle to reorder.</li>
+        <li>The three icons set the <b>priority</b> (high, medium, low), <b>who</b> it’s for and the <b>due date</b>.</li>
+        <li>Click a TODO to open it — change its words, add notes.</li>
+        <li>TODOs are kept in the <b>todos</b> tab, and marked in the session’s cell in the sheet.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+<section class="topic" id="share">
+  <h2><span class="n">11</span>Sharing &amp; reports</h2>
+  <p class="lead"><b>Share</b> on an open game gives you three links.</p>
+  <div class="two narrow-left">
+    <?= shot('share', 'Share: Collaborate, Public page and Report.') ?>
+    <div>
+      <ul>
+        <li><b>Collaborate</b> — anyone with this link can see the game’s sessions and add new ones — playtesters, a co-designer — with no account. <b>Copy</b> puts it on the clipboard.</li>
+        <li><b>Public page</b> — the game’s info page, view only.</li>
+        <li><b>Report</b> — <b>Generate Report</b> makes a page of the session notes and time &amp; materials. Open it and print, or save as PDF, to send to a publisher.</li>
+      </ul>
+      <div class="note"><b>Anyone with a link</b> can use it — share it only with people you trust with that game.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="sep">
+<section class="topic" id="contracts">
+  <h2><span class="n">12</span>The Contracts list</h2>
+  <p class="lead">Paid design work — development, editing, playtesting for a publisher — by client and game.</p>
+  <?= shot('contracts', 'Cobalt Games, opened: an estimate and an invoice for Harbor Lights, a payment, and the buttons.') ?>
+  <ul>
+    <li>Each <b>client</b> (publisher) is a card. Open it for each game you’ve worked on for them, with its estimates, invoices, contracts and payments.</li>
+    <li>Click an estimate or invoice to see its number, amount and date, with <b>Share</b> (email the PDF), <b>Edit</b>, <b>+ Invoice</b> and <b>Delete</b>.</li>
+    <li>Under each game: <b>Edit Game</b>, <b>+ Estimate</b>, <b>+ Invoice</b>, <b>+ Payment</b> and <b>+ Report</b>.</li>
+    <li>Everything is kept in the <b>contracts</b> tab of your sheet; the PDFs are made on the server.</li>
+  </ul>
+</section>
+<section class="topic" id="estimates">
+  <h2><span class="n">13</span>Contracts &amp; estimates</h2>
+  <p class="lead"><b>+ Contract</b> (or <b>+ Estimate</b> under a game) writes up the work and makes an estimate PDF.</p>
+  <div class="two narrow-left">
+    <?= shot('estimate', 'New Contract: the client, the game, the scope and the price.') ?>
+    <div>
+      <ul>
+        <li><b>Type</b> — an <b>Estimate</b> to send first, or straight to an <b>Invoice</b>.</li>
+        <li><b>Publisher / Client</b> and <b>Game</b> — pick or type. <b>Summary</b> — one line on what it’s for.</li>
+        <li><b># of Tests</b>, <b># of Edit Rounds</b> and <b>Scope of Work</b> — what’s included.</li>
+        <li><b>Unit Price</b>, <b>Printing</b> (optional), <b>Duration</b>, target start and end, and an optional <b>discount</b>.</li>
+        <li><b>Create</b> makes the PDF with your <a href="devboard/help#company">company details</a> on it.</li>
+        <li><b>Edit</b> later to change the dates, amounts or status (Estimate, Invoice, Paid) — the PDF is made again.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+<section class="topic" id="invoices">
+  <h2><span class="n">14</span>Invoices</h2>
+  <div class="two narrow-left">
+    <?= shot('invoice', '+ Invoice from an estimate: a fixed amount or a share of it.') ?>
+    <div>
+      <ul>
+        <li><b>+ Invoice</b> on an estimate bills against it: a <b>fixed amount</b>, or a <b>percentage</b> of the estimate — handy for milestones (<em>Milestone 1 of 2</em>).</li>
+        <li>Add a <b>summary</b>, a <b>description</b>, a <b>due date</b> and notes, then <b>Create</b>.</li>
+        <li>An invoice without an estimate: <b>+ Invoice</b> under a game, with just the amount and due date.</li>
+        <li>Mark it <b>Paid</b> with <b>Edit</b> when the money arrives.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+<section class="topic" id="payments">
+  <h2><span class="n">15</span>Payments</h2>
+  <p class="lead">Money you paid out — to an artist, a playtest group, a co-designer.</p>
+  <div class="two narrow-left">
+    <?= shot('payment', '+ Payment: who was paid, for which contract, how much and when.') ?>
+    <div>
+      <ul>
+        <li><b>Paid to</b> — pick someone from your people, or type a name.</li>
+        <li><b>Contract</b> — the work it’s for (pick a contract’s summary), the <b>amount</b>, the <b>date paid</b> and notes.</li>
+        <li>Payments show under the game as <em>paid out</em>, so you can see what a project cost you.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+<section class="topic" id="tm">
+  <h2><span class="n">16</span>Time &amp; materials</h2>
+  <p class="lead">For work billed by the hour, log the time and costs as you go.</p>
+  <div class="two narrow-left">
+    <?= shot('tm', '+ T&amp;M: the contract, what you did, the time, and any materials.') ?>
+    <div>
+      <ul>
+        <li><b>+ T&amp;M</b> on an open game: pick the <b>contract</b>, say what you worked on, and the <b>time</b> (<em>1 hr</em>, <em>30 min</em>).</li>
+        <li><b>Materials</b> — anything you bought for it, with its cost.</li>
+        <li>Time and materials go in the game’s dev tab and into its <a href="devboard/help#share">report</a>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+<section class="topic" id="company">
+  <h2><span class="n">17</span>Your company details</h2>
+  <p class="lead">What goes at the top of your estimates and invoices.</p>
+  <?= shot('company', 'Menu → Company: your logo, name, address and how to pay you.', 'mid') ?>
+  <ul>
+    <li><b>Logo</b>, <b>Company Name</b> and <b>Address</b> head every estimate and invoice.</li>
+    <li><b>Payment Info</b> — how clients pay you (bank details, PayPal…) — is printed at the bottom of invoices.</li>
+  </ul>
+</section>
+
+<hr class="sep">
+<section class="topic" id="saving">
+  <h2><span class="n">18</span>Saving &amp; Fetch</h2>
+  <p class="lead">Everything you change — sessions, TODOs, games, contracts — shows straight away and is kept in this browser, then sent to your Google Sheet in one go.</p>
+  <?= shot('save-pending', '<b>Save</b> lights up when changes are waiting.', 'small') ?>
+  <ul>
+    <li><b>Save</b> (or <kbd>⌘S</kbd>) sends everything now. The button fills up as it goes, and you can keep working.</li>
+    <li>DevBoard also <b>saves by itself</b> once you’ve stopped for about a minute and a half (never while you’re typing). Closing the page doesn’t lose anything — unsaved changes stay in this browser and are saved next time you open it.</li>
+    <li>Anything that reads from the sheet or makes something from it — <b>Fetch</b>, reloading a game, an estimate PDF, a report — saves your changes first, so it always includes them.</li>
+    <li>If the server can’t be reached, your changes wait for the next Save. If one can’t be made (the session was deleted in Sheets, say), DevBoard tells you.</li>
+    <li><b>Fetch</b> (menu) reads everything from the sheet again — use it after editing the sheet in Google Sheets.</li>
+  </ul>
+  <div class="note"><b>One browser:</b> until they’re saved, changes don’t follow you to another computer — and clearing the browser’s site data removes them. Save before you switch.</div>
+</section>
+
+<hr class="sep">
+<section class="topic" id="plans">
+  <h2><span class="n">19</span>Plans &amp; codes</h2>
+  <div class="two">
+    <?= shot('plans', 'Menu → Subscription: Core, Pro, or the all-in-one.') ?>
+    <div>
+      <div class="cards" style="grid-template-columns:1fr;margin-top:0">
+        <div class="card"><b>Free week</b><p>Every feature for 7 days from sign-up. No card needed.</p></div>
+        <div class="card"><b>Core — $2.99/month</b><p>Sessions and notes, the timer and rounds, photos, TODOs, sharing and reports.</p></div>
+        <div class="card"><b>Pro — $3.99/month</b><p>Everything in Core, plus contracts, estimates and invoices.</p></div>
+        <div class="card"><b>All-in-one — $9.99/month</b><p>DevBoard Pro, PitchBoard, CardBoard and BillBoard together.</p></div>
+        <div class="card"><b>Codes</b><p><b>Have a code?</b> in the plans (or menu → <b>Enter a code</b>) unlocks time for every app, or just the one it was made for.</p></div>
+      </div>
+    </div>
+  </div>
+  <p style="margin-top:1rem">After the free week your sheet is view only until you subscribe — nothing in it is lost. Cancel any time from <b>Manage billing</b>.</p>
+</section>
+<section class="topic" id="settings">
+  <h2><span class="n">20</span>Profile, settings &amp; menu</h2>
+  <div class="two">
+    <?= shot('menu', 'The menu, from the round person button.') ?>
+    <?= shot('profile', 'Profile: your photo and details, for your shared pages and paperwork.') ?>
+  </div>
+  <ul>
+    <li><b>Profile</b> — your photo, name, email, a short description and skills, mailing address, messaging handle, phone and how you’d like to be paid. Your photo also shows on the menu button.</li>
+    <li><b>Company</b> — see <a href="devboard/help#company">Your company details</a>. <b>Fetch</b> — read the latest from the sheet. <b>Releases</b> — what’s new. <b>Help</b> — this page.</li>
+    <li><b>Subscription</b> / <b>Enter a code</b> — see <a href="devboard/help#plans">Plans</a>. <b>GameBoard</b> — back to the GameBoard home. <b>Sign out</b> — asks first, then signs you out of every app in this browser.</li>
+  </ul>
+</section>
+<section class="topic" id="keys">
+  <h2><span class="n">21</span>Keyboard shortcuts</h2>
+  <p><kbd>⌘</kbd> is <kbd>Ctrl</kbd> on Windows.</p>
+  <table class="keys">
+    <tr class="h"><td colspan="2">Everywhere</td></tr>
+    <tr><td><kbd>⌘S</kbd></td><td>Save everything to the sheet</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>Close a dialog (it shakes instead if you’ve typed something — use Cancel to drop it)</td></tr>
+    <tr class="h"><td colspan="2">Session dialog</td></tr>
+    <tr><td><kbd>⌘</kbd>+arrow keys</td><td>Move between the boxes</td></tr>
+    <tr><td><kbd>⌘</kbd>+<kbd>Enter</kbd></td><td>Add (or save) the session</td></tr>
+  </table>
+</section>
+<section class="topic" id="trouble">
+  <h2><span class="n">22</span>Troubleshooting</h2>
+  <ul>
+    <li><b>“Sheet not shared”</b> when connecting — check it’s shared with <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> as an <b>Editor</b>.</li>
+    <li><b>Changes made in Google Sheets don’t show</b> — the round arrow on the game, or menu → <b>Fetch</b>.</li>
+    <li><b>It says View only</b> — another account set this sheet up, or nobody has (<b>Make it mine</b>), or your free week has ended (<a href="devboard/help#plans">Plans</a>). Contracts need <b>Pro</b>.</li>
+    <li><b>Save stays lit</b> — you’re offline, or need to sign in again; your changes are kept until it works.</li>
+    <li><b>A game isn’t in the Games tab</b> — it has no dev tab yet: <b>+ Game</b> and pick it.</li>
+    <li><b>The PDF has no logo or address</b> — fill in menu → <b>Company</b>, then <b>Edit</b> and save the estimate again.</li>
+    <li><b>No code email</b> — check spam, and wait a minute before asking for another.</li>
+  </ul>
+</section>
+
+<p class="foot">© <?= date('Y') ?> ZapSheets · <a href="dashboard">Your sheets</a> · <a href="devboard/features">Features</a> · <a href="gameboard">GameBoard</a></p>
+</main>
 </div>
 
-<div class="page-body">
-
-  <!-- 01 What is DevBoard? -->
-  <div class="section" id="what-is">
-    <div class="section-header">
-      <span class="section-num">01</span>
-      <h2 class="section-title">What is DevBoard?</h2>
-    </div>
-    <p>DevBoard is a playtest journal for tabletop game designers. For each game you're developing, it keeps a chronological log of every playtest session, meeting, and idea — who was in the room, what you observed, and how you resolved it.</p>
-    <p>All data is stored in a dedicated tab in your Google Sheet, so you always have a permanent record you can search, export, or share.</p>
-    <div class="cards">
-      <div class="card">
-        <span class="card-icon">📋</span>
-        <div class="card-title">Lives in your Sheet</div>
-        <p>Each game gets its own tab (<code>[Game Name] dev</code>). DevBoard reads and writes to it — no separate database.</p>
-      </div>
-      <div class="card">
-        <span class="card-icon">🎲</span>
-        <div class="card-title">Per-game history</div>
-        <p>All sessions for a game are grouped under that game's card — expand it to browse the full history.</p>
-      </div>
-      <div class="card">
-        <span class="card-icon">✏️</span>
-        <div class="card-title">Edit any session</div>
-        <p>Made a typo or forgot a tester? Open the edit dialog and save — the sheet is updated in place.</p>
-      </div>
-      <div class="card">
-        <span class="card-icon">📱</span>
-        <div class="card-title">Works everywhere</div>
-        <p>Designed for phone, tablet, and desktop. Log notes during a playtest from your iPhone.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- 02 Getting Started -->
-  <div class="section" id="getting-started">
-    <div class="section-header">
-      <span class="section-num">02</span>
-      <h2 class="section-title">Getting Started</h2>
-    </div>
-    <p>DevBoard uses the same Google Sheet as PitchBoard. If PitchBoard is already set up, you just need to add games to DevBoard.</p>
-    <div class="steps">
-      <div class="step">
-        <div class="step-body">
-          <div class="step-title">Open DevBoard</div>
-          <p>Navigate to <code>/&lt;sheet-id&gt;/devboard</code>. DevBoard lists every game that has a dev tab in your sheet.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-body">
-          <div class="step-title">Add a game</div>
-          <p>Tap <strong>+ Game</strong> in the top-right. Select a game from your sheet or type a new name. DevBoard creates a <code>[Game Name] dev</code> tab in your sheet automatically.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-body">
-          <div class="step-title">Log your first session</div>
-          <p>Expand the game card and tap <strong>+ Session</strong>. Fill in the date, session type, location, who played, and your observations.</p>
-        </div>
-      </div>
-    </div>
-    <div class="tip"><strong>Tip:</strong> Bookmark your DevBoard URL or add it to your home screen as a web app for quick access during playtests.</div>
-  </div>
-
-  <!-- 03 Session Types -->
-  <div class="section" id="sessions">
-    <div class="section-header">
-      <span class="section-num">03</span>
-      <h2 class="section-title">Session Types</h2>
-    </div>
-    <p>Every session has a type. The type controls the colour coding in DevBoard and in the Google Sheet, and lets you filter sessions per game.</p>
-    <div class="type-grid">
-      <div class="type-item">
-        <span class="type-badge play">Playtest</span>
-        <p>An actual play session — at home, a con, a game café, or online. The most common type.</p>
-      </div>
-      <div class="type-item">
-        <span class="type-badge meet">Meeting</span>
-        <p>A design discussion, co-design call, or publisher conversation about the game's direction.</p>
-      </div>
-      <div class="type-item">
-        <span class="type-badge idea">Idea</span>
-        <p>A solo brainstorm, rule variant, or sudden insight worth capturing before it's forgotten.</p>
-      </div>
-    </div>
-    <p style="margin-top:1.1rem">The session count chips at the top of each game card (e.g. <strong>4 Playtests · 2 Meetings</strong>) are tappable — tap one to filter the session list to that type. Tap again to clear the filter.</p>
-
-    <!-- Example obs/solution pairs -->
-    <h3 style="font-size:.9rem;font-weight:700;color:var(--navy);margin:1.6rem 0 .6rem">Example: how to write observations &amp; solutions</h3>
-    <p style="font-size:.84rem;color:#555;margin-bottom:.9rem">Each observation row captures one thing you noticed during the session. The solution column is where you note what you'll do about it — or leave it blank and come back later.</p>
-    <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:.8rem;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;background:#f0f7fa;padding:.4rem .75rem;font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:#1a5f7a;gap:.5rem;border-bottom:1px solid var(--border);">
-        <div>Observation</div>
-        <div>Solution / Thoughts</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;padding:.55rem .75rem;gap:.5rem;border-bottom:1px solid #eee;background:#fff;">
-        <div style="color:#222">Players didn't understand when to trigger the event card.</div>
-        <div style="color:#555">Add a reminder icon on the board near the event deck. Reword the card text to be more direct.</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;padding:.55rem .75rem;gap:.5rem;border-bottom:1px solid #eee;background:#fafafa;">
-        <div style="color:#222">Round 3 felt too long — players were bored waiting for their turn.</div>
-        <div style="color:#555">Try limiting hand size to 4 cards. Consider simultaneous action selection.</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;padding:.55rem .75rem;gap:.5rem;border-bottom:1px solid #eee;background:#fff;">
-        <div style="color:#222">"I love the trading mechanic — felt really tense and fun."</div>
-        <div style="color:#555">Keep as-is. Maybe lean into it more in the middle game.</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;padding:.55rem .75rem;gap:.5rem;background:#fafafa;">
-        <div style="color:#222">Scoring was confusing at end game — two players counted wrong.</div>
-        <div style="color:#555"></div>
-      </div>
-    </div>
-    <p style="font-size:.78rem;color:#888;margin-top:.55rem">Observations can be problems, quotes from players, things that worked well, or anything worth remembering. Solutions can be left blank — you don't have to have an answer yet.</p>
-
-    <!-- Mock board -->
-    <div class="mock-board">
-      <div class="mock-game-bar">Thornwick Abbey <span>3 Playtests · 1 Meeting · 1 Idea</span></div>
-      <div class="mock-chips">
-        <span class="mock-chip play">3 Playtests</span>
-        <span class="mock-chip meet">1 Meeting</span>
-        <span class="mock-chip idea">1 Idea</span>
-      </div>
-      <div class="mock-session">
-        <div class="mock-session-row">
-          <span class="mock-session-type play">Playtest 3</span>
-          <span class="mock-session-date">· Sep 6, 2026</span>
-          <span class="mock-session-loc">· Game Café</span>
-        </div>
-        <div class="mock-session-testers">Alex Schmidt, Kristina Hedbacker</div>
-      </div>
-      <div class="mock-session">
-        <div class="mock-session-row">
-          <span class="mock-session-type play">Playtest 2</span>
-          <span class="mock-session-date">· Aug 31, 2026</span>
-          <span class="mock-session-loc">· Home</span>
-        </div>
-        <div class="mock-session-testers">John Doe, Andre Bierth</div>
-      </div>
-      <div class="mock-session">
-        <div class="mock-session-row">
-          <span class="mock-session-type meet">Meeting 1</span>
-          <span class="mock-session-date">· Aug 31, 2026</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 04 Logging a Session -->
-  <div class="section" id="logging">
-    <div class="section-header">
-      <span class="section-num">04</span>
-      <h2 class="section-title">Logging a Session</h2>
-    </div>
-    <p>Tap <strong>+ Session</strong> on a game card to open the session dialog.</p>
-    <div class="steps">
-      <div class="step">
-        <div class="step-body">
-          <div class="step-title">Set Date, Type &amp; Location</div>
-          <p>Date defaults to today. Choose Playtest, Meeting, or Idea. Location is optional — use it for the venue, platform (Tabletopia, TTS), or context.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-body">
-          <div class="step-title">Add People</div>
-          <p>Type names in the People field. Start typing to search your saved contacts. Each name goes on a separate row — just type in the last field to add another.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-body">
-          <div class="step-title">Log Observations &amp; Solutions</div>
-          <p>Each observation row has two fields side by side: <strong>Observation</strong> (what happened or what was said) and <strong>Solution</strong> (how you plan to address it). Both are optional per row — log as many as you need. Typing in the last row adds another automatically.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-body">
-          <div class="step-title">Tap Add Session</div>
-          <p>DevBoard writes the session to your Google Sheet and updates the card immediately — no page reload needed.</p>
-        </div>
-      </div>
-    </div>
-    <div class="tip"><strong>Keyboard shortcut:</strong> while in the Observation/Solution grid, use <strong>⌘ + Arrow</strong> (Mac) or <strong>Ctrl + Arrow</strong> (Windows) to move between fields without reaching for the mouse.</div>
-    <div class="tip" style="margin-top:.6rem"><strong>Auto-growing fields:</strong> each text field starts at one line and expands as you type — no scrolling inside tiny boxes.</div>
-  </div>
-
-  <!-- 05 Editing Sessions -->
-  <div class="section" id="editing">
-    <div class="section-header">
-      <span class="section-num">05</span>
-      <h2 class="section-title">Editing Sessions</h2>
-    </div>
-    <p>You can edit any session after it's been saved — useful for fixing typos, adding forgotten testers, or updating observations after reflection.</p>
-    <div class="cards">
-      <div class="card">
-        <span class="card-icon">🖱</span>
-        <div class="card-title">Desktop — hover</div>
-        <p>Hover over a session header to reveal the <strong>Edit</strong> button on the right side of the row. Click it to open the edit dialog.</p>
-      </div>
-      <div class="card">
-        <span class="card-icon">👆</span>
-        <div class="card-title">Touch — long press</div>
-        <p>On iPhone or iPad, press and hold a session header for about half a second. The edit dialog opens when you release.</p>
-      </div>
-    </div>
-    <p style="margin-top:1.1rem">The edit dialog is identical to the add dialog, pre-filled with the session's existing data. Change what you need and tap <strong>Save Changes</strong>. DevBoard replaces the session rows in the sheet in place — the session number and position are preserved.</p>
-    <div class="tip"><strong>Unsaved changes protection:</strong> if you try to close the edit dialog (Escape or tapping outside) while there are unsaved changes, the dialog shakes instead of closing. Use the Cancel button to discard intentionally.</div>
-  </div>
-
-  <!-- 06 The Sheet -->
-  <div class="section" id="sheet">
-    <div class="section-header">
-      <span class="section-num">06</span>
-      <h2 class="section-title">The Sheet</h2>
-    </div>
-    <p>Each game's dev tab uses a five-column format that's readable directly in Google Sheets:</p>
-    <div class="cards">
-      <div class="card">
-        <div class="card-title">Date</div>
-        <p>The session date. Only filled on the session header row — blank for tester and observation rows.</p>
-      </div>
-      <div class="card">
-        <div class="card-title">Event</div>
-        <p>The session label — e.g. <code>Playtest 3</code> or <code>Meeting 1</code>. Only on the header row.</p>
-      </div>
-      <div class="card">
-        <div class="card-title">People</div>
-        <p>One tester per row, formatted as <code>Name email@address.com</code>. Blank on header and observation rows.</p>
-      </div>
-      <div class="card">
-        <div class="card-title">Observation</div>
-        <p>What happened or what was noted. Also used for Location on the session header row.</p>
-      </div>
-      <div class="card">
-        <div class="card-title">Solution</div>
-        <p>How the observation was or will be addressed. Paired with each Observation row.</p>
-      </div>
-    </div>
-    <div class="tip"><strong>Colour coding:</strong> Playtest rows are teal, Meeting rows are purple, and Idea rows are green — applied automatically by conditional formatting when a tab is created.</div>
-  </div>
-
-  <!-- 07 Tips -->
-  <div class="section" id="tips">
-    <div class="section-header">
-      <span class="section-num">07</span>
-      <h2 class="section-title">Tips</h2>
-    </div>
-    <div class="cards">
-      <div class="card">
-        <span class="card-icon">🔄</span>
-        <div class="card-title">Fetch to sync</div>
-        <p>Use the <strong>Fetch</strong> button (person icon → Fetch) after editing the sheet directly to pull in the latest data.</p>
-      </div>
-      <div class="card">
-        <span class="card-icon">🔍</span>
-        <div class="card-title">Search games</div>
-        <p>The search bar at the top filters game cards by name — useful when you have many games in DevBoard.</p>
-      </div>
-      <div class="card">
-        <span class="card-icon">📊</span>
-        <div class="card-title">Filter by type</div>
-        <p>Tap a session-type chip on any game card to filter to just Playtests, Meetings, or Ideas for that game.</p>
-      </div>
-      <div class="card">
-        <span class="card-icon">📝</span>
-        <div class="card-title">Idea sessions</div>
-        <p>Use the Idea type for a quick solo brainstorm — no testers needed, just observations and solutions.</p>
-      </div>
-      <div class="card">
-        <span class="card-icon">👥</span>
-        <div class="card-title">Save contacts first</div>
-        <p>Add frequent testers to your People sheet in advance — their names then appear in the autocomplete when logging sessions.</p>
-      </div>
-      <div class="card">
-        <span class="card-icon">📱</span>
-        <div class="card-title">Home screen shortcut</div>
-        <p>Add DevBoard to your iPhone or iPad home screen as a web app for instant one-tap access during playtests.</p>
-      </div>
-    </div>
-  </div>
-
-</div><!-- /page-body -->
+<div class="lb" id="lb" onclick="this.classList.remove('open')"><img alt=""></div>
 
 <script>
 (function() {
-  var btn = document.getElementById('helpBackBtn');
-  if (document.referrer && document.referrer.indexOf(window.location.origin) === 0) {
-    btn.addEventListener('click', function(e) { e.preventDefault(); history.back(); });
+  'use strict';
+  var side = document.getElementById('side'), links = Array.prototype.slice.call(side.querySelectorAll('a'));
+  var topics = links.map(function(a) { return document.getElementById(a.getAttribute('href').split('#')[1]); });
+
+  // The topic in view is marked in the index
+  function mark() {
+    var y = window.scrollY + 120, cur = 0;
+    topics.forEach(function(t, i) { if (t && t.offsetTop <= y) cur = i; });
+    links.forEach(function(a, i) { a.classList.toggle('on', i === cur); });
+    var on = links[cur]; if (on && (on.offsetTop < side.scrollTop + 60 || on.offsetTop > side.scrollTop + side.clientHeight - 60)) side.scrollTop = on.offsetTop - side.clientHeight / 2;
   }
+  window.addEventListener('scroll', mark, { passive: true }); mark();
+  links.forEach(function(a) { a.addEventListener('click', function() { document.body.classList.remove('nav-open'); }); });
+
+  // Find a topic: matches the index names and each topic's words
+  var words = topics.map(function(t) { return t ? t.textContent.toLowerCase() : ''; });
+  document.getElementById('find').addEventListener('input', function() {
+    var q = this.value.trim().toLowerCase();
+    links.forEach(function(a, i) { a.classList.toggle('hide', !!q && a.textContent.toLowerCase().indexOf(q) < 0 && words[i].indexOf(q) < 0); });
+    side.querySelectorAll('h4').forEach(function(h) {
+      var n = h.nextElementSibling, any = false;
+      while (n && n.tagName === 'A') { if (!n.classList.contains('hide')) any = true; n = n.nextElementSibling; }
+      h.classList.toggle('hide', !any);
+    });
+  });
+
+  // Click a picture to see it bigger
+  var lb = document.getElementById('lb');
+  document.addEventListener('click', function(e) {
+    var img = e.target.closest('.shot img, .steps-stage img, .hero img'); if (!img) return;
+    lb.querySelector('img').src = img.src; lb.classList.add('open');
+  });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') lb.classList.remove('open'); });
+
+  // Animated steps: play in turn while on screen; click a step to jump to it; pause with the button
+  var STEP_MS = 3200, reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('[data-steps]').forEach(function(box) {
+    var imgs = box.querySelectorAll('.steps-stage img'), items = box.querySelectorAll('.steps-list li'), bar = box.querySelector('.steps-bar i');
+    var btn = box.querySelector('.steps-play'), i = 0, playing = !reduce, visible = false, t0 = 0, raf = 0;
+    function show(n) {
+      i = (n + imgs.length) % imgs.length;
+      imgs.forEach(function(im, k) { im.classList.toggle('on', k === i); });
+      items.forEach(function(li, k) { li.classList.toggle('on', k === i); });
+      t0 = performance.now();
+    }
+    function tick(now) {
+      raf = 0;
+      if (!playing || !visible) { bar.style.width = '0'; return; }
+      var p = (now - t0) / STEP_MS;
+      if (p >= 1) { show(i + 1); p = 0; }
+      bar.style.width = (p * 100) + '%';
+      raf = requestAnimationFrame(tick);
+    }
+    function run() { if (!raf && playing && visible) { t0 = performance.now(); raf = requestAnimationFrame(tick); } }
+    function setPlaying(p) { playing = p; btn.textContent = p ? '❚❚' : '▶'; btn.setAttribute('aria-label', p ? 'Pause' : 'Play'); if (p) run(); }
+    btn.addEventListener('click', function() { setPlaying(!playing); });
+    items.forEach(function(li, k) { li.querySelector('button').addEventListener('click', function() { show(k); setPlaying(false); bar.style.width = '0'; }); });
+    if ('IntersectionObserver' in window) new IntersectionObserver(function(es) { visible = es[0].isIntersecting; run(); }, { threshold: .4 }).observe(box);
+    else { visible = true; run(); }
+    setPlaying(playing);
+  });
 })();
 </script>
-
-<div class="footer">
-  <div class="footer-brand"><span class="dev">Dev</span>Board</div>
-  <p>Part of the ZapSheets toolkit for game designers.</p>
-</div>
-
 </body>
 </html>

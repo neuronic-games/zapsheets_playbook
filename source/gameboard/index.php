@@ -11,7 +11,8 @@
 $_raw  = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
 $_host = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
 $_onDomain = (bool) preg_match('/(^|\.)mygameboard\.app$/', $_host);
-$_base = preg_replace('#/gameboard/?$#', '/', $_raw);
+$_dash = (bool) preg_match('#(^|/)dashboard/?$#', $_raw);   // /dashboard — the signed-in account's apps and sheets
+$_base = preg_replace('#/(gameboard|dashboard)/?$#', '/', $_raw);
 if ($_base === $_raw) $_base = '/';
 if (substr($_base, -1) !== '/') $_base .= '/';
 $_scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') ? 'https' : 'http';
@@ -21,6 +22,8 @@ $_abs  = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'zapsheets.com') . $_base;
 require_once dirname(__DIR__, 2) . '/dotEnv.php';
 $_apps = $_onDomain ? $_base : gbLinkBase();
 $_page = gbLinkBase() === $_base ? $_abs . 'gameboard' : 'https://' . $_ENV['GAMEBOARD_HOST'] . '/';
+$_home = $_onDomain ? $_base : $_base . 'gameboard';   // the GameBoard home page (relative to <base>)
+$_hp = $_dash ? $_home : '';   // the home page's sections, from the dashboard
 $_desc = 'Built for game makers, from the first prototype to the store shelf.';
 function e($s) { return htmlspecialchars((string) $s, ENT_QUOTES); }
 $APPS = [
@@ -43,7 +46,7 @@ $APPS = [
 <base href="<?= e($_base) ?>" />
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GameBoard — Tools for Board Game Makers</title>
+<title><?= $_dash ? 'Your dashboard — GameBoard' : 'GameBoard — Tools for Board Game Makers' ?></title>
 <meta name="description" content="<?= e($_desc) ?>">
 <link rel="canonical" href="<?= e($_page) ?>">
 <meta property="og:type" content="website">
@@ -248,6 +251,9 @@ h2 { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(1.8r
 .my-sheets a.app-row b small { font:500 11.5px 'Inter',sans-serif; color:#2e7d32; }
 .my-sheets a.app-row span { margin-left:auto; font:600 12px 'Inter',sans-serif; color:#fff; background:var(--navy); border-radius:999px; padding:.3rem .85rem; }
 .my-sheets a.sh { padding-left:2.9rem; }
+.account.dash { min-height:calc(100vh - 140px); }
+.account.dash .acct-grid { grid-template-columns:1fr; max-width:760px; }
+.account.dash .dash-sub { color:var(--mid); margin:.4rem 0 0; }
 .my-sheets .sh-none { font-size:13px; color:var(--muted); margin:0; }
 .pc.all button:disabled { opacity:.85; cursor:default; background:#fff; }
 .link { background:none; border:none; color:var(--mid); text-decoration:underline; text-underline-offset:2px; font:inherit; font-size:13px; cursor:pointer; }
@@ -657,23 +663,24 @@ footer a:hover { color:var(--navy); }
 <nav class="gbn"><div class="gbn-in">
   <a class="brand" href="<?= e($_onDomain ? '/' : 'gameboard') ?>"><img src="images/gameboard_icon_180.png" alt=""><span><b>Game<span>Board</span></b><small>Tools for Board Game Makers</small></span></a>
   <div class="nav-links">
-    <a href="#action">In action</a>
-    <a href="#who">Who it’s for</a>
-    <a href="#pricing">Apps &amp; pricing</a>
-    <a href="#account">Your account</a>
+    <a href="<?= e($_hp) ?>#action">In action</a>
+    <a href="<?= e($_hp) ?>#who">Who it’s for</a>
+    <a href="<?= e($_hp) ?>#pricing">Apps &amp; pricing</a>
+    <a href="<?= e($_hp) ?>#account">Your account</a>
   </div>
   <div class="gbn-right">
     <button type="button" class="acct-btn" id="navAcct" onclick="toggleNavMenu(event)" title="Menu" aria-label="Menu"><img id="navPic" alt=""><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/></svg></button>
     <div class="gbn-menu" id="navMenu">
       <div class="gbn-who" id="navWho" hidden></div>
-      <button type="button" id="navMineBtn" onclick="closeNavMenu();location.hash='account'">Your account</button>
-      <button type="button" onclick="closeNavMenu();location.hash='pricing'">Apps &amp; pricing</button>
+      <button type="button" id="navMineBtn" onclick="closeNavMenu();goDash()">Your dashboard</button>
+      <button type="button" onclick="closeNavMenu();location.href='<?= e($_hp) ?>#pricing'">Apps &amp; pricing</button>
       <button type="button" id="navStartBtn" onclick="closeNavMenu();acctClick('signup')">Start your free week</button>
       <button type="button" id="navAuthBtn" onclick="navAuth()">Sign in</button>
     </div>
   </div>
 </div></nav>
 
+<?php if (!$_dash): ?>
 <header class="hero">
   <div class="floaters" aria-hidden="true"><img src="images/cardboard_icon_180.png" alt=""><img src="images/db_icon_180.png" alt=""><img src="images/pitchboard_icon_180.png" alt=""><img src="images/bb_icon_180.png" alt=""></div>
   <span class="tag">For board game makers</span>
@@ -948,8 +955,16 @@ footer a:hover { color:var(--navy); }
     </div>
   </div>
 </section>
-<section class="account" id="account">
+<?php endif; ?>
+<section class="account<?= $_dash ? ' dash' : '' ?>" id="account">
   <div class="wrap acct-grid">
+    <?php if ($_dash): ?>
+    <div>
+      <div class="kicker">Your dashboard</div>
+      <h2>Your apps &amp; sheets</h2>
+      <p class="dash-sub">Everything your GameBoard account unlocks — open an app, or go straight to a sheet.</p>
+    </div>
+    <?php else: ?>
     <div>
       <div class="kicker">One account</div>
       <h2>Your GameBoard account</h2>
@@ -959,6 +974,7 @@ footer a:hover { color:var(--navy); }
         <li>Your sheets stay yours: the sheets you set up, you edit; people you share them with can view them.</li>
       </ul>
     </div>
+    <?php endif; ?>
     <div class="card" id="acctCard">
       <div id="acctOut">
         <h3>Sign in or start free</h3>
@@ -971,13 +987,14 @@ footer a:hover { color:var(--navy); }
         <div class="plan" id="mePlan"></div>
         <ul class="my-apps" id="meApps" hidden></ul>
         <div class="my-sheets" id="meSheets" hidden></div>
-        <button type="button" class="go" id="meGo" onclick="location.hash='pricing'">See apps &amp; pricing</button>
+        <button type="button" class="go" id="meGo" onclick="location.href='<?= e($_hp) ?>#pricing'">See apps &amp; pricing</button>
         <div class="foot"><button type="button" class="link" onclick="signOut()">Sign out</button></div>
       </div>
     </div>
   </div>
 </section>
 
+<?php if (!$_dash): ?>
 <section class="own">
   <div class="wrap">
     <div class="kicker">Yours to keep</div>
@@ -991,6 +1008,7 @@ footer a:hover { color:var(--navy); }
     </div>
   </div>
 </section>
+<?php endif; ?>
 
 <footer>Powered by <a href="https://zapsheets.com" style="margin:0">ZapSheets</a> ·
   <?php foreach ($APPS as $a): ?><a href="<?= e($_apps . $a[6] . '/features') ?>"><?= e($a[1]) ?></a><?php endforeach; ?>
@@ -1035,11 +1053,19 @@ footer a:hover { color:var(--navy); }
   'use strict';
   var APP_BASE = document.querySelector('base').getAttribute('href');
   var APPS_URL = <?= json_encode($_apps) ?>;
+  var DASH = <?= $_dash ? 'true' : 'false' ?>, HOME = <?= json_encode($_home) ?>;
   var KEY = 'cb_account';   // the account kept in this browser — the same key the apps read
   var APPS = <?= json_encode(array_map(function ($a) { return ['key' => $a[6], 'name' => $a[1], 'icon' => 'images/' . $a[2]]; }, $APPS)) ?>;
   var wantAll = false;   // "Get all four" before signing in: go on to checkout after
   var acct = null;
   try { acct = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+  // Sent over from the GameBoard home on the other domain: the sign-in comes along in the link (#gbt=…)
+  (function() {
+    var m = /[#&]gbt=([^&]+)/.exec(location.hash || ''); if (!m) return;
+    history.replaceState(null, '', location.pathname + location.search);
+    acct = { token: decodeURIComponent(m[1]), account: null, sheet: '', checked: 0 };
+    try { localStorage.setItem(KEY, JSON.stringify(acct)); } catch (e) {}
+  })();
   window._mode = '';
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -1055,6 +1081,14 @@ footer a:hover { color:var(--navy); }
     if (wantAll) { wantAll = false; setTimeout(buyAll, 50); }
   }
   // The apps run on zapsheets.com: on mygameboard.app, the "Open" links carry the account over
+  // The dashboard: on the apps' site (handing the sign-in over when that's another domain)
+  function dashUrl() {
+    if (crossOrigin()) return APPS_URL + 'dashboard' + (acct && acct.token ? '#gbt=' + encodeURIComponent(acct.token) : '');
+    return APP_BASE + 'dashboard';
+  }
+  window.goDash = function() { location.href = dashUrl(); };
+  // Just signed in: off to the dashboard (unless checkout is next)
+  function signedIn() { closeAuth(); if (!DASH && !wantAll) goDash(); }
   function crossOrigin() { try { return new URL(APPS_URL, location.href).origin !== location.origin; } catch (e) { return false; } }
   function linkApps() {
     document.querySelectorAll('.app-open').forEach(function(a) {
@@ -1071,8 +1105,9 @@ footer a:hover { color:var(--navy); }
     $('navWho').hidden = !a;
     if (a) $('navWho').innerHTML = '<b>' + esc(a.name || (a.email || '').split('@')[0]) + '</b>' + esc(a.email || '');
     $('navMineBtn').hidden = !a; $('navStartBtn').hidden = !!a; $('navAuthBtn').textContent = a ? 'Sign out' : 'Sign in';
-    $('heroCta').textContent = a ? 'Your account' : 'Start your free week';
-    $('acctOut').hidden = !!a; $('acctIn').hidden = !a;
+    if ($('heroCta')) $('heroCta').textContent = a ? 'Your dashboard' : 'Start your free week';
+    // The home page's account section stays the same; the dashboard shows the account
+    $('acctOut').hidden = DASH && !!a; $('acctIn').hidden = !(DASH && a);
     if (a) {
       var nm = a.name || (a.email || '').split('@')[0];
       $('meDot').textContent = (nm || '?').charAt(0).toUpperCase();
@@ -1099,9 +1134,9 @@ footer a:hover { color:var(--navy); }
         return '<li><img src="' + esc(x.icon) + '" alt=""><b>' + esc(x.name) + '</b><span class="' + (st === 'subscribed' ? 'paid' : '') + '">' + esc(label) + '</span></li>';
       }).join('');
     }
-    if (a) { renderSheets(_sheets); loadSheets(); } else { _sheetsFor = ''; _sheets = []; $('meSheets').hidden = true; }
+    if (a && DASH) { renderSheets(_sheets); loadSheets(); } else { _sheetsFor = ''; _sheets = []; $('meSheets').hidden = true; }
     var ab = $('allBtn'), have = a && (a.all_in_one || a.state === 'activated');
-    ab.disabled = !!have; ab.textContent = have ? '✓ You have all four' : 'Get all four';
+    if (ab) { ab.disabled = !!have; ab.textContent = have ? '✓ You have all four' : 'Get all four'; }
     linkApps();
   }
   // Your sheets, grouped by app — each link opens the sheet in its app
@@ -1167,7 +1202,7 @@ footer a:hover { color:var(--navy); }
     $('meGo').hidden = have.length > 0;
   }
   window.acctClick = function(mode) {
-    if (acct) { location.hash = 'account'; return; }
+    if (acct) { goDash(); return; }
     openAuth(mode || '');
   };
   // The all-in-one: Stripe checkout for the signed-in account (sign in or start the free week first)
@@ -1238,7 +1273,7 @@ footer a:hover { color:var(--navy); }
     else if (!checkRules()) { err.textContent = 'Your password needs everything on the list.'; return; }
     var b = $('authSendBtn'), label = b.textContent; b.disabled = true; b.textContent = m === 'login' ? 'Logging in…' : 'Sending…'; err.textContent = '';
     var done = function() { b.disabled = false; b.textContent = label; };
-    if (m === 'login') { post({ action: 'login', email: em, password: pw }).then(function(r) { store(r); closeAuth(); }).catch(function(e) { err.textContent = e.message; }).then(done); return; }
+    if (m === 'login') { post({ action: 'login', email: em, password: pw }).then(function(r) { var w = wantAll; store(r); if (!w) signedIn(); else closeAuth(); }).catch(function(e) { err.textContent = e.message; }).then(done); return; }
     post({ action: 'send', email: em, mode: m }).then(function(r) {
       pending = { email: em, password: pw };
       $('authEmail').hidden = true; $('authCode').hidden = false; $('authCodeIn').value = r.debug_code || '';
@@ -1252,7 +1287,7 @@ footer a:hover { color:var(--navy); }
     if (!pending) { authMode(window._mode); return; }
     if (code.length !== 6) { $('authErr2').textContent = 'Enter the 6-digit code from the email.'; return; }
     var b = $('authGo'), label = b.textContent; b.disabled = true; b.textContent = 'Checking…'; $('authErr2').textContent = '';
-    post({ action: 'verify', email: pending.email, password: pending.password, code: code }).then(function(r) { pending = null; store(r); closeAuth(); })
+    post({ action: 'verify', email: pending.email, password: pending.password, code: code }).then(function(r) { pending = null; var w = wantAll; store(r); if (!w) signedIn(); else closeAuth(); })
       .catch(function(e) { $('authErr2').textContent = e.message; }).then(function() { b.disabled = false; b.textContent = label; });
   };
 

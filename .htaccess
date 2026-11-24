@@ -40,6 +40,9 @@ RewriteRule ^pitchboard/share/([a-f0-9]{24})/?$ source/pitchboard/shared/index.p
 RewriteCond %{HTTP_HOST} ^(www\.)?mygameboard\.app$ [NC]
 RewriteRule ^$ source/gameboard/index.php [L,QSA]
 
+# /dashboard — the signed-in GameBoard account's apps and sheets
+RewriteRule ^dashboard/?$ source/gameboard/index.php [L,QSA]
+
 # /gameboard — the GameBoard hub: the board game apps and the GameBoard account
 RewriteRule ^gameboard/?$ source/gameboard/index.php [L,QSA]
 

@@ -164,25 +164,26 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   <a href="devboard/help#screen"><span class="n">5</span>The screen</a>
   <h4>Playtesting</h4>
   <a href="devboard/help#board"><span class="n">6</span>The Summary</a>
-  <a href="devboard/help#games"><span class="n">7</span>Games</a>
-  <a href="devboard/help#session"><span class="n">8</span>Logging a session</a>
-  <a href="devboard/help#sessions"><span class="n">9</span>Reading &amp; editing sessions</a>
-  <a href="devboard/help#todos"><span class="n">10</span>TODOs</a>
-  <a href="devboard/help#share"><span class="n">11</span>Sharing &amp; reports</a>
+  <a href="devboard/help#timeline"><span class="n">7</span>Timeline</a>
+  <a href="devboard/help#games"><span class="n">8</span>Games</a>
+  <a href="devboard/help#session"><span class="n">9</span>Logging a session</a>
+  <a href="devboard/help#sessions"><span class="n">10</span>Reading &amp; editing sessions</a>
+  <a href="devboard/help#todos"><span class="n">11</span>TODOs</a>
+  <a href="devboard/help#share"><span class="n">12</span>Sharing &amp; reports</a>
   <h4>Contracts &amp; money</h4>
-  <a href="devboard/help#contracts"><span class="n">12</span>The Contracts list</a>
-  <a href="devboard/help#estimates"><span class="n">13</span>Contracts &amp; estimates</a>
-  <a href="devboard/help#invoices"><span class="n">14</span>Invoices</a>
-  <a href="devboard/help#payments"><span class="n">15</span>Payments</a>
-  <a href="devboard/help#tm"><span class="n">16</span>Time &amp; materials</a>
-  <a href="devboard/help#company"><span class="n">17</span>Your company details</a>
+  <a href="devboard/help#contracts"><span class="n">13</span>The Contracts list</a>
+  <a href="devboard/help#estimates"><span class="n">14</span>Contracts &amp; estimates</a>
+  <a href="devboard/help#invoices"><span class="n">15</span>Invoices</a>
+  <a href="devboard/help#payments"><span class="n">16</span>Payments</a>
+  <a href="devboard/help#tm"><span class="n">17</span>Time &amp; materials</a>
+  <a href="devboard/help#company"><span class="n">18</span>Your company details</a>
   <h4>Saving</h4>
-  <a href="devboard/help#saving"><span class="n">18</span>Saving &amp; Fetch</a>
+  <a href="devboard/help#saving"><span class="n">19</span>Saving &amp; Fetch</a>
   <h4>Account</h4>
-  <a href="devboard/help#plans"><span class="n">19</span>Plans &amp; codes</a>
-  <a href="devboard/help#settings"><span class="n">20</span>Profile, settings &amp; menu</a>
-  <a href="devboard/help#keys"><span class="n">21</span>Keyboard shortcuts</a>
-  <a href="devboard/help#trouble"><span class="n">22</span>Troubleshooting</a>
+  <a href="devboard/help#plans"><span class="n">20</span>Plans &amp; codes</a>
+  <a href="devboard/help#settings"><span class="n">21</span>Profile, settings &amp; menu</a>
+  <a href="devboard/help#keys"><span class="n">22</span>Keyboard shortcuts</a>
+  <a href="devboard/help#trouble"><span class="n">23</span>Troubleshooting</a>
 
 </nav>
 
@@ -256,12 +257,44 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   <ul>
     <li><b>The totals</b> — games, games in active development, contracts and publishers.</li>
     <li><b>TODOs</b> — every open TODO from every game, with the number still open. See <a href="devboard/help#todos">TODOs</a>.</li>
-    <li><b>Timeline</b> — your active projects: each contract with a <b>Target End Date</b> (or a <b>Duration</b> — the due date is then worked out from the start, and shown with ≈) that isn’t finished, as a bar from its target start to its due date, soonest first. A line marks today; bars turn amber a week before they’re due and red once late. Estimates not invoiced yet are striped (and drop off once their date has passed); once an estimate has an invoice — a deposit, say — it’s solid and stays until it’s finished. Hover over a bar for the contract’s summary. A game with several contracts shows each one, grouped under the game. Click one to open the contract.</li>
+    <li><b>Timeline</b> — your active projects, from start to due date. See <a href="devboard/help#timeline">Timeline</a>.</li>
     <li><b>Contracts</b> — your latest estimates, invoices, contracts and payments, with their amounts and status.</li>
   </ul>
 </section>
+<section class="topic" id="timeline">
+  <h2><span class="n">7</span>Timeline</h2>
+  <p class="lead">Every active project on one line of time: what’s late, what’s next, and what’s still only an estimate.</p>
+  <?= shot('timeline', 'The timeline on the Summary: one bar per contract, from its start to its due date, with today marked.') ?>
+  <h3>Reading it</h3>
+  <ul>
+    <li><b>Each bar is a contract</b>, from its start to its due date; the due date and how long is left are on the right. Projects due soonest are at the top.</li>
+    <li><b>The pink line is today.</b> Month names run along the top.</li>
+    <li><b>Colors:</b> teal — on track; <b>amber</b> — due within a week; <b>red</b> — late (“4 days late”).</li>
+    <li><b>Striped</b> — an estimate that hasn’t been invoiced yet: an offer, not a go-ahead.</li>
+    <li><b>≈ before a date</b> — the contract has no due date of its own, so it was worked out from its <b>Duration</b>.</li>
+    <li><b>A game with several contracts</b> shows them together: the game’s name with “2 contracts”, then each contract on its own row, named by its summary.</li>
+  </ul>
+  <?= shot('timeline-hover', 'Hover over a row for the contract’s summary, its Ref Number and dates.') ?>
+  <ul>
+    <li><b>Hover</b> over a row for the contract’s summary, the game, publisher and Ref Number, and its dates.</li>
+    <li><b>Click</b> a row to open the contract and change it.</li>
+  </ul>
+  <h3>What’s on it</h3>
+  <ul>
+    <li>Contracts with a <b>Target End Date</b>, or a <b>Duration</b> (“1 month”, “6 weeks”, “10 days”) to work one out from. Payments aren’t projects, so they never show.</li>
+    <li><b>Where a bar starts:</b> the <b>Target Start Date</b>, or else the <b>Start Date</b>, or else the contract’s date.</li>
+    <li><b>Estimates that were invoiced</b> — a deposit, say — count as going ahead: solid, and they stay (late, if need be) until they’re finished. An invoice is matched to its estimate by its note (“Invoice from estimate #…”), or by the same game and summary.</li>
+  </ul>
+  <h3>When a project leaves it</h3>
+  <ul>
+    <li>Give the contract an actual <b>End Date</b> — it’s finished.</li>
+    <li>Or it’s <b>Paid</b> and its due date has gone by.</li>
+    <li>An estimate that was never invoiced leaves once its due date has passed.</li>
+  </ul>
+  <div class="tip"><b>To put a project on the timeline:</b> open the contract and set its <b>Target End Date</b> (and a <b>Target Start Date</b>, for where the bar begins) — or give it a <b>Duration</b> in the sheet.</div>
+</section>
 <section class="topic" id="games">
-  <h2><span class="n">7</span>Games</h2>
+  <h2><span class="n">8</span>Games</h2>
   <p class="lead">Each game you’re developing, with its sessions newest first.</p>
   <ul>
     <li><b>+ Game</b> starts development on a game: pick one from your games list or type a new name. DevBoard adds a <b>[Game] dev</b> tab for its sessions (and a row in <b>games</b> for a new game).</li>
@@ -271,7 +304,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   <?= shot('game', 'Edit: the game’s details, the same as in PitchBoard.', 'mid') ?>
 </section>
 <section class="topic" id="session">
-  <h2><span class="n">8</span>Logging a session</h2>
+  <h2><span class="n">9</span>Logging a session</h2>
   <p class="lead">A session is one sitting with the game — a playtest, a meeting, an idea, an editing pass or a report.</p>
   <?= steps([['log-1', 'Open the game and click <b>+ Session</b>.'], ['log-2', 'Fill in the date, type, where, who played — then what you saw and what to do about it.'], ['log-3', '<b>Add Session</b>: it’s at the top of the game’s list at once.']], 'Log a playtest') ?>
   <ul>
@@ -285,7 +318,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   <?= shot('session', 'The session dialog, filled in: rounds and timer at the top, two testers, and two observations.') ?>
 </section>
 <section class="topic" id="sessions">
-  <h2><span class="n">9</span>Reading &amp; editing sessions</h2>
+  <h2><span class="n">10</span>Reading &amp; editing sessions</h2>
   <?= shot('session-open', 'Click a session to open it: each observation beside its solution.') ?>
   <ul>
     <li>A session’s row shows its type and number, date, location, length and rounds, who played and how many notes it has. Click it to open it.</li>
@@ -295,7 +328,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   </ul>
 </section>
 <section class="topic" id="todos">
-  <h2><span class="n">10</span>TODOs</h2>
+  <h2><span class="n">11</span>TODOs</h2>
   <p class="lead">Turn what you noticed into a list of what to do.</p>
   <div class="two narrow-left">
     <?= shot('todo', 'A TODO: the observation, notes, priority, who and when.') ?>
@@ -311,7 +344,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   </div>
 </section>
 <section class="topic" id="share">
-  <h2><span class="n">11</span>Sharing &amp; reports</h2>
+  <h2><span class="n">12</span>Sharing &amp; reports</h2>
   <p class="lead"><b>Share</b> on an open game gives you three links.</p>
   <div class="two narrow-left">
     <?= shot('share', 'Share: Collaborate, Public page and Report.') ?>
@@ -328,7 +361,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
 
 <hr class="sep">
 <section class="topic" id="contracts">
-  <h2><span class="n">12</span>The Contracts list</h2>
+  <h2><span class="n">13</span>The Contracts list</h2>
   <p class="lead">Paid design work — development, editing, playtesting for a publisher — by client and game.</p>
   <?= shot('contracts', 'Cobalt Games, opened: an estimate and an invoice for Harbor Lights, a payment, and the buttons.') ?>
   <ul>
@@ -339,7 +372,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   </ul>
 </section>
 <section class="topic" id="estimates">
-  <h2><span class="n">13</span>Contracts &amp; estimates</h2>
+  <h2><span class="n">14</span>Contracts &amp; estimates</h2>
   <p class="lead"><b>+ Contract</b> (or <b>+ Estimate</b> under a game) writes up the work and makes an estimate PDF.</p>
   <div class="two narrow-left">
     <?= shot('estimate', 'New Contract: the client, the game, the scope and the price.') ?>
@@ -356,7 +389,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   </div>
 </section>
 <section class="topic" id="invoices">
-  <h2><span class="n">14</span>Invoices</h2>
+  <h2><span class="n">15</span>Invoices</h2>
   <div class="two narrow-left">
     <?= shot('invoice', '+ Invoice from an estimate: a fixed amount or a share of it.') ?>
     <div>
@@ -370,7 +403,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   </div>
 </section>
 <section class="topic" id="payments">
-  <h2><span class="n">15</span>Payments</h2>
+  <h2><span class="n">16</span>Payments</h2>
   <p class="lead">Money you paid out — to an artist, a playtest group, a co-designer.</p>
   <div class="two narrow-left">
     <?= shot('payment', '+ Payment: who was paid, for which contract, how much and when.') ?>
@@ -384,7 +417,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   </div>
 </section>
 <section class="topic" id="tm">
-  <h2><span class="n">16</span>Time &amp; materials</h2>
+  <h2><span class="n">17</span>Time &amp; materials</h2>
   <p class="lead">For work billed by the hour, log the time and costs as you go.</p>
   <div class="two narrow-left">
     <?= shot('tm', '+ T&amp;M: the contract, what you did, the time, and any materials.') ?>
@@ -398,7 +431,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   </div>
 </section>
 <section class="topic" id="company">
-  <h2><span class="n">17</span>Your company details</h2>
+  <h2><span class="n">18</span>Your company details</h2>
   <p class="lead">What goes at the top of your estimates and invoices.</p>
   <?= shot('company', 'Menu → Company: your logo, name, address and how to pay you.', 'mid') ?>
   <ul>
@@ -409,7 +442,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
 
 <hr class="sep">
 <section class="topic" id="saving">
-  <h2><span class="n">18</span>Saving &amp; Fetch</h2>
+  <h2><span class="n">19</span>Saving &amp; Fetch</h2>
   <p class="lead">Everything you change — sessions, TODOs, games, contracts — shows straight away and is kept in this browser, then sent to your Google Sheet in one go.</p>
   <?= shot('save-pending', '<b>Save</b> lights up when changes are waiting.', 'small') ?>
   <ul>
@@ -424,7 +457,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
 
 <hr class="sep">
 <section class="topic" id="plans">
-  <h2><span class="n">19</span>Plans &amp; codes</h2>
+  <h2><span class="n">20</span>Plans &amp; codes</h2>
   <div class="two">
     <?= shot('plans', 'Menu → Subscription: Core, Pro, or the all-in-one.') ?>
     <div>
@@ -440,7 +473,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   <p style="margin-top:1rem">After the free week your sheet is view only until you subscribe — nothing in it is lost. Cancel any time from <b>Manage billing</b>.</p>
 </section>
 <section class="topic" id="settings">
-  <h2><span class="n">20</span>Profile, settings &amp; menu</h2>
+  <h2><span class="n">21</span>Profile, settings &amp; menu</h2>
   <div class="two">
     <?= shot('menu', 'The menu, from the round person button.') ?>
     <?= shot('profile', 'Profile: your photo and details, for your shared pages and paperwork.') ?>
@@ -453,7 +486,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   </ul>
 </section>
 <section class="topic" id="keys">
-  <h2><span class="n">21</span>Keyboard shortcuts</h2>
+  <h2><span class="n">22</span>Keyboard shortcuts</h2>
   <p><kbd>⌘</kbd> is <kbd>Ctrl</kbd> on Windows.</p>
   <table class="keys">
     <tr class="h"><td colspan="2">Everywhere</td></tr>
@@ -465,12 +498,13 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   </table>
 </section>
 <section class="topic" id="trouble">
-  <h2><span class="n">22</span>Troubleshooting</h2>
+  <h2><span class="n">23</span>Troubleshooting</h2>
   <ul>
     <li><b>“Sheet not shared”</b> when connecting — check it’s shared with <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> as an <b>Editor</b>.</li>
     <li><b>Changes made in Google Sheets don’t show</b> — the round arrow on the game, or menu → <b>Fetch</b>.</li>
     <li><b>It says View only</b> — another account set this sheet up, or nobody has (<b>Make it mine</b>), or your free week has ended (<a href="devboard/help#plans">Plans</a>). Contracts need <b>Pro</b>.</li>
     <li><b>Save stays lit</b> — you’re offline, or need to sign in again; your changes are kept until it works.</li>
+    <li><b>A contract isn’t on the timeline</b> — it needs a Target End Date or a Duration; an estimate that wasn’t invoiced drops off once its date has passed, and a contract with an End Date is finished. See <a href="devboard/help#timeline">Timeline</a>.</li>
     <li><b>A game isn’t in the Games tab</b> — it has no dev tab yet: <b>+ Game</b> and pick it.</li>
     <li><b>The PDF has no logo or address</b> — fill in menu → <b>Company</b>, then <b>Edit</b> and save the estimate again.</li>
     <li><b>No code email</b> — check spam, and wait a minute before asking for another.</li>

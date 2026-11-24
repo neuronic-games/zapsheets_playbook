@@ -242,7 +242,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   <h2><span class="n">5</span>The screen</h2>
   <?= shot('games', 'The Games tab: search and + Game, then each game you’re developing.') ?>
   <ul>
-    <li><b>Tabs</b> at the top: <b>Board</b> (the overview), <b>Games</b> (your sessions) and <b>Contracts</b>.</li>
+    <li><b>Tabs</b> at the top: <b>Summary</b> (the overview), <b>Games</b> (your sessions) and <b>Contracts</b>.</li>
     <li><b>Save</b> (top right) sends your changes to the sheet — see <a href="devboard/help#saving">Saving</a>. The round person button (your photo, once you’ve added one) opens the <a href="devboard/help#settings">menu</a>.</li>
     <li>Each tab has its own <b>search</b>: sessions, people and notes on Games; publishers, games and contracts on Contracts.</li>
   </ul>
@@ -301,7 +301,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
     <?= shot('todo', 'A TODO: the observation, notes, priority, who and when.') ?>
     <div>
       <ul>
-        <li>Click the <b>light bulb</b> on an observation in a session to make it a TODO. It shows on the game and on the <b>Board</b>.</li>
+        <li>Click the <b>light bulb</b> on an observation in a session to make it a TODO. It shows on the game and on the <b>Summary</b>.</li>
         <li>Tick a TODO when it’s done; drag the <b>⋮⋮</b> handle to reorder.</li>
         <li>The three icons set the <b>priority</b> (high, medium, low), <b>who</b> it’s for and the <b>due date</b>.</li>
         <li>Click a TODO to open it — change its words, add notes.</li>

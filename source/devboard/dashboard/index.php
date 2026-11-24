@@ -1081,7 +1081,7 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
     </div>
 
     <div class="top-tab-btns">
-      <button class="top-tab"        id="tabDash"       onclick="switchTab('dash')">Board</button>
+      <button class="top-tab"        id="tabDash"       onclick="switchTab('dash')">Summary</button>
       <button class="top-tab active" id="tabGames"      onclick="switchTab('games')">Games</button>
       <button class="top-tab"        id="tabPublishers" onclick="switchTab('publishers')">Contracts</button>
     </div>

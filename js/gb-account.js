@@ -18,7 +18,9 @@
  * GBAccount.token()    — the signed token or ''
  * GBAccount.canEdit()  — signed in, the sheet's owner, the app unlocked
  * GBAccount.require(fn)— true when canEdit(); otherwise opens sign-in or the plans (and calls fn after signing in)
- * GBAccount.signIn() / signOut() / openPlans(reason) / refresh(force)
+ * GBAccount.signIn() / signOut() / openPlans(reason) / openCode() / refresh(force)
+ * The page's account menu (O.menuButton / O.menu, or found by its usual id) gets the profile picture on its
+ * button, a header with the name, email and plan, and "Enter a code" — the same as CardBoard's.
  */
 (function() {
   'use strict';
@@ -139,7 +141,15 @@
     '.gba-who{margin:.8rem 0 0;text-align:center;font-size:.78rem;color:#8a90a6}' +
     '.gba-code{display:flex;gap:.4rem;margin:.6rem 0 0}.gba-code input{margin:0;flex:1}.gba-code .gba-go{width:auto;margin:0;padding:.5rem .9rem}' +
     '.gba-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);z-index:10001;background:#1a1a2e;color:#fff;padding:.6rem 1rem;border-radius:8px;font:500 .86rem var(--gb-text,"DINRegular",Arial,sans-serif);box-shadow:0 8px 24px rgba(20,19,42,.3);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}' +
-    '.gba-toast.show{opacity:1;transform:translateX(-50%)}';
+    '.gba-toast.show{opacity:1;transform:translateX(-50%)}' +
+    // The page's menu button shows the profile picture once signed in (like CardBoard); the menu names who's signed in
+    '.gba-has-pic{padding:0!important;overflow:hidden!important}' +
+    '.gba-has-pic>:not(.gba-pic){display:none!important}' +
+    '.gba-pic{display:none;width:100%;height:100%;object-fit:cover;border-radius:50%}' +
+    '.gba-has-pic>.gba-pic{display:block}' +
+    '.gba-mwho{padding:.55rem 1rem .5rem;font-size:.75rem;line-height:1.35;color:rgba(255,255,255,.55);border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:.2rem;word-break:break-all;text-align:left}' +
+    '.gba-mwho b{display:block;color:#fff;font-size:.86rem;word-break:normal}' +
+    '.gba-mwho small{display:block;margin-top:.15rem;color:rgba(255,255,255,.45)}';
 
   function build() {
     if ($('gbaSignIn')) return;
@@ -220,7 +230,52 @@
       else { msg.innerHTML = '<b>Your free week has ended.</b> Everything is safe in your sheet — subscribe to keep using ' + esc(O.name) + '.'; btn.textContent = 'See plans'; btn.onclick = function() { openPlans('locked'); }; }
       bar.hidden = ok || (!a && O.gate === false);   // pages anyone may look at: no bar until someone signs in
     }
+    menu();
     _listeners.forEach(function(fn) { try { fn(api.state()); } catch (e) {} });
+  }
+  // The page's own account menu, set up the same way in every app (CardBoard's is the model):
+  //   - the round menu button shows the profile picture when there is one, otherwise the person icon
+  //   - when signed in, the menu starts with the name, email and plan, and has "Enter a code" below the subscription
+  // Found by O.menuButton / O.menu (element ids), or the usual ids and classes of the apps.
+  function menu() {
+    var btn = O.menuButton ? $(O.menuButton) : document.querySelector('#accountBtn, #menuBtn, #bbUserBtn, .account-menu-wrap > button, .user-menu-wrap > button');
+    var list = O.menu ? $(O.menu) : document.querySelector('#accountMenu, #bbMenu, .account-menu, .user-menu');
+    var a = info(), img = a && a.image ? String(a.image) : '';
+    if (btn) {
+      var pic = btn.querySelector('.gba-pic');
+      if (!pic) { pic = document.createElement('img'); pic.className = 'gba-pic'; pic.alt = ''; btn.insertBefore(pic, btn.firstChild); pic.onerror = function() { btn.classList.remove('gba-has-pic'); }; }
+      if (img && pic.getAttribute('src') !== img) pic.src = img;
+      // A round button the size the icon button already had, filled by the picture
+      if (img && !btn.classList.contains('gba-has-pic')) {
+        var sz = Math.max(btn.offsetWidth, btn.offsetHeight, 32);
+        btn.style.width = btn.style.height = sz + 'px'; btn.style.borderRadius = '50%';
+      } else if (!img && btn.classList.contains('gba-has-pic')) btn.style.width = btn.style.height = btn.style.borderRadius = '';
+      btn.classList.toggle('gba-has-pic', !!img);
+      if (a) btn.title = (a.name || a.email || 'Menu');
+    }
+    if (!list) return;
+    var who = list.querySelector('.gba-mwho');
+    if (!who) { who = document.createElement('div'); who.className = 'gba-mwho'; list.insertBefore(who, list.firstChild); }
+    who.style.display = a ? '' : 'none';   // (not hidden: the apps' menu styles can override it)
+    if (a) {
+      var nm = String(a.name || '').trim() || String(a.email || '').split('@')[0];
+      who.innerHTML = '<b>' + esc(nm) + '</b>' + esc(a.email || '') + (checked() ? '<small>' + planLabel().replace(/<[^>]+>/g, '') + '</small>' : '');
+    }
+    // "Enter a code" under the subscription item (any item whose text is Subscribe / Subscription)
+    var code = list.querySelector('.gba-mcode');
+    if (!code) {
+      var sub = Array.prototype.filter.call(list.querySelectorAll('button, a'), function(b) { return /^\s*subscri(be|ption)\s*$/i.test(b.textContent); })[0];
+      if (sub) {
+        code = document.createElement('button'); code.type = 'button'; code.className = sub.className + ' gba-mcode'; code.textContent = 'Enter a code';
+        code.onclick = function(e) { e.stopPropagation(); list.classList.remove('open'); openCode(); };
+        sub.parentNode.insertBefore(code, sub.nextSibling);
+      }
+    }
+    if (code) code.style.display = !a || (appInfo() || {}).state === 'activated' || unlocked() ? 'none' : '';
+  }
+  function openCode() {   // the plans, with the code box already open
+    if (!ACCT) { signIn().then(openCode, function() {}); return; }
+    openPlans(''); $('gbaHaveCode').hidden = true; $('gbaCodeForm').hidden = false; setTimeout(function() { $('gbaCodeIn').focus(); }, 60);
   }
   function claim() {
     accountPost('claim').then(function(r) { store(r); toast(isOwner() ? '✓ This sheet is yours now' : 'Someone else has set this sheet up'); })
@@ -398,7 +453,7 @@
       else openPlans('locked');
       return false;
     },
-    signIn: function() { return signIn(false); }, signOut: signOut, openPlans: openPlans, refresh: refresh, onChange: function(fn) { _listeners.push(fn); },
+    signIn: function() { return signIn(false); }, signOut: signOut, openPlans: openPlans, openCode: openCode, refresh: refresh, onChange: function(fn) { _listeners.push(fn); },
     planLabel: function() { return planLabel().replace(/<[^>]+>/g, ''); }
   };
   window.GBAccount = api;

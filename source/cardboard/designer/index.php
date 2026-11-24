@@ -87,6 +87,9 @@ button, input, select, textarea { font-family:inherit; }
 @keyframes svStripes { to { background-position:14px 0; } }
 .account-menu { display:none; position:absolute; top:calc(100% + .4rem); right:0; background:#1a1a2e; border:1px solid rgba(255,255,255,.2); border-radius:8px; min-width:160px; z-index:300; box-shadow:0 6px 20px rgba(0,0,0,.4); overflow:hidden; }
 .account-menu.open { display:block; }
+.mm-who { padding:.55rem 1rem .5rem; font-size:.75rem; line-height:1.35; color:rgba(255,255,255,.55); border-bottom:1px solid rgba(255,255,255,.12); margin-bottom:.2rem; word-break:break-all; }
+.mm-who b { display:block; color:#fff; font-size:.86rem; word-break:normal; }
+.mm-who small { display:block; margin-top:.15rem; color:rgba(255,255,255,.45); }
 .account-menu-item { display:block; width:100%; background:none; border:none; color:rgba(255,255,255,.85); text-align:left; cursor:pointer; font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; padding:.6rem 1rem; transition:background .12s; }
 .account-menu-item:hover { background:rgba(255,255,255,.1); color:#fff; }
 .account-menu-divider { border:none; border-top:1px solid rgba(255,255,255,.12); margin:.2rem 0; }
@@ -853,6 +856,7 @@ body.cb-gate #signinOverlay { background:#2e2763; }
         <svg id="menuIco" width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/></svg>
       </button>
       <div class="account-menu" id="accountMenu">
+        <div class="mm-who" id="mmWho" style="display:none"></div>
         <button class="account-menu-item" onclick="closeAccountMenu();openProfileDialog()">Profile</button>
         <button class="account-menu-item" onclick="closeAccountMenu();openSettingsDialog()">Settings</button>
         <button class="account-menu-item" onclick="closeAccountMenu();reloadSheet()" title="Read the latest data from the Google Sheet">Fetch</button>

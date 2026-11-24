@@ -4365,6 +4365,11 @@ function fmtWhen(v) {
 function updateSubMenu() {
   var mp = $('menuPic'), im = (acctInfo() || {}).image || '';   // the profile picture in place of the menu icon
   if (mp) { mp.hidden = !im; if (im && mp.getAttribute('src') !== im) mp.src = im; $('menuIco').style.display = im ? 'none' : ''; }
+  var who = $('mmWho'), me = acctInfo();   // who's signed in, at the top of the menu (as in every GameBoard app)
+  if (who) {
+    who.style.display = me ? '' : 'none';
+    if (me) who.innerHTML = '<b>' + esc(String(me.name || '').trim() || String(me.email || '').split('@')[0]) + '</b>' + esc(me.email || '') + '<small>' + planLabel().replace(/<[^>]+>/g, '') + '</small>';
+  }
   var b = $('cbSubBtn'); if (!b) return;
   var a = acctInfo(), st = a && (a.sheet_unlocked && ACCT.sheet === SHEET_ID ? 'activated' : a.state);
   b.textContent = !a ? 'Sign in' : 'Subscription';

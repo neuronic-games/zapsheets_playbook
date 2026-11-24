@@ -229,7 +229,7 @@ h2 { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(1.8r
 .my-apps span { color:var(--muted); margin-left:auto; text-align:right; }
 .my-apps span.paid { color:#2e7d32; font-weight:600; }
 /* Your sheets, by app: each opens in its app */
-.my-sheets { margin:-.2rem 0 1rem; max-height:340px; overflow:auto; }
+.my-sheets { margin:-.2rem 0 1rem; }
 .my-sheets h4 { display:flex; align-items:center; gap:.45rem; margin:.9rem 0 .2rem; font:600 12px 'Inter',sans-serif; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
 .my-sheets h4:first-child { margin-top:0; }
 .my-sheets h4 img { width:20px; height:20px; border-radius:5px; }
@@ -240,6 +240,14 @@ h2 { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(1.8r
 .my-sheets .sh-new { display:flex; flex-wrap:wrap; gap:.3rem; margin:.15rem 0 .4rem; }
 .my-sheets .sh-new a { font-size:12px; color:var(--mid); border:1px solid var(--line); border-radius:999px; padding:.15rem .6rem; text-decoration:none; }
 .my-sheets .sh-new a:hover { border-color:var(--navy); color:var(--navy); }
+.my-sheets a.app-row { display:flex; align-items:center; gap:.6rem; padding:.5rem .5rem; margin:.7rem -.5rem .1rem; border-radius:10px; text-decoration:none; color:var(--navy); }
+.my-sheets a.app-row:first-of-type { margin-top:0; }
+.my-sheets a.app-row:hover { background:#f6f2ea; }
+.my-sheets a.app-row img { width:30px; height:30px; border-radius:8px; flex-shrink:0; }
+.my-sheets a.app-row b { font:600 14px 'Inter',sans-serif; display:flex; flex-direction:column; }
+.my-sheets a.app-row b small { font:500 11.5px 'Inter',sans-serif; color:#2e7d32; }
+.my-sheets a.app-row span { margin-left:auto; font:600 12px 'Inter',sans-serif; color:#fff; background:var(--navy); border-radius:999px; padding:.3rem .85rem; }
+.my-sheets a.sh { padding-left:2.9rem; }
 .my-sheets .sh-none { font-size:13px; color:var(--muted); margin:0; }
 .pc.all button:disabled { opacity:.85; cursor:default; background:#fff; }
 .link { background:none; border:none; color:var(--mid); text-decoration:underline; text-underline-offset:2px; font:inherit; font-size:13px; cursor:pointer; }
@@ -961,9 +969,9 @@ footer a:hover { color:var(--navy); }
       <div id="acctIn" hidden>
         <div class="me"><div class="me-dot" id="meDot"></div><div><b id="meName"></b><span id="meEmail"></span></div></div>
         <div class="plan" id="mePlan"></div>
-        <ul class="my-apps" id="meApps"></ul>
+        <ul class="my-apps" id="meApps" hidden></ul>
         <div class="my-sheets" id="meSheets" hidden></div>
-        <button type="button" class="go" onclick="location.hash='pricing'">Open an app</button>
+        <button type="button" class="go" id="meGo" onclick="location.hash='pricing'">See apps &amp; pricing</button>
         <div class="foot"><button type="button" class="link" onclick="signOut()">Sign out</button></div>
       </div>
     </div>
@@ -1091,17 +1099,17 @@ footer a:hover { color:var(--navy); }
         return '<li><img src="' + esc(x.icon) + '" alt=""><b>' + esc(x.name) + '</b><span class="' + (st === 'subscribed' ? 'paid' : '') + '">' + esc(label) + '</span></li>';
       }).join('');
     }
-    if (a) loadSheets(); else { _sheetsFor = ''; $('meSheets').hidden = true; }
+    if (a) { renderSheets(_sheets); loadSheets(); } else { _sheetsFor = ''; _sheets = []; $('meSheets').hidden = true; }
     var ab = $('allBtn'), have = a && (a.all_in_one || a.state === 'activated');
     ab.disabled = !!have; ab.textContent = have ? '✓ You have all four' : 'Get all four';
     linkApps();
   }
   // Your sheets, grouped by app — each link opens the sheet in its app
-  var _sheetsFor = '';
+  var _sheetsFor = '', _sheets = [];
   function loadSheets() {
     if (!acct || !acct.token || _sheetsFor === acct.token) return;
     _sheetsFor = acct.token;
-    post({ action: 'sheets', cbt: acct.token }).then(function(r) { renderSheets(r.sheets || []); }).catch(function() { _sheetsFor = ''; });
+    post({ action: 'sheets', cbt: acct.token }).then(function(r) { _sheets = r.sheets || []; renderSheets(_sheets); }).catch(function() { _sheetsFor = ''; });
   }
   function ago(t) {
     if (!t) return '';
@@ -1112,24 +1120,51 @@ footer a:hover { color:var(--navy); }
     var u = APPS_URL + encodeURIComponent(id) + '/' + app;
     return acct && acct.token && crossOrigin() ? u + '#gbt=' + encodeURIComponent(acct.token) : u;
   }
+  // The apps this account can use now: subscribed (or all-in-one), activated, a code, or the free week
+  function myApps() {
+    var a = acct && acct.account; if (!a) return [];
+    if (a.state === 'activated' || a.all_in_one) return APPS;
+    var apps = a.apps || {};
+    return APPS.filter(function(x) {
+      var p = apps[x.key] || {};
+      return /^(subscribed|code|trial)$/.test(p.state || '') && (p.state === 'subscribed' || !p.until || new Date(p.until).getTime() > Date.now());
+    });
+  }
+  // What the account has for an app, in a few words (nothing when it's activated — the line above says so)
+  function planOf(x) {
+    var a = acct && acct.account; if (!a || a.state === 'activated') return '';
+    var p = (a.apps || {})[x.key] || {}, d = function(t) { return t ? new Date(t + (String(t).length === 10 ? 'T12:00:00Z' : '')).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''; };
+    if (a.all_in_one) return 'All-in-one' + (p.period_end ? ' · renews ' + d(p.period_end) : '');
+    if (p.state === 'subscribed') return (p.plan === 'core' ? 'Core' : 'Subscribed') + (p.period_end ? ' · renews ' + d(p.period_end) : '');
+    if (p.state === 'code') return 'Code · until ' + d(p.until);
+    if (p.state === 'trial') { var n = Math.max(0, Math.ceil((new Date(p.until).getTime() - Date.now()) / 864e5)); return 'Free week · ' + n + (n === 1 ? ' day' : ' days') + ' left'; }
+    return '';
+  }
+  function appUrl(key) {
+    var u = APPS_URL + key;
+    return acct && acct.token && crossOrigin() ? u + '#gbt=' + encodeURIComponent(acct.token) : u;
+  }
+  // Your apps: each app's logo and an Open link, with your sheets in it underneath
   function renderSheets(list) {
-    var box = $('meSheets'), h = '';
-    APPS.forEach(function(x) {
-      var mine = list.filter(function(s) { return s.app === x.key; }); if (!mine.length) return;
-      h += '<h4><img src="' + esc(x.icon) + '" alt="">' + esc(x.name) + '</h4>' + mine.map(function(s) {
+    var box = $('meSheets'), h = '', have = myApps();
+    have.forEach(function(x) {
+      var mine = list.filter(function(s) { return s.app === x.key; });
+      h += '<a class="app-row" href="' + esc(appUrl(x.key)) + '"><img src="' + esc(x.icon) + '" alt=""><b>' + esc(x.name) + (planOf(x) ? '<small>' + esc(planOf(x)) + '</small>' : '') + '</b><span>Open</span></a>' + mine.map(function(s) {
         // CardBoard knows the spreadsheet's name; for the others the title is the studio, so what's in it reads better
         var name = (x.key === 'cardboard' ? s.title : '') || s.summary || s.title || ('Sheet ' + s.id.slice(0, 8) + '…');
         var tip = [s.title, s.summary].filter(Boolean).join(' — ');
         return '<a class="sh" href="' + esc(sheetUrl(s.id, x.key)) + '" title="' + esc(tip) + '"><b>' + esc(name) + '</b><span>' + esc(ago(s.opened)) + '</span></a>';
       }).join('');
     });
-    var loose = list.filter(function(s) { return !s.app; });
+    var loose = have.length ? list.filter(function(s) { return !s.app; }) : [];
     if (loose.length) h += '<h4>Not opened in an app yet</h4>' + loose.map(function(s) {
       return '<div class="sh-new"><b style="font-size:13px;color:var(--navy);margin-right:.3rem">Sheet ' + esc(s.id.slice(0, 8)) + '…</b>' +
-        APPS.map(function(x) { return '<a href="' + esc(sheetUrl(s.id, x.key)) + '">' + esc(x.name) + '</a>'; }).join('') + '</div>';
+        have.map(function(x) { return '<a href="' + esc(sheetUrl(s.id, x.key)) + '">' + esc(x.name) + '</a>'; }).join('') + '</div>';
     }).join('');
-    box.innerHTML = h ? '<h4 style="margin:0 0 .3rem;color:var(--navy)">Your sheets</h4>' + h : '';
+    box.innerHTML = h ? '<h4 style="margin:0 0 .5rem;color:var(--navy)">Your apps</h4>' + h : '';
     box.hidden = !h;
+    // With apps to open, the big button isn't needed; without, it points to the plans
+    $('meGo').hidden = have.length > 0;
   }
   window.acctClick = function(mode) {
     if (acct) { location.hash = 'account'; return; }

@@ -2407,24 +2407,63 @@ function _btodoBeginDrag(row, ev) {
 }
 
 var _todosSynced = false;
+// Contracts from before Ref Numbers were codes (a plain number like 7, or none): once per page load the
+// server gives them standard 8-character codes in the sheet; the page then shows them.
+var _refsFixed = false;
+function _fixOldRefs() {
+  if (_refsFixed) return; _refsFixed = true;
+  if (!(window.GBAccount && GBAccount.canEdit && GBAccount.canEdit())) { _refsFixed = false; return; }   // the owner, once the account is checked
+  var old = CONTRACT_RAW.some(function(c) { return c && (c.Game || c.Client) && !/^[0-9A-Z]{8}$/.test(String(c['Ref Number'] || '').replace(/^'/, '').trim()); });
+  if (!old) return;
+  var fd = new FormData(); fd.append('id', SHEET_ID);
+  fetch(APP_BASE + 'push/fixContractRefs.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(r) {
+    if (r && r.ok && r.changed && r.changed.length) {
+      if (window.GBAccount) GBAccount.toast('✓ ' + r.changed.length + ' older contract' + (r.changed.length === 1 ? '' : 's') + ' got a Ref Number');
+      setTimeout(function() { location.reload(); }, 1200);
+    }
+  }).catch(function() {});
+}
+
 // ── Summary: timeline of active projects ─────────────────────────────────────
-// A project is a contract (not a payment) with a Target End Date that isn't finished: no actual End Date,
+// A project is a contract (not a payment) with a Target End Date (or a Duration to work one out from) that isn't finished: no actual End Date,
 // and not paid (or only estimated) with its due date gone by. Estimates show striped. Bars run from the target start (or the contract date) to the due date.
+// A date (ms, noon UTC) plus a duration written in words: "1 month", "2 months", "6 weeks", "10 days", "1.5 months", "1 year"
+function _dashAddDuration(t, dur) {
+  var m = /(\d+(?:\.\d+)?)\s*(d|day|days|w|wk|wks|week|weeks|m|mo|mos|month|months|y|yr|yrs|year|years)\b/i.exec(String(dur || ''));
+  if (!m) return 0;
+  var n = parseFloat(m[1]), u = m[2].toLowerCase().charAt(0), d = new Date(t);
+  if (u === 'd') return t + Math.round(n * 864e5);
+  if (u === 'w') return t + Math.round(n * 7 * 864e5);
+  var months = u === 'y' ? n * 12 : n, whole = Math.floor(months);
+  d.setUTCMonth(d.getUTCMonth() + whole);
+  return d.getTime() + Math.round((months - whole) * 30 * 864e5);
+}
 function _dashTimelineHtml() {
   var DAY = 864e5, today = new Date(todayISO() + 'T12:00:00Z').getTime();
-  var day = function(v) { var s = String(v || '').trim().slice(0, 10); if (!/^\d{4}-\d\d-\d\d$/.test(s)) { var d = new Date(v); if (isNaN(d)) return 0; s = d.toISOString().slice(0, 10); } return new Date(s + 'T12:00:00Z').getTime(); };
+  // A date as written in the sheet (2026-11-30, 11/30/2026, a Sheets serial number…) → noon UTC that day
+  var day = function(v) {
+    var s = String(v || '').trim(), m;
+    if ((m = /^(\d{4})-(\d\d)-(\d\d)/.exec(s))) return Date.UTC(+m[1], m[2] - 1, +m[3], 12);
+    if ((m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s))) return Date.UTC(+m[3], m[1] - 1, +m[2], 12);
+    if (/^\d{5}$/.test(s)) return Date.UTC(1899, 11, 30, 12) + s * DAY;
+    var d = new Date(s); return isNaN(d) || !s ? 0 : Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 12);
+  };
   var items = [];
   CONTRACT_RAW.forEach(function(c, i) {
     if (!c || _isPaymentRow(c)) return;
-    var end = day(c['Target End Date']); if (!end) return;
     if (String(c['End Date'] || '').trim()) return;                                   // finished
+    var start = day(c['Target Start Date']) || day(c['Start Date']) || day(c.Date);
+    // The due date: the Target End Date, or else the start plus the Duration ("1 month", "6 weeks", "10 days")
+    var end = day(c['Target End Date']), fromDur = false;
+    if (!end && start) { end = _dashAddDuration(start, c.Duration); fromDur = !!end; }
+    if (!end) return;
+    if (!start) start = end - 14 * DAY;
     var st = _conStatus(c), paid = st === 'Paid' || st === 'Fully Paid';
     if (paid && end < today) return;                                                    // paid and done
-    var start = day(c['Target Start Date']) || day(c['Start Date']) || day(c.Date) || end - 14 * DAY;
     if (start > end) start = end;
     var est = /^estimate$/i.test(st || _ceStatusValue(c));
     if (est && end < today) return;                                                     // an estimate whose dates have gone by
-    items.push({ i: i, c: c, start: start, end: end, est: est });
+    items.push({ i: i, c: c, start: start, end: end, est: est, dur: fromDur });
   });
   var out = '<div><div class="dash-section-hd">Timeline · active projects</div>';
   if (!items.length) return out + '<div class="dtl dtl-empty">No active projects with due dates yet. Give a contract a <b>Target End Date</b> and it shows here.</div></div>';
@@ -2448,11 +2487,11 @@ function _dashTimelineHtml() {
     var cls = days < 0 ? 'late' : days <= 7 ? 'soon' : 'ok';
     var due = days < 0 ? (-days) + (days === -1 ? ' day' : ' days') + ' late' : days === 0 ? 'Due today' : days === 1 ? 'Due tomorrow' : 'Due in ' + days + ' days';
     var who = String(c.Client || '').trim(), what = String(c.Summary || c.Description || '').trim().split('\n')[0];
-    var tip = (c.Game || '') + (who ? ' · ' + who : '') + '\n' + fmtDate(new Date(x.start).toISOString().slice(0, 10)) + ' → ' + fmtDate(new Date(x.end).toISOString().slice(0, 10)) + (x.est ? '\nEstimate' : '');
+    var tip = (c.Game || '') + (who ? ' · ' + who : '') + '\n' + fmtDate(new Date(x.start).toISOString().slice(0, 10)) + ' → ' + fmtDate(new Date(x.end).toISOString().slice(0, 10)) + (x.dur ? '\nDue date worked out from the duration (' + String(c.Duration).trim() + ')' : '') + (x.est ? '\nEstimate' : '');
     out += '<div class="dtl-row" onclick="openContractEditDialog(' + x.i + ')" title="' + esc(tip) + '">' +
       '<div class="dtl-name"><b>' + esc(c.Game || '—') + '</b><span>' + esc(who || what || '') + (x.est ? ' · Estimate' : '') + '</span></div>' +
       '<div class="dtl-track"><span class="dtl-today" style="left:' + todayX + '%"></span><span class="dtl-bar ' + cls + (x.est ? ' est' : '') + '" style="left:' + left.toFixed(2) + '%;width:' + w.toFixed(2) + '%"></span></div>' +
-      '<div class="dtl-due ' + cls + '"><b>' + esc(fmtDate(new Date(x.end).toISOString().slice(0, 10))) + '</b><span>' + esc(due) + '</span></div></div>';
+      '<div class="dtl-due ' + cls + '"><b>' + (x.dur ? '<small title="From the duration">≈ </small>' : '') + esc(fmtDate(new Date(x.end).toISOString().slice(0, 10))) + '</b><span>' + esc(due) + '</span></div></div>';
   });
   return out + '</div></div>';
 }
@@ -2463,6 +2502,7 @@ function renderDashView() {
   _renderBoardTodos();
   // Once per page load: make sure every light-bulb note is in the todos sheet (recreates it if deleted)
   if (!_todosSynced) { _todosSynced = true; _todosPost('sync', {}).catch(function() {}); }
+  _fixOldRefs();
 
   // Stat chips
   var activeCount = Object.keys(ACTIVE_KEYS).length;
@@ -7580,6 +7620,7 @@ function _dbStartCheckout(type, btn, btnLabel, plan) {
   var loadSheetPlan = _dbLoadSubStatus;   // the sheet's own subscription file (paid before accounts)
   function fromAccount(s) {
     var a = s.account || {}, x = s.app || {}, live = s.canEdit;
+    if (live && typeof _fixOldRefs === 'function') setTimeout(_fixOldRefs, 0);   // older contracts get standard Ref Numbers
     _dbSubStatus = { ok: true, is_core: live, is_pro: live && !(x.state === 'subscribed' && x.plan === 'core'),
                      status: a.status || '', portal_url: a.portal_url || '', activated: x.state === 'activated' };
     var item = document.getElementById('dbUpgradeBtn');

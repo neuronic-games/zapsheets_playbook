@@ -14,6 +14,8 @@ RewriteRule ^pitchboard/help_compendium/?$ source/pitchboard/help_compendium/ind
 RewriteRule ^pitchboard/help/?$ source/pitchboard/help/index.php [L,QSA]
 # /pitchboard/features — sales / features page (must come before /pitchboard rule)
 RewriteRule ^pitchboard/features/?$ source/pitchboard/features/index.php [L,QSA]
+# /billboard/help — help page (must come before /billboard rules)
+RewriteRule ^billboard/help/?$ source/billboard/help/index.php [L,QSA]
 # /billboard/features — sales / features page (must come before /billboard rules)
 RewriteRule ^billboard/features/?$ source/billboard/features/index.php [L,QSA]
 # /billboard/demo — demo catalog page (must come before /billboard rules)

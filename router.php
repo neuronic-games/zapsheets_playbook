@@ -195,6 +195,11 @@ if (preg_match('#^/gameboard/?$#', $uri) || ($uri === '/' && preg_match('/(^|\.)
     serveFile(__DIR__ . '/source/gameboard/index.php', $MIME);
 }
 
+// ── /billboard/help — help page ───────────────────────────────────────────────
+if (preg_match('#^/billboard/help/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/billboard/help/index.php', $MIME);
+}
+
 // ── /billboard/{token}/{slug} — public game page ─────────────────────────────
 if (preg_match('#^/billboard/([a-f0-9]{24})/([^/]+)/?$#', $uri)) {
     serveFile(__DIR__ . '/source/billboard/public/index.php', $MIME);

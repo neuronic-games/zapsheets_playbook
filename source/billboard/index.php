@@ -532,6 +532,7 @@ body.bb-admin-mode .bb-add-game-card { display:flex; }
           <hr class="user-menu-divider" />
           <button class="user-menu-item" onclick="bbMenuAction('fetch')">Fetch</button>
           <button class="user-menu-item" id="bbMenuPublish" onclick="bbMenuAction('publish')" style="display:none">🌐 Publish Site</button>
+          <a class="user-menu-item" href="<?= h($_appRoot) ?>billboard/help" target="_blank" rel="noopener" style="display:block;text-decoration:none">Help</a>
           <hr class="user-menu-divider" />
           <button class="user-menu-item" id="bbDonateBtn" onclick="bbMenuAction('donate')" style="color:#e2557a">Donate</button>
           <button class="user-menu-item" id="bbUpgradeBtn" onclick="bbMenuAction('upgrade')" style="color:#f5a623">Subscribe</button>
@@ -3497,6 +3498,7 @@ body.bb-admin-mode .bb-hero.bb-drag-over .bb-cover-btn { display: flex; }
         <hr class="user-menu-divider" />
         <button class="user-menu-item" onclick="bbMenuAction('fetch')">Fetch</button>
         <button class="user-menu-item" onclick="bbMenuAction('publish')">🌐 Publish Site</button>
+        <a class="user-menu-item" href="<?= h($_appRoot) ?>billboard/help" target="_blank" rel="noopener" style="display:block;text-decoration:none">Help</a>
         <hr class="user-menu-divider" />
         <button class="user-menu-item" id="bbMenuSignInOut" onclick="bbMenuAction('signout')">Sign Out</button>
       </div>

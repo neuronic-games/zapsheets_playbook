@@ -57,6 +57,8 @@ if (isset($pyResult['error'])) {
 
 $result['tabs']  = $pyResult['tabs']  ?? [];
 $result['title'] = $pyResult['title'] ?? '';
+require_once __DIR__ . '/linkPreview.php';
+gbSaveSheetName($sheetId, $result['title']);   // the dashboard shows the sheet by its name
 if (empty($pyResult['ok'])) {
     $result['ok'] = false;
 }

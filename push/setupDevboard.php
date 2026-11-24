@@ -37,6 +37,8 @@ if ($result === null) {
 if (!empty($result['ok'])) {
     require_once __DIR__ . '/refreshJson.php';
     refreshJson($pythonPath, $sheetId, 'games');
+    require_once __DIR__ . '/linkPreview.php';
+    gbSaveSheetName($sheetId, (string) ($result['title'] ?? ''));   // the dashboard shows the sheet by its name
 }
 
 echo json_encode($result);

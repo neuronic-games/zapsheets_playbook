@@ -37,6 +37,37 @@ function gbPreviewList(array $names, int $show = 3): string {
 }
 function gbPreviewPlural(int $n, string $one, string $many = ''): string { return $n . ' ' . ($n === 1 ? $one : ($many ?: $one . 's')); }
 
+// The Google Sheet's own name (its file title), kept when the sheet is connected: sheets/{id}/_title.txt
+// (CardBoard keeps its own copy too). '' when it isn't known yet.
+function gbSheetName(string $sheetId): string {
+    if (!preg_match('/^[A-Za-z0-9_\-]{10,128}$/', $sheetId)) return '';
+    $dir = dirname(__DIR__) . '/sheets/' . $sheetId;
+    foreach (['_title.txt', '_cardboard_title.txt'] as $f) { $t = trim((string) @file_get_contents($dir . '/' . $f)); if ($t !== '') return $t; }
+    return gbPreviewClean(gbPreviewJson($sheetId, '_cardboard_info.json')['title'] ?? '');
+}
+function gbSaveSheetName(string $sheetId, string $title): void {
+    $title = trim($title);
+    if ($title === '' || !preg_match('/^[A-Za-z0-9_\-]{10,128}$/', $sheetId)) return;
+    $dir = dirname(__DIR__) . '/sheets/' . $sheetId;
+    if (!is_dir($dir)) @mkdir($dir, 0775, true);
+    @file_put_contents($dir . '/_title.txt', mb_substr($title, 0, 200));
+}
+/** Look up the names of sheets not known yet (a few at a time), keep them, and return id => name. */
+function gbFetchSheetNames(array $ids): array {
+    $root = dirname(__DIR__) . '/sheets/';
+    // A sheet that couldn't be opened is tried again a day later, not on every visit
+    $ids = array_values(array_filter($ids, function ($id) use ($root) { return preg_match('/^[A-Za-z0-9_\-]{10,128}$/', $id) && @filemtime($root . $id . '/_title_tried') < time() - 86400; }));
+    if (!$ids) return [];
+    $py = $_ENV['PYTHON'] ?? 'python3';
+    $cmd = escapeshellarg($py) . ' ' . escapeshellarg(__DIR__ . '/gsheettitles.py');
+    foreach ($ids as $id) $cmd .= ' ' . escapeshellarg($id);
+    $r = json_decode((string) shell_exec($cmd . ' 2>/dev/null'), true);
+    $got = is_array($r['titles'] ?? null) ? $r['titles'] : [];
+    foreach ($got as $id => $t) gbSaveSheetName((string) $id, (string) $t);
+    foreach ($ids as $id) if (!isset($got[$id]) && is_dir($root . $id)) @touch($root . $id . '/_title_tried');
+    return $got;
+}
+
 // The sheet's own name and what's in it, from what the server keeps
 function gbSheetSummary(string $app, string $sheetId): array {
     $title = ''; $parts = [];

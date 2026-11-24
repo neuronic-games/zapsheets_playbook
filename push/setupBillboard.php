@@ -96,6 +96,8 @@ foreach ($rawTabs as $tabName => $status) {
 }
 $result['tabs']  = $normalTabs;
 $result['title'] = $pyResult['title'] ?? '';
+require_once __DIR__ . '/linkPreview.php';
+gbSaveSheetName($sheetId, $result['title']);   // the dashboard shows the sheet by its name
 // Only fail if there's an actual error beyond "already exists"
 if ($tabsHadRealError) {
     $result['ok'] = false;

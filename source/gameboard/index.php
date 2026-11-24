@@ -238,8 +238,16 @@ h2 { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(1.8r
 .my-sheets h4 img { width:20px; height:20px; border-radius:5px; }
 .my-sheets a.sh { display:flex; align-items:baseline; gap:.6rem; padding:.45rem .5rem; margin:0 -.5rem; border-radius:8px; text-decoration:none; color:var(--navy); font-size:13px; }
 .my-sheets a.sh:hover { background:#f6f2ea; }
-.my-sheets a.sh b { font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.my-sheets a.sh span { margin-left:auto; color:var(--muted); font-size:12px; white-space:nowrap; flex-shrink:0; }
+.my-sheets a.sh { align-items:center; }
+.my-sheets .sh-nm { display:flex; flex-direction:column; min-width:0; }
+.my-sheets .sh-nm b { font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.my-sheets .sh-nm small { font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.my-sheets .sh-id { display:none; margin-top:.2rem; font:12px ui-monospace,Menlo,monospace; color:var(--mid); background:#f6f2ea; border-radius:5px; padding:.1rem .4rem; width:max-content; max-width:100%; overflow-wrap:anywhere; user-select:all; cursor:text; }
+.my-sheets a.sh.show-id .sh-id { display:block; }
+.my-sheets .sh-eye { flex-shrink:0; width:28px; height:28px; border:none; border-radius:50%; background:transparent; color:var(--muted); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+.my-sheets .sh-eye svg { width:16px; height:16px; }
+.my-sheets .sh-eye:hover, .my-sheets a.sh.show-id .sh-eye { background:#efe9de; color:var(--navy); }
+.my-sheets .sh-when { margin-left:auto; color:var(--muted); font-size:12px; white-space:nowrap; flex-shrink:0; }
 .my-sheets .sh-new { display:flex; flex-wrap:wrap; gap:.3rem; margin:.15rem 0 .4rem; }
 .my-sheets .sh-new a { font-size:12px; color:var(--mid); border:1px solid var(--line); border-radius:999px; padding:.15rem .6rem; text-decoration:none; }
 .my-sheets .sh-new a:hover { border-color:var(--navy); color:var(--navy); }
@@ -1180,20 +1188,30 @@ footer a:hover { color:var(--navy); }
     return acct && acct.token && crossOrigin() ? u + '#gbt=' + encodeURIComponent(acct.token) : u;
   }
   // Your apps: each app's logo and an Open link, with your sheets in it underneath
+  document.addEventListener('click', function(ev) {
+    if (ev.target.closest && ev.target.closest('.sh-id')) { ev.preventDefault(); return; }   // select the ID to copy it, without opening the sheet
+    var eye = ev.target.closest && ev.target.closest('.sh-eye'); if (!eye) return;
+    ev.preventDefault(); ev.stopPropagation();
+    var row = eye.closest('.sh'), on = row.classList.toggle('show-id');
+    eye.title = on ? 'Hide the sheet ID' : 'Show the sheet ID'; eye.setAttribute('aria-label', eye.title);
+  }, true);
   function renderSheets(list) {
     var box = $('meSheets'), h = '', have = myApps();
     have.forEach(function(x) {
       var mine = list.filter(function(s) { return s.app === x.key; });
       h += '<a class="app-row" href="' + esc(appUrl(x.key)) + '"><img src="' + esc(x.icon) + '" alt=""><b>' + esc(x.name) + (planOf(x) ? '<small>' + esc(planOf(x)) + '</small>' : '') + '</b><span>Open</span></a>' + mine.map(function(s) {
-        // CardBoard knows the spreadsheet's name; for the others the title is the studio, so what's in it reads better
-        var name = (x.key === 'cardboard' ? s.title : '') || s.summary || s.title || ('Sheet ' + s.id.slice(0, 8) + '…');
-        var tip = [s.title, s.summary].filter(Boolean).join(' — ');
-        return '<a class="sh" href="' + esc(sheetUrl(s.id, x.key)) + '" title="' + esc(tip) + '"><b>' + esc(name) + '</b><span>' + esc(ago(s.opened)) + '</span></a>';
+        // The Google Sheet's name, what's in it underneath; the eye shows the sheet's ID
+        var name = s.name || (x.key === 'cardboard' ? s.title : '') || s.summary || s.title || 'Untitled sheet';
+        var what = s.summary && s.summary !== name ? s.summary : '';
+        return '<a class="sh" href="' + esc(sheetUrl(s.id, x.key)) + '"><span class="sh-nm"><b>' + esc(name) + '</b>' + (what ? '<small>' + esc(what) + '</small>' : '') +
+          '<code class="sh-id">' + esc(s.id) + '</code></span>' +
+          '<button type="button" class="sh-eye" title="Show the sheet ID" aria-label="Show the sheet ID"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>' +
+          '<span class="sh-when">' + esc(ago(s.opened)) + '</span></a>';
       }).join('');
     });
     var loose = have.length ? list.filter(function(s) { return !s.app; }) : [];
     if (loose.length) h += '<h4>Not opened in an app yet</h4>' + loose.map(function(s) {
-      return '<div class="sh-new"><b style="font-size:13px;color:var(--navy);margin-right:.3rem">Sheet ' + esc(s.id.slice(0, 8)) + '…</b>' +
+      return '<div class="sh-new"><b style="font-size:13px;color:var(--navy);margin-right:.3rem" title="' + esc(s.id) + '">' + esc(s.name || ('Sheet ' + s.id.slice(0, 8) + '…')) + '</b>' +
         have.map(function(x) { return '<a href="' + esc(sheetUrl(s.id, x.key)) + '">' + esc(x.name) + '</a>'; }).join('') + '</div>';
     }).join('');
     box.innerHTML = h ? '<h4 style="margin:0 0 .5rem;color:var(--navy)">Your apps</h4>' + h : '';

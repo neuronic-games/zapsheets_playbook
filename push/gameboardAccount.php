@@ -208,6 +208,10 @@ if ($action === 'sheets') {
     if (!$p || ($p['x'] ?? 0) < time() - 30 * 86400) fail('Please sign in again', ['need_auth' => true]);
     require_once __DIR__ . '/linkPreview.php';
     $out = [];
+    // Each sheet's Google name: kept at setup; for sheets set up before, looked up now (a few at a time) and kept
+    $names = []; $missing = [];
+    foreach ((array) ($p['sh'] ?? []) as $id) { if (!stripeValidSheetId($id)) continue; $names[$id] = gbSheetName($id); if ($names[$id] === '') $missing[] = $id; }
+    if ($missing) $names = array_merge($names, gbFetchSheetNames(array_slice($missing, 0, 6)));
     foreach (array_reverse((array) ($p['sh'] ?? [])) as $id) {
         if (!stripeValidSheetId($id)) continue;
         $dir = dirname(__DIR__) . '/sheets/' . $id;
@@ -223,7 +227,7 @@ if ($action === 'sheets') {
         if (!$apps) $apps = ['' => (int) @filemtime($dir)];   // not opened in an app yet
         foreach ($apps as $app => $when) {
             [$title, $what] = $app !== '' ? gbSheetSummary($app, $id) : ['', ''];
-            $out[] = ['id' => $id, 'app' => $app, 'title' => $title, 'summary' => $what, 'opened' => (int) $when];
+            $out[] = ['id' => $id, 'app' => $app, 'name' => (string) ($names[$id] ?? ''), 'title' => $title, 'summary' => $what, 'opened' => (int) $when];
         }
     }
     usort($out, function ($x, $y) { return $y['opened'] <=> $x['opened']; });

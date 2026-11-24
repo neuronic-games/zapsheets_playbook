@@ -237,7 +237,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
     <li><b>Start your free week</b> — enter your email and a password (8 or more characters, with a letter and a number). We email you a 6-digit code; type it in and you're in, with every feature for 7 days.</li>
     <li><b>Log in</b> — your email and password. You stay signed in on that browser.</li>
     <li><b>Forgot password?</b> — on the log-in screen. We email a code; enter it with your new password.</li>
-    <li><b>Profile</b> (menu) — your name and studio. Signing in on any of the four apps signs you in to all of them.</li>
+    <li><b>Account</b> (menu) — your picture, name and studio, email, password, plan and codes. Signing in on any of the four apps signs you in to all of them.</li>
   </ul>
 </section>
 
@@ -551,7 +551,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
         <div class="card"><b>Free week</b><p>Every feature for 7 days from sign-up. No card needed.</p></div>
         <div class="card"><b>CardBoard — $4.99/month</b><p>Keep designing after the free week. Cancel any time from <b>Manage billing</b>.</p></div>
         <div class="card"><b>All-in-one — $9.99/month</b><p>CardBoard, DevBoard, PitchBoard and BillBoard together, from the GameBoard home page.</p></div>
-        <div class="card"><b>Codes</b><p><b>Have a code?</b> in the plans (or menu → <b>Enter a code</b>). A code unlocks time — a week, a month, a year or for good — for every app, or just the app it was made for. Each works once per account.</p></div>
+        <div class="card"><b>Codes</b><p><b>Have a code?</b> in the plans (or menu → <b>Account</b>). A code unlocks time — a week, a month, a year or for good — for every app, or just the app it was made for. Each works once per account.</p></div>
       </div>
     </div>
   </div>
@@ -565,9 +565,10 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
     <?= shot('settings', 'Settings: the spreadsheet, measurements and your plan.') ?>
   </div>
   <ul>
-    <li><b>Profile</b> — your name and studio. <b>Settings</b> — open the spreadsheet in Google Sheets, choose inches or millimetres, see your plan.</li>
+    <li><b>Account</b> (first in the menu, or click your name at the top) — your picture, name and studio, the email you sign in with, your password, your plan (<b>Plans</b>) and codes.</li>
+    <li><b>Settings</b> — open the spreadsheet in Google Sheets, choose inches or millimetres, see your plan.</li>
     <li><b>Fetch</b> — read the latest from the sheet, including tabs you've added, renamed or removed in Sheets.</li>
-    <li><b>Subscription</b> / <b>Enter a code</b> — see <a href="cardboard/help#plans">Plans</a>. <b>Help</b> — this page. <b>Sign out</b> — of this browser.</li>
+    <li><b>Help</b> — this page. <b>Sign out</b> — of this browser.</li>
   </ul>
 </section>
 

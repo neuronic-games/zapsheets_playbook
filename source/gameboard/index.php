@@ -693,6 +693,7 @@ footer a:hover { color:var(--navy); }
     <div class="gbn-menu" id="navMenu">
       <div class="gbn-who" id="navWho" hidden></div>
       <button type="button" id="navMineBtn" onclick="closeNavMenu();goDash()">Your dashboard</button>
+      <button type="button" id="navAcctBtn" onclick="closeNavMenu();openAccount()" hidden>Account</button>
       <button type="button" onclick="closeNavMenu();location.href='<?= e($_hp) ?>#pricing'">Apps &amp; pricing</button>
       <button type="button" id="navStartBtn" onclick="closeNavMenu();acctClick('signup')">Start your free week</button>
       <button type="button" id="navAuthBtn" onclick="navAuth()">Sign in</button>
@@ -1107,6 +1108,17 @@ footer a:hover { color:var(--navy); }
     return APP_BASE + 'dashboard';
   }
   window.goDash = function() { location.href = dashUrl(); };
+  // Account: name, picture, email, password, plan and codes — the same dialog as in the apps
+  var _dlg = null;
+  window.openAccount = function() {
+    if (!acct) { acctClick('login'); return; }
+    if (!_dlg) _dlg = window.GBAccountDialog ? Promise.resolve() : new Promise(function(res, rej) { var s = document.createElement('script'); s.src = APP_BASE + 'js/gb-acctdlg.js?v=1'; s.onload = res; s.onerror = function() { _dlg = null; rej(); }; document.head.appendChild(s); });
+    _dlg.then(function() {
+      GBAccountDialog.open({ base: APP_BASE, app: '', sheet: '', account: function() { return (acct && acct.account) || {}; }, token: function() { return (acct && acct.token) || ''; },
+        store: store, plan: function() { return esc($('mePlan') && $('mePlan').textContent || ''); },
+        plans: function() { location.href = '<?= e($_hp) ?>#pricing'; }, signOut: function() { window.signOut(); } });
+    });
+  };
   // Just signed in: off to the dashboard (unless checkout is next)
   function signedIn() { closeAuth(); if (!DASH && !wantAll) goDash(); }
   function crossOrigin() { try { return new URL(APPS_URL, location.href).origin !== location.origin; } catch (e) { return false; } }
@@ -1124,7 +1136,7 @@ footer a:hover { color:var(--navy); }
     $('navAcct').classList.toggle('has-pic', !!im); $('navAcct').title = a ? (a.name || a.email || 'Menu') : 'Menu';
     $('navWho').hidden = !a;
     if (a) $('navWho').innerHTML = '<b>' + esc(a.name || (a.email || '').split('@')[0]) + '</b>' + esc(a.email || '');
-    $('navMineBtn').hidden = !a; $('navStartBtn').hidden = !!a; $('navAuthBtn').textContent = a ? 'Sign out' : 'Sign in';
+    $('navMineBtn').hidden = !a; $('navAcctBtn').hidden = !a; $('navStartBtn').hidden = !!a; $('navAuthBtn').textContent = a ? 'Sign out' : 'Sign in';
     if ($('heroCta')) $('heroCta').textContent = a ? 'Your dashboard' : 'Start your free week';
     // The home page's account section stays the same; the dashboard shows the account
     $('acctOut').hidden = DASH && !!a; $('acctIn').hidden = !(DASH && a);

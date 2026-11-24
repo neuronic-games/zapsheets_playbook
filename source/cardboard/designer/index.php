@@ -856,12 +856,12 @@ body.cb-gate #signinOverlay { background:#2e2763; }
         <svg id="menuIco" width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/></svg>
       </button>
       <div class="account-menu" id="accountMenu">
-        <div class="mm-who" id="mmWho" style="display:none"></div>
-        <button class="account-menu-item" onclick="closeAccountMenu();openProfileDialog()">Profile</button>
+        <div class="mm-who" id="mmWho" style="display:none;cursor:pointer" title="Account" onclick="closeAccountMenu();openAccountDialog()"></div>
+        <button class="account-menu-item" onclick="closeAccountMenu();openAccountDialog()">Account</button>
         <button class="account-menu-item" onclick="closeAccountMenu();openSettingsDialog()">Settings</button>
         <button class="account-menu-item" onclick="closeAccountMenu();reloadSheet()" title="Read the latest data from the Google Sheet">Fetch</button>
-        <button class="account-menu-item" id="cbSubBtn" onclick="closeAccountMenu();openPlansDialog()" style="color:#f5a623">Subscribe</button>
-        <button class="account-menu-item" id="cbCodeBtn" onclick="closeAccountMenu();openCodeDialog()" hidden>Enter a code</button>
+        <button class="account-menu-item" id="cbSubBtn" onclick="closeAccountMenu();openPlansDialog()" style="color:#f5a623;display:none">Subscribe</button>
+        <button class="account-menu-item" id="cbCodeBtn" onclick="closeAccountMenu();openCodeDialog()" hidden style="display:none">Enter a code</button>
         <button class="account-menu-item" onclick="closeAccountMenu();window.open(APP_BASE + 'cardboard/help', '_blank')">Help</button>
         <a class="account-menu-item" href="gameboard" style="text-decoration:none">GameBoard</a>
         <button class="account-menu-item" id="cbSignOut" onclick="closeAccountMenu();signOut()" hidden>Sign out</button>

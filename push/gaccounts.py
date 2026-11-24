@@ -244,6 +244,17 @@ def main():
         write(n, u)
         out({'ok': True, 'user': u, 'days': days, 'apps': apps})
 
+    if action == 'rename':   # a new sign-in email for the same row (everything else stays: sheets, plans, codes)
+        if not u: out({'error': 'There’s no account for that email'})
+        new = str(data.get('new_email') or '').strip().lower()
+        if not new or '@' not in new: out({'error': 'Missing the new email'})
+        n2, u2 = find('Email', new)
+        if u2: out({'error': 'That email already has a GameBoard account'})
+        u['Email'] = new
+        u['Last Seen'] = iso(now())
+        write(n, u)
+        out({'ok': True, 'user': u})
+
     if action == 'update':
         u = u or new_person(email)
         for k, v in (data.get('fields') or {}).items():

@@ -446,7 +446,7 @@ table.keys tr.h td { background:#fffafa; font-family:'DINBlack',sans-serif; font
         <div class="card"><b>Free week</b><p>Every feature for 7 days from sign-up. No card needed.</p></div>
         <div class="card"><b>PitchBoard — $1.99/month</b><p>Keep tracking after the free week. Cancel any time from <b>Manage billing</b>.</p></div>
         <div class="card"><b>All-in-one — $9.99/month</b><p>PitchBoard, DevBoard, CardBoard and BillBoard together, from the GameBoard home page.</p></div>
-        <div class="card"><b>Codes</b><p><b>Have a code?</b> in the plans (or menu → <b>Enter a code</b>) unlocks time for every app, or just the one it was made for.</p></div>
+        <div class="card"><b>Codes</b><p><b>Have a code?</b> in the plans (or menu → <b>Account</b>) unlocks time for every app, or just the one it was made for.</p></div>
       </div>
     </div>
   </div>
@@ -460,10 +460,11 @@ table.keys tr.h td { background:#fffafa; font-family:'DINBlack',sans-serif; font
   </div>
   <ul>
     <li>At the top: who’s signed in, and the plan.</li>
+    <li><b>Account</b> (first in the menu, or click your name at the top) — your picture, name and studio, the email you sign in with, your password, your plan (<b>Plans</b>) and codes.</li>
     <li><b>Profile</b> — your public profile (name, location, a short bio) for the people you share with. <b>Settings</b> — your name, email and phone, and your <b>Compendium</b> code to see publisher details from The Compendium by Cardboard Edison.</li>
     <li><b>Fetch</b> — read the latest from the sheet. <b>Import</b> and <b>Slideshow</b> — see <a href="pitchboard/help#import">Import &amp; slideshow</a>.</li>
     <li><b>Releases</b> — what’s new. <b>Feedback</b> — tell us what you think. <b>Help</b> — this page.</li>
-    <li><b>Subscription</b> / <b>Enter a code</b> — see <a href="pitchboard/help#plans">Plans</a>. <b>GameBoard</b> — back to the GameBoard home. <b>Sign out</b> — asks first, then signs you out of every app in this browser.</li>
+    <li><b>GameBoard</b> — back to the GameBoard home. <b>Sign out</b> — asks first, then signs you out of every app in this browser.</li>
   </ul>
 </section>
 <section class="topic" id="trouble">

@@ -15,6 +15,10 @@
  *   image    — cbt, file (a picture)       → {ok, token, account}   (profile picture: squared to 256 px WebP, kept in
  *                                            images/avatars/, its link in the Admin sheet's Image column; no file = remove)
  *   sheets   — cbt                         → {ok, sheets: [{id, app, title, summary, opened}]}  (your sheets, by app)
+ *   password — cbt, current, password      → {ok, token, account}   (a new password; the current one first)
+ *   send     — cbt, email, mode=change     → {ok}  (a code to a NEW email address, to move the account to it)
+ *   email    — cbt, email, code, current   → {ok, token, account}   (the account's sign-in email becomes the new one;
+ *                                            subscriptions follow; sign-ins from before the change must sign in again)
  *   redeem   — cbt, code                   → {ok, token, account, days, apps}  (a free code from the Admin sheet's Codes tab —
  *                                            every app, or only the apps in its App column —
  *                                            or an activation key: unlocked with no time limit)
@@ -93,8 +97,8 @@ function cbCodeEmailHtml(string $code, string $mode = 'signup'): string {
             '<td style="font-family:' . $font . ';font-size:22px;font-weight:800;letter-spacing:.5px;"><span style="color:#f6efe2;">Game</span><span style="color:#f0766a;">Board</span></td>' .
           '</tr></table></td></tr>' .
         '<tr><td style="padding:30px 28px 8px;font-family:' . $font . ';color:#1b1b2b;">' .
-          '<div style="font-size:20px;font-weight:700;color:#2e2763;margin:0 0 8px;">' . ($mode === 'reset' ? 'Reset your password' : 'Confirm your email') . '</div>' .
-          '<div style="font-size:15px;line-height:1.55;color:#555a70;margin:0 0 22px;">' . ($mode === 'reset' ? 'Enter this code to choose a new password for your GameBoard account.' : 'Enter this code to finish creating your GameBoard account.') . ' It works for 15 minutes.</div>' .
+          '<div style="font-size:20px;font-weight:700;color:#2e2763;margin:0 0 8px;">' . ($mode === 'reset' ? 'Reset your password' : ($mode === 'change' ? 'Confirm your new email' : 'Confirm your email')) . '</div>' .
+          '<div style="font-size:15px;line-height:1.55;color:#555a70;margin:0 0 22px;">' . ($mode === 'reset' ? 'Enter this code to choose a new password for your GameBoard account.' : ($mode === 'change' ? 'Enter this code to sign in to your GameBoard account with this email from now on.' : 'Enter this code to finish creating your GameBoard account.')) . ' It works for 15 minutes.</div>' .
           '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;"><tr>' . $digits . '</tr></table>' .
           '<div style="font-size:13px;line-height:1.55;color:#8a8fa8;margin:0 0 22px;">One account for PitchBoard, DevBoard, CardBoard and BillBoard. Your first week is free, with every feature. If you didn’t ask for this code, you can ignore this email.</div>' .
         '</td></tr>' .
@@ -123,10 +127,41 @@ function cbPasswordIn(): string {
     if (strlen($pw) > 200) fail('That password is too long');
     return $pw;
 }
+/** The signed-in person from the token (cbt), or a need_auth answer. A sign-in from before the account's email changed must sign in again. */
+function cbTokenIn(): array {
+    $p = cbReadToken(cbRequestToken());
+    if (!$p || ($p['x'] ?? 0) < time() - 30 * 86400) fail('Please sign in again', ['need_auth' => true]);
+    $mv = json_decode((string) @file_get_contents(cbPrivateDir('moved') . '/' . hash('sha256', strtolower($p['e'])) . '.json'), true);
+    if ($mv && (($p['x'] ?? 0) - CB_TOKEN_HOURS * 3600) <= ($mv['t'] ?? 0)) fail('Your account’s email changed — please sign in with ' . ($mv['to'] ?? 'the new one'), ['need_auth' => true]);
+    return $p;
+}
 function cbFind(string $email): ?array {
     $f = cbAdmin(['action' => 'find', 'field' => 'Email', 'value' => $email]);
     if (empty($f['ok'])) fail($f['error'] ?? 'Couldn’t check your account');
     return $f['user'] ?: null;
+}
+
+/** The emailed code is right (and for this kind of step): used up. Else fails. */
+function cbCheckCode(string $file, string $email, string $code, string $from): void {
+    $c = json_decode((string) @file_get_contents($file), true);
+    if (!$c || ($c['x'] ?? 0) < time()) { @unlink($file); fail('That code has expired — ask for a new one'); }
+    if ((($c['mode'] ?? '') === 'change') !== ($from !== '') || ($from !== '' && ($c['from'] ?? '') !== $from)) fail('That code isn’t right');
+    if (!hash_equals($c['h'], hash_hmac('sha256', $email . '|' . $code, cbSecret()))) {
+        $c['tries'] = ($c['tries'] ?? 0) + 1;
+        if ($c['tries'] >= 5) { @unlink($file); fail('Too many wrong codes — ask for a new one'); }
+        file_put_contents($file, json_encode($c), LOCK_EX); usleep(400000);
+        fail('That code isn’t right');
+    }
+    @unlink($file);
+}
+/** The person's current password is right (an account without one yet passes). Else fails. */
+function cbCheckPassword(string $email): array {
+    if (!cbLimit('pwcheck|' . $email, 10)) fail('Too many tries — please wait a while and try again');
+    $u = cbFind($email);
+    if (!$u) fail('Please sign in again', ['need_auth' => true]);
+    $hash = trim((string) ($u['Password Hash'] ?? ''));
+    if ($hash !== '' && !password_verify((string) ($_POST['current'] ?? ''), $hash)) { usleep(500000); fail('Your current password isn’t right'); }
+    return $u;
 }
 
 // Signing up and resetting a password both prove the email with a code first.
@@ -134,17 +169,24 @@ function cbFind(string $email): ?array {
 //   mode reset  — an existing account chooses a new password
 if ($action === 'send') {
     $email = cbEmailIn();
-    $mode  = ($_POST['mode'] ?? '') === 'reset' ? 'reset' : 'signup';
+    $mode  = in_array($_POST['mode'] ?? '', ['reset', 'change'], true) ? $_POST['mode'] : 'signup';
+    $from  = '';
+    if ($mode === 'change') {   // moving a signed-in account to a new email: the code goes to the new address
+        $me = cbTokenIn(); $from = strtolower($me['e']);
+        if ($email === $from) fail('That’s already your email');
+    }
     if (!cbLimit('send|' . $email, 5) || !cbLimit('sendip|' . $ip, 20)) fail('Too many codes asked for — please wait a while and try again');
     $u = cbFind($email);
     if ($mode === 'signup' && $u && trim((string) ($u['Password Hash'] ?? '')) !== '') fail('You already have a GameBoard account — log in instead.', ['has_account' => true]);
+    if ($mode === 'change' && $u) fail('That email already has a GameBoard account');
     if ($mode === 'reset' && !$u) fail('There’s no GameBoard account for that email — start your free week instead.', ['no_account' => true]);
     $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
     $file = cbPrivateDir('codes') . '/' . hash('sha256', $email) . '.json';
-    file_put_contents($file, json_encode(['h' => hash_hmac('sha256', $email . '|' . $code, cbSecret()), 'x' => time() + 900, 'tries' => 0, 'mode' => $mode]), LOCK_EX);
+    file_put_contents($file, json_encode(['h' => hash_hmac('sha256', $email . '|' . $code, cbSecret()), 'x' => time() + 900, 'tries' => 0, 'mode' => $mode, 'from' => $from]), LOCK_EX);
     $body = "Your GameBoard code is:\r\n\r\n    $code\r\n\r\nIt works for 15 minutes. If you didn't ask for it, you can ignore this email.\r\n\r\n— GameBoard by ZapSheets";
     $why  = cbSendMail($email, 'Your GameBoard code: ' . $code, $body, cbCodeEmailHtml($code, $mode));
     if ($why !== '' && empty($_ENV['GAMEBOARD_AUTH_DEBUG'] ?? ($_ENV['CARDBOARD_AUTH_DEBUG'] ?? ''))) { @unlink($file); fail('The email couldn’t be sent — please try again later'); }
+    if ($mode === 'change') $u = null;
     ok(['existing' => (bool) $u] + (!empty($_ENV['GAMEBOARD_AUTH_DEBUG'] ?? ($_ENV['CARDBOARD_AUTH_DEBUG'] ?? '')) ? ['debug_code' => $code] : []));   // debug code only on a test server
 }
 
@@ -155,14 +197,7 @@ if ($action === 'verify') {
     $code  = preg_replace('/\D/', '', (string) ($_POST['code'] ?? ''));
     $file  = cbPrivateDir('codes') . '/' . hash('sha256', $email) . '.json';
     $c = json_decode((string) @file_get_contents($file), true);
-    if (!$c || ($c['x'] ?? 0) < time()) { @unlink($file); fail('That code has expired — ask for a new one'); }
-    if (!hash_equals($c['h'], hash_hmac('sha256', $email . '|' . $code, cbSecret()))) {
-        $c['tries'] = ($c['tries'] ?? 0) + 1;
-        if ($c['tries'] >= 5) { @unlink($file); fail('Too many wrong codes — ask for a new one'); }
-        file_put_contents($file, json_encode($c), LOCK_EX); usleep(400000);
-        fail('That code isn’t right');
-    }
-    @unlink($file);
+    cbCheckCode($file, $email, $code, '');
     $r = cbAdmin(['action' => 'user', 'email' => $email, 'name' => trim((string) ($_POST['name'] ?? '')), 'sheet' => $sheet,
                   'fields' => ['Password Hash' => password_hash($pw, PASSWORD_DEFAULT)]]);
     if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t open your account');
@@ -185,8 +220,7 @@ if ($action === 'login') {
 }
 
 if ($action === 'redeem') {
-    $p = cbReadToken(cbRequestToken());
-    if (!$p || ($p['x'] ?? 0) < time() - 30 * 86400) fail('Please sign in again', ['need_auth' => true]);
+    $p = cbTokenIn();
     $code = trim((string) ($_POST['code'] ?? ''));
     if ($code === '' || strlen($code) > 100) fail('Enter a code');
     if (!cbLimit('redeem|' . $p['e'], 10)) fail('Too many tries — please wait an hour and try again');
@@ -204,8 +238,7 @@ if ($action === 'redeem') {
 // each app the sheet is used in (newest first). The app comes from _gb_apps.json, or for older sheets from what the
 // server keeps for them (CardBoard's files, pitches, contracts, a BillBoard site).
 if ($action === 'sheets') {
-    $p = cbReadToken(cbRequestToken());
-    if (!$p || ($p['x'] ?? 0) < time() - 30 * 86400) fail('Please sign in again', ['need_auth' => true]);
+    $p = cbTokenIn();
     require_once __DIR__ . '/linkPreview.php';
     $out = [];
     foreach (array_reverse((array) ($p['sh'] ?? [])) as $id) {
@@ -231,9 +264,35 @@ if ($action === 'sheets') {
 }
 
 // claim — cbt, sheet: set this sheet up as yours (Connect on the home page, or "Make it mine" when nobody has it)
-if ($action === 'refresh' || $action === 'activate' || $action === 'profile' || $action === 'claim' || $action === 'image') {
-    $p = cbReadToken(cbRequestToken());
-    if (!$p || ($p['x'] ?? 0) < time() - 30 * 86400) fail('Please sign in again', ['need_auth' => true]);
+// A new sign-in email: the code sent to it, and the current password
+if ($action === 'email') {
+    $p = cbTokenIn(); $old = strtolower($p['e']);
+    $email = cbEmailIn();
+    cbCheckPassword($old);
+    cbCheckCode(cbPrivateDir('codes') . '/' . hash('sha256', $email) . '.json', $email, preg_replace('/\D/', '', (string) ($_POST['code'] ?? '')), $old);
+    $r = cbAdmin(['action' => 'rename', 'email' => $old, 'new_email' => $email]);
+    if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t change your email');
+    // Sign-ins from before the change (other browsers) sign in again, with the new email
+    @file_put_contents(cbPrivateDir('moved') . '/' . hash('sha256', $old) . '.json', json_encode(['to' => $email, 't' => time()]), LOCK_EX);
+    // Subscriptions follow the account (renewals are matched by this email), and receipts go to the new address
+    foreach ((stripeRequest('GET', 'subscriptions/search', ['query' => "metadata['cb_email']:'" . str_replace("'", "\\'", $old) . "'", 'limit' => 100])['data'] ?? []) as $s) {
+        if (!empty($s['id'])) stripeRequest('POST', 'subscriptions/' . $s['id'], ['metadata[cb_email]' => $email]);
+        if (!empty($s['customer']) && is_string($s['customer'])) stripeRequest('POST', 'customers/' . $s['customer'], ['email' => $email]);
+    }
+    if (!empty($r['user']['Stripe Customer'])) stripeRequest('POST', 'customers/' . trim((string) $r['user']['Stripe Customer']), ['email' => $email]);
+    $r = cbAdmin(['action' => 'user', 'email' => $email, 'sheet' => $sheet]);
+    if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t open your account');
+    cbSignedIn($r['user'], $sheet, !empty($r['taken']));
+}
+
+if ($action === 'refresh' || $action === 'activate' || $action === 'profile' || $action === 'claim' || $action === 'image' || $action === 'password') {
+    $p = cbTokenIn();
+    if ($action === 'password') {
+        cbCheckPassword($p['e']);
+        $pw = cbPasswordIn();
+        $r = cbAdmin(['action' => 'update', 'email' => $p['e'], 'fields' => ['Password Hash' => password_hash($pw, PASSWORD_DEFAULT)]]);
+        if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t change your password');
+    }
     if ($action === 'activate') {
         $key = (string) ($_POST['key'] ?? '');
         if (trim($key) === '' || strlen($key) > 200) fail('Enter an activation key');

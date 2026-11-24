@@ -18,7 +18,7 @@
  * GBAccount.token()    — the signed token or ''
  * GBAccount.canEdit()  — signed in, the sheet's owner, the app unlocked
  * GBAccount.require(fn)— true when canEdit(); otherwise opens sign-in or the plans (and calls fn after signing in)
- * GBAccount.signIn() / signOut() / openPlans(reason) / openCode() / refresh(force)
+ * GBAccount.signIn() / signOut() / openPlans(reason) / openCode() / openAccount() / refresh(force)
  * The page's account menu (O.menuButton / O.menu, or found by its usual id) gets the profile picture on its
  * button, a header with the name, email and plan, and "Enter a code" — the same as CardBoard's.
  */
@@ -360,17 +360,19 @@
       var nm = String(a.name || '').trim() || String(a.email || '').split('@')[0];
       who.innerHTML = '<b>' + esc(nm) + '</b>' + esc(a.email || '') + (checked() ? '<small>' + planLabel().replace(/<[^>]+>/g, '') + '</small>' : '');
     }
-    // "Enter a code" under the subscription item (any item whose text is Subscribe / Subscription)
-    var code = list.querySelector('.gba-mcode');
-    if (!code) {
-      var sub = Array.prototype.filter.call(list.querySelectorAll('button, a'), function(b) { return /^\s*subscri(be|ption)\s*$/i.test(b.textContent); })[0];
-      if (sub) {
-        code = document.createElement('button'); code.type = 'button'; code.className = sub.className + ' gba-mcode'; code.textContent = 'Enter a code';
-        code.onclick = function(e) { e.stopPropagation(); list.classList.remove('open'); openCode(); };
-        sub.parentNode.insertBefore(code, sub.nextSibling);
-      }
+    if (!who._acct) { who._acct = true; who.style.cursor = 'pointer'; who.title = 'Account'; who.onclick = function(e) { e.stopPropagation(); list.classList.remove('open'); openAccount(); }; }
+    // "Account" (name, picture, email, password, plan, codes) in place of the app's own Subscribe / Subscription item
+    var subs = Array.prototype.filter.call(list.querySelectorAll('button, a'), function(b) { return !b.classList.contains('gba-macct') && /^\s*(subscri(be|ption)|pro active|core active)\s*$/i.test(b.textContent); });
+    var acctItem = list.querySelector('.gba-macct');
+    if (!acctItem) {
+      var any = list.querySelector('button:not(.gba-mhome), a:not(.gba-mhome)'), ref = who.nextSibling;   // first in the menu, under who's signed in
+      acctItem = document.createElement('button'); acctItem.type = 'button';
+      acctItem.className = ((any && any.className) || '').replace(/\b(signout|active|gba-mhome)\b/g, '') + ' gba-macct'; acctItem.textContent = 'Account';
+      acctItem.style.color = '';
+      acctItem.onclick = function(e) { e.stopPropagation(); list.classList.remove('open'); if (typeof window.closeAccountMenu === 'function') try { window.closeAccountMenu(); } catch (x) {} if (typeof window.closeBbMenu === 'function') try { window.closeBbMenu(); } catch (x) {} openAccount(); };
+      list.insertBefore(acctItem, ref);
     }
-    if (code) code.style.display = !a || (appInfo() || {}).state === 'activated' || unlocked() ? 'none' : '';
+    subs.forEach(function(b) { b.style.display = 'none'; });
     // "GameBoard" — back to the GameBoard home, just above Sign in / Sign out (the menu's last item)
     if (!list.querySelector('.gba-mhome')) {
       var items = list.querySelectorAll('button, a'), last = items[items.length - 1], ref = last;
@@ -380,6 +382,18 @@
       home.style.textDecoration = 'none'; home.style.display = 'block'; home.style.boxSizing = 'border-box';
       if (ref) list.insertBefore(home, ref); else list.appendChild(home);
     }
+  }
+  // The Account dialog (js/gb-acctdlg.js, loaded the first time it's needed)
+  var _dlgLoad = null;
+  function openAccount() {
+    if (!ACCT) { signIn().then(openAccount, function() {}); return; }
+    if (!_dlgLoad) _dlgLoad = window.GBAccountDialog ? Promise.resolve() : new Promise(function(res, rej) {
+      var s = document.createElement('script'); s.src = O.base + 'js/gb-acctdlg.js?v=1'; s.onload = res; s.onerror = function() { _dlgLoad = null; rej(); }; document.head.appendChild(s);
+    });
+    _dlgLoad.then(function() {
+      GBAccountDialog.open({ base: O.base, app: O.app, sheet: O.sheet || '', account: info, token: function() { return (ACCT && ACCT.token) || ''; },
+        store: store, plan: planLabel, plans: function() { openPlans(''); }, toast: toast, signOut: signOut });
+    }, function() { toast('Couldn’t open your account — check your connection'); });
   }
   function openCode() {   // the plans, with the code box already open
     if (!ACCT) { signIn().then(openCode, function() {}); return; }
@@ -607,7 +621,7 @@
       return accountPost('claim').then(function(r) { store(r); return isOwner(); });
     },
     toast: function(m) { build(); toast(m); },
-    signIn: function() { return signIn(false); }, signOut: signOut, openPlans: openPlans, openCode: openCode, refresh: refresh, onChange: function(fn) { _listeners.push(fn); },
+    signIn: function() { return signIn(false); }, signOut: signOut, openPlans: openPlans, openCode: openCode, openAccount: openAccount, refresh: refresh, onChange: function(fn) { _listeners.push(fn); },
     planLabel: function() { return planLabel().replace(/<[^>]+>/g, ''); }
   };
   window.GBAccount = api;

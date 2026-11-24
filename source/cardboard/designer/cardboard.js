@@ -4261,6 +4261,16 @@ function saveProfile() {
     })
     .catch(function(e) { $('pfErr').textContent = 'Couldn\'t save — ' + e.message; btn.disabled = false; btn.textContent = 'Save'; });
 }
+// Account: picture, name and studio, sign-in email, password, plan and codes — the dialog every GameBoard app shares
+var _acctDlg = null;
+function openAccountDialog() {
+  if (!ACCT) { askSignIn().then(openAccountDialog, function() {}); return; }
+  if (!_acctDlg) _acctDlg = window.GBAccountDialog ? Promise.resolve() : new Promise(function(res, rej) { var s = document.createElement('script'); s.src = APP_BASE + 'js/gb-acctdlg.js?v=1'; s.onload = res; s.onerror = function() { _acctDlg = null; rej(); }; document.head.appendChild(s); });
+  _acctDlg.then(function() {
+    GBAccountDialog.open({ base: APP_BASE, app: 'cardboard', sheet: SHEET_ID, account: function() { return acctInfo() || {}; }, token: function() { return (ACCT && ACCT.token) || ''; },
+      store: storeAcct, plan: planLabel, plans: function() { openPlansDialog(); }, toast: function(m) { toast(m); }, signOut: signOut });
+  }, function() { toast('Couldn’t open your account — check your connection', true); });
+}
 function changeSignInEmail() {
   askDialog({ title: 'Use a different email?', message: 'You’ll be signed out, then you can sign in with the other address. Each email has its own free week and subscription.', ok: 'Continue', cancel: 'Cancel' })
     .then(function(yes) { if (!yes) return; closeDialog('profileOverlay'); forgetAcct(); askSignIn().then(openProfileDialog, function() {}); });

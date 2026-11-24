@@ -25,7 +25,7 @@
 (function() {
   'use strict';
   var KEY = 'cb_account', MAX_AGE = 4 * 3600 * 1000;
-  var O = {}, ACCT = null, _refreshing = null, _signIn = null, _mode = '', _pending = null, _listeners = [];
+  var O = {}, ACCT = null, _refreshing = null, _failed = 0, _retryT = 0, _quiet = 0, _signIn = null, _mode = '', _pending = null, _listeners = [];
   try { ACCT = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { ACCT = null; }
   // Older pages put a different shape here: only an object with a token counts
   if (ACCT && !ACCT.token) ACCT = null;
@@ -56,7 +56,11 @@
     var s = null; try { s = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
     var tok = s && s.token ? s.token : '';
     if (tok === ((ACCT && ACCT.token) || '')) return;
-    if (!tok) { ACCT = null; apply(); return; }
+    if (!tok) { if (ACCT) { ACCT = null; apply(); } return; }
+    // Every check hands out a fresh token: the same account checked in another tab just takes the new token
+    // (checking again here would set that tab off, and so on, back and forth)
+    var mine = info(), theirs = s.account;
+    if (ACCT && mine && (!theirs || String(theirs.email || '').toLowerCase() === String(mine.email || '').toLowerCase())) { ACCT.token = tok; return; }
     ACCT = s; apply(); refresh(true).catch(function() {});
   }
   window.addEventListener('storage', function(ev) { if (ev.key === KEY || ev.key === null) follow(); });
@@ -68,15 +72,25 @@
     var fd = new FormData(); fd.append('action', action); fd.append('sheet', O.sheet || ''); fd.append('app', O.app);
     Object.keys(extra || {}).forEach(function(k) { fd.append(k, extra[k]); });
     if (ACCT && ACCT.token && !fd.has('cbt')) fd.append('cbt', ACCT.token);
-    return _fetch(O.base + 'push/gameboardAccount.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
+    var ctl = window.AbortController ? new AbortController() : null, tm = ctl ? setTimeout(function() { ctl.abort(); }, 20000) : 0;   // never wait forever
+    return _fetch(O.base + 'push/gameboardAccount.php', { method: 'POST', body: fd, signal: ctl ? ctl.signal : undefined })
+      .then(function(r) { clearTimeout(tm); return r.json(); }, function(e) { clearTimeout(tm); throw new Error(e && e.name === 'AbortError' ? 'The account check took too long' : 'Couldn’t reach the server'); })
       .then(function(r) { if (!r || r.error) { var e = new Error(r && r.error ? r.error : 'No response'); e.needAuth = !!(r && r.need_auth); throw e; } return r; });
   }
   function refresh(force) {
     if (!ACCT) return Promise.reject(new Error('Not signed in'));
     if (!force && checked() && Date.now() - (ACCT.checked || 0) < MAX_AGE) return Promise.resolve(ACCT);
     if (_refreshing) return _refreshing;
-    _refreshing = accountPost('refresh').then(function(r) { store(r); return ACCT; })
-      .catch(function(e) { if (e.needAuth) forget(); throw e; })
+    clearTimeout(_retryT);
+    if (!checked() && !_failed) { _quiet = Date.now() + 1200; apply(); setTimeout(apply, 1250); }   // a quick check needs no bar
+    _refreshing = accountPost('refresh').then(function(r) { _failed = 0; store(r); return ACCT; })
+      .catch(function(e) {
+        if (e.needAuth) { _failed = 0; forget(); throw e; }
+        // Couldn't check (slow server, no connection): say so, and try again by itself — sooner first, then less often
+        _failed++; apply();
+        _retryT = setTimeout(function() { if (ACCT && !checked()) refresh(true).catch(function() {}); }, Math.min(60000, 4000 * Math.pow(2, _failed - 1)));
+        throw e;
+      })
       .then(function(a) { _refreshing = null; return a; }, function(e) { _refreshing = null; throw e; });
     return _refreshing;
   }
@@ -234,11 +248,12 @@
     if (bar) {
       var btn = $('gbaBarBtn'), msg = $('gbaBarMsg'); btn.hidden = false;
       if (!a) { msg.innerHTML = '<b>Sign in to make changes</b> — your first week of ' + esc(O.name) + ' is free, with every feature.'; btn.textContent = 'Sign in'; btn.onclick = function() { signIn().catch(function() {}); }; }
+      else if (!checked() && _failed) { msg.innerHTML = '<b>Couldn’t check your account.</b> Trying again — or try now.'; btn.textContent = 'Try again'; btn.onclick = function() { _failed = 0; apply(); refresh(true).catch(function() {}); }; }
       else if (!checked()) { msg.textContent = 'Checking your account…'; btn.hidden = true; }
       else if (!isOwner() && a.unclaimed) { msg.innerHTML = '<b>View only.</b> Nobody has set this sheet up with a GameBoard account yet — if it’s yours, make it yours to change it.'; btn.textContent = 'Make it mine'; btn.onclick = claim; }
       else if (!isOwner()) { msg.innerHTML = '<b>View only.</b> This sheet belongs to another GameBoard account — you can look, not change it.'; btn.hidden = true; }
       else { msg.innerHTML = '<b>Your free week has ended.</b> Everything is safe in your sheet — subscribe to keep using ' + esc(O.name) + '.'; btn.textContent = 'See plans'; btn.onclick = function() { openPlans('locked'); }; }
-      bar.hidden = ok || (!a && O.gate === false);   // pages anyone may look at: no bar until someone signs in
+      bar.hidden = ok || (!a && O.gate === false) || (a && !checked() && !_failed && Date.now() < _quiet);   // pages anyone may look at: no bar until someone signs in
     }
     menu();
     _listeners.forEach(function(fn) { try { fn(api.state()); } catch (e) {} });

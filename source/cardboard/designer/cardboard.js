@@ -4300,7 +4300,10 @@ function followAcct() {
   var s = null; try { s = JSON.parse(localStorage.getItem(ACCT_KEY) || 'null'); } catch (e) {}
   var tok = s && s.token ? s.token : '';
   if (tok === ((ACCT && ACCT.token) || '')) return;
-  if (!tok) { ACCT = null; applyAcct(); return; }
+  if (!tok) { if (ACCT) { ACCT = null; applyAcct(); } return; }
+  // Every check hands out a fresh token: the same account checked in another tab just takes the new token
+  var mine = acctInfo(), theirs = s.account;
+  if (ACCT && mine && (!theirs || String(theirs.email || '').toLowerCase() === String(mine.email || '').toLowerCase())) { ACCT.token = tok; return; }
   window.location.reload();   // a different account: start over with it
 }
 window.addEventListener('storage', function(ev) { if (ev.key === ACCT_KEY || ev.key === null) followAcct(); });

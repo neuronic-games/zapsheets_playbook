@@ -1234,6 +1234,8 @@ footer a:hover { color:var(--navy); }
   function follow() {
     var s = null; try { s = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
     if ((s && s.token || '') === (acct && acct.token || '')) return;
+    var em = function(x) { return String((x && x.account && x.account.email) || '').toLowerCase(); };
+    if (s && s.token && acct && (!s.account || em(s) === em(acct))) { acct.token = s.token; return; }   // the same account, just re-checked
     acct = s && s.token ? s : null; show();
   }
   window.addEventListener('storage', function(ev) { if (ev.key === KEY || ev.key === null) follow(); });

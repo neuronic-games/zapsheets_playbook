@@ -573,7 +573,7 @@ input[type="date"].field-input { -webkit-appearance:none; appearance:none; min-h
 }
 .dialog-shake { animation:dialog-shake .35s ease; }
 </style>
-<link rel="stylesheet" href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>css/gameboard-ui.css?v=5" />
+<link rel="stylesheet" href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>css/gameboard-ui.css?v=6" />
 </head>
 <body class="gb-app gb-dev">
 

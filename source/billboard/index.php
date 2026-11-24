@@ -500,8 +500,8 @@ body.bb-admin-mode .bb-add-game-card { display:flex; }
 .bb-plan-current b { color:#333; } .bb-plan-current span { color:#888; }
 .bb-plan-current.paid { background:#edf7ed; } .bb-plan-current.paid b { color:#2e7d32; }
 </style>
-<link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=5" />
-<?php if (!isset($_bbPublicBase)): ?><script src="<?= h($_appRoot) ?>js/gb-account.js?v=8"></script><?php endif; ?>
+<link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=6" />
+<?php if (!isset($_bbPublicBase)): ?><script src="<?= h($_appRoot) ?>js/gb-account.js?v=9"></script><?php endif; ?>
 </head>
 <body<?= isset($_bbPublicBase) ? '' : ' class="gb-app gb-bill"' ?>>
 
@@ -3461,8 +3461,8 @@ body.bb-admin-mode .bb-hero.bb-drag-over .bb-cover-btn { display: flex; }
 .bb-social-set:hover { border-color:rgba(255,255,255,.6); background:rgba(255,255,255,.08); }
 .bb-social-empty { display:none; }
 </style>
-<link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=5" />
-<?php if (!isset($_bbPublicBase)): ?><script src="<?= h($_appRoot) ?>js/gb-account.js?v=8"></script><?php endif; ?>
+<link rel="stylesheet" href="<?= h($_appRoot) ?>css/gameboard-ui.css?v=6" />
+<?php if (!isset($_bbPublicBase)): ?><script src="<?= h($_appRoot) ?>js/gb-account.js?v=9"></script><?php endif; ?>
 </head>
 <body<?= isset($_bbPublicBase) ? '' : ' class="gb-app gb-bill"' ?>>
 

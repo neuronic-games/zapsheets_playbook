@@ -82,7 +82,7 @@ if ($_sheet_id && is_dir($_sheets_root)) {
 <head>
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
 <script src="js/activationKey.js" defer></script>
-<script src="js/gb-account.js?v=8"></script>
+<script src="js/gb-account.js?v=9"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PitchBoard</title>
@@ -1701,7 +1701,7 @@ if ($_sheet_id && is_dir($_sheets_root)) {
     .pb-plan-go { background:#f5a623; color:#fff; border:none; }
     .pb-plan-go:disabled { opacity:.6; cursor:default; }
 </style>
-<link rel="stylesheet" href="css/gameboard-ui.css?v=5" />
+<link rel="stylesheet" href="css/gameboard-ui.css?v=6" />
 </head>
 <body class="gb-app gb-page gb-pitch">
 

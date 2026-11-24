@@ -29,6 +29,9 @@
 .gb-pitch { --gb-accent:#d9574a; --gb-accent-dk:#bc4437; --gb-accent-lt:#fdeceb; }   /* PitchBoard coral */
 .gb-bill  { --gb-accent:#2e8b57; --gb-accent-dk:#246f45; --gb-accent-lt:#e3f3ea; }   /* BillBoard green  */
 
+/* The sign-in page's background: a deep shade of the accent (CardBoard's purple is its own) */
+.gb-card { --gb-gate:#2e2763; } .gb-pitch { --gb-gate:#4a1e1a; } .gb-dev { --gb-gate:#0f3640; } .gb-bill { --gb-gate:#173a27; }
+
 /* ── Page ─────────────────────────────────────────────────────────────────── */
 body.gb-page { background:var(--gb-bg); font-family:var(--gb-text); color:var(--gb-ink); }
 

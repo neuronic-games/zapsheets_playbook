@@ -181,7 +181,7 @@ body {
 .ll.ok  { color: #4ade80; }
 .ll.err { color: #ff8a80; }
 </style>
-<link rel="stylesheet" href="css/gameboard-ui.css?v=5" />
+<link rel="stylesheet" href="css/gameboard-ui.css?v=6" />
 </head>
 <body class="gb-app gb-setup gb-pitch">
 
@@ -386,7 +386,7 @@ body {
 })();
 </script>
 
-<script src="js/gb-account.js?v=8"></script>
+<script src="js/gb-account.js?v=9"></script>
 <script>
 // The GameBoard account in the top bar's menu (no sheet here yet: no bar). Signed out: the sign-in screen,
 // and the New sheet card only once signed in. "Not now" goes back to the GameBoard home.

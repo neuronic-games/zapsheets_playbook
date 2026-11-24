@@ -133,12 +133,39 @@
   // Forms posted the old way (navigator.sendBeacon) can't carry headers: nothing to do there.
 
   // ── The page: styles, the bar, the dialogs ─────────────────────────────────
+  var TAGS = { pitchboard: 'Your board game pitch tracker', devboard: 'Playtest notes for your games', billboard: 'Put your board games on show', cardboard: 'Design and print cards from your Google Sheet' };
   var CSS =
     '.gba-bar{position:sticky;top:0;z-index:900;display:flex;align-items:center;justify-content:center;gap:.9rem;flex-wrap:wrap;padding:.55rem 1rem;background:#fff8e6;color:#5c4400;border-bottom:1px solid #f0dca0;font:500 .86rem/1.35 var(--gb-text,"DINRegular",Arial,sans-serif);text-align:center}' +
     '.gba-bar[hidden]{display:none}.gba-bar b{font-family:var(--gb-black,"DINBlack",Arial,sans-serif);font-weight:normal}' +
     '.gba-bar button{background:var(--gb-accent,#5b4fd6);color:#fff;border:none;border-radius:8px;padding:.38rem .95rem;font:inherit;font-family:var(--gb-black,"DINBlack",Arial,sans-serif);text-transform:uppercase;letter-spacing:.06em;font-size:.72rem;cursor:pointer}' +
     '.gba-ov{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;padding:1rem;background:rgba(20,19,42,.55);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}' +
-    '.gba-ov.open{display:flex}body.gba-gate .gba-ov#gbaSignIn{background:#f2f3f7}' +
+    '.gba-ov.open{display:flex}' +
+    '.gba-brand,#gbaChoose .gba-go span{display:none}' +
+    // Sign-in page (an app that needs the account first): CardBoard's — the app's deep color, the logo and name, a white card
+    'body.gba-gate .gba-ov#gbaSignIn{background:var(--gb-gate,#2e2763);flex-direction:column;align-items:center;justify-content:flex-start;padding:2.5rem 1rem 3rem;overflow:auto;-webkit-backdrop-filter:none;backdrop-filter:none}' +
+    'body.gba-gate .gba-brand{display:block;text-align:center;margin:0 0 2.25rem}' +
+    'body.gba-gate .gba-brand img{display:block;width:84px;height:84px;border-radius:20px;margin:0 auto .9rem;box-shadow:0 4px 20px rgba(0,0,0,.18)}' +
+    'body.gba-gate .gba-bname{font:normal 2.1rem/1 var(--gb-black,"DINBlack",Arial,sans-serif);text-transform:uppercase;letter-spacing:.09em;color:#fff}' +
+    'body.gba-gate .gba-btag{margin-top:.4rem;font:normal .88rem var(--gb-text,"DINRegular",Arial,sans-serif);letter-spacing:.03em;color:rgba(255,255,255,.65)}' +
+    'body.gba-gate #gbaSignIn .gba-dlg{max-width:520px;max-height:none;overflow:visible;border-radius:16px;padding:2rem 2rem 2.25rem;box-shadow:0 18px 50px rgba(0,0,0,.35);flex-shrink:0}' +
+    'body.gba-gate #gbaSignIn .gba-logo{display:none}' +
+    'body.gba-gate #gbaSignIn h2{text-align:left;font-size:1.05rem;text-transform:uppercase;letter-spacing:.07em;color:#111;margin:0 0 .8rem}' +
+    'body.gba-gate #gbaSignIn .gba-sub{text-align:left;font-size:.85rem;line-height:1.5;color:#666;margin:0 0 .9rem}' +
+    'body.gba-gate #gbaSignIn.choose h2,body.gba-gate #gbaSignIn.choose .gba-sub{text-align:center}' +
+    'body.gba-gate #gbaChoose{display:flex;flex-direction:column;gap:.7rem}body.gba-gate #gbaChoose[hidden]{display:none}' +
+    'body.gba-gate #gbaChoose .gba-go{display:flex;flex-direction:column;align-items:center;gap:.2rem;margin:0!important;padding:1rem;height:auto;border-radius:11px;box-shadow:0 2px 8px rgba(0,0,0,.18)}' +
+    'body.gba-gate #gbaChoose .gba-go b{font:normal 1rem var(--gb-black,"DINBlack",Arial,sans-serif);letter-spacing:.04em}' +
+    'body.gba-gate #gbaChoose .gba-go span{display:block;font:normal .8rem var(--gb-text,"DINRegular",Arial,sans-serif);text-transform:none;letter-spacing:0;color:rgba(255,255,255,.78)}' +
+    'body.gba-gate #gbaChoose .gba-go.ghost{border:1.5px solid #d6d9e6;color:#2e2763;box-shadow:none}body.gba-gate #gbaChoose .gba-go.ghost span{color:#8a8fa8}' +
+    'body.gba-gate #gbaChoose .gba-go.ghost:hover{background:var(--gb-accent-lt,#f7f5ff);border-color:var(--gb-accent,#a99cff)}' +
+    'body.gba-gate #gbaSignIn input{padding:.7rem .9rem;border-color:#d0ccc5;border-radius:9px;background:#fafaf8;margin-bottom:.6rem}body.gba-gate #gbaSignIn input:focus{background:#fff}' +
+    'body.gba-gate #gbaSignIn form .gba-go{height:2.85rem;padding:0;border-radius:9px;font-size:.9rem;letter-spacing:.09em;box-shadow:0 2px 8px rgba(0,0,0,.18);margin-top:.2rem}' +
+    'body.gba-gate .gba-rules{font-size:.8rem;color:#9aa0b8;gap:.25rem .9rem;margin:.1rem 0 .8rem}' +
+    'body.gba-gate .gba-rules li{display:flex;align-items:center;gap:.45rem}' +
+    'body.gba-gate .gba-rules li::before{content:"";width:1rem;height:1rem;flex-shrink:0;border-radius:50%;border:1.5px solid #c9cce0;box-sizing:border-box}' +
+    'body.gba-gate .gba-rules li.ok{color:#2e7d32}body.gba-gate .gba-rules li.ok::before{content:"";border-color:#2e9d4c;background:#2e9d4c url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'3.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M5 12.5l4.5 4.5L19 7.5\'/%3E%3C/svg%3E") center/70% no-repeat}' +
+    'body.gba-gate #gbaSignIn .gba-link{font-size:.82rem;margin-top:1rem}' +
+    'body.gba-gate #gbaSignIn .gba-link + .gba-link{margin-top:.5rem}' +
     '.gba-dlg{background:#fff;border-radius:14px;box-shadow:0 18px 50px rgba(20,19,42,.28);width:100%;max-width:400px;max-height:92vh;overflow:auto;padding:1.6rem 1.5rem 1.3rem;color:#1b1d2b;font-family:var(--gb-text,"DINRegular",Arial,sans-serif);position:relative}' +
     '.gba-dlg.wide{max-width:520px}' +
     '.gba-x{position:absolute;top:.6rem;right:.7rem;background:none;border:none;font-size:1.4rem;line-height:1;color:#8a90a6;cursor:pointer}' +
@@ -184,10 +211,11 @@
     var icon = O.icon ? '<img class="gba-logo" src="' + esc(O.icon) + '" alt="">' : '';
     var wrap = document.createElement('div');
     wrap.innerHTML =
-      '<div class="gba-ov" id="gbaSignIn"><div class="gba-dlg" role="dialog" aria-modal="true" aria-labelledby="gbaTitle">' +
+      '<div class="gba-ov" id="gbaSignIn"><div class="gba-brand">' + (O.icon ? '<img src="' + esc(O.icon) + '" alt="">' : '') + '<div class="gba-bname">' + esc(O.name) + '</div><div class="gba-btag">' + esc(O.tagline || TAGS[O.app] || 'Part of GameBoard — tools for board game makers') + '</div></div>' +
+        '<div class="gba-dlg" role="dialog" aria-modal="true" aria-labelledby="gbaTitle">' +
         '<button type="button" class="gba-x" id="gbaSiX" aria-label="Close">×</button>' + icon +
         '<h2 id="gbaTitle"></h2><p class="gba-sub" id="gbaSub"></p>' +
-        '<div id="gbaChoose"><button type="button" class="gba-go" data-m="signup">Start your free week</button><button type="button" class="gba-go ghost" data-m="login" style="margin-top:.5rem">Log in</button></div>' +
+        '<div id="gbaChoose"><button type="button" class="gba-go" data-m="signup"><b data-m="signup">Start your free week</b><span data-m="signup">Every feature for 7 days · no card needed</span></button><button type="button" class="gba-go ghost" data-m="login" style="margin-top:.5rem"><b data-m="login">Log in</b><span data-m="login">I already have a GameBoard account</span></button></div>' +
         '<form id="gbaStep1" hidden>' +
           '<input type="email" id="gbaEmail" placeholder="Email" autocomplete="email" autocapitalize="off" spellcheck="false">' +
           '<input type="password" id="gbaPass" placeholder="Password">' +
@@ -339,10 +367,12 @@
   function step(m) {
     _mode = m; _pending = null;
     $('gbaChoose').hidden = !!m; $('gbaStep1').hidden = !m; $('gbaStep2').hidden = true; $('gbaErr').textContent = '';
-    $('gbaTitle').textContent = { login: 'Log in', signup: 'Start your free week', reset: 'Reset your password' }[m] || 'Welcome to ' + O.name;
+    var page = document.body.classList.contains('gba-gate');
+    $('gbaSignIn').classList.toggle('choose', !m);
+    $('gbaTitle').textContent = { login: 'Log in', signup: 'Start your free week', reset: 'Reset your password' }[m] || (page ? 'Welcome' : 'Welcome to ' + O.name);
     $('gbaSub').textContent = { login: 'Use your GameBoard email and password — the same one for every app.',
       signup: 'Every feature for 7 days — no card needed. Choose a password; we’ll email you a code to confirm.',
-      reset: 'Choose a new password; we’ll email you a code to confirm it’s you.' }[m] || 'Sign in with your GameBoard account — one account for CardBoard, DevBoard, PitchBoard and BillBoard.';
+      reset: 'Choose a new password; we’ll email you a code to confirm it’s you.' }[m] || (page ? 'Sign in to use ' + O.name + '. New here? Your first week is free, with every feature — one GameBoard account for every app.' : 'Sign in with your GameBoard account — one account for CardBoard, DevBoard, PitchBoard and BillBoard.');
     $('gbaPass').value = ''; $('gbaPass2').value = '';
     $('gbaPass').placeholder = m === 'login' ? 'Password' : 'Password (8 or more characters)';
     $('gbaPass').setAttribute('autocomplete', m === 'login' ? 'current-password' : 'new-password');

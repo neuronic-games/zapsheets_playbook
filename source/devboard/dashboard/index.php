@@ -3037,13 +3037,16 @@ function _paymentItemHtml(pay) {
   var amt = isNaN(n) ? '—' : '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   var when = fmtDate(pay.Date || '') || pay.Date || '';
   var h = '<div class="estimate-item pay-item" id="ci-' + idx + '">';
+  // Like the estimates and invoices: its Ref Number, date and what it's for (and who was paid)
+  var forWhat = [_cleanSummary(pay.Summary), pay.Payee ? '→ ' + pay.Payee : ''].filter(Boolean).join(' · ');
   h += '<div class="estimate-item-header" onclick="_payToggle(' + idx + ')">' +
     '<span class="estimate-type-pill payout">Paid out</span>' +
-    '<div class="pay-payee">' + esc(pay.Payee || '—') + (_cleanSummary(pay.Summary) ? ' <span style="opacity:.6">· ' + esc(_cleanSummary(pay.Summary)) + '</span>' : '') + '</div>' +
-    '<div class="estimate-date">' + esc(when) + '</div>' +
+    '<div class="estimate-num-badge">' + esc(String(pay['Ref Number'] || '').replace(/^'/, '')) + '</div>' +
+    '<div class="estimate-date">' + esc(when) + (forWhat ? '<span class="estimate-sum" title="' + esc(forWhat) + '">' + esc(forWhat) + '</span>' : '') + '</div>' +
     '<div class="estimate-amount out">' + esc(amt) + '</div>' +
     '<div class="estimate-item-chevron">▼</div></div>';
-  h += '<div class="estimate-item-body"><div class="estimate-item-details" style="cursor:default"><dl class="estimate-item-fields">' +
+  // The details open the payment slip, the way an estimate's open its PDF
+  h += '<div class="estimate-item-body"><div class="estimate-item-details" title="Open the payment slip" onclick="event.stopPropagation();_payOpenSlip(' + idx + ')"><dl class="estimate-item-fields">' +
     '<div class="estimate-item-field"><dt>Paid to</dt><dd>' + esc(pay.Payee || '—') + '</dd></div>' +
     (_cleanSummary(pay.Summary) ? '<div class="estimate-item-field"><dt>For</dt><dd>' + esc(_cleanSummary(pay.Summary)) + '</dd></div>' : '') +
     '<div class="estimate-item-field"><dt>Amount</dt><dd>' + esc(amt) + '</dd></div>' +
@@ -3054,8 +3057,7 @@ function _paymentItemHtml(pay) {
   h += '<div class="estimate-item-actions">' +
     '<div id="cdel-row-' + idx + '" style="display:flex;gap:.5rem;align-items:center">' +
       '<button type="button" class="btn-contract-action" id="pay-share-btn-' + idx + '" onclick="event.stopPropagation();_paySlipShare(' + idx + ')">✉ Share</button>' +
-      '<button type="button" class="btn-contract-action payment" id="pay-slip-btn-' + idx + '" onclick="event.stopPropagation();_payOpenSlip(' + idx + ')">Payment Slip</button>' +
-      '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_conStartDelete(' + idx + ')">🗑 Delete Payment</button></div>' +
+      '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_conStartDelete(' + idx + ')">🗑 Delete</button></div>' +
     '<div id="cdel-confirm-' + idx + '" style="display:none;align-items:center;justify-content:flex-end;gap:.5rem">' +
       '<button type="button" class="est-nocancel-btn" onclick="event.stopPropagation();_conCancelDelete(' + idx + ')">Don\'t Delete</button>' +
       '<button type="button" class="est-confirm-btn" id="cdel-btn-' + idx + '" onclick="event.stopPropagation();_conConfirmDelete(' + idx + ')">Confirm</button></div>' +
@@ -3097,7 +3099,7 @@ function _payMakeSlip(idx, btn, done, fail) {
 function _payOpenSlip(idx) {
   var win = window.open('', '_blank');
   if (win) win.document.write('<p style="font:16px -apple-system,Arial,sans-serif;color:#666;padding:2rem">Making the payment slip…</p>');
-  _payMakeSlip(idx, document.getElementById('pay-slip-btn-' + idx),
+  _payMakeSlip(idx, null,
     function(url) { if (win) win.location.href = url; else window.open(url, '_blank'); },
     function() { if (win) win.close(); });
 }

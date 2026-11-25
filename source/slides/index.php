@@ -291,7 +291,7 @@ $_sheet_id = $_bm[2] ?? '';
   }
   /* ── Pick the games: a panel that pulls down from the top ── */
   #pick-tab {
-    position: fixed; top: 9px; left: 50%; transform: translateX(-50%);
+    position: fixed; top: 9px; left: calc(1.5rem + min(640px, 100vw - 3rem) / 2); transform: translateX(-50%);   /* over the middle of the spec box, like the bar at the bottom */
     z-index: 40; padding: 3px 18px 8px;   /* a bigger target than the bar itself */
     cursor: grab; touch-action: none; -webkit-tap-highlight-color: transparent; transition: opacity .2s;
   }
@@ -302,15 +302,15 @@ $_sheet_id = $_bm[2] ?? '';
   #pick-shade { position: fixed; inset: 0; z-index: 44; background: rgba(0,0,0,.45); opacity: 0; pointer-events: none; transition: opacity .25s; }
   body.pick-open #pick-shade { opacity: 1; pointer-events: auto; }
   #pick {
-    position: fixed; top: 0; left: 50%; z-index: 45;
-    width: min(520px, 100%); max-height: 78vh; display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 1.5rem; z-index: 45;   /* in line with the spec box below */
+    width: min(640px, calc(100vw - 3rem)); max-height: 78vh; display: flex; flex-direction: column;
     background: rgba(22,22,36,.97); border: 1px solid rgba(255,255,255,.1); border-top: none;
     border-radius: 0 0 18px 18px; box-shadow: 0 12px 40px rgba(0,0,0,.55);
-    transform: translate(-50%, -100%); transition: transform .28s cubic-bezier(.25,.46,.45,.94);
+    transform: translateY(-100%); transition: transform .28s cubic-bezier(.25,.46,.45,.94);
     padding-top: env(safe-area-inset-top, 0px);
     -webkit-user-select: none; user-select: none;
   }
-  body.pick-open #pick { transform: translate(-50%, 0); }
+  body.pick-open #pick { transform: translateY(0); }
   #pick.drag { transition: none; }
   .pick-hd { display: flex; align-items: center; gap: .5rem; padding: .9rem 1rem .6rem; color: #fff; }
   .pick-hd b { font-family: 'DINBlack', sans-serif; font-weight: normal; font-size: .95rem; letter-spacing: .02em; }
@@ -1217,7 +1217,7 @@ $_sheet_id = $_bm[2] ?? '';
       function move(ev) {
         dy = ev.clientY - y0;
         var t = opening ? Math.min(0, -h + Math.max(0, dy)) : Math.min(0, Math.min(0, dy));
-        pickEl.style.transform = 'translate(-50%, ' + t + 'px)';
+        pickEl.style.transform = 'translateY(' + t + 'px)';
       }
       function up() {
         handle.removeEventListener('pointermove', move); handle.removeEventListener('pointerup', up); handle.removeEventListener('pointercancel', up);

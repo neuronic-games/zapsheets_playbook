@@ -1407,13 +1407,22 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
     <input type="hidden" id="invoiceEstIdx" />
 
     <!-- Reference info: CSS grid so all values share the same row baseline -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto;row-gap:.15rem;padding:.45rem .75rem;background:#f5f9fc;border-radius:7px;border:1px solid #e2edf5">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto;row-gap:.15rem;align-items:baseline;padding:.45rem .75rem;background:#f5f9fc;border-radius:7px;border:1px solid #e2edf5">
       <div style="font-family:'DINBlack',sans-serif;font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;white-space:nowrap">Client</div>
       <div style="font-family:'DINBlack',sans-serif;font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;white-space:nowrap">Estimate #</div>
       <div style="font-family:'DINBlack',sans-serif;font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:#aab;white-space:nowrap">Estimate Total</div>
-      <div id="invoiceRefClient" style="font-family:'DINRegular',sans-serif;font-size:.82rem;color:#333"></div>
-      <div id="invoiceRefNum"    style="font-family:'DINRegular',sans-serif;font-size:.82rem;color:#333"></div>
-      <div id="invoiceRefAmount" style="font-family:'DINBlack',sans-serif;font-size:.82rem;color:#1a5f7a"></div>
+      <div id="invoiceRefClient" style="font-family:'DINRegular',sans-serif;font-size:.82rem;line-height:1.2;color:#333"></div>
+      <div id="invoiceRefNum"    style="font-family:'DINRegular',sans-serif;font-size:.82rem;line-height:1.2;color:#333"></div>
+      <div id="invoiceRefAmount" style="font-family:'DINBlack',sans-serif;font-size:.82rem;line-height:1.2;color:#1a5f7a"></div>
+    </div>
+
+    <!-- Summary: pick an estimate (its numbers fill in above, and Percentage of Estimate opens up) or type one -->
+    <div class="ge-label">Summary
+      <div class="combo-wrap" id="invoiceSumCombo">
+        <input type="text" id="invoiceSummary" class="ge-input combo-input" maxlength="120" autocomplete="off" placeholder="Pick an estimate’s summary, or type one"
+          oninput="_invoiceMarkDirty();sumRebuild('invoice',this.value)" onfocus="sumRebuild('invoice',this.value)" onkeydown="sumKey('invoice',event)" onblur="setTimeout(function(){document.getElementById('invoiceSumCombo').classList.remove('open')},150)" />
+        <div class="combo-dropdown" id="invoiceSumDrop"></div>
+      </div>
     </div>
 
     <!-- Amount type + value (all in one label row) -->
@@ -1440,9 +1449,6 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
       </div>
     </label>
 
-    <label class="ge-label">Summary
-      <input type="text" id="invoiceSummary" class="ge-input" maxlength="120" autocomplete="off" placeholder="One line: what this invoice is for" oninput="_invoiceMarkDirty()" />
-    </label>
     <label class="ge-label">Description
       <textarea id="invoiceDescription" class="ge-input ge-textarea" rows="3" oninput="_invoiceMarkDirty()"></textarea>
     </label>
@@ -3152,7 +3158,7 @@ function _estimateSummaries(game) {   // [{s: summary, ref: its Ref Number, amt:
     var ref = String(e.contract_id || e.estimate_num || '').replace(/^'/, '').trim();
     var sm = _contractSummaryFor(ref) || _cleanSummary(e.summary) || _cleanSummary(e.game);
     if (!sm) return;
-    var it = { s: sm, ref: ref, amt: String(e.amount || '0') }, k = sm + '\u0001' + ref;
+    var it = { s: sm, ref: ref, amt: String(e.amount || '0'), i: ESTIMATES_RAW.indexOf(e) }, k = sm + '\u0001' + ref;
     if (seen[k]) return; seen[k] = 1;
     all.push(it);
     if (g && String(e.game || '').trim().toLowerCase() === g) mine.push(it);
@@ -3176,6 +3182,7 @@ function sumPick(px, n, ref) {
   document.getElementById(px + 'Summary').dataset.ref = ref || '';
   document.getElementById(px + 'SumDrop').innerHTML = '';
   document.getElementById(px + 'SumCombo').classList.remove('open');
+  if (px === 'invoice') _invoicePickEst(ref || '');
 }
 function sumKey(px, e) {
   if (e.key === 'Escape') { document.getElementById(px + 'SumCombo').classList.remove('open'); }
@@ -3667,6 +3674,10 @@ function openInvoiceFromEstimate(estIdx) {
   document.getElementById('invoiceAmtLabel').querySelector('label') && (document.getElementById('invoiceAmtLabel').style.display = '');
   document.getElementById('invoiceDescription').value = est.game || '';
   document.getElementById('invoiceSummary').value  = _contractSummaryFor(est.contract_id || est.estimate_num);   // the estimate's own
+  _invoiceCtx = { game: est.game || '', client: est.client || '' };
+  _sumSrc.invoice = _estimateSummaries(est.game);
+  document.getElementById('invoiceSumCombo').classList.remove('open');
+  document.querySelector('#invoiceAmtType option[value="pct"]').disabled = false;
   document.getElementById('invoiceDueDate').value  = _isoDaysFromToday(14);
   document.getElementById('invoiceNotes').value    = '';
   document.getElementById('invoiceCreateBtn').disabled = false;
@@ -3675,6 +3686,54 @@ function openInvoiceFromEstimate(estIdx) {
 
   document.getElementById('invoiceOverlay').classList.add('open');
   setTimeout(function() { document.getElementById('invoiceAmount').focus(); }, 50);
+}
+
+// + Invoice on a game: the same dialog, no estimate yet — pick one by its summary (or type a summary for an invoice on its own)
+var _invoiceCtx = { game: '', client: '' };
+function openInvoiceDialog(gameName, clientName) {
+  var _args = arguments; if (!_dbRequirePro(function() { openInvoiceDialog.apply(null, _args); })) return;
+  _invoiceEstIdx = -1;
+  _invoiceDirty  = false;
+  _invoiceCtx = { game: gameName || '', client: clientName || '' };
+  _sumSrc.invoice = _estimateSummaries(gameName);
+  document.getElementById('invoiceGameTitle').textContent = gameName || clientName || '';
+  document.getElementById('invoiceRefClient').textContent = clientName || '—';
+  _invoiceShowEst(null);
+  document.getElementById('invoiceAmount').value = '';
+  document.getElementById('invoiceDescription').value = gameName || '';
+  document.getElementById('invoiceSummary').value = '';
+  document.getElementById('invoiceSumCombo').classList.remove('open');
+  document.getElementById('invoiceDueDate').value = _isoDaysFromToday(14);
+  document.getElementById('invoiceNotes').value = '';
+  var b = document.getElementById('invoiceCreateBtn'); b.disabled = false; b.textContent = 'Create';
+  var log = document.getElementById('invoiceLog'); log.style.display = 'none'; log.textContent = '';
+  document.getElementById('invoiceOverlay').classList.add('open');
+  setTimeout(function() { document.getElementById('invoiceSummary').focus(); }, 50);
+}
+// The estimate the invoice is for (or none): its number and total above, and whether Percentage of Estimate can be used
+function _invoiceShowEst(est) {
+  var amt = est && est.amount ? parseFloat(est.amount) : 0, money = function(n) { return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+  document.getElementById('invoiceRefNum').textContent = est ? (est.estimate_num || '—') : '—';
+  document.getElementById('invoiceRefAmount').textContent = amt ? money(amt) : '—';
+  var pctOpt = document.querySelector('#invoiceAmtType option[value="pct"]');
+  pctOpt.disabled = !amt;
+  if (!amt || document.getElementById('invoiceAmtType').value !== 'pct') document.getElementById('invoiceAmtType').value = 'fixed';
+  document.getElementById('invoicePct').value = '100';
+  document.getElementById('invoicePctCalc').textContent = amt ? money(amt) : '';
+  _invoiceAmtTypeChange();
+  _invoiceDirty = false;
+}
+// An estimate picked in the Summary combo: the invoice is for it
+function _invoicePickEst(ref) {
+  var it = (_sumSrc.invoice || []).filter(function(n) { return n.ref === ref; })[0];
+  if (!it || it.i == null || !ESTIMATES_RAW[it.i]) return;
+  var est = ESTIMATES_RAW[it.i];
+  _invoiceEstIdx = it.i;
+  _invoiceShowEst(est);
+  if (!(parseFloat(document.getElementById('invoiceAmount').value) > 0) && est.amount) document.getElementById('invoiceAmount').value = parseFloat(est.amount).toFixed(2);
+  if (est.game) document.getElementById('invoiceDescription').value = document.getElementById('invoiceDescription').value || est.game;
+  _invoiceDirty = true;
+  setTimeout(function() { document.getElementById(document.getElementById('invoiceAmtType').value === 'pct' ? 'invoicePct' : 'invoiceAmount').focus(); }, 30);
 }
 
 function _invoiceAmtTypeChange() {
@@ -3705,8 +3764,8 @@ function forceCloseInvoiceDialog() {
 }
 
 function submitInvoice() {
-  var est = ESTIMATES_RAW[_invoiceEstIdx];
-  if (!est) return;
+  var est = _invoiceEstIdx >= 0 ? ESTIMATES_RAW[_invoiceEstIdx] : null;
+  var ctx = est ? { game: est.game || '', client: est.client || '' } : _invoiceCtx;   // no estimate: an invoice on its own
 
   var isPct    = document.getElementById('invoiceAmtType').value === 'pct';
   var amount   = isPct
@@ -3735,11 +3794,11 @@ function submitInvoice() {
 
   var fd = new FormData();
   fd.append('id',           SHEET_ID);
-  fd.append('game',         est.game         || '');
-  fd.append('client',       est.client       || '');
-  fd.append('estimate_num', est.estimate_num  || '');
-  fd.append('source_ref',   est.contract_id   || '');   // the estimate's Ref Number (a note on the invoice's Summary)
-  fd.append('estimate_amt', est.amount        || '0');
+  fd.append('game',         ctx.game         || '');
+  fd.append('client',       ctx.client       || '');
+  fd.append('estimate_num', est ? est.estimate_num || '' : '');
+  fd.append('source_ref',   est ? est.contract_id  || '' : '');   // the estimate's Ref Number (a note on the invoice's Summary)
+  fd.append('estimate_amt', est ? est.amount       || '0' : '0');
   fd.append('invoice_amt',  amount);
   fd.append('description',  document.getElementById('invoiceDescription').value.trim());
   fd.append('summary',      invSummary);
@@ -5029,6 +5088,7 @@ function _isoDaysFromToday(n) {
 }
 
 function openStandaloneInvoiceDialog(gameName, clientName) {
+  return openInvoiceDialog(gameName, clientName);   // the same dialog as an estimate's + Invoice
   var _args = arguments; if (!_dbRequirePro(function() { openStandaloneInvoiceDialog.apply(null, _args); })) return;
   _siGame   = gameName   || '';
   _siClient = clientName || '';

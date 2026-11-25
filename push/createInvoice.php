@@ -89,6 +89,7 @@ $summary = dbContractSummary($sheetId, $docId);
 $appDomain = rtrim($_ENV['APP_DOMAIN'] ?? 'http://localhost:8000', '/');
 $basePath  = trim($_ENV['BASE_PATH']  ?? '', '/');
 $baseUrl   = $basePath ? "$appDomain/$basePath" : $appDomain;
+if (function_exists('gbLinkBase')) $baseUrl = rtrim(gbLinkBase(), '/');   // the PDF's share link: the apps' own domain (mygameboard.app), not zapsheets.com
 
 $payload = [
     'game'       => $game,

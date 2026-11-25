@@ -2133,6 +2133,14 @@ var BIO_PAYMENT   = <?= json_encode((object) array_filter(array_reduce($_bios, f
   $e = strtolower(ltrim(trim((string) ($b['Email'] ?? '')), "'")); if ($e !== '') $m[$e] = ltrim(trim((string) ($b['Payment'] ?? '')), "'"); return $m; }, [])), JSON_UNESCAPED_UNICODE) ?>;
 var TODOS_RAW     = <?= json_encode(array_values($_todos_raw), JSON_UNESCAPED_UNICODE) ?>;
 var ESTIMATES_RAW = <?= json_encode(array_values($_estimates_raw), JSON_UNESCAPED_UNICODE) ?>;
+// Older PDF links point at zapsheets.com: the same file is here, on this site's own domain
+function _dbSameSite(u) {
+  var m = /^https?:\/\/(?:www\.)?zapsheets\.com\/(?:[^?#]*\/)?(shares\/contracts\/[A-Za-z0-9]+)\/?$/i.exec(String(u || '').trim());
+  if (!m || /(^|\.)zapsheets\.com$/i.test(location.hostname)) return u;
+  try { return new URL(APP_BASE + m[1], location.href).href; } catch (e) { return u; }
+}
+ESTIMATES_RAW.forEach(function(e) { if (e && e.url) e.url = _dbSameSite(e.url); });
+CONTRACT_RAW.forEach(function(c) { if (c && c.Files) c.Files = _dbSameSite(c.Files); });
 var SESSIONS_BRIEF = <?= json_encode($_sessions_brief, JSON_UNESCAPED_UNICODE) ?>;   // {g game, d date, e type, n number, w where, t people}
 
 // Quick lookup: email (lowercase) → display name from People sheet

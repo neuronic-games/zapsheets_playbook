@@ -125,22 +125,46 @@ function gbAppList(array $apps): string {
     if (count($apps) <= 1) return (string) ($apps[0] ?? 'GameBoard');
     return implode(', ', array_slice($apps, 0, -1)) . ' and ' . end($apps);
 }
-/** The email that says someone's been let in from the Waiting Room (to some apps, or all): the same look as the code email. */
+/** The invitation email (let in from the Waiting Room): which apps, until when, and a button straight to the GameBoard log-in. */
+const GB_INVITE_APPS = [   // name → [icon, what it's for, colour]
+    'PitchBoard' => ['pitchboard_icon_180.png', 'Pitch your games to publishers', '#e7a35a'],
+    'DevBoard'   => ['db_icon_180.png',         'Playtest and develop your games', '#49c4d4'],
+    'CardBoard'  => ['cardboard_icon_180.png',  'Design and print your cards',     '#7b6cf6'],
+    'BillBoard'  => ['bb_icon_180.png',         'Show and sell your games',        '#9ed29f'],
+];
+function gbInviteSubject(array $apps): string {
+    return 'You’re invited to ' . (count($apps) >= 4 ? 'GameBoard' : gbAppList($apps));
+}
+function gbLoginLink(): string { return gbLinkBase() . 'gameboard?login'; }   // opens the log-in form (or the dashboard when signed in)
 function gbLetInText(array $apps): string {
-    $what = count($apps) >= 4 ? 'every GameBoard app' : gbAppList($apps);
-    return "Good news: you can now use " . $what . ".\r\n\r\nLog in at " . gbLinkBase() . "gameboard with the email and password you signed up with. "
-         . "Your free week of " . $what . ", with every feature, starts now.\r\n\r\n— GameBoard by ZapSheets";
+    $until = gmdate('F j', time() + 7 * 86400);
+    $lines = '';
+    foreach ($apps as $a) $lines .= '  • ' . $a . ' — ' . (GB_INVITE_APPS[$a][1] ?? '') . "\r\n";
+    return "You're invited to " . (count($apps) >= 4 ? 'every GameBoard app' : gbAppList($apps)) . ":\r\n\r\n" . $lines
+         . "\r\nYour free week, with every feature, starts now and runs to " . $until . ".\r\n\r\n"
+         . "Log in with the email and password you signed up with:\r\n" . gbLoginLink() . "\r\n\r\n— GameBoard by ZapSheets";
 }
 function gbLetInHtml(string $name, array $apps): string {
-    $what = htmlspecialchars(count($apps) >= 4 ? 'every GameBoard app' : gbAppList($apps), ENT_QUOTES);
-    $base = gbLinkBase();
-    $logo = htmlspecialchars($base . 'images/gameboard_icon_180.png', ENT_QUOTES);
-    $app  = htmlspecialchars($base . 'gameboard', ENT_QUOTES);
-    $font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
-    $hi   = trim($name) !== '' ? 'Hi ' . htmlspecialchars(preg_split('/\s+/', trim($name))[0], ENT_QUOTES) . ', your' : 'Your';
-    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><title>You can now log in to GameBoard</title></head>' .
+    $base  = gbLinkBase();
+    $h     = function ($v) { return htmlspecialchars((string) $v, ENT_QUOTES); };
+    $logo  = $h($base . 'images/gameboard_icon_180.png');
+    $login = $h(gbLoginLink());
+    $home  = $h($base . 'gameboard');
+    $font  = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+    $title = count($apps) >= 4 ? 'every GameBoard app' : gbAppList($apps);
+    $until = gmdate('F j', time() + 7 * 86400);
+    $hi    = trim($name) !== '' ? 'Hi ' . $h(preg_split('/\s+/', trim($name))[0]) . ' — good news! ' : 'Good news! ';
+    $rows  = '';
+    foreach ($apps as $a) {
+        [$icon, $what, $col] = GB_INVITE_APPS[$a] ?? ['gameboard_icon_180.png', '', '#e5604f'];
+        $rows .= '<tr><td style="padding:0 0 10px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eeecf6;border-left:4px solid ' . $col . ';border-radius:10px;"><tr>' .
+          '<td width="44" style="padding:12px 0 12px 14px;"><img src="' . $h($base . 'images/' . $icon) . '" width="40" height="40" alt="" style="display:block;border-radius:9px;"></td>' .
+          '<td style="padding:12px 14px;font-family:' . $font . ';"><div style="font-size:16px;font-weight:700;color:#2e2763;">' . $h($a) . '</div>' .
+          '<div style="font-size:13px;color:#8a8fa8;">' . $h($what) . '</div></td></tr></table></td></tr>';
+    }
+    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><title>' . $h(gbInviteSubject($apps)) . '</title></head>' .
       '<body style="margin:0;padding:0;background:#f3f2fa;">' .
-      '<div style="display:none;max-height:0;overflow:hidden;">Your GameBoard account is ready — log in and start your free week.</div>' .
+      '<div style="display:none;max-height:0;overflow:hidden;">You’re invited to ' . $h($title) . ' — your free week starts now.</div>' .
       '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f2fa;"><tr><td align="center" style="padding:32px 16px;">' .
       '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 18px rgba(46,39,99,.10);">' .
         '<tr><td style="background:#14132a;padding:22px 28px;">' .
@@ -149,14 +173,15 @@ function gbLetInHtml(string $name, array $apps): string {
             '<td style="font-family:' . $font . ';font-size:22px;font-weight:800;letter-spacing:.5px;"><span style="color:#f6efe2;">Game</span><span style="color:#f0766a;">Board</span></td>' .
           '</tr></table></td></tr>' .
         '<tr><td style="padding:30px 28px 8px;font-family:' . $font . ';color:#1b1b2b;">' .
-          '<div style="font-size:20px;font-weight:700;color:#2e2763;margin:0 0 8px;">You can now log in</div>' .
-          '<div style="font-size:15px;line-height:1.55;color:#555a70;margin:0 0 22px;">' . $hi . ' GameBoard account is ready for <b style="color:#2e2763;">' . $what . '</b>. Log in with the email and password you signed up with — your free week, with every feature, starts now.</div>' .
-          '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 26px;"><tr><td style="background:#e5604f;border-radius:10px;">' .
-            '<a href="' . $app . '" style="display:inline-block;padding:13px 26px;font-family:' . $font . ';font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;">Log in to GameBoard</a></td></tr></table>' .
-          '<div style="font-size:13px;line-height:1.55;color:#8a8fa8;margin:0 0 22px;">One account for PitchBoard, DevBoard, CardBoard and BillBoard.</div>' .
+          '<div style="font-size:21px;font-weight:700;color:#2e2763;margin:0 0 8px;">You’re invited to ' . $h($title) . '</div>' .
+          '<div style="font-size:15px;line-height:1.55;color:#555a70;margin:0 0 18px;">' . $hi . 'You’re off the waitlist. Your free week, with every feature, starts now and runs to <b style="color:#2e2763;">' . $h($until) . '</b>.</div>' .
+          '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px;">' . $rows . '</table>' .
+          '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 14px;"><tr><td style="background:#e5604f;border-radius:10px;">' .
+            '<a href="' . $login . '" style="display:inline-block;padding:13px 26px;font-family:' . $font . ';font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;">Log in to GameBoard</a></td></tr></table>' .
+          '<div style="font-size:13px;line-height:1.55;color:#8a8fa8;margin:0 0 22px;">Use the email and password you signed up with.</div>' .
         '</td></tr>' .
         '<tr><td style="padding:16px 28px 22px;border-top:1px solid #eeecf6;font-family:' . $font . ';font-size:12px;color:#9aa0b8;">' .
-          '<a href="' . $app . '" style="color:#d9534a;text-decoration:none;font-weight:600;">Open GameBoard</a> &nbsp;·&nbsp; Tools for board game makers &nbsp;·&nbsp; © ' . gmdate('Y') . ' ZapSheets' .
+          '<a href="' . $home . '" style="color:#d9534a;text-decoration:none;font-weight:600;">Open GameBoard</a> &nbsp;·&nbsp; Tools for board game makers &nbsp;·&nbsp; © ' . gmdate('Y') . ' ZapSheets' .
         '</td></tr>' .
       '</table></td></tr></table></body></html>';
 }
@@ -332,7 +357,7 @@ if ($action === 'waitlist' || $action === 'letin') {
         if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t invite them');
         $done = [];
         foreach ($r['done'] ?? [] as $d) {
-            $why = cbSendMail($d['Email'], 'You can now use ' . gbAppList($d['Apps']), gbLetInText($d['Apps']), gbLetInHtml((string) $d['Name'], $d['Apps']));
+            $why = cbSendMail($d['Email'], gbInviteSubject($d['Apps']), gbLetInText($d['Apps']), gbLetInHtml((string) $d['Name'], $d['Apps']));
             $done[] = ['email' => $d['Email'], 'apps' => $d['Apps'], 'mailed' => $why === ''];
         }
         $extra = ['done' => $done, 'errors' => $r['errors'] ?? []];

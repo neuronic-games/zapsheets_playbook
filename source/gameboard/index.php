@@ -1355,6 +1355,8 @@ footer a:hover { color:var(--navy); }
     if (away) location.href = APPS_URL + '#gbsignout';
   };
   // Signed out here from the GameBoard home on the other domain
+  // ?login (the invitation email's button): straight to the log-in form
+  if (/[?&]login\b/.test(location.search)) { history.replaceState(null, '', location.pathname + location.hash); if (!acct) setTimeout(function() { openAuth('login'); }, 0); }
   if (/[#&]gbsignout\b/.test(location.hash)) { acct = null; try { localStorage.removeItem(KEY); } catch (e) {} history.replaceState(null, '', location.pathname + location.search); }
   // Signed in or out in another tab or app: follow it
   function follow() {

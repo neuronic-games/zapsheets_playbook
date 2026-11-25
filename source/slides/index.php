@@ -368,9 +368,14 @@ $_sheet_id = $_bm[2] ?? '';
   .sm-none { font-size: .8rem; color: rgba(255,255,255,.55); margin: 0; }
   .slide-info { cursor: ns-resize; }
   /* Faint bars, like the one at the top: something to drag */
-  .slide-grab { width: 30px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.28); margin: 0 0 .7rem; transition: background .15s, width .15s; }
+  .slide-grab {   /* at the bottom edge, right under the middle of the stats box */
+    position: absolute; bottom: max(9px, env(safe-area-inset-bottom, 0px)); left: calc(1.5rem + min(640px, 100vw - 3rem) / 2);
+    transform: translateX(-50%); width: 30px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.28);
+    transition: background .15s, width .15s, opacity .2s;
+  }
+  .slide-more.drag ~ .slide-grab, .slide-info.peeking .slide-grab { opacity: 0; }
   .slide-info:hover .slide-grab { background: rgba(255,255,255,.7); width: 38px; }
-  .slide-more-in::before { content: ''; display: block; width: 30px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.28); margin: -.35rem 0 .75rem; }
+  .slide-more-in::before { content: ''; display: block; width: 30px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.28); margin: -.35rem auto .75rem; }
   @media (max-width: 420px) { .sm-comp { columns: 1; } }
 </style>
 </head>
@@ -755,7 +760,7 @@ $_sheet_id = $_bm[2] ?? '';
   // Peek: the current slide's panel opens as far as you've dragged, and closes when you let go
   var peekOn = false, suppressClick = false;
   function peekEl() { return trackEl.querySelectorAll('.slide-more')[current]; }
-  function peekStart() { peekOn = true; stopProgress(); var m = peekEl(); if (m) m.classList.add('drag'); }
+  function peekStart() { peekOn = true; stopProgress(); var m = peekEl(); if (m) { m.classList.add('drag'); m.parentNode.classList.add('peeking'); } }
   function peekTo(px) {
     var m = peekEl(); if (!m) return;
     var h = m.firstChild.offsetHeight + 16, max = window.innerHeight * 0.7;
@@ -764,7 +769,7 @@ $_sheet_id = $_bm[2] ?? '';
   }
   function peekEnd() {
     peekOn = false; var m = peekEl();
-    if (m) { m.classList.remove('drag'); m.style.height = ''; m.scrollTop = 0; }
+    if (m) { m.classList.remove('drag'); m.parentNode.classList.remove('peeking'); m.style.height = ''; m.scrollTop = 0; }
     if (!paused) resetProgress();
   }
   // With a mouse: press on the name and drag up

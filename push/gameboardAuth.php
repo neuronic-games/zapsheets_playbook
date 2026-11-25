@@ -127,6 +127,20 @@ function gbUninvitedMsg(string $name): string {
     return 'You haven’t been invited to ' . $name . ' yet — we’ll email you when you can use it.';
 }
 
+/**
+ * Stop a request for an app the signed-in person hasn't been invited to (Waiting Room) — setting a sheet up, fetching it.
+ * $app '' = the app the page says it is (X-GB-App, sent by gb-account.js). No token or no app: nothing to check.
+ */
+function gbBlockUninvited(string $app = ''): void {
+    if ($app === '') $app = strtolower(trim((string) ($_SERVER['HTTP_X_GB_APP'] ?? ($_POST['gb_app'] ?? ''))));
+    if (!array_key_exists($app, GB_APP_COLS)) return;
+    $p = cbReadToken(cbRequestToken());
+    if (!$p || gbAppAccess($p, $app)['st'] !== 'uninvited') return;
+    if (!headers_sent()) header('Content-Type: application/json');
+    echo json_encode(['error' => gbUninvitedMsg(GB_APP_COLS[$app]), 'uninvited' => true, 'app' => $app], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 /** One app's access from a token or cbAccessFromUser(); tokens from before the app columns only knew CardBoard. */
 function gbAppAccess(array $p, string $app): array {
     if (isset($p['a'][$app])) return $p['a'][$app];
@@ -166,6 +180,7 @@ function cbRequireSignIn(): void {
     $p = cbReadToken(cbRequestToken());
     if (!$p) { echo json_encode(['error' => 'Sign in with your GameBoard account first.', 'need_auth' => true]); exit; }
     if (($p['x'] ?? 0) < time()) { echo json_encode(['error' => 'Your sign-in needs refreshing.', 'need_auth' => true, 'refresh' => true]); exit; }
+    gbBlockUninvited('cardboard');
 }
 
 /**

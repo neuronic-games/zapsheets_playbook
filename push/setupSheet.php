@@ -13,6 +13,7 @@ ini_set('display_errors', '0');
 header('Content-Type: application/json');
 
 require __DIR__ . '/../dotEnv.php';
+require_once __DIR__ . '/gameboardAuth.php'; gbBlockUninvited('pitchboard');   // the Waiting Room: only the apps they were invited to
 require_once __DIR__ . '/refreshJson.php';
 
 $sheetId = trim($_POST['id'] ?? $_GET['id'] ?? '');

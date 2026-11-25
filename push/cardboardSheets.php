@@ -10,6 +10,7 @@
 error_reporting(0);
 require __DIR__ . '/../dotEnv.php';
 require_once __DIR__ . '/gameboardAuth.php';
+require_once __DIR__ . '/gameboardAuth.php'; gbBlockUninvited('cardboard');   // the Waiting Room: only the apps they were invited to
 
 function csDir(string $id): string { return dirname(__DIR__) . '/sheets/' . $id; }
 function csValid(string $id): bool { return (bool) preg_match('/^[A-Za-z0-9_\-]{20,128}$/', $id); }

@@ -549,8 +549,19 @@ body.designs .app { display:flex; flex-direction:column; }
       .then(function(r) { if (r && r.waiting) location.href = APP_BASE + 'waiting';   // the Waiting Room: no sign-in until let in
         if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response'); return r; });
   }
+  // Let in from the Waiting Room to other apps only: CardBoard can't be used (gb-uninvited.js covers the page)
+  function cbUninvited(a) {
+    var x = a && a.apps && a.apps.cardboard;
+    if (!x || x.state !== 'uninvited') { if (window.GBUninvited) GBUninvited.hide(); return; }
+    var N = { pitchboard: 'PitchBoard', devboard: 'DevBoard', billboard: 'BillBoard' };
+    var have = Object.keys(N).filter(function(k) { return /^(trial|code|subscribed|activated)$/.test(((a.apps || {})[k] || {}).state || ''); }).map(function(k) { return N[k]; });
+    var go = function() { GBUninvited.show({ name: 'CardBoard', icon: APP_BASE + 'images/cardboard_icon_180.png', home: APP_BASE + 'dashboard', apps: have }); };
+    if (window.GBUninvited) return go();
+    var s = document.createElement('script'); s.src = APP_BASE + 'js/gb-uninvited.js?v=1'; s.onload = go; document.head.appendChild(s);
+  }
   function show() {
     document.body.classList.toggle('signed-out', !acct);
+    cbUninvited(acct && acct.account);
     document.body.classList.toggle('designs', !!acct);
     $('authCard').hidden = !!acct;
     if (acct) { fillMe(); dLoad(); }
@@ -600,7 +611,7 @@ body.designs .app { display:flex; flex-direction:column; }
   window.picDrop = function(e) { e.preventDefault(); $('sideAv').classList.remove('drop'); picUpload(e.dataTransfer.files && e.dataTransfer.files[0]); };
 
   function seenIds() { try { var l = JSON.parse(localStorage.getItem('cb_seen') || '[]'); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
-  function storeAcct(r) { acct = { token: r.token, account: r.account, sheet: '', checked: Date.now() }; try { localStorage.setItem('cb_account', JSON.stringify(acct)); } catch (e) {} }
+  function storeAcct(r) { acct = { token: r.token, account: r.account, sheet: '', checked: Date.now() }; try { localStorage.setItem('cb_account', JSON.stringify(acct)); } catch (e) {} cbUninvited(acct.account); }
   function listPost() {
     var fd = new FormData(); fd.append('cbt', acct.token); fd.append('seen', seenIds().map(function(x) { return x.id; }).join(','));
     return fetch(APP_BASE + 'push/cardboardSheets.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); });

@@ -4330,9 +4330,20 @@ function acctRefresh(force) {
     .then(function(a) { _acctRefreshing = null; return a; }, function(e) { _acctRefreshing = null; throw e; });
   return _acctRefreshing;
 }
+// Let in from the Waiting Room to other apps only: CardBoard can't be used (gb-uninvited.js covers the page)
+function cbUninvited(a) {
+  var x = a && a.apps && a.apps.cardboard;
+  if (!x || x.state !== 'uninvited') { if (window.GBUninvited) GBUninvited.hide(); return; }
+  var N = { pitchboard: 'PitchBoard', devboard: 'DevBoard', billboard: 'BillBoard' };
+  var have = Object.keys(N).filter(function(k) { return /^(trial|code|subscribed|activated)$/.test(((a.apps || {})[k] || {}).state || ''); }).map(function(k) { return N[k]; });
+  var go = function() { GBUninvited.show({ name: 'CardBoard', icon: APP_BASE + 'images/cardboard_icon_180.png', home: APP_BASE + 'dashboard', apps: have }); };
+  if (window.GBUninvited) return go();
+  var s = document.createElement('script'); s.src = APP_BASE + 'js/gb-uninvited.js?v=1'; s.onload = go; document.head.appendChild(s);
+}
 // The designer follows the account: everything while it has access, read-only once the week is over
 function applyAcct() {
   var a = acctInfo(), ok = hasAccess();
+  if (acctChecked()) cbUninvited(a);
   document.body.classList.toggle('cb-locked', !ok);
   var bar = $('lockBar');
   if (bar) {

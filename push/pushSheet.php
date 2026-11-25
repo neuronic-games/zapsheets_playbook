@@ -4,6 +4,7 @@
     ini_set('display_errors', '0');
 
     require __DIR__ . '/../dotEnv.php';
+require_once __DIR__ . '/gameboardAuth.php'; gbBlockUninvited('');   // the Waiting Room: only the apps they were invited to
 
     $spreadsheetId = $_POST['id'];
     $sheet = $_POST['sheetname'];

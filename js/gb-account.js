@@ -331,8 +331,22 @@
         else hideTip();
       } else hideTip();
     } else hideTip();
+    uninvited();
     menu();
     _listeners.forEach(function(fn) { try { fn(api.state()); } catch (e) {} });
+  }
+  // Let in from the Waiting Room to other apps only: this app's page can't be used (gb-uninvited.js covers it)
+  var _gbuLoad = null;
+  function uninvited() {
+    var a = info(), x = appInfo(), on = !!(a && checked() && x && x.state === 'uninvited' && !unlocked());
+    if (!on) { if (window.GBUninvited) GBUninvited.hide(); return; }
+    var NAMES = { pitchboard: 'PitchBoard', devboard: 'DevBoard', cardboard: 'CardBoard', billboard: 'BillBoard' };
+    var have = Object.keys(NAMES).filter(function(k) { var p = (a.apps || {})[k] || {}; return /^(trial|code|subscribed|activated)$/.test(p.state || ''); }).map(function(k) { return NAMES[k]; });
+    _gbuLoad = _gbuLoad || new Promise(function(res, rej) {
+      if (window.GBUninvited) return res();
+      var s = document.createElement('script'); s.src = (O.base || '') + 'js/gb-uninvited.js?v=1'; s.onload = res; s.onerror = function() { _gbuLoad = null; rej(); }; document.head.appendChild(s);
+    });
+    _gbuLoad.then(function() { if ((appInfo() || {}).state === 'uninvited') GBUninvited.show({ name: O.name, icon: O.icon ? (O.base || '') + O.icon.replace(/^\//, '') : '', home: (O.base || '') + 'dashboard', apps: have }); }, function() {});
   }
   // The page's own account menu, set up the same way in every app (CardBoard's is the model):
   //   - the round menu button shows the profile picture when there is one, otherwise the person icon

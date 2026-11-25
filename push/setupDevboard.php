@@ -9,6 +9,7 @@ ini_set('display_errors', '0');
 header('Content-Type: application/json');
 
 require __DIR__ . '/../dotEnv.php';
+require_once __DIR__ . '/gameboardAuth.php'; gbBlockUninvited('devboard');   // the Waiting Room: only the apps they were invited to
 
 $sheetId = trim($_POST['id'] ?? '');
 if (!$sheetId) {

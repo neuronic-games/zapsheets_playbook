@@ -419,7 +419,7 @@ table.keys tr.h td { background:#fffafa; font-family:'DINBlack',sans-serif; font
     <li><b>Import</b> (menu) — paste a link to a PitchBoard share file and <b>Load</b>. PitchBoard lists its pitches and contacts, marking which are new, which have changed and which you already have, and <b>Import</b> adds them to this sheet. Handy for bringing in pitches a co-designer kept on their own.</li>
     <li><b>Slideshow</b> (menu) — your games one by one, full screen, for showing at a meeting or a booth.</li>
     <li><b>Pick the slides</b> — pull down the small bar at the top edge of the slideshow (or swipe down from the top on a phone, or press <b>G</b>). Tap a game to show or hide it and drag <b>⋮⋮</b> to change the order; <b>Reset</b> goes back to your Pitching games. Your choice is kept on that device.</li>
-    <li><b>Stats and components</b> — drag a game’s name up to see its players, play time, complexity and components; let go and they slide back down.</li>
+    <li><b>Stats and components</b> — tap a game’s name (or drag it up, or press <b>I</b>) to slide up its players, play time, complexity and components; tap again, drag it down or change slides to put it away. The ✉ in the box starts an email with the game’s details and links.</li>
   </ul>
 </section>
 

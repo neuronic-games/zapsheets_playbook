@@ -366,7 +366,12 @@ $_sheet_id = $_bm[2] ?? '';
   .sm-comp li { break-inside: avoid; padding-left: .9em; position: relative; }
   .sm-comp li::before { content: ''; position: absolute; left: 0; top: .62em; width: 4px; height: 4px; border-radius: 50%; background: #c8860a; }
   .sm-none { font-size: .8rem; color: rgba(255,255,255,.55); margin: 0; }
-  .slide-info { cursor: ns-resize; }
+  .slide-info { cursor: pointer; }
+  .slide-more-in { position: relative; cursor: default; }
+  .sm-mail { position: absolute; top: .55rem; right: .6rem; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.75); background: rgba(255,255,255,.08); transition: background .15s, color .15s; }
+  .sm-mail:hover { background: #c8860a; color: #fff; }
+  .sm-mail svg { width: 17px; height: 17px; }
+  .sm-stats, .sm-none { padding-right: 2.6rem; }
   /* Faint bars, like the one at the top: something to drag */
   .slide-grab {   /* at the bottom edge, right under the middle of the stats box */
     position: absolute; bottom: max(9px, env(safe-area-inset-bottom, 0px)); left: calc(1.5rem + min(640px, 100vw - 3rem) / 2);
@@ -713,6 +718,7 @@ $_sheet_id = $_bm[2] ?? '';
   }
   function setSlide(idx, animate) {
     var n = slides.length;
+    if (specOpen && ((idx % n) + n) % n !== current) setSpec(false);
     var wrapDir = animate !== false && n > 1 ? (idx >= n && current === n - 1 ? 1 : idx < 0 && current === 0 ? -1 : 0) : 0;
     if (wrapDir) placeWrap(wrapDir);
     current = ((idx % n) + n) % n;
@@ -753,7 +759,7 @@ $_sheet_id = $_bm[2] ?? '';
   // ── Stats and components: from the game's own data (game-{Name}-en.json), kept for offline ──
   var MORE_KEY = 'pb_slide_more_' + sheetId;
   function moreStore() { try { return JSON.parse(localStorage.getItem(MORE_KEY) || '{}') || {}; } catch (e) { return {}; } }
-  function moreHtml(rows) {
+  function moreHtml(rows, s) {
     var v = function (n) { var r = (rows || []).filter(function (x) { return x && x.Name === n && String(x.Value || '').trim(); })[0]; return r ? String(r.Value).trim() : ''; };
     var e = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
     var stats = [], p1 = v('MinPlayers'), p2 = v('MaxPlayers'), t1 = v('MinPlaytime'), t2 = v('MaxPlaytime'), w = parseFloat(v('Weight'));
@@ -761,15 +767,31 @@ $_sheet_id = $_bm[2] ?? '';
     if (t1 || t2) stats.push([(t1 && t2 && t1 !== t2 ? t1 + '–' + t2 : (t1 || t2)) + ' min', 'Play time']);
     if (w > 0) stats.push([w.toFixed(1) + ' / 5', 'Complexity']);
     var comps = (rows || []).filter(function (x) { return x && x.Name === 'Component' && String(x.Value || '').trim(); }).map(function (x) { return String(x.Value).trim(); });
-    var h = '';
+    var h = s ? '<a class="sm-mail" href="' + e(mailHref(s, stats, comps)) + '" title="Email this game’s details" aria-label="Email this game’s details">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></a>' : '';
     if (stats.length) h += '<div class="sm-stats">' + stats.map(function (x) { return '<div class="sm-stat"><b>' + e(x[0]) + '</b><span>' + x[1] + '</span></div>'; }).join('') + '</div>';
     if (comps.length) h += '<div class="sm-h">Components</div><ul class="sm-comp">' + comps.map(function (c) { return '<li>' + e(c) + '</li>'; }).join('') + '</ul>';
-    return h || '<p class="sm-none">No player count, play time or components for this game yet.</p>';
+    if (!stats.length && !comps.length) h += '<p class="sm-none">No player count, play time or components for this game yet.</p>';
+    return h;
+  }
+  // An email with the game's details, ready to address
+  function mailHref(s, stats, comps) {
+    var abs = function (u) { try { return u ? new URL(u, location.href).href : ''; } catch (e) { return u; } };
+    var L = [s.name + (s.tagline ? ' — ' + s.tagline : '')];
+    if (s.designers) L.push('Designed by ' + s.designers);
+    if (stats.length) L.push(stats.map(function (x) { return x[1] + ': ' + x[0]; }).join(' · '));
+    if (s.desc) L.push('', s.desc);
+    if (comps.length) L.push('', 'Components:', comps.map(function (c) { return '• ' + c; }).join('\n'));
+    var links = [];
+    if (s.page) links.push('Game page: ' + abs(s.page));
+    if (s.sellsheet) links.push('Sell sheet: ' + abs(s.sellsheet));
+    if (links.length) L.push('', links.join('\n'));
+    return 'mailto:?subject=' + encodeURIComponent(s.name) + '&body=' + encodeURIComponent(L.join('\n'));
   }
   function loadMore(i) {
     var s = slides[i], el = trackEl.querySelectorAll('.slide-more-in')[i];
     if (!s || !el) return;
-    var fill = function (rows) { el.innerHTML = moreHtml(rows); };
+    var fill = function (rows) { el.innerHTML = moreHtml(rows, s); };
     var kept = moreStore()[s.name];
     if (kept) fill(kept);
     if (s._more === 'loading' || (s._more === 'done' && kept)) return;
@@ -781,31 +803,48 @@ $_sheet_id = $_bm[2] ?? '';
         var keep = rows.filter(function (x) { return x && /^(MinPlayers|MaxPlayers|MinPlaytime|MaxPlaytime|Weight|Component)$/.test(x.Name); }).map(function (x) { return { Name: x.Name, Value: x.Value }; });
         var st = moreStore(); st[s.name] = keep; try { localStorage.setItem(MORE_KEY, JSON.stringify(st)); } catch (e) {}
         s._more = 'done';
-        var now = trackEl.querySelectorAll('.slide-more-in')[slides.indexOf(s)]; if (now) now.innerHTML = moreHtml(keep);
+        var now = trackEl.querySelectorAll('.slide-more-in')[slides.indexOf(s)]; if (now) now.innerHTML = moreHtml(keep, s);
       })
       .catch(function () { s._more = ''; if (!kept) fill([]); });
   }
-  // Peek: the current slide's panel opens as far as you've dragged, and closes when you let go
-  var peekOn = false, suppressClick = false;
+  // The spec box: tap the game's name to slide it up (tap again to put it away), or drag it up or down
+  var peekOn = false, suppressClick = false, specOpen = false, peekFrom = 0, lastTouch = 0;
   function peekEl() { return trackEl.querySelectorAll('.slide-more')[current]; }
-  function peekStart() { peekOn = true; stopProgress(); var m = peekEl(); if (m) { m.classList.add('drag'); m.parentNode.classList.add('peeking'); } }
-  function peekTo(px) {
+  function specH(m) { return Math.min(m.firstChild.offsetHeight + 16, window.innerHeight * 0.7); }
+  function setSpec(open) {
+    var m = peekEl();
+    specOpen = !!open && !!m;
+    trackEl.querySelectorAll('.slide-more').forEach(function (x) {
+      var on = specOpen && x === m;
+      x.classList.remove('drag');
+      x.style.height = on ? specH(x) + 'px' : '';
+      x.style.overflowY = on && x.firstChild.offsetHeight + 16 > window.innerHeight * 0.7 ? 'auto' : 'hidden';
+      if (!on) x.scrollTop = 0;
+      x.parentNode.classList.toggle('peeking', on);
+    });
+    if (specOpen) stopProgress(); else if (!paused && slides.length && !document.body.classList.contains('pick-open')) resetProgress();
+  }
+  function toggleSpec() { setSpec(!specOpen); }
+  function peekStart() {
     var m = peekEl(); if (!m) return;
-    var h = m.firstChild.offsetHeight + 16, max = window.innerHeight * 0.7;
-    m.style.height = Math.max(0, Math.min(px, h, max)) + 'px';
-    m.style.overflowY = h > max ? 'auto' : 'hidden';
+    peekOn = true; stopProgress();
+    peekFrom = specOpen ? specH(m) : 0;
+    m.classList.add('drag'); m.parentNode.classList.add('peeking');
   }
-  function peekEnd() {
-    peekOn = false; var m = peekEl();
-    if (m) { m.classList.remove('drag'); m.parentNode.classList.remove('peeking'); m.style.height = ''; m.scrollTop = 0; }
-    if (!paused) resetProgress();
+  function peekTo(px) {   // px: how far up from where the drag started
+    var m = peekEl(); if (!m) return;
+    m.style.height = Math.max(0, Math.min(peekFrom + px, specH(m))) + 'px';
   }
-  // With a mouse: press on the name and drag up
+  function peekEnd(px) {   // up past a little: open; down past a little: closed; else as it was
+    peekOn = false;
+    setSpec(px > 40 ? true : px < -40 ? false : specOpen);
+  }
+  // With a mouse: drag the name up (or the open box down)
   trackEl.addEventListener('mousedown', function (e) {
-    if (e.button !== 0 || !e.target.closest('.slide-info') || e.target.closest('.slide-page-link')) return;
+    if (e.button !== 0 || !e.target.closest('.slide-info') || e.target.closest('.slide-page-link, .sm-mail')) return;
     var y0 = e.clientY;
-    function mv(ev) { var dy = y0 - ev.clientY; if (!peekOn && dy > 8) peekStart(); if (peekOn) { ev.preventDefault(); peekTo(dy); } }
-    function up() { window.removeEventListener('mousemove', mv); window.removeEventListener('mouseup', up); if (peekOn) { suppressClick = true; peekEnd(); } }
+    function mv(ev) { var dy = y0 - ev.clientY; if (!peekOn && Math.abs(dy) > 8) peekStart(); if (peekOn) { ev.preventDefault(); peekTo(dy); } }
+    function up(ev) { window.removeEventListener('mousemove', mv); window.removeEventListener('mouseup', up); if (peekOn) { suppressClick = true; peekEnd(y0 - ev.clientY); } }
     window.addEventListener('mousemove', mv); window.addEventListener('mouseup', up);
   });
 
@@ -869,7 +908,7 @@ $_sheet_id = $_bm[2] ?? '';
     touchX0 = e.touches[0].clientX;
     touchY0 = e.touches[0].clientY;
     swiping = false;
-    touchInfo = !!(e.target.closest && e.target.closest('.slide-info'));
+    touchInfo = !!(e.target.closest && e.target.closest('.slide-info')) && !(e.target.closest('.sm-mail'));
     trackEl.classList.remove('animating');
   }, { passive: true });
 
@@ -878,7 +917,7 @@ $_sheet_id = $_bm[2] ?? '';
     var dx = e.touches[0].clientX - touchX0;
     var dy = e.touches[0].clientY - touchY0;
     if (peekOn) { e.preventDefault(); peekTo(-dy); return; }
-    if (!swiping && touchInfo && dy < -10 && Math.abs(dy) > Math.abs(dx)) { e.preventDefault(); peekStart(); peekTo(-dy); return; }
+    if (!swiping && touchInfo && Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx) && (dy < 0 || specOpen)) { e.preventDefault(); peekStart(); peekTo(-dy); return; }
     if (!swiping) {
       if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
         swiping = true;
@@ -899,14 +938,19 @@ $_sheet_id = $_bm[2] ?? '';
 
   trackEl.addEventListener('touchend', function (e) {
     if (touchX0 == null) return;
-    var dx = e.changedTouches[0].clientX - touchX0;
+    var dx = e.changedTouches[0].clientX - touchX0, dyEnd = e.changedTouches[0].clientY - touchY0;
     touchX0 = null; touchY0 = null;
-    if (peekOn) { peekEnd(); return; }
+    lastTouch = Date.now();
+    if (peekOn) { peekEnd(-dyEnd); return; }
 
     if (!swiping) {
       // Let taps on the game-page link pass through to the browser
       var tgt = e.target;
-      if (tgt && tgt.closest && tgt.closest('.slide-page-link')) return;
+      if (tgt && tgt.closest && tgt.closest('.slide-page-link, .sm-mail')) return;
+      // A tap on the game's name: the spec box; a tap inside the open box: nothing
+      if (tgt && tgt.closest && tgt.closest('.slide-more')) return;
+      if (tgt && tgt.closest && tgt.closest('.slide-info')) { toggleSpec(); return; }
+      if (specOpen) { setSpec(false); return; }   // a tap elsewhere puts it away
       // Treat as a tap
       var x = e.changedTouches[0].clientX;
       var w = window.innerWidth;
@@ -925,7 +969,7 @@ $_sheet_id = $_bm[2] ?? '';
     }
   }, { passive: true });
 
-  trackEl.addEventListener('touchcancel', function () { touchX0 = null; if (peekOn) peekEnd(); }, { passive: true });
+  trackEl.addEventListener('touchcancel', function () { touchX0 = null; if (peekOn) peekEnd(0); }, { passive: true });
 
   // Prevent context menu on long-press (phone)
   document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
@@ -936,8 +980,12 @@ $_sheet_id = $_bm[2] ?? '';
   // #slideshow that mirrors the touch handler's coordinate logic.
   document.getElementById('slideshow').addEventListener('click', function (e) {
     // Let clicks on the game-page eye link pass through to the browser
-    if (e.target && e.target.closest && e.target.closest('.slide-page-link')) return;
+    if (e.target && e.target.closest && e.target.closest('.slide-page-link, .sm-mail')) return;
     if (suppressClick) { suppressClick = false; return; }
+    if (Date.now() - lastTouch < 700) return;   // the click a phone sends after a tap: the tap was handled
+    if (e.target.closest && e.target.closest('.slide-more')) return;
+    if (e.target.closest && e.target.closest('.slide-info')) { toggleSpec(); return; }
+    if (specOpen) { setSpec(false); return; }
     var x = e.clientX;
     var w = window.innerWidth;
     if (x < w * 0.28)      { prev(); }
@@ -949,6 +997,8 @@ $_sheet_id = $_bm[2] ?? '';
   document.addEventListener('keydown', function (e) {
     if (document.body.classList.contains('pick-open')) { if (e.key === 'Escape') { e.preventDefault(); closePick(); } return; }
     if (e.key === 'g' || e.key === 'G') { e.preventDefault(); openPick(); return; }
+    if (e.key === 'Escape' && specOpen) { e.preventDefault(); setSpec(false); return; }
+    if (e.key === 'i' || e.key === 'I') { e.preventDefault(); toggleSpec(); return; }
     if (!slides.length) return;
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  { e.preventDefault(); next(); }
     if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')    { e.preventDefault(); prev(); }
@@ -1006,6 +1056,8 @@ $_sheet_id = $_bm[2] ?? '';
           designers: designers,
           page:      (g['Page URL'] || '').trim(),
           status:    (g['Status']  || '').trim(),
+          sellsheet: (g['Sellsheet URL'] || g['Sell Sheet URL'] || g['Sell Sheet'] || '').trim(),
+          desc:      (g['Description'] || '').trim(),
         };
       });
 

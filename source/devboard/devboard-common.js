@@ -146,10 +146,10 @@ function copySessionNotes(key, btn) {
 }
 (function() {
   var st = document.createElement('style');
-  // In the header, in place of the note count (the page sets --sess-right so both line up with its + T&M button)
-  st.textContent = '.session-header .sess-copy-btn{display:none;position:absolute;top:50%;right:var(--sess-right,2.6rem);transform:translateY(-50%)}' +
+  // In the header, centred top to bottom, in place of the note count (the page sets --sess-right so both line up with its + T&M button)
+  st.textContent = '.session-header{position:relative}.session-header .sess-copy-btn{display:none;position:absolute;top:50%;right:calc(var(--sess-right,2.6rem) + 1rem);transform:translateY(-50%)}' +
     '.session-block.open > .session-header .sess-copy-btn{display:inline-flex}' +
-    '.session-block.open > .session-header .session-header-row:has(.sess-copy-btn) .session-count{visibility:hidden}' +
+    '.session-block.open > .session-header:has(.sess-copy-btn) .session-count{visibility:hidden}' +
     '.sess-copy-btn{font-family:DINBlack,sans-serif;font-size:.62rem;text-transform:uppercase;letter-spacing:.07em;display:inline-flex;align-items:center;gap:.3rem;' +
     'background:transparent;color:#1a5f7a;border:1.5px solid #1a5f7a;border-radius:6px;padding:.25rem .6rem;cursor:pointer;transition:background .15s,color .15s}' +
     '.sess-copy-btn:hover{background:#1a5f7a;color:#fff}.sess-copy-btn.done{background:#2e7a52;border-color:#2e7a52;color:#fff}';

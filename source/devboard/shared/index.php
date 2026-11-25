@@ -290,7 +290,8 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
   -webkit-touch-callout:none;
 }
 .session-header:hover { background:#e6f2f8; }
-.session-header-row { position:relative; display:flex; align-items:baseline; gap:.55rem; --sess-right:calc(14px + 1.55rem); padding-right:var(--sess-right); }   /* the note count (or Copy) ends under the + T&M button */
+.session-header { --sess-right:calc(14px + 1.55rem); }   /* the note count (or Copy) ends under the + T&M button */
+.session-header-row { position:relative; display:flex; align-items:baseline; gap:.55rem; padding-right:var(--sess-right); }   /* the note count (or Copy) ends under the + T&M button */
 .session-type { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; line-height:1; }
 .session-type.type-playtest  { color:#1a5f7a; }
 .session-type.type-meeting   { color:#6b3fa8; }
@@ -1205,7 +1206,6 @@ function renderSessions() {
     if (s.date)    html += '<span class="session-sep">·</span><span class="session-date">' + esc(fmtDate(s.date)) + '</span>';
     if (locationDisplay) html += '<span class="session-sep">·</span><span class="session-location">' + esc(locationDisplay) + '</span>';
     html += '<span class="session-count">' + s.obs.length + (s.obs.length === 1 ? ' note' : ' notes') + '</span>';
-    if (s.obs.length && !isTM) html += sessCopyBtn('c-' + i, GAME_NAME, s);
     html += '<span class="session-chevron">▼</span>';
     html += '</div>';
     if (s.testers.length || s.submittedBy) {
@@ -1214,6 +1214,7 @@ function renderSessions() {
       if (s.submittedBy) html += (s.testers.length ? ' ' : '') + '(Submitted by ' + esc(s.submittedBy) + ')';
       html += '</div>';
     }
+    if (s.obs.length && !isTM) html += sessCopyBtn('c-' + i, GAME_NAME, s);
     html += '</div>';  // .session-header
     // Body — clickable to open edit dialog when signed in
     var bodyAttrs = _collabUser ? ' onclick="guardedOpenEditDialog(' + allIdx + ')" style="cursor:pointer"' : '';

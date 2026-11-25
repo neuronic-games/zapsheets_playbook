@@ -686,8 +686,9 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
   -webkit-touch-callout:none;
 }
 .session-header:hover { background:#e6f2f8; }
+.session-header { --sess-right:calc(14px + 1.75rem); }   /* the note count (or Copy) ends under the + T&M button */
 /* position:relative so button+chevron can be abs-positioned within the row */
-.session-header-row { position:relative; display:flex; align-items:baseline; gap:.55rem; --sess-right:calc(14px + 1.75rem); padding-right:var(--sess-right); }   /* the note count (or Copy) ends under the + T&M button */
+.session-header-row { position:relative; display:flex; align-items:baseline; gap:.55rem; padding-right:var(--sess-right); }   /* the note count (or Copy) ends under the + T&M button */
 .session-type {
   font-family:'DINBlack',sans-serif; font-size:.72rem;
   text-transform:uppercase; letter-spacing:.06em; line-height:1;
@@ -4290,7 +4291,6 @@ function renderBody(gameName, rows) {
       if (s.location) html += '<span class="session-sep">·</span><span class="session-location">' + esc(s.location) + '</span>';
       if (s.length)   html += '<span class="session-sep">·</span><span class="session-length">' + esc(s.length) + '</span>';
       html +=   '<span class="session-count">' + s.obs.length + (s.obs.length === 1 ? ' note' : ' notes') + '</span>';
-      if (s.obs.length) html += sessCopyBtn('d-' + blockId, gameName, s);
       html +=   '<span class="session-chevron">▼</span>';
       html +=   '</div>';
       // Testers as comma-separated line in the header
@@ -4300,6 +4300,7 @@ function renderBody(gameName, rows) {
         if (s.submittedBy) { var _sbLabel = _peopleByEmail[s.submittedBy.toLowerCase()] || s.submittedBy; html += (s.testers.length ? ' ' : '') + '(Submitted by ' + esc(_sbLabel) + ')'; }
         html += '</div>';
       }
+      if (s.obs.length) html += sessCopyBtn('d-' + blockId, gameName, s);
       html += '</div>';
       // Collapsible body — click anywhere to open edit dialog
       html += '<div class="session-body-wrap"><div class="session-body" onclick="openEditSessionDialog(' + gnQ + ',' + allIdx + ')" style="cursor:pointer">';

@@ -1789,7 +1789,7 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
   <div class="contract-dialog" style="position:relative;overflow:visible" onclick="event.stopPropagation()"
        onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitPayment();}">
     <button onclick="closePaymentDialog()" style="position:absolute;top:.75rem;right:.75rem;background:none;border:none;cursor:pointer;font-size:1rem;color:#888;line-height:1;padding:.25rem .4rem;" title="Close">&#x2715;</button>
-    <h2>Payment — <span id="payGameTitle"></span></h2>
+    <h2><span id="payDlgTitle">Payment</span> — <span id="payGameTitle"></span></h2>
     <div class="field-grid" style="grid-template-columns:1fr 1fr">
       <div class="field-group span2">
         <label>Paid to</label>
@@ -3079,12 +3079,55 @@ function _paymentItemHtml(pay) {
   h += '<div class="estimate-item-actions">' +
     '<div id="cdel-row-' + idx + '" style="display:flex;gap:.5rem;align-items:center">' +
       '<button type="button" class="btn-contract-action" id="pay-share-btn-' + idx + '" onclick="event.stopPropagation();_paySlipShare(' + idx + ')">✉ Share</button>' +
+      '<button type="button" class="btn-contract-action" onclick="event.stopPropagation();openPaymentEdit(' + idx + ')">Edit</button>' +
       '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_conStartDelete(' + idx + ')">🗑 Delete</button></div>' +
     '<div id="cdel-confirm-' + idx + '" style="display:none;align-items:center;justify-content:flex-end;gap:.5rem">' +
       '<button type="button" class="est-nocancel-btn" onclick="event.stopPropagation();_conCancelDelete(' + idx + ')">Don\'t Delete</button>' +
       '<button type="button" class="est-confirm-btn" id="cdel-btn-' + idx + '" onclick="event.stopPropagation();_conConfirmDelete(' + idx + ')">Confirm</button></div>' +
     '</div></div></div>';
   return h;
+}
+// Edit a payment: the same dialog, filled in; saved like a contract's changes (its slip is made again with them)
+function openPaymentEdit(idx) {
+  var _args = arguments; if (!_dbRequirePro(function() { openPaymentEdit.apply(null, _args); })) return;
+  var pay = CONTRACT_RAW[idx]; if (!pay) return;
+  openPaymentDialog(pay.Client || '', pay.Game || '');
+  _payCtx.editIdx = idx; _payCtx.ref = String(pay['Ref Number'] || '').replace(/^'/, '');
+  document.getElementById('payDlgTitle').textContent = 'Edit Payment';
+  document.getElementById('payPersonInput').value = pay.Payee || '';
+  var sm = _cleanSummary(pay.Summary);
+  document.getElementById('paySummary').value = sm;
+  document.getElementById('paySummary').dataset.ref = '';
+  var n = parseFloat(String(pay.Quote || '').replace(/[$,]/g, ''));
+  document.getElementById('payAmount').value = isNaN(n) ? '' : n.toFixed(2);
+  var d = _dbDay(pay.Date); if (d) { var dd = new Date(d); document.getElementById('payDate').value = dd.getUTCFullYear() + '-' + ('0' + (dd.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + dd.getUTCDate()).slice(-2); }
+  document.getElementById('payNotes').value = String(pay.Notes || '').replace(/^'/, '');
+  var b = document.getElementById('payBtn'); b.textContent = 'Save Changes';
+  _payInitial = _payValues();
+}
+function _paySaveEdit(v) {
+  var idx = _payCtx.editIdx, pay = CONTRACT_RAW[idx]; if (!pay) return;
+  var fd = new FormData();
+  fd.append('id', SHEET_ID); fd.append('contract_id', _payCtx.ref);
+  fd.append('game', pay.Game || ''); fd.append('client', pay.Client || '');
+  fd.append('quote', (parseFloat(v.amount) || 0).toFixed(2)); fd.append('payment', 'Paid');
+  fd.append('summary', v.summary); fd.append('notes', v.notes);
+  fd.append('payee', v.person); fd.append('date', v.date);
+  _payAppendMe(fd);
+  var btn = document.getElementById('payBtn'); btn.disabled = true; btn.textContent = 'Saving…';
+  fetch(APP_BASE + 'push/updateContract.php', { method: 'POST', body: fd })   // kept here and sent with Save, like other edits
+    .then(function(r) { return r.json(); })
+    .then(function(j) {
+      btn.disabled = false; btn.textContent = 'Save Changes';
+      if (!j || !j.ok) { var e = document.getElementById('payErr'); e.textContent = (j && j.error) || 'Save failed.'; e.style.display = 'block'; return; }
+      pay.Payee = v.person; pay.Summary = v.summary; pay.Quote = (parseFloat(v.amount) || 0).toFixed(2); pay.Date = v.date || pay.Date; pay.Notes = v.notes;
+      if (j.slip) pay.Files = j.slip;
+      else if (j.queued) pay._slipStale = true;   // made again when the change is saved
+      forceClosePaymentDialog();
+      renderPublishersViewKeepOpen();
+      if (typeof _dbContractsChanged === 'function') _dbContractsChanged();
+    })
+    .catch(function() { btn.disabled = false; btn.textContent = 'Save Changes'; var e = document.getElementById('payErr'); e.textContent = 'Network error.'; e.style.display = 'block'; });
 }
 function _payToggle(idx) { var el = document.getElementById('ci-' + idx); if (el) el.classList.toggle('open'); }
 // A new estimate, invoice or payment: its shared page opens in a new tab as soon as it's made.
@@ -3123,7 +3166,7 @@ function _payMakeSlip(idx, btn, done, fail) {
     .then(function(r) { return r.json(); })
     .then(function(j) {
       if (!j || !j.ok) throw new Error((j && j.error) || 'Could not make the slip');
-      pay.Files = j.url;
+      pay.Files = j.url; delete pay._slipStale;
       if (btn) { btn.disabled = false; btn.textContent = label; }
       done(j.url);
     })
@@ -3132,7 +3175,7 @@ function _payMakeSlip(idx, btn, done, fail) {
 // Payment Slip: a tab opens straight away (so it isn't blocked), and shows the slip once it's made
 function _payOpenSlip(idx) {
   var pay = CONTRACT_RAW[idx]; if (!pay) return;
-  if (pay.Files) { window.open(pay.Files, '_blank'); return; }   // made already: straight there
+  if (pay.Files && !pay._slipStale) { window.open(pay.Files, '_blank'); return; }   // made already: straight there
   var win = window.open('', '_blank');
   if (win) win.document.write('<p style="font:16px -apple-system,Arial,sans-serif;color:#666;padding:2rem">Making the payment slip…</p>');
   _payMakeSlip(idx, null,
@@ -3147,7 +3190,7 @@ function _paySlipShare(idx) {
     var body = 'Hi ' + String(pay.Payee || '').split(' ')[0] + ',\n\nI sent you ' + amt + (pay.Game ? ' for ' + pay.Game : '') + '. Here is the payment slip:\n' + url + '\n\nThanks!\n' + (MY_NAME || '');
     window.location.href = 'mailto:' + encodeURIComponent(_payeeEmail(pay.Payee)) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
   };
-  if (pay.Files) send(pay.Files); else _payMakeSlip(idx, document.getElementById('pay-share-btn-' + idx), send);
+  if (pay.Files && !pay._slipStale) send(pay.Files); else _payMakeSlip(idx, document.getElementById('pay-share-btn-' + idx), send);
 }
 var _payCtx = null, _payInitial = {};
 // ── Contract summaries: the one-line Summary every contract has ─────────────
@@ -3225,6 +3268,7 @@ function _payValues() {
 }
 function openPaymentDialog(client, game) {
   _payCtx = { client: client || '', game: game || '', ref: _dbNewRef() };   // ref: the same on a retry, so it's saved once
+  document.getElementById('payDlgTitle').textContent = 'Payment';
   document.getElementById('payGameTitle').textContent = game || '';
   document.getElementById('payPersonInput').value = '';
   _sumSrc.pay = _contractSummaries(game);
@@ -3331,7 +3375,9 @@ function submitPayment() {
   v.summary = v.summary.replace(/\s+/g, ' ');
   if (!v.summary) { fail('Which contract is it for? Pick or type its summary.'); document.getElementById('paySummary').focus(); return; }
   if (!(parseFloat(v.amount) > 0)) { fail('Enter the amount paid.'); document.getElementById('payAmount').focus(); return; }
-  err.style.display = 'none'; btn.disabled = true; btn.textContent = 'Saving…';
+  err.style.display = 'none';
+  if (_payCtx.editIdx != null) { _paySaveEdit(v); return; }
+  btn.disabled = true; btn.textContent = 'Saving…';
   var fd = new FormData();
   fd.append('id', SHEET_ID); fd.append('game', _payCtx.game); fd.append('client', _payCtx.client);
   fd.append('payee', v.person); fd.append('summary', v.summary); fd.append('contract_ref', sumRef('pay')); fd.append('amount', v.amount); fd.append('date', v.date); fd.append('notes', v.notes);

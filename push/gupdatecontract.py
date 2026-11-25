@@ -48,6 +48,8 @@ payment           = data.get('payment',           '').strip()
 notes             = data.get('notes',             '').strip()
 summary           = data.get('summary')   # None: leave the Summary as it is
 summary           = None if summary is None else ' '.join(str(summary).split())
+extra             = data.get('extra') or {}   # more columns to set (a payment's Payee and Date) — only ones the sheet has
+if not isinstance(extra, dict): extra = {}
 
 if not contract_id:
     print(json.dumps({"error": "contract_id is required"}))
@@ -130,6 +132,8 @@ FIELD_MAP = {
     'Notes':             notes,
 }
 if summary is not None: FIELD_MAP['Summary'] = summary
+for _k, _v in extra.items():
+    if str(_k) in ('Payee', 'Date', 'Type'): FIELD_MAP[str(_k)] = str(_v).strip()
 
 try:
     updates = []

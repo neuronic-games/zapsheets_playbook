@@ -50,6 +50,11 @@ $data = [
     'discount_pct'      => $discountPct > 0 ? strval($discountPct) : '',
 ];
 if ($summary !== null) $data['summary'] = $summary;
+// A payment: who was paid and when
+$extra = [];
+if (isset($_POST['payee'])) { $payee = trim((string) $_POST['payee']); if ($payee === '') { echo json_encode(['error' => 'Who was paid?']); exit; } $extra['Payee'] = $payee; }
+if (isset($_POST['date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', trim((string) $_POST['date']))) $extra['Date'] = trim((string) $_POST['date']);
+if ($extra) $data['extra'] = $extra;
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
 $encoded    = base64_encode(json_encode($data, JSON_UNESCAPED_UNICODE));
@@ -151,6 +156,15 @@ if ($estIdx !== null && in_array($docType, ['Estimate', 'Invoice'], true)) {
     } else {
         $result['regenerated'] = ['error' => $pdfOut['error'] ?? 'The PDF could not be regenerated'];
     }
+}
+
+// A payment: its slip made again with the corrected details (same link)
+if ($docType === 'Payment') {
+    require_once __DIR__ . '/paymentSlip.php';
+    $slip = pbMakePaymentSlip($sheetId, $record, $_POST);
+    $result['record'] = $record;
+    if (!empty($slip['ok'])) { $result['slip'] = $slip['url']; $result['record']['Files'] = $slip['url']; }
+    else $result['slip_error'] = $slip['error'] ?? 'Could not make the slip';
 }
 
 refreshJson($pythonPath, $sheetId, 'contracts');

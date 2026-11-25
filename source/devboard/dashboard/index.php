@@ -535,6 +535,20 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 }
 /* Inline delete confirmation */
 .estimate-item .est-confirm { display:none; }
+/* Which rows go together: each item has a stripe in its kind's colour; an open item becomes a card of its own */
+.estimate-item, .contract-item { --it:#8fc3d8; box-shadow:inset 3px 0 0 var(--it); }
+.estimate-item:has(.estimate-type-pill.invoice) { --it:#e2b53e; }
+.estimate-item:has(.estimate-type-pill.paid)    { --it:#4caf6e; }
+.estimate-item:has(.estimate-type-pill.partial) { --it:#e08a4a; }
+.estimate-item:has(.estimate-type-pill.payout)  { --it:#8b5cf6; }
+.contract-item { --it:#9aa7b4; }
+.estimate-item.open, .contract-item.open {
+  margin:.55rem .7rem; border:1px solid #cfdde7; border-left:4px solid var(--it); border-radius:10px; background:#fff; overflow:hidden;
+  box-shadow:0 4px 14px rgba(26,95,122,.13);
+}
+.estimate-item.open .estimate-item-header { background:#eef5f9; padding-top:.5rem; padding-bottom:.5rem; }
+.estimate-item.open .estimate-item-body, .contract-item.open .client-contract-details { background:#fff; }
+.estimate-item.open:last-of-type { border-bottom:1px solid #cfdde7; }
 /* .confirming removed — delete confirm is now inline within .estimate-item-actions */
 .est-nocancel-btn { font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; background:none; border:1.5px solid #c0c8d0; color:#888; border-radius:6px; padding:.35rem .65rem; cursor:pointer; white-space:nowrap; transition:border-color .15s,color .15s; }
 .est-nocancel-btn:hover { border-color:#555; color:#333; }

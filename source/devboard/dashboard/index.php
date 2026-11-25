@@ -3087,6 +3087,18 @@ function _paymentItemHtml(pay) {
   return h;
 }
 function _payToggle(idx) { var el = document.getElementById('ci-' + idx); if (el) el.classList.toggle('open'); }
+// A new estimate, invoice or payment: its shared page opens in a new tab as soon as it's made.
+// The tab is opened at the click (a tab opened when the answer comes back is blocked) and shows a
+// note until then; go(url) shows the page, close() takes the tab away (an error, or no page).
+function _dbDocTab(msg) {
+  var w = null;
+  try { w = window.open('', '_blank'); } catch (e) {}
+  if (w) { try { w.document.write('<title>Making…</title><p style="font:16px -apple-system,Arial,sans-serif;color:#666;padding:2rem">' + (msg || 'Making the PDF…') + '</p>'); } catch (e) {} }
+  return {
+    go: function(url) { if (!url) { this.close(); return; } if (w && !w.closed) w.location.href = url; else window.open(url, '_blank'); },
+    close: function() { try { if (w && !w.closed) w.close(); } catch (e) {} }
+  };
+}
 // The sender's details for the slip — the same ones estimates and invoices use
 function _payAppendMe(fd) {
   fd.append('my_name', MY_NAME || ''); fd.append('my_phone', MY_PHONE || ''); fd.append('my_company', MY_COMPANY || '');
@@ -3323,17 +3335,19 @@ function submitPayment() {
   fd.append('payee', v.person); fd.append('summary', v.summary); fd.append('contract_ref', sumRef('pay')); fd.append('amount', v.amount); fd.append('date', v.date); fd.append('notes', v.notes);
   fd.append('ref', _payCtx.ref);
   _payAppendMe(fd);
+  var _tab = _dbDocTab('Making the payment slip…');
   fetch(APP_BASE + 'push/addPayment.php', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
     .then(function(j) {
-      if (!j || !j.ok) { fail((j && j.error) || 'Save failed.'); return; }
+      if (!j || !j.ok) { _tab.close(); fail((j && j.error) || 'Save failed.'); return; }
+      _tab.go(j.row && j.row.Files);
       var _have = CONTRACT_RAW.some(function(c) { return c && j.row && String(c['Ref Number'] || '') === String(j.row['Ref Number'] || ''); });
       if (!_have) CONTRACT_RAW.push(j.row);
       forceClosePaymentDialog();
       var st = _saveOpenState(); renderPublishersView(); _restoreOpenState(st);
       if (typeof showSaveToast === 'function') showSaveToast(j.slip_error ? 'Payment saved — the slip didn’t work: ' + j.slip_error : '✓ Payment to ' + v.person + ' saved, with its payment slip', j.slip_error ? '' : 'success');
     })
-    .catch(function() { fail('Network error.'); });
+    .catch(function() { _tab.close(); fail('Network error.'); });
 }
 
 // Save/restore open state for publisher cards, game groups, and game cards across re-renders
@@ -3400,18 +3414,21 @@ function generateInvoice(dataIdx) {
   fd.append('my_logo',     MY_LOGO          || '');
   fd.append('my_address',  MY_COMPANY_ADDRESS || MY_BIO_LOCATION || '');
 
+  var _tab = _dbDocTab();   // opened now, while it's still a click (a tab opened later is blocked)
   fetch(APP_BASE + 'push/createInvoice.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })
     .then(function(j) {
       if (btn) { btn.disabled = false; btn.textContent = 'Invoice'; }
       if (!j.ok) {
+        _tab.close();
         alert('Invoice error: ' + (j.error || 'Unknown error'));
         return;
       }
       // Open the spreadsheet in a new tab
-      if (j.url) window.open(j.url, '_blank');
+      _tab.go(j.url);
     })
     .catch(function() {
+      _tab.close();
       if (btn) { btn.disabled = false; btn.textContent = 'Invoice'; }
       alert('Invoice generation failed. Check your connection.');
     });
@@ -3625,11 +3642,13 @@ function submitEstimate() {
   fd.append('my_address',     MY_COMPANY_ADDRESS || MY_BIO_LOCATION || '');
   fd.append('my_payment',     MY_PAYMENT_INFO  || '');
 
+  var _tab = _dbDocTab();   // opened now, while it's still a click (a tab opened later is blocked)
   fetch(APP_BASE + 'push/createEstimate.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })
     .then(function(j) {
       document.getElementById('estimateCreateBtn').disabled = false;
       if (!j.ok) {
+        _tab.close();
         _estimateLog('✕  ' + (j.error || 'Unknown error'), 'error');
         return;
       }
@@ -3639,9 +3658,10 @@ function submitEstimate() {
       forceCloseEstimateDialog();
       renderPublishersViewKeepOpen();
       // Open in new tab
-      if (j.url) window.open(j.url, '_blank');
+      _tab.go(j.url);
     })
     .catch(function() {
+      _tab.close();
       document.getElementById('estimateCreateBtn').disabled = false;
       _estimateLog('✕  Request failed. Check your connection.', 'error');
     });
@@ -3819,11 +3839,13 @@ function submitInvoice() {
   fd.append('my_address',     MY_COMPANY_ADDRESS || MY_BIO_LOCATION || '');
   fd.append('my_payment',     MY_PAYMENT_INFO  || '');
 
+  var _tab = _dbDocTab();   // opened now, while it's still a click (a tab opened later is blocked)
   fetch(APP_BASE + 'push/createInvoiceFromEstimate.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })
     .then(function(j) {
       btn.disabled = false; btn.textContent = 'Create';
       if (!j.ok) {
+        _tab.close();
         log.textContent = '✕  ' + (j.error || 'Unknown error');
         log.className = 'sync-log error'; log.style.display = '';
         return;
@@ -3835,10 +3857,11 @@ function submitInvoice() {
         renderPublishersViewKeepOpen();
       }
       // Open the new invoice sheet
-      if (j.url) window.open(j.url, '_blank');
+      _tab.go(j.url);
       forceCloseInvoiceDialog();
     })
     .catch(function() {
+      _tab.close();
       btn.disabled = false; btn.textContent = 'Create';
       log.textContent = '✕  Request failed. Check your connection.';
       log.className = 'sync-log error'; log.style.display = '';

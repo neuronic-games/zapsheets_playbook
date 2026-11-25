@@ -2716,7 +2716,7 @@ function renderDashView() {
   html += '<div class="dash-stat"><div class="dash-stat-num">' + GAMES_RAW.length + '</div><div class="dash-stat-label">Games</div></div>';
   html += '<div class="dash-stat"><div class="dash-stat-num">' + activeCount + '</div><div class="dash-stat-label">Active Dev</div></div>';
   html += '<div class="dash-stat"><div class="dash-stat-num">' + CONTRACT_RAW.filter(function(c) { return c && !_isPaymentRow(c); }).length + '</div><div class="dash-stat-label">Contracts</div></div>';
-  var _pubCount = Object.keys(CONTRACT_RAW.reduce(function(a,c){if((c.Client||'').trim())a[(c.Client||'').trim().toLowerCase()]=1;return a},{})).length;
+  var _pubCount = Object.keys(CONTRACT_RAW.reduce(function(a,c){if(c&&(c.Client||'').trim())a[(c.Client||'').trim().toLowerCase()]=1;return a},{})).length;
   html += '<div class="dash-stat"><div class="dash-stat-num">' + (_pubCount || '—') + '</div><div class="dash-stat-label">Publishers</div></div>';
   html += '</div>';
 
@@ -3108,7 +3108,7 @@ function _cleanSummary(v) { return String(v || '').replace(/^'/, '').replace(/\s
 function _contractSummaryFor(ref) {   // a contract's Summary by its Ref Number
   ref = String(ref || ''); if (!ref) return '';
   for (var i = 0; i < CONTRACT_RAW.length; i++) {
-    var c = CONTRACT_RAW[i]; if (String(c['Ref Number'] || c.ID || '') === ref) return _cleanSummary(c.Summary);
+    var c = CONTRACT_RAW[i]; if (c && String(c['Ref Number'] || c.ID || '') === ref) return _cleanSummary(c.Summary);
   }
   return '';
 }
@@ -3116,7 +3116,7 @@ function _contractSummaryFor(ref) {   // a contract's Summary by its Ref Number
 function _contractSummaries(game) {   // [{s: summary, ref: Ref Number}]
   var g = String(game || '').trim().toLowerCase(), mine = [], all = [], seen = {};
   CONTRACT_RAW.slice().reverse().forEach(function(c) {
-    if (!/^invoice$/i.test(String(c.Type || '').trim())) return;   // T&M and payouts go with invoices (not estimates or payments)
+    if (!c || !/^invoice$/i.test(String(c.Type || '').trim())) return;   // T&M and payouts go with invoices (not estimates or payments)
     var sm = _cleanSummary(c.Summary) || _cleanSummary(c.Description) || _cleanSummary(c.Game);   // older invoices have no Summary yet
     var it = { s: sm, ref: String(c['Ref Number'] || c.ID || '').replace(/^'/, '').trim() }, k = it.s + '\u0001' + it.ref;
     if (seen[k]) return; seen[k] = 1;

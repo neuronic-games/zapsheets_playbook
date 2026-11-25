@@ -7897,5 +7897,13 @@ function _dbStartCheckout(type, btn, btnLabel, plan) {
   window._dashMenuAuthAction = function() { if (GBAccount.account()) GBAccount.signOut(); else GBAccount.signIn().catch(function() {}); };
 })();
 </script>
+<script>
+// "Forgot password?" under the collaborator sign-in (js/collab-reset.js)
+(function() {
+  var s = document.createElement('script'); s.src = String(APP_BASE).replace(/\/?$/, '/') + 'js/collab-reset.js?v=1';
+  s.onload = function() { CollabReset.attach({ pass: 'dashSignInPassword', email: 'dashSignInEmail', sheet: (typeof SHEET_ID !== 'undefined' ? SHEET_ID : ''), base: APP_BASE }); };
+  document.head.appendChild(s);
+})();
+</script>
 </body>
 </html>

@@ -866,5 +866,13 @@ document.querySelectorAll('input[type="date"]').forEach(function(inp) {
 _loadUser();
 _updateSignedInState();
 </script>
+<script>
+// "Forgot password?" under the collaborator sign-in (js/collab-reset.js)
+(function() {
+  var s = document.createElement('script'); s.src = String(APP_ROOT).replace(/\/?$/, '/') + 'js/collab-reset.js?v=1';
+  s.onload = function() { CollabReset.attach({ pass: 'authPass', email: 'authEmail', sheet: (typeof SHEET_ID !== 'undefined' ? SHEET_ID : ''), base: APP_ROOT }); };
+  document.head.appendChild(s);
+})();
+</script>
 </body>
 </html>

@@ -9042,5 +9042,13 @@ function startPbUpgradeCheckout() {
   window._menuAuthAction = function() { if (GBAccount.account()) GBAccount.signOut(); else GBAccount.signIn().catch(function() {}); };
 })();
 </script>
+<script>
+// "Forgot password?" under the collaborator sign-in (js/collab-reset.js)
+(function() {
+  var s = document.createElement('script'); s.src = String(APP_BASE).replace(/\/?$/, '/') + 'js/collab-reset.js?v=1';
+  s.onload = function() { CollabReset.attach({ pass: 'collabAuthPass', email: 'collabAuthEmail', sheet: (typeof sheet_Id !== 'undefined' ? sheet_Id : ''), base: APP_BASE }); };
+  document.head.appendChild(s);
+})();
+</script>
 </body>
 </html>

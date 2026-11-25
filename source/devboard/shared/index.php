@@ -2605,5 +2605,13 @@ document.querySelectorAll('input[type="date"]').forEach(function(inp) {
   inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
 });
 </script>
+<script>
+// "Forgot password?" under the collaborator sign-in (js/collab-reset.js)
+(function() {
+  var s = document.createElement('script'); s.src = String(APP_BASE).replace(/\/?$/, '/') + 'js/collab-reset.js?v=1';
+  s.onload = function() { CollabReset.attach({ pass: 'authPassword', email: 'authEmail', sheet: (typeof SHEET_ID !== 'undefined' ? SHEET_ID : ''), base: APP_BASE }); };
+  document.head.appendChild(s);
+})();
+</script>
 </body>
 </html>

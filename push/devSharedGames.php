@@ -7,8 +7,8 @@
  *   add    — tokens (comma separated share-link tokens, 24 hex) → {ok, games}
  *   remove — token                                            → {ok, games}
  *   list   —                                                  → {ok, games}
- * games = [{t, g game, s shared by, i picture, url}] — only links that still exist, A–Z
- * own   = [{g game, i picture, sheet, url}] — the games in your own DevBoard sheets, when your account can use
+ * games = [{t, g game, s shared by, i picture, d designers, url}] — only links that still exist, A–Z
+ * own   = [{g game, i picture, d designers, sheet, url}] — the games in your own DevBoard sheets, when your account can use
  *         DevBoard (subscribed, the free week, a code or activated); devboard = whether it can
  */
 error_reporting(0);
@@ -44,6 +44,9 @@ if ($action === 'add') {
 // Only links that still exist; the game's name, who shared it and its picture
 $games = [];
 $gamesCache = [];
+$desOf = function (array $row): string {
+    return implode(', ', array_filter(array_map(function ($k) use ($row) { return trim((string) ($row['Designer' . $k] ?? $row['Designer ' . $k] ?? '')); }, [1, 2, 3, 4])));
+};
 $imgOf = function (array $row): string {
     $raw = trim((string) ($row['Image URL'] ?? $row['Image'] ?? $row['ImageURL'] ?? ''));
     $img = preg_match('/^=IMAGE\("([^"]*)"\)$/i', $raw, $im) ? $im[1] : $raw;
@@ -54,14 +57,14 @@ foreach (array_keys($have) as $t) {
     $m = json_decode((string) @file_get_contents($shares . $t . '.json'), true) ?: [];
     $sid = (string) ($m['sheet_id'] ?? ''); $g = (string) ($m['game'] ?? '');
     if ($sid === '' || $g === '') continue;
-    $img = '';
+    $img = ''; $des = '';
     if (!isset($gamesCache[$sid])) $gamesCache[$sid] = json_decode((string) @file_get_contents($root . '/sheets/' . basename($sid) . '/games.json'), true) ?: [];
     foreach ($gamesCache[$sid] as $row) {
         if (strcasecmp(trim((string) ($row['Name'] ?? '')), $g) !== 0) continue;
-        $img = $imgOf($row);
+        $img = $imgOf($row); $des = $desOf($row);
         break;
     }
-    $games[] = ['t' => $t, 'g' => $g, 's' => (string) ($m['sharer'] ?? ''), 'i' => $img, 'url' => rtrim(gbLinkBase(), '/') . '/devboard/share/' . $t];
+    $games[] = ['t' => $t, 'g' => $g, 's' => (string) ($m['sharer'] ?? ''), 'i' => $img, 'd' => $des, 'url' => rtrim(gbLinkBase(), '/') . '/devboard/share/' . $t];
 }
 if ($changed) @file_put_contents($file, json_encode($have), LOCK_EX);
 usort($games, function ($a, $b) { return strcasecmp($a['g'], $b['g']); });
@@ -85,7 +88,7 @@ if ($canOwn) {
             $g = trim((string) ($row['Name'] ?? ''));
             if ($g === '' || isset($seen[strtolower($sid . '|' . $g)])) continue;
             $seen[strtolower($sid . '|' . $g)] = 1;
-            $own[] = ['g' => $g, 'i' => $imgOf($row), 'sheet' => $sid, 'url' => rtrim(gbLinkBase(), '/') . '/' . $sid . '/devboard#game=' . rawurlencode($g)];
+            $own[] = ['g' => $g, 'i' => $imgOf($row), 'd' => $desOf($row), 'sheet' => $sid, 'url' => rtrim(gbLinkBase(), '/') . '/' . $sid . '/devboard#game=' . rawurlencode($g)];
         }
     }
     usort($own, function ($a, $b) { return strcasecmp($a['g'], $b['g']); });

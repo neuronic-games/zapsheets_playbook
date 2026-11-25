@@ -71,6 +71,7 @@ foreach ($_people_raw as $_p) {
 $_gamesFile    = __DIR__ . '/../../../sheets/' . $_sheetId . '/games.json';
 $_gameImage    = '';
 $_sellsheetUrl = '';
+$_designers    = '';
 if (file_exists($_gamesFile)) {
     $_games = json_decode(file_get_contents($_gamesFile), true) ?: [];
     foreach ($_games as $_g) {
@@ -81,6 +82,7 @@ if (file_exists($_gamesFile)) {
             } elseif ($_raw) {
                 $_gameImage = $_raw;
             }
+            $_designers = implode(', ', array_filter(array_map(function ($k) use ($_g) { return trim((string) ($_g['Designer' . $k] ?? $_g['Designer ' . $k] ?? '')); }, [1, 2, 3, 4])));
             foreach (['Sell Sheet', 'Sell Sheet URL', 'Sellsheet URL', 'Sellsheet', 'SellsheetURL'] as $_sk) {
                 $_sellsheetUrl = trim(ltrim(trim((string)($_g[$_sk] ?? '')), "'"));
                 if ($_sellsheetUrl !== '') break;
@@ -215,14 +217,31 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 .my-games-sub { margin:.5rem 0 0; font-size:.72rem; color:#8a95a1; }
 .my-games-sub a { color:#1a5f7a; }
 
-/* ── Game card ── */
+/* ── Game cards: the same look as the owner's dashboard; the open one is this share link's game ── */
+.game-card { background:#fff; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,.08); margin-bottom:.75rem; overflow:hidden; }
+.game-card[hidden] { display:none; }
 .game-header {
-  background:#1a5f7a; color:#fff;
-  border-radius:10px 10px 0 0; padding:.65rem 1rem;
-  display:flex; align-items:center; gap:.5rem;
+  background:#1a5f7a; color:#fff; padding:.8rem 1rem;
+  display:flex; align-items:center; gap:.6rem; cursor:pointer; user-select:none; text-decoration:none;
 }
-.game-title { font-family:'DINBlack',sans-serif; font-size:.95rem; letter-spacing:.03em; flex:1; }
-.header-btns { display:flex; align-items:center; gap:.5rem; }
+.game-header:hover { background:#145070; }
+.game-title { font-family:'DINBlack',sans-serif; font-size:.95rem; letter-spacing:.03em; flex:1; min-width:0; display:flex; align-items:center; gap:.45rem; }
+.game-title > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.gc-collab { flex:none; width:16px; height:16px; color:#9fd3e3; }
+.gc-meta { font-family:'DINRegular',sans-serif; font-size:.75rem; color:rgba(255,255,255,.55); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:40%; }
+.gc-chev { font-size:.65rem; opacity:.6; flex-shrink:0; transition:transform .22s ease; transform:rotate(-90deg); }
+.game-card.open .gc-chev { transform:rotate(0deg); }
+.game-card:not(.open) .cur-body { display:none; }
+.game-card.add .game-header { background:#fff; color:#1a5f7a; border:1.5px dashed #9cc3d1; border-radius:10px; }
+.game-card.add { box-shadow:none; background:transparent; }
+.cur-toolbar { display:flex; align-items:center; padding:.5rem 1rem; background:#f7fafb; border-bottom:1px solid #ddeaf0; }
+.header-btns { display:flex; align-items:stretch; gap:.45rem; flex-wrap:wrap; margin-left:auto; }
+.cur-toolbar .page-link-btn { color:#1a5f7a; border-color:#1a5f7a; }
+.cur-toolbar .page-link-btn:hover { background:#1a5f7a; color:#fff; }
+.cur-toolbar .add-session-btn { border:1.5px solid #1a5f7a; background:transparent; color:#1a5f7a; }
+.cur-toolbar .add-session-btn:hover { background:#1a5f7a; color:#fff; }
+.cur-toolbar #addSessionBtn { background:#1a5f7a; color:#fff; }
+.cur .sessions-wrap { border:none; border-radius:0; }
 .add-session-btn {
   font-family:'DINBlack',sans-serif; font-size:.7rem;
   text-transform:uppercase; letter-spacing:.07em;
@@ -637,7 +656,7 @@ input[type="date"].field-input { -webkit-appearance:none; appearance:none; min-h
 
 <div class="page">
 
-  <!-- Every game shared with you (filled from this browser's list; shown once there's more than one) -->
+  <!-- Your games: heading and filters (the cards themselves go in #gcards, around this link's game) -->
   <div class="my-games" id="myGames" style="display:none"></div>
 
   <!-- Not-signed-in nudge -->
@@ -656,8 +675,15 @@ input[type="date"].field-input { -webkit-appearance:none; appearance:none; min-h
     </div>
   </div>
 
-  <div class="game-header">
-    <span class="game-title"><?= _ds_e($_gameName) ?></span>
+  <div class="gcards" id="gcards">
+  <div class="game-card open cur" id="curCard">
+  <div class="game-header" onclick="if(!event.target.closest('a,button'))this.parentNode.classList.toggle('open')" title="Shared with you<?= !empty($_meta['sharer']) ? ' by ' . _ds_e($_meta['sharer']) : '' ?>">
+    <span class="game-title"><span><?= _ds_e($_gameName) ?></span><svg class="gc-collab" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-label="Shared with you"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+    <span class="gc-meta"><?= _ds_e($_designers !== '' ? $_designers : (!empty($_meta['sharer']) ? 'Shared by ' . $_meta['sharer'] : '')) ?></span>
+    <span class="gc-chev">▼</span>
+  </div>
+  <div class="cur-body">
+  <div class="cur-toolbar">
     <div class="header-btns">
 <?php if ($_sellsheetUrl): ?>
       <a class="page-link-btn" href="<?= _ds_e($_sellsheetUrl) ?>"<?= $_sellsheetIsOwn ? ' target="_blank" rel="noopener"' : '' ?>>Sellsheet</a>
@@ -680,6 +706,9 @@ input[type="date"].field-input { -webkit-appearance:none; appearance:none; min-h
 
   <div class="sessions-wrap" id="sessionsWrap">
     <div class="loading-msg">Loading sessions…</div>
+  </div>
+  </div>
+  </div>
   </div>
 </div>
 
@@ -2538,7 +2567,7 @@ _loadStoredUser();
 // ── Your shared games: each share link opened in this browser is remembered, so all of them are one click away ──
 (function() {
   var KEY = 'devboard_shared_games', TOKEN = <?= json_encode($_token) ?>, BASE = <?= json_encode($_base) ?>;
-  var me = { t: TOKEN, g: <?= json_encode($_gameName, JSON_UNESCAPED_UNICODE) ?>, i: <?= json_encode($_gameImage, JSON_UNESCAPED_UNICODE) ?>, s: <?= json_encode((string) ($_meta['sharer'] ?? ''), JSON_UNESCAPED_UNICODE) ?>, at: Date.now() };
+  var me = { t: TOKEN, d: <?= json_encode($_designers, JSON_UNESCAPED_UNICODE) ?>, g: <?= json_encode($_gameName, JSON_UNESCAPED_UNICODE) ?>, i: <?= json_encode($_gameImage, JSON_UNESCAPED_UNICODE) ?>, s: <?= json_encode((string) ($_meta['sharer'] ?? ''), JSON_UNESCAPED_UNICODE) ?>, at: Date.now() };
   function load() { try { var l = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
   function keep(l) { try { localStorage.setItem(KEY, JSON.stringify(l.slice(0, 60))); } catch (e) {} }
   var list = load().filter(function(x) { return x && x.t && x.t !== TOKEN; });
@@ -2557,7 +2586,7 @@ _loadStoredUser();
   function merge(r) {
     if (!r || !r.ok || !Array.isArray(r.games)) return;
     var l = load(), byT = {}; l.forEach(function(x) { byT[x.t] = x; });
-    r.games.forEach(function(gm) { var x = byT[gm.t]; if (x) { x.g = gm.g || x.g; x.s = gm.s || x.s; x.i = gm.i || x.i; } else l.push({ t: gm.t, g: gm.g, s: gm.s, i: gm.i, at: 0 }); });
+    r.games.forEach(function(gm) { var x = byT[gm.t]; if (x) { x.g = gm.g || x.g; x.s = gm.s || x.s; x.i = gm.i || x.i; x.d = gm.d || ''; } else l.push({ t: gm.t, g: gm.g, s: gm.s, i: gm.i, d: gm.d || '', at: 0 }); });
     var live = {}; r.games.forEach(function(gm) { live[gm.t] = 1; });
     l = l.filter(function(x) { return live[x.t] || x.t === TOKEN; });   // links the owner has taken back drop off
     keep(l);
@@ -2567,38 +2596,43 @@ _loadStoredUser();
   server('add', { tokens: load().map(function(x) { return x.t; }).join(',') }).then(merge);
   var ICON_SHARED = '<svg class="my-game-collab" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
   function render() {
-    var box = document.getElementById('myGames'); if (!box) return;
+    var box = document.getElementById('myGames'), wrap = document.getElementById('gcards'), cur = document.getElementById('curCard');
+    if (!box || !wrap || !cur) return;
     var signedIn = !!gbToken(), own = signedIn ? loadOwn() : { games: [], can: null };
     var esc = function(s) { return String(s || '').replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
-    var items = load().map(function(x) { return { k: 'shared', t: x.t, g: x.g, i: x.i, s: x.s, url: BASE + 'devboard/share/' + x.t }; })
-      .concat(own.games.map(function(x) { return { k: 'own', g: x.g, i: x.i, url: x.url }; }))
+    var items = load().map(function(x) { return { k: 'shared', t: x.t, g: x.g, s: x.s, d: x.d, url: BASE + 'devboard/share/' + x.t }; })
+      .concat(own.games.map(function(x) { return { k: 'own', g: x.g, d: x.d, url: x.url }; }))
       .sort(function(a, b) { return String(a.g).localeCompare(String(b.g)); });
     var nShared = items.filter(function(x) { return x.k === 'shared'; }).length, nOwn = items.length - nShared;
     var f = ''; try { f = localStorage.getItem(FILT) || ''; } catch (e) {}
     if (!nOwn || !nShared) f = '';   // filters only when there are both kinds
-    var shown = items.filter(function(x) { return !f || x.k === f; });
+    // Heading, filters and the sync note above the list
     var note = signedIn ? 'on all your devices' : '<a href="' + esc(BASE + 'gameboard') + '">sign in to GameBoard</a> to see them on all your devices';
     var chip = function(k, label, n) { return '<button type="button" class="my-games-f' + (f === k ? ' on' : '') + '" data-f="' + k + '">' + label + ' <i>' + n + '</i></button>'; };
     var h = '<div class="my-games-hd">Your games <span>' + items.length + (items.length === 1 ? ' game' : ' games') + ' · ' + note + '</span></div>';
     if (nOwn && nShared) h += '<div class="my-games-fs">' + chip('', 'All', items.length) + chip('own', 'My games', nOwn) + chip('shared', ICON_SHARED + 'Shared with me', nShared) + '</div>';
-    h += '<div class="my-games-list">' + shown.map(function(x) {
-      var img = x.i && /^https?:\/\//.test(x.i) ? ' style="background-image:url(&quot;' + esc(x.i) + '&quot;)"' : '';
-      var cur = x.k === 'shared' && x.t === TOKEN;
-      var tip = x.k === 'shared' ? 'Shared with you' + (x.s ? ' by ' + x.s : '') : 'Your game';
-      return '<a class="my-game ' + x.k + (cur ? ' cur' : '') + '" href="' + esc(x.url) + '" title="' + esc(tip) + '">' +
-        '<span class="my-game-img"' + img + '>' + (img ? '' : esc(String(x.g || '?').charAt(0).toUpperCase())) + '</span>' +
-        '<div><b><span>' + esc(x.g) + '</span>' + (x.k === 'shared' ? ICON_SHARED : '') + '</b>' +
-        '<small>' + (x.k === 'shared' ? (x.s ? 'Shared by ' + esc(x.s) : 'Shared with you') : 'Your game') + '</small></div>' +
-        (x.k === 'shared' && !cur ? '<button type="button" class="my-game-x" title="Remove from this list" data-t="' + esc(x.t) + '">✕</button>' : '') + '</a>';
-    }).join('');
-    // Your own games: with DevBoard, start one; without, where to get it
-    if (signedIn && own.can === true && !nOwn) h += '<a class="my-game add" href="' + esc(BASE + 'devboard') + '"><span class="my-game-img">+</span><div><b>Your own game</b><small>Set up your DevBoard sheet</small></div></a>';
-    h += '</div>';
-    if (signedIn && own.can === false) h += '<div class="my-games-sub">Want to track your own games here too? <a href="' + esc(BASE + 'gameboard/dashboard') + '">Subscribe to DevBoard</a> — they’ll show up in this list next to the games shared with you.</div>';
-    box.innerHTML = h;
-    box.style.display = '';
-    box.querySelectorAll('.my-game-x').forEach(function(b) { b.onclick = function(e) { e.preventDefault(); e.stopPropagation(); keep(load().filter(function(x) { return x.t !== b.dataset.t; })); render(); server('remove', { token: b.dataset.t }); }; });
+    if (signedIn && own.can === false) h += '<div class="my-games-sub">Want your own games in this list too? <a href="' + esc(BASE + 'gameboard/dashboard') + '">Subscribe to DevBoard</a>.</div>';
+    box.innerHTML = h; box.style.display = '';
     box.querySelectorAll('.my-games-f').forEach(function(b) { b.onclick = function() { try { localStorage.setItem(FILT, b.dataset.f); } catch (e) {} render(); }; });
+    // The games, as cards like the owner's dashboard: this link's game open, the others a click away
+    wrap.querySelectorAll('.game-card:not(.cur)').forEach(function(c) { c.remove(); });
+    var before = true;
+    items.forEach(function(x) {
+      if (x.k === 'shared' && x.t === TOKEN) { before = false; return; }
+      if (f && x.k !== f) return;
+      var tip = x.k === 'shared' ? 'Shared with you' + (x.s ? ' by ' + x.s : '') : 'Your game';
+      var meta = x.d || (x.k === 'shared' && x.s ? 'Shared by ' + x.s : '');
+      var el = document.createElement('div'); el.className = 'game-card ' + x.k;
+      el.innerHTML = '<a class="game-header" href="' + esc(x.url) + '" title="' + esc(tip) + '"><span class="game-title"><span>' + esc(x.g) + '</span>' + (x.k === 'shared' ? ICON_SHARED.replace('my-game-collab', 'gc-collab') : '') + '</span>' +
+        (meta ? '<span class="gc-meta">' + esc(meta) + '</span>' : '') + '<span class="gc-chev">▼</span></a>';
+      if (before) wrap.insertBefore(el, cur); else wrap.appendChild(el);
+    });
+    cur.hidden = f === 'own';
+    if (signedIn && own.can === true && !nOwn && f !== 'shared') {
+      var add = document.createElement('div'); add.className = 'game-card add';
+      add.innerHTML = '<a class="game-header" href="' + esc(BASE + 'devboard') + '"><span class="game-title"><span>+ Your own game</span></span><span class="gc-meta" style="color:#8a95a1">Set up your DevBoard sheet</span></a>';
+      wrap.appendChild(add);
+    }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render); else render();
   window.addEventListener('storage', function(e) { if (e.key === KEY || e.key === OWN || e.key === 'cb_account') render(); });

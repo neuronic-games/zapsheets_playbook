@@ -81,10 +81,19 @@ if (!empty($result['ok'])) {
     $estFile = dirname(__DIR__) . '/sheets/' . $sheetId . '/estimates.json';
     if (file_exists($estFile)) {
         $estimates = json_decode(file_get_contents($estFile), true) ?: [];
-        $estimates = array_values(array_filter($estimates, function($e) use ($tab, $fileUrl) {
-            if ($tab    && ($e['tab'] ?? '')  === $tab)    return false;
-            if ($fileUrl && ($e['url']  ?? '') === $fileUrl) return false;
-            if ($fileUrl && ($e['file'] ?? '') === $fileUrl) return false;
+        // The same link on another domain (zapsheets.com / mygameboard.app) is the same file: compare paths
+        $bp = trim($_ENV['BASE_PATH'] ?? '', '/');
+        $relOf = function ($u) use ($bp) {
+            $r = ltrim((string) preg_replace('#^https?://[^/]+#', '', trim((string) $u)), '/');
+            if ($bp !== '' && strpos($r, $bp . '/') === 0) $r = substr($r, strlen($bp) + 1);
+            if (preg_match('#(?:^|/)(shares/contracts/[A-Za-z0-9]+)/?$#', $r, $mm)) $r = $mm[1];   // the app under a path (zapsheets.com/app/…)
+            return rtrim($r, '/');
+        };
+        $want = $fileUrl !== '' ? $relOf($fileUrl) : '';
+        $estimates = array_values(array_filter($estimates, function($e) use ($tab, $want, $relOf) {
+            if ($tab  && ($e['tab'] ?? '')  === $tab)    return false;
+            if ($want !== '' && !empty($e['url'])  && $relOf($e['url'])  === $want) return false;
+            if ($want !== '' && !empty($e['file']) && $relOf($e['file']) === $want) return false;
             return true;
         }));
         file_put_contents($estFile, json_encode($estimates, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));

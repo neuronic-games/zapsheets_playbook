@@ -290,7 +290,7 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
   -webkit-touch-callout:none;
 }
 .session-header:hover { background:#e6f2f8; }
-.session-header-row { position:relative; display:flex; align-items:baseline; gap:.55rem; padding-right:5.5rem; }
+.session-header-row { position:relative; display:flex; align-items:baseline; gap:.55rem; --sess-right:calc(14px + 1.55rem); padding-right:var(--sess-right); }   /* the note count (or Copy) ends under the + T&M button */
 .session-type { font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; line-height:1; }
 .session-type.type-playtest  { color:#1a5f7a; }
 .session-type.type-meeting   { color:#6b3fa8; }

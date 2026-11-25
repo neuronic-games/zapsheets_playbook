@@ -687,7 +687,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 }
 .session-header:hover { background:#e6f2f8; }
 /* position:relative so button+chevron can be abs-positioned within the row */
-.session-header-row { position:relative; display:flex; align-items:baseline; gap:.55rem; padding-right:5.5rem; }
+.session-header-row { position:relative; display:flex; align-items:baseline; gap:.55rem; --sess-right:calc(14px + 1.75rem); padding-right:var(--sess-right); }   /* the note count (or Copy) ends under the + T&M button */
 .session-type {
   font-family:'DINBlack',sans-serif; font-size:.72rem;
   text-transform:uppercase; letter-spacing:.06em; line-height:1;

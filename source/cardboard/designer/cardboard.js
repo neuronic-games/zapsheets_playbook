@@ -4243,24 +4243,6 @@ function saveSettings() {
   return api('save', { tab: SETTINGS_KEY, layout: JSON.stringify(keep) }).then(function() { LAYOUTS[SETTINGS_KEY] = keep; _oldProfile = null; writeStartCache(); });
 }
 
-// Profile: kept with the person's GameBoard account (their row in the Admin sheet). The email is
-// the one they sign in with; changing it means signing in with the other address.
-function openProfileDialog() {
-  if (!ACCT) { askSignIn().then(openProfileDialog, function() {}); return; }
-  var a = acctInfo(), old = _oldProfile || {};   // older versions kept a profile in _cardboard_settings
-  $('pfName').value = a.name || old.name || ''; $('pfEmail').value = a.email || ''; $('pfStudio').value = a.studio || old.studio || '';
-  $('pfErr').textContent = ''; $('pfSave').disabled = false; $('pfSave').textContent = 'Save';
-  openDialog('profileOverlay'); setTimeout(function() { $('pfName').focus(); }, 60);
-}
-function saveProfile() {
-  var btn = $('pfSave'); btn.disabled = true; btn.textContent = 'Saving…';
-  accountPost('profile', { name: $('pfName').value.trim(), studio: $('pfStudio').value.trim() })
-    .then(function(r) {
-      storeAcct(r); closeDialog('profileOverlay'); toast('✓ Profile saved');
-      if (_oldProfile && hasAccess()) saveSettings().catch(function() {});   // take the old copy out of the sheet
-    })
-    .catch(function(e) { $('pfErr').textContent = 'Couldn\'t save — ' + e.message; btn.disabled = false; btn.textContent = 'Save'; });
-}
 // Account: picture, name and studio, sign-in email, password, plan and codes — the dialog every GameBoard app shares
 var _acctDlg = null;
 function openAccountDialog() {
@@ -4271,15 +4253,10 @@ function openAccountDialog() {
       store: storeAcct, plan: planLabel, plans: function() { openPlansDialog(); }, toast: function(m) { toast(m); }, signOut: signOut });
   }, function() { toast('Couldn’t open your account — check your connection', true); });
 }
-function changeSignInEmail() {
-  askDialog({ title: 'Use a different email?', message: 'You’ll be signed out, then you can sign in with the other address. Each email has its own free week and subscription.', ok: 'Continue', cancel: 'Cancel' })
-    .then(function(yes) { if (!yes) return; closeDialog('profileOverlay'); forgetAcct(); askSignIn().then(openProfileDialog, function() {}); });
-}
 
 function openSettingsDialog() {
   $('setSheetTitle').textContent = SHEET_TITLE || 'This spreadsheet';
   markUnits(); $('setErr').textContent = '';
-  $('setPlan').innerHTML = planLabel();
   openDialog('settingsOverlay');
 }
 function markUnits() { document.querySelectorAll('#setUnits button').forEach(function(b) { b.classList.toggle('on', b.dataset.u === (SETTINGS.units || 'in')); }); }

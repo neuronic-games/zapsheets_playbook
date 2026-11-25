@@ -533,7 +533,6 @@ body.bb-admin-mode .bb-add-game-card { display:flex; }
           <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7.5" r="4.5"/><path d="M3.5 21c0-4.14 3.81-7.5 8.5-7.5s8.5 3.36 8.5 7.5"/></svg>
         </button>
         <div class="user-menu" id="bbMenu">
-          <button class="user-menu-item" id="bbMenuProfile" onclick="bbMenuAction('profile')">Profile</button>
           <button class="user-menu-item" onclick="bbMenuAction('settings')">Settings</button>
           <button class="user-menu-item" onclick="bbMenuAction('analytics')">📊 Analytics</button>
           <hr class="user-menu-divider" />

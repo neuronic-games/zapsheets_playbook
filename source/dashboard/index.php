@@ -1419,6 +1419,15 @@ if ($_sheet_id && is_dir($_sheets_root)) {
       margin-top:.2rem;
     }
     .ge-row { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+    /* Profile: the account's name, email and picture at the top (changed in Account) */
+    .pf-acct { display:flex; align-items:center; gap:.7rem; padding:.6rem .7rem; border:1px solid #e3e8ee; border-radius:10px; background:#f7f8fa; }
+    .pf-acct-pic { flex:none; width:44px; height:44px; border-radius:50%; background:#1a1a2e center/cover no-repeat; color:#fff; display:flex; align-items:center; justify-content:center; font-family:'DINBlack',sans-serif; font-size:1.1rem; }
+    .pf-acct-who { flex:1; min-width:0; display:flex; flex-direction:column; }
+    .pf-acct-who b { font-family:'DINBlack',sans-serif; font-weight:normal; font-size:.9rem; color:#1a1a2e; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .pf-acct-who small { font-size:.75rem; color:#888; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .pf-acct-btn { flex:none; font-family:'DINBlack',sans-serif; font-size:.64rem; text-transform:uppercase; letter-spacing:.07em; border:1.5px solid #1a1a2e; color:#1a1a2e; background:#fff; border-radius:6px; padding:.35rem .65rem; cursor:pointer; }
+    .pf-acct-btn:hover { background:#1a1a2e; color:#fff; }
+    .pf-acct-note { font-size:.74rem; color:#888; line-height:1.45; margin:0; }
     .ge-label {
       display:flex; flex-direction:column; gap:.28rem;
       font-family:'DINBlack',sans-serif; font-size:.62rem;
@@ -1730,8 +1739,8 @@ if ($_sheet_id && is_dir($_sheets_root)) {
         </svg>
       </button>
       <div class="account-menu" id="accountMenu">
-        <button class="account-menu-item" onclick="closeAccountMenu();openCollabAuthDialog()">Profile</button>
-        <button class="account-menu-item" onclick="accountMenuProfile()">Settings</button>
+        <button class="account-menu-item" onclick="accountMenuProfile()">Profile</button>
+        <button class="account-menu-item" onclick="closeAccountMenu();openPbSettings()">Settings</button>
         <button class="account-menu-item" onclick="accountMenuFetch()">Fetch</button>
         <button class="account-menu-item" onclick="accountMenuImport()">Import</button>
         <button class="account-menu-item" onclick="accountMenuSlideshow()">Slideshow</button>
@@ -2255,20 +2264,41 @@ if ($_sheet_id && is_dir($_sheets_root)) {
   <div class="sync-dialog" style="width:min(400px,94vw)" onclick="event.stopPropagation()">
     <h2>Profile</h2>
     <div style="display:flex;flex-direction:column;gap:.65rem;margin:.25rem 0 .5rem">
-      <label class="ge-label">Name<input type="text"  id="profileName"  class="ge-input" /></label>
-      <label class="ge-label">Email<input type="email" id="profileEmail" class="ge-input" /></label>
-      <label class="ge-label">Phone<input type="tel"   id="profilePhone" class="ge-input" /></label>
-      <label class="ge-label" style="margin-top:.4rem">Compendium Code
-        <div style="position:relative">
-          <input type="text" id="profileCompendiumCode" class="ge-input" placeholder="Your Compendium access code" style="width:100%;padding-right:2.4rem;box-sizing:border-box" />
-          <?php if ($_ce_logo_src): ?><img src="<?= $_ce_logo_src ?>" alt="Cardboard Edison" id="compCodeLogo" style="position:absolute;right:.45rem;top:50%;transform:translateY(-50%);height:22px;width:22px;border-radius:50%;pointer-events:none" /><?php endif; ?>
-        </div>
-      </label>
+      <!-- Name, email and picture: from the GameBoard account (Account in the menu), the same in every app -->
+      <div class="pf-acct">
+        <span class="pf-acct-pic" id="profileAcctPic"></span>
+        <div class="pf-acct-who"><b id="profileAcctName"></b><small id="profileAcctEmail"></small></div>
+        <button type="button" class="pf-acct-btn" onclick="forceCloseProfileDialog();if(window.GBAccount)GBAccount.openAccount()">Edit in Account</button>
+      </div>
+      <p class="pf-acct-note">Your name, email and picture come from your GameBoard account — the same in every app. Below: what PitchBoard keeps about you for this sheet.</p>
+      <input type="hidden" id="profileName" /><input type="hidden" id="profileEmail" />
+      <label class="ge-label">Phone<input type="tel"   id="profilePhone" class="ge-input" placeholder="+1 555 000 0000" /></label>
     </div>
     <div class="sync-log" id="profileLog" style="display:none"></div>
     <div class="sync-dialog-actions" style="margin-top:1.2rem">
       <button class="notes-close" id="profileCancelBtn" onclick="forceCloseProfileDialog()">Cancel</button>
       <button class="sync-update-btn" id="profileSaveBtn" onclick="submitProfile()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings: PitchBoard's own settings for this sheet (not about you) -->
+<div class="sync-overlay" id="pbSettingsOverlay" onclick="if(event.target===this)closePbSettings()">
+  <div class="sync-dialog" style="width:min(400px,94vw)" onclick="event.stopPropagation()">
+    <h2>Settings</h2>
+    <div style="display:flex;flex-direction:column;gap:.65rem;margin:.25rem 0 .5rem">
+      <label class="ge-label">Compendium Code
+        <div style="position:relative">
+          <input type="text" id="profileCompendiumCode" class="ge-input" placeholder="Your Compendium access code" style="width:100%;padding-right:2.4rem;box-sizing:border-box" />
+          <?php if ($_ce_logo_src): ?><img src="<?= $_ce_logo_src ?>" alt="Cardboard Edison" id="compCodeLogo" style="position:absolute;right:.45rem;top:50%;transform:translateY(-50%);height:22px;width:22px;border-radius:50%;pointer-events:none" /><?php endif; ?>
+        </div>
+      </label>
+      <p class="pf-acct-note">Your Cardboard Edison Compendium code turns on Compendium publisher info in Publishers.</p>
+    </div>
+    <div class="sync-log" id="pbSetLog" style="display:none"></div>
+    <div class="sync-dialog-actions" style="margin-top:1.2rem">
+      <button class="notes-close" onclick="forceClosePbSettings()">Cancel</button>
+      <button class="sync-update-btn" id="pbSetSaveBtn" onclick="submitProfile()">Save</button>
     </div>
   </div>
 </div>
@@ -6219,6 +6249,7 @@ document.addEventListener('keydown', function(ev) {
   // Data-entry overlays — guard if dirty
   el = document.getElementById('profileOverlay');
   if (el.classList.contains('open'))       { closeProfileDialog(); return; }
+  if (document.getElementById('pbSettingsOverlay').classList.contains('open')) { closePbSettings(); return; }
   el = document.getElementById('diOverlay');
   if (el.classList.contains('open'))       { d = el.querySelector('.di-dialog');        if (hasDialogData(d)) shakeDialog(d); else closeDiDialog();       return; }
   el = document.getElementById('gameEditOverlay');
@@ -7360,6 +7391,17 @@ function openProfileDialog() {
   document.getElementById('profileEmail').value          = myEmail          || '';
   document.getElementById('profilePhone').value          = myPhone          || '';
   document.getElementById('profileCompendiumCode').value = myCompendiumCode || '';
+  // Name, email and picture: the account's (kept in step in the sheet when you save)
+  var _acc = (window.GBAccount && GBAccount.account && GBAccount.account()) || null;
+  var _nm = (_acc && _acc.name) || myName || '', _em = (_acc && _acc.email) || myEmail || '', _im = (_acc && _acc.image) || '';
+  document.getElementById('profileName').value = _nm; document.getElementById('profileEmail').value = _em;
+  document.getElementById('profileAcctName').textContent = _nm || 'No name yet — add it in Account';
+  document.getElementById('profileAcctEmail').textContent = _em;
+  var _pic = document.getElementById('profileAcctPic');
+  _pic.style.backgroundImage = _im ? 'url("' + String(_im).replace(/"/g, '%22') + '")' : '';
+  _pic.textContent = _im ? '' : (_nm || _em || '?').charAt(0).toUpperCase();
+  document.getElementById('pbSetLog').innerHTML = ''; document.getElementById('pbSetLog').style.display = 'none';
+  document.getElementById('pbSetSaveBtn').disabled = false;
   document.getElementById('profileLog').innerHTML = '';
   document.getElementById('profileLog').style.display = 'none';
   document.getElementById('profileSaveBtn').disabled   = false;
@@ -7368,6 +7410,17 @@ function openProfileDialog() {
   _profileSnapshot();
   document.getElementById('profileOverlay').classList.add('open');
 }
+// Settings: the same values, saved together (name, email and phone stay as they are)
+function openPbSettings() {
+  openProfileDialog();
+  document.getElementById('profileOverlay').classList.remove('open');
+  document.getElementById('pbSettingsOverlay').classList.add('open');
+}
+function closePbSettings() {
+  if (_profileIsDirty()) { shakeDialog(document.querySelector('#pbSettingsOverlay .sync-dialog')); return; }
+  forceClosePbSettings();
+}
+function forceClosePbSettings() { document.getElementById('pbSettingsOverlay').classList.remove('open'); }
 function closeProfileDialog() {
   if (_profileIsDirty()) { shakeDialog(document.querySelector('#profileOverlay .sync-dialog')); return; }
   forceCloseProfileDialog();
@@ -7376,7 +7429,7 @@ function forceCloseProfileDialog() {
   document.getElementById('profileOverlay').classList.remove('open');
 }
 function _profileLog(msg, type) {
-  var log  = document.getElementById('profileLog');
+  var log  = document.getElementById(document.getElementById('pbSettingsOverlay').classList.contains('open') ? 'pbSetLog' : 'profileLog');
   log.style.display = '';
   var span = document.createElement('span');
   span.className   = 'sync-log-line ' + (type || 'info');
@@ -7390,7 +7443,7 @@ function submitProfile() {
   var email           = document.getElementById('profileEmail').value.trim();
   var phone           = document.getElementById('profilePhone').value.trim();
   var compendiumCode  = document.getElementById('profileCompendiumCode').value.trim();
-  if (!name) { _profileLog('Name is required.', 'error'); return; }
+  if (!name) { _profileLog('Add your name in Account first (menu › Account).', 'error'); return; }
 
   document.getElementById('profileSaveBtn').disabled   = true;
   document.getElementById('profileCancelBtn').disabled = true;
@@ -7429,7 +7482,7 @@ function submitProfile() {
     }
     _profileSnapshot(); // re-sync so dialog no longer appears dirty
     _profileLog('✓  Saved', 'ok');
-    setTimeout(forceCloseProfileDialog, 600);
+    setTimeout(function() { forceCloseProfileDialog(); forceClosePbSettings(); }, 600);
   };
   xhr.onerror = function() {
     _profileLog('✕  Network error', 'error');

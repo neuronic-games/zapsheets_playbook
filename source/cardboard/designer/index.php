@@ -1008,20 +1008,6 @@ body.cb-gate #signinOverlay { background:#2e2763; }
 <!-- Footer: copyright, and a little room at the bottom of the app -->
 <footer class="zs-footer cb-footer">© <?= date('Y') ?> ZapSheets. All rights reserved.<span class="sep">·</span><a href="cardboard/features" target="_blank" rel="noopener">CardBoard</a><span class="sep">·</span><a href="cardboard/help" target="_blank" rel="noopener">Help</a></footer>
 
-<!-- Profile -->
-<div class="overlay" id="profileOverlay" onclick="if(event.target===this)closeDialog('profileOverlay')">
-  <div class="dlg" onclick="event.stopPropagation()">
-    <h2 class="dlg-title">Profile</h2>
-    <p class="dlg-sub">Who's designing these cards. Saved with your GameBoard account.</p>
-    <label class="mini" for="pfName">Name</label><input class="inp" id="pfName" maxlength="80">
-    <label class="mini" for="pfEmail">Email</label><div class="pf-email"><input class="inp" id="pfEmail" type="email" readonly tabindex="-1" aria-describedby="pfEmailNote"><button type="button" class="si-link" onclick="changeSignInEmail()">Change</button></div>
-    <p class="pf-note" id="pfEmailNote">The email you sign in with — codes and receipts go here.</p>
-    <label class="mini" for="pfStudio">Studio or company</label><input class="inp" id="pfStudio" maxlength="80">
-    <div class="dlg-err" id="pfErr"></div>
-    <div class="dlg-actions"><button class="attr-btn" onclick="closeDialog('profileOverlay')">Cancel</button><button class="print-go" id="pfSave" onclick="saveProfile()">Save</button></div>
-  </div>
-</div>
-
 <!-- Settings -->
 <div class="overlay" id="settingsOverlay" onclick="if(event.target===this)closeDialog('settingsOverlay')">
   <div class="dlg" onclick="event.stopPropagation()">
@@ -1032,8 +1018,6 @@ body.cb-gate #signinOverlay { background:#2e2763; }
     <span class="lbl">Measurements</span>
     <div class="seg" id="setUnits"><button type="button" data-u="in" onclick="setUnitsChoice('in')">Inches</button><button type="button" data-u="mm" onclick="setUnitsChoice('mm')">Millimetres</button></div>
     <p class="dlg-sub" style="margin-top:.35rem">Used for the card size. Positions on the card stay in points (1/72 in).</p>
-    <span class="lbl">Plan</span>
-    <div class="set-plan"><span id="setPlan">—</span><button class="attr-btn" onclick="closeDialog('settingsOverlay');openPlansDialog()">Plans</button></div>
     <div class="dlg-err" id="setErr"></div>
     <div class="dlg-actions"><button class="attr-btn" onclick="closeDialog('settingsOverlay')">Close</button></div>
   </div>

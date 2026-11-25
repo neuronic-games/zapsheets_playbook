@@ -419,6 +419,15 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .act-badge.act-tm { background:#eef3f6; color:#4a5a6a; }
 .act-more { display:block; width:100%; padding:.6rem; border:none; border-top:1px solid #f0f4f8; background:#fff; color:#1a5f7a; font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.08em; cursor:pointer; }
 .act-more:hover { background:#f8fafc; }
+/* Profile: the account's name, email and picture at the top (changed in Account) */
+.pf-acct { display:flex; align-items:center; gap:.7rem; padding:.6rem .7rem; border:1px solid #e3e8ee; border-radius:10px; background:#f7fafc; margin:.3rem 0 .4rem; }
+.pf-acct-pic { flex:none; width:44px; height:44px; border-radius:50%; background:#1a5f7a center/cover no-repeat; color:#fff; display:flex; align-items:center; justify-content:center; font-family:'DINBlack',sans-serif; font-size:1.1rem; }
+.pf-acct-who { flex:1; min-width:0; display:flex; flex-direction:column; }
+.pf-acct-who b { font-family:'DINBlack',sans-serif; font-weight:normal; font-size:.9rem; color:#1a2b38; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pf-acct-who small { font-size:.75rem; color:#888; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pf-acct-btn { flex:none; font-family:'DINBlack',sans-serif; font-size:.64rem; text-transform:uppercase; letter-spacing:.07em; border:1.5px solid #1a5f7a; color:#1a5f7a; background:#fff; border-radius:6px; padding:.35rem .65rem; cursor:pointer; }
+.pf-acct-btn:hover { background:#1a5f7a; color:#fff; }
+.pf-acct-note { font-size:.74rem; color:#888; line-height:1.45; margin:0 0 .3rem; }
 .dash-contracts > .act-more:first-child { border-top:none; border-bottom:1px solid #f0f4f8; }   /* Show earlier, above the list */
 .dash-contract-game { font-family:'DINBlack',sans-serif; color:#1a5f7a; }
 .dash-contract-client { color:#666; font-size:.72rem; }
@@ -1200,7 +1209,7 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
       </button>
       <div class="account-menu" id="accountMenu">
         <button class="account-menu-item" onclick="accountMenuProfile()">Profile</button>
-        <button class="account-menu-item" onclick="accountMenuCompany()">Company</button>
+        <button class="account-menu-item" onclick="accountMenuCompany()">Settings</button>
         <button class="account-menu-item" onclick="accountMenuFetch()">Fetch</button>
         <button class="account-menu-item" onclick="accountMenuRelease()">Releases</button>
         <button class="account-menu-item" onclick="accountMenuHelp()">Help</button>
@@ -1532,17 +1541,15 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
 <div class="overlay" id="profileOverlay" onclick="if(event.target===this)closeProfileDialog()">
   <div class="sync-dialog" style="width:min(500px,94vw)">
     <h2>Profile</h2>
-    <!-- Photo + Name/Email row -->
-    <div style="display:flex;gap:1rem;align-items:flex-start;margin:.25rem 0 0">
-      <div class="profile-photo-wrap" id="profilePhotoWrap" title="Click to change photo" onclick="document.getElementById('profilePhotoFile').click()">
-        <img id="profilePhotoImg" src="" alt="" style="display:none">
-        <span id="profilePhotoPlaceholder" style="padding:.3rem">Photo</span>
-      </div>
-      <div style="flex:1;display:flex;flex-direction:column;gap:.6rem">
-        <label class="ge-label">Name<input type="text"  id="profileName"  class="ge-input" placeholder="Your name" /></label>
-        <label class="ge-label">Email<input type="email" id="profileEmail" class="ge-input" placeholder="your@email.com" /></label>
-      </div>
+    <!-- Name, email and picture: from the GameBoard account (Account in the menu), the same in every app -->
+    <div class="pf-acct">
+      <span class="pf-acct-pic" id="profileAcctPic"></span>
+      <div class="pf-acct-who"><b id="profileAcctName"></b><small id="profileAcctEmail"></small></div>
+      <button type="button" class="pf-acct-btn" onclick="forceCloseProfileDialog();if(window.GBAccount)GBAccount.openAccount()">Edit in Account</button>
     </div>
+    <p class="pf-acct-note">Your name, email and picture come from your GameBoard account — the same in every app. Below: what DevBoard keeps about you for this sheet.</p>
+    <input type="hidden" id="profileName" /><input type="hidden" id="profileEmail" />
+    <div id="profilePhotoWrap" hidden><img id="profilePhotoImg" src="" alt="" style="display:none"><span id="profilePhotoPlaceholder"></span></div>
     <!-- Bio fields -->
     <div style="display:flex;flex-direction:column;gap:.65rem;margin:.75rem 0 .5rem">
       <label class="ge-label">Description<textarea id="profileDesc" class="ge-input ge-textarea" placeholder="Brief bio…"></textarea></label>
@@ -1553,7 +1560,7 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
       <label class="ge-label">Preferred Payment Method<input type="text" id="profilePayment" class="ge-input" placeholder="e.g. Venmo: @YourName  or  PayPal: you@email.com" /></label>
       <label class="ge-label">Notes<textarea id="profileNotes" class="ge-input ge-textarea" placeholder="Availability, preferences…" rows="2"></textarea></label>
     </div>
-    <input type="file" id="profilePhotoFile" accept="image/*" style="display:none" onchange="profilePhotoPreview(this)">
+    <input type="file" id="profilePhotoFile" accept="image/*" style="display:none">
     <div class="sync-log" id="profileLog" style="display:none"></div>
     <div class="sync-dialog-actions">
       <button class="notes-close" id="profileCancelBtn" onclick="forceCloseProfileDialog()">Cancel</button>
@@ -1565,7 +1572,8 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
 <!-- Company dialog -->
 <div class="overlay" id="companyOverlay" onclick="if(event.target===this)closeCompanyDialog()">
   <div class="sync-dialog" style="width:min(420px,94vw)">
-    <h2>Company</h2>
+    <h2>Settings</h2>
+    <p class="pf-acct-note" style="margin:-.2rem 0 .6rem">Your studio’s details for this sheet — on your estimates, invoices and payment slips.</p>
     <div style="display:flex;gap:1rem;align-items:center;margin:.25rem 0 .5rem">
       <div class="profile-photo-wrap" id="companyLogoWrap"
            style="width:88px;height:56px;border-radius:6px;flex-shrink:0"
@@ -7580,9 +7588,19 @@ function openProfileDialog() {
   document.getElementById('profileSaveBtn').disabled   = false;
   document.getElementById('profileCancelBtn').disabled = false;
   document.getElementById('profileCancelBtn').textContent = 'Cancel';
+  // Name, email and picture: the account's (kept in step in the sheet when you save)
+  var _acc = (window.GBAccount && GBAccount.account && GBAccount.account()) || null;
+  var _nm = (_acc && _acc.name) || MY_NAME || '', _em = (_acc && _acc.email) || MY_EMAIL || '';
+  if (_acc && _acc.image) _profilePhotoUrl = _acc.image;
+  document.getElementById('profileName').value = _nm; document.getElementById('profileEmail').value = _em;
+  document.getElementById('profileAcctName').textContent = _nm || 'No name yet — add it in Account';
+  document.getElementById('profileAcctEmail').textContent = _em;
+  var _pic = document.getElementById('profileAcctPic');
+  _pic.style.backgroundImage = _profilePhotoUrl ? 'url("' + String(_profilePhotoUrl).replace(/"/g, '%22') + '")' : '';
+  _pic.textContent = _profilePhotoUrl ? '' : (_nm || _em || '?').charAt(0).toUpperCase();
   // Capture initial state for dirty checking
   _profileInitial = {
-    name: MY_NAME || '', email: MY_EMAIL || '', phone: MY_PHONE || '',
+    name: _nm, email: _em, phone: MY_PHONE || '',
     desc: MY_BIO_DESC || '', skills: MY_BIO_SKILLS || '', location: MY_BIO_LOCATION || '',
     discord: MY_BIO_DISCORD || '', payment: MY_BIO_PAYMENT || '', notes: MY_BIO_NOTES || ''
   };
@@ -7625,7 +7643,7 @@ function submitProfile() {
   var payment  = document.getElementById('profilePayment').value.trim();
   var notes    = document.getElementById('profileNotes').value.trim();
   var photoFile = document.getElementById('profilePhotoFile').files[0];
-  if (!name) { _profileLog('Name is required.', 'error'); return; }
+  if (!name) { _profileLog('Add your name in Account first (menu › Account).', 'error'); return; }
   document.getElementById('profileSaveBtn').disabled   = true;
   document.getElementById('profileCancelBtn').disabled = true;
   _profileLog('Saving…', 'info');

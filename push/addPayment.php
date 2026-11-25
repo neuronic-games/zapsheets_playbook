@@ -33,10 +33,37 @@ if (!is_numeric($amount) || (float) $amount <= 0) { echo json_encode(['error' =>
 if ($summary === '') { echo json_encode(['error' => 'Which contract is it for? Add its summary']); exit; }
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) $date = date('Y-m-d');
 
-// A short reference, like the other contract rows (used to find the row again, e.g. to delete it)
-$alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-$ref = '';
-for ($i = 0; $i < 8; $i++) $ref .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+// A short reference, like the other contract rows (used to find the row again, e.g. to delete it).
+// The page makes it when the dialog opens and sends the same one if the save is tried again — so a retry
+// (the first try still running, or its answer lost) never adds the payment twice.
+$ref = strtoupper(trim((string) ($_POST['ref'] ?? '')));
+if (!preg_match('/^[A-Z0-9]{8}$/', $ref)) {
+    $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    $ref = '';
+    for ($i = 0; $i < 8; $i++) $ref .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+}
+$_dir = dirname(__DIR__) . '/sheets/' . basename($sheetId);
+foreach ((json_decode((string) @file_get_contents($_dir . '/contracts.json'), true) ?: []) as $_c) {
+    if ((string) ($_c['Ref Number'] ?? '') === $ref) { echo json_encode(['ok' => true, 'row' => $_c, 'already' => true], JSON_UNESCAPED_UNICODE); exit; }
+}
+// One try at a time for this payment: a marker made only if it isn't there (a second try waits for the first)
+$_mkDir = $_dir . '/_payments';
+if (!is_dir($_mkDir)) @mkdir($_mkDir, 0755, true);
+$_mk = $_mkDir . '/' . $ref . '.json';
+$_fh = @fopen($_mk, 'x');
+if (!$_fh) {
+    for ($_i = 0; $_i < 120; $_i++) {
+        $_was = json_decode((string) @file_get_contents($_mk), true);
+        if (!empty($_was['ok'])) { echo json_encode($_was + ['already' => true], JSON_UNESCAPED_UNICODE); exit; }
+        if (!is_file($_mk)) break;   // the first try failed: this one goes ahead
+        sleep(1);
+    }
+    if (is_file($_mk)) { echo json_encode(['error' => 'This payment is still being saved — wait a moment, then check the list before trying again']); exit; }
+    $_fh = @fopen($_mk, 'x');
+    if (!$_fh) { echo json_encode(['error' => 'This payment is being saved already']); exit; }
+}
+fwrite($_fh, '{}'); fclose($_fh);
+register_shutdown_function(function () use ($_mk) { $d = json_decode((string) @file_get_contents($_mk), true); if (empty($d['ok'])) @unlink($_mk); });   // not saved: let a retry go
 
 $row = [
     'ID'         => $ref,
@@ -71,4 +98,6 @@ unset($row['__add_headers__'], $row['__notes__']);
 // The payment slip to send to the person (PDF, like estimates and invoices)
 $slip = pbMakePaymentSlip($sheetId, $row, $_POST);
 if (!empty($slip['ok'])) $row['Files'] = $slip['url'];
-echo json_encode(['ok' => true, 'row' => $row] + (empty($slip['ok']) ? ['slip_error' => $slip['error'] ?? 'Could not make the slip'] : []), JSON_UNESCAPED_UNICODE);
+$_out = ['ok' => true, 'row' => $row] + (empty($slip['ok']) ? ['slip_error' => $slip['error'] ?? 'Could not make the slip'] : []);
+@file_put_contents($_mk, json_encode($_out, JSON_UNESCAPED_UNICODE));   // a retry gets this answer
+echo json_encode($_out, JSON_UNESCAPED_UNICODE);

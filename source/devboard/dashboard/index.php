@@ -3161,7 +3161,7 @@ function _payValues() {
            date: document.getElementById('payDate').value, notes: document.getElementById('payNotes').value.trim() };
 }
 function openPaymentDialog(client, game) {
-  _payCtx = { client: client || '', game: game || '' };
+  _payCtx = { client: client || '', game: game || '', ref: _dbNewRef() };   // ref: the same on a retry, so it's saved once
   document.getElementById('payGameTitle').textContent = game || '';
   document.getElementById('payPersonInput').value = '';
   _sumSrc.pay = _contractSummaries(game);
@@ -3272,12 +3272,14 @@ function submitPayment() {
   var fd = new FormData();
   fd.append('id', SHEET_ID); fd.append('game', _payCtx.game); fd.append('client', _payCtx.client);
   fd.append('payee', v.person); fd.append('summary', v.summary); fd.append('contract_ref', sumRef('pay')); fd.append('amount', v.amount); fd.append('date', v.date); fd.append('notes', v.notes);
+  fd.append('ref', _payCtx.ref);
   _payAppendMe(fd);
   fetch(APP_BASE + 'push/addPayment.php', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
     .then(function(j) {
       if (!j || !j.ok) { fail((j && j.error) || 'Save failed.'); return; }
-      CONTRACT_RAW.push(j.row);
+      var _have = CONTRACT_RAW.some(function(c) { return c && j.row && String(c['Ref Number'] || '') === String(j.row['Ref Number'] || ''); });
+      if (!_have) CONTRACT_RAW.push(j.row);
       forceClosePaymentDialog();
       var st = _saveOpenState(); renderPublishersView(); _restoreOpenState(st);
       if (typeof showSaveToast === 'function') showSaveToast(j.slip_error ? 'Payment saved — the slip didn’t work: ' + j.slip_error : '✓ Payment to ' + v.person + ' saved, with its payment slip', j.slip_error ? '' : 'success');

@@ -317,6 +317,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
 .dbc { padding-bottom:6px; }
 .dbc-row { display:grid; grid-template-columns:auto auto auto 1fr auto; gap:7px; align-items:baseline; padding:7px 12px; border-top:1px solid #edf1f5; font-size:9.5px; box-shadow:inset 3px 0 0 var(--it,#8fc3d8); }
 .dbc-row.out { --it:#8b5cf6; } .dbc-row.paid { --it:#4caf6e; } .dbc-row.est { --it:#8fc3d8; }
+.dbc-tags { display:inline-flex; gap:4px; }
 .dbc-sum { color:#334155; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
 .dbx-pill.out { color:#6d28d9; background:#ede9fe; } .dbx-amt.out { color:#6d28d9; }
 .dbc-card { margin:6px 8px; border:1px solid #cfdde7; border-left:3px solid #e2b53e; border-radius:8px; overflow:hidden; box-shadow:0 4px 12px rgba(26,95,122,.13); background:#fff; }
@@ -640,11 +641,11 @@ footer a:hover { color:rgba(255,255,255,.7); }
             <div class="dbx-game">Break of Dawn <span>1 estimate · 2 invoices · 1 payment</span></div>
             <div class="dbc-row out"><span class="dbx-pill out">Paid out</span><span class="dbx-ref">R7MD2KQ9</span><span class="dbx-date">11/26/2026</span><span class="dbc-sum">Break of Dawn dev · → Maya Chen</span><span class="dbx-amt out">$120.00</span></div>
             <div class="dbc-card inv">
-              <div class="dbc-row"><span class="dbx-pill inv">Invoiced</span><span class="dbx-ref">P8XW3M5C</span><span class="dbx-date">11/24/2026</span><span class="dbc-sum">Break of Dawn dev</span><span class="dbx-amt">$130.00</span></div>
+              <div class="dbc-row"><span class="dbx-pill inv">Invoice</span><span class="dbx-ref">P8XW3M5C</span><span class="dbx-date">11/24/2026</span><span class="dbc-sum">Break of Dawn dev</span><span class="dbx-amt">$130.00</span></div>
               <div class="dbc-fields"><div><i>Contract #</i>P8XW3M5C</div><div><i>Amount</i>$130.00</div><div><i>Date</i>11/24/2026</div><div><i>Client</i>Riverbend Games</div></div>
               <div class="dbx-cbtns"><span class="dbx-cb">✉ Share</span><span class="dbx-cb">Edit</span><span class="dbx-cb del">Delete</span></div>
             </div>
-            <div class="dbc-row paid"><span class="dbx-pill paid">Paid</span><span class="dbx-ref">K4Q7ZR21</span><span class="dbx-date">11/10/2026</span><span class="dbc-sum">Break of Dawn dev</span><span class="dbx-amt">$260.00</span></div>
+            <div class="dbc-row paid"><span class="dbc-tags"><span class="dbx-pill inv">Invoice</span><span class="dbx-pill paid">Paid</span></span><span class="dbx-ref">K4Q7ZR21</span><span class="dbx-date">11/10/2026</span><span class="dbc-sum">Break of Dawn dev</span><span class="dbx-amt">$260.00</span></div>
             <div class="dbc-row est"><span class="dbx-pill est">Estimate</span><span class="dbx-ref">CA7N2E4S</span><span class="dbx-date">11/04/2026</span><span class="dbc-sum">Break of Dawn dev</span><span class="dbx-amt">$390.00</span></div>
           </div>
           <div class="dbx-pdf dbi">

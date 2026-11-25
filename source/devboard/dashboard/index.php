@@ -504,7 +504,8 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .estimate-type-pill.invoice { color:#a16207; background:#fef3cd; }
 .estimate-type-pill.paid    { color:#15803d; background:#dcfce7; }
 .estimate-type-pill.partial { color:#9a3412; background:#ffedd5; }
-.estimate-type-pill.payout  { color:#6d28d9; background:#ede9fe; }   /* a payment to a collaborator (money out) */
+.estimate-type-pill.payout  { color:#6d28d9; background:#ede9fe; }
+.estimate-tags { display:inline-flex; gap:.3rem; align-items:baseline; white-space:nowrap; }   /* a payment to a collaborator (money out) */
 .pay-payee { font-family:'DINBlack',sans-serif; font-size:.78rem; color:#333; }
 .estimate-amount.out { color:#6d28d9; }
 .btn-contract-action.payment { border-color:#6d28d9; color:#6d28d9; }
@@ -2938,7 +2939,7 @@ function renderPublishersView() {
         var isInvoice = (est.type === 'invoice');
         var estTag    = _estStatusTag(est);
         html += '<div class="estimate-item-header" onclick="_estToggle(' + globalIdx + ')">' +
-          '<span class="estimate-type-pill' + estTag.cls + '">' + estTag.label + '</span>' +
+          _estTagsHtml(est, estTag) +
           '<div class="estimate-num-badge">' + esc(est.estimate_num || '') + '</div>' +
           '<div class="estimate-date">' + esc(est.date || '') + (function(sm) { return sm ? '<span class="estimate-sum" title="' + esc(sm) + '">' + esc(sm) + '</span>' : ''; })(_contractSummaryFor(est.contract_id || est.estimate_num)) + '</div>' +
           '<div class="estimate-amount">' + esc(amtFmt) + '</div>' +
@@ -7751,6 +7752,13 @@ function _estStatusTag(est) {
   return est && est.type === 'invoice' ? { cls: ' invoice', label: 'Invoiced' } : { cls: '', label: 'Estimate' };
 }
 
+// Two tags: what it is (Estimate / Invoice), then its status when that says more (Paid, Partial; an estimate that's Invoiced)
+function _estTagsHtml(est, tag) {
+  var inv = est && est.type === 'invoice';
+  var kind = '<span class="estimate-type-pill' + (inv ? ' invoice' : '') + '">' + (inv ? 'Invoice' : 'Estimate') + '</span>';
+  var same = inv ? tag.label === 'Invoiced' : tag.label === 'Estimate';
+  return '<span class="estimate-tags">' + kind + (same ? '' : '<span class="estimate-type-pill' + tag.cls + '">' + tag.label + '</span>') + '</span>';
+}
 // Contract status: the sheet's "Status" column (older sheets: "Payment")
 function _conStatus(con) {
   return String((con && (con.Status || con.Payment)) || '').trim();

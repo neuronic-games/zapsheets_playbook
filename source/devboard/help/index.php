@@ -210,12 +210,19 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
 </section>
 <section class="topic" id="sheet">
   <h2><span class="n">2</span>Set up your sheet</h2>
-  <?= shot('newsheet', 'The DevBoard start page: open one of your sheets or start a blank one, then paste its link.') ?>
+  <?= shot('newsheet', 'Link to your sheet: copy the service account, share your sheet with it, then paste the sheet’s link.') ?>
   <ol>
-    <li><b>Open or make a sheet.</b> <b>Open a sheet</b> goes to your Google Sheets; <b>Start a blank sheet</b> makes a new one. Your PitchBoard sheet works too — your games are already there.</li>
-    <li><b>Share it with DevBoard.</b> In Sheets, click <b>Share</b> and add <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> (the <b>Copy</b> button copies it) as an <b>Editor</b>.</li>
-    <li><b>Connect it.</b> Paste the sheet’s link and click <b>Connect &amp; Open</b>. DevBoard adds the tabs it needs and opens your board — bookmark that page to come straight back.</li>
+    <li><b>Copy the service account.</b> Step 1 shows DevBoard’s service account, <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> — the <b>Copy</b> button copies it.</li>
+    <li><b>Open or make a sheet, and share it with DevBoard.</b> <b>Open a sheet</b> goes to your Google Sheets; <b>Start a blank sheet</b> makes a new one. Your PitchBoard sheet works too — your games are already there. Then, in the sheet:
+      <ul>
+        <li>Choose <b>File › Share › Share with others</b> (or the <b>Share</b> button at the top right).</li>
+        <li>Paste the service account into <b>Add people, groups…</b>, leave it as <b>Editor</b>, and click <b>Send</b>.</li>
+        <li>Copy the sheet’s URL from your browser’s address bar (or click <b>Copy link</b> in the Share window).</li>
+      </ul>
+    </li>
+    <li><b>Paste and connect.</b> Paste the URL (or just the sheet’s ID) in step 3 and click <b>Connect &amp; Open</b>; the progress shows underneath. DevBoard adds the tabs it needs and opens your board — bookmark that page to come straight back.</li>
   </ol>
+  <div class="tip"><b>What is a service account?</b> It’s DevBoard’s own Google account — not a person. DevBoard reads your sheet and saves your changes back to it through this account (the same one for every GameBoard app). It only sees the sheets you share with it — not the rest of your Drive or your email — and needs <b>Editor</b> to add its tabs and write your changes. Remove it in the sheet’s Share window any time; your sheet stays as it is.</div>
   <p>DevBoard uses these tabs: <b>games</b>, <b>people</b>, <b>contracts</b>, <b>settings</b> and <b>bios</b>, plus a <b>[Game] dev</b> tab for each game you develop and a <b>todos</b> tab. Tabs that are already there are used as they are, and the same names are used by every GameBoard app.</p>
   <div class="tip"><b>Your sheets:</b> every sheet you’ve connected is listed on your GameBoard <a href="dashboard">dashboard</a>, with an Open link for each app.</div>
 </section>

@@ -216,11 +216,20 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 
 <section class="topic" id="sheet">
   <h2><span class="n">2</span>Set up your sheet</h2>
+  <p>Click <b>+ Design</b> on <a href="cardboard">CardBoard</a> (signed in) and <b>Link to your sheet</b> opens.</p>
+  <?= shot('newsheet', 'Link to your sheet: copy the service account, share your sheet with it, then paste the sheet’s link.') ?>
   <ol>
-    <li><b>Headings in row 1.</b> Put the field names in the first row (<em>Name</em>, <em>Type</em>, <em>Cost</em>, <em>Text</em>, <em>Art</em>…) and one card per row below. Each tab is a deck.</li>
-    <li><b>Share it with CardBoard.</b> In Sheets, click <b>Share</b> and add <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> as an <b>Editor</b>. CardBoard reads and writes your sheet through that address.</li>
-    <li><b>Connect it.</b> Open <a href="cardboard">CardBoard</a>, sign in, paste the spreadsheet's link and continue. The designer opens on your first deck — bookmark that page, or add it to your Home Screen, to come straight back.</li>
+    <li><b>Copy the service account.</b> Step 1 shows CardBoard’s service account, <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> — the <b>Copy</b> button copies it.</li>
+    <li><b>Open or make a sheet, and share it with CardBoard.</b> <b>Copy the sample deck</b> makes your own copy of an 18-card deck to play with; <b>Start a blank sheet</b> makes a new one — put the field names in row 1 (<em>Name</em>, <em>Type</em>, <em>Cost</em>, <em>Text</em>, <em>Art</em>…) and one card per row below. Each tab is a deck. Then, in the sheet:
+      <ul>
+        <li>Choose <b>File › Share › Share with others</b> (or the <b>Share</b> button at the top right).</li>
+        <li>Paste the service account into <b>Add people, groups…</b>, leave it as <b>Editor</b>, and click <b>Send</b>.</li>
+        <li>Copy the sheet’s URL from your browser’s address bar (or click <b>Copy link</b> in the Share window).</li>
+      </ul>
+    </li>
+    <li><b>Paste and connect.</b> Paste the URL (or just the sheet’s ID) in step 3 and click <b>Connect &amp; Open</b>; the progress shows underneath. The designer opens on your first deck — bookmark that page, or add it to your Home Screen, to come straight back.</li>
   </ol>
+  <div class="tip"><b>What is a service account?</b> It’s CardBoard’s own Google account — not a person. CardBoard reads your sheet and saves your changes back to it through this account (the same one for every GameBoard app). It only sees the sheets you share with it — not the rest of your Drive or your email — and needs <b>Editor</b> to add its tabs and write your changes. Remove it in the sheet’s Share window any time; your sheet stays as it is.</div>
   <p>CardBoard adds two tabs to your spreadsheet: <b>layouts</b> (every deck's design and your settings) and <b>tags</b>. Leave them in place. Hidden tabs aren't listed as decks, so hide any tab you don't want to design from.</p>
   <?= shot('cards', 'The sample deck used on this page: 8 spells, with a picture link in <b>Art</b> and a formula in <b>Value</b>.') ?>
   <div class="tip"><b>Picture columns:</b> a column of picture links (Dropbox, Google Drive, any web address) is recognised automatically — it shows thumbnails in the Cards view and is added to a card as a picture.</div>

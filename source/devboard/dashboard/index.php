@@ -3131,6 +3131,8 @@ function _payMakeSlip(idx, btn, done, fail) {
 }
 // Payment Slip: a tab opens straight away (so it isn't blocked), and shows the slip once it's made
 function _payOpenSlip(idx) {
+  var pay = CONTRACT_RAW[idx]; if (!pay) return;
+  if (pay.Files) { window.open(pay.Files, '_blank'); return; }   // made already: straight there
   var win = window.open('', '_blank');
   if (win) win.document.write('<p style="font:16px -apple-system,Arial,sans-serif;color:#666;padding:2rem">Making the payment slip…</p>');
   _payMakeSlip(idx, null,

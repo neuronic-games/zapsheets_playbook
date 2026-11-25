@@ -419,6 +419,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .act-badge.act-tm { background:#eef3f6; color:#4a5a6a; }
 .act-more { display:block; width:100%; padding:.6rem; border:none; border-top:1px solid #f0f4f8; background:#fff; color:#1a5f7a; font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.08em; cursor:pointer; }
 .act-more:hover { background:#f8fafc; }
+.dash-contracts > .act-more:first-child { border-top:none; border-bottom:1px solid #f0f4f8; }   /* Show earlier, above the list */
 .dash-contract-game { font-family:'DINBlack',sans-serif; color:#1a5f7a; }
 .dash-contract-client { color:#666; font-size:.72rem; }
 
@@ -2541,6 +2542,28 @@ var _todosSynced = false;
 // Contracts from before Ref Numbers were codes (a plain number like 7, or none): once per page load the
 // server gives them standard 8-character codes in the sheet; the page then shows them.
 var _refsFixed = false;
+// Payments saved before this kept their Date and amount as text in the sheet (left-aligned, no $): written
+// again as a date and money, like the other rows — kept and saved with Save, once per payment
+var _payCellsFixed = false;
+function _fixPaymentCells() {
+  if (_payCellsFixed) return; _payCellsFixed = true;
+  if (!(window.GBAccount && GBAccount.canEdit && GBAccount.canEdit())) { _payCellsFixed = false; return; }
+  CONTRACT_RAW.forEach(function(c) {
+    if (!c || !_isPaymentRow(c)) return;
+    var ref = String(c['Ref Number'] || '').replace(/^'/, '').trim(), d = String(c.Date || '').trim(), q = String(c.Quote || '').trim();
+    var isoDate = /^\d{4}-\d{2}-\d{2}$/.test(d), plainAmt = /^\d+(\.\d+)?$/.test(q);
+    if (!ref || (!isoDate && !plainAmt)) return;
+    var fd = new FormData();
+    fd.append('id', SHEET_ID); fd.append('contract_id', ref); fd.append('game', c.Game || ''); fd.append('client', c.Client || '');
+    fd.append('quote', q.replace(/[$,]/g, '')); fd.append('payment', 'Paid'); if (_cleanSummary(c.Summary)) fd.append('summary', _cleanSummary(c.Summary));
+    fd.append('notes', String(c.Notes || '').replace(/^'/, '')); fd.append('payee', c.Payee || '');
+    var day = _dbDay(d); if (day) { var dd = new Date(day); fd.append('date', dd.getUTCFullYear() + '-' + ('0' + (dd.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + dd.getUTCDate()).slice(-2)); }
+    fd.append('no_slip', '1');
+    if (window.GBQueue && GBQueue.put) GBQueue.put(APP_BASE + 'push/updateContract.php', fd, 'paycells:' + ref);
+    var n = parseFloat(q); if (!isNaN(n)) c.Quote = '$' + n.toFixed(2);
+    if (day) c.Date = fmtDate(new Date(day).toISOString().slice(0, 10));
+  });
+}
 function _fixOldRefs() {
   if (_refsFixed) return; _refsFixed = true;
   if (!(window.GBAccount && GBAccount.canEdit && GBAccount.canEdit())) { _refsFixed = false; return; }   // the owner, once the account is checked
@@ -2593,11 +2616,13 @@ function _dashActivityHtml() {
     if (s.w && x.notes.indexOf(s.w) < 0) x.notes.push(s.w);
   });
   if (!items.length) return '';
-  // Newest first; undated last. Same day: sessions before contracts, then later rows first
+  // Like a log: oldest at the top, the latest at the bottom (undated first). The latest ones show; earlier ones on request.
+  // Same day: sessions, then T&M, then contracts, each in the sheet's order
   var rank = { s: 0, tm: 1, c: 2 };
-  items.sort(function(a, b) { return (b.t || -1) - (a.t || -1) || (a.k === b.k ? b.o - a.o : rank[a.k] - rank[b.k]); });
+  items.sort(function(a, b) { return (a.t || -1) - (b.t || -1) || (a.k === b.k ? a.o - b.o : rank[a.k] - rank[b.k]); });
   var html = '<div><div class="dash-section-hd">Activity</div><div class="dash-contracts">';
-  items.slice(0, _actShown).forEach(function(x) {
+  if (items.length > _actShown) html += '<button type="button" class="act-more" onclick="_actShown+=12;renderDashView()">Show earlier (' + (items.length - _actShown) + ')</button>';
+  items.slice(Math.max(0, items.length - _actShown)).forEach(function(x) {
     var when = x.t ? fmtDate(new Date(x.t).toISOString().slice(0, 10)) : '';
     if (x.k === 'tm') {
       var parts = [], amt = [];
@@ -2635,7 +2660,6 @@ function _dashActivityHtml() {
       '<div style="font-family:DINBlack,sans-serif;font-size:.78rem">' + esc(quote) + '</div>' +
       '<div><span class="' + badgeCls + '">' + esc(payment || '—') + '</span></div></div>';
   });
-  if (items.length > _actShown) html += '<button type="button" class="act-more" onclick="_actShown+=12;renderDashView()">Show more (' + (items.length - _actShown) + ')</button>';
   return html + '</div></div>';
 }
 // A session in Activity: open its game on the Games tab
@@ -8143,6 +8167,7 @@ function _dbStartCheckout(type, btn, btnLabel, plan) {
   function fromAccount(s) {
     var a = s.account || {}, x = s.app || {}, live = s.canEdit;
     if (live && typeof _fixOldRefs === 'function') setTimeout(_fixOldRefs, 0);   // older contracts get standard Ref Numbers
+    if (live && typeof _fixPaymentCells === 'function') setTimeout(_fixPaymentCells, 0);   // payments saved as text get a real date and amount
     _dbSubStatus = { ok: true, is_core: live, is_pro: live && !(x.state === 'subscribed' && x.plan === 'core'),
                      status: a.status || '', portal_url: a.portal_url || '', activated: x.state === 'activated' };
     var item = document.getElementById('dbUpgradeBtn');

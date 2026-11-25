@@ -53,7 +53,8 @@ if ($summary !== null) $data['summary'] = $summary;
 // A payment: who was paid and when
 $extra = [];
 if (isset($_POST['payee'])) { $payee = trim((string) $_POST['payee']); if ($payee === '') { echo json_encode(['error' => 'Who was paid?']); exit; } $extra['Payee'] = $payee; }
-if (isset($_POST['date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', trim((string) $_POST['date']))) $extra['Date'] = trim((string) $_POST['date']);
+if (isset($_POST['date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', trim((string) $_POST['date']))) $extra['Date'] = date('m/d/Y', strtotime(trim((string) $_POST['date'])));   // a date in the sheet
+if ($extra && is_numeric(str_replace([',', '$'], '', $quote))) $data['quote'] = '$' . number_format((float) str_replace([',', '$'], '', $quote), 2, '.', ',');   // a payment's amount: money
 if ($extra) $data['extra'] = $extra;
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';
@@ -158,8 +159,8 @@ if ($estIdx !== null && in_array($docType, ['Estimate', 'Invoice'], true)) {
     }
 }
 
-// A payment: its slip made again with the corrected details (same link)
-if ($docType === 'Payment') {
+// A payment: its slip made again with the corrected details (same link) — not when only tidying the sheet (no_slip)
+if ($docType === 'Payment' && empty($_POST['no_slip'])) {
     require_once __DIR__ . '/paymentSlip.php';
     $slip = pbMakePaymentSlip($sheetId, $record, $_POST);
     $result['record'] = $record;

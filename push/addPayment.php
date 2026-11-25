@@ -68,17 +68,18 @@ register_shutdown_function(function () use ($_mk) { $d = json_decode((string) @f
 $row = [
     'ID'         => $ref,
     'Ref Number' => $ref,
-    'Date'       => $date,
+    'Date'       => date('m/d/Y', strtotime($date)),   // a date in the sheet (like the other rows), not text
     'Game'       => $game,
     'Client'     => $client,
     'Type'       => 'Payment',
     'Payee'      => $payee,
-    'Quote'      => number_format((float) $amount, 2, '.', ''),
+    'Quote'      => '$' . number_format((float) $amount, 2, '.', ','),   // money, like the invoices
     'Status'     => 'Paid',
     'Payment'    => 'Paid',
     'Summary'    => $summary,
     'Notes'      => $notes,
     '__add_headers__' => ['Type', 'Ref Number', 'Payee', 'Summary'],
+    '__raw__'    => ['Date', 'Quote'],
 ];
 $contractRef = trim((string) ($_POST['contract_ref'] ?? ''));   // the contract it's for: its Ref Number as a note on the Summary
 if ($contractRef !== '') $row['__notes__'] = ['Summary' => 'Ref Number: ' . $contractRef];

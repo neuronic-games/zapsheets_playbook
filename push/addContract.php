@@ -39,7 +39,7 @@ foreach ($_have as $_c) if ((string) ($_c['Ref Number'] ?? '') === $ref) { echo 
 $today = date('Y-m-d');
 
 $row = [
-    'Date'             => $today,
+    'Date'             => date('m/d/Y'),   // a date in the sheet (like the other rows), not text
     'Game'             => $game,
     'Client'           => $client,
     'Target Start Date'=> $targetStart,
@@ -53,6 +53,7 @@ $row = [
     'Summary'          => $summary,
     'Ref Number'       => $ref,
     '__add_headers__'  => ['Summary', 'Ref Number'],
+    '__raw__'          => ['Date', 'Quote'],
 ];
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';

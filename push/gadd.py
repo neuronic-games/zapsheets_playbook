@@ -143,8 +143,18 @@ if sheet_name.lower() == 'pitches':
         }))
         sys.exit(0)
 
+# __raw__: headings written as values the sheet reads (a date as a date, an amount as money) — only for plain
+# dates and amounts; everything else keeps the ' that stops Sheets reading it as a formula
+raw_cols = set(str(h).strip() for h in (row_data.pop('__raw__', None) or []))
+import re as _re_raw
+def cell_val(h, v):
+    s = (str(v) if v is not None else '').strip()
+    if h in raw_cols and _re_raw.fullmatch(r'(\d{1,2}/\d{1,2}/\d{4}|\$?-?\d[\d,]*(\.\d+)?)', s):
+        return s
+    return safe_str(v)
+
 # Build row list aligned to headers
-new_row = [safe_str(row_data.get(h.strip(), '')) for h in headers]
+new_row = [cell_val(h.strip(), row_data.get(h.strip(), '')) for h in headers]
 
 # Delegate row-finding to the Sheets API via append_rows (OVERWRITE mode avoids
 # INSERT_ROWS which can fail on protected sheets). The API appends after the last

@@ -18,6 +18,9 @@ $quote       = trim($_POST['quote']        ?? '');
 $payment     = trim($_POST['payment']      ?? '');
 $notes       = trim($_POST['notes']        ?? '');
 $summary     = trim(preg_replace('/\s+/', ' ', (string) ($_POST['summary'] ?? '')));
+$ref         = strtoupper(trim((string) ($_POST['ref'] ?? '')));   // made on the page, so the contract can be shown (and edited) before it's saved
+require_once __DIR__ . '/refreshJson.php';
+if (!preg_match('/^[A-Z0-9]{8}$/', $ref)) $ref = tmGenRef();
 
 if (!$sheetId || !$client) {
     echo json_encode(['error' => 'Missing required fields']);
@@ -27,6 +30,10 @@ if ($summary === '') {
     echo json_encode(['error' => 'Add a one-line summary']);
     exit;
 }
+
+// Sent again (a Save that was cut off and retried): it's in already
+$_have = json_decode((string) @file_get_contents(dirname(__DIR__) . '/sheets/' . basename($sheetId) . '/contracts.json'), true) ?: [];
+foreach ($_have as $_c) if ((string) ($_c['Ref Number'] ?? '') === $ref) { echo json_encode(['ok' => true, 'ref' => $ref, 'already' => true]); exit; }
 
 // Format today's date
 $today = date('Y-m-d');
@@ -44,7 +51,8 @@ $row = [
     'Payment'          => $payment,
     'Notes'            => $notes,
     'Summary'          => $summary,
-    '__add_headers__'  => ['Summary'],
+    'Ref Number'       => $ref,
+    '__add_headers__'  => ['Summary', 'Ref Number'],
 ];
 
 $pythonPath = $_ENV['PYTHON'] ?? 'python3';

@@ -2098,6 +2098,22 @@ var _profilePhotoUrl = MY_BIO_IMAGE || '';
 var PEOPLE_NAMES  = <?= json_encode(array_values($_people_names), JSON_UNESCAPED_UNICODE) ?>;
 var PEOPLE_DATA   = <?= json_encode(array_values($_people_raw),  JSON_UNESCAPED_UNICODE) ?>;
 var CONTRACT_RAW  = <?= json_encode(array_values($_contracts_raw), JSON_UNESCAPED_UNICODE) ?>;
+// New contracts kept in this browser and not saved yet: shown as if they were (they go to the sheet with Save)
+(function() {
+  var q; try { q = JSON.parse(localStorage.getItem('gb_queue:devboard:' + <?= json_encode($_sheet_id) ?>) || '[]'); } catch (e) { q = []; }
+  var have = {}; CONTRACT_RAW.forEach(function(c) { if (c && c['Ref Number']) have[String(c['Ref Number'])] = 1; });
+  (Array.isArray(q) ? q : []).forEach(function(it) {
+    if (!it || !/\/push\/addContract\.php$/.test(String(it.u || '').split('?')[0]) || !it.b || it.b.t !== 'form') return;
+    var f = {}; it.b.d.forEach(function(p) { f[p[0]] = p[1]; });
+    if (!f.ref || have[f.ref]) return;
+    var d = new Date(it.t || Date.now());
+    CONTRACT_RAW.push({ 'Date': d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'),
+      'Game': f.game || '', 'Client': f.client || '', 'Target Start Date': f.target_start || '', 'Target End Date': f.target_end || '',
+      'Start Date': '', 'End Date': '', 'Quote': f.quote || '', 'Status': f.payment || '', 'Payment': f.payment || '', 'Notes': f.notes || '',
+      'Summary': f.summary || '', 'Ref Number': f.ref });
+    have[f.ref] = 1;
+  });
+})();
 // Each person's payment details from their bio (Bios tab "Payment"), by email — shown on payments to them
 var BIO_PAYMENT   = <?= json_encode((object) array_filter(array_reduce($_bios, function ($m, $b) {
   $e = strtolower(ltrim(trim((string) ($b['Email'] ?? '')), "'")); if ($e !== '') $m[$e] = ltrim(trim((string) ($b['Payment'] ?? '')), "'"); return $m; }, [])), JSON_UNESCAPED_UNICODE) ?>;
@@ -2176,7 +2192,8 @@ function switchTab(tab) {
     if (el) el.classList.toggle('active', v === tab);
   });
   if (tab === 'dash')       renderDashView();
-  if (tab === 'publishers') renderPublishersView();
+  // Contracts: redrawn with what was open still open (cards, games, contracts), from the top
+  if (tab === 'publishers') { var _st = _saveOpenState(); _st.scroll = 0; _st.cards = []; renderPublishersView(); _restoreOpenState(_st); }
 }
 
 function _statusStyle(status) {
@@ -3270,8 +3287,9 @@ function submitPayment() {
 
 // Save/restore open state for publisher cards, game groups, and game cards across re-renders
 function _saveOpenState() {
-  var open = { pubs: [], games: [], cards: [], scroll: window.scrollY };
+  var open = { pubs: [], games: [], cards: [], items: [], scroll: window.scrollY };
   document.querySelectorAll('.client-card.open').forEach(function(el) { open.pubs.push(el.id); });
+  document.querySelectorAll('#view-publishers [id^="ci-"].open').forEach(function(el) { open.items.push(el.id); });
   document.querySelectorAll('.game-group.open').forEach(function(el) { open.games.push(el.id); });
   document.querySelectorAll('.game-card.open').forEach(function(el) { if (el.dataset.game) open.cards.push(el.dataset.game); });
   return open;
@@ -3280,6 +3298,7 @@ function _restoreOpenState(state) {
   if (!state) return;
   state.pubs.forEach(function(id)  { var el = document.getElementById(id); if (el) el.classList.add('open'); });
   state.games.forEach(function(id) { var el = document.getElementById(id); if (el) el.classList.add('open'); });
+  (state.items || []).forEach(function(id) { var el = document.getElementById(id); if (el) el.classList.add('open'); });
   if (state.cards && state.cards.length) {
     document.querySelectorAll('.game-card').forEach(function(el) {
       if (state.cards.indexOf(el.dataset.game) !== -1) {
@@ -3798,7 +3817,7 @@ function _conConfirmDelete(dataIdx) {
 
   var fd = new FormData();
   fd.append('id',          SHEET_ID);
-  fd.append('contract_id', con.ID || '');
+  fd.append('contract_id', con['Ref Number'] || con.ID || '');
 
   fetch(APP_BASE + 'push/deleteContract.php', { method:'POST', body:fd })
     .then(function(r) { return r.json(); })
@@ -5106,9 +5125,8 @@ function submitContract() {
   if (!client) { errEl.textContent = 'Client is required.'; errEl.style.display = 'block'; return; }
   var summary = document.getElementById('contractSummary').value.replace(/\s+/g, ' ').trim();
   if (!summary) { errEl.textContent = 'Add a one-line summary.'; errEl.style.display = 'block'; document.getElementById('contractSummary').focus(); return; }
-  var btn = document.getElementById('contractBtn');
-  btn.disabled    = true;
-  btn.textContent = 'Saving…';
+  // The contract is added here at once (with its Ref Number) and saved to the sheet with the next Save
+  var ref = _dbNewRef();
   var fd = new FormData();
   fd.append('id',           SHEET_ID);
   fd.append('game',         _contractGame);
@@ -5119,16 +5137,30 @@ function submitContract() {
   fd.append('payment',      payment);
   fd.append('notes',        notes);
   fd.append('summary',      summary);
+  fd.append('ref',          ref);
+  var rec = _dbContractFromForm(fd);
+  var mayKeep = window.GBQueue && GBQueue.put && (!window.GBAccount || !GBAccount.canEdit || GBAccount.canEdit());
+  if (mayKeep && GBQueue.put(APP_BASE + 'push/addContract.php', fd, 'contract-add:' + ref)) {
+    CONTRACT_RAW.push(rec);
+    forceCloseContractDialog();
+    _dbContractsChanged();
+    return;
+  }
+  // Not kept here (view only, or this browser can't keep it): straight to the server, which says why not
+  var btn = document.getElementById('contractBtn');
+  btn.disabled    = true;
+  btn.textContent = 'Saving…';
   fetch(APP_BASE + 'push/addContract.php', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
     .then(function(j) {
+      btn.disabled = false; btn.textContent = 'Add Contract';
       if (j && j.ok) {
+        CONTRACT_RAW.push(rec);
         forceCloseContractDialog();
+        _dbContractsChanged();
       } else {
         errEl.textContent   = (j && j.error) ? j.error : 'Save failed.';
         errEl.style.display = 'block';
-        btn.disabled    = false;
-        btn.textContent = 'Add Contract';
       }
     })
     .catch(function() {
@@ -5137,6 +5169,31 @@ function submitContract() {
       btn.disabled    = false;
       btn.textContent = 'Add Contract';
     });
+}
+// A new contract's Ref Number: 8 letters and digits, like the others
+function _dbNewRef() {
+  var c = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', r = '', have = {}, i;
+  CONTRACT_RAW.forEach(function(x) { if (x && x['Ref Number']) have[String(x['Ref Number'])] = 1; });
+  do {
+    r = '';
+    var a = new Uint32Array(8); (window.crypto || window.msCrypto).getRandomValues(a);
+    for (i = 0; i < 8; i++) r += c.charAt(a[i] % 36);
+  } while (have[r]);
+  return r;
+}
+// The contract row as the sheet will have it, from what's sent to push/addContract.php
+function _dbContractFromForm(fd) {
+  var g = function(k) { var v = fd.get ? fd.get(k) : ''; return v == null ? '' : String(v); };
+  var d = new Date(), today = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  return { 'Date': today, 'Game': g('game'), 'Client': g('client'), 'Target Start Date': g('target_start'), 'Target End Date': g('target_end'),
+           'Start Date': '', 'End Date': '', 'Quote': g('quote'), 'Status': g('payment'), 'Payment': g('payment'), 'Notes': g('notes'),
+           'Summary': g('summary'), 'Ref Number': g('ref') };
+}
+// Contracts changed here: redraw what shows them
+function _dbContractsChanged() {
+  try { if (typeof renderPublishersViewKeepOpen === 'function' && _activeTab === 'publishers') renderPublishersViewKeepOpen(); } catch (e) {}
+  try { if (typeof renderDashView === 'function' && _activeTab === 'dash') renderDashView(); } catch (e) {}
+  try { _dbTabCounts(); } catch (e) {}
 }
 // ── end Contract dialog ─────────────────────────────────────────────────────
 

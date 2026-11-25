@@ -2866,7 +2866,10 @@ function renderPublishersView() {
         // Latest sheet row first (reverse of sheet order)
         return ESTIMATES_RAW.indexOf(b) - ESTIMATES_RAW.indexOf(a);
       });
+      // Estimates, invoices, payments and contracts: drawn one by one, then put together latest first
+      var _rows = [];
       sortedEsts.forEach(function(est) {
+        var _s0 = html.length;
         var amtFmt = est.amount ? '$' + parseFloat(est.amount).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
         var globalIdx = ESTIMATES_RAW.indexOf(est);
         var openAttr = est.url ? ' onclick="event.stopPropagation();window.open(\'' + esc(est.url) + '\',\'_blank\')"' : '';
@@ -2917,17 +2920,19 @@ function renderPublishersView() {
         html += '</div>'; // .estimate-item-actions
         html += '</div>'; // .estimate-item-body
         html += '</div>'; // .estimate-item
+        _rows.push({ t: _dbDay(est.date), h: html.slice(_s0) }); html = html.slice(0, _s0);
       });
 
       // Payments to collaborators for this game — latest first
       g.payments.slice().sort(function(a, b) { return CONTRACT_RAW.indexOf(b) - CONTRACT_RAW.indexOf(a); })
-        .forEach(function(pay) { html += _paymentItemHtml(pay); });
+        .forEach(function(pay) { _rows.push({ t: _dbDay(pay.Date), h: _paymentItemHtml(pay) }); });
 
       // Contracts for this game — latest sheet row first
       var sortedCons = g.contracts.slice().sort(function(a, b) {
         return CONTRACT_RAW.indexOf(b) - CONTRACT_RAW.indexOf(a);
       });
       sortedCons.forEach(function(con) {
+        var _s0 = html.length;
         var quoteNum = parseFloat(con.Quote || '');
         var quote    = isNaN(quoteNum) ? '—' : '$' + quoteNum.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
         var payment  = _conStatus(con) || (/^(estimate|invoice)$/i.test(String(con.Type || '').trim()) ? _ceStatusValue(con) : '');
@@ -2980,7 +2985,11 @@ function renderPublishersView() {
         '</div>';
         html += '</div>'; // .client-contract-details
         html += '</div>'; // .contract-item
+        _rows.push({ t: _dbDay(con.Date), h: html.slice(_s0) }); html = html.slice(0, _s0);
       });
+      // Latest first (same day: as they were — each kind already latest first)
+      _rows.map(function(r, i) { r.i = i; return r; }).sort(function(a, b) { return (b.t - a.t) || (a.i - b.i); })
+        .forEach(function(r) { html += r.h; });
 
       // Footer: Edit Game (left) | + Estimate + + Invoice + + Report (right)
       html += '<div class="game-group-footer">';

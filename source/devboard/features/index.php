@@ -642,7 +642,7 @@ footer a:hover { color:rgba(255,255,255,.7); }
             <div class="dbc-card inv">
               <div class="dbc-row"><span class="dbx-pill inv">Invoiced</span><span class="dbx-ref">P8XW3M5C</span><span class="dbx-date">11/24/2026</span><span class="dbc-sum">Break of Dawn dev</span><span class="dbx-amt">$130.00</span></div>
               <div class="dbc-fields"><div><i>Contract #</i>P8XW3M5C</div><div><i>Amount</i>$130.00</div><div><i>Date</i>11/24/2026</div><div><i>Client</i>Riverbend Games</div></div>
-              <div class="dbx-cbtns"><span class="dbx-cb">✉ Share</span><span class="dbx-cb">Edit</span><span class="dbx-cb inv">+ Invoice</span><span class="dbx-cb del">Delete</span></div>
+              <div class="dbx-cbtns"><span class="dbx-cb">✉ Share</span><span class="dbx-cb">Edit</span><span class="dbx-cb del">Delete</span></div>
             </div>
             <div class="dbc-row paid"><span class="dbx-pill paid">Paid</span><span class="dbx-ref">K4Q7ZR21</span><span class="dbx-date">11/10/2026</span><span class="dbc-sum">Break of Dawn dev</span><span class="dbx-amt">$260.00</span></div>
             <div class="dbc-row est"><span class="dbx-pill est">Estimate</span><span class="dbx-ref">CA7N2E4S</span><span class="dbx-date">11/04/2026</span><span class="dbc-sum">Break of Dawn dev</span><span class="dbx-amt">$390.00</span></div>

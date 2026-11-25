@@ -2945,7 +2945,7 @@ function renderPublishersView() {
         if (est.contract_id) {
           html += '<button type="button" class="btn-contract-action" onclick="event.stopPropagation();openContractEditForEstimate(' + globalIdx + ')">Edit</button>';
         }
-        html += '<button type="button" class="btn-contract-action invoice" onclick="event.stopPropagation();openInvoiceFromEstimate(' + globalIdx + ')">+ Invoice</button>';
+        if (!isInvoice) html += '<button type="button" class="btn-contract-action invoice" onclick="event.stopPropagation();openInvoiceFromEstimate(' + globalIdx + ')">+ Invoice</button>';   // invoices are made from estimates
         html += '<button type="button" class="estimate-del-btn" onclick="event.stopPropagation();_estStartDelete(' + globalIdx + ')">🗑 Delete</button>';
         html += '</div>';
         // Inline confirm (shown in place of action buttons when delete is clicked)

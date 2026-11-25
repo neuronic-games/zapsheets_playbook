@@ -288,7 +288,16 @@ label.me-dot { position:relative; overflow:hidden; cursor:pointer; }
 .my-sheets a.app-row span { margin-left:auto; font:600 12px 'Inter',sans-serif; color:#fff; background:var(--navy); border-radius:999px; padding:.3rem .85rem; }
 .my-sheets a.sh { padding-left:2.9rem; }
 .account.dash { min-height:calc(100vh - 140px); }
-.account.dash .acct-grid { grid-template-columns:1fr; max-width:760px; }
+.account.dash .acct-grid { grid-template-columns:minmax(0,1fr); max-width:760px; }
+/* Long sheet names never make the page wider than the phone: the grid's columns may shrink, and so may each row's text */
+.acct-grid > * { min-width:0; }
+.my-sheets a.sh .sh-nm { flex:1 1 auto; }
+@media (max-width:560px) {
+  .account.dash .card { padding:1.1rem 1rem; border-radius:14px; }
+  .my-sheets a.sh { padding-left:2.4rem; gap:.4rem; }
+  .my-sheets a.app-row { margin-left:-.35rem; margin-right:-.35rem; }
+  .my-sheets .sh-when { font-size:11px; }
+}
 .account.dash .dash-sub { color:var(--mid); margin:.4rem 0 0; }
 .my-sheets .sh-none { font-size:13px; color:var(--muted); margin:0; }
 .pc.all button:disabled { opacity:.85; cursor:default; background:#fff; }

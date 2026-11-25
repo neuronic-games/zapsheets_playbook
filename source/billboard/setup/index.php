@@ -160,9 +160,9 @@ body {
     <ol class="gs-steps">
       <li>
         <b>Copy the BillBoard service account</b>
-        <div class="gs-acct"><code>editor@zapsheets-480701.iam.gserviceaccount.com</code><button type="button" class="copy-email-btn" id="copyEmailBtn" onclick="copyEmail()">Copy</button></div>
+        <div class="gs-acct"><code>editor@<wbr>zapsheets-480701.iam.gserviceaccount.com</code><button type="button" class="copy-email-btn" id="copyEmailBtn" onclick="copyEmail()">Copy</button></div>
         <details class="gs-more">
-          <summary>More info</summary>
+          <summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="17"/><circle cx="12" cy="7.5" r=".6" fill="currentColor"/></svg>What is a service account?</summary>
           <p><b>Why share with this address?</b> It’s BillBoard’s own Google account — a service account, not a person. BillBoard reads your sheet and saves the changes you make in the app back to it through this account. It’s the same account for all the GameBoard apps.</p>
           <p><b>What it can see.</b> Only the sheets you share with it. It has no access to the rest of your Google Drive, your Gmail or any other files.</p>
           <p><b>Why Editor?</b> To add the tabs BillBoard needs and write your changes. It only changes the sheet when you do something in the app; you’ll see those changes in the sheet’s version history.</p>

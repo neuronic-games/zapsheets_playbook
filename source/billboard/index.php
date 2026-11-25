@@ -213,6 +213,13 @@ if (!$_gameSlug) {
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?= h($_pubName ?: 'BillBoard') ?></title>
+<link rel="icon" type="image/png" sizes="32x32" href="<?= h($_appRoot) ?>images/bb_icon_32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="<?= h($_appRoot) ?>images/bb_icon_16.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="<?= h($_appRoot) ?>images/bb_icon_180.png" />
+<link rel="manifest" href="<?= h($_appRoot) ?>manifest.php?app=billboard&amp;id=<?= urlencode((string) $_sheetId) ?>&amp;base=<?= urlencode($_appRoot) ?>&amp;start=<?= urlencode($_bbBase) ?>&amp;name=<?= urlencode($_pubName ?: 'BillBoard') ?>" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="<?= h($_pubName ?: 'BillBoard') ?>" />
 <?php require_once dirname(__DIR__, 2) . '/push/linkPreview.php'; echo gbLinkPreview('billboard', $_sheetId, array_filter(['title' => $_pubName ?: null, 'image' => (trim($_settings['Logo URL'] ?? '') && preg_match('#^https?://#', trim($_settings['Logo URL'] ?? ''))) ? trim($_settings['Logo URL']) : null])); ?>
 <style>
 @font-face { font-family:'DINBlack';   src:url('<?= h($_appRoot) ?>fonts/DINBlack.woff2')  format('woff2'); }
@@ -2840,6 +2847,13 @@ foreach ($_allGames as $g) {
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?= h($_name) ?><?= $_summary ? ' — ' . h($_summary) : '' ?></title>
+<link rel="icon" type="image/png" sizes="32x32" href="<?= h($_appRoot) ?>images/bb_icon_32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="<?= h($_appRoot) ?>images/bb_icon_16.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="<?= h($_appRoot) ?>images/bb_icon_180.png" />
+<link rel="manifest" href="<?= h($_appRoot) ?>manifest.php?app=billboard&amp;id=<?= urlencode((string) $_sheetId) ?>&amp;base=<?= urlencode($_appRoot) ?>&amp;start=<?= urlencode($_bbBase) ?>&amp;name=<?= urlencode($_pubName ?: 'BillBoard') ?>" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="<?= h($_pubName ?: 'BillBoard') ?>" />
 <?php require_once dirname(__DIR__, 2) . '/push/linkPreview.php'; echo gbLinkPreview('billboard', $_sheetId, array_filter(['title' => $_name . ($_summary ? ' — ' . $_summary : ''), 'description' => mb_substr(trim(strip_tags($_description ?: $_summary)), 0, 200) ?: null, 'image' => preg_match('#^https?://#', (string) $_heroImg) ? $_heroImg : null])); ?>
 <style>
 @font-face { font-family:'DINBlack';   src:url('<?= $_appRoot ?>fonts/DINBlack.woff2')  format('woff2'); }

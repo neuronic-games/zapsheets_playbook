@@ -26,6 +26,25 @@ if ($app === 'cardboard') {
             ['src' => $base . 'images/cardboard_icon_512.png', 'sizes' => '512x512', 'type' => 'image/png'],
         ],
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+} elseif ($app === 'billboard') {
+    // BillBoard: the catalog (or its public link) on the Home Screen, under the studio's name
+    $name  = trim(mb_substr(preg_replace('/[\x00-\x1f<>]/u', '', (string) ($_GET['name'] ?? '')), 0, 80)) ?: 'BillBoard';
+    $start = (string) ($_GET['start'] ?? '');
+    if ($start === '' || strpos($start, $base) !== 0 || preg_match('#[^A-Za-z0-9_\-/.]#', $start)) $start = $base . $id . '/billboard/';
+    echo json_encode([
+        'name'             => $name,
+        'short_name'       => mb_strlen($name) > 14 ? mb_substr($name, 0, 13) . '…' : $name,
+        'id'               => 'BillBoard_' . md5($start),
+        'start_url'        => $start,
+        'scope'            => $start,
+        'theme_color'      => '#1a1a2e',
+        'background_color' => '#1a1a2e',
+        'display'          => 'standalone',
+        'icons'            => [
+            ['src' => $base . 'images/bb_icon_192.png', 'sizes' => '192x192', 'type' => 'image/png'],
+            ['src' => $base . 'images/bb_icon_512.png', 'sizes' => '512x512', 'type' => 'image/png'],
+        ],
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 } elseif ($app === 'slides') {
     $startUrl = $base . $id . '/pitchboard/slides';
     echo json_encode([

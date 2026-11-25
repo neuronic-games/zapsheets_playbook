@@ -70,12 +70,12 @@ function obsHtml(text) {
 
 // ── Copy a session's notes: formatted (for email or Google Docs) and as plain text ──
 var _copySess = {};
-// The Copy button at the end of an open session; key: unique on the page
+// The Copy button in a session's header (shown while the session is open); key: unique on the page
 function sessCopyBtn(key, game, s) {
   _copySess[key] = { g: game, s: s };
-  return '<div class="sess-copy-row"><button type="button" class="sess-copy-btn" title="Copy these notes, formatted, to paste into an email or a doc"' +
+  return '<button type="button" class="sess-copy-btn" title="Copy these notes, formatted, to paste into an email or a doc"' +
     ' onclick="event.stopPropagation();copySessionNotes(\'' + esc(String(key).replace(/'/g, '')) + '\',this)">' +
-    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>';
+    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button>';
 }
 function _sessCellHtml(text) {   // lines, bullets and pictures, with inline styles that survive pasting
   return String(text || '').split(/(=IMAGE\("[^"]*"\))/i).map(function(p) {
@@ -146,7 +146,7 @@ function copySessionNotes(key, btn) {
 }
 (function() {
   var st = document.createElement('style');
-  st.textContent = '.sess-copy-row{display:flex;justify-content:flex-end;padding:.35rem 1rem .5rem;border-top:1px solid #f0f4f8}' +
+  st.textContent = '.session-header .sess-copy-btn{display:none;margin-left:.75rem;align-self:center}.session-block.open > .session-header .sess-copy-btn{display:inline-flex}' +
     '.sess-copy-btn{font-family:DINBlack,sans-serif;font-size:.62rem;text-transform:uppercase;letter-spacing:.07em;display:inline-flex;align-items:center;gap:.3rem;' +
     'background:transparent;color:#1a5f7a;border:1.5px solid #1a5f7a;border-radius:6px;padding:.25rem .6rem;cursor:pointer;transition:background .15s,color .15s}' +
     '.sess-copy-btn:hover{background:#1a5f7a;color:#fff}.sess-copy-btn.done{background:#2e7a52;border-color:#2e7a52;color:#fff}';

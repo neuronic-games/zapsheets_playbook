@@ -1205,6 +1205,7 @@ function renderSessions() {
     if (s.date)    html += '<span class="session-sep">·</span><span class="session-date">' + esc(fmtDate(s.date)) + '</span>';
     if (locationDisplay) html += '<span class="session-sep">·</span><span class="session-location">' + esc(locationDisplay) + '</span>';
     html += '<span class="session-count">' + s.obs.length + (s.obs.length === 1 ? ' note' : ' notes') + '</span>';
+    if (s.obs.length && !isTM) html += sessCopyBtn('c-' + i, GAME_NAME, s);
     html += '<span class="session-chevron">▼</span>';
     html += '</div>';
     if (s.testers.length || s.submittedBy) {
@@ -1225,7 +1226,6 @@ function renderSessions() {
       });
       html += '</tbody></table>';
     }
-    if (s.obs.length && !isTM) html += sessCopyBtn('c-' + i, GAME_NAME, s);
     html += '</div></div>';  // .session-body .session-body-wrap
     html += '</div>';  // .session-block
   });

@@ -4290,6 +4290,7 @@ function renderBody(gameName, rows) {
       if (s.location) html += '<span class="session-sep">·</span><span class="session-location">' + esc(s.location) + '</span>';
       if (s.length)   html += '<span class="session-sep">·</span><span class="session-length">' + esc(s.length) + '</span>';
       html +=   '<span class="session-count">' + s.obs.length + (s.obs.length === 1 ? ' note' : ' notes') + '</span>';
+      if (s.obs.length) html += sessCopyBtn('d-' + blockId, gameName, s);
       html +=   '<span class="session-chevron">▼</span>';
       html +=   '</div>';
       // Testers as comma-separated line in the header
@@ -4310,7 +4311,6 @@ function renderBody(gameName, rows) {
         });
         html += '</tbody></table>';
       }
-      if (s.obs.length) html += sessCopyBtn('d-' + blockId, gameName, s);
       html += '</div></div>';
       html += '</div>';
     });

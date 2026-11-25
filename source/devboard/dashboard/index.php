@@ -428,6 +428,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .pf-acct-btn { flex:none; font-family:'DINBlack',sans-serif; font-size:.64rem; text-transform:uppercase; letter-spacing:.07em; border:1.5px solid #1a5f7a; color:#1a5f7a; background:#fff; border-radius:6px; padding:.35rem .65rem; cursor:pointer; }
 .pf-acct-btn:hover { background:#1a5f7a; color:#fff; }
 .pf-acct-note { font-size:.74rem; color:#888; line-height:1.45; margin:0 0 .3rem; }
+.fld-hint { display:block; margin-top:.25rem; font-family:'DINRegular',sans-serif; font-size:.72rem; font-weight:normal; text-transform:none; letter-spacing:0; color:#8a94a0; line-height:1.4; }
 .dash-contracts > .act-more:first-child { border-top:none; border-bottom:1px solid #f0f4f8; }   /* Show earlier, above the list */
 .dash-contract-game { font-family:'DINBlack',sans-serif; color:#1a5f7a; }
 .dash-contract-client { color:#666; font-size:.72rem; }
@@ -1552,13 +1553,13 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
     <div id="profilePhotoWrap" hidden><img id="profilePhotoImg" src="" alt="" style="display:none"><span id="profilePhotoPlaceholder"></span></div>
     <!-- Bio fields -->
     <div style="display:flex;flex-direction:column;gap:.65rem;margin:.75rem 0 .5rem">
-      <label class="ge-label">Description<textarea id="profileDesc" class="ge-input ge-textarea" placeholder="Brief bio…"></textarea></label>
-      <label class="ge-label" style="text-transform:none;letter-spacing:0"><span style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em">Skills</span> <span style="color:#bbb;font-size:.65rem">(comma-separated)</span><input type="text" id="profileSkills" class="ge-input" placeholder="Game Designer, Tester…" /></label>
-      <label class="ge-label">Mailing Address<textarea id="profileLocation" class="ge-input ge-textarea" placeholder="Street&#10;City, State, ZIP" rows="3"></textarea></label>
-      <label class="ge-label">Messaging<input type="text" id="profileDiscord" class="ge-input" placeholder="@handle or username" /></label>
-      <label class="ge-label">Phone<input type="tel" id="profilePhone" class="ge-input" placeholder="+1 555 000 0000" /></label>
-      <label class="ge-label">Preferred Payment Method<input type="text" id="profilePayment" class="ge-input" placeholder="e.g. Venmo: @YourName  or  PayPal: you@email.com" /></label>
-      <label class="ge-label">Notes<textarea id="profileNotes" class="ge-input ge-textarea" placeholder="Availability, preferences…" rows="2"></textarea></label>
+      <label class="ge-label">Description<textarea id="profileDesc" class="ge-input ge-textarea" placeholder="Brief bio…"></textarea><span class="fld-hint">A short introduction for the people you work with — kept in the sheet’s bios tab.</span></label>
+      <label class="ge-label" style="text-transform:none;letter-spacing:0"><span style="font-family:'DINBlack',sans-serif;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em">Skills</span> <span style="color:#bbb;font-size:.65rem">(comma-separated)</span><input type="text" id="profileSkills" class="ge-input" placeholder="Game Designer, Tester…" /><span class="fld-hint">What you do, for the people you work with — kept in the bios tab.</span></label>
+      <label class="ge-label">Mailing Address<textarea id="profileLocation" class="ge-input ge-textarea" placeholder="Street&#10;City, State, ZIP" rows="3"></textarea><span class="fld-hint">On your estimates, invoices and payment slips when Settings has no studio address.</span></label>
+      <label class="ge-label">Messaging<input type="text" id="profileDiscord" class="ge-input" placeholder="@handle or username" /><span class="fld-hint">How the people you work with can reach you — kept in the bios tab.</span></label>
+      <label class="ge-label">Phone<input type="tel" id="profilePhone" class="ge-input" placeholder="+1 555 000 0000" /><span class="fld-hint">On your estimates, invoices and payment slips.</span></label>
+      <label class="ge-label">Preferred Payment Method<input type="text" id="profilePayment" class="ge-input" placeholder="e.g. Venmo: @YourName  or  PayPal: you@email.com" /><span class="fld-hint">When someone records a payment to you, this shows as “Paid via” and on your payment slip.</span></label>
+      <label class="ge-label">Notes<textarea id="profileNotes" class="ge-input ge-textarea" placeholder="Availability, preferences…" rows="2"></textarea><span class="fld-hint">Just for you — not on any document.</span></label>
     </div>
     <input type="file" id="profilePhotoFile" accept="image/*" style="display:none">
     <div class="sync-log" id="profileLog" style="display:none"></div>
@@ -1577,25 +1578,25 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
     <div style="display:flex;gap:1rem;align-items:center;margin:.25rem 0 .5rem">
       <div class="profile-photo-wrap" id="companyLogoWrap"
            style="width:88px;height:56px;border-radius:6px;flex-shrink:0"
-           title="Click to change logo"
+           title="Your logo, at the top of your estimates, invoices and payment slips — click to change it"
            onclick="document.getElementById('companyLogoFile').click()">
         <img id="companyLogoImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain">
         <span id="companyLogoPlaceholder" style="padding:.3rem">Logo</span>
       </div>
       <label class="ge-label" style="flex:1">Company Name
-        <input type="text" id="companyName" class="ge-input" placeholder="Your studio or company" />
+        <input type="text" id="companyName" class="ge-input" placeholder="Your studio or company" /><span class="fld-hint">At the top of your estimates, invoices and payment slips.</span>
       </label>
     </div>
     <input type="file" id="companyLogoFile" accept="image/*" style="display:none" onchange="companyLogoFileChange(this)">
     <label class="ge-label" style="margin-top:.35rem">Address
       <textarea id="companyAddress" class="ge-input" rows="3"
         placeholder="Street&#10;City, State, ZIP"
-        style="resize:vertical;min-height:3.5rem;line-height:1.5"></textarea>
+        style="resize:vertical;min-height:3.5rem;line-height:1.5"></textarea><span class="fld-hint">Under your studio’s name on your documents.</span>
     </label>
     <label class="ge-label" style="margin-top:.35rem">Payment Info
       <textarea id="companyPaymentInfo" class="ge-input" rows="4"
         placeholder="ACH Payments:&#10;Bank Name&#10;Routing: ...&#10;Account: ..."
-        style="resize:vertical;min-height:4rem;line-height:1.5;font-size:.8rem"></textarea>
+        style="resize:vertical;min-height:4rem;line-height:1.5;font-size:.8rem"></textarea><span class="fld-hint">On your invoices — how clients can pay you.</span>
     </label>
     <div class="sync-log" id="companyLog" style="display:none"></div>
     <div class="sync-dialog-actions">

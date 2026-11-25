@@ -1428,6 +1428,7 @@ if ($_sheet_id && is_dir($_sheets_root)) {
     .pf-acct-btn { flex:none; font-family:'DINBlack',sans-serif; font-size:.64rem; text-transform:uppercase; letter-spacing:.07em; border:1.5px solid #1a1a2e; color:#1a1a2e; background:#fff; border-radius:6px; padding:.35rem .65rem; cursor:pointer; }
     .pf-acct-btn:hover { background:#1a1a2e; color:#fff; }
     .pf-acct-note { font-size:.74rem; color:#888; line-height:1.45; margin:0; }
+    .fld-hint { display:block; margin-top:.25rem; font-family:'DINRegular',sans-serif; font-size:.72rem; font-weight:normal; text-transform:none; letter-spacing:0; color:#8a94a0; line-height:1.4; }
     .ge-label {
       display:flex; flex-direction:column; gap:.28rem;
       font-family:'DINBlack',sans-serif; font-size:.62rem;
@@ -2272,7 +2273,7 @@ if ($_sheet_id && is_dir($_sheets_root)) {
       </div>
       <p class="pf-acct-note">Your name, email and picture come from your GameBoard account — the same in every app. Below: what PitchBoard keeps about you for this sheet.</p>
       <input type="hidden" id="profileName" /><input type="hidden" id="profileEmail" />
-      <label class="ge-label">Phone<input type="tel"   id="profilePhone" class="ge-input" placeholder="+1 555 000 0000" /></label>
+      <label class="ge-label">Phone<input type="tel"   id="profilePhone" class="ge-input" placeholder="+1 555 000 0000" /><span class="fld-hint">In the signature of the pitch emails PitchBoard writes for you, and in the top bar.</span></label>
     </div>
     <div class="sync-log" id="profileLog" style="display:none"></div>
     <div class="sync-dialog-actions" style="margin-top:1.2rem">

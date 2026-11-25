@@ -202,6 +202,14 @@ body.gb-setup .gs-steps > li:last-child > b { margin:0; }
 body.gb-setup .gs-acct { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; background:#f6f7fb; border:1px solid #e3e5ef; border-radius:9px; padding:.5rem .65rem; }
 body.gb-setup .gs-acct code { font-size:.8rem; color:#333; overflow-wrap:anywhere; flex:1 1 14rem; }
 body.gb-setup .gs-steps .gs-start { margin:.1rem 0 .7rem; }
+body.gb-setup .gs-more { margin:.6rem 0 0; border:1px solid #e3e5ef; border-radius:9px; background:#fff; }
+body.gb-setup .gs-more summary { cursor:pointer; padding:.45rem .7rem; font-family:var(--gb-black); font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; color:var(--gb-accent-dk); list-style:none; display:flex; align-items:center; gap:.4rem; }
+body.gb-setup .gs-more summary::-webkit-details-marker { display:none; }
+body.gb-setup .gs-more summary::before { content:'ⓘ'; font-family:var(--gb-text); font-size:.9rem; text-transform:none; }
+body.gb-setup .gs-more summary::after { content:'▾'; margin-left:auto; font-size:.75rem; transition:transform .15s; }
+body.gb-setup .gs-more[open] summary::after { transform:rotate(180deg); }
+body.gb-setup .gs-more p { margin:0; padding:0 .8rem .6rem; font-size:.8rem; line-height:1.5; color:#555; }
+body.gb-setup .gs-more p b { color:#333; }
 body.gb-setup .gs-how { font-size:.8rem; color:#888; margin:0 0 .2rem; }
 body.gb-setup .gs-sub { padding-left:1.15rem; margin:0 0 .7rem; font-size:.84rem; }
 body.gb-setup .gs-sub li { margin:0 0 .2rem; }

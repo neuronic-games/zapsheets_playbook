@@ -143,6 +143,14 @@ body {
       <li>
         <b>Copy the DevBoard service account</b>
         <div class="gs-acct"><code>editor@zapsheets-480701.iam.gserviceaccount.com</code><button type="button" class="copy-email-btn" id="copyEmailBtn" onclick="copyEmail()">Copy</button></div>
+        <details class="gs-more">
+          <summary>More info</summary>
+          <p><b>Why share with this address?</b> It’s DevBoard’s own Google account — a service account, not a person. DevBoard reads your sheet and saves the changes you make in the app back to it through this account. It’s the same account for all the GameBoard apps.</p>
+          <p><b>What it can see.</b> Only the sheets you share with it. It has no access to the rest of your Google Drive, your Gmail or any other files.</p>
+          <p><b>Why Editor?</b> To add the tabs DevBoard needs and write your changes. It only changes the sheet when you do something in the app; you’ll see those changes in the sheet’s version history.</p>
+          <p><b>Your data stays yours.</b> The sheet stays in your Google Drive. DevBoard keeps a copy of what it reads on its server so pages load quickly; it isn’t shared with anyone.</p>
+          <p><b>Stop any time.</b> Remove the address in the sheet’s Share window and DevBoard can no longer open the sheet. Everything in it stays where it is.</p>
+        </details>
       </li>
       <li>
         <b>Open (or make) a Google Spreadsheet, share it with DevBoard, and copy its URL</b>

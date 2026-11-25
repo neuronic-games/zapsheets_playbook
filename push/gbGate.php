@@ -51,6 +51,8 @@ function gbGate(array $apps, bool $always = true): void {
         if (cbSheetUnlocked($sheet)) return;
         if (stripeSheetPlan($sheet, $app)['is_core']) return;   // paid for on the sheet, before accounts
     }
+    if (gbAppAccess($p, $app)['u'] < time() && gbAppAccess($p, $app)['st'] === 'uninvited')
+        gbGateStop(['error' => gbUninvitedMsg($name), 'uninvited' => true, 'app' => $app]);
     if (gbAppAccess($p, $app)['u'] < time())
         gbGateStop(['error' => 'Your free week has ended — subscribe to ' . $name . ' (or get all four) to keep going.', 'locked' => true, 'app' => $app]);
 }

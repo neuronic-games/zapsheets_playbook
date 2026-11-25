@@ -546,7 +546,8 @@ body.designs .app { display:flex; flex-direction:column; }
   function post(fields) {
     var fd = new FormData(); Object.keys(fields).forEach(function(k) { fd.append(k, fields[k]); });
     return fetch(APP_BASE + 'push/gameboardAccount.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
-      .then(function(r) { if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response'); return r; });
+      .then(function(r) { if (r && r.waiting) location.href = APP_BASE + 'waiting';   // the Waiting Room: no sign-in until let in
+        if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response'); return r; });
   }
   function show() {
     document.body.classList.toggle('signed-out', !acct);

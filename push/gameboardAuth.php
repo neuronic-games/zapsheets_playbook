@@ -10,7 +10,7 @@
  *   token = base64url(JSON {e: email, n: name, st: state, u: access until, te: trial end,
  *                           pe: period end, a: {app: {st, u, pe, p}}, all: all-in-one,
  *                           x: token expires}) . "." . HMAC-SHA256
- *   state = trial | code | subscribed | activated | locked — for each app in a (st/u/pe are CardBoard's)
+ *   state = trial | code | subscribed | activated | locked | uninvited (let in from the Waiting Room to other apps only) — for each app in a (st/u/pe are CardBoard's)
  *   Which apps are paid for is kept in the Admin sheet's app columns (CardBoard … BillBoard, All Apps).
  *
  * An activation key or a comped sheet (STRIPE_PRO_SHEET_IDS) unlocks a spreadsheet for anyone.
@@ -86,8 +86,15 @@ function cbAccessFromUser(array $u): array {
         $bits = preg_split('/\s+/', trim($part), 2);
         if (count($bits) === 2) $codes[strtolower($bits[0])] = preg_match('/^perpetual/i', $bits[1]) ? GB_FOREVER : (strtotime($bits[1] . ' UTC') ?: 0);
     }
+    // Trial Apps (from the Waiting Room): the free week is only for these apps, each with its own end
+    $ta = [];
+    foreach (explode(',', (string) ($u['Trial Apps'] ?? '')) as $part) {
+        $bits = preg_split('/\s+/', trim($part), 2);
+        if (count($bits) === 2) $ta[strtolower($bits[0])] = strtotime($bits[1] . ' UTC') ?: 0;
+    }
     $apps  = [];
     foreach (GB_APP_COLS as $app => $colName) {
+        $tea = $ta ? ($ta[strtolower($colName)] ?? 0) : $te;   // this app's free week
         [$t, $plan, $pe] = gbPaidUntil((string) ($u[$colName] ?? ''));
         if ($app === 'cardboard' && $t === 0 && in_array(strtolower((string) ($u['Status'] ?? '')), STRIPE_LIVE_STATUSES, true)) {
             $pe = (string) ($u['Period End'] ?? '');   // the older single subscription
@@ -97,10 +104,11 @@ function cbAccessFromUser(array $u): array {
         if ($all[0] > $t) { $t = $all[0]; $plan = 'pro'; $pe = $all[2]; }
         $c = max($cu, $codes[strtolower($colName)] ?? 0);   // a code for every app, or one for this app
         if ($act)            { $st = 'activated';  $until = GB_FOREVER; $plan = 'pro'; }
-        elseif ($t > $now)   { $st = 'subscribed'; $until = max($t, $te, $c); }
-        elseif ($c > $now)   { $st = 'code';       $until = max($c, $te); }
-        elseif ($te > $now)  { $st = 'trial';      $until = $te; }
-        else                 { $st = 'locked';     $until = max($te, $t, $c); }
+        elseif ($t > $now)   { $st = 'subscribed'; $until = max($t, $tea, $c); }
+        elseif ($c > $now)   { $st = 'code';       $until = max($c, $tea); }
+        elseif ($tea > $now) { $st = 'trial';      $until = $tea; }
+        elseif ($ta && !isset($ta[strtolower($colName)])) { $st = 'uninvited'; $until = 0; }
+        else                 { $st = 'locked';     $until = max($tea, $t, $c); }
         $apps[$app] = ['st' => $st, 'u' => $until, 'pe' => $t > $now ? $pe : '', 'p' => $t > $now || $act ? $plan : ''];
     }
     $sh = array_values(array_filter(array_map('trim', explode(',', (string) ($u['Sheets'] ?? ''))), 'stripeValidSheetId'));
@@ -112,6 +120,11 @@ function cbAccessFromUser(array $u): array {
         'status' => (string) ($u['Status'] ?? ''), 'studio' => (string) ($u['Studio'] ?? ''),
         'image' => (string) ($u['Image'] ?? ''),   // profile picture (a link)
     ];
+}
+
+/** An app the person hasn't been let in to from the Waiting Room yet. */
+function gbUninvitedMsg(string $name): string {
+    return 'You haven’t been invited to ' . $name . ' yet — we’ll email you when you can use it.';
 }
 
 /** One app's access from a token or cbAccessFromUser(); tokens from before the app columns only knew CardBoard. */
@@ -170,6 +183,7 @@ function cbRequireAccess(string $sheetId, string $app = 'cardboard'): void {
     if (cbSheetUnlocked($sheetId)) return;
     if (gbAppAccess($p, $app)['u'] < time()) {
         $name = array_key_exists($app, GB_APP_COLS) ? GB_APP_COLS[$app] : 'this app';
+        if (gbAppAccess($p, $app)['st'] === 'uninvited') { echo json_encode(['error' => gbUninvitedMsg($name), 'uninvited' => true]); exit; }
         echo json_encode(['error' => 'Your free week has ended — subscribe to ' . $name . ' (or get all four) to keep going.', 'locked' => true]); exit;
     }
 }

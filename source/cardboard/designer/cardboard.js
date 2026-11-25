@@ -4313,7 +4313,8 @@ function accountPost(action, extra) {
   Object.keys(extra || {}).forEach(function(k) { fd.append(k, extra[k]); });
   if (ACCT && ACCT.token) fd.append('cbt', ACCT.token);
   return fetch(APP_BASE + 'push/gameboardAccount.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
-    .then(function(r) { if (!r || r.error) { var e = new Error(r && r.error ? r.error : 'No response'); e.needAuth = !!(r && r.need_auth); throw e; } return r; });
+    .then(function(r) { if (r && r.waiting) location.href = APP_BASE + 'waiting';   // the Waiting Room: no sign-in until let in
+      if (!r || r.error) { var e = new Error(r && r.error ? r.error : 'No response'); e.needAuth = !!(r && r.need_auth); throw e; } return r; });
 }
 var _acctRefreshing = null;
 function claimSheet() {   // a sheet nobody has set up: it becomes this account's

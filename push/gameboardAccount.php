@@ -22,6 +22,15 @@
  *   redeem   — cbt, code                   → {ok, token, account, days, apps}  (a free code from the Admin sheet's Codes tab —
  *                                            every app, or only the apps in its App column —
  *                                            or an activation key: unlocked with no time limit)
+ *   waitlist — cbt                         → {ok, users: [{email, name, created, waiting, apps}]}  (the Waiting Room, oldest
+ *                                            first, and people let in to only some apps; admins only)
+ *   letin    — cbt, emails (JSON list), apps (JSON list of app keys; none = every app)
+ *                                         → {ok, users, done: [{email, apps, mailed}], errors}  (a free week of those apps
+ *                                            starts now — the other apps stay closed — and each person is emailed; admins only)
+ * Admins: Role = admin in their Admin-sheet row.
+ * The Waiting Room (settings tab: WaitingRoomOn = TRUE): a new account waits (Status = waiting) instead of starting
+ * its free week. Signing up, logging in or refreshing then answers {error, waiting: true} with no token, and the
+ * apps go to {base}waiting.
  * app (optional, default cardboard) — the app asking: account.state/until/period_end are that app's.
  * account = {email, name, state: trial|code|subscribed|activated|locked, until, trial_end, period_end, status, sheet_unlocked,
  *            apps: {cardboard|devboard|pitchboard|billboard: {state, until, period_end, plan}}, all_in_one}
@@ -70,7 +79,9 @@ function gbNoteApp(string $sheet, string $app): void {
     $apps[$app] = time();
     @file_put_contents($f, json_encode($apps), LOCK_EX);
 }
+const GB_WAITING_MSG = 'Thank you for creating your account. During this period we have limited new accounts on our site. You are added to our waitlist and will be notified when you may log in.';
 function cbSignedIn(array $u, string $sheet, bool $taken = true): void {
+    if (strtolower(trim((string) ($u['Status'] ?? ''))) === 'waiting') fail(GB_WAITING_MSG, ['waiting' => true]);   // no token until let in
     $a = cbAccessFromUser($u);
     $acc = cbAccountOut($a, $sheet);
     if (!empty($acc['owner'])) gbNoteApp($sheet, (string) ($_POST['app'] ?? 'cardboard'));
@@ -101,6 +112,48 @@ function cbCodeEmailHtml(string $code, string $mode = 'signup'): string {
           '<div style="font-size:15px;line-height:1.55;color:#555a70;margin:0 0 22px;">' . ($mode === 'reset' ? 'Enter this code to choose a new password for your GameBoard account.' : ($mode === 'change' ? 'Enter this code to sign in to your GameBoard account with this email from now on.' : 'Enter this code to finish creating your GameBoard account.')) . ' It works for 15 minutes.</div>' .
           '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;"><tr>' . $digits . '</tr></table>' .
           '<div style="font-size:13px;line-height:1.55;color:#8a8fa8;margin:0 0 22px;">One account for PitchBoard, DevBoard, CardBoard and BillBoard. Your first week is free, with every feature. If you didn’t ask for this code, you can ignore this email.</div>' .
+        '</td></tr>' .
+        '<tr><td style="padding:16px 28px 22px;border-top:1px solid #eeecf6;font-family:' . $font . ';font-size:12px;color:#9aa0b8;">' .
+          '<a href="' . $app . '" style="color:#d9534a;text-decoration:none;font-weight:600;">Open GameBoard</a> &nbsp;·&nbsp; Tools for board game makers &nbsp;·&nbsp; © ' . gmdate('Y') . ' ZapSheets' .
+        '</td></tr>' .
+      '</table></td></tr></table></body></html>';
+}
+
+/** "DevBoard", "DevBoard and PitchBoard", "CardBoard, DevBoard and PitchBoard" */
+function gbAppList(array $apps): string {
+    if (count($apps) >= 4) return 'GameBoard';
+    if (count($apps) <= 1) return (string) ($apps[0] ?? 'GameBoard');
+    return implode(', ', array_slice($apps, 0, -1)) . ' and ' . end($apps);
+}
+/** The email that says someone's been let in from the Waiting Room (to some apps, or all): the same look as the code email. */
+function gbLetInText(array $apps): string {
+    $what = count($apps) >= 4 ? 'every GameBoard app' : gbAppList($apps);
+    return "Good news: you can now use " . $what . ".\r\n\r\nLog in at " . gbLinkBase() . "gameboard with the email and password you signed up with. "
+         . "Your free week of " . $what . ", with every feature, starts now.\r\n\r\n— GameBoard by ZapSheets";
+}
+function gbLetInHtml(string $name, array $apps): string {
+    $what = htmlspecialchars(count($apps) >= 4 ? 'every GameBoard app' : gbAppList($apps), ENT_QUOTES);
+    $base = gbLinkBase();
+    $logo = htmlspecialchars($base . 'images/gameboard_icon_180.png', ENT_QUOTES);
+    $app  = htmlspecialchars($base . 'gameboard', ENT_QUOTES);
+    $font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+    $hi   = trim($name) !== '' ? 'Hi ' . htmlspecialchars(preg_split('/\s+/', trim($name))[0], ENT_QUOTES) . ', your' : 'Your';
+    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><title>You can now log in to GameBoard</title></head>' .
+      '<body style="margin:0;padding:0;background:#f3f2fa;">' .
+      '<div style="display:none;max-height:0;overflow:hidden;">Your GameBoard account is ready — log in and start your free week.</div>' .
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f2fa;"><tr><td align="center" style="padding:32px 16px;">' .
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 18px rgba(46,39,99,.10);">' .
+        '<tr><td style="background:#14132a;padding:22px 28px;">' .
+          '<table role="presentation" cellpadding="0" cellspacing="0"><tr>' .
+            '<td style="padding-right:12px;"><img src="' . $logo . '" width="40" height="40" alt="" style="display:block;border-radius:9px;"></td>' .
+            '<td style="font-family:' . $font . ';font-size:22px;font-weight:800;letter-spacing:.5px;"><span style="color:#f6efe2;">Game</span><span style="color:#f0766a;">Board</span></td>' .
+          '</tr></table></td></tr>' .
+        '<tr><td style="padding:30px 28px 8px;font-family:' . $font . ';color:#1b1b2b;">' .
+          '<div style="font-size:20px;font-weight:700;color:#2e2763;margin:0 0 8px;">You can now log in</div>' .
+          '<div style="font-size:15px;line-height:1.55;color:#555a70;margin:0 0 22px;">' . $hi . ' GameBoard account is ready for <b style="color:#2e2763;">' . $what . '</b>. Log in with the email and password you signed up with — your free week, with every feature, starts now.</div>' .
+          '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 26px;"><tr><td style="background:#e5604f;border-radius:10px;">' .
+            '<a href="' . $app . '" style="display:inline-block;padding:13px 26px;font-family:' . $font . ';font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;">Log in to GameBoard</a></td></tr></table>' .
+          '<div style="font-size:13px;line-height:1.55;color:#8a8fa8;margin:0 0 22px;">One account for PitchBoard, DevBoard, CardBoard and BillBoard.</div>' .
         '</td></tr>' .
         '<tr><td style="padding:16px 28px 22px;border-top:1px solid #eeecf6;font-family:' . $font . ';font-size:12px;color:#9aa0b8;">' .
           '<a href="' . $app . '" style="color:#d9534a;text-decoration:none;font-weight:600;">Open GameBoard</a> &nbsp;·&nbsp; Tools for board game makers &nbsp;·&nbsp; © ' . gmdate('Y') . ' ZapSheets' .
@@ -198,7 +251,7 @@ if ($action === 'verify') {
     $file  = cbPrivateDir('codes') . '/' . hash('sha256', $email) . '.json';
     $c = json_decode((string) @file_get_contents($file), true);
     cbCheckCode($file, $email, $code, '');
-    $r = cbAdmin(['action' => 'user', 'email' => $email, 'name' => trim((string) ($_POST['name'] ?? '')), 'sheet' => $sheet,
+    $r = cbAdmin(['action' => 'user', 'email' => $email, 'name' => trim((string) ($_POST['name'] ?? '')), 'sheet' => $sheet, 'signup' => true,
                   'fields' => ['Password Hash' => password_hash($pw, PASSWORD_DEFAULT)]]);
     if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t open your account');
     cbSignedIn($r['user'], $sheet, !empty($r['taken']));
@@ -261,6 +314,33 @@ if ($action === 'sheets') {
     }
     usort($out, function ($x, $y) { return $y['opened'] <=> $x['opened']; });
     ok(['sheets' => $out]);
+}
+
+// The Waiting Room, for admins (Role = admin in the Admin sheet): who's waiting, and letting someone in
+if ($action === 'waitlist' || $action === 'letin') {
+    $p = cbTokenIn();
+    $me = cbFind(strtolower($p['e']));
+    if (!$me || strtolower(trim((string) ($me['Role'] ?? ''))) !== 'admin') fail('Only admins can see the Waiting Room', ['not_admin' => true]);
+    $extra = [];
+    if ($action === 'letin') {
+        $emails = array_values(array_filter(array_map(function ($e) { return strtolower(trim((string) $e)); }, (array) json_decode((string) ($_POST['emails'] ?? '[]'), true)),
+                  function ($e) { return filter_var($e, FILTER_VALIDATE_EMAIL); }));
+        $apps = array_values(array_intersect(array_map('strtolower', (array) json_decode((string) ($_POST['apps'] ?? '[]'), true)), array_keys(GB_APP_COLS)));
+        if (!$emails) fail('Choose who to invite');
+        if (!$apps) fail('Choose at least one app');
+        $r = cbAdmin(['action' => 'letin', 'emails' => $emails, 'apps' => $apps]);
+        if (empty($r['ok'])) fail($r['error'] ?? 'Couldn’t invite them');
+        $done = [];
+        foreach ($r['done'] ?? [] as $d) {
+            $why = cbSendMail($d['Email'], 'You can now use ' . gbAppList($d['Apps']), gbLetInText($d['Apps']), gbLetInHtml((string) $d['Name'], $d['Apps']));
+            $done[] = ['email' => $d['Email'], 'apps' => $d['Apps'], 'mailed' => $why === ''];
+        }
+        $extra = ['done' => $done, 'errors' => $r['errors'] ?? []];
+    }
+    $w = cbAdmin(['action' => 'waiting']);
+    if (empty($w['ok'])) fail($w['error'] ?? 'Couldn’t read the Waiting Room');
+    $users = array_map(function ($x) { return ['email' => $x['Email'], 'name' => $x['Name'], 'created' => $x['Created'], 'waiting' => !empty($x['Waiting']), 'apps' => $x['Apps'] ?? []]; }, $w['users'] ?? []);
+    ok(['users' => $users] + $extra);
 }
 
 // claim — cbt, sheet: set this sheet up as yours (Connect on the home page, or "Make it mine" when nobody has it)

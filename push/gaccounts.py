@@ -14,6 +14,16 @@
 #            (added on top of any code time left). Each person can use each code once (their Users row
 #            lists them in Codes Used); Max Uses
 #            (blank = no limit) and Expires (blank = never) are optional.
+#   waiting — → {ok, users: [{Email, Name, Created, Waiting, Apps}]}: the people in the Waiting Room (Status = waiting),
+#            and those let in to only some apps (Apps: the apps they're in), oldest first
+#   letin  — emails: [...], apps: [CardBoard, …] (none = every app) → each gets a free week of those apps, starting
+#            now (Trial Apps), and Status = trial. → {ok, done: [{Email, Name, Apps: the apps new to them}], errors}
+#
+# The Waiting Room: while the "settings" tab has WaitingRoomOn = TRUE (key in column A, value in B), a new
+# person who signs up gets Status = waiting and no free week yet; they can't sign in until let in (letin, or by
+# changing their Status in the sheet — their free week of every app then starts the next time they sign in).
+# Trial Apps: when it has anything, the free week is only for those apps, each with its own end —
+# "DevBoard 2026-12-02 23:03:36, PitchBoard 2026-12-09 10:00:00" (the same way as App Codes); other apps stay closed.
 # Answer: {ok, user: {Header: value, …}}
 #
 # The Admin sheet is the one PHP passes as "admin" (CARDBOARD_ADMIN_SHEET in .env), or the built-in ID below.
@@ -31,7 +41,7 @@ ADMIN_SHEET = '1heNPe8GCggJVoUlGvDVwBt697LvD7vtQT5yDfsnV4M0'
 TAB = 'Users'
 HEADERS = ['Email', 'Name', 'Studio', 'Trial Start', 'Trial End', 'Status', 'Plan', 'Period End',
            'Stripe Customer', 'Stripe Subscription', 'Activated', 'Sheets', 'Created', 'Last Seen', 'Password Hash', 'Code Until', 'Codes Used',
-           'CardBoard', 'DevBoard', 'PitchBoard', 'BillBoard', 'All Apps', 'App Codes', 'Image']
+           'CardBoard', 'DevBoard', 'PitchBoard', 'BillBoard', 'All Apps', 'App Codes', 'Image', 'Trial Apps']
 # The app columns say which apps the person pays for: the date the paid time runs to (the Stripe webhook keeps
 # it current; blank when cancelled). DevBoard's cheaper plan is written "2026-12-20 core". "Perpetual" (typed by
 # you) unlocks that app for good. All Apps is the all-in-one plan: every app.
@@ -143,12 +153,56 @@ def main():
                 wb.values_update(q(ws.title) + '!' + ic + str(rowno), params={'valueInputOption': 'USER_ENTERED'}, body={'values': [['=IMAGE("' + img + '")']]})
         else:
             wb.values_append(q(ws.title) + '!A1', params={'valueInputOption': 'RAW', 'insertDataOption': 'INSERT_ROWS'}, body={'values': [line]})
-    def new_person(email):
+    def new_person(email, waiting=False):
         t = now()
+        if waiting: return {'Email': email, 'Status': 'waiting', 'Created': iso(t)}   # the free week starts when let in
         return {'Email': email, 'Trial Start': iso(t), 'Trial End': iso(t + datetime.timedelta(days=TRIAL_DAYS)),
                 'Status': 'trial', 'Created': iso(t)}
+    def start_trial(u):
+        t = now()
+        u['Trial Start'] = iso(t); u['Trial End'] = iso(t + datetime.timedelta(days=TRIAL_DAYS))
+        if str(u.get('Status', '')).strip().lower() in ('', 'waiting'): u['Status'] = 'trial'
+    def waiting_room_on():
+        # settings tab: WaitingRoomOn in column A, TRUE in column B
+        sws = next((w for w in wb.worksheets() if w.title.lower() == 'settings'), None)
+        if sws is None: return False
+        for row in wb.values_get(q(sws.title) + '!A:B').get('values', []):
+            if len(row) >= 2 and str(row[0]).strip().lower() == 'waitingroomon':
+                return str(row[1]).strip().lower() in ('true', 'yes', 'on', '1', 'y')
+        return False
+    def is_waiting(u): return str((u or {}).get('Status', '')).strip().lower() == 'waiting'
 
     action = data.get('action')
+    ALL4 = ['PitchBoard', 'DevBoard', 'CardBoard', 'BillBoard']
+    if action == 'waiting':
+        people = []
+        for x in (rec(r) for r in rows):
+            ta = app_codes(x.get('Trial Apps', ''))
+            if x.get('Email') and (is_waiting(x) or (ta and any(a not in ta for a in ALL4))):
+                people.append({'Email': x.get('Email', ''), 'Name': x.get('Name', ''), 'Created': x.get('Created', ''),
+                               'Waiting': is_waiting(x), 'Apps': [a for a in ALL4 if a in ta]})
+        people.sort(key=lambda x: x['Created'] or '9')
+        out({'ok': True, 'users': people})
+    if action == 'letin':
+        apps = [APP_NAMES[a.strip().lower()] for a in (data.get('apps') or []) if a.strip().lower() in APP_NAMES] or ALL4
+        done, errors = [], []
+        for em in data.get('emails') or []:
+            em = str(em).strip().lower()
+            rn, x = find('Email', em)
+            if not x: errors.append(em + ': no account'); continue
+            have = app_codes(x.get('Trial Apps', ''))
+            if not is_waiting(x) and not have: errors.append(em + ': already has every app'); continue
+            t = now(); new = [a for a in apps if a not in have]
+            for a in new: have[a] = iso(t + datetime.timedelta(days=TRIAL_DAYS))
+            if not new: continue
+            x['Trial Apps'] = ', '.join(a + ' ' + have[a] for a in ALL4 if a in have)
+            if not str(x.get('Trial Start', '')).strip(): x['Trial Start'] = iso(t)
+            x['Trial End'] = max(have.values())
+            if is_waiting(x): x['Status'] = 'trial'
+            write(rn, x)
+            rows[rn - 2] = [x.get(h, '') for h in hdr]
+            done.append({'Email': em, 'Name': x.get('Name', ''), 'Apps': new})
+        out({'ok': True, 'done': done, 'errors': errors})
     if action == 'find':
         n, u = find(str(data.get('field') or ''), data.get('value') or '')
         out({'ok': True, 'user': u})
@@ -158,7 +212,9 @@ def main():
     n, u = find('Email', email)
 
     if action == 'user':
-        u = u or new_person(email)
+        if not u: u = new_person(email, bool(data.get('signup')) and waiting_room_on())
+        elif not is_waiting(u) and not str(u.get('Trial Start', '')).strip() and not str(u.get('Trial End', '')).strip() and not str(u.get('Trial Apps', '')).strip():
+            start_trial(u)   # let in by changing Status in the sheet: the free week starts now
         if data.get('name') and not u.get('Name'): u['Name'] = str(data['name'])[:100]   # only a first name; Profile changes it after
         sheet = str(data.get('sheet') or '').strip()
         if sheet:

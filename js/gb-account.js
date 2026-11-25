@@ -80,7 +80,8 @@
     var ctl = window.AbortController ? new AbortController() : null, tm = ctl ? setTimeout(function() { ctl.abort(); }, 20000) : 0;   // never wait forever
     return _fetch(O.base + 'push/gameboardAccount.php', { method: 'POST', body: fd, signal: ctl ? ctl.signal : undefined })
       .then(function(r) { clearTimeout(tm); return r.json(); }, function(e) { clearTimeout(tm); throw new Error(e && e.name === 'AbortError' ? 'The account check took too long' : 'Couldn’t reach the server'); })
-      .then(function(r) { if (!r || r.error) { var e = new Error(r && r.error ? r.error : 'No response'); e.needAuth = !!(r && r.need_auth); throw e; } return r; });
+      .then(function(r) { if (r && r.waiting) location.href = O.base + 'waiting';   // the Waiting Room: no sign-in until let in
+        if (!r || r.error) { var e = new Error(r && r.error ? r.error : 'No response'); e.needAuth = !!(r && r.need_auth); throw e; } return r; });
   }
   function refresh(force) {
     if (!ACCT) return Promise.reject(new Error('Not signed in'));
@@ -108,6 +109,7 @@
   function onAnswer(r) {
     if (!r || typeof r !== 'object') return;
     if (r.need_auth) { if (r.refresh && ACCT) refresh(true).catch(function() { signIn().catch(function() {}); }); else signIn().catch(function() {}); }
+    else if (r.uninvited) toast(r.error);
     else if (r.locked) { refresh(true).then(apply, apply); openPlans('locked'); }
     else if (r.view_only) { toast('View only — this sheet belongs to another GameBoard account'); refresh(true).then(apply, apply); }
   }
@@ -318,6 +320,7 @@
       else if (!checked()) { msg.textContent = 'Checking your account…'; btn.hidden = true; }
       else if (!isOwner() && a.unclaimed) { msg.innerHTML = '<b>View only.</b> Nobody has set this sheet up with a GameBoard account yet — if it’s yours, make it yours to change it.'; btn.textContent = 'Make it mine'; btn.onclick = claim; }
       else if (!isOwner()) { msg.innerHTML = '<b>View only.</b> This sheet belongs to another GameBoard account — you can look, not change it.'; btn.hidden = true; }
+      else if ((appInfo() || {}).state === 'uninvited') { msg.innerHTML = '<b>You haven’t been invited to ' + esc(O.name) + ' yet.</b> We’ll email you when you can use it.'; btn.hidden = true; }
       else { msg.innerHTML = '<b>Your free week has ended.</b> Everything is safe in your sheet — subscribe to keep using ' + esc(O.name) + '.'; btn.textContent = 'See plans'; btn.onclick = function() { openPlans('locked'); }; }
       bar.hidden = ok || (!a && O.gate === false) || (a && !checked() && !_failed && Date.now() < _quiet);   // pages anyone may look at: no bar until someone signs in
       // Checking (or couldn't check) the account: the callout from the profile button instead of the bar
@@ -536,6 +539,7 @@
     if (x.state === 'code') return '<b>Unlocked with a code</b> · until ' + esc(when(x.until));
     if (x.state === 'trial') { var d = daysLeft(); return '<b>Free week</b> · ' + d + (d === 1 ? ' day' : ' days') + ' left'; }
     if (a.sheet_paid) return '<b>Paid on this sheet</b>';
+    if (x.state === 'uninvited') return '<b>Not invited yet</b>';
     return '<b>Free week ended</b>';
   }
   function renderPlans() {

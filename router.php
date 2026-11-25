@@ -101,6 +101,7 @@ $RESERVED = [
     'billboard',    // setup landing page + public share routes — handled below
     'gameboard',    // the GameBoard hub — handled below
     'dashboard',    // the GameBoard account's dashboard — handled below
+    'waiting',      // the Waiting Room — handled below
     'cardboard',    // setup landing page — handled below
 ];
 
@@ -188,6 +189,11 @@ if (preg_match('#^/shares/cardboard/([a-f0-9]{24})/([A-Za-z0-9\-]+\.(?:png|jpg))
 // ── /dashboard — the GameBoard account's apps and sheets ─────────────────────
 if (preg_match('#^/dashboard/?$#', $uri)) {
     serveFile(__DIR__ . '/source/gameboard/index.php', $MIME);
+}
+
+// ── /waiting — the Waiting Room (new accounts, while WaitingRoomOn) ───────────
+if (preg_match('#^/waiting/?$#', $uri)) {
+    serveFile(__DIR__ . '/source/waiting/index.php', $MIME);
 }
 
 // ── /gameboard — the GameBoard hub (and the root of mygameboard.app) ──────────

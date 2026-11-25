@@ -1121,7 +1121,8 @@ footer a:hover { color:var(--navy); }
   function post(fields) {
     var fd = new FormData(), ep = fields._url || 'gameboardAccount'; Object.keys(fields).forEach(function(k) { if (k !== '_url') fd.append(k, fields[k]); });
     return fetch(APP_BASE + 'push/' + ep + '.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
-      .then(function(r) { if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response'); return r; });
+      .then(function(r) { if (r && r.waiting) location.href = APP_BASE + 'waiting';   // the Waiting Room: no sign-in until let in
+        if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response'); return r; });
   }
   function store(r) {
     acct = { token: r.token, account: r.account, sheet: '', checked: Date.now() };
@@ -1179,20 +1180,27 @@ footer a:hover { color:var(--navy); }
       var when = function(d) { return d ? new Date(d + (d.length === 10 ? 'T12:00:00Z' : '')).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''; };
       var paid = APPS.filter(function(x) { return (apps[x.key] || {}).state === 'subscribed'; }).map(function(x) { return x.name; });
       var left = days(a.trial_end || a.until);
+      // Let in from the Waiting Room to only some apps: their free week is for those apps
+      var some = APPS.some(function(x) { return (apps[x.key] || {}).state === 'uninvited'; });
+      var tri = APPS.filter(function(x) { return (apps[x.key] || {}).state === 'trial'; });
+      if (some && tri.length) left = Math.max.apply(null, tri.map(function(x) { return days(apps[x.key].until); }));
       var txt = a.state === 'activated' ? 'Activated — every app, every feature, no time limit.'
               : a.all_in_one ? 'All-in-one — every app, every feature. Thank you!'
               : paid.length ? 'Subscribed to ' + paid.join(', ').replace(/, ([^,]*)$/, ' and $1') + ' — thank you!'
+              : some && tri.length ? 'Free week of ' + tri.map(function(x) { return x.name; }).join(', ').replace(/, ([^,]*)$/, ' and $1') + ' — ' + left + (left === 1 ? ' day' : ' days') + ' left, with every feature.'
+              : some ? 'You haven’t been invited to any app yet — we’ll email you when you can use one.'
               : a.state === 'trial' ? 'Free week — ' + left + (left === 1 ? ' day' : ' days') + ' left, with every app and feature.'
               : a.state === 'code' ? 'Unlocked with a code until ' + new Date(a.until).toLocaleDateString() + '.'
               : 'Your free week has ended — subscribe to an app, or get all four.';
       $('mePlan').textContent = txt;
-      $('mePlan').classList.toggle('ok', a.state !== 'locked' || paid.length > 0);
+      $('mePlan').classList.toggle('ok', (a.state !== 'locked' && !(some && !tri.length)) || paid.length > 0);
       // Each app: what this account has
       $('meApps').innerHTML = a.state === 'activated' || !a.apps ? '' : APPS.map(function(x) {
         var p = apps[x.key] || {}, st = p.state, d;
         var label = st === 'subscribed' ? (a.all_in_one ? 'All-in-one' : (p.plan === 'core' ? 'Core' : 'Subscribed')) + (p.period_end ? ' · renews ' + when(p.period_end) : '')
                   : st === 'code' ? 'Code · until ' + when(p.until)
                   : st === 'trial' ? 'Free week · ' + (d = days(p.until)) + (d === 1 ? ' day' : ' days') + ' left'
+                  : st === 'uninvited' ? 'Not invited yet'
                   : 'Not subscribed';
         return '<li><img src="' + esc(x.icon) + '" alt=""><b>' + esc(x.name) + '</b><span class="' + (st === 'subscribed' ? 'paid' : '') + '">' + esc(label) + '</span></li>';
       }).join('');
@@ -1249,6 +1257,7 @@ footer a:hover { color:var(--navy); }
     if (p.state === 'subscribed') return (p.plan === 'core' ? 'Core' : 'Subscribed') + (p.period_end ? ' · renews ' + d(p.period_end) : '');
     if (p.state === 'code') return 'Code · until ' + d(p.until);
     if (p.state === 'trial') { var n = Math.max(0, Math.ceil((new Date(p.until).getTime() - Date.now()) / 864e5)); return 'Free week · ' + n + (n === 1 ? ' day' : ' days') + ' left'; }
+    if (p.state === 'uninvited') return 'Not invited yet';
     return '';
   }
   function appUrl(key) {

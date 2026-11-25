@@ -626,6 +626,10 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 }
 .tm-summary-person { color:#1a5f7a; font-family:'DINBlack',sans-serif; font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; }
 .tm-summary-val { color:#555; }
+.tm-summary-row.by-contract { flex-direction:column; gap:.2rem; }
+.tm-summary-line { display:flex; flex-wrap:wrap; align-items:baseline; gap:.25rem .9rem; }
+.tm-summary-con { color:#9a6b1f; font-family:'DINBlack',sans-serif; font-size:.68rem; min-width:9rem; max-width:16rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tm-summary-con.none { color:#aaa; font-style:italic; font-family:'DINRegular',sans-serif; }
 .stat-active   { box-shadow:0 0 0 2.5px #fff, 0 0 0 4.5px rgba(0,0,0,.25); }
 .subtitle-right { margin-left:auto; display:flex; align-items:stretch; gap:.45rem; flex-wrap:wrap; }
 @media (max-width:560px) { .subtitle-right { margin-left:0; width:100%; } }
@@ -5422,29 +5426,42 @@ function _resolveTMPerson(raw) {
 }
 
 function _buildTMSummaryHtml(rows) {
-  // Aggregate T&M rows by person
-  var byPerson = {};
+  // T&M by the contract it's for (the Ref Number noted on the row), then by person
+  var groups = {}, order = [];
   rows.forEach(function(row) {
     var et = (row['Event'] || '').trim().toLowerCase();
     if (et !== 'time' && et !== 'material') return;
-    var person = _resolveTMPerson((row['People'] || '').trim() || '(unknown)');
-    if (!byPerson[person]) byPerson[person] = { mins: 0, cost: 0 };
+    var m = /Ref Number:\s*([A-Za-z0-9_\-]+)/i.exec(String((row['_notes'] || {})['Event'] || ''));
+    var ref = m ? m[1] : '';
+    if (!groups[ref]) { groups[ref] = { people: {}, names: [] }; order.push(ref); }
+    var g = groups[ref], person = _resolveTMPerson((row['People'] || '').trim() || '(unknown)');
+    if (!g.people[person]) { g.people[person] = { mins: 0, cost: 0 }; g.names.push(person); }
     if (et === 'time') {
-      byPerson[person].mins += _parseTMMinutes(row['Observations'] || row['Observation'] || '');
+      g.people[person].mins += _parseTMMinutes(row['Observations'] || row['Observation'] || '');
     } else {
       var c = parseFloat((row['Observations'] || row['Observation'] || '').replace(/[^0-9.]/g, ''));
-      if (!isNaN(c)) byPerson[person].cost += c;
+      if (!isNaN(c)) g.people[person].cost += c;
     }
   });
-  var people = Object.keys(byPerson);
-  if (!people.length) return '';
-  var html = '<div class="tm-summary-row">';
-  people.forEach(function(p) {
-    var parts = [];
-    if (byPerson[p].mins) parts.push(_fmtTMTime(byPerson[p].mins));
-    if (byPerson[p].cost) parts.push('$' + byPerson[p].cost.toFixed(2));
-    if (!parts.length) return;
-    html += '<span><span class="tm-summary-person">' + esc(p) + '</span> <span class="tm-summary-val">' + parts.join(' · ') + '</span></span>';
+  if (!order.length) return '';
+  // Contracts A–Z by what they're for; entries not tied to one last
+  var label = function(ref) { return ref ? (_contractSummaryFor(ref) || '#' + ref) : 'No contract'; };
+  order.sort(function(x, y) { return !x - !y || label(x).localeCompare(label(y)); });
+  var showLabels = order.length > 1 || order[0] !== '';
+  var html = '<div class="tm-summary-row' + (showLabels ? ' by-contract' : '') + '">';
+  order.forEach(function(ref) {
+    var g = groups[ref], line = '';
+    g.names.forEach(function(p) {
+      var parts = [];
+      if (g.people[p].mins) parts.push(_fmtTMTime(g.people[p].mins));
+      if (g.people[p].cost) parts.push('$' + g.people[p].cost.toFixed(2));
+      if (!parts.length) return;
+      line += '<span><span class="tm-summary-person">' + esc(p) + '</span> <span class="tm-summary-val">' + parts.join(' · ') + '</span></span>';
+    });
+    if (!line) return;
+    html += showLabels
+      ? '<div class="tm-summary-line"><span class="tm-summary-con' + (ref ? '' : ' none') + '"' + (ref ? ' title="Ref # ' + esc(ref) + '"' : '') + '>' + esc(label(ref)) + '</span>' + line + '</div>'
+      : line;
   });
   html += '</div>';
   return html;

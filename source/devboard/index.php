@@ -121,7 +121,7 @@ body {
 .ll.ok  { color:#4ade80; }
 .ll.err { color:#ff8a80; }
 </style>
-<link rel="stylesheet" href="css/gameboard-ui.css?v=6" />
+<link rel="stylesheet" href="css/gameboard-ui.css?v=7" />
 </head>
 <body class="gb-app gb-setup gb-dev">
 
@@ -137,19 +137,29 @@ body {
 <div class="page">
   <!-- New sheet: like CardBoard's "New design" -->
   <div class="card" id="gsCard" hidden>
-    <div class="card-title">New sheet</div>
-    <div class="gs-start">
-      <a href="https://docs.google.com/spreadsheets/" target="_blank" rel="noopener"><b>Open a sheet</b><span>Pick one of your Google Sheets to use with DevBoard</span></a>
-      <a href="https://sheets.new" target="_blank" rel="noopener"><b>Start a blank sheet</b><span>A new Google Sheet — DevBoard sets up the tabs it needs</span></a>
-    </div>
-    <div class="instructions">
-      Keep your playtests in a Google Sheet. DevBoard sets up Games and Settings tabs — per-game dev tabs are added as you playtest. Your PitchBoard sheet works too.
-      <ol>
-        <li>Open (or make, above) a Google Spreadsheet and share it with the DevBoard service account.</li>
-        <li>Click <strong>Share</strong> and add <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> <button class="copy-email-btn" id="copyEmailBtn" onclick="copyEmail()">Copy</button> with <strong>Editor</strong> rights.</li>
-        <li>Paste the spreadsheet URL or ID below.</li>
-      </ol>
-    </div>
+    <div class="card-title">Link to your sheet</div>
+    <p class="gs-intro">Keep your playtests in a Google Sheet. DevBoard sets up Games and Settings tabs — per-game dev tabs are added as you playtest. Your PitchBoard sheet works too.</p>
+    <ol class="gs-steps">
+      <li>
+        <b>Copy the DevBoard service account</b>
+        <div class="gs-acct"><code>editor@zapsheets-480701.iam.gserviceaccount.com</code><button type="button" class="copy-email-btn" id="copyEmailBtn" onclick="copyEmail()">Copy</button></div>
+      </li>
+      <li>
+        <b>Open (or make) a Google Spreadsheet, share it with DevBoard, and copy its URL</b>
+        <div class="gs-start">
+          <a href="https://docs.google.com/spreadsheets/" target="_blank" rel="noopener"><b>Open a sheet</b><span>One of your Google Sheets</span></a>
+          <a href="https://sheets.new" target="_blank" rel="noopener"><b>Start a blank sheet</b><span>DevBoard sets up the tabs it needs</span></a>
+        </div>
+        <div class="gs-how">In the sheet:</div>
+        <ol class="gs-sub">
+          <li>Choose <strong>File › Share › Share with others</strong> (or the <strong>Share</strong> button at the top right).</li>
+          <li>Paste the service account into <strong>Add people, groups…</strong>, leave it as <strong>Editor</strong>, and click <strong>Send</strong>.</li>
+          <li>Copy the sheet’s URL from your browser’s address bar (or click <strong>Copy link</strong> in the Share window).</li>
+        </ol>
+        <figure class="gs-shot"><img src="images/help/google-share.jpg" alt="Google Sheets’ Share window: the service account added as Editor, with Copy link and Send" loading="lazy"><figcaption>The Share window in Google Sheets — the service account added as <b>Editor</b>.</figcaption></figure>
+      </li>
+      <li><b>Paste the spreadsheet URL or ID below</b></li>
+    </ol>
 
     <input type="text" id="sheetInput" class="sheet-input"
       placeholder="https://docs.google.com/spreadsheets/d/… or sheet ID"

@@ -866,7 +866,7 @@ input[type="date"].field-input { -webkit-appearance:none; appearance:none; min-h
           <input type="text" class="field-input" id="authEditPhone" placeholder="" />
         </div>
         <div class="field-group">
-          <label>Payment</label>
+          <label>Preferred Payment Method</label>
           <input type="text" class="field-input" id="authEditPayment" placeholder="e.g. Venmo: @YourName  or  PayPal: you@email.com" />
         </div>
       </div>

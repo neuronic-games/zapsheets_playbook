@@ -1524,7 +1524,7 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
       <label class="ge-label">Mailing Address<textarea id="profileLocation" class="ge-input ge-textarea" placeholder="Street&#10;City, State, ZIP" rows="3"></textarea></label>
       <label class="ge-label">Messaging<input type="text" id="profileDiscord" class="ge-input" placeholder="@handle or username" /></label>
       <label class="ge-label">Phone<input type="tel" id="profilePhone" class="ge-input" placeholder="+1 555 000 0000" /></label>
-      <label class="ge-label">Payment<input type="text" id="profilePayment" class="ge-input" placeholder="e.g. Venmo: @YourName  or  PayPal: you@email.com" /></label>
+      <label class="ge-label">Preferred Payment Method<input type="text" id="profilePayment" class="ge-input" placeholder="e.g. Venmo: @YourName  or  PayPal: you@email.com" /></label>
       <label class="ge-label">Notes<textarea id="profileNotes" class="ge-input ge-textarea" placeholder="Availability, preferences…" rows="2"></textarea></label>
     </div>
     <input type="file" id="profilePhotoFile" accept="image/*" style="display:none" onchange="profilePhotoPreview(this)">

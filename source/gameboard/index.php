@@ -1024,6 +1024,7 @@ footer a:hover { color:var(--navy); }
         <div class="plan" id="mePlan"></div>
         <ul class="my-apps" id="meApps" hidden></ul>
         <div class="my-sheets" id="meSheets" hidden></div>
+        <div class="my-sheets" id="meShared" hidden></div>
         <button type="button" class="go" id="meGo" onclick="location.href='<?= e($_hp) ?>#pricing'">See apps &amp; pricing</button>
         <div class="foot"><button type="button" class="link" onclick="signOut()">Sign out</button></div>
       </div>
@@ -1107,8 +1108,8 @@ footer a:hover { color:var(--navy); }
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function post(fields) {
-    var fd = new FormData(); Object.keys(fields).forEach(function(k) { fd.append(k, fields[k]); });
-    return fetch(APP_BASE + 'push/gameboardAccount.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
+    var fd = new FormData(), ep = fields._url || 'gameboardAccount'; Object.keys(fields).forEach(function(k) { if (k !== '_url') fd.append(k, fields[k]); });
+    return fetch(APP_BASE + 'push/' + ep + '.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
       .then(function(r) { if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response'); return r; });
   }
   function store(r) {
@@ -1185,7 +1186,7 @@ footer a:hover { color:var(--navy); }
         return '<li><img src="' + esc(x.icon) + '" alt=""><b>' + esc(x.name) + '</b><span class="' + (st === 'subscribed' ? 'paid' : '') + '">' + esc(label) + '</span></li>';
       }).join('');
     }
-    if (a && DASH) { renderSheets(_sheets); loadSheets(); } else { _sheetsFor = ''; _sheets = []; $('meSheets').hidden = true; }
+    if (a && DASH) { renderSheets(_sheets); loadSheets(); loadShared(); } else { _sheetsFor = ''; _sheets = []; $('meSheets').hidden = true; $('meShared').hidden = true; _sharedFor = ''; }
     var ab = $('allBtn'), have = a && (a.all_in_one || a.state === 'activated');
     if (ab) { ab.disabled = !!have; ab.textContent = have ? '✓ You have all four' : 'Get all four'; }
     linkApps();
@@ -1196,6 +1197,19 @@ footer a:hover { color:var(--navy); }
     if (!acct || !acct.token || _sheetsFor === acct.token) return;
     _sheetsFor = acct.token;
     post({ action: 'sheets', cbt: acct.token }).then(function(r) { _sheets = r.sheets || []; renderSheets(_sheets); }).catch(function() { _sheetsFor = ''; });
+  }
+  // DevBoard games others have shared with you (the share links you've opened while signed in)
+  var _sharedFor = '';
+  function loadShared() {
+    if (!acct || !acct.token || _sharedFor === acct.token) return;
+    _sharedFor = acct.token;
+    post({ action: 'list', cbt: acct.token, _url: 'devSharedGames' }).then(function(r) {
+      var g = r.games || [], box = $('meShared');
+      box.innerHTML = g.length ? '<h4 style="margin:0 0 .5rem;color:var(--navy)"><img src="images/db_icon_180.png" alt="">Shared with you</h4>' + g.map(function(x) {
+        return '<a class="sh" href="' + esc(x.url) + '"><span class="sh-nm"><b>' + esc(x.g) + '</b>' + (x.s ? '<small>DevBoard · shared by ' + esc(x.s) + '</small>' : '<small>DevBoard</small>') + '</span><span class="sh-when">Open</span></a>';
+      }).join('') : '';
+      box.hidden = !g.length;
+    }).catch(function() { _sharedFor = ''; });
   }
   function ago(t) {
     if (!t) return '';

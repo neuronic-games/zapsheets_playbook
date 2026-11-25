@@ -189,6 +189,7 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 .my-games { margin:0 0 1rem; }
 .my-games-hd { display:flex; align-items:baseline; justify-content:space-between; margin:0 0 .45rem; font-family:'DINBlack',sans-serif; font-size:.62rem; text-transform:uppercase; letter-spacing:.09em; color:#8a95a1; }
 .my-games-hd span { font-family:'DINRegular',sans-serif; text-transform:none; letter-spacing:0; font-size:.7rem; color:#a3adb8; }
+.my-games-hd a { color:#1a5f7a; }
 .my-games-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:.5rem; }
 .my-game { position:relative; display:flex; align-items:center; gap:.6rem; padding:.45rem .6rem; background:#fff; border:1.5px solid #e3e8ee; border-radius:10px; text-decoration:none; color:#1a2b38; transition:border-color .15s, box-shadow .15s; }
 .my-game:hover { border-color:#1a5f7a; box-shadow:0 2px 10px rgba(26,95,122,.12); }
@@ -2528,12 +2529,30 @@ _loadStoredUser();
   function keep(l) { try { localStorage.setItem(KEY, JSON.stringify(l.slice(0, 60))); } catch (e) {} }
   var list = load().filter(function(x) { return x && x.t && x.t !== TOKEN; });
   list.unshift(me); keep(list);
+  // Signed in to GameBoard in this browser: the list is kept with the account too, so it follows you to every device
+  function gbToken() { try { var a = JSON.parse(localStorage.getItem('cb_account') || 'null'); return (a && a.token) || ''; } catch (e) { return ''; } }
+  function server(action, extra) {
+    var cbt = gbToken(); if (!cbt || !window.fetch) return Promise.resolve(null);
+    var fd = new FormData(); fd.append('cbt', cbt); fd.append('action', action);
+    Object.keys(extra || {}).forEach(function(k) { fd.append(k, extra[k]); });
+    return fetch(BASE + 'push/devSharedGames.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); }).catch(function() { return null; });
+  }
+  function merge(r) {
+    if (!r || !r.ok || !Array.isArray(r.games)) return;
+    var l = load(), byT = {}; l.forEach(function(x) { byT[x.t] = x; });
+    r.games.forEach(function(gm) { var x = byT[gm.t]; if (x) { x.g = gm.g || x.g; x.s = gm.s || x.s; x.i = gm.i || x.i; } else l.push({ t: gm.t, g: gm.g, s: gm.s, i: gm.i, at: 0 }); });
+    var live = {}; r.games.forEach(function(gm) { live[gm.t] = 1; });
+    l = l.filter(function(x) { return live[x.t] || x.t === TOKEN; });   // links the owner has taken back drop off
+    keep(l); render();
+  }
+  server('add', { tokens: load().map(function(x) { return x.t; }).join(',') }).then(merge);
   function render() {
     var l = load(), box = document.getElementById('myGames'); if (!box) return;
     if (l.length < 2) { box.style.display = 'none'; return; }
     l = l.slice().sort(function(a, b) { return String(a.g).localeCompare(String(b.g)); });
     var esc = function(s) { return String(s || '').replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
-    box.innerHTML = '<div class="my-games-hd">Your shared games <span>' + l.length + ' games</span></div><div class="my-games-list">' + l.map(function(x) {
+    var signedIn = !!gbToken();
+    box.innerHTML = '<div class="my-games-hd">Your shared games <span>' + l.length + ' games' + (signedIn ? ' · on all your devices' : ' · <a href="' + esc(BASE + 'gameboard') + '">sign in to GameBoard</a> to see them on all your devices') + '</span></div><div class="my-games-list">' + l.map(function(x) {
       var img = x.i && /^https?:\/\//.test(x.i) ? ' style="background-image:url(&quot;' + esc(x.i) + '&quot;)"' : '';
       return '<a class="my-game' + (x.t === TOKEN ? ' cur' : '') + '" href="' + esc(BASE + 'devboard/share/' + x.t) + '">' +
         '<span class="my-game-img"' + img + '>' + (img ? '' : esc(String(x.g || '?').charAt(0).toUpperCase())) + '</span>' +
@@ -2541,7 +2560,7 @@ _loadStoredUser();
         (x.t === TOKEN ? '' : '<button type="button" class="my-game-x" title="Remove from this list" data-t="' + esc(x.t) + '">✕</button>') + '</a>';
     }).join('') + '</div>';
     box.style.display = '';
-    box.querySelectorAll('.my-game-x').forEach(function(b) { b.onclick = function(e) { e.preventDefault(); e.stopPropagation(); keep(load().filter(function(x) { return x.t !== b.dataset.t; })); render(); }; });
+    box.querySelectorAll('.my-game-x').forEach(function(b) { b.onclick = function(e) { e.preventDefault(); e.stopPropagation(); keep(load().filter(function(x) { return x.t !== b.dataset.t; })); render(); server('remove', { token: b.dataset.t }); }; });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render); else render();
   window.addEventListener('storage', function(e) { if (e.key === KEY) render(); });

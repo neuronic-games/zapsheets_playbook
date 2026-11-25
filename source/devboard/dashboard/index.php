@@ -1837,7 +1837,11 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
       </div>
       <div class="field-group span2">
         <label>Summary</label>
-        <input type="text" class="field-input" id="siSummary" maxlength="120" placeholder="One line: what this invoice is for" autocomplete="off" />
+        <div class="combo-wrap" id="siSumCombo">
+          <input type="text" class="field-input combo-input" id="siSummary" maxlength="120" placeholder="Pick an estimate’s summary, or type one" autocomplete="off"
+            oninput="this.dataset.ref='';sumRebuild('si',this.value)" onfocus="sumRebuild('si',this.value)" onkeydown="sumKey('si',event)" />
+          <div class="combo-dropdown" id="siSumDrop"></div>
+        </div>
       </div>
       <div class="field-group">
         <label>Amount</label>
@@ -3137,6 +3141,21 @@ function _contractSummaries(game) {   // [{s: summary, ref: Ref Number}]
     if (seen[k]) return; seen[k] = 1;
     all.push(it);
     if (g && String(c.Game || '').trim().toLowerCase() === g) mine.push(it);
+  });
+  return mine.length ? mine : all;
+}
+// The estimates' summaries for a game (newest first), for a new invoice to pick from; every game's if none
+function _estimateSummaries(game) {   // [{s: summary, ref: its Ref Number, amt: its amount}]
+  var g = String(game || '').trim().toLowerCase(), mine = [], all = [], seen = {};
+  (ESTIMATES_RAW || []).slice().reverse().forEach(function(e) {
+    if (!e || String(e.type || 'estimate').toLowerCase() !== 'estimate') return;
+    var ref = String(e.contract_id || e.estimate_num || '').replace(/^'/, '').trim();
+    var sm = _contractSummaryFor(ref) || _cleanSummary(e.summary) || _cleanSummary(e.game);
+    if (!sm) return;
+    var it = { s: sm, ref: ref, amt: String(e.amount || '0') }, k = sm + '\u0001' + ref;
+    if (seen[k]) return; seen[k] = 1;
+    all.push(it);
+    if (g && String(e.game || '').trim().toLowerCase() === g) mine.push(it);
   });
   return mine.length ? mine : all;
 }
@@ -5019,6 +5038,9 @@ function openStandaloneInvoiceDialog(gameName, clientName) {
   document.getElementById('siDueDate').value         = _isoDaysFromToday(14);
   document.getElementById('siNotes').value           = '';
   document.getElementById('siSummary').value         = '';
+  document.getElementById('siSummary').dataset.ref   = '';
+  _sumSrc.si = _estimateSummaries(_siGame);   // the estimates to invoice from
+  document.getElementById('siSumCombo').classList.remove('open');
   document.getElementById('siErr').textContent       = '';
   document.getElementById('siErr').style.display     = 'none';
   document.getElementById('siBtn').disabled          = false;
@@ -5065,8 +5087,10 @@ function submitStandaloneInvoice() {
   fd.append('id',           SHEET_ID);
   fd.append('game',         _siGame);
   fd.append('client',       client);
-  fd.append('estimate_num', '');
-  fd.append('estimate_amt', '0');
+  // Picked an estimate's summary: the invoice is for that estimate (so it counts as invoiced)
+  var siRef = sumRef('si'), siEst = (_sumSrc.si || []).filter(function(n) { return n.ref === siRef; })[0];
+  fd.append('estimate_num', siEst ? siEst.ref : '');
+  fd.append('estimate_amt', siEst ? siEst.amt : '0');
   fd.append('invoice_amt',  amount);
   fd.append('summary',      siSummary);
   fd.append('tgt_start',    dueDate);

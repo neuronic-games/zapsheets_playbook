@@ -229,5 +229,6 @@ body.gb-setup .gs-shot figcaption { font-size:.74rem; color:#999; margin:.35rem 
   body.gb-setup .gs-wide .gs-steps > li:last-child > b { margin:0 0 .7rem; }
   body.gb-setup .gs-wide .gs-shot img { max-width:min(100%, 360px); }   /* the whole dialog fits on the screen */
   body.gb-setup .gs-wide .gs-steps .gs-btns { flex-wrap:wrap; }
+  body.gb-setup .gs-wide .log-panel { margin-top:1rem; max-height:50vh; }   /* the progress, under step 3 */
 }
 @media (max-width:560px) { body.gb-setup .gs-start { grid-template-columns:1fr; } body.gb-setup .card { padding:1.5rem 1.2rem 1.6rem; } }

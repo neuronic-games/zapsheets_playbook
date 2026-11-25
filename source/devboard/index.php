@@ -176,11 +176,11 @@ body {
           <a class="gs-cancel" href="dashboard">Cancel</a>
           <button id="connectBtn" class="connect-btn" onclick="startSetup()">Connect &amp; Open</button>
         </div>
+        <div id="logPanel" class="log-panel" style="display:none"></div>
       </li>
     </ol>
 
 
-    <div id="logPanel" class="log-panel" style="display:none"></div>
   </div>
 </div>
 

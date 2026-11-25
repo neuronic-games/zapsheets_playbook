@@ -367,6 +367,10 @@ $_sheet_id = $_bm[2] ?? '';
   .sm-comp li::before { content: ''; position: absolute; left: 0; top: .62em; width: 4px; height: 4px; border-radius: 50%; background: #c8860a; }
   .sm-none { font-size: .8rem; color: rgba(255,255,255,.55); margin: 0; }
   .slide-info { cursor: ns-resize; }
+  /* Faint bars, like the one at the top: something to drag */
+  .slide-grab { width: 30px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.28); margin: 0 0 .7rem; transition: background .15s, width .15s; }
+  .slide-info:hover .slide-grab { background: rgba(255,255,255,.7); width: 38px; }
+  .slide-more-in::before { content: ''; display: block; width: 30px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.28); margin: -.35rem 0 .75rem; }
   @media (max-width: 420px) { .sm-comp { columns: 1; } }
 </style>
 </head>
@@ -622,6 +626,10 @@ $_sheet_id = $_bm[2] ?? '';
       var info = document.createElement('div');
       info.className = 'slide-info';
 
+      var grab = document.createElement('div');
+      grab.className = 'slide-grab';
+      grab.setAttribute('aria-hidden', 'true');
+      info.appendChild(grab);
       var nameEl = document.createElement('p');
       nameEl.className = 'slide-name';
       nameEl.textContent = s.name;

@@ -313,6 +313,36 @@ footer a:hover { color:rgba(255,255,255,.7); }
 .dbx-li { display:flex; justify-content:space-between; padding:4px 0; border-top:1px solid #edf1f5; }
 .dbx-li.sub { color:#64748b; } .dbx-li.disc { color:#64748b; }
 .dbx-total { display:flex; justify-content:space-between; margin-top:5px; font-family:'DBDINBlack','Inter',sans-serif; font-size:13px; color:#E8623A; }
+/* The contract list as it is now: a stripe per kind, the open one a card of its own */
+.dbc { padding-bottom:6px; }
+.dbc-row { display:grid; grid-template-columns:auto auto auto 1fr auto; gap:7px; align-items:baseline; padding:7px 12px; border-top:1px solid #edf1f5; font-size:9.5px; box-shadow:inset 3px 0 0 var(--it,#8fc3d8); }
+.dbc-row.out { --it:#8b5cf6; } .dbc-row.paid { --it:#4caf6e; } .dbc-row.est { --it:#8fc3d8; }
+.dbc-sum { color:#334155; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.dbx-pill.out { color:#6d28d9; background:#ede9fe; } .dbx-amt.out { color:#6d28d9; }
+.dbc-card { margin:6px 8px; border:1px solid #cfdde7; border-left:3px solid #e2b53e; border-radius:8px; overflow:hidden; box-shadow:0 4px 12px rgba(26,95,122,.13); background:#fff; }
+.dbc-card .dbc-row { border-top:none; box-shadow:none; background:#eef5f9; padding-left:9px; }
+.dbc-fields { display:flex; gap:14px; padding:7px 9px; font-size:9px; color:#333; border-top:1px solid #edf1f5; }
+.dbc-fields i { display:block; font-style:normal; font-family:'DBDINBlack','Inter',sans-serif; font-size:6.5px; letter-spacing:.06em; text-transform:uppercase; color:#aab; }
+.dbc-card .dbx-cbtns { padding:6px 9px 8px; }
+.dbx-cb.del { border-color:#e8b4b4; color:#c0392b; }
+/* The sample invoice, like the PDF DevBoard makes */
+.dbi { padding:0 13px 12px; overflow:hidden; font-family:'Inter',Arial,sans-serif; }
+.dbi-bar { height:5px; background:#E8623A; margin:0 -13px 9px; }
+.dbi-top { display:flex; justify-content:space-between; align-items:flex-start; }
+.dbi-co { font-weight:800; font-size:12px; color:#E8623A; }
+.dbi-addr { font-size:7px; color:#777; margin-top:2px; }
+.dbi-logo { width:24px; height:24px; border-radius:5px; background:#1e1e1e; color:#E8623A; font-weight:800; font-size:9px; display:flex; align-items:center; justify-content:center; }
+.dbi-title { font-weight:800; font-size:17px; color:#1e1e1e; margin:7px 0 0; letter-spacing:-.01em; }
+.dbi-sub { font-size:7px; color:#888; margin-bottom:7px; }
+.dbi-meta { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; font-size:7.5px; color:#444; padding-bottom:7px; border-bottom:1px solid #e5e5e5; margin-bottom:7px; }
+.dbi-meta b { display:block; color:#1e1e1e; font-size:7px; }
+.dbi-th { display:flex; justify-content:space-between; background:#E8623A; color:#fff; font-weight:700; font-size:7.5px; padding:4px 6px; }
+.dbi-li { display:flex; justify-content:space-between; padding:5px 6px; font-size:8px; background:#f5f5f5; }
+.dbi-li.sub { background:none; color:#666; border-bottom:1px solid #e5e5e5; }
+.dbi-li.sub b { color:#1e1e1e; }
+.dbi-foot { display:flex; justify-content:space-between; align-items:flex-end; margin-top:8px; font-size:7px; color:#444; }
+.dbi-foot b { display:block; color:#E8623A; font-size:7.5px; }
+.dbi-total { font-weight:700; font-size:10px; color:#555; } .dbi-total span { font-weight:800; font-size:15px; color:#E8623A; margin-left:5px; }
 .ie-toast { position:absolute; left:50%; transform:translate(-50%,8px); background:#15803d; color:#fff; font-family:'Inter',system-ui,sans-serif; font-size:11px; font-weight:600; padding:6px 12px; border-radius:999px; box-shadow:0 6px 18px rgba(21,128,61,.35); opacity:0; transition:opacity .2s, transform .2s; white-space:nowrap; z-index:5; }
 .ie-toast.show { opacity:1; transform:translate(-50%,0); }
 .ie-cursor { position:absolute; left:0; top:0; z-index:7; filter:drop-shadow(0 2px 3px rgba(0,0,0,.3)); pointer-events:none; }
@@ -595,6 +625,8 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <li>Separate printing line item and optional discounts</li>
           <li>Edit later — the PDF updates at the same link</li>
           <li>Estimate · Invoiced · Paid status for each contract</li>
+          <li>Payments to collaborators, each with a payment slip</li>
+          <li>Everything for a game in one list, newest first</li>
         </ul>
       </div>
       <div class="browser-frame">
@@ -603,20 +635,29 @@ footer a:hover { color:rgba(255,255,255,.7); }
           <div class="browser-url">mygameboard.app/…/devboard</div>
         </div>
         <div class="dbx">
-          <div class="dbx-client"><b>Riverbend Games</b><span>3 contracts</span></div>
-          <div class="dbx-cbody">
-            <div class="dbx-game">Break of Dawn <span>1 estimate · 2 invoices</span></div>
-            <div class="dbx-doc"><span class="dbx-pill paid">Paid</span><span class="dbx-ref">K4Q7ZR21</span><span class="dbx-date">11/10/2026</span><span class="dbx-amt">$260.00</span></div>
-            <div class="dbx-doc"><span class="dbx-pill inv">Invoiced</span><span class="dbx-ref">P8XW3M5C</span><span class="dbx-date">11/24/2026</span><span class="dbx-amt">$130.00</span></div>
-            <div class="dbx-doc"><span class="dbx-pill est">Estimate</span><span class="dbx-ref">CA7N2E4S</span><span class="dbx-date">11/04/2026</span><span class="dbx-amt">$390.00</span></div>
-            <div class="dbx-cbtns"><span class="dbx-cb">✉ Share</span><span class="dbx-cb">Edit</span><span class="dbx-cb inv">+ Invoice</span></div>
+          <div class="dbx-client"><b>Riverbend Games</b><span>3 contracts · 1 payment</span></div>
+          <div class="dbx-cbody dbc">
+            <div class="dbx-game">Break of Dawn <span>1 estimate · 2 invoices · 1 payment</span></div>
+            <div class="dbc-row out"><span class="dbx-pill out">Paid out</span><span class="dbx-ref">R7MD2KQ9</span><span class="dbx-date">11/26/2026</span><span class="dbc-sum">Break of Dawn dev · → Maya Chen</span><span class="dbx-amt out">$120.00</span></div>
+            <div class="dbc-card inv">
+              <div class="dbc-row"><span class="dbx-pill inv">Invoiced</span><span class="dbx-ref">P8XW3M5C</span><span class="dbx-date">11/24/2026</span><span class="dbc-sum">Break of Dawn dev</span><span class="dbx-amt">$130.00</span></div>
+              <div class="dbc-fields"><div><i>Contract #</i>P8XW3M5C</div><div><i>Amount</i>$130.00</div><div><i>Date</i>11/24/2026</div><div><i>Client</i>Riverbend Games</div></div>
+              <div class="dbx-cbtns"><span class="dbx-cb">✉ Share</span><span class="dbx-cb">Edit</span><span class="dbx-cb inv">+ Invoice</span><span class="dbx-cb del">Delete</span></div>
+            </div>
+            <div class="dbc-row paid"><span class="dbx-pill paid">Paid</span><span class="dbx-ref">K4Q7ZR21</span><span class="dbx-date">11/10/2026</span><span class="dbc-sum">Break of Dawn dev</span><span class="dbx-amt">$260.00</span></div>
+            <div class="dbc-row est"><span class="dbx-pill est">Estimate</span><span class="dbx-ref">CA7N2E4S</span><span class="dbx-date">11/04/2026</span><span class="dbc-sum">Break of Dawn dev</span><span class="dbx-amt">$390.00</span></div>
           </div>
-          <div class="dbx-pdf">
-            <div class="dbx-pdf-h"><b>INVOICE</b><span>K4Q7ZR21<br>Riverbend Games</span></div>
-            <div class="dbx-li"><span>Break of Dawn development · 2 playtests, test reports</span><span>$210.00</span></div>
-            <div class="dbx-li"><span>Printing</span><span>$50.00</span></div>
-            <div class="dbx-li sub"><span>Subtotal</span><span>$260.00</span></div>
-            <div class="dbx-total"><span>Total</span><span>$260.00</span></div>
+          <div class="dbx-pdf dbi">
+            <div class="dbi-bar"></div>
+            <div class="dbi-top"><div><div class="dbi-co">Lantern Studio</div><div class="dbi-addr">12 Harbor St, Portland, ME · +1 207 555 0142</div></div><div class="dbi-logo">LS</div></div>
+            <div class="dbi-title">Invoice</div>
+            <div class="dbi-sub">Submitted on 11/24/2026</div>
+            <div class="dbi-meta"><div><b>Prepared for</b>Riverbend Games</div><div><b>Due Date</b>12/08/2026</div><div><b>Invoice #</b>P8XW3M5C</div><div><b>Estimate #</b>CA7N2E4S</div></div>
+            <div class="dbi-th"><span>Description</span><span>Price</span></div>
+            <div class="dbi-li"><span>Break of Dawn development · milestone 2 of 2</span><span>$130.00</span></div>
+            <div class="dbi-li sub"><span></span><span>Subtotal&nbsp;&nbsp;<b>$130.00</b></span></div>
+            <div class="dbi-foot"><div><b>Payment</b>Zelle / PayPal: pay@lanternstudio.example</div><div class="dbi-total">Total <span>$130.00</span></div></div>
+          </div>
           </div>
         </div>
       </div>

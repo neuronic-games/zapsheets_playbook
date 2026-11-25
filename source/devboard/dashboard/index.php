@@ -7647,6 +7647,13 @@ function _updateSubTitle() {
 buildGameList();
 renderCards();
 _updateSubTitle();
+// #game=Name (from "Your games" on a shared page): open that game on the Games tab
+(function() {
+  var m = /(?:^#|&)game=([^&]*)/.exec(location.hash || ''); if (!m) return;
+  var name = ''; try { name = decodeURIComponent(m[1]); } catch (e) { return; }
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+  if (name) setTimeout(function() { _actOpenGame(name); }, 0);
+})();
 // Auto-wrap all date inputs with .date-wrap for cross-browser calendar icon
 document.querySelectorAll('input[type="date"]').forEach(function(inp) {
   if (inp.closest('.date-wrap')) return;

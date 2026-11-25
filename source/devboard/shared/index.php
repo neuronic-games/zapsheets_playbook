@@ -200,6 +200,20 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 .my-game > div { min-width:0; flex:1; }
 .my-game-x { position:absolute; top:2px; right:4px; border:none; background:none; color:#b8c0c8; font-size:.8rem; cursor:pointer; display:none; padding:2px 4px; }
 .my-game:hover .my-game-x { display:block; } .my-game-x:hover { color:#d92d20; }
+.my-game b { display:flex; align-items:center; gap:.3rem; }
+.my-game b > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.my-game-collab { flex:none; width:14px; height:14px; color:#1a5f7a; }
+.my-game.add { border-style:dashed; color:#1a5f7a; }
+.my-game.add .my-game-img { background:#eef7fa; color:#1a5f7a; font-size:1.3rem; }
+.my-games-fs { display:flex; flex-wrap:wrap; gap:.35rem; margin:0 0 .55rem; }
+.my-games-f { display:inline-flex; align-items:center; gap:.3rem; border:1.5px solid #e3e8ee; background:#fff; color:#4a5866; border-radius:999px; padding:.22rem .7rem; font-family:'DINBlack',sans-serif; font-size:.66rem; text-transform:uppercase; letter-spacing:.06em; cursor:pointer; }
+.my-games-f i { font-style:normal; font-family:'DINRegular',sans-serif; color:#8a95a1; }
+.my-games-f .my-game-collab { width:13px; height:13px; }
+.my-games-f:hover { border-color:#1a5f7a; }
+.my-games-f.on { background:#1a5f7a; border-color:#1a5f7a; color:#fff; }
+.my-games-f.on i, .my-games-f.on .my-game-collab { color:#cfe6ee; }
+.my-games-sub { margin:.5rem 0 0; font-size:.72rem; color:#8a95a1; }
+.my-games-sub a { color:#1a5f7a; }
 
 /* ── Game card ── */
 .game-header {
@@ -2537,33 +2551,57 @@ _loadStoredUser();
     Object.keys(extra || {}).forEach(function(k) { fd.append(k, extra[k]); });
     return fetch(BASE + 'push/devSharedGames.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); }).catch(function() { return null; });
   }
+  // Your own DevBoard games (when your GameBoard account can use DevBoard) — kept here too, so the list shows at once
+  var OWN = 'devboard_own_games', FILT = 'devboard_games_filter';
+  function loadOwn() { try { var o = JSON.parse(localStorage.getItem(OWN) || 'null'); return o && Array.isArray(o.games) ? o : { games: [], can: null }; } catch (e) { return { games: [], can: null }; } }
   function merge(r) {
     if (!r || !r.ok || !Array.isArray(r.games)) return;
     var l = load(), byT = {}; l.forEach(function(x) { byT[x.t] = x; });
     r.games.forEach(function(gm) { var x = byT[gm.t]; if (x) { x.g = gm.g || x.g; x.s = gm.s || x.s; x.i = gm.i || x.i; } else l.push({ t: gm.t, g: gm.g, s: gm.s, i: gm.i, at: 0 }); });
     var live = {}; r.games.forEach(function(gm) { live[gm.t] = 1; });
     l = l.filter(function(x) { return live[x.t] || x.t === TOKEN; });   // links the owner has taken back drop off
-    keep(l); render();
+    keep(l);
+    try { localStorage.setItem(OWN, JSON.stringify({ games: Array.isArray(r.own) ? r.own.slice(0, 200) : [], can: !!r.devboard })); } catch (e) {}
+    render();
   }
   server('add', { tokens: load().map(function(x) { return x.t; }).join(',') }).then(merge);
+  var ICON_SHARED = '<svg class="my-game-collab" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
   function render() {
-    var l = load(), box = document.getElementById('myGames'); if (!box) return;
-    if (l.length < 2) { box.style.display = 'none'; return; }
-    l = l.slice().sort(function(a, b) { return String(a.g).localeCompare(String(b.g)); });
+    var box = document.getElementById('myGames'); if (!box) return;
+    var signedIn = !!gbToken(), own = signedIn ? loadOwn() : { games: [], can: null };
     var esc = function(s) { return String(s || '').replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
-    var signedIn = !!gbToken();
-    box.innerHTML = '<div class="my-games-hd">Your shared games <span>' + l.length + ' games' + (signedIn ? ' · on all your devices' : ' · <a href="' + esc(BASE + 'gameboard') + '">sign in to GameBoard</a> to see them on all your devices') + '</span></div><div class="my-games-list">' + l.map(function(x) {
+    var items = load().map(function(x) { return { k: 'shared', t: x.t, g: x.g, i: x.i, s: x.s, url: BASE + 'devboard/share/' + x.t }; })
+      .concat(own.games.map(function(x) { return { k: 'own', g: x.g, i: x.i, url: x.url }; }))
+      .sort(function(a, b) { return String(a.g).localeCompare(String(b.g)); });
+    var nShared = items.filter(function(x) { return x.k === 'shared'; }).length, nOwn = items.length - nShared;
+    var f = ''; try { f = localStorage.getItem(FILT) || ''; } catch (e) {}
+    if (!nOwn || !nShared) f = '';   // filters only when there are both kinds
+    var shown = items.filter(function(x) { return !f || x.k === f; });
+    var note = signedIn ? 'on all your devices' : '<a href="' + esc(BASE + 'gameboard') + '">sign in to GameBoard</a> to see them on all your devices';
+    var chip = function(k, label, n) { return '<button type="button" class="my-games-f' + (f === k ? ' on' : '') + '" data-f="' + k + '">' + label + ' <i>' + n + '</i></button>'; };
+    var h = '<div class="my-games-hd">Your games <span>' + items.length + (items.length === 1 ? ' game' : ' games') + ' · ' + note + '</span></div>';
+    if (nOwn && nShared) h += '<div class="my-games-fs">' + chip('', 'All', items.length) + chip('own', 'My games', nOwn) + chip('shared', ICON_SHARED + 'Shared with me', nShared) + '</div>';
+    h += '<div class="my-games-list">' + shown.map(function(x) {
       var img = x.i && /^https?:\/\//.test(x.i) ? ' style="background-image:url(&quot;' + esc(x.i) + '&quot;)"' : '';
-      return '<a class="my-game' + (x.t === TOKEN ? ' cur' : '') + '" href="' + esc(BASE + 'devboard/share/' + x.t) + '">' +
+      var cur = x.k === 'shared' && x.t === TOKEN;
+      var tip = x.k === 'shared' ? 'Shared with you' + (x.s ? ' by ' + x.s : '') : 'Your game';
+      return '<a class="my-game ' + x.k + (cur ? ' cur' : '') + '" href="' + esc(x.url) + '" title="' + esc(tip) + '">' +
         '<span class="my-game-img"' + img + '>' + (img ? '' : esc(String(x.g || '?').charAt(0).toUpperCase())) + '</span>' +
-        '<div><b>' + esc(x.g) + '</b>' + (x.s ? '<small>Shared by ' + esc(x.s) + '</small>' : '') + '</div>' +
-        (x.t === TOKEN ? '' : '<button type="button" class="my-game-x" title="Remove from this list" data-t="' + esc(x.t) + '">✕</button>') + '</a>';
-    }).join('') + '</div>';
+        '<div><b><span>' + esc(x.g) + '</span>' + (x.k === 'shared' ? ICON_SHARED : '') + '</b>' +
+        '<small>' + (x.k === 'shared' ? (x.s ? 'Shared by ' + esc(x.s) : 'Shared with you') : 'Your game') + '</small></div>' +
+        (x.k === 'shared' && !cur ? '<button type="button" class="my-game-x" title="Remove from this list" data-t="' + esc(x.t) + '">✕</button>' : '') + '</a>';
+    }).join('');
+    // Your own games: with DevBoard, start one; without, where to get it
+    if (signedIn && own.can === true && !nOwn) h += '<a class="my-game add" href="' + esc(BASE + 'devboard') + '"><span class="my-game-img">+</span><div><b>Your own game</b><small>Set up your DevBoard sheet</small></div></a>';
+    h += '</div>';
+    if (signedIn && own.can === false) h += '<div class="my-games-sub">Want to track your own games here too? <a href="' + esc(BASE + 'gameboard/dashboard') + '">Subscribe to DevBoard</a> — they’ll show up in this list next to the games shared with you.</div>';
+    box.innerHTML = h;
     box.style.display = '';
     box.querySelectorAll('.my-game-x').forEach(function(b) { b.onclick = function(e) { e.preventDefault(); e.stopPropagation(); keep(load().filter(function(x) { return x.t !== b.dataset.t; })); render(); server('remove', { token: b.dataset.t }); }; });
+    box.querySelectorAll('.my-games-f').forEach(function(b) { b.onclick = function() { try { localStorage.setItem(FILT, b.dataset.f); } catch (e) {} render(); }; });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render); else render();
-  window.addEventListener('storage', function(e) { if (e.key === KEY) render(); });
+  window.addEventListener('storage', function(e) { if (e.key === KEY || e.key === OWN || e.key === 'cb_account') render(); });
 })();
 _updateMenuLabel();
 _updateSignedInState();

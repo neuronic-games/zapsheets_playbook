@@ -185,6 +185,20 @@ html, body { margin:0; padding:0; background:#f2f5f8; color:#1a1a2e; min-height:
 
 /* ── Page wrapper ── */
 .page { max-width:860px; margin:0 auto; padding:1.25rem 1rem 3rem; }
+/* Every game shared with you (the links opened in this browser), in one list */
+.my-games { margin:0 0 1rem; }
+.my-games-hd { display:flex; align-items:baseline; justify-content:space-between; margin:0 0 .45rem; font-family:'DINBlack',sans-serif; font-size:.62rem; text-transform:uppercase; letter-spacing:.09em; color:#8a95a1; }
+.my-games-hd span { font-family:'DINRegular',sans-serif; text-transform:none; letter-spacing:0; font-size:.7rem; color:#a3adb8; }
+.my-games-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:.5rem; }
+.my-game { position:relative; display:flex; align-items:center; gap:.6rem; padding:.45rem .6rem; background:#fff; border:1.5px solid #e3e8ee; border-radius:10px; text-decoration:none; color:#1a2b38; transition:border-color .15s, box-shadow .15s; }
+.my-game:hover { border-color:#1a5f7a; box-shadow:0 2px 10px rgba(26,95,122,.12); }
+.my-game.cur { border-color:#1a5f7a; background:#eef7fa; }
+.my-game-img { flex:none; width:38px; height:38px; border-radius:7px; background:#1a5f7a center/cover no-repeat; color:#fff; display:flex; align-items:center; justify-content:center; font-family:'DINBlack',sans-serif; font-size:1rem; }
+.my-game b { display:block; font-family:'DINBlack',sans-serif; font-weight:normal; font-size:.8rem; line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.my-game small { display:block; font-size:.66rem; color:#8a95a1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.my-game > div { min-width:0; flex:1; }
+.my-game-x { position:absolute; top:2px; right:4px; border:none; background:none; color:#b8c0c8; font-size:.8rem; cursor:pointer; display:none; padding:2px 4px; }
+.my-game:hover .my-game-x { display:block; } .my-game-x:hover { color:#d92d20; }
 
 /* ── Game card ── */
 .game-header {
@@ -607,6 +621,9 @@ input[type="date"].field-input { -webkit-appearance:none; appearance:none; min-h
 </div>
 
 <div class="page">
+
+  <!-- Every game shared with you (filled from this browser's list; shown once there's more than one) -->
+  <div class="my-games" id="myGames" style="display:none"></div>
 
   <!-- Not-signed-in nudge -->
   <div id="notSignedInBanner" style="display:none">
@@ -2503,6 +2520,32 @@ document.addEventListener('keydown', function(ev) {
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 _loadStoredUser();
+// ── Your shared games: each share link opened in this browser is remembered, so all of them are one click away ──
+(function() {
+  var KEY = 'devboard_shared_games', TOKEN = <?= json_encode($_token) ?>, BASE = <?= json_encode($_base) ?>;
+  var me = { t: TOKEN, g: <?= json_encode($_gameName, JSON_UNESCAPED_UNICODE) ?>, i: <?= json_encode($_gameImage, JSON_UNESCAPED_UNICODE) ?>, s: <?= json_encode((string) ($_meta['sharer'] ?? ''), JSON_UNESCAPED_UNICODE) ?>, at: Date.now() };
+  function load() { try { var l = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
+  function keep(l) { try { localStorage.setItem(KEY, JSON.stringify(l.slice(0, 60))); } catch (e) {} }
+  var list = load().filter(function(x) { return x && x.t && x.t !== TOKEN; });
+  list.unshift(me); keep(list);
+  function render() {
+    var l = load(), box = document.getElementById('myGames'); if (!box) return;
+    if (l.length < 2) { box.style.display = 'none'; return; }
+    l = l.slice().sort(function(a, b) { return String(a.g).localeCompare(String(b.g)); });
+    var esc = function(s) { return String(s || '').replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    box.innerHTML = '<div class="my-games-hd">Your shared games <span>' + l.length + ' games</span></div><div class="my-games-list">' + l.map(function(x) {
+      var img = x.i && /^https?:\/\//.test(x.i) ? ' style="background-image:url(&quot;' + esc(x.i) + '&quot;)"' : '';
+      return '<a class="my-game' + (x.t === TOKEN ? ' cur' : '') + '" href="' + esc(BASE + 'devboard/share/' + x.t) + '">' +
+        '<span class="my-game-img"' + img + '>' + (img ? '' : esc(String(x.g || '?').charAt(0).toUpperCase())) + '</span>' +
+        '<div><b>' + esc(x.g) + '</b>' + (x.s ? '<small>Shared by ' + esc(x.s) + '</small>' : '') + '</div>' +
+        (x.t === TOKEN ? '' : '<button type="button" class="my-game-x" title="Remove from this list" data-t="' + esc(x.t) + '">✕</button>') + '</a>';
+    }).join('') + '</div>';
+    box.style.display = '';
+    box.querySelectorAll('.my-game-x').forEach(function(b) { b.onclick = function(e) { e.preventDefault(); e.stopPropagation(); keep(load().filter(function(x) { return x.t !== b.dataset.t; })); render(); }; });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render); else render();
+  window.addEventListener('storage', function(e) { if (e.key === KEY) render(); });
+})();
 _updateMenuLabel();
 _updateSignedInState();
 

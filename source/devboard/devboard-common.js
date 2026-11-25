@@ -68,6 +68,91 @@ function obsHtml(text) {
   }).join('');
 }
 
+// ── Copy a session's notes: formatted (for email or Google Docs) and as plain text ──
+var _copySess = {};
+// The Copy button at the end of an open session; key: unique on the page
+function sessCopyBtn(key, game, s) {
+  _copySess[key] = { g: game, s: s };
+  return '<div class="sess-copy-row"><button type="button" class="sess-copy-btn" title="Copy these notes, formatted, to paste into an email or a doc"' +
+    ' onclick="event.stopPropagation();copySessionNotes(\'' + esc(String(key).replace(/'/g, '')) + '\',this)">' +
+    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>';
+}
+function _sessCellHtml(text) {   // lines, bullets and pictures, with inline styles that survive pasting
+  return String(text || '').split(/(=IMAGE\("[^"]*"\))/i).map(function(p) {
+    var m = p.match(/^=IMAGE\("([^"]*)"\)$/i);
+    if (m) return '<img src="' + esc(m[1]) + '" alt="" style="max-width:320px;max-height:240px;display:block;margin:4px 0">';
+    return p.split('\n').map(function(l) { return esc(l); }).join('<br>');
+  }).join('');
+}
+function _sessCellText(text) {
+  return String(text || '').replace(/=IMAGE\("([^"]*)"\)/gi, '[picture: $1]').trim();
+}
+function sessionNotesFormatted(game, s) {
+  var title = (game ? game + ' — ' : '') + (s.testnum || 'Session');
+  var meta = [s.date ? fmtDate(s.date) : '', s.location || '', s.length || ''].filter(Boolean).join(' · ');
+  var who = (s.testers || []).join(', ');
+  var F = 'font-family:Arial,Helvetica,sans-serif;';
+  var th = F + 'text-align:left;font-size:13px;padding:6px 10px;border:1px solid #c9d6df;background:#eef4f7;color:#1a5f7a';
+  var td = F + 'font-size:13px;padding:6px 10px;border:1px solid #c9d6df;vertical-align:top';
+  var h = '<div style="' + F + 'color:#222">' +
+    '<h3 style="' + F + 'font-size:16px;margin:0 0 4px">' + esc(title) + '</h3>' +
+    (meta ? '<p style="' + F + 'font-size:13px;color:#555;margin:0 0 2px">' + esc(meta) + '</p>' : '') +
+    (who ? '<p style="' + F + 'font-size:13px;color:#555;margin:0 0 2px">Testers: ' + esc(who) + '</p>' : '');
+  var t = [title];
+  if (meta) t.push(meta);
+  if (who) t.push('Testers: ' + who);
+  var obs = s.obs || [];
+  if (obs.length) {
+    h += '<table style="border-collapse:collapse;width:100%;margin-top:8px"><thead><tr><th style="' + th + ';width:50%">Observations</th><th style="' + th + '">Solutions</th></tr></thead><tbody>' +
+      obs.map(function(o) { return '<tr><td style="' + td + '">' + _sessCellHtml(o.obs) + '</td><td style="' + td + ';color:#1a5f7a">' + _sessCellHtml(o.sol) + '</td></tr>'; }).join('') +
+      '</tbody></table>';
+    t.push('');
+    obs.forEach(function(o) {
+      t.push('• ' + _sessCellText(o.obs).replace(/\n/g, '\n  '));
+      if (_sessCellText(o.sol)) t.push('  → ' + _sessCellText(o.sol).replace(/\n/g, '\n    '));
+    });
+  } else {
+    h += '<p style="' + F + 'font-size:13px;color:#888;margin:8px 0 0">No notes.</p>';
+  }
+  return { html: h + '</div>', text: t.join('\n') };
+}
+function copySessionNotes(key, btn) {
+  var c = _copySess[key]; if (!c) return;
+  var out = sessionNotesFormatted(c.g, c.s);
+  var done = function(ok) {
+    if (!btn) return;
+    var was = btn.getAttribute('data-label') || btn.innerHTML; btn.setAttribute('data-label', was);
+    btn.innerHTML = ok ? '✓ Copied' : 'Couldn’t copy';
+    btn.classList.toggle('done', !!ok);
+    clearTimeout(btn._t); btn._t = setTimeout(function() { btn.innerHTML = was; btn.classList.remove('done'); }, 1800);
+  };
+  var fallback = function() {   // select a formatted copy on the page and copy that
+    var d = document.createElement('div');
+    d.contentEditable = 'true'; d.innerHTML = out.html;
+    d.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+    document.body.appendChild(d);
+    var r = document.createRange(); r.selectNodeContents(d);
+    var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+    sel.removeAllRanges(); document.body.removeChild(d);
+    done(ok);
+  };
+  if (navigator.clipboard && window.ClipboardItem) {
+    navigator.clipboard.write([new ClipboardItem({
+      'text/html':  new Blob([out.html], { type: 'text/html' }),
+      'text/plain': new Blob([out.text], { type: 'text/plain' })
+    })]).then(function() { done(true); }, fallback);
+  } else fallback();
+}
+(function() {
+  var st = document.createElement('style');
+  st.textContent = '.sess-copy-row{display:flex;justify-content:flex-end;padding:.35rem 1rem .5rem;border-top:1px solid #f0f4f8}' +
+    '.sess-copy-btn{font-family:DINBlack,sans-serif;font-size:.62rem;text-transform:uppercase;letter-spacing:.07em;display:inline-flex;align-items:center;gap:.3rem;' +
+    'background:transparent;color:#1a5f7a;border:1.5px solid #1a5f7a;border-radius:6px;padding:.25rem .6rem;cursor:pointer;transition:background .15s,color .15s}' +
+    '.sess-copy-btn:hover{background:#1a5f7a;color:#fff}.sess-copy-btn.done{background:#2e7a52;border-color:#2e7a52;color:#fff}';
+  (document.head || document.documentElement).appendChild(st);
+})();
+
 // ── Bullet hanging-indent CSS variable (set after fonts load) ────────────────
 function _setBulIndent() {
   var sp = document.createElement('span');

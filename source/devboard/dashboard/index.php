@@ -4310,6 +4310,7 @@ function renderBody(gameName, rows) {
         });
         html += '</tbody></table>';
       }
+      if (s.obs.length) html += sessCopyBtn('d-' + blockId, gameName, s);
       html += '</div></div>';
       html += '</div>';
     });

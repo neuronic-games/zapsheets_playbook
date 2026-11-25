@@ -1225,6 +1225,7 @@ function renderSessions() {
       });
       html += '</tbody></table>';
     }
+    if (s.obs.length && !isTM) html += sessCopyBtn('c-' + i, GAME_NAME, s);
     html += '</div></div>';  // .session-body .session-body-wrap
     html += '</div>';  // .session-block
   });

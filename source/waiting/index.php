@@ -108,10 +108,14 @@ main { flex:1; width:100%; max-width:960px; margin:-3.5rem auto 0; padding:0 1.2
 .admin-hd { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:.4rem; }
 .admin-msg { font-size:.85rem; color:var(--mid); min-height:1.3em; margin-top:.5rem; }
 .admin-msg.err { color:#b91c1c; }
+/* An admin sees only who's waiting; while checking whether this is an admin, nothing shows (no flash) */
+body.checking .hero, body.checking #public, body.is-admin .hero, body.is-admin #public { display:none; }
+body.is-admin main { margin-top:2rem; }
 footer { text-align:center; font-size:.8rem; color:var(--muted); padding:1.2rem; }
 </style>
 </head>
 <body>
+<script>try { if ((JSON.parse(localStorage.getItem('cb_account') || 'null') || {}).token) document.body.classList.add('checking'); } catch (e) {}</script>
 <nav class="gbn">
   <a class="brand" href="gameboard?home">
     <img src="images/gameboard_icon_180.png" alt="">
@@ -131,7 +135,7 @@ footer { text-align:center; font-size:.8rem; color:var(--muted); padding:1.2rem;
 </section>
 
 <main>
-  <div class="card">
+  <div class="card" id="public">
     <h2>While you wait, look around</h2>
     <p>One GameBoard account opens all four apps. See what each one does, and how it works.</p>
     <div class="apps">
@@ -146,7 +150,7 @@ footer { text-align:center; font-size:.8rem; color:var(--muted); padding:1.2rem;
   </div>
 
   <div class="card admin" id="admin" hidden>
-    <div class="admin-hd"><h2>Who’s waiting</h2><button type="button" class="btn ghost" id="adminReload">Refresh</button></div>
+    <div class="admin-hd"><h2>The Waiting Room — who’s waiting</h2><button type="button" class="btn ghost" id="adminReload">Refresh</button></div>
     <div id="adminList"></div>
     <div class="invite" id="adminInvite">
       <span class="lab">Invite to</span>
@@ -186,6 +190,7 @@ footer { text-align:center; font-size:.8rem; color:var(--muted); padding:1.2rem;
     $('adminGo').textContent = n > 1 ? 'Invite ' + n : 'Invite';
   }
   function show(users) {
+    document.body.classList.remove('checking'); document.body.classList.add('is-admin');
     $('admin').hidden = false;
     $('adminInvite').hidden = !users.length;
     $('adminList').innerHTML = !users.length ? '<div class="empty">Nobody’s waiting.</div>' :
@@ -198,8 +203,10 @@ footer { text-align:center; font-size:.8rem; color:var(--muted); padding:1.2rem;
     sync();
   }
   function load() {
-    post({ action: 'waitlist' }).then(function(r) { if (r && r.ok) show(r.users || []); else if (r && !r.not_admin && !r.need_auth) { $('admin').hidden = false; msg(esc(r.error || 'Couldn’t read the Waiting Room'), true); } })
-      .catch(function() {});
+    post({ action: 'waitlist' }).then(function(r) {
+      if (r && r.ok) return show(r.users || []);
+      if (r && !r.not_admin && !r.need_auth) { document.body.classList.add('is-admin'); $('admin').hidden = false; msg(esc(r.error || 'Couldn’t read the Waiting Room'), true); }
+    }).catch(function() {}).then(function() { document.body.classList.remove('checking'); });
   }
   $('adminReload').onclick = function() { msg(''); load(); };
   $('adminList').addEventListener('click', function(ev) {

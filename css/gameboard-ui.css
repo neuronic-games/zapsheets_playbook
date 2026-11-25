@@ -221,7 +221,6 @@ body.gb-setup .gs-shot figcaption { font-size:.74rem; color:#999; margin:.35rem 
 @media (min-width:900px) {
   body.gb-setup .page:has(> .gs-wide:not([hidden])) { max-width:none; padding:1.5rem 2rem 2rem; }
   body.gb-setup .gs-wide { min-height:calc(100vh - 8rem); box-sizing:border-box; padding:2rem 2.4rem; }
-  body.gb-setup .gs-wide .gs-intro { max-width:60rem; }
   body.gb-setup .gs-wide .gs-steps { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.7fr) minmax(0,1fr); gap:2rem; align-items:start; }
   body.gb-setup .gs-wide .gs-steps > li { padding:1.1rem 1.2rem 1.3rem 1.2rem; border:1.5px solid #e6e8f0; border-radius:14px; background:#fcfcfe; }
   body.gb-setup .gs-wide .gs-steps > li::before { position:static; margin:0 0 .6rem; width:2rem; height:2rem; font-size:1rem; }

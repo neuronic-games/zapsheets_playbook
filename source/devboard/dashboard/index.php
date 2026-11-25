@@ -2592,9 +2592,9 @@ function _dashActivityHtml() {
     var payment = isPay ? 'Paid out' : (_conStatus(c) || (/^(estimate|invoice)$/i.test(String(c.Type || '').trim()) ? _ceStatusValue(c) : ''));
     var badgeCls = 'client-contract-badge';
     if (!isPay) { if (payment === 'Paid' || payment === 'Fully Paid') badgeCls += ' paid'; else if (payment === 'Invoiced') badgeCls += ' invoiced'; else if (payment === 'Partial') badgeCls += ' partial'; }
-    var what = String(c.Summary || '').trim();
+    var what = String(c.Summary || '').trim();   // what it's for (a payment: the contract it's paid against)
     html += '<div class="dash-contract-row act-row"' + (isPay ? '' : ' onclick="openContractEditDialog(' + x.i + ')"') + '>' +
-      '<div><div class="dash-contract-game">' + esc(c.Game || '—') + '</div><div class="dash-contract-client">' + esc(isPay ? '→ ' + (c.Payee || '') : [c.Client || '', what].filter(Boolean).join(' · ')) + '</div></div>' +
+      '<div><div class="dash-contract-game">' + esc(c.Game || '—') + '</div><div class="dash-contract-client">' + esc(isPay ? ['→ ' + (c.Payee || ''), _cleanSummary(what)].filter(Boolean).join(' · ') : [c.Client || '', what].filter(Boolean).join(' · ')) + '</div></div>' +
       '<div style="color:#888;font-size:.72rem">' + esc(when) + '</div>' +
       '<div style="font-family:DINBlack,sans-serif;font-size:.78rem">' + esc(quote) + '</div>' +
       '<div><span class="' + badgeCls + '">' + esc(payment || '—') + '</span></div></div>';

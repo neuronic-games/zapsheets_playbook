@@ -288,6 +288,54 @@ body.designs .app { display:flex; flex-direction:column; }
   .d-grid { grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:.9rem; }
   .d-start { grid-template-columns:1fr; }
 }
+/* New design: the same three steps as the other apps' Link to your sheet (css/gameboard-ui.css, here in CardBoard's colours) */
+#createDlg { --gb-accent:#4b3fa8; --gb-accent-dk:#3b3190; --gb-accent-lt:#f3f1ff; --gb-black:'DINBlack',sans-serif; --gb-text:'DINRegular',sans-serif; }
+#createDlg .gs-start { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; margin:.2rem 0 1.3rem; }
+#createDlg .gs-start a { display:flex; flex-direction:column; gap:.2rem; padding:.85rem .95rem; border:1.5px solid #d6d9e6; border-radius:11px; color:#2e2763; text-decoration:none; transition:border-color .12s, background .12s; }
+#createDlg .gs-start a:hover { border-color:var(--gb-accent); background:var(--gb-accent-lt); }
+#createDlg .gs-start b { font-family:var(--gb-black); font-weight:400; font-size:.92rem; }
+#createDlg .gs-start span { font-size:.78rem; color:#8a8fa8; line-height:1.4; }
+/* Link to your sheet: three numbered steps */
+#createDlg .gs-intro { font-size:.86rem; color:#666; line-height:1.6; margin:0 0 1.1rem; }
+#createDlg .gs-steps { list-style:none; counter-reset:gs; padding:0; margin:0 0 1.2rem; }
+#createDlg .gs-steps > li { counter-increment:gs; position:relative; padding:0 0 1.1rem 2.3rem; font-size:.88rem; color:#555; line-height:1.55; }
+#createDlg .gs-steps > li::before { content:counter(gs); position:absolute; left:0; top:-.05rem; width:1.55rem; height:1.55rem; border-radius:50%; background:var(--gb-accent); color:#fff; font-family:var(--gb-black); font-size:.8rem; display:flex; align-items:center; justify-content:center; }
+#createDlg .gs-steps > li > b { display:block; font-family:var(--gb-black); font-weight:400; color:#222; font-size:.9rem; margin:0 0 .45rem; }
+#createDlg .gs-steps > li:last-child { padding-bottom:0; }
+#createDlg .gs-steps > li:last-child > b { margin:0; }
+#createDlg .gs-acct { display:flex; flex-direction:column; align-items:flex-start; gap:.45rem; background:#f6f7fb; border:1px solid #e3e5ef; border-radius:9px; padding:.5rem .65rem; }
+#createDlg .gs-acct code { font-size:.8rem; color:#333; overflow-wrap:anywhere; line-height:1.5; }
+#createDlg .gs-steps .gs-start { margin:.1rem 0 .7rem; }
+#createDlg .gs-more { margin:.6rem 0 0; border:1px solid #e3e5ef; border-radius:9px; background:#fff; }
+#createDlg .gs-more summary { cursor:pointer; padding:.45rem .7rem; font-family:var(--gb-black); font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; line-height:1.2; color:var(--gb-accent-dk); list-style:none; display:flex; align-items:center; gap:.45rem; }
+#createDlg .gs-more summary::-webkit-details-marker { display:none; }
+#createDlg .gs-more summary svg { flex:none; width:15px; height:15px; display:block; margin-top:-1px; }
+#createDlg .gs-more summary::after { content:'▾'; margin-left:auto; font-size:.75rem; transition:transform .15s; }
+#createDlg .gs-more[open] summary::after { transform:rotate(180deg); }
+#createDlg .gs-more p { margin:0; padding:0 .8rem .6rem; font-size:.8rem; line-height:1.5; color:#555; }
+#createDlg .gs-more p b { color:#333; }
+#createDlg .gs-how { font-size:.8rem; color:#888; margin:0 0 .2rem; }
+#createDlg .gs-sub { padding-left:1.15rem; margin:0 0 .7rem; font-size:.84rem; }
+#createDlg .gs-sub li { margin:0 0 .2rem; }
+#createDlg .gs-sub strong { color:#333; }
+#createDlg .gs-shot { margin:0; }
+#createDlg .gs-shot img { display:block; width:100%; max-width:380px; border-radius:10px; border:1px solid #e3e5ef; box-shadow:0 2px 10px rgba(0,0,0,.08); }
+#createDlg .gs-shot figcaption { font-size:.74rem; color:#999; margin:.35rem 0 0; }
+/* Wide screens: the whole width, the three steps side by side */
+@media (min-width:900px) {
+  .d-dlg:has(.gs-wide) { max-width:min(100%, 1700px); }
+  #createDlg .gs-wide { min-height:calc(90vh - 2rem); box-sizing:border-box; padding:2rem 2.4rem; }
+  #createDlg .gs-wide .gs-steps { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.7fr) minmax(0,1fr); gap:2rem; align-items:start; }
+  #createDlg .gs-wide .gs-steps > li { padding:1.1rem 1.2rem 1.3rem 1.2rem; border:1.5px solid #e6e8f0; border-radius:14px; background:#fcfcfe; }
+  #createDlg .gs-wide .gs-steps > li::before { position:static; margin:0 0 .6rem; width:2rem; height:2rem; font-size:1rem; }
+  #createDlg .gs-wide .gs-steps > li > b { font-size:1rem; margin:0 0 .7rem; }
+  #createDlg .gs-wide .gs-steps > li:last-child > b { margin:0 0 .7rem; }
+  #createDlg .gs-wide .gs-shot img { max-width:min(100%, 360px); }   /* the whole dialog fits on the screen */
+  #createDlg .gs-wide .gs-steps .gs-btns { flex-wrap:wrap; }
+  #createDlg .gs-wide .log-panel { margin-top:1rem; max-height:50vh; }   /* the progress, under step 3 */
+}
+@media (max-width:560px) { #createDlg .gs-start { grid-template-columns:1fr; } }
+#createDlg .why { margin:0 0 1.1rem; }
 </style>
 </head>
 <body>
@@ -385,15 +433,10 @@ body.designs .app { display:flex; flex-direction:column; }
 <div class="d-ov" id="createOverlay" onclick="closeCreateDialog()">
   <div class="d-dlg" id="createDlg" onclick="event.stopPropagation()" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();startSetup();}">
     <button type="button" class="x-btn" onclick="closeCreateDialog()" title="Close">×</button>
-  <div class="card" id="connectCard">
-    <div class="card-title">New design</div>
-    <div class="d-start">
-      <a href="https://docs.google.com/spreadsheets/d/1sy20Ig_fmfpTfnpkEUXibgErXj2XISiqr-Ag6Xe3uRc/copy" target="_blank" rel="noopener"><b>Copy the sample deck</b><span>Sea Creatures — 18 cards with a finished layout, to play with</span></a>
-      <a href="https://sheets.new" target="_blank" rel="noopener"><b>Start a blank sheet</b><span>A new Google Sheet: one tab per deck, one row per card</span></a>
-    </div>
-    <div class="instructions">
-      Keep your cards in a Google Sheet — one tab per deck, one row per card, one column per field (Name, Cost, Text, Image…). CardBoard turns each row into a card using a layout you design, then lays them out on print sheets.
-      <details class="why">
+  <div class="card gs-wide" id="connectCard">
+    <div class="card-title">Link to your sheet</div>
+    <p class="gs-intro">Keep your cards in a Google Sheet — one tab per deck, one row per card, one column per field (Name, Cost, Text, Image…). CardBoard turns each row into a card using a layout you design, then lays them out on print sheets.</p>
+    <details class="why">
         <summary>Why a Google Sheet?</summary>
         <p><b>It’s where your cards live.</b> Your cards, your layouts and your tags are all saved in your sheet (CardBoard adds a <i>layouts</i> and a <i>tags</i> tab for its part) — CardBoard is the designer, the sheet is the home. That’s why it needs one to start.</p>
         <ul>
@@ -402,26 +445,46 @@ body.designs .app { display:flex; flex-direction:column; }
           <li><b>Work with others.</b> Share the sheet with co-designers or playtesters the usual Google way.</li>
           <li><b>Nothing gets lost.</b> Google keeps the sheet’s version history, so you can always go back.</li>
         </ul>
-        <p><b>Why share it with that address?</b> It’s CardBoard’s own Google account — it lets CardBoard read your cards and save your designs back. It only sees the sheets you share with it, and you can remove it whenever you like.</p>
-      </details>
-      <ol>
-        <li>Open (or make, above) a Google Spreadsheet and share it with the CardBoard service account.</li>
-        <li>Click <strong>Share</strong> and add <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> <button class="copy-email-btn" id="copyEmailBtn" onclick="copyEmail()">Copy</button> with <strong>Editor</strong> rights.</li>
-        <li>Paste the spreadsheet URL or ID below.</li>
-      </ol>
-    </div>
-
-    <input type="text" id="sheetInput" class="sheet-input"
-      placeholder="https://docs.google.com/spreadsheets/d/… or sheet ID"
-      onkeydown="if(event.key==='Enter')startSetup()"
-      autocomplete="off" spellcheck="false" />
-
-    <div class="d-btns">
-      <button type="button" class="cancel-btn" onclick="forceCloseCreateDialog()">Cancel</button>
-      <button id="connectBtn" class="connect-btn" onclick="startSetup()">Connect &amp; Open</button>
-    </div>
-
-    <div id="logPanel" class="log-panel" style="display:none"></div>
+    </details>
+    <ol class="gs-steps">
+      <li>
+        <b>Copy the CardBoard service account</b>
+        <div class="gs-acct"><code>editor@<wbr>zapsheets-480701.iam.gserviceaccount.com</code><button type="button" class="copy-email-btn" id="copyEmailBtn" onclick="copyEmail()">Copy</button></div>
+        <details class="gs-more">
+          <summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="17"/><circle cx="12" cy="7.5" r=".6" fill="currentColor"/></svg>What is a service account?</summary>
+          <p><b>Why share with this address?</b> It’s CardBoard’s own Google account — a service account, not a person. CardBoard reads your sheet and saves the changes you make in the app back to it through this account. It’s the same account for all the GameBoard apps.</p>
+          <p><b>What it can see.</b> Only the sheets you share with it. It has no access to the rest of your Google Drive, your Gmail or any other files.</p>
+          <p><b>Why Editor?</b> To add the tabs CardBoard needs and write your changes. It only changes the sheet when you do something in the app; you’ll see those changes in the sheet’s version history.</p>
+          <p><b>Your data stays yours.</b> The sheet stays in your Google Drive. CardBoard keeps a copy of what it reads on its server so pages load quickly; it isn’t shared with anyone.</p>
+          <p><b>Stop any time.</b> Remove the address in the sheet’s Share window and CardBoard can no longer open the sheet. Everything in it stays where it is.</p>
+        </details>
+      </li>
+      <li>
+        <b>Open (or make) a Google Spreadsheet, share it with CardBoard, and copy its URL</b>
+        <div class="gs-start">
+          <a href="https://docs.google.com/spreadsheets/d/1sy20Ig_fmfpTfnpkEUXibgErXj2XISiqr-Ag6Xe3uRc/copy" target="_blank" rel="noopener"><b>Copy the sample deck</b><span>Sea Creatures — 18 cards with a finished layout</span></a>
+          <a href="https://sheets.new" target="_blank" rel="noopener"><b>Start a blank sheet</b><span>One tab per deck, one row per card</span></a>
+        </div>
+        <div class="gs-how">In the sheet:</div>
+        <ol class="gs-sub">
+          <li>Choose <strong>File › Share › Share with others</strong> (or the <strong>Share</strong> button at the top right).</li>
+          <li>Paste the service account into <strong>Add people, groups…</strong>, leave it as <strong>Editor</strong>, and click <strong>Send</strong>.</li>
+          <li>Copy the sheet’s URL from your browser’s address bar (or click <strong>Copy link</strong> in the Share window).</li>
+        </ol>
+        <figure class="gs-shot"><img src="images/help/google-share.jpg" alt="Google Sheets’ Share window: the service account added as Editor, with Copy link and Send" loading="lazy"><figcaption>The Share window in Google Sheets — the service account added as <b>Editor</b>.</figcaption></figure>
+      </li>
+      <li><b>Paste the spreadsheet URL or ID</b>
+        <input type="text" id="sheetInput" class="sheet-input"
+          placeholder="https://docs.google.com/spreadsheets/d/… or sheet ID"
+          onkeydown="if(event.key==='Enter')startSetup()"
+          autocomplete="off" spellcheck="false" />
+        <div class="d-btns">
+          <button type="button" class="cancel-btn" onclick="forceCloseCreateDialog()">Cancel</button>
+          <button id="connectBtn" class="connect-btn" onclick="startSetup()">Connect &amp; Open</button>
+        </div>
+        <div id="logPanel" class="log-panel" style="display:none"></div>
+      </li>
+    </ol>
   </div>
   </div>
 </div>

@@ -289,6 +289,69 @@ $_sheet_id = $_bm[2] ?? '';
     font-size: .82rem; line-height: 1.6;
     color: rgba(255,255,255,.35); margin: 0;
   }
+  /* ── Pick the games: a panel that pulls down from the top ── */
+  #pick-tab {
+    position: fixed; top: 32px; left: 50%; transform: translateX(-50%);
+    z-index: 40; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 6px 14px 5px; border-radius: 0 0 14px 14px;
+    color: rgba(255,255,255,.75); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase;
+    background: rgba(0,0,0,.35); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    text-shadow: 0 1px 3px rgba(0,0,0,.5); cursor: grab; touch-action: none; -webkit-tap-highlight-color: transparent;
+    transition: color .15s, opacity .2s;
+  }
+  #pick-tab::before { content: ''; width: 34px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.55); }
+  #pick-tab:hover { color: #fff; }
+  #pick-tab:hover::before { background: #fff; }
+  body.pick-open #pick-tab { opacity: 0; pointer-events: none; }
+  #pick-shade { position: fixed; inset: 0; z-index: 44; background: rgba(0,0,0,.45); opacity: 0; pointer-events: none; transition: opacity .25s; }
+  body.pick-open #pick-shade { opacity: 1; pointer-events: auto; }
+  #pick {
+    position: fixed; top: 0; left: 50%; z-index: 45;
+    width: min(520px, 100%); max-height: 78vh; display: flex; flex-direction: column;
+    background: rgba(22,22,36,.97); border: 1px solid rgba(255,255,255,.1); border-top: none;
+    border-radius: 0 0 18px 18px; box-shadow: 0 12px 40px rgba(0,0,0,.55);
+    transform: translate(-50%, -100%); transition: transform .28s cubic-bezier(.25,.46,.45,.94);
+    padding-top: env(safe-area-inset-top, 0px);
+    -webkit-user-select: none; user-select: none;
+  }
+  body.pick-open #pick { transform: translate(-50%, 0); }
+  #pick.drag { transition: none; }
+  .pick-hd { display: flex; align-items: center; gap: .5rem; padding: .9rem 1rem .6rem; color: #fff; }
+  .pick-hd b { font-family: 'DINBlack', sans-serif; font-weight: normal; font-size: .95rem; letter-spacing: .02em; }
+  .pick-hd span { font-size: .72rem; color: rgba(255,255,255,.45); margin-right: auto; }
+  .pick-hd button {
+    font-family: 'DINBlack', sans-serif; font-size: .62rem; letter-spacing: .08em; text-transform: uppercase;
+    background: transparent; color: rgba(255,255,255,.75); border: 1px solid rgba(255,255,255,.25);
+    border-radius: 999px; padding: .3rem .7rem; cursor: pointer;
+  }
+  .pick-hd button:hover { color: #fff; border-color: rgba(255,255,255,.6); }
+  .pick-hd #pick-done { background: #c8860a; border-color: #c8860a; color: #fff; }
+  .pick-sub { font-size: .7rem; color: rgba(255,255,255,.4); padding: 0 1rem .5rem; }
+  #pick-list { overflow-y: auto; padding: 0 .5rem .5rem; -webkit-overflow-scrolling: touch; }
+  .pick-row {
+    display: flex; align-items: center; gap: .65rem; padding: .4rem .5rem; margin: 2px 0;
+    border-radius: 10px; color: #fff; cursor: pointer; background: rgba(255,255,255,.03);
+  }
+  .pick-row:hover { background: rgba(255,255,255,.07); }
+  .pick-row.off { color: rgba(255,255,255,.45); }
+  .pick-row.off .pick-img { opacity: .4; filter: grayscale(1); }
+  .pick-row.nophoto { cursor: default; }
+  .pick-row.dragging { background: rgba(200,134,10,.22); box-shadow: 0 6px 20px rgba(0,0,0,.4); position: relative; z-index: 2; }
+  .pick-grip { flex: none; width: 22px; text-align: center; color: rgba(255,255,255,.35); font-size: 1rem; letter-spacing: -2px; cursor: grab; touch-action: none; padding: .35rem 0; }
+  .pick-grip:hover { color: #fff; }
+  .pick-num { flex: none; width: 1.3rem; text-align: right; font-size: .7rem; color: #c8860a; font-family: 'DINBlack', sans-serif; }
+  .pick-row.off .pick-num { visibility: hidden; }
+  .pick-img { flex: none; width: 46px; height: 32px; border-radius: 5px; background: #2a2a40 center/cover no-repeat; }
+  .pick-nm { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .pick-nm b { font-family: 'DINBlack', sans-serif; font-weight: normal; font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pick-nm small { font-size: .66rem; color: rgba(255,255,255,.4); }
+  .pick-sw { flex: none; width: 34px; height: 20px; border-radius: 10px; background: rgba(255,255,255,.18); position: relative; transition: background .15s; }
+  .pick-sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; }
+  .pick-row:not(.off) .pick-sw { background: #c8860a; }
+  .pick-row:not(.off) .pick-sw::after { transform: translateX(14px); }
+  .pick-row.nophoto .pick-sw { display: none; }
+  .pick-bar { flex: none; height: 22px; display: flex; align-items: center; justify-content: center; cursor: grab; touch-action: none; }
+  .pick-bar::before { content: ''; width: 40px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.3); }
 </style>
 </head>
 <body>
@@ -325,8 +388,18 @@ $_sheet_id = $_bm[2] ?? '';
       <path d="M3 9h18M9 21V9"/>
     </svg>
     <p class="empty-title">No slides to show</p>
-    <p class="empty-sub">Add games with <strong>Status = Pitching</strong><br>and a <strong>Photo URL</strong> or <strong>Image URL</strong>.</p>
+    <p class="empty-sub" id="empty-sub">Add games with <strong>Status = Pitching</strong><br>and a <strong>Photo URL</strong> or <strong>Image URL</strong>.</p>
   </div>
+</div>
+
+<!-- Pull down to pick the games and their order -->
+<div id="pick-tab" role="button" tabindex="0" aria-label="Choose the games">Games</div>
+<div id="pick-shade"></div>
+<div id="pick" role="dialog" aria-label="Choose the games and their order">
+  <div class="pick-hd"><b>Slides</b><span id="pick-n"></span><button type="button" id="pick-all">All</button><button type="button" id="pick-reset">Reset</button><button type="button" id="pick-done">Done</button></div>
+  <div class="pick-sub">Tap a game to show or hide it · drag <span style="letter-spacing:-2px">⋮⋮</span> to change the order</div>
+  <div id="pick-list"></div>
+  <div class="pick-bar" id="pick-bar" aria-hidden="true"></div>
 </div>
 
 <script src="js/core/zapsheetsCore.js?v=2"></script>
@@ -583,7 +656,9 @@ $_sheet_id = $_bm[2] ?? '';
       dotsEl.innerHTML = slides.map(function (_, i) {
         return '<div class="dot' + (i === 0 ? ' active' : '') + '"></div>';
       }).join('');
+      dotsEl.style.display = '';
     } else {
+      dotsEl.innerHTML = '';
       dotsEl.style.display = 'none';
     }
   }
@@ -740,6 +815,9 @@ $_sheet_id = $_bm[2] ?? '';
 
   // ── Keyboard nav ─────────────────────────────────────────
   document.addEventListener('keydown', function (e) {
+    if (document.body.classList.contains('pick-open')) { if (e.key === 'Escape') { e.preventDefault(); closePick(); } return; }
+    if (e.key === 'g' || e.key === 'G') { e.preventDefault(); openPick(); return; }
+    if (!slides.length) return;
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  { e.preventDefault(); next(); }
     if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')    { e.preventDefault(); prev(); }
     if (e.key === ' ')                                     { e.preventDefault(); togglePause(); }
@@ -753,7 +831,7 @@ $_sheet_id = $_bm[2] ?? '';
   // ── Visibility: pause when tab is hidden ─────────────────
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) { stopProgress(); }
-    else if (!paused)    { resetProgress(); }
+    else if (!paused && slides.length && !document.body.classList.contains('pick-open')) { resetProgress(); }
   });
 
   // ── Empty / error ─────────────────────────────────────────
@@ -762,6 +840,14 @@ $_sheet_id = $_bm[2] ?? '';
     emptyEl.style.display   = 'flex';
     document.getElementById('progress-bar').style.display = 'none';
     counterEl.style.display = 'none';
+    dotsEl.style.display = 'none';
+    trackEl.innerHTML = '';
+    stopProgress();
+  }
+  function hideEmpty() {
+    emptyEl.style.display = 'none';
+    document.getElementById('progress-bar').style.display = '';
+    counterEl.style.display = '';
   }
 
   // ── Load games.json ──────────────────────────────────────
@@ -774,12 +860,9 @@ $_sheet_id = $_bm[2] ?? '';
     try { games = JSON.parse(xhr.responseText); } catch (e) { showEmpty(); return; }
     if (!Array.isArray(games)) { showEmpty(); return; }
 
-    slides = games
-      .filter(function (g) {
-        var status = (g['Status'] || '').trim().toLowerCase();
-        var photo  = stripImageFormula((g['Photo URL'] || g['Image URL'] || g['Image'] || '').trim());
-        return status === 'pitching' && photo;
-      })
+    // Every game with a name: the ones with a picture can be slides
+    allGames = games
+      .filter(function (g) { return (g['Name'] || '').trim(); })
       .map(function (g) {
         var designers = ['Designer1', 'Designer2', 'Designer3', 'Designer4']
           .map(function (f) { return (g[f] || '').trim(); })
@@ -790,10 +873,9 @@ $_sheet_id = $_bm[2] ?? '';
           photo:     stripImageFormula((g['Photo URL'] || g['Image URL'] || g['Image'] || '').trim()),
           designers: designers,
           page:      (g['Page URL'] || '').trim(),
+          status:    (g['Status']  || '').trim(),
         };
       });
-
-    if (!slides.length) { showEmpty(); return; }
 
     // If a previous online session cached images server-side, swap Dropbox URLs
     // to same-origin server URLs now — before buildDom sets img.src — so the SW
@@ -803,26 +885,182 @@ $_sheet_id = $_bm[2] ?? '';
         var stored = localStorage.getItem('pb_urlmap_' + sheetId);
         if (!stored) return;
         var map = JSON.parse(stored);
-        slides.forEach(function (s) {
+        allGames.forEach(function (s) {
           if (map[s.photo]) s.photo = map[s.photo];
         });
       } catch (e) {}
     })();
 
-    // Apply any IDB-stored blobs as Object URLs before building DOM —
-    // this makes images work offline on the very first paint without
-    // relying on the service worker to serve them from cache.
+    applyPick();
+  };
+  // ── The games shown, and their order: yours to choose (pull down from the top) ──
+  // Kept per sheet in this browser: {order: [names], on: [names]}. Until you choose, it's the
+  // Pitching games with a picture, in the sheet's order; new games join at the end the same way.
+  var allGames = [];
+  var PICK_KEY = 'pb_slides_pick_' + sheetId;
+  function defaultOn(g) { return !!g.photo && g.status.toLowerCase() === 'pitching'; }
+  function loadPick() { try { var p = JSON.parse(localStorage.getItem(PICK_KEY) || 'null'); return p && Array.isArray(p.order) && Array.isArray(p.on) ? p : null; } catch (e) { return null; } }
+  function savePick(p) { try { if (p) localStorage.setItem(PICK_KEY, JSON.stringify(p)); else localStorage.removeItem(PICK_KEY); } catch (e) {} }
+  // The games in the chosen order, each with whether it's shown
+  function pickedList() {
+    var p = loadPick(), byName = {}, out = [];
+    allGames.forEach(function (g) { byName[g.name.toLowerCase()] = g; });
+    if (p) {
+      var on = {}; p.on.forEach(function (n) { on[String(n).toLowerCase()] = 1; });
+      p.order.forEach(function (n) {
+        var g = byName[String(n).toLowerCase()]; if (!g || g._seen) return;
+        g._seen = 1; out.push({ g: g, on: !!on[g.name.toLowerCase()] && !!g.photo });
+      });
+    }
+    allGames.forEach(function (g) { if (!g._seen) out.push({ g: g, on: defaultOn(g) }); delete g._seen; });
+    out.forEach(function (x) { delete x.g._seen; });
+    return out;
+  }
+  var _shownOnce = false;
+  function applyPick(keepName) {
+    slides = pickedList().filter(function (x) { return x.on; }).map(function (x) { return x.g; });
+    renderPickList();
+    if (!slides.length) {
+      var sub = document.getElementById('empty-sub');
+      if (sub && allGames.some(function (g) { return g.photo; })) sub.innerHTML = 'No games picked. Pull down <strong>Games</strong> at the top to choose them.';
+      showEmpty(); return;
+    }
+    hideEmpty();
+    var start = 0;
+    if (keepName) slides.forEach(function (s, i) { if (s.name === keepName) start = i; });
+    // Apply any IDB-stored images before building the DOM — this makes images work offline
+    // on the very first paint without relying on the service worker.
     applyIDBImages().then(function () {
       buildDom();
-      setSlide(0, false);
-      resetProgress();
+      setSlide(start, false);
+      if (!document.body.classList.contains('pick-open')) resetProgress();
       updateDotCacheStatus();
       prefetchImages().then(function () {
         setTimeout(updateDotCacheStatus, 400);
       });
       cacheOnServer();
     });
+  }
+  var pickEl = document.getElementById('pick'), pickList = document.getElementById('pick-list');
+  function escH(t) { return String(t || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function renderPickList() {
+    var list = pickedList(), n = 0;
+    pickList.innerHTML = list.map(function (x) {
+      var g = x.g, u = g.photo ? (g._idbSrc || resolveImage(g.photo).cached) : '';
+      var num = x.on ? ++n : '';
+      return '<div class="pick-row' + (x.on ? '' : ' off') + (g.photo ? '' : ' nophoto') + '" data-name="' + escH(g.name) + '">' +
+        '<span class="pick-grip" title="Drag to reorder">⋮⋮</span><span class="pick-num">' + num + '</span>' +
+        '<span class="pick-img"' + (u ? ' style="background-image:url(&quot;' + escH(u) + '&quot;)"' : '') + '></span>' +
+        '<span class="pick-nm"><b>' + escH(g.name) + '</b><small>' + escH(g.photo ? (g.status || 'No status') : 'No picture — add a Photo URL to show it') + '</small></span>' +
+        '<span class="pick-sw" aria-hidden="true"></span></div>';
+    }).join('');
+    document.getElementById('pick-n').textContent = n + ' of ' + list.filter(function (x) { return x.g.photo; }).length + ' shown';
+  }
+  // The list as it stands on screen → saved
+  function savePickFromDom() {
+    var order = [], on = [];
+    pickList.querySelectorAll('.pick-row').forEach(function (r) { order.push(r.dataset.name); if (!r.classList.contains('off')) on.push(r.dataset.name); });
+    savePick({ order: order, on: on });
+    _pickChanged = true;
+  }
+  var _pickChanged = false;
+  function openPick() {
+    if (document.body.classList.contains('pick-open')) return;
+    renderPickList();
+    _pickChanged = false;
+    pickEl.classList.remove('drag'); pickEl.style.transform = '';
+    document.body.classList.add('pick-open');
+    stopProgress();
+  }
+  function closePick() {
+    pickEl.classList.remove('drag'); pickEl.style.transform = '';
+    if (!document.body.classList.contains('pick-open')) return;
+    document.body.classList.remove('pick-open');
+    if (_pickChanged) { _pickChanged = false; applyPick(slides[current] && slides[current].name); }
+    else if (!paused && slides.length) resetProgress();
+  }
+  window.openPick = openPick;
+  pickList.addEventListener('click', function (e) {
+    if (e.target.closest('.pick-grip')) return;
+    var r = e.target.closest('.pick-row'); if (!r || r.classList.contains('nophoto')) return;
+    r.classList.toggle('off');
+    var n = 0; pickList.querySelectorAll('.pick-row').forEach(function (x) { x.querySelector('.pick-num').textContent = x.classList.contains('off') ? '' : ++n; });
+    document.getElementById('pick-n').textContent = n + ' of ' + pickList.querySelectorAll('.pick-row:not(.nophoto)').length + ' shown';
+    savePickFromDom();
+  });
+  document.getElementById('pick-done').onclick = closePick;
+  document.getElementById('pick-shade').onclick = closePick;
+  document.getElementById('pick-all').onclick = function () {
+    pickList.querySelectorAll('.pick-row:not(.nophoto)').forEach(function (r) { r.classList.remove('off'); });
+    savePickFromDom(); renderPickList();
   };
+  document.getElementById('pick-reset').onclick = function () { savePick(null); _pickChanged = true; renderPickList(); };
+  // Reorder: drag a row by its grip (mouse or touch)
+  pickList.addEventListener('pointerdown', function (e) {
+    var grip = e.target.closest('.pick-grip'); if (!grip) return;
+    e.preventDefault();
+    var row = grip.closest('.pick-row'), y0 = e.clientY, moved = false, scrollT = null;
+    row.classList.add('dragging');
+    // Listen on the window: moving the row in the list would end a pointer capture on the grip
+    function move(ev) {
+      var y = ev.clientY, lr = pickList.getBoundingClientRect();
+      if (Math.abs(y - y0) > 3) moved = true;
+      // Near the list's edges: scroll it
+      clearInterval(scrollT);
+      if (y < lr.top + 28) scrollT = setInterval(function () { pickList.scrollTop -= 8; }, 16);
+      else if (y > lr.bottom - 28) scrollT = setInterval(function () { pickList.scrollTop += 8; }, 16);
+      var rows = Array.prototype.slice.call(pickList.querySelectorAll('.pick-row:not(.dragging)'));
+      var before = null;
+      for (var i = 0; i < rows.length; i++) { var rr = rows[i].getBoundingClientRect(); if (y < rr.top + rr.height / 2) { before = rows[i]; break; } }
+      if (before !== row.nextSibling) pickList.insertBefore(row, before);
+    }
+    function up() {
+      clearInterval(scrollT);
+      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
+      row.classList.remove('dragging');
+      if (moved) { savePickFromDom(); renderPickList(); }
+    }
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+  });
+  // Pull the panel down by the tab at the top (or tap it); push it back up by the bar at its bottom
+  function pullable(handle, opening) {
+    handle.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      var y0 = e.clientY, h = pickEl.offsetHeight, dy = 0;
+      try { handle.setPointerCapture(e.pointerId); } catch (x) {}
+      if (opening) { renderPickList(); h = pickEl.offsetHeight; stopProgress(); }
+      pickEl.classList.add('drag');
+      function move(ev) {
+        dy = ev.clientY - y0;
+        var t = opening ? Math.min(0, -h + Math.max(0, dy)) : Math.min(0, Math.min(0, dy));
+        pickEl.style.transform = 'translate(-50%, ' + t + 'px)';
+      }
+      function up() {
+        handle.removeEventListener('pointermove', move); handle.removeEventListener('pointerup', up); handle.removeEventListener('pointercancel', up);
+        pickEl.classList.remove('drag'); pickEl.style.transform = '';
+        if (opening) { if (dy > 50 || Math.abs(dy) < 6) openPick(); else if (!paused && slides.length) resetProgress(); }
+        else { if (dy < -40 || Math.abs(dy) < 6) closePick(); }
+      }
+      handle.addEventListener('pointermove', move); handle.addEventListener('pointerup', up); handle.addEventListener('pointercancel', up);
+    });
+  }
+  pullable(document.getElementById('pick-tab'), true);
+  pullable(document.getElementById('pick-bar'), false);
+  document.getElementById('pick-tab').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); openPick(); } });
+  // On a phone: swipe down from the top of a slide
+  (function () {
+    var vy0 = null, vx0 = 0;
+    document.getElementById('slideshow').addEventListener('touchstart', function (e) {
+      vy0 = e.touches.length === 1 && e.touches[0].clientY < window.innerHeight * 0.3 ? e.touches[0].clientY : null;
+      if (vy0 != null) vx0 = e.touches[0].clientX;
+    }, { passive: true });
+    document.getElementById('slideshow').addEventListener('touchmove', function (e) {
+      if (vy0 == null) return;
+      var dy = e.touches[0].clientY - vy0, dx = Math.abs(e.touches[0].clientX - vx0);
+      if (dx > dy) { vy0 = null; return; }
+      if (dy > 60) { vy0 = null; openPick(); }
+    }, { passive: true });
+  })();
   xhr.onerror = function () { showEmpty(); };
   xhr.send();
 

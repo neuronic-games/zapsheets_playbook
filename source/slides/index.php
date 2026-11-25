@@ -291,17 +291,13 @@ $_sheet_id = $_bm[2] ?? '';
   }
   /* ── Pick the games: a panel that pulls down from the top ── */
   #pick-tab {
-    position: fixed; top: 32px; left: 50%; transform: translateX(-50%);
-    z-index: 40; display: flex; flex-direction: column; align-items: center; gap: 3px;
-    padding: 6px 14px 5px; border-radius: 0 0 14px 14px;
-    color: rgba(255,255,255,.75); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase;
-    background: rgba(0,0,0,.35); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-    text-shadow: 0 1px 3px rgba(0,0,0,.5); cursor: grab; touch-action: none; -webkit-tap-highlight-color: transparent;
-    transition: color .15s, opacity .2s;
+    position: fixed; top: 9px; left: 50%; transform: translateX(-50%);
+    z-index: 40; padding: 3px 18px 8px;   /* a bigger target than the bar itself */
+    cursor: grab; touch-action: none; -webkit-tap-highlight-color: transparent; transition: opacity .2s;
   }
-  #pick-tab::before { content: ''; width: 34px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.55); }
-  #pick-tab:hover { color: #fff; }
-  #pick-tab:hover::before { background: #fff; }
+  #pick-tab::before { content: ''; display: block; width: 30px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.28); transition: background .15s, width .15s; }
+  #pick-tab:hover::before, #pick-tab:focus-visible::before { background: rgba(255,255,255,.7); width: 38px; }
+  #pick-tab:focus { outline: none; }
   body.pick-open #pick-tab { opacity: 0; pointer-events: none; }
   #pick-shade { position: fixed; inset: 0; z-index: 44; background: rgba(0,0,0,.45); opacity: 0; pointer-events: none; transition: opacity .25s; }
   body.pick-open #pick-shade { opacity: 1; pointer-events: auto; }
@@ -352,6 +348,26 @@ $_sheet_id = $_bm[2] ?? '';
   .pick-row.nophoto .pick-sw { display: none; }
   .pick-bar { flex: none; height: 22px; display: flex; align-items: center; justify-content: center; cursor: grab; touch-action: none; }
   .pick-bar::before { content: ''; width: 40px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.3); }
+  /* ── Drag the game's name up: its stats and components rise with it; let go and they slide back ── */
+  .slide-more { height: 0; overflow: hidden; transition: height .32s cubic-bezier(.25,.46,.45,.94); }
+  .slide-more.drag { transition: none; }
+  .slide-more-in {
+    margin: .8rem 0 .2rem; padding: .9rem 1rem; border-radius: 14px;
+    background: rgba(10,10,20,.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,.1); color: #fff; max-width: 640px;
+  }
+  .sm-stats { display: flex; flex-wrap: wrap; gap: .5rem 1.4rem; }
+  .sm-stat b { display: block; font-family: 'DINBlack', sans-serif; font-weight: normal; font-size: 1.15rem; line-height: 1.2; }
+  .sm-stat span { font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.55); }
+  .sm-h { margin: .85rem 0 .35rem; font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: #c8860a; }
+  .sm-stats + .sm-h { margin-top: .9rem; }
+  .sm-h:first-child { margin-top: 0; }
+  .sm-comp { margin: 0; padding: 0; list-style: none; columns: 2; column-gap: 1.4rem; font-size: .85rem; line-height: 1.55; color: rgba(255,255,255,.88); }
+  .sm-comp li { break-inside: avoid; padding-left: .9em; position: relative; }
+  .sm-comp li::before { content: ''; position: absolute; left: 0; top: .62em; width: 4px; height: 4px; border-radius: 50%; background: #c8860a; }
+  .sm-none { font-size: .8rem; color: rgba(255,255,255,.55); margin: 0; }
+  .slide-info { cursor: ns-resize; }
+  @media (max-width: 420px) { .sm-comp { columns: 1; } }
 </style>
 </head>
 <body>
@@ -393,7 +409,7 @@ $_sheet_id = $_bm[2] ?? '';
 </div>
 
 <!-- Pull down to pick the games and their order -->
-<div id="pick-tab" role="button" tabindex="0" aria-label="Choose the games">Games</div>
+<div id="pick-tab" role="button" tabindex="0" aria-label="Choose the games" title="Pull down to choose the games"></div>
 <div id="pick-shade"></div>
 <div id="pick" role="dialog" aria-label="Choose the games and their order">
   <div class="pick-hd"><b>Slides</b><span id="pick-n"></span><button type="button" id="pick-all">All</button><button type="button" id="pick-reset">Reset</button><button type="button" id="pick-done">Done</button></div>
@@ -647,6 +663,10 @@ $_sheet_id = $_bm[2] ?? '';
         desEl.textContent = s.designers;
         info.appendChild(desEl);
       }
+      var more = document.createElement('div');
+      more.className = 'slide-more';
+      more.innerHTML = '<div class="slide-more-in"><p class="sm-none">Loading…</p></div>';
+      info.appendChild(more);
       wrap.appendChild(info);
       trackEl.appendChild(wrap);
     });
@@ -685,7 +705,68 @@ $_sheet_id = $_bm[2] ?? '';
     });
     // Counter
     counterEl.textContent = (current + 1) + ' / ' + slides.length;
+    // Its stats and components, ready for a drag up (and the next one's)
+    loadMore(current); if (slides.length > 1) loadMore((current + 1) % slides.length);
   }
+
+  // ── Stats and components: from the game's own data (game-{Name}-en.json), kept for offline ──
+  var MORE_KEY = 'pb_slide_more_' + sheetId;
+  function moreStore() { try { return JSON.parse(localStorage.getItem(MORE_KEY) || '{}') || {}; } catch (e) { return {}; } }
+  function moreHtml(rows) {
+    var v = function (n) { var r = (rows || []).filter(function (x) { return x && x.Name === n && String(x.Value || '').trim(); })[0]; return r ? String(r.Value).trim() : ''; };
+    var e = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    var stats = [], p1 = v('MinPlayers'), p2 = v('MaxPlayers'), t1 = v('MinPlaytime'), t2 = v('MaxPlaytime'), w = parseFloat(v('Weight'));
+    if (p1 || p2) stats.push([p1 && p2 && p1 !== p2 ? p1 + '–' + p2 : (p1 || p2), 'Players']);
+    if (t1 || t2) stats.push([(t1 && t2 && t1 !== t2 ? t1 + '–' + t2 : (t1 || t2)) + ' min', 'Play time']);
+    if (w > 0) stats.push([w.toFixed(1) + ' / 5', 'Complexity']);
+    var comps = (rows || []).filter(function (x) { return x && x.Name === 'Component' && String(x.Value || '').trim(); }).map(function (x) { return String(x.Value).trim(); });
+    var h = '';
+    if (stats.length) h += '<div class="sm-stats">' + stats.map(function (x) { return '<div class="sm-stat"><b>' + e(x[0]) + '</b><span>' + x[1] + '</span></div>'; }).join('') + '</div>';
+    if (comps.length) h += '<div class="sm-h">Components</div><ul class="sm-comp">' + comps.map(function (c) { return '<li>' + e(c) + '</li>'; }).join('') + '</ul>';
+    return h || '<p class="sm-none">No player count, play time or components for this game yet.</p>';
+  }
+  function loadMore(i) {
+    var s = slides[i], el = trackEl.querySelectorAll('.slide-more-in')[i];
+    if (!s || !el) return;
+    var fill = function (rows) { el.innerHTML = moreHtml(rows); };
+    var kept = moreStore()[s.name];
+    if (kept) fill(kept);
+    if (s._more === 'loading' || (s._more === 'done' && kept)) return;
+    s._more = 'loading';
+    fetch(BASE + 'game-' + encodeURIComponent(s.name) + '-en.json?v=' + Date.now())
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (rows) {
+        if (!Array.isArray(rows)) rows = [];
+        var keep = rows.filter(function (x) { return x && /^(MinPlayers|MaxPlayers|MinPlaytime|MaxPlaytime|Weight|Component)$/.test(x.Name); }).map(function (x) { return { Name: x.Name, Value: x.Value }; });
+        var st = moreStore(); st[s.name] = keep; try { localStorage.setItem(MORE_KEY, JSON.stringify(st)); } catch (e) {}
+        s._more = 'done';
+        var now = trackEl.querySelectorAll('.slide-more-in')[slides.indexOf(s)]; if (now) now.innerHTML = moreHtml(keep);
+      })
+      .catch(function () { s._more = ''; if (!kept) fill([]); });
+  }
+  // Peek: the current slide's panel opens as far as you've dragged, and closes when you let go
+  var peekOn = false, suppressClick = false;
+  function peekEl() { return trackEl.querySelectorAll('.slide-more')[current]; }
+  function peekStart() { peekOn = true; stopProgress(); var m = peekEl(); if (m) m.classList.add('drag'); }
+  function peekTo(px) {
+    var m = peekEl(); if (!m) return;
+    var h = m.firstChild.offsetHeight + 16, max = window.innerHeight * 0.7;
+    m.style.height = Math.max(0, Math.min(px, h, max)) + 'px';
+    m.style.overflowY = h > max ? 'auto' : 'hidden';
+  }
+  function peekEnd() {
+    peekOn = false; var m = peekEl();
+    if (m) { m.classList.remove('drag'); m.style.height = ''; m.scrollTop = 0; }
+    if (!paused) resetProgress();
+  }
+  // With a mouse: press on the name and drag up
+  trackEl.addEventListener('mousedown', function (e) {
+    if (e.button !== 0 || !e.target.closest('.slide-info') || e.target.closest('.slide-page-link')) return;
+    var y0 = e.clientY;
+    function mv(ev) { var dy = y0 - ev.clientY; if (!peekOn && dy > 8) peekStart(); if (peekOn) { ev.preventDefault(); peekTo(dy); } }
+    function up() { window.removeEventListener('mousemove', mv); window.removeEventListener('mouseup', up); if (peekOn) { suppressClick = true; peekEnd(); } }
+    window.addEventListener('mousemove', mv); window.addEventListener('mouseup', up);
+  });
 
   function next() { setSlide(current + 1, true); resetProgress(); }
   function prev() { setSlide(current - 1, true); resetProgress(); }
@@ -740,12 +821,14 @@ $_sheet_id = $_bm[2] ?? '';
   var touchX0 = null;
   var touchY0 = null;
   var swiping  = false;
+  var touchInfo = false;   // started on the game's name: dragging up peeks at its stats
 
   trackEl.addEventListener('touchstart', function (e) {
     if (e.touches.length !== 1) return;
     touchX0 = e.touches[0].clientX;
     touchY0 = e.touches[0].clientY;
     swiping = false;
+    touchInfo = !!(e.target.closest && e.target.closest('.slide-info'));
     trackEl.classList.remove('animating');
   }, { passive: true });
 
@@ -753,6 +836,8 @@ $_sheet_id = $_bm[2] ?? '';
     if (touchX0 == null) return;
     var dx = e.touches[0].clientX - touchX0;
     var dy = e.touches[0].clientY - touchY0;
+    if (peekOn) { e.preventDefault(); peekTo(-dy); return; }
+    if (!swiping && touchInfo && dy < -10 && Math.abs(dy) > Math.abs(dx)) { e.preventDefault(); peekStart(); peekTo(-dy); return; }
     if (!swiping) {
       if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
         swiping = true;
@@ -773,6 +858,7 @@ $_sheet_id = $_bm[2] ?? '';
     if (touchX0 == null) return;
     var dx = e.changedTouches[0].clientX - touchX0;
     touchX0 = null; touchY0 = null;
+    if (peekOn) { peekEnd(); return; }
 
     if (!swiping) {
       // Let taps on the game-page link pass through to the browser
@@ -796,6 +882,8 @@ $_sheet_id = $_bm[2] ?? '';
     }
   }, { passive: true });
 
+  trackEl.addEventListener('touchcancel', function () { touchX0 = null; if (peekOn) peekEnd(); }, { passive: true });
+
   // Prevent context menu on long-press (phone)
   document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
@@ -806,6 +894,7 @@ $_sheet_id = $_bm[2] ?? '';
   document.getElementById('slideshow').addEventListener('click', function (e) {
     // Let clicks on the game-page eye link pass through to the browser
     if (e.target && e.target.closest && e.target.closest('.slide-page-link')) return;
+    if (suppressClick) { suppressClick = false; return; }
     var x = e.clientX;
     var w = window.innerWidth;
     if (x < w * 0.28)      { prev(); }
@@ -922,7 +1011,7 @@ $_sheet_id = $_bm[2] ?? '';
     renderPickList();
     if (!slides.length) {
       var sub = document.getElementById('empty-sub');
-      if (sub && allGames.some(function (g) { return g.photo; })) sub.innerHTML = 'No games picked. Pull down <strong>Games</strong> at the top to choose them.';
+      if (sub && allGames.some(function (g) { return g.photo; })) sub.innerHTML = 'No games picked. Pull down the bar at the top to choose them.';
       showEmpty(); return;
     }
     hideEmpty();

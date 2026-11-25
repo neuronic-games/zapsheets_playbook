@@ -209,4 +209,17 @@ body.gb-setup .gs-sub strong { color:#333; }
 body.gb-setup .gs-shot { margin:0; }
 body.gb-setup .gs-shot img { display:block; width:100%; max-width:380px; border-radius:10px; border:1px solid #e3e5ef; box-shadow:0 2px 10px rgba(0,0,0,.08); }
 body.gb-setup .gs-shot figcaption { font-size:.74rem; color:#999; margin:.35rem 0 0; }
+/* Wide screens: the whole width, the three steps side by side */
+@media (min-width:900px) {
+  body.gb-setup .page:has(> .gs-wide:not([hidden])) { max-width:none; padding:1.5rem 2rem 2rem; }
+  body.gb-setup .gs-wide { min-height:calc(100vh - 8rem); box-sizing:border-box; padding:2rem 2.4rem; }
+  body.gb-setup .gs-wide .gs-intro { max-width:60rem; }
+  body.gb-setup .gs-wide .gs-steps { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.7fr) minmax(0,1fr); gap:2rem; align-items:start; }
+  body.gb-setup .gs-wide .gs-steps > li { padding:1.1rem 1.2rem 1.3rem 1.2rem; border:1.5px solid #e6e8f0; border-radius:14px; background:#fcfcfe; }
+  body.gb-setup .gs-wide .gs-steps > li::before { position:static; margin:0 0 .6rem; width:2rem; height:2rem; font-size:1rem; }
+  body.gb-setup .gs-wide .gs-steps > li > b { font-size:1rem; margin:0 0 .7rem; }
+  body.gb-setup .gs-wide .gs-steps > li:last-child > b { margin:0 0 .7rem; }
+  body.gb-setup .gs-wide .gs-shot img { max-width:min(100%, 360px); }   /* the whole dialog fits on the screen */
+  body.gb-setup .gs-wide .gs-steps .gs-btns { flex-wrap:wrap; }
+}
 @media (max-width:560px) { body.gb-setup .gs-start { grid-template-columns:1fr; } body.gb-setup .card { padding:1.5rem 1.2rem 1.6rem; } }

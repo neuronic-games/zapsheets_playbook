@@ -136,7 +136,7 @@ body {
 
 <div class="page">
   <!-- New sheet: like CardBoard's "New design" -->
-  <div class="card" id="gsCard" hidden>
+  <div class="card gs-wide" id="gsCard" hidden>
     <div class="card-title">Link to your sheet</div>
     <p class="gs-intro">Keep your playtests in a Google Sheet. DevBoard sets up Games and Settings tabs — per-game dev tabs are added as you playtest. Your PitchBoard sheet works too.</p>
     <ol class="gs-steps">
@@ -158,18 +158,19 @@ body {
         </ol>
         <figure class="gs-shot"><img src="images/help/google-share.jpg" alt="Google Sheets’ Share window: the service account added as Editor, with Copy link and Send" loading="lazy"><figcaption>The Share window in Google Sheets — the service account added as <b>Editor</b>.</figcaption></figure>
       </li>
-      <li><b>Paste the spreadsheet URL or ID below</b></li>
+      <li><b>Paste the spreadsheet URL or ID</b>
+        <input type="text" id="sheetInput" class="sheet-input"
+          placeholder="https://docs.google.com/spreadsheets/d/… or sheet ID"
+          onkeydown="if(event.key==='Enter')startSetup()"
+          autocomplete="off" spellcheck="false" />
+
+        <div class="gs-btns">
+          <a class="gs-cancel" href="dashboard">Cancel</a>
+          <button id="connectBtn" class="connect-btn" onclick="startSetup()">Connect &amp; Open</button>
+        </div>
+      </li>
     </ol>
 
-    <input type="text" id="sheetInput" class="sheet-input"
-      placeholder="https://docs.google.com/spreadsheets/d/… or sheet ID"
-      onkeydown="if(event.key==='Enter')startSetup()"
-      autocomplete="off" spellcheck="false" />
-
-    <div class="gs-btns">
-      <a class="gs-cancel" href="dashboard">Cancel</a>
-      <button id="connectBtn" class="connect-btn" onclick="startSetup()">Connect &amp; Open</button>
-    </div>
 
     <div id="logPanel" class="log-panel" style="display:none"></div>
   </div>

@@ -697,8 +697,26 @@ $_sheet_id = $_bm[2] ?? '';
   }
 
   // ── Navigation ───────────────────────────────────────────
+  // A continuous loop: past the last slide comes the first (and before the first, the last) — the slide
+  // being wrapped to is moved alongside for the move, then everything jumps back into place unseen.
+  var wrapEl = null, wrapT = null;
+  function clearWrap() { if (wrapEl) { wrapEl.style.transform = ''; wrapEl = null; } }
+  function placeWrap(dir) {
+    var els = trackEl.querySelectorAll('.slide'), n = els.length;
+    if (n < 2) return;
+    var want = dir > 0 && current === n - 1 ? els[0] : dir < 0 && current === 0 ? els[n - 1] : null;
+    if (want === wrapEl) return;
+    clearWrap();
+    if (!want) return;
+    wrapEl = want;
+    wrapEl.style.transform = 'translateX(' + (dir > 0 ? n * 100 : -n * 100) + '%)';
+  }
   function setSlide(idx, animate) {
-    current = ((idx % slides.length) + slides.length) % slides.length;
+    var n = slides.length;
+    var wrapDir = animate !== false && n > 1 ? (idx >= n && current === n - 1 ? 1 : idx < 0 && current === 0 ? -1 : 0) : 0;
+    if (wrapDir) placeWrap(wrapDir);
+    current = ((idx % n) + n) % n;
+    clearTimeout(wrapT);
 
     if (animate !== false) {
       trackEl.classList.add('animating');
@@ -706,7 +724,17 @@ $_sheet_id = $_bm[2] ?? '';
     } else {
       trackEl.classList.remove('animating');
     }
-    trackEl.style.transform = 'translateX(' + (-current * 100) + '%)';
+    if (wrapDir) {
+      trackEl.style.transform = 'translateX(' + (wrapDir > 0 ? -n * 100 : 100) + '%)';
+      wrapT = setTimeout(function () {
+        trackEl.classList.remove('animating');
+        clearWrap();
+        trackEl.style.transform = 'translateX(' + (-current * 100) + '%)';
+      }, 400);
+    } else {
+      trackEl.style.transform = 'translateX(' + (-current * 100) + '%)';
+      if (wrapEl) { if (animate !== false) wrapT = setTimeout(clearWrap, 400); else clearWrap(); }   // snapping back from a drag
+    }
 
     // Active class
     trackEl.querySelectorAll('.slide').forEach(function (s, i) {
@@ -862,6 +890,8 @@ $_sheet_id = $_bm[2] ?? '';
     }
     if (swiping) {
       e.preventDefault();
+      clearTimeout(wrapT);
+      placeWrap(dx < 0 ? 1 : -1);   // at either end, the slide on the other end is there to drag in
       trackEl.style.transform =
         'translateX(calc(' + (-current * 100) + '% + ' + dx + 'px))';
     }

@@ -183,7 +183,7 @@ $_client_count = count(array_unique(array_filter(array_map(
 <head>
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
 <script src="js/activationKey.js" defer></script>
-<script src="js/gb-account.js?v=13"></script>
+<script src="js/gb-account.js?v=14"></script>
 <script src="js/gb-queue.js?v=2"></script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />

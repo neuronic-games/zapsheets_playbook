@@ -30,6 +30,7 @@
 
   var CSS =
     '.gbd-ov{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;padding:1rem;background:rgba(20,19,42,.55);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}.gbd-ov.open{display:flex}' +
+    '.gbd-ov{overscroll-behavior:contain}.gbd{overscroll-behavior:contain}.gbd.shake{animation:gbdShake .35s}@keyframes gbdShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}' +
     '.gbd{position:relative;background:#fff;color:#1b1d2b;border-radius:16px;box-shadow:0 18px 50px rgba(20,19,42,.3);width:100%;max-width:460px;max-height:92vh;overflow:auto;padding:1.5rem 1.5rem 1.2rem;font:15px/1.4 var(--gb-text,"DINRegular",Arial,sans-serif);text-align:left;animation:gbdPop .18s ease-out}' +
     '@keyframes gbdPop{from{opacity:0;transform:scale(.96)}}' +
     '.gbd *{box-sizing:border-box}.gbd [hidden]{display:none!important}' +
@@ -101,7 +102,7 @@
       '</div>';
     document.body.appendChild(ov);
     ov.addEventListener('click', function(e) { if (e.target === ov) close(); });
-    ov.addEventListener('keydown', function(e) { e.stopPropagation(); if (e.key === 'Escape') close(); });
+    ov.addEventListener('keydown', function(e) { e.stopPropagation(); if (e.key === 'Escape') { e.preventDefault(); escClose(); } });
     $('gbdX').onclick = close; $('gbdDone').onclick = close;
     $('gbdOut').onclick = function() { close(); if (O.signOut) O.signOut(); };
     // Picture
@@ -146,9 +147,32 @@
     $('gbdProfSave').disabled = true; $('gbdCode').value = '';
     ['gbdPicErr', 'gbdProfErr', 'gbdCodeErr'].forEach(function(id) { $(id).textContent = ''; });
     mailOpen(false); pwOpen(false); fill();
+    if (!$('gbdOv').classList.contains('open')) {
+      // Keep the page underneath still while the dialog is open
+      _scroll = { html: document.documentElement.style.overflow, body: document.body.style.overflow };
+      document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
+      document.addEventListener('keydown', onKey, true);
+    }
     $('gbdOv').classList.add('open');
   }
-  function close() { if (built) $('gbdOv').classList.remove('open'); }
+  function close() {
+    if (!built || !$('gbdOv').classList.contains('open')) return;
+    $('gbdOv').classList.remove('open');
+    document.removeEventListener('keydown', onKey, true);
+    // The page underneath scrolls again
+    document.documentElement.style.overflow = _scroll.html; document.body.style.overflow = _scroll.body;
+  }
+  // Esc: closes when nothing's been typed; with changes not saved, a shake instead
+  var _scroll = { html: '', body: '' };
+  function onKey(e) { if (e.key === 'Escape' && $('gbdOv').classList.contains('open')) { e.preventDefault(); e.stopPropagation(); escClose(); } }
+  function edited() {
+    var v = function(id) { var el = $(id); return el && !el.closest('[hidden]') && String(el.value || '').trim() !== ''; };
+    return !$('gbdProfSave').disabled || v('gbdMailNew') || v('gbdMailPw') || v('gbdMailCode') || v('gbdPw1') || v('gbdPw2') || v('gbdPwCur') || v('gbdCode');
+  }
+  function escClose() {
+    if (!edited()) { close(); return; }
+    var d = document.querySelector('#gbdOv .gbd'); d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake');
+  }
 
   // ── Picture: made small here (a square, 512 px), squared again on the server ──
   function shrink(f) {

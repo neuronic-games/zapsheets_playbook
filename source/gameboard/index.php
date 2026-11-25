@@ -1140,7 +1140,7 @@ footer a:hover { color:var(--navy); }
   var _dlg = null;
   window.openAccount = function() {
     if (!acct) { acctClick('login'); return; }
-    if (!_dlg) _dlg = window.GBAccountDialog ? Promise.resolve() : new Promise(function(res, rej) { var s = document.createElement('script'); s.src = APP_BASE + 'js/gb-acctdlg.js?v=1'; s.onload = res; s.onerror = function() { _dlg = null; rej(); }; document.head.appendChild(s); });
+    if (!_dlg) _dlg = window.GBAccountDialog ? Promise.resolve() : new Promise(function(res, rej) { var s = document.createElement('script'); s.src = APP_BASE + 'js/gb-acctdlg.js?v=2'; s.onload = res; s.onerror = function() { _dlg = null; rej(); }; document.head.appendChild(s); });
     _dlg.then(function() {
       GBAccountDialog.open({ base: APP_BASE, app: '', sheet: '', account: function() { return (acct && acct.account) || {}; }, token: function() { return (acct && acct.token) || ''; },
         store: store, plan: function() { return esc($('mePlan') && $('mePlan').textContent || ''); },

@@ -388,7 +388,7 @@
   function openAccount() {
     if (!ACCT) { signIn().then(openAccount, function() {}); return; }
     if (!_dlgLoad) _dlgLoad = window.GBAccountDialog ? Promise.resolve() : new Promise(function(res, rej) {
-      var s = document.createElement('script'); s.src = O.base + 'js/gb-acctdlg.js?v=1'; s.onload = res; s.onerror = function() { _dlgLoad = null; rej(); }; document.head.appendChild(s);
+      var s = document.createElement('script'); s.src = O.base + 'js/gb-acctdlg.js?v=2'; s.onload = res; s.onerror = function() { _dlgLoad = null; rej(); }; document.head.appendChild(s);
     });
     _dlgLoad.then(function() {
       GBAccountDialog.open({ base: O.base, app: O.app, sheet: O.sheet || '', account: info, token: function() { return (ACCT && ACCT.token) || ''; },

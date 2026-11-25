@@ -4247,7 +4247,7 @@ function saveSettings() {
 var _acctDlg = null;
 function openAccountDialog() {
   if (!ACCT) { askSignIn().then(openAccountDialog, function() {}); return; }
-  if (!_acctDlg) _acctDlg = window.GBAccountDialog ? Promise.resolve() : new Promise(function(res, rej) { var s = document.createElement('script'); s.src = APP_BASE + 'js/gb-acctdlg.js?v=1'; s.onload = res; s.onerror = function() { _acctDlg = null; rej(); }; document.head.appendChild(s); });
+  if (!_acctDlg) _acctDlg = window.GBAccountDialog ? Promise.resolve() : new Promise(function(res, rej) { var s = document.createElement('script'); s.src = APP_BASE + 'js/gb-acctdlg.js?v=2'; s.onload = res; s.onerror = function() { _acctDlg = null; rej(); }; document.head.appendChild(s); });
   _acctDlg.then(function() {
     GBAccountDialog.open({ base: APP_BASE, app: 'cardboard', sheet: SHEET_ID, account: function() { return acctInfo() || {}; }, token: function() { return (ACCT && ACCT.token) || ''; },
       store: storeAcct, plan: planLabel, plans: function() { openPlansDialog(); }, toast: function(m) { toast(m); }, signOut: signOut });

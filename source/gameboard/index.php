@@ -32,7 +32,7 @@ $APPS = [
         ['$4.99', 'after a free week']],
   ['dev',  'DevBoard',   'db_icon_180.png',        'Playtest & develop', 'Every playtest, remembered.', '#49c4d4', 'devboard',
         ['Session log with observations and solutions', 'TODOs from your notes, with owner and due date', 'Estimates, invoices and reports for studios*'],
-        ['$2.99', 'Core · *$3.99 Pro with estimates &amp; invoices']],
+        ['$2.99', '*$3.99 Pro with estimates &amp; invoices', 'Core']],
   ['pitch','PitchBoard', 'pitchboard_icon_180.png',        'Pitch to publishers', 'From first sketch to signed deal — tracked.', '#e7a35a', 'pitchboard',
         ['A pitch log for every game, and a board view', 'Sell sheet generator', 'Game pages and links for collaborators'],
         ['$1.99', 'every feature']],
@@ -977,7 +977,7 @@ footer a:hover { color:var(--navy); }
         <div class="pc-head"><img src="images/<?= e($a[2]) ?>" alt=""><div><b><?= e($a[1]) ?></b><small><?= e($a[3]) ?></small></div></div>
         <p class="pc-line"><?= e($a[4]) ?></p>
         <ul class="pc-feat"><?php foreach ($a[7] as $li): ?><li><?= e($li) ?></li><?php endforeach; ?></ul>
-        <div class="pc-price"><?= e($a[8][0]) ?><small>/ month</small></div>
+        <div class="pc-price"><?= e($a[8][0]) ?><small>/ month<?= !empty($a[8][2]) ? ' (' . e($a[8][2]) . ')' : '' ?></small></div>
         <div class="pc-note"><?= $a[8][1] === 'every feature' ? 'Every feature.' : ucfirst($a[8][1]) . '.' ?></div>
         <div class="pc-btns"><a href="<?= e($_apps . $a[6] . '/features') ?>">Features</a><a class="app-open" data-app="<?= e($a[6]) ?>" href="<?= e($_apps . $a[6]) ?>" title="Open <?= e($a[1]) ?>">Open</a></div>
       </div>

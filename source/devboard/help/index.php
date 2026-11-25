@@ -181,7 +181,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   <a href="devboard/help#saving"><span class="n">19</span>Saving &amp; Fetch</a>
   <h4>Account</h4>
   <a href="devboard/help#plans"><span class="n">20</span>Plans &amp; codes</a>
-  <a href="devboard/help#settings"><span class="n">21</span>Profile, settings &amp; menu</a>
+  <a href="devboard/help#settings"><span class="n">21</span>Account, profile, settings &amp; menu</a>
   <a href="devboard/help#keys"><span class="n">22</span>Keyboard shortcuts</a>
   <a href="devboard/help#trouble"><span class="n">23</span>Troubleshooting</a>
 
@@ -440,7 +440,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
 <section class="topic" id="company">
   <h2><span class="n">18</span>Your company details</h2>
   <p class="lead">What goes at the top of your estimates and invoices.</p>
-  <?= shot('company', 'Menu → Company: your logo, name, address and how to pay you.', 'mid') ?>
+  <?= shot('company', 'Menu → Settings: your logo, studio name, address and how to pay you.', 'mid') ?>
   <ul>
     <li><b>Logo</b>, <b>Company Name</b> and <b>Address</b> head every estimate and invoice.</li>
     <li><b>Payment Info</b> — how clients pay you (bank details, PayPal…) — is printed at the bottom of invoices.</li>
@@ -480,15 +480,15 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
   <p style="margin-top:1rem">After the free week your sheet is view only until you subscribe — nothing in it is lost. Cancel any time from <b>Manage billing</b>.</p>
 </section>
 <section class="topic" id="settings">
-  <h2><span class="n">21</span>Profile, settings &amp; menu</h2>
+  <h2><span class="n">21</span>Account, profile, settings &amp; menu</h2>
   <div class="two">
     <?= shot('menu', 'The menu, from the round person button.') ?>
-    <?= shot('profile', 'Profile: your photo and details, for your shared pages and paperwork.') ?>
+    <?= shot('profile', 'Profile: your name, email and picture from your account at the top, then what DevBoard keeps about you.') ?>
   </div>
   <ul>
-    <li><b>Account</b> (first in the menu, or click your name at the top) — your picture, name and studio, the email you sign in with, your password, your plan (<b>Plans</b>) and codes.</li>
-    <li><b>Profile</b> — your photo, name, email, a short description and skills, mailing address, messaging handle, phone and how you’d like to be paid. Your photo also shows on the menu button.</li>
-    <li><b>Company</b> — see <a href="devboard/help#company">Your company details</a>. <b>Fetch</b> — read the latest from the sheet. <b>Releases</b> — what’s new. <b>Help</b> — this page.</li>
+    <li><b>Account</b> (first in the menu, or click your name at the top) — <b>you</b>, the same in every GameBoard app: your picture, name and studio, the email you sign in with, your password, your plan (<b>Plans</b>) and codes. <kbd>Esc</kbd> closes it.</li>
+    <li><b>Profile</b> — <b>what DevBoard keeps about you</b> for this sheet. Your name, email and picture come from your account (<b>Edit in Account</b> changes them); below them: a short description and skills, mailing address, messaging handle, phone, how you’d like to be paid, and notes. A line under each field says where it’s used — your phone goes on your estimates and invoices, your payment method shows as “Paid via” when someone pays you.</li>
+    <li><b>Settings</b> — <b>DevBoard’s settings</b> for this sheet, not about you: your studio’s details for your documents — see <a href="devboard/help#company">Your company details</a>. <b>Fetch</b> — read the latest from the sheet. <b>Releases</b> — what’s new. <b>Help</b> — this page.</li>
     <li><b>GameBoard</b> — back to the GameBoard home. <b>Sign out</b> — asks first, then signs you out of every app in this browser.</li>
   </ul>
 </section>
@@ -513,7 +513,7 @@ table.keys tr.h td { background:#f8fcfd; font-family:'DINBlack',sans-serif; font
     <li><b>Save stays lit</b> — you’re offline, or need to sign in again; your changes are kept until it works.</li>
     <li><b>A contract isn’t on the timeline</b> — it needs a Target End Date or a Duration; an estimate that wasn’t invoiced drops off once its date has passed, and a contract with an End Date is finished. See <a href="devboard/help#timeline">Timeline</a>.</li>
     <li><b>A game isn’t in the Games tab</b> — it has no dev tab yet: <b>+ Game</b> and pick it.</li>
-    <li><b>The PDF has no logo or address</b> — fill in menu → <b>Company</b>, then <b>Edit</b> and save the estimate again.</li>
+    <li><b>The PDF has no logo or address</b> — fill in menu → <b>Settings</b>, then <b>Edit</b> and save the estimate again.</li>
     <li><b>No code email</b> — check spam, and wait a minute before asking for another.</li>
   </ul>
 </section>

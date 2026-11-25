@@ -184,7 +184,7 @@ table.keys tr.h td { background:#fffafa; font-family:'DINBlack',sans-serif; font
   <a href="pitchboard/help#saving"><span class="n">20</span>Saving &amp; Fetch</a>
   <h4>Account</h4>
   <a href="pitchboard/help#plans"><span class="n">21</span>Plans &amp; codes</a>
-  <a href="pitchboard/help#settings"><span class="n">22</span>Settings &amp; menu</a>
+  <a href="pitchboard/help#settings"><span class="n">22</span>Account, profile, settings &amp; menu</a>
   <a href="pitchboard/help#trouble"><span class="n">23</span>Troubleshooting</a>
 
 </nav>
@@ -462,15 +462,19 @@ table.keys tr.h td { background:#fffafa; font-family:'DINBlack',sans-serif; font
   <p style="margin-top:1rem">After the free week your sheet is view only until you subscribe — nothing in it is lost.</p>
 </section>
 <section class="topic" id="settings">
-  <h2><span class="n">22</span>Settings &amp; menu</h2>
+  <h2><span class="n">22</span>Account, profile, settings &amp; menu</h2>
   <div class="two">
     <?= shot('menu', 'The menu, from the round person button.') ?>
-    <?= shot('settings', 'Settings: your name, email, phone and Compendium code.') ?>
+    <?= shot('profile', 'Profile: your name, email and picture from your account at the top, then your phone.') ?>
   </div>
   <ul>
     <li>At the top: who’s signed in, and the plan.</li>
-    <li><b>Account</b> (first in the menu, or click your name at the top) — your picture, name and studio, the email you sign in with, your password, your plan (<b>Plans</b>) and codes.</li>
-    <li><b>Profile</b> — your public profile (name, location, a short bio) for the people you share with. <b>Settings</b> — your name, email and phone, and your <b>Compendium</b> code to see publisher details from The Compendium by Cardboard Edison.</li>
+    <li><b>Account</b> (first in the menu, or click your name at the top) — <b>you</b>, the same in every GameBoard app: your picture, name and studio, the email you sign in with, your password, your plan (<b>Plans</b>) and codes. <kbd>Esc</kbd> closes it.</li>
+    <li><b>Profile</b> — <b>what PitchBoard keeps about you</b> for this sheet. Your name, email and picture come from your account (<b>Edit in Account</b> changes them); below them, your phone — it goes in the signature of the pitch emails PitchBoard writes for you.</li>
+    <li><b>Settings</b> — <b>PitchBoard’s settings</b> for this sheet, not about you: your <b>Compendium</b> code, to see publisher details from The Compendium by Cardboard Edison.</li>
+  </ul>
+  <?= shot('settings', 'Settings: your Compendium code.', 'mid') ?>
+  <ul>
     <li><b>Fetch</b> — read the latest from the sheet. <b>Import</b> and <b>Slideshow</b> — see <a href="pitchboard/help#import">Import &amp; slideshow</a>.</li>
     <li><b>Releases</b> — what’s new. <b>Feedback</b> — tell us what you think. <b>Help</b> — this page.</li>
     <li><b>GameBoard</b> — back to the GameBoard home. <b>Sign out</b> — asks first, then signs you out of every app in this browser.</li>

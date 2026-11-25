@@ -185,7 +185,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
   <a href="cardboard/help#undo"><span class="n">22</span>Undo, copy &amp; paste</a>
   <h4>Account</h4>
   <a href="cardboard/help#plans"><span class="n">23</span>Plans &amp; codes</a>
-  <a href="cardboard/help#settings"><span class="n">24</span>Settings &amp; menu</a>
+  <a href="cardboard/help#settings"><span class="n">24</span>Account, settings &amp; menu</a>
   <a href="cardboard/help#keys"><span class="n">25</span>Keyboard shortcuts</a>
   <a href="cardboard/help#trouble"><span class="n">26</span>Troubleshooting</a>
 </nav>
@@ -568,14 +568,14 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="settings">
-  <h2><span class="n">24</span>Settings &amp; menu</h2>
+  <h2><span class="n">24</span>Account, settings &amp; menu</h2>
   <div class="two">
     <?= shot('menu', 'The menu, from the round person button.') ?>
-    <?= shot('settings', 'Settings: the spreadsheet, measurements and your plan.') ?>
+    <?= shot('settings', 'Settings: the spreadsheet and measurements.') ?>
   </div>
   <ul>
-    <li><b>Account</b> (first in the menu, or click your name at the top) — your picture, name and studio, the email you sign in with, your password, your plan (<b>Plans</b>) and codes.</li>
-    <li><b>Settings</b> — open the spreadsheet in Google Sheets, choose inches or millimetres, see your plan.</li>
+    <li><b>Account</b> (first in the menu, or click your name at the top) — <b>you</b>, the same in every GameBoard app: your picture, name and studio, the email you sign in with, your password, your plan (<b>Plans</b>) and codes. <kbd>Esc</kbd> closes it.</li>
+    <li><b>Settings</b> — <b>CardBoard’s settings</b> for this spreadsheet, not about you: open it in Google Sheets, and choose inches or millimetres for card sizes. (Your plan is in Account.)</li>
     <li><b>Fetch</b> — read the latest from the sheet, including tabs you've added, renamed or removed in Sheets.</li>
     <li><b>Help</b> — this page. <b>Sign out</b> — of this browser.</li>
   </ul>

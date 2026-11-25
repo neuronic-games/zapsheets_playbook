@@ -182,7 +182,7 @@ table.keys tr.h td { background:#f8fcf9; font-family:'DINBlack',sans-serif; font
   <a href="billboard/help#saving"><span class="n">19</span>Saving &amp; Fetch</a>
   <h4>Account</h4>
   <a href="billboard/help#plans"><span class="n">20</span>Plans &amp; codes</a>
-  <a href="billboard/help#settings"><span class="n">21</span>Settings &amp; menu</a>
+  <a href="billboard/help#settings"><span class="n">21</span>Account, settings &amp; menu</a>
   <a href="billboard/help#trouble"><span class="n">22</span>Troubleshooting</a>
 
 </nav>
@@ -437,15 +437,15 @@ table.keys tr.h td { background:#f8fcf9; font-family:'DINBlack',sans-serif; font
   <p style="margin-top:1rem">After the free week your sheet is view only until you subscribe — nothing in it is lost.</p>
 </section>
 <section class="topic" id="settings">
-  <h2><span class="n">21</span>Settings &amp; menu</h2>
+  <h2><span class="n">21</span>Account, settings &amp; menu</h2>
   <div class="two">
     <?= shot('menu', 'The menu, from the round person button.') ?>
     <?= shot('settings', 'Settings: your company, banner pictures, social links and display.') ?>
   </div>
   <ul>
-    <li><b>Settings</b> — your <b>company</b> (name, logo link, tagline, about), up to six <b>banner pictures</b> (as links), <b>social links</b>, and <b>display</b>: the banner color, the template (<b>Classic</b> or <b>OpenSea</b>), the copyright line and footer note, and the <b>newsletter</b> sign-up’s heading and text.</li>
-    <li><b>Account</b> (first in the menu, or click your name at the top) — your picture, name and studio, the email you sign in with, your password, your plan (<b>Plans</b>) and codes.</li>
-    <li><b>Profile</b> — who’s signed in. <b>Analytics</b>, <b>Fetch</b> and <b>Publish Site</b> — see above.</li>
+    <li><b>Settings</b> — <b>BillBoard’s settings</b> for your site, not about you: your <b>company</b> (name, logo link, tagline, about), up to six <b>banner pictures</b> (as links), <b>social links</b>, and <b>display</b>: the banner color, the template (<b>Classic</b> or <b>OpenSea</b>), the copyright line and footer note, and the <b>newsletter</b> sign-up’s heading and text.</li>
+    <li><b>Account</b> (first in the menu, or click your name at the top) — <b>you</b>, the same in every GameBoard app: your picture, name and studio, the email you sign in with, your password, your plan (<b>Plans</b>) and codes. <kbd>Esc</kbd> closes it.</li>
+    <li><b>Analytics</b>, <b>Fetch</b> and <b>Publish Site</b> — see above.</li>
     <li><b>Help</b> — this page. <b>Donate</b> — support BillBoard.</li>
     <li><b>GameBoard</b> — back to the GameBoard home. <b>Sign out</b> — asks first, then signs you out of every app in this browser.</li>
   </ul>

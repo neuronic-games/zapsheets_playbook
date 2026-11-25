@@ -5216,6 +5216,14 @@ document.addEventListener('keydown', function(ev) {
   var el;
   el = document.getElementById('confirmOverlay');
   if (el && el.classList.contains('open')) { _closeConfirmDialog(); return; }
+  el = document.getElementById('todoOverlay');
+  if (el && el.classList.contains('open')) {
+    // Unsaved changes to the TODO: a shake, as in the other dialogs; otherwise it closes
+    var td = _todoDlgId && _todoById(_todoDlgId);
+    var changed = td && (document.getElementById('todoDlgObsIn').value.trim() !== (td.Observation || '') || document.getElementById('todoDlgSolIn').value.trim() !== (td.Thoughts || ''));
+    if (changed) shakeDialog(el.firstElementChild); else closeTodoDialog();
+    return;
+  }
   el = document.getElementById('upgradeOverlay');
   if (el && el.classList.contains('open')) { closeUpgradeDialog(); return; }
   el = document.getElementById('companyOverlay');

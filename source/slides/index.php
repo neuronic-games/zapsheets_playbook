@@ -291,13 +291,17 @@ $_sheet_id = $_bm[2] ?? '';
   }
   /* ── Pick the games: a panel that pulls down from the top ── */
   #pick-tab {
-    position: fixed; top: 3px; left: 50%; transform: translateX(-50%);
-    z-index: 40; padding: 3px 18px 10px;   /* a bigger target than the bar itself */
-    cursor: grab; touch-action: none; -webkit-tap-highlight-color: transparent; transition: opacity .2s;
+    position: fixed; top: 32px; left: 50%; transform: translateX(-50%);
+    z-index: 40; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 6px 14px 5px; border-radius: 0 0 14px 14px;
+    color: rgba(255,255,255,.75); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase;
+    background: rgba(0,0,0,.35); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    text-shadow: 0 1px 3px rgba(0,0,0,.5); cursor: grab; touch-action: none; -webkit-tap-highlight-color: transparent;
+    transition: color .15s, opacity .2s;
   }
-  #pick-tab::before { content: ''; display: block; width: 30px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.28); transition: background .15s, width .15s; }
-  #pick-tab:hover::before, #pick-tab:focus-visible::before { background: rgba(255,255,255,.7); width: 38px; }
-  #pick-tab:focus { outline: none; }
+  #pick-tab::before { content: ''; width: 34px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.55); }
+  #pick-tab:hover { color: #fff; }
+  #pick-tab:hover::before { background: #fff; }
   body.pick-open #pick-tab { opacity: 0; pointer-events: none; }
   #pick-shade { position: fixed; inset: 0; z-index: 44; background: rgba(0,0,0,.45); opacity: 0; pointer-events: none; transition: opacity .25s; }
   body.pick-open #pick-shade { opacity: 1; pointer-events: auto; }
@@ -389,7 +393,7 @@ $_sheet_id = $_bm[2] ?? '';
 </div>
 
 <!-- Pull down to pick the games and their order -->
-<div id="pick-tab" role="button" tabindex="0" aria-label="Choose the games" title="Pull down to choose the games"></div>
+<div id="pick-tab" role="button" tabindex="0" aria-label="Choose the games">Games</div>
 <div id="pick-shade"></div>
 <div id="pick" role="dialog" aria-label="Choose the games and their order">
   <div class="pick-hd"><b>Slides</b><span id="pick-n"></span><button type="button" id="pick-all">All</button><button type="button" id="pick-reset">Reset</button><button type="button" id="pick-done">Done</button></div>
@@ -918,7 +922,7 @@ $_sheet_id = $_bm[2] ?? '';
     renderPickList();
     if (!slides.length) {
       var sub = document.getElementById('empty-sub');
-      if (sub && allGames.some(function (g) { return g.photo; })) sub.innerHTML = 'No games picked. Pull down the bar at the top to choose them.';
+      if (sub && allGames.some(function (g) { return g.photo; })) sub.innerHTML = 'No games picked. Pull down <strong>Games</strong> at the top to choose them.';
       showEmpty(); return;
     }
     hideEmpty();

@@ -1115,6 +1115,11 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
 .todo-dlg-lbl { display:block; font-family:'DINBlack',sans-serif; font-size:.65rem; letter-spacing:.08em; text-transform:uppercase; color:#999; margin:.55rem 0 .25rem; }
 .todo-dlg-obs, .todo-dlg-sol { width:100%; box-sizing:border-box; border:1.5px solid #d0d8e0; border-radius:8px; padding:.5rem .65rem; font-family:'DINRegular',sans-serif; font-size:.92rem; color:#333; background:#fff; }
 .todo-dlg-obs { font-family:'DINBlack',sans-serif; color:#1a5f7a; }
+.todo-dlg-obs[hidden] { display:none; }
+.todo-dlg-pic { margin:0 0 .2rem; }
+.todo-dlg-pic img { display:block; max-width:100%; max-height:45vh; border-radius:8px; border:1.5px solid #d0d8e0; background:#f3f6f9; }
+.todo-dlg-piclink { margin:.35rem 0 0; padding:0; border:none; background:none; color:#8a95a1; font:inherit; font-size:.72rem; text-decoration:underline; cursor:pointer; }
+.todo-thumb { display:inline-block; vertical-align:middle; height:2.4rem; max-width:4.5rem; object-fit:cover; border-radius:5px; border:1px solid #e3e8ee; margin:.1rem .5rem .1rem 0; background:#f3f6f9; }
 .todo-dlg-sol { resize:vertical; line-height:1.55; background:#fffdf3; border-color:#f1e8c4; min-height:5rem; }
 .todo-dlg-obs:focus, .todo-dlg-sol:focus { outline:none; border-color:#1a5f7a; box-shadow:0 0 0 2px rgba(26,95,122,.12); }
 .todo-dlg-obs[readonly], .todo-dlg-sol[readonly] { background:#f6f7f9; color:#555; }
@@ -2043,6 +2048,7 @@ body.btodo-dragging, body.btodo-dragging * { cursor:grabbing !important; user-se
     <div class="todo-dlg-meta" id="todoDlgMeta"></div>
     <label class="todo-dlg-lbl" for="todoDlgObsIn">TODO</label>
     <input type="text" class="todo-dlg-obs" id="todoDlgObsIn" placeholder="What needs doing">
+    <div class="todo-dlg-pic" id="todoDlgPic" hidden><a id="todoDlgPicA" target="_blank" rel="noopener" title="Open the picture"><img id="todoDlgPicImg" alt="The TODO’s picture"></a><button type="button" class="todo-dlg-piclink" onclick="document.getElementById('todoDlgObsIn').hidden=false;this.hidden=true">Show the cell</button></div>
     <label class="todo-dlg-lbl" for="todoDlgSolIn">Notes</label>
     <textarea class="todo-dlg-sol" id="todoDlgSolIn" rows="4" placeholder="Details" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight+4,window.innerHeight*.5)+'px'"></textarea>
     <div class="todo-dlg-tags" id="todoDlgTags"></div>
@@ -2247,6 +2253,13 @@ function _todosSyncFromSave(game, eventType, sessionNum, date, pairs) {
 // The list is in the same order as the rows of the todos sheet
 function _todosSorted() { return TODOS_RAW.slice(); }
 
+// A TODO's text that may be a picture cell (=IMAGE("url")): the picture as a thumbnail, any other text after it
+function _todoImgUrl(s) { var m = /=IMAGE\(\s*"(https?:\/\/[^"]+)"/i.exec(String(s || '')); return m ? m[1] : ''; }
+function _todoObsHtml(s, cls) {
+  var url = _todoImgUrl(s), rest = String(s || '').replace(/=IMAGE\([^)]*\)/gi, '').trim();
+  if (!url) return rest ? '<span class="' + cls + '">' + esc(rest) + '</span>' : '';
+  return '<img class="todo-thumb" src="' + esc(url) + '" alt="" loading="lazy" onerror="this.replaceWith(document.createTextNode(\'🖼 Image\'))">' + (rest ? '<span class="' + cls + '">' + esc(rest) + '</span>' : '');
+}
 function _renderBoardTodos() {
   var list = _todosSorted();
   if (!list.length) { _boardTodosEl.innerHTML = ''; return; }
@@ -2261,7 +2274,7 @@ function _renderBoardTodos() {
     h += '<span class="btodo-handle" title="Drag to reorder" onpointerdown="_btodoDragStart(event)">⋮⋮</span>';
     h += '<input type="checkbox" class="btodo-check"' + (done ? ' checked' : '') + ' onchange="onBoardTodoCheck(\'' + id + '\', this)">';
     h += '<div class="btodo-text" onclick="openTodoDialog({ id: \'' + id + '\' })" title="' + esc([obs, t.Thoughts, [t.Game, t.Session].filter(Boolean).join(' · ')].filter(Boolean).join('\n')) + '">' +
-           (obs ? '<span class="btodo-obs">' + esc(obs) + '</span>' : '') +
+           _todoObsHtml(t.Observation, 'btodo-obs') +
            (t.Thoughts ? '<span class="btodo-sol">' + esc(t.Thoughts) + '</span>' : '') +
            '<span class="btodo-meta">' + esc([t.Game, t.Session].filter(Boolean).join(' · ')) + '</span>' +
          '</div>';
@@ -4050,7 +4063,7 @@ function _buildTodoHtml(gameName, sessions) {
     html += '<div class="todo-item' + (it.done ? ' done' : '') + '">' +
               '<input type="checkbox"' + (it.done ? ' checked' : '') + ' onchange="onTodoCheck(\'' + gnJ + '\',' + i + ',this)">' +
               '<span class="todo-text" onclick="openTodoDialog({ game: \'' + gnJ + '\', idx: ' + i + ' })">' +
-                (obsText ? '<span class="todo-obs">' + esc(obsText) + '</span>' : '') +
+                _todoObsHtml(shownObs, 'todo-obs') +
                 (shownSol ? '<span class="todo-sol">' + esc(shownSol) + '</span>' : '') +
                 (it.label ? '<span class="todo-meta">' + esc(it.label) + '</span>' : '') +
               '</span>' +
@@ -4088,6 +4101,10 @@ function openTodoDialog(ref) {
   var editable = !!_todoDlgId;
   var oEl = document.getElementById('todoDlgObsIn'), sEl = document.getElementById('todoDlgSolIn');
   oEl.value = obs; sEl.value = sol;
+  // A picture cell: show the picture (the cell itself is a click away)
+  var pic = _todoImgUrl(obs), pw = document.getElementById('todoDlgPic');
+  pw.hidden = !pic; oEl.hidden = !!pic;
+  if (pic) { document.getElementById('todoDlgPicImg').src = pic; document.getElementById('todoDlgPicA').href = pic; pw.querySelector('.todo-dlg-piclink').hidden = false; }
   oEl.readOnly = sEl.readOnly = !editable;
   document.getElementById('todoDlgSave').style.display = editable ? '' : 'none';
   document.getElementById('todoDlgNote').style.display = editable ? 'none' : '';

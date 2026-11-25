@@ -32,7 +32,7 @@ $APPS = [
         ['$4.99', 'after a free week']],
   ['dev',  'DevBoard',   'db_icon_180.png',        'Playtest & develop', 'Every playtest, remembered.', '#49c4d4', 'devboard',
         ['Session log with observations and solutions', 'TODOs from your notes, with owner and due date', 'Estimates, invoices and reports for studios*'],
-        ['$2.99', '*$3.99 Pro with estimates &amp; invoices', 'Core']],
+        ['$2.99', '*$3.99 / month (Pro)', 'Core']],
   ['pitch','PitchBoard', 'pitchboard_icon_180.png',        'Pitch to publishers', 'From first sketch to signed deal — tracked.', '#e7a35a', 'pitchboard',
         ['A pitch log for every game, and a board view', 'Sell sheet generator', 'Game pages and links for collaborators'],
         ['$1.99', 'every feature']],
@@ -206,7 +206,7 @@ h2 { font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(1.8r
 .pc-price small { font-family:'Inter',sans-serif; font-size:13px; font-weight:400; color:rgba(255,255,255,.6); margin-left:.2rem; }
 .pc-note { font-size:13px; color:rgba(255,255,255,.65); margin:.45rem 0 1rem; min-height:2.9em; }
 .pro-mark { color:var(--c, #49c4d4); font-size:.85em; margin-left:.25em; vertical-align:.08em; cursor:help; }
-.pc-note .pro-mark { margin:0 .2em 0 0; }
+.pc-note .pro-mark { margin:0; }
 .pc a, .pc button { display:block; text-align:center; text-decoration:none; font:600 14px 'Inter',sans-serif; color:#fff; border:1px solid rgba(255,255,255,.3); border-radius:10px; padding:10px; background:transparent; cursor:pointer; }
 .pc a:hover { border-color:#fff; }
 .pc.all { background:linear-gradient(160deg, #f0766a 0%, #e5604f 45%, #c94a3a 100%); border:none; box-shadow:0 24px 60px rgba(229,96,79,.35); position:relative; }
@@ -980,7 +980,7 @@ footer a:hover { color:var(--navy); }
         <p class="pc-line"><?= e($a[4]) ?></p>
         <ul class="pc-feat"><?php foreach ($a[7] as $li): ?><li><?= substr($li, -1) === '*' ? e(substr($li, 0, -1)) . '<span class="pro-mark" title="Pro plan">✦</span>' : e($li) ?></li><?php endforeach; ?></ul>
         <div class="pc-price"><?= e($a[8][0]) ?><small>/ month<?= !empty($a[8][2]) ? ' (' . e($a[8][2]) . ')' : '' ?></small></div>
-        <div class="pc-note"><?= $a[8][1] === 'every feature' ? 'Every feature.' : (substr($a[8][1], 0, 1) === '*' ? '<span class="pro-mark" title="Pro plan">✦</span>' . substr($a[8][1], 1) : ucfirst($a[8][1])) . '.' ?></div>
+        <div class="pc-note"><?= $a[8][1] === 'every feature' ? 'Every feature.' : (substr($a[8][1], 0, 1) === '*' ? '<span class="pro-mark" title="Pro plan">✦</span> ' . substr($a[8][1], 1) : ucfirst($a[8][1]) . '.') ?></div>
         <div class="pc-btns"><a href="<?= e($_apps . $a[6] . '/features') ?>">Features</a><a class="app-open" data-app="<?= e($a[6]) ?>" href="<?= e($_apps . $a[6]) ?>" title="Open <?= e($a[1]) ?>">Open</a></div>
       </div>
       <?php endforeach; ?>

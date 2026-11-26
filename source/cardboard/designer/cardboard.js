@@ -488,6 +488,15 @@ function renderCardHTML(lay, row, designing, ctx) {
     for (var i = 0; i < Math.max(n, designing ? 1 : 0); i++) out += i ? inner.replace(/^<div class="/, '<div class="rep-copy ') : inner;
     return '<div class="el-rep rep-' + (rep.dir === 'v' ? 'v' : 'h') + (designing && !n ? ' rep-none' : '') + '" ' + attr + ' style="left:' + x + 'pt;top:' + y + 'pt;z-index:' + (z || 1) + ';gap:' + gap + 'pt">' + out + '</div>';
   }
+  // An element with its own Repeat (in a group too): its copies in a row or column where the element sits — in a list, as one of its items
+  function repEl(x, list) {
+    if (!x.rep) return elHTML(x, list);
+    var one = elHTML(x, list), n = repCount(x.rep, row);
+    if (!one) return '';
+    one = one.replace(/transform:translate\([^)]*\) ?/, 'transform:');
+    var w = repWrap(x.rep, x.x, x.y, x.z, 'data-rep="' + x.id + '"', one, n);
+    return list ? w.replace('class="el-rep ', 'class="el-rep in-list ') : w;
+  }
   sorted.forEach(function(e) {
     var rg = e.group && reps[e.group];
     if (rg) {   // a repeated group: its members (as a list, if it is one) in a block, the block repeated
@@ -496,23 +505,19 @@ function renderCardHTML(lay, row, designing, ctx) {
       var b0 = cornerBox(gm), x2 = -Infinity, y2 = -Infinity;
       gm.forEach(function(x) { x2 = Math.max(x2, x.x + x.w); y2 = Math.max(y2, x.y + x.h); });
       var body = lists[rg.id]
-        ? '<div class="el-list list-' + rg.list + '" data-g="' + rg.id + '" style="left:' + b0.x + 'pt;top:' + b0.y + 'pt;gap:' + (rg.gap == null ? 4 : +rg.gap || 0) + 'pt;align-items:' + { start: 'flex-start', center: 'center', end: 'flex-end' }[listAlign(rg)] + '">' + gm.slice().reverse().map(function(x) { return elHTML(x, rg.list); }).join('') + '</div>'
-        : gm.map(function(x) { return elHTML(x); }).join('');
+        ? '<div class="el-list list-' + rg.list + '" data-g="' + rg.id + '" style="left:' + b0.x + 'pt;top:' + b0.y + 'pt;gap:' + (rg.gap == null ? 4 : +rg.gap || 0) + 'pt;align-items:' + { start: 'flex-start', center: 'center', end: 'flex-end' }[listAlign(rg)] + '">' + gm.slice().reverse().map(function(x) { return repEl(x, rg.list); }).join('') + '</div>'
+        : gm.map(function(x) { return repEl(x); }).join('');
       var block = '<div class="rep-block" style="width:' + r1(x2 - b0.x) + 'pt;height:' + r1(y2 - b0.y) + 'pt"><div class="rep-shift" style="left:' + (-b0.x) + 'pt;top:' + (-b0.y) + 'pt">' + body + '</div></div>';
       h += repWrap(rg.rep, b0.x, b0.y, e.z, 'data-repg="' + rg.id + '"', block, repCount(rg.rep, row));
       return;
     }
-    if (e.rep && !e.group) {
-      var one = elHTML(e); if (one) one = one.replace(/transform:translate\([^)]*\) ?/, 'transform:');
-      h += repWrap(e.rep, e.x, e.y, e.z, 'data-rep="' + e.id + '"', one, repCount(e.rep, row)); return;
-    }
     var g = e.group && lists[e.group];
-    if (!g) { h += elHTML(e); return; }
+    if (!g) { h += repEl(e); return; }
     var members = sorted.filter(function(x) { return x.group === g.id; });
     if (members[members.length - 1] !== e) return;   // the list is drawn once, where its top member sits
     var bb = cornerBox(members), gap = g.gap == null ? 4 : +g.gap || 0, al = { start: 'flex-start', center: 'center', end: 'flex-end' }[listAlign(g)];
     h += '<div class="el-list list-' + g.list + (g.id === selG ? ' picked' : '') + '" data-g="' + g.id + '" style="' + listPlace(g, bb, lay.card) + 'z-index:' + (e.z || 1) + ';gap:' + gap + 'pt;align-items:' + al + '">' +
-         members.slice().reverse().map(function(x) { return elHTML(x, g.list); }).join('') + '</div>';
+         members.slice().reverse().map(function(x) { return repEl(x, g.list); }).join('') + '</div>';
   });
   if (designing && multi.length && !(selG && lists[selG])) {   // one box around everything selected (a group or several elements)
     var bb = selBox(face.els.filter(function(x) { return multi.indexOf(x.id) >= 0; }));
@@ -3314,7 +3319,7 @@ function _renderAttrs() {
   if (canAuto && (e.autoW || e.autoH)) h += '<p class="muted" style="margin:.3rem 0 0">Auto ' + (e.autoW && e.autoH ? 'width and height' : e.autoW ? 'width' : 'height') + ': the box fits each card\'s text, growing from its ' + (e.autoW ? ({ left: 'left side', center: 'middle', right: 'right side' }[e.align || 'left']) : '') + (e.autoW && e.autoH ? ' and ' : '') + (e.autoH ? ({ top: 'top', middle: 'middle', bottom: 'bottom' }[e.valign || 'top']) : '') + '. Drag a side to fix its size.</p>';
   h += '<div class="row2" style="margin-top:.45rem">' + numInp('a_rot', 'Rotate (°)', e.rot || 0, 'setProp', 'rot', 1) +
        '<div><span class="mini">Opacity</span><input class="inp" type="number" min="0" max="100" step="5" value="' + Math.round((e.opacity == null ? 1 : e.opacity) * 100) + '" onchange="setProp(\'opacity\',clamp(this.value/100,0,1),true)"></div></div>';
-  if (!e.group) h += repeatAttrs('e', e.id, e.rep);
+  h += repeatAttrs('e', e.id, e.rep);
   h += actionsHTML();
   p.innerHTML = h;
   var slot = $('imgSlot');

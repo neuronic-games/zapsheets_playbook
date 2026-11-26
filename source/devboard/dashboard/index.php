@@ -2232,6 +2232,7 @@ function _dbTabCounts() {
 }
 function switchTab(tab) {
   _activeTab = tab;
+  try { sessionStorage.setItem('db_tab:' + SHEET_ID, tab); } catch (e) {}   // stays after a reload
   _dbTabCounts();
   ['Dash','Games','Publishers'].forEach(function(t) {
     var btn = document.getElementById('tab' + t);
@@ -2558,14 +2559,22 @@ var _refsFixed = false;
 // Payments saved before this kept their Date and amount as text in the sheet (left-aligned, no $): written
 // again as a date and money, like the other rows — kept and saved with Save, once per payment
 var _payCellsFixed = false;
+// Each payment is repaired once (remembered in this browser): a date the sheet shows as 2026-11-25 because of
+// the column's format looks just like one typed as text, and repairing it again on every load kept saving and
+// reloading the page.
 function _fixPaymentCells() {
   if (_payCellsFixed) return; _payCellsFixed = true;
   if (!(window.GBAccount && GBAccount.canEdit && GBAccount.canEdit())) { _payCellsFixed = false; return; }
+  var KEY = 'db_payfix:' + SHEET_ID, done = {};
+  try { done = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) {}
+  var before = Object.keys(done).length;
   CONTRACT_RAW.forEach(function(c) {
     if (!c || !_isPaymentRow(c)) return;
     var ref = String(c['Ref Number'] || '').replace(/^'/, '').trim(), d = String(c.Date || '').trim(), q = String(c.Quote || '').trim();
     var isoDate = /^\d{4}-\d{2}-\d{2}$/.test(d), plainAmt = /^\d+(\.\d+)?$/.test(q);
     if (!ref || (!isoDate && !plainAmt)) return;
+    if (done[ref]) return;   // repaired once already
+    done[ref] = 1;
     var fd = new FormData();
     fd.append('id', SHEET_ID); fd.append('contract_id', ref); fd.append('game', c.Game || ''); fd.append('client', c.Client || '');
     fd.append('quote', q.replace(/[$,]/g, '')); fd.append('payment', 'Paid'); if (_cleanSummary(c.Summary)) fd.append('summary', _cleanSummary(c.Summary));
@@ -2576,6 +2585,7 @@ function _fixPaymentCells() {
     var n = parseFloat(q); if (!isNaN(n)) c.Quote = '$' + n.toFixed(2);
     if (day) c.Date = fmtDate(new Date(day).toISOString().slice(0, 10));
   });
+  if (Object.keys(done).length !== before) try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (e) {}
 }
 function _fixOldRefs() {
   if (_refsFixed) return; _refsFixed = true;
@@ -3106,7 +3116,7 @@ function _pubConCount(contracts) {
   return parts.join(' · ');
 }
 function _paymentItemHtml(pay) {
-  var idx = CONTRACT_RAW.indexOf(pay), n = parseFloat(pay.Quote || '');
+  var idx = CONTRACT_RAW.indexOf(pay), n = parseFloat(String(pay.Quote || '').replace(/[$,\s]/g, ''));   // "$150.00" (money) or 150
   var amt = isNaN(n) ? '—' : '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   var when = fmtDate(pay.Date || '') || pay.Date || '';
   var h = '<div class="estimate-item pay-item" id="ci-' + idx + '">';
@@ -8225,6 +8235,14 @@ function _dbStartCheckout(type, btn, btnLabel, plan) {
   window._dbLoadSubStatus = function(cb) { fromAccount(GBAccount.state()); if (cb) cb(_dbSubStatus); };
   window.openUpgradeDialog = function(reason) { GBAccount.openPlans(reason === 'pro' ? 'pro' : ''); };
   window._dashMenuAuthAction = function() { if (GBAccount.account()) GBAccount.signOut(); else GBAccount.signIn().catch(function() {}); };
+})();
+// Back on the tab you were on (a reload — after saving changes kept from last time — opened Games)
+(function() {
+  var t = ''; try { t = sessionStorage.getItem('db_tab:' + SHEET_ID) || ''; } catch (e) {}
+  if (t && t !== 'games' && document.getElementById('view-' + t)) {
+    var go = function() { try { switchTab(t); } catch (e) {} };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+  }
 })();
 </script>
 <script>

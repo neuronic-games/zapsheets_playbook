@@ -1611,8 +1611,11 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
     return;
   }
   if (handle === 'rot' && isSel(e.id) && !multi.length) { rotateDrag(ev, e, elDom); return; }   // before Shift-click, so Shift can snap the angle
-  // Clicking part of a group picks the whole group; Shift/⌘-click adds to (or takes from) the selection
-  var unit = e.group ? groupMembers(e.group).map(function(x) { return x.id; }) : [e.id];
+  // Clicking part of a group picks the whole group; Shift/⌘-click adds to (or takes from) the selection.
+  // A member picked on its own (in Layers, or by clicking it again while its group is picked) moves and resizes alone.
+  var alone = !!e.group && isSel(e.id) && !multi.length;
+  var unit = e.group && !alone ? groupMembers(e.group).map(function(x) { return x.id; }) : [e.id];
+  var groupWasPicked = !!e.group && !alone && unit.length > 1 && unit.every(isSel) && multi.length === unit.length;
   if (ev.shiftKey || ev.metaKey || ev.ctrlKey) {
     var cur = selIdsNow(), has = unit.every(function(id) { return cur.indexOf(id) >= 0; });
     setSel(has ? cur.filter(function(id) { return unit.indexOf(id) < 0; }) : cur.concat(unit));
@@ -1673,6 +1676,7 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
     document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up);
     $('cardHolder').classList.remove('moving');
     if (moved) changed(!group);   // a group's panel shows its position, so refresh it
+    else if (groupWasPicked) setSel([e.id]);   // a second click on a group's member: that member on its own
     else if (wasSel && clickedSel) { keyId = keyId === e.id || (keyUnit() || []).some(function(x) { return x.id === e.id; }) ? null : e.id; render(); renderAttrs(); }   // pick (or drop) the key object
   }
   document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);

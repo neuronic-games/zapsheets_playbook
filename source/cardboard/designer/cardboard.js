@@ -2068,7 +2068,7 @@ function saveAll(auto) {
     var ops = tagOps(), done = 0, ic = Promise.resolve();
     ops.forEach(function(o) {
       ic = ic.then(function() {
-        return (o.op === 'del' ? api('deltag', { tag: o.tag }) : api('settag', Object.assign({ tag: o.tag, value: o.value || '' }, o.old ? { old: o.old } : {})))
+        return (o.op === 'del' ? api('deltag', { tag: o.tag }) : api('settag', Object.assign({ tag: o.tag, value: o.value || '', fmt: JSON.stringify(o.fmt || []) }, o.old ? { old: o.old } : {})))
           .then(function() { done++; });
       });
     });
@@ -4490,7 +4490,7 @@ function expandTags(html, ctx) {
   return html.replace(/\[([^\[\]{}<>]{1,60})\]/g, function(all, name) {
     var t = TAGMAP[tagKey(name)]; if (!t) return all;
     var pic = tagPicture(t.value);
-    if (!pic) return esc(t.value);
+    if (!pic) return tagTextHtml(t);   // a word, with its own bold / italic / colour if it has any
     if (ctx.proxy) pic = proxied(pic);
     return '<img class="tag-img" src="' + esc(pic) + '" alt="' + esc(name) + '" draggable="false" referrerpolicy="no-referrer">';
   });
@@ -4503,9 +4503,44 @@ function loadTags() {
 
 // The Tags view
 var _tagDraft = null;   // a new tag not saved yet
+// A text tag's words with its formatting (t.fmt: [[start, {b,i,u,s,c}]], read from the value's cell in the tags tab)
+function tagTextHtml(t) {
+  var v = String(t.value || ''), runs = Array.isArray(t.fmt) ? t.fmt : [];
+  if (!runs.length) return esc(v);
+  var one = { v: v, _fmt: { v: { t: v, r: runs } } };
+  return fmtHtml(one, 'v', v);
+}
 function tagPreview(t) {
   var pic = tagPicture(t.value);
-  return pic ? '<img src="' + esc(pic) + '" alt="" referrerpolicy="no-referrer">' : '<span>' + (t.value ? esc(t.value) : '<i>empty</i>') + '</span>';
+  return pic ? '<img src="' + esc(pic) + '" alt="" referrerpolicy="no-referrer">' : '<span>' + (t.value ? tagTextHtml(t) : '<i>empty</i>') + '</span>';
+}
+// Editing a text tag's words: a formatted box, the formatting buttons floating above it while it's being edited
+function tagEdFocus(ed, idx) {
+  if (ed._bar) return;
+  if (!hasAccess()) { ed.blur(); return; }
+  var t = tagAt(idx); if (!t) return;
+  var oldV = String(t.value || ''), oldR = JSON.stringify(t.fmt || []);
+  var bar = document.createElement('div'); bar.className = 'fmt-box fmt-float'; bar.innerHTML = fmtBarHtml();
+  document.body.appendChild(bar); ed._bar = bar;
+  function place() { var rc = ed.getBoundingClientRect(); bar.style.left = Math.max(6, Math.min(window.innerWidth - bar.offsetWidth - 6, rc.left)) + 'px'; bar.style.top = Math.max(6, rc.top - bar.offsetHeight - 6) + 'px'; }
+  place(); window.addEventListener('scroll', place, true);
+  _fmtEd = ed; fmtFocus(ed);
+  var done = false;
+  ed._finish = function(save) {
+    if (done) return; done = true;
+    var r = save && document.body.contains(ed) ? fmtRead(ed) : null;
+    window.removeEventListener('scroll', place, true); bar.remove(); ed._bar = null; ed._finish = null;
+    if (_fmtEd === ed) _fmtEd = null;
+    if (r && (r.text !== oldV || JSON.stringify(r.runs) !== oldR)) setTagValue(idx, r.text, r.runs);
+  };
+  ed.onkeydown = function(k) {
+    k.stopPropagation();
+    var key = (k.key || '').toLowerCase();
+    if ((k.metaKey || k.ctrlKey) && /^[biu]$/.test(key)) { k.preventDefault(); fmtCmd({ b: 'bold', i: 'italic', u: 'underline' }[key]); }
+    else if (k.key === 'Enter' && !k.shiftKey) { k.preventDefault(); ed.blur(); }
+    else if (k.key === 'Escape') { k.preventDefault(); ed.innerHTML = tagTextHtml(t); done = false; ed._finish && ed._finish(false); ed.blur(); }
+  };
+  ed.onblur = function() { setTimeout(function() { if (ed._picking || (document.activeElement && bar.contains(document.activeElement))) return; if (ed._finish) ed._finish(true); }, 0); };
 }
 function renderTags() {
   var box = $('tagList'); if (!box) return;
@@ -4520,7 +4555,7 @@ function renderTags() {
       ? '<div class="tag-img-box">' + (tagPicture(t.value) ? '<img src="' + esc(tagPicture(t.value)) + '" alt="" referrerpolicy="no-referrer">' : '<span class="muted">No picture</span>') +
         '<button type="button" class="tag-pick" onclick="pickTagImage(' + idx + ')" title="Choose a picture"' + (pro ? '' : ' disabled') + '>' + IMG_ICON + ' Choose</button>' +
         '<input class="inp" value="' + esc(parseIcon(t.value) ? '' : t.value) + '" placeholder="or paste a picture link" onchange="setTagValue(' + idx + ',this.value.trim())"' + (pro ? '' : ' disabled') + '></div>'
-      : '<input class="inp" value="' + esc(t.value) + '" placeholder="What [tag] becomes" onchange="setTagValue(' + idx + ',this.value)"' + (pro ? '' : ' disabled') + '>';
+      : '<div class="inp tag-text" contenteditable="' + (pro ? 'true' : 'false') + '" spellcheck="true" data-ph="What [tag] becomes" onfocus="tagEdFocus(this,' + idx + ')" onpaste="fmtPaste(event)">' + tagTextHtml(t) + '</div>';
     return '<div class="tag-row' + (draft ? ' draft' : '') + '">' +
       '<input class="inp tag-name" value="' + esc(draft ? t.tag : t.tag) + '" placeholder="[name]" onchange="renameTag(' + idx + ',this.value,this)"' + (draft ? ' id="tagDraftName"' : '') + (pro ? '' : ' disabled') + '>' +
       '<div class="seg tag-kind"><button type="button" class="' + (img ? '' : 'on') + '" onclick="setTagKind(' + idx + ',\'text\')"' + (pro ? '' : ' disabled') + '>Text</button><button type="button" class="' + (img ? 'on' : '') + '" onclick="setTagKind(' + idx + ',\'image\')"' + (pro ? '' : ' disabled') + '>Image</button></div>' +
@@ -4541,7 +4576,7 @@ var _tagPtr = false, _tagRedraw = false;
 document.addEventListener('pointerdown', function() { _tagPtr = true; }, true);
 document.addEventListener('pointerup', function() { _tagPtr = false; if (_tagRedraw) setTimeout(laterRenderTags, 0); }, true);
 function laterRenderTags() {
-  var a = document.activeElement, typing = a && $('tagList') && $('tagList').contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName);
+  var a = document.activeElement, typing = a && $('tagList') && $('tagList').contains(a) && (/^(INPUT|TEXTAREA)$/.test(a.tagName) || a.isContentEditable);
   if (_tagPtr || typing) { _tagRedraw = true; if (typing) a.addEventListener('blur', function() { setTimeout(laterRenderTags, 0); }, { once: true }); return; }
   _tagRedraw = false; renderTags();
 }
@@ -4553,7 +4588,7 @@ function setTagOps(l) { lsSet('cb_tags:' + SHEET_ID, l.length ? l : null); updat
 function queueTagOp(o) {
   var ops = tagOps(), last = ops[ops.length - 1];
   // A name or value changed again before saving: one change, from the name the sheet still has
-  if (o.op === 'set' && last && last.op === 'set' && tagKey(last.tag) === tagKey(o.old || o.tag)) { last.tag = o.tag; last.value = o.value; }
+  if (o.op === 'set' && last && last.op === 'set' && tagKey(last.tag) === tagKey(o.old || o.tag)) { last.tag = o.tag; last.value = o.value; last.fmt = o.fmt; }
   else ops.push(o);
   setTagOps(ops);   // saved with everything else (Save, or the pause after you stop)
 }
@@ -4562,14 +4597,14 @@ function applyTagOps(list) {   // the sheet's tags with this browser's unsaved c
     var k = tagKey(o.op === 'set' && o.old ? o.old : o.tag), i = -1;
     list.forEach(function(t, j) { if (tagKey(braced(t.tag)) === k) i = j; });
     if (o.op === 'del') { if (i >= 0) list.splice(i, 1); return; }
-    if (i >= 0) { list[i].tag = o.tag; list[i].value = o.value; } else list.push({ tag: o.tag, value: o.value });
+    if (i >= 0) { list[i].tag = o.tag; list[i].value = o.value; list[i].fmt = o.fmt || []; } else list.push({ tag: o.tag, value: o.value, fmt: o.fmt || [] });
   });
   return list;
 }
 function saveTag(t, old) {   // kept until Save
   if (!t.tag) return Promise.resolve();
   if (!requirePro('edit', function() {})) { renderTags(); return Promise.resolve(); }
-  queueTagOp({ op: 'set', tag: t.tag, value: t.value || '', old: old && tagKey(old) !== tagKey(t.tag) ? old : '' });
+  queueTagOp({ op: 'set', tag: t.tag, value: t.value || '', fmt: tagPicture(t.value) ? [] : (t.fmt || []), old: old && tagKey(old) !== tagKey(t.tag) ? old : '' });
   if (t === _tagDraft) { _tagDraft = null; _lastDraft = t; TAGS.push(t); }
   setTags(TAGS); refreshCards();
   laterRenderTags();
@@ -4583,8 +4618,10 @@ function renameTag(i, v, input) {
   // Show the braces now, but don't redraw the list yet: the click that moved focus away (Image, Choose…) must still land
   t.tag = name; if (input) input.value = name; saveTag(t, old);
 }
-function setTagValue(i, v) {
+function setTagValue(i, v, fmt) {   // fmt: the formatting of a text tag's words (runs), or undefined to leave it
   var t = tagAt(i); if (!t) return;
+  if (fmt !== undefined) t.fmt = fmt && fmt.length ? fmt : [];
+  else if (t.value !== v) t.fmt = [];   // new words (or a picture): the old formatting doesn't fit them
   t.value = v; if (t === _tagDraft && !t.tag) { renderTags(); return; }
   saveTag(t, '');
 }

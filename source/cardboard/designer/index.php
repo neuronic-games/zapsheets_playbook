@@ -102,6 +102,9 @@ button, input, select, textarea { font-family:inherit; }
 .mm-who small { display:block; margin-top:.15rem; color:rgba(255,255,255,.45); }
 .account-menu-item { display:block; width:100%; background:none; border:none; color:rgba(255,255,255,.85); text-align:left; cursor:pointer; font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; padding:.6rem 1rem; transition:background .12s; }
 .account-menu-item[hidden] { display:none; }
+.tag-text { display:flex; align-items:center; flex-wrap:wrap; min-height:2.05rem; height:auto; line-height:1.35; padding-top:.35rem; padding-bottom:.35rem; white-space:pre-wrap; cursor:text; outline:none; }   /* a text tag's words, formatted */
+.tag-text:empty::before { content:attr(data-ph); color:#a3a8bf; }
+.tag-text[contenteditable="false"] { background:#f6f6fa; cursor:default; }
 .share-dlg .share-row { display:flex; gap:.45rem; margin-top:.6rem; }
 .share-dlg .share-row .inp { flex:1; min-width:0; font-size:.8rem; }
 .share-dlg .danger-txt { color:#c0392b; margin-right:auto; }

@@ -92,6 +92,37 @@ def cell_fmt(cell):
         out_runs.append([int(run.get('startIndex', 0)), d])
     return {'t': text, 'r': out_runs} if any_fmt else None
 
+def fmt_to_tfr(text, fmt):
+    # [[start, {b, i, u, s, c}], …] → Sheets textFormatRuns for this text ([] = no formatting)
+    tfr = []
+    for item in (fmt or []):
+        try: start, d = int(item[0]), (item[1] or {})
+        except Exception: continue
+        if start < 0 or start >= len(text): continue
+        f = {'bold': bool(d.get('b')), 'italic': bool(d.get('i')), 'underline': bool(d.get('u')), 'strikethrough': bool(d.get('s'))}
+        col = str(d.get('c') or '')
+        if __import__('re').match(r'^#[0-9a-fA-F]{6}$', col):
+            f['foregroundColorStyle'] = {'rgbColor': {'red': int(col[1:3], 16) / 255, 'green': int(col[3:5], 16) / 255, 'blue': int(col[5:7], 16) / 255}}
+        tfr.append({'startIndex': start, 'format': f})
+    if tfr and tfr[0]['startIndex'] != 0: tfr.insert(0, {'startIndex': 0, 'format': {}})
+    return tfr
+
+def grid_cells(wb, rng):
+    # The cells of a range with their formatting runs (one call), or None when that call fails
+    try:
+        from google.auth.transport.requests import Request as GoogleAuthRequest
+        import requests as requests_lib, urllib.parse
+        auth = getattr(wb.client, 'auth', None) or wb.client.http_client.auth
+        if not auth.valid: auth.refresh(GoogleAuthRequest())
+        url = ('https://sheets.googleapis.com/v4/spreadsheets/' + urllib.parse.quote(wb.id, safe='') +
+               '?includeGridData=true&ranges=' + urllib.parse.quote(rng, safe='') +
+               '&fields=' + urllib.parse.quote('sheets.data.rowData.values(formattedValue,textFormatRuns)', safe=''))
+        r = requests_lib.get(url, headers={'Authorization': f'Bearer {auth.token}'}, timeout=30)
+        r.raise_for_status()
+        return ((r.json().get('sheets') or [{}])[0].get('data') or [{}])[0].get('rowData', [])
+    except Exception:
+        return None
+
 def peek_rows(wb, title, n=8):
     # The heading row and the first rows of a tab, as records like gread.py's — only the
     # first n rows are fetched, so it's quick even on a big sheet
@@ -181,9 +212,16 @@ def main():
         if action == 'tags':
             if tws is None: out({'ok': True, 'tags': []})
             vals = rows_of(tws); tags = []
+            # Formatting inside a text tag's value (bold, italic, colour…): read with its cell
+            rd = grid_cells(wb, q(tws.title) + '!B1:B' + str(max(1, len(vals)))) or []
             for i, r in enumerate(vals[1:]):
                 t = brace(r[0] if r else '')
-                if t: tags.append({'tag': t, 'value': str(r[1]) if len(r) > 1 else '', 'row': i + 2})
+                if not t: continue
+                rec = {'tag': t, 'value': str(r[1]) if len(r) > 1 else '', 'row': i + 2}
+                cell = ((rd[i + 1].get('values') or [{}])[0]) if i + 1 < len(rd) else {}
+                f = cell_fmt(cell) if cell else None
+                if f and f['t'] == rec['value']: rec['fmt'] = f['r']
+                tags.append(rec)
             out({'ok': True, 'tags': tags})
         tag = brace(data.get('tag'))
         if not tag: out({'error': 'Give the tag a name'})
@@ -230,6 +268,17 @@ def main():
             wb.values_update(q(tws.title) + '!A' + str(row) + ':B' + str(row), params={'valueInputOption': 'RAW'}, body={'values': [[tag, value]]})
         else:
             res = wb.values_append(q(tws.title) + '!A1', params={'valueInputOption': 'RAW', 'insertDataOption': 'INSERT_ROWS'}, body={'values': [[tag, value]]})
+            m = __import__('re').search(r'![A-Z]+(\d+)', ((res or {}).get('updates') or {}).get('updatedRange', ''))
+            row = int(m.group(1)) if m else 0
+        # A text tag's formatting (fmt: [[start, {b,i,u,s,c}]], [] = none): written as the value cell's text runs
+        if isinstance(data.get('fmt'), list) and row:
+            try:
+                wb.batch_update({'requests': [{'updateCells': {
+                    'range': {'sheetId': tws.id, 'startRowIndex': row - 1, 'endRowIndex': row, 'startColumnIndex': 1, 'endColumnIndex': 2},
+                    'rows': [{'values': [{'userEnteredValue': {'stringValue': value}, 'textFormatRuns': fmt_to_tfr(value, data['fmt'])}]}],
+                    'fields': 'userEnteredValue,textFormatRuns'}}]})
+            except Exception:
+                pass   # the text is in; only its formatting didn't go
         out({'ok': True, 'tag': tag, 'value': value})
 
     ws = next((w for w in sheets if w.title.lower() == TAB), None)

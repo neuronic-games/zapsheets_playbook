@@ -84,6 +84,7 @@ if ($action === 'settag' || $action === 'deltag') {
         $req['value'] = (string) ($_POST['value'] ?? '');
         if (mb_strlen($req['value']) > 5000) { echo json_encode(['error' => 'That value is too long']); exit; }
         if (isset($_POST['old'])) $req['old'] = (string) $_POST['old'];
+        if (isset($_POST['fmt'])) { $f = json_decode((string) $_POST['fmt'], true); if (is_array($f)) $req['fmt'] = array_slice($f, 0, 500); }   // a text tag's formatting
     }
     echo json_encode(cbRun($python, $sheetId, $req), JSON_UNESCAPED_UNICODE);
     exit;
@@ -142,6 +143,7 @@ if (in_array($action, ['grid', 'setcell', 'addrow', 'deleterow', 'deletefield', 
     if ($action === 'setcell') {
         $req += ['row' => (int) ($_POST['row'] ?? 0), 'field' => (string) ($_POST['field'] ?? ''), 'value' => (string) ($_POST['value'] ?? '')];
         if (isset($_POST['old'])) $req['old'] = (string) $_POST['old'];
+        if (isset($_POST['fmt'])) { $f = json_decode((string) $_POST['fmt'], true); if (is_array($f)) $req['fmt'] = array_slice($f, 0, 500); }   // a text tag's formatting
         if (mb_strlen($req['value']) > 50000) { echo json_encode(['error' => 'That is too long for one cell']); exit; }
     }
     if ($action === 'addrow') {

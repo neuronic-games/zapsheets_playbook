@@ -1709,6 +1709,13 @@ document.addEventListener('keydown', function(ev) {
   var typing = /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '') || !!(document.activeElement && document.activeElement.isContentEditable);
   var mod = ev.metaKey || ev.ctrlKey;
   if (mod && ev.key.toLowerCase() === 's') { ev.preventDefault(); saveAll(); return; }
+  // ⌘← / ⌘→: previous / next card, ⌘↑ / ⌘↓: first / last (read-only too)
+  if (!typing && mod && _activeTab === 'design' && layout && /^Arrow(Left|Right|Up|Down)$/.test(ev.key)) {
+    ev.preventDefault();
+    if (ev.key === 'ArrowLeft') stepRow(-1); else if (ev.key === 'ArrowRight') stepRow(1);
+    else if (ev.key === 'ArrowUp') firstCard(); else lastCard();
+    return;
+  }
   if (!typing && _activeTab === 'design' && layout && ev.key === 'Escape' && selEls().length) { selectEl(null); return; }
   if (typing || _activeTab !== 'design' || !layout || !hasAccess()) return;   // read-only once the free week is over
   if (mod && ev.key.toLowerCase() === 'z') { ev.preventDefault(); if (ev.shiftKey) redo(); else undo(); return; }
@@ -2856,7 +2863,7 @@ function _renderAttrs() {
     h += '<span class="lbl">' + (side === 'back' ? 'Both sides' : 'Look') + '</span>' + (side === 'back' ? '' : colorRow('Background', 'bg', c.bg, false, 'setCard'));
     h += '<div class="row2" style="margin-top:.45rem">' + numInp('c_r', 'Corner radius (pt)', c.radius, 'setCard', 'radius') + numInp('c_bw', 'Border (pt)', c.borderW, 'setCard', 'borderW', .5) + '</div>';
     h += '<div style="margin-top:.45rem">' + colorRow('Border color', 'borderColor', c.borderColor, false, 'setCard') + '</div>';
-    h += '<span class="lbl">Shortcuts</span><p class="muted" style="margin:0">Arrows nudge 1 pt (Shift: 10) · Alt while dragging: fine moves · Shift+corner: keep a shape\'s proportions · ⌘D duplicate · Delete removes · ⌘Z undo · ⌘S save</p>';
+    h += '<span class="lbl">Shortcuts</span><p class="muted" style="margin:0">Arrows nudge 1 pt (Shift: 10) · ⌘← ⌘→ previous / next card (⌘↑ ⌘↓ first / last) · Alt while dragging: fine moves · Shift+corner: keep a shape\'s proportions · ⌘D duplicate · Delete removes · ⌘Z undo · ⌘S save</p>';
     if (hasAccess() && readClip()) h += actionsHTML('paste');
     p.innerHTML = h; return;
   }

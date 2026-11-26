@@ -3157,7 +3157,7 @@ var PAPER = { letter: [612, 792], a4: [595.3, 841.9] };
 function savePrintSettings(tab) {
   if (!tab || !layout) return;
   _printSettings[tab] = { paper: $('pPaper').value, orient: $('pOrient').value, gap: $('pGap').value, cut: $('pCut').value, copies: copiesValue($('pCopies')), backs: $('pBacks').value };
-  try { localStorage.setItem('cb_print:' + SHEET_ID + ':' + tab, JSON.stringify(_printSettings[tab])); } catch (e) {}
+  if (hasAccess()) try { localStorage.setItem('cb_print:' + SHEET_ID + ':' + tab, JSON.stringify(_printSettings[tab])); } catch (e) {}   // someone viewing: only for this visit
   keepSheetSetting('print', tab, _printSettings[tab]);
 }
 // The owner's Print and Export choices are kept with the sheet (its settings, saved like the layouts), so they're
@@ -3168,9 +3168,9 @@ function keepSheetSetting(kind, tab, v) {
   if (JSON.stringify(all[tab]) === JSON.stringify(v)) return;
   all[tab] = v; SETTINGS[kind] = all; markSettings();
 }
-function sheetSetting(kind, tab, local) {   // the owner: the sheet's (then this browser's); others: theirs, else the sheet's
+function sheetSetting(kind, tab, local) {   // the sheet's (as the owner last saved them), else this browser's
   var sh = SETTINGS[kind] && SETTINGS[kind][tab];
-  return hasAccess() ? (sh || local) : (local || sh);
+  return sh || (hasAccess() ? local : null);   // someone viewing always starts from the owner's; their changes last the visit
 }
 function restorePrintSettings(tab) {
   var s = _printSettings[tab], loc = null;
@@ -3187,7 +3187,7 @@ function restorePrintSettings(tab) {
 function saveExportSettings(tab) {
   if (!tab || !layout) return;
   _exportSettings[tab] = { target: $('eTarget').value, quality: $('eQuality').value, copies: copiesValue($('eCopies')) };
-  try { localStorage.setItem('cb_export:' + SHEET_ID + ':' + tab, JSON.stringify(_exportSettings[tab])); } catch (e) {}
+  if (hasAccess()) try { localStorage.setItem('cb_export:' + SHEET_ID + ':' + tab, JSON.stringify(_exportSettings[tab])); } catch (e) {}
   keepSheetSetting('export', tab, _exportSettings[tab]);
 }
 function restoreExportSettings(tab) {

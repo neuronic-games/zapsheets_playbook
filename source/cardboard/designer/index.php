@@ -11,8 +11,18 @@ preg_match('#^(.*?)(?:sheets/)?([A-Za-z0-9_\-]+)/cardboard/?$#', $_rp, $_bm);
 $_base = (isset($_bm[1]) && $_bm[1] !== '') ? $_bm[1] : '/';
 if (substr($_base, -1) !== '/') $_base .= '/';
 $_sheet_id = $_bm[2] ?? '';
+// A view-only share link (/v-{token}/cardboard): the page only ever knows "v-{token}"; the server finds the sheet
+require_once dirname(__DIR__, 3) . '/push/cardboardView.php';
+$_view    = cbViewId($_sheet_id);
+$_real_id = cbViewSheet($_sheet_id);
+if ($_view && $_real_id === '') {
+    http_response_code(404);
+    echo '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Link turned off</title></head>'
+       . '<body style="font-family:sans-serif;padding:3rem;text-align:center;color:#2e2763"><h2>This share link has been turned off.</h2><p>Ask the person who sent it for a new one.</p></body></html>';
+    exit;
+}
 // The spreadsheet's name (kept by push/cardboardData.php): the page title and the Home Screen name
-$_cb_title = $_sheet_id !== '' ? trim((string) @file_get_contents(dirname(__DIR__, 3) . '/sheets/' . preg_replace('/[^A-Za-z0-9_\-]/', '', $_sheet_id) . '/_cardboard_title.txt')) : '';
+$_cb_title = $_real_id !== '' ? trim((string) @file_get_contents(dirname(__DIR__, 3) . '/sheets/' . preg_replace('/[^A-Za-z0-9_\-]/', '', $_real_id) . '/_cardboard_title.txt')) : '';
 $_cb_name  = $_cb_title !== '' ? $_cb_title : 'CardBoard';
 ?>
 <!DOCTYPE html>
@@ -30,7 +40,7 @@ $_cb_name  = $_cb_title !== '' ? $_cb_title : 'CardBoard';
 <meta name="mobile-web-app-capable" content="yes" />
 <link rel="manifest" id="cbManifest" href="manifest.php?app=cardboard&amp;id=<?= urlencode($_sheet_id) ?>&amp;base=<?= urlencode($_base) ?>" />
 <title><?= htmlspecialchars($_cb_title !== '' ? $_cb_title : 'Loading…', ENT_QUOTES) ?></title>
-<?php require_once dirname(__DIR__, 3) . '/push/linkPreview.php'; echo gbLinkPreview('cardboard', $_sheet_id); ?>
+<?php require_once dirname(__DIR__, 3) . '/push/linkPreview.php'; echo gbLinkPreview('cardboard', $_real_id); ?>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Cinzel:wght@500;700&family=Lilita+One&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Roboto+Condensed:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" crossorigin="anonymous">
@@ -91,6 +101,10 @@ button, input, select, textarea { font-family:inherit; }
 .mm-who b { display:block; color:#fff; font-size:.86rem; word-break:normal; }
 .mm-who small { display:block; margin-top:.15rem; color:rgba(255,255,255,.45); }
 .account-menu-item { display:block; width:100%; background:none; border:none; color:rgba(255,255,255,.85); text-align:left; cursor:pointer; font-family:'DINBlack',sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.07em; padding:.6rem 1rem; transition:background .12s; }
+.account-menu-item[hidden] { display:none; }
+.share-dlg .share-row { display:flex; gap:.45rem; margin-top:.6rem; }
+.share-dlg .share-row .inp { flex:1; min-width:0; font-size:.8rem; }
+.share-dlg .danger-txt { color:#c0392b; margin-right:auto; }
 .account-menu-item:hover { background:rgba(255,255,255,.1); color:#fff; }
 .account-menu-divider { border:none; border-top:1px solid rgba(255,255,255,.12); margin:.2rem 0; }
 
@@ -899,7 +913,8 @@ body.cb-gate #signinOverlay { background:#2e2763; }
       <div class="account-menu" id="accountMenu">
         <div class="mm-who" id="mmWho" style="display:none;cursor:pointer" title="Account" onclick="closeAccountMenu();openAccountDialog()"></div>
         <button class="account-menu-item" onclick="closeAccountMenu();openAccountDialog()">Account</button>
-        <button class="account-menu-item" onclick="closeAccountMenu();openSettingsDialog()">Settings</button>
+        <button class="account-menu-item" id="cbShareBtn" onclick="closeAccountMenu();openShareDialog()" hidden>Share</button>
+        <button class="account-menu-item" id="cbSettingsBtn" onclick="closeAccountMenu();openSettingsDialog()">Settings</button>
         <button class="account-menu-item" onclick="closeAccountMenu();reloadSheet()" title="Read the latest data from the Google Sheet">Fetch</button>
         <button class="account-menu-item" id="cbSubBtn" onclick="closeAccountMenu();openPlansDialog()" style="color:#f5a623;display:none">Subscribe</button>
         <button class="account-menu-item" id="cbCodeBtn" onclick="closeAccountMenu();openCodeDialog()" hidden style="display:none">Enter a code</button>
@@ -1020,7 +1035,7 @@ body.cb-gate #signinOverlay { background:#2e2763; }
       <div class="p-zoom"><button type="button" onclick="printZoom(-1)" title="Zoom out">−</button><span id="pZoomPct">100%</span><button type="button" onclick="printZoom(1)" title="Zoom in (or pinch / ⌘ + scroll)">+</button><button type="button" class="fit" onclick="printZoom(0)" title="Show the whole page">Fit</button></div></div>
     <span class="print-info" id="printInfo"></span>
     <div class="p-actions"><button class="print-go" onclick="if (requirePro('print', function() { window.print(); })) window.print()">Print</button>
-    <button class="print-go dl-go" id="pdfGo" onclick="runPrintPdf()" title="Download the pages as a PDF" aria-label="Download PDF"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10.5 5 5 5-5"/><path d="M5 20h14"/></svg></button></div>
+    <button class="print-go ghost dl-go" id="pdfGo" onclick="runPrintPdf()" title="Download the pages as a PDF" aria-label="Download PDF"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10.5 5 5 5-5"/><path d="M5 20h14"/></svg></button></div>
   </div>
   <div class="pages" id="pages"></div>
 </div>
@@ -1038,8 +1053,8 @@ body.cb-gate #signinOverlay { background:#2e2763; }
     <div class="grp"><span class="mini">Copies</span>
       <select class="sel" id="eCopies"></select></div>
     <div class="grp"><span class="mini">Card back</span><span class="e-note" id="eBackNote"></span></div>
-    <div class="e-actions"><button class="print-go ghost" id="publishGo" onclick="runPublish()" title="Host the sheets on zapsheets.com at links that stay the same (Pro)">Get links</button>
-    <button class="print-go dl-go" id="exportGo" onclick="runExport()" title="Download the card images (zip)" aria-label="Download"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10.5 5 5 5-5"/><path d="M5 20h14"/></svg></button></div>
+    <div class="e-actions"><button class="print-go" id="publishGo" onclick="runPublish()" title="Host the sheets on zapsheets.com at links that stay the same (Pro)">Get links</button>
+    <button class="print-go ghost dl-go" id="exportGo" onclick="runExport()" title="Download the card images (zip)" aria-label="Download"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10.5 5 5 5-5"/><path d="M5 20h14"/></svg></button></div>
   </div>
   <div class="export-info"><span id="exportInfo"></span><div class="export-help" id="exportHelp"></div>
     <div class="export-progress" id="exportProgress" style="display:none"><div></div></div><span class="muted" id="exportStatus"></span>

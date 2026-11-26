@@ -189,6 +189,7 @@ function gbLetInHtml(string $name, array $apps): string {
 $action = $_POST['action'] ?? '';
 $sheet  = trim((string) ($_POST['sheet'] ?? ''));
 if ($sheet !== '' && !stripeValidSheetId($sheet)) $sheet = '';
+if (preg_match('/^v-/', $sheet) && ($_POST['action'] ?? '') === 'claim') fail('A view-only link can’t be made yours');   // a share link isn't the sheet
 $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 
 function cbEmailIn(): string {

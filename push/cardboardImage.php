@@ -16,6 +16,8 @@ ini_set('display_errors', '0');
 function fail($code, $msg) { http_response_code($code); header('Content-Type: text/plain'); echo $msg; exit; }
 
 $sheetId = $_GET['id'] ?? '';
+require_once __DIR__ . '/cardboardView.php';
+$sheetId = cbViewSheet((string) $sheetId);   // a view-only link ("v-{token}") reads its sheet's pictures too
 if (!preg_match('/^[A-Za-z0-9_\-]{20,}$/', $sheetId) || !is_dir(dirname(__DIR__) . '/sheets/' . $sheetId)) fail(403, 'Unknown sheet');
 
 $url = trim($_GET['url'] ?? '');

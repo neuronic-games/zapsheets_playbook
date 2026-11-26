@@ -235,7 +235,7 @@ function savePub(tab) { cacheSet(ck('pub:' + tab), PUBLISHED[tab] || {}); }
 function cbPost(url, fd, again) {
   if (ACCT && ACCT.token) fd.set('cbt', ACCT.token);
   return fetch(url, { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(res) {
-    if (res && res.need_auth && !again && !_guest) {   // a read-only viewer isn't asked to sign in by the page itself
+    if (res && res.need_auth && !again && !_guest && !viewLink()) {   // a read-only viewer isn't asked to sign in by the page itself
       var next = res.refresh && ACCT ? acctRefresh(true) : askSignIn();
       return next.then(function() { return cbPost(url, fd, true); }, function() { return res; });
     }
@@ -479,7 +479,7 @@ function renderCardHTML(lay, row, designing, ctx) {
 // Nothing is read from the spreadsheet until the person has signed in (or started their free week)
 function init() {
   applyAcct();
-  if (!ACCT && !_guest) {
+  if (!ACCT && !_guest && !viewLink()) {
     $('cardHolder').innerHTML = '';
     askSignIn(true).then(function() { init(); }, function() {});
     return;
@@ -4785,7 +4785,8 @@ function applyAcct() {
   if (bar) {
     bar.hidden = ok;
     $('lockBtn').hidden = false;
-    if (!a && _guest) { $('lockMsg').innerHTML = '<b>Read only.</b> You’re viewing this deck without signing in — sign in to design your own cards (first week free).'; $('lockBtn').textContent = 'Sign in'; $('lockBtn').onclick = function() { askSignIn().then(function() { location.reload(); }, function() {}); }; }
+    if (viewLink()) { $('lockMsg').innerHTML = '<b>View only.</b> These cards were shared with you to look through — nothing here can be changed.'; $('lockBtn').hidden = true; }
+    else if (!a && _guest) { $('lockMsg').innerHTML = '<b>Read only.</b> You’re viewing this deck without signing in — sign in to design your own cards (first week free).'; $('lockBtn').textContent = 'Sign in'; $('lockBtn').onclick = function() { askSignIn().then(function() { location.reload(); }, function() {}); }; }
     else if (!a) { $('lockMsg').innerHTML = '<b>Sign in to start designing</b> — your first week is free, with every feature.'; $('lockBtn').textContent = 'Sign in'; $('lockBtn').onclick = function() { askSignIn().catch(function() {}); }; }
     else if (!acctChecked()) { $('lockMsg').innerHTML = 'Checking your account…'; $('lockBtn').hidden = true; }
     else if (!isOwner() && a.unclaimed) { $('lockMsg').innerHTML = '<b>View only.</b> Nobody has set this sheet up in CardBoard yet — if it’s yours, make it yours to design its cards.'; $('lockBtn').textContent = 'Make it mine'; $('lockBtn').onclick = claimSheet; }
@@ -4825,6 +4826,8 @@ function updateSubMenu() {
   b.title = a ? planLabel().replace(/<[^>]+>/g, '') : '';
   b.style.color = st === 'subscribed' || st === 'activated' || st === 'code' ? '#4caf50' : '#f5a623';
   var so = $('cbSignOut'); if (so) so.hidden = !a;
+  var sh = $('cbShareBtn'); if (sh) sh.hidden = viewLink() || !isOwner();   // the owner shares a view-only link
+  var se = $('cbSettingsBtn'); if (se) se.hidden = viewLink();
   var cb = $('cbCodeBtn'); if (cb) cb.hidden = !a || a.state === 'activated';   // the person's own account, not a comped sheet
 }
 // Returns true when allowed; otherwise asks to sign in or shows the plans
@@ -4930,6 +4933,40 @@ function closeSignIn() {
 }
 // A shared link opened without an account: look through the cards, read-only
 var _guest = false;
+// A view-only share link (/v-{token}/cardboard): the page never sees the sheet's ID, and nothing can be changed
+function viewLink() { return /^v-[a-f0-9]{24}$/.test(SHEET_ID); }
+// Menu → Share (the sheet's owner): a view-only link to send — it doesn't show the sheet's ID
+function shareApi(action) {
+  var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('action', action);
+  return cbPost(APP_BASE + 'push/cardboardShare.php', fd).then(function(r) { if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response'); return r; });
+}
+function openShareDialog() {
+  if (viewLink() || !isOwner()) { toast('Only the person who set this sheet up can share it', true); return; }
+  var ov = document.createElement('div'); ov.className = 'overlay open ask-overlay';
+  function body(url, busy) {
+    ov.innerHTML = '<div class="dlg ask share-dlg" role="dialog" aria-modal="true"><h2 class="dlg-title">Share a view-only link</h2>' +
+      '<p class="ask-msg">Anyone with the link can look through these cards and their layouts — they can’t change anything, and the link doesn’t show your Google Sheet.</p>' +
+      (url ? '<div class="share-row"><input class="inp" readonly value="' + esc(url) + '" onclick="this.select()"><button type="button" class="print-go" data-a="copy">Copy</button></div>'
+           : '<p class="muted" style="margin:.2rem 0 0">' + (busy ? 'Making the link…' : 'Not shared yet.') + '</p>') +
+      '<div class="dlg-actions">' + (url ? '<button type="button" class="attr-btn danger-txt" data-a="stop">Stop sharing</button>' : '') +
+      '<button type="button" class="attr-btn" data-a="close">Close</button>' + (url ? '' : '<button type="button" class="print-go" data-a="make"' + (busy ? ' disabled' : '') + '>Make the link</button>') + '</div></div>';
+  }
+  function close() { document.removeEventListener('keydown', key, true); ov.remove(); }
+  function key(ev) { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); close(); } }
+  ov.addEventListener('click', function(ev) {
+    var b = ev.target.closest('[data-a]');
+    if (!b) { if (ev.target === ov) close(); return; }
+    var a = b.dataset.a;
+    if (a === 'close') close();
+    if (a === 'copy') { var inp = ov.querySelector('input'); inp.select(); (navigator.clipboard ? navigator.clipboard.writeText(inp.value) : Promise.reject()).catch(function() { document.execCommand('copy'); }); b.textContent = 'Copied'; setTimeout(function() { b.textContent = 'Copy'; }, 1400); }
+    if (a === 'make') { body('', true); shareApi('create').then(function(r) { body(r.url); }, function(e) { toast('Couldn’t make the link — ' + e.message, true); body(''); }); }
+    if (a === 'stop') askDialog({ title: 'Stop sharing?', message: 'The link stops working for everyone who has it. You can make a new one any time.', ok: 'Stop sharing', danger: true })
+      .then(function(yes) { if (yes) shareApi('stop').then(function() { body(''); toast('✓ The link no longer works'); }, function(e) { toast('Couldn’t stop sharing — ' + e.message, true); }); });
+  });
+  document.addEventListener('keydown', key, true);
+  body('', true); document.body.appendChild(ov);
+  shareApi('get').then(function(r) { body(r.url); }, function(e) { toast('Couldn’t read the share link — ' + e.message, true); close(); });
+}
 function viewAsGuest() {
   _guest = true; document.body.classList.remove('cb-gate'); closeDialog('signinOverlay');
   if (_signIn) { var d = _signIn; _signIn = null; d.rej(new Error('Viewing read only')); }

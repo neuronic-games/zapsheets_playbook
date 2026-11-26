@@ -27,6 +27,11 @@ function done($d) { echo json_encode($d, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED
 
 $app     = dirname(__DIR__);
 $sheetId = trim($_POST['id'] ?? '');
+require_once __DIR__ . '/cardboardView.php';
+if (cbViewId($sheetId)) {   // a view-only link: may list the published pictures, nothing else
+    if (($_POST['action'] ?? '') !== 'list') { header('Content-Type: application/json'); echo json_encode(['error' => 'This is a view-only link.']); exit; }
+    $sheetId = cbViewSheet($sheetId);
+}
 if (!preg_match('/^[A-Za-z0-9_\-]{20,}$/', $sheetId) || !is_dir("$app/sheets/$sheetId")) done(['error' => 'Unknown sheet']);
 $tab = trim($_POST['tab'] ?? '');
 if ($tab === '' || mb_strlen($tab) > 100) done(['error' => 'Missing sheet tab']);

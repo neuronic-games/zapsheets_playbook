@@ -16,6 +16,10 @@ require_once __DIR__ . '/refreshJson.php';
 
 $sheetId = trim($_POST['id'] ?? '');
 $action  = trim($_POST['action'] ?? '');
+// A view-only share link ("v-{token}"): the real sheet is looked up here, and it can only be read
+require_once __DIR__ . '/cardboardView.php';
+$viewLink = cbViewId($sheetId);
+if ($viewLink) { $sheetId = cbViewSheet($sheetId); if ($sheetId === '') { echo json_encode(['error' => 'This share link has been turned off.']); exit; } }
 if (!preg_match('/^[A-Za-z0-9_-]{10,128}$/', $sheetId)) { echo json_encode(['error' => 'Invalid sheet id']); exit; }
 $python = $_ENV['PYTHON'] ?? 'python3';
 
@@ -43,6 +47,7 @@ function cbRun(string $python, string $sheetId, array $data): array {
 // and the free week, a subscription or an unlocked sheet
 require_once __DIR__ . '/gameboardAuth.php';
 if (in_array($action, ['save', 'addtab', 'addfield', 'renamefield', 'setcell', 'addrow', 'deleterow', 'deletefield', 'savecells', 'reorder', 'settag', 'deltag'], true)) {
+    if ($viewLink) { echo json_encode(['error' => 'This is a view-only link — nothing can be changed here.', 'view_only' => true]); exit; }
     require_once __DIR__ . '/gameboardAuth.php';
     cbRequireAccess($sheetId);
     if (is_dir(dirname(__DIR__) . '/sheets/' . $sheetId)) @touch(dirname(__DIR__) . '/sheets/' . $sheetId . '/_cardboard_edited');   // "edited 3 minutes ago" on the Designs page

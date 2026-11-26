@@ -343,7 +343,8 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .tb-btn:hover:not(:disabled) { border-color:#a99cff; color:#2e2763; }
 .tb-btn:disabled { opacity:.4; cursor:default; }
 .tb-btn.tb-add { color:#4b3fa8; }
-#rowInfo .card-no { cursor:text; } #rowInfo .card-no:hover { background:#f7f5ff; }
+#rowInfo .card-no { cursor:text; height:2.5rem; min-width:1.8rem; padding:0 .3rem; border-radius:4px; font-size:.9rem; margin:-.35rem 0; position:relative; z-index:1; } #rowInfo .card-no:hover { background:#f7f5ff; }   /* a little card, taller than the buttons beside it */
+#rowInfo .card-no-in { height:2.5rem; margin:-.35rem 0; font-size:.9rem; position:relative; z-index:1; }
 .card-no-in { height:1.55rem; box-sizing:border-box; border:1.5px solid #5b4fd6; border-radius:5px; padding:0 .2rem; text-align:center; font:inherit; font-family:'DINBlack',sans-serif; font-size:.78rem; color:#2e2763; outline:none; box-shadow:0 0 0 3px #ece9ff; }
 .card-no.card-add { font-size:.9rem; font-family:'DINRegular',Arial,sans-serif; border-style:dashed; background:none; }
 .tb-btn.tb-add:hover .card-no.card-add { border-style:solid; background:#f7f5ff; }

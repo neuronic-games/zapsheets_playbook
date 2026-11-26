@@ -564,6 +564,31 @@ def main():
                 try: n = int(a.get('after') or 0)
                 except Exception: n = 0
                 return n if n >= 1 else 0
+            # A new card sent before whose answer never came back (the page was left mid-save): the server kept what it wrote
+            # (known: {key: line}). If that row is still in the sheet, it's updated instead of added a second time.
+            known = data.get('known') or {}
+            again = [a for a in adds if isinstance(known.get(str(a.get('key'))), list)]
+            if again:
+                norm = lambda l: [str(v).strip().lower() for v in l] if l else []
+                def trim(l):
+                    l = list(l)
+                    while l and l[-1] == '': l.pop()
+                    return l
+                allv = wb.values_get(q(tws.title), params={'valueRenderOption': 'FORMULA'}).get('values', [])
+                have_rows = [trim(norm([cellstr(v) for v in r])) for r in allv]
+                upd, used = [], set()
+                for a in again:
+                    want = trim(norm(known[str(a.get('key'))]))
+                    r = next((i + 1 for i, v in enumerate(have_rows) if i > 0 and v == want and (i + 1) not in used), 0)
+                    if not r: continue
+                    used.add(r)
+                    upd.append({'range': q(tws.title) + '!' + gspread.utils.rowcol_to_a1(r, 1), 'values': [line(a)]})
+                    added.append({'key': a.get('key'), 'row': r})
+                if upd:
+                    wb.values_batch_update({'valueInputOption': 'USER_ENTERED', 'data': upd})
+                    done = {x['key'] for x in added}
+                    adds = [a for a in adds if a.get('key') not in done]
+            sent_lines = {str(a.get('key')): line(a) for a in adds if a.get('key')}
             ends = [a for a in adds if not anchor(a)]
             placed = [a for a in adds if anchor(a)]
             if ends:
@@ -571,7 +596,7 @@ def main():
                 rng = ((res or {}).get('updates') or {}).get('updatedRange', '')
                 m = __import__('re').search(r'![A-Z]+(\d+)', rng)
                 first = int(m.group(1)) if m else 0
-                added = [{'key': a.get('key'), 'row': (first + i) if first else 0} for i, a in enumerate(ends)]
+                added = [{'key': a.get('key'), 'row': (first + i) if first else 0} for i, a in enumerate(ends)] + added
                 if first == 2:   # straight under the heading row: inserted rows copy its look (purple, bold) — give them a plain one
                     try:
                         wb.batch_update({'requests': [{'repeatCell': {
@@ -628,7 +653,7 @@ def main():
                 wb.batch_update({'requests': reqs})
                 for a in added:   # new rows sit below the deleted ones, so they move up
                     if a['row']: a['row'] -= len([r for r in gone_now if r < a['row']])
-            out({'ok': True, 'results': results, 'added': added, 'cols': cols_added,
+            out({'ok': True, 'results': results, 'added': added, 'cols': cols_added, 'lines': sent_lines,
                  'deleted_rows': deleted_rows, 'deleted_cols': deleted_cols, 'row_conflicts': row_conflicts})
 
         def delete_dim(dim, i):   # i: 0-based row or column index

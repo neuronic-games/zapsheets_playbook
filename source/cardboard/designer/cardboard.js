@@ -526,6 +526,7 @@ function init() {
       rememberSeen();
       if (res.title) { $('subTitle').textContent = res.title; document.title = res.title; setHomeName(res.title); }
       mergeNewTabs(); fillDeckSelects();
+      if (res.cached) recheckTabs();
       var sel = $('sheetSel');
       var start = isNewTab(want) ? want : (res.tab || want);
       if (!TABS.some(function(t) { return t.title === start; })) {
@@ -562,6 +563,20 @@ function setHomeName(t) {
 function newTabs() { var l = lsGet('cb_newtabs:' + SHEET_ID); return Array.isArray(l) ? l : []; }
 function isNewTab(t) { return !!t && newTabs().indexOf(t) >= 0; }
 function setNewTabs(l) { lsSet('cb_newtabs:' + SHEET_ID, l.length ? l : null); updateSaveBtn(); }
+// The decks as this browser kept them may be out of date (a tab added in Sheets, or a save cut short):
+// ask the sheet in the background and add or drop decks to match
+function recheckTabs() {
+  apiNet('tabs').then(function(r) {
+    if (!r || !r.tabs) return;
+    var now = TABS.filter(function(t) { return !t.pending; }).map(function(t) { return t.title; }).join('\u0001');
+    var got = r.tabs.map(function(t) { return t.title; });
+    if (got.join('\u0001') === now) return;
+    var pend = TABS.filter(function(t) { return t.pending && got.indexOf(t.title) < 0; });
+    TABS = r.tabs.concat(pend);
+    setNewTabs(newTabs().filter(function(n) { return got.indexOf(n) < 0; }));
+    fillDeckSelects(); refreshSheetCombos(); writeStartCache();
+  }).catch(function() {});
+}
 function mergeNewTabs() {   // the new decks go at the end of the list; drop any the sheet now has
   var have = TABS.map(function(t) { return t.title.toLowerCase(); }), keep = [];
   newTabs().forEach(function(n) { if (have.indexOf(n.toLowerCase()) < 0) { keep.push(n); TABS.push({ title: n, rows: 0, cols: 0, pending: true }); } });
@@ -2252,6 +2267,7 @@ function saveAll(auto) {
       return api('addtab', { name: tab }).then(function() {
         setNewTabs(newTabs().filter(function(x) { return x !== tab; }));
         TABS.forEach(function(t) { if (t.title === tab) delete t.pending; });
+        writeStartCache();   // kept now: if the page is left before the save ends, the deck is still listed next time
       }).catch(function(e) { failedNew.push(tab); errors.push('new deck “' + tab + '”: ' + e.message); }).then(step);
     });
   });

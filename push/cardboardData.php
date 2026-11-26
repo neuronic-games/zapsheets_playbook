@@ -50,6 +50,7 @@ if (in_array($action, ['save', 'addtab', 'addfield', 'renamefield', 'setcell', '
     if ($viewLink) { echo json_encode(['error' => 'This is a view-only link — nothing can be changed here.', 'view_only' => true]); exit; }
     require_once __DIR__ . '/gameboardAuth.php';
     cbRequireAccess($sheetId);
+    ignore_user_abort(true);   // a change that has started finishes (and is recorded) even if the page is left meanwhile
     if (is_dir(dirname(__DIR__) . '/sheets/' . $sheetId)) @touch(dirname(__DIR__) . '/sheets/' . $sheetId . '/_cardboard_edited');   // "edited 3 minutes ago" on the Designs page
 }
 
@@ -171,9 +172,28 @@ if (in_array($action, ['grid', 'setcell', 'addrow', 'deleterow', 'deletefield', 
         $req['cols'] = is_array($cols) ? array_values(array_filter(array_map(function ($c) { return trim(preg_replace('/\s+/u', ' ', (string) $c)); }, $cols), function ($c) {
             return $c !== '' && mb_strlen($c) <= 60 && strpbrk($c, '{}[]') === false && !in_array(strtolower($c), ['_row', '_notes'], true); })) : [];
         if (count($req['cells']) + count($req['adds']) > 2000) { echo json_encode(['error' => 'Too many changes at once']); exit; }
+        // New cards this server has written before (a save whose answer never reached the page): what was written, so
+        // gcardboard.py updates those rows instead of adding them again. Kept per tab in sheets/{id}/_cardboard_adds.json.
+        $addsFile = dirname(__DIR__) . '/sheets/' . $sheetId . '/_cardboard_adds.json';
+        $addsLog = json_decode((string) @file_get_contents($addsFile), true) ?: [];
+        $known = [];
+        foreach ($req['adds'] as $ad) { $k = (string) ($ad['key'] ?? ''); if ($k !== '' && isset($addsLog[$tab][$k]['l'])) $known[$k] = $addsLog[$tab][$k]['l']; }
+        if ($known) $req['known'] = $known;
         foreach ($req['cells'] as $c) if (mb_strlen((string) ($c['value'] ?? '')) > 50000) { echo json_encode(['error' => 'One of the cells is too long']); exit; }
     }
     $res = cbRun($python, $sheetId, $req);
+    if ($action === 'savecells' && !empty($res['ok']) && !empty($res['lines']) && is_array($res['lines'])) {
+        $addsLog = json_decode((string) @file_get_contents($addsFile), true) ?: [];
+        foreach ($res['lines'] as $k => $l) $addsLog[$tab][(string) $k] = ['l' => $l, 't' => time()];
+        foreach ($addsLog as $t => $m) {   // a week is plenty; at most 3000 per tab
+            $m = array_filter($m, function ($v) { return ($v['t'] ?? 0) > time() - 7 * 86400; });
+            if (count($m) > 3000) $m = array_slice($m, -3000, null, true);
+            if ($m) $addsLog[$t] = $m; else unset($addsLog[$t]);
+        }
+        if (!is_dir(dirname($addsFile))) @mkdir(dirname($addsFile), 0755, true);
+        @file_put_contents($addsFile, json_encode($addsLog, JSON_UNESCAPED_UNICODE), LOCK_EX);
+        unset($res['lines']);
+    }
     if ($action !== 'grid' && !empty($res['ok'])) @unlink(dirname(__DIR__) . '/sheets/' . $sheetId . '/' . strtolower($tab) . '.json');   // cached rows are stale now
     echo json_encode($res, JSON_UNESCAPED_UNICODE);
     exit;

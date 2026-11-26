@@ -1964,6 +1964,12 @@ function overlayPending(partial) {
   if (GRID && GRID.tab === tab) go();
   else api('grid', { tab: tab }).then(function(r) { if (curTab !== tab || (GRID && GRID.tab === tab)) return go(); GRID = { tab: tab, header: r.header || [], rows: r.rows || [] }; go(); }).catch(function() {});
 }
+// The formatting inside a grid cell (bold, italic, colours…), from its card's row: {t, r} or null
+function gridFmt(gr, name) {
+  if (!gr || gr.draft || !name) return null;
+  var card = ROWS[gridCardIndex(gr)];
+  return card && !card._pend && card._fmt && card._fmt[name] ? card._fmt[name] : null;
+}
 function gridCardIndex(gr) { return GRID.rows.filter(function(g) { return !g.draft && !rowDeleted(g.row); }).indexOf(gr); }   // which card a sheet row is
 function overlayGrid() {
   if (!GRID || GRID.tab !== curTab) return;
@@ -3651,9 +3657,10 @@ function gridVisibleRows() {
 // GRID rows keep both: values (what's in the cell) and shown ({column: [value, displayed]}, from the
 // same read). The displayed one is used only while the cell still holds that value — once it's
 // edited here, the new value shows (a new formula as written) until the next load after Save.
-function gridShown(name, v, res) {
-  if (res && res[0] === v) v = res[1];
+function gridShown(name, v, res, fmt) {
+  if (res && res[0] === v && res[1] !== v) v = res[1];   // a formula result or a number's format: shown as the sheet shows it (no formatting inside)
   else if (/^=/.test(v)) return '<span class="g-formula">' + esc(v) + '</span>';
+  else if (fmt && fmt.r && fmt.t === cleanVal(v)) { var one = {}; one[name] = v; one._fmt = {}; one._fmt[name] = fmt; return richCell(one, name); }   // bold, colours… inside the cell
   // Mappings aren't shown here: the same column can map differently in different elements of the layout
   return rich(textVal(v));
 }
@@ -3681,7 +3688,7 @@ function renderGrid() {
     cols.forEach(function(c) {
       var v = r.values[c.i] || '', st = (r.state || {})[c.i] || '';
       var thumb = !c.ghost && imageUrl(v) && (imgCols[c.i] || isImageLink(v)) ? gridThumb(v) : '';
-      h += '<td data-r="' + ri + '" data-c="' + c.i + '" class="' + (st ? 'st-' + st : '') + (c.ghost ? ' ghost-col' : '') + (/^=/.test(v) ? ' formula' : '') + '" title="' + esc(v.length > 60 ? v : '') + '">' + thumb + (c.ghost ? '<span>' + esc(v) + '</span>' : gridShown(c.name, v, r.shown && r.shown[c.i])) + '</td>';
+      h += '<td data-r="' + ri + '" data-c="' + c.i + '" class="' + (st ? 'st-' + st : '') + (c.ghost ? ' ghost-col' : '') + (/^=/.test(v) ? ' formula' : '') + '" title="' + esc(v.length > 60 ? v : '') + '">' + thumb + (c.ghost ? '<span>' + esc(v) + '</span>' : gridShown(c.name, v, r.shown && r.shown[c.i], gridFmt(r, c.name))) + '</td>';
     });
     h += '</tr>';
   });
@@ -3710,13 +3717,46 @@ function startGridEdit(typed) {
   if (!_gridSel || _gridEdit) return;
   if (!requirePro('edit', function() {})) return;
   var td = gridCell(_gridSel.r, _gridSel.c); if (!td) return;
-  var r = GRID.rows[_gridSel.r], v = r.values[_gridSel.c] || '';
+  var r = GRID.rows[_gridSel.r], v = r.values[_gridSel.c] || '', name = GRID.header[_gridSel.c];
   var rect = td.getBoundingClientRect(), wrap = $('gridWrap').getBoundingClientRect();
+  var pos = function(el) {
+    el.style.left = (rect.left - wrap.left + $('gridWrap').scrollLeft) + 'px'; el.style.top = (rect.top - wrap.top + $('gridWrap').scrollTop) + 'px';
+    el.style.minWidth = Math.max(rect.width, 180) + 'px'; el.style.minHeight = rect.height + 'px';
+  };
+  // A column's text (not a formula, not a new row): edited with its formatting, and the formatting buttons above it
+  var rich = !!name && !r.draft && !/^=/.test(typed != null ? typed : v);
+  if (rich) {
+    var fmt = gridFmt(r, name), oldRuns = fmt && fmt.t === cleanVal(v) ? fmt.r : [];
+    var ed = document.createElement('div');
+    ed.className = 'g-editor g-rich'; ed.contentEditable = 'true'; ed.spellcheck = true;
+    var one = {}; one[name] = v; if (oldRuns.length) { one._fmt = {}; one._fmt[name] = { t: cleanVal(v), r: oldRuns }; }
+    ed.innerHTML = typed != null ? esc(typed) : fmtHtml(one, name, v);
+    pos(ed); $('gridWrap').appendChild(ed);
+    var bar = document.createElement('div'); bar.className = 'fmt-box fmt-float'; bar.innerHTML = fmtBarHtml();
+    document.body.appendChild(bar);
+    var place = function() { var rc = ed.getBoundingClientRect(), bw = bar.offsetWidth; bar.style.left = Math.max(6, Math.min(window.innerWidth - bw - 6, rc.left)) + 'px'; bar.style.top = Math.max(6, rc.top - bar.offsetHeight - 6) + 'px'; };
+    place(); window.addEventListener('scroll', place, true); window.addEventListener('resize', place);
+    _gridEdit = { r: _gridSel.r, c: _gridSel.c, ta: ed, old: v, oldRuns: oldRuns, rich: true, bar: bar, place: place };
+    _fmtEd = ed; fmtFocus(ed); ed.focus();
+    var rg = document.createRange(); rg.selectNodeContents(ed); rg.collapse(false); var sl = getSelection(); sl.removeAllRanges(); sl.addRange(rg);
+    ed.addEventListener('keydown', function(ev) {
+      ev.stopPropagation();
+      var k = (ev.key || '').toLowerCase();
+      if ((ev.metaKey || ev.ctrlKey) && /^[biu]$/.test(k)) { ev.preventDefault(); fmtCmd({ b: 'bold', i: 'italic', u: 'underline' }[k]); }
+      else if (ev.key === 'Escape') { ev.preventDefault(); endGridEdit(false); }
+      else if (ev.key === 'Enter' && !ev.shiftKey && !ev.altKey) { ev.preventDefault(); endGridEdit(true); moveGridSel(1, 0); }   // Shift/Alt+Enter: new line
+      else if (ev.key === 'Tab') { ev.preventDefault(); endGridEdit(true); moveGridSel(0, ev.shiftKey ? -1 : 1); }
+    });
+    ed.addEventListener('paste', fmtPaste);
+    ed._finish = function(save) { endGridEdit(save); };
+    ed.addEventListener('blur', function() {
+      setTimeout(function() { if (!_gridEdit || _gridEdit.ta !== ed || ed._picking || (document.activeElement && bar.contains(document.activeElement))) return; endGridEdit(true); }, 0);
+    });
+    return;
+  }
   var ta = document.createElement('textarea');
   ta.className = 'g-editor'; ta.value = typed != null ? typed : v;
-  ta.style.left = (rect.left - wrap.left + $('gridWrap').scrollLeft) + 'px'; ta.style.top = (rect.top - wrap.top + $('gridWrap').scrollTop) + 'px';
-  ta.style.minWidth = Math.max(rect.width, 180) + 'px'; ta.style.minHeight = rect.height + 'px';
-  $('gridWrap').appendChild(ta);
+  pos(ta); $('gridWrap').appendChild(ta);
   _gridEdit = { r: _gridSel.r, c: _gridSel.c, ta: ta, old: v };
   ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
   function fit() { ta.style.height = 'auto'; ta.style.height = Math.min(260, ta.scrollHeight + 2) + 'px'; }
@@ -3732,6 +3772,17 @@ function startGridEdit(typed) {
 function endGridEdit(save) {
   var ed = _gridEdit; if (!ed) return;
   _gridEdit = null;
+  if (ed.rich) {
+    var rd = save && document.body.contains(ed.ta) ? fmtRead(ed.ta) : null;
+    window.removeEventListener('scroll', ed.place, true); window.removeEventListener('resize', ed.place); ed.bar.remove();
+    if (_fmtEd === ed.ta) _fmtEd = null;
+    ed.ta.remove();
+    if (!rd) { paintCell(ed.r, ed.c); return; }
+    var runs = rd.runs.length || ed.oldRuns.length ? rd.runs : undefined;
+    if (rd.text !== ed.old || JSON.stringify(runs || []) !== JSON.stringify(ed.oldRuns)) saveGridCell(ed.r, ed.c, rd.text, ed.old, runs);
+    else paintCell(ed.r, ed.c);
+    return;
+  }
   var val = ed.ta.value; ed.ta.remove();
   if (save && val !== ed.old) saveGridCell(ed.r, ed.c, val, ed.old);
 }
@@ -3756,14 +3807,14 @@ function paintCell(r, c) {   // show a cell again after it changed: its picture 
   else {
     var thumb = imageUrl(v) && (isImageLink(v) || (FIELDS.indexOf(name) >= 0 && looksLikeImage(name))) ? gridThumb(v) : '';
     var res = row.shown && row.shown[c] && row.shown[c][0] === v ? row.shown[c] : null;
-    td.innerHTML = thumb + gridShown(name, v, res);
+    td.innerHTML = thumb + gridShown(name, v, res, gridFmt(row, name));
   }
   td.title = v.length > 60 ? v : '';
   td.classList.toggle('formula', /^=/.test(v));
   markFound(td);
   if (_gridFilter) updateReplaceBtn();
 }
-function saveGridCell(r, c, val, old) {   // kept in this browser until Save
+function saveGridCell(r, c, val, old, fmt) {   // kept in this browser until Save; fmt: the formatting inside it (runs), or undefined
   var row = GRID.rows[r], field = GRID.header[c], tab = GRID.tab;
   if (!field) {   // the empty column at the end: add it to the sheet, then the value
     if (!String(val).trim() || c !== ghostCol()) return;
@@ -3783,8 +3834,11 @@ function saveGridCell(r, c, val, old) {   // kept in this browser until Save
     if (GRID.rows[GRID.rows.length - 1] === row && !rowEmpty(row)) { var sel = _gridSel; renderGrid(); _gridSel = sel; if (sel) markGridSel(); }   // a fresh empty row below
   } else {
     var was = pendingOld(tab, row.row, field);
-    queueCell(tab, row.row, field, val, was != null ? was : old);
-    var cardRow = ROWS[gridCardIndex(row)]; if (cardRow && !cardRow._pend) cardRow[field] = val;
+    var cardRow = ROWS[gridCardIndex(row)];
+    if (fmt !== undefined && cardRow && !cardRow._pend) setRowFmt(cardRow, field, val, fmt);
+    queueCell(tab, row.row, field, val, was != null ? was : old, fmt);
+    if (cardRow && !cardRow._pend) cardRow[field] = val;
+    paintCell(r, c);
   }
   if (tab === curTab) { renderData(); if (_activeTab === 'print') renderPrint(); }
 }

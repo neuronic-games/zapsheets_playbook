@@ -427,6 +427,18 @@ function elInner(e, row, ctx) {
   }
   return '';
 }
+// Where a list group sits: from its top-left corner, or — placed from an edge (g.rx / g.ry) — from that edge, so a
+// list that's longer on some cards grows away from it. g.ww / g.hh: its drawn size when it was placed there.
+function listPlace(g, bb, card) {
+  var s = '', tf = [];
+  if (g.rx === 'right') s += 'right:' + r1(card.w - (bb.x + (g.ww || 0))) + 'pt;';
+  else if (g.rx === 'center') { s += 'left:' + r1(bb.x + (g.ww || 0) / 2) + 'pt;'; tf.push('translateX(-50%)'); }
+  else s += 'left:' + bb.x + 'pt;';
+  if (g.ry === 'bottom') s += 'bottom:' + r1(card.h - (bb.y + (g.hh || 0))) + 'pt;';
+  else if (g.ry === 'middle') { s += 'top:' + r1(bb.y + (g.hh || 0) / 2) + 'pt;'; tf.push('translateY(-50%)'); }
+  else s += 'top:' + bb.y + 'pt;';
+  return s + (tf.length ? 'transform:' + tf.join(' ') + ';' : '');
+}
 function renderCardHTML(lay, row, designing, ctx) {
   ctx = Object.assign({ card: 0, row: 0 }, ctx || {}, { designing: !!designing });
   var face = faceOf(lay, ctx.side), cs = ctx.side === 'back' ? Object.assign({}, lay.card, { bg: lay.back.bg }) : lay.card;
@@ -468,8 +480,8 @@ function renderCardHTML(lay, row, designing, ctx) {
     if (!g) { h += elHTML(e); return; }
     var members = sorted.filter(function(x) { return x.group === g.id; });
     if (members[members.length - 1] !== e) return;   // the list is drawn once, where its top member sits
-    var bb = selBox(members), gap = g.gap == null ? 4 : +g.gap || 0, al = { start: 'flex-start', center: 'center', end: 'flex-end' }[listAlign(g)];
-    h += '<div class="el-list list-' + g.list + (g.id === selG ? ' picked' : '') + '" data-g="' + g.id + '" style="left:' + bb.x + 'pt;top:' + bb.y + 'pt;z-index:' + (e.z || 1) + ';gap:' + gap + 'pt;align-items:' + al + '">' +
+    var bb = cornerBox(members), gap = g.gap == null ? 4 : +g.gap || 0, al = { start: 'flex-start', center: 'center', end: 'flex-end' }[listAlign(g)];
+    h += '<div class="el-list list-' + g.list + (g.id === selG ? ' picked' : '') + '" data-g="' + g.id + '" style="' + listPlace(g, bb, lay.card) + 'z-index:' + (e.z || 1) + ';gap:' + gap + 'pt;align-items:' + al + '">' +
          members.slice().reverse().map(function(x) { return elHTML(x, g.list); }).join('') + '</div>';
   });
   if (designing && multi.length && !(selG && lists[selG])) {   // one box around everything selected (a group or several elements)
@@ -1260,7 +1272,7 @@ function alignPlan() {
     return { card: false, key: true, units: units.filter(function(u) { return !u.some(function(x) { return kids.indexOf(x.id) >= 0; }); }), ref: selBox(ku) };
   }
   if (units.length > 1) return { card: false, units: units, ref: selBox(sel) };
-  return { card: true, units: [sel], ref: { x: 0, y: 0, w: layout.card.w, h: layout.card.h } };
+  return { card: true, units: [sel], gid: selGroupId(), ref: { x: 0, y: 0, w: layout.card.w, h: layout.card.h } };
 }
 var ALIGN_TITLES = {
   key:  { top: 'Line up the tops with the key object', middle: 'Line up the middles with the key object', bottom: 'Line up the bottoms with the key object', left: 'Line up the left edges with the key object', center: 'Line up the centers with the key object', right: 'Line up the right edges with the key object' },
@@ -1272,7 +1284,7 @@ function alignDotsHTML() {
   var plan = alignPlan(); if (!plan) return '';
   var bb = plan.ref, T = ALIGN_TITLES[plan.card ? 'card' : plan.key ? 'key' : 'sel'], k = PX * zoom, W = layout.card.w * k, H = layout.card.h * k, h = '';
   var ys = { top: bb.y, middle: bb.y + bb.h / 2, bottom: bb.y + bb.h }, xs = { left: bb.x, center: bb.x + bb.w / 2, right: bb.x + bb.w };
-  var rel = function(axis, n) { return plan.card && plan.units.every(function(u) { return u.every(function(e) { return e[axis] === n; }); }); };
+  var rel = function(axis, n) { return plan.card && relOn(plan, axis, n); };
   var dot = function(n, axis, pos) {
     var on = rel(axis, n), at = plan.card && alignedAt(plan, n);
     var t = on ? 'Placed from the ' + EDGE_NAME[n] + ' — stays there if the card changes size. Click for a fixed position' + (at ? '' : ' (or move it back there)')
@@ -1320,6 +1332,11 @@ function fillSel(dim) {
 // box's top-left corner as always; the card's own size changing (or W / H) keeps the distance from that edge.
 var EDGE_NAME = { left: 'left edge', center: 'center', right: 'right edge', top: 'top', middle: 'middle', bottom: 'bottom' };
 function edgeAxis(edge) { return /^(left|center|right)$/.test(edge) ? 'rx' : 'ry'; }
+function relOn(plan, axis, n) {   // is the selection placed from edge n? (a whole group: the group's own setting)
+  var g = plan.gid && groupById(plan.gid);
+  if (g) return g[axis] === n;
+  return plan.units.every(function(u) { return u.every(function(e) { return e[axis] === n; }); });
+}
 function alignedAt(plan, edge) {
   var bb = plan.ref;
   return plan.units.every(function(u) {
@@ -1346,13 +1363,18 @@ function alignSel(edge) {
   var plan = alignPlan(); if (!plan) return;
   var bb = plan.ref, moved = false, axis = edgeAxis(edge);
   if (plan.card && alignedAt(plan, edge)) {   // already there: toggle placed from this edge / a fixed position
-    var on = plan.units.every(function(u) { return u.every(function(e) { return e[axis] === edge; }); });
+    var on = relOn(plan, axis, edge), g = plan.gid && groupById(plan.gid);
     snapshot();
-    plan.units.forEach(function(u) { u.forEach(function(e) { if (on) delete e[axis]; else e[axis] = edge; }); });
+    if (g) {   // a whole group: placed from the edge as one (its members lose their own setting for that direction)
+      plan.units[0].forEach(function(e) { delete e[axis]; });
+      if (on) { delete g[axis]; delete g[axis === 'rx' ? 'ww' : 'hh']; }
+      else { var gb = selBox(plan.units[0]); g[axis] = edge; if (axis === 'rx') g.ww = gb.w; else g.hh = gb.h; }
+    } else plan.units.forEach(function(u) { u.forEach(function(e) { if (on) delete e[axis]; else e[axis] = edge; }); });
     toast(on ? 'Fixed position' : 'Placed from the ' + EDGE_NAME[edge] + ' — it stays there if the card changes size');
     changed(true); renderAttrs(); return;
   }
-  var keepRel = plan.card && plan.units.every(function(u) { return u.every(function(e) { return e[axis] === edge; }); });
+  var keepRel = plan.card && relOn(plan, axis, edge);
+  if (plan.gid && !keepRel) { var g0 = groupById(plan.gid); if (g0 && g0[axis]) { delete g0[axis]; delete g0[axis === 'rx' ? 'ww' : 'hh']; } }
   plan.units.forEach(function(u) {
     var b = selBox(u), dx = 0, dy = 0;
     if (edge === 'left') dx = bb.x - b.x;
@@ -1839,7 +1861,9 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
       var bx = $('cardHolder').querySelector('.sel-box'), b2 = selBox(group);
       if (bx && b2) { bx.style.left = b2.x + 'pt'; bx.style.top = b2.y + 'pt'; }
       $('cardHolder').querySelectorAll('.el-list').forEach(function(l) {   // a list group moves from its corner
-        var lb = selBox(groupMembers(l.dataset.g)); if (lb) { l.style.left = lb.x + 'pt'; l.style.top = lb.y + 'pt'; }
+        var gm = groupMembers(l.dataset.g), lg = groupById(l.dataset.g); if (!gm.length || !lg) return;
+        var keepT = l.style.zIndex + '|' + l.style.gap + '|' + l.style.alignItems;
+        l.setAttribute('style', listPlace(lg, cornerBox(gm), layout.card)); var kt = keepT.split('|'); l.style.zIndex = kt[0]; l.style.gap = kt[1]; l.style.alignItems = kt[2];
       });
       return;
     }
@@ -2472,9 +2496,10 @@ function selBox(els) {
   // A list group is as big as it's drawn on the card (it fits this row's contents), from its top-left corner
   var gid = els[0].group, lg = gid && els.every(function(e) { return e.group === gid; }) && groupMembers(gid).length === els.length && groupById(gid);
   var node = lg && lg.list && $('cardHolder') && $('cardHolder').querySelector('.el-list[data-g="' + gid + '"]');
-  if (node && zoom) { var r = node.getBoundingClientRect(), k = zoom * PX; return { x: r1(x1), y: r1(y1), w: r1(r.width / k), h: r1(r.height / k) }; }
+  if (node && zoom) { var r = node.getBoundingClientRect(), k = zoom * PX; var cd = node.parentNode, cr = cd.getBoundingClientRect(); return { x: r1((r.left - cr.left) / k - cd.clientLeft / PX), y: r1((r.top - cr.top) / k - cd.clientTop / PX), w: r1(r.width / k), h: r1(r.height / k) }; }
   return { x: r1(x1), y: r1(y1), w: r1(x2 - x1), h: r1(y2 - y1) };
 }
+function cornerBox(els) { var x = Infinity, y = Infinity; els.forEach(function(e) { x = Math.min(x, e.x); y = Math.min(y, e.y); }); return { x: r1(x), y: r1(y) }; }
 function groupById(gid) { return (face().groups || []).filter(function(g) { return g.id === gid; })[0]; }
 function groupMembers(gid) { return curEls().filter(function(x) { return x.group === gid; }); }
 function newGroup(name) { var f = face(); f.groups = f.groups || []; var g = { id: 'g' + uid().slice(1), name: name }; f.groups.push(g); return g.id; }
@@ -2855,9 +2880,13 @@ function setCard(key, val, num) {
 // The card changed size: everything placed from an edge keeps its distance from that edge (front and back)
 function keepRelative(ow, oh) {
   var dw = layout.card.w - ow, dh = layout.card.h - oh; if (!dw && !dh) return;
-  layout.els.concat(layout.back.els).forEach(function(e) {
-    if (e.rx === 'center' || e.rx === 'right') e.x = r1(e.x + dw * (e.rx === 'center' ? .5 : 1));
-    if (e.ry === 'middle' || e.ry === 'bottom') e.y = r1(e.y + dh * (e.ry === 'middle' ? .5 : 1));
+  [layout, layout.back].forEach(function(f) {
+    var gs = {}; (f.groups || []).forEach(function(g) { gs[g.id] = g; });
+    f.els.forEach(function(e) {
+      var g = e.group && gs[e.group], rx = g && g.rx ? g.rx : e.rx, ry = g && g.ry ? g.ry : e.ry;   // a group placed from an edge moves as one
+      if (rx === 'center' || rx === 'right') e.x = r1(e.x + dw * (rx === 'center' ? .5 : 1));
+      if (ry === 'middle' || ry === 'bottom') e.y = r1(e.y + dh * (ry === 'middle' ? .5 : 1));
+    });
   });
 }
 function syncGeomInputs(e) {

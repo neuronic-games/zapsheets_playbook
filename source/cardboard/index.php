@@ -254,6 +254,8 @@ body.designs .app { display:flex; flex-direction:column; }
 .d-menu { position:absolute; right:.3rem; top:2.5rem; z-index:5; background:#fff; border:1px solid #dfe2ec; border-radius:10px; box-shadow:0 10px 30px rgba(20,20,50,.18); padding:.35rem; min-width:190px; max-width:calc(100vw - 2rem); }
 .d-menu button { display:block; width:100%; text-align:left; border:none; background:none; padding:.55rem .75rem; border-radius:7px; font:inherit; font-size:.9rem; color:#2b2d42; cursor:pointer; }
 .d-menu button:hover { background:#f4f3fb; }
+.d-menu button.danger { color:#c0392b; border-top:1px solid #eceaf5; border-radius:0 0 7px 7px; margin-top:.2rem; }
+.d-menu button.danger:hover { background:#fdf0ee; }
 .d-empty { text-align:center; padding:4rem 1rem; color:#6b7090; }
 .d-empty b { display:block; font-family:'DINBlack',sans-serif; font-size:1.25rem; color:#1f1b47; margin-bottom:.4rem; }
 .d-empty .connect-btn { width:auto; padding:0 1.6rem; margin-top:1.2rem; }
@@ -462,7 +464,7 @@ body.designs .app { display:flex; flex-direction:column; }
       <li>
         <b>Open (or make) a Google Spreadsheet, share it with CardBoard, and copy its URL</b>
         <div class="gs-start">
-          <a href="https://docs.google.com/spreadsheets/d/1sy20Ig_fmfpTfnpkEUXibgErXj2XISiqr-Ag6Xe3uRc/copy" target="_blank" rel="noopener"><b>Copy the sample deck</b><span>Sea Creatures — 18 cards with a finished layout</span></a>
+          <a href="https://docs.google.com/spreadsheets/d/1sy20Ig_fmfpTfnpkEUXibgErXj2XISiqr-Ag6Xe3uRc/copy" target="_blank" rel="noopener"><b>Copy the sample deck</b><span>Sea Creatures, with a finished layout</span></a>
           <a href="https://sheets.new" target="_blank" rel="noopener"><b>Start a blank sheet</b><span>One tab per deck, one row per card</span></a>
         </div>
         <div class="gs-how">In the sheet:</div>
@@ -685,7 +687,7 @@ body.designs .app { display:flex; flex-direction:column; }
     var m = document.createElement('div'); m.className = 'd-menu';
     m.innerHTML = '<button type="button" data-a="open">Open</button><button type="button" data-a="tab">Open in a new tab</button>' +
       '<button type="button" data-a="sheet">Open the Google Sheet</button><button type="button" data-a="copy">Copy link</button>' +
-      (x.mine ? '' : '<button type="button" data-a="forget">Remove from this list</button>');
+      (x.mine ? '<button type="button" data-a="delete" class="danger">Delete</button>' : '<button type="button" data-a="forget">Remove from this list</button>');
     m.addEventListener('click', function(e) {
       e.preventDefault(); e.stopPropagation();
       var a = e.target.dataset.a, url = location.origin + APP_BASE + id + '/cardboard'; closeMenu();
@@ -693,6 +695,16 @@ body.designs .app { display:flex; flex-direction:column; }
       if (a === 'tab') window.open(url, '_blank');
       if (a === 'sheet') window.open('https://docs.google.com/spreadsheets/d/' + id + '/edit', '_blank');
       if (a === 'copy') (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function() { dToast('✓ Link copied'); }, function() { prompt('Copy this link', url); });
+      if (a === 'delete') {
+        if (!confirm('Delete “' + (x.title || 'this design') + '”?\n\nIt leaves this list and its share link stops working. Your Google Sheet and everything in it stay as they are.')) return;
+        var fd = new FormData(); fd.append('action', 'delete'); fd.append('id', id); fd.append('cbt', acct.token);
+        fetch('push/cardboardSheets.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(res) {
+          if (!res.ok) { dToast(res.error || 'Couldn’t delete'); return; }
+          try { localStorage.setItem('cb_seen', JSON.stringify(seenIds().filter(function(s) { return s.id !== id; }))); } catch (er) {}
+          DES = (DES || []).filter(function(d) { return d.id !== id; }); try { localStorage.setItem('cb_designs', JSON.stringify(DES)); } catch (er) {}
+          dRender(); dToast('✓ Deleted');
+        }).catch(function() { dToast('Couldn’t delete'); });
+      }
       if (a === 'forget') {
         try { localStorage.setItem('cb_seen', JSON.stringify(seenIds().filter(function(s) { return s.id !== id; }))); } catch (er) {}
         DES = (DES || []).filter(function(d) { return d.id !== id; }); try { localStorage.setItem('cb_designs', JSON.stringify(DES)); } catch (er) {}

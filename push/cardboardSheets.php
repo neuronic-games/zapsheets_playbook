@@ -57,6 +57,16 @@ if (($_POST['action'] ?? '') === 'thumb') {
     csOut(['ok' => true]);
 }
 
+// Delete a design: CardBoard forgets the sheet (picture, name, share link). The Google Sheet itself isn't touched.
+if (($_POST['action'] ?? '') === 'delete') {
+    $id = trim((string) ($_POST['id'] ?? ''));
+    if (!csValid($id) || !in_array($id, $mine, true)) csOut(['error' => 'Only the sheet’s owner can delete this design']);
+    foreach (['_cardboard_info.json', '_cardboard_title.txt', '_cardboard_thumb.jpg', '_cardboard_edited'] as $f) @unlink(csDir($id) . '/' . $f);
+    require_once __DIR__ . '/cardboardView.php';
+    cbViewStop($id);
+    csOut(['ok' => true]);
+}
+
 // Yours (newest set-up first), then the ones this browser has looked at
 $seen = array_filter(array_map('trim', explode(',', (string) ($_POST['seen'] ?? ''))), 'csValid');
 $ids = array_values(array_unique(array_merge(array_reverse($mine), array_slice($seen, 0, 100))));

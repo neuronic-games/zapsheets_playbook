@@ -3262,10 +3262,12 @@ function renderExport() {
   function cell(inner) { return '<div class="x-cell" style="width:' + cw + 'px;height:' + chh + 'px">' + inner + '</div>'; }
   if (P.single) {
     var sc1 = 110 / cw;
-    h += '<div class="x-sheet x-flow">' + P.list.slice(0, 60).map(function(it, i) {
-      return '<div class="x-thumb" style="width:' + cw * sc1 + 'px;height:' + chh * sc1 + 'px"><div style="transform:scale(' + sc1 + ');transform-origin:0 0">' + cell(renderCardHTML(lay, it.row, false, { card: i, row: it.ri })) + '</div></div>';
-    }).join('') + (P.list.length > 60 ? '<div class="muted">+ ' + (P.list.length - 60) + ' more</div>' : '') +
-         '<div class="x-thumb x-back" style="width:' + cw * sc1 + 'px;height:' + chh * sc1 + 'px"><div style="transform:scale(' + sc1 + ');transform-origin:0 0">' + cell(backHTML(P.list[0], 0, { lay: lay })) + '</div></div></div>';
+    var thumb = function(inner, cls) { return '<div class="x-thumb' + (cls || '') + '" style="width:' + cw * sc1 + 'px;height:' + chh * sc1 + 'px"><div style="transform:scale(' + sc1 + ');transform-origin:0 0">' + cell(inner) + '</div></div>'; };
+    var nShow = varies ? 30 : 60;   // unique backs: each card is followed by its own back
+    h += '<div class="x-sheet x-flow">' + P.list.slice(0, nShow).map(function(it, i) {
+      return thumb(renderCardHTML(lay, it.row, false, { card: i, row: it.ri })) + (varies ? thumb(backHTML(it, i, { lay: lay }), ' x-back') : '');
+    }).join('') + (P.list.length > nShow ? '<div class="muted">+ ' + (P.list.length - nShow) + ' more</div>' : '') +
+         (varies ? '' : thumb(backHTML(P.list[0], 0, { lay: lay }), ' x-back')) + '</div>';
   } else {
     var sw = P.cols * cw, sh = P.rows * chh, sc = Math.min(1, (box.clientWidth - 60) / sw, 760 / sh) || .3, start = 0;
     P.sheets.forEach(function(cards, si) {
@@ -3275,6 +3277,14 @@ function renderExport() {
       for (var k = cards.length; k < P.cols * P.rows - (P.t.backLast ? 1 : 0); k++) h += cell('');
       if (P.t.backLast) h += '<div class="x-cell x-back" title="Card back — shown for hidden cards" style="width:' + cw + 'px;height:' + chh + 'px">' + backHTML(cards[0], start, { lay: lay }) + '</div>';
       h += '</div></div>';
+      if (varies) {   // unique backs: a matching sheet of backs, each in the same place as its card
+        h += '<div class="x-label">Sheet ' + (si + 1) + ' backs · ' + cards.length + ' cards</div>';
+        h += '<div class="x-sheet" style="width:' + sw * sc + 'px;height:' + sh * sc + 'px"><div class="x-grid" style="width:' + sw + 'px;grid-template-columns:repeat(' + P.cols + ',' + cw + 'px);transform:scale(' + sc + ')">';
+        cards.forEach(function(it, i) { h += cell(backHTML(it, start + i, { lay: lay })); });
+        for (var k2 = cards.length; k2 < P.cols * P.rows - (P.t.backLast ? 1 : 0); k2++) h += cell('');
+        if (P.t.backLast) h += '<div class="x-cell x-back" style="width:' + cw + 'px;height:' + chh + 'px">' + backHTML(cards[0], start, { lay: lay }) + '</div>';
+        h += '</div></div>';
+      }
       start += cards.length;
     });
   }

@@ -483,9 +483,10 @@ function renderCardHTML(lay, row, designing, ctx) {
   var sorted = face.els.filter(function(e) { return !(e.group && off[e.group] && (!designing || off[e.group] === 2)); }).sort(function(a, b) { return (a.z || 1) - (b.z || 1); });
   var reps = {}; (face.groups || []).forEach(function(g) { if (g.rep) reps[g.id] = g; });
   // Repeated: an element (or a whole group) drawn n times side by side or one under another, from its corner
-  function repWrap(rep, x, y, z, attr, inner, n) {
+  function repWrap(rep, x, y, z, attr, inner, n, picked) {   // none on this card: shown faint only while it's selected (to work on it)
     var gap = rep.gap == null ? 2 : +rep.gap || 0, out = '';
-    for (var i = 0; i < Math.max(n, designing ? 1 : 0); i++) out += i ? inner.replace(/^<div class="/, '<div class="rep-copy ') : inner;
+    if (!n && !(designing && picked)) return '';
+    for (var i = 0; i < Math.max(n, 1); i++) out += i ? inner.replace(/^<div class="/, '<div class="rep-copy ') : inner;
     return '<div class="el-rep rep-' + (rep.dir === 'v' ? 'v' : 'h') + (designing && !n ? ' rep-none' : '') + '" ' + attr + ' style="left:' + x + 'pt;top:' + y + 'pt;z-index:' + (z || 1) + ';gap:' + gap + 'pt">' + out + '</div>';
   }
   // An element with its own Repeat (in a group too): its copies in a row or column where the element sits — in a list, as one of its items
@@ -494,7 +495,7 @@ function renderCardHTML(lay, row, designing, ctx) {
     var one = elHTML(x, list), n = repCount(x.rep, row);
     if (!one) return '';
     one = one.replace(/transform:translate\([^)]*\) ?/, 'transform:');
-    var w = repWrap(x.rep, x.x, x.y, x.z, 'data-rep="' + x.id + '"', one, n);
+    var w = repWrap(x.rep, x.x, x.y, x.z, 'data-rep="' + x.id + '"', one, n, isSel(x.id));
     return list ? w.replace('class="el-rep ', 'class="el-rep in-list ') : w;
   }
   sorted.forEach(function(e) {
@@ -508,7 +509,7 @@ function renderCardHTML(lay, row, designing, ctx) {
         ? '<div class="el-list list-' + rg.list + '" data-g="' + rg.id + '" style="left:' + b0.x + 'pt;top:' + b0.y + 'pt;gap:' + (rg.gap == null ? 4 : +rg.gap || 0) + 'pt;align-items:' + { start: 'flex-start', center: 'center', end: 'flex-end' }[listAlign(rg)] + '">' + gm.slice().reverse().map(function(x) { return repEl(x, rg.list); }).join('') + '</div>'
         : gm.map(function(x) { return repEl(x); }).join('');
       var block = '<div class="rep-block" style="width:' + r1(x2 - b0.x) + 'pt;height:' + r1(y2 - b0.y) + 'pt"><div class="rep-shift" style="left:' + (-b0.x) + 'pt;top:' + (-b0.y) + 'pt">' + body + '</div></div>';
-      h += repWrap(rg.rep, b0.x, b0.y, e.z, 'data-repg="' + rg.id + '"', block, repCount(rg.rep, row));
+      h += repWrap(rg.rep, b0.x, b0.y, e.z, 'data-repg="' + rg.id + '"', block, repCount(rg.rep, row), gm.some(function(x) { return isSel(x.id); }));
       return;
     }
     var g = e.group && lists[e.group];

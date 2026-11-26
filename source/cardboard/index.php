@@ -281,6 +281,20 @@ body.designs .app { display:flex; flex-direction:column; }
 .cancel-btn:hover { background:#f6f6fa; }
 @keyframes dshake { 0%,100% { transform:translateX(0); } 20%,60% { transform:translateX(-8px); } 40%,80% { transform:translateX(8px); } }
 .d-dlg.shake { animation:dshake .35s; }
+/* askDialog — the same confirm dialog as the designer */
+.ask-overlay { position:fixed; inset:0; z-index:950; background:rgba(20,18,45,.45); display:flex; align-items:center; justify-content:center; padding:1rem; animation:askFade .15s ease; }
+.ask-overlay .dlg { width:min(400px,92vw); background:#fff; border-radius:14px; padding:1.2rem 1.3rem 1.1rem; box-shadow:0 20px 60px rgba(20,20,60,.3); animation:askPop .18s cubic-bezier(.3,1.4,.5,1); }
+.ask-overlay .dlg-title { margin:0 0 .25rem; font-family:'DINBlack',sans-serif; font-weight:400; font-size:1.05rem; color:#2e2763; letter-spacing:.02em; }
+.ask-overlay .ask-msg { margin:.35rem 0 .2rem; font-size:.86rem; line-height:1.5; color:#4a4e68; }
+.ask-overlay .dlg-actions { display:flex; justify-content:flex-end; gap:.5rem; margin-top:1.1rem; }
+.ask-overlay .attr-btn { height:2.05rem; padding:0 1rem; border:1.5px solid #d6d9e6; border-radius:7px; background:#fff; color:#3b3f5c; font-size:.75rem; cursor:pointer; white-space:nowrap; }
+.ask-overlay .attr-btn:hover { border-color:#a99cff; }
+.ask-overlay .print-go { height:2.05rem; border:none; border-radius:7px; background:#4b3fa8; color:#fff; font-family:'DINBlack',sans-serif; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; padding:0 1.2rem; cursor:pointer; }
+.ask-overlay .print-go.danger { background:#c0392b; }
+.ask-overlay .print-go.danger:hover { background:#a93226; }
+.ask-overlay button:focus-visible { outline:2px solid #7b6cf6; outline-offset:2px; }
+@keyframes askFade { from { opacity:0; } }
+@keyframes askPop { from { transform:scale(.94); opacity:0; } }
 
 @media (max-width:760px) {
   .d-side { display:none; }
@@ -696,14 +710,16 @@ body.designs .app { display:flex; flex-direction:column; }
       if (a === 'sheet') window.open('https://docs.google.com/spreadsheets/d/' + id + '/edit', '_blank');
       if (a === 'copy') (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function() { dToast('✓ Link copied'); }, function() { prompt('Copy this link', url); });
       if (a === 'delete') {
-        if (!confirm('Delete “' + (x.title || 'this design') + '”?\n\nIt leaves this list and its share link stops working. Your Google Sheet and everything in it stay as they are.')) return;
-        var fd = new FormData(); fd.append('action', 'delete'); fd.append('id', id); fd.append('cbt', acct.token);
-        fetch('push/cardboardSheets.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(res) {
-          if (!res.ok) { dToast(res.error || 'Couldn’t delete'); return; }
-          try { localStorage.setItem('cb_seen', JSON.stringify(seenIds().filter(function(s) { return s.id !== id; }))); } catch (er) {}
-          DES = (DES || []).filter(function(d) { return d.id !== id; }); try { localStorage.setItem('cb_designs', JSON.stringify(DES)); } catch (er) {}
-          dRender(); dToast('✓ Deleted');
-        }).catch(function() { dToast('Couldn’t delete'); });
+        askDialog({ title: 'Delete ' + (x.title || 'this design') + '?', message: 'It leaves this list and its share link stops working. Your Google Sheet and everything in it stay as they are.', ok: 'Delete', cancel: 'Keep', danger: true }).then(function(yes) {
+          if (!yes) return;
+          var fd = new FormData(); fd.append('action', 'delete'); fd.append('id', id); fd.append('cbt', acct.token);
+          fetch('push/cardboardSheets.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(res) {
+            if (!res.ok) { dToast(res.error || 'Couldn’t delete'); return; }
+            try { localStorage.setItem('cb_seen', JSON.stringify(seenIds().filter(function(s) { return s.id !== id; }))); } catch (er) {}
+            DES = (DES || []).filter(function(d) { return d.id !== id; }); try { localStorage.setItem('cb_designs', JSON.stringify(DES)); } catch (er) {}
+            dRender(); dToast('✓ Deleted');
+          }).catch(function() { dToast('Couldn’t delete'); });
+        });
       }
       if (a === 'forget') {
         try { localStorage.setItem('cb_seen', JSON.stringify(seenIds().filter(function(s) { return s.id !== id; }))); } catch (er) {}
@@ -714,6 +730,35 @@ body.designs .app { display:flex; flex-direction:column; }
     btn.parentNode.appendChild(m);
   };
   document.addEventListener('click', function(e) { if (!e.target.closest('.d-menu') && !e.target.closest('.d-more')) closeMenu(); });
+  // askDialog({title, message, ok, cancel, danger}) → Promise<boolean> — the designer's confirm dialog
+  function askDialog(o) {
+    return new Promise(function(done) {
+      var ov = document.createElement('div');
+      ov.className = 'ask-overlay';
+      ov.innerHTML = '<div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="askTitle">' +
+        '<h2 class="dlg-title" id="askTitle">' + esc(o.title || '') + '</h2>' +
+        '<p class="ask-msg">' + esc(o.message || '') + '</p>' +
+        '<div class="dlg-actions">' + (o.cancel === '' ? '' : '<button type="button" class="attr-btn" data-a="0">' + esc(o.cancel || 'Cancel') + '</button>') +
+        '<button type="button" class="print-go' + (o.danger ? ' danger' : '') + '" data-a="1">' + esc(o.ok || 'OK') + '</button></div></div>';
+      var prev = document.activeElement;
+      function close(v) { document.removeEventListener('keydown', key, true); ov.remove(); if (prev && prev.focus) prev.focus(); done(v); }
+      function key(ev) {
+        if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); close(false); }
+        else if (ev.key === 'Enter') { ev.preventDefault(); ev.stopPropagation(); var f = document.activeElement; close(f && f.dataset && f.dataset.a ? f.dataset.a === '1' : !o.danger); }
+        else if (ev.key === 'Tab') {
+          var b = ov.querySelectorAll('button'), i = Array.prototype.indexOf.call(b, document.activeElement);
+          ev.preventDefault(); b[(i + (ev.shiftKey ? b.length - 1 : 1)) % b.length].focus();
+        }
+      }
+      ov.addEventListener('click', function(ev) {
+        var b = ev.target.closest('[data-a]');
+        if (b) close(b.dataset.a === '1'); else if (ev.target === ov) close(false);
+      });
+      document.addEventListener('keydown', key, true);
+      document.body.appendChild(ov);
+      ov.querySelector(o.danger ? '[data-a="0"]' : '[data-a="1"]').focus();   // risky actions default to Cancel
+    });
+  }
   function dToast(t) { var el = $('dToast'); el.textContent = t; el.classList.add('show'); clearTimeout(el._h); el._h = setTimeout(function() { el.classList.remove('show'); }, 1800); }
 
   // + Create (the dialog pattern: dirty-check on ×/Esc/backdrop, Cancel always closes, ⌘Enter connects)

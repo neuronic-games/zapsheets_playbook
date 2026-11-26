@@ -3077,10 +3077,23 @@ function savePrintSettings(tab) {
   if (!tab || !layout) return;
   _printSettings[tab] = { paper: $('pPaper').value, orient: $('pOrient').value, gap: $('pGap').value, cut: $('pCut').value, copies: $('pCopies').value, backs: $('pBacks').value };
   try { localStorage.setItem('cb_print:' + SHEET_ID + ':' + tab, JSON.stringify(_printSettings[tab])); } catch (e) {}
+  keepSheetSetting('print', tab, _printSettings[tab]);
+}
+// The owner's Print and Export choices are kept with the sheet (its settings, saved like the layouts), so they're
+// the same on every device and for everyone the cards are shared with; a viewer's own changes stay in their browser
+function keepSheetSetting(kind, tab, v) {
+  if (!hasAccess()) return;
+  var all = SETTINGS[kind] || {};
+  if (JSON.stringify(all[tab]) === JSON.stringify(v)) return;
+  all[tab] = v; SETTINGS[kind] = all; markSettings();
+}
+function sheetSetting(kind, tab, local) {   // the owner: the sheet's (then this browser's); others: theirs, else the sheet's
+  var sh = SETTINGS[kind] && SETTINGS[kind][tab];
+  return hasAccess() ? (sh || local) : (local || sh);
 }
 function restorePrintSettings(tab) {
-  var s = _printSettings[tab];
-  if (!s) { try { s = JSON.parse(localStorage.getItem('cb_print:' + SHEET_ID + ':' + tab) || 'null'); } catch (e) {} }
+  var s = _printSettings[tab], loc = null;
+  if (!s) { try { loc = JSON.parse(localStorage.getItem('cb_print:' + SHEET_ID + ':' + tab) || 'null'); } catch (e) {} s = sheetSetting('print', tab, loc); }
   if (!s) return;
   _printSettings[tab] = s;
   if (s.paper) $('pPaper').value = s.paper;
@@ -3094,10 +3107,11 @@ function saveExportSettings(tab) {
   if (!tab || !layout) return;
   _exportSettings[tab] = { target: $('eTarget').value, quality: $('eQuality').value, copies: $('eCopies').value };
   try { localStorage.setItem('cb_export:' + SHEET_ID + ':' + tab, JSON.stringify(_exportSettings[tab])); } catch (e) {}
+  keepSheetSetting('export', tab, _exportSettings[tab]);
 }
 function restoreExportSettings(tab) {
-  var s = _exportSettings[tab];
-  if (!s) { try { s = JSON.parse(localStorage.getItem('cb_export:' + SHEET_ID + ':' + tab) || 'null'); } catch (e) {} }
+  var s = _exportSettings[tab], loc = null;
+  if (!s) { try { loc = JSON.parse(localStorage.getItem('cb_export:' + SHEET_ID + ':' + tab) || 'null'); } catch (e) {} s = sheetSetting('export', tab, loc); }
   if (!s) return;
   _exportSettings[tab] = s;
   if (s.target) $('eTarget').value = s.target;

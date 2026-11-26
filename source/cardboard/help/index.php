@@ -453,6 +453,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
   </ul>
   <h3>Lining up</h3>
   <p>With something selected, round dots appear past the card's right and bottom edges. With <b>one</b> element (or group) selected they line it up with the card — top, middle, bottom, left, centre, right. With <b>several</b>, they line them up with each other.</p>
+  <p><b>Place from an edge.</b> Click the dot of an edge the element is already on and the dot turns red: the element is now placed from that edge (or the middle). X and Y show the distance from it, and it stays there if the card changes size or you change its width or height. Click the red dot again for a fixed position.</p>
   <?= shot('align', 'Three elements selected: the dots line them up with each other.') ?>
   <h3>Lining up to a key object</h3>
   <p>To line things up with one particular element — without moving it — make it the <b>key object</b>:</p>

@@ -442,6 +442,9 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .al-guide.in { z-index:60; border-color:#7b6cf6; opacity:0; transition:opacity .12s; }
 .al-dot { position:absolute; width:14px; height:14px; margin:-7px 0 0 -7px; padding:0; border-radius:50%; border:2px solid #fff; background:#2a2d3e; box-shadow:0 1px 4px rgba(20,20,60,.3); cursor:pointer; z-index:6; transition:transform .12s, background .12s; }
 .al-dot:hover, .al-dot:focus-visible { background:#7b6cf6; transform:scale(1.3); outline:none; }
+.al-dot.rel { background:#e0392b; }
+.al-dot.rel:hover, .al-dot.rel:focus-visible { background:#f05a4c; }
+.rel-pos .mini { color:#e0392b; white-space:nowrap; }
 .al-dot:hover + .al-guide.in, .al-dot:focus-visible + .al-guide.in { opacity:1; }
 .fill-btn { position:absolute; width:24px; height:24px; margin:-12px 0 0 -12px; padding:0; border-radius:50%; border:2px solid #fff; background:#2a2d3e; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 5px rgba(20,20,60,.3); cursor:pointer; z-index:6; transition:transform .12s, background .12s; }
 .fill-btn:hover, .fill-btn:focus-visible { background:#7b6cf6; transform:scale(1.15); outline:none; }

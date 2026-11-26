@@ -1272,19 +1272,27 @@ function alignDotsHTML() {
   var plan = alignPlan(); if (!plan) return '';
   var bb = plan.ref, T = ALIGN_TITLES[plan.card ? 'card' : plan.key ? 'key' : 'sel'], k = PX * zoom, W = layout.card.w * k, H = layout.card.h * k, h = '';
   var ys = { top: bb.y, middle: bb.y + bb.h / 2, bottom: bb.y + bb.h }, xs = { left: bb.x, center: bb.x + bb.w / 2, right: bb.x + bb.w };
+  var rel = function(axis, n) { return plan.card && plan.units.every(function(u) { return u.every(function(e) { return e[axis] === n; }); }); };
+  var dot = function(n, axis, pos) {
+    var on = rel(axis, n), at = plan.card && alignedAt(plan, n);
+    var t = on ? 'Placed from the ' + EDGE_NAME[n] + ' — stays there if the card changes size. Click for a fixed position' + (at ? '' : ' (or move it back there)')
+      : at ? 'Already here. Click to place it from the ' + EDGE_NAME[n] + ', so it stays there if the card changes size' : T[n];
+    if (on && !at) t = 'Move back to the ' + EDGE_NAME[n] + ' (placed from there)';
+    return '<button type="button" class="al-dot' + (on ? ' rel' : '') + '" style="' + pos + '" onclick="alignSel(\'' + n + '\')" title="' + t + '" aria-label="' + t + '"></button>';
+  };
   var offR = 34, offB = 34;   // dots sit out past the card's right and bottom edges…
   var CW = W, CH = H;   // the hover guides still run across the whole card
   if (plan.key) { W = Math.round((bb.x + bb.w) * k); H = Math.round((bb.y + bb.h) * k); offR = 26; offB = 26; }   // …or around the key object
   Object.keys(ys).forEach(function(n) {
     var y = Math.round(ys[n] * k);
     h += '<div class="al-guide al-h" style="left:' + W + 'px;top:' + y + 'px;width:' + offR + 'px"></div>' +
-      '<button type="button" class="al-dot" style="left:' + (W + offR) + 'px;top:' + y + 'px" onclick="alignSel(\'' + n + '\')" title="' + T[n] + '" aria-label="' + T[n] + '"></button>' +
+      dot(n, 'ry', 'left:' + (W + offR) + 'px;top:' + y + 'px') +
       '<div class="al-guide al-h in" style="left:0;top:' + y + 'px;width:' + Math.max(W, CW) + 'px"></div>';
   });
   Object.keys(xs).forEach(function(n) {
     var x = Math.round(xs[n] * k);
     h += '<div class="al-guide al-v" style="top:' + H + 'px;left:' + x + 'px;height:' + offB + 'px"></div>' +
-      '<button type="button" class="al-dot" style="top:' + (H + offB) + 'px;left:' + x + 'px" onclick="alignSel(\'' + n + '\')" title="' + T[n] + '" aria-label="' + T[n] + '"></button>' +
+      dot(n, 'rx', 'top:' + (H + offB) + 'px;left:' + x + 'px') +
       '<div class="al-guide al-v in" style="top:0;left:' + x + 'px;height:' + Math.max(H, CH) + 'px"></div>';
   });
   return h;
@@ -1308,9 +1316,43 @@ function fillSel(dim) {
   sel.forEach(function(e) { if (dim === 'w') { e.x = 0; e.w = c.w; } else { e.y = 0; e.h = c.h; } });
   changed(true); var one = elById(selId); if (one) syncGeomInputs(one); else renderAttrs();
 }
+// Placed from an edge (relative): e.rx = left | center | right, e.ry = top | middle | bottom. x and y stay the
+// box's top-left corner as always; the card's own size changing (or W / H) keeps the distance from that edge.
+var EDGE_NAME = { left: 'left edge', center: 'center', right: 'right edge', top: 'top', middle: 'middle', bottom: 'bottom' };
+function edgeAxis(edge) { return /^(left|center|right)$/.test(edge) ? 'rx' : 'ry'; }
+function alignedAt(plan, edge) {
+  var bb = plan.ref;
+  return plan.units.every(function(u) {
+    var b = selBox(u), d = edge === 'left' ? bb.x - b.x : edge === 'center' ? bb.x + bb.w / 2 - (b.x + b.w / 2) : edge === 'right' ? bb.x + bb.w - (b.x + b.w)
+      : edge === 'top' ? bb.y - b.y : edge === 'middle' ? bb.y + bb.h / 2 - (b.y + b.h / 2) : bb.y + bb.h - (b.y + b.h);
+    return Math.abs(d) < .05;
+  });
+}
+function relOff(e, k) {   // what X / Y show: the distance from the edge it's placed from
+  var c = layout.card;
+  if (k === 'x') return e.rx === 'center' ? e.x + e.w / 2 - c.w / 2 : e.rx === 'right' ? c.w - e.x - e.w : e.x;
+  return e.ry === 'middle' ? e.y + e.h / 2 - c.h / 2 : e.ry === 'bottom' ? c.h - e.y - e.h : e.y;
+}
+function relAbs(e, k, v) {   // and back to the top-left corner
+  var c = layout.card;
+  if (k === 'x') return e.rx === 'center' ? v + c.w / 2 - e.w / 2 : e.rx === 'right' ? c.w - v - e.w : v;
+  return e.ry === 'middle' ? v + c.h / 2 - e.h / 2 : e.ry === 'bottom' ? c.h - v - e.h : v;
+}
+function relLabel(e, k) {
+  var n = k === 'x' ? e.rx : e.ry;
+  return n ? { left: 'From left', center: 'From center', right: 'From right', top: 'From top', middle: 'From middle', bottom: 'From bottom' }[n] : k.toUpperCase();
+}
 function alignSel(edge) {
   var plan = alignPlan(); if (!plan) return;
-  var bb = plan.ref, moved = false;
+  var bb = plan.ref, moved = false, axis = edgeAxis(edge);
+  if (plan.card && alignedAt(plan, edge)) {   // already there: toggle placed from this edge / a fixed position
+    var on = plan.units.every(function(u) { return u.every(function(e) { return e[axis] === edge; }); });
+    snapshot();
+    plan.units.forEach(function(u) { u.forEach(function(e) { if (on) delete e[axis]; else e[axis] = edge; }); });
+    toast(on ? 'Fixed position' : 'Placed from the ' + EDGE_NAME[edge] + ' — it stays there if the card changes size');
+    changed(true); renderAttrs(); return;
+  }
+  var keepRel = plan.card && plan.units.every(function(u) { return u.every(function(e) { return e[axis] === edge; }); });
   plan.units.forEach(function(u) {
     var b = selBox(u), dx = 0, dy = 0;
     if (edge === 'left') dx = bb.x - b.x;
@@ -1321,7 +1363,7 @@ function alignSel(edge) {
     else if (edge === 'bottom') dy = bb.y + bb.h - (b.y + b.h);
     if (Math.abs(dx) < .05 && Math.abs(dy) < .05) return;
     if (!moved) { snapshot(); moved = true; }
-    u.forEach(function(e) { e.x = r1(e.x + dx); e.y = r1(e.y + dy); });
+    u.forEach(function(e) { e.x = r1(e.x + dx); e.y = r1(e.y + dy); if (!keepRel && e[axis] && e[axis] !== edge) delete e[axis]; });
   });
   if (!moved) { toast(plan.card ? 'Already there' : 'Already lined up'); return; }
   changed(true); var one = elById(selId); if (one) syncGeomInputs(one); else renderAttrs();
@@ -2787,8 +2829,12 @@ function setProp(key, val, num) {
   var e = elById(selId); if (!e) return;
   endLive(e, key);
   if (num) { val = parseFloat(val); if (isNaN(val)) return; }
+  if ((key === 'x' && e.rx) || (key === 'y' && e.ry)) val = r1(relAbs(e, key, val));   // typed as the distance from its edge
   if (e[key] === val) { render(); return; }
-  snapshot(); e[key] = val;
+  snapshot();
+  if (key === 'w' && (e.rx === 'center' || e.rx === 'right')) e.x = r1(e.x - (val - e.w) * (e.rx === 'center' ? .5 : 1));   // a new size keeps the edge it's placed from
+  if (key === 'h' && (e.ry === 'middle' || e.ry === 'bottom')) e.y = r1(e.y - (val - e.h) * (e.ry === 'middle' ? .5 : 1));
+  e[key] = val;
   if (key === 'field' && e.kind === 'data' && e.as === 'map') e.map = savedMap(val);   // the new column's own mappings
   if (STROKE_FOR[key] && val && val !== 'transparent' && !(+e[STROKE_FOR[key]])) { e[STROKE_FOR[key]] = 1; changed(); return; }   // show the border
   if (key === 'bg' || key === 'color' || key === 'fill' || STROKE_FOR[key]) { changed(); return; }      // refresh the swatch and box
@@ -2798,14 +2844,24 @@ function setBackProp(key, val) { endLive(layout.back, key); snapshot(); layout.b
 function setCard(key, val, num) {
   endLive(layout.card, key);
   if (num) { val = parseFloat(val); if (isNaN(val)) return; }
+  var ow = layout.card.w, oh = layout.card.h;
   snapshot(); layout.card[key] = val;
   if (key === 'borderColor' && val && val !== 'transparent' && !(+layout.card.borderW)) layout.card.borderW = 1;
   if (key === 'size') { var s = CARD_SIZES.filter(function(x) { return x.id === val; })[0]; if (s && s.w) { layout.card.w = s.w; layout.card.h = s.h; } }
   if (key === 'w' || key === 'h') layout.card.size = 'custom';
+  keepRelative(ow, oh);
   changed(); if (key === 'size' || key === 'w' || key === 'h') fitZoom();
 }
+// The card changed size: everything placed from an edge keeps its distance from that edge (front and back)
+function keepRelative(ow, oh) {
+  var dw = layout.card.w - ow, dh = layout.card.h - oh; if (!dw && !dh) return;
+  layout.els.concat(layout.back.els).forEach(function(e) {
+    if (e.rx === 'center' || e.rx === 'right') e.x = r1(e.x + dw * (e.rx === 'center' ? .5 : 1));
+    if (e.ry === 'middle' || e.ry === 'bottom') e.y = r1(e.y + dh * (e.ry === 'middle' ? .5 : 1));
+  });
+}
 function syncGeomInputs(e) {
-  ['x', 'y', 'w', 'h'].forEach(function(k) { var i = $('a_' + k); if (i && document.activeElement !== i && !(k === 'w' && e.autoW && hasAuto(e)) && !(k === 'h' && e.autoH && hasAuto(e))) i.value = r1(e[k]); });
+  ['x', 'y', 'w', 'h'].forEach(function(k) { var i = $('a_' + k); if (i && document.activeElement !== i && !(k === 'w' && e.autoW && hasAuto(e)) && !(k === 'h' && e.autoH && hasAuto(e))) i.value = r1(k === 'x' || k === 'y' ? relOff(e, k) : e[k]); });
 }
 // An auto box's position while it's dragged (its size and where it sits come from elStyle)
 function placeAuto(node, e) {
@@ -3120,6 +3176,11 @@ function _renderAttrs() {
     h += textAttrs(e) + boxAttrs(e, 'Background');
   }
   var canAuto = isTextLike(e);
+  function posInp(k) {   // X / Y: from the card's top-left, or from the edge it's placed from (red, like its dot)
+    var r = k === 'x' ? e.rx : e.ry;
+    return '<div' + (r ? ' class="rel-pos" title="Placed from the ' + EDGE_NAME[r] + ' — click its dot below or beside the card for a fixed position"' : '') + '>' +
+      numInp('a_' + k, relLabel(e, k), relOff(e, k), 'setProp', k, .5).replace(/^<div>|<\/div>$/g, '') + '</div>';
+  }
   function sizeInp(id, label, key, autoKey) {   // W / H: a number, or Auto (text grows and shrinks with what's in it)
     if (!canAuto) return numInp(id, label, e[key], 'setProp', key, .5);
     var on = !!e[autoKey];
@@ -3127,7 +3188,7 @@ function _renderAttrs() {
       (on ? '<input class="inp auto-inp" id="' + id + '" value="Auto" readonly onclick="setAuto(\'' + key + '\')" title="Click for a fixed size">'
           : '<input class="inp" type="number" step=".5" id="' + id + '" value="' + r1(e[key] || 0) + '" onchange="setProp(\'' + key + '\',this.value,true)">') + '</div>';
   }
-  h += '<span class="lbl">Position (pt)</span><div class="row4">' + numInp('a_x', 'X', e.x, 'setProp', 'x', .5) + numInp('a_y', 'Y', e.y, 'setProp', 'y', .5) + sizeInp('a_w', 'W', 'w', 'autoW') + sizeInp('a_h', 'H', 'h', 'autoH') + '</div>';
+  h += '<span class="lbl">Position (pt)</span><div class="row4">' + posInp('x') + posInp('y') + sizeInp('a_w', 'W', 'w', 'autoW') + sizeInp('a_h', 'H', 'h', 'autoH') + '</div>';
   if (canAuto && (e.autoW || e.autoH)) h += '<p class="muted" style="margin:.3rem 0 0">Auto ' + (e.autoW && e.autoH ? 'width and height' : e.autoW ? 'width' : 'height') + ': the box fits each card\'s text, growing from its ' + (e.autoW ? ({ left: 'left side', center: 'middle', right: 'right side' }[e.align || 'left']) : '') + (e.autoW && e.autoH ? ' and ' : '') + (e.autoH ? ({ top: 'top', middle: 'middle', bottom: 'bottom' }[e.valign || 'top']) : '') + '. Drag a side to fix its size.</p>';
   h += '<div class="row2" style="margin-top:.45rem">' + numInp('a_rot', 'Rotate (°)', e.rot || 0, 'setProp', 'rot', 1) +
        '<div><span class="mini">Opacity</span><input class="inp" type="number" min="0" max="100" step="5" value="' + Math.round((e.opacity == null ? 1 : e.opacity) * 100) + '" onchange="setProp(\'opacity\',clamp(this.value/100,0,1),true)"></div></div>';

@@ -208,16 +208,27 @@ def main():
             return '[' + n + ']' if n else ''
         def rows_of(w):
             vals = wb.values_get(q(w.title), params={'valueRenderOption': 'FORMULA'}).get('values', [])
+            # A tags tab without its heading row (made by hand, or the heading deleted): the first row is a tag —
+            # put the headings back above it, so that tag is read (and found when it changes) like the others
+            if vals and vals[0] and brace(vals[0][0]) and str(vals[0][0]).strip().lower() not in ('tag', 'tags', 'name'):
+                try:
+                    w.insert_row(TAGS_HEADERS, 1, value_input_option='RAW')
+                    vals = [list(TAGS_HEADERS)] + vals
+                except Exception:
+                    vals = [['Tag', 'Value']] + vals   # read it as data anyway
             return vals
         if action == 'tags':
             if tws is None: out({'ok': True, 'tags': []})
             vals = rows_of(tws); tags = []
             # Formatting inside a text tag's value (bold, italic, colour…): read with its cell
             rd = grid_cells(wb, q(tws.title) + '!B1:B' + str(max(1, len(vals)))) or []
+            seen = {}
             for i, r in enumerate(vals[1:]):
                 t = brace(r[0] if r else '')
                 if not t: continue
+                if t.lower() in seen: tags.pop(seen[t.lower()]); seen = {x['tag'].lower(): k for k, x in enumerate(tags)}   # the same tag twice: the lower row wins
                 rec = {'tag': t, 'value': str(r[1]) if len(r) > 1 else '', 'row': i + 2}
+                seen[t.lower()] = len(tags)
                 cell = ((rd[i + 1].get('values') or [{}])[0]) if i + 1 < len(rd) else {}
                 f = cell_fmt(cell) if cell else None
                 if f and f['t'] == rec['value']: rec['fmt'] = f['r']
@@ -246,10 +257,10 @@ def main():
         vals = rows_of(tws)
         def find(t):
             return next((i + 1 for i, r in enumerate(vals) if i > 0 and r and brace(r[0]).lower() == t.lower()), 0)
-        if action == 'deltag':
-            row = find(tag)
-            if row:
-                wb.batch_update({'requests': [{'deleteDimension': {'range': {'sheetId': tws.id, 'dimension': 'ROWS', 'startIndex': row - 1, 'endIndex': row}}}]})
+        if action == 'deltag':   # every row with that tag (an older duplicate too)
+            rows_del = [i + 1 for i, r in enumerate(vals) if i > 0 and r and brace(r[0]).lower() == tag.lower()]
+            for d in sorted(rows_del, reverse=True):
+                wb.batch_update({'requests': [{'deleteDimension': {'range': {'sheetId': tws.id, 'dimension': 'ROWS', 'startIndex': d - 1, 'endIndex': d}}}]})
             out({'ok': True})
         # settag: a new name must not clash with another tag; renaming keeps the row
         # Without "old" this updates the tag's row (or adds one). Renaming (old given, different
@@ -270,6 +281,14 @@ def main():
             res = wb.values_append(q(tws.title) + '!A1', params={'valueInputOption': 'RAW', 'insertDataOption': 'INSERT_ROWS'}, body={'values': [[tag, value]]})
             m = __import__('re').search(r'![A-Z]+(\d+)', ((res or {}).get('updates') or {}).get('updatedRange', ''))
             row = int(m.group(1)) if m else 0
+        # The same tag in other rows too (an older row the tab already had): those go, so the tag has one row
+        try:
+            dups = [i + 1 for i, r in enumerate(vals) if i > 0 and r and brace(r[0]).lower() == tag.lower() and i + 1 != row]
+            for d in sorted(dups, reverse=True):
+                wb.batch_update({'requests': [{'deleteDimension': {'range': {'sheetId': tws.id, 'dimension': 'ROWS', 'startIndex': d - 1, 'endIndex': d}}}]})
+                if row and d < row: row -= 1
+        except Exception:
+            pass
         # A text tag's formatting (fmt: [[start, {b,i,u,s,c}]], [] = none): written as the value cell's text runs
         if isinstance(data.get('fmt'), list) and row:
             try:

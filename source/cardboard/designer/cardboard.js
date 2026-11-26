@@ -142,7 +142,9 @@ function api(action, extra) {
     if (action === 'grid') return Promise.resolve({ ok: true, header: [], rows: [] });
   }
   extra = extra || {};
-  if (CACHE_READS[action] && !extra.force) return cachedRead(action, extra);   // what's kept here first
+  // What's kept here first — except for someone only looking (a view-only link, someone else's sheet, no sign-in):
+  // they never save, so nothing would tell their copy it's out of date; they always get the sheet as saved now
+  if (CACHE_READS[action] && !extra.force && !viewerOnly()) return cachedRead(action, extra);
   return apiNet(action, extra).then(function(res) { cacheAfter(action, extra, res); return res; });
 }
 function apiNet(action, extra) {
@@ -5012,6 +5014,7 @@ function closeSignIn() {
 var _guest = false;
 // A view-only share link (/v-{token}/cardboard): the page never sees the sheet's ID, and nothing can be changed
 function viewLink() { return /^v-[a-f0-9]{24}$/.test(SHEET_ID); }
+function viewerOnly() { return viewLink() || _guest || (!!ACCT && acctChecked() && !isOwner()); }
 // Menu → Share (the sheet's owner): a view-only link to send — it doesn't show the sheet's ID
 function shareApi(action) {
   var fd = new FormData(); fd.append('id', SHEET_ID); fd.append('action', action);

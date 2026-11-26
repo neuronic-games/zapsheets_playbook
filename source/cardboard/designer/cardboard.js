@@ -567,7 +567,7 @@ function newDeckProblem(n) {
   if (TABS.some(function(t) { return t.title.toLowerCase() === n.toLowerCase(); })) return 'There\'s already a deck called “' + n + '”';
   return '';
 }
-function addNewDeck(n, base) {   // base: an existing deck whose columns and layout the new one starts with
+function addNewDeck(n, base, withRows) {   // base: an existing deck whose columns and layout (and cards, withRows) the new one starts with
   n = String(n || '').trim().replace(/\s+/g, ' ');
   if (!hasAccess()) { requirePro('edit', function() {}); return; }
   var why = newDeckProblem(n); if (why) { toast(why, true); return; }
@@ -578,12 +578,29 @@ function addNewDeck(n, base) {   // base: an existing deck whose columns and lay
     if (lay) lsPut('cb_draft:' + SHEET_ID + ':' + n, JSON.stringify(lay));
   }
   fillDeckSelects(); selectTab(n);
-  if (base) deckColumns(base).then(function(cols) {
-    if (!cols.length) return;
-    var p = dataPend(n); cols.forEach(function(c) { if (p.cols.indexOf(c) < 0) p.cols.push(c); }); setDataPend(n, p);
-    if (curTab === n) { cols.forEach(function(c) { if (FIELDS.indexOf(c) < 0) FIELDS.push(c); }); renderData(); render(); renderAttrs(); }
+  if (base) Promise.all([deckColumns(base), withRows ? deckRows(base) : Promise.resolve([])]).then(function(r) {
+    var cols = r[0], rows = r[1];
+    if (!cols.length && !rows.length) return;
+    rows.forEach(function(x) { Object.keys(x).forEach(function(k) { if (cols.indexOf(k) < 0) cols.push(k); }); });
+    var p = dataPend(n); cols.forEach(function(c) { if (p.cols.indexOf(c) < 0) p.cols.push(c); });
+    rows.forEach(function(x) { var v = {}; cols.forEach(function(c) { v[c] = x[c] == null ? '' : String(x[c]); }); p.adds.push({ key: uid(), values: v }); });
+    setDataPend(n, p);
+    if (curTab === n) { overlayPending(); renderData(); render(); renderAttrs(); if (_activeTab === 'data') renderGrid(); }
+    if (rows.length) toast('Copied ' + rows.length + (rows.length === 1 ? ' card' : ' cards') + ' from “' + base + '” — Save to put them in your sheet');
   });
   toast('New deck “' + n + '”' + (base ? ' based on “' + base + '”' : '') + ' — Save to put it in your sheet');
+}
+// A deck's cards as plain values (no formatting inside cells), with the changes not saved yet
+function deckRows(tab) {
+  var clean = function(list) { return list.map(function(r) { var o = {}; Object.keys(r).forEach(function(k) { if (!isInternal(k)) o[k] = r[k]; }); return o; }); };
+  if (tab === curTab && !_rowsPartial) return Promise.resolve(clean(ROWS));
+  var p = dataPend(tab);
+  if (isNewTab(tab)) return Promise.resolve(p.adds.map(function(a) { return Object.assign({}, a.values); }));
+  return api('rows', { tab: tab }).then(function(r) {
+    var rows = clean(r.rows || []);
+    p.adds.forEach(function(a) { rows.push(Object.assign({}, a.values)); });
+    return rows;
+  }).catch(function() { toast('Couldn’t read the cards of “' + tab + '”', true); return []; });
 }
 // A deck's columns: the current deck's fields, else its heading row (plus columns added here, not saved yet)
 function deckColumns(tab) {
@@ -601,12 +618,12 @@ var _newDeckInitial = null;
 function openNewDeckDialog(name) {
   if (!hasAccess()) { requirePro('edit', function() {}); return; }
   $('newDeckName').value = name || ''; $('ndBaseInput').value = ''; $('newDeckErr').textContent = '';
-  $('ndBaseCombo').classList.remove('open');
-  _newDeckInitial = { name: '', base: '' };
+  $('ndBaseCombo').classList.remove('open'); $('ndRows').checked = false; $('ndRowsWrap').hidden = true;
+  _newDeckInitial = { name: '', base: '', rows: false };
   openDialog('newDeckOverlay');
   setTimeout(function() { $('newDeckName').focus(); }, 30);
 }
-function newDeckDirty() { return !!_newDeckInitial && ($('newDeckName').value.trim() !== _newDeckInitial.name || $('ndBaseInput').value.trim() !== _newDeckInitial.base); }
+function newDeckDirty() { return !!_newDeckInitial && ($('newDeckName').value.trim() !== _newDeckInitial.name || $('ndBaseInput').value.trim() !== _newDeckInitial.base || $('ndRows').checked !== _newDeckInitial.rows); }
 function closeNewDeckDialog() {
   if (newDeckDirty()) { var d = $('newDeckDlg'); d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake'); return; }
   forceCloseNewDeckDialog();
@@ -619,7 +636,8 @@ function ndBaseTab(v) {   // the typed "Based on" as a deck's exact name ('' = b
 }
 function newDeckCheck() {
   var n = $('newDeckName').value.trim().replace(/\s+/g, ' ');
-  var why = n ? newDeckProblem(n) : '';
+  var why = n ? newDeckProblem(n) : '', b = ndBaseTab($('ndBaseInput').value);
+  $('ndRowsWrap').hidden = !b; $('ndBaseSub').textContent = b ? 'Copies the columns and layout of “' + b + '”.' : 'Copies that deck’s columns and layout.';
   if (!why && ndBaseTab($('ndBaseInput').value) === null && !$('ndBaseCombo').classList.contains('open')) why = 'Pick a deck from the list, or leave it empty';
   $('newDeckErr').textContent = why; return why;
 }
@@ -627,7 +645,8 @@ function submitNewDeck() {
   var n = $('newDeckName').value.trim().replace(/\s+/g, ' '), base = ndBaseTab($('ndBaseInput').value);
   var why = newDeckProblem(n) || (base === null ? 'Pick a deck from the list, or leave it empty' : '');
   if (why) { $('newDeckErr').textContent = why; return; }
-  forceCloseNewDeckDialog(); addNewDeck(n, base);
+  var rows = !!base && $('ndRows').checked;
+  forceCloseNewDeckDialog(); addNewDeck(n, base, rows);
 }
 function ndBaseRebuild(filter) {
   var drop = $('ndBaseDrop'), lower = (filter || '').toLowerCase();

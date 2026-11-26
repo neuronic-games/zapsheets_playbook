@@ -198,6 +198,8 @@ select.sel { -webkit-appearance:none; appearance:none; padding-right:2rem; backg
 .combo-item .ci-ico { width:16px; display:flex; color:#7b6cf6; }
 .combo-item.blank { color:#6b7090; font-style:italic; }
 #newDeckOverlay .dlg { overflow:visible; }
+.nd-rows { display:flex; align-items:center; gap:.45rem; margin-top:.6rem; font-size:.84rem; color:#2e2763; cursor:pointer; }
+.nd-rows input { width:15px; height:15px; accent-color:#4b3fa8; margin:0; }
 .sheet-combo.naming .inp { border-color:#7b6cf6; }
 .sheet-combo.naming .sc-ico, .sheet-combo.naming .sc-count { display:none; }
 .sheet-combo.naming.has-layout .inp { padding-left:.5rem; }
@@ -1126,7 +1128,8 @@ table.grid.grid-preview { pointer-events:none; opacity:.7; }   /* the cards, sho
         oninput="ndBaseRebuild(this.value);newDeckCheck()" onfocus="ndBaseRebuild(this.value)" onkeydown="ndBaseKey(event)" />
       <div class="combo-dropdown" id="ndBaseDrop"></div>
     </div>
-    <p class="dlg-sub" style="margin-top:.35rem">Copies that deck’s columns and layout. Its cards stay where they are.</p>
+    <p class="dlg-sub" style="margin-top:.35rem" id="ndBaseSub">Copies that deck’s columns and layout.</p>
+    <label class="nd-rows" id="ndRowsWrap" hidden><input type="checkbox" id="ndRows" onchange="newDeckCheck()"> Copy its cards too</label>
     <div class="dlg-err" id="newDeckErr"></div>
     <div class="dlg-actions"><button type="button" class="attr-btn" onclick="forceCloseNewDeckDialog()">Cancel</button><button type="button" class="print-go" onclick="submitNewDeck()">Add deck</button></div>
   </div>

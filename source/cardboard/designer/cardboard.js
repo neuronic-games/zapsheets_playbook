@@ -1384,7 +1384,7 @@ function editCellInPlace(e) {
     if (_fmtEd === inner) _fmtEd = null;
     inner.removeAttribute('contenteditable'); node.classList.remove('editing', 'ed-dark');
     var fmt = r.runs.length || oldRuns.length ? r.runs : undefined;
-    var same = v === old && JSON.stringify(fmt || []) === JSON.stringify(oldRuns);
+    var same = fmtSame(old, oldRuns, v, fmt || []);
     if (!save || same || (fresh && !v.trim())) { render(); return; }
     if (fresh || !ROWS[rowIdx]) newCardRow();
     setRowCell(e, v, fmt);
@@ -1585,12 +1585,27 @@ function fmtRead(ed) {
   var row = ROWS[rowIdx], e = elById(selId);
   return { text: text, runs: any ? runs : [], had: !!(row && e && rowFmtRuns(row, e.field).length) };
 }
+// Whether a text and its formatting are the same as before: the same words (a non-breaking space the editor puts in
+// counts as a space) and the same look letter by letter, however the runs are written. Clicking into a box and out
+// again isn't a change.
+function fmtNorm(t) { return String(t == null ? '' : t).replace(/\u00a0/g, ' ').replace(/\r/g, ''); }
+function fmtLook(text, runs) {
+  var t = fmtNorm(text), out = [], cur = null;
+  var rs = (runs || []).slice().sort(function(a, b) { return (+a[0] || 0) - (+b[0] || 0); });
+  for (var i = 0, k = -1; i < t.length; i++) {
+    while (k + 1 < rs.length && (+rs[k + 1][0] || 0) <= i) k++;
+    var d = k >= 0 ? rs[k][1] || {} : {}, key = (d.b ? 'b' : '') + (d.i ? 'i' : '') + (d.u ? 'u' : '') + (d.s ? 's' : '') + (d.c && !/^#000000$/i.test(d.c) ? String(d.c).toLowerCase() : '');
+    if (cur && cur[1] === key) cur[0]++; else out.push(cur = [1, key]);
+  }
+  return JSON.stringify(out);
+}
+function fmtSame(t1, r1, t2, r2) { return fmtNorm(t1) === fmtNorm(t2) && fmtLook(t1, r1) === fmtLook(t2, r2); }
 function setRowValue(v, fmt) {   // fmt (from the formatted value box): [[start, {b,i,u,s,c}]], or undefined for plain text
   var e = elById(selId), row = ROWS[rowIdx]; if (!e || e.kind !== 'data') return;
   if (!requirePro('edit', function() {})) { renderAttrs(); return; }
   if (!row) { if (!String(v).trim()) return; newCardRow(); setRowCell(e, v); return; }   // the first card
-  var same = String(row[e.field] == null ? '' : row[e.field]) === v;
-  if (fmt !== undefined && same && JSON.stringify(fmt) === JSON.stringify(rowFmtRuns(row, e.field))) return;   // nothing changed
+  var cur = cleanVal(row[e.field] == null ? '' : row[e.field]), same = fmtNorm(cur) === fmtNorm(v);
+  if (same && fmtSame(cur, rowFmtRuns(row, e.field), v, fmt || [])) return;   // nothing changed (clicked in and out)
   if (fmt === undefined && same) return;
   setRowCell(e, v, fmt);
 }
@@ -1653,7 +1668,7 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
   }
   var clickedSel = unit.every(isSel);
   if (!clickedSel) setSel(unit);
-  if (handle && hasAuto(e) && !multi.length) fixAuto(e, elDom, /[ew]/.test(handle), /[ns]/.test(handle));   // a side dragged: fixed from now on
+  var autoSide = !!handle && hasAuto(e) && !multi.length;   // a side dragged: fixed from now on (only once it really moves)
   var start = ptFromEvent(ev), o = { x: e.x, y: e.y, w: e.w, h: e.h }, c = layout.card, moved = false;
   var group = multi.length ? curEls().filter(function(x) { return multi.indexOf(x.id) >= 0; }) : null;
   var origin = group && group.map(function(x) { return { x: x.x, y: x.y }; });
@@ -1661,7 +1676,10 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
   function mv(m) {
     var p = ptFromEvent(m), dx = p.x - start.x, dy = p.y - start.y;
     if (!moved && Math.abs(dx) + Math.abs(dy) < .8) return;
-    if (!moved) { snapshot(); moved = true; $('cardHolder').classList.add('moving'); }   // hide the align dots until it's dropped
+    if (!moved) {
+      snapshot(); moved = true; $('cardHolder').classList.add('moving');   // hide the align dots until it's dropped
+      if (autoSide) { fixAuto(e, elDom, /[ew]/.test(handle), /[ns]/.test(handle)); o = { x: e.x, y: e.y, w: e.w, h: e.h }; }
+    }
     var snap = m.altKey ? .1 : 1;
     function sn(v) { return Math.round(v / snap) * snap; }
     if (group) {   // move everything selected together
@@ -3921,7 +3939,7 @@ function endGridEdit(save) {
     ed.ta.remove();
     if (!rd) { paintCell(ed.r, ed.c); return; }
     var runs = rd.runs.length || ed.oldRuns.length ? rd.runs : undefined;
-    if (rd.text !== ed.old || JSON.stringify(runs || []) !== JSON.stringify(ed.oldRuns)) saveGridCell(ed.r, ed.c, rd.text, ed.old, runs);
+    if (!fmtSame(cleanVal(ed.old), ed.oldRuns, rd.text, runs || [])) saveGridCell(ed.r, ed.c, rd.text, ed.old, runs);
     else paintCell(ed.r, ed.c);
     return;
   }
@@ -4588,7 +4606,7 @@ function tagEdFocus(ed, idx) {
     var r = save && document.body.contains(ed) ? fmtRead(ed) : null;
     window.removeEventListener('scroll', place, true); bar.remove(); ed._bar = null; ed._finish = null;
     if (_fmtEd === ed) _fmtEd = null;
-    if (r && (r.text !== oldV || JSON.stringify(r.runs) !== oldR)) setTagValue(idx, r.text, r.runs);
+    if (r && !fmtSame(oldV, JSON.parse(oldR), r.text, r.runs)) setTagValue(idx, r.text, r.runs);
   };
   ed.onkeydown = function(k) {
     k.stopPropagation();

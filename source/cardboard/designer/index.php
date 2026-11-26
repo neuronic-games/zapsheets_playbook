@@ -724,7 +724,13 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
 .print-bar .sel { width:auto; min-width:7.5rem; }
 .print-go { height:2.05rem; border:none; border-radius:7px; background:#4b3fa8; color:#fff; font-family:'DINBlack',sans-serif; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; padding:0 1.2rem; cursor:pointer; margin-left:auto; }
 .print-info { font-size:.8rem; color:#6b7090; align-self:center; }
-.pages { flex:1; overflow:auto; padding:1.5rem; display:flex; flex-direction:column; align-items:center; gap:2.2rem; background:#e4e6ef; }
+.pages { flex:1; overflow:auto; padding:1.5rem; display:flex; flex-direction:column; align-items:safe center; gap:2.2rem; background:#e4e6ef; }
+.page-pair { display:flex; flex-shrink:0; }   /* double-sided: a front and its back side by side */
+.p-zoom { display:inline-flex; align-items:center; border:1.5px solid #d6d9e6; border-radius:7px; background:#fff; height:2.05rem; overflow:hidden; }
+.p-zoom button { border:none; background:none; width:1.9rem; height:100%; font:inherit; font-size:1rem; color:#2e2763; cursor:pointer; }
+.p-zoom button:hover { background:#f3f1ff; }
+.p-zoom button.fit { width:auto; padding:0 .55rem; font-size:.72rem; font-family:'DINBlack',sans-serif; letter-spacing:.05em; text-transform:uppercase; border-left:1px solid #e5e3f0; }
+.p-zoom span { min-width:3rem; text-align:center; font-size:.78rem; color:#4a4e69; }
 .page-holder { position:relative; flex-shrink:0; box-shadow:0 6px 24px rgba(20,20,60,.18); background:#fff; }
 .page { position:absolute; left:0; top:0; background:#fff; transform-origin:0 0; overflow:hidden; }
 .page .card { box-shadow:none; }
@@ -855,7 +861,8 @@ body.cb-gate #signinOverlay { background:#2e2763; }
   #view-print { display:block !important; }
   .pages { display:block; padding:0; background:#fff; overflow:visible; }
   .page-holder { box-shadow:none; width:auto !important; height:auto !important; break-after:page; page-break-after:always; }
-  .page-holder:last-child { break-after:auto; page-break-after:auto; }
+  .page-pair { display:block; }
+  .pages > .page-holder:last-child, .pages > .page-pair:last-child > .page-holder:last-child { break-after:auto; page-break-after:auto; }
   .page { position:relative; transform:none !important; }
   .page-tag { display:none; }
 }
@@ -1006,6 +1013,8 @@ body.cb-gate #signinOverlay { background:#2e2763; }
       <select class="sel" id="pCopies" onchange="renderPrint()"></select></div>
     <div class="grp"><span class="mini">Backs</span>
       <select class="sel" id="pBacks" onchange="renderPrint()"><option value="none">Fronts only</option><option value="long">Double-sided (flip on long edge)</option><option value="short">Double-sided (flip on short edge)</option></select></div>
+ <div class="grp"><span class="mini">Zoom</span>
+      <div class="p-zoom"><button type="button" onclick="printZoom(-1)" title="Zoom out">−</button><span id="pZoomPct">100%</span><button type="button" onclick="printZoom(1)" title="Zoom in (or pinch / ⌘ + scroll)">+</button><button type="button" class="fit" onclick="printZoom(0)" title="Show the whole page">Fit</button></div></div>
     <span class="print-info" id="printInfo"></span>
     <button class="print-go" onclick="if (requirePro('print', function() { window.print(); })) window.print()">Print</button>
   </div>

@@ -3105,6 +3105,20 @@ function restoreExportSettings(tab) {
   if (s.copies) { $('eCopies').value = s.copies; $('eCopies').dataset.touched = '1'; }
 }
 
+// Print view zoom: 1 = the whole page (or front and back side by side) fits
+var _printZoom = 1;
+function printZoom(d) {
+  _printZoom = d === 0 ? 1 : clamp(_printZoom * (d > 0 ? 1.25 : 0.8), 0.4, 6);
+  if (Math.abs(_printZoom - 1) < 0.02) _printZoom = 1;
+  renderPrint();
+}
+$('pages').addEventListener('wheel', function(ev) {   // pinch, or ⌘/Ctrl + scroll, zooms
+  if (!ev.ctrlKey && !ev.metaKey) return;
+  ev.preventDefault();
+  _printZoom = clamp(_printZoom * Math.exp(-ev.deltaY * 0.01), 0.4, 6);
+  renderPrint();
+}, { passive: false });
+window.addEventListener('resize', function() { if (_activeTab === 'print') { clearTimeout(window._prRs); window._prRs = setTimeout(renderPrint, 150); } });
 function renderPrint() {
   var pages = $('pages');
   if (!layout) { pages.innerHTML = ''; return; }
@@ -3125,14 +3139,19 @@ function renderPrint() {
   var ox = (pw - gw) / 2, oy = (ph - gh) / 2;
   $('printInfo').textContent = list.length + (list.length === 1 ? ' card' : ' cards') + ' · ' + per + ' per page · ' + nPages + (nPages === 1 ? ' page' : ' pages');
 
-  var scale = Math.min(1, (pages.clientWidth - 60) / (pw * PX)) || 1;
+  // Backs: none, or a back page beside each front page laid out so it lines up when printed double-sided
+  var backs = $('pBacks').value, two = backs !== 'none';
+  // The whole page fits (a front and its back side by side when double-sided); Zoom goes from there
+  var GAPX = 28, availW = Math.max(200, pages.clientWidth - 48), availH = Math.max(200, pages.clientHeight - 64);
+  var fit = Math.min(availW / ((two ? 2 : 1) * pw * PX + (two ? GAPX : 0)), availH / (ph * PX)) || 1;
+  var scale = fit * _printZoom;
+  $('pZoomPct').textContent = Math.round(scale * 100) + '%';
   var html = '';
-  // Backs: none, or a back page after each front page laid out so it lines up when printed double-sided
-  var backs = $('pBacks').value;
   $('printInfo').textContent = list.length + (list.length === 1 ? ' card' : ' cards') + ' · ' + per + ' per page · ' +
     (backs === 'none' ? nPages + (nPages === 1 ? ' page' : ' pages') : nPages * 2 + ' pages (fronts and backs)');
   for (var p = 0; p < nPages; p++) {
     var cards = list.slice(p * per, (p + 1) * per);
+    if (two) html += '<div class="page-pair" style="gap:' + GAPX + 'px">';
     [false, true].forEach(function(isBack) {
       if (isBack && backs === 'none') return;
       html += '<div class="page-holder" style="width:' + (pw * PX * scale) + 'px;height:' + (ph * PX * scale) + 'px">' +
@@ -3153,6 +3172,7 @@ function renderPrint() {
       if (!isBack) html += cropMarks(cards.length);
       html += '</div></div>';
     });
+    if (two) html += '</div>';
   }
   function cropMarks(count) {
     if (cut !== 'marks' || !count) return '';

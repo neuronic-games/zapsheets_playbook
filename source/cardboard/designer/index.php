@@ -257,6 +257,9 @@ table.grid thead th.ghost-col { cursor:text; }
 #rowMenu .row-prev { margin:.15rem auto .5rem; overflow:hidden; border-radius:6px; box-shadow:0 2px 8px rgba(20,20,60,.18); }
 /* A little card with its number (Cards view rows, Layout view card picker) */
 .card-no { display:inline-flex; align-items:center; justify-content:center; min-width:1.15rem; height:1.55rem; padding:0 .2rem; box-sizing:border-box; border:1.5px solid currentColor; border-radius:3px; background:#fff; font-family:'DINBlack',sans-serif; font-size:.62rem; line-height:1; letter-spacing:0; color:inherit; vertical-align:middle; }
+/* DIN's digits sit low in their line: trim the line to the figures so they're centred in the box */
+.card-no { padding-bottom:.14em; }
+@supports (text-box: trim-both cap alphabetic) { .card-no { padding-bottom:0; text-box:trim-both cap alphabetic; } }
 table.grid tbody td.rn .card-no { display:flex; margin:0 auto; width:fit-content; }
 table.grid tbody td.rn:hover .card-no, table.grid tbody td.rn.menu-open .card-no { background:#f7f5ff; }
 #rowInfo { display:inline-flex; align-items:center; justify-content:center; min-width:0; color:#4b3fa8; }

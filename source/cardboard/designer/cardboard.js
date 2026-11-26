@@ -326,6 +326,14 @@ function cardStyle(c) {
 // Auto width / height (text, card fields shown as text, generated values): the box grows and shrinks with what's
 // in it. It stays put on the side its text is aligned to — left-aligned grows to the right, centred grows both
 // ways around the middle of the box, right-aligned grows to the left; top / middle / bottom the same way down.
+// Text padding: the same all round (pad), or each side on its own (padSep, then padT / padR / padB / padL)
+function padBox(e) {
+  var all = e.pad == null ? 2 : +e.pad || 0;
+  if (!e.padSep) return { t: all, r: all, b: all, l: all };
+  var one = function(k) { var v = e[k]; return v == null || v === '' || isNaN(+v) ? all : +v; };
+  return { t: one('padT'), r: one('padR'), b: one('padB'), l: one('padL') };
+}
+function padCss(e) { var p = padBox(e); return p.t === p.r && p.r === p.b && p.b === p.l ? p.t + 'pt' : p.t + 'pt ' + p.r + 'pt ' + p.b + 'pt ' + p.l + 'pt'; }
 function hasAuto(e) { return !!(e && (e.autoW || e.autoH) && isTextLike(e)); }
 function elStyle(e, card) {
   var c = card || (layout && layout.card) || { w: 9999, h: 9999 };
@@ -335,9 +343,9 @@ function elStyle(e, card) {
     var ay = !ah ? e.y : va === 'middle' ? e.y + e.h / 2 : va === 'bottom' ? e.y + e.h : e.y;
     var tx = !aw ? 0 : al === 'center' ? -50 : al === 'right' ? -100 : 0, ty = !ah ? 0 : va === 'middle' ? -50 : va === 'bottom' ? -100 : 0;
     var maxW = al === 'center' ? Math.min(ax, c.w - ax) * 2 : al === 'right' ? ax : c.w - ax;
-    var pad = e.pad == null ? 2 : +e.pad || 0;
+    var pb = padBox(e);
     var sa = 'left:' + r1(ax) + 'pt;top:' + r1(ay) + 'pt;z-index:' + (e.z || 1) + ';' +
-             '--minh:' + r1((e.size || 12) * (e.lh || 1.15) + 2 * pad) + 'pt;' +   // while designing, an empty Auto box keeps one line (to see and pick it)
+             '--minh:' + r1((e.size || 12) * (e.lh || 1.15) + pb.t + pb.b) + 'pt;' +   // while designing, an empty Auto box keeps one line (to see and pick it)
              (aw ? 'width:max-content;max-width:' + r1(Math.max(12, maxW)) + 'pt;' : 'width:' + e.w + 'pt;') +
              (ah ? 'height:auto;' : 'height:' + e.h + 'pt;');
     var tf = (tx || ty ? 'translate(' + tx + '%,' + ty + '%) ' : '') + (e.rot ? 'rotate(' + e.rot + 'deg)' : '');
@@ -357,7 +365,7 @@ function elLook(e) {
   if (e.radius) s += 'border-radius:' + e.radius + 'pt;';
   if (isTextLike(e)) {
     s += 'font-family:\'' + (e.font || 'DINRegular') + '\',Arial,sans-serif;font-size:' + (e.size || 12) + 'pt;color:' + (e.color || '#111') + ';' +
-         'text-align:' + (e.align || 'left') + ';padding:' + (e.pad == null ? 2 : e.pad) + 'pt;line-height:' + (e.lh || 1.15) + ';' +
+         'text-align:' + (e.align || 'left') + ';padding:' + padCss(e) + ';line-height:' + (e.lh || 1.15) + ';' +
          (e.bold ? 'font-weight:700;' : 'font-weight:400;') + (e.italic ? 'font-style:italic;' : '') + (e.upper ? 'text-transform:uppercase;' : '');
   }
   return s;
@@ -2715,6 +2723,28 @@ function openColorPop(btn, onSet, key, none) {
 }
 document.addEventListener('pointerdown', function(ev) { var p = $('colorPop'); if (p && !p.contains(ev.target) && !ev.target.closest('.swatch')) closeColorPop(); });
 document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') closeColorPop(); });
+// Padding (pt): one number for every side (linked), or top / right / bottom / left each on its own
+var LINK_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>';
+var UNLINK_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/><path d="M4 4l16 16"/></svg>';
+function padAttrs(e) {
+  var p = padBox(e), sep = !!e.padSep;
+  var tg = '<button type="button" class="pad-link' + (sep ? '' : ' on') + '" onclick="setPadLinked(' + (sep ? 'true' : 'false') + ')" title="' +
+           (sep ? 'Each side on its own — click to use one number for every side' : 'Every side the same — click to set top, right, bottom and left on their own') + '">' + (sep ? UNLINK_ICON : LINK_ICON) + '</button>';
+  var h = '<div style="margin-top:.45rem"><span class="mini sz-lbl pad-lbl">Padding (pt)' + tg + '</span>';
+  if (!sep) return h + '<input class="inp" type="number" step=".5" min="0" id="a_pad" value="' + r1(p.t) + '" onchange="setProp(\'pad\',this.value,true)"></div>';
+  var one = function(k, label, v) { return '<div><span class="mini">' + label + '</span><input class="inp" type="number" step=".5" min="0" value="' + r1(v) + '" onchange="setProp(\'' + k + '\',this.value,true)"></div>'; };
+  return h + '<div class="row4">' + one('padT', 'Top', p.t) + one('padR', 'Right', p.r) + one('padB', 'Bottom', p.b) + one('padL', 'Left', p.l) + '</div></div>';
+}
+function setPadLinked(linked) {
+  var e = elById(selId); if (!e) return;
+  var p = padBox(e);
+  snapshot();
+  if (linked) {   // back to one number: the top's (or, when the sides differ, their largest)
+    e.pad = p.t === p.r && p.r === p.b && p.b === p.l ? p.t : Math.max(p.t, p.r, p.b, p.l);
+    delete e.padSep; delete e.padT; delete e.padR; delete e.padB; delete e.padL;
+  } else { e.padSep = true; e.padT = p.t; e.padR = p.r; e.padB = p.b; e.padL = p.l; }
+  changed(true); renderAttrs();
+}
 function numInp(id, label, val, onSet, key, step) {
   return '<div><span class="mini">' + label + '</span><input class="inp" type="number" step="' + (step || 1) + '" id="' + id + '" value="' + r1(val || 0) + '" onchange="' + onSet + '(\'' + key + '\',this.value,true)"></div>';
 }
@@ -2778,7 +2808,7 @@ function boxAttrs(e, title) {
   var h = '<span class="lbl">' + title + '</span>' + colorRow('Fill', 'bg', e.bg, true, 'setProp');
   h += '<div class="row2" style="margin-top:.45rem">' + numInp('a_bw', 'Border (pt)', e.borderW, 'setProp', 'borderW', .5) + numInp('a_r', 'Corner radius', e.radius, 'setProp', 'radius') + '</div>';
   h += '<div style="margin-top:.45rem">' + colorRow('Border color', 'borderColor', e.borderColor, false, 'setProp') + '</div>';
-  if (isTextLike(e)) h += '<div style="margin-top:.45rem">' + numInp('a_pad', 'Padding (pt)', e.pad == null ? 2 : e.pad, 'setProp', 'pad', .5) + '</div>';
+  if (isTextLike(e)) h += padAttrs(e);
   return h;
 }
 function fitAttrs(e) {

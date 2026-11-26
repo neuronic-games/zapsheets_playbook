@@ -426,6 +426,10 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .auto-tg { border:1px solid #dfe1ea; background:#fff; color:#8a8fa8; border-radius:999px; font:inherit; font-size:.52rem; letter-spacing:.06em; text-transform:uppercase; padding:0 5px; height:14px; line-height:12px; cursor:pointer; }
 .designing .el.auto-h { min-height:var(--minh); }   /* an empty Auto box stays visible while designing (printed cards: nothing) */
 .designing .el.auto-w { min-width:18pt; }
+.pad-link { display:inline-flex; align-items:center; justify-content:center; width:20px; height:16px; padding:0; border:1px solid #dfe1ea; border-radius:5px; background:#fff; color:#8a8fa8; cursor:pointer; }
+.pad-link:hover { border-color:#7b6cf6; color:#4b3fa8; }
+.pad-link.on { background:#f1effe; border-color:#c9c2fb; color:#4b3fa8; }
+.mini.pad-lbl { height:16px; line-height:16px; }
 .auto-tg:hover { border-color:#7b6cf6; color:#4b3fa8; }
 .auto-tg.on { background:#7b6cf6; border-color:#7b6cf6; color:#fff; }
 .auto-inp { color:#7b6cf6; font-weight:600; cursor:pointer; background:#f6f5ff; }

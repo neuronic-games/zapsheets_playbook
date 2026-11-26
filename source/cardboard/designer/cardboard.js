@@ -1452,15 +1452,42 @@ function fmtHtml(row, field, rv) {   // the cell's text as HTML with its formatt
   else html = esc(t).replace(/\n/g, '<br>');
   return html;
 }
-function fmtBarHtml() {
+function fmtBarHtml(noTags) {   // noTags: the Tags view's own box (a tag inside a tag isn't turned into anything)
   var btn = function(cmd, label, title) { return '<button type="button" class="fmt-b" onmousedown="event.preventDefault()" onclick="fmtCmd(\'' + cmd + '\')" title="' + title + '">' + label + '</button>'; };
   return '<div class="fmt-bar">' + btn('bold', '<b>B</b>', 'Bold (⌘B)') + btn('italic', '<i>I</i>', 'Italic (⌘I)') + btn('underline', '<u>U</u>', 'Underline (⌘U)') + btn('strikeThrough', '<s>S</s>', 'Strikethrough') +
       '<span class="fmt-sep"></span>' +
       FMT_COLORS.map(function(c) { return '<button type="button" class="fmt-c" style="background:' + c + '" onmousedown="event.preventDefault()" onclick="fmtColor(\'' + c + '\')" title="' + c + '"></button>'; }).join('') +
       '<label class="fmt-c fmt-more" title="Another colour" onmousedown="fmtKeepSel()"><input type="color" oninput="fmtColor(this.value, true)" onchange="fmtColorDone()"></label>' +
       '<span class="fmt-sep"></span>' + btn('removeFormat', '<span style="text-decoration:line-through;font-weight:400">T</span>ₓ', 'Clear the formatting of the selection') +
+      (noTags ? '' : '<span class="fmt-sep"></span><button type="button" class="fmt-b fmt-tagbtn" onmousedown="event.preventDefault();fmtKeepSel()" onclick="fmtTagMenu(this)" title="Insert a tag from your tag list">[ Tag ]</button>') +
     '</div>';
 }
+// The Tag button: the tag list, and a click puts [name] where the cursor is
+function fmtTagMenu(btn) {
+  var box = btn.closest('.fmt-box'), had = box.querySelector('.fmt-tagmenu'); if (had) { had.remove(); fmtTagDone(); return; }
+  var m = document.createElement('div'); m.className = 'fmt-tagmenu';
+  m.innerHTML = TAGS.length ? TAGS.map(function(t) {
+      return '<button type="button" class="fmt-tagit" data-tag="' + esc(t.tag) + '" onmousedown="event.preventDefault()">' +
+        '<span class="fmt-tagprev">' + tagPreview(t) + '</span><code>' + esc(t.tag) + '</code></button>';
+    }).join('') : '<div class="muted" style="padding:.5rem .7rem">No tags yet — add them in the Tags view.</div>';
+  m.addEventListener('click', function(ev) { var b = ev.target.closest('[data-tag]'); if (b) fmtInsertTag(b.dataset.tag); });
+  box.appendChild(m);
+  m.style.left = Math.max(0, btn.offsetLeft + btn.offsetWidth - m.offsetWidth) + 'px';
+}
+function fmtTagDone() { var ed = fmtEd(); if (ed) ed._picking = false; }
+function fmtInsertTag(name) {
+  var ed = fmtEd(); document.querySelectorAll('.fmt-tagmenu').forEach(function(x) { x.remove(); });
+  if (!ed) return;
+  ed.focus();
+  if (_fmtSel) { var sl = getSelection(); sl.removeAllRanges(); sl.addRange(_fmtSel); }
+  try { document.execCommand('insertText', false, name); } catch (e) {}
+  fmtTagDone();
+}
+document.addEventListener('pointerdown', function(ev) {   // a click elsewhere closes the tag list
+  if (ev.target.closest && (ev.target.closest('.fmt-tagmenu') || ev.target.closest('.fmt-tagbtn'))) return;
+  var open = document.querySelectorAll('.fmt-tagmenu'); if (!open.length) return;
+  open.forEach(function(x) { x.remove(); }); fmtTagDone();
+}, true);
 function fmtBoxHtml(row, field, rv) {
   return '<div class="fmt-box">' + fmtBarHtml() +
     '<div class="ta fmt-ed" id="a_val" contenteditable="true" spellcheck="true" data-ph="' + esc(row ? 'Empty in this row — type to fill it in' : 'No cards yet — type to add one') + '"' +
@@ -4550,7 +4577,7 @@ function tagEdFocus(ed, idx) {
   if (!hasAccess()) { ed.blur(); return; }
   var t = tagAt(idx); if (!t) return;
   var oldV = String(t.value || ''), oldR = JSON.stringify(t.fmt || []);
-  var bar = document.createElement('div'); bar.className = 'fmt-box fmt-float'; bar.innerHTML = fmtBarHtml();
+  var bar = document.createElement('div'); bar.className = 'fmt-box fmt-float'; bar.innerHTML = fmtBarHtml(true);
   document.body.appendChild(bar); ed._bar = bar;
   function place() { var rc = ed.getBoundingClientRect(); bar.style.left = Math.max(6, Math.min(window.innerWidth - bar.offsetWidth - 6, rc.left)) + 'px'; bar.style.top = Math.max(6, rc.top - bar.offsetHeight - 6) + 'px'; }
   place(); window.addEventListener('scroll', place, true);

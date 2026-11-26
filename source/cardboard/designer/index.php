@@ -464,6 +464,14 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .fmt-ed.ta { border:none !important; box-shadow:none !important; min-height:4.5em; max-height:16em; overflow:auto; white-space:pre-wrap; outline:none; cursor:text; border-radius:0 0 8px 8px; }
 .fmt-ed:empty::before { content:attr(data-ph); color:#a0a4bb; }
 .fmt-float { position:fixed; z-index:400; box-shadow:0 6px 20px rgba(20,19,42,.18); }
+.fmt-box:not(.fmt-float) { position:relative; }
+.fmt-b.fmt-tagbtn { font:700 11px/1 'DINBlack',sans-serif; letter-spacing:.04em; color:#4b3fa8; padding:0 6px; white-space:nowrap; }
+.fmt-tagmenu { position:absolute; top:calc(100% + 4px); z-index:410; min-width:200px; max-width:300px; max-height:260px; overflow:auto; background:#fff; border:1px solid #dfe1ea; border-radius:9px; box-shadow:0 10px 28px rgba(20,19,42,.2); padding:4px; }
+.fmt-tagit { display:flex; align-items:center; gap:.55rem; width:100%; border:none; background:none; padding:.4rem .55rem; border-radius:6px; cursor:pointer; text-align:left; font:inherit; font-size:.82rem; color:#2b2d42; }
+.fmt-tagit:hover { background:#f3f1ff; }
+.fmt-tagit code { color:#4b3fa8; font-size:.78rem; }
+.fmt-tagprev { display:inline-flex; align-items:center; min-width:22px; max-width:120px; overflow:hidden; white-space:nowrap; }
+.fmt-tagprev img { width:18px; height:18px; object-fit:contain; }
 .fmt-float .fmt-bar { border-bottom:none; flex-wrap:nowrap; }
 .el.as-image.editing .el-inner { font-family:'DINRegular',Arial,sans-serif; font-size:10pt; color:#1b1b2b; display:flex; align-items:center; justify-content:center; text-align:center; }
 .sel-box { position:absolute; z-index:49; pointer-events:none; outline:calc(1.5px / var(--z)) solid #7b6cf6; outline-offset:calc(2px / var(--z)); }

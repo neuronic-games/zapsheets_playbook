@@ -110,6 +110,12 @@ Last updated: 2026-11-26.
   `sheets/{id}/_cardboard_view.txt` back). cardboardData / cardboardImage / cardboardPublish (list only) resolve it and
   refuse every write; claim refuses it. Managed by `push/cardboardShare.php` (get / create / stop). Note: uploaded
   picture links (`images/{sheetId}/…`) still contain the sheet ID.
+- **New decks / saves cut short**: a new deck's tab gets a frozen purple heading row (`addtab`). The deck list kept in
+  the browser is rechecked against the sheet after a cached start (`recheckTabs`). New cards written by `savecells`
+  are logged per tab in `sheets/{id}/_cardboard_adds.json` (key → line written, a week); if the same key comes
+  again (the page never got the answer), gcardboard.py updates that row instead of adding it twice.
+- **Placed from an edge**: `e.rx/e.ry` (elements) or `g.rx/g.ry` + `g.ww/g.hh` (whole groups; list groups are drawn
+  from that edge, `listPlace`). x / y stay the top-left corner; `keepRelative` shifts them when the card size changes.
 - **Drawing off-screen** (`#exportStage`) is moved to `<body>` at load: inside the hidden Export view it drew blank
   (Designs thumbnails, the Print PDF).
 - **Print**: whole page fits with Zoom (−/+/Fit, pinch); double-sided pairs side by side; download as PDF

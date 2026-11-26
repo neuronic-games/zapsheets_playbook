@@ -4651,9 +4651,11 @@ function renderTags() {
   var box = $('tagList'); if (!box) return;
   var pro = hasAccess();   // read-only once the free week is over
   $('tagsInfo').textContent = TAGS.length + (TAGS.length === 1 ? ' tag' : ' tags');
-  var list = (_tagDraft ? [_tagDraft] : []).concat(TAGS);
-  if (!list.length) { box.innerHTML = '<div class="tag-empty">No tags yet. <b>+ Add tag</b>, name it (like <code>energy</code>), and give it a word or a picture. Then write <code>[energy]</code> in any text or data on your cards.</div>'; return; }
-  box.innerHTML = list.map(function(t, i) {
+  // A new tag is typed into the empty row at the bottom; once it has a name, a fresh empty row appears below it
+  if (pro && !_tagDraft) _tagDraft = { tag: '', value: '', kind: 'text' };
+  var list = TAGS.concat(pro && _tagDraft ? [_tagDraft] : []);
+  if (!list.length) { box.innerHTML = '<div class="tag-empty">No tags yet.</div>'; return; }
+  box.innerHTML = (TAGS.length ? '' : '<div class="tag-empty">No tags yet. Type a name in the row below (like <code>energy</code>) and give it a word or a picture. Then write <code>[energy]</code> in any text or data on your cards.</div>') + list.map(function(t, i) {
     var draft = t === _tagDraft, img = draft ? t.kind === 'image' : (t.kind || (tagPicture(t.value) ? 'image' : 'text')) === 'image';
     var idx = draft ? -1 : TAGS.indexOf(t);
     var val = img
@@ -4662,11 +4664,11 @@ function renderTags() {
         '<input class="inp" value="' + esc(parseIcon(t.value) ? '' : t.value) + '" placeholder="or paste a picture link" onchange="setTagValue(' + idx + ',this.value.trim())"' + (pro ? '' : ' disabled') + '></div>'
       : '<div class="inp tag-text" contenteditable="' + (pro ? 'true' : 'false') + '" spellcheck="true" data-ph="What [tag] becomes" onfocus="tagEdFocus(this,' + idx + ')" onpaste="fmtPaste(event)">' + tagTextHtml(t) + '</div>';
     return '<div class="tag-row' + (draft ? ' draft' : '') + '">' +
-      '<input class="inp tag-name" value="' + esc(draft ? t.tag : t.tag) + '" placeholder="[name]" onchange="renameTag(' + idx + ',this.value,this)"' + (draft ? ' id="tagDraftName"' : '') + (pro ? '' : ' disabled') + '>' +
+      '<input class="inp tag-name" value="' + esc(draft ? t.tag : t.tag) + '" placeholder="' + (draft ? 'New tag…' : '[name]') + '" onchange="renameTag(' + idx + ',this.value,this)"' + (draft ? ' id="tagDraftName"' : '') + (pro ? '' : ' disabled') + '>' +
       '<div class="seg tag-kind"><button type="button" class="' + (img ? '' : 'on') + '" onclick="setTagKind(' + idx + ',\'text\')"' + (pro ? '' : ' disabled') + '>Text</button><button type="button" class="' + (img ? 'on' : '') + '" onclick="setTagKind(' + idx + ',\'image\')"' + (pro ? '' : ' disabled') + '>Image</button></div>' +
       '<div class="tag-val">' + val + '</div>' +
       '<div class="tag-prev" title="How it looks on a card">Gain 1 ' + (draft && !t.value ? '<span class="muted">' + esc(t.tag || '[…]') + '</span>' : tagPreview(t)) + '</div>' +
-      '<button type="button" class="tag-del" onclick="deleteTag(' + idx + ')" title="Delete this tag"' + (pro ? '' : ' disabled') + '>✕</button></div>';
+      (draft ? '<span class="tag-del"></span>' : '<button type="button" class="tag-del" onclick="deleteTag(' + idx + ')" title="Delete this tag"' + (pro ? '' : ' disabled') + '>✕</button>') + '</div>';
   }).join('');
 }
 function addTag() {

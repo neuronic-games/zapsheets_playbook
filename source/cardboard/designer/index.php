@@ -985,7 +985,7 @@ table.grid.grid-preview { pointer-events:none; opacity:.7; }   /* the cards, sho
       </div>
       <div class="e-actions"><span class="print-info" id="tagsInfo"></span>
         <button class="print-go ghost" onclick="loadTags()">Reload</button>
-        <button class="print-go" onclick="addTag()">+ Add tag</button></div>
+</div>
     </div>
     
     <div class="tag-cols"><span>Tag</span><span>Type</span><span>Becomes</span><span>Preview</span><span></span></div>

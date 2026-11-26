@@ -301,7 +301,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
   <span class="stage-pill st1">Google Sheet</span><span class="stage-arrow">→</span>
   <span class="stage-pill st2">Front &amp; back layout</span><span class="stage-arrow">→</span>
   <span class="stage-pill st3">Print sheets</span><span class="stage-arrow">→</span>
-  <span class="stage-pill st4">Tabletop Simulator</span>
+  <span class="stage-pill st4">Play online</span>
 </div>
 
 <section id="features" style="background:var(--slate-pale);">
@@ -314,7 +314,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
       <div class="feat-card"><div class="feat-strip"><img src="images/cardboard-features/strip-backs.jpg" alt="The back of a card in the designer" loading="lazy" width="290" height="46"></div><h3>Fronts and backs</h3><p>Flip the card to design its back. One shared back, or a different back for each card when it shows data from the row.</p></div>
       <div class="feat-card"><div class="feat-strip"><img src="images/cardboard-features/strip-shapes.jpg" alt="Text, picture and shape elements to drag onto the card" loading="lazy" width="290" height="46"></div><h3>Text, pictures, shapes</h3><p>Fixed text with <code>{Column}</code> placeholders, pictures from a column or a link, and stars, circles, hexagons and more.</p></div>
       <div class="feat-card"><div class="feat-strip"><img src="images/cardboard-features/strip-generated.jpg" alt="A number sequence on the card and its settings" loading="lazy" width="290" height="46"></div><h3>Generated values</h3><p>Number your cards, roll a random value, or pick from a list — the same in the preview and on the printout.</p></div>
-      <div class="feat-card"><div class="feat-strip"><img src="images/cardboard-features/strip-cards.jpg" alt="The Cards tab: the deck as a grid" loading="lazy" width="290" height="46"></div><h3>Edit your cards in place</h3><p>The Cards tab shows each deck as a grid. Type into a cell, add rows and columns as you go, and Save sends it all to Google Sheets — without overwriting someone else's change.</p></div>
+      <div class="feat-card"><div class="feat-strip"><img src="images/cardboard-features/strip-cards.jpg" alt="The Cards tab: the deck as a grid" loading="lazy" width="290" height="46"></div><h3>Edit your cards in place</h3><p>The Cards tab shows each deck as a grid. Type into a cell, add rows and columns as you go, and Save sends it all to Google Sheets.</p></div>
       <div class="feat-card"><div class="feat-strip"><img src="images/cardboard-features/strip-print.jpg" alt="Print sheets: fronts and matching backs" loading="lazy" width="290" height="46"></div><h3>Print-and-play sheets</h3><p>Letter or A4, crop marks, copies from a Count column, and backs that line up when you print double-sided.</p></div>
       <div class="feat-card"><div class="feat-strip"><img src="images/cardboard-features/strip-tts.jpg" alt="A Tabletop Simulator card sheet" loading="lazy" width="290" height="46"></div><h3>Tabletop Simulator &amp; Screentop</h3><p>Card sheets in the exact grid each one expects — 10 × 7 for TTS, with the back in the hidden-card slot.</p></div>
       <div class="feat-card"><div class="feat-strip"><img src="images/cardboard-features/strip-links.jpg" alt="Get links for Tabletop Simulator" loading="lazy" width="290" height="46"></div><h3>Links that stay up to date</h3><p>Every export — Tabletop Simulator sheets, Screentop sheets or separate card images — can be hosted at links that never change. Save your layout and everything using those links gets the new cards.</p></div>
@@ -435,7 +435,6 @@ footer a { color:var(--text-mid); text-decoration:none; }
           <li>Pictures from Dropbox, Google Drive or the web show right in the grid</li>
           <li>Write <b>[tags]</b> in any text — they become words or icons on the cards</li>
           <li>Bold, italic and colours inside a cell, edited in CardBoard or in Sheets</li>
-          <li>Never overwrites a change someone made in Sheets</li>
         </ul>
       </div>
     </div>

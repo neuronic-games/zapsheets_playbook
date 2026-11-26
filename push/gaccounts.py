@@ -144,13 +144,26 @@ def main():
         return 0, None
     def write(rowno, d):
         line = [d.get(h, '') for h in hdr]
-        img = str(d.get('Image', '') or '').strip() if 'Image' in hdr else ''
-        if img: line[hdr.index('Image')] = ''   # written as a formula below
-        if rowno:
+        if rowno and 'Image' in hdr:
+            # The row is written around the Image cell, which is only touched when the picture changed. (Writing the
+            # whole row blanked it for a moment before its =IMAGE() formula went back in: another sign-in reading the
+            # row just then saw no picture and wrote it back empty — the picture was lost.)
+            ii = hdr.index('Image'); r = str(rowno)
+            img = str(d.get('Image', '') or '').strip()
+            was = str(rec(rows[rowno - 2]).get('Image', '') or '').strip() if 0 <= rowno - 2 < len(rows) else None
+            data = []
+            if ii > 0: data.append({'range': q(ws.title) + '!A' + r + ':' + col(ii) + r, 'values': [line[:ii]]})
+            if ii < len(hdr) - 1: data.append({'range': q(ws.title) + '!' + col(ii + 2) + r + ':' + col(len(hdr)) + r, 'values': [line[ii + 1:]]})
+            if data: wb.values_batch_update({'valueInputOption': 'RAW', 'data': data})
+            if img != was:
+                cell = q(ws.title) + '!' + col(ii + 1) + r
+                if img and re.match(r'^https?://[^"\s]+$', img):
+                    wb.values_update(cell, params={'valueInputOption': 'USER_ENTERED'}, body={'values': [['=IMAGE("' + img + '")']]})
+                else:
+                    wb.values_update(cell, params={'valueInputOption': 'RAW'}, body={'values': [[img]]})
+            rows[rowno - 2] = list(line)
+        elif rowno:
             wb.values_update(q(ws.title) + '!A' + str(rowno) + ':' + col(len(hdr)) + str(rowno), params={'valueInputOption': 'RAW'}, body={'values': [line]})
-            if img and re.match(r'^https?://[^"\s]+$', img):
-                ic = col(hdr.index('Image') + 1)
-                wb.values_update(q(ws.title) + '!' + ic + str(rowno), params={'valueInputOption': 'USER_ENTERED'}, body={'values': [['=IMAGE("' + img + '")']]})
         else:
             wb.values_append(q(ws.title) + '!A1', params={'valueInputOption': 'RAW', 'insertDataOption': 'INSERT_ROWS'}, body={'values': [line]})
     def new_person(email, waiting=False):

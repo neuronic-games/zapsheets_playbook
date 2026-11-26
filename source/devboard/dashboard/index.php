@@ -3265,7 +3265,7 @@ function _contractSummaryFor(ref) {   // a contract's Summary by its Ref Number
   return '';
 }
 // The invoices' summaries for a game (newest first), for T&M and payments to pick from; every game's if none
-function _contractSummaries(game) {   // [{s: summary, ref: Ref Number}]
+function _contractSummaries(game, only) {   // [{s: summary, ref: Ref Number}]; only: that game's, even if it has none
   var g = String(game || '').trim().toLowerCase(), mine = [], all = [], seen = {};
   CONTRACT_RAW.slice().reverse().forEach(function(c) {
     if (!c || !/^invoice$/i.test(String(c.Type || '').trim())) return;   // T&M and payouts go with invoices (not estimates or payments)
@@ -3275,7 +3275,7 @@ function _contractSummaries(game) {   // [{s: summary, ref: Ref Number}]
     all.push(it);
     if (g && String(c.Game || '').trim().toLowerCase() === g) mine.push(it);
   });
-  return mine.length ? mine : all;
+  return mine.length || only ? mine : all;
 }
 // The estimates' summaries for a game (newest first), for a new invoice to pick from; every game's if none
 function _estimateSummaries(game) {   // [{s: summary, ref: its Ref Number, amt: its amount}]
@@ -5763,7 +5763,8 @@ function openDashTMDialog(gameName) {
   document.getElementById('dashTMTimeNotes').value    = '';
   document.getElementById('dashTMErr').textContent    = '';
   // T&M belongs to a contract: pick one of this game's (the only one is filled in)
-  _sumSrc.dashTM = _contractSummaries(gameName);
+  _sumSrc.dashTM = _contractSummaries(gameName, true);   // only this game's invoices
+  document.getElementById('dashTMSummary').placeholder = _sumSrc.dashTM.length ? 'Pick a contract’s summary, or type one' : 'No invoices for this game yet — type a summary';
   _dashTMInitialSum = _sumSrc.dashTM.length === 1 ? _sumSrc.dashTM[0].s : '';
   document.getElementById('dashTMSummary').value = _dashTMInitialSum;
   document.getElementById('dashTMSummary').dataset.ref = _sumSrc.dashTM.length === 1 ? _sumSrc.dashTM[0].ref : '';

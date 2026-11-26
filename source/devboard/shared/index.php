@@ -54,7 +54,7 @@ foreach (array_reverse($_contracts_all) as $_c) {
     if (!in_array($_it, $_tm_all, true)) $_tm_all[] = $_it;
     if (strcasecmp(trim((string) ($_c['Game'] ?? '')), $_gameName) === 0 && !in_array($_it, $_tm_contracts, true)) $_tm_contracts[] = $_it;
 }
-if (!$_tm_contracts) $_tm_contracts = $_tm_all;
+// T&M for a game goes with that game's invoices only
 
 // Load people names for tester autocomplete
 $_people_file  = __DIR__ . '/../../../sheets/' . $_sheetId . '/people.json';
@@ -1491,6 +1491,7 @@ function openTMDialog() {
   _tmInitialSum = TM_CONTRACTS.length === 1 ? TM_CONTRACTS[0].s : '';
   document.getElementById('tmSummary').value = _tmInitialSum;
   document.getElementById('tmSummary').dataset.ref = TM_CONTRACTS.length === 1 ? TM_CONTRACTS[0].ref : '';
+  document.getElementById('tmSummary').placeholder = TM_CONTRACTS.length ? 'Pick a contract’s summary, or type one' : 'No invoices for this game yet — type a summary';
   document.getElementById('tmSumCombo').classList.remove('open');
   document.getElementById('tmTimeMinutes').value  = '';
   document.getElementById('tmTimeNotes').value    = '';

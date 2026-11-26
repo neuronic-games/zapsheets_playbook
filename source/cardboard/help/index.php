@@ -258,7 +258,13 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
     <li><b>Make it mine</b> appears when nobody has set the sheet up — click it to take it on. A sheet that belongs to another account just says <b>View only</b>.</li>
     <li>In view only you can browse every card, deck, layout and setting; the editing tools are greyed out and <b>Paste</b> is hidden.</li>
     <li>Connecting a sheet on the CardBoard start page also makes it yours.</li>
+    <li>In view only you can still click an element (on the card or in Layers) to see its settings — nothing can be moved or changed, and dragging from the left panel just says so. <kbd>⌘←</kbd> <kbd>⌘→</kbd> step through the cards.</li>
+    <li>Opening someone’s sheet without an account? The welcome box has <b>View read only</b> to look through the cards without signing in.</li>
   </ul>
+  <h3>Your designs</h3>
+  <p><a href="cardboard">CardBoard</a>’s start page (the logo at the top left takes you there) shows every sheet you’ve set up — with a picture of its first card, when it was last edited and how many decks it has — plus sheets you’ve viewed. Search, sort, open one, or start a new one with <b>+ Design</b>.</p>
+  <h3>Share a view-only link</h3>
+  <p>Menu → <b>Share</b> (the sheet’s owner) makes a link anyone can open to look through the cards and layouts — without signing in, and without seeing your Google Sheet’s address. They can’t change anything. <b>Stop sharing</b> turns the link off. The link always shows what you’ve <b>saved</b>, with your saved Print and Export settings; changes still waiting in your browser show up once they’re saved.</p>
 </section>
 
 <section class="topic" id="screen">
@@ -267,7 +273,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
   <ul>
     <li><b>Tabs</b> at the top: <b>Cards</b>, <b>Tags</b>, <b>Layout</b>, <b>Print</b>, <b>Export</b>.</li>
     <li><b>Save</b> (top right) sends your changes to the sheet — see <a href="cardboard/help#saving">Saving</a>. The round person button opens the <a href="cardboard/help#settings">menu</a>.</li>
-    <li><b>Left panel</b> — the <b>Deck</b> list, then everything you can put on a card: Text, Card fields, Image, Shapes and Generated values. Fold a section by clicking its heading.</li>
+    <li><b>Left panel</b> — the <b>Deck</b> list, then everything you can put on a card: <b>Fixed</b> (Text and Image — the same on every card), <b>Card</b> fields, Shapes and Generated values. Fold a section by clicking its heading.</li>
     <li><b>Middle</b> — the card, with the card navigator, zoom (<b>−</b>, <b>+</b>, <b>Fit</b>) and undo/redo above it. The round button at its top left flips to the <a href="cardboard/help#backs">back</a>.</li>
     <li><b>Right panel</b> — the settings of whatever is selected; with nothing selected, the card's size, background, corners and border. The layers button at its top opens <a href="cardboard/help#layers">Layers</a>.</li>
   </ul>
@@ -297,7 +303,9 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
     <li>Click a cell and start typing to replace it, or double-click (or <kbd>Enter</kbd> / <kbd>F2</kbd>) to edit what's there.</li>
     <li><kbd>Enter</kbd> keeps it and moves down; <kbd>Shift</kbd>+<kbd>Enter</kbd> adds a new line; <kbd>Tab</kbd> moves right; <kbd>Esc</kbd> cancels. Arrow keys move around, <kbd>Delete</kbd> clears.</li>
     <li><b>Formulas</b> show their result, as Sheets does; editing the cell shows the formula.</li>
-    <li>A field shown through a <a href="cardboard/help#mapping">mapping</a> shows what you typed and what the card shows: <em>Fire → 🔥</em>.</li>
+    <li><b>Formatting inside a cell</b> — bold, italic, underline, strikethrough and colour on any words — shows here as on the cards. While you edit a cell, the formatting bar floats above it: select words and click <b>B</b>, <b>I</b>, <b>U</b>, <b>S</b> or a colour (or <kbd>⌘B</kbd> <kbd>⌘I</kbd> <kbd>⌘U</kbd>). <b>[ Tag ]</b> puts a tag from your list where the cursor is. It’s saved into the sheet’s cell, formatting and all.</li>
+    <li><kbd>⌘C</kbd> / <kbd>⌘V</kbd> copy a cell to another with its formatting (and formatted text from Google Sheets keeps its look when pasted).</li>
+    <li>Cells always show the values in your sheet — not mappings, since different elements can map the same field differently.</li>
     <li><b>↶ ↷</b> undo and redo your edits here (<kbd>⌘Z</kbd>, <kbd>⇧⌘Z</kbd>). <b>Reload</b> reads this deck from the sheet again.</li>
   </ul>
   <h3>Find and replace</h3>
@@ -322,12 +330,13 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
     <li><b>Delete</b> a card or column: it disappears straight away and is deleted from the sheet when you save.</li>
   </ul>
   <?= steps([['move-1', 'Press on a card’s number…'], ['move-2', '…drag it up or down; the line shows where it will go.'], ['move-3', 'Let go. The card moves here, in Layout, Print and Export — and in your sheet when you save.']], 'Move a card') ?>
+  <p>The Cards view reads the sheet its own way (every cell as typed, formulas too), so it’s read ahead in the background as soon as a deck’s cards are in. If it isn’t quite ready when you open it, you see the cards straight away, faded, and can edit a moment later.</p>
   <div class="note"><b>Someone else edited the sheet?</b> If a cell changed in Google Sheets after you loaded it, CardBoard won't overwrite it: the cell turns red and shows their value.</div>
 </section>
 
 <section class="topic" id="addcard">
   <h2><span class="n">8</span>Stepping through &amp; adding cards</h2>
-  <p>Above the card in the Layout view: <b>first</b>, <b>previous</b>, the card number, <b>next</b> and <b>last</b> — check your design on every card. Click the card number to type another and press <kbd>Enter</kbd> to go straight to it. The dashed <b>+</b> adds a card right after the one you're on.</p>
+  <p>Above the card in the Layout view: <b>first</b>, <b>previous</b>, the card number, <b>next</b> and <b>last</b> — check your design on every card. Click the card number to type another and press <kbd>Enter</kbd> to go straight to it. <kbd>⌘←</kbd> / <kbd>⌘→</kbd> go to the previous / next card, <kbd>⌘↑</kbd> / <kbd>⌘↓</kbd> to the first / last. The dashed <b>+</b> adds a card right after the one you're on.</p>
   <?= steps([['cardno-1', 'Click the card number and type the card you want.'], ['cardno-2', 'Press <kbd>Enter</kbd> — there it is. (<kbd>Esc</kbd> stays put.)']], 'Go to a card by number') ?>
   <?= steps([['card-nav', 'Click <b>+</b> beside the card navigator.'], ['card-added', 'A blank card appears after this one. Double-click a field on the card to fill it in.']], 'Add a card from the Layout view') ?>
   <p>New cards are kept in this browser until you save; they take their place in the sheet right below the card you added them after.</p>
@@ -341,9 +350,9 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
   <p class="lead">Drag anything from the left panel onto the card. You can also drop a picture file straight onto the card.</p>
   <?= steps([['add-field-1', 'Find the field in the <b>Card</b> list — it shows this card’s value.'], ['add-field-mid', 'Drag it onto the card.'], ['add-field-2', 'Drop it. It’s selected, ready to style in the right panel.']], 'Put a field on the card') ?>
   <div class="cards">
-    <div class="card"><b>Text</b><p>Fixed wording, like a title or rules. Put a field name in braces — <code>{Cost}</code> — to fill it in from each card: <em>“Costs {Cost} gold”</em>.</p></div>
+    <div class="card"><b>Text</b> <span style="opacity:.55;font-weight:400">(Fixed)</span><p>Fixed wording, like a title or rules. Put a field name in braces — <code>{Cost}</code> — to fill it in from each card: <em>“Costs {Cost} gold”</em>.</p></div>
     <div class="card"><b>Card</b><p>One field of your deck (Name, Cost, Art…) — shown as text, a picture, or through a mapping.</p></div>
-    <div class="card"><b>Image</b><p>The same picture on every card: a logo, a frame, an icon.</p></div>
+    <div class="card"><b>Image</b> <span style="opacity:.55;font-weight:400">(Fixed)</span><p>The same picture on every card: a logo, a frame, an icon. Fixed text and pictures can switch to a <a href="cardboard/help#mapping">Mapping</a> too.</p></div>
     <div class="card"><b>Shape</b><p>Rectangle, rounded, circle, line, triangle, diamond, hexagon or star, with fill and outline.</p></div>
     <div class="card"><b>Generated</b><p>A number sequence, a random number, or a pick from a list.</p></div>
   </div>
@@ -357,7 +366,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
       <ul>
         <li><b>Column</b> — which field it shows.</li>
         <li><b>Show as</b> — <b>Text</b>, <b>Image</b> (for a field of picture links) or <b>Mapping</b> (see <a href="cardboard/help#mapping">Mappings</a>).</li>
-        <li><b>Value for row N</b> — this card's value, exactly as typed in the sheet (tags still in brackets). Edit it here, or double-click the field on the card to edit it in place: <kbd>Enter</kbd> keeps it, <kbd>Shift</kbd>+<kbd>Enter</kbd> adds a line, <kbd>Esc</kbd> cancels. It goes to the sheet with your next save.</li>
+        <li><b>Value for row N</b> — this card's value, exactly as typed in the sheet (tags still in brackets). Edit it here, or double-click the field on the card to edit it in place: <kbd>Enter</kbd> keeps it, <kbd>Shift</kbd>+<kbd>Enter</kbd> adds a line, <kbd>Esc</kbd> cancels. While you edit, the formatting bar appears — bold, italic, underline, strikethrough, colours and <b>[ Tag ]</b> — and the formatting is saved into the cell. It goes to the sheet with your next save.</li>
       </ul>
       <h3>The Card list</h3>
       <ul>
@@ -376,9 +385,10 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
   <p>Text, Card fields shown as text, and Generated values share these settings in the right panel:</p>
   <ul>
     <li><b>Font</b> — DIN Black, DIN Medium, Bangers, Cinzel, Lilita One, Merriweather, Roboto Condensed, and standard fonts.</li>
-    <li><b>Size</b> (pt), <b>Line height</b> and <b>Color</b> (recent colors are remembered).</li>
+    <li><b>Size</b> (pt), <b>Line height</b> and <b>Color</b> (recent colors are remembered). Every colour has an <b>Opacity</b> slider, for see-through fills and text.</li>
     <li><b>Style</b> — <b>B</b> bold, <b>I</b> italic, <b>AA</b> all capitals. <b>Align</b> left, centre or right; <b>Vertical</b> top, middle or bottom.</li>
-    <li><b>Background</b> — a fill, border, corner radius and padding around the text: handy for badges and keyword chips.</li>
+    <li><b>Background</b> — a fill, border, corner radius and padding around the text: handy for badges and keyword chips. Padding can be the same on every side, or set for each side.</li>
+    <li><b>Auto</b> width or height (the buttons beside W and H) — the box grows with its words, anchored by its alignment. Dragging that side fixes the size again.</li>
   </ul>
   <p>Text wraps to fit its box. Make the box taller, or the font smaller, if words get cut off.</p>
 </section>
@@ -409,8 +419,11 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
     <li>A value with no row shows as it is (or as its picture, if it's a picture link or a tag).</li>
     <li>Results can be <a href="cardboard/help#tags">tags</a> like <code>[fire]</code>, so changing the tag changes every card.</li>
     <li>Double-click the element on the card to change that card's value.</li>
+    <li><b>Fixed text and pictures</b> can map too: their <b>Show as</b> is <b>Fixed</b> or <b>Mapping</b>. Choosing <b>Fixed</b> again brings back the text or picture they had.</li>
     <li><b>Mappings are remembered for the field</b>, even if you delete the element or set it back to Text: choose <b>Mapping</b> again on any element showing that field and they come back. The Cards view always shows the values as they are in your sheet, since different elements can map the same field differently.</li>
   </ul>
+  <h3>Groups that show only on some cards</h3>
+  <p>Select a group and set <b>Show as → Mapping</b>: pick a column, then click the values the group shows for — say, a treasure frame only on <em>Treasure</em> cards. On other cards it’s left out (in print and exports too). While designing, a hidden group appears faint only while you’ve picked it in Layers.</p>
 </section>
 
 <section class="topic" id="generated">
@@ -460,7 +473,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
       <h3>Groups</h3>
       <ul>
         <li>Select several elements and press <kbd>⌘G</kbd> (or <b>Group</b>). Clicking any member selects the whole group. <kbd>⇧⌘G</kbd> ungroups.</li>
-        <li>Rename a group in its <b>Name</b> box or by double-clicking it in Layers; drag elements in or out of it there. Tick just one row in Layers to change one member.</li>
+        <li>Rename a group in its <b>Name</b> box or by double-clicking it in Layers; drag elements in or out of it there. Tick just one row in Layers — or click a member again once its group is picked — to change one member: dragging and its handles then move and resize just that one.</li>
       </ul>
     </div>
   </div>
@@ -477,7 +490,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
       <p>Click the round flip button at the top left of the card to design the back. It works just like the front, with its own background; the size, corners and border are shared by both sides.</p>
       <ul>
         <li>If nothing on the back changes from card to card, every card shares one back.</li>
-        <li>Add a Card field, a <code>{Field}</code> in text, a mapping or a Generated value, and each card gets its own back.</li>
+        <li>Add a Card field, a <code>{Field}</code> in text, a mapping or a Generated value, and each card gets its own back — <b>Unique backs</b> in Export, where the preview shows the backs sheets too. Tabletop Simulator’s “hidden card” slot (what others see of a card in your hand) is then a plain purple CardBoard card, since no one back fits all.</li>
       </ul>
     </div>
   </div>
@@ -488,10 +501,11 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
   <p class="lead">Write a word in square brackets — <code>[mana]</code> — in any text or cell, and every card shows a picture or text in its place: <em>“Gain 1 [mana]”</em> becomes “Gain 1 💎”.</p>
   <?= shot('tags', 'The Tags view: each tag becomes an icon, a picture or text. The preview shows how it looks.') ?>
   <ol>
-    <li>Open <b>Tags</b> and click <b>+ Add tag</b>, then give it a name (with or without brackets).</li>
-    <li>Choose <b>Text</b> to replace it with words, or <b>Image</b> for a picture: <b>Choose</b> an icon from the library (with a color), upload one, or paste a link.</li>
+    <li>Open <b>Tags</b> and type a name (with or without brackets) in the empty row at the bottom — a new empty row appears below it.</li>
+    <li>Choose <b>Text</b> to replace it with words, or <b>Image</b> for a picture: <b>Choose</b> an icon from the library (with a color — your recent colors are there too), upload one, or paste a link.</li>
   </ol>
-  <p>Tags live in your spreadsheet's <b>tags</b> tab, so you can edit them there too and click <b>Reload</b>. Curly braces stay for fields: <em>“Gain {Amount} [mana]”</em> uses both.</p>
+  <p>Text tags can be formatted: click into the words and the formatting bar appears — bold, italic, underline, strikethrough and colour. In any text you edit, <b>[ Tag ]</b> on the formatting bar inserts a tag from your list.</p>
+  <p>Adding, changing and deleting tags is kept in this browser and saved with everything else. Tags live in your spreadsheet's <b>tags</b> tab (one row per tag, under a <em>Tag / Value</em> heading), so you can edit them there too and click <b>Reload</b>. Curly braces stay for fields: <em>“Gain {Amount} [mana]”</em> uses both.</p>
 </section>
 
 <hr class="sep">
@@ -506,7 +520,11 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
     <li><b>Copies</b> — one of each card, or the number in a field such as <b>Count</b> or <b>Qty</b> (picked automatically when there is one).</li>
     <li><b>Backs</b> — fronts only, or double-sided flipping on the long or short edge to match your printer; each page of backs lines up behind its fronts.</li>
   </ul>
-  <p>Click <b>Print</b> and choose your printer or <b>Save as PDF</b>. Print at 100% (no “fit to page”) so cards come out the right size.</p>
+  <ul>
+    <li>The preview fits a whole page — double-sided shows each front page and its back side by side. <b>Zoom</b> (−, +, <b>Fit</b>), or pinch / <kbd>⌘</kbd> + scroll, to look closer.</li>
+    <li>Your Print (and Export) settings are saved with the sheet, for each deck, so they’re the same on every device and in share links.</li>
+  </ul>
+  <p>Click <b>Print</b> and choose your printer or <b>Save as PDF</b> — or the download button next to it for a PDF of the pages straight away. Print at 100% (no “fit to page”) so cards come out the right size.</p>
 </section>
 
 <section class="topic" id="export">
@@ -525,12 +543,12 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 <!-- ───────────────────────── Saving ───────────────────────── -->
 <section class="topic" id="saving">
   <h2><span class="n">21</span>Saving &amp; working offline</h2>
-  <p class="lead">Everything you change — layouts, cells, new cards, new fields and decks, column order and widths, settings — is kept in this browser as you work, and sent to your Google Sheet when you save.</p>
+  <p class="lead">Everything you change — layouts, cells (and their formatting), new cards, new fields and decks, tags, column order and widths, Print and Export settings — is kept in this browser as you work, and sent to your Google Sheet when you save.</p>
   <?= steps([['save-pending', '<b>Save</b> turns yellow when changes are waiting.'], ['save-saving', 'Saving runs in the background: the button fills as each part is saved, and you can keep working.']], 'Save') ?>
   <ul>
     <li><b>Save</b> (or <kbd>⌘S</kbd>) sends everything at once.</li>
     <li>CardBoard <b>saves by itself</b> as rarely as it can: your changes pile up in this browser and go to the sheet together once you've stopped for a minute and a half (never while you're typing). Changes that have waited 15 minutes go at a shorter pause, and it also saves when this browser's storage starts to fill up. Closing the page or switching apps doesn't lose anything — the changes stay here until they're saved.</li>
-    <li>Until it's saved, a change is only in this browser — other people, exports and hosted links see the last saved version.</li>
+    <li>Until it's saved, a change is only in this browser — other people, share links, exports and hosted links see the last saved version. Clicking into a box and out again without changing anything isn’t a change.</li>
     <li><b>Fetch</b> (menu) reads everything from the sheet again; with unsaved changes it asks whether to save first.</li>
   </ul>
   <h3>Offline</h3>
@@ -601,10 +619,13 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
     <tr><td><kbd>Delete</kbd> · <kbd>Esc</kbd></td><td>Delete the selection · select nothing, or cancel an edit</td></tr>
     <tr><td>Double-click</td><td>Edit text or a field on the card · choose a picture · rename a group in Layers</td></tr>
     <tr><td>Click the card number</td><td>Type a card number and press <kbd>Enter</kbd> to go to it</td></tr>
+    <tr><td><kbd>⌘←</kbd> <kbd>⌘→</kbd> · <kbd>⌘↑</kbd> <kbd>⌘↓</kbd></td><td>Previous / next card · first / last card</td></tr>
+    <tr><td><kbd>⌘B</kbd> <kbd>⌘I</kbd> <kbd>⌘U</kbd></td><td>Bold / italic / underline the selected words while editing text</td></tr>
     <tr class="h"><td colspan="2">Cards view</td></tr>
     <tr><td>Drag a card's number</td><td>Move the card up or down (the row moves in the sheet on Save)</td></tr>
     <tr><td><kbd>Enter</kbd> / <kbd>F2</kbd></td><td>Edit the cell · <kbd>Enter</kbd> again keeps it and moves down</td></tr>
     <tr><td><kbd>Shift</kbd>+<kbd>Enter</kbd> · <kbd>Tab</kbd> · <kbd>Esc</kbd></td><td>New line · keep and move right · cancel</td></tr>
+    <tr><td><kbd>⌘C</kbd> / <kbd>⌘V</kbd></td><td>Copy / paste a cell, with its formatting</td></tr>
   </table>
 </section>
 
@@ -613,6 +634,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
   <ul>
     <li><b>“Couldn't open the sheet”</b> — check it's shared with <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> as an <b>Editor</b>.</li>
     <li><b>Changes made in Google Sheets don't show</b> — menu → <b>Fetch</b>.</li>
+    <li><b>A share link shows old cards</b> — check your changes are saved (the Save button isn’t yellow); the link shows the saved sheet. Reload the link.</li>
     <li><b>It says View only</b> — another account set this sheet up, or nobody has (<b>Make it mine</b>), or your free week has ended (<a href="cardboard/help#plans">Plans</a>).</li>
     <li><b>A picture says “Picture didn't load”</b> — open the link in a private window. Drive files must be shared as “Anyone with the link”; Dropbox links must be shared links.</li>
     <li><b>Text is cut off</b> — make the box bigger, the font smaller, or the padding less.</li>

@@ -140,8 +140,9 @@ Last updated: 2026-11-26.
 - **Toy Run (CardBoard)**: the person is pasting Dropbox links into the Card Image column of "Char - Neighbor"; the
   back's rage-frame image element needs a link to `frame_rage.png`. Power Number has no white outline (CardBoard
   text has no outline). Fonts stand in: Roboto Condensed for Oswald, DIN Medium for Eurostile.
-- **CardBoard help** doesn't yet cover: formatting inside cells, Auto width/height, per-side padding, the Fetch
-  change. The CardBoard Settings help screenshot still shows the old Plan row.
+- **CardBoard help**: text is up to date (2026-11-26: formatting, tags, share links, designs page, print zoom/PDF,
+  mappings for fixed elements and groups, Auto size, padding). Screenshots weren't retaken — several (Tags, Print,
+  Settings, the left panel's old Text / Image sections) show the older look.
 - Earlier offers not taken up (only if asked): split collaborator T&M by contract; bio fields in Pb Profile; centre
   the session chevron; "Remake slip" for payments; restyle the TM/Pulse/Note setup pages; a marker for newly added
   payments in Activity.

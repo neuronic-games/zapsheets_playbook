@@ -196,9 +196,21 @@ def main():
         if not name or name.lower() in (TAB, TAGS_TAB): out({'error': 'That name can\'t be used for a deck'})
         if any(w.title.lower() == name.lower() for w in sheets): out({'ok': True, 'existed': True})
         try:
-            wb.add_worksheet(title=name, rows=200, cols=10)
+            nws = wb.add_worksheet(title=name, rows=200, cols=10)
         except Exception as e:
             out({'error': 'Couldn\'t add the tab: ' + str(e)})
+        try:   # the heading row: frozen, CardBoard purple with white bold text
+            wb.batch_update({'requests': [
+                {'updateSheetProperties': {'properties': {'sheetId': nws.id, 'gridProperties': {'frozenRowCount': 1}},
+                                           'fields': 'gridProperties.frozenRowCount'}},
+                {'repeatCell': {'range': {'sheetId': nws.id, 'startRowIndex': 0, 'endRowIndex': 1},
+                                'cell': {'userEnteredFormat': {'backgroundColor': {'red': .29, 'green': .247, 'blue': .659},
+                                         'textFormat': {'bold': True, 'foregroundColor': {'red': 1, 'green': 1, 'blue': 1}},
+                                         'verticalAlignment': 'MIDDLE'}},
+                                'fields': 'userEnteredFormat(backgroundColor,textFormat,verticalAlignment)'}},
+            ]})
+        except Exception:
+            pass
         out({'ok': True})
 
     if action in ('tags', 'settag', 'deltag'):

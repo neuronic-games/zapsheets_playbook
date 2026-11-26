@@ -72,6 +72,21 @@ if ($type === 'subscription') {
     $who = cbReadToken(cbRequestToken());
     if (!$who && ($app === 'cardboard' || $app === 'all')) stripeFail('Sign in with your GameBoard account first');
     if ($who && $app === 'all' && !empty($who['all'])) stripeFail('You already have the all-in-one — every app is yours');
+    // While the Waiting Room is on, no subscribing to an app the person hasn't been invited to (nor the all-in-one,
+    // which would open those apps too). Checked against the Admin sheet as it is now, not the sign-in's copy.
+    if ($who) {
+        $room = cbAdmin(['action' => 'room', 'email' => $who['e']]);
+        if (!empty($room['room']) && !empty($room['user'])) {
+            $acc = cbAccessFromUser($room['user']);
+            foreach ($app === 'all' ? array_keys(GB_APP_COLS) : [$app] as $a) {
+                if (array_key_exists($a, GB_APP_COLS) && gbAppAccess($acc, $a)['st'] === 'uninvited') {
+                    stripeFail($app === 'all'
+                        ? 'The all-in-one opens when you’ve been invited to every app — we’ll email you when you can use them.'
+                        : 'You can subscribe to ' . GB_APP_COLS[$a] . ' once you’ve been invited to it — we’ll email you when you can use it.');
+                }
+            }
+        }
+    }
     if ($who) {
         $params['customer_email']                          = $who['e'];
         $params['metadata[cb_email]']                      = $who['e'];

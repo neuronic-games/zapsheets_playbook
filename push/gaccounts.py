@@ -224,6 +224,8 @@ def main():
     if not email or '@' not in email: out({'error': 'Missing email'})
     n, u = find('Email', email)
 
+    if action == 'room':   # read only: the person's row as it is now, and whether the Waiting Room is on (checkout)
+        out({'ok': True, 'user': u or {}, 'room': waiting_room_on()})
     if action == 'user':
         if not u: u = new_person(email, bool(data.get('signup')) and waiting_room_on())
         elif not is_waiting(u) and not str(u.get('Trial Start', '')).strip() and not str(u.get('Trial End', '')).strip() and not str(u.get('Trial Apps', '')).strip():

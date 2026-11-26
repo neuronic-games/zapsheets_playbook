@@ -78,6 +78,9 @@ Last updated: 2026-11-26.
     (`js/gb-uninvited.js`) covers those apps; the server refuses them (`gbGate`, `cbRequireAccess`,
     `gbBlockUninvited()` in setupSheet / setupDevboard / pushSheet / cardboardSheets / CardBoard reads).
   - Changing Status by hand in the sheet still works: the free week of every app starts at the next sign-in.
+  - **No subscribing to an uninvited app while the room is on** (decided 2026-11-26): `stripeCheckout.php` asks
+    `gaccounts.py` (`action: room` → the row as it is now + WaitingRoomOn) and refuses an app the person is
+    `uninvited` to, and the all-in-one if any app is. With the room off, checkout works as before.
 
 ## 5. CardBoard — newer parts
 
@@ -125,8 +128,6 @@ Last updated: 2026-11-26.
 
 ## 8. Open items
 
-- **Uninvited apps and paying**: should an app the person wasn't invited to (Waiting Room) still let them
-  subscribe? Today the uninvited screen blocks the app, so they can't reach the plans. Waiting on the person.
 - **Toy Run (CardBoard)**: the person is pasting Dropbox links into the Card Image column of "Char - Neighbor"; the
   back's rage-frame image element needs a link to `frame_rage.png`. Power Number has no white outline (CardBoard
   text has no outline). Fonts stand in: Roboto Condensed for Oswald, DIN Medium for Eurostile.

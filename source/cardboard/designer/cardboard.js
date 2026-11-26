@@ -459,7 +459,10 @@ function renderCardHTML(lay, row, designing, ctx) {
   // A group with a Mapping shows only on cards whose value is one of its values (faint while designing, so it can still be picked)
   var off = {};
   (face.groups || []).forEach(function(g) { if (!groupShows(g, row)) off[g.id] = 1; });
-  var sorted = face.els.filter(function(e) { return designing || !(e.group && off[e.group]); }).sort(function(a, b) { return (a.z || 1) - (b.z || 1); });
+  // …and while designing, only once it (or one of its members) is picked in the Layers list
+  var picked = designing ? selIdsNow() : [];
+  Object.keys(off).forEach(function(gid) { if (!face.els.some(function(e) { return e.group === gid && picked.indexOf(e.id) >= 0; })) off[gid] = 2; });
+  var sorted = face.els.filter(function(e) { return !(e.group && off[e.group] && (!designing || off[e.group] === 2)); }).sort(function(a, b) { return (a.z || 1) - (b.z || 1); });
   sorted.forEach(function(e) {
     var g = e.group && lists[e.group];
     if (!g) { h += elHTML(e); return; }
@@ -2519,7 +2522,7 @@ function groupWhenAttrs(gid, g) {
                     : '<span class="muted">No values in this column yet.</span>') + '</div>';
   var row = ROWS[rowIdx];
   h += '<p class="muted" style="margin:.35rem 0 0">' + (!on.length ? 'Pick one or more values — until then the group shows on no card.'
-       : row ? 'This card’s ' + esc(w.field) + ' is <b>' + esc(cleanVal(row[w.field]).trim() || 'empty') + '</b>, so the group ' + (groupShows(g, row) ? 'shows.' : 'is hidden (faint here while you design).') : '') + '</p>';
+       : row ? 'This card’s ' + esc(w.field) + ' is <b>' + esc(cleanVal(row[w.field]).trim() || 'empty') + '</b>, so the group ' + (groupShows(g, row) ? 'shows.' : 'is hidden (shown faint here only while it’s picked).') : '') + '</p>';
   return h + '</div>';
 }
 function setGroupWhen(gid, on) {

@@ -427,6 +427,12 @@ function elInner(e, row, ctx) {
   }
   return '';
 }
+// How many times a repeated element or group is drawn on a card: a fixed number, or a column's value (0–60)
+function repCount(rep, row) {
+  if (!rep) return 1;
+  var n = rep.field ? (row ? parseInt(cleanVal(row[rep.field]), 10) : 1) : +rep.n;
+  return isNaN(n) ? 0 : Math.max(0, Math.min(60, Math.round(n)));
+}
 // Where a list group sits: from its top-left corner, or — placed from an edge (g.rx / g.ry) — from that edge, so a
 // list that's longer on some cards grows away from it. g.ww / g.hh: its drawn size when it was placed there.
 function listPlace(g, bb, card) {
@@ -475,7 +481,31 @@ function renderCardHTML(lay, row, designing, ctx) {
   var picked = designing ? selIdsNow() : [];
   Object.keys(off).forEach(function(gid) { if (!face.els.some(function(e) { return e.group === gid && picked.indexOf(e.id) >= 0; })) off[gid] = 2; });
   var sorted = face.els.filter(function(e) { return !(e.group && off[e.group] && (!designing || off[e.group] === 2)); }).sort(function(a, b) { return (a.z || 1) - (b.z || 1); });
+  var reps = {}; (face.groups || []).forEach(function(g) { if (g.rep) reps[g.id] = g; });
+  // Repeated: an element (or a whole group) drawn n times side by side or one under another, from its corner
+  function repWrap(rep, x, y, z, attr, inner, n) {
+    var gap = rep.gap == null ? 2 : +rep.gap || 0, out = '';
+    for (var i = 0; i < Math.max(n, designing ? 1 : 0); i++) out += i ? inner.replace(/^<div class="/, '<div class="rep-copy ') : inner;
+    return '<div class="el-rep rep-' + (rep.dir === 'v' ? 'v' : 'h') + (designing && !n ? ' rep-none' : '') + '" ' + attr + ' style="left:' + x + 'pt;top:' + y + 'pt;z-index:' + (z || 1) + ';gap:' + gap + 'pt">' + out + '</div>';
+  }
   sorted.forEach(function(e) {
+    var rg = e.group && reps[e.group];
+    if (rg) {   // a repeated group: its members (as a list, if it is one) in a block, the block repeated
+      var gm = sorted.filter(function(x) { return x.group === rg.id; });
+      if (gm[gm.length - 1] !== e) return;
+      var b0 = cornerBox(gm), x2 = -Infinity, y2 = -Infinity;
+      gm.forEach(function(x) { x2 = Math.max(x2, x.x + x.w); y2 = Math.max(y2, x.y + x.h); });
+      var body = lists[rg.id]
+        ? '<div class="el-list list-' + rg.list + '" data-g="' + rg.id + '" style="left:' + b0.x + 'pt;top:' + b0.y + 'pt;gap:' + (rg.gap == null ? 4 : +rg.gap || 0) + 'pt;align-items:' + { start: 'flex-start', center: 'center', end: 'flex-end' }[listAlign(rg)] + '">' + gm.slice().reverse().map(function(x) { return elHTML(x, rg.list); }).join('') + '</div>'
+        : gm.map(function(x) { return elHTML(x); }).join('');
+      var block = '<div class="rep-block" style="width:' + r1(x2 - b0.x) + 'pt;height:' + r1(y2 - b0.y) + 'pt"><div class="rep-shift" style="left:' + (-b0.x) + 'pt;top:' + (-b0.y) + 'pt">' + body + '</div></div>';
+      h += repWrap(rg.rep, b0.x, b0.y, e.z, 'data-repg="' + rg.id + '"', block, repCount(rg.rep, row));
+      return;
+    }
+    if (e.rep && !e.group) {
+      var one = elHTML(e); if (one) one = one.replace(/transform:translate\([^)]*\) ?/, 'transform:');
+      h += repWrap(e.rep, e.x, e.y, e.z, 'data-rep="' + e.id + '"', one, repCount(e.rep, row)); return;
+    }
     var g = e.group && lists[e.group];
     if (!g) { h += elHTML(e); return; }
     var members = sorted.filter(function(x) { return x.group === g.id; });
@@ -1875,7 +1905,9 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
       });
       var bx = $('cardHolder').querySelector('.sel-box'), b2 = selBox(group);
       if (bx && b2) { bx.style.left = b2.x + 'pt'; bx.style.top = b2.y + 'pt'; }
+      $('cardHolder').querySelectorAll('.el-rep[data-repg]').forEach(function(l) { var c0 = cornerBox(groupMembers(l.dataset.repg)); l.style.left = c0.x + 'pt'; l.style.top = c0.y + 'pt'; });
       $('cardHolder').querySelectorAll('.el-list').forEach(function(l) {   // a list group moves from its corner
+        if (l.closest('.el-rep')) return;
         var gm = groupMembers(l.dataset.g), lg = groupById(l.dataset.g); if (!gm.length || !lg) return;
         var keepT = l.style.zIndex + '|' + l.style.gap + '|' + l.style.alignItems;
         l.setAttribute('style', listPlace(lg, cornerBox(gm), layout.card)); var kt = keepT.split('|'); l.style.zIndex = kt[0]; l.style.gap = kt[1]; l.style.alignItems = kt[2];
@@ -1903,6 +1935,7 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
       else { node.style.left = e.x + 'pt'; node.style.top = e.y + 'pt'; node.style.width = e.w + 'pt'; node.style.height = e.h + 'pt'; }
       if (e.kind === 'shape' && handle) node.querySelector('.el-inner').innerHTML = shapeSVG(e);
     }
+    var rw = $('cardHolder').querySelector('.el-rep[data-rep="' + e.id + '"]'); if (rw) { rw.style.left = e.x + 'pt'; rw.style.top = e.y + 'pt'; }
     syncGeomInputs(e);
   }
   var wasSel = group && unit.every(function(id) { return group.some(function(x) { return x.id === id; }); }) && multi.length > unit.length;
@@ -2721,6 +2754,7 @@ function multiAttrs() {
     if (mode) h += '<p class="muted" style="margin:.35rem 0 0">In the Layers order, top first — drag there to reorder. Empty text and pictures take no room.</p>';
   }
   if (g) h += groupWhenAttrs(gid, g);
+  if (g) h += repeatAttrs('g', gid, g.rep);
   h += actionsHTML(g ? 'ungroup' : 'group');
   h += '<span class="lbl">Shortcuts</span><p class="muted" style="margin:0">⌘G group · ⇧⌘G ungroup · ⌘A select all · Shift or ⌘-click to add to the selection</p>';
   return h;
@@ -2775,6 +2809,49 @@ function toggleGroupWhenVal(gid, v) {
   snapshot(); var k = v.toLowerCase(), l = (g.when.values || []).filter(function(x) { return String(x).toLowerCase() !== k; });
   if (l.length === (g.when.values || []).length) l.push(v);
   g.when.values = l; changed(); renderAttrs();
+}
+// ── Repeat: an element (not in a group) or a whole group drawn several times, a fixed number or a column's value ──
+function repTarget(kind, id) { return kind === 'g' ? groupById(id) : elById(id); }
+function repeatAttrs(kind, id, rep) {
+  var a = '\'' + kind + '\',\'' + id + '\'', mode = !rep ? '' : rep.field ? 'field' : 'n';
+  var h = '<span class="lbl">Repeat</span><div class="seg">' +
+    '<button type="button" class="' + (mode ? '' : 'on') + '" title="Drawn once" onclick="setRepeat(' + a + ',\'\')">Once</button>' +
+    '<button type="button" class="' + (mode === 'n' ? 'on' : '') + '" title="Drawn the same number of times on every card" onclick="setRepeat(' + a + ',\'n\')">Times</button>' +
+    '<button type="button" class="' + (mode === 'field' ? 'on' : '') + '" title="Drawn as many times as a column says on each card" onclick="setRepeat(' + a + ',\'field\')">Column</button></div>';
+  if (!mode) return h;
+  h += '<div class="map-box" style="--n:' + (mode === 'n' ? 2 : 3) + '"><div class="row2">';
+  if (mode === 'n') h += '<div><span class="mini">Times</span><input class="inp" type="number" min="0" max="60" step="1" value="' + (+rep.n || 0) + '" onchange="setRepeatProp(' + a + ',\'n\',this.value)"></div>';
+  else h += '<div><span class="mini">Column</span><select class="sel" onchange="setRepeatProp(' + a + ',\'field\',this.value)">' +
+    FIELDS.map(function(f) { return '<option' + (f === rep.field ? ' selected' : '') + '>' + esc(f) + '</option>'; }).join('') + (FIELDS.indexOf(rep.field) < 0 ? '<option selected>' + esc(rep.field) + '</option>' : '') + '</select></div>';
+  h += '<div><span class="mini">Gap (pt)</span><input class="inp" type="number" step=".5" value="' + r1(rep.gap == null ? 2 : rep.gap) + '" onchange="setRepeatProp(' + a + ',\'gap\',this.value)"></div></div>';
+  h += '<span class="mini" style="margin-top:.45rem">Direction</span><div class="seg">' +
+    '<button type="button" class="' + (rep.dir === 'v' ? '' : 'on') + '" onclick="setRepeatProp(' + a + ',\'dir\',\'h\')">Side by side</button>' +
+    '<button type="button" class="' + (rep.dir === 'v' ? 'on' : '') + '" onclick="setRepeatProp(' + a + ',\'dir\',\'v\')">One under another</button></div>';
+  var row = ROWS[rowIdx];
+  if (mode === 'field') h += '<p class="muted" style="margin:.35rem 0 0">' + (row ? 'This card’s ' + esc(rep.field) + ' is <b>' + esc(cleanVal(row[rep.field]).trim() || 'empty') + '</b>, so it’s drawn ' + repCount(rep, row) + (repCount(rep, row) === 1 ? ' time' : ' times') + '. ' : '') + 'Up to 60; anything not a number counts as 0.</p>';
+  return h + '</div>';
+}
+function setRepeat(kind, id, mode) {
+  var t = repTarget(kind, id); if (!t) return;
+  var cur = !t.rep ? '' : t.rep.field ? 'field' : 'n'; if (cur === mode) return;
+  snapshot();
+  if (!mode) delete t.rep;
+  else {
+    var keep = t.rep || {}, r = { dir: keep.dir || 'h' }; if (keep.gap != null) r.gap = keep.gap;
+    if (mode === 'n') r.n = 3; else r.field = repColumnGuess();
+    t.rep = r;
+  }
+  changed(); renderAttrs();
+}
+function repColumnGuess() {   // a column whose values are small numbers (Count, Power…), else the first
+  var row = ROWS[rowIdx] || {};
+  return FIELDS.filter(function(f) { return /^\s*\d{1,2}\s*$/.test(cleanVal(row[f])); })[0] || FIELDS[0] || '';
+}
+function setRepeatProp(kind, id, key, val) {
+  var t = repTarget(kind, id); if (!t || !t.rep) return;
+  if (key === 'n' || key === 'gap') { val = parseFloat(val); if (isNaN(val)) return; if (key === 'n') val = Math.max(0, Math.min(60, Math.round(val))); }
+  if (t.rep[key] === val) return;
+  snapshot(); t.rep[key] = val; changed(); renderAttrs();
 }
 function setGroupList(gid, mode) {
   var g = groupById(gid); if (!g || (g.list || '') === mode) return;
@@ -3237,6 +3314,7 @@ function _renderAttrs() {
   if (canAuto && (e.autoW || e.autoH)) h += '<p class="muted" style="margin:.3rem 0 0">Auto ' + (e.autoW && e.autoH ? 'width and height' : e.autoW ? 'width' : 'height') + ': the box fits each card\'s text, growing from its ' + (e.autoW ? ({ left: 'left side', center: 'middle', right: 'right side' }[e.align || 'left']) : '') + (e.autoW && e.autoH ? ' and ' : '') + (e.autoH ? ({ top: 'top', middle: 'middle', bottom: 'bottom' }[e.valign || 'top']) : '') + '. Drag a side to fix its size.</p>';
   h += '<div class="row2" style="margin-top:.45rem">' + numInp('a_rot', 'Rotate (°)', e.rot || 0, 'setProp', 'rot', 1) +
        '<div><span class="mini">Opacity</span><input class="inp" type="number" min="0" max="100" step="5" value="' + Math.round((e.opacity == null ? 1 : e.opacity) * 100) + '" onchange="setProp(\'opacity\',clamp(this.value/100,0,1),true)"></div></div>';
+  if (!e.group) h += repeatAttrs('e', e.id, e.rep);
   h += actionsHTML();
   p.innerHTML = h;
   var slot = $('imgSlot');

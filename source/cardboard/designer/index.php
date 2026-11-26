@@ -383,6 +383,14 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .el-list.list-h { flex-direction:row; align-items:center; }
 .el-list.list-v { flex-direction:column; align-items:flex-start; }
 .el-list > .el.in-list { position:relative; left:auto !important; top:auto !important; flex:0 0 auto; }
+/* Repeated elements and groups: copies side by side (rep-h) or one under another (rep-v) */
+.el-rep { position:absolute; display:flex; align-items:flex-start; }
+.el-rep.rep-h { flex-direction:row; } .el-rep.rep-v { flex-direction:column; }
+.el-rep > .el { position:relative; left:auto !important; top:auto !important; flex:0 0 auto; }
+.el-rep > .rep-block { position:relative; flex:0 0 auto; }
+.el-rep .rep-shift { position:absolute; }
+.el-rep .rep-copy .hdl, .el-rep > .rep-copy > .hdl { display:none; }
+.designing .el-rep.rep-none { opacity:.3; }
 .designing .el-list.picked { outline:calc(1.5px / var(--z)) dashed #4b3fa8; outline-offset:calc(2px / var(--z)); z-index:50 !important; }
 .arr-row { display:flex; gap:.45rem; align-items:stretch; }
 .arr-row .seg button { display:flex; align-items:center; justify-content:center; height:2.1rem; padding:0 .55rem; }

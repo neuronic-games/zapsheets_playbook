@@ -335,7 +335,9 @@ function elStyle(e, card) {
     var ay = !ah ? e.y : va === 'middle' ? e.y + e.h / 2 : va === 'bottom' ? e.y + e.h : e.y;
     var tx = !aw ? 0 : al === 'center' ? -50 : al === 'right' ? -100 : 0, ty = !ah ? 0 : va === 'middle' ? -50 : va === 'bottom' ? -100 : 0;
     var maxW = al === 'center' ? Math.min(ax, c.w - ax) * 2 : al === 'right' ? ax : c.w - ax;
+    var pad = e.pad == null ? 2 : +e.pad || 0;
     var sa = 'left:' + r1(ax) + 'pt;top:' + r1(ay) + 'pt;z-index:' + (e.z || 1) + ';' +
+             '--minh:' + r1((e.size || 12) * (e.lh || 1.15) + 2 * pad) + 'pt;' +   // while designing, an empty Auto box keeps one line (to see and pick it)
              (aw ? 'width:max-content;max-width:' + r1(Math.max(12, maxW)) + 'pt;' : 'width:' + e.w + 'pt;') +
              (ah ? 'height:auto;' : 'height:' + e.h + 'pt;');
     var tf = (tx || ty ? 'translate(' + tx + '%,' + ty + '%) ' : '') + (e.rot ? 'rotate(' + e.rot + 'deg)' : '');
@@ -424,7 +426,7 @@ function renderCardHTML(lay, row, designing, ctx) {
     var inner = elInner(e, row, ctx);
     // In a list, a text or picture with nothing to show takes no room at all
     if (list && (inner === '' || (isTextLike(e) && !/<(img|svg)\b/.test(inner) && !inner.replace(/<[^>]*>/g, '').trim()))) return '';
-    var cls = 'el k-' + e.kind + (dataIsImage(e) || (e.kind === 'data' && e.as === 'map' && mapPicture(e, row)) ? ' as-image' : '') + (e.valign === 'middle' ? ' v-middle' : e.valign === 'bottom' ? ' v-bottom' : '') + (designing && isSel(e.id) ? ' picked' + (multi.length ? ' multi' : '') : '');
+    var cls = 'el k-' + e.kind + (hasAuto(e) ? (e.autoW ? ' auto-w' : '') + (e.autoH ? ' auto-h' : '') : '') + (dataIsImage(e) || (e.kind === 'data' && e.as === 'map' && mapPicture(e, row)) ? ' as-image' : '') + (e.valign === 'middle' ? ' v-middle' : e.valign === 'bottom' ? ' v-bottom' : '') + (designing && isSel(e.id) ? ' picked' + (multi.length ? ' multi' : '') : '');
     if (designing && UPLOADING[e.id]) cls += ' img-loading';
     if (keyIds.indexOf(e.id) >= 0) cls += ' key';
     if (e.group && off[e.group]) cls += ' when-off';

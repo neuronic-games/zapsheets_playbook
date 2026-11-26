@@ -2158,8 +2158,11 @@ var BIO_PAYMENT   = <?= json_encode((object) array_filter(array_reduce($_bios, f
   $e = strtolower(ltrim(trim((string) ($b['Email'] ?? '')), "'")); if ($e !== '') $m[$e] = ltrim(trim((string) ($b['Payment'] ?? '')), "'"); return $m; }, [])), JSON_UNESCAPED_UNICODE) ?>;
 var TODOS_RAW     = <?= json_encode(array_values($_todos_raw), JSON_UNESCAPED_UNICODE) ?>;
 var ESTIMATES_RAW = <?= json_encode(array_values($_estimates_raw), JSON_UNESCAPED_UNICODE) ?>;
-// Older PDF links point at zapsheets.com: the same file is here, on this site's own domain
+// A link as the sheet gives it — "[text](url)" when the cell is a link (a URL typed in, or one Sheets turned into a
+// link) — becomes the plain address. Older PDF links point at zapsheets.com: the same file is here, on this site's own domain.
 function _dbSameSite(u) {
+  var md = /^\s*\[[^\]]*\]\(\s*([^)\s]+)\s*\)\s*$/.exec(String(u || ''));
+  if (md) u = md[1];
   var m = /^https?:\/\/(?:www\.)?zapsheets\.com\/(?:[^?#]*\/)?(shares\/contracts\/[A-Za-z0-9]+)\/?$/i.exec(String(u || '').trim());
   if (!m || /(^|\.)zapsheets\.com$/i.test(location.hostname)) return u;
   try { return new URL(APP_BASE + m[1], location.href).href; } catch (e) { return u; }
@@ -3038,7 +3041,7 @@ function renderPublishersView() {
         }
         if (notes) html += '<div class="contract-detail-notes">' + esc(notes) + '</div>';
         // Share + Delete button row
-        var conFilesUrl = (con.Files || '').trim();
+        var conFilesUrl = _dbSameSite((con.Files || '').trim());
         var conType     = (con.Type || '').trim() || 'Contract';
         html += '<div class="contract-del-row" id="cdel-row-' + dataIdx + '">';
         if (conFilesUrl) {
@@ -3223,6 +3226,7 @@ function _payMakeSlip(idx, btn, done, fail) {
 // Payment Slip: a tab opens straight away (so it isn't blocked), and shows the slip once it's made
 function _payOpenSlip(idx) {
   var pay = CONTRACT_RAW[idx]; if (!pay) return;
+  if (pay.Files) pay.Files = _dbSameSite(pay.Files);
   if (pay.Files && !pay._slipStale) { window.open(pay.Files, '_blank'); return; }   // made already: straight there
   var win = window.open('', '_blank');
   if (win) win.document.write('<p style="font:16px -apple-system,Arial,sans-serif;color:#666;padding:2rem">Making the payment slip…</p>');
@@ -3436,6 +3440,7 @@ function submitPayment() {
     .then(function(r) { return r.json(); })
     .then(function(j) {
       if (!j || !j.ok) { _tab.close(); fail((j && j.error) || 'Save failed.'); return; }
+      if (j.row && j.row.Files) j.row.Files = _dbSameSite(j.row.Files);
       _tab.go(j.row && j.row.Files);
       var _have = CONTRACT_RAW.some(function(c) { return c && j.row && String(c['Ref Number'] || '') === String(j.row['Ref Number'] || ''); });
       if (!_have) CONTRACT_RAW.push(j.row);
@@ -3750,7 +3755,7 @@ function submitEstimate() {
       }
       // Add to in-memory list and re-render
       if (j.estimate_record) ESTIMATES_RAW.push(j.estimate_record);
-      if (j.contract_record) CONTRACT_RAW.push(j.contract_record);
+      if (j.contract_record) { if (j.contract_record.Files) j.contract_record.Files = _dbSameSite(j.contract_record.Files); CONTRACT_RAW.push(j.contract_record); }
       forceCloseEstimateDialog();
       renderPublishersViewKeepOpen();
       // Open in new tab
@@ -3949,7 +3954,7 @@ function submitInvoice() {
       // Add to ESTIMATES_RAW so it shows without reload
       if (j.invoice_record) {
         ESTIMATES_RAW.push(j.invoice_record);
-        if (j.contract_record) CONTRACT_RAW.push(j.contract_record);
+        if (j.contract_record) { if (j.contract_record.Files) j.contract_record.Files = _dbSameSite(j.contract_record.Files); CONTRACT_RAW.push(j.contract_record); }
         renderPublishersViewKeepOpen();
       }
       // Open the new invoice sheet
@@ -5293,7 +5298,7 @@ function submitStandaloneInvoice() {
     .then(function(j) {
       if (j && j.ok) {
         if (j.invoice_record) ESTIMATES_RAW.push(j.invoice_record);
-        if (j.contract_record) CONTRACT_RAW.push(j.contract_record);
+        if (j.contract_record) { if (j.contract_record.Files) j.contract_record.Files = _dbSameSite(j.contract_record.Files); CONTRACT_RAW.push(j.contract_record); }
         forceCloseStandaloneInvoiceDialog();
         renderPublishersViewKeepOpen();
         if (j.url) window.open(j.url, '_blank');

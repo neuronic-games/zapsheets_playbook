@@ -88,6 +88,7 @@ if (!empty($result['ok'])) {
         foreach ($rows as $r) {
             if ((string)($r['Ref Number'] ?? '') === (string)$contractId) {
                 $fileUrl = $r['Files'] ?? '';
+                if (preg_match('/^\s*\[[^\]]*\]\(\s*([^)\s]+)\s*\)\s*$/', $fileUrl, $mm)) $fileUrl = $mm[1];   // a link cell: "[text](url)"
                 break;
             }
         }

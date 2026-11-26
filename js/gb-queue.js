@@ -10,6 +10,9 @@
  *                  extraPending: fn, beforeSave: fn })       // a change not handed over yet (counts for the button) / hand it over
  *   GBQueue.put(url, formData, key) — keep a change made by the page itself; a newer one with the same key replaces it
  *   GBQueue.remove(key)             — drop a kept change (Cancel)
+ *   GBQueue.items('updateGame')     — the changes kept for an endpoint, oldest first, as {field: value} — so a page
+ *                                     that loads data from the server can show them on top of it before they're saved
+ *   saveBeforeLeaving: true         — a link to a page the server builds (a game page, a sell sheet…) saves first
  *
  * How it works, without changing the page's own code:
  *  - A call to one of the `queue` endpoints isn't sent: it's kept (localStorage, per sheet) and answered at once
@@ -190,6 +193,19 @@
   // Another tab of the same sheet saved or kept changes: follow it
   window.addEventListener('storage', function(e) { if (KEY && e.key === KEY) { load(); updateBtn(); } });
 
+  // A link to another page of this site (the game page, a sell sheet, the slideshow…) shows what the server has:
+  // with changes kept here, save them first, then go
+  document.addEventListener('click', function(e) {
+    if (!O.saveBeforeLeaving || !KEY || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var a = e.target.closest && e.target.closest('a[href]'); if (!a || a.hasAttribute('download')) return;
+    var u; try { u = new URL(a.getAttribute('href'), document.baseURI); } catch (x) { return; }
+    if (u.origin !== location.origin || /\/push\//.test(u.pathname) || (u.pathname === location.pathname && u.hash)) return;
+    load(); if (!Q.length) return;
+    e.preventDefault();
+    var w = a.target === '_blank' ? window.open('', '_blank') : null;   // opened now, while it's a click (else it's blocked)
+    toast('Saving your changes first…');
+    save(true).then(function() { if (w) w.location.href = u.href; else location.href = u.href; });
+  }, false);
   window.GBQueue = {
     init: function(opts) {
       O = opts || {}; if (!O.sheet || !O.app) return window.GBQueue;
@@ -203,13 +219,22 @@
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
       return window.GBQueue;
     },
-    save: function() { return save(false); },
+    save: function(quiet) { return save(quiet === true ? true : false); },
     put: function(url, fd, key) { if (!KEY) return false; var b = pack(fd); if (!b) return false; add(url, b, key); return true; },
     remove: function(key) { load(); var n = Q.length; Q = Q.filter(function(x) { return x.k !== key; }); if (Q.length !== n) keep(); },
     has: function(key) { load(); return Q.some(function(x) { return x.k === key; }); },
     refresh: function() { load(); updateBtn(); },
     active: function() { return !!KEY && canKeep(); },   // changes are being kept (signed in, may edit)
     pending: function() { load(); return Q.length; },
+    items: function(ep) {
+      load();
+      return Q.filter(function(x) { return endpoint(x.u) === ep; }).map(function(x) {
+        var d = {};
+        if (x.b && x.b.t === 'form') x.b.d.forEach(function(p) { d[p[0]] = p[1]; });
+        else if (x.b && x.b.t === 'text' && window.URLSearchParams) new URLSearchParams(x.b.d).forEach(function(v, k) { d[k] = v; });
+        return d;
+      });
+    },
     saving: function() { return !!_saving; }
   };
 })();

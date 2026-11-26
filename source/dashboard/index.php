@@ -83,7 +83,7 @@ if ($_sheet_id && is_dir($_sheets_root)) {
 <base href="<?= htmlspecialchars($_base, ENT_QUOTES) ?>" />
 <script src="js/activationKey.js" defer></script>
 <script src="js/gb-account.js?v=16"></script>
-<script src="js/gb-queue.js?v=2"></script>
+<script src="js/gb-queue.js?v=3"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PitchBoard</title>
@@ -4437,6 +4437,7 @@ function render(pitches, settings, people, games) {
     var name = (g.Name||'').trim();
     if (name) gamesIndex[name] = g;
   });
+  _pbApplyKeptGames();
 
   allPitches = (pitches||[])
     .filter(function(r){ return r.Date || r.Publisher || r.Game; })
@@ -4645,6 +4646,35 @@ function goToGame(gameName) {
   setView('game');
   _expandCardByTitle(gameName);
 }
+// Game changes kept in this browser (not saved to the sheet yet) go on top of what the server sent, so every
+// link and field shows them — after a reload, or coming back from the game page — until they're saved
+var PB_GAME_FIELDS = { tagline: 'Tagline', description: 'Description', status: 'Status', date_started: 'Date Started',
+  date_signed: 'Date Signed', date_published: 'Date Published', designer1: 'Designer1', designer2: 'Designer2',
+  designer3: 'Designer3', designer4: 'Designer4', rules: 'Rules', play: 'Play', print: 'Print', sellsheet: 'Sellsheet',
+  view: 'View', video: 'Video', image: 'Image URL' };
+// The other headings a sheet may use for the same field (the links read them too): kept in step
+var PB_GAME_ALIASES = { Rules: ['Rules URL', 'Rules Link', 'Link Rules'], Play: ['Play URL', 'Play Link', 'Link Play'],
+  Print: ['Print URL', 'Print Link', 'Link Print'], Sellsheet: ['Sell Sheet', 'Sell Sheet URL', 'Sellsheet URL', 'SellsheetURL', 'Link Sellsheet'],
+  Video: ['Video URL', 'Video Link', 'Link Video', 'YouTube', 'YouTube URL'], View: ['View URL', 'BGG', 'BGG URL'] };
+function _pbApplyKeptGames() {
+  if (!window.GBQueue || !GBQueue.items) return;
+  var kept = [];
+  try { kept = GBQueue.items('addGame').map(function(d) { d._new = true; return d; }).concat(GBQueue.items('updateGame')); } catch (e) { return; }
+  kept.forEach(function(d) {
+    var name = String(d.name || d.orig_name || '').trim(); if (!name) return;
+    var old = String(d.orig_name || '').trim();
+    var entry = gamesIndex[name] || (old && gamesIndex[old]) || {};
+    Object.keys(PB_GAME_FIELDS).forEach(function(k) {
+      if (!(k in d)) return;
+      var col = PB_GAME_FIELDS[k]; entry[col] = d[k];
+      (PB_GAME_ALIASES[col] || []).forEach(function(a) { if (a in entry) entry[a] = d[k]; });
+    });
+    entry.Name = name;
+    if (old && old !== name && gamesIndex[old] === entry) delete gamesIndex[old];
+    gamesIndex[name] = entry;
+  });
+}
+
 function pbSaveReturnGame(el) {
   sessionStorage.setItem('pb_return_game', el.getAttribute('data-return-game'));
 }
@@ -6158,6 +6188,7 @@ function submitGameEdit() {
         entry.View       = payload.view;
         entry.Video      = payload.video;
         entry['Image URL'] = payload.image;
+        Object.keys(PB_GAME_ALIASES).forEach(function(col) { (PB_GAME_ALIASES[col] || []).forEach(function(a) { if (a in entry) entry[a] = entry[col]; }); });
         if (!isNew && newName !== oldName) {
           delete gamesIndex[oldName];
           allPitches.forEach(function(r) { if (r.Game === oldName) r.Game = newName; });
@@ -7318,7 +7349,11 @@ function accountMenuImport() { closeAccountMenu(); importClick(); }
 function accountMenuProfile(){ closeAccountMenu(); openProfileDialog(); }
 function accountMenuFeedback()   { closeAccountMenu(); window.open('https://zapsheets.com/app/1c9EDq5J05v101J00TEeFRa_Yq9SuegOQ8keH5lXb3aY/noteboard/4358b5009c67', '_blank'); }
 function accountMenuHelp()       { closeAccountMenu(); window.open(APP_BASE + 'pitchboard/help', '_blank'); }
-function accountMenuSlideshow() { closeAccountMenu(); window.location.href = APP_BASE + sheet_Id + '/pitchboard/slides?back=1'; }
+function accountMenuSlideshow() {
+  closeAccountMenu();
+  var go = function() { window.location.href = APP_BASE + sheet_Id + '/pitchboard/slides?back=1'; };
+  if (window.GBQueue && GBQueue.pending()) GBQueue.save(true).then(go, go); else go();   // the slideshow reads the sheet: save first
+}
 function accountMenuRelease()    { closeAccountMenu(); openRnDialog(); }
 
 // ── Release notes dialog ──────────────────────────────
@@ -9088,7 +9123,7 @@ function startPbUpgradeCheckout() {
     onChange: fromAccount
   });
   // Changes to the sheet are kept in this browser and saved together (Save, ⌘S, or by themselves after a pause) — like CardBoard
-  GBQueue.init({ app: 'pitchboard', sheet: sheet_Id, base: APP_BASE, reloadAfterPending: true,
+  GBQueue.init({ app: 'pitchboard', sheet: sheet_Id, base: APP_BASE, reloadAfterPending: true, saveBeforeLeaving: true,
     queue: ['updateGame', 'addGame', 'addRow', 'updateRow', 'deleteRow', 'addPerson', 'updatePerson', 'renameDesigner', 'deleteGame', 'updateGameTab', 'updateProfile'],
     free: ['gameboardAccount', 'getSubscription', 'getAnalytics', 'pageViewLogger', 'stripeCheckout', 'uploadMedia', 'collabAuth', 'collabGetBio', 'collabUpdateEmail'] });
   window._pbLoadSubStatus = function(cb) { fromAccount(GBAccount.state()); if (cb) cb(_pbSubStatus); };

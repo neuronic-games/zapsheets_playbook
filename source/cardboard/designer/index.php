@@ -804,6 +804,8 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
 .ask-msg { margin:.35rem 0 .2rem; font-size:.86rem; line-height:1.5; color:#4a4e68; }
 .dlg.ask .dlg-actions { margin-top:1.1rem; }
 .dlg.ask .print-go { padding:0 1.2rem; }
+.dlg.ask .dlg-actions { align-items:stretch; }
+.dlg.ask .dlg-actions button { height:auto; min-height:2.6rem; padding:.5rem 1.1rem; line-height:1.25; white-space:normal; }
 .print-go.danger { background:#c0392b; }
 .print-go.danger:hover { background:#a93226; }
 .dlg.ask button:focus-visible { outline:2px solid #7b6cf6; outline-offset:2px; }

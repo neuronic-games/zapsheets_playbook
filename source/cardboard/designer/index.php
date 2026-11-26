@@ -258,8 +258,7 @@ table.grid thead th.ghost-col { cursor:text; }
 /* A little card with its number (Cards view rows, Layout view card picker) */
 .card-no { display:inline-flex; align-items:center; justify-content:center; min-width:1.15rem; height:1.55rem; padding:0 .2rem; box-sizing:border-box; border:1.5px solid currentColor; border-radius:3px; background:#fff; font-family:'DINBlack',sans-serif; font-size:.62rem; line-height:1; letter-spacing:0; color:inherit; vertical-align:middle; }
 /* DIN's digits sit low in their line: trim the line to the figures so they're centred in the box */
-.card-no { padding-bottom:.14em; }
-@supports (text-box: trim-both cap alphabetic) { .card-no { padding-bottom:0; text-box:trim-both cap alphabetic; } }
+.card-no { padding-bottom:.5em; }   /* centred, the padding counts half: lifts the figures ~.25em */
 table.grid tbody td.rn .card-no { display:flex; margin:0 auto; width:fit-content; }
 table.grid tbody td.rn:hover .card-no, table.grid tbody td.rn.menu-open .card-no { background:#f7f5ff; }
 #rowInfo { display:inline-flex; align-items:center; justify-content:center; min-width:0; color:#4b3fa8; }
@@ -343,7 +342,7 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .tb-btn:hover:not(:disabled) { border-color:#a99cff; color:#2e2763; }
 .tb-btn:disabled { opacity:.4; cursor:default; }
 .tb-btn.tb-add { color:#4b3fa8; }
-#rowInfo .card-no { cursor:text; height:2.5rem; min-width:1.8rem; padding:0 .3rem; border-radius:4px; font-size:.9rem; margin:-.35rem 0; position:relative; z-index:1; } #rowInfo .card-no:hover { background:#f7f5ff; }   /* a little card, taller than the buttons beside it */
+#rowInfo .card-no { cursor:text; height:2.5rem; min-width:1.8rem; padding:0 .3rem .5em; border-radius:4px; font-size:.9rem; margin:-.35rem 0; position:relative; z-index:1; } #rowInfo .card-no:hover { background:#f7f5ff; }   /* a little card, taller than the buttons beside it */
 #rowInfo .card-no-in { height:2.5rem; margin:-.35rem 0; font-size:.9rem; position:relative; z-index:1; }
 .card-no-in { height:1.55rem; box-sizing:border-box; border:1.5px solid #5b4fd6; border-radius:5px; padding:0 .2rem; text-align:center; font:inherit; font-family:'DINBlack',sans-serif; font-size:.78rem; color:#2e2763; outline:none; box-shadow:0 0 0 3px #ece9ff; }
 .card-no.card-add { font-size:.9rem; font-family:'DINRegular',Arial,sans-serif; border-style:dashed; background:none; }

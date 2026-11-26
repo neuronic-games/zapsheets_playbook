@@ -181,6 +181,31 @@ section { padding:5.5rem 2rem; }
 .sheet-mock th { background:#f3f1ff; color:#2e2763; font-weight:600; font-size:10px; }
 .sheet-mock td.rn, .sheet-mock th.rn { background:#f7f8fc; color:#9aa0b8; text-align:center; width:28px; }
 .sheet-mock td.sel { box-shadow:inset 0 0 0 2px #4b3fa8; }
+/* Your data: the grid (pictures, [tags], formatting) with the Value box and the card it makes */
+.sheet-mock.dm td { vertical-align:middle; }
+.sheet-mock.dm td.art { padding:3px 6px; width:34px; }
+.sheet-mock.dm td.art img { display:block; width:26px; height:36px; object-fit:cover; border-radius:3px; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+.sheet-mock .tg { color:#6d5ce8; background:#f1effe; border-radius:4px; padding:0 3px; font-weight:500; }
+.sheet-mock .rd { color:#e3262b; }
+.dm-lower { display:grid; grid-template-columns:118px 1fr; gap:14px; padding:14px; background:#f7f8fc; border-top:1px solid #e6e8f0; align-items:start; }
+.dm-card { background:#fff; border-radius:8px; padding:6px; box-shadow:0 4px 14px rgba(46,39,99,.18); font-family:'Inter',sans-serif; }
+.dm-card-art img { display:block; width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:5px; }
+.dm-card-name { font-weight:700; font-size:10.5px; color:#1c1a2b; margin:5px 0 2px; }
+.dm-card-text { font-size:9px; line-height:1.35; color:#333; white-space:normal; }
+.dm-ico { display:inline-block; vertical-align:-2px; }
+.dm-lbl { font-size:9px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#9aa0b8; margin-bottom:4px; }
+.dm-box { background:#fff; border:1px solid #7b6cf6; border-radius:8px; box-shadow:0 0 0 3px rgba(123,108,246,.15); }
+.dm-bar { display:flex; align-items:center; gap:4px; padding:4px 6px; border-bottom:1px solid #eceef4; font-family:Georgia,serif; font-size:12px; color:#2e2763; }
+.dm-bar span { display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:16px; border-radius:4px; }
+.dm-bar .b { font-weight:700; } .dm-bar .i { font-style:italic; } .dm-bar .u { text-decoration:underline; } .dm-bar .s { text-decoration:line-through; }
+.dm-bar .on { background:#f1effe; }
+.dm-bar .sep { width:1px; min-width:1px; height:12px; background:#e3e5ee; margin:0 2px; }
+.dm-bar .sw { width:11px; min-width:11px; height:11px; border-radius:3px; border:1px solid rgba(0,0,0,.15); }
+.dm-bar .sw.on { box-shadow:0 0 0 2px #fff, 0 0 0 3px #7b6cf6; }
+.dm-ed { padding:7px 8px; font-size:11px; line-height:1.45; color:#1c1a2b; white-space:normal; min-height:46px; }
+.dm-ed .hl { background:#cfe0ff; }
+.dm-ed .caret { display:inline-block; width:1px; height:12px; background:#1c1a2b; vertical-align:-2px; margin-left:1px; animation:dmBlink 1s steps(1) infinite; }
+@keyframes dmBlink { 50% { opacity:0; } }
 .tts-mock { background:#1d2230; padding:16px; display:grid; grid-template-columns:repeat(5,1fr); gap:4px; }
 .tts-mock img { width:100%; aspect-ratio:5/7; object-fit:cover; border-radius:3px; }
 .tts-mock .bk { background:#2e2763; border-radius:3px; aspect-ratio:5/7; display:flex; align-items:center; justify-content:center; color:#f2c14e; font-size:18px; outline:2px dashed #a99cff; outline-offset:-3px; }
@@ -364,15 +389,28 @@ footer a { color:var(--text-mid); text-decoration:none; }
   <div class="container">
     <div class="shot-grid">
       <div class="browser-frame">
-        <div class="browser-chrome"><div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="browser-url">mygameboard.app/…/cardboard — Data</div></div>
-        <div class="sheet-mock">
+        <div class="browser-chrome"><div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="browser-url">mygameboard.app/…/cardboard</div></div>
+        <div class="sheet-mock dm">
           <table>
-            <tr><th class="rn"></th><th>Name</th><th>Cost</th><th>Type</th><th>Text</th><th>Count</th></tr>
-            <tr><td class="rn">2</td><td>Floristry</td><td>3</td><td>Market</td><td>Draw 2 flower cards…</td><td>2</td></tr>
-            <tr><td class="rn">3</td><td>Scurry Up!</td><td class="sel">1</td><td>Action</td><td>Move a squirrel two…</td><td>3</td></tr>
-            <tr><td class="rn">4</td><td>Pressure</td><td>5</td><td>Event</td><td>Every player dives…</td><td>1</td></tr>
-            <tr><td class="rn">5</td><td>Deep Dive</td><td>4</td><td>Event</td><td>Look at the top 3…</td><td>2</td></tr>
+            <tr><th class="rn"></th><th>Art</th><th>Name</th><th>Cost</th><th>Text</th><th>Count</th></tr>
+            <tr><td class="rn">2</td><td class="art"><img src="images/billboard-features/cover-floristry.webp" alt=""></td><td>Floristry</td><td>3</td><td>Draw 2 <span class="tg">[flower]</span> cards…</td><td>2</td></tr>
+            <tr><td class="rn">3</td><td class="art"><img src="images/billboard-features/cover-scurry.webp" alt=""></td><td>Scurry Up!</td><td>1</td><td class="sel">Move a squirrel two spaces…</td><td>3</td></tr>
+            <tr><td class="rn">4</td><td class="art"><img src="images/billboard-features/cover-pressure.webp" alt=""></td><td>Pressure</td><td>5</td><td>Every player dives <span class="tg">[deep]</span>…</td><td>1</td></tr>
           </table>
+          <div class="dm-lower">
+            <div class="dm-card">
+              <div class="dm-card-art"><img src="images/billboard-features/cover-scurry.webp" alt=""></div>
+              <div class="dm-card-name">Scurry Up!</div>
+              <div class="dm-card-text">Move a squirrel <b class="rd">two</b> spaces, then gain 1 <span class="dm-ico" title="[acorn]"><svg viewBox="0 0 24 24" width="11" height="11"><path d="M5 10c0-3 3-5 7-5s7 2 7 5H5z" fill="#7a4a1f"/><path d="M12 5V2.5" stroke="#7a4a1f" stroke-width="2" stroke-linecap="round"/><path d="M6 10h12c0 6-3 10-6 11-3-1-6-5-6-11z" fill="#c88a3c"/></svg></span>.</div>
+            </div>
+            <div class="dm-val">
+              <div class="dm-lbl">Value for row 3</div>
+              <div class="dm-box">
+                <div class="dm-bar"><span class="b on">B</span><span class="i">I</span><span class="u">U</span><span class="s">S</span><span class="sep"></span><span class="sw" style="background:#111"></span><span class="sw on" style="background:#e3262b"></span><span class="sw" style="background:#f59e0b"></span><span class="sw" style="background:#009444"></span><span class="sw" style="background:#2563eb"></span><span class="sw" style="background:#7c3aed"></span></div>
+                <div class="dm-ed">Move a squirrel <b class="rd hl">two</b> spaces, then gain 1 <span class="tg">[acorn]</span>.<span class="caret"></span></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="shot-text">
@@ -381,9 +419,10 @@ footer a { color:var(--text-mid); text-decoration:none; }
         <p>The Cards tab is your deck as a grid. Tweak a cost or reword a card, press Save, and it's in your Google Sheet — the designer, the print sheets and your Tabletop Simulator deck all pick it up.</p>
         <ul>
           <li>Edit like a spreadsheet: type, Enter, Tab, Esc</li>
-          <li>Add rows and columns from CardBoard</li>
+          <li>Pictures from Dropbox, Google Drive or the web show right in the grid</li>
+          <li>Write <b>[tags]</b> in any text — they become words or icons on the cards</li>
+          <li>Bold, italic and colours inside a cell, edited in CardBoard or in Sheets</li>
           <li>Never overwrites a change someone made in Sheets</li>
-          <li>Hide the columns you don't need while designing</li>
         </ul>
       </div>
     </div>

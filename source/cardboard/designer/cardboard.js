@@ -442,7 +442,8 @@ function renderCardHTML(lay, row, designing, ctx) {
     if (list && hasAuto(e)) st = st.replace(/transform:[^;]*;/, '') + (e.rot ? 'transform:rotate(' + e.rot + 'deg);' : '');   // in a list it flows; no anchoring
     if (list) {   // sized by its contents along the list: as wide (or as tall) as it needs, up to its own box
       cls += ' in-list';
-      if (isTextLike(e)) st += list === 'h' ? 'width:auto;max-width:' + e.w + 'pt;' : 'height:auto;max-height:' + e.h + 'pt;';
+      // Auto width / height: as big as its text (no cap); otherwise up to its own box
+      if (isTextLike(e)) st += list === 'h' ? 'width:auto;max-width:' + (e.autoW ? 'none' : e.w + 'pt') + ';' : 'height:auto;max-height:' + (e.autoH ? 'none' : e.h + 'pt') + ';';
     }
     return '<div class="' + cls + '" data-id="' + e.id + '" style="' + st + '">' + (designing
       ? '<div class="el-inner">' + inner + '</div>' +

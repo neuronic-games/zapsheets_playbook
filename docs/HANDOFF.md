@@ -105,6 +105,15 @@ Last updated: 2026-11-26.
 - **Padding**: `pad` for every side, or `padSep` + `padT/padR/padB/padL` (`padBox`, `padCss`). Note: gen
   sequences also use `pad` for zero-padding digits (old overlap, left as is).
 - In-place editing of light text gets a dark box (`editContrast`).
+- **View-only share links** (menu → Share, owner only): `/v-{token}/cardboard`. The page only knows `v-{token}`;
+  `push/cardboardView.php` maps it to the sheet (`shares/cardboard-view/{token}.json`, and
+  `sheets/{id}/_cardboard_view.txt` back). cardboardData / cardboardImage / cardboardPublish (list only) resolve it and
+  refuse every write; claim refuses it. Managed by `push/cardboardShare.php` (get / create / stop). Note: uploaded
+  picture links (`images/{sheetId}/…`) still contain the sheet ID.
+- **Drawing off-screen** (`#exportStage`) is moved to `<body>` at load: inside the hidden Export view it drew blank
+  (Designs thumbnails, the Print PDF).
+- **Print**: whole page fits with Zoom (−/+/Fit, pinch); double-sided pairs side by side; download as PDF
+  (`runPrintPdf`, jsPDF from cdnjs, ~220 dpi).
 
 ## 6. DevBoard — newer parts
 

@@ -3077,11 +3077,13 @@ function insertField() {
 // ── Print sheets ──────────────────────────────────────────────────────────────
 // Copies: 1 each, or a numeric column (Count, Qty…). Fills the select and returns [{row, ri}].
 function cardList(cs, onChange) {
-  var cur = cs.value;
+  // A kept choice (restored before the list had its options) wins once; "" is "1 of each card"
+  var cur = cs.dataset.want != null ? cs.dataset.want : cs.value;
   var numeric = FIELDS.filter(function(f) { return ROWS.length && ROWS.every(function(r) { var v = cleanVal(r[f]).trim(); return v === '' || /^\d{1,3}$/.test(v); }); });
   cs.innerHTML = '<option value="">1 of each card</option>' + numeric.map(function(f) { return '<option value="' + esc(f) + '">From "' + esc(f) + '"</option>'; }).join('');
   if (!cur && !cs.dataset.touched) cur = numeric.filter(function(f) { return /^(count|qty|quantity|copies|#)$/i.test(f); })[0] || '';
   cs.value = numeric.indexOf(cur) >= 0 ? cur : '';
+  if (cs.dataset.want != null && (ROWS.length || cur === '')) delete cs.dataset.want;   // the cards are in: the choice is settled
   cs.onchange = function() { cs.dataset.touched = '1'; onChange(); };
   var list = [];
   ROWS.forEach(function(r, ri) {
@@ -3091,12 +3093,13 @@ function cardList(cs, onChange) {
   });
   return list;
 }
+function copiesValue(cs) { return cs.dataset.want != null ? cs.dataset.want : cs.value; }   // the kept choice until the cards are in
 var PAPER = { letter: [612, 792], a4: [595.3, 841.9] };
 
 // ── Per-tab print / export settings ──────────────────────────────────────────
 function savePrintSettings(tab) {
   if (!tab || !layout) return;
-  _printSettings[tab] = { paper: $('pPaper').value, orient: $('pOrient').value, gap: $('pGap').value, cut: $('pCut').value, copies: $('pCopies').value, backs: $('pBacks').value };
+  _printSettings[tab] = { paper: $('pPaper').value, orient: $('pOrient').value, gap: $('pGap').value, cut: $('pCut').value, copies: copiesValue($('pCopies')), backs: $('pBacks').value };
   try { localStorage.setItem('cb_print:' + SHEET_ID + ':' + tab, JSON.stringify(_printSettings[tab])); } catch (e) {}
   keepSheetSetting('print', tab, _printSettings[tab]);
 }
@@ -3122,11 +3125,11 @@ function restorePrintSettings(tab) {
   if (s.gap != null) $('pGap').value = s.gap;
   if (s.cut) $('pCut').value = s.cut;
   if (s.backs) $('pBacks').value = s.backs;
-  if (s.copies) { $('pCopies').value = s.copies; $('pCopies').dataset.touched = '1'; }
+  if (s.copies != null) { $('pCopies').dataset.want = s.copies; $('pCopies').dataset.touched = '1'; }   // "" = 1 of each card
 }
 function saveExportSettings(tab) {
   if (!tab || !layout) return;
-  _exportSettings[tab] = { target: $('eTarget').value, quality: $('eQuality').value, copies: $('eCopies').value };
+  _exportSettings[tab] = { target: $('eTarget').value, quality: $('eQuality').value, copies: copiesValue($('eCopies')) };
   try { localStorage.setItem('cb_export:' + SHEET_ID + ':' + tab, JSON.stringify(_exportSettings[tab])); } catch (e) {}
   keepSheetSetting('export', tab, _exportSettings[tab]);
 }
@@ -3137,7 +3140,7 @@ function restoreExportSettings(tab) {
   _exportSettings[tab] = s;
   if (s.target) $('eTarget').value = s.target;
   if (s.quality) $('eQuality').value = s.quality;
-  if (s.copies) { $('eCopies').value = s.copies; $('eCopies').dataset.touched = '1'; }
+  if (s.copies != null) { $('eCopies').dataset.want = s.copies; $('eCopies').dataset.touched = '1'; }
 }
 
 // Print view zoom: 1 = the whole page (or front and back side by side) fits
@@ -3157,8 +3160,8 @@ window.addEventListener('resize', function() { if (_activeTab === 'print') { cle
 function renderPrint(forPdf) {   // forPdf: don't draw — answer {pw, ph, sides: [page HTML]} for the PDF download
   var pages = $('pages'), sides = [];
   if (!layout) { pages.innerHTML = ''; return; }
-  savePrintSettings(curTab);
   var list = cardList($('pCopies'), renderPrint);
+  savePrintSettings(curTab);   // after the Copies list is filled, so its choice is the one kept
   // Printed cards are cut square, so draw them without rounded corners
   var sq = Object.assign({}, layout, { card: Object.assign({}, layout.card, { radius: 0 }) });
 
@@ -3341,8 +3344,8 @@ function exportLayout(round) {   // a frozen copy, so editing during a backgroun
 
 function renderExport() {
   var box = $('exportPreview'); if (!layout) { box.innerHTML = ''; return; }
-  saveExportSettings(curTab);
   cardList($('eCopies'), renderExport);   // fills the Copies choices
+  saveExportSettings(curTab);
   var o = exportOpts(), pub = (PUBLISHED[curTab] || {})[o.target];
   if (pub && pub.grid && pub.settings && pub.settings.quality === o.quality) o.grid = pub.grid;   // match the published links
   var P = exportPlan(o), c = layout.card, varies = backVaries();

@@ -440,6 +440,9 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 /* Light writing (white on a dark card): a dark box behind it while editing, so it can be read */
 .el.editing.ed-dark .el-inner { background:rgba(20,19,42,.9); outline-color:#a99dff; }
 .el.editing .hdl { display:none; }
+/* Editing on the card: the text flows as one block (a column of flex items put each bold or coloured word on its own line),
+   still placed top / middle / bottom like the element (editVAlign) */
+.designing .el.editing > .el-inner { display:block; }   /* placed middle / bottom by editVAlign() */
 /* W / H set to Auto in the panel */
 .row4 > div > .mini { height:14px; line-height:14px; }   /* the four labels the same height, so the boxes line up */
 .mini.sz-lbl { display:flex; align-items:center; justify-content:space-between; gap:4px; }

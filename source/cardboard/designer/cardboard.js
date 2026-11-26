@@ -1382,7 +1382,7 @@ function editCellInPlace(e) {
     var r = save ? fmtRead(inner) : { text: old, runs: oldRuns }, v = r.text;
     window.removeEventListener('scroll', place, true); window.removeEventListener('resize', place); bar.remove();
     if (_fmtEd === inner) _fmtEd = null;
-    inner.removeAttribute('contenteditable'); node.classList.remove('editing', 'ed-dark');
+    inner.removeAttribute('contenteditable'); inner.style.paddingTop = ''; node.classList.remove('editing', 'ed-dark');
     var fmt = r.runs.length || oldRuns.length ? r.runs : undefined;
     var same = fmtSame(old, oldRuns, v, fmt || []);
     if (!save || same || (fresh && !v.trim())) { render(); return; }
@@ -1397,10 +1397,21 @@ function editCellInPlace(e) {
     else if (k.key === 'Escape') { k.preventDefault(); finish(false); }
   });
   inner.addEventListener('paste', fmtPaste);
+  editVAlign(node, inner); inner.addEventListener('input', function() { editVAlign(node, inner); });
   inner._finish = finish;
   inner.addEventListener('blur', function() {
     setTimeout(function() { if (inner._picking || (document.activeElement && bar.contains(document.activeElement))) return; finish(true); }, 0);
   });
+}
+// While editing on the card the text is one block; a middle or bottom element keeps its text there with top padding
+function editVAlign(node, inner) {
+  var mid = node.classList.contains('v-middle'), bot = node.classList.contains('v-bottom');
+  inner.style.paddingTop = '';
+  if (!mid && !bot) return;
+  var rg = document.createRange(); rg.selectNodeContents(inner);
+  var h = rg.getBoundingClientRect().height, H = inner.getBoundingClientRect().height, z = (inner.getBoundingClientRect().height / (inner.offsetHeight || 1)) || 1;
+  var free = Math.max(0, (H - h) / z);
+  if (free > 0) inner.style.paddingTop = (mid ? free / 2 : free) + 'px';
 }
 // + Card beside the card navigator: a new, empty card straight after the one on screen. It's kept
 // once something is typed into it (an empty row isn't a card), and Save puts its row in the sheet in
@@ -3105,7 +3116,8 @@ function delMapItem(i) { var e = mapEl(); if (!e) return; snapshot(); e.map.item
 document.addEventListener('pointerdown', function(ev) {
   var a = document.activeElement, p = $('attrPanel');
   if (a && p && p.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName) && !p.contains(ev.target)) a.blur();
-  if (a && a.isContentEditable && a.closest('.el.editing') && !a.contains(ev.target)) a.blur();   // editing a value on the card
+  if (a && a.isContentEditable && a.closest('.el.editing') && !a.contains(ev.target) &&
+      !(ev.target.closest && (ev.target.closest('.fmt-float') || ev.target.closest('.fmt-tagmenu')))) a.blur();   // editing a value on the card (its formatting bar isn't "away")
 }, true);
 function liveText(v) {   // show typing on the card right away; one undo step when the box loses focus
   var e = elById(selId); if (!e) return;

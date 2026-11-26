@@ -567,15 +567,90 @@ function newDeckProblem(n) {
   if (TABS.some(function(t) { return t.title.toLowerCase() === n.toLowerCase(); })) return 'There\'s already a deck called “' + n + '”';
   return '';
 }
-function addNewDeck(n) {
+function addNewDeck(n, base) {   // base: an existing deck whose columns and layout the new one starts with
   n = String(n || '').trim().replace(/\s+/g, ' ');
   if (!hasAccess()) { requirePro('edit', function() {}); return; }
   var why = newDeckProblem(n); if (why) { toast(why, true); return; }
   var l = newTabs(); l.push(n); setNewTabs(l);
   TABS.push({ title: n, rows: 0, cols: 0, pending: true });
+  if (base) {
+    var lay = base === curTab && layout ? layout : (lsGet('cb_draft:' + SHEET_ID + ':' + base) || LAYOUTS[base]);
+    if (lay) lsPut('cb_draft:' + SHEET_ID + ':' + n, JSON.stringify(lay));
+  }
   fillDeckSelects(); selectTab(n);
-  toast('New deck “' + n + '” — add columns and cards, then Save to put it in your sheet');
+  if (base) deckColumns(base).then(function(cols) {
+    if (!cols.length) return;
+    var p = dataPend(n); cols.forEach(function(c) { if (p.cols.indexOf(c) < 0) p.cols.push(c); }); setDataPend(n, p);
+    if (curTab === n) { cols.forEach(function(c) { if (FIELDS.indexOf(c) < 0) FIELDS.push(c); }); renderData(); render(); renderAttrs(); }
+  });
+  toast('New deck “' + n + '”' + (base ? ' based on “' + base + '”' : '') + ' — Save to put it in your sheet');
 }
+// A deck's columns: the current deck's fields, else its heading row (plus columns added here, not saved yet)
+function deckColumns(tab) {
+  if (tab === curTab) return Promise.resolve(FIELDS.slice());
+  var pend = dataPend(tab);
+  if (isNewTab(tab)) return Promise.resolve(pend.cols.slice());
+  return api('grid', { tab: tab }).then(function(r) {
+    var h = (r.header || []).filter(function(x) { return x && !isInternal(x) && pend.delcols.indexOf(x) < 0; });
+    pend.cols.forEach(function(c) { if (h.indexOf(c) < 0) h.push(c); });
+    return h;
+  }).catch(function() { toast('Couldn’t read the columns of “' + tab + '”', true); return []; });
+}
+// ── New deck dialog (the dialog pattern; "Based on" is the standard combo) ──────
+var _newDeckInitial = null;
+function openNewDeckDialog(name) {
+  if (!hasAccess()) { requirePro('edit', function() {}); return; }
+  $('newDeckName').value = name || ''; $('ndBaseInput').value = ''; $('newDeckErr').textContent = '';
+  $('ndBaseCombo').classList.remove('open');
+  _newDeckInitial = { name: '', base: '' };
+  openDialog('newDeckOverlay');
+  setTimeout(function() { $('newDeckName').focus(); }, 30);
+}
+function newDeckDirty() { return !!_newDeckInitial && ($('newDeckName').value.trim() !== _newDeckInitial.name || $('ndBaseInput').value.trim() !== _newDeckInitial.base); }
+function closeNewDeckDialog() {
+  if (newDeckDirty()) { var d = $('newDeckDlg'); d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake'); return; }
+  forceCloseNewDeckDialog();
+}
+function forceCloseNewDeckDialog() { $('ndBaseCombo').classList.remove('open'); closeDialog('newDeckOverlay'); _newDeckInitial = null; }
+function ndBaseTab(v) {   // the typed "Based on" as a deck's exact name ('' = blank; null = no such deck)
+  v = String(v || '').trim(); if (!v) return '';
+  var t = TABS.filter(function(x) { return x.title.toLowerCase() === v.toLowerCase(); })[0];
+  return t ? t.title : null;
+}
+function newDeckCheck() {
+  var n = $('newDeckName').value.trim().replace(/\s+/g, ' ');
+  var why = n ? newDeckProblem(n) : '';
+  if (!why && ndBaseTab($('ndBaseInput').value) === null && !$('ndBaseCombo').classList.contains('open')) why = 'Pick a deck from the list, or leave it empty';
+  $('newDeckErr').textContent = why; return why;
+}
+function submitNewDeck() {
+  var n = $('newDeckName').value.trim().replace(/\s+/g, ' '), base = ndBaseTab($('ndBaseInput').value);
+  var why = newDeckProblem(n) || (base === null ? 'Pick a deck from the list, or leave it empty' : '');
+  if (why) { $('newDeckErr').textContent = why; return; }
+  forceCloseNewDeckDialog(); addNewDeck(n, base);
+}
+function ndBaseRebuild(filter) {
+  var drop = $('ndBaseDrop'), lower = (filter || '').toLowerCase();
+  var items = TABS.map(function(t) { return t.title; }).filter(function(n) { return !lower || n.toLowerCase().indexOf(lower) !== -1; });
+  if (!items.length) { drop.innerHTML = ''; $('ndBaseCombo').classList.remove('open'); return; }
+  drop.innerHTML = (lower ? '' : '<div class="combo-item blank" data-name="" onmousedown="ndBasePick(this.dataset.name)"><span class="ci-ico"></span>Nothing — start blank</div>') +
+    items.map(function(n) {
+      return '<div class="combo-item" data-name="' + esc(n) + '" onmousedown="ndBasePick(this.dataset.name)"><span class="ci-ico">' + (hasLayout(n) ? LAYOUT_ICON : '') + '</span>' + esc(n) + '</div>';
+    }).join('');
+  $('ndBaseCombo').classList.add('open');
+}
+function ndBasePick(n) {
+  $('ndBaseInput').value = n; $('ndBaseDrop').innerHTML = ''; $('ndBaseCombo').classList.remove('open'); newDeckCheck();
+}
+function ndBaseKey(e) {
+  if (e.key === 'Escape') { if ($('ndBaseCombo').classList.contains('open')) { e.preventDefault(); e.stopPropagation(); $('ndBaseCombo').classList.remove('open'); } }
+  if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey) {
+    e.preventDefault();
+    var first = document.querySelector('#ndBaseDrop .combo-item:not(.blank)') || document.querySelector('#ndBaseDrop .combo-item');
+    if ($('ndBaseCombo').classList.contains('open') && first) ndBasePick(first.dataset.name); else submitNewDeck();
+  }
+}
+document.addEventListener('mousedown', function(e) { if (!e.target.closest('#ndBaseCombo')) { var c = $('ndBaseCombo'); if (c && c.classList.contains('open')) { c.classList.remove('open'); newDeckCheck(); } } });
 // The current deck's card count, shown in each Deck box (once its rows are in)
 var _countTab = '';
 function updateDeckCount() {
@@ -633,7 +708,7 @@ function makeSheetCombo(sel) {
   function open() { if (box.classList.contains('open')) return; box.classList.add('open'); inp.setAttribute('aria-expanded', 'true'); draw(''); inp.select(); }
   function close(restore) { stopNaming(); box.classList.remove('open'); inp.setAttribute('aria-expanded', 'false'); if (restore !== false) inp.value = sel.value; }
   function pick(t) {
-    if (t === NEW) { if (typed && !newDeckProblem(typed)) { close(false); inp.blur(); addNewDeck(typed); } else startNaming(typed); return; }
+    if (t === NEW) { close(); inp.blur(); openNewDeckDialog(typed); return; }
     close(false); inp.value = t; inp.blur();
     if (t !== sel.value) { sel.value = t; selectTab(t); } else refreshSheetCombos();
   }
@@ -4857,7 +4932,7 @@ function askDialog(o) {
 var SETTINGS_KEY = '_cardboard_settings', SETTINGS = { units: 'in' }, SHEET_TITLE = '', _oldProfile = null;
 function openDialog(id) { $(id).classList.add('open'); }
 function closeDialog(id) { $(id).classList.remove('open'); }
-document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') document.querySelectorAll('.overlay.open').forEach(function(o) { o.classList.remove('open'); }); });
+document.addEventListener('keydown', function(ev) { if (ev.key === 'Escape') document.querySelectorAll('.overlay.open').forEach(function(o) { if (o.id === 'newDeckOverlay') closeNewDeckDialog(); else o.classList.remove('open'); }); });
 function saveSettings() {
   var keep = Object.assign({}, SETTINGS); delete keep.profile;
   return api('save', { tab: SETTINGS_KEY, layout: JSON.stringify(keep) }).then(function() { LAYOUTS[SETTINGS_KEY] = keep; _oldProfile = null; writeStartCache(); });

@@ -184,10 +184,20 @@ select.sel { -webkit-appearance:none; appearance:none; padding-right:2rem; backg
 .sc-none { padding:.5rem .6rem; font-size:.78rem; color:#9aa0b8; }
 /* New deck: the last entry in the list, then naming it in the box */
 .sc-item.sc-new { color:#4b3fa8; border-top:1px solid #eceef5; margin-top:.2rem; padding-top:.5rem; border-radius:0 0 6px 6px; }
-.sc-item.sc-new .sc-mark { justify-content:center; font-size:1rem; line-height:1; }
+.sc-item.sc-new .sc-mark { justify-content:center; align-items:center; }
+.sc-item.sc-new .sc-mark svg { display:block; }
 .sc-pend { font-family:'DINRegular',Arial,sans-serif; font-size:.62rem; text-transform:none; letter-spacing:0; color:#c07a00; background:#fff4dc; border-radius:999px; padding:0 .4rem; }
 .sc-newhint { text-transform:none; letter-spacing:0; line-height:1.45; }
 .sc-newhint.bad { color:#c0392b; }
+/* New deck dialog: its "Based on" combo (the standard combo pattern) */
+.combo-wrap { position:relative; }
+.combo-dropdown { display:none; position:absolute; left:0; right:0; top:calc(100% + 2px); z-index:20; max-height:220px; overflow:auto; background:#fff; border:1px solid #e1e4ee; border-radius:8px; box-shadow:0 10px 28px rgba(20,20,60,.16); padding:.25rem; }
+.combo-wrap.open .combo-dropdown { display:block; }
+.combo-item { padding:.5rem .8rem; border-radius:6px; cursor:pointer; font-size:.84rem; color:#2e2763; display:flex; align-items:center; gap:.5rem; }
+.combo-item:hover { background:#e8f4f8; color:#1a5f7a; }
+.combo-item .ci-ico { width:16px; display:flex; color:#7b6cf6; }
+.combo-item.blank { color:#6b7090; font-style:italic; }
+#newDeckOverlay .dlg { overflow:visible; }
 .sheet-combo.naming .inp { border-color:#7b6cf6; }
 .sheet-combo.naming .sc-ico, .sheet-combo.naming .sc-count { display:none; }
 .sheet-combo.naming.has-layout .inp { padding-left:.5rem; }
@@ -1100,6 +1110,25 @@ table.grid.grid-preview { pointer-events:none; opacity:.7; }   /* the cards, sho
     <p class="dlg-sub" style="margin-top:.35rem">Used for the card size. Positions on the card stay in points (1/72 in).</p>
     <div class="dlg-err" id="setErr"></div>
     <div class="dlg-actions"><button class="attr-btn" onclick="closeDialog('settingsOverlay')">Close</button></div>
+  </div>
+</div>
+
+<!-- New deck -->
+<div class="overlay" id="newDeckOverlay" onclick="if(event.target===this)closeNewDeckDialog()">
+  <div class="dlg" id="newDeckDlg" onclick="event.stopPropagation()" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();submitNewDeck();}">
+    <h2 class="dlg-title">New deck</h2>
+    <p class="dlg-sub">A new tab in your sheet. It’s added when you Save.</p>
+    <span class="lbl">Name</span>
+    <input type="text" id="newDeckName" class="inp" autocomplete="off" spellcheck="false" placeholder="e.g. Monsters" oninput="newDeckCheck()" onkeydown="if(event.key==='Enter'&&!event.metaKey&&!event.ctrlKey){event.preventDefault();submitNewDeck();}" />
+    <span class="lbl">Based on</span>
+    <div class="combo-wrap" id="ndBaseCombo">
+      <input type="text" id="ndBaseInput" class="inp combo-input" autocomplete="off" spellcheck="false" placeholder="Nothing — start blank"
+        oninput="ndBaseRebuild(this.value);newDeckCheck()" onfocus="ndBaseRebuild(this.value)" onkeydown="ndBaseKey(event)" />
+      <div class="combo-dropdown" id="ndBaseDrop"></div>
+    </div>
+    <p class="dlg-sub" style="margin-top:.35rem">Copies that deck’s columns and layout. Its cards stay where they are.</p>
+    <div class="dlg-err" id="newDeckErr"></div>
+    <div class="dlg-actions"><button type="button" class="attr-btn" onclick="forceCloseNewDeckDialog()">Cancel</button><button type="button" class="print-go" onclick="submitNewDeck()">Add deck</button></div>
   </div>
 </div>
 

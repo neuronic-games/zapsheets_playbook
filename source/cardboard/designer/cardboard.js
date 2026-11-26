@@ -1279,6 +1279,12 @@ $('cardHolder').addEventListener('dblclick', function(ev) {
   else if (e && e.kind === 'data') editCellInPlace(e);
   else if (e && e.kind === 'text') editTextInPlace(e);
 });
+// Editing on the card: the box behind the writing contrasts with it — dark behind light writing, light behind dark
+function editContrast(node, inner) {
+  var m = /rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)/.exec(getComputedStyle(inner).color || '');
+  var lum = m ? (0.2126 * m[1] + 0.7152 * m[2] + 0.0722 * m[3]) / 255 : 0;
+  node.classList.toggle('ed-dark', lum > 0.55);
+}
 // Double-click a Text element to edit its wording on the card — as written, with {Column} and [tag]
 // still showing. Enter saves (Shift+Enter for a new line), Esc cancels, clicking away saves.
 function editTextInPlace(e) {
@@ -1287,7 +1293,7 @@ function editTextInPlace(e) {
   var node = $('cardHolder').querySelector('.el[data-id="' + e.id + '"]'), inner = node && node.querySelector('.el-inner');
   if (!inner) return;
   var old = e.text || '', done = false;
-  node.classList.add('editing');
+  node.classList.add('editing'); editContrast(node, inner);
   inner.textContent = old;
   try { inner.contentEditable = 'plaintext-only'; } catch (x) {}
   if (inner.contentEditable !== 'plaintext-only') inner.contentEditable = 'true';
@@ -1296,7 +1302,7 @@ function editTextInPlace(e) {
   function finish(save) {
     if (done) return; done = true;
     var v = inner.innerText.replace(/\r/g, '').replace(/\n$/, '');
-    inner.removeAttribute('contenteditable'); node.classList.remove('editing');
+    inner.removeAttribute('contenteditable'); node.classList.remove('editing', 'ed-dark');
     if (save && v !== old) { snapshot(); e.text = v; changed(); }
     else render();
   }
@@ -1316,7 +1322,7 @@ function editCellInPlace(e) {
   var node = $('cardHolder').querySelector('.el[data-id="' + e.id + '"]'), inner = node && node.querySelector('.el-inner');
   if (!inner) return;
   var old = fresh ? '' : cleanVal(row[e.field]), done = false;
-  node.classList.add('editing');
+  node.classList.add('editing'); editContrast(node, inner);
   inner.textContent = old;
   try { inner.contentEditable = 'plaintext-only'; } catch (x) {}
   if (inner.contentEditable !== 'plaintext-only') inner.contentEditable = 'true';
@@ -1325,7 +1331,7 @@ function editCellInPlace(e) {
   function finish(save) {
     if (done) return; done = true;
     var v = inner.innerText.replace(/\r/g, '').replace(/\n$/, '');
-    inner.removeAttribute('contenteditable'); node.classList.remove('editing');
+    inner.removeAttribute('contenteditable'); node.classList.remove('editing', 'ed-dark');
     if (!save || v === old || (fresh && !v.trim())) { render(); return; }
     if (fresh || !ROWS[rowIdx]) newCardRow();
     setRowCell(e, v);

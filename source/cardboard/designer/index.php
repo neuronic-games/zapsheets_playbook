@@ -417,6 +417,8 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .moving .al-dot, .moving .al-guide { display:none; }
 .el.editing { z-index:60 !important; }
 .el.editing .el-inner { cursor:text; user-select:text; -webkit-user-select:text; white-space:pre-wrap; outline:calc(2px / var(--z, 1)) solid #7b6cf6; outline-offset:calc(1px / var(--z, 1)); background:rgba(255,255,255,.9); }
+/* Light writing (white on a dark card): a dark box behind it while editing, so it can be read */
+.el.editing.ed-dark .el-inner { background:rgba(20,19,42,.9); outline-color:#a99dff; }
 .el.editing .hdl { display:none; }
 .el.as-image.editing .el-inner { font-family:'DINRegular',Arial,sans-serif; font-size:10pt; color:#1b1b2b; display:flex; align-items:center; justify-content:center; text-align:center; }
 .sel-box { position:absolute; z-index:49; pointer-events:none; outline:calc(1.5px / var(--z)) solid #7b6cf6; outline-offset:calc(2px / var(--z)); }

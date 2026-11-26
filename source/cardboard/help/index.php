@@ -513,7 +513,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 <!-- ───────────────────────── Printing & sharing ───────────────────────── -->
 <section class="topic" id="print">
   <h2><span class="n">19</span>Print</h2>
-  <?= shot('print', 'Copies from the Count field: 16 cards, 9 per page, with crop marks.') ?>
+  <?= shot('print', 'Double-sided: each page of fronts sits next to its backs. Zoom in with − / +, or download a PDF.') ?>
   <ul>
     <li><b>Paper</b> Letter or A4, <b>Orientation</b>, and the <b>Gap</b> between cards (none, 1/16 in, 1/8 in).</li>
     <li><b>Cut lines</b> — crop marks, card outlines, or none.</li>

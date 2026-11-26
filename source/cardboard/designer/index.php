@@ -465,6 +465,8 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .fmt-ed:empty::before { content:attr(data-ph); color:#a0a4bb; }
 .fmt-float { position:fixed; z-index:400; box-shadow:0 6px 20px rgba(20,19,42,.18); }
 .fmt-box:not(.fmt-float) { position:relative; }
+.fmt-box:not(.fmt-float) > .fmt-bar { display:none; }   /* the Value box: the formatting buttons only while you're editing it */
+.fmt-box:not(.fmt-float):focus-within > .fmt-bar { display:flex; }
 .fmt-b.fmt-tagbtn { font:700 11px/1 'DINBlack',sans-serif; letter-spacing:.04em; color:#4b3fa8; padding:0 6px; white-space:nowrap; }
 .fmt-tagmenu { position:absolute; top:calc(100% + 4px); z-index:410; min-width:200px; max-width:300px; max-height:260px; overflow:auto; background:#fff; border:1px solid #dfe1ea; border-radius:9px; box-shadow:0 10px 28px rgba(20,19,42,.2); padding:4px; }
 .fmt-tagit { display:flex; align-items:center; gap:.55rem; width:100%; border:none; background:none; padding:.4rem .55rem; border-radius:6px; cursor:pointer; text-align:left; font:inherit; font-size:.82rem; color:#2b2d42; }

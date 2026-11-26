@@ -1885,7 +1885,7 @@ function pendingCol(tab, name) { return dataPend(tab).cols.indexOf(name) >= 0; }
 function settingsPending() { return !!lsGet('cb_settings:' + SHEET_ID); }
 function markSettings() { var keep = Object.assign({}, SETTINGS); delete keep.profile; lsSet('cb_settings:' + SHEET_ID, keep); updateSaveBtn(); }
 function pendingCount() {
-  var n = newTabs().length + draftTabs().length + (settingsPending() ? 1 : 0);
+  var n = newTabs().length + draftTabs().length + (settingsPending() ? 1 : 0) + tagOps().length;
   dataTabs().forEach(function(t) { n += pendSize(dataPend(t)); });
   return n;
 }
@@ -2017,7 +2017,7 @@ function saveAll(auto) {
   if (!requirePro('save', saveAll)) return Promise.resolve();
   if (_gridEdit && auto !== true) endGridEdit(true);
   _saving = true; _saveDone = 0;
-  _saveSteps = newTabs().length + dataTabs().length + draftTabs().length + (settingsPending() ? 1 : 0);
+  _saveSteps = newTabs().length + dataTabs().length + draftTabs().length + (settingsPending() ? 1 : 0) + (tagOps().length ? 1 : 0);
   updateSaveBtn();
   var step = function() { _saveDone++; updateSaveBtn(); };
   var errors = [], conflicts = 0, savedTabs = [], chain = Promise.resolve(), failedNew = [];
@@ -2063,6 +2063,18 @@ function saveAll(auto) {
         if (savedTabs.indexOf(tab) < 0) savedTabs.push(tab);
       }).catch(function(e) { errors.push('“' + tab + '” layout: ' + e.message); }).then(step);
     });
+  });
+  if (tagOps().length) chain = chain.then(function() {   // the tags tab: each kept change, in order
+    var ops = tagOps(), done = 0, ic = Promise.resolve();
+    ops.forEach(function(o) {
+      ic = ic.then(function() {
+        return (o.op === 'del' ? api('deltag', { tag: o.tag }) : api('settag', Object.assign({ tag: o.tag, value: o.value || '' }, o.old ? { old: o.old } : {})))
+          .then(function() { done++; });
+      });
+    });
+    return ic.catch(function(e) { errors.push('tags: ' + e.message); })
+      .then(function() { setTagOps(tagOps().slice(done)); })   // what didn't go (and anything changed meanwhile) stays for the next Save
+      .then(step);
   });
   if (settingsPending()) chain = chain.then(function() {
     var snap = JSON.stringify(lsGet('cb_settings:' + SHEET_ID));
@@ -4485,7 +4497,7 @@ function expandTags(html, ctx) {
 }
 function refreshCards() { render(); if (_activeTab === 'print') renderPrint(); if (_activeTab === 'export') renderExport(); }
 function loadTags() {
-  return api('tags').then(function(r) { setTags(r.tags || []); refreshCards(); if (_activeTab === 'tags') renderTags(); })
+  return api('tags').then(function(r) { setTags(applyTagOps(r.tags || [])); refreshCards(); if (_activeTab === 'tags') renderTags(); })
     .catch(function(e) { if (_activeTab === 'tags') $('tagList').innerHTML = '<div class="muted" style="padding:1rem">Couldn\'t read the tags — ' + esc(e.message) + '</div>'; });
 }
 
@@ -4534,21 +4546,34 @@ function laterRenderTags() {
   _tagRedraw = false; renderTags();
 }
 function tagAt(i) { return i < 0 ? (_tagDraft || _lastDraft) : TAGS[i]; }
-var _tagSaves = Promise.resolve();   // one save at a time, so a new tag's name and value can't race
-function saveTag(t, old) {
+// Tag changes are kept in this browser (cb_tags:{sheet}) like every other change, and Save (or the pause after
+// you stop) sends them to the tags tab in order: [{op: 'set', tag, value, old}, {op: 'del', tag}]
+function tagOps() { var l = lsGet('cb_tags:' + SHEET_ID); return Array.isArray(l) ? l : []; }
+function setTagOps(l) { lsSet('cb_tags:' + SHEET_ID, l.length ? l : null); updateSaveBtn(); }
+function queueTagOp(o) {
+  var ops = tagOps(), last = ops[ops.length - 1];
+  // A name or value changed again before saving: one change, from the name the sheet still has
+  if (o.op === 'set' && last && last.op === 'set' && tagKey(last.tag) === tagKey(o.old || o.tag)) { last.tag = o.tag; last.value = o.value; }
+  else ops.push(o);
+  setTagOps(ops);   // saved with everything else (Save, or the pause after you stop)
+}
+function applyTagOps(list) {   // the sheet's tags with this browser's unsaved changes on top
+  tagOps().forEach(function(o) {
+    var k = tagKey(o.op === 'set' && o.old ? o.old : o.tag), i = -1;
+    list.forEach(function(t, j) { if (tagKey(braced(t.tag)) === k) i = j; });
+    if (o.op === 'del') { if (i >= 0) list.splice(i, 1); return; }
+    if (i >= 0) { list[i].tag = o.tag; list[i].value = o.value; } else list.push({ tag: o.tag, value: o.value });
+  });
+  return list;
+}
+function saveTag(t, old) {   // kept until Save
   if (!t.tag) return Promise.resolve();
-  var p = _tagSaves = _tagSaves.catch(function() {}).then(function() {
-    return api('settag', Object.assign({ tag: t.tag, value: t.value || '' }, old && tagKey(old) !== tagKey(t.tag) ? { old: old } : {}));
-  });
-  return p.then(function() {
-    if (t === _tagDraft) { _tagDraft = null; _lastDraft = t; TAGS.push(t); }
-    setTags(TAGS); refreshCards();
-    laterRenderTags();
-    toast('✓ Saved ' + t.tag);
-  }).catch(function(e) {
-    toast('Couldn\'t save the tag — ' + e.message, true);
-    loadTags();
-  });
+  if (!requirePro('edit', function() {})) { renderTags(); return Promise.resolve(); }
+  queueTagOp({ op: 'set', tag: t.tag, value: t.value || '', old: old && tagKey(old) !== tagKey(t.tag) ? old : '' });
+  if (t === _tagDraft) { _tagDraft = null; _lastDraft = t; TAGS.push(t); }
+  setTags(TAGS); refreshCards();
+  laterRenderTags();
+  return Promise.resolve();
 }
 function renameTag(i, v, input) {
   var t = tagAt(i), name = braced(v); if (!t) return;
@@ -4577,8 +4602,9 @@ function deleteTag(i) {
   askDialog({ title: 'Delete ' + t.tag + '?', message: 'Cards will show ' + t.tag + ' as plain text again. The row is removed from the tags tab.', ok: 'Delete', cancel: 'Keep', danger: true })
     .then(function(yes) {
       if (!yes) return;
-      api('deltag', { tag: t.tag }).then(function() { TAGS.splice(TAGS.indexOf(t), 1); setTags(TAGS); refreshCards(); renderTags(); toast('Deleted ' + t.tag); })
-        .catch(function(e) { toast('Couldn\'t delete — ' + e.message, true); });
+      if (!requirePro('edit', function() {})) return;
+      queueTagOp({ op: 'del', tag: t.tag });   // kept until Save
+      TAGS.splice(TAGS.indexOf(t), 1); setTags(TAGS); refreshCards(); renderTags();
     });
 }
 

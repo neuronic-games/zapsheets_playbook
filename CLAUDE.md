@@ -1,5 +1,9 @@
 # DevBoard — Project Notes for Claude
 
+**Start here: read `docs/HANDOFF.md`** — how we work (deploy, commits, cache-busting), the security rules, how this
+setup behaves, how the newer features fit together, and the open items. Update it at the end of each larger piece
+of work.
+
 ## Auto-commit
 After every turn in which you modify, create, or delete any file in this repo, run the commit skill automatically — no need for the user to ask. Stage all changes and write a concise commit message describing what changed.
 

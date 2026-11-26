@@ -731,7 +731,7 @@ input[type="date"].field-input { -webkit-appearance:none; appearance:none; min-h
     <div style="display:grid;grid-template-columns:1fr 110px;gap:.5rem .6rem;margin-bottom:.6rem">
       <div class="field-group" style="margin:0">
         <label>Notes</label>
-        <textarea class="field-input ge-textarea" id="tmTimeNotes" placeholder="What did you work on?" style="height:2.45rem;min-height:2.45rem;resize:vertical"></textarea>
+        <input type="text" class="field-input" id="tmTimeNotes" placeholder="What did you work on?" autocomplete="off" />
       </div>
       <div class="field-group" style="margin:0">
         <label>Time</label>

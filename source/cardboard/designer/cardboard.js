@@ -3432,14 +3432,14 @@ function renderExport() {
       h += '<div class="x-sheet" style="width:' + sw * sc + 'px;height:' + sh * sc + 'px"><div class="x-grid" style="width:' + sw + 'px;grid-template-columns:repeat(' + P.cols + ',' + cw + 'px);transform:scale(' + sc + ')">';
       cards.forEach(function(it, i) { h += cell(renderCardHTML(lay, it.row, false, { card: start + i, row: it.ri })); });
       for (var k = cards.length; k < P.cols * P.rows - (P.t.backLast ? 1 : 0); k++) h += cell('');
-      if (P.t.backLast) h += '<div class="x-cell x-back" title="Card back — shown for hidden cards" style="width:' + cw + 'px;height:' + chh + 'px">' + backHTML(cards[0], start, { lay: lay }) + '</div>';
+      if (P.t.backLast) h += '<div class="x-cell x-back" title="' + (varies ? 'Shown for hidden cards (backs differ, so a plain CardBoard card)' : 'Card back — shown for hidden cards') + '" style="width:' + cw + 'px;height:' + chh + 'px">' + (varies ? hiddenCardHTML() : backHTML(cards[0], start, { lay: lay })) + '</div>';
       h += '</div></div>';
       if (varies) {   // unique backs: a matching sheet of backs, each in the same place as its card
         h += '<div class="x-label">Sheet ' + (si + 1) + ' backs · ' + cards.length + ' cards</div>';
         h += '<div class="x-sheet" style="width:' + sw * sc + 'px;height:' + sh * sc + 'px"><div class="x-grid" style="width:' + sw + 'px;grid-template-columns:repeat(' + P.cols + ',' + cw + 'px);transform:scale(' + sc + ')">';
         cards.forEach(function(it, i) { h += cell(backHTML(it, start + i, { lay: lay })); });
         for (var k2 = cards.length; k2 < P.cols * P.rows - (P.t.backLast ? 1 : 0); k2++) h += cell('');
-        if (P.t.backLast) h += '<div class="x-cell x-back" style="width:' + cw + 'px;height:' + chh + 'px">' + backHTML(cards[0], start, { lay: lay }) + '</div>';
+        if (P.t.backLast) h += '<div class="x-cell x-back" style="width:' + cw + 'px;height:' + chh + 'px">' + hiddenCardHTML() + '</div>';
         h += '</div></div>';
       }
       start += cards.length;
@@ -3452,7 +3452,8 @@ function exportHelp(P) {
   if (tgt === 'tts') return '<b>In Tabletop Simulator:</b> Objects → Components → Custom → <b>Deck</b>. For each sheet: Face = <code>faces-N.png</code>, ' +
     (uniq ? 'tick <b>Unique backs</b> and set Back = <code>backs-N.png</code>, ' : 'Back = <code>back.png</code> (Unique backs off), ') +
     'Width <b>' + P.cols + '</b>, Height <b>' + P.rows + '</b>, Number = the cards on that sheet (shown above each one). Tick <b>Back is hidden</b>. ' +
-    'The last slot on each sheet is the back, which TTS shows for cards in other players\' hands.';
+    (uniq ? 'The last slot on each sheet is a plain CardBoard card, which TTS shows for cards in other players\' hands (the backs differ, so it can\'t be one of them).'
+          : 'The last slot on each sheet is the back, which TTS shows for cards in other players\' hands.');
   if (tgt === 'screentop') return '<b>In Screentop:</b> add each <code>sheet-N.png</code>' + (uniq ? ' (and its <code>backs-N.png</code>)' : '') + ' as an image and split it into a grid of <b>' + P.cols + '</b> columns × <b>' + P.rows + '</b> rows. ' +
     'The last cell is the card back. Sheets stay under 4096 px, Screentop\'s image limit.';
   return 'One picture per card (<code>card-001.png</code> …) plus ' + (uniq ? 'its back (<code>card-001-back.png</code> …)' : '<code>back.png</code>') + ' — for Screentop\'s one-image-per-card decks, or anywhere else.';
@@ -3492,6 +3493,23 @@ function fileBlob(cv, o) {
 // Draw every file for an export. onFile(name, blob, info) is called for each and may return a promise.
 // Only one export draws at a time (they share the off-screen stage), so calls queue up.
 var _drawQueue = Promise.resolve();
+// With unique backs, the card shown for hidden cards (in another player's hand in Tabletop Simulator) can't be any
+// one card's back: it's a plain CardBoard card — purple, with the logo in the middle
+var HIDDEN_BG = '#4b3fa8';
+function hiddenCardHTML() {
+  return '<div style="width:100%;height:100%;background:' + HIDDEN_BG + ';display:flex;align-items:center;justify-content:center;border-radius:' + ((layout && layout.card.radius) || 0) + 'pt">' +
+    '<img src="images/cardboard_icon_512.png" alt="" style="width:42%;border-radius:18%;box-shadow:0 2px 8px rgba(0,0,0,.25)"></div>';
+}
+function hiddenCardCanvas(w, h, card) {
+  return new Promise(function(ok) {
+    var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    var g = cv.getContext('2d'); g.fillStyle = HIDDEN_BG; g.fillRect(0, 0, w, h);
+    var im = new Image();
+    im.onload = function() { var s = Math.round(Math.min(w, h) * 0.42); g.drawImage(im, Math.round((w - s) / 2), Math.round((h - s) / 2), s, s); ok(cv); };
+    im.onerror = function() { ok(cv); };
+    im.src = APP_BASE + 'images/cardboard_icon_512.png';
+  });
+}
 // The off-screen stage the pictures are drawn from lives outside the Export view, so drawing works from any view
 // (the PDF in Print, the Designs picture while designing) — inside a hidden view everything came out blank
 if ($('exportStage') && $('exportStage').parentNode !== document.body) document.body.appendChild($('exportStage'));
@@ -3566,7 +3584,7 @@ function buildExportNow(o, onFile, tick) {
         chain = chain.then(function() {
           var sheet = document.createElement('canvas'), bsheet = document.createElement('canvas');
           sheet.width = bsheet.width = P.cols * P.cardW; sheet.height = bsheet.height = P.rows * P.cardH;
-          var g = sheet.getContext('2d'), bg = bsheet.getContext('2d'), hidden = null, inner = Promise.resolve();
+          var g = sheet.getContext('2d'), bg = bsheet.getContext('2d'), hidden = null, inner = uniq ? hiddenCardCanvas(P.cardW, P.cardH, lay.card).then(function(cv) { hidden = cv; }) : Promise.resolve();
           cards.forEach(function(it, i) {
             var k = index++;
             inner = inner.then(function() {
@@ -3575,14 +3593,14 @@ function buildExportNow(o, onFile, tick) {
               return drawCard(renderCardHTML(lay, it.row, false, { card: k, row: it.ri, proxy: true }), P.cardW, c)
                 .then(function(cv) { g.drawImage(cv, x, y); done++; })
                 .then(function() {
-                  if (uniq) return drawCard(backHTML(it, k, { lay: lay, proxy: true }), P.cardW, c).then(function(cv) { bg.drawImage(cv, x, y); if (!hidden) hidden = cv; done++; });
+                  if (uniq) return drawCard(backHTML(it, k, { lay: lay, proxy: true }), P.cardW, c).then(function(cv) { bg.drawImage(cv, x, y); done++; });
                 });
             });
           });
           var info = { kind: 'faces', sheet: si + 1, cards: cards.length };
           return inner.then(function() {
             var hx = (P.cols - 1) * P.cardW, hy = (P.rows - 1) * P.cardH;
-            if (P.t.backLast) { g.drawImage(uniq ? hidden : back, hx, hy); if (uniq) bg.drawImage(hidden, hx, hy); }
+            if (P.t.backLast) { g.drawImage(uniq ? hidden : back, hx, hy); if (uniq) bg.drawImage(hidden, hx, hy); }   // hidden: the plain CardBoard card (unique backs)
             return blob(sheet);
           }).then(function(b) { return emit(prefix + (si + 1) + ext, b, info); })
             .then(function() { if (uniq) return blob(bsheet).then(function(b2) { return emit('backs-' + (si + 1) + ext, b2, { kind: 'backs', sheet: si + 1, cards: cards.length }); }); });

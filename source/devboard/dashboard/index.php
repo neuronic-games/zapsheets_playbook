@@ -429,7 +429,7 @@ body { margin:0; background:#f0f4f8; font-family:'DINRegular',Arial,sans-serif; 
 .pf-acct-btn:hover { background:#1a5f7a; color:#fff; }
 .pf-acct-note { font-size:.74rem; color:#888; line-height:1.45; margin:0 0 .3rem; }
 .fld-hint { display:block; margin-top:.25rem; font-family:'DINRegular',sans-serif; font-size:.72rem; font-weight:normal; text-transform:none; letter-spacing:0; color:#8a94a0; line-height:1.4; }
-.dash-contracts > .act-more:first-child { border-top:none; border-bottom:1px solid #f0f4f8; }   /* Show earlier, above the list */
+.dash-contracts > .act-more:first-child { border-top:none; }   /* Show more, under the list */
 .dash-contract-game { font-family:'DINBlack',sans-serif; color:#1a5f7a; }
 .dash-contract-client { color:#666; font-size:.72rem; }
 
@@ -2629,13 +2629,12 @@ function _dashActivityHtml() {
     if (s.w && x.notes.indexOf(s.w) < 0) x.notes.push(s.w);
   });
   if (!items.length) return '';
-  // Like a log: oldest at the top, the latest at the bottom (undated first). The latest ones show; earlier ones on request.
-  // Same day: sessions, then T&M, then contracts, each in the sheet's order
+  // The latest first (undated last); the latest ones show, more on request at the bottom.
+  // Same day: contracts, then T&M, then sessions, each the newest in the sheet first
   var rank = { s: 0, tm: 1, c: 2 };
-  items.sort(function(a, b) { return (a.t || -1) - (b.t || -1) || (a.k === b.k ? a.o - b.o : rank[a.k] - rank[b.k]); });
+  items.sort(function(a, b) { return (b.t || -1) - (a.t || -1) || (a.k === b.k ? b.o - a.o : rank[b.k] - rank[a.k]); });
   var html = '<div><div class="dash-section-hd">Activity</div><div class="dash-contracts">';
-  if (items.length > _actShown) html += '<button type="button" class="act-more" onclick="_actShown+=12;renderDashView()">Show earlier (' + (items.length - _actShown) + ')</button>';
-  items.slice(Math.max(0, items.length - _actShown)).forEach(function(x) {
+  items.slice(0, _actShown).forEach(function(x) {
     var when = x.t ? fmtDate(new Date(x.t).toISOString().slice(0, 10)) : '';
     if (x.k === 'tm') {
       var parts = [], amt = [];
@@ -2673,6 +2672,7 @@ function _dashActivityHtml() {
       '<div style="font-family:DINBlack,sans-serif;font-size:.78rem">' + esc(quote) + '</div>' +
       '<div><span class="' + badgeCls + '">' + esc(payment || '—') + '</span></div></div>';
   });
+  if (items.length > _actShown) html += '<button type="button" class="act-more" onclick="_actShown+=12;renderDashView()">Show more (' + (items.length - _actShown) + ')</button>';
   return html + '</div></div>';
 }
 // A session in Activity: open its game on the Games tab

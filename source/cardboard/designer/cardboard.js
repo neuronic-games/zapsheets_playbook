@@ -3119,8 +3119,8 @@ $('pages').addEventListener('wheel', function(ev) {   // pinch, or ⌘/Ctrl + sc
   renderPrint();
 }, { passive: false });
 window.addEventListener('resize', function() { if (_activeTab === 'print') { clearTimeout(window._prRs); window._prRs = setTimeout(renderPrint, 150); } });
-function renderPrint() {
-  var pages = $('pages');
+function renderPrint(forPdf) {   // forPdf: don't draw — answer {pw, ph, sides: [page HTML]} for the PDF download
+  var pages = $('pages'), sides = [];
   if (!layout) { pages.innerHTML = ''; return; }
   savePrintSettings(curTab);
   var list = cardList($('pCopies'), renderPrint);
@@ -3154,6 +3154,7 @@ function renderPrint() {
     if (two) html += '<div class="page-pair" style="gap:' + GAPX + 'px">';
     [false, true].forEach(function(isBack) {
       if (isBack && backs === 'none') return;
+      var side0 = html.length;
       html += '<div class="page-holder" style="width:' + (pw * PX * scale) + 'px;height:' + (ph * PX * scale) + 'px">' +
               (backs !== 'none' ? '<span class="page-tag">' + (isBack ? 'Back' : 'Front') + ' · page ' + (p + 1) + '</span>' : '') +
               '<div class="page" style="width:' + pw + 'pt;height:' + ph + 'pt;transform:scale(' + scale + ')">' +
@@ -3167,10 +3168,11 @@ function renderPrint() {
         if (isBack && backs === 'short') row = rowsN - 1 - row; // flipped over the short edge: rows swap
         var cx = ox + col * (c.w + gap), cy = oy + row * (c.h + gap);
         html += '<div style="position:absolute;left:' + cx + 'pt;top:' + cy + 'pt;width:' + c.w + 'pt;height:' + c.h + 'pt' + (cut === 'outline' ? ';outline:.5pt solid #9aa0b8' : '') + '">' +
-                renderCardHTML(sq, it.row, false, { card: p * per + i, row: it.ri, side: isBack ? 'back' : 'front' }) + '</div>';
+                renderCardHTML(sq, it.row, false, { card: p * per + i, row: it.ri, side: isBack ? 'back' : 'front', proxy: !!forPdf }) + '</div>';
       });
       if (!isBack) html += cropMarks(cards.length);
       html += '</div></div>';
+      if (forPdf) { var hs = html.slice(side0), pi = hs.indexOf('<div class="page"'); sides.push(hs.slice(pi, hs.length - 6).replace(/transform:scale\([^)]*\)/, 'transform:none')); }
     });
     if (two) html += '</div>';
   }
@@ -3191,7 +3193,41 @@ function renderPrint() {
     });
     return out;
   }
+  if (forPdf) return { pw: pw, ph: ph, land: land, sides: sides };
   pages.innerHTML = list.length ? html : '<div class="muted">No cards to print.</div>';
+}
+// Download the print pages as a PDF (the same pages, fronts and backs in order), drawn in the browser
+var _pdfBusy = false;
+function runPrintPdf() {
+  if (_pdfBusy || !layout) return;
+  if (!requirePro('print', runPrintPdf)) return;
+  var d = renderPrint(true); if (!d || !d.sides.length) { toast('No cards to print', true); return; }
+  var btn = $('pdfGo'), info = $('printInfo'), was = info.textContent, DPI = 220, ratio = DPI / 72 / PX;
+  _pdfBusy = true; btn.disabled = true;
+  var libs = Promise.all([exportLibs(), window.jspdf ? 0 : loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')]);
+  var run = _drawQueue.then(function() { return libs; }).then(function() {
+    var pdf = new window.jspdf.jsPDF({ unit: 'pt', format: [d.pw, d.ph], orientation: d.land ? 'landscape' : 'portrait', compress: true });
+    var chain = Promise.resolve();
+    d.sides.forEach(function(html, i) {
+      chain = chain.then(function() {
+        info.textContent = 'Making the PDF… page ' + (i + 1) + ' of ' + d.sides.length;
+        return drawCard(html, d.pw * PX * ratio, { w: d.pw, h: d.ph });
+      }).then(function(cv) {
+        var w = document.createElement('canvas'); w.width = cv.width; w.height = cv.height;
+        var g = w.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w.width, w.height); g.drawImage(cv, 0, 0);
+        if (i) pdf.addPage([d.pw, d.ph], d.land ? 'landscape' : 'portrait');
+        pdf.addImage(w.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, d.pw, d.ph, undefined, 'FAST');
+      });
+    });
+    return chain.then(function() {
+      var name = ((SHEET_TITLE ? SHEET_TITLE + ' - ' : '') + (curTab || 'cards')).replace(/[\\/:*?"<>|]+/g, '').trim() || 'cards';
+      pdf.save(name + ' - print.pdf');
+      toast('✓ PDF downloaded — ' + d.sides.length + (d.sides.length === 1 ? ' page' : ' pages'));
+    });
+  });
+  _drawQueue = run.catch(function() {});
+  run.catch(function(e) { toast('Couldn’t make the PDF — ' + e.message, true); })
+    .then(function() { _pdfBusy = false; btn.disabled = false; info.textContent = was; $('exportStage').innerHTML = ''; });
 }
 
 // ── Export: card sheets for Tabletop Simulator and Screentop ──────────────────
@@ -3361,6 +3397,9 @@ function fileBlob(cv, o) {
 // Draw every file for an export. onFile(name, blob, info) is called for each and may return a promise.
 // Only one export draws at a time (they share the off-screen stage), so calls queue up.
 var _drawQueue = Promise.resolve();
+// The off-screen stage the pictures are drawn from lives outside the Export view, so drawing works from any view
+// (the PDF in Print, the Designs picture while designing) — inside a hidden view everything came out blank
+if ($('exportStage') && $('exportStage').parentNode !== document.body) document.body.appendChild($('exportStage'));
 // The sheet's picture on the Designs page (/cardboard): its first card. Sent whenever that card looks
 // different from the last one sent (after a save, a fetch or on opening), never in the way of anything else.
 var _thumbBusy = false;

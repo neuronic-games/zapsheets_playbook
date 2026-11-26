@@ -610,7 +610,10 @@ table.grid thead th.just-added { animation:colFlash 1.6s ease; }
 /* Get / Update links takes the room; Download is an icon */
 #view-export .e-actions { display:flex; gap:.5rem; }
 #view-export #publishGo { flex:1; white-space:nowrap; }
-#view-export .dl-go { flex:0 0 auto; display:flex; align-items:center; justify-content:center; padding-left:.9rem; padding-right:.9rem; }
+#view-print .p-actions { display:flex; gap:.45rem; }
+#view-print .p-actions .print-go:first-child { flex:1; width:auto; }
+#view-print .p-actions .dl-go { width:auto; }
+#view-export .dl-go, #view-print .dl-go { flex:0 0 auto; display:flex; align-items:center; justify-content:center; padding-left:.9rem; padding-right:.9rem; }
 #view-export .e-actions { margin-left:0; }
 #view-export .e-actions .print-go { flex:1; }
 #view-export .export-info { border-bottom:none; }
@@ -768,7 +771,7 @@ table.grid tbody tr:hover td:not(.sel) { background-color:#fafaff; }
 .lock-bar { display:flex; align-items:center; justify-content:center; gap:1rem; flex-wrap:wrap; padding:.55rem 1rem; background:#fff7e6; border-bottom:1px solid #f5d98c; color:#5c4a12; font-size:.82rem; flex-shrink:0; }
 .lock-bar[hidden] { display:none; }
 .lock-bar .plan-btn { width:auto; padding:.45rem 1rem; }
-body.cb-locked .tags-stick .print-go:not(.ghost), body.cb-locked #exportGo, body.cb-locked #publishGo { opacity:.5; pointer-events:none; }
+body.cb-locked .tags-stick .print-go:not(.ghost), body.cb-locked #exportGo, body.cb-locked #publishGo, body.cb-locked #pdfGo { opacity:.5; pointer-events:none; }
 body.cb-locked #cardHolder .el { cursor:default; }
 body.cb-locked #cardHolder [data-h] { display:none; }
 /* read only: the attributes show, but nothing in them can be clicked or typed into (the panel still scrolls) */
@@ -1016,7 +1019,8 @@ body.cb-gate #signinOverlay { background:#2e2763; }
  <div class="grp"><span class="mini">Zoom</span>
       <div class="p-zoom"><button type="button" onclick="printZoom(-1)" title="Zoom out">−</button><span id="pZoomPct">100%</span><button type="button" onclick="printZoom(1)" title="Zoom in (or pinch / ⌘ + scroll)">+</button><button type="button" class="fit" onclick="printZoom(0)" title="Show the whole page">Fit</button></div></div>
     <span class="print-info" id="printInfo"></span>
-    <button class="print-go" onclick="if (requirePro('print', function() { window.print(); })) window.print()">Print</button>
+    <div class="p-actions"><button class="print-go" onclick="if (requirePro('print', function() { window.print(); })) window.print()">Print</button>
+    <button class="print-go dl-go" id="pdfGo" onclick="runPrintPdf()" title="Download the pages as a PDF" aria-label="Download PDF"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10.5 5 5 5-5"/><path d="M5 20h14"/></svg></button></div>
   </div>
   <div class="pages" id="pages"></div>
 </div>

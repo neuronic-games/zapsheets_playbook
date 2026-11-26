@@ -66,6 +66,32 @@ def cell_text(cell):
         return f'[{text}]({cell["hyperlink"]})'
     return text
 
+def _hex(c):
+    rgb = c.get('rgbColor') if isinstance(c, dict) and 'rgbColor' in c else c
+    if not isinstance(rgb, dict): return ''
+    return '#%02x%02x%02x' % tuple(int(round(float(rgb.get(k, 0)) * 255)) for k in ('red', 'green', 'blue'))
+
+def cell_fmt(cell):
+    # Formatting on part of a cell's text (the same as gread.py's get_cell_fmt): {t, r: [[start, {b,i,u,s,c}]]} or None
+    text = cell.get('formattedValue', '')
+    runs = cell.get('textFormatRuns', [])
+    if not text or not runs or any(r.get('format', {}).get('link', {}).get('uri') for r in runs): return None
+    out_runs, any_fmt = [], False
+    for run in runs:
+        f = run.get('format', {}) or {}
+        d = {}
+        if f.get('bold'): d['b'] = 1
+        if f.get('italic'): d['i'] = 1
+        if f.get('underline'): d['u'] = 1
+        if f.get('strikethrough'): d['s'] = 1
+        cs = f.get('foregroundColorStyle') or f.get('foregroundColor')
+        if cs:
+            col = _hex(cs)
+            if col: d['c'] = col
+        if d: any_fmt = True
+        out_runs.append([int(run.get('startIndex', 0)), d])
+    return {'t': text, 'r': out_runs} if any_fmt else None
+
 def peek_rows(wb, title, n=8):
     # The heading row and the first rows of a tab, as records like gread.py's — only the
     # first n rows are fetched, so it's quick even on a big sheet
@@ -82,14 +108,19 @@ def peek_rows(wb, title, n=8):
         r.raise_for_status()
         rd = ((r.json().get('sheets') or [{}])[0].get('data') or [{}])[0].get('rowData', [])
         grid = [[cell_text(c) for c in row.get('values', [])] for row in rd]
+        fmts = [[cell_fmt(c) for c in row.get('values', [])] for row in rd]
     except Exception:
-        grid = wb.values_get(rng).get('values', [])
+        grid = wb.values_get(rng).get('values', []); fmts = []
     if not grid: return []
     hdr = [str(h).strip() for h in grid[0]]
     recs = []
-    for row in grid[1:]:
+    for k, row in enumerate(grid[1:], start=1):
         if not any(str(v).strip() for v in row): continue
-        recs.append({h: (str(row[i]) if i < len(row) else '') for i, h in enumerate(hdr) if h})
+        rec = {h: (str(row[i]) if i < len(row) else '') for i, h in enumerate(hdr) if h}
+        fr = fmts[k] if k < len(fmts) else []
+        fm = {h: fr[i] for i, h in enumerate(hdr) if h and i < len(fr) and fr[i]}
+        if fm: rec['_fmt'] = fm   # formatting inside cells (CardBoard draws it)
+        recs.append(rec)
     return recs
 
 def read_layouts(wb, ws):

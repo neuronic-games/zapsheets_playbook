@@ -147,6 +147,7 @@ def get_records_with_links(service_account_client, sheet_id, sheet_name):
     with_notes = sheet_name.lower().endswith('] dev')
 
     records = []
+    del FMT[:]
     for row_no, row in enumerate(row_data[1:], start=2):
         cells = row.get('values', [])
         row_texts = [get_cell_text(c) for c in cells]
@@ -165,9 +166,50 @@ def get_records_with_links(service_account_client, sheet_id, sheet_name):
         if with_notes:
             record['_row'] = row_no   # sheet row number, used to update that row's note
         records.append(record)
+        fm = {}
+        for i, header in enumerate(headers):
+            h = header.strip()
+            if h and i < len(cells):
+                f = get_cell_fmt(cells[i])
+                if f: fm[h] = f
+        FMT.append(fm or None)
 
     return records
 
+
+# ── Formatting inside a cell (text runs): bold, italic, underline, strikethrough, colour ──
+# Kept for CardBoard in a file of its own next to the records ({tab}.fmt.json), so the records stay
+# the same for every app: [{field: {t: text, r: [[start, {b, i, u, s, c}], …]}} or null, …] —
+# one entry per record. Only cells with formatting on part of their text (whole-cell formatting is
+# the card element's own style), and not cells with links (their text is changed to [text](url)).
+
+def _hex(c):
+    rgb = c.get('rgbColor') if isinstance(c, dict) and 'rgbColor' in c else c
+    if not isinstance(rgb, dict): return ''
+    return '#%02x%02x%02x' % tuple(int(round(float(rgb.get(k, 0)) * 255)) for k in ('red', 'green', 'blue'))
+
+def get_cell_fmt(cell):
+    text = cell.get('formattedValue', '')
+    runs = cell.get('textFormatRuns', [])
+    if not text or not runs: return None
+    if any(r.get('format', {}).get('link', {}).get('uri') for r in runs): return None
+    out_runs, any_fmt = [], False
+    for run in runs:
+        f = run.get('format', {}) or {}
+        d = {}
+        if f.get('bold'): d['b'] = 1
+        if f.get('italic'): d['i'] = 1
+        if f.get('underline'): d['u'] = 1
+        if f.get('strikethrough'): d['s'] = 1
+        cs = f.get('foregroundColorStyle') or f.get('foregroundColor')
+        if cs:
+            col = _hex(cs)
+            if col: d['c'] = col
+        if d: any_fmt = True
+        out_runs.append([int(run.get('startIndex', 0)), d])
+    return {'t': text, 'r': out_runs} if any_fmt else None
+
+FMT = []   # one entry per record (None when nothing in that row is formatted)
 
 # ── Build records (prefer hyperlink-aware API; fall back to plain values) ─────
 
@@ -225,6 +267,17 @@ except Exception as e:
     err = json.dumps({"error": f"File write failed for '{path}': {type(e).__name__}: {str(e)}"})
     print(err)
     sys.exit(1)
+
+# The formatting inside cells, for CardBoard (see get_cell_fmt): next to the records, or removed when there is none
+try:
+    fmt_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sheets', mGoogleSheetId, os.path.basename(path)[:-5] + '.fmt.json')
+    if len(FMT) == len(records):   # read through the Sheets API (the fallback knows nothing of formatting: left as it is)
+        if any(FMT):
+            with open(fmt_path, 'w', encoding='utf8') as f: f.write(json.dumps(FMT, ensure_ascii=False))
+        elif os.path.exists(fmt_path):
+            os.remove(fmt_path)
+except Exception:
+    pass
 
 # Print the JSON to stdout so PHP can capture and relay it
 print(json_data)

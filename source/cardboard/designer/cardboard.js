@@ -250,7 +250,7 @@ function toast(msg, err) {
 
 // ── Values from the sheet ─────────────────────────────────────────────────────
 // Keys the app adds to each row for itself (not columns of the sheet). Columns may start with _ (like _Action).
-function isInternal(k) { return k === '_row' || k === '_notes' || k === '_pend'; }
+function isInternal(k) { return k === '_row' || k === '_notes' || k === '_pend' || k === '_fmt'; }
 function cleanVal(v) {
   v = String(v == null ? '' : v);
   if (v.charAt(0) === "'") v = v.slice(1);
@@ -384,9 +384,9 @@ function elInner(e, row, ctx) {
         var mu = mapPicture(e, row), hit = mapHit(e, row);
         if (mu) return imgDiv(mu, e, '', ctx);
         if (!row) return '<span class="el-empty">' + esc(e.field) + '</span>';
-        return rich(hit ? (hit.t || '') : textVal(row[e.field]), ctx);
+        return hit ? rich(hit.t || '', ctx) : richCell(row, e.field, ctx);
       }
-      return row ? rich(textVal(row[e.field]), ctx) : '<span class="el-empty">' + esc(e.field) + '</span>';
+      return row ? richCell(row, e.field, ctx) : '<span class="el-empty">' + esc(e.field) + '</span>';
     case 'image': { var iu = imageUrl(picRef(e.src)); return iu || ctx && ctx.designing ? imgDiv(iu, e, 'Drop an image here, or double-click to choose', ctx) : ''; }
     case 'shape': return shapeSVG(e);
     case 'gen':   return rich(fill(genValue(e, ctx), row), ctx);   // {Field} in Before / After / the list: that card's value
@@ -4029,6 +4029,24 @@ function setTags(list) {
 function tagsOn() { return TAGS.length > 0; }
 // One block of text, so an inline tag picture sits in the line instead of becoming its own flex item
 function rich(t, ctx) { return '<span class="tx">' + expandTags(esc(t), ctx || {}) + '</span>'; }
+// A card's value as the sheet formats it: bold, italic, underline, strikethrough and colour on part of
+// the cell's text (row._fmt[field] = {t: text, r: [[start, {b, i, u, s, c}], …]}, read with the rows).
+// Only while the value is still the text that was formatted; anything else in the element's own style.
+function richCell(row, field, ctx) {
+  var t = textVal(row[field]), f = row._fmt && row._fmt[field];
+  if (!f || !f.r || f.t !== cleanVal(row[field])) return rich(t, ctx);
+  var runs = f.r, html = '';
+  runs.forEach(function(run, i) {
+    var a = +run[0] || 0, b = i + 1 < runs.length ? +runs[i + 1][0] : t.length, seg = t.slice(a, b), d = run[1] || {};
+    if (!seg) return;
+    var st = (d.b ? 'font-weight:700;' : '') + (d.i ? 'font-style:italic;' : '') +
+             (d.u || d.s ? 'text-decoration:' + (d.u ? 'underline ' : '') + (d.s ? 'line-through' : '') + ';' : '') +
+             (/^#[0-9a-f]{6}$/i.test(d.c || '') ? 'color:' + d.c + ';' : '');
+    var inner = expandTags(esc(seg), ctx || {});
+    html += st ? '<span style="' + st + '">' + inner + '</span>' : inner;
+  });
+  return '<span class="tx">' + html + '</span>';
+}
 function expandTags(html, ctx) {
   if (!tagsOn()) return html;
   return html.replace(/\[([^\[\]{}<>]{1,60})\]/g, function(all, name) {

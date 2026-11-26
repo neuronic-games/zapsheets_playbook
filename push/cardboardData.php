@@ -179,7 +179,16 @@ function cbCached(string $sheetId, string $tab): ?array {
     $f = dirname(__DIR__) . '/sheets/' . $sheetId . '/' . strtolower($tab) . '.json';
     if (!is_file($f)) return null;
     $rows = json_decode((string) @file_get_contents($f), true);
-    return is_array($rows) ? $rows : null;
+    return is_array($rows) ? cbWithFmt($rows, $sheetId, $tab) : null;
+}
+// Formatting inside cells (bold, italic, colour… on part of the text), kept by gread.py next to the rows
+// ({tab}.fmt.json, one entry per row): added to each row as _fmt {field: {t, r}} for the cards to draw
+function cbWithFmt(array $rows, string $sheetId, string $tab): array {
+    $fmt = json_decode((string) @file_get_contents(dirname(__DIR__) . '/sheets/' . $sheetId . '/' . strtolower($tab) . '.fmt.json'), true);
+    if (!is_array($fmt) || count($fmt) !== count($rows)) return $rows;
+    foreach ($rows as $i => &$row) if (is_array($row) && !empty($fmt[$i])) $row['_fmt'] = $fmt[$i];
+    unset($row);
+    return $rows;
 }
 if ($action === 'start') {
     $res = cbRun($python, $sheetId, ['action' => 'start', 'tab' => trim($_POST['tab'] ?? '')]);
@@ -214,7 +223,7 @@ if ($action === 'rows') {
         if ($err !== null && !file_exists($file)) { echo json_encode(['error' => $err]); exit; }
     }
     $rows = json_decode((string) @file_get_contents($file), true);
-    echo json_encode(['ok' => true, 'rows' => is_array($rows) ? $rows : []], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['ok' => true, 'rows' => is_array($rows) ? cbWithFmt($rows, $sheetId, $tab) : []], JSON_UNESCAPED_UNICODE);
     exit;
 }
 

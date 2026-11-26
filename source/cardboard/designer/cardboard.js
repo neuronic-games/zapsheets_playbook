@@ -4281,7 +4281,7 @@ function refreshRows() {
       ev.preventDefault(); var row = GRID.rows[_gridSel.r], old = row.values[_gridSel.c] || '';
       if (old) saveGridCell(_gridSel.r, _gridSel.c, '', old);
     }
-    else if (mod && k.toLowerCase() === 'c') { var v = GRID.rows[_gridSel.r].values[_gridSel.c] || ''; if (navigator.clipboard) navigator.clipboard.writeText(v); }
+    else if (mod && k.toLowerCase() === 'c') gridCopy();
     else if (k.length === 1 && !mod && !ev.altKey) { ev.preventDefault(); startGridEdit(k); }   // typing replaces, like a spreadsheet
   });
   document.addEventListener('paste', function(ev) {
@@ -4289,9 +4289,40 @@ function refreshRows() {
     if (/^(INPUT|TEXTAREA)$/.test((document.activeElement || {}).tagName || '')) return;
     var t = (ev.clipboardData && ev.clipboardData.getData('text/plain')) || '';
     if (!t) return; ev.preventDefault();
-    var row = GRID.rows[_gridSel.r]; saveGridCell(_gridSel.r, _gridSel.c, t.replace(/\r?\n$/, ''), row.values[_gridSel.c] || '');
+    t = t.replace(/\r?\n$/, '');
+    var row = GRID.rows[_gridSel.r], name = GRID.header[_gridSel.c];
+    var fmt = name && !row.draft && !/^=/.test(t) ? gridPastedFmt(t, ev.clipboardData.getData('text/html') || '') : undefined;
+    if (fmt && !fmt.length && !gridFmt(row, name)) fmt = undefined;   // plain into plain: nothing to change
+    saveGridCell(_gridSel.r, _gridSel.c, t, row.values[_gridSel.c] || '', fmt);
   });
 })();
+// Copying a cell keeps its formatting: as HTML for other apps, and here (gridPastedFmt) for pasting into another cell
+var _gridClip = null;
+function gridCopy() {
+  var row = GRID.rows[_gridSel.r], v = row.values[_gridSel.c] || '', name = GRID.header[_gridSel.c], f = gridFmt(row, name);
+  var runs = f && f.t === cleanVal(v) ? f.r : [];
+  _gridClip = { text: cleanVal(v), runs: runs };
+  if (!navigator.clipboard) return;
+  if (runs.length && window.ClipboardItem && navigator.clipboard.write) {
+    var one = {}; one[name] = v; one._fmt = {}; one._fmt[name] = f;
+    var html = '<meta charset="utf-8"><span>' + fmtHtml(one, name, v) + '</span>';
+    navigator.clipboard.write([new ClipboardItem({ 'text/plain': new Blob([v], { type: 'text/plain' }), 'text/html': new Blob([html], { type: 'text/html' }) })])
+      .catch(function() { navigator.clipboard.writeText(v); });
+  } else navigator.clipboard.writeText(v);
+}
+// The formatting for pasted text: what was copied from a cell here, else what the pasted HTML has (e.g. from Google Sheets).
+// undefined = plain text, [] = none (clears what the cell had)
+function gridPastedFmt(text, html) {
+  if (_gridClip && _gridClip.text === text) return _gridClip.runs.length ? _gridClip.runs : [];
+  if (!html || !/style=|<(b|strong|i|em|u|s|strike|del|font)\b/i.test(html)) return [];
+  var box = document.createElement('div');
+  box.style.cssText = 'position:fixed;left:-9999px;top:0;white-space:pre-wrap;font-weight:400;font-style:normal;color:#000';
+  box.innerHTML = html.replace(/<(meta|style|script)[^>]*>[\s\S]*?<\/\1>|<meta[^>]*>/gi, '');
+  document.body.appendChild(box);
+  var r; try { r = fmtRead(box); } catch (e) { r = null; }
+  box.remove();
+  return r && r.text.replace(/\n+$/, '') === text ? r.runs : [];
+}
 
 // ── Tags (Pro): [name] in any text becomes a word or a picture ───────────────
 // ({Column} stays for sheet columns.) Kept in the spreadsheet's "tags" tab as name/value pairs: Tag = "[energy]", Value =

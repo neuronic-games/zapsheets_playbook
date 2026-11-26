@@ -299,7 +299,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
 
 <div class="pipeline">
   <span class="stage-pill st1">Google Sheet</span><span class="stage-arrow">→</span>
-  <span class="stage-pill st2">Front &amp; back layout</span><span class="stage-arrow">→</span>
+  <span class="stage-pill st2">Design Cards</span><span class="stage-arrow">→</span>
   <span class="stage-pill st3">Print sheets</span><span class="stage-arrow">→</span>
   <span class="stage-pill st4">Play online</span>
 </div>
@@ -332,7 +332,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
       <div class="shot-text">
         <div class="section-label">See it in action</div>
         <h2 class="section-title" style="margin-bottom:1rem;">Lay out the front and back of a card</h2>
-        <p>Your sheet's columns are on the left. Drag them onto the card — the art, the name, the cost — then flip it over and design the back the same way.</p>
+        <p>No need for complicated design tools to get a deck on the table. Make a simple, clean card layout right in CardBoard: your sheet's columns are on the left — drag them onto the card (the art, the name, the cost), then flip it over and design the back the same way.</p>
         <ol>
           <li><b>Drag columns onto the front.</b> Each shows the value from the current row.</li>
           <li><b>Add shapes</b> behind them — a coin for the cost, a frame, a banner.</li>

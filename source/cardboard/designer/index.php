@@ -420,6 +420,12 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 /* Light writing (white on a dark card): a dark box behind it while editing, so it can be read */
 .el.editing.ed-dark .el-inner { background:rgba(20,19,42,.9); outline-color:#a99dff; }
 .el.editing .hdl { display:none; }
+/* W / H set to Auto in the panel */
+.sz-lbl { display:flex; align-items:center; justify-content:space-between; gap:4px; }
+.auto-tg { border:1px solid #dfe1ea; background:#fff; color:#8a8fa8; border-radius:999px; font:inherit; font-size:.56rem; letter-spacing:.06em; text-transform:uppercase; padding:0 5px; line-height:1.5; cursor:pointer; }
+.auto-tg:hover { border-color:#7b6cf6; color:#4b3fa8; }
+.auto-tg.on { background:#7b6cf6; border-color:#7b6cf6; color:#fff; }
+.auto-inp { color:#7b6cf6; font-weight:600; cursor:pointer; background:#f6f5ff; }
 /* The formatted value box (Layout panel): the cell's text with its formatting */
 .fmt-box { border:1px solid #dfe1ea; border-radius:8px; background:#fff; }
 .fmt-box:focus-within { border-color:#7b6cf6; box-shadow:0 0 0 3px rgba(123,108,246,.15); }

@@ -323,9 +323,31 @@ function cardStyle(c) {
   return 'width:' + c.w + 'pt;height:' + c.h + 'pt;background:' + (c.bg || '#fff') + ';border-radius:' + (c.radius || 0) + 'pt;' +
          (c.borderW ? 'box-shadow:inset 0 0 0 ' + c.borderW + 'pt ' + (c.borderColor || '#000') + ';' : '');
 }
-function elStyle(e) {
+// Auto width / height (text, card fields shown as text, generated values): the box grows and shrinks with what's
+// in it. It stays put on the side its text is aligned to — left-aligned grows to the right, centred grows both
+// ways around the middle of the box, right-aligned grows to the left; top / middle / bottom the same way down.
+function hasAuto(e) { return !!(e && (e.autoW || e.autoH) && isTextLike(e)); }
+function elStyle(e, card) {
+  var c = card || (layout && layout.card) || { w: 9999, h: 9999 };
+  if (hasAuto(e)) {
+    var aw = !!e.autoW, ah = !!e.autoH, al = e.align || 'left', va = e.valign || 'top';
+    var ax = !aw ? e.x : al === 'center' ? e.x + e.w / 2 : al === 'right' ? e.x + e.w : e.x;
+    var ay = !ah ? e.y : va === 'middle' ? e.y + e.h / 2 : va === 'bottom' ? e.y + e.h : e.y;
+    var tx = !aw ? 0 : al === 'center' ? -50 : al === 'right' ? -100 : 0, ty = !ah ? 0 : va === 'middle' ? -50 : va === 'bottom' ? -100 : 0;
+    var maxW = al === 'center' ? Math.min(ax, c.w - ax) * 2 : al === 'right' ? ax : c.w - ax;
+    var sa = 'left:' + r1(ax) + 'pt;top:' + r1(ay) + 'pt;z-index:' + (e.z || 1) + ';' +
+             (aw ? 'width:max-content;max-width:' + r1(Math.max(12, maxW)) + 'pt;' : 'width:' + e.w + 'pt;') +
+             (ah ? 'height:auto;' : 'height:' + e.h + 'pt;');
+    var tf = (tx || ty ? 'translate(' + tx + '%,' + ty + '%) ' : '') + (e.rot ? 'rotate(' + e.rot + 'deg)' : '');
+    if (tf) sa += 'transform:' + tf + ';';
+    return sa + elLook(e);
+  }
   var s = 'left:' + e.x + 'pt;top:' + e.y + 'pt;width:' + e.w + 'pt;height:' + e.h + 'pt;z-index:' + (e.z || 1) + ';';
   if (e.rot) s += 'transform:rotate(' + e.rot + 'deg);';
+  return s + elLook(e);
+}
+function elLook(e) {
+  var s = '';
   if (e.opacity != null && e.opacity < 1) s += 'opacity:' + e.opacity + ';';
   if (e.kind === 'shape') return s;
   if (e.bg) s += 'background:' + e.bg + ';';
@@ -406,7 +428,8 @@ function renderCardHTML(lay, row, designing, ctx) {
     if (designing && UPLOADING[e.id]) cls += ' img-loading';
     if (keyIds.indexOf(e.id) >= 0) cls += ' key';
     if (e.group && off[e.group]) cls += ' when-off';
-    var st = elStyle(e);
+    var st = elStyle(e, lay.card);
+    if (list && hasAuto(e)) st = st.replace(/transform:[^;]*;/, '') + (e.rot ? 'transform:rotate(' + e.rot + 'deg);' : '');   // in a list it flows; no anchoring
     if (list) {   // sized by its contents along the list: as wide (or as tall) as it needs, up to its own box
       cls += ' in-list';
       if (isTextLike(e)) st += list === 'h' ? 'width:auto;max-width:' + e.w + 'pt;' : 'height:auto;max-height:' + e.h + 'pt;';
@@ -1584,6 +1607,7 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
   }
   var clickedSel = unit.every(isSel);
   if (!clickedSel) setSel(unit);
+  if (handle && hasAuto(e) && !multi.length) fixAuto(e, elDom, /[ew]/.test(handle), /[ns]/.test(handle));   // a side dragged: fixed from now on
   var start = ptFromEvent(ev), o = { x: e.x, y: e.y, w: e.w, h: e.h }, c = layout.card, moved = false;
   var group = multi.length ? curEls().filter(function(x) { return multi.indexOf(x.id) >= 0; }) : null;
   var origin = group && group.map(function(x) { return { x: x.x, y: x.y }; });
@@ -1598,7 +1622,8 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
       var ddx = sn(dx), ddy = sn(dy);
       group.forEach(function(x, i) {
         x.x = r1(origin[i].x + ddx); x.y = r1(origin[i].y + ddy);
-        var nd = $('cardHolder').querySelector('.el[data-id="' + x.id + '"]'); if (nd) { nd.style.left = x.x + 'pt'; nd.style.top = x.y + 'pt'; }
+        var nd = $('cardHolder').querySelector('.el[data-id="' + x.id + '"]');
+        if (nd) { if (hasAuto(x)) placeAuto(nd, x); else { nd.style.left = x.x + 'pt'; nd.style.top = x.y + 'pt'; } }
       });
       var bx = $('cardHolder').querySelector('.sel-box'), b2 = selBox(group);
       if (bx && b2) { bx.style.left = b2.x + 'pt'; bx.style.top = b2.y + 'pt'; }
@@ -1624,7 +1649,8 @@ $('cardHolder').addEventListener('pointerdown', function(ev) {
     }
     var node = $('cardHolder').querySelector('.el[data-id="' + e.id + '"]');
     if (node) {
-      node.style.left = e.x + 'pt'; node.style.top = e.y + 'pt'; node.style.width = e.w + 'pt'; node.style.height = e.h + 'pt';
+      if (hasAuto(e)) placeAuto(node, e);
+      else { node.style.left = e.x + 'pt'; node.style.top = e.y + 'pt'; node.style.width = e.w + 'pt'; node.style.height = e.h + 'pt'; }
       if (e.kind === 'shape' && handle) node.querySelector('.el-inner').innerHTML = shapeSVG(e);
     }
     syncGeomInputs(e);
@@ -2584,7 +2610,36 @@ function setCard(key, val, num) {
   changed(); if (key === 'size' || key === 'w' || key === 'h') fitZoom();
 }
 function syncGeomInputs(e) {
-  ['x', 'y', 'w', 'h'].forEach(function(k) { var i = $('a_' + k); if (i && document.activeElement !== i) i.value = r1(e[k]); });
+  ['x', 'y', 'w', 'h'].forEach(function(k) { var i = $('a_' + k); if (i && document.activeElement !== i && !(k === 'w' && e.autoW && hasAuto(e)) && !(k === 'h' && e.autoH && hasAuto(e))) i.value = r1(e[k]); });
+}
+// An auto box's position while it's dragged (its size and where it sits come from elStyle)
+function placeAuto(node, e) {
+  var keep = node.className; node.setAttribute('style', elStyle(e)); node.className = keep;
+}
+// The box as drawn now, in points (an auto box is as big as its text)
+function drawnBox(e, node) {
+  if (!node) return { x: e.x, y: e.y, w: e.w, h: e.h };
+  var cs = getComputedStyle(node), w = parseFloat(cs.width) / PX, h = parseFloat(cs.height) / PX;
+  if (!(w > 0)) w = e.w; if (!(h > 0)) h = e.h;
+  var al = e.align || 'left', va = e.valign || 'top';
+  var x = !e.autoW ? e.x : al === 'center' ? e.x + e.w / 2 - w / 2 : al === 'right' ? e.x + e.w - w : e.x;
+  var y = !e.autoH ? e.y : va === 'middle' ? e.y + e.h / 2 - h / 2 : va === 'bottom' ? e.y + e.h - h : e.y;
+  return { x: r1(x), y: r1(y), w: r1(w), h: r1(h) };
+}
+// Width and/or height stop being Auto: fixed at the size the box has now, where it is now
+function fixAuto(e, node, horiz, vert) {
+  var b = drawnBox(e, node);
+  if (horiz && e.autoW) { e.x = b.x; e.w = b.w; delete e.autoW; }
+  if (vert && e.autoH) { e.y = b.y; e.h = b.h; delete e.autoH; }
+}
+// The Auto buttons beside W and H
+function setAuto(dim) {
+  var e = elById(selId); if (!e || !isTextLike(e)) return;
+  var key = dim === 'w' ? 'autoW' : 'autoH';
+  snapshot();
+  if (e[key]) fixAuto(e, $('cardHolder').querySelector('.el[data-id="' + e.id + '"]'), dim === 'w', dim === 'h');
+  else e[key] = true;
+  changed(true); renderAttrs();
 }
 // A color field: a swatch that opens CardBoard's color chooser (transparent, a palette, recent
 // colors, or any color), and a box to type a color.
@@ -2847,7 +2902,16 @@ function _renderAttrs() {
     if (e.mode !== 'seq') h += '<div class="attr-btns"><button class="attr-btn" onclick="setProp(\'seed\',uid())">' + DIE_ICON + ' Re-roll</button></div>';
     h += textAttrs(e) + boxAttrs(e, 'Background');
   }
-  h += '<span class="lbl">Position (pt)</span><div class="row4">' + numInp('a_x', 'X', e.x, 'setProp', 'x', .5) + numInp('a_y', 'Y', e.y, 'setProp', 'y', .5) + numInp('a_w', 'W', e.w, 'setProp', 'w', .5) + numInp('a_h', 'H', e.h, 'setProp', 'h', .5) + '</div>';
+  var canAuto = isTextLike(e);
+  function sizeInp(id, label, key, autoKey) {   // W / H: a number, or Auto (text grows and shrinks with what's in it)
+    if (!canAuto) return numInp(id, label, e[key], 'setProp', key, .5);
+    var on = !!e[autoKey];
+    return '<div><span class="mini sz-lbl">' + label + '<button type="button" class="auto-tg' + (on ? ' on' : '') + '" onclick="setAuto(\'' + key + '\')" title="' + (on ? 'Auto: grows and shrinks with the text — click for a fixed size' : 'Make it Auto: grows and shrinks with the text') + '">Auto</button></span>' +
+      (on ? '<input class="inp auto-inp" id="' + id + '" value="Auto" readonly onclick="setAuto(\'' + key + '\')" title="Click for a fixed size">'
+          : '<input class="inp" type="number" step=".5" id="' + id + '" value="' + r1(e[key] || 0) + '" onchange="setProp(\'' + key + '\',this.value,true)">') + '</div>';
+  }
+  h += '<span class="lbl">Position (pt)</span><div class="row4">' + numInp('a_x', 'X', e.x, 'setProp', 'x', .5) + numInp('a_y', 'Y', e.y, 'setProp', 'y', .5) + sizeInp('a_w', 'W', 'w', 'autoW') + sizeInp('a_h', 'H', 'h', 'autoH') + '</div>';
+  if (canAuto && (e.autoW || e.autoH)) h += '<p class="muted" style="margin:.3rem 0 0">Auto ' + (e.autoW && e.autoH ? 'width and height' : e.autoW ? 'width' : 'height') + ': the box fits each card\'s text, growing from its ' + (e.autoW ? ({ left: 'left side', center: 'middle', right: 'right side' }[e.align || 'left']) : '') + (e.autoW && e.autoH ? ' and ' : '') + (e.autoH ? ({ top: 'top', middle: 'middle', bottom: 'bottom' }[e.valign || 'top']) : '') + '. Drag a side to fix its size.</p>';
   h += '<div class="row2" style="margin-top:.45rem">' + numInp('a_rot', 'Rotate (°)', e.rot || 0, 'setProp', 'rot', 1) +
        '<div><span class="mini">Opacity</span><input class="inp" type="number" min="0" max="100" step="5" value="' + Math.round((e.opacity == null ? 1 : e.opacity) * 100) + '" onchange="setProp(\'opacity\',clamp(this.value/100,0,1),true)"></div></div>';
   h += actionsHTML();

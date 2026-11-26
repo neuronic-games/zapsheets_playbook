@@ -458,7 +458,9 @@ function init() {
   // that tab's rows load in the background. (Older servers: tabs + layouts, then the rows.)
   var want = '';
   try { want = localStorage.getItem('cb_tab:' + SHEET_ID) || ''; } catch (e) {}
-  api('start', { tab: want })
+  var fresh = false;   // Fetch: read the sheet again, not the rows the server saved before
+  try { fresh = !!sessionStorage.getItem('cb_fetch:' + SHEET_ID); sessionStorage.removeItem('cb_fetch:' + SHEET_ID); } catch (e) {}
+  api('start', fresh ? { tab: want, force: '1' } : { tab: want })
     .catch(function(e) {
       if (!/unknown action/i.test(e.message)) throw e;
       return Promise.all([api('tabs'), api('layouts').catch(function() { return { layouts: {} }; })])
@@ -481,7 +483,7 @@ function init() {
       if (!start) { $('cardHolder').innerHTML = '<div class="muted">This spreadsheet has no decks to design from — each tab of the spreadsheet is a deck.</div>'; return; }
       sel.value = start; $('gridSheet').value = start; $('pSheet').value = start; $('eSheet').value = start;
       refreshSheetCombos(); updateSaveBtn();
-      selectTab(start, true, false, false, res.rows && res.tab === start ? res : null);
+      selectTab(start, true, fresh, false, !fresh && res.rows && res.tab === start ? res : null);
     })
     .catch(function(e) {
       $('cardHolder').innerHTML = '<div class="muted" style="max-width:360px;text-align:center">Couldn\'t open the sheet — ' + esc(e.message) +
@@ -714,6 +716,8 @@ function reloadSheet(asked) {
   // changes stay — they're kept apart) and the page opens fresh
   if (!navigator.onLine) { toast('You’re offline — Fetch needs a connection', true); return; }
   toast('Fetching the latest from your sheet…');
+  // After the reload the server reads the sheet again too (else it answers with the rows it saved before)
+  try { sessionStorage.setItem('cb_fetch:' + SHEET_ID, '1'); } catch (e) {}
   cacheClear().then(function() { location.reload(); });
 }
 function openInSheets() { window.open('https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit', '_blank', 'noopener'); }

@@ -194,7 +194,7 @@ if ($action === 'start') {
     $res = cbRun($python, $sheetId, ['action' => 'start', 'tab' => trim($_POST['tab'] ?? '')]);
     if (!empty($res['ok'])) {
         cbKeepTitle($sheetId, $res['title'] ?? ''); cbKeepInfo($sheetId, $res);
-        $all = cbCached($sheetId, (string) ($res['tab'] ?? ''));
+        $all = empty($_POST['force']) ? cbCached($sheetId, (string) ($res['tab'] ?? '')) : null;   // Fetch: the rows are read again
         if ($all !== null) { $res['rows'] = $all; $res['full'] = true; } else $res['full'] = false;
         if (empty($res['layouts'])) $res['layouts'] = new stdClass();   // {} rather than [] in the JSON
     }

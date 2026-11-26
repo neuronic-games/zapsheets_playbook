@@ -572,6 +572,13 @@ def main():
                 m = __import__('re').search(r'![A-Z]+(\d+)', rng)
                 first = int(m.group(1)) if m else 0
                 added = [{'key': a.get('key'), 'row': (first + i) if first else 0} for i, a in enumerate(ends)]
+                if first == 2:   # straight under the heading row: inserted rows copy its look (purple, bold) — give them a plain one
+                    try:
+                        wb.batch_update({'requests': [{'repeatCell': {
+                            'range': {'sheetId': tws.id, 'startRowIndex': 1, 'endRowIndex': 1 + len(ends)},
+                            'cell': {'userEnteredFormat': {}}, 'fields': 'userEnteredFormat(backgroundColor,textFormat,verticalAlignment)'}}]})
+                    except Exception:
+                        pass
             # Cards placed after another card: rows inserted there (in the order sent), bottom group first so
             # the anchors above stay put; then every row below an insert moves down by the rows put in above it
             inserted = []   # (anchor, count)

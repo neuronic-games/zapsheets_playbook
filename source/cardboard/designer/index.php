@@ -226,8 +226,8 @@ select.sel { -webkit-appearance:none; appearance:none; padding-right:2rem; backg
 .field-chip .ico svg { display:block; margin:0 auto; }
 /* New column */
 .new-field { margin-bottom:.35rem; }
-.new-btn { display:flex; align-items:center; gap:.45rem; width:100%; border:1.5px dashed #a99cff; border-radius:7px; padding:.3rem .55rem .46rem; margin:0; background:#f7f5ff; color:#4b3fa8; font-family:'DINBlack',sans-serif; font-size:.74rem; letter-spacing:.03em; line-height:inherit; text-align:left; text-transform:none; cursor:pointer; }
-.new-btn::before { content:'+'; width:16px; text-align:center; flex-shrink:0; font-size:.9rem; line-height:1; position:relative; top:.04rem; }   /* DIN capitals sit low: the text is lifted a little and the + lines up with it */
+.new-btn { display:flex; align-items:center; gap:.45rem; width:100%; border:1.5px dashed #a99cff; border-radius:7px; padding:.34rem .55rem .42rem; margin:0; background:#f7f5ff; color:#4b3fa8; font-family:'DINBlack',sans-serif; font-size:.74rem; letter-spacing:.03em; line-height:inherit; text-align:left; text-transform:none; cursor:pointer; }
+.new-btn::before { content:'+'; width:16px; text-align:center; flex-shrink:0; font-size:.9rem; line-height:1; position:relative; top:-.05rem; }   /* DIN capitals sit low: the text is lifted a little and the + lines up with it */
 .new-btn:hover { background:#ece9ff; border-style:solid; }
 .new-form { display:none; gap:.3rem; }
 .new-form .inp { flex:1; min-width:0; height:2.26rem; }

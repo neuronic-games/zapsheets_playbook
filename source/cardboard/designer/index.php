@@ -433,6 +433,8 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 .fmt-sep { width:1px; height:16px; background:#e3e5ee; margin:0 3px; }
 .fmt-ed.ta { border:none !important; box-shadow:none !important; min-height:4.5em; max-height:16em; overflow:auto; white-space:pre-wrap; outline:none; cursor:text; border-radius:0 0 8px 8px; }
 .fmt-ed:empty::before { content:attr(data-ph); color:#a0a4bb; }
+.fmt-float { position:fixed; z-index:400; box-shadow:0 6px 20px rgba(20,19,42,.18); }
+.fmt-float .fmt-bar { border-bottom:none; flex-wrap:nowrap; }
 .el.as-image.editing .el-inner { font-family:'DINRegular',Arial,sans-serif; font-size:10pt; color:#1b1b2b; display:flex; align-items:center; justify-content:center; text-align:center; }
 .sel-box { position:absolute; z-index:49; pointer-events:none; outline:calc(1.5px / var(--z)) solid #7b6cf6; outline-offset:calc(2px / var(--z)); }
 .sel-box.group { outline-color:#4b3fa8; }

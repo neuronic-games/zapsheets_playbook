@@ -1325,27 +1325,43 @@ function editCellInPlace(e) {
   if (!isSel(e.id) || multi.length) setSel([e.id]);
   var node = $('cardHolder').querySelector('.el[data-id="' + e.id + '"]'), inner = node && node.querySelector('.el-inner');
   if (!inner) return;
-  var old = fresh ? '' : cleanVal(row[e.field]), done = false;
+  var old = fresh ? '' : cleanVal(row[e.field]), oldRuns = fresh ? [] : rowFmtRuns(row, e.field), done = false;
   node.classList.add('editing'); editContrast(node, inner);
-  inner.textContent = old;
-  try { inner.contentEditable = 'plaintext-only'; } catch (x) {}
-  if (inner.contentEditable !== 'plaintext-only') inner.contentEditable = 'true';
+  inner.innerHTML = fresh ? '' : fmtHtml(row, e.field, old);   // as written, with its formatting (tags not turned into words)
+  inner.contentEditable = 'true';
+  _fmtEd = inner; fmtFocus(inner);
+  // The formatting bar, floating just above the field (B I U S, colours, clear)
+  var bar = document.createElement('div'); bar.className = 'fmt-box fmt-float'; bar.innerHTML = fmtBarHtml();
+  document.body.appendChild(bar);
+  function place() { var rc = node.getBoundingClientRect(), bw = bar.offsetWidth; bar.style.left = Math.max(6, Math.min(window.innerWidth - bw - 6, rc.left)) + 'px'; bar.style.top = Math.max(6, rc.top - bar.offsetHeight - 8) + 'px'; }
+  place(); window.addEventListener('scroll', place, true); window.addEventListener('resize', place);
   inner.focus();
   var rg = document.createRange(); rg.selectNodeContents(inner); var sl = getSelection(); sl.removeAllRanges(); sl.addRange(rg);
   function finish(save) {
     if (done) return; done = true;
-    var v = inner.innerText.replace(/\r/g, '').replace(/\n$/, '');
+    if (!document.body.contains(inner)) save = false;   // taken away already (kept on the click that did it)
+    var r = save ? fmtRead(inner) : { text: old, runs: oldRuns }, v = r.text;
+    window.removeEventListener('scroll', place, true); window.removeEventListener('resize', place); bar.remove();
+    if (_fmtEd === inner) _fmtEd = null;
     inner.removeAttribute('contenteditable'); node.classList.remove('editing', 'ed-dark');
-    if (!save || v === old || (fresh && !v.trim())) { render(); return; }
+    var fmt = r.runs.length || oldRuns.length ? r.runs : undefined;
+    var same = v === old && JSON.stringify(fmt || []) === JSON.stringify(oldRuns);
+    if (!save || same || (fresh && !v.trim())) { render(); return; }
     if (fresh || !ROWS[rowIdx]) newCardRow();
-    setRowCell(e, v);
+    setRowCell(e, v, fmt);
   }
   inner.addEventListener('keydown', function(k) {
     k.stopPropagation();
-    if (k.key === 'Enter' && !k.shiftKey) { k.preventDefault(); finish(true); }
+    var key = (k.key || '').toLowerCase();
+    if ((k.metaKey || k.ctrlKey) && /^[biu]$/.test(key)) { k.preventDefault(); fmtCmd({ b: 'bold', i: 'italic', u: 'underline' }[key]); }
+    else if (k.key === 'Enter' && !k.shiftKey) { k.preventDefault(); finish(true); }
     else if (k.key === 'Escape') { k.preventDefault(); finish(false); }
   });
-  inner.addEventListener('blur', function() { finish(true); });
+  inner.addEventListener('paste', fmtPaste);
+  inner._finish = finish;
+  inner.addEventListener('blur', function() {
+    setTimeout(function() { if (inner._picking || (document.activeElement && bar.contains(document.activeElement))) return; finish(true); }, 0);
+  });
 }
 // + Card beside the card navigator: a new, empty card straight after the one on screen. It's kept
 // once something is typed into it (an empty row isn't a card), and Save puts its row in the sheet in
@@ -1386,7 +1402,7 @@ function newCardRow(at) {   // at: its place in the deck (default: the end)
 // Select words and use the buttons (or ⌘B / ⌘I / ⌘U) for bold, italic, underline, strikethrough and colour.
 // The text and its formatting are kept like any other change and go into the cell on Save.
 var FMT_COLORS = ['#000000', '#e3262b', '#991c1c', '#f59e0b', '#009444', '#2563eb', '#7c3aed', '#ffffff'];
-function fmtBoxHtml(row, field, rv) {
+function fmtHtml(row, field, rv) {   // the cell's text as HTML with its formatting (lines as <br>)
   var t = cleanVal(rv), runs = rowFmtRuns(row, field), html = '';
   if (runs.length) runs.forEach(function(run, i) {
     var a = +run[0] || 0, b = i + 1 < runs.length ? +runs[i + 1][0] : t.length, seg = t.slice(a, b), d = run[1] || {};
@@ -1394,38 +1410,49 @@ function fmtBoxHtml(row, field, rv) {
     var st = fmtStyle(d), inner = esc(seg).replace(/\n/g, '<br>');
     html += st ? '<span style="' + st + '">' + inner + '</span>' : inner;
   });
-  else html = esc(rv).replace(/\n/g, '<br>');
+  else html = esc(t).replace(/\n/g, '<br>');
+  return html;
+}
+function fmtBarHtml() {
   var btn = function(cmd, label, title) { return '<button type="button" class="fmt-b" onmousedown="event.preventDefault()" onclick="fmtCmd(\'' + cmd + '\')" title="' + title + '">' + label + '</button>'; };
-  return '<div class="fmt-box">' +
-    '<div class="fmt-bar">' + btn('bold', '<b>B</b>', 'Bold (⌘B)') + btn('italic', '<i>I</i>', 'Italic (⌘I)') + btn('underline', '<u>U</u>', 'Underline (⌘U)') + btn('strikeThrough', '<s>S</s>', 'Strikethrough') +
+  return '<div class="fmt-bar">' + btn('bold', '<b>B</b>', 'Bold (⌘B)') + btn('italic', '<i>I</i>', 'Italic (⌘I)') + btn('underline', '<u>U</u>', 'Underline (⌘U)') + btn('strikeThrough', '<s>S</s>', 'Strikethrough') +
       '<span class="fmt-sep"></span>' +
       FMT_COLORS.map(function(c) { return '<button type="button" class="fmt-c" style="background:' + c + '" onmousedown="event.preventDefault()" onclick="fmtColor(\'' + c + '\')" title="' + c + '"></button>'; }).join('') +
-      '<label class="fmt-c fmt-more" title="Another colour" onmousedown="fmtKeepSel()"><input type="color" oninput="fmtColor(this.value, true)"></label>' +
+      '<label class="fmt-c fmt-more" title="Another colour" onmousedown="fmtKeepSel()"><input type="color" oninput="fmtColor(this.value, true)" onchange="fmtColorDone()"></label>' +
       '<span class="fmt-sep"></span>' + btn('removeFormat', '<span style="text-decoration:line-through;font-weight:400">T</span>ₓ', 'Clear the formatting of the selection') +
-    '</div>' +
+    '</div>';
+}
+function fmtBoxHtml(row, field, rv) {
+  return '<div class="fmt-box">' + fmtBarHtml() +
     '<div class="ta fmt-ed" id="a_val" contenteditable="true" spellcheck="true" data-ph="' + esc(row ? 'Empty in this row — type to fill it in' : 'No cards yet — type to add one') + '"' +
-      ' onfocus="fmtFocus()" onblur="fmtBlur(this)" onpaste="fmtPaste(event)" onkeydown="fmtKey(event)">' + html + '</div></div>';
+      ' onfocus="fmtFocus(this)" onblur="fmtBlur(this)" onpaste="fmtPaste(event)" onkeydown="fmtKey(event)">' + fmtHtml(row, field, rv) + '</div></div>';
 }
 function fmtStyle(d) {
   return (d.b ? 'font-weight:700;' : '') + (d.i ? 'font-style:italic;' : '') +
          (d.u || d.s ? 'text-decoration:' + (d.u ? 'underline ' : '') + (d.s ? 'line-through' : '') + ';' : '') +
          (/^#[0-9a-f]{6}$/i.test(d.c || '') ? 'color:' + d.c + ';' : '');
 }
-var _fmtSel = null;
-function fmtFocus() { try { document.execCommand('styleWithCSS', false, true); } catch (e) {} }
-function fmtKeepSel() { var sl = getSelection(); _fmtSel = sl.rangeCount && $('a_val') && $('a_val').contains(sl.anchorNode) ? sl.getRangeAt(0).cloneRange() : _fmtSel; }
+var _fmtSel = null, _fmtEd = null;   // the editor the buttons work on: the Value box, or a field being edited on the card
+function fmtEd() { return _fmtEd && document.body.contains(_fmtEd) ? _fmtEd : $('a_val'); }
+function fmtFocus(ed) { _fmtEd = ed || _fmtEd; try { document.execCommand('styleWithCSS', false, true); } catch (e) {} }
+function fmtKeepSel() { var ed = fmtEd(), sl = getSelection(); _fmtSel = sl.rangeCount && ed && ed.contains(sl.anchorNode) ? sl.getRangeAt(0).cloneRange() : _fmtSel; if (ed) ed._picking = true; }
 function fmtCmd(cmd) {
-  var ed = $('a_val'); if (!ed) return;
+  var ed = fmtEd(); if (!ed) return;
   if (document.activeElement !== ed) ed.focus();
   try { document.execCommand('styleWithCSS', false, true); document.execCommand(cmd, false, null); } catch (e) {}
-  if (cmd === 'removeFormat') fmtNow(ed);
+  if (cmd === 'removeFormat' && ed.id === 'a_val') fmtNow(ed);
 }
 function fmtColor(c, fromPicker) {
-  var ed = $('a_val'); if (!ed) return;
+  var ed = fmtEd(); if (!ed) return;
   if (fromPicker && _fmtSel) { ed.focus(); var sl = getSelection(); sl.removeAllRanges(); sl.addRange(_fmtSel); }
   else if (document.activeElement !== ed) ed.focus();
   try { document.execCommand('styleWithCSS', false, true); document.execCommand('foreColor', false, c); } catch (e) {}
-  if (fromPicker) fmtNow(ed);
+  if (fromPicker) { var s2 = getSelection(); if (s2.rangeCount) _fmtSel = s2.getRangeAt(0).cloneRange(); }
+}
+function fmtColorDone() {   // the colour picker closed: back to the text, or (the Value box) keep the change
+  var ed = fmtEd(); if (!ed) return;
+  ed._picking = false;
+  if (ed.id === 'a_val') fmtNow(ed); else { ed.focus(); if (_fmtSel) { var sl = getSelection(); sl.removeAllRanges(); sl.addRange(_fmtSel); } }
 }
 function fmtKey(ev) {
   var k = (ev.key || '').toLowerCase();
@@ -1437,22 +1464,38 @@ function fmtPaste(ev) {   // pasted text comes in plain (its own formatting woul
   var t = (ev.clipboardData || window.clipboardData).getData('text/plain') || '';
   document.execCommand('insertText', false, t);
 }
-function fmtBlur(ed) { setTimeout(function() { if (document.activeElement && document.activeElement.closest && document.activeElement.closest('.fmt-box')) return; fmtNow(ed); }, 0); }
-function fmtNow(ed) { var r = fmtRead(ed); setRowValue(r.text, r.runs.length || r.had ? r.runs : undefined); }
+function fmtBlur(ed) { setTimeout(function() { if (ed._picking || (document.activeElement && document.activeElement.closest && document.activeElement.closest('.fmt-box'))) return; fmtNow(ed); }, 0); }
+// Read only while the box is on the page (once the panel is redrawn its styles are gone and it would read as plain)
+function fmtNow(ed) { if (!ed || !document.body.contains(ed)) return; var r = fmtRead(ed); setRowValue(r.text, r.runs.length || r.had ? r.runs : undefined); }
+// Clicking anywhere else keeps what was typed and formatted right then — before that click redraws the panel or the
+// card (which took the editor away before it could be kept, and its formatting was lost)
+window.addEventListener('pointerdown', function(ev) {
+  var t = ev.target, ed = _fmtEd && document.body.contains(_fmtEd) ? _fmtEd : $('a_val');
+  if (!ed || !(document.activeElement === ed || ed._picking)) return;
+  if (ed.contains(t) || (t.closest && (t.closest('.fmt-float') || (ed.id === 'a_val' && t.closest('.fmt-box') && ed.closest('.fmt-box').contains(t))))) return;
+  ed._picking = false;
+  if (ed._finish) ed._finish(true); else fmtNow(ed);
+}, true);
 // The box's text and formatting: text as the cell will hold it (lines kept), runs where the formatting changes
 function fmtRead(ed) {
-  var base = getComputedStyle(ed), baseColor = base.color, text = '', marks = [];
+  var base = getComputedStyle(ed), baseColor = base.color, baseBold = +base.fontWeight >= 600 || base.fontWeight === 'bold', baseItalic = base.fontStyle === 'italic', text = '', marks = [];
   function hex(c) { var m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c || ''); return m ? '#' + [m[1], m[2], m[3]].map(function(x) { return ('0' + (+x).toString(16)).slice(-2); }).join('') : ''; }
   function walk(n, first) {
     if (n.nodeType === 3) {
-      var cs = getComputedStyle(n.parentNode), d = {};
-      if (+cs.fontWeight >= 600 || cs.fontWeight === 'bold') d.b = 1;
-      if (cs.fontStyle === 'italic') d.i = 1;
-      var dec = '', p = n.parentNode;
-      while (p && p !== ed) { dec += ' ' + (getComputedStyle(p).textDecorationLine || ''); p = p.parentNode; }
-      if (/underline/.test(dec)) d.u = 1;
-      if (/line-through/.test(dec)) d.s = 1;
-      if (cs.color !== baseColor) d.c = hex(cs.color);
+      // Each word's formatting is what is set on it (the nearest span, b, i… decides), not how it looks: a bold
+      // element's words aren't "bold" in the sheet unless they were made bold
+      var d = {}, got = {}, p = n.parentNode;
+      while (p && p !== ed && p.nodeType === 1) {
+        var st = p.style || {}, tag = p.nodeName, w = String(st.fontWeight || ''), fs = String(st.fontStyle || ''), dec = String(st.textDecorationLine || st.textDecoration || '');
+        if (!('b' in got)) { if (/^(bold|bolder|[6-9]00)$/.test(w) || tag === 'B' || tag === 'STRONG') got.b = 1; else if (/^(normal|lighter|[1-5]00)$/.test(w)) got.b = 0; }
+        if (!('i' in got)) { if (fs === 'italic' || fs === 'oblique' || tag === 'I' || tag === 'EM') got.i = 1; else if (fs === 'normal') got.i = 0; }
+        if (!('u' in got)) { if (/underline/.test(dec) || tag === 'U') got.u = 1; else if (/none/.test(dec)) got.u = 0; }
+        if (!('s' in got)) { if (/line-through/.test(dec) || tag === 'S' || tag === 'STRIKE' || tag === 'DEL') got.s = 1; else if (/none/.test(dec)) got.s = 0; }
+        if (!('c' in got)) { var col = st.color || (tag === 'FONT' && p.getAttribute('color')) || ''; if (col) got.c = /^#[0-9a-f]{6}$/i.test(col) ? col.toLowerCase() : hex(col); }
+        p = p.parentNode;
+      }
+      if (got.b) d.b = 1; if (got.i) d.i = 1; if (got.u) d.u = 1; if (got.s) d.s = 1;
+      if (got.c && hex(baseColor) !== got.c) d.c = got.c;
       var s = n.nodeValue.replace(/\u00a0/g, ' ');
       if (s) { marks.push([text.length, d]); text += s; }
       return;

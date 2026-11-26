@@ -12,7 +12,7 @@
 #   renamefield — sheet, old, name → the heading "old" becomes "name"
 #   deleterow — sheet, row, values → deletes the row if it still holds those values
 #   deletefield — sheet, field → deletes that column
-#   savecells — sheet, cols [names], cells [{row, field, value, old}], adds [{key, values}],
+#   savecells — sheet, cols [names], cells [{row, field, value, old, fmt?}], adds [{key, values}],
 #               delrows [{row, values}], delcols [names] → many edits in one go (deletions last)
 #   grid    — sheet → {header, rows: [{row, values}]} as typed in the sheet (formulas, not results)
 #   setcell — sheet, row, field, value, old → writes one cell (as if typed); refuses if the cell
@@ -450,6 +450,32 @@ def main():
                 writes.append({'range': a1, 'values': [[str(c.get('value', ''))]]}); written.append((row, field, a1))
             if writes:
                 wb.values_batch_update({'valueInputOption': 'USER_ENTERED', 'data': writes})
+                # Formatting inside a cell (bold, italic, underline, strikethrough, colour on part of the text):
+                # cells sent with fmt [[start, {b, i, u, s, c}], …] are written as text with those text runs
+                # (fmt [] clears them). Cells without fmt keep whatever Sheets does with a typed value.
+                runs_reqs = []
+                for c, row, field, a1 in todo:
+                    if (row, field, a1) not in written or not isinstance(c.get('fmt'), list): continue
+                    text = str(c.get('value', ''))
+                    tfr = []
+                    for item in c['fmt']:
+                        try: start, d = int(item[0]), (item[1] or {})
+                        except Exception: continue
+                        if start < 0 or start >= len(text): continue
+                        f = {'bold': bool(d.get('b')), 'italic': bool(d.get('i')), 'underline': bool(d.get('u')), 'strikethrough': bool(d.get('s'))}
+                        col = str(d.get('c') or '')
+                        if __import__('re').match(r'^#[0-9a-fA-F]{6}$', col):
+                            f['foregroundColorStyle'] = {'rgbColor': {'red': int(col[1:3], 16) / 255, 'green': int(col[3:5], 16) / 255, 'blue': int(col[5:7], 16) / 255}}
+                        tfr.append({'startIndex': start, 'format': f})
+                    if tfr and tfr[0]['startIndex'] != 0: tfr.insert(0, {'startIndex': 0, 'format': {}})
+                    runs_reqs.append({'updateCells': {
+                        'range': {'sheetId': tws.id, 'startRowIndex': row - 1, 'endRowIndex': row,
+                                  'startColumnIndex': hdr.index(field), 'endColumnIndex': hdr.index(field) + 1},
+                        'rows': [{'values': [{'userEnteredValue': {'stringValue': text}, 'textFormatRuns': tfr}]}],
+                        'fields': 'userEnteredValue,textFormatRuns'}})
+                if runs_reqs:
+                    try: wb.batch_update({'requests': runs_reqs})
+                    except Exception: pass   # the text is in; only its formatting didn't go
                 for (row, field, a1), now in zip(written, batch_get([w[2] for w in written])):
                     results.append({'row': row, 'field': field, 'status': 'ok', 'value': now})
             added = []

@@ -1382,15 +1382,123 @@ function newCardRow(at) {   // at: its place in the deck (default: the end)
 }
 // Write a text value into this row's cell for a Data field. Shown on the card straight away;
 // put back if the sheet can't be updated.
-function setRowValue(v) {
+// ── The formatted value box (Layout panel): the cell's text with its formatting, as in the sheet ────────────
+// Select words and use the buttons (or ⌘B / ⌘I / ⌘U) for bold, italic, underline, strikethrough and colour.
+// The text and its formatting are kept like any other change and go into the cell on Save.
+var FMT_COLORS = ['#000000', '#e3262b', '#991c1c', '#f59e0b', '#009444', '#2563eb', '#7c3aed', '#ffffff'];
+function fmtBoxHtml(row, field, rv) {
+  var t = cleanVal(rv), runs = rowFmtRuns(row, field), html = '';
+  if (runs.length) runs.forEach(function(run, i) {
+    var a = +run[0] || 0, b = i + 1 < runs.length ? +runs[i + 1][0] : t.length, seg = t.slice(a, b), d = run[1] || {};
+    if (!seg) return;
+    var st = fmtStyle(d), inner = esc(seg).replace(/\n/g, '<br>');
+    html += st ? '<span style="' + st + '">' + inner + '</span>' : inner;
+  });
+  else html = esc(rv).replace(/\n/g, '<br>');
+  var btn = function(cmd, label, title) { return '<button type="button" class="fmt-b" onmousedown="event.preventDefault()" onclick="fmtCmd(\'' + cmd + '\')" title="' + title + '">' + label + '</button>'; };
+  return '<div class="fmt-box">' +
+    '<div class="fmt-bar">' + btn('bold', '<b>B</b>', 'Bold (⌘B)') + btn('italic', '<i>I</i>', 'Italic (⌘I)') + btn('underline', '<u>U</u>', 'Underline (⌘U)') + btn('strikeThrough', '<s>S</s>', 'Strikethrough') +
+      '<span class="fmt-sep"></span>' +
+      FMT_COLORS.map(function(c) { return '<button type="button" class="fmt-c" style="background:' + c + '" onmousedown="event.preventDefault()" onclick="fmtColor(\'' + c + '\')" title="' + c + '"></button>'; }).join('') +
+      '<label class="fmt-c fmt-more" title="Another colour" onmousedown="fmtKeepSel()"><input type="color" oninput="fmtColor(this.value, true)"></label>' +
+      '<span class="fmt-sep"></span>' + btn('removeFormat', '<span style="text-decoration:line-through;font-weight:400">T</span>ₓ', 'Clear the formatting of the selection') +
+    '</div>' +
+    '<div class="ta fmt-ed" id="a_val" contenteditable="true" spellcheck="true" data-ph="' + esc(row ? 'Empty in this row — type to fill it in' : 'No cards yet — type to add one') + '"' +
+      ' onfocus="fmtFocus()" onblur="fmtBlur(this)" onpaste="fmtPaste(event)" onkeydown="fmtKey(event)">' + html + '</div></div>';
+}
+function fmtStyle(d) {
+  return (d.b ? 'font-weight:700;' : '') + (d.i ? 'font-style:italic;' : '') +
+         (d.u || d.s ? 'text-decoration:' + (d.u ? 'underline ' : '') + (d.s ? 'line-through' : '') + ';' : '') +
+         (/^#[0-9a-f]{6}$/i.test(d.c || '') ? 'color:' + d.c + ';' : '');
+}
+var _fmtSel = null;
+function fmtFocus() { try { document.execCommand('styleWithCSS', false, true); } catch (e) {} }
+function fmtKeepSel() { var sl = getSelection(); _fmtSel = sl.rangeCount && $('a_val') && $('a_val').contains(sl.anchorNode) ? sl.getRangeAt(0).cloneRange() : _fmtSel; }
+function fmtCmd(cmd) {
+  var ed = $('a_val'); if (!ed) return;
+  if (document.activeElement !== ed) ed.focus();
+  try { document.execCommand('styleWithCSS', false, true); document.execCommand(cmd, false, null); } catch (e) {}
+  if (cmd === 'removeFormat') fmtNow(ed);
+}
+function fmtColor(c, fromPicker) {
+  var ed = $('a_val'); if (!ed) return;
+  if (fromPicker && _fmtSel) { ed.focus(); var sl = getSelection(); sl.removeAllRanges(); sl.addRange(_fmtSel); }
+  else if (document.activeElement !== ed) ed.focus();
+  try { document.execCommand('styleWithCSS', false, true); document.execCommand('foreColor', false, c); } catch (e) {}
+  if (fromPicker) fmtNow(ed);
+}
+function fmtKey(ev) {
+  var k = (ev.key || '').toLowerCase();
+  if ((ev.metaKey || ev.ctrlKey) && /^[biu]$/.test(k)) { ev.preventDefault(); fmtCmd({ b: 'bold', i: 'italic', u: 'underline' }[k]); }
+  ev.stopPropagation();   // typing here isn't a shortcut for the card
+}
+function fmtPaste(ev) {   // pasted text comes in plain (its own formatting would come from another page)
+  ev.preventDefault();
+  var t = (ev.clipboardData || window.clipboardData).getData('text/plain') || '';
+  document.execCommand('insertText', false, t);
+}
+function fmtBlur(ed) { setTimeout(function() { if (document.activeElement && document.activeElement.closest && document.activeElement.closest('.fmt-box')) return; fmtNow(ed); }, 0); }
+function fmtNow(ed) { var r = fmtRead(ed); setRowValue(r.text, r.runs.length || r.had ? r.runs : undefined); }
+// The box's text and formatting: text as the cell will hold it (lines kept), runs where the formatting changes
+function fmtRead(ed) {
+  var base = getComputedStyle(ed), baseColor = base.color, text = '', marks = [];
+  function hex(c) { var m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c || ''); return m ? '#' + [m[1], m[2], m[3]].map(function(x) { return ('0' + (+x).toString(16)).slice(-2); }).join('') : ''; }
+  function walk(n, first) {
+    if (n.nodeType === 3) {
+      var cs = getComputedStyle(n.parentNode), d = {};
+      if (+cs.fontWeight >= 600 || cs.fontWeight === 'bold') d.b = 1;
+      if (cs.fontStyle === 'italic') d.i = 1;
+      var dec = '', p = n.parentNode;
+      while (p && p !== ed) { dec += ' ' + (getComputedStyle(p).textDecorationLine || ''); p = p.parentNode; }
+      if (/underline/.test(dec)) d.u = 1;
+      if (/line-through/.test(dec)) d.s = 1;
+      if (cs.color !== baseColor) d.c = hex(cs.color);
+      var s = n.nodeValue.replace(/\u00a0/g, ' ');
+      if (s) { marks.push([text.length, d]); text += s; }
+      return;
+    }
+    if (n.nodeName === 'BR') { marks.push([text.length, {}]); text += '\n'; return; }
+    var block = /^(DIV|P|LI)$/.test(n.nodeName);
+    if (block && !first && text && text.slice(-1) !== '\n') { marks.push([text.length, {}]); text += '\n'; }
+    for (var c = n.firstChild; c; c = c.nextSibling) walk(c, false);
+  }
+  for (var c = ed.firstChild; c; c = c.nextSibling) walk(c, c === ed.firstChild);
+  text = text.replace(/\n+$/, '');
+  var runs = [];
+  marks.forEach(function(m) {
+    if (m[0] >= text.length) return;
+    var key = JSON.stringify(m[1]), last = runs[runs.length - 1];
+    if (last && JSON.stringify(last[1]) === key) return;
+    if (last && last[0] === m[0]) { last[1] = m[1]; return; }
+    runs.push([m[0], m[1]]);
+  });
+  var any = runs.some(function(x) { return Object.keys(x[1]).length; });
+  var row = ROWS[rowIdx], e = elById(selId);
+  return { text: text, runs: any ? runs : [], had: !!(row && e && rowFmtRuns(row, e.field).length) };
+}
+function setRowValue(v, fmt) {   // fmt (from the formatted value box): [[start, {b,i,u,s,c}]], or undefined for plain text
   var e = elById(selId), row = ROWS[rowIdx]; if (!e || e.kind !== 'data') return;
   if (!requirePro('edit', function() {})) { renderAttrs(); return; }
   if (!row) { if (!String(v).trim()) return; newCardRow(); setRowCell(e, v); return; }   // the first card
-  if (String(row[e.field] == null ? '' : row[e.field]) !== v) setRowCell(e, v);
+  var same = String(row[e.field] == null ? '' : row[e.field]) === v;
+  if (fmt !== undefined && same && JSON.stringify(fmt) === JSON.stringify(rowFmtRuns(row, e.field))) return;   // nothing changed
+  if (fmt === undefined && same) return;
+  setRowCell(e, v, fmt);
 }
-function setRowCell(e, value) {   // kept in this browser until Save
+// The formatting inside a card's cell, as runs [[start, {…}]] ([] when it has none, or it no longer matches the text)
+function rowFmtRuns(row, field) {
+  var f = row && row._fmt && row._fmt[field];
+  return f && f.r && f.t === cleanVal(row[field]) ? f.r.filter(function(x) { return x[1] && Object.keys(x[1]).length; }).length ? f.r : [] : [];
+}
+function setRowFmt(row, field, value, fmt) {
+  if (!row) return;
+  if (!row._fmt) row._fmt = {};
+  if (fmt && fmt.length) row._fmt[field] = { t: value, r: fmt }; else delete row._fmt[field];
+}
+function setRowCell(e, value, fmt) {   // kept in this browser until Save
   var row = ROWS[rowIdx]; if (!row) return;
-  var tab = curTab, field = e.field, before = row[field];
+  var tab = curTab, field = e.field, before = row[field], beforeFmt = row._fmt && row._fmt[field];
+  if (fmt !== undefined) setRowFmt(row, field, value, fmt);
   if (row._pend) {   // a new row that isn't in the sheet yet
     row[field] = value; var o = {}; FIELDS.forEach(function(f) { o[f] = row[f] || ''; }); queueAdd(tab, row._pend, o, { after: row._after, prevKey: row._prevKey });
     if (GRID && GRID.tab === tab) { var gd = GRID.rows.filter(function(g) { return g.key === row._pend; })[0], c0 = GRID.header.indexOf(field); if (gd && c0 >= 0) { gd.values[c0] = value; (gd.state = gd.state || {})[c0] = 'pending'; } }
@@ -1402,11 +1510,11 @@ function setRowCell(e, value) {   // kept in this browser until Save
     var c = GRID.header.indexOf(field); if (c < 0) throw new Error('the ' + field + ' column wasn\'t found');
     var was = pendingOld(tab, gr.row, field), sheetVal = was != null ? was : (gr.values[c] == null ? '' : gr.values[c]);
     if (/^=/.test(String(sheetVal))) throw new Error('that cell is a formula — change it in the sheet');
-    queueCell(tab, gr.row, field, value, sheetVal);
+    queueCell(tab, gr.row, field, value, sheetVal, fmt);
     gr.values[c] = value; (gr.state = gr.state || {})[c] = pendingOld(tab, gr.row, field) == null ? '' : 'pending';
     if (_activeTab === 'data') renderGrid(); if (selId === e.id) renderAttrs();
   }).catch(function(err) {
-    if (row[field] === value) row[field] = before;
+    if (row[field] === value) { row[field] = before; if (fmt !== undefined) { if (!row._fmt) row._fmt = {}; if (beforeFmt) row._fmt[field] = beforeFmt; else delete row._fmt[field]; } }
     render(); renderData();
     toast('Couldn\'t change it — ' + err.message, true);
   });
@@ -1734,10 +1842,10 @@ function updateSaveBtn() {
   if (st && st.dataset.prev == null) { st.textContent = _saving ? 'Saving…' : ''; st.className = 'tb-status'; }
 }
 // Cell edits: one entry per cell, keeping the value the sheet had before the first edit (to spot edits made in Sheets meanwhile)
-function queueCell(tab, row, field, value, old) {
+function queueCell(tab, row, field, value, old, fmt) {   // fmt: formatting inside the cell, [[start, {b,i,u,s,c}]] ([] = none)
   var p = dataPend(tab), c = p.cells.filter(function(x) { return x.row === row && x.field === field; })[0];
-  if (c) { c.value = value; if (c.value === c.old) p.cells.splice(p.cells.indexOf(c), 1); }
-  else if (value !== old) p.cells.push({ row: row, field: field, value: value, old: old == null ? '' : old });
+  if (c) { c.value = value; if (fmt !== undefined) c.fmt = fmt; if (c.value === c.old && c.fmt === undefined) p.cells.splice(p.cells.indexOf(c), 1); }
+  else if (value !== old || fmt !== undefined) { var n = { row: row, field: field, value: value, old: old == null ? '' : old }; if (fmt !== undefined) n.fmt = fmt; p.cells.push(n); }
   setDataPend(tab, p);
 }
 // place: {after: sheet row it goes under (1 = the top), prevKey: a new card it follows} — where + Card put it
@@ -1790,7 +1898,7 @@ function overlayGrid() {
     var gr = GRID.rows.filter(function(g) { return !g.draft && g.row === c.row; })[0], col = GRID.header.indexOf(c.field);
     if (!gr || col < 0) return;
     gr.values[col] = c.value; (gr.state = gr.state || {})[col] = 'pending';
-    var card = ROWS[gridCardIndex(gr)]; if (card && !card._pend) card[c.field] = c.value;
+    var card = ROWS[gridCardIndex(gr)]; if (card && !card._pend) { card[c.field] = c.value; if (c.fmt !== undefined) setRowFmt(card, c.field, c.value, c.fmt); }
   });
   var tail = GRID.rows.length;   // new rows go above the empty row(s) kept at the end for typing into
   while (tail > 0 && GRID.rows[tail - 1].draft && rowEmpty(GRID.rows[tail - 1]) && !p.adds.some(function(a) { return a.key === GRID.rows[tail - 1].key; })) tail--;
@@ -2656,9 +2764,8 @@ function _renderAttrs() {
     }
     if (e.as !== 'image' && e.as !== 'map') {   // this row's value as typed in the sheet (tags not yet turned into words or pictures) — handy when it's empty on the card
       var rv = ROWS[rowIdx] ? (ROWS[rowIdx][e.field] == null ? '' : String(ROWS[rowIdx][e.field])) : '';
-      h += '<span class="lbl">Value for row ' + (rowIdx + 1) + '</span><textarea class="ta" id="a_val"' +
-           ' placeholder="' + (ROWS[rowIdx] ? 'Empty in this row — type to fill it in' : 'No cards yet — type to add one') + '" onchange="setRowValue(this.value)">' + esc(rv) + '</textarea>' +
-           '<p class="muted" style="margin:.3rem 0 0">Saved in the <b>' + esc(e.field) + '</b> cell for this row.</p>';
+      h += '<span class="lbl">Value for row ' + (rowIdx + 1) + '</span>' + fmtBoxHtml(ROWS[rowIdx], e.field, rv) +
+           '<p class="muted" style="margin:.3rem 0 0">Saved in the <b>' + esc(e.field) + '</b> cell for this row. Select words to make them bold, italic or a colour — as in the sheet.</p>';
     }
     h += dataIsImage(e) ? fitAttrs(e) + boxAttrs(e, 'Frame') : e.as === 'map' ? textAttrs(e) + fitAttrs(e) + boxAttrs(e, 'Background') : textAttrs(e) + boxAttrs(e, 'Background');
   }

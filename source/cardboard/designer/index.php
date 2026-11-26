@@ -420,6 +420,19 @@ img.el-img { -webkit-user-drag:none; user-select:none; }
 /* Light writing (white on a dark card): a dark box behind it while editing, so it can be read */
 .el.editing.ed-dark .el-inner { background:rgba(20,19,42,.9); outline-color:#a99dff; }
 .el.editing .hdl { display:none; }
+/* The formatted value box (Layout panel): the cell's text with its formatting */
+.fmt-box { border:1px solid #dfe1ea; border-radius:8px; background:#fff; }
+.fmt-box:focus-within { border-color:#7b6cf6; box-shadow:0 0 0 3px rgba(123,108,246,.15); }
+.fmt-bar { display:flex; flex-wrap:wrap; align-items:center; gap:3px; padding:4px 5px; border-bottom:1px solid #eceef4; }
+.fmt-b { min-width:24px; height:24px; padding:0 4px; border:none; border-radius:5px; background:none; color:#2e2763; font:15px/1 Georgia,serif; cursor:pointer; }
+.fmt-b:hover { background:#f1effe; }
+.fmt-c { width:16px; height:16px; padding:0; border:1px solid rgba(0,0,0,.18); border-radius:4px; cursor:pointer; flex:none; }
+.fmt-c:hover { transform:scale(1.15); }
+.fmt-more { position:relative; overflow:hidden; background:conic-gradient(#e3262b,#f59e0b,#009444,#2563eb,#7c3aed,#e3262b); }
+.fmt-more input { position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer; border:none; padding:0; }
+.fmt-sep { width:1px; height:16px; background:#e3e5ee; margin:0 3px; }
+.fmt-ed.ta { border:none !important; box-shadow:none !important; min-height:4.5em; max-height:16em; overflow:auto; white-space:pre-wrap; outline:none; cursor:text; border-radius:0 0 8px 8px; }
+.fmt-ed:empty::before { content:attr(data-ph); color:#a0a4bb; }
 .el.as-image.editing .el-inner { font-family:'DINRegular',Arial,sans-serif; font-size:10pt; color:#1b1b2b; display:flex; align-items:center; justify-content:center; text-align:center; }
 .sel-box { position:absolute; z-index:49; pointer-events:none; outline:calc(1.5px / var(--z)) solid #7b6cf6; outline-offset:calc(2px / var(--z)); }
 .sel-box.group { outline-color:#4b3fa8; }

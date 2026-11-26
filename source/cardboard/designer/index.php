@@ -860,6 +860,8 @@ body.cb-gate #signinOverlay { background:#2e2763; }
 .toast.show { opacity:1; transform:translate(-50%,0); }
 .toast.err { background:#b42318; }
 .loading { display:flex; align-items:center; justify-content:center; gap:.6rem; flex:1; color:#8a8fa8; font-size:.9rem; }
+.grid-loading { padding:3.5rem 1rem; }   /* the Cards view's first read: clear of the bar above */
+table.grid.grid-preview { pointer-events:none; opacity:.7; }   /* the cards, shown while the Cards view reads the sheet; editable a moment later */
 .spin { width:20px; height:20px; border:2.5px solid #d6d9e6; border-top-color:#4b3fa8; border-radius:50%; animation:spin .8s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
 

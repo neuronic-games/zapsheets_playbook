@@ -698,7 +698,7 @@ function selectTab(name, first, force, asked, pre) {   // pre: {rows, full} alre
   function allLoaded() {
     setTimeout(keepThumb, 2500);   // the Designs page's picture, if the first card looks different now
     if (!FIELDS.length || FIELDS.length === dataPend(name).cols.length) headerFields(name);   // no cards: the columns come from the heading row
-    if (_activeTab === 'data') loadGrid(force);
+    loadGrid(force);   // the Cards view's own read, started now so it's ready (or nearly) when you open it
     var due = false; try { due = !!localStorage.getItem('cb_repub:' + SHEET_ID + ':' + name); localStorage.removeItem('cb_repub:' + SHEET_ID + ':' + name); } catch (e) {}
     if (force) { toast('✓ Reloaded from the sheet'); autoRepublish(name); }
     else if (_republishWaiting === name || due) { _republishWaiting = ''; autoRepublish(name); }
@@ -3702,13 +3702,31 @@ var GRID = null, _gridSel = null, _gridEdit = null, _rowsStale = false, _gridFil
 function loadGrid(force) {
   var tab = curTab, box = $('gridWrap');
   if (!tab) return;
-  if (GRID && GRID.tab === tab && !force) { overlayGrid(); renderGrid(); return; }   // already in memory: no need to read the sheet
-  box.innerHTML = '<div class="loading"><span class="spin"></span>Loading “' + esc(tab) + '”…</div>';
+  if (GRID && GRID.tab === tab && !force) { if (_activeTab === 'data') { overlayGrid(); renderGrid(); } return; }   // already in memory
+  // The Cards view reads the sheet its own way — every cell as typed (formulas, plain numbers) as well as how the sheet
+  // shows it — which the cards don't need. Until that's in, the cards already loaded show here (looking, not editing).
+  if (_activeTab === 'data') gridPreview(tab);
+  if (_loadingGrid === tab && !force) return;
+  _loadingGrid = tab;
   api('grid', { tab: tab, force: force ? '1' : '' }).then(function(r) {
+    if (_loadingGrid === tab) _loadingGrid = '';
     if (curTab !== tab) return;
     GRID = { tab: tab, header: r.header || [], rows: r.rows || [] };
-    overlayGrid(); _gridSel = null; renderGrid();
-  }).catch(function(e) { box.innerHTML = '<div class="muted" style="padding:2rem">Couldn\'t read the sheet — ' + esc(e.message) + '</div>'; });
+    overlayGrid(); _gridSel = null; if (_activeTab === 'data') renderGrid();
+  }).catch(function(e) {
+    if (_loadingGrid === tab) _loadingGrid = '';
+    if (curTab !== tab || _activeTab !== 'data') return;
+    box.innerHTML = '<div class="muted" style="padding:2rem">Couldn\'t read the sheet — ' + esc(e.message) + '</div>';
+  });
+}
+var _loadingGrid = '';
+function gridPreview(tab) {   // the cards already loaded, as a plain table (looking only), until the sheet's own read is in
+  var box = $('gridWrap');
+  if (!ROWS.length || _rowsPartial || !FIELDS.length) { box.innerHTML = '<div class="loading grid-loading"><span class="spin"></span>Reading “' + esc(tab) + '”…</div>'; return; }
+  var cols = orderedFields(FIELDS.filter(function(f) { return !isHidden(f); }));
+  box.innerHTML = '<table class="grid grid-preview"><thead><tr><th class="rn"></th>' + cols.map(function(f) { return '<th>' + esc(f) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    ROWS.map(function(r, i) { return '<tr><td class="rn">' + cardNo(i + 1) + '</td>' + cols.map(function(f) { return '<td>' + richCell(r, f) + '</td>'; }).join('') + '</tr>'; }).join('') +
+    '</tbody></table>';
 }
 // Column order and widths in the Data view are kept per tab in _cardboard_settings (the sheet itself is unchanged)
 function gridPrefs(tab) { var g = SETTINGS.grid = SETTINGS.grid || {}; return g[tab || GRID.tab] = g[tab || GRID.tab] || {}; }

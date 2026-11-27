@@ -615,9 +615,17 @@ function recheckTabs() {
     var got = r.tabs.map(function(t) { return t.title; });
     if (got.join('\u0001') === now) return;
     var pend = TABS.filter(function(t) { return t.pending && got.indexOf(t.title) < 0; });
+    var known = TABS.map(function(t) { return t.title; }), added = got.filter(function(n) { return known.indexOf(n) < 0; });
     TABS = r.tabs.concat(pend);
     setNewTabs(newTabs().filter(function(n) { return got.indexOf(n) < 0; }));
     fillDeckSelects(); refreshSheetCombos(); writeStartCache();
+    // decks added elsewhere (in Sheets, or from a template) may come with layouts this browser hasn't seen
+    if (added.length) apiNet('layouts').then(function(l) {
+      var got2 = (l && l.layouts) || {}, now = false;
+      added.forEach(function(n) { if (got2[n] && !LAYOUTS[n]) { LAYOUTS[n] = got2[n]; if (n === curTab && !dirty) now = true; } });
+      writeStartCache();
+      if (now) selectTab(curTab); else refreshSheetCombos();
+    }).catch(function() {});
   }).catch(function() {});
 }
 function mergeNewTabs() {   // the new decks go at the end of the list; drop any the sheet now has

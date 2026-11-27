@@ -999,7 +999,7 @@ body.designs .app { display:flex; flex-direction:column; }
         var fd = new FormData(); fd.append('id', sheetId); fd.append('action', 'fromtemplate'); fd.append('tab', t.name); fd.append('cbt', acct.token);
         return fetch(APP_BASE + 'push/cardboardData.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(r) {
           if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response');
-          try { localStorage.setItem('cb_tab:' + sheetId, r.tab || t.name); } catch (e) {}
+          try { localStorage.setItem('cb_tab:' + sheetId, r.tab || t.name); sessionStorage.setItem('cb_fetch:' + sheetId, '1'); } catch (e) {}   // the designer reads the sheet again (not what it kept from before)
           addLog('✓  Added the deck “' + (r.tab || t.name) + '” with its layout and sample cards', 'ok');
         }).catch(function(e) { addLog('!  Couldn’t add the template — ' + e.message, 'err'); });
       }).then(function() {

@@ -42,8 +42,13 @@ if (($_POST['action'] ?? '') === 'thumb') {
     if (!$tmp || !is_uploaded_file($tmp) || filesize($tmp) > 600 * 1024) csOut(['error' => 'No picture']);
     $info = @getimagesize($tmp);
     if (!$info || !in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG], true)) csOut(['error' => 'Not a picture']);
-    if (!@move_uploaded_file($tmp, csDir($id) . '/_cardboard_thumb.jpg')) csOut(['error' => 'Couldn’t keep the picture']);
     $tab = trim((string) ($_POST['tab'] ?? ''));   // each deck keeps its own picture too (the Templates use them)
+    if ($tab !== '' && !empty($_POST['deck_only'])) {   // only that deck's picture (the templates sheet draws every deck)
+        if (!@move_uploaded_file($tmp, csDir($id) . '/_cardboard_thumb_' . md5($tab) . '.jpg')) csOut(['error' => 'Couldn’t keep the picture']);
+        @unlink(csDir($id) . '/_templates.json');
+        csOut(['ok' => true]);
+    }
+    if (!@move_uploaded_file($tmp, csDir($id) . '/_cardboard_thumb.jpg')) csOut(['error' => 'Couldn’t keep the picture']);
     if ($tab !== '') { @copy(csDir($id) . '/_cardboard_thumb.jpg', csDir($id) . '/_cardboard_thumb_' . md5($tab) . '.jpg'); @unlink(csDir($id) . '/_templates.json'); }
     @touch(csDir($id) . '/_cardboard_edited');
     // the sheet's name and decks, as the designer has them (the tile shows them)

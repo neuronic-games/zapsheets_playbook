@@ -861,6 +861,7 @@ function selectTab(name, first, force, asked, pre) {   // pre: {rows, full} alre
   }
   function allLoaded() {
     setTimeout(keepThumb, 2500);   // the Designs page's picture, if the first card looks different now
+    if (first) setTimeout(keepTemplateThumbs, 6000);   // the templates sheet: every template's picture
     if (!FIELDS.length || FIELDS.length === dataPend(name).cols.length) headerFields(name);   // no cards: the columns come from the heading row
     loadGrid(force);   // the Cards view's own read, started now so it's ready (or nearly) when you open it
     var due = false; try { due = !!localStorage.getItem('cb_repub:' + SHEET_ID + ':' + name); localStorage.removeItem('cb_repub:' + SHEET_ID + ':' + name); } catch (e) {}
@@ -3807,6 +3808,34 @@ if ($('exportStage') && $('exportStage').parentNode !== document.body) document.
 // The sheet's picture on the Designs page (/cardboard): its first card. Sent whenever that card looks
 // different from the last one sent (after a save, a fetch or on opening), never in the way of anything else.
 var _thumbBusy = false;
+// The templates sheet (Sea Creatures): every deck with a layout is a template on the Designs page, each with a
+// picture of its first card. Its owner opening it draws the ones that changed (one after another, quietly).
+var TEMPLATES_SHEET = '1sy20Ig_fmfpTfnpkEUXibgErXj2XISiqr-Ag6Xe3uRc';
+function keepTemplateThumbs() {
+  if (SHEET_ID !== TEMPLATES_SHEET || !isOwner()) return;
+  var tabs = TABS.filter(function(t) { return !t.pending && LAYOUTS[t.title] && t.title !== curTab; }).map(function(t) { return t.title; });
+  tabs.forEach(function(tab) {
+    _drawQueue = _drawQueue.then(function() {
+      return api('rows', { tab: tab }).then(function(r) {
+        var row = (r.rows || [])[0]; if (!row) return;
+        var lay = normalize(JSON.parse(JSON.stringify(LAYOUTS[tab]))), html = renderCardHTML(lay, row, false, { card: 0, row: 0, proxy: true });
+        var sig = String(html.length) + ':' + hashStr(html), k = 'cb_thumb:' + SHEET_ID + ':' + tab;
+        try { if (localStorage.getItem(k) === sig) return; } catch (e) {}
+        return exportLibs().then(function() { return drawCard(html, 360, lay.card); }).then(function(cv) {
+          var t = document.createElement('canvas'); t.width = cv.width; t.height = cv.height;
+          var g = t.getContext('2d'); g.fillStyle = '#eef0f6'; g.fillRect(0, 0, t.width, t.height); g.drawImage(cv, 0, 0);
+          return canvasBlob(t, 'image/jpeg');
+        }).then(function(b) {
+          if (!b) return;
+          var fd = new FormData(); fd.append('action', 'thumb'); fd.append('id', SHEET_ID); fd.append('file', b, 'thumb.jpg'); fd.append('tab', tab); fd.append('deck_only', '1');
+          if (ACCT && ACCT.token) fd.append('cbt', ACCT.token);
+          return fetch(APP_BASE + 'push/cardboardSheets.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
+            .then(function(r) { if (r && r.ok) { try { localStorage.setItem(k, sig); } catch (e) {} } });
+        });
+      }).catch(function() {});
+    });
+  });
+}
 function keepThumb() {
   if (!isOwner() || !layout || !ROWS.length || !curTab || _rowsPartial || _thumbBusy) return;
   var lay = JSON.parse(JSON.stringify(layout)), row = ROWS[0], c = lay.card, w = 360;

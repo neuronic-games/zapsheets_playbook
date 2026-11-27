@@ -76,18 +76,22 @@ function cbKeepInfo(string $sheetId, array $res): void {
 const CB_TEMPLATES_SHEET = '1sy20Ig_fmfpTfnpkEUXibgErXj2XISiqr-Ag6Xe3uRc';
 if ($action === 'templates') {
     $f = dirname(__DIR__) . '/sheets/' . CB_TEMPLATES_SHEET . '/_templates.json';
-    $old = json_decode((string) @file_get_contents($f), true);
-    if (is_array($old) && empty($_POST['force']) && @filemtime($f) > time() - 600) { echo json_encode($old, JSON_UNESCAPED_UNICODE); exit; }
-    $res = cbRun($python, CB_TEMPLATES_SHEET, ['action' => 'templates']);
-    if (!empty($res['ok'])) {
-        foreach ($res['templates'] as &$t) {   // its picture: the deck's first card, as the designer last drew it
-            $th = dirname(__DIR__) . '/sheets/' . CB_TEMPLATES_SHEET . '/_cardboard_thumb_' . md5($t['name']) . '.jpg';
-            $t['thumb'] = is_file($th) ? 'push/cardboardSheets.php?thumb=' . CB_TEMPLATES_SHEET . '&tab=' . rawurlencode($t['name']) . '&v=' . filemtime($th) : '';
-        }
-        unset($t);
-        if (!is_dir(dirname($f))) @mkdir(dirname($f), 0755, true);
-        @file_put_contents($f, json_encode($res, JSON_UNESCAPED_UNICODE), LOCK_EX);
-    } elseif (is_array($old)) $res = $old;
+    $res = json_decode((string) @file_get_contents($f), true);
+    if (!is_array($res) || !empty($_POST['force']) || @filemtime($f) < time() - 600) {
+        $new = cbRun($python, CB_TEMPLATES_SHEET, ['action' => 'templates']);
+        if (!empty($new['ok'])) {
+            if (!is_dir(dirname($f))) @mkdir(dirname($f), 0755, true);
+            @file_put_contents($f, json_encode($new, JSON_UNESCAPED_UNICODE), LOCK_EX);
+            $res = $new;
+        } elseif (!is_array($res)) $res = $new;
+    }
+    // Each template's picture: its deck's first card as the designer last drew it, else the one that comes with CardBoard
+    foreach (($res['templates'] ?? []) as $i => $t) {
+        $th = dirname(__DIR__) . '/sheets/' . CB_TEMPLATES_SHEET . '/_cardboard_thumb_' . md5($t['name']) . '.jpg';
+        $st = 'images/cardboard-templates/thumb-' . preg_replace('/[^a-z0-9]+/', '-', strtolower($t['name'])) . '.webp';
+        $res['templates'][$i]['thumb'] = is_file($th) ? 'push/cardboardSheets.php?thumb=' . CB_TEMPLATES_SHEET . '&tab=' . rawurlencode($t['name']) . '&v=' . filemtime($th)
+            : (is_file(dirname(__DIR__) . '/' . $st) ? $st . '?v=' . filemtime(dirname(__DIR__) . '/' . $st) : '');
+    }
     echo json_encode($res, JSON_UNESCAPED_UNICODE); exit;
 }
 

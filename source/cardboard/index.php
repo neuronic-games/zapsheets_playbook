@@ -272,6 +272,10 @@ body.designs .app { display:flex; flex-direction:column; }
 .t-card .d-thumb { border-radius:10px 10px 0 0; }
 .t-card .d-info .t { font-family:'DINBlack',sans-serif; }
 .t-card .d-info .m { display:block; margin-top:.3rem; white-space:normal; }
+.t-card .d-info { display:flex; flex-direction:column; flex:1; }
+.t-go { display:block; margin-top:auto; align-self:stretch; text-align:center; height:40px; line-height:40px; margin-top:.9rem; border-radius:999px; background:#4b3fa8; color:#fff; font-family:'DINBlack',sans-serif; font-size:.74rem; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; }
+.t-go:hover { background:#3b3190; }
+.t-card .d-info .m { flex:1; }
 .t-card .ph-t { width:auto; height:70%; aspect-ratio:var(--ar, 5 / 7); border-radius:8px; background:#fff; border:2px dashed #c9cde0; display:flex; align-items:center; justify-content:center; color:#9aa0b8; font-family:'DINBlack',sans-serif; font-size:.8rem; letter-spacing:.06em; text-transform:uppercase; padding:.5rem; text-align:center; }
 .tpl-note { display:flex; align-items:center; gap:.8rem; margin-right:2.4rem !important; background:#f3f1ff; border:1px solid #d9d3ff; color:#2e2763; border-radius:10px; padding:.7rem .9rem; margin:0 0 1rem; font-size:.92rem; }
 .tpl-note img { width:42px; border-radius:5px; box-shadow:0 2px 6px rgba(20,20,50,.2); }
@@ -449,7 +453,7 @@ body.designs .app { display:flex; flex-direction:column; }
     </aside>
     <main class="d-main">
       <section id="tplView" hidden>
-        <div class="d-head"><h1>Templates</h1><button type="button" class="t-use" id="tplUse" onclick="useTemplate()" disabled>Use this layout</button></div>
+        <div class="d-head"><h1>Templates</h1><button type="button" class="t-use" id="tplUse" onclick="useTemplate()" disabled>Use this design</button></div>
         <p class="t-sub">Start from a finished layout. Pick one, then link a new Google Sheet: the layout, its columns and a few sample cards are added to it.</p>
         <div id="tGrid"><div class="d-loading">Loading the templates…</div></div>
       </section>
@@ -811,12 +815,14 @@ body.designs .app { display:flex; flex-direction:column; }
       var ar = (t.w || 180) + ' / ' + (t.h || 252);
       return '<button type="button" class="t-card' + (t.name === _tplPick ? ' on' : '') + '" data-i="' + i + '" onclick="pickTemplate(' + i + ')" ondblclick="pickTemplate(' + i + ');useTemplate()">' +
         '<div class="d-thumb">' + (t.thumb ? '<img src="' + esc(APP_BASE + t.thumb) + '" alt="" loading="lazy">' : '<div class="ph-t" style="--ar:' + ar + '">' + esc(t.name) + '</div>') + '</div>' +
-        '<div class="d-info"><div class="t">' + esc(t.name) + '</div><div class="m">' + esc(t.desc || ((t.w > t.h ? 'Landscape' : 'Portrait') + ' card')) + '</div></div></button>';
+        '<div class="d-info"><div class="t">' + esc(t.name) + '</div><div class="m">' + esc(t.desc || ((t.w > t.h ? 'Landscape' : 'Portrait') + ' card')) + '</div>' +
+        '<span class="t-go" role="button" onclick="event.stopPropagation();useTemplate(' + i + ')">Use this design</span></div></button>';
     }).join('') + '</div>';
     $('tplUse').disabled = !_tplPick;
   }
   window.pickTemplate = function(i) { var t = TPLS[i]; if (!t) return; _tplPick = _tplPick === t.name ? '' : t.name; tRender(); };
-  window.useTemplate = function() {
+  window.useTemplate = function(i) {
+    if (typeof i === 'number' && TPLS[i]) _tplPick = TPLS[i].name;
     var t = (TPLS || []).filter(function(x) { return x.name === _tplPick; })[0]; if (!t) return;
     _useTpl = t; openCreateDialog(true);
   };

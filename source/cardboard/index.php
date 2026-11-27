@@ -260,6 +260,23 @@ body.designs .app { display:flex; flex-direction:column; }
 .d-empty b { display:block; font-family:'DINBlack',sans-serif; font-size:1.25rem; color:#1f1b47; margin-bottom:.4rem; }
 .d-empty .connect-btn { width:auto; padding:0 1.6rem; margin-top:1.2rem; }
 .d-loading { color:#8a8fa8; padding:2rem 0; }
+/* Templates: pick one, then Use this layout */
+.t-sub { margin:-.9rem 0 1.4rem; color:#6b7090; font-size:.98rem; }
+.t-use { height:44px; padding:0 1.4rem; border:none; border-radius:999px; background:#4b3fa8; color:#fff; font-family:'DINBlack',sans-serif; font-size:.82rem; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
+.t-use:hover:not(:disabled) { background:#3b3190; }
+.t-use:disabled { opacity:.4; cursor:default; }
+.t-card { position:relative; background:#fff; border:2px solid #dfe2ec; border-radius:12px; cursor:pointer; display:flex; flex-direction:column; text-align:left; padding:0; font:inherit; color:inherit; transition:box-shadow .15s, transform .15s, border-color .15s; }
+.t-card:hover { box-shadow:0 8px 24px rgba(46,39,99,.14); transform:translateY(-2px); }
+.t-card.on { border-color:#4b3fa8; box-shadow:0 0 0 4px rgba(75,63,168,.18); }
+.t-card.on::after { content:'✓'; position:absolute; top:.6rem; right:.6rem; width:28px; height:28px; border-radius:50%; background:#4b3fa8; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; }
+.t-card .d-thumb { border-radius:10px 10px 0 0; }
+.t-card .d-info .t { font-family:'DINBlack',sans-serif; }
+.t-card .d-info .m { display:block; margin-top:.3rem; white-space:normal; }
+.t-card .ph-t { width:auto; height:70%; aspect-ratio:var(--ar, 5 / 7); border-radius:8px; background:#fff; border:2px dashed #c9cde0; display:flex; align-items:center; justify-content:center; color:#9aa0b8; font-family:'DINBlack',sans-serif; font-size:.8rem; letter-spacing:.06em; text-transform:uppercase; padding:.5rem; text-align:center; }
+.tpl-note { display:flex; align-items:center; gap:.8rem; margin-right:2.4rem !important; background:#f3f1ff; border:1px solid #d9d3ff; color:#2e2763; border-radius:10px; padding:.7rem .9rem; margin:0 0 1rem; font-size:.92rem; }
+.tpl-note img { width:42px; border-radius:5px; box-shadow:0 2px 6px rgba(20,20,50,.2); }
+.tpl-note .grow { flex:1; }
+.tpl-note .link-btn { white-space:nowrap; }
 .d-toast { position:fixed; left:50%; bottom:1.5rem; transform:translateX(-50%) translateY(300%); opacity:0; background:#2e2763; color:#fff; padding:.6rem 1.1rem; border-radius:9px; font-size:.9rem; transition:transform .2s; z-index:80; }
 .d-toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
 
@@ -422,7 +439,8 @@ body.designs .app { display:flex; flex-direction:column; }
     <aside class="d-side">
       <div class="d-me"><label class="d-av d-pic" id="sideAv" title="Click or drop a picture to change it" ondragover="event.preventDefault();this.classList.add('drop')" ondragleave="this.classList.remove('drop')" ondrop="picDrop(event)"><span class="ini" id="sideIni"></span><img id="sideImg" alt="" hidden><span class="cam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><input type="file" accept="image/*" hidden onchange="picPick(this)"></label><div class="nm" id="meName"></div><div class="em" id="meEmail"></div><span class="pl" id="mePlan"></span></div>
       <nav class="d-nav">
-        <a href="cardboard" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>Designs</a>
+        <a href="cardboard" class="on" id="navDesigns" onclick="return showView('designs')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>Designs</a>
+        <a href="cardboard#templates" id="navTemplates" onclick="return showView('templates')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="5" width="10" height="14" rx="2"/><path d="M16.5 7.5l3 .8-3 11.5-4.5-1.2"/><path d="M6.5 9h4M6.5 12h4"/></svg>Templates</a>
         <a href="cardboard/help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.3-2.5 4"/><circle cx="12" cy="17.3" r=".6" fill="currentColor"/></svg>Help</a>
         <a href="cardboard/features"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg>Features</a>
         <a href="gameboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3.5 10.5 12 4l8.5 6.5V20h-6v-5.5h-5V20h-6z"/></svg>GameBoard</a>
@@ -430,6 +448,12 @@ body.designs .app { display:flex; flex-direction:column; }
       <div class="foot"><button type="button" class="link-btn" onclick="authSignOut()">Sign out</button></div>
     </aside>
     <main class="d-main">
+      <section id="tplView" hidden>
+        <div class="d-head"><h1>Templates</h1><button type="button" class="t-use" id="tplUse" onclick="useTemplate()" disabled>Use this layout</button></div>
+        <p class="t-sub">Start from a finished layout. Pick one, then link a new Google Sheet: the layout, its columns and a few sample cards are added to it.</p>
+        <div id="tGrid"><div class="d-loading">Loading the templates…</div></div>
+      </section>
+      <section id="desView">
       <div class="d-head">
         <h1>Your designs</h1>
         <label class="d-search" id="dSearchWrap"><input type="search" id="dSearch" placeholder="Search" autocomplete="off" oninput="dRender()"><button type="button" class="x" onclick="dClearSearch()" title="Clear">×</button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg></label>
@@ -442,6 +466,7 @@ body.designs .app { display:flex; flex-direction:column; }
         <label class="d-sort"><select id="dSort" onchange="dRender()"><option value="edited">Edited</option><option value="name">Name</option></select></label>
       </div>
       <div id="dGrid"><div class="d-loading">Loading your designs…</div></div>
+      </section>
     </main>
   </div>
 </div>
@@ -450,6 +475,7 @@ body.designs .app { display:flex; flex-direction:column; }
   <div class="d-dlg" id="createDlg" onclick="event.stopPropagation()" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();startSetup();}">
     <button type="button" class="x-btn" onclick="closeCreateDialog()" title="Close">×</button>
   <div class="card gs-wide" id="connectCard">
+    <div class="tpl-note" id="tplNote" hidden><img id="tplNoteImg" alt="" hidden><span class="grow">Template: <b id="tplNoteName"></b> — its layout, columns and sample cards are added to the sheet you link.</span><button type="button" class="link-btn" onclick="dropTemplate()">Don’t use it</button></div>
     <div class="card-title">Link to your sheet</div>
     <p class="gs-intro">Keep your cards in a Google Sheet — one tab per deck, one row per card, one column per field (Name, Cost, Text, Image…). CardBoard turns each row into a card using a layout you design, then lays them out on print sheets.</p>
     <details class="why">
@@ -478,7 +504,7 @@ body.designs .app { display:flex; flex-direction:column; }
       <li>
         <b>Open (or make) a Google Spreadsheet, share it with CardBoard, and copy its URL</b>
         <div class="gs-start">
-          <a href="https://docs.google.com/spreadsheets/d/1sy20Ig_fmfpTfnpkEUXibgErXj2XISiqr-Ag6Xe3uRc/copy" target="_blank" rel="noopener"><b>Copy the sample deck</b><span>Sea Creatures, with a finished layout</span></a>
+          <a href="https://docs.google.com/spreadsheets/d/1sy20Ig_fmfpTfnpkEUXibgErXj2XISiqr-Ag6Xe3uRc/copy" target="_blank" rel="noopener" id="sampleLink"><b>Copy the sample deck</b><span>Sea Creatures, with a finished layout</span></a>
           <a href="https://sheets.new" target="_blank" rel="noopener"><b>Start a blank sheet</b><span>One tab per deck, one row per card</span></a>
         </div>
         <div class="gs-how">In the sheet:</div>
@@ -677,7 +703,7 @@ body.designs .app { display:flex; flex-direction:column; }
     }).map(function(x) { return Object.assign({}, x, { when: Math.max(x.edited || 0, x.mine ? 0 : seenAt[x.id] || 0) }); });
     show.sort(sort === 'name' ? function(a, b) { return (a.title || 'zzz').localeCompare(b.title || 'zzz', undefined, { sensitivity: 'base' }); } : function(a, b) { return b.when - a.when; });
     if (!list.length) {
-      $('dGrid').innerHTML = '<div class="d-empty"><b>No designs yet</b>Connect a Google Sheet — or copy the sample deck — to design your first cards.<br><button type="button" class="connect-btn" onclick="openCreateDialog()">+ Design</button></div>';
+      $('dGrid').innerHTML = '<div class="d-empty"><b>No designs yet</b>Connect a Google Sheet, or start from a template, to design your first cards.<br><button type="button" class="connect-btn" onclick="openCreateDialog()">+ Design</button> <button type="button" class="cancel-btn" style="margin-top:1.2rem" onclick="showView(\'templates\')">Browse templates</button></div>';
       return;
     }
     if (!show.length) { $('dGrid').innerHTML = '<div class="d-empty"><b>Nothing matches</b>' + (q ? 'No design or deck called “' + esc(q) + '”.' : '') + '</div>'; return; }
@@ -761,9 +787,54 @@ body.designs .app { display:flex; flex-direction:column; }
   }
   function dToast(t) { var el = $('dToast'); el.textContent = t; el.classList.add('show'); clearTimeout(el._h); el._h = setTimeout(function() { el.classList.remove('show'); }, 1800); }
 
+  // ── Templates: the decks of the Sea Creatures sample sheet that have a layout ──
+  var TPLS = null, _tplPick = '', _useTpl = null, TPL_SHEET = '1sy20Ig_fmfpTfnpkEUXibgErXj2XISiqr-Ag6Xe3uRc';
+  window.showView = function(v) {
+    var t = v === 'templates';
+    $('tplView').hidden = !t; $('desView').hidden = t;
+    $('navTemplates').classList.toggle('on', t); $('navDesigns').classList.toggle('on', !t);
+    try { history.replaceState(null, '', t ? '#templates' : location.pathname + location.search); } catch (e) {}
+    if (t) tLoad();
+    return false;
+  };
+  function tLoad() {
+    if (TPLS) { tRender(); return; }
+    var fd = new FormData(); fd.append('id', TPL_SHEET); fd.append('action', 'templates');
+    fetch(APP_BASE + 'push/cardboardData.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(r) {
+      if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response');
+      TPLS = r.templates || []; tRender();
+    }).catch(function(e) { $('tGrid').innerHTML = '<div class="d-empty"><b>Couldn’t load the templates</b>' + esc(e.message || '') + '</div>'; });
+  }
+  function tRender() {
+    if (!TPLS.length) { $('tGrid').innerHTML = '<div class="d-empty"><b>No templates yet</b></div>'; return; }
+    $('tGrid').innerHTML = '<div class="d-grid">' + TPLS.map(function(t, i) {
+      var ar = (t.w || 180) + ' / ' + (t.h || 252);
+      return '<button type="button" class="t-card' + (t.name === _tplPick ? ' on' : '') + '" data-i="' + i + '" onclick="pickTemplate(' + i + ')" ondblclick="pickTemplate(' + i + ');useTemplate()">' +
+        '<div class="d-thumb">' + (t.thumb ? '<img src="' + esc(APP_BASE + t.thumb) + '" alt="" loading="lazy">' : '<div class="ph-t" style="--ar:' + ar + '">' + esc(t.name) + '</div>') + '</div>' +
+        '<div class="d-info"><div class="t">' + esc(t.name) + '</div><div class="m">' + esc(t.desc || ((t.w > t.h ? 'Landscape' : 'Portrait') + ' card')) + '</div></div></button>';
+    }).join('') + '</div>';
+    $('tplUse').disabled = !_tplPick;
+  }
+  window.pickTemplate = function(i) { var t = TPLS[i]; if (!t) return; _tplPick = _tplPick === t.name ? '' : t.name; tRender(); };
+  window.useTemplate = function() {
+    var t = (TPLS || []).filter(function(x) { return x.name === _tplPick; })[0]; if (!t) return;
+    _useTpl = t; openCreateDialog(true);
+  };
+  window.dropTemplate = function() { _useTpl = null; showTplNote(); };
+  function showTplNote() {
+    var t = _useTpl;
+    $('tplNote').hidden = !t; $('sampleLink').hidden = !!t;   // a template goes into a new, blank sheet
+    if (!t) return;
+    $('tplNoteName').textContent = t.name;
+    $('tplNoteImg').hidden = !t.thumb; if (t.thumb) $('tplNoteImg').src = APP_BASE + t.thumb;
+  }
+  if (location.hash === '#templates') setTimeout(function() { showView('templates'); }, 0);
+
   // + Create (the dialog pattern: dirty-check on ×/Esc/backdrop, Cancel always closes, ⌘Enter connects)
   var _createInitial = null;
-  window.openCreateDialog = function() {
+  window.openCreateDialog = function(fromTpl) {
+    if (!fromTpl) _useTpl = null;
+    showTplNote();
     $('sheetInput').value = ''; $('logPanel').innerHTML = ''; $('logPanel').style.display = 'none';
     $('connectBtn').disabled = false; $('connectBtn').textContent = 'Connect & Open';
     _createInitial = { url: '' };
@@ -919,6 +990,15 @@ body.designs .app { display:flex; flex-direction:column; }
         try { localStorage.setItem('cb_account', JSON.stringify(acct)); } catch (e) {}
         addLog(r.account && r.account.owner ? '✓  Set up as yours' : '✓  Someone else set this sheet up — it opens view only', 'ok');
       }).catch(function(e) { addLog('!  ' + e.message, 'err'); }).then(function() {
+        if (!_useTpl) return;
+        var t = _useTpl; addLog('Adding the ' + t.name + ' template…', 'inf');
+        var fd = new FormData(); fd.append('id', sheetId); fd.append('action', 'fromtemplate'); fd.append('tab', t.name); fd.append('cbt', acct.token);
+        return fetch(APP_BASE + 'push/cardboardData.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(r) {
+          if (!r || r.error) throw new Error(r && r.error ? r.error : 'No response');
+          try { localStorage.setItem('cb_tab:' + sheetId, r.tab || t.name); } catch (e) {}
+          addLog('✓  Added the deck “' + (r.tab || t.name) + '” with its layout and sample cards', 'ok');
+        }).catch(function(e) { addLog('!  Couldn’t add the template — ' + e.message, 'err'); });
+      }).then(function() {
         addLog('✓  Ready — opening CardBoard…', 'ok');
         setTimeout(function() { window.location.href = APP_BASE + sheetId + '/cardboard'; }, 800);
       });

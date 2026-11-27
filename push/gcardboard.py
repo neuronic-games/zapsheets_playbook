@@ -213,6 +213,63 @@ def main():
             pass
         out({'ok': True})
 
+    if action == 'templates':
+        # The templates sheet: every deck with a layout — its name, a line about it (layout "desc"), its card size and columns
+        lws = next((w for w in sheets if w.title.lower() == TAB), None)
+        lays = read_layouts(wb, lws)
+        out_t = []
+        for w in sheets:
+            if w.title.lower() in (TAB, TAGS_TAB) or hidden(w) or w.title not in lays: continue
+            l = lays[w.title]; c = l.get('card') or {}
+            out_t.append({'name': w.title, 'desc': str(l.get('desc') or ''), 'w': c.get('w', 180), 'h': c.get('h', 252)})
+        out({'ok': True, 'templates': out_t})
+
+    if action == 'fromtemplate':
+        # A template (a deck of the templates sheet, src): its columns, sample cards and layout become a deck of this sheet.
+        # A new sheet's only, empty tab (Sheet1) is used for it; otherwise a tab is added.
+        src_id, name = str(data.get('src') or ''), str(data.get('tab') or '').strip()
+        try:
+            src = gspread.service_account(filename=credFileName).open_by_key(src_id)
+            sws = next((w for w in src.worksheets() if w.title == name), None)
+            if sws is None: out({'error': 'That template was not found'})
+            vals = src.values_get(q(name), params={'valueRenderOption': 'FORMULA'}).get('values', [])
+            lws = next((w for w in src.worksheets() if w.title.lower() == TAB), None)
+            lay = read_layouts(src, lws).get(name) if lws else None
+        except SystemExit:
+            raise
+        except Exception as e:
+            out({'error': 'Couldn\'t read the template: ' + str(e)})
+        if not vals: out({'error': 'The template is empty'})
+        titles = [w.title for w in sheets]
+        target = name
+        k = 2
+        while target in titles: target = '%s %d' % (name, k); k += 1
+        decks = [w for w in sheets if w.title.lower() not in (TAB, TAGS_TAB)]
+        tws = None
+        if len(decks) == 1 and not any(any(str(c).strip() for c in r) for r in (wb.values_get(q(decks[0].title)).get('values', []) or [])):
+            tws = decks[0]
+            try: tws.update_title(target)
+            except Exception: pass
+        if tws is None:
+            tws = wb.add_worksheet(title=target, rows=max(200, len(vals) + 50), cols=max(10, max(len(r) for r in vals)))
+        if tws.col_count < max(len(r) for r in vals): tws.add_cols(max(len(r) for r in vals) - tws.col_count)
+        wb.values_update(q(target) + '!A1', params={'valueInputOption': 'USER_ENTERED'}, body={'values': vals})
+        try:
+            wb.batch_update({'requests': [
+                {'updateSheetProperties': {'properties': {'sheetId': tws.id, 'gridProperties': {'frozenRowCount': 1}}, 'fields': 'gridProperties.frozenRowCount'}},
+                {'repeatCell': {'range': {'sheetId': tws.id, 'startRowIndex': 0, 'endRowIndex': 1},
+                                'cell': {'userEnteredFormat': {'backgroundColor': {'red': .29, 'green': .247, 'blue': .659},
+                                         'textFormat': {'bold': True, 'foregroundColor': {'red': 1, 'green': 1, 'blue': 1}}, 'verticalAlignment': 'MIDDLE'}},
+                                'fields': 'userEnteredFormat(backgroundColor,textFormat,verticalAlignment)'}},
+            ]})
+        except Exception:
+            pass
+        if not isinstance(lay, dict): out({'ok': True, 'tab': target, 'layout': False})
+        lay.pop('desc', None)
+        # then the layout is saved under the new deck's name, as a Save from the designer would
+        action, data = 'save', {'action': 'save', 'sheet': target, 'layout': lay, 'tab_made': target}
+        sheets = wb.worksheets()
+
     if action in ('tags', 'settag', 'deltag'):
         tws = next((w for w in sheets if w.title.lower() == TAGS_TAB), None)
         def brace(n):   # tag names are written [energy]; older rows saved as {energy} are read the same way
@@ -370,7 +427,7 @@ def main():
         else:
             wb.values_append(q(ws.title) + '!A1', params={'valueInputOption': 'RAW', 'insertDataOption': 'OVERWRITE'},
                              body={'values': [[name, raw, stamp]]})
-        out({'ok': True, 'saved': name, 'updated': stamp})
+        out({'ok': True, 'saved': name, 'updated': stamp, 'tab': data.get('tab_made') or name})
 
     if action == 'addfield':
         name  = str(data.get('sheet', '')).strip()

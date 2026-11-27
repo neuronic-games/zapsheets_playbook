@@ -18,7 +18,7 @@ function csValid(string $id): bool { return (bool) preg_match('/^[A-Za-z0-9_\-]{
 // The picture: public, like the link preview (it's the first card of a deck shared by link)
 if (isset($_GET['thumb'])) {
     $id = (string) $_GET['thumb'];
-    $f = csDir($id) . '/_cardboard_thumb.jpg';
+    $f = csDir($id) . (isset($_GET['tab']) ? '/_cardboard_thumb_' . md5((string) $_GET['tab']) . '.jpg' : '/_cardboard_thumb.jpg');   // one deck's picture, or the sheet's
     if (!csValid($id) || !is_file($f)) { http_response_code(404); exit; }
     header('Content-Type: image/jpeg');
     header('Cache-Control: public, max-age=300');
@@ -43,6 +43,8 @@ if (($_POST['action'] ?? '') === 'thumb') {
     $info = @getimagesize($tmp);
     if (!$info || !in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG], true)) csOut(['error' => 'Not a picture']);
     if (!@move_uploaded_file($tmp, csDir($id) . '/_cardboard_thumb.jpg')) csOut(['error' => 'Couldn’t keep the picture']);
+    $tab = trim((string) ($_POST['tab'] ?? ''));   // each deck keeps its own picture too (the Templates use them)
+    if ($tab !== '') { @copy(csDir($id) . '/_cardboard_thumb.jpg', csDir($id) . '/_cardboard_thumb_' . md5($tab) . '.jpg'); @unlink(csDir($id) . '/_templates.json'); }
     @touch(csDir($id) . '/_cardboard_edited');
     // the sheet's name and decks, as the designer has them (the tile shows them)
     $decks = json_decode((string) ($_POST['decks'] ?? ''), true);

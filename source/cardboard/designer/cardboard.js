@@ -483,11 +483,18 @@ function renderCardHTML(lay, row, designing, ctx) {
   var sorted = face.els.filter(function(e) { return !(e.group && off[e.group] && (!designing || off[e.group] === 2)); }).sort(function(a, b) { return (a.z || 1) - (b.z || 1); });
   var reps = {}; (face.groups || []).forEach(function(g) { if (g.rep) reps[g.id] = g; });
   // Repeated: an element (or a whole group) drawn n times side by side or one under another, from its corner
-  function repWrap(rep, x, y, z, attr, inner, n, picked) {   // none on this card: shown faint only while it's selected (to work on it)
+  function repWrap(rep, x, y, z, attr, inner, n, picked, box) {   // box: {w, h, rx, ry} of one copy   // none on this card: shown faint only while it's selected (to work on it)
     var gap = rep.gap == null ? 2 : +rep.gap || 0, out = '';
     if (!n && !(designing && picked)) return '';
     for (var i = 0; i < Math.max(n, 1); i++) out += i ? inner.replace(/^<div class="/, '<div class="rep-copy ') : inner;
-    return '<div class="el-rep rep-' + (rep.dir === 'v' ? 'v' : 'h') + (designing && !n ? ' rep-none' : '') + '" ' + attr + ' style="left:' + x + 'pt;top:' + y + 'pt;z-index:' + (z || 1) + ';gap:' + gap + 'pt">' + out + '</div>';
+    // placed from an edge (rx / ry): the copies grow away from it — centred on the box's middle, or out from its right / bottom
+    var pos = 'left:' + x + 'pt;top:' + y + 'pt;', tf = [];
+    if (box && box.rx === 'center') { pos = pos.replace(/left:[^;]*;/, 'left:' + r1(x + box.w / 2) + 'pt;'); tf.push('translateX(-50%)'); }
+    else if (box && box.rx === 'right') pos = pos.replace(/left:[^;]*;/, 'right:' + r1(lay.card.w - x - box.w) + 'pt;');
+    if (box && box.ry === 'middle') { pos = pos.replace(/top:[^;]*;/, 'top:' + r1(y + box.h / 2) + 'pt;'); tf.push('translateY(-50%)'); }
+    else if (box && box.ry === 'bottom') pos = pos.replace(/top:[^;]*;/, 'bottom:' + r1(lay.card.h - y - box.h) + 'pt;');
+    if (tf.length) pos += 'transform:' + tf.join(' ') + ';';
+    return '<div class="el-rep rep-' + (rep.dir === 'v' ? 'v' : 'h') + (designing && !n ? ' rep-none' : '') + '" ' + attr + ' style="' + pos + 'z-index:' + (z || 1) + ';gap:' + gap + 'pt">' + out + '</div>';
   }
   // An element with its own Repeat (in a group too): its copies in a row or column where the element sits — in a list, as one of its items
   function repEl(x, list) {
@@ -495,7 +502,7 @@ function renderCardHTML(lay, row, designing, ctx) {
     var one = elHTML(x, list), n = repCount(x.rep, row);
     if (!one) return '';
     one = one.replace(/transform:translate\([^)]*\) ?/, 'transform:');
-    var w = repWrap(x.rep, x.x, x.y, x.z, 'data-rep="' + x.id + '"', one, n, isSel(x.id));
+    var w = repWrap(x.rep, x.x, x.y, x.z, 'data-rep="' + x.id + '"', one, n, isSel(x.id), list ? null : { w: x.w, h: x.h, rx: x.rx, ry: x.ry });
     return list ? w.replace('class="el-rep ', 'class="el-rep in-list ') : w;
   }
   sorted.forEach(function(e) {
@@ -509,7 +516,7 @@ function renderCardHTML(lay, row, designing, ctx) {
         ? '<div class="el-list list-' + rg.list + '" data-g="' + rg.id + '" style="left:' + b0.x + 'pt;top:' + b0.y + 'pt;gap:' + (rg.gap == null ? 4 : +rg.gap || 0) + 'pt;align-items:' + { start: 'flex-start', center: 'center', end: 'flex-end' }[listAlign(rg)] + '">' + gm.slice().reverse().map(function(x) { return repEl(x, rg.list); }).join('') + '</div>'
         : gm.map(function(x) { return repEl(x); }).join('');
       var block = '<div class="rep-block" style="width:' + r1(x2 - b0.x) + 'pt;height:' + r1(y2 - b0.y) + 'pt"><div class="rep-shift" style="left:' + (-b0.x) + 'pt;top:' + (-b0.y) + 'pt">' + body + '</div></div>';
-      h += repWrap(rg.rep, b0.x, b0.y, e.z, 'data-repg="' + rg.id + '"', block, repCount(rg.rep, row), gm.some(function(x) { return isSel(x.id); }));
+      h += repWrap(rg.rep, b0.x, b0.y, e.z, 'data-repg="' + rg.id + '"', block, repCount(rg.rep, row), gm.some(function(x) { return isSel(x.id); }), { w: x2 - b0.x, h: y2 - b0.y, rx: rg.rx, ry: rg.ry });
       return;
     }
     var g = e.group && lists[e.group];
@@ -3805,7 +3812,7 @@ function keepThumb() {
   var lay = JSON.parse(JSON.stringify(layout)), row = ROWS[0], c = lay.card, w = 360;
   var html = renderCardHTML(lay, row, false, { card: 0, row: 0, proxy: true });
   var decks = TABS.filter(function(t) { return !t.pending; }).map(function(t) { return t.title; });
-  var sig = String(html.length) + ':' + hashStr(html + '|' + decks.join('|') + '|' + SHEET_TITLE), k = 'cb_thumb:' + SHEET_ID;
+  var sig = String(html.length) + ':' + hashStr(html + '|' + decks.join('|') + '|' + SHEET_TITLE), k = 'cb_thumb:' + SHEET_ID + ':' + curTab, tab = curTab;   // per deck
   try { if (localStorage.getItem(k) === sig) return; } catch (e) {}
   _thumbBusy = true;
   _drawQueue = _drawQueue.then(function() {
@@ -3818,7 +3825,7 @@ function keepThumb() {
       .then(function(b) {
         if (!b) return;
         var fd = new FormData(); fd.append('action', 'thumb'); fd.append('id', SHEET_ID); fd.append('file', b, 'thumb.jpg');
-        fd.append('title', SHEET_TITLE || ''); fd.append('decks', JSON.stringify(decks));
+        fd.append('title', SHEET_TITLE || ''); fd.append('decks', JSON.stringify(decks)); fd.append('tab', tab);
         if (ACCT && ACCT.token) fd.append('cbt', ACCT.token);
         return fetch(APP_BASE + 'push/cardboardSheets.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); })
           .then(function(r) { if (r && r.ok) { try { localStorage.setItem(k, sig); } catch (e) {} } });

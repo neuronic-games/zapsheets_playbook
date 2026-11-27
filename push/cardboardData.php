@@ -46,7 +46,7 @@ function cbRun(string $python, string $sheetId, array $data): array {
 // Anyone with the link can view the sheet (read-only); anything that changes it needs a sign-in
 // and the free week, a subscription or an unlocked sheet
 require_once __DIR__ . '/gameboardAuth.php';
-if (in_array($action, ['save', 'addtab', 'addfield', 'renamefield', 'setcell', 'addrow', 'deleterow', 'deletefield', 'savecells', 'reorder', 'settag', 'deltag'], true)) {
+if (in_array($action, ['save', 'addtab', 'fromtemplate', 'addfield', 'renamefield', 'setcell', 'addrow', 'deleterow', 'deletefield', 'savecells', 'reorder', 'settag', 'deltag'], true)) {
     if ($viewLink) { echo json_encode(['error' => 'This is a view-only link — nothing can be changed here.', 'view_only' => true]); exit; }
     require_once __DIR__ . '/gameboardAuth.php';
     cbRequireAccess($sheetId);
@@ -72,6 +72,25 @@ function cbKeepInfo(string $sheetId, array $res): void {
     $info = ['title' => (string) ($res['title'] ?? ($old['title'] ?? '')), 'decks' => $decks, 'designed' => $lay];
     if ($info !== $old) @file_put_contents($f, json_encode($info, JSON_UNESCAPED_UNICODE), LOCK_EX);
 }
+// Templates (the Designs page): the decks of the templates sheet (the Sea Creatures sample), kept here for 10 minutes
+const CB_TEMPLATES_SHEET = '1sy20Ig_fmfpTfnpkEUXibgErXj2XISiqr-Ag6Xe3uRc';
+if ($action === 'templates') {
+    $f = dirname(__DIR__) . '/sheets/' . CB_TEMPLATES_SHEET . '/_templates.json';
+    $old = json_decode((string) @file_get_contents($f), true);
+    if (is_array($old) && empty($_POST['force']) && @filemtime($f) > time() - 600) { echo json_encode($old, JSON_UNESCAPED_UNICODE); exit; }
+    $res = cbRun($python, CB_TEMPLATES_SHEET, ['action' => 'templates']);
+    if (!empty($res['ok'])) {
+        foreach ($res['templates'] as &$t) {   // its picture: the deck's first card, as the designer last drew it
+            $th = dirname(__DIR__) . '/sheets/' . CB_TEMPLATES_SHEET . '/_cardboard_thumb_' . md5($t['name']) . '.jpg';
+            $t['thumb'] = is_file($th) ? 'push/cardboardSheets.php?thumb=' . CB_TEMPLATES_SHEET . '&tab=' . rawurlencode($t['name']) . '&v=' . filemtime($th) : '';
+        }
+        unset($t);
+        if (!is_dir(dirname($f))) @mkdir(dirname($f), 0755, true);
+        @file_put_contents($f, json_encode($res, JSON_UNESCAPED_UNICODE), LOCK_EX);
+    } elseif (is_array($old)) $res = $old;
+    echo json_encode($res, JSON_UNESCAPED_UNICODE); exit;
+}
+
 if ($action === 'tabs')    { $res = cbRun($python, $sheetId, ['action' => 'tabs']); if (!empty($res['ok'])) { cbKeepTitle($sheetId, $res['title'] ?? ''); cbKeepInfo($sheetId, $res); } echo json_encode($res); exit; }
 if ($action === 'layouts') { echo json_encode(cbRun($python, $sheetId, ['action' => 'layouts'])); exit; }
 
@@ -110,6 +129,14 @@ if ($action === 'renamefield') {
     $res = cbRun($python, $sheetId, ['action' => 'renamefield', 'sheet' => $tab, 'old' => $old, 'name' => $name]);
     if (!empty($res['ok'])) @unlink(dirname(__DIR__) . '/sheets/' . $sheetId . '/' . strtolower($tab) . '.json');   // re-read next time
     echo json_encode($res);
+    exit;
+}
+
+// A template's deck copied into this sheet (columns, sample cards and layout) — the Designs page's "Use this layout"
+if ($action === 'fromtemplate') {
+    $tab = trim((string) ($_POST['tab'] ?? ''));
+    if ($tab === '' || mb_strlen($tab) > 100 || strpbrk($tab, "/\\") !== false) { echo json_encode(['error' => 'That template can’t be used']); exit; }
+    echo json_encode(cbRun($python, $sheetId, ['action' => 'fromtemplate', 'src' => CB_TEMPLATES_SHEET, 'tab' => $tab]), JSON_UNESCAPED_UNICODE);
     exit;
 }
 

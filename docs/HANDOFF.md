@@ -116,6 +116,16 @@ Last updated: 2026-11-26.
   again (the page never got the answer), gcardboard.py updates that row instead of adding it twice.
 - **Placed from an edge**: `e.rx/e.ry` (elements) or `g.rx/g.ry` + `g.ww/g.hh` (whole groups; list groups are drawn
   from that edge, `listPlace`). x / y stay the top-left corner; `keepRelative` shifts them when the card size changes.
+- **Templates** (Designs page → Templates): every deck *with a layout* in the Sea Creatures sample sheet
+  (`CB_TEMPLATES_SHEET` in cardboardData.php) is a template; its layout's `desc` is the line under it. List:
+  cardboardData `templates` (gcardboard.py `templates`, cached 10 min in `sheets/{id}/_templates.json`). Pictures:
+  each deck's own thumb `_cardboard_thumb_{md5(tab)}.jpg`, sent by the designer's `keepThumb` (owner only) — open
+  each template deck once in the designer to make them. Use this layout → the Link Sheet dialog → after claim,
+  `fromtemplate` copies the tab's values (formulas kept), heading style and layout into the new sheet (its empty
+  Sheet1 is renamed). Template art: `images/cardboard-templates/*.webp`. The sample sheet is editable by anyone
+  with the link (anonymous edits worked) — worth locking down.
+- **Repeat** (`e.rep` / `g.rep` = {n | field, dir, gap}): drawn n times in a flex row/column (`repWrap`); placed from
+  the centre/right/bottom (`rx`/`ry`) the copies grow away from that edge.
 - **Drawing off-screen** (`#exportStage`) is moved to `<body>` at load: inside the hidden Export view it drew blank
   (Designs thumbnails, the Print PDF).
 - **Print**: whole page fits with Zoom (−/+/Fit, pinch); double-sided pairs side by side; download as PDF

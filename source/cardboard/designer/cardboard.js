@@ -433,6 +433,18 @@ function repCount(rep, row) {
   var n = rep.field ? (row ? parseInt(cleanVal(row[rep.field]), 10) : 1) : +rep.n;
   return isNaN(n) ? 0 : Math.max(0, Math.min(60, Math.round(n)));
 }
+// A list group's look: its box with padding, pulled out by the padding and border so the members stay where they are
+function listLook(g) {
+  var p = +g.pad || 0, b = +g.borderW > 0 ? +g.borderW : 0;
+  return groupLookCss(g) + (p ? 'padding:' + p + 'pt;' : '') + (p + b ? 'margin:' + (-(p + b)) + 'pt;' : '');
+}
+// A free group's look: a box behind its members, around them plus the padding
+function groupBoxHTML(g, members, z) {
+  if (!groupHasLook(g) || !members.length) return '';
+  var p = +g.pad || 0, b = +g.borderW > 0 ? +g.borderW : 0, x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+  members.forEach(function(m) { x1 = Math.min(x1, m.x); y1 = Math.min(y1, m.y); x2 = Math.max(x2, m.x + m.w); y2 = Math.max(y2, m.y + m.h); });
+  return '<div class="el-gbox" style="left:' + r1(x1 - p - b) + 'pt;top:' + r1(y1 - p - b) + 'pt;width:' + r1(x2 - x1 + 2 * p) + 'pt;height:' + r1(y2 - y1 + 2 * p) + 'pt;z-index:' + (z || 1) + ';' + groupLookCss(g) + '"></div>';
+}
 // Where a list group sits: from its top-left corner, or — placed from an edge (g.rx / g.ry) — from that edge, so a
 // list that's longer on some cards grows away from it. g.ww / g.hh: its drawn size when it was placed there.
 function listPlace(g, bb, card) {
@@ -513,18 +525,22 @@ function renderCardHTML(lay, row, designing, ctx) {
       var b0 = cornerBox(gm), x2 = -Infinity, y2 = -Infinity;
       gm.forEach(function(x) { x2 = Math.max(x2, x.x + x.w); y2 = Math.max(y2, x.y + x.h); });
       var body = lists[rg.id]
-        ? '<div class="el-list list-' + rg.list + '" data-g="' + rg.id + '" style="left:' + b0.x + 'pt;top:' + b0.y + 'pt;gap:' + (rg.gap == null ? 4 : +rg.gap || 0) + 'pt;align-items:' + { start: 'flex-start', center: 'center', end: 'flex-end' }[listAlign(rg)] + '">' + gm.slice().reverse().map(function(x) { return repEl(x, rg.list); }).join('') + '</div>'
-        : gm.map(function(x) { return repEl(x); }).join('');
+        ? '<div class="el-list list-' + rg.list + '" data-g="' + rg.id + '" style="left:' + b0.x + 'pt;top:' + b0.y + 'pt;gap:' + (rg.gap == null ? 4 : +rg.gap || 0) + 'pt;align-items:' + { start: 'flex-start', center: 'center', end: 'flex-end' }[listAlign(rg)] + ';' + listLook(rg) + '">' + gm.slice().reverse().map(function(x) { return repEl(x, rg.list); }).join('') + '</div>'
+        : groupBoxHTML(rg, gm, 1) + gm.map(function(x) { return repEl(x); }).join('');
       var block = '<div class="rep-block" style="width:' + r1(x2 - b0.x) + 'pt;height:' + r1(y2 - b0.y) + 'pt"><div class="rep-shift" style="left:' + (-b0.x) + 'pt;top:' + (-b0.y) + 'pt">' + body + '</div></div>';
       h += repWrap(rg.rep, b0.x, b0.y, e.z, 'data-repg="' + rg.id + '"', block, repCount(rg.rep, row), gm.some(function(x) { return isSel(x.id); }), { w: x2 - b0.x, h: y2 - b0.y, rx: rg.rx, ry: rg.ry });
       return;
     }
     var g = e.group && lists[e.group];
-    if (!g) { h += repEl(e); return; }
+    if (!g) {
+      var fg = e.group && !lists[e.group] && (face.groups || []).filter(function(x) { return x.id === e.group; })[0];
+      if (fg && groupHasLook(fg)) { var fm = sorted.filter(function(x) { return x.group === fg.id; }); if (fm[0] === e) h += groupBoxHTML(fg, fm, e.z); }
+      h += repEl(e); return;
+    }
     var members = sorted.filter(function(x) { return x.group === g.id; });
     if (members[members.length - 1] !== e) return;   // the list is drawn once, where its top member sits
     var bb = cornerBox(members), gap = g.gap == null ? 4 : +g.gap || 0, al = { start: 'flex-start', center: 'center', end: 'flex-end' }[listAlign(g)];
-    h += '<div class="el-list list-' + g.list + (g.id === selG ? ' picked' : '') + '" data-g="' + g.id + '" style="' + listPlace(g, bb, lay.card) + 'z-index:' + (e.z || 1) + ';gap:' + gap + 'pt;align-items:' + al + '">' +
+    h += '<div class="el-list list-' + g.list + (g.id === selG ? ' picked' : '') + '" data-g="' + g.id + '" style="' + listPlace(g, bb, lay.card) + 'z-index:' + (e.z || 1) + ';gap:' + gap + 'pt;align-items:' + al + ';' + listLook(g) + '">' +
          members.slice().reverse().map(function(x) { return repEl(x, g.list); }).join('') + '</div>';
   });
   if (designing && multi.length && !(selG && lists[selG])) {   // one box around everything selected (a group or several elements)
@@ -2775,6 +2791,7 @@ function multiAttrs() {
       '<label class="arr-gap" title="Space between the members of the list (pt)"><span>Gap</span><input class="inp" type="number" step=".5" min="0" id="g_gap" value="' + r1(g.gap == null ? 4 : g.gap) + '"' + (mode ? '' : ' disabled') + ' onchange="setGroupGap(\'' + gid + '\',this.value)"></label></div></div>';
     if (mode) h += '<p class="muted" style="margin:.35rem 0 0">In the Layers order, top first — drag there to reorder. Empty text and pictures take no room.</p>';
   }
+  if (g) h += groupLookAttrs(g);
   if (g) h += groupWhenAttrs(gid, g);
   if (g) h += repeatAttrs('g', gid, g.rep);
   h += actionsHTML(g ? 'ungroup' : 'group');
@@ -2957,7 +2974,7 @@ function moveSelTo(axis, v) {
 // made when the picker closes, as one undo step. Choosing a border color with no border width
 // gives it a 1 pt border, so the color shows.
 var _live = null;   // {obj, key, orig} while a picker is open
-function liveTarget(onSet) { return onSet === 'setCard' ? layout.card : onSet === 'setBackProp' ? layout.back : elById(selId); }
+function liveTarget(onSet) { return onSet === 'setCard' ? layout.card : onSet === 'setBackProp' ? layout.back : onSet === 'setGroupProp' ? groupById(selGroupId()) : elById(selId); }
 function liveColor(onSet, key, val) {
   var o = liveTarget(onSet); if (!o) return;
   if (!_live || _live.obj !== o || _live.key !== key) _live = { obj: o, key: key, orig: o[key] };
@@ -2965,6 +2982,34 @@ function liveColor(onSet, key, val) {
 }
 function endLive(o, key) { if (_live && _live.obj === o && _live.key === key) { o[key] = _live.orig; _live = null; } }
 var STROKE_FOR = { borderColor: 'borderW', stroke: 'strokeW' };
+// A group's own look: a box around its members (fill, border, corners, padding) — g.bg, g.borderW, g.borderColor, g.radius, g.pad
+function setGroupProp(key, val, num) {
+  var g = groupById(selGroupId()); if (!g) return;
+  endLive(g, key);
+  if (num) { val = parseFloat(val); if (isNaN(val)) return; }
+  if (g[key] === val) { render(); return; }
+  snapshot(); g[key] = val;
+  if (key === 'borderColor' && val && val !== 'transparent' && !(+g.borderW)) g.borderW = 1;
+  changed(); renderAttrs();
+}
+function groupLookAttrs(g) {
+  var h = '<span class="lbl">Look</span>' + colorRow('Fill', 'bg', g.bg, true, 'setGroupProp');
+  h += '<div class="row2" style="margin-top:.45rem"><div><span class="mini">Border (pt)</span><input class="inp" type="number" step=".5" min="0" value="' + r1(g.borderW || 0) + '" onchange="setGroupProp(\'borderW\',this.value,true)"></div>' +
+       '<div><span class="mini">Corner radius</span><input class="inp" type="number" step="1" min="0" value="' + r1(g.radius || 0) + '" onchange="setGroupProp(\'radius\',this.value,true)"></div></div>';
+  h += '<div style="margin-top:.45rem">' + colorRow('Border color', 'borderColor', g.borderColor, false, 'setGroupProp') + '</div>';
+  h += '<div class="row2" style="margin-top:.45rem"><div><span class="mini">Padding (pt)</span><input class="inp" type="number" step=".5" min="0" value="' + r1(g.pad || 0) + '" onchange="setGroupProp(\'pad\',this.value,true)"></div>' +
+       '<div><span class="mini">Opacity</span><input class="inp" type="number" min="0" max="100" step="5" value="' + Math.round((g.opacity == null ? 1 : g.opacity) * 100) + '" onchange="setGroupProp(\'opacity\',clamp(this.value/100,0,1),true)"></div></div>';
+  return h;
+}
+function groupHasLook(g) { return !!g && (!!(g.bg && g.bg !== 'transparent') || +g.borderW > 0); }
+function groupLookCss(g) {   // the box's own look (no position)
+  var s = '';
+  if (g.bg && g.bg !== 'transparent') s += 'background:' + g.bg + ';';
+  if (+g.borderW > 0) s += 'border:' + g.borderW + 'pt solid ' + (g.borderColor || '#000') + ';';
+  if (+g.radius) s += 'border-radius:' + g.radius + 'pt;';
+  if (g.opacity != null && g.opacity < 1) s += 'opacity:' + g.opacity + ';';
+  return s;
+}
 function setProp(key, val, num) {
   var e = elById(selId); if (!e) return;
   endLive(e, key);

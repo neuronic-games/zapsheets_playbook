@@ -380,6 +380,7 @@ table.grid thead th[data-c]:hover, table.grid thead th.menu-open { background:#e
 .el.v-middle { justify-content:center; } .el.v-bottom { justify-content:flex-end; }
 /* A group set out as a list: its members flow side by side (or one under another), each as big as its contents need */
 .el-list { position:absolute; display:flex; }
+.el-gbox { position:absolute; box-sizing:content-box; pointer-events:none; }
 .el-list.list-h { flex-direction:row; align-items:center; }
 .el-list.list-v { flex-direction:column; align-items:flex-start; }
 .el-list > .el.in-list { position:relative; left:auto !important; top:auto !important; flex:0 0 auto; }

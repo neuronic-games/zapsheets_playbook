@@ -498,6 +498,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
       <ul>
         <li>Select several elements and press <kbd>⌘G</kbd> (or <b>Group</b>). Clicking any member selects the whole group. <kbd>⇧⌘G</kbd> ungroups.</li>
         <li>Rename a group in its <b>Name</b> box or by double-clicking it in Layers; drag elements in or out of it there. Tick just one row in Layers — or click a member again once its group is picked — to change one member: dragging and its handles then move and resize just that one.</li>
+        <li><b>Look</b>: a group can have its own fill, border, corner radius, padding and opacity — a box drawn behind its members, the padding around them. On a list it grows and shrinks with the list.</li>
       </ul>
     </div>
   </div>

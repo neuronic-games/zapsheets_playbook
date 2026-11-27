@@ -267,8 +267,6 @@ body.designs .app { display:flex; flex-direction:column; }
 .t-use:disabled { opacity:.4; cursor:default; }
 .t-card { position:relative; background:#fff; border:2px solid #dfe2ec; border-radius:12px; cursor:pointer; display:flex; flex-direction:column; text-align:left; padding:0; font:inherit; color:inherit; transition:box-shadow .15s, transform .15s, border-color .15s; }
 .t-card:hover { box-shadow:0 8px 24px rgba(46,39,99,.14); transform:translateY(-2px); }
-.t-card.on { border-color:#4b3fa8; box-shadow:0 0 0 4px rgba(75,63,168,.18); }
-.t-card.on::after { content:'✓'; position:absolute; top:.6rem; right:.6rem; width:28px; height:28px; border-radius:50%; background:#4b3fa8; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; }
 .t-card .d-thumb { border-radius:10px 10px 0 0; }
 .t-card .d-info .t { font-family:'DINBlack',sans-serif; }
 .t-card .d-info .m { display:block; margin-top:.3rem; white-space:normal; }
@@ -327,7 +325,7 @@ body.designs .app { display:flex; flex-direction:column; }
 }
 /* New design: the same three steps as the other apps' Link to your sheet (css/gameboard-ui.css, here in CardBoard's colours) */
 #createDlg { --gb-accent:#4b3fa8; --gb-accent-dk:#3b3190; --gb-accent-lt:#f3f1ff; --gb-black:'DINBlack',sans-serif; --gb-text:'DINRegular',sans-serif; }
-#createDlg .gs-start { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; margin:.2rem 0 1.3rem; }
+#createDlg .gs-start { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:.7rem; margin:.2rem 0 1.3rem; }
 #createDlg .gs-start a { display:flex; flex-direction:column; gap:.2rem; padding:.85rem .95rem; border:1.5px solid #d6d9e6; border-radius:11px; color:#2e2763; text-decoration:none; transition:border-color .12s, background .12s; }
 #createDlg .gs-start a:hover { border-color:var(--gb-accent); background:var(--gb-accent-lt); }
 #createDlg .gs-start b { font-family:var(--gb-black); font-weight:400; font-size:.92rem; }
@@ -453,8 +451,8 @@ body.designs .app { display:flex; flex-direction:column; }
     </aside>
     <main class="d-main">
       <section id="tplView" hidden>
-        <div class="d-head"><h1>Templates</h1><button type="button" class="t-use" id="tplUse" onclick="useTemplate()" disabled>Use this design</button></div>
-        <p class="t-sub">Start from a finished layout. Pick one, then link a new Google Sheet: the layout, its columns and a few sample cards are added to it.</p>
+        <div class="d-head"><h1>Templates</h1></div>
+        <p class="t-sub">Start from a finished layout. Click <b>Use this design</b>, then link a Google Sheet: a deck with the layout, its columns and a few sample cards is added to it.</p>
         <div id="tGrid"><div class="d-loading">Loading the templates…</div></div>
       </section>
       <section id="desView">
@@ -479,7 +477,7 @@ body.designs .app { display:flex; flex-direction:column; }
   <div class="d-dlg" id="createDlg" onclick="event.stopPropagation()" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();startSetup();}">
     <button type="button" class="x-btn" onclick="closeCreateDialog()" title="Close">×</button>
   <div class="card gs-wide" id="connectCard">
-    <div class="tpl-note" id="tplNote" hidden><img id="tplNoteImg" alt="" hidden><span class="grow">Template: <b id="tplNoteName"></b> — its layout, columns and sample cards are added to the sheet you link.</span><button type="button" class="link-btn" onclick="dropTemplate()">Don’t use it</button></div>
+    <div class="tpl-note" id="tplNote" hidden><img id="tplNoteImg" alt="" hidden><span class="grow">Template: <b id="tplNoteName"></b> — a deck with its layout, columns and sample cards is added to the sheet you link.</span><button type="button" class="link-btn" onclick="dropTemplate()">Don’t use it</button></div>
     <div class="card-title">Link to your sheet</div>
     <p class="gs-intro">Keep your cards in a Google Sheet — one tab per deck, one row per card, one column per field (Name, Cost, Text, Image…). CardBoard turns each row into a card using a layout you design, then lays them out on print sheets.</p>
     <details class="why">
@@ -509,6 +507,7 @@ body.designs .app { display:flex; flex-direction:column; }
         <b>Open (or make) a Google Spreadsheet, share it with CardBoard, and copy its URL</b>
         <div class="gs-start">
           <a href="https://docs.google.com/spreadsheets/d/1sy20Ig_fmfpTfnpkEUXibgErXj2XISiqr-Ag6Xe3uRc/copy" target="_blank" rel="noopener" id="sampleLink"><b>Copy the sample deck</b><span>Sea Creatures, with a finished layout</span></a>
+          <a href="https://docs.google.com/spreadsheets/" target="_blank" rel="noopener"><b>Open a sheet</b><span>One of your Google Sheets</span></a>
           <a href="https://sheets.new" target="_blank" rel="noopener"><b>Start a blank sheet</b><span>One tab per deck, one row per card</span></a>
         </div>
         <div class="gs-how">In the sheet:</div>
@@ -813,12 +812,11 @@ body.designs .app { display:flex; flex-direction:column; }
     if (!TPLS.length) { $('tGrid').innerHTML = '<div class="d-empty"><b>No templates yet</b></div>'; return; }
     $('tGrid').innerHTML = '<div class="d-grid">' + TPLS.map(function(t, i) {
       var ar = (t.w || 180) + ' / ' + (t.h || 252);
-      return '<button type="button" class="t-card' + (t.name === _tplPick ? ' on' : '') + '" data-i="' + i + '" onclick="pickTemplate(' + i + ')" ondblclick="pickTemplate(' + i + ');useTemplate()">' +
+      return '<button type="button" class="t-card" data-i="' + i + '" onclick="useTemplate(' + i + ')">' +
         '<div class="d-thumb">' + (t.thumb ? '<img src="' + esc(APP_BASE + t.thumb) + '" alt="" loading="lazy">' : '<div class="ph-t" style="--ar:' + ar + '">' + esc(t.name) + '</div>') + '</div>' +
         '<div class="d-info"><div class="t">' + esc(t.name) + '</div><div class="m">' + esc(t.desc || ((t.w > t.h ? 'Landscape' : 'Portrait') + ' card')) + '</div>' +
         '<span class="t-go" role="button" onclick="event.stopPropagation();useTemplate(' + i + ')">Use this design</span></div></button>';
     }).join('') + '</div>';
-    $('tplUse').disabled = !_tplPick;
   }
   window.pickTemplate = function(i) { var t = TPLS[i]; if (!t) return; _tplPick = _tplPick === t.name ? '' : t.name; tRender(); };
   window.useTemplate = function(i) {

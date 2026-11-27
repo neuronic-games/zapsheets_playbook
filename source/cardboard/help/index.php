@@ -143,6 +143,11 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
   .steps-list { grid-auto-flow:row; }
 }
 @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } .steps-stage img { transition:none; } }
+.tpl-row { display:grid; grid-template-columns:repeat(auto-fill, minmax(118px, 1fr)); gap:.8rem; margin:1rem 0 1.2rem; }
+.tpl-row figure { margin:0; background:#eef0f6; border-radius:10px; padding:.7rem .6rem .6rem; display:flex; flex-direction:column; align-items:center; }
+.tpl-row img { height:120px; max-width:100%; object-fit:contain; border-radius:5px; box-shadow:0 4px 12px rgba(20,20,50,.22); }
+.tpl-row figcaption { font-size:.78rem; line-height:1.35; color:#6b7090; margin-top:.55rem; text-align:center; }
+.tpl-row figcaption b { display:block; color:#1f1b47; font-size:.85rem; }
 </style>
 </head>
 <body>
@@ -159,35 +164,36 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
   <h4>Getting started</h4>
   <a href="cardboard/help#welcome"><span class="n">1</span>What CardBoard does</a>
   <a href="cardboard/help#sheet"><span class="n">2</span>Set up your sheet</a>
-  <a href="cardboard/help#account"><span class="n">3</span>Sign in</a>
-  <a href="cardboard/help#owner"><span class="n">4</span>Your sheets &amp; view only</a>
-  <a href="cardboard/help#screen"><span class="n">5</span>The screen</a>
+  <a href="cardboard/help#templates"><span class="n">3</span>Start from a template</a>
+  <a href="cardboard/help#account"><span class="n">4</span>Sign in</a>
+  <a href="cardboard/help#owner"><span class="n">5</span>Your sheets &amp; view only</a>
+  <a href="cardboard/help#screen"><span class="n">6</span>The screen</a>
   <h4>Your cards</h4>
-  <a href="cardboard/help#decks"><span class="n">6</span>Decks</a>
-  <a href="cardboard/help#cards"><span class="n">7</span>The Cards view</a>
-  <a href="cardboard/help#addcard"><span class="n">8</span>Stepping through &amp; adding cards</a>
+  <a href="cardboard/help#decks"><span class="n">7</span>Decks</a>
+  <a href="cardboard/help#cards"><span class="n">8</span>The Cards view</a>
+  <a href="cardboard/help#addcard"><span class="n">9</span>Stepping through &amp; adding cards</a>
   <h4>Designing</h4>
-  <a href="cardboard/help#elements"><span class="n">9</span>Adding elements</a>
-  <a href="cardboard/help#fields"><span class="n">10</span>Card fields</a>
-  <a href="cardboard/help#text"><span class="n">11</span>Text style</a>
-  <a href="cardboard/help#pictures"><span class="n">12</span>Pictures</a>
-  <a href="cardboard/help#mapping"><span class="n">13</span>Mappings</a>
-  <a href="cardboard/help#generated"><span class="n">14</span>Generated values</a>
-  <a href="cardboard/help#arrange"><span class="n">15</span>Moving &amp; lining up</a>
-  <a href="cardboard/help#layers"><span class="n">16</span>Layers, groups &amp; lists</a>
-  <a href="cardboard/help#backs"><span class="n">17</span>Card backs</a>
-  <a href="cardboard/help#tags"><span class="n">18</span>Tags</a>
+  <a href="cardboard/help#elements"><span class="n">10</span>Adding elements</a>
+  <a href="cardboard/help#fields"><span class="n">11</span>Card fields</a>
+  <a href="cardboard/help#text"><span class="n">12</span>Text style</a>
+  <a href="cardboard/help#pictures"><span class="n">13</span>Pictures</a>
+  <a href="cardboard/help#mapping"><span class="n">14</span>Mappings</a>
+  <a href="cardboard/help#generated"><span class="n">15</span>Generated values</a>
+  <a href="cardboard/help#arrange"><span class="n">16</span>Moving &amp; lining up</a>
+  <a href="cardboard/help#layers"><span class="n">17</span>Layers, groups &amp; lists</a>
+  <a href="cardboard/help#backs"><span class="n">18</span>Card backs</a>
+  <a href="cardboard/help#tags"><span class="n">19</span>Tags</a>
   <h4>Printing &amp; sharing</h4>
-  <a href="cardboard/help#print"><span class="n">19</span>Print</a>
-  <a href="cardboard/help#export"><span class="n">20</span>Export &amp; links</a>
+  <a href="cardboard/help#print"><span class="n">20</span>Print</a>
+  <a href="cardboard/help#export"><span class="n">21</span>Export &amp; links</a>
   <h4>Saving</h4>
-  <a href="cardboard/help#saving"><span class="n">21</span>Saving &amp; working offline</a>
-  <a href="cardboard/help#undo"><span class="n">22</span>Undo, copy &amp; paste</a>
+  <a href="cardboard/help#saving"><span class="n">22</span>Saving &amp; working offline</a>
+  <a href="cardboard/help#undo"><span class="n">23</span>Undo, copy &amp; paste</a>
   <h4>Account</h4>
-  <a href="cardboard/help#plans"><span class="n">23</span>Plans &amp; codes</a>
-  <a href="cardboard/help#settings"><span class="n">24</span>Account, settings &amp; menu</a>
-  <a href="cardboard/help#keys"><span class="n">25</span>Keyboard shortcuts</a>
-  <a href="cardboard/help#trouble"><span class="n">26</span>Troubleshooting</a>
+  <a href="cardboard/help#plans"><span class="n">24</span>Plans &amp; codes</a>
+  <a href="cardboard/help#settings"><span class="n">25</span>Account, settings &amp; menu</a>
+  <a href="cardboard/help#keys"><span class="n">26</span>Keyboard shortcuts</a>
+  <a href="cardboard/help#trouble"><span class="n">27</span>Troubleshooting</a>
 </nav>
 
 <main class="main" id="main">
@@ -196,7 +202,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
   <div>
     <h1><span class="c">Card</span><span class="b">Board</span> Help</h1>
     <p>Design board game cards from a Google Sheet — one row per card — then print them or send them to Tabletop Simulator and Screentop.</p>
-    <div class="quick"><a href="cardboard/help#sheet">Set up a sheet</a><a href="cardboard/help#elements">Design a card</a><a href="cardboard/help#mapping">Mappings</a><a href="cardboard/help#print">Print</a><a href="cardboard/help#saving">Saving</a></div>
+    <div class="quick"><a href="cardboard/help#sheet">Set up a sheet</a><a href="cardboard/help#templates">Templates</a><a href="cardboard/help#elements">Design a card</a><a href="cardboard/help#mapping">Mappings</a><a href="cardboard/help#print">Print</a><a href="cardboard/help#saving">Saving</a></div>
   </div>
   <img src="<?= $IMG ?>layout.jpg" alt="The CardBoard designer">
 </div>
@@ -217,7 +223,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 <section class="topic" id="sheet">
   <h2><span class="n">2</span>Set up your sheet</h2>
   <p>Click <b>+ Design</b> on <a href="cardboard">CardBoard</a> (signed in) and <b>Link to your sheet</b> opens.</p>
-  <div class="tip"><b>Start from a template:</b> <b>Templates</b> in the start page’s side menu has finished designs (Classic, Hero, Event, Resource, Location, Tarot). <b>Use this design</b> opens the same dialog, and the template is added to the sheet you link — <a href="cardboard/help#owner">more below</a>.</div>
+  <div class="tip"><b>Start from a template:</b> <b>Templates</b> in the start page’s side menu has finished designs (Classic, Hero, Event, Resource, Location, Tarot). <b>Use this design</b> opens the same dialog, and the template is added to the sheet you link — see <a href="cardboard/help#templates">Start from a template</a>.</div>
   <?= shot('newsheet', 'Link to your sheet: copy the service account, share your sheet with it, then paste the sheet’s link.') ?>
   <ol>
     <li><b>Copy the service account.</b> Step 1 shows CardBoard’s service account, <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> — the <b>Copy</b> button copies it.</li>
@@ -236,8 +242,24 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
   <div class="tip"><b>Picture columns:</b> a column of picture links (Dropbox, Google Drive, any web address) is recognised automatically — it shows thumbnails in the Cards view and is added to a card as a picture.</div>
 </section>
 
+<section class="topic" id="templates">
+  <h2><span class="n">3</span>Start from a template</h2>
+  <p>Not sure where to begin? <b>Templates</b> in the side menu of <a href="cardboard">CardBoard</a>’s start page shows finished designs, each with a sample card:</p>
+  <div class="tpl-row">
+    <?php foreach ([['classic', 'Classic', 'Title and cost on top, a picture, rules text and a stat.'], ['hero', 'Hero', 'A full-card portrait with attack and health.'], ['event', 'Event', 'Words first: a big title, the effect and flavour text.'], ['resource', 'Resource', 'A round picture, a bold name and its value as stars.'], ['location', 'Location', 'A landscape card: the picture left, the place and reward right.'], ['tarot', 'Tarot', 'A tall card with a gold double frame.'], ['sea-creatures', 'Sea Creatures', 'The sample deck, with mappings and groups.']] as $_t): ?>
+    <figure><img src="images/cardboard-templates/thumb-<?= $_t[0] ?>.webp" alt="The <?= $_t[1] ?> template" loading="lazy"><figcaption><b><?= $_t[1] ?></b><?= $_t[2] ?></figcaption></figure>
+    <?php endforeach; ?>
+  </div>
+  <ol>
+    <li>Click a template (or <b>Use this design</b> under it). <b>Link to your sheet</b> opens.</li>
+    <li>Link a Google Sheet — <b>Start a blank sheet</b>, or <b>Open a sheet</b> to use one you already have — shared with CardBoard’s service account, as in <a href="cardboard/help#sheet">Set up your sheet</a>.</li>
+    <li><b>Connect &amp; Open</b>: CardBoard adds a deck named after the template, with its columns, a few sample cards and the finished layout (front and back). In a new sheet its empty first tab is used; your other tabs stay as they are.</li>
+  </ol>
+  <div class="tip"><b>Make it yours:</b> replace the sample cards in the sheet or the <a href="cardboard/help#cards">Cards view</a>, and change anything on the layout — it’s an ordinary deck now. Rename a column in the Cards view and the layout follows.</div>
+</section>
+
 <section class="topic" id="account">
-  <h2><span class="n">3</span>Sign in</h2>
+  <h2><span class="n">4</span>Sign in</h2>
   <p class="lead">CardBoard uses your <b>GameBoard account</b> — one email and password for CardBoard, DevBoard, PitchBoard and BillBoard.</p>
   <div class="two">
     <?= shot('signin', 'Start your free week, or log in.') ?>
@@ -252,7 +274,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="owner">
-  <h2><span class="n">4</span>Your sheets &amp; view only</h2>
+  <h2><span class="n">5</span>Your sheets &amp; view only</h2>
   <p class="lead">The account that sets a sheet up in CardBoard owns it: only that account changes its cards and layouts. Anyone else you share the link with can look, not change.</p>
   <?= shot('viewonly', 'A sheet nobody has set up yet opens view only, with <b>Make it mine</b>.') ?>
   <ul>
@@ -264,14 +286,12 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
   </ul>
   <h3>Your designs</h3>
   <p><a href="cardboard">CardBoard</a>’s start page (the logo at the top left takes you there) shows every sheet you’ve set up — with a picture of its first card, when it was last edited and how many decks it has — plus sheets you’ve viewed. Search, sort, open one, or start a new one with <b>+ Design</b>.</p>
-  <h3>Templates</h3>
-  <p><b>Templates</b> in the start page’s side menu shows ready-made layouts — Classic, Hero, Event, Resource, Location, Tarot and the Sea Creatures sample. Click one (or <b>Use this design</b> under it), then link a Google Sheet — a new one or one of yours (<b>Open a sheet</b>): CardBoard adds a deck to it with the template’s columns, a few sample cards and the finished layout. Your other tabs stay as they are. Change the cards in the sheet (or the Cards view) and the layout is yours to edit.</p>
   <h3>Share a view-only link</h3>
   <p>Menu → <b>Share</b> (the sheet’s owner) makes a link anyone can open to look through the cards and layouts — without signing in, and without seeing your Google Sheet’s address. They can’t change anything. <b>Stop sharing</b> turns the link off. The link always shows what you’ve <b>saved</b>, with your saved Print and Export settings; changes still waiting in your browser show up once they’re saved.</p>
 </section>
 
 <section class="topic" id="screen">
-  <h2><span class="n">5</span>The screen</h2>
+  <h2><span class="n">6</span>The screen</h2>
   <?= shot('layout', 'The <b>Layout</b> view: elements on the left, the card in the middle, its settings on the right.') ?>
   <ul>
     <li><b>Tabs</b> at the top: <b>Cards</b>, <b>Tags</b>, <b>Layout</b>, <b>Print</b>, <b>Export</b>.</li>
@@ -286,7 +306,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 
 <!-- ───────────────────────── Your cards ───────────────────────── -->
 <section class="topic" id="decks">
-  <h2><span class="n">6</span>Decks</h2>
+  <h2><span class="n">7</span>Decks</h2>
   <div class="two narrow-left">
     <?= shot('deck-combo', 'The Deck list: type to filter, or add a new deck.') ?>
     <div>
@@ -298,7 +318,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="cards">
-  <h2><span class="n">7</span>The Cards view</h2>
+  <h2><span class="n">8</span>The Cards view</h2>
   <p class="lead">The deck as a grid — one row per card — so you can write and fix cards without leaving CardBoard.</p>
   <?= shot('cards', 'Picture links show a thumbnail; tags like <code>[mana]</code> show their icon; formulas show their results.') ?>
   <h3>Editing cells</h3>
@@ -338,7 +358,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="addcard">
-  <h2><span class="n">8</span>Stepping through &amp; adding cards</h2>
+  <h2><span class="n">9</span>Stepping through &amp; adding cards</h2>
   <p>Above the card in the Layout view: <b>first</b>, <b>previous</b>, the card number, <b>next</b> and <b>last</b> — check your design on every card. Click the card number to type another and press <kbd>Enter</kbd> to go straight to it. <kbd>⌘←</kbd> / <kbd>⌘→</kbd> go to the previous / next card, <kbd>⌘↑</kbd> / <kbd>⌘↓</kbd> to the first / last. The dashed <b>+</b> adds a card right after the one you're on.</p>
   <?= steps([['cardno-1', 'Click the card number and type the card you want.'], ['cardno-2', 'Press <kbd>Enter</kbd> — there it is. (<kbd>Esc</kbd> stays put.)']], 'Go to a card by number') ?>
   <?= steps([['card-nav', 'Click <b>+</b> beside the card navigator.'], ['card-added', 'A blank card appears after this one. Double-click a field on the card to fill it in.']], 'Add a card from the Layout view') ?>
@@ -349,7 +369,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 
 <!-- ───────────────────────── Designing ───────────────────────── -->
 <section class="topic" id="elements">
-  <h2><span class="n">9</span>Adding elements</h2>
+  <h2><span class="n">10</span>Adding elements</h2>
   <p class="lead">Drag anything from the left panel onto the card. You can also drop a picture file straight onto the card.</p>
   <?= steps([['add-field-1', 'Find the field in the <b>Card</b> list — it shows this card’s value.'], ['add-field-mid', 'Drag it onto the card.'], ['add-field-2', 'Drop it. It’s selected, ready to style in the right panel.']], 'Put a field on the card') ?>
   <div class="cards">
@@ -362,7 +382,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="fields">
-  <h2><span class="n">10</span>Card fields</h2>
+  <h2><span class="n">11</span>Card fields</h2>
   <div class="two">
     <?= shot('text-selected', 'A Card field selected: its column, how it shows, this card’s value and its style.') ?>
     <div>
@@ -384,7 +404,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="text">
-  <h2><span class="n">11</span>Text style</h2>
+  <h2><span class="n">12</span>Text style</h2>
   <p>Text, Card fields shown as text, and Generated values share these settings in the right panel:</p>
   <ul>
     <li><b>Font</b> — DIN Black, DIN Medium, Bangers, Cinzel, Lilita One, Merriweather, Roboto Condensed, and standard fonts.</li>
@@ -397,7 +417,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="pictures">
-  <h2><span class="n">12</span>Pictures</h2>
+  <h2><span class="n">13</span>Pictures</h2>
   <div class="two">
     <?= shot('picture', 'A picture field: each card has its own picture, saved in its Art cell.') ?>
     <div>
@@ -414,7 +434,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="mapping">
-  <h2><span class="n">13</span>Mappings</h2>
+  <h2><span class="n">14</span>Mappings</h2>
   <p class="lead">A mapping shows something different for each value of a field: a flame for <em>Fire</em> cards, “❄ FROST” for <em>Ice</em> cards. Each value can become text <em>or</em> a picture, so one element can be a word on one card and an icon on the next.</p>
   <?= steps([['mapping-0', 'Select a Card field and choose <b>Show as → Mapping</b>.'], ['mapping', 'Add a row for each value: type the text it becomes, or click the picture button to use a picture or a tag. <em>Fire</em> becomes a flame.'], ['mapping-2', 'Step to the next card: <em>Ice</em> becomes the text “❄ FROST”.']], 'Map a field’s values to text and pictures') ?>
   <ul>
@@ -430,7 +450,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="generated">
-  <h2><span class="n">14</span>Generated values</h2>
+  <h2><span class="n">15</span>Generated values</h2>
   <div class="two">
     <?= shot('generated', 'A number sequence numbering the cards #01, #02…') ?>
     <div>
@@ -446,7 +466,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="arrange">
-  <h2><span class="n">15</span>Moving &amp; lining up</h2>
+  <h2><span class="n">16</span>Moving &amp; lining up</h2>
   <ul>
     <li><b>Select</b> by clicking; <kbd>Shift</kbd> or <kbd>⌘</kbd>-click adds to the selection; <kbd>⌘A</kbd> selects everything; <kbd>Esc</kbd> selects nothing.</li>
     <li><b>Move</b> by dragging, or nudge with the arrow keys (1 pt; with <kbd>Shift</kbd>, 10 pt). Hold <kbd>Alt</kbd> while dragging for fine moves.</li>
@@ -468,7 +488,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="layers">
-  <h2><span class="n">16</span>Layers, groups &amp; lists</h2>
+  <h2><span class="n">17</span>Layers, groups &amp; lists</h2>
   <div class="two">
     <?= shot('layers', 'The Layers list: front-most first. Drag rows to restack.') ?>
     <div>
@@ -489,7 +509,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="backs">
-  <h2><span class="n">17</span>Card backs</h2>
+  <h2><span class="n">18</span>Card backs</h2>
   <div class="two">
     <?= shot('back', 'The back: its own background and elements.') ?>
     <div>
@@ -503,7 +523,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="tags">
-  <h2><span class="n">18</span>Tags</h2>
+  <h2><span class="n">19</span>Tags</h2>
   <p class="lead">Write a word in square brackets — <code>[mana]</code> — in any text or cell, and every card shows a picture or text in its place: <em>“Gain 1 [mana]”</em> becomes “Gain 1 💎”.</p>
   <?= shot('tags', 'The Tags view: each tag becomes an icon, a picture or text. The preview shows how it looks.') ?>
   <ol>
@@ -518,7 +538,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 
 <!-- ───────────────────────── Printing & sharing ───────────────────────── -->
 <section class="topic" id="print">
-  <h2><span class="n">19</span>Print</h2>
+  <h2><span class="n">20</span>Print</h2>
   <?= shot('print', 'Double-sided: each page of fronts sits next to its backs. Zoom in with − / +, or download a PDF.') ?>
   <ul>
     <li><b>Paper</b> Letter or A4, <b>Orientation</b>, and the <b>Gap</b> between cards (none, 1/16 in, 1/8 in).</li>
@@ -534,7 +554,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="export">
-  <h2><span class="n">20</span>Export &amp; links</h2>
+  <h2><span class="n">21</span>Export &amp; links</h2>
   <?= shot('export', 'A Tabletop Simulator sheet: 10 × 7 cards at most, with the back in the last slot.') ?>
   <ul>
     <li><b>For</b> — <b>Tabletop Simulator</b>, <b>Screentop</b>, or <b>Separate images</b> (one picture per card). <b>Size</b> — Standard (up to 4096 px), Large or Small. <b>Copies</b> as in Print.</li>
@@ -548,7 +568,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 
 <!-- ───────────────────────── Saving ───────────────────────── -->
 <section class="topic" id="saving">
-  <h2><span class="n">21</span>Saving &amp; working offline</h2>
+  <h2><span class="n">22</span>Saving &amp; working offline</h2>
   <p class="lead">Everything you change — layouts, cells (and their formatting), new cards, new fields and decks, tags, column order and widths, Print and Export settings — is kept in this browser as you work, and sent to your Google Sheet when you save.</p>
   <?= steps([['save-pending', '<b>Save</b> turns yellow when changes are waiting.'], ['save-saving', 'Saving runs in the background: the button fills as each part is saved, and you can keep working.']], 'Save') ?>
   <ul>
@@ -563,7 +583,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="undo">
-  <h2><span class="n">22</span>Undo, copy &amp; paste</h2>
+  <h2><span class="n">23</span>Undo, copy &amp; paste</h2>
   <ul>
     <li><b>Undo / Redo</b> — the curved arrows above the card (and above the Cards grid), or <kbd>⌘Z</kbd> and <kbd>⇧⌘Z</kbd>.</li>
     <li><b>Copy, Cut, Paste</b> and <b>Duplicate</b> — the buttons under <b>Actions</b> in the right panel, or <kbd>⌘C</kbd>, <kbd>⌘X</kbd>, <kbd>⌘V</kbd>, <kbd>⌘D</kbd>. Paste works between the front and back, between decks, between spreadsheets — even in another CardBoard window. Groups and their list settings come along.</li>
@@ -576,7 +596,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 
 <!-- ───────────────────────── Account ───────────────────────── -->
 <section class="topic" id="plans">
-  <h2><span class="n">23</span>Plans &amp; codes</h2>
+  <h2><span class="n">24</span>Plans &amp; codes</h2>
   <div class="two">
     <?= shot('plans', 'Menu → Subscription: your plan, and how to keep going.') ?>
     <div>
@@ -592,7 +612,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="settings">
-  <h2><span class="n">24</span>Account, settings &amp; menu</h2>
+  <h2><span class="n">25</span>Account, settings &amp; menu</h2>
   <div class="two">
     <?= shot('menu', 'The menu, from the round person button.') ?>
     <?= shot('settings', 'Settings: the spreadsheet and measurements.') ?>
@@ -606,7 +626,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="keys">
-  <h2><span class="n">25</span>Keyboard shortcuts</h2>
+  <h2><span class="n">26</span>Keyboard shortcuts</h2>
   <p><kbd>⌘</kbd> is <kbd>Ctrl</kbd> on Windows.</p>
   <table class="keys">
     <tr class="h"><td colspan="2">Everywhere</td></tr>
@@ -636,7 +656,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 </section>
 
 <section class="topic" id="trouble">
-  <h2><span class="n">26</span>Troubleshooting</h2>
+  <h2><span class="n">27</span>Troubleshooting</h2>
   <ul>
     <li><b>“Couldn't open the sheet”</b> — check it's shared with <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> as an <b>Editor</b>.</li>
     <li><b>Changes made in Google Sheets don't show</b> — menu → <b>Fetch</b>.</li>

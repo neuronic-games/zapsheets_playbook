@@ -217,6 +217,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
 <section class="topic" id="sheet">
   <h2><span class="n">2</span>Set up your sheet</h2>
   <p>Click <b>+ Design</b> on <a href="cardboard">CardBoard</a> (signed in) and <b>Link to your sheet</b> opens.</p>
+  <div class="tip"><b>Start from a template:</b> <b>Templates</b> in the start page’s side menu has finished designs (Classic, Hero, Event, Resource, Location, Tarot). <b>Use this design</b> opens the same dialog, and the template is added to the sheet you link — <a href="cardboard/help#owner">more below</a>.</div>
   <?= shot('newsheet', 'Link to your sheet: copy the service account, share your sheet with it, then paste the sheet’s link.') ?>
   <ol>
     <li><b>Copy the service account.</b> Step 1 shows CardBoard’s service account, <code>editor@zapsheets-480701.iam.gserviceaccount.com</code> — the <b>Copy</b> button copies it.</li>
@@ -264,7 +265,7 @@ table.keys tr.h td { background:#f6f5fd; font-family:'DINBlack',sans-serif; font
   <h3>Your designs</h3>
   <p><a href="cardboard">CardBoard</a>’s start page (the logo at the top left takes you there) shows every sheet you’ve set up — with a picture of its first card, when it was last edited and how many decks it has — plus sheets you’ve viewed. Search, sort, open one, or start a new one with <b>+ Design</b>.</p>
   <h3>Templates</h3>
-  <p><b>Templates</b> in the start page’s side menu shows ready-made layouts — Classic, Hero, Event, Resource, Location, Tarot and the Sea Creatures sample. Click <b>Use this design</b> under one, then link a new, blank Google Sheet: CardBoard adds a deck to it with the template’s columns, a few sample cards and the finished layout. Change the cards in the sheet (or the Cards view) and the layout is yours to edit.</p>
+  <p><b>Templates</b> in the start page’s side menu shows ready-made layouts — Classic, Hero, Event, Resource, Location, Tarot and the Sea Creatures sample. Click one (or <b>Use this design</b> under it), then link a Google Sheet — a new one or one of yours (<b>Open a sheet</b>): CardBoard adds a deck to it with the template’s columns, a few sample cards and the finished layout. Your other tabs stay as they are. Change the cards in the sheet (or the Cards view) and the layout is yours to edit.</p>
   <h3>Share a view-only link</h3>
   <p>Menu → <b>Share</b> (the sheet’s owner) makes a link anyone can open to look through the cards and layouts — without signing in, and without seeing your Google Sheet’s address. They can’t change anything. <b>Stop sharing</b> turns the link off. The link always shows what you’ve <b>saved</b>, with your saved Print and Export settings; changes still waiting in your browser show up once they’re saved.</p>
 </section>

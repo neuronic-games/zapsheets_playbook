@@ -226,6 +226,12 @@ section { padding:5.5rem 2rem; }
 .link-row span { flex:1; background:#f7f8fc; border:1px solid #e1e4ee; border-radius:5px; padding:4px 7px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .link-row b { font-family:'Inter',sans-serif; font-weight:600; font-size:10px; color:#2e2763; border:1px solid #d6d9e6; border-radius:5px; padding:3px 9px; }
 
+.tpl-mock { background:#f2f2f7; padding:14px; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; font-family:'Inter',sans-serif; }
+.tpl-mock .tp { background:#fff; border:1px solid #e1e4ee; border-radius:9px; padding:0 0 8px; display:flex; flex-direction:column; overflow:hidden; }
+.tpl-mock .tp-pic { background:#eef0f6; height:118px; display:flex; align-items:center; justify-content:center; }
+.tpl-mock .tp-pic img { max-height:100px; max-width:86%; border-radius:4px; box-shadow:0 4px 10px rgba(20,20,50,.22); }
+.tpl-mock b { font-size:11px; color:#1f1b47; margin:6px 9px 6px; }
+.tpl-mock span { margin:0 9px; background:#4b3fa8; color:#fff; border-radius:999px; text-align:center; font-size:8px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:5px 0; }
 .tags-mock { background:#fff; font-family:'Inter',sans-serif; padding:14px; }
 .tags-mock .tm-row { display:grid; grid-template-columns:96px 1fr; gap:8px; align-items:center; border:1px solid #e5e3f0; border-radius:8px; padding:7px 10px; margin-bottom:6px; font-size:11px; color:#2a2d3e; }
 .tags-mock .tm-row code { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:#4b3fa8; background:#f3f1ff; border-radius:4px; padding:1px 6px; justify-self:start; }
@@ -310,6 +316,7 @@ footer a { color:var(--text-mid); text-decoration:none; }
     <h2 class="section-title">From spreadsheet to card deck</h2>
     <p class="section-sub">Change a word in your sheet and every card that uses it changes too. No copying text into a drawing app, card by card.</p>
     <div class="features-grid">
+      <div class="feat-card"><div class="feat-strip"><img src="images/cardboard-features/strip-templates.jpg" alt="Template cards: Classic, Hero, Event, Resource, Tarot" loading="lazy" width="290" height="46"></div><h3>Start from a template</h3><p>Pick a finished design — Classic, Hero, Event, Resource, Location or Tarot — and CardBoard adds it to your sheet with its columns and a few sample cards.</p></div>
       <div class="feat-card"><div class="feat-strip"><img src="images/cardboard-features/strip-designer.jpg" alt="The designer: columns on the left, the card with its data" loading="lazy" width="290" height="46"></div><h3>Drag-and-drop card designer</h3><p>Drag your sheet's columns onto the card and see the real data right away. Step through rows to check every card.</p></div>
       <div class="feat-card"><div class="feat-strip"><img src="images/cardboard-features/strip-backs.jpg" alt="The back of a card in the designer" loading="lazy" width="290" height="46"></div><h3>Fronts and backs</h3><p>Flip the card to design its back. One shared back, or a different back for each card when it shows data from the row.</p></div>
       <div class="feat-card"><div class="feat-strip"><img src="images/cardboard-features/strip-shapes.jpg" alt="Text, picture and shape elements to drag onto the card" loading="lazy" width="290" height="46"></div><h3>Text, pictures, shapes</h3><p>Fixed text with <code>{Column}</code> placeholders, pictures from a column or a link, and stars, circles, hexagons and more.</p></div>
@@ -466,6 +473,31 @@ footer a { color:var(--text-mid); text-decoration:none; }
             <div class="out"><span class="lbl">On the card</span>Gain 2 <svg class="ti" viewBox="0 0 24 24"><path d="M13.5 2 4.5 13.5h6.5L10 22l9-11.5h-6.5z" fill="#f2b705"/></svg>. Pay 2 <svg class="ti" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#e9a81c"/><circle cx="12" cy="12" r="7" fill="#f7c948" stroke="#c98a0c" stroke-width="1.2"/></svg> to score 1 victory points.</div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="shot-section" id="templates" style="background:var(--slate-pale)">
+  <div class="container">
+    <div class="shot-grid">
+      <div class="browser-frame">
+        <div class="browser-chrome"><div class="browser-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="browser-url">mygameboard.app/cardboard — Templates</div></div>
+        <div class="tpl-mock">
+          <?php foreach ([['classic', 'Classic'], ['hero', 'Hero'], ['event', 'Event'], ['resource', 'Resource'], ['tarot', 'Tarot'], ['location', 'Location']] as $_t): ?>
+          <div class="tp"><div class="tp-pic"><img src="images/cardboard-templates/thumb-<?= $_t[0] ?>.webp" alt="The <?= $_t[1] ?> template" loading="lazy"></div><b><?= $_t[1] ?></b><span>Use this design</span></div>
+          <?php endforeach; ?>
+        </div>
+      </div>
+      <div class="shot-text">
+        <div class="section-label">Templates</div>
+        <h2 class="section-title" style="margin-bottom:1rem;">Start from a finished design</h2>
+        <p>Not sure where to begin? Pick a template from the Designs page and click <b>Use this design</b>. Link a Google Sheet — a new one or one you already have — and CardBoard adds a deck with the layout, its columns and a few sample cards.</p>
+        <ul>
+          <li><b>Classic</b>, <b>Hero</b>, <b>Event</b>, <b>Resource</b>, <b>Location</b> and <b>Tarot</b> — portrait, landscape and tall cards</li>
+          <li>Replace the sample cards with yours in the sheet or the Cards view</li>
+          <li>Everything stays editable: move, restyle or add to the layout</li>
+        </ul>
       </div>
     </div>
   </div>
